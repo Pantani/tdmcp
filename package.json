@@ -54,12 +54,12 @@
     "generative-art"
   ],
   "dependencies": {
-    "@bottobot/td-mcp": "^2.8.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.15",
+    "@bottobot/td-mcp": "^2.8.0",
     "@types/node": "^25.9.1",
     "@vitest/coverage-v8": "^4.1.7",
     "msw": "^2.14.6",

@@ -28,11 +28,12 @@ const manifestPath = join(root, "dxt", "manifest.json");
 const outFile = join(root, "tdmcp.dxt");
 
 /** Files/dirs to include at the root of the bundle (source -> archive path). */
+// node_modules is intentionally NOT here — it's staged production-only by
+// stageNodeModules() so the bundle stays small (no dev tooling / build-only deps).
 const INCLUDE = [
   // manifest.json MUST sit at the archive root.
   [manifestPath, "manifest.json"],
   [join(root, "dist"), "dist"],
-  [join(root, "node_modules"), "node_modules"],
   [join(root, "recipes"), "recipes"],
   [join(root, "td"), "td"],
   [join(root, "README.md"), "README.md"],
@@ -56,8 +57,8 @@ function preflight() {
   if (!existsSync(join(root, "dist", "index.js"))) {
     fail("dist/index.js not found. Run `npm run build` before building the .dxt bundle.");
   }
-  if (!existsSync(join(root, "node_modules"))) {
-    fail("node_modules not found. Install production deps (`npm ci --omit=dev`) before bundling.");
+  if (!existsSync(join(root, "package-lock.json"))) {
+    fail("package-lock.json not found — it is needed to install production deps into the bundle.");
   }
 }
 
@@ -76,6 +77,27 @@ function stageFiles(stageDir) {
     mkdirSync(dirname(target), { recursive: true });
     cpSync(src, target, { recursive: true });
   }
+}
+
+/**
+ * Stage a PRODUCTION-only node_modules into the bundle so the .dxt stays small —
+ * no dev tooling (TypeScript, Biome, Vitest) and no build-only data
+ * (`@bottobot/td-mcp`; the knowledge base is already baked into `dist/`). Installs
+ * from the lockfile into the staging dir; if that fails (e.g. offline with a cold
+ * cache) it falls back to copying the repo's node_modules so the build still
+ * produces a working — if larger — bundle.
+ */
+function stageNodeModules(stageDir) {
+  cpSync(join(root, "package.json"), join(stageDir, "package.json"));
+  cpSync(join(root, "package-lock.json"), join(stageDir, "package-lock.json"));
+  log("installing production dependencies into the bundle (npm ci --omit=dev)…");
+  const res = spawnSync("npm", ["ci", "--omit=dev", "--ignore-scripts", "--no-audit", "--no-fund"], {
+    cwd: stageDir,
+    stdio: "inherit",
+  });
+  if (res.status === 0 && existsSync(join(stageDir, "node_modules"))) return;
+  log("prod-only install failed — copying the repo node_modules as a fallback (larger bundle).");
+  cpSync(join(root, "node_modules"), join(stageDir, "node_modules"), { recursive: true });
 }
 
 /** Try the official packer(s). Returns true if one ran and succeeded. */
@@ -97,6 +119,7 @@ function tryOfficialPacker() {
     const stageDir = mkdtempSync(join(tmpdir(), "tdmcp-dxt-"));
     try {
       stageFiles(stageDir);
+      stageNodeModules(stageDir);
       const res = spawnSync("npx", ["--yes", pkg, "pack", stageDir, outFile], {
         cwd: root,
         encoding: "utf8",
@@ -140,6 +163,7 @@ function zipFallback() {
       cpSync(src, target, { recursive: true });
       log(`staged ${dest}`);
     }
+    stageNodeModules(stageDir);
     rmSync(outFile, { force: true });
     const res = spawnSync("zip", ["-r", "-q", "-X", outFile, "."], {
       cwd: stageDir,
