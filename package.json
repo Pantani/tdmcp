@@ -1,0 +1,64 @@
+{
+  "name": "@tdmcp/server",
+  "version": "0.1.0",
+  "description": "AI-native visual creation for TouchDesigner — a production-grade MCP server.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "tdmcp": "dist/index.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "recipes",
+    "td",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc && tsup && node scripts/copy-assets.mjs",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "import:bottobot": "tsx scripts/import-bottobot-data.ts",
+    "validate:recipes": "tsx scripts/validate-recipes.ts",
+    "smoke:live": "tsx scripts/smoke-live.ts"
+  },
+  "keywords": [
+    "touchdesigner",
+    "mcp",
+    "model-context-protocol",
+    "visual",
+    "creative-coding",
+    "generative-art"
+  ],
+  "dependencies": {
+    "@bottobot/td-mcp": "^2.8.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.15",
+    "@types/node": "^25.9.1",
+    "@vitest/coverage-v8": "^4.1.7",
+    "msw": "^2.14.6",
+    "tsup": "^8.5.1",
+    "tsx": "^4.22.3",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.7"
+  }
+}
