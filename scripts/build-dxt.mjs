@@ -91,10 +91,14 @@ function stageNodeModules(stageDir) {
   cpSync(join(root, "package.json"), join(stageDir, "package.json"));
   cpSync(join(root, "package-lock.json"), join(stageDir, "package-lock.json"));
   log("installing production dependencies into the bundle (npm ci --omit=dev)…");
-  const res = spawnSync("npm", ["ci", "--omit=dev", "--ignore-scripts", "--no-audit", "--no-fund"], {
-    cwd: stageDir,
-    stdio: "inherit",
-  });
+  const res = spawnSync(
+    "npm",
+    ["ci", "--omit=dev", "--ignore-scripts", "--no-audit", "--no-fund"],
+    {
+      cwd: stageDir,
+      stdio: "inherit",
+    },
+  );
   if (res.status === 0 && existsSync(join(stageDir, "node_modules"))) return;
   log("prod-only install failed — copying the repo node_modules as a fallback (larger bundle).");
   cpSync(join(root, "node_modules"), join(stageDir, "node_modules"), { recursive: true });
