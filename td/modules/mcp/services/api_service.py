@@ -10,6 +10,14 @@ import sys
 import traceback
 from contextlib import redirect_stdout
 
+import td
+
+# TouchDesigner injects globals (op, app, project, operator classes) only into
+# DAT/Textport scope, not into imported modules — so reach them via `td`.
+op = td.op
+app = td.app
+project = td.project
+
 _TYPE_RE = re.compile(r"[A-Za-z][A-Za-z0-9_]*$")
 
 
@@ -19,13 +27,13 @@ def op_type(node):
 
 
 def _resolve_type(type_name):
-    """Resolves an operator type string to its class (TD injects these globally)."""
+    """Resolves an operator type string to its class via the td module."""
     if not type_name or not _TYPE_RE.match(type_name):
         raise ValueError("Invalid operator type: %r" % (type_name,))
-    try:
-        return eval(type_name)  # noqa: S307 - operator type classes are TD builtins
-    except Exception as exc:  # noqa: BLE001
-        raise ValueError("Unknown operator type: %s" % type_name) from exc
+    cls = getattr(td, type_name, None)
+    if cls is None:
+        raise ValueError("Unknown operator type: %s" % type_name)
+    return cls
 
 
 def node_ref(node):
@@ -89,7 +97,7 @@ def node_detail(node):
     try:
         for par in node.pars():
             try:
-                pars[par.name] = par.eval()
+                pars[par.name] = _jsonable(par.eval())
             except Exception:  # noqa: BLE001
                 pars[par.name] = None
     except Exception:  # noqa: BLE001
@@ -118,15 +126,18 @@ def update_parameters(path, parameters):
 
 def exec_script(script, return_output=True):
     buf = io.StringIO()
-    scope = {}
+    # Seed the exec namespace with the full TD namespace (op, ParMode, operator
+    # classes, …) so scripts behave like they would in a DAT/Textport.
+    namespace = dict(vars(td))
+    namespace["op"] = op
     try:
         with redirect_stdout(buf):
-            exec(script, globals(), scope)  # noqa: S102 - intentional, runs inside TD
+            exec(script, namespace)  # noqa: S102 - intentional, runs inside TD
     except Exception:  # noqa: BLE001
         raise RuntimeError(traceback.format_exc())
     result = {"stdout": buf.getvalue() if return_output else ""}
-    if "result" in scope and scope["result"] is not None:
-        result["result"] = _jsonable(scope["result"])
+    if namespace.get("result") is not None:
+        result["result"] = _jsonable(namespace["result"])
     return result
 
 

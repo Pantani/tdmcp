@@ -2,9 +2,13 @@
 
 import base64
 
+import td
+
+op = td.op  # TD globals are not available inside imported modules; reach via td
+
 
 def capture(path, width=640, height=360):
-    node = op(path)  # noqa: F821 - TD global
+    node = op(path)
     if node is None:
         raise LookupError("Node not found: %s" % path)
     if getattr(node, "family", None) != "TOP":

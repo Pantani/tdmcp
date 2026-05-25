@@ -1,11 +1,15 @@
 """Atomic-ish batch operations: create / update / delete / connect."""
 
+import td
+
 from mcp.services import api_service
+
+op = td.op  # TD globals are not available inside imported modules; reach via td
 
 
 def connect(source_path, target_path, source_output=0, target_input=0):
-    src = op(source_path)  # noqa: F821 - TD global
-    dst = op(target_path)  # noqa: F821
+    src = op(source_path)
+    dst = op(target_path)
     if src is None or dst is None:
         raise LookupError("Source or target not found")
     dst.inputConnectors[target_input].connect(src.outputConnectors[source_output])

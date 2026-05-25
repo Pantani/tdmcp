@@ -1,6 +1,10 @@
 """Recursive network analysis: errors, topology and performance."""
 
+import td
+
 from mcp.services import api_service
+
+op = td.op  # TD globals are not available inside imported modules; reach via td
 
 
 def errors(path):
@@ -8,7 +12,7 @@ def errors(path):
 
 
 def topology(path):
-    root = op(path)  # noqa: F821 - TD global
+    root = op(path)
     if root is None:
         return {"nodes": [], "connections": []}
     nodes, connections = [], []

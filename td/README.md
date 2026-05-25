@@ -51,6 +51,23 @@ Then run the live smoke test from the repo root:
 npm run smoke:live
 ```
 
+## Global auto-install (recommended)
+
+Instead of wiring a Web Server DAT per project, use the self-installing
+`td/startup.py` so the bridge comes up automatically in any project:
+
+1. Add the absolute path of `td/modules` to **Preferences → "Python 64-bit
+   Module Path"** so `import mcp...` works everywhere. Then leave
+   `MODULES_DIR = ""` in `startup.py`; otherwise set it to that absolute path.
+2. Add an **Execute DAT** and paste the contents of `td/startup.py` into it.
+3. Turn ON the Execute DAT's **Start** and **Create** toggles. It creates and
+   configures `tdmcp_webserver` (port 9980) plus its callbacks on project open.
+4. To apply it to every *new* project, save this project as your **Default
+   Project** (Preferences) with that Execute DAT included.
+
+`install()` is idempotent — re-running just reconfigures the existing ops, so
+it is safe to leave the Execute DAT in place permanently.
+
 ## Endpoints
 
 | Method | Path | Purpose |
