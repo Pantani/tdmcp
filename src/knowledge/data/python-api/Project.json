@@ -1,0 +1,118 @@
+{
+  "className": "Project",
+  "displayName": "Project Class",
+  "description": "The Project class describes the current session.  It can be accessed with the project object, found in the automatically imported td module. Members changed in this such as the 'paths' member will be written to disk when the project is saved.",
+  "category": "General",
+  "fileName": "Project_Class.htm",
+  "members": [
+    {
+      "name": "folder",
+      "id": "content",
+      "returnType": "str",
+      "readOnly": true,
+      "description": "folder member"
+    },
+    {
+      "name": "folder",
+      "id": "bodyContent",
+      "returnType": "str",
+      "readOnly": true,
+      "description": "folder member"
+    }
+  ],
+  "methods": [
+    {
+      "name": "load",
+      "parameters": [
+        {
+          "name": "path",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "load(path)"
+    },
+    {
+      "name": "save",
+      "parameters": [
+        {
+          "name": "path",
+          "type": "Any"
+        },
+        {
+          "name": "saveExternalToxs=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "bool :",
+      "signature": "save(path, saveExternalToxs=False)"
+    },
+    {
+      "name": "quit",
+      "parameters": [
+        {
+          "name": "force=False",
+          "type": "Any"
+        },
+        {
+          "name": "crash=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "quit(force=False, crash=False)"
+    },
+    {
+      "name": "addPrivacy",
+      "parameters": [
+        {
+          "name": "key",
+          "type": "Any"
+        }
+      ],
+      "returns": "bool :",
+      "signature": "addPrivacy(key)"
+    },
+    {
+      "name": "removePrivacy",
+      "parameters": [
+        {
+          "name": "key",
+          "type": "Any"
+        }
+      ],
+      "returns": "bool :",
+      "signature": "removePrivacy(key)"
+    },
+    {
+      "name": "accessPrivateContents",
+      "parameters": [
+        {
+          "name": "key",
+          "type": "Any"
+        }
+      ],
+      "returns": "bool :",
+      "signature": "accessPrivateContents(key)"
+    },
+    {
+      "name": "applyWindowSettings",
+      "parameters": [],
+      "returns": "None :",
+      "signature": "applyWindowSettings()"
+    },
+    {
+      "name": "stack",
+      "parameters": [],
+      "returns": "str :",
+      "signature": "stack()"
+    },
+    {
+      "name": "pythonStack",
+      "parameters": [],
+      "returns": "str :",
+      "signature": "pythonStack()"
+    }
+  ],
+  "enhanced": true
+}

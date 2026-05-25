@@ -1,0 +1,115 @@
+{
+  "className": "Par",
+  "displayName": "Par Class",
+  "description": "The Par class describes an instance of a single Parameter. See also Custom Parameters.",
+  "category": "General",
+  "fileName": "Par_Class.htm",
+  "members": [
+    {
+      "name": "val",
+      "id": "content",
+      "returnType": "Any",
+      "readOnly": true,
+      "description": "val member"
+    },
+    {
+      "name": "val",
+      "id": "bodyContent",
+      "returnType": "Any",
+      "readOnly": true,
+      "description": "val member"
+    }
+  ],
+  "methods": [
+    {
+      "name": "copy",
+      "parameters": [
+        {
+          "name": "Par",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "copy(Par)"
+    },
+    {
+      "name": "eval",
+      "parameters": [],
+      "returns": "Any :",
+      "signature": "eval()"
+    },
+    {
+      "name": "evalNorm",
+      "parameters": [],
+      "returns": "float :",
+      "signature": "evalNorm()"
+    },
+    {
+      "name": "evalExpression",
+      "parameters": [],
+      "returns": "Any :",
+      "signature": "evalExpression()"
+    },
+    {
+      "name": "evalExport",
+      "parameters": [],
+      "returns": "Any :",
+      "signature": "evalExport()"
+    },
+    {
+      "name": "evalOPs",
+      "parameters": [],
+      "returns": "List[ OP ] :",
+      "signature": "evalOPs()"
+    },
+    {
+      "name": "evalFile",
+      "parameters": [],
+      "returns": "tdu.FileInfo :",
+      "signature": "evalFile()"
+    },
+    {
+      "name": "pulse",
+      "parameters": [
+        {
+          "name": "value=1",
+          "type": "Any"
+        },
+        {
+          "name": "frames=0",
+          "type": "Any"
+        },
+        {
+          "name": "seconds=0",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "pulse(value=1, frames=0, seconds=0)"
+    },
+    {
+      "name": "destroy",
+      "parameters": [],
+      "returns": "None :",
+      "signature": "destroy()"
+    },
+    {
+      "name": "reset",
+      "parameters": [],
+      "returns": "bool :",
+      "signature": "reset()"
+    },
+    {
+      "name": "isPar",
+      "parameters": [
+        {
+          "name": "par",
+          "type": "Par"
+        }
+      ],
+      "returns": "bool :",
+      "signature": "isPar(par : Par)"
+    }
+  ],
+  "enhanced": true
+}

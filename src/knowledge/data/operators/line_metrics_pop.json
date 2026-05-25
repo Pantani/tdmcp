@@ -1,0 +1,548 @@
+{
+  "name": "Line Metrics POP",
+  "id": "line_metrics_pop",
+  "category": "POP",
+  "subcategory": "Experimental",
+  "description": "You can add metrics attributes to Line Strips. They can be created as point attribute or the vertex attributes.",
+  "parameters": [
+    {
+      "name": "attrclass",
+      "label": "Attribute Class",
+      "description": "Configure Attribute Class for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertex",
+          "description": ""
+        },
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        },
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    },
+    {
+      "name": "point",
+      "label": "Point",
+      "description": "Configure Point for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertex",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "dispnext",
+      "label": "Displacement to Next",
+      "description": "Configure Displacement to Next for the operator",
+      "type": "string"
+    },
+    {
+      "name": "dispnextname",
+      "label": "Displacement to Next Attrib Name",
+      "description": "Configure Displacement to Next Attrib Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "dispprev",
+      "label": "Displacement to Previous",
+      "description": "Configure Displacement to Previous for the operator",
+      "type": "string"
+    },
+    {
+      "name": "dispprevname",
+      "label": "Displacement to Previous Attrib Name",
+      "description": "Configure Displacement to Previous Attrib Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "distnext",
+      "label": "Distance to Next",
+      "description": "Configure Distance to Next for the operator",
+      "type": "string"
+    },
+    {
+      "name": "distnextname",
+      "label": "Distance to Next Attrib Name",
+      "description": "Configure Distance to Next Attrib Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "distprev",
+      "label": "Distance to Previous",
+      "description": "Configure Distance to Previous for the operator",
+      "type": "string"
+    },
+    {
+      "name": "distprevname",
+      "label": "Distance to Previous Attrib Name",
+      "description": "Configure Distance to Previous Attrib Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "dirnext",
+      "label": "Direction to Next",
+      "description": "Configure Direction to Next for the operator",
+      "type": "string"
+    },
+    {
+      "name": "dirnextname",
+      "label": "Direction to Next Attrib Name",
+      "description": "Configure Direction to Next Attrib Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "dirprev",
+      "label": "Direction to Previous",
+      "description": "Configure Direction to Previous for the operator",
+      "type": "string"
+    },
+    {
+      "name": "dirprevname",
+      "label": "Direction to Previous Attrib Name",
+      "description": "Configure Direction to Previous Attrib Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "tangent",
+      "label": "Tangent",
+      "description": "Configure Tangent for the operator",
+      "type": "string"
+    },
+    {
+      "name": "tangentname",
+      "label": "Tangent Attrib Name",
+      "description": "Configure Tangent Attrib Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "curvature",
+      "label": "Curvature",
+      "description": "Configure Curvature for the operator",
+      "type": "string"
+    },
+    {
+      "name": "curvaturename",
+      "label": "Curvature Attrib Name",
+      "description": "Configure Curvature Attrib Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "angleperdist",
+      "label": "Angle per Distance",
+      "description": "Configure Angle per Distance for the operator",
+      "type": "string"
+    },
+    {
+      "name": "angleperdistname",
+      "label": "Angle per Distance Attrib Name",
+      "description": "Configure Angle per Distance Attrib Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "continuousdir",
+      "label": "Continuous Direction",
+      "description": "Configure Continuous Direction for the operator",
+      "type": "string"
+    },
+    {
+      "name": "maxneighbors",
+      "label": "Max Neighbors",
+      "description": "Configure Max Neighbors for the operator",
+      "type": "string"
+    },
+    {
+      "name": "diststart",
+      "label": "Distance from Start",
+      "description": "Configure Distance from Start for the operator",
+      "type": "string"
+    },
+    {
+      "name": "diststartname",
+      "label": "Distance from Start Attrib Name",
+      "description": "Configure Distance from Start Attrib Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "distend",
+      "label": "Distance from End",
+      "description": "Configure Distance from End for the operator",
+      "type": "string"
+    },
+    {
+      "name": "distendname",
+      "label": "Distance from End Attrib Name",
+      "description": "Configure Distance from End Attrib Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "diststartnorm",
+      "label": "Distance from Start Normalized",
+      "description": "Configure Distance from Start Normalized for the operator",
+      "type": "string"
+    },
+    {
+      "name": "diststartnormname",
+      "label": "Distance from Start Normalized Attrib Name",
+      "description": "Configure Distance from Start Normalized Attrib Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "distendnorm",
+      "label": "Distance from End Normalized",
+      "description": "Configure Distance from End Normalized for the operator",
+      "type": "string"
+    },
+    {
+      "name": "distendnormname",
+      "label": "Distance from End Normalized Attrib Name",
+      "description": "Configure Distance from End Normalized Attrib Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "primlen",
+      "label": "Line Strip Length",
+      "description": "Configure Line Strip Length for the operator",
+      "type": "string"
+    },
+    {
+      "name": "primlenname",
+      "label": "Line Strip Length Attrib Name",
+      "description": "Configure Line Strip Length Attrib Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "primlenprim",
+      "label": "Length Attrib Primitive Attribute",
+      "description": "Configure Length Attrib Primitive Attribute for the operator",
+      "type": "string"
+    },
+    {
+      "name": "pointindex",
+      "label": "Vert Index in Line Strip",
+      "description": "Configure Vert Index in Line Strip for the operator",
+      "type": "string"
+    },
+    {
+      "name": "pointindexname",
+      "label": "Vert Index Attrib Name",
+      "description": "Configure Vert Index Attrib Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "numverts",
+      "label": "Number of Verts in Line Strip",
+      "description": "Configure Number of Verts in Line Strip for the operator",
+      "type": "string"
+    },
+    {
+      "name": "numvertsname",
+      "label": "Number of Verts Attrib Name",
+      "description": "Configure Number of Verts Attrib Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "vertindexnorm",
+      "label": "Vert Index in Line Strip Normalized",
+      "description": "Configure Vert Index in Line Strip Normalized for the operator",
+      "type": "string"
+    },
+    {
+      "name": "vertindexnormname",
+      "label": "Vert Index Normalized Attrib Name",
+      "description": "Configure Vert Index Normalized Attrib Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "linestripindex",
+      "label": "Line Strip Index",
+      "description": "Configure Line Strip Index for the operator",
+      "type": "string"
+    },
+    {
+      "name": "linestripindexname",
+      "label": "Line Strip Index Attrib Name",
+      "description": "Configure Line Strip Index Attrib Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "lsindexnorm",
+      "label": "Line Strip Index Normalized",
+      "description": "Configure Line Strip Index Normalized for the operator",
+      "type": "string"
+    },
+    {
+      "name": "lsindexnormname",
+      "label": "Line Strip Index Normalized Attrib Name",
+      "description": "Configure Line Strip Index Normalized Attrib Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "bypass",
+      "label": "Bypass",
+      "description": "Configure Bypass for the operator",
+      "type": "string"
+    },
+    {
+      "name": "delinputattrs",
+      "label": "Delete Input Attributes",
+      "description": "Configure Delete Input Attributes for the operator",
+      "type": "string"
+    },
+    {
+      "name": "parmcolorspace",
+      "label": "Parameter Color Space",
+      "description": "Configure Parameter Color Space for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        }
+      ]
+    },
+    {
+      "name": "srgb",
+      "label": "sRGB",
+      "description": "Configure sRGB for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        }
+      ]
+    },
+    {
+      "name": "parmreferencewhite",
+      "label": "Parameter Reference White",
+      "description": "Configure Parameter Reference White for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    },
+    {
+      "name": "default",
+      "label": "Default For Color Space",
+      "description": "Configure Default For Color Space for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    }
+  ],
+  "experimental": true,
+  "sourceFile": "Experimental-Line_Metrics_POP.htm",
+  "parsedAt": "2025-08-08T03:03:56.855Z"
+}

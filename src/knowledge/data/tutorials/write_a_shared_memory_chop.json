@@ -1,0 +1,261 @@
+{
+  "id": "write_a_shared_memory_chop",
+  "name": "Write a Shared Memory CHOP",
+  "displayName": "Write a Shared Memory CHOP",
+  "category": "TUTORIAL",
+  "subcategory": "CHOP Tutorial",
+  "type": "tutorial",
+  "description": "This article refers to how to write external applications to interface with Shared Mem Out CHOP and Shared Mem In CHOP.",
+  "summary": "This article refers to how to write external applications to interface with Shared Mem Out CHOP and Shared Mem In CHOP. In the TouchDesigner installation directory, under /touch/SharedMem/CHOP there is the header defined in CHOP_SharedMemHeader.h that needs to be filled in at the start of the shared memory buffer. The memory buffer should have this header, followed by the channel data and optionally the channel data. NOTE: The 'Shared Mem Type' parameter in the CHOP must be set to 'Local' for your app to be able interface with it",
+  "content": {
+    "sections": [
+      {
+        "title": "Introduction",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "This article refers to how to write external applications to interface with Shared Mem Out CHOP and Shared Mem In CHOP."
+          },
+          {
+            "type": "paragraph",
+            "text": "In the TouchDesigner installation directory, under /touch/SharedMem/CHOP there is the header defined in CHOP_SharedMemHeader.h that needs to be filled in at the start of the shared memory buffer. The memory buffer should have this header, followed by the channel data and optionally the channel data."
+          },
+          {
+            "type": "paragraph",
+            "text": "NOTE: The 'Shared Mem Type' parameter in the CHOP must be set to 'Local' for your app to be able interface with it"
+          }
+        ]
+      },
+      {
+        "title": "Creating a Shared Memory Buffer",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Refer to the article Using Shared Memory in TouchDesigner to learn how to create a shared memory buffer. If you are the sender, you need to create a buffer who's size will accommodate both the header, the channel data and the channel names (if you are sending them). Get the size of the header simply with"
+          },
+          {
+            "type": "code",
+            "text": "sizeof(CHOP_SharedMemHeader)",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "The size of the channel data is"
+          },
+          {
+            "type": "code",
+            "text": "number of channels * channel length * 4",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "4 because that's the number of bytes in a float."
+          },
+          {
+            "type": "paragraph",
+            "text": "The size of the channel names is the length of each channel name + 1 extra byte per channel to accommodate the null character at the end of each channel name. For example if you have 2 channels named cha1 and cha2 the required size would be"
+          },
+          {
+            "type": "code",
+            "text": "4 + 4 + 2 = 10\n where the terms are: (length of cha1) + (length of cha2) + (number of channels, for the null characters)",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "Following the same example, if the channel length was 5 samples long, then you'd need to allocate a memory buffer that has the size in bytes of at least:"
+          },
+          {
+            "type": "code",
+            "text": "sizeof(CHOP_SharedMemHeader) + 10 + (2 * 5 * 4)",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "Once you have a pointer to the memory, you can do the next step."
+          }
+        ]
+      },
+      {
+        "title": "Writing/Reading the Header",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "You can get the header file used to describe the data that is sent through a Shared Mem CHOP in Touch/SharedMem/CHOP (Under the directory where Touch is installed). The file is called CHOP_SharedMemHeader.h."
+          },
+          {
+            "type": "paragraph",
+            "text": "The header is the first thing that appears in the shared memory. So you can cast the pointer you get from UT_SharedMem to CHOP_SharedMemHeader."
+          },
+          {
+            "type": "code",
+            "text": "CHOP_SharedMemHeader *header = (CHOP_SharedMemHeader*)shm->getMemory();",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "If you are the sender, fill in all of the fields in this header. Refer to the header for more details one each field you need to fill in."
+          },
+          {
+            "type": "paragraph",
+            "text": "If you are the sender, make sure you fill in all required fields in the header, otherwise the receiver won't know where the data is"
+          },
+          {
+            "type": "paragraph",
+            "text": "Most of the members of the header are self-explanatory. Typical usage would be like this"
+          },
+          {
+            "type": "code",
+            "text": "header->magicNumber = CHOP_SHM_MAGIC_NUMBER; // Must be set to this\n header->version = CHOP_SHM_VERSION; // Must be set to this\n header->size = sharedMemSize; // As calculated when you created the shared memory\n header->numChans = numOfChannelsToSend;\n header->length = lengthOfEachChannel; // Number of samples\n header->sampleRate = theSampleRate;\n header->namesSent = amISendingNames; // 1 if you are sending channel names, 0 otherwise\n header->channelDataOffset = sizeof(CHOP_SharedMemHeader);\n header->nameDataOffset = header->channelDataOffset + (header->numChans * header->length * 4);",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "If you are the receiver, use the the information from the header however you see fit."
+          }
+        ]
+      },
+      {
+        "title": "Reading/Writing the channel data",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Get a pointer to where you should read/write the channel data by simply using the getChannelData() call in the header"
+          },
+          {
+            "type": "code",
+            "text": "float *data = header->getChannelData();",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "The channel data is tightly packed, one channel at a time. So the first channel's samples appear first, follow immediately by the second channel's samples."
+          },
+          {
+            "type": "paragraph",
+            "text": "A typical loop to read/write the channel data would look like this"
+          },
+          {
+            "type": "code",
+            "text": "float *data = header->getChannelData(); \n for (int i = 0; i < header->numChans; i++)\n {\n    // data points to the channel data of the i'th channel\n    for (int j = 0; j < header->length; j++)\n    {\n        // data[j] is the j'th sample in the current channel\n        float sample = data[j];\n        // do something with the data\n        // or if you are writing data to the shared mem, you'd assign something to data[j]\n    }\n    // Move the data pointer forward so that it now points to the data for\n    // the next channel\n    data += header->length;\n }",
+            "language": "text"
+          }
+        ]
+      },
+      {
+        "title": "Reading/Writing the channel names",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "If you are writing channel names, make sure you set the namesSent field of the header to 1, otherwise the names will be ignored. If you don't send names, then the channels will keep their previous names, or use incremental names starting at 'chan1' if they don't have a previous name."
+          },
+          {
+            "type": "paragraph",
+            "text": "If you are reading channel names, make sure the namesSent field of the header is 1, otherwise you will be reading garbabe data."
+          },
+          {
+            "type": "paragraph",
+            "text": "Get a pointer to where you should read/write the channel names by simply using the getNameData() call in the header"
+          },
+          {
+            "type": "code",
+            "text": "char *names = header->getNameData();",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "The channel names are tightly packed with the data containing a channel name, followed by a null character, followed immediately by the next channel name."
+          },
+          {
+            "type": "paragraph",
+            "text": "A typical loop to read the channel names would be:"
+          },
+          {
+            "type": "code",
+            "text": "char *names = header->getNameData(); \n for (int i = 0; i < header->numChans; i++)\n {\n    // names pointer to the name of the i'th channel, so you can do whatever you normally can with a string it\n    // such as\n    cout << names << endl;\n    \n    // Now move the pointer forward to the next channel name\n    // add the number of character in the name, plus the null character to the pointer\n    names += strlen(names) + 1;\n }",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "A typical loop to write the channel names would be:"
+          },
+          {
+            "type": "code",
+            "text": "// This example assumes you have an array of char*s called myNames that contain the channel names.\n char *names = header->getNameData(); \n for (int i = 0; i < header->numChans; i++)\n {\n    // names pointer to the name of the i'th channel, so copy the channel name to it, make sure you include the\n    // null character at the end of the string (the + 1 in the size of the memcpy)\n    memcpy(names, myNames[i], strlen(myNames[i]) + 1);\n    \n    // Now move the pointer forward to the next channel name\n    // add the number of character in the name, plus the null character to the pointer\n    names += strlen(myNames[i]) + 1;\n }",
+            "language": "text"
+          }
+        ]
+      }
+    ],
+    "tableOfContents": [
+      {
+        "number": "1",
+        "text": "Creating a Shared Memory Buffer",
+        "href": "#Creating_a_Shared_Memory_Buffer"
+      },
+      {
+        "number": "2",
+        "text": "Writing/Reading the Header",
+        "href": "#Writing/Reading_the_Header"
+      },
+      {
+        "number": "3",
+        "text": "Reading/Writing the channel data",
+        "href": "#Reading/Writing_the_channel_data"
+      },
+      {
+        "number": "4",
+        "text": "Reading/Writing the channel names",
+        "href": "#Reading/Writing_the_channel_names"
+      }
+    ],
+    "relatedLinks": [
+      {
+        "text": "Shared Mem Out CHOP",
+        "href": "Shared_Mem_Out_CHOP.htm"
+      },
+      {
+        "text": "Shared Mem In CHOP",
+        "href": "Shared_Mem_In_CHOP.htm"
+      },
+      {
+        "text": "Using Shared Memory in TouchDesigner",
+        "href": "Using_Shared_Memory_in_TouchDesigner.htm"
+      }
+    ],
+    "images": []
+  },
+  "keywords": [
+    "write",
+    "shared",
+    "memory",
+    "chop",
+    "introduction",
+    "creating",
+    "buffer",
+    "writing/reading",
+    "header",
+    "reading/writing",
+    "channel",
+    "data",
+    "names",
+    "dat",
+    "parameter",
+    "sample",
+    "mat"
+  ],
+  "tags": [
+    "Tutorial",
+    "TouchDesigner",
+    "Write a Shared Memory CHOP"
+  ],
+  "searchWeight": 2,
+  "lastUpdated": "2025-08-08T03:32:33.824Z",
+  "sourceFile": "C:\\Program Files\\Derivative\\TouchDesigner\\Samples\\Learn\\OfflineHelp\\https.docs.derivative.ca\\Write_a_Shared_Memory_CHOP.htm",
+  "isValid": true,
+  "validationErrors": []
+}

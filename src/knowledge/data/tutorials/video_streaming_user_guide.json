@@ -1,0 +1,653 @@
+{
+  "id": "video_streaming_user_guide",
+  "name": "Video Streaming User Guide",
+  "displayName": "Video Streaming User Guide",
+  "category": "TUTORIAL",
+  "subcategory": "Video Guide",
+  "type": "tutorial",
+  "description": "This guide will cover the supported protocols and services that are now available to TouchDesigner users for audio video streaming over the Internet.",
+  "summary": "This guide will cover the supported protocols and services that are now available to TouchDesigner users for audio video streaming over the Internet.",
+  "content": {
+    "sections": [
+      {
+        "title": "Contents",
+        "level": 2,
+        "content": [
+          {
+            "type": "unordered-list",
+            "items": [
+              "1 Current Protocols in Official",
+              "2 Streaming Services using RTMP\n2.1 Twitch\n2.1.1 Connection and Setup Instructions\n2.1.2 Maximum Quality Settings\n\n2.2 Youtube\n2.2.1 Connection and Setup Instructions\n2.2.2 Maximum Quality Settings\n\n2.3 Mux\n2.3.1 Connection and Setup Instructions\n2.3.2 Maximum Quality Settings\n\n2.4 Wowza\n2.4.1 Connection and Setup Instructions",
+              "2.1 Twitch\n2.1.1 Connection and Setup Instructions\n2.1.2 Maximum Quality Settings",
+              "2.1.1 Connection and Setup Instructions",
+              "2.1.2 Maximum Quality Settings",
+              "2.2 Youtube\n2.2.1 Connection and Setup Instructions\n2.2.2 Maximum Quality Settings",
+              "2.2.1 Connection and Setup Instructions",
+              "2.2.2 Maximum Quality Settings",
+              "2.3 Mux\n2.3.1 Connection and Setup Instructions\n2.3.2 Maximum Quality Settings",
+              "2.3.1 Connection and Setup Instructions",
+              "2.3.2 Maximum Quality Settings",
+              "2.4 Wowza\n2.4.1 Connection and Setup Instructions",
+              "2.4.1 Connection and Setup Instructions"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "2.1 Twitch\n2.1.1 Connection and Setup Instructions\n2.1.2 Maximum Quality Settings",
+              "2.1.1 Connection and Setup Instructions",
+              "2.1.2 Maximum Quality Settings",
+              "2.2 Youtube\n2.2.1 Connection and Setup Instructions\n2.2.2 Maximum Quality Settings",
+              "2.2.1 Connection and Setup Instructions",
+              "2.2.2 Maximum Quality Settings",
+              "2.3 Mux\n2.3.1 Connection and Setup Instructions\n2.3.2 Maximum Quality Settings",
+              "2.3.1 Connection and Setup Instructions",
+              "2.3.2 Maximum Quality Settings",
+              "2.4 Wowza\n2.4.1 Connection and Setup Instructions",
+              "2.4.1 Connection and Setup Instructions"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "2.1.1 Connection and Setup Instructions",
+              "2.1.2 Maximum Quality Settings"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "2.2.1 Connection and Setup Instructions",
+              "2.2.2 Maximum Quality Settings"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "2.3.1 Connection and Setup Instructions",
+              "2.3.2 Maximum Quality Settings"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "2.4.1 Connection and Setup Instructions"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Current Protocols in Official[edit]",
+            "level": 4
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "RTMP - A widely adopted protocol for streaming audio video to streaming services like YouTube and Twitch.",
+              "RTSP - An open source server and client protocol for sending and receiving audio video data over the internet.",
+              "NDI - A video over IP protocol that is extremely useful in a variety of networked video use cases.",
+              "SRT - (Secure Reliable Transport) upcoming in Video Stream In TOP, currently in Experimental builds."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "See also Broadcasting to Social Media from TouchDesigner via virtual webcams."
+          }
+        ]
+      },
+      {
+        "title": "Streaming Services using RTMP[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "subsection",
+            "title": "Twitch[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "URL: https://www.twitch.tv/"
+          },
+          {
+            "type": "paragraph",
+            "text": "A service owned and operated by Amazon. It's probably the most popular live streaming system to date."
+          },
+          {
+            "type": "paragraph",
+            "text": "Services"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Free access",
+              "Integrated chat",
+              "Stream recording and stream playback (for a limited number of days)",
+              "Premium (Paid) Access offers various enhancements to recording"
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Advantages"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Free with Ads / Premium without Ads",
+              "Easy to use",
+              "The best place to try this for the first time",
+              "Low latency (3-5 seconds)"
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Disadvantages"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Ads for free",
+              "Entrance way to content is very noisey with gamers playing games",
+              "Recording and archiving options for video is limited and always temporary"
+            ]
+          },
+          {
+            "type": "ordered-list",
+            "items": [
+              "Sign up for a user account. Follow the instructions.",
+              "Once a member find your streamkey located in \"Account Settings\" in the \"Stream\" section. They \"Primary Stream key\" is a permanent key that you can use over and over so it should be kept to yourself or others will be able to hijack your channel. Use the copy button to copy the string the keyboard and construct the string in the VideoStream out TOP parameter called Destination URL as follows...",
+              "Pick an ingest server that is closest or recommended. https://stream.twitch.tv/ingests/"
+            ]
+          },
+          {
+            "type": "code",
+            "text": "{ingest server url} = rtmp://live.twitch.tv/app/\n  {stream key} = live_1234567_sduhy3xJ1KJ34Eg6CjksdJLubFS7gtUY\n  RTMP Destination URL = rtmp://live.twitch.tv/app/live_1234567_sduhy3xJ1KJ34Eg6CjksdJLubFS7gtUY",
+            "language": "python"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Resolution: 1920x1080",
+              "Bitrate: 6000 kbps",
+              "Bitrate Mode: CBR",
+              "Framerate: 60",
+              "Keyframe Interval: 2 seconds",
+              "Profile: Main",
+              "B-frames: 2"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Maximum quality settings trade quality for size / bandwidth and are possibly less compatible with a wider audience. We encourage you to try  all the settings to figure out what’s best for your use case."
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Youtube[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "URL: https://youtube.com"
+          },
+          {
+            "type": "paragraph",
+            "text": "Services"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Video streaming",
+              "Video transcoding",
+              "Live video streaming",
+              "Live video recording"
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Advantages"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Possibly the biggest video platform in the world.",
+              "Most viewers already have a Youtube account.",
+              "Smart TVs come with Youtube installed - easy to play content on TVs or any other device.",
+              "Free archiving of all videos.",
+              "Immediate access to your videos.",
+              "Ability to monetize your content based on advertising revenue from playback."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Disadvantages"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Setup is more complex than Twitch"
+            ]
+          },
+          {
+            "type": "ordered-list",
+            "items": [
+              "Sign up for a user account.",
+              "Use google to search for YouTube live streaming",
+              "Click the search link called \"YouTube Live | Learn How to Start Your Stream\"",
+              "Go to https://youtube.com/live_dashboard. You will end up at the YouTube Studio Dashboard.",
+              "Locate the \"Go Live\" button which is an icon with a red dot in the middle.  Click that.",
+              "This will bring you to a new streaming user interface.  It allows you to select a Webcam or Stream sender.  Select \"Stream\" on the left control panel.",
+              "From here follow the setup dialog instructions to setup your stream. Construct the string for the VideoStreamOut TOP by concatenating the Stream URL with a \"slash\" (\"/\") as follows..."
+            ]
+          },
+          {
+            "type": "code",
+            "text": "{stream url} = rtmp://x.rtmp.youtube.com/live2\n  {stream key} = asdf-56wq-6yut-9ast\n  RTMP Destination URL = rtmp://x.rtmp.youtube.com/live2/asdf-56wq-6yut-9ast",
+            "language": "python"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Important Note: Once you have successfully connected to the Studio streaming RTMP server, the connection status below the preview monitor will go from \"no data\" to \"Excellent (or other) Connection\" but it may not play the preview until you reload the page on the browser.",
+              "Important Note: Once you have successfully connected to the Studio streaming RTMP server, the connection status below the preview monitor will go from \"no data\" to \"Excellent (or other) Connection\" but it may not play the preview until you reload the page on the browser.",
+              "Important Note: Once you have successfully connected to the Studio streaming RTMP server, the connection status below the preview monitor will go from \"no data\" to \"Excellent (or other) Connection\" but it may not play the preview until you reload the page on the browser."
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Important Note: Once you have successfully connected to the Studio streaming RTMP server, the connection status below the preview monitor will go from \"no data\" to \"Excellent (or other) Connection\" but it may not play the preview until you reload the page on the browser.",
+              "Important Note: Once you have successfully connected to the Studio streaming RTMP server, the connection status below the preview monitor will go from \"no data\" to \"Excellent (or other) Connection\" but it may not play the preview until you reload the page on the browser."
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Important Note: Once you have successfully connected to the Studio streaming RTMP server, the connection status below the preview monitor will go from \"no data\" to \"Excellent (or other) Connection\" but it may not play the preview until you reload the page on the browser."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "https://support.google.com/youtube/answer/2853702?hl=en&ref_topic=9257892"
+          },
+          {
+            "type": "paragraph",
+            "text": "(These requirement specifications have yet to be fully realized. 4K is not working yet on our side)"
+          },
+          {
+            "type": "subsection",
+            "title": "Mux[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "URL: https://mux.com/"
+          },
+          {
+            "type": "paragraph",
+            "text": "A passionate team of video experts who have done a very good job taking some of the complexity out of streaming for business use cases. They provide a robust platform for high quality streaming geared toward application developers."
+          },
+          {
+            "type": "paragraph",
+            "text": "Services"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Video transcoding",
+              "Video storage and playback backend",
+              "Live streaming and live stream recording",
+              "Data metrics",
+              "Application development API"
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Advantages"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Very good human support",
+              "Easy to use - good backend user interface - minimal",
+              "Clean API for supporting application development",
+              "They have their own network that is tuned for quality of playback",
+              "Supports XXXX Kbps",
+              "Make your own streaming application and avoid the noise and chaos to Twitch or Mixer"
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Disadvantages"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Higher latency than Twitch and Mixer - can be up to 30 seconds",
+              "Might be expensive. Call them with you use case or look here to start. https://mux.com/pricing",
+              "Only support RTMP and HLS currently.",
+              "Much more complex than Twitch or Mixer - (It's designed for professional developers)",
+              "Their business model seems to be geared towards ingesting and transcoding video and not live streams.",
+              "Their maximum frame rate is 30 and maximum bitrate is 5000."
+            ]
+          },
+          {
+            "type": "ordered-list",
+            "items": [
+              "Sign up for a user account. Follow the instructions.",
+              "Once in user account use the Settings (Gear Icon) menu to locate documentation.",
+              "https://docs.mux.com/docs/live-streaming"
+            ]
+          },
+          {
+            "type": "code",
+            "text": "{ingest server url} = rtmp://global-live.mux.com:5222/app\n  {stream key} = 123412341234-JKHASDF98asdf9789fAoad\n  RTMP Destination URL = rtmp://global-live.mux.com:5222/app/123412341234-JKHASDF98asdf9789fAoad",
+            "language": "python"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Resolution: 1920x1080",
+              "Bitrate: 7000 kbps",
+              "Bitrate Mode: CBR",
+              "Framerate: 30",
+              "Keyframe Interval: 0 seconds",
+              "Profile: Main",
+              "Preset:",
+              "B-frames: 2"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Wowza[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "URL: https://wowza.com/"
+          },
+          {
+            "type": "paragraph",
+            "text": "Pay to stream service charges you based on your bandwidth usage.  http://cloud.wowza.com provides an easy to use system for RTMP ingest and HLS broadcasting. As well they offer a streaming engine that can be installed onto a cloud service like Microsoft Azure to manage an entire customizable streaming service. Its very technical to setup."
+          },
+          {
+            "type": "paragraph",
+            "text": "Services"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Video transcoding",
+              "Live streaming and live stream recording",
+              "Data metrics",
+              "Application development API"
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Advantages"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Very good human support",
+              "Wowza cloud services are fairly easy to use and are very configurable.",
+              "Clean API for supporting application development",
+              "Their network provides customization of settings for higher bit rates",
+              "Make your own streaming application and avoid the noise and chaos to Twitch or Mixer",
+              "30 day trial for testing cloud services - https://www.wowza.com/wowza-streaming-cloud-free-trial",
+              "6 month trial for running Wowza engine - https://www.wowza.com/wowza-streaming-engine-free-trial",
+              "High resolutions and high bitrates are available"
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Disadvantages"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "You must have a membership to use it",
+              "Pricing structure isnt very clear as it is pay to play",
+              "Cloud only supports RTMP",
+              "Much more complex than Twitch or Mixer - (It's designed for professional developers)",
+              "Possibly a good business model for TouchDesigner users who want to stream video content to a fixed number of high quality clients."
+            ]
+          },
+          {
+            "type": "ordered-list",
+            "items": [
+              "Sign up for a demo user account. Follow the instructions."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "See also Video Stream Out TOP, Video Stream In TOP and RTMP."
+          },
+          {
+            "type": "paragraph",
+            "text": "An Operator Family that creates, composites and modifies images, and reads/writes images and movies to/from files and the network. TOPs run on the graphics card's GPU."
+          },
+          {
+            "type": "paragraph",
+            "text": "The width and height of an image in pixels. Most TOPs, like the Movie File In TOP can set the image resolution. See Aspect Ratio for the width/height ratio of an image, taking into account non-square pixels."
+          },
+          {
+            "type": "paragraph",
+            "text": "In the Animation component each keyframe specifies a channel's value at a specific time (or frame). A keyframe holds a value, slopes and accelerations, and an interpolation type. A channel's keyframes are used to interpolate and determine the values of all the samples of the channel."
+          }
+        ]
+      },
+      {
+        "title": "Navigation menu",
+        "level": 2,
+        "content": [
+          {
+            "type": "subsection",
+            "title": "Personal tools",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Log in"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Namespaces",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Page",
+              "Discussion",
+              "Experimental"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Views",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Read",
+              "View source",
+              "View history"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Search",
+            "level": 3
+          },
+          {
+            "type": "subsection",
+            "title": "TouchDesigner",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Main Page",
+              "Categories",
+              "Learn TouchDesigner",
+              "Tutorials",
+              "Interoperability",
+              "Glossary",
+              "Operators",
+              "Python",
+              "Python Class Reference",
+              "Palette",
+              "FAQ",
+              "Recent Doc Edits",
+              "Release Notes"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Downloads",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "TouchDesigner",
+              "Shared Examples"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Tools",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "What links here",
+              "Related changes",
+              "Special pages",
+              "Printable version",
+              "Permanent link",
+              "Page information",
+              "Page values"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "This page was last edited on 6 October 2021, at 01:04."
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Privacy policy",
+              "About Derivative",
+              "Disclaimers"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              ""
+            ]
+          }
+        ]
+      }
+    ],
+    "tableOfContents": [
+      {
+        "number": "1",
+        "text": "Contents",
+        "href": "#Contents"
+      },
+      {
+        "number": "2",
+        "text": "Streaming Services using RTMP[edit]",
+        "href": "#Streaming_Services_using_RTMP[edit]"
+      },
+      {
+        "number": "3",
+        "text": "Navigation menu",
+        "href": "#Navigation_menu"
+      }
+    ],
+    "relatedLinks": [
+      {
+        "text": "RTMP",
+        "href": "./RTMP.htm"
+      },
+      {
+        "text": "RTSP",
+        "href": "./RTSP.htm"
+      },
+      {
+        "text": "NDI",
+        "href": "./NDI.htm"
+      },
+      {
+        "text": "SRT",
+        "href": "./SRT.htm"
+      },
+      {
+        "text": "Video Stream In TOP",
+        "href": "./Video_Stream_In_TOP.htm"
+      },
+      {
+        "text": "Video Stream Out TOP",
+        "href": "./Video_Stream_Out_TOP.htm"
+      },
+      {
+        "text": "Video Stream In TOP",
+        "href": "./Video_Stream_In_TOP.htm"
+      },
+      {
+        "text": "RTMP",
+        "href": "./RTMP.htm"
+      },
+      {
+        "text": "Operator Family",
+        "href": "./Operator_Family.htm"
+      },
+      {
+        "text": "Movie File In TOP",
+        "href": "./Movie_File_In_TOP.htm"
+      }
+    ],
+    "images": [
+      {
+        "src": "./resources/assets/poweredby_mediawiki_88x31.png",
+        "alt": "Powered by MediaWiki",
+        "caption": "Powered by MediaWiki"
+      }
+    ]
+  },
+  "keywords": [
+    "video",
+    "streaming",
+    "user",
+    "guide",
+    "this",
+    "will",
+    "cover",
+    "supported",
+    "protocols",
+    "services",
+    "that",
+    "available",
+    "touchdesigner"
+  ],
+  "tags": [
+    "Tutorial",
+    "TouchDesigner",
+    "Video Streaming User Guide"
+  ],
+  "searchWeight": 2,
+  "lastUpdated": "2025-08-13T01:17:18.955Z",
+  "sourceFile": "C:\\Program Files\\Derivative\\TouchDesigner\\Samples\\Learn\\OfflineHelp\\https.docs.derivative.ca\\Video_Streaming_User_Guide.htm",
+  "isValid": true,
+  "validationErrors": []
+}

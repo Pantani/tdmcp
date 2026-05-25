@@ -1,0 +1,11 @@
+{
+  "name": "DMX Map DAT",
+  "id": "dmx_map_dat",
+  "category": "DAT",
+  "subcategory": "Experimental",
+  "description": "The DMX Map DAT references a DMX Out POP or a DMX Fixture POP and outputs their DMX universes in table format. The DMX Map DAT is useful for visualizing DMX universe layouts and in the case of the DMX Out POP it can be helpful for debugging channel conflicts between DMX Fixture POPs.",
+  "parameters": [],
+  "experimental": true,
+  "sourceFile": "Experimental-DMX_Map_DAT.htm",
+  "parsedAt": "2025-08-08T03:03:55.323Z"
+}

@@ -1,0 +1,4283 @@
+{
+  "name": "Math Combine POP",
+  "id": "math_combine_pop",
+  "category": "POP",
+  "subcategory": "Experimental",
+  "description": "The Math Combine POP can do numerous math operations in one node, and is an expansion of the more elementary Math POP and Math Mix POP:",
+  "parameters": [
+    {
+      "name": "in2_Tex",
+      "label": "Attribute Class",
+      "description": "Configure Attribute Class for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertex",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primitive",
+          "description": ""
+        },
+        {
+          "label": "Ignore",
+          "value": "ignore",
+          "description": ""
+        },
+        {
+          "label": "Warning",
+          "value": "warning",
+          "description": ""
+        },
+        {
+          "label": "Error",
+          "value": "error",
+          "description": ""
+        },
+        {
+          "label": "Hold",
+          "value": "hold",
+          "description": ""
+        },
+        {
+          "label": "Repeat",
+          "value": "repeat",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "One",
+          "value": "one",
+          "description": ""
+        },
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "*",
+          "value": "*",
+          "description": ""
+        },
+        {
+          "label": "float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "float2",
+          "value": "float2",
+          "description": ""
+        },
+        {
+          "label": "float3",
+          "value": "float3",
+          "description": ""
+        },
+        {
+          "label": "float4",
+          "value": "float4",
+          "description": ""
+        },
+        {
+          "label": "double",
+          "value": "double",
+          "description": ""
+        },
+        {
+          "label": "double2",
+          "value": "double2",
+          "description": ""
+        },
+        {
+          "label": "double3",
+          "value": "double3",
+          "description": ""
+        },
+        {
+          "label": "double4",
+          "value": "double4",
+          "description": ""
+        },
+        {
+          "label": "int",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "int2",
+          "value": "int2",
+          "description": ""
+        },
+        {
+          "label": "int3",
+          "value": "int3",
+          "description": ""
+        },
+        {
+          "label": "int4",
+          "value": "int4",
+          "description": ""
+        },
+        {
+          "label": "uint",
+          "value": "uint",
+          "description": ""
+        },
+        {
+          "label": "uint2",
+          "value": "uint2",
+          "description": ""
+        },
+        {
+          "label": "uint3",
+          "value": "uint3",
+          "description": ""
+        },
+        {
+          "label": "uint4",
+          "value": "uint4",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "vec0value0",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "vec0value1",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "vec0value2",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "vec0value3",
+          "description": ""
+        },
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        },
+        {
+          "label": "N",
+          "value": "n",
+          "description": ""
+        },
+        {
+          "label": "Color",
+          "value": "color",
+          "description": ""
+        },
+        {
+          "label": "Tex",
+          "value": "tex",
+          "description": ""
+        },
+        {
+          "label": "PointScale",
+          "value": "pointscale",
+          "description": ""
+        },
+        {
+          "label": "LineWidth",
+          "value": "linewidth",
+          "description": ""
+        },
+        {
+          "label": "float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "double",
+          "value": "double",
+          "description": ""
+        },
+        {
+          "label": "int",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "uint",
+          "value": "uint",
+          "description": ""
+        },
+        {
+          "label": "dir",
+          "value": "dir",
+          "description": ""
+        },
+        {
+          "label": "dbl dir",
+          "value": "ddir",
+          "description": ""
+        },
+        {
+          "label": "1",
+          "value": "1",
+          "description": ""
+        },
+        {
+          "label": "2",
+          "value": "2",
+          "description": ""
+        },
+        {
+          "label": "3",
+          "value": "3",
+          "description": ""
+        },
+        {
+          "label": "4",
+          "value": "4",
+          "description": ""
+        },
+        {
+          "label": "Default Value",
+          "value": "attr0defvalue1",
+          "description": ""
+        },
+        {
+          "label": "Default Value",
+          "value": "attr0defvalue2",
+          "description": ""
+        },
+        {
+          "label": "Default Value",
+          "value": "attr0defvalue3",
+          "description": ""
+        },
+        {
+          "label": "Default Value",
+          "value": "attr0defvalue4",
+          "description": ""
+        },
+        {
+          "label": "1",
+          "value": "1",
+          "description": ""
+        },
+        {
+          "label": "2",
+          "value": "2",
+          "description": ""
+        },
+        {
+          "label": "3",
+          "value": "3",
+          "description": ""
+        },
+        {
+          "label": "4",
+          "value": "4",
+          "description": ""
+        },
+        {
+          "label": "Multiply, Add, Operation",
+          "value": "multaddop",
+          "description": ""
+        },
+        {
+          "label": "Add, Multiply, Operation",
+          "value": "addmultop",
+          "description": ""
+        },
+        {
+          "label": "Operation, Multiply, Add",
+          "value": "opmultadd",
+          "description": ""
+        },
+        {
+          "label": "Operation, Add, Multiply",
+          "value": "opaddmult",
+          "description": ""
+        },
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "abs(A)",
+          "value": "abs",
+          "description": ""
+        },
+        {
+          "label": "sign(A)",
+          "value": "sign",
+          "description": ""
+        },
+        {
+          "label": "sqrt(A)",
+          "value": "sqrt",
+          "description": ""
+        },
+        {
+          "label": "A * A",
+          "value": "square",
+          "description": ""
+        },
+        {
+          "label": "1 / A",
+          "value": "inverse",
+          "description": ""
+        },
+        {
+          "label": "floor(A)",
+          "value": "floor",
+          "description": ""
+        },
+        {
+          "label": "round(A)",
+          "value": "round",
+          "description": ""
+        },
+        {
+          "label": "ceil(A)",
+          "value": "ceil",
+          "description": ""
+        },
+        {
+          "label": "int(A)",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "fract(A)",
+          "value": "fract",
+          "description": ""
+        },
+        {
+          "label": "degrees(A)",
+          "value": "degrees",
+          "description": ""
+        },
+        {
+          "label": "radians(A)",
+          "value": "radians",
+          "description": ""
+        },
+        {
+          "label": "normalize(A)",
+          "value": "normalize",
+          "description": ""
+        },
+        {
+          "label": "exp10(A)",
+          "value": "exp10",
+          "description": ""
+        },
+        {
+          "label": "exp2(A)",
+          "value": "exp2",
+          "description": ""
+        },
+        {
+          "label": "exp(A)",
+          "value": "exp",
+          "description": ""
+        },
+        {
+          "label": "log10(A)",
+          "value": "log10",
+          "description": ""
+        },
+        {
+          "label": "log2(A)",
+          "value": "log2",
+          "description": ""
+        },
+        {
+          "label": "ln(A)",
+          "value": "ln",
+          "description": ""
+        },
+        {
+          "label": "sin(A)",
+          "value": "sin",
+          "description": ""
+        },
+        {
+          "label": "cos(A)",
+          "value": "cos",
+          "description": ""
+        },
+        {
+          "label": "tan(A)",
+          "value": "tan",
+          "description": ""
+        },
+        {
+          "label": "asin(A)",
+          "value": "asin",
+          "description": ""
+        },
+        {
+          "label": "acos(A)",
+          "value": "acos",
+          "description": ""
+        },
+        {
+          "label": "atan(A)",
+          "value": "atan",
+          "description": ""
+        },
+        {
+          "label": "dbtopow(A)",
+          "value": "dbtopow",
+          "description": ""
+        },
+        {
+          "label": "powtodb(A)",
+          "value": "powtodb",
+          "description": ""
+        },
+        {
+          "label": "dbtoamp(A)",
+          "value": "dbtoamp",
+          "description": ""
+        },
+        {
+          "label": "amptodb(A)",
+          "value": "amptodb",
+          "description": ""
+        },
+        {
+          "label": "Off",
+          "value": "off",
+          "description": ""
+        },
+        {
+          "label": "Floor",
+          "value": "floor",
+          "description": ""
+        },
+        {
+          "label": "Round",
+          "value": "round",
+          "description": ""
+        },
+        {
+          "label": "Ceiling",
+          "value": "ceiling",
+          "description": ""
+        },
+        {
+          "label": "> 0",
+          "value": "gt0",
+          "description": ""
+        },
+        {
+          "label": ">= 0",
+          "value": "gteq0",
+          "description": ""
+        },
+        {
+          "label": "== 0",
+          "value": "eq0",
+          "description": ""
+        },
+        {
+          "label": "!= 0",
+          "value": "neq0",
+          "description": ""
+        },
+        {
+          "label": "<= 0",
+          "value": "lteq0",
+          "description": ""
+        },
+        {
+          "label": "< 0",
+          "value": "lt0",
+          "description": ""
+        },
+        {
+          "label": "Color",
+          "value": "Color",
+          "description": ""
+        },
+        {
+          "label": "Color(0) Color(1) Color(2)",
+          "value": "Color(0) Color(1) Color(2)",
+          "description": ""
+        },
+        {
+          "label": "N",
+          "value": "N",
+          "description": ""
+        },
+        {
+          "label": "Tex",
+          "value": "Tex",
+          "description": ""
+        },
+        {
+          "label": "Color.i012",
+          "value": "Color.i012",
+          "description": ""
+        },
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "A",
+          "value": "copya",
+          "description": ""
+        },
+        {
+          "label": "abs(A)",
+          "value": "abs",
+          "description": ""
+        },
+        {
+          "label": "sign(A)",
+          "value": "sign",
+          "description": ""
+        },
+        {
+          "label": "sqrt(A)",
+          "value": "sqrt",
+          "description": ""
+        },
+        {
+          "label": "A * A",
+          "value": "square",
+          "description": ""
+        },
+        {
+          "label": "1 / A",
+          "value": "inverse",
+          "description": ""
+        },
+        {
+          "label": "floor(A)",
+          "value": "floor",
+          "description": ""
+        },
+        {
+          "label": "round(A)",
+          "value": "round",
+          "description": ""
+        },
+        {
+          "label": "ceil(A)",
+          "value": "ceil",
+          "description": ""
+        },
+        {
+          "label": "int(A)",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "fract(A)",
+          "value": "fract",
+          "description": ""
+        },
+        {
+          "label": "normalize(A)",
+          "value": "normalize",
+          "description": ""
+        },
+        {
+          "label": "exp10(A)",
+          "value": "exp10",
+          "description": ""
+        },
+        {
+          "label": "exp2(A)",
+          "value": "exp2",
+          "description": ""
+        },
+        {
+          "label": "exp(A)",
+          "value": "exp",
+          "description": ""
+        },
+        {
+          "label": "log10(A)",
+          "value": "log10",
+          "description": ""
+        },
+        {
+          "label": "log2(A)",
+          "value": "log2",
+          "description": ""
+        },
+        {
+          "label": "ln(A)",
+          "value": "ln",
+          "description": ""
+        },
+        {
+          "label": "sin(A)",
+          "value": "sin",
+          "description": ""
+        },
+        {
+          "label": "cos(A)",
+          "value": "cos",
+          "description": ""
+        },
+        {
+          "label": "tan(A)",
+          "value": "tan",
+          "description": ""
+        },
+        {
+          "label": "asin(A)",
+          "value": "asin",
+          "description": ""
+        },
+        {
+          "label": "acos(A)",
+          "value": "acos",
+          "description": ""
+        },
+        {
+          "label": "atan(A)",
+          "value": "atan",
+          "description": ""
+        },
+        {
+          "label": "degrees(A)",
+          "value": "degrees",
+          "description": ""
+        },
+        {
+          "label": "radians(A)",
+          "value": "radians",
+          "description": ""
+        },
+        {
+          "label": "length(A)",
+          "value": "length",
+          "description": ""
+        },
+        {
+          "label": "compadd(A)",
+          "value": "compadd",
+          "description": ""
+        },
+        {
+          "label": "compsub(A)",
+          "value": "compsub",
+          "description": ""
+        },
+        {
+          "label": "compmult(A)",
+          "value": "compmult",
+          "description": ""
+        },
+        {
+          "label": "compdiv(A)",
+          "value": "compdiv",
+          "description": ""
+        },
+        {
+          "label": "compavg(A)",
+          "value": "compavg",
+          "description": ""
+        },
+        {
+          "label": "compmin(A)",
+          "value": "compmin",
+          "description": ""
+        },
+        {
+          "label": "compmax(A)",
+          "value": "compmax",
+          "description": ""
+        },
+        {
+          "label": "A + B",
+          "value": "add",
+          "description": ""
+        },
+        {
+          "label": "A - B",
+          "value": "asubb",
+          "description": "B asubb -"
+        },
+        {
+          "label": "B - A",
+          "value": "bsuba",
+          "description": "A bsuba -"
+        },
+        {
+          "label": "A * B",
+          "value": "mult",
+          "description": ""
+        },
+        {
+          "label": "A / B",
+          "value": "adivb",
+          "description": ""
+        },
+        {
+          "label": "B / A",
+          "value": "bdiva",
+          "description": ""
+        },
+        {
+          "label": "A ** B",
+          "value": "apowerb",
+          "description": ""
+        },
+        {
+          "label": "logB(A)",
+          "value": "logba",
+          "description": ""
+        },
+        {
+          "label": "avg(A, B)",
+          "value": "avg",
+          "description": ""
+        },
+        {
+          "label": "min(A, B)",
+          "value": "min",
+          "description": ""
+        },
+        {
+          "label": "max(A, B)",
+          "value": "max",
+          "description": ""
+        },
+        {
+          "label": "mod(A, B)",
+          "value": "mod",
+          "description": ""
+        },
+        {
+          "label": "int(A / B)",
+          "value": "intadivb",
+          "description": ""
+        },
+        {
+          "label": "A > B",
+          "value": "gt",
+          "description": ""
+        },
+        {
+          "label": "A >= B",
+          "value": "gte",
+          "description": ""
+        },
+        {
+          "label": "A < B",
+          "value": "lt",
+          "description": ""
+        },
+        {
+          "label": "A <= B",
+          "value": "lte",
+          "description": ""
+        },
+        {
+          "label": "A == B",
+          "value": "eq",
+          "description": ""
+        },
+        {
+          "label": "A != B",
+          "value": "ne",
+          "description": ""
+        },
+        {
+          "label": "atan2(A, B)",
+          "value": "atan2",
+          "description": ""
+        },
+        {
+          "label": "dot(A, B)",
+          "value": "dot",
+          "description": ""
+        },
+        {
+          "label": "angle(A, B)",
+          "value": "angle",
+          "description": ""
+        },
+        {
+          "label": "cross(A, B)",
+          "value": "cross",
+          "description": ""
+        },
+        {
+          "label": "A + B * C",
+          "value": "aaddbmultc",
+          "description": ""
+        },
+        {
+          "label": "A * B + C",
+          "value": "amultbaddc",
+          "description": ""
+        },
+        {
+          "label": "A + B + C",
+          "value": "aaddbaddc",
+          "description": ""
+        },
+        {
+          "label": "A * B * C",
+          "value": "amultbmultc",
+          "description": ""
+        },
+        {
+          "label": "rangefrom(A, B, C)",
+          "value": "rangefrom",
+          "description": ""
+        },
+        {
+          "label": "rangeto(A, B, C)",
+          "value": "rangeto",
+          "description": ""
+        },
+        {
+          "label": "mix(A, B, C)",
+          "value": "mix",
+          "description": ""
+        },
+        {
+          "label": "A if C else B",
+          "value": "ifelse",
+          "description": ""
+        },
+        {
+          "label": "loop(A, B, C)",
+          "value": "loop",
+          "description": ""
+        },
+        {
+          "label": "zigzag(A, B, C)",
+          "value": "zigzag",
+          "description": ""
+        },
+        {
+          "label": "clamp(A, B, C)",
+          "value": "clamp",
+          "description": ""
+        },
+        {
+          "label": "smoothstep(A, B, C)",
+          "value": "smoothstep",
+          "description": ""
+        },
+        {
+          "label": "B <= A < C",
+          "value": "bltealtc",
+          "description": ""
+        },
+        {
+          "label": "B < A <= C",
+          "value": "bltaltec",
+          "description": ""
+        },
+        {
+          "label": "B < A < C",
+          "value": "bltaltec",
+          "description": ""
+        },
+        {
+          "label": "B <= A <= C",
+          "value": "bltaltec",
+          "description": ""
+        },
+        {
+          "label": "reflect(A, B)",
+          "value": "reflect",
+          "description": ""
+        },
+        {
+          "label": "refract(A, B, C)",
+          "value": "refract",
+          "description": ""
+        },
+        {
+          "label": "Color",
+          "value": "Color",
+          "description": ""
+        },
+        {
+          "label": "Color(0) Color(1) Color(2)",
+          "value": "Color(0) Color(1) Color(2)",
+          "description": ""
+        },
+        {
+          "label": "N",
+          "value": "N",
+          "description": ""
+        },
+        {
+          "label": "Tex",
+          "value": "Tex",
+          "description": ""
+        },
+        {
+          "label": "Color.i012",
+          "value": "Color.i012",
+          "description": ""
+        },
+        {
+          "label": "1",
+          "value": "1",
+          "description": ""
+        },
+        {
+          "label": "2",
+          "value": "2",
+          "description": ""
+        },
+        {
+          "label": "3",
+          "value": "3",
+          "description": ""
+        },
+        {
+          "label": "4",
+          "value": "4",
+          "description": ""
+        },
+        {
+          "label": "Off",
+          "value": "off",
+          "description": ""
+        },
+        {
+          "label": "Floor",
+          "value": "floor",
+          "description": ""
+        },
+        {
+          "label": "Round",
+          "value": "round",
+          "description": ""
+        },
+        {
+          "label": "Ceiling",
+          "value": "ceiling",
+          "description": ""
+        },
+        {
+          "label": "> 0",
+          "value": "gt0",
+          "description": ""
+        },
+        {
+          "label": ">= 0",
+          "value": "gteq0",
+          "description": ""
+        },
+        {
+          "label": "== 0",
+          "value": "eq0",
+          "description": ""
+        },
+        {
+          "label": "!= 0",
+          "value": "neq0",
+          "description": ""
+        },
+        {
+          "label": "<= 0",
+          "value": "lteq0",
+          "description": ""
+        },
+        {
+          "label": "< 0",
+          "value": "lt0",
+          "description": ""
+        },
+        {
+          "label": "Automatic",
+          "value": "auto",
+          "description": ""
+        },
+        {
+          "label": "Float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "Int",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "Color",
+          "value": "Color",
+          "description": ""
+        },
+        {
+          "label": "Color(0) Color(1) Color(2)",
+          "value": "Color(0) Color(1) Color(2)",
+          "description": ""
+        },
+        {
+          "label": "N",
+          "value": "N",
+          "description": ""
+        },
+        {
+          "label": "Tex",
+          "value": "Tex",
+          "description": ""
+        },
+        {
+          "label": "Color.i012",
+          "value": "Color.i012",
+          "description": ""
+        },
+        {
+          "label": "*",
+          "value": "*",
+          "description": ""
+        },
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        },
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    },
+    {
+      "name": "attrclass",
+      "label": "Attribute Class",
+      "description": "Configure Attribute Class for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertex",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primitive",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "point",
+      "label": "Point",
+      "description": "Configure Point for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertex",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primitive",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "lengthmismatchnotif",
+      "label": "Length Mismatch",
+      "description": "Configure Length Mismatch for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Ignore",
+          "value": "ignore",
+          "description": ""
+        },
+        {
+          "label": "Warning",
+          "value": "warning",
+          "description": ""
+        },
+        {
+          "label": "Error",
+          "value": "error",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "ignore",
+      "label": "Ignore",
+      "description": "Configure Ignore for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Ignore",
+          "value": "ignore",
+          "description": ""
+        },
+        {
+          "label": "Warning",
+          "value": "warning",
+          "description": ""
+        },
+        {
+          "label": "Error",
+          "value": "error",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "lengthmismatchaction",
+      "label": "Length Mismatch Action",
+      "description": "Configure Length Mismatch Action for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Hold",
+          "value": "hold",
+          "description": ""
+        },
+        {
+          "label": "Repeat",
+          "value": "repeat",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "One",
+          "value": "one",
+          "description": ""
+        },
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "hold",
+      "label": "Hold",
+      "description": "Configure Hold for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Hold",
+          "value": "hold",
+          "description": ""
+        },
+        {
+          "label": "Repeat",
+          "value": "repeat",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "One",
+          "value": "one",
+          "description": ""
+        },
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "group",
+      "label": "Group",
+      "description": "Configure Group for the operator",
+      "type": "string"
+    },
+    {
+      "name": "input",
+      "label": "Input",
+      "description": "Configure Input for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "*",
+          "value": "*",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "input0pop",
+      "label": "In POP(s)",
+      "description": "Configure In POP(s) for the operator",
+      "type": "string"
+    },
+    {
+      "name": "input0attrs",
+      "label": "In Attributes",
+      "description": "Configure In Attributes for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "*",
+          "value": "*",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "*",
+      "label": "*",
+      "description": "Configure * for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "*",
+          "value": "*",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "input0renameto",
+      "label": "Rename to",
+      "description": "Configure Rename to for the operator",
+      "type": "string"
+    },
+    {
+      "name": "vec",
+      "label": "Vector",
+      "description": "Configure Vector for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "float2",
+          "value": "float2",
+          "description": ""
+        },
+        {
+          "label": "float3",
+          "value": "float3",
+          "description": ""
+        },
+        {
+          "label": "float4",
+          "value": "float4",
+          "description": ""
+        },
+        {
+          "label": "double",
+          "value": "double",
+          "description": ""
+        },
+        {
+          "label": "double2",
+          "value": "double2",
+          "description": ""
+        },
+        {
+          "label": "double3",
+          "value": "double3",
+          "description": ""
+        },
+        {
+          "label": "double4",
+          "value": "double4",
+          "description": ""
+        },
+        {
+          "label": "int",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "int2",
+          "value": "int2",
+          "description": ""
+        },
+        {
+          "label": "int3",
+          "value": "int3",
+          "description": ""
+        },
+        {
+          "label": "int4",
+          "value": "int4",
+          "description": ""
+        },
+        {
+          "label": "uint",
+          "value": "uint",
+          "description": ""
+        },
+        {
+          "label": "uint2",
+          "value": "uint2",
+          "description": ""
+        },
+        {
+          "label": "uint3",
+          "value": "uint3",
+          "description": ""
+        },
+        {
+          "label": "uint4",
+          "value": "uint4",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "vec0value0",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "vec0value1",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "vec0value2",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "vec0value3",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "vec0name",
+      "label": "Name",
+      "description": "Configure Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "vec0type",
+      "label": "Type",
+      "description": "Configure Type for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "float2",
+          "value": "float2",
+          "description": ""
+        },
+        {
+          "label": "float3",
+          "value": "float3",
+          "description": ""
+        },
+        {
+          "label": "float4",
+          "value": "float4",
+          "description": ""
+        },
+        {
+          "label": "double",
+          "value": "double",
+          "description": ""
+        },
+        {
+          "label": "double2",
+          "value": "double2",
+          "description": ""
+        },
+        {
+          "label": "double3",
+          "value": "double3",
+          "description": ""
+        },
+        {
+          "label": "double4",
+          "value": "double4",
+          "description": ""
+        },
+        {
+          "label": "int",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "int2",
+          "value": "int2",
+          "description": ""
+        },
+        {
+          "label": "int3",
+          "value": "int3",
+          "description": ""
+        },
+        {
+          "label": "int4",
+          "value": "int4",
+          "description": ""
+        },
+        {
+          "label": "uint",
+          "value": "uint",
+          "description": ""
+        },
+        {
+          "label": "uint2",
+          "value": "uint2",
+          "description": ""
+        },
+        {
+          "label": "uint3",
+          "value": "uint3",
+          "description": ""
+        },
+        {
+          "label": "uint4",
+          "value": "uint4",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "float",
+      "label": "float",
+      "description": "Configure float for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "float2",
+          "value": "float2",
+          "description": ""
+        },
+        {
+          "label": "float3",
+          "value": "float3",
+          "description": ""
+        },
+        {
+          "label": "float4",
+          "value": "float4",
+          "description": ""
+        },
+        {
+          "label": "double",
+          "value": "double",
+          "description": ""
+        },
+        {
+          "label": "double2",
+          "value": "double2",
+          "description": ""
+        },
+        {
+          "label": "double3",
+          "value": "double3",
+          "description": ""
+        },
+        {
+          "label": "double4",
+          "value": "double4",
+          "description": ""
+        },
+        {
+          "label": "int",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "int2",
+          "value": "int2",
+          "description": ""
+        },
+        {
+          "label": "int3",
+          "value": "int3",
+          "description": ""
+        },
+        {
+          "label": "int4",
+          "value": "int4",
+          "description": ""
+        },
+        {
+          "label": "uint",
+          "value": "uint",
+          "description": ""
+        },
+        {
+          "label": "uint2",
+          "value": "uint2",
+          "description": ""
+        },
+        {
+          "label": "uint3",
+          "value": "uint3",
+          "description": ""
+        },
+        {
+          "label": "uint4",
+          "value": "uint4",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "vec0value",
+      "label": "Value",
+      "description": "Configure Value for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Value",
+          "value": "vec0value0",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "vec0value1",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "vec0value2",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "vec0value3",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "vec0value0",
+      "label": "Value",
+      "description": "Configure Value for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Value",
+          "value": "vec0value0",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "vec0value1",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "vec0value2",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "vec0value3",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "attr",
+      "label": "New Attribute",
+      "description": "Configure New Attribute for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        },
+        {
+          "label": "N",
+          "value": "n",
+          "description": ""
+        },
+        {
+          "label": "Color",
+          "value": "color",
+          "description": ""
+        },
+        {
+          "label": "Tex",
+          "value": "tex",
+          "description": ""
+        },
+        {
+          "label": "PointScale",
+          "value": "pointscale",
+          "description": ""
+        },
+        {
+          "label": "LineWidth",
+          "value": "linewidth",
+          "description": ""
+        },
+        {
+          "label": "float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "double",
+          "value": "double",
+          "description": ""
+        },
+        {
+          "label": "int",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "uint",
+          "value": "uint",
+          "description": ""
+        },
+        {
+          "label": "dir",
+          "value": "dir",
+          "description": ""
+        },
+        {
+          "label": "dbl dir",
+          "value": "ddir",
+          "description": ""
+        },
+        {
+          "label": "1",
+          "value": "1",
+          "description": ""
+        },
+        {
+          "label": "2",
+          "value": "2",
+          "description": ""
+        },
+        {
+          "label": "3",
+          "value": "3",
+          "description": ""
+        },
+        {
+          "label": "4",
+          "value": "4",
+          "description": ""
+        },
+        {
+          "label": "Default Value",
+          "value": "attr0defvalue1",
+          "description": ""
+        },
+        {
+          "label": "Default Value",
+          "value": "attr0defvalue2",
+          "description": ""
+        },
+        {
+          "label": "Default Value",
+          "value": "attr0defvalue3",
+          "description": ""
+        },
+        {
+          "label": "Default Value",
+          "value": "attr0defvalue4",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "attr0name",
+      "label": "Name",
+      "description": "Configure Name for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        },
+        {
+          "label": "N",
+          "value": "n",
+          "description": ""
+        },
+        {
+          "label": "Color",
+          "value": "color",
+          "description": ""
+        },
+        {
+          "label": "Tex",
+          "value": "tex",
+          "description": ""
+        },
+        {
+          "label": "PointScale",
+          "value": "pointscale",
+          "description": ""
+        },
+        {
+          "label": "LineWidth",
+          "value": "linewidth",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "custom",
+      "label": "Custom",
+      "description": "Configure Custom for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        },
+        {
+          "label": "N",
+          "value": "n",
+          "description": ""
+        },
+        {
+          "label": "Color",
+          "value": "color",
+          "description": ""
+        },
+        {
+          "label": "Tex",
+          "value": "tex",
+          "description": ""
+        },
+        {
+          "label": "PointScale",
+          "value": "pointscale",
+          "description": ""
+        },
+        {
+          "label": "LineWidth",
+          "value": "linewidth",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "attr0customname",
+      "label": "Custom Name",
+      "description": "Configure Custom Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "attr0type",
+      "label": "Type",
+      "description": "Configure Type for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "double",
+          "value": "double",
+          "description": ""
+        },
+        {
+          "label": "int",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "uint",
+          "value": "uint",
+          "description": ""
+        },
+        {
+          "label": "dir",
+          "value": "dir",
+          "description": ""
+        },
+        {
+          "label": "dbl dir",
+          "value": "ddir",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "attr0numcomps",
+      "label": "Number of Components",
+      "description": "Configure Number of Components for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "1",
+          "value": "1",
+          "description": ""
+        },
+        {
+          "label": "2",
+          "value": "2",
+          "description": ""
+        },
+        {
+          "label": "3",
+          "value": "3",
+          "description": ""
+        },
+        {
+          "label": "4",
+          "value": "4",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "1",
+      "label": "1",
+      "description": "Configure 1 for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "1",
+          "value": "1",
+          "description": ""
+        },
+        {
+          "label": "2",
+          "value": "2",
+          "description": ""
+        },
+        {
+          "label": "3",
+          "value": "3",
+          "description": ""
+        },
+        {
+          "label": "4",
+          "value": "4",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "attr0defvalue",
+      "label": "Default Value",
+      "description": "Configure Default Value for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default Value",
+          "value": "attr0defvalue1",
+          "description": ""
+        },
+        {
+          "label": "Default Value",
+          "value": "attr0defvalue2",
+          "description": ""
+        },
+        {
+          "label": "Default Value",
+          "value": "attr0defvalue3",
+          "description": ""
+        },
+        {
+          "label": "Default Value",
+          "value": "attr0defvalue4",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "attr0defvalue1",
+      "label": "Default Value",
+      "description": "Configure Default Value for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default Value",
+          "value": "attr0defvalue1",
+          "description": ""
+        },
+        {
+          "label": "Default Value",
+          "value": "attr0defvalue2",
+          "description": ""
+        },
+        {
+          "label": "Default Value",
+          "value": "attr0defvalue3",
+          "description": ""
+        },
+        {
+          "label": "Default Value",
+          "value": "attr0defvalue4",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "pre",
+      "label": "Pre",
+      "description": "Configure Pre for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "1",
+          "value": "1",
+          "description": ""
+        },
+        {
+          "label": "2",
+          "value": "2",
+          "description": ""
+        },
+        {
+          "label": "3",
+          "value": "3",
+          "description": ""
+        },
+        {
+          "label": "4",
+          "value": "4",
+          "description": ""
+        },
+        {
+          "label": "Multiply, Add, Operation",
+          "value": "multaddop",
+          "description": ""
+        },
+        {
+          "label": "Add, Multiply, Operation",
+          "value": "addmultop",
+          "description": ""
+        },
+        {
+          "label": "Operation, Multiply, Add",
+          "value": "opmultadd",
+          "description": ""
+        },
+        {
+          "label": "Operation, Add, Multiply",
+          "value": "opaddmult",
+          "description": ""
+        },
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "abs(A)",
+          "value": "abs",
+          "description": ""
+        },
+        {
+          "label": "sign(A)",
+          "value": "sign",
+          "description": ""
+        },
+        {
+          "label": "sqrt(A)",
+          "value": "sqrt",
+          "description": ""
+        },
+        {
+          "label": "A * A",
+          "value": "square",
+          "description": ""
+        },
+        {
+          "label": "1 / A",
+          "value": "inverse",
+          "description": ""
+        },
+        {
+          "label": "floor(A)",
+          "value": "floor",
+          "description": ""
+        },
+        {
+          "label": "round(A)",
+          "value": "round",
+          "description": ""
+        },
+        {
+          "label": "ceil(A)",
+          "value": "ceil",
+          "description": ""
+        },
+        {
+          "label": "int(A)",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "fract(A)",
+          "value": "fract",
+          "description": ""
+        },
+        {
+          "label": "degrees(A)",
+          "value": "degrees",
+          "description": ""
+        },
+        {
+          "label": "radians(A)",
+          "value": "radians",
+          "description": ""
+        },
+        {
+          "label": "normalize(A)",
+          "value": "normalize",
+          "description": ""
+        },
+        {
+          "label": "exp10(A)",
+          "value": "exp10",
+          "description": ""
+        },
+        {
+          "label": "exp2(A)",
+          "value": "exp2",
+          "description": ""
+        },
+        {
+          "label": "exp(A)",
+          "value": "exp",
+          "description": ""
+        },
+        {
+          "label": "log10(A)",
+          "value": "log10",
+          "description": ""
+        },
+        {
+          "label": "log2(A)",
+          "value": "log2",
+          "description": ""
+        },
+        {
+          "label": "ln(A)",
+          "value": "ln",
+          "description": ""
+        },
+        {
+          "label": "sin(A)",
+          "value": "sin",
+          "description": ""
+        },
+        {
+          "label": "cos(A)",
+          "value": "cos",
+          "description": ""
+        },
+        {
+          "label": "tan(A)",
+          "value": "tan",
+          "description": ""
+        },
+        {
+          "label": "asin(A)",
+          "value": "asin",
+          "description": ""
+        },
+        {
+          "label": "acos(A)",
+          "value": "acos",
+          "description": ""
+        },
+        {
+          "label": "atan(A)",
+          "value": "atan",
+          "description": ""
+        },
+        {
+          "label": "dbtopow(A)",
+          "value": "dbtopow",
+          "description": ""
+        },
+        {
+          "label": "powtodb(A)",
+          "value": "powtodb",
+          "description": ""
+        },
+        {
+          "label": "dbtoamp(A)",
+          "value": "dbtoamp",
+          "description": ""
+        },
+        {
+          "label": "amptodb(A)",
+          "value": "amptodb",
+          "description": ""
+        },
+        {
+          "label": "Off",
+          "value": "off",
+          "description": ""
+        },
+        {
+          "label": "Floor",
+          "value": "floor",
+          "description": ""
+        },
+        {
+          "label": "Round",
+          "value": "round",
+          "description": ""
+        },
+        {
+          "label": "Ceiling",
+          "value": "ceiling",
+          "description": ""
+        },
+        {
+          "label": "> 0",
+          "value": "gt0",
+          "description": ""
+        },
+        {
+          "label": ">= 0",
+          "value": "gteq0",
+          "description": ""
+        },
+        {
+          "label": "== 0",
+          "value": "eq0",
+          "description": ""
+        },
+        {
+          "label": "!= 0",
+          "value": "neq0",
+          "description": ""
+        },
+        {
+          "label": "<= 0",
+          "value": "lteq0",
+          "description": ""
+        },
+        {
+          "label": "< 0",
+          "value": "lt0",
+          "description": ""
+        },
+        {
+          "label": "Color",
+          "value": "Color",
+          "description": ""
+        },
+        {
+          "label": "Color(0) Color(1) Color(2)",
+          "value": "Color(0) Color(1) Color(2)",
+          "description": ""
+        },
+        {
+          "label": "N",
+          "value": "N",
+          "description": ""
+        },
+        {
+          "label": "Tex",
+          "value": "Tex",
+          "description": ""
+        },
+        {
+          "label": "Color.i012",
+          "value": "Color.i012",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "pre0scope",
+      "label": "Scope",
+      "description": "Configure Scope for the operator",
+      "type": "string"
+    },
+    {
+      "name": "pre0parsize",
+      "label": "Parameter Size",
+      "description": "Configure Parameter Size for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "1",
+          "value": "1",
+          "description": ""
+        },
+        {
+          "label": "2",
+          "value": "2",
+          "description": ""
+        },
+        {
+          "label": "3",
+          "value": "3",
+          "description": ""
+        },
+        {
+          "label": "4",
+          "value": "4",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "pre0order",
+      "label": "Order",
+      "description": "Configure Order for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Multiply, Add, Operation",
+          "value": "multaddop",
+          "description": ""
+        },
+        {
+          "label": "Add, Multiply, Operation",
+          "value": "addmultop",
+          "description": ""
+        },
+        {
+          "label": "Operation, Multiply, Add",
+          "value": "opmultadd",
+          "description": ""
+        },
+        {
+          "label": "Operation, Add, Multiply",
+          "value": "opaddmult",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "multaddop",
+      "label": "Multiply, Add, Operation",
+      "description": "Configure Multiply, Add, Operation for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Multiply, Add, Operation",
+          "value": "multaddop",
+          "description": ""
+        },
+        {
+          "label": "Add, Multiply, Operation",
+          "value": "addmultop",
+          "description": ""
+        },
+        {
+          "label": "Operation, Multiply, Add",
+          "value": "opmultadd",
+          "description": ""
+        },
+        {
+          "label": "Operation, Add, Multiply",
+          "value": "opaddmult",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "pre0mult",
+      "label": "Multiply",
+      "description": "Configure Multiply for the operator",
+      "type": "string"
+    },
+    {
+      "name": "pre0add",
+      "label": "Add",
+      "description": "Configure Add for the operator",
+      "type": "string"
+    },
+    {
+      "name": "pre0oper",
+      "label": "Operation",
+      "description": "Configure Operation for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "abs(A)",
+          "value": "abs",
+          "description": ""
+        },
+        {
+          "label": "sign(A)",
+          "value": "sign",
+          "description": ""
+        },
+        {
+          "label": "sqrt(A)",
+          "value": "sqrt",
+          "description": ""
+        },
+        {
+          "label": "A * A",
+          "value": "square",
+          "description": ""
+        },
+        {
+          "label": "1 / A",
+          "value": "inverse",
+          "description": ""
+        },
+        {
+          "label": "floor(A)",
+          "value": "floor",
+          "description": ""
+        },
+        {
+          "label": "round(A)",
+          "value": "round",
+          "description": ""
+        },
+        {
+          "label": "ceil(A)",
+          "value": "ceil",
+          "description": ""
+        },
+        {
+          "label": "int(A)",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "fract(A)",
+          "value": "fract",
+          "description": ""
+        },
+        {
+          "label": "degrees(A)",
+          "value": "degrees",
+          "description": ""
+        },
+        {
+          "label": "radians(A)",
+          "value": "radians",
+          "description": ""
+        },
+        {
+          "label": "normalize(A)",
+          "value": "normalize",
+          "description": ""
+        },
+        {
+          "label": "exp10(A)",
+          "value": "exp10",
+          "description": ""
+        },
+        {
+          "label": "exp2(A)",
+          "value": "exp2",
+          "description": ""
+        },
+        {
+          "label": "exp(A)",
+          "value": "exp",
+          "description": ""
+        },
+        {
+          "label": "log10(A)",
+          "value": "log10",
+          "description": ""
+        },
+        {
+          "label": "log2(A)",
+          "value": "log2",
+          "description": ""
+        },
+        {
+          "label": "ln(A)",
+          "value": "ln",
+          "description": ""
+        },
+        {
+          "label": "sin(A)",
+          "value": "sin",
+          "description": ""
+        },
+        {
+          "label": "cos(A)",
+          "value": "cos",
+          "description": ""
+        },
+        {
+          "label": "tan(A)",
+          "value": "tan",
+          "description": ""
+        },
+        {
+          "label": "asin(A)",
+          "value": "asin",
+          "description": ""
+        },
+        {
+          "label": "acos(A)",
+          "value": "acos",
+          "description": ""
+        },
+        {
+          "label": "atan(A)",
+          "value": "atan",
+          "description": ""
+        },
+        {
+          "label": "dbtopow(A)",
+          "value": "dbtopow",
+          "description": ""
+        },
+        {
+          "label": "powtodb(A)",
+          "value": "powtodb",
+          "description": ""
+        },
+        {
+          "label": "dbtoamp(A)",
+          "value": "dbtoamp",
+          "description": ""
+        },
+        {
+          "label": "amptodb(A)",
+          "value": "amptodb",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "none",
+      "label": "None",
+      "description": "Configure None for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "abs(A)",
+          "value": "abs",
+          "description": ""
+        },
+        {
+          "label": "sign(A)",
+          "value": "sign",
+          "description": ""
+        },
+        {
+          "label": "sqrt(A)",
+          "value": "sqrt",
+          "description": ""
+        },
+        {
+          "label": "A * A",
+          "value": "square",
+          "description": ""
+        },
+        {
+          "label": "1 / A",
+          "value": "inverse",
+          "description": ""
+        },
+        {
+          "label": "floor(A)",
+          "value": "floor",
+          "description": ""
+        },
+        {
+          "label": "round(A)",
+          "value": "round",
+          "description": ""
+        },
+        {
+          "label": "ceil(A)",
+          "value": "ceil",
+          "description": ""
+        },
+        {
+          "label": "int(A)",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "fract(A)",
+          "value": "fract",
+          "description": ""
+        },
+        {
+          "label": "degrees(A)",
+          "value": "degrees",
+          "description": ""
+        },
+        {
+          "label": "radians(A)",
+          "value": "radians",
+          "description": ""
+        },
+        {
+          "label": "normalize(A)",
+          "value": "normalize",
+          "description": ""
+        },
+        {
+          "label": "exp10(A)",
+          "value": "exp10",
+          "description": ""
+        },
+        {
+          "label": "exp2(A)",
+          "value": "exp2",
+          "description": ""
+        },
+        {
+          "label": "exp(A)",
+          "value": "exp",
+          "description": ""
+        },
+        {
+          "label": "log10(A)",
+          "value": "log10",
+          "description": ""
+        },
+        {
+          "label": "log2(A)",
+          "value": "log2",
+          "description": ""
+        },
+        {
+          "label": "ln(A)",
+          "value": "ln",
+          "description": ""
+        },
+        {
+          "label": "sin(A)",
+          "value": "sin",
+          "description": ""
+        },
+        {
+          "label": "cos(A)",
+          "value": "cos",
+          "description": ""
+        },
+        {
+          "label": "tan(A)",
+          "value": "tan",
+          "description": ""
+        },
+        {
+          "label": "asin(A)",
+          "value": "asin",
+          "description": ""
+        },
+        {
+          "label": "acos(A)",
+          "value": "acos",
+          "description": ""
+        },
+        {
+          "label": "atan(A)",
+          "value": "atan",
+          "description": ""
+        },
+        {
+          "label": "dbtopow(A)",
+          "value": "dbtopow",
+          "description": ""
+        },
+        {
+          "label": "powtodb(A)",
+          "value": "powtodb",
+          "description": ""
+        },
+        {
+          "label": "dbtoamp(A)",
+          "value": "dbtoamp",
+          "description": ""
+        },
+        {
+          "label": "amptodb(A)",
+          "value": "amptodb",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "pre0quantize",
+      "label": "Quantize",
+      "description": "Configure Quantize for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Off",
+          "value": "off",
+          "description": ""
+        },
+        {
+          "label": "Floor",
+          "value": "floor",
+          "description": ""
+        },
+        {
+          "label": "Round",
+          "value": "round",
+          "description": ""
+        },
+        {
+          "label": "Ceiling",
+          "value": "ceiling",
+          "description": ""
+        },
+        {
+          "label": "> 0",
+          "value": "gt0",
+          "description": ""
+        },
+        {
+          "label": ">= 0",
+          "value": "gteq0",
+          "description": ""
+        },
+        {
+          "label": "== 0",
+          "value": "eq0",
+          "description": ""
+        },
+        {
+          "label": "!= 0",
+          "value": "neq0",
+          "description": ""
+        },
+        {
+          "label": "<= 0",
+          "value": "lteq0",
+          "description": ""
+        },
+        {
+          "label": "< 0",
+          "value": "lt0",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "off",
+      "label": "Off",
+      "description": "Configure Off for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Off",
+          "value": "off",
+          "description": ""
+        },
+        {
+          "label": "Floor",
+          "value": "floor",
+          "description": ""
+        },
+        {
+          "label": "Round",
+          "value": "round",
+          "description": ""
+        },
+        {
+          "label": "Ceiling",
+          "value": "ceiling",
+          "description": ""
+        },
+        {
+          "label": "> 0",
+          "value": "gt0",
+          "description": ""
+        },
+        {
+          "label": ">= 0",
+          "value": "gteq0",
+          "description": ""
+        },
+        {
+          "label": "== 0",
+          "value": "eq0",
+          "description": ""
+        },
+        {
+          "label": "!= 0",
+          "value": "neq0",
+          "description": ""
+        },
+        {
+          "label": "<= 0",
+          "value": "lteq0",
+          "description": ""
+        },
+        {
+          "label": "< 0",
+          "value": "lt0",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "pre0resultscope",
+      "label": "Result Scope",
+      "description": "Configure Result Scope for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Color",
+          "value": "Color",
+          "description": ""
+        },
+        {
+          "label": "Color(0) Color(1) Color(2)",
+          "value": "Color(0) Color(1) Color(2)",
+          "description": ""
+        },
+        {
+          "label": "N",
+          "value": "N",
+          "description": ""
+        },
+        {
+          "label": "Tex",
+          "value": "Tex",
+          "description": ""
+        },
+        {
+          "label": "Color.i012",
+          "value": "Color.i012",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "Color",
+      "label": "Color",
+      "description": "Configure Color for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Color",
+          "value": "Color",
+          "description": ""
+        },
+        {
+          "label": "Color(0) Color(1) Color(2)",
+          "value": "Color(0) Color(1) Color(2)",
+          "description": ""
+        },
+        {
+          "label": "N",
+          "value": "N",
+          "description": ""
+        },
+        {
+          "label": "Tex",
+          "value": "Tex",
+          "description": ""
+        },
+        {
+          "label": "Color.i012",
+          "value": "Color.i012",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "comb",
+      "label": "Combine",
+      "description": "Configure Combine for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "A",
+          "value": "copya",
+          "description": ""
+        },
+        {
+          "label": "abs(A)",
+          "value": "abs",
+          "description": ""
+        },
+        {
+          "label": "sign(A)",
+          "value": "sign",
+          "description": ""
+        },
+        {
+          "label": "sqrt(A)",
+          "value": "sqrt",
+          "description": ""
+        },
+        {
+          "label": "A * A",
+          "value": "square",
+          "description": ""
+        },
+        {
+          "label": "1 / A",
+          "value": "inverse",
+          "description": ""
+        },
+        {
+          "label": "floor(A)",
+          "value": "floor",
+          "description": ""
+        },
+        {
+          "label": "round(A)",
+          "value": "round",
+          "description": ""
+        },
+        {
+          "label": "ceil(A)",
+          "value": "ceil",
+          "description": ""
+        },
+        {
+          "label": "int(A)",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "fract(A)",
+          "value": "fract",
+          "description": ""
+        },
+        {
+          "label": "normalize(A)",
+          "value": "normalize",
+          "description": ""
+        },
+        {
+          "label": "exp10(A)",
+          "value": "exp10",
+          "description": ""
+        },
+        {
+          "label": "exp2(A)",
+          "value": "exp2",
+          "description": ""
+        },
+        {
+          "label": "exp(A)",
+          "value": "exp",
+          "description": ""
+        },
+        {
+          "label": "log10(A)",
+          "value": "log10",
+          "description": ""
+        },
+        {
+          "label": "log2(A)",
+          "value": "log2",
+          "description": ""
+        },
+        {
+          "label": "ln(A)",
+          "value": "ln",
+          "description": ""
+        },
+        {
+          "label": "sin(A)",
+          "value": "sin",
+          "description": ""
+        },
+        {
+          "label": "cos(A)",
+          "value": "cos",
+          "description": ""
+        },
+        {
+          "label": "tan(A)",
+          "value": "tan",
+          "description": ""
+        },
+        {
+          "label": "asin(A)",
+          "value": "asin",
+          "description": ""
+        },
+        {
+          "label": "acos(A)",
+          "value": "acos",
+          "description": ""
+        },
+        {
+          "label": "atan(A)",
+          "value": "atan",
+          "description": ""
+        },
+        {
+          "label": "degrees(A)",
+          "value": "degrees",
+          "description": ""
+        },
+        {
+          "label": "radians(A)",
+          "value": "radians",
+          "description": ""
+        },
+        {
+          "label": "length(A)",
+          "value": "length",
+          "description": ""
+        },
+        {
+          "label": "compadd(A)",
+          "value": "compadd",
+          "description": ""
+        },
+        {
+          "label": "compsub(A)",
+          "value": "compsub",
+          "description": ""
+        },
+        {
+          "label": "compmult(A)",
+          "value": "compmult",
+          "description": ""
+        },
+        {
+          "label": "compdiv(A)",
+          "value": "compdiv",
+          "description": ""
+        },
+        {
+          "label": "compavg(A)",
+          "value": "compavg",
+          "description": ""
+        },
+        {
+          "label": "compmin(A)",
+          "value": "compmin",
+          "description": ""
+        },
+        {
+          "label": "compmax(A)",
+          "value": "compmax",
+          "description": ""
+        },
+        {
+          "label": "A + B",
+          "value": "add",
+          "description": ""
+        },
+        {
+          "label": "A - B",
+          "value": "asubb",
+          "description": "B asubb -"
+        },
+        {
+          "label": "B - A",
+          "value": "bsuba",
+          "description": "A bsuba -"
+        },
+        {
+          "label": "A * B",
+          "value": "mult",
+          "description": ""
+        },
+        {
+          "label": "A / B",
+          "value": "adivb",
+          "description": ""
+        },
+        {
+          "label": "B / A",
+          "value": "bdiva",
+          "description": ""
+        },
+        {
+          "label": "A ** B",
+          "value": "apowerb",
+          "description": ""
+        },
+        {
+          "label": "logB(A)",
+          "value": "logba",
+          "description": ""
+        },
+        {
+          "label": "avg(A, B)",
+          "value": "avg",
+          "description": ""
+        },
+        {
+          "label": "min(A, B)",
+          "value": "min",
+          "description": ""
+        },
+        {
+          "label": "max(A, B)",
+          "value": "max",
+          "description": ""
+        },
+        {
+          "label": "mod(A, B)",
+          "value": "mod",
+          "description": ""
+        },
+        {
+          "label": "int(A / B)",
+          "value": "intadivb",
+          "description": ""
+        },
+        {
+          "label": "A > B",
+          "value": "gt",
+          "description": ""
+        },
+        {
+          "label": "A >= B",
+          "value": "gte",
+          "description": ""
+        },
+        {
+          "label": "A < B",
+          "value": "lt",
+          "description": ""
+        },
+        {
+          "label": "A <= B",
+          "value": "lte",
+          "description": ""
+        },
+        {
+          "label": "A == B",
+          "value": "eq",
+          "description": ""
+        },
+        {
+          "label": "A != B",
+          "value": "ne",
+          "description": ""
+        },
+        {
+          "label": "atan2(A, B)",
+          "value": "atan2",
+          "description": ""
+        },
+        {
+          "label": "dot(A, B)",
+          "value": "dot",
+          "description": ""
+        },
+        {
+          "label": "angle(A, B)",
+          "value": "angle",
+          "description": ""
+        },
+        {
+          "label": "cross(A, B)",
+          "value": "cross",
+          "description": ""
+        },
+        {
+          "label": "A + B * C",
+          "value": "aaddbmultc",
+          "description": ""
+        },
+        {
+          "label": "A * B + C",
+          "value": "amultbaddc",
+          "description": ""
+        },
+        {
+          "label": "A + B + C",
+          "value": "aaddbaddc",
+          "description": ""
+        },
+        {
+          "label": "A * B * C",
+          "value": "amultbmultc",
+          "description": ""
+        },
+        {
+          "label": "rangefrom(A, B, C)",
+          "value": "rangefrom",
+          "description": ""
+        },
+        {
+          "label": "rangeto(A, B, C)",
+          "value": "rangeto",
+          "description": ""
+        },
+        {
+          "label": "mix(A, B, C)",
+          "value": "mix",
+          "description": ""
+        },
+        {
+          "label": "A if C else B",
+          "value": "ifelse",
+          "description": ""
+        },
+        {
+          "label": "loop(A, B, C)",
+          "value": "loop",
+          "description": ""
+        },
+        {
+          "label": "zigzag(A, B, C)",
+          "value": "zigzag",
+          "description": ""
+        },
+        {
+          "label": "clamp(A, B, C)",
+          "value": "clamp",
+          "description": ""
+        },
+        {
+          "label": "smoothstep(A, B, C)",
+          "value": "smoothstep",
+          "description": ""
+        },
+        {
+          "label": "B <= A < C",
+          "value": "bltealtc",
+          "description": ""
+        },
+        {
+          "label": "B < A <= C",
+          "value": "bltaltec",
+          "description": ""
+        },
+        {
+          "label": "B < A < C",
+          "value": "bltaltec",
+          "description": ""
+        },
+        {
+          "label": "B <= A <= C",
+          "value": "bltaltec",
+          "description": ""
+        },
+        {
+          "label": "reflect(A, B)",
+          "value": "reflect",
+          "description": ""
+        },
+        {
+          "label": "refract(A, B, C)",
+          "value": "refract",
+          "description": ""
+        },
+        {
+          "label": "Color",
+          "value": "Color",
+          "description": ""
+        },
+        {
+          "label": "Color(0) Color(1) Color(2)",
+          "value": "Color(0) Color(1) Color(2)",
+          "description": ""
+        },
+        {
+          "label": "N",
+          "value": "N",
+          "description": ""
+        },
+        {
+          "label": "Tex",
+          "value": "Tex",
+          "description": ""
+        },
+        {
+          "label": "Color.i012",
+          "value": "Color.i012",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "comb0oper",
+      "label": "Operation",
+      "description": "Configure Operation for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "A",
+          "value": "copya",
+          "description": ""
+        },
+        {
+          "label": "abs(A)",
+          "value": "abs",
+          "description": ""
+        },
+        {
+          "label": "sign(A)",
+          "value": "sign",
+          "description": ""
+        },
+        {
+          "label": "sqrt(A)",
+          "value": "sqrt",
+          "description": ""
+        },
+        {
+          "label": "A * A",
+          "value": "square",
+          "description": ""
+        },
+        {
+          "label": "1 / A",
+          "value": "inverse",
+          "description": ""
+        },
+        {
+          "label": "floor(A)",
+          "value": "floor",
+          "description": ""
+        },
+        {
+          "label": "round(A)",
+          "value": "round",
+          "description": ""
+        },
+        {
+          "label": "ceil(A)",
+          "value": "ceil",
+          "description": ""
+        },
+        {
+          "label": "int(A)",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "fract(A)",
+          "value": "fract",
+          "description": ""
+        },
+        {
+          "label": "normalize(A)",
+          "value": "normalize",
+          "description": ""
+        },
+        {
+          "label": "exp10(A)",
+          "value": "exp10",
+          "description": ""
+        },
+        {
+          "label": "exp2(A)",
+          "value": "exp2",
+          "description": ""
+        },
+        {
+          "label": "exp(A)",
+          "value": "exp",
+          "description": ""
+        },
+        {
+          "label": "log10(A)",
+          "value": "log10",
+          "description": ""
+        },
+        {
+          "label": "log2(A)",
+          "value": "log2",
+          "description": ""
+        },
+        {
+          "label": "ln(A)",
+          "value": "ln",
+          "description": ""
+        },
+        {
+          "label": "sin(A)",
+          "value": "sin",
+          "description": ""
+        },
+        {
+          "label": "cos(A)",
+          "value": "cos",
+          "description": ""
+        },
+        {
+          "label": "tan(A)",
+          "value": "tan",
+          "description": ""
+        },
+        {
+          "label": "asin(A)",
+          "value": "asin",
+          "description": ""
+        },
+        {
+          "label": "acos(A)",
+          "value": "acos",
+          "description": ""
+        },
+        {
+          "label": "atan(A)",
+          "value": "atan",
+          "description": ""
+        },
+        {
+          "label": "degrees(A)",
+          "value": "degrees",
+          "description": ""
+        },
+        {
+          "label": "radians(A)",
+          "value": "radians",
+          "description": ""
+        },
+        {
+          "label": "length(A)",
+          "value": "length",
+          "description": ""
+        },
+        {
+          "label": "compadd(A)",
+          "value": "compadd",
+          "description": ""
+        },
+        {
+          "label": "compsub(A)",
+          "value": "compsub",
+          "description": ""
+        },
+        {
+          "label": "compmult(A)",
+          "value": "compmult",
+          "description": ""
+        },
+        {
+          "label": "compdiv(A)",
+          "value": "compdiv",
+          "description": ""
+        },
+        {
+          "label": "compavg(A)",
+          "value": "compavg",
+          "description": ""
+        },
+        {
+          "label": "compmin(A)",
+          "value": "compmin",
+          "description": ""
+        },
+        {
+          "label": "compmax(A)",
+          "value": "compmax",
+          "description": ""
+        },
+        {
+          "label": "A + B",
+          "value": "add",
+          "description": ""
+        },
+        {
+          "label": "A - B",
+          "value": "asubb",
+          "description": "B asubb -"
+        },
+        {
+          "label": "B - A",
+          "value": "bsuba",
+          "description": "A bsuba -"
+        },
+        {
+          "label": "A * B",
+          "value": "mult",
+          "description": ""
+        },
+        {
+          "label": "A / B",
+          "value": "adivb",
+          "description": ""
+        },
+        {
+          "label": "B / A",
+          "value": "bdiva",
+          "description": ""
+        },
+        {
+          "label": "A ** B",
+          "value": "apowerb",
+          "description": ""
+        },
+        {
+          "label": "logB(A)",
+          "value": "logba",
+          "description": ""
+        },
+        {
+          "label": "avg(A, B)",
+          "value": "avg",
+          "description": ""
+        },
+        {
+          "label": "min(A, B)",
+          "value": "min",
+          "description": ""
+        },
+        {
+          "label": "max(A, B)",
+          "value": "max",
+          "description": ""
+        },
+        {
+          "label": "mod(A, B)",
+          "value": "mod",
+          "description": ""
+        },
+        {
+          "label": "int(A / B)",
+          "value": "intadivb",
+          "description": ""
+        },
+        {
+          "label": "A > B",
+          "value": "gt",
+          "description": ""
+        },
+        {
+          "label": "A >= B",
+          "value": "gte",
+          "description": ""
+        },
+        {
+          "label": "A < B",
+          "value": "lt",
+          "description": ""
+        },
+        {
+          "label": "A <= B",
+          "value": "lte",
+          "description": ""
+        },
+        {
+          "label": "A == B",
+          "value": "eq",
+          "description": ""
+        },
+        {
+          "label": "A != B",
+          "value": "ne",
+          "description": ""
+        },
+        {
+          "label": "atan2(A, B)",
+          "value": "atan2",
+          "description": ""
+        },
+        {
+          "label": "dot(A, B)",
+          "value": "dot",
+          "description": ""
+        },
+        {
+          "label": "angle(A, B)",
+          "value": "angle",
+          "description": ""
+        },
+        {
+          "label": "cross(A, B)",
+          "value": "cross",
+          "description": ""
+        },
+        {
+          "label": "A + B * C",
+          "value": "aaddbmultc",
+          "description": ""
+        },
+        {
+          "label": "A * B + C",
+          "value": "amultbaddc",
+          "description": ""
+        },
+        {
+          "label": "A + B + C",
+          "value": "aaddbaddc",
+          "description": ""
+        },
+        {
+          "label": "A * B * C",
+          "value": "amultbmultc",
+          "description": ""
+        },
+        {
+          "label": "rangefrom(A, B, C)",
+          "value": "rangefrom",
+          "description": ""
+        },
+        {
+          "label": "rangeto(A, B, C)",
+          "value": "rangeto",
+          "description": ""
+        },
+        {
+          "label": "mix(A, B, C)",
+          "value": "mix",
+          "description": ""
+        },
+        {
+          "label": "A if C else B",
+          "value": "ifelse",
+          "description": ""
+        },
+        {
+          "label": "loop(A, B, C)",
+          "value": "loop",
+          "description": ""
+        },
+        {
+          "label": "zigzag(A, B, C)",
+          "value": "zigzag",
+          "description": ""
+        },
+        {
+          "label": "clamp(A, B, C)",
+          "value": "clamp",
+          "description": ""
+        },
+        {
+          "label": "smoothstep(A, B, C)",
+          "value": "smoothstep",
+          "description": ""
+        },
+        {
+          "label": "B <= A < C",
+          "value": "bltealtc",
+          "description": ""
+        },
+        {
+          "label": "B < A <= C",
+          "value": "bltaltec",
+          "description": ""
+        },
+        {
+          "label": "B < A < C",
+          "value": "bltaltec",
+          "description": ""
+        },
+        {
+          "label": "B <= A <= C",
+          "value": "bltaltec",
+          "description": ""
+        },
+        {
+          "label": "reflect(A, B)",
+          "value": "reflect",
+          "description": ""
+        },
+        {
+          "label": "refract(A, B, C)",
+          "value": "refract",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "comb0scopea",
+      "label": "Scope A",
+      "description": "Configure Scope A for the operator",
+      "type": "string"
+    },
+    {
+      "name": "comb0scopeb",
+      "label": "Scope B",
+      "description": "Configure Scope B for the operator",
+      "type": "string"
+    },
+    {
+      "name": "comb0scopec",
+      "label": "Scope C",
+      "description": "Configure Scope C for the operator",
+      "type": "string"
+    },
+    {
+      "name": "comb0result",
+      "label": "Result Scope",
+      "description": "Configure Result Scope for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Color",
+          "value": "Color",
+          "description": ""
+        },
+        {
+          "label": "Color(0) Color(1) Color(2)",
+          "value": "Color(0) Color(1) Color(2)",
+          "description": ""
+        },
+        {
+          "label": "N",
+          "value": "N",
+          "description": ""
+        },
+        {
+          "label": "Tex",
+          "value": "Tex",
+          "description": ""
+        },
+        {
+          "label": "Color.i012",
+          "value": "Color.i012",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "post",
+      "label": "Post",
+      "description": "Configure Post for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "1",
+          "value": "1",
+          "description": ""
+        },
+        {
+          "label": "2",
+          "value": "2",
+          "description": ""
+        },
+        {
+          "label": "3",
+          "value": "3",
+          "description": ""
+        },
+        {
+          "label": "4",
+          "value": "4",
+          "description": ""
+        },
+        {
+          "label": "Off",
+          "value": "off",
+          "description": ""
+        },
+        {
+          "label": "Floor",
+          "value": "floor",
+          "description": ""
+        },
+        {
+          "label": "Round",
+          "value": "round",
+          "description": ""
+        },
+        {
+          "label": "Ceiling",
+          "value": "ceiling",
+          "description": ""
+        },
+        {
+          "label": "> 0",
+          "value": "gt0",
+          "description": ""
+        },
+        {
+          "label": ">= 0",
+          "value": "gteq0",
+          "description": ""
+        },
+        {
+          "label": "== 0",
+          "value": "eq0",
+          "description": ""
+        },
+        {
+          "label": "!= 0",
+          "value": "neq0",
+          "description": ""
+        },
+        {
+          "label": "<= 0",
+          "value": "lteq0",
+          "description": ""
+        },
+        {
+          "label": "< 0",
+          "value": "lt0",
+          "description": ""
+        },
+        {
+          "label": "Automatic",
+          "value": "auto",
+          "description": ""
+        },
+        {
+          "label": "Float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "Int",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "Color",
+          "value": "Color",
+          "description": ""
+        },
+        {
+          "label": "Color(0) Color(1) Color(2)",
+          "value": "Color(0) Color(1) Color(2)",
+          "description": ""
+        },
+        {
+          "label": "N",
+          "value": "N",
+          "description": ""
+        },
+        {
+          "label": "Tex",
+          "value": "Tex",
+          "description": ""
+        },
+        {
+          "label": "Color.i012",
+          "value": "Color.i012",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "post0scope",
+      "label": "Scope",
+      "description": "Configure Scope for the operator",
+      "type": "string"
+    },
+    {
+      "name": "post0parsize",
+      "label": "Parameter Size",
+      "description": "Configure Parameter Size for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "1",
+          "value": "1",
+          "description": ""
+        },
+        {
+          "label": "2",
+          "value": "2",
+          "description": ""
+        },
+        {
+          "label": "3",
+          "value": "3",
+          "description": ""
+        },
+        {
+          "label": "4",
+          "value": "4",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "post0fromlow",
+      "label": "Map from Low",
+      "description": "Configure Map from Low for the operator",
+      "type": "string"
+    },
+    {
+      "name": "post0fromhigh",
+      "label": "Map from High",
+      "description": "Configure Map from High for the operator",
+      "type": "string"
+    },
+    {
+      "name": "post0tolow",
+      "label": "Map to Low",
+      "description": "Configure Map to Low for the operator",
+      "type": "string"
+    },
+    {
+      "name": "post0tohigh",
+      "label": "Map to High",
+      "description": "Configure Map to High for the operator",
+      "type": "string"
+    },
+    {
+      "name": "post0quantize",
+      "label": "Quantize",
+      "description": "Configure Quantize for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Off",
+          "value": "off",
+          "description": ""
+        },
+        {
+          "label": "Floor",
+          "value": "floor",
+          "description": ""
+        },
+        {
+          "label": "Round",
+          "value": "round",
+          "description": ""
+        },
+        {
+          "label": "Ceiling",
+          "value": "ceiling",
+          "description": ""
+        },
+        {
+          "label": "> 0",
+          "value": "gt0",
+          "description": ""
+        },
+        {
+          "label": ">= 0",
+          "value": "gteq0",
+          "description": ""
+        },
+        {
+          "label": "== 0",
+          "value": "eq0",
+          "description": ""
+        },
+        {
+          "label": "!= 0",
+          "value": "neq0",
+          "description": ""
+        },
+        {
+          "label": "<= 0",
+          "value": "lteq0",
+          "description": ""
+        },
+        {
+          "label": "< 0",
+          "value": "lt0",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "post0castto",
+      "label": "Cast to",
+      "description": "Configure Cast to for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Automatic",
+          "value": "auto",
+          "description": ""
+        },
+        {
+          "label": "Float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "Int",
+          "value": "int",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "auto",
+      "label": "Automatic",
+      "description": "Configure Automatic for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Automatic",
+          "value": "auto",
+          "description": ""
+        },
+        {
+          "label": "Float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "Int",
+          "value": "int",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "post0result",
+      "label": "Result Scope",
+      "description": "Configure Result Scope for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Color",
+          "value": "Color",
+          "description": ""
+        },
+        {
+          "label": "Color(0) Color(1) Color(2)",
+          "value": "Color(0) Color(1) Color(2)",
+          "description": ""
+        },
+        {
+          "label": "N",
+          "value": "N",
+          "description": ""
+        },
+        {
+          "label": "Tex",
+          "value": "Tex",
+          "description": ""
+        },
+        {
+          "label": "Color.i012",
+          "value": "Color.i012",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "delattrs",
+      "label": "Delete Attributes",
+      "description": "Configure Delete Attributes for the operator",
+      "type": "string"
+    },
+    {
+      "name": "delnewattrs",
+      "label": "Delete New Attributes",
+      "description": "Configure Delete New Attributes for the operator",
+      "type": "string"
+    },
+    {
+      "name": "outputsecondary",
+      "label": "Output Secondary Attributes",
+      "description": "Configure Output Secondary Attributes for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "*",
+          "value": "*",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "bypass",
+      "label": "Bypass",
+      "description": "Configure Bypass for the operator",
+      "type": "string"
+    },
+    {
+      "name": "delinputattrs",
+      "label": "Delete Input Attributes",
+      "description": "Configure Delete Input Attributes for the operator",
+      "type": "string"
+    },
+    {
+      "name": "parmcolorspace",
+      "label": "Parameter Color Space",
+      "description": "Configure Parameter Color Space for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        }
+      ]
+    },
+    {
+      "name": "srgb",
+      "label": "sRGB",
+      "description": "Configure sRGB for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        }
+      ]
+    },
+    {
+      "name": "parmreferencewhite",
+      "label": "Parameter Reference White",
+      "description": "Configure Parameter Reference White for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    },
+    {
+      "name": "default",
+      "label": "Default For Color Space",
+      "description": "Configure Default For Color Space for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    }
+  ],
+  "experimental": true,
+  "sourceFile": "Experimental-Math_Combine_POP.htm",
+  "parsedAt": "2025-08-08T03:03:57.354Z"
+}

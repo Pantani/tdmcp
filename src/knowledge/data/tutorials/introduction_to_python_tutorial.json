@@ -1,0 +1,1598 @@
+{
+  "id": "introduction_to_python_tutorial",
+  "name": "Introduction to Python Tutorial",
+  "displayName": "Introduction to Python Tutorial",
+  "category": "TUTORIAL",
+  "subcategory": "Python Tutorial",
+  "type": "tutorial",
+  "description": "This tutorial is a general introduction to using Python in TouchDesigner. It doesn't require previous knowledge of Python, but it also doesn't go into \"how to program\". Resources for learning Python in general are here. Experienced programmers will also be able to glean the basics of working in TouchDesigner quickly from the information here.",
+  "summary": "This tutorial is a general introduction to using Python in TouchDesigner. It doesn't require previous knowledge of Python, but it also doesn't go into \"how to program\". Resources for learning Python i...",
+  "content": {
+    "sections": [
+      {
+        "title": "Contents",
+        "level": 2,
+        "content": [
+          {
+            "type": "unordered-list",
+            "items": [
+              "1 Python in Parameter Expressions\n1.1 Writing a Simple Python Expression\n1.2 Accessing Operators in Expressions: me, op, and parent\n1.2.1 Operator Shortcuts Using parent and op\n\n1.3 Accessing Parameters in Expressions: par\n1.4 Accessing CHOP channels\n1.5 More Complex Expressions, Errors, and eval",
+              "1.1 Writing a Simple Python Expression",
+              "1.2 Accessing Operators in Expressions: me, op, and parent\n1.2.1 Operator Shortcuts Using parent and op",
+              "1.2.1 Operator Shortcuts Using parent and op",
+              "1.3 Accessing Parameters in Expressions: par",
+              "1.4 Accessing CHOP channels",
+              "1.5 More Complex Expressions, Errors, and eval",
+              "2 Python in the Textport\n2.1 Working With TouchDesigner Objects in the Textport",
+              "2.1 Working With TouchDesigner Objects in the Textport",
+              "3 Python in DATs\n3.1 Callbacks\n3.1.1 print vs. debug\n3.1.2 Execute DATs\n\n3.2 Script OPs\n3.3 Extensions\n3.3.1 Creating An Extension\n3.3.2 Accessing An Extension From Inside a Component\n3.3.3 Accessing An Extension From Outside a Component\n\n3.4 DATs as Modules\n3.4.1 Component Modules\n3.4.2 The import statement in TouchDesigner\n3.4.3 Module On Demand, the mod object\n3.4.4 The module member\n3.4.5 Automatic Recompilation of Modules",
+              "3.1 Callbacks\n3.1.1 print vs. debug\n3.1.2 Execute DATs",
+              "3.1.1 print vs. debug",
+              "3.1.2 Execute DATs",
+              "3.2 Script OPs",
+              "3.3 Extensions\n3.3.1 Creating An Extension\n3.3.2 Accessing An Extension From Inside a Component\n3.3.3 Accessing An Extension From Outside a Component",
+              "3.3.1 Creating An Extension",
+              "3.3.2 Accessing An Extension From Inside a Component",
+              "3.3.3 Accessing An Extension From Outside a Component",
+              "3.4 DATs as Modules\n3.4.1 Component Modules\n3.4.2 The import statement in TouchDesigner\n3.4.3 Module On Demand, the mod object\n3.4.4 The module member\n3.4.5 Automatic Recompilation of Modules",
+              "3.4.1 Component Modules",
+              "3.4.2 The import statement in TouchDesigner",
+              "3.4.3 Module On Demand, the mod object",
+              "3.4.4 The module member",
+              "3.4.5 Automatic Recompilation of Modules"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "1.1 Writing a Simple Python Expression",
+              "1.2 Accessing Operators in Expressions: me, op, and parent\n1.2.1 Operator Shortcuts Using parent and op",
+              "1.2.1 Operator Shortcuts Using parent and op",
+              "1.3 Accessing Parameters in Expressions: par",
+              "1.4 Accessing CHOP channels",
+              "1.5 More Complex Expressions, Errors, and eval"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "1.2.1 Operator Shortcuts Using parent and op"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "2.1 Working With TouchDesigner Objects in the Textport"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "3.1 Callbacks\n3.1.1 print vs. debug\n3.1.2 Execute DATs",
+              "3.1.1 print vs. debug",
+              "3.1.2 Execute DATs",
+              "3.2 Script OPs",
+              "3.3 Extensions\n3.3.1 Creating An Extension\n3.3.2 Accessing An Extension From Inside a Component\n3.3.3 Accessing An Extension From Outside a Component",
+              "3.3.1 Creating An Extension",
+              "3.3.2 Accessing An Extension From Inside a Component",
+              "3.3.3 Accessing An Extension From Outside a Component",
+              "3.4 DATs as Modules\n3.4.1 Component Modules\n3.4.2 The import statement in TouchDesigner\n3.4.3 Module On Demand, the mod object\n3.4.4 The module member\n3.4.5 Automatic Recompilation of Modules",
+              "3.4.1 Component Modules",
+              "3.4.2 The import statement in TouchDesigner",
+              "3.4.3 Module On Demand, the mod object",
+              "3.4.4 The module member",
+              "3.4.5 Automatic Recompilation of Modules"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "3.1.1 print vs. debug",
+              "3.1.2 Execute DATs"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "3.3.1 Creating An Extension",
+              "3.3.2 Accessing An Extension From Inside a Component",
+              "3.3.3 Accessing An Extension From Outside a Component"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "3.4.1 Component Modules",
+              "3.4.2 The import statement in TouchDesigner",
+              "3.4.3 Module On Demand, the mod object",
+              "3.4.4 The module member",
+              "3.4.5 Automatic Recompilation of Modules"
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "One of the easiest and most common places to use Python is in parameter expressions. Parameter expressions allow you to write a one line Python program to set the value of a parameter. If the value of the expression changes, the parameter's value will update automatically."
+          },
+          {
+            "type": "paragraph",
+            "text": "This section will teach you all the basics of writing parameter expressions. For an extensive list of example TouchDesigner Python expressions, see the Expressions sections in Python Tips."
+          }
+        ]
+      },
+      {
+        "title": "Writing a Simple Python Expression[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "To start with, create a Text TOP using the OP Create Dialog by selecting Text from the TOP family. If the Parameter Dialog is not open, press p keyboard shortcut to open it."
+          },
+          {
+            "type": "paragraph",
+            "text": "To enter an expression into the 'Text' parameter, expand the parameter by clicking on its name, then press the blue square. It is now in expression mode. In the entry area, type"
+          },
+          {
+            "type": "code",
+            "text": "'Hello World!'",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "and press <Enter> key. You should see this:"
+          },
+          {
+            "type": "paragraph",
+            "text": "The quotes are important to let Python know that \"Hello World!\" is a string (a series of letters) and not a command. Let's try a command now. Replace your expression with"
+          },
+          {
+            "type": "code",
+            "text": "absTime.frame",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "You can see the current frame changing now in both the parameter and the TOP display. Breaking down your short expression, there are two parts: absTime is TouchDesigner's absolute time object, the . tells Python you want information inside it (called a member), and frame is the specific thing you want from absTime."
+          },
+          {
+            "type": "code",
+            "text": "absTime",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": ".",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "frame",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "absTime",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "This simple process will let you create powerful interactions in TouchDesigner. In general, you just have to write short expressions in Python code explaining the piece of data you want. Part of the power of TouchDesigner is that (in most cases) this information will automatically be updated in your parameter if it changes."
+          }
+        ]
+      },
+      {
+        "title": "Accessing Operators in Expressions: me, op, and parent[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "code",
+            "text": "me",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "op",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "parent",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "While absTime is a standalone object in TouchDesigner, most of the time you will be getting information from operators in your network. To use information from the operator that the expression is located on, you use the me object. In your Text DAT's 'Text' parameter expression, write me.name. Change the name of the operator by clicking on it and you will see the change reflected in the viewer."
+          },
+          {
+            "type": "code",
+            "text": "absTime",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "me",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "me.name",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "For the next example, put down a Rectangle TOP next to your Text TOP. The op command (op stands for \"operator\") lets you navigate to other operators and get information about them. In the Text TOP's 'Text' parameter, enter op('rectangle1').type. You should now have this:"
+          },
+          {
+            "type": "code",
+            "text": "op",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "op('rectangle1').type",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "As you probably figured out, the text now displays the operator type of rectangle1. Let's break down that expression a little more. The parentheses after op indicate that it is a \"function\". A function is a command that (usually) requires extra information, called arguments. The extra information in this case is 'rectangle1', which indicates which operator you want. After that, there is the familiar dot notation explaining that you want the type of the operator you named. The 'rectangle1' is a Touchdesigner path and you will use these all the time. You're probably familiar with this sort of notation from file browsers. In the examples below, you'll notice that paths that begin with / are \"absolute\" paths, starting from the project's top network level (also known as root), while ones that don't start with / are \"relative\" paths, meaning the path starts from the operator where the expression is located."
+          },
+          {
+            "type": "code",
+            "text": "op",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "'rectangle1'",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "type",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "'rectangle1'",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "/",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "/",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "op('rectangle1')",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "op('comp/rectangle1')",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "op('/project1')",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "op('/project1/rectangle1')",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "op('..')",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "op('.')",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "me",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "op('./rectangle1')",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Another common way of accessing operators is using parent. The parent() function returns the component one level up in the network hierarchy. You can give it a number as well, so parent(2) return the component two levels up in the network hierarchy."
+          },
+          {
+            "type": "code",
+            "text": "parent",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "parent()",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "parent(2)",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "Operator Shortcuts Using parent and op[edit]",
+            "level": 3
+          },
+          {
+            "type": "code",
+            "text": "parent",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "op",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "The parent object can also be used to search upward in the hierarchy for a named Parent Shortcut. For example, in the 'Text' parameter of the Text TOP, enter this expression:"
+          },
+          {
+            "type": "code",
+            "text": "parent",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "parent.Project",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "This returns the operator /project1 because in the tutorial file, the project1 component has the Parent Shortcut Project. You can see this by opening /project1's parameter box and looking at the 'Parent Shortcut' parameter on the 'Common' page. Using this parent.<shortcut> syntax will search upward until an operator with that Parent Shortcut is found."
+          },
+          {
+            "type": "code",
+            "text": "Project",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "parent.<shortcut>",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Similarly, the op object can be used to search anywhere in your TouchDesigner file for a component with a Global OP Shortcut. As an example, open /project1's parameters again and type MyGlobal into the 'Global OP Shortcut' parameter on the 'Common' page. You can now get that operator by entering op.MyGlobal into the Text TOP's 'Text' parameter expression."
+          },
+          {
+            "type": "code",
+            "text": "op",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "MyGlobal",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "op.MyGlobal",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "A couple important notes here. Global OP Shortcuts must be unique. You can only ever have one of a given name in your file. They are best used only for the most important and unique components in your file. Parent Shortcuts don't have to be unique and the first one found searching upward will be returned. These shortcuts are used often; it is highly recommended to give your custom components a Parent Shortcut at their top level."
+          },
+          {
+            "type": "paragraph",
+            "text": "You can also combine the various ways of looking for operators. For example parent.Project.op('text1') will return the operator text1 inside /project1."
+          },
+          {
+            "type": "code",
+            "text": "parent.Project.op('text1')",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "Accessing Parameters in Expressions: par[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "code",
+            "text": "par",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Parameters on operators can be accessed by using the par object. To start, expand the 'Size' parameter on rectangle1. You'll notice that there are two separate values, 'sizex' and 'sizey', which are the actual parameter names. Put 'sizey' into expression mode and enter"
+          },
+          {
+            "type": "code",
+            "text": "me.par.sizex",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "When you change 'sizex', 'sizey' now stays in sync, keeping the rectangle in a square shape. Now, in the 'Text' parameter of your Text TOP, enter this expression:"
+          },
+          {
+            "type": "code",
+            "text": "op('rectangle1').par.sizex",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Now changing 'sizex' keeps the displayed text in sync as well. To review, the general process here is to use me or op to reach the operator you want, then access the parameter you want via the par object."
+          },
+          {
+            "type": "code",
+            "text": "me",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "op",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "par",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "Accessing CHOP channels[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Another common use of parameter expressions is to access CHOP channel data. For this example, put down a Beat CHOP. Rather than typing the expression this time, we are going to use drag/drop to create it. Follow these steps:"
+          },
+          {
+            "type": "ordered-list",
+            "items": [
+              "Press the + button on the bottom right of the Beat CHOP to make its viewer active.",
+              "Select rectangle1 to see its parameter dialog.",
+              "Drag the 'ramp' channel and drop it into the left (x) entry box in the 'Size' parameter.",
+              "Select CHOP Reference from the popup menu."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "You will now have the following expression in 'sizex':"
+          },
+          {
+            "type": "code",
+            "text": "op('beat2')['ramp']",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "In Python, the [] square bracket notation is a way to specify elements in a collection. In this case, because CHOPs can have multiple channels, you specify which channel you want by putting its name in the square brackets. While you will usually want to use the name, you also have the option of picking a channel by number. Change the 'sizex' expression to op('beat2')[0] and you will see the same results. Note that in Python, the first element of a sequential list is always zero, not one."
+          },
+          {
+            "type": "code",
+            "text": "[]",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "More Complex Expressions, Errors, and eval[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "code",
+            "text": "eval",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "You may have noticed that your Text TOP shows an unreadable jumble of numbers now, because the CHOP sends data that changes quickly and has many digits. To fix this, we will use Python's round function which takes two arguments: the number to round and the number of decimal places to show. Enter the following into the 'Text' parameter of the Text TOP:"
+          },
+          {
+            "type": "code",
+            "text": "round",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "round(op('rectangle1').par.sizex,1)",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "The parameter turns red and a red X marker is placed on the operator. This is what an error looks like. Don't worry, errors are an unavoidable part of scripting. Before we fix it, it's worth looking at a couple different ways to view the error message. One is to hover over the parameter or expression. Another is to click on the red X marker on the node.\nThis specific error is td.Par doesn't define __round__ method. The problem is that technically op('rectangle1').par.sizex returns a parameter object and not an actual number, which is what the round function wants. Often using a parameter object will work, but occasionally you will run into this problem and need to convert from a parameter to a value. To do this, use the eval function. Change your expression to this:"
+          },
+          {
+            "type": "code",
+            "text": "op('rectangle1').par.sizex",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "round",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "eval",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "round(op('rectangle1').par.sizex.eval(),1)",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "For an extensive list of example TouchDesigner Python expressions, see the Expressions sections in Python Tips."
+          },
+          {
+            "type": "paragraph",
+            "text": "When working with Python in TouchDesigner it is very helpful to have a Textport open. For quick tasks, you can open a floating textport by pressing alt-t, but for more extended Python work like this tutorial, opening a textport pane is recommended. To do this:"
+          },
+          {
+            "type": "ordered-list",
+            "items": [
+              "Click the downward facing arrow on the far right above the TouchDesigner network view and choose 'Split left/right'.",
+              "Click the downward facing triangle on the far left above your new pane and choose 'Textport and DATs'."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "The textport performs these useful functions when working with Python:"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Displays output from print and debug statements in Python code.",
+              "Displays all error messages from Python code.",
+              "Lets you test simple Python."
+            ]
+          },
+          {
+            "type": "code",
+            "text": "print",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "debug",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "As a simple test, type print('Hello World!') into the textport and press <Enter>."
+          },
+          {
+            "type": "code",
+            "text": "print('Hello World!')",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "Working With TouchDesigner Objects in the Textport[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Accessing TouchDesigner objects from the textport is quite similar to in parameter expressions. Most commonly, you will start with an operator, which means you will need its path. There's a great trick for this:"
+          },
+          {
+            "type": "ordered-list",
+            "items": [
+              "Enter r = op(' into the textport. Do not press <Enter>.",
+              "Drag and drop your rectangle1 operator into the textport. The path is automatically appended to your command.",
+              "Finish the line by typing ') and pressing <Enter>."
+            ]
+          },
+          {
+            "type": "code",
+            "text": "r = op('",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "')",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "You have now assigned your rectangle operator to the variable r. Type r and press <Enter> and you will see information about the operator. Here's a few more things to try while you're at it:"
+          },
+          {
+            "type": "code",
+            "text": "r",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "r",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "r.name",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "r.par.fillcolorr",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "r.par.fillcolorr = 0",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "dir(r)",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "help(r.resetViewer)",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "resetViewer",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "You can use this technique to examine TouchDesigner objects, to test simple Python code, and to perform simple, one time Python tasks."
+          },
+          {
+            "type": "paragraph",
+            "text": "Any Python code more extensive than expressions goes in [DAT|DATs]. There are four main places where you will find/create such code:"
+          },
+          {
+            "type": "ordered-list",
+            "items": [
+              "Callbacks (callback DATs and execute DATs) - react to various TouchDesigner events",
+              "Script Operators - actually a subset of callback DATs, this code creates the content in these special operators",
+              "Extensions - create a Python interface for custom components",
+              "Standalone modules - generalized, reusable Python code"
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Before we dive into working with Python in DATs, you may want to set up an external editor if you haven't already. DATs and the textport can be used for editing, but external editors provide more extensive tools including syntax highlighting, code folding, etc. To set this up, see Editing DAT Text in an External Editor."
+          },
+          {
+            "type": "paragraph",
+            "text": "The sections below will build on the simple examples described above in Python in Parameter Expressions."
+          }
+        ]
+      },
+      {
+        "title": "Callbacks[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Callbacks let you use Python to react to many different kinds of changes in TouchDesigner. Some operators will have callback DATs attached to them when you create them, such as Timer CHOP, while other callback DATs stand alone as their own operator types, such as Parameter Execute DAT."
+          },
+          {
+            "type": "paragraph",
+            "text": "For this example, put down a Parameter Execute DAT next to the operators you created in the Python in Parameter Expressions section. To set it up to watch the 'Text' parameter on the Text TOP, do the following:"
+          },
+          {
+            "type": "ordered-list",
+            "items": [
+              "Drag the Text TOP into parexec1 DAT's 'OP' parameter. It should now contain the name of the Text TOP. We changed that name above, so yours might be different.",
+              "To pick which specific parameter to watch, type text in parexec1 DAT's 'Parameters' parameter."
+            ]
+          },
+          {
+            "type": "code",
+            "text": "text",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Now that we've set up the parameters, we can write some Python. Right-click on parexec1 and select 'Edit Contents...'. We want to run code when the parameter value changes, so first let's make sure we're getting messages properly. Change the onValueChange callback to look like this:"
+          },
+          {
+            "type": "code",
+            "text": "onValueChange",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "def onValueChange(par, prev):\n\tdebug(par)",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "If you look back at the textport, you'll see a debug statement showing up every tenth of a second, when the number in the parameter. Just to show something interesting you might do with this, now change the onValueChange callback (including the import line above) to:"
+          },
+          {
+            "type": "code",
+            "text": "onValueChange",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "import random\n\ndef onValueChange(par, prev):\n\top('rectangle1').par.fillcolorr = random.random()\n\top('rectangle1').par.fillcolorg = random.random()\n\top('rectangle1').par.fillcolorb = random.random()",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "You will now see the rectangle's square changing to a random color every time the Text TOP's 'Text' parameter changes. This effect would be impossible to achieve with just parameter expressions."
+          },
+          {
+            "type": "paragraph",
+            "text": "For those unfamiliar with Python, the import statement is how you reference external Python code, called modules. Once you import the module random, you can use the function in it that happens also to be called random. To see a list of modules available with TouchDesigner, go here."
+          },
+          {
+            "type": "code",
+            "text": "import",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "random",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "random",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "print vs. debug[edit]",
+            "level": 3
+          },
+          {
+            "type": "code",
+            "text": "print",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "debug",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "An important thing to note in the above section is the debug command. It is a TouchDesigner utility that works much like a Python print statement but automatically adds exactly where in your network the debug command came from. In TouchDesigner, you will often find yourself needing to send information to the textport in order to fix problems in your scripts. You should always use the debug statement to do this instead of print."
+          },
+          {
+            "type": "code",
+            "text": "debug",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "print",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "debug",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "debug",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "print",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "Execute DATs[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "Execute DATs are DAT operators that provide callbacks for events in TouchDesigner. For example, the example above uses a Parameter Execute DAT to react to parameter value changes. Here are the execute DATs and what they react to:"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "CHOP Execute - changes in CHOP channels",
+              "DAT Execute - changes in a DAT table.",
+              "OP Execute - general operator changes, such as name, children, wiring, etc.",
+              "Panel Execute - interactions with a Panel Component (UI).",
+              "Parameter Execute - changes to parameter values and settings",
+              "Execute - system events, such as startup, file save, operator creation, etc."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "See OP Snippets for examples of all these."
+          }
+        ]
+      },
+      {
+        "title": "Script OPs[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Script OPs are operators that provide callbacks that actually create the data of the operator itself. When you place one of these operators, there will be a callback DAT attached to it automatically. In the DAT, you can edit the onCook callback to define the operator's behavior when it cooks. Here is a list of the script OPs:"
+          },
+          {
+            "type": "code",
+            "text": "onCook",
+            "language": "python"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Script CHOP - use Python to create a CHOP and its channels.",
+              "Script DAT - use Python to create a DAT table.",
+              "Script SOP - use Python to create a SOP using points, curves, meshes etc.",
+              "Script TOP - use Python to create a TOP image."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "See OP Snippets for examples of all these."
+          }
+        ]
+      },
+      {
+        "title": "Extensions[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Extensions are Python classes that allow you to build data and functionality into your custom components. There is a lot to extensions and we will only brush the surface in the tutorial below. For a more in-depth look at Extensions, look here. This simple technique for adding Python attributes and functions is incredibly powerful for giving custom components extended Python functionality."
+          },
+          {
+            "type": "subsection",
+            "title": "Creating An Extension[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "To create a default extension, follow these steps:"
+          },
+          {
+            "type": "ordered-list",
+            "items": [
+              "Create a new Container COMP",
+              "Use the RMB Menu on the new component to select 'Customize Component...'",
+              "Open the 'Extension Code' section",
+              "Enter the name TutorialExt and press 'Add'",
+              "Press 'Edit' to see the contents"
+            ]
+          },
+          {
+            "type": "code",
+            "text": "TutorialExt",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "There's a lot going on in there that we aren't going to get into here, but to get an idea of what extensions are for, just note these lines of code:"
+          },
+          {
+            "type": "code",
+            "text": "# attributes:\n\t\tself.a = 0 # attribute\n\t\tself.B = 1 # promoted attribute",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "Accessing An Extension From Inside a Component[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "To see the extension in action, go inside the container COMP. The first thing you'll notice is that there is a DAT in there called TutorialExt. This is where the actual extension text is located, and you can edit it through the Component Editor, as shown above, or directly by changing the DAT here."
+          },
+          {
+            "type": "paragraph",
+            "text": "For this example, create a Text TOP here in the container. Change the Text TOP's 'Text' parameter to expression mode (click the blue square) and enter the following expression:"
+          },
+          {
+            "type": "code",
+            "text": "ext.TutorialExt.a",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "This uses the ext object to search upward for TutorialExt and return it's a attribute. Extensions can be accessed from anywhere inside their component using the ext object. You can change this expression to ext.TutorialExt.B to see that value as well. You can use both extension attributes and extension functions in this way."
+          },
+          {
+            "type": "code",
+            "text": "ext",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "TutorialExt",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "a",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "ext",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "ext.TutorialExt.B",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "Accessing An Extension From Outside a Component[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "Promoted members of Extensions can also be accessed from outside their components. Extension members are \"promoted\" when they start with a capital letter. This applies to both attributes and functions."
+          },
+          {
+            "type": "paragraph",
+            "text": "To see this in action, navigate upward out of the component by pressing u keyboard shortcut. Create another Text TOP here, and again enter an expression into its 'Text' parameter. This time, the expression is: op('container1').B. As you can see, the extension attribute acts as a member of the container COMP itself. If you try the expression op('container1').a you'll get an error. This is because only capitalized attributes and functions of an extension are promoted to this level."
+          },
+          {
+            "type": "code",
+            "text": "op('container1').B",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "op('container1').a",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "DATs as Modules[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "All DATs with Python code in them can be used as modules. Importing these modules is a little different than in most Python however, because they exist in TouchDesigner networks instead of in files. For the following examples, work inside /project1."
+          },
+          {
+            "type": "code",
+            "text": "/project1",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Place a Text DAT and rename it to utils. Enter the following function:"
+          },
+          {
+            "type": "code",
+            "text": "def my_adder(x,y):\n\treturn 10*x+y",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Add another text DAT and rename it to test. In this DAT enter the following:"
+          },
+          {
+            "type": "code",
+            "text": "import utils\na = utils.my_adder(1,3)\nprint(a)",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Open a textport, then run the test module by right-clicking on its node and selecting 'Run Script'. Note: if your node viewer is active on test you will have to right-click on its name bar."
+          },
+          {
+            "type": "paragraph",
+            "text": "You will see the resulting 13 in the textport. The my_utils DAT has been treated as a module, using the import statement."
+          },
+          {
+            "type": "code",
+            "text": "13",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "my_utils",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "Component Modules[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "To create Component Modules that are accessible anywhere inside a component, you must place them in a specific child of that component, namely local/modules. You can create this path if it doesn't already exist by creating a Base COMP called local with another Base COMP called modules inside it."
+          },
+          {
+            "type": "code",
+            "text": "local/modules",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "The import statement in TouchDesigner[edit]",
+            "level": 3
+          },
+          {
+            "type": "code",
+            "text": "import",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "TouchDesigner uses a special version of the import statement which looks for modules in the following order:"
+          },
+          {
+            "type": "code",
+            "text": "import",
+            "language": "python"
+          },
+          {
+            "type": "ordered-list",
+            "items": [
+              "The current component",
+              "The current component's Component Modules",
+              "The Component Modules of each parent until it reaches the root component",
+              "The component modules of /sys component (internal TouchDesigner modules)",
+              "The regular Python disk search"
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Note:  When you attempt to import an external module, it will first look for DATs of that name in the same folder , so be sure to avoid name conflicts keeping the above search order in mind."
+          },
+          {
+            "type": "subsection",
+            "title": "Module On Demand, the mod object[edit]",
+            "level": 3
+          },
+          {
+            "type": "code",
+            "text": "mod",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "The import statement, though useful contains two disadvantages:"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Module names must be single words, so relative DAT paths cannot be used.",
+              "They are unsuitable for use in a parameter expression."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "To avoid this, use the  Module On Demand or mod object."
+          },
+          {
+            "type": "code",
+            "text": "mod",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "In the DAT test, replace the contents with the following code:"
+          },
+          {
+            "type": "code",
+            "text": "a = mod.utils.my_adder(1,3)\nprint(a)",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Notice how no import statement is needed, making this evaluation suitable for one-line parameter expressions."
+          },
+          {
+            "type": "paragraph",
+            "text": "String paths, including relative paths can also be used in the mod object. Simply pass in the string as a parameter to the mod object:"
+          },
+          {
+            "type": "code",
+            "text": "mod",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "a = mod('utils').my_adder(1,3)\nprint(a)",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Both absolute and relative paths may be used:"
+          },
+          {
+            "type": "code",
+            "text": "a = mod('/project1/utils').my_adder(1,3)\nprint(a)",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "All of the above will result in the same output."
+          },
+          {
+            "type": "paragraph",
+            "text": "Note: mod uses the same search order described above for import."
+          },
+          {
+            "type": "code",
+            "text": "mod",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "import",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "The module member[edit]",
+            "level": 3
+          },
+          {
+            "type": "code",
+            "text": "module",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "You can also access a DAT as a module via its module member. Using this method, the test script would be:"
+          },
+          {
+            "type": "code",
+            "text": "module",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "a = op('/project1/utils').module.my_adder(1,3)\nprint(a)",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "This method of access is useful if you know exactly where your module is located and want to avoid any of TouchDesigner's automated searching."
+          },
+          {
+            "type": "subsection",
+            "title": "Automatic Recompilation of Modules[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "If you access a TouchDesigner object such as a CHOP channel or parameter in the root code of a module, as opposed to accessing it in a function or class, the module will recompile automatically whenever that TD object changes. This can cause slowdowns and unexpected results, so it is a best practice to keep such references in functions. Furthermore, there are some edge cases where the module will not recompile automatically causing further confusion. The following illustrates the best practice:"
+          },
+          {
+            "type": "code",
+            "text": "# Don't do it like this. The module will recompile every time value0 changes\nvalue = op('constant1').par.value0\n\n# Do it like this:\ndef value0():\n\treturn op('constant1').par.value0",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "A text string that contains data (string, float, list, boolean, etc.) and operators (+ * < etc) that are evaluated by the node's language (python or Tscript) and returns a string, float list or boolean, etc. Expressions are used in parameters, DATs and in scripts."
+          },
+          {
+            "type": "paragraph",
+            "text": "An Operator Family that creates, composites and modifies images, and reads/writes images and movies to/from files and the network. TOPs run on the graphics card's GPU."
+          },
+          {
+            "type": "paragraph",
+            "text": "Absolute Time starts counting from 0 when the TouchDesigner process starts, and is always increasing. It will pause if the Power 0/1 button at the top of the UI is Off."
+          },
+          {
+            "type": "paragraph",
+            "text": "An Operator Family that manipulates text strings: multi-line text or tables. Multi-line text is often a python Script or GLSL Shader, but can be any multi-line text. Tables are rows and columns of cells, each containing a text string."
+          },
+          {
+            "type": "paragraph",
+            "text": "The location of an operator within the TouchDesigner environment, for example, /geo1/circle1, a node called circle1 in a component called geo1. The path / is called Root. This path is displayed at the top of every Pane, showing which Component's network you are currently in. To refer instead to a filesystem folder, directory, disk file or http: address, see Folder."
+          },
+          {
+            "type": "code",
+            "text": "/geo1/circle1",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "circle1",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "geo1",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "/",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "http:",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "A Parent Shortcut is a parameter on a component that contains a name that you can use anywhere inside the component to refer to that component using the syntax parent.Name, for example parent.Effect.width to obtain panel width."
+          },
+          {
+            "type": "code",
+            "text": "parent.Name",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "parent.Effect.width",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "A name for a component that is accessible from any node in a project, which can be declared in a component's Global Operator Shortcut parameter."
+          },
+          {
+            "type": "paragraph",
+            "text": "An Operator Family which operate on Channels (a sequence of numbers (Samples)) which are used for animation, audio, mathematics, simulation, logic, UI construction, and data streamed from/to devices and protocols."
+          },
+          {
+            "type": "paragraph",
+            "text": "A Link. The grey dashed lines between nodes is a Reference or Link that indicates one operator is getting data from another operator from any Operator Family."
+          },
+          {
+            "type": "paragraph",
+            "text": "The grey dashed lines between nodes is a Reference (or Link). A Reference is (1) a Parameter Reference, a parameter in an OP that is a name or path to another operator, (2) a Node Reference, an expression in a parameter or DAT script that contains the name or path of another operator, (3) a DAT Cell Reference or (4) a CHOP Channel Reference."
+          },
+          {
+            "type": "paragraph",
+            "text": "A Link or Reference is a dashed line between nodes that represent other data flowing between nodes. Examples are CHOP Exports, node Paths in parameters, and expressions in parameters referencing CHOP channels, DAT tables and other nodes. In contrast is a Wire that connects nodes in the same Operator Family."
+          },
+          {
+            "type": "paragraph",
+            "text": "The dialog box in which commands and scripts can typed in manually. Output to the textport includes script errors and messages from print() and debug() calls in python code. You can also edit DATs in the textport."
+          },
+          {
+            "type": "code",
+            "text": "print()",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "debug()",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "A set of commands located in a Text DAT that are triggered to run under certain conditions. There are two scripting languages in TouchDesigner: Python and the original Tscript. Scripts and single-line commands can also be run in the Textport."
+          },
+          {
+            "type": "paragraph",
+            "text": "Any component can be extended with its own Python classes which contain python functions and data."
+          },
+          {
+            "type": "paragraph",
+            "text": "Any of the procedural data operators. OPs do all the work in TouchDesigner. They \"cook\" and output data to other OPs, which ultimately result in new images, data and audio being generated. See Node."
+          },
+          {
+            "type": "paragraph",
+            "text": "A Operator Family that reads, creates and modifies 3D points, polygons, lines, particles, surfaces, spheres and meatballs. Particles and point clouds are now done primarily on the GPU using TOPs."
+          },
+          {
+            "type": "paragraph",
+            "text": "An Operator Family that contains its own Network. There are sixteen 3D Object Component and ten 2D Panel Component types. See also Network Path."
+          },
+          {
+            "type": "paragraph",
+            "text": "An Operator Family that contains its own Network. There are sixteen 3D Object Component and ten 2D Panel Component types. See also Network Path."
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Python",
+              "Tutorials",
+              "TouchDesigner Tips",
+              "TDPages"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Navigation menu",
+        "level": 2,
+        "content": [
+          {
+            "type": "subsection",
+            "title": "Personal tools",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Log in"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Namespaces",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Page",
+              "Discussion",
+              "Experimental"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Views",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Read",
+              "View source",
+              "View history"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Search",
+            "level": 3
+          },
+          {
+            "type": "subsection",
+            "title": "TouchDesigner",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Main Page",
+              "Categories",
+              "Learn TouchDesigner",
+              "Tutorials",
+              "Interoperability",
+              "Glossary",
+              "Operators",
+              "Python",
+              "Python Class Reference",
+              "Palette",
+              "FAQ",
+              "Recent Doc Edits",
+              "Release Notes"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Downloads",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "TouchDesigner",
+              "Shared Examples"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Tools",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "What links here",
+              "Related changes",
+              "Special pages",
+              "Printable version",
+              "Permanent link",
+              "Page information",
+              "Page values"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "This page was last edited on 20 December 2022, at 22:04."
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Privacy policy",
+              "About Derivative",
+              "Disclaimers"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              ""
+            ]
+          }
+        ]
+      }
+    ],
+    "tableOfContents": [
+      {
+        "number": "1",
+        "text": "Contents",
+        "href": "#Contents"
+      },
+      {
+        "number": "2",
+        "text": "Writing a Simple Python Expression[edit]",
+        "href": "#Writing_a_Simple_Python_Expression[edit]"
+      },
+      {
+        "number": "3",
+        "text": "Accessing Operators in Expressions: me, op, and parent[edit]",
+        "href": "#Accessing_Operators_in_Expressions:_me,_op,_and_parent[edit]"
+      },
+      {
+        "number": "4",
+        "text": "Accessing Parameters in Expressions: par[edit]",
+        "href": "#Accessing_Parameters_in_Expressions:_par[edit]"
+      },
+      {
+        "number": "5",
+        "text": "Accessing CHOP channels[edit]",
+        "href": "#Accessing_CHOP_channels[edit]"
+      },
+      {
+        "number": "6",
+        "text": "More Complex Expressions, Errors, and eval[edit]",
+        "href": "#More_Complex_Expressions,_Errors,_and_eval[edit]"
+      },
+      {
+        "number": "7",
+        "text": "Working With TouchDesigner Objects in the Textport[edit]",
+        "href": "#Working_With_TouchDesigner_Objects_in_the_Textport[edit]"
+      },
+      {
+        "number": "8",
+        "text": "Callbacks[edit]",
+        "href": "#Callbacks[edit]"
+      },
+      {
+        "number": "9",
+        "text": "Script OPs[edit]",
+        "href": "#Script_OPs[edit]"
+      },
+      {
+        "number": "10",
+        "text": "Extensions[edit]",
+        "href": "#Extensions[edit]"
+      },
+      {
+        "number": "11",
+        "text": "DATs as Modules[edit]",
+        "href": "#DATs_as_Modules[edit]"
+      },
+      {
+        "number": "12",
+        "text": "Navigation menu",
+        "href": "#Navigation_menu"
+      }
+    ],
+    "relatedLinks": [
+      {
+        "text": "Python in TouchDesigner",
+        "href": "./Python.htm"
+      },
+      {
+        "text": "parameter expressions",
+        "href": "./Parameter_Expression.htm"
+      },
+      {
+        "text": "Python Tips",
+        "href": "./Python_Tips.htm"
+      },
+      {
+        "text": "Text TOP",
+        "href": "./Text_TOP.htm"
+      },
+      {
+        "text": "OP Create Dialog",
+        "href": "./OP_Create_Dialog.htm"
+      },
+      {
+        "text": "Parameter Dialog",
+        "href": "./Parameter_Dialog.htm"
+      },
+      {
+        "text": "absolute time",
+        "href": "./AbsTime_Class.htm"
+      },
+      {
+        "text": "Rectangle TOP",
+        "href": "./Rectangle_TOP.htm"
+      },
+      {
+        "text": "path",
+        "href": "./Network_Path.htm"
+      },
+      {
+        "text": "root",
+        "href": "./Root.htm"
+      }
+    ],
+    "images": [
+      {
+        "src": "./images/d/d5/Python_HelloWorld.png",
+        "alt": "Python HelloWorld.png",
+        "caption": "Python HelloWorld.png"
+      },
+      {
+        "src": "./images/2/27/Python_Rectangle.png",
+        "alt": "Python Rectangle.png",
+        "caption": "Python Rectangle.png"
+      },
+      {
+        "src": "./images/e/e9/Python_Pars.png",
+        "alt": "Python Pars.png",
+        "caption": "Python Pars.png"
+      },
+      {
+        "src": "./images/5/59/Python_Eval.png",
+        "alt": "Python Eval.png",
+        "caption": "Python Eval.png"
+      },
+      {
+        "src": "./images/5/5e/Python_textport.png",
+        "alt": "Python textport.png",
+        "caption": "Python textport.png"
+      },
+      {
+        "src": "./resources/assets/poweredby_mediawiki_88x31.png",
+        "alt": "Powered by MediaWiki",
+        "caption": "Powered by MediaWiki"
+      }
+    ]
+  },
+  "keywords": [
+    "introduction",
+    "to",
+    "python",
+    "tutorial",
+    "this",
+    "general",
+    "using",
+    "touchdesigner.",
+    "doesn't",
+    "require",
+    "previous"
+  ],
+  "tags": [
+    "Tutorial",
+    "TouchDesigner",
+    "Introduction to Python Tutorial"
+  ],
+  "searchWeight": 2,
+  "lastUpdated": "2025-08-13T01:17:18.884Z",
+  "sourceFile": "C:\\Program Files\\Derivative\\TouchDesigner\\Samples\\Learn\\OfflineHelp\\https.docs.derivative.ca\\Introduction_to_Python_Tutorial.htm",
+  "isValid": true,
+  "validationErrors": []
+}

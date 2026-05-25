@@ -1,0 +1,25 @@
+{
+  "id": "projection_mapping",
+  "name": "Projection Mapping",
+  "description": "Takes a source visual through corner-pin keystone correction and edge feathering, ready to send to a projector window.",
+  "tags": ["projection", "mapping", "output", "installation"],
+  "difficulty": "advanced",
+  "td_version_min": "2022",
+  "nodes": [
+    { "name": "source", "type": "nullTOP", "comment": "Wire your visual into this node" },
+    { "name": "cornerpin", "type": "cornerpinTOP", "comment": "Keystone / corner-pin warp" },
+    {
+      "name": "feather",
+      "type": "levelTOP",
+      "comment": "Edge-blend brightness ramp (placeholder for edge blending)"
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "Send to a Window COMP for the projector" }
+  ],
+  "connections": [
+    { "from": "source", "to": "cornerpin" },
+    { "from": "cornerpin", "to": "feather" },
+    { "from": "feather", "to": "out1" }
+  ],
+  "parameters": [],
+  "preview_description": "A warped, edge-feathered version of the source ready to align onto a physical surface."
+}

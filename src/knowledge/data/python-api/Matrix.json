@@ -1,0 +1,556 @@
+{
+  "className": "Matrix",
+  "displayName": "Matrix Class",
+  "description": "The matrix class holds a single 4x4 matrix for use in transformations. The matrix's data layout is in column-major format, which is to say that the matrix is multiplied from the left of vectors and positions. The translation values are stored in the last column of the matrix.\nA matrix is created with this line, and will always be initialized to the identity matrix.",
+  "category": "General",
+  "fileName": "Matrix_Class.htm",
+  "members": [],
+  "methods": [
+    {
+      "name": "Matrix",
+      "parameters": [],
+      "returns": "tdu.Matrix :",
+      "signature": "Matrix()"
+    },
+    {
+      "name": "Matrix",
+      "parameters": [
+        {
+          "name": "[1",
+          "type": "Any"
+        },
+        {
+          "name": "2",
+          "type": "Any"
+        },
+        {
+          "name": "3",
+          "type": "Any"
+        },
+        {
+          "name": "4]",
+          "type": "Any"
+        },
+        {
+          "name": "[5",
+          "type": "Any"
+        },
+        {
+          "name": "6",
+          "type": "Any"
+        },
+        {
+          "name": "7",
+          "type": "Any"
+        },
+        {
+          "name": "8]",
+          "type": "Any"
+        },
+        {
+          "name": "[9",
+          "type": "Any"
+        },
+        {
+          "name": "10",
+          "type": "Any"
+        },
+        {
+          "name": "11",
+          "type": "Any"
+        },
+        {
+          "name": "12]",
+          "type": "Any"
+        },
+        {
+          "name": "[13",
+          "type": "Any"
+        },
+        {
+          "name": "14",
+          "type": "Any"
+        },
+        {
+          "name": "15",
+          "type": "Any"
+        },
+        {
+          "name": "16]",
+          "type": "Any"
+        }
+      ],
+      "returns": "tdu.Matrix :",
+      "signature": "Matrix([1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16])"
+    },
+    {
+      "name": "Matrix",
+      "parameters": [
+        {
+          "name": "[1",
+          "type": "Any"
+        },
+        {
+          "name": "2",
+          "type": "Any"
+        },
+        {
+          "name": "3",
+          "type": "Any"
+        },
+        {
+          "name": "4",
+          "type": "Any"
+        },
+        {
+          "name": "5",
+          "type": "Any"
+        },
+        {
+          "name": "6",
+          "type": "Any"
+        },
+        {
+          "name": "7",
+          "type": "Any"
+        },
+        {
+          "name": "8",
+          "type": "Any"
+        },
+        {
+          "name": "9",
+          "type": "Any"
+        },
+        {
+          "name": "10",
+          "type": "Any"
+        },
+        {
+          "name": "11",
+          "type": "Any"
+        },
+        {
+          "name": "12",
+          "type": "Any"
+        },
+        {
+          "name": "13",
+          "type": "Any"
+        },
+        {
+          "name": "14",
+          "type": "Any"
+        },
+        {
+          "name": "15",
+          "type": "Any"
+        },
+        {
+          "name": "16]",
+          "type": "Any"
+        }
+      ],
+      "returns": "tdu.Matrix :",
+      "signature": "Matrix([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])"
+    },
+    {
+      "name": "Matrix",
+      "parameters": [
+        {
+          "name": "[0",
+          "type": "Any"
+        },
+        {
+          "name": "0",
+          "type": "Any"
+        },
+        {
+          "name": "0",
+          "type": "Any"
+        },
+        {
+          "name": "1]",
+          "type": "Any"
+        }
+      ],
+      "returns": "tdu.Matrix :",
+      "signature": "Matrix([0, 0, 0, 1])"
+    },
+    {
+      "name": "transpose",
+      "parameters": [],
+      "returns": "None :",
+      "signature": "transpose()"
+    },
+    {
+      "name": "getTranspose",
+      "parameters": [],
+      "returns": "None :",
+      "signature": "getTranspose()"
+    },
+    {
+      "name": "invert",
+      "parameters": [],
+      "returns": "None :",
+      "signature": "invert()"
+    },
+    {
+      "name": "getInverse",
+      "parameters": [],
+      "returns": "tdu.Matrix :",
+      "signature": "getInverse()"
+    },
+    {
+      "name": "determinant",
+      "parameters": [],
+      "returns": "float :",
+      "signature": "determinant()"
+    },
+    {
+      "name": "mapUnitSquareToQuad",
+      "parameters": [
+        {
+          "name": "blX",
+          "type": "Any"
+        },
+        {
+          "name": "blY",
+          "type": "Any"
+        },
+        {
+          "name": "brX",
+          "type": "Any"
+        },
+        {
+          "name": "brY",
+          "type": "Any"
+        },
+        {
+          "name": "tlX",
+          "type": "Any"
+        },
+        {
+          "name": "tlY",
+          "type": "Any"
+        },
+        {
+          "name": "trX",
+          "type": "Any"
+        },
+        {
+          "name": "trY",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "mapUnitSquareToQuad(blX, blY, brX, brY, tlX, tlY, trX, trY)"
+    },
+    {
+      "name": "mapQuadToUnitSquare",
+      "parameters": [
+        {
+          "name": "blX",
+          "type": "Any"
+        },
+        {
+          "name": "blY",
+          "type": "Any"
+        },
+        {
+          "name": "brX",
+          "type": "Any"
+        },
+        {
+          "name": "brY",
+          "type": "Any"
+        },
+        {
+          "name": "tlX",
+          "type": "Any"
+        },
+        {
+          "name": "tlY",
+          "type": "Any"
+        },
+        {
+          "name": "trX",
+          "type": "Any"
+        },
+        {
+          "name": "trY",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "mapQuadToUnitSquare(blX, blY, brX, brY, tlX, tlY, trX, trY)"
+    },
+    {
+      "name": "fillTable",
+      "parameters": [
+        {
+          "name": "tableDAT",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "fillTable(tableDAT)"
+    },
+    {
+      "name": "numpyArray",
+      "parameters": [],
+      "returns": "numpy.array :",
+      "signature": "numpyArray()"
+    },
+    {
+      "name": "identity",
+      "parameters": [],
+      "returns": "None :",
+      "signature": "identity()"
+    },
+    {
+      "name": "copy",
+      "parameters": [],
+      "returns": "tdu.Matrix :",
+      "signature": "copy()"
+    },
+    {
+      "name": "translate",
+      "parameters": [
+        {
+          "name": "tx",
+          "type": "Any"
+        },
+        {
+          "name": "ty",
+          "type": "Any"
+        },
+        {
+          "name": "tz",
+          "type": "Any"
+        },
+        {
+          "name": "fromRight=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "translate(tx, ty, tz, fromRight=False)"
+    },
+    {
+      "name": "rotate",
+      "parameters": [
+        {
+          "name": "rx",
+          "type": "Any"
+        },
+        {
+          "name": "ry",
+          "type": "Any"
+        },
+        {
+          "name": "rz",
+          "type": "Any"
+        },
+        {
+          "name": "fromRight=False",
+          "type": "Any"
+        },
+        {
+          "name": "pivot=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "rotate(rx, ry, rz, fromRight=False, pivot=None)"
+    },
+    {
+      "name": "rotateOnAxis",
+      "parameters": [
+        {
+          "name": "rotationAxis",
+          "type": "Any"
+        },
+        {
+          "name": "angle",
+          "type": "Any"
+        },
+        {
+          "name": "fromRight=False",
+          "type": "Any"
+        },
+        {
+          "name": "pivot=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "rotateOnAxis(rotationAxis, angle, fromRight=False, pivot=None)"
+    },
+    {
+      "name": "scale",
+      "parameters": [
+        {
+          "name": "sx",
+          "type": "Any"
+        },
+        {
+          "name": "sy",
+          "type": "Any"
+        },
+        {
+          "name": "sz",
+          "type": "Any"
+        },
+        {
+          "name": "fromRight=False",
+          "type": "Any"
+        },
+        {
+          "name": "pivot=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "scale(sx, sy, sz, fromRight=False, pivot=None)"
+    },
+    {
+      "name": "lookat",
+      "parameters": [
+        {
+          "name": "eyePos",
+          "type": "Any"
+        },
+        {
+          "name": "target",
+          "type": "Any"
+        },
+        {
+          "name": "up",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "lookat(eyePos, target, up)"
+    },
+    {
+      "name": "decompose",
+      "parameters": [],
+      "returns": "Tuple(Tuple, Tuple, Tuple) :",
+      "signature": "decompose()"
+    },
+    {
+      "name": "projectionFrustum",
+      "parameters": [
+        {
+          "name": "left",
+          "type": "Any"
+        },
+        {
+          "name": "right",
+          "type": "Any"
+        },
+        {
+          "name": "bottom",
+          "type": "Any"
+        },
+        {
+          "name": "top",
+          "type": "Any"
+        },
+        {
+          "name": "near",
+          "type": "Any"
+        },
+        {
+          "name": "far",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "projectionFrustum(left, right, bottom, top, near, far)"
+    },
+    {
+      "name": "projectionFovX",
+      "parameters": [
+        {
+          "name": "fovX",
+          "type": "Any"
+        },
+        {
+          "name": "aspectX",
+          "type": "Any"
+        },
+        {
+          "name": "aspectY",
+          "type": "Any"
+        },
+        {
+          "name": "near",
+          "type": "Any"
+        },
+        {
+          "name": "far",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "projectionFovX(fovX, aspectX, aspectY, near, far)"
+    },
+    {
+      "name": "projectionStereo",
+      "parameters": [
+        {
+          "name": "ipd",
+          "type": "Any"
+        },
+        {
+          "name": "convergeZ",
+          "type": "Any"
+        },
+        {
+          "name": "fovX",
+          "type": "Any"
+        },
+        {
+          "name": "aspectX",
+          "type": "Any"
+        },
+        {
+          "name": "aspectY",
+          "type": "Any"
+        },
+        {
+          "name": "near",
+          "type": "Any"
+        },
+        {
+          "name": "far",
+          "type": "Any"
+        },
+        {
+          "name": "rightEye = false",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "projectionStereo(ipd, convergeZ, fovX, aspectX, aspectY, near, far, rightEye = false)"
+    },
+    {
+      "name": "square",
+      "parameters": [
+        {
+          "name": "0",
+          "type": "Any"
+        },
+        {
+          "name": "0",
+          "type": "Any"
+        }
+      ],
+      "returns": "&gt; (1,1) space to a space defined by an arbitrary quadrilateral (blX, blY) -&gt; (trX, trY). The 4 corners of the quadrilateral are given ('bl' means bottom left, 'tr' means top right etc.).  ",
+      "signature": "square(0,0)"
+    }
+  ],
+  "enhanced": true
+}

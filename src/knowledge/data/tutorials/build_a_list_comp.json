@@ -1,0 +1,268 @@
+{
+  "id": "build_a_list_comp",
+  "name": "Build a List COMP",
+  "displayName": "Build a List COMP",
+  "category": "TUTORIAL",
+  "subcategory": "COMP Tutorial",
+  "type": "tutorial",
+  "description": "This document explains the finer points of building a List COMP. It is assumed the reader already has an understanding of the Python language. The official Python documentation can be found at this address.",
+  "summary": "This document explains the finer points of building a List COMP. It is assumed the reader already has an understanding of the Python language. The official Python documentation can be found at this address. The List COMP runs its init callbacks when the Reset parameter is pulsed or on load. These init functions are in place to let the user assign Table, Row, Col or Cell specific attributes which determine the layout and look of the List. The four init functions are called in this order: Once initialized the following callback functions are run on specific events:",
+  "content": {
+    "sections": [
+      {
+        "title": "Overview",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "This document explains the finer points of building a List COMP. It is assumed the reader already has an understanding of the Python language. The official Python documentation can be found at this address."
+          }
+        ]
+      },
+      {
+        "title": "Callbacks Stages",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "The List COMP runs its init callbacks when the Reset parameter is pulsed or on load. These init functions are in place to let the user assign Table, Row, Col or Cell specific attributes which determine the layout and look of the List. The four init functions are called in this order:"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "onInitTable(comp, attribs)",
+              "onInitCol(comp, col, attribs)",
+              "onInitRow(comp, row, attribs)",
+              "onInitCell(comp, row, col, attribs)"
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Once initialized the following callback functions are run on specific events:"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "onRollover(comp, row, col, coords, prevRow, prevCol, prevCoords) is called when a mouse rolls over a cell",
+              "onSelect(comp, startRow, startCol, startCoords, endRow, endCol, endCoords, start, end) is called when a mouse is clicked while over a cell",
+              "onRadio(comp, row, col, prevRow, prevCol)",
+              "onFocus(comp, row, col, prevRow, prevCol)",
+              "onEdit(comp, row, col, val)"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Building a simple List COMP with a Folder DAT as content source",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Lets assume you want to display the content of a Folder DAT with the ability to highlight rows you are rolling over. Lets also assume that clicking on a row will change the rows layout as well and run a custom script which takes the row and column as an argument. As a requirement, the first row should act as a header row with a different layout then the rest. For this example it is assumed that the Folder DAT is 5 columns wide and located parallel to the List COMP."
+          },
+          {
+            "type": "paragraph",
+            "text": "When dealing with the List COMP you have to be aware of the fact that its flexibility comes with a responsibility of the creator to manage states as well. This means that while List COMP is running callbacks as mentioned earlier, you will have to make sure that you save the Lists current state in appropriate ways. For example when a row changes its layout on rollover, the callbacks will have to make sure to change the layout back to its default look once the mouse leaves the row. Its proven very useful to save the required states in Python lists or dictionaries as Storage"
+          },
+          {
+            "type": "paragraph",
+            "text": "In the List COMP parameters on the List page, change the Rows and Columns parameter to reflect the Folder DAT size and enable the Lock First Row parameter. On the Layout parameter page, change the Width parameter to 900."
+          },
+          {
+            "type": "paragraph",
+            "text": "Enter the List COMP and start editing the callbacks Text DAT. For the initRow function enter this to specify each rows bgColor and hit the List COMP Reset parameter to see the changes:"
+          },
+          {
+            "type": "code",
+            "text": "def onInitRow(comp, row, attribs):\n\t# if this is the first row make the background slightly red, otherwise keep it grey\n\tif row == 0:\n\t\tbgColor = [0.4,0.2,0.2,1]\n\telse:\n\t\tbgColor = [0.2,0.2,0.2,1]\n\n\t# assign the bgColor to the rows attributes\n\tattribs.bgColor = bgColor\n\n\treturn",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "Now in the initCell function we will specify each cells content and hit the List COMP Reset parameter to see the changes:"
+          },
+          {
+            "type": "code",
+            "text": "def onInitCell(comp, row, col, attribs):\n\t# grab the cell content from the Folder DAT\n\tcellContent = op('../folder1')[row,col].val\n\n\t# assign the text from the Folder DAT to the cell attribute\n\tattribs.text = cellContent\n\n\treturn",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Right away we see the need to appropriately size the column width which we can do in the initCol function. Additionally we'll set the first column to be able to stretch, so that when we increase the List COMP width, the first column will adjust to that size while the rest of the columns stay the same. The initial width given to the stretchy column serves as it's minimal width. After editing hit the List COMP Reset parameter to see the changes."
+          },
+          {
+            "type": "code",
+            "text": "def onInitCol(comp, col, attribs):\n\t# specify each columns width in a list\n\tcolWidth = [150,150,250,90,90]\n\n\t# specify which column is stretchable in a list\n\tstretch = [1,0,0,0,0]\n\n\t# assign the width and stretch to the column attributes\n\tattribs.colWidth = colWidth[col]\n\tattribs.colStretch = stretch[col]\n\n\treturn",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "We can add further formatting to the List COMP in a general way via the initTable function and hit the List COMP Reset parameter to see the changes:"
+          },
+          {
+            "type": "code",
+            "text": "def onInitTable(comp, attribs):\n\t# set every cells justify to be center left\n\tattribs.textJustify = JustifyType.CENTERLEFT\n\n\t# set every cells bottom border to a slight blue\n\tattribs.bottomBorderOutColor = [0.2,0.2,0.6,1]\n\n\treturn",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "To change the look of a row when rolling over, edit the rollover callback function. The rollover callback function is called on and while your mouse is moving over a cell. Therefor when changing the layout of a row we should in this case compare the previous with the current rollover row and only change the bgColor when they are different. When rolling out of or into a List COMP the arguments for row, col, prevrow and prevcol will be -1 respectively."
+          },
+          {
+            "type": "code",
+            "text": "def onRollover(comp, row, col, coords, prevRow, prevCol, prevCoords):\n\t# make sure to only change the layout if row and prevRow are different\n\tif row != prevRow:\n\n\t\t# we don't want to change the header row so test for row being larger then 0\n\t\t# this also takes care of when rolling out of the List where row would return -1\n\t\tif row > 0:\n\t\t\trowAttribs = comp.rowAttribs[row]\n\t\t\trowAttribs.bgColor = [0.2,0.4,0.2,1]\n\n\t\t# same as before, we check that prevRow is not the header row and\n\t\t# we are not entering the List from the outside\n\t\tif prevRow > 0:\n\t\t\trowAttribs = comp.rowAttribs[prevRow]\n\t\t\trowAttribs.bgColor = [0.2,0.2,0.2,1]\n\n\treturn",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "To achieve a momentary click layout change on the List COMP we can use the select callback in a similar way as we used the rollover callback. The select callback additionally receives a start and end argument with start being True on mouse down and end being True on mouse up. As your mouse can move around the List COMP while the mouse is down, you also receive start and end row/col information. As we have no information on which row was previously selected, we will have to save the selected row in storage:"
+          },
+          {
+            "type": "code",
+            "text": "def onSelect(comp, startRow, startCol, startCoords, endRow, endCol, endCoords, start, end):\n\t# execute this on mouse down\n\tif start and startRow > 0:\n\t\t# get the row attributes for the clicked on row\n\t\t# and change the bgColor\n\t\trowAttribs = comp.rowAttribs[startRow]\n\t\trowAttribs.bgColor = [0.2,0.6,0.4,1]\n\n\t\t# save the startRow in storage so we can revert the layout changes on mouse up\n\t\tcomp.store('prevSelect',startRow)\n\n\t\t# run a script and pass row and column as an argument\n\t\top('../myScript').run(startRow, startCol)\n\t\n\t# execute this on mouse up\n\telif end:\n\t\t# get the previous selected row from storage\n\t\tprevSelRow = comp.fetch('prevSelect',None)\n\n\t\t# if there is a previously selected row change the layout back to default\n\t\tif prevSelRow:\n\t\t\trowAttribs = comp.rowAttribs[prevSelRow]\n\n\t\t\t# if my mouse is still over the previously selected row, change it's layout to the rollover bg\n\t\t\t# else change it to the default look\n\t\t\tif startRow == endRow:\n\t\t\t\tbgColor = [0.2,0.4,0.2,1]\n\t\t\telse:\n\t\t\t\tbgColor = [0.2,0.2,0.2,1]\n\n\t\t\t# assign the color to the rows bgColor attribute\n\t\t\trowAttribs.bgColor = bgColor\n\n\t\t# remove the previously selected row from storage\n\t\tcomp.unstore('prevSelect')\n\n\treturn",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "Using a Python Dictionary as content for the List COMP",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "With the cell text content being assigned via the text attribute, we can also get data from structures like Lists or Dictionaries. For this example we will assume that our content dictionary has following structure:"
+          },
+          {
+            "type": "code",
+            "text": "myDict = {\n\t'header':[\n\t\t{'id':'name','label':'Name'},\n\t\t{'id':'extension','label':'Extension'},\n\t\t{'id':'type','label':'Type'},\n\t\t{'id':'size','label':'Size'}\n\t],\n\t'content':[\n\t\t{'name':'MyList.toe','extension':'toe','type':'TouchDesigner File','size':184666},\n\t\t{'name':'MyImage.jpg','extension':'jpg','type':'Image File','size':184326},\n\t\t{'name':'MyList1.toe','extension':'toe','type':'TouchDesigner File','size':184632},\n\t\t{'name':'MyList2.toe','extension':'toe','type':'TouchDesigner File','size':184536}\n\t]\n}",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "The header key holds the information for the first row while the content key holds all other rows text. In order to gain access to the dictionary from the List COMP we will store this dictionary as an Dependency Class object to the List COMP."
+          },
+          {
+            "type": "code",
+            "text": "myListCOMP = op('/project1/myListCOMP')\nmyListCOMP.store('contentDict',tdu.Dependency(myDict))",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "To display as many Rows as there are items in the stored Dictionary, we'll change the List COMPs Row parameter to:"
+          },
+          {
+            "type": "code",
+            "text": "len(me.fetch('contentDict',{'content':[]}))+1",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "Similarly for the Columns we will look at the size of the header dictionary:"
+          },
+          {
+            "type": "code",
+            "text": "len(me.fetch('contentDict',{'header':[]}))",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "The second argument to the fetch Method is the default which will be returned in case the stored item is not found."
+          },
+          {
+            "type": "paragraph",
+            "text": "For the cells to display the correct content, we will need to fetch the stored dictionary in the initCell callback function and depending on row and column fetch the right entry from the content dictionary:"
+          },
+          {
+            "type": "code",
+            "text": "def onInitCell(comp, row, col, attribs):\n\tcontentDict = comp.fetch('contentDict',None)\n\tif contentDict:\n\t\theader = contentDict['header'][col]\n\t\tif row == 0:\n\t\t\tattribs.text = header['Label']\n\t\telse:\n\t\t\tid = header['id']\n\t\t\trowContent = contentDict[row-1]\n\t\t\tattribs.text = rowContent[id]\n\n\treturn",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "As we are using a Dependency Class object, with every update we make to the dictionary, the change will also be shown in the List COMP"
+          },
+          {
+            "type": "code",
+            "text": "myListCOMP = op('/project1/myListCOMP')\ncontentDict = myListCOMP.fetch('contentDict',None)\nnewItem = {'name':'someFile.toe','extension':'toe','type':'TouchDesigner File','size':932753}\ncontentDict['content'].append(newItem)",
+            "language": "python"
+          }
+        ]
+      }
+    ],
+    "tableOfContents": [
+      {
+        "number": "1",
+        "text": "Overview",
+        "href": "#Overview"
+      },
+      {
+        "number": "2",
+        "text": "Callbacks Stages",
+        "href": "#Callbacks_Stages"
+      },
+      {
+        "number": "3",
+        "text": "Building a simple List COMP with a Folder DAT as content source",
+        "href": "#Building_a_simple_List_COMP_with_a_Folder_DAT_as_content_source"
+      },
+      {
+        "number": "4",
+        "text": "Using a Python Dictionary as content for the List COMP",
+        "href": "#Using_a_Python_Dictionary_as_content_for_the_List_COMP"
+      }
+    ],
+    "relatedLinks": [
+      {
+        "text": "List COMP",
+        "href": "List_COMP.htm"
+      },
+      {
+        "text": "Folder DAT",
+        "href": "Folder_DAT.htm"
+      },
+      {
+        "text": "Text DAT",
+        "href": "Text_DAT.htm"
+      },
+      {
+        "text": "Dependency Class",
+        "href": "Dependency_Class.htm"
+      },
+      {
+        "text": "List COMPs",
+        "href": "List_COMP.htm"
+      }
+    ],
+    "images": []
+  },
+  "keywords": [
+    "build",
+    "list",
+    "comp",
+    "overview",
+    "callbacks",
+    "stages",
+    "building",
+    "simple",
+    "with",
+    "folder",
+    "content",
+    "source",
+    "using",
+    "python",
+    "dictionary",
+    "parameter",
+    "dat",
+    "mat"
+  ],
+  "tags": [
+    "Tutorial",
+    "TouchDesigner",
+    "Build a List COMP"
+  ],
+  "searchWeight": 2,
+  "lastUpdated": "2025-08-08T03:32:33.652Z",
+  "sourceFile": "C:\\Program Files\\Derivative\\TouchDesigner\\Samples\\Learn\\OfflineHelp\\https.docs.derivative.ca\\Build_a_List_COMP.htm",
+  "isValid": true,
+  "validationErrors": []
+}

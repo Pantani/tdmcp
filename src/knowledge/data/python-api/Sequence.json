@@ -1,0 +1,48 @@
+{
+  "className": "Sequence",
+  "displayName": "Sequence Class",
+  "description": "An object describing and controlling a set of sequential parameters. Accessed via",
+  "category": "General",
+  "fileName": "Sequence_Class.htm",
+  "members": [
+    {
+      "name": "blockSize",
+      "id": "content",
+      "returnType": "int",
+      "readOnly": true,
+      "description": "blockSize member"
+    },
+    {
+      "name": "blockSize",
+      "id": "bodyContent",
+      "returnType": "int",
+      "readOnly": true,
+      "description": "blockSize member"
+    }
+  ],
+  "methods": [
+    {
+      "name": "destroyBlock",
+      "parameters": [
+        {
+          "name": "block",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "destroyBlock(block)"
+    },
+    {
+      "name": "insertBlock",
+      "parameters": [
+        {
+          "name": "block",
+          "type": "Any"
+        }
+      ],
+      "returns": "SequenceBlock :",
+      "signature": "insertBlock(block)"
+    }
+  ],
+  "enhanced": true
+}

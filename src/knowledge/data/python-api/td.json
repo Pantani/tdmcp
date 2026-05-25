@@ -1,0 +1,646 @@
+{
+  "className": "td",
+  "displayName": "td",
+  "description": "Core TouchDesigner module providing global functions and system access",
+  "category": "Core",
+  "url": "https://docs.derivative.ca/Td_Module",
+  "members": [
+    {
+      "name": "op",
+      "type": "function",
+      "description": "Access operators by path",
+      "readonly": false
+    },
+    {
+      "name": "me",
+      "type": "property",
+      "description": "Reference to current operator",
+      "readonly": false
+    },
+    {
+      "name": "parent",
+      "type": "property",
+      "description": "Reference to parent operator",
+      "readonly": false
+    },
+    {
+      "name": "absTime",
+      "type": "property",
+      "description": "Absolute time in seconds",
+      "readonly": false
+    },
+    {
+      "name": "project",
+      "type": "property",
+      "description": "Project settings and info",
+      "readonly": false
+    }
+  ],
+  "methods": [
+    {
+      "name": "debug",
+      "parameters": [
+        {
+          "name": "*args",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "debug(*args)"
+    },
+    {
+      "name": "op",
+      "parameters": [
+        {
+          "name": "pattern1",
+          "type": "Any"
+        },
+        {
+          "name": "pattern2...",
+          "type": "Any"
+        },
+        {
+          "name": "includeUtility=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "OP  or None ",
+      "signature": "op(pattern1, pattern2..., includeUtility=False)"
+    },
+    {
+      "name": "op",
+      "parameters": [
+        {
+          "name": "pattern1",
+          "type": "Any"
+        },
+        {
+          "name": "pattern2...",
+          "type": "Any"
+        },
+        {
+          "name": "includeUtility=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "OP  ",
+      "signature": "op(pattern1, pattern2..., includeUtility=False)"
+    },
+    {
+      "name": "ops",
+      "parameters": [
+        {
+          "name": "pattern1",
+          "type": "Any"
+        },
+        {
+          "name": "pattern2..",
+          "type": "Any"
+        },
+        {
+          "name": "includeUtility=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "List[ OP ] :",
+      "signature": "ops(pattern1, pattern2.., includeUtility=False)"
+    },
+    {
+      "name": "passive",
+      "parameters": [
+        {
+          "name": "OP",
+          "type": "Any"
+        }
+      ],
+      "returns": "OP  :",
+      "signature": "passive( OP )"
+    },
+    {
+      "name": "run",
+      "parameters": [
+        {
+          "name": "script",
+          "type": "Any"
+        },
+        {
+          "name": "arg1",
+          "type": "Any"
+        },
+        {
+          "name": "arg2...",
+          "type": "Any"
+        },
+        {
+          "name": "endFrame=False",
+          "type": "Any"
+        },
+        {
+          "name": "fromOP=None",
+          "type": "Any"
+        },
+        {
+          "name": "asParameter=False",
+          "type": "Any"
+        },
+        {
+          "name": "group=None",
+          "type": "Any"
+        },
+        {
+          "name": "delayFrames=0",
+          "type": "Any"
+        },
+        {
+          "name": "delayMilliSeconds=0",
+          "type": "Any"
+        },
+        {
+          "name": "delayRef=me",
+          "type": "Any"
+        }
+      ],
+      "returns": "Run :",
+      "signature": "run(script, arg1, arg2..., endFrame=False, fromOP=None, asParameter=False, group=None, delayFrames=0, delayMilliSeconds=0, delayRef=me)"
+    },
+    {
+      "name": "fetchStamp",
+      "parameters": [
+        {
+          "name": "key",
+          "type": "Any"
+        },
+        {
+          "name": "default",
+          "type": "Any"
+        }
+      ],
+      "returns": "value :",
+      "signature": "fetchStamp(key, default)"
+    },
+    {
+      "name": "var",
+      "parameters": [
+        {
+          "name": "varName",
+          "type": "Any"
+        }
+      ],
+      "returns": "str :",
+      "signature": "var(varName)"
+    },
+    {
+      "name": "varExists",
+      "parameters": [
+        {
+          "name": "varName",
+          "type": "Any"
+        }
+      ],
+      "returns": "bool :",
+      "signature": "varExists(varName)"
+    },
+    {
+      "name": "varOwner",
+      "parameters": [
+        {
+          "name": "varName",
+          "type": "Any"
+        }
+      ],
+      "returns": "OP | None :",
+      "signature": "varOwner(varName)"
+    },
+    {
+      "name": "isMainThread",
+      "parameters": [],
+      "returns": "bool :",
+      "signature": "isMainThread()"
+    },
+    {
+      "name": "clear",
+      "parameters": [],
+      "returns": "None :",
+      "signature": "clear()"
+    },
+    {
+      "name": "includeUtility",
+      "parameters": [
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "if True, allow  Utility nodes  to be returned. If False, Utility operators will be ignored.       b   =   op  (  'project1'  ) ",
+      "signature": "includeUtility(Optional)"
+    },
+    {
+      "name": "includeUtility",
+      "parameters": [
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "if True, allow  Utility nodes  to be returned. If False, Utility operators will be ignored.    ",
+      "signature": "includeUtility(Optional)"
+    },
+    {
+      "name": "includeUtility",
+      "parameters": [
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "if True, allow  Utility nodes  to be returned. If False, Utility operators will be ignored.   Note a version of this method that searches relative to an operator is also in the  OP Class .",
+      "signature": "includeUtility(Optional)"
+    },
+    {
+      "name": "Class",
+      "parameters": [
+        {
+          "name": "OP .par",
+          "type": "Any"
+        }
+      ],
+      "returns": "holds all the parameters for an  OP .",
+      "signature": "Class(  OP .par )"
+    },
+    {
+      "name": "Class",
+      "parameters": [
+        {
+          "name": "OP .par",
+          "type": "Any"
+        }
+      ],
+      "returns": "holds all the parameter groups for an  OP .",
+      "signature": "Class(  OP .par )"
+    },
+    {
+      "name": "Class",
+      "parameters": [
+        {
+          "name": "OP .seq",
+          "type": "Any"
+        }
+      ],
+      "returns": "holds all the sequences for an  OP .",
+      "signature": "Class(  OP .seq )"
+    },
+    {
+      "name": "Class",
+      "parameters": [
+        {
+          "name": "absTime",
+          "type": "Any"
+        }
+      ],
+      "returns": "information about  absolute time  ",
+      "signature": "Class(  absTime  )"
+    },
+    {
+      "name": "Class",
+      "parameters": [
+        {
+          "name": "app",
+          "type": "Any"
+        }
+      ],
+      "returns": "information about the TouchDesigner app, including version, installation folders, etc. ",
+      "signature": "Class( app )"
+    },
+    {
+      "name": "Class",
+      "parameters": [
+        {
+          "name": "project",
+          "type": "Any"
+        }
+      ],
+      "returns": "information about the current TouchDesigner session ",
+      "signature": "Class( project )"
+    },
+    {
+      "name": "Module",
+      "parameters": [
+        {
+          "name": "tdu",
+          "type": "Any"
+        }
+      ],
+      "returns": "generic utilities for TouchDesigner not relating directly to TD objects.",
+      "signature": "Module( tdu )"
+    },
+    {
+      "name": "Class",
+      "parameters": [
+        {
+          "name": "tdu.ArcBall",
+          "type": "Any"
+        }
+      ],
+      "returns": "encapsulates many aspects of 3D viewer interaction. ",
+      "signature": "Class( tdu.ArcBall )"
+    },
+    {
+      "name": "Class",
+      "parameters": [
+        {
+          "name": "tdu.Camera",
+          "type": "Any"
+        }
+      ],
+      "returns": "maintains a 3D position and orientation for a camera and provides multiple methods for manipulating the camera's position and direction. ",
+      "signature": "Class( tdu.Camera )"
+    },
+    {
+      "name": "Class",
+      "parameters": [
+        {
+          "name": "tdu.Color",
+          "type": "Any"
+        }
+      ],
+      "returns": "holds a 4 component color ",
+      "signature": "Class( tdu.Color )"
+    },
+    {
+      "name": "Class",
+      "parameters": [
+        {
+          "name": "tdu. Dependency",
+          "type": "Any"
+        }
+      ],
+      "returns": "used to create  Dependable  Python data. ",
+      "signature": "Class( tdu. Dependency  )"
+    },
+    {
+      "name": "Class",
+      "parameters": [
+        {
+          "name": "tdu.Matrix",
+          "type": "Any"
+        }
+      ],
+      "returns": "holds a single 4x4 matrix for use in transformations. See  ObjectCOMP Class  for transforms of 3D objects. ",
+      "signature": "Class( tdu.Matrix )"
+    },
+    {
+      "name": "Class",
+      "parameters": [
+        {
+          "name": "tdu.Position",
+          "type": "Any"
+        }
+      ],
+      "returns": "holds a 3 component position ",
+      "signature": "Class( tdu.Position )"
+    },
+    {
+      "name": "Class",
+      "parameters": [
+        {
+          "name": "tdu.Quaternion",
+          "type": "Any"
+        }
+      ],
+      "returns": "holds a quaternion object for 3D rotations ",
+      "signature": "Class( tdu.Quaternion )"
+    },
+    {
+      "name": "Class",
+      "parameters": [
+        {
+          "name": "tdu.Timecode",
+          "type": "Any"
+        }
+      ],
+      "returns": "holds a timecode value ",
+      "signature": "Class( tdu.Timecode )"
+    },
+    {
+      "name": "Class",
+      "parameters": [
+        {
+          "name": "tdu.Vector",
+          "type": "Any"
+        }
+      ],
+      "returns": "holds a 3 component vector        Licenses Class   ( licenses ) - information about installed  license  objects",
+      "signature": "Class( tdu.Vector )"
+    },
+    {
+      "name": "Class",
+      "parameters": [
+        {
+          "name": "licenses.dongles",
+          "type": "Any"
+        }
+      ],
+      "returns": "list of attached dongles",
+      "signature": "Class( licenses.dongles )"
+    },
+    {
+      "name": "Class",
+      "parameters": [
+        {
+          "name": "mod",
+          "type": "Any"
+        }
+      ],
+      "returns": "access to modules located in TouchDesigner DATs ",
+      "signature": "Class( mod )"
+    },
+    {
+      "name": "Class",
+      "parameters": [
+        {
+          "name": "monitors",
+          "type": "Any"
+        }
+      ],
+      "returns": "access to information about all connected display devices",
+      "signature": "Class( monitors )"
+    },
+    {
+      "name": "Class",
+      "parameters": [
+        {
+          "name": "runs",
+          "type": "Any"
+        }
+      ],
+      "returns": "information about all delayed  run objects ",
+      "signature": "Class( runs )"
+    },
+    {
+      "name": "Class",
+      "parameters": [
+        {
+          "name": "sysInfo",
+          "type": "Any"
+        }
+      ],
+      "returns": "current system/hardware information ",
+      "signature": "Class( sysInfo )"
+    },
+    {
+      "name": "Class",
+      "parameters": [
+        {
+          "name": "ui",
+          "type": "Any"
+        }
+      ],
+      "returns": "information about application ui elements",
+      "signature": "Class( ui )"
+    },
+    {
+      "name": "Class",
+      "parameters": [
+        {
+          "name": "ui.colors",
+          "type": "Any"
+        }
+      ],
+      "returns": "application colors ",
+      "signature": "Class( ui.colors )"
+    },
+    {
+      "name": "Class",
+      "parameters": [
+        {
+          "name": "ui.options",
+          "type": "Any"
+        }
+      ],
+      "returns": "configurable ui options ",
+      "signature": "Class( ui.options )"
+    },
+    {
+      "name": "Class",
+      "parameters": [
+        {
+          "name": "ui.panes",
+          "type": "Any"
+        }
+      ],
+      "returns": "collection of all panes open in the editor",
+      "signature": "Class( ui.panes )"
+    },
+    {
+      "name": "Class",
+      "parameters": [
+        {
+          "name": "ui.preferences",
+          "type": "Any"
+        }
+      ],
+      "returns": "collection of TouchDesigner preferences ",
+      "signature": "Class( ui.preferences )"
+    },
+    {
+      "name": "Class",
+      "parameters": [
+        {
+          "name": "ui.undo",
+          "type": "Any"
+        }
+      ],
+      "returns": "tools for interacting with the undo system, including creating script-based undo steps      Standard Python Modules   [  edit  ]   ",
+      "signature": "Class( ui.undo )"
+    },
+    {
+      "name": "TDResources",
+      "parameters": [
+        {
+          "name": "op.TDResources...",
+          "type": "Any"
+        }
+      ],
+      "returns": "not a module, but does contain system resources that can be accessed via Python. It includes system  pop-up menu ,  button pop-up menu ,  pop-up dialog , and  mouse  resources.     ",
+      "signature": "TDResources( op.TDResources... )"
+    },
+    {
+      "name": "0",
+      "parameters": [
+        {
+          "name": "attr",
+          "type": "Any"
+        }
+      ],
+      "returns": "Classes without boilerplate (legacy). ",
+      "signature": "0( attr )"
+    },
+    {
+      "name": "0",
+      "parameters": [
+        {
+          "name": "attrs",
+          "type": "Any"
+        }
+      ],
+      "returns": "Classes without boilerplate. ",
+      "signature": "0( attrs )"
+    },
+    {
+      "name": "07",
+      "parameters": [
+        {
+          "name": "certifi",
+          "type": "Any"
+        }
+      ],
+      "returns": "Root  Certificates for validating the trustworthiness of SSL certificates while verifying the identity of TLS hosts. ",
+      "signature": "07( certifi )"
+    },
+    {
+      "name": "0",
+      "parameters": [
+        {
+          "name": "chardet",
+          "type": "Any"
+        }
+      ],
+      "returns": "The Universal Character Encoding Detector. ",
+      "signature": "0( chardet )"
+    },
+    {
+      "name": "1",
+      "parameters": [
+        {
+          "name": "charset_normalizer",
+          "type": "Any"
+        }
+      ],
+      "returns": "A library that helps you read text from an unknown charset encoding. ",
+      "signature": "1( charset_normalizer )"
+    },
+    {
+      "name": "1",
+      "parameters": [
+        {
+          "name": "decorator",
+          "type": "Any"
+        }
+      ],
+      "returns": "Define signature-preserving function decorators and decorator factories. ",
+      "signature": "1( decorator )"
+    }
+  ],
+  "examples": [
+    {
+      "title": "Accessing operators",
+      "code": "# Get operator by path\nnoise = td.op('/project1/noise1')\n\n# Get multiple operators\nbuttons = td.ops('button*')\n\n# Access parent and me\ncurrent = td.me\nparent = td.parent()"
+    },
+    {
+      "title": "Using time functions",
+      "code": "# Get absolute time\ntime = td.absTime.seconds\n\n# Frame information\nframe = td.absTime.frame"
+    }
+  ],
+  "source": "stub",
+  "enhanced": true
+}

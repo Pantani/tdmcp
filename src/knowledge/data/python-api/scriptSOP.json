@@ -1,0 +1,24 @@
+{
+  "className": "scriptSOP",
+  "displayName": "scriptSOP Class",
+  "description": "This class inherits from the  SOP class.\nIt references a specific Script SOP.",
+  "category": "General",
+  "fileName": "ScriptSOP_Class.htm",
+  "members": [],
+  "methods": [
+    {
+      "name": "content",
+      "signature": "clear()",
+      "returnType": "None",
+      "description": "clear() method",
+      "parameters": []
+    },
+    {
+      "name": "bodyContent",
+      "signature": "clear()",
+      "returnType": "None",
+      "description": "clear() method",
+      "parameters": []
+    }
+  ]
+}

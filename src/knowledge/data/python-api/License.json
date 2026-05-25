@@ -1,0 +1,25 @@
+{
+  "className": "License",
+  "displayName": "License Class",
+  "description": "The License class describes a single instance of an installed license.  They can be accessed from the licenses object.",
+  "category": "General",
+  "fileName": "License_Class.htm",
+  "members": [
+    {
+      "name": "index",
+      "id": "content",
+      "returnType": "int",
+      "readOnly": true,
+      "description": "index member"
+    },
+    {
+      "name": "index",
+      "id": "bodyContent",
+      "returnType": "int",
+      "readOnly": true,
+      "description": "index member"
+    }
+  ],
+  "methods": [],
+  "enhanced": true
+}

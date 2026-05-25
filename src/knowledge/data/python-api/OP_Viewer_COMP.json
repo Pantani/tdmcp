@@ -1,0 +1,9 @@
+{
+  "className": "OP Viewer COMP",
+  "displayName": "OP Viewer COMP",
+  "description": "The OP Viewer Component allows any operator viewer (CHOP Viewer, SOP Viewer, panels, etc.) to be part of a panel with optional full interactivity.",
+  "category": "Component",
+  "fileName": "OPViewer_Class.htm",
+  "members": [],
+  "methods": []
+}

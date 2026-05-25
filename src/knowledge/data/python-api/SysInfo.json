@@ -1,0 +1,25 @@
+{
+  "className": "SysInfo",
+  "displayName": "SysInfo Class",
+  "description": "The SysInfo class describes current system information. Note: It can be accessed with the sysinfo object, found in the automatically imported td module.",
+  "category": "General",
+  "fileName": "SysInfo_Class.htm",
+  "members": [
+    {
+      "name": "numCPUs",
+      "id": "content",
+      "returnType": "int",
+      "readOnly": true,
+      "description": "numCPUs member"
+    },
+    {
+      "name": "numCPUs",
+      "id": "bodyContent",
+      "returnType": "int",
+      "readOnly": true,
+      "description": "numCPUs member"
+    }
+  ],
+  "methods": [],
+  "enhanced": true
+}

@@ -1,0 +1,32 @@
+{
+  "className": "Point",
+  "displayName": "Point Class",
+  "description": "A Point describes an instance to a single geometry point.  They are accessible through the SOP.points member.",
+  "category": "General",
+  "fileName": "Point_Class.htm",
+  "members": [
+    {
+      "name": "index",
+      "id": "content",
+      "returnType": "int",
+      "readOnly": true,
+      "description": "index member"
+    },
+    {
+      "name": "index",
+      "id": "bodyContent",
+      "returnType": "int",
+      "readOnly": true,
+      "description": "index member"
+    }
+  ],
+  "methods": [
+    {
+      "name": "destroy",
+      "parameters": [],
+      "returns": "None :",
+      "signature": "destroy()"
+    }
+  ],
+  "enhanced": true
+}

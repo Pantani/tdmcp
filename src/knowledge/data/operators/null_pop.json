@@ -1,0 +1,18 @@
+{
+  "name": "Null POP",
+  "id": "null_pop",
+  "category": "POP",
+  "subcategory": "Experimental",
+  "description": "The Null POP does nothing - it passes its input to its output unchanged. It does not consume any CPU or GPU memory.",
+  "parameters": [
+    {
+      "name": "P",
+      "label": "Input 0:",
+      "description": "Configure Input 0: for the operator",
+      "type": "string"
+    }
+  ],
+  "experimental": true,
+  "sourceFile": "Experimental-Null_POP.htm",
+  "parsedAt": "2025-08-08T03:03:57.981Z"
+}

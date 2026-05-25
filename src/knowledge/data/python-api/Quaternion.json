@@ -1,0 +1,24 @@
+{
+  "className": "Quaternion",
+  "displayName": "Quaternion Class",
+  "description": "Holds a Quaternion object which can be used to manipulate rotations in various ways. Quaternions can be constructed using a few different ways to describe the initial rotation:",
+  "category": "General",
+  "fileName": "quaternion_Class.htm",
+  "members": [
+    {
+      "name": "x",
+      "id": "content",
+      "returnType": "float",
+      "readOnly": false,
+      "description": "x member"
+    },
+    {
+      "name": "x",
+      "id": "bodyContent",
+      "returnType": "float",
+      "readOnly": false,
+      "description": "x member"
+    }
+  ],
+  "methods": []
+}

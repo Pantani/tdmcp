@@ -1,0 +1,10 @@
+{
+  "className": "Dependency",
+  "displayName": "Dependency",
+  "description": "Dependency is the Procedural mechanism in TouchDesigner, where if one piece of data changes, it automatically causes other operators and expressions to re-Cook. This assures all data is consistent in a TouchDesigner process, and causes all the output displays, UIs, devices and protocols to update in realtime.",
+  "category": "General",
+  "fileName": "Dependency_Class.htm",
+  "members": [],
+  "methods": [],
+  "enhanced": true
+}

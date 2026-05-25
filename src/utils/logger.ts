@@ -22,7 +22,11 @@ export interface Logger {
 export function createLogger(level: LogLevel = "info"): Logger {
   const threshold = LEVELS[level];
 
-  const emit = (lvl: Exclude<LogLevel, "silent">, message: string, meta?: Record<string, unknown>) => {
+  const emit = (
+    lvl: Exclude<LogLevel, "silent">,
+    message: string,
+    meta?: Record<string, unknown>,
+  ) => {
     if (LEVELS[lvl] < threshold) return;
     const stamp = new Date().toISOString();
     const suffix = meta && Object.keys(meta).length > 0 ? ` ${JSON.stringify(meta)}` : "";

@@ -1,0 +1,41 @@
+{
+  "className": "Attributes",
+  "displayName": "Attributes Class",
+  "description": "An Attributes object describes a set of Prim Class, Point Class, or Vertex Class attributes, contained within a SOP.",
+  "category": "General",
+  "fileName": "Attributes_Class.htm",
+  "members": [
+    {
+      "name": "owner",
+      "id": "content",
+      "returnType": "OP",
+      "readOnly": true,
+      "description": "owner member"
+    },
+    {
+      "name": "owner",
+      "id": "bodyContent",
+      "returnType": "OP",
+      "readOnly": true,
+      "description": "owner member"
+    }
+  ],
+  "methods": [
+    {
+      "name": "create",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "default",
+          "type": "Any"
+        }
+      ],
+      "returns": "Attribute :",
+      "signature": "create(name, default)"
+    }
+  ],
+  "enhanced": true
+}

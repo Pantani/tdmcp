@@ -1,0 +1,39 @@
+{
+  "id": "webcam_glitch",
+  "name": "Webcam Glitch",
+  "description": "Live webcam pushed through edge detection, RGB split, a feedback loop and a glitch shader for a corrupted-signal look.",
+  "tags": ["webcam", "glitch", "feedback", "realtime"],
+  "difficulty": "intermediate",
+  "td_version_min": "2022",
+  "nodes": [
+    { "name": "cam", "type": "videodeviceinTOP", "comment": "Webcam input" },
+    { "name": "edge", "type": "edgeTOP" },
+    { "name": "rgbsplit", "type": "glslTOP", "comment": "Chromatic RGB offset" },
+    { "name": "feedback1", "type": "feedbackTOP" },
+    { "name": "comp1", "type": "compositeTOP" },
+    { "name": "glitch", "type": "glslTOP", "comment": "Per-band horizontal displacement" },
+    { "name": "out1", "type": "nullTOP" }
+  ],
+  "connections": [
+    { "from": "cam", "to": "edge" },
+    { "from": "edge", "to": "rgbsplit" },
+    { "from": "rgbsplit", "to": "comp1", "to_input": 0 },
+    { "from": "feedback1", "to": "comp1", "to_input": 1 },
+    { "from": "comp1", "to": "glitch" },
+    { "from": "glitch", "to": "out1" }
+  ],
+  "parameters": [
+    {
+      "name": "feedback_target",
+      "node": "feedback1",
+      "param": "top",
+      "value": "glitch",
+      "description": "Feedback samples the glitch output."
+    }
+  ],
+  "glsl_code": {
+    "rgbsplit": "out vec4 fragColor;\nvoid main(){ vec2 uv=vUV.st; vec2 o=vec2(0.006,0.0);\n  float r=texture(sTD2DInputs[0],uv+o).r; float g=texture(sTD2DInputs[0],uv).g; float b=texture(sTD2DInputs[0],uv-o).b;\n  fragColor=TDOutputSwizzle(vec4(r,g,b,1.0)); }\n",
+    "glitch": "out vec4 fragColor;\nfloat hash(float x){return fract(sin(x*127.1)*43758.5453);}\nvoid main(){ vec2 uv=vUV.st; float band=floor(uv.y*24.0);\n  float off=(hash(band)-0.5)*0.08*step(0.7,hash(band*1.7));\n  fragColor=TDOutputSwizzle(texture(sTD2DInputs[0],uv+vec2(off,0.0))); }\n"
+  },
+  "preview_description": "A ghosted, color-fringed webcam image that periodically tears into horizontal glitch bands."
+}

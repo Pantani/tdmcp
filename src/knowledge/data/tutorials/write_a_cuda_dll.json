@@ -1,0 +1,259 @@
+{
+  "id": "write_a_cuda_dll",
+  "name": "Write a CUDA DLL",
+  "displayName": "Write a CUDA DLL",
+  "category": "TUTORIAL",
+  "subcategory": "CUDA Tutorial",
+  "type": "tutorial",
+  "description": "CUDA is a programming language developed by NVIDIA to allow developers to use the power of GPUs in a way much more general than using them only for graphics. More details about CUDA can be found at the CUDA Homepage.",
+  "summary": "CUDA is a programming language developed by NVIDIA to allow developers to use the power of GPUs in a way much more general than using them only for graphics. More details about CUDA can be found at th...",
+  "content": {
+    "sections": [
+      {
+        "title": "Overview[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "CUDA is a programming language developed by NVIDIA to allow developers to use the power of GPUs in a way much more general than using them only for graphics. More details about CUDA can be found at the CUDA Homepage."
+          },
+          {
+            "type": "paragraph",
+            "text": "Using TouchDesigner as a tool to program CUDA has many benefits. It allows you to use all the tools TouchDesigner already has to create, load, manipulate, save and visualize data that you are passing to and sending out of your CUDA program. For example if you want to write a CUDA program that does something with audio data, instead of having to write your own code that loads audio using an external API, you can simply load the audio into a CHOP, and pass that data into the CUDA program.  Similarly instead of having to write your own OpenGL code to visualize the output of a CUDA program, it can be visualized using the tools TouchDesigner already has."
+          },
+          {
+            "type": "paragraph",
+            "text": "If you are interested in programming CUDA, a good starting place is the CUDA Programming Guide included in the CUDA SDK."
+          },
+          {
+            "type": "paragraph",
+            "text": "The official 2020.20000 series release of TouchDesigner currently uses version 10.0 of the CUDA toolkit, make sure you download that version, even if a newer one is available. See here for CUDA versions supported by different releases of TouchDesigner."
+          },
+          {
+            "type": "paragraph",
+            "text": "CUDA is now fully supported using the CPlusPlus TOP. The CUDA TOP is no longer supported.\nFor more information see the articles in Category:C++."
+          },
+          {
+            "type": "paragraph",
+            "text": "An Operator Family which operate on Channels (a sequence of numbers (Samples)) which are used for animation, audio, mathematics, simulation, logic, UI construction, and data streamed from/to devices and protocols."
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "CUDA",
+              "C++",
+              "TDPages"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Navigation menu",
+        "level": 2,
+        "content": [
+          {
+            "type": "subsection",
+            "title": "Personal tools",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Log in"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Namespaces",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Page",
+              "Discussion",
+              "Experimental"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Views",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Read",
+              "View source",
+              "View history"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Search",
+            "level": 3
+          },
+          {
+            "type": "subsection",
+            "title": "TouchDesigner",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Main Page",
+              "Categories",
+              "Learn TouchDesigner",
+              "Tutorials",
+              "Interoperability",
+              "Glossary",
+              "Operators",
+              "Python",
+              "Python Class Reference",
+              "Palette",
+              "FAQ",
+              "Recent Doc Edits",
+              "Release Notes"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Downloads",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "TouchDesigner",
+              "Shared Examples"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Tools",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "What links here",
+              "Related changes",
+              "Special pages",
+              "Printable version",
+              "Permanent link",
+              "Page information",
+              "Page values"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "This page was last edited on 27 August 2020, at 13:43."
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Privacy policy",
+              "About Derivative",
+              "Disclaimers"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              ""
+            ]
+          }
+        ]
+      }
+    ],
+    "tableOfContents": [
+      {
+        "number": "1",
+        "text": "Overview[edit]",
+        "href": "#Overview[edit]"
+      },
+      {
+        "number": "2",
+        "text": "Navigation menu",
+        "href": "#Navigation_menu"
+      }
+    ],
+    "relatedLinks": [
+      {
+        "text": "CUDA",
+        "href": "./CUDA.htm"
+      },
+      {
+        "text": "GPUs",
+        "href": "./GPU.htm"
+      },
+      {
+        "text": "here",
+        "href": "./CUDA.htm"
+      },
+      {
+        "text": "CPlusPlus TOP",
+        "href": "./CPlusPlus_TOP.htm"
+      },
+      {
+        "text": "CUDA TOP",
+        "href": "./CUDA_TOP.htm"
+      },
+      {
+        "text": "Category:C++",
+        "href": "./Category-C++.htm"
+      },
+      {
+        "text": "Operator Family",
+        "href": "./Operator_Family.htm"
+      },
+      {
+        "text": "Channels",
+        "href": "./Channel.htm"
+      },
+      {
+        "text": "Samples",
+        "href": "./Sample.htm"
+      },
+      {
+        "text": "C++",
+        "href": "./Category-C++.htm"
+      }
+    ],
+    "images": [
+      {
+        "src": "./resources/assets/poweredby_mediawiki_88x31.png",
+        "alt": "Powered by MediaWiki",
+        "caption": "Powered by MediaWiki"
+      }
+    ]
+  },
+  "keywords": [
+    "write",
+    "a",
+    "cuda",
+    "dll",
+    "tutorial",
+    "programming",
+    "language",
+    "developed",
+    "nvidia",
+    "allow",
+    "developers",
+    "power",
+    "gpus",
+    "much"
+  ],
+  "tags": [
+    "Tutorial",
+    "TouchDesigner",
+    "Write a CUDA DLL"
+  ],
+  "searchWeight": 2,
+  "lastUpdated": "2025-08-13T01:17:18.909Z",
+  "sourceFile": "C:\\Program Files\\Derivative\\TouchDesigner\\Samples\\Learn\\OfflineHelp\\https.docs.derivative.ca\\Write_a_CUDA_DLL.htm",
+  "isValid": true,
+  "validationErrors": []
+}

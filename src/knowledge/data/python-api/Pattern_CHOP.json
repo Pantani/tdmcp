@@ -1,0 +1,9 @@
+{
+  "className": "Pattern CHOP",
+  "displayName": "Pattern CHOP",
+  "description": "The Pattern CHOP generates a sequence of samples in a channel. Unlike the Wave CHOP its purpose is generating arrays of samples that have no reference to time (seconds or frames).",
+  "category": "General",
+  "fileName": "Pattern_Class.htm",
+  "members": [],
+  "methods": []
+}

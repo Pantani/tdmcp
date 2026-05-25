@@ -1,0 +1,1254 @@
+{
+  "name": "Primitive POP",
+  "id": "primitive_pop",
+  "category": "POP",
+  "subcategory": "Experimental",
+  "description": "The Primitive POP lets you manually create primitives. Primitives are made from points, so it takes an optional input POP, from which you can delete its primitives and create new ones. Then you can add a set of new points manually using blocks of sequential parameters on the Points page.",
+  "parameters": [
+    {
+      "name": "[0-9]",
+      "label": "Delete Primitives and Keep Points",
+      "description": "Configure Delete Primitives and Keep Points for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        },
+        {
+          "label": "N",
+          "value": "n",
+          "description": ""
+        },
+        {
+          "label": "Color",
+          "value": "color",
+          "description": ""
+        },
+        {
+          "label": "Tex",
+          "value": "tex",
+          "description": ""
+        },
+        {
+          "label": "PointScale",
+          "value": "pointscale",
+          "description": ""
+        },
+        {
+          "label": "LineWidth",
+          "value": "linewidth",
+          "description": ""
+        },
+        {
+          "label": "float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "double",
+          "value": "double",
+          "description": ""
+        },
+        {
+          "label": "int",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "uint",
+          "value": "uint",
+          "description": ""
+        },
+        {
+          "label": "dir",
+          "value": "dir",
+          "description": ""
+        },
+        {
+          "label": "dbl dir",
+          "value": "ddir",
+          "description": ""
+        },
+        {
+          "label": "1",
+          "value": "1",
+          "description": ""
+        },
+        {
+          "label": "2",
+          "value": "2",
+          "description": ""
+        },
+        {
+          "label": "3",
+          "value": "3",
+          "description": ""
+        },
+        {
+          "label": "4",
+          "value": "4",
+          "description": ""
+        },
+        {
+          "label": "Default Value",
+          "value": "attr0valuer",
+          "description": ""
+        },
+        {
+          "label": "Default Value",
+          "value": "attr0valueg",
+          "description": ""
+        },
+        {
+          "label": "Default Value",
+          "value": "attr0valueb",
+          "description": ""
+        },
+        {
+          "label": "Default Value",
+          "value": "attr0valuea",
+          "description": ""
+        },
+        {
+          "label": "Position",
+          "value": "pt0posx",
+          "description": ""
+        },
+        {
+          "label": "Position",
+          "value": "pt0posy",
+          "description": ""
+        },
+        {
+          "label": "Position",
+          "value": "pt0posz",
+          "description": ""
+        },
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "By Set",
+          "value": "set",
+          "description": ""
+        },
+        {
+          "label": "By Pattern",
+          "value": "pattern",
+          "description": ""
+        },
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Points",
+          "value": "points",
+          "description": ""
+        },
+        {
+          "label": "Lines",
+          "value": "lines",
+          "description": ""
+        },
+        {
+          "label": "Triangles",
+          "value": "triangles",
+          "description": ""
+        },
+        {
+          "label": "Quads",
+          "value": "quads",
+          "description": ""
+        },
+        {
+          "label": "Line Strip",
+          "value": "linestrip",
+          "description": ""
+        },
+        {
+          "label": "Closed Line Strip",
+          "value": "closedlinestrip",
+          "description": ""
+        },
+        {
+          "label": "All Points",
+          "value": "all",
+          "description": ""
+        },
+        {
+          "label": "Groups of N Points",
+          "value": "group",
+          "description": ""
+        },
+        {
+          "label": "Skip Every Nth Point",
+          "value": "skip",
+          "description": ""
+        },
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Points",
+          "value": "points",
+          "description": ""
+        },
+        {
+          "label": "Lines",
+          "value": "lines",
+          "description": ""
+        },
+        {
+          "label": "Triangles",
+          "value": "triangles",
+          "description": ""
+        },
+        {
+          "label": "Quads",
+          "value": "quads",
+          "description": ""
+        },
+        {
+          "label": "Line Strip",
+          "value": "linestrip",
+          "description": ""
+        },
+        {
+          "label": "Closed Line Strip",
+          "value": "closedlinestrip",
+          "description": ""
+        },
+        {
+          "label": "Do Nothing",
+          "value": "donothing",
+          "description": ""
+        },
+        {
+          "label": "Remove",
+          "value": "remove",
+          "description": ""
+        },
+        {
+          "label": "Turn into Point Prims",
+          "value": "pointprims",
+          "description": ""
+        },
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        },
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    },
+    {
+      "name": "keep",
+      "label": "Delete Primitives and Keep Points",
+      "description": "Configure Delete Primitives and Keep Points for the operator",
+      "type": "string"
+    },
+    {
+      "name": "addpts",
+      "label": "Add Points",
+      "description": "Configure Add Points for the operator",
+      "type": "string"
+    },
+    {
+      "name": "premultcolor",
+      "label": "Pre-Multiply RGB by Alpha",
+      "description": "Configure Pre-Multiply RGB by Alpha for the operator",
+      "type": "string"
+    },
+    {
+      "name": "attr",
+      "label": "New Attribute",
+      "description": "Configure New Attribute for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        },
+        {
+          "label": "N",
+          "value": "n",
+          "description": ""
+        },
+        {
+          "label": "Color",
+          "value": "color",
+          "description": ""
+        },
+        {
+          "label": "Tex",
+          "value": "tex",
+          "description": ""
+        },
+        {
+          "label": "PointScale",
+          "value": "pointscale",
+          "description": ""
+        },
+        {
+          "label": "LineWidth",
+          "value": "linewidth",
+          "description": ""
+        },
+        {
+          "label": "float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "double",
+          "value": "double",
+          "description": ""
+        },
+        {
+          "label": "int",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "uint",
+          "value": "uint",
+          "description": ""
+        },
+        {
+          "label": "dir",
+          "value": "dir",
+          "description": ""
+        },
+        {
+          "label": "dbl dir",
+          "value": "ddir",
+          "description": ""
+        },
+        {
+          "label": "1",
+          "value": "1",
+          "description": ""
+        },
+        {
+          "label": "2",
+          "value": "2",
+          "description": ""
+        },
+        {
+          "label": "3",
+          "value": "3",
+          "description": ""
+        },
+        {
+          "label": "4",
+          "value": "4",
+          "description": ""
+        },
+        {
+          "label": "Default Value",
+          "value": "attr0valuer",
+          "description": ""
+        },
+        {
+          "label": "Default Value",
+          "value": "attr0valueg",
+          "description": ""
+        },
+        {
+          "label": "Default Value",
+          "value": "attr0valueb",
+          "description": ""
+        },
+        {
+          "label": "Default Value",
+          "value": "attr0valuea",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "attr0name",
+      "label": "Name",
+      "description": "Configure Name for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        },
+        {
+          "label": "N",
+          "value": "n",
+          "description": ""
+        },
+        {
+          "label": "Color",
+          "value": "color",
+          "description": ""
+        },
+        {
+          "label": "Tex",
+          "value": "tex",
+          "description": ""
+        },
+        {
+          "label": "PointScale",
+          "value": "pointscale",
+          "description": ""
+        },
+        {
+          "label": "LineWidth",
+          "value": "linewidth",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "custom",
+      "label": "Custom",
+      "description": "Configure Custom for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        },
+        {
+          "label": "N",
+          "value": "n",
+          "description": ""
+        },
+        {
+          "label": "Color",
+          "value": "color",
+          "description": ""
+        },
+        {
+          "label": "Tex",
+          "value": "tex",
+          "description": ""
+        },
+        {
+          "label": "PointScale",
+          "value": "pointscale",
+          "description": ""
+        },
+        {
+          "label": "LineWidth",
+          "value": "linewidth",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "attr0customname",
+      "label": "Custom Name",
+      "description": "Configure Custom Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "attr0type",
+      "label": "Type",
+      "description": "Configure Type for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "double",
+          "value": "double",
+          "description": ""
+        },
+        {
+          "label": "int",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "uint",
+          "value": "uint",
+          "description": ""
+        },
+        {
+          "label": "dir",
+          "value": "dir",
+          "description": ""
+        },
+        {
+          "label": "dbl dir",
+          "value": "ddir",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "float",
+      "label": "float",
+      "description": "Configure float for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "double",
+          "value": "double",
+          "description": ""
+        },
+        {
+          "label": "int",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "uint",
+          "value": "uint",
+          "description": ""
+        },
+        {
+          "label": "dir",
+          "value": "dir",
+          "description": ""
+        },
+        {
+          "label": "dbl dir",
+          "value": "ddir",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "attr0numcomps",
+      "label": "Number of Components",
+      "description": "Configure Number of Components for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "1",
+          "value": "1",
+          "description": ""
+        },
+        {
+          "label": "2",
+          "value": "2",
+          "description": ""
+        },
+        {
+          "label": "3",
+          "value": "3",
+          "description": ""
+        },
+        {
+          "label": "4",
+          "value": "4",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "1",
+      "label": "1",
+      "description": "Configure 1 for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "1",
+          "value": "1",
+          "description": ""
+        },
+        {
+          "label": "2",
+          "value": "2",
+          "description": ""
+        },
+        {
+          "label": "3",
+          "value": "3",
+          "description": ""
+        },
+        {
+          "label": "4",
+          "value": "4",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "attr0value",
+      "label": "Default Value",
+      "description": "Configure Default Value for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default Value",
+          "value": "attr0valuer",
+          "description": ""
+        },
+        {
+          "label": "Default Value",
+          "value": "attr0valueg",
+          "description": ""
+        },
+        {
+          "label": "Default Value",
+          "value": "attr0valueb",
+          "description": ""
+        },
+        {
+          "label": "Default Value",
+          "value": "attr0valuea",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "attr0valuer",
+      "label": "Default Value",
+      "description": "Configure Default Value for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default Value",
+          "value": "attr0valuer",
+          "description": ""
+        },
+        {
+          "label": "Default Value",
+          "value": "attr0valueg",
+          "description": ""
+        },
+        {
+          "label": "Default Value",
+          "value": "attr0valueb",
+          "description": ""
+        },
+        {
+          "label": "Default Value",
+          "value": "attr0valuea",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "pt",
+      "label": "Point",
+      "description": "Configure Point for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Position",
+          "value": "pt0posx",
+          "description": ""
+        },
+        {
+          "label": "Position",
+          "value": "pt0posy",
+          "description": ""
+        },
+        {
+          "label": "Position",
+          "value": "pt0posz",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "pt0pos",
+      "label": "Position",
+      "description": "Configure Position for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Position",
+          "value": "pt0posx",
+          "description": ""
+        },
+        {
+          "label": "Position",
+          "value": "pt0posy",
+          "description": ""
+        },
+        {
+          "label": "Position",
+          "value": "pt0posz",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "pt0posx",
+      "label": "Position",
+      "description": "Configure Position for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Position",
+          "value": "pt0posx",
+          "description": ""
+        },
+        {
+          "label": "Position",
+          "value": "pt0posy",
+          "description": ""
+        },
+        {
+          "label": "Position",
+          "value": "pt0posz",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "method",
+      "label": "Method",
+      "description": "Configure Method for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "By Set",
+          "value": "set",
+          "description": ""
+        },
+        {
+          "label": "By Pattern",
+          "value": "pattern",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "none",
+      "label": "None",
+      "description": "Configure None for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "By Set",
+          "value": "set",
+          "description": ""
+        },
+        {
+          "label": "By Pattern",
+          "value": "pattern",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "setprimtype",
+      "label": "Primitives Type",
+      "description": "Configure Primitives Type for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Points",
+          "value": "points",
+          "description": ""
+        },
+        {
+          "label": "Lines",
+          "value": "lines",
+          "description": ""
+        },
+        {
+          "label": "Triangles",
+          "value": "triangles",
+          "description": ""
+        },
+        {
+          "label": "Quads",
+          "value": "quads",
+          "description": ""
+        },
+        {
+          "label": "Line Strip",
+          "value": "linestrip",
+          "description": ""
+        },
+        {
+          "label": "Closed Line Strip",
+          "value": "closedlinestrip",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "set",
+      "label": "Set",
+      "description": "Configure Set for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "All Points",
+          "value": "all",
+          "description": ""
+        },
+        {
+          "label": "Groups of N Points",
+          "value": "group",
+          "description": ""
+        },
+        {
+          "label": "Skip Every Nth Point",
+          "value": "skip",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "all",
+      "label": "All Points",
+      "description": "Configure All Points for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "All Points",
+          "value": "all",
+          "description": ""
+        },
+        {
+          "label": "Groups of N Points",
+          "value": "group",
+          "description": ""
+        },
+        {
+          "label": "Skip Every Nth Point",
+          "value": "skip",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "n",
+      "label": "N",
+      "description": "Configure N for the operator",
+      "type": "string"
+    },
+    {
+      "name": "prim",
+      "label": "Primitive",
+      "description": "Configure Primitive for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Points",
+          "value": "points",
+          "description": ""
+        },
+        {
+          "label": "Lines",
+          "value": "lines",
+          "description": ""
+        },
+        {
+          "label": "Triangles",
+          "value": "triangles",
+          "description": ""
+        },
+        {
+          "label": "Quads",
+          "value": "quads",
+          "description": ""
+        },
+        {
+          "label": "Line Strip",
+          "value": "linestrip",
+          "description": ""
+        },
+        {
+          "label": "Closed Line Strip",
+          "value": "closedlinestrip",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "prim0type",
+      "label": "Type",
+      "description": "Configure Type for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Points",
+          "value": "points",
+          "description": ""
+        },
+        {
+          "label": "Lines",
+          "value": "lines",
+          "description": ""
+        },
+        {
+          "label": "Triangles",
+          "value": "triangles",
+          "description": ""
+        },
+        {
+          "label": "Quads",
+          "value": "quads",
+          "description": ""
+        },
+        {
+          "label": "Line Strip",
+          "value": "linestrip",
+          "description": ""
+        },
+        {
+          "label": "Closed Line Strip",
+          "value": "closedlinestrip",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "prim0pattern",
+      "label": "Point Index Pattern",
+      "description": "Configure Point Index Pattern for the operator",
+      "type": "string"
+    },
+    {
+      "name": "unusedpointsop",
+      "label": "Unused Points",
+      "description": "Configure Unused Points for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Do Nothing",
+          "value": "donothing",
+          "description": ""
+        },
+        {
+          "label": "Remove",
+          "value": "remove",
+          "description": ""
+        },
+        {
+          "label": "Turn into Point Prims",
+          "value": "pointprims",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "donothing",
+      "label": "Do Nothing",
+      "description": "Configure Do Nothing for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Do Nothing",
+          "value": "donothing",
+          "description": ""
+        },
+        {
+          "label": "Remove",
+          "value": "remove",
+          "description": ""
+        },
+        {
+          "label": "Turn into Point Prims",
+          "value": "pointprims",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "cpureadback",
+      "label": "Copy Topology Info Back to CPU",
+      "description": "Configure Copy Topology Info Back to CPU for the operator",
+      "type": "string"
+    },
+    {
+      "name": "bypass",
+      "label": "Bypass",
+      "description": "Configure Bypass for the operator",
+      "type": "string"
+    },
+    {
+      "name": "delinputattrs",
+      "label": "Delete Input Attributes",
+      "description": "Configure Delete Input Attributes for the operator",
+      "type": "string"
+    },
+    {
+      "name": "parmcolorspace",
+      "label": "Parameter Color Space",
+      "description": "Configure Parameter Color Space for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        }
+      ]
+    },
+    {
+      "name": "srgb",
+      "label": "sRGB",
+      "description": "Configure sRGB for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        }
+      ]
+    },
+    {
+      "name": "parmreferencewhite",
+      "label": "Parameter Reference White",
+      "description": "Configure Parameter Reference White for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    },
+    {
+      "name": "default",
+      "label": "Default For Color Space",
+      "description": "Configure Default For Color Space for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    }
+  ],
+  "experimental": true,
+  "sourceFile": "Experimental-Primitive_POP.htm",
+  "parsedAt": "2025-08-08T03:03:58.997Z"
+}

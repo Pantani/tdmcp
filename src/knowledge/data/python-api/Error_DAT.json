@@ -1,0 +1,9 @@
+{
+  "className": "Error DAT",
+  "displayName": "Error DAT",
+  "description": "The Error DAT lists the most recent TouchDesigner errors in its FIFO (first in/first out) table.",
+  "category": "General",
+  "fileName": "Error_Class.htm",
+  "members": [],
+  "methods": []
+}

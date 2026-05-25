@@ -1,0 +1,10 @@
+{
+  "className": "Runs",
+  "displayName": "Runs Class",
+  "description": "The Runs class describes the set of all delayed run objects. It can be accessed with the runs object, found in the automatically imported td module. See Run Command Examples for more info.",
+  "category": "General",
+  "fileName": "Runs_Class.htm",
+  "members": [],
+  "methods": [],
+  "enhanced": true
+}

@@ -1,0 +1,104 @@
+{
+  "id": "write_a_cplusplus_top",
+  "name": "Write a CPlusPlus TOP",
+  "displayName": "Write a CPlusPlus TOP",
+  "category": "TUTORIAL",
+  "subcategory": "TOP Tutorial",
+  "type": "tutorial",
+  "description": "Make sure you've read through Write a CPlusPlus Plugin first for general information about writing a plugin for a CPlusPlus TOP.",
+  "summary": "Make sure you've read through Write a CPlusPlus Plugin first for general information about writing a plugin for a CPlusPlus TOP. The CPlusPlus TOP allows you to write C++ code to create a TOP that can output multiple textures. Currently you can create your output by filling a CPU memory buffer (TOP_ExecuteMode::CPUMem) or by filling a cudaArray buffer (TOP_ExecuteMode::CUDA). Most of the documentation is held in the header files for the C++ API. The samples also contain a lot of comments about the workflow.",
+  "content": {
+    "sections": [
+      {
+        "title": "Overview",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Make sure you've read through Write a CPlusPlus Plugin first for general information about writing a plugin for a CPlusPlus TOP."
+          },
+          {
+            "type": "paragraph",
+            "text": "The CPlusPlus TOP allows you to write C++ code to create a TOP that can output multiple textures. Currently you can create your output by filling a CPU memory buffer (TOP_ExecuteMode::CPUMem) or by filling a cudaArray buffer (TOP_ExecuteMode::CUDA)."
+          },
+          {
+            "type": "paragraph",
+            "text": "Most of the documentation is held in the header files for the C++ API. The samples also contain a lot of comments about the workflow."
+          }
+        ]
+      },
+      {
+        "title": "CUDA",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "The CPlusPlus TOP can be used with CUDA. See the CudaTOP example project included with the TouchDesigner installation for an example. Note that any CUDA operations that occur in your C++ code must occur on the main thread, between calls to OP_Context::beginCUDAOperations() and OP_Context::endCUDAOperations()."
+          }
+        ]
+      },
+      {
+        "title": "See Also",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Write a CPlusPlus PluginWrite a CPlusPlus CHOPUpgrading Custom Operators and CPlusPlus Plugins to 2022 and Newer BuildsCPlusPlus TOPCPlusPlus CHOP"
+          }
+        ]
+      }
+    ],
+    "tableOfContents": [],
+    "relatedLinks": [
+      {
+        "text": "Write a CPlusPlus Plugin",
+        "href": "Write_a_CPlusPlus_Plugin.htm"
+      },
+      {
+        "text": "CPlusPlus TOP",
+        "href": "CPlusPlus_TOP.htm"
+      },
+      {
+        "text": "CUDA",
+        "href": "CUDA.htm"
+      },
+      {
+        "text": "Write a CPlusPlus CHOP",
+        "href": "Write_a_CPlusPlus_CHOP.htm"
+      },
+      {
+        "text": "Upgrading Custom Operators and CPlusPlus Plugins to 2022 and Newer Builds",
+        "href": "Upgrading_Custom_Operators_and_CPlusPlus_Plugins_to_2022_and_Newer_Builds.htm"
+      },
+      {
+        "text": "CPlusPlus CHOP",
+        "href": "CPlusPlus_CHOP.htm"
+      }
+    ],
+    "images": []
+  },
+  "keywords": [
+    "write",
+    "cplusplus",
+    "overview",
+    "cuda",
+    "also",
+    "top",
+    "mat",
+    "texture",
+    "sample",
+    "dat",
+    "chop",
+    "operator"
+  ],
+  "tags": [
+    "Tutorial",
+    "TouchDesigner",
+    "Write a CPlusPlus TOP"
+  ],
+  "searchWeight": 2,
+  "lastUpdated": "2025-08-08T03:32:33.699Z",
+  "sourceFile": "C:\\Program Files\\Derivative\\TouchDesigner\\Samples\\Learn\\OfflineHelp\\https.docs.derivative.ca\\Write_a_CPlusPlus_TOP.htm",
+  "isValid": true,
+  "validationErrors": []
+}

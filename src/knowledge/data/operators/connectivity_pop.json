@@ -1,0 +1,11 @@
+{
+  "name": "Connectivity POP",
+  "id": "connectivity_pop",
+  "category": "POP",
+  "subcategory": "Experimental",
+  "description": "The Connectivity POP is still in development and is intended to re-connect the input's points with a set of primitives, similar to what the Grid POP or Torus POP does to their sets of points. It works on any POP that has multi-Dimensions, that is, rows, columns, slices and any number of dimensions.",
+  "parameters": [],
+  "experimental": true,
+  "sourceFile": "Experimental-Connectivity_POP.htm",
+  "parsedAt": "2025-08-08T03:03:54.744Z"
+}

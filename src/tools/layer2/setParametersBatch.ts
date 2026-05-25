@@ -1,0 +1,44 @@
+import { z } from "zod";
+import { guardTd, jsonResult } from "../result.js";
+import type { ToolContext, ToolRegistrar } from "../types.js";
+
+const UpdateSchema = z.object({
+  path: z.string(),
+  parameters: z.record(z.string(), z.unknown()),
+});
+
+export const setParametersBatchSchema = z.object({
+  updates: z
+    .array(UpdateSchema)
+    .min(1)
+    .describe("List of { path, parameters } updates applied in one atomic batch."),
+});
+type SetParametersBatchArgs = z.infer<typeof setParametersBatchSchema>;
+
+export async function setParametersBatchImpl(ctx: ToolContext, args: SetParametersBatchArgs) {
+  return guardTd(
+    () =>
+      ctx.client.batch(
+        args.updates.map((update) => ({
+          action: "update" as const,
+          path: update.path,
+          parameters: update.parameters,
+        })),
+      ),
+    (result) =>
+      jsonResult(`Applied ${args.updates.length} parameter update(s) in one batch.`, result),
+  );
+}
+
+export const registerSetParametersBatch: ToolRegistrar = (server, ctx) => {
+  server.registerTool(
+    "set_parameters_batch",
+    {
+      title: "Set parameters (batch)",
+      description: "Update parameters on multiple nodes atomically in a single request.",
+      inputSchema: setParametersBatchSchema.shape,
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
+    },
+    (args) => setParametersBatchImpl(ctx, args),
+  );
+};

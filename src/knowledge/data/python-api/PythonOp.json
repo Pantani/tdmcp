@@ -1,0 +1,140 @@
+{
+  "className": "PythonOp",
+  "displayName": "PythonOp",
+  "description": "The PythonOp class represents a Python operator in TouchDesigner, providing access to Python script execution and operator-specific functionality.",
+  "url": "https://docs.derivative.ca/Python_Op",
+  "members": [
+    {
+      "name": "module",
+      "description": "The Python module object associated with this operator",
+      "readonly": false
+    },
+    {
+      "name": "isDAT",
+      "description": "Boolean indicating if this is a DAT operator",
+      "readonly": false
+    },
+    {
+      "name": "isCOMP",
+      "description": "Boolean indicating if this is a COMP operator",
+      "readonly": false
+    },
+    {
+      "name": "callbacks",
+      "description": "Dictionary of registered callback functions",
+      "readonly": false
+    },
+    {
+      "name": "extensions",
+      "description": "List of extension classes attached to this operator",
+      "readonly": false
+    }
+  ],
+  "methods": [
+    {
+      "name": "run",
+      "description": "Execute the Python script in this operator",
+      "signature": "run(*args, **kwargs)",
+      "parameters": [
+        {
+          "name": "*args",
+          "type": "Any",
+          "description": "Positional arguments to pass to the script"
+        },
+        {
+          "name": "**kwargs",
+          "type": "Any",
+          "description": "Keyword arguments to pass to the script"
+        }
+      ],
+      "returns": "Any"
+    },
+    {
+      "name": "call",
+      "description": "Call a specific function within the Python operator",
+      "signature": "call(function_name, *args, **kwargs)",
+      "parameters": [
+        {
+          "name": "function_name",
+          "type": "str",
+          "description": "Name of the function to call"
+        },
+        {
+          "name": "*args",
+          "type": "Any",
+          "description": "Arguments to pass to the function"
+        },
+        {
+          "name": "**kwargs",
+          "type": "Any",
+          "description": "Keyword arguments to pass to the function"
+        }
+      ],
+      "returns": "Any"
+    },
+    {
+      "name": "addExtension",
+      "description": "Add an extension class to this operator",
+      "signature": "addExtension(extension_class)",
+      "parameters": [
+        {
+          "name": "extension_class",
+          "type": "class",
+          "description": "The extension class to add"
+        }
+      ],
+      "returns": "None"
+    },
+    {
+      "name": "removeExtension",
+      "description": "Remove an extension class from this operator",
+      "signature": "removeExtension(extension_class)",
+      "parameters": [
+        {
+          "name": "extension_class",
+          "type": "class",
+          "description": "The extension class to remove"
+        }
+      ],
+      "returns": "None"
+    },
+    {
+      "name": "addCallback",
+      "description": "Register a callback function for a specific event",
+      "signature": "addCallback(event, callback)",
+      "parameters": [
+        {
+          "name": "event",
+          "type": "str",
+          "description": "The event name to register for"
+        },
+        {
+          "name": "callback",
+          "type": "function",
+          "description": "The callback function to execute"
+        }
+      ],
+      "returns": "None"
+    },
+    {
+      "name": "removeCallback",
+      "description": "Remove a registered callback function",
+      "signature": "removeCallback(event, callback)",
+      "parameters": [
+        {
+          "name": "event",
+          "type": "str",
+          "description": "The event name"
+        },
+        {
+          "name": "callback",
+          "type": "function",
+          "description": "The callback function to remove"
+        }
+      ],
+      "returns": "None"
+    }
+  ],
+  "examples": [],
+  "source": "stub"
+}

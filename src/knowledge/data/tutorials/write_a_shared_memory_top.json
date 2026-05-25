@@ -1,0 +1,193 @@
+{
+  "id": "write_a_shared_memory_top",
+  "name": "Write a Shared Memory TOP",
+  "displayName": "Write a Shared Memory TOP",
+  "category": "TUTORIAL",
+  "subcategory": "TOP Tutorial",
+  "type": "tutorial",
+  "description": "In the TouchDesigner installation directory, under Samples/SharedMem/TOP there is the header defined in TOP_SharedMemHeader.h that needs to be filled in at the start of the shared memory buffer. The memory buffer should have this header, followed by the image data.",
+  "summary": "In the TouchDesigner installation directory, under Samples/SharedMem/TOP there is the header defined in TOP_SharedMemHeader.h that needs to be filled in at the start of the shared memory buffer. The memory buffer should have this header, followed by the image data. NOTE: The 'Shared Mem Type' parameter in the TOP must be set to 'Local' for your app to be able interface with it. Refer to the article Using Shared Memory in TouchDesigner to learn how to create a shared memory buffer. If you are the sender, you need to create a buffer whose size will accommodate both the header, and the image data. Get the size of the header simply with",
+  "content": {
+    "sections": [
+      {
+        "title": "Introduction",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "In the TouchDesigner installation directory, under Samples/SharedMem/TOP there is the header defined in TOP_SharedMemHeader.h that needs to be filled in at the start of the shared memory buffer. The memory buffer should have this header, followed by the image data."
+          },
+          {
+            "type": "paragraph",
+            "text": "NOTE: The 'Shared Mem Type' parameter in the TOP must be set to 'Local' for your app to be able interface with it."
+          }
+        ]
+      },
+      {
+        "title": "Creating a Shared Memory Buffer",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Refer to the article Using Shared Memory in TouchDesigner to learn how to create a shared memory buffer. If you are the sender, you need to create a buffer whose size will accommodate both the header, and the image data. Get the size of the header simply with"
+          },
+          {
+            "type": "code",
+            "text": "sizeof(TOP_SharedMemHeader)",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "The size of the image data depends on the number of channels, the resolution and the dataType. In general it's"
+          },
+          {
+            "type": "code",
+            "text": "width * height * number of channels * number_of_bytes_per_channel",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "Where number_of_bytes_per_channel is 1 for dataType GL_UNSIGNED_BYTE and 4 for GL_FLOAT."
+          },
+          {
+            "type": "paragraph",
+            "text": "Once you have a pointer to the memory, you can do the next step."
+          }
+        ]
+      },
+      {
+        "title": "Writing/Reading the Header",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "You can get the header file used to describe the data that is sent through a Shared Mem TOP in touch/SharedMem/TOP (Under the directory where TouchDesigner is installed). The file is called TOP_SharedMemHeader.h."
+          },
+          {
+            "type": "paragraph",
+            "text": "The header is the first thing that appears in the shared memory. So you can cast the pointer you get from UT_SharedMem to TOP_SharedMemHeader."
+          },
+          {
+            "type": "code",
+            "text": "TOP_SharedMemHeader *header = (TOP_SharedMemHeader*)shm->getMemory();",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "If you are the sender, fill in all of the fields in this header. Refer to the header for more details one each field you need to fill in."
+          },
+          {
+            "type": "paragraph",
+            "text": "If you are the sender, make sure you do this, otherwise the receiver won't know where the image is."
+          },
+          {
+            "type": "code",
+            "text": "header->dataOffset = sizeof(TOP_SharedMemHeader);",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "Most of the members of the header are self-explanatory, except for dataFormat, dataType and pixelFormat. The valid values for these are listed at the top of TOP_SharedMemHeader.h. The values are OpenGL constants but I'll provide their actual values (in hexadecimal) in case you aren't using OpenGL at all in your app."
+          },
+          {
+            "type": "paragraph",
+            "text": "dataFormat: This is the format of your image in memory. For example if you don't have an alpha channel and your image data's pixel format is RGB, you specify GL_RGB."
+          },
+          {
+            "type": "paragraph",
+            "text": "dataType: This is the data type of your image data. If it's stored an unsigned char's use GL_UNSIGNED_BYTE (8-bits per channel), if it's stored as floats use GL_FLOAT (32-bits per channel)."
+          },
+          {
+            "type": "paragraph",
+            "text": "pixelFormat: This is the format of the texture you want to be created in the Shared Mem In TOP. The pixelFormat doesn't need to match the dataType. For example you can create a GL_RGBA16F_ARB (16 bit float) texture from 8-bits unsigned char data, or vice versa, if you want. Don't confuse the RGBA here with a dataFormat as above, the RGBA doesn't imply that's the channel order, it just implies that's the channels present, they could be ordered BGRA if you want."
+          },
+          {
+            "type": "paragraph",
+            "text": "If you are the receiver, use the the information from the header however you see fit."
+          }
+        ]
+      },
+      {
+        "title": "Reading/Writing the Image",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Get a pointer to where you should read/write the image by simply using the getImage() call in the header:"
+          },
+          {
+            "type": "code",
+            "text": "unsigned char *image = (unsigned char*)header->getImage(); // For 8-bit",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "or"
+          },
+          {
+            "type": "code",
+            "text": "float *image = (float*)header->getImage(); // For floating point data",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "Now read/write the image data depending on the format."
+          }
+        ]
+      }
+    ],
+    "tableOfContents": [
+      {
+        "number": "1",
+        "text": "Creating a Shared Memory Buffer",
+        "href": "#Creating_a_Shared_Memory_Buffer"
+      },
+      {
+        "number": "2",
+        "text": "Writing/Reading the Header",
+        "href": "#Writing/Reading_the_Header"
+      },
+      {
+        "number": "3",
+        "text": "Reading/Writing the Image",
+        "href": "#Reading/Writing_the_Image"
+      }
+    ],
+    "relatedLinks": [
+      {
+        "text": "Using Shared Memory in TouchDesigner",
+        "href": "Using_Shared_Memory_in_TouchDesigner.htm"
+      }
+    ],
+    "images": []
+  },
+  "keywords": [
+    "write",
+    "shared",
+    "memory",
+    "introduction",
+    "creating",
+    "buffer",
+    "writing/reading",
+    "header",
+    "reading/writing",
+    "image",
+    "top",
+    "dat",
+    "sample",
+    "parameter",
+    "channel",
+    "mat",
+    "texture"
+  ],
+  "tags": [
+    "Tutorial",
+    "TouchDesigner",
+    "Write a Shared Memory TOP"
+  ],
+  "searchWeight": 2,
+  "lastUpdated": "2025-08-08T03:32:33.852Z",
+  "sourceFile": "C:\\Program Files\\Derivative\\TouchDesigner\\Samples\\Learn\\OfflineHelp\\https.docs.derivative.ca\\Write_a_Shared_Memory_TOP.htm",
+  "isValid": true,
+  "validationErrors": []
+}

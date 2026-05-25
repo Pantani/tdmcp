@@ -1,0 +1,72 @@
+{
+  "id": "feedback_tunnel",
+  "name": "Feedback Tunnel",
+  "description": "A hypnotic tunnel created by feeding a transformed, blurred frame back into itself over a noise seed.",
+  "tags": ["feedback", "generative", "tunnel", "abstract", "noise"],
+  "difficulty": "beginner",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "noise1",
+      "type": "noiseTOP",
+      "parameters": { "period": 3, "monochrome": 1 },
+      "comment": "Seed texture that feeds the loop"
+    },
+    { "name": "feedback1", "type": "feedbackTOP", "comment": "Holds the previous frame" },
+    {
+      "name": "comp1",
+      "type": "compositeTOP",
+      "comment": "Combines the seed with the fed-back frame (default Over)"
+    },
+    {
+      "name": "transform1",
+      "type": "transformTOP",
+      "parameters": { "scalex": 1.03, "scaley": 1.03, "rotate": 1.5 },
+      "comment": "Zoom + rotate each frame to create the tunnel motion"
+    },
+    { "name": "blur1", "type": "blurTOP", "parameters": { "size": 2 } },
+    {
+      "name": "level1",
+      "type": "levelTOP",
+      "parameters": { "gain": 0.96 },
+      "comment": "Decay / feedback gain"
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "Output of the system" }
+  ],
+  "connections": [
+    { "from": "noise1", "to": "comp1", "to_input": 0 },
+    { "from": "feedback1", "to": "comp1", "to_input": 1 },
+    { "from": "comp1", "to": "transform1" },
+    { "from": "transform1", "to": "blur1" },
+    { "from": "blur1", "to": "level1" },
+    { "from": "level1", "to": "out1" }
+  ],
+  "parameters": [
+    {
+      "name": "feedback_target",
+      "node": "feedback1",
+      "param": "top",
+      "value": "level1",
+      "description": "feedbackTOP samples the loop output (level1). Value resolves to the created node path."
+    },
+    {
+      "name": "feedback_gain",
+      "node": "level1",
+      "param": "gain",
+      "value": 0.96,
+      "min": 0,
+      "max": 1,
+      "label": "Feedback Gain"
+    },
+    {
+      "name": "zoom",
+      "node": "transform1",
+      "param": "scalex",
+      "value": 1.03,
+      "min": 1,
+      "max": 1.2,
+      "label": "Tunnel Zoom"
+    }
+  ],
+  "preview_description": "An endless rotating tunnel of evolving colored noise that folds into its own center."
+}

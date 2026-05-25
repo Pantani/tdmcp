@@ -1,0 +1,191 @@
+{
+  "id": "feedback_top",
+  "name": "Feedback TOP",
+  "displayName": "Feedback TOP",
+  "category": "TOP",
+  "subcategory": "Filters",
+  "version": "Available since TouchDesigner 2019+",
+  "lastUpdated": "2026-02-21T00:00:00.000Z",
+  "sourceFile": "",
+  "url": "https://docs.derivative.ca/Feedback_TOP",
+  "description": "The Feedback TOP creates feedback effects by routing a portion of its downstream output back as its own input each frame. It is the foundation of feedback-zoom trails, motion blur simulation, reaction-diffusion systems, and any effect that accumulates visual history over time. When Bypass Feedback is 0 (active), the operator outputs the contents of its Target TOP from the previous frame instead of passing through its input. This allows a chain of filter TOPs (Transform, Level, Blur, GLSL) to be inserted between the Feedback TOP and its target Null TOP, producing an iterative, self-modifying image stream.",
+  "summary": "Creates iterative visual feedback effects by re-routing a downstream image back as input each frame. Essential for trails, motion blur, and generative accumulation effects.",
+  "details": "The feedback loop is formed by pointing the Target TOP parameter at a Null TOP that is positioned DOWNSTREAM of the Feedback TOP. Operators placed between the Feedback output and the target Null modulate the feedback buffer each frame: a Transform TOP zooms or rotates, a Level TOP decays brightness, a Blur TOP smooths aliasing. The loop runs entirely on the GPU.",
+  "usage": "1. Place a Feedback TOP in your network.\n2. Wire your source image (Noise TOP, Movie File In TOP, etc.) into Feedback input 0.\n3. Add filter TOPs after Feedback output: Transform -> Level -> Blur.\n4. Place a Null TOP at the end of the chain.\n5. Set the Feedback TOP Target TOP parameter to the path of that Null TOP.\n6. The loop is now active — output accumulates each frame.",
+  "tips": [
+    "Set the Target TOP parameter to a Null TOP that is DOWNSTREAM of the Feedback TOP — targeting an upstream node breaks the loop.",
+    "Use pixel format RGBA16Float on the Feedback TOP to prevent precision loss and colour banding during decay.",
+    "Lower the Level TOP Brightness to 0.97–0.99 between Feedback and target to create a slow trail decay without full persistence.",
+    "Add a Transform TOP (Scale X/Y = 1.005, Rotate = 0.1) between Feedback and target for the classic zoom-rotate spiral.",
+    "Use op('feedback1').par.resetpulse.pulse() from a script to clear the buffer instantly to black.",
+    "Set Bypass Feedback to 1 via parameter expression or Python to temporarily pass through the source image without feedback.",
+    "Inserting a GLSL TOP between Feedback and target allows per-pixel shader manipulation of the feedback buffer each frame.",
+    "Use a Composite TOP with Operand=Add to inject new source material into the loop: Feedback output -> Composite input 0, source -> Composite input 1, Composite -> Null target.",
+    "Match the Feedback TOP resolution to the filter chain resolution to avoid unexpected rescaling.",
+    "Feedback TOP with Transform SOP chained into a Render TOP creates pseudo-3D layered depth effects."
+  ],
+  "warnings": [
+    "The Target TOP must be DOWNSTREAM of the Feedback TOP. If you accidentally point it upstream, TouchDesigner will detect the unresolved cycle and cook may fail.",
+    "Very high resolution feedback loops are expensive — each frame the full texture must be read back and written. Use 1920x1080 or lower for interactive framerates.",
+    "Pixel format mismatch between Feedback and downstream filters can cause unexpected colour shifts. Set all TOPs in the loop to the same pixel format.",
+    "Setting Bypass Feedback to 1 discards accumulated buffer — the history is lost. Use a separate Null TOP to sample the accumulated state before bypassing."
+  ],
+  "parameters": [
+    {
+      "id": null,
+      "name": "Target TOP",
+      "label": "Target TOP",
+      "group": "Feedback",
+      "page": "Feedback",
+      "type": "string",
+      "dataType": "string",
+      "style": "OP",
+      "defaultValue": "",
+      "description": "Path to the Null TOP (or any TOP) that is downstream of the Feedback TOP. This closes the feedback loop — the output of that target node is fed back as the input to the Feedback TOP on the next frame. Must point to a node AFTER the Feedback TOP in the cook order.",
+      "tooltip": "The downstream Null TOP that closes the feedback loop.",
+      "examples": ["null1", "project/feedback_target"],
+      "isReadOnly": false,
+      "isAdvanced": false,
+      "isHidden": false,
+      "isAnimatable": false,
+      "order": 0,
+      "isVisible": true,
+      "isValid": true
+    },
+    {
+      "id": null,
+      "name": "Reset",
+      "label": "Bypass Feedback",
+      "group": "Feedback",
+      "page": "Feedback",
+      "type": "int",
+      "dataType": "int",
+      "style": "Toggle",
+      "defaultValue": 0,
+      "minValue": 0,
+      "maxValue": 1,
+      "description": "When set to 1 (On), the Feedback TOP acts as a passthrough — it outputs whatever is connected to its input instead of the feedback buffer. When set to 0 (Off, default), feedback is active and the loop runs.",
+      "tooltip": "Toggle to disable the feedback loop and pass the input image through.",
+      "commonExpressions": ["0", "1", "int(absTime.frame % 2 == 0)"],
+      "isReadOnly": false,
+      "isAnimatable": true,
+      "order": 1,
+      "isValid": true
+    },
+    {
+      "id": null,
+      "name": "Reset Pulse",
+      "label": "Reset Pulse",
+      "group": "Feedback",
+      "page": "Feedback",
+      "type": "pulse",
+      "dataType": "pulse",
+      "style": "Pulse",
+      "description": "Clears the feedback buffer to black in a single frame. Useful for resetting the accumulated state on demand.",
+      "tooltip": "Click to clear the feedback buffer immediately.",
+      "commonExpressions": [],
+      "isReadOnly": false,
+      "isAnimatable": false,
+      "order": 2,
+      "isValid": true
+    },
+    {
+      "id": null,
+      "name": "Output Resolution",
+      "label": "Output Resolution",
+      "group": "Common",
+      "page": "Common",
+      "type": "menu",
+      "dataType": "int",
+      "style": "Menu",
+      "defaultValue": "useinput",
+      "menuItems": ["useinput", "eighth", "quarter", "half", "2x", "4x", "8x", "fit", "limit", "custom"],
+      "description": "Controls the resolution of the output texture. 'Use Input' matches the input image resolution. Custom enables the Resolution W/H parameters.",
+      "isReadOnly": false,
+      "isAnimatable": false,
+      "order": 3,
+      "isValid": true
+    },
+    {
+      "id": null,
+      "name": "Pixel Format",
+      "label": "Pixel Format",
+      "group": "Common",
+      "page": "Common",
+      "type": "menu",
+      "dataType": "int",
+      "style": "Menu",
+      "defaultValue": "useinput",
+      "menuItems": ["useinput", "rgba8", "rgba16", "rgba16f", "rgba32f"],
+      "description": "Pixel format of the feedback buffer. Use RGBA16Float or RGBA32Float for smooth decay without banding. 8-bit formats can show stepping when brightness decays below 1/255.",
+      "isReadOnly": false,
+      "isAnimatable": false,
+      "order": 4,
+      "isValid": true
+    }
+  ],
+  "parameterGroups": {
+    "Feedback": ["Target TOP", "Reset", "Reset Pulse"],
+    "Common": ["Output Resolution", "Pixel Format", "Channel Mask", "Input Smoothness"]
+  },
+  "codeExamples": [],
+  "pythonExamples": [
+    {
+      "title": "Basic feedback loop setup via Python",
+      "description": "Programmatically configure a Feedback TOP and its target in a base component.",
+      "code": "# Set the Target TOP parameter\nop('feedback1').par.top = 'null1'\n\n# Bypass feedback (passthrough mode)\nop('feedback1').par.reset = 1\n\n# Re-enable feedback\nop('feedback1').par.reset = 0\n\n# Pulse reset to clear buffer\nop('feedback1').par.resetpulse.pulse()"
+    },
+    {
+      "title": "Animate feedback decay with audio level",
+      "description": "Drive Level TOP brightness from an audio amplitude CHOP to make feedback trails pulse with music.",
+      "code": "# In an Execute DAT - onFrameStart\ndef onFrameStart(frame):\n    # Get audio amplitude from Null CHOP reference\n    amp = op('null_audio')['chan1']\n    # Base decay 0.95, pulse to 0.99 on loud hits\n    decay = 0.95 + amp * 0.04\n    op('level1').par.brightness = decay"
+    },
+    {
+      "title": "Toggle feedback bypass on keypress",
+      "description": "Use a Keyboard In DAT callback to toggle the feedback loop on/off.",
+      "code": "# In Keyboard In DAT - onKeyboardEvent\ndef onKeyboardEvent(dat, key, character, alt, ctrl, shift, state):\n    if character == 'f' and state:\n        fb = op('feedback1')\n        fb.par.reset = 0 if fb.par.reset else 1"
+    },
+    {
+      "title": "Read pixel values from feedback buffer",
+      "description": "Sample a specific pixel from the feedback output texture each frame.",
+      "code": "# In a Script DAT or Execute DAT\ndef onFrameStart(frame):\n    top = op('feedback1')\n    # numpyArray requires Script TOP or CUDA access;\n    # for simple sampling use a CHOP to TOP + pixel lookup\n    print(f'Feedback resolution: {top.width}x{top.height}')\n    print(f'Pixel format: {top.pixelFormat}')"
+    }
+  ],
+  "expressions": [
+    "op('feedback1').par.top = 'null1'",
+    "op('feedback1').par.reset = 0",
+    "op('feedback1').par.resetpulse.pulse()"
+  ],
+  "commonInputs": [
+    { "op": "Noise TOP",         "reason": "Generative seed texture for the feedback loop" },
+    { "op": "Movie File In TOP", "reason": "Video as the seed input that gets accumulated" },
+    { "op": "GLSL TOP",          "reason": "Shader-rendered frame as feedback seed" },
+    { "op": "Composite TOP",     "reason": "Blended multi-source input for the loop" }
+  ],
+  "commonOutputs": [
+    { "op": "Transform TOP", "reason": "Zoom/rotate feedback buffer each iteration" },
+    { "op": "Level TOP",     "reason": "Decay brightness each frame to create trails" },
+    { "op": "Blur TOP",      "reason": "Soften accumulated buffer to prevent aliasing" },
+    { "op": "Null TOP",      "reason": "Feedback target node that closes the loop" },
+    { "op": "GLSL TOP",      "reason": "Per-pixel shader processing of the buffer" }
+  ],
+  "relatedOperators": ["Level TOP", "Transform TOP", "Blur TOP", "Null TOP", "Composite TOP", "GLSL TOP", "Noise TOP"],
+  "workflowPatterns": [
+    "generative-art",
+    "feedback-zoom",
+    "motion-blur-fake",
+    "reaction-diffusion"
+  ],
+  "keywords": [
+    "feedback", "trail", "echo", "persistence", "motion blur", "accumulation",
+    "loop", "iterative", "generative", "decay", "buffer", "zoom", "rotation",
+    "ping-pong", "reaction diffusion"
+  ],
+  "tags": ["TOP", "Filters", "Feedback TOP", "generative", "feedback loop"],
+  "searchWeight": 2,
+  "contentHash": "",
+  "processingDate": "2026-02-21T00:00:00.000Z",
+  "processingVersion": "2.10.0",
+  "isValid": true,
+  "validationErrors": []
+}

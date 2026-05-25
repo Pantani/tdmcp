@@ -1,0 +1,2659 @@
+{
+  "name": "Transform POP",
+  "id": "transform_pop",
+  "category": "POP",
+  "subcategory": "Experimental",
+  "description": "The Transform POP applies a translate, rotate and scale to the position (attribute P) and normal (attribute N) of all the points of the input.",
+  "parameters": [
+    {
+      "name": "P",
+      "label": "Mode",
+      "description": "Configure Mode for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Transform Geometry",
+          "value": "transformgeo",
+          "description": ""
+        },
+        {
+          "label": "Transform Attribute",
+          "value": "transformattrib",
+          "description": ""
+        },
+        {
+          "label": "Transform Attribute Scope as Position",
+          "value": "transformattribscopepos",
+          "description": ""
+        },
+        {
+          "label": "Transform Attribute Scope as Vector",
+          "value": "transformattribscopevec",
+          "description": ""
+        },
+        {
+          "label": "Transform Attribute",
+          "value": "transformattr",
+          "description": ""
+        },
+        {
+          "label": "Transform Attribute Scope as Position",
+          "value": "transformattrscopepos",
+          "description": ""
+        },
+        {
+          "label": "Transform Attribute Scope as Vector",
+          "value": "transformattrscopevec",
+          "description": ""
+        },
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertex",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primitive",
+          "description": ""
+        },
+        {
+          "label": "Scale Rotate Translate",
+          "value": "srt",
+          "description": ""
+        },
+        {
+          "label": "Scale Translate Rotate",
+          "value": "str",
+          "description": ""
+        },
+        {
+          "label": "Rotate Scale Translate",
+          "value": "rst",
+          "description": ""
+        },
+        {
+          "label": "Rotate Translate Scale",
+          "value": "rts",
+          "description": ""
+        },
+        {
+          "label": "Translate Scale Rotate",
+          "value": "tsr",
+          "description": ""
+        },
+        {
+          "label": "Translate Rotate Scale",
+          "value": "trs",
+          "description": ""
+        },
+        {
+          "label": "Rx Ry Rz",
+          "value": "xyz",
+          "description": ""
+        },
+        {
+          "label": "Rx Rz Ry",
+          "value": "xzy",
+          "description": ""
+        },
+        {
+          "label": "Ry Rx Rz",
+          "value": "yxz",
+          "description": ""
+        },
+        {
+          "label": "Ry Rz Rx",
+          "value": "yzx",
+          "description": ""
+        },
+        {
+          "label": "Rz Rx Ry",
+          "value": "zxy",
+          "description": ""
+        },
+        {
+          "label": "Rz Ry Rx",
+          "value": "zyx",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "tx",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "ty",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "tz",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "rx",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "ry",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "rz",
+          "description": ""
+        },
+        {
+          "label": "Scale",
+          "value": "sx",
+          "description": ""
+        },
+        {
+          "label": "Scale",
+          "value": "sy",
+          "description": ""
+        },
+        {
+          "label": "Scale",
+          "value": "sz",
+          "description": ""
+        },
+        {
+          "label": "Pivot",
+          "value": "px",
+          "description": ""
+        },
+        {
+          "label": "Pivot",
+          "value": "py",
+          "description": ""
+        },
+        {
+          "label": "Pivot",
+          "value": "pz",
+          "description": ""
+        },
+        {
+          "label": "Up Vector",
+          "value": "upvectorx",
+          "description": ""
+        },
+        {
+          "label": "Up Vector",
+          "value": "upvectory",
+          "description": ""
+        },
+        {
+          "label": "Up Vector",
+          "value": "upvectorz",
+          "description": ""
+        },
+        {
+          "label": "+X",
+          "value": "posx",
+          "description": ""
+        },
+        {
+          "label": "-X",
+          "value": "negx",
+          "description": "X negx -"
+        },
+        {
+          "label": "+Y",
+          "value": "posy",
+          "description": ""
+        },
+        {
+          "label": "-Y",
+          "value": "negy",
+          "description": "Y negy -"
+        },
+        {
+          "label": "+Z",
+          "value": "posz",
+          "description": ""
+        },
+        {
+          "label": "-Z",
+          "value": "negz",
+          "description": "Z negz -"
+        },
+        {
+          "label": "Input, then Transform Page",
+          "value": "inputxformpage",
+          "description": ""
+        },
+        {
+          "label": "Transform Page, then Input",
+          "value": "xformpageinput",
+          "description": ""
+        },
+        {
+          "label": "P",
+          "value": "P",
+          "description": ""
+        },
+        {
+          "label": "N",
+          "value": "N",
+          "description": ""
+        },
+        {
+          "label": "Color",
+          "value": "Color",
+          "description": ""
+        },
+        {
+          "label": "Color.i012",
+          "value": "Color.i012",
+          "description": ""
+        },
+        {
+          "label": "Tex",
+          "value": "Tex",
+          "description": ""
+        },
+        {
+          "label": "PointScale",
+          "value": "PointScale",
+          "description": ""
+        },
+        {
+          "label": "LineWidth",
+          "value": "LineWidth",
+          "description": ""
+        },
+        {
+          "label": "float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "double",
+          "value": "double",
+          "description": ""
+        },
+        {
+          "label": "int",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "uint",
+          "value": "uint",
+          "description": ""
+        },
+        {
+          "label": "dir",
+          "value": "dir",
+          "description": ""
+        },
+        {
+          "label": "dbl dir",
+          "value": "ddir",
+          "description": ""
+        },
+        {
+          "label": "1",
+          "value": "1",
+          "description": ""
+        },
+        {
+          "label": "2",
+          "value": "2",
+          "description": ""
+        },
+        {
+          "label": "3",
+          "value": "3",
+          "description": ""
+        },
+        {
+          "label": "4",
+          "value": "4",
+          "description": ""
+        },
+        {
+          "label": "New Attribute Default Value",
+          "value": "newattrdefaultval1",
+          "description": ""
+        },
+        {
+          "label": "New Attribute Default Value",
+          "value": "newattrdefaultval2",
+          "description": ""
+        },
+        {
+          "label": "New Attribute Default Value",
+          "value": "newattrdefaultval3",
+          "description": ""
+        },
+        {
+          "label": "New Attribute Default Value",
+          "value": "newattrdefaultval4",
+          "description": ""
+        },
+        {
+          "label": "Transform, then Align",
+          "value": "transformalign",
+          "description": ""
+        },
+        {
+          "label": "Align, then Transform",
+          "value": "aligntransform",
+          "description": ""
+        },
+        {
+          "label": "Scale Translate",
+          "value": "st",
+          "description": ""
+        },
+        {
+          "label": "Translate Scale",
+          "value": "ts",
+          "description": ""
+        },
+        {
+          "label": "Off",
+          "value": "off",
+          "description": ""
+        },
+        {
+          "label": "Origin",
+          "value": "origin",
+          "description": ""
+        },
+        {
+          "label": "Reference Input",
+          "value": "reference",
+          "description": ""
+        },
+        {
+          "label": "Min",
+          "value": "min",
+          "description": ""
+        },
+        {
+          "label": "Center",
+          "value": "center",
+          "description": ""
+        },
+        {
+          "label": "Max",
+          "value": "max",
+          "description": ""
+        },
+        {
+          "label": "Min",
+          "value": "min",
+          "description": ""
+        },
+        {
+          "label": "Center",
+          "value": "center",
+          "description": ""
+        },
+        {
+          "label": "Max",
+          "value": "max",
+          "description": ""
+        },
+        {
+          "label": "Off",
+          "value": "off",
+          "description": ""
+        },
+        {
+          "label": "Origin",
+          "value": "origin",
+          "description": ""
+        },
+        {
+          "label": "Reference Input",
+          "value": "reference",
+          "description": ""
+        },
+        {
+          "label": "Min",
+          "value": "min",
+          "description": ""
+        },
+        {
+          "label": "Center",
+          "value": "center",
+          "description": ""
+        },
+        {
+          "label": "Max",
+          "value": "max",
+          "description": ""
+        },
+        {
+          "label": "Min",
+          "value": "min",
+          "description": ""
+        },
+        {
+          "label": "Center",
+          "value": "center",
+          "description": ""
+        },
+        {
+          "label": "Max",
+          "value": "max",
+          "description": ""
+        },
+        {
+          "label": "Off",
+          "value": "off",
+          "description": ""
+        },
+        {
+          "label": "Origin",
+          "value": "origin",
+          "description": ""
+        },
+        {
+          "label": "Reference Input",
+          "value": "reference",
+          "description": ""
+        },
+        {
+          "label": "Min",
+          "value": "min",
+          "description": ""
+        },
+        {
+          "label": "Center",
+          "value": "center",
+          "description": ""
+        },
+        {
+          "label": "Max",
+          "value": "max",
+          "description": ""
+        },
+        {
+          "label": "Min",
+          "value": "min",
+          "description": ""
+        },
+        {
+          "label": "Center",
+          "value": "center",
+          "description": ""
+        },
+        {
+          "label": "Max",
+          "value": "max",
+          "description": ""
+        },
+        {
+          "label": "Per Axis",
+          "value": "peraxis",
+          "description": ""
+        },
+        {
+          "label": "Unity",
+          "value": "unity",
+          "description": ""
+        },
+        {
+          "label": "Reference",
+          "value": "reference",
+          "description": ""
+        },
+        {
+          "label": "Off",
+          "value": "off",
+          "description": ""
+        },
+        {
+          "label": "Unity",
+          "value": "unity",
+          "description": ""
+        },
+        {
+          "label": "Reference Input",
+          "value": "reference",
+          "description": ""
+        },
+        {
+          "label": "Unity Proportional",
+          "value": "unityprop",
+          "description": ""
+        },
+        {
+          "label": "Reference Proportional",
+          "value": "referenceprop",
+          "description": ""
+        },
+        {
+          "label": "Off",
+          "value": "off",
+          "description": ""
+        },
+        {
+          "label": "Unity",
+          "value": "unity",
+          "description": ""
+        },
+        {
+          "label": "Reference Input",
+          "value": "reference",
+          "description": ""
+        },
+        {
+          "label": "Unity Proportional",
+          "value": "unityprop",
+          "description": ""
+        },
+        {
+          "label": "Reference Proportional",
+          "value": "referenceprop",
+          "description": ""
+        },
+        {
+          "label": "Off",
+          "value": "off",
+          "description": ""
+        },
+        {
+          "label": "Unity",
+          "value": "unity",
+          "description": ""
+        },
+        {
+          "label": "Reference Input",
+          "value": "reference",
+          "description": ""
+        },
+        {
+          "label": "Unity Proportional",
+          "value": "unityprop",
+          "description": ""
+        },
+        {
+          "label": "Reference Proportional",
+          "value": "referenceprop",
+          "description": ""
+        },
+        {
+          "label": "t (Translate)",
+          "value": "t",
+          "description": ""
+        },
+        {
+          "label": "tx",
+          "value": "tx",
+          "description": ""
+        },
+        {
+          "label": "ty",
+          "value": "ty",
+          "description": ""
+        },
+        {
+          "label": "tz",
+          "value": "tz",
+          "description": ""
+        },
+        {
+          "label": "r (Rotate)",
+          "value": "r",
+          "description": ""
+        },
+        {
+          "label": "rx",
+          "value": "rx",
+          "description": ""
+        },
+        {
+          "label": "ry",
+          "value": "ry",
+          "description": ""
+        },
+        {
+          "label": "rz",
+          "value": "rz",
+          "description": ""
+        },
+        {
+          "label": "s (Scale)",
+          "value": "s",
+          "description": ""
+        },
+        {
+          "label": "sx",
+          "value": "sx",
+          "description": ""
+        },
+        {
+          "label": "sy",
+          "value": "sy",
+          "description": ""
+        },
+        {
+          "label": "sz",
+          "value": "sz",
+          "description": ""
+        },
+        {
+          "label": "p (Pivot)",
+          "value": "p",
+          "description": ""
+        },
+        {
+          "label": "px",
+          "value": "px",
+          "description": ""
+        },
+        {
+          "label": "py",
+          "value": "py",
+          "description": ""
+        },
+        {
+          "label": "pz",
+          "value": "pz",
+          "description": ""
+        },
+        {
+          "label": "scale (Uniform Scale)",
+          "value": "scale",
+          "description": ""
+        },
+        {
+          "label": "Set",
+          "value": "set",
+          "description": ""
+        },
+        {
+          "label": "Multiply",
+          "value": "mult",
+          "description": ""
+        },
+        {
+          "label": "Add",
+          "value": "add",
+          "description": ""
+        },
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        },
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    },
+    {
+      "name": "mode",
+      "label": "Mode",
+      "description": "Configure Mode for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Transform Geometry",
+          "value": "transformgeo",
+          "description": ""
+        },
+        {
+          "label": "Transform Attribute",
+          "value": "transformattrib",
+          "description": ""
+        },
+        {
+          "label": "Transform Attribute Scope as Position",
+          "value": "transformattribscopepos",
+          "description": ""
+        },
+        {
+          "label": "Transform Attribute Scope as Vector",
+          "value": "transformattribscopevec",
+          "description": ""
+        },
+        {
+          "label": "Transform Attribute",
+          "value": "transformattr",
+          "description": ""
+        },
+        {
+          "label": "Transform Attribute Scope as Position",
+          "value": "transformattrscopepos",
+          "description": ""
+        },
+        {
+          "label": "Transform Attribute Scope as Vector",
+          "value": "transformattrscopevec",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "transformgeo",
+      "label": "Transform Geometry",
+      "description": "Configure Transform Geometry for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Transform Geometry",
+          "value": "transformgeo",
+          "description": ""
+        },
+        {
+          "label": "Transform Attribute",
+          "value": "transformattrib",
+          "description": ""
+        },
+        {
+          "label": "Transform Attribute Scope as Position",
+          "value": "transformattribscopepos",
+          "description": ""
+        },
+        {
+          "label": "Transform Attribute Scope as Vector",
+          "value": "transformattribscopevec",
+          "description": ""
+        },
+        {
+          "label": "Transform Attribute",
+          "value": "transformattr",
+          "description": ""
+        },
+        {
+          "label": "Transform Attribute Scope as Position",
+          "value": "transformattrscopepos",
+          "description": ""
+        },
+        {
+          "label": "Transform Attribute Scope as Vector",
+          "value": "transformattrscopevec",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "attrclass",
+      "label": "Attribute Class",
+      "description": "Configure Attribute Class for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertex",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primitive",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "point",
+      "label": "Point",
+      "description": "Configure Point for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertex",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primitive",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "inputattrscope",
+      "label": "Input Attribute (Scope)",
+      "description": "Configure Input Attribute (Scope) for the operator",
+      "type": "string"
+    },
+    {
+      "name": "group",
+      "label": "Group",
+      "description": "Configure Group for the operator",
+      "type": "string"
+    },
+    {
+      "name": "weightattr",
+      "label": "Weight Attribute",
+      "description": "Configure Weight Attribute for the operator",
+      "type": "string"
+    },
+    {
+      "name": "xord",
+      "label": "Transform Order",
+      "description": "Configure Transform Order for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Scale Rotate Translate",
+          "value": "srt",
+          "description": ""
+        },
+        {
+          "label": "Scale Translate Rotate",
+          "value": "str",
+          "description": ""
+        },
+        {
+          "label": "Rotate Scale Translate",
+          "value": "rst",
+          "description": ""
+        },
+        {
+          "label": "Rotate Translate Scale",
+          "value": "rts",
+          "description": ""
+        },
+        {
+          "label": "Translate Scale Rotate",
+          "value": "tsr",
+          "description": ""
+        },
+        {
+          "label": "Translate Rotate Scale",
+          "value": "trs",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "srt",
+      "label": "Scale Rotate Translate",
+      "description": "Configure Scale Rotate Translate for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Scale Rotate Translate",
+          "value": "srt",
+          "description": ""
+        },
+        {
+          "label": "Scale Translate Rotate",
+          "value": "str",
+          "description": ""
+        },
+        {
+          "label": "Rotate Scale Translate",
+          "value": "rst",
+          "description": ""
+        },
+        {
+          "label": "Rotate Translate Scale",
+          "value": "rts",
+          "description": ""
+        },
+        {
+          "label": "Translate Scale Rotate",
+          "value": "tsr",
+          "description": ""
+        },
+        {
+          "label": "Translate Rotate Scale",
+          "value": "trs",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "rord",
+      "label": "Rotate Order",
+      "description": "Configure Rotate Order for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Rx Ry Rz",
+          "value": "xyz",
+          "description": ""
+        },
+        {
+          "label": "Rx Rz Ry",
+          "value": "xzy",
+          "description": ""
+        },
+        {
+          "label": "Ry Rx Rz",
+          "value": "yxz",
+          "description": ""
+        },
+        {
+          "label": "Ry Rz Rx",
+          "value": "yzx",
+          "description": ""
+        },
+        {
+          "label": "Rz Rx Ry",
+          "value": "zxy",
+          "description": ""
+        },
+        {
+          "label": "Rz Ry Rx",
+          "value": "zyx",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "xyz",
+      "label": "Rx Ry Rz",
+      "description": "Configure Rx Ry Rz for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Rx Ry Rz",
+          "value": "xyz",
+          "description": ""
+        },
+        {
+          "label": "Rx Rz Ry",
+          "value": "xzy",
+          "description": ""
+        },
+        {
+          "label": "Ry Rx Rz",
+          "value": "yxz",
+          "description": ""
+        },
+        {
+          "label": "Ry Rz Rx",
+          "value": "yzx",
+          "description": ""
+        },
+        {
+          "label": "Rz Rx Ry",
+          "value": "zxy",
+          "description": ""
+        },
+        {
+          "label": "Rz Ry Rx",
+          "value": "zyx",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "t",
+      "label": "Translate",
+      "description": "Configure Translate for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Translate",
+          "value": "tx",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "ty",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "tz",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "tx",
+      "label": "Translate",
+      "description": "Configure Translate for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Translate",
+          "value": "tx",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "ty",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "tz",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "r",
+      "label": "Rotate",
+      "description": "Configure Rotate for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Rotate",
+          "value": "rx",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "ry",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "rz",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "rx",
+      "label": "Rotate",
+      "description": "Configure Rotate for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Rotate",
+          "value": "rx",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "ry",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "rz",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "s",
+      "label": "Scale",
+      "description": "Configure Scale for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Scale",
+          "value": "sx",
+          "description": ""
+        },
+        {
+          "label": "Scale",
+          "value": "sy",
+          "description": ""
+        },
+        {
+          "label": "Scale",
+          "value": "sz",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "sx",
+      "label": "Scale",
+      "description": "Configure Scale for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Scale",
+          "value": "sx",
+          "description": ""
+        },
+        {
+          "label": "Scale",
+          "value": "sy",
+          "description": ""
+        },
+        {
+          "label": "Scale",
+          "value": "sz",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "p",
+      "label": "Pivot",
+      "description": "Configure Pivot for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Pivot",
+          "value": "px",
+          "description": ""
+        },
+        {
+          "label": "Pivot",
+          "value": "py",
+          "description": ""
+        },
+        {
+          "label": "Pivot",
+          "value": "pz",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "px",
+      "label": "Pivot",
+      "description": "Configure Pivot for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Pivot",
+          "value": "px",
+          "description": ""
+        },
+        {
+          "label": "Pivot",
+          "value": "py",
+          "description": ""
+        },
+        {
+          "label": "Pivot",
+          "value": "pz",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "scale",
+      "label": "Uniform Scale",
+      "description": "Configure Uniform Scale for the operator",
+      "type": "string"
+    },
+    {
+      "name": "invert",
+      "label": "Invert",
+      "description": "Configure Invert for the operator",
+      "type": "string"
+    },
+    {
+      "name": "vlength",
+      "label": "Vectors Maintain Length",
+      "description": "Configure Vectors Maintain Length for the operator",
+      "type": "string"
+    },
+    {
+      "name": "lookat",
+      "label": "Look At",
+      "description": "Configure Look At for the operator",
+      "type": "string"
+    },
+    {
+      "name": "upvector",
+      "label": "Up Vector",
+      "description": "Configure Up Vector for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Up Vector",
+          "value": "upvectorx",
+          "description": ""
+        },
+        {
+          "label": "Up Vector",
+          "value": "upvectory",
+          "description": ""
+        },
+        {
+          "label": "Up Vector",
+          "value": "upvectorz",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "upvectorx",
+      "label": "Up Vector",
+      "description": "Configure Up Vector for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Up Vector",
+          "value": "upvectorx",
+          "description": ""
+        },
+        {
+          "label": "Up Vector",
+          "value": "upvectory",
+          "description": ""
+        },
+        {
+          "label": "Up Vector",
+          "value": "upvectorz",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "forwarddir",
+      "label": "Forward Direction",
+      "description": "Configure Forward Direction for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "+X",
+          "value": "posx",
+          "description": ""
+        },
+        {
+          "label": "-X",
+          "value": "negx",
+          "description": "X negx -"
+        },
+        {
+          "label": "+Y",
+          "value": "posy",
+          "description": ""
+        },
+        {
+          "label": "-Y",
+          "value": "negy",
+          "description": "Y negy -"
+        },
+        {
+          "label": "+Z",
+          "value": "posz",
+          "description": ""
+        },
+        {
+          "label": "-Z",
+          "value": "negz",
+          "description": "Z negz -"
+        }
+      ]
+    },
+    {
+      "name": "posx",
+      "label": "+X",
+      "description": "Configure +X for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "+X",
+          "value": "posx",
+          "description": ""
+        },
+        {
+          "label": "-X",
+          "value": "negx",
+          "description": "X negx -"
+        },
+        {
+          "label": "+Y",
+          "value": "posy",
+          "description": ""
+        },
+        {
+          "label": "-Y",
+          "value": "negy",
+          "description": "Y negy -"
+        },
+        {
+          "label": "+Z",
+          "value": "posz",
+          "description": ""
+        },
+        {
+          "label": "-Z",
+          "value": "negz",
+          "description": "Z negz -"
+        }
+      ]
+    },
+    {
+      "name": "xformmatrixop",
+      "label": "Xform Matrix/CHOP/DAT",
+      "description": "Configure Xform Matrix/CHOP/DAT for the operator",
+      "type": "string"
+    },
+    {
+      "name": "multiplyorder",
+      "label": "Multiply Order",
+      "description": "Configure Multiply Order for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Input, then Transform Page",
+          "value": "inputxformpage",
+          "description": ""
+        },
+        {
+          "label": "Transform Page, then Input",
+          "value": "xformpageinput",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "inputxformpage",
+      "label": "Input, then Transform Page",
+      "description": "Configure Input, then Transform Page for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Input, then Transform Page",
+          "value": "inputxformpage",
+          "description": ""
+        },
+        {
+          "label": "Transform Page, then Input",
+          "value": "xformpageinput",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "outputattrscope",
+      "label": "Output Attribute (Scope)",
+      "description": "Configure Output Attribute (Scope) for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "P",
+          "value": "P",
+          "description": ""
+        },
+        {
+          "label": "N",
+          "value": "N",
+          "description": ""
+        },
+        {
+          "label": "Color",
+          "value": "Color",
+          "description": ""
+        },
+        {
+          "label": "Color.i012",
+          "value": "Color.i012",
+          "description": ""
+        },
+        {
+          "label": "Tex",
+          "value": "Tex",
+          "description": ""
+        },
+        {
+          "label": "PointScale",
+          "value": "PointScale",
+          "description": ""
+        },
+        {
+          "label": "LineWidth",
+          "value": "LineWidth",
+          "description": ""
+        },
+        {
+          "label": "float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "double",
+          "value": "double",
+          "description": ""
+        },
+        {
+          "label": "int",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "uint",
+          "value": "uint",
+          "description": ""
+        },
+        {
+          "label": "dir",
+          "value": "dir",
+          "description": ""
+        },
+        {
+          "label": "dbl dir",
+          "value": "ddir",
+          "description": ""
+        },
+        {
+          "label": "1",
+          "value": "1",
+          "description": ""
+        },
+        {
+          "label": "2",
+          "value": "2",
+          "description": ""
+        },
+        {
+          "label": "3",
+          "value": "3",
+          "description": ""
+        },
+        {
+          "label": "4",
+          "value": "4",
+          "description": ""
+        },
+        {
+          "label": "New Attribute Default Value",
+          "value": "newattrdefaultval1",
+          "description": ""
+        },
+        {
+          "label": "New Attribute Default Value",
+          "value": "newattrdefaultval2",
+          "description": ""
+        },
+        {
+          "label": "New Attribute Default Value",
+          "value": "newattrdefaultval3",
+          "description": ""
+        },
+        {
+          "label": "New Attribute Default Value",
+          "value": "newattrdefaultval4",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "overrideautoattr",
+      "label": "Override Automatic Attribute",
+      "description": "Configure Override Automatic Attribute for the operator",
+      "type": "string"
+    },
+    {
+      "name": "newattrtype",
+      "label": "New Attribute Type",
+      "description": "Configure New Attribute Type for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "double",
+          "value": "double",
+          "description": ""
+        },
+        {
+          "label": "int",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "uint",
+          "value": "uint",
+          "description": ""
+        },
+        {
+          "label": "dir",
+          "value": "dir",
+          "description": ""
+        },
+        {
+          "label": "dbl dir",
+          "value": "ddir",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "float",
+      "label": "float",
+      "description": "Configure float for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "double",
+          "value": "double",
+          "description": ""
+        },
+        {
+          "label": "int",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "uint",
+          "value": "uint",
+          "description": ""
+        },
+        {
+          "label": "dir",
+          "value": "dir",
+          "description": ""
+        },
+        {
+          "label": "dbl dir",
+          "value": "ddir",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "attrnumcomps",
+      "label": "New Attribute Number of Components",
+      "description": "Configure New Attribute Number of Components for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "1",
+          "value": "1",
+          "description": ""
+        },
+        {
+          "label": "2",
+          "value": "2",
+          "description": ""
+        },
+        {
+          "label": "3",
+          "value": "3",
+          "description": ""
+        },
+        {
+          "label": "4",
+          "value": "4",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "1",
+      "label": "1",
+      "description": "Configure 1 for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "1",
+          "value": "1",
+          "description": ""
+        },
+        {
+          "label": "2",
+          "value": "2",
+          "description": ""
+        },
+        {
+          "label": "3",
+          "value": "3",
+          "description": ""
+        },
+        {
+          "label": "4",
+          "value": "4",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "newattrdefaultval",
+      "label": "New Attribute Default Value",
+      "description": "Configure New Attribute Default Value for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "New Attribute Default Value",
+          "value": "newattrdefaultval1",
+          "description": ""
+        },
+        {
+          "label": "New Attribute Default Value",
+          "value": "newattrdefaultval2",
+          "description": ""
+        },
+        {
+          "label": "New Attribute Default Value",
+          "value": "newattrdefaultval3",
+          "description": ""
+        },
+        {
+          "label": "New Attribute Default Value",
+          "value": "newattrdefaultval4",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "newattrdefaultval1",
+      "label": "New Attribute Default Value",
+      "description": "Configure New Attribute Default Value for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "New Attribute Default Value",
+          "value": "newattrdefaultval1",
+          "description": ""
+        },
+        {
+          "label": "New Attribute Default Value",
+          "value": "newattrdefaultval2",
+          "description": ""
+        },
+        {
+          "label": "New Attribute Default Value",
+          "value": "newattrdefaultval3",
+          "description": ""
+        },
+        {
+          "label": "New Attribute Default Value",
+          "value": "newattrdefaultval4",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "alignxformorder",
+      "label": "Align Transform Order",
+      "description": "Configure Align Transform Order for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Transform, then Align",
+          "value": "transformalign",
+          "description": ""
+        },
+        {
+          "label": "Align, then Transform",
+          "value": "aligntransform",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "transformalign",
+      "label": "Transform, then Align",
+      "description": "Configure Transform, then Align for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Transform, then Align",
+          "value": "transformalign",
+          "description": ""
+        },
+        {
+          "label": "Align, then Transform",
+          "value": "aligntransform",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "alignopord",
+      "label": "Align Operation Order",
+      "description": "Configure Align Operation Order for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Scale Translate",
+          "value": "st",
+          "description": ""
+        },
+        {
+          "label": "Translate Scale",
+          "value": "ts",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "st",
+      "label": "Scale Translate",
+      "description": "Configure Scale Translate for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Scale Translate",
+          "value": "st",
+          "description": ""
+        },
+        {
+          "label": "Translate Scale",
+          "value": "ts",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "aligntx",
+      "label": "Align Translate X",
+      "description": "Configure Align Translate X for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Off",
+          "value": "off",
+          "description": ""
+        },
+        {
+          "label": "Origin",
+          "value": "origin",
+          "description": ""
+        },
+        {
+          "label": "Reference Input",
+          "value": "reference",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "off",
+      "label": "Off",
+      "description": "Configure Off for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Off",
+          "value": "off",
+          "description": ""
+        },
+        {
+          "label": "Origin",
+          "value": "origin",
+          "description": ""
+        },
+        {
+          "label": "Reference Input",
+          "value": "reference",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "fromx",
+      "label": "From Input",
+      "description": "Configure From Input for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Min",
+          "value": "min",
+          "description": ""
+        },
+        {
+          "label": "Center",
+          "value": "center",
+          "description": ""
+        },
+        {
+          "label": "Max",
+          "value": "max",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "min",
+      "label": "Min",
+      "description": "Configure Min for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Min",
+          "value": "min",
+          "description": ""
+        },
+        {
+          "label": "Center",
+          "value": "center",
+          "description": ""
+        },
+        {
+          "label": "Max",
+          "value": "max",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "tox",
+      "label": "To Reference",
+      "description": "Configure To Reference for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Min",
+          "value": "min",
+          "description": ""
+        },
+        {
+          "label": "Center",
+          "value": "center",
+          "description": ""
+        },
+        {
+          "label": "Max",
+          "value": "max",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "alignty",
+      "label": "Align Translate Y",
+      "description": "Configure Align Translate Y for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Off",
+          "value": "off",
+          "description": ""
+        },
+        {
+          "label": "Origin",
+          "value": "origin",
+          "description": ""
+        },
+        {
+          "label": "Reference Input",
+          "value": "reference",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "fromy",
+      "label": "From Input",
+      "description": "Configure From Input for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Min",
+          "value": "min",
+          "description": ""
+        },
+        {
+          "label": "Center",
+          "value": "center",
+          "description": ""
+        },
+        {
+          "label": "Max",
+          "value": "max",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "toy",
+      "label": "To Reference",
+      "description": "Configure To Reference for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Min",
+          "value": "min",
+          "description": ""
+        },
+        {
+          "label": "Center",
+          "value": "center",
+          "description": ""
+        },
+        {
+          "label": "Max",
+          "value": "max",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "aligntz",
+      "label": "Align Translate Z",
+      "description": "Configure Align Translate Z for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Off",
+          "value": "off",
+          "description": ""
+        },
+        {
+          "label": "Origin",
+          "value": "origin",
+          "description": ""
+        },
+        {
+          "label": "Reference Input",
+          "value": "reference",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "fromz",
+      "label": "From Input",
+      "description": "Configure From Input for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Min",
+          "value": "min",
+          "description": ""
+        },
+        {
+          "label": "Center",
+          "value": "center",
+          "description": ""
+        },
+        {
+          "label": "Max",
+          "value": "max",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "toz",
+      "label": "To Reference",
+      "description": "Configure To Reference for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Min",
+          "value": "min",
+          "description": ""
+        },
+        {
+          "label": "Center",
+          "value": "center",
+          "description": ""
+        },
+        {
+          "label": "Max",
+          "value": "max",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "alignscale",
+      "label": "Align Scale",
+      "description": "Configure Align Scale for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Per Axis",
+          "value": "peraxis",
+          "description": ""
+        },
+        {
+          "label": "Unity",
+          "value": "unity",
+          "description": ""
+        },
+        {
+          "label": "Reference",
+          "value": "reference",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "peraxis",
+      "label": "Per Axis",
+      "description": "Configure Per Axis for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Per Axis",
+          "value": "peraxis",
+          "description": ""
+        },
+        {
+          "label": "Unity",
+          "value": "unity",
+          "description": ""
+        },
+        {
+          "label": "Reference",
+          "value": "reference",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "alignscalex",
+      "label": "Align Scale X",
+      "description": "Configure Align Scale X for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Off",
+          "value": "off",
+          "description": ""
+        },
+        {
+          "label": "Unity",
+          "value": "unity",
+          "description": ""
+        },
+        {
+          "label": "Reference Input",
+          "value": "reference",
+          "description": ""
+        },
+        {
+          "label": "Unity Proportional",
+          "value": "unityprop",
+          "description": ""
+        },
+        {
+          "label": "Reference Proportional",
+          "value": "referenceprop",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "alignscaley",
+      "label": "Align Scale Y",
+      "description": "Configure Align Scale Y for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Off",
+          "value": "off",
+          "description": ""
+        },
+        {
+          "label": "Unity",
+          "value": "unity",
+          "description": ""
+        },
+        {
+          "label": "Reference Input",
+          "value": "reference",
+          "description": ""
+        },
+        {
+          "label": "Unity Proportional",
+          "value": "unityprop",
+          "description": ""
+        },
+        {
+          "label": "Reference Proportional",
+          "value": "referenceprop",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "alignscalez",
+      "label": "Align Scale Z",
+      "description": "Configure Align Scale Z for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Off",
+          "value": "off",
+          "description": ""
+        },
+        {
+          "label": "Unity",
+          "value": "unity",
+          "description": ""
+        },
+        {
+          "label": "Reference Input",
+          "value": "reference",
+          "description": ""
+        },
+        {
+          "label": "Unity Proportional",
+          "value": "unityprop",
+          "description": ""
+        },
+        {
+          "label": "Reference Proportional",
+          "value": "referenceprop",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "map",
+      "label": "Mapping",
+      "description": "Configure Mapping for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "t (Translate)",
+          "value": "t",
+          "description": ""
+        },
+        {
+          "label": "tx",
+          "value": "tx",
+          "description": ""
+        },
+        {
+          "label": "ty",
+          "value": "ty",
+          "description": ""
+        },
+        {
+          "label": "tz",
+          "value": "tz",
+          "description": ""
+        },
+        {
+          "label": "r (Rotate)",
+          "value": "r",
+          "description": ""
+        },
+        {
+          "label": "rx",
+          "value": "rx",
+          "description": ""
+        },
+        {
+          "label": "ry",
+          "value": "ry",
+          "description": ""
+        },
+        {
+          "label": "rz",
+          "value": "rz",
+          "description": ""
+        },
+        {
+          "label": "s (Scale)",
+          "value": "s",
+          "description": ""
+        },
+        {
+          "label": "sx",
+          "value": "sx",
+          "description": ""
+        },
+        {
+          "label": "sy",
+          "value": "sy",
+          "description": ""
+        },
+        {
+          "label": "sz",
+          "value": "sz",
+          "description": ""
+        },
+        {
+          "label": "p (Pivot)",
+          "value": "p",
+          "description": ""
+        },
+        {
+          "label": "px",
+          "value": "px",
+          "description": ""
+        },
+        {
+          "label": "py",
+          "value": "py",
+          "description": ""
+        },
+        {
+          "label": "pz",
+          "value": "pz",
+          "description": ""
+        },
+        {
+          "label": "scale (Uniform Scale)",
+          "value": "scale",
+          "description": ""
+        },
+        {
+          "label": "Set",
+          "value": "set",
+          "description": ""
+        },
+        {
+          "label": "Multiply",
+          "value": "mult",
+          "description": ""
+        },
+        {
+          "label": "Add",
+          "value": "add",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "map0op",
+      "label": "OP",
+      "description": "Configure OP for the operator",
+      "type": "string"
+    },
+    {
+      "name": "map0element",
+      "label": "Element",
+      "description": "Configure Element for the operator",
+      "type": "string"
+    },
+    {
+      "name": "map0parm",
+      "label": "Parameter",
+      "description": "Configure Parameter for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "t (Translate)",
+          "value": "t",
+          "description": ""
+        },
+        {
+          "label": "tx",
+          "value": "tx",
+          "description": ""
+        },
+        {
+          "label": "ty",
+          "value": "ty",
+          "description": ""
+        },
+        {
+          "label": "tz",
+          "value": "tz",
+          "description": ""
+        },
+        {
+          "label": "r (Rotate)",
+          "value": "r",
+          "description": ""
+        },
+        {
+          "label": "rx",
+          "value": "rx",
+          "description": ""
+        },
+        {
+          "label": "ry",
+          "value": "ry",
+          "description": ""
+        },
+        {
+          "label": "rz",
+          "value": "rz",
+          "description": ""
+        },
+        {
+          "label": "s (Scale)",
+          "value": "s",
+          "description": ""
+        },
+        {
+          "label": "sx",
+          "value": "sx",
+          "description": ""
+        },
+        {
+          "label": "sy",
+          "value": "sy",
+          "description": ""
+        },
+        {
+          "label": "sz",
+          "value": "sz",
+          "description": ""
+        },
+        {
+          "label": "p (Pivot)",
+          "value": "p",
+          "description": ""
+        },
+        {
+          "label": "px",
+          "value": "px",
+          "description": ""
+        },
+        {
+          "label": "py",
+          "value": "py",
+          "description": ""
+        },
+        {
+          "label": "pz",
+          "value": "pz",
+          "description": ""
+        },
+        {
+          "label": "scale (Uniform Scale)",
+          "value": "scale",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "map0combineop",
+      "label": "Combine Operation",
+      "description": "Configure Combine Operation for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Set",
+          "value": "set",
+          "description": ""
+        },
+        {
+          "label": "Multiply",
+          "value": "mult",
+          "description": ""
+        },
+        {
+          "label": "Add",
+          "value": "add",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "set",
+      "label": "Set",
+      "description": "Configure Set for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Set",
+          "value": "set",
+          "description": ""
+        },
+        {
+          "label": "Multiply",
+          "value": "mult",
+          "description": ""
+        },
+        {
+          "label": "Add",
+          "value": "add",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "bypass",
+      "label": "Bypass",
+      "description": "Configure Bypass for the operator",
+      "type": "string"
+    },
+    {
+      "name": "delinputattrs",
+      "label": "Delete Input Attributes",
+      "description": "Configure Delete Input Attributes for the operator",
+      "type": "string"
+    },
+    {
+      "name": "parmcolorspace",
+      "label": "Parameter Color Space",
+      "description": "Configure Parameter Color Space for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        }
+      ]
+    },
+    {
+      "name": "srgb",
+      "label": "sRGB",
+      "description": "Configure sRGB for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        }
+      ]
+    },
+    {
+      "name": "parmreferencewhite",
+      "label": "Parameter Reference White",
+      "description": "Configure Parameter Reference White for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    },
+    {
+      "name": "default",
+      "label": "Default For Color Space",
+      "description": "Configure Default For Color Space for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    }
+  ],
+  "experimental": true,
+  "sourceFile": "Experimental-Transform_POP.htm",
+  "parsedAt": "2025-08-08T03:04:00.708Z"
+}

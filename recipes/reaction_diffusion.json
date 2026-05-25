@@ -1,0 +1,44 @@
+{
+  "id": "reaction_diffusion",
+  "name": "Reaction Diffusion",
+  "description": "A Gray-Scott reaction-diffusion simulation running entirely on the GPU in a GLSL TOP, with the previous state fed back each frame.",
+  "tags": ["generative", "glsl", "simulation", "reaction-diffusion", "organic"],
+  "difficulty": "advanced",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "seed1",
+      "type": "noiseTOP",
+      "parameters": { "period": 8, "monochrome": 1 },
+      "comment": "Initial perturbation that seeds the B chemical"
+    },
+    {
+      "name": "feedback1",
+      "type": "feedbackTOP",
+      "comment": "Holds the previous simulation state"
+    },
+    {
+      "name": "glsl1",
+      "type": "glslTOP",
+      "comment": "Gray-Scott update step (reads feedback as input 0)"
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "Output of the simulation" }
+  ],
+  "connections": [
+    { "from": "feedback1", "to": "glsl1", "to_input": 0 },
+    { "from": "glsl1", "to": "out1" }
+  ],
+  "parameters": [
+    {
+      "name": "feedback_target",
+      "node": "feedback1",
+      "param": "top",
+      "value": "glsl1",
+      "description": "feedbackTOP samples glsl1 (the simulation output)."
+    }
+  ],
+  "glsl_code": {
+    "glsl1": "uniform float uFeed;\nuniform float uKill;\nout vec4 fragColor;\n\nvec2 sampleAB(vec2 uv) { return texture(sTD2DInputs[0], uv).rg; }\n\nvoid main()\n{\n    vec2 uv = vUV.st;\n    vec2 texel = uTD2DInfos[0].res.xy;\n    vec2 c = sampleAB(uv);\n    float a = c.r;\n    float b = c.g;\n\n    vec2 lap = vec2(0.0);\n    lap += sampleAB(uv + texel * vec2(-1.0, 0.0)) * 0.2;\n    lap += sampleAB(uv + texel * vec2( 1.0, 0.0)) * 0.2;\n    lap += sampleAB(uv + texel * vec2( 0.0,-1.0)) * 0.2;\n    lap += sampleAB(uv + texel * vec2( 0.0, 1.0)) * 0.2;\n    lap += sampleAB(uv + texel * vec2(-1.0,-1.0)) * 0.05;\n    lap += sampleAB(uv + texel * vec2( 1.0,-1.0)) * 0.05;\n    lap += sampleAB(uv + texel * vec2(-1.0, 1.0)) * 0.05;\n    lap += sampleAB(uv + texel * vec2( 1.0, 1.0)) * 0.05;\n    lap -= c;\n\n    float feed = uFeed > 0.0 ? uFeed : 0.055;\n    float kill = uKill > 0.0 ? uKill : 0.062;\n    float reaction = a * b * b;\n    float da = 1.0 * lap.r - reaction + feed * (1.0 - a);\n    float db = 0.5 * lap.g + reaction - (kill + feed) * b;\n\n    float a2 = clamp(a + da, 0.0, 1.0);\n    float b2 = clamp(b + db, 0.0, 1.0);\n    fragColor = TDOutputSwizzle(vec4(a2, b2, 0.0, 1.0));\n}\n"
+  },
+  "preview_description": "Evolving coral / fingerprint-like organic patterns growing and dividing across the frame."
+}

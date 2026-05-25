@@ -1,0 +1,11 @@
+{
+  "name": "POP to CHOP",
+  "id": "pop_to_chop",
+  "category": "CHOP",
+  "subcategory": "Experimental",
+  "description": "POP to CHOP converts POP attributes to CHOP channels.",
+  "parameters": [],
+  "experimental": true,
+  "sourceFile": "Experimental-POP_to_CHOP.htm",
+  "parsedAt": "2025-08-08T03:03:58.734Z"
+}

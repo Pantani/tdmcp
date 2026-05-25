@@ -1,0 +1,1516 @@
+{
+  "className": "listCOMP",
+  "displayName": "listCOMP Class",
+  "description": "This class inherits from the  COMP class.\nIt references a specific List COMP.",
+  "category": "Component",
+  "fileName": "listCOMP_Class.htm",
+  "members": [
+    {
+      "name": "attribs",
+      "id": "content",
+      "returnType": "td.ListAttribute",
+      "readOnly": true,
+      "description": "attribs member"
+    },
+    {
+      "name": "attribs",
+      "id": "bodyContent",
+      "returnType": "td.ListAttribute",
+      "readOnly": true,
+      "description": "attribs member"
+    }
+  ],
+  "methods": [
+    {
+      "name": "scroll",
+      "parameters": [
+        {
+          "name": "row",
+          "type": "Any"
+        },
+        {
+          "name": "col",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "scroll(row, col)"
+    },
+    {
+      "name": "setKeyboardFocus",
+      "parameters": [
+        {
+          "name": "row",
+          "type": "Any"
+        },
+        {
+          "name": "col",
+          "type": "Any"
+        },
+        {
+          "name": "selectAll=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "setKeyboardFocus(row, col, selectAll=False)"
+    },
+    {
+      "name": "reset",
+      "parameters": [],
+      "returns": "None :",
+      "signature": "reset()"
+    },
+    {
+      "name": "panelParent",
+      "parameters": [
+        {
+          "name": "n",
+          "type": "Any"
+        }
+      ],
+      "returns": "OP | None :",
+      "signature": "panelParent(n)"
+    },
+    {
+      "name": "interactMouse",
+      "parameters": [
+        {
+          "name": "u",
+          "type": "Any"
+        },
+        {
+          "name": "v",
+          "type": "Any"
+        },
+        {
+          "name": "leftClick=0",
+          "type": "Any"
+        },
+        {
+          "name": "middleClick=0",
+          "type": "Any"
+        },
+        {
+          "name": "rightClick=0",
+          "type": "Any"
+        },
+        {
+          "name": "left=False",
+          "type": "Any"
+        },
+        {
+          "name": "middle=False",
+          "type": "Any"
+        },
+        {
+          "name": "right=False",
+          "type": "Any"
+        },
+        {
+          "name": "wheel=0",
+          "type": "Any"
+        },
+        {
+          "name": "pixels=False",
+          "type": "Any"
+        },
+        {
+          "name": "Screen=False",
+          "type": "Any"
+        },
+        {
+          "name": "quiet=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "PanelCOMP :",
+      "signature": "interactMouse(u, v, leftClick=0, middleClick=0, rightClick=0, left=False, middle=False, right=False, wheel=0, pixels=False, Screen=False, quiet=True)"
+    },
+    {
+      "name": "interactTouch",
+      "parameters": [
+        {
+          "name": "u",
+          "type": "Any"
+        },
+        {
+          "name": "v",
+          "type": "Any"
+        },
+        {
+          "name": "hover='id'",
+          "type": "Any"
+        },
+        {
+          "name": "start='id'",
+          "type": "Any"
+        },
+        {
+          "name": "move='id'",
+          "type": "Any"
+        },
+        {
+          "name": "end='id'",
+          "type": "Any"
+        },
+        {
+          "name": "pixels=False",
+          "type": "Any"
+        },
+        {
+          "name": "screen=False",
+          "type": "Any"
+        },
+        {
+          "name": "quiet=True",
+          "type": "Any"
+        },
+        {
+          "name": "aux='data'",
+          "type": "Any"
+        }
+      ],
+      "returns": "PanelCOMP :",
+      "signature": "interactTouch(u, v, hover='id', start='id', move='id', end='id', pixels=False, screen=False, quiet=True, aux='data')"
+    },
+    {
+      "name": "interactClear",
+      "parameters": [],
+      "returns": "None :",
+      "signature": "interactClear()"
+    },
+    {
+      "name": "interactStatus",
+      "parameters": [],
+      "returns": "list :",
+      "signature": "interactStatus()"
+    },
+    {
+      "name": "locateMouse",
+      "parameters": [],
+      "returns": "Tuple[float, float] :",
+      "signature": "locateMouse()"
+    },
+    {
+      "name": "locateMouseUV",
+      "parameters": [],
+      "returns": "Tuple[float, float] :",
+      "signature": "locateMouseUV()"
+    },
+    {
+      "name": "setFocus",
+      "parameters": [
+        {
+          "name": "moveMouse=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "setFocus(moveMouse=False)"
+    },
+    {
+      "name": "create",
+      "parameters": [
+        {
+          "name": "opType",
+          "type": "Any"
+        },
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "initialize=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "OP  :",
+      "signature": "create(opType, name, initialize=True)"
+    },
+    {
+      "name": "collapseSelected",
+      "parameters": [],
+      "returns": "None :",
+      "signature": "collapseSelected()"
+    },
+    {
+      "name": "copy",
+      "parameters": [
+        {
+          "name": "OP",
+          "type": "Any"
+        },
+        {
+          "name": "name=None",
+          "type": "Any"
+        },
+        {
+          "name": "includeDocked=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "OP  :",
+      "signature": "copy( OP , name=None, includeDocked=True)"
+    },
+    {
+      "name": "copyOPs",
+      "parameters": [
+        {
+          "name": "listOfOPs",
+          "type": "Any"
+        }
+      ],
+      "returns": "List :",
+      "signature": "copyOPs(listOfOPs)"
+    },
+    {
+      "name": "findChildren",
+      "parameters": [
+        {
+          "name": "type=None",
+          "type": "Any"
+        },
+        {
+          "name": "name=None",
+          "type": "Any"
+        },
+        {
+          "name": "path=None",
+          "type": "Any"
+        },
+        {
+          "name": "depth=None",
+          "type": "Any"
+        },
+        {
+          "name": "maxDepth=None",
+          "type": "Any"
+        },
+        {
+          "name": "text=None",
+          "type": "Any"
+        },
+        {
+          "name": "comment=None",
+          "type": "Any"
+        },
+        {
+          "name": "tags=[]",
+          "type": "Any"
+        },
+        {
+          "name": "allTags=False",
+          "type": "Any"
+        },
+        {
+          "name": "parValue=None",
+          "type": "Any"
+        },
+        {
+          "name": "parExpr=None",
+          "type": "Any"
+        },
+        {
+          "name": "parName=None",
+          "type": "Any"
+        },
+        {
+          "name": "onlyNonDefaults=False",
+          "type": "Any"
+        },
+        {
+          "name": "includeUtility=False",
+          "type": "Any"
+        },
+        {
+          "name": "key=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "List of OPs :",
+      "signature": "findChildren(type=None, name=None, path=None, depth=None, maxDepth=None, text=None, comment=None, tags=[], allTags=False, parValue=None, parExpr=None, parName=None, onlyNonDefaults=False, includeUtility=False, key=None)"
+    },
+    {
+      "name": "initializeExtensions",
+      "parameters": [
+        {
+          "name": "index=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "Extension :",
+      "signature": "initializeExtensions(index=None)"
+    },
+    {
+      "name": "loadTox",
+      "parameters": [
+        {
+          "name": "filepath",
+          "type": "Any"
+        },
+        {
+          "name": "unwired=False",
+          "type": "Any"
+        },
+        {
+          "name": "pattern=None",
+          "type": "Any"
+        },
+        {
+          "name": "password=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "OP  :",
+      "signature": "loadTox(filepath, unwired=False, pattern=None, password=None)"
+    },
+    {
+      "name": "loadByteArray",
+      "parameters": [
+        {
+          "name": "byteArray",
+          "type": "Any"
+        },
+        {
+          "name": "unwired=False",
+          "type": "Any"
+        },
+        {
+          "name": "pattern=None",
+          "type": "Any"
+        },
+        {
+          "name": "password=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "OP  :",
+      "signature": "loadByteArray(byteArray, unwired=False, pattern=None, password=None)"
+    },
+    {
+      "name": "reload",
+      "parameters": [
+        {
+          "name": "filepath",
+          "type": "Any"
+        },
+        {
+          "name": "password=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "reload(filepath, password=None)"
+    },
+    {
+      "name": "resetNetworkView",
+      "parameters": [
+        {
+          "name": "recurse",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "resetNetworkView(recurse)"
+    },
+    {
+      "name": "save",
+      "parameters": [
+        {
+          "name": "filepath",
+          "type": "Any"
+        },
+        {
+          "name": "createFolders=False",
+          "type": "Any"
+        },
+        {
+          "name": "password=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "Path  :",
+      "signature": "save(filepath, createFolders=False, password=None)"
+    },
+    {
+      "name": "saveByteArray",
+      "parameters": [
+        {
+          "name": "password=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "bytearray :",
+      "signature": "saveByteArray(password=None)"
+    },
+    {
+      "name": "saveExternalTox",
+      "parameters": [
+        {
+          "name": "recurse=False",
+          "type": "Any"
+        },
+        {
+          "name": "password=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "int :",
+      "signature": "saveExternalTox(recurse=False, password=None)"
+    },
+    {
+      "name": "appendCustomPage",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        }
+      ],
+      "returns": "Page :",
+      "signature": "appendCustomPage(name)"
+    },
+    {
+      "name": "destroyCustomPars",
+      "parameters": [],
+      "returns": "Total :",
+      "signature": "destroyCustomPars()"
+    },
+    {
+      "name": "sortCustomPages",
+      "parameters": [
+        {
+          "name": "page1",
+          "type": "Any"
+        },
+        {
+          "name": "page2",
+          "type": "Any"
+        },
+        {
+          "name": "page3...",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "sortCustomPages(page1, page2, page3...)"
+    },
+    {
+      "name": "accessPrivateContents",
+      "parameters": [
+        {
+          "name": "key",
+          "type": "Any"
+        }
+      ],
+      "returns": "Bool :",
+      "signature": "accessPrivateContents(key)"
+    },
+    {
+      "name": "addPrivacy",
+      "parameters": [
+        {
+          "name": "key",
+          "type": "Any"
+        },
+        {
+          "name": "developerName=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "addPrivacy(key, developerName=None)"
+    },
+    {
+      "name": "addPrivacy",
+      "parameters": [
+        {
+          "name": "firmCode",
+          "type": "Any"
+        },
+        {
+          "name": "productCode",
+          "type": "Any"
+        },
+        {
+          "name": "developerName=None",
+          "type": "Any"
+        },
+        {
+          "name": "developerEmail=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "addPrivacy(firmCode, productCode, developerName=None, developerEmail=None)"
+    },
+    {
+      "name": "blockPrivateContents",
+      "parameters": [
+        {
+          "name": "key",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "blockPrivateContents(key)"
+    },
+    {
+      "name": "removePrivacy",
+      "parameters": [
+        {
+          "name": "key",
+          "type": "Any"
+        }
+      ],
+      "returns": "Bool :",
+      "signature": "removePrivacy(key)"
+    },
+    {
+      "name": "setVar",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "value",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "setVar(name, value)"
+    },
+    {
+      "name": "unsetVar",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "unsetVar(name)"
+    },
+    {
+      "name": "vars",
+      "parameters": [
+        {
+          "name": "pattern1",
+          "type": "Any"
+        },
+        {
+          "name": "pattern2...",
+          "type": "Any"
+        }
+      ],
+      "returns": "List :",
+      "signature": "vars(pattern1, pattern2...)"
+    },
+    {
+      "name": "op",
+      "parameters": [
+        {
+          "name": "pattern1",
+          "type": "Any"
+        },
+        {
+          "name": "pattern2...",
+          "type": "Any"
+        },
+        {
+          "name": "includeUtility=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "OP  or None ",
+      "signature": "op(pattern1, pattern2..., includeUtility=False)"
+    },
+    {
+      "name": "op",
+      "parameters": [
+        {
+          "name": "pattern1",
+          "type": "Any"
+        },
+        {
+          "name": "pattern2...",
+          "type": "Any"
+        },
+        {
+          "name": "includeUtility=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "OP  ",
+      "signature": "op(pattern1, pattern2..., includeUtility=False)"
+    },
+    {
+      "name": "parent",
+      "parameters": [
+        {
+          "name": "n",
+          "type": "Any"
+        }
+      ],
+      "returns": "OP or None ",
+      "signature": "parent(n)"
+    },
+    {
+      "name": "pars",
+      "parameters": [
+        {
+          "name": "pattern",
+          "type": "Any"
+        }
+      ],
+      "returns": "list :",
+      "signature": "pars(pattern)"
+    },
+    {
+      "name": "cook",
+      "parameters": [
+        {
+          "name": "force=False",
+          "type": "Any"
+        },
+        {
+          "name": "recurse=False",
+          "type": "Any"
+        },
+        {
+          "name": "includeUtility=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "cook(force=False, recurse=False, includeUtility=False)"
+    },
+    {
+      "name": "copyParameters",
+      "parameters": [
+        {
+          "name": "OP",
+          "type": "Any"
+        },
+        {
+          "name": "custom=True",
+          "type": "Any"
+        },
+        {
+          "name": "builtin=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "copyParameters( OP , custom=True, builtin=True)"
+    },
+    {
+      "name": "changeType",
+      "parameters": [
+        {
+          "name": "OPtype",
+          "type": "Any"
+        }
+      ],
+      "returns": "OP  :",
+      "signature": "changeType(OPtype)"
+    },
+    {
+      "name": "dependenciesTo",
+      "parameters": [
+        {
+          "name": "OP",
+          "type": "Any"
+        }
+      ],
+      "returns": "list :",
+      "signature": "dependenciesTo( OP )"
+    },
+    {
+      "name": "evalExpression",
+      "parameters": [
+        {
+          "name": "str",
+          "type": "Any"
+        }
+      ],
+      "returns": "value :",
+      "signature": "evalExpression(str)"
+    },
+    {
+      "name": "destroy",
+      "parameters": [],
+      "returns": "None :",
+      "signature": "destroy()"
+    },
+    {
+      "name": "var",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "search=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "str :",
+      "signature": "var(name, search=True)"
+    },
+    {
+      "name": "openMenu",
+      "parameters": [
+        {
+          "name": "x=None",
+          "type": "Any"
+        },
+        {
+          "name": "y=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "openMenu(x=None, y=None)"
+    },
+    {
+      "name": "relativePath",
+      "parameters": [
+        {
+          "name": "OP",
+          "type": "Any"
+        }
+      ],
+      "returns": "str :",
+      "signature": "relativePath( OP )"
+    },
+    {
+      "name": "setInputs",
+      "parameters": [
+        {
+          "name": "listOfOPs",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "setInputs(listOfOPs)"
+    },
+    {
+      "name": "shortcutPath",
+      "parameters": [
+        {
+          "name": "OP",
+          "type": "Any"
+        },
+        {
+          "name": "toParName=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "str :",
+      "signature": "shortcutPath( OP , toParName=None)"
+    },
+    {
+      "name": "ops",
+      "parameters": [
+        {
+          "name": "pattern1",
+          "type": "Any"
+        },
+        {
+          "name": "pattern2..",
+          "type": "Any"
+        },
+        {
+          "name": "includeUtility=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "list of OPs :",
+      "signature": "ops(pattern1, pattern2.., includeUtility=False)"
+    },
+    {
+      "name": "resetPars",
+      "parameters": [
+        {
+          "name": "parNames='*'",
+          "type": "Any"
+        },
+        {
+          "name": "parGroupNames='*'",
+          "type": "Any"
+        },
+        {
+          "name": "pageNames='*'",
+          "type": "Any"
+        },
+        {
+          "name": "includeBuiltin=True",
+          "type": "Any"
+        },
+        {
+          "name": "includeCustom=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "bool :",
+      "signature": "resetPars(parNames='*', parGroupNames='*', pageNames='*', includeBuiltin=True, includeCustom=True)"
+    },
+    {
+      "name": "addScriptError",
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "addScriptError(msg)"
+    },
+    {
+      "name": "addError",
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "addError(msg)"
+    },
+    {
+      "name": "addWarning",
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "addWarning(msg)"
+    },
+    {
+      "name": "errors",
+      "parameters": [
+        {
+          "name": "recurse=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "str :",
+      "signature": "errors(recurse=False)"
+    },
+    {
+      "name": "warnings",
+      "parameters": [
+        {
+          "name": "recurse=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "str :",
+      "signature": "warnings(recurse=False)"
+    },
+    {
+      "name": "scriptErrors",
+      "parameters": [
+        {
+          "name": "recurse=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "str :",
+      "signature": "scriptErrors(recurse=False)"
+    },
+    {
+      "name": "clearScriptErrors",
+      "parameters": [
+        {
+          "name": "recurse=False",
+          "type": "Any"
+        },
+        {
+          "name": "error='*'",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "clearScriptErrors(recurse=False, error='*')"
+    },
+    {
+      "name": "childrenCPUMemory",
+      "parameters": [],
+      "returns": "int :",
+      "signature": "childrenCPUMemory()"
+    },
+    {
+      "name": "childrenGPUMemory",
+      "parameters": [],
+      "returns": "int :",
+      "signature": "childrenGPUMemory()"
+    },
+    {
+      "name": "resetNodeSize",
+      "parameters": [],
+      "returns": "None :",
+      "signature": "resetNodeSize()"
+    },
+    {
+      "name": "closeViewer",
+      "parameters": [
+        {
+          "name": "topMost=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "closeViewer(topMost=False)"
+    },
+    {
+      "name": "openViewer",
+      "parameters": [
+        {
+          "name": "unique=False",
+          "type": "Any"
+        },
+        {
+          "name": "borders=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "openViewer(unique=False, borders=True)"
+    },
+    {
+      "name": "resetViewer",
+      "parameters": [
+        {
+          "name": "recurse=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "resetViewer(recurse=False)"
+    },
+    {
+      "name": "openParameters",
+      "parameters": [],
+      "returns": "None :",
+      "signature": "openParameters()"
+    },
+    {
+      "name": "fetch",
+      "parameters": [
+        {
+          "name": "key",
+          "type": "Any"
+        },
+        {
+          "name": "default",
+          "type": "Any"
+        },
+        {
+          "name": "search=True",
+          "type": "Any"
+        },
+        {
+          "name": "storeDefault=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "value :",
+      "signature": "fetch(key, default, search=True, storeDefault=False)"
+    },
+    {
+      "name": "fetchOwner",
+      "parameters": [
+        {
+          "name": "key",
+          "type": "Any"
+        }
+      ],
+      "returns": "OP  :",
+      "signature": "fetchOwner(key)"
+    },
+    {
+      "name": "store",
+      "parameters": [
+        {
+          "name": "key",
+          "type": "Any"
+        },
+        {
+          "name": "value",
+          "type": "Any"
+        }
+      ],
+      "returns": "value :",
+      "signature": "store(key, value)"
+    },
+    {
+      "name": "unstore",
+      "parameters": [
+        {
+          "name": "keys1",
+          "type": "Any"
+        },
+        {
+          "name": "keys2..",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "unstore(keys1, keys2..)"
+    },
+    {
+      "name": "storeStartupValue",
+      "parameters": [
+        {
+          "name": "key",
+          "type": "Any"
+        },
+        {
+          "name": "value",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "storeStartupValue(key, value)"
+    },
+    {
+      "name": "unstoreStartupValue",
+      "parameters": [
+        {
+          "name": "keys1",
+          "type": "Any"
+        },
+        {
+          "name": "keys2..",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "unstoreStartupValue(keys1, keys2..)"
+    },
+    {
+      "name": "__getstate__",
+      "parameters": [],
+      "returns": "dict :",
+      "signature": "__getstate__()"
+    },
+    {
+      "name": "__setstate__",
+      "parameters": [],
+      "returns": "dict :",
+      "signature": "__setstate__()"
+    },
+    {
+      "name": "onInitCell",
+      "parameters": [
+        {
+          "name": "comp",
+          "type": "Any"
+        },
+        {
+          "name": "row",
+          "type": "Any"
+        },
+        {
+          "name": "col",
+          "type": "Any"
+        },
+        {
+          "name": "attribs",
+          "type": "Any"
+        }
+      ],
+      "returns": "None",
+      "signature": "onInitCell(  comp  ,   row  ,   col  ,   attribs  )"
+    },
+    {
+      "name": "onInitRow",
+      "parameters": [
+        {
+          "name": "comp",
+          "type": "Any"
+        },
+        {
+          "name": "row",
+          "type": "Any"
+        },
+        {
+          "name": "attribs",
+          "type": "Any"
+        }
+      ],
+      "returns": "None",
+      "signature": "onInitRow(  comp  ,   row  ,   attribs  )"
+    },
+    {
+      "name": "onInitCol",
+      "parameters": [
+        {
+          "name": "comp",
+          "type": "Any"
+        },
+        {
+          "name": "col",
+          "type": "Any"
+        },
+        {
+          "name": "attribs",
+          "type": "Any"
+        }
+      ],
+      "returns": "None",
+      "signature": "onInitCol(  comp  ,   col  ,   attribs  )"
+    },
+    {
+      "name": "onInitTable",
+      "parameters": [
+        {
+          "name": "comp",
+          "type": "Any"
+        },
+        {
+          "name": "attribs",
+          "type": "Any"
+        }
+      ],
+      "returns": "None",
+      "signature": "onInitTable(  comp  ,   attribs  )"
+    },
+    {
+      "name": "onRollover",
+      "parameters": [
+        {
+          "name": "comp",
+          "type": "Any"
+        },
+        {
+          "name": "row",
+          "type": "Any"
+        },
+        {
+          "name": "col",
+          "type": "Any"
+        },
+        {
+          "name": "coords",
+          "type": "Any"
+        },
+        {
+          "name": "prevRow",
+          "type": "Any"
+        },
+        {
+          "name": "prevCol",
+          "type": "Any"
+        },
+        {
+          "name": "prevCoords",
+          "type": "Any"
+        }
+      ],
+      "returns": "None",
+      "signature": "onRollover(  comp  ,   row  ,   col  ,   coords  ,   prevRow  ,   prevCol  ,   prevCoords  )"
+    },
+    {
+      "name": "onSelect",
+      "parameters": [
+        {
+          "name": "comp",
+          "type": "Any"
+        },
+        {
+          "name": "startRow",
+          "type": "Any"
+        },
+        {
+          "name": "startCol",
+          "type": "Any"
+        },
+        {
+          "name": "startCoords",
+          "type": "Any"
+        },
+        {
+          "name": "endRow",
+          "type": "Any"
+        },
+        {
+          "name": "endCol",
+          "type": "Any"
+        },
+        {
+          "name": "endCoords",
+          "type": "Any"
+        },
+        {
+          "name": "start",
+          "type": "Any"
+        },
+        {
+          "name": "end",
+          "type": "Any"
+        }
+      ],
+      "returns": "None",
+      "signature": "onSelect(  comp  ,   startRow  ,   startCol  ,   startCoords  ,   endRow  ,   endCol  ,   endCoords  ,   start  ,   end  )"
+    },
+    {
+      "name": "onRadio",
+      "parameters": [
+        {
+          "name": "comp",
+          "type": "Any"
+        },
+        {
+          "name": "row",
+          "type": "Any"
+        },
+        {
+          "name": "col",
+          "type": "Any"
+        },
+        {
+          "name": "prevRow",
+          "type": "Any"
+        },
+        {
+          "name": "prevCol",
+          "type": "Any"
+        }
+      ],
+      "returns": "None",
+      "signature": "onRadio(  comp  ,   row  ,   col  ,   prevRow  ,   prevCol  )"
+    },
+    {
+      "name": "onFocus",
+      "parameters": [
+        {
+          "name": "comp",
+          "type": "Any"
+        },
+        {
+          "name": "row",
+          "type": "Any"
+        },
+        {
+          "name": "col",
+          "type": "Any"
+        },
+        {
+          "name": "prevRow",
+          "type": "Any"
+        },
+        {
+          "name": "prevCol",
+          "type": "Any"
+        }
+      ],
+      "returns": "None",
+      "signature": "onFocus(  comp  ,   row  ,   col  ,   prevRow  ,   prevCol  )"
+    },
+    {
+      "name": "onEdit",
+      "parameters": [
+        {
+          "name": "comp",
+          "type": "Any"
+        },
+        {
+          "name": "row",
+          "type": "Any"
+        },
+        {
+          "name": "col",
+          "type": "Any"
+        },
+        {
+          "name": "val",
+          "type": "Any"
+        }
+      ],
+      "returns": "None",
+      "signature": "onEdit(  comp  ,   row  ,   col  ,   val  )"
+    },
+    {
+      "name": "onHoverGetAccept",
+      "parameters": [
+        {
+          "name": "comp",
+          "type": "Any"
+        },
+        {
+          "name": "row",
+          "type": "Any"
+        },
+        {
+          "name": "col",
+          "type": "Any"
+        },
+        {
+          "name": "coords",
+          "type": "Any"
+        },
+        {
+          "name": "prevRow",
+          "type": "Any"
+        },
+        {
+          "name": "prevCol",
+          "type": "Any"
+        },
+        {
+          "name": "prevCoords",
+          "type": "Any"
+        },
+        {
+          "name": "dragItems",
+          "type": "Any"
+        }
+      ],
+      "returns": "None",
+      "signature": "onHoverGetAccept(  comp  ,   row  ,   col  ,   coords  ,   prevRow  ,   prevCol  ,   prevCoords  ,   dragItems  )"
+    },
+    {
+      "name": "onDropGetAccept",
+      "parameters": [
+        {
+          "name": "comp",
+          "type": "Any"
+        },
+        {
+          "name": "row",
+          "type": "Any"
+        },
+        {
+          "name": "col",
+          "type": "Any"
+        },
+        {
+          "name": "coords",
+          "type": "Any"
+        },
+        {
+          "name": "prevRow",
+          "type": "Any"
+        },
+        {
+          "name": "prevCol",
+          "type": "Any"
+        },
+        {
+          "name": "prevCoords",
+          "type": "Any"
+        },
+        {
+          "name": "dragItems",
+          "type": "Any"
+        }
+      ],
+      "returns": "None",
+      "signature": "onDropGetAccept(  comp  ,   row  ,   col  ,   coords  ,   prevRow  ,   prevCol  ,   prevCoords  ,   dragItems  )"
+    },
+    {
+      "name": "includeUtility",
+      "parameters": [
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "if True, allow  Utility nodes  to be returned. If False, Utility nodes will be ignored.       b   =   op  (  'project1'  ) ",
+      "signature": "includeUtility(Optional)"
+    },
+    {
+      "name": "includeUtility",
+      "parameters": [
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "if True, allow  Utility nodes  to be returned. If False, Utility operators will be ignored.    ",
+      "signature": "includeUtility(Optional)"
+    },
+    {
+      "name": "parNames",
+      "parameters": [
+        {
+          "name": "Keyword",
+          "type": "Any"
+        },
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "Specify parameters by Par name. ",
+      "signature": "parNames(Keyword, Optional)"
+    },
+    {
+      "name": "parGroupNames",
+      "parameters": [
+        {
+          "name": "Keyword",
+          "type": "Any"
+        },
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "Specify parameters by  ParGroup  name. ",
+      "signature": "parGroupNames(Keyword, Optional)"
+    },
+    {
+      "name": "pageNames",
+      "parameters": [
+        {
+          "name": "Keyword",
+          "type": "Any"
+        },
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "Specify parameters by page name. ",
+      "signature": "pageNames(Keyword, Optional)"
+    },
+    {
+      "name": "includeBuiltin",
+      "parameters": [
+        {
+          "name": "Keyword",
+          "type": "Any"
+        },
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "Include builtin parameters. ",
+      "signature": "includeBuiltin(Keyword, Optional)"
+    },
+    {
+      "name": "includeCustom",
+      "parameters": [
+        {
+          "name": "Keyword",
+          "type": "Any"
+        },
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "Include custom parameters.       op  (  'player'  )  .  resetPars  (  includeBuiltin  =  False  )   # only reset custom ",
+      "signature": "includeCustom(Keyword, Optional)"
+    }
+  ],
+  "enhanced": true
+}

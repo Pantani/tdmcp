@@ -1,0 +1,154 @@
+{
+  "className": "NetworkEditor",
+  "displayName": "NetworkEditor Class",
+  "description": "The NetworkEditor class describes an instance of a Network Editor. They are subclasses of the Pane Class, which can be accessed from the ui object.",
+  "category": "General",
+  "fileName": "NetworkEditor_Class.htm",
+  "members": [
+    {
+      "name": "showBackdropCHOPs",
+      "id": "content",
+      "returnType": "bool",
+      "readOnly": true,
+      "description": "showBackdropCHOPs member"
+    },
+    {
+      "name": "showBackdropCHOPs",
+      "id": "bodyContent",
+      "returnType": "bool",
+      "readOnly": true,
+      "description": "showBackdropCHOPs member"
+    }
+  ],
+  "methods": [
+    {
+      "name": "fitWidth",
+      "parameters": [
+        {
+          "name": "width",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "fitWidth(width)"
+    },
+    {
+      "name": "fitHeight",
+      "parameters": [
+        {
+          "name": "height",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "fitHeight(height)"
+    },
+    {
+      "name": "home",
+      "parameters": [
+        {
+          "name": "zoom=True",
+          "type": "Any"
+        },
+        {
+          "name": "op=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "home(zoom=True, op=None)"
+    },
+    {
+      "name": "homeSelected",
+      "parameters": [
+        {
+          "name": "zoom=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "homeSelected(zoom=True)"
+    },
+    {
+      "name": "placeOPs",
+      "parameters": [
+        {
+          "name": "listOfOPs",
+          "type": "Any"
+        },
+        {
+          "name": "inputIndex=None",
+          "type": "Any"
+        },
+        {
+          "name": "outputIndex=None",
+          "type": "Any"
+        },
+        {
+          "name": "delOP=None",
+          "type": "Any"
+        },
+        {
+          "name": "undoName='Operators'",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "placeOPs(listOfOPs, inputIndex=None, outputIndex=None, delOP=None, undoName='Operators')"
+    },
+    {
+      "name": "changeType",
+      "parameters": [
+        {
+          "name": "paneType",
+          "type": "Any"
+        }
+      ],
+      "returns": "td. Pane  :",
+      "signature": "changeType(paneType)"
+    },
+    {
+      "name": "close",
+      "parameters": [],
+      "returns": "None :",
+      "signature": "close()"
+    },
+    {
+      "name": "floatingCopy",
+      "parameters": [],
+      "returns": "td. Pane  :",
+      "signature": "floatingCopy()"
+    },
+    {
+      "name": "splitBottom",
+      "parameters": [],
+      "returns": "td. Pane  :",
+      "signature": "splitBottom()"
+    },
+    {
+      "name": "splitLeft",
+      "parameters": [],
+      "returns": "td. Pane  :",
+      "signature": "splitLeft()"
+    },
+    {
+      "name": "splitRight",
+      "parameters": [],
+      "returns": "td. Pane  :",
+      "signature": "splitRight()"
+    },
+    {
+      "name": "splitTop",
+      "parameters": [],
+      "returns": "td. Pane  :",
+      "signature": "splitTop()"
+    },
+    {
+      "name": "tearAway",
+      "parameters": [],
+      "returns": "bool :",
+      "signature": "tearAway()"
+    }
+  ],
+  "enhanced": true
+}

@@ -1,0 +1,1029 @@
+{
+  "name": "Grid POP",
+  "id": "grid_pop",
+  "category": "POP",
+  "subcategory": "Experimental",
+  "description": "The Grid POP creates rows and columns of points in a plane, and optionally creates multiple slices of points resulting in a 3D grid. The points can be connected with a variety of primitives using the Connectivity menu.",
+  "parameters": [
+    {
+      "name": "numCols numRows",
+      "label": "Connectivity",
+      "description": "Configure Connectivity for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Lines",
+          "value": "lines",
+          "description": ""
+        },
+        {
+          "label": "Line Strips",
+          "value": "linestrips",
+          "description": ""
+        },
+        {
+          "label": "Triangles",
+          "value": "triangles",
+          "description": ""
+        },
+        {
+          "label": "Alternating Triangles",
+          "value": "alttriangles",
+          "description": ""
+        },
+        {
+          "label": "Quadrilaterals",
+          "value": "quads",
+          "description": ""
+        },
+        {
+          "label": "Point Prims",
+          "value": "points",
+          "description": ""
+        },
+        {
+          "label": "Size",
+          "value": "size1",
+          "description": ""
+        },
+        {
+          "label": "Size",
+          "value": "size2",
+          "description": ""
+        },
+        {
+          "label": "Size",
+          "value": "size3",
+          "description": ""
+        },
+        {
+          "label": "Random",
+          "value": "random1",
+          "description": ""
+        },
+        {
+          "label": "Random",
+          "value": "random2",
+          "description": ""
+        },
+        {
+          "label": "Random",
+          "value": "random3",
+          "description": ""
+        },
+        {
+          "label": "Random Size Fit",
+          "value": "randomsizefit1",
+          "description": ""
+        },
+        {
+          "label": "Random Size Fit",
+          "value": "randomsizefit2",
+          "description": ""
+        },
+        {
+          "label": "Random Size Fit",
+          "value": "randomsizefit3",
+          "description": ""
+        },
+        {
+          "label": "Line X/Y/Z",
+          "value": "line1",
+          "description": ""
+        },
+        {
+          "label": "Line X/Y/Z",
+          "value": "line2",
+          "description": ""
+        },
+        {
+          "label": "Line X/Y/Z",
+          "value": "line3",
+          "description": ""
+        },
+        {
+          "label": "Plane XY/YZ/ZX",
+          "value": "plane1",
+          "description": ""
+        },
+        {
+          "label": "Plane XY/YZ/ZX",
+          "value": "plane2",
+          "description": ""
+        },
+        {
+          "label": "Plane XY/YZ/ZX",
+          "value": "plane3",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "tx",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "ty",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "tz",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "rx",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "ry",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "rz",
+          "description": ""
+        },
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Point",
+          "value": "pointNormals",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertNormals",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primNormals",
+          "description": ""
+        },
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vert",
+          "description": ""
+        },
+        {
+          "label": "When Rows Cols Slices > 1",
+          "value": "morethanone",
+          "description": ""
+        },
+        {
+          "label": "Always for Rows Cols",
+          "value": "rowscolsalways",
+          "description": ""
+        },
+        {
+          "label": "Always for Rows Cols Slices",
+          "value": "rowscolsslicesalways",
+          "description": ""
+        },
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        },
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    },
+    {
+      "name": "surftype",
+      "label": "Connectivity",
+      "description": "Configure Connectivity for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Lines",
+          "value": "lines",
+          "description": ""
+        },
+        {
+          "label": "Line Strips",
+          "value": "linestrips",
+          "description": ""
+        },
+        {
+          "label": "Triangles",
+          "value": "triangles",
+          "description": ""
+        },
+        {
+          "label": "Alternating Triangles",
+          "value": "alttriangles",
+          "description": ""
+        },
+        {
+          "label": "Quadrilaterals",
+          "value": "quads",
+          "description": ""
+        },
+        {
+          "label": "Point Prims",
+          "value": "points",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "none",
+      "label": "None",
+      "description": "Configure None for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Lines",
+          "value": "lines",
+          "description": ""
+        },
+        {
+          "label": "Line Strips",
+          "value": "linestrips",
+          "description": ""
+        },
+        {
+          "label": "Triangles",
+          "value": "triangles",
+          "description": ""
+        },
+        {
+          "label": "Alternating Triangles",
+          "value": "alttriangles",
+          "description": ""
+        },
+        {
+          "label": "Quadrilaterals",
+          "value": "quads",
+          "description": ""
+        },
+        {
+          "label": "Point Prims",
+          "value": "points",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "modifybounds",
+      "label": "Modify Bounds",
+      "description": "Configure Modify Bounds for the operator",
+      "type": "string"
+    },
+    {
+      "name": "size",
+      "label": "Size",
+      "description": "Configure Size for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Size",
+          "value": "size1",
+          "description": ""
+        },
+        {
+          "label": "Size",
+          "value": "size2",
+          "description": ""
+        },
+        {
+          "label": "Size",
+          "value": "size3",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "size1",
+      "label": "Size",
+      "description": "Configure Size for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Size",
+          "value": "size1",
+          "description": ""
+        },
+        {
+          "label": "Size",
+          "value": "size2",
+          "description": ""
+        },
+        {
+          "label": "Size",
+          "value": "size3",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "scale",
+      "label": "Uniform Scale",
+      "description": "Configure Uniform Scale for the operator",
+      "type": "string"
+    },
+    {
+      "name": "cols",
+      "label": "Columns",
+      "description": "Configure Columns for the operator",
+      "type": "string"
+    },
+    {
+      "name": "rows",
+      "label": "Rows",
+      "description": "Configure Rows for the operator",
+      "type": "string"
+    },
+    {
+      "name": "slices",
+      "label": "Slices",
+      "description": "Configure Slices for the operator",
+      "type": "string"
+    },
+    {
+      "name": "uniquepoints",
+      "label": "Unique Points",
+      "description": "Configure Unique Points for the operator",
+      "type": "string"
+    },
+    {
+      "name": "seed",
+      "label": "Seed",
+      "description": "Configure Seed for the operator",
+      "type": "string"
+    },
+    {
+      "name": "random",
+      "label": "Random",
+      "description": "Configure Random for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Random",
+          "value": "random1",
+          "description": ""
+        },
+        {
+          "label": "Random",
+          "value": "random2",
+          "description": ""
+        },
+        {
+          "label": "Random",
+          "value": "random3",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "random1",
+      "label": "Random",
+      "description": "Configure Random for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Random",
+          "value": "random1",
+          "description": ""
+        },
+        {
+          "label": "Random",
+          "value": "random2",
+          "description": ""
+        },
+        {
+          "label": "Random",
+          "value": "random3",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "randomsizefit",
+      "label": "Random Size Fit",
+      "description": "Configure Random Size Fit for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Random Size Fit",
+          "value": "randomsizefit1",
+          "description": ""
+        },
+        {
+          "label": "Random Size Fit",
+          "value": "randomsizefit2",
+          "description": ""
+        },
+        {
+          "label": "Random Size Fit",
+          "value": "randomsizefit3",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "randomsizefit1",
+      "label": "Random Size Fit",
+      "description": "Configure Random Size Fit for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Random Size Fit",
+          "value": "randomsizefit1",
+          "description": ""
+        },
+        {
+          "label": "Random Size Fit",
+          "value": "randomsizefit2",
+          "description": ""
+        },
+        {
+          "label": "Random Size Fit",
+          "value": "randomsizefit3",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "line",
+      "label": "Line X/Y/Z",
+      "description": "Configure Line X/Y/Z for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Line X/Y/Z",
+          "value": "line1",
+          "description": ""
+        },
+        {
+          "label": "Line X/Y/Z",
+          "value": "line2",
+          "description": ""
+        },
+        {
+          "label": "Line X/Y/Z",
+          "value": "line3",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "line1",
+      "label": "Line X/Y/Z",
+      "description": "Configure Line X/Y/Z for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Line X/Y/Z",
+          "value": "line1",
+          "description": ""
+        },
+        {
+          "label": "Line X/Y/Z",
+          "value": "line2",
+          "description": ""
+        },
+        {
+          "label": "Line X/Y/Z",
+          "value": "line3",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "plane",
+      "label": "Plane XY/YZ/ZX",
+      "description": "Configure Plane XY/YZ/ZX for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Plane XY/YZ/ZX",
+          "value": "plane1",
+          "description": ""
+        },
+        {
+          "label": "Plane XY/YZ/ZX",
+          "value": "plane2",
+          "description": ""
+        },
+        {
+          "label": "Plane XY/YZ/ZX",
+          "value": "plane3",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "plane1",
+      "label": "Plane XY/YZ/ZX",
+      "description": "Configure Plane XY/YZ/ZX for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Plane XY/YZ/ZX",
+          "value": "plane1",
+          "description": ""
+        },
+        {
+          "label": "Plane XY/YZ/ZX",
+          "value": "plane2",
+          "description": ""
+        },
+        {
+          "label": "Plane XY/YZ/ZX",
+          "value": "plane3",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "anchoru",
+      "label": "Anchor U",
+      "description": "Configure Anchor U for the operator",
+      "type": "string"
+    },
+    {
+      "name": "anchorv",
+      "label": "Anchor V",
+      "description": "Configure Anchor V for the operator",
+      "type": "string"
+    },
+    {
+      "name": "anchorw",
+      "label": "Anchor W",
+      "description": "Configure Anchor W for the operator",
+      "type": "string"
+    },
+    {
+      "name": "t",
+      "label": "Translate",
+      "description": "Configure Translate for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Translate",
+          "value": "tx",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "ty",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "tz",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "tx",
+      "label": "Translate",
+      "description": "Configure Translate for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Translate",
+          "value": "tx",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "ty",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "tz",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "r",
+      "label": "Rotate",
+      "description": "Configure Rotate for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Rotate",
+          "value": "rx",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "ry",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "rz",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "rx",
+      "label": "Rotate",
+      "description": "Configure Rotate for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Rotate",
+          "value": "rx",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "ry",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "rz",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "normal",
+      "label": "Normal",
+      "description": "Configure Normal for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Point",
+          "value": "pointNormals",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertNormals",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primNormals",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "texture",
+      "label": "Texture Coordinates",
+      "description": "Configure Texture Coordinates for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vert",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "dimension",
+      "label": "Append Dimension",
+      "description": "Configure Append Dimension for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "When Rows Cols Slices > 1",
+          "value": "morethanone",
+          "description": ""
+        },
+        {
+          "label": "Always for Rows Cols",
+          "value": "rowscolsalways",
+          "description": ""
+        },
+        {
+          "label": "Always for Rows Cols Slices",
+          "value": "rowscolsslicesalways",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "morethanone",
+      "label": "When Rows Cols Slices > 1",
+      "description": "Configure When Rows Cols Slices > 1 for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "When Rows Cols Slices > 1",
+          "value": "morethanone",
+          "description": ""
+        },
+        {
+          "label": "Always for Rows Cols",
+          "value": "rowscolsalways",
+          "description": ""
+        },
+        {
+          "label": "Always for Rows Cols Slices",
+          "value": "rowscolsslicesalways",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "bypass",
+      "label": "Bypass",
+      "description": "Configure Bypass for the operator",
+      "type": "string"
+    },
+    {
+      "name": "delinputattrs",
+      "label": "Delete Input Attributes",
+      "description": "Configure Delete Input Attributes for the operator",
+      "type": "string"
+    },
+    {
+      "name": "parmcolorspace",
+      "label": "Parameter Color Space",
+      "description": "Configure Parameter Color Space for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        }
+      ]
+    },
+    {
+      "name": "srgb",
+      "label": "sRGB",
+      "description": "Configure sRGB for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        }
+      ]
+    },
+    {
+      "name": "parmreferencewhite",
+      "label": "Parameter Reference White",
+      "description": "Configure Parameter Reference White for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    },
+    {
+      "name": "default",
+      "label": "Default For Color Space",
+      "description": "Configure Default For Color Space for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    }
+  ],
+  "experimental": true,
+  "sourceFile": "Experimental-Grid_POP.htm",
+  "parsedAt": "2025-08-08T03:03:56.292Z"
+}

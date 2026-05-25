@@ -1,0 +1,24 @@
+{
+  "className": "scriptTOP",
+  "displayName": "scriptTOP Class",
+  "description": "This class inherits from the  TOP class.\nIt references a specific Script TOP.",
+  "category": "General",
+  "fileName": "ScriptTOP_Class.htm",
+  "members": [],
+  "methods": [
+    {
+      "name": "content",
+      "signature": "copyNumpyArray(numpyArray)",
+      "returnType": "None",
+      "description": "copyNumpyArray(numpyArray) method",
+      "parameters": []
+    },
+    {
+      "name": "bodyContent",
+      "signature": "copyNumpyArray(numpyArray)",
+      "returnType": "None",
+      "description": "copyNumpyArray(numpyArray) method",
+      "parameters": []
+    }
+  ]
+}

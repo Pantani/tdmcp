@@ -1,0 +1,43 @@
+{
+  "className": "Attribute",
+  "displayName": "Attribute Class",
+  "description": "An Attribute describes a general geometric Attribute, associated with a Prim Class, Point Class, or Vertex Class.\nSpecific values for each Prim, Point or Vertex are described with the AttributeData Class.\nLists of attributes for the SOP are described with the Attributes Class.",
+  "category": "General",
+  "fileName": "Attribute_Class.htm",
+  "members": [
+    {
+      "name": "owner",
+      "id": "content",
+      "returnType": "OP",
+      "readOnly": true,
+      "description": "owner member"
+    },
+    {
+      "name": "owner",
+      "id": "bodyContent",
+      "returnType": "OP",
+      "readOnly": true,
+      "description": "owner member"
+    }
+  ],
+  "methods": [
+    {
+      "name": "destroy",
+      "parameters": [],
+      "returns": "None :",
+      "signature": "destroy()"
+    },
+    {
+      "name": "vals",
+      "parameters": [
+        {
+          "name": "delayed=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "list :",
+      "signature": "vals(delayed=False)"
+    }
+  ],
+  "enhanced": true
+}

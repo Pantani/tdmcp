@@ -7,3 +7,5 @@ coverage/
 .env.*
 .DS_Store
 *.tsbuildinfo
+__pycache__/
+*.pyc

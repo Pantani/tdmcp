@@ -1,0 +1,200 @@
+{
+  "className": "Timecode",
+  "displayName": "Timecode Class",
+  "description": "The Timecode class holds a timecode value. See also Timecode and Timecode CHOP.",
+  "category": "General",
+  "fileName": "Timecode_Class.htm",
+  "members": [
+    {
+      "name": "countdown",
+      "id": "content",
+      "returnType": "tdu.Timecode",
+      "readOnly": true,
+      "description": "countdown member"
+    },
+    {
+      "name": "countdown",
+      "id": "bodyContent",
+      "returnType": "tdu.Timecode",
+      "readOnly": true,
+      "description": "countdown member"
+    }
+  ],
+  "methods": [
+    {
+      "name": "setComponents",
+      "parameters": [
+        {
+          "name": "hour",
+          "type": "Any"
+        },
+        {
+          "name": "minute",
+          "type": "Any"
+        },
+        {
+          "name": "second",
+          "type": "Any"
+        },
+        {
+          "name": "frame",
+          "type": "Any"
+        },
+        {
+          "name": "negative=False",
+          "type": "Any"
+        },
+        {
+          "name": "fps=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "setComponents(hour, minute, second, frame, negative=False, fps=None)"
+    },
+    {
+      "name": "setString",
+      "parameters": [
+        {
+          "name": "timecodeStr",
+          "type": "Any"
+        },
+        {
+          "name": "fps=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "setString(timecodeStr, fps=None)"
+    },
+    {
+      "name": "setTotalFrames",
+      "parameters": [
+        {
+          "name": "totalFrames",
+          "type": "Any"
+        },
+        {
+          "name": "fps=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "setTotalFrames(totalFrames, fps=None)"
+    },
+    {
+      "name": "setLength",
+      "parameters": [
+        {
+          "name": "length",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "setLength(length)"
+    },
+    {
+      "name": "str",
+      "parameters": [
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "Initializes the Timecode object from a Timecode formatted String: ie.  hh:mm:ss:ff  or  hh:mm:ss.ff  ",
+      "signature": "str(Optional)"
+    },
+    {
+      "name": "negative",
+      "parameters": [
+        {
+          "name": "Keyword",
+          "type": "Any"
+        },
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "Whether the new Timecode is negative. False by default. ",
+      "signature": "negative(Keyword, Optional)"
+    },
+    {
+      "name": "fps",
+      "parameters": [
+        {
+          "name": "Keyword",
+          "type": "Any"
+        },
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "The Timecode's  FPS . If not specified then the  FPS  will not change. ",
+      "signature": "fps(Keyword, Optional)"
+    },
+    {
+      "name": "rates",
+      "parameters": [
+        {
+          "name": "eg. 29.97). True by default.       n  .  setComponents  (  12",
+          "type": "Any"
+        },
+        {
+          "name": "22",
+          "type": "Any"
+        },
+        {
+          "name": "33",
+          "type": "Any"
+        },
+        {
+          "name": "45",
+          "type": "Any"
+        },
+        {
+          "name": "negative  =  True",
+          "type": "Any"
+        },
+        {
+          "name": "fps  =  60",
+          "type": "Any"
+        }
+      ],
+      "returns": "&gt;   new   Timecode   will   be   -  12  :  22  :  33  :  45. ",
+      "signature": "rates(eg. 29.97). True by default.       n  .  setComponents  (  12  ,   22  ,   33  ,   45  ,   negative  =  True  ,   fps  =  60  )"
+    },
+    {
+      "name": "fps",
+      "parameters": [
+        {
+          "name": "Keyword",
+          "type": "Any"
+        },
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "The Timecode's  FPS . If not specified then the  FPS  will not change.       n  .  setString  (  '01:01:00:00'  ,   fps  =  60  ) ",
+      "signature": "fps(Keyword, Optional)"
+    },
+    {
+      "name": "fps",
+      "parameters": [
+        {
+          "name": "Keyword",
+          "type": "Any"
+        },
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "The Timecode's  FPS . If not specified then the  FPS  will not change.       n  .  setTotalFrames  (  120  ,   fps  =  60  )   # new Timecode will be 00:00:02:00 ",
+      "signature": "fps(Keyword, Optional)"
+    }
+  ],
+  "enhanced": true
+}

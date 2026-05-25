@@ -1,0 +1,54 @@
+{
+  "className": "Group",
+  "displayName": "Group Class",
+  "description": "An Group describes groups lists of Prim Class or Point Class.",
+  "category": "General",
+  "fileName": "Group_Class.htm",
+  "members": [
+    {
+      "name": "default",
+      "id": "content",
+      "returnType": "tuple",
+      "readOnly": true,
+      "description": "default member"
+    },
+    {
+      "name": "default",
+      "id": "bodyContent",
+      "returnType": "tuple",
+      "readOnly": true,
+      "description": "default member"
+    }
+  ],
+  "methods": [
+    {
+      "name": "add",
+      "parameters": [
+        {
+          "name": "item",
+          "type": "Point  |  Prim  | int"
+        }
+      ],
+      "returns": "None :",
+      "signature": "add(item :  Point  |  Prim  | int)"
+    },
+    {
+      "name": "discard",
+      "parameters": [
+        {
+          "name": "item",
+          "type": "Point  |  Prim  | int"
+        }
+      ],
+      "returns": "None :",
+      "signature": "discard(item :  Point  |  Prim  | int)"
+    },
+    {
+      "name": "destroy",
+      "parameters": [],
+      "returns": "None :",
+      "signature": "destroy()"
+    }
+  ],
+  "enhanced": true
+}

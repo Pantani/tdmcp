@@ -1,0 +1,26 @@
+{
+  "id": "audio_spectrum_bars",
+  "name": "Audio Spectrum Bars",
+  "description": "Classic spectrum analyzer: live audio is analyzed into a frequency spectrum and drawn as colored bars in a GLSL TOP.",
+  "tags": ["audio-reactive", "spectrum", "bars", "music"],
+  "difficulty": "beginner",
+  "td_version_min": "2022",
+  "nodes": [
+    { "name": "audioin", "type": "audiodeviceinCHOP", "comment": "Live audio input" },
+    { "name": "spectrum", "type": "audiospectrumCHOP", "comment": "FFT spectrum" },
+    { "name": "audio_tex", "type": "choptoTOP", "comment": "Spectrum as a 1-row texture" },
+    { "name": "bars", "type": "glslTOP", "comment": "Draws the bars from the spectrum texture" },
+    { "name": "out1", "type": "nullTOP" }
+  ],
+  "connections": [
+    { "from": "audioin", "to": "spectrum" },
+    { "from": "spectrum", "to": "audio_tex" },
+    { "from": "audio_tex", "to": "bars" },
+    { "from": "bars", "to": "out1" }
+  ],
+  "parameters": [],
+  "glsl_code": {
+    "bars": "out vec4 fragColor;\nvoid main(){\n    vec2 uv = vUV.st;\n    float amp = texture(sTD2DInputs[0], vec2(uv.x, 0.5)).r;\n    float bar = step(uv.y, clamp(amp, 0.0, 1.0));\n    vec3 col = mix(vec3(0.02,0.0,0.08), vec3(0.1,0.9,1.0), uv.x) * bar;\n    fragColor = TDOutputSwizzle(vec4(col, 1.0));\n}\n"
+  },
+  "preview_description": "A row of glowing cyan-to-magenta bars rising and falling with the music."
+}

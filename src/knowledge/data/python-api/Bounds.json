@@ -1,0 +1,10 @@
+{
+  "className": "Bounds",
+  "displayName": "Bounds Class",
+  "description": "Bounds(min, max, center, size)",
+  "category": "General",
+  "fileName": "Bounds_Class.htm",
+  "members": [],
+  "methods": [],
+  "enhanced": true
+}

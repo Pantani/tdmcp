@@ -1,0 +1,80 @@
+{
+  "className": "Cell",
+  "displayName": "Cell Class",
+  "description": "The Cell Class describes the contents of a single cell from a DAT operator table.\nThe DAT Class offers many ways of accessing its individual cells.\nDAT cells are always internally stored as strings, but may be accessed as numeric values.",
+  "category": "General",
+  "fileName": "Cell_Class.htm",
+  "members": [
+    {
+      "name": "valid",
+      "id": "content",
+      "returnType": "bool",
+      "readOnly": true,
+      "description": "valid member"
+    },
+    {
+      "name": "valid",
+      "id": "bodyContent",
+      "returnType": "bool",
+      "readOnly": true,
+      "description": "valid member"
+    }
+  ],
+  "methods": [
+    {
+      "name": "run",
+      "parameters": [
+        {
+          "name": "*args",
+          "type": "Any"
+        },
+        {
+          "name": "endFrame=False",
+          "type": "Any"
+        },
+        {
+          "name": "fromOP=None",
+          "type": "Any"
+        },
+        {
+          "name": "asParameter=False",
+          "type": "Any"
+        },
+        {
+          "name": "group=None",
+          "type": "Any"
+        },
+        {
+          "name": "delayFrames=0",
+          "type": "Any"
+        },
+        {
+          "name": "delayMilliSeconds=0",
+          "type": "Any"
+        },
+        {
+          "name": "delayRef=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "td.Run :",
+      "signature": "run(*args, endFrame=False, fromOP=None, asParameter=False, group=None, delayFrames=0, delayMilliSeconds=0, delayRef=None)"
+    },
+    {
+      "name": "offset",
+      "parameters": [
+        {
+          "name": "r",
+          "type": "Any"
+        },
+        {
+          "name": "c",
+          "type": "Any"
+        }
+      ],
+      "returns": "Cell | None :",
+      "signature": "offset(r, c)"
+    }
+  ],
+  "enhanced": true
+}

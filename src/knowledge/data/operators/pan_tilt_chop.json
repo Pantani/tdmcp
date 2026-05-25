@@ -1,0 +1,11 @@
+{
+  "name": "Pan Tilt CHOP",
+  "id": "pan_tilt_chop",
+  "category": "CHOP",
+  "subcategory": "Experimental",
+  "description": "Calculate pan/tilt rotation values for a series of pan/tilt platforms like moving head light fixtures. Values are calculated to minimize flipping and angular rotation frame by frame. Multiple rigs are calculated per CHOP. The first input is the realtive position of the target to the fixture either as tx, ty, tz channels or a full set of transform channels as output by the Object CHOP. The angles are calculated to point the platform towards the target. If multiple platforms each have their individual moving target, the pan/tilt can be calculated by calculating the transform between target and fixture using the Object CHOP's DAT table parameter.",
+  "parameters": [],
+  "experimental": true,
+  "sourceFile": "Experimental-Pan_Tilt_CHOP.htm",
+  "parsedAt": "2025-08-08T03:03:58.084Z"
+}

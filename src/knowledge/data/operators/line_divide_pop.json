@@ -1,0 +1,688 @@
+{
+  "name": "Line Divide POP",
+  "id": "line_divide_pop",
+  "category": "POP",
+  "subcategory": "Experimental",
+  "description": "The Line Divide POP takes any set of line strips, and for each it generates a new line strip that is subdivided using various interpolation methods. The default is linear interpolation with 4 divisions between incoming points.",
+  "parameters": [
+    {
+      "name": "Weight",
+      "label": "Interpolation Method per Segment",
+      "description": "Configure Interpolation Method per Segment for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Linear",
+          "value": "linear",
+          "description": ""
+        },
+        {
+          "label": "Cardinal (Interpolating)",
+          "value": "cardinal",
+          "description": ""
+        },
+        {
+          "label": "BSpline",
+          "value": "bspline",
+          "description": ""
+        },
+        {
+          "label": "Cubic Bezier With Tangents",
+          "value": "cubicbeziertang",
+          "description": ""
+        },
+        {
+          "label": "Cubic Bezier",
+          "value": "cubicbezier",
+          "description": ""
+        },
+        {
+          "label": "Quadratic Bezier",
+          "value": "quadraticbezier",
+          "description": ""
+        },
+        {
+          "label": "Divisions per Line Strip",
+          "value": "linestrip",
+          "description": ""
+        },
+        {
+          "label": "Divisions per Segment",
+          "value": "segment",
+          "description": ""
+        },
+        {
+          "label": "Distance between Points",
+          "value": "dist",
+          "description": ""
+        },
+        {
+          "label": "Distance by Curvature",
+          "value": "curvature",
+          "description": ""
+        },
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Divisions per Line Strip",
+          "value": "linestrip",
+          "description": ""
+        },
+        {
+          "label": "Distance between Points",
+          "value": "dist",
+          "description": ""
+        },
+        {
+          "label": "Points as Keyframes",
+          "value": "keyframes",
+          "description": ""
+        },
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        },
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    },
+    {
+      "name": "interpmethodpersegment",
+      "label": "Interpolation Method per Segment",
+      "description": "Configure Interpolation Method per Segment for the operator",
+      "type": "string"
+    },
+    {
+      "name": "segmethodattr",
+      "label": "Segment Method Attribute",
+      "description": "Configure Segment Method Attribute for the operator",
+      "type": "string"
+    },
+    {
+      "name": "interpmethod",
+      "label": "Interpolation Method",
+      "description": "Configure Interpolation Method for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Linear",
+          "value": "linear",
+          "description": ""
+        },
+        {
+          "label": "Cardinal (Interpolating)",
+          "value": "cardinal",
+          "description": ""
+        },
+        {
+          "label": "BSpline",
+          "value": "bspline",
+          "description": ""
+        },
+        {
+          "label": "Cubic Bezier With Tangents",
+          "value": "cubicbeziertang",
+          "description": ""
+        },
+        {
+          "label": "Cubic Bezier",
+          "value": "cubicbezier",
+          "description": ""
+        },
+        {
+          "label": "Quadratic Bezier",
+          "value": "quadraticbezier",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "linear",
+      "label": "Linear",
+      "description": "Configure Linear for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Linear",
+          "value": "linear",
+          "description": ""
+        },
+        {
+          "label": "Cardinal (Interpolating)",
+          "value": "cardinal",
+          "description": ""
+        },
+        {
+          "label": "BSpline",
+          "value": "bspline",
+          "description": ""
+        },
+        {
+          "label": "Cubic Bezier With Tangents",
+          "value": "cubicbeziertang",
+          "description": ""
+        },
+        {
+          "label": "Cubic Bezier",
+          "value": "cubicbezier",
+          "description": ""
+        },
+        {
+          "label": "Quadratic Bezier",
+          "value": "quadraticbezier",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "useweight",
+      "label": "Weight Attribute",
+      "description": "Configure Weight Attribute for the operator",
+      "type": "string"
+    },
+    {
+      "name": "weightattr",
+      "label": "Weight Attribute Name",
+      "description": "Configure Weight Attribute Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "usetanin",
+      "label": "In Tangent Attribute",
+      "description": "Configure In Tangent Attribute for the operator",
+      "type": "string"
+    },
+    {
+      "name": "taninattr",
+      "label": "In Tangent Attribute Name",
+      "description": "Configure In Tangent Attribute Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "usetanout",
+      "label": "Out Tangent Attribute",
+      "description": "Configure Out Tangent Attribute for the operator",
+      "type": "string"
+    },
+    {
+      "name": "tanoutattr",
+      "label": "Out Tangent Attribute Name",
+      "description": "Configure Out Tangent Attribute Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "usetaninconst",
+      "label": "In Tangent Constraint Attribute",
+      "description": "Configure In Tangent Constraint Attribute for the operator",
+      "type": "string"
+    },
+    {
+      "name": "taninconstattr",
+      "label": "In Tangent Constraint Attribute Name",
+      "description": "Configure In Tangent Constraint Attribute Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "clamped",
+      "label": "Clamped",
+      "description": "Configure Clamped for the operator",
+      "type": "string"
+    },
+    {
+      "name": "tension",
+      "label": "Tension",
+      "description": "Configure Tension for the operator",
+      "type": "string"
+    },
+    {
+      "name": "divmethod",
+      "label": "Divisions Method",
+      "description": "Configure Divisions Method for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Divisions per Line Strip",
+          "value": "linestrip",
+          "description": ""
+        },
+        {
+          "label": "Divisions per Segment",
+          "value": "segment",
+          "description": ""
+        },
+        {
+          "label": "Distance between Points",
+          "value": "dist",
+          "description": ""
+        },
+        {
+          "label": "Distance by Curvature",
+          "value": "curvature",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "linestrip",
+      "label": "Divisions per Line Strip",
+      "description": "Configure Divisions per Line Strip for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Divisions per Line Strip",
+          "value": "linestrip",
+          "description": ""
+        },
+        {
+          "label": "Divisions per Segment",
+          "value": "segment",
+          "description": ""
+        },
+        {
+          "label": "Distance between Points",
+          "value": "dist",
+          "description": ""
+        },
+        {
+          "label": "Distance by Curvature",
+          "value": "curvature",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "divs",
+      "label": "Divisions",
+      "description": "Configure Divisions for the operator",
+      "type": "string"
+    },
+    {
+      "name": "mindist",
+      "label": "Min Distance",
+      "description": "Configure Min Distance for the operator",
+      "type": "string"
+    },
+    {
+      "name": "maxdist",
+      "label": "Max Distance",
+      "description": "Configure Max Distance for the operator",
+      "type": "string"
+    },
+    {
+      "name": "minmaxbias",
+      "label": "Min Max Bias",
+      "description": "Configure Min Max Bias for the operator",
+      "type": "string"
+    },
+    {
+      "name": "byedge",
+      "label": "By Edge",
+      "description": "Configure By Edge for the operator",
+      "type": "string"
+    },
+    {
+      "name": "addctrlpointattr",
+      "label": "Add ControlPoint Attribute",
+      "description": "Configure Add ControlPoint Attribute for the operator",
+      "type": "string"
+    },
+    {
+      "name": "maxverts",
+      "label": "Maximum Number of Vertices",
+      "description": "Configure Maximum Number of Vertices for the operator",
+      "type": "string"
+    },
+    {
+      "name": "resamplemethod",
+      "label": "Post-Resample Method",
+      "description": "Configure Post-Resample Method for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Divisions per Line Strip",
+          "value": "linestrip",
+          "description": ""
+        },
+        {
+          "label": "Distance between Points",
+          "value": "dist",
+          "description": ""
+        },
+        {
+          "label": "Points as Keyframes",
+          "value": "keyframes",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "none",
+      "label": "None",
+      "description": "Configure None for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Divisions per Line Strip",
+          "value": "linestrip",
+          "description": ""
+        },
+        {
+          "label": "Distance between Points",
+          "value": "dist",
+          "description": ""
+        },
+        {
+          "label": "Points as Keyframes",
+          "value": "keyframes",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "resampledivs",
+      "label": "Divisions",
+      "description": "Configure Divisions for the operator",
+      "type": "string"
+    },
+    {
+      "name": "resampledist",
+      "label": "Distance",
+      "description": "Configure Distance for the operator",
+      "type": "string"
+    },
+    {
+      "name": "indvarattr",
+      "label": "Independant Variable Attribute",
+      "description": "Configure Independant Variable Attribute for the operator",
+      "type": "string"
+    },
+    {
+      "name": "indvarstep",
+      "label": "Independant Variable Step",
+      "description": "Configure Independant Variable Step for the operator",
+      "type": "string"
+    },
+    {
+      "name": "resamplemaxverts",
+      "label": "Maximum Number of Vertices",
+      "description": "Configure Maximum Number of Vertices for the operator",
+      "type": "string"
+    },
+    {
+      "name": "maxtries",
+      "label": "Max Tries for Binary Search",
+      "description": "Configure Max Tries for Binary Search for the operator",
+      "type": "string"
+    },
+    {
+      "name": "rmvunusedpts",
+      "label": "Remove Unused Points",
+      "description": "Configure Remove Unused Points for the operator",
+      "type": "string"
+    },
+    {
+      "name": "bypass",
+      "label": "Bypass",
+      "description": "Configure Bypass for the operator",
+      "type": "string"
+    },
+    {
+      "name": "delinputattrs",
+      "label": "Delete Input Attributes",
+      "description": "Configure Delete Input Attributes for the operator",
+      "type": "string"
+    },
+    {
+      "name": "parmcolorspace",
+      "label": "Parameter Color Space",
+      "description": "Configure Parameter Color Space for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        }
+      ]
+    },
+    {
+      "name": "srgb",
+      "label": "sRGB",
+      "description": "Configure sRGB for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        }
+      ]
+    },
+    {
+      "name": "parmreferencewhite",
+      "label": "Parameter Reference White",
+      "description": "Configure Parameter Reference White for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    },
+    {
+      "name": "default",
+      "label": "Default For Color Space",
+      "description": "Configure Default For Color Space for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    }
+  ],
+  "experimental": true,
+  "sourceFile": "Experimental-Line_Divide_POP.htm",
+  "parsedAt": "2025-08-08T03:03:56.801Z"
+}

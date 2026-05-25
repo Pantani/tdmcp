@@ -1,0 +1,25 @@
+{
+  "className": "Panel",
+  "displayName": "Panel Class",
+  "description": "The Panel class manages Panel Components, and is used to access the state of a panel via its Panel Value Class.",
+  "category": "General",
+  "fileName": "Panel_Class.htm",
+  "members": [
+    {
+      "name": "owner",
+      "id": "content",
+      "returnType": "OP",
+      "readOnly": true,
+      "description": "owner member"
+    },
+    {
+      "name": "owner",
+      "id": "bodyContent",
+      "returnType": "OP",
+      "readOnly": true,
+      "description": "owner member"
+    }
+  ],
+  "methods": [],
+  "enhanced": true
+}

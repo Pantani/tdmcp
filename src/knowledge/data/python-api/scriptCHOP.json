@@ -1,0 +1,24 @@
+{
+  "className": "scriptCHOP",
+  "displayName": "scriptCHOP Class",
+  "description": "This class inherits from the  CHOP class.\nIt references a specific Script CHOP.",
+  "category": "General",
+  "fileName": "ScriptCHOP_Class.htm",
+  "members": [
+    {
+      "name": "timeSliceDefault",
+      "id": "content",
+      "returnType": "bool",
+      "readOnly": true,
+      "description": "timeSliceDefault member"
+    },
+    {
+      "name": "timeSliceDefault",
+      "id": "bodyContent",
+      "returnType": "bool",
+      "readOnly": true,
+      "description": "timeSliceDefault member"
+    }
+  ],
+  "methods": []
+}

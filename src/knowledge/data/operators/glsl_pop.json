@@ -1,0 +1,2317 @@
+{
+  "name": "GLSL POP",
+  "id": "glsl_pop",
+  "category": "POP",
+  "subcategory": "Experimental",
+  "description": "This POP allows you to modify input attributes with GLSL. It works on a single attribute class at a time, Points, Verts or Primitives, and doesn't allow to change the number of input elements (Points, Verts or Primitives).",
+  "parameters": [
+    {
+      "name": "computedat",
+      "label": "Compute Shader",
+      "description": "Configure Compute Shader for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertex",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primitive",
+          "description": ""
+        },
+        {
+          "label": "Auto",
+          "value": "auto",
+          "description": ""
+        },
+        {
+          "label": "Number of Elements in Other Input",
+          "value": "otherinputelements",
+          "description": ""
+        },
+        {
+          "label": "Manual",
+          "value": "manual",
+          "description": ""
+        },
+        {
+          "label": "Manual Number of Elements",
+          "value": "numelems",
+          "description": ""
+        },
+        {
+          "label": "Number of Elements from Attribute",
+          "value": "numelemsattrib",
+          "description": ""
+        },
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertex",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primitive",
+          "description": ""
+        },
+        {
+          "label": "Work Group Size",
+          "value": "workgroupsizex",
+          "description": ""
+        },
+        {
+          "label": "Work Group Size",
+          "value": "workgroupsizey",
+          "description": ""
+        },
+        {
+          "label": "Work Group Size",
+          "value": "workgroupsizez",
+          "description": ""
+        },
+        {
+          "label": "Dispatch Size",
+          "value": "dispatchsizex",
+          "description": ""
+        },
+        {
+          "label": "Dispatch Size",
+          "value": "dispatchsizey",
+          "description": ""
+        },
+        {
+          "label": "Dispatch Size",
+          "value": "dispatchsizez",
+          "description": ""
+        },
+        {
+          "label": "*",
+          "value": "*",
+          "description": ""
+        },
+        {
+          "label": "Write Only",
+          "value": "writeonly",
+          "description": ""
+        },
+        {
+          "label": "Read-Write",
+          "value": "readwrite",
+          "description": "Write readwrite -"
+        },
+        {
+          "label": "Performance",
+          "value": "performance",
+          "description": "Performant noise."
+        },
+        {
+          "label": "Quality",
+          "value": "quality",
+          "description": "Quality noise."
+        },
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        },
+        {
+          "label": "N",
+          "value": "n",
+          "description": ""
+        },
+        {
+          "label": "Color",
+          "value": "color",
+          "description": ""
+        },
+        {
+          "label": "Tex",
+          "value": "tex",
+          "description": ""
+        },
+        {
+          "label": "PointScale",
+          "value": "pointscale",
+          "description": ""
+        },
+        {
+          "label": "LineWidth",
+          "value": "linewidth",
+          "description": ""
+        },
+        {
+          "label": "float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "double",
+          "value": "double",
+          "description": ""
+        },
+        {
+          "label": "int",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "uint",
+          "value": "uint",
+          "description": ""
+        },
+        {
+          "label": "vector",
+          "value": "vector",
+          "description": ""
+        },
+        {
+          "label": "dvector",
+          "value": "dvector",
+          "description": ""
+        },
+        {
+          "label": "dir",
+          "value": "dir",
+          "description": ""
+        },
+        {
+          "label": "dbl dir",
+          "value": "ddir",
+          "description": ""
+        },
+        {
+          "label": "1",
+          "value": "1",
+          "description": ""
+        },
+        {
+          "label": "2",
+          "value": "2",
+          "description": ""
+        },
+        {
+          "label": "3",
+          "value": "3",
+          "description": ""
+        },
+        {
+          "label": "4",
+          "value": "4",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "attr0valuer",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "attr0valueg",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "attr0valueb",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "attr0valuea",
+          "description": ""
+        },
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Transform Matrix",
+          "value": "transformMatrix",
+          "description": ""
+        },
+        {
+          "label": "float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "vec2",
+          "value": "vec2",
+          "description": ""
+        },
+        {
+          "label": "vec3",
+          "value": "vec3",
+          "description": ""
+        },
+        {
+          "label": "vec4",
+          "value": "vec4",
+          "description": ""
+        },
+        {
+          "label": "double",
+          "value": "double",
+          "description": ""
+        },
+        {
+          "label": "dvec2",
+          "value": "dvec2",
+          "description": ""
+        },
+        {
+          "label": "dvec3",
+          "value": "dvec3",
+          "description": ""
+        },
+        {
+          "label": "dvec4",
+          "value": "dvec4",
+          "description": ""
+        },
+        {
+          "label": "int",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "ivec2",
+          "value": "ivec2",
+          "description": ""
+        },
+        {
+          "label": "ivec3",
+          "value": "ivec3",
+          "description": ""
+        },
+        {
+          "label": "ivec4",
+          "value": "ivec4",
+          "description": ""
+        },
+        {
+          "label": "uint",
+          "value": "uint",
+          "description": ""
+        },
+        {
+          "label": "uvec2",
+          "value": "uvec2",
+          "description": ""
+        },
+        {
+          "label": "uvec3",
+          "value": "uvec3",
+          "description": ""
+        },
+        {
+          "label": "uvec4",
+          "value": "uvec4",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "vec0valuex",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "vec0valuey",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "vec0valuez",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "vec0valuew",
+          "description": ""
+        },
+        {
+          "label": "Hold",
+          "value": "hold",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "Repeat",
+          "value": "repeat",
+          "description": ""
+        },
+        {
+          "label": "Mirror",
+          "value": "mirror",
+          "description": ""
+        },
+        {
+          "label": "Hold",
+          "value": "hold",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "Repeat",
+          "value": "repeat",
+          "description": ""
+        },
+        {
+          "label": "Mirror",
+          "value": "mirror",
+          "description": ""
+        },
+        {
+          "label": "Hold",
+          "value": "hold",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "Repeat",
+          "value": "repeat",
+          "description": ""
+        },
+        {
+          "label": "Mirror",
+          "value": "mirror",
+          "description": ""
+        },
+        {
+          "label": "Nearest Pixel",
+          "value": "nearest",
+          "description": ""
+        },
+        {
+          "label": "Interpolate Pixels",
+          "value": "linear",
+          "description": ""
+        },
+        {
+          "label": "float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "vec2",
+          "value": "vec2",
+          "description": ""
+        },
+        {
+          "label": "vec3",
+          "value": "vec3",
+          "description": ""
+        },
+        {
+          "label": "vec4",
+          "value": "vec4",
+          "description": ""
+        },
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        },
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    },
+    {
+      "name": "attrclass",
+      "label": "Attribute Class",
+      "description": "Configure Attribute Class for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertex",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primitive",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "point",
+      "label": "Point",
+      "description": "Configure Point for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertex",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primitive",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "numthreadsmode",
+      "label": "Number of Threads",
+      "description": "Configure Number of Threads for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Auto",
+          "value": "auto",
+          "description": ""
+        },
+        {
+          "label": "Number of Elements in Other Input",
+          "value": "otherinputelements",
+          "description": ""
+        },
+        {
+          "label": "Manual",
+          "value": "manual",
+          "description": ""
+        },
+        {
+          "label": "Manual Number of Elements",
+          "value": "numelems",
+          "description": ""
+        },
+        {
+          "label": "Number of Elements from Attribute",
+          "value": "numelemsattrib",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "auto",
+      "label": "Auto",
+      "description": "Configure Auto for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Auto",
+          "value": "auto",
+          "description": ""
+        },
+        {
+          "label": "Number of Elements in Other Input",
+          "value": "otherinputelements",
+          "description": ""
+        },
+        {
+          "label": "Manual",
+          "value": "manual",
+          "description": ""
+        },
+        {
+          "label": "Manual Number of Elements",
+          "value": "numelems",
+          "description": ""
+        },
+        {
+          "label": "Number of Elements from Attribute",
+          "value": "numelemsattrib",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "threadsinput",
+      "label": "Threads Input",
+      "description": "Configure Threads Input for the operator",
+      "type": "string"
+    },
+    {
+      "name": "numelems",
+      "label": "Number of Elements",
+      "description": "Configure Number of Elements for the operator",
+      "type": "string"
+    },
+    {
+      "name": "numelemspop",
+      "label": "POP",
+      "description": "Configure POP for the operator",
+      "type": "string"
+    },
+    {
+      "name": "numelemsclass",
+      "label": "Num Elements Attrib",
+      "description": "Configure Num Elements Attrib for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertex",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primitive",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "numelemsattr",
+      "label": "Num Elements Attrib",
+      "description": "Configure Num Elements Attrib for the operator",
+      "type": "string"
+    },
+    {
+      "name": "workgroupsize",
+      "label": "Work Group Size",
+      "description": "Configure Work Group Size for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Work Group Size",
+          "value": "workgroupsizex",
+          "description": ""
+        },
+        {
+          "label": "Work Group Size",
+          "value": "workgroupsizey",
+          "description": ""
+        },
+        {
+          "label": "Work Group Size",
+          "value": "workgroupsizez",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "workgroupsizex",
+      "label": "Work Group Size",
+      "description": "Configure Work Group Size for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Work Group Size",
+          "value": "workgroupsizex",
+          "description": ""
+        },
+        {
+          "label": "Work Group Size",
+          "value": "workgroupsizey",
+          "description": ""
+        },
+        {
+          "label": "Work Group Size",
+          "value": "workgroupsizez",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "dispatchsize",
+      "label": "Dispatch Size",
+      "description": "Configure Dispatch Size for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Dispatch Size",
+          "value": "dispatchsizex",
+          "description": ""
+        },
+        {
+          "label": "Dispatch Size",
+          "value": "dispatchsizey",
+          "description": ""
+        },
+        {
+          "label": "Dispatch Size",
+          "value": "dispatchsizez",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "dispatchsizex",
+      "label": "Dispatch Size",
+      "description": "Configure Dispatch Size for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Dispatch Size",
+          "value": "dispatchsizex",
+          "description": ""
+        },
+        {
+          "label": "Dispatch Size",
+          "value": "dispatchsizey",
+          "description": ""
+        },
+        {
+          "label": "Dispatch Size",
+          "value": "dispatchsizez",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "outputattrs",
+      "label": "Output Attributes",
+      "description": "Configure Output Attributes for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "*",
+          "value": "*",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "*",
+      "label": "*",
+      "description": "Configure * for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "*",
+          "value": "*",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "outputaccess",
+      "label": "Output Access",
+      "description": "Configure Output Access for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Write Only",
+          "value": "writeonly",
+          "description": ""
+        },
+        {
+          "label": "Read-Write",
+          "value": "readwrite",
+          "description": "Write readwrite -"
+        }
+      ]
+    },
+    {
+      "name": "writeonly",
+      "label": "Write Only",
+      "description": "Configure Write Only for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Write Only",
+          "value": "writeonly",
+          "description": ""
+        },
+        {
+          "label": "Read-Write",
+          "value": "readwrite",
+          "description": "Write readwrite -"
+        }
+      ]
+    },
+    {
+      "name": "initoutputattrs",
+      "label": "Initialize Output Attributes",
+      "description": "Configure Initialize Output Attributes for the operator",
+      "type": "string"
+    },
+    {
+      "name": "prevpassoutput",
+      "label": "Copy Previous Pass Output to Input",
+      "description": "Configure Copy Previous Pass Output to Input for the operator",
+      "type": "string"
+    },
+    {
+      "name": "npasses",
+      "label": "Passes",
+      "description": "Configure Passes for the operator",
+      "type": "string"
+    },
+    {
+      "name": "input",
+      "label": "Input",
+      "description": "Configure Input for the operator",
+      "type": "string"
+    },
+    {
+      "name": "input0pops",
+      "label": "In POPs",
+      "description": "Configure In POPs for the operator",
+      "type": "string"
+    },
+    {
+      "name": "simplexnoise",
+      "label": "TDSimplexNoise()",
+      "description": "Configure TDSimplexNoise() for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Performance",
+          "value": "performance",
+          "description": "Performant noise."
+        },
+        {
+          "label": "Quality",
+          "value": "quality",
+          "description": "Quality noise."
+        }
+      ]
+    },
+    {
+      "name": "performance",
+      "label": "Performance",
+      "description": "Configure Performance for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Performance",
+          "value": "performance",
+          "description": "Performant noise."
+        },
+        {
+          "label": "Quality",
+          "value": "quality",
+          "description": "Quality noise."
+        }
+      ]
+    },
+    {
+      "name": "attr",
+      "label": "New Attribute",
+      "description": "Configure New Attribute for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        },
+        {
+          "label": "N",
+          "value": "n",
+          "description": ""
+        },
+        {
+          "label": "Color",
+          "value": "color",
+          "description": ""
+        },
+        {
+          "label": "Tex",
+          "value": "tex",
+          "description": ""
+        },
+        {
+          "label": "PointScale",
+          "value": "pointscale",
+          "description": ""
+        },
+        {
+          "label": "LineWidth",
+          "value": "linewidth",
+          "description": ""
+        },
+        {
+          "label": "float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "double",
+          "value": "double",
+          "description": ""
+        },
+        {
+          "label": "int",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "uint",
+          "value": "uint",
+          "description": ""
+        },
+        {
+          "label": "vector",
+          "value": "vector",
+          "description": ""
+        },
+        {
+          "label": "dvector",
+          "value": "dvector",
+          "description": ""
+        },
+        {
+          "label": "dir",
+          "value": "dir",
+          "description": ""
+        },
+        {
+          "label": "dbl dir",
+          "value": "ddir",
+          "description": ""
+        },
+        {
+          "label": "1",
+          "value": "1",
+          "description": ""
+        },
+        {
+          "label": "2",
+          "value": "2",
+          "description": ""
+        },
+        {
+          "label": "3",
+          "value": "3",
+          "description": ""
+        },
+        {
+          "label": "4",
+          "value": "4",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "attr0valuer",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "attr0valueg",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "attr0valueb",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "attr0valuea",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "attr0name",
+      "label": "New Attribute Name",
+      "description": "Configure New Attribute Name for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        },
+        {
+          "label": "N",
+          "value": "n",
+          "description": ""
+        },
+        {
+          "label": "Color",
+          "value": "color",
+          "description": ""
+        },
+        {
+          "label": "Tex",
+          "value": "tex",
+          "description": ""
+        },
+        {
+          "label": "PointScale",
+          "value": "pointscale",
+          "description": ""
+        },
+        {
+          "label": "LineWidth",
+          "value": "linewidth",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "custom",
+      "label": "Custom",
+      "description": "Configure Custom for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        },
+        {
+          "label": "N",
+          "value": "n",
+          "description": ""
+        },
+        {
+          "label": "Color",
+          "value": "color",
+          "description": ""
+        },
+        {
+          "label": "Tex",
+          "value": "tex",
+          "description": ""
+        },
+        {
+          "label": "PointScale",
+          "value": "pointscale",
+          "description": ""
+        },
+        {
+          "label": "LineWidth",
+          "value": "linewidth",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "attr0customname",
+      "label": "Custom Name",
+      "description": "Configure Custom Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "attr0type",
+      "label": "New Attribute Type",
+      "description": "Configure New Attribute Type for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "double",
+          "value": "double",
+          "description": ""
+        },
+        {
+          "label": "int",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "uint",
+          "value": "uint",
+          "description": ""
+        },
+        {
+          "label": "vector",
+          "value": "vector",
+          "description": ""
+        },
+        {
+          "label": "dvector",
+          "value": "dvector",
+          "description": ""
+        },
+        {
+          "label": "dir",
+          "value": "dir",
+          "description": ""
+        },
+        {
+          "label": "dbl dir",
+          "value": "ddir",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "float",
+      "label": "float",
+      "description": "Configure float for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "double",
+          "value": "double",
+          "description": ""
+        },
+        {
+          "label": "int",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "uint",
+          "value": "uint",
+          "description": ""
+        },
+        {
+          "label": "vector",
+          "value": "vector",
+          "description": ""
+        },
+        {
+          "label": "dvector",
+          "value": "dvector",
+          "description": ""
+        },
+        {
+          "label": "dir",
+          "value": "dir",
+          "description": ""
+        },
+        {
+          "label": "dbl dir",
+          "value": "ddir",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "attr0numcomps",
+      "label": "New Attribute Number of Components",
+      "description": "Configure New Attribute Number of Components for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "1",
+          "value": "1",
+          "description": ""
+        },
+        {
+          "label": "2",
+          "value": "2",
+          "description": ""
+        },
+        {
+          "label": "3",
+          "value": "3",
+          "description": ""
+        },
+        {
+          "label": "4",
+          "value": "4",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "1",
+      "label": "1",
+      "description": "Configure 1 for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "1",
+          "value": "1",
+          "description": ""
+        },
+        {
+          "label": "2",
+          "value": "2",
+          "description": ""
+        },
+        {
+          "label": "3",
+          "value": "3",
+          "description": ""
+        },
+        {
+          "label": "4",
+          "value": "4",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "attr0isarray",
+      "label": "Array",
+      "description": "Configure Array for the operator",
+      "type": "string"
+    },
+    {
+      "name": "attr0arraysize",
+      "label": "New Attribute Array Size",
+      "description": "Configure New Attribute Array Size for the operator",
+      "type": "string"
+    },
+    {
+      "name": "attr0value",
+      "label": "Value",
+      "description": "Configure Value for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Value",
+          "value": "attr0valuer",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "attr0valueg",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "attr0valueb",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "attr0valuea",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "attr0valuer",
+      "label": "Value",
+      "description": "Configure Value for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Value",
+          "value": "attr0valuer",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "attr0valueg",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "attr0valueb",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "attr0valuea",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "matattr",
+      "label": "Matrix Attribute",
+      "description": "Configure Matrix Attribute for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Transform Matrix",
+          "value": "transformMatrix",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "matattr0name",
+      "label": "Custom Matrix Name",
+      "description": "Configure Custom Matrix Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "matattr0numrows",
+      "label": "Rows",
+      "description": "Configure Rows for the operator",
+      "type": "string"
+    },
+    {
+      "name": "matattr0numcols",
+      "label": "Columns",
+      "description": "Configure Columns for the operator",
+      "type": "string"
+    },
+    {
+      "name": "matattr0isarray",
+      "label": "Array",
+      "description": "Configure Array for the operator",
+      "type": "string"
+    },
+    {
+      "name": "matattr0arraysize",
+      "label": "Array Size",
+      "description": "Configure Array Size for the operator",
+      "type": "string"
+    },
+    {
+      "name": "matattr0qualifier",
+      "label": "Qualifier",
+      "description": "Configure Qualifier for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Transform Matrix",
+          "value": "transformMatrix",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "none",
+      "label": "None",
+      "description": "Configure None for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Transform Matrix",
+          "value": "transformMatrix",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "vec",
+      "label": "Vector",
+      "description": "Configure Vector for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "vec2",
+          "value": "vec2",
+          "description": ""
+        },
+        {
+          "label": "vec3",
+          "value": "vec3",
+          "description": ""
+        },
+        {
+          "label": "vec4",
+          "value": "vec4",
+          "description": ""
+        },
+        {
+          "label": "double",
+          "value": "double",
+          "description": ""
+        },
+        {
+          "label": "dvec2",
+          "value": "dvec2",
+          "description": ""
+        },
+        {
+          "label": "dvec3",
+          "value": "dvec3",
+          "description": ""
+        },
+        {
+          "label": "dvec4",
+          "value": "dvec4",
+          "description": ""
+        },
+        {
+          "label": "int",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "ivec2",
+          "value": "ivec2",
+          "description": ""
+        },
+        {
+          "label": "ivec3",
+          "value": "ivec3",
+          "description": ""
+        },
+        {
+          "label": "ivec4",
+          "value": "ivec4",
+          "description": ""
+        },
+        {
+          "label": "uint",
+          "value": "uint",
+          "description": ""
+        },
+        {
+          "label": "uvec2",
+          "value": "uvec2",
+          "description": ""
+        },
+        {
+          "label": "uvec3",
+          "value": "uvec3",
+          "description": ""
+        },
+        {
+          "label": "uvec4",
+          "value": "uvec4",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "vec0valuex",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "vec0valuey",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "vec0valuez",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "vec0valuew",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "vec0name",
+      "label": "Name",
+      "description": "Configure Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "vec0type",
+      "label": "Type",
+      "description": "Configure Type for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "vec2",
+          "value": "vec2",
+          "description": ""
+        },
+        {
+          "label": "vec3",
+          "value": "vec3",
+          "description": ""
+        },
+        {
+          "label": "vec4",
+          "value": "vec4",
+          "description": ""
+        },
+        {
+          "label": "double",
+          "value": "double",
+          "description": ""
+        },
+        {
+          "label": "dvec2",
+          "value": "dvec2",
+          "description": ""
+        },
+        {
+          "label": "dvec3",
+          "value": "dvec3",
+          "description": ""
+        },
+        {
+          "label": "dvec4",
+          "value": "dvec4",
+          "description": ""
+        },
+        {
+          "label": "int",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "ivec2",
+          "value": "ivec2",
+          "description": ""
+        },
+        {
+          "label": "ivec3",
+          "value": "ivec3",
+          "description": ""
+        },
+        {
+          "label": "ivec4",
+          "value": "ivec4",
+          "description": ""
+        },
+        {
+          "label": "uint",
+          "value": "uint",
+          "description": ""
+        },
+        {
+          "label": "uvec2",
+          "value": "uvec2",
+          "description": ""
+        },
+        {
+          "label": "uvec3",
+          "value": "uvec3",
+          "description": ""
+        },
+        {
+          "label": "uvec4",
+          "value": "uvec4",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "vec0value",
+      "label": "Value",
+      "description": "Configure Value for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Value",
+          "value": "vec0valuex",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "vec0valuey",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "vec0valuez",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "vec0valuew",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "vec0valuex",
+      "label": "Value",
+      "description": "Configure Value for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Value",
+          "value": "vec0valuex",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "vec0valuey",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "vec0valuez",
+          "description": ""
+        },
+        {
+          "label": "Value",
+          "value": "vec0valuew",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "sampler",
+      "label": "Sampler",
+      "description": "Configure Sampler for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Hold",
+          "value": "hold",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "Repeat",
+          "value": "repeat",
+          "description": ""
+        },
+        {
+          "label": "Mirror",
+          "value": "mirror",
+          "description": ""
+        },
+        {
+          "label": "Hold",
+          "value": "hold",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "Repeat",
+          "value": "repeat",
+          "description": ""
+        },
+        {
+          "label": "Mirror",
+          "value": "mirror",
+          "description": ""
+        },
+        {
+          "label": "Hold",
+          "value": "hold",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "Repeat",
+          "value": "repeat",
+          "description": ""
+        },
+        {
+          "label": "Mirror",
+          "value": "mirror",
+          "description": ""
+        },
+        {
+          "label": "Nearest Pixel",
+          "value": "nearest",
+          "description": ""
+        },
+        {
+          "label": "Interpolate Pixels",
+          "value": "linear",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "sampler0name",
+      "label": "Name",
+      "description": "Configure Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "sampler0top",
+      "label": "TOP",
+      "description": "Configure TOP for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Hold",
+          "value": "hold",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "Repeat",
+          "value": "repeat",
+          "description": ""
+        },
+        {
+          "label": "Mirror",
+          "value": "mirror",
+          "description": ""
+        },
+        {
+          "label": "Hold",
+          "value": "hold",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "Repeat",
+          "value": "repeat",
+          "description": ""
+        },
+        {
+          "label": "Mirror",
+          "value": "mirror",
+          "description": ""
+        },
+        {
+          "label": "Hold",
+          "value": "hold",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "Repeat",
+          "value": "repeat",
+          "description": ""
+        },
+        {
+          "label": "Mirror",
+          "value": "mirror",
+          "description": ""
+        },
+        {
+          "label": "Nearest Pixel",
+          "value": "nearest",
+          "description": ""
+        },
+        {
+          "label": "Interpolate Pixels",
+          "value": "linear",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "sampler0extendu",
+      "label": "Extend U",
+      "description": "Configure Extend U for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Hold",
+          "value": "hold",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "Repeat",
+          "value": "repeat",
+          "description": ""
+        },
+        {
+          "label": "Mirror",
+          "value": "mirror",
+          "description": ""
+        },
+        {
+          "label": "Hold",
+          "value": "hold",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "Repeat",
+          "value": "repeat",
+          "description": ""
+        },
+        {
+          "label": "Mirror",
+          "value": "mirror",
+          "description": ""
+        },
+        {
+          "label": "Hold",
+          "value": "hold",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "Repeat",
+          "value": "repeat",
+          "description": ""
+        },
+        {
+          "label": "Mirror",
+          "value": "mirror",
+          "description": ""
+        },
+        {
+          "label": "Nearest Pixel",
+          "value": "nearest",
+          "description": ""
+        },
+        {
+          "label": "Interpolate Pixels",
+          "value": "linear",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "hold",
+      "label": "Hold",
+      "description": "Configure Hold for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Hold",
+          "value": "hold",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "Repeat",
+          "value": "repeat",
+          "description": ""
+        },
+        {
+          "label": "Mirror",
+          "value": "mirror",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "sampler0extendv",
+      "label": "Extend V",
+      "description": "Configure Extend V for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Hold",
+          "value": "hold",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "Repeat",
+          "value": "repeat",
+          "description": ""
+        },
+        {
+          "label": "Mirror",
+          "value": "mirror",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "sampler0extendw",
+      "label": "Extend W",
+      "description": "Configure Extend W for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Hold",
+          "value": "hold",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "Repeat",
+          "value": "repeat",
+          "description": ""
+        },
+        {
+          "label": "Mirror",
+          "value": "mirror",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "sampler0filter",
+      "label": "Filter",
+      "description": "Configure Filter for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Nearest Pixel",
+          "value": "nearest",
+          "description": ""
+        },
+        {
+          "label": "Interpolate Pixels",
+          "value": "linear",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "nearest",
+      "label": "Nearest Pixel",
+      "description": "Configure Nearest Pixel for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Nearest Pixel",
+          "value": "nearest",
+          "description": ""
+        },
+        {
+          "label": "Interpolate Pixels",
+          "value": "linear",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "array",
+      "label": "Array",
+      "description": "Configure Array for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "vec2",
+          "value": "vec2",
+          "description": ""
+        },
+        {
+          "label": "vec3",
+          "value": "vec3",
+          "description": ""
+        },
+        {
+          "label": "vec4",
+          "value": "vec4",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "array0name",
+      "label": "Name",
+      "description": "Configure Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "array0type",
+      "label": "Type",
+      "description": "Configure Type for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "vec2",
+          "value": "vec2",
+          "description": ""
+        },
+        {
+          "label": "vec3",
+          "value": "vec3",
+          "description": ""
+        },
+        {
+          "label": "vec4",
+          "value": "vec4",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "array0chop",
+      "label": "CHOP",
+      "description": "Configure CHOP for the operator",
+      "type": "string"
+    },
+    {
+      "name": "matrix",
+      "label": "Matrix",
+      "description": "Configure Matrix for the operator",
+      "type": "string"
+    },
+    {
+      "name": "matrix0name",
+      "label": "Name",
+      "description": "Configure Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "matrix0value",
+      "label": "Matrix",
+      "description": "Configure Matrix for the operator",
+      "type": "string"
+    },
+    {
+      "name": "tempbuffer",
+      "label": "Temp Buffer",
+      "description": "Configure Temp Buffer for the operator",
+      "type": "string"
+    },
+    {
+      "name": "tempbuffer0name",
+      "label": "Name",
+      "description": "Configure Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "tempbuffer0initval",
+      "label": "Initial Value",
+      "description": "Configure Initial Value for the operator",
+      "type": "string"
+    },
+    {
+      "name": "const",
+      "label": "Constant",
+      "description": "Configure Constant for the operator",
+      "type": "string"
+    },
+    {
+      "name": "const0name",
+      "label": "Name",
+      "description": "Configure Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "const0value",
+      "label": "Value",
+      "description": "Configure Value for the operator",
+      "type": "string"
+    },
+    {
+      "name": "bypass",
+      "label": "Bypass",
+      "description": "Configure Bypass for the operator",
+      "type": "string"
+    },
+    {
+      "name": "delinputattrs",
+      "label": "Delete Input Attributes",
+      "description": "Configure Delete Input Attributes for the operator",
+      "type": "string"
+    },
+    {
+      "name": "parmcolorspace",
+      "label": "Parameter Color Space",
+      "description": "Configure Parameter Color Space for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        }
+      ]
+    },
+    {
+      "name": "srgb",
+      "label": "sRGB",
+      "description": "Configure sRGB for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        }
+      ]
+    },
+    {
+      "name": "parmreferencewhite",
+      "label": "Parameter Reference White",
+      "description": "Configure Parameter Reference White for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    },
+    {
+      "name": "default",
+      "label": "Default For Color Space",
+      "description": "Configure Default For Color Space for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    }
+  ],
+  "experimental": true,
+  "sourceFile": "Experimental-GLSL_POP.htm",
+  "parsedAt": "2025-08-08T03:03:56.177Z"
+}

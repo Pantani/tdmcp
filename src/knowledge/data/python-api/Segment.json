@@ -1,0 +1,25 @@
+{
+  "className": "Segment",
+  "displayName": "Segment Class",
+  "description": "A Segment object describes a single segment from a Timer CHOP.",
+  "category": "General",
+  "fileName": "Segment_Class.htm",
+  "members": [
+    {
+      "name": "beginFrames",
+      "id": "content",
+      "returnType": "int",
+      "readOnly": true,
+      "description": "beginFrames member"
+    },
+    {
+      "name": "beginFrames",
+      "id": "bodyContent",
+      "returnType": "int",
+      "readOnly": true,
+      "description": "beginFrames member"
+    }
+  ],
+  "methods": [],
+  "enhanced": true
+}

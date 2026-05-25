@@ -1,0 +1,2353 @@
+{
+  "id": "write_a_glsl_material",
+  "name": "Write a GLSL Material",
+  "displayName": "Write a GLSL Material",
+  "category": "TUTORIAL",
+  "subcategory": "GLSL Tutorial",
+  "type": "tutorial",
+  "description": "This document explains the finer points of writing a GLSL Material in TouchDesigner. It is assumed the reader already has an understanding of the GLSL language. The official GLSL documentation can be found at this address.",
+  "summary": "This document explains the finer points of writing a GLSL Material in TouchDesigner. It is assumed the reader already has an understanding of the GLSL language. The official GLSL documentation can be ...",
+  "content": {
+    "sections": [
+      {
+        "title": "Contents",
+        "level": 2,
+        "content": [
+          {
+            "type": "unordered-list",
+            "items": [
+              "1 Overview\n1.1 GLSL Version\n1.2 The concept of GLSL Shaders\n1.3 TouchDesigner GLSL conventions",
+              "1.1 GLSL Version",
+              "1.2 The concept of GLSL Shaders",
+              "1.3 TouchDesigner GLSL conventions",
+              "2 Shader Stages\n2.1 Vertex Shader\n2.2 Pixel Shader\n2.3 Geometry Shader",
+              "2.1 Vertex Shader",
+              "2.2 Pixel Shader",
+              "2.3 Geometry Shader",
+              "3 A Basic Shader\n3.1 Vertex Shader\n3.2 Pixel Shader",
+              "3.1 Vertex Shader",
+              "3.2 Pixel Shader",
+              "4 Working with Geometry Attributes",
+              "5 TouchDesigner specific defines",
+              "6 TouchDesigner specific Uniforms",
+              "7 TouchDesigner specific Functions\n7.1 Vertex Shader Only Functions\n7.2 Geometry Shader Only Functions\n7.3 Pixel Shader Only Functions\n7.3.1 Physically Based (PBR) Lighting\n7.3.2 Phong Lighting\n7.3.3 Common Lighting Functions\n\n7.4 Common Functions\n7.4.1 General functions\n7.4.2 Matrix functions\n7.4.3 Perlin and Simplex noise functions\n7.4.4 HSV Conversion\n7.4.5 Projection Conversions",
+              "7.1 Vertex Shader Only Functions",
+              "7.2 Geometry Shader Only Functions",
+              "7.3 Pixel Shader Only Functions\n7.3.1 Physically Based (PBR) Lighting\n7.3.2 Phong Lighting\n7.3.3 Common Lighting Functions",
+              "7.3.1 Physically Based (PBR) Lighting",
+              "7.3.2 Phong Lighting",
+              "7.3.3 Common Lighting Functions",
+              "7.4 Common Functions\n7.4.1 General functions\n7.4.2 Matrix functions\n7.4.3 Perlin and Simplex noise functions\n7.4.4 HSV Conversion\n7.4.5 Projection Conversions",
+              "7.4.1 General functions",
+              "7.4.2 Matrix functions",
+              "7.4.3 Perlin and Simplex noise functions",
+              "7.4.4 HSV Conversion",
+              "7.4.5 Projection Conversions",
+              "8 Working with Lights\n8.1 Custom work with lights\n8.1.1 Knowing which variables correspond to which Light COMPs\n8.1.2 Light Parameters\n8.1.3 Cone Lighting Technique\n8.1.4 Attenuation\n8.1.5 Projection and Shadow Mapping\n8.1.5.1 Projection Mapping\n8.1.5.2 Shadow Mapping",
+              "8.1 Custom work with lights\n8.1.1 Knowing which variables correspond to which Light COMPs\n8.1.2 Light Parameters\n8.1.3 Cone Lighting Technique\n8.1.4 Attenuation\n8.1.5 Projection and Shadow Mapping\n8.1.5.1 Projection Mapping\n8.1.5.2 Shadow Mapping",
+              "8.1.1 Knowing which variables correspond to which Light COMPs",
+              "8.1.2 Light Parameters",
+              "8.1.3 Cone Lighting Technique",
+              "8.1.4 Attenuation",
+              "8.1.5 Projection and Shadow Mapping\n8.1.5.1 Projection Mapping\n8.1.5.2 Shadow Mapping",
+              "8.1.5.1 Projection Mapping",
+              "8.1.5.2 Shadow Mapping",
+              "9 Multiple Render Targets",
+              "10 Multi-Camera Rendering",
+              "11 Image Outputs",
+              "12 Outputting gl_Position",
+              "13 Specilization Constants",
+              "14 Working with Deforms\n14.1 Skinning Deforms (Bone Deforms)\n14.1.1 Functions\n\n14.2 Instancing\n14.2.1 Instance Index/ID\n14.2.2 Deform Functions\n14.2.3 Attribute Functions\n14.2.4 Instance Texturing",
+              "14.1 Skinning Deforms (Bone Deforms)\n14.1.1 Functions",
+              "14.1.1 Functions",
+              "14.2 Instancing\n14.2.1 Instance Index/ID\n14.2.2 Deform Functions\n14.2.3 Attribute Functions\n14.2.4 Instance Texturing",
+              "14.2.1 Instance Index/ID",
+              "14.2.2 Deform Functions",
+              "14.2.3 Attribute Functions",
+              "14.2.4 Instance Texturing",
+              "15 Point Sprites",
+              "16 Order Independent Transparency",
+              "17 Dithering",
+              "18 Picking",
+              "19 Shadertoy\n19.1 VR Shaders",
+              "19.1 VR Shaders",
+              "20 Other Notes\n20.1 #version statement\n20.2 #include statements\n20.3 Diagnosing crashes due to GLSL\n20.4 Changes from GLSL 1.20\n20.5 Major changes since TouchDesigner088",
+              "20.1 #version statement",
+              "20.2 #include statements",
+              "20.3 Diagnosing crashes due to GLSL",
+              "20.4 Changes from GLSL 1.20",
+              "20.5 Major changes since TouchDesigner088",
+              "21 Related Articles"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "1.1 GLSL Version",
+              "1.2 The concept of GLSL Shaders",
+              "1.3 TouchDesigner GLSL conventions"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "2.1 Vertex Shader",
+              "2.2 Pixel Shader",
+              "2.3 Geometry Shader"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "3.1 Vertex Shader",
+              "3.2 Pixel Shader"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "7.1 Vertex Shader Only Functions",
+              "7.2 Geometry Shader Only Functions",
+              "7.3 Pixel Shader Only Functions\n7.3.1 Physically Based (PBR) Lighting\n7.3.2 Phong Lighting\n7.3.3 Common Lighting Functions",
+              "7.3.1 Physically Based (PBR) Lighting",
+              "7.3.2 Phong Lighting",
+              "7.3.3 Common Lighting Functions",
+              "7.4 Common Functions\n7.4.1 General functions\n7.4.2 Matrix functions\n7.4.3 Perlin and Simplex noise functions\n7.4.4 HSV Conversion\n7.4.5 Projection Conversions",
+              "7.4.1 General functions",
+              "7.4.2 Matrix functions",
+              "7.4.3 Perlin and Simplex noise functions",
+              "7.4.4 HSV Conversion",
+              "7.4.5 Projection Conversions"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "7.3.1 Physically Based (PBR) Lighting",
+              "7.3.2 Phong Lighting",
+              "7.3.3 Common Lighting Functions"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "7.4.1 General functions",
+              "7.4.2 Matrix functions",
+              "7.4.3 Perlin and Simplex noise functions",
+              "7.4.4 HSV Conversion",
+              "7.4.5 Projection Conversions"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "8.1 Custom work with lights\n8.1.1 Knowing which variables correspond to which Light COMPs\n8.1.2 Light Parameters\n8.1.3 Cone Lighting Technique\n8.1.4 Attenuation\n8.1.5 Projection and Shadow Mapping\n8.1.5.1 Projection Mapping\n8.1.5.2 Shadow Mapping",
+              "8.1.1 Knowing which variables correspond to which Light COMPs",
+              "8.1.2 Light Parameters",
+              "8.1.3 Cone Lighting Technique",
+              "8.1.4 Attenuation",
+              "8.1.5 Projection and Shadow Mapping\n8.1.5.1 Projection Mapping\n8.1.5.2 Shadow Mapping",
+              "8.1.5.1 Projection Mapping",
+              "8.1.5.2 Shadow Mapping"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "8.1.1 Knowing which variables correspond to which Light COMPs",
+              "8.1.2 Light Parameters",
+              "8.1.3 Cone Lighting Technique",
+              "8.1.4 Attenuation",
+              "8.1.5 Projection and Shadow Mapping\n8.1.5.1 Projection Mapping\n8.1.5.2 Shadow Mapping",
+              "8.1.5.1 Projection Mapping",
+              "8.1.5.2 Shadow Mapping"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "8.1.5.1 Projection Mapping",
+              "8.1.5.2 Shadow Mapping"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "14.1 Skinning Deforms (Bone Deforms)\n14.1.1 Functions",
+              "14.1.1 Functions",
+              "14.2 Instancing\n14.2.1 Instance Index/ID\n14.2.2 Deform Functions\n14.2.3 Attribute Functions\n14.2.4 Instance Texturing",
+              "14.2.1 Instance Index/ID",
+              "14.2.2 Deform Functions",
+              "14.2.3 Attribute Functions",
+              "14.2.4 Instance Texturing"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "14.1.1 Functions"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "14.2.1 Instance Index/ID",
+              "14.2.2 Deform Functions",
+              "14.2.3 Attribute Functions",
+              "14.2.4 Instance Texturing"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "19.1 VR Shaders"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "20.1 #version statement",
+              "20.2 #include statements",
+              "20.3 Diagnosing crashes due to GLSL",
+              "20.4 Changes from GLSL 1.20",
+              "20.5 Major changes since TouchDesigner088"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Overview[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "This document explains the finer points of writing a GLSL Material in TouchDesigner. It is assumed the reader already has an understanding of the GLSL language. The official GLSL documentation can be found at this address."
+          },
+          {
+            "type": "subsection",
+            "title": "GLSL Version[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "TouchDesigner uses GLSL 3.30 and newer versions as it's language. Many online examples, as well as WebGL shaders, are written against GLSL 1.20. There are some significant language differences between GLSL 1.20 and GLSL 3.30+. For information about some of these differences, please refer to Changes from GLSL 1.20"
+          },
+          {
+            "type": "subsection",
+            "title": "The concept of GLSL Shaders[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "A GLSL Shader is a program that is applied to geometry as it is being rendered. A GLSL shader is split into two main components, vertex shader and pixel shader."
+          },
+          {
+            "type": "paragraph",
+            "text": "Vertex Shader - A vertex shader is a program that is applied to every vertex of the geometry the Material is applied to."
+          },
+          {
+            "type": "paragraph",
+            "text": "Pixel Shader - A pixel shader is a program that is applied to every pixel that is drawn. This is often also referred to as a Fragment Shader."
+          },
+          {
+            "type": "paragraph",
+            "text": "There is also the Geometry Shader, which is a stage between the vertex and pixel stages, but it isn't used very often. For more information on Geometry Shaders have a look here."
+          },
+          {
+            "type": "subsection",
+            "title": "TouchDesigner GLSL conventions[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "All functions and uniforms provided by TouchDesigner as augmentations of the GLSL language will follow these conventions."
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Function names will always start with the letters TD. e.g. TDLighting()."
+            ]
+          },
+          {
+            "type": "code",
+            "text": "TD",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "TDLighting()",
+            "language": "python"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Uniforms will start with the letters uTD."
+            ]
+          },
+          {
+            "type": "code",
+            "text": "uTD",
+            "language": "python"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Samplers will start with the letters sTD."
+            ]
+          },
+          {
+            "type": "code",
+            "text": "sTD",
+            "language": "python"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Images will start with the letters mTD."
+            ]
+          },
+          {
+            "type": "code",
+            "text": "mTD",
+            "language": "python"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Vertex input attributes will be named the same as they are in the TouchDesigner SOP interface (P, N, uv)."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Most uniforms provided by TouchDesigner will be contained in Uniform Blocks. This means instead of accessing a single matrix by uTDMatrixName, the matrices will be stored a single block with many matrices such as uTDMats, which has members such as uTDMats[0].worldCam and uTDMats[0].projInverse."
+          },
+          {
+            "type": "code",
+            "text": "uTDMatrixName",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "uTDMats",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "uTDMats[0].worldCam",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "uTDMats[0].projInverse",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "Shader Stages[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "subsection",
+            "title": "Vertex Shader[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "Inside a vertex shader you only have access to one vertex, you don't know the positions of other vertices are or what the output of the vertex shader for other vertices will be."
+          },
+          {
+            "type": "paragraph",
+            "text": "The input to a vertex shader is all the data about the particular vertex that the program is running on. Data like the vertex position in SOP space, texture coordinate, color, normal are available. These values are called attributes. Attributes are declared in the vertex shader using the in keyword."
+          },
+          {
+            "type": "code",
+            "text": "in",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "The vertex shader can output many things. The primary things it will output are the vertex position (after being transformed by the world, camera and projection matrix), color, and texture coordinates. It can output any other values as well using output variables declared using out. Outputs from a vertex shader are linearly interpolated across the surface of the primitive the vertex is a part of. For example, if you output a value of 0.2 at 1st vertex and a value of 0.4 at the 2nd vertex on a line, a pixel drawn half-way between these two points will receive a value of 0.3."
+          },
+          {
+            "type": "code",
+            "text": "out",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "Pixel Shader[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "The inputs to a pixel shader are all of the outputs from the vertex shader, and any uniforms that are defined. The outputs from the vertex shader will have been linearly interpolated across the polygon that the vertices created. A pixel shader can output two things: Color and Depth. Color is output through the variable declared as layout(location = 0) out vec4 whateverName. Depth is output through a variable declared as out float depthName. You can name these variables whatever you want. You are required to write out a color value, but you do not need to write out depth (in fact it's best if you don't unless absolutely needed). GLSL will automatically output the correct depth value for you if you don't write out a depth value. If you are outputting to multiple color buffer, you declare more color outputs with the location value set to 1, 2, 3, etc., instead of 0."
+          },
+          {
+            "type": "code",
+            "text": "layout(location = 0) out vec4 whateverName",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "out float depthName",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "location",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "Geometry Shader[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "A geometry shader takes a single point primitive points, line or triangle, and outputs set of points, line strips, or triangle strips. Currently in TouchDesigner the input primitive types you must use to match with what we are rendering is one of:"
+          },
+          {
+            "type": "code",
+            "text": "layout(points) in;\n layout(lines_adjacency) in;\n layout(triangles) in;",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Other input types such as lines or triangles_adjacency is not currently supported."
+          },
+          {
+            "type": "code",
+            "text": "lines",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "triangles_adjacency",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Note - In the 2018.20000 series of builds lines were supported and lines_adjacency were not, so the change to the 2019.10000 that switched the support to lines_adjacency unfortunetely breaks existing geometry shaders."
+          },
+          {
+            "type": "code",
+            "text": "lines",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "lines_adjacency",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "lines_adjacency",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "A Basic Shader[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "subsection",
+            "title": "Vertex Shader[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "This vertex shader will simply transform each vertex correctly and leave it entirely up to the pixel shader to color the pixels:"
+          },
+          {
+            "type": "code",
+            "text": "void main()\n{\n\t// P is the position of the current vertex\n\t// TDDeform() will return the deformed P position, in world space.\n\t// Transform it from world space to projection space so it can be rasterized\n\tgl_Position = TDWorldToProj(TDDeform(TDPos()));\n}",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "Pixel Shader[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "This pixel shader simply sets every pixel to red:"
+          },
+          {
+            "type": "code",
+            "text": "// We need to declare the name of the output fragment color (this is different from GLSL 1.2 where it was automatically declared as gl_FragColor)\nout vec4 fragColor;\nvoid main()\n{\n\tfragColor = vec4(1, 0, 0, 1);\n}",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "Working with Geometry Attributes[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "The follow vertex shader attributes (inputs) will always be declared for you to use in your vertex shader. You do not need to declare them yourself."
+          },
+          {
+            "type": "code",
+            "text": "vec3 TDPos(); // Vertex position\nvec3 TDNormal(); // normal\nvec3 TDTexCoord(uint coordLayer); // texture coordinate layers",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Other Attributes"
+          },
+          {
+            "type": "paragraph",
+            "text": "All other attributes you want to use need to be declared in your shader code. are passed as custom attributes. For forward compatibility with POPs in the future, these attributes should be declared using the 'Attributes' page on the GLSL MAT. The declared attributes can be accessed via a function call to TDAttrib_<attributeName>().\nFor example if you declare a custom attribute called 'life'. You would access it in the shader using TDAttrib_life()."
+          },
+          {
+            "type": "code",
+            "text": "TDAttrib_<attributeName>()",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "TDAttrib_life()",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "For attributes that are larger than 4 values, you should declare them as vec4s with an Array Size larger than 1. If the size isn't a multiple of 4, then the extra values are undefined. For example for the attribute pCapt[6], you would declare it as vec4 with an array size of 2."
+          },
+          {
+            "type": "code",
+            "text": "pCapt[6]",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "The values TDAttrib_pCapt()[0].x, TDAttrib_pCapt()[0].y, TDAttrib_pCapt()[0].z, TDAttrib_pCapt()[0].w, TDAttrib_pCapt()[1].x and TDAttrib_pCapt()[1].y will have the values from the geometry and TDAttrib_pCapt()[1].z and TDAttrib_pCapt()[1].w will have undefined values."
+          },
+          {
+            "type": "code",
+            "text": "TDAttrib_pCapt()[0].x, TDAttrib_pCapt()[0].y, TDAttrib_pCapt()[0].z, TDAttrib_pCapt()[0].w, TDAttrib_pCapt()[1].x",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "TDAttrib_pCapt()[1].y",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "TDAttrib_pCapt()[1].z",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "TDAttrib_pCapt()[1].w",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "The attribute pCapt[8] would also be declared using Array Size of 2, since it can fit all of its data in 2 vec4s."
+          },
+          {
+            "type": "code",
+            "text": "pCapt[8]",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "If your attribute is an integer type, you can use the integer types (ivec2, ivec4) instead."
+          },
+          {
+            "type": "code",
+            "text": "ivec2, ivec4",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "TouchDesigner specific defines[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Shaders in TouchDesigner are dynamically recompiled based on a few things such as the number and types of lights in the scene or the number of cameras used in this pass (in the case of Multi-Camera Rendering). This is done for optimization purposes since loops with known amounts of iterations are far faster in GLSL. Some defines are provided which allow code written by end-users to be recompiled with different numbers of lights/cameras correct."
+          },
+          {
+            "type": "code",
+            "text": "// This define will be defined at compile time, and your shader will be recompiled for each combination\n// of lights in use (if it's is used in multiple light configurations). You can use it for things like a loop\n// counter to loop over all lights in the scene, as you will see if you output example code from the Phong MAT.\n// Environment COMPs are counted separately from regular Light COMPs.\n#define TD_NUM_LIGHTS <defined at compile time>\n#define TD_NUM_ENV_LIGHTS <defined at compile time>",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// On newer hardware multiple cameras can be rendered at the same time. This define will be set to the\n// number of cameras done on this render pass. This may be 1 or more, depending on many factors.\n// Code should be written in a way that should work regardless of what this value is.\n#define TD_NUM_CAMERAS <defined at compiler time>",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// One of these defines will be set depending on which shader stage is being compiled.\n// This allows shaders to use #ifdef <stageName> and #ifndef <stageName> to either include or\n// omit code based on the current shader stage being included. This also allows for single\n// large DATs to contain all the code for all stages, with each portion #ifdef-ed in for\n// each stage.\n#define TD_VERTEX_SHADER\n#define TD_GEOMETRY_SHADER\n#define TD_PIXEL_SHADER\n#define TD_COMPUTE_SHADER",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "TouchDesigner specific Uniforms[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "These are uniform that TouchDesigner will automatically set for you. You do not need to declare any of these, you can just use them in your shaders."
+          },
+          {
+            "type": "code",
+            "text": "// General rendering state info\nstruct TDGeneral {\n  vec4 ambientColor;  // Ambient light color (sum of all Ambient Light COMPs used)\n  vec4 viewport;      // viewport info, contains (x, y, 1.0 / w, 1.0 / h). x/y/w/h are in pixel units.   \n};\nuniform TDGeneral uTDGeneral;\n// So for example you'd get the ambient color by doing \n// vec4 ambientColor = uTDGeneral.ambientColor;",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// Matrices\nstruct TDMatrix\n{\n\tmat4 world;\t\t\t// world transform matrix, combination of hierarchy of Object COMPs containing the SOP.\n\t\t\t\t\t\t// transforms from SOP space into World Space\n\tmat4 worldInverse;\t// inverse of the world matrix\n\tmat4 worldCam;\t\t// multiplication of the world and the camera matrix. (Cam * World)\n\tmat4 worldCamInverse;\n\tmat4 cam;\t\t\t// camera transform matrix, obtained from the Camera COMP used to render\n\tmat4 camInverse;\n\tmat4 camProj;\t\t// camera transform and the projection matrix from the camera COMP, (Proj * Cam)\n\tmat4 camProjInverse;\n\tmat4 proj;\t\t\t// projection matrix from the Camera COMP. The Z range will be [0,1], Vulkan style.\n\tmat4 projInverse;\n\tmat4 worldCamProj;\t// multiplication of the world, camera and projection matrices. (Proj * Cam * World)\n\t\t\t\t\t\t// takes a vertex in SOP space and puts it into projection space\n\tmat4 worldCamProjInverse;\n\tmat3 worldForNormals;\t// Inverse transpose of the world matrix, use this to transform normals\n\t\t\t\t\t\t\t// from SOP space into world space\n\tmat3 camForNormals;\t\t// Inverse transpose of the camera matrix, use this to transform normals\n\t\t\t\t\t\t\t// from world space into camera space\n\tmat3 worldCamForNormals;\t// Inverse transpose of the worldCam matrix, use this to transform normals\n\t\t\t\t\t\t\t\t// from SOP space into camera space inverse(transpose(Cam * World))\n\t   \n};\nuniform TDMatrix uTDMats[TD_NUM_CAMERAS];\n// For example you'd transform the vertex in SOP space into camera space with this line of code\n// vec4 camSpaceVert = uTDMats[TDCameraIndex()].worldCam * vec4(TDPos(), 1.0);",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "struct TDCameraInfo\n{\n\tvec4 nearFar;\t\t\t// near/far plane info, contains (near, far, far - near, 1.0 / (far - near))\n\tvec4 fog;\t\t\t\t// fog info, as defined in the Camera COMP\n\t\t\t\t\t\t\t// contains (fogStart, fogEnd, 1.0 / (fogEnd - fogStart), fogDensity)\n\tvec4 fogColor;\t\t\t// Fog Color as defined in the Camera COMP\n\tint renderTOPCameraIndex;\t// Says which camera from the Render TOP's 'Cameras' parameter this particular camera is.\n};\nuniform TDCameraInfo uTDCamInfos[TD_NUM_CAMERAS];",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "In general you don't need to do anything with any of these light uniforms/samplers, as it's all done for you in the TDLighting(), TDLightingPBR() and, TDEnvLightingPBR() functions. Only if you are doing custom lighting will you need to worry about these."
+          },
+          {
+            "type": "code",
+            "text": "TDLighting(), TDLightingPBR() and, TDEnvLightingPBR()",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "struct TDLight\n{\n\tvec4 position;\t\t// the light's position in world space\n\tvec3 direction;\t\t// the light's direction in world space\n\tvec3 diffuse;\t\t// the light's diffuse color\n\tvec4 nearFar;\t\t// the near and far settings from the light's View page\n\t\t\t\t\t\t// contains (near, far, far - near, 1.0 / (far - near)\n\tvec4 lightSize;\t\t// values from the light's Light Size parameter\n\t\t\t\t\t\t// containers (light width, light height, light width / light projection width, light height / light projection height)\n\tvec4 misc;\t\t\t// misc parameters values, right now it contains\n\t\t\t\t\t\t// (Max shadow softness, 0, 0, 0)\n\tvec4 coneLookupScaleBias;\t// applied to a cone light's contribution to create the spot lit area\n\t\t\t\t\t\t\t\t// contains (coneLookupScale, coneLookupBias, 1.0, 0.0).\n                                // If the light is not a cone light, this will contain (0.0, 0.0, 0.0, 0.0).\n\tvec4 attenScaleBiasRoll;\t// applied to the light's distance from the point to get an attenuation value\n\t\t\t\t\t\t\t\t// contains (attenuation scale, attenuation bias, attenuation rolloff, 0)\n\tmat4 shadowMapMatrix;\t\t// transforms a point in world space into the projection space of the shadow mapped light\n\t\t\t\t\t\t\t\t// also rescales projection space from [-1, 1] to [0, 1], so the value can be used\n\t\t\t\t\t\t\t\t// to lookup into a shadow map\n\tmat4 shadowMapCamMatrix;\t// transforms a point in world space into the camera space of the shadow mapped light\n\tvec4 shadowMapRes;\t\t\t// the resolution of the shadow map associated with this light\n\t\t\t\t\t\t\t\t// contains (1.0 / width, 1.0 / height, width, height)\n\t\t\t\t\t\t\t\t// filled with 0s if the light isn't shadow mapped\n\tmat4 projMapMatrix;\t\t\t// transforms a point in world space into the projection map space of the light\n\t\t\t\t\t\t\t\t// used when using textureProj() function for projection mapping\n} \nuniform TDLight uTDLights[TD_NUM_LIGHTS];",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "struct TDEnvLight\n{\n\tvec3 color;\t\t\t\t\t// Color of the env light (not counting it's environment map)\n\tmat3 rotate;\t\t\t\t// Rotation to be applied to the env light.\n};\nuniform TDEnvLight uTDEnvLights[TD_NUM_ENV_LIGHTS];",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// This one is held differently since it's backed by a storage buffer object and not a uniform buffer object.\nbuffer TDEnvLightBuffer\n{\n\tvec3 shCoeffs[9]; // Spherical harmonic coefficients calculated from the environment map. Used for diffuse PBR lighting.\n} uTDEnvLightBuffers[TD_ENV_LIGHTS_ARRAY_SIZE];",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "When using sampler3D created using a Texture 3D TOP, it can sometimes be useful to know which slice is the 'newest' slice in the array, when using the Texture 3D TOP as a circular cache. The P-coordinate location of where the newest slice will provided by a uniform named the same as your sampler, with the suffix 'POffset'. For example if you have a uniform named sColorMap, you can declare a matching sColorMapPOffset uniform and it will automatically be filled in for you."
+          },
+          {
+            "type": "code",
+            "text": "sColorMapPOffset",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "uniform float sColorMapPOffset; // P offset to newest slice in sampler3D named sColorMap",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "TouchDesigner specific Functions[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Further details about each of these functions are given in the sections following this."
+          },
+          {
+            "type": "subsection",
+            "title": "Vertex Shader Only Functions[edit]",
+            "level": 3
+          },
+          {
+            "type": "code",
+            "text": "// Transforms a point from world space to projection space. \n// These functions should always be used to output to gl_Position, allowing TouchDesigner to do custom manipulations\n// of the values as needed for special operations and projections.\n// The extra manipulations that are currently done are:\n// 1. Conversions to other projections such as FishEye\n// 2. Conversions to Quad Reprojection using TDQuadReproject()\n// 3. Adjustments needed for picking using TDPickAdjust().\n// When using this function you should not call the above functions, since it will do those for you.\n// Both the vec4 and vec3 version of TDWorldToProj() treat the xyz as a point, not a vector.\nvec4 TDWorldToProj(vec4 v);\nvec4 TDWorldToProj(vec3 v);\n\n\n// These ones take an extra 'uv' coordinate, which is used when UV Unwrapping is done in the Render TOP.\n// If the version without the uv is used, then TDInstanceTexCoord(TDUVUnwrapCoord()) will be used to get the texture coord.\nvec4 TDWorldToProj(vec4 v, vec3 uv);\nvec4 TDWorldToProj(vec3 v, vec3 uv);",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// Returns the color for this vertex/point, including handling alpha-premultiplication correctly.\n// This replaces accessing it directly via 'Cd', as was done in the past.\nvec4 TDPointColor();",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// Returns the instance ID for the current instance. This should always be used, not gl_InstanceID directly.\n// For more information look at the Instancing section of this document.\nint TDInstanceID();",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// Returns the index of the camera for this particular vertex, within this batch. Needed to support Multi-Camera Rendering.\n// This is always 0-based, and it does not reflect which camera is being currently being used from the Render TOP.\n// Due to multiple batches being needed for split up larger amounts of cameras, this number resets to be 0 each batch.\n// To get the actual camera index as it's listed in the Render TOP, use the uTDCamInfos[TDCameraIndex()].renderTOPCameraIndex\n// or, in builds 2022.32790 and later TDTrueCameraIndex().\nint TDCameraIndex();",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// Available in builds 2022.32790 and later.\n// Returns the index of the camera as it's listed in the Render TOP.\nint TDTrueCameraIndex();",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// Deforms a point or vector using instancing and skinned deforms. The returned result is in World Space.\n// Be sure to use the *Vec version in the case of vectors to get correct results.\n// Also use the *Norm version when deforming a normal, to make sure it still matches the surface correctly.\n/// These functions will internally call TDSkinnedDeform() and TDInstanceDeform().\nvec4 TDDeform(vec4 pos);\nvec4 TDDeform(vec3 pos);\nvec3 TDDeformVec(vec3 v);\nvec3 TDDeformNorm(vec3 n);",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// These versions allow you to control the instanceID used for the deform.\nvec4 TDDeform(int instanceID, vec3 pos);\nvec3 TDDeformVec(int instanceID, vec3 v);\nvec3 TDDeformNorm(int instanceID, vec3 n);",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// ** In general you don't need to call any of the below functions, just calling TDDeform or TDDeformVec will\n// do all the work for you\n// Just the skinning or instancing portion of the deforms\n// Returned position/vector is in SOP space for the *Skinned* version, and world space for the *Instance* version.\nvec4 TDSkinnedDeform(vec4 pos);\nvec3 TDSkinnedDeformVec(vec3 vec);\nvec4 TDInstanceDeform(vec4 pos);\nvec3 TDInstanceDeformVec(vec3 vec);",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// You also don't need to call these usually, but are available for special cases\n// For instancing functions, if you don't provide an index, it will use TDInstanceID().\nmat4 TDBoneMat(int boneIndex);\nmat4 TDInstanceMat(int instanceID);\nmat4 TDInstanceMat();\n// Returns a 3x3 matrix only. Useful if you are only working with vectors, not positions.\n// If you are using both, it is faster to just call TDInstanceMat(), and cast the result to a mat3\n// when required.\nmat3 TDInstanceMat3(int instanceID);\nmat3 TDInstanceMat3();",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// To calculate the texture coordinates for your instance (if used in the Geometry COMP's parameters), use these functions\n// For texture coordinates the passed in variable 't' is the current texture coordinate to be modified/replaced\nvec3 TDInstanceTexCoord(int instanceID, vec3 t);\nvec3 TDInstanceTexCoord(vec3 t);",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// TDWorldToProj() will already apply the Quad Reproject feature if used by the [[Camera COMP]].\n// However in same cases you may be doing custom operations that require it to be applied manually.\n// This function just returns the point unchanged if Quad Reproject isn't being used.\nvec4 TDQuadReproject(vec4 v, int camIndex);",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// Available in builds 2019.32020 or later.\n// TDWorldToProj() will already apply the Picking adjustment if required (when picking is occuring).\n// However in same cases you may be doing custom operations that require it to be applied manually.\n// This function should be given the position after it's been transformed into projection space.\n// This function just returns the point unchanged if picking isn't active for this render.\nvec4 TDPickAdjust(vec4 v, int camIndex);",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// Returns the uv coordinate that was selected for UV unwrapping in the Render TOP\nvec3 TDUVUnwrapCoord();",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "Geometry Shader Only Functions[edit]",
+            "level": 3
+          },
+          {
+            "type": "code",
+            "text": "// Similar to th ones in the vertex shader, but require a camera index since it\n// needs to be passed through to the geometry shader via a input variable.\nvec4 TDWorldToProj(vec4 v, vec3 uv, int cameraIndex);\\n\";\nvec4 TDWorldToProj(vec3 v, vec3 uv, int cameraIndex);\\n\";\nvec4 TDWorldToProj(vec4 v, int cameraIndex);\\n\";\nvec4 TDWorldToProj(vec3 v, int cameraIndex);\\n\";\nvec4 TDQuadReproject(vec4 v, int camIndex);",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "Pixel Shader Only Functions[edit]",
+            "level": 3
+          },
+          {
+            "type": "code",
+            "text": "// This function is provided as a wrapper for gl_FrontFacing.\n// It is required since some GPUs (Intel on macOS mainly) have broken\n// functionality for gl_FrontFacing.\n// On most GPUs this just returns gl_FrontFacing. On GPUs where the behavior\n// is broken, an alternative method using position and normal is used to \n// determine if the pixel is front or back facing.\n// Position and normal should be in the same space, and normal must be normalized.\nbool TDFrontFacing(vec3 position, vec3 normal);",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// Call this function to give TouchDesigner a chance to discard some pixels if appropriate.\n// This is used in things such as order-indepdendent transparency and dual-paraboloid rendering.\n// For best performance call it at the start of the pixel shader.\n// It will do nothing if no features that require it are active, so it's safe to always call it.\nvoid TDCheckDiscard();",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// Obtain the texture coordinate for point sprite primitives.\n// This must be used instead of gl_PointCoord, otherwise the coordinates may be flipped vertically\n// in some cases.\nvec2 TDPointCoord();",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// Obtain the modified color for this pixel. Pass in the interpolated point color from the vertex shader.\n// This function usually just returns back the passed argument, but when doing Geo Text COMP rendering,\n// it is needed to create the text glyphs.\nvec4 TDPixelColor(vec4 c);",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// Call this function to apply the alpha test to the current pixel. This function will do nothing\n// if the alpha test is disabled, so it can be safely always called\nvoid TDAlphaTest(float alphaValue);",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// Call this to apply the Camera COMPs fog to the passed color. Requires the world space vertex position also\n// This function will do nothing if fog is disabled, so it's safe to always call it at the end of your shader\n// there would be no performance impact from calling it if fog is disabled\n// the cameraIndex should be passed through from the vertex shader using a varying, sourced from TDCameraIndex()\nvec4 TDFog(vec4 curColor, vec3 worldSpacePos, int cameraIndex);",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// Call this at the end of your shadow to apply a dither to your final color. This function does nothing\n// if dithering is disabled in the Render TOPs parameters\nvec4 TDDither(vec4 curColor);",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// Pass any color value through this function before writing it out to a color buffer.\n// This is needed to ensure that color channels are output to the correct channels\n// in the color buffer, based on hardware limitation that may store alpha-only\n// textures as red-only internally, for example\nvec4 TDOutputSwizzle(vec4 curColor);",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "The TDLighting() functions are called per light to determine that light's diffuse and specular contributions.\nShadowing, projection mapping are all automatically handled for you inside this functions."
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "The TDPBRResult or TDPhongResult return structure will be filled with the results.",
+              "lightIndex is the light index to calculate",
+              "worldSpacePos is the world space vertex position",
+              "shadowStrength is a scalar on the shadow to increase or decrease its effect for example a value of 0.5 would give a maximum 50% shadow.",
+              "worldSpaceNorm is the normalized world space normal",
+              "vertToCamVec is the normalized vector from the vertex position to the camera position.",
+              "shininess is the specular shininess exponent."
+            ]
+          },
+          {
+            "type": "code",
+            "text": "TDPBRResult or TDPhongResult",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "lightIndex",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "worldSpacePos",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "shadowStrength",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "worldSpaceNorm",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "vertToCamVec",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "shininess",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "Physically Based (PBR) Lighting[edit]",
+            "level": 4
+          },
+          {
+            "type": "code",
+            "text": "// Will be filled with the results of the lighting calculations\nstruct TDPBRResult\n{\n\tvec3 diffuse;\n\tvec3 specular;\n    // Contains how much the pixel is inside a shadow for this light. 0 means no shadow, 1 means fully shadowed.\n\tfloat shadowStrength;\n};",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// For all regular lights. Should be called in a loop from 0 to TD_NUM_LIGHTS\nTDPBRResult TDLightingPBR(\n\tint lightIndex,\n\tvec3 diffuseColor,\n\tvec3 specularColor,\n\tvec3 worldSpacePos,\n\tvec3 worldSpaceNormal,\n\tfloat shadowStrength,\n\tvec3 shadowColor,\n\tvec3 vertToCamVec,\n\tfloat roughness);",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// For environment lights. Should be called in a loop from 0 to TD_NUM_ENV_LIGHTS\nTDPBRResult TDEnvLightingPBR(\n\tinout vec3 diffuseContrib,\n\tinout vec3 specularContrib,\n\tint lightIndex,\n\tvec3 diffuseColor,\n\tvec3 specularColor,\n\tvec3 worldSpaceNormal,\n\tvec3 vertToCamVec,\n\tfloat roughness,\n\tfloat ambientOcclusion);",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "Phong Lighting[edit]",
+            "level": 4
+          },
+          {
+            "type": "code",
+            "text": "// Will be filled with the results of the lighting calculations\nstruct TDPhongResult\n{\n\tvec3 diffuse;\n\tvec3 specular;\n\tvec3 specular2;\n\t// Contains how much the pixel is inside a shadow for this light. 0 means no shadow, 1 means fully shadowed.\n\tfloat shadowStrength;\n};",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "TDPhongResult TDLighting(\n\tint lightIndex,\n\tvec3 worldSpacePos,\n\tvec3 worldSpaceNorm,\n\tfloat shadowStrength,\n\tvec3 shadowColor,\n\tvec3 vertToCamVec,\n\tfloat shininess,\n\tfloat shininess2\n);",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "Common Lighting Functions[edit]",
+            "level": 4
+          },
+          {
+            "type": "code",
+            "text": "// In general you don't need to use these functions, they are called for you in the TDLighting() functions.\n// These functions return the shadow strength at the current pixel for light at the given index.\n// Also requires the world space vertex position to do its calculations\n// returns undefined results if the shadow isn't mapped using the chosen shadow type\n// The returned value is 0 for no shadow, 1 for 100% shadowed\n// Due to percentage closer filtering, hard shadows can still have values between 0 and 1 at the edges of the shadow\nfloat TDHardShadow(int lightIndex, vec3 worldSpacePos);\n// This one will apply soft shadows with both 25 search steps done, and 25 filter samples.\nfloat TDSoftShadow(int lightIndex, vec3 worldSpacePos);\n// Allows for control of search steps and filter samples.\nfloat TDSoftShadow(int lightIndex, vec3 worldSpacePos, int samples, int searchSteps);",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// Gets the projection map color for the given world space vertex position.\n// No other lighting calculations are applied to the returned color\n// If the given light index is not using a projection map, then 'defaultColor' is returned.\nvec4 TDProjMap(int lightIndex, vec3 worldSpacePosition, vec4 defaultColor);",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// Directly access environment maps for the env lights. Will be black for lights that don't have a map\n// of that particular dimensionality.\n// For the 2D map based env lights.\nvec4 TDEnvLightTextureLod(int lightIndex, vec2 coord, float mipLevel);\n// For the Cube map based env lights.\nvec4 TDEnvLightTextureLod(int lightIndex, vec3 coord, float mipLevel);",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// For directly accessing the shadow maps. All of these access the same maps (per index), but are setup in compare or sampling mode.\n// A returned value of 1 means it's fully in the shadow, 0 means it's not in the shadow.\n// For lights indices that aren't generating shadows, these functions will return 0.\n// These two first one is used in the function texture(sampler2DShadow, vec3) or textureProj(sampler2DShadow, vec4)\n// for automatic depth comparison and hardware percentage closer filtering.\nfloat TDCompareShadowTexture(int lightIndex, vec2 coord, float depth);\nfloat TDCompareShadowTextureProj(int lightIndex, vec4 coord);\n\n// These ones is used for directly getting the depth from the shadow map using\n// texture(sampler2D, vec2) or textureProj(sampler2D, vec3).\n// If using hard shadows the values are in [0, 1] post-projection depth units.\n// If using soft shadows the values are in camera space of the light (not the camera being rendered from).\nfloat TDShadowTexture(int lightIndex, vec2 coord);\nfloat TDShadowTextureProj(int lightIndex, vec3 coord);",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// The projection maps defined in the Projection Map parameter of the Light COMP.\n// The map will return black if the light doesn't have a projection map defined.\nvec4 TDProjTexture(int lightIndex, vec2 coord, float mipMapBias);\n// Samples the texture using the same rules as textureProj().\nvec4 TDProjTextureProj(int lightIndex, vec3 coord);",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// The falloff ramp from when the cone light starts to fade out until it reaches black.\n// Used in combination with uTDLights[].coneLookupScaleBias.\n// Will return 1.0 when the light is not a cone light.\nfloat TDConeLookup(int lightIndex, float coord);",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "Common Functions[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "Available in all shader stages."
+          },
+          {
+            "type": "subsection",
+            "title": "General functions[edit]",
+            "level": 4
+          },
+          {
+            "type": "code",
+            "text": "// A function that gives a half-sine ramp from 0 to 1.\n// Sampling it with a coordinate outside the (0, 1) range will return 0 for anything below 0 and 1 for anything above 1.\n// It's possibly faster than using the GLSL sin() function, depending on the hardware.\nfloat TDSineLookup(float coord);",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "Matrix functions[edit]",
+            "level": 4
+          },
+          {
+            "type": "code",
+            "text": "// Creates a translation matrix for the given 3 translation values.\nmat4 TDTranslate(float x, float y, float z);\n\n// Creates a rotation matrix that rotates around the +X, +Y and +Z axis repectively.\nmat3 TDRotateX(float radians);\nmat3 TDRotateY(float radians);\nmat3 TDRotateZ(float radians);\n\n// Creates a rotation matrix that rotates around the 'axis', the given number of 'radians'\n// The 'axis' vector must already be normalized before being passed to this function.\nmat3 TDRotateOnAxis(float radians, vec3 axis);\n\n// Creates a scale matrix for the given 3 scale values.\nmat3 TDScale(float x, float y, float z);\n\n// Creates a rotation matrix that rotates starting from looking down +Z, to the 'forward' vector direction.\n// The 'forward' and 'up' vectors passed to this function do not need to be normalized.\nmat3 TDRotateToVector(vec3 forward, vec3 up);\n\n// Creates a rotation matrix to rotate from vector 'from' to vector 'to'. The solution isn't particularly stable, but useful in some cases.\n// The 'from' and 'to' vectors must already be normalized before being passed to this function.\nmat3 TDCreateRotMatrix(vec3 from, vec3 to);",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// Takes a surface normal, the tangent to the surface, and a handedness value (either -1 or 1)\n// Returns a matrix that will convert vectors from tangent space, to the space the normal and tangent are in\n// Both the normal and the tangent must be normalized before this function is called.\n// The w coordinate of the T attribute created by the [[Attribute Create SOP]] contains the handedness\n// that should be passed in as-is.\nmat3 TDCreateTBNMatrix(vec3 normal, vec3 tangent, float handedness);",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "Perlin and Simplex noise functions[edit]",
+            "level": 4
+          },
+          {
+            "type": "code",
+            "text": "// Noise functions\n// These will return the same result for the same input\n// Results are between -1 and 1\n// Can be slow so just be aware when using them. \n// Different dimensionality selected by passing vec2, vec3 or vec4. \nfloat TDPerlinNoise(vec2 v);\nfloat TDPerlinNoise(vec3 v);\nfloat TDPerlinNoise(vec4 v);\nfloat TDSimplexNoise(vec2 v);\nfloat TDSimplexNoise(vec3 v);\nfloat TDSimplexNoise(vec4 v);",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "HSV Conversion[edit]",
+            "level": 4
+          },
+          {
+            "type": "code",
+            "text": "// Converts between RGB and HSV color space\nvec3 TDHSVToRGB(vec3 c);\nvec3 TDRGBToHSV(vec3 c);",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "Projection Conversions[edit]",
+            "level": 4
+          },
+          {
+            "type": "code",
+            "text": "// Converts a 0-1 equirectangular texture coordinate into cubemap coordinates.\n// A 0 for the U coordinate corresponds to the middle of the +X face. So along the vec3(1, Y, 0) plane.\n// As U rises, equirectangular coordinates rotate from +X, to +Z, then -X and -Z.\nvec3 TDEquirectangularToCubeMap(vec2 equiCoord);",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// Converts from cubemap coordinates to equirectangular\n// cubemapCoord MUST be normalized before calling this function.\nvec2 TDCubeMapToEquirectangular(vec3 cubemapCoord);\n\n// Available in builds 2019.18140\n// This version will also output a mipmap bias float. This float should be passed in the 'bias'\n// parameter of texture(), to help select the mipmap level. This helps avoids seams at the edge\n// of equirectangular map.\nvec2 TDCubeMapToEquirectangular(vec3 cubemapCoord, out float mipMapBias);",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "Working with Lights[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "To help shaders be as fast as possible, a lot of the logic to calculate lights is hard-coded into the shader depending on what features are enabled and what the light type is. Shaders written for the GLSL MAT will be recompiled with different implementation of TDLightingPBR(), TDLighting() etc depending on the number and types of lights in the scene. This allows the same GLSL MAT to be used in multiple different scenes without needing to be changed based on the number of lights in the scene. These compilations are cached, so each permutation of lighting settings will only cause one compilation to occur, each time TD is run."
+          },
+          {
+            "type": "paragraph",
+            "text": "TIP: Geometry viewers have built-in lighting separate from your scene's lighting objects. For information on how to duplicate that lighting, see the Geometry Viewer article."
+          },
+          {
+            "type": "subsection",
+            "title": "Custom work with lights[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "If you decide to do custom lighting work, this section describes how a lot of the light values are used in our shader."
+          },
+          {
+            "type": "subsection",
+            "title": "Knowing which variables correspond to which Light COMPs[edit]",
+            "level": 4
+          },
+          {
+            "type": "paragraph",
+            "text": "The variables will be indexed to differentiate the lights, starting at 0. Light 0 will be the first light listed in the Render TOP, Light 1 will be the 2nd light listed and so on. In the event that lights are selected using a wildcard such as light*, the lights gathered from this wildcard will be sorted alpha-numerically."
+          },
+          {
+            "type": "paragraph",
+            "text": "For example, say the Render TOP has \"/light3 /container1/light* /alight1\" listed in its Light parameter, and /container1/ has two light COMPs, named light1 and light2. In this case the lights would correspond to the following indices: \n/light3 would be index 0 \n/container1/light1 would be index 1 \n/container1/light2 would be index 2 \n/alight1 would be index 3"
+          },
+          {
+            "type": "subsection",
+            "title": "Light Parameters[edit]",
+            "level": 4
+          },
+          {
+            "type": "paragraph",
+            "text": "All of the parameters for the lights are defined in the uTDLights structure, defined  here."
+          },
+          {
+            "type": "subsection",
+            "title": "Cone Lighting Technique[edit]",
+            "level": 4
+          },
+          {
+            "type": "paragraph",
+            "text": "TouchDesigner's built-in shaders use a custom cone-lighting technique that you can mimic in your shader. The intensity of the cone light is pre-computed into a 1D texture (a lookup table) to reduce the workload in the shader. The start of the 1D texture (texture coordinate 0.0) is the intensity of the light at the edge of the cone angle (the first pixel is always 0). The end of the 1D texture (texture coordinate 1.0) is the intensity of the light at the center of the cone. This lookup table is accessed via:"
+          },
+          {
+            "type": "code",
+            "text": "float TDConeLookup(int lightIndex, float coord);",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "A second helper uniform is also given to the shader to make looking up in the 1D texture easier:"
+          },
+          {
+            "type": "code",
+            "text": "uTDLights[i].coneLookupScaleBias;",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "To correctly look into this lookup table the following algorithm should be used:"
+          },
+          {
+            "type": "code",
+            "text": "// 'spot' is the spot vector\n// 'lightV' is the vector coming from the light position, pointing towards\n// the point on the geometry we are shading.\n// It doesn't matter which space these vectors are in (camera space, object space), \n// as long as they are both in the same space.\n// Determine the cosine of the angle between the two vectors, will be between [-1, 1]\nfloat spotEffect = dot(spot, lightV);\n// Now rescale the value using the special helper uniform so that value is between [0,1]\n// A value of 0 will mean the angle between the two vectors is the same as the total \n// cone angle + cone delta of the light\nspotEffect = (spotEffect * uTDLights[i].coneLookupScaleBias.x) + uTDLights[i].coneLookupScaleBias.y;\n// Finally lookup into the lookup table\nfloat dimmer = TDConeLookup(i, spotEffect);\n// You can now multiply the strength of the light by 'dimmer' to create the correct\n// light intensity based on this pixels position in or outside the cone light's area of\n// influence",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "Attenuation[edit]",
+            "level": 4
+          },
+          {
+            "type": "paragraph",
+            "text": "Attenuation is handled for you in the TDLighting() function, but if you want to add it yourself this section describes how."
+          },
+          {
+            "type": "paragraph",
+            "text": "To determine the attenuation from the light to a point in space, use this function. lightDist is the distance from the vertex to the light."
+          },
+          {
+            "type": "code",
+            "text": "lightDist",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// Will return 1 if there is no attenuation, 0 if the light is fully attenuated, and something in between if it's in the fade-off region.\nfloat TDAttenuateLight(int lightIndex, float lightDist);",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "The math behind TDAttenutateLight is as follows:"
+          },
+          {
+            "type": "paragraph",
+            "text": "TouchDesigner's built-in shaders use a custom attenuation technique. Like the cone lighting, a pre-calculated scale and bias is provided for you that will allow you to get the correct attenuated intensity of the light. The uniform is:"
+          },
+          {
+            "type": "code",
+            "text": "uTDLights[i].attenScaleBiasRoll // Contains (1 / -(attenEnd - attenStart), attenEnd / (attenEnd - attenStart), attenRolloff)",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "TDAttenutateLight is defined as:"
+          },
+          {
+            "type": "code",
+            "text": "float TDAttenuateLight(int lightIndex, float lightDist)\n{\n    float lightAtten = lightDist * uTDLights[lightIndex].attenScaleBiasRoll.x;\n    lightAtten += uTDLights[lightIndex].attenScaleBiasRoll.y;\n    lightAtten = clamp(lightAtten, 0.0, 1.0) * 1.57073963\n    lightAtten = sin(lightAtten);\n    lightAtten = pow(lightAtten, uTDLights[lightIndex].attenScaleBiasRoll.z);\n    return lightAtten;\n}",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "Projection and Shadow Mapping[edit]",
+            "level": 4
+          },
+          {
+            "type": "paragraph",
+            "text": "Projection mapping and shadowing mapping are handled for you in the TDLighting() functions, but you can do it yourself if you want using the below information."
+          },
+          {
+            "type": "paragraph",
+            "text": "Projection and Shadow mapping are very similar operations. The only difference is a projection map will be used to color the surface, while a shadow map will be used to decide if that surface receives lighting from a certain light."
+          },
+          {
+            "type": "paragraph",
+            "text": "Use the TDProjMap() function, which will give you back the projection map color, including handling different projection types."
+          },
+          {
+            "type": "code",
+            "text": "TDProjMap()",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Use TDHardShadow() or TDSoftShadow() to manually get the shadow value."
+          },
+          {
+            "type": "code",
+            "text": "TDHardShadow()",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "TDSoftShadow()",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "Multiple Render Targets[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Using the '# Of Color Buffers' parameter in the Render TOP along with the Render Select TOP, you can write GLSL shaders that output multiple color values per pixel. This is done by declaring and writing to pixel shader outputs declare like this:"
+          },
+          {
+            "type": "code",
+            "text": "layout(location = 0) vec4 fragColor[TD_NUM_COLOR_BUFFERS];",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "The constant TD_NUM_COLOR_BUFFERS with automatically be set for you based on the render settings. Ensure you are not writing beyond the number of buffers provided, or corruption/GPU crashes may occur."
+          }
+        ]
+      },
+      {
+        "title": "Multi-Camera Rendering[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Multi-Camera Rendering is rendering multiple cameras in a single rendering pass, all looking at the same scene. This means the scene-graph is only traversed once, which avoids many calls to the graphics driver. Lights, textures, material and draw calls only need to be done once for the entire set of cameras being rendered. This feature is supported by Nvidia Pascal (Geforce 1000, Quadro P-Series) or AMD Polaris (Radeon R9, Radeon Pro WX) and newer GPUs. This feature is important for VR rendering, as well as things such as rendering a Cube Map in a single pass (instead of one pass per side)."
+          },
+          {
+            "type": "paragraph",
+            "text": "Multi-Camera Rendering will not function if the Cameras have different light masks. The cameras will be rendered one pass at a time in that case."
+          },
+          {
+            "type": "paragraph",
+            "text": "This feature is used by the Render TOP when multiple cameras are listed in the 'Cameras' parameter. The 'Multi-Camera Hint' parameter can help control how this feature is used for that particular Render TOP. The results of each camera's render can be obtained using Render Select TOP."
+          },
+          {
+            "type": "paragraph",
+            "text": "Nvidia calls this feature 'Simultaneous Multi-Projection'."
+          },
+          {
+            "type": "paragraph",
+            "text": "The multi-camera functionality on these GPUs is not general and requires some tricks to function properly. Because of this it's important all of your shaders make use of the TD* functions such as TDWorldToProj(), TDInstanceID() instead of doing those things manually and using built-in GLSL functionality. Functions such as TDFog() also require a camera index to be passed to it to apply fog for the correct camera."
+          }
+        ]
+      },
+      {
+        "title": "Image Outputs[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "In the Render TOP you can allocate extra image outputs that can be accessed during rendering. These outputs are arbitrarily sized images that can be written and read from at any location (similar to the Compute shader workflow for the GLSL TOP), using imageStore() and imageLoad(). The images will automatically be declared for you inside of the shader, you should not declare them yourself (as you do for other uniforms). This is because there is a lot of extra decoration required for the image uniforms. Currently when compiling in the GLSL MAT itself your code will result in an error, since the images are not available there. However when you apply your MAT to a geometry and render it via the Render TOP, a new version of your shader will be included that has that image declared."
+          },
+          {
+            "type": "code",
+            "text": "imageStore()",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "imageLoad()",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "If you set the array size to 0, then the image will not be allocated as an array, so it should not have [] included in it's access. E.g an image named sTestOutput would be written to via:"
+          },
+          {
+            "type": "code",
+            "text": "imageStore(sTestOutput, ivec2(0, 0), vec4(0.0));",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "If the array size is 1 or more, then instead you'd use []:"
+          },
+          {
+            "type": "code",
+            "text": "imageStore(sTestOutput[0], ivec2(0, 0), vec4(0.0));",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "Outputting gl_Position[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Although in general you can transform your points/vectors using the built-in model/view and projection matrices at will, when outputting to gl_Position you should use the built-in functions. These functions allow TouchDesigner to do some manipulation of the values for final output, depending on the rendering setup. For example for doing optimized Multi-Camera Rendering, the position will need to be multiplied by the correct camera for this execution of the vertex shader. To give TouchDesigner a chance to do this manipulation, you should call the built-in functions to transform your vertex position:"
+          },
+          {
+            "type": "code",
+            "text": "vec4 TDWorldToProj(vec4 v);\nvec4 TDWorldToProj(vec3 v);",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "So for example at the end of your shader you would do:"
+          },
+          {
+            "type": "code",
+            "text": "gl_Position = TDWorldToProj(worldSpacePosition);",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "Specilization Constants[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Specialization Constants are a new feature in Vulkan that allow code to be re-optimized based on integer constant values, without doing a full recompilation of the shader code. These are useful to set the value for rarely changing values such as 'modes' in shader, or selection of particular code paths that are doing via a switch() or if() statement. In the past this may have been done with a #define statement, or a uniform.\nA specialized version of a shader will be cached and re-used, but takes up GPU resources. So they should not be used for constantly changing values, but instead for values that are only changed sometimes, within a limited range of values."
+          },
+          {
+            "type": "code",
+            "text": "#define",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "uniform",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "To define a specialization constant, declare a constant with an extra layout() qualifier."
+          },
+          {
+            "type": "code",
+            "text": "layout(constant_id = 0) const int SomeMode = 0;",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Then you can use SomeMode just as you would any other variable. If you don't want it to be = 0, you can assign a different value on the 'Constants' page of the GLSL TOP, GLSL MAT etc.\nYou can declare multiple specialization constants, you just need to give each one it's own unique constant_id value (0, 1, 2, etc.)."
+          },
+          {
+            "type": "code",
+            "text": "SomeMode",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "constant_id",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "Working with Deforms[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Currently there are two different types deformations that can be applied to geometry:  skinned deforms and instanced transforms."
+          },
+          {
+            "type": "paragraph",
+            "text": "TouchDesigner automatically encapsulates all of the work for both of these deforms in the GLSL functions.\nUse the *Vec version when deforming vectors.These functions always return the point/vector in World space, not model/SOP."
+          },
+          {
+            "type": "code",
+            "text": "vec4 TDDeform(vec4 p);\nvec3 TDDeform(vec3 p);\nvec3 TDDeformVec(vec3 v);\nvec3 TDDeformNorm(vec3 v);",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "As the shader writer, it's your job to manipulate the vertex attributes such as the position and normal (since there's no place for TouchDesigner to do it if you're the one writing the shader), so it's up to you to call the TDDeform() function. In general you will simply call it simply like this:"
+          },
+          {
+            "type": "code",
+            "text": "vec4 worldSpaceVert = TDDeform(vec4(TDPos(), 1.0)); \nvec3 worldSpaceNorm = TDDeformNorm(TDNormal()));",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "However you can use the below declared functions directly."
+          },
+          {
+            "type": "subsection",
+            "title": "Skinning Deforms (Bone Deforms)[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "When you enable the Deform feature in the GLSL MAT, TouchDesigner will automatically declare some attributes, varyings, uniforms and functions for you to use to deform your geometry in the same way that other MATs deform geometry. It's important you don't re-use any of these reserved words when using deforms to avoid name conflicts when compiling the shader. Even when not using deforms though, the below listed functions will be declared anyway so shader code will run correctly both when deforms are turned on and off. The functions do nothing when deforms are off (and have no cost to the shader speed). The bone matrices for deforms are built by using the pCaptPath and pCaptData detail attributes along with the the bone's current position based on the skeleton at that frame. The indices in pCapt match up with the array index of the matrices for the bones. More information on how Skinning Deforms work can be found here:\nDeforming Geometry (Skinning)"
+          },
+          {
+            "type": "subsection",
+            "title": "Functions[edit]",
+            "level": 4
+          },
+          {
+            "type": "paragraph",
+            "text": "You generally will not need to call these directly, they are called by the TDDeform() function."
+          },
+          {
+            "type": "code",
+            "text": "TDDeform()",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "In the vertex shader:"
+          },
+          {
+            "type": "code",
+            "text": "vec4 TDSkinnedDeform(vec4 pos);\nvec3 TDSkinnedDeformVec(vec3 vec);",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "You can get the bone matrix for the given matrix index with this function:"
+          },
+          {
+            "type": "code",
+            "text": "mat4 TDBoneMat(int boneIndex);",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "Instancing[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "When you enable instancing on the Instance page of the Geometry COMP the TDDeform() functions will automatically call the correct lower level function that will transform the instance, based on the channels given in the XForm CHOP parameter. If you don't specify a CHOP, then all of the instances will be drawn at the same spot, unless you transform them yourself."
+          },
+          {
+            "type": "subsection",
+            "title": "Instance Index/ID[edit]",
+            "level": 4
+          },
+          {
+            "type": "paragraph",
+            "text": "To calculate the instance ID, use the provided TDInstanceID() function. Do not use gl_InstanceID directly because the number of instances being rendered may be larger than requested due to Multi-Camera Rendering. Shader writers familiar with TouchDesigner088 may also remember the uTDInstanceIDOffset that had to be used, this does not need to be used with TDInstance();"
+          },
+          {
+            "type": "code",
+            "text": "uTDInstanceIDOffset",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "int TDInstanceID();",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Since this function is only available in the vertex shader, you will need to pass it onwards to the pixel shader through an out/in, if you require it in the pixel shader."
+          },
+          {
+            "type": "code",
+            "text": "// In the vertex shader, declare something like this, and assign vInstanceID = TDInstanceID() in the main()\nflat out int vInstanceID;\nvoid main()\n{\n\tvInstanceID = TDInstanceID();\n\t// other main vertex function stuff\n\t// ....\n}",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "And in the pixel shader you can read this value if it's declared like this:"
+          },
+          {
+            "type": "code",
+            "text": "// Pixel shader\nflat in int vInstanceID;",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "This is declared as flat since int variable types can not be interpolated across a primitive."
+          },
+          {
+            "type": "code",
+            "text": "flat",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "int",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "Deform Functions[edit]",
+            "level": 4
+          },
+          {
+            "type": "paragraph",
+            "text": "You generally will not need to call any of these directly, they are called by the TDDeform() function. These functions are only available in the vertex shader."
+          },
+          {
+            "type": "paragraph",
+            "text": "In the vertex shader:"
+          },
+          {
+            "type": "code",
+            "text": "vec4 TDInstanceDeform(vec4 pos);\nvec3 TDInstanceDeformVec(vec3 vec);",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "For the transform, access these matrices using the functions:"
+          },
+          {
+            "type": "code",
+            "text": "mat4 TDInstanceMat(int instanceIndex);\nmat4 TDInstanceMat();",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "These matrices will contain the entire transform, including TX, TY, TZ, SX, SY, SZ as well as Rotate To."
+          },
+          {
+            "type": "subsection",
+            "title": "Attribute Functions[edit]",
+            "level": 4
+          },
+          {
+            "type": "paragraph",
+            "text": "When modifying the texture coordinates, these functions do the texture coordinate modifications per instance. t is the texture coordinate to modify. The version without instanceIndex will use the current value for gl_InstanceID automatically."
+          },
+          {
+            "type": "code",
+            "text": "vec3 TDInstanceTexCoord(int instanceIndex, vec3 t);\nvec3 TDInstanceTexCoord(vec3 t);",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "To modify diffuse color, these functions will replace/add/subtract from the original diffuse color. In general you'll want to pass in the result of TDPointColor() into these functions to have them modify it. If instance color is not in use, this function will just return the passed in color, unmodified."
+          },
+          {
+            "type": "code",
+            "text": "vec4 TDInstanceColor(vec4 curColor);\nvec4 TDInstanceColor(int instanceIndex, vec4 curColor);",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Custom instance attributes can be retrieved using these functions:"
+          },
+          {
+            "type": "code",
+            "text": "vec4 TDInstanceCustomAttrib0();\nvec4 TDInstanceCustomAttrib0(int instanceIndex);\nvec4 TDInstanceCustomAttrib1();\nvec4 TDInstanceCustomAttrib1(int instanceIndex);\nvec4 TDInstanceCustomAttrib2();\nvec4 TDInstanceCustomAttrib2(int instanceIndex);\nvec4 TDInstanceCustomAttrib3();\nvec4 TDInstanceCustomAttrib3(int instanceIndex);",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "Instance Texturing[edit]",
+            "level": 4
+          },
+          {
+            "type": "paragraph",
+            "text": "Instance texturing allows mapping larger number of individual textures onto instances. The number of textures available to be used in a single render varies by GPU. The resolution/pixel format of each texture can be different. It avoids needing to use a 2D Texture Array to map multiple images onto instances. Only one type of texture dimension is supported at a time (2D, Cube etc). Access the textures is a two step process. First you need to get the texture index for the current instance you are outputting. This is achieved through TDInstanceTextureIndex(). Then you can use that texture index in a call to TDInstanceTexture() to obtain the sampled texture color at the passed coordinates. There are a few variations of these functions. In the vertex shader there are versions that can implicitly know the current instance index and output using that. In both vertex/pixel shaders there is also versions that allow you to manually specify the instance index via a parameter. You will typically be sampling the texture in the pixel shader, in which case you want to obtain the texture index in the vertex shader, then pass it through to the pixel shader via a flat uint in/out variable."
+          },
+          {
+            "type": "code",
+            "text": "TDInstanceTextureIndex()",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "TDInstanceTexture()",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "flat uint",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// AVAILABLE IN THE VERTEX SHADER ONLY\n// Implicitly uses the current instance. Returns the texture index for this instance.\nuint TDInstanceTextureIndex();\n// Returns the texture color at the given 'uv', implicitly using the current instance index to determine which texture to sample.\n// You will not usually be using these versions of TDInstanceTexture(), since they are only available in the vertex shader.\nvec4 TDInstanceTexture(vec2 uv);\nvec4 TDInstanceTexture(vec3 uv);",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "If you require more custom control of which instance texture you which to use, you can use these functions instead:"
+          },
+          {
+            "type": "code",
+            "text": "// AVAILABLE IN ALL SHADER STAAGES\n// Gives to you the textureIndex for the given instanceIndex.\nuint TDInstanceTextureIndex(int instanceIndex);\n// Samples the texture 'texIndex' at the given 'uv'.\nvec4 TDInstanceTexture(uint texIndex, vec3 uv);\nvec4 TDInstanceTexture(uint texIndex, vec2 uv);",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "The best way to see this code being used in a live example is to output a shader from the Phong MAT that is doing instance texturing."
+          }
+        ]
+      },
+      {
+        "title": "Point Sprites[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Point Sprites must now use vec2 TDPointCoord() instead of gl_PointCoord to obtain the texture coordinates for the sprite. Using gl_PointCoord will result in the texture coordinates being flipped vertically in some cases."
+          },
+          {
+            "type": "code",
+            "text": "vec2 TDPointCoord()",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "gl_PointCoord",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "When rendering point sprites primitives you are required to write to the vertex shader output gl_PointSize. This output variable determines how large the point sprite is (in pixels) when it is rendered. If you don't write to the output then your point sizes are undefined."
+          },
+          {
+            "type": "code",
+            "text": "gl_PointSize",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Each point sprite will be rendered as a square of pixels gl_PointSize pixels wide. The square of pixels will receive textures coordinates from 0-1 over the entire square in the pixel shader, obtained via TDPointCoord()."
+          },
+          {
+            "type": "code",
+            "text": "gl_PointSize",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "TDPointCoord()",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "Order Independent Transparency[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "You can make your shader support Order Independent Transparency by simply adding this line at the start of your pixel shader's main() function. If Order Independent Transparency isn't enabled in the Render TOP, then this function will do nothing."
+          },
+          {
+            "type": "code",
+            "text": "TDCheckOrderIndTrans();",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "Dithering[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "If dithering is enabled in the Render TOP, you can have this dithering applied to your color by simply calling:"
+          },
+          {
+            "type": "code",
+            "text": "finalColor = TDDither(finalColor);",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "You generally want to do this right at the end of the shader, just before you write the value to your output color. If dithering is disabled in the Render TOP this function will still be available (to avoid compiler errors), but it will leave the color unchanged."
+          }
+        ]
+      },
+      {
+        "title": "Picking[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "The Render Pick DAT and CHOP do their work with a render operation, so they need to interact with the shader to do their work. If you export a Phong MAT shader you will see the following lines in it"
+          },
+          {
+            "type": "code",
+            "text": "#ifndef TD_PICKING_ACTIVE\n\t// All the typical shader code\n#else\n\tTDWritePickingValues();\n#endif",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "The key thing that is occurring here is that when picking is occuring, the define TD_PICKING_ACTIVE is set and only the code inside the #else block is executed. The function:"
+          },
+          {
+            "type": "code",
+            "text": "void TDWritePickingValues();",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Will write default values for picking, which the Render Pick DAT/CHOP will read. If you have a custom shader that changes vertex positions in a non standard way, or if you want to output different kinds of information (like a color other than TDPointColor()), you can replace the values that have been written by this function afterwards. The values available to you are:"
+          },
+          {
+            "type": "code",
+            "text": "TDPickVertex {\n\tvec3 sopSpacePosition;\n\tvec3 worldSpacePosition;\n\tvec3 camSpacePosition;\n\tvec3 sopSpaceNormal;\n\tvec3 worldSpaceNormal;\n\tvec3 camSpaceNormal;\n\tvec3 uv[1];\n\tflat int instanceId;\n\tvec4 color;\n} vTDPickVert;",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "So for example if you modifying the vertex position in a way different from the standard TDDeform() way, you could write these newly calculated values to like this:\n Be sure to do this AFTER the call to TDWritePickingValues(), otherwise that call will overwrite your values ."
+          },
+          {
+            "type": "code",
+            "text": "TDWritePickingValues();\nvTDPickVert.sopSpacePosition = newPosition;\nvTDPickVert.worldSpacePosition = uTDMats[TDCameraIndex()].world * vec4(newPosition, 1.0);\nvTDPickVert.camSpacePosition = uTDMats[TDCameraIndex()].worldCam * vec4(newPosition, 1.0);",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "You do not have to write to all the entries in this structure, but you can for completeness. Only the values that are being read by the Render Pick CHOP/DAT (selected in their parameters) must be filled in."
+          },
+          {
+            "type": "paragraph",
+            "text": "For custom attributes that you set for picking in the Render Pick CHOP or Render Pick DAT, the attributes are available in vTDCustomPickVert with the name and size as defined in the Render Pick node."
+          },
+          {
+            "type": "code",
+            "text": "vTDCustomPickVert",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "Shadertoy[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "subsection",
+            "title": "VR Shaders[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "Shaders that come from Shadertoy that support VR rendering will have a mainVR function defined. Re-creating the fragRayOri and fragRayDir variables that function uses inside of TD is simple. In the vertex shader:"
+          },
+          {
+            "type": "code",
+            "text": "mainVR",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "fragRayOri",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "fragRayDir",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "vec4 worldSpaceVert = TDDeform(TDPos());\nvec4 worldSpaceCamPos = uTDMat.camInverse[3]; // The last column of the camera transform is it's position\n\nvec3 fragRayOri = worldSpaceCamPos.xyz;\nvec3 fragRayDir = worldSpaceVert.xyz - worldSpaceCamPos.xyz;\n// Pass these variables to the pixel shader using 'out' variables named of your choosing",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "And in the pixel shader you just need to normalize whatever variable the fragRayDir was went through. The variable that came from fragRayOri and be used as-is."
+          },
+          {
+            "type": "code",
+            "text": "fragRayDir",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "fragRayOri",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "To support these shaders, which are usually raymarching shaders, you'll want to render geometry that covers the entire viewport, such as putting a sphere around your camera."
+          }
+        ]
+      },
+      {
+        "title": "Other Notes[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "subsection",
+            "title": "#version statement[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "The #version statement will be added to the code automatically for you. Your code should not have a #version statement, otherwise compile errors may occur."
+          },
+          {
+            "type": "subsection",
+            "title": "#include statements[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "You can use an #include statement in one DAT to include code from another DAT. The path can be absolute or relative."
+          },
+          {
+            "type": "code",
+            "text": "#include </project1/text1>\n #include <../../geo1/text2>\n #include \"text2\"",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "Diagnosing crashes due to GLSL[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "If you are experiencing a full application crash when writing GLSL code, you may want to refer to this article for tips on diagnosing these issues."
+          },
+          {
+            "type": "subsection",
+            "title": "Changes from GLSL 1.20[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "Shaders written for 1.20 will not compile as 3.30 shaders. The language received a large overhaul, changing the name of many key functions and replacing a lot of functionality. All of the changes can be seen in the official GLSL documentation linked to earlier. Some of the more important changes are:"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Removed texture1D(sampler1D, float), texture2D(sampler2D, vec2), etc. All texture sampling is done with identical function names, regardless of the dimensionality of the texture. e.g. texture(sampler1D, float), or texture(sampler2D, vec2)."
+            ]
+          },
+          {
+            "type": "code",
+            "text": "texture1D(sampler1D, float), texture2D(sampler2D, vec2), etc.",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "texture(sampler1D, float), or texture(sampler2D, vec2)",
+            "language": "python"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Removed the keyword varying. Instead use in and out (depending on if the value is getting outputted from the shader or inputted from a previous shader stage). Examples later on in the article."
+            ]
+          },
+          {
+            "type": "code",
+            "text": "varying",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "in",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "out",
+            "language": "python"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Removed the keyword attribute. Instead just use in in your vertex shader."
+            ]
+          },
+          {
+            "type": "code",
+            "text": "attribute",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "in",
+            "language": "python"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Removed built-in varyings gl_TexCoord[]. You'll need to always declare your own variables that get output/input between shader stages."
+            ]
+          },
+          {
+            "type": "code",
+            "text": "gl_TexCoord[]",
+            "language": "python"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Removed gl_FragColor and gl_FragData[]. Instead you name your own color outputs using the syntax layout(location = 0) vec4 oFragColor[TD_NUM_COLOR_BUFFERS]."
+            ]
+          },
+          {
+            "type": "code",
+            "text": "gl_FragColor",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "gl_FragData[]",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "layout(location = 0) vec4 oFragColor[TD_NUM_COLOR_BUFFERS]",
+            "language": "python"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Removed all built-in attributes such as gl_Vertex, gl_MultiTexCoord0, gl_Normal. In TouchDesigner these attributes will be accessible through automatically declared attributes such as in vec3 TDPos(); in vec3 TDTexCoord(uint coordLayer); in vec3 TDNormal(); vec4 TDPointColor(). More details on this later."
+            ]
+          },
+          {
+            "type": "code",
+            "text": "gl_Vertex, gl_MultiTexCoord0, gl_Normal",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "in vec3 TDPos(); in vec3 TDTexCoord(uint coordLayer); in vec3 TDNormal(); vec4 TDPointColor()",
+            "language": "python"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Removed almost all built-in uniforms such as matrices (gl_ModelViewMatrix, gl_ProjectionMatrix), light information (gl_LightSource[]), fog information (gl_Fog). All of this data will be available through new means provided by TouchDesigner, detailed later."
+            ]
+          },
+          {
+            "type": "code",
+            "text": "gl_ModelViewMatrix, gl_ProjectionMatrix",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "gl_LightSource[]",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "gl_Fog",
+            "language": "python"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Arrays of samplers are now supported, and are used extensively in TouchDesigner when appropriate. There are limitations on how these samplers are indexed though, detailed in the GLSL spec for the particular version you are using (3.30 has different rules from 4.10, for example)."
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Major changes since TouchDesigner088[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "A lot of changes have been done to TouchDesigner's GLSL API in 099. Most of these changes were done to better facilitate Multi-Camera Rendering. A summary of most of these changes is:"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Lighting and other work is now done in World space instead of Camera space. This makes code cleaner since the shaders would need to do their work in multiple different camera spaces for multiple cameras. Legacy GLSL shaders are supported with the GLSL TOPs 'Lighting Space' parameter which will be set to Camera Space for older shaders.",
+              "TDInstanceID() should be used instead of gl_InstanceID/uTDInstanceIDOffset.",
+              "uTDMat has been removed when lighting in World Space, use the array uTDMats[] instead.",
+              "Some values from the uTDGeneral structure have been moved to uTDCamInfos[], since that info is camera specific.",
+              "A notion of camera index (obtained in the vertex shader using TDCameraIndex()), is needed for some functions such as TDFog().",
+              "TDAlphaTest(float) must be called to apply the alpha test. It can be safely called when the alpha test is disabled on the MAT, it'll do nothing in that case.",
+              "Before writing any color to a output color buffer, it should be passed through vec4 TDOutputSwizzle(vec4). This ensures the channels are in the correct place depending on how the channels are stored in the output texture. For example Alpha-only textures may be stored in a 'Red-only' texture internally, so the alpha value will need to be swizzled over to the red channel before output."
+            ]
+          },
+          {
+            "type": "code",
+            "text": "TDInstanceID()",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "gl_InstanceID/uTDInstanceIDOffset",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "uTDMat",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "uTDMats[]",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "uTDGeneral",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "uTDCamInfos[]",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "TDCameraIndex()",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "TDFog()",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "TDAlphaTest(float)",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "vec4 TDOutputSwizzle(vec4)",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "Related Articles[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "MATs or Materials are an Operator Family that applies a Shader to a SOP or 3D Geometry Object for rendering textured surfaces with lighting."
+          },
+          {
+            "type": "paragraph",
+            "text": "A sequence of vertices form a Polygon in a SOP. Each vertex is an integer index into the Point List, and each Point holds an XYZ position and attributes like Normals and Texture Coordinates."
+          },
+          {
+            "type": "paragraph",
+            "text": "The OpenGL (pre-2022) or Vulkan (2022-) code that runs on the GPU and creates rendered images from polygons and textures. A shader is programmed in Text DATs and referenced by a GLSL Material or a GLSL TOP. Shaders are composed of up to three parts: Vertex Shader, Pixel Shader and Compute Shader."
+          },
+          {
+            "type": "paragraph",
+            "text": "A Operator Family that reads, creates and modifies 3D points, polygons, lines, particles, surfaces, spheres and meatballs. Particles and point clouds are now done primarily on the GPU using TOPs."
+          },
+          {
+            "type": "paragraph",
+            "text": "Information associated with SOP geometry. Points and primitives (polygons, NURBS, etc.) can have any number of attributes - position (P) is standard, and built-in optional attributes are normals (N), texture coordinates (uv), color (Cd), etc."
+          },
+          {
+            "type": "paragraph",
+            "text": "MATs or Materials are an Operator Family that applies a Shader to a SOP or 3D Geometry Object for rendering textured surfaces with lighting."
+          },
+          {
+            "type": "paragraph",
+            "text": "An Operator Family that contains its own Network. There are sixteen 3D Object Component and ten 2D Panel Component types. See also Network Path."
+          },
+          {
+            "type": "paragraph",
+            "text": "An Operator Family that creates, composites and modifies images, and reads/writes images and movies to/from files and the network. TOPs run on the graphics card's GPU."
+          },
+          {
+            "type": "paragraph",
+            "text": "Quad Reprojection renders pixel-perfect perspective-correct images for flat TVs and LED panels hung at any orientation."
+          },
+          {
+            "type": "paragraph",
+            "text": "Rendering is the creation of a 3D image with the Render TOP. Rendering is also used more generally to include the compositing (with TOPs) to generate an output image."
+          },
+          {
+            "type": "paragraph",
+            "text": "(1) A Geometry Component can instance and render its SOP geometry many times: once for each sample in a CHOP, row of a DAT table, pixel in a TOP, or point of a SOP, (2) An instance is an OP that doesn't actually have its own data, but rather just refers to an OP (or has an input) whose data it uses. This includes Null OPs, Switch OPs and in some cases Select OPs."
+          },
+          {
+            "type": "paragraph",
+            "text": "A technique or workflow that allows for displaying content on often irregular shapes and surfaces."
+          },
+          {
+            "type": "paragraph",
+            "text": "The Graphics Processing Unit. This is the high-speed, many-core processor of the graphics card/chip that takes geometry, images and data from the CPU and creates images and processed data."
+          },
+          {
+            "type": "paragraph",
+            "text": "An Operator Family which operate on Channels (a sequence of numbers (Samples)) which are used for animation, audio, mathematics, simulation, logic, UI construction, and data streamed from/to devices and protocols."
+          },
+          {
+            "type": "paragraph",
+            "text": "Each SOP has a list of Points. Each point has an XYZ 3D position value plus other optional attributes. Each polygon Primitive is defined by a vertex list, which is list of point numbers."
+          },
+          {
+            "type": "paragraph",
+            "text": "An Operator Family that manipulates text strings: multi-line text or tables. Multi-line text is often a python Script or GLSL Shader, but can be any multi-line text. Tables are rows and columns of cells, each containing a text string."
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Touch Glossary",
+              "Rendering",
+              "TDPages",
+              "TouchDesigner Tips",
+              "Materials",
+              "GLSL",
+              "Programming in TouchDesigner"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Navigation menu",
+        "level": 2,
+        "content": [
+          {
+            "type": "subsection",
+            "title": "Personal tools",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Log in"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Namespaces",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Page",
+              "Discussion",
+              "Experimental"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Views",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Read",
+              "View source",
+              "View history"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Search",
+            "level": 3
+          },
+          {
+            "type": "subsection",
+            "title": "TouchDesigner",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Main Page",
+              "Categories",
+              "Learn TouchDesigner",
+              "Tutorials",
+              "Interoperability",
+              "Glossary",
+              "Operators",
+              "Python",
+              "Python Class Reference",
+              "Palette",
+              "FAQ",
+              "Recent Doc Edits",
+              "Release Notes"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Downloads",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "TouchDesigner",
+              "Shared Examples"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Tools",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "What links here",
+              "Related changes",
+              "Special pages",
+              "Printable version",
+              "Permanent link",
+              "Page information",
+              "Page values"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "This page was last edited on 17 October 2024, at 16:07."
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Privacy policy",
+              "About Derivative",
+              "Disclaimers"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              ""
+            ]
+          }
+        ]
+      }
+    ],
+    "tableOfContents": [
+      {
+        "number": "1",
+        "text": "Contents",
+        "href": "#Contents"
+      },
+      {
+        "number": "2",
+        "text": "Overview[edit]",
+        "href": "#Overview[edit]"
+      },
+      {
+        "number": "3",
+        "text": "Shader Stages[edit]",
+        "href": "#Shader_Stages[edit]"
+      },
+      {
+        "number": "4",
+        "text": "A Basic Shader[edit]",
+        "href": "#A_Basic_Shader[edit]"
+      },
+      {
+        "number": "5",
+        "text": "Working with Geometry Attributes[edit]",
+        "href": "#Working_with_Geometry_Attributes[edit]"
+      },
+      {
+        "number": "6",
+        "text": "TouchDesigner specific defines[edit]",
+        "href": "#TouchDesigner_specific_defines[edit]"
+      },
+      {
+        "number": "7",
+        "text": "TouchDesigner specific Uniforms[edit]",
+        "href": "#TouchDesigner_specific_Uniforms[edit]"
+      },
+      {
+        "number": "8",
+        "text": "TouchDesigner specific Functions[edit]",
+        "href": "#TouchDesigner_specific_Functions[edit]"
+      },
+      {
+        "number": "9",
+        "text": "Working with Lights[edit]",
+        "href": "#Working_with_Lights[edit]"
+      },
+      {
+        "number": "10",
+        "text": "Multiple Render Targets[edit]",
+        "href": "#Multiple_Render_Targets[edit]"
+      },
+      {
+        "number": "11",
+        "text": "Multi-Camera Rendering[edit]",
+        "href": "#Multi-Camera_Rendering[edit]"
+      },
+      {
+        "number": "12",
+        "text": "Image Outputs[edit]",
+        "href": "#Image_Outputs[edit]"
+      },
+      {
+        "number": "13",
+        "text": "Outputting gl_Position[edit]",
+        "href": "#Outputting_gl_Position[edit]"
+      },
+      {
+        "number": "14",
+        "text": "Specilization Constants[edit]",
+        "href": "#Specilization_Constants[edit]"
+      },
+      {
+        "number": "15",
+        "text": "Working with Deforms[edit]",
+        "href": "#Working_with_Deforms[edit]"
+      },
+      {
+        "number": "16",
+        "text": "Point Sprites[edit]",
+        "href": "#Point_Sprites[edit]"
+      },
+      {
+        "number": "17",
+        "text": "Order Independent Transparency[edit]",
+        "href": "#Order_Independent_Transparency[edit]"
+      },
+      {
+        "number": "18",
+        "text": "Dithering[edit]",
+        "href": "#Dithering[edit]"
+      },
+      {
+        "number": "19",
+        "text": "Picking[edit]",
+        "href": "#Picking[edit]"
+      },
+      {
+        "number": "20",
+        "text": "Shadertoy[edit]",
+        "href": "#Shadertoy[edit]"
+      },
+      {
+        "number": "21",
+        "text": "Other Notes[edit]",
+        "href": "#Other_Notes[edit]"
+      },
+      {
+        "number": "22",
+        "text": "Related Articles[edit]",
+        "href": "#Related_Articles[edit]"
+      },
+      {
+        "number": "23",
+        "text": "Navigation menu",
+        "href": "#Navigation_menu"
+      }
+    ],
+    "relatedLinks": [
+      {
+        "text": "Shader",
+        "href": "./Shader.htm"
+      },
+      {
+        "text": "Texture 3D TOP",
+        "href": "./Texture_3D_TOP.htm"
+      },
+      {
+        "text": "Texture 3D TOP",
+        "href": "./Texture_3D_TOP.htm"
+      },
+      {
+        "text": "Geometry Viewer",
+        "href": "./Geometry_Viewer.htm"
+      },
+      {
+        "text": "Render TOP",
+        "href": "./Render_TOP.htm"
+      },
+      {
+        "text": "Render TOP",
+        "href": "./Render_TOP.htm"
+      },
+      {
+        "text": "Render TOP",
+        "href": "./Render_TOP.htm"
+      },
+      {
+        "text": "Render Select TOP",
+        "href": "./Render_Select_TOP.htm"
+      },
+      {
+        "text": "Render TOP",
+        "href": "./Render_TOP.htm"
+      },
+      {
+        "text": "Render Select TOP",
+        "href": "./Render_Select_TOP.htm"
+      }
+    ],
+    "images": [
+      {
+        "src": "./resources/assets/poweredby_mediawiki_88x31.png",
+        "alt": "Powered by MediaWiki",
+        "caption": "Powered by MediaWiki"
+      }
+    ]
+  },
+  "keywords": [
+    "write",
+    "a",
+    "glsl",
+    "material",
+    "tutorial",
+    "this",
+    "document",
+    "explains",
+    "finer",
+    "points",
+    "writing",
+    "touchdesigner.",
+    "assumed"
+  ],
+  "tags": [
+    "Tutorial",
+    "TouchDesigner",
+    "Write a GLSL Material"
+  ],
+  "searchWeight": 2,
+  "lastUpdated": "2025-08-13T01:17:18.946Z",
+  "sourceFile": "C:\\Program Files\\Derivative\\TouchDesigner\\Samples\\Learn\\OfflineHelp\\https.docs.derivative.ca\\Write_a_GLSL_Material.htm",
+  "isValid": true,
+  "validationErrors": []
+}

@@ -1,0 +1,11 @@
+{
+  "name": "POP to TOP",
+  "id": "pop_to_top",
+  "category": "TOP",
+  "subcategory": "Experimental",
+  "description": "The POP to TOP converts the points of a POP to the pixels of a TOP.  By default it treats the POP points as one unstructured list of points and chooses a square TOP resolution that fits all the points into the image.  It by default converts the P position attribute to pixels in 32-bit float image channels.  The alpha of the image is set to a value of 1, except for the pixels that do not represent any point, where the pixels are set to 0 (the \"active\" channel).",
+  "parameters": [],
+  "experimental": true,
+  "sourceFile": "Experimental-POP_to_TOP.htm",
+  "parsedAt": "2025-08-08T03:03:58.926Z"
+}

@@ -1,0 +1,10 @@
+{
+  "className": "Parent",
+  "displayName": "Parent",
+  "description": "In the network path hierarchy, the parent of a node or network is said to be the node or network in which the node is located. So in the network /project1/test/notes, the test node/network is said to be the parent of notes.",
+  "category": "General",
+  "fileName": "Parent_Class.htm",
+  "members": [],
+  "methods": [],
+  "enhanced": true
+}

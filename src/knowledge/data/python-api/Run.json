@@ -1,0 +1,32 @@
+{
+  "className": "Run",
+  "displayName": "Run Class",
+  "description": "The Run class describes a single instance of a delayed script execution. See Run Command Examples for more info.\nThey can be accessed from the runs object. Scripts can be executed with delays with the following methods:",
+  "category": "General",
+  "fileName": "Run_Class.htm",
+  "members": [
+    {
+      "name": "active",
+      "id": "content",
+      "returnType": "bool",
+      "readOnly": true,
+      "description": "active member"
+    },
+    {
+      "name": "active",
+      "id": "bodyContent",
+      "returnType": "bool",
+      "readOnly": true,
+      "description": "active member"
+    }
+  ],
+  "methods": [
+    {
+      "name": "kill",
+      "parameters": [],
+      "returns": "None :",
+      "signature": "kill()"
+    }
+  ],
+  "enhanced": true
+}

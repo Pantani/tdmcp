@@ -1,0 +1,78 @@
+{
+  "className": "App",
+  "displayName": "App Class",
+  "description": "This class contains specific application details, such as its version and installation folders. It can be accessed with the app object, found in the automatically imported td module.",
+  "category": "General",
+  "fileName": "App_Class.htm",
+  "members": [
+    {
+      "name": "applicationsFolder",
+      "id": "content",
+      "returnType": "str",
+      "readOnly": true,
+      "description": "applicationsFolder member"
+    },
+    {
+      "name": "applicationsFolder",
+      "id": "bodyContent",
+      "returnType": "str",
+      "readOnly": true,
+      "description": "applicationsFolder member"
+    }
+  ],
+  "methods": [
+    {
+      "name": "addNonCommercialLimit",
+      "parameters": [
+        {
+          "name": "password=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "addNonCommercialLimit(password=None)"
+    },
+    {
+      "name": "removeNonCommercialLimit",
+      "parameters": [
+        {
+          "name": "password=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "bool :",
+      "signature": "removeNonCommercialLimit(password=None)"
+    },
+    {
+      "name": "addResolutionLimit",
+      "parameters": [
+        {
+          "name": "x",
+          "type": "Any"
+        },
+        {
+          "name": "y",
+          "type": "Any"
+        },
+        {
+          "name": "password=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "addResolutionLimit(x, y, password=None)"
+    },
+    {
+      "name": "removeResolutionLimit",
+      "parameters": [
+        {
+          "name": "password=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "bool :",
+      "signature": "removeResolutionLimit(password=None)"
+    }
+  ],
+  "enhanced": true
+}

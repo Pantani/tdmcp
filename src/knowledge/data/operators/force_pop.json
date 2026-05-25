@@ -1,0 +1,878 @@
+{
+  "name": "Force POP",
+  "id": "force_pop",
+  "category": "POP",
+  "subcategory": "Experimental",
+  "description": "The Force POP is used in a Particle POP loop and outputs a float3 attribute named PartForce that sums a set of forces defined in the Force POP.",
+  "parameters": [
+    {
+      "name": "PartForce",
+      "label": "Spec POP",
+      "description": "Configure Spec POP for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Global Force",
+          "value": "globforcex",
+          "description": ""
+        },
+        {
+          "label": "Global Force",
+          "value": "globforcey",
+          "description": ""
+        },
+        {
+          "label": "Global Force",
+          "value": "globforcez",
+          "description": ""
+        },
+        {
+          "label": "Wind Force",
+          "value": "windforcex",
+          "description": ""
+        },
+        {
+          "label": "Wind Force",
+          "value": "windforcey",
+          "description": ""
+        },
+        {
+          "label": "Wind Force",
+          "value": "windforcez",
+          "description": ""
+        },
+        {
+          "label": "Radial",
+          "value": "radial",
+          "description": ""
+        },
+        {
+          "label": "Axial",
+          "value": "axial",
+          "description": ""
+        },
+        {
+          "label": "Vortex",
+          "value": "vortex",
+          "description": ""
+        },
+        {
+          "label": "Spiral",
+          "value": "spiral",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "tx",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "ty",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "tz",
+          "description": ""
+        },
+        {
+          "label": "Direction",
+          "value": "directionx",
+          "description": ""
+        },
+        {
+          "label": "Direction",
+          "value": "directiony",
+          "description": ""
+        },
+        {
+          "label": "Direction",
+          "value": "directionz",
+          "description": ""
+        },
+        {
+          "label": "globforce (Global Force)",
+          "value": "globforce",
+          "description": ""
+        },
+        {
+          "label": "globforcex",
+          "value": "globforcex",
+          "description": ""
+        },
+        {
+          "label": "globforcey",
+          "value": "globforcey",
+          "description": ""
+        },
+        {
+          "label": "globforcez",
+          "value": "globforcez",
+          "description": ""
+        },
+        {
+          "label": "globforcemult (Global Force Multiplier)",
+          "value": "globforcemult",
+          "description": ""
+        },
+        {
+          "label": "windforce (Wind Force)",
+          "value": "windforce",
+          "description": ""
+        },
+        {
+          "label": "windforcex",
+          "value": "windforcex",
+          "description": ""
+        },
+        {
+          "label": "windforcey",
+          "value": "windforcey",
+          "description": ""
+        },
+        {
+          "label": "windforcez",
+          "value": "windforcez",
+          "description": ""
+        },
+        {
+          "label": "windforcemult (Wind Force Multiplier)",
+          "value": "windforcemult",
+          "description": ""
+        },
+        {
+          "label": "Set",
+          "value": "set",
+          "description": ""
+        },
+        {
+          "label": "Multiply",
+          "value": "mult",
+          "description": ""
+        },
+        {
+          "label": "Add",
+          "value": "add",
+          "description": ""
+        },
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        },
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    },
+    {
+      "name": "specpop",
+      "label": "Spec POP",
+      "description": "Configure Spec POP for the operator",
+      "type": "string"
+    },
+    {
+      "name": "globforce",
+      "label": "Global Force",
+      "description": "Configure Global Force for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Global Force",
+          "value": "globforcex",
+          "description": ""
+        },
+        {
+          "label": "Global Force",
+          "value": "globforcey",
+          "description": ""
+        },
+        {
+          "label": "Global Force",
+          "value": "globforcez",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "globforcex",
+      "label": "Global Force",
+      "description": "Configure Global Force for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Global Force",
+          "value": "globforcex",
+          "description": ""
+        },
+        {
+          "label": "Global Force",
+          "value": "globforcey",
+          "description": ""
+        },
+        {
+          "label": "Global Force",
+          "value": "globforcez",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "globforcemult",
+      "label": "Global Force Multiplier",
+      "description": "Configure Global Force Multiplier for the operator",
+      "type": "string"
+    },
+    {
+      "name": "windforce",
+      "label": "Wind Force",
+      "description": "Configure Wind Force for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Wind Force",
+          "value": "windforcex",
+          "description": ""
+        },
+        {
+          "label": "Wind Force",
+          "value": "windforcey",
+          "description": ""
+        },
+        {
+          "label": "Wind Force",
+          "value": "windforcez",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "windforcex",
+      "label": "Wind Force",
+      "description": "Configure Wind Force for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Wind Force",
+          "value": "windforcex",
+          "description": ""
+        },
+        {
+          "label": "Wind Force",
+          "value": "windforcey",
+          "description": ""
+        },
+        {
+          "label": "Wind Force",
+          "value": "windforcez",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "windforcemult",
+      "label": "Wind Force Multiplier",
+      "description": "Configure Wind Force Multiplier for the operator",
+      "type": "string"
+    },
+    {
+      "name": "forcetype",
+      "label": "Local Force Type",
+      "description": "Configure Local Force Type for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Radial",
+          "value": "radial",
+          "description": ""
+        },
+        {
+          "label": "Axial",
+          "value": "axial",
+          "description": ""
+        },
+        {
+          "label": "Vortex",
+          "value": "vortex",
+          "description": ""
+        },
+        {
+          "label": "Spiral",
+          "value": "spiral",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "radial",
+      "label": "Radial",
+      "description": "Configure Radial for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Radial",
+          "value": "radial",
+          "description": ""
+        },
+        {
+          "label": "Axial",
+          "value": "axial",
+          "description": ""
+        },
+        {
+          "label": "Vortex",
+          "value": "vortex",
+          "description": ""
+        },
+        {
+          "label": "Spiral",
+          "value": "spiral",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "t",
+      "label": "Translate",
+      "description": "Configure Translate for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Translate",
+          "value": "tx",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "ty",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "tz",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "tx",
+      "label": "Translate",
+      "description": "Configure Translate for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Translate",
+          "value": "tx",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "ty",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "tz",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "rad",
+      "label": "Radius",
+      "description": "Configure Radius for the operator",
+      "type": "string"
+    },
+    {
+      "name": "amount",
+      "label": "Amount",
+      "description": "Configure Amount for the operator",
+      "type": "string"
+    },
+    {
+      "name": "direction",
+      "label": "Direction",
+      "description": "Configure Direction for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Direction",
+          "value": "directionx",
+          "description": ""
+        },
+        {
+          "label": "Direction",
+          "value": "directiony",
+          "description": ""
+        },
+        {
+          "label": "Direction",
+          "value": "directionz",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "directionx",
+      "label": "Direction",
+      "description": "Configure Direction for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Direction",
+          "value": "directionx",
+          "description": ""
+        },
+        {
+          "label": "Direction",
+          "value": "directiony",
+          "description": ""
+        },
+        {
+          "label": "Direction",
+          "value": "directionz",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "map",
+      "label": "Mapping",
+      "description": "Configure Mapping for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "globforce (Global Force)",
+          "value": "globforce",
+          "description": ""
+        },
+        {
+          "label": "globforcex",
+          "value": "globforcex",
+          "description": ""
+        },
+        {
+          "label": "globforcey",
+          "value": "globforcey",
+          "description": ""
+        },
+        {
+          "label": "globforcez",
+          "value": "globforcez",
+          "description": ""
+        },
+        {
+          "label": "globforcemult (Global Force Multiplier)",
+          "value": "globforcemult",
+          "description": ""
+        },
+        {
+          "label": "windforce (Wind Force)",
+          "value": "windforce",
+          "description": ""
+        },
+        {
+          "label": "windforcex",
+          "value": "windforcex",
+          "description": ""
+        },
+        {
+          "label": "windforcey",
+          "value": "windforcey",
+          "description": ""
+        },
+        {
+          "label": "windforcez",
+          "value": "windforcez",
+          "description": ""
+        },
+        {
+          "label": "windforcemult (Wind Force Multiplier)",
+          "value": "windforcemult",
+          "description": ""
+        },
+        {
+          "label": "Set",
+          "value": "set",
+          "description": ""
+        },
+        {
+          "label": "Multiply",
+          "value": "mult",
+          "description": ""
+        },
+        {
+          "label": "Add",
+          "value": "add",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "map0op",
+      "label": "OP",
+      "description": "Configure OP for the operator",
+      "type": "string"
+    },
+    {
+      "name": "map0element",
+      "label": "Element",
+      "description": "Configure Element for the operator",
+      "type": "string"
+    },
+    {
+      "name": "map0parm",
+      "label": "Parameter",
+      "description": "Configure Parameter for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "globforce (Global Force)",
+          "value": "globforce",
+          "description": ""
+        },
+        {
+          "label": "globforcex",
+          "value": "globforcex",
+          "description": ""
+        },
+        {
+          "label": "globforcey",
+          "value": "globforcey",
+          "description": ""
+        },
+        {
+          "label": "globforcez",
+          "value": "globforcez",
+          "description": ""
+        },
+        {
+          "label": "globforcemult (Global Force Multiplier)",
+          "value": "globforcemult",
+          "description": ""
+        },
+        {
+          "label": "windforce (Wind Force)",
+          "value": "windforce",
+          "description": ""
+        },
+        {
+          "label": "windforcex",
+          "value": "windforcex",
+          "description": ""
+        },
+        {
+          "label": "windforcey",
+          "value": "windforcey",
+          "description": ""
+        },
+        {
+          "label": "windforcez",
+          "value": "windforcez",
+          "description": ""
+        },
+        {
+          "label": "windforcemult (Wind Force Multiplier)",
+          "value": "windforcemult",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "map0combineop",
+      "label": "Combine Operation",
+      "description": "Configure Combine Operation for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Set",
+          "value": "set",
+          "description": ""
+        },
+        {
+          "label": "Multiply",
+          "value": "mult",
+          "description": ""
+        },
+        {
+          "label": "Add",
+          "value": "add",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "set",
+      "label": "Set",
+      "description": "Configure Set for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Set",
+          "value": "set",
+          "description": ""
+        },
+        {
+          "label": "Multiply",
+          "value": "mult",
+          "description": ""
+        },
+        {
+          "label": "Add",
+          "value": "add",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "bypass",
+      "label": "Bypass",
+      "description": "Configure Bypass for the operator",
+      "type": "string"
+    },
+    {
+      "name": "delinputattrs",
+      "label": "Delete Input Attributes",
+      "description": "Configure Delete Input Attributes for the operator",
+      "type": "string"
+    },
+    {
+      "name": "parmcolorspace",
+      "label": "Parameter Color Space",
+      "description": "Configure Parameter Color Space for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        }
+      ]
+    },
+    {
+      "name": "srgb",
+      "label": "sRGB",
+      "description": "Configure sRGB for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        }
+      ]
+    },
+    {
+      "name": "parmreferencewhite",
+      "label": "Parameter Reference White",
+      "description": "Configure Parameter Reference White for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    },
+    {
+      "name": "default",
+      "label": "Default For Color Space",
+      "description": "Configure Default For Color Space for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    }
+  ],
+  "experimental": true,
+  "sourceFile": "Experimental-Force_POP.htm",
+  "parsedAt": "2025-08-08T03:03:55.819Z"
+}

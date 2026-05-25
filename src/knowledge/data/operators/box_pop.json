@@ -1,0 +1,827 @@
+{
+  "name": "Box POP",
+  "id": "box_pop",
+  "category": "POP",
+  "subcategory": "Experimental",
+  "description": "The Box POP creates 6-sided boxes. The box can have 8 points - one at each corner with each face sharing a point with two other faces. Or the box can have 24 points with each of the 6 faces using 4 unique points (Unique Points toggle parameter).",
+  "parameters": [
+    {
+      "name": "surftype",
+      "label": "Connectivity",
+      "description": "Configure Connectivity for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Triangles",
+          "value": "triangles",
+          "description": ""
+        },
+        {
+          "label": "Quadrilaterals",
+          "value": "quads",
+          "description": ""
+        },
+        {
+          "label": "Point Prims",
+          "value": "points",
+          "description": ""
+        },
+        {
+          "label": "Size",
+          "value": "sizex",
+          "description": ""
+        },
+        {
+          "label": "Size",
+          "value": "sizey",
+          "description": ""
+        },
+        {
+          "label": "Size",
+          "value": "sizez",
+          "description": ""
+        },
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Subdivide",
+          "value": "subdivde",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "tx",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "ty",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "tz",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "rx",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "ry",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "rz",
+          "description": ""
+        },
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Point",
+          "value": "pointNormals",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertNormals",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primNormals",
+          "description": ""
+        },
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Point",
+          "value": "pointNormals",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertNormals",
+          "description": ""
+        },
+        {
+          "label": "Box Inside",
+          "value": "boxinside",
+          "description": ""
+        },
+        {
+          "label": "Face Inside",
+          "value": "faceinside",
+          "description": ""
+        },
+        {
+          "label": "Cube Map Inside",
+          "value": "cubemapinside",
+          "description": ""
+        },
+        {
+          "label": "Box Outside",
+          "value": "boxoutside",
+          "description": ""
+        },
+        {
+          "label": "Face Outside",
+          "value": "faceoutside",
+          "description": ""
+        },
+        {
+          "label": "Cube Map Outside",
+          "value": "cubemapoutside",
+          "description": ""
+        },
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Point",
+          "value": "pointColor",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertColor",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primColor",
+          "description": ""
+        },
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        },
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    },
+    {
+      "name": "none",
+      "label": "None",
+      "description": "Configure None for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Triangles",
+          "value": "triangles",
+          "description": ""
+        },
+        {
+          "label": "Quadrilaterals",
+          "value": "quads",
+          "description": ""
+        },
+        {
+          "label": "Point Prims",
+          "value": "points",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "uniquepoints",
+      "label": "Unique Points",
+      "description": "Configure Unique Points for the operator",
+      "type": "string"
+    },
+    {
+      "name": "modifybounds",
+      "label": "Modify Bounds",
+      "description": "Configure Modify Bounds for the operator",
+      "type": "string"
+    },
+    {
+      "name": "size",
+      "label": "Size",
+      "description": "Configure Size for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Size",
+          "value": "sizex",
+          "description": ""
+        },
+        {
+          "label": "Size",
+          "value": "sizey",
+          "description": ""
+        },
+        {
+          "label": "Size",
+          "value": "sizez",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "sizex",
+      "label": "Size",
+      "description": "Configure Size for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Size",
+          "value": "sizex",
+          "description": ""
+        },
+        {
+          "label": "Size",
+          "value": "sizey",
+          "description": ""
+        },
+        {
+          "label": "Size",
+          "value": "sizez",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "scale",
+      "label": "Uniform Scale",
+      "description": "Configure Uniform Scale for the operator",
+      "type": "string"
+    },
+    {
+      "name": "anchoru",
+      "label": "Anchor U",
+      "description": "Configure Anchor U for the operator",
+      "type": "string"
+    },
+    {
+      "name": "anchorv",
+      "label": "Anchor V",
+      "description": "Configure Anchor V for the operator",
+      "type": "string"
+    },
+    {
+      "name": "anchorw",
+      "label": "Anchor W",
+      "description": "Configure Anchor W for the operator",
+      "type": "string"
+    },
+    {
+      "name": "cornertype",
+      "label": "Corner Type",
+      "description": "Configure Corner Type for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Subdivide",
+          "value": "subdivde",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "cornerradius",
+      "label": "Corner Radius",
+      "description": "Configure Corner Radius for the operator",
+      "type": "string"
+    },
+    {
+      "name": "depth",
+      "label": "Depth",
+      "description": "Configure Depth for the operator",
+      "type": "string"
+    },
+    {
+      "name": "t",
+      "label": "Translate",
+      "description": "Configure Translate for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Translate",
+          "value": "tx",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "ty",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "tz",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "tx",
+      "label": "Translate",
+      "description": "Configure Translate for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Translate",
+          "value": "tx",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "ty",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "tz",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "r",
+      "label": "Rotate",
+      "description": "Configure Rotate for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Rotate",
+          "value": "rx",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "ry",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "rz",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "rx",
+      "label": "Rotate",
+      "description": "Configure Rotate for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Rotate",
+          "value": "rx",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "ry",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "rz",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "normal",
+      "label": "Normal",
+      "description": "Configure Normal for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Point",
+          "value": "pointNormals",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertNormals",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primNormals",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "texture",
+      "label": "Texture Coordinates",
+      "description": "Configure Texture Coordinates for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Point",
+          "value": "pointNormals",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertNormals",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "mapping",
+      "label": "Mapping",
+      "description": "Configure Mapping for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Box Inside",
+          "value": "boxinside",
+          "description": ""
+        },
+        {
+          "label": "Face Inside",
+          "value": "faceinside",
+          "description": ""
+        },
+        {
+          "label": "Cube Map Inside",
+          "value": "cubemapinside",
+          "description": ""
+        },
+        {
+          "label": "Box Outside",
+          "value": "boxoutside",
+          "description": ""
+        },
+        {
+          "label": "Face Outside",
+          "value": "faceoutside",
+          "description": ""
+        },
+        {
+          "label": "Cube Map Outside",
+          "value": "cubemapoutside",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "boxinside",
+      "label": "Box Inside",
+      "description": "Configure Box Inside for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Box Inside",
+          "value": "boxinside",
+          "description": ""
+        },
+        {
+          "label": "Face Inside",
+          "value": "faceinside",
+          "description": ""
+        },
+        {
+          "label": "Cube Map Inside",
+          "value": "cubemapinside",
+          "description": ""
+        },
+        {
+          "label": "Box Outside",
+          "value": "boxoutside",
+          "description": ""
+        },
+        {
+          "label": "Face Outside",
+          "value": "faceoutside",
+          "description": ""
+        },
+        {
+          "label": "Cube Map Outside",
+          "value": "cubemapoutside",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "extenduv",
+      "label": "Extend to Corner",
+      "description": "Configure Extend to Corner for the operator",
+      "type": "string"
+    },
+    {
+      "name": "color",
+      "label": "Color",
+      "description": "Configure Color for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Point",
+          "value": "pointColor",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertColor",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primColor",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "bypass",
+      "label": "Bypass",
+      "description": "Configure Bypass for the operator",
+      "type": "string"
+    },
+    {
+      "name": "delinputattrs",
+      "label": "Delete Input Attributes",
+      "description": "Configure Delete Input Attributes for the operator",
+      "type": "string"
+    },
+    {
+      "name": "parmcolorspace",
+      "label": "Parameter Color Space",
+      "description": "Configure Parameter Color Space for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        }
+      ]
+    },
+    {
+      "name": "srgb",
+      "label": "sRGB",
+      "description": "Configure sRGB for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        }
+      ]
+    },
+    {
+      "name": "parmreferencewhite",
+      "label": "Parameter Reference White",
+      "description": "Configure Parameter Reference White for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    },
+    {
+      "name": "default",
+      "label": "Default For Color Space",
+      "description": "Configure Default For Color Space for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    }
+  ],
+  "experimental": true,
+  "sourceFile": "Experimental-Box_POP.htm",
+  "parsedAt": "2025-08-08T03:03:54.399Z"
+}

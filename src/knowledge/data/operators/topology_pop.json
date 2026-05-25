@@ -1,0 +1,1526 @@
+{
+  "name": "Topology POP",
+  "id": "topology_pop",
+  "category": "POP",
+  "subcategory": "Experimental",
+  "description": "The Topology POP gives finer control on how to combine existing points and topology (vertices and primitives), as well as their memory allocation.",
+  "parameters": [
+    {
+      "name": "render",
+      "label": "Render",
+      "description": "Configure Render for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "From Input",
+          "value": "input",
+          "description": ""
+        },
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        },
+        {
+          "label": "Input",
+          "value": "input",
+          "description": ""
+        },
+        {
+          "label": "Specify POP",
+          "value": "specpop",
+          "description": ""
+        },
+        {
+          "label": "Source Topology and Topology Info",
+          "value": "topo",
+          "description": ""
+        },
+        {
+          "label": "Source Attribute and Manual Topology Info",
+          "value": "attr",
+          "description": ""
+        },
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertex",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primitive",
+          "description": ""
+        },
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Specify POP",
+          "value": "specpop",
+          "description": ""
+        },
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertex",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primitive",
+          "description": ""
+        },
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Specify POP",
+          "value": "specpop",
+          "description": ""
+        },
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertex",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primitive",
+          "description": ""
+        },
+        {
+          "label": "Source Topology Reference",
+          "value": "ref",
+          "description": ""
+        },
+        {
+          "label": "Source Topology Copy",
+          "value": "copy",
+          "description": ""
+        },
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        },
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        },
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        },
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        },
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        },
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        },
+        {
+          "label": "Auto",
+          "value": "auto",
+          "description": ""
+        },
+        {
+          "label": "Manual",
+          "value": "manual",
+          "description": ""
+        },
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertex",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primitive",
+          "description": ""
+        },
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertex",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primitive",
+          "description": ""
+        },
+        {
+          "label": "From Input",
+          "value": "input",
+          "description": ""
+        },
+        {
+          "label": "From Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "From Parameters",
+          "value": "fromparams",
+          "description": ""
+        },
+        {
+          "label": "From Attributes",
+          "value": "fromattrs",
+          "description": ""
+        },
+        {
+          "label": "From Input",
+          "value": "input",
+          "description": ""
+        },
+        {
+          "label": "Set",
+          "value": "set",
+          "description": ""
+        },
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertex",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primitive",
+          "description": ""
+        },
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertex",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primitive",
+          "description": ""
+        },
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "Set",
+          "value": "set",
+          "description": ""
+        },
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "Set",
+          "value": "set",
+          "description": ""
+        },
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "Set",
+          "value": "set",
+          "description": ""
+        },
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "Set",
+          "value": "set",
+          "description": ""
+        },
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "Set",
+          "value": "set",
+          "description": ""
+        },
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "Set",
+          "value": "set",
+          "description": ""
+        },
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        },
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    },
+    {
+      "name": "maxpointsmode",
+      "label": "Max Points",
+      "description": "Configure Max Points for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "From Input",
+          "value": "input",
+          "description": ""
+        },
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "input",
+      "label": "From Input",
+      "description": "Configure From Input for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "From Input",
+          "value": "input",
+          "description": ""
+        },
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "maxpoints",
+      "label": "Max Points",
+      "description": "Configure Max Points for the operator",
+      "type": "string"
+    },
+    {
+      "name": "primsourcemode",
+      "label": "Primitive Source Mode",
+      "description": "Configure Primitive Source Mode for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Input",
+          "value": "input",
+          "description": ""
+        },
+        {
+          "label": "Specify POP",
+          "value": "specpop",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "primmode",
+      "label": "Primitive Mode",
+      "description": "Configure Primitive Mode for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Source Topology and Topology Info",
+          "value": "topo",
+          "description": ""
+        },
+        {
+          "label": "Source Attribute and Manual Topology Info",
+          "value": "attr",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "topo",
+      "label": "Source Topology and Topology Info",
+      "description": "Configure Source Topology and Topology Info for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Source Topology and Topology Info",
+          "value": "topo",
+          "description": ""
+        },
+        {
+          "label": "Source Attribute and Manual Topology Info",
+          "value": "attr",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "primspop",
+      "label": "Primitives POP",
+      "description": "Configure Primitives POP for the operator",
+      "type": "string"
+    },
+    {
+      "name": "pointindexattrclass",
+      "label": "Point Index Attrib Class",
+      "description": "Configure Point Index Attrib Class for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertex",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primitive",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "point",
+      "label": "Point",
+      "description": "Configure Point for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertex",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primitive",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "pointindexattrname",
+      "label": "Point Index Attrib Name",
+      "description": "Configure Point Index Attrib Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "vertattrmode",
+      "label": "Vertex Attribute Mode",
+      "description": "Configure Vertex Attribute Mode for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Specify POP",
+          "value": "specpop",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "none",
+      "label": "None",
+      "description": "Configure None for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Specify POP",
+          "value": "specpop",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "vertattrpop",
+      "label": "Vertex Attribute POP",
+      "description": "Configure Vertex Attribute POP for the operator",
+      "type": "string"
+    },
+    {
+      "name": "vertattrclass",
+      "label": "Vertex Attribute Class",
+      "description": "Configure Vertex Attribute Class for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertex",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primitive",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "primattrmode",
+      "label": "Prim Attribute Mode",
+      "description": "Configure Prim Attribute Mode for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Specify POP",
+          "value": "specpop",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "primattrpop",
+      "label": "Prim Attribute POP",
+      "description": "Configure Prim Attribute POP for the operator",
+      "type": "string"
+    },
+    {
+      "name": "primattrclass",
+      "label": "Prim Attribute Class",
+      "description": "Configure Prim Attribute Class for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertex",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primitive",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "topology",
+      "label": "Topology",
+      "description": "Configure Topology for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Source Topology Reference",
+          "value": "ref",
+          "description": ""
+        },
+        {
+          "label": "Source Topology Copy",
+          "value": "copy",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "ref",
+      "label": "Source Topology Reference",
+      "description": "Configure Source Topology Reference for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Source Topology Reference",
+          "value": "ref",
+          "description": ""
+        },
+        {
+          "label": "Source Topology Copy",
+          "value": "copy",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "maxtrianglesmode",
+      "label": "Max Triangles",
+      "description": "Configure Max Triangles for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "primsource",
+      "label": "Primitive Source",
+      "description": "Configure Primitive Source for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "maxtriangles",
+      "label": "Max Triangles",
+      "description": "Configure Max Triangles for the operator",
+      "type": "string"
+    },
+    {
+      "name": "maxquadsmode",
+      "label": "Max Quads",
+      "description": "Configure Max Quads for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "maxquads",
+      "label": "Max Quads",
+      "description": "Configure Max Quads for the operator",
+      "type": "string"
+    },
+    {
+      "name": "maxlinestripsmode",
+      "label": "Max Line Strips",
+      "description": "Configure Max Line Strips for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "maxlinestrips",
+      "label": "Max Line Strips",
+      "description": "Configure Max Line Strips for the operator",
+      "type": "string"
+    },
+    {
+      "name": "maxlsvertsmode",
+      "label": "Max Line Strip Verts",
+      "description": "Configure Max Line Strip Verts for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "maxlsverts",
+      "label": "Max Line Strip Verts",
+      "description": "Configure Max Line Strip Verts for the operator",
+      "type": "string"
+    },
+    {
+      "name": "maxlinesmode",
+      "label": "Max Lines",
+      "description": "Configure Max Lines for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "maxlines",
+      "label": "Max Lines",
+      "description": "Configure Max Lines for the operator",
+      "type": "string"
+    },
+    {
+      "name": "maxpointprimsmode",
+      "label": "Max Point Prims",
+      "description": "Configure Max Point Prims for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "maxpointprims",
+      "label": "Max Point Prims",
+      "description": "Configure Max Point Prims for the operator",
+      "type": "string"
+    },
+    {
+      "name": "lsinfofromprimsource",
+      "label": "Line Strip Info from Prim Source",
+      "description": "Configure Line Strip Info from Prim Source for the operator",
+      "type": "string"
+    },
+    {
+      "name": "lsinfoupdate",
+      "label": "Line Strip Info Update",
+      "description": "Configure Line Strip Info Update for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Auto",
+          "value": "auto",
+          "description": ""
+        },
+        {
+          "label": "Manual",
+          "value": "manual",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "auto",
+      "label": "Auto",
+      "description": "Configure Auto for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Auto",
+          "value": "auto",
+          "description": ""
+        },
+        {
+          "label": "Manual",
+          "value": "manual",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "lsinfopop",
+      "label": "Line Strip Info POP",
+      "description": "Configure Line Strip Info POP for the operator",
+      "type": "string"
+    },
+    {
+      "name": "lsinfoclass",
+      "label": "Line Strip Info Attribute",
+      "description": "Configure Line Strip Info Attribute for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertex",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primitive",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "lsinfoattr",
+      "label": "Line Strip Info Attribute",
+      "description": "Configure Line Strip Info Attribute for the operator",
+      "type": "string"
+    },
+    {
+      "name": "lsindexpop",
+      "label": "Line Strip Index per Vert POP",
+      "description": "Configure Line Strip Index per Vert POP for the operator",
+      "type": "string"
+    },
+    {
+      "name": "lsindexclass",
+      "label": "Line Strip Index per Vert Attribute",
+      "description": "Configure Line Strip Index per Vert Attribute for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertex",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primitive",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "lsindexattr",
+      "label": "Line Strip Index per Vert Attribute",
+      "description": "Configure Line Strip Index per Vert Attribute for the operator",
+      "type": "string"
+    },
+    {
+      "name": "lsmaxvertsoverride",
+      "label": "Max Verts per Line Strip",
+      "description": "Configure Max Verts per Line Strip for the operator",
+      "type": "string"
+    },
+    {
+      "name": "lsmaxverts",
+      "label": "Max Verts per Line Strip",
+      "description": "Configure Max Verts per Line Strip for the operator",
+      "type": "string"
+    },
+    {
+      "name": "pointcounttopoinfo",
+      "label": "Point Count and Topology Info",
+      "description": "Configure Point Count and Topology Info for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "From Input",
+          "value": "input",
+          "description": ""
+        },
+        {
+          "label": "From Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "From Parameters",
+          "value": "fromparams",
+          "description": ""
+        },
+        {
+          "label": "From Attributes",
+          "value": "fromattrs",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "pointcountmode",
+      "label": "Point Count",
+      "description": "Configure Point Count for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "From Input",
+          "value": "input",
+          "description": ""
+        },
+        {
+          "label": "Set",
+          "value": "set",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "pointcountpop",
+      "label": "Point Count POP",
+      "description": "Configure Point Count POP for the operator",
+      "type": "string"
+    },
+    {
+      "name": "pointcountclass",
+      "label": "Point Count Attribute",
+      "description": "Configure Point Count Attribute for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertex",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primitive",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "pointcountattr",
+      "label": "Point Count Attribute",
+      "description": "Configure Point Count Attribute for the operator",
+      "type": "string"
+    },
+    {
+      "name": "topoinfopop",
+      "label": "Topology Info POP",
+      "description": "Configure Topology Info POP for the operator",
+      "type": "string"
+    },
+    {
+      "name": "topoinfoclass",
+      "label": "Topology Info Attributes Class",
+      "description": "Configure Topology Info Attributes Class for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Point",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertex",
+          "description": ""
+        },
+        {
+          "label": "Primitive",
+          "value": "primitive",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "trianglecountmode",
+      "label": "Triangle Count",
+      "description": "Configure Triangle Count for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "Set",
+          "value": "set",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "trianglecountattr",
+      "label": "Triangle Count Attribute",
+      "description": "Configure Triangle Count Attribute for the operator",
+      "type": "string"
+    },
+    {
+      "name": "quadcountmode",
+      "label": "Quad Count",
+      "description": "Configure Quad Count for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "Set",
+          "value": "set",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "quadcountattr",
+      "label": "Quad Count Attribute",
+      "description": "Configure Quad Count Attribute for the operator",
+      "type": "string"
+    },
+    {
+      "name": "linestripcountmode",
+      "label": "Line Strip Count",
+      "description": "Configure Line Strip Count for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "Set",
+          "value": "set",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "linestripcountattr",
+      "label": "Line Strip Count Attribute",
+      "description": "Configure Line Strip Count Attribute for the operator",
+      "type": "string"
+    },
+    {
+      "name": "lsvertcountmode",
+      "label": "Line Strip Vert Count",
+      "description": "Configure Line Strip Vert Count for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "Set",
+          "value": "set",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "lsvertcountattr",
+      "label": "Line Strip Vert Count Attribute",
+      "description": "Configure Line Strip Vert Count Attribute for the operator",
+      "type": "string"
+    },
+    {
+      "name": "linecountmode",
+      "label": "Line Count",
+      "description": "Configure Line Count for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "Set",
+          "value": "set",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "linecountattr",
+      "label": "Line Count Attribute",
+      "description": "Configure Line Count Attribute for the operator",
+      "type": "string"
+    },
+    {
+      "name": "pointprimcountmode",
+      "label": "Point Prim Count",
+      "description": "Configure Point Prim Count for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Primitive Source",
+          "value": "primsource",
+          "description": ""
+        },
+        {
+          "label": "Zero",
+          "value": "zero",
+          "description": ""
+        },
+        {
+          "label": "Set",
+          "value": "set",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "pointprimcountattr",
+      "label": "Point Prim Count Attrib",
+      "description": "Configure Point Prim Count Attrib for the operator",
+      "type": "string"
+    },
+    {
+      "name": "bypass",
+      "label": "Bypass",
+      "description": "Configure Bypass for the operator",
+      "type": "string"
+    },
+    {
+      "name": "delinputattrs",
+      "label": "Delete Input Attributes",
+      "description": "Configure Delete Input Attributes for the operator",
+      "type": "string"
+    },
+    {
+      "name": "parmcolorspace",
+      "label": "Parameter Color Space",
+      "description": "Configure Parameter Color Space for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        }
+      ]
+    },
+    {
+      "name": "srgb",
+      "label": "sRGB",
+      "description": "Configure sRGB for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        }
+      ]
+    },
+    {
+      "name": "parmreferencewhite",
+      "label": "Parameter Reference White",
+      "description": "Configure Parameter Reference White for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    },
+    {
+      "name": "default",
+      "label": "Default For Color Space",
+      "description": "Configure Default For Color Space for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    }
+  ],
+  "experimental": true,
+  "sourceFile": "Experimental-Topology_POP.htm",
+  "parsedAt": "2025-08-08T03:04:00.365Z"
+}

@@ -1,0 +1,73 @@
+{
+  "id": "noise_landscape",
+  "name": "Noise Landscape",
+  "description": "A 3D terrain displaced by noise, shaded with a Phong material and rendered with an orbiting camera.",
+  "tags": ["generative", "3d", "geometry", "noise", "landscape"],
+  "difficulty": "intermediate",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "grid1",
+      "type": "gridSOP",
+      "parameters": { "rows": 120, "cols": 120, "sizex": 4, "sizey": 4 },
+      "comment": "Base mesh"
+    },
+    {
+      "name": "noise1",
+      "type": "noiseSOP",
+      "parameters": { "amp": 0.6, "period": 2 },
+      "comment": "Displaces the grid points into hills/valleys"
+    },
+    { "name": "phong1", "type": "phongMAT", "comment": "Surface shading" },
+    {
+      "name": "geo1",
+      "type": "geometryCOMP",
+      "comment": "Renders the displaced SOP (place grid1/noise1 inside this COMP, or reference via the Geometry COMP SOP)"
+    },
+    { "name": "cam1", "type": "cameraCOMP", "parameters": { "tz": 6, "ty": 3, "rx": -25 } },
+    { "name": "light1", "type": "lightCOMP", "parameters": { "tx": 4, "ty": 6, "tz": 4 } },
+    { "name": "render1", "type": "renderTOP", "comment": "Final rendered image" },
+    { "name": "out1", "type": "nullTOP" }
+  ],
+  "connections": [{ "from": "grid1", "to": "noise1" }, { "from": "render1", "to": "out1" }],
+  "parameters": [
+    {
+      "name": "geometry",
+      "node": "render1",
+      "param": "geometry",
+      "value": "geo1",
+      "description": "Geometry COMP to render."
+    },
+    {
+      "name": "camera",
+      "node": "render1",
+      "param": "camera",
+      "value": "cam1",
+      "description": "Camera COMP."
+    },
+    {
+      "name": "lights",
+      "node": "render1",
+      "param": "lights",
+      "value": "light1",
+      "description": "Light COMP(s)."
+    },
+    {
+      "name": "material",
+      "node": "geo1",
+      "param": "material",
+      "value": "phong1",
+      "description": "Material applied to the geometry."
+    },
+    {
+      "name": "terrain_height",
+      "node": "noise1",
+      "param": "amp",
+      "value": 0.6,
+      "min": 0,
+      "max": 2,
+      "label": "Terrain Height"
+    }
+  ],
+  "preview_description": "A softly lit rolling 3D terrain of noise-driven hills viewed from a slightly elevated angle."
+}

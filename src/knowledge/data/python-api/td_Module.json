@@ -1,0 +1,24 @@
+{
+  "className": "td Module",
+  "displayName": "td Module",
+  "description": "The td module contains all TouchDesigner related Python classes and utilities. All td module members and methods are imported when the application launches and are automatically available in scripts, expressions, and the textport.For additional helpful Python classes and utilities not directly related to TouchDesigner, see the Tdu Module",
+  "category": "General",
+  "fileName": "td_Module.htm",
+  "members": [
+    {
+      "name": "me",
+      "id": "content",
+      "returnType": "OP",
+      "readOnly": true,
+      "description": "me member"
+    },
+    {
+      "name": "me",
+      "id": "bodyContent",
+      "returnType": "OP",
+      "readOnly": true,
+      "description": "me member"
+    }
+  ],
+  "methods": []
+}

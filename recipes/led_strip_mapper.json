@@ -1,0 +1,32 @@
+{
+  "id": "led_strip_mapper",
+  "name": "LED Strip Mapper",
+  "description": "Samples a visual down to one pixel per LED and streams the colors out a Serial DAT to an addressable LED strip.",
+  "tags": ["led", "output", "mapping", "hardware"],
+  "difficulty": "advanced",
+  "td_version_min": "2022",
+  "nodes": [
+    { "name": "source", "type": "nullTOP", "comment": "Wire your visual into this node" },
+    { "name": "fit", "type": "fitTOP", "comment": "Resample to LED-strip resolution (e.g. 144x1)" },
+    { "name": "topto", "type": "topto", "comment": "TOP → CHOP: one sample per LED" },
+    { "name": "chopto_dat", "type": "choptoDAT", "comment": "Channels → table of color bytes" },
+    { "name": "serial", "type": "serialDAT", "comment": "Sends bytes to the LED controller" }
+  ],
+  "connections": [
+    { "from": "source", "to": "fit" },
+    { "from": "fit", "to": "topto" },
+    { "from": "topto", "to": "chopto_dat" }
+  ],
+  "parameters": [
+    {
+      "name": "led_count",
+      "node": "fit",
+      "param": "resolutionw",
+      "value": 144,
+      "min": 1,
+      "max": 1024,
+      "label": "LED Count"
+    }
+  ],
+  "preview_description": "A thin strip of sampled colors mirroring the source visual, ready to push to physical LEDs."
+}

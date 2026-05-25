@@ -1,0 +1,218 @@
+{
+  "id": "render_top",
+  "name": "Render TOP",
+  "displayName": "Render TOP",
+  "category": "TOP",
+  "subcategory": "3D Rendering",
+  "version": "Available since TouchDesigner 2019+",
+  "lastUpdated": "2026-02-21T00:00:00.000Z",
+  "sourceFile": "",
+  "url": "https://docs.derivative.ca/Render_TOP",
+  "description": "The Render TOP is the core operator for rendering 3D scenes in TouchDesigner. It rasterises a 3D scene — defined by one or more Geometry COMPs, a Camera COMP, and optional Light COMPs — into a 2D RGBA image. The scene objects are referenced by path in parameters, not through wire connections. The Render TOP outputs the final composited pixel colour including material shading, alpha, depth, and optional render passes.",
+  "summary": "Renders a 3D scene (Geometry COMPs + Camera COMP + Lights) into a 2D image. The primary bridge between the 3D COMP world and the 2D TOP world.",
+  "details": "The Render TOP uses OpenGL rasterisation. It supports multi-sample anti-aliasing (MSAA), depth buffers, multiple render targets (via Render Pass TOPs), alpha pre-multiplication, and instanced rendering. The Geometry, Camera, and Light parameters each accept paths to COMPs in the same or different networks. Lights affect all geometry in the scene unless material-side lighting is disabled.",
+  "usage": "1. Create a Geometry COMP in your network and connect SOP geometry to it.\n2. Create a Camera COMP.\n3. Create a Render TOP.\n4. Set the Render TOP Camera parameter to the Camera COMP path.\n5. Set the Geometry parameter to the Geometry COMP path (or use '*' to include all visible Geometry COMPs).\n6. The Render TOP output (port 0) is now a live 2D render of the 3D scene.\n7. Wire the output to Level TOP, Composite TOP, or Out TOP for further processing.",
+  "tips": [
+    "Set the Camera parameter to a Camera COMP path, not a wire — Render TOP has no TOP inputs.",
+    "Use '*' in the Geometry parameter to automatically render all visible Geometry COMPs in the same level.",
+    "Enable Depth Buffer to allow proper depth-sorted transparency and Render Pick CHOP interaction.",
+    "Use Render Pass TOP to extract separate render buffers (colour, depth, normals, position) from a single render call.",
+    "Anti-alias the output with the Samples parameter (1 = none, 4 = 4xMSAA). Higher samples cost GPU memory.",
+    "Use multiple Render TOPs with the same scene but different cameras for split-screen or security-camera effects.",
+    "Set Pixel Format to RGBA16Float for HDR rendering that can handle values above 1.0 for bloom post-processing.",
+    "The Render TOP respects the Display flag on Geometry COMPs — turn off Display on a Geometry COMP to exclude it from the render without removing the Geometry parameter.",
+    "Wire the Render TOP output into a Level TOP to do basic tone-mapping, or into a GLSL TOP for custom post-processing.",
+    "Use Light COMPs (Point Light, Directional Light, Environment Light) to add dynamic lighting. Reference them in the Light parameter."
+  ],
+  "warnings": [
+    "Render TOP has NO top-level wire inputs — scene objects are set via parameters (Camera, Geometry, Light).",
+    "If the Camera parameter is empty the render output is black.",
+    "Very high MSAA sample counts (8x, 16x) can exhaust GPU VRAM. Use 2x or 4x for a good quality/performance balance.",
+    "Geometry COMPs must have a Material (MAT) assigned or they will render with the default fallback material (flat grey).",
+    "Transparent materials require correct render order: render opaque geometry first, then transparent geometry in a second Render TOP or sorted pass.",
+    "Instanced rendering (via Geometry COMP instance parameters) multiplies draw call cost — use Script CHOP or a Constant CHOP to supply instance transforms."
+  ],
+  "parameters": [
+    {
+      "id": null,
+      "name": "Camera",
+      "label": "Camera",
+      "group": "Render",
+      "page": "Render",
+      "type": "string",
+      "dataType": "string",
+      "style": "OP",
+      "defaultValue": "",
+      "description": "Path to the Camera COMP that defines the viewpoint and projection for this render. Required — without a camera the output is black.",
+      "tooltip": "Path to Camera COMP",
+      "examples": ["cam1", "/project1/cam1"],
+      "commonExpressions": ["'cam1'"],
+      "isReadOnly": false,
+      "isAnimatable": false,
+      "order": 0,
+      "isValid": true
+    },
+    {
+      "id": null,
+      "name": "Geometry",
+      "label": "Geometry",
+      "group": "Render",
+      "page": "Render",
+      "type": "string",
+      "dataType": "string",
+      "style": "OP",
+      "defaultValue": "*",
+      "description": "Path(s) to Geometry COMPs to render. Use '*' to include all visible Geometry COMPs at the same network level. Multiple paths can be space-separated.",
+      "tooltip": "Geometry COMP path(s) or wildcard",
+      "examples": ["geo1", "geo1 geo2 geo3", "*"],
+      "isReadOnly": false,
+      "isAnimatable": false,
+      "order": 1,
+      "isValid": true
+    },
+    {
+      "id": null,
+      "name": "Light",
+      "label": "Light",
+      "group": "Render",
+      "page": "Render",
+      "type": "string",
+      "dataType": "string",
+      "style": "OP",
+      "defaultValue": "*",
+      "description": "Path(s) to Light COMPs. Use '*' to include all visible lights at the same network level.",
+      "tooltip": "Light COMP path(s) or wildcard",
+      "examples": ["light1", "light1 light2", "*"],
+      "isReadOnly": false,
+      "isAnimatable": false,
+      "order": 2,
+      "isValid": true
+    },
+    {
+      "id": null,
+      "name": "Samples",
+      "label": "Samples (MSAA)",
+      "group": "Render",
+      "page": "Render",
+      "type": "menu",
+      "dataType": "int",
+      "style": "Menu",
+      "defaultValue": 1,
+      "menuItems": [1, 2, 4, 8, 16],
+      "description": "Multisample Anti-Aliasing level. 1 = no MSAA. 4 = 4x MSAA (good quality, moderate GPU cost). Higher values require more VRAM.",
+      "tooltip": "MSAA sample count. Higher = smoother edges but more GPU memory.",
+      "isReadOnly": false,
+      "isAnimatable": false,
+      "order": 3,
+      "isValid": true
+    },
+    {
+      "id": null,
+      "name": "Depth Buffer",
+      "label": "Depth Buffer",
+      "group": "Render",
+      "page": "Render",
+      "type": "int",
+      "dataType": "int",
+      "style": "Toggle",
+      "defaultValue": 1,
+      "description": "Enables depth testing so closer geometry occludes farther geometry. Disable only if you control draw order explicitly and don't need depth sorting.",
+      "isReadOnly": false,
+      "isAnimatable": false,
+      "order": 4,
+      "isValid": true
+    },
+    {
+      "id": null,
+      "name": "Clear Color",
+      "label": "Clear Color",
+      "group": "Render",
+      "page": "Render",
+      "type": "float",
+      "dataType": "float",
+      "style": "RGBA",
+      "defaultValue": [0, 0, 0, 0],
+      "description": "Background colour and alpha of the render. Default is transparent black (0,0,0,0), which composites cleanly over other layers.",
+      "isReadOnly": false,
+      "isAnimatable": true,
+      "order": 5,
+      "isValid": true
+    },
+    {
+      "id": null,
+      "name": "Pixel Format",
+      "label": "Pixel Format",
+      "group": "Common",
+      "page": "Common",
+      "type": "menu",
+      "dataType": "int",
+      "style": "Menu",
+      "defaultValue": "rgba8",
+      "menuItems": ["rgba8", "rgba16", "rgba16f", "rgba32f"],
+      "description": "Output pixel format. Use RGBA16Float for HDR output. RGBA8 is fastest and uses least VRAM.",
+      "isReadOnly": false,
+      "isAnimatable": false,
+      "order": 6,
+      "isValid": true
+    }
+  ],
+  "parameterGroups": {
+    "Render": ["Camera", "Geometry", "Light", "Samples", "Depth Buffer", "Clear Color"],
+    "Common": ["Output Resolution", "Pixel Format", "Fill Viewer"]
+  },
+  "codeExamples": [],
+  "pythonExamples": [
+    {
+      "title": "Set camera and geometry parameters from Python",
+      "description": "Programmatically assign Camera and Geometry COMPs to a Render TOP.",
+      "code": "# Assign camera\nop('render1').par.camera = 'cam1'\n\n# Assign geometry (wildcard)\nop('render1').par.geometry = '*'\n\n# Assign specific geometry operators\nop('render1').par.geometry = 'geo1 geo2'\n\n# Read current render resolution\nprint(f'Render output: {op(\"render1\").width}x{op(\"render1\").height}')"
+    },
+    {
+      "title": "Multi-camera render switcher",
+      "description": "Switch between multiple cameras based on a MIDI CC or OSC message.",
+      "code": "CAMERAS = ['cam_front', 'cam_side', 'cam_top', 'cam_isometric']\n\ndef setCameraByIndex(index):\n    \"\"\"Switch Render TOP camera by index (0-3).\"\"\"\n    idx = max(0, min(index, len(CAMERAS) - 1))\n    op('render1').par.camera = CAMERAS[idx]\n    print(f'[Render] Switched to {CAMERAS[idx]}')\n\n# Call from MIDI Event DAT:\n# setCameraByIndex(int(val / 32))  # Map 0-127 to 0-3"
+    },
+    {
+      "title": "Dynamic clear colour for background",
+      "description": "Animate render background colour from a script.",
+      "code": "# In Execute DAT - onFrameStart\nimport math\n\ndef onFrameStart(frame):\n    t = absTime.seconds\n    r = op('render1')\n    r.par.bgcolorr = (math.sin(t * 0.3) + 1) * 0.5 * 0.1\n    r.par.bgcolorb = (math.cos(t * 0.2) + 1) * 0.5 * 0.1"
+    },
+    {
+      "title": "Toggle geometry visibility in render",
+      "description": "Show or hide a Geometry COMP from the render by toggling its Display flag.",
+      "code": "# Toggle a Geometry COMP in/out of the render\ndef toggleGeo(geoName):\n    geo = op(geoName)\n    geo.display = not geo.display\n\n# Example: hide particles during a scene transition\ntoggleGeo('geo_particles')"
+    }
+  ],
+  "expressions": [
+    "op('render1').par.camera = 'cam1'",
+    "op('render1').par.geometry = '*'",
+    "op('render1').width",
+    "op('render1').height"
+  ],
+  "commonInputs": [],
+  "commonOutputs": [
+    { "op": "Level TOP",            "reason": "Post-process brightness/contrast of the 3D render" },
+    { "op": "Blur TOP",             "reason": "Depth-of-field or motion blur simulation" },
+    { "op": "Composite TOP",        "reason": "Overlay 2D HUD elements on top of the 3D render" },
+    { "op": "GLSL TOP",             "reason": "Custom post-processing (bloom, SSAO, colour grading)" },
+    { "op": "Null TOP",             "reason": "Named output reference" },
+    { "op": "Video Device Out TOP", "reason": "Send rendered output directly to a display" }
+  ],
+  "relatedOperators": [
+    "Geometry COMP", "Camera COMP", "Light COMP", "Phong MAT", "PBR MAT", "GLSL MAT",
+    "Render Pass TOP", "Render Pick CHOP", "Level TOP", "Composite TOP"
+  ],
+  "workflowPatterns": ["3d-render-pipeline", "live-performance", "data-visualization"],
+  "keywords": [
+    "render", "3d", "rasterize", "opengl", "camera", "geometry", "lighting",
+    "material", "scene", "msaa", "anti-alias", "depth buffer", "hdr", "texture",
+    "viewport", "projection", "frustum", "instancing"
+  ],
+  "tags": ["TOP", "3D Rendering", "Render TOP", "opengl", "camera", "geometry"],
+  "searchWeight": 2,
+  "contentHash": "",
+  "processingDate": "2026-02-21T00:00:00.000Z",
+  "processingVersion": "2.10.0",
+  "isValid": true,
+  "validationErrors": []
+}

@@ -1,0 +1,62 @@
+{
+  "className": "Pane",
+  "displayName": "Pane",
+  "description": "Network editor pane control",
+  "category": "Interface",
+  "url": "https://docs.derivative.ca/Pane_Class",
+  "members": [
+    {
+      "name": "owner",
+      "type": "COMP",
+      "description": "Component displayed in pane",
+      "readonly": false
+    },
+    {
+      "name": "ratio",
+      "type": "float",
+      "description": "Split ratio for pane",
+      "readonly": false
+    },
+    {
+      "name": "type",
+      "type": "str",
+      "description": "Pane type",
+      "readonly": false
+    }
+  ],
+  "methods": [
+    {
+      "name": "changeType",
+      "description": "Change pane to different type",
+      "signature": "changeType(paneType: str) -> Pane",
+      "parameters": [
+        {
+          "name": "paneType",
+          "type": "str",
+          "description": "New pane type (networkeditor, panel, etc)"
+        }
+      ],
+      "returns": "Modified Pane object"
+    },
+    {
+      "name": "home",
+      "description": "Home view to operator(s)",
+      "signature": "home(zoom: bool = True, op: OP = None) -> None",
+      "parameters": [
+        {
+          "name": "zoom",
+          "type": "bool",
+          "description": "Also adjust zoom"
+        },
+        {
+          "name": "op",
+          "type": "OP",
+          "description": "Specific op to home to"
+        }
+      ],
+      "returns": "None"
+    }
+  ],
+  "examples": [],
+  "source": "stub"
+}

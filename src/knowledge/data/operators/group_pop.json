@@ -1,0 +1,1423 @@
+{
+  "name": "Group POP",
+  "id": "group_pop",
+  "category": "POP",
+  "subcategory": "Experimental",
+  "description": "The Group POP lets you put sets of points or primitives into named groups so that you can then use the groups in other POPs, such as the Transform POP to affect only the elements of particular groups.",
+  "parameters": [
+    {
+      "name": "P(0) > 0",
+      "label": "Group Name",
+      "description": "Configure Group Name for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Primitives",
+          "value": "primitive",
+          "description": ""
+        },
+        {
+          "label": "Points",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "And",
+          "value": "and",
+          "description": ""
+        },
+        {
+          "label": "Or",
+          "value": "or",
+          "description": ""
+        },
+        {
+          "label": "Exclusive Or",
+          "value": "xor",
+          "description": ""
+        },
+        {
+          "label": "Not And",
+          "value": "nand",
+          "description": ""
+        },
+        {
+          "label": "Not Or",
+          "value": "nor",
+          "description": ""
+        },
+        {
+          "label": "<",
+          "value": "lt",
+          "description": ""
+        },
+        {
+          "label": "<=",
+          "value": "lte",
+          "description": ""
+        },
+        {
+          "label": ">",
+          "value": "gt",
+          "description": ""
+        },
+        {
+          "label": ">=",
+          "value": "gte",
+          "description": ""
+        },
+        {
+          "label": "==",
+          "value": "eq",
+          "description": ""
+        },
+        {
+          "label": "!=",
+          "value": "ne",
+          "description": ""
+        },
+        {
+          "label": "And",
+          "value": "and",
+          "description": ""
+        },
+        {
+          "label": "Or",
+          "value": "or",
+          "description": ""
+        },
+        {
+          "label": "Exclusive Or",
+          "value": "xor",
+          "description": ""
+        },
+        {
+          "label": "Not And",
+          "value": "nand",
+          "description": ""
+        },
+        {
+          "label": "Not Or",
+          "value": "nor",
+          "description": ""
+        },
+        {
+          "label": "*",
+          "value": "*",
+          "description": ""
+        },
+        {
+          "label": "*:4",
+          "value": "*:4",
+          "description": ""
+        },
+        {
+          "label": "0-50",
+          "value": "0-50",
+          "description": "50 0-50 -"
+        },
+        {
+          "label": "0-50:2",
+          "value": "0-50:2",
+          "description": "50:2 0-50:2 -"
+        },
+        {
+          "label": "And",
+          "value": "and",
+          "description": ""
+        },
+        {
+          "label": "Or",
+          "value": "or",
+          "description": ""
+        },
+        {
+          "label": "Exclusive Or",
+          "value": "xor",
+          "description": ""
+        },
+        {
+          "label": "Not And",
+          "value": "nand",
+          "description": ""
+        },
+        {
+          "label": "Not Or",
+          "value": "nor",
+          "description": ""
+        },
+        {
+          "label": "And",
+          "value": "and",
+          "description": ""
+        },
+        {
+          "label": "Or",
+          "value": "or",
+          "description": ""
+        },
+        {
+          "label": "Exclusive Or",
+          "value": "xor",
+          "description": ""
+        },
+        {
+          "label": "Not And",
+          "value": "nand",
+          "description": ""
+        },
+        {
+          "label": "Not Or",
+          "value": "nor",
+          "description": ""
+        },
+        {
+          "label": "Bounding Box",
+          "value": "usebbox",
+          "description": ""
+        },
+        {
+          "label": "Bounding Sphere",
+          "value": "usebsphere",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "bound0translatex",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "bound0translatey",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "bound0translatez",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "bound0rotatex",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "bound0rotatey",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "bound0rotatez",
+          "description": ""
+        },
+        {
+          "label": "Scale",
+          "value": "bound0scalex",
+          "description": ""
+        },
+        {
+          "label": "Scale",
+          "value": "bound0scaley",
+          "description": ""
+        },
+        {
+          "label": "Scale",
+          "value": "bound0scalez",
+          "description": ""
+        },
+        {
+          "label": "Primitive to Point Group",
+          "value": "topoint",
+          "description": ""
+        },
+        {
+          "label": "Point to Primitive Group",
+          "value": "toprim",
+          "description": ""
+        },
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        },
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    },
+    {
+      "name": "grname",
+      "label": "Group Name",
+      "description": "Configure Group Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "entity",
+      "label": "Entity",
+      "description": "Configure Entity for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Primitives",
+          "value": "primitive",
+          "description": ""
+        },
+        {
+          "label": "Points",
+          "value": "point",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "primitive",
+      "label": "Primitives",
+      "description": "Configure Primitives for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Primitives",
+          "value": "primitive",
+          "description": ""
+        },
+        {
+          "label": "Points",
+          "value": "point",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "debugcolor",
+      "label": "Debug Color",
+      "description": "Configure Debug Color for the operator",
+      "type": "string"
+    },
+    {
+      "name": "attr",
+      "label": "Attribute",
+      "description": "Configure Attribute for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "And",
+          "value": "and",
+          "description": ""
+        },
+        {
+          "label": "Or",
+          "value": "or",
+          "description": ""
+        },
+        {
+          "label": "Exclusive Or",
+          "value": "xor",
+          "description": ""
+        },
+        {
+          "label": "Not And",
+          "value": "nand",
+          "description": ""
+        },
+        {
+          "label": "Not Or",
+          "value": "nor",
+          "description": ""
+        },
+        {
+          "label": "<",
+          "value": "lt",
+          "description": ""
+        },
+        {
+          "label": "<=",
+          "value": "lte",
+          "description": ""
+        },
+        {
+          "label": ">",
+          "value": "gt",
+          "description": ""
+        },
+        {
+          "label": ">=",
+          "value": "gte",
+          "description": ""
+        },
+        {
+          "label": "==",
+          "value": "eq",
+          "description": ""
+        },
+        {
+          "label": "!=",
+          "value": "ne",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "attr0combine",
+      "label": "Combine",
+      "description": "Configure Combine for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "And",
+          "value": "and",
+          "description": ""
+        },
+        {
+          "label": "Or",
+          "value": "or",
+          "description": ""
+        },
+        {
+          "label": "Exclusive Or",
+          "value": "xor",
+          "description": ""
+        },
+        {
+          "label": "Not And",
+          "value": "nand",
+          "description": ""
+        },
+        {
+          "label": "Not Or",
+          "value": "nor",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "and",
+      "label": "And",
+      "description": "Configure And for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "And",
+          "value": "and",
+          "description": ""
+        },
+        {
+          "label": "Or",
+          "value": "or",
+          "description": ""
+        },
+        {
+          "label": "Exclusive Or",
+          "value": "xor",
+          "description": ""
+        },
+        {
+          "label": "Not And",
+          "value": "nand",
+          "description": ""
+        },
+        {
+          "label": "Not Or",
+          "value": "nor",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "attr0inattr",
+      "label": "Attribute",
+      "description": "Configure Attribute for the operator",
+      "type": "string"
+    },
+    {
+      "name": "attr0func",
+      "label": "Function",
+      "description": "Configure Function for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "<",
+          "value": "lt",
+          "description": ""
+        },
+        {
+          "label": "<=",
+          "value": "lte",
+          "description": ""
+        },
+        {
+          "label": ">",
+          "value": "gt",
+          "description": ""
+        },
+        {
+          "label": ">=",
+          "value": "gte",
+          "description": ""
+        },
+        {
+          "label": "==",
+          "value": "eq",
+          "description": ""
+        },
+        {
+          "label": "!=",
+          "value": "ne",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "lt",
+      "label": "<",
+      "description": "Configure < for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "<",
+          "value": "lt",
+          "description": ""
+        },
+        {
+          "label": "<=",
+          "value": "lte",
+          "description": ""
+        },
+        {
+          "label": ">",
+          "value": "gt",
+          "description": ""
+        },
+        {
+          "label": ">=",
+          "value": "gte",
+          "description": ""
+        },
+        {
+          "label": "==",
+          "value": "eq",
+          "description": ""
+        },
+        {
+          "label": "!=",
+          "value": "ne",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "attr0value",
+      "label": "Value",
+      "description": "Configure Value for the operator",
+      "type": "string"
+    },
+    {
+      "name": "attr0invert",
+      "label": "Invert",
+      "description": "Configure Invert for the operator",
+      "type": "string"
+    },
+    {
+      "name": "thinenabled",
+      "label": "Enabled",
+      "description": "Configure Enabled for the operator",
+      "type": "string"
+    },
+    {
+      "name": "thinoutrange",
+      "label": "Thin Out Range",
+      "description": "Configure Thin Out Range for the operator",
+      "type": "string"
+    },
+    {
+      "name": "thinrangestart",
+      "label": "Thin Range Start",
+      "description": "Configure Thin Range Start for the operator",
+      "type": "string"
+    },
+    {
+      "name": "thinrangelength",
+      "label": "Thin Range Length",
+      "description": "Configure Thin Range Length for the operator",
+      "type": "string"
+    },
+    {
+      "name": "thinstep",
+      "label": "Thin Step",
+      "description": "Configure Thin Step for the operator",
+      "type": "string"
+    },
+    {
+      "name": "thinrandom",
+      "label": "Thin Random",
+      "description": "Configure Thin Random for the operator",
+      "type": "string"
+    },
+    {
+      "name": "thinrandomseed",
+      "label": "Thin Random Seed",
+      "description": "Configure Thin Random Seed for the operator",
+      "type": "string"
+    },
+    {
+      "name": "thininvert",
+      "label": "Invert",
+      "description": "Configure Invert for the operator",
+      "type": "string"
+    },
+    {
+      "name": "pattern",
+      "label": "Pattern",
+      "description": "Configure Pattern for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "And",
+          "value": "and",
+          "description": ""
+        },
+        {
+          "label": "Or",
+          "value": "or",
+          "description": ""
+        },
+        {
+          "label": "Exclusive Or",
+          "value": "xor",
+          "description": ""
+        },
+        {
+          "label": "Not And",
+          "value": "nand",
+          "description": ""
+        },
+        {
+          "label": "Not Or",
+          "value": "nor",
+          "description": ""
+        },
+        {
+          "label": "*",
+          "value": "*",
+          "description": ""
+        },
+        {
+          "label": "*:4",
+          "value": "*:4",
+          "description": ""
+        },
+        {
+          "label": "0-50",
+          "value": "0-50",
+          "description": "50 0-50 -"
+        },
+        {
+          "label": "0-50:2",
+          "value": "0-50:2",
+          "description": "50:2 0-50:2 -"
+        }
+      ]
+    },
+    {
+      "name": "pattern0combine",
+      "label": "Combine",
+      "description": "Configure Combine for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "And",
+          "value": "and",
+          "description": ""
+        },
+        {
+          "label": "Or",
+          "value": "or",
+          "description": ""
+        },
+        {
+          "label": "Exclusive Or",
+          "value": "xor",
+          "description": ""
+        },
+        {
+          "label": "Not And",
+          "value": "nand",
+          "description": ""
+        },
+        {
+          "label": "Not Or",
+          "value": "nor",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "pattern0pattern",
+      "label": "Pattern",
+      "description": "Configure Pattern for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "*",
+          "value": "*",
+          "description": ""
+        },
+        {
+          "label": "*:4",
+          "value": "*:4",
+          "description": ""
+        },
+        {
+          "label": "0-50",
+          "value": "0-50",
+          "description": "50 0-50 -"
+        },
+        {
+          "label": "0-50:2",
+          "value": "0-50:2",
+          "description": "50:2 0-50:2 -"
+        }
+      ]
+    },
+    {
+      "name": "*",
+      "label": "*",
+      "description": "Configure * for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "*",
+          "value": "*",
+          "description": ""
+        },
+        {
+          "label": "*:4",
+          "value": "*:4",
+          "description": ""
+        },
+        {
+          "label": "0-50",
+          "value": "0-50",
+          "description": "50 0-50 -"
+        },
+        {
+          "label": "0-50:2",
+          "value": "0-50:2",
+          "description": "50:2 0-50:2 -"
+        }
+      ]
+    },
+    {
+      "name": "pattern0invert",
+      "label": "Invert",
+      "description": "Configure Invert for the operator",
+      "type": "string"
+    },
+    {
+      "name": "group",
+      "label": "Group",
+      "description": "Configure Group for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "And",
+          "value": "and",
+          "description": ""
+        },
+        {
+          "label": "Or",
+          "value": "or",
+          "description": ""
+        },
+        {
+          "label": "Exclusive Or",
+          "value": "xor",
+          "description": ""
+        },
+        {
+          "label": "Not And",
+          "value": "nand",
+          "description": ""
+        },
+        {
+          "label": "Not Or",
+          "value": "nor",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "group0combine",
+      "label": "Combine",
+      "description": "Configure Combine for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "And",
+          "value": "and",
+          "description": ""
+        },
+        {
+          "label": "Or",
+          "value": "or",
+          "description": ""
+        },
+        {
+          "label": "Exclusive Or",
+          "value": "xor",
+          "description": ""
+        },
+        {
+          "label": "Not And",
+          "value": "nand",
+          "description": ""
+        },
+        {
+          "label": "Not Or",
+          "value": "nor",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "group0name",
+      "label": "Group",
+      "description": "Configure Group for the operator",
+      "type": "string"
+    },
+    {
+      "name": "group0invert",
+      "label": "Invert",
+      "description": "Configure Invert for the operator",
+      "type": "string"
+    },
+    {
+      "name": "bound",
+      "label": "Bound",
+      "description": "Configure Bound for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "And",
+          "value": "and",
+          "description": ""
+        },
+        {
+          "label": "Or",
+          "value": "or",
+          "description": ""
+        },
+        {
+          "label": "Exclusive Or",
+          "value": "xor",
+          "description": ""
+        },
+        {
+          "label": "Not And",
+          "value": "nand",
+          "description": ""
+        },
+        {
+          "label": "Not Or",
+          "value": "nor",
+          "description": ""
+        },
+        {
+          "label": "Bounding Box",
+          "value": "usebbox",
+          "description": ""
+        },
+        {
+          "label": "Bounding Sphere",
+          "value": "usebsphere",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "bound0translatex",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "bound0translatey",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "bound0translatez",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "bound0rotatex",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "bound0rotatey",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "bound0rotatez",
+          "description": ""
+        },
+        {
+          "label": "Scale",
+          "value": "bound0scalex",
+          "description": ""
+        },
+        {
+          "label": "Scale",
+          "value": "bound0scaley",
+          "description": ""
+        },
+        {
+          "label": "Scale",
+          "value": "bound0scalez",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "bound0combine",
+      "label": "Combine",
+      "description": "Configure Combine for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "And",
+          "value": "and",
+          "description": ""
+        },
+        {
+          "label": "Or",
+          "value": "or",
+          "description": ""
+        },
+        {
+          "label": "Exclusive Or",
+          "value": "xor",
+          "description": ""
+        },
+        {
+          "label": "Not And",
+          "value": "nand",
+          "description": ""
+        },
+        {
+          "label": "Not Or",
+          "value": "nor",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "bound0inattr",
+      "label": "Attribute",
+      "description": "Configure Attribute for the operator",
+      "type": "string"
+    },
+    {
+      "name": "bound0type",
+      "label": "Bounding Type",
+      "description": "Configure Bounding Type for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Bounding Box",
+          "value": "usebbox",
+          "description": ""
+        },
+        {
+          "label": "Bounding Sphere",
+          "value": "usebsphere",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "usebbox",
+      "label": "Bounding Box",
+      "description": "Configure Bounding Box for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Bounding Box",
+          "value": "usebbox",
+          "description": ""
+        },
+        {
+          "label": "Bounding Sphere",
+          "value": "usebsphere",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "bound0translate",
+      "label": "Translate",
+      "description": "Configure Translate for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Translate",
+          "value": "bound0translatex",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "bound0translatey",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "bound0translatez",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "bound0translatex",
+      "label": "Translate",
+      "description": "Configure Translate for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Translate",
+          "value": "bound0translatex",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "bound0translatey",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "bound0translatez",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "bound0rotate",
+      "label": "Rotate",
+      "description": "Configure Rotate for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Rotate",
+          "value": "bound0rotatex",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "bound0rotatey",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "bound0rotatez",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "bound0rotatex",
+      "label": "Rotate",
+      "description": "Configure Rotate for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Rotate",
+          "value": "bound0rotatex",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "bound0rotatey",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "bound0rotatez",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "bound0scale",
+      "label": "Scale",
+      "description": "Configure Scale for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Scale",
+          "value": "bound0scalex",
+          "description": ""
+        },
+        {
+          "label": "Scale",
+          "value": "bound0scaley",
+          "description": ""
+        },
+        {
+          "label": "Scale",
+          "value": "bound0scalez",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "bound0scalex",
+      "label": "Scale",
+      "description": "Configure Scale for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Scale",
+          "value": "bound0scalex",
+          "description": ""
+        },
+        {
+          "label": "Scale",
+          "value": "bound0scaley",
+          "description": ""
+        },
+        {
+          "label": "Scale",
+          "value": "bound0scalez",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "bound0invert",
+      "label": "Invert",
+      "description": "Configure Invert for the operator",
+      "type": "string"
+    },
+    {
+      "name": "cnvtype",
+      "label": "Convert Type",
+      "description": "Configure Convert Type for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Primitive to Point Group",
+          "value": "topoint",
+          "description": ""
+        },
+        {
+          "label": "Point to Primitive Group",
+          "value": "toprim",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "topoint",
+      "label": "Primitive to Point Group",
+      "description": "Configure Primitive to Point Group for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Primitive to Point Group",
+          "value": "topoint",
+          "description": ""
+        },
+        {
+          "label": "Point to Primitive Group",
+          "value": "toprim",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "convertg",
+      "label": "Convert Group",
+      "description": "Configure Convert Group for the operator",
+      "type": "string"
+    },
+    {
+      "name": "cnvtname",
+      "label": "Convert Name",
+      "description": "Configure Convert Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "preserve",
+      "label": "Preserve Original",
+      "description": "Configure Preserve Original for the operator",
+      "type": "string"
+    },
+    {
+      "name": "oldname",
+      "label": "Old Group Name",
+      "description": "Configure Old Group Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "newname",
+      "label": "New Group Name",
+      "description": "Configure New Group Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "deletename",
+      "label": "Delete Group",
+      "description": "Configure Delete Group for the operator",
+      "type": "string"
+    },
+    {
+      "name": "bypass",
+      "label": "Bypass",
+      "description": "Configure Bypass for the operator",
+      "type": "string"
+    },
+    {
+      "name": "delinputattrs",
+      "label": "Delete Input Attributes",
+      "description": "Configure Delete Input Attributes for the operator",
+      "type": "string"
+    },
+    {
+      "name": "parmcolorspace",
+      "label": "Parameter Color Space",
+      "description": "Configure Parameter Color Space for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        }
+      ]
+    },
+    {
+      "name": "srgb",
+      "label": "sRGB",
+      "description": "Configure sRGB for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        }
+      ]
+    },
+    {
+      "name": "parmreferencewhite",
+      "label": "Parameter Reference White",
+      "description": "Configure Parameter Reference White for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    },
+    {
+      "name": "default",
+      "label": "Default For Color Space",
+      "description": "Configure Default For Color Space for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    }
+  ],
+  "experimental": true,
+  "sourceFile": "Experimental-Group_POP.htm",
+  "parsedAt": "2025-08-08T03:03:56.372Z"
+}

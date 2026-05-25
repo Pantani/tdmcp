@@ -1,0 +1,797 @@
+{
+  "className": "Page",
+  "displayName": "Page Class",
+  "description": "The Page Class describes the list of custom parameters contained on a page. Pages are created on components via the COMP Class. See also the guide Custom Parameters.",
+  "category": "General",
+  "fileName": "Page_Class.htm",
+  "members": [
+    {
+      "name": "name",
+      "id": "content",
+      "returnType": "bool",
+      "readOnly": true,
+      "description": "name member"
+    },
+    {
+      "name": "name",
+      "id": "bodyContent",
+      "returnType": "bool",
+      "readOnly": true,
+      "description": "name member"
+    }
+  ],
+  "methods": [
+    {
+      "name": "appendOP",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendOP(name, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "appendCOMP",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendCOMP(name, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "appendObject",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendObject(name, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "appendPanelCOMP",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendPanelCOMP(name, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "appendTOP",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendTOP(name, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "appendCHOP",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendCHOP(name, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "appendSOP",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendSOP(name, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "appendMAT",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendMAT(name, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "appendDAT",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendDAT(name, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "appendInt",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "size=1",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendInt(name, label=None, size=1, order=None, replace=True)"
+    },
+    {
+      "name": "appendFloat",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "size=1",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendFloat(name, label=None, size=1, order=None, replace=True)"
+    },
+    {
+      "name": "appendXY",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendXY(name, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "appendXYZ",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendXYZ(name, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "appendXYZW",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendXYZW(name, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "appendWH",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendWH(name, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "appendUV",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendUV(name, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "appendUVW",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendUVW(name, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "appendRGB",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendRGB(name, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "appendRGBA",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendRGBA(name, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "appendStr",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendStr(name, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "appendStrMenu",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendStrMenu(name, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "appendMenu",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendMenu(name, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "appendFile",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendFile(name, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "appendFileSave",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendFileSave(name, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "appendFolder",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendFolder(name, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "appendPulse",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendPulse(name, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "appendMomentary",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendMomentary(name, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "appendToggle",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendToggle(name, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "appendPython",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendPython(name, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "appendPar",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "par=None",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendPar(name, par=None, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "appendHeader",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendHeader(name, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "appendSequence",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "label=None",
+          "type": "Any"
+        },
+        {
+          "name": "order=None",
+          "type": "Any"
+        },
+        {
+          "name": "replace=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "ParGroup  :",
+      "signature": "appendSequence(name, label=None, order=None, replace=True)"
+    },
+    {
+      "name": "destroy",
+      "parameters": [],
+      "returns": "None :",
+      "signature": "destroy()"
+    },
+    {
+      "name": "sort",
+      "parameters": [
+        {
+          "name": "*pars",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "sort(*pars)"
+    },
+    {
+      "name": "resetPars",
+      "parameters": [],
+      "returns": "bool :",
+      "signature": "resetPars()"
+    }
+  ],
+  "enhanced": true
+}

@@ -1,0 +1,621 @@
+{
+  "className": "MAT",
+  "displayName": "MAT Class",
+  "description": "A MAT describes a reference to a MAT operator.",
+  "category": "Operator",
+  "fileName": "MAT_Class.htm",
+  "members": [
+    {
+      "name": "isMAT",
+      "id": "content",
+      "returnType": "bool",
+      "readOnly": true,
+      "description": "isMAT member"
+    },
+    {
+      "name": "isMAT",
+      "id": "bodyContent",
+      "returnType": "bool",
+      "readOnly": true,
+      "description": "isMAT member"
+    }
+  ],
+  "methods": [
+    {
+      "name": "op",
+      "parameters": [
+        {
+          "name": "pattern1",
+          "type": "Any"
+        },
+        {
+          "name": "pattern2...",
+          "type": "Any"
+        },
+        {
+          "name": "includeUtility=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "OP  or None ",
+      "signature": "op(pattern1, pattern2..., includeUtility=False)"
+    },
+    {
+      "name": "op",
+      "parameters": [
+        {
+          "name": "pattern1",
+          "type": "Any"
+        },
+        {
+          "name": "pattern2...",
+          "type": "Any"
+        },
+        {
+          "name": "includeUtility=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "OP  ",
+      "signature": "op(pattern1, pattern2..., includeUtility=False)"
+    },
+    {
+      "name": "parent",
+      "parameters": [
+        {
+          "name": "n",
+          "type": "Any"
+        }
+      ],
+      "returns": "OP or None ",
+      "signature": "parent(n)"
+    },
+    {
+      "name": "pars",
+      "parameters": [
+        {
+          "name": "pattern",
+          "type": "Any"
+        }
+      ],
+      "returns": "list :",
+      "signature": "pars(pattern)"
+    },
+    {
+      "name": "cook",
+      "parameters": [
+        {
+          "name": "force=False",
+          "type": "Any"
+        },
+        {
+          "name": "recurse=False",
+          "type": "Any"
+        },
+        {
+          "name": "includeUtility=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "cook(force=False, recurse=False, includeUtility=False)"
+    },
+    {
+      "name": "copyParameters",
+      "parameters": [
+        {
+          "name": "OP",
+          "type": "Any"
+        },
+        {
+          "name": "custom=True",
+          "type": "Any"
+        },
+        {
+          "name": "builtin=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "copyParameters( OP , custom=True, builtin=True)"
+    },
+    {
+      "name": "changeType",
+      "parameters": [
+        {
+          "name": "OPtype",
+          "type": "Any"
+        }
+      ],
+      "returns": "OP  :",
+      "signature": "changeType(OPtype)"
+    },
+    {
+      "name": "dependenciesTo",
+      "parameters": [
+        {
+          "name": "OP",
+          "type": "Any"
+        }
+      ],
+      "returns": "list :",
+      "signature": "dependenciesTo( OP )"
+    },
+    {
+      "name": "evalExpression",
+      "parameters": [
+        {
+          "name": "str",
+          "type": "Any"
+        }
+      ],
+      "returns": "value :",
+      "signature": "evalExpression(str)"
+    },
+    {
+      "name": "destroy",
+      "parameters": [],
+      "returns": "None :",
+      "signature": "destroy()"
+    },
+    {
+      "name": "var",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "search=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "str :",
+      "signature": "var(name, search=True)"
+    },
+    {
+      "name": "openMenu",
+      "parameters": [
+        {
+          "name": "x=None",
+          "type": "Any"
+        },
+        {
+          "name": "y=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "openMenu(x=None, y=None)"
+    },
+    {
+      "name": "relativePath",
+      "parameters": [
+        {
+          "name": "OP",
+          "type": "Any"
+        }
+      ],
+      "returns": "str :",
+      "signature": "relativePath( OP )"
+    },
+    {
+      "name": "setInputs",
+      "parameters": [
+        {
+          "name": "listOfOPs",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "setInputs(listOfOPs)"
+    },
+    {
+      "name": "shortcutPath",
+      "parameters": [
+        {
+          "name": "OP",
+          "type": "Any"
+        },
+        {
+          "name": "toParName=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "str :",
+      "signature": "shortcutPath( OP , toParName=None)"
+    },
+    {
+      "name": "ops",
+      "parameters": [
+        {
+          "name": "pattern1",
+          "type": "Any"
+        },
+        {
+          "name": "pattern2..",
+          "type": "Any"
+        },
+        {
+          "name": "includeUtility=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "list of OPs :",
+      "signature": "ops(pattern1, pattern2.., includeUtility=False)"
+    },
+    {
+      "name": "resetPars",
+      "parameters": [
+        {
+          "name": "parNames='*'",
+          "type": "Any"
+        },
+        {
+          "name": "parGroupNames='*'",
+          "type": "Any"
+        },
+        {
+          "name": "pageNames='*'",
+          "type": "Any"
+        },
+        {
+          "name": "includeBuiltin=True",
+          "type": "Any"
+        },
+        {
+          "name": "includeCustom=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "bool :",
+      "signature": "resetPars(parNames='*', parGroupNames='*', pageNames='*', includeBuiltin=True, includeCustom=True)"
+    },
+    {
+      "name": "addScriptError",
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "addScriptError(msg)"
+    },
+    {
+      "name": "addError",
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "addError(msg)"
+    },
+    {
+      "name": "addWarning",
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "addWarning(msg)"
+    },
+    {
+      "name": "errors",
+      "parameters": [
+        {
+          "name": "recurse=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "str :",
+      "signature": "errors(recurse=False)"
+    },
+    {
+      "name": "warnings",
+      "parameters": [
+        {
+          "name": "recurse=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "str :",
+      "signature": "warnings(recurse=False)"
+    },
+    {
+      "name": "scriptErrors",
+      "parameters": [
+        {
+          "name": "recurse=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "str :",
+      "signature": "scriptErrors(recurse=False)"
+    },
+    {
+      "name": "clearScriptErrors",
+      "parameters": [
+        {
+          "name": "recurse=False",
+          "type": "Any"
+        },
+        {
+          "name": "error='*'",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "clearScriptErrors(recurse=False, error='*')"
+    },
+    {
+      "name": "childrenCPUMemory",
+      "parameters": [],
+      "returns": "int :",
+      "signature": "childrenCPUMemory()"
+    },
+    {
+      "name": "childrenGPUMemory",
+      "parameters": [],
+      "returns": "int :",
+      "signature": "childrenGPUMemory()"
+    },
+    {
+      "name": "resetNodeSize",
+      "parameters": [],
+      "returns": "None :",
+      "signature": "resetNodeSize()"
+    },
+    {
+      "name": "closeViewer",
+      "parameters": [
+        {
+          "name": "topMost=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "closeViewer(topMost=False)"
+    },
+    {
+      "name": "openViewer",
+      "parameters": [
+        {
+          "name": "unique=False",
+          "type": "Any"
+        },
+        {
+          "name": "borders=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "openViewer(unique=False, borders=True)"
+    },
+    {
+      "name": "resetViewer",
+      "parameters": [
+        {
+          "name": "recurse=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "resetViewer(recurse=False)"
+    },
+    {
+      "name": "openParameters",
+      "parameters": [],
+      "returns": "None :",
+      "signature": "openParameters()"
+    },
+    {
+      "name": "fetch",
+      "parameters": [
+        {
+          "name": "key",
+          "type": "Any"
+        },
+        {
+          "name": "default",
+          "type": "Any"
+        },
+        {
+          "name": "search=True",
+          "type": "Any"
+        },
+        {
+          "name": "storeDefault=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "value :",
+      "signature": "fetch(key, default, search=True, storeDefault=False)"
+    },
+    {
+      "name": "fetchOwner",
+      "parameters": [
+        {
+          "name": "key",
+          "type": "Any"
+        }
+      ],
+      "returns": "OP  :",
+      "signature": "fetchOwner(key)"
+    },
+    {
+      "name": "store",
+      "parameters": [
+        {
+          "name": "key",
+          "type": "Any"
+        },
+        {
+          "name": "value",
+          "type": "Any"
+        }
+      ],
+      "returns": "value :",
+      "signature": "store(key, value)"
+    },
+    {
+      "name": "unstore",
+      "parameters": [
+        {
+          "name": "keys1",
+          "type": "Any"
+        },
+        {
+          "name": "keys2..",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "unstore(keys1, keys2..)"
+    },
+    {
+      "name": "storeStartupValue",
+      "parameters": [
+        {
+          "name": "key",
+          "type": "Any"
+        },
+        {
+          "name": "value",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "storeStartupValue(key, value)"
+    },
+    {
+      "name": "unstoreStartupValue",
+      "parameters": [
+        {
+          "name": "keys1",
+          "type": "Any"
+        },
+        {
+          "name": "keys2..",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "unstoreStartupValue(keys1, keys2..)"
+    },
+    {
+      "name": "__getstate__",
+      "parameters": [],
+      "returns": "dict :",
+      "signature": "__getstate__()"
+    },
+    {
+      "name": "__setstate__",
+      "parameters": [],
+      "returns": "dict :",
+      "signature": "__setstate__()"
+    },
+    {
+      "name": "includeUtility",
+      "parameters": [
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "if True, allow  Utility nodes  to be returned. If False, Utility nodes will be ignored.       b   =   op  (  'project1'  ) ",
+      "signature": "includeUtility(Optional)"
+    },
+    {
+      "name": "includeUtility",
+      "parameters": [
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "if True, allow  Utility nodes  to be returned. If False, Utility operators will be ignored.    ",
+      "signature": "includeUtility(Optional)"
+    },
+    {
+      "name": "parNames",
+      "parameters": [
+        {
+          "name": "Keyword",
+          "type": "Any"
+        },
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "Specify parameters by Par name. ",
+      "signature": "parNames(Keyword, Optional)"
+    },
+    {
+      "name": "parGroupNames",
+      "parameters": [
+        {
+          "name": "Keyword",
+          "type": "Any"
+        },
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "Specify parameters by  ParGroup  name. ",
+      "signature": "parGroupNames(Keyword, Optional)"
+    },
+    {
+      "name": "pageNames",
+      "parameters": [
+        {
+          "name": "Keyword",
+          "type": "Any"
+        },
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "Specify parameters by page name. ",
+      "signature": "pageNames(Keyword, Optional)"
+    },
+    {
+      "name": "includeBuiltin",
+      "parameters": [
+        {
+          "name": "Keyword",
+          "type": "Any"
+        },
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "Include builtin parameters. ",
+      "signature": "includeBuiltin(Keyword, Optional)"
+    },
+    {
+      "name": "includeCustom",
+      "parameters": [
+        {
+          "name": "Keyword",
+          "type": "Any"
+        },
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "Include custom parameters.       op  (  'player'  )  .  resetPars  (  includeBuiltin  =  False  )   # only reset custom ",
+      "signature": "includeCustom(Keyword, Optional)"
+    }
+  ],
+  "enhanced": true
+}

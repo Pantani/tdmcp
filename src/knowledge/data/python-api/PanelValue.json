@@ -1,0 +1,25 @@
+{
+  "className": "PanelValue",
+  "displayName": "PanelValue Class",
+  "description": "A PanelValue describes an instance to a Panel Value.  They can be accessed through a component's panel member, and are used in the Panel Execute DAT.",
+  "category": "General",
+  "fileName": "PanelValue_Class.htm",
+  "members": [
+    {
+      "name": "name",
+      "id": "content",
+      "returnType": "str",
+      "readOnly": true,
+      "description": "name member"
+    },
+    {
+      "name": "name",
+      "id": "bodyContent",
+      "returnType": "str",
+      "readOnly": true,
+      "description": "name member"
+    }
+  ],
+  "methods": [],
+  "enhanced": true
+}

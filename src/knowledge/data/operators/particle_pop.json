@@ -1,0 +1,1130 @@
+{
+  "name": "Particle POP",
+  "id": "particle_pop",
+  "category": "POP",
+  "subcategory": "Experimental",
+  "description": "The Particle POP is used for creating and controlling motion of \"particles\" for particle system simulations. A particle is simply a POP point with special attributes that are created by the Particle POP or added/modified manually by the user in a feedback-type loop, making it easy for customization. POPs are able to handle millions+ of points as they fully run on the GPU.",
+  "parameters": [
+    {
+      "name": "P",
+      "label": "Target Particles Update POP",
+      "description": "Configure Target Particles Update POP for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Reuse Point Ids in Loop",
+          "value": "loop",
+          "description": ""
+        },
+        {
+          "label": "Reuse First Available Point Id",
+          "value": "unused",
+          "description": ""
+        },
+        {
+          "label": "Don't Reuse Point Ids",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Birth Rate",
+          "value": "rate",
+          "description": ""
+        },
+        {
+          "label": "Birth Attribute",
+          "value": "attr",
+          "description": ""
+        },
+        {
+          "label": "S",
+          "value": "seconds",
+          "description": ""
+        },
+        {
+          "label": "F",
+          "value": "frames",
+          "description": ""
+        },
+        {
+          "label": "S",
+          "value": "seconds",
+          "description": ""
+        },
+        {
+          "label": "F",
+          "value": "frames",
+          "description": ""
+        },
+        {
+          "label": "S",
+          "value": "seconds",
+          "description": ""
+        },
+        {
+          "label": "F",
+          "value": "frames",
+          "description": ""
+        },
+        {
+          "label": "*",
+          "value": "*",
+          "description": ""
+        },
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        },
+        {
+          "label": "N",
+          "value": "n",
+          "description": ""
+        },
+        {
+          "label": "Color",
+          "value": "color",
+          "description": ""
+        },
+        {
+          "label": "Tex",
+          "value": "tex",
+          "description": ""
+        },
+        {
+          "label": "PointScale",
+          "value": "pointscale",
+          "description": ""
+        },
+        {
+          "label": "LineWidth",
+          "value": "linewidth",
+          "description": ""
+        },
+        {
+          "label": "float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "double",
+          "value": "double",
+          "description": ""
+        },
+        {
+          "label": "int",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "uint",
+          "value": "uint",
+          "description": ""
+        },
+        {
+          "label": "dir",
+          "value": "dir",
+          "description": ""
+        },
+        {
+          "label": "dbl dir",
+          "value": "ddir",
+          "description": ""
+        },
+        {
+          "label": "1",
+          "value": "1",
+          "description": ""
+        },
+        {
+          "label": "2",
+          "value": "2",
+          "description": ""
+        },
+        {
+          "label": "3",
+          "value": "3",
+          "description": ""
+        },
+        {
+          "label": "4",
+          "value": "4",
+          "description": ""
+        },
+        {
+          "label": "New Attribute Default Value",
+          "value": "attr0valuer",
+          "description": ""
+        },
+        {
+          "label": "New Attribute Default Value",
+          "value": "attr0valueg",
+          "description": ""
+        },
+        {
+          "label": "New Attribute Default Value",
+          "value": "attr0valueb",
+          "description": ""
+        },
+        {
+          "label": "New Attribute Default Value",
+          "value": "attr0valuea",
+          "description": ""
+        },
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        },
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    },
+    {
+      "name": "particlesupdatepop",
+      "label": "Target Particles Update POP",
+      "description": "Configure Target Particles Update POP for the operator",
+      "type": "string"
+    },
+    {
+      "name": "createpointprim",
+      "label": "Create Point Primitives",
+      "description": "Configure Create Point Primitives for the operator",
+      "type": "string"
+    },
+    {
+      "name": "pointidreuse",
+      "label": "Point Id Reuse",
+      "description": "Configure Point Id Reuse for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Reuse Point Ids in Loop",
+          "value": "loop",
+          "description": ""
+        },
+        {
+          "label": "Reuse First Available Point Id",
+          "value": "unused",
+          "description": ""
+        },
+        {
+          "label": "Don't Reuse Point Ids",
+          "value": "none",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "loop",
+      "label": "Reuse Point Ids in Loop",
+      "description": "Configure Reuse Point Ids in Loop for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Reuse Point Ids in Loop",
+          "value": "loop",
+          "description": ""
+        },
+        {
+          "label": "Reuse First Available Point Id",
+          "value": "unused",
+          "description": ""
+        },
+        {
+          "label": "Don't Reuse Point Ids",
+          "value": "none",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "maxparticles",
+      "label": "Maximum Particles",
+      "description": "Configure Maximum Particles for the operator",
+      "type": "string"
+    },
+    {
+      "name": "emissionmode",
+      "label": "Emission from",
+      "description": "Configure Emission from for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Birth Rate",
+          "value": "rate",
+          "description": ""
+        },
+        {
+          "label": "Birth Attribute",
+          "value": "attr",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "rate",
+      "label": "Birth Rate",
+      "description": "Configure Birth Rate for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Birth Rate",
+          "value": "rate",
+          "description": ""
+        },
+        {
+          "label": "Birth Attribute",
+          "value": "attr",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "birthrate",
+      "label": "Birth Rate",
+      "description": "Configure Birth Rate for the operator",
+      "type": "string"
+    },
+    {
+      "name": "birthrateunit",
+      "label": "Birth Rate Unit",
+      "description": "Configure Birth Rate Unit for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "S",
+          "value": "seconds",
+          "description": ""
+        },
+        {
+          "label": "F",
+          "value": "frames",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "seconds",
+      "label": "S",
+      "description": "Configure S for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "S",
+          "value": "seconds",
+          "description": ""
+        },
+        {
+          "label": "F",
+          "value": "frames",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "birthattr",
+      "label": "Input Birth Attribute",
+      "description": "Configure Input Birth Attribute for the operator",
+      "type": "string"
+    },
+    {
+      "name": "rndinputpts",
+      "label": "Randomize Input Points",
+      "description": "Configure Randomize Input Points for the operator",
+      "type": "string"
+    },
+    {
+      "name": "life",
+      "label": "Life Expect",
+      "description": "Configure Life Expect for the operator",
+      "type": "string"
+    },
+    {
+      "name": "lifeunit",
+      "label": "Life Expect Unit",
+      "description": "Configure Life Expect Unit for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "S",
+          "value": "seconds",
+          "description": ""
+        },
+        {
+          "label": "F",
+          "value": "frames",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "lifevariance",
+      "label": "Life Variance",
+      "description": "Configure Life Variance for the operator",
+      "type": "string"
+    },
+    {
+      "name": "randomseed",
+      "label": "Random Seed",
+      "description": "Configure Random Seed for the operator",
+      "type": "string"
+    },
+    {
+      "name": "damping",
+      "label": "Velocity Damping",
+      "description": "Configure Velocity Damping for the operator",
+      "type": "string"
+    },
+    {
+      "name": "initializepulse",
+      "label": "Initialize",
+      "description": "Configure Initialize for the operator",
+      "type": "string"
+    },
+    {
+      "name": "startpulse",
+      "label": "Start",
+      "description": "Configure Start for the operator",
+      "type": "string"
+    },
+    {
+      "name": "play",
+      "label": "Play",
+      "description": "Configure Play for the operator",
+      "type": "string"
+    },
+    {
+      "name": "speed",
+      "label": "Speed",
+      "description": "Configure Speed for the operator",
+      "type": "string"
+    },
+    {
+      "name": "preroll",
+      "label": "Pre-Roll",
+      "description": "Configure Pre-Roll for the operator",
+      "type": "string"
+    },
+    {
+      "name": "prerollunit",
+      "label": "Pre-Roll Unit",
+      "description": "Configure Pre-Roll Unit for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "S",
+          "value": "seconds",
+          "description": ""
+        },
+        {
+          "label": "F",
+          "value": "frames",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "donepulse",
+      "label": "Go to Done",
+      "description": "Configure Go to Done for the operator",
+      "type": "string"
+    },
+    {
+      "name": "attrs",
+      "label": "In Attributes",
+      "description": "Configure In Attributes for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "*",
+          "value": "*",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "*",
+      "label": "*",
+      "description": "Configure * for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "*",
+          "value": "*",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "renameto",
+      "label": "Rename to",
+      "description": "Configure Rename to for the operator",
+      "type": "string"
+    },
+    {
+      "name": "initvelattr",
+      "label": "Initial Velocity Attribute",
+      "description": "Configure Initial Velocity Attribute for the operator",
+      "type": "string"
+    },
+    {
+      "name": "usemassattr",
+      "label": "Use Mass Attribute",
+      "description": "Configure Use Mass Attribute for the operator",
+      "type": "string"
+    },
+    {
+      "name": "initmassattr",
+      "label": "Initial Mass Attribute",
+      "description": "Configure Initial Mass Attribute for the operator",
+      "type": "string"
+    },
+    {
+      "name": "usedragattr",
+      "label": "Use Drag Attribute",
+      "description": "Configure Use Drag Attribute for the operator",
+      "type": "string"
+    },
+    {
+      "name": "initdragattr",
+      "label": "Initial Drag Attribute",
+      "description": "Configure Initial Drag Attribute for the operator",
+      "type": "string"
+    },
+    {
+      "name": "usedeathattr",
+      "label": "Use Death Attribute",
+      "description": "Configure Use Death Attribute for the operator",
+      "type": "string"
+    },
+    {
+      "name": "attr",
+      "label": "New Attribute",
+      "description": "Configure New Attribute for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        },
+        {
+          "label": "N",
+          "value": "n",
+          "description": ""
+        },
+        {
+          "label": "Color",
+          "value": "color",
+          "description": ""
+        },
+        {
+          "label": "Tex",
+          "value": "tex",
+          "description": ""
+        },
+        {
+          "label": "PointScale",
+          "value": "pointscale",
+          "description": ""
+        },
+        {
+          "label": "LineWidth",
+          "value": "linewidth",
+          "description": ""
+        },
+        {
+          "label": "float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "double",
+          "value": "double",
+          "description": ""
+        },
+        {
+          "label": "int",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "uint",
+          "value": "uint",
+          "description": ""
+        },
+        {
+          "label": "dir",
+          "value": "dir",
+          "description": ""
+        },
+        {
+          "label": "dbl dir",
+          "value": "ddir",
+          "description": ""
+        },
+        {
+          "label": "1",
+          "value": "1",
+          "description": ""
+        },
+        {
+          "label": "2",
+          "value": "2",
+          "description": ""
+        },
+        {
+          "label": "3",
+          "value": "3",
+          "description": ""
+        },
+        {
+          "label": "4",
+          "value": "4",
+          "description": ""
+        },
+        {
+          "label": "New Attribute Default Value",
+          "value": "attr0valuer",
+          "description": ""
+        },
+        {
+          "label": "New Attribute Default Value",
+          "value": "attr0valueg",
+          "description": ""
+        },
+        {
+          "label": "New Attribute Default Value",
+          "value": "attr0valueb",
+          "description": ""
+        },
+        {
+          "label": "New Attribute Default Value",
+          "value": "attr0valuea",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "attr0name",
+      "label": "New Attribute Name",
+      "description": "Configure New Attribute Name for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        },
+        {
+          "label": "N",
+          "value": "n",
+          "description": ""
+        },
+        {
+          "label": "Color",
+          "value": "color",
+          "description": ""
+        },
+        {
+          "label": "Tex",
+          "value": "tex",
+          "description": ""
+        },
+        {
+          "label": "PointScale",
+          "value": "pointscale",
+          "description": ""
+        },
+        {
+          "label": "LineWidth",
+          "value": "linewidth",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "custom",
+      "label": "Custom",
+      "description": "Configure Custom for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Custom",
+          "value": "custom",
+          "description": ""
+        },
+        {
+          "label": "N",
+          "value": "n",
+          "description": ""
+        },
+        {
+          "label": "Color",
+          "value": "color",
+          "description": ""
+        },
+        {
+          "label": "Tex",
+          "value": "tex",
+          "description": ""
+        },
+        {
+          "label": "PointScale",
+          "value": "pointscale",
+          "description": ""
+        },
+        {
+          "label": "LineWidth",
+          "value": "linewidth",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "attr0customname",
+      "label": "Custom Name",
+      "description": "Configure Custom Name for the operator",
+      "type": "string"
+    },
+    {
+      "name": "attr0type",
+      "label": "New Attribute Type",
+      "description": "Configure New Attribute Type for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "double",
+          "value": "double",
+          "description": ""
+        },
+        {
+          "label": "int",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "uint",
+          "value": "uint",
+          "description": ""
+        },
+        {
+          "label": "dir",
+          "value": "dir",
+          "description": ""
+        },
+        {
+          "label": "dbl dir",
+          "value": "ddir",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "float",
+      "label": "float",
+      "description": "Configure float for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "float",
+          "value": "float",
+          "description": ""
+        },
+        {
+          "label": "double",
+          "value": "double",
+          "description": ""
+        },
+        {
+          "label": "int",
+          "value": "int",
+          "description": ""
+        },
+        {
+          "label": "uint",
+          "value": "uint",
+          "description": ""
+        },
+        {
+          "label": "dir",
+          "value": "dir",
+          "description": ""
+        },
+        {
+          "label": "dbl dir",
+          "value": "ddir",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "attr0numcomps",
+      "label": "New Attribute Number of Components",
+      "description": "Configure New Attribute Number of Components for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "1",
+          "value": "1",
+          "description": ""
+        },
+        {
+          "label": "2",
+          "value": "2",
+          "description": ""
+        },
+        {
+          "label": "3",
+          "value": "3",
+          "description": ""
+        },
+        {
+          "label": "4",
+          "value": "4",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "1",
+      "label": "1",
+      "description": "Configure 1 for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "1",
+          "value": "1",
+          "description": ""
+        },
+        {
+          "label": "2",
+          "value": "2",
+          "description": ""
+        },
+        {
+          "label": "3",
+          "value": "3",
+          "description": ""
+        },
+        {
+          "label": "4",
+          "value": "4",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "attr0value",
+      "label": "New Attribute Default Value",
+      "description": "Configure New Attribute Default Value for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "New Attribute Default Value",
+          "value": "attr0valuer",
+          "description": ""
+        },
+        {
+          "label": "New Attribute Default Value",
+          "value": "attr0valueg",
+          "description": ""
+        },
+        {
+          "label": "New Attribute Default Value",
+          "value": "attr0valueb",
+          "description": ""
+        },
+        {
+          "label": "New Attribute Default Value",
+          "value": "attr0valuea",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "attr0valuer",
+      "label": "New Attribute Default Value",
+      "description": "Configure New Attribute Default Value for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "New Attribute Default Value",
+          "value": "attr0valuer",
+          "description": ""
+        },
+        {
+          "label": "New Attribute Default Value",
+          "value": "attr0valueg",
+          "description": ""
+        },
+        {
+          "label": "New Attribute Default Value",
+          "value": "attr0valueb",
+          "description": ""
+        },
+        {
+          "label": "New Attribute Default Value",
+          "value": "attr0valuea",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "bypass",
+      "label": "Bypass",
+      "description": "Configure Bypass for the operator",
+      "type": "string"
+    },
+    {
+      "name": "delinputattrs",
+      "label": "Delete Input Attributes",
+      "description": "Configure Delete Input Attributes for the operator",
+      "type": "string"
+    },
+    {
+      "name": "parmcolorspace",
+      "label": "Parameter Color Space",
+      "description": "Configure Parameter Color Space for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        }
+      ]
+    },
+    {
+      "name": "srgb",
+      "label": "sRGB",
+      "description": "Configure sRGB for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        }
+      ]
+    },
+    {
+      "name": "parmreferencewhite",
+      "label": "Parameter Reference White",
+      "description": "Configure Parameter Reference White for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    },
+    {
+      "name": "default",
+      "label": "Default For Color Space",
+      "description": "Configure Default For Color Space for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    }
+  ],
+  "experimental": true,
+  "sourceFile": "Experimental-Particle_POP.htm",
+  "parsedAt": "2025-08-08T03:03:58.212Z"
+}

@@ -1,0 +1,199 @@
+{
+  "id": "geometry_comp",
+  "name": "Geometry COMP",
+  "displayName": "Geometry COMP",
+  "category": "COMP",
+  "subcategory": "3D",
+  "version": "Available since TouchDesigner 2019+",
+  "lastUpdated": "2026-02-21T00:00:00.000Z",
+  "sourceFile": "",
+  "url": "https://docs.derivative.ca/Geometry_COMP",
+  "description": "The Geometry COMP is the bridge between the SOP (Surface OPerator) world and the 3D rendering pipeline. It wraps SOP geometry — boxes, spheres, procedural meshes, point clouds — and exposes it for rendering via a Render TOP. The Geometry COMP controls transform (position, rotation, scale), material assignment, instancing, and display properties. You wire SOPs into its input; the Render TOP references it by path in its Geometry parameter.",
+  "summary": "Wraps SOP geometry for 3D rendering. Provides transforms, material assignment, instancing, and LOD control. Referenced by Render TOP via path parameter, not wire connection.",
+  "details": "The Geometry COMP is a container in the COMP family that holds a SOP network and presents the resulting geometry to the render pipeline. Its Transform page controls world-space placement. The Material parameter links to a MAT operator for shading. The Instance page enables GPU instancing driven by CHOP channels, Table DATs, or other data sources — allowing millions of copies of the geometry to be rendered in a single draw call.",
+  "usage": "1. Place a SOP operator (Box SOP, Grid SOP, etc.) in your network.\n2. Place a Geometry COMP.\n3. Wire the SOP output into the Geometry COMP input 0.\n4. Create a Camera COMP and a Render TOP.\n5. Set the Render TOP Camera parameter to the Camera COMP path.\n6. Set the Render TOP Geometry parameter to the Geometry COMP name (e.g., 'geo1').\n7. Add a MAT operator (Phong MAT, PBR MAT) and set the Geometry COMP Material parameter to it.",
+  "tips": [
+    "Use '*' in the Render TOP Geometry parameter to automatically include all visible Geometry COMPs at the same level.",
+    "Toggle the Display flag on the Geometry COMP (blue flag in header) to show/hide it in renders without changing Render TOP parameters.",
+    "The Geometry COMP Transform page (Translate, Rotate, Scale) positions the object in world space. Animate these with CHOP expressions.",
+    "Enable instancing (Instance page, Instance On = 1) to render millions of copies of the geometry driven by CHOP channels (tx, ty, tz per instance).",
+    "Assign a Phong MAT or PBR MAT via the Material parameter for physically-based shading.",
+    "Use a Script CHOP to generate instance transforms procedurally: Fibonacci sphere, grid layout, random scatter.",
+    "Level-of-Detail: use the LOD SOP inside the Geometry COMP to reduce triangle count at distance.",
+    "Multiple SOPs can feed into a Geometry COMP — connect them into a Merge SOP first.",
+    "Set the Render flag (render icon in header) to Off to exclude from all renders while keeping the Display flag on.",
+    "Use Object CHOP or Parameter CHOP to read back the Geometry COMP's world-space transform from other operators."
+  ],
+  "warnings": [
+    "The Geometry COMP is referenced by path in Render TOP parameters — it is NOT wire-connected to Render TOP.",
+    "Without a Material assigned the geometry renders with a flat default material. Always assign a MAT for correct shading.",
+    "Instancing requires that the instance CHOP channels have exactly the right names (tx, ty, tz, rx, ry, rz, sx, sy, sz, or custom attribute names matching your MAT).",
+    "High polygon-count SOPs inside a Geometry COMP will increase CPU-to-GPU upload time. Use Poly Reduce SOP or LOD SOP for heavy meshes.",
+    "The Geometry COMP's internal coordinate system is its own object space. Translate/Rotate/Scale on the COMP move the whole object in world space."
+  ],
+  "parameters": [
+    {
+      "id": null,
+      "name": "Translate",
+      "label": "Translate",
+      "group": "Transform",
+      "page": "Transform",
+      "type": "float",
+      "dataType": "float",
+      "style": "XYZ",
+      "defaultValue": [0, 0, 0],
+      "description": "World-space translation of the geometry object. X=right, Y=up, Z=towards camera (OpenGL convention).",
+      "tooltip": "Position in 3D world space.",
+      "commonExpressions": [
+        "op('null1')['tx']",
+        "sin(absTime.seconds) * 2"
+      ],
+      "isReadOnly": false,
+      "isAnimatable": true,
+      "order": 0,
+      "isValid": true
+    },
+    {
+      "id": null,
+      "name": "Rotate",
+      "label": "Rotate",
+      "group": "Transform",
+      "page": "Transform",
+      "type": "float",
+      "dataType": "float",
+      "style": "XYZ",
+      "defaultValue": [0, 0, 0],
+      "description": "Rotation in degrees around X, Y, Z axes. Applied in the order defined by Transform Order parameter.",
+      "tooltip": "Rotation in degrees.",
+      "commonExpressions": ["absTime.seconds * 30", "op('lfo1')['chan1'] * 360"],
+      "isReadOnly": false,
+      "isAnimatable": true,
+      "order": 1,
+      "isValid": true
+    },
+    {
+      "id": null,
+      "name": "Scale",
+      "label": "Scale",
+      "group": "Transform",
+      "page": "Transform",
+      "type": "float",
+      "dataType": "float",
+      "style": "XYZ",
+      "defaultValue": [1, 1, 1],
+      "description": "Scale multiplier for each axis. Use uniform scale (all three equal) to avoid shearing.",
+      "isReadOnly": false,
+      "isAnimatable": true,
+      "order": 2,
+      "isValid": true
+    },
+    {
+      "id": null,
+      "name": "Material",
+      "label": "Material",
+      "group": "Render",
+      "page": "Render",
+      "type": "string",
+      "dataType": "string",
+      "style": "OP",
+      "defaultValue": "",
+      "description": "Path to the MAT operator that defines the surface appearance (shader, textures, lighting response). Accepts Phong MAT, PBR MAT, GLSL MAT, etc.",
+      "tooltip": "Path to MAT operator",
+      "examples": ["phong1", "pbr1", "/project1/materials/metallic"],
+      "isReadOnly": false,
+      "isAnimatable": false,
+      "order": 3,
+      "isValid": true
+    },
+    {
+      "id": null,
+      "name": "Instance",
+      "label": "Instance On",
+      "group": "Instance",
+      "page": "Instance",
+      "type": "int",
+      "dataType": "int",
+      "style": "Toggle",
+      "defaultValue": 0,
+      "description": "Enables GPU instancing. When On, the geometry is drawn multiple times (once per instance) using transform data from CHOP channels or Table DAT rows.",
+      "isReadOnly": false,
+      "isAnimatable": false,
+      "order": 4,
+      "isValid": true
+    },
+    {
+      "id": null,
+      "name": "Instance CHOP",
+      "label": "Instance CHOP",
+      "group": "Instance",
+      "page": "Instance",
+      "type": "string",
+      "dataType": "string",
+      "style": "OP",
+      "defaultValue": "",
+      "description": "Path to a CHOP that provides per-instance transform data. Channel names tx, ty, tz, rx, ry, rz, sx, sy, sz are used automatically. Number of samples = number of instances.",
+      "examples": ["null_instances", "script1"],
+      "isReadOnly": false,
+      "isAnimatable": false,
+      "order": 5,
+      "isValid": true
+    }
+  ],
+  "parameterGroups": {
+    "Transform": ["Translate", "Rotate", "Scale", "Transform Order", "Pivot"],
+    "Render": ["Material", "Cull Face", "Depth Test"],
+    "Instance": ["Instance On", "Instance CHOP", "Instance Count"]
+  },
+  "codeExamples": [],
+  "pythonExamples": [
+    {
+      "title": "Animate Geometry COMP transform from Python",
+      "description": "Drive position and rotation from an Execute DAT.",
+      "code": "import math\n\ndef onFrameStart(frame):\n    t = absTime.seconds\n    geo = op('geo1')\n\n    # Circular orbit\n    radius = 3\n    geo.par.tx = math.sin(t * 0.5) * radius\n    geo.par.tz = math.cos(t * 0.5) * radius\n\n    # Continuous Y rotation\n    geo.par.ry = (t * 45) % 360  # 45 degrees per second"
+    },
+    {
+      "title": "GPU instancing with procedural transforms",
+      "description": "Use a Script CHOP to generate instance positions in a Fibonacci sphere pattern.",
+      "code": "# In a Script CHOP — generates N instances on a sphere surface\nimport numpy as np\n\nN = 500  # number of instances\n\ndef cook(scriptOp):\n    scriptOp.clear()\n    tx = scriptOp.appendChan('tx')\n    ty = scriptOp.appendChan('ty')\n    tz = scriptOp.appendChan('tz')\n    tx.setSize(N)\n    ty.setSize(N)\n    tz.setSize(N)\n\n    golden = (1 + np.sqrt(5)) / 2\n    indices = np.arange(N)\n    theta = np.arccos(1 - 2 * (indices + 0.5) / N)\n    phi   = 2 * np.pi * indices / golden\n    r = 5  # sphere radius\n\n    for i in range(N):\n        tx[i] = r * np.sin(theta[i]) * np.cos(phi[i])\n        ty[i] = r * np.cos(theta[i])\n        tz[i] = r * np.sin(theta[i]) * np.sin(phi[i])\n\n# Geometry COMP: Instance On = 1, Instance CHOP = 'script1'"
+    },
+    {
+      "title": "Assign material dynamically",
+      "description": "Switch between materials based on a condition.",
+      "code": "MATERIALS = {'metal': 'pbr_metal', 'glass': 'pbr_glass', 'emissive': 'phong_glow'}\n\ndef setMaterial(geoName, materialKey):\n    mat = MATERIALS.get(materialKey)\n    if mat:\n        op(geoName).par.material = mat\n        print(f'[Geo] {geoName} material -> {mat}')\n\n# Switch to emissive on beat\nsetMaterial('geo1', 'emissive')"
+    }
+  ],
+  "expressions": [
+    "op('geo1').par.tx = sin(absTime.seconds) * 2",
+    "op('geo1').par.ry = absTime.seconds * 30",
+    "op('geo1').par.material = 'phong1'",
+    "op('geo1').display = True"
+  ],
+  "commonInputs": [
+    { "op": "Box SOP",      "reason": "Simple box geometry to render" },
+    { "op": "Sphere SOP",   "reason": "Sphere geometry" },
+    { "op": "Grid SOP",     "reason": "Plane / terrain geometry" },
+    { "op": "Text SOP",     "reason": "3D extruded text" },
+    { "op": "Script SOP",   "reason": "Procedurally generated geometry" },
+    { "op": "Noise SOP",    "reason": "Deformed geometry" },
+    { "op": "Merge SOP",    "reason": "Combined multiple SOP sources" }
+  ],
+  "commonOutputs": [],
+  "relatedOperators": [
+    "Render TOP", "Camera COMP", "Light COMP", "Phong MAT", "PBR MAT", "GLSL MAT",
+    "Box SOP", "Sphere SOP", "Grid SOP", "Noise SOP", "Script SOP",
+    "Object CHOP", "Render Pick CHOP"
+  ],
+  "workflowPatterns": ["3d-render-pipeline", "generative-art", "live-performance"],
+  "keywords": [
+    "geometry", "3d", "mesh", "polygon", "render", "instancing", "material",
+    "transform", "position", "rotation", "scale", "sop", "gpu", "object",
+    "scene", "world space", "display", "flag", "lod"
+  ],
+  "tags": ["COMP", "3D", "Geometry COMP", "rendering", "instancing", "sop"],
+  "searchWeight": 2,
+  "contentHash": "",
+  "processingDate": "2026-02-21T00:00:00.000Z",
+  "processingVersion": "2.10.0",
+  "isValid": true,
+  "validationErrors": []
+}

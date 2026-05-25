@@ -1,0 +1,10 @@
+{
+  "className": "Parameter",
+  "displayName": "Parameter",
+  "description": "Every operator in TouchDesigner has a set of control Parameters that can be integer or floating point numbers, menus, binary toggles, text strings or operator paths, which determine the output of the operator.",
+  "category": "General",
+  "fileName": "Parameter_Class.htm",
+  "members": [],
+  "methods": [],
+  "enhanced": true
+}

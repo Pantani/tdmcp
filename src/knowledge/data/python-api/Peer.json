@@ -1,0 +1,85 @@
+{
+  "className": "Peer",
+  "displayName": "Peer Class",
+  "description": "A Peer describes the network connection originating a message in the callback functions found in oscinDAT, tcpipDAT, udpinDAT, udtinDAT.",
+  "category": "General",
+  "fileName": "Peer_Class.htm",
+  "members": [
+    {
+      "name": "owner",
+      "id": "content",
+      "returnType": "OP",
+      "readOnly": true,
+      "description": "owner member"
+    },
+    {
+      "name": "owner",
+      "id": "bodyContent",
+      "returnType": "OP",
+      "readOnly": true,
+      "description": "owner member"
+    }
+  ],
+  "methods": [
+    {
+      "name": "close",
+      "parameters": [],
+      "returns": "bool :",
+      "signature": "close()"
+    },
+    {
+      "name": "sendBytes",
+      "parameters": [
+        {
+          "name": "*messages",
+          "type": "Any"
+        }
+      ],
+      "returns": "int :",
+      "signature": "sendBytes(*messages)"
+    },
+    {
+      "name": "sendOSC",
+      "parameters": [
+        {
+          "name": "address",
+          "type": "Any"
+        },
+        {
+          "name": "*values",
+          "type": "Any"
+        },
+        {
+          "name": "asBundle=False",
+          "type": "Any"
+        },
+        {
+          "name": "useNonStandardTypes=True",
+          "type": "Any"
+        },
+        {
+          "name": "use64BitPrecision=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "int :",
+      "signature": "sendOSC(address, *values, asBundle=False, useNonStandardTypes=True, use64BitPrecision=False)"
+    },
+    {
+      "name": "send",
+      "parameters": [
+        {
+          "name": "*messages",
+          "type": "Any"
+        },
+        {
+          "name": "terminator=''",
+          "type": "Any"
+        }
+      ],
+      "returns": "int :",
+      "signature": "send(*messages, terminator='')"
+    }
+  ],
+  "enhanced": true
+}

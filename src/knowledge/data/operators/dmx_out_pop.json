@@ -1,0 +1,668 @@
+{
+  "name": "DMX Out POP",
+  "id": "dmx_out_pop",
+  "category": "POP",
+  "subcategory": "Experimental",
+  "description": "The DMX Out POP can send to DMX, Art-Net, sACN, KiNET, or FTDI devices.",
+  "parameters": [
+    {
+      "name": "/*",
+      "label": "Active",
+      "description": "Configure Active for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Generic Serial",
+          "value": "serial",
+          "description": "Uses the operating system's serial calls to write data."
+        },
+        {
+          "label": "Enttec USB Pro",
+          "value": "enttecusbpro",
+          "description": ""
+        },
+        {
+          "label": "Enttec USB Pro Mk2",
+          "value": "enttecusbpromk2",
+          "description": ""
+        },
+        {
+          "label": "Art-Net",
+          "value": "artnet",
+          "description": "Net artnet - Sets the interface to Art-Net protocol."
+        },
+        {
+          "label": "sACN",
+          "value": "sacn",
+          "description": "Sets the interface to sACN protocol."
+        },
+        {
+          "label": "KiNET",
+          "value": "kinet",
+          "description": "Sets the interface to KiNET protocol."
+        },
+        {
+          "label": "COM3",
+          "value": "com3",
+          "description": ""
+        },
+        {
+          "label": "Default",
+          "value": "default",
+          "description": ""
+        },
+        {
+          "label": "*",
+          "value": "*",
+          "description": ""
+        },
+        {
+          "label": "192.168.178.150",
+          "value": "192.168.178.150",
+          "description": ""
+        },
+        {
+          "label": "10.2.0.2",
+          "value": "10.2.0.2",
+          "description": ""
+        },
+        {
+          "label": "DmxOut (v1)",
+          "value": "v1",
+          "description": ""
+        },
+        {
+          "label": "PortOut (v2)",
+          "value": "v2",
+          "description": ""
+        },
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        },
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    },
+    {
+      "name": "active",
+      "label": "Active",
+      "description": "Configure Active for the operator",
+      "type": "string"
+    },
+    {
+      "name": "interface",
+      "label": "Interface",
+      "description": "Configure Interface for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Generic Serial",
+          "value": "serial",
+          "description": "Uses the operating system's serial calls to write data."
+        },
+        {
+          "label": "Enttec USB Pro",
+          "value": "enttecusbpro",
+          "description": ""
+        },
+        {
+          "label": "Enttec USB Pro Mk2",
+          "value": "enttecusbpromk2",
+          "description": ""
+        },
+        {
+          "label": "Art-Net",
+          "value": "artnet",
+          "description": "Net artnet - Sets the interface to Art-Net protocol."
+        },
+        {
+          "label": "sACN",
+          "value": "sacn",
+          "description": "Sets the interface to sACN protocol."
+        },
+        {
+          "label": "KiNET",
+          "value": "kinet",
+          "description": "Sets the interface to KiNET protocol."
+        }
+      ]
+    },
+    {
+      "name": "serial",
+      "label": "Generic Serial",
+      "description": "Configure Generic Serial for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Generic Serial",
+          "value": "serial",
+          "description": "Uses the operating system's serial calls to write data."
+        },
+        {
+          "label": "Enttec USB Pro",
+          "value": "enttecusbpro",
+          "description": ""
+        },
+        {
+          "label": "Enttec USB Pro Mk2",
+          "value": "enttecusbpromk2",
+          "description": ""
+        },
+        {
+          "label": "Art-Net",
+          "value": "artnet",
+          "description": "Net artnet - Sets the interface to Art-Net protocol."
+        },
+        {
+          "label": "sACN",
+          "value": "sacn",
+          "description": "Sets the interface to sACN protocol."
+        },
+        {
+          "label": "KiNET",
+          "value": "kinet",
+          "description": "Sets the interface to KiNET protocol."
+        }
+      ]
+    },
+    {
+      "name": "rate",
+      "label": "Rate",
+      "description": "Configure Rate for the operator",
+      "type": "string"
+    },
+    {
+      "name": "fixture",
+      "label": "Fixture",
+      "description": "Configure Fixture for the operator",
+      "type": "string"
+    },
+    {
+      "name": "fixture0active",
+      "label": "Active",
+      "description": "Configure Active for the operator",
+      "type": "string"
+    },
+    {
+      "name": "fixture0pop",
+      "label": "DMX Fixture POPs",
+      "description": "Configure DMX Fixture POPs for the operator",
+      "type": "string"
+    },
+    {
+      "name": "serialport",
+      "label": "Serial Port",
+      "description": "Configure Serial Port for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "COM3",
+          "value": "com3",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "com3",
+      "label": "COM3",
+      "description": "Configure COM3 for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "COM3",
+          "value": "com3",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "dmxkingport",
+      "label": "DMXking Port",
+      "description": "Configure DMXking Port for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default",
+          "value": "default",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "default",
+      "label": "Default",
+      "description": "Configure Default for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default",
+          "value": "default",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "device",
+      "label": "Device",
+      "description": "Configure Device for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "*",
+          "value": "*",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "*",
+      "label": "*",
+      "description": "Configure * for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "*",
+          "value": "*",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "multicast",
+      "label": "Multicast",
+      "description": "Configure Multicast for the operator",
+      "type": "string"
+    },
+    {
+      "name": "netaddress",
+      "label": "Network Address",
+      "description": "Configure Network Address for the operator",
+      "type": "string"
+    },
+    {
+      "name": "localaddress",
+      "label": "Local Address",
+      "description": "Configure Local Address for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "192.168.178.150",
+          "value": "192.168.178.150",
+          "description": ""
+        },
+        {
+          "label": "10.2.0.2",
+          "value": "10.2.0.2",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "192.168.178.150",
+      "label": "192.168.178.150",
+      "description": "Configure 192.168.178.150 for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "192.168.178.150",
+          "value": "192.168.178.150",
+          "description": ""
+        },
+        {
+          "label": "10.2.0.2",
+          "value": "10.2.0.2",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "localport",
+      "label": "Local Port",
+      "description": "Configure Local Port for the operator",
+      "type": "string"
+    },
+    {
+      "name": "customport",
+      "label": "Use Custom Port",
+      "description": "Configure Use Custom Port for the operator",
+      "type": "string"
+    },
+    {
+      "name": "netport",
+      "label": "Network Port",
+      "description": "Configure Network Port for the operator",
+      "type": "string"
+    },
+    {
+      "name": "priority",
+      "label": "Priority",
+      "description": "Configure Priority for the operator",
+      "type": "string"
+    },
+    {
+      "name": "sendartsync",
+      "label": "Send ArtSync",
+      "description": "Configure Send ArtSync for the operator",
+      "type": "string"
+    },
+    {
+      "name": "cid",
+      "label": "CID",
+      "description": "Configure CID for the operator",
+      "type": "string"
+    },
+    {
+      "name": "source",
+      "label": "Source",
+      "description": "Configure Source for the operator",
+      "type": "string"
+    },
+    {
+      "name": "kinetversion",
+      "label": "KiNET Version",
+      "description": "Configure KiNET Version for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "DmxOut (v1)",
+          "value": "v1",
+          "description": ""
+        },
+        {
+          "label": "PortOut (v2)",
+          "value": "v2",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "v1",
+      "label": "DmxOut (v1)",
+      "description": "Configure DmxOut (v1) for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "DmxOut (v1)",
+          "value": "v1",
+          "description": ""
+        },
+        {
+          "label": "PortOut (v2)",
+          "value": "v2",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "customkinetport",
+      "label": "Use Custom KiNET Port",
+      "description": "Configure Use Custom KiNET Port for the operator",
+      "type": "string"
+    },
+    {
+      "name": "kinetport",
+      "label": "KiNET Port",
+      "description": "Configure KiNET Port for the operator",
+      "type": "string"
+    },
+    {
+      "name": "routingtable",
+      "label": "Routing Table",
+      "description": "Configure Routing Table for the operator",
+      "type": "string"
+    },
+    {
+      "name": "usemultipliers",
+      "label": "Use Multipliers",
+      "description": "Configure Use Multipliers for the operator",
+      "type": "string"
+    },
+    {
+      "name": "multiplier",
+      "label": "Multiplier",
+      "description": "Configure Multiplier for the operator",
+      "type": "string"
+    },
+    {
+      "name": "multiplier0dmxchannels",
+      "label": "DMX Channels",
+      "description": "Configure DMX Channels for the operator",
+      "type": "string"
+    },
+    {
+      "name": "multipliers0value",
+      "label": "Multiplier Value",
+      "description": "Configure Multiplier Value for the operator",
+      "type": "string"
+    },
+    {
+      "name": "bypass",
+      "label": "Bypass",
+      "description": "Configure Bypass for the operator",
+      "type": "string"
+    },
+    {
+      "name": "delinputattrs",
+      "label": "Delete Input Attributes",
+      "description": "Configure Delete Input Attributes for the operator",
+      "type": "string"
+    },
+    {
+      "name": "parmcolorspace",
+      "label": "Parameter Color Space",
+      "description": "Configure Parameter Color Space for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        }
+      ]
+    },
+    {
+      "name": "srgb",
+      "label": "sRGB",
+      "description": "Configure sRGB for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        }
+      ]
+    },
+    {
+      "name": "parmreferencewhite",
+      "label": "Parameter Reference White",
+      "description": "Configure Parameter Reference White for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    }
+  ],
+  "experimental": true,
+  "sourceFile": "Experimental-DMX_Out_POP.htm",
+  "parsedAt": "2025-08-08T03:03:55.389Z"
+}

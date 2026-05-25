@@ -1,0 +1,10 @@
+{
+  "className": "Network",
+  "displayName": "Network",
+  "description": "A network is a group of inter-connected Nodes of Operators in one Component. Every component contains a network, and every network lives in a component.",
+  "category": "General",
+  "fileName": "Network_Class.htm",
+  "members": [],
+  "methods": [],
+  "enhanced": true
+}

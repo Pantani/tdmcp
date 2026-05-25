@@ -1,0 +1,25 @@
+{
+  "className": "Monitor",
+  "displayName": "Monitor Class",
+  "description": "The Monitor class describes a single instance of a monitor display. They can be accessed from the monitors object.",
+  "category": "General",
+  "fileName": "Monitor_Class.htm",
+  "members": [
+    {
+      "name": "index",
+      "id": "content",
+      "returnType": "int",
+      "readOnly": true,
+      "description": "index member"
+    },
+    {
+      "name": "index",
+      "id": "bodyContent",
+      "returnType": "int",
+      "readOnly": true,
+      "description": "index member"
+    }
+  ],
+  "methods": [],
+  "enhanced": true
+}

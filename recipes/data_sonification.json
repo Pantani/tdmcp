@@ -1,0 +1,37 @@
+{
+  "id": "data_sonification",
+  "name": "Data Sonification",
+  "description": "Drives both audio and a visual from a data table: values are read into CHOPs, smoothed, and mapped to an oscillator and a color ramp.",
+  "tags": ["data", "sonification", "audio", "visualization"],
+  "difficulty": "intermediate",
+  "td_version_min": "2022",
+  "nodes": [
+    { "name": "data", "type": "tableDAT", "comment": "Source data (rows of numbers)" },
+    { "name": "datto", "type": "dattoCHOP", "comment": "Data table → channels" },
+    { "name": "smooth", "type": "filterCHOP", "parameters": { "width": 0.2 } },
+    { "name": "osc", "type": "audiooscillatorCHOP", "comment": "Maps a channel to pitch" },
+    { "name": "audioout", "type": "audiodeviceoutCHOP" },
+    { "name": "viz", "type": "choptoTOP", "comment": "Channels as a texture" },
+    { "name": "out1", "type": "nullTOP" }
+  ],
+  "connections": [
+    { "from": "data", "to": "datto" },
+    { "from": "datto", "to": "smooth" },
+    { "from": "smooth", "to": "osc" },
+    { "from": "osc", "to": "audioout" },
+    { "from": "smooth", "to": "viz" },
+    { "from": "viz", "to": "out1" }
+  ],
+  "parameters": [
+    {
+      "name": "smoothing",
+      "node": "smooth",
+      "param": "width",
+      "value": 0.2,
+      "min": 0,
+      "max": 1,
+      "label": "Smoothing"
+    }
+  ],
+  "preview_description": "A shifting band of colors tracking the data, accompanied by an evolving tone."
+}

@@ -1,0 +1,49 @@
+{
+  "id": "particle_galaxy",
+  "name": "Particle Galaxy",
+  "description": "A swirling galaxy of particles emitted from a sphere, pushed by turbulence and gravity, rendered as glowing sprites.",
+  "tags": ["particle", "3d", "galaxy", "generative"],
+  "difficulty": "advanced",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "geo",
+      "type": "geometryCOMP",
+      "comment": "Holds the particle SOP chain (place sphere/particle inside for rendering)"
+    },
+    {
+      "name": "sphere",
+      "type": "sphereSOP",
+      "parameters": { "rad": 1 },
+      "comment": "Emitter surface"
+    },
+    {
+      "name": "particle",
+      "type": "particleSOP",
+      "parameters": { "life": 4 },
+      "comment": "Particle simulation"
+    },
+    { "name": "mat", "type": "pointspriteMAT", "comment": "Glowing sprite material" },
+    { "name": "cam", "type": "cameraCOMP", "parameters": { "tz": 6 } },
+    { "name": "light", "type": "lightCOMP", "parameters": { "tx": 3, "ty": 4, "tz": 4 } },
+    { "name": "render", "type": "renderTOP", "comment": "Rendered galaxy" },
+    { "name": "out1", "type": "nullTOP" }
+  ],
+  "connections": [{ "from": "sphere", "to": "particle" }, { "from": "render", "to": "out1" }],
+  "parameters": [
+    { "name": "geometry", "node": "render", "param": "geometry", "value": "geo" },
+    { "name": "camera", "node": "render", "param": "camera", "value": "cam" },
+    { "name": "lights", "node": "render", "param": "lights", "value": "light" },
+    { "name": "material", "node": "geo", "param": "material", "value": "mat" },
+    {
+      "name": "lifetime",
+      "node": "particle",
+      "param": "life",
+      "value": 4,
+      "min": 1,
+      "max": 20,
+      "label": "Particle Lifetime"
+    }
+  ],
+  "preview_description": "A slowly rotating spiral of bright point-sprites drifting outward from a glowing core."
+}

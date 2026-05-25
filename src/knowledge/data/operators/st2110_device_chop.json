@@ -1,0 +1,11 @@
+{
+  "name": "ST2110 Device CHOP",
+  "id": "st2110_device_chop",
+  "category": "CHOP",
+  "subcategory": "Experimental",
+  "description": "This node is used to configure the IP settings of a ST2110 Device such as the DHCP settings, IP configuration and PTP settings. Currently this node does not have any channels it outputs, but it does have some Info CHOP channels that give diagnostic information.",
+  "parameters": [],
+  "experimental": true,
+  "sourceFile": "Experimental-ST2110_Device_CHOP.htm",
+  "parsedAt": "2025-08-08T03:03:59.958Z"
+}

@@ -1,0 +1,63 @@
+{
+  "className": "Prim",
+  "displayName": "Prim Class",
+  "description": "A Prim describes an instance to a single geometry primitive.  They are accessible through the SOP.prims member.",
+  "category": "General",
+  "fileName": "Prim_Class.htm",
+  "members": [
+    {
+      "name": "center",
+      "id": "content",
+      "returnType": "TDU.Position",
+      "readOnly": true,
+      "description": "center member"
+    },
+    {
+      "name": "center",
+      "id": "bodyContent",
+      "returnType": "TDU.Position",
+      "readOnly": true,
+      "description": "center member"
+    }
+  ],
+  "methods": [
+    {
+      "name": "destroy",
+      "parameters": [
+        {
+          "name": "destroyPoints=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "destroy(destroyPoints=True)"
+    },
+    {
+      "name": "eval",
+      "parameters": [
+        {
+          "name": "u",
+          "type": "Any"
+        },
+        {
+          "name": "v",
+          "type": "Any"
+        }
+      ],
+      "returns": "TDU.Position :",
+      "signature": "eval(u, v)"
+    },
+    {
+      "name": "len",
+      "parameters": [
+        {
+          "name": "Prim",
+          "type": "Any"
+        }
+      ],
+      "returns": "int :",
+      "signature": "len(Prim)"
+    }
+  ],
+  "enhanced": true
+}

@@ -1,0 +1,796 @@
+{
+  "id": "write_a_cplusplus_plugin",
+  "name": "Write a C++ Plugin",
+  "displayName": "Write a CPlusPlus Plugin",
+  "category": "TUTORIAL",
+  "subcategory": "C++ Tutorial",
+  "type": "tutorial",
+  "description": "The CPlusPlus OPs (CPlusPlus CHOP, CPlusPlus TOP, CPlusPlus SOP and CPlusPlus DAT) allow you to load your own C++ code that has been compiled into a plugin. You can use this node to create custom filters, output to some custom file format or device, or to bring data in from some custom device or file format. Depending on the type of OP the input/output, behavior and function names will be different, but the general idea is the same. Although these OPs are not the same as a full SDK, they provide much of the same functionality.",
+  "summary": "The CPlusPlus OPs (CPlusPlus CHOP, CPlusPlus TOP, CPlusPlus SOP and CPlusPlus DAT) allow you to load your own C++ code that has been compiled into a plugin. You can use this node to create custom filt...",
+  "content": {
+    "sections": [
+      {
+        "title": "Contents",
+        "level": 2,
+        "content": [
+          {
+            "type": "unordered-list",
+            "items": [
+              "1 Interface Summary",
+              "2 Sample Code",
+              "3 General Work flow",
+              "4 Developing plugins on Windows\n4.1 Compiling\n4.2 Debugging\n4.3 Seeing Console Output",
+              "4.1 Compiling",
+              "4.2 Debugging",
+              "4.3 Seeing Console Output",
+              "5 Developing plugins on macOS\n5.1 Compiling\n5.2 Debugging\n5.3 Seeing Console Output",
+              "5.1 Compiling",
+              "5.2 Debugging",
+              "5.3 Seeing Console Output",
+              "6 Python",
+              "7 Info CHOP and Info DAT",
+              "8 How to Use Custom Parameters",
+              "9 Custom Parameters Class Definitions",
+              "10 See Also"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "4.1 Compiling",
+              "4.2 Debugging",
+              "4.3 Seeing Console Output"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "5.1 Compiling",
+              "5.2 Debugging",
+              "5.3 Seeing Console Output"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Interface Summary[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "TouchDesigner defines a base C++ class that you will inherit from to you create your own class. There are some pure-virtual functions you are required to override, while there are others that will do some default behavior of you don't provide an overridden method. Data is passed in and out of the functions using other simple classes which hold the information."
+          },
+          {
+            "type": "paragraph",
+            "text": "To initialize the plugin and create an instance of the class there are 3 C functions you are required to specify. The first one will tell TouchDesigner which version of the API you are running (by returning a constant which you can see in the header file). The other two will create (using new) and destroy (using delete) an instance of the class when TouchDesigner asks them to. A single instance of the class will get created for each OP that is using the plugin."
+          },
+          {
+            "type": "code",
+            "text": "new",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "delete",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "Sample Code[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "You can find code to get started making the plugin in the Samples/CPlusPlus/ folder, select \"Browse Samples\" from the Help menu in TouchDesigner. In this folder there is a sub-folder for each type of CPlusPlus Operator (CHOP and TOP), that contains all the source code as well as Visual Studio Solution and Project file and an Xcode project."
+          },
+          {
+            "type": "code",
+            "text": "Samples/CPlusPlus/",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "There will be a base class defined in a header file (for example TOP_CPlusPlusBase.h) which should not be edited. You will make a child of this base class. An example child class has already been provided in the sample directory. Much of the information you will need to program a plugin will be in the comments of these files, as well as the base class header file."
+          },
+          {
+            "type": "code",
+            "text": "TOP_CPlusPlusBase.h",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "When you have examined the sample code and are ready to make your own plugin, use the sample code as a template for your own project."
+          }
+        ]
+      },
+      {
+        "title": "General Work flow[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "In general when the CPlusPlus OP cooks it will call some functions in your class which are asking some questions (for example, if the node should cook every frame). It will then call the execute() function where your class should do the actual work."
+          },
+          {
+            "type": "code",
+            "text": "execute()",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "Developing plugins on Windows[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "subsection",
+            "title": "Compiling[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "Plugins on Windows are built as a DLL. The sample was created and compiled using Visual Studio 2015."
+          },
+          {
+            "type": "paragraph",
+            "text": "Build products are placed alongside the project."
+          },
+          {
+            "type": "subsection",
+            "title": "Debugging[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "You can attach the Visual Studio debugger to TouchDesigner when it's running. Breakpoints in your plugin code will behave as normal. This is also a good way to explore all the data structures TouchDesigner passes in and out of the functions."
+          },
+          {
+            "type": "code",
+            "text": "TouchDesigner",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "To launch your project with the debugger already attached in Visual Studio, go to the project properties and under the debugging section put in the full path to TouchDesigner.exe in the 'Command' section. If you have a .toe file already setup, put that in the 'Command Arguments' section. Now you can hit F5 and your project will load up inside TouchDesigner with the debugger already attached. You'll get an error saying there is no debug information for TouchDesigher.exe, but that's expected. You'll have debug information for your .dll when the process is executing your code."
+          },
+          {
+            "type": "code",
+            "text": "TouchDesigner.exe",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": ".toe",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "TouchDesigher.exe",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "dll",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "Seeing Console Output[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "To see print statement output, use std::cout and set a windows environment variable TOUCH_TEXT_CONSOLE=1 and you will have a black console window that will show your print statements (as well as some debug statements from TouchDesigner in general). Note: printing lines of text to the console window has a large impact on performance. Be sure to disable all printing when performance testing or shipping a finalized plugin."
+          },
+          {
+            "type": "code",
+            "text": "std::cout",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "Developing plugins on macOS[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "subsection",
+            "title": "Compiling[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "Plugins on macOS are built as a bundle named with a .plugin extension. The sample will open and build with the latest version of Xcode on macOS."
+          },
+          {
+            "type": "paragraph",
+            "text": "Unlike Visual Studio, Xcode doesn't keep build products alongside project source code."
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "To create a finished plugin for distribution, you create an Archive build using Product > Archive and then Export... and Save Built Products.",
+              "To use a debug build during development and testing, use Product > Build in Xcode, then Product > Show Build Folder in Finder, then your plugin will be in Products/Debug. Now switch to TouchDesigner and place a CPlusPlus CHOP or TOP and hit the + button beside the Plugin Path parameter, switch back to the Finder, and drag the plugin to the choose file dialog on-screen from TouchDesigner. You can save the .toe to use for debugging so you don't have to repeat this (see the next section)."
+            ]
+          },
+          {
+            "type": "code",
+            "text": ".toe",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "Debugging[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "You can attach the Xcode debugger to TouchDesigner when it's running. Breakpoints in your plugin code will behave as normal. This is also a good way to explore all the data structures TouchDesigner passes in and out of the functions."
+          },
+          {
+            "type": "code",
+            "text": "TouchDesigner",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "To launch your project with the debugger already attached, edit the project's scheme (Product > Scheme > Edit Scheme...) so its Run target has TouchDesigner as its executable in the 'Info' section. If you have a .toe file already setup, put the path to that in the 'Arguments' section. Debugging will operate as normal."
+          },
+          {
+            "type": "code",
+            "text": "TouchDesigner",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": ".toe",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "Seeing Console Output[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "Messages sent to std::cout will appear in the console in Xcode's Debug area. Note: printing lines of text to the console has an impact on performance. Be sure to disable all printing when performance testing or shipping a finalized plugin."
+          },
+          {
+            "type": "code",
+            "text": "std::cout",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "Python[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Your plugin can interface with Python both by providing a custom Python class that exposes methods and members users can access, as well as calling Callback DAT Python callbacks. See the CHOPWithPythonClass sample project for examples of how to do this.\nNote: Python only works when the Plugin is installed as a Custom Operator. It does not work when used within a CPlusPlus node."
+          }
+        ]
+      },
+      {
+        "title": "Info CHOP and Info DAT[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "All of the CPlusPlus OPs support outputting data through the Info CHOP and Info DAT. There are functions where you can specify how much data you want to output, and then others where you specify the actual data you want to output."
+          }
+        ]
+      },
+      {
+        "title": "How to Use Custom Parameters[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Both the CPlusPlus CHOP and the CPlusPlus TOP support Custom Parameters. There are two main functions associated with the creation and management of Custom Parameters. The first is the setupParameters() function and the second is the pulsePressed() function."
+          },
+          {
+            "type": "code",
+            "text": "setupParameters()",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "pulsePressed()",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "The setupParameters() function is where all Custom Parameters should be defined. The example below shows how to create a RGB custom parameter:"
+          },
+          {
+            "type": "code",
+            "text": "setupParameters()",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// color 1\n{\n\tOP_NumericParameter\tnp;\n\n\tnp.name = \"Color1\";\n\tnp.label = \"Color 1\";\n\tnp.defaultValues[0] = 1.0f;\n\tnp.defaultValues[1] = 0.0f;\n\tnp.defaultValues[2] = 0.0f;\n\n\tfor (int i=0; i<3; i++)\n\t{ \n\t\tnp.minValues[i] = 0.0f;\n\t\tnp.maxValues[i] = 1.0f;\n\t\tnp.minSliders[i] = 0.0f;\n\t\tnp.maxSliders[i] = 1.0f;\n\t\tnp.clampMins[i] = true;\n\t\tnp.clampMaxes[i] = true;\n\t}\n\t\n\tmanager->appendRGB(np);\n}",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "This example creates the first color picker found on the 'Custom' page of the Parameter Dialog of the sample OpenGLTOP project."
+          },
+          {
+            "type": "code",
+            "text": "OpenGLTOP",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "The code snippet below demonstrates fetching the value of the Custom Parameters discussed above, 'Color1'. This code can be found in the execute() function of the OpenGLTOP.cpp source file:"
+          },
+          {
+            "type": "code",
+            "text": "execute()",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "OpenGLTOP.cpp",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "float colr1 = (float)inputs->getParDouble(\"Color1\", 0);\nfloat colg1 = (float)inputs->getParDouble(\"Color1\", 1);\nfloat colb1 = (float)inputs->getParDouble(\"Color1\", 2);",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Similarly this may be done in a single call:"
+          },
+          {
+            "type": "code",
+            "text": "float colr1, colg1, colb1;\ninputs->getParDouble3(\"Color1\", colr1, colg1, colb1);",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Adding the Custom Parameters to the manager class as noted above, allows Custom Parameters value's to be retrieved from the inputs class."
+          },
+          {
+            "type": "code",
+            "text": "manager",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "inputs",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "The second important function is the pulsePressed() function. This function allows you retrieve the name and values of custom pulse parameters. Below is the definition of a pulse parameter from the setupParameters() function in the OpenGLTOP.cpp source:"
+          },
+          {
+            "type": "code",
+            "text": "pulsePressed()",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "setupParameters()",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "OpenGLTOP.cpp",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "// pulse\n{\n\tOP_NumericParameter\tnp;\n\n\tnp.name = \"Reset\";\n\tnp.label = \"Reset\";\n\t\n\tmanager->appendPulse(np);\n}",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "To run code based on the 'Reset' pulse parameter, we can check the name argument passed to the pulsePressed() function, as per the example below from the pulsePressed() function in the OpenGLTOP.cpp source:"
+          },
+          {
+            "type": "code",
+            "text": "pulsePressed()",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "pulsePressed()",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "OpenGLTOP.cpp",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "if (!strcmp(name, \"Reset\"))\n{\n\tmyRotation = 0;\n}",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "Custom Parameters Class Definitions[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Because Custom Parameters extend existing classes, the definition of those classes be found in the CPlusPlus_Common.h source file accompanied with all of the sample CPlusPlus examples. The class definitions are:"
+          },
+          {
+            "type": "code",
+            "text": "CPlusPlus_Common.h",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "OP_ParameterManager - The manager class that contains functions to add custom parameters."
+          },
+          {
+            "type": "code",
+            "text": "OP_ParameterManager",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "OP_NumericParameter - The class to define for numeric value fields such as pulse buttons, toggles, float parameters, integer parameters, etc."
+          },
+          {
+            "type": "code",
+            "text": "OP_NumericParameter",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "OP_StringParameter - The class to define string based fields such as string entry, file or folder references, Operator references, menu items, etc."
+          },
+          {
+            "type": "code",
+            "text": "OP_StringParameter",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "See Also[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Write a CPlusPlus TOPWrite a CPlusPlus CHOPUpgrading Custom Operators and CPlusPlus Plugins to 2022 and Newer Builds"
+          },
+          {
+            "type": "paragraph",
+            "text": "An Operator Family which operate on Channels (a sequence of numbers (Samples)) which are used for animation, audio, mathematics, simulation, logic, UI construction, and data streamed from/to devices and protocols."
+          },
+          {
+            "type": "paragraph",
+            "text": "An Operator Family that creates, composites and modifies images, and reads/writes images and movies to/from files and the network. TOPs run on the graphics card's GPU."
+          },
+          {
+            "type": "paragraph",
+            "text": "TOuch Environment file, the file type used by TouchDesigner to save your entire project."
+          },
+          {
+            "type": "paragraph",
+            "text": "Exporting is the connection of CHOP channels to parameters of operators. The output of each exporting CHOP is one or more channels, active only while the CHOP Viewer is on. The current value of a channel can be exported to a parameter of any operator, overriding that parameter's value. See Parameter."
+          },
+          {
+            "type": "paragraph",
+            "text": "A Folder in TouchDesigner always refers to a Windows or macOS operating system directory/folder system that contain files and other folders. It does not refer to operators within TouchDesigner. See Network Path."
+          },
+          {
+            "type": "paragraph",
+            "text": "The location of an operator within the TouchDesigner environment, for example, /geo1/circle1, a node called circle1 in a component called geo1. The path / is called Root. This path is displayed at the top of every Pane, showing which Component's network you are currently in. To refer instead to a filesystem folder, directory, disk file or http: address, see Folder."
+          },
+          {
+            "type": "code",
+            "text": "/geo1/circle1",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "circle1",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "geo1",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "/",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "http:",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Some operators have a DAT docked to them that contains some python functions. These functions, called \"callbacks\", get called when something in the operator changes."
+          },
+          {
+            "type": "paragraph",
+            "text": "An Operator Family that manipulates text strings: multi-line text or tables. Multi-line text is often a python Script or GLSL Shader, but can be any multi-line text. Tables are rows and columns of cells, each containing a text string."
+          },
+          {
+            "type": "paragraph",
+            "text": "Any of the procedural data operators. OPs do all the work in TouchDesigner. They \"cook\" and output data to other OPs, which ultimately result in new images, data and audio being generated. See Node."
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "C++",
+              "TDPages"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Navigation menu",
+        "level": 2,
+        "content": [
+          {
+            "type": "subsection",
+            "title": "Personal tools",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Log in"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Namespaces",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Page",
+              "Discussion",
+              "Experimental"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Views",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Read",
+              "View source",
+              "View history"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Search",
+            "level": 3
+          },
+          {
+            "type": "subsection",
+            "title": "TouchDesigner",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Main Page",
+              "Categories",
+              "Learn TouchDesigner",
+              "Tutorials",
+              "Interoperability",
+              "Glossary",
+              "Operators",
+              "Python",
+              "Python Class Reference",
+              "Palette",
+              "FAQ",
+              "Recent Doc Edits",
+              "Release Notes"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Downloads",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "TouchDesigner",
+              "Shared Examples"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Tools",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "What links here",
+              "Related changes",
+              "Special pages",
+              "Printable version",
+              "Permanent link",
+              "Page information",
+              "Page values"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "This page was last edited on 19 January 2024, at 07:36."
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Privacy policy",
+              "About Derivative",
+              "Disclaimers"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              ""
+            ]
+          }
+        ]
+      }
+    ],
+    "tableOfContents": [
+      {
+        "number": "1",
+        "text": "Contents",
+        "href": "#Contents"
+      },
+      {
+        "number": "2",
+        "text": "Interface Summary[edit]",
+        "href": "#Interface_Summary[edit]"
+      },
+      {
+        "number": "3",
+        "text": "Sample Code[edit]",
+        "href": "#Sample_Code[edit]"
+      },
+      {
+        "number": "4",
+        "text": "General Work flow[edit]",
+        "href": "#General_Work_flow[edit]"
+      },
+      {
+        "number": "5",
+        "text": "Developing plugins on Windows[edit]",
+        "href": "#Developing_plugins_on_Windows[edit]"
+      },
+      {
+        "number": "6",
+        "text": "Developing plugins on macOS[edit]",
+        "href": "#Developing_plugins_on_macOS[edit]"
+      },
+      {
+        "number": "7",
+        "text": "Python[edit]",
+        "href": "#Python[edit]"
+      },
+      {
+        "number": "8",
+        "text": "Info CHOP and Info DAT[edit]",
+        "href": "#Info_CHOP_and_Info_DAT[edit]"
+      },
+      {
+        "number": "9",
+        "text": "How to Use Custom Parameters[edit]",
+        "href": "#How_to_Use_Custom_Parameters[edit]"
+      },
+      {
+        "number": "10",
+        "text": "Custom Parameters Class Definitions[edit]",
+        "href": "#Custom_Parameters_Class_Definitions[edit]"
+      },
+      {
+        "number": "11",
+        "text": "See Also[edit]",
+        "href": "#See_Also[edit]"
+      },
+      {
+        "number": "12",
+        "text": "Navigation menu",
+        "href": "#Navigation_menu"
+      }
+    ],
+    "relatedLinks": [
+      {
+        "text": "CPlusPlus CHOP",
+        "href": "./CPlusPlus_CHOP.htm"
+      },
+      {
+        "text": "CPlusPlus TOP",
+        "href": "./CPlusPlus_TOP.htm"
+      },
+      {
+        "text": "CPlusPlus SOP",
+        "href": "./CPlusPlus_SOP.htm"
+      },
+      {
+        "text": "CPlusPlus DAT",
+        "href": "./CPlusPlus_DAT.htm"
+      },
+      {
+        "text": "Custom Operator",
+        "href": "./Custom_Operators.htm"
+      },
+      {
+        "text": "Upgrading Custom Operators and CPlusPlus Plugins to 2022 and Newer Builds",
+        "href": "./Upgrading_Custom_Operators_and_CPlusPlus_Plugins_to_2022_and_Newer_Builds.htm"
+      },
+      {
+        "text": "CPlusPlus CHOP",
+        "href": "./CPlusPlus_CHOP.htm"
+      },
+      {
+        "text": "CPlusPlus TOP",
+        "href": "./CPlusPlus_TOP.htm"
+      },
+      {
+        "text": "Custom Parameters",
+        "href": "./Custom_Parameters.htm"
+      },
+      {
+        "text": "Custom Parameters",
+        "href": "./Custom_Parameters.htm"
+      }
+    ],
+    "images": [
+      {
+        "src": "./resources/assets/poweredby_mediawiki_88x31.png",
+        "alt": "Powered by MediaWiki",
+        "caption": "Powered by MediaWiki"
+      }
+    ]
+  },
+  "keywords": [
+    "write",
+    "a",
+    "c++",
+    "plugin",
+    "tutorial",
+    "cplusplus",
+    "(cplusplus",
+    "chop,",
+    "top,",
+    "dat)",
+    "allow",
+    "load"
+  ],
+  "tags": [
+    "Tutorial",
+    "TouchDesigner",
+    "Write a C++ Plugin"
+  ],
+  "searchWeight": 2,
+  "lastUpdated": "2025-08-13T01:17:18.903Z",
+  "sourceFile": "C:\\Program Files\\Derivative\\TouchDesigner\\Samples\\Learn\\OfflineHelp\\https.docs.derivative.ca\\Write_a_CPlusPlus_Plugin.htm",
+  "isValid": true,
+  "validationErrors": []
+}

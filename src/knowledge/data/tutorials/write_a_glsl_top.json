@@ -1,0 +1,818 @@
+{
+  "id": "write_a_glsl_top",
+  "name": "Write a GLSL TOP",
+  "displayName": "Write a GLSL TOP",
+  "category": "TUTORIAL",
+  "subcategory": "TOP Tutorial",
+  "type": "tutorial",
+  "description": "The official GLSL documentation can be found at this address.",
+  "summary": "The official GLSL documentation can be found at this address. TouchDesigner's main supported version of GLSL is 4.60. Support for versions of GLSL 3.30 and earlier have been removed due to the switch to Vulkan. A shader written for 3.30 should work fine when targeting newer GLSL though. A shader written for the GLSL TOP is generally a image based operation. It does essentially no geometry based work. For users who are familiar with writing 3D GLSL shaders, a GLSL TOP is simply a shader applied to a single quad that is drawn to cover up the entire viewport (also known as a full-screen-aligned quad). To simplify the subject, this guide will avoid the extra complexities involved in 3D rendering, and present the topic of writing a GLSL shader in a 2D world only, dealing only with pixels.",
+  "content": {
+    "sections": [
+      {
+        "title": "Overview",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "The official GLSL documentation can be found at this address."
+          },
+          {
+            "type": "paragraph",
+            "text": "TouchDesigner's main supported version of GLSL is 4.60. Support for versions of GLSL 3.30 and earlier have been removed due to the switch to Vulkan. A shader written for 3.30 should work fine when targeting newer GLSL though."
+          },
+          {
+            "type": "paragraph",
+            "text": "A shader written for the GLSL TOP is generally a image based operation. It does essentially no geometry based work. For users who are familiar with writing 3D GLSL shaders, a GLSL TOP is simply a shader applied to a single quad that is drawn to cover up the entire viewport (also known as a full-screen-aligned quad). To simplify the subject, this guide will avoid the extra complexities involved in 3D rendering, and present the topic of writing a GLSL shader in a 2D world only, dealing only with pixels."
+          },
+          {
+            "type": "paragraph",
+            "text": "The shader code in a GLSL TOP is run once for every pixel that is getting output. It's the job of the shader writer to:"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Sample the pixel(s) of the inputs, if any.",
+              "Do whatever math is needed to create the pixel color.",
+              "Output the pixel color."
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Concepts",
+        "level": 2,
+        "content": [
+          {
+            "type": "subsection",
+            "title": "Output Swizzle",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "To ensure cross-platform support between Windows and macOS, any color written to a texture should be first passed through vec4 TDOutputSwizzle(vec4). This function will ensure the correct channels go in the correct output channels depending on the destination texture format. For example alpha-only textures do not actually exist, and are stored as red-only textures. When they are sampled a swizzle is automatically applied to they output (0, 0, 0, R). vec4 TDOutputSwizzle() will place the alpha value into the output red channel in that case. When this texture is used else where the value will correctly appear in the 'alpha' channel, using the previously mentioned swizzle."
+          },
+          {
+            "type": "subsection",
+            "title": "Outputting Color",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "Usually you will only need a pixel shader to create a functioning GLSL TOP."
+          },
+          {
+            "type": "paragraph",
+            "text": "A simple shader to start with is one that just sets every pixel to red."
+          },
+          {
+            "type": "code",
+            "text": "layout(location = 0) out vec4 fragColor;\nvoid main()\n{\n   vec4 color = vec4(1.0, 0.0, 0.0, 1.0);\n   fragColor = TDOutputSwizzle(color);\n}",
+            "language": "cpp"
+          },
+          {
+            "type": "paragraph",
+            "text": "Simply place this code into a DAT and set the GLSL TOPs Pixel Shader parameter to this DAT."
+          },
+          {
+            "type": "paragraph",
+            "text": "Notice that fragColor is defined by the shader writer as the location where the color is output. This is different from GLSL 1.20 where you used the built in variable gl_FragColor."
+          },
+          {
+            "type": "paragraph",
+            "text": "For compute shaders the output textures will be defined for you, do not define it in your shader code."
+          },
+          {
+            "type": "code",
+            "text": "uniform image2D sTDComputeOutputs[TD_NUM_COLOR_BUFFERS];",
+            "language": "glsl"
+          },
+          {
+            "type": "paragraph",
+            "text": "The type may change from image2D to a different type if you are outputting a 3D Texture (image3D), for example."
+          },
+          {
+            "type": "paragraph",
+            "text": "To write to the output, use the GLSL function imageStore()"
+          },
+          {
+            "type": "code",
+            "text": "void main()\n{\n   vec4 color = vec4(1, 0, 0, 1);\n   imageStore(sTDComputeOutputs[0], ivec2(gl_GlobalInvocationID.xy), TDOutputSwizzle(color));\n}",
+            "language": "cpp"
+          },
+          {
+            "type": "subsection",
+            "title": "Sampling Inputs",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "The next thing you will likely want to do is sample the pixels of the input TOP(s). The following line will sample an input TOP using the texture() function:"
+          },
+          {
+            "type": "code",
+            "text": "vec4 inputColor = texture(sTD2DInputs[0], vUV.st);",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "By default in a pixel shader the input variable vUV is declared/set for you and will contain the texture coordinate of the pixel. This variable is only given if you don't supply a vertex shader. If you supply your own vertex shader than it is up to you to pass the texture coordinate through to the pixel shader. The values will smoothly interpolate across the entire 2D image. so when your drawing the middle pixel the value of vUV.st will be (0.5, 0.5). Input sampler variables are declared for you as arrays. Samplers are split based on their dimensions (2D, 3D, 2DArray, Cube). The sampler that refers to the TOP containing the first 2D texture sTD2DInputs[0]. Similarly, the 2nd 2D input would be called sTD2DInputs[1] and so on for any number of 2D inputs (the GLSL Multi TOP has unlimited inputs, however your video card has a limited number of textures that can be used in a shader)."
+          },
+          {
+            "type": "paragraph",
+            "text": "The line texture(sTD2DInputs[0], vUV.st), samples the texture sTD2DInputs[0], at texture coordinate vUV.st. Since vUV.st changes for every pixel, we'll be sampling a different pixel from the input each time."
+          },
+          {
+            "type": "paragraph",
+            "text": "To visualize the values for vUV.st, try putting this shader into the GLSL TOP."
+          },
+          {
+            "type": "code",
+            "text": "layout(location = 0) out vec4 fragColor;\n  void main()\n  {\n     fragColor = vec4(vUV.s, vUV.t, 0.0, 1.0);\n  }",
+            "language": "cpp"
+          },
+          {
+            "type": "paragraph",
+            "text": "Compute shaders can sample inputs using the same texture() functions just like pixel shaders. However there is no vUV coordinate available, so coordinates will need to be manually calculated using the gl_GlobalInvocationID and the input texture resolution, available in it's TDTexInfo structure. Alternatively texelFetch can be used which access integer texture coordinates ranging from [0, width - 1] and [0, height - 1]."
+          }
+        ]
+      },
+      {
+        "title": "Samplers",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Samplers are GLSL's name for a texture. Samplers are given to your GLSL program as arrays, split based on the texture's dimensionality (2D, 3D, 2DArray, Cube etc.). You can find out how many of each type are connected to the TOP using these constants:"
+          },
+          {
+            "type": "code",
+            "text": "TD_NUM_2D_INPUTS\n TD_NUM_3D_INPUTS\n TD_NUM_2D_ARRAY_INPUTS\n TD_NUM_CUBE_INPUTS",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "If you change the number/type of inputs connected to your GLSL TOP, then the shader will recompile with new values for the above defines and below arrays. Regardless of which input a TOP is connected to, it will be collapse into an array of samplers based on it's dimensionality. The arrays are defined as follows (you don't need to declare these in your shader):"
+          },
+          {
+            "type": "code",
+            "text": "uniform sampler2D sTD2DInputs[TD_NUM_2D_INPUTS];\n uniform sampler3D sTD3DInputs[TD_NUM_3D_INPUTS];\n uniform sampler2DArray sTD2DArrayInputs[TD_NUM_2D_ARRAY_INPUTS];\n uniform samplerCube sTDCubeInputs[TD_NUM_CUBE_INPUTS];",
+            "language": "glsl"
+          },
+          {
+            "type": "paragraph",
+            "text": "So for example say you have 5 inputs connected to your GLSL TOP, in this order: a 2D TOP, a 3D TOP, a 2D TOP, a Cube TOP, a 2D Array TOP. Then"
+          },
+          {
+            "type": "code",
+            "text": "TD_NUM_2D_INPUTS = 2\n TD_NUM_3D_INPUTS = 1\n TD_NUM_2D_ARRAY_INPUTS = 1\n TD_NUM_CUBE_INPUTS = 1",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "And you can reference your inputs like this:"
+          },
+          {
+            "type": "code",
+            "text": "texture(sTD2DInputs[0], vUV.st); // first 2D input\n texture(sTD2DInputs[1], vUV.st); // second 2D input, NOT the second input connected to the TOP though\n texture(sTD3DInputs[0], vUV.stp); // first 3D input\n texture(sTDCubeInputs[0], vUV.stp); // first cube input\n texture(sTD2DArrayInputs[0], vUV.stp); // first 2D array input",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "By default accessing an array of samplers (or image outputs) must be done with what is known as a dynamically uniform expression. This essentially means the array index should be a compile time constant, something the compiler can reduce down to a constant at compile time, or a few other shader inputs, outlined in the previous linked article. A for-loop always going from 0 to 5 for example is something that the compiler knows at compile time, and is thus dynamically uniform. Similarly, a uniform integer value passed into the shader is also dynamically uniform. For GLSL MATs, your Instance ID (TDInstanceID()) is not dynamically uniform. If you want to look up into your inputs using something that is decided during shader execution, such as deciding on a different input based on the current UV value, you need to wrap your index in nonuniformEXT() to tell the compiler the index is non-uniform. E.g"
+          },
+          {
+            "type": "code",
+            "text": "int inputIndex;\n if (vUV.s > 0.5)\n     inputIndex = 0;\n else\n     inputIndex = 1;\n vec4 col = sTD2DInputs[nonuniformEXT(inputIndex)], vUV);",
+            "language": "glsl"
+          },
+          {
+            "type": "subsection",
+            "title": "Built In Samplers",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "For convenience the following samplers are provided for you to use as needed:"
+          },
+          {
+            "type": "code",
+            "text": "uniform sampler2D sTDNoiseMap;  // A 256x256 8-bit Red-only channel texture that has random data.",
+            "language": "glsl"
+          },
+          {
+            "type": "code",
+            "text": "uniform sampler1D sTDSineLookup; // A Red-only texture that goes from 0 to 1 in a sine shape.",
+            "language": "glsl"
+          }
+        ]
+      },
+      {
+        "title": "Uniforms",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "A uniform is a value that stays the same for every pixel that is drawn. They are set using the Vectors 1 and Vectors 2 pages in the GLSL TOP. To use a uniform inside your shader, declare a uniform of the same name and size as the parameters you have set on the Vectors pages of the GLSL TOP. For example, lets say we want to make a shader that will create an image that is one solid color, but you don't want it hard coded into the shader (as we did in the first example)."
+          },
+          {
+            "type": "code",
+            "text": "layout(location = 0) out vec4 fragColor;\n uniform vec4 uColor;\n void main()\n {\n    fragColor = uColor;\n }",
+            "language": "cpp"
+          },
+          {
+            "type": "paragraph",
+            "text": "You can now set the Value parameters on the GLSL TOP for the Uniform Name uColor however you see fit (ie. export to them, use expressions, or set them by hand). The GLSL TOP will automatically update and create a new image to match the changing values."
+          },
+          {
+            "type": "subsection",
+            "title": "Built in Uniforms",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "The GLSL TOP has built-in uniforms that may come in useful depending on the shader you are writing. You do not need to declare this uniforms, they are declared for you."
+          },
+          {
+            "type": "paragraph",
+            "text": "There are many arrays of this structure that gives information about input/output textures such as their resolution. The structure is defined as:"
+          },
+          {
+            "type": "code",
+            "text": "struct TDTexInfo\n {\n   // contains (1.0 / width, 1.0 / height, width, height)\n   vec4 res;  \n   // contains (1.0 / depth, depth, depthOffset, undefined)\n   // depthOffset is between [0,1] for 3D textures and between [0, depth - 1] for 2D texture Arrays.\n   vec4 depth;\n   \n };",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "For each of the input sampler arrays (2D, 3D, 2DArray etc.), there is a parallel array of the above structure containing the information about each sampler. For the output info of the texture, there is uTDOutputINfo. You can get the resolution the TOP is going to output at using this uniform. No need to try to pass it in manually via a custom uniform. The depthOffset value will always be 0 though."
+          },
+          {
+            "type": "code",
+            "text": "uniform TDTexInfo uTD2DInfos[TD_NUM_2D_INPUTS];\n uniform TDTexInfo uTD3DInfos[TD_NUM_3D_INPUTS];\n uniform TDTexInfo uTD2DArrayInfos[TD_NUM_2D_ARRAY_INPUTS];\n uniform TDTexInfo uTDCubeInfos[TD_NUM_CUBE_INPUTS];\n \n // Information about the output of the TOP such as it's resolution.\n uniform TDTexInfo uTDOutputInfo;",
+            "language": "glsl"
+          },
+          {
+            "type": "paragraph",
+            "text": "So for example to get the width of the first 2D input, you could type:"
+          },
+          {
+            "type": "code",
+            "text": "float width = uTD2DInfos[0].res.z;",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "When the input is a texture that has depth (3D or 2D Array), then the depth variable will contain the depth, and the depthOffset. The depthOffset is the offset from the texture coordinate at the front of the texture to the texture coordinate of the slice of the input that was most recently updated. So if you wanted a TOP that always output the newest slice of a 3D texture use this shader"
+          },
+          {
+            "type": "code",
+            "text": "layout(location = 0) out vec4 fragColor;\n void main()\n {\n     // The center of the first slice is not located at 0, but rather halfway between 0 (the start of the first slice)\n     // and 1.0 / depth (the end of the first slice)\n     float firstSlice = uTD3DInfos[0].depth.x * 0.5;\n     \n     // now add the offset\n     firstSlice += uTD3DInfos[0].depth.z;\n\n     // now sample the texture\n     fragColor = texture(sTD3DInputs[0], vec3(vUV.st, firstSlice));\n }",
+            "language": "cpp"
+          },
+          {
+            "type": "paragraph",
+            "text": "For 3D textures the depthOffset is always between 0 and 1. For 2D Arrays the offset is between 0 and (depth - 1), and will always be an integer."
+          },
+          {
+            "type": "paragraph",
+            "text": "When outputting a 3D or 2D Array texture, this uniform holds the slice index that you are currently rendering to."
+          },
+          {
+            "type": "code",
+            "text": "// Refer to 3D Textures and 2D Texture Arrays\n uniform int uTDCurrentDepth;",
+            "language": "glsl"
+          },
+          {
+            "type": "paragraph",
+            "text": "When using the \"Num Passes\" parameter on the Common page of the GLSL TOP, it is often useful to know which pass you are currently rendering in the shader. You can do this by looking at the uniform"
+          },
+          {
+            "type": "code",
+            "text": "// The current render pass in the GLSL TOP, starts at 0 and counts up.\n uniform int uTDPass;",
+            "language": "glsl"
+          }
+        ]
+      },
+      {
+        "title": "Atomic Counters",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Atomic counters are global unsigned integers that can have atomic operations performed on them, namely increment and decrement. They can be used in the shaders at any stage of the pipeline (vertex, fragment/pixel, compute) and can be used to track all sorts of things such as number of vertices, number of red pixels, and more. All shader executions will be using the same variable, which allows them to share information between each other."
+          },
+          {
+            "type": "paragraph",
+            "text": "Below is a simple example of a pixel shader where the atomic counter is incremented each time (ie. once per pixel), converted to a float, and then put into the red channel. Visually, pixels that are rendered first will be a darker red than those rendered last."
+          },
+          {
+            "type": "code",
+            "text": "uniform atomic_uint ac;\n out vec4 fragColor;\n void main()\n {\n    uint c = atomicCounterIncrement(ac);\n    float r = (c/255)/255.f;\n    fragColor = vec4(r,0,0,1);\n }",
+            "language": "cpp"
+          },
+          {
+            "type": "paragraph",
+            "text": "They can also be declared and initialized as arrays by declaring them as:"
+          },
+          {
+            "type": "code",
+            "text": "uniform atomic_uint ac[10];",
+            "language": "glsl"
+          },
+          {
+            "type": "paragraph",
+            "text": "Note that although many online examples will prefix the declaration with a binding location such as layout (binding = 0), it is more efficient to omit that and let our compiler assign the binding automatically."
+          }
+        ]
+      },
+      {
+        "title": "Specialization Constants",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Specialization Constants are a new feature in Vulkan that allow code to be re-optimized based on integer constant values, without doing a full recompilation of the shader code. These are useful to set the value for rarely changing values such as 'modes' in shader, or selection of particular code paths that are doing via a switch() or if() statement. In the past this may have been done with a #define statement, or a uniform. A specialized version of a shader will be cached and re-used, but takes up GPU resources. So they should not be used for constantly changing values, but instead for values that are only changed sometimes, within a limited range of values."
+          },
+          {
+            "type": "paragraph",
+            "text": "To define a specialization constant, declare a constant with an extra layout() qualifier."
+          },
+          {
+            "type": "code",
+            "text": "layout(constant_id = 0) const int SomeMode = 0;",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "Then you can use SomeMode just as you would any other variable. If you don't want it to be = 0, you can assign a different value on the 'Constants' page of the GLSL TOP, GLSL MAT etc. You can declare multiple specialization constants, you just need to give each one it's own unique constant_id value (0, 1, 2, etc.)."
+          }
+        ]
+      },
+      {
+        "title": "Built-in Functions",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "These are TouchDesigner specific functions which are made available for use within the shader."
+          },
+          {
+            "type": "subsection",
+            "title": "Output Swizzle",
+            "level": 3
+          },
+          {
+            "type": "code",
+            "text": "// Any color value being written to a texture (either through imageStore or an out \n // variable should be passed through this function to ensure the color channels go to the correct outputs color channels.\n vec4 TDOutputSwizzle(vec4 c);",
+            "language": "text"
+          },
+          {
+            "type": "subsection",
+            "title": "Perlin and Simplex Noise",
+            "level": 3
+          },
+          {
+            "type": "code",
+            "text": "// Noise functions\n // These will return the same result for the same input\n // Results are between -1 and 1\n // Can be slow so just be aware when using them. \n // Different dimensionality selected by passing vec2, vec3 or vec4. \n float TDPerlinNoise(vec2 v);\n float TDPerlinNoise(vec3 v);\n float TDPerlinNoise(vec4 v);\n float TDSimplexNoise(vec2 v);\n float TDSimplexNoise(vec3 v);\n float TDSimplexNoise(vec4 v);",
+            "language": "text"
+          },
+          {
+            "type": "subsection",
+            "title": "HSV Conversion",
+            "level": 3
+          },
+          {
+            "type": "code",
+            "text": "// Converts between RGB and HSV color space\n vec3 TDHSVToRGB(vec3 c);\n vec3 TDRGBToHSV(vec3 c);",
+            "language": "text"
+          },
+          {
+            "type": "subsection",
+            "title": "Dithering",
+            "level": 3
+          },
+          {
+            "type": "code",
+            "text": "// Applies a small random noise to the color to help avoid banding\n // in some cases.\n vec4 TDDither(vec4 color);",
+            "language": "cpp"
+          },
+          {
+            "type": "subsection",
+            "title": "Matrix Functions",
+            "level": 3
+          },
+          {
+            "type": "code",
+            "text": "// Creates a translation matrix for the given 3 translation values.\nmat4 TDTranslate(float x, float y, float z);\n\n// Creates a rotation matrix that rotates around the +X, +Y and +Z axis repectively.\nmat3 TDRotateX(float radians);\nmat3 TDRotateY(float radians);\nmat3 TDRotateZ(float radians);\n\n// Creates a rotation matrix that rotates around the 'axis', the given number of 'radians'\n// The 'axis' vector must already be normalized before being passed to this function.\nmat3 TDRotateOnAxis(float radians, vec3 axis);\n\n// Creates a scale matrix for the given 3 scale values.\nmat3 TDScale(float x, float y, float z);\n\n// Creates a rotation matrix that rotates starting from looking down +Z, to the 'forward' vector direction.\n// The 'forward' and 'up' vectors passed to this function do not need to be normalized.\nmat3 TDRotateToVector(vec3 forward, vec3 up);\n\n// Creates a rotation matrix to rotate from vector 'from' to vector 'to'. The solution isn't particularly stable, but useful in some cases.\n// The 'from' and 'to' vectors must already be normalized before being passed to this function.\nmat3 TDCreateRotMatrix(vec3 from, vec3 to);",
+            "language": "text"
+          }
+        ]
+      },
+      {
+        "title": "Sampling more than one pixel",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "It some shaders you may want to sample more than one pixel from the input TOP (when creating a Blur shader for example). This is done simply with multiple calls to texture(), while offsetting the values of vUV (or your own texture coordinate)."
+          },
+          {
+            "type": "paragraph",
+            "text": "In texture coordinate terms, the value difference between one pixel and the pixel directly to the right of it is (1.0 / width). Similarly, the value difference between one pixel and the pixel directly below it is -(1.0 / height). The following function is helpful in calculating the correct texture coordinates for neighboring pixels:"
+          },
+          {
+            "type": "code",
+            "text": "// This function is not provided for you, you need to declare it yourself.\n  vec2 input2DOffset(int texIndex, int xOffset, int yOffset)\n  {\n      return vec2(vUV.s + (float(xOffset) * uTD2DInfos[texIndex].res.s),\n                 vUV.t + (float(yOffset) * uTD2DInfos[texIndex].res.t));\n  }",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "There is however a new function is GLSL, textureOffset() which does this work for you. It has a limited range it can sample from the starting coordinate though, so it can't be used to get an arbitrary sample offset from a coordinate."
+          },
+          {
+            "type": "paragraph",
+            "text": "Here is a very simple blur shader that will sample a 3x3 grid around each pixel and output the average value of all 9 pixels. It's manually calculating the offsets instead of using textureOffset, although textureOffset would work fine in this example since the offsets are only 1 pixel."
+          },
+          {
+            "type": "code",
+            "text": "vec2 input2DOffset(int texIndex, int xOffset, int yOffset)\n {\n     return vec2(vUV.s + (float(xOffset) * uTD2DInfos[texIndex].res.s),\n                vUV.t + (float(yOffset) * uTD2DInfos[texIndex].res.t));\n }\n \n layout(location = 0) out vec4 fragColor;\n void main()\n {\n     vec4 colorSum = vec4(0.0);\n     colorSum += texture(sTD2DInputs[0], input2DOffset(0, 0, 0));\n     colorSum += texture(sTD2DInputs[0], input2DOffset(0, -1, -1));\n     colorSum += texture(sTD2DInputs[0], input2DOffset(0, 0, -1));\n     colorSum += texture(sTD2DInputs[0], input2DOffset(0, 1, -1));\n     colorSum += texture(sTD2DInputs[0], input2DOffset(0, 1, 0));\n     colorSum += texture(sTD2DInputs[0], input2DOffset(0, 1, 1));\n     colorSum += texture(sTD2DInputs[0], input2DOffset(0, 0, 1));\n     colorSum += texture(sTD2DInputs[0], input2DOffset(0, -1, 1));\n     colorSum += texture(sTD2DInputs[0], input2DOffset(0, -1, 0));\n     fragColor = colorSum / 9.0;\n }",
+            "language": "cpp"
+          }
+        ]
+      },
+      {
+        "title": "3D Textures and 2D Texture Arrays",
+        "level": 2,
+        "content": [
+          {
+            "type": "subsection",
+            "title": "Pixel Shaders",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "When creating a 3D Texture or a 2D Texture Array, your shader will be rendered once for every depth slice that is created. It's like rendering a bunch of 2D textures."
+          },
+          {
+            "type": "paragraph",
+            "text": "Along with the different input samplers you'll get, you also have access to a few uniforms to help you decide what to create for each slice."
+          },
+          {
+            "type": "code",
+            "text": "uniform int uTDCurrentDepth; // Is the 0-based index of the slice that's currently being created.",
+            "language": "glsl"
+          },
+          {
+            "type": "subsection",
+            "title": "Compute Shaders",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "When creating a 3D Texture or a 2D Texture Array with a compute shader, the shader is still only ran once. The entire output texture is available to be written to using imageStore, and should be filled as desired, possibly with a Z dispatch size equal to the depth of the texture."
+          }
+        ]
+      },
+      {
+        "title": "Outputting to Multiple Color Buffers",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "In the same pixel shader you can output to multiple identical size/format buffers at the same time. To do this first turn up the \"# of Color Buffers\" parameter in the GLSL TOP to the number of outputs you need."
+          },
+          {
+            "type": "paragraph",
+            "text": "The output connector on the GLSL TOP will always output the color for the first color buffer. To get the other color buffers use a Render Select TOP and point it to the GLSL TOP, then select your color buffer index you want."
+          },
+          {
+            "type": "subsection",
+            "title": "Pixel Shaders",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "In your shader declare your other other output locations. For example if your plan to output to 3 different buffers you could declare them like this:"
+          },
+          {
+            "type": "code",
+            "text": "layout(location = 0) out vec4 fragColor;\n layout(location = 1) out vec4 otherColor;\n layout(location = 2) out vec4 extraInfo;",
+            "language": "text"
+          },
+          {
+            "type": "paragraph",
+            "text": "Now you can write to fragColor, otherColor and extraInfo to write to the 3 color buffers that your are outputting to. If you don't write to all of your outputs in all cases, the resulting pixel value is undefined. Don't avoid writing a value to try to keep last frame's value in the buffer."
+          },
+          {
+            "type": "subsection",
+            "title": "Compute Shaders",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "The sTDComputeOutputs[] uniform will be sized equal to the number of color buffers being output."
+          }
+        ]
+      },
+      {
+        "title": "Vertex Shader",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "In most cases you will not need to provide a vertex shader to the GLSL TOP. If you decide to provide a vertex shader, it's most basic form would be:"
+          },
+          {
+            "type": "code",
+            "text": "out vec3 texCoord;\n void main()\n {\n      texCoord = uv[0];\n      gl_Position = TDSOPToProj(vec4(P, 1.0));\n }",
+            "language": "cpp"
+          },
+          {
+            "type": "paragraph",
+            "text": "It is very important that you do not manipulate the vertex position, as it will cause the quad to not be aligned with the TOP output. Also, notice how we declare our own output variable for the texture coordinate here. vUV will not be automatically available to us in the pixel shader if we supply a vertex shader, so we use this variable instead;"
+          },
+          {
+            "type": "code",
+            "text": "layout (location = 0) out vec4 fragColor;\n in vec3 texCoord;\n void main()\n {\n     fragColor = texture(sTD2DInputs[0], texCoord.st);\n }",
+            "language": "cpp"
+          }
+        ]
+      },
+      {
+        "title": "Debugging Crashes",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "With the changeover to Vulkan, it's much easier for incorrectly written GLSL to cause a full application crash. For more information about this, refer to this article."
+          }
+        ]
+      },
+      {
+        "title": "Other Notes",
+        "level": 2,
+        "content": [
+          {
+            "type": "subsection",
+            "title": "#version statement",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "TouchDesigner will automatically put a #version statement at the start of the shaders when compiling them, so you should make sure your shaders don't have a #version statement. You will get an error if they do."
+          }
+        ]
+      }
+    ],
+    "tableOfContents": [
+      {
+        "number": "1",
+        "text": "Overview",
+        "href": "#Overview"
+      },
+      {
+        "number": "2",
+        "text": "Concepts",
+        "href": "#Concepts"
+      },
+      {
+        "number": "2.1",
+        "text": "Output Swizzle",
+        "href": "#Output_Swizzle"
+      },
+      {
+        "number": "2.2",
+        "text": "Outputting Color",
+        "href": "#Outputting_Color"
+      },
+      {
+        "number": "2.2.1",
+        "text": "Pixel Shader",
+        "href": "#Pixel_Shader"
+      },
+      {
+        "number": "2.2.2",
+        "text": "Compute Shader",
+        "href": "#Compute_Shader"
+      },
+      {
+        "number": "2.3",
+        "text": "Sampling Inputs",
+        "href": "#Sampling_Inputs"
+      },
+      {
+        "number": "2.3.1",
+        "text": "Pixel Shaders",
+        "href": "#Pixel_Shaders"
+      },
+      {
+        "number": "2.3.2",
+        "text": "Compute Shaders",
+        "href": "#Compute_Shaders"
+      },
+      {
+        "number": "3",
+        "text": "Samplers",
+        "href": "#Samplers"
+      },
+      {
+        "number": "3.1",
+        "text": "Non-Dynamically Uniform Sampler Access",
+        "href": "#Non-Dynamically_Uniform_Sampler_Access"
+      },
+      {
+        "number": "3.2",
+        "text": "Built In Samplers",
+        "href": "#Built_In_Samplers"
+      },
+      {
+        "number": "4",
+        "text": "Uniforms",
+        "href": "#Uniforms"
+      },
+      {
+        "number": "4.1",
+        "text": "Built in Uniforms",
+        "href": "#Built_in_Uniforms"
+      },
+      {
+        "number": "5",
+        "text": "Atomic Counters",
+        "href": "#Atomic_Counters"
+      },
+      {
+        "number": "6",
+        "text": "Specialization Constants",
+        "href": "#Specialization_Constants"
+      },
+      {
+        "number": "7",
+        "text": "Built-in Functions",
+        "href": "#Built-in_Functions"
+      },
+      {
+        "number": "7.1",
+        "text": "Output Swizzle",
+        "href": "#Output_Swizzle_2"
+      },
+      {
+        "number": "7.2",
+        "text": "Perlin and Simplex Noise",
+        "href": "#Perlin_and_Simplex_Noise"
+      },
+      {
+        "number": "7.3",
+        "text": "HSV Conversion",
+        "href": "#HSV_Conversion"
+      },
+      {
+        "number": "7.4",
+        "text": "Dithering",
+        "href": "#Dithering"
+      },
+      {
+        "number": "7.5",
+        "text": "Matrix Functions",
+        "href": "#Matrix_Functions"
+      },
+      {
+        "number": "8",
+        "text": "Sampling more than one pixel",
+        "href": "#Sampling_more_than_one_pixel"
+      },
+      {
+        "number": "9",
+        "text": "3D Textures and 2D Texture Arrays",
+        "href": "#3D_Textures_and_2D_Texture_Arrays"
+      },
+      {
+        "number": "9.1",
+        "text": "Pixel Shaders",
+        "href": "#Pixel_Shaders_2"
+      },
+      {
+        "number": "9.2",
+        "text": "Compute Shaders",
+        "href": "#Compute_Shaders_2"
+      },
+      {
+        "number": "10",
+        "text": "Outputting to Multiple Color Buffers",
+        "href": "#Outputting_to_Multiple_Color_Buffers"
+      },
+      {
+        "number": "10.1",
+        "text": "Pixel Shaders",
+        "href": "#Pixel_Shaders_3"
+      },
+      {
+        "number": "10.2",
+        "text": "Compute Shaders",
+        "href": "#Compute_Shaders_3"
+      },
+      {
+        "number": "11",
+        "text": "Vertex Shader",
+        "href": "#Vertex_Shader"
+      },
+      {
+        "number": "12",
+        "text": "Debugging Crashes",
+        "href": "#Debugging_Crashes"
+      },
+      {
+        "number": "13",
+        "text": "Other Notes",
+        "href": "#Other_Notes"
+      },
+      {
+        "number": "13.1",
+        "text": "#version statement",
+        "href": "##version_statement"
+      }
+    ],
+    "relatedLinks": [
+      {
+        "text": "GLSL TOP",
+        "href": "GLSL_TOP.htm"
+      },
+      {
+        "text": "DAT",
+        "href": "DAT.htm"
+      },
+      {
+        "text": "GLSL MAT",
+        "href": "GLSL_MAT.htm"
+      },
+      {
+        "text": "3D Texture",
+        "href": "3D_Texture.htm"
+      },
+      {
+        "text": "2D Texture Array",
+        "href": "2D_Texture_Array.htm"
+      },
+      {
+        "text": "Render Select TOP",
+        "href": "Render_Select_TOP.htm"
+      },
+      {
+        "text": "this article.",
+        "href": "Debugging_crashes_triggered_by_GLSL_errors.htm"
+      }
+    ],
+    "images": []
+  },
+  "keywords": [
+    "write",
+    "glsl",
+    "overview",
+    "concepts",
+    "samplers",
+    "uniforms",
+    "atomic",
+    "counters",
+    "specialization",
+    "constants",
+    "built-in",
+    "functions",
+    "sampling",
+    "more",
+    "than",
+    "pixel",
+    "textures",
+    "texture",
+    "arrays",
+    "outputting",
+    "multiple",
+    "color",
+    "buffers",
+    "vertex",
+    "shader",
+    "debugging",
+    "crashes",
+    "other",
+    "notes",
+    "top",
+    "comp",
+    "render",
+    "mat",
+    "channel",
+    "sample",
+    "dat",
+    "parameter",
+    "export",
+    "sop",
+    "import"
+  ],
+  "tags": [
+    "Tutorial",
+    "TouchDesigner",
+    "Write a GLSL TOP"
+  ],
+  "searchWeight": 2,
+  "lastUpdated": "2025-08-08T03:32:33.770Z",
+  "sourceFile": "C:\\Program Files\\Derivative\\TouchDesigner\\Samples\\Learn\\OfflineHelp\\https.docs.derivative.ca\\Write_a_GLSL_TOP.htm",
+  "isValid": true,
+  "validationErrors": []
+}

@@ -1,0 +1,139 @@
+{
+  "id": "write_a_cplusplus_chop",
+  "name": "Write a CPlusPlus CHOP",
+  "displayName": "Write a CPlusPlus CHOP",
+  "category": "TUTORIAL",
+  "subcategory": "CHOP Tutorial",
+  "type": "tutorial",
+  "description": "Make sure you've read through Write a CPlusPlus Plugin first for general information about writing a plugin for a CPlusPlus CHOP.",
+  "summary": "Make sure you've read through Write a CPlusPlus Plugin first for general information about writing a plugin for a CPlusPlus CHOP. The CPlusPlus CHOP allows you to manipulate CHOP data using custom code, or bring in/output CHOP data to and from external sources or file formats. You can use one of the CHOP's inputs to determine the number of channels, channel names, sample rate etc. of the output, or you can specify them in code (in getOutputInfo()).",
+  "content": {
+    "sections": [
+      {
+        "title": "Overview",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Make sure you've read through Write a CPlusPlus Plugin first for general information about writing a plugin for a CPlusPlus CHOP."
+          },
+          {
+            "type": "paragraph",
+            "text": "The CPlusPlus CHOP allows you to manipulate CHOP data using custom code, or bring in/output CHOP data to and from external sources or file formats."
+          }
+        ]
+      },
+      {
+        "title": "Output Channels",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "You can use one of the CHOP's inputs to determine the number of channels, channel names, sample rate etc. of the output, or you can specify them in code (in getOutputInfo())."
+          },
+          {
+            "type": "paragraph",
+            "text": "To get started it is much easier to output non-Time Sliced data, where you specify the length of the channels and you just fill that much data every frame. The example that comes with the TouchDesigner installer outputs a Time Slice for illustration though."
+          }
+        ]
+      },
+      {
+        "title": "Time Sliced Data",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "If you are unfamiliar with what a time slice is, see the Time Slicing article."
+          },
+          {
+            "type": "paragraph",
+            "text": "If the plugin is outputting time sliced data then TouchDesigner will tell you how many samples it wants you to output. The number of samples depends on how long it's been since TouchDesigner last cooked (due to skipped frames), and the sample rate of the Time Slice vs the sample rate of the CHOP. For example let's say the CHOP is outputting 120hz sample rate data and the Timeline is running at 60hz. If TouchDesigner skipped cooking the last frame the Time Slice size will be 2 frames long. Since the CHOPs sample rate is 120hz vs. the 60hz of the timeline, you will be asked to provide 4 samples of data per channel to fill the Time Slice."
+          }
+        ]
+      },
+      {
+        "title": "See Also",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Write a CPlusPlus PluginWrite a CPlusPlus TOPUpgrading Custom Operators and CPlusPlus Plugins to 2022 and Newer Builds"
+          }
+        ]
+      }
+    ],
+    "tableOfContents": [
+      {
+        "number": "1",
+        "text": "Overview",
+        "href": "#Overview"
+      },
+      {
+        "number": "2",
+        "text": "Output Channels",
+        "href": "#Output_Channels"
+      },
+      {
+        "number": "3",
+        "text": "Time Sliced Data",
+        "href": "#Time_Sliced_Data"
+      },
+      {
+        "number": "4",
+        "text": "See Also",
+        "href": "#See_Also"
+      }
+    ],
+    "relatedLinks": [
+      {
+        "text": "Write a CPlusPlus Plugin",
+        "href": "Write_a_CPlusPlus_Plugin.htm"
+      },
+      {
+        "text": "Time Slicing",
+        "href": "Time_Slicing.htm"
+      },
+      {
+        "text": "Timeline",
+        "href": "Timeline.htm"
+      },
+      {
+        "text": "Write a CPlusPlus TOP",
+        "href": "Write_a_CPlusPlus_TOP.htm"
+      },
+      {
+        "text": "Upgrading Custom Operators and CPlusPlus Plugins to 2022 and Newer Builds",
+        "href": "Upgrading_Custom_Operators_and_CPlusPlus_Plugins_to_2022_and_Newer_Builds.htm"
+      }
+    ],
+    "images": []
+  },
+  "keywords": [
+    "write",
+    "cplusplus",
+    "chop",
+    "overview",
+    "output",
+    "channels",
+    "time",
+    "sliced",
+    "data",
+    "also",
+    "mat",
+    "dat",
+    "channel",
+    "sample",
+    "top",
+    "operator"
+  ],
+  "tags": [
+    "Tutorial",
+    "TouchDesigner",
+    "Write a CPlusPlus CHOP"
+  ],
+  "searchWeight": 2,
+  "lastUpdated": "2025-08-08T03:32:33.678Z",
+  "sourceFile": "C:\\Program Files\\Derivative\\TouchDesigner\\Samples\\Learn\\OfflineHelp\\https.docs.derivative.ca\\Write_a_CPlusPlus_CHOP.htm",
+  "isValid": true,
+  "validationErrors": []
+}

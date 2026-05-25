@@ -1,0 +1,43 @@
+{
+  "className": "Connector",
+  "displayName": "Connector Class",
+  "description": "The Connector class describes the input or output connection point of an operator.  There are two types of connections:  those between Components, and those between regular operators.\nConnections between regular operators can be accessed through the OP.inputConnectors and OP.outputConnectors members. These are the connectors on the left and right sides of Operators.\nConnections between components can be accessed through the COMP.inputCOMPConnectors and COMP.outputCOMPConnectors members. These are the connectors on the top and bottom of Component operators",
+  "category": "General",
+  "fileName": "Connector_Class.htm",
+  "members": [
+    {
+      "name": "index",
+      "id": "content",
+      "returnType": "int",
+      "readOnly": true,
+      "description": "index member"
+    },
+    {
+      "name": "index",
+      "id": "bodyContent",
+      "returnType": "int",
+      "readOnly": true,
+      "description": "index member"
+    }
+  ],
+  "methods": [
+    {
+      "name": "connect",
+      "parameters": [
+        {
+          "name": "target",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "connect(target)"
+    },
+    {
+      "name": "disconnect",
+      "parameters": [],
+      "returns": "None :",
+      "signature": "disconnect()"
+    }
+  ],
+  "enhanced": true
+}

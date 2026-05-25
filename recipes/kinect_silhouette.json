@@ -1,0 +1,45 @@
+{
+  "id": "kinect_silhouette",
+  "name": "Kinect Silhouette",
+  "description": "Uses a Kinect Azure depth feed to isolate a body silhouette and drive a glowing outline. Requires Kinect Azure hardware.",
+  "tags": ["kinect", "depth", "interactive", "installation"],
+  "difficulty": "advanced",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "kinect",
+      "type": "kinectazureTOP",
+      "comment": "Depth / player index (requires hardware)"
+    },
+    {
+      "name": "threshold",
+      "type": "thresholdTOP",
+      "parameters": { "threshold": 0.5 },
+      "comment": "Isolate the body from the background"
+    },
+    { "name": "edge", "type": "edgeTOP", "comment": "Silhouette outline" },
+    { "name": "glow", "type": "blurTOP", "parameters": { "size": 6 } },
+    { "name": "comp1", "type": "compositeTOP", "comment": "Combine outline + glow" },
+    { "name": "out1", "type": "nullTOP" }
+  ],
+  "connections": [
+    { "from": "kinect", "to": "threshold" },
+    { "from": "threshold", "to": "edge" },
+    { "from": "edge", "to": "comp1", "to_input": 0 },
+    { "from": "edge", "to": "glow" },
+    { "from": "glow", "to": "comp1", "to_input": 1 },
+    { "from": "comp1", "to": "out1" }
+  ],
+  "parameters": [
+    {
+      "name": "depth_threshold",
+      "node": "threshold",
+      "param": "threshold",
+      "value": 0.5,
+      "min": 0,
+      "max": 1,
+      "label": "Depth Threshold"
+    }
+  ],
+  "preview_description": "A glowing neon outline of a person moving in front of the sensor against a black background."
+}

@@ -1,0 +1,1141 @@
+{
+  "name": "Sphere POP",
+  "id": "sphere_pop",
+  "category": "POP",
+  "subcategory": "Experimental",
+  "description": "The Sphere POP creates spherical shapes in two different forms: Geodesic type creates a set of triangles of equally-spaced points which can be recursively divided giving more detail, and Grid type where you specify rows and columns of points similar to latitude/longitude lines. In both cases, the points can be connected with a variety of primitives using the Connectivity menu.",
+  "parameters": [
+    {
+      "name": "numCols numRows",
+      "label": "Type",
+      "description": "Configure Type for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Geodesic",
+          "value": "geodesic",
+          "description": ""
+        },
+        {
+          "label": "Grid",
+          "value": "grid",
+          "description": ""
+        },
+        {
+          "label": "Tetrahedron",
+          "value": "tetrahedron",
+          "description": ""
+        },
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Rows",
+          "value": "rows",
+          "description": ""
+        },
+        {
+          "label": "Columns",
+          "value": "cols",
+          "description": ""
+        },
+        {
+          "label": "Rows and Columns",
+          "value": "rowcol",
+          "description": ""
+        },
+        {
+          "label": "Triangles",
+          "value": "triangles",
+          "description": ""
+        },
+        {
+          "label": "Alternating Triangles",
+          "value": "alttriangles",
+          "description": ""
+        },
+        {
+          "label": "Quadrilaterals",
+          "value": "quads",
+          "description": ""
+        },
+        {
+          "label": "Point Prims",
+          "value": "point",
+          "description": ""
+        },
+        {
+          "label": "Line Strip",
+          "value": "linestrip",
+          "description": ""
+        },
+        {
+          "label": "Lines",
+          "value": "lines",
+          "description": ""
+        },
+        {
+          "label": "X Axis",
+          "value": "x",
+          "description": ""
+        },
+        {
+          "label": "Y Axis",
+          "value": "y",
+          "description": ""
+        },
+        {
+          "label": "Z Axis",
+          "value": "z",
+          "description": ""
+        },
+        {
+          "label": "Radius",
+          "value": "rad1",
+          "description": ""
+        },
+        {
+          "label": "Radius",
+          "value": "rad2",
+          "description": ""
+        },
+        {
+          "label": "Radius",
+          "value": "rad3",
+          "description": ""
+        },
+        {
+          "label": "Brute Force",
+          "value": "bruteforce",
+          "description": ""
+        },
+        {
+          "label": "Shared Memory",
+          "value": "sharedmemory",
+          "description": ""
+        },
+        {
+          "label": "Spatial Grid",
+          "value": "spatialgrid",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "tx",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "ty",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "tz",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "rx",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "ry",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "rz",
+          "description": ""
+        },
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Point",
+          "value": "pointtexcoord",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertextexcoord",
+          "description": ""
+        },
+        {
+          "label": "By Primitive Type",
+          "value": "byprimtype",
+          "description": ""
+        },
+        {
+          "label": "Equirectangular Inside (Spherical Polar)",
+          "value": "equirectangularin",
+          "description": ""
+        },
+        {
+          "label": "Equirectangular Outside (Spherical Polar)",
+          "value": "equirectangularout",
+          "description": ""
+        },
+        {
+          "label": "Equidistant Azimuth (Fish Eye 180)",
+          "value": "equiazimuth",
+          "description": ""
+        },
+        {
+          "label": "Equidistant Azimuth (Fish Eye 360)",
+          "value": "equiazimuth360",
+          "description": ""
+        },
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Point",
+          "value": "pointNormals",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertNormals",
+          "description": ""
+        },
+        {
+          "label": "Angle U",
+          "value": "beginangleu",
+          "description": ""
+        },
+        {
+          "label": "Angle U",
+          "value": "endangleu",
+          "description": ""
+        },
+        {
+          "label": "Angle V",
+          "value": "beginanglev",
+          "description": ""
+        },
+        {
+          "label": "Angle V",
+          "value": "endanglev",
+          "description": ""
+        },
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        },
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    },
+    {
+      "name": "type",
+      "label": "Type",
+      "description": "Configure Type for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Geodesic",
+          "value": "geodesic",
+          "description": ""
+        },
+        {
+          "label": "Grid",
+          "value": "grid",
+          "description": ""
+        },
+        {
+          "label": "Tetrahedron",
+          "value": "tetrahedron",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "geodesic",
+      "label": "Geodesic",
+      "description": "Configure Geodesic for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Geodesic",
+          "value": "geodesic",
+          "description": ""
+        },
+        {
+          "label": "Grid",
+          "value": "grid",
+          "description": ""
+        },
+        {
+          "label": "Tetrahedron",
+          "value": "tetrahedron",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "surftype",
+      "label": "Connectivity",
+      "description": "Configure Connectivity for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Rows",
+          "value": "rows",
+          "description": ""
+        },
+        {
+          "label": "Columns",
+          "value": "cols",
+          "description": ""
+        },
+        {
+          "label": "Rows and Columns",
+          "value": "rowcol",
+          "description": ""
+        },
+        {
+          "label": "Triangles",
+          "value": "triangles",
+          "description": ""
+        },
+        {
+          "label": "Alternating Triangles",
+          "value": "alttriangles",
+          "description": ""
+        },
+        {
+          "label": "Quadrilaterals",
+          "value": "quads",
+          "description": ""
+        },
+        {
+          "label": "Point Prims",
+          "value": "point",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "none",
+      "label": "None",
+      "description": "Configure None for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Rows",
+          "value": "rows",
+          "description": ""
+        },
+        {
+          "label": "Columns",
+          "value": "cols",
+          "description": ""
+        },
+        {
+          "label": "Rows and Columns",
+          "value": "rowcol",
+          "description": ""
+        },
+        {
+          "label": "Triangles",
+          "value": "triangles",
+          "description": ""
+        },
+        {
+          "label": "Alternating Triangles",
+          "value": "alttriangles",
+          "description": ""
+        },
+        {
+          "label": "Quadrilaterals",
+          "value": "quads",
+          "description": ""
+        },
+        {
+          "label": "Point Prims",
+          "value": "point",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "linetype",
+      "label": "Line Type",
+      "description": "Configure Line Type for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Line Strip",
+          "value": "linestrip",
+          "description": ""
+        },
+        {
+          "label": "Lines",
+          "value": "lines",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "linestrip",
+      "label": "Line Strip",
+      "description": "Configure Line Strip for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Line Strip",
+          "value": "linestrip",
+          "description": ""
+        },
+        {
+          "label": "Lines",
+          "value": "lines",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "orient",
+      "label": "Orientation",
+      "description": "Configure Orientation for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "X Axis",
+          "value": "x",
+          "description": ""
+        },
+        {
+          "label": "Y Axis",
+          "value": "y",
+          "description": ""
+        },
+        {
+          "label": "Z Axis",
+          "value": "z",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "x",
+      "label": "X Axis",
+      "description": "Configure X Axis for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "X Axis",
+          "value": "x",
+          "description": ""
+        },
+        {
+          "label": "Y Axis",
+          "value": "y",
+          "description": ""
+        },
+        {
+          "label": "Z Axis",
+          "value": "z",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "modifybounds",
+      "label": "Modify Bounds",
+      "description": "Configure Modify Bounds for the operator",
+      "type": "string"
+    },
+    {
+      "name": "rad",
+      "label": "Radius",
+      "description": "Configure Radius for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Radius",
+          "value": "rad1",
+          "description": ""
+        },
+        {
+          "label": "Radius",
+          "value": "rad2",
+          "description": ""
+        },
+        {
+          "label": "Radius",
+          "value": "rad3",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "rad1",
+      "label": "Radius",
+      "description": "Configure Radius for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Radius",
+          "value": "rad1",
+          "description": ""
+        },
+        {
+          "label": "Radius",
+          "value": "rad2",
+          "description": ""
+        },
+        {
+          "label": "Radius",
+          "value": "rad3",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "scale",
+      "label": "Uniform Scale",
+      "description": "Configure Uniform Scale for the operator",
+      "type": "string"
+    },
+    {
+      "name": "freq",
+      "label": "Frequency",
+      "description": "Configure Frequency for the operator",
+      "type": "string"
+    },
+    {
+      "name": "fuse",
+      "label": "Fuse",
+      "description": "Configure Fuse for the operator",
+      "type": "string"
+    },
+    {
+      "name": "fusetechnique",
+      "label": "Fuse Technique",
+      "description": "Configure Fuse Technique for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Brute Force",
+          "value": "bruteforce",
+          "description": ""
+        },
+        {
+          "label": "Shared Memory",
+          "value": "sharedmemory",
+          "description": ""
+        },
+        {
+          "label": "Spatial Grid",
+          "value": "spatialgrid",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "bruteforce",
+      "label": "Brute Force",
+      "description": "Configure Brute Force for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Brute Force",
+          "value": "bruteforce",
+          "description": ""
+        },
+        {
+          "label": "Shared Memory",
+          "value": "sharedmemory",
+          "description": ""
+        },
+        {
+          "label": "Spatial Grid",
+          "value": "spatialgrid",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "cols",
+      "label": "Columns",
+      "description": "Configure Columns for the operator",
+      "type": "string"
+    },
+    {
+      "name": "rows",
+      "label": "Rows",
+      "description": "Configure Rows for the operator",
+      "type": "string"
+    },
+    {
+      "name": "anchoru",
+      "label": "Anchor U",
+      "description": "Configure Anchor U for the operator",
+      "type": "string"
+    },
+    {
+      "name": "anchorv",
+      "label": "Anchor V",
+      "description": "Configure Anchor V for the operator",
+      "type": "string"
+    },
+    {
+      "name": "anchorw",
+      "label": "Anchor W",
+      "description": "Configure Anchor W for the operator",
+      "type": "string"
+    },
+    {
+      "name": "t",
+      "label": "Translate",
+      "description": "Configure Translate for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Translate",
+          "value": "tx",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "ty",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "tz",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "tx",
+      "label": "Translate",
+      "description": "Configure Translate for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Translate",
+          "value": "tx",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "ty",
+          "description": ""
+        },
+        {
+          "label": "Translate",
+          "value": "tz",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "r",
+      "label": "Rotate",
+      "description": "Configure Rotate for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Rotate",
+          "value": "rx",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "ry",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "rz",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "rx",
+      "label": "Rotate",
+      "description": "Configure Rotate for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Rotate",
+          "value": "rx",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "ry",
+          "description": ""
+        },
+        {
+          "label": "Rotate",
+          "value": "rz",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "texture",
+      "label": "Texture Coordinates",
+      "description": "Configure Texture Coordinates for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Point",
+          "value": "pointtexcoord",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertextexcoord",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "texturemethod",
+      "label": "Texture Method",
+      "description": "Configure Texture Method for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "By Primitive Type",
+          "value": "byprimtype",
+          "description": ""
+        },
+        {
+          "label": "Equirectangular Inside (Spherical Polar)",
+          "value": "equirectangularin",
+          "description": ""
+        },
+        {
+          "label": "Equirectangular Outside (Spherical Polar)",
+          "value": "equirectangularout",
+          "description": ""
+        },
+        {
+          "label": "Equidistant Azimuth (Fish Eye 180)",
+          "value": "equiazimuth",
+          "description": ""
+        },
+        {
+          "label": "Equidistant Azimuth (Fish Eye 360)",
+          "value": "equiazimuth360",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "byprimtype",
+      "label": "By Primitive Type",
+      "description": "Configure By Primitive Type for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "By Primitive Type",
+          "value": "byprimtype",
+          "description": ""
+        },
+        {
+          "label": "Equirectangular Inside (Spherical Polar)",
+          "value": "equirectangularin",
+          "description": ""
+        },
+        {
+          "label": "Equirectangular Outside (Spherical Polar)",
+          "value": "equirectangularout",
+          "description": ""
+        },
+        {
+          "label": "Equidistant Azimuth (Fish Eye 180)",
+          "value": "equiazimuth",
+          "description": ""
+        },
+        {
+          "label": "Equidistant Azimuth (Fish Eye 360)",
+          "value": "equiazimuth360",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "normal",
+      "label": "Normal",
+      "description": "Configure Normal for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "None",
+          "value": "none",
+          "description": ""
+        },
+        {
+          "label": "Point",
+          "value": "pointNormals",
+          "description": ""
+        },
+        {
+          "label": "Vertex",
+          "value": "vertNormals",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "closedu",
+      "label": "U Closed",
+      "description": "Configure U Closed for the operator",
+      "type": "string"
+    },
+    {
+      "name": "angleu",
+      "label": "Angle U",
+      "description": "Configure Angle U for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Angle U",
+          "value": "beginangleu",
+          "description": ""
+        },
+        {
+          "label": "Angle U",
+          "value": "endangleu",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "beginangleu",
+      "label": "Angle U",
+      "description": "Configure Angle U for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Angle U",
+          "value": "beginangleu",
+          "description": ""
+        },
+        {
+          "label": "Angle U",
+          "value": "endangleu",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "anglev",
+      "label": "Angle V",
+      "description": "Configure Angle V for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Angle V",
+          "value": "beginanglev",
+          "description": ""
+        },
+        {
+          "label": "Angle V",
+          "value": "endanglev",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "beginanglev",
+      "label": "Angle V",
+      "description": "Configure Angle V for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Angle V",
+          "value": "beginanglev",
+          "description": ""
+        },
+        {
+          "label": "Angle V",
+          "value": "endanglev",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "bypass",
+      "label": "Bypass",
+      "description": "Configure Bypass for the operator",
+      "type": "string"
+    },
+    {
+      "name": "delinputattrs",
+      "label": "Delete Input Attributes",
+      "description": "Configure Delete Input Attributes for the operator",
+      "type": "string"
+    },
+    {
+      "name": "parmcolorspace",
+      "label": "Parameter Color Space",
+      "description": "Configure Parameter Color Space for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        }
+      ]
+    },
+    {
+      "name": "srgb",
+      "label": "sRGB",
+      "description": "Configure sRGB for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "sRGB",
+          "value": "srgb",
+          "description": "sRGB color space, with sRGB transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "sRGB - Linear",
+          "value": "srgblinear",
+          "description": "Linear srgblinear - sRGB color space, with linear transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.601 (NTSC)",
+          "value": "rec601ntsc",
+          "description": "Rec.601 with NTSC primaries color space, with Rec.601 transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.709",
+          "value": "rec709",
+          "description": "Rec.709 color space, with Rec.709 (same as Rec.2020) transfer function. Considered an SDR color space with respect to Reference White."
+        },
+        {
+          "label": "Rec.2020",
+          "value": "rec2020",
+          "description": "Rec.2020 color space, with Rec.2020 (same as Rec.709) transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3",
+          "value": "dcip3",
+          "description": "P3 dcip3 - DCI-P3 color space, with D65 white point and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "DCI-P3 (D60)",
+          "value": "dcip3d60",
+          "description": "P3 (D60) dcip3d60 - DCI-P3 \"D60 sim\" color space, with D60 white point, and 2.6 gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Display-P3 (D65)",
+          "value": "displayp3d65",
+          "description": "P3 (D65) displayp3d65 - Display-P3 color space, with D65 white point, and sRGB gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACES2065-1",
+          "value": "aces2065-1",
+          "description": "1 aces2065-1 - ACES 2065-1 (also known as ACES AP0) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "ACEScg",
+          "value": "acescg",
+          "description": "ACEScg (also known as ACES AP1) color space, with a linear gamma transfer function. Considered an HDR color space with respect to Reference White."
+        },
+        {
+          "label": "Passthrough",
+          "value": "passthrough",
+          "description": "When selected, the color values will be used as-is in the operation, without any modification or attempt to convert them into the Working Color Space."
+        }
+      ]
+    },
+    {
+      "name": "parmreferencewhite",
+      "label": "Parameter Reference White",
+      "description": "Configure Parameter Reference White for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    },
+    {
+      "name": "default",
+      "label": "Default For Color Space",
+      "description": "Configure Default For Color Space for the operator",
+      "type": "menu",
+      "options": [
+        {
+          "label": "Default For Color Space",
+          "value": "default",
+          "description": "Will use either the SDR or the HDR Reference White, based on the color space selected."
+        },
+        {
+          "label": "Standard (SDR)",
+          "value": "sdr",
+          "description": "Will treat the Parameter Color Space as SDR for it's reference white value."
+        },
+        {
+          "label": "High (HDR)",
+          "value": "hdr",
+          "description": "Will treat the Parameter Color Space as HDR for it's reference white value."
+        }
+      ]
+    }
+  ],
+  "experimental": true,
+  "sourceFile": "Experimental-Sphere_POP.htm",
+  "parsedAt": "2025-08-08T03:03:59.844Z"
+}

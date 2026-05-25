@@ -1,0 +1,1986 @@
+{
+  "id": "tdbitwig_user_guide",
+  "name": "TDBitwig User Guide",
+  "displayName": "TDBitwig User Guide",
+  "category": "TUTORIAL",
+  "subcategory": "Integration Guide",
+  "type": "tutorial",
+  "description": "TDBitwig is a set of TouchDesigner components that enables bi-directional communication between Bitwig Studio and TouchDesigner. The TDBitwig functionality enables users to create custom audio-visual performances by integrating real-time visuals with live audio output.",
+  "summary": "TDBitwig is a set of TouchDesigner components that enables bi-directional communication between Bitwig Studio and TouchDesigner. The TDBitwig functionality enables users to create custom audio-visual ...",
+  "content": {
+    "sections": [
+      {
+        "title": "Contents",
+        "level": 2,
+        "content": [
+          {
+            "type": "unordered-list",
+            "items": [
+              "1 Introduction\n1.1 NOTE",
+              "1.1 NOTE",
+              "2 Overview\n2.1 Bitwig API\n2.2 Open Sound Control (OSC)\n2.3 System Design",
+              "2.1 Bitwig API",
+              "2.2 Open Sound Control (OSC)",
+              "2.3 System Design",
+              "3 Getting Started\n3.1 Installation\n3.2 Setup\n3.2.1 Custom Extension Installation\n3.2.2 Configuring OSC\n\n3.3 Troubleshooting",
+              "3.1 Installation",
+              "3.2 Setup\n3.2.1 Custom Extension Installation\n3.2.2 Configuring OSC",
+              "3.2.1 Custom Extension Installation",
+              "3.2.2 Configuring OSC",
+              "3.3 Troubleshooting",
+              "4 Component Concepts\n4.1 Cursors\n4.1.1 Cursor Navigation\n\n4.2 Observers\n4.3 Limitations\n4.4 Cursor Mapping",
+              "4.1 Cursors\n4.1.1 Cursor Navigation",
+              "4.1.1 Cursor Navigation",
+              "4.2 Observers",
+              "4.3 Limitations",
+              "4.4 Cursor Mapping",
+              "5 Component Set\n5.1 System Components\n5.1.1 bitwigMain\n5.1.2 tdBitwigPackage\n\n5.2 Object Components\n5.2.1 Common Features\n5.2.2 bitwigSong\n5.2.3 bitwigTrack\n5.2.4 bitwigClipSlot\n5.2.5 bitwigClip\n5.2.6 bitwigRemotesDevice\n5.2.7 bitwigRemotesTrack\n5.2.8 bitwigRemotesProject\n5.2.9 bitwigNote\n\n5.3 Auxiliary Components\n5.3.1 bitwigSelect",
+              "5.1 System Components\n5.1.1 bitwigMain\n5.1.2 tdBitwigPackage",
+              "5.1.1 bitwigMain",
+              "5.1.2 tdBitwigPackage",
+              "5.2 Object Components\n5.2.1 Common Features\n5.2.2 bitwigSong\n5.2.3 bitwigTrack\n5.2.4 bitwigClipSlot\n5.2.5 bitwigClip\n5.2.6 bitwigRemotesDevice\n5.2.7 bitwigRemotesTrack\n5.2.8 bitwigRemotesProject\n5.2.9 bitwigNote",
+              "5.2.1 Common Features",
+              "5.2.2 bitwigSong",
+              "5.2.3 bitwigTrack",
+              "5.2.4 bitwigClipSlot",
+              "5.2.5 bitwigClip",
+              "5.2.6 bitwigRemotesDevice",
+              "5.2.7 bitwigRemotesTrack",
+              "5.2.8 bitwigRemotesProject",
+              "5.2.9 bitwigNote",
+              "5.3 Auxiliary Components\n5.3.1 bitwigSelect",
+              "5.3.1 bitwigSelect"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "1.1 NOTE"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "2.1 Bitwig API",
+              "2.2 Open Sound Control (OSC)",
+              "2.3 System Design"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "3.1 Installation",
+              "3.2 Setup\n3.2.1 Custom Extension Installation\n3.2.2 Configuring OSC",
+              "3.2.1 Custom Extension Installation",
+              "3.2.2 Configuring OSC",
+              "3.3 Troubleshooting"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "3.2.1 Custom Extension Installation",
+              "3.2.2 Configuring OSC"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "4.1 Cursors\n4.1.1 Cursor Navigation",
+              "4.1.1 Cursor Navigation",
+              "4.2 Observers",
+              "4.3 Limitations",
+              "4.4 Cursor Mapping"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "4.1.1 Cursor Navigation"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "5.1 System Components\n5.1.1 bitwigMain\n5.1.2 tdBitwigPackage",
+              "5.1.1 bitwigMain",
+              "5.1.2 tdBitwigPackage",
+              "5.2 Object Components\n5.2.1 Common Features\n5.2.2 bitwigSong\n5.2.3 bitwigTrack\n5.2.4 bitwigClipSlot\n5.2.5 bitwigClip\n5.2.6 bitwigRemotesDevice\n5.2.7 bitwigRemotesTrack\n5.2.8 bitwigRemotesProject\n5.2.9 bitwigNote",
+              "5.2.1 Common Features",
+              "5.2.2 bitwigSong",
+              "5.2.3 bitwigTrack",
+              "5.2.4 bitwigClipSlot",
+              "5.2.5 bitwigClip",
+              "5.2.6 bitwigRemotesDevice",
+              "5.2.7 bitwigRemotesTrack",
+              "5.2.8 bitwigRemotesProject",
+              "5.2.9 bitwigNote",
+              "5.3 Auxiliary Components\n5.3.1 bitwigSelect",
+              "5.3.1 bitwigSelect"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "5.1.1 bitwigMain",
+              "5.1.2 tdBitwigPackage"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "5.2.1 Common Features",
+              "5.2.2 bitwigSong",
+              "5.2.3 bitwigTrack",
+              "5.2.4 bitwigClipSlot",
+              "5.2.5 bitwigClip",
+              "5.2.6 bitwigRemotesDevice",
+              "5.2.7 bitwigRemotesTrack",
+              "5.2.8 bitwigRemotesProject",
+              "5.2.9 bitwigNote"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "5.3.1 bitwigSelect"
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "TDBitwig is a set of TouchDesigner components that enables bi-directional communication between Bitwig Studio and TouchDesigner. The TDBitwig functionality enables users to create custom audio-visual performances by integrating real-time visuals with live audio output."
+          },
+          {
+            "type": "paragraph",
+            "text": "For information about Bitwig Studio go here… (https://www.bitwig.com/)"
+          }
+        ]
+      },
+      {
+        "title": "NOTE[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "There was an oversight and we mistakenly included 2 extensions with Bitwig 5.1 and versions up to Bitwig 5.1.5. This oversight has been confirmed as fixed of Bitwig Version 5.1.6. If you are not able to update Bitwig to version 5.1.6, be sure the use the plugin version v1.1.12."
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "TouchDesigner OSC",
+              "Bitwig OSC"
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "TouchDesigner OSC"
+          },
+          {
+            "type": "paragraph",
+            "text": "Bitwig OSC"
+          },
+          {
+            "type": "subsection",
+            "title": "Bitwig API[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "TDBitwig’s ability to read and control information in a Bitwig session relies entirely on the Bitwig Studio Control Surface API. The TouchDesigner controller script serves to extend the functionality of this API and achieve the full capability of the TDBitwig System."
+          },
+          {
+            "type": "paragraph",
+            "text": "The Control Surface API is widely used to support a variety of hardware controllers like MIDI devices, and enables users to expand the level of interactivity in their recording and performance workflows."
+          },
+          {
+            "type": "paragraph",
+            "text": "Much of the inspiration for the TDBitwig Controller extension comes from the well documented library of Bitwig Studio controller scripts as well as the DrivenByMoss extension collection written by Jurgen Mossgraber."
+          },
+          {
+            "type": "subsection",
+            "title": "Open Sound Control (OSC)[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "The communication between TouchDesigner and Bitwig Studio relies on Open Sound Control (OSC), a message-based protocol using UDP. The use of OSC allows for communication between any number of devices on a network, and enables the TDBitwig System to send high-resolution data between separate devices running TouchDesigner and Bitwig Studio respectively."
+          },
+          {
+            "type": "subsection",
+            "title": "System Design[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "The design for the TDBitwig System was largely motivated by the popular application of the Bitwig API to support hardware controllers. Similarly, the TDBitwig Component Set can be thought of as a collection of software-based controllers; each component communicates with it’s respective part of the Bitwig session and has its own set of buttons and sliders for controlling certain Bitwig parameters. What distinguishes software-based controllers from their physical counterparts is the increased ability to access and control Bitwig session information in a programmatic environment like TouchDesigner."
+          }
+        ]
+      },
+      {
+        "title": "Installation[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "System Requirements:"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Bitwig Studio Version 5.0.11 +",
+              "TouchDesigner 2022.35280 +"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Setup[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "ordered-list",
+            "items": [
+              "Open Bitwig Studio.",
+              "Setup your newly imported controller extension.\nOpen Dashboard → Settings → Controllers → + Add Controller\nChoose Hardware Vendor : Derivative.\nChoose Product: TouchDesigner.\nClick Add.",
+              "Open Dashboard → Settings → Controllers → + Add Controller",
+              "Choose Hardware Vendor : Derivative.",
+              "Choose Product: TouchDesigner.",
+              "Click Add.",
+              "Open TouchDesigner.",
+              "In TouchDesigner, import the bitwigMain COMP.\nOpen the TouchDesigner palette.\nClick on the TDBitwig folder.\nDrag the bitwigMain COMP into your project.",
+              "Open the TouchDesigner palette.",
+              "Click on the TDBitwig folder.",
+              "Drag the bitwigMain COMP into your project.",
+              "If you are using the system on one computer, a connection should be established at this point since the OSC ports are set to match by default. If you are working on 2 computers or wish to use different OSC port numbers, refer to the Configuring OSC section below.",
+              "You can verify the connection status with the “connected” channel in the bitwigMain COMP’s OP view. If properly connected the value should be 1 and you can begin using the system. If a connection is not established, refer to the Troubleshooting section below."
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Open Dashboard → Settings → Controllers → + Add Controller",
+              "Choose Hardware Vendor : Derivative.",
+              "Choose Product: TouchDesigner.",
+              "Click Add."
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Open the TouchDesigner palette.",
+              "Click on the TDBitwig folder.",
+              "Drag the bitwigMain COMP into your project."
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Custom Extension Installation[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "Bitwig Studio includes the Touchdesigner controller extension file in their Bitwig builds, so updates to that file will be timed with their minor releases."
+          },
+          {
+            "type": "subsection",
+            "title": "Configuring OSC[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "You can locate the settings to configure your OSC connection in the following areas:"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "TouchDesigner:\nClick on the bitwigMain Component in your project,\nIn the parameter window, navigate to the Setup parameter page.",
+              "Click on the bitwigMain Component in your project,",
+              "In the parameter window, navigate to the Setup parameter page.",
+              "Bitwig Studio:\nOpen the Dashboard, and in the Settings Pane, scroll to the Controllers Section.\nYou should see the controller settings for the TouchDesigner controller extension.\nMake sure the active icon for the controller is on to view the settings window.",
+              "Open the Dashboard, and in the Settings Pane, scroll to the Controllers Section.",
+              "You should see the controller settings for the TouchDesigner controller extension.",
+              "Make sure the active icon for the controller is on to view the settings window."
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Click on the bitwigMain Component in your project,",
+              "In the parameter window, navigate to the Setup parameter page."
+            ]
+          },
+          {
+            "type": "code",
+            "text": "bitwigMain",
+            "language": "python"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Open the Dashboard, and in the Settings Pane, scroll to the Controllers Section.",
+              "You should see the controller settings for the TouchDesigner controller extension.",
+              "Make sure the active icon for the controller is on to view the settings window."
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "TouchDesigner OSC",
+              "Bitwig OSC"
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "TouchDesigner OSC"
+          },
+          {
+            "type": "paragraph",
+            "text": "Bitwig OSC"
+          },
+          {
+            "type": "paragraph",
+            "text": "To properly setup your OSC connection, make sure of the following:"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "The Bitwig IP Address setting in TouchDesigner matches the IP address of the device running Bitwig",
+              "The TouchDesigner IP Address setting in Bitwig matches the IP address of the device running TouchDesigner",
+              "The TouchDesigner In Port number in TouchDesigner matches the TouchDesigner Port number in Bitwig",
+              "The Bitwig Port number in TouchDesigner matches the Bitwig In Port number in Bitwig"
+            ]
+          },
+          {
+            "type": "code",
+            "text": "Bitwig IP Address",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "TouchDesigner IP Address",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "TouchDesigner In Port",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "TouchDesigner Port",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "Bitwig Port",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "Bitwig In Port",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Note:"
+          },
+          {
+            "type": "paragraph",
+            "text": "In Bitwig, you will need to restart the controller extension every time you change the TouchDesigner IP Address or TouchDesigner Port setting since they cannot be changed at run time."
+          },
+          {
+            "type": "code",
+            "text": "TouchDesigner IP Address",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "TouchDesigner Port",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "To restart the extension, de-activate and re-activate the controller by clicking the power icon in the top left of the controller window."
+          }
+        ]
+      },
+      {
+        "title": "Troubleshooting[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "If you are experiencing any problems, the most useful tool for troubleshooting will be the Textport. Be sure to have it open while troubleshooting, as most errors will be reported there."
+          },
+          {
+            "type": "paragraph",
+            "text": "The most common issues with TDBitwig will involve connections. The most important connection will be the network connection between the bitwigMain Component and the TouchDesigner controller extension in Bitwig. To test this connection, use the Ping parameter belonging to the bitwigMain Component, located in the Debug parameter page. Once pressed, you should see a “ping sent” message followed by a “ping reply received” message in the Textport. If the reply message does not appear, it may indicate that your OSC network is not configured properly or your device’s firewall is blocking the connection."
+          },
+          {
+            "type": "code",
+            "text": "bitwigMain",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "Ping",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "bitwigMain",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "The TouchDesigner controller extension in Bitwig is also equipped with a Send Ping button which will send a ping message to the specified IP and port. This functionality can serve useful for testing the connection from Bitwig to TouchDesigner."
+          },
+          {
+            "type": "paragraph",
+            "text": "In addition to the ping test, all of the TDBitwig Components have a Connect parameter which can be used to manually reset connections. In the bitwigMain Component it is located in the Setup page, for all others it exists in the TDBitwig page. Toggling the parameter off and on will restart a connection and may reveal useful error messages indicating the problem."
+          },
+          {
+            "type": "paragraph",
+            "text": "If connectivity issues persist, try closing your external text editor and any other sub-processes of TouchDesigner. For some reason, OSC ports can be associated with these sub-processes and the ports will not reopen until the applications are closed. Also, if two projects running TDBitwig are open and are using identical ports, it will cause port conflict issues."
+          },
+          {
+            "type": "paragraph",
+            "text": "For more verbose descriptions of lower-level activity, you can enable the following parameters in the bitwigMain COMP:"
+          },
+          {
+            "type": "ordered-list",
+            "items": [
+              "Log Messages: print to Textport all incoming and outgoing OSC Messages",
+              "Debug Messages: print to Texport information about calls to the python extension methods belonging to this Component. All TDBitwig Components come with this toggle and in most use cases will not be necessary."
+            ]
+          },
+          {
+            "type": "code",
+            "text": "Log Messages",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "Debug Messages",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Note:"
+          },
+          {
+            "type": "paragraph",
+            "text": "There is a 3rd party application called Protokol, which provides a user-friendly OSC network checker. This may serve useful for network troubleshooting."
+          }
+        ]
+      },
+      {
+        "title": "Cursors[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "The ability of Components to navigate Bitwig and select which object they are interested in (Track, Device, Clip Slot, or Parameter Page) relies on the concept of Cursors. In Bitwig, Cursors are used to point to a particular object, and there are different ways users can decide how a cursor selects an object. Any TDBitwig Component which communicates with a non-global Bitwig object has a corresponding cursor(s) within Bitwig."
+          },
+          {
+            "type": "paragraph",
+            "text": "Components using Cursors:"
+          },
+          {
+            "type": "code",
+            "text": "bitwigTrack",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "bitwigClip",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "bitwigRemotesDevices",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "bitwigRemotesTrack",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "bitwigRemotesProject",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "bitwigNote",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "One way to think about cursors is that if the object I am interested in is or belongs to a specific object, then I will use a cursor to select that object. For example, to access a specific device’s remote controls page, I will use the CursorTrack to select the track that the device belongs to, use the CursorDevice to select the device that the remotes page belongs to, then use the CursorRemoteControlsPage to select the remotes page. Note that the selection of objects via cursors will almost always begin by choosing the Track, with the exception of the bitwigRemotesProject, because the project remotes are global."
+          },
+          {
+            "type": "subsection",
+            "title": "Cursor Navigation[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "Pinning:"
+          },
+          {
+            "type": "paragraph",
+            "text": "By default, the cursor selection will follow whichever object is currently selected in the Bitwig User Interface unless it is pinned. The pinning functionality applies to CursorTracks, CursorClips and CursorDevices. If a Cursor Object is un-pinned, you can change the selection of the Cursor by clicking on the desired object in the Bitwig UI."
+          },
+          {
+            "type": "paragraph",
+            "text": "Example:"
+          },
+          {
+            "type": "paragraph",
+            "text": "If the Cursor is pinned, it’s selection will not change even if a different object is selected in the Bitwig UI."
+          },
+          {
+            "type": "paragraph",
+            "text": "Going back to our example:"
+          },
+          {
+            "type": "paragraph",
+            "text": "The use of pinning and un-pinning becomes a convenient way to select objects in TDBitwig by interacting with the Bitwig UI. The Component parameters Pin Track and Pin Device allow users to pin and unpin Cursors within TouchDesigner."
+          },
+          {
+            "type": "code",
+            "text": "Pin Track",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "Pin Device",
+            "language": "python"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Cursor Track Navigation",
+              "Cursor Device Navigation"
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Cursor Track Navigation"
+          },
+          {
+            "type": "paragraph",
+            "text": "Cursor Device Navigation"
+          },
+          {
+            "type": "paragraph",
+            "text": "Scrolling:"
+          },
+          {
+            "type": "paragraph",
+            "text": "In addition to the pinning functionality, you can also use the scroll feature of Cursors to change their selection. The idea of scrolling is much more straightforward; cursors provide the ability to select the next or previous object based on the order in the Bitwig UI."
+          },
+          {
+            "type": "paragraph",
+            "text": "In TDBitwig, this functionality is realized for CursorTracks with the Prev Track and Next Track parameters, or in the case of CursorDevices, the Prev Device and Next Device parameters. Pressing these will change the current cursor selection to either the previous or next object."
+          },
+          {
+            "type": "code",
+            "text": "Prev Track",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "Next Track",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "Prev Device",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "Next Device",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "Observers[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Observers (aka listeners) define which attributes belonging to a Bitwig object we are interested in. Each TDBitwig Component has a set of observers associated with it, which defines the attribute scope it has access to and can control."
+          },
+          {
+            "type": "paragraph",
+            "text": "If an observer is active, any update to the attribute associated with that observer in Bitwig will trigger a callback that sends an OSC message to TouchDesigner informing the updated value. In the TDBitwig system, Component parameters are “linked” to observers, such that if an OSC message containing an updated value is received, it will change the parameter value to match the updated value from Bitwig."
+          },
+          {
+            "type": "paragraph",
+            "text": "Conversely, when an update to a parameter occurs in TouchDesigner, a callback will send an OSC message to Bitwig containing the updated observed value, and the controller extension will update the Bitwig attribute associated with the observer accordingly. The use of observers allows for bi-directional control of parameters/attributes between the 2 applications in this way."
+          }
+        ]
+      },
+      {
+        "title": "Limitations[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "Because Bitwig Observers cannot be added after controller initialization, we are limited to a finite number of objects we are observing as well as the properties of the object we are observing. This limitation is most relevant to the amount of Cursor Objects made available to the TDBitwig system, particularly the amount of CursorTracks and Project CursorRemoteControlPages."
+          },
+          {
+            "type": "paragraph",
+            "text": "The system is designed such that any Component with Track Selection functionality has a one-to-one relationship with a CursorTrack. Therefore, the total number of these TDBitwig Components in a project will be limited to the number of CursorTracks available. The same relationship exists between the bitwigRemotesProject COMP and the Project CursorRemoteControlsPage."
+          },
+          {
+            "type": "paragraph",
+            "text": "Currently the system supports:"
+          },
+          {
+            "type": "paragraph",
+            "text": "256 CursorTracks:"
+          },
+          {
+            "type": "code",
+            "text": "bitwigTrack",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "bitwigClipSlot",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "bitwigClip",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "bitwigRemotesDevice",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "bitwigRemotesTrack",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "bitwigNote",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "64 Project CursorRemoteControlsPages:"
+          },
+          {
+            "type": "code",
+            "text": "bitwigRemotesProject",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "Cursor Mapping[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "paragraph",
+            "text": "The correspondence between TDBitwig Object Components and their respective Bitwig Cursor is established by a mapping of the Component to the index of the Cursor it is listening to. When a Component requiring a Cursor is created, it will request a cursor index from the bitwigMain COMP; the bitwigMain COMP will find the next available Cursor and assign its index to the Object Component which made the request. This mapping allows the TDBitwig system to route incoming and outgoing information between TDBitwig Components and the Bitwig Objects they are communicating with."
+          },
+          {
+            "type": "paragraph",
+            "text": "The Bitwig COMPs which use a Bitwig Cursor will have a Listener Index parameter representing the cursor index they have been assigned. This index will also exist as a header for the Out CHOP channels within the Component. Once a Component has been created and successfully assigned a cursor index, its mapping will never change as long as that Component Object exists. The only instances in which cursor mappings will change is when a new Component is created or a Component is deleted."
+          }
+        ]
+      },
+      {
+        "title": "System Components[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "subsection",
+            "title": "bitwigMain[edit]",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              ""
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Description:"
+          },
+          {
+            "type": "paragraph",
+            "text": "The bitwigMain COMP serves as the central communication hub for the TDBitwig system, and is responsible for relaying most of the information between the Bitwig session and TDBitwig Object Components in a project. This COMP is necessary for every connection to a Bitwig Studio Session; for most use cases only one is required but there are real situations which may require more."
+          },
+          {
+            "type": "code",
+            "text": "bitwigMain",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "The interaction with the Component will mainly pertain to connection configuration, users can locate the configuration settings in the Setup Parameter Page. A detailed explanation of the configuring process is provided in the above Configuring OSC section. Once connected, all the TDBitwig Object Components referencing this COMP will be enabled for use."
+          },
+          {
+            "type": "paragraph",
+            "text": "Refer to the bitwigMain documentation page to find a detailed description of this Component and its parameters."
+          },
+          {
+            "type": "subsection",
+            "title": "tdBitwigPackage[edit]",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              ""
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Description:"
+          },
+          {
+            "type": "paragraph",
+            "text": "The tdBitwigPackage COMP allows users to update their TDBitwig Components in a project to the most recent released version. To bring your TDBitwig project up-to-date, locate this Component in the TouchDesigner Palette, within the TDBitwig folder. Drag this Component into your project, and press the Update parameter located in the About parameter page. Once pressed, all the existing TDBitwig Components existing in the current project will be updated to the version associated with the tdBitwigPackage COMP."
+          },
+          {
+            "type": "code",
+            "text": "tdBitwigPackage",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "Object Components[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "subsection",
+            "title": "Common Features[edit]",
+            "level": 3
+          },
+          {
+            "type": "paragraph",
+            "text": "The TDBitwig Object Components rely on a common framework, and therefore will share a set of common features."
+          },
+          {
+            "type": "paragraph",
+            "text": "Chop Output:"
+          },
+          {
+            "type": "paragraph",
+            "text": "The first (and sometimes only) output of the Object Components will be a CHOP Out. The CHOP will contain numeric data corresponding to the properties that the Component is listening to. Each property value will have its own channel, and the channel name will contain the type of object and name of the property that the value belongs to. Some Components have multiple outputs; these will be described in their respective sections."
+          },
+          {
+            "type": "paragraph",
+            "text": "TDBitwig Parameter Page:"
+          },
+          {
+            "type": "paragraph",
+            "text": "This parameter page will contain information and functionality pertaining to the TDBitwig system."
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "TDBitwig Comp : A reference to the Bitwig Main COMP",
+              "Connect : A toggle to manually enable or disable listeners associated with this COMP.",
+              "Debug Messages : Print information about extension method calls for the Component",
+              "Timeslice OSC Chop : A toggle to enable or disable time-slicing for the OSC In CHOP. When off, CHOP outputs will only cook when OSC messages are received. When on, CHOP outputs will cook constantly, but their cook time may be lower.",
+              "Strip CHOP Prefix Segments : Strip off the given number of address segments in the output CHOP channel names. This can help manage the length of the channel names and make them more simple to read."
+            ]
+          },
+          {
+            "type": "code",
+            "text": "TDBitwig Comp",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "Connect",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "Debug Messages",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "Timeslice OSC Chop",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "Strip CHOP Prefix Segments",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "About Page:"
+          },
+          {
+            "type": "paragraph",
+            "text": "This parameter page will contain information and functionality pertaining to version and updates."
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Help : Opens the Component documentation page",
+              "Version : The TDBitwig version that the Component is updated to",
+              ".tox Save Build : The TouchDesigner build version that the Component was saved in",
+              "Update : If the tdBitwigPackage COMP is present in the TouchDesigner project, pressing pulse will update the Component to the newest version"
+            ]
+          },
+          {
+            "type": "code",
+            "text": "Help",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "Version",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": ".tox Save Build",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "Update",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Track/Device Navigation:"
+          },
+          {
+            "type": "paragraph",
+            "text": "Because many of the objects in Bitwig are associated with a track, users will commonly begin object navigation by selecting a track object, followed by the object belonging to the track (device, clip, remoteControlPage, etc.). For an in-depth explanation of object selection, read the Cursors section above."
+          },
+          {
+            "type": "subsection",
+            "title": "bitwigSong[edit]",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              ""
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Description:"
+          },
+          {
+            "type": "paragraph",
+            "text": "The bitwigSong COMP acts as a bi-directional interface for Bitwig’s global transport; including timing, playback, and recording functionality. It also stores information about scenes and cues, and supports control for their playback."
+          },
+          {
+            "type": "code",
+            "text": "bitwigSong",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Extra Outputs:"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "beatCHOP : simulates the Beat CHOP operator",
+              "cueInfo : a table of cueMarker info",
+              "sceneInfo : a table of scenes",
+              "currentCueInfo : provides info about the nearest cue marker left of the playhead"
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Promoted Methods:"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "LaunchCue(cueIndex) :\nMove playhead position to the specified cue and start playback\ncueIndex: integer index of the chosen cue to launch",
+              "LaunchScene(sceneIndex) :\nStart playback of all clips at the specified scene index\nsceneIndex: integer index of the chosen scene to launch"
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "LaunchCue(cueIndex) :"
+          },
+          {
+            "type": "code",
+            "text": "LaunchCue(cueIndex)",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Move playhead position to the specified cue and start playback"
+          },
+          {
+            "type": "paragraph",
+            "text": "cueIndex: integer index of the chosen cue to launch"
+          },
+          {
+            "type": "code",
+            "text": "cueIndex",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "LaunchScene(sceneIndex) :"
+          },
+          {
+            "type": "code",
+            "text": "LaunchScene(sceneIndex)",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Start playback of all clips at the specified scene index"
+          },
+          {
+            "type": "paragraph",
+            "text": "sceneIndex: integer index of the chosen scene to launch"
+          },
+          {
+            "type": "code",
+            "text": "sceneIndex",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Callbacks:"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "onCuePassed(info) :\nThe playhead location is on the cue marker’s position\ninfo : dictionary containing cue info\nindex : index of cue\nname : name of cue",
+              "onCueChanged(info) :\nThe nearest cue marker left of the playhead has changed\ninfo : dictionary containing cue info\nindex : index of cue\nname : name of cue",
+              "onPlay(info) :\nTransport starts playback",
+              "onStop(info) :\nTransport stops playback",
+              "onLoopStartPassed :\nplayhead location is on the loop start position"
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "onCuePassed(info) :"
+          },
+          {
+            "type": "code",
+            "text": "onCuePassed(info)",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "The playhead location is on the cue marker’s position"
+          },
+          {
+            "type": "paragraph",
+            "text": "info : dictionary containing cue info"
+          },
+          {
+            "type": "code",
+            "text": "info",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "index : index of cue"
+          },
+          {
+            "type": "code",
+            "text": "index",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "name : name of cue"
+          },
+          {
+            "type": "code",
+            "text": "name",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "onCueChanged(info) :"
+          },
+          {
+            "type": "code",
+            "text": "onCueChanged(info)",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "The nearest cue marker left of the playhead has changed"
+          },
+          {
+            "type": "paragraph",
+            "text": "info : dictionary containing cue info"
+          },
+          {
+            "type": "code",
+            "text": "info",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "index : index of cue"
+          },
+          {
+            "type": "code",
+            "text": "index",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "name : name of cue"
+          },
+          {
+            "type": "code",
+            "text": "name",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "onPlay(info) :"
+          },
+          {
+            "type": "code",
+            "text": "onPlay(info)",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Transport starts playback"
+          },
+          {
+            "type": "paragraph",
+            "text": "onStop(info) :"
+          },
+          {
+            "type": "code",
+            "text": "onStop(info)",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Transport stops playback"
+          },
+          {
+            "type": "paragraph",
+            "text": "onLoopStartPassed :"
+          },
+          {
+            "type": "code",
+            "text": "onLoopStartPassed",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "playhead location is on the loop start position"
+          },
+          {
+            "type": "subsection",
+            "title": "bitwigTrack[edit]",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              ""
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Description:"
+          },
+          {
+            "type": "paragraph",
+            "text": "The bitwigTrack COMP acts as an interface for accessing and controlling the attributes of a given Bitwig Track object. It allows users to choose the specific track they are interested in and perform any actions accordingly."
+          },
+          {
+            "type": "code",
+            "text": "bitwigTrack",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "bitwigClipSlot[edit]",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              ""
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Description:"
+          },
+          {
+            "type": "paragraph",
+            "text": "The bitwigClipSlot COMP serves as an interface for controlling clip slot playback and receiving playback information of all clip slots for a given track. Users begin by choosing which track they are interested in; from there they can access the clip slots associated with that track, and subsequently decide to perform actions on a specific clip slot."
+          },
+          {
+            "type": "code",
+            "text": "bitwigClipSlot",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Extra Outputs:"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "clipInfo : a table of clip slot information for the given track",
+              "clipStatusInfo : provides the current playing clip and current queued for playback clip"
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Promoted Methods:"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "LaunchClip(clipSlotIndex) :\nLaunches clip at the specified index, playback behavior will depend on the Transport launch settings\nclipSlotIndex: integer index of the clip to launch",
+              "SelectClip(clipSlotIndex) :\nSelects clip at specified index in the Bitwig Clip Launcher Window\nclipSlotIndex: integer index of the clip to select",
+              "StopClip(clipSlotIndex) :\nStops playback of clip at specified index. Behavior will depend on Transport launch settings\nclipSlotIndex: integer index of the clip to stop",
+              "RecordClip(clipSlotIndex) :\nArms the clip for recording. If the Clip Slot is empty, a new clip will be created. Recording behavior will depend on Transport settings.\nclipSlotIndex: integer index of the clip to record"
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "LaunchClip(clipSlotIndex) :"
+          },
+          {
+            "type": "code",
+            "text": "LaunchClip(clipSlotIndex)",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Launches clip at the specified index, playback behavior will depend on the Transport launch settings"
+          },
+          {
+            "type": "paragraph",
+            "text": "clipSlotIndex: integer index of the clip to launch"
+          },
+          {
+            "type": "code",
+            "text": "clipSlotIndex",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "SelectClip(clipSlotIndex) :"
+          },
+          {
+            "type": "code",
+            "text": "SelectClip(clipSlotIndex)",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Selects clip at specified index in the Bitwig Clip Launcher Window"
+          },
+          {
+            "type": "paragraph",
+            "text": "clipSlotIndex: integer index of the clip to select"
+          },
+          {
+            "type": "code",
+            "text": "clipSlotIndex",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "StopClip(clipSlotIndex) :"
+          },
+          {
+            "type": "code",
+            "text": "StopClip(clipSlotIndex)",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Stops playback of clip at specified index. Behavior will depend on Transport launch settings"
+          },
+          {
+            "type": "paragraph",
+            "text": "clipSlotIndex: integer index of the clip to stop"
+          },
+          {
+            "type": "code",
+            "text": "clipSlotIndex",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "RecordClip(clipSlotIndex) :"
+          },
+          {
+            "type": "code",
+            "text": "RecordClip(clipSlotIndex)",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Arms the clip for recording. If the Clip Slot is empty, a new clip will be created. Recording behavior will depend on Transport settings."
+          },
+          {
+            "type": "paragraph",
+            "text": "clipSlotIndex: integer index of the clip to record"
+          },
+          {
+            "type": "code",
+            "text": "clipSlotIndex",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Callbacks:"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "onPlayingClipChanged(info)\nThe current playing clip has changed\ninfo : dictionary containing clip info\nindex : index of clip slot\nname : name of clip slot",
+              "onQueuedClipChanged(info)\nThe current queued for playback clip has changed\ninfo : dictionary containing clip info\nindex : index of clip slot\nname : name of clip slot"
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "onPlayingClipChanged(info)"
+          },
+          {
+            "type": "code",
+            "text": "onPlayingClipChanged(info)",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "The current playing clip has changed"
+          },
+          {
+            "type": "paragraph",
+            "text": "info : dictionary containing clip info"
+          },
+          {
+            "type": "code",
+            "text": "info",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "index : index of clip slot"
+          },
+          {
+            "type": "code",
+            "text": "index",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "name : name of clip slot"
+          },
+          {
+            "type": "code",
+            "text": "name",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "onQueuedClipChanged(info)"
+          },
+          {
+            "type": "code",
+            "text": "onQueuedClipChanged(info)",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "The current queued for playback clip has changed"
+          },
+          {
+            "type": "paragraph",
+            "text": "info : dictionary containing clip info"
+          },
+          {
+            "type": "code",
+            "text": "info",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "index : index of clip slot"
+          },
+          {
+            "type": "code",
+            "text": "index",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "name : name of clip slot"
+          },
+          {
+            "type": "code",
+            "text": "name",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "bitwigClip[edit]",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              ""
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Description:"
+          },
+          {
+            "type": "paragraph",
+            "text": "The bitwigClip COMP serves as an interface for controlling clip playback and clip attributes in Bitwig’s clip launcher context. Users begin by choosing which track they are interested in; from there they can perform actions or read/modify the properties of a given launcher clip."
+          },
+          {
+            "type": "code",
+            "text": "bitwigClip",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "bitwigRemotesDevice[edit]",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "",
+              ""
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Description:"
+          },
+          {
+            "type": "paragraph",
+            "text": "The bitwigRemotesDevice COMP serves as an interface for accessing and controlling Device Remote Controls in Bitwig. Navigation to controls begins by selecting a track, followed by the device within that track, and ending with the desired page. The 8 Remote Control Parameters on this Component will correspond to the 8 Remote Controls on a single page."
+          },
+          {
+            "type": "code",
+            "text": "bitwigRemotesDevice",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "bitwigRemotesTrack[edit]",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "",
+              ""
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Description:"
+          },
+          {
+            "type": "paragraph",
+            "text": "The bitwigRemotesTrack COMP serves as an interface for accessing and controlling Track Remote Controls in Bitwig. Navigation to controls begins by selecting a track, followed by the desired page. The 8 Remote Control Parameters on this Component will correspond to the 8 Remote Controls on a single page."
+          },
+          {
+            "type": "code",
+            "text": "bitwigRemotesTrack",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "bitwigRemotesProject[edit]",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "",
+              ""
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Description:"
+          },
+          {
+            "type": "paragraph",
+            "text": "The bitwigRemotesProject COMP serves as an interface for accessing and controlling global Project Remote Controls in Bitwig. Navigation to controls begins by selecting the desired page. The 8 Remote Control Parameters on this Component will correspond to the 8 Remote Controls on a single page."
+          },
+          {
+            "type": "code",
+            "text": "bitwigRemotesProject",
+            "language": "python"
+          },
+          {
+            "type": "subsection",
+            "title": "bitwigNote[edit]",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              ""
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Description:"
+          },
+          {
+            "type": "paragraph",
+            "text": "The bitwigNote COMP allows users to read a live stream of note events on a given Bitwig Track. The incoming notes will correspond to the track’s note input source, whether it be output from a midi device or side-chained from another track or device within Bitwig. Users will use the navigation controls to specify which track’s input source they want to monitor."
+          },
+          {
+            "type": "code",
+            "text": "bitwigNote",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Callbacks:"
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "onNoteEvent(info) :\nA note event has occurred, includes note on, note off, or velocity change\ninfo: dictionary containing note event info\npitch : pitch index of the note\nvelocity : velocity of the note"
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "onNoteEvent(info) :"
+          },
+          {
+            "type": "code",
+            "text": "onNoteEvent(info)",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "A note event has occurred, includes note on, note off, or velocity change"
+          },
+          {
+            "type": "paragraph",
+            "text": "info: dictionary containing note event info"
+          },
+          {
+            "type": "code",
+            "text": "info",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "pitch : pitch index of the note"
+          },
+          {
+            "type": "code",
+            "text": "pitch",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "velocity : velocity of the note"
+          },
+          {
+            "type": "code",
+            "text": "velocity",
+            "language": "python"
+          }
+        ]
+      },
+      {
+        "title": "Auxiliary Components[edit]",
+        "level": 2,
+        "content": [
+          {
+            "type": "subsection",
+            "title": "bitwigSelect[edit]",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              ""
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Description:"
+          },
+          {
+            "type": "paragraph",
+            "text": "The bitwigSelect COMP enables users to retrieve channel information from the output CHOP of any Bitwig Object Component in a project. Component search can be filtered by the Object type, and once the output CHOP is selected, users can filter specific channels they are interested in. The selection of Components uses python references based on relative paths. Similarly to the application of the select OP, this Component creates a clean separation of data between the source and points of influence."
+          },
+          {
+            "type": "code",
+            "text": "bitwigSelect",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Relative Paths"
+          },
+          {
+            "type": "paragraph",
+            "text": "The Select Relative To This Comp  parameter determines if the path used to reference the desired Object Component is relative to the bitwigMain Component or the bitwigSelect Component being used. Paths relative to the bitwigMain COMP will be stable when the location of this bitwigSelect COMP changes, but will break if the location of the selected COMP changes. Paths relative to the bitwigSelect COMP will break if the location of either the selected COMP or the bitwigSelect COMP changes, but will be easier to read and allows users to drag and drop the desired COMP into the 'Selected COMP' parameter. The choice between relative to bitwigMain or bitwigSelect will generally be a trade-off between stability and ease-of-use."
+          },
+          {
+            "type": "code",
+            "text": "Select Relative To This Comp",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "Channel Snapshot"
+          },
+          {
+            "type": "paragraph",
+            "text": "In the case of the bitwigNote COMP, there will be moments when the selected output CHOP is empty, particularly during connection processes on startup. This will cause errors in any references made to the channels which previously populated the output CHOP. To resolve this, the bitwigSelect COMP supports the ability to snapshot the current selected channels. Once snapshot, the output of the bitwigSelect COMP will remain on the snapped channels and will not be affected if the selected output CHOP is empty, keeping references to channels intact."
+          },
+          {
+            "type": "paragraph",
+            "text": "An Operator Family that contains its own Network. There are sixteen 3D Object Component and ten 2D Panel Component types. See also Network Path."
+          },
+          {
+            "type": "paragraph",
+            "text": "An Operator Family that contains its own Network. There are sixteen 3D Object Component and ten 2D Panel Component types. See also Network Path."
+          },
+          {
+            "type": "paragraph",
+            "text": "A work area in TouchDesigner's layout that includes the Network Editor and 7 other pane types used for different tasks. The TouchDesigner interface can consist of a single pane, or be split into multiple panes."
+          },
+          {
+            "type": "paragraph",
+            "text": "The dialog box in which commands and scripts can typed in manually. Output to the textport includes script errors and messages from print() and debug() calls in python code. You can also edit DATs in the textport."
+          },
+          {
+            "type": "code",
+            "text": "print()",
+            "language": "python"
+          },
+          {
+            "type": "code",
+            "text": "debug()",
+            "language": "python"
+          },
+          {
+            "type": "paragraph",
+            "text": "An Operator Family which operate on Channels (a sequence of numbers (Samples)) which are used for animation, audio, mathematics, simulation, logic, UI construction, and data streamed from/to devices and protocols."
+          },
+          {
+            "type": "paragraph",
+            "text": "A built-in panel in TouchDesigner that contains a library of components and media that can be dragged-dropped into a TouchDesigner network."
+          },
+          {
+            "type": "paragraph",
+            "text": "TouchDesigner Component file, the file type used to save a Component of your TouchDesigner project."
+          },
+          {
+            "type": "paragraph",
+            "text": "A Window in TouchDesigner is a window in Microsoft Windows or macOS that contains either (1) the TouchDesigner editing interface that exists in Designer Mode, or (2) a user-created Panel inside a Window Component. The user-created windows can span Multiple Monitors borderless, or be floating windows with borders, or popups."
+          },
+          {
+            "type": "paragraph",
+            "text": "Any of the procedural data operators. OPs do all the work in TouchDesigner. They \"cook\" and output data to other OPs, which ultimately result in new images, data and audio being generated. See Node."
+          }
+        ]
+      },
+      {
+        "title": "Navigation menu",
+        "level": 2,
+        "content": [
+          {
+            "type": "subsection",
+            "title": "Personal tools",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Log in"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Namespaces",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Page",
+              "Discussion",
+              "Experimental"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Views",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Read",
+              "View source",
+              "View history"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Search",
+            "level": 3
+          },
+          {
+            "type": "subsection",
+            "title": "TouchDesigner",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Main Page",
+              "Categories",
+              "Learn TouchDesigner",
+              "Tutorials",
+              "Interoperability",
+              "Glossary",
+              "Operators",
+              "Python",
+              "Python Class Reference",
+              "Palette",
+              "FAQ",
+              "Recent Doc Edits",
+              "Release Notes"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Downloads",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "TouchDesigner",
+              "Shared Examples"
+            ]
+          },
+          {
+            "type": "subsection",
+            "title": "Tools",
+            "level": 3
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "What links here",
+              "Related changes",
+              "Special pages",
+              "Printable version",
+              "Permanent link",
+              "Page information",
+              "Page values"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "This page was last edited on 13 March 2024, at 23:25."
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              "Privacy policy",
+              "About Derivative",
+              "Disclaimers"
+            ]
+          },
+          {
+            "type": "unordered-list",
+            "items": [
+              ""
+            ]
+          }
+        ]
+      }
+    ],
+    "tableOfContents": [
+      {
+        "number": "1",
+        "text": "Contents",
+        "href": "#Contents"
+      },
+      {
+        "number": "2",
+        "text": "NOTE[edit]",
+        "href": "#NOTE[edit]"
+      },
+      {
+        "number": "3",
+        "text": "Installation[edit]",
+        "href": "#Installation[edit]"
+      },
+      {
+        "number": "4",
+        "text": "Setup[edit]",
+        "href": "#Setup[edit]"
+      },
+      {
+        "number": "5",
+        "text": "Troubleshooting[edit]",
+        "href": "#Troubleshooting[edit]"
+      },
+      {
+        "number": "6",
+        "text": "Cursors[edit]",
+        "href": "#Cursors[edit]"
+      },
+      {
+        "number": "7",
+        "text": "Observers[edit]",
+        "href": "#Observers[edit]"
+      },
+      {
+        "number": "8",
+        "text": "Limitations[edit]",
+        "href": "#Limitations[edit]"
+      },
+      {
+        "number": "9",
+        "text": "Cursor Mapping[edit]",
+        "href": "#Cursor_Mapping[edit]"
+      },
+      {
+        "number": "10",
+        "text": "System Components[edit]",
+        "href": "#System_Components[edit]"
+      },
+      {
+        "number": "11",
+        "text": "Object Components[edit]",
+        "href": "#Object_Components[edit]"
+      },
+      {
+        "number": "12",
+        "text": "Auxiliary Components[edit]",
+        "href": "#Auxiliary_Components[edit]"
+      },
+      {
+        "number": "13",
+        "text": "Navigation menu",
+        "href": "#Navigation_menu"
+      }
+    ],
+    "relatedLinks": [
+      {
+        "text": "TDBitwig",
+        "href": "./TDBitwig.htm"
+      },
+      {
+        "text": "TDBitwig",
+        "href": "./TDBitwig.htm"
+      },
+      {
+        "text": "Operator Family",
+        "href": "./Operator_Family.htm"
+      },
+      {
+        "text": "Network",
+        "href": "./Network.htm"
+      },
+      {
+        "text": "Object Component",
+        "href": "./Object_Component.htm"
+      },
+      {
+        "text": "Panel Component",
+        "href": "./Panel_Component.htm"
+      },
+      {
+        "text": "Network Path",
+        "href": "./Network_Path.htm"
+      },
+      {
+        "text": "Operator Family",
+        "href": "./Operator_Family.htm"
+      },
+      {
+        "text": "Network",
+        "href": "./Network.htm"
+      },
+      {
+        "text": "Object Component",
+        "href": "./Object_Component.htm"
+      }
+    ],
+    "images": [
+      {
+        "src": "./images/thumb/7/7e/BitwigControllersPage.png/441px-BitwigControllersPage.png",
+        "alt": "TouchDesigner OSC",
+        "caption": "TouchDesigner OSC"
+      },
+      {
+        "src": "./images/thumb/0/03/PluginVersion.png/700px-PluginVersion.png",
+        "alt": "Bitwig OSC",
+        "caption": "Bitwig OSC"
+      },
+      {
+        "src": "./images/thumb/c/c6/Bitwig_OSC_parameters.png/460px-Bitwig_OSC_parameters.png",
+        "alt": "TouchDesigner OSC",
+        "caption": "TouchDesigner OSC"
+      },
+      {
+        "src": "./images/thumb/5/5f/Bitwig_OSC_Settings.png/696px-Bitwig_OSC_Settings.png",
+        "alt": "Bitwig OSC",
+        "caption": "Bitwig OSC"
+      },
+      {
+        "src": "./images/c/cd/CursorTrack_NavigationPars.png",
+        "alt": "Cursor Track Navigation",
+        "caption": "Cursor Track Navigation"
+      },
+      {
+        "src": "./images/f/f5/CursorDevice_NavigationPars.png",
+        "alt": "Cursor Device Navigation",
+        "caption": "Cursor Device Navigation"
+      },
+      {
+        "src": "./images/thumb/0/03/BitwigMain_TD.png/1134px-BitwigMain_TD.png",
+        "alt": "BitwigMain TD.png",
+        "caption": "BitwigMain TD.png"
+      },
+      {
+        "src": "./images/thumb/6/67/TdBitwigPackage_Pars.png/1077px-TdBitwigPackage_Pars.png",
+        "alt": "TdBitwigPackage Pars.png",
+        "caption": "TdBitwigPackage Pars.png"
+      },
+      {
+        "src": "./images/thumb/4/4e/BitwigSong_outs.png/1127px-BitwigSong_outs.png",
+        "alt": "BitwigSong outs.png",
+        "caption": "BitwigSong outs.png"
+      },
+      {
+        "src": "./images/thumb/2/29/BitwigTrack_Pars.png/1068px-BitwigTrack_Pars.png",
+        "alt": "BitwigTrack Pars.png",
+        "caption": "BitwigTrack Pars.png"
+      },
+      {
+        "src": "./images/thumb/2/2e/ClipLauncher_Outs.png/955px-ClipLauncher_Outs.png",
+        "alt": "ClipLauncher Outs.png",
+        "caption": "ClipLauncher Outs.png"
+      },
+      {
+        "src": "./images/thumb/2/2e/ClipLauncher_Outs.png/955px-ClipLauncher_Outs.png",
+        "alt": "ClipLauncher Outs.png",
+        "caption": "ClipLauncher Outs.png"
+      },
+      {
+        "src": "./images/1/17/DeviceRemotes_ControlsPar.png",
+        "alt": "DeviceRemotes ControlsPar.png",
+        "caption": "DeviceRemotes ControlsPar.png"
+      },
+      {
+        "src": "./images/3/39/Bitwig_DeviceRemotes_Page.png",
+        "alt": "Bitwig DeviceRemotes Page.png",
+        "caption": "Bitwig DeviceRemotes Page.png"
+      },
+      {
+        "src": "./images/9/94/TrackRemotes_ControlPars.png",
+        "alt": "TrackRemotes ControlPars.png",
+        "caption": "TrackRemotes ControlPars.png"
+      },
+      {
+        "src": "./images/4/42/Bitwig_TrackRemotes_Page.png",
+        "alt": "Bitwig TrackRemotes Page.png",
+        "caption": "Bitwig TrackRemotes Page.png"
+      },
+      {
+        "src": "./images/0/06/ProjectRemotes_TouchDesigner_pars.png",
+        "alt": "ProjectRemotes TouchDesigner pars.png",
+        "caption": "ProjectRemotes TouchDesigner pars.png"
+      },
+      {
+        "src": "./images/5/58/Bitwig_ProjectRemotes_Page.png",
+        "alt": "Bitwig ProjectRemotes Page.png",
+        "caption": "Bitwig ProjectRemotes Page.png"
+      },
+      {
+        "src": "./images/thumb/1/15/BitwigNote_Pars.png/1191px-BitwigNote_Pars.png",
+        "alt": "BitwigNote Pars.png",
+        "caption": "BitwigNote Pars.png"
+      },
+      {
+        "src": "./images/thumb/7/78/BitwigSelect_Parameters2.png/1242px-BitwigSelect_Parameters2.png",
+        "alt": "BitwigSelect Parameters2.png",
+        "caption": "BitwigSelect Parameters2.png"
+      },
+      {
+        "src": "./resources/assets/poweredby_mediawiki_88x31.png",
+        "alt": "Powered by MediaWiki",
+        "caption": "Powered by MediaWiki"
+      }
+    ]
+  },
+  "keywords": [
+    "tdbitwig",
+    "user",
+    "guide",
+    "integration",
+    "touchdesigner",
+    "components",
+    "that",
+    "enables",
+    "bi-directional",
+    "communication",
+    "between",
+    "bitwig",
+    "studio"
+  ],
+  "tags": [
+    "Tutorial",
+    "TouchDesigner",
+    "TDBitwig User Guide"
+  ],
+  "searchWeight": 2,
+  "lastUpdated": "2025-08-13T01:17:18.981Z",
+  "sourceFile": "C:\\Program Files\\Derivative\\TouchDesigner\\Samples\\Learn\\OfflineHelp\\https.docs.derivative.ca\\TDBitwig_User_Guide.htm",
+  "isValid": true,
+  "validationErrors": []
+}

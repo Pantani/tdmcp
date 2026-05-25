@@ -1,0 +1,1289 @@
+{
+  "className": "evaluateDAT",
+  "displayName": "evaluateDAT Class",
+  "description": "This class inherits from the  DAT class.\nIt references a specific Evaluate DAT.",
+  "category": "General",
+  "fileName": "evaluateDAT_Class.htm",
+  "members": [
+    {
+      "name": "exprCell",
+      "id": "content",
+      "returnType": "int",
+      "readOnly": true,
+      "description": "exprCell member"
+    },
+    {
+      "name": "exprCell",
+      "id": "bodyContent",
+      "returnType": "int",
+      "readOnly": true,
+      "description": "exprCell member"
+    }
+  ],
+  "methods": [
+    {
+      "name": "flush",
+      "parameters": [],
+      "returns": "None :",
+      "signature": "flush()"
+    },
+    {
+      "name": "isatty",
+      "parameters": [],
+      "returns": "False :",
+      "signature": "isatty()"
+    },
+    {
+      "name": "run",
+      "parameters": [
+        {
+          "name": "arg1",
+          "type": "Any"
+        },
+        {
+          "name": "arg2...",
+          "type": "Any"
+        },
+        {
+          "name": "endFrame=False",
+          "type": "Any"
+        },
+        {
+          "name": "fromOP=None",
+          "type": "Any"
+        },
+        {
+          "name": "asParameter=False",
+          "type": "Any"
+        },
+        {
+          "name": "group=None",
+          "type": "Any"
+        },
+        {
+          "name": "delayFrames=0",
+          "type": "Any"
+        },
+        {
+          "name": "delayMilliSeconds=0",
+          "type": "Any"
+        },
+        {
+          "name": "delayRef=me",
+          "type": "Any"
+        }
+      ],
+      "returns": "td.Run :",
+      "signature": "run(arg1, arg2..., endFrame=False, fromOP=None, asParameter=False, group=None, delayFrames=0, delayMilliSeconds=0, delayRef=me)"
+    },
+    {
+      "name": "save",
+      "parameters": [
+        {
+          "name": "filepath",
+          "type": "Any"
+        },
+        {
+          "name": "append=False",
+          "type": "Any"
+        },
+        {
+          "name": "createFolders=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "str :",
+      "signature": "save(filepath, append=False, createFolders=False)"
+    },
+    {
+      "name": "write",
+      "parameters": [
+        {
+          "name": "args",
+          "type": "Any"
+        }
+      ],
+      "returns": "str :",
+      "signature": "write(args)"
+    },
+    {
+      "name": "detectLanguage",
+      "parameters": [
+        {
+          "name": "setLanguage=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "str :",
+      "signature": "detectLanguage(setLanguage=False)"
+    },
+    {
+      "name": "clear",
+      "parameters": [
+        {
+          "name": "keepSize=False",
+          "type": "Any"
+        },
+        {
+          "name": "keepFirstRow=False",
+          "type": "Any"
+        },
+        {
+          "name": "keepFirstCol=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "clear(keepSize=False, keepFirstRow=False, keepFirstCol=False)"
+    },
+    {
+      "name": "copy",
+      "parameters": [
+        {
+          "name": "DAT",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "copy( DAT )"
+    },
+    {
+      "name": "appendRow",
+      "parameters": [
+        {
+          "name": "vals",
+          "type": "Any"
+        },
+        {
+          "name": "nameOrIndex",
+          "type": "Any"
+        },
+        {
+          "name": "sort=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "int :",
+      "signature": "appendRow(vals, nameOrIndex, sort=None)"
+    },
+    {
+      "name": "appendRows",
+      "parameters": [
+        {
+          "name": "vals",
+          "type": "Any"
+        },
+        {
+          "name": "nameOrIndex",
+          "type": "Any"
+        },
+        {
+          "name": "sort=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "int :",
+      "signature": "appendRows(vals, nameOrIndex, sort=None)"
+    },
+    {
+      "name": "appendCol",
+      "parameters": [
+        {
+          "name": "vals",
+          "type": "Any"
+        },
+        {
+          "name": "nameOrIndex",
+          "type": "Any"
+        },
+        {
+          "name": "sort=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "int :",
+      "signature": "appendCol(vals, nameOrIndex, sort=None)"
+    },
+    {
+      "name": "appendCols",
+      "parameters": [
+        {
+          "name": "vals",
+          "type": "Any"
+        },
+        {
+          "name": "nameOrIndex",
+          "type": "Any"
+        },
+        {
+          "name": "sort=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "int :",
+      "signature": "appendCols(vals, nameOrIndex, sort=None)"
+    },
+    {
+      "name": "insertRow",
+      "parameters": [
+        {
+          "name": "vals",
+          "type": "Any"
+        },
+        {
+          "name": "nameOrIndex",
+          "type": "Any"
+        },
+        {
+          "name": "sort=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "int :",
+      "signature": "insertRow(vals, nameOrIndex, sort=None)"
+    },
+    {
+      "name": "insertCol",
+      "parameters": [
+        {
+          "name": "vals",
+          "type": "Any"
+        },
+        {
+          "name": "nameOrIndex",
+          "type": "Any"
+        },
+        {
+          "name": "sort=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "int :",
+      "signature": "insertCol(vals, nameOrIndex, sort=None)"
+    },
+    {
+      "name": "replaceRow",
+      "parameters": [
+        {
+          "name": "nameOrIndex",
+          "type": "Any"
+        },
+        {
+          "name": "vals",
+          "type": "Any"
+        },
+        {
+          "name": "entireRow=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "int :",
+      "signature": "replaceRow(nameOrIndex, vals, entireRow=True)"
+    },
+    {
+      "name": "replaceCol",
+      "parameters": [
+        {
+          "name": "nameOrIndex",
+          "type": "Any"
+        },
+        {
+          "name": "vals",
+          "type": "Any"
+        },
+        {
+          "name": "entireCol=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "int :",
+      "signature": "replaceCol(nameOrIndex, vals, entireCol=True)"
+    },
+    {
+      "name": "deleteRow",
+      "parameters": [
+        {
+          "name": "nameOrIndex",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "deleteRow(nameOrIndex)"
+    },
+    {
+      "name": "deleteRows",
+      "parameters": [
+        {
+          "name": "vals",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "deleteRows(vals)"
+    },
+    {
+      "name": "deleteCol",
+      "parameters": [
+        {
+          "name": "nameOrIndex",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "deleteCol(nameOrIndex)"
+    },
+    {
+      "name": "deleteCols",
+      "parameters": [
+        {
+          "name": "vals",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "deleteCols(vals)"
+    },
+    {
+      "name": "setSize",
+      "parameters": [
+        {
+          "name": "numrows",
+          "type": "Any"
+        },
+        {
+          "name": "numcols",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "setSize(numrows, numcols)"
+    },
+    {
+      "name": "scroll",
+      "parameters": [
+        {
+          "name": "row",
+          "type": "Any"
+        },
+        {
+          "name": "col",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "scroll(row, col)"
+    },
+    {
+      "name": "cell",
+      "parameters": [
+        {
+          "name": "rowNameOrIndex",
+          "type": "Any"
+        },
+        {
+          "name": "colNameOrIndex",
+          "type": "Any"
+        },
+        {
+          "name": "caseSensitive=True",
+          "type": "Any"
+        },
+        {
+          "name": "val=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "td.Cell | str | None :",
+      "signature": "cell(rowNameOrIndex, colNameOrIndex, caseSensitive=True, val=False)"
+    },
+    {
+      "name": "cells",
+      "parameters": [
+        {
+          "name": "rowNameOrIndex",
+          "type": "Any"
+        },
+        {
+          "name": "colNameOrIndex",
+          "type": "Any"
+        },
+        {
+          "name": "caseSensitive=True",
+          "type": "Any"
+        },
+        {
+          "name": "val=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "list :",
+      "signature": "cells(rowNameOrIndex, colNameOrIndex, caseSensitive=True, val=False)"
+    },
+    {
+      "name": "findCell",
+      "parameters": [
+        {
+          "name": "pattern",
+          "type": "Any"
+        },
+        {
+          "name": "rows=None",
+          "type": "Any"
+        },
+        {
+          "name": "cols=None",
+          "type": "Any"
+        },
+        {
+          "name": "valuePattern=True",
+          "type": "Any"
+        },
+        {
+          "name": "rowPattern=True",
+          "type": "Any"
+        },
+        {
+          "name": "colPattern=True",
+          "type": "Any"
+        },
+        {
+          "name": "caseSensitive=False",
+          "type": "Any"
+        },
+        {
+          "name": "val=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "Cell | str | None :",
+      "signature": "findCell(pattern, rows=None, cols=None, valuePattern=True, rowPattern=True, colPattern=True, caseSensitive=False, val=False)"
+    },
+    {
+      "name": "findCells",
+      "parameters": [
+        {
+          "name": "pattern",
+          "type": "Any"
+        },
+        {
+          "name": "rows=None",
+          "type": "Any"
+        },
+        {
+          "name": "cols=None",
+          "type": "Any"
+        },
+        {
+          "name": "valuePattern=True",
+          "type": "Any"
+        },
+        {
+          "name": "rowPattern=True",
+          "type": "Any"
+        },
+        {
+          "name": "colPattern=True",
+          "type": "Any"
+        },
+        {
+          "name": "val=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "list :",
+      "signature": "findCells(pattern, rows=None, cols=None, valuePattern=True, rowPattern=True, colPattern=True, val=False)"
+    },
+    {
+      "name": "row",
+      "parameters": [
+        {
+          "name": "*nameOrIndexes",
+          "type": "Any"
+        },
+        {
+          "name": "caseSensitive=True",
+          "type": "Any"
+        },
+        {
+          "name": "val=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "List[Cell] :",
+      "signature": "row(*nameOrIndexes, caseSensitive=True, val=False)"
+    },
+    {
+      "name": "rows",
+      "parameters": [
+        {
+          "name": "*nameOrIndexes",
+          "type": "Any"
+        },
+        {
+          "name": "caseSensitive=True",
+          "type": "Any"
+        },
+        {
+          "name": "val=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "List[List[Cell]] :",
+      "signature": "rows(*nameOrIndexes, caseSensitive=True, val=False)"
+    },
+    {
+      "name": "col",
+      "parameters": [
+        {
+          "name": "*nameOrIndexes",
+          "type": "Any"
+        },
+        {
+          "name": "caseSensitive=True",
+          "type": "Any"
+        },
+        {
+          "name": "val=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "list :",
+      "signature": "col(*nameOrIndexes, caseSensitive=True, val=False)"
+    },
+    {
+      "name": "cols",
+      "parameters": [
+        {
+          "name": "*nameOrIndexes",
+          "type": "Any"
+        },
+        {
+          "name": "caseSensitive=True",
+          "type": "Any"
+        },
+        {
+          "name": "val=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "List[List[Cell]] :",
+      "signature": "cols(*nameOrIndexes, caseSensitive=True, val=False)"
+    },
+    {
+      "name": "op",
+      "parameters": [
+        {
+          "name": "pattern1",
+          "type": "Any"
+        },
+        {
+          "name": "pattern2...",
+          "type": "Any"
+        },
+        {
+          "name": "includeUtility=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "OP  or None ",
+      "signature": "op(pattern1, pattern2..., includeUtility=False)"
+    },
+    {
+      "name": "op",
+      "parameters": [
+        {
+          "name": "pattern1",
+          "type": "Any"
+        },
+        {
+          "name": "pattern2...",
+          "type": "Any"
+        },
+        {
+          "name": "includeUtility=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "OP  ",
+      "signature": "op(pattern1, pattern2..., includeUtility=False)"
+    },
+    {
+      "name": "parent",
+      "parameters": [
+        {
+          "name": "n",
+          "type": "Any"
+        }
+      ],
+      "returns": "OP or None ",
+      "signature": "parent(n)"
+    },
+    {
+      "name": "pars",
+      "parameters": [
+        {
+          "name": "pattern",
+          "type": "Any"
+        }
+      ],
+      "returns": "list :",
+      "signature": "pars(pattern)"
+    },
+    {
+      "name": "cook",
+      "parameters": [
+        {
+          "name": "force=False",
+          "type": "Any"
+        },
+        {
+          "name": "recurse=False",
+          "type": "Any"
+        },
+        {
+          "name": "includeUtility=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "cook(force=False, recurse=False, includeUtility=False)"
+    },
+    {
+      "name": "copyParameters",
+      "parameters": [
+        {
+          "name": "OP",
+          "type": "Any"
+        },
+        {
+          "name": "custom=True",
+          "type": "Any"
+        },
+        {
+          "name": "builtin=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "copyParameters( OP , custom=True, builtin=True)"
+    },
+    {
+      "name": "changeType",
+      "parameters": [
+        {
+          "name": "OPtype",
+          "type": "Any"
+        }
+      ],
+      "returns": "OP  :",
+      "signature": "changeType(OPtype)"
+    },
+    {
+      "name": "dependenciesTo",
+      "parameters": [
+        {
+          "name": "OP",
+          "type": "Any"
+        }
+      ],
+      "returns": "list :",
+      "signature": "dependenciesTo( OP )"
+    },
+    {
+      "name": "evalExpression",
+      "parameters": [
+        {
+          "name": "str",
+          "type": "Any"
+        }
+      ],
+      "returns": "value :",
+      "signature": "evalExpression(str)"
+    },
+    {
+      "name": "destroy",
+      "parameters": [],
+      "returns": "None :",
+      "signature": "destroy()"
+    },
+    {
+      "name": "var",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "Any"
+        },
+        {
+          "name": "search=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "str :",
+      "signature": "var(name, search=True)"
+    },
+    {
+      "name": "openMenu",
+      "parameters": [
+        {
+          "name": "x=None",
+          "type": "Any"
+        },
+        {
+          "name": "y=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "openMenu(x=None, y=None)"
+    },
+    {
+      "name": "relativePath",
+      "parameters": [
+        {
+          "name": "OP",
+          "type": "Any"
+        }
+      ],
+      "returns": "str :",
+      "signature": "relativePath( OP )"
+    },
+    {
+      "name": "setInputs",
+      "parameters": [
+        {
+          "name": "listOfOPs",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "setInputs(listOfOPs)"
+    },
+    {
+      "name": "shortcutPath",
+      "parameters": [
+        {
+          "name": "OP",
+          "type": "Any"
+        },
+        {
+          "name": "toParName=None",
+          "type": "Any"
+        }
+      ],
+      "returns": "str :",
+      "signature": "shortcutPath( OP , toParName=None)"
+    },
+    {
+      "name": "ops",
+      "parameters": [
+        {
+          "name": "pattern1",
+          "type": "Any"
+        },
+        {
+          "name": "pattern2..",
+          "type": "Any"
+        },
+        {
+          "name": "includeUtility=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "list of OPs :",
+      "signature": "ops(pattern1, pattern2.., includeUtility=False)"
+    },
+    {
+      "name": "resetPars",
+      "parameters": [
+        {
+          "name": "parNames='*'",
+          "type": "Any"
+        },
+        {
+          "name": "parGroupNames='*'",
+          "type": "Any"
+        },
+        {
+          "name": "pageNames='*'",
+          "type": "Any"
+        },
+        {
+          "name": "includeBuiltin=True",
+          "type": "Any"
+        },
+        {
+          "name": "includeCustom=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "bool :",
+      "signature": "resetPars(parNames='*', parGroupNames='*', pageNames='*', includeBuiltin=True, includeCustom=True)"
+    },
+    {
+      "name": "addScriptError",
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "addScriptError(msg)"
+    },
+    {
+      "name": "addError",
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "addError(msg)"
+    },
+    {
+      "name": "addWarning",
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "addWarning(msg)"
+    },
+    {
+      "name": "errors",
+      "parameters": [
+        {
+          "name": "recurse=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "str :",
+      "signature": "errors(recurse=False)"
+    },
+    {
+      "name": "warnings",
+      "parameters": [
+        {
+          "name": "recurse=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "str :",
+      "signature": "warnings(recurse=False)"
+    },
+    {
+      "name": "scriptErrors",
+      "parameters": [
+        {
+          "name": "recurse=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "str :",
+      "signature": "scriptErrors(recurse=False)"
+    },
+    {
+      "name": "clearScriptErrors",
+      "parameters": [
+        {
+          "name": "recurse=False",
+          "type": "Any"
+        },
+        {
+          "name": "error='*'",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "clearScriptErrors(recurse=False, error='*')"
+    },
+    {
+      "name": "childrenCPUMemory",
+      "parameters": [],
+      "returns": "int :",
+      "signature": "childrenCPUMemory()"
+    },
+    {
+      "name": "childrenGPUMemory",
+      "parameters": [],
+      "returns": "int :",
+      "signature": "childrenGPUMemory()"
+    },
+    {
+      "name": "resetNodeSize",
+      "parameters": [],
+      "returns": "None :",
+      "signature": "resetNodeSize()"
+    },
+    {
+      "name": "closeViewer",
+      "parameters": [
+        {
+          "name": "topMost=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "closeViewer(topMost=False)"
+    },
+    {
+      "name": "openViewer",
+      "parameters": [
+        {
+          "name": "unique=False",
+          "type": "Any"
+        },
+        {
+          "name": "borders=True",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "openViewer(unique=False, borders=True)"
+    },
+    {
+      "name": "resetViewer",
+      "parameters": [
+        {
+          "name": "recurse=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "resetViewer(recurse=False)"
+    },
+    {
+      "name": "openParameters",
+      "parameters": [],
+      "returns": "None :",
+      "signature": "openParameters()"
+    },
+    {
+      "name": "fetch",
+      "parameters": [
+        {
+          "name": "key",
+          "type": "Any"
+        },
+        {
+          "name": "default",
+          "type": "Any"
+        },
+        {
+          "name": "search=True",
+          "type": "Any"
+        },
+        {
+          "name": "storeDefault=False",
+          "type": "Any"
+        }
+      ],
+      "returns": "value :",
+      "signature": "fetch(key, default, search=True, storeDefault=False)"
+    },
+    {
+      "name": "fetchOwner",
+      "parameters": [
+        {
+          "name": "key",
+          "type": "Any"
+        }
+      ],
+      "returns": "OP  :",
+      "signature": "fetchOwner(key)"
+    },
+    {
+      "name": "store",
+      "parameters": [
+        {
+          "name": "key",
+          "type": "Any"
+        },
+        {
+          "name": "value",
+          "type": "Any"
+        }
+      ],
+      "returns": "value :",
+      "signature": "store(key, value)"
+    },
+    {
+      "name": "unstore",
+      "parameters": [
+        {
+          "name": "keys1",
+          "type": "Any"
+        },
+        {
+          "name": "keys2..",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "unstore(keys1, keys2..)"
+    },
+    {
+      "name": "storeStartupValue",
+      "parameters": [
+        {
+          "name": "key",
+          "type": "Any"
+        },
+        {
+          "name": "value",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "storeStartupValue(key, value)"
+    },
+    {
+      "name": "unstoreStartupValue",
+      "parameters": [
+        {
+          "name": "keys1",
+          "type": "Any"
+        },
+        {
+          "name": "keys2..",
+          "type": "Any"
+        }
+      ],
+      "returns": "None :",
+      "signature": "unstoreStartupValue(keys1, keys2..)"
+    },
+    {
+      "name": "__getstate__",
+      "parameters": [],
+      "returns": "dict :",
+      "signature": "__getstate__()"
+    },
+    {
+      "name": "__setstate__",
+      "parameters": [],
+      "returns": "dict :",
+      "signature": "__setstate__()"
+    },
+    {
+      "name": "rows",
+      "parameters": [
+        {
+          "name": "Keyword",
+          "type": "Any"
+        },
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "If specified, looks for cell only in the specified rows. Must be specified as a list. ",
+      "signature": "rows(Keyword, Optional)"
+    },
+    {
+      "name": "cols",
+      "parameters": [
+        {
+          "name": "Keyword",
+          "type": "Any"
+        },
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "If specified, looks for cell only in the specified columns. Must be specified as a list. ",
+      "signature": "cols(Keyword, Optional)"
+    },
+    {
+      "name": "colPattern",
+      "parameters": [
+        {
+          "name": "Keyword",
+          "type": "Any"
+        },
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "If specified and set to False, disables pattern matching for a cell, rows or columns. ",
+      "signature": "colPattern(Keyword, Optional)"
+    },
+    {
+      "name": "caseSensitive",
+      "parameters": [
+        {
+          "name": "Keyword",
+          "type": "Any"
+        },
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "Cell matching is case sensitive if set to true. ",
+      "signature": "caseSensitive(Keyword, Optional)"
+    },
+    {
+      "name": "rows",
+      "parameters": [
+        {
+          "name": "Keyword",
+          "type": "Any"
+        },
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "If specified, looks for cells only in the specified rows. ",
+      "signature": "rows(Keyword, Optional)"
+    },
+    {
+      "name": "cols",
+      "parameters": [
+        {
+          "name": "Keyword",
+          "type": "Any"
+        },
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "If specified, looks for cells only in the specified columns. ",
+      "signature": "cols(Keyword, Optional)"
+    },
+    {
+      "name": "colPattern",
+      "parameters": [
+        {
+          "name": "Keyword",
+          "type": "Any"
+        },
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "If specified, overrides pattern matching for cells, rows or columns. ",
+      "signature": "colPattern(Keyword, Optional)"
+    },
+    {
+      "name": "caseSensitive",
+      "parameters": [
+        {
+          "name": "Keyword",
+          "type": "Any"
+        },
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "Cell matching is case sensitive if set to true. ",
+      "signature": "caseSensitive(Keyword, Optional)"
+    },
+    {
+      "name": "includeUtility",
+      "parameters": [
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "if True, allow  Utility nodes  to be returned. If False, Utility nodes will be ignored.       b   =   op  (  'project1'  ) ",
+      "signature": "includeUtility(Optional)"
+    },
+    {
+      "name": "includeUtility",
+      "parameters": [
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "if True, allow  Utility nodes  to be returned. If False, Utility operators will be ignored.    ",
+      "signature": "includeUtility(Optional)"
+    },
+    {
+      "name": "parNames",
+      "parameters": [
+        {
+          "name": "Keyword",
+          "type": "Any"
+        },
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "Specify parameters by Par name. ",
+      "signature": "parNames(Keyword, Optional)"
+    },
+    {
+      "name": "parGroupNames",
+      "parameters": [
+        {
+          "name": "Keyword",
+          "type": "Any"
+        },
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "Specify parameters by  ParGroup  name. ",
+      "signature": "parGroupNames(Keyword, Optional)"
+    },
+    {
+      "name": "pageNames",
+      "parameters": [
+        {
+          "name": "Keyword",
+          "type": "Any"
+        },
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "Specify parameters by page name. ",
+      "signature": "pageNames(Keyword, Optional)"
+    },
+    {
+      "name": "includeBuiltin",
+      "parameters": [
+        {
+          "name": "Keyword",
+          "type": "Any"
+        },
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "Include builtin parameters. ",
+      "signature": "includeBuiltin(Keyword, Optional)"
+    },
+    {
+      "name": "includeCustom",
+      "parameters": [
+        {
+          "name": "Keyword",
+          "type": "Any"
+        },
+        {
+          "name": "Optional",
+          "type": "Any"
+        }
+      ],
+      "returns": "Include custom parameters.       op  (  'player'  )  .  resetPars  (  includeBuiltin  =  False  )   # only reset custom ",
+      "signature": "includeCustom(Keyword, Optional)"
+    }
+  ],
+  "enhanced": true
+}
