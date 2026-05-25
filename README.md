@@ -55,20 +55,44 @@ You set all three up below. It takes about 5 minutes.
 
 ## Get started
 
-> **In a hurry? Take a shortcut — both skip the manual steps below:**
->
-> - **Claude Desktop, zero terminal** → install the one-click extension. Drag
->   **`tdmcp.dxt`** into Claude Desktop → *Settings → Extensions*, set the
->   TouchDesigner host/port if they differ from `127.0.0.1:9980`, and enable it.
->   (No prebuilt bundle yet? Build one with `npm run build:dxt`.) Details:
->   [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). You still do **Step 2** (the bridge).
-> - **One command, any client** → after cloning, run **`npm run setup`** (or
->   `./setup.sh`). It installs, builds, and prints the exact lines to connect your
->   AI — with your real paths already filled in. Then do **Step 2**.
->
-> The numbered walk-through below is the same thing, explained one piece at a time.
+Setup is **two pieces**: the **bridge** inside TouchDesigner (so it can be
+driven) and the **tdmcp server** connected to your AI. Below, pick the path for
+your AI client — **every path also needs the bridge in Step 2.** Budget ~5 min.
 
-### Step 1 — Install the tdmcp server (once)
+> **Which path?** Claude Desktop → the one-click extension just below. Claude
+> Code or Cursor → Steps 1–3.
+
+### Claude Desktop: the one-click extension (`.dxt`) — easiest
+
+A `.dxt` is a single file that Claude Desktop installs as an **extension**. The
+tdmcp server is **bundled inside it**, and you set the TouchDesigner host/port in
+a settings form — no JSON, no `claude mcp add`, nothing to keep running yourself.
+
+**1. Get the `tdmcp.dxt` file.** There's no prebuilt download yet, so build it
+once (needs [Node 20+](https://nodejs.org)):
+
+```bash
+git clone https://github.com/Pantani/tdmcp.git
+cd tdmcp
+npm install
+npm run build:dxt      # writes tdmcp.dxt into this folder
+```
+
+**2. Install it in Claude Desktop.** Open **Settings → Extensions**, choose
+**Install from file** (or drag `tdmcp.dxt` onto the window). When asked, set the
+TouchDesigner **host** / **port** if they differ from `127.0.0.1` / `9980`, then
+**enable** the extension.
+
+**3. Turn on the bridge** inside TouchDesigner — do **Step 2** below. The
+extension *drives* TouchDesigner; the bridge is what lets it in.
+
+That's the whole Claude Desktop setup — skip to **Step 4** and start creating.
+More detail (and the Docker/HTTP options) live in
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
+---
+
+### Step 1 — Install the tdmcp server (once) · Claude Code / Cursor
 
 Open a terminal and run these four lines. You only ever do this once.
 
@@ -80,6 +104,10 @@ npm run build
 ```
 
 When it finishes you'll have a ready-to-run server at `dist/index.js`.
+
+> ⚡ **Shortcut:** instead of `npm install && npm run build`, run **`npm run
+> setup`** (or `./setup.sh`). It installs, builds, and then prints the exact line
+> to connect your AI — with your real paths already filled in.
 
 > 💡 **Tip — you'll need this folder's full path twice below.** While you're
 > still in the `tdmcp` folder, run `pwd`. Copy what it prints (e.g.
@@ -99,7 +127,8 @@ This lets the server actually control TouchDesigner. The easy, set-and-forget wa
    <project-path>/td/modules
    ```
 
-   (Using the tip from Step 1 — e.g. `/Users/you/tdmcp/td/modules`.) Click OK.
+   (That's the `tdmcp` folder you cloned — e.g. `/Users/you/tdmcp/td/modules`; run
+   `pwd` inside it if you're unsure of the full path.) Click OK.
 3. Open the **Textport** (`Dialogs → Textport and DATs`), type this one line and
    press Enter:
 
@@ -152,8 +181,8 @@ claude mcp add tdmcp -- node <project-path>/dist/index.js
 > `claude mcp add tdmcp -- npx -y @tdmcp/server`.
 
 **Claude Desktop** — the easiest route is the **one-click `.dxt` extension**
-(see the shortcut at the top of *Get started* — no config file needed). To wire
-it up manually instead, edit `claude_desktop_config.json`
+described at the top of *Get started* (no config file needed). To wire it up
+manually instead, edit `claude_desktop_config.json`
 (`Settings → Developer → Edit Config`) and add:
 
 ```json
