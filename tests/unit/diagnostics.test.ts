@@ -53,6 +53,36 @@ describe("find_td_nodes", () => {
     expect(sc(r).paths).toEqual(["/project1/noise1"]);
     expect(sc(r).matches).toBeUndefined();
   });
+
+  it("asks the bridge for a recursive topology and returns nested descendants", async () => {
+    let sawRecursive = false;
+    server.use(
+      http.get(`${TD_BASE}/api/network/:seg/topology`, ({ request }) => {
+        sawRecursive = new URL(request.url).searchParams.get("recursive") === "true";
+        return HttpResponse.json({
+          ok: true,
+          data: {
+            nodes: [
+              { path: "/project1/base1", type: "baseCOMP", name: "base1" },
+              { path: "/project1/base1/noise1", type: "noiseTOP", name: "noise1" },
+            ],
+            connections: [],
+          },
+        });
+      }),
+    );
+    const r = await findTdNodesImpl(makeCtx(), {
+      parent_path: "/project1",
+      pattern: "noise*",
+      recursive: true,
+      path_only: true,
+      limit: 50,
+    });
+    // recursive=true must hit the topology endpoint with ?recursive=true (not the
+    // depth-1 /api/nodes listing), and surface a node nested below the root.
+    expect(sawRecursive).toBe(true);
+    expect(sc(r).paths).toEqual(["/project1/base1/noise1"]);
+  });
 });
 
 describe("summarize_td_errors", () => {
@@ -124,5 +154,39 @@ describe("snapshot_td_graph", () => {
       include_params: true,
     });
     expect(sc(withParams).nodes[0].parameters).toMatchObject({ period: 1 });
+  });
+
+  it("fails forward: one unreadable node does not sink the whole snapshot", async () => {
+    server.use(
+      http.get(`${TD_BASE}/api/network/:seg/topology`, () =>
+        HttpResponse.json({
+          ok: true,
+          data: {
+            nodes: [
+              { path: "/project1/a", type: "noiseTOP", name: "a" },
+              { path: "/project1/b", type: "noiseTOP", name: "b" },
+            ],
+            connections: [],
+          },
+        }),
+      ),
+      http.get(`${TD_BASE}/api/nodes/:seg`, ({ params }) => {
+        const p = decodeURIComponent(String(params.seg));
+        if (p === "/project1/b") {
+          return HttpResponse.json({ ok: false, error: { message: "boom" } }, { status: 500 });
+        }
+        return HttpResponse.json({
+          ok: true,
+          data: { path: p, type: "noiseTOP", name: "a", parameters: { period: 1 } },
+        });
+      }),
+    );
+    const r = await snapshotTdGraphImpl(makeCtx(), { path: "/project1", include_params: true });
+    expect(r.isError).toBeFalsy();
+    expect(sc(r).nodeCount).toBe(2);
+    const a = sc(r).nodes.find((n: { path: string }) => n.path === "/project1/a");
+    const b = sc(r).nodes.find((n: { path: string }) => n.path === "/project1/b");
+    expect(a.parameters).toMatchObject({ period: 1 });
+    expect(b.parameters).toEqual({}); // unreadable node degrades to empty params, not a hard error
   });
 });

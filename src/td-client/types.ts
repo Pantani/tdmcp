@@ -38,10 +38,6 @@ export class TdApiError extends TdError {
   }
 }
 
-export function isTdError(err: unknown): err is TdError {
-  return err instanceof TdError;
-}
-
 /** Produces a human-friendly, single-line description of any error. */
 export function friendlyTdError(err: unknown): string {
   if (err instanceof TdError) return err.message;

@@ -92,7 +92,7 @@ def _route(method, path, query, body):
         if kind == "errors":
             return analysis_service.errors(node_path)
         if kind == "topology":
-            return analysis_service.topology(node_path)
+            return analysis_service.topology(node_path, recursive=_qs(query, "recursive") == "true")
         if kind == "performance":
             return analysis_service.performance(node_path)
 

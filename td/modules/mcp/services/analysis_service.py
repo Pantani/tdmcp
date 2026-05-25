@@ -11,12 +11,17 @@ def errors(path):
     return api_service.get_node_errors(path, recursive=True)
 
 
-def topology(path):
+def topology(path, recursive=False):
     root = op(path)
     if root is None:
         return {"nodes": [], "connections": []}
     nodes, connections = [], []
-    children = root.findChildren(depth=1) if hasattr(root, "findChildren") else []
+    if not hasattr(root, "findChildren"):
+        children = []
+    elif recursive:
+        children = root.findChildren()  # all descendants
+    else:
+        children = root.findChildren(depth=1)  # direct children only
     for child in children:
         nodes.append(
             {"path": child.path, "type": api_service.op_type(child), "name": child.name}

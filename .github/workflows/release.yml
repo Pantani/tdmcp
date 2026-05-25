@@ -1,0 +1,105 @@
+name: Release
+
+# Cut a release by pushing a version tag:
+#
+#   npm version patch          # or minor / major — bumps package.json + manifest, commits, tags
+#   git push --follow-tags     # pushes the commit AND the v* tag
+#
+# The tag push triggers this workflow, which re-runs the full check suite, builds
+# the Claude Desktop `.dxt` bundle, publishes a GitHub Release with the bundle
+# attached + auto-generated notes, and (if NPM_TOKEN is set) publishes to npm.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+# Least privilege by default; the job below elevates only what it needs.
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the GitHub Release + upload the .dxt asset
+      id-token: write # npm publish with provenance
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Verify tag matches package.json and manifest versions
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG="$(node -p "require('./package.json').version")"
+          MANIFEST="$(node -p "require('./dxt/manifest.json').version")"
+          echo "tag=$TAG  package.json=$PKG  manifest=$MANIFEST"
+          if [ "$TAG" != "$PKG" ]; then
+            echo "::error::Tag v$TAG does not match package.json version $PKG. Bump with 'npm version' before tagging."
+            exit 1
+          fi
+          if [ "$MANIFEST" != "$PKG" ]; then
+            echo "::error::dxt/manifest.json version $MANIFEST does not match package.json $PKG (the 'version' npm script keeps them in sync)."
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Import knowledge base
+        run: npm run import:bottobot
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Validate recipes
+        run: npm run validate:recipes
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Build .dxt bundle
+        run: npm run build:dxt
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" tdmcp.dxt \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes \
+            --verify-tag
+
+      - name: Check for npm token
+        id: npmtoken
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -n "$NPM_TOKEN" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::NPM_TOKEN secret is not set — skipping npm publish. Add it in Settings → Secrets and variables → Actions to enable 'npx -y tdmcp'."
+          fi
+
+      - name: Publish to npm
+        if: steps.npmtoken.outputs.present == 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public

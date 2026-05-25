@@ -46,4 +46,14 @@ describe("integration: Streamable HTTP transport", () => {
     });
     expect(res.status).toBe(400);
   });
+
+  it("returns 404 for paths other than /mcp", async () => {
+    const res = await fetch(`http://127.0.0.1:${PORT}/not-mcp`);
+    expect(res.status).toBe(404);
+  });
+
+  it("rejects a GET without a session id", async () => {
+    const res = await fetch(`http://127.0.0.1:${PORT}/mcp`, { method: "GET" });
+    expect(res.status).toBe(400);
+  });
 });

@@ -25,11 +25,3 @@ export function jsonContents(uri: URL, data: unknown): ReadResourceResult {
     ],
   };
 }
-
-export function textContents(
-  uri: URL,
-  text: string,
-  mimeType = "text/markdown",
-): ReadResourceResult {
-  return { contents: [{ uri: uri.href, mimeType, text }] };
-}

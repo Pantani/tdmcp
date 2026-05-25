@@ -68,8 +68,12 @@ A `.dxt` is a single file that Claude Desktop installs as an **extension**. The
 tdmcp server is **bundled inside it**, and you set the TouchDesigner host/port in
 a settings form — no JSON, no `claude mcp add`, nothing to keep running yourself.
 
-**1. Get the `tdmcp.dxt` file.** There's no prebuilt download yet, so build it
-once (needs [Node 20+](https://nodejs.org)):
+**1. Get the `tdmcp.dxt` file.** Download the latest prebuilt bundle:
+
+**[⬇ Download tdmcp.dxt](https://github.com/Pantani/tdmcp/releases/latest/download/tdmcp.dxt)** — always the newest release.
+
+<details>
+<summary>Or build it yourself (needs <a href="https://nodejs.org">Node 20+</a>)</summary>
 
 ```bash
 git clone https://github.com/Pantani/tdmcp.git
@@ -77,6 +81,8 @@ cd tdmcp
 npm install
 npm run build:dxt      # writes tdmcp.dxt into this folder
 ```
+
+</details>
 
 **2. Install it in Claude Desktop.** Open **Settings → Extensions**, choose
 **Install from file** (or drag `tdmcp.dxt` onto the window). When asked, set the
@@ -293,6 +299,7 @@ MCP client ──stdio──▶ tdmcp server (Node/TS) ──HTTP──▶ Touch
 | `TDMCP_TRANSPORT` | `stdio` | MCP transport: `stdio` (default) or `http` (Streamable HTTP) |
 | `TDMCP_HTTP_PORT` | `3939` | Port for the HTTP transport (when `TDMCP_TRANSPORT=http`) |
 | `TDMCP_EVENTS` | `on` | Subscribe to TD WebSocket events and forward them as MCP logging notifications (`on`/`off`) |
+| `TDMCP_RAW_PYTHON` | `on` | Whether to expose the raw-Python escape-hatch tools (`execute_python_script`, `exec_node_method`). Set to `off` to lock them out for restricted setups |
 | `TDMCP_LOG_LEVEL` | `info` | `debug` / `info` / `warn` / `error` / `silent` (stderr) |
 | `TDMCP_REQUEST_TIMEOUT_MS` | `10000` | Per-request timeout to the bridge |
 
@@ -300,6 +307,38 @@ The HTTP transport (`TDMCP_TRANSPORT=http`) serves MCP at `POST/GET/DELETE /mcp`
 on `127.0.0.1:$TDMCP_HTTP_PORT` with stateful sessions — handy for remote/headless
 setups. See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for Docker and the Claude
 Desktop `.dxt` extension.
+
+### Security
+
+The TouchDesigner bridge runs **arbitrary Python inside your TD process** (that is
+what lets the assistant build networks for you). Treat it like an open door to the
+machine TD runs on:
+
+- **The Web Server DAT listens on its port (default `9980`) on all network
+  interfaces**, and the bridge has no authentication. Anyone who can reach
+  `http://<your-ip>:9980` can run code on that machine. Only run it on a trusted
+  network, and/or firewall the port to localhost.
+- `TDMCP_RAW_PYTHON=off` hides the raw-Python MCP tools, but it does **not** close
+  the bridge's `/api/exec` endpoint — that gating lives on the MCP-server side only.
+- The MCP server itself binds to loopback (`127.0.0.1`) for both stdio and HTTP
+  transports and enables DNS-rebinding protection on HTTP.
+
+### Command-line agent (`tdmcp-agent`)
+
+The package also installs a second binary, `tdmcp-agent`, that drives the same
+tools from a shell with machine-readable output — useful for scripts and CI:
+
+```bash
+tdmcp-agent --help                 # list commands
+tdmcp-agent info                   # health check + TD/bridge info
+tdmcp-agent nodes find --params '{"parent_path":"/project1","type":"TOP"}'
+tdmcp-agent nodes create --dry-run --params '{"parent_path":"/project1","type":"noiseTOP"}'
+tdmcp-agent schema "nodes create" # print a command's JSON Schema
+```
+
+Output format is `--output json` (default) / `ndjson` / `text`. Mutating commands
+are tagged `mutates`; the Python escape hatches require `--allow-unsafe` and honour
+`TDMCP_RAW_PYTHON=off`.
 
 ### Scripts
 
@@ -331,7 +370,7 @@ npm run smoke:live   # creates a Noise→Null chain in /project1 and grabs a pre
 
 ## Current state
 
-- ✅ 30+ tools across 3 layers, 6 resource families, 5 prompts, 10 recipes, a
+- ✅ 35 tools across 3 layers, 6 resource families, 5 prompts, 10 recipes, a
   feedback engine, and the TouchDesigner Python bridge.
 - ✅ Two transports: **stdio** (default) and **Streamable HTTP**; plus an optional
   **WebSocket event stream** (TD → MCP logging notifications).

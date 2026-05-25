@@ -62,6 +62,24 @@ describe("tdmcp-agent CLI", () => {
     expect(r.stderr).toContain("--allow-unsafe");
   });
 
+  it("locks exec out entirely when TDMCP_RAW_PYTHON=off, even with --allow-unsafe", async () => {
+    const makeCtxLocked = (): ToolContext => ({ ...makeCtx(), allowRawPython: false });
+    const r = await runCli(
+      ["exec", "python", "--allow-unsafe", "--params", '{"script":"print(1)"}'],
+      { makeCtx: makeCtxLocked },
+    );
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain("disabled");
+  });
+
+  it("runs exec python with --allow-unsafe against the mocked bridge", async () => {
+    const r = await runCli(
+      ["exec", "python", "--allow-unsafe", "--params", '{"script":"print(1)"}'],
+      { makeCtx },
+    );
+    expect(r.code).toBe(0);
+  });
+
   it("rejects invalid JSON in --params", async () => {
     const r = await runCli(["nodes", "list", "--params", "{not json"]);
     expect(r.code).toBe(2);

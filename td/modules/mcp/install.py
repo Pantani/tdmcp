@@ -113,6 +113,11 @@ def run(port=9980, parent_path="/project1", container="tdmcp_bridge", modules_di
         comp.save(export_tox)
 
     print("[tdmcp] bridge running on port %d (%s)" % (port, comp.path))
+    print(
+        "[tdmcp] SECURITY: this bridge runs arbitrary Python and the Web Server DAT "
+        "listens on all interfaces with no auth. Run it only on a trusted network "
+        "or firewall port %d to localhost." % port
+    )
     return comp
 
 

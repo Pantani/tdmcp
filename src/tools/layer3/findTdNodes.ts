@@ -34,7 +34,7 @@ export const findTdNodesOutputSchema = z.object({
 
 export async function findTdNodesImpl(ctx: ToolContext, args: FindTdNodesArgs) {
   const fetch = args.recursive
-    ? async () => (await ctx.client.getNetworkTopology(args.parent_path)).nodes
+    ? async () => (await ctx.client.getNetworkTopology(args.parent_path, true)).nodes
     : async () => (await ctx.client.getNodes(args.parent_path)).nodes;
 
   return guardTd(fetch, (allNodes) => {

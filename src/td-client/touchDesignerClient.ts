@@ -216,8 +216,14 @@ export class TouchDesignerClient {
     return this.request("GET", `/api/network/${segment(path)}/errors`, NodeErrorsSchema);
   }
 
-  getNetworkTopology(path: string) {
-    return this.request("GET", `/api/network/${segment(path)}/topology`, TopologySchema);
+  getNetworkTopology(path: string, recursive = false) {
+    return this.request(
+      "GET",
+      `/api/network/${segment(path)}/topology`,
+      TopologySchema,
+      undefined,
+      recursive ? { recursive: true } : undefined,
+    );
   }
 
   getNetworkPerformance(path: string) {

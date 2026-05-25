@@ -5,7 +5,7 @@ export const ConfigSchema = z.object({
   tdHost: z.string().min(1).default("127.0.0.1"),
   /** TouchDesigner bridge port (WebServer DAT). */
   tdPort: z.coerce.number().int().positive().max(65535).default(9980),
-  /** MCP transport. Only `stdio` is fully wired in this build; `http` is scaffolded. */
+  /** MCP transport: `stdio` (default, for local clients) or `http` (Streamable HTTP, loopback-only). */
   transport: z.enum(["stdio", "http"]).default("stdio"),
   /** Log verbosity (written to stderr). */
   logLevel: z.enum(["debug", "info", "warn", "error", "silent"]).default("info"),
