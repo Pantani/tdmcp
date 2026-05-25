@@ -1,4 +1,4 @@
-# Runs the @tdmcp/server MCP server in a container over the HTTP transport.
+# Runs the tdmcp MCP server in a container over the HTTP transport.
 #
 # NOTE: TouchDesigner is NOT containerized — it runs natively on the host
 # (the TD Web Server DAT bridge listens on 127.0.0.1:9980 there). The container

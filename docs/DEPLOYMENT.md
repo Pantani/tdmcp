@@ -1,6 +1,6 @@
 # Deployment
 
-How to ship `@tdmcp/server` three ways: as a **Docker** container (HTTP
+How to ship `tdmcp` three ways: as a **Docker** container (HTTP
 transport), as a **Claude Desktop Extension** (`.dxt`, stdio), and to **npm**.
 
 > **TouchDesigner is never containerized.** It always runs natively on the host
@@ -87,7 +87,7 @@ The manifest lives at `dxt/manifest.json`. It declares a `node` server with
 
 ## 3. Publish to npm
 
-The package is public and scoped (`@tdmcp/server`).
+The package is public and unscoped (`tdmcp`).
 
 ```bash
 npm run build

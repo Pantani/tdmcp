@@ -163,7 +163,7 @@ Done — a `tdmcp_bridge` node now lives in your network and is listening. ✅
   ```
 
 - **From the terminal** — if you installed the server with `npx` (so there's no
-  local `td/modules`), run `npx @tdmcp/server install-bridge` (or
+  local `td/modules`), run `npx tdmcp install-bridge` (or
   `node <project-path>/dist/index.js install-bridge` from a clone). It copies the
   bridge to `~/tdmcp-bridge` and prints the exact line to paste in the Textport.
 
@@ -178,7 +178,7 @@ claude mcp add tdmcp -- node <project-path>/dist/index.js
 ```
 
 > Once tdmcp is published to npm this becomes path-free:
-> `claude mcp add tdmcp -- npx -y @tdmcp/server`.
+> `claude mcp add tdmcp -- npx -y tdmcp`.
 
 **Claude Desktop** — the easiest route is the **one-click `.dxt` extension**
 described at the top of *Get started* (no config file needed). To wire it up

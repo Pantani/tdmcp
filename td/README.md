@@ -1,7 +1,7 @@
 # tdmcp TouchDesigner bridge
 
 This folder contains the TouchDesigner-side bridge: a small Python package that
-exposes a REST API (via a **Web Server DAT**) which the `@tdmcp/server` MCP server
+exposes a REST API (via a **Web Server DAT**) which the `tdmcp` MCP server
 talks to.
 
 > A binary `.tox` cannot be generated from source by an AI agent, so the bridge
@@ -33,7 +33,7 @@ Textport:
 from mcp import install; install.run()
 ```
 
-**C. From the terminal.** `npx @tdmcp/server install-bridge` (or
+**C. From the terminal.** `npx tdmcp install-bridge` (or
 `node dist/index.js install-bridge` from a clone) copies the bridge to
 `~/tdmcp-bridge` and prints exactly what to paste in the Textport.
 

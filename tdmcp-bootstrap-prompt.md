@@ -11,7 +11,7 @@
 
 ## 1. PROJECT IDENTITY
 
-**Name:** `tdmcp` (npm: `@tdmcp/server`)
+**Name:** `tdmcp` (npm: `tdmcp`)
 **Tagline:** "AI-native visual creation for TouchDesigner"
 **License:** MIT
 **Language:** TypeScript (server) + Python (TD-side)
@@ -130,7 +130,7 @@ TouchDesigner has one of the steepest learning curves in creative software. Curr
 - **Distribution:** `.tox` component (drag-and-drop install)
 
 ### Package Distribution
-- **npm:** `@tdmcp/server` (the MCP server)
+- **npm:** `tdmcp` (the MCP server)
 - **GitHub Releases:** `.tox` file + `.dxt` extension for Claude Desktop
 - **Docker:** Optional container for headless/remote setups
 

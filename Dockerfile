@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 #
-# Multi-stage build for the @tdmcp/server MCP server.
+# Multi-stage build for the tdmcp MCP server.
 #
 # IMPORTANT: inside a container the MCP server CANNOT use the default `stdio`
 # transport — stdio only works when the MCP client spawns the process as a
