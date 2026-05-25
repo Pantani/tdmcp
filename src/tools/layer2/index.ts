@@ -4,6 +4,7 @@ import { registerCreateContainer } from "./createContainer.js";
 import { registerCreateGlslShader } from "./createGlslShader.js";
 import { registerCreateNodeChain } from "./createNodeChain.js";
 import { registerCreatePythonScript } from "./createPythonScript.js";
+import { registerDuplicateNetwork } from "./duplicateNetwork.js";
 import { registerSetParametersBatch } from "./setParametersBatch.js";
 
 export const layer2Registrars: ToolRegistrar[] = [
@@ -13,4 +14,5 @@ export const layer2Registrars: ToolRegistrar[] = [
   registerCreatePythonScript,
   registerSetParametersBatch,
   registerCreateContainer,
+  registerDuplicateNetwork,
 ];

@@ -61,7 +61,8 @@ export async function createAudioReactiveImpl(ctx: ToolContext, args: CreateAudi
     }
 
     const audioTex = await builder.add("choptoTOP", "audio_tex");
-    await builder.connect(spectrum, audioTex);
+    // A CHOP-to TOP reads its source CHOP via the `chop` parameter, not a wire.
+    await builder.setParams(audioTex, { chop: spectrum });
 
     let visual: string;
     if (args.visual_style === "glsl") {

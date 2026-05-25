@@ -23,7 +23,7 @@ const hasImage = (content: unknown): boolean =>
   Array.isArray(content) && content.some((c) => (c as { type?: string }).type === "image");
 
 describe("integration: Layer 1 artist tools over MCP", () => {
-  it("registers all three tool layers (23+ tools)", async () => {
+  it("registers all three tool layers (31+ tools)", async () => {
     const client = await connectClient();
     const { tools } = await client.listTools();
     const names = tools.map((t) => t.name);
@@ -35,9 +35,15 @@ describe("integration: Layer 1 artist tools over MCP", () => {
         "create_node_chain",
         "create_td_node",
         "get_preview",
+        "get_td_classes",
+        "get_module_help",
+        "get_td_performance",
+        "duplicate_network",
+        "create_data_visualization",
+        "describe_project",
       ]),
     );
-    expect(tools.length).toBeGreaterThanOrEqual(23);
+    expect(tools.length).toBeGreaterThanOrEqual(31);
   });
 
   it("create_feedback_network builds a container and returns a preview", async () => {
