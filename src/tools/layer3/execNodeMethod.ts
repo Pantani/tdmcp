@@ -18,13 +18,15 @@ export async function execNodeMethodImpl(ctx: ToolContext, args: ExecNodeMethodA
 }
 
 export const registerExecNodeMethod: ToolRegistrar = (server, ctx) => {
+  if (ctx.allowRawPython === false) return;
   server.registerTool(
     "exec_node_method",
     {
       title: "Call node method",
-      description: "Invoke a Python method on a specific node (operator).",
+      description:
+        "Escape hatch — invoke an arbitrary Python method on a node (operator). Prefer structured tools where one exists; use this for operations they don't cover (e.g. .cook(), .copy(), .destroy()).",
       inputSchema: execNodeMethodSchema.shape,
-      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     (args) => execNodeMethodImpl(ctx, args),
   );

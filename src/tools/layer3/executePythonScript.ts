@@ -24,14 +24,15 @@ export async function executePythonScriptImpl(ctx: ToolContext, args: ExecutePyt
 }
 
 export const registerExecutePythonScript: ToolRegistrar = (server, ctx) => {
+  if (ctx.allowRawPython === false) return;
   server.registerTool(
     "execute_python_script",
     {
       title: "Execute Python in TouchDesigner",
       description:
-        "Run a Python script inside the TouchDesigner process via the bridge. Code is executed in TD only — never on the local machine.",
+        "Escape hatch — run an arbitrary Python script inside the TouchDesigner process. Prefer the structured tools (find_td_nodes, get_td_node_parameters, update_td_node_parameters, summarize_td_errors, snapshot_td_graph, …); reach for this only when no structured tool can express the operation. Code runs in TD only, never on the local machine.",
       inputSchema: executePythonScriptSchema.shape,
-      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     (args) => executePythonScriptImpl(ctx, args),
   );

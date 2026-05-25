@@ -1,9 +1,17 @@
 // Builds the Claude Desktop Extension bundle (`tdmcp.dxt`).
 //
 // A .dxt is a zip archive whose root contains `manifest.json` plus the server's
-// runtime files. This script prefers the official packer
-// (`npx @anthropic-ai/dxt pack`) when it is available, and otherwise falls back
-// to assembling the zip itself from the verified file list.
+// runtime files. This script prefers the official packer when it is available,
+// and otherwise falls back to assembling the zip itself from the verified file
+// list.
+//
+// The official packer was renamed from `@anthropic-ai/dxt` (CLI `dxt`) to
+// `@anthropic-ai/mcpb` (CLI `mcpb`); both expose `pack <dir> <output>`. We try
+// the current `mcpb` package first, then the legacy `dxt` package, then zip.
+// NOTE: the legacy `dxt` CLI predates spec 0.3 and rejects the modern
+// `manifest_version` key (it still requires `dxt_version`), so on machines that
+// only have the legacy package the official-packer path is expected to fail and
+// the zip fallback kicks in — the resulting bundle is still valid.
 //
 // Run AFTER `npm run build` (the bundle needs a populated `dist/`).
 //
@@ -53,43 +61,58 @@ function preflight() {
   }
 }
 
-/** Try the official packer. Returns true if it ran and succeeded. */
-function tryOfficialPacker() {
-  // `dxt pack <dir> <output>` packs a directory whose root holds manifest.json.
-  // We stage the verified file list into a temp dir, then point the packer at it.
-  log("attempting official packer: npx @anthropic-ai/dxt pack …");
-  const probe = spawnSync("npx", ["--yes", "@anthropic-ai/dxt", "--version"], {
-    cwd: root,
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-  if (probe.status !== 0) {
-    log("official packer not available — falling back to built-in zip.");
-    return false;
-  }
+// Official packer package names, in preference order. `mcpb` is the current
+// name; `dxt` is the deprecated predecessor. Both expose `<cli> pack <dir> <out>`.
+const OFFICIAL_PACKERS = [
+  { pkg: "@anthropic-ai/mcpb", cli: "mcpb" },
+  { pkg: "@anthropic-ai/dxt", cli: "dxt" },
+];
 
-  const stageDir = mkdtempSync(join(tmpdir(), "tdmcp-dxt-"));
-  try {
-    for (const [src, dest] of INCLUDE) {
-      if (!existsSync(src)) continue;
-      const target = join(stageDir, dest);
-      mkdirSync(dirname(target), { recursive: true });
-      cpSync(src, target, { recursive: true });
-    }
-    const res = spawnSync("npx", ["--yes", "@anthropic-ai/dxt", "pack", stageDir, outFile], {
+/** Stage the verified file list into `stageDir` (archive root holds manifest.json). */
+function stageFiles(stageDir) {
+  for (const [src, dest] of INCLUDE) {
+    if (!existsSync(src)) continue;
+    const target = join(stageDir, dest);
+    mkdirSync(dirname(target), { recursive: true });
+    cpSync(src, target, { recursive: true });
+  }
+}
+
+/** Try the official packer(s). Returns true if one ran and succeeded. */
+function tryOfficialPacker() {
+  // `<cli> pack <dir> <output>` packs a directory whose root holds manifest.json.
+  // We stage the verified file list into a temp dir, then point the packer at it.
+  for (const { pkg } of OFFICIAL_PACKERS) {
+    log(`attempting official packer: npx ${pkg} pack …`);
+    const probe = spawnSync("npx", ["--yes", pkg, "--version"], {
       cwd: root,
       encoding: "utf8",
-      stdio: "inherit",
+      stdio: ["ignore", "pipe", "pipe"],
     });
-    if (res.status === 0) {
-      log(`official packer produced ${outFile}`);
-      return true;
+    if (probe.status !== 0) {
+      log(`${pkg} not available — trying next packer.`);
+      continue;
     }
-    log("official packer failed — falling back to built-in zip.");
-    return false;
-  } finally {
-    rmSync(stageDir, { recursive: true, force: true });
+
+    const stageDir = mkdtempSync(join(tmpdir(), "tdmcp-dxt-"));
+    try {
+      stageFiles(stageDir);
+      const res = spawnSync("npx", ["--yes", pkg, "pack", stageDir, outFile], {
+        cwd: root,
+        encoding: "utf8",
+        stdio: "inherit",
+      });
+      if (res.status === 0) {
+        log(`official packer (${pkg}) produced ${outFile}`);
+        return true;
+      }
+      log(`${pkg} failed to pack — trying next packer.`);
+    } finally {
+      rmSync(stageDir, { recursive: true, force: true });
+    }
   }
+  log("no official packer succeeded — falling back to built-in zip.");
+  return false;
 }
 
 /** Fallback: assemble the .dxt with the system `zip` tool. */
@@ -97,9 +120,9 @@ function zipFallback() {
   const hasZip = spawnSync("zip", ["-v"], { stdio: "ignore" }).status === 0;
   if (!hasZip) {
     fail(
-      "neither `npx @anthropic-ai/dxt` nor a system `zip` is available.\n" +
+      "neither the official packer (`npx @anthropic-ai/mcpb`) nor a system `zip` is available.\n" +
         "  Install one of them, e.g.:\n" +
-        "    npm i -g @anthropic-ai/dxt   # then re-run this script\n" +
+        "    npm i -g @anthropic-ai/mcpb   # then re-run this script\n" +
         "    # or install a `zip` CLI (brew install zip / apt-get install zip)",
     );
   }

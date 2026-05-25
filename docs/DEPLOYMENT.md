@@ -64,9 +64,13 @@ npm run build          # populate dist/ first
 node scripts/build-dxt.mjs
 ```
 
-`build-dxt.mjs` uses the official packer (`npx @anthropic-ai/dxt pack`) when
-available and otherwise falls back to a system `zip`. It writes `tdmcp.dxt` to
-the repo root and prints install instructions.
+`build-dxt.mjs` uses the official packer when available and otherwise falls back
+to a system `zip`. The packer was renamed from `@anthropic-ai/dxt` (CLI `dxt`) to
+`@anthropic-ai/mcpb` (CLI `mcpb`); the script prefers `npx @anthropic-ai/mcpb pack`
+and falls back to the legacy `@anthropic-ai/dxt`, then `zip`. (The legacy `dxt`
+CLI predates manifest spec 0.3 and rejects the `manifest_version` key, so install
+`@anthropic-ai/mcpb` to use the official packer.) It writes `tdmcp.dxt` to the
+repo root and prints install instructions.
 
 ### Install
 

@@ -1,5 +1,4 @@
 {
-  "_note": "Verified against the official spec at https://raw.githubusercontent.com/anthropics/dxt/refs/heads/main/MANIFEST.md (MCPB/DXT MANIFEST.md, spec version 0.3, dated 2025-12-02). The current spec uses the top-level field name `manifest_version` (the older `@anthropic-ai/dxt` examples used `dxt_version`); `manifest_version: \"0.3\"` is used here per the verified spec. user_config values are injected into the server env via `${user_config.KEY}` template literals, and `${__dirname}` resolves to the unpacked extension directory. Claude Desktop spawns this process locally, so the stdio transport is used (no TDMCP_TRANSPORT override).",
   "manifest_version": "0.3",
   "name": "tdmcp",
   "display_name": "TouchDesigner (tdmcp)",

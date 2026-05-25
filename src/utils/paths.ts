@@ -36,6 +36,20 @@ export function recipesDir(): string {
 }
 
 /**
+ * Directory holding the TouchDesigner-side Python bridge modules that ship with
+ * the package (the `td/modules` tree). Used by the `install-bridge` CLI to copy
+ * them somewhere TouchDesigner can import from.
+ * - dev (tsx): `<root>/td/modules`
+ * - installed package (node): `<pkgroot>/td/modules`
+ */
+export function bridgeModulesDir(): string {
+  return firstExisting(
+    [resolve(moduleDir, "../td/modules"), resolve(moduleDir, "../../td/modules")],
+    resolve(moduleDir, "../td/modules"),
+  );
+}
+
+/**
  * Resolves the installed `@bottobot/td-mcp` package root (the source of operator
  * data), if present. Used as a fallback when local knowledge data is missing.
  */

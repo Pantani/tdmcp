@@ -1,0 +1,3 @@
+# Keep Python bytecode caches out of the published tarball (td/ is in `files`).
+**/__pycache__/
+*.pyc

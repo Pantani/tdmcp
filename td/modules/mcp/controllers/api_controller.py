@@ -120,6 +120,17 @@ def _merge_query(request, query):
     return query
 
 
+def _emit_node_errors(webserver, path):
+    if not path:
+        return
+    try:
+        report = api_service.get_node_errors(path, recursive=False)
+    except Exception:  # noqa: BLE001
+        return
+    for err in report.get("errors", []):
+        events.broadcast(webserver, "node.error", err)
+
+
 def _emit_event(webserver, method, path, data):
     if webserver is None:
         return
@@ -128,6 +139,9 @@ def _emit_event(webserver, method, path, data):
     try:
         if method == "POST" and rest == ["nodes"]:
             events.broadcast(webserver, "node.created", data)
+            _emit_node_errors(webserver, (data or {}).get("path"))
+        elif method == "PATCH" and len(rest) >= 2 and rest[0] == "nodes":
+            _emit_node_errors(webserver, (data or {}).get("path"))
         elif method == "DELETE" and len(rest) >= 2 and rest[0] == "nodes":
             events.broadcast(webserver, "node.deleted", data)
         elif method == "POST" and rest == ["batch"]:
@@ -135,7 +149,9 @@ def _emit_event(webserver, method, path, data):
                 if not result.get("ok"):
                     continue
                 if result.get("action") == "create":
-                    events.broadcast(webserver, "node.created", result.get("data"))
+                    node = result.get("data")
+                    events.broadcast(webserver, "node.created", node)
+                    _emit_node_errors(webserver, (node or {}).get("path"))
                 elif result.get("action") == "delete":
                     events.broadcast(webserver, "node.deleted", {"path": result.get("path")})
     except Exception:  # noqa: BLE001

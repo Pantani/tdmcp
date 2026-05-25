@@ -2,6 +2,7 @@ import { z } from "zod";
 import { NodeRefSchema } from "../../td-client/validators.js";
 import { guardTd, structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { globToRegExp } from "./nodeMatch.js";
 
 export const getTdNodesSchema = z.object({
   parent_path: z
@@ -41,12 +42,6 @@ export const getTdNodesOutputSchema = z.object({
   nodes: z.array(NodeRefSchema).optional(),
   hint: z.string().optional(),
 });
-
-/** Turns a `*`-glob into a case-insensitive RegExp (other regex metachars are escaped). */
-function globToRegExp(pattern: string): RegExp {
-  const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*");
-  return new RegExp(escaped, "i");
-}
 
 export async function getTdNodesImpl(ctx: ToolContext, args: GetTdNodesArgs) {
   return guardTd(

@@ -36,6 +36,37 @@ def _callbacks_source(modules_dir=None):
     )
 
 
+def _event_hooks_source(modules_dir=None):
+    header = ""
+    if modules_dir:
+        header = (
+            "import sys\n"
+            "if %r not in sys.path:\n"
+            "    sys.path.insert(0, %r)\n\n" % (modules_dir, modules_dir)
+        )
+    return header + (
+        "def _broadcast(event, data):\n"
+        "    try:\n"
+        "        from mcp import events\n"
+        "        events.broadcast(me.parent().op('webserver'), event, data)\n"
+        "    except Exception:\n"
+        "        pass\n\n"
+        "def onFrameEnd(frame):\n"
+        "    try:\n"
+        "        if int(frame) % 30 == 0:\n"
+        "            _broadcast('timeline.frame', {'frame': int(frame), 'seconds': float(absTime.seconds)})\n"
+        "    except Exception:\n"
+        "        pass\n\n"
+        "def onProjectPostSave():\n"
+        "    try:\n"
+        "        _broadcast('project.saved', {'filename': project.name})\n"
+        "    except Exception:\n"
+        "        pass\n\n"
+        "def onStart(): return\n"
+        "def onCreate(): return\n"
+    )
+
+
 def run(port=9980, parent_path="/project1", container="tdmcp_bridge", modules_dir=None, export_tox=None):
     import td  # TouchDesigner globals are only available via the td module here
 
@@ -56,11 +87,39 @@ def run(port=9980, parent_path="/project1", container="tdmcp_bridge", modules_di
     server.par.callbacks = callbacks
     server.par.active = True
 
+    # Execute DAT that emits project.saved / timeline.frame events over WebSocket.
+    hooks = comp.op("events_hook") or comp.create(td.executeDAT, "events_hook")
+    hooks.text = _event_hooks_source(modules_dir)
+    hooks.par.active = True
+    hooks.par.frameend = True
+    hooks.par.projectpostsave = True
+
     if export_tox:
         comp.save(export_tox)
 
     print("[tdmcp] bridge running on port %d (%s)" % (port, comp.path))
     return comp
+
+
+def export(path, modules_dir=None, port=9980, parent_path="/project1", container="tdmcp_bridge"):
+    """Build the bridge and save it as a reusable .tox you can drag into any project.
+
+    Run this once in your own TouchDesigner, commit the resulting .tox, and from
+    then on the bridge install is just drag-and-drop. Pass `modules_dir` (the
+    absolute path to `td/modules`) to bake the import path into the .tox so it
+    keeps working in projects that don't have that folder on the Preferences
+    "Python 64-bit Module Path"; otherwise the target machine still needs it set.
+
+        from mcp import install
+        install.export("/path/to/mcp_webserver_base.tox")
+    """
+    return run(
+        port=port,
+        parent_path=parent_path,
+        container=container,
+        modules_dir=modules_dir,
+        export_tox=path,
+    )
 
 
 def uninstall(parent_path="/project1", container="tdmcp_bridge"):

@@ -10,6 +10,11 @@ export interface ToolContext {
   knowledge: KnowledgeBase;
   recipes: RecipeLibrary;
   logger: Logger;
+  /**
+   * Whether the raw Python escape-hatch tools may be registered. Undefined means
+   * allowed (the default); only an explicit `false` locks them out.
+   */
+  allowRawPython?: boolean;
 }
 
 /** A function that registers one tool against the MCP server. */

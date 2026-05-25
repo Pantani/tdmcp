@@ -9,6 +9,48 @@ talks to.
 > one-time, copy-paste install (below). You can then export your own
 > `mcp_webserver_base.tox` from TD for reuse.
 
+## Easiest install
+
+You only need the bridge running inside TouchDesigner once. Pick whichever fits —
+all three create one tidy `tdmcp_bridge` COMP (Web Server DAT + callbacks), are
+idempotent, and can be undone with `from mcp import install; install.uninstall()`.
+
+**A. One paste — no clone, no Preferences.** In the Textport
+(`Dialogs → Textport and DATs`):
+
+```python
+import urllib.request; exec(urllib.request.urlopen("https://raw.githubusercontent.com/Pantani/tdmcp/main/td/bootstrap.py").read().decode())
+```
+
+It downloads the bridge to `~/tdmcp-bridge/modules` and starts it on port 9980.
+(Needs the repo reachable; if it is private, use B or C.)
+
+**B. One line — after adding the module path.** Add the absolute path of
+`td/modules` to **Preferences → "Python 64-bit Module Path"**, then in the
+Textport:
+
+```python
+from mcp import install; install.run()
+```
+
+**C. From the terminal.** `npx @tdmcp/server install-bridge` (or
+`node dist/index.js install-bridge` from a clone) copies the bridge to
+`~/tdmcp-bridge` and prints exactly what to paste in the Textport.
+
+### Make a reusable .tox (drag-and-drop)
+
+Run this once in your own TouchDesigner to bake a component you can drag into any
+project:
+
+```python
+from mcp import install
+install.export("/path/to/mcp_webserver_base.tox", modules_dir="/abs/path/to/td/modules")
+```
+
+Commit that `.tox`; from then on the bridge install is just dragging it in. Pass
+`modules_dir` so the import path travels inside the `.tox`; otherwise the target
+machine still needs `td/modules` on its Preferences module path.
+
 ## Layout
 
 ```
@@ -25,7 +67,9 @@ td/
 └── templates/webserver_callbacks.py        # Web Server DAT callbacks
 ```
 
-## Install (≈2 minutes)
+## Manual install (Web Server DAT, ≈2 minutes)
+
+Prefer to wire it by hand, or can't run the options above? Do it manually:
 
 1. Copy the `td/modules` folder into your project folder, e.g.
    `<yourproject>/tdmcp/modules` (so you have `<yourproject>/tdmcp/modules/mcp/...`).

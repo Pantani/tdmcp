@@ -11,8 +11,8 @@ beforeAll(() => mock.listen({ onUnhandledRequest: "error" }));
 afterEach(() => mock.resetHandlers());
 afterAll(() => mock.close());
 
-async function connectClient() {
-  const config = loadConfig({}); // defaults → 127.0.0.1:9980 (matches the mock bridge)
+async function connectClient(env: NodeJS.ProcessEnv = {}) {
+  const config = loadConfig(env); // defaults → 127.0.0.1:9980 (matches the mock bridge)
   const server = createTdmcpServer(config, { logger: silentLogger });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   const client = new Client({ name: "tdmcp-test-client", version: "0.0.0" });
@@ -38,6 +38,23 @@ describe("integration: Layer 3 over the MCP protocol", () => {
         "exec_node_method",
       ]),
     );
+  });
+
+  it("locks out raw Python escape hatches when TDMCP_RAW_PYTHON=off", async () => {
+    const client = await connectClient({ TDMCP_RAW_PYTHON: "off" });
+    const names = (await client.listTools()).tools.map((t) => t.name);
+    expect(names).not.toContain("execute_python_script");
+    expect(names).not.toContain("exec_node_method");
+    // Structured tools stay available.
+    expect(names).toContain("find_td_nodes");
+    expect(names).toContain("get_td_nodes");
+  });
+
+  it("marks the Python escape hatches as destructive", async () => {
+    const client = await connectClient();
+    const tools = (await client.listTools()).tools;
+    const exec = tools.find((t) => t.name === "execute_python_script");
+    expect(exec?.annotations?.destructiveHint).toBe(true);
   });
 
   it("creates a Noise TOP, then a Null TOP, then lists them", async () => {

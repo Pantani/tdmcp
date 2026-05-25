@@ -55,6 +55,19 @@ You set all three up below. It takes about 5 minutes.
 
 ## Get started
 
+> **In a hurry? Take a shortcut — both skip the manual steps below:**
+>
+> - **Claude Desktop, zero terminal** → install the one-click extension. Drag
+>   **`tdmcp.dxt`** into Claude Desktop → *Settings → Extensions*, set the
+>   TouchDesigner host/port if they differ from `127.0.0.1:9980`, and enable it.
+>   (No prebuilt bundle yet? Build one with `npm run build:dxt`.) Details:
+>   [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). You still do **Step 2** (the bridge).
+> - **One command, any client** → after cloning, run **`npm run setup`** (or
+>   `./setup.sh`). It installs, builds, and prints the exact lines to connect your
+>   AI — with your real paths already filled in. Then do **Step 2**.
+>
+> The numbered walk-through below is the same thing, explained one piece at a time.
+
 ### Step 1 — Install the tdmcp server (once)
 
 Open a terminal and run these four lines. You only ever do this once.
@@ -111,6 +124,20 @@ Done — a `tdmcp_bridge` node now lives in your network and is listening. ✅
 > [`td/README.md`](td/README.md) for the Execute-DAT auto-start and the fully
 > manual Web Server DAT setup.
 
+**Two even-easier ways to do Step 2:**
+
+- **No clone, no Preferences** — paste this single line into the Textport. It
+  fetches the bridge and starts it for you:
+
+  ```python
+  import urllib.request; exec(urllib.request.urlopen("https://raw.githubusercontent.com/Pantani/tdmcp/main/td/bootstrap.py").read().decode())
+  ```
+
+- **From the terminal** — if you installed the server with `npx` (so there's no
+  local `td/modules`), run `npx @tdmcp/server install-bridge` (or
+  `node <project-path>/dist/index.js install-bridge` from a clone). It copies the
+  bridge to `~/tdmcp-bridge` and prints the exact line to paste in the Textport.
+
 ### Step 3 — Connect your AI assistant
 
 Point your AI client at the server you built in Step 1. Pick your client:
@@ -121,7 +148,12 @@ Point your AI client at the server you built in Step 1. Pick your client:
 claude mcp add tdmcp -- node <project-path>/dist/index.js
 ```
 
-**Claude Desktop** — edit `claude_desktop_config.json`
+> Once tdmcp is published to npm this becomes path-free:
+> `claude mcp add tdmcp -- npx -y @tdmcp/server`.
+
+**Claude Desktop** — the easiest route is the **one-click `.dxt` extension**
+(see the shortcut at the top of *Get started* — no config file needed). To wire
+it up manually instead, edit `claude_desktop_config.json`
 (`Settings → Developer → Edit Config`) and add:
 
 ```json
@@ -181,15 +213,20 @@ return a friendly "not reachable" message instead of crashing.
 
 **Artist tools** (describe the result, get a whole network):
 `create_visual_system`, `create_feedback_network`, `create_generative_art`,
-`create_audio_reactive`, `create_particle_system`, `apply_post_processing`,
-`setup_output`, `get_preview`.
+`create_audio_reactive`, `create_particle_system`, `create_data_visualization`,
+`apply_post_processing`, `setup_output`, `get_preview`, `describe_project`.
 
 **Building blocks**: `create_node_chain`, `connect_nodes`, `create_glsl_shader`,
-`create_python_script`, `set_parameters_batch`, `create_container`.
+`create_python_script`, `set_parameters_batch`, `create_container`,
+`duplicate_network`.
 
 **Atomic operations**: `create_td_node`, `delete_td_node`,
-`update_td_node_parameters`, `get_td_nodes`, `get_td_node_parameters`,
-`get_td_node_errors`, `execute_python_script`, `exec_node_method`, `get_td_info`.
+`update_td_node_parameters`, `execute_python_script`, `exec_node_method`.
+
+**Inspect & analyze**: `get_td_info`, `get_td_nodes`, `get_td_node_parameters`,
+`get_td_node_errors`, `get_td_performance`, `get_td_topology`, `get_td_classes`,
+`get_td_class_details`, `get_module_help` (plus search / summary / compare /
+snapshot helpers).
 
 **Recipes** — 10 validated, ready-to-build templates: `feedback_tunnel`,
 `reaction_diffusion`, `noise_landscape`, `audio_spectrum_bars`, `particle_galaxy`,
@@ -224,14 +261,22 @@ MCP client ──stdio──▶ tdmcp server (Node/TS) ──HTTP──▶ Touch
 | --- | --- | --- |
 | `TDMCP_TD_HOST` | `127.0.0.1` | TouchDesigner bridge host |
 | `TDMCP_TD_PORT` | `9980` | Web Server DAT port |
-| `TDMCP_TRANSPORT` | `stdio` | MCP transport (`stdio`; `http` is scaffolded) |
+| `TDMCP_TRANSPORT` | `stdio` | MCP transport: `stdio` (default) or `http` (Streamable HTTP) |
+| `TDMCP_HTTP_PORT` | `3939` | Port for the HTTP transport (when `TDMCP_TRANSPORT=http`) |
+| `TDMCP_EVENTS` | `on` | Subscribe to TD WebSocket events and forward them as MCP logging notifications (`on`/`off`) |
 | `TDMCP_LOG_LEVEL` | `info` | `debug` / `info` / `warn` / `error` / `silent` (stderr) |
 | `TDMCP_REQUEST_TIMEOUT_MS` | `10000` | Per-request timeout to the bridge |
+
+The HTTP transport (`TDMCP_TRANSPORT=http`) serves MCP at `POST/GET/DELETE /mcp`
+on `127.0.0.1:$TDMCP_HTTP_PORT` with stateful sessions — handy for remote/headless
+setups. See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for Docker and the Claude
+Desktop `.dxt` extension.
 
 ### Scripts
 
 | Script | Purpose |
 | --- | --- |
+| `npm run setup` | guided install + build, then prints how to connect your client |
 | `npm run dev` | run the server from source (stdio) |
 | `npm run build` | typecheck + bundle + copy assets to `dist/` |
 | `npm test` | unit + integration tests (Vitest + MSW) |
@@ -239,6 +284,7 @@ MCP client ──stdio──▶ tdmcp server (Node/TS) ──HTTP──▶ Touch
 | `npm run smoke:live` | end-to-end test against a running TD |
 | `npm run validate:recipes` | validate every recipe JSON |
 | `npm run import:bottobot` | (re)build the embedded knowledge base — only needed to refresh it |
+| `npm run build:dxt` | package a Claude Desktop `.dxt` extension (see `docs/DEPLOYMENT.md`) |
 
 > The knowledge base ships in the repo, so a fresh clone needs only
 > `npm install && npm run build`. `import:bottobot` is a maintenance command for
@@ -256,16 +302,20 @@ npm run smoke:live   # creates a Noise→Null chain in /project1 and grabs a pre
 
 ## Current state
 
-- ✅ 23 tools across 3 layers, 6 resource families, 5 prompts, 10 recipes, a
+- ✅ 30+ tools across 3 layers, 6 resource families, 5 prompts, 10 recipes, a
   feedback engine, and the TouchDesigner Python bridge.
+- ✅ Two transports: **stdio** (default) and **Streamable HTTP**; plus an optional
+  **WebSocket event stream** (TD → MCP logging notifications).
 - ✅ `typecheck`, `build`, `lint`, and `test` all pass; the server boots over
   stdio with clean stdout.
-- 🔌 Verified end-to-end against a live TouchDesigner.
+- 🔌 Verified end-to-end against a live TouchDesigner (CRUD, preview, batch, and
+  `node.created`/`node.deleted` events).
 
 ## Known limitations
 
-- **HTTP/SSE transport** is scaffolded behind `TDMCP_TRANSPORT`, but only `stdio`
-  is wired in this build.
+- **WebSocket events** cover `node.created` / `node.deleted` / `node.error` and
+  are forwarded only on the stdio transport; `project.saved` / `timeline.frame` /
+  `node.cook` are not emitted yet.
 - **Audio / particle / 3D builders and the exotic recipes** (kinect, LED,
   projection) produce valid, connected networks but use best-effort TD parameter
   names — fine-tuning may be needed, and they emit warnings to that effect.

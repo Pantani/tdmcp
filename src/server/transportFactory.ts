@@ -4,7 +4,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
-import { TdEventStream } from "../td-client/eventStream.js";
+import { type TdEvent, TdEventStream } from "../td-client/eventStream.js";
 import { type TdmcpConfig, tdBaseUrl } from "../utils/config.js";
 import type { Logger } from "../utils/logger.js";
 
@@ -14,6 +14,27 @@ export interface TransportHandle {
 }
 
 const MCP_PATH = "/mcp";
+
+/** Forwards one TD event to a connected MCP client as a logging notification. */
+function forwardEvent(server: McpServer, event: TdEvent): void {
+  const level = event.event === "node.error" ? "error" : "info";
+  void server.sendLoggingMessage({ level, logger: "touchdesigner", data: event }).catch(() => {
+    // client may not support logging or not be connected yet — ignore
+  });
+}
+
+/** Opens the TD event stream (if enabled) and routes each event to `onEvent`. */
+function createEventStream(
+  config: TdmcpConfig,
+  logger: Logger,
+  onEvent: (event: TdEvent) => void,
+): TdEventStream | undefined {
+  if (config.events !== "on") return undefined;
+  const url = `${tdBaseUrl(config).replace(/^http/, "ws")}/`;
+  const stream = new TdEventStream({ url, logger, onEvent });
+  stream.start();
+  return stream;
+}
 
 function readBody(req: IncomingMessage): Promise<unknown> {
   return new Promise((resolve, reject) => {
@@ -47,23 +68,7 @@ function startStdio(
   void server.connect(transport);
   logger.info("tdmcp connected over stdio");
 
-  let events: TdEventStream | undefined;
-  if (config.events === "on") {
-    const wsUrl = `${tdBaseUrl(config).replace(/^http/, "ws")}/`;
-    events = new TdEventStream({
-      url: wsUrl,
-      logger,
-      onEvent: (event) => {
-        const level = event.event === "node.error" ? "error" : "info";
-        void server
-          .sendLoggingMessage({ level, logger: "touchdesigner", data: event })
-          .catch(() => {
-            // client may not support logging or not be ready — ignore
-          });
-      },
-    });
-    events.start();
-  }
+  const events = createEventStream(config, logger, (event) => forwardEvent(server, event));
 
   return {
     close: async () => {
@@ -84,6 +89,10 @@ function startHttp(
   logger: Logger,
 ): TransportHandle {
   const transports = new Map<string, StreamableHTTPServerTransport>();
+  const servers = new Map<string, McpServer>();
+  const events = createEventStream(config, logger, (event) => {
+    for (const sessionServer of servers.values()) forwardEvent(sessionServer, event);
+  });
 
   const httpServer: Server = createServer((req, res) => {
     void handle(req, res).catch((err) => {
@@ -118,16 +127,24 @@ function startHttp(
           });
           return;
         }
+        const sessionServer = createMcpServer();
         const created: StreamableHTTPServerTransport = new StreamableHTTPServerTransport({
           sessionIdGenerator: () => randomUUID(),
           onsessioninitialized: (id) => {
             transports.set(id, created);
+            servers.set(id, sessionServer);
           },
+          // Reject Host headers other than loopback to block DNS-rebinding attacks.
+          enableDnsRebindingProtection: true,
+          allowedHosts: [`127.0.0.1:${config.httpPort}`, `localhost:${config.httpPort}`],
         });
         created.onclose = () => {
-          if (created.sessionId) transports.delete(created.sessionId);
+          if (created.sessionId) {
+            transports.delete(created.sessionId);
+            servers.delete(created.sessionId);
+          }
         };
-        await createMcpServer().connect(created);
+        await sessionServer.connect(created);
         await created.handleRequest(req, res, body);
         return;
       }
@@ -154,8 +171,10 @@ function startHttp(
 
   return {
     close: async () => {
+      events?.close();
       for (const transport of transports.values()) await transport.close();
       transports.clear();
+      servers.clear();
       await new Promise<void>((resolve) => httpServer.close(() => resolve()));
     },
   };
