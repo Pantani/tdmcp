@@ -26,6 +26,15 @@ describe("loadConfig", () => {
     expect(() => loadConfig({ TDMCP_TRANSPORT: "carrier-pigeon" })).toThrow();
   });
 
+  it("leaves bridgeToken unset by default and treats empty string as unset", () => {
+    expect(loadConfig({}).bridgeToken).toBeUndefined();
+    expect(loadConfig({ TDMCP_BRIDGE_TOKEN: "" }).bridgeToken).toBeUndefined();
+  });
+
+  it("reads a bridge token from the environment", () => {
+    expect(loadConfig({ TDMCP_BRIDGE_TOKEN: "s3cret" }).bridgeToken).toBe("s3cret");
+  });
+
   it("builds the TD base URL", () => {
     expect(tdBaseUrl({ tdHost: "127.0.0.1", tdPort: 9980 })).toBe("http://127.0.0.1:9980");
   });

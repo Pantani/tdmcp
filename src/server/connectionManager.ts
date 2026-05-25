@@ -13,6 +13,7 @@ export class ConnectionManager {
     this.client = new TouchDesignerClient({
       baseUrl: tdBaseUrl(config),
       timeoutMs: config.requestTimeoutMs,
+      token: config.bridgeToken,
       logger,
     });
   }

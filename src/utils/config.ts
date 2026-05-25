@@ -20,6 +20,13 @@ export const ConfigSchema = z.object({
    * Set to "off" to lock them out for restricted setups; on by default.
    */
   rawPython: z.enum(["on", "off"]).default("on"),
+  /**
+   * Optional shared bearer token for the TD bridge. When set, the server sends it
+   * as `Authorization: Bearer <token>` and the bridge requires a match. Leave unset
+   * (default) for the zero-config local flow. Set the SAME value in TouchDesigner's
+   * environment (`TDMCP_BRIDGE_TOKEN`) to turn enforcement on.
+   */
+  bridgeToken: z.string().min(1).optional(),
 });
 
 export type TdmcpConfig = z.infer<typeof ConfigSchema>;
@@ -38,6 +45,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): TdmcpConfig {
     httpPort: env.TDMCP_HTTP_PORT,
     events: env.TDMCP_EVENTS,
     rawPython: env.TDMCP_RAW_PYTHON,
+    bridgeToken: env.TDMCP_BRIDGE_TOKEN || undefined,
   });
 }
 

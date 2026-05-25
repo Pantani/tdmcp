@@ -24,6 +24,8 @@ export interface TouchDesignerClientOptions {
   baseUrl: string;
   timeoutMs?: number;
   logger?: Logger;
+  /** Optional shared bearer token; sent as `Authorization: Bearer <token>` when set. */
+  token?: string;
   /** Overridable for tests (defaults to global `fetch`). */
   fetchImpl?: typeof fetch;
 }
@@ -60,12 +62,14 @@ export class TouchDesignerClient {
   private readonly baseUrl: string;
   private readonly timeoutMs: number;
   private readonly logger: Logger;
+  private readonly token: string | undefined;
   private readonly fetchImpl: typeof fetch;
 
   constructor(options: TouchDesignerClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/+$/, "");
     this.timeoutMs = options.timeoutMs ?? 10000;
     this.logger = options.logger ?? silentLogger;
+    this.token = options.token;
     this.fetchImpl = options.fetchImpl ?? fetch;
   }
 
@@ -92,10 +96,13 @@ export class TouchDesignerClient {
     let response: Response;
     try {
       this.logger.debug(`TD ${method} ${path}`);
+      const headers: Record<string, string> = {};
+      if (body !== undefined) headers["content-type"] = "application/json";
+      if (this.token) headers.authorization = `Bearer ${this.token}`;
       response = await this.fetchImpl(url, {
         method,
         signal: controller.signal,
-        headers: body !== undefined ? { "content-type": "application/json" } : undefined,
+        headers: Object.keys(headers).length > 0 ? headers : undefined,
         body: body !== undefined ? JSON.stringify(body) : undefined,
       });
     } catch (err) {

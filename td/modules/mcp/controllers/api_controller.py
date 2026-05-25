@@ -7,11 +7,57 @@ Node-path URL segments are percent-encoded by the client (a TD path contains
 slashes), so they are `unquote`d here.
 """
 
+import hmac
 import json
+import os
 from urllib.parse import parse_qs, unquote, urlparse
 
 from mcp import events
 from mcp.services import analysis_service, api_service, batch_service, preview_service
+
+
+def _required_token():
+    """The shared bearer token the bridge enforces, or None when auth is off.
+
+    Off by default (zero-config local flow). Launch TouchDesigner with the
+    `TDMCP_BRIDGE_TOKEN` environment variable set — to the SAME value the Node
+    server uses — to require authentication on every request.
+    """
+    token = os.environ.get("TDMCP_BRIDGE_TOKEN")
+    return token or None
+
+
+def _find_header(request, name):
+    """Case-insensitively find an HTTP header in TouchDesigner's request dict.
+
+    TD builds vary in how they expose headers (top-level keys, or nested under a
+    'headers'/'header'/'fields' dict), so scan defensively for the first match.
+    """
+    target = name.lower()
+
+    def scan(node, depth=0):
+        if not isinstance(node, dict) or depth > 2:
+            return None
+        for key, value in node.items():
+            if isinstance(key, str) and key.lower() == target and isinstance(value, str):
+                return value
+        for nested in ("headers", "header", "fields"):
+            sub = node.get(nested)
+            hit = scan(sub, depth + 1) if isinstance(sub, dict) else None
+            if hit is not None:
+                return hit
+        return None
+
+    return scan(request)
+
+
+def _check_auth(request):
+    token = _required_token()
+    if not token:
+        return  # auth disabled (default)
+    provided = (_find_header(request, "authorization") or "").strip()
+    if not hmac.compare_digest(provided, "Bearer " + token):
+        raise PermissionError("Unauthorized: missing or invalid bearer token.")
 
 
 def _qs(query, key, default=None):
@@ -160,6 +206,7 @@ def _emit_event(webserver, method, path, data):
 
 def handle(request, response, webserver=None):
     try:
+        _check_auth(request)
         method = (request.get("method") or "GET").upper()
         parsed = urlparse(request.get("uri", "/"))
         query = _merge_query(request, parse_qs(parsed.query))
@@ -167,5 +214,7 @@ def handle(request, response, webserver=None):
         data = _route(method, parsed.path, query, body)
         _emit_event(webserver, method, parsed.path, data)
         return _send(response, 200, {"ok": True, "data": data})
+    except PermissionError as exc:
+        return _send(response, 401, {"ok": False, "error": {"message": str(exc)}})
     except Exception as exc:  # noqa: BLE001
         return _send(response, 400, {"ok": False, "error": {"message": str(exc)}})

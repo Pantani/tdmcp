@@ -48,6 +48,31 @@ describe("TouchDesignerClient", () => {
     await expect(client().getInfo()).rejects.toBeInstanceOf(TdConnectionError);
   });
 
+  it("sends an Authorization bearer header when a token is configured", async () => {
+    let auth: string | null = "MISSING";
+    server.use(
+      http.get(`${TD_BASE}/api/info`, ({ request }) => {
+        auth = request.headers.get("authorization");
+        return HttpResponse.json({ ok: true, data: { td_version: "x" } });
+      }),
+    );
+    const tokened = new TouchDesignerClient({ baseUrl: TD_BASE, timeoutMs: 2000, token: "s3cret" });
+    await tokened.getInfo();
+    expect(auth).toBe("Bearer s3cret");
+  });
+
+  it("omits the Authorization header when no token is configured", async () => {
+    let auth: string | null = "MISSING";
+    server.use(
+      http.get(`${TD_BASE}/api/info`, ({ request }) => {
+        auth = request.headers.get("authorization");
+        return HttpResponse.json({ ok: true, data: { td_version: "x" } });
+      }),
+    );
+    await client().getInfo();
+    expect(auth).toBeNull();
+  });
+
   it("encodes the node path into a single URL segment", async () => {
     let pathname = "";
     server.use(

@@ -300,6 +300,7 @@ MCP client ──stdio──▶ tdmcp server (Node/TS) ──HTTP──▶ Touch
 | `TDMCP_HTTP_PORT` | `3939` | Port for the HTTP transport (when `TDMCP_TRANSPORT=http`) |
 | `TDMCP_EVENTS` | `on` | Subscribe to TD WebSocket events and forward them as MCP logging notifications (`on`/`off`) |
 | `TDMCP_RAW_PYTHON` | `on` | Whether to expose the raw-Python escape-hatch tools (`execute_python_script`, `exec_node_method`). Set to `off` to lock them out for restricted setups |
+| `TDMCP_BRIDGE_TOKEN` | _(unset)_ | Optional shared bearer token. When set, the server sends it and the bridge requires it — set the **same** value in TouchDesigner's environment to turn auth on |
 | `TDMCP_LOG_LEVEL` | `info` | `debug` / `info` / `warn` / `error` / `silent` (stderr) |
 | `TDMCP_REQUEST_TIMEOUT_MS` | `10000` | Per-request timeout to the bridge |
 
@@ -315,11 +316,16 @@ what lets the assistant build networks for you). Treat it like an open door to t
 machine TD runs on:
 
 - **The Web Server DAT listens on its port (default `9980`) on all network
-  interfaces**, and the bridge has no authentication. Anyone who can reach
-  `http://<your-ip>:9980` can run code on that machine. Only run it on a trusted
-  network, and/or firewall the port to localhost.
+  interfaces.** Anyone who can reach `http://<your-ip>:9980` can run code on that
+  machine. Only run it on a trusted network, and/or firewall the port to localhost.
+- **Turn on bridge auth for untrusted networks:** set `TDMCP_BRIDGE_TOKEN` to a
+  shared secret in **both** the MCP server's environment and TouchDesigner's
+  environment. The bridge then rejects any request without a matching
+  `Authorization: Bearer <token>` (HTTP `401`). Unset (default) keeps the
+  zero-config local flow.
 - `TDMCP_RAW_PYTHON=off` hides the raw-Python MCP tools, but it does **not** close
   the bridge's `/api/exec` endpoint — that gating lives on the MCP-server side only.
+  Use the bridge token (above) to lock down the endpoint itself.
 - The MCP server itself binds to loopback (`127.0.0.1`) for both stdio and HTTP
   transports and enables DNS-rebinding protection on HTTP.
 
