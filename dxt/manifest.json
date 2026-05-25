@@ -1,0 +1,42 @@
+{
+  "_note": "Verified against the official spec at https://raw.githubusercontent.com/anthropics/dxt/refs/heads/main/MANIFEST.md (MCPB/DXT MANIFEST.md, spec version 0.3, dated 2025-12-02). The current spec uses the top-level field name `manifest_version` (the older `@anthropic-ai/dxt` examples used `dxt_version`); `manifest_version: \"0.3\"` is used here per the verified spec. user_config values are injected into the server env via `${user_config.KEY}` template literals, and `${__dirname}` resolves to the unpacked extension directory. Claude Desktop spawns this process locally, so the stdio transport is used (no TDMCP_TRANSPORT override).",
+  "manifest_version": "0.3",
+  "name": "tdmcp",
+  "display_name": "TouchDesigner (tdmcp)",
+  "version": "0.1.0",
+  "description": "AI-native visual creation for TouchDesigner — build real node networks from plain language.",
+  "author": {
+    "name": "Pantani",
+    "url": "https://github.com/Pantani/tdmcp"
+  },
+  "server": {
+    "type": "node",
+    "entry_point": "dist/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/dist/index.js"],
+      "env": {
+        "TDMCP_TD_HOST": "${user_config.TDMCP_TD_HOST}",
+        "TDMCP_TD_PORT": "${user_config.TDMCP_TD_PORT}"
+      }
+    }
+  },
+  "user_config": {
+    "TDMCP_TD_HOST": {
+      "type": "string",
+      "title": "TouchDesigner host",
+      "description": "Hostname/IP of the TouchDesigner Web Server DAT bridge. Use 127.0.0.1 when TouchDesigner runs on this machine.",
+      "required": false,
+      "default": "127.0.0.1"
+    },
+    "TDMCP_TD_PORT": {
+      "type": "number",
+      "title": "TouchDesigner port",
+      "description": "Port of the TouchDesigner Web Server DAT bridge (must match the bridge's port).",
+      "required": false,
+      "default": 9980,
+      "min": 1,
+      "max": 65535
+    }
+  }
+}

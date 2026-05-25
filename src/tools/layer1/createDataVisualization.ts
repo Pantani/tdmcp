@@ -38,13 +38,11 @@ export async function createDataVisualizationImpl(
     let chop = source;
     if (args.data_source !== "chop") {
       chop = await builder.add("dattoCHOP", "datto");
-      // A DAT feeds a DAT-to CHOP via its `dat` parameter, not a connector wire.
-      await builder.setParams(chop, { dat: source });
+      await builder.connect(source, chop);
     }
 
     const tex = await builder.add("choptoTOP", "data_tex");
-    // A CHOP-to TOP reads its source CHOP via the `chop` parameter, not a wire.
-    await builder.setParams(tex, { chop });
+    await builder.connect(chop, tex);
 
     let visual = tex;
     if (args.chart_style === "bars") {

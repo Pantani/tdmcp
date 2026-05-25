@@ -9,6 +9,16 @@ import type { ToolContext } from "../types.js";
 
 const q = (value: string): string => JSON.stringify(value);
 
+/**
+ * Conversion operators (e.g. `choptoTOP`, `dattoCHOP`, `toptoCHOP`, `soptoDAT`)
+ * read their source from a parameter named after the source family, not from a
+ * connector wire. Returns that parameter name (`chop`/`dat`/`top`/`sop`) or undefined.
+ */
+function converterSourceParam(type: string): string | undefined {
+  const match = /^(chop|dat|top|sop)to/i.exec(type);
+  return match ? match[1].toLowerCase() : undefined;
+}
+
 /** Wraps a Layer 1 build, converting any thrown TD error into a friendly result. */
 export async function runBuild(fn: () => Promise<CallToolResult>): Promise<CallToolResult> {
   try {
@@ -33,6 +43,7 @@ export class NetworkBuilder {
   readonly created: CreatedNode[] = [];
   readonly warnings: string[] = [];
   private readonly nameToPath = new Map<string, string>();
+  private readonly pathToType = new Map<string, string>();
 
   constructor(
     private readonly ctx: ToolContext,
@@ -48,6 +59,7 @@ export class NetworkBuilder {
     });
     if (name) this.nameToPath.set(name, ref.path);
     if (ref.name) this.nameToPath.set(ref.name, ref.path);
+    this.pathToType.set(ref.path, ref.type || type);
     this.created.push({ name: ref.name || name || "", path: ref.path, type: ref.type || type });
     return ref.path;
   }
@@ -57,6 +69,13 @@ export class NetworkBuilder {
   }
 
   async connect(fromPath: string, toPath: string, fromOutput = 0, toInput = 0): Promise<void> {
+    // Conversion ops (choptoTOP, dattoCHOP, …) take their source via a parameter.
+    const targetType = this.pathToType.get(toPath);
+    const param = targetType ? converterSourceParam(targetType) : undefined;
+    if (param) {
+      await this.setParams(toPath, { [param]: fromPath });
+      return;
+    }
     try {
       await connectNodesViaBridge(this.ctx.client, fromPath, toPath, fromOutput, toInput);
     } catch (err) {
