@@ -313,9 +313,10 @@ npm run smoke:live   # creates a Noise→Null chain in /project1 and grabs a pre
 
 ## Known limitations
 
-- **WebSocket events** cover `node.created` / `node.deleted` / `node.error` and
-  are forwarded only on the stdio transport; `project.saved` / `timeline.frame` /
-  `node.cook` are not emitted yet.
+- **WebSocket events** (`node.created` / `node.deleted` / `node.error` /
+  `project.saved` / `timeline.frame` / `node.cook`) are forwarded as MCP logging
+  notifications on both transports. High-frequency events (`timeline.frame`,
+  `node.cook`) are dropped by the consumer unless explicitly opted in.
 - **Audio / particle / 3D builders and the exotic recipes** (kinect, LED,
   projection) produce valid, connected networks but use best-effort TD parameter
   names — fine-tuning may be needed, and they emit warnings to that effect.
