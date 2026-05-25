@@ -13,6 +13,8 @@ export const ConfigSchema = z.object({
   requestTimeoutMs: z.coerce.number().int().positive().default(10000),
   /** HTTP transport port (only used when transport=http). */
   httpPort: z.coerce.number().int().positive().max(65535).default(3939),
+  /** Subscribe to TD WebSocket events and forward them as MCP logging notifications. */
+  events: z.enum(["on", "off"]).default("on"),
 });
 
 export type TdmcpConfig = z.infer<typeof ConfigSchema>;
@@ -29,6 +31,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): TdmcpConfig {
     logLevel: env.TDMCP_LOG_LEVEL,
     requestTimeoutMs: env.TDMCP_REQUEST_TIMEOUT_MS,
     httpPort: env.TDMCP_HTTP_PORT,
+    events: env.TDMCP_EVENTS,
   });
 }
 

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { jsonResult } from "../result.js";
+import { structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
 export const getTdClassDetailsSchema = z.object({
@@ -15,12 +15,12 @@ export function getTdClassDetailsImpl(ctx: ToolContext, args: GetTdClassDetailsA
       .filter((c) => c.className.toLowerCase().includes(args.class_name.toLowerCase()))
       .slice(0, 5)
       .map((c) => c.className);
-    return jsonResult(`Python class "${args.class_name}" not found.`, {
+    return structuredResult(`Python class "${args.class_name}" not found.`, {
       found: false,
       suggestions,
     });
   }
-  return jsonResult(
+  return structuredResult(
     `${cls.className} — ${cls.methods?.length ?? 0} methods, ${cls.members?.length ?? 0} members.`,
     cls,
   );

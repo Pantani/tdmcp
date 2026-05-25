@@ -8,12 +8,15 @@ async function main(): Promise<void> {
   const logger = createLogger(config.logLevel);
 
   try {
-    const server = createTdmcpServer(config, { logger });
-    await startTransport(server, config, logger);
+    const handle = await startTransport(
+      () => createTdmcpServer(config, { logger }),
+      config,
+      logger,
+    );
 
     const shutdown = () => {
       logger.info("tdmcp shutting down");
-      void server.close().finally(() => process.exit(0));
+      void handle.close().finally(() => process.exit(0));
     };
     process.on("SIGINT", shutdown);
     process.on("SIGTERM", shutdown);

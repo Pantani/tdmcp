@@ -56,11 +56,12 @@ describe("integration: Layer 3 over the MCP protocol", () => {
 
     const list = await client.callTool({
       name: "get_td_nodes",
-      arguments: { parent_path: "/project1" },
+      arguments: { parent_path: "/project1", detail_level: "full" },
     });
-    const text = JSON.stringify(list.content);
-    expect(text).toContain("noise1");
-    expect(text).toContain("null1");
+    // Node data now travels on the structuredContent channel, not the text block.
+    const data = JSON.stringify(list.structuredContent);
+    expect(data).toContain("noise1");
+    expect(data).toContain("null1");
   });
 
   it("reads the operator knowledge resource", async () => {

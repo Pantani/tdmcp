@@ -17,6 +17,21 @@ export function jsonResult(summary: string, data: unknown): CallToolResult {
   return { content: [{ type: "text", text }] };
 }
 
+/**
+ * A short text summary plus a machine-readable `structuredContent` payload.
+ *
+ * Use this (with an `outputSchema` on the tool) for read tools so agents can
+ * process the data with code instead of re-parsing a JSON code fence out of the
+ * conversation. The text block stays small on purpose — it is only a summary;
+ * the full data travels on the `structuredContent` channel.
+ */
+export function structuredResult(summary: string, data: object): CallToolResult {
+  return {
+    content: [{ type: "text", text: summary }],
+    structuredContent: data as { [key: string]: unknown },
+  };
+}
+
 /** An image block (base64), optionally preceded by a caption. */
 export function imageResult(
   base64: string,

@@ -43,7 +43,7 @@ export async function setupOutputImpl(ctx: ToolContext, args: SetupOutputArgs) {
       const [width, height] = RESOLUTIONS[args.resolution];
       try {
         await ctx.client.executePythonScript(
-          `w = op(${q(node.path)})\nw.par.op = ${q(args.source_path)}\nw.par.winw = ${width}\nw.par.winh = ${height}`,
+          `w = op(${q(node.path)})\nw.par.winop = ${q(args.source_path)}\nw.par.winw = ${width}\nw.par.winh = ${height}`,
           false,
         );
       } catch (err) {

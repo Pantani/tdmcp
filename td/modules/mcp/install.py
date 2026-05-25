@@ -24,7 +24,7 @@ def _callbacks_source(modules_dir=None):
     return header + (
         "def onHTTPRequest(webServerDAT, request, response):\n"
         "    from mcp.controllers import api_controller  # per-request: hot-reloads after cache clear\n"
-        "    return api_controller.handle(request, response)\n\n"
+        "    return api_controller.handle(request, response, webServerDAT)\n\n"
         "def onWebSocketOpen(webServerDAT, client, uri): return\n"
         "def onWebSocketReceiveText(webServerDAT, client, data): return\n"
         "def onWebSocketReceiveBinary(webServerDAT, client, data): return\n"

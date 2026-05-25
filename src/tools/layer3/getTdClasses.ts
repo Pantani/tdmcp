@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { jsonResult } from "../result.js";
+import { structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
 export const getTdClassesSchema = z.object({
@@ -19,7 +19,9 @@ export function getTdClassesImpl(ctx: ToolContext, args: GetTdClassesArgs) {
         c.className.toLowerCase().includes(needle) || c.displayName.toLowerCase().includes(needle),
     );
   }
-  return jsonResult(`Found ${classes.length} TouchDesigner Python API class(es).`, { classes });
+  return structuredResult(`Found ${classes.length} TouchDesigner Python API class(es).`, {
+    classes,
+  });
 }
 
 export const registerGetTdClasses: ToolRegistrar = (server, ctx) => {

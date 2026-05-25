@@ -10,6 +10,7 @@ slashes), so they are `unquote`d here.
 import json
 from urllib.parse import parse_qs, unquote, urlparse
 
+from mcp import events
 from mcp.services import analysis_service, api_service, batch_service, preview_service
 
 
@@ -119,13 +120,36 @@ def _merge_query(request, query):
     return query
 
 
-def handle(request, response):
+def _emit_event(webserver, method, path, data):
+    if webserver is None:
+        return
+    parts = [p for p in path.split("/") if p]
+    rest = parts[1:] if parts[:1] == ["api"] else []
+    try:
+        if method == "POST" and rest == ["nodes"]:
+            events.broadcast(webserver, "node.created", data)
+        elif method == "DELETE" and len(rest) >= 2 and rest[0] == "nodes":
+            events.broadcast(webserver, "node.deleted", data)
+        elif method == "POST" and rest == ["batch"]:
+            for result in (data or {}).get("results", []):
+                if not result.get("ok"):
+                    continue
+                if result.get("action") == "create":
+                    events.broadcast(webserver, "node.created", result.get("data"))
+                elif result.get("action") == "delete":
+                    events.broadcast(webserver, "node.deleted", {"path": result.get("path")})
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def handle(request, response, webserver=None):
     try:
         method = (request.get("method") or "GET").upper()
         parsed = urlparse(request.get("uri", "/"))
         query = _merge_query(request, parse_qs(parsed.query))
         body = _parse_body(request)
         data = _route(method, parsed.path, query, body)
+        _emit_event(webserver, method, parsed.path, data)
         return _send(response, 200, {"ok": True, "data": data})
     except Exception as exc:  # noqa: BLE001
         return _send(response, 400, {"ok": False, "error": {"message": str(exc)}})

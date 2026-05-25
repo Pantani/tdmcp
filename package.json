@@ -36,7 +36,12 @@
     "typecheck": "tsc --noEmit",
     "import:bottobot": "tsx scripts/import-bottobot-data.ts",
     "validate:recipes": "tsx scripts/validate-recipes.ts",
-    "smoke:live": "tsx scripts/smoke-live.ts"
+    "smoke:live": "tsx scripts/smoke-live.ts",
+    "build:dxt": "node scripts/build-dxt.mjs",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "keywords": [
     "touchdesigner",

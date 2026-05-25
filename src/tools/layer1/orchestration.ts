@@ -16,7 +16,7 @@ const q = (value: string): string => JSON.stringify(value);
  */
 function converterSourceParam(type: string): string | undefined {
   const match = /^(chop|dat|top|sop)to/i.exec(type);
-  return match ? match[1].toLowerCase() : undefined;
+  return match?.[1]?.toLowerCase();
 }
 
 /** Wraps a Layer 1 build, converting any thrown TD error into a friendly result. */

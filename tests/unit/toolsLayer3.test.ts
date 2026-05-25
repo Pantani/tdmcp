@@ -65,8 +65,13 @@ describe("layer 3 tool handlers", () => {
   });
 
   it("get_td_nodes lists child nodes", async () => {
-    const result = await getTdNodesImpl(makeCtx(), { parent_path: "/project1" });
-    expect(textOf(result)).toContain("noise1");
-    expect(textOf(result)).toContain("null1");
+    const result = await getTdNodesImpl(makeCtx(), {
+      parent_path: "/project1",
+      path_only: false,
+      detail_level: "summary",
+    });
+    const data = JSON.stringify(result.structuredContent);
+    expect(data).toContain("noise1");
+    expect(data).toContain("null1");
   });
 });

@@ -19,7 +19,7 @@ from mcp.controllers import api_controller  # noqa: E402
 
 
 def onHTTPRequest(webServerDAT, request, response):
-    return api_controller.handle(request, response)
+    return api_controller.handle(request, response, webServerDAT)
 
 
 def onWebSocketOpen(webServerDAT, client, uri):

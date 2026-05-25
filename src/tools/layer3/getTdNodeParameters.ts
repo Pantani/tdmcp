@@ -1,24 +1,45 @@
 import { z } from "zod";
-import { guardTd, jsonResult } from "../result.js";
+import { NodeDetailSchema } from "../../td-client/validators.js";
+import { guardTd, structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
 export const getTdNodeParametersSchema = z.object({
   path: z.string().describe("Full path of the node to inspect."),
+  keys: z
+    .array(z.string())
+    .optional()
+    .describe("Only return these parameter names (case-sensitive). Omit to return all parameters."),
+  omit_io: z
+    .boolean()
+    .default(false)
+    .describe("Drop the inputs/outputs lists from the result to save context."),
 });
 type GetTdNodeParametersArgs = z.infer<typeof getTdNodeParametersSchema>;
 
 export async function getTdNodeParametersImpl(ctx: ToolContext, args: GetTdNodeParametersArgs) {
   return guardTd(
     () => ctx.client.getNode(args.path),
-    (node) =>
-      jsonResult(`Parameters for ${node.path} (${node.type}).`, {
+    (node) => {
+      let parameters = node.parameters;
+      if (args.keys && args.keys.length > 0) {
+        const wanted = new Set(args.keys);
+        parameters = Object.fromEntries(
+          Object.entries(node.parameters).filter(([k]) => wanted.has(k)),
+        );
+      }
+      const data: Record<string, unknown> = {
         path: node.path,
         type: node.type,
         name: node.name,
-        parameters: node.parameters,
-        inputs: node.inputs,
-        outputs: node.outputs,
-      }),
+        parameters,
+      };
+      if (!args.omit_io) {
+        data.inputs = node.inputs;
+        data.outputs = node.outputs;
+      }
+      const count = Object.keys(parameters).length;
+      return structuredResult(`${count} parameter(s) for ${node.path} (${node.type}).`, data);
+    },
   );
 }
 
@@ -27,8 +48,10 @@ export const registerGetTdNodeParameters: ToolRegistrar = (server, ctx) => {
     "get_td_node_parameters",
     {
       title: "Get node parameters",
-      description: "Read the current parameters (and I/O) of a node.",
+      description:
+        "Read the current parameters (and I/O) of a node. Pass `keys` to project specific parameters or `omit_io:true` to drop the inputs/outputs lists.",
       inputSchema: getTdNodeParametersSchema.shape,
+      outputSchema: NodeDetailSchema.shape,
       annotations: { readOnlyHint: true, openWorldHint: true },
     },
     (args) => getTdNodeParametersImpl(ctx, args),
