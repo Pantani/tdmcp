@@ -62,6 +62,12 @@ your AI client — **every path also needs the bridge in Step 2.** Budget ~5 min
 > **Which path?** Claude Desktop → the one-click extension just below. Claude
 > Code or Cursor → Steps 1–3.
 
+> 🤖 **Or let an AI do it for you.** Hand
+> [`tdmcp-install-prompt.md`](tdmcp-install-prompt.md) to Claude Code, Codex, or
+> Cursor and it runs the install and client wiring itself — you only paste one
+> line into TouchDesigner at the end. The manual steps below are the alternative
+> if you'd rather drive it yourself.
+
 ### Claude Desktop: the one-click extension (`.dxt`) — easiest
 
 A `.dxt` is a single file that Claude Desktop installs as an **extension**. The
