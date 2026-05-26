@@ -12,7 +12,7 @@ nodes inside your project, checks it for errors, and shows you a preview.
 
 It works because it pairs two things every other tool was missing:
 
-- **Real knowledge** — an embedded reference of 629 operators, 68 Python classes,
+- **Real knowledge** — an embedded reference of 652 operators, 68 Python classes,
   32 workflow patterns, GLSL techniques and tutorials, so the AI uses real
   TouchDesigner operators instead of guessing.
 - **Real execution** — a small **bridge** running inside TouchDesigner that
@@ -269,10 +269,12 @@ for lighting, NDI/Syphon-Spout video in), and `manage_component` (save/load reus
 `get_td_class_details`, `get_module_help` (plus search / summary / compare /
 snapshot helpers).
 
-**Recipes** — 10 validated, ready-to-build templates: `feedback_tunnel`,
-`reaction_diffusion`, `noise_landscape`, `audio_spectrum_bars`, `particle_galaxy`,
-`webcam_glitch`, `data_sonification`, `kinect_silhouette`, `led_strip_mapper`,
-`projection_mapping`.
+**Recipes** — 11 validated, ready-to-build templates: `feedback_tunnel`,
+`performable_feedback_tunnel` (the same tunnel pre-wired with live knobs for
+decay/zoom/spin/blur — ready to perform, animate with an LFO, or snapshot as
+presets), `reaction_diffusion`, `noise_landscape`, `audio_spectrum_bars`,
+`particle_galaxy`, `webcam_glitch`, `data_sonification`, `kinect_silhouette`,
+`led_strip_mapper`, `projection_mapping`.
 
 **Knowledge resources** the AI reads from:
 `tdmcp://operators/{category|name}`, `tdmcp://python-api/{class}`,
@@ -337,6 +339,11 @@ machine TD runs on:
   holds even without a token); the structured endpoints keep working.
 - The MCP server itself binds to loopback (`127.0.0.1`) for both stdio and HTTP
   transports and enables DNS-rebinding protection on HTTP.
+- **The bridge refuses browser cross-origin requests.** Any request carrying an
+  `Origin` header that isn't loopback (`127.0.0.1`/`localhost`) is rejected (HTTP
+  `401`), so a malicious web page open in your browser can't quietly POST to the
+  bridge (CSRF / DNS-rebinding → drive-by code execution). The MCP server sends no
+  `Origin`, so normal use is unaffected.
 
 ### Command-line agent (`tdmcp-agent`)
 
@@ -385,7 +392,7 @@ npm run smoke:live   # creates a Noise→Null chain in /project1 and grabs a pre
 
 ## Current state
 
-- ✅ 35 tools across 3 layers, 6 resource families, 5 prompts, 10 recipes, a
+- ✅ 41 tools across 3 layers, 6 resource families, 5 prompts, 11 recipes, a
   feedback engine, and the TouchDesigner Python bridge.
 - ✅ Two transports: **stdio** (default) and **Streamable HTTP**; plus an optional
   **WebSocket event stream** (TD → MCP logging notifications).

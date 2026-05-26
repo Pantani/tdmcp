@@ -117,6 +117,41 @@ describe("layer 2 tool handlers", () => {
     expect(text).toContain("glsl1_frag");
   });
 
+  it("create_glsl_shader binds numeric uniforms via the Vectors sequence, not the legacy flat params", async () => {
+    const scripts: string[] = [];
+    server.use(
+      http.post(`${TD_BASE}/api/exec`, async ({ request }) => {
+        scripts.push(((await request.json()) as { script: string }).script);
+        return HttpResponse.json({ ok: true, data: { result: null, stdout: "" } });
+      }),
+    );
+    const result = await createGlslShaderImpl(makeCtx(), {
+      parent_path: "/project1",
+      name: "glsl1",
+      fragment_shader:
+        "out vec4 fragColor; uniform vec3 uColor; void main(){ fragColor = vec4(uColor,1.0); }",
+      uniforms: [
+        { name: "uColor", type: "vec3", default_value: "0.2,0.4,0.8" },
+        { name: "uTex", type: "sampler2D" },
+      ],
+      resolution: "input",
+    });
+    const bind = scripts.find((s) => s.includes("seq.vec.numBlocks"));
+    expect(bind).toBeDefined();
+    // Real GLSL TOP uniform params: vec<i>name + vec<i>value{x,y,z,w} (all components).
+    expect(bind).toContain("vec%dname");
+    expect(bind).toContain("vec%dvalue%s");
+    expect(bind).toContain('"name":"uColor"');
+    expect(bind).toContain("0.2");
+    expect(bind).toContain("0.8");
+    // The flat params the old path used don't exist on a GLSL TOP — must be gone.
+    expect(scripts.join("\n")).not.toContain("uniname");
+    expect(scripts.join("\n")).not.toContain("value0x");
+    // sampler2D can't be auto-bound to a numeric value → surfaced as a warning.
+    expect(textOf(result)).toContain("uTex");
+    expect(textOf(result)).toContain("manually");
+  });
+
   it("create_container creates a COMP", async () => {
     const result = await createContainerImpl(makeCtx(), {
       parent_path: "/project1",

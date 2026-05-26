@@ -104,4 +104,52 @@ describe("animateParameterImpl", () => {
     expect(p.frequency).toBe(0.5);
     expect(p.container).toBe("/project1/sys");
   });
+
+  // lfoCHOP ramp/pulse/random output [0,1] (unipolar), not [-1,1]. amp/offset
+  // must use offset=min, amp=span so they still sweep the full requested range.
+  it.each([
+    ["ramp", "ramp"],
+    ["pulse", "pulse"],
+    ["random", "normal"],
+  ])("maps the unipolar %s waveform to the full min–max range", async (waveform, wavetype) => {
+    let script = "";
+    await animateParameterImpl(
+      fakeCtx((s) => (script = s)),
+      {
+        targets: ["/p/n.tx"],
+        waveform: waveform as "ramp" | "pulse" | "random",
+        min: 0,
+        max: 10,
+        period_seconds: 4,
+        name: "lfo_anim",
+      },
+    );
+    const p = decodePayload(script);
+    expect(p.wavetype).toBe(wavetype);
+    expect(p.amp).toBe(10); // full span, not span/2
+    expect(p.offset).toBe(0); // min, not the midpoint
+  });
+
+  it.each([
+    ["sine", "sin"],
+    ["triangle", "tri"],
+    ["square", "square"],
+  ])("keeps the bipolar %s waveform centered", async (waveform, wavetype) => {
+    let script = "";
+    await animateParameterImpl(
+      fakeCtx((s) => (script = s)),
+      {
+        targets: ["/p/n.tx"],
+        waveform: waveform as "sine" | "triangle" | "square",
+        min: 0,
+        max: 10,
+        period_seconds: 4,
+        name: "lfo_anim",
+      },
+    );
+    const p = decodePayload(script);
+    expect(p.wavetype).toBe(wavetype);
+    expect(p.amp).toBe(5); // span/2
+    expect(p.offset).toBe(5); // midpoint
+  });
 });

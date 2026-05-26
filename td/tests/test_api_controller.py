@@ -202,6 +202,40 @@ class ParsingTests(unittest.TestCase):
         self.assertIsNone(ac._find_header({"other": "v"}, "x-token"))
 
 
+class OriginTests(unittest.TestCase):
+    """The Origin guard blocks browser-driven CSRF / DNS-rebinding."""
+
+    def test_no_origin_is_allowed(self):
+        ac._check_origin({"method": "GET"})  # the Node client sends no Origin
+
+    def test_loopback_origins_allowed(self):
+        for origin in (
+            "http://127.0.0.1:9980",
+            "http://localhost",
+            "https://localhost:3000",
+            "http://[::1]:9980",
+        ):
+            ac._check_origin({"Origin": origin})  # must not raise
+
+    def test_cross_origin_rejected(self):
+        for origin in ("http://evil.com", "https://attacker.example:8443", "http://192.168.1.5"):
+            with self.assertRaises(PermissionError, msg=origin):
+                ac._check_origin({"Origin": origin})
+
+    def test_opaque_null_origin_rejected(self):
+        with self.assertRaises(PermissionError):
+            ac._check_origin({"Origin": "null"})
+
+    def test_origin_lookup_is_case_insensitive_and_nested(self):
+        with self.assertRaises(PermissionError):
+            ac._check_origin({"headers": {"origin": "http://evil.com"}})
+
+    def test_handle_rejects_cross_origin_with_401(self):
+        resp = ac.handle({"method": "GET", "uri": "/api/info", "Origin": "http://evil.com"}, {})
+        self.assertEqual(resp["statusCode"], 401)
+        self.assertIn("cross-origin", resp["data"])
+
+
 class HandleTests(unittest.TestCase):
     def tearDown(self):
         _clear_exec_env()
