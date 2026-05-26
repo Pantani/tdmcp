@@ -66,6 +66,40 @@ function pickEmitter(
   return "point";
 }
 
+const COLOR_WORDS: Record<string, string> = {
+  red: "#e03030",
+  crimson: "#c01040",
+  orange: "#ff7a18",
+  amber: "#ffb000",
+  yellow: "#f5e050",
+  gold: "#e8c020",
+  green: "#30c050",
+  lime: "#9be025",
+  teal: "#10b0a0",
+  cyan: "#20d0e0",
+  blue: "#1840d0",
+  navy: "#0a1a66",
+  indigo: "#3010a0",
+  purple: "#7a20c0",
+  violet: "#8a40e0",
+  magenta: "#d020a0",
+  pink: "#ff60b0",
+  white: "#f0f0f0",
+  black: "#101015",
+};
+
+// Best-effort: pull up to two named colors from the description so a feedback system
+// can honor a requested palette instead of rendering grayscale.
+function parseColors(description: string): string[] {
+  const d = description.toLowerCase();
+  const found: string[] = [];
+  for (const [word, hex] of Object.entries(COLOR_WORDS)) {
+    if (new RegExp(`\\b${word}`).test(d) && !found.includes(hex)) found.push(hex);
+    if (found.length >= 2) break;
+  }
+  return found;
+}
+
 function withNote(result: CallToolResult, note: string): CallToolResult {
   return { ...result, content: [{ type: "text", text: note }, ...result.content] };
 }
@@ -105,6 +139,7 @@ export async function createVisualSystemImpl(ctx: ToolContext, args: CreateVisua
           seed_type: "noise",
           transformations: ["blur", "displace", "level"],
           feedback_gain: 0.95,
+          colors: parseColors(args.description),
           parent_path: args.parent_path,
         }),
         note,

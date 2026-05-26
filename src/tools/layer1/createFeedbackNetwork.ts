@@ -2,6 +2,30 @@ import { z } from "zod";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { createSystemContainer, finalize, runBuild } from "./orchestration.js";
 
+const q = (value: string): string => JSON.stringify(value);
+
+// Builds a GLSL fragment that maps the grayscale luminance through a 1- or 2-color
+// gradient, so a described palette ("blues and magentas") survives to the output.
+function colorizeShader(colors: string[]): string {
+  const toVec3 = (hex: string | undefined): string => {
+    const m = hex ? /^#?([0-9a-fA-F]{6})$/.exec(hex.trim()) : null;
+    if (!m?.[1]) return "vec3(1.0)";
+    const n = Number.parseInt(m[1], 16);
+    const r = ((n >> 16) & 255) / 255;
+    const g = ((n >> 8) & 255) / 255;
+    const b = (n & 255) / 255;
+    return `vec3(${r.toFixed(4)}, ${g.toFixed(4)}, ${b.toFixed(4)})`;
+  };
+  const lo = colors.length >= 2 ? toVec3(colors[0]) : "vec3(0.0)";
+  const hi = toVec3(colors[colors.length - 1]);
+  return `out vec4 fragColor;
+void main(){
+    float l = texture(sTD2DInputs[0], vUV.st).r;
+    fragColor = TDOutputSwizzle(vec4(mix(${lo}, ${hi}, l), 1.0));
+}
+`;
+}
+
 const SEED_TYPES = {
   noise: "noiseTOP",
   shape: "circleTOP",
@@ -41,6 +65,11 @@ export const createFeedbackNetworkSchema = z.object({
     )
     .default(["blur", "displace", "level"]),
   feedback_gain: z.number().min(0).max(1).default(0.95),
+  colors: z
+    .array(z.string())
+    .max(2)
+    .optional()
+    .describe("Up to two hex colors to colorize the otherwise-grayscale output."),
   parent_path: z.string().default("/project1"),
 });
 type CreateFeedbackNetworkArgs = z.infer<typeof createFeedbackNetworkSchema>;
@@ -77,13 +106,24 @@ export async function createFeedbackNetworkImpl(ctx: ToolContext, args: CreateFe
     await builder.setParams(gain, { gain: args.feedback_gain });
     await builder.connect(last, gain);
 
+    // Colorize only the final output; the loop keeps sampling the grayscale gain node
+    // so the feedback stays clean.
+    let output = gain;
+    if (args.colors && args.colors.length > 0) {
+      const colorize = await builder.add("glslTOP", "colorize");
+      const frag = await builder.add("textDAT", "colorize_frag");
+      await builder.python(
+        `op(${q(frag)}).text = ${q(colorizeShader(args.colors))}\nop(${q(colorize)}).par.pixeldat = op(${q(frag)}).name`,
+      );
+      await builder.connect(gain, colorize);
+      output = colorize;
+    }
+
     const out = await builder.add("nullTOP", "out1");
-    await builder.connect(gain, out);
+    await builder.connect(output, out);
 
     // Close the loop: feedbackTOP samples the gain node's output.
-    await builder.python(
-      `op(${JSON.stringify(feedback)}).par.top = op(${JSON.stringify(gain)}).name`,
-    );
+    await builder.python(`op(${q(feedback)}).par.top = op(${q(gain)}).name`);
 
     return finalize(ctx, {
       summary: `Created a feedback network (seed: ${args.seed_type}, gain: ${args.feedback_gain}, ${args.transformations.length} transform(s)).`,
