@@ -81,10 +81,17 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "$GITHUB_REF_NAME" tdmcp.dxt \
-            --title "$GITHUB_REF_NAME" \
-            --generate-notes \
-            --verify-tag
+          # A release may already exist if it was published from the GitHub UI
+          # (publishing there creates the tag, which triggers this workflow). In
+          # that case just (re)attach the bundle; otherwise create the release.
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" tdmcp.dxt --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" tdmcp.dxt \
+              --title "$GITHUB_REF_NAME" \
+              --generate-notes \
+              --verify-tag
+          fi
 
       - name: Check for npm token
         id: npmtoken
