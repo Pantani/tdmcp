@@ -80,7 +80,15 @@ export async function createAudioReactiveImpl(ctx: ToolContext, args: CreateAudi
 
     let visual: string;
     if (args.visual_style === "glsl") {
-      visual = await builder.add("glslTOP", "visual");
+      // Give the visual a real canvas + RGBA format. Left on "use input", the GLSL TOP
+      // inherits the audio texture's Nx1 mono resolution, collapsing the output to a
+      // 1px-tall grayscale strip.
+      visual = await builder.add("glslTOP", "visual", {
+        outputresolution: "custom",
+        resolutionw: 1280,
+        resolutionh: 720,
+        format: "rgba8fixed",
+      });
       const frag = await builder.add("textDAT", "visual_frag");
       await builder.python(
         `op(${q(frag)}).text = ${q(AUDIO_SPECTRUM_SHADER)}\nop(${q(visual)}).par.pixeldat = op(${q(frag)}).name`,
@@ -89,7 +97,7 @@ export async function createAudioReactiveImpl(ctx: ToolContext, args: CreateAudi
     } else {
       visual = await builder.add("circleTOP", "visual", { radius: 0.3 });
       await builder.python(
-        `c = op(${q(visual)})\nfor p in ('radiusx', 'radiusy'):\n    try:\n        par = getattr(c.par, p)\n        par.expr = "0.2 + op('level')['chan1'] * 0.6"\n        par.mode = ParMode.EXPRESSION\n    except Exception: pass`,
+        `c = op(${q(visual)})\nfor p in ('radiusx', 'radiusy'):\n    try:\n        par = getattr(c.par, p)\n        par.expr = "0.2 + op('level')['chan1'] * 0.6"\n    except Exception: pass`,
       );
       builder.warnings.push(
         `Visual style "${args.visual_style}" is approximated: a circle driven by the audio level. Refine the mapping for production.`,

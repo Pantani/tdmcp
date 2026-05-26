@@ -129,7 +129,7 @@ export async function createGenerativeArtImpl(ctx: ToolContext, args: CreateGene
     await builder.connect(noise, level);
     await builder.connect(level, out);
     await builder.python(
-      `p = op(${q(noise)}).par.tz\np.expr = ${q(`absTime.seconds * ${args.evolution_speed}`)}\np.mode = ParMode.EXPRESSION`,
+      `p = op(${q(noise)}).par.tz\np.expr = ${q(`absTime.seconds * ${args.evolution_speed}`)}`,
     );
     builder.warnings.push(
       `Technique "${args.technique}" is approximated with an animated-noise generator in this version.`,

@@ -34,6 +34,7 @@
     { "name": "out1", "type": "nullTOP", "comment": "Output of the system" }
   ],
   "connections": [
+    { "from": "noise1", "to": "feedback1" },
     { "from": "noise1", "to": "comp1", "to_input": 0 },
     { "from": "feedback1", "to": "comp1", "to_input": 1 },
     { "from": "comp1", "to": "transform1" },

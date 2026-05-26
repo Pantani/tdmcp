@@ -17,6 +17,7 @@
   "connections": [
     { "from": "cam", "to": "edge" },
     { "from": "edge", "to": "rgbsplit" },
+    { "from": "rgbsplit", "to": "feedback1" },
     { "from": "rgbsplit", "to": "comp1", "to_input": 0 },
     { "from": "feedback1", "to": "comp1", "to_input": 1 },
     { "from": "comp1", "to": "glitch" },
