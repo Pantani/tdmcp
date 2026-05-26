@@ -126,6 +126,19 @@ describe("layer 1 tool handlers", () => {
   });
 
   describe("create_particle_system", () => {
+    // Records every POST /api/exec script so a test can assert which Python steps ran.
+    function captureExecScripts(): string[] {
+      const scripts: string[] = [];
+      server.use(
+        http.post(`${TD_BASE}/api/exec`, async ({ request }) => {
+          const body = (await request.json()) as { script: string };
+          scripts.push(body.script);
+          return HttpResponse.json({ ok: true, data: { result: null, stdout: "" } });
+        }),
+      );
+      return scripts;
+    }
+
     it("builds a particle system inside a container", async () => {
       const result = await createParticleSystemImpl(makeCtx(), {
         emitter_shape: "point",
@@ -139,6 +152,22 @@ describe("layer 1 tool handlers", () => {
       const text = textOf(result);
       expect(text).toContain("/project1/particle_system");
       expect(text).toContain("/project1/particle_system/out1");
+    });
+
+    it("strips the geometryCOMP's default torus before populating it", async () => {
+      const scripts = captureExecScripts();
+      await createParticleSystemImpl(makeCtx(), {
+        emitter_shape: "point",
+        particle_count: 10000,
+        forces: ["noise", "gravity"],
+        render_style: "sprites",
+        lifetime: 3,
+        parent_path: "/project1",
+      });
+      // A fresh geometryCOMP ships with a default torus1 that would render over the
+      // particles; the builder must clear the COMP's children right after creating it.
+      const cleared = scripts.some((s) => s.includes(".children") && s.includes(".destroy()"));
+      expect(cleared).toBe(true);
     });
   });
 
