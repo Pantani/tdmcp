@@ -114,9 +114,12 @@ def run(port=9980, parent_path="/project1", container="tdmcp_bridge", modules_di
 
     print("[tdmcp] bridge running on port %d (%s)" % (port, comp.path))
     print(
-        "[tdmcp] SECURITY: this bridge runs arbitrary Python and the Web Server DAT "
-        "listens on all interfaces with no auth. Run it only on a trusted network "
-        "or firewall port %d to localhost." % port
+        "[tdmcp] SECURITY: the Web Server DAT listens on ALL network interfaces and, by "
+        "default, executes arbitrary Python (the /api/exec and node-method endpoints) with "
+        "no authentication. On a shared/untrusted network, harden it: (1) set the "
+        "TDMCP_BRIDGE_TOKEN env var (same value on the Node server) to require a bearer "
+        "token; (2) set TDMCP_BRIDGE_ALLOW_EXEC=0 to refuse the arbitrary-code endpoints; "
+        "and/or firewall port %d to localhost." % port
     )
     return comp
 

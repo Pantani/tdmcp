@@ -27,14 +27,16 @@ def topology(path, recursive=False):
             {"path": child.path, "type": api_service.op_type(child), "name": child.name}
         )
         for index, connector in enumerate(getattr(child, "inputConnectors", [])):
-            for wire in getattr(connector, "connections", []):
-                owner = getattr(wire, "owner", None)
+            # `connector.connections` yields the source-side output Connectors; each
+            # carries its own `.index` (the source output index) and `.owner` (the op).
+            for source in getattr(connector, "connections", []):
+                owner = getattr(source, "owner", None)
                 if owner is None:
                     continue
                 connections.append(
                     {
                         "source_path": owner.path,
-                        "source_output": 0,
+                        "source_output": int(getattr(source, "index", 0) or 0),
                         "target_path": child.path,
                         "target_input": index,
                     }

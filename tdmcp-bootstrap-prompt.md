@@ -81,10 +81,10 @@ TouchDesigner has one of the steepest learning curves in creative software. Curr
 │  └─────────────────────────────────────────────────────────┘ │
 │  ┌─────────────────────────────────────────────────────────┐ │
 │  │  KNOWLEDGE BASE (embedded, from bottobot + extensions)  │ │
-│  │  ├── 630 operator docs (JSON)                           │ │
-│  │  ├── 69 Python API classes                              │ │
+│  │  ├── 629 operator docs (JSON)                           │ │
+│  │  ├── 68 Python API classes                              │ │
 │  │  ├── 32 workflow patterns + wiring guides               │ │
-│  │  ├── 16 GLSL shader patterns                            │ │
+│  │  ├── 7 GLSL shader patterns                             │ │
 │  │  ├── 14 tutorials                                       │ │
 │  │  ├── Recipe library (composite network templates)       │ │
 │  │  └── Version compatibility matrix                       │ │
@@ -553,9 +553,9 @@ tdmcp://version/{td_version}           → version compatibility info
 ```
 
 ### Data Sources:
-- **Operators (630):** Sourced from `@bottobot/td-mcp` data files, enriched with wiring guides
-- **Python API (69 classes, 1510+ methods):** Sourced from `@bottobot/td-mcp`
-- **GLSL Patterns (16):** Sourced from `@bottobot/td-mcp` experimental techniques
+- **Operators (629):** Sourced from `@bottobot/td-mcp` data files, enriched with wiring guides
+- **Python API (68 classes, 1510+ methods):** Sourced from `@bottobot/td-mcp`
+- **GLSL Patterns (7):** Sourced from `@bottobot/td-mcp` experimental techniques
 - **Recipes (new):** Composite templates we author (see Section 8)
 - **Workflow Patterns (32):** Sourced from `@bottobot/td-mcp` patterns.json
 
@@ -757,8 +757,8 @@ tdmcp/
 │   │   └── validators.ts
 │   │
 │   ├── knowledge/                        # embedded knowledge base
-│   │   ├── operators/                    # 630 operator JSON files
-│   │   ├── python-api/                   # 69 Python class JSON files
+│   │   ├── operators/                    # 629 operator JSON files
+│   │   ├── python-api/                   # 68 Python class JSON files
 │   │   ├── patterns/                     # workflow patterns
 │   │   ├── glsl/                         # GLSL shader code
 │   │   ├── recipes/                      # composite templates

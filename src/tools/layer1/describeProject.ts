@@ -64,9 +64,9 @@ export const registerDescribeProject: ToolRegistrar = (server, ctx) => {
   server.registerTool(
     "describe_project",
     {
-      title: "Describe / plan a project",
+      title: "Plan a visual from a description",
       description:
-        "Turn a natural-language description into a build plan (which tool/recipe and nodes) WITHOUT creating anything. Use it to preview the approach before building.",
+        "Turn a natural-language description of a visual you WANT into a build plan (which tool/recipe and nodes) — a dry run that creates nothing. Note: this does NOT inspect the current TouchDesigner project; to read existing nodes use get_td_nodes / get_td_topology / find_td_nodes.",
       inputSchema: describeProjectSchema.shape,
       annotations: { readOnlyHint: true, openWorldHint: false },
     },

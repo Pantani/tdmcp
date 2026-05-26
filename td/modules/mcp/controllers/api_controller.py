@@ -27,6 +27,20 @@ def _required_token():
     return token or None
 
 
+def _exec_allowed():
+    """Whether the arbitrary-code endpoints (`/api/exec`, node `method`) are enabled.
+
+    On by default. Set `TDMCP_BRIDGE_ALLOW_EXEC` to 0/false/no/off in TouchDesigner's
+    environment to reject them at the bridge — defense in depth that holds even against
+    a direct network caller, independent of the Node server's own `TDMCP_RAW_PYTHON`
+    gate (which only hides the tools client-side). Structured endpoints stay available.
+    """
+    raw = os.environ.get("TDMCP_BRIDGE_ALLOW_EXEC")
+    if raw is None:
+        return True
+    return raw.strip().lower() not in ("0", "false", "no", "off")
+
+
 def _find_header(request, name):
     """Case-insensitively find an HTTP header in TouchDesigner's request dict.
 
@@ -104,6 +118,8 @@ def _route(method, path, query, body):
         return api_service.get_nodes(_qs(query, "parent"))
 
     if rest == ["exec"] and method == "POST":
+        if not _exec_allowed():
+            raise PermissionError("Forbidden: arbitrary code execution is disabled (TDMCP_BRIDGE_ALLOW_EXEC=0).")
         return api_service.exec_script(body["script"], body.get("return_output", True))
 
     if rest == ["batch"] and method == "POST":
@@ -111,6 +127,10 @@ def _route(method, path, query, body):
 
     if rest[0] == "nodes" and len(rest) >= 2:
         if rest[-1] == "method" and method == "POST":
+            if not _exec_allowed():
+                raise PermissionError(
+                    "Forbidden: arbitrary method calls are disabled (TDMCP_BRIDGE_ALLOW_EXEC=0)."
+                )
             return api_service.call_method(
                 _node_path(rest[1:-1]),
                 body["method"],
