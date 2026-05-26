@@ -75,7 +75,10 @@ def _parname(s):
         s = "Par"
     if not s[0].isalpha():
         s = "P" + s
-    return s[0].upper() + s[1:]
+    # TD custom-parameter names must be a leading uppercase letter followed by lowercase
+    # letters/digits only, so lowercase the tail — otherwise camelCase input like "CamZoom"
+    # keeps its internal capital and TouchDesigner rejects the name.
+    return s[0].upper() + s[1:].lower()
 
 if _comp is None:
     report["fatal"] = "COMP not found: " + _payload["comp"]
