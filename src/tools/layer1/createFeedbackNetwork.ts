@@ -54,6 +54,9 @@ export async function createFeedbackNetworkImpl(ctx: ToolContext, args: CreateFe
     });
     const feedback = await builder.add("feedbackTOP", "feedback1");
     const comp = await builder.add("compositeTOP", "comp1");
+    // The TD default operand (multiply) collapses the loop to black; an additive
+    // operand injects the seed each frame, and "maximum" stays bounded under feedback gain.
+    await builder.setParams(comp, { operand: "maximum" });
     await builder.connect(seed, comp, 0, 0);
     await builder.connect(feedback, comp, 0, 1);
     // feedbackTOP needs an input for its first frame; seed it before the loop closes.
