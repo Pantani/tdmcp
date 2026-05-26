@@ -36,51 +36,10 @@
       "param": "top",
       "value": "glsl1",
       "description": "feedbackTOP samples glsl1 (the simulation output)."
-    },
-    {
-      "name": "uniform_count",
-      "node": "glsl1",
-      "param": "const",
-      "value": 2,
-      "description": "Declare two scalar (Constant) uniforms on the GLSL TOP so uFeed/uKill resolve."
-    },
-    {
-      "name": "feed_rate",
-      "node": "glsl1",
-      "param": "const0value",
-      "value": 0.055,
-      "label": "Feed rate",
-      "min": 0,
-      "max": 0.1,
-      "description": "Gray-Scott feed rate, bound to the uFeed uniform."
-    },
-    {
-      "name": "feed_uniform_name",
-      "node": "glsl1",
-      "param": "const0name",
-      "value": "uFeed",
-      "description": "Bind Constant 0 to the uFeed uniform."
-    },
-    {
-      "name": "kill_rate",
-      "node": "glsl1",
-      "param": "const1value",
-      "value": 0.062,
-      "label": "Kill rate",
-      "min": 0,
-      "max": 0.1,
-      "description": "Gray-Scott kill rate, bound to the uKill uniform."
-    },
-    {
-      "name": "kill_uniform_name",
-      "node": "glsl1",
-      "param": "const1name",
-      "value": "uKill",
-      "description": "Bind Constant 1 to the uKill uniform."
     }
   ],
   "glsl_code": {
-    "glsl1": "uniform float uFeed;\nuniform float uKill;\nout vec4 fragColor;\n\nvec2 sampleAB(vec2 uv) { return texture(sTD2DInputs[0], uv).rg; }\n\nvoid main()\n{\n    vec2 uv = vUV.st;\n    vec2 texel = uTD2DInfos[0].res.xy;\n    vec2 c = sampleAB(uv);\n    float a = c.r;\n    float b = c.g;\n\n    vec2 lap = vec2(0.0);\n    lap += sampleAB(uv + texel * vec2(-1.0, 0.0)) * 0.2;\n    lap += sampleAB(uv + texel * vec2( 1.0, 0.0)) * 0.2;\n    lap += sampleAB(uv + texel * vec2( 0.0,-1.0)) * 0.2;\n    lap += sampleAB(uv + texel * vec2( 0.0, 1.0)) * 0.2;\n    lap += sampleAB(uv + texel * vec2(-1.0,-1.0)) * 0.05;\n    lap += sampleAB(uv + texel * vec2( 1.0,-1.0)) * 0.05;\n    lap += sampleAB(uv + texel * vec2(-1.0, 1.0)) * 0.05;\n    lap += sampleAB(uv + texel * vec2( 1.0, 1.0)) * 0.05;\n    lap -= c;\n\n    float feed = uFeed > 0.0 ? uFeed : 0.055;\n    float kill = uKill > 0.0 ? uKill : 0.062;\n    float reaction = a * b * b;\n    float da = 1.0 * lap.r - reaction + feed * (1.0 - a);\n    float db = 0.5 * lap.g + reaction - (kill + feed) * b;\n\n    float a2 = clamp(a + da, 0.0, 1.0);\n    float b2 = clamp(b + db, 0.0, 1.0);\n    fragColor = TDOutputSwizzle(vec4(a2, b2, 0.0, 1.0));\n}\n"
+    "glsl1": "out vec4 fragColor;\n\nvec2 sampleAB(vec2 uv) { return texture(sTD2DInputs[0], uv).rg; }\n\nvoid main()\n{\n    vec2 uv = vUV.st;\n    vec2 texel = uTD2DInfos[0].res.xy;\n    vec2 c = sampleAB(uv);\n    float a = c.r;\n    float b = c.g;\n\n    vec2 lap = vec2(0.0);\n    lap += sampleAB(uv + texel * vec2(-1.0, 0.0)) * 0.2;\n    lap += sampleAB(uv + texel * vec2( 1.0, 0.0)) * 0.2;\n    lap += sampleAB(uv + texel * vec2( 0.0,-1.0)) * 0.2;\n    lap += sampleAB(uv + texel * vec2( 0.0, 1.0)) * 0.2;\n    lap += sampleAB(uv + texel * vec2(-1.0,-1.0)) * 0.05;\n    lap += sampleAB(uv + texel * vec2( 1.0,-1.0)) * 0.05;\n    lap += sampleAB(uv + texel * vec2(-1.0, 1.0)) * 0.05;\n    lap += sampleAB(uv + texel * vec2( 1.0, 1.0)) * 0.05;\n    lap -= c;\n\n    float feed = 0.055;\n    float kill = 0.062;\n    float reaction = a * b * b;\n    float da = 1.0 * lap.r - reaction + feed * (1.0 - a);\n    float db = 0.5 * lap.g + reaction - (kill + feed) * b;\n\n    float a2 = clamp(a + da, 0.0, 1.0);\n    float b2 = clamp(b + db, 0.0, 1.0);\n    fragColor = TDOutputSwizzle(vec4(a2, b2, 0.0, 1.0));\n}\n"
   },
   "preview_description": "Evolving coral / fingerprint-like organic patterns growing and dividing across the frame."
 }
