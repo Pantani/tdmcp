@@ -13,15 +13,35 @@ export function buildPayloadScript(template: string, payload: object): string {
   return template.replace("__PAYLOAD_B64__", b64);
 }
 
-/** Pulls the JSON report object out of a script's stdout (first `{` … last `}`). */
+/** Pulls the JSON report object out of a script's stdout. */
 export function parsePythonReport<T>(stdout: string | undefined): T {
   if (!stdout) throw new TdApiError("The TouchDesigner script returned no output.");
+  // The report is emitted as the final `print(json.dumps(...))`, so it is the
+  // last non-empty line. Parse that first: it is robust to TD interleaving its
+  // own log lines before the report — lines that may carry stray braces that
+  // would otherwise widen (and corrupt) the `{` … `}` span heuristic below.
+  const lines = stdout.split("\n");
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const line = lines[i]?.trim();
+    if (!line) continue;
+    if (line.startsWith("{") && line.endsWith("}")) {
+      try {
+        return JSON.parse(line) as T;
+      } catch {
+        // not valid JSON on its own — fall through to the span heuristic
+      }
+    }
+    break; // only the last non-empty line qualifies for the single-line fast path
+  }
+  // Fallback: widest `{` … `}` span (covers a report printed across lines).
   const start = stdout.indexOf("{");
   const end = stdout.lastIndexOf("}");
-  if (start < 0 || end < start) {
-    throw new TdApiError(
-      `Could not parse the TouchDesigner script result: ${stdout.slice(0, 200)}`,
-    );
+  if (start >= 0 && end > start) {
+    try {
+      return JSON.parse(stdout.slice(start, end + 1)) as T;
+    } catch {
+      // fall through to the shared error below
+    }
   }
-  return JSON.parse(stdout.slice(start, end + 1)) as T;
+  throw new TdApiError(`Could not parse the TouchDesigner script result: ${stdout.slice(0, 200)}`);
 }

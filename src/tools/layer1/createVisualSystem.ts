@@ -11,8 +11,19 @@ import { buildFromRecipe, finalize, runBuild } from "./orchestration.js";
 export const createVisualSystemSchema = z.object({
   description: z.string().min(1).describe("Natural-language description of the visual system."),
   parent_path: z.string().default("/project1"),
-  resolution: z.enum(["720p", "1080p", "4K", "custom"]).default("1080p"),
-  target_fps: z.coerce.number().positive().default(60),
+  resolution: z
+    .enum(["720p", "1080p", "4K", "custom"])
+    .default("1080p")
+    .describe(
+      "Advisory target resolution. Recorded in the build note; the sub-builders use their own internal sizes and do not enforce this per-node.",
+    ),
+  target_fps: z.coerce
+    .number()
+    .positive()
+    .default(60)
+    .describe(
+      "Advisory target frame rate (informational only — TD's real cook rate is a project-level setting, not set here).",
+    ),
 });
 type CreateVisualSystemArgs = z.infer<typeof createVisualSystemSchema>;
 
@@ -106,7 +117,7 @@ function withNote(result: CallToolResult, note: string): CallToolResult {
 
 export async function createVisualSystemImpl(ctx: ToolContext, args: CreateVisualSystemArgs) {
   const { kind, label } = classify(args.description);
-  const note = `Interpreted "${args.description}" as a ${label} system (target ${args.resolution} @ ${args.target_fps}fps).`;
+  const note = `Interpreted "${args.description}" as a ${label} system (advisory target ${args.resolution} @ ${args.target_fps}fps).`;
   ctx.logger.info("create_visual_system classified", { kind, description: args.description });
 
   switch (kind) {
