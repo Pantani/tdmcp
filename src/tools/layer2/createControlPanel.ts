@@ -60,7 +60,7 @@ interface ControlReport {
 // single script keeps the page/parameter/binding work atomic. `ParMode` is *not*
 // injected into the bridge's exec globals, so the expression-mode enum is derived
 // from a live parameter (`type(par.mode)`) instead of imported.
-const PANEL_SCRIPT = String.raw`
+const PANEL_SCRIPT = `
 import json, base64, traceback
 _payload = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
 _comp = op(_payload["comp"]); _page_name = _payload["page"]; _controls = _payload["controls"]
