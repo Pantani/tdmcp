@@ -71,9 +71,15 @@ def create_node(parent_path, type_name, name=None, parameters=None):
         raise LookupError("Parent not found: %s" % parent_path)
     cls = _resolve_type(type_name)
     node = parent.create(cls, name) if name else parent.create(cls)
+    ref = node_ref(node)
     if parameters:
-        apply_parameters(node, parameters)
-    return node_ref(node)
+        # The node is created regardless; surface any params that did not apply
+        # (unknown name or bad value) as a non-fatal warning rather than dropping
+        # them silently. The caller (create_td_node) relays these to the user.
+        _applied, failed = apply_parameters(node, parameters)
+        if failed:
+            ref["parameter_warnings"] = sorted(failed)
+    return ref
 
 
 def delete_node(path):
@@ -120,7 +126,23 @@ def update_parameters(path, parameters):
     node = op(path)  # noqa: F821
     if node is None:
         raise LookupError("Node not found: %s" % path)
-    apply_parameters(node, parameters)
+    params = parameters or {}
+    # Reject unknown parameter names up front (atomic: apply nothing) so a typo
+    # like `gain` on a levelTOP fails loudly instead of being silently dropped.
+    unknown = [k for k in params if getattr(node.par, k, None) is None]
+    if unknown:
+        raise ValueError(
+            "Unknown parameter(s) on %s (%s): %s. "
+            "Use get_td_node_parameters to see the valid parameter names."
+            % (path, op_type(node), ", ".join(sorted(unknown)))
+        )
+    applied, failed = apply_parameters(node, params)
+    if failed:
+        raise ValueError(
+            "Could not set parameter(s) on %s (%s): %s "
+            "(wrong value type or out of range?). Applied: %s."
+            % (path, op_type(node), ", ".join(sorted(failed)), ", ".join(sorted(applied)) or "none")
+        )
     return node_detail(node)
 
 

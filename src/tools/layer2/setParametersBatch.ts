@@ -27,8 +27,14 @@ export async function setParametersBatchImpl(ctx: ToolContext, args: SetParamete
           parameters: update.parameters,
         })),
       ),
-    (result) =>
-      jsonResult(`Applied ${args.updates.length} parameter update(s) in one batch.`, result),
+    (result) => {
+      const failed = result.results.filter((r) => !r.ok);
+      const okCount = result.results.length - failed.length;
+      const summary = failed.length
+        ? `Applied ${okCount}/${result.results.length} parameter update(s); ${failed.length} failed (see results).`
+        : `Applied ${okCount} parameter update(s) in one batch.`;
+      return jsonResult(summary, result);
+    },
   );
 }
 

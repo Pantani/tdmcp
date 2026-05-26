@@ -103,7 +103,7 @@ export const createGenerativeArtSchema = z.object({
     "custom_glsl",
   ]),
   color_palette: z.string().optional().describe("Free-text palette hint (best-effort)."),
-  evolution_speed: z.number().positive().default(1.0),
+  evolution_speed: z.coerce.number().positive().default(1.0),
   custom_glsl_code: z
     .string()
     .optional()

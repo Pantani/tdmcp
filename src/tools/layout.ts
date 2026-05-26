@@ -12,6 +12,8 @@
 const X_STEP = 200;
 /** Vertical gap between sibling nodes within a layer, in TD network units. */
 const Y_STEP = 140;
+/** Breathing room left between an existing cluster and a newly placed node. */
+const SIBLING_GAP = 80;
 
 export interface LayoutEdge {
   from: string;
@@ -124,5 +126,27 @@ export function layoutScript(positions: Positions): string {
     "    if _n is not None:",
     "        _n.nodeX = _xy[0]",
     "        _n.nodeY = _xy[1]",
+  ].join("\n");
+}
+
+/**
+ * Builds a Python snippet that drops a just-created node clear of its existing
+ * siblings — left-aligned with the current cluster and one gap below its lowest
+ * node — so repeated top-level creations stack into a tidy column instead of
+ * piling up at the origin. The first node in an empty network lands at (0, 0).
+ */
+export function placeBelowSiblingsScript(parentPath: string, nodePath: string): string {
+  const q = JSON.stringify;
+  return [
+    `_parent = op(${q(parentPath)})`,
+    `_new = op(${q(nodePath)})`,
+    "if _parent is not None and _new is not None:",
+    "    _sibs = [c for c in _parent.children if c is not _new]",
+    "    if _sibs:",
+    "        _new.nodeX = min(c.nodeX for c in _sibs)",
+    `        _new.nodeY = min(c.nodeY for c in _sibs) - _new.nodeHeight - ${SIBLING_GAP}`,
+    "    else:",
+    "        _new.nodeX = 0",
+    "        _new.nodeY = 0",
   ].join("\n");
 }

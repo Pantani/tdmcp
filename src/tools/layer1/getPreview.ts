@@ -5,8 +5,8 @@ import type { ToolContext, ToolRegistrar } from "../types.js";
 
 export const getPreviewSchema = z.object({
   node_path: z.string().describe("Path of the TOP node to capture."),
-  width: z.number().int().positive().default(640),
-  height: z.number().int().positive().default(360),
+  width: z.coerce.number().int().positive().default(640),
+  height: z.coerce.number().int().positive().default(360),
 });
 type GetPreviewArgs = z.infer<typeof getPreviewSchema>;
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { placeBelowSiblingsScript } from "../layout.js";
 import { guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
@@ -19,12 +20,23 @@ type CreateContainerArgs = z.infer<typeof createContainerSchema>;
 
 export async function createContainerImpl(ctx: ToolContext, args: CreateContainerArgs) {
   return guardTd(
-    () =>
-      ctx.client.createNode({
+    async () => {
+      const node = await ctx.client.createNode({
         parent_path: args.parent_path,
         type: COMP_MAP[args.comp_type],
         name: args.name,
-      }),
+      });
+      // Place it clear of existing siblings (cosmetic — never block creation).
+      try {
+        await ctx.client.executePythonScript(
+          placeBelowSiblingsScript(args.parent_path, node.path),
+          false,
+        );
+      } catch (err) {
+        ctx.logger.debug("container placement skipped", { err: String(err) });
+      }
+      return node;
+    },
     (node) => jsonResult(`Created ${args.comp_type} COMP at ${node.path}.`, { node }),
   );
 }

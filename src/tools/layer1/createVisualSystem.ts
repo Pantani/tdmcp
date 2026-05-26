@@ -12,7 +12,7 @@ export const createVisualSystemSchema = z.object({
   description: z.string().min(1).describe("Natural-language description of the visual system."),
   parent_path: z.string().default("/project1"),
   resolution: z.enum(["720p", "1080p", "4K", "custom"]).default("1080p"),
-  target_fps: z.number().positive().default(60),
+  target_fps: z.coerce.number().positive().default(60),
 });
 type CreateVisualSystemArgs = z.infer<typeof createVisualSystemSchema>;
 

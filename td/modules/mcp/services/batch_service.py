@@ -11,8 +11,42 @@ def connect(source_path, target_path, source_output=0, target_input=0):
     src = op(source_path)
     dst = op(target_path)
     if src is None or dst is None:
-        raise LookupError("Source or target not found")
-    dst.inputConnectors[target_input].connect(src.outputConnectors[source_output])
+        raise LookupError("Source or target not found: %s -> %s" % (source_path, target_path))
+    src_parent = src.parent()
+    dst_parent = dst.parent()
+    # TD wires only connect operators sharing a parent. A cross-container connect
+    # silently no-ops (no exception, no wire), so reject it with an actionable msg.
+    if src_parent is None or dst_parent is None or src_parent.path != dst_parent.path:
+        raise ValueError(
+            "Cannot wire across containers: %s (in %s) -> %s (in %s). "
+            "Wires only connect operators sharing a parent; to bring an operator "
+            "across networks use a Select/In OP (e.g. a Select TOP/CHOP whose source "
+            "parameter points at %r)."
+            % (
+                src.path,
+                getattr(src_parent, "path", "<root>"),
+                dst.path,
+                getattr(dst_parent, "path", "<root>"),
+                source_path,
+            )
+        )
+    try:
+        in_conn = dst.inputConnectors[target_input]
+        out_conn = src.outputConnectors[source_output]
+    except IndexError:
+        raise IndexError(
+            "Connector index out of range: target_input=%d (%s has %d input(s)), "
+            "source_output=%d (%s has %d output(s))."
+            % (
+                target_input,
+                dst.path,
+                len(dst.inputConnectors),
+                source_output,
+                src.path,
+                len(src.outputConnectors),
+            )
+        )
+    in_conn.connect(out_conn)
 
 
 def run(operations):

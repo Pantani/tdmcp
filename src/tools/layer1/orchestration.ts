@@ -4,7 +4,12 @@ import { capturePreview } from "../../feedback/previewCapture.js";
 import type { Recipe, RecipeGlslUniform } from "../../recipes/schema.js";
 import { friendlyTdError } from "../../td-client/types.js";
 import { connectNodesViaBridge } from "../layer2/connectHelper.js";
-import { computeLayoutByParent, type LayoutEdge, layoutScript } from "../layout.js";
+import {
+  computeLayoutByParent,
+  type LayoutEdge,
+  layoutScript,
+  placeBelowSiblingsScript,
+} from "../layout.js";
 import { errorResult } from "../result.js";
 import type { ToolContext } from "../types.js";
 
@@ -183,6 +188,17 @@ export async function createSystemContainer(
     type: "baseCOMP",
     name,
   });
+  // Drop the container clear of any existing siblings so repeated generations
+  // stack into a column instead of overlapping at the origin. Cosmetic only —
+  // a failure here must never abort the build.
+  try {
+    await ctx.client.executePythonScript(
+      placeBelowSiblingsScript(parentPath, container.path),
+      false,
+    );
+  } catch (err) {
+    ctx.logger.debug("container placement skipped", { err: String(err) });
+  }
   return new NetworkBuilder(ctx, container.path);
 }
 

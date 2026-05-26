@@ -64,7 +64,7 @@ export const createFeedbackNetworkSchema = z.object({
       ]),
     )
     .default(["blur", "displace", "level"]),
-  feedback_gain: z.number().min(0).max(1).default(0.95),
+  feedback_gain: z.coerce.number().min(0).max(1).default(0.95),
   colors: z
     .array(z.string())
     .max(2)

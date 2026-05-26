@@ -24,7 +24,7 @@ export const createAudioReactiveSchema = z.object({
     .optional()
     .describe("Existing CHOP path (audio_source='existing_chop')."),
   visual_style: z.enum(["geometric", "particle", "feedback", "glsl", "instancing"]),
-  frequency_bands: z
+  frequency_bands: z.coerce
     .number()
     .int()
     .positive()

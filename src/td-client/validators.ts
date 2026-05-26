@@ -12,6 +12,8 @@ export const NodeRefSchema = z.object({
   path: z.string(),
   type: z.string().default(""),
   name: z.string().default(""),
+  /** Parameters that could not be applied at create time (unknown name or bad value). */
+  parameter_warnings: z.array(z.string()).optional(),
 });
 export type TdNodeRef = z.infer<typeof NodeRefSchema>;
 

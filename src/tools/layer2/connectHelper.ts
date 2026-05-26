@@ -32,10 +32,17 @@ export async function connectNodesViaBridge(
     if (!(err instanceof TdApiError)) throw err;
   }
 
-  // Fallback: wire via Python inside TD.
+  // Fallback: wire via Python inside TD. Validate first so a cross-container
+  // wire (which TD silently no-ops) or a missing op raises instead of reporting
+  // a phantom success.
   const src = JSON.stringify(sourcePath);
   const dst = JSON.stringify(targetPath);
-  const python = `op(${dst}).inputConnectors[${targetInput}].connect(op(${src}).outputConnectors[${sourceOutput}])`;
+  const python = [
+    `__s = op(${src}); __d = op(${dst})`,
+    `if __s is None or __d is None: raise LookupError('connect: source or target not found (%s -> %s)' % (${src}, ${dst}))`,
+    `if __s.parent() is None or __d.parent() is None or __s.parent().path != __d.parent().path: raise ValueError('connect: cannot wire across containers (%s -> %s); use a Select/In OP to bring an operator across networks' % (${src}, ${dst}))`,
+    `__d.inputConnectors[${targetInput}].connect(__s.outputConnectors[${sourceOutput}])`,
+  ].join("\n");
   await client.executePythonScript(python, false);
   return { method: "python" };
 }

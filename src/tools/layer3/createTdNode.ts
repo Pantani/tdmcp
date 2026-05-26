@@ -36,7 +36,18 @@ export async function createTdNodeImpl(ctx: ToolContext, args: CreateTdNodeArgs)
         name: args.name,
         parameters: args.parameters,
       }),
-    (node) => jsonResult(`Created ${node.type || args.type} at ${node.path}.`, { node, warnings }),
+    (node) => {
+      const allWarnings = [...warnings];
+      if (node.parameter_warnings?.length) {
+        allWarnings.push(
+          `These parameter(s) were not applied (unknown name or bad value): ${node.parameter_warnings.join(", ")}.`,
+        );
+      }
+      return jsonResult(`Created ${node.type || args.type} at ${node.path}.`, {
+        node,
+        warnings: allWarnings,
+      });
+    },
   );
 }
 

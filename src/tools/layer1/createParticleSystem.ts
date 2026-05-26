@@ -13,16 +13,64 @@ const EMITTER_SOP = {
   image: "gridSOP",
 } as const;
 
+const q2 = (n: number): string => (Number.isFinite(n) ? n.toString() : "0");
+
+/**
+ * Builds the Python that turns a bare Particle SOP into a real, immediately-visible system:
+ * - `normals = True` makes each particle inherit its source point's normal as initial
+ *   velocity, so a sphere/circle/box emitter actually sprays into a cloud (a single-point
+ *   emitter has no normal, so it stays a turbulence-driven stream — that's expected).
+ * - `timepreroll = lifetime` pre-simulates the sim so frame 1 is already fully populated
+ *   instead of slowly filling in over the first few seconds.
+ * - A baseline drag keeps the cloud contained within the camera frame.
+ * - `birth` is derived from particle_count so the requested count is honored at steady state.
+ * Forces map to native params where the legacy Particle SOP supports them (gravity → external,
+ * noise/turbulence → turbulence, drag → drag); attract/repel/vortex have no native equivalent
+ * and are approximated with turbulence (+ a little wind for vortex).
+ */
+function particleDynamicsPython(particlePath: string, args: CreateParticleSystemArgs): string {
+  const f = new Set(args.forces);
+  const birth = Math.max(1, Math.round(args.particle_count / args.lifetime));
+  let drag = 2.0;
+  if (f.has("drag")) drag = 3.5;
+  if (f.has("repel")) drag = 1.0;
+  let turb = 0;
+  if (f.has("noise")) turb = 1.0;
+  if (f.has("turbulence")) turb = 1.8;
+  if (f.has("attract") || f.has("repel") || f.has("vortex")) turb = Math.max(turb, 1.2);
+  const gravity = f.has("gravity") ? -0.6 : 0;
+  const wind = f.has("vortex") ? 0.5 : 0;
+  return [
+    `_p = op(${q(particlePath)})`,
+    `_p.par.birth = ${birth}`,
+    `_p.par.lifevar = ${q2(Number((args.lifetime * 0.25).toFixed(3)))}`,
+    "_p.par.normals = True",
+    "_p.par.jitter = True",
+    `_p.par.timepreroll = ${q2(args.lifetime)}`,
+    "_p.par.dodrag = True",
+    `_p.par.drag = ${q2(drag)}`,
+    `_p.par.turbx = ${q2(turb)}`,
+    `_p.par.turby = ${q2(turb)}`,
+    `_p.par.turbz = ${q2(turb)}`,
+    "_p.par.period = 3.0",
+    `_p.par.externaly = ${q2(gravity)}`,
+    `_p.par.windx = ${q2(wind)}`,
+    "_p.par.reset.pulse()",
+  ].join("\n");
+}
+
 export const createParticleSystemSchema = z.object({
-  emitter_shape: z.enum(["point", "line", "circle", "sphere", "mesh", "image"]).default("point"),
-  particle_count: z.number().int().positive().default(10000),
+  // Default to "sphere": its varied normals give particles a radial initial velocity, so the
+  // out-of-the-box system is a full cloud. ("point" has no normals and stays a thin stream.)
+  emitter_shape: z.enum(["point", "line", "circle", "sphere", "mesh", "image"]).default("sphere"),
+  particle_count: z.coerce.number().int().positive().default(10000),
   forces: z
     .array(z.enum(["gravity", "noise", "attract", "repel", "vortex", "turbulence", "drag"]))
     .default(["noise", "gravity"]),
   render_style: z
     .enum(["points", "sprites", "lines", "trails", "instanced_geo"])
     .default("sprites"),
-  lifetime: z.number().positive().default(3),
+  lifetime: z.coerce.number().positive().default(3),
   parent_path: z.string().default("/project1"),
 });
 type CreateParticleSystemArgs = z.infer<typeof createParticleSystemSchema>;
@@ -59,11 +107,15 @@ export async function createParticleSystemImpl(ctx: ToolContext, args: CreatePar
     }
     await builder.connect(emitter.path, particle.path);
 
+    // Turn the bare Particle SOP into an immediately-visible, moving system (initial velocity
+    // from normals, pre-roll population, force mapping, containment drag).
+    await builder.python(particleDynamicsPython(particle.path, args));
+
     const mat = await builder.add(
       args.render_style === "sprites" ? "pointspriteMAT" : "constantMAT",
       "mat",
     );
-    const cam = await builder.add("cameraCOMP", "cam", { tz: 5 });
+    const cam = await builder.add("cameraCOMP", "cam", { tz: 6 });
     const light = await builder.add("lightCOMP", "light", { tx: 3, ty: 4, tz: 4 });
     // Opaque near-black background so the (white, point-sized) particles are visible.
     // Left transparent, white particles vanish against a light compositing backdrop; set
@@ -91,9 +143,19 @@ export async function createParticleSystemImpl(ctx: ToolContext, args: CreatePar
       ].join("\n"),
     );
 
-    builder.warnings.push(
-      `Particle forces (${args.forces.join(", ")}), exact count (${args.particle_count}) and the "${args.render_style}" render style are scaffolded; tune the particleSOP and material for production.`,
+    const approximated = args.forces.filter(
+      (x) => x === "attract" || x === "repel" || x === "vortex",
     );
+    if (approximated.length > 0) {
+      builder.warnings.push(
+        `Forces ${approximated.join(", ")} have no native Particle SOP equivalent and are approximated with turbulence.`,
+      );
+    }
+    if (args.render_style !== "points" && args.render_style !== "sprites") {
+      builder.warnings.push(
+        `Render style "${args.render_style}" falls back to point/sprite rendering in this version.`,
+      );
+    }
 
     return finalize(ctx, {
       summary: `Created a particle system (emitter: ${args.emitter_shape}, ~${args.particle_count} particles, render: ${args.render_style}).`,
