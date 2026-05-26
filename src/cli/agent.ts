@@ -32,15 +32,21 @@ import {
   createParticleSystemImpl,
   createParticleSystemSchema,
 } from "../tools/layer1/createParticleSystem.js";
+import { createTempoSyncImpl, createTempoSyncSchema } from "../tools/layer1/createTempoSync.js";
 import {
   createVisualSystemImpl,
   createVisualSystemSchema,
 } from "../tools/layer1/createVisualSystem.js";
 import { describeProjectImpl, describeProjectSchema } from "../tools/layer1/describeProject.js";
+import {
+  extractAudioFeaturesImpl,
+  extractAudioFeaturesSchema,
+} from "../tools/layer1/extractAudioFeatures.js";
 import { getPreviewSchema } from "../tools/layer1/getPreview.js";
 import { setupOutputImpl, setupOutputSchema } from "../tools/layer1/setupOutput.js";
 import { animateParameterImpl, animateParameterSchema } from "../tools/layer2/animateParameter.js";
 import { arrangeNetworkImpl, arrangeNetworkSchema } from "../tools/layer2/arrangeNetwork.js";
+import { bindToChannelImpl, bindToChannelSchema } from "../tools/layer2/bindToChannel.js";
 import { connectNodesImpl, connectNodesSchema } from "../tools/layer2/connectNodes.js";
 import { createContainerImpl, createContainerSchema } from "../tools/layer2/createContainer.js";
 import {
@@ -199,6 +205,18 @@ const COMMANDS: Record<string, Command> = {
     "Build an audio-reactive visual.",
     { mutates: true },
   ),
+  "audio-features": r(
+    extractAudioFeaturesSchema,
+    extractAudioFeaturesImpl,
+    "Extract reactive channels (level/bass/mid/treble) to bind to params.",
+    { mutates: true },
+  ),
+  "tempo-sync": r(
+    createTempoSyncSchema,
+    createTempoSyncImpl,
+    "Create a beat clock (ramp/pulse/beat/bar/bpm) + optional beat events.",
+    { mutates: true },
+  ),
   dataviz: r(
     createDataVisualizationSchema,
     createDataVisualizationImpl,
@@ -223,6 +241,12 @@ const COMMANDS: Record<string, Command> = {
   animate: r(animateParameterSchema, animateParameterImpl, "Drive parameters with an LFO.", {
     mutates: true,
   }),
+  bind: r(
+    bindToChannelSchema,
+    bindToChannelImpl,
+    "Bind parameters to a CHOP channel (audio feature / beat) by expression.",
+    { mutates: true },
+  ),
   arrange: r(arrangeNetworkSchema, arrangeNetworkImpl, "Auto-arrange a network left→right.", {
     mutates: true,
   }),

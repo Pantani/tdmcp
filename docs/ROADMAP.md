@@ -28,7 +28,7 @@ Every feature follows the existing patterns:
 | Phase | Version | Theme | Rationale |
 |---|---|---|---|
 | 0 | 0.3.0 ☑ | DX & CLI foundation | Multiplier — speeds up every later phase |
-| 1 | 0.4.0 | Musical reactivity | Core workflow; depends on phase-0 event producer |
+| 1 | 0.4.0 ☑ | Musical reactivity | Core workflow; depends on phase-0 event producer |
 | 2 | 0.5.0 | Live performance | Makes systems playable; reuses presets + events |
 | 3 | 0.6.0 | Advanced creation (TD) | Heavy, independent features → parallelizable |
 | 4 | 0.7.0 | Intelligence (AI) | Layer that builds on everything already shipped |
@@ -58,20 +58,24 @@ event producer and reload logic already shipped in 0.2.0, so no reinstall needed
 
 ---
 
-## Phase 1 — v0.4.0 · Musical reactivity ⭐
+## Phase 1 — v0.4.0 · Musical reactivity ⭐ ☑ shipped
 
-The heart of the live workflow. Beat events depend on the phase-0 event producer.
+The heart of the live workflow. Beat events ride the phase-0 event producer.
 
 | Feature | Delivers | Effort | Status |
 |---|---|---|---|
-| `create_tempo_sync` | Tempo clock (Ableton Link / Tempo CHOP) + per-beat/bar triggers | M | ☐ |
-| `extract_audio_features` | BPM, energy, onset, bass/mid/treble split, envelope — as ready-to-bind channels | M | ☐ |
-| Beat events on stream | Broadcast `beat`/`bar` (Beat CHOP + CHOP Execute) → consumable by CLI and AI | M | ☐ |
-| Prompt "beat-reactive designer" | Guides the AI to build visuals that react to audio features | S | ☐ |
+| `extract_audio_features` | Audio chain exposing level + bass/mid/treble band energies on a Null CHOP, with a Sensitivity knob; device/file/oscillator/existing source | M | ☑ |
+| `create_tempo_sync` | Beat CHOP clock → `ramp`/`pulse`/`count`/`beat`/`bar`/`bpm`; emits a `beat` event over the WebSocket each beat (via a CHOP Execute DAT) | M | ☑ |
+| `bind_to_channel` | The link: drive any parameter from a CHOP channel (audio feature / beat) by expression, with scale + offset | M | ☑ |
+| Prompt "beat-reactive designer" | Guides the AI to wire audio features + beat into a visual's parameters | S | ☑ |
 
-**Areas:** new L1 tools, `events.py` + beat producer, `src/prompts/`. Real
-operators: `ableton_link_chop`, `beat_chop`, `analyze_chop`,
-`audio_spectrum_chop`, `audio_dynamics_chop` (all already in the KB).
+**Areas:** `src/tools/layer1/extractAudioFeatures.ts`,
+`src/tools/layer1/createTempoSync.ts`, `src/tools/layer2/bindToChannel.ts`,
+`src/prompts/beatReactiveDesigner.ts`, CLI commands `audio-features` /
+`tempo-sync` / `bind`. Notes from the live probe: this build has **no Tempo
+CHOP** (the Beat CHOP is the clock) and the bass/mid/treble split uses Audio
+Filter → Analyze (RMS) rather than the spectrum. `bind_to_channel` was added as
+the missing link that actually wires reactive signals into visuals.
 
 ---
 

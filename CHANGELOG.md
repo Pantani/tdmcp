@@ -4,6 +4,29 @@ All notable changes to **tdmcp** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-05-26
+
+Musical reactivity: turn audio and the beat into signals that drive visuals.
+
+### Added
+
+- **`extract_audio_features`** — build an audio-analysis chain that exposes ready-to-bind
+  reactive channels (overall level plus bass/mid/treble band energies) on a Null CHOP, with
+  a Sensitivity knob. Source can be the live device (mic/line), an audio file, a synthetic
+  oscillator (for testing without device permission), or an existing CHOP.
+- **`create_tempo_sync`** — a Beat CHOP clock driven by TouchDesigner's global tempo,
+  exposing beat-synced channels (`ramp`, `pulse`, `count`, `beat`, `bar`, `bpm`). With
+  `emit_events` on, a CHOP Execute DAT broadcasts a **`beat` event** over the bridge
+  WebSocket on every beat, so `tdmcp-agent watch` and the AI can react to the pulse live.
+- **`bind_to_channel`** — the link that makes a visual react: drive any node parameter from
+  a CHOP channel (an audio feature or a beat channel) by expression, with a scale and offset.
+  Wires `extract_audio_features` / `create_tempo_sync` into a visual system.
+- **`beat_reactive_designer` prompt** — guides the assistant through building the reactive
+  chain and mapping audio features / the beat onto a visual system's parameters.
+- **CLI commands** `audio-features`, `tempo-sync` and `bind` for the above.
+
+[0.4.0]: https://github.com/Pantani/tdmcp/releases/tag/v0.4.0
+
 ## [0.3.0] - 2026-05-26
 
 Developer experience and a scriptable CLI: drive the whole toolset from a shell, stream

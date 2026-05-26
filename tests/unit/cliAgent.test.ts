@@ -218,3 +218,65 @@ describe("tdmcp-agent watch", () => {
     expect(url).toMatch(/^ws:\/\/.+\/$/);
   });
 });
+
+describe("tdmcp-agent CLI — phase 1 (musical reactivity)", () => {
+  it("lists the reactivity commands in --help", async () => {
+    const r = await runCli(["--help"]);
+    expect(r.code).toBe(0);
+    for (const cmd of ["audio-features", "tempo-sync", "bind"]) {
+      expect(r.stdout).toContain(cmd);
+    }
+  });
+
+  it("emits a JSON Schema for bind (source_chop + channel)", async () => {
+    const r = await runCli(["schema", "bind"]);
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.command).toBe("bind");
+    const input = JSON.stringify(doc.input);
+    expect(input).toContain("source_chop");
+    expect(input).toContain("channel");
+  });
+
+  it("dry-runs audio-features with the safe oscillator source", async () => {
+    const r = await runCli(["audio-features", "--dry-run", "--params", '{"source":"oscillator"}']);
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.dryRun).toBe(true);
+    expect(doc.command).toBe("audio-features");
+    expect(doc.args.source).toBe("oscillator");
+  });
+
+  it("dry-runs tempo-sync", async () => {
+    const r = await runCli(["tempo-sync", "--dry-run", "--params", '{"period":2}']);
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.command).toBe("tempo-sync");
+    expect(doc.args.period).toBe(2);
+  });
+
+  it("binds parameters to a channel through the mocked exec endpoint", async () => {
+    server.use(
+      http.post(`${TD_BASE}/api/exec`, () =>
+        HttpResponse.json({
+          ok: true,
+          data: {
+            result: null,
+            stdout:
+              '{"bound": ["/project1/v/transform1.scale"], "warnings": [], "channel_present": true, "expression": "op(x)[bass]"}',
+          },
+        }),
+      ),
+    );
+    const r = await runCli(
+      [
+        "bind",
+        "--params",
+        '{"targets":["/project1/v/transform1.scale"],"source_chop":"/x","channel":"bass"}',
+      ],
+      { makeCtx },
+    );
+    expect(r.code).toBe(0);
+    expect(JSON.parse(r.stdout).bound).toContain("/project1/v/transform1.scale");
+  });
+});

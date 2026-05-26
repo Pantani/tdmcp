@@ -1,4 +1,5 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { registerBeatReactiveDesigner } from "./beatReactiveDesigner.js";
 import { registerDebugNetwork } from "./debugNetwork.js";
 import { registerExplainNetwork } from "./explainNetwork.js";
 import { registerOptimizePerformance } from "./optimizePerformance.js";
@@ -13,6 +14,7 @@ export function registerAllPrompts(server: McpServer, ctx: PromptContext): void 
   registerOptimizePerformance(server, ctx);
   registerExplainNetwork(server, ctx);
   registerRemixVisual(server, ctx);
+  registerBeatReactiveDesigner(server, ctx);
 }
 
 export type { PromptContext } from "./types.js";

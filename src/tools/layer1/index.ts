@@ -5,8 +5,10 @@ import { registerCreateDataVisualization } from "./createDataVisualization.js";
 import { registerCreateFeedbackNetwork } from "./createFeedbackNetwork.js";
 import { registerCreateGenerativeArt } from "./createGenerativeArt.js";
 import { registerCreateParticleSystem } from "./createParticleSystem.js";
+import { registerCreateTempoSync } from "./createTempoSync.js";
 import { registerCreateVisualSystem } from "./createVisualSystem.js";
 import { registerDescribeProject } from "./describeProject.js";
+import { registerExtractAudioFeatures } from "./extractAudioFeatures.js";
 import { registerGetPreview } from "./getPreview.js";
 import { registerSetupOutput } from "./setupOutput.js";
 
@@ -21,4 +23,6 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerGetPreview,
   registerDescribeProject,
   registerCreateVisualSystem,
+  registerExtractAudioFeatures,
+  registerCreateTempoSync,
 ];
