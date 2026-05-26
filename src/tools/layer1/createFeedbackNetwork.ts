@@ -56,11 +56,17 @@ export async function createFeedbackNetworkImpl(ctx: ToolContext, args: CreateFe
     const comp = await builder.add("compositeTOP", "comp1");
     await builder.connect(seed, comp, 0, 0);
     await builder.connect(feedback, comp, 0, 1);
+    // feedbackTOP needs an input for its first frame; seed it before the loop closes.
+    await builder.connect(seed, feedback);
 
     let last = comp;
     for (const transformation of args.transformations) {
       const node = await builder.add(TRANSFORM_TYPES[transformation], transformation);
       await builder.connect(last, node);
+      // displaceTOP and lumablurTOP need a second input (the displacement / luma map).
+      if (transformation === "displace" || transformation === "luma_blur") {
+        await builder.connect(seed, node, 0, 1);
+      }
       last = node;
     }
 

@@ -28,6 +28,31 @@ export const RecipeParameterSchema = z.object({
 });
 export type RecipeParameter = z.infer<typeof RecipeParameterSchema>;
 
+/**
+ * A uniform exposed by a GLSL TOP. On the GLSL TOP these live in *parameter
+ * sequences* (the "Vectors" page), so they cannot be set like a normal parameter —
+ * the block count (`op.seq.<kind>.numBlocks`) has to be raised first, after which the
+ * per-block `<kind><i>name`/value sub-parameters exist. `buildFromRecipe` handles
+ * that translation; recipe authors just declare the uniform here.
+ */
+export const RecipeGlslUniformSchema = z.object({
+  node: z.string().describe("Recipe node name of the GLSL TOP that declares the uniform."),
+  name: z.string().describe("Uniform name as referenced in the shader, e.g. 'uFeed'."),
+  kind: z
+    .enum(["const", "vec", "color"])
+    .default("const")
+    .describe("GLSL TOP uniform kind: const (float), vec (vec4), color (rgba)."),
+  value: z
+    .union([z.number(), z.array(z.number())])
+    .optional()
+    .describe("Initial value: a number for const, or an array for vec/color components."),
+  label: z.string().optional(),
+  min: z.number().optional(),
+  max: z.number().optional(),
+  description: z.string().optional(),
+});
+export type RecipeGlslUniform = z.infer<typeof RecipeGlslUniformSchema>;
+
 export const RecipeSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -38,6 +63,7 @@ export const RecipeSchema = z.object({
   nodes: z.array(RecipeNodeSchema).min(1),
   connections: z.array(RecipeConnectionSchema).default([]),
   parameters: z.array(RecipeParameterSchema).default([]),
+  glsl_uniforms: z.array(RecipeGlslUniformSchema).default([]),
   glsl_code: z.record(z.string(), z.string()).optional(),
   python_code: z.record(z.string(), z.string()).optional(),
   preview_description: z.string().default(""),

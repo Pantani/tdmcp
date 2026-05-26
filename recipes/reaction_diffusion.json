@@ -8,9 +8,8 @@
   "nodes": [
     {
       "name": "seed1",
-      "type": "noiseTOP",
-      "parameters": { "period": 8, "monochrome": 1 },
-      "comment": "Initial perturbation that seeds the B chemical"
+      "type": "glslTOP",
+      "comment": "Generates the Gray-Scott initial state: A=1 everywhere with sparse organic blobs of B"
     },
     {
       "name": "feedback1",
@@ -36,10 +35,56 @@
       "param": "top",
       "value": "glsl1",
       "description": "feedbackTOP samples glsl1 (the simulation output)."
+    },
+    {
+      "name": "seed_resmode",
+      "node": "seed1",
+      "param": "outputresolution",
+      "value": "custom",
+      "description": "The seed GLSL TOP has no input, so it needs an explicit resolution; it propagates through the feedback loop to size the whole simulation."
+    },
+    { "name": "seed_resmult", "node": "seed1", "param": "resmult", "value": 0 },
+    {
+      "name": "seed_resw",
+      "node": "seed1",
+      "param": "resolutionw",
+      "value": 256,
+      "label": "Resolution",
+      "description": "Simulation grid width."
+    },
+    {
+      "name": "seed_resh",
+      "node": "seed1",
+      "param": "resolutionh",
+      "value": 256,
+      "description": "Simulation grid height."
+    }
+  ],
+  "glsl_uniforms": [
+    {
+      "node": "glsl1",
+      "name": "uFeed",
+      "kind": "const",
+      "value": 0.055,
+      "label": "Feed Rate",
+      "min": 0.0,
+      "max": 0.1,
+      "description": "Gray-Scott feed rate — how fast chemical A is replenished. Lower values give sparser patterns."
+    },
+    {
+      "node": "glsl1",
+      "name": "uKill",
+      "kind": "const",
+      "value": 0.062,
+      "label": "Kill Rate",
+      "min": 0.0,
+      "max": 0.1,
+      "description": "Gray-Scott kill rate — how fast chemical B is removed. Tune alongside Feed Rate to shift between spots, stripes and mazes."
     }
   ],
   "glsl_code": {
-    "glsl1": "out vec4 fragColor;\n\nvec2 sampleAB(vec2 uv) { return texture(sTD2DInputs[0], uv).rg; }\n\nvoid main()\n{\n    vec2 uv = vUV.st;\n    vec2 texel = uTD2DInfos[0].res.xy;\n    vec2 c = sampleAB(uv);\n    float a = c.r;\n    float b = c.g;\n\n    vec2 lap = vec2(0.0);\n    lap += sampleAB(uv + texel * vec2(-1.0, 0.0)) * 0.2;\n    lap += sampleAB(uv + texel * vec2( 1.0, 0.0)) * 0.2;\n    lap += sampleAB(uv + texel * vec2( 0.0,-1.0)) * 0.2;\n    lap += sampleAB(uv + texel * vec2( 0.0, 1.0)) * 0.2;\n    lap += sampleAB(uv + texel * vec2(-1.0,-1.0)) * 0.05;\n    lap += sampleAB(uv + texel * vec2( 1.0,-1.0)) * 0.05;\n    lap += sampleAB(uv + texel * vec2(-1.0, 1.0)) * 0.05;\n    lap += sampleAB(uv + texel * vec2( 1.0, 1.0)) * 0.05;\n    lap -= c;\n\n    float feed = 0.055;\n    float kill = 0.062;\n    float reaction = a * b * b;\n    float da = 1.0 * lap.r - reaction + feed * (1.0 - a);\n    float db = 0.5 * lap.g + reaction - (kill + feed) * b;\n\n    float a2 = clamp(a + da, 0.0, 1.0);\n    float b2 = clamp(b + db, 0.0, 1.0);\n    fragColor = TDOutputSwizzle(vec4(a2, b2, 0.0, 1.0));\n}\n"
+    "seed1": "out vec4 fragColor;\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }\nfloat vnoise(vec2 p){\n    vec2 i = floor(p); vec2 f = fract(p);\n    f = f*f*(3.0-2.0*f);\n    float a = hash(i);\n    float b = hash(i+vec2(1.0,0.0));\n    float c = hash(i+vec2(0.0,1.0));\n    float d = hash(i+vec2(1.0,1.0));\n    return mix(mix(a,b,f.x), mix(c,d,f.x), f.y);\n}\nvoid main(){\n    vec2 uv = vUV.st;\n    float n = vnoise(uv * 14.0);\n    float b = smoothstep(0.62, 0.70, n);\n    fragColor = TDOutputSwizzle(vec4(1.0, b, 0.0, 1.0));\n}\n",
+    "glsl1": "out vec4 fragColor;\n\nuniform float uFeed;\nuniform float uKill;\n\nvec2 sampleAB(vec2 uv) { return texture(sTD2DInputs[0], uv).rg; }\n\nvoid main()\n{\n    vec2 uv = vUV.st;\n    vec2 texel = uTD2DInfos[0].res.xy;\n    vec2 c = sampleAB(uv);\n    float a = c.r;\n    float b = c.g;\n\n    vec2 lap = vec2(0.0);\n    lap += sampleAB(uv + texel * vec2(-1.0, 0.0)) * 0.2;\n    lap += sampleAB(uv + texel * vec2( 1.0, 0.0)) * 0.2;\n    lap += sampleAB(uv + texel * vec2( 0.0,-1.0)) * 0.2;\n    lap += sampleAB(uv + texel * vec2( 0.0, 1.0)) * 0.2;\n    lap += sampleAB(uv + texel * vec2(-1.0,-1.0)) * 0.05;\n    lap += sampleAB(uv + texel * vec2( 1.0,-1.0)) * 0.05;\n    lap += sampleAB(uv + texel * vec2(-1.0, 1.0)) * 0.05;\n    lap += sampleAB(uv + texel * vec2( 1.0, 1.0)) * 0.05;\n    lap -= c;\n\n    float reaction = a * b * b;\n    float da = 1.0 * lap.r - reaction + uFeed * (1.0 - a);\n    float db = 0.5 * lap.g + reaction - (uKill + uFeed) * b;\n\n    float a2 = clamp(a + da, 0.0, 1.0);\n    float b2 = clamp(b + db, 0.0, 1.0);\n    fragColor = TDOutputSwizzle(vec4(a2, b2, 0.0, 1.0));\n}\n"
   },
   "preview_description": "Evolving coral / fingerprint-like organic patterns growing and dividing across the frame."
 }
