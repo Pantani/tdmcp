@@ -55,7 +55,7 @@ TouchDesigner has one of the steepest learning curves in creative software. Curr
 │  │  ├── create_data_visualization                          │ │
 │  │  ├── apply_post_processing                              │ │
 │  │  ├── setup_output                                       │ │
-│  │  └── describe_project (natural language → plan)         │ │
+│  │  └── plan_visual (natural language → plan)              │ │
 │  └─────────────────────────────────────────────────────────┘ │
 │  ┌─────────────────────────────────────────────────────────┐ │
 │  │  LAYER 2: Mid-Level Tools (network building blocks)     │ │

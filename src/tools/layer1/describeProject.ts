@@ -62,7 +62,7 @@ export function describeProjectImpl(ctx: ToolContext, args: DescribeProjectArgs)
 
 export const registerDescribeProject: ToolRegistrar = (server, ctx) => {
   server.registerTool(
-    "describe_project",
+    "plan_visual",
     {
       title: "Plan a visual from a description",
       description:

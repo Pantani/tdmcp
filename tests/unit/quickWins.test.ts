@@ -45,13 +45,13 @@ describe("quick-win offline tools", () => {
     expect(textOf(getModuleHelpImpl(ctx, { name: "App" })).length).toBeGreaterThan(10);
   });
 
-  it("describe_project classifies a feedback description", () => {
+  it("plan_visual classifies a feedback description", () => {
     expect(
       textOf(describeProjectImpl(ctx, { description: "a feedback tunnel from noise" })),
     ).toContain("create_feedback_network");
   });
 
-  it("describe_project maps reaction-diffusion to its recipe", () => {
+  it("plan_visual maps reaction-diffusion to its recipe", () => {
     expect(
       textOf(describeProjectImpl(ctx, { description: "a reaction diffusion simulation" })),
     ).toContain("reaction_diffusion");

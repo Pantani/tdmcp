@@ -255,7 +255,7 @@ return a friendly "not reachable" message instead of crashing.
 **Artist tools** (describe the result, get a whole network):
 `create_visual_system`, `create_feedback_network`, `create_generative_art`,
 `create_audio_reactive`, `create_particle_system`, `create_data_visualization`,
-`apply_post_processing`, `setup_output`, `get_preview`, `describe_project`.
+`apply_post_processing`, `setup_output`, `get_preview`, `plan_visual`.
 
 **Building blocks**: `create_node_chain`, `connect_nodes`, `create_glsl_shader`,
 `create_python_script`, `set_parameters_batch`, `create_container`,

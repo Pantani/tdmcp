@@ -40,7 +40,7 @@ describe("integration: Layer 1 artist tools over MCP", () => {
         "get_td_performance",
         "duplicate_network",
         "create_data_visualization",
-        "describe_project",
+        "plan_visual",
       ]),
     );
     expect(tools.length).toBeGreaterThanOrEqual(31);
