@@ -33,7 +33,7 @@ Textport:
 from mcp import install; install.run()
 ```
 
-**C. From the terminal.** `npx tdmcp install-bridge` (or
+**C. From the terminal.** `npx @dpantani/tdmcp install-bridge` (or
 `node dist/index.js install-bridge` from a clone) copies the bridge to
 `~/tdmcp-bridge` and prints exactly what to paste in the Textport.
 
