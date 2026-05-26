@@ -92,7 +92,10 @@ async function addGlslEffect(
 export async function applyPostProcessingImpl(ctx: ToolContext, args: ApplyPostProcessingArgs) {
   return runBuild(async () => {
     const builder = await createSystemContainer(ctx, args.parent_path, "post_fx");
-    let previous = args.source_path;
+    // Wires can't cross COMPs, so pull the external source in via a Select TOP (references by path).
+    const source = await builder.add("selectTOP", "source");
+    await builder.setParams(source, { top: args.source_path });
+    let previous = source;
     let applied = 0;
 
     for (let i = 0; i < args.effects.length; i++) {

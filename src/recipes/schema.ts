@@ -30,22 +30,28 @@ export type RecipeParameter = z.infer<typeof RecipeParameterSchema>;
 
 /**
  * A uniform exposed by a GLSL TOP. On the GLSL TOP these live in *parameter
- * sequences* (the "Vectors" page), so they cannot be set like a normal parameter —
- * the block count (`op.seq.<kind>.numBlocks`) has to be raised first, after which the
- * per-block `<kind><i>name`/value sub-parameters exist. `buildFromRecipe` handles
- * that translation; recipe authors just declare the uniform here.
+ * sequences*, not normal parameters, so they cannot be set the usual way: the block
+ * count (`op.seq.<seq>.numBlocks`) has to be raised first, after which the per-block
+ * name/value sub-parameters exist. `float`/`vec` uniforms bind through the "Vectors"
+ * page (the `vec` sequence); `color` binds through the "Colors" page (the `color`
+ * sequence). The "Constants" page does NOT feed a runtime `uniform float`, so it is
+ * not used here. `buildFromRecipe` handles the translation; authors just declare the
+ * uniform.
  */
 export const RecipeGlslUniformSchema = z.object({
   node: z.string().describe("Recipe node name of the GLSL TOP that declares the uniform."),
   name: z.string().describe("Uniform name as referenced in the shader, e.g. 'uFeed'."),
   kind: z
-    .enum(["const", "vec", "color"])
-    .default("const")
-    .describe("GLSL TOP uniform kind: const (float), vec (vec4), color (rgba)."),
+    .enum(["float", "vec", "color"])
+    .default("float")
+    .describe(
+      "Uniform kind: float (uniform float), vec (uniform vec2/3/4), color (rgba). " +
+        "float/vec use the Vectors page; color uses the Colors page.",
+    ),
   value: z
     .union([z.number(), z.array(z.number())])
     .optional()
-    .describe("Initial value: a number for const, or an array for vec/color components."),
+    .describe("Initial value: a number for float, or an array of components for vec/color."),
   label: z.string().optional(),
   min: z.number().optional(),
   max: z.number().optional(),
