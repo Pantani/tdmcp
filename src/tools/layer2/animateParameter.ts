@@ -23,7 +23,7 @@ export const animateParameterSchema = z.object({
   waveform: z
     .enum(["sine", "triangle", "ramp", "square", "pulse", "random"])
     .default("sine")
-    .describe("Oscillator shape. 'sine'/'triangle' sweep symmetrically between min and max."),
+    .describe("Oscillator shape. Every waveform sweeps the full min–max range."),
   min: z.coerce.number().default(0).describe("Low end of the value sweep."),
   max: z.coerce.number().default(1).describe("High end of the value sweep."),
   period_seconds: z.coerce
@@ -105,9 +105,16 @@ export function buildAnimateScript(payload: object): string {
   return buildPayloadScript(ANIMATE_SCRIPT, payload);
 }
 
+// lfoCHOP wave shapes are not uniformly bipolar: sin/tri/square swing [-1, 1],
+// but ramp/pulse/random(normal) output [0, 1] (verified live, build 2025.32820).
+// amp/offset must branch on that, else unipolar waves only sweep [midpoint, max].
+const BIPOLAR_WAVEFORMS = new Set(["sine", "triangle", "square"]);
+
 export async function animateParameterImpl(ctx: ToolContext, args: AnimateParameterArgs) {
-  const amp = (args.max - args.min) / 2;
-  const offset = (args.max + args.min) / 2;
+  const span = args.max - args.min;
+  const bipolar = BIPOLAR_WAVEFORMS.has(args.waveform);
+  const amp = bipolar ? span / 2 : span;
+  const offset = bipolar ? (args.max + args.min) / 2 : args.min;
   const frequency = 1 / args.period_seconds;
   return guardTd(
     async () => {

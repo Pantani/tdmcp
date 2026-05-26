@@ -74,6 +74,31 @@ def _check_auth(request):
         raise PermissionError("Unauthorized: missing or invalid bearer token.")
 
 
+_LOOPBACK_HOSTS = ("127.0.0.1", "localhost", "::1")
+
+
+def _check_origin(request):
+    """Reject browser-originated cross-origin requests (CSRF / DNS-rebinding).
+
+    The Node MCP server — the only legitimate caller — never sends an `Origin`
+    header. Browsers always attach one on cross-site requests, so a request
+    bearing a non-loopback `Origin` can only be a web page trying to drive the
+    bridge (e.g. a malicious site POSTing to http://127.0.0.1:9980/api/exec).
+    Under the default zero-auth + exec-on config that would be drive-by remote
+    code execution, so refuse it. Loopback origins stay allowed (a locally
+    served tool page still works) and same-origin / no-Origin callers are
+    unaffected. Holds even against a direct caller and independent of the
+    optional bearer token, mirroring the Node HTTP transport's DNS-rebinding
+    guard on its own port.
+    """
+    origin = _find_header(request, "origin")
+    if not origin:
+        return
+    host = urlparse(origin).hostname
+    if host not in _LOOPBACK_HOSTS:
+        raise PermissionError("Forbidden: cross-origin request rejected (origin %r)." % origin)
+
+
 def _qs(query, key, default=None):
     values = query.get(key)
     return values[0] if values else default
@@ -228,6 +253,7 @@ def _emit_event(webserver, method, path, data):
 
 def handle(request, response, webserver=None):
     try:
+        _check_origin(request)
         _check_auth(request)
         method = (request.get("method") or "GET").upper()
         parsed = urlparse(request.get("uri", "/"))

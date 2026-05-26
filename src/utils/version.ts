@@ -16,7 +16,9 @@ export function getVersion(): string {
     try {
       const raw = readFileSync(resolve(dir, "package.json"), "utf8");
       const pkg = JSON.parse(raw) as { name?: string; version?: string };
-      if (pkg.name === "tdmcp" && pkg.version) {
+      // The published name is scoped (`@dpantani/tdmcp`); accept the legacy
+      // unscoped name too so a rename can't silently drop us to the fallback.
+      if (pkg.version && (pkg.name === "@dpantani/tdmcp" || pkg.name === "tdmcp")) {
         cached = pkg.version;
         return cached;
       }

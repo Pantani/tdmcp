@@ -69,24 +69,47 @@ export async function createGlslShaderImpl(ctx: ToolContext, args: CreateGlslSha
       await ctx.client.executePythonScript(wiring.join("\n"), false);
 
       if (args.uniforms && args.uniforms.length > 0) {
-        const names = JSON.stringify(args.uniforms.map((u) => u.name));
-        const values = JSON.stringify(args.uniforms.map((u) => u.default_value ?? ""));
-        const bind = [
-          `g = op(${q(glsl.path)})`,
-          `for i, nm in enumerate(${names}):`,
-          "    try: setattr(g.par, 'uniname' + str(i), nm)",
-          "    except Exception: pass",
-          `for i, v in enumerate(${values}):`,
-          "    try:",
-          "        if v != '': setattr(g.par, 'value' + str(i) + 'x', v)",
-          "    except Exception: pass",
-        ].join("\n");
-        try {
-          await ctx.client.executePythonScript(bind, false);
-        } catch {
+        // sampler2D uniforms bind to TOP inputs (the Samplers page), not numeric
+        // values, so they can't be auto-set here — flag them for manual wiring.
+        const samplers = args.uniforms.filter((u) => u.type === "sampler2D");
+        if (samplers.length > 0) {
           warnings.push(
-            "Could not auto-bind uniforms; declare them in the shader and set them on the GLSL TOP manually.",
+            `sampler2D uniform(s) ${samplers.map((u) => u.name).join(", ")} must be wired manually (GLSL TOP Samplers page / TOP inputs).`,
           );
+        }
+        // Numeric uniforms bind through the GLSL TOP "Vectors" sequence
+        // (vec<i>name + vec<i>value{x,y,z,w}). The flat uniname<i>/value<i>x params
+        // the old path targeted don't exist on the GLSL TOP, so it silently
+        // no-opped multi-component uniforms (only the X channel ever stuck).
+        const specs = args.uniforms
+          .filter((u) => u.type !== "sampler2D")
+          .map((u) => ({
+            name: u.name,
+            comps: (u.default_value ?? "")
+              .split(",")
+              .map((s) => Number(s.trim()))
+              .filter((n) => Number.isFinite(n))
+              .slice(0, 4),
+          }))
+          .filter((s) => s.comps.length > 0);
+        if (specs.length > 0) {
+          const bind = [
+            `g = op(${q(glsl.path)})`,
+            `_specs = ${JSON.stringify(specs)}`,
+            "g.seq.vec.numBlocks = max(g.seq.vec.numBlocks, len(_specs))",
+            "for i, s in enumerate(_specs):",
+            "    setattr(g.par, 'vec%dname' % i, s['name'])",
+            "    for axis, val in zip('xyzw', s['comps']):",
+            "        try: setattr(g.par, 'vec%dvalue%s' % (i, axis), val)",
+            "        except Exception: pass",
+          ].join("\n");
+          try {
+            await ctx.client.executePythonScript(bind, false);
+          } catch {
+            warnings.push(
+              "Could not auto-bind uniforms; declare them in the shader and set them on the GLSL TOP's Vectors page manually.",
+            );
+          }
         }
       }
 
