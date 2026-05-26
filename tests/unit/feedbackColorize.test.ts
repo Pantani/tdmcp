@@ -59,6 +59,7 @@ describe("feedback network colorize", () => {
       transformations: ["blur"],
       feedback_gain: 0.9,
       colors: ["#1840d0", "#d020a0"],
+      expose_controls: false,
       parent_path: "/project1",
     });
     expect(bodies.some((b) => b.type === "glslTOP" && b.name === "colorize")).toBe(true);
@@ -70,9 +71,44 @@ describe("feedback network colorize", () => {
       seed_type: "noise",
       transformations: ["blur"],
       feedback_gain: 0.9,
+      expose_controls: false,
       parent_path: "/project1",
     });
     expect(bodies.some((b) => b.name === "colorize")).toBe(false);
+  });
+
+  it("exposes a Feedback control bound to the gain's brightness1 when expose_controls is on", async () => {
+    const scripts = captureExecScripts();
+    await createFeedbackNetworkImpl(makeCtx(), {
+      seed_type: "noise",
+      transformations: ["blur"],
+      feedback_gain: 0.9,
+      expose_controls: true,
+      parent_path: "/project1",
+    });
+    // The control panel runs as a single Python pass that appends a custom page.
+    const panelScript = scripts.find((s) => s.includes("appendCustomPage"));
+    expect(panelScript).toBeDefined();
+    const b64 = /b64decode\("([^"]+)"\)/.exec(panelScript ?? "")?.[1];
+    if (b64 === undefined) throw new Error("panel script did not embed a base64 payload");
+    const payload = JSON.parse(Buffer.from(b64, "base64").toString("utf8")) as {
+      controls: Array<{ name: string; bind_to?: string[] }>;
+    };
+    const feedback = payload.controls.find((c) => c.name === "Feedback");
+    expect(feedback).toBeDefined();
+    expect(feedback?.bind_to?.[0]).toMatch(/\.brightness1$/);
+  });
+
+  it("skips the control panel when expose_controls is off", async () => {
+    const scripts = captureExecScripts();
+    await createFeedbackNetworkImpl(makeCtx(), {
+      seed_type: "noise",
+      transformations: ["blur"],
+      feedback_gain: 0.9,
+      expose_controls: false,
+      parent_path: "/project1",
+    });
+    expect(scripts.some((s) => s.includes("appendCustomPage"))).toBe(false);
   });
 
   it("derives a palette from color words in a create_visual_system description", async () => {

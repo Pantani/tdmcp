@@ -146,6 +146,7 @@ describe("layer 1 tool handlers", () => {
         forces: ["noise", "gravity"],
         render_style: "sprites",
         lifetime: 3,
+        expose_controls: false,
         parent_path: "/project1",
       });
       expect(result.isError).toBeFalsy();
@@ -162,6 +163,7 @@ describe("layer 1 tool handlers", () => {
         forces: ["noise", "gravity"],
         render_style: "sprites",
         lifetime: 3,
+        expose_controls: false,
         parent_path: "/project1",
       });
       // A fresh geometryCOMP ships with a default torus1 that would render over the

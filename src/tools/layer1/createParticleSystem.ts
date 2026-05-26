@@ -198,11 +198,7 @@ export async function createParticleSystemImpl(ctx: ToolContext, args: CreatePar
             min: 0,
             max: 4,
             default: dynamics.turb,
-            bind_to: [
-              `${particle.path}.turbx`,
-              `${particle.path}.turby`,
-              `${particle.path}.turbz`,
-            ],
+            bind_to: [`${particle.path}.turbx`, `${particle.path}.turby`, `${particle.path}.turbz`],
           },
           {
             name: "Gravity",
