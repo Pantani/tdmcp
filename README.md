@@ -249,6 +249,14 @@ return a friendly "not reachable" message instead of crashing.
 `duplicate_network`, `arrange_network` (tidy a messy network into a readable
 left→right layout).
 
+**Live control, animation & I/O** (make a generated system playable):
+`create_control_panel` (add knobs/sliders/toggles to a COMP and bind them to node
+parameters), `manage_presets` (store/recall/list named snapshots of those controls),
+`animate_parameter` (drive parameters with an LFO over time — no manual keyframing),
+`create_external_io` (OSC/MIDI input mapped straight to parameters, DMX/Art-Net out
+for lighting, NDI/Syphon-Spout video in), and `manage_component` (save/load reusable
+`.tox` components).
+
 **Atomic operations**: `create_td_node`, `delete_td_node`,
 `update_td_node_parameters`, `execute_python_script`, `exec_node_method`.
 

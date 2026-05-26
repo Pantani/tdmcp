@@ -4,10 +4,12 @@ import { registerArrangeNetwork } from "./arrangeNetwork.js";
 import { registerConnectNodes } from "./connectNodes.js";
 import { registerCreateContainer } from "./createContainer.js";
 import { registerCreateControlPanel } from "./createControlPanel.js";
+import { registerCreateExternalIo } from "./createExternalIo.js";
 import { registerCreateGlslShader } from "./createGlslShader.js";
 import { registerCreateNodeChain } from "./createNodeChain.js";
 import { registerCreatePythonScript } from "./createPythonScript.js";
 import { registerDuplicateNetwork } from "./duplicateNetwork.js";
+import { registerManageComponent } from "./manageComponent.js";
 import { registerManagePresets } from "./managePresets.js";
 import { registerSetParametersBatch } from "./setParametersBatch.js";
 
@@ -21,6 +23,8 @@ export const layer2Registrars: ToolRegistrar[] = [
   registerCreateControlPanel,
   registerAnimateParameter,
   registerManagePresets,
+  registerManageComponent,
+  registerCreateExternalIo,
   registerDuplicateNetwork,
   registerArrangeNetwork,
 ];

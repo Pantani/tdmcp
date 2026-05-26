@@ -196,10 +196,10 @@ describe("layer 2 tool handlers", () => {
     expect(textOf(result)).toContain("/project1/builder");
     // Resolves the callbacks DAT via the script DAT's `callbacks` parameter,
     // with a fallback to the `<name>_callbacks` sibling.
-    expect(execScript).toContain("_op = op(\"/project1/builder\")");
+    expect(execScript).toContain('_op = op("/project1/builder")');
     expect(execScript).toContain("_op.par.callbacks.eval()");
     expect(execScript).toContain("_op.name + '_callbacks'");
-    expect(execScript).toContain("_cb.text = \"def onCook(dat): pass\"");
+    expect(execScript).toContain('_cb.text = "def onCook(dat): pass"');
     // Must NOT assign to the scriptDAT's own read-only .text.
     expect(execScript).not.toContain('op("/project1/builder").text =');
   });
