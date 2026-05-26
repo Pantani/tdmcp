@@ -155,12 +155,17 @@ export async function createGenerativeArtImpl(ctx: ToolContext, args: CreateGene
     if (recipeId) {
       const recipe = ctx.recipes.get(recipeId);
       if (recipe) {
-        const { builder, outputPath } = await buildFromRecipe(ctx, recipe, args.parent_path);
+        const { builder, outputPath, controls } = await buildFromRecipe(
+          ctx,
+          recipe,
+          args.parent_path,
+        );
         return finalize(ctx, {
           summary: `Created "${recipe.name}" generative system.`,
           builder,
           outputPath,
           recipeId,
+          controls,
           extra: { technique: args.technique, color_palette: args.color_palette },
         });
       }

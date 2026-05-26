@@ -207,6 +207,8 @@ export async function createSystemContainer(
 export interface RecipeBuildResult {
   builder: NetworkBuilder;
   outputPath?: string;
+  /** Controls to auto-expose, with `bind_to` already resolved to real node paths. */
+  controls?: ControlSpec[];
 }
 
 /** Instantiates a recipe inside a new container under `parentPath`. */
@@ -327,7 +329,21 @@ export async function buildFromRecipe(
   const outNode =
     recipe.nodes.find((n) => /^out/i.test(n.name)) ?? recipe.nodes[recipe.nodes.length - 1];
   const outputPath = outNode ? builder.pathOf(outNode.name) : undefined;
-  return { builder, outputPath };
+
+  // Resolve each control's bind targets from recipe node *names* to the real created
+  // paths, so the panel can bind them. An unresolved name is left as-is (it surfaces as
+  // a warning when the panel runs).
+  const controls: ControlSpec[] = recipe.controls.map((control) => ({
+    ...control,
+    bind_to: control.bind_to?.map((target) => {
+      const dot = target.lastIndexOf(".");
+      if (dot <= 0) return target;
+      const path = builder.pathOf(target.slice(0, dot));
+      return path ? `${path}.${target.slice(dot + 1)}` : target;
+    }),
+  }));
+
+  return { builder, outputPath, controls };
 }
 
 export interface FinalizeOptions {

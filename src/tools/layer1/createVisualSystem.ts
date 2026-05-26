@@ -163,13 +163,18 @@ export async function createVisualSystemImpl(ctx: ToolContext, args: CreateVisua
       const recipe = ctx.recipes.findByTags(significantTerms(args.description));
       if (recipe) {
         return runBuild(async () => {
-          const { builder, outputPath } = await buildFromRecipe(ctx, recipe, args.parent_path);
+          const { builder, outputPath, controls } = await buildFromRecipe(
+            ctx,
+            recipe,
+            args.parent_path,
+          );
           return withNote(
             await finalize(ctx, {
               summary: `Built "${recipe.name}" from a matching recipe.`,
               builder,
               outputPath,
               recipeId: recipe.id,
+              controls,
             }),
             note,
           );

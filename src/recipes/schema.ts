@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { controlSchema } from "../tools/layer2/createControlPanel.js";
 
 export const RecipeNodeSchema = z.object({
   name: z.string().describe("Unique node name within the recipe (used for wiring)."),
@@ -83,6 +84,13 @@ export const RecipeSchema = z.object({
   glsl_uniforms: z.array(RecipeGlslUniformSchema).default([]),
   glsl_code: z.record(z.string(), z.string()).optional(),
   python_code: z.record(z.string(), z.string()).optional(),
+  /**
+   * Live controls to auto-expose on the system container: custom parameters (knobs/
+   * sliders/toggles) bound to node parameters so the built system is immediately
+   * playable. Each control's `bind_to` uses recipe node *names* ("nodeName.parName");
+   * buildFromRecipe rewrites them to the real created paths.
+   */
+  controls: z.array(controlSchema).default([]),
   preview_description: z.string().default(""),
 });
 export type Recipe = z.infer<typeof RecipeSchema>;
