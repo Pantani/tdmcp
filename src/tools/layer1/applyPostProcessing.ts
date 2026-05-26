@@ -5,7 +5,13 @@ import { createSystemContainer, finalize, type NetworkBuilder, runBuild } from "
 const q = (value: string): string => JSON.stringify(value);
 
 const DIRECT_EFFECTS: Record<string, { type: string; parameters?: Record<string, unknown> }> = {
-  bloom: { type: "bloomTOP" },
+  // bloomTOP defaults bloom everything above 0.01 and adds it back, which blows bright
+  // sources out to solid white. Raise the threshold so only highlights bloom, and soften the
+  // intensity for a tasteful glow that preserves the underlying image.
+  bloom: {
+    type: "bloomTOP",
+    parameters: { bloomthreshold: 0.8, bloomintensity: 0.6, bloomfill: 0.5 },
+  },
   blur: { type: "blurTOP", parameters: { size: 4 } },
   edge_detect: { type: "edgeTOP" },
   sharpen: { type: "sharpenTOP" },

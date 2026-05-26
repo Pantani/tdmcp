@@ -70,7 +70,108 @@
       "min": 0,
       "max": 2,
       "label": "Terrain Height"
+    },
+    {
+      "name": "sky_r",
+      "node": "render1",
+      "param": "bgcolorr",
+      "value": 0.06,
+      "description": "Background sky red — deep indigo atmosphere instead of empty white void."
+    },
+    {
+      "name": "sky_g",
+      "node": "render1",
+      "param": "bgcolorg",
+      "value": 0.07,
+      "description": "Background sky green."
+    },
+    {
+      "name": "sky_b",
+      "node": "render1",
+      "param": "bgcolorb",
+      "value": 0.14,
+      "description": "Background sky blue."
+    },
+    {
+      "name": "sky_a",
+      "node": "render1",
+      "param": "bgcolora",
+      "value": 1,
+      "description": "Background alpha = 1 so the sky is opaque (not transparent/white)."
+    },
+    {
+      "name": "terrain_diffuse_r",
+      "node": "phong1",
+      "param": "diffr",
+      "value": 0.3,
+      "description": "Terrain diffuse red — mossy green so the landscape is coloured, not default grey."
+    },
+    {
+      "name": "terrain_diffuse_g",
+      "node": "phong1",
+      "param": "diffg",
+      "value": 0.58,
+      "description": "Terrain diffuse green."
+    },
+    {
+      "name": "terrain_diffuse_b",
+      "node": "phong1",
+      "param": "diffb",
+      "value": 0.42,
+      "description": "Terrain diffuse blue."
+    },
+    {
+      "name": "terrain_ambient_r",
+      "node": "phong1",
+      "param": "ambr",
+      "value": 0.07,
+      "description": "Ambient red — cool indigo fill matching the sky so shadow sides read as atmospheric depth, not black."
+    },
+    {
+      "name": "terrain_ambient_g",
+      "node": "phong1",
+      "param": "ambg",
+      "value": 0.11,
+      "description": "Ambient green."
+    },
+    {
+      "name": "terrain_ambient_b",
+      "node": "phong1",
+      "param": "ambb",
+      "value": 0.2,
+      "description": "Ambient blue (indigo fill)."
+    },
+    {
+      "name": "terrain_specular_r",
+      "node": "phong1",
+      "param": "specr",
+      "value": 0.7,
+      "description": "Specular red — warm sun glint catching the hill tops."
+    },
+    {
+      "name": "terrain_specular_g",
+      "node": "phong1",
+      "param": "specg",
+      "value": 0.62,
+      "description": "Specular green."
+    },
+    {
+      "name": "terrain_specular_b",
+      "node": "phong1",
+      "param": "specb",
+      "value": 0.4,
+      "description": "Specular blue (warm)."
+    },
+    {
+      "name": "terrain_shininess",
+      "node": "phong1",
+      "param": "shininess",
+      "value": 30,
+      "min": 0,
+      "max": 100,
+      "label": "Highlight Tightness",
+      "description": "Phong shininess — tighter sun highlight on the ridges."
     }
   ],
-  "preview_description": "A softly lit rolling 3D terrain of noise-driven hills viewed from a slightly elevated angle."
+  "preview_description": "A green-teal rolling 3D terrain, sun-lit with warm specular highlights on the ridges and cool indigo ambient in the valleys, set against a deep indigo atmospheric sky."
 }

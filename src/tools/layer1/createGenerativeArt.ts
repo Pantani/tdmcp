@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { ControlSpec } from "../layer2/createControlPanel.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import {
   buildFromRecipe,
@@ -108,6 +109,10 @@ export const createGenerativeArtSchema = z.object({
     .string()
     .optional()
     .describe("Fragment shader (only for technique 'custom_glsl')."),
+  expose_controls: z
+    .boolean()
+    .default(true)
+    .describe("Expose a live 'Speed' knob (evolution speed) on the system container."),
   parent_path: z.string().default("/project1"),
 });
 type CreateGenerativeArtArgs = z.infer<typeof createGenerativeArtSchema>;
@@ -128,8 +133,11 @@ async function buildGlslGenerative(
   // Bind a `uTime` uniform to absTime so time-driven shaders animate. The uniform lives in
   // the GLSL TOP's "Vectors" sequence, whose block count has no structured setter; raise it
   // via numBlocks, then set the block name and an expression on its first component.
+  // uTime advances with absTime; a defensive `Speed` lookup lets an auto-exposed control
+  // (parent().par.Speed) drive evolution speed live, and falls back to the build-time constant
+  // when no control is present — so the expression never errors.
   await builder.python(
-    `_g = op(${q(glsl)})\n_g.seq.vec.numBlocks = max(_g.seq.vec.numBlocks, 1)\n_g.par.vec0name = 'uTime'\n_g.par.vec0valuex.expr = ${q(`absTime.seconds * ${speed}`)}`,
+    `_g = op(${q(glsl)})\n_g.seq.vec.numBlocks = max(_g.seq.vec.numBlocks, 1)\n_g.par.vec0name = 'uTime'\n_g.par.vec0valuex.expr = ${q(`absTime.seconds * (parent().par.Speed.eval() if hasattr(parent().par, 'Speed') else ${speed})`)}`,
   );
   const out = await builder.add("nullTOP", "out1");
   await builder.connect(glsl, out);
@@ -138,6 +146,11 @@ async function buildGlslGenerative(
 
 export async function createGenerativeArtImpl(ctx: ToolContext, args: CreateGenerativeArtArgs) {
   return runBuild(async () => {
+    // A single "Speed" knob drives evolution speed (the time-driving expressions reference it).
+    // Recipe-built techniques don't use that expression, so they don't get the control.
+    const speedControls: ControlSpec[] = args.expose_controls
+      ? [{ name: "Speed", type: "float", min: 0, max: 4, default: args.evolution_speed }]
+      : [];
     const recipeId = RECIPE_FOR.get(args.technique);
     if (recipeId) {
       const recipe = ctx.recipes.get(recipeId);
@@ -169,6 +182,7 @@ export async function createGenerativeArtImpl(ctx: ToolContext, args: CreateGene
         summary: "Created a custom GLSL generative system.",
         builder,
         outputPath,
+        controls: speedControls,
         extra: { technique: args.technique },
       });
     }
@@ -188,6 +202,7 @@ export async function createGenerativeArtImpl(ctx: ToolContext, args: CreateGene
         summary: `Created a "${args.technique}" generative system (GLSL).`,
         builder,
         outputPath,
+        controls: speedControls,
         extra: { technique: args.technique, color_palette: args.color_palette },
       });
     }
@@ -203,7 +218,7 @@ export async function createGenerativeArtImpl(ctx: ToolContext, args: CreateGene
     await builder.connect(noise, level);
     await builder.connect(level, out);
     await builder.python(
-      `p = op(${q(noise)}).par.tz\np.expr = ${q(`absTime.seconds * ${args.evolution_speed}`)}`,
+      `p = op(${q(noise)}).par.tz\np.expr = ${q(`absTime.seconds * (parent().par.Speed.eval() if hasattr(parent().par, 'Speed') else ${args.evolution_speed})`)}`,
     );
     builder.warnings.push(
       `Technique "${args.technique}" is approximated with an animated-noise generator in this version.`,
@@ -212,6 +227,7 @@ export async function createGenerativeArtImpl(ctx: ToolContext, args: CreateGene
       summary: `Created an approximate "${args.technique}" generative system.`,
       builder,
       outputPath: out,
+      controls: speedControls,
       extra: { technique: args.technique, evolution_speed: args.evolution_speed },
     });
   });

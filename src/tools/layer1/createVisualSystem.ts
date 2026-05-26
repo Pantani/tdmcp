@@ -152,6 +152,7 @@ export async function createVisualSystemImpl(ctx: ToolContext, args: CreateVisua
         await createGenerativeArtImpl(ctx, {
           technique: kind,
           evolution_speed: 1.0,
+          expose_controls: true,
           parent_path: args.parent_path,
         }),
         note,
@@ -177,6 +178,7 @@ export async function createVisualSystemImpl(ctx: ToolContext, args: CreateVisua
         await createGenerativeArtImpl(ctx, {
           technique: "custom_glsl",
           evolution_speed: 1.0,
+          expose_controls: true,
           parent_path: args.parent_path,
         }),
         note,
