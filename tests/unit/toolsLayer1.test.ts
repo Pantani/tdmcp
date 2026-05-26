@@ -49,6 +49,7 @@ describe("layer 1 tool handlers", () => {
         visual_style: "glsl",
         frequency_bands: 8,
         beat_detection: true,
+        expose_controls: false,
         parent_path: "/project1",
       });
       expect(result.isError).toBeFalsy();
@@ -58,12 +59,40 @@ describe("layer 1 tool handlers", () => {
       expect(text).toContain("style: glsl");
     });
 
+    it("exposes a Sensitivity knob bound to the audio gain when expose_controls is on", async () => {
+      const scripts: string[] = [];
+      server.use(
+        http.post(`${TD_BASE}/api/exec`, async ({ request }) => {
+          scripts.push(((await request.json()) as { script: string }).script);
+          return HttpResponse.json({ ok: true, data: { result: null, stdout: "" } });
+        }),
+      );
+      await createAudioReactiveImpl(makeCtx(), {
+        audio_source: "microphone",
+        visual_style: "glsl",
+        frequency_bands: 8,
+        beat_detection: false,
+        expose_controls: true,
+        parent_path: "/project1",
+      });
+      const panel = scripts.find((s) => s.includes("appendCustomPage"));
+      expect(panel).toBeDefined();
+      const b64 = /b64decode\("([^"]+)"\)/.exec(panel ?? "")?.[1];
+      if (b64 === undefined) throw new Error("panel script did not embed a base64 payload");
+      const payload = JSON.parse(Buffer.from(b64, "base64").toString("utf8")) as {
+        controls: Array<{ name: string; bind_to?: string[] }>;
+      };
+      const sens = payload.controls.find((c) => c.name === "Sensitivity");
+      expect(sens?.bind_to?.[0]).toMatch(/sensitivity\.brightness1$/);
+    });
+
     it("builds a geometric audio-reactive system", async () => {
       const result = await createAudioReactiveImpl(makeCtx(), {
         audio_source: "microphone",
         visual_style: "geometric",
         frequency_bands: 8,
         beat_detection: true,
+        expose_controls: false,
         parent_path: "/project1",
       });
       expect(result.isError).toBeFalsy();
@@ -98,6 +127,7 @@ describe("layer 1 tool handlers", () => {
         visual_style: "glsl",
         frequency_bands: 8,
         beat_detection: true,
+        expose_controls: false,
         parent_path: "/project1",
       });
       const spectrum = bodies.find((b) => b.name === "spectrum");
@@ -118,6 +148,7 @@ describe("layer 1 tool handlers", () => {
         visual_style: "glsl",
         frequency_bands: bands,
         beat_detection: false,
+        expose_controls: false,
         parent_path: "/project1",
       });
       const spectrum = bodies.find((b) => b.name === "spectrum");
@@ -269,6 +300,7 @@ describe("layer 1 tool handlers", () => {
       const result = await createDataVisualizationImpl(makeCtx(), {
         data_source: "table",
         chart_style: "bars",
+        expose_controls: false,
         parent_path: "/project1",
       });
       expect(result.isError).toBeFalsy();

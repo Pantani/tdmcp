@@ -117,6 +117,7 @@ export async function createVisualSystemImpl(ctx: ToolContext, args: CreateVisua
           visual_style: pickAudioStyle(args.description),
           frequency_bands: 8,
           beat_detection: true,
+          expose_controls: true,
           parent_path: args.parent_path,
         }),
         note,

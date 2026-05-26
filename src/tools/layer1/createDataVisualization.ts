@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { ControlSpec } from "../layer2/createControlPanel.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { createSystemContainer, finalize, runBuild } from "./orchestration.js";
 
@@ -23,6 +24,10 @@ const SOURCE_TYPE = {
 export const createDataVisualizationSchema = z.object({
   data_source: z.enum(["table", "file", "chop"]).default("table"),
   chart_style: z.enum(["bars", "graph", "points"]).default("bars"),
+  expose_controls: z
+    .boolean()
+    .default(true)
+    .describe("Expose a live 'Scale' knob that amplifies the data values feeding the chart."),
   parent_path: z.string().default("/project1"),
 });
 type CreateDataVisualizationArgs = z.infer<typeof createDataVisualizationSchema>;
@@ -60,8 +65,12 @@ export async function createDataVisualizationImpl(
 
     const tex = await builder.add("choptoTOP", "data_tex");
     await builder.connect(chop, tex);
+    // A Scale gain on the data texture lets one knob amplify the values feeding the chart;
+    // brightness1 = 1 is a passthrough, so the default leaves the chart unchanged.
+    const scale = await builder.add("levelTOP", "scale", { brightness1: 1 });
+    await builder.connect(tex, scale);
 
-    let visual = tex;
+    let visual = scale;
     if (args.chart_style === "bars") {
       // Fixed canvas + RGBA. Left on "use input", the chart inherits the data texture's
       // tiny Nx1 mono resolution, collapsing the output to a grayscale speck.
@@ -75,7 +84,7 @@ export async function createDataVisualizationImpl(
       await builder.python(
         `op(${q(frag)}).text = ${q(BARS_SHADER)}\nop(${q(glsl)}).par.pixeldat = op(${q(frag)}).name`,
       );
-      await builder.connect(tex, glsl);
+      await builder.connect(scale, glsl);
       visual = glsl;
     } else {
       builder.warnings.push(
@@ -89,10 +98,24 @@ export async function createDataVisualizationImpl(
       "Wire your real data into the 'data' node — a placeholder source was created.",
     );
 
+    const controls: ControlSpec[] = args.expose_controls
+      ? [
+          {
+            name: "Scale",
+            type: "float",
+            min: 0,
+            max: 4,
+            default: 1,
+            bind_to: [`${scale}.brightness1`],
+          },
+        ]
+      : [];
+
     return finalize(ctx, {
       summary: `Created a data visualization (source: ${args.data_source}, style: ${args.chart_style}).`,
       builder,
       outputPath: out,
+      controls,
       extra: { data_source: args.data_source, chart_style: args.chart_style },
     });
   });

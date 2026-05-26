@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { ControlSpec } from "../layer2/createControlPanel.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { createSystemContainer, finalize, type NetworkBuilder, runBuild } from "./orchestration.js";
 
@@ -88,6 +89,10 @@ export const createAudioReactiveSchema = z.object({
       "Spectrum resolution: sets the Audio Spectrum CHOP output length (TouchDesigner clamps it to 128–4096 bins). Higher = finer spectrum.",
     ),
   beat_detection: z.boolean().default(true),
+  expose_controls: z
+    .boolean()
+    .default(true)
+    .describe("Expose a live 'Sensitivity' knob (how strongly the audio drives the visual)."),
   parent_path: z.string().default("/project1"),
 });
 type CreateAudioReactiveArgs = z.infer<typeof createAudioReactiveSchema>;
@@ -134,6 +139,11 @@ export async function createAudioReactiveImpl(ctx: ToolContext, args: CreateAudi
 
     const audioTex = await builder.add("choptoTOP", "audio_tex");
     await builder.connect(spectrum, audioTex);
+    // A Sensitivity gain on the spectrum texture lets one knob scale how strongly the audio
+    // drives every visual style — it multiplies the bins before the shaders' fixed *20 lift.
+    // brightness1 = 1 is a passthrough, so the default leaves the look unchanged.
+    const sensitivity = await builder.add("levelTOP", "sensitivity", { brightness1: 1 });
+    await builder.connect(audioTex, sensitivity);
 
     // Every style renders a GLSL spectrum visual: "glsl" is the classic horizontal bars;
     // geometric/particle/feedback/instancing each get their own shader (radial bars / dot
@@ -153,15 +163,29 @@ export async function createAudioReactiveImpl(ctx: ToolContext, args: CreateAudi
     await builder.python(
       `op(${q(frag)}).text = ${q(shader)}\nop(${q(visual)}).par.pixeldat = op(${q(frag)}).name`,
     );
-    await builder.connect(audioTex, visual);
+    await builder.connect(sensitivity, visual);
 
     const out = await builder.add("nullTOP", "out1");
     await builder.connect(visual, out);
+
+    const controls: ControlSpec[] = args.expose_controls
+      ? [
+          {
+            name: "Sensitivity",
+            type: "float",
+            min: 0,
+            max: 4,
+            default: 1,
+            bind_to: [`${sensitivity}.brightness1`],
+          },
+        ]
+      : [];
 
     return finalize(ctx, {
       summary: `Created an audio-reactive system (source: ${args.audio_source}, style: ${args.visual_style}, ${args.frequency_bands} bands).`,
       builder,
       outputPath: out,
+      controls,
       extra: {
         audio_source: args.audio_source,
         visual_style: args.visual_style,
