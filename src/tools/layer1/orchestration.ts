@@ -4,6 +4,7 @@ import { capturePreview } from "../../feedback/previewCapture.js";
 import type { Recipe, RecipeGlslUniform } from "../../recipes/schema.js";
 import { friendlyTdError } from "../../td-client/types.js";
 import { connectNodesViaBridge } from "../layer2/connectHelper.js";
+import { computeLayoutByParent, type LayoutEdge, layoutScript } from "../layout.js";
 import { errorResult } from "../result.js";
 import type { ToolContext } from "../types.js";
 
@@ -87,6 +88,9 @@ export class NetworkBuilder {
   readonly warnings: string[] = [];
   private readonly nameToPath = new Map<string, string>();
   private readonly pathToType = new Map<string, string>();
+  // Intended data-flow wires, recorded even when the physical connect fails or is
+  // satisfied via a source parameter, so auto-layout still reflects the flow.
+  private readonly edges: LayoutEdge[] = [];
 
   constructor(
     private readonly ctx: ToolContext,
@@ -122,6 +126,7 @@ export class NetworkBuilder {
   }
 
   async connect(fromPath: string, toPath: string, fromOutput = 0, toInput = 0): Promise<void> {
+    this.edges.push({ from: fromPath, to: toPath });
     // Conversion ops (choptoTOP, dattoCHOP, …) take their source via a parameter.
     const targetType = this.pathToType.get(toPath);
     const param = targetType ? converterSourceParam(targetType) : undefined;
@@ -149,6 +154,20 @@ export class NetworkBuilder {
       await this.ctx.client.executePythonScript(code, false);
     } catch (err) {
       this.warnings.push(`Python step failed: ${friendlyTdError(err)}`);
+    }
+  }
+
+  /** Arranges every created node left→right along the recorded data flow. */
+  async layout(): Promise<void> {
+    const positions = computeLayoutByParent(
+      this.created.map((c) => c.path),
+      this.edges,
+    );
+    if (Object.keys(positions).length === 0) return;
+    try {
+      await this.ctx.client.executePythonScript(layoutScript(positions), false);
+    } catch (err) {
+      this.warnings.push(`Auto-layout skipped: ${friendlyTdError(err)}`);
     }
   }
 }
@@ -312,6 +331,7 @@ export async function finalize(
   options: FinalizeOptions,
 ): Promise<CallToolResult> {
   const { builder } = options;
+  await builder.layout();
   const warnings = [...builder.warnings];
 
   let errors: Array<{ path: string; message: string }> = [];

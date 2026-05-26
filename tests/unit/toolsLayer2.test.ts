@@ -4,6 +4,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
 import { RecipeLibrary } from "../../src/recipes/loader.js";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
+import { arrangeNetworkImpl } from "../../src/tools/layer2/arrangeNetwork.js";
 import { connectNodesImpl } from "../../src/tools/layer2/connectNodes.js";
 import { createContainerImpl } from "../../src/tools/layer2/createContainer.js";
 import { createGlslShaderImpl } from "../../src/tools/layer2/createGlslShader.js";
@@ -122,5 +123,50 @@ describe("layer 2 tool handlers", () => {
       comp_type: "container",
     });
     expect(textOf(result)).toContain("/project1/viz");
+  });
+
+  it("arrange_network positions a network's nodes via exec", async () => {
+    let execScript = "";
+    server.use(
+      http.get(`${TD_BASE}/api/network/:seg/topology`, () =>
+        HttpResponse.json({
+          ok: true,
+          data: {
+            nodes: [
+              { path: "/project1/a", type: "noiseTOP", name: "a" },
+              { path: "/project1/b", type: "levelTOP", name: "b" },
+            ],
+            connections: [
+              {
+                source_path: "/project1/a",
+                source_output: 0,
+                target_path: "/project1/b",
+                target_input: 0,
+              },
+            ],
+          },
+        }),
+      ),
+      http.post(`${TD_BASE}/api/exec`, async ({ request }) => {
+        execScript = ((await request.json()) as { script: string }).script;
+        return HttpResponse.json({ ok: true, data: { result: null, stdout: "" } });
+      }),
+    );
+    const result = await arrangeNetworkImpl(makeCtx(), { path: "/project1", recursive: false });
+    expect(textOf(result)).toContain("Arranged 2 node(s)");
+    // Downstream node "b" is pushed right of source "a".
+    expect(execScript).toContain("_n.nodeX = _xy[0]");
+    expect(execScript).toContain('"/project1/a":[0,0]');
+    expect(execScript).toContain('"/project1/b":[200,0]');
+  });
+
+  it("arrange_network reports when there is nothing to arrange", async () => {
+    server.use(
+      http.get(`${TD_BASE}/api/network/:seg/topology`, () =>
+        HttpResponse.json({ ok: true, data: { nodes: [], connections: [] } }),
+      ),
+    );
+    const result = await arrangeNetworkImpl(makeCtx(), { path: "/empty", recursive: false });
+    expect(textOf(result)).toContain("No nodes to arrange");
   });
 });

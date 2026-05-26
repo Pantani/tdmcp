@@ -1,4 +1,5 @@
 import type { ToolRegistrar } from "../types.js";
+import { registerArrangeNetwork } from "./arrangeNetwork.js";
 import { registerConnectNodes } from "./connectNodes.js";
 import { registerCreateContainer } from "./createContainer.js";
 import { registerCreateGlslShader } from "./createGlslShader.js";
@@ -15,4 +16,5 @@ export const layer2Registrars: ToolRegistrar[] = [
   registerSetParametersBatch,
   registerCreateContainer,
   registerDuplicateNetwork,
+  registerArrangeNetwork,
 ];

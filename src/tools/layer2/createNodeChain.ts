@@ -1,6 +1,7 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { friendlyTdError } from "../../td-client/types.js";
+import { computeDataflowLayout, type LayoutEdge, layoutScript } from "../layout.js";
 import { errorResult, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { connectNodesViaBridge } from "./connectHelper.js";
@@ -75,6 +76,26 @@ export async function createNodeChainImpl(
       } catch (err) {
         warnings.push(`Failed to connect ${from.path} → ${to.path}: ${friendlyTdError(err)}`);
       }
+    }
+  }
+
+  const edges: LayoutEdge[] = [];
+  if (args.connect_sequentially) {
+    for (let i = 0; i < created.length - 1; i++) {
+      const from = created[i];
+      const to = created[i + 1];
+      if (from && to) edges.push({ from: from.path, to: to.path });
+    }
+  }
+  const positions = computeDataflowLayout(
+    created.map((c) => c.path),
+    edges,
+  );
+  if (Object.keys(positions).length > 0) {
+    try {
+      await ctx.client.executePythonScript(layoutScript(positions), false);
+    } catch (err) {
+      warnings.push(`Auto-layout skipped: ${friendlyTdError(err)}`);
     }
   }
 

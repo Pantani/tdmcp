@@ -17,7 +17,9 @@ It works because it pairs two things every other tool was missing:
   TouchDesigner operators instead of guessing.
 - **Real execution** — a small **bridge** running inside TouchDesigner that
   actually creates, connects, inspects and previews nodes — with a
-  create → verify → preview loop so the AI can see and fix its own work.
+  create → verify → preview loop so the AI can see and fix its own work. Every
+  generated network is auto-arranged into a readable left→right layout instead
+  of piling nodes on top of each other.
 
 ---
 
@@ -244,7 +246,8 @@ return a friendly "not reachable" message instead of crashing.
 
 **Building blocks**: `create_node_chain`, `connect_nodes`, `create_glsl_shader`,
 `create_python_script`, `set_parameters_batch`, `create_container`,
-`duplicate_network`.
+`duplicate_network`, `arrange_network` (tidy a messy network into a readable
+left→right layout).
 
 **Atomic operations**: `create_td_node`, `delete_td_node`,
 `update_td_node_parameters`, `execute_python_script`, `exec_node_method`.
