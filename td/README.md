@@ -58,6 +58,7 @@ td/
 ├── modules/
 │   ├── mcp/
 │   │   ├── controllers/api_controller.py   # HTTP router + JSON envelope
+│   │   ├── dev.py                          # reload_bridge(): hot-reload modules in a running TD
 │   │   └── services/
 │   │       ├── api_service.py               # node CRUD, exec, method, info
 │   │       ├── preview_service.py           # TOP → base64 PNG
@@ -66,6 +67,21 @@ td/
 │   └── utils/version.py
 └── templates/webserver_callbacks.py        # Web Server DAT callbacks
 ```
+
+## Developing the bridge
+
+TouchDesigner imports the bridge modules once at project open, so editing files under
+`td/` does **not** update a running bridge — it keeps serving the code it loaded. After
+editing, reload without reopening the project:
+
+```python
+from mcp import dev
+dev.reload_bridge()   # reimports every mcp.* / utils.* module; returns the names reloaded
+```
+
+Bump `BRIDGE_VERSION` in `modules/utils/version.py` on every bridge change. `get_td_info`
+reports the *running* bridge's version, so when it lags the repo you know the running
+bridge is stale and should be reloaded (or the project reopened).
 
 ## Manual install (Web Server DAT, ≈2 minutes)
 
