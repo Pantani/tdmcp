@@ -38,114 +38,116 @@ Three pieces talk to each other on your computer:
 3. **The bridge** — a tiny piece that runs *inside* TouchDesigner so the server
    can actually drive it. You switch it on once per machine.
 
-You set all three up below. It takes about 5 minutes.
+The steps below wire these together — about 5 minutes (less with the one-click
+Claude Desktop extension, which bundles the server for you).
 
 ---
 
 ## What you'll need
 
-- **[TouchDesigner](https://derivative.ca/download)** (free non-commercial
-  edition is fine).
-- **[Node.js](https://nodejs.org) version 20 or newer** — this runs the server.
-  Not sure if you have it? Open a terminal and run `node -v`. If it prints a
-  number ≥ 20 you're set; otherwise install it from the link.
-- An MCP-capable AI client: **Claude Code**, **Claude Desktop**, or **Cursor**.
+- **[TouchDesigner](https://derivative.ca/download)** — the free non-commercial
+  edition is fine.
+- An MCP-capable AI assistant: **Claude Desktop** (easiest), **Claude Code**, or
+  **Cursor**.
+
+**Do I need Node.js?** Only for the build-from-source path (Claude Code / Cursor),
+which needs **[Node.js 20+](https://nodejs.org)** — check with `node -v`. The
+one-click Claude Desktop extension needs **nothing extra**: Claude Desktop ships
+with its own Node, and the server is bundled inside the `.dxt`.
 
 ---
 
 ## Get started
 
-Setup is **two pieces**: the **bridge** inside TouchDesigner (so it can be
-driven) and the **tdmcp server** connected to your AI. Below, pick the path for
-your AI client — **every path also needs the bridge in Step 2.** Budget ~5 min.
+You set up **two sides** and they meet in the middle:
 
-> **Which path?** Claude Desktop → the one-click extension just below. Claude
-> Code or Cursor → Steps 1–3.
+1. **Your AI** — connect the tdmcp server to it. *How* depends on your client (Step 1).
+2. **TouchDesigner** — flip on the **bridge** with one pasted line. *Same for everyone* (Step 2).
 
-> 🤖 **Or let an AI do it for you.** Hand
+**Most people should use Claude Desktop + the one-click `.dxt`** — no terminal, no
+Node, no building. Choose your client in **Step 1**, then everyone does **Steps 2–3**.
+
+> 🤖 **Don't want to do it by hand?** Hand
 > [`tdmcp-install-prompt.md`](tdmcp-install-prompt.md) to Claude Code, Codex, or
-> Cursor and it runs the install and client wiring itself — you only paste one
-> line into TouchDesigner at the end. The manual steps below are the alternative
-> if you'd rather drive it yourself.
+> Cursor and it runs the whole install for you — you only paste one line into
+> TouchDesigner at the end.
 
-### Claude Desktop: the one-click extension (`.dxt`) — easiest
+### Step 1 — Connect tdmcp to your AI
 
-A `.dxt` is a single file that Claude Desktop installs as an **extension**. The
-tdmcp server is **bundled inside it**, and you set the TouchDesigner host/port in
-a settings form — no JSON, no `claude mcp add`, nothing to keep running yourself.
+Pick the one tab that matches your client.
 
-**1. Get the `tdmcp.dxt` file.** Download the latest prebuilt bundle:
+<details open>
+<summary><b>🟢 Claude Desktop — one-click <code>.dxt</code> (easiest: no terminal, no Node)</b></summary>
 
-**[⬇ Download tdmcp.dxt](https://github.com/Pantani/tdmcp/releases/latest/download/tdmcp.dxt)** — always the newest release.
+<br />
 
-<details>
-<summary>Or build it yourself (needs <a href="https://nodejs.org">Node 20+</a>)</summary>
+A `.dxt` is **one file** Claude Desktop installs as an extension. The tdmcp server
+is **bundled inside it** — no terminal, no Node install, nothing to keep running
+yourself.
 
-```bash
-git clone https://github.com/Pantani/tdmcp.git
-cd tdmcp
-npm install
-npm run build:dxt      # writes tdmcp.dxt into this folder
-```
+1. **Download** the bundle →
+   **[⬇ tdmcp.dxt](https://github.com/Pantani/tdmcp/releases/latest/download/tdmcp.dxt)**
+   (always the latest release).
+2. **Install it:** in Claude Desktop open **Settings → Extensions**, then drag
+   `tdmcp.dxt` onto the window (or click **Install from file**).
+3. **Enable it.** Leave the TouchDesigner **host** / **port** at `127.0.0.1` /
+   `9980` unless you changed them.
+
+Connected — **now do Step 2** to turn on the bridge. (Docker/HTTP options live in
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).)
 
 </details>
 
-**2. Install it in Claude Desktop.** Open **Settings → Extensions**, choose
-**Install from file** (or drag `tdmcp.dxt` onto the window). When asked, set the
-TouchDesigner **host** / **port** if they differ from `127.0.0.1` / `9980`, then
-**enable** the extension.
+<details>
+<summary><b>Claude Code or Cursor — build from source (needs Node 20+)</b></summary>
 
-**3. Turn on the bridge** inside TouchDesigner — do **Step 2** below. The
-extension *drives* TouchDesigner; the bridge is what lets it in.
+<br />
 
-That's the whole Claude Desktop setup — skip to **Step 4** and start creating.
-More detail (and the Docker/HTTP options) live in
-[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
-
----
-
-### Step 1 — Install the tdmcp server (once) · Claude Code / Cursor
-
-Open a terminal and run these four lines. You only ever do this once.
+This path builds the server locally, so you need
+**[Node.js 20+](https://nodejs.org)** (`node -v` to check).
 
 ```bash
 git clone https://github.com/Pantani/tdmcp.git
 cd tdmcp
-npm install
-npm run build
+npm run setup
 ```
 
-When it finishes you'll have a ready-to-run server at `dist/index.js`.
+`npm run setup` installs, builds, and then **prints the exact line to connect your
+AI**, with your real paths already filled in — paste it and you're done. The manual
+equivalents:
 
-> ⚡ **Shortcut:** instead of `npm install && npm run build`, run **`npm run
-> setup`** (or `./setup.sh`). It installs, builds, and then prints the exact line
-> to connect your AI — with your real paths already filled in.
+- **Claude Code:**
 
-> 💡 **Tip — you'll need this folder's full path twice below.** While you're
-> still in the `tdmcp` folder, run `pwd`. Copy what it prints (e.g.
-> `/Users/you/tdmcp`) — that's your **project path**. Wherever the steps below
-> say `<project-path>`, paste it in.
+  ```bash
+  claude mcp add tdmcp -- node <project-path>/dist/index.js
+  ```
 
-### Step 2 — Switch on the bridge inside TouchDesigner
+- **Cursor** — create `.cursor/mcp.json` in your workspace:
 
-This lets the server actually control TouchDesigner. The easy, set-and-forget way:
+  ```json
+  {
+    "mcpServers": {
+      "tdmcp": { "command": "node", "args": ["<project-path>/dist/index.js"] }
+    }
+  }
+  ```
+
+`<project-path>` is the folder you cloned — run `pwd` inside it for the full path.
+Restart your client afterward so it loads the server. **Now do Step 2.**
+
+</details>
+
+### Step 2 — Turn on the bridge inside TouchDesigner (everyone)
+
+This is the **same one line** no matter which client you set up in Step 1 — it's
+what lets the server actually drive TouchDesigner.
 
 1. **Open TouchDesigner.**
-2. Open **Preferences** (`Edit → Preferences`, or the **TouchDesigner** menu on
-   macOS). In the **General** section, find **"Python 64-bit Module Path"** and
-   paste:
-
-   ```
-   <project-path>/td/modules
-   ```
-
-   (That's the `tdmcp` folder you cloned — e.g. `/Users/you/tdmcp/td/modules`; run
-   `pwd` inside it if you're unsure of the full path.) Click OK.
-3. Open the **Textport** (`Dialogs → Textport and DATs`), type this one line and
-   press Enter:
+2. Open the **Textport** (`Dialogs → Textport and DATs`), paste this **one line**
+   and press Enter:
 
    ```python
-   from mcp import install; install.run()
+   import urllib.request; exec(urllib.request.urlopen("https://raw.githubusercontent.com/Pantani/tdmcp/main/td/bootstrap.py").read().decode())
    ```
 
 You should see:
@@ -154,84 +156,43 @@ You should see:
 [tdmcp] bridge running on port 9980 (/project1/tdmcp_bridge)
 ```
 
-Done — a `tdmcp_bridge` node now lives in your network and is listening. ✅
+Done — a `tdmcp_bridge` node now lives in your network and is listening. ✅ It's
+safe and reversible: it only adds that one tidy component, and re-running the line
+just reconfigures it.
 
-> This is **safe and reversible**: it only adds one tidy `tdmcp_bridge` component.
-> Re-running the line just reconfigures it. To remove it later, run
-> `from mcp import install; install.uninstall()`.
->
-> Want it to start automatically in *every* project? Save the project (with that
-> Module Path preference) as your **Default Project**, or see
-> [`td/README.md`](td/README.md) for the Execute-DAT auto-start and the fully
-> manual Web Server DAT setup.
+<details>
+<summary>Keep it on across restarts · other install methods · removing it</summary>
 
-**Two even-easier ways to do Step 2:**
+<br />
 
-- **No clone, no Preferences** — paste this single line into the Textport. It
-  fetches the bridge and starts it for you:
+- **Start it automatically in every project:** save your project as your
+  **Default Project**, or use the Execute-DAT auto-start in
+  [`td/README.md`](td/README.md).
+- **If you cloned the repo** and want a set-and-forget install: add
+  `<project-path>/td/modules` to TouchDesigner's **Python 64-bit Module Path**
+  (`Edit → Preferences → General`), then run
+  `from mcp import install; install.run()` in the Textport.
+- **From a terminal:** `npx @dpantani/tdmcp install-bridge` (or
+  `node <project-path>/dist/index.js install-bridge` from a clone) copies the
+  bridge to `~/tdmcp-bridge` and prints the Textport line.
+- **Remove it later:** `from mcp import install; install.uninstall()`.
+- **Port 9980 taken?** Set it in both places — the bridge
+  (`install.run(port=9981)`) and the client (`TDMCP_TD_PORT=9981`).
 
-  ```python
-  import urllib.request; exec(urllib.request.urlopen("https://raw.githubusercontent.com/Pantani/tdmcp/main/td/bootstrap.py").read().decode())
-  ```
+</details>
 
-- **From the terminal** — if you installed the server with `npx` (so there's no
-  local `td/modules`), run `npx @dpantani/tdmcp install-bridge` (or
-  `node <project-path>/dist/index.js install-bridge` from a clone). It copies the
-  bridge to `~/tdmcp-bridge` and prints the exact line to paste in the Textport.
+### Step 3 — Make something
 
-### Step 3 — Connect your AI assistant
-
-Point your AI client at the server you built in Step 1. Pick your client:
-
-**Claude Code**
-
-```bash
-claude mcp add tdmcp -- node <project-path>/dist/index.js
-```
-
-> Once tdmcp is published to npm this becomes path-free:
-> `claude mcp add tdmcp -- npx -y @dpantani/tdmcp`.
-
-**Claude Desktop** — the easiest route is the **one-click `.dxt` extension**
-described at the top of *Get started* (no config file needed). To wire it up
-manually instead, edit `claude_desktop_config.json`
-(`Settings → Developer → Edit Config`) and add:
-
-```json
-{
-  "mcpServers": {
-    "tdmcp": {
-      "command": "node",
-      "args": ["<project-path>/dist/index.js"]
-    }
-  }
-}
-```
-
-**Cursor** — create `.cursor/mcp.json` in your workspace:
-
-```json
-{
-  "mcpServers": {
-    "tdmcp": {
-      "command": "node",
-      "args": ["<project-path>/dist/index.js"]
-    }
-  }
-}
-```
-
-Restart your AI client so it picks up the new server.
-
-### Step 4 — Make something
-
-With TouchDesigner open and your AI client connected, just ask in plain language:
+With TouchDesigner open and your AI connected, just ask in plain language:
 
 > *"Create an audio-reactive particle galaxy and show me a preview."*
 
 The AI builds the network in your project, checks it for errors, and returns a
 thumbnail. Iterate from there: *"make it warmer,"* *"add a feedback trail,"*
 *"output it fullscreen."*
+
+> 💡 Once tdmcp is published to npm, the Claude Code wiring becomes path-free:
+> `claude mcp add tdmcp -- npx -y @dpantani/tdmcp`.
 
 ---
 
@@ -240,7 +201,7 @@ thumbnail. Iterate from there: *"make it warmer,"* *"add a feedback trail,"*
 | What you see | What to do |
 | --- | --- |
 | The AI says **"TouchDesigner isn't reachable."** | Make sure TD is open and the bridge is on (Step 2). Test it: `curl http://127.0.0.1:9980/api/info` should return JSON. |
-| `from mcp import install` → **`No module named 'mcp'`** | The Module Path isn't set. Re-check Step 2.2 — it must point at `<project-path>/td/modules`, then restart TouchDesigner. |
+| `from mcp import install` → **`No module named 'mcp'`** | You're using the Module-Path method but it isn't set — point it at `<project-path>/td/modules` (see Step 2's collapsed options) and restart TouchDesigner. Or just use the one-line bootstrap in Step 2 instead. |
 | **`command not found: node` / `npm`** | Node isn't installed (or is too old). Install Node ≥ 20 from [nodejs.org](https://nodejs.org) and reopen the terminal. |
 | **Your AI client doesn't list any tdmcp tools** | Restart the client after adding the server, and double-check the path to `dist/index.js` is the full absolute path. |
 | **Port 9980 is already taken** | Set a different port in *both* places: the bridge (`install.run(port=9981)`) and the client (`TDMCP_TD_PORT=9981`). |
