@@ -6,18 +6,19 @@ import type { ToolContext, ToolRegistrar } from "../types.js";
 const controlSchema = z.object({
   name: z
     .string()
-    .describe("Control label; also sanitized into a valid TD custom-parameter name (e.g. 'blur amount' → 'Bluramount')."),
+    .describe(
+      "Control label; also sanitized into a valid TD custom-parameter name (e.g. 'blur amount' → 'Bluramount').",
+    ),
   type: z
     .enum(["float", "int", "toggle", "menu", "rgb", "pulse", "string"])
     .default("float")
-    .describe("Widget kind: float/int sliders, a toggle, a dropdown menu, an RGB swatch, a momentary pulse, or a text field."),
+    .describe(
+      "Widget kind: float/int sliders, a toggle, a dropdown menu, an RGB swatch, a momentary pulse, or a text field.",
+    ),
   label: z.string().optional().describe("Display label (defaults to `name`)."),
   min: z.coerce.number().optional().describe("Slider lower bound (float/int) — also hard-clamped."),
   max: z.coerce.number().optional().describe("Slider upper bound (float/int) — also hard-clamped."),
-  default: z
-    .union([z.number(), z.boolean(), z.string()])
-    .optional()
-    .describe("Initial value."),
+  default: z.union([z.number(), z.boolean(), z.string()]).optional().describe("Initial value."),
   menu_items: z.array(z.string()).optional().describe("Options for a 'menu' control."),
   bind_to: z
     .array(z.string())
@@ -31,9 +32,17 @@ export const createControlPanelSchema = z.object({
   comp_path: z
     .string()
     .default("/project1")
-    .describe("COMP that will receive the custom parameters — usually a generated system's container."),
-  page: z.string().default("Controls").describe("Name of the custom-parameter page to add the controls to."),
-  controls: z.array(controlSchema).min(1).describe("The controls (knobs/sliders/toggles/menus) to expose."),
+    .describe(
+      "COMP that will receive the custom parameters — usually a generated system's container.",
+    ),
+  page: z
+    .string()
+    .default("Controls")
+    .describe("Name of the custom-parameter page to add the controls to."),
+  controls: z
+    .array(controlSchema)
+    .min(1)
+    .describe("The controls (knobs/sliders/toggles/menus) to expose."),
 });
 type CreateControlPanelArgs = z.infer<typeof createControlPanelSchema>;
 

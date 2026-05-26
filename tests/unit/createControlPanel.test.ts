@@ -14,7 +14,14 @@ describe("buildPanelScript", () => {
       comp: "/project1/sys",
       page: "Controls",
       controls: [
-        { name: "blur amount", type: "float", min: 0, max: 50, default: 12, bind_to: ["/project1/sys/blur1.size"] },
+        {
+          name: "blur amount",
+          type: "float",
+          min: 0,
+          max: 50,
+          default: 12,
+          bind_to: ["/project1/sys/blur1.size"],
+        },
         { name: "Enable", type: "toggle", default: true },
       ],
     };
