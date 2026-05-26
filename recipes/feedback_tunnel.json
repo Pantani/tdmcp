@@ -21,14 +21,14 @@
     {
       "name": "transform1",
       "type": "transformTOP",
-      "parameters": { "scalex": 1.03, "scaley": 1.03, "rotate": 1.5 },
+      "parameters": { "sx": 1.03, "sy": 1.03, "rotate": 1.5 },
       "comment": "Zoom + rotate each frame to create the tunnel motion"
     },
     { "name": "blur1", "type": "blurTOP", "parameters": { "size": 2 } },
     {
       "name": "level1",
       "type": "levelTOP",
-      "parameters": { "gain": 0.96 },
+      "parameters": { "brightness1": 0.96 },
       "comment": "Decay / feedback gain"
     },
     { "name": "out1", "type": "nullTOP", "comment": "Output of the system" }
@@ -53,7 +53,7 @@
     {
       "name": "feedback_gain",
       "node": "level1",
-      "param": "gain",
+      "param": "brightness1",
       "value": 0.96,
       "min": 0,
       "max": 1,
@@ -62,7 +62,7 @@
     {
       "name": "zoom",
       "node": "transform1",
-      "param": "scalex",
+      "param": "sx",
       "value": 1.03,
       "min": 1,
       "max": 1.2,

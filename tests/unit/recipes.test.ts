@@ -44,6 +44,17 @@ describe("RecipeLibrary", () => {
     expect(recipe?.glsl_code?.glsl1).toContain("uniform float uFeed");
     expect(recipe?.glsl_code?.glsl1).toContain("uniform float uKill");
   });
+
+  it("ships live controls on the performable feedback tunnel, bound to real parameters", () => {
+    const recipe = library.get("performable_feedback_tunnel");
+    expect(recipe).toBeDefined();
+    expect(recipe?.controls.map((c) => c.name)).toEqual(["Feedback", "Zoom", "Spin", "Blur"]);
+    // Feedback drives the levelTOP's `brightness1` (it has no `gain`); Zoom drives the
+    // transformTOP's `sx`/`sy` (not `scalex`/`scaley`) — the params that actually exist.
+    const byName = new Map(recipe?.controls.map((c) => [c.name, c]));
+    expect(byName.get("Feedback")?.bind_to).toEqual(["level1.brightness1"]);
+    expect(byName.get("Zoom")?.bind_to).toEqual(["transform1.sx", "transform1.sy"]);
+  });
 });
 
 describe("buildFromRecipe — GLSL uniforms", () => {
@@ -134,5 +145,19 @@ describe("buildFromRecipe — GLSL uniforms", () => {
 
     const { builder } = await buildFromRecipe(makeCtx(), recipe, "/project1");
     expect(builder.warnings.some((w) => w.includes('unknown node "ghost"'))).toBe(true);
+  });
+
+  it("resolves a control's bind_to from recipe node names to real created paths", async () => {
+    const recipe = RecipeSchema.parse({
+      id: "ctrl_probe",
+      name: "Control Probe",
+      nodes: [{ name: "blur1", type: "blurTOP" }],
+      controls: [
+        { name: "Blur", type: "float", min: 0, max: 8, default: 2, bind_to: ["blur1.size"] },
+      ],
+    });
+    const { controls } = await buildFromRecipe(makeCtx(), recipe, "/project1");
+    // "blur1.size" → "/project1/ctrl_probe/blur1.size" (the real node path the panel can bind).
+    expect(controls?.[0]?.bind_to?.[0]).toMatch(/\/project1\/ctrl_probe\/blur1\.size$/);
   });
 });

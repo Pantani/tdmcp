@@ -1,0 +1,92 @@
+{
+  "id": "performable_feedback_tunnel",
+  "name": "Performable Feedback Tunnel",
+  "description": "A feedback tunnel that ships with live controls: knobs for feedback decay, zoom, spin and blur are exposed on the container so you can perform it, animate the knobs with an LFO, or snapshot looks as presets.",
+  "tags": [
+    "feedback",
+    "generative",
+    "tunnel",
+    "abstract",
+    "noise",
+    "performable",
+    "controls",
+    "vj"
+  ],
+  "difficulty": "intermediate",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "noise1",
+      "type": "noiseTOP",
+      "parameters": { "period": 3, "mono": 1 },
+      "comment": "Seed texture that feeds the loop (mono=1 keeps it grayscale; the param is 'mono', not 'monochrome')"
+    },
+    { "name": "feedback1", "type": "feedbackTOP", "comment": "Holds the previous frame" },
+    {
+      "name": "comp1",
+      "type": "compositeTOP",
+      "parameters": { "operand": "maximum" },
+      "comment": "Combines seed + fed-back frame. 'maximum' stays bounded under feedback gain (the default multiply collapses to black)."
+    },
+    {
+      "name": "transform1",
+      "type": "transformTOP",
+      "parameters": { "sx": 1.03, "sy": 1.03, "rotate": 1.5 },
+      "comment": "Zoom + rotate each frame to create the tunnel motion (sx/sy are the scale params, not scalex/scaley)"
+    },
+    { "name": "blur1", "type": "blurTOP", "parameters": { "size": 2 } },
+    {
+      "name": "level1",
+      "type": "levelTOP",
+      "parameters": { "brightness1": 0.96 },
+      "comment": "Decay / feedback gain. levelTOP multiplies RGB via brightness1 (it has no 'gain' parameter)."
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "Output of the system" }
+  ],
+  "connections": [
+    { "from": "noise1", "to": "feedback1" },
+    { "from": "noise1", "to": "comp1", "to_input": 0 },
+    { "from": "feedback1", "to": "comp1", "to_input": 1 },
+    { "from": "comp1", "to": "transform1" },
+    { "from": "transform1", "to": "blur1" },
+    { "from": "blur1", "to": "level1" },
+    { "from": "level1", "to": "out1" }
+  ],
+  "parameters": [
+    {
+      "name": "feedback_target",
+      "node": "feedback1",
+      "param": "top",
+      "value": "level1",
+      "description": "feedbackTOP samples the loop output (level1). Value resolves to the created node path."
+    }
+  ],
+  "controls": [
+    {
+      "name": "Feedback",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 0.96,
+      "bind_to": ["level1.brightness1"]
+    },
+    {
+      "name": "Zoom",
+      "type": "float",
+      "min": 1,
+      "max": 1.2,
+      "default": 1.03,
+      "bind_to": ["transform1.sx", "transform1.sy"]
+    },
+    {
+      "name": "Spin",
+      "type": "float",
+      "min": -5,
+      "max": 5,
+      "default": 1.5,
+      "bind_to": ["transform1.rotate"]
+    },
+    { "name": "Blur", "type": "float", "min": 0, "max": 8, "default": 2, "bind_to": ["blur1.size"] }
+  ],
+  "preview_description": "An endless rotating tunnel of evolving colored noise that folds into its own center, with live knobs for feedback, zoom, spin and blur."
+}
