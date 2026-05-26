@@ -4,12 +4,14 @@ import { capturePreview } from "../../feedback/previewCapture.js";
 import type { Recipe, RecipeGlslUniform } from "../../recipes/schema.js";
 import { friendlyTdError } from "../../td-client/types.js";
 import { connectNodesViaBridge } from "../layer2/connectHelper.js";
+import { buildPanelScript, type ControlSpec } from "../layer2/createControlPanel.js";
 import {
   computeLayoutByParent,
   type LayoutEdge,
   layoutScript,
   placeBelowSiblingsScript,
 } from "../layout.js";
+import { parsePythonReport } from "../pythonReport.js";
 import { errorResult } from "../result.js";
 import type { ToolContext } from "../types.js";
 
@@ -334,7 +336,39 @@ export interface FinalizeOptions {
   outputPath?: string;
   recipeId?: string;
   capturePreviewImage?: boolean;
+  /**
+   * Controls to expose on the system container so the generated network is immediately
+   * playable (knobs/sliders bound to its key parameters). Failures are folded into the
+   * response warnings — they never abort the build.
+   */
+  controls?: ControlSpec[];
   extra?: Record<string, unknown>;
+}
+
+interface ExposeControlsResult {
+  created: Array<{ name: string }>;
+  bound: Array<{ control: string; target: string }>;
+  warnings: string[];
+  fatal?: string;
+}
+
+/**
+ * Appends a control panel (custom parameters bound to node parameters) to the system
+ * container, reusing the same Python pass as the create_control_panel tool. Fail-forward:
+ * any error is returned as a warning rather than thrown.
+ */
+async function exposeControls(
+  ctx: ToolContext,
+  compPath: string,
+  controls: ControlSpec[],
+): Promise<ExposeControlsResult> {
+  try {
+    const script = buildPanelScript({ comp: compPath, page: "Controls", controls });
+    const exec = await ctx.client.executePythonScript(script, true);
+    return parsePythonReport<ExposeControlsResult>(exec.stdout);
+  } catch (err) {
+    return { created: [], bound: [], warnings: [`Control panel skipped: ${friendlyTdError(err)}`] };
+  }
 }
 
 /**
@@ -349,6 +383,15 @@ export async function finalize(
   const { builder } = options;
   await builder.layout();
   const warnings = [...builder.warnings];
+
+  // Expose live controls on the container so the generated system is playable on arrival.
+  let controlsSummary: { added: string[]; bound: number } | undefined;
+  if (options.controls?.length) {
+    const result = await exposeControls(ctx, builder.containerPath, options.controls);
+    warnings.push(...result.warnings);
+    if (result.fatal) warnings.push(`Control panel skipped: ${result.fatal}`);
+    else controlsSummary = { added: result.created.map((c) => c.name), bound: result.bound.length };
+  }
 
   let errors: Array<{ path: string; message: string }> = [];
   try {
@@ -377,6 +420,7 @@ export async function finalize(
     created: builder.created.map((c) => c.path),
     output: options.outputPath,
     recipe: options.recipeId,
+    controls: controlsSummary,
     errors,
     warnings,
     ...options.extra,

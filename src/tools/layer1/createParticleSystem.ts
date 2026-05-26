@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { ControlSpec } from "../layer2/createControlPanel.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { createSystemContainer, finalize, runBuild } from "./orchestration.js";
 
@@ -28,7 +29,17 @@ const q2 = (n: number): string => (Number.isFinite(n) ? n.toString() : "0");
  * noise/turbulence → turbulence, drag → drag); attract/repel/vortex have no native equivalent
  * and are approximated with turbulence (+ a little wind for vortex).
  */
-function particleDynamicsPython(particlePath: string, args: CreateParticleSystemArgs): string {
+interface ParticleDynamics {
+  birth: number;
+  drag: number;
+  turb: number;
+  gravity: number;
+  wind: number;
+  lifevar: number;
+}
+
+/** Single source of truth for the Particle SOP dynamics derived from the requested forces. */
+function computeParticleDynamics(args: CreateParticleSystemArgs): ParticleDynamics {
   const f = new Set(args.forces);
   const birth = Math.max(1, Math.round(args.particle_count / args.lifetime));
   let drag = 2.0;
@@ -40,21 +51,30 @@ function particleDynamicsPython(particlePath: string, args: CreateParticleSystem
   if (f.has("attract") || f.has("repel") || f.has("vortex")) turb = Math.max(turb, 1.2);
   const gravity = f.has("gravity") ? -0.6 : 0;
   const wind = f.has("vortex") ? 0.5 : 0;
+  const lifevar = Number((args.lifetime * 0.25).toFixed(3));
+  return { birth, drag, turb, gravity, wind, lifevar };
+}
+
+function particleDynamicsPython(
+  particlePath: string,
+  args: CreateParticleSystemArgs,
+  dyn: ParticleDynamics,
+): string {
   return [
     `_p = op(${q(particlePath)})`,
-    `_p.par.birth = ${birth}`,
-    `_p.par.lifevar = ${q2(Number((args.lifetime * 0.25).toFixed(3)))}`,
+    `_p.par.birth = ${dyn.birth}`,
+    `_p.par.lifevar = ${q2(dyn.lifevar)}`,
     "_p.par.normals = True",
     "_p.par.jitter = True",
     `_p.par.timepreroll = ${q2(args.lifetime)}`,
     "_p.par.dodrag = True",
-    `_p.par.drag = ${q2(drag)}`,
-    `_p.par.turbx = ${q2(turb)}`,
-    `_p.par.turby = ${q2(turb)}`,
-    `_p.par.turbz = ${q2(turb)}`,
+    `_p.par.drag = ${q2(dyn.drag)}`,
+    `_p.par.turbx = ${q2(dyn.turb)}`,
+    `_p.par.turby = ${q2(dyn.turb)}`,
+    `_p.par.turbz = ${q2(dyn.turb)}`,
     "_p.par.period = 3.0",
-    `_p.par.externaly = ${q2(gravity)}`,
-    `_p.par.windx = ${q2(wind)}`,
+    `_p.par.externaly = ${q2(dyn.gravity)}`,
+    `_p.par.windx = ${q2(dyn.wind)}`,
     "_p.par.reset.pulse()",
   ].join("\n");
 }
@@ -71,6 +91,10 @@ export const createParticleSystemSchema = z.object({
     .enum(["points", "sprites", "lines", "trails", "instanced_geo"])
     .default("sprites"),
   lifetime: z.coerce.number().positive().default(3),
+  expose_controls: z
+    .boolean()
+    .default(true)
+    .describe("Expose live Drag / Turbulence / Gravity / Lifetime knobs on the system container."),
   parent_path: z.string().default("/project1"),
 });
 type CreateParticleSystemArgs = z.infer<typeof createParticleSystemSchema>;
@@ -109,7 +133,8 @@ export async function createParticleSystemImpl(ctx: ToolContext, args: CreatePar
 
     // Turn the bare Particle SOP into an immediately-visible, moving system (initial velocity
     // from normals, pre-roll population, force mapping, containment drag).
-    await builder.python(particleDynamicsPython(particle.path, args));
+    const dynamics = computeParticleDynamics(args);
+    await builder.python(particleDynamicsPython(particle.path, args, dynamics));
 
     const mat = await builder.add(
       args.render_style === "sprites" ? "pointspriteMAT" : "constantMAT",
@@ -157,10 +182,52 @@ export async function createParticleSystemImpl(ctx: ToolContext, args: CreatePar
       );
     }
 
+    const controls: ControlSpec[] = args.expose_controls
+      ? [
+          {
+            name: "Drag",
+            type: "float",
+            min: 0,
+            max: 8,
+            default: dynamics.drag,
+            bind_to: [`${particle.path}.drag`],
+          },
+          {
+            name: "Turbulence",
+            type: "float",
+            min: 0,
+            max: 4,
+            default: dynamics.turb,
+            bind_to: [
+              `${particle.path}.turbx`,
+              `${particle.path}.turby`,
+              `${particle.path}.turbz`,
+            ],
+          },
+          {
+            name: "Gravity",
+            type: "float",
+            min: -3,
+            max: 3,
+            default: dynamics.gravity,
+            bind_to: [`${particle.path}.externaly`],
+          },
+          {
+            name: "Lifetime",
+            type: "float",
+            min: 0.1,
+            max: 10,
+            default: args.lifetime,
+            bind_to: [`${particle.path}.life`],
+          },
+        ]
+      : [];
+
     return finalize(ctx, {
       summary: `Created a particle system (emitter: ${args.emitter_shape}, ~${args.particle_count} particles, render: ${args.render_style}).`,
       builder,
       outputPath: out,
+      controls,
       extra: {
         emitter_shape: args.emitter_shape,
         forces: args.forces,

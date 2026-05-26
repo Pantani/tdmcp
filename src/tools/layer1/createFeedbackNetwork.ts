@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { ControlSpec } from "../layer2/createControlPanel.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { createSystemContainer, finalize, runBuild } from "./orchestration.js";
 
@@ -25,6 +26,18 @@ void main(){
 }
 `;
 }
+
+// A self-contained generative pattern for the "glsl" seed type. A bare glslTOP ships TD's
+// boilerplate shader (solid white `vec4(1.0)`), which would feed the loop pure white; this
+// gives it a varied colour field to evolve instead.
+const SEED_GLSL = `out vec4 fragColor;
+void main(){
+    vec2 uv = vUV.st;
+    float v = sin(uv.x * 12.0) + sin(uv.y * 12.0) + sin((uv.x + uv.y) * 8.0);
+    vec3 col = 0.5 + 0.5 * cos(vec3(0.0, 2.0, 4.0) + v);
+    fragColor = TDOutputSwizzle(vec4(col, 1.0));
+}
+`;
 
 const SEED_TYPES = {
   noise: "noiseTOP",
@@ -70,6 +83,10 @@ export const createFeedbackNetworkSchema = z.object({
     .max(2)
     .optional()
     .describe("Up to two hex colors to colorize the otherwise-grayscale output."),
+  expose_controls: z
+    .boolean()
+    .default(true)
+    .describe("Expose a live 'Feedback' knob on the system container, bound to the loop's decay."),
   parent_path: z.string().default("/project1"),
 });
 type CreateFeedbackNetworkArgs = z.infer<typeof createFeedbackNetworkSchema>;
@@ -81,6 +98,13 @@ export async function createFeedbackNetworkImpl(ctx: ToolContext, args: CreateFe
     const seed = await builder.add(SEED_TYPES[args.seed_type], "seed", {
       ...(args.seed_type === "noise" ? { monochrome: 1, period: 4 } : {}),
     });
+    if (args.seed_type === "glsl") {
+      // Replace the glslTOP's default white boilerplate with a real generative pattern.
+      const seedFrag = await builder.add("textDAT", "seed_frag");
+      await builder.python(
+        `op(${q(seedFrag)}).text = ${q(SEED_GLSL)}\nop(${q(seed)}).par.pixeldat = op(${q(seedFrag)}).name`,
+      );
+    }
     const feedback = await builder.add("feedbackTOP", "feedback1");
     const comp = await builder.add("compositeTOP", "comp1");
     // The TD default operand (multiply) collapses the loop to black; an additive
@@ -103,7 +127,10 @@ export async function createFeedbackNetworkImpl(ctx: ToolContext, args: CreateFe
     }
 
     const gain = await builder.add("levelTOP", "gain");
-    await builder.setParams(gain, { gain: args.feedback_gain });
+    // A levelTOP has no "gain" parameter (setting it is a silent no-op), so the loop never
+    // decayed and the "maximum" composite saturated to solid white. "brightness1" multiplies
+    // RGB, so set it to feedback_gain to actually fade the fed-back frame each cycle.
+    await builder.setParams(gain, { brightness1: args.feedback_gain });
     await builder.connect(last, gain);
 
     // Colorize only the final output; the loop keeps sampling the grayscale gain node
@@ -125,10 +152,25 @@ export async function createFeedbackNetworkImpl(ctx: ToolContext, args: CreateFe
     // Close the loop: feedbackTOP samples the gain node's output.
     await builder.python(`op(${q(feedback)}).par.top = op(${q(gain)}).name`);
 
+    // The decay multiplier (gain.brightness1) is the one knob a feedback system lives by.
+    const controls: ControlSpec[] = args.expose_controls
+      ? [
+          {
+            name: "Feedback",
+            type: "float",
+            min: 0,
+            max: 1,
+            default: args.feedback_gain,
+            bind_to: [`${gain}.brightness1`],
+          },
+        ]
+      : [];
+
     return finalize(ctx, {
       summary: `Created a feedback network (seed: ${args.seed_type}, gain: ${args.feedback_gain}, ${args.transformations.length} transform(s)).`,
       builder,
       outputPath: out,
+      controls,
       extra: { seed_type: args.seed_type, transformations: args.transformations },
     });
   });

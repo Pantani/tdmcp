@@ -3,7 +3,7 @@ import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
-const controlSchema = z.object({
+export const controlSchema = z.object({
   name: z
     .string()
     .describe(
@@ -27,6 +27,9 @@ const controlSchema = z.object({
       "Parameters this control should drive, each written as 'nodePath.parName' (e.g. '/project1/sys/blur1.size'). Each target is switched to expression mode so moving the control moves the parameter live. Not supported for 'rgb'/'pulse'.",
     ),
 });
+
+/** One control spec (knob/slider/toggle/menu/…), reused by Layer 1 tools that auto-expose a panel. */
+export type ControlSpec = z.infer<typeof controlSchema>;
 
 export const createControlPanelSchema = z.object({
   comp_path: z
