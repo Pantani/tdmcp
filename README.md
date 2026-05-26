@@ -12,7 +12,7 @@ nodes inside your project, checks it for errors, and shows you a preview.
 
 It works because it pairs two things every other tool was missing:
 
-- **Real knowledge** — an embedded reference of 652 operators, 68 Python classes,
+- **Real knowledge** — an embedded reference of 629 operators, 68 Python classes,
   32 workflow patterns, GLSL techniques and tutorials, so the AI uses real
   TouchDesigner operators instead of guessing.
 - **Real execution** — a small **bridge** running inside TouchDesigner that
