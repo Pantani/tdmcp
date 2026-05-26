@@ -10,7 +10,7 @@
     { "name": "edge", "type": "edgeTOP" },
     { "name": "rgbsplit", "type": "glslTOP", "comment": "Chromatic RGB offset" },
     { "name": "feedback1", "type": "feedbackTOP" },
-    { "name": "comp1", "type": "compositeTOP" },
+    { "name": "comp1", "type": "compositeTOP", "parameters": { "outputresolution": "custom", "resolutionw": 1280, "resolutionh": 720 } },
     { "name": "glitch", "type": "glslTOP", "comment": "Per-band horizontal displacement" },
     { "name": "out1", "type": "nullTOP" }
   ],

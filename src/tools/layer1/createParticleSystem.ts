@@ -65,7 +65,15 @@ export async function createParticleSystemImpl(ctx: ToolContext, args: CreatePar
     );
     const cam = await builder.add("cameraCOMP", "cam", { tz: 5 });
     const light = await builder.add("lightCOMP", "light", { tx: 3, ty: 4, tz: 4 });
-    const render = await builder.add("renderTOP", "render");
+    // Opaque near-black background so the (white, point-sized) particles are visible.
+    // Left transparent, white particles vanish against a light compositing backdrop; set
+    // bgcolora back to 0 if you want to composite the particles over other layers.
+    const render = await builder.add("renderTOP", "render", {
+      bgcolorr: 0.02,
+      bgcolorg: 0.02,
+      bgcolorb: 0.05,
+      bgcolora: 1,
+    });
     const out = await builder.add("nullTOP", "out1");
     await builder.connect(render, out);
 

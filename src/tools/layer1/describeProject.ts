@@ -34,7 +34,7 @@ export function describeProjectImpl(ctx: ToolContext, args: DescribeProjectArgs)
     tool = "create_feedback_network";
     summary = "feedback network";
   } else {
-    tool = "create_generative_art";
+    tool = "create_visual_system";
     summary = "generative visual";
     recipeId = ctx.recipes.findByTags(significantTerms(d))?.id;
   }
