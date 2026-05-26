@@ -5,6 +5,7 @@ import { createAudioReactiveImpl } from "./createAudioReactive.js";
 import { createFeedbackNetworkImpl } from "./createFeedbackNetwork.js";
 import { createGenerativeArtImpl } from "./createGenerativeArt.js";
 import { createParticleSystemImpl } from "./createParticleSystem.js";
+import { significantTerms } from "./intent.js";
 import { buildFromRecipe, finalize, runBuild } from "./orchestration.js";
 
 export const createVisualSystemSchema = z.object({
@@ -120,11 +121,7 @@ export async function createVisualSystemImpl(ctx: ToolContext, args: CreateVisua
       );
     default: {
       // Try to match a recipe by keywords before falling back to generative GLSL.
-      const terms = args.description
-        .toLowerCase()
-        .split(/[^a-z0-9]+/)
-        .filter((t) => t.length > 3);
-      const recipe = ctx.recipes.findByTags(terms);
+      const recipe = ctx.recipes.findByTags(significantTerms(args.description));
       if (recipe) {
         return runBuild(async () => {
           const { builder, outputPath } = await buildFromRecipe(ctx, recipe, args.parent_path);

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { textResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { significantTerms } from "./intent.js";
 
 export const describeProjectSchema = z.object({
   description: z.string().min(1).describe("Natural-language description of the visual you want."),
@@ -35,8 +36,7 @@ export function describeProjectImpl(ctx: ToolContext, args: DescribeProjectArgs)
   } else {
     tool = "create_generative_art";
     summary = "generative visual";
-    const terms = d.split(/[^a-z0-9]+/).filter((t) => t.length > 3);
-    recipeId = ctx.recipes.findByTags(terms)?.id;
+    recipeId = ctx.recipes.findByTags(significantTerms(d))?.id;
   }
 
   const lines: string[] = [

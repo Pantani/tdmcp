@@ -36,9 +36,9 @@ describe("RecipeLibrary", () => {
     const byName = new Map(recipe?.glsl_uniforms.map((u) => [u.name, u]));
 
     const uFeed = byName.get("uFeed");
-    expect(uFeed).toMatchObject({ node: "glsl1", kind: "const", value: 0.055 });
+    expect(uFeed).toMatchObject({ node: "glsl1", kind: "float", value: 0.055 });
     const uKill = byName.get("uKill");
-    expect(uKill).toMatchObject({ node: "glsl1", kind: "const", value: 0.062 });
+    expect(uKill).toMatchObject({ node: "glsl1", kind: "float", value: 0.062 });
 
     // The shader must actually declare the uniforms it exposes, or they do nothing.
     expect(recipe?.glsl_code?.glsl1).toContain("uniform float uFeed");
@@ -67,10 +67,10 @@ describe("buildFromRecipe — GLSL uniforms", () => {
       name: "Uniform Probe",
       nodes: [{ name: "glsl1", type: "glslTOP" }],
       glsl_uniforms: [
-        { node: "glsl1", name: "uFeed", kind: "const", value: 0.055 },
-        { node: "glsl1", name: "uKill", kind: "const", value: 0.062 },
+        { node: "glsl1", name: "uFeed", kind: "float", value: 0.055 },
+        { node: "glsl1", name: "uKill", kind: "float", value: 0.062 },
         { node: "glsl1", name: "uTint", kind: "color", value: [0.1, 0.2, 0.3, 1] },
-        { node: "glsl1", name: "uDir", kind: "vec", value: [1, 0, 0, 0] },
+        { node: "glsl1", name: "uDir", kind: "vec", value: [1, 2, 3, 4] },
       ],
     });
 
@@ -95,28 +95,33 @@ describe("buildFromRecipe — GLSL uniforms", () => {
     const { builder } = await buildFromRecipe(makeCtx(), recipe, "/project1");
     expect(builder.warnings).toEqual([]);
 
-    // numBlocks is raised once per (node, kind) group, sized to the number of uniforms.
+    // numBlocks is raised once per (node, sequence) group. float + vec both bind through
+    // the `vec` sequence, so the three of them share it (3 blocks); color is its own.
     const exec = execScripts.join("\n");
-    expect(exec).toMatch(/\.seq\.const\n_seq\.numBlocks = max\(_seq\.numBlocks, 2\)/);
+    expect(exec).toMatch(/\.seq\.vec\n_seq\.numBlocks = max\(_seq\.numBlocks, 3\)/);
     expect(exec).toMatch(/\.seq\.color\n_seq\.numBlocks = max\(_seq\.numBlocks, 1\)/);
-    expect(exec).toMatch(/\.seq\.vec\n_seq\.numBlocks = max\(_seq\.numBlocks, 1\)/);
+    expect(exec).not.toContain(".seq.const");
 
     // The block name/value sub-parameters are set via the normal structured path.
     const all = Object.assign({}, ...patched) as Record<string, unknown>;
-    expect(all.const0name).toBe("uFeed");
-    expect(all.const0value).toBe(0.055);
-    expect(all.const1name).toBe("uKill");
-    expect(all.const1value).toBe(0.062);
+    // Two scalar floats occupy vec blocks 0 and 1, each filling only the x component.
+    expect(all.vec0name).toBe("uFeed");
+    expect(all.vec0valuex).toBe(0.055);
+    expect(all.vec0valuey).toBeUndefined();
+    expect(all.vec1name).toBe("uKill");
+    expect(all.vec1valuex).toBe(0.062);
+    // The vec uniform fills all four components in block 2.
+    expect(all.vec2name).toBe("uDir");
+    expect(all.vec2valuex).toBe(1);
+    expect(all.vec2valuey).toBe(2);
+    expect(all.vec2valuez).toBe(3);
+    expect(all.vec2valuew).toBe(4);
+    // The color uniform binds through the color sequence.
     expect(all.color0name).toBe("uTint");
     expect(all.color0rgbr).toBe(0.1);
     expect(all.color0rgbg).toBe(0.2);
     expect(all.color0rgbb).toBe(0.3);
     expect(all.color0alpha).toBe(1);
-    expect(all.vec0name).toBe("uDir");
-    expect(all.vec0valuex).toBe(1);
-    expect(all.vec0valuey).toBe(0);
-    expect(all.vec0valuez).toBe(0);
-    expect(all.vec0valuew).toBe(0);
   });
 
   it("warns instead of throwing when a uniform targets an unknown node", async () => {
@@ -124,7 +129,7 @@ describe("buildFromRecipe — GLSL uniforms", () => {
       id: "uniform_missing",
       name: "Uniform Missing",
       nodes: [{ name: "glsl1", type: "glslTOP" }],
-      glsl_uniforms: [{ node: "ghost", name: "uX", kind: "const", value: 1 }],
+      glsl_uniforms: [{ node: "ghost", name: "uX", kind: "float", value: 1 }],
     });
 
     const { builder } = await buildFromRecipe(makeCtx(), recipe, "/project1");
