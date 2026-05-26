@@ -1,0 +1,3 @@
+[mcp_servers.tdmcp]
+args = ["/Users/pantani/Desktop/art/mapping/tdmcp/dist/index.js"]
+command = "node"
