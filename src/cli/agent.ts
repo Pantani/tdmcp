@@ -1,8 +1,67 @@
+import { writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
+import { capturePreview } from "../feedback/previewCapture.js";
 import { buildToolContext } from "../server/context.js";
+import { type TdEventHandler, TdEventStream } from "../td-client/eventStream.js";
+import { friendlyTdError } from "../td-client/types.js";
+import {
+  applyPostProcessingImpl,
+  applyPostProcessingSchema,
+} from "../tools/layer1/applyPostProcessing.js";
+import {
+  createAudioReactiveImpl,
+  createAudioReactiveSchema,
+} from "../tools/layer1/createAudioReactive.js";
+import {
+  createDataVisualizationImpl,
+  createDataVisualizationSchema,
+} from "../tools/layer1/createDataVisualization.js";
+import {
+  createFeedbackNetworkImpl,
+  createFeedbackNetworkSchema,
+} from "../tools/layer1/createFeedbackNetwork.js";
+import {
+  createGenerativeArtImpl,
+  createGenerativeArtSchema,
+} from "../tools/layer1/createGenerativeArt.js";
+import {
+  createParticleSystemImpl,
+  createParticleSystemSchema,
+} from "../tools/layer1/createParticleSystem.js";
+import {
+  createVisualSystemImpl,
+  createVisualSystemSchema,
+} from "../tools/layer1/createVisualSystem.js";
+import { describeProjectImpl, describeProjectSchema } from "../tools/layer1/describeProject.js";
+import { getPreviewSchema } from "../tools/layer1/getPreview.js";
+import { setupOutputImpl, setupOutputSchema } from "../tools/layer1/setupOutput.js";
+import { animateParameterImpl, animateParameterSchema } from "../tools/layer2/animateParameter.js";
+import { arrangeNetworkImpl, arrangeNetworkSchema } from "../tools/layer2/arrangeNetwork.js";
+import { connectNodesImpl, connectNodesSchema } from "../tools/layer2/connectNodes.js";
+import { createContainerImpl, createContainerSchema } from "../tools/layer2/createContainer.js";
+import {
+  createControlPanelImpl,
+  createControlPanelSchema,
+} from "../tools/layer2/createControlPanel.js";
+import { createExternalIoImpl, createExternalIoSchema } from "../tools/layer2/createExternalIo.js";
+import { createGlslShaderImpl, createGlslShaderSchema } from "../tools/layer2/createGlslShader.js";
+import { createNodeChainImpl, createNodeChainSchema } from "../tools/layer2/createNodeChain.js";
+import {
+  createPythonScriptImpl,
+  createPythonScriptSchema,
+} from "../tools/layer2/createPythonScript.js";
+import { duplicateNetworkImpl, duplicateNetworkSchema } from "../tools/layer2/duplicateNetwork.js";
+import { manageCheckpointImpl, manageCheckpointSchema } from "../tools/layer2/manageCheckpoint.js";
+import { manageComponentImpl, manageComponentSchema } from "../tools/layer2/manageComponent.js";
+import { managePresetsImpl, managePresetsSchema } from "../tools/layer2/managePresets.js";
+import {
+  setParametersBatchImpl,
+  setParametersBatchSchema,
+} from "../tools/layer2/setParametersBatch.js";
 import { compareTdNodesImpl, compareTdNodesSchema } from "../tools/layer3/compareTdNodes.js";
 import { createTdNodeImpl, createTdNodeSchema } from "../tools/layer3/createTdNode.js";
 import { deleteTdNodeImpl, deleteTdNodeSchema } from "../tools/layer3/deleteTdNode.js";
@@ -27,6 +86,7 @@ import {
 import { getTdNodesImpl, getTdNodesSchema } from "../tools/layer3/getTdNodes.js";
 import { getTdPerformanceImpl, getTdPerformanceSchema } from "../tools/layer3/getTdPerformance.js";
 import { getTdTopologyImpl, getTdTopologySchema } from "../tools/layer3/getTdTopology.js";
+import { reloadBridgeImpl, reloadBridgeSchema } from "../tools/layer3/reloadBridge.js";
 import { snapshotTdGraphImpl, snapshotTdGraphSchema } from "../tools/layer3/snapshotTdGraph.js";
 import {
   summarizeTdErrorsImpl,
@@ -37,7 +97,7 @@ import {
   updateTdNodeParametersSchema,
 } from "../tools/layer3/updateTdNodeParameters.js";
 import type { ToolContext } from "../tools/types.js";
-import { loadConfig } from "../utils/config.js";
+import { loadConfig, type TdmcpConfig, tdBaseUrl } from "../utils/config.js";
 import { silentLogger } from "../utils/logger.js";
 
 // biome-ignore lint/suspicious/noExplicitAny: args are validated by each command's zod schema before use.
@@ -61,6 +121,11 @@ const r = (
 /** Static command tree — each entry maps 1:1 onto an existing MCP tool handler. */
 const COMMANDS: Record<string, Command> = {
   info: r(z.object({}), (ctx) => getTdInfoImpl(ctx), "Health check + TD/bridge info."),
+  reload: r(
+    reloadBridgeSchema,
+    reloadBridgeImpl,
+    "Hot-reload the bridge's Python after editing td/.",
+  ),
   "nodes list": r(
     getTdNodesSchema,
     getTdNodesImpl,
@@ -108,6 +173,111 @@ const COMMANDS: Record<string, Command> = {
     execNodeMethodImpl,
     "Escape hatch: call a Python method on a node.",
     { mutates: true, unsafe: true },
+  ),
+  // Layer 1 — high-level generators (each builds a whole network, verifies, previews).
+  visual: r(
+    createVisualSystemSchema,
+    createVisualSystemImpl,
+    "Build a visual system from a description.",
+    { mutates: true },
+  ),
+  feedback: r(createFeedbackNetworkSchema, createFeedbackNetworkImpl, "Build a feedback network.", {
+    mutates: true,
+  }),
+  generative: r(
+    createGenerativeArtSchema,
+    createGenerativeArtImpl,
+    "Build a generative-art system.",
+    { mutates: true },
+  ),
+  particles: r(createParticleSystemSchema, createParticleSystemImpl, "Build a particle system.", {
+    mutates: true,
+  }),
+  "audio-reactive": r(
+    createAudioReactiveSchema,
+    createAudioReactiveImpl,
+    "Build an audio-reactive visual.",
+    { mutates: true },
+  ),
+  dataviz: r(
+    createDataVisualizationSchema,
+    createDataVisualizationImpl,
+    "Build a data visualization.",
+    { mutates: true },
+  ),
+  "post-fx": r(
+    applyPostProcessingSchema,
+    applyPostProcessingImpl,
+    "Apply post-processing (bloom/blur/…).",
+    { mutates: true },
+  ),
+  output: r(setupOutputSchema, setupOutputImpl, "Set up a window / NDI / Syphon-Spout output.", {
+    mutates: true,
+  }),
+  plan: r(
+    describeProjectSchema,
+    describeProjectImpl,
+    "Plan which tool/recipe builds a described visual (creates nothing).",
+  ),
+  // Layer 2 — building blocks.
+  animate: r(animateParameterSchema, animateParameterImpl, "Drive parameters with an LFO.", {
+    mutates: true,
+  }),
+  arrange: r(arrangeNetworkSchema, arrangeNetworkImpl, "Auto-arrange a network left→right.", {
+    mutates: true,
+  }),
+  connect: r(connectNodesSchema, connectNodesImpl, "Wire two nodes together.", { mutates: true }),
+  container: r(createContainerSchema, createContainerImpl, "Create a COMP container.", {
+    mutates: true,
+  }),
+  "control-panel": r(
+    createControlPanelSchema,
+    createControlPanelImpl,
+    "Add bound custom-parameter controls to a COMP.",
+    { mutates: true },
+  ),
+  io: r(
+    createExternalIoSchema,
+    createExternalIoImpl,
+    "Bridge OSC/MIDI in, DMX out, NDI/Syphon in.",
+    {
+      mutates: true,
+    },
+  ),
+  glsl: r(createGlslShaderSchema, createGlslShaderImpl, "Create a GLSL TOP shader.", {
+    mutates: true,
+  }),
+  chain: r(createNodeChainSchema, createNodeChainImpl, "Create a chain of connected nodes.", {
+    mutates: true,
+  }),
+  script: r(
+    createPythonScriptSchema,
+    createPythonScriptImpl,
+    "Create a DAT preloaded with Python.",
+    {
+      mutates: true,
+    },
+  ),
+  duplicate: r(duplicateNetworkSchema, duplicateNetworkImpl, "Duplicate a network.", {
+    mutates: true,
+  }),
+  component: r(manageComponentSchema, manageComponentImpl, "Save/load a COMP as a .tox.", {
+    mutates: true,
+  }),
+  checkpoint: r(
+    manageCheckpointSchema,
+    manageCheckpointImpl,
+    "Store/restore a full sub-network snapshot (undo point).",
+    { mutates: true },
+  ),
+  preset: r(managePresetsSchema, managePresetsImpl, "Store/recall/list/delete COMP presets.", {
+    mutates: true,
+  }),
+  params: r(
+    setParametersBatchSchema,
+    setParametersBatchImpl,
+    "Set many parameters across nodes at once.",
+    { mutates: true },
   ),
 };
 
@@ -166,6 +336,8 @@ function usage(): string {
   lines.push("  --output <fmt>    json (default) | ndjson | text.");
   lines.push("  --dry-run         Validate and print the intended call without executing.");
   lines.push("  --allow-unsafe    Required for `exec` escape-hatch commands.");
+  lines.push("  -o, --out <file>  (preview) Output PNG path. Defaults to ./preview.png.");
+  lines.push("  --include-high-frequency  (watch) Also stream timeline.frame / node.cook events.");
   lines.push("  -h, --help        Show this help.", "");
   lines.push("Commands:");
   for (const [key, cmd] of Object.entries(COMMANDS)) {
@@ -175,12 +347,18 @@ function usage(): string {
     lines.push(`  ${key.padEnd(20)} ${cmd.summary}${tags ? `  [${tags}]` : ""}`);
   }
   lines.push("  schema <command>     Print a command's JSON Schema and metadata.");
+  lines.push("  preview <nodePath>   Capture a TOP to a PNG file (-o/--out).  [writes a file]");
+  lines.push("  watch                Stream TD events as ndjson until Ctrl-C.  [long-running]");
   return lines.join("\n");
 }
 
 export interface RunCliOptions {
   /** Inject a context (used by tests); production builds one from env config. */
   makeCtx?: () => ToolContext;
+}
+
+function buildCtx(opts: RunCliOptions): ToolContext {
+  return opts.makeCtx ? opts.makeCtx() : buildToolContext(loadConfig(), { logger: silentLogger });
 }
 
 function parseCliArgs(argv: string[]) {
@@ -193,6 +371,8 @@ function parseCliArgs(argv: string[]) {
       output: { type: "string", default: "json" },
       "dry-run": { type: "boolean", default: false },
       "allow-unsafe": { type: "boolean", default: false },
+      out: { type: "string", short: "o" },
+      "include-high-frequency": { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false },
     },
   });
@@ -224,6 +404,62 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
       input: z.toJSONSchema(cmd.schema),
     };
     return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
+  }
+
+  // `preview <nodePath> -o file.png` — capture a TOP and write it to disk. This is a
+  // side effect that doesn't fit the CallToolResult command table, so it's handled here.
+  if (positionals[0] === "preview") {
+    const raw: Record<string, unknown> = {};
+    try {
+      if (typeof values.params === "string") Object.assign(raw, JSON.parse(values.params));
+      if (typeof values.json === "string") Object.assign(raw, JSON.parse(values.json));
+    } catch (err) {
+      return {
+        stdout: "",
+        stderr: `Invalid JSON in --params/--json: ${(err as Error).message}\n`,
+        code: 2,
+      };
+    }
+    if (positionals[1]) raw.node_path = positionals[1];
+    const parsed = getPreviewSchema.safeParse(raw);
+    if (!parsed.success) {
+      return {
+        stdout: "",
+        stderr: `Invalid arguments for "preview": ${parsed.error.message}\n`,
+        code: 2,
+      };
+    }
+    const outPath = typeof values.out === "string" && values.out ? values.out : "preview.png";
+    if (values["dry-run"]) {
+      const doc = { dryRun: true, command: "preview", args: parsed.data, out: resolve(outPath) };
+      return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
+    }
+    const ctx = buildCtx(opts);
+    try {
+      const preview = await capturePreview(
+        ctx.client,
+        parsed.data.node_path,
+        parsed.data.width,
+        parsed.data.height,
+      );
+      const bytes = Buffer.from(preview.base64, "base64");
+      writeFileSync(outPath, bytes);
+      const doc = {
+        node_path: preview.path,
+        file: resolve(outPath),
+        width: preview.width,
+        height: preview.height,
+        bytes: bytes.length,
+        mimeType: preview.mimeType,
+      };
+      return {
+        stdout: `${JSON.stringify(doc, null, 2)}\n`,
+        stderr: `Saved preview of ${preview.path} to ${outPath} (${bytes.length} bytes).\n`,
+        code: 0,
+      };
+    } catch (err) {
+      return { stdout: "", stderr: `${friendlyTdError(err)}\n`, code: 1 };
+    }
   }
 
   const resolved = resolveCommand(positionals);
@@ -268,9 +504,7 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
     return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
   }
 
-  const ctx = opts.makeCtx
-    ? opts.makeCtx()
-    : buildToolContext(loadConfig(), { logger: silentLogger });
+  const ctx = buildCtx(opts);
 
   if (cmd.unsafe) {
     if (ctx.allowRawPython === false) {
@@ -304,8 +538,58 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   };
 }
 
+export interface RunWatchOptions {
+  config?: TdmcpConfig;
+  includeHighFrequency?: boolean;
+  /** Where each event line goes; defaults to stdout. Overridable for tests. */
+  write?: (line: string) => void;
+  /** Inject a stream factory for tests; defaults to a real `TdEventStream`. */
+  makeStream?: (args: { url: string; onEvent: TdEventHandler; includeHighFrequency: boolean }) => {
+    start: () => void;
+    close: () => void;
+  };
+  /** Resolve the returned promise when aborted; defaults to listening for SIGINT. */
+  signal?: AbortSignal;
+}
+
+/**
+ * Streams TouchDesigner bridge events to stdout as ndjson until interrupted.
+ * Runs outside `runCli` because it is a long-lived stream, not a request/response.
+ */
+export function runWatch(opts: RunWatchOptions = {}): Promise<void> {
+  const config = opts.config ?? loadConfig();
+  const url = `${tdBaseUrl(config).replace(/^http/, "ws")}/`;
+  const write = opts.write ?? ((line: string) => process.stdout.write(`${line}\n`));
+  const includeHighFrequency = opts.includeHighFrequency ?? false;
+  const onEvent: TdEventHandler = (event) => write(JSON.stringify(event));
+  const stream = opts.makeStream
+    ? opts.makeStream({ url, onEvent, includeHighFrequency })
+    : new TdEventStream({ url, onEvent, includeHighFrequency });
+  stream.start();
+  process.stderr.write(`Watching ${url} for TouchDesigner events (Ctrl-C to stop)…\n`);
+  return new Promise<void>((resolveDone) => {
+    const stop = () => {
+      stream.close();
+      resolveDone();
+    };
+    if (opts.signal) {
+      if (opts.signal.aborted) return stop();
+      opts.signal.addEventListener("abort", stop, { once: true });
+    } else {
+      process.once("SIGINT", stop);
+    }
+  });
+}
+
 async function main(): Promise<void> {
-  const result = await runCli(process.argv.slice(2));
+  const argv = process.argv.slice(2);
+  const wantsHelp = argv.includes("--help") || argv.includes("-h");
+  // `watch` is a long-lived stream, so it bypasses runCli's request/response model.
+  if (argv[0] === "watch" && !wantsHelp) {
+    await runWatch({ includeHighFrequency: argv.includes("--include-high-frequency") });
+    return;
+  }
+  const result = await runCli(argv);
   if (result.stdout) process.stdout.write(result.stdout);
   if (result.stderr) process.stderr.write(result.stderr);
   process.exitCode = result.code;

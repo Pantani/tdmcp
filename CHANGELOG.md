@@ -4,6 +4,33 @@ All notable changes to **tdmcp** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-05-26
+
+Developer experience and a scriptable CLI: drive the whole toolset from a shell, stream
+live events, and take undo points before risky edits.
+
+### Added
+
+- **`reload_bridge`** — hot-reload the bridge's Python inside the running TouchDesigner so
+  edits under `td/` take effect without reopening the project (also `tdmcp-agent reload`).
+- **`manage_checkpoint`** — store / restore / list / delete a full snapshot of a
+  sub-network (an "undo point"). A checkpoint captures every node's constant parameters,
+  the wiring and node positions; restoring reapplies parameters, recreates nodes deleted
+  since (with their wiring) and prunes nodes created since. Complements `manage_presets`
+  (which captures custom-parameter looks for performance) by snapshotting the whole network.
+- **CLI `preview`** — capture a TOP straight to a PNG file (`-o/--out`).
+- **CLI `watch`** — stream TouchDesigner bridge events (`node.created`, `node.cook`,
+  `timeline.frame`, …) as ndjson until interrupted; `--include-high-frequency` opts into
+  the per-frame events.
+- **CLI: full Layer-1/Layer-2 coverage** — the agent now exposes the high-level generators
+  and building blocks, not just Layer-3 CRUD: `visual`, `feedback`, `generative`,
+  `particles`, `audio-reactive`, `dataviz`, `post-fx`, `output`, `plan`, plus `animate`,
+  `arrange`, `connect`, `container`, `control-panel`, `io`, `glsl`, `chain`, `script`,
+  `duplicate`, `component`, `preset`, `params` and `checkpoint`. Whole systems can now be
+  scripted from a shell.
+
+[0.3.0]: https://github.com/Pantani/tdmcp/releases/tag/v0.3.0
+
 ## [0.2.0] - 2026-05-26
 
 Live control: generated systems are now playable instruments, not just static renders.

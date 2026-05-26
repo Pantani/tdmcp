@@ -9,6 +9,7 @@ import { registerCreateGlslShader } from "./createGlslShader.js";
 import { registerCreateNodeChain } from "./createNodeChain.js";
 import { registerCreatePythonScript } from "./createPythonScript.js";
 import { registerDuplicateNetwork } from "./duplicateNetwork.js";
+import { registerManageCheckpoint } from "./manageCheckpoint.js";
 import { registerManageComponent } from "./manageComponent.js";
 import { registerManagePresets } from "./managePresets.js";
 import { registerSetParametersBatch } from "./setParametersBatch.js";
@@ -23,6 +24,7 @@ export const layer2Registrars: ToolRegistrar[] = [
   registerCreateControlPanel,
   registerAnimateParameter,
   registerManagePresets,
+  registerManageCheckpoint,
   registerManageComponent,
   registerCreateExternalIo,
   registerDuplicateNetwork,

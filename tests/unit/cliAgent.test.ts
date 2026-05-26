@@ -1,5 +1,6 @@
+import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { runCli } from "../../src/cli/agent.js";
+import { runCli, runWatch } from "../../src/cli/agent.js";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
 import { RecipeLibrary } from "../../src/recipes/loader.js";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
@@ -112,5 +113,108 @@ describe("tdmcp-agent CLI", () => {
     expect(lines.length).toBeGreaterThanOrEqual(2);
     expect(r.stdout).toContain("noise1");
     expect(r.stdout).toContain("null1");
+  });
+});
+
+describe("tdmcp-agent CLI — phase 0 additions", () => {
+  it("lists the new high-level + DX commands in --help", async () => {
+    const r = await runCli(["--help"]);
+    expect(r.code).toBe(0);
+    for (const cmd of [
+      "reload",
+      "visual",
+      "audio-reactive",
+      "checkpoint",
+      "preview",
+      "watch",
+      "plan",
+    ]) {
+      expect(r.stdout).toContain(cmd);
+    }
+  });
+
+  it("emits a JSON Schema for a Layer-2 command (checkpoint)", async () => {
+    const r = await runCli(["schema", "checkpoint"]);
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.command).toBe("checkpoint");
+    expect(JSON.stringify(doc.input)).toContain("recreate_deleted");
+  });
+
+  it("dry-runs a Layer-1 generator without calling TD", async () => {
+    const r = await runCli(["generative", "--dry-run", "--params", '{"technique":"voronoi"}']);
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.dryRun).toBe(true);
+    expect(doc.command).toBe("generative");
+    expect(doc.args.technique).toBe("voronoi");
+  });
+
+  it("dry-runs preview and resolves an output path without writing a file", async () => {
+    const r = await runCli(["preview", "/project1/out1", "--dry-run"]);
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.dryRun).toBe(true);
+    expect(doc.command).toBe("preview");
+    expect(doc.args.node_path).toBe("/project1/out1");
+    expect(doc.out).toContain("preview.png");
+  });
+
+  it("requires a node path for preview", async () => {
+    const r = await runCli(["preview"]);
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain("Invalid arguments");
+  });
+
+  it("reloads the bridge through the mocked exec endpoint", async () => {
+    server.use(
+      http.post(`${TD_BASE}/api/exec`, () =>
+        HttpResponse.json({
+          ok: true,
+          data: { result: null, stdout: '{"reloaded": ["mcp", "utils"], "count": 2}' },
+        }),
+      ),
+    );
+    const r = await runCli(["reload"], { makeCtx });
+    expect(r.code).toBe(0);
+    expect(JSON.parse(r.stdout).count).toBe(2);
+  });
+});
+
+describe("tdmcp-agent watch", () => {
+  it("writes events as ndjson and stops when the signal aborts", async () => {
+    const lines: string[] = [];
+    const controller = new AbortController();
+    let emit: ((e: { event: string; data?: unknown }) => void) | undefined;
+    let closed = false;
+    const done = runWatch({
+      write: (line) => lines.push(line),
+      signal: controller.signal,
+      makeStream: ({ onEvent }) => {
+        emit = onEvent;
+        return { start: () => {}, close: () => (closed = true) };
+      },
+    });
+    emit?.({ event: "node.created", data: { path: "/project1/x" } });
+    controller.abort();
+    await done;
+    expect(closed).toBe(true);
+    expect(lines).toContain('{"event":"node.created","data":{"path":"/project1/x"}}');
+  });
+
+  it("derives a ws:// url ending in / from config", async () => {
+    let url = "";
+    const controller = new AbortController();
+    const done = runWatch({
+      write: () => {},
+      signal: controller.signal,
+      makeStream: (args) => {
+        url = args.url;
+        return { start: () => {}, close: () => {} };
+      },
+    });
+    controller.abort();
+    await done;
+    expect(url).toMatch(/^ws:\/\/.+\/$/);
   });
 });

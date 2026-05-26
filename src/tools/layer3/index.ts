@@ -14,6 +14,7 @@ import { registerGetTdNodeParameters } from "./getTdNodeParameters.js";
 import { registerGetTdNodes } from "./getTdNodes.js";
 import { registerGetTdPerformance } from "./getTdPerformance.js";
 import { registerGetTdTopology } from "./getTdTopology.js";
+import { registerReloadBridge } from "./reloadBridge.js";
 import { registerSnapshotTdGraph } from "./snapshotTdGraph.js";
 import { registerSummarizeTdErrors } from "./summarizeTdErrors.js";
 import { registerUpdateTdNodeParameters } from "./updateTdNodeParameters.js";
@@ -37,4 +38,5 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerSummarizeTdErrors,
   registerCompareTdNodes,
   registerSnapshotTdGraph,
+  registerReloadBridge,
 ];
