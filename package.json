@@ -35,6 +35,7 @@
     "format": "biome format --write .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:bridge": "python3 -m unittest discover -s td/tests",
     "typecheck": "tsc --noEmit",
     "import:bottobot": "tsx scripts/import-bottobot-data.ts",
     "validate:recipes": "tsx scripts/validate-recipes.ts",
