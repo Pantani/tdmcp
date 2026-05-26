@@ -47,11 +47,12 @@ Claude Desktop extension, which bundles the server for you).
 
 - **[TouchDesigner](https://derivative.ca/download)** — the free non-commercial
   edition is fine.
-- An MCP-capable AI assistant: **Claude Desktop** (easiest), **Claude Code**, or
-  **Cursor**.
+- An MCP-capable AI assistant: **Claude Desktop** (easiest), **Claude Code**,
+  **Codex**, or **Cursor**.
 
-**Do I need Node.js?** Only for the build-from-source path (Claude Code / Cursor),
-which needs **[Node.js 20+](https://nodejs.org)** — check with `node -v`. The
+**Do I need Node.js?** Only for the build-from-source path (Claude Code, Codex,
+or Cursor), which needs **[Node.js 20+](https://nodejs.org)** — check with
+`node -v`. The
 one-click Claude Desktop extension needs **nothing extra**: Claude Desktop ships
 with its own Node, and the server is bundled inside the `.dxt`.
 
@@ -59,18 +60,27 @@ with its own Node, and the server is bundled inside the `.dxt`.
 
 ## Get started
 
-You set up **two sides** and they meet in the middle:
+You set up **two sides**: your **AI** (so it gets the tdmcp tools) and
+**TouchDesigner** (so the AI can drive it). Pick whichever way is easiest for you.
 
-1. **Your AI** — connect the tdmcp server to it. *How* depends on your client (Step 1).
-2. **TouchDesigner** — flip on the **bridge** with one pasted line. *Same for everyone* (Step 2).
+**🤖 The easiest way — let your AI install it for you.** If you already use
+**Claude Code**, **Codex**, or **Cursor**, you don't have to do any of the manual
+steps below. Just **paste this one message** into it:
 
-**Most people should use Claude Desktop + the one-click `.dxt`** — no terminal, no
-Node, no building. Choose your client in **Step 1**, then everyone does **Steps 2–3**.
+```text
+Install and connect tdmcp for me by reading and following
+https://raw.githubusercontent.com/Pantani/tdmcp/main/tdmcp-install-prompt.md
+Do every step yourself; only stop when you need me to paste one line into TouchDesigner.
+```
 
-> 🤖 **Don't want to do it by hand?** Hand
-> [`tdmcp-install-prompt.md`](tdmcp-install-prompt.md) to Claude Code, Codex, or
-> Cursor and it runs the whole install for you — you only paste one line into
-> TouchDesigner at the end.
+**That's the whole install.** Your AI clones, builds, and wires everything up on
+its own. The *only* thing it will ask you to do is paste one line into
+TouchDesigner's Textport when it's ready — nothing else. (It's the
+[`tdmcp-install-prompt.md`](tdmcp-install-prompt.md) runbook doing the work.)
+
+**Prefer to do it yourself, or using Claude Desktop?** Follow the three manual
+steps below — Step 1's one-click `.dxt` is the no-terminal, no-Node route for
+Claude Desktop.
 
 ### Step 1 — Connect tdmcp to your AI
 
@@ -99,7 +109,7 @@ Connected — **now do Step 2** to turn on the bridge. (Docker/HTTP options live
 </details>
 
 <details>
-<summary><b>Claude Code or Cursor — build from source (needs Node 20+)</b></summary>
+<summary><b>Claude Code, Codex, or Cursor — build from source (needs Node 20+)</b></summary>
 
 <br />
 
@@ -120,6 +130,20 @@ equivalents:
 
   ```bash
   claude mcp add tdmcp -- node <project-path>/dist/index.js
+  ```
+
+- **Codex CLI:**
+
+  ```bash
+  codex mcp add tdmcp -- node <project-path>/dist/index.js
+  ```
+
+  Prefer editing config by hand? Add this to `~/.codex/config.toml`:
+
+  ```toml
+  [mcp_servers.tdmcp]
+  command = "node"
+  args = ["<project-path>/dist/index.js"]
   ```
 
 - **Cursor** — create `.cursor/mcp.json` in your workspace:

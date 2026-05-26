@@ -7,7 +7,9 @@ const q = (value: string): string => JSON.stringify(value);
 const AUDIO_SPECTRUM_SHADER = `out vec4 fragColor;
 void main(){
     vec2 uv = vUV.st;
-    float amp = texture(sTD2DInputs[0], vec2(uv.x, 0.5)).r;
+    // Audio Spectrum CHOP magnitudes are tiny (~0.01–0.1); scale into the [0,1] bar
+    // range so realistic input renders visible bars instead of a near-black frame.
+    float amp = texture(sTD2DInputs[0], vec2(uv.x, 0.5)).r * 20.0;
     float bar = step(uv.y, clamp(amp, 0.0, 1.0));
     vec3 col = mix(vec3(0.02, 0.0, 0.08), vec3(0.1, 0.8, 1.0), uv.x) * bar;
     fragColor = TDOutputSwizzle(vec4(col, 1.0));

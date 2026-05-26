@@ -49,6 +49,14 @@ export async function createParticleSystemImpl(ctx: ToolContext, args: CreatePar
       { name: "emitter", path: emitter.path, type: emitter.type },
       { name: "particle", path: particle.path, type: particle.type },
     );
+    // The "point" emitter is an Add SOP, which ships with zero points — so the particle
+    // SOP would have no source to birth from and the system renders empty. Enable a point
+    // (its count is a parameter *sequence*, set via numBlocks rather than a plain par).
+    if (args.emitter_shape === "point") {
+      await builder.python(
+        `_e = op(${q(emitter.path)})\n_e.par.addpts = True\n_e.seq.point.numBlocks = max(_e.seq.point.numBlocks, 1)`,
+      );
+    }
     await builder.connect(emitter.path, particle.path);
 
     const mat = await builder.add(
