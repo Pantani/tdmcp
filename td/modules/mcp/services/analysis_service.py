@@ -44,13 +44,18 @@ def topology(path, recursive=False):
     return {"nodes": nodes, "connections": connections}
 
 
-def performance(path):
+def performance(path, recursive=False):
     root = op(path)  # noqa: F821
     if root is None:
         return {"nodes": [], "total_cook_time_ms": 0.0}
     nodes = []
     total = 0.0
-    children = root.findChildren(depth=1) if hasattr(root, "findChildren") else []
+    if not hasattr(root, "findChildren"):
+        children = []
+    elif recursive:
+        children = root.findChildren()  # all descendants (cook time of nested nodes too)
+    else:
+        children = root.findChildren(depth=1)  # direct children only
     for child in children:
         cook_time = float(getattr(child, "cookTime", 0.0) or 0.0)
         total += cook_time

@@ -9,13 +9,18 @@ export interface PerformanceReport {
   warnings: string[];
 }
 
-/** Reports cook times against the frame budget implied by `targetFps`. */
+/**
+ * Reports cook times against the frame budget implied by `targetFps`. `recursive`
+ * measures every descendant (so cook time inside generated containers is counted, not
+ * just the root's direct children). Nodes are returned slowest-first.
+ */
 export async function checkPerformance(
   client: TouchDesignerClient,
   path: string,
   targetFps = 60,
+  recursive = true,
 ): Promise<PerformanceReport> {
-  const perf = await client.getNetworkPerformance(path);
+  const perf = await client.getNetworkPerformance(path, recursive);
   const frameBudgetMs = 1000 / targetFps;
   const warnings: string[] = [];
 
@@ -35,5 +40,7 @@ export async function checkPerformance(
     );
   }
 
-  return { path, targetFps, frameBudgetMs, totalCookMs, nodes: perf.nodes, warnings };
+  // Surface the slowest nodes first so the real bottlenecks are obvious.
+  const nodes = [...perf.nodes].sort((a, b) => b.cook_time_ms - a.cook_time_ms);
+  return { path, targetFps, frameBudgetMs, totalCookMs, nodes, warnings };
 }

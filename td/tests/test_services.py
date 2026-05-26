@@ -31,7 +31,7 @@ _td_stub.app = mock.MagicMock(name="app")
 _td_stub.project = mock.MagicMock(name="project")
 sys.modules.setdefault("td", _td_stub)
 
-from mcp.services import api_service, batch_service  # noqa: E402
+from mcp.services import analysis_service, api_service, batch_service  # noqa: E402
 
 
 # --- Lightweight fakes for TD node objects -------------------------------------
@@ -165,6 +165,44 @@ class ConnectGuardTests(unittest.TestCase):
         with self._patch_op({}):
             with self.assertRaises(LookupError):
                 batch_service.connect("/a", "/b")
+
+
+class _PerfNode:
+    def __init__(self, path, cook_time=0.0, cook_count=0):
+        self.path = path
+        self.cookTime = cook_time
+        self.cookCount = cook_count
+
+
+class _PerfRoot:
+    """Returns direct children at depth=1, all descendants otherwise — like a TD COMP."""
+
+    def __init__(self, direct, nested):
+        self._direct = direct
+        self._nested = nested
+
+    def findChildren(self, depth=None):
+        return self._direct if depth == 1 else self._nested
+
+
+class PerformanceRecursiveTests(unittest.TestCase):
+    def _run(self, recursive):
+        direct = [_PerfNode("/p/a", 1.0)]
+        nested = [_PerfNode("/p/a", 1.0), _PerfNode("/p/sys/inner", 2.0)]
+        root = _PerfRoot(direct, nested)
+        with mock.patch.object(analysis_service, "op", lambda path: root):
+            return analysis_service.performance("/p", recursive=recursive)
+
+    def test_shallow_measures_only_direct_children(self):
+        result = self._run(recursive=False)
+        self.assertEqual([n["path"] for n in result["nodes"]], ["/p/a"])
+        self.assertEqual(result["total_cook_time_ms"], 1.0)
+
+    def test_recursive_measures_nested_nodes_too(self):
+        result = self._run(recursive=True)
+        self.assertEqual(sorted(n["path"] for n in result["nodes"]), ["/p/a", "/p/sys/inner"])
+        # Nested node's cook time is now counted in the total.
+        self.assertEqual(result["total_cook_time_ms"], 3.0)
 
 
 if __name__ == "__main__":

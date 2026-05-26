@@ -160,7 +160,9 @@ def _route(method, path, query, body):
         if kind == "topology":
             return analysis_service.topology(node_path, recursive=_qs(query, "recursive") == "true")
         if kind == "performance":
-            return analysis_service.performance(node_path)
+            return analysis_service.performance(
+                node_path, recursive=_qs(query, "recursive") == "true"
+            )
 
     raise ValueError("Unsupported %s %s" % (method, path))
 

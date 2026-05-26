@@ -37,6 +37,7 @@ describe("analysis tool handlers", () => {
       const result = await getTdPerformanceImpl(makeCtx(), {
         root_path: "/project1",
         target_fps: 60,
+        recursive: true,
       });
       expect(result.isError).toBeFalsy();
       // Summary text stays small; full data travels on structuredContent.

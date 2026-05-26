@@ -10,6 +10,12 @@ export const getTdPerformanceSchema = z.object({
     .positive()
     .default(60)
     .describe("Frame-rate target used to flag slow nodes."),
+  recursive: z
+    .boolean()
+    .default(true)
+    .describe(
+      "Measure every descendant (true, default) so cook time inside generated containers is counted, not just the root's direct children.",
+    ),
 });
 type GetTdPerformanceArgs = z.infer<typeof getTdPerformanceSchema>;
 
@@ -30,7 +36,7 @@ export const getTdPerformanceOutputSchema = z.object({
 
 export async function getTdPerformanceImpl(ctx: ToolContext, args: GetTdPerformanceArgs) {
   return guardTd(
-    () => checkPerformance(ctx.client, args.root_path, args.target_fps),
+    () => checkPerformance(ctx.client, args.root_path, args.target_fps, args.recursive),
     (report) =>
       structuredResult(
         report.warnings.length === 0
@@ -47,7 +53,7 @@ export const registerGetTdPerformance: ToolRegistrar = (server, ctx) => {
     {
       title: "Get network performance",
       description:
-        "Report cook times under a network and warn about nodes that exceed the frame budget.",
+        "Report cook times under a network (recursively by default, slowest node first) and warn about nodes that exceed the frame budget.",
       inputSchema: getTdPerformanceSchema.shape,
       outputSchema: getTdPerformanceOutputSchema.shape,
       annotations: { readOnlyHint: true, openWorldHint: true },

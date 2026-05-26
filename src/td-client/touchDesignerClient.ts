@@ -233,7 +233,13 @@ export class TouchDesignerClient {
     );
   }
 
-  getNetworkPerformance(path: string) {
-    return this.request("GET", `/api/network/${segment(path)}/performance`, PerformanceSchema);
+  getNetworkPerformance(path: string, recursive = false) {
+    return this.request(
+      "GET",
+      `/api/network/${segment(path)}/performance`,
+      PerformanceSchema,
+      undefined,
+      recursive ? { recursive: true } : undefined,
+    );
   }
 }
