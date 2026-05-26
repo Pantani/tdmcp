@@ -25,6 +25,7 @@
     { "name": "out1", "type": "nullTOP", "comment": "Output of the simulation" }
   ],
   "connections": [
+    { "from": "seed1", "to": "feedback1", "to_input": 0 },
     { "from": "feedback1", "to": "glsl1", "to_input": 0 },
     { "from": "glsl1", "to": "out1" }
   ],
@@ -35,6 +36,47 @@
       "param": "top",
       "value": "glsl1",
       "description": "feedbackTOP samples glsl1 (the simulation output)."
+    },
+    {
+      "name": "uniform_count",
+      "node": "glsl1",
+      "param": "const",
+      "value": 2,
+      "description": "Declare two scalar (Constant) uniforms on the GLSL TOP so uFeed/uKill resolve."
+    },
+    {
+      "name": "feed_rate",
+      "node": "glsl1",
+      "param": "const0value",
+      "value": 0.055,
+      "label": "Feed rate",
+      "min": 0,
+      "max": 0.1,
+      "description": "Gray-Scott feed rate, bound to the uFeed uniform."
+    },
+    {
+      "name": "feed_uniform_name",
+      "node": "glsl1",
+      "param": "const0name",
+      "value": "uFeed",
+      "description": "Bind Constant 0 to the uFeed uniform."
+    },
+    {
+      "name": "kill_rate",
+      "node": "glsl1",
+      "param": "const1value",
+      "value": 0.062,
+      "label": "Kill rate",
+      "min": 0,
+      "max": 0.1,
+      "description": "Gray-Scott kill rate, bound to the uKill uniform."
+    },
+    {
+      "name": "kill_uniform_name",
+      "node": "glsl1",
+      "param": "const1name",
+      "value": "uKill",
+      "description": "Bind Constant 1 to the uKill uniform."
     }
   ],
   "glsl_code": {
