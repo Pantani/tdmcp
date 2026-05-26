@@ -5,8 +5,11 @@ import { KnowledgeBase } from "../../src/knowledge/index.js";
 import { RecipeLibrary } from "../../src/recipes/loader.js";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
 import { createTdNodeImpl } from "../../src/tools/layer3/createTdNode.js";
+import { deleteTdNodeImpl } from "../../src/tools/layer3/deleteTdNode.js";
 import { getTdInfoImpl } from "../../src/tools/layer3/getTdInfo.js";
+import { getTdNodeParametersImpl } from "../../src/tools/layer3/getTdNodeParameters.js";
 import { getTdNodesImpl } from "../../src/tools/layer3/getTdNodes.js";
+import { updateTdNodeParametersImpl } from "../../src/tools/layer3/updateTdNodeParameters.js";
 import type { ToolContext } from "../../src/tools/types.js";
 import { silentLogger } from "../../src/utils/logger.js";
 import { makeTdServer, offlineInfoHandler, TD_BASE } from "../helpers/tdMock.js";
@@ -73,5 +76,60 @@ describe("layer 3 tool handlers", () => {
     const data = JSON.stringify(result.structuredContent);
     expect(data).toContain("noise1");
     expect(data).toContain("null1");
+  });
+
+  it("get_td_node_parameters returns all params and I/O by default", async () => {
+    const result = await getTdNodeParametersImpl(makeCtx(), {
+      path: "/project1/noise1",
+      omit_io: false,
+    });
+    const data = result.structuredContent as {
+      parameters: Record<string, unknown>;
+      inputs?: unknown;
+      outputs?: unknown;
+    };
+    expect(data.parameters).toHaveProperty("period");
+    expect(data.parameters).toHaveProperty("amplitude");
+    expect(data).toHaveProperty("inputs");
+    expect(data).toHaveProperty("outputs");
+  });
+
+  it("get_td_node_parameters projects requested keys and can omit I/O", async () => {
+    const result = await getTdNodeParametersImpl(makeCtx(), {
+      path: "/project1/noise1",
+      keys: ["period"],
+      omit_io: true,
+    });
+    const data = result.structuredContent as {
+      parameters: Record<string, unknown>;
+      inputs?: unknown;
+      outputs?: unknown;
+    };
+    expect(Object.keys(data.parameters)).toEqual(["period"]);
+    expect(data).not.toHaveProperty("inputs");
+    expect(data).not.toHaveProperty("outputs");
+  });
+
+  it("update_td_node_parameters sets parameters and reports the count", async () => {
+    const result = await updateTdNodeParametersImpl(makeCtx(), {
+      path: "/project1/noise1",
+      parameters: { period: 4, amplitude: 0.5 },
+    });
+    expect(result.isError).toBeFalsy();
+    expect(textOf(result)).toContain("Updated 2 parameter(s)");
+    expect(textOf(result)).toContain("/project1/noise1");
+  });
+
+  it("delete_td_node removes a node by path", async () => {
+    const result = await deleteTdNodeImpl(makeCtx(), { path: "/project1/noise1" });
+    expect(result.isError).toBeFalsy();
+    expect(textOf(result)).toContain("Deleted /project1/noise1");
+  });
+
+  it("delete_td_node returns a friendly error when offline", async () => {
+    server.use(http.delete(`${TD_BASE}/api/nodes/:seg`, () => HttpResponse.error()));
+    const result = await deleteTdNodeImpl(makeCtx(), { path: "/project1/noise1" });
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("Cannot reach TouchDesigner");
   });
 });

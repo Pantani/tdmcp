@@ -21,7 +21,7 @@ async function connectClient(env: NodeJS.ProcessEnv = {}) {
 }
 
 describe("integration: Layer 3 over the MCP protocol", () => {
-  it("exposes all 9 Layer 3 tools", async () => {
+  it("exposes the core Layer 3 tools", async () => {
     const client = await connectClient();
     const { tools } = await client.listTools();
     const names = tools.map((t) => t.name);

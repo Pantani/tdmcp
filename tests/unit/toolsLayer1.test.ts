@@ -1,4 +1,5 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
 import { RecipeLibrary } from "../../src/recipes/loader.js";
@@ -11,6 +12,13 @@ import { setupOutputImpl } from "../../src/tools/layer1/setupOutput.js";
 import type { ToolContext } from "../../src/tools/types.js";
 import { silentLogger } from "../../src/utils/logger.js";
 import { makeTdServer, TD_BASE } from "../helpers/tdMock.js";
+
+interface CreatedNodeBody {
+  parent_path: string;
+  type: string;
+  name?: string;
+  parameters?: Record<string, unknown>;
+}
 
 const server = makeTdServer();
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
@@ -63,6 +71,57 @@ describe("layer 1 tool handlers", () => {
       expect(text).toContain("/project1/audio_reactive");
       expect(text).toContain("/project1/audio_reactive/out1");
       expect(text).toContain("style: geometric");
+    });
+
+    // Records every POST /api/nodes body so a test can assert what parameters a
+    // builder asked the bridge to set on a node.
+    function captureCreateBodies(): CreatedNodeBody[] {
+      const bodies: CreatedNodeBody[] = [];
+      server.use(
+        http.post(`${TD_BASE}/api/nodes`, async ({ request }) => {
+          const body = (await request.json()) as CreatedNodeBody;
+          bodies.push(body);
+          const name = body.name ?? `${body.type.replace(/[^a-zA-Z0-9]/g, "").toLowerCase()}1`;
+          return HttpResponse.json({
+            ok: true,
+            data: { path: `${body.parent_path}/${name}`, type: body.type, name },
+          });
+        }),
+      );
+      return bodies;
+    }
+
+    it("caps the spectrum output length so the CHOP-to-TOP texture stays within GPU limits", async () => {
+      const bodies = captureCreateBodies();
+      await createAudioReactiveImpl(makeCtx(), {
+        audio_source: "microphone",
+        visual_style: "glsl",
+        frequency_bands: 8,
+        beat_detection: true,
+        parent_path: "/project1",
+      });
+      const spectrum = bodies.find((b) => b.name === "spectrum");
+      expect(spectrum?.type).toBe("audiospectrumCHOP");
+      // "matchtofrequency" (the TD default) would emit ~22050 samples and overflow the
+      // 16384 max texture width; "setmanually" + a bounded outlength keeps it in range.
+      expect(spectrum?.parameters).toMatchObject({ outputmenu: "setmanually", outlength: 128 });
+    });
+
+    it.each([
+      [8, 128], // below TD's 128 minimum → clamped up
+      [512, 512], // inside the valid range → passed through
+      [99999, 4096], // above TD's 4096 maximum → clamped down
+    ])("clamps spectrum outlength into TD's 128–4096 range (bands=%i → %i)", async (bands, want) => {
+      const bodies = captureCreateBodies();
+      await createAudioReactiveImpl(makeCtx(), {
+        audio_source: "microphone",
+        visual_style: "glsl",
+        frequency_bands: bands,
+        beat_detection: false,
+        parent_path: "/project1",
+      });
+      const spectrum = bodies.find((b) => b.name === "spectrum");
+      expect(spectrum?.parameters?.outlength).toBe(want);
     });
   });
 

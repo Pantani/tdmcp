@@ -11,7 +11,9 @@ export const setParametersBatchSchema = z.object({
   updates: z
     .array(UpdateSchema)
     .min(1)
-    .describe("List of { path, parameters } updates applied in one atomic batch."),
+    .describe(
+      "List of { path, parameters } updates sent in one batch request (per-update results; not transactional — a failed update does not roll back the others).",
+    ),
 });
 type SetParametersBatchArgs = z.infer<typeof setParametersBatchSchema>;
 
@@ -35,7 +37,8 @@ export const registerSetParametersBatch: ToolRegistrar = (server, ctx) => {
     "set_parameters_batch",
     {
       title: "Set parameters (batch)",
-      description: "Update parameters on multiple nodes atomically in a single request.",
+      description:
+        "Update parameters on multiple nodes in a single batch request. Each update reports its own success; a failure does not roll back the others.",
       inputSchema: setParametersBatchSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

@@ -22,7 +22,14 @@ export const createAudioReactiveSchema = z.object({
     .optional()
     .describe("Existing CHOP path (audio_source='existing_chop')."),
   visual_style: z.enum(["geometric", "particle", "feedback", "glsl", "instancing"]),
-  frequency_bands: z.number().int().positive().default(8),
+  frequency_bands: z
+    .number()
+    .int()
+    .positive()
+    .default(8)
+    .describe(
+      "Spectrum resolution: sets the Audio Spectrum CHOP output length (TouchDesigner clamps it to 128–4096 bins). Higher = finer spectrum.",
+    ),
   beat_detection: z.boolean().default(true),
   parent_path: z.string().default("/project1"),
 });
@@ -49,7 +56,15 @@ export async function createAudioReactiveImpl(ctx: ToolContext, args: CreateAudi
     const builder = await createSystemContainer(ctx, args.parent_path, "audio_reactive");
 
     const audioSource = await buildAudioSource(builder, args);
-    const spectrum = await builder.add("audiospectrumCHOP", "spectrum");
+    // Cap the spectrum output length so the downstream CHOP-to-TOP texture stays within
+    // GPU limits. Left on "Match Length To Frequency", the spectrum emits ~22050 samples,
+    // which overflows the 16384 max texture width and triggers a clamp warning. TouchDesigner
+    // clamps outlength to 128–4096, so frequency_bands maps into that range.
+    const outLength = Math.min(Math.max(args.frequency_bands, 128), 4096);
+    const spectrum = await builder.add("audiospectrumCHOP", "spectrum", {
+      outputmenu: "setmanually",
+      outlength: outLength,
+    });
     await builder.connect(audioSource, spectrum);
 
     const analyze = await builder.add("analyzeCHOP", "level", { function: 6 });

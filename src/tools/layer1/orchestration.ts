@@ -109,6 +109,11 @@ export class NetworkBuilder {
     if (ref.name) this.nameToPath.set(ref.name, ref.path);
     this.pathToType.set(ref.path, ref.type || type);
     this.created.push({ name: ref.name || name || "", path: ref.path, type: ref.type || type });
+    // A fresh geometryCOMP ships with a default torus1 that renders over the real
+    // geometry; clear its default children before the builder populates it.
+    if (/geometrycomp/i.test(type)) {
+      await this.python(`_g = op(${q(ref.path)})\nfor _c in list(_g.children):\n    _c.destroy()`);
+    }
     return ref.path;
   }
 

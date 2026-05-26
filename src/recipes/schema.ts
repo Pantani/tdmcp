@@ -20,7 +20,6 @@ export const RecipeNodeSchema = z.object({
     ),
   comment: z.string().optional(),
 });
-export type RecipeNode = z.infer<typeof RecipeNodeSchema>;
 
 export const RecipeConnectionSchema = z.object({
   from: z.string().describe("Source node name."),
@@ -28,7 +27,6 @@ export const RecipeConnectionSchema = z.object({
   from_output: z.number().int().nonnegative().default(0),
   to_input: z.number().int().nonnegative().default(0),
 });
-export type RecipeConnection = z.infer<typeof RecipeConnectionSchema>;
 
 export const RecipeParameterSchema = z.object({
   name: z.string().describe("Friendly name of the exposed control."),
@@ -40,7 +38,6 @@ export const RecipeParameterSchema = z.object({
   max: z.number().optional(),
   description: z.string().optional(),
 });
-export type RecipeParameter = z.infer<typeof RecipeParameterSchema>;
 
 /**
  * A uniform exposed by a GLSL TOP. On the GLSL TOP these live in *parameter
