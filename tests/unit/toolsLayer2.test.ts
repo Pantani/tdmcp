@@ -9,6 +9,7 @@ import { connectNodesImpl } from "../../src/tools/layer2/connectNodes.js";
 import { createContainerImpl } from "../../src/tools/layer2/createContainer.js";
 import { createGlslShaderImpl } from "../../src/tools/layer2/createGlslShader.js";
 import { createNodeChainImpl } from "../../src/tools/layer2/createNodeChain.js";
+import { createPythonScriptImpl } from "../../src/tools/layer2/createPythonScript.js";
 import type { ToolContext } from "../../src/tools/types.js";
 import { silentLogger } from "../../src/utils/logger.js";
 import { makeTdServer, TD_BASE } from "../helpers/tdMock.js";
@@ -158,6 +159,49 @@ describe("layer 2 tool handlers", () => {
     expect(execScript).toContain("_n.nodeX = _xy[0]");
     expect(execScript).toContain('"/project1/a":[0,0]');
     expect(execScript).toContain('"/project1/b":[200,0]');
+  });
+
+  it("create_python_script writes a text DAT's code to its own .text", async () => {
+    let execScript = "";
+    server.use(
+      http.post(`${TD_BASE}/api/exec`, async ({ request }) => {
+        execScript = ((await request.json()) as { script: string }).script;
+        return HttpResponse.json({ ok: true, data: { result: null, stdout: "" } });
+      }),
+    );
+    const result = await createPythonScriptImpl(makeCtx(), {
+      parent_path: "/project1",
+      name: "txt1",
+      code: "print('hi')",
+      dat_type: "text",
+    });
+    expect(textOf(result)).toContain("/project1/txt1");
+    expect(execScript).toBe('op("/project1/txt1").text = "print(\'hi\')"');
+  });
+
+  it("create_python_script writes a script DAT's code to its callbacks DAT, not its read-only .text", async () => {
+    let execScript = "";
+    server.use(
+      http.post(`${TD_BASE}/api/exec`, async ({ request }) => {
+        execScript = ((await request.json()) as { script: string }).script;
+        return HttpResponse.json({ ok: true, data: { result: null, stdout: "" } });
+      }),
+    );
+    const result = await createPythonScriptImpl(makeCtx(), {
+      parent_path: "/project1",
+      name: "builder",
+      code: "def onCook(dat): pass",
+      dat_type: "script",
+    });
+    expect(textOf(result)).toContain("/project1/builder");
+    // Resolves the callbacks DAT via the script DAT's `callbacks` parameter,
+    // with a fallback to the `<name>_callbacks` sibling.
+    expect(execScript).toContain("_op = op(\"/project1/builder\")");
+    expect(execScript).toContain("_op.par.callbacks.eval()");
+    expect(execScript).toContain("_op.name + '_callbacks'");
+    expect(execScript).toContain("_cb.text = \"def onCook(dat): pass\"");
+    // Must NOT assign to the scriptDAT's own read-only .text.
+    expect(execScript).not.toContain('op("/project1/builder").text =');
   });
 
   it("arrange_network reports when there is nothing to arrange", async () => {

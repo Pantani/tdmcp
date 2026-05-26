@@ -225,6 +225,41 @@ describe("layer 1 tool handlers", () => {
       expect(text).toContain("/project1/ndi_out");
       expect(text).toContain("ndi output");
     });
+
+    it("bridges a wired output's source through a Select TOP (works across COMPs)", async () => {
+      // Record node creations and the Select TOP's parameter PATCH so we can assert
+      // the source is brought in by path reference rather than a (cross-COMP-illegal) wire.
+      const created: CreatedNodeBody[] = [];
+      let selectTopParam: unknown;
+      server.use(
+        http.post(`${TD_BASE}/api/nodes`, async ({ request }) => {
+          const body = (await request.json()) as CreatedNodeBody;
+          created.push(body);
+          const name = body.name ?? `${body.type.replace(/[^a-zA-Z0-9]/g, "").toLowerCase()}1`;
+          return HttpResponse.json({
+            ok: true,
+            data: { path: `${body.parent_path}/${name}`, type: body.type, name },
+          });
+        }),
+        http.patch(`${TD_BASE}/api/nodes/:seg`, async ({ request }) => {
+          const body = (await request.json()) as { parameters: Record<string, unknown> };
+          if ("top" in body.parameters) selectTopParam = body.parameters.top;
+          return HttpResponse.json({ ok: true, data: { parameters: body.parameters } });
+        }),
+      );
+
+      const result = await setupOutputImpl(makeCtx(), {
+        source_path: "/scene/out1",
+        output_type: "ndi",
+        resolution: "1080p",
+        parent_path: "/project1",
+      });
+
+      expect(result.isError).toBeFalsy();
+      const select = created.find((b) => b.type === "selectTOP");
+      expect(select?.parent_path).toBe("/project1");
+      expect(selectTopParam).toBe("/scene/out1");
+    });
   });
 
   describe("create_data_visualization", () => {

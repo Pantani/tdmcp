@@ -1,0 +1,19 @@
+{
+  "name": "TCP/IP DAT",
+  "id": "tcp_ip_dat",
+  "category": "DAT",
+  "subcategory": "Generators",
+  "description": "The TCP/IP DAT sends and receives messages over a TCP/IP network connection.",
+  "keywords": [
+    "tcp",
+    "dat",
+    "the",
+    "sends",
+    "and",
+    "receives",
+    "messages",
+    "over",
+    "network",
+    "connection"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "name": "Text POP",
+  "id": "text_pop",
+  "category": "POP",
+  "subcategory": "Generators",
+  "description": "The Text POP generates point and primitive geometry from text strings in the POP network.",
+  "keywords": [
+    "text",
+    "pop",
+    "the",
+    "generates",
+    "point",
+    "and",
+    "primitive",
+    "geometry",
+    "from",
+    "strings"
+  ]
+}

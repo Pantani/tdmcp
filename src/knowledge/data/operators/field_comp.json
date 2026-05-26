@@ -1,0 +1,19 @@
+{
+  "name": "Field COMP",
+  "id": "field_comp",
+  "category": "COMP",
+  "subcategory": "Components",
+  "description": "The Field COMP defines a spatial field sampled by the POP and physics systems to drive forces, values or deformations over space.",
+  "keywords": [
+    "field",
+    "comp",
+    "the",
+    "defines",
+    "spatial",
+    "sampled",
+    "pop",
+    "and",
+    "physics",
+    "systems"
+  ]
+}

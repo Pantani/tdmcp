@@ -40,6 +40,8 @@ export async function setupOutputImpl(ctx: ToolContext, args: SetupOutputArgs) {
     });
 
     if (args.output_type === "window") {
+      // windowCOMP references its source via the `winop` path parameter, which
+      // works across COMP boundaries — no wire needed.
       const [width, height] = RESOLUTIONS[args.resolution];
       try {
         await ctx.client.executePythonScript(
@@ -50,8 +52,17 @@ export async function setupOutputImpl(ctx: ToolContext, args: SetupOutputArgs) {
         warnings.push(`Could not configure window: ${friendlyTdError(err)}`);
       }
     } else {
+      // The other outputs need a real wired input. A direct wire fails when the
+      // source lives in a different COMP (TD wires can't cross COMP boundaries),
+      // so bridge it through a Select TOP that references the source by path.
       try {
-        await connectNodesViaBridge(ctx.client, args.source_path, node.path);
+        const select = await ctx.client.createNode({
+          parent_path: args.parent_path,
+          type: "selectTOP",
+          name: `${args.output_type}_src`,
+        });
+        await ctx.client.updateNodeParameters(select.path, { top: args.source_path });
+        await connectNodesViaBridge(ctx.client, select.path, node.path);
       } catch (err) {
         warnings.push(`Could not connect source to output: ${friendlyTdError(err)}`);
       }

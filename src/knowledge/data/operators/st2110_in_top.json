@@ -1,0 +1,19 @@
+{
+  "name": "ST2110 In TOP",
+  "id": "st2110_in_top",
+  "category": "TOP",
+  "subcategory": "Generators",
+  "description": "The ST2110 In TOP receives uncompressed video from a SMPTE ST 2110 network stream.",
+  "keywords": [
+    "st2110",
+    "top",
+    "the",
+    "receives",
+    "uncompressed",
+    "video",
+    "from",
+    "smpte",
+    "2110",
+    "network"
+  ]
+}

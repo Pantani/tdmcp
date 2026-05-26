@@ -1,0 +1,19 @@
+{
+  "name": "Serial Devices DAT",
+  "id": "serial_devices_dat",
+  "category": "DAT",
+  "subcategory": "Generators",
+  "description": "The Serial Devices DAT lists the serial (COM) ports/devices available on the system in a table.",
+  "keywords": [
+    "serial",
+    "devices",
+    "dat",
+    "the",
+    "lists",
+    "com",
+    "ports",
+    "available",
+    "system",
+    "table"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "name": "Layer Mix TOP",
+  "id": "layer_mix_top",
+  "category": "TOP",
+  "subcategory": "Composite",
+  "description": "The Layer Mix TOP composites multiple input layers together using selectable per-layer blend modes.",
+  "keywords": [
+    "layer",
+    "mix",
+    "top",
+    "the",
+    "composites",
+    "multiple",
+    "input",
+    "layers",
+    "together",
+    "using"
+  ]
+}

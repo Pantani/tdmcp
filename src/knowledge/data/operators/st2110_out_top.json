@@ -1,0 +1,19 @@
+{
+  "name": "ST2110 Out TOP",
+  "id": "st2110_out_top",
+  "category": "TOP",
+  "subcategory": "Generators",
+  "description": "The ST2110 Out TOP sends video as an uncompressed SMPTE ST 2110 network stream.",
+  "keywords": [
+    "st2110",
+    "out",
+    "top",
+    "the",
+    "sends",
+    "video",
+    "uncompressed",
+    "smpte",
+    "2110",
+    "network"
+  ]
+}
