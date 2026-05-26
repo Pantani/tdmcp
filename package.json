@@ -1,6 +1,6 @@
 {
   "name": "@dpantani/tdmcp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "AI-native visual creation for TouchDesigner — a production-grade MCP server.",
   "type": "module",
   "license": "MIT",
