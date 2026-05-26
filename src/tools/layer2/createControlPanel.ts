@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TdApiError } from "../../td-client/types.js";
+import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
@@ -159,19 +159,11 @@ print(json.dumps(report))
 `;
 
 export function buildPanelScript(payload: object): string {
-  const b64 = Buffer.from(JSON.stringify(payload), "utf8").toString("base64");
-  return PANEL_SCRIPT.replace("__PAYLOAD_B64__", b64);
+  return buildPayloadScript(PANEL_SCRIPT, payload);
 }
 
-/** Pulls the JSON report out of the script's stdout (first `{` … last `}`). */
 export function parseReport(stdout: string | undefined): ControlReport {
-  if (!stdout) throw new TdApiError("The control-panel script returned no output.");
-  const start = stdout.indexOf("{");
-  const end = stdout.lastIndexOf("}");
-  if (start < 0 || end < start) {
-    throw new TdApiError(`Could not parse control-panel result: ${stdout.slice(0, 200)}`);
-  }
-  return JSON.parse(stdout.slice(start, end + 1)) as ControlReport;
+  return parsePythonReport<ControlReport>(stdout);
 }
 
 export async function createControlPanelImpl(ctx: ToolContext, args: CreateControlPanelArgs) {

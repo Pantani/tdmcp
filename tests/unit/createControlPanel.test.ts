@@ -3,9 +3,9 @@ import { buildPanelScript, parseReport } from "../../src/tools/layer2/createCont
 
 /** Decodes the base64 payload the generated script embeds, so tests can assert on it. */
 function decodePayload(script: string): unknown {
-  const match = /b64decode\("([^"]+)"\)/.exec(script);
-  if (!match) throw new Error("script did not embed a base64 payload");
-  return JSON.parse(Buffer.from(match[1], "base64").toString("utf8"));
+  const b64 = /b64decode\("([^"]+)"\)/.exec(script)?.[1];
+  if (b64 === undefined) throw new Error("script did not embed a base64 payload");
+  return JSON.parse(Buffer.from(b64, "base64").toString("utf8"));
 }
 
 describe("buildPanelScript", () => {
