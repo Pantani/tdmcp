@@ -4,6 +4,20 @@ export const RecipeNodeSchema = z.object({
   name: z.string().describe("Unique node name within the recipe (used for wiring)."),
   type: z.string().describe("Operator type, e.g. 'noiseTOP'."),
   parameters: z.record(z.string(), z.unknown()).default({}),
+  parent: z
+    .string()
+    .optional()
+    .describe(
+      "Name of another recipe node (a COMP, e.g. a geometryCOMP) to nest this node inside of. " +
+        "The parent must appear earlier in `nodes`. Used to place SOPs inside a Geometry COMP.",
+    ),
+  render: z
+    .boolean()
+    .optional()
+    .describe(
+      "For a SOP nested in a geometryCOMP: make this the rendered geometry. Sets the render/display " +
+        "flags on it and clears its siblings, so the COMP renders this instead of its default torus.",
+    ),
   comment: z.string().optional(),
 });
 export type RecipeNode = z.infer<typeof RecipeNodeSchema>;

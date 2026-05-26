@@ -9,19 +9,22 @@
     {
       "name": "geo",
       "type": "geometryCOMP",
-      "comment": "Holds the particle SOP chain (place sphere/particle inside for rendering)"
+      "comment": "Renders the particle SOP nested inside it (not its default torus)"
     },
     {
       "name": "sphere",
       "type": "sphereSOP",
-      "parameters": { "rad": 1 },
-      "comment": "Emitter surface"
+      "parent": "geo",
+      "parameters": { "radx": 1, "rady": 1, "radz": 1 },
+      "comment": "Emitter surface, nested inside geo"
     },
     {
       "name": "particle",
       "type": "particleSOP",
+      "parent": "geo",
+      "render": true,
       "parameters": { "life": 4 },
-      "comment": "Particle simulation"
+      "comment": "Particle simulation fed by the sphere; this is the rendered geometry"
     },
     { "name": "mat", "type": "pointspriteMAT", "comment": "Glowing sprite material" },
     { "name": "cam", "type": "cameraCOMP", "parameters": { "tz": 6 } },

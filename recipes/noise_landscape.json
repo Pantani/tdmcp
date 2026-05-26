@@ -7,23 +7,26 @@
   "td_version_min": "2022",
   "nodes": [
     {
+      "name": "geo1",
+      "type": "geometryCOMP",
+      "comment": "Renders the displaced terrain SOP nested inside it (not its default torus)"
+    },
+    {
       "name": "grid1",
       "type": "gridSOP",
+      "parent": "geo1",
       "parameters": { "rows": 120, "cols": 120, "sizex": 4, "sizey": 4 },
-      "comment": "Base mesh"
+      "comment": "Base mesh, nested inside geo1"
     },
     {
       "name": "noise1",
       "type": "noiseSOP",
+      "parent": "geo1",
+      "render": true,
       "parameters": { "amp": 0.6, "period": 2 },
-      "comment": "Displaces the grid points into hills/valleys"
+      "comment": "Displaces the grid into hills/valleys; this is the rendered geometry"
     },
     { "name": "phong1", "type": "phongMAT", "comment": "Surface shading" },
-    {
-      "name": "geo1",
-      "type": "geometryCOMP",
-      "comment": "Renders the displaced SOP (place grid1/noise1 inside this COMP, or reference via the Geometry COMP SOP)"
-    },
     { "name": "cam1", "type": "cameraCOMP", "parameters": { "tz": 6, "ty": 3, "rx": -25 } },
     { "name": "light1", "type": "lightCOMP", "parameters": { "tx": 4, "ty": 6, "tz": 4 } },
     { "name": "render1", "type": "renderTOP", "comment": "Final rendered image" },

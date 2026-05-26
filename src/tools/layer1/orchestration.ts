@@ -93,9 +93,14 @@ export class NetworkBuilder {
     readonly containerPath: string,
   ) {}
 
-  async add(type: string, name?: string, parameters?: Record<string, unknown>): Promise<string> {
+  async add(
+    type: string,
+    name?: string,
+    parameters?: Record<string, unknown>,
+    parentPath?: string,
+  ): Promise<string> {
     const ref = await this.ctx.client.createNode({
-      parent_path: this.containerPath,
+      parent_path: parentPath ?? this.containerPath,
       type,
       name,
       parameters,
@@ -171,7 +176,16 @@ export async function buildFromRecipe(
   const builder = await createSystemContainer(ctx, parentPath, recipe.id);
 
   for (const node of recipe.nodes) {
-    await builder.add(node.type, node.name, node.parameters);
+    let parentPath: string | undefined;
+    if (node.parent) {
+      parentPath = builder.pathOf(node.parent);
+      if (!parentPath) {
+        builder.warnings.push(
+          `Node "${node.name}" references unknown parent "${node.parent}" (it must appear earlier in nodes).`,
+        );
+      }
+    }
+    await builder.add(node.type, node.name, node.parameters, parentPath);
   }
 
   // Inline GLSL: place each shader in a Text DAT and point the GLSL TOP's pixeldat at it.
@@ -255,6 +269,17 @@ export async function buildFromRecipe(
       continue;
     }
     await builder.connect(from, to, connection.from_output, connection.to_input);
+  }
+
+  // Nested render geometry: make each flagged SOP the one its parent COMP renders,
+  // clearing its siblings (including the COMP's default torus).
+  for (const node of recipe.nodes) {
+    if (!node.render) continue;
+    const target = builder.pathOf(node.name);
+    if (!target) continue;
+    await builder.python(
+      `_n = op(${q(target)})\n_p = _n.parent()\nfor _c in _p.children:\n    _c.render = False\n    _c.display = False\n_n.render = True\n_n.display = True`,
+    );
   }
 
   const outNode =
