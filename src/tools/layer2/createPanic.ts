@@ -106,22 +106,16 @@ export async function createPanicImpl(ctx: ToolContext, args: CreatePanicArgs) {
     const out = await builder.add("nullTOP", "out1");
     await builder.connect(blackout, out);
 
-    // Big togglable Blackout / Freeze buttons bound to the container params above, so a
-    // performer can hit them instantly. They bind to the very pars the expressions read.
+    // Big togglable Blackout / Freeze buttons on the container, so a performer can hit them
+    // instantly. These are the SOURCE-OF-TRUTH pars that the freeze/blackout node expressions
+    // above read by absolute path — so they must NOT use bind_to: a control panel bind sets the
+    // target's expr to `op(container).par.<Name>`, and binding Blackout/Freeze to themselves
+    // creates a self-referential expression ("Recursion/loop error in evaluation of parameter").
+    // Created unbound here, they're plain toggles the expressions consume.
     const controls: ControlSpec[] = args.expose_controls
       ? [
-          {
-            name: "Blackout",
-            type: "toggle",
-            default: args.blackout,
-            bind_to: [`${container}.Blackout`],
-          },
-          {
-            name: "Freeze",
-            type: "toggle",
-            default: args.freeze,
-            bind_to: [`${container}.Freeze`],
-          },
+          { name: "Blackout", type: "toggle", default: args.blackout },
+          { name: "Freeze", type: "toggle", default: args.freeze },
         ]
       : [];
 

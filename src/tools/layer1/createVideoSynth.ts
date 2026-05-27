@@ -262,7 +262,19 @@ export async function createVideoSynthImpl(ctx: ToolContext, args: CreateVideoSy
           { name: "FreqX", type: "float", min: 0, max: 16, default: args.freq_x },
           { name: "FreqY", type: "float", min: 0, max: 16, default: args.freq_y },
           { name: "Scale", type: "float", min: 0.1, max: 4, default: args.scale },
-          { name: "Color", type: "rgb", default: undefined },
+          // Seed the RGB swatch with the build-time colour (a swatch defaults to black, which
+          // would make the uColor-driven pattern render black/dark).
+          {
+            name: "Color",
+            type: "rgb",
+            default: `#${color
+              .map((c) =>
+                Math.round(c * 255)
+                  .toString(16)
+                  .padStart(2, "0"),
+              )
+              .join("")}`,
+          },
         ]
       : [];
 

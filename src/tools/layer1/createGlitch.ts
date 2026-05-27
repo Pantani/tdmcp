@@ -29,8 +29,9 @@ void main(){
     // Horizontal band tearing: quantise Y into bands, jump a subset of them sideways.
     // The active set drifts with uTime so the corruption flickers rather than holds still.
     float band = floor(uv.y * 24.0);
-    float active = step(0.72, hash11(band * 1.7 + floor(uTime * 8.0)));
-    float tear = (hash11(band + floor(uTime * 8.0)) - 0.5) * 0.18 * active;
+    // NB: 'active' is a reserved word in TD's GLSL — use a non-reserved name.
+    float bandOn = step(0.72, hash11(band * 1.7 + floor(uTime * 8.0)));
+    float tear = (hash11(band + floor(uTime * 8.0)) - 0.5) * 0.18 * bandOn;
     vec2 tuv = uv + vec2(tear * uAmount, 0.0);
 
     // Chromatic RGB split: sample R/G/B at increasing horizontal offsets. uShift is the

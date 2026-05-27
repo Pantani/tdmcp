@@ -133,8 +133,9 @@ describe("create_waveform", () => {
       expose_controls: false,
       parent_path: "/project1",
     });
-    // The Trail CHOP feeds the scope, so the `chop` param must point at the trail's path.
-    expect(choptoTopChopParam).toBe("/project1/waveform/trail");
+    // The Trail feeds a Resample (downsample to a fixed display width) which feeds the scope,
+    // so the CHOP-to-TOP's `chop` source param must point at the rebin (resample) node.
+    expect(choptoTopChopParam).toBe("/project1/waveform/rebin");
   });
 
   it("builds an oscillator source (the device-free test path) without an audio device node", async () => {

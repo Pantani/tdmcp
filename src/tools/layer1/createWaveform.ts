@@ -100,12 +100,23 @@ export async function createWaveformImpl(ctx: ToolContext, args: CreateWaveformA
     });
     await builder.connect(gain, trail);
 
+    // The Trail buffers at the audio rate (time_window × ~44.1k samples) — far more than a
+    // texture can hold, so CHOP-to-TOP would clamp to 256px and warn. Resample down to a fixed
+    // display rate first, so the whole window becomes a clean full-width trace with no warning.
+    const rebin = await builder.add("resampleCHOP", "rebin", { rate: 1024 });
+    await builder.connect(trail, rebin);
+
     // Render the buffered CHOP samples into an image. CHOP to TOP reads its source from a
     // `chop` PARAMETER (a path reference), NOT a wire — exactly like top-to-CHOP's `top`
     // param. The NetworkBuilder.connect() helper detects the conversion op and sets that
-    // parameter automatically, so connect(trail, scope) wires it correctly.
-    const scope = await builder.add("choptoTOP", "scope", { outputresolution: "custom" });
-    await builder.connect(trail, scope);
+    // parameter automatically, so connect(rebin, scope) wires it correctly. The custom
+    // resolution matches the resampled width so nothing is clamped.
+    const scope = await builder.add("choptoTOP", "scope", {
+      outputresolution: "custom",
+      resolutionw: 1024,
+      resolutionh: 256,
+    });
+    await builder.connect(rebin, scope);
 
     // The raw scope is a (near-mono) trace. A Level TOP lifts brightness so a quiet signal
     // is still visible; brightness1 is the Level TOP's brightness (NOT `gain`).

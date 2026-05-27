@@ -80,6 +80,18 @@ def _parname(s):
     # keeps its internal capital and TouchDesigner rejects the name.
     return s[0].upper() + s[1:].lower()
 
+def _parse_rgb(v):
+    # Accept a hex string ("#rrggbb"/"rrggbb") or a [r,g,b] list of 0..1 floats → 0..1 RGB.
+    try:
+        if isinstance(v, (list, tuple)) and len(v) >= 3:
+            return [float(v[0]), float(v[1]), float(v[2])]
+        s = str(v).strip().lstrip("#")
+        if len(s) == 6:
+            return [int(s[0:2], 16) / 255.0, int(s[2:4], 16) / 255.0, int(s[4:6], 16) / 255.0]
+    except Exception:
+        pass
+    return None
+
 if _comp is None:
     report["fatal"] = "COMP not found: " + _payload["comp"]
 elif not hasattr(_comp, "appendCustomPage"):
@@ -134,6 +146,14 @@ else:
             elif _typ in ("string", "str"):
                 if _dflt is not None:
                     _p0.default = str(_dflt); _p0.val = str(_dflt)
+            elif _typ == "rgb":
+                # An RGB swatch defaults to black; set its r/g/b components from the spec's
+                # default (hex or [r,g,b]) so colour-driven shaders don't start out black.
+                if _dflt is not None:
+                    _rgb = _parse_rgb(_dflt)
+                    if _rgb is not None:
+                        for _i in range(min(3, len(_pg))):
+                            _pg[_i].default = _rgb[_i]; _pg[_i].val = _rgb[_i]
             report["created"].append({"control": _spec["name"], "name": _name, "type": _typ, "pars": [pp.name for pp in _pg], "value": _p0.eval()})
             _binds = _spec.get("bind_to") or []
             if _binds and _typ in ("rgb", "pulse"):

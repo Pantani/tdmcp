@@ -164,7 +164,7 @@ describe("create_panic", () => {
     expect(exprLiteral(freeze)).toBe('(0 if op("/project1/panic").par.Freeze else 1)');
   });
 
-  it("exposes Blackout and Freeze toggle buttons bound to the container params", async () => {
+  it("exposes Blackout and Freeze as unbound toggles the effect expressions read", async () => {
     const scripts = captureExecScripts();
     await createPanicImpl(makeCtx(), {
       blackout: true,
@@ -184,12 +184,15 @@ describe("create_panic", () => {
     const blackout = payload.controls.find((c) => c.name === "Blackout");
     expect(blackout?.type).toBe("toggle");
     expect(blackout?.default).toBe(true);
-    expect(blackout?.bind_to?.[0]).toBe("/project1/panic.Blackout");
+    // Unbound: the freeze/blackout node expressions read these container pars by absolute
+    // path, so binding them to themselves (bind_to) would make a self-referential expression
+    // — a "Recursion/loop error in evaluation of parameter" in TD. Verified live.
+    expect(blackout?.bind_to).toBeUndefined();
 
     const freeze = payload.controls.find((c) => c.name === "Freeze");
     expect(freeze?.type).toBe("toggle");
     expect(freeze?.default).toBe(false);
-    expect(freeze?.bind_to?.[0]).toBe("/project1/panic.Freeze");
+    expect(freeze?.bind_to).toBeUndefined();
   });
 
   it("appends the Blackout/Freeze params directly when controls are not exposed", async () => {
