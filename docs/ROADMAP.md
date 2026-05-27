@@ -330,7 +330,7 @@ a model; `create_depth_silhouette` makes a flat mask — both distinct from the 
 - `create_dome_output`: GLSL fisheye/equirect remap of an existing (ideally equirectangular) source renders a valid dome master; a true cube-map render is the higher-fidelity follow-up.
 - `create_mesh_warp`: the Point SOP's `tz` is a per-point expression (`me.inputPoint`) — no `dopos` toggle exists. Camera tilted off head-on so the curvature reads in preview; `constantMAT.colormap` textures the grid.
 - `create_depth_displacement`: GLSL MAT par names are `vdat`/`pdat`/`sampler0top`/`sampler0name` + the `vec` uniform sequence; named samplers must be **declared** in the shader (`uniform sampler2D sHeight;`) and `P` is `vec3`.
-- `create_gpu_particle_field`: TOP-instancing maps texel `r`/`g`/`b` → XYZ and derives the count from the texture (validated), but applies translate **only** — particle size must live on the dot SOP's radius, not per-instance scale. Audio/motion reactivity adds a source but wiring it into the velocity force is a noted follow-up.
+- `create_gpu_particle_field`: TOP-instancing maps texel `r`/`g`/`b` → XYZ and derives the count from the texture (validated), but applies translate **only** — particle size must live on the dot SOP's radius, not per-instance scale. Audio/motion reactivity is wired end-to-end: an RMS (audio) or frame-difference (motion) analysis drives the velocity shader's `uReact` uniform by expression, energising the field with the signal (validated by forcing the uniform).
 
 **Areas:** new L1 tools `create3dAudioReactive`, `createDomeOutput`, `createMeshWarp`,
 `createDepthDisplacement`, `createGpuParticleField` (each `*Impl` + `register*` + msw unit test),

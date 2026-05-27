@@ -198,8 +198,9 @@ describe("create_gpu_particle_field", () => {
     expect(velFragScript).toContain("curl");
   });
 
-  it("adds an audio source and a warning when reactivity='audio'", async () => {
+  it("wires an audio RMS chain into the velocity shader's uReact uniform when reactivity='audio'", async () => {
     const bodies = captureCreateBodies();
+    const scripts = captureExecScripts();
     const result = await createGpuParticleFieldImpl(makeCtx(), {
       side: 32,
       forces: ["noise"],
@@ -208,9 +209,34 @@ describe("create_gpu_particle_field", () => {
       expose_controls: false,
       parent_path: "/project1",
     });
+    expect(result.isError).toBeFalsy();
+    // Audio source → RMS Power → a single-value Null the uniform reads.
     expect(bodies.some((b) => b.name === "audio_in" && b.type === "audiodeviceinCHOP")).toBe(true);
-    const text = result.content.find((c) => c.type === "text");
-    expect(text?.type === "text" && text.text).toContain("reactivity='audio'");
+    expect(bodies.some((b) => b.name === "audio_rms" && b.type === "analyzeCHOP")).toBe(true);
+    expect(bodies.some((b) => b.name === "react_level" && b.type === "nullCHOP")).toBe(true);
+    // The velocity shader gains the uReact term, and the uniform is bound to the analysis.
+    const velFragScript = scripts.find((s) => s.includes("vel_frag") && s.includes(".text"));
+    expect(velFragScript).toContain("uReact");
+    expect(
+      scripts.some((s) => s.includes('vec0name = "uReact"') && s.includes("react_level")),
+    ).toBe(true);
+  });
+
+  it("wires a motion frame-difference chain into uReact when reactivity='motion'", async () => {
+    const bodies = captureCreateBodies();
+    const scripts = captureExecScripts();
+    await createGpuParticleFieldImpl(makeCtx(), {
+      side: 32,
+      forces: ["noise"],
+      reactivity: "motion",
+      point_size: 0.02,
+      expose_controls: false,
+      parent_path: "/project1",
+    });
+    expect(bodies.some((b) => b.name === "motion_in" && b.type === "videodeviceinTOP")).toBe(true);
+    expect(bodies.some((b) => b.name === "motion_diff" && b.type === "differenceTOP")).toBe(true);
+    expect(bodies.some((b) => b.name === "react_level" && b.type === "toptoCHOP")).toBe(true);
+    expect(scripts.some((s) => s.includes('vec0name = "uReact"'))).toBe(true);
   });
 
   it("stays self-contained on the default path (no reactivity source)", async () => {

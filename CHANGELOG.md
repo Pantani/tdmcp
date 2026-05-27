@@ -28,7 +28,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **`create_gpu_particle_field`** — a high-count **GPU particle field** (side², up to 512²≈262k):
   position/velocity **feedback-TOP** loops (curl-noise / gravity) feed **TOP-instancing**, flowing as
   curl-noise streams well beyond the CPU `create_particle_system` (CLI `gpu-particles`). Optional
-  audio/motion reactivity adds a source (wiring it into the velocity force is a noted follow-up).
+  reactivity energises the field live — `audio` from mic/line RMS, `motion` from camera
+  frame-difference energy — both bound to the velocity shader's `uReact` uniform.
 
 ## [0.3.0] - 2026-05-27
 

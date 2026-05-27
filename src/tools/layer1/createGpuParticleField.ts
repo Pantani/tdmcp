@@ -41,9 +41,11 @@ vec3 hash33(vec3 p){
  *  - "gravity": a constant pull along -Y.
  * `damp` keeps velocities bounded so the sim does not blow up under feedback.
  */
-function velocityShader(forces: readonly string[]): string {
+function velocityShader(forces: readonly string[], reactive: boolean): string {
   const lines = [
     "out vec4 fragColor;",
+    // uReact (0 when idle) is driven live from the audio/motion analysis when reactivity is on.
+    ...(reactive ? ["uniform float uReact;"] : []),
     GLSL_HASH.trim(),
     "const float dt = 1.0 / 60.0;",
     "const float damp = 0.98;",
@@ -69,6 +71,11 @@ function velocityShader(forces: readonly string[]): string {
   }
   if (forces.includes("gravity")) {
     lines.push("    force += vec3(0.0, -0.6, 0.0);");
+  }
+  if (reactive) {
+    // A per-particle impulse scaled by the live signal: louder audio / more camera motion
+    // energises the whole field (uReact stays 0 when the source is quiet, so the field settles).
+    lines.push("    force += hash33(seed * 31.0 + vec3(7.0)) * uReact * 6.0;");
   }
   lines.push(
     "    vel = vel * damp + force * dt;",
@@ -125,7 +132,7 @@ export const createGpuParticleFieldSchema = z.object({
     .enum(["none", "audio", "motion"])
     .default("none")
     .describe(
-      "Optional external push. 'none' (default) is fully self-contained. 'audio' adds an Audio Device In CHOP, 'motion' a Video Device In TOP — wiring either into the velocity shader as a force needs live tuning (⚠).",
+      "Optional external push that energises the field live, bound to the velocity shader's uReact uniform. 'none' (default) is fully self-contained. 'audio' drives it from mic/line RMS (Audio Device In → Analyze), 'motion' from camera frame-difference energy (Video Device In → mono → cache/difference → average). Either may pop a one-time macOS device-permission dialog — click Allow.",
     ),
   point_size: z.coerce
     .number()
@@ -161,8 +168,9 @@ export async function createGpuParticleFieldImpl(
     const velFb = await builder.add("feedbackTOP", "vel_fb");
     const velUpdate = await builder.add("glslTOP", "vel_update", bufParams);
     const velFrag = await builder.add("textDAT", "vel_frag");
+    const reactive = args.reactivity !== "none";
     await builder.python(
-      `op(${q(velFrag)}).text = ${q(velocityShader(args.forces))}\nop(${q(velUpdate)}).par.pixeldat = op(${q(velFrag)}).name`,
+      `op(${q(velFrag)}).text = ${q(velocityShader(args.forces, reactive))}\nop(${q(velUpdate)}).par.pixeldat = op(${q(velFrag)}).name`,
     );
     await builder.connect(velFb, velUpdate, 0, 0);
     await builder.python(`op(${q(velFb)}).par.top = op(${q(velUpdate)}).name`);
@@ -235,18 +243,62 @@ export async function createGpuParticleFieldImpl(
     const out = await builder.add("nullTOP", "out1");
     await builder.connect(render, out);
 
-    // --- Optional reactivity source --------------------------------------------------------
-    // Default ("none") adds nothing. audio/motion add a minimal source but do NOT wire it into
-    // the velocity shader yet — that mapping needs live tuning.
+    // --- Optional reactivity: drive the velocity shader's uReact uniform from a live signal ----
+    // "none" leaves uReact unset (0) → the field is self-contained. audio/motion build a small
+    // analysis chain ending on a single-value CHOP "react_level", then bind vel_update's uReact
+    // uniform to it by expression so it updates every frame (the GLSL TOP's per-frame cook pulls
+    // the chain, keeping it warm without a separate Execute DAT).
+    let reactExpr: string | undefined;
     if (args.reactivity === "audio") {
-      await builder.add("audiodeviceinCHOP", "audio_in");
-      builder.warnings.push(
-        "⚠ reactivity='audio' adds an Audio Device In CHOP but does not yet feed the velocity shader. To make the field react, sample it into the vel_update shader (e.g. choptoTOP → a second GLSL input, or a uniform) and add its amplitude to `force`. Needs live tuning.",
-      );
+      // Live mic/line → RMS Power = current loudness. (Creating the device may pop a one-time
+      // macOS microphone-permission dialog — click Allow.)
+      const audioIn = await builder.add("audiodeviceinCHOP", "audio_in");
+      const rms = await builder.add("analyzeCHOP", "audio_rms", { function: "rmspower" });
+      await builder.connect(audioIn, rms);
+      await builder.add("nullCHOP", "react_level");
+      await builder.connect(rms, builder.pathOf("react_level") as string);
+      reactExpr = "op('react_level')[0] * 8.0";
     } else if (args.reactivity === "motion") {
-      await builder.add("videodeviceinTOP", "motion_in");
-      builder.warnings.push(
-        "⚠ reactivity='motion' adds a Video Device In TOP but does not yet feed the velocity shader. To make the field react, wire it (optionally through a frame-difference/edge chain) as an extra input to vel_update and add it to `force`. Needs live tuning.",
+      // Camera → frame-to-frame difference → average = motion energy (the create_motion_reactive
+      // chain). Creating the camera may pop a one-time macOS camera-permission dialog — click Allow.
+      const motionIn = await builder.add("videodeviceinTOP", "motion_in");
+      const mono = await builder.add("monochromeTOP", "motion_mono", {
+        outputresolution: "custom",
+        resolutionw: 160,
+        resolutionh: 160,
+      });
+      await builder.connect(motionIn, mono);
+      const cache = await builder.add("cacheTOP", "motion_prev", {
+        active: 1,
+        cachesize: 2,
+        outputindexunit: "indices",
+        outputindex: -1,
+      });
+      await builder.connect(mono, cache);
+      const diff = await builder.add("differenceTOP", "motion_diff");
+      await builder.connect(mono, diff, 0, 0);
+      await builder.connect(cache, diff, 0, 1);
+      const energy = await builder.add("analyzeTOP", "motion_energy", { op: "average" });
+      await builder.connect(diff, energy);
+      await builder.add("toptoCHOP", "react_level", {
+        top: energy,
+        r: "motion",
+        g: "",
+        b: "",
+        a: "",
+      });
+      reactExpr = "op('react_level')['motion'] * 40.0";
+    }
+    if (reactExpr) {
+      // Name vel_update's first float uniform "uReact" and drive it from the analysis each frame.
+      await builder.python(
+        [
+          `_v = op(${q(velUpdate)})`,
+          "_seq = _v.seq.vec",
+          "_seq.numBlocks = max(_seq.numBlocks, 1)",
+          '_v.par.vec0name = "uReact"',
+          `_v.par.vec0valuex.expr = ${q(reactExpr)}`,
+        ].join("\n"),
       );
     }
 
@@ -295,7 +347,7 @@ export const registerCreateGpuParticleField: ToolRegistrar = (server, ctx) => {
     {
       title: "Create GPU particle field",
       description:
-        "Build a high-count GPU particle / point field: position and velocity are simulated entirely on the GPU in two RGBA32float feedback-TOP loops (velocity integrates forces — noise/curl/gravity; position integrates velocity), then a Geometry COMP instances a tiny dot once per texel, reading XYZ from the position texture. Reaches counts (side², up to 512²≈262k) well beyond the CPU create_particle_system, flowing as curl-noise streams. Exposes PointSize and Zoom knobs. Optional audio/motion reactivity adds a source (wiring it into the velocity force needs live tuning).",
+        "Build a high-count GPU particle / point field: position and velocity are simulated entirely on the GPU in two RGBA32float feedback-TOP loops (velocity integrates forces — noise/curl/gravity; position integrates velocity), then a Geometry COMP instances a tiny dot once per texel, reading XYZ from the position texture. Reaches counts (side², up to 512²≈262k) well beyond the CPU create_particle_system, flowing as curl-noise streams. Exposes PointSize and Zoom knobs. Optional reactivity energises the field live: 'audio' drives it from mic/line RMS, 'motion' from camera frame-difference energy (both bound to the velocity shader's uReact uniform).",
       inputSchema: createGpuParticleFieldSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
