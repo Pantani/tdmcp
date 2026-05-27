@@ -16,6 +16,11 @@ operadores.
 > *"Crie um túnel de feedback a partir de ruído com blur e displace, adicione bloom
 > e me mostre um preview."*
 
+<video src="/examples/feedback-tunnel.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Resultado real do prompt acima — uma rede de feedback (blur + displace),
+capturada ao vivo do TouchDesigner.*
+
 > *"Faça um padrão de reação-difusão em evolução, em verdes e pretos, lento e
 > orgânico."*
 

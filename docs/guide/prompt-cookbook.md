@@ -14,6 +14,11 @@ tunnel" works better than naming operators. The AI picks the operators.
 > *"Create a feedback tunnel from noise with blur and displace, add bloom, and
 > show me a preview."*
 
+<video src="/examples/feedback-tunnel.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Real output from the prompt above — a feedback network (blur + displace),
+captured live from TouchDesigner.*
+
 > *"Make an evolving reaction-diffusion pattern in greens and blacks, slow and
 > organic."*
 
