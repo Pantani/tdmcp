@@ -1,13 +1,14 @@
-# tdmcp — build TouchDesigner from plain language
+# tdmcp — TouchDesigner MCP server
 
 [![CI](https://github.com/Pantani/tdmcp/actions/workflows/ci.yml/badge.svg)](https://github.com/Pantani/tdmcp/actions/workflows/ci.yml)
 [![Docs](https://github.com/Pantani/tdmcp/actions/workflows/docs.yml/badge.svg)](https://pantani.github.io/tdmcp/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**tdmcp** lets you create real visual systems in
-[TouchDesigner](https://derivative.ca) just by describing them to an AI assistant
-(Claude, Cursor, …). You type what you want; the AI builds the actual network of
-nodes inside your project, checks it for errors, and shows you a preview.
+**tdmcp is a [Model Context Protocol](https://modelcontextprotocol.io) (MCP) server
+for [TouchDesigner](https://derivative.ca)** — build TouchDesigner from plain
+language. You describe a visual to an AI assistant (Claude, Claude Code, Cursor,
+Codex); the AI builds the actual network of nodes inside your project, checks it
+for errors, and shows you a preview.
 
 > *"Create a feedback tunnel from noise with blur and displace, then add bloom and
 > output it to a window."*
@@ -130,7 +131,7 @@ the [prompt cookbook](https://pantani.github.io/tdmcp/guide/prompt-cookbook).
 
 ## What you can do
 
-**75+ tools** across three layers, plus an Obsidian vault integration — from
+**97+ tools** across three layers, plus an Obsidian vault integration — from
 one-line artist generators (`create_feedback_network`, `create_audio_reactive`,
 `create_particle_system`, `create_generative_art`, …) to building blocks
 (`create_control_panel`, `animate_parameter`, `create_external_io` for

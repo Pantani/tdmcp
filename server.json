@@ -1,0 +1,22 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.Pantani/tdmcp",
+  "title": "tdmcp — TouchDesigner MCP server",
+  "description": "Build real visual systems in TouchDesigner from plain language with Claude, Cursor or Codex.",
+  "version": "0.8.0",
+  "repository": {
+    "url": "https://github.com/Pantani/tdmcp",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "@dpantani/tdmcp",
+      "version": "0.8.0",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

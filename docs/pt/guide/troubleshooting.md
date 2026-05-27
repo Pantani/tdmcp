@@ -1,3 +1,7 @@
+---
+description: "Resolva problemas comuns do tdmcp — conecte o servidor MCP para TouchDesigner e a ponte, e faça seu cliente de IA conversar com o TouchDesigner."
+---
+
 # Solução de problemas
 
 A maioria dos problemas é uma de poucas coisas. Ache o que você está vendo abaixo.

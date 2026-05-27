@@ -1,3 +1,7 @@
+---
+description: "Galeria de receitas do tdmcp, o servidor MCP para TouchDesigner — sistemas visuais prontos que você monta no TouchDesigner com um único prompt."
+---
+
 # Galeria de receitas
 
 Receitas são **redes prontas e testadas** que você pode pedir pelo nome — um jeito

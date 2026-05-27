@@ -1,3 +1,7 @@
+---
+description: "Recipe gallery for tdmcp, the TouchDesigner MCP server — ready-made visual systems you can build in TouchDesigner with a single prompt."
+---
+
 # Recipe gallery
 
 Recipes are **pre-built, tested networks** you can ask for by name — a fast way to

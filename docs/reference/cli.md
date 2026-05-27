@@ -1,3 +1,7 @@
+---
+description: "The tdmcp command line — agent runner and a local-LLM copilot for the TouchDesigner MCP server, for tasks that do not need a paid API."
+---
+
 # CLI
 
 The package installs two binaries: `tdmcp` (the MCP server + utilities) and

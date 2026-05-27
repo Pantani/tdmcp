@@ -1,3 +1,7 @@
+---
+description: "tdmcp is the TouchDesigner MCP server — an AI assistant builds real TouchDesigner networks from your plain-language description, then checks and previews them."
+---
+
 # What is tdmcp?
 
 **tdmcp lets you build visuals in [TouchDesigner](https://derivative.ca) just by

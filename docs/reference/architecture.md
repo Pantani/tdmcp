@@ -1,3 +1,7 @@
+---
+description: "How the TouchDesigner MCP server works — the MCP tool layers, the embedded operator knowledge base, and the bridge that runs inside TouchDesigner."
+---
+
 # Architecture
 
 tdmcp is three programs that talk to each other on your machine:

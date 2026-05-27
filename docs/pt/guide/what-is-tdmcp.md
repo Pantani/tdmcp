@@ -1,3 +1,7 @@
+---
+description: "tdmcp é o servidor MCP para TouchDesigner — uma IA monta redes de verdade no TouchDesigner a partir da sua descrição em linguagem natural, confere os erros e mostra um preview."
+---
+
 # O que é o tdmcp?
 
 **O tdmcp deixa você criar visuais no [TouchDesigner](https://derivative.ca)

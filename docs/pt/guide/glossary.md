@@ -1,3 +1,7 @@
+---
+description: "Glossário do tdmcp, o servidor MCP para TouchDesigner — MCP, a ponte, operadores, TOP/CHOP/SOP e outros termos do TouchDesigner em linguagem simples."
+---
+
 # Glossário
 
 Definições em linguagem simples para as palavras que você vai ouvir. Você não

@@ -1,3 +1,7 @@
+---
+description: "Fix common tdmcp setup issues — connect the TouchDesigner MCP server and the bridge, and get your AI client talking to TouchDesigner."
+---
+
 # Troubleshooting
 
 Most problems are one of a handful of things. Find what you're seeing below.

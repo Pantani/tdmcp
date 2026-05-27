@@ -1,0 +1,34 @@
+# Smithery config for tdmcp — the TouchDesigner MCP server.
+# Docs: https://smithery.ai/docs/build/project-config
+# Note: requires @dpantani/tdmcp to be published to npm (currently 0.2.0; publish
+# 0.8.0 for this to install the latest tools). tdmcp also needs the TouchDesigner
+# bridge running locally — see https://pantani.github.io/tdmcp/guide/install
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      TDMCP_TD_HOST:
+        type: string
+        default: "127.0.0.1"
+        description: "TouchDesigner bridge host."
+      TDMCP_TD_PORT:
+        type: string
+        default: "9980"
+        description: "TouchDesigner bridge (Web Server DAT) port."
+      TDMCP_VAULT_PATH:
+        type: string
+        description: "Optional absolute path to an Obsidian vault to enable the vault tools."
+    required: []
+  commandFunction: |-
+    (config) => ({
+      command: "npx",
+      args: ["-y", "@dpantani/tdmcp"],
+      env: Object.assign(
+        {
+          TDMCP_TD_HOST: config.TDMCP_TD_HOST || "127.0.0.1",
+          TDMCP_TD_PORT: config.TDMCP_TD_PORT || "9980"
+        },
+        config.TDMCP_VAULT_PATH ? { TDMCP_VAULT_PATH: config.TDMCP_VAULT_PATH } : {}
+      )
+    })

@@ -1,3 +1,7 @@
+---
+description: "The tdmcp bridge and REST API — the component inside TouchDesigner that the MCP server drives to create, inspect, connect and preview nodes."
+---
+
 # Bridge & REST API
 
 The bridge is the TouchDesigner side of tdmcp: a small Python package that exposes

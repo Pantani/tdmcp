@@ -1,3 +1,7 @@
+---
+description: "Make your first visual with tdmcp, the TouchDesigner MCP server — ask in plain language and watch the node network build, verify and preview itself."
+---
+
 # Your first visual
 
 You've [installed tdmcp](/guide/install) and seen `bridge running` in

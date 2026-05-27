@@ -1,7 +1,7 @@
 {
   "name": "@dpantani/tdmcp",
   "version": "0.8.0",
-  "description": "AI-native visual creation for TouchDesigner — a production-grade MCP server.",
+  "description": "tdmcp — the TouchDesigner MCP server. Build real TouchDesigner visual systems from plain language with Claude, Cursor, or Codex (Model Context Protocol).",
   "type": "module",
   "license": "MIT",
   "homepage": "https://pantani.github.io/tdmcp/",
@@ -55,11 +55,21 @@
   },
   "keywords": [
     "touchdesigner",
+    "touchdesigner-mcp",
     "mcp",
+    "mcp-server",
     "model-context-protocol",
+    "claude",
+    "cursor",
+    "codex",
+    "ai",
     "visual",
     "creative-coding",
-    "generative-art"
+    "generative-art",
+    "vj",
+    "glsl",
+    "audio-reactive",
+    "derivative"
   ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",

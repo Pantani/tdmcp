@@ -1,3 +1,7 @@
+---
+description: "Environment variables for tdmcp, the TouchDesigner MCP server — configure the bridge host and port, auth token, vault path and exec safety."
+---
+
 # Environment variables
 
 All configuration is through environment variables (no config file), so it works

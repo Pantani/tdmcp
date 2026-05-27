@@ -1,3 +1,7 @@
+---
+description: "Crie seu primeiro visual com o tdmcp, o servidor MCP para TouchDesigner — peça em linguagem natural e veja a rede de nós se montar, conferir e dar preview sozinha."
+---
+
 # Seu primeiro visual
 
 Você já [instalou o tdmcp](/pt/guide/install) e viu `bridge running` no Textport
