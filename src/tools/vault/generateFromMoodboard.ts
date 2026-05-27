@@ -6,7 +6,7 @@ import {
 } from "../layer1/createGenerativeArt.js";
 import { errorResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
-import { requireVault } from "./shared.js";
+import { readNoteSafe, requireVault } from "./shared.js";
 
 export const generateFromMoodboardSchema = z.object({
   note: z
@@ -64,7 +64,9 @@ export async function generateFromMoodboardImpl(ctx: ToolContext, args: Generate
     return errorResult(`Moodboard note not found: ${args.note} (looked under Moodboards/ too).`);
   }
 
-  const { data, body } = vault.readNote(rel);
+  const note = readNoteSafe(vault, rel);
+  if ("error" in note) return note.error;
+  const { data, body } = note;
   const technique =
     args.technique ?? (typeof data.technique === "string" ? data.technique : "fractal");
 

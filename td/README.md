@@ -102,7 +102,7 @@ Verify from a terminal:
 
 ```bash
 curl http://127.0.0.1:9980/api/info
-# {"ok":true,"data":{"python_version":"3.11.x","td_version":"...","bridge_version":"0.1.0"}}
+# {"ok":true,"data":{"python_version":"3.11.x","td_version":"...","bridge_version":"0.3.0"}}
 ```
 
 Then run the live smoke test from the repo root:

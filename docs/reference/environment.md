@@ -18,7 +18,7 @@ your shell, or the Claude Desktop extension settings.
 | `TDMCP_TRANSPORT` | `stdio` | MCP transport: `stdio` (default) or `http` (Streamable HTTP). |
 | `TDMCP_HTTP_PORT` | `3939` | Port for the HTTP transport (when `TDMCP_TRANSPORT=http`). |
 | `TDMCP_EVENTS` | `on` | Subscribe to TD WebSocket events and forward them as MCP logging notifications (`on`/`off`). |
-| `TDMCP_RAW_PYTHON` | `on` | Whether to expose the raw-Python escape-hatch tools (`execute_python_script`, `exec_node_method`). Set to `off` to lock them out for restricted setups. |
+| `TDMCP_RAW_PYTHON` | `on` | Whether to expose the two raw-Python escape-hatch tools (`execute_python_script`, `exec_node_method`). Set to `off` to lock them out for restricted setups. This removes only those two client-authored-code tools — many higher-level tools still send their own *templated* Python to the bridge, so `off` is **not** "no code runs in TD". To actually disable code execution, set `TDMCP_BRIDGE_ALLOW_EXEC=0` in TouchDesigner's environment (below). |
 | `TDMCP_BRIDGE_TOKEN` | _(unset)_ | Optional shared bearer token. When set, the server sends it and the bridge requires it — set the **same** value in TouchDesigner's environment to turn auth on. |
 | `TDMCP_LOG_LEVEL` | `info` | `debug` / `info` / `warn` / `error` / `silent` (logged to stderr). |
 | `TDMCP_REQUEST_TIMEOUT_MS` | `10000` | Per-request timeout to the bridge, in milliseconds. |

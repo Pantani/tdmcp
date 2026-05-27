@@ -74,6 +74,20 @@ describe("generateFromMoodboardImpl", () => {
     });
   });
 
+  it("returns a friendly error (never throws) when the note has malformed YAML frontmatter", async () => {
+    await withVault(async (vault) => {
+      // Unclosed flow sequence — gray-matter's matter() throws on this. The tool
+      // must catch it and return an isError result, not crash the handler.
+      vault.write("Moodboards/broken.md", "---\ntechnique: [a, b\n---\n\nBody.\n");
+      const result = await generateFromMoodboardImpl(ctxWith(vault), {
+        note: "broken",
+        parent_path: "/project1",
+      });
+      expect(result.isError).toBe(true);
+      expect(textOf(result)).toContain("broken");
+    });
+  });
+
   it("reads the note's technique frontmatter and builds a matching generative system", async () => {
     await withVault(async (vault) => {
       vault.write("Moodboards/membranes.md", MOODBOARD_NOTE);

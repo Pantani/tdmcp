@@ -1,4 +1,4 @@
-# tdmcp Roadmap — v0.2.0 → v1.0.0
+# tdmcp Roadmap — v0.3.0 → v1.0.0
 
 A phased plan toward 1.0. Each phase ships as its own minor release with a
 CHANGELOG entry and live validation in TouchDesigner. Phases are ordered by
@@ -26,7 +26,7 @@ Every feature follows the existing patterns:
 ## Phase overview
 
 > Phase numbers are historical build order, not release order — the **Version** column
-> shows which release each phase ships in. Everything built so far (Phases 0–11) ships in 0.3.0.
+> shows which release each phase ships in. Everything built so far (Phases 0–12) ships in 0.3.0.
 
 | Phase | Version | Theme | Rationale |
 |---|---|---|---|
@@ -40,7 +40,7 @@ Every feature follows the existing patterns:
 | — | 1.0.0 | Consolidation | API stabilization, docs, test coverage |
 | 7 | 0.3.0 ☑ | Stage I/O & sensor reactivity | Send video out, fan across projectors, react to the camera, follow an external clock, run hands-free |
 | 8–11 | 0.3.0 ◐ | Effects, reactivity, control & AI | Parallel waves — signature effects, deeper reactivity, creation, live control/AI/DX (detailed below) |
-| 12 | 0.4.0 ◐ | Dimensional: 3D, depth & spatial mapping | Take visuals off the flat plane — react in 3D, sculpt with depth, map onto real surfaces |
+| 12 | 0.3.0 ☑ | Dimensional: 3D, depth & spatial mapping | Take visuals off the flat plane — react in 3D, sculpt with depth, map onto real surfaces |
 
 ---
 
@@ -305,7 +305,7 @@ tuning of `detect_pitch` (threshold/argmax) and `learn_control` (noise-reject di
 
 ---
 
-## Phase 12 — v0.4.0 · Dimensional: 3D, depth & spatial mapping ◐ integrated & live-validated
+## Phase 12 — v0.3.0 · Dimensional: 3D, depth & spatial mapping ☑ shipped
 
 Takes visuals **off the flat plane**: react in 3D, sculpt with depth, and map onto real-world
 surfaces — the terrain of installations and dimensional VJ work. Today 3D is only basic

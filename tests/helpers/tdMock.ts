@@ -17,7 +17,7 @@ export const tdHandlers = [
     ok({
       td_version: "2023.12000",
       python_version: "3.11.1",
-      bridge_version: "0.1.0",
+      bridge_version: "0.3.0",
       build: "2023.12000",
     }),
   ),

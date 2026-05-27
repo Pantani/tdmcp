@@ -262,7 +262,7 @@ ground truth that Step 5 worked:
 
 ```bash
 curl -s http://127.0.0.1:9980/api/info
-# Expect JSON like: {"ok":true,"data":{"python_version":"3.11.x","td_version":"...","bridge_version":"0.1.0"}}
+# Expect JSON like: {"ok":true,"data":{"python_version":"3.11.x","td_version":"...","bridge_version":"0.3.0"}}
 ```
 
 Retry every few seconds until it returns JSON (or the user says they pasted it and

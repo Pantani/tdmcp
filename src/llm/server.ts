@@ -19,6 +19,47 @@ const SSE_HEADERS = {
   connection: "keep-alive",
 } as const;
 
+const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "::1"]);
+
+/** Extracts the bare hostname from a `Host` header (`h:port`, `[::1]:port`) or an `Origin` URL. */
+function hostnameOf(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  if (value.includes("://")) {
+    try {
+      return new URL(value).hostname;
+    } catch {
+      return undefined;
+    }
+  }
+  let h = value.trim();
+  if (h.startsWith("[")) {
+    const end = h.indexOf("]");
+    return end > 0 ? h.slice(1, end) : undefined; // [::1]:port -> ::1
+  }
+  const colon = h.indexOf(":");
+  if (colon > 0 && colon === h.lastIndexOf(":")) h = h.slice(0, colon); // strip :port (ipv4/host)
+  return h;
+}
+
+/**
+ * The chat UI is bound to loopback, but binding alone does not stop a web page the
+ * artist visits from POSTing to `http://127.0.0.1:<port>/chat` (CSRF) or a name
+ * rebound to 127.0.0.1 (DNS rebinding) — either could drive node CRUD against the
+ * live TD project. Accept a request only when both the `Host` and (when present)
+ * the `Origin` resolve to a loopback name, mirroring the bridge's `_check_origin`
+ * and the MCP HTTP transport's DNS-rebinding guard.
+ */
+function isLoopbackRequest(req: IncomingMessage): boolean {
+  const host = hostnameOf(req.headers.host);
+  if (!host || !LOOPBACK_HOSTS.has(host)) return false;
+  const origin = req.headers.origin;
+  if (origin !== undefined) {
+    const originHost = hostnameOf(origin);
+    if (!originHost || !LOOPBACK_HOSTS.has(originHost)) return false;
+  }
+  return true;
+}
+
 function readJsonBody(req: IncomingMessage, limitBytes = 5_000_000): Promise<unknown> {
   return new Promise((resolve, reject) => {
     let size = 0;
@@ -114,6 +155,11 @@ export function startChatServer(ctx: ToolContext, config: TdmcpConfig): Promise<
     const path = (req.url ?? "/").split("?")[0];
 
     const run = async () => {
+      if (!isLoopbackRequest(req)) {
+        res.writeHead(403, { "content-type": "text/plain" });
+        res.end("forbidden: cross-origin or non-loopback request rejected");
+        return;
+      }
       if (method === "GET" && path === "/") {
         res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
         res.end(CHAT_HTML);
