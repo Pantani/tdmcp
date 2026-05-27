@@ -3,6 +3,7 @@ import { registerAnimateParameter } from "./animateParameter.js";
 import { registerArrangeNetwork } from "./arrangeNetwork.js";
 import { registerBindToChannel } from "./bindToChannel.js";
 import { registerConnectNodes } from "./connectNodes.js";
+import { registerCreateClipLauncher } from "./createClipLauncher.js";
 import { registerCreateContainer } from "./createContainer.js";
 import { registerCreateControlPanel } from "./createControlPanel.js";
 import { registerCreateControlSurface } from "./createControlSurface.js";
@@ -10,6 +11,7 @@ import { registerCreateExternalIo } from "./createExternalIo.js";
 import { registerCreateGlslShader } from "./createGlslShader.js";
 import { registerCreateMacro } from "./createMacro.js";
 import { registerCreateNodeChain } from "./createNodeChain.js";
+import { registerCreatePanic } from "./createPanic.js";
 import { registerCreatePhoneRemote } from "./createPhoneRemote.js";
 import { registerCreatePythonScript } from "./createPythonScript.js";
 import { registerDuplicateNetwork } from "./duplicateNetwork.js";
@@ -41,4 +43,7 @@ export const layer2Registrars: ToolRegistrar[] = [
   registerCreateExternalIo,
   registerDuplicateNetwork,
   registerArrangeNetwork,
+  // Wave 4 — live-performance ergonomics:
+  registerCreatePanic,
+  registerCreateClipLauncher,
 ];

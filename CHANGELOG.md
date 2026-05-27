@@ -50,6 +50,29 @@ Follow-ups: finish the items deferred during the phased build (to be versioned a
   `create_autopilot` follow (CLI `clock-sync`). Validated live: the knob drives the global tempo
   (128→174) and taps are recorded. (Dedicated MIDI-clock / Ableton-Link sync is a planned
   follow-up.)
+- **Signature VJ effects** — `create_strobe` (beat-syncable strobe/flash, square LFO → brightness;
+  CLI `strobe`), `create_kaleidoscope` (N-fold radial mirror via a GLSL polar-fold; CLI
+  `kaleidoscope`), `create_glitch` (RGB-shift + noise displacement, non-device default source; CLI
+  `glitch`), `create_kinetic_text` (animated / beat-flashed lyric typography; CLI `kinetictext`).
+- **Deeper musical reactivity** — `create_spectrum` (N-band FFT via an Audio Spectrum CHOP → a
+  per-band Null for binding; CLI `spectrum`), `detect_onsets` (kick/snare/hat transient detection
+  built from primitives — band RMS → moving baseline → threshold — with an optional `onset`
+  WebSocket event; CLI `onsets`), `create_waveform` (time-domain oscilloscope; CLI `waveform`). The
+  frequency / transient / time-domain complements to `extract_audio_features`.
+- **Creation** — `create_color_grade` (lift/gamma/gain + saturation/hue + optional LUT; CLI
+  `colorgrade`), `import_model` (3D model file → Geo/Camera/Light/Render, primitive fallback; CLI
+  `model`), `create_shader_lib` (curated GLSL pack: tunnel/raymarch/fractal/metaballs/plasma; CLI
+  `shaderlib`), `create_video_synth` (analog-synth lissajous/interference/scanline patterns; CLI
+  `videosynth`), `create_depth_silhouette` (silhouette / body mask from a depth or video source,
+  device-free default; CLI `silhouette`).
+- **Live-performance ergonomics** — `create_panic` (instant Blackout + Freeze safety control; CLI
+  `panic`), `create_clip_launcher` (Ableton-style grid of cue-trigger buttons, reusing manage_cue's
+  recall/morph engine; CLI `launcher`).
+- **AI prompts** — `text_to_shader` (author + validate a GLSL TOP from a description),
+  `audio_to_show` (plan a full reactive set from a track), `auto_fix` (a detect → diagnose → fix →
+  re-check repair loop).
+- **CLI `doctor`** — a one-shot environment diagnostic (TD bridge, local LLM copilot, vault, config)
+  with a plain-language pass/warn/fail report; the exit code reflects critical checks only.
 
 ### Changed
 

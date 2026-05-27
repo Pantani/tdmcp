@@ -1,4 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { registerAudioToShow } from "./audioToShow.js";
+import { registerAutoFix } from "./autoFix.js";
 import { registerBeatReactiveDesigner } from "./beatReactiveDesigner.js";
 import { registerCritiqueVisual } from "./critiqueVisual.js";
 import { registerDebugNetwork } from "./debugNetwork.js";
@@ -7,6 +9,7 @@ import { registerFixShader } from "./fixShader.js";
 import { registerImageToVisual } from "./imageToVisual.js";
 import { registerOptimizePerformance } from "./optimizePerformance.js";
 import { registerRemixVisual } from "./remixVisual.js";
+import { registerTextToShader } from "./textToShader.js";
 import { registerTweakVisual } from "./tweakVisual.js";
 import type { PromptContext } from "./types.js";
 import { registerVisualArtistMode } from "./visualArtistMode.js";
@@ -25,6 +28,9 @@ export function registerAllPrompts(server: McpServer, ctx: PromptContext): void 
   registerCritiqueVisual(server, ctx);
   registerVjSetBuilder(server, ctx);
   registerFixShader(server, ctx);
+  registerTextToShader(server, ctx);
+  registerAudioToShow(server, ctx);
+  registerAutoFix(server, ctx);
 }
 
 export type { PromptContext } from "./types.js";

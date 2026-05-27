@@ -238,3 +238,50 @@ No new bridge endpoints expected (Execute-DAT + `buildPayloadScript` patterns su
 
 **Candidate CLI:** `io --params '{"kind":"ndi_out",…}'` (existing command, new kind),
 `motion-reactive`, `clock-sync`, `multi-output`, `text`, `autopilot`.
+
+---
+
+## Phases 8–11 — v1.2.0 · Effects, reactivity, control & AI ◐ integrated (live-validation pending)
+
+Built as parallel waves (one subagent per feature — new files + offline `msw` unit tests only, no
+registry edits — then integrated single-writer) alongside Phase 7. Each ships as a new tool + CLI
+command + unit tests, all green offline (104 unit tests). **Live TD validation + per-feature tuning
+is the remaining step** (each build flagged its own ⚠ live-tuning unknown). See
+[[parallel-feature-build-workflow]].
+
+### Phase 8 — Signature VJ effects ⭐
+| Feature | Delivers | CLI | Status |
+|---|---|---|---|
+| `create_strobe` | Beat-syncable strobe/flash (square LFO → brightness expression) | `strobe` | ◐ |
+| `create_kaleidoscope` | N-fold radial mirror (self-contained GLSL polar-fold) | `kaleidoscope` | ◐ |
+| `create_glitch` | RGB-shift (GLSL) + noise displacement, non-device default | `glitch` | ◐ |
+| `create_kinetic_text` | Animated / beat-flashed lyric typography (flash/pulse/slide) | `kinetictext` | ◐ |
+
+### Phase 9 — Deeper musical reactivity ⭐
+| Feature | Delivers | CLI | Status |
+|---|---|---|---|
+| `create_spectrum` | N-band FFT (Audio Spectrum CHOP → resample → per-band Null) | `spectrum` | ◐ |
+| `detect_onsets` | kick/snare/hat transients (RMS → moving baseline → threshold) + `onset` events | `onsets` | ◐ |
+| `create_waveform` | Time-domain oscilloscope (trail → CHOP-to-TOP) | `waveform` | ◐ |
+
+### Phase 10 — Creation & content
+| Feature | Delivers | CLI | Status |
+|---|---|---|---|
+| `create_color_grade` | Lift/gamma/gain + saturation/hue + optional LUT | `colorgrade` | ◐ |
+| `import_model` | 3D model file → Geo/Camera/Light/Render (primitive fallback) | `model` | ◐ |
+| `create_shader_lib` | Curated GLSL pack (tunnel/raymarch/fractal/metaballs/plasma) | `shaderlib` | ◐ |
+| `create_video_synth` | Analog-synth lissajous/interference/scanline patterns | `videosynth` | ◐ |
+| `create_depth_silhouette` | Silhouette/body mask from depth/video (device-free default) | `silhouette` | ◐ |
+
+### Phase 11 — Live control, AI & DX
+| Feature | Delivers | CLI | Status |
+|---|---|---|---|
+| `create_panic` | Instant Blackout + Freeze safety control | `panic` | ◐ |
+| `create_clip_launcher` | Ableton-style cue-trigger button grid (reuses `manage_cue`) | `launcher` | ◐ |
+| `text_to_shader` / `audio_to_show` / `auto_fix` | AI prompts: author GLSL, plan a set, repair loop | — | ◐ |
+| `tdmcp doctor` | Environment diagnostic (bridge / LLM / vault / config) | `doctor` | ◐ |
+
+**Still deferred (need live design or hardware):** MIDI/OSC learn (live-stateful), pitch detection
+(`pitchCHOP` not createable — spectrum-argmax research), A/B decks; and the shared-file extensions
+io DMX/LED/RTMP (`createExternalIo`), envelope-on-bind (`bindToChannel`), quantized cue recall
+(`manageCue`).

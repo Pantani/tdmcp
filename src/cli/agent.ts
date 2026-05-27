@@ -20,10 +20,15 @@ import {
   createAudioReactiveSchema,
 } from "../tools/layer1/createAudioReactive.js";
 import { createAutopilotImpl, createAutopilotSchema } from "../tools/layer1/createAutopilot.js";
+import { createColorGradeImpl, createColorGradeSchema } from "../tools/layer1/createColorGrade.js";
 import {
   createDataVisualizationImpl,
   createDataVisualizationSchema,
 } from "../tools/layer1/createDataVisualization.js";
+import {
+  createDepthSilhouetteImpl,
+  createDepthSilhouetteSchema,
+} from "../tools/layer1/createDepthSilhouette.js";
 import {
   createFeedbackNetworkImpl,
   createFeedbackNetworkSchema,
@@ -32,10 +37,19 @@ import {
   createGenerativeArtImpl,
   createGenerativeArtSchema,
 } from "../tools/layer1/createGenerativeArt.js";
+import { createGlitchImpl, createGlitchSchema } from "../tools/layer1/createGlitch.js";
+import {
+  createKaleidoscopeImpl,
+  createKaleidoscopeSchema,
+} from "../tools/layer1/createKaleidoscope.js";
 import {
   createKeyframeAnimationImpl,
   createKeyframeAnimationSchema,
 } from "../tools/layer1/createKeyframeAnimation.js";
+import {
+  createKineticTextImpl,
+  createKineticTextSchema,
+} from "../tools/layer1/createKineticText.js";
 import { createLayerMixerImpl, createLayerMixerSchema } from "../tools/layer1/createLayerMixer.js";
 import {
   createMotionReactiveImpl,
@@ -53,7 +67,10 @@ import {
   createProjectionMappingImpl,
   createProjectionMappingSchema,
 } from "../tools/layer1/createProjectionMapping.js";
+import { createShaderLibImpl, createShaderLibSchema } from "../tools/layer1/createShaderLib.js";
 import { createSimulationImpl, createSimulationSchema } from "../tools/layer1/createSimulation.js";
+import { createSpectrumImpl, createSpectrumSchema } from "../tools/layer1/createSpectrum.js";
+import { createStrobeImpl, createStrobeSchema } from "../tools/layer1/createStrobe.js";
 import {
   createSyncExternalClockImpl,
   createSyncExternalClockSchema,
@@ -67,16 +84,20 @@ import {
   createVideoPlayerImpl,
   createVideoPlayerSchema,
 } from "../tools/layer1/createVideoPlayer.js";
+import { createVideoSynthImpl, createVideoSynthSchema } from "../tools/layer1/createVideoSynth.js";
 import {
   createVisualSystemImpl,
   createVisualSystemSchema,
 } from "../tools/layer1/createVisualSystem.js";
+import { createWaveformImpl, createWaveformSchema } from "../tools/layer1/createWaveform.js";
 import { describeProjectImpl, describeProjectSchema } from "../tools/layer1/describeProject.js";
+import { detectOnsetsImpl, detectOnsetsSchema } from "../tools/layer1/detectOnsets.js";
 import {
   extractAudioFeaturesImpl,
   extractAudioFeaturesSchema,
 } from "../tools/layer1/extractAudioFeatures.js";
 import { getPreviewSchema } from "../tools/layer1/getPreview.js";
+import { importModelImpl, importModelSchema } from "../tools/layer1/importModel.js";
 import { listRecipesImpl, listRecipesSchema } from "../tools/layer1/listRecipes.js";
 import { scaffoldShowImpl, scaffoldShowSchema } from "../tools/layer1/scaffoldShow.js";
 import { setupOutputImpl, setupOutputSchema } from "../tools/layer1/setupOutput.js";
@@ -84,6 +105,10 @@ import { animateParameterImpl, animateParameterSchema } from "../tools/layer2/an
 import { arrangeNetworkImpl, arrangeNetworkSchema } from "../tools/layer2/arrangeNetwork.js";
 import { bindToChannelImpl, bindToChannelSchema } from "../tools/layer2/bindToChannel.js";
 import { connectNodesImpl, connectNodesSchema } from "../tools/layer2/connectNodes.js";
+import {
+  createClipLauncherImpl,
+  createClipLauncherSchema,
+} from "../tools/layer2/createClipLauncher.js";
 import { createContainerImpl, createContainerSchema } from "../tools/layer2/createContainer.js";
 import {
   createControlPanelImpl,
@@ -97,6 +122,7 @@ import { createExternalIoImpl, createExternalIoSchema } from "../tools/layer2/cr
 import { createGlslShaderImpl, createGlslShaderSchema } from "../tools/layer2/createGlslShader.js";
 import { createMacroImpl, createMacroSchema } from "../tools/layer2/createMacro.js";
 import { createNodeChainImpl, createNodeChainSchema } from "../tools/layer2/createNodeChain.js";
+import { createPanicImpl, createPanicSchema } from "../tools/layer2/createPanic.js";
 import {
   createPhoneRemoteImpl,
   createPhoneRemoteSchema,
@@ -164,6 +190,7 @@ import {
 import type { ToolContext } from "../tools/types.js";
 import { loadConfig, type TdmcpConfig, tdBaseUrl } from "../utils/config.js";
 import { silentLogger } from "../utils/logger.js";
+import { runDoctor } from "./doctor.js";
 
 // biome-ignore lint/suspicious/noExplicitAny: args are validated by each command's zod schema before use.
 type Runner = (ctx: ToolContext, args: any) => CallToolResult | Promise<CallToolResult>;
@@ -489,6 +516,85 @@ const COMMANDS: Record<string, Command> = {
     "Set many parameters across nodes at once.",
     { mutates: true },
   ),
+  // Signature effects, deeper reactivity, creation, live control (waves 1–5).
+  strobe: r(createStrobeSchema, createStrobeImpl, "Build a beat-syncable strobe/flash layer.", {
+    mutates: true,
+  }),
+  kaleidoscope: r(
+    createKaleidoscopeSchema,
+    createKaleidoscopeImpl,
+    "Wrap a source in an N-fold kaleidoscope (radial mirror).",
+    { mutates: true },
+  ),
+  glitch: r(
+    createGlitchSchema,
+    createGlitchImpl,
+    "Apply a glitch look (RGB-shift + noise displacement).",
+    { mutates: true },
+  ),
+  spectrum: r(
+    createSpectrumSchema,
+    createSpectrumImpl,
+    "Extract an N-band FFT spectrum to bind per-band.",
+    { mutates: true },
+  ),
+  onsets: r(
+    detectOnsetsSchema,
+    detectOnsetsImpl,
+    "Detect kick/snare/hat onsets (per-band pulse + optional events).",
+    { mutates: true },
+  ),
+  waveform: r(
+    createWaveformSchema,
+    createWaveformImpl,
+    "Render a time-domain audio oscilloscope/waveform.",
+    { mutates: true },
+  ),
+  colorgrade: r(
+    createColorGradeSchema,
+    createColorGradeImpl,
+    "Color-grade a source (lift/gamma/gain + saturation/hue + LUT).",
+    { mutates: true },
+  ),
+  model: r(importModelSchema, importModelImpl, "Import a 3D model file and render it.", {
+    mutates: true,
+  }),
+  shaderlib: r(
+    createShaderLibSchema,
+    createShaderLibImpl,
+    "Instantiate a curated GLSL shader (tunnel/raymarch/fractal/…).",
+    { mutates: true },
+  ),
+  videosynth: r(
+    createVideoSynthSchema,
+    createVideoSynthImpl,
+    "Analog video-synth patterns (lissajous/interference/scanlines).",
+    { mutates: true },
+  ),
+  silhouette: r(
+    createDepthSilhouetteSchema,
+    createDepthSilhouetteImpl,
+    "Extract a silhouette/body mask from a depth or video source.",
+    { mutates: true },
+  ),
+  kinetictext: r(
+    createKineticTextSchema,
+    createKineticTextImpl,
+    "Animated/beat-flashed kinetic typography (lyric flashes).",
+    { mutates: true },
+  ),
+  panic: r(
+    createPanicSchema,
+    createPanicImpl,
+    "Live safety: instant Blackout + Freeze over an output.",
+    { mutates: true },
+  ),
+  launcher: r(
+    createClipLauncherSchema,
+    createClipLauncherImpl,
+    "Build an Ableton-style grid of cue-trigger buttons.",
+    { mutates: true },
+  ),
 };
 
 export interface CliResult {
@@ -560,6 +666,7 @@ function usage(): string {
   lines.push("  preview <nodePath>   Capture a TOP to a PNG file (-o/--out).  [writes a file]");
   lines.push("  watch                Stream TD events as ndjson until Ctrl-C.  [long-running]");
   lines.push("  repl                 Interactive mode: run commands line-by-line.  [interactive]");
+  lines.push("  doctor               Diagnose your setup (TD bridge, LLM, vault, config).");
   return lines.join("\n");
 }
 
@@ -671,6 +778,14 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
     } catch (err) {
       return { stdout: "", stderr: `${friendlyTdError(err)}\n`, code: 1 };
     }
+  }
+
+  // `doctor` — environment diagnostic (TD bridge, LLM copilot, vault, config). Read-only and
+  // reachable even when TD is offline, so it bypasses the CallToolResult command table.
+  if (positionals[0] === "doctor") {
+    const make = opts.makeCtx;
+    const { stdout, stderr, code } = await runDoctor(make ? { makeCtx: () => make() } : {});
+    return { stdout, stderr, code };
   }
 
   const resolved = resolveCommand(positionals);
