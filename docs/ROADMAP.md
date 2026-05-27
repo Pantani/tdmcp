@@ -36,6 +36,8 @@ Every feature follows the existing patterns:
 | 6 | 0.9.0 ◐ | Obsidian vault | Markdown library + journal bridge: recipes, setlists, shaders, presets, docs |
 | — | 1.0.0 | Consolidation | API stabilization, docs, test coverage |
 | 7 | 1.1.0 ☑ | Stage I/O & sensor reactivity | Send video out, fan across projectors, react to the camera, follow an external clock, run hands-free |
+| 8–11 | 1.2.0 ◐ | Effects, reactivity, control & AI | Parallel waves — signature effects, deeper reactivity, creation, live control/AI/DX (detailed below) |
+| 12 | 1.3.0 ☐ | Dimensional: 3D, depth & spatial mapping | Take visuals off the flat plane — react in 3D, sculpt with depth, map onto real surfaces |
 
 ---
 
@@ -297,3 +299,41 @@ is the remaining step** (each build flagged its own ⚠ live-tuning unknown). Se
 **Still deferred:** dedicated MIDI-clock / Ableton-Link tempo sync (needs hardware); full live
 tuning of `detect_pitch` (threshold/argmax) and `learn_control` (noise-reject diff); and
 `create_waveform`'s amplitude→Y deflection (the SOP attribute-scope detail).
+
+---
+
+## Phase 12 — v1.3.0 · Dimensional: 3D, depth & spatial mapping ☐ planned
+
+Takes visuals **off the flat plane**: react in 3D, sculpt with depth, and map onto real-world
+surfaces — the terrain of installations and dimensional VJ work. Today 3D is only basic
+(`create_3d_scene`, `import_model`) and mapping is flat (`projection_mapping` corner-pin,
+`create_multi_output` tiling). This phase builds on mechanisms already validated live this cycle —
+GPU **instancing** (`create_3d_scene`), **GLSL TOP** masks (the `create_multi_output` edge-blend),
+and per-point attribute displacement (`pscale`). It stays clear of the parallel waves (8–11) and the
+vault track — nothing here overlaps their 2D effects / audio / creation tools (`import_model` loads
+a model; `create_depth_silhouette` makes a flat mask — both distinct from the 3D geometry below).
+
+| Feature | Delivers | Effort | Status |
+|---|---|---|---|
+| `create_3d_audio_reactive` (L1) | A 3D scene that reacts to sound — a grid of **instances** whose height/scale tracks `create_spectrum` FFT bands (bind `instancesy`/`instancesz` to band channels), or a primitive that pulses with the bass. The 3D counterpart to `create_audio_reactive`. **Lowest-risk** — reuses the validated instancing + `bind_to_channel` path | M | ☐ |
+| `create_dome_output` (L1) | Render the scene to a cubemap and remap to **fisheye / equirectangular** for planetarium domes / 360 — the curved single-output complement to `create_multi_output`'s flat tiling. A **GLSL** remap (proven) of a cube render | M | ☐ |
+| `create_mesh_warp` (L1) | Map a source onto a **curved / irregular** surface via a deformable grid (textured grid geometry, or a Bezier/Warp TOP), beyond the flat corner-pin — for domes, columns, sculptures. Output for `setup_output` | L | ☐ |
+| `create_depth_displacement` (L1) | Push a plane into 3D by a **depth / luminance map** (camera / video / depth source) — a 2.5D relief / pseudo-scan that moves with the camera. Distinct from `create_depth_silhouette` (a flat mask); this is real geometry | M | ☐ |
+| `create_gpu_particle_field` (L1) | A high-count **GPU particle / point field** reacting to audio or camera motion (emit on beats, push by bass, color by band) — beyond the CPU `create_particle_system`. **Highest-complexity** (position/velocity feedback TOPs + instancing) | L | ☐ |
+
+**Probe-first checklist** (confirm operators live before fixing each API — the Phase-7 lesson):
+
+- `create_3d_audio_reactive`: confirm a 1×N CHOP can feed `instancesy`/`instancesz` per instance (validated instancing path); else fall back to a whole-geometry bass pulse.
+- `create_dome_output`: confirm the Render TOP **cube-map** mode (or a 6-camera render), then a GLSL fisheye/equirect remap (GLSL is validated).
+- `create_mesh_warp`: confirm a grid-warp primitive — a textured `gridSOP` rendered with draggable points, or a Bezier/Warp TOP if present.
+- `create_depth_displacement`: confirm geometry displacement by a texture (a displacement material, a GLSL vertex stage, or a SOP reading the TOP), plus the cold-cook keep-alive (the `create_motion_reactive` Execute-DAT lesson) when the source is a still.
+- `create_gpu_particle_field`: confirm this build's GPU-particle pattern (position/velocity feedback TOPs + instancing, or a dedicated operator); the likeliest deferral.
+
+**Stretch / hardware- or model-blocked (won't ship unvalidated):** depth-camera input
+(Kinect / RealSense / Azure) in `create_external_io`; pose / body tracking (MediaPipe / ML) →
+skeleton-driven visuals; real-time AI generation (StreamDiffusion). All need a sensor, an ML
+component, or GPU+models to validate live.
+
+**macOS note:** the five core features are pure-GPU render / GLSL / file-or-camera sourced, so each
+is testable on the dev machine (unlike optical flow or depth sensors, which this build/OS can't
+validate).
