@@ -326,9 +326,3 @@ can reach `http://<your-ip>:9980` can run code on that machine. Only run it on a
 trusted network and/or firewall port 9980 to localhost. For untrusted networks,
 set the same `TDMCP_BRIDGE_TOKEN` secret in both the MCP server's environment and
 TouchDesigner's environment to require bearer-token auth on the bridge.
-
----
-
-*This runbook installs and connects tdmcp. To **build** the tdmcp server itself
-from scratch, see the separate `tdmcp-bootstrap-prompt.md` — that's a different
-document for a different job.*
