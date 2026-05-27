@@ -88,10 +88,10 @@ try:
             report["nodes"].append(_node)
             try:
                 for _ic in _c.inputConnectors:
-                    for _conn in _ic.connections:
-                        _src = _conn.outOP
+                    for _oc in _ic.connections:
+                        _src = _oc.owner
                         if _src is not None and _src.name in _names:
-                            report["connections"].append({"from": _src.name, "to": _c.name, "from_output": _conn.outConnector.index, "to_input": _ic.index})
+                            report["connections"].append({"from": _src.name, "to": _c.name, "from_output": _oc.index, "to_input": _ic.index})
             except Exception:
                 pass
         if not _kids:
