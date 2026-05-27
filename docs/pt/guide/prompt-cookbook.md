@@ -109,6 +109,11 @@ demais para um clipe leve).*
 > *"Passe minha webcam por detecção de bordas, um RGB split e um loop de feedback
 > para um visual glitchado."*
 
+<video src="/examples/video-glitch.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*O look de glitch / VHS — scanlines, RGB split e datamosh (mostrado sobre uma fonte
+sintética em vez de uma webcam ao vivo).*
+
 > *"Toque este arquivo de vídeo em loop com controle de velocidade."* (passe o
 > caminho)
 

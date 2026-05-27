@@ -105,6 +105,11 @@ Gravity / Lifetime* knobs to shape the motion.
 > *"Pipe my webcam through edge detection, an RGB split and a feedback loop for a
 > glitchy look."*
 
+<video src="/examples/video-glitch.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*The glitch / VHS look — scanlines, RGB split and datamosh (shown on a synthetic
+source rather than a live webcam).*
+
 > *"Play this video file on a loop with speed control."* (give it the path)
 
 > *"Take my webcam and make it look like an old, degraded VHS tape."*
