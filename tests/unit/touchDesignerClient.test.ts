@@ -88,3 +88,61 @@ describe("TouchDesignerClient", () => {
     expect(pathname).toBe(`/api/nodes/${encodeURIComponent("/project1/a/b")}`);
   });
 });
+
+describe("TouchDesignerClient retry (idempotent GET)", () => {
+  const retryClient = () =>
+    new TouchDesignerClient({ baseUrl: TD_BASE, timeoutMs: 2000, retries: 2, retryDelayMs: 0 });
+
+  it("retries a transient connection failure on a GET and then succeeds", async () => {
+    let calls = 0;
+    server.use(
+      http.get(`${TD_BASE}/api/info`, () => {
+        calls++;
+        if (calls < 2) return HttpResponse.error(); // network failure on the first try
+        return HttpResponse.json({ ok: true, data: { td_version: "2023.12000" } });
+      }),
+    );
+    const info = await retryClient().getInfo();
+    expect(info.td_version).toBe("2023.12000");
+    expect(calls).toBe(2);
+  });
+
+  it("gives up with TdConnectionError after exhausting retries (1 + 2)", async () => {
+    let calls = 0;
+    server.use(
+      http.get(`${TD_BASE}/api/info`, () => {
+        calls++;
+        return HttpResponse.error();
+      }),
+    );
+    await expect(retryClient().getInfo()).rejects.toBeInstanceOf(TdConnectionError);
+    expect(calls).toBe(3);
+  });
+
+  it("does NOT retry a non-idempotent POST (avoids double-create)", async () => {
+    let calls = 0;
+    server.use(
+      http.post(`${TD_BASE}/api/nodes`, () => {
+        calls++;
+        return HttpResponse.error();
+      }),
+    );
+    await expect(
+      retryClient().createNode({ parent_path: "/project1", type: "noiseTOP" }),
+    ).rejects.toBeInstanceOf(TdConnectionError);
+    expect(calls).toBe(1);
+  });
+
+  it("does not retry when retries is 0", async () => {
+    let calls = 0;
+    server.use(
+      http.get(`${TD_BASE}/api/info`, () => {
+        calls++;
+        return HttpResponse.error();
+      }),
+    );
+    const noRetry = new TouchDesignerClient({ baseUrl: TD_BASE, timeoutMs: 2000, retries: 0 });
+    await expect(noRetry.getInfo()).rejects.toBeInstanceOf(TdConnectionError);
+    expect(calls).toBe(1);
+  });
+});

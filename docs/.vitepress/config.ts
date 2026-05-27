@@ -24,6 +24,7 @@ function pageUrl(relativePath: string): string {
 const artistGuide = (base: string) => [
   { text: "What is tdmcp?", link: `${base}/what-is-tdmcp` },
   { text: "Install", link: `${base}/install` },
+  { text: "Codex + TouchDesigner", link: `${base}/codex` },
   { text: "Your first visual", link: `${base}/first-visual` },
   { text: "Prompt cookbook", link: `${base}/prompt-cookbook` },
   { text: "Recipe gallery", link: `${base}/recipes` },
@@ -73,7 +74,7 @@ export default defineConfig({
       {
         name: "keywords",
         content:
-          "TouchDesigner MCP, TouchDesigner MCP server, MCP server for TouchDesigner, Model Context Protocol, tdmcp, TouchDesigner AI, Claude TouchDesigner, Cursor TouchDesigner, generative visuals, creative coding, VJ",
+          "TouchDesigner MCP, TouchDesigner MCP server, MCP server for TouchDesigner, Model Context Protocol, tdmcp, TouchDesigner AI, Claude TouchDesigner, Cursor TouchDesigner, Codex TouchDesigner, generative visuals, creative coding, VJ",
       },
     ],
     ["meta", { name: "theme-color", content: "#0b0b0e" }],
