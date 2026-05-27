@@ -1,3 +1,7 @@
+---
+description: "Prompts prontos para criar visuais com o tdmcp, o servidor MCP para TouchDesigner — feedback, áudio-reativo, partículas, arte generativa e mais."
+---
+
 # Receitas de prompt
 
 Copie, troque as palavras e deixe do seu jeito. Estão agrupadas pelo que você quer
@@ -43,6 +47,11 @@ capturada ao vivo do TouchDesigner.*
 
 > *"Faça um analisador de espectro com barras coloridas que reagem à minha música."*
 
+![Um espectro de áudio FFT desenhado como barras coloridas pelo tdmcp](/examples/audio-spectrum.png)
+
+*Áudio ao vivo convertido em espectro de frequências (aqui guiado por um sinal de
+teste — aponte para o mic ou uma faixa).*
+
 > *"Crie uma galáxia de partículas reativa ao áudio guiada pela batida, e dê
 > preview."*
 
@@ -82,6 +91,10 @@ demais para um clipe leve).*
 
 > *"Faça 10.000 partículas que rodopiam como uma galáxia."*
 
+![10.000 partículas na GPU rodopiando como uma galáxia no preto](/examples/particles-swirl.png)
+
+*Uma galáxia de pontos rodopiada por um vórtice (quadro estático).*
+
 > *"Construa uma cena 3D com cubos instanciados reagindo a um campo de ruído."*
 
 <video src="/examples/scene-3d.mp4" autoplay loop muted playsinline style="width:100%;max-width:560px;border-radius:8px;display:block"></video>
@@ -105,9 +118,17 @@ demais para um clipe leve).*
 
 > *"Adicione o título 'ABERTURA' centralizado sobre este visual, em branco."*
 
+![Um título em branco, centralizado sobre um visual](/examples/text-title.png)
+
 > *"Coloque o nome da música no canto inferior esquerdo, em rosa-choque."*
 
+![O nome de uma música em rosa-choque no canto inferior esquerdo de um visual](/examples/text-songname.png)
+
 > *"Faça uma camada de texto (lower-third) transparente para eu compor depois."*
+
+![Uma faixa de título (lower-third) sobre um visual](/examples/text-lowerthird.png)
+
+*Mostrado sobre um visual; a camada real é transparente, pronta para compor.*
 
 **O que você recebe:** uma camada de texto estilizada (tamanho, cor, alinhamento)
 composta sobre seu visual ou em fundo transparente — pronta para mandar à saída.

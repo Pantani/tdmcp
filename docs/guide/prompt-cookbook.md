@@ -1,3 +1,7 @@
+---
+description: "Copy-paste prompts for building visuals with tdmcp, the TouchDesigner MCP server — feedback tunnels, audio-reactive, particles, generative art and more."
+---
+
 # Prompt cookbook
 
 Copy these, change the words, and make them yours. They're grouped by what you
@@ -41,6 +45,11 @@ down or speed it up.
 
 > *"Make an audio spectrum analyzer with colored bars that react to my music."*
 
+![An FFT audio spectrum drawn as colored bars by tdmcp](/examples/audio-spectrum.png)
+
+*Live audio analyzed into a frequency spectrum (shown driven by a test signal —
+point it at your mic or a track).*
+
 > *"Create an audio-reactive particle galaxy driven by the beat, and preview it."*
 
 > *"Build a radial spectrum that pulses on the bass, warm colors."*
@@ -78,6 +87,10 @@ a light clip).*
 
 > *"Make 10,000 particles that swirl like a galaxy."*
 
+![10,000 GPU particles swirling like a galaxy on black](/examples/particles-swirl.png)
+
+*A galaxy of points swirled by a vortex (still frame).*
+
 > *"Build a 3D scene with instanced cubes reacting to a noise field."*
 
 <video src="/examples/scene-3d.mp4" autoplay loop muted playsinline style="width:100%;max-width:560px;border-radius:8px;display:block"></video>
@@ -100,9 +113,17 @@ Gravity / Lifetime* knobs to shape the motion.
 
 > *"Add the title 'OPENING SET' centered over this visual in white."*
 
+![The title OPENING SET in white, centered over a visual](/examples/text-title.png)
+
 > *"Put the song name in the bottom-left corner in hot pink."*
 
+![A song name in hot pink in the lower-left corner of a visual](/examples/text-songname.png)
+
 > *"Make a transparent lower-third text layer I can composite later."*
+
+![A lower-third title bar over a visual](/examples/text-lowerthird.png)
+
+*Shown over a visual; the real layer is transparent, ready to composite.*
 
 **What you'll get:** a styled text layer (font size, color, alignment) composited
 over your visual or on its own transparent background — ready to send to output.
