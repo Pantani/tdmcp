@@ -301,7 +301,11 @@ export default defineConfig({
       themeConfig: {
         nav: [
           { text: "Guia", link: "/pt/guide/what-is-tdmcp", activeMatch: "/pt/guide/" },
-          { text: "Docs para devs (EN)", link: "/reference/architecture" },
+          {
+            text: "Docs para devs",
+            link: "/pt/reference/architecture",
+            activeMatch: "/pt/reference/",
+          },
           { text: "Roadmap (EN)", link: "/roadmap" },
         ],
         sidebar: [
@@ -309,7 +313,13 @@ export default defineConfig({
           {
             text: "Para desenvolvedores",
             collapsed: false,
-            items: [{ text: "Documentação técnica (em inglês)", link: "/reference/architecture" }],
+            items: [
+              { text: "Arquitetura", link: "/pt/reference/architecture" },
+              { text: "Variáveis de ambiente", link: "/pt/reference/environment" },
+              { text: "Tools (em inglês)", link: "/reference/tools" },
+              { text: "CLI (em inglês)", link: "/reference/cli" },
+              { text: "Bridge & REST API (em inglês)", link: "/reference/bridge-api" },
+            ],
           },
         ],
         editLink: {
