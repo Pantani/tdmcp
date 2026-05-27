@@ -10,6 +10,11 @@ async function main(): Promise<void> {
     runInstallBridge(argv.slice(1));
     return;
   }
+  if (argv[0] === "chat" || argv[0] === "llm-run") {
+    const { runChat } = await import("./cli/chat.js");
+    await runChat(argv.slice(1));
+    return;
+  }
 
   const config = loadConfig();
   const logger = createLogger(config.logLevel);
