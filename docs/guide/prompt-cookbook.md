@@ -162,6 +162,11 @@ Great for lyrics, titles, song names and credits.
 
 > *"Corner-pin this onto a projector and let me drag the corners."*
 
+<video src="/examples/projection-mapping.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*A source warped through a corner-pin keystone — drag the four corners to line it
+up with a wall, screen or object.*
+
 > *"Record the output to a movie file for 30 seconds."*
 
 ## Fixing & understanding

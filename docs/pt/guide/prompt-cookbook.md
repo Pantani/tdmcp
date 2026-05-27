@@ -168,6 +168,11 @@ composta sobre seu visual ou em fundo transparente — pronta para mandar à sa�
 
 > *"Faça corner-pin disto num projetor e me deixe arrastar os cantos."*
 
+<video src="/examples/projection-mapping.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Uma fonte distorcida por um corner-pin (keystone) — arraste os quatro cantos para
+alinhar com uma parede, tela ou objeto.*
+
 > *"Grave a saída em um arquivo de vídeo por 30 segundos."*
 
 ## Consertar & entender
