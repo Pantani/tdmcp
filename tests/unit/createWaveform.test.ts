@@ -116,7 +116,7 @@ describe("create_waveform", () => {
     expect(render?.parameters?.geometry).toBe(geo ? "/project1/waveform/geo" : undefined);
   });
 
-  it("maps the amplitude onto the Y position (P(1)) and spreads the points along X for a deflected trace", async () => {
+  it("renames the signal channel to 'ty' so CHOP-to-SOP deflects each point's Y (default mode auto-spreads X)", async () => {
     const bodies = captureCreateBodies();
     await createWaveformImpl(makeCtx(), {
       source: "oscillator",
@@ -126,15 +126,17 @@ describe("create_waveform", () => {
       expose_controls: false,
       parent_path: "/project1",
     });
-    // The CHOP-to-SOP scopes the sample value onto Y (P(1)) so it deflects vertically, while X
-    // is laid out left→right between startpos/endpos (it is not driven by a channel).
+    // CHOP-to-SOP maps a channel named "ty" to each point's Y-translate (the vertical deflection);
+    // in default mode it auto-spreads the points across X in [-1, 1]. (Live-verified: a "ty" channel
+    // deflects Y and X auto-spreads; setting startposx/endposx would OVERRIDE the deflection and
+    // flatten the line — so the SOP is left in default mode with no position params.)
+    const ypos = bodies.find((b) => b.type === "renameCHOP" && b.name === "ypos");
+    expect(ypos?.parameters).toMatchObject({ renamefrom: "*", renameto: "ty" });
     const line = bodies.find((b) => b.type === "choptoSOP");
-    expect(line?.parameters).toMatchObject({
-      attscope: "*",
-      mapping: "onetoone",
-      startposx: -1,
-      endposx: 1,
-    });
+    expect(line?.name).toBe("line");
+    // No explicit position overrides (they would defeat the ty-driven deflection).
+    expect(line?.parameters?.startposx).toBeUndefined();
+    expect(line?.parameters?.attscope).toBeUndefined();
   });
 
   it("sets the Trail CHOP window length from time_window in seconds", async () => {

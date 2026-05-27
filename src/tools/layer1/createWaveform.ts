@@ -108,11 +108,11 @@ export async function createWaveformImpl(ctx: ToolContext, args: CreateWaveformA
     const rebin = await builder.add("resampleCHOP", "rebin", { rate: 1024 });
     await builder.connect(trail, rebin);
 
-    // CHOP-to-SOP maps channels to point attributes BY NAME. Rename the single signal channel
-    // to "P(1)" so it drives each point's Y position (the vertical deflection of the trace); X is
-    // laid out left→right by startposx→endposx below. Without this the channel ("chan1") matches
-    // no position attribute and the line renders flat.
-    const ypos = await builder.add("renameCHOP", "ypos", { renamefrom: "*", renameto: "P(1)" });
+    // CHOP-to-SOP maps channels to point attributes BY NAME. Rename the single signal channel to
+    // "ty" (the per-point Y translate) so the sample value deflects each point vertically — the
+    // trace. X is laid out left→right by startposx→endposx below. (Live-verified with a sine
+    // pattern: a channel named "ty" deflects Y; "P(1)"/"chan1" leave the line flat.)
+    const ypos = await builder.add("renameCHOP", "ypos", { renamefrom: "*", renameto: "ty" });
     await builder.connect(rebin, ypos);
 
     // Render the buffered samples as a real oscilloscope LINE rather than a brightness strip.
@@ -130,32 +130,14 @@ export async function createWaveformImpl(ctx: ToolContext, args: CreateWaveformA
     // createSystemContainer's builder cleared the COMP's default torus on add.
     const geo = await builder.add("geometryCOMP", "geo");
 
-    // CHOP to SOP makes one geometry point per CHOP sample and (by default) strings them into
-    // a polyline — a connected trace, not a heat-map row. The mapping that reads as a scope:
-    //   • x = time, y = amplitude. We scope the amplitude channel ONLY onto the Y position
-    //     (attscope = "P(1)"), so the sample value deflects each point vertically.
-    //   • x is NOT driven by any channel, so CHOP to SOP spreads the points evenly between
-    //     startpos and endpos along X — startposx=-1 → endposx=1 lays the trace left→right.
-    //     z stays 0, putting the whole line flat in the XY plane facing the camera.
-    //   • mapping = onetoone keeps one point per resampled sample (rebin = 1024 points).
-    // CHOP to SOP reads its source from a `chop` PARAMETER (a path reference), NOT a wire;
-    // NetworkBuilder.connect() detects the converter op (type starts with "chopto") and
-    // patches that param automatically, so connect(rebin, line) points it at the resample.
-    const line = await builder.add(
-      "choptoSOP",
-      "line",
-      {
-        attscope: "*",
-        mapping: "onetoone",
-        startposx: -1,
-        startposy: 0,
-        startposz: 0,
-        endposx: 1,
-        endposy: 0,
-        endposz: 0,
-      },
-      geo,
-    );
+    // CHOP-to-SOP in DEFAULT mode: one point per sample, auto-spread across X in [-1, 1] by sample
+    // index, with the "ty" channel (renamed above) deflecting each point's Y — a real scope trace.
+    // (Live-verified: default mode gives X-spread + Y-deflection; setting startposx/endposx forces
+    // explicit positions that OVERRIDE the ty deflection and flatten the line, so we leave the
+    // positions at their defaults.) CHOP-to-SOP reads its source from a `chop` PARAMETER (not a
+    // wire); NetworkBuilder.connect() detects the converter and patches it, so connect(ypos, line)
+    // points the SOP at the renamed signal.
+    const line = await builder.add("choptoSOP", "line", {}, geo);
     await builder.connect(ypos, line);
 
     // Flag the line SOP render+display and point the COMP's `material` param at the constant
