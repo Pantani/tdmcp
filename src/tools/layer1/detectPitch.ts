@@ -88,10 +88,9 @@ export async function detectPitchImpl(ctx: ToolContext, args: DetectPitchArgs) {
     });
     await builder.connect(source, fft);
 
-    // Restrict the argmax to the [min_hz, max_hz] band. Because index == Hz, trimming the
-    // channel to the sample range [min_hz, max_hz] (absolute, in samples, discard exterior)
-    // leaves exactly the searchable bins. The Trim CHOP RE-BASES indices to 0 at the window
-    // start, so the peak index we read back is OFFSET FROM min_hz — we add min_hz below.
+    // Restrict the argmax to the [min_hz, max_hz] band. The Trim CHOP re-bases indices to 0 at the
+    // window start, so the peak index read back is relative to bandStart — added back in the
+    // index→Hz conversion below.
     // The Audio Spectrum (visual) spans [0, rate/2] across `fftLength` bins, so Hz ≈
     // index * (rate/2)/fftLength — NOT 1 Hz per sample (live-verified: a 440 Hz tone peaks
     // near bin 40, not 440). Convert the Hz search band to sample indices (assume 44.1 kHz for
@@ -123,12 +122,16 @@ export async function detectPitchImpl(ctx: ToolContext, args: DetectPitchArgs) {
     });
     await builder.connect(band, peakIndex);
 
-    // index → Hz: add the band-start offset back to get the absolute bin, then multiply by the
-    // live Hz-per-bin = (rate/2)/fftLength, read from the spectrum's actual sample rate at cook
-    // time (so it's correct regardless of the device rate). Replaces the old `index + min_hz`,
-    // which wrongly assumed 1 Hz per bin and made the tracker read the band floor (~80 Hz).
-    const toHz = await builder.add("expressionCHOP", "to_hz", {
-      expr0expr: `(me.inputVal + ${bandStart}) * (op('spectrum_fft').rate / 2.0) / ${fftLength}.0`,
+    // index → Hz: (band-relative index + bandStart) × Hz-per-bin, where Hz-per-bin = (rate/2)/
+    // fftLength. A Math CHOP does it as in×gain + postoff: gain = Hz-per-bin, postoff =
+    // bandStart × Hz-per-bin. (Assumes 44.1 kHz — the live-verified device rate; an Expression
+    // CHOP reading the live rate was tried but TD passed the input through unchanged, so the
+    // robust Math CHOP form is used instead.) Live-verified: a 440 Hz tone → bin 40 → ~441 Hz out.
+    const hzPerBin = nyquistAssumed / fftLength;
+    const toHz = await builder.add("mathCHOP", "to_hz", {
+      gain: hzPerBin,
+      postoff: bandStart * hzPerBin,
+      integer: "round",
     });
     await builder.connect(peakIndex, toHz);
 
@@ -174,13 +177,20 @@ export async function detectPitchImpl(ctx: ToolContext, args: DetectPitchArgs) {
     await builder.connect(toHz, gatedHz, 0, 0);
     await builder.connect(gateHz, gatedHz, 0, 1);
 
-    // MIDI note number from Hz: note = 69 + 12*log2(hz/440). Guard hz<=0 (gated silence) →
-    // emit 0 rather than -inf. me.inputVal is this sample's pitch_hz. Renamed to `note`.
-    const note = await builder.add("expressionCHOP", "to_note", {
-      expr0expr:
-        "69 + 12*tdu.math.log(me.inputVal/440.0)/tdu.math.log(2) if me.inputVal > 0 else 0",
-    });
+    // MIDI note number from Hz: note = 69 + 12*log2(hz/440). The Expression CHOP's `expr0expr`
+    // is a PARAMETER whose EXPRESSION (not its value) defines the output — it MUST be set via
+    // `.expr` + EXPRESSION mode (setting the value casts to numeric and fails; live-verified).
+    // math.log(x, 2) is log base 2; guard hz<=0 (gated silence) → 0. me.inputVal = this sample's
+    // gated pitch_hz. Renamed to `note` below.
+    const note = await builder.add("expressionCHOP", "to_note");
     await builder.connect(gatedHz, note);
+    await builder.python(
+      [
+        `_p = op(${JSON.stringify(note)}).par.expr0expr`,
+        `_p.expr = ${JSON.stringify("69 + 12*math.log(me.inputVal/440.0, 2) if me.inputVal > 0 else 0")}`,
+        "_p.mode = type(_p.mode).EXPRESSION",
+      ].join("\n"),
+    );
     const noteRename = await builder.add("renameCHOP", "note_named", {
       renamefrom: "*",
       renameto: "note",

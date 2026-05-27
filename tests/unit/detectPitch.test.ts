@@ -147,7 +147,7 @@ describe("detect_pitch", () => {
     expect(idx?.parameters).toMatchObject({ function: "highestpeakindex" });
   });
 
-  it("adds the window-start offset (min_hz) back to recover absolute Hz", async () => {
+  it("converts the peak bin to Hz via Hz-per-bin = (rate/2)/outlength (index × gain + offset)", async () => {
     const bodies = captureCreateBodies();
     await detectPitchImpl(makeCtx(), {
       source: "oscillator",
@@ -156,14 +156,16 @@ describe("detect_pitch", () => {
       expose_controls: false,
       parent_path: "/project1",
     });
-    // index → Hz: an Expression CHOP converts (band-relative index + band-start) × Hz-per-bin,
-    // reading the spectrum's LIVE sample rate ((rate/2)/outlength) so it's correct regardless of
-    // the device rate. (Replaces the old mathCHOP Post-Add that wrongly assumed 1 Hz per bin.)
+    // The Audio Spectrum spans [0, rate/2] across `outlength` bins, so Hz = bin × (rate/2)/outlength
+    // (live-verified: a 440 Hz tone → bin 40 → 441 Hz). A Math CHOP applies it as bin×gain + postoff:
+    // gain = Hz-per-bin, postoff = bandStart × Hz-per-bin. With max_hz=900 → outlength=900 →
+    // Hz-per-bin = 22050/900 = 24.5. (An Expression CHOP reading the live rate was tried but TD set
+    // its value rather than its expression, passing the input through unchanged — Math CHOP is used.)
     const toHz = bodies.find((b) => b.name === "to_hz");
-    expect(toHz?.type).toBe("expressionCHOP");
-    expect(String((toHz?.parameters as { expr0expr?: string })?.expr0expr)).toContain(
-      "op('spectrum_fft').rate",
-    );
+    expect(toHz?.type).toBe("mathCHOP");
+    const pars = toHz?.parameters as { gain?: number; integer?: string };
+    expect(pars?.gain).toBeCloseTo(24.5, 1);
+    expect(pars?.integer).toBe("round");
   });
 
   it("gates the reported pitch to 0 below a magnitude Threshold", async () => {
