@@ -36,6 +36,11 @@ Follow-ups: finish the items deferred during the phased build (to be versioned a
   Active / Beats / Amount knobs pause or retune it on stage. Reuses the tempo clock,
   randomize_controls and manage_cue mechanisms (validated live: controls drift each beat, Active
   pauses).
+- **`create_multi_output`** — fan a master TOP across N projectors/displays: each output is a
+  cropped horizontal or vertical slice resized to full projector resolution and ended on a Null,
+  ready for setup_output; with `as_windows`, each tile also gets a borderless Window COMP offset
+  across the desktop onto its own display (CLI `multi-output`). The multi-projector counterpart to
+  setup_output's single window (validated live: a ramp split into seamless left/right halves).
 
 ### Changed
 

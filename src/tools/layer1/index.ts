@@ -10,6 +10,7 @@ import { registerCreateGenerativeArt } from "./createGenerativeArt.js";
 import { registerCreateKeyframeAnimation } from "./createKeyframeAnimation.js";
 import { registerCreateLayerMixer } from "./createLayerMixer.js";
 import { registerCreateMotionReactive } from "./createMotionReactive.js";
+import { registerCreateMultiOutput } from "./createMultiOutput.js";
 import { registerCreateParticleSystem } from "./createParticleSystem.js";
 import { registerCreateProjectionMapping } from "./createProjectionMapping.js";
 import { registerCreateSimulation } from "./createSimulation.js";
@@ -37,6 +38,7 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateVisualSystem,
   registerExtractAudioFeatures,
   registerCreateMotionReactive,
+  registerCreateMultiOutput,
   registerCreateTempoSync,
   registerCreateTextOverlay,
   registerCreateAutopilot,

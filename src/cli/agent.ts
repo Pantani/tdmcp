@@ -42,6 +42,10 @@ import {
   createMotionReactiveSchema,
 } from "../tools/layer1/createMotionReactive.js";
 import {
+  createMultiOutputImpl,
+  createMultiOutputSchema,
+} from "../tools/layer1/createMultiOutput.js";
+import {
   createParticleSystemImpl,
   createParticleSystemSchema,
 } from "../tools/layer1/createParticleSystem.js";
@@ -365,6 +369,12 @@ const COMMANDS: Record<string, Command> = {
   output: r(setupOutputSchema, setupOutputImpl, "Set up a window / NDI / Syphon-Spout output.", {
     mutates: true,
   }),
+  "multi-output": r(
+    createMultiOutputSchema,
+    createMultiOutputImpl,
+    "Fan a master TOP across N projectors (cropped tiles + optional windows).",
+    { mutates: true },
+  ),
   plan: r(
     describeProjectSchema,
     describeProjectImpl,
