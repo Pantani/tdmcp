@@ -1,11 +1,16 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerBeatReactiveDesigner } from "./beatReactiveDesigner.js";
+import { registerCritiqueVisual } from "./critiqueVisual.js";
 import { registerDebugNetwork } from "./debugNetwork.js";
 import { registerExplainNetwork } from "./explainNetwork.js";
+import { registerFixShader } from "./fixShader.js";
+import { registerImageToVisual } from "./imageToVisual.js";
 import { registerOptimizePerformance } from "./optimizePerformance.js";
 import { registerRemixVisual } from "./remixVisual.js";
+import { registerTweakVisual } from "./tweakVisual.js";
 import type { PromptContext } from "./types.js";
 import { registerVisualArtistMode } from "./visualArtistMode.js";
+import { registerVjSetBuilder } from "./vjSetBuilder.js";
 
 /** Registers every MCP prompt against the server. */
 export function registerAllPrompts(server: McpServer, ctx: PromptContext): void {
@@ -15,6 +20,11 @@ export function registerAllPrompts(server: McpServer, ctx: PromptContext): void 
   registerExplainNetwork(server, ctx);
   registerRemixVisual(server, ctx);
   registerBeatReactiveDesigner(server, ctx);
+  registerImageToVisual(server, ctx);
+  registerTweakVisual(server, ctx);
+  registerCritiqueVisual(server, ctx);
+  registerVjSetBuilder(server, ctx);
+  registerFixShader(server, ctx);
 }
 
 export type { PromptContext } from "./types.js";

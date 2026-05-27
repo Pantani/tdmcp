@@ -400,3 +400,29 @@ describe("tdmcp-agent CLI — phase 3 (advanced creation)", () => {
     expect(r.stderr).toContain("positive duration");
   });
 });
+
+describe("tdmcp-agent CLI — phase 4 (intelligence)", () => {
+  it("lists the intelligence commands in --help", async () => {
+    const r = await runCli(["--help"]);
+    expect(r.code).toBe(0);
+    for (const cmd of ["operators", "document"]) {
+      expect(r.stdout).toContain(cmd);
+    }
+  });
+
+  it("searches the operator knowledge base (offline)", async () => {
+    const r = await runCli(["operators", "--params", '{"query":"blur","limit":5}'], { makeCtx });
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.count).toBeGreaterThan(0);
+    expect(JSON.stringify(doc.operators).toLowerCase()).toContain("blur");
+  });
+
+  it("documents a network into a mermaid flowchart via the mocked bridge", async () => {
+    const r = await runCli(["document", "--params", '{"path":"/project1"}'], { makeCtx });
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.mermaid).toContain("flowchart");
+    expect(doc.nodeCount).toBeGreaterThanOrEqual(1);
+  });
+});

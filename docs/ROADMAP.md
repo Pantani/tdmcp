@@ -31,7 +31,7 @@ Every feature follows the existing patterns:
 | 1 | 0.4.0 ☑ | Musical reactivity | Core workflow; depends on phase-0 event producer |
 | 2 | 0.5.0 ☑ | Live performance | Makes systems playable; reuses presets + events |
 | 3 | 0.6.0 ☑ | Advanced creation (TD) | Heavy, independent features → parallelizable |
-| 4 | 0.7.0 | Intelligence (AI) | Layer that builds on everything already shipped |
+| 4 | 0.7.0 ☑ | Intelligence (AI) | Layer that builds on everything already shipped |
 | 5 | 0.8.0 | Robustness & export | Polish, automation, path to 1.0 |
 | — | 1.0.0 | Consolidation | API stabilization, docs, test coverage |
 
@@ -123,21 +123,25 @@ techniques.
 
 ---
 
-## Phase 4 — v0.7.0 · Intelligence (AI)
+## Phase 4 — v0.7.0 · Intelligence (AI) ☑ shipped
 
 The intelligence layer on top of everything already built.
 
 | Feature | Delivers | Effort | Status |
 |---|---|---|---|
-| Visual reference → network | Send a still/video; the AI recreates the look in real nodes (multimodal) | L | ☐ |
-| Natural-language tweaks | "darker / faster / more chaotic" → the right params on the existing patch | M | ☐ |
-| Semantic KB search | Embeddings over the 629 operators (note: new dependency — weigh cost/benefit) | M | ☐ |
-| Aesthetic critique / suggestion | AI evaluates the patch and proposes visual/perf improvements | M | ☐ |
-| Patch doc / diagram | Expands `describe_project` into a readable network map | S | ☐ |
-| Remaining prompts | "VJ set builder", "palette/mood", "fix shader compile error" | S | ☐ |
+| Visual reference → network | `image_to_visual` prompt — recreate a reference image's look in real nodes (multimodal) | L | ☑ |
+| Natural-language tweaks | `tweak_visual` prompt — "darker/faster/more chaotic" → the right params | M | ☑ |
+| Operator KB search | `search_operators` — relevance-ranked keyword search over the 629 operators (no embedding dependency) | M | ☑ |
+| Aesthetic critique | `critique_visual` prompt — evaluates preview/topology/perf, proposes concrete fixes | M | ☑ |
+| Patch doc / diagram | `document_network` — counts by family/type + a Mermaid flowchart of the real network | S | ☑ |
+| Remaining prompts | `vj_set_builder` and `fix_shader` | S | ☑ |
 
-**Areas:** `src/prompts/`, `src/tools/layer1/describeProject.ts`, possible
-embeddings module in `src/knowledge/`.
+**Areas:** `src/tools/layer3/searchOperators.ts` & `documentNetwork.ts`,
+`src/prompts/` (image_to_visual, tweak_visual, critique_visual, vj_set_builder,
+fix_shader), CLI commands `operators` / `document`. Note: "semantic" search is
+relevance-ranked keyword matching over the KB rather than a heavyweight embedding
+index; multimodal / natural-language / critique ship as prompts (the model already
+sees images and the patch) instead of bespoke tools.
 
 ---
 

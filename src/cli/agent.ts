@@ -100,6 +100,7 @@ import {
 import { compareTdNodesImpl, compareTdNodesSchema } from "../tools/layer3/compareTdNodes.js";
 import { createTdNodeImpl, createTdNodeSchema } from "../tools/layer3/createTdNode.js";
 import { deleteTdNodeImpl, deleteTdNodeSchema } from "../tools/layer3/deleteTdNode.js";
+import { documentNetworkImpl, documentNetworkSchema } from "../tools/layer3/documentNetwork.js";
 import { execNodeMethodImpl, execNodeMethodSchema } from "../tools/layer3/execNodeMethod.js";
 import {
   executePythonScriptImpl,
@@ -122,6 +123,7 @@ import { getTdNodesImpl, getTdNodesSchema } from "../tools/layer3/getTdNodes.js"
 import { getTdPerformanceImpl, getTdPerformanceSchema } from "../tools/layer3/getTdPerformance.js";
 import { getTdTopologyImpl, getTdTopologySchema } from "../tools/layer3/getTdTopology.js";
 import { reloadBridgeImpl, reloadBridgeSchema } from "../tools/layer3/reloadBridge.js";
+import { searchOperatorsImpl, searchOperatorsSchema } from "../tools/layer3/searchOperators.js";
 import { snapshotTdGraphImpl, snapshotTdGraphSchema } from "../tools/layer3/snapshotTdGraph.js";
 import {
   summarizeTdErrorsImpl,
@@ -196,6 +198,16 @@ const COMMANDS: Record<string, Command> = {
     getModuleHelpSchema,
     getModuleHelpImpl,
     "Human-readable help for a class (offline).",
+  ),
+  operators: r(
+    searchOperatorsSchema,
+    searchOperatorsImpl,
+    "Search the operator knowledge base by keyword (offline).",
+  ),
+  document: r(
+    documentNetworkSchema,
+    documentNetworkImpl,
+    "Document a network (summary + mermaid).",
   ),
   "exec python": r(
     executePythonScriptSchema,

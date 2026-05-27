@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "tdmcp",
   "display_name": "TouchDesigner (tdmcp)",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "AI-native visual creation for TouchDesigner — build real node networks from plain language.",
   "author": {
     "name": "Pantani",

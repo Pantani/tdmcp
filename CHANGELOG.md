@@ -4,6 +4,26 @@ All notable changes to **tdmcp** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-05-26
+
+Intelligence: help the assistant discover, document, recreate, tune and critique work.
+
+### Added
+
+- **`search_operators`** — keyword search over the embedded 629-operator knowledge base, ranked
+  by relevance and fully offline, so the assistant can find the right operator ('what sends DMX?')
+  instead of guessing a type. (Relevance ranking over names/descriptions/keywords — no embedding
+  dependency.)
+- **`document_network`** — read an existing network and return a readable map: counts by operator
+  family/type plus a Mermaid flowchart of the data flow, for explaining or handing off a patch.
+- **AI prompts**: `image_to_visual` (recreate a reference image's look in real nodes — multimodal),
+  `tweak_visual` (plain-language adjustments → the right parameters), `critique_visual` (aesthetic +
+  performance critique with concrete fixes), `vj_set_builder` (assemble a full reactive set), and
+  `fix_shader` (diagnose a GLSL TOP compile error against TD's conventions).
+- **CLI commands** `operators` and `document`.
+
+[0.7.0]: https://github.com/Pantani/tdmcp/releases/tag/v0.7.0
+
 ## [0.6.0] - 2026-05-26
 
 Advanced creation: video, 3D, mixing, mapping, choreographed motion and simulations.
