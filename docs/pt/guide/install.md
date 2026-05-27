@@ -1,3 +1,7 @@
+---
+description: "Instale o tdmcp, o servidor MCP para TouchDesigner, no Claude Desktop em uns 3 minutos — sem terminal, sem Node. Extensão .dxt de um clique e a ponte ligada."
+---
+
 # Instalação (Claude Desktop)
 
 Esta é a forma mais fácil de usar o tdmcp: **sem terminal, sem Node, sem arquivos
@@ -71,6 +75,51 @@ A ponte deixa o Claude rodar código dentro do TouchDesigner e escuta na porta
 Wi-Fi público sem firewall. Desenvolvedores podem reforçar isso — veja
 [Security](/reference/architecture#security) (em inglês).
 :::
+
+## Outros clientes de IA: Claude Code, Codex & Cursor
+
+O Claude Desktop (acima) é a rota sem terminal. Para **Claude Code**, **Codex** ou
+**Cursor**, conecte o tdmcp a partir do código-fonte — você vai precisar do
+**[Node.js 20+](https://nodejs.org)**.
+
+::: tip Mais fácil — deixe a IA fazer
+Cole o comando do topo desta página na sua IA; ela clona, compila e conecta tudo
+sozinha, parando só na linha da ponte no [passo 3](#turn-on-the-bridge).
+:::
+
+Ou conecte na mão:
+
+```bash
+git clone https://github.com/Pantani/tdmcp.git
+cd tdmcp
+npm run setup   # instala, compila e imprime a linha exata para conectar seu cliente
+```
+
+O `npm run setup` imprime um comando pronto para colar, com os seus caminhos reais
+preenchidos. Os equivalentes manuais (`<project-path>` é a pasta clonada — rode `pwd` nela):
+
+- **Claude Code** — `claude mcp add tdmcp -- node <project-path>/dist/index.js`
+- **Codex CLI** — `codex mcp add tdmcp -- node <project-path>/dist/index.js`, ou
+  adicione ao `~/.codex/config.toml`:
+
+  ```toml
+  [mcp_servers.tdmcp]
+  command = "node"
+  args = ["<project-path>/dist/index.js"]
+  ```
+
+- **Cursor** — crie `.cursor/mcp.json` no seu workspace:
+
+  ```json
+  {
+    "mcpServers": {
+      "tdmcp": { "command": "node", "args": ["<project-path>/dist/index.js"] }
+    }
+  }
+  ```
+
+Reinicie seu cliente para ele carregar o servidor, depois ligue a ponte —
+[passo 3 acima](#turn-on-the-bridge). É a mesma linha única para todos os clientes.
 
 ## Algum problema?
 

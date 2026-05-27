@@ -1,3 +1,7 @@
+---
+description: "Install tdmcp, the TouchDesigner MCP server, in Claude Desktop in about 3 minutes — no terminal, no Node. One-click .dxt extension, then flip on the bridge."
+---
+
 # Install (Claude Desktop)
 
 This is the easiest way to use tdmcp: **no terminal, no Node, no setup files.**
@@ -69,6 +73,52 @@ Only use it on a network you trust (like your own computer), not on public Wi-Fi
 without a firewall. Developers can lock it down further — see
 [Security](/reference/architecture#security).
 :::
+
+## Other AI clients: Claude Code, Codex & Cursor
+
+Claude Desktop (above) is the no-terminal route. For **Claude Code**, **Codex**, or
+**Cursor**, connect tdmcp from source — you'll need
+**[Node.js 20+](https://nodejs.org)**.
+
+::: tip Easiest — let your AI do it
+Paste the one-liner from the top of this page into your client; it clones, builds
+and wires everything itself, stopping only for the bridge line in
+[step 3](#turn-on-the-bridge).
+:::
+
+Or wire it by hand:
+
+```bash
+git clone https://github.com/Pantani/tdmcp.git
+cd tdmcp
+npm run setup   # installs, builds, and prints the exact line to connect your client
+```
+
+`npm run setup` prints a ready-to-paste command with your real paths filled in.
+The manual equivalents (`<project-path>` is the cloned folder — run `pwd` inside it):
+
+- **Claude Code** — `claude mcp add tdmcp -- node <project-path>/dist/index.js`
+- **Codex CLI** — `codex mcp add tdmcp -- node <project-path>/dist/index.js`, or add
+  this to `~/.codex/config.toml`:
+
+  ```toml
+  [mcp_servers.tdmcp]
+  command = "node"
+  args = ["<project-path>/dist/index.js"]
+  ```
+
+- **Cursor** — create `.cursor/mcp.json` in your workspace:
+
+  ```json
+  {
+    "mcpServers": {
+      "tdmcp": { "command": "node", "args": ["<project-path>/dist/index.js"] }
+    }
+  }
+  ```
+
+Restart your client so it loads the server, then turn on the bridge —
+[step 3 above](#turn-on-the-bridge). It's the same one line for every client.
 
 ## Trouble?
 
