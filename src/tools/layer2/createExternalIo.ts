@@ -14,9 +14,9 @@ const bindSchema = z.object({
 
 export const createExternalIoSchema = z.object({
   kind: z
-    .enum(["osc_in", "midi_in", "dmx_out", "ndi_in", "syphon_spout_in"])
+    .enum(["osc_in", "midi_in", "osc_out", "midi_out", "dmx_out", "ndi_in", "syphon_spout_in"])
     .describe(
-      "What to bridge: OSC input, MIDI input, DMX/Art-Net output (lighting), or NDI / Syphon-Spout video input. (Video/NDI/Syphon *outputs* live in setup_output.)",
+      "What to bridge: OSC/MIDI input (a control surface — bind channels to parameters), OSC/MIDI output (send a CHOP's channels back out for bidirectional feedback — pass source_path), DMX/Art-Net output (lighting), or NDI / Syphon-Spout video input. (Video/NDI/Syphon *outputs* live in setup_output.)",
     ),
   parent_path: z.string().default("/project1").describe("COMP to create the I/O operator in."),
   name: z.string().optional(),
@@ -24,7 +24,7 @@ export const createExternalIoSchema = z.object({
     .number()
     .int()
     .optional()
-    .describe("(osc_in) UDP port to listen on. Defaults to 7000."),
+    .describe("(osc_in) UDP port to listen on / (osc_out) port to send to. Defaults to 7000."),
   normalize: z
     .enum(["off", "0to1", "-1to1", "onoff"])
     .default("0to1")
@@ -38,7 +38,7 @@ export const createExternalIoSchema = z.object({
   source_path: z
     .string()
     .optional()
-    .describe("(dmx_out) CHOP whose channel values are sent out as DMX."),
+    .describe("(dmx_out/osc_out/midi_out) CHOP whose channel values are sent out."),
   interface: z
     .enum(["artnet", "sacn", "enttecusbpro", "enttecusbpromk2", "serial", "kinet"])
     .default("artnet")
@@ -71,7 +71,7 @@ const IO_SCRIPT = `
 import json, base64, traceback
 _p = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
 report = {"kind": _p["kind"], "warnings": []}
-_TYPEMAP = {"osc_in": oscinCHOP, "midi_in": midiinCHOP, "dmx_out": dmxoutCHOP, "ndi_in": ndiinTOP, "syphon_spout_in": syphonspoutinTOP}
+_TYPEMAP = {"osc_in": oscinCHOP, "midi_in": midiinCHOP, "osc_out": oscoutCHOP, "midi_out": midioutCHOP, "dmx_out": dmxoutCHOP, "ndi_in": ndiinTOP, "syphon_spout_in": syphonspoutinTOP}
 try:
     _kind = _p["kind"]; _parent = op(_p["parent"])
     if _parent is None:
@@ -90,22 +90,29 @@ try:
                 pr.val = val
             except Exception:
                 report["warnings"].append("Could not set parameter '%s'" % parname)
+        def _connect_source():
+            _src = _p.get("source")
+            if not _src:
+                report["warnings"].append("This kind needs a source_path (the CHOP whose channels to send)."); return
+            _s = op(_src)
+            if _s is None:
+                report["warnings"].append("Source CHOP not found: " + _src); return
+            try:
+                _node.inputConnectors[0].connect(_s); report["source"] = _s.path
+            except Exception:
+                report["warnings"].append("Could not connect source " + _src)
         if _kind == "osc_in":
             _setpar("port", _p.get("port"))
         elif _kind == "midi_in":
             _setpar("norm", _p.get("normalize"))
+        elif _kind == "osc_out":
+            _setpar("netaddress", _p.get("net_address") or "127.0.0.1"); _setpar("port", _p.get("port"))
+            _connect_source()
+        elif _kind == "midi_out":
+            _connect_source()
         elif _kind == "dmx_out":
             _setpar("interface", _p.get("interface")); _setpar("universe", _p.get("universe")); _setpar("netaddress", _p.get("net_address"))
-            _src = _p.get("source")
-            if _src:
-                _s = op(_src)
-                if _s is None:
-                    report["warnings"].append("Source CHOP not found: " + _src)
-                else:
-                    try:
-                        _node.inputConnectors[0].connect(_s); report["source"] = _s.path
-                    except Exception:
-                        report["warnings"].append("Could not connect source " + _src)
+            _connect_source()
         elif _kind == "ndi_in":
             _setpar("name", _p.get("source_name"))
         elif _kind == "syphon_spout_in":
@@ -146,7 +153,7 @@ export async function createExternalIoImpl(ctx: ToolContext, args: CreateExterna
         kind: args.kind,
         parent: args.parent_path,
         name: args.name ?? null,
-        port: args.kind === "osc_in" ? (args.port ?? 7000) : null,
+        port: args.kind === "osc_in" || args.kind === "osc_out" ? (args.port ?? 7000) : null,
         normalize: args.normalize,
         bind_to: args.bind_to ?? null,
         source: args.source_path ?? null,
@@ -179,7 +186,7 @@ export const registerCreateExternalIo: ToolRegistrar = (server, ctx) => {
     {
       title: "Create external I/O",
       description:
-        "Bridge TouchDesigner to the outside world: OSC input or MIDI input (a control surface — bind incoming channels straight to parameters), DMX/Art-Net output for lighting, or NDI / Syphon-Spout video input. Validate live where possible, but real signal needs the hardware/sender present.",
+        "Bridge TouchDesigner to the outside world: OSC/MIDI input (a control surface — bind incoming channels straight to parameters), OSC/MIDI output (send a CHOP's channels back out for bidirectional feedback to lighting desks, other apps or hardware — pass source_path), DMX/Art-Net output for lighting, or NDI / Syphon-Spout video input. To discover which channel a control sends (a 'MIDI learn'), wiggle it and read the input CHOP with get_td_nodes, then bind_to that channel. Validate live where possible, but real signal needs the hardware/sender present.",
       inputSchema: createExternalIoSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

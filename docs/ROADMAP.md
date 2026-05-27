@@ -29,7 +29,7 @@ Every feature follows the existing patterns:
 |---|---|---|---|
 | 0 | 0.3.0 ☑ | DX & CLI foundation | Multiplier — speeds up every later phase |
 | 1 | 0.4.0 ☑ | Musical reactivity | Core workflow; depends on phase-0 event producer |
-| 2 | 0.5.0 | Live performance | Makes systems playable; reuses presets + events |
+| 2 | 0.5.0 ☑ | Live performance | Makes systems playable; reuses presets + events |
 | 3 | 0.6.0 | Advanced creation (TD) | Heavy, independent features → parallelizable |
 | 4 | 0.7.0 | Intelligence (AI) | Layer that builds on everything already shipped |
 | 5 | 0.8.0 | Robustness & export | Polish, automation, path to 1.0 |
@@ -79,23 +79,24 @@ the missing link that actually wires reactive signals into visuals.
 
 ---
 
-## Phase 2 — v0.5.0 · Live performance ⭐
+## Phase 2 — v0.5.0 · Live performance ⭐ ☑ shipped
 
-Turns generated systems into instruments. Extends `manage_presets` and the
-existing external I/O.
+Turns generated systems into instruments. Builds on the preset/control-panel/external-I/O work.
 
 | Feature | Delivers | Effort | Status |
 |---|---|---|---|
-| Cue / scene system | Scene list with **timed crossfade / morph** between presets | L | ☐ |
-| MIDI/OSC learn | Map a physical control by "move and capture" instead of declaring the channel | M | ☐ |
-| Playable control surface | Performance panel (cue buttons, XY pad, crossfaders) | M | ☐ |
-| Macro controls | One knob → N parameters with curves / ranges (one-to-many) | M | ☐ |
-| Safe randomize | Button that randomizes params within defined ranges | S | ☐ |
-| Phone remote | Web panel via WebServer DAT (reuses the bridge) | M | ☐ |
-| MIDI/OSC output | Bidirectional feedback (extends `create_external_io`) | S | ☐ |
+| `manage_cue` (scene system) | Store/recall/list/delete cues + a timed, eased **morph** crossfade between looks (Execute DAT engine) | L | ☑ |
+| `create_macro` | One 0–1 knob → N parameters, each remapped into its own range with a curve | M | ☑ |
+| `randomize_controls` | Randomize numeric controls within range, with an `amount` blend (nudge → full scramble) | S | ☑ |
+| `create_control_surface` | Playable panel COMP: faders that drive params + buttons that recall/morph cues | M | ☑ |
+| `create_phone_remote` | Mobile web panel served from a Web Server DAT — touch sliders, no app to install | M | ☑ |
+| OSC/MIDI output | `osc_out` / `midi_out` in `create_external_io` for bidirectional feedback | S | ☑ |
 
-**Areas:** extends `managePresets`, `createControlPanel`, `createExternalIo`;
-new `td/templates/` for the web panel.
+**Areas:** new L2 tools (`manageCue`, `createMacro`, `randomizeControls`,
+`createControlSurface`, `createPhoneRemote`), extended `createExternalIo`, CLI
+commands `cue`/`macro`/`randomize`/`surface`/`remote`. Note: "MIDI learn" is
+covered declaratively — wiggle a control, read the input CHOP with `get_td_nodes`,
+then `bind_to_channel` — rather than an interactive capture mode.
 
 ---
 

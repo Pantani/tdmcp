@@ -53,9 +53,18 @@ import {
   createControlPanelImpl,
   createControlPanelSchema,
 } from "../tools/layer2/createControlPanel.js";
+import {
+  createControlSurfaceImpl,
+  createControlSurfaceSchema,
+} from "../tools/layer2/createControlSurface.js";
 import { createExternalIoImpl, createExternalIoSchema } from "../tools/layer2/createExternalIo.js";
 import { createGlslShaderImpl, createGlslShaderSchema } from "../tools/layer2/createGlslShader.js";
+import { createMacroImpl, createMacroSchema } from "../tools/layer2/createMacro.js";
 import { createNodeChainImpl, createNodeChainSchema } from "../tools/layer2/createNodeChain.js";
+import {
+  createPhoneRemoteImpl,
+  createPhoneRemoteSchema,
+} from "../tools/layer2/createPhoneRemote.js";
 import {
   createPythonScriptImpl,
   createPythonScriptSchema,
@@ -63,7 +72,12 @@ import {
 import { duplicateNetworkImpl, duplicateNetworkSchema } from "../tools/layer2/duplicateNetwork.js";
 import { manageCheckpointImpl, manageCheckpointSchema } from "../tools/layer2/manageCheckpoint.js";
 import { manageComponentImpl, manageComponentSchema } from "../tools/layer2/manageComponent.js";
+import { manageCueImpl, manageCueSchema } from "../tools/layer2/manageCue.js";
 import { managePresetsImpl, managePresetsSchema } from "../tools/layer2/managePresets.js";
+import {
+  randomizeControlsImpl,
+  randomizeControlsSchema,
+} from "../tools/layer2/randomizeControls.js";
 import {
   setParametersBatchImpl,
   setParametersBatchSchema,
@@ -260,6 +274,18 @@ const COMMANDS: Record<string, Command> = {
     "Add bound custom-parameter controls to a COMP.",
     { mutates: true },
   ),
+  surface: r(
+    createControlSurfaceSchema,
+    createControlSurfaceImpl,
+    "Build a playable panel: faders + cue buttons.",
+    { mutates: true },
+  ),
+  remote: r(
+    createPhoneRemoteSchema,
+    createPhoneRemoteImpl,
+    "Serve a phone web panel for a COMP's controls.",
+    { mutates: true },
+  ),
   io: r(
     createExternalIoSchema,
     createExternalIoImpl,
@@ -297,6 +323,21 @@ const COMMANDS: Record<string, Command> = {
   preset: r(managePresetsSchema, managePresetsImpl, "Store/recall/list/delete COMP presets.", {
     mutates: true,
   }),
+  cue: r(
+    manageCueSchema,
+    manageCueImpl,
+    "Scene system: store/recall/morph/list/delete cues (timed crossfade).",
+    { mutates: true },
+  ),
+  macro: r(createMacroSchema, createMacroImpl, "Add one knob that drives many parameters.", {
+    mutates: true,
+  }),
+  randomize: r(
+    randomizeControlsSchema,
+    randomizeControlsImpl,
+    "Randomize a COMP's numeric controls within range.",
+    { mutates: true },
+  ),
   params: r(
     setParametersBatchSchema,
     setParametersBatchImpl,

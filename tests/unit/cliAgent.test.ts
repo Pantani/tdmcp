@@ -280,3 +280,75 @@ describe("tdmcp-agent CLI — phase 1 (musical reactivity)", () => {
     expect(JSON.parse(r.stdout).bound).toContain("/project1/v/transform1.scale");
   });
 });
+
+describe("tdmcp-agent CLI — phase 2 (live performance)", () => {
+  it("lists the performance commands in --help", async () => {
+    const r = await runCli(["--help"]);
+    expect(r.code).toBe(0);
+    for (const cmd of ["cue", "macro", "randomize", "surface", "remote"]) {
+      expect(r.stdout).toContain(cmd);
+    }
+  });
+
+  it("schema cue exposes the morph action and duration", async () => {
+    const r = await runCli(["schema", "cue"]);
+    expect(r.code).toBe(0);
+    const input = JSON.stringify(JSON.parse(r.stdout).input);
+    expect(input).toContain("morph");
+    expect(input).toContain("duration");
+  });
+
+  it("schema surface exposes faders and cue_buttons", async () => {
+    const r = await runCli(["schema", "surface"]);
+    expect(r.code).toBe(0);
+    const input = JSON.stringify(JSON.parse(r.stdout).input);
+    expect(input).toContain("faders");
+    expect(input).toContain("cue_buttons");
+  });
+
+  it("schema io now includes osc_out and midi_out", async () => {
+    const r = await runCli(["schema", "io"]);
+    expect(r.code).toBe(0);
+    const input = JSON.stringify(JSON.parse(r.stdout).input);
+    expect(input).toContain("osc_out");
+    expect(input).toContain("midi_out");
+  });
+
+  it("dry-runs randomize with an amount", async () => {
+    const r = await runCli([
+      "randomize",
+      "--dry-run",
+      "--params",
+      '{"comp_path":"/project1/sys","amount":0.5}',
+    ]);
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.command).toBe("randomize");
+    expect(doc.args.amount).toBe(0.5);
+  });
+
+  it("creates a macro through the mocked exec endpoint", async () => {
+    server.use(
+      http.post(`${TD_BASE}/api/exec`, () =>
+        HttpResponse.json({
+          ok: true,
+          data: {
+            result: null,
+            stdout:
+              '{"comp":"/project1/sys","macro":"Energy","bound":["/project1/sys/a.scale"],"warnings":[]}',
+          },
+        }),
+      ),
+    );
+    const r = await runCli(
+      [
+        "macro",
+        "--params",
+        '{"comp_path":"/project1/sys","name":"Energy","targets":[{"param":"/project1/sys/a.scale","min":0,"max":2}]}',
+      ],
+      { makeCtx },
+    );
+    expect(r.code).toBe(0);
+    expect(JSON.parse(r.stdout).macro).toBe("Energy");
+  });
+});

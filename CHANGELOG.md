@@ -4,6 +4,33 @@ All notable changes to **tdmcp** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-05-26
+
+Live performance: turn generated systems into instruments you can play on stage.
+
+### Added
+
+- **`manage_cue`** — a scene system: store / recall / list / delete named cues (snapshots of a
+  COMP's custom parameters) and, crucially, **`morph`** to a cue — a timed, eased crossfade of
+  every numeric control from the current look to the cue (via a small Execute DAT), so you can
+  glide between looks instead of hard-cutting.
+- **`create_macro`** — one macro knob (0–1) that drives many parameters at once, each remapped
+  into its own [min,max] with an optional response curve — sweep a whole look from one fader.
+- **`randomize_controls`** — randomize a COMP's numeric controls within their ranges, with an
+  `amount` that blends toward random (a gentle nudge or a full scramble) — instant variations
+  for improvisation. Non-numeric controls are left untouched.
+- **`create_control_surface`** — build a playable panel (a Container COMP of widgets): vertical
+  faders that drive parameters and buttons that recall or morph to cues. Open it in Perform mode
+  for a touchable stage surface.
+- **`create_phone_remote`** — serve a mobile web panel from a Web Server DAT: open a URL on your
+  phone and every numeric control becomes a touch slider, no app to install. (Trusted networks
+  only — it accepts writes without auth, like the bridge.)
+- **OSC / MIDI output** in `create_external_io` (`osc_out`, `midi_out`) — send a CHOP's channels
+  back out for bidirectional feedback to lighting desks, other apps or hardware.
+- **CLI commands** `cue`, `macro`, `randomize`, `surface` and `remote` for the above.
+
+[0.5.0]: https://github.com/Pantani/tdmcp/releases/tag/v0.5.0
+
 ## [0.4.0] - 2026-05-26
 
 Musical reactivity: turn audio and the beat into signals that drive visuals.
