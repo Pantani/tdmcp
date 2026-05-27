@@ -2,11 +2,12 @@
 description: "Instale o tdmcp, o servidor MCP para TouchDesigner, no Claude Desktop em uns 3 minutos — sem terminal, sem Node. Extensão .dxt de um clique e a ponte ligada."
 ---
 
-# Instalação (Claude Desktop)
+# Instalação
 
-Esta é a forma mais fácil de usar o tdmcp: **sem terminal, sem Node, sem arquivos
-de configuração.** O servidor tdmcp inteiro vem embutido em um único arquivo de
-extensão do Claude Desktop. Três passos, cerca de 3 minutos.
+**A forma mais fácil é o Claude Desktop** — sem terminal, sem Node, sem arquivos de
+configuração. O servidor tdmcp inteiro vem embutido em um único arquivo de
+extensão. Três passos, cerca de 3 minutos. Usa **Claude Code, Codex ou Cursor**?
+Veja a seção mais abaixo.
 
 ::: tip Usa Claude Code, Cursor ou Codex?
 Você não precisa fazer nada disso na mão. Cole esta mensagem na sua IA e ela
