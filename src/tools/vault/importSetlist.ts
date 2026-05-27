@@ -1,0 +1,143 @@
+import { z } from "zod";
+import { friendlyTdError } from "../../td-client/types.js";
+import type { Vault } from "../../vault/index.js";
+import { buildFromRecipe, finalize } from "../layer1/orchestration.js";
+import { errorResult, jsonResult } from "../result.js";
+import type { ToolContext, ToolRegistrar } from "../types.js";
+import { requireVault } from "./shared.js";
+
+const TrackSchema = z.union([
+  z.string(),
+  z.object({
+    title: z.string().optional(),
+    recipe: z.string().optional(),
+    preset: z.string().optional(),
+    bpm: z.number().optional(),
+    notes: z.string().optional(),
+  }),
+]);
+
+export const importSetlistSchema = z.object({
+  note: z
+    .string()
+    .min(1)
+    .describe(
+      "Setlist note: a vault-relative path, or a name resolved against the Setlists/ folder.",
+    ),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("COMP to build each track's recipe inside."),
+  dry_run: z
+    .boolean()
+    .default(false)
+    .describe("Only resolve and report what would be built; do not touch TouchDesigner."),
+});
+type ImportSetlistArgs = z.infer<typeof importSetlistSchema>;
+
+interface NormalizedTrack {
+  title?: string;
+  recipe?: string;
+  preset?: string;
+  bpm?: number;
+  notes?: string;
+}
+
+function resolveNotePath(vault: Vault, note: string): string | undefined {
+  const candidates = note.endsWith(".md")
+    ? [note, `Setlists/${note}`]
+    : [`${note}.md`, `Setlists/${note}.md`, note, `Setlists/${note}`];
+  for (const candidate of candidates) {
+    try {
+      if (vault.exists(candidate)) return candidate;
+    } catch {
+      // candidate escapes the vault root — skip it
+    }
+  }
+  return undefined;
+}
+
+export async function importSetlistImpl(ctx: ToolContext, args: ImportSetlistArgs) {
+  const v = requireVault(ctx);
+  if ("error" in v) return v.error;
+  const { vault } = v;
+
+  const rel = resolveNotePath(vault, args.note);
+  if (!rel) {
+    return errorResult(`Setlist note not found: ${args.note} (looked under Setlists/ too).`);
+  }
+
+  const { data } = vault.readNote(rel);
+  const parsed = z.array(TrackSchema).safeParse(data.tracks);
+  if (!parsed.success) {
+    return errorResult(
+      `Setlist note "${rel}" has no valid \`tracks\` list in its frontmatter (expected an array of recipe ids or {title, recipe, preset, bpm, notes} objects).`,
+    );
+  }
+  const tracks: NormalizedTrack[] = parsed.data.map((t) =>
+    typeof t === "string" ? { recipe: t } : t,
+  );
+
+  const built: Array<{ track?: string; recipe: string; container?: string; warnings?: string[] }> =
+    [];
+  const skipped: Array<{ track?: string; reason: string }> = [];
+
+  for (const track of tracks) {
+    const label = track.title ?? track.recipe ?? track.preset;
+    if (!track.recipe) {
+      skipped.push({
+        track: label,
+        reason: track.preset ? "preset track — recall it live, not buildable" : "no recipe id",
+      });
+      continue;
+    }
+    const recipe = ctx.recipes.get(track.recipe);
+    if (!recipe) {
+      skipped.push({ track: label, reason: `recipe "${track.recipe}" not found` });
+      continue;
+    }
+    if (args.dry_run) {
+      built.push({ track: label, recipe: recipe.id });
+      continue;
+    }
+    try {
+      const result = await buildFromRecipe(ctx, recipe, args.parent_path);
+      await finalize(ctx, {
+        summary: "",
+        builder: result.builder,
+        outputPath: result.outputPath,
+        controls: result.controls,
+        recipeId: recipe.id,
+        capturePreviewImage: false,
+      });
+      built.push({
+        track: label,
+        recipe: recipe.id,
+        container: result.builder.containerPath,
+        warnings: result.builder.warnings,
+      });
+    } catch (err) {
+      skipped.push({ track: label, reason: friendlyTdError(err) });
+    }
+  }
+
+  const verb = args.dry_run ? "would build" : "built";
+  return jsonResult(
+    `Setlist ${rel}: ${verb} ${built.length} track(s), skipped ${skipped.length}.`,
+    { path: rel, dry_run: args.dry_run, built, skipped },
+  );
+}
+
+export const registerImportSetlist: ToolRegistrar = (server, ctx) => {
+  server.registerTool(
+    "import_setlist",
+    {
+      title: "Import a setlist from the vault",
+      description:
+        "Read a setlist note (frontmatter `tracks`: an array of recipe ids, or {title, recipe, preset, bpm, notes} objects) and build each track's recipe into the project — pre-staging a show's visuals. Recipes resolve against built-in and vault recipes. Use dry_run to validate first. Requires TDMCP_VAULT_PATH.",
+      inputSchema: importSetlistSchema.shape,
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
+    },
+    (args) => importSetlistImpl(ctx, args),
+  );
+};
