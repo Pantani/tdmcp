@@ -1,5 +1,6 @@
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { createInterface } from "node:readline";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
@@ -60,6 +61,7 @@ import {
 } from "../tools/layer1/extractAudioFeatures.js";
 import { getPreviewSchema } from "../tools/layer1/getPreview.js";
 import { listRecipesImpl, listRecipesSchema } from "../tools/layer1/listRecipes.js";
+import { scaffoldShowImpl, scaffoldShowSchema } from "../tools/layer1/scaffoldShow.js";
 import { setupOutputImpl, setupOutputSchema } from "../tools/layer1/setupOutput.js";
 import { animateParameterImpl, animateParameterSchema } from "../tools/layer2/animateParameter.js";
 import { arrangeNetworkImpl, arrangeNetworkSchema } from "../tools/layer2/arrangeNetwork.js";
@@ -129,6 +131,7 @@ import {
   optimizePerformanceImpl,
   optimizePerformanceSchema,
 } from "../tools/layer3/optimizePerformance.js";
+import { recordMovieImpl, recordMovieSchema } from "../tools/layer3/recordMovie.js";
 import { reloadBridgeImpl, reloadBridgeSchema } from "../tools/layer3/reloadBridge.js";
 import { renderOutputImpl, renderOutputSchema } from "../tools/layer3/renderOutput.js";
 import { searchOperatorsImpl, searchOperatorsSchema } from "../tools/layer3/searchOperators.js";
@@ -225,8 +228,19 @@ const COMMANDS: Record<string, Command> = {
     { mutates: true },
   ),
   render: r(renderOutputSchema, renderOutputImpl, "Save a TOP to a file at full resolution."),
+  movie: r(recordMovieSchema, recordMovieImpl, "Record a TOP to a movie/sequence (start/stop).", {
+    mutates: true,
+  }),
   recipes: r(listRecipesSchema, listRecipesImpl, "List the built-in recipe library (offline)."),
   recipe: r(applyRecipeSchema, applyRecipeImpl, "Build a recipe by id.", { mutates: true }),
+  init: r(
+    scaffoldShowSchema,
+    scaffoldShowImpl,
+    "Scaffold a show skeleton (master output + beat clock).",
+    {
+      mutates: true,
+    },
+  ),
   "exec python": r(
     executePythonScriptSchema,
     executePythonScriptImpl,
@@ -498,6 +512,7 @@ function usage(): string {
   lines.push("  schema <command>     Print a command's JSON Schema and metadata.");
   lines.push("  preview <nodePath>   Capture a TOP to a PNG file (-o/--out).  [writes a file]");
   lines.push("  watch                Stream TD events as ndjson until Ctrl-C.  [long-running]");
+  lines.push("  repl                 Interactive mode: run commands line-by-line.  [interactive]");
   return lines.join("\n");
 }
 
@@ -730,12 +745,49 @@ export function runWatch(opts: RunWatchOptions = {}): Promise<void> {
   });
 }
 
+/** Splits a REPL line into argv, respecting single/double quotes (so JSON --params works). */
+function tokenizeLine(line: string): string[] {
+  const tokens: string[] = [];
+  const re = /"([^"]*)"|'([^']*)'|(\S+)/g;
+  let m: RegExpExecArray | null = re.exec(line);
+  while (m !== null) {
+    tokens.push(m[1] ?? m[2] ?? m[3] ?? "");
+    m = re.exec(line);
+  }
+  return tokens;
+}
+
+/** Interactive read-eval-print loop: each line is tokenized and run through runCli. */
+export async function runRepl(opts: RunCliOptions = {}): Promise<void> {
+  const rl = createInterface({ input: process.stdin, output: process.stderr });
+  process.stderr.write(
+    "tdmcp REPL — enter a command (e.g. `info`, `nodes list`); `help` for commands, `exit` to quit.\n> ",
+  );
+  for await (const line of rl) {
+    const trimmed = line.trim();
+    if (trimmed === "exit" || trimmed === "quit") break;
+    if (trimmed === "help") {
+      process.stdout.write(`${usage()}\n`);
+    } else if (trimmed) {
+      const result = await runCli(tokenizeLine(trimmed), opts);
+      if (result.stdout) process.stdout.write(result.stdout);
+      if (result.stderr) process.stderr.write(result.stderr);
+    }
+    process.stderr.write("> ");
+  }
+  rl.close();
+}
+
 async function main(): Promise<void> {
   const argv = process.argv.slice(2);
   const wantsHelp = argv.includes("--help") || argv.includes("-h");
-  // `watch` is a long-lived stream, so it bypasses runCli's request/response model.
+  // `watch` (a long-lived stream) and `repl` (interactive) bypass runCli's request/response model.
   if (argv[0] === "watch" && !wantsHelp) {
     await runWatch({ includeHighFrequency: argv.includes("--include-high-frequency") });
+    return;
+  }
+  if (argv[0] === "repl" && !wantsHelp) {
+    await runRepl();
     return;
   }
   const result = await runCli(argv);

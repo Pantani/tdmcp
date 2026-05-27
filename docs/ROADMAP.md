@@ -158,9 +158,11 @@ sees images and the patch) instead of bespoke tools.
 
 **Areas:** new L3 tools (`renderOutput`, `optimizePerformance`, `diffSnapshots`),
 L1 (`listRecipes`, `applyRecipe`), extended `createExternalIo`, CLI commands
-`render`/`optimize`/`diff`/`recipes`/`recipe`. Note: a `.toe` scaffold and an
-interactive REPL were dropped — the CLI is already fully scriptable per-command,
-so a REPL adds little; deferred to 1.0 polish if wanted.
+`render`/`optimize`/`diff`/`recipes`/`recipe`. Follow-ups (Unreleased) finished the
+items deferred during the build: `record_movie` (movie/sequence beyond a single
+frame), a show scaffold (`scaffold_show` / CLI `init`), an interactive CLI `repl`,
+GPU instancing in `create_3d_scene`, and an opt-in `semantic` re-rank for
+`search_operators` via the LLM endpoint (keyword stays the zero-config default).
 
 ---
 

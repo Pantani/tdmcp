@@ -18,6 +18,7 @@ import { registerDescribeProject } from "./describeProject.js";
 import { registerExtractAudioFeatures } from "./extractAudioFeatures.js";
 import { registerGetPreview } from "./getPreview.js";
 import { registerListRecipes } from "./listRecipes.js";
+import { registerScaffoldShow } from "./scaffoldShow.js";
 import { registerSetupOutput } from "./setupOutput.js";
 
 export const layer1Registrars: ToolRegistrar[] = [
@@ -41,4 +42,5 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateSimulation,
   registerListRecipes,
   registerApplyRecipe,
+  registerScaffoldShow,
 ];

@@ -17,6 +17,7 @@ import { registerGetTdNodes } from "./getTdNodes.js";
 import { registerGetTdPerformance } from "./getTdPerformance.js";
 import { registerGetTdTopology } from "./getTdTopology.js";
 import { registerOptimizePerformance } from "./optimizePerformance.js";
+import { registerRecordMovie } from "./recordMovie.js";
 import { registerReloadBridge } from "./reloadBridge.js";
 import { registerRenderOutput } from "./renderOutput.js";
 import { registerSearchOperators } from "./searchOperators.js";
@@ -49,4 +50,5 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerDiffSnapshots,
   registerOptimizePerformance,
   registerRenderOutput,
+  registerRecordMovie,
 ];

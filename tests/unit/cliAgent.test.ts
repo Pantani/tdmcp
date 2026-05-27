@@ -475,3 +475,39 @@ describe("tdmcp-agent CLI — phase 5 (robustness & export)", () => {
     expect(input).toContain("gamepad_in");
   });
 });
+
+describe("tdmcp-agent CLI — pending items (0.9.0)", () => {
+  it("lists the new commands in --help", async () => {
+    const r = await runCli(["--help"]);
+    expect(r.code).toBe(0);
+    for (const cmd of ["movie", "init", "repl"]) {
+      expect(r.stdout).toContain(cmd);
+    }
+  });
+
+  it("schema scene3d exposes instances", async () => {
+    const r = await runCli(["schema", "scene3d"]);
+    expect(r.code).toBe(0);
+    expect(JSON.stringify(JSON.parse(r.stdout).input)).toContain("instances");
+  });
+
+  it("schema operators exposes the semantic opt-in", async () => {
+    const r = await runCli(["schema", "operators"]);
+    expect(r.code).toBe(0);
+    expect(JSON.stringify(JSON.parse(r.stdout).input)).toContain("semantic");
+  });
+
+  it("schema movie exposes action and seconds", async () => {
+    const r = await runCli(["schema", "movie"]);
+    expect(r.code).toBe(0);
+    const input = JSON.stringify(JSON.parse(r.stdout).input);
+    expect(input).toContain("seconds");
+    expect(input).toContain("imagesequence");
+  });
+
+  it("operator search stays in keyword mode by default (no endpoint needed)", async () => {
+    const r = await runCli(["operators", "--params", '{"query":"blur"}'], { makeCtx });
+    expect(r.code).toBe(0);
+    expect(JSON.parse(r.stdout).mode).toBe("keyword");
+  });
+});

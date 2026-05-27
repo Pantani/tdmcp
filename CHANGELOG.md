@@ -4,6 +4,29 @@ All notable changes to **tdmcp** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+Follow-ups: finish the items deferred during the phased build (to be versioned alongside the next release).
+
+### Added
+
+- **`record_movie`** — record a TOP to a movie file (.mov/.mp4) or an image sequence via a
+  Movie File Out TOP, with start/stop and an optional `seconds` auto-stop for capturing a
+  fixed-length loop (CLI `movie`). Complements render_output's single frame.
+- **`scaffold_show`** — create a starting skeleton for a live show (a master output Null + a
+  tempo beat clock) so a set has a frame to build into (CLI `init`).
+- **CLI `repl`** — an interactive mode that runs commands line-by-line (quotes preserved for
+  JSON `--params`).
+
+### Changed
+
+- **`create_3d_scene` instancing** — an `instances` param scatters N copies of the geometry over
+  a grid via GPU instancing, with the camera framed to fit (validated: a 3×3 sphere grid renders).
+- **`search_operators` semantic mode** — opt-in `semantic: true` re-ranks keyword candidates by
+  embedding similarity through the configured LLM endpoint (`TDMCP_LLM_BASE_URL`/`_MODEL`), falling
+  back to keyword ranking when unavailable. The default stays pure keyword (zero-config); for best
+  results point `TDMCP_LLM_MODEL` at a dedicated embedding model (e.g. `nomic-embed-text`).
+
 ## [0.8.0] - 2026-05-26
 
 Robustness & export: render to disk, hunt bottlenecks, version patches, reuse recipes, more input.
