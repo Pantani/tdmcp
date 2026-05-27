@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { isLocalOllama } from "../../src/cli/chat.js";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
 import { type AgentEvent, runAgentTurn } from "../../src/llm/agent.js";
 import {
@@ -262,6 +263,19 @@ describe("local copilot — live settings", () => {
     const withKey: LlmConfig = { ...base, llmApiKey: "sk-123" };
     expect(applySettings(withKey, { apiKey: "" }).llmApiKey).toBeUndefined();
     expect(applySettings(withKey, {}).llmApiKey).toBe("sk-123");
+  });
+});
+
+describe("local copilot — Ollama auto-start gating", () => {
+  it("recognizes the local Ollama default endpoint (which it may auto-start)", () => {
+    expect(isLocalOllama("http://127.0.0.1:11434/v1")).toBe(true);
+    expect(isLocalOllama("http://localhost:11434/v1")).toBe(true);
+  });
+
+  it("does NOT treat remote or non-default endpoints as local Ollama", () => {
+    expect(isLocalOllama("https://api.openai.com/v1")).toBe(false);
+    expect(isLocalOllama("http://127.0.0.1:1234/v1")).toBe(false); // e.g. LM Studio
+    expect(isLocalOllama("http://192.168.1.50:11434/v1")).toBe(false); // remote host
   });
 });
 
