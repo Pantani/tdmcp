@@ -117,6 +117,11 @@ sintética em vez de uma webcam ao vivo).*
 > *"Toque este arquivo de vídeo em loop com controle de velocidade."* (passe o
 > caminho)
 
+<video src="/examples/video-player.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Um arquivo de vídeo carregado num player com controles de Play / Velocidade
+([Big Buck Bunny](https://peach.blender.org), CC-BY).*
+
 > *"Pegue minha webcam e deixe com cara de fita VHS velha e degradada."*
 
 ## Texto & títulos

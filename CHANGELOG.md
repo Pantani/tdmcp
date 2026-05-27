@@ -116,9 +116,13 @@ Follow-ups: finish the items deferred during the phased build (to be versioned a
   candidate pool. The default stays pure keyword (zero-config); for best results point
   `TDMCP_LLM_MODEL` at a dedicated embedding model (e.g. `nomic-embed-text`).
 
-## [0.8.0] - 2026-05-26
+## [0.3.0] - 2026-05-27
 
-Robustness & export: render to disk, hunt bottlenecks, version patches, reuse recipes, more input.
+Everything built on top of 0.2.0, in one release: a scriptable CLI and developer-experience
+tooling, musical and beat reactivity, live-performance instruments (cues, macros, control
+surfaces, phone remote), advanced creation (video, 3D, mixing, projection mapping, keyframes,
+simulations), assistant intelligence (operator search, documentation, AI prompts), and
+robustness & export (render to disk, performance hunting, snapshots, recipes).
 
 ### Added
 
@@ -136,14 +140,6 @@ Robustness & export: render to disk, hunt bottlenecks, version patches, reuse re
   `mouse_in`) — more control sources to bind to parameters.
 - **CLI commands** `render`, `optimize`, `diff`, `recipes` and `recipe`.
 
-[0.8.0]: https://github.com/Pantani/tdmcp/releases/tag/v0.8.0
-
-## [0.7.0] - 2026-05-26
-
-Intelligence: help the assistant discover, document, recreate, tune and critique work.
-
-### Added
-
 - **`search_operators`** — keyword search over the embedded 629-operator knowledge base, ranked
   by relevance and fully offline, so the assistant can find the right operator ('what sends DMX?')
   instead of guessing a type. (Relevance ranking over names/descriptions/keywords — no embedding
@@ -155,14 +151,6 @@ Intelligence: help the assistant discover, document, recreate, tune and critique
   performance critique with concrete fixes), `vj_set_builder` (assemble a full reactive set), and
   `fix_shader` (diagnose a GLSL TOP compile error against TD's conventions).
 - **CLI commands** `operators` and `document`.
-
-[0.7.0]: https://github.com/Pantani/tdmcp/releases/tag/v0.7.0
-
-## [0.6.0] - 2026-05-26
-
-Advanced creation: video, 3D, mixing, mapping, choreographed motion and simulations.
-
-### Added
 
 - **`create_layer_mixer`** — a VJ layer mixer: 'crossfade' makes an A/B Cross TOP with a
   Crossfade knob, or composite inputs with a blend mode (add/difference/hardlight/glow/…).
@@ -179,14 +167,6 @@ Advanced creation: video, 3D, mixing, mapping, choreographed motion and simulati
 - **`create_simulation`** — GPU simulations: 'reaction_diffusion' (Gray-Scott, via the recipe)
   plus 'slime' and 'fluid' feedback flow-field looks, with a Decay knob.
 - **CLI commands** `mixer`, `video`, `scene3d`, `mapping`, `keyframe` and `simulation`.
-
-[0.6.0]: https://github.com/Pantani/tdmcp/releases/tag/v0.6.0
-
-## [0.5.0] - 2026-05-26
-
-Live performance: turn generated systems into instruments you can play on stage.
-
-### Added
 
 - **`manage_cue`** — a scene system: store / recall / list / delete named cues (snapshots of a
   COMP's custom parameters) and, crucially, **`morph`** to a cue — a timed, eased crossfade of
@@ -207,14 +187,6 @@ Live performance: turn generated systems into instruments you can play on stage.
   back out for bidirectional feedback to lighting desks, other apps or hardware.
 - **CLI commands** `cue`, `macro`, `randomize`, `surface` and `remote` for the above.
 
-[0.5.0]: https://github.com/Pantani/tdmcp/releases/tag/v0.5.0
-
-## [0.4.0] - 2026-05-26
-
-Musical reactivity: turn audio and the beat into signals that drive visuals.
-
-### Added
-
 - **`extract_audio_features`** — build an audio-analysis chain that exposes ready-to-bind
   reactive channels (overall level plus bass/mid/treble band energies) on a Null CHOP, with
   a Sensitivity knob. Source can be the live device (mic/line), an audio file, a synthetic
@@ -229,15 +201,6 @@ Musical reactivity: turn audio and the beat into signals that drive visuals.
 - **`beat_reactive_designer` prompt** — guides the assistant through building the reactive
   chain and mapping audio features / the beat onto a visual system's parameters.
 - **CLI commands** `audio-features`, `tempo-sync` and `bind` for the above.
-
-[0.4.0]: https://github.com/Pantani/tdmcp/releases/tag/v0.4.0
-
-## [0.3.0] - 2026-05-26
-
-Developer experience and a scriptable CLI: drive the whole toolset from a shell, stream
-live events, and take undo points before risky edits.
-
-### Added
 
 - **`reload_bridge`** — hot-reload the bridge's Python inside the running TouchDesigner so
   edits under `td/` take effect without reopening the project (also `tdmcp-agent reload`).

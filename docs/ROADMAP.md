@@ -28,11 +28,11 @@ Every feature follows the existing patterns:
 | Phase | Version | Theme | Rationale |
 |---|---|---|---|
 | 0 | 0.3.0 ☑ | DX & CLI foundation | Multiplier — speeds up every later phase |
-| 1 | 0.4.0 ☑ | Musical reactivity | Core workflow; depends on phase-0 event producer |
-| 2 | 0.5.0 ☑ | Live performance | Makes systems playable; reuses presets + events |
-| 3 | 0.6.0 ☑ | Advanced creation (TD) | Heavy, independent features → parallelizable |
-| 4 | 0.7.0 ☑ | Intelligence (AI) | Layer that builds on everything already shipped |
-| 5 | 0.8.0 ☑ | Robustness & export | Polish, automation, path to 1.0 |
+| 1 | 0.3.0 ☑ | Musical reactivity | Core workflow; depends on phase-0 event producer |
+| 2 | 0.3.0 ☑ | Live performance | Makes systems playable; reuses presets + events |
+| 3 | 0.3.0 ☑ | Advanced creation (TD) | Heavy, independent features → parallelizable |
+| 4 | 0.3.0 ☑ | Intelligence (AI) | Layer that builds on everything already shipped |
+| 5 | 0.3.0 ☑ | Robustness & export | Polish, automation, path to 1.0 |
 | 6 | 0.9.0 ◐ | Obsidian vault | Markdown library + journal bridge: recipes, setlists, shaders, presets, docs |
 | — | 1.0.0 | Consolidation | API stabilization, docs, test coverage |
 | 7 | 1.1.0 ☑ | Stage I/O & sensor reactivity | Send video out, fan across projectors, react to the camera, follow an external clock, run hands-free |
@@ -62,7 +62,7 @@ event producer and reload logic already shipped in 0.2.0, so no reinstall needed
 
 ---
 
-## Phase 1 — v0.4.0 · Musical reactivity ⭐ ☑ shipped
+## Phase 1 — v0.3.0 · Musical reactivity ⭐ ☑ shipped
 
 The heart of the live workflow. Beat events ride the phase-0 event producer.
 
@@ -83,7 +83,7 @@ the missing link that actually wires reactive signals into visuals.
 
 ---
 
-## Phase 2 — v0.5.0 · Live performance ⭐ ☑ shipped
+## Phase 2 — v0.3.0 · Live performance ⭐ ☑ shipped
 
 Turns generated systems into instruments. Builds on the preset/control-panel/external-I/O work.
 
@@ -104,7 +104,7 @@ then `bind_to_channel` — rather than an interactive capture mode.
 
 ---
 
-## Phase 3 — v0.6.0 · Advanced creation (TouchDesigner) ☑ shipped
+## Phase 3 — v0.3.0 · Advanced creation (TouchDesigner) ☑ shipped
 
 Heavy but mutually independent creation tools — each builds, verifies and previews a network.
 
@@ -127,7 +127,7 @@ techniques.
 
 ---
 
-## Phase 4 — v0.7.0 · Intelligence (AI) ☑ shipped
+## Phase 4 — v0.3.0 · Intelligence (AI) ☑ shipped
 
 The intelligence layer on top of everything already built.
 
@@ -149,7 +149,7 @@ sees images and the patch) instead of bespoke tools.
 
 ---
 
-## Phase 5 — v0.8.0 · Robustness & export ☑ shipped
+## Phase 5 — v0.3.0 · Robustness & export ☑ shipped
 
 | Feature | Delivers | Effort | Status |
 |---|---|---|---|

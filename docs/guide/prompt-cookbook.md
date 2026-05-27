@@ -112,6 +112,11 @@ source rather than a live webcam).*
 
 > *"Play this video file on a loop with speed control."* (give it the path)
 
+<video src="/examples/video-player.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*A movie file loaded into a player with live Play / Speed controls
+([Big Buck Bunny](https://peach.blender.org), CC-BY).*
+
 > *"Take my webcam and make it look like an old, degraded VHS tape."*
 
 ## Text & titles

@@ -29,6 +29,7 @@ const artistGuide = (base: string) => [
   { text: "Recipe gallery", link: `${base}/recipes` },
   { text: "Troubleshooting", link: `${base}/troubleshooting` },
   { text: "Glossary", link: `${base}/glossary` },
+  { text: "FAQ", link: `${base}/faq` },
 ];
 
 const artistGuidePt = [
@@ -108,6 +109,11 @@ export default defineConfig({
       ["meta", { name: "twitter:title", content: title }],
       ["meta", { name: "twitter:description", content: description }],
     ];
+    const isPt = pageData.relativePath.startsWith("pt/");
+    tags.push(
+      ["meta", { property: "og:locale", content: isPt ? "pt_BR" : "en_US" }],
+      ["meta", { property: "og:locale:alternate", content: isPt ? "en_US" : "pt_BR" }],
+    );
     // Home pages: declare the EN/PT alternates so neither cannibalises the other.
     if (pageData.relativePath === "index.md" || pageData.relativePath === "pt/index.md") {
       tags.push(
@@ -136,6 +142,60 @@ export default defineConfig({
           author: { "@type": "Person", name: "Pantani", url: "https://github.com/Pantani" },
           offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
           sameAs: [GITHUB, NPM],
+        }),
+      ]);
+    }
+    // FAQ rich-result schema — mirrors the visible Q&A on the FAQ page.
+    if (pageData.relativePath === "guide/faq.md") {
+      const qa: [string, string][] = [
+        [
+          "Is there an MCP server for TouchDesigner?",
+          "Yes — tdmcp is an open-source (MIT) Model Context Protocol server for TouchDesigner. It connects AI assistants like Claude, Cursor and Codex to TouchDesigner so they can build real node networks from plain-language prompts.",
+        ],
+        [
+          "Can Claude or Cursor control TouchDesigner?",
+          "Yes. With tdmcp connected, you describe a visual in plain language and the assistant creates, wires, inspects and previews the actual operators inside your TouchDesigner project.",
+        ],
+        [
+          "Do I need to know how to code, or which operators to use?",
+          "No. You describe the result you want; tdmcp carries an embedded reference of TouchDesigner's real operators, so the AI picks and wires them for you.",
+        ],
+        [
+          "Is tdmcp free?",
+          "Yes — it is free and open-source under the MIT license, and it works with the free non-commercial edition of TouchDesigner.",
+        ],
+        [
+          "Which AI assistants work with tdmcp?",
+          "Claude Desktop (one-click install), Claude Code, Codex and Cursor — any MCP-capable client.",
+        ],
+        [
+          "Does it work offline, without a paid API?",
+          "It ships a local LLM copilot (tdmcp chat) that handles simple tasks through a local model, and the server stays usable even when TouchDesigner is closed.",
+        ],
+        [
+          "Does tdmcp run on macOS and Windows?",
+          "Yes, on both — anywhere TouchDesigner and Node.js 20+ run.",
+        ],
+        [
+          "Is it safe to run?",
+          "The bridge runs inside your own TouchDesigner on localhost. For untrusted networks you can require a bearer token and disable the code-execution endpoints.",
+        ],
+        [
+          "How is tdmcp different from other TouchDesigner MCP experiments?",
+          "It pairs a real operator knowledge base with a bridge that executes inside TouchDesigner in a create → verify → preview loop — so the AI uses real operators and fixes its own mistakes instead of guessing.",
+        ],
+      ];
+      tags.push([
+        "script",
+        { type: "application/ld+json" },
+        JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: qa.map(([q, a]) => ({
+            "@type": "Question",
+            name: q,
+            acceptedAnswer: { "@type": "Answer", text: a },
+          })),
         }),
       ]);
     }
