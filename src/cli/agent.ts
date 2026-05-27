@@ -51,6 +51,10 @@ import {
 import { createSimulationImpl, createSimulationSchema } from "../tools/layer1/createSimulation.js";
 import { createTempoSyncImpl, createTempoSyncSchema } from "../tools/layer1/createTempoSync.js";
 import {
+  createTextOverlayImpl,
+  createTextOverlaySchema,
+} from "../tools/layer1/createTextOverlay.js";
+import {
   createVideoPlayerImpl,
   createVideoPlayerSchema,
 } from "../tools/layer1/createVideoPlayer.js";
@@ -325,6 +329,12 @@ const COMMANDS: Record<string, Command> = {
   scene3d: r(create3dSceneSchema, create3dSceneImpl, "Build a renderable 3D scene.", {
     mutates: true,
   }),
+  text: r(
+    createTextOverlaySchema,
+    createTextOverlayImpl,
+    "Composite styled text over a visual (lyrics/titles/credits).",
+    { mutates: true },
+  ),
   mapping: r(
     createProjectionMappingSchema,
     createProjectionMappingImpl,

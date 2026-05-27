@@ -13,6 +13,7 @@ import { registerCreateParticleSystem } from "./createParticleSystem.js";
 import { registerCreateProjectionMapping } from "./createProjectionMapping.js";
 import { registerCreateSimulation } from "./createSimulation.js";
 import { registerCreateTempoSync } from "./createTempoSync.js";
+import { registerCreateTextOverlay } from "./createTextOverlay.js";
 import { registerCreateVideoPlayer } from "./createVideoPlayer.js";
 import { registerCreateVisualSystem } from "./createVisualSystem.js";
 import { registerDescribeProject } from "./describeProject.js";
@@ -36,6 +37,7 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerExtractAudioFeatures,
   registerCreateMotionReactive,
   registerCreateTempoSync,
+  registerCreateTextOverlay,
   registerCreateLayerMixer,
   registerCreateVideoPlayer,
   registerCreate3dScene,

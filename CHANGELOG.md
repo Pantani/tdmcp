@@ -26,6 +26,10 @@ Follow-ups: finish the items deferred during the phased build (to be versioned a
   small Execute DAT keeps the analysis cooking so the signals stay live before anything is bound.
   (Optical flow is unsupported on macOS, so flow direction isn't exposed.) First of the Phase 7
   "stage I/O & sensor reactivity" tools.
+- **`create_text_overlay`** — composite styled text (font size, hex color, h/v alignment) over a
+  visual through a Text TOP + Composite TOP, or on its own transparent background, output as a Null
+  (CLI `text`). For lyrics, titles, song names or credits — distinct from the vault's
+  `bind_vault_text` (a data-sync of a Text DAT); this is a finished visual layer.
 
 ### Changed
 

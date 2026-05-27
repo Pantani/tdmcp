@@ -541,4 +541,27 @@ describe("tdmcp-agent CLI — phase 7 (stage I/O & sensor reactivity)", () => {
     expect(doc.command).toBe("motion-reactive");
     expect(doc.args.source).toBe("synthetic");
   });
+
+  it("schema text exposes the text content and alignment", async () => {
+    const r = await runCli(["schema", "text"]);
+    expect(r.code).toBe(0);
+    const input = JSON.stringify(JSON.parse(r.stdout).input);
+    expect(input).toContain("source_path");
+    expect(input).toContain("align");
+    expect(input).toContain("font_size");
+  });
+
+  it("dry-runs text with a color and alignment", async () => {
+    const r = await runCli([
+      "text",
+      "--dry-run",
+      "--params",
+      '{"text":"HELLO","color":"#ff3366","valign":"bottom"}',
+    ]);
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.command).toBe("text");
+    expect(doc.args.text).toBe("HELLO");
+    expect(doc.args.valign).toBe("bottom");
+  });
 });
