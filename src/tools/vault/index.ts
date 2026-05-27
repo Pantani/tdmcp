@@ -1,5 +1,7 @@
 import type { ToolRegistrar } from "../types.js";
 import { registerApplyShaderFromVault } from "./applyShaderFromVault.js";
+import { registerExportNetworkToVault } from "./exportNetworkToVault.js";
+import { registerLogPerformance } from "./logPerformance.js";
 import { registerSaveRecipeToVault } from "./saveRecipeToVault.js";
 import { registerSyncPresetsVault } from "./syncPresetsVault.js";
 
@@ -12,4 +14,6 @@ export const vaultRegistrars: ToolRegistrar[] = [
   registerSaveRecipeToVault,
   registerApplyShaderFromVault,
   registerSyncPresetsVault,
+  registerExportNetworkToVault,
+  registerLogPerformance,
 ];
