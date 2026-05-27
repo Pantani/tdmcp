@@ -81,11 +81,12 @@ export default defineConfig({
     ["link", { rel: "icon", type: "image/svg+xml", href: "/tdmcp/favicon.svg" }],
     ["meta", { property: "og:type", content: "website" }],
     ["meta", { property: "og:site_name", content: "tdmcp — TouchDesigner MCP server" }],
-    ["meta", { property: "og:image", content: `${HOSTNAME}og-image.png` }],
-    ["meta", { property: "og:image:width", content: "2400" }],
-    ["meta", { property: "og:image:height", content: "1260" }],
+    ["meta", { property: "og:image", content: `${HOSTNAME}og-image.jpg` }],
+    ["meta", { property: "og:image:type", content: "image/jpeg" }],
+    ["meta", { property: "og:image:width", content: "1200" }],
+    ["meta", { property: "og:image:height", content: "630" }],
     ["meta", { name: "twitter:card", content: "summary_large_image" }],
-    ["meta", { name: "twitter:image", content: `${HOSTNAME}og-image.png` }],
+    ["meta", { name: "twitter:image", content: `${HOSTNAME}og-image.jpg` }],
   ],
   // Keep these docs at their existing repo paths (README links to them) but serve
   // them at clean lowercase URLs on the site.
