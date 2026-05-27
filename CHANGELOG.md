@@ -39,8 +39,11 @@ Follow-ups: finish the items deferred during the phased build (to be versioned a
 - **`create_multi_output`** — fan a master TOP across N projectors/displays: each output is a
   cropped horizontal or vertical slice resized to full projector resolution and ended on a Null,
   ready for setup_output; with `as_windows`, each tile also gets a borderless Window COMP offset
-  across the desktop onto its own display (CLI `multi-output`). The multi-projector counterpart to
-  setup_output's single window (validated live: a ramp split into seamless left/right halves).
+  across the desktop onto its own display (CLI `multi-output`). An `overlap` adds **edge-blending** —
+  tiles widen into their neighbours and a GLSL feather fades the shared seams so physically-
+  overlapping projectors blend smoothly. The multi-projector counterpart to setup_output's single
+  window (validated live: a ramp split into seamless halves, and the feather fading interior seams
+  to transparent while leaving the canvas edges full).
 - **`sync_external_clock`** — lock the project tempo to a live source so beat-synced visuals follow
   the music: a Bpm knob writes the global tempo (`op('/').time.tempo`) and a Tap pulse beat-matches
   by ear (averaging taps into a BPM), driving every Beat CHOP downstream — `create_tempo_sync` and

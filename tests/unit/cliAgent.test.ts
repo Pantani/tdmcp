@@ -583,26 +583,28 @@ describe("tdmcp-agent CLI — phase 7 (stage I/O & sensor reactivity)", () => {
     expect(doc.args.beats).toBe(8);
   });
 
-  it("schema multi-output exposes count and layout", async () => {
+  it("schema multi-output exposes count, layout and edge-blend overlap", async () => {
     const r = await runCli(["schema", "multi-output"]);
     expect(r.code).toBe(0);
     const input = JSON.stringify(JSON.parse(r.stdout).input);
     expect(input).toContain("count");
     expect(input).toContain("horizontal");
     expect(input).toContain("as_windows");
+    expect(input).toContain("overlap");
   });
 
-  it("dry-runs multi-output across 3 projectors", async () => {
+  it("dry-runs multi-output across 3 projectors with edge-blend", async () => {
     const r = await runCli([
       "multi-output",
       "--dry-run",
       "--params",
-      '{"source_path":"/project1/out1","count":3,"as_windows":true}',
+      '{"source_path":"/project1/out1","count":3,"overlap":0.25,"as_windows":true}',
     ]);
     expect(r.code).toBe(0);
     const doc = JSON.parse(r.stdout);
     expect(doc.command).toBe("multi-output");
     expect(doc.args.count).toBe(3);
+    expect(doc.args.overlap).toBe(0.25);
     expect(doc.args.as_windows).toBe(true);
   });
 
