@@ -31,6 +31,7 @@ import { registerCreateVisualSystem } from "./createVisualSystem.js";
 import { registerCreateWaveform } from "./createWaveform.js";
 import { registerDescribeProject } from "./describeProject.js";
 import { registerDetectOnsets } from "./detectOnsets.js";
+import { registerDetectPitch } from "./detectPitch.js";
 import { registerExtractAudioFeatures } from "./extractAudioFeatures.js";
 import { registerGetPreview } from "./getPreview.js";
 import { registerImportModel } from "./importModel.js";
@@ -78,4 +79,5 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateDepthSilhouette,
   registerCreateKineticText,
   registerCreateWaveform,
+  registerDetectPitch,
 ];

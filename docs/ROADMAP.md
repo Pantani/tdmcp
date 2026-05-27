@@ -281,7 +281,19 @@ is the remaining step** (each build flagged its own ⚠ live-tuning unknown). Se
 | `text_to_shader` / `audio_to_show` / `auto_fix` | AI prompts: author GLSL, plan a set, repair loop | — | ◐ |
 | `tdmcp doctor` | Environment diagnostic (bridge / LLM / vault / config) | `doctor` | ◐ |
 
-**Still deferred (need live design or hardware):** MIDI/OSC learn (live-stateful), pitch detection
-(`pitchCHOP` not createable — spectrum-argmax research), A/B decks; and the shared-file extensions
-io DMX/LED/RTMP (`createExternalIo`), envelope-on-bind (`bindToChannel`), quantized cue recall
-(`manageCue`).
+### Wave 6 — refinements + the deferred tracks ◐ integrated (two experimental)
+
+| Feature | Delivers | CLI | Status |
+|---|---|---|---|
+| `create_waveform` refine | Real scope LINE (CHOP-to-SOP → Geo → ortho Render TOP); ⚠ vertical deflection (SOP `P(1)` attribute mapping) needs live tuning | `waveform` | ◐ |
+| `create_kinetic_text` refine | Flash modulates alpha (text vanishes, not black) | `kinetictext` | ☑ |
+| `create_external_io` outputs | `rtmp_out` (Video Stream Out) + `artnet_out` (DMX Out CHOP → Art-Net/sACN) | `io` | ◐ |
+| `bind_to_channel` smoothing | attack/release/smooth Lag-CHOP envelope follow | `bind` | ◐ |
+| `manage_cue` quantize | recall/morph snapped to the next beat/bar | `cue` | ◐ |
+| `create_decks` | A/B decks + master crossfader + per-deck gain | `decks` | ◐ |
+| `detect_pitch` | FFT-argmax monophonic pitch (Hz/note) — **experimental**: reads 0 with the default threshold, needs live tuning | `pitch` | ◐ |
+| `learn_control` | MIDI/OSC snapshot→diff→bind — **experimental** (live-stateful) | `learn` | ◐ |
+
+**Still deferred:** dedicated MIDI-clock / Ableton-Link tempo sync (needs hardware); full live
+tuning of `detect_pitch` (threshold/argmax) and `learn_control` (noise-reject diff); and
+`create_waveform`'s amplitude→Y deflection (the SOP attribute-scope detail).

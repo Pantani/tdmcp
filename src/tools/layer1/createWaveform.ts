@@ -3,6 +3,8 @@ import type { ControlSpec } from "../layer2/createControlPanel.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { createSystemContainer, finalize, type NetworkBuilder, runBuild } from "./orchestration.js";
 
+const q = (value: string): string => JSON.stringify(value);
+
 export const createWaveformSchema = z.object({
   source: z
     .enum(["device", "file", "oscillator", "existing_chop"])
@@ -19,7 +21,7 @@ export const createWaveformSchema = z.object({
     .string()
     .default("#00ff88")
     .describe(
-      "Waveform colour as a hex string ('#00ff88' = classic phosphor green). Tints the mono trace via a Constant TOP multiplied over the CHOP-to-TOP image.",
+      "Waveform colour as a hex string ('#00ff88' = classic phosphor green). Tints the rendered scope line via a Constant TOP multiplied over the Render TOP image.",
     ),
   scale: z.coerce
     .number()
@@ -106,25 +108,97 @@ export async function createWaveformImpl(ctx: ToolContext, args: CreateWaveformA
     const rebin = await builder.add("resampleCHOP", "rebin", { rate: 1024 });
     await builder.connect(trail, rebin);
 
-    // Render the buffered CHOP samples into an image. CHOP to TOP reads its source from a
-    // `chop` PARAMETER (a path reference), NOT a wire — exactly like top-to-CHOP's `top`
-    // param. The NetworkBuilder.connect() helper detects the conversion op and sets that
-    // parameter automatically, so connect(rebin, scope) wires it correctly. The custom
-    // resolution matches the resampled width so nothing is clamped.
-    const scope = await builder.add("choptoTOP", "scope", {
+    // CHOP-to-SOP maps channels to point attributes BY NAME. Rename the single signal channel
+    // to "P(1)" so it drives each point's Y position (the vertical deflection of the trace); X is
+    // laid out left→right by startposx→endposx below. Without this the channel ("chan1") matches
+    // no position attribute and the line renders flat.
+    const ypos = await builder.add("renameCHOP", "ypos", { renamefrom: "*", renameto: "P(1)" });
+    await builder.connect(rebin, ypos);
+
+    // Render the buffered samples as a real oscilloscope LINE rather than a brightness strip.
+    // A flat/constant material lets the line render at full, unlit brightness (no shading
+    // falloff that would dim the trace). Kept white here; the chosen colour is applied as a
+    // tint after the render so the live Color control still drives one Constant TOP swatch.
+    const mat = await builder.add("constantMAT", "mat", {
+      colorr: 1,
+      colorg: 1,
+      colorb: 1,
+      alpha: 1,
+    });
+
+    // A Geometry COMP renders the line SOP, so the SOP must live INSIDE the COMP.
+    // createSystemContainer's builder cleared the COMP's default torus on add.
+    const geo = await builder.add("geometryCOMP", "geo");
+
+    // CHOP to SOP makes one geometry point per CHOP sample and (by default) strings them into
+    // a polyline — a connected trace, not a heat-map row. The mapping that reads as a scope:
+    //   • x = time, y = amplitude. We scope the amplitude channel ONLY onto the Y position
+    //     (attscope = "P(1)"), so the sample value deflects each point vertically.
+    //   • x is NOT driven by any channel, so CHOP to SOP spreads the points evenly between
+    //     startpos and endpos along X — startposx=-1 → endposx=1 lays the trace left→right.
+    //     z stays 0, putting the whole line flat in the XY plane facing the camera.
+    //   • mapping = onetoone keeps one point per resampled sample (rebin = 1024 points).
+    // CHOP to SOP reads its source from a `chop` PARAMETER (a path reference), NOT a wire;
+    // NetworkBuilder.connect() detects the converter op (type starts with "chopto") and
+    // patches that param automatically, so connect(rebin, line) points it at the resample.
+    const line = await builder.add(
+      "choptoSOP",
+      "line",
+      {
+        attscope: "*",
+        mapping: "onetoone",
+        startposx: -1,
+        startposy: 0,
+        startposz: 0,
+        endposx: 1,
+        endposy: 0,
+        endposz: 0,
+      },
+      geo,
+    );
+    await builder.connect(ypos, line);
+
+    // Flag the line SOP render+display and point the COMP's `material` param at the constant
+    // MAT (mirrors create_3d_scene / create_particle_system).
+    await builder.python(
+      [
+        `_l = op(${q(line)})`,
+        "_l.render = True",
+        "_l.display = True",
+        `op(${q(geo)}).par.material = ${q(mat)}`,
+      ].join("\n"),
+    );
+
+    // Orthographic camera so the trace keeps its true left→right / up-down shape with no
+    // perspective foreshortening (a scope must not bow). orthowidth ≈ the X span (2) plus a
+    // little margin frames [-1,1] full-width; default tz=1 already looks down -Z at origin,
+    // and the line sits at z=0 so it faces the camera. A light is created for the render
+    // scene even though the constant MAT is unlit.
+    const cam = await builder.add("cameraCOMP", "cam", {
+      projection: "ortho",
+      orthowidth: 2.2,
+      tz: 5,
+    });
+    const lightComp = await builder.add("lightCOMP", "light", { tx: 0, ty: 0, tz: 5 });
+    // Render TOP reads its scene from PARAMETERS (camera/geometry/lights), not wires — and an
+    // opaque near-black background gives the classic dark-scope look (and contrast for the
+    // multiply tint). The custom resolution keeps a wide scope aspect.
+    const render = await builder.add("renderTOP", "render", {
+      camera: cam,
+      geometry: geo,
+      lights: lightComp,
+      bgcolorr: 0.01,
+      bgcolorg: 0.02,
+      bgcolorb: 0.02,
+      bgcolora: 1,
       outputresolution: "custom",
       resolutionw: 1024,
       resolutionh: 256,
     });
-    await builder.connect(rebin, scope);
 
-    // The raw scope is a (near-mono) trace. A Level TOP lifts brightness so a quiet signal
-    // is still visible; brightness1 is the Level TOP's brightness (NOT `gain`).
-    const level = await builder.add("levelTOP", "brightness", { brightness1: 1 });
-    await builder.connect(scope, level);
-
-    // Tint the mono trace to the chosen colour: a flat Constant TOP of the colour multiplied
-    // over the trace (operand 'multiply') stains the white waveform without touching shape.
+    // Tint the white line to the chosen colour: a flat Constant TOP of the colour multiplied
+    // over the render (operand 'multiply') stains the trace without touching its shape, and
+    // leaves the dark background dark. Input 0 = the render, input 1 = the flat colour.
     const rgb = hexToRgb(args.color);
     const tintColor = await builder.add("constantTOP", "tint", {
       colorr: rgb.r,
@@ -133,8 +207,7 @@ export async function createWaveformImpl(ctx: ToolContext, args: CreateWaveformA
       alpha: 1,
     });
     const tint = await builder.add("compositeTOP", "tinted", { operand: "multiply" });
-    // Input 0 = the trace, input 1 = the flat colour multiplied over it.
-    await builder.connect(level, tint, 0, 0);
+    await builder.connect(render, tint, 0, 0);
     await builder.connect(tintColor, tint, 0, 1);
 
     const out = await builder.add("nullTOP", "out1");
@@ -169,7 +242,7 @@ export async function createWaveformImpl(ctx: ToolContext, args: CreateWaveformA
       : [];
 
     return finalize(ctx, {
-      summary: `Built a waveform oscilloscope (source: ${args.source}, ${args.time_window}s window) → ${out}. The Trail CHOP scrolls the recent signal and a CHOP-to-TOP draws it as a moving trace.`,
+      summary: `Built a waveform oscilloscope (source: ${args.source}, ${args.time_window}s window) → ${out}. The Trail CHOP scrolls the recent signal, a CHOP-to-SOP turns the samples into a deflected scope line (x=time, y=amplitude), and a Render TOP draws it as a glowing trace tinted to ${args.color}.`,
       builder,
       outputPath: out,
       // Output is a TOP (the Null), so a preview image is captured.
@@ -181,7 +254,8 @@ export async function createWaveformImpl(ctx: ToolContext, args: CreateWaveformA
         time_window: args.time_window,
         color: { r: rgb.r, g: rgb.g, b: rgb.b },
         trail_path: trail,
-        scope_path: scope,
+        line_path: line,
+        render_path: render,
         output_path: out,
       },
     });
@@ -194,7 +268,7 @@ export const registerCreateWaveform: ToolRegistrar = (server, ctx) => {
     {
       title: "Create waveform oscilloscope",
       description:
-        "Build a time-domain audio waveform / oscilloscope — the actual audio signal scrolling left-to-right as a moving trace (the time-domain companion to create_spectrum's frequency bins and detect_onsets' transients). A Trail CHOP keeps a rolling buffer of recent samples (time_window seconds), a CHOP-to-TOP draws that buffer as an image, and a Constant TOP tints it to the chosen colour over a Level TOP. Unlike create_audio_reactive (which renders a spectrum), this shows the raw waveform. Source can be the live device (mic/line — may prompt for macOS permission), an audio file, a synthetic oscillator (for testing), or an existing CHOP. Output is a Null TOP. Scale is the vertical amplitude zoom; TimeWindow is the horizontal time span.",
+        "Build a time-domain audio waveform / oscilloscope — the actual audio signal scrolling left-to-right as a moving trace (the time-domain companion to create_spectrum's frequency bins and detect_onsets' transients). A Trail CHOP keeps a rolling buffer of recent samples (time_window seconds), a CHOP-to-SOP turns those samples into a real scope LINE (x=time, y=amplitude) rendered by a Geometry COMP through an orthographic Camera + Render TOP, and a Constant TOP tints the trace to the chosen colour. Unlike create_audio_reactive (which renders a spectrum), this shows the raw waveform. Source can be the live device (mic/line — may prompt for macOS permission), an audio file, a synthetic oscillator (for testing), or an existing CHOP. Output is a Null TOP. Scale is the vertical amplitude zoom; TimeWindow is the horizontal time span.",
       inputSchema: createWaveformSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

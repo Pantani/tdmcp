@@ -94,7 +94,7 @@ describe("create_kinetic_text", () => {
     expect(lfo?.parameters?.wavetype).toBe("square");
   });
 
-  it("gates the Level TOP brightness1 by an EXPRESSION referencing the LFO by absolute path", async () => {
+  it("gates the Level TOP opacity (alpha) by an EXPRESSION referencing the LFO by absolute path", async () => {
     const scripts = captureExecScripts();
     await createKineticTextImpl(makeCtx(), {
       text: "FLASH",
@@ -105,16 +105,20 @@ describe("create_kinetic_text", () => {
       expose_controls: false,
       parent_path: "/project1",
     });
-    // The brightness expression must drive brightness1 (NOT gain), reference the LFO
-    // channel by absolute path, and switch the param into EXPRESSION mode. The path is
-    // JSON-stringified inside the expr, so its quotes are backslash-escaped in the script
-    // text — match the path + channel separately to stay quoting-agnostic.
+    // The flash expression must drive `opacity` (the alpha multiplier — NOT brightness1,
+    // which only darkens RGB and would leave a black silhouette over a background),
+    // reference the LFO channel by absolute path, and switch the param into EXPRESSION
+    // mode. The path is JSON-stringified inside the expr, so its quotes are backslash-
+    // escaped in the script text — match the path + channel separately to stay
+    // quoting-agnostic.
     const expr = scripts.find(
-      (s) => s.includes("brightness1") && s.includes("type(_p.mode).EXPRESSION"),
+      (s) => s.includes(".par.opacity") && s.includes("type(_p.mode).EXPRESSION"),
     );
     expect(expr).toBeDefined();
     expect(expr).toContain("/project1/kinetic_text/anim_lfo");
     expect(expr).toContain("['chan1']");
+    // And it must NOT gate brightness1 (the old, buggy behaviour that flashed to black).
+    expect(scripts.some((s) => s.includes("brightness1"))).toBe(false);
   });
 
   it("builds a pulse system that drives Transform sx/sy and a sine LFO", async () => {

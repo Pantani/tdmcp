@@ -23,11 +23,13 @@ export const createExternalIoSchema = z.object({
       "osc_out",
       "midi_out",
       "dmx_out",
+      "artnet_out",
+      "rtmp_out",
       "ndi_in",
       "syphon_spout_in",
     ])
     .describe(
-      "What to bridge: OSC/MIDI/keyboard/gamepad/mouse input (a control surface — bind channels to parameters), OSC/MIDI output (send a CHOP's channels back out for bidirectional feedback — pass source_path), DMX/Art-Net output (lighting), or NDI / Syphon-Spout video input. (Video/NDI/Syphon *outputs* live in setup_output.)",
+      "What to bridge: OSC/MIDI/keyboard/gamepad/mouse input (a control surface — bind channels to parameters), OSC/MIDI output (send a CHOP's channels back out for bidirectional feedback — pass source_path), DMX/Art-Net output for lighting (dmx_out is the general DMX desk; artnet_out is a network-only Art-Net/sACN preset for pixel-mapping LED strips & stage fixtures — both send a CHOP's 0-255 channels and need source_path), RTMP output to live-stream a TOP to Twitch/YouTube/OBS-ingest (rtmp_out — pass source_path = the TOP to stream and url; needs an NVIDIA GPU on Windows), or NDI / Syphon-Spout video input. (Window/recording/NDI/Syphon *video outputs* live in setup_output.)",
     ),
   parent_path: z.string().default("/project1").describe("COMP to create the I/O operator in."),
   name: z.string().optional(),
@@ -49,13 +51,47 @@ export const createExternalIoSchema = z.object({
   source_path: z
     .string()
     .optional()
-    .describe("(dmx_out/osc_out/midi_out) CHOP whose channel values are sent out."),
+    .describe(
+      "(dmx_out/artnet_out/osc_out/midi_out) CHOP whose channel values are sent out, or (rtmp_out) the TOP to stream. Should live in the same COMP as parent_path so the wire/source connects.",
+    ),
   interface: z
     .enum(["artnet", "sacn", "enttecusbpro", "enttecusbpromk2", "serial", "kinet"])
     .default("artnet")
-    .describe("(dmx_out) DMX transport."),
-  universe: z.coerce.number().int().default(1).describe("(dmx_out) DMX universe."),
-  net_address: z.string().optional().describe("(dmx_out) Target IP address for Art-Net / sACN."),
+    .describe("(dmx_out) DMX transport. (artnet_out forces a network protocol via `net`.)"),
+  net: z
+    .enum(["artnet", "sacn"])
+    .optional()
+    .describe(
+      "(artnet_out) Network DMX protocol: Art-Net or sACN (streaming ACN). Defaults to Art-Net.",
+    ),
+  universe: z.coerce.number().int().default(1).describe("(dmx_out/artnet_out) DMX universe."),
+  net_address: z
+    .string()
+    .optional()
+    .describe("(dmx_out/artnet_out) Target IP address for Art-Net / sACN."),
+  url: z
+    .string()
+    .optional()
+    .describe(
+      "(rtmp_out) Full RTMP destination as {service url}/{stream key}, e.g. 'rtmp://live.twitch.tv/app/live_xxx'. If omitted but stream_key is given, prefix with rtmp_base.",
+    ),
+  rtmp_base: z
+    .string()
+    .optional()
+    .describe(
+      "(rtmp_out) Ingest base URL to combine with stream_key when url is not given (defaults to YouTube's primary ingest).",
+    ),
+  stream_key: z
+    .string()
+    .optional()
+    .describe("(rtmp_out) Stream key, appended to rtmp_base as '{rtmp_base}/{stream_key}'."),
+  fps: z.coerce.number().optional().describe("(rtmp_out) Frame rate to stream at. Defaults to 30."),
+  active: z
+    .boolean()
+    .optional()
+    .describe(
+      "(rtmp_out) Start streaming immediately. Defaults off so the artist can confirm the URL before going live.",
+    ),
   source_name: z
     .string()
     .optional()
@@ -82,7 +118,7 @@ const IO_SCRIPT = `
 import json, base64, traceback
 _p = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
 report = {"kind": _p["kind"], "warnings": []}
-_TYPEMAP = {"osc_in": oscinCHOP, "midi_in": midiinCHOP, "keyboard_in": keyboardinCHOP, "gamepad_in": joystickCHOP, "mouse_in": mouseinCHOP, "osc_out": oscoutCHOP, "midi_out": midioutCHOP, "dmx_out": dmxoutCHOP, "ndi_in": ndiinTOP, "syphon_spout_in": syphonspoutinTOP}
+_TYPEMAP = {"osc_in": oscinCHOP, "midi_in": midiinCHOP, "keyboard_in": keyboardinCHOP, "gamepad_in": joystickCHOP, "mouse_in": mouseinCHOP, "osc_out": oscoutCHOP, "midi_out": midioutCHOP, "dmx_out": dmxoutCHOP, "artnet_out": dmxoutCHOP, "rtmp_out": videostreamoutTOP, "ndi_in": ndiinTOP, "syphon_spout_in": syphonspoutinTOP}
 try:
     _kind = _p["kind"]; _parent = op(_p["parent"])
     if _parent is None:
@@ -103,11 +139,12 @@ try:
                 report["warnings"].append("Could not set parameter '%s'" % parname)
         def _connect_source():
             _src = _p.get("source")
+            _what = "the TOP to stream" if _kind == "rtmp_out" else "the CHOP whose channels to send"
             if not _src:
-                report["warnings"].append("This kind needs a source_path (the CHOP whose channels to send)."); return
+                report["warnings"].append("This kind needs a source_path (%s)." % _what); return
             _s = op(_src)
             if _s is None:
-                report["warnings"].append("Source CHOP not found: " + _src); return
+                report["warnings"].append("Source operator not found: " + _src); return
             try:
                 _node.inputConnectors[0].connect(_s); report["source"] = _s.path
             except Exception:
@@ -124,6 +161,13 @@ try:
         elif _kind == "dmx_out":
             _setpar("interface", _p.get("interface")); _setpar("universe", _p.get("universe")); _setpar("netaddress", _p.get("net_address"))
             _connect_source()
+        elif _kind == "artnet_out":
+            _setpar("interface", _p.get("net")); _setpar("universe", _p.get("universe")); _setpar("netaddress", _p.get("net_address"))
+            _connect_source()
+        elif _kind == "rtmp_out":
+            _setpar("mode", "rtmpsender"); _setpar("url", _p.get("url")); _setpar("fps", _p.get("fps"))
+            _connect_source()
+            _setpar("active", _p.get("active"))
         elif _kind == "ndi_in":
             _setpar("name", _p.get("source_name"))
         elif _kind == "syphon_spout_in":
@@ -160,6 +204,15 @@ export function buildIoScript(payload: object): string {
 export async function createExternalIoImpl(ctx: ToolContext, args: CreateExternalIoArgs) {
   return guardTd(
     async () => {
+      // Compose the RTMP destination: an explicit url wins, otherwise stitch the
+      // ingest base to the stream key (the Video Stream Out TOP wants one combined URL).
+      const rtmpUrl =
+        args.kind === "rtmp_out"
+          ? (args.url ??
+            (args.stream_key
+              ? `${args.rtmp_base ?? "rtmp://a.rtmp.youtube.com/live2"}/${args.stream_key}`
+              : null))
+          : null;
       const script = buildIoScript({
         kind: args.kind,
         parent: args.parent_path,
@@ -169,8 +222,12 @@ export async function createExternalIoImpl(ctx: ToolContext, args: CreateExterna
         bind_to: args.bind_to ?? null,
         source: args.source_path ?? null,
         interface: args.interface,
+        net: args.net ?? "artnet",
         universe: args.universe,
         net_address: args.net_address ?? null,
+        url: rtmpUrl,
+        fps: args.kind === "rtmp_out" ? (args.fps ?? 30) : null,
+        active: args.kind === "rtmp_out" ? (args.active ?? false) : null,
         source_name: args.source_name ?? null,
       });
       const exec = await ctx.client.executePythonScript(script, true);
@@ -197,7 +254,7 @@ export const registerCreateExternalIo: ToolRegistrar = (server, ctx) => {
     {
       title: "Create external I/O",
       description:
-        "Bridge TouchDesigner to the outside world: OSC/MIDI input (a control surface — bind incoming channels straight to parameters), OSC/MIDI output (send a CHOP's channels back out for bidirectional feedback to lighting desks, other apps or hardware — pass source_path), DMX/Art-Net output for lighting, or NDI / Syphon-Spout video input. To discover which channel a control sends (a 'MIDI learn'), wiggle it and read the input CHOP with get_td_nodes, then bind_to that channel. Validate live where possible, but real signal needs the hardware/sender present.",
+        "Bridge TouchDesigner to the outside world: OSC/MIDI input (a control surface — bind incoming channels straight to parameters), OSC/MIDI output (send a CHOP's channels back out for bidirectional feedback to lighting desks, other apps or hardware — pass source_path), DMX/Art-Net output for lighting (dmx_out for any DMX desk; artnet_out for network Art-Net/sACN pixel-mapping of LED strips & stage fixtures), RTMP output to live-stream a TOP to Twitch/YouTube/OBS (rtmp_out — NVIDIA GPU on Windows only), or NDI / Syphon-Spout video input. To discover which channel a control sends (a 'MIDI learn'), wiggle it and read the input CHOP with get_td_nodes, then bind_to that channel. Validate live where possible, but real signal needs the hardware/sender present.",
       inputSchema: createExternalIoSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

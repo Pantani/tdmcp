@@ -73,6 +73,24 @@ Follow-ups: finish the items deferred during the phased build (to be versioned a
   re-check repair loop).
 - **CLI `doctor`** — a one-shot environment diagnostic (TD bridge, local LLM copilot, vault, config)
   with a plain-language pass/warn/fail report; the exit code reflects critical checks only.
+- **Oscilloscope waveform + flash-to-transparent text** — `create_waveform` now renders a real scope
+  LINE (CHOP-to-SOP → Geometry → orthographic Render TOP) instead of a brightness strip;
+  `create_kinetic_text`'s flash modulates ALPHA so the text vanishes between flashes (over a
+  background) instead of going black.
+- **`create_external_io` output kinds** — `rtmp_out` (stream a TOP over RTMP via a Video Stream Out
+  TOP — NVIDIA/Windows) and `artnet_out` (send a CHOP out as Art-Net/sACN via a DMX Out CHOP, for
+  LED pixel-mapping & stage fixtures).
+- **`bind_to_channel` smoothing** — optional `attack`/`release` (or `smooth`) seconds insert a Lag
+  CHOP between the channel and the parameter, so reactivity follows a clean envelope instead of
+  flickering on the raw signal.
+- **`manage_cue` beat-quantized recall** — an optional `quantize` ("off"/"beat"/"bar") defers a
+  recall/morph to the next musical boundary so scene changes snap to the beat.
+- **`create_decks`** — DJ-style A/B decks blended by a master crossfader (Cross TOP) with per-deck
+  gain; each deck pulls a source TOP or a built-in test source (CLI `decks`).
+- **`detect_pitch`** (experimental) — monophonic pitch (Hz / MIDI note) from the FFT's dominant bin
+  on a Null CHOP, for melody-reactive parameters (CLI `pitch`).
+- **`learn_control`** (experimental) — interactive MIDI/OSC "learn": snapshot an input CHOP, then
+  bind the control the artist just moved (CLI `learn`).
 
 ### Changed
 

@@ -16,7 +16,7 @@ export const createKineticTextSchema = z.object({
     .enum(["flash", "pulse", "slide"])
     .default("flash")
     .describe(
-      "Animation style: 'flash' = hard on/off blink (a square LFO gates the brightness — the classic lyric-flash); 'pulse' = breathing scale-up + fade driven by a sine LFO; 'slide' = the text scrolls horizontally across the frame.",
+      "Animation style: 'flash' = hard on/off blink (a square LFO gates the alpha/opacity — the classic lyric-flash, the text vanishes between flashes rather than going black); 'pulse' = breathing scale-up + alpha fade driven by a sine LFO; 'slide' = the text scrolls horizontally across the frame.",
     ),
   size: z.coerce
     .number()
@@ -101,28 +101,34 @@ export async function createKineticTextImpl(ctx: ToolContext, args: CreateKineti
     });
 
     // Build the animation per mode. `animated` is the TOP carrying the moving text; the
-    // node whose brightness1 the Intensity-style flash gates is `level` (when present).
+    // node whose opacity the flash/fade gates is `level` (when present).
     let animated = textTop;
     let levelNode: string | undefined;
     let transformNode: string | undefined;
 
     if (args.mode === "flash") {
       // Hard on/off: the square LFO swings [-1, 1]; treat >0 as "on" so the text snaps
-      // fully on then fully off (a crisp flash, not a fade). The Level TOP's brightness
-      // param is `brightness1` (NOT `gain`). Switch it to EXPRESSION mode the way
-      // animate_parameter does — `type(par.mode).EXPRESSION` (ParMode isn't a bridge global).
-      const level = await builder.add("levelTOP", "level", { brightness1: 1 });
+      // fully on then fully off (a crisp flash, not a fade). Gate the Level TOP's `opacity`
+      // (the alpha multiplier — verified in level_top.json: `level.par.opacity`), NOT
+      // brightness1: brightness only darkens the RGB, so "off" left a BLACK text silhouette
+      // composited over a background. opacity 0 multiplies the glyph alpha to zero, so the
+      // whole layer truly vanishes (RGB / font colour is untouched). Switch it to EXPRESSION
+      // mode the way animate_parameter does — `type(par.mode).EXPRESSION` (ParMode isn't a
+      // bridge global).
+      const level = await builder.add("levelTOP", "level", { opacity: 1 });
       await builder.connect(textTop, level);
       const expr = `(1 if op(${q(lfo)})['chan1'] > 0 else 0)`;
       await builder.python(
-        `_p = op(${q(level)}).par.brightness1\n_p.expr = ${q(expr)}\n_p.mode = type(_p.mode).EXPRESSION`,
+        `_p = op(${q(level)}).par.opacity\n_p.expr = ${q(expr)}\n_p.mode = type(_p.mode).EXPRESSION`,
       );
       levelNode = level;
       animated = level;
     } else if (args.mode === "pulse") {
       // Breathing scale + fade. The sine LFO (chan1, [-1, 1]) drives a Transform TOP's
-      // sx/sy (scale, NOT scalex/scaley) between ~0.8 and ~1.2, and a Level TOP's
-      // brightness1 between ~0.4 and 1.0 — the word swells and brightens, then recedes.
+      // sx/sy (scale, NOT scalex/scaley) between ~0.8 and ~1.2, and a Level TOP's `opacity`
+      // between ~0.4 and 1.0 — the word swells and fades in/out, then recedes. Fading the
+      // alpha (opacity), not brightness1, so the text fades to transparent (not to black)
+      // over a background; RGB / font colour stays intact.
       const transform = await builder.add("transformTOP", "scale", { sx: 1, sy: 1 });
       await builder.connect(textTop, transform);
       const scaleExpr = `(1 + 0.2 * op(${q(lfo)})['chan1'])`;
@@ -135,11 +141,11 @@ export async function createKineticTextImpl(ctx: ToolContext, args: CreateKineti
           `    _p.mode = type(_p.mode).EXPRESSION`,
         ].join("\n"),
       );
-      const level = await builder.add("levelTOP", "level", { brightness1: 1 });
+      const level = await builder.add("levelTOP", "level", { opacity: 1 });
       await builder.connect(transform, level);
       const fadeExpr = `(0.7 + 0.3 * op(${q(lfo)})['chan1'])`;
       await builder.python(
-        `_p = op(${q(level)}).par.brightness1\n_p.expr = ${q(fadeExpr)}\n_p.mode = type(_p.mode).EXPRESSION`,
+        `_p = op(${q(level)}).par.opacity\n_p.expr = ${q(fadeExpr)}\n_p.mode = type(_p.mode).EXPRESSION`,
       );
       transformNode = transform;
       levelNode = level;
@@ -252,7 +258,7 @@ export const registerCreateKineticText: ToolRegistrar = (server, ctx) => {
     {
       title: "Create kinetic text",
       description:
-        "Build a self-contained animated / kinetic typography layer — a word or line that flashes, pulses, or slides, the signature live-VJ lyric-flash effect. A Text TOP renders the text; an LFO CHOP at the given Rate (Hz) drives the animation: 'flash' gates a Level TOP's brightness hard on/off (a square wave), 'pulse' drives a Transform TOP's scale plus a Level TOP fade (a sine, the text breathes), and 'slide' scrolls the Transform TOP's translate-X. With an input_path the text is composited OVER that source (pulled in by a Select TOP, so it can live in another container); without one it animates on a transparent frame. Output is a Null TOP. Rate is free-running for v1 — bind the LFO's frequency to a beat CHOP (or a Trigger to a detect_onsets channel) to lock the flashes to the tempo.",
+        "Build a self-contained animated / kinetic typography layer — a word or line that flashes, pulses, or slides, the signature live-VJ lyric-flash effect. A Text TOP renders the text; an LFO CHOP at the given Rate (Hz) drives the animation: 'flash' gates a Level TOP's alpha/opacity hard on/off (a square wave — the text vanishes between flashes rather than turning black, so it pops cleanly in and out over a background), 'pulse' drives a Transform TOP's scale plus a Level TOP alpha fade (a sine, the text breathes), and 'slide' scrolls the Transform TOP's translate-X. With an input_path the text is composited OVER that source (pulled in by a Select TOP, so it can live in another container); without one it animates on a transparent frame. Output is a Null TOP. Rate is free-running for v1 — bind the LFO's frequency to a beat CHOP (or a Trigger to a detect_onsets channel) to lock the flashes to the tempo.",
       inputSchema: createKineticTextSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

@@ -72,7 +72,7 @@ describe("create_waveform", () => {
     expect(text).toContain("source: oscillator");
   });
 
-  it("creates a Trail CHOP (scrolling buffer) and a CHOP-to-TOP (renders the trace)", async () => {
+  it("creates a Trail CHOP (scrolling buffer) and a CHOP-to-SOP scope line rendered via Geo + Camera + Render TOP", async () => {
     const bodies = captureCreateBodies();
     await createWaveformImpl(makeCtx(), {
       source: "oscillator",
@@ -84,8 +84,57 @@ describe("create_waveform", () => {
     });
     const trail = bodies.find((b) => b.type === "trailCHOP");
     expect(trail?.name).toBe("trail");
-    const scope = bodies.find((b) => b.type === "choptoTOP");
-    expect(scope?.name).toBe("scope");
+    // The render path is now a real oscilloscope LINE: the resampled CHOP becomes points of a
+    // SOP polyline (CHOP-to-SOP), a Geometry COMP renders it through an orthographic Camera and
+    // a Render TOP. There is no longer a CHOP-to-TOP brightness strip.
+    expect(bodies.some((b) => b.type === "choptoTOP")).toBe(false);
+    const line = bodies.find((b) => b.type === "choptoSOP");
+    expect(line?.name).toBe("line");
+    expect(bodies.some((b) => b.type === "geometryCOMP")).toBe(true);
+    expect(bodies.some((b) => b.type === "cameraCOMP")).toBe(true);
+    expect(bodies.some((b) => b.type === "renderTOP")).toBe(true);
+    expect(bodies.some((b) => b.type === "constantMAT")).toBe(true);
+  });
+
+  it("renders the scope line through an orthographic camera with the Render TOP reading geo/camera/lights by parameter", async () => {
+    const bodies = captureCreateBodies();
+    await createWaveformImpl(makeCtx(), {
+      source: "oscillator",
+      color: "#00ff88",
+      scale: 1,
+      time_window: 1,
+      expose_controls: false,
+      parent_path: "/project1",
+    });
+    // Orthographic projection keeps the trace's true shape (no perspective bow).
+    const cam = bodies.find((b) => b.type === "cameraCOMP");
+    expect(cam?.parameters).toMatchObject({ projection: "ortho" });
+    // Render TOP wires its scene through params, not connectors (mirrors create_3d_scene).
+    const render = bodies.find((b) => b.type === "renderTOP");
+    const geo = bodies.find((b) => b.type === "geometryCOMP");
+    expect(render?.parameters?.camera).toBe(cam ? "/project1/waveform/cam" : undefined);
+    expect(render?.parameters?.geometry).toBe(geo ? "/project1/waveform/geo" : undefined);
+  });
+
+  it("maps the amplitude onto the Y position (P(1)) and spreads the points along X for a deflected trace", async () => {
+    const bodies = captureCreateBodies();
+    await createWaveformImpl(makeCtx(), {
+      source: "oscillator",
+      color: "#00ff88",
+      scale: 1,
+      time_window: 1,
+      expose_controls: false,
+      parent_path: "/project1",
+    });
+    // The CHOP-to-SOP scopes the sample value onto Y (P(1)) so it deflects vertically, while X
+    // is laid out left→right between startpos/endpos (it is not driven by a channel).
+    const line = bodies.find((b) => b.type === "choptoSOP");
+    expect(line?.parameters).toMatchObject({
+      attscope: "*",
+      mapping: "onetoone",
+      startposx: -1,
+      endposx: 1,
+    });
   });
 
   it("sets the Trail CHOP window length from time_window in seconds", async () => {
@@ -104,10 +153,10 @@ describe("create_waveform", () => {
     expect(trail?.parameters).toMatchObject({ wlength: 2.5, wlengthunit: "seconds" });
   });
 
-  it("ingests the CHOP into the CHOP-to-TOP via its `chop` source parameter (not a wire)", async () => {
-    // CHOP to TOP reads its source from a `chop` PARAMETER (a path reference), like
+  it("ingests the CHOP into the CHOP-to-SOP via its `chop` source parameter (not a wire)", async () => {
+    // CHOP to SOP reads its source from a `chop` PARAMETER (a path reference), like
     // top-to-CHOP's `top`. The builder must PATCH that parameter rather than wiring it.
-    let choptoTopChopParam: unknown;
+    let choptoSopChopParam: unknown;
     const created: CreatedNodeBody[] = [];
     server.use(
       http.post(`${TD_BASE}/api/nodes`, async ({ request }) => {
@@ -121,7 +170,7 @@ describe("create_waveform", () => {
       }),
       http.patch(`${TD_BASE}/api/nodes/:seg`, async ({ request }) => {
         const body = (await request.json()) as { parameters: Record<string, unknown> };
-        if ("chop" in body.parameters) choptoTopChopParam = body.parameters.chop;
+        if ("chop" in body.parameters) choptoSopChopParam = body.parameters.chop;
         return HttpResponse.json({ ok: true, data: { parameters: body.parameters } });
       }),
     );
@@ -133,9 +182,10 @@ describe("create_waveform", () => {
       expose_controls: false,
       parent_path: "/project1",
     });
-    // The Trail feeds a Resample (downsample to a fixed display width) which feeds the scope,
-    // so the CHOP-to-TOP's `chop` source param must point at the rebin (resample) node.
-    expect(choptoTopChopParam).toBe("/project1/waveform/rebin");
+    // The Trail feeds a Resample (downsample to a fixed display width) which feeds the line,
+    // so the CHOP-to-SOP's `chop` source param must point at the rename node (whose "P(1)"
+    // channel drives the Y deflection).
+    expect(choptoSopChopParam).toBe("/project1/waveform/ypos");
   });
 
   it("builds an oscillator source (the device-free test path) without an audio device node", async () => {

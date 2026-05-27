@@ -7,6 +7,7 @@ import { registerCreateClipLauncher } from "./createClipLauncher.js";
 import { registerCreateContainer } from "./createContainer.js";
 import { registerCreateControlPanel } from "./createControlPanel.js";
 import { registerCreateControlSurface } from "./createControlSurface.js";
+import { registerCreateDecks } from "./createDecks.js";
 import { registerCreateExternalIo } from "./createExternalIo.js";
 import { registerCreateGlslShader } from "./createGlslShader.js";
 import { registerCreateMacro } from "./createMacro.js";
@@ -15,6 +16,7 @@ import { registerCreatePanic } from "./createPanic.js";
 import { registerCreatePhoneRemote } from "./createPhoneRemote.js";
 import { registerCreatePythonScript } from "./createPythonScript.js";
 import { registerDuplicateNetwork } from "./duplicateNetwork.js";
+import { registerLearnControl } from "./learnControl.js";
 import { registerManageCheckpoint } from "./manageCheckpoint.js";
 import { registerManageComponent } from "./manageComponent.js";
 import { registerManageCue } from "./manageCue.js";
@@ -46,4 +48,7 @@ export const layer2Registrars: ToolRegistrar[] = [
   // Wave 4 — live-performance ergonomics:
   registerCreatePanic,
   registerCreateClipLauncher,
+  // Wave 6 — DJ decks + MIDI/OSC learn:
+  registerCreateDecks,
+  registerLearnControl,
 ];

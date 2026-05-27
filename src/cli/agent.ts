@@ -92,6 +92,7 @@ import {
 import { createWaveformImpl, createWaveformSchema } from "../tools/layer1/createWaveform.js";
 import { describeProjectImpl, describeProjectSchema } from "../tools/layer1/describeProject.js";
 import { detectOnsetsImpl, detectOnsetsSchema } from "../tools/layer1/detectOnsets.js";
+import { detectPitchImpl, detectPitchSchema } from "../tools/layer1/detectPitch.js";
 import {
   extractAudioFeaturesImpl,
   extractAudioFeaturesSchema,
@@ -118,6 +119,7 @@ import {
   createControlSurfaceImpl,
   createControlSurfaceSchema,
 } from "../tools/layer2/createControlSurface.js";
+import { createDecksImpl, createDecksSchema } from "../tools/layer2/createDecks.js";
 import { createExternalIoImpl, createExternalIoSchema } from "../tools/layer2/createExternalIo.js";
 import { createGlslShaderImpl, createGlslShaderSchema } from "../tools/layer2/createGlslShader.js";
 import { createMacroImpl, createMacroSchema } from "../tools/layer2/createMacro.js";
@@ -132,6 +134,7 @@ import {
   createPythonScriptSchema,
 } from "../tools/layer2/createPythonScript.js";
 import { duplicateNetworkImpl, duplicateNetworkSchema } from "../tools/layer2/duplicateNetwork.js";
+import { learnControlImpl, learnControlSchema } from "../tools/layer2/learnControl.js";
 import { manageCheckpointImpl, manageCheckpointSchema } from "../tools/layer2/manageCheckpoint.js";
 import { manageComponentImpl, manageComponentSchema } from "../tools/layer2/manageComponent.js";
 import { manageCueImpl, manageCueSchema } from "../tools/layer2/manageCue.js";
@@ -593,6 +596,24 @@ const COMMANDS: Record<string, Command> = {
     createClipLauncherSchema,
     createClipLauncherImpl,
     "Build an Ableton-style grid of cue-trigger buttons.",
+    { mutates: true },
+  ),
+  decks: r(
+    createDecksSchema,
+    createDecksImpl,
+    "Build DJ-style A/B decks with a master crossfader.",
+    { mutates: true },
+  ),
+  pitch: r(
+    detectPitchSchema,
+    detectPitchImpl,
+    "Detect monophonic pitch (Hz/note) from the FFT (experimental).",
+    { mutates: true },
+  ),
+  learn: r(
+    learnControlSchema,
+    learnControlImpl,
+    "MIDI/OSC learn: snapshot an input CHOP, then bind the moved control (experimental).",
     { mutates: true },
   ),
 };
