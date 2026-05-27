@@ -37,6 +37,22 @@ usually with a *Sensitivity* knob. See the
 [microphone permission note](/guide/troubleshooting#macos-microphone-camera-permission)
 on macOS, or ask for a **test tone** instead of the mic while experimenting.
 
+## Camera & motion reactive
+
+The camera counterpart to audio reactivity — drive a visual from movement or
+brightness in front of your webcam.
+
+> *"Make a visual that reacts to movement in front of my webcam, and preview it."*
+
+> *"Drive the feedback amount from how much motion the camera sees."*
+
+> *"React to the room's brightness — bloom up when the lights come on."*
+
+**What you'll get:** an analysis chain exposing *motion* and *brightness* channels
+plus a *Sensitivity* knob. Like the mic, the live camera triggers the
+[macOS permission popup](/guide/troubleshooting#macos-microphone-camera-permission)
+— or ask for a **synthetic test source** to experiment without a camera.
+
 ## Particles & 3D
 
 > *"Create a particle system emitted from a sphere with turbulence and gravity,
@@ -57,6 +73,18 @@ Gravity / Lifetime* knobs to shape the motion.
 > *"Play this video file on a loop with speed control."* (give it the path)
 
 > *"Take my webcam and make it look like an old, degraded VHS tape."*
+
+## Text & titles
+
+> *"Add the title 'OPENING SET' centered over this visual in white."*
+
+> *"Put the song name in the bottom-left corner in hot pink."*
+
+> *"Make a transparent lower-third text layer I can composite later."*
+
+**What you'll get:** a styled text layer (font size, color, alignment) composited
+over your visual or on its own transparent background — ready to send to output.
+Great for lyrics, titles, song names and credits.
 
 ## Live performance & control
 
