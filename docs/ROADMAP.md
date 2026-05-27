@@ -35,7 +35,7 @@ Every feature follows the existing patterns:
 | 5 | 0.8.0 ☑ | Robustness & export | Polish, automation, path to 1.0 |
 | 6 | 0.9.0 ◐ | Obsidian vault | Markdown library + journal bridge: recipes, setlists, shaders, presets, docs |
 | — | 1.0.0 | Consolidation | API stabilization, docs, test coverage |
-| 7 | 1.1.0 ☐ | Stage I/O & sensor reactivity | Send video out, fan across projectors, react to the camera, follow an external clock, run hands-free |
+| 7 | 1.1.0 ◐ | Stage I/O & sensor reactivity | Send video out, fan across projectors, react to the camera, follow an external clock, run hands-free |
 
 ---
 
@@ -209,8 +209,8 @@ knowledge) or the local-LLM copilot (`tdmcp chat`).
 
 | Feature | Delivers | Effort | Status |
 |---|---|---|---|
-| Video **output** in `create_external_io` | `ndi_out` / `syphon_out` (macOS) / `spout_out` (Windows) — send the composition to Resolume, a media server, or OBS. Completes the I/O loop (video-in already ships) | M | ☐ |
-| `create_motion_reactive` (L1) | Camera/video-in → motion-energy / optical-flow / brightness / presence on a Null CHOP, with a Sensitivity knob — the **camera** counterpart to `extract_audio_features`, ready for `bind_to_channel`. Directly serves camera-reactive sets | L | ☐ |
+| Video **output** | ~~`ndi_out` / `syphon_out` / `spout_out`~~ — **already shipped**: `setup_output` covers `ndi` / `syphon_spout` / `window` / `record` / `touch_out`. (A `video_device_out` for SDI/capture-card hardware is the only gap; deferred as niche.) | — | ☑ |
+| `create_motion_reactive` (L1) | Camera/video-in → frame-to-frame **motion** energy + **brightness** on a Null CHOP, with a Sensitivity knob — the **camera** counterpart to `extract_audio_features`, ready for `bind_to_channel`. A Cache TOP holds the previous frame, a Difference + Analyze reduce it, and an Execute DAT keeps the chain live. (Optical flow is unsupported on macOS, so direction isn't exposed.) | L | ☑ |
 | `sync_external_clock` (L2) | Lock the project tempo to an incoming **MIDI beat clock** (or tap-tempo), so the Beat CHOP clock follows the DJ instead of a fixed BPM. Complements `create_tempo_sync` (internal clock) | M | ☐ |
 | `create_multi_output` (L1) | Fan a master TOP across N regions/displays — one cropped Window per projector — with an optional edge-blend gradient for overlap. Builds on `setup_output` for multi-projector mapping | L | ☐ |
 | `create_text_overlay` (L1) | A styled **Text TOP** (font / size / color / alignment, optional scroll) composited over a source — lyrics, titles, credits. Distinct from the vault's `bind_vault_text` (which data-syncs a Text *DAT* to a note); this is a finished visual layer | M | ☐ |

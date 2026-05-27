@@ -511,3 +511,34 @@ describe("tdmcp-agent CLI — pending items (0.9.0)", () => {
     expect(JSON.parse(r.stdout).mode).toBe("keyword");
   });
 });
+
+describe("tdmcp-agent CLI — phase 7 (stage I/O & sensor reactivity)", () => {
+  it("lists motion-reactive in --help", async () => {
+    const r = await runCli(["--help"]);
+    expect(r.code).toBe(0);
+    expect(r.stdout).toContain("motion-reactive");
+  });
+
+  it("schema motion-reactive exposes the source choices and analysis resolution", async () => {
+    const r = await runCli(["schema", "motion-reactive"]);
+    expect(r.code).toBe(0);
+    const input = JSON.stringify(JSON.parse(r.stdout).input);
+    expect(input).toContain("camera");
+    expect(input).toContain("synthetic");
+    expect(input).toContain("analysis_resolution");
+  });
+
+  it("dry-runs motion-reactive with the safe synthetic source", async () => {
+    const r = await runCli([
+      "motion-reactive",
+      "--dry-run",
+      "--params",
+      '{"source":"synthetic"}',
+    ]);
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.dryRun).toBe(true);
+    expect(doc.command).toBe("motion-reactive");
+    expect(doc.args.source).toBe("synthetic");
+  });
+});

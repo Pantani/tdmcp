@@ -18,6 +18,14 @@ Follow-ups: finish the items deferred during the phased build (to be versioned a
   tempo beat clock) so a set has a frame to build into (CLI `init`).
 - **CLI `repl`** — an interactive mode that runs commands line-by-line (quotes preserved for
   JSON `--params`).
+- **`create_motion_reactive`** — a camera/video analysis chain that exposes ready-to-bind reactive
+  channels (overall brightness + frame-to-frame motion energy) on a Null CHOP, with a Sensitivity
+  knob (CLI `motion-reactive`). The camera counterpart to extract_audio_features: bind a parameter
+  to `op('…/motion_reactive/features')['motion']` and it reacts to movement. Source can be the live
+  camera, a movie file, a synthetic pattern (for testing without a camera), or an existing TOP. A
+  small Execute DAT keeps the analysis cooking so the signals stay live before anything is bound.
+  (Optical flow is unsupported on macOS, so flow direction isn't exposed.) First of the Phase 7
+  "stage I/O & sensor reactivity" tools.
 
 ### Changed
 

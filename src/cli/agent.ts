@@ -37,6 +37,10 @@ import {
 } from "../tools/layer1/createKeyframeAnimation.js";
 import { createLayerMixerImpl, createLayerMixerSchema } from "../tools/layer1/createLayerMixer.js";
 import {
+  createMotionReactiveImpl,
+  createMotionReactiveSchema,
+} from "../tools/layer1/createMotionReactive.js";
+import {
   createParticleSystemImpl,
   createParticleSystemSchema,
 } from "../tools/layer1/createParticleSystem.js";
@@ -282,6 +286,12 @@ const COMMANDS: Record<string, Command> = {
     extractAudioFeaturesSchema,
     extractAudioFeaturesImpl,
     "Extract reactive channels (level/bass/mid/treble) to bind to params.",
+    { mutates: true },
+  ),
+  "motion-reactive": r(
+    createMotionReactiveSchema,
+    createMotionReactiveImpl,
+    "Extract camera reactive channels (brightness/motion) to bind to params.",
     { mutates: true },
   ),
   "tempo-sync": r(
