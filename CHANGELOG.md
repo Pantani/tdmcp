@@ -41,6 +41,12 @@ Follow-ups: finish the items deferred during the phased build (to be versioned a
   ready for setup_output; with `as_windows`, each tile also gets a borderless Window COMP offset
   across the desktop onto its own display (CLI `multi-output`). The multi-projector counterpart to
   setup_output's single window (validated live: a ramp split into seamless left/right halves).
+- **`sync_external_clock`** — lock the project tempo to a live source so beat-synced visuals follow
+  the music: a Bpm knob writes the global tempo (`op('/').time.tempo`) and a Tap pulse beat-matches
+  by ear (averaging taps into a BPM), driving every Beat CHOP downstream — `create_tempo_sync` and
+  `create_autopilot` follow (CLI `clock-sync`). Validated live: the knob drives the global tempo
+  (128→174) and taps are recorded. (Dedicated MIDI-clock / Ableton-Link sync is a planned
+  follow-up.)
 
 ### Changed
 

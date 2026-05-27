@@ -54,6 +54,10 @@ import {
   createProjectionMappingSchema,
 } from "../tools/layer1/createProjectionMapping.js";
 import { createSimulationImpl, createSimulationSchema } from "../tools/layer1/createSimulation.js";
+import {
+  createSyncExternalClockImpl,
+  createSyncExternalClockSchema,
+} from "../tools/layer1/createSyncExternalClock.js";
 import { createTempoSyncImpl, createTempoSyncSchema } from "../tools/layer1/createTempoSync.js";
 import {
   createTextOverlayImpl,
@@ -307,6 +311,12 @@ const COMMANDS: Record<string, Command> = {
     createTempoSyncSchema,
     createTempoSyncImpl,
     "Create a beat clock (ramp/pulse/beat/bar/bpm) + optional beat events.",
+    { mutates: true },
+  ),
+  "clock-sync": r(
+    createSyncExternalClockSchema,
+    createSyncExternalClockImpl,
+    "Drive the global tempo from a Bpm knob + tap-tempo (beat-match the DJ).",
     { mutates: true },
   ),
   dataviz: r(

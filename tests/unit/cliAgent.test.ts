@@ -605,4 +605,18 @@ describe("tdmcp-agent CLI — phase 7 (stage I/O & sensor reactivity)", () => {
     expect(doc.args.count).toBe(3);
     expect(doc.args.as_windows).toBe(true);
   });
+
+  it("schema clock-sync exposes the bpm range", async () => {
+    const r = await runCli(["schema", "clock-sync"]);
+    expect(r.code).toBe(0);
+    expect(JSON.stringify(JSON.parse(r.stdout).input)).toContain("bpm");
+  });
+
+  it("dry-runs clock-sync at a given bpm", async () => {
+    const r = await runCli(["clock-sync", "--dry-run", "--params", '{"bpm":128}']);
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.command).toBe("clock-sync");
+    expect(doc.args.bpm).toBe(128);
+  });
 });

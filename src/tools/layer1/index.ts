@@ -14,6 +14,7 @@ import { registerCreateMultiOutput } from "./createMultiOutput.js";
 import { registerCreateParticleSystem } from "./createParticleSystem.js";
 import { registerCreateProjectionMapping } from "./createProjectionMapping.js";
 import { registerCreateSimulation } from "./createSimulation.js";
+import { registerCreateSyncExternalClock } from "./createSyncExternalClock.js";
 import { registerCreateTempoSync } from "./createTempoSync.js";
 import { registerCreateTextOverlay } from "./createTextOverlay.js";
 import { registerCreateVideoPlayer } from "./createVideoPlayer.js";
@@ -39,6 +40,7 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerExtractAudioFeatures,
   registerCreateMotionReactive,
   registerCreateMultiOutput,
+  registerCreateSyncExternalClock,
   registerCreateTempoSync,
   registerCreateTextOverlay,
   registerCreateAutopilot,

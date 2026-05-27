@@ -35,7 +35,7 @@ Every feature follows the existing patterns:
 | 5 | 0.8.0 ☑ | Robustness & export | Polish, automation, path to 1.0 |
 | 6 | 0.9.0 ◐ | Obsidian vault | Markdown library + journal bridge: recipes, setlists, shaders, presets, docs |
 | — | 1.0.0 | Consolidation | API stabilization, docs, test coverage |
-| 7 | 1.1.0 ◐ | Stage I/O & sensor reactivity | Send video out, fan across projectors, react to the camera, follow an external clock, run hands-free |
+| 7 | 1.1.0 ☑ | Stage I/O & sensor reactivity | Send video out, fan across projectors, react to the camera, follow an external clock, run hands-free |
 
 ---
 
@@ -198,7 +198,7 @@ recipe library, bridge hardening.
 
 ---
 
-## Phase 7 — v1.1.0 · Stage I/O & sensor reactivity ☐ planned
+## Phase 7 — v1.1.0 · Stage I/O & sensor reactivity ☑ shipped
 
 Features resume after the 1.0 stabilization milestone. The completed phases make
 a system *play*; this phase makes it survive a real venue: get the signal **out**
@@ -211,7 +211,7 @@ knowledge) or the local-LLM copilot (`tdmcp chat`).
 |---|---|---|---|
 | Video **output** | ~~`ndi_out` / `syphon_out` / `spout_out`~~ — **already shipped**: `setup_output` covers `ndi` / `syphon_spout` / `window` / `record` / `touch_out`. (A `video_device_out` for SDI/capture-card hardware is the only gap; deferred as niche.) | — | ☑ |
 | `create_motion_reactive` (L1) | Camera/video-in → frame-to-frame **motion** energy + **brightness** on a Null CHOP, with a Sensitivity knob — the **camera** counterpart to `extract_audio_features`, ready for `bind_to_channel`. A Cache TOP holds the previous frame, a Difference + Analyze reduce it, and an Execute DAT keeps the chain live. (Optical flow is unsupported on macOS, so direction isn't exposed.) | L | ☑ |
-| `sync_external_clock` (L2) | Lock the project tempo to an incoming **MIDI beat clock** (or tap-tempo), so the Beat CHOP clock follows the DJ instead of a fixed BPM. Complements `create_tempo_sync` (internal clock) | M | ☐ |
+| `sync_external_clock` (L1) | Drive the project's **global tempo** (`op('/').time.tempo`) from a Bpm knob + a Tap pulse (beat-match the DJ by ear), so every Beat CHOP — `create_tempo_sync`, `create_autopilot` — follows. Complements `create_tempo_sync` (validated live). A dedicated **MIDI-clock / Ableton-Link** sync is a noted follow-up (needs hardware to validate) | M | ☑ |
 | `create_multi_output` (L1) | Fan a master TOP across N projectors/displays — a cropped horizontal/vertical slice per output (resized to full projector res, ended on a Null), with optional borderless Window COMPs offset across the desktop. Builds on `setup_output` (validated live). Edge-blend for overlapping projectors is a noted follow-up | L | ☑ |
 | `create_text_overlay` (L1) | A styled **Text TOP** (font size / hex color / h+v alignment) composited 'over' a source through a Composite TOP, or standalone on a transparent background — lyrics, titles, credits. Distinct from the vault's `bind_vault_text` (which data-syncs a Text *DAT* to a note); this is a finished visual layer (validated live) | M | ☑ |
 | `create_autopilot` (L1) | A beat-driven **auto-VJ**: a Beat CHOP + CHOP Execute DAT that every N beats randomizes a target COMP's controls (by `amount`) or cycles its stored cues, for hands-free improvisation, with live Active/Beats/Amount knobs (reuses the tempo clock + `randomize_controls` + `manage_cue`). A live runtime engine, unlike the vault's static `import_setlist` build (validated live) | M | ☑ |
