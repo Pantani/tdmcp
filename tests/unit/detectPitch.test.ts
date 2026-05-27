@@ -128,15 +128,15 @@ describe("detect_pitch", () => {
       expose_controls: false,
       parent_path: "/project1",
     });
-    // The trim keeps absolute samples [min_hz, max_hz] (index == Hz) and discards the rest.
-    // The end is capped to the last valid sample index (outlength-1): with max_hz=800 the
-    // FFT has 800 samples → indices 0..799, so the trim end clamps to 799.
+    // The Audio Spectrum spans [0, rate/2] across `outlength` bins, so a Hz maps to sample
+    // index ≈ hz * outlength / (44100/2) — NOT index==Hz. With min_hz=100, max_hz=800 and
+    // outlength=800: start = round(100*800/22050) = 4, end = round(800*800/22050) = 29.
     const band = bodies.find((b) => b.name === "search_band");
     expect(band?.type).toBe("trimCHOP");
     expect(band?.parameters).toMatchObject({
       relative: "abs",
-      start: 100,
-      end: 799,
+      start: 4,
+      end: 29,
       startunit: "samples",
       endunit: "samples",
       discard: "exterior",
@@ -156,10 +156,14 @@ describe("detect_pitch", () => {
       expose_controls: false,
       parent_path: "/project1",
     });
-    // Trim re-bases the peak index to 0 at the window start, so we Post-Add min_hz to get Hz.
+    // index → Hz: an Expression CHOP converts (band-relative index + band-start) × Hz-per-bin,
+    // reading the spectrum's LIVE sample rate ((rate/2)/outlength) so it's correct regardless of
+    // the device rate. (Replaces the old mathCHOP Post-Add that wrongly assumed 1 Hz per bin.)
     const toHz = bodies.find((b) => b.name === "to_hz");
-    expect(toHz?.type).toBe("mathCHOP");
-    expect(toHz?.parameters).toMatchObject({ postoff: 120, integer: "round" });
+    expect(toHz?.type).toBe("expressionCHOP");
+    expect(String((toHz?.parameters as { expr0expr?: string })?.expr0expr)).toContain(
+      "op('spectrum_fft').rate",
+    );
   });
 
   it("gates the reported pitch to 0 below a magnitude Threshold", async () => {

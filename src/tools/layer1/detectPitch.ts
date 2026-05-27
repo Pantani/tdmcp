@@ -92,10 +92,18 @@ export async function detectPitchImpl(ctx: ToolContext, args: DetectPitchArgs) {
     // channel to the sample range [min_hz, max_hz] (absolute, in samples, discard exterior)
     // leaves exactly the searchable bins. The Trim CHOP RE-BASES indices to 0 at the window
     // start, so the peak index we read back is OFFSET FROM min_hz — we add min_hz below.
+    // The Audio Spectrum (visual) spans [0, rate/2] across `fftLength` bins, so Hz ≈
+    // index * (rate/2)/fftLength — NOT 1 Hz per sample (live-verified: a 440 Hz tone peaks
+    // near bin 40, not 440). Convert the Hz search band to sample indices (assume 44.1 kHz for
+    // the build-time window bounds; the index→Hz expression below reads the live rate for accuracy).
+    const nyquistAssumed = 44100 / 2;
+    const hzToSample = (hz: number) => Math.round((hz * fftLength) / nyquistAssumed);
+    const bandStart = Math.max(0, Math.min(hzToSample(minHz), fftLength - 2));
+    const bandEnd = Math.max(bandStart + 1, Math.min(hzToSample(maxHz), fftLength - 1));
     const band = await builder.add("trimCHOP", "search_band", {
       relative: "abs",
-      start: Math.floor(minHz),
-      end: Math.min(Math.floor(maxHz), fftLength - 1),
+      start: bandStart,
+      end: bandEnd,
       startunit: "samples",
       endunit: "samples",
       discard: "exterior",
@@ -115,12 +123,12 @@ export async function detectPitchImpl(ctx: ToolContext, args: DetectPitchArgs) {
     });
     await builder.connect(band, peakIndex);
 
-    // index → Hz: add the window-start offset back (Post-Add). Round to integer (the index
-    // is already integral, but a fractional sample rate could introduce a tiny error). This
-    // is the raw, unguarded pitch estimate in Hz.
-    const toHz = await builder.add("mathCHOP", "to_hz", {
-      postoff: Math.floor(minHz),
-      integer: "round",
+    // index → Hz: add the band-start offset back to get the absolute bin, then multiply by the
+    // live Hz-per-bin = (rate/2)/fftLength, read from the spectrum's actual sample rate at cook
+    // time (so it's correct regardless of the device rate). Replaces the old `index + min_hz`,
+    // which wrongly assumed 1 Hz per bin and made the tracker read the band floor (~80 Hz).
+    const toHz = await builder.add("expressionCHOP", "to_hz", {
+      expr0expr: `(me.inputVal + ${bandStart}) * (op('spectrum_fft').rate / 2.0) / ${fftLength}.0`,
     });
     await builder.connect(peakIndex, toHz);
 
@@ -142,7 +150,9 @@ export async function detectPitchImpl(ctx: ToolContext, args: DetectPitchArgs) {
 
     // Threshold gate: 1 while the (scaled) magnitude is above `threshold`, else 0. boundmin
     // is the live Threshold knob target; a huge boundmax makes it a one-sided "≥" test.
-    const DEFAULT_THRESHOLD = 0.02;
+    // Audio Spectrum (visual) magnitudes are tiny (a clear tone peaks ~0.001–0.01, noise floor
+    // ~0.0001), so the gate threshold must sit between them — 0.02 muted everything. Tune live.
+    const DEFAULT_THRESHOLD = 0.0005;
     const gate = await builder.add("logicCHOP", "gate", {
       convert: "bound",
       boundmin: DEFAULT_THRESHOLD,

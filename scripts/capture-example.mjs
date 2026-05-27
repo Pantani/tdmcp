@@ -22,7 +22,9 @@ function arg(name, fallback) {
 const node = arg("node");
 const out = arg("out");
 if (!node || !out) {
-  console.error("Usage: --node <TOP path> --out <gif path> [--frames 40] [--step 2] [--size 480 | --width W --height H] [--fps 16] [--host 127.0.0.1:9980]");
+  console.error(
+    "Usage: --node <TOP path> --out <gif path> [--frames 40] [--step 2] [--size 480 | --width W --height H] [--fps 16] [--host 127.0.0.1:9980]",
+  );
   process.exit(1);
 }
 const frames = Number(arg("frames", "40"));
@@ -50,7 +52,10 @@ async function main() {
     const r = await fetch(`${base}/api/preview/${enc}?width=${width}&height=${height}`);
     const j = await r.json();
     if (!j.ok) throw new Error(`preview failed for ${node}: ${JSON.stringify(j.error ?? j)}`);
-    writeFileSync(join(dir, `f_${String(i).padStart(3, "0")}.png`), Buffer.from(j.data.base64, "base64"));
+    writeFileSync(
+      join(dir, `f_${String(i).padStart(3, "0")}.png`),
+      Buffer.from(j.data.base64, "base64"),
+    );
     captured++;
   }
   console.log(`captured ${captured} frames from ${node}`);
@@ -62,15 +67,55 @@ async function main() {
     // streaming. Far smaller than GIF for detailed/animated visuals (use a looping
     // muted <video> to embed). crf 24 keeps files light.
     execFileSync("ffmpeg", [
-      "-y", "-framerate", String(fps), "-i", seq,
-      "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "24",
-      "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2", "-movflags", "+faststart",
-      out, "-loglevel", "error",
+      "-y",
+      "-framerate",
+      String(fps),
+      "-i",
+      seq,
+      "-c:v",
+      "libx264",
+      "-pix_fmt",
+      "yuv420p",
+      "-crf",
+      "24",
+      "-vf",
+      "scale=trunc(iw/2)*2:trunc(ih/2)*2",
+      "-movflags",
+      "+faststart",
+      out,
+      "-loglevel",
+      "error",
     ]);
   } else {
     const pal = join(dir, "palette.png");
-    execFileSync("ffmpeg", ["-y", "-framerate", String(fps), "-i", seq, "-vf", "palettegen=stats_mode=diff", pal, "-loglevel", "error"]);
-    execFileSync("ffmpeg", ["-y", "-framerate", String(fps), "-i", seq, "-i", pal, "-lavfi", "paletteuse=dither=bayer:bayer_scale=3", "-loop", "0", out, "-loglevel", "error"]);
+    execFileSync("ffmpeg", [
+      "-y",
+      "-framerate",
+      String(fps),
+      "-i",
+      seq,
+      "-vf",
+      "palettegen=stats_mode=diff",
+      pal,
+      "-loglevel",
+      "error",
+    ]);
+    execFileSync("ffmpeg", [
+      "-y",
+      "-framerate",
+      String(fps),
+      "-i",
+      seq,
+      "-i",
+      pal,
+      "-lavfi",
+      "paletteuse=dither=bayer:bayer_scale=3",
+      "-loop",
+      "0",
+      out,
+      "-loglevel",
+      "error",
+    ]);
   }
   rmSync(dir, { recursive: true, force: true });
   console.log(`wrote ${out}`);

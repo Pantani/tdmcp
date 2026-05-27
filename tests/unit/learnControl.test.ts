@@ -37,6 +37,7 @@ interface Payload {
   scale: number;
   offset: number;
   parent_path: string;
+  min_delta: number;
 }
 
 function decodePayload(script: string): Payload {
@@ -74,6 +75,7 @@ describe("buildLearnScript", () => {
       scale: 2,
       offset: 0.5,
       parent_path: "/project1",
+      min_delta: 0.05,
     };
     expect(decodePayload(buildLearnScript(payload))).toEqual(payload);
   });
@@ -86,20 +88,90 @@ describe("buildLearnScript", () => {
       scale: 1,
       offset: 0,
       parent_path: "/project1",
+      min_delta: 0.05,
     });
     // State persists in the parent COMP's storage, namespaced by source path.
     expect(script).toContain('KEY = "tdmcp_learn"');
     expect(script).toContain("_store_op.store(KEY, _store)");
     expect(script).toContain("_store_op.fetch(KEY, {})");
     expect(script).toContain("_store[_src] = _now");
-    // Diff = largest absolute change, ranked.
-    expect(script).toContain("abs(_val - float(_prev[_name]))");
-    expect(script).toContain("_deltas.sort(key=lambda kv: kv[1], reverse=True)");
+    // Diff = raw |new - old| normalized by the channel's own magnitude so ranges compare
+    // fairly: norm = raw / max(|old|, |new|, EPS). EPS guards a channel resting at 0.
+    expect(script).toContain("_raw = abs(_val - _old)");
+    expect(script).toContain("_norm = _raw / max(abs(_old), abs(_val), _EPS)");
+    expect(script).toContain("_EPS = 1e-6");
+    // Ranking + pick are on the NORMALIZED delta (kv[2]), and both raw + norm are reported.
+    expect(script).toContain("_deltas.sort(key=lambda kv: kv[2], reverse=True)");
+    expect(script).toContain('{"channel": n, "delta": r, "norm": nm}');
+    // Minimum-movement gate (jitter rejection) compares the top normalized delta to min_delta.
+    expect(script).toContain('_min_norm = _p.get("min_delta")');
+    expect(script).toContain("_deltas[0][2] < _min_norm");
     // Bind reuses the bind_to_channel expression mechanism (absolute path via repr,
     // expression mode derived from a live parameter).
     expect(script).toContain('_expr = "op(%s)[%s]" % (repr(_src), repr(_ch))');
     expect(script).toContain("_PM = type(_par.mode)");
     expect(script).toContain("_par.mode = _PM.EXPRESSION");
+  });
+
+  it("defaults min_delta to 0.05 when the caller omits it, and forwards an explicit value", async () => {
+    // Default applied in the impl (schema field is .optional(), not .default()).
+    let script = "";
+    mockExec(
+      {
+        mode: "bind",
+        source_chop: "/project1/midiin1",
+        matched_channel: "ch1",
+        matched_delta: 1,
+        matched_norm: 1,
+        min_delta: 0.05,
+        bound: "/project1/n.tx",
+        expression: "op('/project1/midiin1')['ch1']",
+        ranking: [{ channel: "ch1", delta: 1, norm: 1 }],
+        warnings: [],
+      },
+      (s) => {
+        script = s;
+      },
+    );
+    await learnControlImpl(makeCtx(), {
+      mode: "bind",
+      source_chop: "/project1/midiin1",
+      target: "/project1/n.tx",
+      scale: 1,
+      offset: 0,
+      parent_path: "/project1",
+    });
+    expect(decodePayload(script).min_delta).toBe(0.05);
+
+    // An explicit value is forwarded verbatim.
+    let script2 = "";
+    mockExec(
+      {
+        mode: "bind",
+        source_chop: "/project1/midiin1",
+        matched_channel: "ch1",
+        matched_delta: 1,
+        matched_norm: 1,
+        min_delta: 0.3,
+        bound: "/project1/n.tx",
+        expression: "op('/project1/midiin1')['ch1']",
+        ranking: [{ channel: "ch1", delta: 1, norm: 1 }],
+        warnings: [],
+      },
+      (s) => {
+        script2 = s;
+      },
+    );
+    await learnControlImpl(makeCtx(), {
+      mode: "bind",
+      source_chop: "/project1/midiin1",
+      target: "/project1/n.tx",
+      scale: 1,
+      offset: 0,
+      parent_path: "/project1",
+      min_delta: 0.3,
+    });
+    expect(decodePayload(script2).min_delta).toBe(0.3);
   });
 });
 
@@ -136,19 +208,22 @@ describe("learnControlImpl — snapshot", () => {
 });
 
 describe("learnControlImpl — bind", () => {
-  it("reports the matched (most-moved) channel and the binding it made", async () => {
-    // Mocked CHOP: ch2 moved the most since the snapshot → it should win.
+  it("reports the matched (most-moved) channel, its normalized delta, and the binding it made", async () => {
+    // Mocked CHOP: ch2 moved the most since the snapshot → it should win. The report
+    // carries both the raw delta and the normalized delta the pick was made on.
     mockExec({
       mode: "bind",
       source_chop: "/project1/midiin1",
       matched_channel: "ch2",
       matched_delta: 0.87,
+      matched_norm: 0.92,
+      min_delta: 0.05,
       bound: "/project1/sys/transform1.scale",
       expression: "(op('/project1/midiin1')['ch2']) * 2",
       ranking: [
-        { channel: "ch2", delta: 0.87 },
-        { channel: "ch1", delta: 0.02 },
-        { channel: "ch3", delta: 0.0 },
+        { channel: "ch2", delta: 0.87, norm: 0.92 },
+        { channel: "ch1", delta: 0.02, norm: 0.04 },
+        { channel: "ch3", delta: 0.0, norm: 0.0 },
       ],
       warnings: [],
     });
@@ -164,6 +239,8 @@ describe("learnControlImpl — bind", () => {
     const text = textOf(result);
     expect(text).toContain("Matched channel 'ch2'");
     expect(text).toContain("0.8700");
+    // The normalized delta the ranking was based on is surfaced too.
+    expect(text).toContain("0.9200 normalized");
     expect(text).toContain("/project1/sys/transform1.scale");
     expect(text).toContain("op('/project1/midiin1')['ch2']");
   });
@@ -239,7 +316,8 @@ describe("learnControlImpl — bind", () => {
       mode: "bind",
       source_chop: "/project1/midiin1",
       fatal: "No channel changed since the snapshot — wiggle a control, then call bind again.",
-      ranking: [{ channel: "ch1", delta: 0.0 }],
+      ranking: [{ channel: "ch1", delta: 0.0, norm: 0.0 }],
+      min_delta: 0.05,
       warnings: [],
     });
     const result = await learnControlImpl(makeCtx(), {
@@ -254,17 +332,50 @@ describe("learnControlImpl — bind", () => {
     expect(textOf(result)).toContain("wiggle a control");
   });
 
+  it("rejects a sub-threshold (jitter) move instead of binding noise", async () => {
+    // The top channel moved, but its NORMALIZED delta (0.01) is under the default
+    // min_delta (0.05): TD declines to bind and tells the artist to wiggle harder.
+    mockExec({
+      mode: "bind",
+      source_chop: "/project1/midiin1",
+      fatal:
+        "Top channel 'ch1' moved only 0.0100 (normalized; threshold 0.0500) — that's within jitter. Wiggle the control harder, or lower min_delta, then call bind again.",
+      ranking: [
+        { channel: "ch1", delta: 0.13, norm: 0.01 },
+        { channel: "ch2", delta: 0.0, norm: 0.0 },
+      ],
+      min_delta: 0.05,
+      warnings: [],
+    });
+    const result = await learnControlImpl(makeCtx(), {
+      mode: "bind",
+      source_chop: "/project1/midiin1",
+      target: "/project1/n.tx",
+      scale: 1,
+      offset: 0,
+      parent_path: "/project1",
+    });
+    expect(result.isError).toBe(true);
+    const text = textOf(result);
+    expect(text).toContain("within jitter");
+    expect(text).toContain("Wiggle the control harder");
+    // Nothing was bound.
+    expect(text).not.toContain("bound /project1/n.tx");
+  });
+
   it("passes warnings (e.g. an ambiguous near-tie match) through to the summary", async () => {
     mockExec({
       mode: "bind",
       source_chop: "/project1/midiin1",
       matched_channel: "ch1",
       matched_delta: 0.5,
+      matched_norm: 0.5,
+      min_delta: 0.05,
       bound: "/project1/n.tx",
       expression: "op('/project1/midiin1')['ch1']",
       ranking: [
-        { channel: "ch1", delta: 0.5 },
-        { channel: "ch2", delta: 0.49 },
+        { channel: "ch1", delta: 0.5, norm: 0.5 },
+        { channel: "ch2", delta: 0.49, norm: 0.49 },
       ],
       warnings: [
         "Top two channels moved by similar amounts ('ch1' vs 'ch2'); the match may be wrong — re-snapshot and wiggle only one control.",

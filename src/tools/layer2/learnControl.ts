@@ -25,6 +25,12 @@ export const learnControlSchema = z.object({
     .default(1)
     .describe("Multiply the matched channel value (mapping gain)."),
   offset: z.coerce.number().default(0).describe("Add to the scaled value (mapping offset)."),
+  min_delta: z.coerce
+    .number()
+    .optional()
+    .describe(
+      "mode:'bind' minimum NORMALIZED movement (default 0.05). The winning channel's delta is normalized by max(|old|, |new|, epsilon) — a unit-free relative change — so a 0–127 MIDI CC and a 0–1 OSC float compare fairly. If the top channel moved less than this, nothing is bound and you're told to wiggle the control harder. Raise it to reject controller jitter; lower it for very small/slow knobs.",
+    ),
   parent_path: z
     .string()
     .default("/project1")
@@ -42,10 +48,12 @@ interface LearnReport {
   channel_count?: number;
   // bind
   matched_channel?: string;
-  matched_delta?: number;
+  matched_delta?: number; // raw |new - old| of the winning channel (for display)
+  matched_norm?: number; // normalized delta the pick was actually made on
+  min_delta?: number; // the normalized threshold that was applied
   bound?: string;
   expression?: string;
-  ranking?: Array<{ channel: string; delta: number }>;
+  ranking?: Array<{ channel: string; delta: number; norm: number }>;
   warnings: string[];
   fatal?: string;
 }
@@ -55,11 +63,21 @@ interface LearnReport {
 // so the snapshot survives between the two calls (and a save/reload).
 //
 // snapshot: read every channel's current value and store it.
-// bind: re-read the same channels, diff against the stored snapshot, pick the channel with
-//   the largest |new - old| (the one the artist just wiggled), then switch the target
-//   parameter to expression mode tracking op('chop')['chan'] (* scale) (+ offset) — mirroring
+// bind: re-read the same channels, diff against the stored snapshot, pick the channel that
+//   moved the most (the one the artist just wiggled), then switch the target parameter to
+//   expression mode tracking op('chop')['chan'] (* scale) (+ offset) — mirroring
 //   bind_to_channel. Expressions evaluate relative to the PARENT, so the source path is
 //   embedded as an absolute path via repr().
+//
+//   The pick is made on a NORMALIZED delta, not the raw |new - old|, so channels of
+//   different ranges compare fairly:
+//       norm = |new - old| / max(|old|, |new|, EPS)
+//   This is a unit-free relative change (roughly "fraction of the channel's own magnitude
+//   that it moved"), so a 0–127 MIDI CC no longer dwarfs a 0–1 OSC float just by living on
+//   a bigger scale — e.g. a CC 0→64 and a float 0.0→0.5 both normalize to ~1.0. EPS keeps a
+//   channel resting at exactly 0 from dividing by zero (it then reads as a full move).
+//   If the winning channel's normalized delta is below MIN_DELTA, nothing is bound — the
+//   move was jitter/too small. The raw delta is still reported for display.
 const LEARN_SCRIPT = `
 import json, base64, traceback
 _p = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
@@ -101,23 +119,41 @@ try:
                 if _prev is None:
                     report["fatal"] = "No snapshot recorded for %s yet — run mode 'snapshot' first." % _src
                 else:
-                    # Diff only channels present in BOTH readings.
+                    # Normalized diff: rank by relative change, not raw |new - old|, so
+                    # channels of different ranges compare fairly. Each entry is
+                    # (name, raw_delta, norm_delta) where
+                    #   norm = raw / max(|old|, |new|, EPS).
+                    # EPS guards a channel resting at exactly 0 (it reads as a full move).
+                    _EPS = 1e-6
+                    _min_norm = _p.get("min_delta")
+                    if _min_norm is None:
+                        _min_norm = 0.05
+                    _min_norm = float(_min_norm)
                     _deltas = []
                     for _name, _val in _now.items():
                         if _name in _prev:
-                            _deltas.append((_name, abs(_val - float(_prev[_name]))))
-                    _deltas.sort(key=lambda kv: kv[1], reverse=True)
-                    report["ranking"] = [{"channel": n, "delta": d} for n, d in _deltas[:8]]
+                            _old = float(_prev[_name])
+                            _raw = abs(_val - _old)
+                            _norm = _raw / max(abs(_old), abs(_val), _EPS)
+                            _deltas.append((_name, _raw, _norm))
+                    # Rank by the normalized delta (the value the pick is made on).
+                    _deltas.sort(key=lambda kv: kv[2], reverse=True)
+                    report["ranking"] = [{"channel": n, "delta": r, "norm": nm} for n, r, nm in _deltas[:8]]
+                    report["min_delta"] = _min_norm
                     if not _deltas:
                         report["fatal"] = "No channels in common between the snapshot and the current reading."
-                    elif _deltas[0][1] <= 0.0:
+                    elif _deltas[0][2] <= 0.0:
                         report["fatal"] = "No channel changed since the snapshot — wiggle a control, then call bind again."
+                    elif _deltas[0][2] < _min_norm:
+                        report["fatal"] = "Top channel '%s' moved only %.4f (normalized; threshold %.4f) — that's within jitter. Wiggle the control harder, or lower min_delta, then call bind again." % (_deltas[0][0], _deltas[0][2], _min_norm)
                     else:
-                        _ch, _delta = _deltas[0]
+                        _ch, _delta, _norm = _deltas[0]
                         report["matched_channel"] = _ch
                         report["matched_delta"] = _delta
-                        # Warn on an ambiguous match (a near-tie between the top two).
-                        if len(_deltas) > 1 and _deltas[1][1] > 0 and (_deltas[0][1] - _deltas[1][1]) < (0.25 * _deltas[0][1]):
+                        report["matched_norm"] = _norm
+                        # Warn on an ambiguous match (a near-tie between the top two, on the
+                        # normalized scale the pick was made on).
+                        if len(_deltas) > 1 and _deltas[1][2] > 0 and (_deltas[0][2] - _deltas[1][2]) < (0.25 * _deltas[0][2]):
                             report["warnings"].append("Top two channels moved by similar amounts ('%s' vs '%s'); the match may be wrong — re-snapshot and wiggle only one control." % (_deltas[0][0], _deltas[1][0]))
                         _scale = _p["scale"]; _offset = _p["offset"]
                         _expr = "op(%s)[%s]" % (repr(_src), repr(_ch))
@@ -165,6 +201,9 @@ export async function learnControlImpl(ctx: ToolContext, args: LearnControlArgs)
         scale: args.scale,
         offset: args.offset,
         parent_path: args.parent_path,
+        // Normalized minimum-movement gate for mode:'bind'. Default lives here (kept out of
+        // the schema so the field stays .optional() and doesn't become required in z.infer).
+        min_delta: args.min_delta ?? 0.05,
       });
       const exec = await ctx.client.executePythonScript(script, true);
       return parsePythonReport<LearnReport>(exec.stdout);
@@ -179,7 +218,11 @@ export async function learnControlImpl(ctx: ToolContext, args: LearnControlArgs)
       } else {
         const delta =
           typeof report.matched_delta === "number" ? report.matched_delta.toFixed(4) : "?";
-        summary = `Matched channel '${report.matched_channel}' (moved by ${delta}) and bound ${report.bound} to it (${report.expression}).`;
+        const norm =
+          typeof report.matched_norm === "number"
+            ? ` / ${report.matched_norm.toFixed(4)} normalized`
+            : "";
+        summary = `Matched channel '${report.matched_channel}' (moved by ${delta}${norm}) and bound ${report.bound} to it (${report.expression}).`;
       }
       if (report.warnings.length) summary += ` ${report.warnings.length} warning(s).`;
       return jsonResult(summary, report);
