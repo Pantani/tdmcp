@@ -33,6 +33,7 @@ Every feature follows the existing patterns:
 | 3 | 0.6.0 ☑ | Advanced creation (TD) | Heavy, independent features → parallelizable |
 | 4 | 0.7.0 ☑ | Intelligence (AI) | Layer that builds on everything already shipped |
 | 5 | 0.8.0 ☑ | Robustness & export | Polish, automation, path to 1.0 |
+| 6 | 0.9.0 ◐ | Obsidian vault | Markdown library + journal bridge: recipes, setlists, shaders, presets, docs |
 | — | 1.0.0 | Consolidation | API stabilization, docs, test coverage |
 
 ---
@@ -160,6 +161,30 @@ L1 (`listRecipes`, `applyRecipe`), extended `createExternalIo`, CLI commands
 `render`/`optimize`/`diff`/`recipes`/`recipe`. Note: a `.toe` scaffold and an
 interactive REPL were dropped — the CLI is already fully scriptable per-command,
 so a REPL adds little; deferred to 1.0 polish if wanted.
+
+---
+
+## Phase 6 — v0.9.0 · Obsidian vault integration ◐ in progress
+
+Bridges an Obsidian vault (a folder of markdown notes) and TouchDesigner, gated on
+`TDMCP_VAULT_PATH`. The vault layer is `src/vault/`; tools live in `src/tools/vault/`.
+
+| Feature | Delivers | Effort | Status |
+|---|---|---|---|
+| Vault infra | `src/vault/` (path-traversal-safe IO + frontmatter), `TDMCP_VAULT_PATH`, `ToolContext.vault` | S | ☑ |
+| Recipes ↔ vault | `RecipeLibrary` merges `<vault>/Recipes/*.md`; `save_recipe_to_vault` captures a live network | M | ☑ |
+| `apply_shader_from_vault` | Build a GLSL TOP from a fenced-`glsl` note | S | ☑ |
+| `sync_presets_vault` | Export/import `manage_presets` snapshots as markdown | S | ☑ |
+| `export_network_to_vault` | Mermaid + `[[wikilink]]` patch-map note | S | ☑ |
+| `log_performance` | Dated show diary with snapshot + thumbnail | S | ☑ |
+| `import_setlist` | Build a show from a setlist note's `tracks` | M | ☑ |
+| `bind_vault_text` | Text DAT live-synced to a vault note | S | ☑ |
+| `generate_from_moodboard` | Seed `create_generative_art` from a palette/mood note | S | ☑ |
+| `scaffold_vault` | Write a starter vault layout with worked examples | S | ☑ |
+
+**Areas:** `src/vault/{index,frontmatter}.ts`, `src/recipes/markdown.ts`,
+`src/tools/vault/*`, `TDMCP_VAULT_PATH` in `src/utils/config.ts`. Offline-tested
+(vitest); live TD validation pending. Depends on `gray-matter` for frontmatter.
 
 ---
 

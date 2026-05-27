@@ -276,6 +276,17 @@ presets), `reaction_diffusion`, `noise_landscape`, `audio_spectrum_bars`,
 `particle_galaxy`, `webcam_glitch`, `data_sonification`, `kinect_silhouette`,
 `led_strip_mapper`, `projection_mapping`.
 
+**Obsidian vault** (set `TDMCP_VAULT_PATH` to a vault folder — see below): keep your
+looks, shows and notes in markdown and move them in and out of TouchDesigner.
+`scaffold_vault` writes a starter layout; `save_recipe_to_vault` captures a network as a
+reusable recipe note (which `list_recipes`/`apply_recipe` then see alongside the
+built-ins); `apply_shader_from_vault` builds a GLSL TOP from a fenced-`glsl` note;
+`sync_presets_vault` exports/imports presets; `export_network_to_vault` writes a Mermaid +
+`[[wikilink]]` map of a patch; `log_performance` keeps a dated show diary with thumbnails;
+`import_setlist` builds a show from a setlist note; `bind_vault_text` feeds a note's text
+live into a Text DAT; `generate_from_moodboard` seeds a generative system from a
+palette/mood note.
+
 **Knowledge resources** the AI reads from:
 `tdmcp://operators/{category|name}`, `tdmcp://python-api/{class}`,
 `tdmcp://patterns/{name}`, `tdmcp://glsl/{name}`, `tdmcp://recipes/{name}`,
@@ -312,6 +323,7 @@ MCP client ──stdio──▶ tdmcp server (Node/TS) ──HTTP──▶ Touch
 | `TDMCP_BRIDGE_ALLOW_EXEC` | `1` | **Set in TouchDesigner's environment.** Set to `0`/`false`/`off` to make the bridge refuse the arbitrary-code endpoints (`/api/exec`, node `method`) — enforced bridge-side, even for direct network callers |
 | `TDMCP_LOG_LEVEL` | `info` | `debug` / `info` / `warn` / `error` / `silent` (stderr) |
 | `TDMCP_REQUEST_TIMEOUT_MS` | `10000` | Per-request timeout to the bridge |
+| `TDMCP_VAULT_PATH` | _(unset)_ | Absolute path to an Obsidian vault (a folder of markdown notes). Enables the vault tools (`scaffold_vault`, `save_recipe_to_vault`, `import_setlist`, …); a leading `~/` is expanded. Leave unset to disable them |
 
 The HTTP transport (`TDMCP_TRANSPORT=http`) serves MCP at `POST/GET/DELETE /mcp`
 on `127.0.0.1:$TDMCP_HTTP_PORT` with stateful sessions — handy for remote/headless

@@ -2,9 +2,11 @@ import type { ToolRegistrar } from "../types.js";
 import { registerApplyShaderFromVault } from "./applyShaderFromVault.js";
 import { registerBindVaultText } from "./bindVaultText.js";
 import { registerExportNetworkToVault } from "./exportNetworkToVault.js";
+import { registerGenerateFromMoodboard } from "./generateFromMoodboard.js";
 import { registerImportSetlist } from "./importSetlist.js";
 import { registerLogPerformance } from "./logPerformance.js";
 import { registerSaveRecipeToVault } from "./saveRecipeToVault.js";
+import { registerScaffoldVault } from "./scaffoldVault.js";
 import { registerSyncPresetsVault } from "./syncPresetsVault.js";
 
 /**
@@ -13,6 +15,7 @@ import { registerSyncPresetsVault } from "./syncPresetsVault.js";
  * artist gets a clear "configure your vault" message rather than a missing tool.
  */
 export const vaultRegistrars: ToolRegistrar[] = [
+  registerScaffoldVault,
   registerSaveRecipeToVault,
   registerApplyShaderFromVault,
   registerSyncPresetsVault,
@@ -20,4 +23,5 @@ export const vaultRegistrars: ToolRegistrar[] = [
   registerLogPerformance,
   registerImportSetlist,
   registerBindVaultText,
+  registerGenerateFromMoodboard,
 ];
