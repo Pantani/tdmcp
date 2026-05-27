@@ -36,9 +36,9 @@ export const detectOnsetsSchema = z.object({
     .number()
     .min(0)
     .max(1)
-    .default(0.15)
+    .default(0.01)
     .describe(
-      "How far an instant's energy must rise above its own moving baseline to count as a hit (0..1). Lower = more sensitive (more hits), higher = only strong transients. Tune live per track.",
+      "How far an instant's band energy must rise above its own moving baseline (in RMS units) to count as a hit. Band-RMS magnitudes are small (a steady tone reads ~0.002 live), so the default is 0.01 — the old 0.15 was unreachable and never fired. Lower = more sensitive; raise it if a loud track double-triggers. Tune live per source (needs real percussive audio to dial in).",
     ),
   emit_events: z
     .boolean()
