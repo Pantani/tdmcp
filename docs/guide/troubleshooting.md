@@ -23,6 +23,22 @@ The client didn't load the server.
 - On Claude Desktop, confirm the "TouchDesigner (tdmcp)" extension is **enabled**
   in **Settings → Extensions**.
 
+## The local copilot says "LLM offline"
+
+`tdmcp chat` talks to a local LLM (Ollama by default). If the header shows
+**LLM offline** or messages fail with *fetch failed*:
+
+1. **Restart `tdmcp chat`** (Ctrl-C, run it again). It **auto-starts Ollama** for
+   you — so a fresh launch brings the daemon back up if it had stopped.
+2. **Is Ollama installed?** It must be on your PATH — get it at
+   [ollama.com](https://ollama.com). (Homebrew's Ollama isn't a persistent daemon
+   and can stop between sessions; `tdmcp chat` starting it for you covers that.)
+3. **Model not pulled?** If the status says *model not pulled*, click **Pull** in
+   the UI or run `ollama pull qwen2.5:3b`.
+4. **Started with `--no-ollama`?** Then start the daemon yourself: `ollama serve`.
+5. **Using a remote / cloud endpoint?** Check `TDMCP_LLM_BASE_URL` and
+   `TDMCP_LLM_API_KEY` in your [environment](/reference/environment).
+
 ## macOS microphone & camera permission {#macos-microphone-camera-permission}
 
 The **first time** a visual uses your microphone (audio-reactive) or camera

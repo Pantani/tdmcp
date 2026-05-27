@@ -34,13 +34,19 @@ are tagged `mutates`; the Python escape hatches require `--allow-unsafe` and hon
 
 For **simple tasks** you can talk to a **local LLM** instead of a paid API.
 `tdmcp chat` boots a small chat UI in your browser, wired to the same
-TouchDesigner bridge:
+TouchDesigner bridge — and **starts Ollama for you** if it isn't already running:
 
 ```bash
-# one-time: install Ollama from https://ollama.com, then
-ollama pull qwen2.5:3b
-tdmcp chat            # starts the UI on http://127.0.0.1:4141 and opens your browser
+# one-time: install Ollama from https://ollama.com
+ollama pull qwen2.5:3b   # optional — the UI also has a one-click pull
+tdmcp chat               # starts Ollama if needed, opens http://127.0.0.1:4141
 ```
+
+If the endpoint is local Ollama and the daemon isn't up, `tdmcp chat` launches
+`ollama serve` for you — detached and left running, so quitting the chat never
+takes the model offline. Flags: **`--no-ollama`** (don't auto-start — for a remote
+endpoint or a self-managed daemon), **`--no-open`** (don't open the browser), and
+**`--help`**.
 
 It is meant for the easy stuff — inspecting the project, reading errors, and
 creating/wiring/parameterizing individual operators — and is given a **curated,

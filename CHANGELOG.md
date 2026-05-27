@@ -10,6 +10,16 @@ Follow-ups: finish the items deferred during the phased build (to be versioned a
 
 ### Added
 
+- **Local LLM copilot (`tdmcp chat`, alias `tdmcp llm-run`)** — a browser chat UI driven by a
+  local LLM (Ollama by default; any OpenAI-compatible endpoint via `TDMCP_LLM_BASE_URL`) for
+  **simple tasks**, wired to the same bridge. Given a curated, **safe** tool subset (Layer-3
+  inspect/CRUD + a few Layer-2; no Layer-1 system generators, no raw Python), with token streaming,
+  cancel, a **read-only** tier, live model/endpoint switching, a one-click model **pull**, an
+  **Escalate** handoff that copies a paste-ready prompt for Claude/Codex (same bridge, no state to
+  move), and persistent history. **Auto-starts Ollama** when the local daemon isn't running
+  (detached, left running so quitting the chat never takes the model offline); opt out with
+  `--no-ollama`. Default model **`qwen2.5:3b`** — benchmarked 100% tool-calling on the simple-task
+  workload, faster and lighter than 7B/14B (sub-3B is flaky; `llama3.1:8b` weaker at tool use).
 - **`record_movie`** — record a TOP to a movie file (.mov/.mp4) via a Movie File Out TOP, with
   start/stop and an optional `seconds` auto-stop for capturing a fixed-length loop; stop also
   removes the recorder node it added so nothing lingers (CLI `movie`). Complements render_output —
