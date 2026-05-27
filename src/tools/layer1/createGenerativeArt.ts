@@ -80,10 +80,56 @@ void main(){
 }
 `;
 
+// A real de Jong strange attractor, iterated per pixel and splatted as glowing points on
+// black: each pixel sums a tight Gaussian over thousands of orbit samples (fine particle
+// filaments) plus a faint wide halo (glow). The four coefficients are FIXED at a known dense,
+// robustly-chaotic set — de Jong has periodic windows scattered through coefficient space, so
+// animating the coefficients can collapse the figure to a few dots; motion instead comes from
+// slowly rotating and breathing the framing. `uTime` is bound to absTime by buildGlslGenerative;
+// lowercase var names dodge the preamble #define collisions (see CLAUDE.md / GLSL gotchas).
+const STRANGE_ATTRACTOR_SHADER = `out vec4 fragColor;
+uniform float uTime;
+vec2 dejong(vec2 z, float a, float b, float c, float d){
+  return vec2(sin(a*z.y)-cos(b*z.x), sin(c*z.x)-cos(d*z.y));
+}
+void main(){
+  const float pa = 1.4, pb = -2.3, pc = 2.4, pd = -2.1;
+  const vec2 ctr = vec2(-0.185, -0.227);   // orbit centroid -> recenter on canvas
+  float ang = uTime * 0.05;
+  float ca = cos(ang), sa = sin(ang);
+  vec2 p = mat2(ca, -sa, sa, ca) * (vUV.st - 0.5);
+  float scale = 0.18 * (1.0 + 0.04 * sin(uTime * 0.11));
+  vec2 z = vec2(0.10, 0.10);
+  for(int i=0;i<40;i++){ z = dejong(z,pa,pb,pc,pd); }   // settle onto the attractor
+  float glow = 0.0;
+  const int STEPS = 3600;
+  for(int i=0;i<STEPS;i++){
+    z = dejong(z,pa,pb,pc,pd);
+    vec2 d2 = p - (z - ctr) * scale;
+    float r = dot(d2, d2);
+    glow += exp(-r*22000.0);        // tight core -> particle filaments
+    glow += 0.08*exp(-r*1200.0);    // faint halo -> glow
+  }
+  glow *= 0.02;
+  vec3 col = vec3(0.10,0.35,1.00)*glow;
+  col += vec3(0.30,0.95,1.00)*pow(glow,1.5)*0.7;
+  col += vec3(1.00,0.80,0.45)*pow(glow,3.0)*0.9;
+  fragColor = TDOutputSwizzle(vec4(col,1.0));
+}
+`;
+
+interface InlineTechnique {
+  shader: string;
+  // Generator GLSL TOPs default to 256×256 (no input to size from). Fine attractor filaments
+  // need a real canvas, so this pins a fixed square resolution; undefined keeps the default.
+  squareRes?: number;
+}
+
 // Techniques that map to a faithful inline shader. The rest fall back to animated noise.
-const TECHNIQUE_SHADERS: Record<string, string> = {
-  voronoi: VORONOI_SHADER,
-  fractal: FBM_SHADER,
+const TECHNIQUE_SHADERS: Record<string, InlineTechnique> = {
+  voronoi: { shader: VORONOI_SHADER },
+  fractal: { shader: FBM_SHADER },
+  strange_attractor: { shader: STRANGE_ATTRACTOR_SHADER, squareRes: 720 },
 };
 
 const RECIPE_FOR = new Map<string, string>([
@@ -123,6 +169,7 @@ async function buildGlslGenerative(
   name: string,
   fragment: string,
   speed = 1.0,
+  squareRes?: number,
 ): Promise<{ builder: NetworkBuilder; outputPath: string }> {
   const builder = await createSystemContainer(ctx, parentPath, name);
   const glsl = await builder.add("glslTOP", "glsl1");
@@ -130,6 +177,11 @@ async function buildGlslGenerative(
   await builder.python(
     `op(${q(frag)}).text = ${q(fragment)}\nop(${q(glsl)}).par.pixeldat = op(${q(frag)}).name`,
   );
+  if (squareRes !== undefined) {
+    await builder.python(
+      `_r = op(${q(glsl)})\n_r.par.outputresolution = 'custom'\n_r.par.resolutionw = ${squareRes}\n_r.par.resolutionh = ${squareRes}`,
+    );
+  }
   // Bind a `uTime` uniform to absTime so time-driven shaders animate. The uniform lives in
   // the GLSL TOP's "Vectors" sequence, whose block count has no structured setter; raise it
   // via numBlocks, then set the block name and an expression on its first component.
@@ -194,14 +246,15 @@ export async function createGenerativeArtImpl(ctx: ToolContext, args: CreateGene
 
     // Techniques with a faithful inline shader render the real thing (animated via uTime);
     // the rest fall back to animated noise below.
-    const inlineShader = TECHNIQUE_SHADERS[args.technique];
-    if (inlineShader) {
+    const inline = TECHNIQUE_SHADERS[args.technique];
+    if (inline) {
       const { builder, outputPath } = await buildGlslGenerative(
         ctx,
         args.parent_path,
         `generative_${args.technique}`,
-        inlineShader,
+        inline.shader,
         args.evolution_speed,
+        inline.squareRes,
       );
       return finalize(ctx, {
         summary: `Created a "${args.technique}" generative system (GLSL).`,
@@ -244,7 +297,7 @@ export const registerCreateGenerativeArt: ToolRegistrar = (server, ctx) => {
     {
       title: "Create generative art",
       description:
-        "Create an evolving generative visual. Known techniques (reaction_diffusion, noise_landscape) use validated recipes; custom_glsl uses your shader; others fall back to a knowledge GLSL pattern or animated noise.",
+        "Create an evolving generative visual. reaction_diffusion/noise_landscape use validated recipes; strange_attractor, voronoi, and fractal render real GLSL; custom_glsl uses your shader; the rest fall back to animated noise.",
       inputSchema: createGenerativeArtSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

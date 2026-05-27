@@ -61,6 +61,28 @@ describe("generative art evolution-speed control", () => {
     expect(payload.controls.some((c) => c.name === "Speed")).toBe(true);
   });
 
+  it("renders strange_attractor as a real de Jong GLSL system, not the noise fallback", async () => {
+    const scripts = captureExecScripts();
+    const result = await createGenerativeArtImpl(makeCtx(), {
+      technique: "strange_attractor",
+      evolution_speed: 1,
+      expose_controls: true,
+      parent_path: "/project1",
+    });
+    // The genuine attractor shader is loaded into the GLSL TOP's pixel DAT.
+    expect(scripts.some((s) => s.includes("dejong(") && s.includes("pixeldat"))).toBe(true);
+    // Fine filaments need a real canvas, so a fixed square resolution is pinned.
+    const resScript = scripts.find((s) => s.includes("outputresolution"));
+    expect(resScript).toContain("'custom'");
+    expect(resScript).toContain("resolutionw = 720");
+    // It must NOT take the animated-noise fallback (which drives a noiseTOP's tz).
+    expect(scripts.some((s) => s.includes(".par.tz"))).toBe(false);
+    const text = result.content.find((c) => c.type === "text");
+    const summary = (text as { text?: string } | undefined)?.text ?? "";
+    expect(summary).toContain("(GLSL)");
+    expect(summary).not.toContain("animated-noise");
+  });
+
   it("keeps the expression defensive but skips the panel when expose_controls is off", async () => {
     const scripts = captureExecScripts();
     await createGenerativeArtImpl(makeCtx(), {

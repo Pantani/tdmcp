@@ -40,8 +40,9 @@ capturada ao vivo do TouchDesigner.*
 
 > *"Me dê um visual de atrator estranho com partículas brilhantes no preto."*
 
-**O que você recebe:** um visual que se auto-evolui, geralmente com um botão de
-*Velocidade* para acelerar ou desacelerar.
+<video src="/examples/strange-attractor.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Um atrator estranho de verdade (de Jong) — pontos de órbita brilhando no preto, com um botão de Velocidade para evoluí-lo.*
 
 ## Reativo a áudio
 

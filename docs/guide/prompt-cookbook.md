@@ -38,8 +38,9 @@ captured live from TouchDesigner.*
 
 > *"Give me a strange-attractor visual with glowing particles on black."*
 
-**What you'll get:** a self-evolving visual, usually with a *Speed* knob to slow it
-down or speed it up.
+<video src="/examples/strange-attractor.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*A real de Jong strange attractor — orbit points glowing on black, with a Speed knob to evolve it. Captured live.*
 
 ## Audio-reactive
 
