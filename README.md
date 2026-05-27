@@ -325,7 +325,7 @@ MCP client ──stdio──▶ tdmcp server (Node/TS) ──HTTP──▶ Touch
 | `TDMCP_REQUEST_TIMEOUT_MS` | `10000` | Per-request timeout to the bridge |
 | `TDMCP_VAULT_PATH` | _(unset)_ | Absolute path to an Obsidian vault (a folder of markdown notes). Enables the vault tools (`scaffold_vault`, `save_recipe_to_vault`, `import_setlist`, …); a leading `~/` is expanded. Leave unset to disable them |
 | `TDMCP_LLM_BASE_URL` | `http://127.0.0.1:11434/v1` | OpenAI-compatible chat endpoint for `tdmcp chat` (the local copilot). Defaults to local Ollama; point it at LM Studio, a cloud GPU or a paid API |
-| `TDMCP_LLM_MODEL` | `qwen2.5:7b` | Model id the local copilot requests (must be pulled in the backend, e.g. `ollama pull qwen2.5:7b`) |
+| `TDMCP_LLM_MODEL` | `qwen2.5:3b` | Model id the local copilot requests (must be pulled in the backend, e.g. `ollama pull qwen2.5:3b`). Bump to `qwen2.5:7b` for more headroom |
 | `TDMCP_LLM_API_KEY` | _(unset)_ | Optional bearer token for the LLM endpoint (ignored by local Ollama; needed for paid/cloud APIs) |
 | `TDMCP_CHAT_PORT` | `4141` | Loopback port the `tdmcp chat` web UI binds to |
 
@@ -386,7 +386,7 @@ TouchDesigner bridge:
 
 ```bash
 # one-time: install Ollama from https://ollama.com, then
-ollama pull qwen2.5:7b
+ollama pull qwen2.5:3b
 tdmcp chat            # starts the UI on http://127.0.0.1:4141 and opens your browser
 ```
 
@@ -398,8 +398,11 @@ Claude/Codex (they drive the same project, so nothing needs to move). The UI als
 has a **read-only** toggle, live **model switching** + endpoint settings (⚙), a
 one-click **model pull**, and persistent history.
 
-> The copilot is only as good as the local model. A 7B (or larger) model is far
-> steadier at calling tools than a tiny one. Any OpenAI-compatible endpoint works
+> The copilot is only as good as the local model. Benchmarked on the simple-task
+> workload, **`qwen2.5:3b`** hit 100% tool-calling — as reliable as 7B/14B but
+> faster and lighter (the default). Sub-3B models (e.g. `qwen2.5:1.5b`) are flaky;
+> `llama3.1:8b` was notably weaker at tool use. Bump to `qwen2.5:7b`/`14b` only for
+> more answer-quality headroom. Any OpenAI-compatible endpoint works
 > (`TDMCP_LLM_BASE_URL`) — local Ollama/LM Studio, or a cloud/paid API.
 
 ### Scripts

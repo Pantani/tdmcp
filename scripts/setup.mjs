@@ -85,7 +85,7 @@ say("  Talk to a local LLM in your browser instead of a paid API — same bridge
 say("  good for inspecting and tweaking single operators. For full systems, use");
 say("  Claude/Codex from STEP A.\n");
 say("    1. Install Ollama from https://ollama.com");
-say("    2. ollama pull qwen2.5:7b");
+say("    2. ollama pull qwen2.5:3b");
 say(`    3. node ${distEntry} chat        (opens http://127.0.0.1:4141)\n`);
 say(`${line}`);
 say("Full guide: README.md   •   TD bridge details: td/README.md");

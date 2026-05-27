@@ -33,8 +33,14 @@ export const ConfigSchema = z.object({
    * GPU, or any OpenAI-compatible API to swap the model without code changes.
    */
   llmBaseUrl: z.string().min(1).default("http://127.0.0.1:11434/v1"),
-  /** Model id the local copilot asks for (must be pulled in the backend, e.g. `ollama pull qwen2.5`). */
-  llmModel: z.string().min(1).default("qwen2.5:7b"),
+  /**
+   * Model id the local copilot asks for (must be pulled in the backend, e.g.
+   * `ollama pull qwen2.5:3b`). Default is `qwen2.5:3b`: in benchmarking it matched
+   * the 7B/14B at 100% tool-calling on the copilot's simple-task workload while being
+   * ~2x faster and <half the size — the sweet spot for the artist audience. Bump to
+   * `qwen2.5:7b` for more answer-quality headroom; avoid sub-3B (flaky at tool use).
+   */
+  llmModel: z.string().min(1).default("qwen2.5:3b"),
   /** Optional bearer token for the LLM endpoint (ignored by local Ollama; needed for paid/cloud APIs). */
   llmApiKey: z.string().min(1).optional(),
   /** Loopback port the `tdmcp chat` web UI binds to. */
