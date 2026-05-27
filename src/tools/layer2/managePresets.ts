@@ -115,7 +115,7 @@ export async function managePresetsImpl(ctx: ToolContext, args: ManagePresetsArg
     },
     (report) => {
       if (report.fatal) {
-        return jsonResult(`Preset ${report.action} failed: ${report.fatal}`, report);
+        return errorResult(`Preset ${report.action} failed: ${report.fatal}`, report);
       }
       let summary: string;
       switch (report.action) {

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
-import { guardTd, jsonResult } from "../result.js";
+import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { MORPH_HOOK } from "./manageCue.js";
 
@@ -203,7 +203,7 @@ export async function createControlSurfaceImpl(ctx: ToolContext, args: CreateCon
     },
     (report) => {
       if (report.fatal) {
-        return jsonResult(`Could not build control surface: ${report.fatal}`, report);
+        return errorResult(`Could not build control surface: ${report.fatal}`, report);
       }
       const summary = `Built control surface ${report.surface} with ${report.faders.length} fader(s) and ${report.cue_buttons.length} cue button(s)${
         report.warnings.length ? `, ${report.warnings.length} warning(s)` : ""

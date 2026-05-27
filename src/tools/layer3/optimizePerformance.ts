@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
-import { guardTd, jsonResult } from "../result.js";
+import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
 export const optimizePerformanceSchema = z.object({
@@ -107,7 +107,7 @@ export async function optimizePerformanceImpl(ctx: ToolContext, args: OptimizePe
     },
     (report) => {
       if (report.fatal) {
-        return jsonResult(`Performance scan failed: ${report.fatal}`, report);
+        return errorResult(`Performance scan failed: ${report.fatal}`, report);
       }
       const summary = args.apply
         ? `Found ${report.slow.length} slow node(s) over ${args.threshold_ms}ms; resized ${report.optimized.length} TOP(s) to ${Math.round(args.scale * 100)}%.`

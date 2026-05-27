@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
-import { guardTd, jsonResult } from "../result.js";
+import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
 const bindSchema = z.object({
@@ -178,7 +178,7 @@ export async function createExternalIoImpl(ctx: ToolContext, args: CreateExterna
     },
     (report) => {
       if (report.fatal) {
-        return jsonResult(`Could not create ${report.kind}: ${report.fatal}`, report);
+        return errorResult(`Could not create ${report.kind}: ${report.fatal}`, report);
       }
       const bound = report.bound?.length ? `, ${report.bound.length} binding(s)` : "";
       const errs = report.errors?.length ? `, ${report.errors.length} node error(s)` : "";

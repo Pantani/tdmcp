@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
-import { guardTd, jsonResult } from "../result.js";
+import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
 export const createPhoneRemoteSchema = z.object({
@@ -149,7 +149,7 @@ export async function createPhoneRemoteImpl(ctx: ToolContext, args: CreatePhoneR
     },
     (report) => {
       if (report.fatal) {
-        return jsonResult(`Could not start phone remote: ${report.fatal}`, report);
+        return errorResult(`Could not start phone remote: ${report.fatal}`, report);
       }
       const summary = `Phone remote serving ${report.controls?.length ?? 0} control(s) at ${report.url} (open it on a phone on the same network)${
         report.warnings.length ? `, ${report.warnings.length} warning(s)` : ""

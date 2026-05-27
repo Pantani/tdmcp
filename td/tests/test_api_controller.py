@@ -179,6 +179,17 @@ class RoutingTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             ac._route("GET", "/api/does-not-exist", {}, {})
 
+    def test_create_node_missing_fields_raises_descriptive(self):
+        with self.assertRaises(ValueError) as cm:
+            ac._route("POST", "/api/nodes", {}, {})
+        self.assertIn("parent_path", str(cm.exception))
+        self.assertIn("type", str(cm.exception))
+
+    def test_exec_missing_script_raises_descriptive(self):
+        with self.assertRaises(ValueError) as cm:
+            ac._route("POST", "/api/exec", {}, {})
+        self.assertIn("script", str(cm.exception))
+
 
 class ParsingTests(unittest.TestCase):
     def test_parse_body_variants(self):
@@ -200,6 +211,12 @@ class ParsingTests(unittest.TestCase):
     def test_find_header_top_level_and_default(self):
         self.assertEqual(ac._find_header({"X-Token": "abc"}, "x-token"), "abc")
         self.assertIsNone(ac._find_header({"other": "v"}, "x-token"))
+
+    def test_find_header_accepts_list_value(self):
+        # A repeated/multi-value header may arrive as a list; take the first str.
+        self.assertEqual(ac._find_header({"Origin": ["http://x", "http://y"]}, "origin"), "http://x")
+        self.assertIsNone(ac._find_header({"Origin": []}, "origin"))
+        self.assertIsNone(ac._find_header({"Origin": [123]}, "origin"))
 
 
 class OriginTests(unittest.TestCase):
@@ -230,9 +247,15 @@ class OriginTests(unittest.TestCase):
         with self.assertRaises(PermissionError):
             ac._check_origin({"headers": {"origin": "http://evil.com"}})
 
-    def test_handle_rejects_cross_origin_with_401(self):
+    def test_handle_rejects_cross_origin_with_403(self):
         resp = ac.handle({"method": "GET", "uri": "/api/info", "Origin": "http://evil.com"}, {})
-        self.assertEqual(resp["statusCode"], 401)
+        self.assertEqual(resp["statusCode"], 403)
+        self.assertIn("cross-origin", resp["data"])
+
+    def test_handle_rejects_list_valued_cross_origin(self):
+        # Some TD builds surface a header as a list; it must not slip the guard.
+        resp = ac.handle({"method": "GET", "uri": "/api/info", "Origin": ["http://evil.com"]}, {})
+        self.assertEqual(resp["statusCode"], 403)
         self.assertIn("cross-origin", resp["data"])
 
 
@@ -263,13 +286,21 @@ class HandleTests(unittest.TestCase):
         self.assertEqual(resp["statusCode"], 400)
         self.assertIn("boom", resp["data"])
 
-    def test_exec_disabled_surfaces_as_401_with_message(self):
+    def test_exec_disabled_surfaces_as_403_with_message(self):
         os.environ["TDMCP_BRIDGE_ALLOW_EXEC"] = "0"
         resp = ac.handle(
             {"method": "POST", "uri": "/api/exec", "data": '{"script": "1"}'}, self._resp()
         )
-        self.assertEqual(resp["statusCode"], 401)
+        self.assertEqual(resp["statusCode"], 403)
         self.assertIn("disabled", resp["data"])
+
+    def test_missing_required_field_surfaces_as_400_with_name(self):
+        # A POST with valid JSON but a missing field gets a descriptive 400,
+        # not a bare KeyError message of just the key name.
+        resp = ac.handle({"method": "POST", "uri": "/api/nodes", "data": "{}"}, self._resp())
+        self.assertEqual(resp["statusCode"], 400)
+        self.assertIn("parent_path", resp["data"])
+        self.assertIn("Missing required field", resp["data"])
 
 
 if __name__ == "__main__":

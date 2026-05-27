@@ -16,6 +16,18 @@ from mcp import events
 from mcp.services import analysis_service, api_service, batch_service, preview_service
 
 
+class _Unauthorized(PermissionError):
+    """Authentication failed — missing or invalid bearer token (HTTP 401)."""
+
+    status = 401
+
+
+class _Forbidden(PermissionError):
+    """Request refused regardless of credentials — cross-origin or exec disabled (HTTP 403)."""
+
+    status = 403
+
+
 def _required_token():
     """The shared bearer token the bridge enforces, or None when auth is off.
 
@@ -53,8 +65,14 @@ def _find_header(request, name):
         if not isinstance(node, dict) or depth > 2:
             return None
         for key, value in node.items():
-            if isinstance(key, str) and key.lower() == target and isinstance(value, str):
-                return value
+            if isinstance(key, str) and key.lower() == target:
+                # TD builds vary: a header may arrive as a str or as a list of
+                # strings (repeated header). Accept a list's first string element
+                # so the Origin guard never fails *open* on a list-shaped header.
+                if isinstance(value, str):
+                    return value
+                if isinstance(value, (list, tuple)) and value and isinstance(value[0], str):
+                    return value[0]
         for nested in ("headers", "header", "fields"):
             sub = node.get(nested)
             hit = scan(sub, depth + 1) if isinstance(sub, dict) else None
@@ -71,7 +89,7 @@ def _check_auth(request):
         return  # auth disabled (default)
     provided = (_find_header(request, "authorization") or "").strip()
     if not hmac.compare_digest(provided, "Bearer " + token):
-        raise PermissionError("Unauthorized: missing or invalid bearer token.")
+        raise _Unauthorized("Unauthorized: missing or invalid bearer token.")
 
 
 _LOOPBACK_HOSTS = ("127.0.0.1", "localhost", "::1")
@@ -96,7 +114,7 @@ def _check_origin(request):
         return
     host = urlparse(origin).hostname
     if host not in _LOOPBACK_HOSTS:
-        raise PermissionError("Forbidden: cross-origin request rejected (origin %r)." % origin)
+        raise _Forbidden("Forbidden: cross-origin request rejected (origin %r)." % origin)
 
 
 def _qs(query, key, default=None):
@@ -126,6 +144,20 @@ def _node_path(segments):
     return "/" + raw.lstrip("/")
 
 
+def _require(body, *keys):
+    """Raise a descriptive error when a required body field is absent.
+
+    Without this, `body["script"]`/`body["type"]` etc. raise a bare KeyError whose
+    message is only the missing key name — opaque to a direct caller. The Node
+    client validates inputs with zod first, so this only fires for raw callers.
+    """
+    if not isinstance(body, dict):
+        raise ValueError("Request body must be a JSON object.")
+    missing = [k for k in keys if k not in body]
+    if missing:
+        raise ValueError("Missing required field(s): %s." % ", ".join(missing))
+
+
 def _route(method, path, query, body):
     parts = [p for p in path.split("/") if p]
     if not parts or parts[0] != "api":
@@ -136,6 +168,7 @@ def _route(method, path, query, body):
         return api_service.get_info()
 
     if rest == ["nodes"] and method == "POST":
+        _require(body, "parent_path", "type")
         return api_service.create_node(
             body["parent_path"], body["type"], body.get("name"), body.get("parameters")
         )
@@ -144,7 +177,8 @@ def _route(method, path, query, body):
 
     if rest == ["exec"] and method == "POST":
         if not _exec_allowed():
-            raise PermissionError("Forbidden: arbitrary code execution is disabled (TDMCP_BRIDGE_ALLOW_EXEC=0).")
+            raise _Forbidden("Forbidden: arbitrary code execution is disabled (TDMCP_BRIDGE_ALLOW_EXEC=0).")
+        _require(body, "script")
         return api_service.exec_script(body["script"], body.get("return_output", True))
 
     if rest == ["batch"] and method == "POST":
@@ -153,9 +187,10 @@ def _route(method, path, query, body):
     if rest[0] == "nodes" and len(rest) >= 2:
         if rest[-1] == "method" and method == "POST":
             if not _exec_allowed():
-                raise PermissionError(
+                raise _Forbidden(
                     "Forbidden: arbitrary method calls are disabled (TDMCP_BRIDGE_ALLOW_EXEC=0)."
                 )
+            _require(body, "method")
             return api_service.call_method(
                 _node_path(rest[1:-1]),
                 body["method"],
@@ -263,6 +298,6 @@ def handle(request, response, webserver=None):
         _emit_event(webserver, method, parsed.path, data)
         return _send(response, 200, {"ok": True, "data": data})
     except PermissionError as exc:
-        return _send(response, 401, {"ok": False, "error": {"message": str(exc)}})
+        return _send(response, getattr(exc, "status", 403), {"ok": False, "error": {"message": str(exc)}})
     except Exception as exc:  # noqa: BLE001
         return _send(response, 400, {"ok": False, "error": {"message": str(exc)}})

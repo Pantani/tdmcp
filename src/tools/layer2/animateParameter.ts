@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
-import { guardTd, jsonResult } from "../result.js";
+import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
 /** Friendly waveform names → the lfoCHOP `wavetype` menu values. */
@@ -132,7 +132,7 @@ export async function animateParameterImpl(ctx: ToolContext, args: AnimateParame
     },
     (report) => {
       if (report.fatal) {
-        return jsonResult(`Could not set up animation: ${report.fatal}`, report);
+        return errorResult(`Could not set up animation: ${report.fatal}`, report);
       }
       const summary = `Animating ${report.targets_bound.length} parameter(s) with a ${args.waveform} LFO (period ${args.period_seconds}s, range ${args.min}–${args.max}) at ${report.lfo}${
         report.warnings.length ? `, ${report.warnings.length} warning(s)` : ""

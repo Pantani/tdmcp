@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
-import { guardTd, jsonResult } from "../result.js";
+import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
 export const controlSchema = z.object({
@@ -185,7 +185,7 @@ export async function createControlPanelImpl(ctx: ToolContext, args: CreateContr
     },
     (report) => {
       if (report.fatal) {
-        return jsonResult(`Could not build control panel: ${report.fatal}`, report);
+        return errorResult(`Could not build control panel: ${report.fatal}`, report);
       }
       const summary = `Added ${report.created.length} control(s) on page "${report.page}" of ${report.comp}, ${report.bound.length} bound to live parameter(s)${
         report.warnings.length ? `, ${report.warnings.length} warning(s)` : ""

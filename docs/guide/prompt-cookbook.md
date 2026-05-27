@@ -1,0 +1,103 @@
+# Prompt cookbook
+
+Copy these, change the words, and make them yours. They're grouped by what you
+want to make. After any build, you can always say **"show me a preview"** and then
+nudge it: *"warmer", "slower", "more contrast", "add a glitch".*
+
+::: tip How to phrase it
+Describe the **result and the feeling**, not the nodes. "A slow, hypnotic, deep-blue
+tunnel" works better than naming operators. The AI picks the operators.
+:::
+
+## Generative & abstract
+
+> *"Create a feedback tunnel from noise with blur and displace, add bloom, and
+> show me a preview."*
+
+> *"Make an evolving reaction-diffusion pattern in greens and blacks, slow and
+> organic."*
+
+> *"Build a flowing noise landscape in 3D with an orbiting camera."*
+
+> *"Give me a strange-attractor visual with glowing particles on black."*
+
+**What you'll get:** a self-evolving visual, usually with a *Speed* knob to slow it
+down or speed it up.
+
+## Audio-reactive
+
+> *"Make an audio spectrum analyzer with colored bars that react to my music."*
+
+> *"Create an audio-reactive particle galaxy driven by the beat, and preview it."*
+
+> *"Build a radial spectrum that pulses on the bass, warm colors."*
+
+**What you'll get:** an analysis chain (spectrum + level + beat) feeding a visual,
+usually with a *Sensitivity* knob. See the
+[microphone permission note](/guide/troubleshooting#macos-microphone-camera-permission)
+on macOS, or ask for a **test tone** instead of the mic while experimenting.
+
+## Particles & 3D
+
+> *"Create a particle system emitted from a sphere with turbulence and gravity,
+> rendered as glowing sprites."*
+
+> *"Make 10,000 particles that swirl like a galaxy."*
+
+> *"Build a 3D scene with instanced cubes reacting to a noise field."*
+
+**What you'll get:** a particle or geometry system with live *Drag / Turbulence /
+Gravity / Lifetime* knobs to shape the motion.
+
+## Video & camera
+
+> *"Pipe my webcam through edge detection, an RGB split and a feedback loop for a
+> glitchy look."*
+
+> *"Play this video file on a loop with speed control."* (give it the path)
+
+> *"Take my webcam and make it look like an old, degraded VHS tape."*
+
+## Live performance & control
+
+> *"Add knobs for feedback, zoom, spin and blur so I can perform this live."*
+
+> *"Animate the spin knob with a slow LFO."*
+
+> *"Make a tempo clock at 128 BPM and sync the movement to the beat."*
+
+> *"Set up two cues — 'intro' and 'drop' — that I can morph between."*
+
+> *"Let me control the main knobs from my phone."*
+
+> *"Map my MIDI controller's first fader to the Sensitivity knob."*
+
+## Output & mapping
+
+> *"Output the final visual to a full-screen window on my second monitor."*
+
+> *"Send this out over NDI so I can use it in OBS."*
+
+> *"Corner-pin this onto a projector and let me drag the corners."*
+
+> *"Record the output to a movie file for 30 seconds."*
+
+## Fixing & understanding
+
+> *"Something looks broken — check the network for errors and fix them."*
+
+> *"Explain what this network is doing, step by step."*
+
+> *"This is running slow — find the bottleneck and optimize it."*
+
+> *"Tidy up the layout so I can read it."*
+
+## Working from your own notes (Obsidian vault)
+
+If you keep an [Obsidian vault](/reference/tools#obsidian-vault) wired up:
+
+> *"Build tonight's set from my 'Friday' setlist note."*
+
+> *"Generate a visual from my 'deep ocean' moodboard."*
+
+> *"Save this look as a recipe in my vault and log it to my show diary."*

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
-import { guardTd, jsonResult } from "../result.js";
+import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
 export const bindToChannelSchema = z.object({
@@ -96,7 +96,7 @@ export async function bindToChannelImpl(ctx: ToolContext, args: BindToChannelArg
     },
     (report) => {
       if (report.fatal) {
-        return jsonResult(`Could not bind to channel: ${report.fatal}`, report);
+        return errorResult(`Could not bind to channel: ${report.fatal}`, report);
       }
       const summary = `Bound ${report.bound.length} parameter(s) to ${args.source_chop}['${args.channel}'] (${report.expression})${
         report.warnings.length ? `, ${report.warnings.length} warning(s)` : ""

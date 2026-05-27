@@ -150,7 +150,7 @@ export async function createKeyframeAnimationImpl(
     },
     (report) => {
       if (report.fatal) {
-        return jsonResult(`Could not create keyframe animation: ${report.fatal}`, report);
+        return errorResult(`Could not create keyframe animation: ${report.fatal}`, report);
       }
       const summary = `Keyframe animation at ${report.container} drives ${report.targets?.length ?? 0} parameter(s) over a ${report.duration}s ${args.loop ? "loop" : "one-shot"} (${args.easing})${
         report.warnings.length ? `, ${report.warnings.length} warning(s)` : ""

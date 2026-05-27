@@ -98,6 +98,11 @@ def capture(path, width=640, height=360):
 
     w = int(getattr(node, "width", width) or width)
     h = int(getattr(node, "height", height) or height)
+    # Clamp to a sane preview ceiling so a hostile/huge request (or a TOP with an
+    # extreme resolution) can't allocate a multi-gigapixel GPU texture and exhaust
+    # VRAM / hang TD. A preview is a thumbnail; 4096 on a side is plenty.
+    w = max(1, min(w, 4096))
+    h = max(1, min(h, 4096))
 
     data = _checkerboard_png(node, w, h)
     if data is None:

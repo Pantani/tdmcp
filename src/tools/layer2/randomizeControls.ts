@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
-import { guardTd, jsonResult } from "../result.js";
+import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
 export const randomizeControlsSchema = z.object({
@@ -95,7 +95,7 @@ export async function randomizeControlsImpl(ctx: ToolContext, args: RandomizeCon
     },
     (report) => {
       if (report.fatal) {
-        return jsonResult(`Randomize failed: ${report.fatal}`, report);
+        return errorResult(`Randomize failed: ${report.fatal}`, report);
       }
       const summary = `Randomized ${report.randomized.length} control(s) on ${report.comp} (amount ${args.amount})${
         report.skipped.length ? `, skipped ${report.skipped.length} non-numeric` : ""

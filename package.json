@@ -4,6 +4,7 @@
   "description": "AI-native visual creation for TouchDesigner — a production-grade MCP server.",
   "type": "module",
   "license": "MIT",
+  "homepage": "https://pantani.github.io/tdmcp/",
   "engines": {
     "node": ">=20"
   },
@@ -41,6 +42,10 @@
     "validate:recipes": "tsx scripts/validate-recipes.ts",
     "smoke:live": "tsx scripts/smoke-live.ts",
     "build:dxt": "node scripts/build-dxt.mjs",
+    "docs:gen": "tsx scripts/gen-tool-docs.ts",
+    "docs:dev": "npm run docs:gen && vitepress dev docs",
+    "docs:build": "npm run docs:gen && vitepress build docs",
+    "docs:preview": "vitepress preview docs",
     "version": "node scripts/sync-manifest-version.mjs && git add dxt/manifest.json",
     "prepack": "node scripts/clean-pycache.mjs",
     "prepublishOnly": "npm run build && npm test"
@@ -70,6 +75,7 @@
     "tsup": "^8.5.1",
     "tsx": "^4.22.3",
     "typescript": "^6.0.3",
+    "vitepress": "^1.6.4",
     "vitest": "^4.1.7"
   }
 }

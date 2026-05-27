@@ -221,7 +221,7 @@ export async function manageCheckpointImpl(ctx: ToolContext, args: ManageCheckpo
     },
     (report) => {
       if (report.fatal) {
-        return jsonResult(`Checkpoint ${report.action} failed: ${report.fatal}`, report);
+        return errorResult(`Checkpoint ${report.action} failed: ${report.fatal}`, report);
       }
       let summary: string;
       switch (report.action) {

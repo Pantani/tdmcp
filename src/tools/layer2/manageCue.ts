@@ -177,7 +177,7 @@ export async function manageCueImpl(ctx: ToolContext, args: ManageCueArgs) {
     },
     (report) => {
       if (report.fatal) {
-        return jsonResult(`Cue ${report.action} failed: ${report.fatal}`, report);
+        return errorResult(`Cue ${report.action} failed: ${report.fatal}`, report);
       }
       let summary: string;
       switch (report.action) {

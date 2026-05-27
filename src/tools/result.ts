@@ -7,8 +7,18 @@ export function textResult(text: string): CallToolResult {
   return { content: [{ type: "text", text }] };
 }
 
-export function errorResult(message: string): CallToolResult {
-  return { isError: true, content: [{ type: "text", text: message }] };
+/**
+ * An `isError` result. When `data` is supplied it is appended as a JSON code
+ * fence (mirroring `jsonResult`) so a hard failure can still carry its structured
+ * report — the difference from `jsonResult` is that `isError` is set, so the CLI
+ * exits non-zero and MCP clients see the failure instead of a false success.
+ */
+export function errorResult(message: string, data?: unknown): CallToolResult {
+  const text =
+    data === undefined
+      ? message
+      : `${message}\n\n\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\``;
+  return { isError: true, content: [{ type: "text", text }] };
 }
 
 /** A text block followed by a pretty-printed JSON code fence. */

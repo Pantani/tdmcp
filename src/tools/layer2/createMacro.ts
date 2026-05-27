@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
-import { guardTd, jsonResult } from "../result.js";
+import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
 const macroTargetSchema = z.object({
@@ -109,7 +109,7 @@ export async function createMacroImpl(ctx: ToolContext, args: CreateMacroArgs) {
     },
     (report) => {
       if (report.fatal) {
-        return jsonResult(`Could not create macro: ${report.fatal}`, report);
+        return errorResult(`Could not create macro: ${report.fatal}`, report);
       }
       const summary = `Macro "${report.macro}" on ${report.comp} drives ${report.bound.length} parameter(s)${
         report.warnings.length ? `, ${report.warnings.length} warning(s)` : ""

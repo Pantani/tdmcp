@@ -123,7 +123,7 @@ export async function manageComponentImpl(ctx: ToolContext, args: ManageComponen
     },
     (report) => {
       if (report.fatal) {
-        return jsonResult(`Component ${report.action} failed: ${report.fatal}`, report);
+        return errorResult(`Component ${report.action} failed: ${report.fatal}`, report);
       }
       const summary =
         report.action === "save"

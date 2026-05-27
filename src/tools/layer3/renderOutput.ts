@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
-import { guardTd, jsonResult } from "../result.js";
+import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
 export const renderOutputSchema = z.object({
@@ -50,7 +50,7 @@ export async function renderOutputImpl(ctx: ToolContext, args: RenderOutputArgs)
       return parsePythonReport<RenderReport>(exec.stdout);
     },
     (report) => {
-      if (report.fatal) return jsonResult(`Render failed: ${report.fatal}`, report);
+      if (report.fatal) return errorResult(`Render failed: ${report.fatal}`, report);
       return jsonResult(
         `Rendered ${args.node_path} (${report.width}×${report.height}) to ${report.saved}.`,
         report,
