@@ -3,6 +3,7 @@ import { RecipeLibrary } from "../recipes/loader.js";
 import type { ToolContext } from "../tools/types.js";
 import type { TdmcpConfig } from "../utils/config.js";
 import { createLogger, type Logger } from "../utils/logger.js";
+import { Vault } from "../vault/index.js";
 import { ConnectionManager } from "./connectionManager.js";
 
 export interface ToolContextOverrides {
@@ -10,6 +11,7 @@ export interface ToolContextOverrides {
   knowledge?: KnowledgeBase;
   recipes?: RecipeLibrary;
   connection?: ConnectionManager;
+  vault?: Vault;
 }
 
 /**
@@ -24,12 +26,15 @@ export function buildToolContext(
   const logger = overrides.logger ?? createLogger(config.logLevel);
   const connection = overrides.connection ?? new ConnectionManager(config, logger);
   const knowledge = overrides.knowledge ?? new KnowledgeBase({ logger });
-  const recipes = overrides.recipes ?? new RecipeLibrary({ logger });
+  const vault =
+    overrides.vault ?? (config.vaultPath ? new Vault(config.vaultPath, logger) : undefined);
+  const recipes = overrides.recipes ?? new RecipeLibrary({ logger, vault });
   return {
     client: connection.client,
     knowledge,
     recipes,
     logger,
+    vault,
     allowRawPython: config.rawPython !== "off",
   };
 }

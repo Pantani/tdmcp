@@ -27,6 +27,24 @@ export const ConfigSchema = z.object({
    * environment (`TDMCP_BRIDGE_TOKEN`) to turn enforcement on.
    */
   bridgeToken: z.string().min(1).optional(),
+  /**
+   * Base URL of an OpenAI-compatible chat endpoint used by `tdmcp chat` (the local
+   * LLM copilot). Defaults to Ollama's local server. Point it at LM Studio, a cloud
+   * GPU, or any OpenAI-compatible API to swap the model without code changes.
+   */
+  llmBaseUrl: z.string().min(1).default("http://127.0.0.1:11434/v1"),
+  /** Model id the local copilot asks for (must be pulled in the backend, e.g. `ollama pull qwen2.5`). */
+  llmModel: z.string().min(1).default("qwen2.5:7b"),
+  /** Optional bearer token for the LLM endpoint (ignored by local Ollama; needed for paid/cloud APIs). */
+  llmApiKey: z.string().min(1).optional(),
+  /** Loopback port the `tdmcp chat` web UI binds to. */
+  chatPort: z.coerce.number().int().positive().max(65535).default(4141),
+  /**
+   * Absolute path to an Obsidian vault (a folder of markdown notes) that backs
+   * the vault integration tools. A leading `~/` is expanded to the home dir.
+   * Leave unset (default) to disable those tools.
+   */
+  vaultPath: z.string().min(1).optional(),
 });
 
 export type TdmcpConfig = z.infer<typeof ConfigSchema>;
@@ -46,6 +64,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): TdmcpConfig {
     events: env.TDMCP_EVENTS,
     rawPython: env.TDMCP_RAW_PYTHON,
     bridgeToken: env.TDMCP_BRIDGE_TOKEN || undefined,
+    llmBaseUrl: env.TDMCP_LLM_BASE_URL,
+    llmModel: env.TDMCP_LLM_MODEL,
+    llmApiKey: env.TDMCP_LLM_API_KEY || undefined,
+    chatPort: env.TDMCP_CHAT_PORT,
+    vaultPath: env.TDMCP_VAULT_PATH || undefined,
   });
 }
 
