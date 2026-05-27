@@ -1,19 +1,24 @@
 import type { ToolRegistrar } from "../types.js";
 import { registerApplyPostProcessing } from "./applyPostProcessing.js";
 import { registerApplyRecipe } from "./applyRecipe.js";
+import { registerCreate3dAudioReactive } from "./create3dAudioReactive.js";
 import { registerCreate3dScene } from "./create3dScene.js";
 import { registerCreateAudioReactive } from "./createAudioReactive.js";
 import { registerCreateAutopilot } from "./createAutopilot.js";
 import { registerCreateColorGrade } from "./createColorGrade.js";
 import { registerCreateDataVisualization } from "./createDataVisualization.js";
+import { registerCreateDepthDisplacement } from "./createDepthDisplacement.js";
 import { registerCreateDepthSilhouette } from "./createDepthSilhouette.js";
+import { registerCreateDomeOutput } from "./createDomeOutput.js";
 import { registerCreateFeedbackNetwork } from "./createFeedbackNetwork.js";
 import { registerCreateGenerativeArt } from "./createGenerativeArt.js";
 import { registerCreateGlitch } from "./createGlitch.js";
+import { registerCreateGpuParticleField } from "./createGpuParticleField.js";
 import { registerCreateKaleidoscope } from "./createKaleidoscope.js";
 import { registerCreateKeyframeAnimation } from "./createKeyframeAnimation.js";
 import { registerCreateKineticText } from "./createKineticText.js";
 import { registerCreateLayerMixer } from "./createLayerMixer.js";
+import { registerCreateMeshWarp } from "./createMeshWarp.js";
 import { registerCreateMotionReactive } from "./createMotionReactive.js";
 import { registerCreateMultiOutput } from "./createMultiOutput.js";
 import { registerCreateParticleSystem } from "./createParticleSystem.js";
@@ -80,4 +85,10 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateKineticText,
   registerCreateWaveform,
   registerDetectPitch,
+  // Phase 12 — dimensional (3D, depth & spatial mapping):
+  registerCreate3dAudioReactive,
+  registerCreateDomeOutput,
+  registerCreateMeshWarp,
+  registerCreateDepthDisplacement,
+  registerCreateGpuParticleField,
 ];

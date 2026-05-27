@@ -7,7 +7,7 @@ description: "The TouchDesigner MCP server. Connect Claude, Cursor, or Codex to 
 hero:
   name: tdmcp
   text: The TouchDesigner MCP server
-  tagline: Build TouchDesigner from plain language. Connect Claude, Cursor, or Codex over MCP — describe what you want and it builds the real node network inside TouchDesigner, checks it for errors, and shows you a preview.
+  tagline: Stop wiring nodes by hand. Describe a visual to Claude, Cursor or Codex and it builds a real, playable network inside TouchDesigner — audio-reactive, generative, particle and 3D systems with live controls — checking and previewing its own work.
   actions:
     - theme: brand
       text: I'm an artist — start here
@@ -30,7 +30,7 @@ features:
     details: Audio-reactive, generative and particle systems arrive playable — with control panels, presets, cues, tempo sync, MIDI/OSC/DMX I/O and a phone remote.
   - title: Works offline-friendly
     details: A local LLM copilot (tdmcp chat) handles simple tasks without a paid API, and the server stays usable even when TouchDesigner is closed.
-  - title: 97 tools, three layers
+  - title: 102 tools, three layers
     details: From one-line artist generators down to atomic node CRUD and Python escape hatches — see the full, always-current Tools reference.
 ---
 

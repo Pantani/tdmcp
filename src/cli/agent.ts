@@ -14,6 +14,10 @@ import {
   applyPostProcessingSchema,
 } from "../tools/layer1/applyPostProcessing.js";
 import { applyRecipeImpl, applyRecipeSchema } from "../tools/layer1/applyRecipe.js";
+import {
+  create3dAudioReactiveImpl,
+  create3dAudioReactiveSchema,
+} from "../tools/layer1/create3dAudioReactive.js";
 import { create3dSceneImpl, create3dSceneSchema } from "../tools/layer1/create3dScene.js";
 import {
   createAudioReactiveImpl,
@@ -26,9 +30,14 @@ import {
   createDataVisualizationSchema,
 } from "../tools/layer1/createDataVisualization.js";
 import {
+  createDepthDisplacementImpl,
+  createDepthDisplacementSchema,
+} from "../tools/layer1/createDepthDisplacement.js";
+import {
   createDepthSilhouetteImpl,
   createDepthSilhouetteSchema,
 } from "../tools/layer1/createDepthSilhouette.js";
+import { createDomeOutputImpl, createDomeOutputSchema } from "../tools/layer1/createDomeOutput.js";
 import {
   createFeedbackNetworkImpl,
   createFeedbackNetworkSchema,
@@ -38,6 +47,10 @@ import {
   createGenerativeArtSchema,
 } from "../tools/layer1/createGenerativeArt.js";
 import { createGlitchImpl, createGlitchSchema } from "../tools/layer1/createGlitch.js";
+import {
+  createGpuParticleFieldImpl,
+  createGpuParticleFieldSchema,
+} from "../tools/layer1/createGpuParticleField.js";
 import {
   createKaleidoscopeImpl,
   createKaleidoscopeSchema,
@@ -51,6 +64,7 @@ import {
   createKineticTextSchema,
 } from "../tools/layer1/createKineticText.js";
 import { createLayerMixerImpl, createLayerMixerSchema } from "../tools/layer1/createLayerMixer.js";
+import { createMeshWarpImpl, createMeshWarpSchema } from "../tools/layer1/createMeshWarp.js";
 import {
   createMotionReactiveImpl,
   createMotionReactiveSchema,
@@ -374,6 +388,37 @@ const COMMANDS: Record<string, Command> = {
   scene3d: r(create3dSceneSchema, create3dSceneImpl, "Build a renderable 3D scene.", {
     mutates: true,
   }),
+  // Phase 12 — dimensional (3D, depth & spatial mapping):
+  audio3d: r(
+    create3dAudioReactiveSchema,
+    create3dAudioReactiveImpl,
+    "Build a 3D scene that reacts to sound (instanced FFT bars / bass pulse).",
+    { mutates: true },
+  ),
+  dome: r(
+    createDomeOutputSchema,
+    createDomeOutputImpl,
+    "Remap a source to fisheye/equirectangular for dome / 360 output.",
+    { mutates: true },
+  ),
+  "mesh-warp": r(
+    createMeshWarpSchema,
+    createMeshWarpImpl,
+    "Map a source onto a deformable curved grid (dome/column/sculpture).",
+    { mutates: true },
+  ),
+  "depth-displace": r(
+    createDepthDisplacementSchema,
+    createDepthDisplacementImpl,
+    "Displace a plane into 3D by a depth/luminance map (2.5D relief).",
+    { mutates: true },
+  ),
+  "gpu-particles": r(
+    createGpuParticleFieldSchema,
+    createGpuParticleFieldImpl,
+    "GPU particle field via feedback TOPs + instancing (experimental).",
+    { mutates: true },
+  ),
   text: r(
     createTextOverlaySchema,
     createTextOverlayImpl,

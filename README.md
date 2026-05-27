@@ -131,7 +131,7 @@ the [prompt cookbook](https://pantani.github.io/tdmcp/guide/prompt-cookbook).
 
 ## What you can do
 
-**97+ tools** across three layers, plus an Obsidian vault integration — from
+**102+ tools** across three layers, plus an Obsidian vault integration — from
 one-line artist generators (`create_feedback_network`, `create_audio_reactive`,
 `create_particle_system`, `create_generative_art`, …) to building blocks
 (`create_control_panel`, `animate_parameter`, `create_external_io` for

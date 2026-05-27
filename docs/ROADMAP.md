@@ -25,6 +25,9 @@ Every feature follows the existing patterns:
 
 ## Phase overview
 
+> Phase numbers are historical build order, not release order — the **Version** column
+> shows which release each phase ships in. Everything built so far (Phases 0–11) ships in 0.3.0.
+
 | Phase | Version | Theme | Rationale |
 |---|---|---|---|
 | 0 | 0.3.0 ☑ | DX & CLI foundation | Multiplier — speeds up every later phase |
@@ -33,11 +36,11 @@ Every feature follows the existing patterns:
 | 3 | 0.3.0 ☑ | Advanced creation (TD) | Heavy, independent features → parallelizable |
 | 4 | 0.3.0 ☑ | Intelligence (AI) | Layer that builds on everything already shipped |
 | 5 | 0.3.0 ☑ | Robustness & export | Polish, automation, path to 1.0 |
-| 6 | 0.9.0 ◐ | Obsidian vault | Markdown library + journal bridge: recipes, setlists, shaders, presets, docs |
+| 6 | 0.3.0 ◐ | Obsidian vault | Markdown library + journal bridge: recipes, setlists, shaders, presets, docs |
 | — | 1.0.0 | Consolidation | API stabilization, docs, test coverage |
-| 7 | 1.1.0 ☑ | Stage I/O & sensor reactivity | Send video out, fan across projectors, react to the camera, follow an external clock, run hands-free |
-| 8–11 | 1.2.0 ◐ | Effects, reactivity, control & AI | Parallel waves — signature effects, deeper reactivity, creation, live control/AI/DX (detailed below) |
-| 12 | 1.3.0 ☐ | Dimensional: 3D, depth & spatial mapping | Take visuals off the flat plane — react in 3D, sculpt with depth, map onto real surfaces |
+| 7 | 0.3.0 ☑ | Stage I/O & sensor reactivity | Send video out, fan across projectors, react to the camera, follow an external clock, run hands-free |
+| 8–11 | 0.3.0 ◐ | Effects, reactivity, control & AI | Parallel waves — signature effects, deeper reactivity, creation, live control/AI/DX (detailed below) |
+| 12 | 0.4.0 ◐ | Dimensional: 3D, depth & spatial mapping | Take visuals off the flat plane — react in 3D, sculpt with depth, map onto real surfaces |
 
 ---
 
@@ -169,7 +172,7 @@ GPU instancing in `create_3d_scene`, and an opt-in `semantic` re-rank for
 
 ---
 
-## Phase 6 — v0.9.0 · Obsidian vault integration ◐ in progress
+## Phase 6 — v0.3.0 · Obsidian vault integration ◐ integrated (live-validation pending)
 
 Bridges an Obsidian vault (a folder of markdown notes) and TouchDesigner, gated on
 `TDMCP_VAULT_PATH`. The vault layer is `src/vault/`; tools live in `src/tools/vault/`.
@@ -200,7 +203,7 @@ recipe library, bridge hardening.
 
 ---
 
-## Phase 7 — v1.1.0 · Stage I/O & sensor reactivity ☑ shipped
+## Phase 7 — v0.3.0 · Stage I/O & sensor reactivity ☑ shipped
 
 Features resume after the 1.0 stabilization milestone. The completed phases make
 a system *play*; this phase makes it survive a real venue: get the signal **out**
@@ -243,7 +246,7 @@ No new bridge endpoints expected (Execute-DAT + `buildPayloadScript` patterns su
 
 ---
 
-## Phases 8–11 — v1.2.0 · Effects, reactivity, control & AI ◐ integrated (live-validation pending)
+## Phases 8–11 — v0.3.0 · Effects, reactivity, control & AI ◐ integrated (live-validation pending)
 
 Built as parallel waves (one subagent per feature — new files + offline `msw` unit tests only, no
 registry edits — then integrated single-writer) alongside Phase 7. Each ships as a new tool + CLI
@@ -302,7 +305,7 @@ tuning of `detect_pitch` (threshold/argmax) and `learn_control` (noise-reject di
 
 ---
 
-## Phase 12 — v1.3.0 · Dimensional: 3D, depth & spatial mapping ☐ planned
+## Phase 12 — v0.4.0 · Dimensional: 3D, depth & spatial mapping ◐ integrated & live-validated
 
 Takes visuals **off the flat plane**: react in 3D, sculpt with depth, and map onto real-world
 surfaces — the terrain of installations and dimensional VJ work. Today 3D is only basic
@@ -315,19 +318,26 @@ a model; `create_depth_silhouette` makes a flat mask — both distinct from the 
 
 | Feature | Delivers | Effort | Status |
 |---|---|---|---|
-| `create_3d_audio_reactive` (L1) | A 3D scene that reacts to sound — a grid of **instances** whose height/scale tracks `create_spectrum` FFT bands (bind `instancesy`/`instancesz` to band channels), or a primitive that pulses with the bass. The 3D counterpart to `create_audio_reactive`. **Lowest-risk** — reuses the validated instancing + `bind_to_channel` path | M | ☐ |
-| `create_dome_output` (L1) | Render the scene to a cubemap and remap to **fisheye / equirectangular** for planetarium domes / 360 — the curved single-output complement to `create_multi_output`'s flat tiling. A **GLSL** remap (proven) of a cube render | M | ☐ |
-| `create_mesh_warp` (L1) | Map a source onto a **curved / irregular** surface via a deformable grid (textured grid geometry, or a Bezier/Warp TOP), beyond the flat corner-pin — for domes, columns, sculptures. Output for `setup_output` | L | ☐ |
-| `create_depth_displacement` (L1) | Push a plane into 3D by a **depth / luminance map** (camera / video / depth source) — a 2.5D relief / pseudo-scan that moves with the camera. Distinct from `create_depth_silhouette` (a flat mask); this is real geometry | M | ☐ |
-| `create_gpu_particle_field` (L1) | A high-count **GPU particle / point field** reacting to audio or camera motion (emit on beats, push by bass, color by band) — beyond the CPU `create_particle_system`. **Highest-complexity** (position/velocity feedback TOPs + instancing) | L | ☐ |
+| `create_3d_audio_reactive` (L1) | A 3D scene that reacts to sound: `instanced_bars` — a row of boxes/spheres whose **per-bar height** tracks the FFT (one CHOP sample per bar drives `instancesy`), a 3D spectrum bar-graph — or `bass_pulse`, a single primitive that swells with RMS energy. The 3D counterpart to `create_audio_reactive` | M | ☑ |
+| `create_dome_output` (L1) | GLSL-remap a source to **fisheye / equirectangular** for planetarium domes / 360 — the curved single-output complement to `create_multi_output`'s flat tiling | M | ☑ |
+| `create_mesh_warp` (L1) | Map a source onto a **curved surface** via a deformable textured grid — a Point-SOP Z deform (bulge / wave / cylinder) of a `gridSOP`, textured through a Constant MAT, beyond the flat corner-pin. Output for `setup_output` | L | ☑ |
+| `create_depth_displacement` (L1) | Push a plane into 3D by a **depth / luminance map** (camera / video / synthetic) via a **GLSL MAT** vertex stage — real 2.5D relief geometry. Distinct from `create_depth_silhouette` (a flat mask). Includes the cold-cook keep-alive | M | ☑ |
+| `create_gpu_particle_field` (L1) | A high-count **GPU particle field** (side² up to 512²) — position/velocity **feedback-TOP** loops (curl-noise / gravity) feeding **TOP-instancing**, flowing as curl-noise streams. Beyond the CPU `create_particle_system` | L | ☑ |
 
-**Probe-first checklist** (confirm operators live before fixing each API — the Phase-7 lesson):
+**Live-validation findings** (built create → verify → preview against TouchDesigner 2025.32820; each `*Impl` exercised end-to-end through the agent CLI against the live bridge):
 
-- `create_3d_audio_reactive`: confirm a 1×N CHOP can feed `instancesy`/`instancesz` per instance (validated instancing path); else fall back to a whole-geometry bass pulse.
-- `create_dome_output`: confirm the Render TOP **cube-map** mode (or a 6-camera render), then a GLSL fisheye/equirect remap (GLSL is validated).
-- `create_mesh_warp`: confirm a grid-warp primitive — a textured `gridSOP` rendered with draggable points, or a Bezier/Warp TOP if present.
-- `create_depth_displacement`: confirm geometry displacement by a texture (a displacement material, a GLSL vertex stage, or a SOP reading the TOP), plus the cold-cook keep-alive (the `create_motion_reactive` Execute-DAT lesson) when the source is a still.
-- `create_gpu_particle_field`: confirm this build's GPU-particle pattern (position/velocity feedback TOPs + instancing, or a dedicated operator); the likeliest deferral.
+- `create_3d_audio_reactive`: per-bar height needs a **CHOP instance source** (channels `tx`/`sy`), not an `instancesy` expression — a per-instance expression evaluates only once. The merge needs `align="start"` or the bins rotate. `bass_pulse` uses Analyze CHOP `function="rmspower"` (not `"rms"`, which silently falls back to a ~0 average).
+- `create_dome_output`: GLSL fisheye/equirect remap of an existing (ideally equirectangular) source renders a valid dome master; a true cube-map render is the higher-fidelity follow-up.
+- `create_mesh_warp`: the Point SOP's `tz` is a per-point expression (`me.inputPoint`) — no `dopos` toggle exists. Camera tilted off head-on so the curvature reads in preview; `constantMAT.colormap` textures the grid.
+- `create_depth_displacement`: GLSL MAT par names are `vdat`/`pdat`/`sampler0top`/`sampler0name` + the `vec` uniform sequence; named samplers must be **declared** in the shader (`uniform sampler2D sHeight;`) and `P` is `vec3`.
+- `create_gpu_particle_field`: TOP-instancing maps texel `r`/`g`/`b` → XYZ and derives the count from the texture (validated), but applies translate **only** — particle size must live on the dot SOP's radius, not per-instance scale. Audio/motion reactivity adds a source but wiring it into the velocity force is a noted follow-up.
+
+**Areas:** new L1 tools `create3dAudioReactive`, `createDomeOutput`, `createMeshWarp`,
+`createDepthDisplacement`, `createGpuParticleField` (each `*Impl` + `register*` + msw unit test),
+registered in `src/tools/layer1/index.ts`; CLI commands `audio3d` / `dome` / `mesh-warp` /
+`depth-displace` / `gpu-particles` in `src/cli/agent.ts`. Built one-subagent-per-feature
+(new files + offline tests only), then single-writer wiring + live tuning. The tool registry is now
+102 tools (44 Layer 1).
 
 **Stretch / hardware- or model-blocked (won't ship unvalidated):** depth-camera input
 (Kinect / RealSense / Azure) in `create_external_io`; pose / body tracking (MediaPipe / ML) →

@@ -6,7 +6,37 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-Follow-ups: finish the items deferred during the phased build (to be versioned alongside the next release).
+### Added
+
+- **Phase 12 — Dimensional (3D, depth & spatial mapping):** five Layer-1 generators that take
+  visuals off the flat plane, each built → verified → previewed live in TouchDesigner.
+- **`create_3d_audio_reactive`** — a 3D scene that reacts to sound (CLI `audio3d`). `instanced_bars`
+  renders a row of boxes/spheres whose **per-bar height** tracks the FFT spectrum (one CHOP sample
+  per bar drives `instancesy` through a CHOP instance source) — a 3D spectrum bar-graph; `bass_pulse`
+  swells a single primitive with RMS energy. The 3D counterpart to `create_audio_reactive`.
+- **`create_dome_output`** — GLSL-remap a source TOP to **fisheye** or **equirectangular** for
+  planetarium domes / 360 projection (CLI `dome`), the curved single-output complement to
+  `create_multi_output`'s flat tiling.
+- **`create_mesh_warp`** — map a source onto a **curved surface** via a deformable textured grid: a
+  Point-SOP Z deform (bulge / wave / cylinder) of a `gridSOP` textured through a Constant MAT, beyond
+  the flat corner-pin — for domes, columns, sculptures. Output ready for `setup_output` (CLI
+  `mesh-warp`).
+- **`create_depth_displacement`** — push a plane into real 3D relief by a **depth / luminance map**
+  (camera / movie / synthetic) through a GLSL MAT vertex stage — true 2.5D geometry, with an
+  Execute-DAT keep-alive for still sources (CLI `depth-displace`). Distinct from
+  `create_depth_silhouette` (a flat mask).
+- **`create_gpu_particle_field`** — a high-count **GPU particle field** (side², up to 512²≈262k):
+  position/velocity **feedback-TOP** loops (curl-noise / gravity) feed **TOP-instancing**, flowing as
+  curl-noise streams well beyond the CPU `create_particle_system` (CLI `gpu-particles`). Optional
+  audio/motion reactivity adds a source (wiring it into the velocity force is a noted follow-up).
+
+## [0.3.0] - 2026-05-27
+
+Everything built on top of 0.2.0, in one release: a scriptable CLI and developer-experience
+tooling, musical and beat reactivity, live-performance instruments (cues, macros, control
+surfaces, phone remote), advanced creation (video, 3D, mixing, projection mapping, keyframes,
+simulations), assistant intelligence (operator search, documentation, AI prompts), and
+robustness & export (render to disk, performance hunting, snapshots, recipes).
 
 ### Added
 
@@ -102,30 +132,6 @@ Follow-ups: finish the items deferred during the phased build (to be versioned a
 - **`learn_control`** (experimental) — interactive MIDI/OSC "learn": snapshot an input CHOP, then
   bind the control the artist just moved (CLI `learn`).
 
-### Changed
-
-- **`create_3d_scene` instancing** — an `instances` param scatters N copies of the geometry over
-  a grid via GPU instancing, with the camera framed to fit. `scale_variation` (0–1) gives each
-  copy a random size via a per-point `pscale` attribute, and `spin` (deg/sec) rotates each copy
-  over time through an `instancery` expression (validated live: a 3×3 grid renders with varied
-  scale + spin).
-- **`search_operators` semantic mode** — opt-in `semantic: true` re-ranks keyword candidates by
-  embedding similarity through the configured LLM endpoint (`TDMCP_LLM_BASE_URL`/`_MODEL`), falling
-  back to keyword ranking when unavailable. Candidate embeddings are cached in-memory (keyed by
-  model, LRU-bounded), so within a session repeat searches only embed the new query, not the whole
-  candidate pool. The default stays pure keyword (zero-config); for best results point
-  `TDMCP_LLM_MODEL` at a dedicated embedding model (e.g. `nomic-embed-text`).
-
-## [0.3.0] - 2026-05-27
-
-Everything built on top of 0.2.0, in one release: a scriptable CLI and developer-experience
-tooling, musical and beat reactivity, live-performance instruments (cues, macros, control
-surfaces, phone remote), advanced creation (video, 3D, mixing, projection mapping, keyframes,
-simulations), assistant intelligence (operator search, documentation, AI prompts), and
-robustness & export (render to disk, performance hunting, snapshots, recipes).
-
-### Added
-
 - **`render_output`** — save a TOP to an image file at its native, full resolution
   (PNG/JPG/EXR/TIFF), for exporting finished frames — unlike get_preview's small inline thumbnail.
 - **`optimize_performance`** — scan a network for cook-time bottlenecks and report the slowest
@@ -219,6 +225,29 @@ robustness & export (render to disk, performance hunting, snapshots, recipes).
   `arrange`, `connect`, `container`, `control-panel`, `io`, `glsl`, `chain`, `script`,
   `duplicate`, `component`, `preset`, `params` and `checkpoint`. Whole systems can now be
   scripted from a shell.
+- **Obsidian vault integration** — bridge a folder of Markdown notes (set `TDMCP_VAULT_PATH`) and
+  TouchDesigner, with path-traversal-safe IO and frontmatter parsing: `scaffold_vault` (a starter
+  vault layout with worked examples), `save_recipe_to_vault` (capture a live network as a recipe
+  note, merged into the recipe library), `apply_shader_from_vault` (build a GLSL TOP from a
+  fenced-`glsl` note), `sync_presets_vault` (presets ↔ Markdown), `export_network_to_vault` (a
+  Mermaid + `[[wikilink]]` patch map), `log_performance` (a dated show diary with snapshot +
+  thumbnail), `import_setlist` (build a show from a setlist note's `tracks`), `bind_vault_text` (a
+  Text DAT live-synced to a note) and `generate_from_moodboard` (seed `create_generative_art` from
+  a palette/mood note).
+
+### Changed
+
+- **`create_3d_scene` instancing** — an `instances` param scatters N copies of the geometry over
+  a grid via GPU instancing, with the camera framed to fit. `scale_variation` (0–1) gives each
+  copy a random size via a per-point `pscale` attribute, and `spin` (deg/sec) rotates each copy
+  over time through an `instancery` expression (validated live: a 3×3 grid renders with varied
+  scale + spin).
+- **`search_operators` semantic mode** — opt-in `semantic: true` re-ranks keyword candidates by
+  embedding similarity through the configured LLM endpoint (`TDMCP_LLM_BASE_URL`/`_MODEL`), falling
+  back to keyword ranking when unavailable. Candidate embeddings are cached in-memory (keyed by
+  model, LRU-bounded), so within a session repeat searches only embed the new query, not the whole
+  candidate pool. The default stays pure keyword (zero-config); for best results point
+  `TDMCP_LLM_MODEL` at a dedicated embedding model (e.g. `nomic-embed-text`).
 
 [0.3.0]: https://github.com/Pantani/tdmcp/releases/tag/v0.3.0
 
