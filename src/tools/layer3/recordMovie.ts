@@ -13,12 +13,8 @@ export const recordMovieSchema = z.object({
     .string()
     .optional()
     .describe(
-      "(start) Output path on the TD machine. .mov/.mp4 for a movie; use a $F pattern (e.g. frame.$F4.png) for an image sequence. Absolute path recommended.",
+      "(start) Output movie path on the TD machine, with a .mov or .mp4 extension. Absolute path recommended.",
     ),
-  type: z
-    .enum(["movie", "imagesequence"])
-    .default("movie")
-    .describe("(start) Record a single movie file or a numbered image sequence."),
   fps: z.coerce.number().positive().default(30).describe("(start) Frames per second."),
   seconds: z.coerce
     .number()
@@ -80,15 +76,17 @@ try:
             else:
                 _mov.par.record = False
                 report["stopped"] = _mov.par.file.eval()
+                # Recording is finished (the file is written); remove the recorder + auto-stop
+                # hook so they don't linger in the project.
+                _mov.destroy()
+                _hook = _parent.op("tdmcp_record_stop")
+                if _hook is not None:
+                    _hook.destroy()
         else:
             if not _p.get("file"):
                 report["fatal"] = "A file path is required to start recording."
             else:
                 _mov = _parent.op("tdmcp_record") or _parent.create(td.moviefileoutTOP, "tdmcp_record")
-                try:
-                    _mov.par.type = _p["type"]
-                except Exception:
-                    pass
                 _mov.par.file = _p["file"]
                 try:
                     _mov.par.fps = _p["fps"]
@@ -125,7 +123,6 @@ export async function recordMovieImpl(ctx: ToolContext, args: RecordMovieArgs) {
         action: args.action,
         node: args.node_path,
         file: args.file ?? null,
-        type: args.type,
         fps: args.fps,
         seconds: args.seconds ?? null,
         hook: REC_HOOK,
@@ -156,7 +153,7 @@ export const registerRecordMovie: ToolRegistrar = (server, ctx) => {
     {
       title: "Record movie / sequence",
       description:
-        "Record a TOP to a movie file (.mov/.mp4) or a numbered image sequence via a Movie File Out TOP — for exporting a clip or a loop, where render_output only saves a single frame. start begins recording (pass file, type, fps); pass `seconds` to auto-stop after a fixed length, or call stop to finish manually. The file is written by TouchDesigner on the TD machine.",
+        "Record a TOP to a movie file (.mov/.mp4) via a Movie File Out TOP — for exporting a clip or a loop, where render_output only saves a single frame. start begins recording (pass file, fps); pass `seconds` to auto-stop after a fixed length, or call stop to finish (stop also cleans up the recorder node). The file is written by TouchDesigner on the TD machine. For individual numbered frames, use render_output per frame.",
       inputSchema: recordMovieSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

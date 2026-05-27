@@ -502,7 +502,7 @@ describe("tdmcp-agent CLI — pending items (0.9.0)", () => {
     expect(r.code).toBe(0);
     const input = JSON.stringify(JSON.parse(r.stdout).input);
     expect(input).toContain("seconds");
-    expect(input).toContain("imagesequence");
+    expect(input).toContain("action");
   });
 
   it("operator search stays in keyword mode by default (no endpoint needed)", async () => {

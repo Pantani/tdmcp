@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { cosineSimilarity, embedTexts } from "../../knowledge/embeddings.js";
+import { cosineSimilarity, embedTextsCached } from "../../knowledge/embeddings.js";
 import { loadConfig } from "../../utils/config.js";
 import { structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -40,7 +40,9 @@ export async function searchOperatorsImpl(ctx: ToolContext, args: SearchOperator
   try {
     const config = loadConfig();
     const texts = [args.query, ...keyword.map((o) => `${o.name}. ${o.summary}`)];
-    const vectors = await embedTexts(texts, config);
+    // Cached: operator-summary embeddings are reused across queries; only the query and any
+    // not-yet-seen candidate actually hit the endpoint.
+    const vectors = await embedTextsCached(texts, config);
     const queryVec = vectors[0] as number[];
     const operators = keyword
       .map((o, i) => ({ o, score: cosineSimilarity(queryVec, vectors[i + 1] as number[]) }))

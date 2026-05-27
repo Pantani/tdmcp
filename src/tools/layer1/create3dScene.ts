@@ -19,6 +19,21 @@ export const create3dSceneSchema = z.object({
     .positive()
     .default(1)
     .describe("Copies to scatter via GPU instancing on a grid (1 = a single object)."),
+  spin: z.coerce
+    .number()
+    .min(0)
+    .default(0)
+    .describe(
+      "Per-instance spin around Y in degrees/sec (0 = still). Each copy rotates in place over time; needs instances > 1.",
+    ),
+  scale_variation: z.coerce
+    .number()
+    .min(0)
+    .max(1)
+    .default(0)
+    .describe(
+      "Per-instance size variation: 0 = all the same size, 1 = sizes range from 0 to full. Needs instances > 1.",
+    ),
   expose_controls: z
     .boolean()
     .default(true)
@@ -55,13 +70,43 @@ export async function create3dSceneImpl(ctx: ToolContext, args: Create3dSceneArg
         geo,
       );
       await builder.python(`_p = op(${q(points)})\n_p.render = False\n_p.display = False`);
-      await builder.setParams(geo, {
+
+      // Scale variation: a Point SOP writes a per-point `pscale` attribute (random per point via
+      // tdu.rand), and instancesx/sy/sz read it so each copy gets its own size. Range is
+      // [1 - variation, 1] — at variation 1 some copies shrink toward 0, at 0 it stays uniform.
+      let instanceSrc = points;
+      if (args.scale_variation > 0) {
+        const pscale = await builder.add("pointSOP", "pscale", {}, geo);
+        await builder.connect(points, pscale);
+        const lo = Number((1 - args.scale_variation).toFixed(4));
+        const rng = Number(args.scale_variation.toFixed(4));
+        await builder.python(
+          `_p = op(${q(pscale)})\n_p.par.dopscale = True\n_p.par.pscale.expr = ${q(`${lo} + ${rng}*tdu.rand(me.inputPoint.index)`)}\n_p.render = False\n_p.display = False`,
+        );
+        instanceSrc = pscale;
+      }
+
+      const instanceParams: Record<string, unknown> = {
         instancing: 1,
-        instanceop: points,
+        instanceop: instanceSrc,
         instancetx: "P(0)",
         instancety: "P(1)",
         instancetz: "P(2)",
-      });
+      };
+      if (args.scale_variation > 0) {
+        instanceParams.instancesx = "pscale";
+        instanceParams.instancesy = "pscale";
+        instanceParams.instancesz = "pscale";
+      }
+      await builder.setParams(geo, instanceParams);
+
+      // Per-instance spin: an expression on instancery (auto-switches the param to EXPRESSION mode)
+      // rotates every copy around its own Y axis over time.
+      if (args.spin > 0) {
+        await builder.python(
+          `op(${q(geo)}).par.instancery.expr = ${q(`absTime.seconds * ${args.spin}`)}`,
+        );
+      }
     }
 
     const camDist = args.instances > 1 ? Math.max(cols, rows) * spacing + 6 : 5;
@@ -90,14 +135,20 @@ export async function create3dSceneImpl(ctx: ToolContext, args: Create3dSceneArg
         ]
       : [];
 
+    const instanceNote =
+      args.instances > 1
+        ? ` ×${args.instances} instanced${args.scale_variation > 0 ? ", varied scale" : ""}${args.spin > 0 ? `, ${args.spin}°/s spin` : ""}`
+        : "";
     return finalize(ctx, {
-      summary: `Built a 3D scene (${args.primitive}${args.instances > 1 ? ` ×${args.instances} instanced` : ""}) rendered to ${out} — Geometry + Camera + Light + Render TOP.`,
+      summary: `Built a 3D scene (${args.primitive}${instanceNote}) rendered to ${out} — Geometry + Camera + Light + Render TOP.`,
       builder,
       outputPath: out,
       controls,
       extra: {
         primitive: args.primitive,
         instances: args.instances,
+        spin: args.spin,
+        scale_variation: args.scale_variation,
         geometry: geo,
         camera: cam,
         render,
@@ -113,7 +164,7 @@ export const registerCreate3dScene: ToolRegistrar = (server, ctx) => {
     {
       title: "Create 3D scene",
       description:
-        "Build a renderable 3D scene: a Geometry COMP holding the chosen primitive (sphere/box/grid), a Camera, a Light, and a Render TOP, output as a Null — optionally instanced into a grid of `instances` copies via GPU instancing. Exposes RotateY (spin) and Zoom (camera distance) knobs. The starting point for 3D visuals — bind RotateY to a tempo ramp or an audio feature to make it move.",
+        "Build a renderable 3D scene: a Geometry COMP holding the chosen primitive (sphere/box/grid), a Camera, a Light, and a Render TOP, output as a Null — optionally instanced into a grid of `instances` copies via GPU instancing, with `scale_variation` for per-copy random sizes and `spin` for per-copy rotation over time. Exposes RotateY (whole-scene spin) and Zoom (camera distance) knobs. The starting point for 3D visuals — bind RotateY to a tempo ramp or an audio feature to make it move.",
       inputSchema: create3dSceneSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

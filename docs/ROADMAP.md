@@ -35,6 +35,7 @@ Every feature follows the existing patterns:
 | 5 | 0.8.0 ☑ | Robustness & export | Polish, automation, path to 1.0 |
 | 6 | 0.9.0 ◐ | Obsidian vault | Markdown library + journal bridge: recipes, setlists, shaders, presets, docs |
 | — | 1.0.0 | Consolidation | API stabilization, docs, test coverage |
+| 7 | 1.1.0 ☐ | Stage I/O & sensor reactivity | Send video out, fan across projectors, react to the camera, follow an external clock, run hands-free |
 
 ---
 
@@ -194,3 +195,46 @@ Bridges an Obsidian vault (a folder of markdown notes) and TouchDesigner, gated 
 
 Tool-API stabilization, docs (README + per-feature), test coverage, expanded
 recipe library, bridge hardening.
+
+---
+
+## Phase 7 — v1.1.0 · Stage I/O & sensor reactivity ☐ planned
+
+Features resume after the 1.0 stabilization milestone. The completed phases make
+a system *play*; this phase makes it survive a real venue: get the signal **out**
+to the rig, spread it across **multiple projectors**, react to the **camera** (not
+just audio), lock to the **DJ's clock**, and keep running **hands-free**. It stays
+clear of the parallel tracks — nothing here touches the Obsidian vault (markdown
+knowledge) or the local-LLM copilot (`tdmcp chat`).
+
+| Feature | Delivers | Effort | Status |
+|---|---|---|---|
+| Video **output** in `create_external_io` | `ndi_out` / `syphon_out` (macOS) / `spout_out` (Windows) — send the composition to Resolume, a media server, or OBS. Completes the I/O loop (video-in already ships) | M | ☐ |
+| `create_motion_reactive` (L1) | Camera/video-in → motion-energy / optical-flow / brightness / presence on a Null CHOP, with a Sensitivity knob — the **camera** counterpart to `extract_audio_features`, ready for `bind_to_channel`. Directly serves camera-reactive sets | L | ☐ |
+| `sync_external_clock` (L2) | Lock the project tempo to an incoming **MIDI beat clock** (or tap-tempo), so the Beat CHOP clock follows the DJ instead of a fixed BPM. Complements `create_tempo_sync` (internal clock) | M | ☐ |
+| `create_multi_output` (L1) | Fan a master TOP across N regions/displays — one cropped Window per projector — with an optional edge-blend gradient for overlap. Builds on `setup_output` for multi-projector mapping | L | ☐ |
+| `create_text_overlay` (L1) | A styled **Text TOP** (font / size / color / alignment, optional scroll) composited over a source — lyrics, titles, credits. Distinct from the vault's `bind_vault_text` (which data-syncs a Text *DAT* to a note); this is a finished visual layer | M | ☐ |
+| `create_autopilot` (L2) | A beat-driven **auto-VJ**: every N beats it morphs to the next stored cue or nudges controls by an `amount` (reuses `manage_cue` + `randomize_controls` + the beat event), for hands-free improvisation. A live runtime engine, unlike the vault's static `import_setlist` build | M | ☐ |
+
+**Why these, why now:** they reuse primitives already shipped — `create_external_io`
+gains output kinds, `create_motion_reactive` mirrors `extract_audio_features` and
+plugs into `bind_to_channel`, `sync_external_clock` feeds the existing Beat CHOP,
+`create_autopilot` orchestrates `manage_cue`/`randomize_controls` on the beat event.
+No new bridge endpoints expected (Execute-DAT + `buildPayloadScript` patterns suffice).
+
+**Probe-first risks (validate live before committing to the API):**
+
+- **Syphon/Spout/NDI out** are platform- and license-dependent operators — confirm
+  the TOP types exist in this build (`syphonspoutoutTOP`, `ndioutTOP`, `videodeviceoutTOP`)
+  before shaping the schema; gate per-OS like the existing input kinds.
+- **External MIDI clock → tempo**: verify whether tempo can be driven from a MIDI
+  Beat/clock signal in this build, or whether tap-tempo (timed pulses → BPM) is the
+  reliable path. (Earlier probing already established there is **no Tempo CHOP** — the
+  Beat CHOP is the clock — so this likely drives the Beat CHOP's BPM via a small
+  Execute/CHOP-Execute DAT.)
+- **Camera capture** can hang TD on a macOS permission modal (known gotcha) — default
+  `create_motion_reactive` to a movie/file or synthetic source for zero-permission
+  testing, exactly as `extract_audio_features` offers an oscillator source.
+
+**Candidate CLI:** `io --params '{"kind":"ndi_out",…}'` (existing command, new kind),
+`motion-reactive`, `clock-sync`, `multi-output`, `text`, `autopilot`.

@@ -10,9 +10,10 @@ Follow-ups: finish the items deferred during the phased build (to be versioned a
 
 ### Added
 
-- **`record_movie`** — record a TOP to a movie file (.mov/.mp4) or an image sequence via a
-  Movie File Out TOP, with start/stop and an optional `seconds` auto-stop for capturing a
-  fixed-length loop (CLI `movie`). Complements render_output's single frame.
+- **`record_movie`** — record a TOP to a movie file (.mov/.mp4) via a Movie File Out TOP, with
+  start/stop and an optional `seconds` auto-stop for capturing a fixed-length loop; stop also
+  removes the recorder node it added so nothing lingers (CLI `movie`). Complements render_output —
+  use render_output per frame for individual numbered stills.
 - **`scaffold_show`** — create a starting skeleton for a live show (a master output Null + a
   tempo beat clock) so a set has a frame to build into (CLI `init`).
 - **CLI `repl`** — an interactive mode that runs commands line-by-line (quotes preserved for
@@ -21,11 +22,16 @@ Follow-ups: finish the items deferred during the phased build (to be versioned a
 ### Changed
 
 - **`create_3d_scene` instancing** — an `instances` param scatters N copies of the geometry over
-  a grid via GPU instancing, with the camera framed to fit (validated: a 3×3 sphere grid renders).
+  a grid via GPU instancing, with the camera framed to fit. `scale_variation` (0–1) gives each
+  copy a random size via a per-point `pscale` attribute, and `spin` (deg/sec) rotates each copy
+  over time through an `instancery` expression (validated live: a 3×3 grid renders with varied
+  scale + spin).
 - **`search_operators` semantic mode** — opt-in `semantic: true` re-ranks keyword candidates by
   embedding similarity through the configured LLM endpoint (`TDMCP_LLM_BASE_URL`/`_MODEL`), falling
-  back to keyword ranking when unavailable. The default stays pure keyword (zero-config); for best
-  results point `TDMCP_LLM_MODEL` at a dedicated embedding model (e.g. `nomic-embed-text`).
+  back to keyword ranking when unavailable. Candidate embeddings are cached in-memory (keyed by
+  model, LRU-bounded), so within a session repeat searches only embed the new query, not the whole
+  candidate pool. The default stays pure keyword (zero-config); for best results point
+  `TDMCP_LLM_MODEL` at a dedicated embedding model (e.g. `nomic-embed-text`).
 
 ## [0.8.0] - 2026-05-26
 
