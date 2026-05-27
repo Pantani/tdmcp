@@ -12,6 +12,7 @@ import {
   applyPostProcessingImpl,
   applyPostProcessingSchema,
 } from "../tools/layer1/applyPostProcessing.js";
+import { applyRecipeImpl, applyRecipeSchema } from "../tools/layer1/applyRecipe.js";
 import { create3dSceneImpl, create3dSceneSchema } from "../tools/layer1/create3dScene.js";
 import {
   createAudioReactiveImpl,
@@ -58,6 +59,7 @@ import {
   extractAudioFeaturesSchema,
 } from "../tools/layer1/extractAudioFeatures.js";
 import { getPreviewSchema } from "../tools/layer1/getPreview.js";
+import { listRecipesImpl, listRecipesSchema } from "../tools/layer1/listRecipes.js";
 import { setupOutputImpl, setupOutputSchema } from "../tools/layer1/setupOutput.js";
 import { animateParameterImpl, animateParameterSchema } from "../tools/layer2/animateParameter.js";
 import { arrangeNetworkImpl, arrangeNetworkSchema } from "../tools/layer2/arrangeNetwork.js";
@@ -100,6 +102,7 @@ import {
 import { compareTdNodesImpl, compareTdNodesSchema } from "../tools/layer3/compareTdNodes.js";
 import { createTdNodeImpl, createTdNodeSchema } from "../tools/layer3/createTdNode.js";
 import { deleteTdNodeImpl, deleteTdNodeSchema } from "../tools/layer3/deleteTdNode.js";
+import { diffSnapshotsImpl, diffSnapshotsSchema } from "../tools/layer3/diffSnapshots.js";
 import { documentNetworkImpl, documentNetworkSchema } from "../tools/layer3/documentNetwork.js";
 import { execNodeMethodImpl, execNodeMethodSchema } from "../tools/layer3/execNodeMethod.js";
 import {
@@ -122,7 +125,12 @@ import {
 import { getTdNodesImpl, getTdNodesSchema } from "../tools/layer3/getTdNodes.js";
 import { getTdPerformanceImpl, getTdPerformanceSchema } from "../tools/layer3/getTdPerformance.js";
 import { getTdTopologyImpl, getTdTopologySchema } from "../tools/layer3/getTdTopology.js";
+import {
+  optimizePerformanceImpl,
+  optimizePerformanceSchema,
+} from "../tools/layer3/optimizePerformance.js";
 import { reloadBridgeImpl, reloadBridgeSchema } from "../tools/layer3/reloadBridge.js";
+import { renderOutputImpl, renderOutputSchema } from "../tools/layer3/renderOutput.js";
 import { searchOperatorsImpl, searchOperatorsSchema } from "../tools/layer3/searchOperators.js";
 import { snapshotTdGraphImpl, snapshotTdGraphSchema } from "../tools/layer3/snapshotTdGraph.js";
 import {
@@ -209,6 +217,16 @@ const COMMANDS: Record<string, Command> = {
     documentNetworkImpl,
     "Document a network (summary + mermaid).",
   ),
+  diff: r(diffSnapshotsSchema, diffSnapshotsImpl, "Diff two network snapshots (offline)."),
+  optimize: r(
+    optimizePerformanceSchema,
+    optimizePerformanceImpl,
+    "Find (and optionally fix) cook-time bottlenecks.",
+    { mutates: true },
+  ),
+  render: r(renderOutputSchema, renderOutputImpl, "Save a TOP to a file at full resolution."),
+  recipes: r(listRecipesSchema, listRecipesImpl, "List the built-in recipe library (offline)."),
+  recipe: r(applyRecipeSchema, applyRecipeImpl, "Build a recipe by id.", { mutates: true }),
   "exec python": r(
     executePythonScriptSchema,
     executePythonScriptImpl,

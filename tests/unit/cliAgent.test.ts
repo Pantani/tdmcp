@@ -426,3 +426,52 @@ describe("tdmcp-agent CLI — phase 4 (intelligence)", () => {
     expect(doc.nodeCount).toBeGreaterThanOrEqual(1);
   });
 });
+
+describe("tdmcp-agent CLI — phase 5 (robustness & export)", () => {
+  it("lists the robustness/export commands in --help", async () => {
+    const r = await runCli(["--help"]);
+    expect(r.code).toBe(0);
+    for (const cmd of ["diff", "optimize", "render", "recipes", "recipe"]) {
+      expect(r.stdout).toContain(cmd);
+    }
+  });
+
+  it("lists the recipe library offline", async () => {
+    const r = await runCli(["recipes"], { makeCtx });
+    expect(r.code).toBe(0);
+    expect(JSON.parse(r.stdout).count).toBeGreaterThan(0);
+  });
+
+  it("diffs two snapshots offline (added node + parameter change)", async () => {
+    const r = await runCli([
+      "diff",
+      "--params",
+      JSON.stringify({
+        before: { nodes: [{ path: "/a", parameters: { size: 1 } }] },
+        after: {
+          nodes: [{ path: "/a", parameters: { size: 5 } }, { path: "/b" }],
+        },
+      }),
+    ]);
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.nodes_added).toContain("/b");
+    expect(doc.parameter_changes[0].changes.size).toEqual({ from: 1, to: 5 });
+  });
+
+  it("schema render exposes node_path and file", async () => {
+    const r = await runCli(["schema", "render"]);
+    expect(r.code).toBe(0);
+    const input = JSON.stringify(JSON.parse(r.stdout).input);
+    expect(input).toContain("node_path");
+    expect(input).toContain("file");
+  });
+
+  it("schema io now includes keyboard_in and gamepad_in", async () => {
+    const r = await runCli(["schema", "io"]);
+    expect(r.code).toBe(0);
+    const input = JSON.stringify(JSON.parse(r.stdout).input);
+    expect(input).toContain("keyboard_in");
+    expect(input).toContain("gamepad_in");
+  });
+});

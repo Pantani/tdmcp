@@ -1,5 +1,6 @@
 import type { ToolRegistrar } from "../types.js";
 import { registerApplyPostProcessing } from "./applyPostProcessing.js";
+import { registerApplyRecipe } from "./applyRecipe.js";
 import { registerCreate3dScene } from "./create3dScene.js";
 import { registerCreateAudioReactive } from "./createAudioReactive.js";
 import { registerCreateDataVisualization } from "./createDataVisualization.js";
@@ -16,6 +17,7 @@ import { registerCreateVisualSystem } from "./createVisualSystem.js";
 import { registerDescribeProject } from "./describeProject.js";
 import { registerExtractAudioFeatures } from "./extractAudioFeatures.js";
 import { registerGetPreview } from "./getPreview.js";
+import { registerListRecipes } from "./listRecipes.js";
 import { registerSetupOutput } from "./setupOutput.js";
 
 export const layer1Registrars: ToolRegistrar[] = [
@@ -37,4 +39,6 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateProjectionMapping,
   registerCreateKeyframeAnimation,
   registerCreateSimulation,
+  registerListRecipes,
+  registerApplyRecipe,
 ];

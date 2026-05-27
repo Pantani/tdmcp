@@ -2,6 +2,7 @@ import type { ToolRegistrar } from "../types.js";
 import { registerCompareTdNodes } from "./compareTdNodes.js";
 import { registerCreateTdNode } from "./createTdNode.js";
 import { registerDeleteTdNode } from "./deleteTdNode.js";
+import { registerDiffSnapshots } from "./diffSnapshots.js";
 import { registerDocumentNetwork } from "./documentNetwork.js";
 import { registerExecNodeMethod } from "./execNodeMethod.js";
 import { registerExecutePythonScript } from "./executePythonScript.js";
@@ -15,7 +16,9 @@ import { registerGetTdNodeParameters } from "./getTdNodeParameters.js";
 import { registerGetTdNodes } from "./getTdNodes.js";
 import { registerGetTdPerformance } from "./getTdPerformance.js";
 import { registerGetTdTopology } from "./getTdTopology.js";
+import { registerOptimizePerformance } from "./optimizePerformance.js";
 import { registerReloadBridge } from "./reloadBridge.js";
+import { registerRenderOutput } from "./renderOutput.js";
 import { registerSearchOperators } from "./searchOperators.js";
 import { registerSnapshotTdGraph } from "./snapshotTdGraph.js";
 import { registerSummarizeTdErrors } from "./summarizeTdErrors.js";
@@ -43,4 +46,7 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerReloadBridge,
   registerSearchOperators,
   registerDocumentNetwork,
+  registerDiffSnapshots,
+  registerOptimizePerformance,
+  registerRenderOutput,
 ];

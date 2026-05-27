@@ -4,6 +4,28 @@ All notable changes to **tdmcp** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-05-26
+
+Robustness & export: render to disk, hunt bottlenecks, version patches, reuse recipes, more input.
+
+### Added
+
+- **`render_output`** — save a TOP to an image file at its native, full resolution
+  (PNG/JPG/EXR/TIFF), for exporting finished frames — unlike get_preview's small inline thumbnail.
+- **`optimize_performance`** — scan a network for cook-time bottlenecks and report the slowest
+  nodes with a concrete suggestion each; with apply:true, lower the flagged TOPs' resolution to
+  reclaim GPU time.
+- **`diff_snapshots`** — compare two snapshot_td_graph snapshots and return a readable diff:
+  nodes added/removed, connection changes, and per-node parameter changes (before/after) — for
+  versioning a patch or seeing exactly what an edit changed. Pure, offline analysis.
+- **`list_recipes` / `apply_recipe`** — browse the built-in recipe library and instantiate a
+  recipe by id in one call.
+- **Keyboard / gamepad / mouse input** in `create_external_io` (`keyboard_in`, `gamepad_in`,
+  `mouse_in`) — more control sources to bind to parameters.
+- **CLI commands** `render`, `optimize`, `diff`, `recipes` and `recipe`.
+
+[0.8.0]: https://github.com/Pantani/tdmcp/releases/tag/v0.8.0
+
 ## [0.7.0] - 2026-05-26
 
 Intelligence: help the assistant discover, document, recreate, tune and critique work.

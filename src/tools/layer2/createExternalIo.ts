@@ -14,9 +14,20 @@ const bindSchema = z.object({
 
 export const createExternalIoSchema = z.object({
   kind: z
-    .enum(["osc_in", "midi_in", "osc_out", "midi_out", "dmx_out", "ndi_in", "syphon_spout_in"])
+    .enum([
+      "osc_in",
+      "midi_in",
+      "keyboard_in",
+      "gamepad_in",
+      "mouse_in",
+      "osc_out",
+      "midi_out",
+      "dmx_out",
+      "ndi_in",
+      "syphon_spout_in",
+    ])
     .describe(
-      "What to bridge: OSC/MIDI input (a control surface — bind channels to parameters), OSC/MIDI output (send a CHOP's channels back out for bidirectional feedback — pass source_path), DMX/Art-Net output (lighting), or NDI / Syphon-Spout video input. (Video/NDI/Syphon *outputs* live in setup_output.)",
+      "What to bridge: OSC/MIDI/keyboard/gamepad/mouse input (a control surface — bind channels to parameters), OSC/MIDI output (send a CHOP's channels back out for bidirectional feedback — pass source_path), DMX/Art-Net output (lighting), or NDI / Syphon-Spout video input. (Video/NDI/Syphon *outputs* live in setup_output.)",
     ),
   parent_path: z.string().default("/project1").describe("COMP to create the I/O operator in."),
   name: z.string().optional(),
@@ -71,7 +82,7 @@ const IO_SCRIPT = `
 import json, base64, traceback
 _p = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
 report = {"kind": _p["kind"], "warnings": []}
-_TYPEMAP = {"osc_in": oscinCHOP, "midi_in": midiinCHOP, "osc_out": oscoutCHOP, "midi_out": midioutCHOP, "dmx_out": dmxoutCHOP, "ndi_in": ndiinTOP, "syphon_spout_in": syphonspoutinTOP}
+_TYPEMAP = {"osc_in": oscinCHOP, "midi_in": midiinCHOP, "keyboard_in": keyboardinCHOP, "gamepad_in": joystickCHOP, "mouse_in": mouseinCHOP, "osc_out": oscoutCHOP, "midi_out": midioutCHOP, "dmx_out": dmxoutCHOP, "ndi_in": ndiinTOP, "syphon_spout_in": syphonspoutinTOP}
 try:
     _kind = _p["kind"]; _parent = op(_p["parent"])
     if _parent is None:
@@ -118,7 +129,7 @@ try:
         elif _kind == "syphon_spout_in":
             _setpar("sendername", _p.get("source_name"))
         _bound = []
-        if _kind in ("osc_in", "midi_in"):
+        if _kind in ("osc_in", "midi_in", "keyboard_in", "gamepad_in", "mouse_in"):
             for _b in (_p.get("bind_to") or []):
                 try:
                     _ch = _b["channel"]; _t = _b["target"]; _dot = _t.rfind(".")

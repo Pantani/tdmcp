@@ -32,7 +32,7 @@ Every feature follows the existing patterns:
 | 2 | 0.5.0 ☑ | Live performance | Makes systems playable; reuses presets + events |
 | 3 | 0.6.0 ☑ | Advanced creation (TD) | Heavy, independent features → parallelizable |
 | 4 | 0.7.0 ☑ | Intelligence (AI) | Layer that builds on everything already shipped |
-| 5 | 0.8.0 | Robustness & export | Polish, automation, path to 1.0 |
+| 5 | 0.8.0 ☑ | Robustness & export | Polish, automation, path to 1.0 |
 | — | 1.0.0 | Consolidation | API stabilization, docs, test coverage |
 
 ---
@@ -145,15 +145,21 @@ sees images and the patch) instead of bespoke tools.
 
 ---
 
-## Phase 5 — v0.8.0 · Robustness & export
+## Phase 5 — v0.8.0 · Robustness & export ☑ shipped
 
 | Feature | Delivers | Effort | Status |
 |---|---|---|---|
-| CLI `render` / export | Frame / sequence / movie via CLI (render automation) | M | ☐ |
-| Performance auto-optimize | Uses `get_td_performance` to drop res / disable cooking on expensive nodes | M | ☐ |
-| Patch versioning / diff | Readable diffs between snapshots (extends `snapshot`) | M | ☐ |
-| CLI `init` / `recipes` / REPL | `.toe` scaffold, apply recipes, interactive mode | M | ☐ |
-| Gamepad / keyboard | Additional control source | S | ☐ |
+| `render_output` | Save a TOP to disk at full resolution (PNG/JPG/EXR/TIFF) — export a finished frame | M | ☑ |
+| `optimize_performance` | Rank cook-time bottlenecks with suggestions; apply:true lowers flagged TOPs' resolution | M | ☑ |
+| `diff_snapshots` | Readable diff between two snapshots — nodes/connections/params added, removed, changed | M | ☑ |
+| `list_recipes` / `apply_recipe` | Browse and instantiate the recipe library from a tool/CLI | M | ☑ |
+| Keyboard / gamepad / mouse input | `keyboard_in` / `gamepad_in` / `mouse_in` in `create_external_io` | S | ☑ |
+
+**Areas:** new L3 tools (`renderOutput`, `optimizePerformance`, `diffSnapshots`),
+L1 (`listRecipes`, `applyRecipe`), extended `createExternalIo`, CLI commands
+`render`/`optimize`/`diff`/`recipes`/`recipe`. Note: a `.toe` scaffold and an
+interactive REPL were dropped — the CLI is already fully scriptable per-command,
+so a REPL adds little; deferred to 1.0 polish if wanted.
 
 ---
 
