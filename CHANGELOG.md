@@ -30,6 +30,12 @@ Follow-ups: finish the items deferred during the phased build (to be versioned a
   visual through a Text TOP + Composite TOP, or on its own transparent background, output as a Null
   (CLI `text`). For lyrics, titles, song names or credits — distinct from the vault's
   `bind_vault_text` (a data-sync of a Text DAT); this is a finished visual layer.
+- **`create_autopilot`** — a beat-driven auto-VJ: a Beat CHOP + CHOP Execute DAT that, every N
+  beats, either randomizes a target COMP's numeric controls (a hands-free drift set by Amount) or
+  cycles through its stored cues, so a set keeps evolving on its own (CLI `autopilot`). Live
+  Active / Beats / Amount knobs pause or retune it on stage. Reuses the tempo clock,
+  randomize_controls and manage_cue mechanisms (validated live: controls drift each beat, Active
+  pauses).
 
 ### Changed
 

@@ -214,7 +214,7 @@ knowledge) or the local-LLM copilot (`tdmcp chat`).
 | `sync_external_clock` (L2) | Lock the project tempo to an incoming **MIDI beat clock** (or tap-tempo), so the Beat CHOP clock follows the DJ instead of a fixed BPM. Complements `create_tempo_sync` (internal clock) | M | ☐ |
 | `create_multi_output` (L1) | Fan a master TOP across N regions/displays — one cropped Window per projector — with an optional edge-blend gradient for overlap. Builds on `setup_output` for multi-projector mapping | L | ☐ |
 | `create_text_overlay` (L1) | A styled **Text TOP** (font size / hex color / h+v alignment) composited 'over' a source through a Composite TOP, or standalone on a transparent background — lyrics, titles, credits. Distinct from the vault's `bind_vault_text` (which data-syncs a Text *DAT* to a note); this is a finished visual layer (validated live) | M | ☑ |
-| `create_autopilot` (L2) | A beat-driven **auto-VJ**: every N beats it morphs to the next stored cue or nudges controls by an `amount` (reuses `manage_cue` + `randomize_controls` + the beat event), for hands-free improvisation. A live runtime engine, unlike the vault's static `import_setlist` build | M | ☐ |
+| `create_autopilot` (L1) | A beat-driven **auto-VJ**: a Beat CHOP + CHOP Execute DAT that every N beats randomizes a target COMP's controls (by `amount`) or cycles its stored cues, for hands-free improvisation, with live Active/Beats/Amount knobs (reuses the tempo clock + `randomize_controls` + `manage_cue`). A live runtime engine, unlike the vault's static `import_setlist` build (validated live) | M | ☑ |
 
 **Why these, why now:** they reuse primitives already shipped — `create_external_io`
 gains output kinds, `create_motion_reactive` mirrors `extract_audio_features` and

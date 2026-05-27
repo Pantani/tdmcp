@@ -3,6 +3,7 @@ import { registerApplyPostProcessing } from "./applyPostProcessing.js";
 import { registerApplyRecipe } from "./applyRecipe.js";
 import { registerCreate3dScene } from "./create3dScene.js";
 import { registerCreateAudioReactive } from "./createAudioReactive.js";
+import { registerCreateAutopilot } from "./createAutopilot.js";
 import { registerCreateDataVisualization } from "./createDataVisualization.js";
 import { registerCreateFeedbackNetwork } from "./createFeedbackNetwork.js";
 import { registerCreateGenerativeArt } from "./createGenerativeArt.js";
@@ -38,6 +39,7 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateMotionReactive,
   registerCreateTempoSync,
   registerCreateTextOverlay,
+  registerCreateAutopilot,
   registerCreateLayerMixer,
   registerCreateVideoPlayer,
   registerCreate3dScene,

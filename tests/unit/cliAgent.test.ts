@@ -529,12 +529,7 @@ describe("tdmcp-agent CLI — phase 7 (stage I/O & sensor reactivity)", () => {
   });
 
   it("dry-runs motion-reactive with the safe synthetic source", async () => {
-    const r = await runCli([
-      "motion-reactive",
-      "--dry-run",
-      "--params",
-      '{"source":"synthetic"}',
-    ]);
+    const r = await runCli(["motion-reactive", "--dry-run", "--params", '{"source":"synthetic"}']);
     expect(r.code).toBe(0);
     const doc = JSON.parse(r.stdout);
     expect(doc.dryRun).toBe(true);
@@ -563,5 +558,28 @@ describe("tdmcp-agent CLI — phase 7 (stage I/O & sensor reactivity)", () => {
     expect(doc.command).toBe("text");
     expect(doc.args.text).toBe("HELLO");
     expect(doc.args.valign).toBe("bottom");
+  });
+
+  it("schema autopilot exposes the mode and beats cadence", async () => {
+    const r = await runCli(["schema", "autopilot"]);
+    expect(r.code).toBe(0);
+    const input = JSON.stringify(JSON.parse(r.stdout).input);
+    expect(input).toContain("randomize");
+    expect(input).toContain("cue");
+    expect(input).toContain("beats");
+  });
+
+  it("dry-runs autopilot in cue mode", async () => {
+    const r = await runCli([
+      "autopilot",
+      "--dry-run",
+      "--params",
+      '{"comp_path":"/project1/v","mode":"cue","beats":8}',
+    ]);
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.command).toBe("autopilot");
+    expect(doc.args.mode).toBe("cue");
+    expect(doc.args.beats).toBe(8);
   });
 });

@@ -19,6 +19,7 @@ import {
   createAudioReactiveImpl,
   createAudioReactiveSchema,
 } from "../tools/layer1/createAudioReactive.js";
+import { createAutopilotImpl, createAutopilotSchema } from "../tools/layer1/createAutopilot.js";
 import {
   createDataVisualizationImpl,
   createDataVisualizationSchema,
@@ -454,6 +455,12 @@ const COMMANDS: Record<string, Command> = {
     randomizeControlsSchema,
     randomizeControlsImpl,
     "Randomize a COMP's numeric controls within range.",
+    { mutates: true },
+  ),
+  autopilot: r(
+    createAutopilotSchema,
+    createAutopilotImpl,
+    "Beat-driven auto-VJ: every N beats randomize controls or cycle cues.",
     { mutates: true },
   ),
   params: r(
