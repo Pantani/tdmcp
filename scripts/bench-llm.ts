@@ -31,7 +31,10 @@ interface Task {
 }
 
 const TASKS: Task[] = [
-  { q: "Is TouchDesigner connected? Use a tool to check, and tell me the version.", ok: ["get_td_info"] },
+  {
+    q: "Is TouchDesigner connected? Use a tool to check, and tell me the version.",
+    ok: ["get_td_info"],
+  },
   { q: "List the nodes inside /project1.", ok: ["get_td_nodes", "find_td_nodes"] },
   { q: "Find any Noise TOP operators in the project.", ok: ["find_td_nodes", "get_td_nodes"] },
   { q: "Which TouchDesigner Python classes have 'noise' in their name?", ok: ["get_td_classes"] },
@@ -39,7 +42,11 @@ const TASKS: Task[] = [
     q: "Are there any errors in /project1?",
     ok: ["get_td_node_errors", "summarize_td_errors", "get_td_nodes"],
   },
-  { q: "Create a Noise TOP named benchNoise inside /project1.", ok: ["create_td_node"], mutates: true },
+  {
+    q: "Create a Noise TOP named benchNoise inside /project1.",
+    ok: ["create_td_node"],
+    mutates: true,
+  },
 ];
 
 const cfg = loadConfig();
@@ -47,7 +54,10 @@ const ctx = buildToolContext(cfg, { logger: silentLogger });
 
 function scoreTurn(events: AgentEvent[], ok: string[]) {
   const started = events
-    .filter((e): e is Extract<AgentEvent, { type: "tool"; status: "start" }> => e.type === "tool" && e.status === "start")
+    .filter(
+      (e): e is Extract<AgentEvent, { type: "tool"; status: "start" }> =>
+        e.type === "tool" && e.status === "start",
+    )
     .map((e) => e.name);
   const okDone = events.some(
     (e) => e.type === "tool" && e.status === "done" && e.ok && ok.includes(e.name),
@@ -70,11 +80,24 @@ async function cleanup() {
 }
 
 async function main() {
-  console.log(`\nmodels: ${MODELS.join(", ")}  ·  runs/task: ${RUNS}  ·  endpoint: ${cfg.llmBaseUrl}\n`);
-  const summary: Array<{ model: string; hit: number; ok: number; ans: number; total: number; ms: number }> = [];
+  console.log(
+    `\nmodels: ${MODELS.join(", ")}  ·  runs/task: ${RUNS}  ·  endpoint: ${cfg.llmBaseUrl}\n`,
+  );
+  const summary: Array<{
+    model: string;
+    hit: number;
+    ok: number;
+    ans: number;
+    total: number;
+    ms: number;
+  }> = [];
 
   for (const model of MODELS) {
-    const client = new LlmClient({ llmBaseUrl: cfg.llmBaseUrl, llmModel: model, llmApiKey: cfg.llmApiKey });
+    const client = new LlmClient({
+      llmBaseUrl: cfg.llmBaseUrl,
+      llmModel: model,
+      llmApiKey: cfg.llmApiKey,
+    });
     const agg = { model, hit: 0, ok: 0, ans: 0, total: 0, ms: 0 };
     console.log(`━━━ ${model} ━━━`);
     for (const task of TASKS) {
@@ -87,7 +110,9 @@ async function main() {
         const events: AgentEvent[] = [];
         const t0 = Date.now();
         try {
-          await runAgentTurn(ctx, client, [{ role: "user", content: task.q }], (e) => events.push(e));
+          await runAgentTurn(ctx, client, [{ role: "user", content: task.q }], (e) =>
+            events.push(e),
+          );
         } catch {
           // network/parse failure counts as a miss
         }
@@ -114,7 +139,9 @@ async function main() {
   }
 
   console.log("━━━ SUMMARY (higher is better; latency lower) ━━━");
-  console.log(`${"model".padEnd(18)} ${"tool-hit".padStart(8)} ${"tool-ok".padStart(8)} ${"answered".padStart(8)} ${"avg-lat".padStart(9)}`);
+  console.log(
+    `${"model".padEnd(18)} ${"tool-hit".padStart(8)} ${"tool-ok".padStart(8)} ${"answered".padStart(8)} ${"avg-lat".padStart(9)}`,
+  );
   for (const a of summary.sort((x, y) => y.ok - x.ok || x.ms - y.ms)) {
     const pct = (n: number) => `${Math.round((100 * n) / a.total)}%`;
     console.log(
