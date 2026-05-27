@@ -24,7 +24,15 @@ capturada ao vivo do TouchDesigner.*
 > *"Faça um padrão de reação-difusão em evolução, em verdes e pretos, lento e
 > orgânico."*
 
+<video src="/examples/reaction-diffusion.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Reação-difusão, simulada na GPU.*
+
 > *"Construa uma paisagem de ruído fluida em 3D com uma câmera orbitando."*
+
+<video src="/examples/noise-landscape.mp4" autoplay loop muted playsinline style="width:100%;max-width:560px;border-radius:8px;display:block"></video>
+
+*Um terreno 3D deslocado por ruído.*
 
 > *"Me dê um visual de atrator estranho com partículas brilhantes no preto."*
 
@@ -67,9 +75,18 @@ brilho na frente da sua webcam.
 > *"Crie um sistema de partículas emitido de uma esfera com turbulência e
 > gravidade, renderizado como sprites brilhantes."*
 
+![Um sistema de partículas criado pelo tdmcp — milhares de sprites saindo de uma esfera](/examples/particle-galaxy.png)
+
+*Uma galáxia de partículas (quadro estático — o movimento das partículas é fino
+demais para um clipe leve).*
+
 > *"Faça 10.000 partículas que rodopiam como uma galáxia."*
 
 > *"Construa uma cena 3D com cubos instanciados reagindo a um campo de ruído."*
+
+<video src="/examples/scene-3d.mp4" autoplay loop muted playsinline style="width:100%;max-width:560px;border-radius:8px;display:block"></video>
+
+*Cubos 3D instanciados, girando.*
 
 **O que você recebe:** um sistema de partículas ou geometria com botões de *Arrasto
 / Turbulência / Gravidade / Vida* para moldar o movimento.

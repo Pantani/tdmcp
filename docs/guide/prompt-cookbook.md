@@ -22,7 +22,15 @@ captured live from TouchDesigner.*
 > *"Make an evolving reaction-diffusion pattern in greens and blacks, slow and
 > organic."*
 
+<video src="/examples/reaction-diffusion.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Reaction-diffusion, simulated on the GPU.*
+
 > *"Build a flowing noise landscape in 3D with an orbiting camera."*
+
+<video src="/examples/noise-landscape.mp4" autoplay loop muted playsinline style="width:100%;max-width:560px;border-radius:8px;display:block"></video>
+
+*A noise-displaced 3D terrain.*
 
 > *"Give me a strange-attractor visual with glowing particles on black."*
 
@@ -63,9 +71,18 @@ plus a *Sensitivity* knob. Like the mic, the live camera triggers the
 > *"Create a particle system emitted from a sphere with turbulence and gravity,
 > rendered as glowing sprites."*
 
+![A particle system built by tdmcp — thousands of sprites bursting from a sphere](/examples/particle-galaxy.png)
+
+*A particle galaxy (still frame — particle motion is too fine-grained to embed as
+a light clip).*
+
 > *"Make 10,000 particles that swirl like a galaxy."*
 
 > *"Build a 3D scene with instanced cubes reacting to a noise field."*
+
+<video src="/examples/scene-3d.mp4" autoplay loop muted playsinline style="width:100%;max-width:560px;border-radius:8px;display:block"></video>
+
+*Instanced 3D cubes, spinning.*
 
 **What you'll get:** a particle or geometry system with live *Drag / Turbulence /
 Gravity / Lifetime* knobs to shape the motion.
