@@ -28,9 +28,21 @@ export interface TouchDesignerClientOptions {
   token?: string;
   /** Overridable for tests (defaults to global `fetch`). */
   fetchImpl?: typeof fetch;
+  /**
+   * Extra attempts for a transient connection failure on an **idempotent** (GET)
+   * request — e.g. TD briefly stalls mid-build. Default 2 (so up to 3 tries).
+   * Only `TdConnectionError` is retried; timeouts and bridge errors are not (a
+   * timeout may mean the request was received, and non-GET methods aren't safe
+   * to repeat). Set 0 to disable.
+   */
+  retries?: number;
+  /** Base backoff between retries, in ms (linear: delay × attempt). Default 150. */
+  retryDelayMs?: number;
 }
 
 type QueryParams = Record<string, string | number | boolean | undefined>;
+
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 function extractErrorMessage(json: unknown): string | undefined {
   if (json && typeof json === "object") {
@@ -64,6 +76,8 @@ export class TouchDesignerClient {
   private readonly logger: Logger;
   private readonly token: string | undefined;
   private readonly fetchImpl: typeof fetch;
+  private readonly retries: number;
+  private readonly retryDelayMs: number;
 
   constructor(options: TouchDesignerClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/+$/, "");
@@ -71,6 +85,8 @@ export class TouchDesignerClient {
     this.logger = options.logger ?? silentLogger;
     this.token = options.token;
     this.fetchImpl = options.fetchImpl ?? fetch;
+    this.retries = Math.max(0, options.retries ?? 2);
+    this.retryDelayMs = Math.max(0, options.retryDelayMs ?? 150);
   }
 
   get endpoint(): string {
@@ -91,6 +107,37 @@ export class TouchDesignerClient {
       }
     }
 
+    // Retry a transient connection failure only for idempotent GETs — a TD that
+    // briefly stalls mid-build shouldn't abort the whole operation. Timeouts and
+    // bridge/API errors are never retried (a timeout may mean the request was
+    // received; non-GET methods aren't safe to repeat).
+    const maxAttempts = method === "GET" ? this.retries + 1 : 1;
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        return await this.attemptRequest(method, url, path, schema, body);
+      } catch (err) {
+        lastError = err;
+        if (err instanceof TdConnectionError && attempt < maxAttempts) {
+          this.logger.debug(
+            `TD ${method} ${path} connection failed (attempt ${attempt}/${maxAttempts}); retrying`,
+          );
+          await sleep(this.retryDelayMs * attempt);
+          continue;
+        }
+        throw err;
+      }
+    }
+    throw lastError;
+  }
+
+  private async attemptRequest<T>(
+    method: string,
+    url: URL,
+    path: string,
+    schema: z.ZodType<T>,
+    body?: unknown,
+  ): Promise<T> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
     let response: Response;

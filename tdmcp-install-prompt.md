@@ -262,7 +262,7 @@ ground truth that Step 5 worked:
 
 ```bash
 curl -s http://127.0.0.1:9980/api/info
-# Expect JSON like: {"ok":true,"data":{"python_version":"3.11.x","td_version":"...","bridge_version":"0.1.0"}}
+# Expect JSON like: {"ok":true,"data":{"python_version":"3.11.x","td_version":"...","bridge_version":"0.3.0"}}
 ```
 
 Retry every few seconds until it returns JSON (or the user says they pasted it and
@@ -326,9 +326,3 @@ can reach `http://<your-ip>:9980` can run code on that machine. Only run it on a
 trusted network and/or firewall port 9980 to localhost. For untrusted networks,
 set the same `TDMCP_BRIDGE_TOKEN` secret in both the MCP server's environment and
 TouchDesigner's environment to require bearer-token auth on the bridge.
-
----
-
-*This runbook installs and connects tdmcp. To **build** the tdmcp server itself
-from scratch, see the separate `tdmcp-bootstrap-prompt.md` — that's a different
-document for a different job.*

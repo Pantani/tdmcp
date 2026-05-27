@@ -4,7 +4,7 @@ import type { Vault } from "../../vault/index.js";
 import { buildFromRecipe, finalize } from "../layer1/orchestration.js";
 import { errorResult, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
-import { requireVault } from "./shared.js";
+import { readNoteSafe, requireVault } from "./shared.js";
 
 const TrackSchema = z.union([
   z.string(),
@@ -67,7 +67,9 @@ export async function importSetlistImpl(ctx: ToolContext, args: ImportSetlistArg
     return errorResult(`Setlist note not found: ${args.note} (looked under Setlists/ too).`);
   }
 
-  const { data } = vault.readNote(rel);
+  const note = readNoteSafe(vault, rel);
+  if ("error" in note) return note.error;
+  const { data } = note;
   const parsed = z.array(TrackSchema).safeParse(data.tracks);
   if (!parsed.success) {
     return errorResult(

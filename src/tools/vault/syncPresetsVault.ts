@@ -3,7 +3,7 @@ import { extractFencedBlock } from "../../vault/frontmatter.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
-import { requireVault } from "./shared.js";
+import { readNoteSafe, requireVault } from "./shared.js";
 
 export const syncPresetsVaultSchema = z.object({
   action: z
@@ -111,7 +111,9 @@ export async function syncPresetsVaultImpl(ctx: ToolContext, args: SyncPresetsVa
   if (!vault.exists(rel)) {
     return errorResult(`Preset note not found: ${rel}.`);
   }
-  const { body } = vault.readNote(rel);
+  const note = readNoteSafe(vault, rel);
+  if ("error" in note) return note.error;
+  const { body } = note;
   const json = extractFencedBlock(body, "json");
   if (!json) {
     return errorResult(`No \`\`\`json presets block found in ${rel}.`);

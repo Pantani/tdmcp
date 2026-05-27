@@ -4,7 +4,14 @@ All notable changes to **tdmcp** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.3.0] - 2026-05-27
+
+Everything built on top of 0.2.0, in one release: a scriptable CLI and developer-experience
+tooling, musical and beat reactivity, live-performance instruments (cues, macros, control
+surfaces, phone remote), advanced creation (video, 3D, mixing, projection mapping, keyframes,
+simulations, dimensional 3D / depth & spatial mapping), assistant intelligence (operator search,
+documentation, AI prompts), and robustness & export (render to disk, performance hunting,
+snapshots, recipes).
 
 ### Added
 
@@ -30,16 +37,6 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   curl-noise streams well beyond the CPU `create_particle_system` (CLI `gpu-particles`). Optional
   reactivity energises the field live — `audio` from mic/line RMS, `motion` from camera
   frame-difference energy — both bound to the velocity shader's `uReact` uniform.
-
-## [0.3.0] - 2026-05-27
-
-Everything built on top of 0.2.0, in one release: a scriptable CLI and developer-experience
-tooling, musical and beat reactivity, live-performance instruments (cues, macros, control
-surfaces, phone remote), advanced creation (video, 3D, mixing, projection mapping, keyframes,
-simulations), assistant intelligence (operator search, documentation, AI prompts), and
-robustness & export (render to disk, performance hunting, snapshots, recipes).
-
-### Added
 
 - **Local LLM copilot (`tdmcp chat`, alias `tdmcp llm-run`)** — a browser chat UI driven by a
   local LLM (Ollama by default; any OpenAI-compatible endpoint via `TDMCP_LLM_BASE_URL`) for

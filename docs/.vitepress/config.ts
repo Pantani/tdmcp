@@ -24,6 +24,7 @@ function pageUrl(relativePath: string): string {
 const artistGuide = (base: string) => [
   { text: "What is tdmcp?", link: `${base}/what-is-tdmcp` },
   { text: "Install", link: `${base}/install` },
+  { text: "Codex + TouchDesigner", link: `${base}/codex` },
   { text: "Your first visual", link: `${base}/first-visual` },
   { text: "Prompt cookbook", link: `${base}/prompt-cookbook` },
   { text: "Recipe gallery", link: `${base}/recipes` },
@@ -73,7 +74,7 @@ export default defineConfig({
       {
         name: "keywords",
         content:
-          "TouchDesigner MCP, TouchDesigner MCP server, MCP server for TouchDesigner, Model Context Protocol, tdmcp, TouchDesigner AI, Claude TouchDesigner, Cursor TouchDesigner, generative visuals, creative coding, VJ",
+          "TouchDesigner MCP, TouchDesigner MCP server, MCP server for TouchDesigner, Model Context Protocol, tdmcp, TouchDesigner AI, Claude TouchDesigner, Cursor TouchDesigner, Codex TouchDesigner, generative visuals, creative coding, VJ",
       },
     ],
     ["meta", { name: "theme-color", content: "#0b0b0e" }],
@@ -300,7 +301,11 @@ export default defineConfig({
       themeConfig: {
         nav: [
           { text: "Guia", link: "/pt/guide/what-is-tdmcp", activeMatch: "/pt/guide/" },
-          { text: "Docs para devs (EN)", link: "/reference/architecture" },
+          {
+            text: "Docs para devs",
+            link: "/pt/reference/architecture",
+            activeMatch: "/pt/reference/",
+          },
           { text: "Roadmap (EN)", link: "/roadmap" },
         ],
         sidebar: [
@@ -308,7 +313,13 @@ export default defineConfig({
           {
             text: "Para desenvolvedores",
             collapsed: false,
-            items: [{ text: "Documentação técnica (em inglês)", link: "/reference/architecture" }],
+            items: [
+              { text: "Arquitetura", link: "/pt/reference/architecture" },
+              { text: "Variáveis de ambiente", link: "/pt/reference/environment" },
+              { text: "Tools (em inglês)", link: "/reference/tools" },
+              { text: "CLI (em inglês)", link: "/reference/cli" },
+              { text: "Bridge & REST API (em inglês)", link: "/reference/bridge-api" },
+            ],
           },
         ],
         editLink: {

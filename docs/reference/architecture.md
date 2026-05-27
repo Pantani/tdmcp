@@ -117,17 +117,24 @@ the machine TD runs on:
   environment. The bridge then rejects any request without a matching
   `Authorization: Bearer <token>` (HTTP `401`). Unset (default) keeps the
   zero-config local flow.
-- `TDMCP_RAW_PYTHON=off` hides the raw-Python MCP tools, but only on the
-  **server side** — a direct network caller could still hit the bridge's
-  `/api/exec` and node-`method` endpoints. To close them at the bridge itself, set
-  `TDMCP_BRIDGE_ALLOW_EXEC=0` in TouchDesigner's environment (defense in depth
-  that holds even without a token); the structured endpoints keep working.
+- `TDMCP_RAW_PYTHON=off` hides only the two **raw-Python MCP tools**
+  (`execute_python_script`, `exec_node_method`) where the *client* authors the
+  code. It is **not** a code-execution kill-switch: many higher-level tools still
+  send their own templated Python to `/api/exec`, and a direct network caller
+  could hit `/api/exec` and node-`method` regardless. To actually close code
+  execution, set `TDMCP_BRIDGE_ALLOW_EXEC=0` in TouchDesigner's environment — the
+  authoritative gate (defense in depth that holds even without a token); the
+  structured endpoints keep working.
 - The MCP server binds to loopback (`127.0.0.1`) for both transports and enables
   DNS-rebinding protection on HTTP.
 - **The bridge refuses browser cross-origin requests.** Any request carrying an
   `Origin` header that isn't loopback is rejected (HTTP `401`), so a malicious web
   page can't quietly POST to the bridge (CSRF / DNS-rebinding → drive-by code
   execution). The MCP server sends no `Origin`, so normal use is unaffected.
+- **The local copilot chat UI (`tdmcp chat`) applies the same guard.** It binds to
+  loopback and rejects (HTTP `403`) any request whose `Host` or `Origin` isn't a
+  loopback name, so a page the artist visits can't drive node CRUD against the live
+  project via `http://127.0.0.1:<chat-port>/chat`.
 
 All of these are configured through [environment variables](/reference/environment).
 
