@@ -30,7 +30,7 @@ Every feature follows the existing patterns:
 | 0 | 0.3.0 ☑ | DX & CLI foundation | Multiplier — speeds up every later phase |
 | 1 | 0.4.0 ☑ | Musical reactivity | Core workflow; depends on phase-0 event producer |
 | 2 | 0.5.0 ☑ | Live performance | Makes systems playable; reuses presets + events |
-| 3 | 0.6.0 | Advanced creation (TD) | Heavy, independent features → parallelizable |
+| 3 | 0.6.0 ☑ | Advanced creation (TD) | Heavy, independent features → parallelizable |
 | 4 | 0.7.0 | Intelligence (AI) | Layer that builds on everything already shipped |
 | 5 | 0.8.0 | Robustness & export | Polish, automation, path to 1.0 |
 | — | 1.0.0 | Consolidation | API stabilization, docs, test coverage |
@@ -100,21 +100,26 @@ then `bind_to_channel` — rather than an interactive capture mode.
 
 ---
 
-## Phase 3 — v0.6.0 · Advanced creation (TouchDesigner)
+## Phase 3 — v0.6.0 · Advanced creation (TouchDesigner) ☑ shipped
 
-Heavy but mutually independent features — good candidates for parallel agents.
+Heavy but mutually independent creation tools — each builds, verifies and previews a network.
 
 | Feature | Delivers | Effort | Status |
 |---|---|---|---|
-| Video playback / media pool | Movie File In, playlist, clip switcher | M | ☐ |
-| Layer mixer (VJ) | A/B composition with blend modes + crossfade | M | ☐ |
-| 3D scene / instancing / render | Camera + Light + Render TOP, geometry instancing | L | ☐ |
-| Projection mapping | Corner-pin / mesh warp | L | ☐ |
-| Keyframe animation | Animation COMP + curves/easing synced to the timeline | M | ☐ |
-| GPU simulations | Fluid / flocking / reaction-diffusion as parameterized tools | L | ☐ |
-| More recipes | Covering video, 3D, mapping, simulations | M | ☐ |
+| `create_video_player` | Movie File In, or a playlist via a Switch TOP, with Play/Speed/Clip controls | M | ☑ |
+| `create_layer_mixer` | A/B Cross TOP (Crossfade knob) or composite blend modes; sources via Select TOPs | M | ☑ |
+| `create_3d_scene` | Geometry + Camera + Light + Render TOP (sphere/box/grid) with RotateY/Zoom | L | ☑ |
+| `create_projection_mapping` | Corner Pin warp with draggable handles, output for setup_output | L | ☑ |
+| `create_keyframe_animation` | Keyframed curve (time/value, easing) looping in sync — choreographed motion | M | ☑ |
+| `create_simulation` | reaction_diffusion (recipe) + slime/fluid feedback flow fields, Decay knob | L | ☑ |
 
-**Areas:** new L1/L2 tools; recipes in `recipes/*.json` + `validate-recipes`.
+**Areas:** new L1 tools (`createLayerMixer`, `createVideoPlayer`, `create3dScene`,
+`createProjectionMapping`, `createKeyframeAnimation`, `createSimulation`), CLI
+commands `mixer`/`video`/`scene3d`/`mapping`/`keyframe`/`simulation`. Note:
+"more recipes" is folded into these generators (they are the creation primitives);
+`create_simulation` reuses the existing `reaction_diffusion` recipe, and
+`create_generative_art` already covers cellular-automata / flow-field / attractor
+techniques.
 
 ---
 

@@ -4,6 +4,30 @@ All notable changes to **tdmcp** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-05-26
+
+Advanced creation: video, 3D, mixing, mapping, choreographed motion and simulations.
+
+### Added
+
+- **`create_layer_mixer`** — a VJ layer mixer: 'crossfade' makes an A/B Cross TOP with a
+  Crossfade knob, or composite inputs with a blend mode (add/difference/hardlight/glow/…).
+  Sources come in via Select TOPs so they can live anywhere.
+- **`create_video_player`** — a Movie File In player, or a playlist of clips through a Switch
+  TOP, with live Play / Speed (and Clip) controls.
+- **`create_3d_scene`** — a renderable 3D scene (Geometry + Camera + Light + Render TOP) for a
+  sphere/box/grid, with RotateY (spin) and Zoom knobs.
+- **`create_projection_mapping`** — wrap a source in a Corner Pin warp; drag the four handles
+  to fit a physical surface, output ready for setup_output.
+- **`create_keyframe_animation`** — animate parameters along a keyframed curve (time/value keys,
+  linear or smooth easing), looping and synced to the timeline — choreographed motion beyond
+  the animate_parameter LFO.
+- **`create_simulation`** — GPU simulations: 'reaction_diffusion' (Gray-Scott, via the recipe)
+  plus 'slime' and 'fluid' feedback flow-field looks, with a Decay knob.
+- **CLI commands** `mixer`, `video`, `scene3d`, `mapping`, `keyframe` and `simulation`.
+
+[0.6.0]: https://github.com/Pantani/tdmcp/releases/tag/v0.6.0
+
 ## [0.5.0] - 2026-05-26
 
 Live performance: turn generated systems into instruments you can play on stage.

@@ -12,6 +12,7 @@ import {
   applyPostProcessingImpl,
   applyPostProcessingSchema,
 } from "../tools/layer1/applyPostProcessing.js";
+import { create3dSceneImpl, create3dSceneSchema } from "../tools/layer1/create3dScene.js";
 import {
   createAudioReactiveImpl,
   createAudioReactiveSchema,
@@ -29,10 +30,24 @@ import {
   createGenerativeArtSchema,
 } from "../tools/layer1/createGenerativeArt.js";
 import {
+  createKeyframeAnimationImpl,
+  createKeyframeAnimationSchema,
+} from "../tools/layer1/createKeyframeAnimation.js";
+import { createLayerMixerImpl, createLayerMixerSchema } from "../tools/layer1/createLayerMixer.js";
+import {
   createParticleSystemImpl,
   createParticleSystemSchema,
 } from "../tools/layer1/createParticleSystem.js";
+import {
+  createProjectionMappingImpl,
+  createProjectionMappingSchema,
+} from "../tools/layer1/createProjectionMapping.js";
+import { createSimulationImpl, createSimulationSchema } from "../tools/layer1/createSimulation.js";
 import { createTempoSyncImpl, createTempoSyncSchema } from "../tools/layer1/createTempoSync.js";
+import {
+  createVideoPlayerImpl,
+  createVideoPlayerSchema,
+} from "../tools/layer1/createVideoPlayer.js";
 import {
   createVisualSystemImpl,
   createVisualSystemSchema,
@@ -236,6 +251,45 @@ const COMMANDS: Record<string, Command> = {
     createDataVisualizationImpl,
     "Build a data visualization.",
     { mutates: true },
+  ),
+  mixer: r(
+    createLayerMixerSchema,
+    createLayerMixerImpl,
+    "Build a VJ layer mixer (crossfade/blend).",
+    {
+      mutates: true,
+    },
+  ),
+  video: r(
+    createVideoPlayerSchema,
+    createVideoPlayerImpl,
+    "Build a movie/clip player (+playlist).",
+    {
+      mutates: true,
+    },
+  ),
+  scene3d: r(create3dSceneSchema, create3dSceneImpl, "Build a renderable 3D scene.", {
+    mutates: true,
+  }),
+  mapping: r(
+    createProjectionMappingSchema,
+    createProjectionMappingImpl,
+    "Wrap a source in a corner-pin for projection mapping.",
+    { mutates: true },
+  ),
+  keyframe: r(
+    createKeyframeAnimationSchema,
+    createKeyframeAnimationImpl,
+    "Animate parameters along a keyframed curve (synced/looping).",
+    { mutates: true },
+  ),
+  simulation: r(
+    createSimulationSchema,
+    createSimulationImpl,
+    "Build a GPU simulation (RD/slime/fluid).",
+    {
+      mutates: true,
+    },
   ),
   "post-fx": r(
     applyPostProcessingSchema,

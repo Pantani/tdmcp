@@ -352,3 +352,51 @@ describe("tdmcp-agent CLI — phase 2 (live performance)", () => {
     expect(JSON.parse(r.stdout).macro).toBe("Energy");
   });
 });
+
+describe("tdmcp-agent CLI — phase 3 (advanced creation)", () => {
+  it("lists the creation commands in --help", async () => {
+    const r = await runCli(["--help"]);
+    expect(r.code).toBe(0);
+    for (const cmd of ["mixer", "video", "scene3d", "mapping", "keyframe", "simulation"]) {
+      expect(r.stdout).toContain(cmd);
+    }
+  });
+
+  it("dry-runs the layer mixer with a blend mode", async () => {
+    const r = await runCli(["mixer", "--dry-run", "--params", '{"blend":"difference"}']);
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.command).toBe("mixer");
+    expect(doc.args.blend).toBe("difference");
+  });
+
+  it("schema scene3d exposes the primitive choices", async () => {
+    const r = await runCli(["schema", "scene3d"]);
+    expect(r.code).toBe(0);
+    const input = JSON.stringify(JSON.parse(r.stdout).input);
+    expect(input).toContain("sphere");
+    expect(input).toContain("primitive");
+  });
+
+  it("schema simulation exposes reaction_diffusion / slime / fluid", async () => {
+    const r = await runCli(["schema", "simulation"]);
+    expect(r.code).toBe(0);
+    const input = JSON.stringify(JSON.parse(r.stdout).input);
+    expect(input).toContain("reaction_diffusion");
+    expect(input).toContain("slime");
+    expect(input).toContain("fluid");
+  });
+
+  it("rejects keyframe animation with a non-positive duration", async () => {
+    const r = await runCli(
+      [
+        "keyframe",
+        "--params",
+        '{"targets":["/project1/x.brightness1"],"keyframes":[{"time":0,"value":0},{"time":0,"value":1}]}',
+      ],
+      { makeCtx },
+    );
+    expect(r.code).toBe(1);
+    expect(r.stderr).toContain("positive duration");
+  });
+});
