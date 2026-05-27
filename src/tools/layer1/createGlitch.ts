@@ -57,12 +57,16 @@ export const createGlitchSchema = z.object({
     .number()
     .min(0)
     .default(1)
-    .describe("Animation speed of the noise that drives the blocky tearing (drives the noise's tz)."),
+    .describe(
+      "Animation speed of the noise that drives the blocky tearing (drives the noise's tz).",
+    ),
   rgb_shift: z.coerce
     .number()
     .min(0)
     .default(0.02)
-    .describe("Base per-channel horizontal offset in UV space (0..~0.1 is a useful range). Multiplied by Amount."),
+    .describe(
+      "Base per-channel horizontal offset in UV space (0..~0.1 is a useful range). Multiplied by Amount.",
+    ),
   block_size: z.coerce
     .number()
     .positive()

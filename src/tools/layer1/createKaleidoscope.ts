@@ -56,7 +56,9 @@ export const createKaleidoscopeSchema = z.object({
     .int()
     .min(2)
     .default(6)
-    .describe("Number of mirrored wedges (N-fold symmetry). 6 is the classic look; higher = finer."),
+    .describe(
+      "Number of mirrored wedges (N-fold symmetry). 6 is the classic look; higher = finer.",
+    ),
   rotation: z.coerce
     .number()
     .default(0)
@@ -83,7 +85,9 @@ export const createKaleidoscopeSchema = z.object({
   expose_controls: z
     .boolean()
     .default(true)
-    .describe("Expose live Segments / Rotation / Zoom / Center X / Center Y knobs on the container."),
+    .describe(
+      "Expose live Segments / Rotation / Zoom / Center X / Center Y knobs on the container.",
+    ),
   parent_path: z.string().default("/project1"),
 });
 type CreateKaleidoscopeArgs = z.infer<typeof createKaleidoscopeSchema>;
@@ -100,9 +104,7 @@ async function buildSource(builder: NetworkBuilder, args: CreateKaleidoscopeArgs
   // Coloured (non-monochrome) noise gives the fold something with structure and hue to mirror.
   const noise = await builder.add("noiseTOP", "source", { monochrome: 0, period: 4 });
   // Drift the noise over time so the default look is alive even before any control is touched.
-  await builder.python(
-    `op(${q(noise)}).par.tz.expr = ${q("absTime.seconds * 0.2")}`,
-  );
+  await builder.python(`op(${q(noise)}).par.tz.expr = ${q("absTime.seconds * 0.2")}`);
   return noise;
 }
 

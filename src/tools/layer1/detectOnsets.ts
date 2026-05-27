@@ -178,7 +178,14 @@ export async function detectOnsetsImpl(ctx: ToolContext, args: DetectOnsetsArgs)
     const builder = await createSystemContainer(ctx, args.parent_path, "onsets");
     const source = await buildSource(builder, args);
 
-    const kick = await buildOnsetBand(builder, source, "kick", "lowpass", args.kick_hz, args.threshold);
+    const kick = await buildOnsetBand(
+      builder,
+      source,
+      "kick",
+      "lowpass",
+      args.kick_hz,
+      args.threshold,
+    );
     const snare = await buildOnsetBand(
       builder,
       source,
@@ -187,7 +194,14 @@ export async function detectOnsetsImpl(ctx: ToolContext, args: DetectOnsetsArgs)
       args.snare_hz,
       args.threshold,
     );
-    const hat = await buildOnsetBand(builder, source, "hat", "highpass", args.hat_hz, args.threshold);
+    const hat = await buildOnsetBand(
+      builder,
+      source,
+      "hat",
+      "highpass",
+      args.hat_hz,
+      args.threshold,
+    );
 
     // Merge the three pulse channels into one, then a Sensitivity gain, then a Null as the
     // stable bind point. Expressions read op('…/onsets/onsets')['kick'] etc.
