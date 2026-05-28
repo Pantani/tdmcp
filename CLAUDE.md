@@ -41,7 +41,7 @@ npm run test:bridge          # Python bridge tests: python3 -m unittest discover
 
 # Docs (VitePress site under docs/)
 npm run docs:dev             # docs:gen then vitepress dev
-npm run build:dxt            # bundle the one-click Claude Desktop .dxt
+npm run build:mcpb           # bundle the one-click Claude Desktop .mcpb (formerly .dxt)
 ```
 
 ## Architecture
@@ -130,3 +130,20 @@ The bridge runs **arbitrary Python inside the TD process** and listens on `9980`
 on all interfaces. For untrusted networks, set `TDMCP_BRIDGE_TOKEN` (both sides)
 and/or `TDMCP_BRIDGE_ALLOW_EXEC=0` in TD's environment. See
 `docs/reference/architecture.md`.
+
+## Harness: directory submission
+
+**Goal:** prepare (and re-prepare) tdmcp's submission to the Anthropic Connectors
+Directory via the Desktop Extension (MCPB) path.
+
+**Trigger:** for any work on the directory/marketplace submission — writing the
+privacy page, migrating `.dxt`→`.mcpb`, drafting form answers, or re-running after
+a rejection — use the `tdmcp-submission` skill (it drives a 4-agent pipeline:
+architect → docs-author ∥ bundle-engineer → QA, defined in `.claude/agents/` and
+`.claude/skills/`). Simple questions can be answered directly. Note: this
+environment runs the team as sub-agents (no `TeamCreate`).
+
+**Change log:**
+| Date | Change | Target | Reason |
+|------|--------|--------|--------|
+| 2026-05-27 | Initial build | full harness | prep tdmcp Connectors Directory submission |
