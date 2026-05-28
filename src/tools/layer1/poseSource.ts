@@ -238,7 +238,7 @@ export async function buildPoseSource(
     const sel = await builder.add(
       "selectCHOP",
       "posein",
-      args.existing_chop_path ? { chops: args.existing_chop_path } : {},
+      args.existing_chop_path ? { chop: args.existing_chop_path } : {},
     );
     return {
       path: sel,
@@ -252,7 +252,7 @@ export async function buildPoseSource(
     const sel = await builder.add(
       "selectCHOP",
       "posein",
-      args.mediapipe_chop_path ? { chops: args.mediapipe_chop_path } : {},
+      args.mediapipe_chop_path ? { chop: args.mediapipe_chop_path } : {},
     );
     return {
       path: sel,

@@ -11,15 +11,25 @@ export const scaffoldExtensionSchema = z.object({
     ),
   class_name: z
     .string()
-    .min(1)
+    .regex(
+      /^[A-Za-z_][A-Za-z0-9_]*$/,
+      "class_name must be a valid Python identifier (letters/digits/underscore, not starting with a digit) — it is written verbatim into the generated class source.",
+    )
     .describe(
-      "Python class name for the extension, conventionally capitalized (e.g. 'WidgetExt'). The first letter is auto-capitalized; the rest is kept as given.",
+      "Python class name for the extension, conventionally capitalized (e.g. 'WidgetExt'). Must be a valid Python identifier. The first letter is auto-capitalized; the rest is kept as given.",
     ),
   methods: z
-    .array(z.string())
+    .array(
+      z
+        .string()
+        .regex(
+          /^[A-Za-z_][A-Za-z0-9_]*$/,
+          "each method name must be a valid Python identifier — it is written verbatim as 'def <name>(self):'.",
+        ),
+    )
     .optional()
     .describe(
-      "Names of stub methods to pre-generate inside the class. Each becomes a 'def name(self):' with a docstring + 'return'. Omit or leave empty to generate only '__init__'.",
+      "Names of stub methods to pre-generate inside the class. Each becomes a 'def name(self):' with a docstring + 'return'. Must be valid Python identifiers. Omit or leave empty to generate only '__init__'.",
     ),
   promote: z
     .boolean()

@@ -137,7 +137,7 @@ describe("create_pose_tracking", () => {
     });
     const posein = bodies.find((b) => b.name === "posein");
     expect(posein?.type).toBe("selectCHOP");
-    expect(posein?.parameters).toMatchObject({ chops: "/project1/MediaPipe/pose" });
+    expect(posein?.parameters).toMatchObject({ chop: "/project1/MediaPipe/pose" });
   });
 
   it("creates an OSC In CHOP on the given port for source='osc'", async () => {

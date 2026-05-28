@@ -331,6 +331,24 @@ describe("scaffold_extension — bad input (schema)", () => {
     ).toThrow();
   });
 
+  it("rejects a class_name that is not a Python identifier", () => {
+    for (const bad of ["Widget Ext", "1Bad", "with-dash", "has.dot"]) {
+      expect(() =>
+        scaffoldExtensionSchema.parse({ comp_path: "/project1/comp", class_name: bad }),
+      ).toThrow();
+    }
+  });
+
+  it("rejects method names that are not Python identifiers", () => {
+    expect(() =>
+      scaffoldExtensionSchema.parse({
+        comp_path: "/project1/comp",
+        class_name: "MyExt",
+        methods: ["ok", "not ok"],
+      }),
+    ).toThrow();
+  });
+
   it("defaults slot to 1 and promote to true when omitted", () => {
     const parsed = scaffoldExtensionSchema.parse({
       comp_path: "/project1/comp",

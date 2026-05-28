@@ -58,7 +58,9 @@ export function computeTypeDefaults(
 ): Record<string, Record<string, unknown>> {
   const byType = new Map<string, Array<Record<string, unknown>>>();
   for (const node of nodes) {
-    if (!node.parameters) continue;
+    // Skip nodes without fetched/meaningful params (e.g. unreadable nodes that degrade to {}),
+    // so they don't seed empty type-default entries that inflate the hoist count without saving tokens.
+    if (!node.parameters || Object.keys(node.parameters).length === 0) continue;
     const list = byType.get(node.type) ?? [];
     list.push(node.parameters);
     byType.set(node.type, list);
@@ -84,7 +86,8 @@ export function computeTypeDefaults(
       }
       if (best) typeDefault[key] = best.value;
     }
-    defaults[type] = typeDefault;
+    // Only hoist types that actually have shared defaults — an empty default is just noise.
+    if (Object.keys(typeDefault).length > 0) defaults[type] = typeDefault;
   }
   return defaults;
 }
