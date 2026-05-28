@@ -81,6 +81,7 @@ type CreatePbrSceneArgs = z.infer<typeof createPbrSceneSchema>;
 export async function createPbrSceneImpl(ctx: ToolContext, args: CreatePbrSceneArgs) {
   return runBuild(async () => {
     const builder = await createSystemContainer(ctx, args.parent_path, "pbrscene");
+    const container = builder.containerPath;
     const [br, bg, bb] = args.base_color;
     const [er, eg, eb] = args.env_color;
 
@@ -117,11 +118,14 @@ export async function createPbrSceneImpl(ctx: ToolContext, args: CreatePbrSceneA
     // Assign the material to the Geometry COMP (mirrors create_3d_scene / create_waveform).
     await builder.python(`op(${q(geo)}).par.material = ${q(mat)}`);
 
-    // Continuous spin: an expression on the Geometry COMP's ry (auto-switches the
-    // param to EXPRESSION mode) turns the object over time so the reflections move.
-    if (args.rotate > 0) {
-      await builder.python(`op(${q(geo)}).par.ry.expr = ${q(`absTime.seconds * ${args.rotate}`)}`);
-    }
+    // Continuous spin, MODULATED by the Spin control. ry is an expression reading the
+    // container's Spin custom par as degrees/sec (absTime.seconds × Spin) so turning the
+    // knob changes the spin rate live — rather than binding Spin directly onto ry, which
+    // would replace this time expression with a static value and freeze the object. The
+    // `hasattr` fallback keeps it cooking before exposeControls appends Spin (and when
+    // controls are off). Always emitted so the exposed Spin knob actually drives motion.
+    const spinExpr = `absTime.seconds * (op(${q(container)}).par.Spin.eval() if hasattr(op(${q(container)}).par, 'Spin') else ${args.rotate})`;
+    await builder.python(`op(${q(geo)}).par.ry.expr = ${q(spinExpr)}`);
 
     const cam = await builder.add("cameraCOMP", "cam", { tz: 5 });
     // A key Light COMP complements the environment light so highlights read crisply.
@@ -160,12 +164,14 @@ export async function createPbrSceneImpl(ctx: ToolContext, args: CreatePbrSceneA
           },
           { name: "BaseColor", type: "rgb", default: toHex([br, bg, bb]) },
           {
+            // Spin (deg/sec) is read by geo.ry's absTime expression above, so it MODULATES
+            // the spin rate. No bind_to: a direct bind would overwrite ry's time expression
+            // with a constant and stop the rotation.
             name: "Spin",
             type: "float",
             min: 0,
             max: 720,
             default: args.rotate,
-            bind_to: [`${geo}.ry`],
           },
         ]
       : [];

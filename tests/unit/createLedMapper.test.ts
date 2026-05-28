@@ -122,6 +122,14 @@ describe("buildLedMapperScript", () => {
     expect(script).toContain('appendCustomPage("LED")');
     expect(script).toContain('appendFloat("Brightness")');
     expect(script).toContain('appendInt("Universe")');
+    // start_channel offset: when > 1, prepend (start_channel - 1) zero pad channels via a
+    // Constant CHOP merged ahead of the pixels (the DMX Out CHOP has no start-channel par).
+    expect(script).toContain('int(_p["start_channel"]) - 1');
+    expect(script).toContain("_mk(constantCHOP");
+    expect(script).toContain("_mk(mergeCHOP");
+    // The pad merges BEFORE the pixels (input 0 = pad, input 1 = pixels) so pixels shift down.
+    expect(script).toContain("inputConnectors[0].connect(_pad)");
+    expect(script).toContain("inputConnectors[1].connect(_pixels)");
   });
 });
 
@@ -181,6 +189,32 @@ describe("createLedMapperImpl", () => {
     expect(text).toContain("Universe");
     expect(text).toContain("led_map_bright.brightness1");
     expect(text).toContain("led_map_dmx.universe");
+  });
+
+  it("forwards start_channel and notes the channel offset (pad channels) in the summary", async () => {
+    const exec = okExec({
+      nodes: {
+        source: "/project1/led_map_src_test",
+        pixels: "/project1/led_map_pixels",
+        pad: "/project1/led_map_pad",
+        offset: "/project1/led_map_offset",
+        dmx: "/project1/led_map_dmx",
+        out: "/project1/led_map_out1",
+      },
+    });
+    const result = await createLedMapperImpl(fakeCtx(exec), { ...baseArgs, start_channel: 5 });
+    expect(result.isError).toBeFalsy();
+    // The payload carries start_channel through to the Python pass.
+    expect(decodePayload(scriptArg(exec)).start_channel).toBe(5);
+    // The summary reports the start channel and the number of pad channels (start_channel - 1).
+    const text = textOf(result);
+    expect(text).toContain("starting at DMX channel 5");
+    expect(text).toContain("4 pad channel(s)");
+  });
+
+  it("does not mention a channel offset when start_channel is 1 (no pad)", async () => {
+    const result = await createLedMapperImpl(fakeCtx(okExec()), { ...baseArgs, start_channel: 1 });
+    expect(textOf(result)).not.toContain("starting at DMX channel");
   });
 
   it("returns an isError result when the bridge reports a fatal failure", async () => {

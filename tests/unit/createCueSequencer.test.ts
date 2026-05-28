@@ -168,6 +168,12 @@ describe("createCueSequencerImpl — engine substitution", () => {
     // The step-boundary detector advances an index in the engine COMP's storage.
     expect(engineText).toContain("tdmcp_seq_index");
     expect(engineText).toContain("step_len");
+    // It honours a live Step change (cue-jump): reads seq.par.Step and syncs the internal
+    // index from it before advancing, so a performer/dashboard move isn't overwritten.
+    expect(engineText).toContain("getattr(seq.par, 'Step', None)");
+    expect(engineText).toContain("sp.eval()");
+    expect(engineText).toContain("jumped");
+    expect(engineText).toContain("stepval != idx");
   });
 
   it("bakes 'stop' (not 'loop') into the engine when loop is false", async () => {

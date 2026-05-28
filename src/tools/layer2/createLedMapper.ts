@@ -61,6 +61,8 @@ interface LedMapperReport {
     bright: string;
     grid: string;
     pixels: string;
+    pad: string;
+    offset: string;
     dmx: string;
     out: string;
   }>;
@@ -161,6 +163,33 @@ try:
         report["nodes"]["pixels"] = _pixels.path
         _conn(_to_sample, _pixels)
 
+        # Start channel: the DMX Out CHOP maps its input channels to DMX slots 1..512 in
+        # order and has NO start-channel parameter (verified against a live dmxoutCHOP), so
+        # to make the first pixel land on slot start_channel we prepend (start_channel - 1)
+        # zero "pad" channels via a Constant CHOP merged BEFORE the pixels. Merge keeps input
+        # order (pad channels first), shifting every pixel slot down by the offset. With
+        # start_channel == 1 there is no offset and the pixels feed the DMX out directly.
+        _dmx_input = _pixels
+        _pad_n = int(_p["start_channel"]) - 1
+        if _pad_n > 0:
+            _pad = _mk(constantCHOP, "pad")
+            try:
+                _pad.par.const.val = _pad_n
+                for _i in range(_pad_n):
+                    setattr(_pad.par, "const%dname" % _i, "pad%d" % _i)
+                    setattr(_pad.par, "const%dvalue" % _i, 0)
+            except Exception:
+                report["warnings"].append("Could not configure the %d-channel start-channel pad." % _pad_n)
+            report["nodes"]["pad"] = _pad.path
+            _merge = _mk(mergeCHOP, "offset")
+            try:
+                _merge.inputConnectors[0].connect(_pad)
+                _merge.inputConnectors[1].connect(_pixels)
+            except Exception:
+                report["warnings"].append("Could not merge the start-channel pad ahead of the pixels.")
+            report["nodes"]["offset"] = _merge.path
+            _dmx_input = _merge
+
         # DMX Out CHOP -> Art-Net / sACN. Created without hardware; real send needs a node.
         _dmx = _mk(dmxoutCHOP, "dmx")
         _setpar(_dmx, "interface", _p["net"])
@@ -168,7 +197,7 @@ try:
         _setpar(_dmx, "netaddress", _p.get("net_address"))
         _setpar(_dmx, "rate", _p.get("fps"))
         report["nodes"]["dmx"] = _dmx.path
-        _conn(_pixels, _dmx)
+        _conn(_dmx_input, _dmx)
 
         # Clean tap for inspection / bind_to_channel.
         _out = _mk(nullCHOP, "out1")
@@ -201,7 +230,10 @@ try:
             report["warnings"].append("Control binding failed: " + traceback.format_exc().splitlines()[-1])
 
         _errs = []
-        for _n in (_source, _bright, _grid, _pixels, _dmx, _out):
+        _check = [_source, _bright, _grid, _pixels, _dmx, _out]
+        if _dmx_input is not _pixels:
+            _check.append(_dmx_input)
+        for _n in _check:
             for _e in _n.errors():
                 _errs.append(str(_e))
         report["errors"] = _errs[:5]
@@ -241,8 +273,12 @@ export async function createLedMapperImpl(ctx: ToolContext, args: CreateLedMappe
       const src = report.source_built ? " (built-in test Ramp source)" : "";
       const errs = report.errors?.length ? `, ${report.errors.length} node error(s)` : "";
       const warns = report.warnings.length ? `, ${report.warnings.length} warning(s)` : "";
+      const startCh =
+        args.start_channel > 1
+          ? ` starting at DMX channel ${args.start_channel} (${args.start_channel - 1} pad channel(s))`
+          : "";
       return jsonResult(
-        `Mapped a ${args.width}x${args.height} ${report.layout} fixture grid (${report.channels} DMX channels) to ${report.nodes.dmx ?? "a DMX Out CHOP"} on universe ${report.universe}${src}${errs}${warns}. Verify the per-pixel channel/slot order against your fixture before sending real Art-Net.`,
+        `Mapped a ${args.width}x${args.height} ${report.layout} fixture grid (${report.channels} DMX channels) to ${report.nodes.dmx ?? "a DMX Out CHOP"} on universe ${report.universe}${startCh}${src}${errs}${warns}. Verify the per-pixel channel/slot order against your fixture before sending real Art-Net.`,
         report,
       );
     },

@@ -209,7 +209,7 @@ describe("create_generative_audio", () => {
     expect(on.filter((b) => b.type === "audiodeviceoutCHOP")).toHaveLength(1);
   });
 
-  it("exposes Frequency + Volume controls (plus FmDepth for fm) when expose_controls is on", async () => {
+  it("exposes Frequency + Volume controls (plus FmRatio/FmDepth for fm) when expose_controls is on", async () => {
     captureCreateBodies();
     const scripts = captureExecScripts();
     await createGenerativeAudioImpl(makeCtx(), {
@@ -231,9 +231,39 @@ describe("create_generative_audio", () => {
     const volume = controls.find((c) => c.name === "Volume");
     expect(volume?.bind_to?.[0]).toMatch(/volume\.gain$/);
 
+    // FmRatio is exposed but NOT bound: the modulator frequency reads it via an expression
+    // (Frequency × Fmratio) so it tracks carrier × ratio, instead of clobbering the
+    // modulator frequency with the bare ratio value (~2 Hz).
+    const fmRatio = controls.find((c) => c.name === "FmRatio");
+    expect(fmRatio?.default).toBe(2);
+    expect(fmRatio?.bind_to).toBeUndefined();
+
     const fmDepth = controls.find((c) => c.name === "FmDepth");
     expect(fmDepth?.default).toBe(100);
     expect(fmDepth?.bind_to?.[0]).toMatch(/fm_scale\.gain$/);
+  });
+
+  it("sets the modulator frequency to a carrier×ratio expression reading Frequency and Fmratio", async () => {
+    captureCreateBodies();
+    const scripts = captureExecScripts();
+    await createGenerativeAudioImpl(makeCtx(), {
+      synth: "fm",
+      frequency: 220,
+      waveform: "sine",
+      fm_ratio: 2,
+      fm_depth: 100,
+      volume: 0.5,
+      to_device: false,
+      expose_controls: true,
+      parent_path: "/project1",
+    });
+    // The modulator's frequency becomes an expression that multiplies the container's
+    // Frequency and Fmratio custom pars (with the build-time values as fallbacks).
+    const modExpr = scripts.find((s) => s.includes("modulator") && s.includes("frequency.expr"));
+    expect(modExpr).toBeDefined();
+    expect(modExpr).toContain("par.Frequency");
+    expect(modExpr).toContain("par.Fmratio");
+    expect(modExpr).toMatch(/\)\s*\*\s*\(/); // Frequency-expr * Fmratio-expr
   });
 
   it("notes the paused-timeline caveat in the summary", async () => {

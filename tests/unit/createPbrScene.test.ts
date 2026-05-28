@@ -170,20 +170,28 @@ describe("create_pbr_scene", () => {
     expect(torusBodies.find((b) => b.name === "shape")?.type).toBe("torusSOP");
   });
 
-  it("animates a continuous Y spin via an absTime expression when rotate > 0", async () => {
+  it("modulates the Y spin via an absTime expression that reads the Spin control", async () => {
     captureCreateBodies();
     const scripts = captureExecScripts();
     await createPbrSceneImpl(makeCtx(), { ...baseArgs, rotate: 45, expose_controls: false });
-    expect(scripts.some((s) => s.includes("ry.expr") && s.includes("absTime.seconds * 45"))).toBe(
-      true,
-    );
+    // ry is an absTime expression that READS the container's Spin custom par (so the knob
+    // modulates the spin rate live) with the rotate value as the fallback — not a constant,
+    // and not a direct bind that would clobber the time expression.
+    const spinScript = scripts.find((s) => s.includes("ry.expr"));
+    expect(spinScript).toBeDefined();
+    expect(spinScript).toContain("absTime.seconds");
+    expect(spinScript).toContain("par.Spin");
+    expect(spinScript).toContain("hasattr");
+    expect(spinScript).toContain("else 45");
   });
 
-  it("does not emit a spin expression when rotate is 0", async () => {
+  it("emits the Spin expression even when rotate is 0 so the exposed knob still drives motion", async () => {
     captureCreateBodies();
     const scripts = captureExecScripts();
     await createPbrSceneImpl(makeCtx(), { ...baseArgs, rotate: 0, expose_controls: false });
-    expect(scripts.some((s) => s.includes("ry.expr"))).toBe(false);
+    const spinScript = scripts.find((s) => s.includes("ry.expr"));
+    expect(spinScript).toContain("par.Spin");
+    expect(spinScript).toContain("else 0");
   });
 
   it("exposes Metallic, Roughness, BaseColor and Spin controls", async () => {
@@ -199,7 +207,11 @@ describe("create_pbr_scene", () => {
     expect(metallic?.type).toBe("float");
     expect(metallic?.bind_to?.[0]).toMatch(/\/pbr\.metallic$/);
     expect(controls.find((c) => c.name === "Roughness")?.bind_to?.[0]).toMatch(/\/pbr\.roughness$/);
-    expect(controls.find((c) => c.name === "Spin")?.bind_to?.[0]).toMatch(/\/geo\.ry$/);
+    // Spin is NOT bound: the geo.ry absTime expression reads it instead, so it modulates
+    // the spin rate rather than overwriting the time expression with a constant.
+    const spin = controls.find((c) => c.name === "Spin");
+    expect(spin?.type).toBe("float");
+    expect(spin?.bind_to).toBeUndefined();
     expect(controls.find((c) => c.name === "BaseColor")?.type).toBe("rgb");
   });
 

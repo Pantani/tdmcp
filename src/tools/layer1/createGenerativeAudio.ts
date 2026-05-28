@@ -3,6 +3,9 @@ import type { ControlSpec } from "../layer2/createControlPanel.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { createSystemContainer, finalize, type NetworkBuilder, runBuild } from "./orchestration.js";
 
+/** Quote a string as a Python literal for inline exec snippets (mirrors other Layer 1 tools). */
+const q = (value: string): string => JSON.stringify(value);
+
 /** Friendly waveform names → the Audio Oscillator CHOP `wavetype` menu values. */
 const WAVE_MAP: Record<"sine" | "triangle" | "sawtooth" | "square", string> = {
   sine: "sine",
@@ -139,6 +142,7 @@ export async function createGenerativeAudioImpl(ctx: ToolContext, args: CreateGe
       await builder.connect(audio, deviceOut);
     }
 
+    const container = builder.containerPath;
     const controls: ControlSpec[] = [];
     if (args.expose_controls) {
       const oscPath =
@@ -165,15 +169,22 @@ export async function createGenerativeAudioImpl(ctx: ToolContext, args: CreateGe
         const modPath = builder.pathOf("modulator");
         const fmScalePath = builder.pathOf("fm_scale");
         if (modPath) {
+          // The modulator frequency is an expression Frequency × Fmratio (both custom pars
+          // on the container), so FmRatio MODULATES the ratio while staying locked to the
+          // carrier: it tracks carrier × ratio live. Binding FmRatio straight onto the
+          // modulator frequency (the old behaviour) retuned the modulator to the ratio
+          // value itself (~2 Hz), breaking the FM relationship. Custom-par names are
+          // sanitized to Initialcap-then-lowercase, so FmRatio → Fmratio.
+          const modExpr = `(op(${q(container)}).par.Frequency.eval() if hasattr(op(${q(container)}).par, 'Frequency') else ${args.frequency}) * (op(${q(container)}).par.Fmratio.eval() if hasattr(op(${q(container)}).par, 'Fmratio') else ${args.fm_ratio})`;
+          await builder.python(`op(${q(modPath)}).par.frequency.expr = ${q(modExpr)}`);
           controls.push({
+            // FmRatio is read by the modulator-frequency expression above (carrier × ratio).
+            // No bind_to: a direct bind would retune the modulator to the ratio value itself.
             name: "FmRatio",
             type: "float",
             min: 0.25,
             max: 16,
             default: args.fm_ratio,
-            // Bound to the modulator's absolute frequency (carrier base × ratio at build
-            // time); turning it retunes the modulator directly.
-            bind_to: [`${modPath}.frequency`],
           });
         }
         if (fmScalePath) {

@@ -100,6 +100,20 @@ def onValueChange(channel, sampleIndex, val, prev):
     idx = int(seq.fetch('tdmcp_seq_index', 0))
     if idx < 0 or idx >= len(steps):
         idx = 0
+    # Honour a live Step change first: a performer/dashboard move to the Step control is a
+    # cue-jump. Sync the internal index from seq.par.Step before advancing so the manual jump
+    # wins (instead of being overwritten by the stored index on the next beat). When Step was
+    # moved we land ON that step this boundary (jumped = True) rather than the usual idx+1.
+    jumped = False
+    sp = getattr(seq.par, 'Step', None)
+    if sp is not None:
+        try:
+            stepval = int(sp.eval())
+        except Exception:
+            stepval = idx
+        if 0 <= stepval < len(steps) and stepval != idx:
+            idx = stepval
+            jumped = True
     cur_bars = int(steps[idx].get('bars', fallback) or fallback)
     if cur_bars < 1:
         cur_bars = 1
@@ -108,18 +122,23 @@ def onValueChange(channel, sampleIndex, val, prev):
         step_len = 1
     block = int(float(val) // step_len)
     last = int(seq.fetch('tdmcp_seq_block', -1))
-    if block <= last:
+    if block <= last and not jumped:
         return
     seq.store('tdmcp_seq_block', block)
-    # A boundary passed: advance (wrapping or stopping per loop), then recall/morph the new cue.
-    nxt = idx + 1
-    if nxt >= len(steps):
-        if '__LOOP__' == 'loop':
-            nxt = 0
-        else:
-            return
+    # A boundary passed (or a manual Step jump): advance — unless we just jumped, in which case
+    # we recall the jumped-to step itself. Wrap or stop per loop on a normal advance.
+    if jumped:
+        nxt = idx
+    else:
+        nxt = idx + 1
+        if nxt >= len(steps):
+            if '__LOOP__' == 'loop':
+                nxt = 0
+            else:
+                return
     seq.store('tdmcp_seq_index', nxt)
-    sp = getattr(seq.par, 'Step', None)
+    # Write the live Step control back so it always reflects the current step (and so the
+    # next beat's sync check sees index == Step rather than re-triggering a jump).
     if sp is not None and not sp.readOnly:
         try:
             sp.val = nxt
