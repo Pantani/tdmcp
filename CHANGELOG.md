@@ -57,6 +57,24 @@ spatial output, data + audio I/O, and AI authoring prompts.
 
 [0.4.0]: https://github.com/Pantani/tdmcp/releases/tag/v0.4.0
 
+## [0.3.1] - 2026-05-27
+
+Packaging and docs for the Anthropic Connectors Directory submission (Desktop
+Extension path). No runtime/tool behaviour changes.
+
+### Changed
+
+- The one-click Claude Desktop bundle is now built as **`.mcpb`** (MCP Bundle), the
+  current Anthropic format — the build script already preferred the
+  `@anthropic-ai/mcpb` packer, so this renames the output and the `build:dxt` →
+  `build:mcpb` script. Legacy `.dxt` files still install in Claude Desktop.
+
+### Added
+
+- **Privacy policy** page (EN + PT) at `/privacy`, documenting that tdmcp runs
+  entirely locally, collects no data, and has no telemetry — required for the
+  Connectors Directory submission.
+
 ## [0.3.0] - 2026-05-27
 
 Everything built on top of 0.2.0, in one release: a scriptable CLI and developer-experience

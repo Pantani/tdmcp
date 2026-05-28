@@ -1,5 +1,5 @@
 ---
-description: "Instale o tdmcp, o servidor MCP para TouchDesigner, no Claude Desktop em uns 3 minutos — sem terminal, sem Node. Extensão .dxt de um clique e a ponte ligada."
+description: "Instale o tdmcp, o servidor MCP para TouchDesigner, no Claude Desktop em uns 3 minutos — sem terminal, sem Node. Extensão .mcpb de um clique e a ponte ligada."
 ---
 
 # Claude — Desktop e Code
@@ -24,20 +24,22 @@ Do every step yourself; only stop when you need me to paste one line into TouchD
 
 ## 1. Baixe a extensão
 
-**[⬇ Baixar tdmcp.dxt](https://github.com/Pantani/tdmcp/releases/latest/download/tdmcp.dxt)**
+**[⬇ Baixar tdmcp.mcpb](https://github.com/Pantani/tdmcp/releases/latest/download/tdmcp.mcpb)**
 
-Um `.dxt` é um único arquivo que o Claude Desktop instala como extensão. O servidor
-está dentro dele — não há mais nada para baixar.
+Um `.mcpb` (MCP Bundle) é um único arquivo que o Claude Desktop instala como
+extensão. O servidor está dentro dele — não há mais nada para baixar. (`.mcpb` é o
+formato atual; antes se chamava `.dxt`, e qualquer `.dxt` mais antigo que você já
+tenha continua instalando.)
 
 ::: warning Se o link de download não funcionar
-Pode ser que ainda não exista uma release publicada. Peça o arquivo `tdmcp.dxt`
+Pode ser que ainda não exista uma release publicada. Peça o arquivo `tdmcp.mcpb`
 diretamente a quem te indicou o tdmcp e continue no passo 2.
 :::
 
 ## 2. Instale no Claude Desktop {#install-from-file}
 
 1. Abra o Claude Desktop → **Settings → Extensions**.
-2. Escolha **Install from file** (ou simplesmente **arraste o `tdmcp.dxt` para a
+2. Escolha **Install from file** (ou simplesmente **arraste o `tdmcp.mcpb` para a
    janela**).
 3. Se pedir configurações, deixe **TouchDesigner host** = `127.0.0.1` e
    **TouchDesigner port** = `9980`. (Os padrões estão certos quando o

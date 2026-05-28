@@ -6,7 +6,7 @@ name: Release
 #   git push --follow-tags     # pushes the commit AND the v* tag
 #
 # The tag push triggers this workflow, which re-runs the full check suite, builds
-# the Claude Desktop `.dxt` bundle, publishes a GitHub Release with the bundle
+# the Claude Desktop `.mcpb` bundle, publishes a GitHub Release with the bundle
 # attached + auto-generated notes, and (if NPM_TOKEN is set) publishes to npm.
 
 on:
@@ -26,13 +26,13 @@ jobs:
   release:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # create the GitHub Release + upload the .dxt asset
+      contents: write # create the GitHub Release + upload the .mcpb asset
       id-token: write # npm publish with provenance
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Use Node.js 20
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20.x
           cache: npm
@@ -74,8 +74,8 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Build .dxt bundle
-        run: npm run build:dxt
+      - name: Build .mcpb bundle
+        run: npm run build:mcpb
 
       - name: Publish GitHub Release
         env:
@@ -85,9 +85,9 @@ jobs:
           # (publishing there creates the tag, which triggers this workflow). In
           # that case just (re)attach the bundle; otherwise create the release.
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" tdmcp.dxt --clobber
+            gh release upload "$GITHUB_REF_NAME" tdmcp.mcpb --clobber
           else
-            gh release create "$GITHUB_REF_NAME" tdmcp.dxt \
+            gh release create "$GITHUB_REF_NAME" tdmcp.mcpb \
               --title "$GITHUB_REF_NAME" \
               --generate-notes \
               --verify-tag

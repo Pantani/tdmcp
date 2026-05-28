@@ -117,9 +117,10 @@ e dar preview dos nós. Você liga uma vez (veja [Instalação](/pt/guide/instal
 : Uma pasta de notas do [Obsidian](https://obsidian.md) que o tdmcp lê e escreve —
 receitas, setlists, moodboards, presets e um diário de shows.
 
-**`.dxt`**
-: O único arquivo de extensão que você instala no Claude Desktop. O servidor tdmcp
-vem embutido nele.
+**`.mcpb`**
+: O único arquivo de extensão (MCP Bundle) que você instala no Claude Desktop. O
+servidor tdmcp vem embutido nele. Antes se chamava `.dxt` — arquivos `.dxt` antigos
+ainda instalam, mas `.mcpb` é o formato atual.
 
 **`.tox`**
 : Um arquivo de componente do TouchDesigner que você arrasta para qualquer projeto

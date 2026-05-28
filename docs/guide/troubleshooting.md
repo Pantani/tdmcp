@@ -59,12 +59,12 @@ The **first time** a visual uses your microphone (audio-reactive) or camera
 
 ## The download / Textport line shows a network error
 
-Both the `.dxt` download and the one-line bridge installer need to reach the
+Both the `.mcpb` download and the one-line bridge installer need to reach the
 internet (GitHub).
 
 - **Reconnect to the internet** and try again.
 - **Download link 404s?** A release may not be published yet — ask whoever shared
-  tdmcp for the `tdmcp.dxt` file directly and
+  tdmcp for the `tdmcp.mcpb` file directly and
   [install from the file](/guide/install#install-from-file).
 
 ## "Port 9980 is already taken"

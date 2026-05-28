@@ -41,7 +41,7 @@ npm run test:bridge          # Python bridge tests: python3 -m unittest discover
 
 # Docs (VitePress site under docs/)
 npm run docs:dev             # docs:gen then vitepress dev
-npm run build:dxt            # bundle the one-click Claude Desktop .dxt
+npm run build:mcpb           # bundle the one-click Claude Desktop .mcpb (formerly .dxt)
 ```
 
 ## Architecture
@@ -137,7 +137,20 @@ and/or `TDMCP_BRIDGE_ALLOW_EXEC=0` in TD's environment. See
 
 **Trigger:** when asked to build, implement, develop, ship, or add one or more tdmcp features/tools, or to run them through the design→develop→QA→deploy pipeline — including follow-ups (re-run, continue, fix, update a feature/batch, or cut the next release) — use the `tdmcp-pipeline` skill. Simple questions can be answered directly. Agents live in `.claude/agents/`, skills in `.claude/skills/`.
 
+## Harness: directory submission
+
+**Goal:** prepare (and re-prepare) tdmcp's submission to the Anthropic Connectors
+Directory via the Desktop Extension (MCPB) path.
+
+**Trigger:** for any work on the directory/marketplace submission — writing the
+privacy page, migrating `.dxt`→`.mcpb`, drafting form answers, or re-running after
+a rejection — use the `tdmcp-submission` skill (it drives a 4-agent pipeline:
+architect → docs-author ∥ bundle-engineer → QA, defined in `.claude/agents/` and
+`.claude/skills/`). Simple questions can be answered directly. Note: this
+environment runs the team as sub-agents (no `TeamCreate`).
+
 **Change log:**
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
 | 2026-05-27 | Initial harness | all (5 agents + 6 skills) | design→develop→QA→deploy pipeline for the open post-0.3.0 feature backlog |
+| 2026-05-27 | Initial build | full harness | prep tdmcp Connectors Directory submission |

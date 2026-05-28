@@ -1,17 +1,19 @@
-// Builds the Claude Desktop Extension bundle (`tdmcp.dxt`).
+// Builds the Claude Desktop Extension bundle (`tdmcp.mcpb`).
 //
-// A .dxt is a zip archive whose root contains `manifest.json` plus the server's
-// runtime files. This script prefers the official packer when it is available,
-// and otherwise falls back to assembling the zip itself from the verified file
-// list.
+// An .mcpb (MCP Bundle) is a zip archive whose root contains `manifest.json`
+// plus the server's runtime files. This script prefers the official packer when
+// it is available, and otherwise falls back to assembling the zip itself from
+// the verified file list.
 //
-// The official packer was renamed from `@anthropic-ai/dxt` (CLI `dxt`) to
-// `@anthropic-ai/mcpb` (CLI `mcpb`); both expose `pack <dir> <output>`. We try
-// the current `mcpb` package first, then the legacy `dxt` package, then zip.
-// NOTE: the legacy `dxt` CLI predates spec 0.3 and rejects the modern
-// `manifest_version` key (it still requires `dxt_version`), so on machines that
-// only have the legacy package the official-packer path is expected to fail and
-// the zip fallback kicks in — the resulting bundle is still valid.
+// The official packer was renamed from `@anthropic-ai/dxt` (CLI `dxt`, format
+// `.dxt`) to `@anthropic-ai/mcpb` (CLI `mcpb`, format `.mcpb`); both expose
+// `pack <dir> <output>`. We try the current `mcpb` package first, then the
+// legacy `dxt` package, then zip. NOTE: the legacy `dxt` CLI predates spec 0.3
+// and rejects the modern `manifest_version` key (it still requires
+// `dxt_version`), so on machines that only have the legacy package the
+// official-packer path is expected to fail and the zip fallback kicks in — the
+// resulting bundle is still valid. (Legacy `.dxt` bundles still install in
+// Claude Desktop; `.mcpb` is the current format.)
 //
 // Run AFTER `npm run build` (the bundle needs a populated `dist/`).
 //
@@ -25,7 +27,7 @@ import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const manifestPath = join(root, "dxt", "manifest.json");
-const outFile = join(root, "tdmcp.dxt");
+const outFile = join(root, "tdmcp.mcpb");
 
 /** Files/dirs to include at the root of the bundle (source -> archive path). */
 // node_modules is intentionally NOT here — it's staged production-only by
@@ -55,7 +57,7 @@ function preflight() {
     fail(`missing manifest: ${manifestPath}`);
   }
   if (!existsSync(join(root, "dist", "index.js"))) {
-    fail("dist/index.js not found. Run `npm run build` before building the .dxt bundle.");
+    fail("dist/index.js not found. Run `npm run build` before building the .mcpb bundle.");
   }
   if (!existsSync(join(root, "package-lock.json"))) {
     fail("package-lock.json not found — it is needed to install production deps into the bundle.");
@@ -80,7 +82,7 @@ function stageFiles(stageDir) {
 }
 
 /**
- * Stage a PRODUCTION-only node_modules into the bundle so the .dxt stays small —
+ * Stage a PRODUCTION-only node_modules into the bundle so the .mcpb stays small —
  * no dev tooling (TypeScript, Biome, Vitest) and no build-only data
  * (`@bottobot/td-mcp`; the knowledge base is already baked into `dist/`). Installs
  * from the lockfile into the staging dir; if that fails (e.g. offline with a cold
@@ -142,7 +144,7 @@ function tryOfficialPacker() {
   return false;
 }
 
-/** Fallback: assemble the .dxt with the system `zip` tool. */
+/** Fallback: assemble the .mcpb with the system `zip` tool. */
 function zipFallback() {
   const hasZip = spawnSync("zip", ["-v"], { stdio: "ignore" }).status === 0;
   if (!hasZip) {

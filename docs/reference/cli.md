@@ -83,5 +83,5 @@ endpoint works via `TDMCP_LLM_BASE_URL` — local Ollama/LM Studio, or a cloud A
 | `npm run smoke:live` | End-to-end test against a running TD. |
 | `npm run validate:recipes` | Validate every recipe JSON. |
 | `npm run import:bottobot` | (Re)build the embedded knowledge base — only needed to refresh it. |
-| `npm run build:dxt` | Package a Claude Desktop `.dxt` extension (see [Deployment](/deployment)). |
+| `npm run build:mcpb` | Package a Claude Desktop `.mcpb` extension (formerly `.dxt`; see [Deployment](/deployment)). |
 | `npm run docs:dev` / `docs:build` | Run / build this documentation site (regenerates the [Tools reference](/reference/tools) first). |

@@ -170,8 +170,8 @@ Then tell the user: **fully quit and reopen Claude Desktop** so it loads the
 server (tools won't appear until restart).
 
 > Easiest no-JSON alternative for Claude Desktop: build the one-click extension
-> with `npm run build:dxt` (writes `tdmcp.dxt` in the repo root), then have the
-> user drag `tdmcp.dxt` into **Settings → Extensions → Install from file** and set
+> with `npm run build:mcpb` (writes `tdmcp.mcpb` in the repo root), then have the
+> user drag `tdmcp.mcpb` into **Settings → Extensions → Install from file** and set
 > host `127.0.0.1` / port `9980`. (Dragging the file is a GUI action only the user
 > can do; offer this only if they prefer it over the JSON edit you can do yourself.)
 

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "tdmcp": {
+      "command": "npx",
+      "args": ["-y", "@dpantani/tdmcp"]
+    }
+  }
+}
