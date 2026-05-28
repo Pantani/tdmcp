@@ -12,8 +12,12 @@
 const X_STEP = 200;
 /** Vertical gap between sibling nodes within a layer, in TD network units. */
 const Y_STEP = 140;
-/** Breathing room left between an existing cluster and a newly placed node. */
-const SIBLING_GAP = 80;
+/** Horizontal pitch between project columns when tiling the top-level grid. */
+const GRID_COL_STEP = 260;
+/** Vertical pitch between projects within a grid column. */
+const GRID_ROW_STEP = 200;
+/** Projects stacked in a column before wrapping to the next column to the right. */
+const GRID_ROWS = 6;
 
 export interface LayoutEdge {
   from: string;
@@ -130,23 +134,28 @@ export function layoutScript(positions: Positions): string {
 }
 
 /**
- * Builds a Python snippet that drops a just-created node clear of its existing
- * siblings — left-aligned with the current cluster and one gap below its lowest
- * node — so repeated top-level creations stack into a tidy column instead of
- * piling up at the origin. The first node in an empty network lands at (0, 0).
+ * Builds a Python snippet that drops a just-created node into the first free cell of a
+ * 2D grid among its siblings: it scans a column top→bottom, then wraps to the next
+ * column to the right after {@link GRID_ROWS} rows. Cells already covered by a sibling
+ * (any family) are skipped, so repeated top-level creations tile into a readable grid
+ * instead of piling at the origin or growing one ever-taller column. The first node in
+ * an empty network lands at (0, 0). Reads the siblings' live sizes, never the new
+ * node's (which may be unreliable right after creation).
  */
-export function placeBelowSiblingsScript(parentPath: string, nodePath: string): string {
+export function placeInGridScript(parentPath: string, nodePath: string): string {
   const q = JSON.stringify;
   return [
     `_parent = op(${q(parentPath)})`,
     `_new = op(${q(nodePath)})`,
     "if _parent is not None and _new is not None:",
-    "    _sibs = [c for c in _parent.children if c is not _new]",
-    "    if _sibs:",
-    "        _new.nodeX = min(c.nodeX for c in _sibs)",
-    `        _new.nodeY = min(c.nodeY for c in _sibs) - _new.nodeHeight - ${SIBLING_GAP}`,
-    "    else:",
-    "        _new.nodeX = 0",
-    "        _new.nodeY = 0",
+    `    _cw, _ch, _rows = ${GRID_COL_STEP}, ${GRID_ROW_STEP}, ${GRID_ROWS}`,
+    "    def _cell(_c):",
+    "        return (round((_c.nodeX + _c.nodeWidth / 2.0) / _cw), round(-(_c.nodeY + _c.nodeHeight / 2.0) / _ch))",
+    "    _occ = {_cell(_c) for _c in _parent.children if _c is not _new}",
+    "    _k = 0",
+    "    while (_k // _rows, _k % _rows) in _occ:",
+    "        _k += 1",
+    "    _new.nodeX = (_k // _rows) * _cw",
+    "    _new.nodeY = -((_k % _rows) * _ch)",
   ].join("\n");
 }
