@@ -41,6 +41,7 @@ Every feature follows the existing patterns:
 | 7 | 0.3.0 ☑ | Stage I/O & sensor reactivity | Send video out, fan across projectors, react to the camera, follow an external clock, run hands-free |
 | 8–11 | 0.3.0 ◐ | Effects, reactivity, control & AI | Parallel waves — signature effects, deeper reactivity, creation, live control/AI/DX (detailed below) |
 | 12 | 0.3.0 ☑ | Dimensional: 3D, depth & spatial mapping | Take visuals off the flat plane — react in 3D, sculpt with depth, map onto real surfaces |
+| 13 | 0.5.0 ☐ | Components, agent-DX & reactivity | Reusable-component scaffolding, project analysis/auto-docs, token-cheap agent-DX, Link/MIDI — the gaps left after the 0.4.0 generators + the body-tracking tools already on `main` |
 
 ---
 
@@ -337,7 +338,7 @@ a model; `create_depth_silhouette` makes a flat mask — both distinct from the 
 registered in `src/tools/layer1/index.ts`; CLI commands `audio3d` / `dome` / `mesh-warp` /
 `depth-displace` / `gpu-particles` in `src/cli/agent.ts`. Built one-subagent-per-feature
 (new files + offline tests only), then single-writer wiring + live tuning. The tool registry is now
-102 tools (44 Layer 1).
+119 tools (56 Layer 1).
 
 **Stretch / hardware- or model-blocked (won't ship unvalidated):** depth-camera input
 (Kinect / RealSense / Azure) in `create_external_io`; pose / body tracking (MediaPipe / ML) →
@@ -347,3 +348,75 @@ component, or GPU+models to validate live.
 **macOS note:** the five core features are pure-GPU render / GLSL / file-or-camera sourced, so each
 is testable on the dev machine (unlike optical flow or depth sensors, which this build/OS can't
 validate).
+
+---
+
+## Phase 13 — v0.5.0 · Components, agent-DX & reactivity ☐ planned
+
+**v0.4.0 shipped 2026-05-27** — fifteen new tools/prompts (raymarch & particle-flock generators,
+point-cloud/PBR/cubemap-dome, tempo detection, LED/palette/cue/dashboard, generative audio, and
+recipe/style prompts). Body/pose tracking (`setup_body_tracking`, `create_pose_tracking`,
+`create_pose_skeleton`, `create_body_reactive`) is also already on `main` (in-tree, **not** in the
+0.4.0 CHANGELOG). Phase 13 is the **next** wave (v0.5.0): the thesis shifts from *generating* visuals (0.4.x already covers that,
+100+ tools) to **packaging, documenting and cheaply operating** them. tdmcp already ships `.tox`
+save/load (`manage_component`); v0.5.0 completes the *reusable-component* story (custom parameters +
+extensions) and adds the analysis + agent-DX gaps no competing TD-MCP owns.
+Benchmarked against the two leaders: **`8beeeaaat/touchdesigner-mcp`** (~330★,
+node-CRUD only, no component packaging) and **`dylanroscover/Embody`** (~111★, the only one with
+network-as-JSON + git-diffable externalization). dotsimulate **LOPs** is orthogonal (a 60+-operator
+agent runtime *inside* TD, incl. its own MCP Server + "Claude Code" operators), so TDMCP stays
+**agent-side** and, for AI generation, *drives* existing `.tox`es rather than reimplementing them.
+Sourced from `research/touchdesigner-insane-tutorials-2026-05.md` (BL-01…BL-22) + a focused
+Embody/dotsimulate deep-dive.
+
+**Priority:** **P0** = component reusability (custom params + extensions) + Link/MIDI · **P1** =
+project intelligence + the token-cheap agent-DX primitives · **P2** = self-documentation niceties +
+perform mode. Table is ordered by priority. (3D/sim/particle generators shipped in 0.4.0; body
+tracking is on `main` in-tree, not in the 0.4.0 CHANGELOG.)
+
+| Feature | Delivers | Effort | Status |
+|---|---|---|---|
+| ~~`export_component` / `import_component`~~ — **already shipped** | `.tox` `save` / `loadTox` / live-linked `externaltox` already exist as **`manage_component`** (BL-01 was a false gap). Remaining gap: a self-contained, dependency-collected portable bundle — note `saveExternalTox` only externalizes to a folder tree, not a single portable `.tox` (→ v0.6.0 `make_portable_tox`) | — | ☑ |
+| `scaffold_extension` | Extension DAT stub + Extension Object + Promote flag + re-init — make a COMP scriptable (BL-03) | M | ☐ |
+| `add_custom_parameters` | Declarative custom-parameter pages (`appendCustomPage`/`appendFloat…`), TDJSON in/out — expose knobs (BL-03) | M | ☐ |
+| `sync_external_clock` + Link/MIDI | Add `ableton_link` + `midi_clock` modes alongside tap-tempo — lock to the DJ's clock (BL-08) | S | ☐ |
+| Body tracking ✅ on `main` (in-tree) | `setup_body_tracking` / `create_pose_tracking` / `create_pose_skeleton` / `create_body_reactive` (+ recipes `mediapipe_body_dots`, `pose_skeleton_mediapipe`) are in-tree on `main` (not in the 0.4.0 CHANGELOG). Remaining (incremental): hand/face modes, more reactive templates, live webcam validation (BL-02) | — | ☑ |
+| `analyze_project` | Unused/dead ops, broken file deps, orphan COMPs, dependency graph via `findChildren`/connectors (BL-04) | M | ☐ |
+| `generate_readme` | Markdown project doc: params table (TDJSON), I/O, child inventory, deps, preview thumbnail (BL-04) | M | ☐ |
+| `analyze_screenshot` | Prompt+tool: `get_preview` image + topology + `get_td_node_errors` → explain/diagnose ("why is it black?") (BL-09) | M | ☐ |
+| `edit_dat_content` | Surgical `old_string`/`new_string` DAT edit (unique-match + opt-in `replace_all`) — token-cheap edits *(Embody-mined)* | S | ☐ |
+| `set_dat_content` (anti-wipe) | Safe whole-DAT write with a `confirm_wipe` guardrail (refuses silent clears) *(Embody-mined)* | S | ☐ |
+| `batch_operations` | Many create/connect/set-param in one bridge round-trip, fail-forward with per-item warnings — expose the Layer-1 builder as a primitive *(Embody-mined)* | M | ☐ |
+| `snapshot_td_graph` compact mode | Token-optimized TDN-style read (type-default hoisting, expr/bind shorthand, inline short arrays) — Embody's `read_tdn` is ~20–90× cheaper than op-walks *(Embody-mined)* | M | ☐ |
+| `manage_annotation` + enclosed ops | Agents add network boxes/comments + query ops enclosed by a box → self-documenting networks *(Embody-mined)* | S | ☐ |
+| `write_agent_guide` | Emit a project-local `CLAUDE.md`/`AGENTS.md` seeded with TDMCP operator conventions + render-coordinate rules *(Embody-mined)* | S | ☐ |
+| `set_perform_mode` | Bridge suspends nonessential MCP/externalization compute during a live show — VJ-critical *(Embody-mined)* | M | ☐ |
+
+**Body tracking — on `main` (in-tree; not in the 0.4.0 CHANGELOG):** `setup_body_tracking`, `create_pose_tracking`,
+`create_pose_skeleton`, `create_body_reactive` are registered in `src/tools/layer1/`, with recipes
+`mediapipe_body_dots` and `pose_skeleton_mediapipe`. Remaining Phase-13 work on this track is
+incremental: hand/face modes, more reactive templates, and live webcam validation
+(create→verify→preview + post-cook error check).
+
+**Areas:** new L2/L3 tools (`scaffoldExtension`, `addCustomParameters` — the reusable-component
+complement to the existing `manageComponent`; `analyzeProject`, `generateReadme`, `editDatContent`, `setDatContent`,
+`batchOperations`, `manageAnnotation`, `writeAgentGuide`), extended `syncExternalClock`
+(Link/MIDI), extended `snapshotTdGraph` (compact mode), `analyze_screenshot` as a prompt+tool,
+plus 1:1 CLI commands. Bridge work uses the existing `buildPayloadScript`/`parsePythonReport`
+pattern — the TD Python API is fully documented (tox: `COMP.save`/`saveExternalTox`/`loadTox`/
+`saveByteArray`; extensions: `mod('X').X(me)` + Promote; params: `appendCustomPage`; analysis:
+`findChildren`/`inputConnectors`/`outputConnectors`; serialization: TDJSON). No new REST endpoints
+expected. Reuse the vault's path-traversal-safe IO for all `.tox`/file writes.
+
+**Deferred to v0.6.0+:** `control_diffusion` / `drive_streamdiffusion` + `connect_comfyui` (drive an
+*installed* StreamDiffusionTD/ComfyUI `.tox`; need GPU/CUDA to live-validate — probe-first),
+`serialize_network` / `rebuild_network` + `make_portable_tox` (git-diffable JSON round-trip),
+TD process lifecycle + multi-instance routing (`manage_td_process` / `switch_instance`),
+`run_bridge_tests`, `get_bridge_logs`, `register_custom_tool` (artist-defined tools, LOPs' Tool-DAT
+idea agent-side), `caption_top`, depth-camera input (Kinect Azure / RealSense, hardware-gated),
+`create_pose_reactive`, and the remaining advanced generators. Note 0.4.0 already shipped
+`create_raymarch_scene` (SDF), `create_particle_flock` (boids) and `create_point_cloud`; still open: `create_gpu_fluid`, `create_optical_flow_particles`,
+`create_vertex_displacement_mat`, `create_strange_attractor`, `create_pop_field`, `create_sdf_text`.
+The recipe/template
+**marketplace** stays v0.6.0+ (local-first via TD Palette + Obsidian vault, per the project's
+local-first distribution model).
