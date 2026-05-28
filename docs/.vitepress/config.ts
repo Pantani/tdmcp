@@ -70,6 +70,7 @@ const devReference = [
 const operations = [
   { text: "Deployment", link: "/deployment" },
   { text: "Roadmap", link: "/roadmap" },
+  { text: "Privacy", link: "/privacy" },
   { text: "Contributing", link: `${GITHUB}/blob/main/CONTRIBUTING.md` },
   { text: "Changelog", link: `${GITHUB}/blob/main/CHANGELOG.md` },
 ];
@@ -335,6 +336,7 @@ export default defineConfig({
               { text: "Tools (em inglês)", link: "/reference/tools" },
               { text: "CLI (em inglês)", link: "/reference/cli" },
               { text: "Bridge & REST API (em inglês)", link: "/reference/bridge-api" },
+              { text: "Privacidade", link: "/pt/privacy" },
             ],
           },
         ],

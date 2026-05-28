@@ -66,7 +66,7 @@ Three pieces talk to each other on your computer:
 
 Node.js is only needed for the build-from-source path (**[Node 20+](https://nodejs.org)**).
 The one-click Claude Desktop extension needs nothing extra — the server is bundled
-inside the `.dxt`.
+inside the `.mcpb` (formerly `.dxt`; legacy `.dxt` files still install).
 
 ## Get started
 
@@ -85,8 +85,8 @@ Do every step yourself; only stop when you need me to paste one line into TouchD
 It clones, builds and wires everything up; the only manual step is pasting one
 line into TouchDesigner (Step 2 below).
 
-**🟢 Claude Desktop — one-click `.dxt` (no terminal, no Node).** Download
-**[tdmcp.dxt](https://github.com/Pantani/tdmcp/releases/latest/download/tdmcp.dxt)**,
+**🟢 Claude Desktop — one-click `.mcpb` (no terminal, no Node).** Download
+**[tdmcp.mcpb](https://github.com/Pantani/tdmcp/releases/latest/download/tdmcp.mcpb)**,
 then in Claude Desktop open **Settings → Extensions** and install it (drag it in or
 **Install from file**). Leave host/port at `127.0.0.1` / `9980`. Full walkthrough:
 [the install guide](https://pantani.github.io/tdmcp/guide/install).

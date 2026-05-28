@@ -43,12 +43,12 @@ Na **primeira vez** que um visual usa o microfone (reativo a áudio) ou a câmer
 
 ## O download / a linha do Textport dá erro de rede
 
-Tanto o download do `.dxt` quanto o instalador de uma linha da ponte precisam de
+Tanto o download do `.mcpb` quanto o instalador de uma linha da ponte precisam de
 internet (acesso ao GitHub).
 
 - **Reconecte à internet** e tente de novo.
 - **Link de download dá 404?** Pode ainda não haver release publicada — peça o
-  arquivo `tdmcp.dxt` diretamente a quem te indicou e
+  arquivo `tdmcp.mcpb` diretamente a quem te indicou e
   [instale pelo arquivo](/pt/guide/install#install-from-file).
 
 ## "Porta 9980 já está em uso"

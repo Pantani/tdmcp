@@ -4,6 +4,24 @@ All notable changes to **tdmcp** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-05-27
+
+Packaging and docs for the Anthropic Connectors Directory submission (Desktop
+Extension path). No runtime/tool behaviour changes.
+
+### Changed
+
+- The one-click Claude Desktop bundle is now built as **`.mcpb`** (MCP Bundle), the
+  current Anthropic format — the build script already preferred the
+  `@anthropic-ai/mcpb` packer, so this renames the output and the `build:dxt` →
+  `build:mcpb` script. Legacy `.dxt` files still install in Claude Desktop.
+
+### Added
+
+- **Privacy policy** page (EN + PT) at `/privacy`, documenting that tdmcp runs
+  entirely locally, collects no data, and has no telemetry — required for the
+  Connectors Directory submission.
+
 ## [0.3.0] - 2026-05-27
 
 Everything built on top of 0.2.0, in one release: a scriptable CLI and developer-experience

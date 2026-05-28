@@ -113,9 +113,10 @@ and preview nodes. You switch it on once (see [Install](/guide/install)).
 : An [Obsidian](https://obsidian.md) folder of notes tdmcp can read and write —
 recipes, setlists, moodboards, presets and a show diary.
 
-**`.dxt`**
-: The single extension file you install in Claude Desktop. The tdmcp server is
-bundled inside it.
+**`.mcpb`**
+: The single extension file (MCP Bundle) you install in Claude Desktop. The tdmcp
+server is bundled inside it. Formerly called `.dxt` — older `.dxt` files still
+install, but `.mcpb` is the current format.
 
 **`.tox`**
 : A TouchDesigner component file you can drag into any project — including a
