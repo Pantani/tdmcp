@@ -351,11 +351,11 @@ validate).
 
 ---
 
-## Phase 13 — v0.4.0 · Components, agent-DX & reactivity ☑ shipped
+## Phase 13 — v0.5.0 · Components, agent-DX & reactivity ☑ shipped
 
 The first post-0.3 wave. The thesis shifts from *generating* visuals (0.3.0 already covers that
 with 102 tools) to **packaging, documenting and cheaply operating** them. tdmcp already ships
-`.tox` save/load (`manage_component`); v0.4.0 completes the *reusable-component* story (custom
+`.tox` save/load (`manage_component`); v0.5.0 completes the *reusable-component* story (custom
 parameters + extensions) and adds the analysis + agent-DX gaps no competing TD-MCP owns.
 Benchmarked against the two leaders: **`8beeeaaat/touchdesigner-mcp`** (~330★,
 node-CRUD only, no component packaging) and **`dylanroscover/Embody`** (~111★, the only one with

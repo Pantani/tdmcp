@@ -131,6 +131,12 @@ on all interfaces. For untrusted networks, set `TDMCP_BRIDGE_TOKEN` (both sides)
 and/or `TDMCP_BRIDGE_ALLOW_EXEC=0` in TD's environment. See
 `docs/reference/architecture.md`.
 
+## Harness: feature delivery
+
+**Goal:** take a feature idea through design/wireframe → build → integrate → QA → deploy, as a coordinated agent team that follows this repo's patterns.
+
+**Trigger:** when asked to build, implement, develop, ship, or add one or more tdmcp features/tools, or to run them through the design→develop→QA→deploy pipeline — including follow-ups (re-run, continue, fix, update a feature/batch, or cut the next release) — use the `tdmcp-pipeline` skill. Simple questions can be answered directly. Agents live in `.claude/agents/`, skills in `.claude/skills/`.
+
 ## Harness: directory submission
 
 **Goal:** prepare (and re-prepare) tdmcp's submission to the Anthropic Connectors
@@ -146,6 +152,7 @@ environment runs the team as sub-agents (no `TeamCreate`).
 **Change log:**
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
+| 2026-05-27 | Initial harness | all (5 agents + 6 skills) | design→develop→QA→deploy pipeline for the open post-0.3.0 feature backlog |
 | 2026-05-27 | Initial build | full harness | prep tdmcp Connectors Directory submission |
 
 ## Harness: feature build

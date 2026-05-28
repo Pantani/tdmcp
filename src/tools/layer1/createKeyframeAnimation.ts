@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { placeInGridScript } from "../layout.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -146,7 +147,19 @@ export async function createKeyframeAnimationImpl(
         hook: KEYFRAME_HOOK,
       });
       const exec = await ctx.client.executePythonScript(script, true);
-      return parsePythonReport<KeyframeReport>(exec.stdout);
+      const report = parsePythonReport<KeyframeReport>(exec.stdout);
+      // The keyframe container is created at the origin; tile it into the grid (cosmetic).
+      if (report.container && !report.fatal) {
+        try {
+          await ctx.client.executePythonScript(
+            placeInGridScript(args.parent_path, report.container),
+            false,
+          );
+        } catch (err) {
+          ctx.logger.debug("container placement skipped", { err: String(err) });
+        }
+      }
+      return report;
     },
     (report) => {
       if (report.fatal) {

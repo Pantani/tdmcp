@@ -4,12 +4,13 @@ All notable changes to **tdmcp** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.0] - 2026-05-28
+## [0.5.0] - 2026-05-28
 
-Phase 13 — the first post-0.3 wave. The focus shifts from *generating* visuals to
-**packaging, documenting and cheaply operating** them: reusable components, project
-intelligence, token-cheap agent-DX primitives, external-clock locking, and body
-tracking. Every new tool was built → integrated → live-validated in TouchDesigner.
+Phase 13 — a second post-0.3 wave, landing alongside 0.4.0's parallel build-out. The
+focus shifts from *generating* visuals to **packaging, documenting and cheaply
+operating** them: reusable components, project intelligence, token-cheap agent-DX
+primitives, and external-clock locking. Every new tool was built → integrated →
+live-validated in TouchDesigner.
 
 ### Added
 
@@ -44,13 +45,10 @@ tracking. Every new tool was built → integrated → live-validated in TouchDes
 - **`set_perform_mode`** (CLI `perform-mode`) — toggle a perform-mode flag (stored on
   the TD root + `ui.performMode`) so the bridge and MCP tools skip nonessential
   compute (preview captures, event streaming, externalization) during a live show.
-- **Body / pose tracking (MediaPipe, webcam):** `setup_body_tracking` (CLI
-  `body-tracking`) one-shot loads the free torinmb/mediapipe-touchdesigner engine,
-  builds an adapter that emits a 33-landmark pose CHOP (tx/ty/tz/confidence), and a
-  live skeleton; `create_pose_tracking` (`pose-track`), `create_pose_skeleton`
-  (`skeleton`) and `create_body_reactive` (`body-reactive`) build pose sources,
-  skeletons and camera-reactive visuals (synthetic / MediaPipe / OSC sources). New
-  recipe **`body_tracking_reactive`** — 33 landmark dots with a feedback motion trail.
+- **Body-tracking CLI + recipe:** 1:1 CLI commands for the MediaPipe body-tracking
+  tools that shipped in 0.4.0 (`body-tracking`, `pose-track`, `skeleton`,
+  `body-reactive`), plus a new recipe **`body_tracking_reactive`** — 33 MediaPipe
+  landmark dots with a feedback motion trail. Re-validated live against the engine.
 - **`analyze_screenshot`** prompt — captures a node's preview + topology + node errors
   and diagnoses what it shows or why it looks wrong ("why is it black?").
 - **Feature-build harness** (`.claude/`): a `tdmcp-tool-builder` skill +
@@ -65,6 +63,59 @@ tracking. Every new tool was built → integrated → live-validated in TouchDes
   (manual Bpm fallback when no source is present).
 - **`snapshot_td_graph`** gains a `compact` mode — hoists per-type default parameters
   and delta-encodes each node for token-cheap whole-COMP reads.
+## [0.4.0] - 2026-05-27
+
+Fifteen new tools and prompts, built as a coordinated parallel pipeline (design →
+develop → QA → deploy) and live-validated against TouchDesigner 2025.32820:
+live-performance control, signature 3D/GPU visuals, more creation primitives,
+spatial output, data + audio I/O, and AI authoring prompts.
+
+### Added
+
+- **`create_cue_sequencer`** (CLI `cue-sequencer`) — a bar-quantized cue timeline: a Beat
+  CHOP + CHOP Execute DAT advances through an ordered list of steps, recalling/morphing each
+  step's cue on the beat. The deterministic, musically-timed counterpart to `create_autopilot`.
+- **`create_stage_dashboard`** (CLI `dashboard`) — one unified web performance surface from a
+  Web Server DAT: cue-launch buttons + master faders + a panic blackout + a live beat/VU
+  readout. Trusted networks only (accepts writes without auth, like the bridge).
+- **`create_raymarch_scene`** (CLI `raymarch`) — a self-contained GLSL TOP raymarcher: SDF
+  scenes (sphere-field / menger fractal / tunnel) with camera, step-count and color controls —
+  the volumetric complement to `create_shader_lib`.
+- **`detect_tempo`** (CLI `detect-tempo`) — auto-BPM from audio onsets (no tapping): inter-onset
+  intervals → median → BPM on a Null CHOP, optionally driving the global tempo. Complements
+  `sync_external_clock`. Experimental — BPM lock needs live tuning.
+- **`create_palette`** (CLI `palette`) — a color palette / gradient generator: harmony rules
+  (complementary/triad/analogous/tetrad/monochrome) or sampled from a source TOP → a Ramp TOP +
+  a swatch CHOP, ready for `create_color_grade` / `generate_from_moodboard` / `bind_to_channel`.
+- **`create_pbr_scene`** (CLI `pbr-scene`) — a 3D scene with a PBR material
+  (metallic/roughness/base color) + an environment light rig for image-based lighting, beyond
+  `create_3d_scene`'s basic light.
+- **`create_particle_flock`** (CLI `flock`) — boids-style GPU particle flocking
+  (separation/alignment/cohesion in a feedback-TOP velocity loop) feeding TOP-instancing — a
+  behavioral complement to `create_gpu_particle_field`.
+- **`create_point_cloud`** (CLI `point-cloud`) — render a point cloud from a depth/luminance map
+  or a synthetic source via texture-packed TOP-instancing, with depth-scale / point-size / spin.
+- **`create_data_source`** (CLI `data-source`) — ingest live external data (JSON/CSV over a Web
+  Client DAT, OSC In, or Serial) onto a binding-ready Null CHOP, the input that feeds
+  `create_data_visualization` / `bind_to_channel`.
+- **`create_generative_audio`** (CLI `gen-audio`) — synthesize audio (oscillator / FM / noise)
+  onto a Null CHOP, with optional opt-in audio-device output — generate sound, not just react.
+- **`create_cubemap_dome`** (CLI `cubemap-dome`) — a true cube-map render (Render TOP in
+  cube-map mode → GLSL fisheye/equirectangular remap) for planetarium domes / 360, the
+  higher-fidelity follow-up to `create_dome_output`.
+- **`create_led_mapper`** (CLI `led-mapper`) — pixel-map regions of a source TOP to an LED
+  fixture layout (strip/grid; horizontal/vertical/serpentine) → per-pixel colors out as
+  DMX/Art-Net, building on `create_external_io`'s `artnet_out`.
+- **`scaffold_genre`** (CLI `genre`) — genre show scaffolds (techno / ambient / installation): a
+  styled starting network with a genre-appropriate tempo, look and palette, beyond
+  `scaffold_show`'s generic skeleton.
+- **`text_to_recipe`** prompt — author a schema-valid recipe JSON (matching `RecipeSchema`) from
+  a plain-language description, ready to save under `recipes/` and instantiate with `apply_recipe`.
+- **`style_reference`** prompt — recreate a reference look (image or text description) by mapping
+  it onto an ordered plan of concrete tdmcp tool calls + parameters.
+
+[0.5.0]: https://github.com/Pantani/tdmcp/releases/tag/v0.5.0
+[0.4.0]: https://github.com/Pantani/tdmcp/releases/tag/v0.4.0
 
 ## [0.3.1] - 2026-05-27
 
