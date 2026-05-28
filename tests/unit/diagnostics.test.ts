@@ -144,7 +144,11 @@ describe("compare_td_nodes", () => {
 
 describe("snapshot_td_graph", () => {
   it("captures nodes and connections, with params only when asked", async () => {
-    const bare = await snapshotTdGraphImpl(makeCtx(), { path: "/project1", include_params: false });
+    const bare = await snapshotTdGraphImpl(makeCtx(), {
+      path: "/project1",
+      include_params: false,
+      compact: false,
+    });
     expect(sc(bare).nodeCount).toBe(1);
     expect(sc(bare).connectionCount).toBe(0);
     expect(sc(bare).nodes[0].parameters).toBeUndefined();
@@ -152,6 +156,7 @@ describe("snapshot_td_graph", () => {
     const withParams = await snapshotTdGraphImpl(makeCtx(), {
       path: "/project1",
       include_params: true,
+      compact: false,
     });
     expect(sc(withParams).nodes[0].parameters).toMatchObject({ period: 1 });
   });
@@ -181,7 +186,11 @@ describe("snapshot_td_graph", () => {
         });
       }),
     );
-    const r = await snapshotTdGraphImpl(makeCtx(), { path: "/project1", include_params: true });
+    const r = await snapshotTdGraphImpl(makeCtx(), {
+      path: "/project1",
+      include_params: true,
+      compact: false,
+    });
     expect(r.isError).toBeFalsy();
     expect(sc(r).nodeCount).toBe(2);
     const a = sc(r).nodes.find((n: { path: string }) => n.path === "/project1/a");

@@ -116,6 +116,10 @@ import { importModelImpl, importModelSchema } from "../tools/layer1/importModel.
 import { listRecipesImpl, listRecipesSchema } from "../tools/layer1/listRecipes.js";
 import { scaffoldShowImpl, scaffoldShowSchema } from "../tools/layer1/scaffoldShow.js";
 import { setupOutputImpl, setupOutputSchema } from "../tools/layer1/setupOutput.js";
+import {
+  addCustomParametersImpl,
+  addCustomParametersSchema,
+} from "../tools/layer2/addCustomParameters.js";
 import { animateParameterImpl, animateParameterSchema } from "../tools/layer2/animateParameter.js";
 import { arrangeNetworkImpl, arrangeNetworkSchema } from "../tools/layer2/arrangeNetwork.js";
 import { bindToChannelImpl, bindToChannelSchema } from "../tools/layer2/bindToChannel.js";
@@ -157,6 +161,10 @@ import {
   randomizeControlsImpl,
   randomizeControlsSchema,
 } from "../tools/layer2/randomizeControls.js";
+import {
+  scaffoldExtensionImpl,
+  scaffoldExtensionSchema,
+} from "../tools/layer2/scaffoldExtension.js";
 import {
   setParametersBatchImpl,
   setParametersBatchSchema,
@@ -562,6 +570,19 @@ const COMMANDS: Record<string, Command> = {
     setParametersBatchSchema,
     setParametersBatchImpl,
     "Set many parameters across nodes at once.",
+    { mutates: true },
+  ),
+  // Phase 13 — reusable components & agent-DX.
+  "add-params": r(
+    addCustomParametersSchema,
+    addCustomParametersImpl,
+    "Append a declarative custom-parameter page to a COMP.",
+    { mutates: true },
+  ),
+  extension: r(
+    scaffoldExtensionSchema,
+    scaffoldExtensionImpl,
+    "Give a COMP a Python extension class (stub + promote + re-init).",
     { mutates: true },
   ),
   // Signature effects, deeper reactivity, creation, live control (waves 1–5).

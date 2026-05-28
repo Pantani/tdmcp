@@ -1,4 +1,5 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { registerAnalyzeScreenshot } from "./analyzeScreenshot.js";
 import { registerAudioToShow } from "./audioToShow.js";
 import { registerAutoFix } from "./autoFix.js";
 import { registerBeatReactiveDesigner } from "./beatReactiveDesigner.js";
@@ -26,6 +27,7 @@ export function registerAllPrompts(server: McpServer, ctx: PromptContext): void 
   registerImageToVisual(server, ctx);
   registerTweakVisual(server, ctx);
   registerCritiqueVisual(server, ctx);
+  registerAnalyzeScreenshot(server, ctx);
   registerVjSetBuilder(server, ctx);
   registerFixShader(server, ctx);
   registerTextToShader(server, ctx);
