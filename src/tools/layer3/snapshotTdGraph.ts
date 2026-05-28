@@ -52,13 +52,13 @@ export const snapshotTdGraphOutputSchema = z.object({
           .record(z.string(), z.unknown())
           .optional()
           .describe(
-            "The node's parameters as key→value; present only when include_params is true. In compact mode, only the deltas from the type default.",
+            "The node's parameters as key→value; present when `include_params` or `compact` is set (compact implies fetching). In compact mode, only the deltas from the type default.",
           ),
         params_unfetched: z
           .boolean()
           .optional()
           .describe(
-            "True when parameters were requested but not fetched for this node (past the per-node cap or a failed read), so a missing `parameters` field isn't mistaken for matching the type default.",
+            "True when parameters were requested (`include_params` or `compact`) but not fetched for this node (past the per-node cap or a failed read), so a missing `parameters` field isn't mistaken for matching the type default.",
           ),
       }),
     )

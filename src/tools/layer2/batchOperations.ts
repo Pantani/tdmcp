@@ -87,6 +87,8 @@ interface OperationResult {
   path?: string;
   from?: string;
   to?: string;
+  /** Whether the operation actually succeeded (connect/setParam are fail-forward into warnings). */
+  ok: boolean;
 }
 
 export async function batchOperationsImpl(ctx: ToolContext, args: BatchOperationsArgs) {
@@ -100,7 +102,7 @@ export async function batchOperationsImpl(ctx: ToolContext, args: BatchOperation
         // can throw — keep going so one bad node doesn't sink the rest of the batch.
         try {
           const path = await builder.add(op.type, op.name, op.parameters, op.parent_path);
-          results.push({ action: "create", type: op.type, path });
+          results.push({ action: "create", type: op.type, path, ok: true });
         } catch (err) {
           builder.warnings.push(`Create ${op.type} failed: ${friendlyTdError(err)}`);
         }
@@ -108,20 +110,34 @@ export async function batchOperationsImpl(ctx: ToolContext, args: BatchOperation
         // `from`/`to` may be names created in this batch or absolute paths.
         const fromPath = builder.pathOf(op.from) ?? op.from;
         const toPath = builder.pathOf(op.to) ?? op.to;
-        // Already fail-forward — connection failures land in builder.warnings.
+        // Fail-forward: connection failures land in builder.warnings. Detect via the
+        // warning-count delta so the result's `ok` reflects what actually happened.
+        const warnsBefore = builder.warnings.length;
         await builder.connect(fromPath, toPath, op.from_output, op.to_input);
-        results.push({ action: "connect", from: op.from, to: op.to });
+        results.push({
+          action: "connect",
+          from: op.from,
+          to: op.to,
+          ok: builder.warnings.length === warnsBefore,
+        });
       } else {
         const path = builder.pathOf(op.path) ?? op.path;
-        // Already fail-forward — param failures land in builder.warnings.
+        // Fail-forward: param failures land in builder.warnings (see connect above).
+        const warnsBefore = builder.warnings.length;
         await builder.setParams(path, op.parameters);
-        results.push({ action: "setParam", path });
+        results.push({
+          action: "setParam",
+          path,
+          ok: builder.warnings.length === warnsBefore,
+        });
       }
     }
 
-    const created = results.filter((r) => r.action === "create").length;
-    const connected = results.filter((r) => r.action === "connect").length;
-    const set = results.filter((r) => r.action === "setParam").length;
+    // Count only operations that actually succeeded — connect/setParam push a result
+    // even on failure (the failure is in warnings), so filter on `ok`.
+    const created = results.filter((r) => r.action === "create" && r.ok).length;
+    const connected = results.filter((r) => r.action === "connect" && r.ok).length;
+    const set = results.filter((r) => r.action === "setParam" && r.ok).length;
     const summary =
       `Ran ${args.operations.length} operation(s): ${created} created, ${connected} connected, ` +
       `${set} set, ${builder.warnings.length} warning(s).`;

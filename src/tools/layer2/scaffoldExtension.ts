@@ -229,10 +229,16 @@ export async function scaffoldExtensionImpl(ctx: ToolContext, args: ScaffoldExte
         return errorResult(`scaffold_extension failed: ${report.fatal}`, report);
       }
       const warnCount = report.warnings.length;
+      // Report what was actually applied. When report.promoted is null the Promote par
+      // wasn't found/set, so don't echo the requested flag as if it took effect.
+      const promoteStr =
+        report.promoted === null || report.promoted === undefined
+          ? `promote requested=${String(args.promote)} (applied: unknown — Promote par not found)`
+          : `promote=${String(report.promoted)}`;
       const parts: string[] = [
         `Scaffolded extension ${report.class_name} on ${report.comp}`,
         `(DAT ${report.dat ?? "unknown"})`,
-        `promote=${String(report.promoted ?? args.promote)}`,
+        promoteStr,
         report.reinit ? "re-init pulsed" : "re-init NOT pulsed (par not found)",
       ];
       if (warnCount > 0) {

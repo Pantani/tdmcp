@@ -104,7 +104,7 @@ export const registerEditDatContent: ToolRegistrar = (server, ctx) => {
         "Surgically replace a substring inside a Text or Table DAT's `.text`. " +
         "Without `replace_all`, requires exactly one match — 0 or >1 occurrences is an error, " +
         "forcing the caller to add context or set `replace_all`. " +
-        "Use `create_python_script` to write an entire DAT from scratch; use this to make a targeted edit.",
+        "Use `set_dat_content` to overwrite an entire DAT's text in place; use this to make a targeted edit.",
       inputSchema: editDatContentSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },

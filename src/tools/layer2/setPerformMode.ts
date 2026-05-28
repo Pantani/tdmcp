@@ -21,6 +21,8 @@ interface PerformModeReport {
   enabled: boolean;
   stored: boolean;
   was: boolean;
+  /** True when this build exposed `ui.performMode` and it was set (success, not a warning). */
+  ui_perform_mode_set: boolean;
   warnings: string[];
   fatal?: string;
 }
@@ -37,7 +39,7 @@ interface PerformModeReport {
 const PERFORM_MODE_SCRIPT = `
 import json, base64, traceback
 _p = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
-report = {"enabled": bool(_p["enabled"]), "stored": False, "was": False, "warnings": []}
+report = {"enabled": bool(_p["enabled"]), "stored": False, "was": False, "ui_perform_mode_set": False, "warnings": []}
 try:
     _root = op('/')
     report["was"] = bool(_root.fetch('tdmcp_perform_mode', False))
@@ -49,7 +51,7 @@ try:
     try:
         if hasattr(ui, 'performMode'):
             ui.performMode = bool(_p["enabled"])
-            report["warnings"].append("ui.performMode set to " + str(bool(_p["enabled"])))
+            report["ui_perform_mode_set"] = True
         else:
             report["warnings"].append(
                 "ui.performMode not found on this TD build — flag stored but no native knob adjusted."
