@@ -54,6 +54,7 @@ const artistGuidePt = [
   },
   { text: "Seu primeiro visual", link: "/pt/guide/first-visual" },
   { text: "Receitas de prompt", link: "/pt/guide/prompt-cookbook" },
+  { text: "Componentes reutilizáveis", link: "/pt/guide/components" },
   { text: "Galeria de receitas", link: "/pt/guide/recipes" },
   { text: "Solução de problemas", link: "/pt/guide/troubleshooting" },
   { text: "Glossário", link: "/pt/guide/glossary" },
