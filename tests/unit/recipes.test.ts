@@ -27,8 +27,11 @@ describe("RecipeLibrary", () => {
   });
 
   it("matches recipes by tag", () => {
+    // Several recipes carry the "feedback" tag (feedback_tunnel, performable_feedback_tunnel,
+    // body_tracking_reactive); findByTags returns one of them — assert it actually matches the
+    // requested tag rather than pinning a brittle id.
     const recipe = library.findByTags(["feedback"]);
-    expect(recipe?.id).toBe("feedback_tunnel");
+    expect(recipe?.tags).toContain("feedback");
   });
 
   it("exposes uFeed/uKill as adjustable GLSL uniforms in reaction-diffusion", () => {

@@ -24,6 +24,10 @@ import {
   createAudioReactiveSchema,
 } from "../tools/layer1/createAudioReactive.js";
 import { createAutopilotImpl, createAutopilotSchema } from "../tools/layer1/createAutopilot.js";
+import {
+  createBodyReactiveImpl,
+  createBodyReactiveSchema,
+} from "../tools/layer1/createBodyReactive.js";
 import { createColorGradeImpl, createColorGradeSchema } from "../tools/layer1/createColorGrade.js";
 import {
   createDataVisualizationImpl,
@@ -78,6 +82,14 @@ import {
   createParticleSystemSchema,
 } from "../tools/layer1/createParticleSystem.js";
 import {
+  createPoseSkeletonImpl,
+  createPoseSkeletonSchema,
+} from "../tools/layer1/createPoseSkeleton.js";
+import {
+  createPoseTrackingImpl,
+  createPoseTrackingSchema,
+} from "../tools/layer1/createPoseTracking.js";
+import {
   createProjectionMappingImpl,
   createProjectionMappingSchema,
 } from "../tools/layer1/createProjectionMapping.js";
@@ -115,6 +127,10 @@ import { getPreviewSchema } from "../tools/layer1/getPreview.js";
 import { importModelImpl, importModelSchema } from "../tools/layer1/importModel.js";
 import { listRecipesImpl, listRecipesSchema } from "../tools/layer1/listRecipes.js";
 import { scaffoldShowImpl, scaffoldShowSchema } from "../tools/layer1/scaffoldShow.js";
+import {
+  setupBodyTrackingImpl,
+  setupBodyTrackingSchema,
+} from "../tools/layer1/setupBodyTracking.js";
 import { setupOutputImpl, setupOutputSchema } from "../tools/layer1/setupOutput.js";
 import {
   addCustomParametersImpl,
@@ -735,6 +751,31 @@ const COMMANDS: Record<string, Command> = {
     writeAgentGuideSchema,
     writeAgentGuideImpl,
     "Emit a project-local CLAUDE.md/AGENTS.md with tdmcp conventions.",
+    { mutates: true },
+  ),
+  // Phase 13 — body / pose tracking (MediaPipe-driven, camera-reactive).
+  "body-tracking": r(
+    setupBodyTrackingSchema,
+    setupBodyTrackingImpl,
+    "One-shot webcam body tracking: load the MediaPipe engine + adapter + live skeleton.",
+    { mutates: true },
+  ),
+  "pose-track": r(
+    createPoseTrackingSchema,
+    createPoseTrackingImpl,
+    "Build a pose-tracking source (MediaPipe/OSC/synthetic) → a 33-landmark pose CHOP.",
+    { mutates: true },
+  ),
+  skeleton: r(
+    createPoseSkeletonSchema,
+    createPoseSkeletonImpl,
+    "Draw a live stick-figure skeleton from a pose CHOP.",
+    { mutates: true },
+  ),
+  "body-reactive": r(
+    createBodyReactiveSchema,
+    createBodyReactiveImpl,
+    "Drive a visual from tracked body motion (camera-reactive performance).",
     { mutates: true },
   ),
 };
