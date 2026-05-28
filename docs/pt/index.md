@@ -20,7 +20,7 @@ hero:
       link: /
 
 features:
-  - title: Descreva, não cabeie
+  - title: Descreva, não perca tempo
     details: "\"Crie um túnel de feedback a partir de ruído com blur e displace, adicione bloom e mande para uma janela\" — e os nós aparecem, conectados, no seu projeto."
   - title: Operadores reais, sem chute
     details: Uma referência embutida de 629 operadores, 68 classes Python, padrões de trabalho e técnicas de GLSL faz a IA usar operadores reais do TouchDesigner em vez de inventá-los.
