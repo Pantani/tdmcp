@@ -338,7 +338,7 @@ a model; `create_depth_silhouette` makes a flat mask — both distinct from the 
 registered in `src/tools/layer1/index.ts`; CLI commands `audio3d` / `dome` / `mesh-warp` /
 `depth-displace` / `gpu-particles` in `src/cli/agent.ts`. Built one-subagent-per-feature
 (new files + offline tests only), then single-writer wiring + live tuning. The tool registry is now
-102 tools (44 Layer 1).
+119 tools (56 Layer 1).
 
 **Stretch / hardware- or model-blocked (won't ship unvalidated):** depth-camera input
 (Kinect / RealSense / Azure) in `create_external_io`; pose / body tracking (MediaPipe / ML) →

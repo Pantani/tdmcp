@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-TDMCP is already a deep MCP server (102 tools across 3 layers: full generation, audio/beat/motion reactivity, output/mapping, live control, vault sync, AI-as-prompts). The research confirms that **node-CRUD MCPs are no longer a differentiator** — there are now at least three competitors:
+TDMCP is already a deep MCP server (119 tools — three layers covering full generation, audio/beat/motion reactivity, output/mapping and live control, plus a separate vault-sync group and AI-as-prompts). The research confirms that **node-CRUD MCPs are no longer a differentiator** — there are now at least three competitors:
 
 - **`8beeeaaat/touchdesigner-mcp`** (~330★) — leading node-CRUD MCP over a WebServer DAT. **No `.tox`/component packaging.**
 - **`dylanroscover/Embody`** (~111★) — the only competitor doing **network-as-JSON + git-diffable externalization + portable `.tox` export**.
@@ -226,7 +226,7 @@ Selected for *potential to become a real feature × AI/automation fit × artist 
 
 ## Recommended MCP Tools
 
-New tools (none duplicate the existing 102). Grouped; `*` = highest priority for v0.5.0.
+New tools (none duplicate the existing 119). Grouped; `*` = highest priority for v0.5.0.
 
 **Component & serialization**
 - ✅ **Already ships as `manage_component`** — `.tox` `save` + `loadTox` (+ live-linked `externaltox`) load. Do **not** rebuild as `export_component`/`import_component`. (Neither `COMP.saveExternalTox` folder-tree externalization nor a dependency-collected self-contained bundle is in `manage_component` yet — the latter is the future `make_portable_tox` gap.)
