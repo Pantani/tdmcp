@@ -149,11 +149,29 @@ architect → docs-author ∥ bundle-engineer → QA, defined in `.claude/agents
 `.claude/skills/`). Simple questions can be answered directly. Note: this
 environment runs the team as sub-agents (no `TeamCreate`).
 
+## Harness: feature discovery
+
+**Goal:** survey the whole project and produce a prioritized list of NEW features
+tdmcp could implement — across artist controls, library/packaging, CLI/DX, AI/LLM
+integration, and TouchDesigner depth — deduped and reconciled against `docs/ROADMAP.md`.
+
+**Trigger:** when asked to brainstorm, discover, survey, list, or audit what
+features/tools/effects/controls/commands/prompts/capabilities tdmcp *could* add
+("what could we build", "what's missing", "ideas", "gap analysis", "feature
+backlog") — including follow-ups (refresh, re-survey, re-prioritize, or scope to
+one surface) — use the `tdmcp-feature-discovery` skill (a fan-out of 5
+`td-surveyor`s → 1 `td-synthesizer`, in `.claude/agents/` and `.claude/skills/`).
+This is the **ideation** harness — it produces a list to choose from; it does
+**not** build. Once a feature is chosen, hand it to `tdmcp-pipeline`. Simple
+questions can be answered directly.
+
 **Change log:**
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
 | 2026-05-27 | Initial harness | all (5 agents + 6 skills) | design→develop→QA→deploy pipeline for the open post-0.3.0 feature backlog |
 | 2026-05-27 | Initial build | full harness | prep tdmcp Connectors Directory submission |
+| 2026-05-28 | Initial harness | feature discovery (2 agents + 3 skills) | ideation: survey 4 surfaces → prioritized FEATURE_BACKLOG; feeds tdmcp-pipeline |
+| 2026-05-28 | Tuned (Phase 7) | discovery (all 5 files) | run robustness (incremental writes + auto-retry); weighting profiles (live-show default); 5th surface `library`; breadth→depth + Confidence field |
 
 ## Harness: feature build
 
