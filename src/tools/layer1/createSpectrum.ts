@@ -28,7 +28,10 @@ export const createSpectrumSchema = z.object({
     .boolean()
     .default(true)
     .describe("Expose a live 'Sensitivity' knob (a gain over every band channel)."),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent COMP path the self-contained 'spectrum' container is created inside."),
 });
 type CreateSpectrumArgs = z.infer<typeof createSpectrumSchema>;
 

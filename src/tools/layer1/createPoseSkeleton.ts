@@ -47,8 +47,13 @@ export const createPoseSkeletonSchema = z.object({
   expose_controls: z
     .boolean()
     .default(true)
-    .describe("Expose live LineWidth / CamDistance knobs (+ a LineColor swatch)."),
-  parent_path: z.string().default("/project1"),
+    .describe(
+      "When true (default), expose live LineWidth / CamDistance knobs (+ a LineColor swatch).",
+    ),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent network where the pose-skeleton container is created (default '/project1')."),
 });
 type CreatePoseSkeletonArgs = z.infer<typeof createPoseSkeletonSchema>;
 
@@ -174,7 +179,7 @@ export const registerCreatePoseSkeleton: ToolRegistrar = (server, ctx) => {
     {
       title: "Create pose skeleton",
       description:
-        "Render a live stick-figure skeleton from full-body pose tracking — the classic MediaPipe body-tracking look: glowing lines connecting the 33 landmarks (shoulders, elbows, wrists, hips, knees, ankles) drawn by a Line MAT and rendered to a Null TOP you can composite or post-process. Source defaults to a SYNTHETIC animated pose so it builds and previews instantly with no camera and no plugin; switch to 'mediapipe' (the free torinmb plugin), 'osc', or an existing pose CHOP (e.g. from create_pose_tracking) for the real performer. Exposes LineColor / LineWidth / CamDistance.",
+        "Render a live stick-figure skeleton from full-body pose tracking — the classic MediaPipe body-tracking look: glowing lines connecting the 33 landmarks (shoulders, elbows, wrists, hips, knees, ankles) drawn by a Line MAT and rendered to a Null TOP you can composite or post-process. Source defaults to a SYNTHETIC animated pose so it builds and previews instantly with no camera and no plugin; switch to 'mediapipe' (the free torinmb plugin), 'osc', or an existing pose CHOP (e.g. from create_pose_tracking) for the real performer. Creates a new baseCOMP under `parent_path` holding the pose source, a Geometry COMP (a Script SOP that rebuilds points + bones each cook), a Line MAT, a Camera, a Render TOP, and a Null output. Use create_body_reactive instead for glowing dots/trails at the landmarks rather than a connected stick figure. Exposes LineColor / LineWidth / CamDistance. Returns a summary plus a JSON block with the container path, created node paths, the skeleton SOP and output paths, the bone count, exposed controls, any node errors, warnings, and an inline preview image.",
       inputSchema: createPoseSkeletonSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

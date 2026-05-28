@@ -57,7 +57,7 @@ export const registerCreateTdNode: ToolRegistrar = (server, ctx) => {
     {
       title: "Create TouchDesigner node",
       description:
-        "Create a single operator (node) inside a parent COMP. Validates the operator type against the knowledge base and warns (without blocking) on unknown types.",
+        "Create a single bare operator (node) inside a parent COMP — nothing is wired or laid out. Validates the operator type against the knowledge base and warns (without blocking) on unknown types. Returns {node, warnings[]} for the created node. This is the atomic primitive: for a complete wired+arranged network prefer the higher-level Layer-1 create_* tools (e.g. create_audio_reactive, create_feedback_network).",
       inputSchema: createTdNodeSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

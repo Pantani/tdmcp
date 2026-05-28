@@ -18,7 +18,10 @@ export const createSyncExternalClockSchema = z.object({
     .describe(
       "How the tempo is sourced. 'tap' (default): a Bpm knob + Tap pulse you dial/tap by ear. 'ableton_link': lock to an Ableton Link session on the network (an Ableton Link CHOP's tempo drives the clock). 'midi_clock': derive BPM from incoming MIDI timing-clock (24 PPQN). The Link/MIDI modes need that source present on the machine — without it they fall back to the manual Bpm knob.",
     ),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent COMP path the self-contained 'tempo_clock' container is created inside."),
 });
 type CreateSyncExternalClockArgs = z.infer<typeof createSyncExternalClockSchema>;
 

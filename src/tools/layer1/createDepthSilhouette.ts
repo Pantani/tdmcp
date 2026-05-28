@@ -64,9 +64,12 @@ export const createDepthSilhouetteSchema = z.object({
     .boolean()
     .default(true)
     .describe(
-      "Expose live Threshold / Smooth / Invert (+ FillColor) controls on the system container.",
+      "When true (default), expose live Threshold / Smooth / Invert (+ FillColor) controls on the system container.",
     ),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent network where the silhouette container is created (default '/project1')."),
 });
 type CreateDepthSilhouetteArgs = z.infer<typeof createDepthSilhouetteSchema>;
 
@@ -249,7 +252,7 @@ export const registerCreateDepthSilhouette: ToolRegistrar = (server, ctx) => {
     {
       title: "Create depth silhouette",
       description:
-        "Extract a silhouette / body mask from a depth or video source — a person's white outline on black you can composite, fill with colour, or use as a mask for reactive visuals (interactive installations / camera-reactive sets). The signal is smoothed (Blur TOP), keyed to a mask (Threshold TOP), optionally inverted (Level TOP) and optionally filled with a colour keyed through the mask (Constant + multiply Composite). Source defaults to a self-contained synthetic noise field so it builds and previews with ZERO device permissions; pick 'file' for a clip, or a 'kinect_azure'/'kinect'/'realsense' sensor for the live installation (may prompt for macOS permission). Exposes Threshold (bind to proximity/audio), Smooth, Invert (+ FillColor) and outputs a Null TOP.",
+        "Extract a silhouette / body mask from a depth or video source — a person's white outline on black you can composite, fill with colour, or use as a mask for reactive visuals (interactive installations / camera-reactive sets). The signal is smoothed (Blur TOP), keyed to a mask (Threshold TOP), optionally inverted (Level TOP) and optionally filled with a colour keyed through the mask (Constant + multiply Composite). Creates a new baseCOMP under `parent_path` holding the source, Blur, Threshold, Level, optional Constant + Composite fill, and a Null output. Source defaults to a self-contained synthetic noise field so it builds and previews with ZERO device permissions; pick 'file' for a clip, or a 'kinect_azure'/'kinect'/'realsense' sensor for the live installation (may prompt for macOS permission). Exposes Threshold (bind to proximity/audio), Smooth, Invert (+ FillColor) and outputs a Null TOP. Use create_depth_displacement instead for true 3D relief geometry rather than a flat 2D mask. Returns a summary plus a JSON block with the container path, created node paths, the mask/output paths, exposed controls, any node errors, warnings, and an inline preview image.",
       inputSchema: createDepthSilhouetteSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

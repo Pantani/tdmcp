@@ -26,7 +26,12 @@ export const createKeyframeAnimationSchema = z.object({
     .enum(["linear", "smooth"])
     .default("smooth")
     .describe("Interpolation between keys: linear, or smooth (eased) for organic motion."),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe(
+      "Parent network where the keyframe-animation container (a baseCOMP) is created (default '/project1').",
+    ),
 });
 type CreateKeyframeAnimationArgs = z.infer<typeof createKeyframeAnimationSchema>;
 
@@ -179,7 +184,7 @@ export const registerCreateKeyframeAnimation: ToolRegistrar = (server, ctx) => {
     {
       title: "Create keyframe animation",
       description:
-        "Animate parameters along a keyframed curve synced to the timeline — structured motion beyond animate_parameter's LFO. Give time/value keyframes and the targets; an Execute DAT interpolates the curve each frame (linear or smooth easing) and loops it. Use it for choreographed moves (a build-up, a drop, a sweep) rather than continuous oscillation.",
+        "Animate parameters along a keyframed curve synced to the timeline — structured motion beyond animate_parameter's LFO (use animate_parameter instead for continuous LFO oscillation). Give time/value keyframes and the targets; this creates a baseCOMP 'keyframe_anim' under `parent_path` containing an Execute DAT that interpolates the curve each frame (linear or smooth easing) and writes the value onto every target parameter, looping over the keyframe span (or holding the last value). Use it for choreographed moves (a build-up, a drop, a sweep). Returns a summary plus a JSON block with the container path, the Execute DAT (hook) path, the loop duration, the targets, and warnings (including any targets that did not resolve). Returns a friendly error if the keyframes do not span a positive duration.",
       inputSchema: createKeyframeAnimationSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

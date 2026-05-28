@@ -73,13 +73,27 @@ void main(){
 };
 
 export const createAudioReactiveSchema = z.object({
-  audio_source: z.enum(["microphone", "file", "device_in", "existing_chop"]).default("microphone"),
-  audio_file_path: z.string().optional().describe("Audio file path (audio_source='file')."),
+  audio_source: z
+    .enum(["microphone", "file", "device_in", "existing_chop"])
+    .default("microphone")
+    .describe(
+      "Where audio comes from: 'microphone'/'device_in' create an Audio Device In CHOP, 'file' an Audio File In CHOP (set audio_file_path), 'existing_chop' reuses an audio CHOP you already have (set existing_chop_path).",
+    ),
+  audio_file_path: z
+    .string()
+    .optional()
+    .describe("Path to an audio file to play; used only when audio_source='file'."),
   existing_chop_path: z
     .string()
     .optional()
-    .describe("Existing CHOP path (audio_source='existing_chop')."),
-  visual_style: z.enum(["geometric", "particle", "feedback", "glsl", "instancing"]),
+    .describe(
+      "Path of an existing audio CHOP to analyze; used only when audio_source='existing_chop'.",
+    ),
+  visual_style: z
+    .enum(["geometric", "particle", "feedback", "glsl", "instancing"])
+    .describe(
+      "How the spectrum is rendered: glsl=horizontal bars, geometric=radial bars, particle=dot field, feedback=ring tunnel, instancing=LED grid.",
+    ),
   frequency_bands: z.coerce
     .number()
     .int()
@@ -88,12 +102,24 @@ export const createAudioReactiveSchema = z.object({
     .describe(
       "Spectrum resolution: sets the Audio Spectrum CHOP output length (TouchDesigner clamps it to 128–4096 bins). Higher = finer spectrum.",
     ),
-  beat_detection: z.boolean().default(true),
+  beat_detection: z
+    .boolean()
+    .default(true)
+    .describe(
+      "When true (default), add a Beat CHOP driven by the audio source for tempo/beat signals.",
+    ),
   expose_controls: z
     .boolean()
     .default(true)
-    .describe("Expose a live 'Sensitivity' knob (how strongly the audio drives the visual)."),
-  parent_path: z.string().default("/project1"),
+    .describe(
+      "When true (default), expose a live 'Sensitivity' knob controlling how strongly the audio drives the visual.",
+    ),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe(
+      "Parent network where the audio-reactive container is created (default '/project1').",
+    ),
 });
 type CreateAudioReactiveArgs = z.infer<typeof createAudioReactiveSchema>;
 
@@ -201,7 +227,7 @@ export const registerCreateAudioReactive: ToolRegistrar = (server, ctx) => {
     {
       title: "Create audio-reactive visual",
       description:
-        "Build an audio analysis chain (spectrum + level + optional beat) and a spectrum visual driven by it. Each visual_style renders the spectrum its own way: glsl=horizontal bars, geometric=radial bars, particle=dot field, feedback=ring tunnel, instancing=LED grid.",
+        "Build an audio analysis chain (spectrum + level + optional beat) and a spectrum visual driven by it. Creates a new baseCOMP under `parent_path` holding the audio source, an Audio Spectrum CHOP, an Analyze level, an optional Beat CHOP, a CHOP-to-TOP texture with a Sensitivity gain, the GLSL visual, and a Null output. Each visual_style renders the spectrum its own way: glsl=horizontal bars, geometric=radial bars, particle=dot field, feedback=ring tunnel, instancing=LED grid. Returns a summary plus a JSON block with the container path, created node paths, the output path, exposed controls, any node errors, warnings, and an inline preview image. Use create_spectrum (Layer 1) or extract_audio_features when you only need the analysis CHOPs without a built-in visual.",
       inputSchema: createAudioReactiveSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

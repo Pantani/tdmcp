@@ -34,7 +34,7 @@ export const registerListRecipes: ToolRegistrar = (server, ctx) => {
       description:
         "List the built-in recipe library — ready-made network templates (feedback tunnel, particle galaxy, reaction-diffusion, projection mapping, …) with their id, name, tags and difficulty. Offline. Apply one with apply_recipe.",
       inputSchema: listRecipesSchema.shape,
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
     },
     (args) => listRecipesImpl(ctx, args),
   );

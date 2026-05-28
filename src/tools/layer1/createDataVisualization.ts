@@ -22,13 +22,28 @@ const SOURCE_TYPE = {
 } as const;
 
 export const createDataVisualizationSchema = z.object({
-  data_source: z.enum(["table", "file", "chop"]).default("table"),
-  chart_style: z.enum(["bars", "graph", "points"]).default("bars"),
+  data_source: z
+    .enum(["table", "file", "chop"])
+    .default("table")
+    .describe(
+      "Kind of source operator to create: 'table' (Table DAT, pre-seeded with sample values), 'file' (File In DAT), or 'chop' (Constant CHOP). Wire your real data into the created 'data' node afterward.",
+    ),
+  chart_style: z
+    .enum(["bars", "graph", "points"])
+    .default("bars")
+    .describe(
+      "Visual style. 'bars' renders a GLSL bar chart; 'graph' and 'points' currently render the data as a texture strip and add a warning that richer plotting needs customization.",
+    ),
   expose_controls: z
     .boolean()
     .default(true)
-    .describe("Expose a live 'Scale' knob that amplifies the data values feeding the chart."),
-  parent_path: z.string().default("/project1"),
+    .describe(
+      "When true (default), expose a live 'Scale' knob that amplifies the data values feeding the chart.",
+    ),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent network where the visualization container is created (default '/project1')."),
 });
 type CreateDataVisualizationArgs = z.infer<typeof createDataVisualizationSchema>;
 
@@ -127,7 +142,7 @@ export const registerCreateDataVisualization: ToolRegistrar = (server, ctx) => {
     {
       title: "Create data visualization",
       description:
-        "Build a data-driven visualization: a data source feeds a CHOP that drives a chart TOP. Wire your real data into the created 'data' node.",
+        "Build a data-driven visualization: a data source feeds a CHOP that drives a chart TOP. Creates a new baseCOMP under `parent_path` holding a 'data' source operator (seeded with placeholder values), a DAT-to-CHOP / CHOP-to-TOP conversion, a Scale level, the chart visual, and a Null output. Wire your real data into the created 'data' node. Returns a summary plus a JSON block with the container path, created node paths, the output path, exposed controls, any node errors, warnings (including a reminder to wire real data), and an inline preview image.",
       inputSchema: createDataVisualizationSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

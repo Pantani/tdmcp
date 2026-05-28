@@ -28,7 +28,10 @@ export const createDecksSchema = z.object({
     .describe(
       "Expose live 'Crossfader' + per-deck 'GainA'/'GainB' knobs on the container so the mix is playable on arrival.",
     ),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent COMP the mixer container is built inside (default '/project1')."),
 });
 type CreateDecksArgs = z.infer<typeof createDecksSchema>;
 

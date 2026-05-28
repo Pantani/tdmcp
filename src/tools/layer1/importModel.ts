@@ -36,7 +36,10 @@ export const importModelSchema = z.object({
     .boolean()
     .default(true)
     .describe("Expose live RotateY (spin), Zoom (camera distance) and Scale knobs."),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent COMP path the self-contained 'model' container is created inside."),
 });
 type ImportModelArgs = z.infer<typeof importModelSchema>;
 

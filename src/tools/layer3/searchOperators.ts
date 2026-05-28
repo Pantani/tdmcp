@@ -70,7 +70,7 @@ export const registerSearchOperators: ToolRegistrar = (server, ctx) => {
       description:
         "Search the embedded operator knowledge base (629 operators) by keyword — name, family or description — ranked by relevance, fully offline. Use it to discover the right operator before creating nodes instead of guessing a type (e.g. 'what sends DMX?', 'particle', 'corner pin'). Returns name, family and a one-line summary per hit. Pass semantic:true to re-rank by embedding similarity (needs an LLM endpoint; falls back to keyword).",
       inputSchema: searchOperatorsSchema.shape,
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     },
     (args) => searchOperatorsImpl(ctx, args),
   );

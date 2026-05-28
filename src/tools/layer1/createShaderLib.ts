@@ -201,7 +201,12 @@ export const createShaderLibSchema = z.object({
     .boolean()
     .default(true)
     .describe("Expose live Speed / Scale / Color controls on the system container."),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe(
+      "Parent COMP path the self-contained 'shader_lib_<shader>' container is created inside.",
+    ),
 });
 type CreateShaderLibArgs = z.infer<typeof createShaderLibSchema>;
 

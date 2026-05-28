@@ -211,7 +211,12 @@ export const createRaymarchSceneSchema = z.object({
     .boolean()
     .default(true)
     .describe("Expose live CameraZ / Speed / StepCount / Intensity / ColorA / ColorB controls."),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe(
+      "Parent COMP path the self-contained 'raymarch_scene_<scene>' container is created inside.",
+    ),
 });
 type CreateRaymarchSceneArgs = z.infer<typeof createRaymarchSceneSchema>;
 

@@ -85,8 +85,13 @@ export const createGlitchSchema = z.object({
   expose_controls: z
     .boolean()
     .default(true)
-    .describe("Expose live Amount/Speed/RGBShift/BlockSize knobs on the system container."),
-  parent_path: z.string().default("/project1"),
+    .describe(
+      "When true (default), expose live Amount/Speed/RGBShift/BlockSize knobs on the system container.",
+    ),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent network where the glitch container is created (default '/project1')."),
 });
 type CreateGlitchArgs = z.infer<typeof createGlitchSchema>;
 
@@ -223,7 +228,7 @@ export const registerCreateGlitch: ToolRegistrar = (server, ctx) => {
     {
       title: "Create glitch",
       description:
-        "Build a glitch / corrupted-signal visual: RGB channel split, noise-driven blocky/slice displacement and horizontal band tearing over a source. With input_path it glitches an existing TOP (pulled in via a Select TOP); otherwise it uses a self-contained animated colour-noise source (no device permissions). Exposes Amount (master intensity — bind to audio/beat), Speed, RGBShift and BlockSize knobs. A signature live VJ look.",
+        "Build a glitch / corrupted-signal visual: RGB channel split, noise-driven blocky/slice displacement and horizontal band tearing over a source. Creates a new baseCOMP under `parent_path` holding the source, a noise driver, a Displace TOP, a GLSL RGB-shift pass, and a Null output. With input_path it glitches an existing TOP (pulled in via a Select TOP); otherwise it uses a self-contained animated colour-noise source (no device permissions). Exposes Amount (master intensity — bind to audio/beat), Speed, RGBShift and BlockSize knobs. Returns a summary plus a JSON block with the container path, created node paths, the output path, exposed controls, any node errors, warnings, and an inline preview image. A signature live VJ look.",
       inputSchema: createGlitchSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

@@ -87,7 +87,7 @@ export const registerDocumentNetwork: ToolRegistrar = (server, ctx) => {
       description:
         "Document an EXISTING network: read its nodes and connections and return a readable map — counts by operator family and type, plus a Mermaid flowchart of the data flow you can paste into docs. Unlike plan_visual (which plans from a description), this describes what's actually in the project. Use it to explain or hand off a patch.",
       inputSchema: documentNetworkSchema.shape,
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     },
     (args) => documentNetworkImpl(ctx, args),
   );

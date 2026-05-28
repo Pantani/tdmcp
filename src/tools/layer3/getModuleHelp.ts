@@ -44,9 +44,9 @@ export const registerGetModuleHelp: ToolRegistrar = (server, ctx) => {
     {
       title: "Get module/class help",
       description:
-        "Human-readable help (description, members, method signatures) for a TouchDesigner Python class or module, from the knowledge base.",
+        "Read-only: human-readable Markdown help (description, members, method signatures) for a TouchDesigner Python class or module, from the embedded knowledge base (offline). Returns formatted text, or {found:false, suggestions[]} of near-name matches if unknown. Use get_td_class_details instead when you need the same information as structured JSON to process in code.",
       inputSchema: getModuleHelpSchema.shape,
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
     },
     (args) => getModuleHelpImpl(ctx, args),
   );

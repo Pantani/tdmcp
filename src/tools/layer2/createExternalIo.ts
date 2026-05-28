@@ -32,7 +32,7 @@ export const createExternalIoSchema = z.object({
       "What to bridge: OSC/MIDI/keyboard/gamepad/mouse input (a control surface — bind channels to parameters), OSC/MIDI output (send a CHOP's channels back out for bidirectional feedback — pass source_path), DMX/Art-Net output for lighting (dmx_out is the general DMX desk; artnet_out is a network-only Art-Net/sACN preset for pixel-mapping LED strips & stage fixtures — both send a CHOP's 0-255 channels and need source_path), RTMP output to live-stream a TOP to Twitch/YouTube/OBS-ingest (rtmp_out — pass source_path = the TOP to stream and url; needs an NVIDIA GPU on Windows), or NDI / Syphon-Spout video input. (Window/recording/NDI/Syphon *video outputs* live in setup_output.)",
     ),
   parent_path: z.string().default("/project1").describe("COMP to create the I/O operator in."),
-  name: z.string().optional(),
+  name: z.string().optional().describe("Name for the I/O operator; auto-generated when omitted."),
   port: z.coerce
     .number()
     .int()

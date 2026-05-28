@@ -31,8 +31,16 @@ export const createTextOverlaySchema = z.object({
   color: z.string().default("#ffffff").describe("Text color as a hex string, e.g. '#ff3366'."),
   align: z.enum(["left", "center", "right"]).default("center").describe("Horizontal alignment."),
   valign: z.enum(["top", "center", "bottom"]).default("center").describe("Vertical alignment."),
-  resolution: z.enum(["720p", "1080p", "4K"]).default("1080p"),
-  parent_path: z.string().default("/project1"),
+  resolution: z
+    .enum(["720p", "1080p", "4K"])
+    .default("1080p")
+    .describe(
+      "Output resolution of the Text TOP: '720p' (1280×720), '1080p' (1920×1080), or '4K' (3840×2160).",
+    ),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent COMP path the self-contained 'text_overlay' container is created inside."),
 });
 type CreateTextOverlayArgs = z.infer<typeof createTextOverlaySchema>;
 

@@ -123,9 +123,9 @@ export const registerScaffoldVault: ToolRegistrar = (server, ctx) => {
     {
       title: "Scaffold a starter vault",
       description:
-        "Populate the configured Obsidian vault with a starter layout and worked examples (a recipe, setlist, shader, and moodboard note) so you begin from a working vault instead of an empty folder. Skips existing files unless overwrite. Requires TDMCP_VAULT_PATH.",
+        "Populate the configured Obsidian vault with a starter layout and worked examples (a README plus example recipe, setlist, shader, and moodboard notes) so you begin from a working vault instead of an empty folder. WRITES Markdown files into the vault root and its subfolders; existing files are skipped unless overwrite:true. Run this once when first setting up a vault, before save_recipe_to_vault/import_setlist/etc. Returns the vault root path and the lists of files created vs skipped. Requires a configured TDMCP_VAULT_PATH.",
       inputSchema: scaffoldVaultSchema.shape,
-      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
     (args) => scaffoldVaultImpl(ctx, args),
   );

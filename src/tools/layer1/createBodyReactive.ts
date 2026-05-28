@@ -58,8 +58,13 @@ export const createBodyReactiveSchema = z.object({
   expose_controls: z
     .boolean()
     .default(true)
-    .describe("Expose live DotSize (+ style-specific Glow/TrailDecay) knobs and a Color swatch."),
-  parent_path: z.string().default("/project1"),
+    .describe(
+      "When true (default), expose live DotSize (+ style-specific Glow/TrailDecay) knobs and a Color swatch.",
+    ),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent network where the body-reactive container is created (default '/project1')."),
 });
 type CreateBodyReactiveArgs = z.infer<typeof createBodyReactiveSchema>;
 
@@ -198,7 +203,7 @@ export const registerCreateBodyReactive: ToolRegistrar = (server, ctx) => {
     {
       title: "Create body reactive",
       description:
-        "Build a body-reactive visual driven by full-body pose tracking: glowing marks that follow the 33 landmarks (head, hands, elbows, hips, knees, feet), rendered to a Null TOP. Styles: 'points' (crisp dots), 'glow' (bloomed dots), 'trails' (motion smears that follow the body). Source defaults to a SYNTHETIC animated pose so it builds and previews instantly with no camera and no plugin; switch to 'mediapipe' (the free torinmb plugin), 'osc', or an existing pose CHOP (e.g. from create_pose_tracking) for the real performer. The visual counterpart of create_audio_reactive, for the body instead of sound.",
+        "Build a body-reactive visual driven by full-body pose tracking: glowing marks that follow the 33 landmarks (head, hands, elbows, hips, knees, feet), rendered to a Null TOP. Creates a new baseCOMP under `parent_path` holding the pose source, a Geometry COMP (dots copied onto the landmark point cloud), a Camera, a Render TOP, and per-style post-processing. Styles: 'points' (crisp dots), 'glow' (bloomed dots), 'trails' (motion smears that follow the body). Source defaults to a SYNTHETIC animated pose so it builds and previews instantly with no camera and no plugin; switch to 'mediapipe' (the free torinmb plugin), 'osc', or an existing pose CHOP (e.g. from create_pose_tracking) for the real performer. The visual counterpart of create_audio_reactive, for the body instead of sound. Returns a summary plus a JSON block with the container path, created node paths, the output path, exposed controls, any node errors, warnings, and an inline preview image.",
       inputSchema: createBodyReactiveSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

@@ -138,28 +138,50 @@ const RECIPE_FOR = new Map<string, string>([
 ]);
 
 export const createGenerativeArtSchema = z.object({
-  technique: z.enum([
-    "noise_landscape",
-    "reaction_diffusion",
-    "strange_attractor",
-    "l_system",
-    "cellular_automata",
-    "flow_field",
-    "voronoi",
-    "fractal",
-    "custom_glsl",
-  ]),
-  color_palette: z.string().optional().describe("Free-text palette hint (best-effort)."),
-  evolution_speed: z.coerce.number().positive().default(1.0),
+  technique: z
+    .enum([
+      "noise_landscape",
+      "reaction_diffusion",
+      "strange_attractor",
+      "l_system",
+      "cellular_automata",
+      "flow_field",
+      "voronoi",
+      "fractal",
+      "custom_glsl",
+    ])
+    .describe(
+      "Generative method. reaction_diffusion/noise_landscape build validated recipes; strange_attractor/voronoi/fractal render faithful inline GLSL; custom_glsl uses your shader (custom_glsl_code); l_system/cellular_automata/flow_field currently fall back to an animated-noise approximation (with a warning).",
+    ),
+  color_palette: z
+    .string()
+    .optional()
+    .describe(
+      "Free-text palette hint recorded in the result; best-effort, not all techniques honor it.",
+    ),
+  evolution_speed: z.coerce
+    .number()
+    .positive()
+    .default(1.0)
+    .describe(
+      "Animation speed multiplier on the time uniform driving the look (1 = nominal, higher = faster evolution). Exposed as the 'Speed' knob.",
+    ),
   custom_glsl_code: z
     .string()
     .optional()
-    .describe("Fragment shader (only for technique 'custom_glsl')."),
+    .describe(
+      "Fragment shader source used only when technique='custom_glsl'; if omitted, a default plasma shader is used (with a warning).",
+    ),
   expose_controls: z
     .boolean()
     .default(true)
-    .describe("Expose a live 'Speed' knob (evolution speed) on the system container."),
-  parent_path: z.string().default("/project1"),
+    .describe(
+      "When true (default), expose a live 'Speed' knob (evolution speed) on the system container.",
+    ),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent network where the generative container is created (default '/project1')."),
 });
 type CreateGenerativeArtArgs = z.infer<typeof createGenerativeArtSchema>;
 
@@ -297,7 +319,7 @@ export const registerCreateGenerativeArt: ToolRegistrar = (server, ctx) => {
     {
       title: "Create generative art",
       description:
-        "Create an evolving generative visual. reaction_diffusion/noise_landscape use validated recipes; strange_attractor, voronoi, and fractal render real GLSL; custom_glsl uses your shader; the rest fall back to animated noise.",
+        "Create an evolving generative visual. Creates a new baseCOMP under `parent_path` holding the generator (a recipe network, a GLSL TOP + Text DAT, or a noise chain) ending in a Null output. reaction_diffusion/noise_landscape use validated recipes; strange_attractor, voronoi, and fractal render real GLSL; custom_glsl uses your shader; the rest fall back to animated noise (with a warning). Exposes a live 'Speed' knob (except for recipe-built techniques). Returns a summary plus a JSON block with the container path, created node paths, the output path, exposed controls, the technique, any node errors, warnings, and an inline preview image.",
       inputSchema: createGenerativeArtSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

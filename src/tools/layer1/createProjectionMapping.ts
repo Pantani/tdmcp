@@ -7,7 +7,10 @@ export const createProjectionMappingSchema = z.object({
     .string()
     .optional()
     .describe("TOP to map (brought in via a Select TOP). Omit for a demo grid source."),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent COMP path the self-contained 'projection' container is created inside."),
 });
 type CreateProjectionMappingArgs = z.infer<typeof createProjectionMappingSchema>;
 

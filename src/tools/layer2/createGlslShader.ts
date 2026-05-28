@@ -3,9 +3,18 @@ import { guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
 const UniformSchema = z.object({
-  name: z.string(),
-  type: z.enum(["float", "vec2", "vec3", "vec4", "int", "sampler2D"]),
-  default_value: z.string().optional(),
+  name: z.string().describe("Uniform name as declared in the shader (e.g. 'uColor')."),
+  type: z
+    .enum(["float", "vec2", "vec3", "vec4", "int", "sampler2D"])
+    .describe(
+      "GLSL uniform type. Numeric types bind to the GLSL TOP's Vectors page; sampler2D maps to a TOP input and must be wired manually.",
+    ),
+  default_value: z
+    .string()
+    .optional()
+    .describe(
+      "Initial value for a numeric uniform as comma-separated components (e.g. '1' or '1,0,0,1'); ignored for sampler2D.",
+    ),
 });
 
 export const createGlslShaderSchema = z.object({
@@ -17,7 +26,12 @@ export const createGlslShaderSchema = z.object({
     .array(UniformSchema)
     .optional()
     .describe("Optional uniform declarations to best-effort bind on the GLSL TOP."),
-  resolution: z.enum(["720p", "1080p", "4K", "input"]).default("input"),
+  resolution: z
+    .enum(["720p", "1080p", "4K", "input"])
+    .default("input")
+    .describe(
+      "Output resolution: '720p' (1280x720), '1080p' (1920x1080), '4K' (3840x2160), or 'input' (default — inherit from the input TOP).",
+    ),
 });
 type CreateGlslShaderArgs = z.infer<typeof createGlslShaderSchema>;
 
@@ -134,7 +148,7 @@ export const registerCreateGlslShader: ToolRegistrar = (server, ctx) => {
     {
       title: "Create GLSL shader",
       description:
-        "Create a GLSL TOP with a fragment shader (and optional vertex shader) supplied via Text DATs, with optional uniform binding and output resolution.",
+        "Create a GLSL TOP under parent_path that renders a custom fragment shader (and optional vertex shader). The shader source is placed in companion Text DATs (`<name>_frag` and, if given, `<name>_vert`) and wired to the GLSL TOP's pixel/vertex parameters; numeric uniforms are best-effort bound on the Vectors page and the output resolution is set. Returns the GLSL TOP path, the fragment/vertex DAT paths, and any warnings (e.g. sampler2D uniforms or uniform binds that need manual wiring).",
       inputSchema: createGlslShaderSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

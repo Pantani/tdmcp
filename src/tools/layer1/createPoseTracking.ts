@@ -23,7 +23,10 @@ export const createPoseTrackingSchema = z.object({
       "Flip the pose horizontally (negate tx) so a webcam feed reads like a mirror — the performer's right hand is on the right of the frame. Build-time; off by default.",
     ),
   expose_controls: z.boolean().default(true).describe("Expose a live 'Smoothing' knob (0 = raw)."),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent COMP path the self-contained 'pose_tracking' container is created inside."),
 });
 type CreatePoseTrackingArgs = z.infer<typeof createPoseTrackingSchema>;
 

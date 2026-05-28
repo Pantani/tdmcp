@@ -23,23 +23,49 @@ export const snapshotTdGraphSchema = z.object({
 type SnapshotTdGraphArgs = z.infer<typeof snapshotTdGraphSchema>;
 
 export const snapshotTdGraphOutputSchema = z.object({
-  path: z.string(),
-  nodeCount: z.number(),
-  connectionCount: z.number(),
-  issues: z.array(z.string()),
-  params_truncated: z.boolean(),
-  compact: z.boolean().optional(),
-  typeDefaults: z.record(z.string(), z.record(z.string(), z.unknown())).optional(),
-  nodes: z.array(
-    z.object({
-      path: z.string(),
-      type: z.string(),
-      name: z.string(),
-      parameters: z.record(z.string(), z.unknown()).optional(),
-      params_unfetched: z.boolean().optional(),
-    }),
-  ),
-  connections: z.array(ConnectionSchema),
+  path: z.string().describe("The network root that was snapshotted, echoing the request."),
+  nodeCount: z.number().describe("Total number of nodes captured."),
+  connectionCount: z.number().describe("Total number of connections captured."),
+  issues: z.array(z.string()).describe("Plain-language structural problems detected in the graph."),
+  params_truncated: z
+    .boolean()
+    .describe("True if include_params was set but the graph exceeded the per-node fetch cap."),
+  compact: z
+    .boolean()
+    .optional()
+    .describe(
+      "True when compact mode hoisted per-type default parameters and delta-encoded nodes.",
+    ),
+  typeDefaults: z
+    .record(z.string(), z.record(z.string(), z.unknown()))
+    .optional()
+    .describe(
+      "Compact mode only: each operator type's hoisted default parameter values; nodes store only their deltas from these.",
+    ),
+  nodes: z
+    .array(
+      z.object({
+        path: z.string().describe("Full path of the node."),
+        type: z.string().describe("Operator type of the node."),
+        name: z.string().describe("Short name of the node."),
+        parameters: z
+          .record(z.string(), z.unknown())
+          .optional()
+          .describe(
+            "The node's parameters as key→value; present only when include_params is true. In compact mode, only the deltas from the type default.",
+          ),
+        params_unfetched: z
+          .boolean()
+          .optional()
+          .describe(
+            "True when parameters were requested but not fetched for this node (past the per-node cap or a failed read), so a missing `parameters` field isn't mistaken for matching the type default.",
+          ),
+      }),
+    )
+    .describe("Every captured node, optionally with its parameters."),
+  connections: z
+    .array(ConnectionSchema)
+    .describe("Every wire as {source_path, target_path, …}, suitable for diffing."),
 });
 
 interface SnapshotNode {
@@ -203,10 +229,10 @@ export const registerSnapshotTdGraph: ToolRegistrar = (server, ctx) => {
     {
       title: "Snapshot network graph",
       description:
-        "Capture a compact, serializable snapshot of a network — nodes, connections, structural issues, and optionally each node's parameters — for review, diffing, or documentation. Set `compact` for a token-cheap whole-COMP read that hoists per-type default parameters and stores only each node's deltas.",
+        "Read-only: capture a compact, serializable snapshot of a network — nodes, connections, structural issues, and optionally each node's parameters — for review, diffing, or documentation. Returns {nodeCount, connectionCount, issues[], nodes[], connections[]}. Set `compact` for a token-cheap whole-COMP read that hoists per-type default parameters and stores only each node's deltas. Feed two of these snapshots to diff_snapshots to see exactly what changed across an edit.",
       inputSchema: snapshotTdGraphSchema.shape,
       outputSchema: snapshotTdGraphOutputSchema.shape,
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     },
     (args) => snapshotTdGraphImpl(ctx, args),
   );

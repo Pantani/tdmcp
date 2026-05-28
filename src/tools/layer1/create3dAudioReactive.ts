@@ -17,11 +17,14 @@ export const create3dAudioReactiveSchema = z.object({
     .describe(
       "Audio source. 'device' = live microphone/line in (the real-world default; creating it may pop a one-time macOS microphone-permission dialog — click Allow). 'file' = an audio file. 'oscillator' = a synthetic tone (white noise → energy in every band, handy for testing without any device permission). 'existing_chop' = reuse a CHOP you already have.",
     ),
-  audio_file_path: z.string().optional().describe("Audio file path (source='file')."),
+  audio_file_path: z
+    .string()
+    .optional()
+    .describe("Path to an audio file to play; used only when source='file'."),
   existing_chop_path: z
     .string()
     .optional()
-    .describe("Path of an existing audio CHOP to analyze (source='existing_chop')."),
+    .describe("Path of an existing audio CHOP to analyze; used only when source='existing_chop'."),
   mode: z
     .enum(["instanced_bars", "bass_pulse"])
     .default("instanced_bars")
@@ -49,8 +52,13 @@ export const create3dAudioReactiveSchema = z.object({
   expose_controls: z
     .boolean()
     .default(true)
-    .describe("Expose live Sensitivity (audio gain), Zoom (camera distance), and Spin knobs."),
-  parent_path: z.string().default("/project1"),
+    .describe(
+      "When true (default), expose live Sensitivity (audio gain), Zoom (camera distance), and Spin knobs.",
+    ),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent network where the scene container is created (default '/project1')."),
 });
 type Create3dAudioReactiveArgs = z.infer<typeof create3dAudioReactiveSchema>;
 
@@ -265,7 +273,7 @@ export const registerCreate3dAudioReactive: ToolRegistrar = (server, ctx) => {
     {
       title: "Create 3D audio-reactive scene",
       description:
-        "Build a 3D scene that reacts to sound — the 3D counterpart of create_audio_reactive. An FFT spectrum chain feeds geometry: 'instanced_bars' renders a row of `bands` boxes/spheres whose individual heights track each frequency bin (a 3D spectrum bar-graph), while 'bass_pulse' swells a single primitive with the low-frequency energy. Includes a Camera, Light, and Render TOP, output as a Null TOP. Exposes Sensitivity (audio gain), Zoom (camera distance), and Spin (whole-scene rotation) knobs. Source can be the live device (mic/line — may prompt for macOS permission), an audio file, a synthetic oscillator (for testing), or an existing CHOP.",
+        "Build a 3D scene that reacts to sound — the 3D counterpart of create_audio_reactive (use that for a 2D spectrum visual instead). Creates a new baseCOMP under `parent_path`. An FFT spectrum chain feeds geometry: 'instanced_bars' renders a row of `bands` boxes/spheres whose individual heights track each frequency bin (a 3D spectrum bar-graph), while 'bass_pulse' swells a single primitive with the low-frequency energy. Includes a Camera, Light, and Render TOP, output as a Null TOP. Exposes Sensitivity (audio gain), Zoom (camera distance), and Spin (whole-scene rotation) knobs. Source can be the live device (mic/line — may prompt for macOS permission), an audio file, a synthetic oscillator (for testing), or an existing CHOP. Returns a summary plus a JSON block with the container path, created node paths, the spectrum/geometry/camera/render/output paths, exposed controls, any node errors, warnings, and an inline preview image.",
       inputSchema: create3dAudioReactiveSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

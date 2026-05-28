@@ -24,12 +24,18 @@ export const findTdNodesSchema = z.object({
 type FindTdNodesArgs = z.infer<typeof findTdNodesSchema>;
 
 export const findTdNodesOutputSchema = z.object({
-  parent_path: z.string(),
-  recursive: z.boolean(),
-  count: z.number(),
-  truncated: z.boolean(),
-  paths: z.array(z.string()).optional(),
-  matches: z.array(NodeRefSchema).optional(),
+  parent_path: z.string().describe("The network root the search ran under."),
+  recursive: z.boolean().describe("Whether descendants were searched, echoing the request."),
+  count: z.number().describe("Total nodes matched before `limit` truncation."),
+  truncated: z.boolean().describe("True if more nodes matched than `limit` returned."),
+  paths: z
+    .array(z.string())
+    .optional()
+    .describe("path_only mode: the matched node paths and nothing else."),
+  matches: z
+    .array(NodeRefSchema)
+    .optional()
+    .describe("Default mode: each matched node as {path, name, type}."),
 });
 
 export async function findTdNodesImpl(ctx: ToolContext, args: FindTdNodesArgs) {
@@ -64,10 +70,10 @@ export const registerFindTdNodes: ToolRegistrar = (server, ctx) => {
     {
       title: "Find TouchDesigner nodes",
       description:
-        "Search a network for nodes by name pattern and/or operator type. Recursive by default; pass path_only:true for a compact path list. Prefer this over get_td_nodes when you are looking for specific nodes.",
+        "Read-only: search a network for nodes by name pattern and/or operator type, recursively by default. Returns {count, truncated, matches/paths}. Prefer this over get_td_nodes when you are looking for specific nodes anywhere in a sub-tree (get_td_nodes only lists one COMP's direct children); use get_td_topology when you also need the wiring between them.",
       inputSchema: findTdNodesSchema.shape,
       outputSchema: findTdNodesOutputSchema.shape,
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     },
     (args) => findTdNodesImpl(ctx, args),
   );

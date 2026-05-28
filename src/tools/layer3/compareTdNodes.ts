@@ -13,15 +13,26 @@ export const compareTdNodesSchema = z.object({
 type CompareTdNodesArgs = z.infer<typeof compareTdNodesSchema>;
 
 export const compareTdNodesOutputSchema = z.object({
-  a: z.string(),
-  b: z.string(),
-  type_a: z.string(),
-  type_b: z.string(),
-  type_match: z.boolean(),
-  differing_count: z.number(),
-  same_count: z.number(),
-  differing: z.array(z.object({ param: z.string(), a: z.unknown(), b: z.unknown() })),
-  identical: z.array(z.string()).optional(),
+  a: z.string().describe("Path of the first node compared."),
+  b: z.string().describe("Path of the second node compared."),
+  type_a: z.string().describe("Operator type of the first node."),
+  type_b: z.string().describe("Operator type of the second node."),
+  type_match: z.boolean().describe("True if both nodes are the same operator type."),
+  differing_count: z.number().describe("Number of parameters whose values differ."),
+  same_count: z.number().describe("Number of parameters that are identical on both nodes."),
+  differing: z
+    .array(
+      z.object({
+        param: z.string().describe("Name of the differing parameter."),
+        a: z.unknown().describe("Its value on the first node."),
+        b: z.unknown().describe("Its value on the second node."),
+      }),
+    )
+    .describe("Every parameter that differs, with each node's value."),
+  identical: z
+    .array(z.string())
+    .optional()
+    .describe("Names of identical parameters; present only when only_diff is false."),
 });
 
 export async function compareTdNodesImpl(ctx: ToolContext, args: CompareTdNodesArgs) {
@@ -68,10 +79,10 @@ export const registerCompareTdNodes: ToolRegistrar = (server, ctx) => {
     {
       title: "Compare two nodes",
       description:
-        "Diff the parameters of two nodes, returning only the values that differ (by default). Useful for aligning settings across similar operators.",
+        "Read-only: diff the parameters of two nodes, returning only the values that differ (by default). Returns {type_match, differing_count, differing[], same_count}. Useful for aligning settings across similar operators; compares two live nodes, whereas diff_snapshots compares two whole-network snapshots over time.",
       inputSchema: compareTdNodesSchema.shape,
       outputSchema: compareTdNodesOutputSchema.shape,
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     },
     (args) => compareTdNodesImpl(ctx, args),
   );

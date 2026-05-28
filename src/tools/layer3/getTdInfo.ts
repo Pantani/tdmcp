@@ -3,7 +3,7 @@ import { jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
 const DESCRIPTION =
-  "Health check + TouchDesigner server info. Returns TD/Python version and bridge status when connected, plus the embedded knowledge-base stats. Use this first to confirm the bridge is reachable.";
+  "Read-only health check + TouchDesigner server info. Returns {connected, endpoint, touchdesigner version info, knowledge-base stats} and changes nothing. Use this first to confirm the bridge is reachable; it succeeds even when TD is offline, reporting connected:false with the reason.";
 
 export async function getTdInfoImpl(ctx: ToolContext) {
   const knowledge = ctx.knowledge.stats();
@@ -31,7 +31,7 @@ export const registerGetTdInfo: ToolRegistrar = (server, ctx) => {
     {
       title: "Get TouchDesigner info",
       description: DESCRIPTION,
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     },
     () => getTdInfoImpl(ctx),
   );
