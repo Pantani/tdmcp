@@ -1,34 +1,58 @@
-# Smithery config for tdmcp — the TouchDesigner MCP server.
-# Docs: https://smithery.ai/docs/build/project-config
-# Note: requires @dpantani/tdmcp to be published to npm (currently 0.2.0; publish
-# 0.8.0 for this to install the latest tools). tdmcp also needs the TouchDesigner
-# bridge running locally — see https://pantani.github.io/tdmcp/guide/install
+# Smithery configuration — https://smithery.ai/docs/build/project-config/smithery.yaml
+#
+# tdmcp is an inherently LOCAL stdio server: it drives a bridge running *inside*
+# TouchDesigner on the same machine (default 127.0.0.1:9980), so it is installed
+# and run locally rather than hosted remotely. Published to npm as @dpantani/tdmcp
+# (npx resolves the latest). The TD bridge must be switched on separately — see
+# https://pantani.github.io/tdmcp/guide/install
 startCommand:
   type: stdio
   configSchema:
+    # JSON Schema for the (optional) configuration. The zero-config local flow
+    # works with no values set — everything below has a safe default or is optional.
     type: object
     properties:
-      TDMCP_TD_HOST:
+      tdHost:
         type: string
         default: "127.0.0.1"
-        description: "TouchDesigner bridge host."
-      TDMCP_TD_PORT:
+        description: Host of the TouchDesigner bridge (the machine running TD).
+      tdPort:
+        type: integer
+        default: 9980
+        description: Port of the TouchDesigner bridge (its WebServer DAT).
+      bridgeToken:
         type: string
-        default: "9980"
-        description: "TouchDesigner bridge (Web Server DAT) port."
-      TDMCP_VAULT_PATH:
+        description: >-
+          Optional bearer token for the bridge. Must match TDMCP_BRIDGE_TOKEN set
+          in TouchDesigner's environment. Leave empty for the default local setup.
+      rawPython:
         type: string
-        description: "Optional absolute path to an Obsidian vault to enable the vault tools."
+        enum: ["on", "off"]
+        default: "on"
+        description: >-
+          Set "off" to hide the raw-Python escape-hatch tools
+          (execute_python_script, exec_node_method) for restricted setups.
+      vaultPath:
+        type: string
+        description: >-
+          Optional absolute path to an Obsidian vault to enable the vault
+          integration tools. Leave empty to disable them.
     required: []
-  commandFunction: |-
+  commandFunction:
+    # Produces the CLI command Smithery uses to start the MCP server on stdio.
+    |-
     (config) => ({
       command: "npx",
       args: ["-y", "@dpantani/tdmcp"],
-      env: Object.assign(
-        {
-          TDMCP_TD_HOST: config.TDMCP_TD_HOST || "127.0.0.1",
-          TDMCP_TD_PORT: config.TDMCP_TD_PORT || "9980"
-        },
-        config.TDMCP_VAULT_PATH ? { TDMCP_VAULT_PATH: config.TDMCP_VAULT_PATH } : {}
-      )
+      env: {
+        ...(config.tdHost && { TDMCP_TD_HOST: config.tdHost }),
+        ...(config.tdPort && { TDMCP_TD_PORT: String(config.tdPort) }),
+        ...(config.rawPython && { TDMCP_RAW_PYTHON: config.rawPython }),
+        ...(config.bridgeToken && { TDMCP_BRIDGE_TOKEN: config.bridgeToken }),
+        ...(config.vaultPath && { TDMCP_VAULT_PATH: config.vaultPath })
+      }
     })
+  exampleConfig:
+    tdHost: "127.0.0.1"
+    tdPort: 9980
+    rawPython: "on"
