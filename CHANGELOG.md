@@ -14,14 +14,19 @@ live-validated in TouchDesigner.
 
 ### Added
 
-- **`add_custom_parameters`** (CLI `add-params`) — append a declarative
-  custom-parameter page to any COMP: Float/Int/Toggle/Menu/Str/Pulse/RGB/XYZ, with
-  clamp, separate menu names/labels, and vector size. Duplicate names are skipped,
-  not fatal. The lower-level, declarative complement to `create_control_panel`.
-- **`scaffold_extension`** (CLI `extension`) — make a COMP scriptable: a Text DAT
-  extension class (`op('./<DAT>').module.<Class>(me)`) + Promote flag + re-init, with
-  the extension parameter names probed live (they vary by build). `comp.ext.<Class>`
-  works immediately.
+- **`add_custom_parameters`** (CLI `add-params`) — append a custom-parameter page
+  (Float/Int sliders, Toggle, Menu, Str, Pulse, RGB, XYZ) to any COMP so a generated
+  network becomes a tunable, reusable component. Sets defaults, slider ranges
+  (`normMin`/`normMax`) and optional hard clamps; a parameter that already exists is
+  **skipped with a warning**, never overwritten, so re-running to add one more knob is safe.
+- **`scaffold_extension`** (CLI `scaffold-ext`) — give a COMP a Python **extension
+  class**: a Text DAT holding the class (with optional method stubs), wired into an
+  extension slot, optionally **promoted** (members callable directly on the COMP), and
+  reinitialized. The extension parameter names vary by TouchDesigner build, so the tool
+  **probes** for them (noting any difference as a warning) instead of hardcoding. With
+  `add_custom_parameters` (knobs) and `manage_component` (save as `.tox`), this completes
+  the build → parameterize → script → package story — see the new
+  [Reusable components](https://pantani.github.io/tdmcp/guide/components) guide.
 - **`analyze_project`** (CLI `analyze`) — find likely-dead operators, broken
   external-file dependencies, and orphan COMPs, plus a dependency map (op()/Select
   refs + CHOP exports). Conservative, with a reason per flag. Complements
@@ -63,6 +68,9 @@ live-validated in TouchDesigner.
   (manual Bpm fallback when no source is present).
 - **`snapshot_td_graph`** gains a `compact` mode — hoists per-type default parameters
   and delta-encodes each node for token-cheap whole-COMP reads.
+
+[0.5.0]: https://github.com/Pantani/tdmcp/compare/v0.4.0...HEAD
+
 ## [0.4.0] - 2026-05-27
 
 Fifteen new tools and prompts, built as a coordinated parallel pipeline (design →

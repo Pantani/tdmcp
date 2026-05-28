@@ -1,369 +1,266 @@
-import { HttpResponse, http } from "msw";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { KnowledgeBase } from "../../src/knowledge/index.js";
-import { RecipeLibrary } from "../../src/recipes/loader.js";
-import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
+import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { describe, expect, it, vi } from "vitest";
 import {
-  buildScaffoldExtensionScript,
+  buildClassSource,
+  buildExtensionScript,
   scaffoldExtensionImpl,
   scaffoldExtensionSchema,
 } from "../../src/tools/layer2/scaffoldExtension.js";
 import type { ToolContext } from "../../src/tools/types.js";
 import { silentLogger } from "../../src/utils/logger.js";
-import { makeTdServer, TD_BASE } from "../helpers/tdMock.js";
 
-const server = makeTdServer();
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
-
-function makeCtx(): ToolContext {
-  return {
-    client: new TouchDesignerClient({ baseUrl: TD_BASE, timeoutMs: 2000 }),
-    knowledge: new KnowledgeBase(),
-    recipes: new RecipeLibrary(),
-    logger: silentLogger,
-  };
+interface Payload {
+  comp: string;
+  class_name: string;
+  code: string;
+  extension: string;
+  promote: boolean;
+  slot: number;
+  methods: string[];
 }
 
-/** Decode the base64 payload embedded in a /api/exec script. */
-function decodePayload(script: string): Record<string, unknown> {
+function decodePayload(script: string): Payload {
   const b64 = /b64decode\("([^"]+)"\)/.exec(script)?.[1];
-  if (!b64) throw new Error("No b64decode found in script");
-  return JSON.parse(Buffer.from(b64, "base64").toString("utf8")) as Record<string, unknown>;
+  if (b64 === undefined) throw new Error("no base64 payload in script");
+  return JSON.parse(Buffer.from(b64, "base64").toString("utf8"));
 }
 
-/** Override /api/exec to capture the script and return a custom stdout report. */
-function interceptExec(reportJson: Record<string, unknown>): { captured: string[] } {
-  const captured: string[] = [];
-  server.use(
-    http.post(`${TD_BASE}/api/exec`, async ({ request }) => {
-      const body = (await request.json()) as { script: string };
-      captured.push(body.script);
-      return HttpResponse.json({
-        ok: true,
-        data: { result: null, stdout: JSON.stringify(reportJson) },
-      });
+function fakeCtx(exec: ReturnType<typeof vi.fn>): ToolContext {
+  return { client: { executePythonScript: exec }, logger: silentLogger } as unknown as ToolContext;
+}
+
+function scriptArg(exec: ReturnType<typeof vi.fn>): string {
+  const s = exec.mock.calls[0]?.[0];
+  if (typeof s !== "string") throw new Error("executePythonScript not called with a string");
+  return s;
+}
+
+function textOf(result: CallToolResult): string {
+  return result.content
+    .filter((c): c is { type: "text"; text: string } => c.type === "text")
+    .map((c) => c.text)
+    .join("\n");
+}
+
+const okReport = (over: Record<string, unknown> = {}) =>
+  vi.fn(async (_script: string, _capture?: boolean) => ({
+    stdout: JSON.stringify({
+      comp: "/project1/sys",
+      dat: "/project1/sys/WidgetExt",
+      extension: "op('./WidgetExt').module.WidgetExt(me)",
+      promoted: true,
+      methods: ["Reset"],
+      warnings: [],
+      ...over,
     }),
-  );
-  return { captured };
-}
+  }));
 
-// ---------------------------------------------------------------------------
-// 1. Happy path
-// ---------------------------------------------------------------------------
-
-describe("scaffold_extension — happy path", () => {
-  it("sends the correct payload fields to /api/exec", async () => {
-    const happyReport = {
-      comp: "/project1/myWidget",
-      class_name: "WidgetExt",
-      dat: "/project1/myWidget/WidgetExt",
-      extension_par: "extension1",
-      promote_par: "promoteextension1",
-      promoted: true,
-      reinit: true,
-      warnings: [],
-    };
-    const { captured } = interceptExec(happyReport);
-
-    const result = await scaffoldExtensionImpl(makeCtx(), {
-      comp_path: "/project1/myWidget",
-      class_name: "WidgetExt",
-      methods: ["onDraw", "getState"],
-      promote: true,
-      slot: 1,
-    });
-
-    expect(result.isError).toBeFalsy();
-    expect(captured).toHaveLength(1);
-
-    const payload = decodePayload(captured[0] ?? "");
-    expect(payload.comp).toBe("/project1/myWidget");
-    expect(payload.class_name).toBe("WidgetExt");
-    expect(payload.methods).toEqual(["onDraw", "getState"]);
-    expect(payload.promote).toBe(true);
-    expect(payload.slot).toBe(1);
+const args = (over: Record<string, unknown> = {}) =>
+  scaffoldExtensionSchema.parse({
+    comp_path: "/project1/sys",
+    class_name: "WidgetExt",
+    methods: ["Reset"],
+    ...over,
   });
 
-  it("produces a friendly summary mentioning class, DAT, promote, and re-init", async () => {
-    const happyReport = {
-      comp: "/project1/myWidget",
-      class_name: "WidgetExt",
-      dat: "/project1/myWidget/WidgetExt",
-      extension_par: "extension1",
-      promote_par: "promoteextension1",
-      promoted: true,
-      reinit: true,
-      warnings: [],
-    };
-    interceptExec(happyReport);
-
-    const result = await scaffoldExtensionImpl(makeCtx(), {
-      comp_path: "/project1/myWidget",
-      class_name: "WidgetExt",
-      promote: true,
-      slot: 1,
-    });
-
-    expect(result.isError).toBeFalsy();
-    const text = result.content[0];
-    expect(text?.type).toBe("text");
-    const summary = (text as { type: "text"; text: string }).text;
-    expect(summary).toContain("WidgetExt");
-    expect(summary).toContain("/project1/myWidget/WidgetExt");
-    expect(summary).toContain("promote=true");
-    expect(summary).toContain("re-init pulsed");
-  });
-
-  it("auto-capitalizes class_name first letter", async () => {
-    const happyReport = {
-      comp: "/project1/comp1",
-      class_name: "WidgetExt",
-      dat: "/project1/comp1/WidgetExt",
-      extension_par: "extension1",
-      promote_par: "promoteextension1",
-      promoted: false,
-      reinit: true,
-      warnings: [],
-    };
-    const { captured } = interceptExec(happyReport);
-
-    await scaffoldExtensionImpl(makeCtx(), {
-      comp_path: "/project1/comp1",
-      class_name: "widgetExt", // lowercase first letter — should be auto-capitalized
-      promote: false,
-      slot: 1,
-    });
-
-    const payload = decodePayload(captured[0] ?? "");
-    expect(payload.class_name).toBe("WidgetExt"); // capitalized
-  });
-
-  it("sends slot=3 when requested", async () => {
-    const happyReport = {
-      comp: "/project1/comp1",
-      class_name: "MyExt",
-      dat: "/project1/comp1/MyExt",
-      extension_par: "extension3",
-      promote_par: "promoteextension3",
-      promoted: true,
-      reinit: true,
-      warnings: [],
-    };
-    const { captured } = interceptExec(happyReport);
-
-    await scaffoldExtensionImpl(makeCtx(), {
-      comp_path: "/project1/comp1",
-      class_name: "MyExt",
-      promote: true,
-      slot: 3,
-    });
-
-    const payload = decodePayload(captured[0] ?? "");
-    expect(payload.slot).toBe(3);
-  });
-
-  it("includes warnings count in summary when bridge returns warnings", async () => {
-    const reportWithWarnings = {
-      comp: "/project1/comp1",
-      class_name: "MyExt",
-      dat: "/project1/comp1/MyExt",
-      extension_par: "extension1",
-      promote_par: null,
-      promoted: null,
-      reinit: false,
-      warnings: ["Extension Promote par not found for slot 1", "reinitextensions par not found"],
-    };
-    interceptExec(reportWithWarnings);
-
-    const result = await scaffoldExtensionImpl(makeCtx(), {
-      comp_path: "/project1/comp1",
-      class_name: "MyExt",
-      promote: true,
-      slot: 1,
-    });
-
-    expect(result.isError).toBeFalsy();
-    const text = result.content[0];
-    const summary = (text as { type: "text"; text: string }).text;
-    expect(summary).toContain("2 warning(s)");
+describe("buildClassSource", () => {
+  it("emits a class with an ownerComp __init__ and a stub per method", () => {
+    const src = buildClassSource("WidgetExt", ["Reset", "Tick"]);
+    expect(src).toContain("class WidgetExt:");
+    expect(src).toContain("def __init__(self, ownerComp):");
+    expect(src).toContain("self.ownerComp = ownerComp");
+    expect(src).toContain("    def Reset(self):");
+    expect(src).toContain("    def Tick(self):");
+    expect(src).toContain("        pass");
   });
 });
 
-// ---------------------------------------------------------------------------
-// 2. buildScaffoldExtensionScript generates valid Python containing class text
-// ---------------------------------------------------------------------------
-
-describe("buildScaffoldExtensionScript", () => {
-  it("embeds class_name and methods into the base64 payload", () => {
-    const script = buildScaffoldExtensionScript({
-      comp: "/project1/c1",
-      class_name: "TestExt",
-      methods: ["run", "stop"],
+describe("buildExtensionScript", () => {
+  it("round-trips the payload and wires extension/promote/reinit on the COMP", () => {
+    const script = buildExtensionScript({
+      comp: "/project1/sys",
+      class_name: "WidgetExt",
+      code: buildClassSource("WidgetExt", []),
+      extension: "op('./WidgetExt').module.WidgetExt(me)",
       promote: true,
       slot: 1,
+      methods: [],
     });
     const payload = decodePayload(script);
-    expect(payload.class_name).toBe("TestExt");
-    expect(payload.methods).toEqual(["run", "stop"]);
-    expect(payload.promote).toBe(true);
-    expect(payload.slot).toBe(1);
+    expect(payload.comp).toBe("/project1/sys");
+    expect(payload.extension).toBe("op('./WidgetExt').module.WidgetExt(me)");
+    // The script probes the build-specific extension parameter names and refreshes.
+    // It must cover BOTH the current zero-based scheme (ext0object/ext0promote) and
+    // the legacy one-based scheme (extension1/promoteextension1), or it silently
+    // fails to wire the COMP on current builds.
+    expect(script).toContain("ext%dobject");
+    expect(script).toContain("ext%dpromote");
+    expect(script).toContain("extension%d");
+    expect(script).toContain("promoteextension%d");
+    expect(script).toContain("reinitextensions");
+    expect(script).toContain("_reinit.pulse()");
+    expect(script).toContain("_comp.create(textDAT");
+    expect(script).toContain('_dat.text = _p["code"]');
   });
 
-  it("does not string-interpolate the comp path (base64 only)", () => {
-    // A path with special chars must not appear literally in the script outside base64
-    const dangerousPath = '/project1/it\'s"a"test';
-    const script = buildScaffoldExtensionScript({
-      comp: dangerousPath,
-      class_name: "Ext",
+  it("treats a non-Text-DAT name collision as fatal instead of overwriting it", () => {
+    const script = buildExtensionScript({
+      comp: "/c",
+      class_name: "WidgetExt",
+      code: "",
+      extension: "",
+      promote: true,
+      slot: 1,
       methods: [],
-      promote: false,
-      slot: 1,
     });
-    // The raw dangerous path must NOT appear literally outside the base64 blob
-    const b64 = /b64decode\("([^"]+)"\)/.exec(script)?.[1] ?? "";
-    const scriptWithoutB64 = script.replace(b64, "");
-    expect(scriptWithoutB64).not.toContain(dangerousPath);
+    // Identifies a Text DAT by OPType ("textDAT") with a .type ("text") fallback,
+    // matching the bridge's op_type() convention; anything else is fatal.
+    expect(script).toContain('"textDAT"');
+    expect(script).toContain('_dat.type == "text"');
+    expect(script).toContain("not a Text DAT");
   });
 });
 
-// ---------------------------------------------------------------------------
-// 3. Bridge fatal — bridge returns a fatal in the report
-// ---------------------------------------------------------------------------
-
-describe("scaffold_extension — bridge fatal", () => {
-  it("returns isError=true when COMP is not found, does not throw", async () => {
-    interceptExec({
-      comp: "/project1/noSuchComp",
-      class_name: "WidgetExt",
-      dat: null,
-      extension_par: null,
-      promote_par: null,
-      promoted: null,
-      reinit: false,
-      warnings: [],
-      fatal: "COMP not found: /project1/noSuchComp",
-    });
-
-    const result = await scaffoldExtensionImpl(makeCtx(), {
-      comp_path: "/project1/noSuchComp",
-      class_name: "WidgetExt",
-      promote: true,
-      slot: 1,
-    });
-
-    expect(result.isError).toBe(true);
-    const text = (result.content[0] as { type: "text"; text: string }).text;
-    expect(text).toContain("COMP not found");
+describe("scaffoldExtensionImpl", () => {
+  it("sanitizes the class name and builds a matching op('./…').module extension expression", async () => {
+    const exec = okReport();
+    await scaffoldExtensionImpl(fakeCtx(exec), args({ class_name: "myWidget" }));
+    const payload = decodePayload(scriptArg(exec));
+    expect(payload.class_name).toBe("MyWidget");
+    expect(payload.extension).toBe("op('./MyWidget').module.MyWidget(me)");
+    expect(payload.code).toContain("class MyWidget:");
+    expect(exec.mock.calls[0]?.[1]).toBe(true);
   });
 
-  it("returns isError=true when target is not a COMP, does not throw", async () => {
-    interceptExec({
-      comp: "/project1/noise1",
-      class_name: "NoiseExt",
-      dat: null,
-      extension_par: null,
-      promote_par: null,
-      promoted: null,
-      reinit: false,
-      warnings: [],
-      fatal: "/project1/noise1 is not a COMP, so it cannot hold an extension.",
-    });
-
-    const result = await scaffoldExtensionImpl(makeCtx(), {
-      comp_path: "/project1/noise1",
-      class_name: "NoiseExt",
-      promote: true,
-      slot: 1,
-    });
-
-    expect(result.isError).toBe(true);
-    const text = (result.content[0] as { type: "text"; text: string }).text;
-    expect(text).toContain("is not a COMP");
+  it("sanitizes, dedupes and keeps method stubs in the class source", async () => {
+    const exec = okReport({ methods: ["doThing", "dothing", "m123bad"] });
+    await scaffoldExtensionImpl(
+      fakeCtx(exec),
+      args({ methods: ["doThing", "do thing", "123bad", "doThing"] }),
+    );
+    const payload = decodePayload(scriptArg(exec));
+    expect(payload.methods).toEqual(["doThing", "dothing", "m123bad"]);
+    expect(payload.code).toContain("def doThing(self):");
+    expect(payload.code).toContain("def m123bad(self):");
   });
 
-  it("returns isError=true when bridge is offline, does not throw", async () => {
-    server.use(http.post(`${TD_BASE}/api/exec`, () => HttpResponse.error()));
-
-    const result = await scaffoldExtensionImpl(makeCtx(), {
-      comp_path: "/project1/myWidget",
-      class_name: "WidgetExt",
-      promote: true,
-      slot: 1,
-    });
-
+  it("rejects an unusable class name without touching TD", async () => {
+    const exec = vi.fn();
+    const result = await scaffoldExtensionImpl(fakeCtx(exec), args({ class_name: "!!!" }));
     expect(result.isError).toBe(true);
+    expect(exec).not.toHaveBeenCalled();
+  });
+
+  it("escapes a Python-keyword class name so the source stays valid", async () => {
+    const exec = okReport();
+    await scaffoldExtensionImpl(fakeCtx(exec), args({ class_name: "None" }));
+    const payload = decodePayload(scriptArg(exec));
+    expect(payload.class_name).toBe("None_");
+    expect(payload.code).toContain("class None_:");
+    expect(payload.extension).toBe("op('./None_').module.None_(me)");
+  });
+
+  it("escapes Python-keyword method names (class/def/return → class_/def_/return_)", async () => {
+    const exec = okReport();
+    await scaffoldExtensionImpl(fakeCtx(exec), args({ methods: ["class", "def", "return"] }));
+    const payload = decodePayload(scriptArg(exec));
+    expect(payload.methods).toEqual(["class_", "def_", "return_"]);
+    expect(payload.code).toContain("def class_(self):");
+    expect(payload.code).toContain("def return_(self):");
+  });
+
+  it("drops dunder method names so they can't override the generated constructor", async () => {
+    const exec = okReport();
+    await scaffoldExtensionImpl(fakeCtx(exec), args({ methods: ["__init__", "doThing"] }));
+    const payload = decodePayload(scriptArg(exec));
+    expect(payload.methods).toEqual(["doThing"]);
+    // Exactly one __init__ (the generated constructor) — no `def __init__(self): pass` stub.
+    expect(payload.code).toContain("def __init__(self, ownerComp):");
+    expect(payload.code).not.toContain("def __init__(self):");
+    expect((payload.code.match(/def __init__/g) ?? []).length).toBe(1);
+  });
+
+  it("summarizes the class, promotion and method count on success", async () => {
+    const result = await scaffoldExtensionImpl(fakeCtx(okReport()), args());
+    expect(result.isError).toBeFalsy();
+    const text = textOf(result);
+    expect(text).toContain("WidgetExt");
+    expect(text).toContain("promoted");
+    expect(text).toContain("1 method stub(s)");
+  });
+
+  it("surfaces a build-difference probe note as a warning, not a failure", async () => {
+    const exec = okReport({
+      warnings: ["Used 'ext1' for the extension slot (this build differs from 'extension1')."],
+    });
+    const result = await scaffoldExtensionImpl(fakeCtx(exec), args());
+    expect(result.isError).toBeFalsy();
+    expect(textOf(result)).toMatch(/1 warning\(s\)/);
+  });
+
+  it("warns when promote=true and a method starts with lowercase (TD won't promote it)", async () => {
+    const exec = okReport({ methods: ["Reset", "doThing"], promoted: true });
+    const result = await scaffoldExtensionImpl(
+      fakeCtx(exec),
+      args({ methods: ["Reset", "doThing"], promote: true }),
+    );
+    expect(result.isError).toBeFalsy();
+    const text = textOf(result);
+    // One TS-side warning for the lowercase method.
+    expect(text).toMatch(/1 warning\(s\)/);
+    expect(text).toContain("doThing");
+    expect(text).toContain("lowercase");
+  });
+
+  it("does not warn about lowercase methods when promote=false", async () => {
+    const exec = okReport({ methods: ["doThing"], promoted: false });
+    const result = await scaffoldExtensionImpl(
+      fakeCtx(exec),
+      args({ methods: ["doThing"], promote: false }),
+    );
+    expect(result.isError).toBeFalsy();
+    // The JSON payload always contains the key "warnings", so match the summary phrase.
+    expect(textOf(result)).not.toMatch(/\d+ warning\(s\)/);
+  });
+
+  it("returns an error result (not a throw) when report.fatal is set", async () => {
+    const exec = vi.fn(async () => ({
+      stdout: JSON.stringify({
+        comp: "/project1/sys",
+        methods: [],
+        warnings: [],
+        fatal: "/project1/sys is not a COMP, so it cannot hold an extension.",
+      }),
+    }));
+    const result = await scaffoldExtensionImpl(fakeCtx(exec), args());
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("is not a COMP");
+  });
+
+  it("never throws when the bridge call fails — it returns an isError result", async () => {
+    const exec = vi.fn(async () => {
+      throw new Error("connection refused");
+    });
+    const result = await scaffoldExtensionImpl(fakeCtx(exec), args());
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("connection refused");
   });
 });
 
-// ---------------------------------------------------------------------------
-// 4. Bad input — schema validation
-// ---------------------------------------------------------------------------
-
-describe("scaffold_extension — bad input (schema)", () => {
-  it("rejects slot < 1", () => {
-    expect(() =>
-      scaffoldExtensionSchema.parse({
-        comp_path: "/project1/comp",
-        class_name: "MyExt",
-        slot: 0,
-      }),
-    ).toThrow();
+describe("scaffoldExtensionSchema (input validation)", () => {
+  it("rejects a missing comp_path", () => {
+    expect(scaffoldExtensionSchema.safeParse({ class_name: "WidgetExt" }).success).toBe(false);
   });
 
-  it("rejects slot > 8", () => {
-    expect(() =>
-      scaffoldExtensionSchema.parse({
-        comp_path: "/project1/comp",
-        class_name: "MyExt",
-        slot: 9,
-      }),
-    ).toThrow();
-  });
-
-  it("rejects empty class_name", () => {
-    expect(() =>
-      scaffoldExtensionSchema.parse({
-        comp_path: "/project1/comp",
-        class_name: "",
-      }),
-    ).toThrow();
-  });
-
-  it("rejects a class_name that is not a Python identifier", () => {
-    for (const bad of ["Widget Ext", "1Bad", "with-dash", "has.dot"]) {
-      expect(() =>
-        scaffoldExtensionSchema.parse({ comp_path: "/project1/comp", class_name: bad }),
-      ).toThrow();
-    }
-  });
-
-  it("rejects method names that are not Python identifiers", () => {
-    expect(() =>
-      scaffoldExtensionSchema.parse({
-        comp_path: "/project1/comp",
-        class_name: "MyExt",
-        methods: ["ok", "not ok"],
-      }),
-    ).toThrow();
-  });
-
-  it("defaults slot to 1 and promote to true when omitted", () => {
-    const parsed = scaffoldExtensionSchema.parse({
-      comp_path: "/project1/comp",
-      class_name: "MyExt",
-    });
-    expect(parsed.slot).toBe(1);
+  it("defaults promote=true and slot=1", () => {
+    const parsed = scaffoldExtensionSchema.parse({ comp_path: "/c", class_name: "WidgetExt" });
     expect(parsed.promote).toBe(true);
+    expect(parsed.slot).toBe(1);
   });
 
-  it("coerces slot from string '2' to number 2", () => {
-    const parsed = scaffoldExtensionSchema.parse({
-      comp_path: "/project1/comp",
-      class_name: "MyExt",
-      slot: "2",
-    });
-    expect(parsed.slot).toBe(2);
+  it("rejects a slot outside 1–8", () => {
+    expect(
+      scaffoldExtensionSchema.safeParse({ comp_path: "/c", class_name: "W", slot: 99 }).success,
+    ).toBe(false);
   });
 });

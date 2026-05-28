@@ -49,6 +49,9 @@ export const layer2Registrars: ToolRegistrar[] = [
   registerManageCheckpoint,
   registerManageCue,
   registerManageComponent,
+  // Make a generated COMP into a reusable, parameterized, scriptable component:
+  registerAddCustomParameters,
+  registerScaffoldExtension,
   registerCreateMacro,
   registerRandomizeControls,
   registerCreatePhoneRemote,
@@ -69,9 +72,7 @@ export const layer2Registrars: ToolRegistrar[] = [
   registerCreateDataSource,
   // Post-0.3.0 parallel build — wave 3:
   registerCreateLedMapper,
-  // Phase 13 — reusable components & agent-DX:
-  registerAddCustomParameters,
-  registerScaffoldExtension,
+  // Phase 13 — agent-DX & perform mode (reusable-component tools registered above):
   registerBatchOperations,
   registerManageAnnotation,
   registerSetPerformMode,

@@ -591,6 +591,18 @@ const COMMANDS: Record<string, Command> = {
   component: r(manageComponentSchema, manageComponentImpl, "Save/load a COMP as a .tox.", {
     mutates: true,
   }),
+  "add-params": r(
+    addCustomParametersSchema,
+    addCustomParametersImpl,
+    "Append a custom-parameter page (knobs/menus/toggles/pulses) to a COMP.",
+    { mutates: true },
+  ),
+  "scaffold-ext": r(
+    scaffoldExtensionSchema,
+    scaffoldExtensionImpl,
+    "Give a COMP a Python extension class (behavior/methods).",
+    { mutates: true },
+  ),
   checkpoint: r(
     manageCheckpointSchema,
     manageCheckpointImpl,
@@ -625,19 +637,6 @@ const COMMANDS: Record<string, Command> = {
     setParametersBatchSchema,
     setParametersBatchImpl,
     "Set many parameters across nodes at once.",
-    { mutates: true },
-  ),
-  // Phase 13 — reusable components & agent-DX.
-  "add-params": r(
-    addCustomParametersSchema,
-    addCustomParametersImpl,
-    "Append a declarative custom-parameter page to a COMP.",
-    { mutates: true },
-  ),
-  extension: r(
-    scaffoldExtensionSchema,
-    scaffoldExtensionImpl,
-    "Give a COMP a Python extension class (stub + promote + re-init).",
     { mutates: true },
   ),
   // Signature effects, deeper reactivity, creation, live control (waves 1–5).
