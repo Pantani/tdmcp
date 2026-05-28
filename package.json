@@ -23,6 +23,7 @@
   },
   "files": [
     "dist",
+    "scripts/tdmcp-lops.mjs",
     "recipes",
     "td",
     "README.md",

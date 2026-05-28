@@ -36,6 +36,15 @@ const child = spawn(process.execPath, [entry, ...process.argv.slice(2)], {
   env,
 });
 
+// Forward termination so the spawned server's lifecycle matches this wrapper's.
+// MCP clients that stop the configured command by killing this process must not
+// leave an orphaned tdmcp server holding stdio + bridge connections.
+for (const signal of ["SIGTERM", "SIGINT", "SIGHUP"]) {
+  process.on(signal, () => {
+    child.kill(signal);
+  });
+}
+
 child.on("error", (err) => {
   process.stderr.write(`[tdmcp-lops] failed to start tdmcp: ${err.message}\n`);
   process.exit(1);
