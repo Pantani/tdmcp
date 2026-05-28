@@ -5,7 +5,27 @@ import { layer3Registrars } from "./layer3/index.js";
 import type { ToolContext } from "./types.js";
 import { vaultRegistrars } from "./vault/index.js";
 
-/** Registers every tool (all layers) against the MCP server. */
+/**
+ * Tools hidden by the `safe` profile: every tool flagged `destructiveHint: true`.
+ * This is a strict superset of TDMCP_RAW_PYTHON=off (which hides only the first
+ * two), so `safe` ⊇ rawPython=off. Keep in sync with `destructiveHint: true`
+ * annotations (a registration test guards this — see toolProfile.test.ts).
+ *
+ * NOTE: this is deliberately NOT the copilot's `LLM_TOOLS` `mutates` classification
+ * (src/llm/tools.ts): that splits read-only vs. write over a different, smaller
+ * curated toolset, whereas `safe` keeps non-destructive mutations
+ * (create/connect/animate) and only drops the destructive ones. Don't unify them.
+ */
+const SAFE_PROFILE_EXCLUDE = new Set<string>([
+  "execute_python_script", // raw client-authored code (also gated by rawPython)
+  "exec_node_method", // raw client-authored code (also gated by rawPython)
+  "delete_td_node", // removes nodes
+  "create_panic", // bypasses & deletes
+  "manage_checkpoint", // overwrites saved state
+  "manage_component", // can delete/replace components
+]);
+
+/** Registers every tool (all layers) against the MCP server, honoring the profile. */
 export function registerAllTools(server: McpServer, ctx: ToolContext): void {
   const registrars = [
     ...layer3Registrars,
@@ -13,6 +33,26 @@ export function registerAllTools(server: McpServer, ctx: ToolContext): void {
     ...layer1Registrars,
     ...vaultRegistrars,
   ];
+
+  // For `safe`, intercept registerTool and drop excluded names. We wrap rather
+  // than gate each registrar so the exclusion list lives in one place. The
+  // registrars ignore registerTool's return value, so returning undefined for an
+  // excluded name is safe; resources/prompts register later, untouched.
+  if (ctx.toolProfile === "safe") {
+    // biome-ignore lint/suspicious/noExplicitAny: registerTool is overloaded; type the bound copy as variadic so we can forward args.
+    const realRegister = server.registerTool.bind(server) as (...args: any[]) => unknown;
+    // biome-ignore lint/suspicious/noExplicitAny: forwarding the SDK's variadic registerTool signature.
+    (server as any).registerTool = (name: string, ...rest: any[]) =>
+      SAFE_PROFILE_EXCLUDE.has(name) ? undefined : realRegister(name, ...rest);
+    try {
+      for (const register of registrars) register(server, ctx);
+    } finally {
+      // biome-ignore lint/suspicious/noExplicitAny: restore the original method.
+      (server as any).registerTool = realRegister;
+    }
+    return;
+  }
+
   for (const register of registrars) register(server, ctx);
 }
 

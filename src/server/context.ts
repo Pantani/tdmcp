@@ -36,5 +36,6 @@ export function buildToolContext(
     logger,
     vault,
     allowRawPython: config.rawPython !== "off",
+    toolProfile: config.toolProfile,
   };
 }

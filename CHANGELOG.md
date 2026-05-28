@@ -6,10 +6,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.5.0] - Unreleased
 
-Phase 13 — a second post-0.3 wave, landing alongside 0.4.0's parallel build-out. The
-focus shifts from *generating* visuals to **packaging, documenting and cheaply
-operating** them: reusable components, project intelligence, token-cheap agent-DX
-primitives, and external-clock locking. Every new tool was built → integrated →
+Phase 13 plus the dotsimulate LOPs integration. The focus shifts from *generating* visuals to
+**packaging, documenting and cheaply operating** them: reusable components (build → parameterize →
+script → package), project intelligence, token-cheap agent-DX primitives, and external-clock
+locking. It also adds a way to drive tdmcp from *inside* TouchDesigner via dotsimulate's LOPs
+"MCP Client" plus an optional curated tool profile for autonomous in-TD agents — additive and
+backward-compatible (the default profile is `full`). Every new tool was built → integrated →
 live-validated in TouchDesigner.
 
 ### Added
@@ -59,6 +61,14 @@ live-validated in TouchDesigner.
 - **Feature-build harness** (`.claude/`): a `tdmcp-tool-builder` skill +
   `tdmcp-feature-lead` / `tdmcp-tool-builder` agents that build tool batches as
   parallel one-tool-per-agent waves with a single-writer integrator.
+- **`scripts/tdmcp-lops.mjs`** — a dependency-free launcher for dotsimulate's LOPs MCP
+  Client. Point the LOPs `command` at it; it injects the hardened env
+  (`TDMCP_RAW_PYTHON=off`, `TDMCP_TOOL_PROFILE=safe`) then execs `dist/index.js`, since
+  LOPs' `servers_config.json` has no documented `env` field.
+- **LOPs integration guide** (EN + PT) — setup, the hardened `servers_config.json` snippet,
+  the TD → tdmcp → bridge → TD architecture, and an explicit callout that this does **not**
+  replace the local `tdmcp chat` copilot. Plus reference docs for the new env var and the
+  in-TD topology.
 
 ### Changed
 
@@ -68,6 +78,11 @@ live-validated in TouchDesigner.
   (manual Bpm fallback when no source is present).
 - **`snapshot_td_graph`** gains a `compact` mode — hoists per-type default parameters
   and delta-encodes each node for token-cheap whole-COMP reads.
+- **`TDMCP_TOOL_PROFILE`** (`full` | `safe`, default `full`) — `safe` additionally hides the
+  six destructive / raw-code tools (`execute_python_script`, `exec_node_method`,
+  `delete_td_node`, `create_panic`, `manage_checkpoint`, `manage_component`), a strict
+  superset of `TDMCP_RAW_PYTHON=off`. Use it to hand an autonomous in-TD agent a curated,
+  non-destructive toolset.
 
 [0.5.0]: https://github.com/Pantani/tdmcp/compare/v0.4.0...HEAD
 

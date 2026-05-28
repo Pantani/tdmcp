@@ -107,6 +107,16 @@ Ele também pode assinar um **fluxo de eventos por WebSocket** do TD
 MCP. Eventos de alta frequência (`timeline.frame`, `node.cook`) são descartados a
 menos que você opte por recebê-los. Controle com `TDMCP_EVENTS`.
 
+### Chamar o tdmcp de dentro do TouchDesigner (LOPs)
+
+O "MCP Client" do LOPs da dotsimulate pode rodar *dentro* do TouchDesigner e iniciar
+este servidor por stdio, fechando um ciclo: **TD (MCP Client do LOPs) → `node dist/index.js`
+(tdmcp) → HTTP → a ponte do TD em `127.0.0.1:9980` (o mesmo TD) → a rede.** Nenhuma
+mudança de transporte é necessária (stdio é o padrão). Como o cliente vive no TD e não tem
+um campo `env` documentado, aponte seu `command` para o wrapper `scripts/tdmcp-lops.mjs`,
+que injeta o perfil reforçado (`TDMCP_RAW_PYTHON=off`, `TDMCP_TOOL_PROFILE=safe`). Veja o
+[guia de integração com LOPs](/pt/guide/lops-integration).
+
 ## Segurança {#security}
 
 A ponte do TouchDesigner roda **Python arbitrário dentro do seu processo do TD** —
