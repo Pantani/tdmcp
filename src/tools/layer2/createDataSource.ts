@@ -95,6 +95,26 @@ try:
                 dst.inputConnectors[0].connect(src); return True
             except Exception:
                 report["warnings"].append("Could not connect %s -> %s" % (src.name, dst.name)); return False
+        def _expose_active(node, parname):
+            # Real Active toggle on the container, expression-bound to the source operator's enable
+            # parameter (so it actually pauses/resumes the source rather than just being a label).
+            try:
+                _pg = None
+                for _existing in _c.customPages:
+                    if _existing.name == "Controls":
+                        _pg = _existing; break
+                if _pg is None:
+                    _pg = _c.appendCustomPage("Controls")
+                _ap = _pg.appendToggle("Active")[0]
+                _ap.default = True; _ap.val = True
+                _tp = getattr(node.par, parname, None)
+                if _tp is not None:
+                    _tp.expr = "op(%r).par.Active" % _c.path
+                    _tp.mode = type(_tp.mode).EXPRESSION
+                return ["Active"]
+            except Exception:
+                report["warnings"].append("Could not create the Active control.")
+                return []
         _controls = []
         _null_chop = None
         _raw_dat = None
@@ -104,6 +124,30 @@ try:
             _setpar(_src, "url", _p.get("url"))
             _setpar(_src, "active", 1 if _p.get("url") else 0)
             _setpar(_src, "reqmethod", "get")
+            # The Web Client DAT has no polling-interval parameter (verified live): it only fetches
+            # on its 'active' toggle or a 'request' pulse. To make poll_seconds control fetch
+            # cadence, an Execute DAT re-pulses src.par.request whenever absTime passes the next
+            # interval. The interval comes from the Poll custom par when exposed (so the knob retunes
+            # the rate live), else the static poll_seconds. Only re-fetches when there is a URL.
+            _poll = float(_p.get("poll_seconds") or 1) or 1
+            _refresh = _c.create(executeDAT, "refresh")
+            _interval_expr = ("op(%r).par.Poll" % _c.path) if _p.get("expose_controls") else repr(_poll)
+            _rtext = (
+                "def onFrameStart(frame):\\n"
+                "\\tsrc = parent().op('src')\\n"
+                "\\tif src is None or not src.par.url.eval():\\n"
+                "\\t\\treturn\\n"
+                "\\tiv = max(0.05, float(%s))\\n"
+                "\\tnxt = parent().fetch('tdmcp_poll_next', 0.0)\\n"
+                "\\tif absTime.seconds >= nxt:\\n"
+                "\\t\\tparent().store('tdmcp_poll_next', absTime.seconds + iv)\\n"
+                "\\t\\tsrc.par.request.pulse()\\n"
+                "\\treturn\\n"
+            ) % _interval_expr
+            _refresh.text = _rtext
+            if hasattr(_refresh.par, "framestart"):
+                _refresh.par.framestart = True
+            _refresh.par.active = 1 if _p.get("url") else 0
             _raw_dat = _c.create(nullDAT, "raw"); _connect(_src, _raw_dat)
             # Static sample: header row of field names + two numeric sample rows so
             # the Null CHOP carries the named channels even before any fetch.
@@ -119,6 +163,19 @@ try:
             _connect(_sample, _datto)
             _null_chop = _c.create(nullCHOP, "out"); _connect(_datto, _null_chop)
             if _p.get("expose_controls"):
+                # Real controls (not just a label list): Active drives the Web Client DAT's enable,
+                # Poll sets the fetch interval the refresh Execute DAT reads above.
+                _pg = _c.appendCustomPage("Controls")
+                _ap = _pg.appendToggle("Active")[0]
+                _ap.default = bool(_p.get("url")); _ap.val = bool(_p.get("url"))
+                try:
+                    _src.par.active.expr = "op(%r).par.Active" % _c.path
+                    _src.par.active.mode = type(_src.par.active.mode).EXPRESSION
+                except Exception:
+                    report["warnings"].append("Could not bind Active to the Web Client DAT.")
+                _pp = _pg.appendFloat("Poll")[0]
+                _pp.normMin = 0.05; _pp.min = 0.05; _pp.clampMin = True
+                _pp.normMax = 60; _pp.default = _poll; _pp.val = _poll
                 _controls = ["Active", "Poll"]
         elif _kind == "osc":
             _src = _c.create(oscinDAT, "src")
@@ -129,7 +186,7 @@ try:
             _setpar(_osc_chop, "port", _p.get("port"))
             _null_chop = _c.create(nullCHOP, "out"); _connect(_osc_chop, _null_chop)
             if _p.get("expose_controls"):
-                _controls = ["Active"]
+                _controls = _expose_active(_src, "active")
         elif _kind == "serial":
             _src = _c.create(serialDAT, "src")
             report["source"] = _src.path; report["source_type"] = _src.type
@@ -143,7 +200,7 @@ try:
             _connect(_src, _datto)
             _null_chop = _c.create(nullCHOP, "out"); _connect(_datto, _null_chop)
             if _p.get("expose_controls"):
-                _controls = ["Active"]
+                _controls = _expose_active(_src, "active")
         if _raw_dat is not None:
             report["null_dat"] = _raw_dat.path
         if _null_chop is not None:

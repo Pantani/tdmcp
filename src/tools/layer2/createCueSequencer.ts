@@ -64,12 +64,15 @@ interface CueSequencerReport {
 
 // CHOP Execute callback deployed as the engine DAT's text (runs in TD's normal op context).
 // It fires once per beat on the Beat CHOP's cumulative `count` channel and uses that count as a
-// musical clock: a step boundary passes whenever floor(count / step_len_beats) increments, where
-// step_len_beats = BarsPerStep × (beats-per-bar for 'bar' quantize, 1 for 'beat'). On a boundary
+// musical clock. A step boundary passes when the cumulative beat count reaches an ACCUMULATED
+// absolute beat target: the target is seeded to (count + current step's length) on the first beat,
+// and each advance adds the NEXT step's OWN length (BarsPerStep × beats-per-bar for 'bar', or ×1
+// for 'beat'). This per-step accumulation is what makes VARIABLE step lengths fire correctly —
+// dividing the running count by a single step length misfired once steps differed. On a boundary
 // (while Active) it advances the stored step index (wrapping if loop), writes the new index to the
 // live Step control, and recalls (or, for __MORPH__>0, morphs over that many seconds) that step's
 // cue on the target — reusing manage_cue's tdmcp_cues storage + tdmcp_cue_transition + cue_morph
-// engine. State (the index + the last boundary block + the ordered steps) lives in the engine
+// engine. State (the index + the accumulated beat target + the ordered steps) lives in the engine
 // COMP's storage so the callback is self-contained. __TARGET__/__QUANT__/__LOOP__/__MORPH__ are
 // substituted on build.
 const SEQ_ENGINE = `import td
@@ -96,10 +99,24 @@ def onValueChange(channel, sampleIndex, val, prev):
     if fallback < 1:
         fallback = 1
     unit = _beats_per_bar() if '__QUANT__' == 'bar' else 1
-    # Use the current step's own length as the boundary period (fall back to the live knob).
+    def _len_beats(i):
+        # Length (in beats) of step i: its own 'bars' x unit, falling back to the live knob.
+        b = int(steps[i].get('bars', fallback) or fallback)
+        if b < 1:
+            b = 1
+        n = b * unit
+        return n if n >= 1 else 1
     idx = int(seq.fetch('tdmcp_seq_index', 0))
     if idx < 0 or idx >= len(steps):
         idx = 0
+    # Next boundary is tracked as an ABSOLUTE accumulated beat target, not by dividing the running
+    # count by a single step length — that misfired for VARIABLE step lengths. The target is seeded
+    # on the first beat to (count + current step's length); each advance adds the NEXT step's own
+    # length, so a 2-bar step then an 8-bar step fire at the correct cumulative beats.
+    target = seq.fetch('tdmcp_seq_target', None)
+    if target is None:
+        target = float(val) + _len_beats(idx)
+        seq.store('tdmcp_seq_target', target)
     # Honour a live Step change first: a performer/dashboard move to the Step control is a
     # cue-jump. Sync the internal index from seq.par.Step before advancing so the manual jump
     # wins (instead of being overwritten by the stored index on the next beat). When Step was
@@ -114,17 +131,10 @@ def onValueChange(channel, sampleIndex, val, prev):
         if 0 <= stepval < len(steps) and stepval != idx:
             idx = stepval
             jumped = True
-    cur_bars = int(steps[idx].get('bars', fallback) or fallback)
-    if cur_bars < 1:
-        cur_bars = 1
-    step_len = cur_bars * unit
-    if step_len < 1:
-        step_len = 1
-    block = int(float(val) // step_len)
-    last = int(seq.fetch('tdmcp_seq_block', -1))
-    if block <= last and not jumped:
+    # A boundary passes when the cumulative beat count reaches the accumulated target (or a manual
+    # Step jump occurred). Otherwise hold.
+    if float(val) < float(target) and not jumped:
         return
-    seq.store('tdmcp_seq_block', block)
     # A boundary passed (or a manual Step jump): advance — unless we just jumped, in which case
     # we recall the jumped-to step itself. Wrap or stop per loop on a normal advance.
     if jumped:
@@ -136,6 +146,9 @@ def onValueChange(channel, sampleIndex, val, prev):
                 nxt = 0
             else:
                 return
+    # Re-seed the target from NOW plus the chosen step's own length so the next boundary respects
+    # the (possibly different) next step's duration. A manual jump re-anchors the schedule too.
+    seq.store('tdmcp_seq_target', float(val) + _len_beats(nxt))
     seq.store('tdmcp_seq_index', nxt)
     # Write the live Step control back so it always reflects the current step (and so the
     # next beat's sync check sees index == Step rather than re-triggering a jump).
@@ -240,10 +253,12 @@ try:
             _bp.normMin = 1; _bp.normMax = 32
             _bp.default = _first_bars; _bp.val = _first_bars
         report["controls"].append("Barsperstep")
-        # Reset the runtime state so the first boundary fires step 0 -> 1 cleanly.
+        # Reset the runtime state so the first boundary fires step 0 -> 1 cleanly. The boundary is
+        # an accumulated absolute beat target seeded by the engine on its first beat (None here);
+        # this replaces the old single-step-length block counter so variable step lengths fire right.
         _seq.store("tdmcp_seq_steps", _p["steps"])
         _seq.store("tdmcp_seq_index", 0)
-        _seq.store("tdmcp_seq_block", -1)
+        _seq.store("tdmcp_seq_target", None)
         # A morph rides manage_cue's frame-driven engine on the TARGET — make sure it exists.
         if float(_p["morph_seconds"]) > 0:
             _tgt = op(_p["target"])

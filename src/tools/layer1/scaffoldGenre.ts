@@ -158,6 +158,9 @@ export async function scaffoldGenreImpl(ctx: ToolContext, args: ScaffoldGenreArg
     // output-channel toggle, not a settable input.
     const bpm = args.bpm ?? preset.bpm;
     let tempo: string | undefined;
+    // The BPM actually written to the global tempo (clamped to the sane range). The user-facing
+    // note shows this clamped value so it matches what was written, not the raw request.
+    let writtenBpm: number | undefined;
     if (bpm !== undefined) {
       const beat = await builder.add("beatCHOP", "beat", {
         ramp: 1,
@@ -171,6 +174,7 @@ export async function scaffoldGenreImpl(ctx: ToolContext, args: ScaffoldGenreArg
       await builder.connect(beat, tempo);
       // Clamp to the same sane range as the external-clock tool before writing the global tempo.
       const clamped = Math.max(40, Math.min(220, bpm));
+      writtenBpm = clamped;
       await builder.python(`op('/').time.tempo = ${clamped}`);
     }
 
@@ -220,7 +224,7 @@ export async function scaffoldGenreImpl(ctx: ToolContext, args: ScaffoldGenreArg
     await builder.connect(look, master);
 
     const tempoNote = tempo
-      ? `a ${bpm} BPM beat clock at "${tempo}"`
+      ? `a ${writtenBpm} BPM beat clock at "${tempo}"`
       : "no beat clock (drone/untimed)";
     return finalize(ctx, {
       summary: `Scaffolded a ${genre} show at ${builder.containerPath}: ${preset.flavor}. It has a "master" output Null (where your mix lands), ${tempoNote}, and a genre look already wired into master. Next: add your own scenes, create_layer_mixer into ${master}, store looks with manage_cue, and create_control_surface to play it.`,

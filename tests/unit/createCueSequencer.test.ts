@@ -134,10 +134,14 @@ describe("buildCueSequencerScript", () => {
     expect(script).toContain('appendInt("Barsperstep")');
   });
 
-  it("stores the ordered step list and resets the runtime index/block state", () => {
+  it("stores the ordered step list and resets the runtime index/target state", () => {
     expect(script).toContain('_seq.store("tdmcp_seq_steps", _p["steps"])');
     expect(script).toContain('_seq.store("tdmcp_seq_index", 0)');
-    expect(script).toContain('_seq.store("tdmcp_seq_block", -1)');
+    // The boundary is an accumulated absolute beat target seeded by the engine on its first
+    // beat (None here) — replacing the old single-step-length block counter so variable step
+    // lengths fire at the right cumulative beats.
+    expect(script).toContain('_seq.store("tdmcp_seq_target", None)');
+    expect(script).not.toContain("tdmcp_seq_block");
   });
 
   it("wires the target's cue_morph hook only when a morph time is set", () => {
@@ -165,9 +169,13 @@ describe("createCueSequencerImpl — engine substitution", () => {
     // The target path is baked in, and it recalls from manage_cue's storage.
     expect(engineText).toContain("/project1/viz");
     expect(engineText).toContain("tdmcp_cues");
-    // The step-boundary detector advances an index in the engine COMP's storage.
+    // The step-boundary detector advances an index in the engine COMP's storage, gated by an
+    // accumulated absolute beat target (each advance adds the NEXT step's OWN length) so
+    // variable step lengths fire at the right cumulative beats — not floor(count / step_len).
     expect(engineText).toContain("tdmcp_seq_index");
-    expect(engineText).toContain("step_len");
+    expect(engineText).toContain("tdmcp_seq_target");
+    expect(engineText).toContain("_len_beats");
+    expect(engineText).not.toContain("step_len");
     // It honours a live Step change (cue-jump): reads seq.par.Step and syncs the internal
     // index from it before advancing, so a performer/dashboard move isn't overwritten.
     expect(engineText).toContain("getattr(seq.par, 'Step', None)");

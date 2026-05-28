@@ -137,6 +137,11 @@ describe("create_cubemap_dome", () => {
 
     // A preview image is captured.
     expect(result.content.some((c) => c.type === "image")).toBe(true);
+
+    // Fisheye uses fov, so the summary prose states it.
+    const text = result.content.find((c) => c.type === "text");
+    const summaryLine = text?.type === "text" ? text.text.split("\n")[0] : "";
+    expect(summaryLine).toContain("(fov 180°)");
   });
 
   it("samples the cube map by direction for an equirectangular sweep (no disc clip)", async () => {
@@ -156,6 +161,13 @@ describe("create_cubemap_dome", () => {
     // Equirectangular sweeps longitude/latitude — no fisheye disc clip.
     expect(shaderScript).not.toContain("r > 1.0");
     expect(shaderScript).toContain("lon");
+
+    // fov is ignored for equirectangular, so the summary prose must NOT state "(fov …°)".
+    // (The structured JSON block still carries the fov key; only the prose suffix is conditional.)
+    const text = result.content.find((c) => c.type === "text");
+    const summaryLine = text?.type === "text" ? text.text.split("\n")[0] : "";
+    expect(summaryLine).not.toContain("fov");
+    expect(summaryLine).toContain("equirectangular master");
   });
 
   it("honours the resolution enum on the GLSL dome master", async () => {

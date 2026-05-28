@@ -106,6 +106,7 @@ void main(){
 export async function createPointCloudImpl(ctx: ToolContext, args: CreatePointCloudArgs) {
   return runBuild(async () => {
     const builder = await createSystemContainer(ctx, args.parent_path, "point_cloud");
+    const container = builder.containerPath;
     const source = (await buildSource(builder, args)) ?? (await builder.add("noiseTOP", "src"));
 
     // A monochrome version of the source is the depth map: one luminance value per pixel, sampled
@@ -169,11 +170,14 @@ export async function createPointCloudImpl(ctx: ToolContext, args: CreatePointCl
     const mat = await builder.add("constantMAT", "mat");
     await builder.setParams(geo, { material: mat });
 
-    // Whole-cloud spin around Y: an expression on the Geometry COMP's ry (auto-switches the param
-    // to EXPRESSION mode) rotates the entire cloud over time.
-    if (args.rotate > 0) {
-      await builder.python(`op(${q(geo)}).par.ry.expr = ${q(`absTime.seconds * ${args.rotate}`)}`);
-    }
+    // Whole-cloud spin around Y, MODULATED by the Spin control. ry is an expression reading the
+    // container's Spin custom par as degrees/sec (absTime.seconds × Spin) so turning the knob
+    // changes the spin rate live — rather than binding Spin directly onto ry, which would replace
+    // this time expression with a static value and freeze the cloud. The `hasattr` fallback keeps
+    // it cooking before exposeControls appends Spin (and when controls are off). Always emitted so
+    // the exposed Spin knob actually drives motion.
+    const spinExpr = `absTime.seconds * (op(${q(container)}).par.Spin.eval() if hasattr(op(${q(container)}).par, 'Spin') else ${args.rotate})`;
+    await builder.python(`op(${q(geo)}).par.ry.expr = ${q(spinExpr)}`);
 
     const camDist = 3;
     const cam = await builder.add("cameraCOMP", "cam", { tz: camDist });
@@ -221,9 +225,16 @@ export async function createPointCloudImpl(ctx: ToolContext, args: CreatePointCl
             default: args.point_size,
             bind_to: [`${dot}.radx`, `${dot}.rady`, `${dot}.radz`],
           },
-          // Whole-cloud spin around Y. Bound as a plain value; set rotate>0 for an animated spin
-          // (which installs a time expression on the same param).
-          { name: "Spin", type: "float", min: 0, max: 360, default: 0, bind_to: [`${geo}.ry`] },
+          {
+            // Spin (deg/sec) is read by geo.ry's absTime expression above, so it MODULATES the
+            // spin rate. No bind_to: a direct bind would overwrite ry's time expression with a
+            // constant and stop the rotation.
+            name: "Spin",
+            type: "float",
+            min: 0,
+            max: 720,
+            default: args.rotate,
+          },
         ]
       : [];
 

@@ -157,8 +157,15 @@ describe("create_point_cloud", () => {
     expect(bodies.some((b) => b.name === "out1" && b.type === "nullTOP")).toBe(true);
     expect(result.content.some((c) => c.type === "image")).toBe(true);
 
-    const controls = panelControls(scripts).map((c) => c.name);
-    expect(controls).toEqual(["DepthScale", "PointSize", "Spin"]);
+    const controls = panelControls(scripts);
+    expect(controls.map((c) => c.name)).toEqual(["DepthScale", "PointSize", "Spin"]);
+    // DepthScale / PointSize drive node params; Spin is NOT bound — the geo.ry absTime
+    // expression reads it instead, so it modulates the spin rate rather than overwriting
+    // the time expression with a constant.
+    expect(controls.find((c) => c.name === "DepthScale")?.bind_to?.[0]).toMatch(/\/pos_pack/);
+    const spin = controls.find((c) => c.name === "Spin");
+    expect(spin?.type).toBe("float");
+    expect(spin?.bind_to).toBeUndefined();
   });
 
   it("scales the cloud with `resolution` (count = resolution²)", async () => {
@@ -200,7 +207,7 @@ describe("create_point_cloud", () => {
     expect(scripts.some((s) => s.includes('vec0name = "uDepth"'))).toBe(true);
   });
 
-  it("installs a Y-spin time expression on the geometry when rotate > 0", async () => {
+  it("modulates the Y spin via an absTime expression that reads the Spin control", async () => {
     const scripts = captureExecScripts();
     await createPointCloudImpl(makeCtx(), {
       source: "synthetic",
@@ -211,11 +218,31 @@ describe("create_point_cloud", () => {
       expose_controls: false,
       parent_path: "/project1",
     });
-    expect(
-      scripts.some(
-        (s) => s.includes(".par.ry.expr") && s.includes("absTime.seconds") && s.includes("30"),
-      ),
-    ).toBe(true);
+    // ry is an absTime expression that READS the container's Spin custom par (so the knob
+    // modulates the spin rate live) with the rotate value as the fallback — not a constant,
+    // and not a direct bind that would clobber the time expression.
+    const spinScript = scripts.find((s) => s.includes(".par.ry.expr"));
+    expect(spinScript).toBeDefined();
+    expect(spinScript).toContain("absTime.seconds");
+    expect(spinScript).toContain("par.Spin");
+    expect(spinScript).toContain("hasattr");
+    expect(spinScript).toContain("else 30");
+  });
+
+  it("emits the Spin expression even when rotate is 0 so the exposed knob still drives motion", async () => {
+    const scripts = captureExecScripts();
+    await createPointCloudImpl(makeCtx(), {
+      source: "synthetic",
+      resolution: 32,
+      depth_scale: 1,
+      point_size: 0.02,
+      rotate: 0,
+      expose_controls: false,
+      parent_path: "/project1",
+    });
+    const spinScript = scripts.find((s) => s.includes(".par.ry.expr"));
+    expect(spinScript).toContain("par.Spin");
+    expect(spinScript).toContain("else 0");
   });
 
   it("stays self-contained on the synthetic path (no camera/movie source)", async () => {

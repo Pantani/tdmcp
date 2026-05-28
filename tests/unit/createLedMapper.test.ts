@@ -131,6 +131,16 @@ describe("buildLedMapperScript", () => {
     expect(script).toContain("inputConnectors[0].connect(_pad)");
     expect(script).toContain("inputConnectors[1].connect(_pixels)");
   });
+
+  it("emits a fail-forward 512-channel DMX-universe overflow check", () => {
+    const script = buildLedMapperScript({ channels: 600, start_channel: 1 });
+    // The check sums pixel channels + start offset and warns past one 512-channel universe,
+    // suggesting multiple universes — it appends to warnings (never throws).
+    expect(script).toContain("> 512");
+    expect(script).toContain("DMX overflow");
+    expect(script).toContain('report["warnings"].append');
+    expect(script).toContain("universes");
+  });
 });
 
 describe("createLedMapperImpl", () => {
@@ -215,6 +225,18 @@ describe("createLedMapperImpl", () => {
   it("does not mention a channel offset when start_channel is 1 (no pad)", async () => {
     const result = await createLedMapperImpl(fakeCtx(okExec()), { ...baseArgs, start_channel: 1 });
     expect(textOf(result)).not.toContain("starting at DMX channel");
+  });
+
+  it("surfaces a DMX-universe overflow warning in the summary's warning count", async () => {
+    const exec = okExec({
+      channels: 600,
+      warnings: [
+        "DMX overflow: 600 channels (600 pixel + 0 start-offset) exceed one 512-channel universe. Split across ~2 universes (raise start_universe per block) so no pixels are dropped.",
+      ],
+    });
+    const result = await createLedMapperImpl(fakeCtx(exec), { ...baseArgs, width: 200, height: 1 });
+    expect(result.isError).toBeFalsy();
+    expect(textOf(result)).toContain("1 warning(s)");
   });
 
   it("returns an isError result when the bridge reports a fatal failure", async () => {

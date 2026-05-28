@@ -204,7 +204,9 @@ export async function createCubemapDomeImpl(ctx: ToolContext, args: CreateCubema
     return finalize(ctx, {
       summary: `Built a true cube-map dome: ${
         args.source ? `remapped ${args.source}` : "rendered a test scene"
-      } through a cube map into a ${args.projection} master at ${res}×${res} (fov ${args.fov}°) → ${out}.`,
+      } through a cube map into a ${args.projection} master at ${res}×${res}${
+        args.projection === "fisheye" ? ` (fov ${args.fov}°)` : ""
+      } → ${out}.`,
       builder,
       outputPath: out,
       controls,

@@ -122,6 +122,24 @@ describe("scaffoldGenreImpl", () => {
     expect(scripts.some((s) => s.includes("op('/').time.tempo = 174"))).toBe(true);
   });
 
+  it("clamps an out-of-range bpm AND reports the clamped value in the note", async () => {
+    captureCreateBodies();
+    const scripts = captureExecScripts();
+    const result = await scaffoldGenreImpl(makeCtx(), {
+      genre: "techno",
+      bpm: 300,
+      parent_path: "/project1",
+    });
+    // The global tempo is clamped to the sane 40..220 ceiling.
+    expect(scripts.some((s) => s.includes("op('/').time.tempo = 220"))).toBe(true);
+    expect(scripts.some((s) => s.includes("time.tempo = 300"))).toBe(false);
+    // The user-facing note shows the CLAMPED value (220), matching what was actually written —
+    // not the raw, unclamped 300.
+    const text = textOf(result);
+    expect(text).toContain("220 BPM beat clock");
+    expect(text).not.toContain("300 BPM");
+  });
+
   it("ambient: builds a soft blurred-feedback look with slow decay at 70 BPM", async () => {
     const bodies = captureCreateBodies();
     const scripts = captureExecScripts();

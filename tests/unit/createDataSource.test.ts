@@ -94,6 +94,42 @@ describe("buildDataSourceScript", () => {
     expect(script).toContain("_null_chop.chans()");
   });
 
+  it("applies poll_seconds: a refresh Execute DAT re-pulses the Web Client request on an interval", () => {
+    const script = buildDataSourceScript({ kind: "json", expose_controls: true });
+    // The Web Client DAT has no interval param, so an Execute DAT re-pulses request on a cadence.
+    expect(script).toContain('_c.create(executeDAT, "refresh")');
+    expect(script).toContain("onFrameStart");
+    expect(script).toContain("src.par.request.pulse()");
+    // When controls are exposed the interval comes from the live Poll knob (so it retunes live).
+    expect(script).toContain("op(%r).par.Poll");
+  });
+
+  it("creates REAL Active + Poll controls on json/csv (not just a label list)", () => {
+    const script = buildDataSourceScript({ kind: "json", expose_controls: true });
+    // A custom page with appended Active toggle + Poll float, bound to the source.
+    expect(script).toContain('_pg.appendToggle("Active")');
+    expect(script).toContain('_pg.appendFloat("Poll")');
+    // Active drives the Web Client DAT's enable via an expression (not a clobbering value bind).
+    expect(script).toContain('_src.par.active.expr = "op(%r).par.Active"');
+    expect(script).toContain("EXPRESSION");
+  });
+
+  it("still installs the refresh poller, choosing interval by expose_controls", () => {
+    // The refresh Execute DAT is always created; its interval comes from the live Poll knob when
+    // controls are exposed, else the literal poll_seconds (the ternary keys off expose_controls).
+    const script = buildDataSourceScript({ kind: "json", expose_controls: false });
+    expect(script).toContain('_c.create(executeDAT, "refresh")');
+    expect(script).toContain('("op(%r).par.Poll" % _c.path) if _p.get("expose_controls") else');
+  });
+
+  it("creates a real Active control for osc/serial sources too", () => {
+    const osc = buildDataSourceScript({ kind: "osc", expose_controls: true });
+    expect(osc).toContain("_expose_active(_src");
+    // The shared helper appends a real Active toggle and expression-binds the source enable.
+    expect(osc).toContain('_pg.appendToggle("Active")');
+    expect(osc).toContain('"op(%r).par.Active"');
+  });
+
   it("includes the osc and serial source operators", () => {
     const script = buildDataSourceScript({ kind: "osc" });
     expect(script).toContain("_c.create(oscinDAT");

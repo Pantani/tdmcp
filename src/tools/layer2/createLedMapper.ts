@@ -169,6 +169,18 @@ try:
         # zero "pad" channels via a Constant CHOP merged BEFORE the pixels. Merge keeps input
         # order (pad channels first), shifting every pixel slot down by the offset. With
         # start_channel == 1 there is no offset and the pixels feed the DMX out directly.
+        # Fail-forward DMX-universe bounds check: a DMX universe holds 512 channels. If the pixel
+        # channels (width×height×3) plus the start-channel offset overflow 512, the extra pixels
+        # would silently fall off the end of this single universe — warn and suggest splitting
+        # across multiple universes (don't throw; a partial map still cooks for inspection).
+        _used = int(_p["channels"]) + (int(_p["start_channel"]) - 1)
+        if _used > 512:
+            _need = (_used + 511) // 512
+            report["warnings"].append(
+                "DMX overflow: %d channels (%d pixel + %d start-offset) exceed one 512-channel universe. "
+                "Split across ~%d universes (raise start_universe per block) so no pixels are dropped."
+                % (_used, int(_p["channels"]), int(_p["start_channel"]) - 1, _need)
+            )
         _dmx_input = _pixels
         _pad_n = int(_p["start_channel"]) - 1
         if _pad_n > 0:
