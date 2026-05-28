@@ -4,16 +4,31 @@ All notable changes to **tdmcp** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.0] - 2026-05-28
+## [0.5.0] - Unreleased
 
-Use tdmcp from *inside* TouchDesigner: dotsimulate's LOPs "MCP Client" can now spawn this
-server over stdio and drive the network, closing the loop **TD → tdmcp → bridge → TD**.
-Ships a hardened launcher and an optional curated tool profile so an autonomous in-TD agent
-gets a safe, non-destructive surface. Additive and backward-compatible — existing clients
-are unaffected (the default profile is `full`).
+Reusable components (build → parameterize → script → package), a way to drive tdmcp from
+*inside* TouchDesigner via dotsimulate's LOPs "MCP Client", and an optional curated tool
+profile for autonomous in-TD agents. Additive and backward-compatible — existing clients are
+unaffected (the default profile is `full`).
 
 ### Added
 
+- **`add_custom_parameters`** — append a custom-parameter page (Float/Int sliders,
+  Toggle, Menu, Str, Pulse, RGB, XYZ) to any COMP so a generated network becomes a
+  tunable, reusable component (CLI `add-params`). Sets defaults, slider ranges
+  (`normMin`/`normMax`) and optional hard clamps; a parameter that already exists is
+  **skipped with a warning**, never overwritten, so re-running to add one more knob is
+  safe.
+- **`scaffold_extension`** — give a COMP a Python **extension class**: create a Text
+  DAT holding the class (with optional method stubs), wire it into an extension slot,
+  optionally **promote** it (so members are callable directly on the COMP, e.g.
+  `op('…').Reset()`), and reinitialize (CLI `scaffold-ext`). The extension parameter
+  names live on the COMP's built-in Extensions page and vary by TouchDesigner build,
+  so the tool **probes** for them (and notes any difference as a warning) instead of
+  hardcoding. Together with `add_custom_parameters` (knobs) and `manage_component`
+  (save as `.tox`), this completes the build → parameterize → script → package story
+  for reusable components — see the new [Reusable components](https://pantani.github.io/tdmcp/guide/components)
+  guide.
 - **`TDMCP_TOOL_PROFILE`** (`full` | `safe`, default `full`) — `safe` additionally hides the
   six destructive / raw-code tools (`execute_python_script`, `exec_node_method`,
   `delete_td_node`, `create_panic`, `manage_checkpoint`, `manage_component`), a strict
@@ -27,6 +42,8 @@ are unaffected (the default profile is `full`).
   the TD → tdmcp → bridge → TD architecture, and an explicit callout that this does **not**
   replace the local `tdmcp chat` copilot. Plus reference docs for the new env var and the
   in-TD topology.
+
+[0.5.0]: https://github.com/Pantani/tdmcp/compare/v0.4.0...HEAD
 
 ## [0.4.0] - 2026-05-27
 
