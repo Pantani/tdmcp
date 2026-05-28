@@ -7,19 +7,18 @@ import { parsePythonReport } from "../pythonReport.js";
 import { errorResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { createPoseSkeletonImpl } from "./createPoseSkeleton.js";
-import { createPoseTrackingImpl } from "./createPoseTracking.js";
 
 const q = (value: string): string => JSON.stringify(value);
 
-/** Default location `tdmcp install torinmb/mediapipe-touchdesigner` extracts the plugin to. */
-function defaultPoseToxPath(): string {
+/** Default location `tdmcp install torinmb/mediapipe-touchdesigner` extracts the engine .tox to. */
+function defaultEngineToxPath(): string {
   return join(
     homedir(),
     "tdmcp-packages",
     "mediapipe-touchdesigner",
     "release",
     "toxes",
-    "pose_tracking.tox",
+    "MediaPipe.tox",
   );
 }
 
@@ -28,9 +27,9 @@ export const setupBodyTrackingSchema = z.object({
     .string()
     .optional()
     .describe(
-      "Path to the MediaPipe plugin's pose_tracking.tox. Defaults to where `tdmcp install torinmb/mediapipe-touchdesigner` puts it (~/tdmcp-packages/mediapipe-touchdesigner/release/toxes/pose_tracking.tox).",
+      "Path to the MediaPipe ENGINE .tox (MediaPipe.tox — the full tracker that captures the webcam, not the bare pose_tracking.tox processor). Defaults to where `tdmcp install torinmb/mediapipe-touchdesigner` puts it (~/tdmcp-packages/mediapipe-touchdesigner/release/toxes/MediaPipe.tox).",
     ),
-  parent_path: z.string().default("/project1").describe("COMP to load the plugin into."),
+  parent_path: z.string().default("/project1").describe("COMP to load the engine into."),
   build_skeleton: z
     .boolean()
     .default(true)
@@ -39,23 +38,66 @@ export const setupBodyTrackingSchema = z.object({
 type SetupBodyTrackingArgs = z.infer<typeof setupBodyTrackingSchema>;
 
 interface LoadReport {
-  error?: "tox_missing" | "parent_missing" | "pose_chop_not_found";
-  loaded?: string;
-  pose_chop?: string;
-  chans?: string[];
-  samples?: number;
+  error?: "tox_missing" | "parent_missing";
+  engine?: string;
+  pose_dat?: string | null;
+  adapter_pose?: string;
 }
 
 /**
- * Python (runs in TD): load pose_tracking.tox into the parent, then locate the landmarks CHOP by a
- * version-robust heuristic (≥33 samples + ≥2 channels, preferring position-like channel names and
- * pose/landmark/select op names). Validated live against a synthetic tox.
+ * The Python onCook for the adapter Script CHOP. It reads the engine's pose JSON DAT
+ * (`{"poseResults":{"landmarks":[[{x,y,z,visibility}, … 33]]}}`) and emits the canonical pose
+ * CHOP every cook: 33 samples × tx/ty/tz/confidence in TD world coordinates. MediaPipe x/y are
+ * normalised 0..1 with y pointing DOWN, so we centre on the hip midpoint and flip y to point UP;
+ * z is negated to match TD's forward axis. The `POSE_DAT = …` assignment is prepended at build
+ * time (in the bridge script) once the live pose DAT path is known.
  */
-function loadAndFindScript(toxPath: string, parentPath: string): string {
+function adapterCallbackBody(): string {
+  return [
+    "import json",
+    "def onCook(scriptOp):",
+    "    scriptOp.clear(); scriptOp.numSamples = 33",
+    "    tx = scriptOp.appendChan('tx'); ty = scriptOp.appendChan('ty'); tz = scriptOp.appendChan('tz'); cf = scriptOp.appendChan('confidence')",
+    "    lms = None",
+    "    d = op(POSE_DAT)",
+    "    if d is not None and d.text.strip():",
+    "        try:",
+    "            poses = json.loads(d.text).get('poseResults', {}).get('landmarks', [])",
+    "            if poses: lms = poses[0]",
+    "        except Exception:",
+    "            lms = None",
+    "    cx = cy = 0.0",
+    "    if lms and len(lms) > 24:",
+    "        cx = (float(lms[23].get('x',0.5)) + float(lms[24].get('x',0.5))) * 0.5",
+    "        cy = (float(lms[23].get('y',0.5)) + float(lms[24].get('y',0.5))) * 0.5",
+    "    for i in range(33):",
+    "        if lms and i < len(lms):",
+    "            p = lms[i]",
+    "            tx[i] = float(p.get('x',0.5)) - cx",
+    "            ty[i] = cy - float(p.get('y',0.5))",
+    "            tz[i] = -float(p.get('z',0.0))",
+    "            cf[i] = float(p.get('visibility',1.0))",
+    "        else:",
+    "            tx[i]=0.0; ty[i]=0.0; tz[i]=0.0; cf[i]=0.0",
+    "    return",
+  ].join("\n");
+}
+
+/**
+ * Python (runs in TD): load the MediaPipe ENGINE tox into the parent, start the timeline (the
+ * engine captures the webcam through an embedded Web Render TOP that only runs while playing),
+ * locate the engine's `pose` JSON DAT, then build an adapter (a baseCOMP `mp_adapter` holding a
+ * Script CHOP `pose` + its callback DAT) that converts the JSON to the canonical 33-sample pose
+ * CHOP. The adapter callback is generated here so it can embed the live pose DAT's path.
+ */
+function loadAndBuildScript(toxPath: string, parentPath: string): string {
   return [
     "import json, os",
     `TOX = ${q(toxPath)}`,
     `PARENT = ${q(parentPath)}`,
+    // The adapter callback body (sans the POSE_DAT assignment, which is prepended once the live
+    // pose-DAT path is known). q() keeps the callback's own braces/quotes intact.
+    `CB_BODY = ${q(adapterCallbackBody())}`,
     "report = {}",
     "root = op(PARENT)",
     "if not os.path.exists(TOX):",
@@ -63,29 +105,34 @@ function loadAndFindScript(toxPath: string, parentPath: string): string {
     "elif root is None:",
     "    report['error'] = 'parent_missing'",
     "else:",
-    "    loaded = root.op('mediapipe_pose') or root.loadTox(TOX)",
+    "    eng = root.op('MediaPipe') or root.loadTox(TOX)",
     "    try:",
-    "        loaded.name = 'mediapipe_pose'",
+    "        eng.name = 'MediaPipe'",
     "    except Exception:",
     "        pass",
-    "    best = None",
-    "    for c in loaded.findChildren(type=CHOP):",
-    "        if c.numSamples >= 33 and c.numChans >= 2:",
-    "            chans = [ch.name for ch in c.chans()]",
-    "            score = 2 if any(n in ('tx', 'x', 'tx0') for n in chans) else 0",
-    "            nm = c.name.lower()",
-    "            if any(k in nm for k in ('pose', 'landmark', 'select', 'null', 'world', 'out')):",
-    "                score += 1",
-    "            if best is None or score > best[0]:",
-    "                best = (score, c, chans)",
-    "    if best is None:",
-    "        report['error'] = 'pose_chop_not_found'",
-    "        report['loaded'] = loaded.path",
-    "    else:",
-    "        report['loaded'] = loaded.path",
-    "        report['pose_chop'] = best[1].path",
-    "        report['chans'] = best[2]",
-    "        report['samples'] = best[1].numSamples",
+    // The engine grabs the webcam via an embedded browser that only runs while the timeline plays.
+    "    root.time.play = True",
+    // Find the pose JSON DAT: directly on the engine, else search a few levels down.
+    "    pose_dat = eng.op('pose')",
+    "    if pose_dat is None:",
+    "        for d in eng.findChildren(type=DAT, maxDepth=3):",
+    "            if d.name == 'pose':",
+    "                pose_dat = d",
+    "                break",
+    "    pose_dat_path = pose_dat.path if pose_dat is not None else ''",
+    // Build the adapter: a baseCOMP holding a Script CHOP + its callback DAT.
+    "    adapter = root.op('mp_adapter') or root.create(baseCOMP, 'mp_adapter')",
+    "    try:",
+    "        adapter.name = 'mp_adapter'",
+    "    except Exception:",
+    "        pass",
+    "    sc = adapter.op('pose') or adapter.create(scriptCHOP, 'pose')",
+    "    cb = adapter.op('pose_cb') or adapter.create(textDAT, 'pose_cb')",
+    "    cb.text = 'POSE_DAT = ' + repr(pose_dat_path) + '\\n' + CB_BODY",
+    "    sc.par.callbacks = cb.name",
+    "    report['engine'] = eng.path",
+    "    report['pose_dat'] = pose_dat_path or None",
+    "    report['adapter_pose'] = adapter.op('pose').path",
     "print(json.dumps(report))",
   ].join("\n");
 }
@@ -107,13 +154,13 @@ function extractJson(result: CallToolResult): Record<string, unknown> {
 }
 
 export async function setupBodyTrackingImpl(ctx: ToolContext, args: SetupBodyTrackingArgs) {
-  const toxPath = args.tox_path ?? defaultPoseToxPath();
+  const toxPath = args.tox_path ?? defaultEngineToxPath();
 
-  // 1. Load the plugin and find its pose-landmarks CHOP.
+  // 1. Load the engine, start the timeline, find its pose JSON DAT, and build the adapter CHOP.
   let report: LoadReport;
   try {
     const exec = await ctx.client.executePythonScript(
-      loadAndFindScript(toxPath, args.parent_path),
+      loadAndBuildScript(toxPath, args.parent_path),
       true,
     );
     report = parsePythonReport<LoadReport>(exec.stdout);
@@ -123,43 +170,30 @@ export async function setupBodyTrackingImpl(ctx: ToolContext, args: SetupBodyTra
 
   if (report.error === "tox_missing") {
     return errorResult(
-      `MediaPipe plugin not found at ${toxPath}. Install it first by running 'tdmcp install torinmb/mediapipe-touchdesigner' in a terminal (the free, MIT-licensed GPU MediaPipe tracker), or pass tox_path to an existing pose_tracking.tox.`,
+      `MediaPipe engine not found at ${toxPath}. Install it first by running 'tdmcp install torinmb/mediapipe-touchdesigner' in a terminal (the free, MIT-licensed GPU MediaPipe tracker), or pass tox_path to an existing MediaPipe.tox.`,
     );
   }
   if (report.error === "parent_missing") {
     return errorResult(`Parent COMP not found: ${args.parent_path}.`);
   }
-  if (report.error === "pose_chop_not_found" || !report.pose_chop) {
+  if (!report.pose_dat) {
     return errorResult(
-      `Loaded the plugin (${report.loaded ?? "?"}) but couldn't find a pose-landmarks CHOP (≥33 samples) inside it. Open the 'mediapipe_pose' component, select your webcam and enable Pose, then re-run — or pass an existing pose CHOP to create_pose_tracking with source='mediapipe'.`,
+      `Loaded the engine (${report.engine ?? "?"}) but couldn't find its pose JSON DAT. Open the MediaPipe component, pick your webcam and enable Pose, then re-run.`,
     );
   }
 
-  // 2. Build pose tracking wired to the plugin's landmarks CHOP.
-  const tracking = await createPoseTrackingImpl(ctx, {
-    source: "mediapipe",
-    mediapipe_chop_path: report.pose_chop,
-    osc_port: 7000,
-    smoothing: 0.08,
-    mirror: false,
-    expose_controls: true,
-    parent_path: args.parent_path,
-  });
-  if (tracking.isError) return tracking;
-  const trackingData = extractJson(tracking);
-  const posePath =
-    (trackingData.pose_path as string | undefined) ?? (trackingData.output as string | undefined);
+  const adapterPose = report.adapter_pose ?? `${args.parent_path}/mp_adapter/pose`;
 
-  // 3. Optionally build a skeleton visual on top of the tracked pose.
+  // 2. Optionally build a skeleton visual on top of the adapter's pose CHOP.
   let skeleton: CallToolResult | undefined;
-  if (args.build_skeleton && posePath) {
+  if (args.build_skeleton) {
     skeleton = await createPoseSkeletonImpl(ctx, {
       source: "existing_chop",
-      existing_chop_path: posePath,
+      existing_chop_path: adapterPose,
       osc_port: 7000,
       line_color: "#33ffe6",
       line_width: 3,
-      camera_distance: 4.6,
+      camera_distance: 5.5,
       expose_controls: true,
       parent_path: args.parent_path,
     });
@@ -167,11 +201,9 @@ export async function setupBodyTrackingImpl(ctx: ToolContext, args: SetupBodyTra
   const skeletonData = skeleton ? extractJson(skeleton) : {};
 
   const summary = {
-    plugin_loaded: report.loaded,
-    pose_landmarks_chop: report.pose_chop,
-    landmark_channels: report.chans,
-    pose_tracking: trackingData.container ?? trackingData.pose_path,
-    pose_chop: posePath,
+    engine_loaded: report.engine,
+    pose_json_dat: report.pose_dat,
+    adapter_pose_chop: adapterPose,
     skeleton: args.build_skeleton
       ? (skeletonData.output ?? "(skeleton build failed)")
       : "(skipped)",
@@ -181,10 +213,9 @@ export async function setupBodyTrackingImpl(ctx: ToolContext, args: SetupBodyTra
     {
       type: "text",
       text:
-        `Body tracking is set up. Loaded the MediaPipe plugin → ${report.loaded}, wired pose tracking to its landmarks CHOP (${report.pose_chop}), ` +
+        `Body tracking is set up. Loaded the MediaPipe engine → ${report.engine}, built an adapter (${adapterPose}) that converts its pose JSON DAT (${report.pose_dat}) into a 33-landmark pose CHOP (tx/ty/tz/confidence), ` +
         `${args.build_skeleton ? "and built a live skeleton" : "ready for visuals"}.\n\n` +
-        "Next, in TouchDesigner: open the 'mediapipe_pose' component, pick your webcam from the dropdown, and enable Pose.\n" +
-        "⚠ macOS will ask for camera permission the first time — click Allow (until you do, TouchDesigner can look frozen).\n\n" +
+        "⚠ Keep the TD timeline PLAYING (the plugin captures via an embedded browser that only runs while playing); grant camera permission if macOS asks.\n\n" +
         `\`\`\`json\n${JSON.stringify(summary, null, 2)}\n\`\`\``,
     },
   ];
@@ -200,7 +231,7 @@ export const registerSetupBodyTracking: ToolRegistrar = (server, ctx) => {
     {
       title: "Set up body tracking",
       description:
-        "One-shot body tracking from a webcam: loads the free torinmb/mediapipe-touchdesigner plugin (install it first with `tdmcp install torinmb/mediapipe-touchdesigner`) into your project, finds its pose-landmarks CHOP, and wires up create_pose_tracking (+ a live skeleton) so you only need to pick your webcam and enable Pose. If the plugin isn't installed yet, it tells you how. Loading the plugin will prompt for camera permission on macOS (click Allow).",
+        "One-shot body tracking from a webcam: loads the free torinmb/mediapipe-touchdesigner ENGINE (install it first with `tdmcp install torinmb/mediapipe-touchdesigner`) into your project, starts the timeline (the engine captures the webcam through an embedded browser that only runs while playing), reads its pose JSON DAT through an adapter that emits a 33-landmark pose CHOP, and builds a live skeleton so you only need to pick your webcam and enable Pose. If the engine isn't installed yet, it tells you how. Loading the engine will prompt for camera permission on macOS (click Allow).",
       inputSchema: setupBodyTrackingSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

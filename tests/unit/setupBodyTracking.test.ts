@@ -41,7 +41,12 @@ function textOf(result: CallToolResult): string {
     .join("\n");
 }
 
-/** Mocks the bridge: the loadTox/find script returns `report`; all other exec calls return empty. */
+/** Detects the engine load/adapter script (which carries the loadTox call + tox path). */
+function isLoadScript(script: string): boolean {
+  return script.includes("loadTox") || script.includes("MediaPipe.tox");
+}
+
+/** Mocks the bridge: the load/adapter script returns `report`; all other exec calls return empty. */
 function mockBridge(report: Record<string, unknown>): {
   bodies: CreatedNodeBody[];
   scripts: string[];
@@ -61,7 +66,7 @@ function mockBridge(report: Record<string, unknown>): {
     http.post(`${TD_BASE}/api/exec`, async ({ request }) => {
       const script = ((await request.json()) as { script: string }).script;
       scripts.push(script);
-      const stdout = script.includes("loadTox") ? JSON.stringify(report) : "";
+      const stdout = isLoadScript(script) ? JSON.stringify(report) : "";
       return HttpResponse.json({ ok: true, data: { result: null, stdout } });
     }),
   );
@@ -73,52 +78,53 @@ function run(args: Partial<z.input<typeof setupBodyTrackingSchema>> = {}) {
 }
 
 describe("setup_body_tracking", () => {
-  it("loads the plugin, finds the pose CHOP, and wires pose tracking to it", async () => {
+  it("loads the engine, builds the JSON→CHOP adapter, and a skeleton", async () => {
     const { bodies, scripts } = mockBridge({
-      loaded: "/project1/mediapipe_pose",
-      pose_chop: "/project1/mediapipe_pose/select1",
-      chans: ["tx", "ty", "tz"],
-      samples: 33,
+      engine: "/project1/MediaPipe",
+      pose_dat: "/project1/MediaPipe/pose",
+      adapter_pose: "/project1/mp_adapter/pose",
     });
-    const result = await run({ tox_path: "/x/pose_tracking.tox", build_skeleton: false });
+    const result = await run({ tox_path: "/x/MediaPipe.tox", build_skeleton: true });
     expect(result.isError).toBeFalsy();
 
-    // It ran a loadTox script pointed at the given tox path.
-    expect(scripts.some((s) => s.includes("loadTox") && s.includes("/x/pose_tracking.tox"))).toBe(
-      true,
-    );
-    // pose tracking was built with source='mediapipe' pointing at the discovered CHOP.
-    const posein = bodies.find((b) => b.name === "posein");
-    expect(posein?.type).toBe("selectCHOP");
-    expect(posein?.parameters).toMatchObject({ chops: "/project1/mediapipe_pose/select1" });
-    expect(textOf(result)).toContain("/project1/mediapipe_pose");
-  });
+    // The load script targeted the engine tox and started the timeline.
+    const loadScript = scripts.find(isLoadScript);
+    expect(loadScript).toBeDefined();
+    expect(loadScript).toContain("MediaPipe.tox");
+    expect(loadScript).toContain("time.play");
+    // The adapter callback (built inside the same script) parses the engine's JSON pose.
+    expect(loadScript).toContain("poseResults");
 
-  it("also builds a skeleton (and returns its preview) when build_skeleton is true", async () => {
-    const { bodies, scripts } = mockBridge({
-      loaded: "/project1/mediapipe_pose",
-      pose_chop: "/project1/mediapipe_pose/select1",
-      chans: ["tx", "ty", "tz"],
-      samples: 33,
-    });
-    const result = await run({ tox_path: "/x/pose_tracking.tox", build_skeleton: true });
-    expect(result.isError).toBeFalsy();
+    // A skeleton SOP was built from the adapter's pose CHOP.
     expect(bodies.some((b) => b.name === "skeleton" && b.type === "scriptSOP")).toBe(true);
+    // The skeleton's preview image is surfaced.
     expect(result.content.some((c) => c.type === "image")).toBe(true);
-    // The skeleton references the tracking output via a Select CHOP (existing_chop source).
-    expect(scripts.length).toBeGreaterThan(0);
+    // The summary references the loaded engine.
+    expect(textOf(result)).toContain("/project1/MediaPipe");
   });
 
-  it("guides the user to install the plugin when the tox is missing", async () => {
+  it("skips the skeleton when build_skeleton is false", async () => {
+    const { bodies } = mockBridge({
+      engine: "/project1/MediaPipe",
+      pose_dat: "/project1/MediaPipe/pose",
+      adapter_pose: "/project1/mp_adapter/pose",
+    });
+    const result = await run({ tox_path: "/x/MediaPipe.tox", build_skeleton: false });
+    expect(result.isError).toBeFalsy();
+    expect(bodies.some((b) => b.type === "scriptSOP")).toBe(false);
+    expect(result.content.some((c) => c.type === "image")).toBe(false);
+  });
+
+  it("guides the user to install the engine when the tox is missing", async () => {
     mockBridge({ error: "tox_missing" });
-    const result = await run({ tox_path: "/nope/pose_tracking.tox" });
+    const result = await run({ tox_path: "/nope/MediaPipe.tox" });
     expect(result.isError).toBe(true);
     expect(textOf(result)).toContain("tdmcp install torinmb/mediapipe-touchdesigner");
   });
 
-  it("reports when no pose CHOP is found inside the loaded plugin", async () => {
-    mockBridge({ error: "pose_chop_not_found", loaded: "/project1/mediapipe_pose" });
-    const result = await run({ tox_path: "/x/pose_tracking.tox" });
+  it("tells the user to enable Pose when no pose JSON DAT is found", async () => {
+    mockBridge({ engine: "/project1/MediaPipe", pose_dat: null });
+    const result = await run({ tox_path: "/x/MediaPipe.tox" });
     expect(result.isError).toBe(true);
     expect(textOf(result)).toContain("enable Pose");
   });

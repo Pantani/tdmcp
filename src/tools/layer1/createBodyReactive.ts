@@ -152,12 +152,11 @@ export async function createBodyReactiveImpl(ctx: ToolContext, args: CreateBodyR
       await builder.connect(decay, over, 0, 1);
       output = await builder.add("nullTOP", "out1");
       await builder.connect(over, output);
-      // Close the feedback loop. The Feedback TOP grabs the previous frame of the final output;
-      // it needs the loop wired into its input (the Target TOP param alone errors with "not
-      // enough sources"). Wire via Python so no layout back-edge/cycle is recorded.
-      await builder.python(
-        `_fb = op(${q(fb)})\n_fb.inputConnectors[0].connect(op(${q(output)}))\n_fb.par.top = ${q(output)}`,
-      );
+      // Close the feedback loop: wire the final output into the Feedback TOP's input — it emits
+      // the previous frame, which legally breaks the cook cycle. (Also setting its Target TOP par
+      // double-paths it and trips a "cook dependency loop" warning — verified live, so we don't.)
+      // Wire via Python so no layout back-edge is recorded.
+      await builder.python(`op(${q(fb)}).inputConnectors[0].connect(op(${q(output)}))`);
       if (args.expose_controls)
         controls.push({
           name: "TrailDecay",
