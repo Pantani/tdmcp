@@ -113,7 +113,10 @@ describe("buildExtensionScript", () => {
       slot: 1,
       methods: [],
     });
-    expect(script).toContain('_dat.type != "text"');
+    // Identifies a Text DAT by OPType ("textDAT") with a .type ("text") fallback,
+    // matching the bridge's op_type() convention; anything else is fatal.
+    expect(script).toContain('"textDAT"');
+    expect(script).toContain('_dat.type == "text"');
     expect(script).toContain("not a Text DAT");
   });
 });

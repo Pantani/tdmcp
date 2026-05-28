@@ -156,10 +156,13 @@ try:
     else:
         _cname = _p["class_name"]; _slot = _p["slot"]; _idx = _slot - 1
         _dat = _comp.op(_cname)
-        if _dat is not None and _dat.type != "text":
-            # Only a Text DAT can hold the class; never overwrite a Table/Execute DAT
-            # (or any other op) that happens to share the name.
-            report["fatal"] = "An operator named '%s' already exists in %s and is a %s, not a Text DAT, so it can't hold the extension class." % (_cname, _p["comp"], _dat.type)
+        # A Text DAT is the only valid extension source. Identify it the way the bridge
+        # does — OPType (the full name "textDAT") with a .type ("text") fallback — so
+        # re-running on an existing Text DAT updates it and only a real foreign op is
+        # rejected; never overwrite a Table/Execute DAT (or any other op) of that name.
+        _is_text_dat = _dat is not None and (getattr(_dat, "OPType", None) == "textDAT" or _dat.type == "text")
+        if _dat is not None and not _is_text_dat:
+            report["fatal"] = "An operator named '%s' already exists in %s and is a %s, not a Text DAT, so it can't hold the extension class." % (_cname, _p["comp"], getattr(_dat, "OPType", None) or _dat.type)
         else:
             if _dat is None:
                 _dat = _comp.create(textDAT, _cname)
