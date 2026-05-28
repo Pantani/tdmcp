@@ -10,7 +10,13 @@ import {
   type LlmConfig,
 } from "../../src/llm/client.js";
 import { buildHandoffPrompt } from "../../src/llm/handoff.js";
-import { dispatchTool, LLM_TOOLS, resolveTools, toOpenAITools } from "../../src/llm/tools.js";
+import {
+  CREATIVE_TOOLS,
+  dispatchTool,
+  LLM_TOOLS,
+  resolveTools,
+  toOpenAITools,
+} from "../../src/llm/tools.js";
 import { RecipeLibrary } from "../../src/recipes/loader.js";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
 import type { ToolContext } from "../../src/tools/types.js";
@@ -70,6 +76,29 @@ describe("local copilot — curated tool registry", () => {
     expect(safe.every((t) => !t.mutates)).toBe(true);
     expect(safe.map((t) => t.name)).not.toContain("create_td_node");
     expect(resolveTools("standard")).toHaveLength(LLM_TOOLS.length);
+  });
+
+  it("exposes the new read-only KB tools to every tier", () => {
+    const names = LLM_TOOLS.map((t) => t.name);
+    expect(names).toContain("search_operators");
+    expect(names).toContain("list_recipes");
+    const byName = Object.fromEntries(LLM_TOOLS.map((t) => [t.name, t.mutates]));
+    expect(byName.search_operators).toBe(false);
+    expect(byName.list_recipes).toBe(false);
+  });
+
+  it("the creative tier adds the curated Layer-1 generators on top of standard", () => {
+    const creative = resolveTools("creative");
+    expect(creative.length).toBe(LLM_TOOLS.length + CREATIVE_TOOLS.length);
+    const names = creative.map((t) => t.name);
+    expect(names).toContain("create_generative_art");
+    expect(names).toContain("create_feedback_network");
+    expect(names).toContain("create_audio_reactive");
+    // Generators are mutating, and standard must NOT expose them.
+    expect(CREATIVE_TOOLS.every((t) => t.mutates)).toBe(true);
+    expect(resolveTools("standard").map((t) => t.name)).not.toContain("create_generative_art");
+    // safe stays read-only even though creative exists.
+    expect(resolveTools("safe").some((t) => t.mutates)).toBe(false);
   });
 
   it("converts tools to OpenAI function specs with object parameters", () => {
