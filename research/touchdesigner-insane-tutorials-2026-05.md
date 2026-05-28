@@ -1,9 +1,9 @@
 # TouchDesigner Insane Tutorials Research for TDMCP
 
-> Research date: 2026-05-28 · TDMCP version at time of research: **0.3.1** (Phases 0–12 shipped, **102 tools**).
+> Research date: 2026-05-28 · TDMCP version at research time: **0.3.1** (102 tools). **Update: v0.4.0 shipped 2026-05-27** — a large parallel build landed body/pose tracking, 3D/PBR/point-cloud, raymarch & particle-flock generators, tempo detection and more, so several backlog items below are now done (see the correction note and the roadmap section).
 > All links below were surfaced by live web search/fetch during the research pass; none are invented. Where a source's authorship or star count was uncertain, it is hedged.
 >
-> **Correction (2026-05-28, during implementation planning):** the "component packaging" gap (BL-01 `export_component`/`import_component`) is **already shipped** — `.tox` `save`/`loadTox`/live-linked load exist as the **`manage_component`** tool. The v0.4.0 plan was retargeted to the genuine gaps that *complete* it: `add_custom_parameters` + `scaffold_extension` (reusable, parameterized components). The only remaining tox gap is a portable/externalized bundle (`saveExternalTox` → `make_portable_tox`, v0.5.0). Treat the BL-01 framing below as superseded; the rest of the analysis stands.
+> **Correction (2026-05-28):** two things changed after the research pass. **(1)** The "component packaging" gap (BL-01 `export_component`/`import_component`) was **already shipped** as the **`manage_component`** tool (`.tox` `save` + `loadTox`/live-linked load; it does *not* expose `saveExternalTox` — that is the future `make_portable_tox` gap). **(2)** **v0.4.0 then shipped (2026-05-27)** via a large parallel build, so several items framed below as "planned/next" are now **done**: body/pose tracking (`setup_body_tracking`, `create_pose_tracking`, `create_pose_skeleton`, `create_body_reactive`), the SDF raymarch scene (`createRaymarchScene`), boids (`createParticleFlock`), point clouds (`createPointCloud`), PBR/cubemap-dome, tempo detection, and more. The genuinely-remaining work — now targeted at **v0.5.0** — is `add_custom_parameters` + `scaffold_extension`, project analysis/auto-docs, Link/MIDI, and the Embody-mined agent-DX primitives. The roadmap section and BL-02 below reflect this; treat any remaining "v0.4.0/planned" phrasing elsewhere as that shifted target.
 
 ---
 
@@ -30,7 +30,7 @@ The single biggest 2025–2026 community shift is **POPs** (the new GPU particle
 1. *Most valuable material* → the Top-15 selection below (MediaPipe plugin, Embody/tox API, StreamDiffusionTD, RayTK, GLSL particle capstone, POPs, Ableton Link, ComfyUI bridges…).
 2. *New techniques* → tox save/loadTox/saveByteArray, extension scaffolding via `mod().Ext(me)`, TDJSON serialization, MediaPipe→WebSocket→CHOP, GPU Navier-Stokes, node-based SDF raymarching, compute-shader boids, real-time img2img.
 3. *Real features* → the Implementation Backlog (BL-01…BL-22).
-4. *Next version (v0.4.0)* → custom-param + extension scaffolding (the reusable-component complement to the already-shipped `manage_component`), project analysis + auto-README, MediaPipe body-tracking, Ableton Link, screenshot-to-debug.
+4. *Next version (v0.5.0; v0.4.0 already shipped body tracking + the 3D/sim/particle generators)* → custom-param + extension scaffolding (the reusable-component complement to the already-shipped `manage_component`), project analysis + auto-README, Ableton Link/MIDI, screenshot-to-debug, and the Embody-mined agent-DX primitives.
 5. *Examples/demos* → see Demo Ideas (body-tracking reactive, live AI-VJ, externalize-to-git, package-a-component, screenshot-to-debug).
 6. *Becoming truly useful for artists with AI* → see Final Recommendations.
 
@@ -207,7 +207,7 @@ Selected for *potential to become a real feature × AI/automation fit × artist 
 | # | Source | What it teaches | TDMCP implementation | New tools | Difficulty | Impact |
 |---|---|---|---|---|---|---|
 | 1 | [COMP Class API](https://docs.derivative.ca/COMP_Class) + [Embody](https://github.com/dylanroscover/Embody) | tox `save`/`loadTox`/`saveByteArray`/`saveExternalTox` | `.tox` save/load **already ships as `manage_component`**; open gap = portable bundle + network↔JSON | `make_portable_tox`, `serialize_network` (v0.5.0) | M | ★★★☆☆ |
-| 2 | [torinmb/mediapipe-touchdesigner](https://github.com/torinmb/mediapipe-touchdesigner) | GPU MediaPipe → WebSocket → CHOP, webcam-only | Body-tracking template + skeleton-driven visuals | `create_body_tracking` | M | ★★★★★ |
+| 2 | [torinmb/mediapipe-touchdesigner](https://github.com/torinmb/mediapipe-touchdesigner) | GPU MediaPipe → WebSocket → CHOP, webcam-only | ✅ **Shipped in 0.4.0**: `setup_body_tracking`/`create_pose_tracking`/`create_pose_skeleton`/`create_body_reactive`; remaining = hand/face modes + recipes | (shipped) | — | ★★★★★ |
 | 3 | [Extensions](https://docs.derivative.ca/Extensions) + [Custom Parameters](https://docs.derivative.ca/Custom_Parameters) + [TDJSON](https://docs.derivative.ca/TDJSON) | `mod().Ext(me)`, `appendCustomPage`, JSON par specs | Scaffold reusable parameterized components | `scaffold_extension`, `add_custom_parameters` | M | ★★★★☆ |
 | 4 | [Working with OPs in Python](https://docs.derivative.ca/Working_with_OPs_in_Python) | `findChildren`, connectors, `op()` deps | Unused-op/dead-node + dependency analysis | `analyze_project` | M | ★★★★☆ |
 | 5 | [Optimize guide](https://docs.derivative.ca/Optimize) + [IIHQ optimizing](https://interactiveimmersive.io/blog/deployment/optimizing-in-touchdesigner/) | Perf Monitor/Probe/Hog heuristics | Auto-README + performance advisor | `generate_readme`, extend `optimize_performance` | M | ★★★★☆ |
@@ -226,7 +226,7 @@ Selected for *potential to become a real feature × AI/automation fit × artist 
 
 ## Recommended MCP Tools
 
-New tools (none duplicate the existing 102). Grouped; `*` = highest priority for v0.4.0.
+New tools (none duplicate the existing 102). Grouped; `*` = highest priority for v0.5.0.
 
 **Component & serialization**
 - ✅ **Already ships as `manage_component`** — `.tox` `save` + `loadTox` (+ live-linked `externaltox`) load. Do **not** rebuild as `export_component`/`import_component`. (`saveExternalTox`-based externalization is *not* in `manage_component` yet — it's the future `make_portable_tox` gap.)
@@ -243,7 +243,7 @@ New tools (none duplicate the existing 102). Grouped; `*` = highest priority for
 - `analyze_screenshot`* — vision model reads `get_preview`/`render_output` image to explain/diagnose.
 
 **Sensor & reactivity**
-- `create_body_tracking`* — MediaPipe plugin + parse landmarks into named joint channels (webcam).
+- ✅ **Shipped in 0.4.0** as `setup_body_tracking` / `create_pose_tracking` / `create_pose_skeleton` / `create_body_reactive` — MediaPipe (webcam) → named joint channels. Remaining: hand/face modes + more recipes.
 - `create_pose_reactive` — map joints to instancing/kinetic geometry (builds on `create_motion_reactive`).
 - `create_depth_camera_input` — Kinect Azure / RealSense color+depth point cloud (+ optional skeleton).
 - `create_ndi_input` — NDI In TOP source wrapper (pairs with existing NDI out).
@@ -302,7 +302,7 @@ This keeps TDMCP **complementary** to LOPs/StreamDiffusion rather than competing
 ## Live Performance / VJ Opportunities
 
 Aligned with the owner's beat/audio/camera-reactive performance use case:
-- **Body-tracking as a performance input** (`create_body_tracking` + `create_pose_reactive`) — the dancer/VJ becomes the controller, webcam-only.
+- **Body-tracking as a performance input** (shipped in 0.4.0: `setup_body_tracking` / `create_pose_*` / `create_body_reactive`; next: a `create_pose_reactive` skeleton→visuals layer) — the dancer/VJ becomes the controller, webcam-only.
 - **Ableton Link / MIDI-clock sync** — lock the whole show to the DJ's clock without tap-tempo guesswork.
 - **DMX fixture patcher** — drive moving heads / LED from cues, extending the existing `artnet_out`.
 - **Live AI-VJ** — audio-reactive feed → StreamDiffusion → feedback, with beat-synced prompt swaps (pairs with `create_autopilot`/`manage_cue`).
@@ -325,28 +325,31 @@ No competitor emphasizes teaching — this is a clean differentiator and fits th
 
 ## Roadmap Proposal
 
-> **Version note:** the prompt template assumed v0.3.0 was next, but **0.3.1 already shipped (Phases 0–12, 102 tools)**. The roadmap below is therefore shifted: the "next release" is **v0.4.0**. Mapping = template-v0.3.0 → **v0.4.0**, template-v0.4.0 → **v0.5.0**, template-v0.5.0+ → **v0.6.0+**. This also threads around the existing ROADMAP's v1.0.0 consolidation milestone — these features are post-1.0 candidates, but the high-value, low-risk ones (component scaffolding, analysis, MediaPipe, Link) are strong enough to pull forward.
+> **Version note (updated 2026-05-28):** **v0.4.0 shipped 2026-05-27.** The original draft targeted "v0.4.0 next"; since that release landed via a large parallel build, the plan below is **shifted up one** — the next release is **v0.5.0**. These remain feature waves around the existing ROADMAP's v1.0.0 consolidation milestone; the high-value, low-risk ones (component scaffolding, analysis, Link/MIDI) are worth pulling forward.
 
-### v0.4.0 — "Components & Reactivity" (next, realistic, differentiated)
-The theme is **turn AI builds into reusable, documented, body-reactive components** — all validatable on the dev Mac (webcam-only), no exotic hardware.
-- ✅ `.tox` save/load (BL-01) **already ships as `manage_component`** — not a v0.4.0 item; the remaining portable-bundle gap (`make_portable_tox`) is v0.5.0.
+### v0.4.0 — ✅ shipped (2026-05-27)
+Landed via a parallel build: body/pose tracking (`setup_body_tracking`, `create_pose_tracking`, `create_pose_skeleton`, `create_body_reactive` + recipes `mediapipe_body_dots`/`pose_skeleton_mediapipe`), `createRaymarchScene` (SDF), `createParticleFlock` (boids), `createPointCloud`, `createPbrScene`, `createCubemapDome`, `detectTempo`, `createLedMapper`, `createPalette`, `createCueSequencer`, `createDataSource`, `createStageDashboard`, `createGenerativeAudio`, `scaffoldGenre`, prompts `textToRecipe`/`styleReference`. So **BL-02 (body tracking)** and several "advanced-generator" items below are **done**.
+
+### v0.5.0 — "Components & agent-DX" (next, realistic, differentiated)
+The theme is **turn AI builds into reusable, documented components + make the agent loop cheaper** — all validatable on the dev Mac, no exotic hardware.
+- ✅ `.tox` save/load (BL-01) already ships as `manage_component`; the portable-bundle gap (`make_portable_tox`) is later.
 - **P0** `scaffold_extension` + `add_custom_parameters` (BL-03) — reusability; the component work that complements `manage_component`.
-- **P0** `create_body_tracking` (BL-02) — flagship reactive feature, webcam-only.
 - **P0** extend `sync_external_clock` with Ableton Link + MIDI clock (BL-08) — small, high VJ impact.
 - **P1** `analyze_project` + `generate_readme` (BL-04) — the education differentiator.
 - **P1** `analyze_screenshot` (BL-09) — novel vision-based debugging.
+- **P1** Embody-mined agent-DX primitives: `edit_dat_content`, `set_dat_content` (anti-wipe), `batch_operations`, `snapshot_td_graph` compact mode.
+- **P2** `manage_annotation`, `write_agent_guide`, `set_perform_mode`.
 - Docs: new guide pages, recipe entries; CHANGELOG; live validation per the create→verify→preview loop.
 
-### v0.5.0 — "Bridges & Automation" (stronger automation)
+### v0.6.0 — "Bridges & Automation"
 - **P1** `control_diffusion` (BL-06) — drive an existing StreamDiffusion/TouchDiffusion `.tox`.
 - **P1** `connect_comfyui` (BL-07) — drive ComfyUI API workflows.
-- **P1** `serialize_network` / `rebuild_network` (BL-10) — git-diffable JSON round-trip.
+- **P1** `serialize_network` / `rebuild_network` (BL-10) + `make_portable_tox` — git-diffable JSON round-trip + portable bundle.
 - **P1** `create_depth_camera_input` (BL-12) + `create_pose_reactive` — depth/skeleton (hardware-gated, probe-first).
-- **P2** `make_portable_tox`, `create_ndi_input`, `create_mqtt_bridge`, `create_websocket_api`, `create_dmx_fixtures`.
-- **P2** advanced generators wave: `create_gpu_fluid`, `create_pop_field`, `create_optical_flow_particles`, `create_vertex_displacement_mat`, `create_strange_attractor`, `create_sdf_text`.
+- **P2** `create_ndi_input`, `create_mqtt_bridge`, `create_websocket_api`, `create_dmx_fixtures`.
+- **P2** remaining advanced generators: `create_gpu_fluid`, `create_pop_field`, `create_optical_flow_particles`, `create_vertex_displacement_mat`, `create_strange_attractor`, `create_sdf_text` (note `create_sdf_scene`/boids/point-cloud already shipped in 0.4.0).
 
-### v0.6.0+ — "Intelligence & Marketplace" (ambitious)
-- **P2** `create_sdf_scene` (node-based raymarch builder) — XL, the most ambitious generator.
+### v0.7.0+ — "Intelligence & Marketplace" (ambitious)
 - **P2** `voice_control` pipeline (Whisper → tool calls) + `text_to_image`.
 - **P2** **Recipe/template marketplace** — `save_template` + a shared, versioned index installable into TD Palette / vault (distribution stays local-first, consistent with TDMCP's model).
 - **P2** **Tutorial-to-template** — parse a tutorial into a validated recipe JSON.
@@ -356,22 +359,15 @@ The theme is **turn AI builds into reusable, documented, body-reactive component
 
 ## Implementation Backlog
 
-Format per item: **motivation · user story · technical design · MCP API · tools/work · usage · risks · tests · docs · priority · effort.** Detailed for the v0.4.0 set; condensed thereafter.
+Format per item: **motivation · user story · technical design · MCP API · tools/work · usage · risks · tests · docs · priority · effort.** Detailed for the v0.5.0 set; condensed thereafter.
 
 ### BL-01 — `.tox` export/import ✅ ALREADY SHIPPED as `manage_component`
 - **Status:** **superseded — do not build.** `.tox` `save` (via `COMP.save`) + `loadTox` (+ live-linked `externaltox` load) already exist in `src/tools/layer2/manageComponent.ts` (the `manage_component` tool, actions `save`/`load`, with `create_folders`/`linked`/`name`). This was a false gap — the generic tool name hid it from the gap scan. Note: `manage_component` does **not** expose `COMP.saveExternalTox` — that externalization is the future `make_portable_tox` gap (BL-11).
-- **Remaining gap → v0.5.0:** a portable/externalized **bundle** that collects external asset deps into one self-contained `.tox` (see `make_portable_tox`, BL-11). The reusable-component work that *complements* `manage_component` — exposing knobs + a Python class so a saved `.tox` is actually reusable — is **BL-03** (`add_custom_parameters` + `scaffold_extension`), the real v0.4.0 P0.
+- **Remaining gap → v0.5.0:** a portable/externalized **bundle** that collects external asset deps into one self-contained `.tox` (see `make_portable_tox`, BL-11). The reusable-component work that *complements* `manage_component` — exposing knobs + a Python class so a saved `.tox` is actually reusable — is **BL-03** (`add_custom_parameters` + `scaffold_extension`), the real v0.5.0 P0.
 
-### BL-02 — `create_body_tracking` (P0, M)
-- **Motivation:** flagship reactive input; webcam-only (no sensor), MIT plugin exists, directly serves the VJ/camera-reactive use case.
-- **User story:** *"'Make the particles follow my hands' → a webcam MediaPipe chain feeding named joint channels into a visual."*
-- **Technical design:** L1 tool. Instantiate/launch the `mediapipe-touchdesigner` WebSocket component (or a packaged equivalent), then build a WebSocket DAT → JSON parse → CHOP chain that exposes named landmark channels (e.g. `hand_l_index_x/y/z`, `pose_*`) on a Null CHOP, ready for `bind_to_channel`. Modes: `hand` / `face` / `pose` / `holistic`. Graceful offline fallback to a synthetic/oscillator source (mirroring `extract_audio_features`). Provide a pure-OSC variant (Pose2Art) as a sensor-free alternative path.
-- **MCP API:** `create_body_tracking({ mode, source?:'webcam'|'osc'|'synthetic', persons?, parent? }) → { nullChop, channels[] }`.
-- **Tools/work:** `src/tools/layer1/createBodyTracking.ts`; bundle/install path for the plugin (document the third-party dependency + license); CLI `body-tracking`.
-- **Usage:** `tdmcp body-tracking --mode hand` then `tdmcp bind --param .../tx --channel hand_r_index_x`.
-- **Risks:** third-party plugin dependency (MIT) — vendoring vs. install step; **macOS camera-permission hang** (known gotcha) — default to synthetic source for zero-permission tests; WebSocket port conflicts.
-- **Tests:** msw unit test for the chain build (no live webcam); live validate with webcam (hand mode) + bind to a visible parameter.
-- **Docs:** `docs/guide/body-tracking.md` (artist-friendly, the easy-install audience); troubleshooting (permissions, plugin install).
+### BL-02 — body/pose tracking ✅ ALREADY SHIPPED in 0.4.0
+- **Status:** **shipped — do not rebuild.** Body/pose tracking ships as `setup_body_tracking`, `create_pose_tracking`, `create_pose_skeleton`, `create_body_reactive` (in `src/tools/layer1/`, with `poseSource.ts`), plus recipes `mediapipe_body_dots` and `pose_skeleton_mediapipe` and a `docs/guide/body-tracking.md` guide (EN+PT). There is **no** `createBodyTracking.ts` — the original single-tool proposal here was superseded by that multi-tool design. The MediaPipe→WebSocket→CHOP approach (webcam-only, MIT plugin) is what landed.
+- **Remaining (incremental, v0.5.0):** dedicated **hand/face** modes if not already covered; more reactive **recipes/templates** (skeleton → instancing / particle forces); a pure-**OSC** path (Pose2Art) as a sensor-free alternative; and **live webcam validation** (create→verify→preview + post-cook error check — mind the macOS camera-permission hang, so default to a synthetic source for zero-permission tests).
 
 ### BL-03 — `scaffold_extension` + `add_custom_parameters` (P0, M)
 - **Motivation:** without parameters + extensions, AI builds aren't real reusable components. This is the half that's *missing* — it complements the already-shipped `manage_component` (BL-01) so a saved `.tox` is actually reusable.
@@ -392,20 +388,20 @@ Format per item: **motivation · user story · technical design · MCP API · to
 - **Tests:** msw unit on a synthetic topology fixture; live validate on a real built project.
 - **Docs:** `docs/guide/analyze-and-document.md`.
 
-### BL-06 — `control_diffusion` (P1, M, v0.5.0)
+### BL-06 — `control_diffusion` (P1, M, v0.6.0)
 - **Motivation:** real-time AI is the hottest frontier; orchestrate, don't reimplement.
 - **Design:** detect a StreamDiffusionTD/TouchDiffusion `.tox` in the project (by family/par signature), expose `prompt`/`strength`/`seed`/`controlnet` as settable params, and wire a source TOP in + diffused TOP out into a reactive chain. Hard-gate behind presence of the component; never bundle diffusion weights.
 - **API:** `control_diffusion({ componentPath?, source, prompt?, strength?, seed? }) → { outTop, params }`.
 - **Risks:** GPU/CUDA/model availability — **cannot fully live-validate on dev Mac**; probe-first; document hardware reqs. Don't reimplement diffusion.
 - **Tests:** msw unit (param wiring); live validation deferred to a CUDA box (documented).
 
-### BL-07 — `connect_comfyui` (P1, L, v0.5.0)
+### BL-07 — `connect_comfyui` (P1, L, v0.6.0)
 - **Design:** drive a saved ComfyUI **API-format** workflow over WebSocket (TDComfyUI/ComfyUI-TD pattern); map natural-language params to graph inputs; return image to a TOP via callback. **API:** `connect_comfyui({ workflowPath, inputs, host? }) → { outTop }`. **Risks:** external ComfyUI server; workflow-format drift.
 
-### BL-08 — Ableton Link + MIDI clock (P0, S, v0.4.0)
+### BL-08 — Ableton Link + MIDI clock (P0, S, v0.5.0)
 - **Design:** extend `sync_external_clock` with `mode: 'tap' | 'ableton_link' | 'midi_clock'`. Link uses the Ableton Link CHOP (tempo/beat/phase) to drive `op('/').time.tempo`; MIDI clock derives BPM from clock pulses. **Risks:** Link/MIDI hardware needed to fully validate — probe-first, keep tap as default. Low effort, high VJ payoff.
 
-### BL-09 — `analyze_screenshot` (P1, M, v0.4.0)
+### BL-09 — `analyze_screenshot` (P1, M, v0.5.0)
 - **Design:** an MCP **prompt + tool** that pulls `get_preview`/`render_output`, attaches topology + `get_td_node_errors`, and asks the model to explain or diagnose ("why is it black?"). Novel for TD; reuses existing capabilities. **Risks:** multimodal availability; keep it a prompt where possible.
 
 ### Condensed (v0.5.0 / v0.6.0+)
@@ -457,11 +453,11 @@ Every feature follows TDMCP's existing two-tier pattern:
 - **POPs are an experimental, version-gated operator family** (~2025.30060) — probe for availability; provide a non-POP fallback.
 - **Marketplace distribution** is local-first (no hosted publish flow) — likely realized via the TD Palette + the Obsidian vault + an awesome-list/npm index rather than a hosted service. *Open question:* index format + trust/curation model.
 - **Open question:** should TDMCP eventually ship its *own* in-TD MCP/agent operator (like LOPs/satoruhiga) or stay purely agent-side? This is an architecture fork worth an explicit decision.
-- **Scope vs. v1.0.0 consolidation:** the existing ROADMAP reserves v1.0.0 for stabilization. Pulling BL-02/03/04/08 into v0.4.0 is justified by differentiation (BL-01 already shipped as `manage_component`), but the advanced-generator wave (BL-18–20) should not delay 1.0.
+- **Scope vs. v1.0.0 consolidation:** the existing ROADMAP reserves v1.0.0 for stabilization. Pulling BL-03/04/08 into v0.5.0 is justified by differentiation (BL-01 and BL-02 already shipped — `manage_component` and body tracking), but the advanced-generator wave should not delay 1.0.
 
 ## Final Recommendations
 
-1. **Ship the component story first (v0.4.0).** `.tox` save/load already ships as `manage_component`; the missing, differentiated piece is the reusability scaffolding — `add_custom_parameters` + `scaffold_extension` — that makes a saved `.tox` actually reusable (knobs + a Python class). Fully documented, low-risk, and it unlocks a recipe/marketplace future.
+1. **Ship the component story first (v0.5.0).** `.tox` save/load already ships as `manage_component`; the missing, differentiated piece is the reusability scaffolding — `add_custom_parameters` + `scaffold_extension` — that makes a saved `.tox` actually reusable (knobs + a Python class). Fully documented, low-risk, and it unlocks a recipe/marketplace future.
 2. **Make body tracking the flagship reactive feature.** Webcam-only, MIT plugin, serves the owner's VJ use case, and demos beautifully — the best "wow" with the least hardware.
 3. **Own documentation & analysis.** `analyze_project`, `generate_readme`, `analyze_screenshot` are a clean, uncontested differentiator that leverages the 629-op KB and the teaching audience.
 4. **Treat AI generation as orchestration, not reimplementation.** Drive StreamDiffusion/ComfyUI/A1111 `.tox`es; don't compete with diffusion engines or LOPs head-on.
@@ -513,7 +509,7 @@ LOPs are **operators living inside TD** (a full agent runtime as COMPs). TDMCP i
 | **StreamDiffusionTD**: SDXL-Turbo img2img, Multi-ControlNet, StreamV2V, IP-Adapter FaceID, TensorRT, **Daydream cloud GPU** | No (known `control_diffusion` gap) | `drive_streamdiffusion` — set prompt/strength/seed, toggle ControlNets, switch local-TRT vs. Daydream; `realtime_diffusion_loop` recipe | L |
 | CLI installer verify/diagnose/repair | Partial (`tdmcp doctor` ◐) | sharpen existing `doctor` | S |
 
-### Net-new shortlist folded into v0.4.0 (Phase 13)
+### Net-new shortlist folded into v0.5.0 (Phase 13)
 `edit_dat_content` (S), `set_dat_content`+guardrail (S), `batch_operations` (M), compact-graph read (M), `manage_annotation`+enclosed ops (S), `write_agent_guide` (S), `set_perform_mode` (M). Pushed to v0.5.0+: `manage_td_process`/multi-instance (L), `run_bridge_tests` (M), `get_bridge_logs` (S), `register_custom_tool` (L), `caption_top` (M), and the sharpened `drive_streamdiffusion`/`connect_comfyui` orchestration framing.
 
 **Takeaway:** Embody's externalization thesis overlaps TDMCP's known serialize gap, but its **token-efficiency** (`read_tdn`) and **agent-DX primitives** (surgical DAT edit, batch, lifecycle, multi-instance, perform-mode) are concrete, low-effort wins genuinely absent today. dotsimulate is largely orthogonal; its real pull is sharpening the diffusion/ComfyUI gaps into explicit "drive the installed `.tox`" tools.
