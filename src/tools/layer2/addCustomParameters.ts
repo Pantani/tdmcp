@@ -15,7 +15,7 @@ const paramSchema = z.object({
     .union([z.number(), z.string(), z.boolean(), z.array(z.number())])
     .optional()
     .describe(
-      "Initial value: a number; a string for Str/Menu (or '#rrggbb' for RGB); a bool for Toggle; or an [r,g,b] / [x,y,z] number array for RGB / XYZ.",
+      "Initial value: a number; a string for Str/Menu (or '#rrggbb' for RGB); a bool for Toggle; or a number array for RGB/XYZ or a multi-component (size > 1) Float/Int.",
     ),
   min: z.coerce.number().optional().describe("Slider lower bound (Float/Int) — sets normMin."),
   max: z.coerce.number().optional().describe("Slider upper bound (Float/Int) — sets normMax."),
@@ -147,8 +147,14 @@ try:
                             if _clamp:
                                 _pp.max = _mx; _pp.clampMax = True
                     if _dflt is not None:
-                        for _pp in _pg:
-                            _pp.default = _dflt; _pp.val = _dflt
+                        if isinstance(_dflt, (list, tuple)):
+                            # A multi-component (size > 1) Float/Int takes a per-component
+                            # array; never assign the whole list to a single numeric par.
+                            for _i in range(min(len(_pg), len(_dflt))):
+                                _pg[_i].default = _dflt[_i]; _pg[_i].val = _dflt[_i]
+                        else:
+                            for _pp in _pg:
+                                _pp.default = _dflt; _pp.val = _dflt
                 elif _typ == "Toggle":
                     if _dflt is not None:
                         _p0.default = bool(_dflt); _p0.val = bool(_dflt)

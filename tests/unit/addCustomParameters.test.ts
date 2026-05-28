@@ -100,6 +100,14 @@ describe("buildParamsScript", () => {
     expect(script).toContain("normMin");
     expect(script).toContain("clampMin");
   });
+
+  it("guards list defaults component-wise for the numeric AND XYZ branches", () => {
+    const script = buildParamsScript({ comp: "/c", page: "Custom", params: [] });
+    // A Float/Int (size > 1) or XYZ default may be an array; neither branch may assign
+    // the whole list to one component, so both guard with isinstance(list/tuple).
+    const guards = script.match(/isinstance\(_dflt, \(list, tuple\)\)/g) ?? [];
+    expect(guards.length).toBeGreaterThanOrEqual(2);
+  });
 });
 
 describe("addCustomParametersImpl", () => {

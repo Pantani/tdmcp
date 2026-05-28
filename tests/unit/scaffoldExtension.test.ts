@@ -152,6 +152,17 @@ describe("scaffoldExtensionImpl", () => {
     expect(payload.code).toContain("def return_(self):");
   });
 
+  it("drops dunder method names so they can't override the generated constructor", async () => {
+    const exec = okReport();
+    await scaffoldExtensionImpl(fakeCtx(exec), args({ methods: ["__init__", "doThing"] }));
+    const payload = decodePayload(scriptArg(exec));
+    expect(payload.methods).toEqual(["doThing"]);
+    // Exactly one __init__ (the generated constructor) — no `def __init__(self): pass` stub.
+    expect(payload.code).toContain("def __init__(self, ownerComp):");
+    expect(payload.code).not.toContain("def __init__(self):");
+    expect((payload.code.match(/def __init__/g) ?? []).length).toBe(1);
+  });
+
   it("summarizes the class, promotion and method count on success", async () => {
     const result = await scaffoldExtensionImpl(fakeCtx(okReport()), args());
     expect(result.isError).toBeFalsy();

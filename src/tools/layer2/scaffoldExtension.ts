@@ -93,10 +93,14 @@ function toClassName(raw: string): string {
   return s;
 }
 
-/** Sanitize to a valid Python method identifier (empty if nothing usable). */
+/** Sanitize to a valid Python method identifier (empty if unusable as a stub). */
 function toMethodName(raw: string): string {
   let s = raw.replace(/[^A-Za-z0-9_]/g, "");
   if (!s) return "";
+  // Dunder names (__init__, __call__, …) collide with the generated constructor and
+  // object protocol/lifecycle methods, so a bare `pass` stub would break the class —
+  // drop them rather than emit a second `def __init__`.
+  if (/^__.+__$/.test(s)) return "";
   if (/[0-9]/.test(s[0] ?? "")) s = `m${s}`;
   if (PY_KEYWORDS.has(s)) s = `${s}_`;
   return s;
