@@ -393,7 +393,7 @@ perform mode. Table is ordered by priority. (Body/3D/sim/particle tools already 
 `create_pose_skeleton`, `create_body_reactive` are registered in `src/tools/layer1/`, with recipes
 `mediapipe_body_dots` and `pose_skeleton_mediapipe`. Remaining Phase-13 work on this track is
 incremental: hand/face modes, more reactive templates, and live webcam validation
-(create→verify→preview + post-cook error check). See [[concurrent-agents-workflow]].
+(create→verify→preview + post-cook error check).
 
 **Areas:** new L2/L3 tools (`scaffoldExtension`, `addCustomParameters` — the reusable-component
 complement to the existing `manageComponent`; `analyzeProject`, `generateReadme`, `editDatContent`, `setDatContent`,
@@ -412,9 +412,8 @@ TD process lifecycle + multi-instance routing (`manage_td_process` / `switch_ins
 `run_bridge_tests`, `get_bridge_logs`, `register_custom_tool` (artist-defined tools, LOPs' Tool-DAT
 idea agent-side), `caption_top`, depth-camera input (Kinect Azure / RealSense, hardware-gated),
 `create_pose_reactive`, and the remaining advanced generators. Note 0.4.0 already shipped
-`create_sdf_scene` (as `createRaymarchScene`), `create_boids_flock` (as `createParticleFlock`) and
-point clouds (`createPointCloud`); still open: `create_gpu_fluid`, `create_optical_flow_particles`,
+`create_raymarch_scene` (SDF), `create_particle_flock` (boids) and `create_point_cloud`; still open: `create_gpu_fluid`, `create_optical_flow_particles`,
 `create_vertex_displacement_mat`, `create_strange_attractor`, `create_pop_field`, `create_sdf_text`.
 The recipe/template
-**marketplace** stays v0.6.0+ (local-first via TD Palette + Obsidian vault, per
-[[project-distribution-local-only]]).
+**marketplace** stays v0.6.0+ (local-first via TD Palette + Obsidian vault, per the project's
+local-first distribution model).
