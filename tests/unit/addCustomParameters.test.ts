@@ -113,6 +113,13 @@ describe("buildParamsScript", () => {
     const script = buildParamsScript({ comp: "/c", page: "Custom", params: [] });
     expect(script).toContain('("", "0", "false", "no", "off")');
   });
+
+  it("appends with replace=False so a missed collision can't overwrite an existing par", () => {
+    const script = buildParamsScript({ comp: "/c", page: "Custom", params: [] });
+    // One non-replacing append* call per widget kind (append* defaults to replace=True).
+    const nonReplacing = script.match(/append\w+\([^)]*replace=False\)/g) ?? [];
+    expect(nonReplacing.length).toBe(8);
+  });
 });
 
 describe("addCustomParametersImpl", () => {

@@ -114,22 +114,25 @@ try:
                     report["warnings"].append("Parameter '%s' already exists on %s — skipped." % (_name, _p["comp"]))
                     continue
                 _size = _spec.get("size") or 1
+                # replace=False (append* defaults to True) so a collision the name
+                # pre-check misses — e.g. a component-suffixed group — raises and is
+                # caught below as a warning, never silently overwriting an existing par.
                 if _typ == "Float":
-                    _pg = _page.appendFloat(_name, label=_label, size=_size)
+                    _pg = _page.appendFloat(_name, label=_label, size=_size, replace=False)
                 elif _typ == "Int":
-                    _pg = _page.appendInt(_name, label=_label, size=_size)
+                    _pg = _page.appendInt(_name, label=_label, size=_size, replace=False)
                 elif _typ == "Toggle":
-                    _pg = _page.appendToggle(_name, label=_label)
+                    _pg = _page.appendToggle(_name, label=_label, replace=False)
                 elif _typ == "Menu":
-                    _pg = _page.appendMenu(_name, label=_label)
+                    _pg = _page.appendMenu(_name, label=_label, replace=False)
                 elif _typ == "Str":
-                    _pg = _page.appendStr(_name, label=_label)
+                    _pg = _page.appendStr(_name, label=_label, replace=False)
                 elif _typ == "Pulse":
-                    _pg = _page.appendPulse(_name, label=_label)
+                    _pg = _page.appendPulse(_name, label=_label, replace=False)
                 elif _typ == "RGB":
-                    _pg = _page.appendRGB(_name, label=_label)
+                    _pg = _page.appendRGB(_name, label=_label, replace=False)
                 elif _typ == "XYZ":
-                    _pg = _page.appendXYZ(_name, label=_label)
+                    _pg = _page.appendXYZ(_name, label=_label, replace=False)
                 else:
                     report["warnings"].append("Unknown parameter type '%s' for '%s'." % (_typ, _spec["name"]))
                     continue
