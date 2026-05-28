@@ -198,6 +198,31 @@ describe("scaffoldExtensionImpl", () => {
     expect(textOf(result)).toMatch(/1 warning\(s\)/);
   });
 
+  it("warns when promote=true and a method starts with lowercase (TD won't promote it)", async () => {
+    const exec = okReport({ methods: ["Reset", "doThing"], promoted: true });
+    const result = await scaffoldExtensionImpl(
+      fakeCtx(exec),
+      args({ methods: ["Reset", "doThing"], promote: true }),
+    );
+    expect(result.isError).toBeFalsy();
+    const text = textOf(result);
+    // One TS-side warning for the lowercase method.
+    expect(text).toMatch(/1 warning\(s\)/);
+    expect(text).toContain("doThing");
+    expect(text).toContain("lowercase");
+  });
+
+  it("does not warn about lowercase methods when promote=false", async () => {
+    const exec = okReport({ methods: ["doThing"], promoted: false });
+    const result = await scaffoldExtensionImpl(
+      fakeCtx(exec),
+      args({ methods: ["doThing"], promote: false }),
+    );
+    expect(result.isError).toBeFalsy();
+    // The JSON payload always contains the key "warnings", so match the summary phrase.
+    expect(textOf(result)).not.toMatch(/\d+ warning\(s\)/);
+  });
+
   it("returns an error result (not a throw) when report.fatal is set", async () => {
     const exec = vi.fn(async () => ({
       stdout: JSON.stringify({

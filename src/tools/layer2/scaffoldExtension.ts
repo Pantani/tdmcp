@@ -224,6 +224,17 @@ export async function scaffoldExtensionImpl(ctx: ToolContext, args: ScaffoldExte
       methods.push(name);
     }
   }
+  // TD only promotes extension members whose names start with a capital letter;
+  // lowercase stubs exist in the class but are not reachable directly on the COMP
+  // (only via op.ext.ClassName.method()). Surface a warning so the caller knows.
+  const promotionWarnings: string[] = args.promote
+    ? methods
+        .filter((m) => /^[a-z]/.test(m))
+        .map(
+          (m) =>
+            `Method '${m}' starts with a lowercase letter — TD only promotes capitalized members; call it via op.ext.${className}.${m}() rather than directly on the COMP.`,
+        )
+    : [];
   const code = buildClassSource(className, methods);
   // The Text DAT is a *child* of the COMP, so the expression must scope the search
   // to the COMP's own children with `op('./<DAT>')` — bare `op('<DAT>')` / `mod(...)`
@@ -247,12 +258,13 @@ export async function scaffoldExtensionImpl(ctx: ToolContext, args: ScaffoldExte
       if (report.fatal) {
         return errorResult(`Could not scaffold extension: ${report.fatal}`, report);
       }
+      const allWarnings = [...report.warnings, ...promotionWarnings];
       const summary = `Scaffolded extension ${className} on ${report.comp}${
         report.dat ? ` (DAT ${report.dat})` : ""
       }${report.promoted ? ", promoted" : ""}${
         report.methods.length ? `, ${report.methods.length} method stub(s)` : ""
-      }${report.warnings.length ? `, ${report.warnings.length} warning(s)` : ""}.`;
-      return jsonResult(summary, report);
+      }${allWarnings.length ? `, ${allWarnings.length} warning(s)` : ""}.`;
+      return jsonResult(summary, { ...report, warnings: allWarnings });
     },
   );
 }
