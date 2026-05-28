@@ -200,7 +200,9 @@ try:
                 for _c in _parent.findChildren(type=annotateCOMP):
                     _t = None
                     _names = [pp.name for pp in _c.pars()]
-                    for _cand in ("Text", "Title", "Header", "Note", "Annotation"):
+                    # Titletext/Bodytext first: that's what the create branch writes on
+                    # current Annotate COMPs, so listing round-trips tool-created annotations.
+                    for _cand in ("Titletext", "Bodytext", "Text", "Title", "Header", "Note", "Annotation"):
                         if _cand in _names:
                             try:
                                 _t = str(getattr(_c.par, _cand))

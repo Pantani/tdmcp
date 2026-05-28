@@ -1,6 +1,6 @@
 ---
 name: tdmcp-tool-builder
-description: How to author one new tdmcp MCP tool the house way — the file shape (XImpl + registerX), the Python-bridge pattern (buildPayloadScript/parsePythonReport over executePythonScript), the result helpers (errorResult/guardTd/jsonResult/structuredResult), fail-forward error handling, ESM/.js + Biome style, and the offline msw unit test that proves it. Load this whenever building, extending, reviewing, or testing a tdmcp tool file under src/tools/** (and its test under tests/unit/**). Use it for every Phase-13 / v0.4.0 feature-build tool and any re-run after a gate failure.
+description: How to author one new tdmcp MCP tool the house way — the file shape (XImpl + registerX), the Python-bridge pattern (buildPayloadScript/parsePythonReport over executePythonScript), the result helpers (errorResult/guardTd/jsonResult/structuredResult), fail-forward error handling, ESM/.js + Biome style, and the offline msw unit test that proves it. Load this whenever building, extending, reviewing, or testing a tdmcp tool file under src/tools/** (and its test under tests/unit/**). Use it for every Phase-13 / v0.5.0 feature-build tool and any re-run after a gate failure.
 ---
 
 # tdmcp-tool-builder

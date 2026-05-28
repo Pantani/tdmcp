@@ -332,10 +332,29 @@ describe("addCustomParametersSchema — bad input", () => {
       expect(() =>
         addCustomParametersSchema.parse({
           comp_path: "/project1/c",
-          params: [{ name: "Test", type }],
+          // Menu requires options; every other type is valid bare.
+          params: [{ name: "Test", type, ...(type === "Menu" ? { menu_names: ["a", "b"] } : {}) }],
         }),
       ).not.toThrow();
     }
+  });
+
+  it("rejects a Menu parameter with no menu_names", () => {
+    expect(() =>
+      addCustomParametersSchema.parse({
+        comp_path: "/project1/c",
+        params: [{ name: "Mode", type: "Menu" }],
+      }),
+    ).toThrow();
+  });
+
+  it("rejects menu_labels whose length differs from menu_names", () => {
+    expect(() =>
+      addCustomParametersSchema.parse({
+        comp_path: "/project1/c",
+        params: [{ name: "Mode", type: "Menu", menu_names: ["a", "b"], menu_labels: ["one"] }],
+      }),
+    ).toThrow();
   });
 
   it("uses 'Custom' as the default page name when omitted", () => {

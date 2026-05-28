@@ -3,65 +3,84 @@ import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
-const paramSchema = z.object({
-  name: z
-    .string()
-    .describe(
-      "Becomes a TD custom-parameter name; auto-capitalized to leading-uppercase (e.g. 'blur radius' → 'Blurradius').",
-    ),
-  type: z
-    .enum(["Float", "Int", "Toggle", "Menu", "Str", "Pulse", "RGB", "XYZ"])
-    .describe(
-      "Parameter widget kind: Float/Int sliders, Toggle checkbox, Menu dropdown, Str text field, Pulse momentary button, RGB colour swatch, XYZ 3-component vector.",
-    ),
-  label: z
-    .string()
-    .optional()
-    .describe("Display label shown in the parameter panel; defaults to `name` if omitted."),
-  default: z
-    .union([z.number(), z.boolean(), z.string(), z.array(z.number())])
-    .optional()
-    .describe(
-      "Initial value. For RGB/XYZ pass a 3-element array of floats (0–1) or a hex string '#rrggbb' for RGB.",
-    ),
-  min: z.coerce
-    .number()
-    .optional()
-    .describe(
-      "Float/Int slider lower bound — sets normMin (soft) and, when clamp is true, also min/clampMin (hard).",
-    ),
-  max: z.coerce
-    .number()
-    .optional()
-    .describe(
-      "Float/Int slider upper bound — sets normMax (soft) and, when clamp is true, also max/clampMax (hard).",
-    ),
-  clamp: z
-    .boolean()
-    .optional()
-    .describe(
-      "When true, also hard-clamps the parameter so values cannot exceed [min,max] regardless of how the artist types.",
-    ),
-  menu_names: z
-    .array(z.string())
-    .optional()
-    .describe(
-      "Menu option keys (internal identifiers). Required for Menu parameters; ignored for other types.",
-    ),
-  menu_labels: z
-    .array(z.string())
-    .optional()
-    .describe(
-      "Menu option display labels shown in the dropdown. Defaults to menu_names if omitted.",
-    ),
-  size: z.coerce
-    .number()
-    .int()
-    .optional()
-    .describe(
-      "Vector size for Float parameters (e.g. size=2 → appendFloat(name, size=2) for a 2-component float). Ignored for other types.",
-    ),
-});
+const paramSchema = z
+  .object({
+    name: z
+      .string()
+      .describe(
+        "Becomes a TD custom-parameter name; auto-capitalized to leading-uppercase (e.g. 'blur radius' → 'Blurradius').",
+      ),
+    type: z
+      .enum(["Float", "Int", "Toggle", "Menu", "Str", "Pulse", "RGB", "XYZ"])
+      .describe(
+        "Parameter widget kind: Float/Int sliders, Toggle checkbox, Menu dropdown, Str text field, Pulse momentary button, RGB colour swatch, XYZ 3-component vector.",
+      ),
+    label: z
+      .string()
+      .optional()
+      .describe("Display label shown in the parameter panel; defaults to `name` if omitted."),
+    default: z
+      .union([z.number(), z.boolean(), z.string(), z.array(z.number())])
+      .optional()
+      .describe(
+        "Initial value. For RGB/XYZ pass a 3-element array of floats (0–1) or a hex string '#rrggbb' for RGB.",
+      ),
+    min: z.coerce
+      .number()
+      .optional()
+      .describe(
+        "Float/Int slider lower bound — sets normMin (soft) and, when clamp is true, also min/clampMin (hard).",
+      ),
+    max: z.coerce
+      .number()
+      .optional()
+      .describe(
+        "Float/Int slider upper bound — sets normMax (soft) and, when clamp is true, also max/clampMax (hard).",
+      ),
+    clamp: z
+      .boolean()
+      .optional()
+      .describe(
+        "When true, also hard-clamps the parameter so values cannot exceed [min,max] regardless of how the artist types.",
+      ),
+    menu_names: z
+      .array(z.string())
+      .optional()
+      .describe(
+        "Menu option keys (internal identifiers). Required for Menu parameters; ignored for other types.",
+      ),
+    menu_labels: z
+      .array(z.string())
+      .optional()
+      .describe(
+        "Menu option display labels shown in the dropdown. Defaults to menu_names if omitted.",
+      ),
+    size: z.coerce
+      .number()
+      .int()
+      .optional()
+      .describe(
+        "Vector size for Float parameters (e.g. size=2 → appendFloat(name, size=2) for a 2-component float). Ignored for other types.",
+      ),
+  })
+  .superRefine((p, ctx) => {
+    // A Menu parameter with no options is meaningless — enforce the documented contract.
+    if (p.type === "Menu" && (!p.menu_names || p.menu_names.length === 0)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["menu_names"],
+        message: "menu_names is required (and must be non-empty) for Menu parameters.",
+      });
+    }
+    // When labels are supplied they must line up 1:1 with the option keys.
+    if (p.menu_labels && p.menu_names && p.menu_labels.length !== p.menu_names.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["menu_labels"],
+        message: "menu_labels, when provided, must have the same length as menu_names.",
+      });
+    }
+  });
 
 export const addCustomParametersSchema = z.object({
   comp_path: z

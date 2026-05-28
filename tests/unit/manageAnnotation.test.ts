@@ -85,9 +85,10 @@ describe("manage_annotation", () => {
     expect(payload.name).toBe("notes");
     expect(payload).toMatchObject({ x: 100, y: 50, w: 400, h: 200 });
 
-    // The script probes the Annotate COMP's title parameter rather than hardcoding it.
+    // The script probes the Annotate COMP's title parameter rather than hardcoding it,
+    // including current TD builds' `Titletext` (what the create branch actually writes).
     expect(scripts[0]).toContain("annotateCOMP");
-    expect(scripts[0]).toContain('("Text", "Title", "Header"');
+    expect(scripts[0]).toContain('"Titletext"');
 
     const text = result.content.find((c) => c.type === "text") as { text: string } | undefined;
     expect(text?.text).toContain("/project1/anno");
