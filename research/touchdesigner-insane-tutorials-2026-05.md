@@ -30,7 +30,7 @@ The single biggest 2025–2026 community shift is **POPs** (the new GPU particle
 1. *Most valuable material* → the Top-15 selection below (MediaPipe plugin, Embody/tox API, StreamDiffusionTD, RayTK, GLSL particle capstone, POPs, Ableton Link, ComfyUI bridges…).
 2. *New techniques* → tox save/loadTox/saveByteArray, extension scaffolding via `mod().Ext(me)`, TDJSON serialization, MediaPipe→WebSocket→CHOP, GPU Navier-Stokes, node-based SDF raymarching, compute-shader boids, real-time img2img.
 3. *Real features* → the Implementation Backlog (BL-01…BL-22).
-4. *Next version (v0.5.0; v0.4.0 already shipped body tracking + the 3D/sim/particle generators)* → custom-param + extension scaffolding (the reusable-component complement to the already-shipped `manage_component`), project analysis + auto-README, Ableton Link/MIDI, screenshot-to-debug, and the Embody-mined agent-DX primitives.
+4. *Next version (v0.5.0; v0.4.0 shipped the 3D/sim/particle generators, and body tracking is on `main` in-tree — not in the 0.4.0 CHANGELOG)* → custom-param + extension scaffolding (the reusable-component complement to the already-shipped `manage_component`), project analysis + auto-README, Ableton Link/MIDI, screenshot-to-debug, and the Embody-mined agent-DX primitives.
 5. *Examples/demos* → see Demo Ideas (body-tracking reactive, live AI-VJ, externalize-to-git, package-a-component, screenshot-to-debug).
 6. *Becoming truly useful for artists with AI* → see Final Recommendations.
 
@@ -189,7 +189,7 @@ These are the concrete, transferable techniques the research surfaced — each i
 
 The research maps cleanly onto **six opportunity clusters**, ranked by *fit × differentiation × effort*:
 
-1. **Component packaging & version control** — `.tox` save/load already ships as `manage_component`; the open gaps are a portable/externalized bundle (`saveExternalTox`) and network↔JSON + parameter-state serialization (git-diffable, Embody-style).
+1. **Component packaging & version control** — `.tox` save/load already ships as `manage_component`; the open gaps are (a) a dependency-collected, self-contained portable bundle (`make_portable_tox`) — distinct from `COMP.saveExternalTox`, which only externalizes to a folder tree — and (b) network↔JSON + parameter-state serialization (git-diffable, Embody-style).
 2. **Reusability scaffolding** — extension stubs, custom-parameter pages, "package this subnet as a component." Turns one-shot AI builds into a library.
 3. **Project intelligence / education** (no competitor) — unused-op & dead-node detection, dependency graph, auto-README, screenshot-to-debug, performance advisor.
 4. **Sensor & body reactivity** — MediaPipe body/hand/face template, depth-camera input, OSC body-tracking path. Serves the VJ / camera-reactive use case.
@@ -206,8 +206,8 @@ Selected for *potential to become a real feature × AI/automation fit × artist 
 
 | # | Source | What it teaches | TDMCP implementation | New tools | Difficulty | Impact |
 |---|---|---|---|---|---|---|
-| 1 | [COMP Class API](https://docs.derivative.ca/COMP_Class) + [Embody](https://github.com/dylanroscover/Embody) | tox `save`/`loadTox`/`saveByteArray`/`saveExternalTox` | `.tox` save/load **already ships as `manage_component`**; open gap = portable bundle + network↔JSON | `make_portable_tox`, `serialize_network` (v0.5.0) | M | ★★★☆☆ |
-| 2 | [torinmb/mediapipe-touchdesigner](https://github.com/torinmb/mediapipe-touchdesigner) | GPU MediaPipe → WebSocket → CHOP, webcam-only | ✅ **Shipped in 0.4.0**: `setup_body_tracking`/`create_pose_tracking`/`create_pose_skeleton`/`create_body_reactive`; remaining = hand/face modes + recipes | (shipped) | — | ★★★★★ |
+| 1 | [COMP Class API](https://docs.derivative.ca/COMP_Class) + [Embody](https://github.com/dylanroscover/Embody) | tox `save`/`loadTox`/`saveByteArray`/`saveExternalTox` | `.tox` save/load **already ships as `manage_component`**; open gap = portable bundle + network↔JSON | `make_portable_tox`, `serialize_network` (v0.6.0) | M | ★★★☆☆ |
+| 2 | [torinmb/mediapipe-touchdesigner](https://github.com/torinmb/mediapipe-touchdesigner) | GPU MediaPipe → WebSocket → CHOP, webcam-only | ✅ **On `main`** (in-tree; not in the 0.4.0 CHANGELOG): `setup_body_tracking`/`create_pose_tracking`/`create_pose_skeleton`/`create_body_reactive`; remaining = hand/face modes + recipes | (in-tree) | — | ★★★★★ |
 | 3 | [Extensions](https://docs.derivative.ca/Extensions) + [Custom Parameters](https://docs.derivative.ca/Custom_Parameters) + [TDJSON](https://docs.derivative.ca/TDJSON) | `mod().Ext(me)`, `appendCustomPage`, JSON par specs | Scaffold reusable parameterized components | `scaffold_extension`, `add_custom_parameters` | M | ★★★★☆ |
 | 4 | [Working with OPs in Python](https://docs.derivative.ca/Working_with_OPs_in_Python) | `findChildren`, connectors, `op()` deps | Unused-op/dead-node + dependency analysis | `analyze_project` | M | ★★★★☆ |
 | 5 | [Optimize guide](https://docs.derivative.ca/Optimize) + [IIHQ optimizing](https://interactiveimmersive.io/blog/deployment/optimizing-in-touchdesigner/) | Perf Monitor/Probe/Hog heuristics | Auto-README + performance advisor | `generate_readme`, extend `optimize_performance` | M | ★★★★☆ |
@@ -215,7 +215,7 @@ Selected for *potential to become a real feature × AI/automation fit × artist 
 | 7 | [TDComfyUI](https://github.com/olegchomp/TDComfyUI) / [ComfyUI-TD](https://github.com/JiSenHua/ComfyUI-TD) | Drive ComfyUI API workflows over WebSocket | ComfyUI bridge driven by natural language | `connect_comfyui` | L | ★★★★☆ |
 | 8 | [Ableton Link CHOP](https://docs.derivative.ca/Ableton_Link_CHOP) | tempo/beat/phase sync | Add Link + MIDI-clock modes to clock sync | extend `sync_external_clock` | S | ★★★★☆ |
 | 9 | `get_preview` + [Troubleshooting](https://interactiveimmersive.io/blog/touchdesigner-resources/troubleshooting-debugging-touchdesigner-projects/) | Vision-based debugging | Feed preview image to a model to explain/fix | `analyze_screenshot` (prompt+tool) | M | ★★★★☆ |
-| 10 | [RayTK](https://github.com/t3kt/raytk) + [Raymarching series](https://derivative.ca/community-post/tutorial/raymarching-touchdesigner-tutorial-series) | Node-based SDF raymarch scenes | SDF scene builder (primitive/bool/repeat) | `create_sdf_scene` | XL | ★★★★☆ |
+| 10 | [RayTK](https://github.com/t3kt/raytk) + [Raymarching series](https://derivative.ca/community-post/tutorial/raymarching-touchdesigner-tutorial-series) | Node-based SDF raymarch scenes | SDF scene builder (primitive/bool/repeat) — extends shipped `create_raymarch_scene` | `create_sdf_scene` | XL | ★★★★☆ |
 | 11 | [GPU Fluid](https://xiaojiangbrian.com/gpu-water-simulation/) + [touchfluids](https://github.com/ancillarymagnet/touchfluids) | Multi-pass Navier-Stokes | True GPU fluid generator | `create_gpu_fluid` | L | ★★★☆☆ |
 | 12 | [Kinect Azure](https://docs.derivative.ca/Kinect_Azure_TOP) / [RealSense](https://docs.derivative.ca/RealSense_TOP) | Depth → point cloud + skeleton | Depth-camera input (hardware-gated) | `create_depth_camera_input` | M | ★★★☆☆ |
 | 13 | [POPs Instance Field](https://derivative.ca/community-post/tutorial/touchdesigner-pops-instance-field/71904) | New GPU point/particle family | POPs-based particle/instancing templates | `create_pop_field` | M | ★★★★☆ |
@@ -229,7 +229,7 @@ Selected for *potential to become a real feature × AI/automation fit × artist 
 New tools (none duplicate the existing 102). Grouped; `*` = highest priority for v0.5.0.
 
 **Component & serialization**
-- ✅ **Already ships as `manage_component`** — `.tox` `save` + `loadTox` (+ live-linked `externaltox`) load. Do **not** rebuild as `export_component`/`import_component`. (`saveExternalTox`-based externalization is *not* in `manage_component` yet — it's the future `make_portable_tox` gap.)
+- ✅ **Already ships as `manage_component`** — `.tox` `save` + `loadTox` (+ live-linked `externaltox`) load. Do **not** rebuild as `export_component`/`import_component`. (Neither `COMP.saveExternalTox` folder-tree externalization nor a dependency-collected self-contained bundle is in `manage_component` yet — the latter is the future `make_portable_tox` gap.)
 - `make_portable_tox` — collect external asset deps into one self-contained `.tox`.
 - `serialize_network` / `rebuild_network` — subnet ↔ portable JSON (operators, params, wires, positions) for git-diffable round-trips.
 
@@ -243,7 +243,7 @@ New tools (none duplicate the existing 102). Grouped; `*` = highest priority for
 - `analyze_screenshot`* — vision model reads `get_preview`/`render_output` image to explain/diagnose.
 
 **Sensor & reactivity**
-- ✅ **Shipped in 0.4.0** as `setup_body_tracking` / `create_pose_tracking` / `create_pose_skeleton` / `create_body_reactive` — MediaPipe (webcam) → named joint channels. Remaining: hand/face modes + more recipes.
+- ✅ **On `main` (in-tree; not in the 0.4.0 CHANGELOG)** as `setup_body_tracking` / `create_pose_tracking` / `create_pose_skeleton` / `create_body_reactive` — MediaPipe (webcam) → named joint channels. Remaining: hand/face modes + more recipes.
 - `create_pose_reactive` — map joints to instancing/kinetic geometry (builds on `create_motion_reactive`).
 - `create_depth_camera_input` — Kinect Azure / RealSense color+depth point cloud (+ optional skeleton).
 - `create_ndi_input` — NDI In TOP source wrapper (pairs with existing NDI out).
@@ -260,7 +260,7 @@ New tools (none duplicate the existing 102). Grouped; `*` = highest priority for
 - `text_to_image` — call DALL·E/Gemini/etc., land output as a TOP source.
 
 **Advanced generators**
-- `create_sdf_scene`, `create_gpu_fluid`, `create_boids_flock`, `create_optical_flow_particles`, `create_vertex_displacement_mat`, `create_strange_attractor`, `create_sdf_text`, `create_pop_field`.
+- `create_gpu_fluid`, `create_optical_flow_particles`, `create_vertex_displacement_mat`, `create_strange_attractor`, `create_sdf_text`, `create_pop_field`. (SDF raymarch and boids already shipped in 0.4.0 as `create_raymarch_scene` / `create_particle_flock`.)
 
 **Library / marketplace**
 - `save_template` + a community recipe **marketplace index** (installable into TD Palette / vault).
@@ -302,7 +302,7 @@ This keeps TDMCP **complementary** to LOPs/StreamDiffusion rather than competing
 ## Live Performance / VJ Opportunities
 
 Aligned with the owner's beat/audio/camera-reactive performance use case:
-- **Body-tracking as a performance input** (shipped in 0.4.0: `setup_body_tracking` / `create_pose_*` / `create_body_reactive`; next: a `create_pose_reactive` skeleton→visuals layer) — the dancer/VJ becomes the controller, webcam-only.
+- **Body-tracking as a performance input** (on `main`, in-tree — not in the 0.4.0 CHANGELOG: `setup_body_tracking` / `create_pose_*` / `create_body_reactive`; next: a `create_pose_reactive` skeleton→visuals layer) — the dancer/VJ becomes the controller, webcam-only.
 - **Ableton Link / MIDI-clock sync** — lock the whole show to the DJ's clock without tap-tempo guesswork.
 - **DMX fixture patcher** — drive moving heads / LED from cues, extending the existing `artnet_out`.
 - **Live AI-VJ** — audio-reactive feed → StreamDiffusion → feedback, with beat-synced prompt swaps (pairs with `create_autopilot`/`manage_cue`).
@@ -347,7 +347,7 @@ The theme is **turn AI builds into reusable, documented components + make the ag
 - **P1** `serialize_network` / `rebuild_network` (BL-10) + `make_portable_tox` — git-diffable JSON round-trip + portable bundle.
 - **P1** `create_depth_camera_input` (BL-12) + `create_pose_reactive` — depth/skeleton (hardware-gated, probe-first).
 - **P2** `create_ndi_input`, `create_mqtt_bridge`, `create_websocket_api`, `create_dmx_fixtures`.
-- **P2** remaining advanced generators: `create_gpu_fluid`, `create_pop_field`, `create_optical_flow_particles`, `create_vertex_displacement_mat`, `create_strange_attractor`, `create_sdf_text` (note `create_sdf_scene`/boids/point-cloud already shipped in 0.4.0).
+- **P2** remaining advanced generators: `create_gpu_fluid`, `create_pop_field`, `create_optical_flow_particles`, `create_vertex_displacement_mat`, `create_strange_attractor`, `create_sdf_text` (note `create_raymarch_scene` (SDF), `create_particle_flock` (boids) and `create_point_cloud` already shipped in 0.4.0).
 
 ### v0.7.0+ — "Intelligence & Marketplace" (ambitious)
 - **P2** `voice_control` pipeline (Whisper → tool calls) + `text_to_image`.
@@ -362,10 +362,10 @@ The theme is **turn AI builds into reusable, documented components + make the ag
 Format per item: **motivation · user story · technical design · MCP API · tools/work · usage · risks · tests · docs · priority · effort.** Detailed for the v0.5.0 set; condensed thereafter.
 
 ### BL-01 — `.tox` export/import ✅ ALREADY SHIPPED as `manage_component`
-- **Status:** **superseded — do not build.** `.tox` `save` (via `COMP.save`) + `loadTox` (+ live-linked `externaltox` load) already exist in `src/tools/layer2/manageComponent.ts` (the `manage_component` tool, actions `save`/`load`, with `create_folders`/`linked`/`name`). This was a false gap — the generic tool name hid it from the gap scan. Note: `manage_component` does **not** expose `COMP.saveExternalTox` — that externalization is the future `make_portable_tox` gap (BL-11).
-- **Remaining gap → v0.5.0:** a portable/externalized **bundle** that collects external asset deps into one self-contained `.tox` (see `make_portable_tox`, BL-11). The reusable-component work that *complements* `manage_component` — exposing knobs + a Python class so a saved `.tox` is actually reusable — is **BL-03** (`add_custom_parameters` + `scaffold_extension`), the real v0.5.0 P0.
+- **Status:** **superseded — do not build.** `.tox` `save` (via `COMP.save`) + `loadTox` (+ live-linked `externaltox` load) already exist in `src/tools/layer2/manageComponent.ts` (the `manage_component` tool, actions `save`/`load`, with `create_folders`/`linked`/`name`). This was a false gap — the generic tool name hid it from the gap scan. Note: `manage_component` does **not** expose `COMP.saveExternalTox` (folder-tree externalization); a dependency-collected, self-contained portable bundle is the separate future `make_portable_tox` gap (BL-11).
+- **Remaining gap → v0.6.0:** a portable/externalized **bundle** that collects external asset deps into one self-contained `.tox` (see `make_portable_tox`, BL-11). The reusable-component work that *complements* `manage_component` — exposing knobs + a Python class so a saved `.tox` is actually reusable — is **BL-03** (`add_custom_parameters` + `scaffold_extension`), the real v0.5.0 P0.
 
-### BL-02 — body/pose tracking ✅ ALREADY SHIPPED in 0.4.0
+### BL-02 — body/pose tracking ✅ ALREADY SHIPPED (in-tree on `main`; not in the 0.4.0 CHANGELOG)
 - **Status:** **shipped — do not rebuild.** Body/pose tracking ships as `setup_body_tracking`, `create_pose_tracking`, `create_pose_skeleton`, `create_body_reactive` (in `src/tools/layer1/`, with `poseSource.ts`), plus recipes `mediapipe_body_dots` and `pose_skeleton_mediapipe` and a `docs/guide/body-tracking.md` guide (EN+PT). There is **no** `createBodyTracking.ts` — the original single-tool proposal here was superseded by that multi-tool design. The MediaPipe→WebSocket→CHOP approach (webcam-only, MIT plugin) is what landed.
 - **Remaining (incremental, v0.5.0):** dedicated **hand/face** modes if not already covered; more reactive **recipes/templates** (skeleton → instancing / particle forces); a pure-**OSC** path (Pose2Art) as a sensor-free alternative; and **live webcam validation** (create→verify→preview + post-cook error check — mind the macOS camera-permission hang, so default to a synthetic source for zero-permission tests).
 
@@ -410,7 +410,7 @@ Format per item: **motivation · user story · technical design · MCP API · to
 - **BL-12 `create_depth_camera_input`** (M) — Kinect Azure / RealSense TOP + optional skeleton CHOP; hardware-gated.
 - **BL-13 `create_pose_reactive`** (L) — joints → instancing/kinetic geometry on top of BL-02.
 - **BL-14 `create_mqtt_bridge`** (S) · **BL-15 `create_websocket_api`** (M) · **BL-16 `create_ndi_input`** (S) · **BL-17 `create_dmx_fixtures`** (L).
-- **BL-18 `create_gpu_fluid`** (L) · **BL-19 `create_pop_field`** (M) · **BL-20 `create_sdf_scene`** (XL) · plus `create_boids_flock`, `create_optical_flow_particles`, `create_vertex_displacement_mat`, `create_strange_attractor`, `create_sdf_text`.
+- **BL-18 `create_gpu_fluid`** (L) · **BL-19 `create_pop_field`** (M) · **BL-20 `create_sdf_scene`** (XL, node-based — extends shipped `create_raymarch_scene`) · plus `create_optical_flow_particles`, `create_vertex_displacement_mat`, `create_strange_attractor`, `create_sdf_text`. (boids shipped as `create_particle_flock`.)
 - **BL-21 `save_template` + marketplace index** (XL) — versioned community recipe index → TD Palette/vault.
 - **BL-22 `voice_control` recipe + `text_to_image`** (L) — Whisper→tool calls; cloud image API→TOP.
 

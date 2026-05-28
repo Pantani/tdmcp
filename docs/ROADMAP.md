@@ -371,7 +371,8 @@ Embody/dotsimulate deep-dive.
 
 **Priority:** **P0** = component reusability (custom params + extensions) + Link/MIDI · **P1** =
 project intelligence + the token-cheap agent-DX primitives · **P2** = self-documentation niceties +
-perform mode. Table is ordered by priority. (Body/3D/sim/particle tools already shipped in 0.4.0.)
+perform mode. Table is ordered by priority. (3D/sim/particle generators shipped in 0.4.0; body
+tracking is on `main` in-tree, not in the 0.4.0 CHANGELOG.)
 
 | Feature | Delivers | Effort | Status |
 |---|---|---|---|
@@ -379,7 +380,7 @@ perform mode. Table is ordered by priority. (Body/3D/sim/particle tools already 
 | `scaffold_extension` | Extension DAT stub + Extension Object + Promote flag + re-init — make a COMP scriptable (BL-03) | M | ☐ |
 | `add_custom_parameters` | Declarative custom-parameter pages (`appendCustomPage`/`appendFloat…`), TDJSON in/out — expose knobs (BL-03) | M | ☐ |
 | `sync_external_clock` + Link/MIDI | Add `ableton_link` + `midi_clock` modes alongside tap-tempo — lock to the DJ's clock (BL-08) | S | ☐ |
-| Body tracking ✅ shipped in 0.4.0 | `setup_body_tracking` / `create_pose_tracking` / `create_pose_skeleton` / `create_body_reactive` (+ recipes `mediapipe_body_dots`, `pose_skeleton_mediapipe`) ship today. Remaining (incremental): hand/face modes, more reactive templates, live webcam validation (BL-02) | — | ☑ |
+| Body tracking ✅ on `main` (in-tree) | `setup_body_tracking` / `create_pose_tracking` / `create_pose_skeleton` / `create_body_reactive` (+ recipes `mediapipe_body_dots`, `pose_skeleton_mediapipe`) are in-tree on `main` (not in the 0.4.0 CHANGELOG). Remaining (incremental): hand/face modes, more reactive templates, live webcam validation (BL-02) | — | ☑ |
 | `analyze_project` | Unused/dead ops, broken file deps, orphan COMPs, dependency graph via `findChildren`/connectors (BL-04) | M | ☐ |
 | `generate_readme` | Markdown project doc: params table (TDJSON), I/O, child inventory, deps, preview thumbnail (BL-04) | M | ☐ |
 | `analyze_screenshot` | Prompt+tool: `get_preview` image + topology + `get_td_node_errors` → explain/diagnose ("why is it black?") (BL-09) | M | ☐ |
@@ -391,7 +392,7 @@ perform mode. Table is ordered by priority. (Body/3D/sim/particle tools already 
 | `write_agent_guide` | Emit a project-local `CLAUDE.md`/`AGENTS.md` seeded with TDMCP operator conventions + render-coordinate rules *(Embody-mined)* | S | ☐ |
 | `set_perform_mode` | Bridge suspends nonessential MCP/externalization compute during a live show — VJ-critical *(Embody-mined)* | M | ☐ |
 
-**Body tracking — shipped in 0.4.0 (in-tree):** `setup_body_tracking`, `create_pose_tracking`,
+**Body tracking — on `main` (in-tree; not in the 0.4.0 CHANGELOG):** `setup_body_tracking`, `create_pose_tracking`,
 `create_pose_skeleton`, `create_body_reactive` are registered in `src/tools/layer1/`, with recipes
 `mediapipe_body_dots` and `pose_skeleton_mediapipe`. Remaining Phase-13 work on this track is
 incremental: hand/face modes, more reactive templates, and live webcam validation
