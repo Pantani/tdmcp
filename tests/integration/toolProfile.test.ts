@@ -1,0 +1,101 @@
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { createTdmcpServer } from "../../src/server/tdmcpServer.js";
+import { loadConfig } from "../../src/utils/config.js";
+import { silentLogger } from "../../src/utils/logger.js";
+import { makeTdServer } from "../helpers/tdMock.js";
+
+const mock = makeTdServer();
+beforeAll(() => mock.listen({ onUnhandledRequest: "error" }));
+afterEach(() => mock.resetHandlers());
+afterAll(() => mock.close());
+
+// Copied verbatim from tests/integration/layer3.test.ts — introspects the
+// assembled server over the in-memory MCP transport (msw mocks the bridge).
+async function connectClient(env: NodeJS.ProcessEnv = {}) {
+  const config = loadConfig(env); // defaults → 127.0.0.1:9980 (matches the mock bridge)
+  const server = createTdmcpServer(config, { logger: silentLogger });
+  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+  const client = new Client({ name: "tdmcp-test-client", version: "0.0.0" });
+  await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+  return client;
+}
+
+// The 6 tools the `safe` profile drops. Must equal the set flagged
+// `destructiveHint: true` (and SAFE_PROFILE_EXCLUDE in src/tools/index.ts).
+const SAFE_PROFILE_EXCLUDE = [
+  "execute_python_script",
+  "exec_node_method",
+  "delete_td_node",
+  "create_panic",
+  "manage_checkpoint",
+  "manage_component",
+];
+
+// Build/inspect surface that the safe profile must keep available.
+const SAFE_PROFILE_KEEP = [
+  "create_td_node",
+  "connect_nodes",
+  "update_td_node_parameters",
+  "find_td_nodes",
+  "get_td_info",
+  "get_td_classes",
+  "search_operators",
+];
+
+async function toolNames(env: NodeJS.ProcessEnv = {}): Promise<string[]> {
+  const client = await connectClient(env);
+  const { tools } = await client.listTools();
+  return tools.map((t) => t.name);
+}
+
+describe("integration: TDMCP_TOOL_PROFILE", () => {
+  it("default (full) registers the destructive/raw tools", async () => {
+    const names = await toolNames();
+    expect(names).toEqual(expect.arrayContaining(SAFE_PROFILE_EXCLUDE));
+  });
+
+  it("explicit full registers the destructive/raw tools", async () => {
+    const names = await toolNames({ TDMCP_TOOL_PROFILE: "full" });
+    expect(names).toEqual(expect.arrayContaining(SAFE_PROFILE_EXCLUDE));
+  });
+
+  it("safe drops the raw-code tools", async () => {
+    const names = await toolNames({ TDMCP_TOOL_PROFILE: "safe" });
+    expect(names).not.toContain("execute_python_script");
+    expect(names).not.toContain("exec_node_method");
+  });
+
+  it("safe drops the destructive tools", async () => {
+    const names = await toolNames({ TDMCP_TOOL_PROFILE: "safe" });
+    expect(names).not.toContain("delete_td_node");
+    expect(names).not.toContain("create_panic");
+    expect(names).not.toContain("manage_checkpoint");
+    expect(names).not.toContain("manage_component");
+  });
+
+  it("safe keeps the build/inspect surface", async () => {
+    const names = await toolNames({ TDMCP_TOOL_PROFILE: "safe" });
+    expect(names).toEqual(expect.arrayContaining(SAFE_PROFILE_KEEP));
+  });
+
+  it("safe hides exactly SAFE_PROFILE_EXCLUDE.size (6) fewer tools than full", async () => {
+    const full = await toolNames({ TDMCP_TOOL_PROFILE: "full" });
+    const safe = await toolNames({ TDMCP_TOOL_PROFILE: "safe" });
+    expect(safe.length).toBeLessThan(full.length);
+    expect(full.length - safe.length).toBe(SAFE_PROFILE_EXCLUDE.length);
+    expect(SAFE_PROFILE_EXCLUDE.length).toBe(6);
+  });
+
+  it("safe ⊇ rawPython=off (composition): safe hides everything rawPython=off hides", async () => {
+    const full = await toolNames({ TDMCP_TOOL_PROFILE: "full" });
+    const rawOff = await toolNames({ TDMCP_RAW_PYTHON: "off" });
+    const safe = await toolNames({ TDMCP_TOOL_PROFILE: "safe" });
+    const hiddenByRawOff = full.filter((n) => !rawOff.includes(n));
+    const hiddenBySafe = new Set(full.filter((n) => !safe.includes(n)));
+    for (const name of hiddenByRawOff) {
+      expect(hiddenBySafe.has(name)).toBe(true);
+    }
+  });
+});

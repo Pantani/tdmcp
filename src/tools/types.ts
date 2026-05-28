@@ -18,6 +18,11 @@ export interface ToolContext {
    * allowed (the default); only an explicit `false` locks them out.
    */
   allowRawPython?: boolean;
+  /**
+   * Tool exposure profile. `"safe"` hides destructive/raw-code tools.
+   * Undefined means `"full"` (the default).
+   */
+  toolProfile?: "full" | "safe";
 }
 
 /** A function that registers one tool against the MCP server. */
