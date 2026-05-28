@@ -33,6 +33,7 @@ import {
   createCubemapDomeImpl,
   createCubemapDomeSchema,
 } from "../tools/layer1/createCubemapDome.js";
+import { createDatamoshImpl, createDatamoshSchema } from "../tools/layer1/createDatamosh.js";
 import {
   createDataVisualizationImpl,
   createDataVisualizationSchema,
@@ -45,11 +46,19 @@ import {
   createDepthSilhouetteImpl,
   createDepthSilhouetteSchema,
 } from "../tools/layer1/createDepthSilhouette.js";
+import {
+  createDisplacementWarpImpl,
+  createDisplacementWarpSchema,
+} from "../tools/layer1/createDisplacementWarp.js";
 import { createDomeOutputImpl, createDomeOutputSchema } from "../tools/layer1/createDomeOutput.js";
 import {
   createFeedbackNetworkImpl,
   createFeedbackNetworkSchema,
 } from "../tools/layer1/createFeedbackNetwork.js";
+import {
+  createFeedbackTunnelImpl,
+  createFeedbackTunnelSchema,
+} from "../tools/layer1/createFeedbackTunnel.js";
 import {
   createGenerativeArtImpl,
   createGenerativeArtSchema,
@@ -63,10 +72,12 @@ import {
   createGpuParticleFieldImpl,
   createGpuParticleFieldSchema,
 } from "../tools/layer1/createGpuParticleField.js";
+import { createHalftoneImpl, createHalftoneSchema } from "../tools/layer1/createHalftone.js";
 import {
   createKaleidoscopeImpl,
   createKaleidoscopeSchema,
 } from "../tools/layer1/createKaleidoscope.js";
+import { createKeyerImpl, createKeyerSchema } from "../tools/layer1/createKeyer.js";
 import {
   createKeyframeAnimationImpl,
   createKeyframeAnimationSchema,
@@ -76,7 +87,14 @@ import {
   createKineticTextSchema,
 } from "../tools/layer1/createKineticText.js";
 import { createLayerMixerImpl, createLayerMixerSchema } from "../tools/layer1/createLayerMixer.js";
+import { createLayerStackImpl, createLayerStackSchema } from "../tools/layer1/createLayerStack.js";
+import { createLiveSourceImpl, createLiveSourceSchema } from "../tools/layer1/createLiveSource.js";
+import { createMediaBinImpl, createMediaBinSchema } from "../tools/layer1/createMediaBin.js";
 import { createMeshWarpImpl, createMeshWarpSchema } from "../tools/layer1/createMeshWarp.js";
+import {
+  createMidiNoteReactiveImpl,
+  createMidiNoteReactiveSchema,
+} from "../tools/layer1/createMidiNoteReactive.js";
 import {
   createMotionReactiveImpl,
   createMotionReactiveSchema,
@@ -85,6 +103,10 @@ import {
   createMultiOutputImpl,
   createMultiOutputSchema,
 } from "../tools/layer1/createMultiOutput.js";
+import {
+  multipass3dDepthImpl,
+  multipass3dDepthSchema,
+} from "../tools/layer1/createMultipass3dDepth.js";
 import {
   createParticleFlockImpl,
   createParticleFlockSchema,
@@ -95,6 +117,7 @@ import {
 } from "../tools/layer1/createParticleSystem.js";
 import { createPbrSceneImpl, createPbrSceneSchema } from "../tools/layer1/createPbrScene.js";
 import { createPointCloudImpl, createPointCloudSchema } from "../tools/layer1/createPointCloud.js";
+import { createPopFieldImpl, createPopFieldSchema } from "../tools/layer1/createPopField.js";
 import {
   createPoseSkeletonImpl,
   createPoseSkeletonSchema,
@@ -111,6 +134,10 @@ import {
   createRaymarchSceneImpl,
   createRaymarchSceneSchema,
 } from "../tools/layer1/createRaymarchScene.js";
+import {
+  createSetNavigatorImpl,
+  createSetNavigatorSchema,
+} from "../tools/layer1/createSetNavigator.js";
 import { createShaderLibImpl, createShaderLibSchema } from "../tools/layer1/createShaderLib.js";
 import { createSimulationImpl, createSimulationSchema } from "../tools/layer1/createSimulation.js";
 import { createSpectrumImpl, createSpectrumSchema } from "../tools/layer1/createSpectrum.js";
@@ -120,10 +147,12 @@ import {
   createSyncExternalClockSchema,
 } from "../tools/layer1/createSyncExternalClock.js";
 import { createTempoSyncImpl, createTempoSyncSchema } from "../tools/layer1/createTempoSync.js";
+import { createText3dImpl, createText3dSchema } from "../tools/layer1/createText3d.js";
 import {
   createTextOverlayImpl,
   createTextOverlaySchema,
 } from "../tools/layer1/createTextOverlay.js";
+import { createTransitionImpl, createTransitionSchema } from "../tools/layer1/createTransition.js";
 import {
   createVideoPlayerImpl,
   createVideoPlayerSchema,
@@ -159,8 +188,16 @@ import {
 import { animateParameterImpl, animateParameterSchema } from "../tools/layer2/animateParameter.js";
 import { arrangeNetworkImpl, arrangeNetworkSchema } from "../tools/layer2/arrangeNetwork.js";
 import { batchOperationsImpl, batchOperationsSchema } from "../tools/layer2/batchOperations.js";
+import {
+  bindAudioReactiveImpl,
+  bindAudioReactiveSchema,
+} from "../tools/layer2/bindAudioReactive.js";
 import { bindToChannelImpl, bindToChannelSchema } from "../tools/layer2/bindToChannel.js";
 import { connectNodesImpl, connectNodesSchema } from "../tools/layer2/connectNodes.js";
+import {
+  createBeatGridSequencerImpl,
+  createBeatGridSequencerSchema,
+} from "../tools/layer2/createBeatGridSequencer.js";
 import {
   createClipLauncherImpl,
   createClipLauncherSchema,
@@ -178,12 +215,21 @@ import {
   createCueSequencerImpl,
   createCueSequencerSchema,
 } from "../tools/layer2/createCueSequencer.js";
+import {
+  createDataReactiveImpl,
+  createDataReactiveSchema,
+} from "../tools/layer2/createDataReactive.js";
 import { createDataSourceImpl, createDataSourceSchema } from "../tools/layer2/createDataSource.js";
 import { createDecksImpl, createDecksSchema } from "../tools/layer2/createDecks.js";
+import {
+  createEnvelopeFollowerImpl,
+  createEnvelopeFollowerSchema,
+} from "../tools/layer2/createEnvelopeFollower.js";
 import { createExternalIoImpl, createExternalIoSchema } from "../tools/layer2/createExternalIo.js";
 import { createGlslShaderImpl, createGlslShaderSchema } from "../tools/layer2/createGlslShader.js";
 import { createLedMapperImpl, createLedMapperSchema } from "../tools/layer2/createLedMapper.js";
 import { createMacroImpl, createMacroSchema } from "../tools/layer2/createMacro.js";
+import { createMidiMapImpl, createMidiMapSchema } from "../tools/layer2/createMidiMap.js";
 import { createNodeChainImpl, createNodeChainSchema } from "../tools/layer2/createNodeChain.js";
 import { createPaletteImpl, createPaletteSchema } from "../tools/layer2/createPalette.js";
 import { createPanicImpl, createPanicSchema } from "../tools/layer2/createPanic.js";
@@ -195,6 +241,7 @@ import {
   createPythonScriptImpl,
   createPythonScriptSchema,
 } from "../tools/layer2/createPythonScript.js";
+import { createReplicatorImpl, createReplicatorSchema } from "../tools/layer2/createReplicator.js";
 import {
   createStageDashboardImpl,
   createStageDashboardSchema,
@@ -210,6 +257,7 @@ import {
   randomizeControlsImpl,
   randomizeControlsSchema,
 } from "../tools/layer2/randomizeControls.js";
+import { rebuildNetworkImpl, rebuildNetworkSchema } from "../tools/layer2/rebuildNetwork.js";
 import {
   scaffoldExtensionImpl,
   scaffoldExtensionSchema,
@@ -224,6 +272,7 @@ import { compareTdNodesImpl, compareTdNodesSchema } from "../tools/layer3/compar
 import { createTdNodeImpl, createTdNodeSchema } from "../tools/layer3/createTdNode.js";
 import { deleteTdNodeImpl, deleteTdNodeSchema } from "../tools/layer3/deleteTdNode.js";
 import { diffSnapshotsImpl, diffSnapshotsSchema } from "../tools/layer3/diffSnapshots.js";
+import { disconnectNodesImpl, disconnectNodesSchema } from "../tools/layer3/disconnectNodes.js";
 import { documentNetworkImpl, documentNetworkSchema } from "../tools/layer3/documentNetwork.js";
 import { editDatContentImpl, editDatContentSchema } from "../tools/layer3/editDatContent.js";
 import { execNodeMethodImpl, execNodeMethodSchema } from "../tools/layer3/execNodeMethod.js";
@@ -233,7 +282,12 @@ import {
 } from "../tools/layer3/executePythonScript.js";
 import { findTdNodesImpl, findTdNodesSchema } from "../tools/layer3/findTdNodes.js";
 import { generateReadmeImpl, generateReadmeSchema } from "../tools/layer3/generateReadme.js";
+import { getBridgeLogsImpl, getBridgeLogsSchema } from "../tools/layer3/getBridgeLogs.js";
 import { getModuleHelpImpl, getModuleHelpSchema } from "../tools/layer3/getModuleHelp.js";
+import {
+  getNodeStateRuntimeImpl,
+  getNodeStateRuntimeSchema,
+} from "../tools/layer3/getNodeStateRuntime.js";
 import {
   getTdClassDetailsImpl,
   getTdClassDetailsSchema,
@@ -248,15 +302,25 @@ import {
 import { getTdNodesImpl, getTdNodesSchema } from "../tools/layer3/getTdNodes.js";
 import { getTdPerformanceImpl, getTdPerformanceSchema } from "../tools/layer3/getTdPerformance.js";
 import { getTdTopologyImpl, getTdTopologySchema } from "../tools/layer3/getTdTopology.js";
+import { inspectComponentImpl, inspectComponentSchema } from "../tools/layer3/inspectComponent.js";
 import {
   optimizePerformanceImpl,
   optimizePerformanceSchema,
 } from "../tools/layer3/optimizePerformance.js";
+import {
+  readParameterModesImpl,
+  readParameterModesSchema,
+} from "../tools/layer3/readParameterModes.js";
 import { recordMovieImpl, recordMovieSchema } from "../tools/layer3/recordMovie.js";
 import { reloadBridgeImpl, reloadBridgeSchema } from "../tools/layer3/reloadBridge.js";
 import { renderOutputImpl, renderOutputSchema } from "../tools/layer3/renderOutput.js";
 import { searchOperatorsImpl, searchOperatorsSchema } from "../tools/layer3/searchOperators.js";
+import { serializeNetworkImpl, serializeNetworkSchema } from "../tools/layer3/serializeNetwork.js";
 import { setDatContentImpl, setDatContentSchema } from "../tools/layer3/setDatContent.js";
+import {
+  setParameterExpressionImpl,
+  setParameterExpressionSchema,
+} from "../tools/layer3/setParameterExpression.js";
 import { snapshotTdGraphImpl, snapshotTdGraphSchema } from "../tools/layer3/snapshotTdGraph.js";
 import {
   summarizeTdErrorsImpl,
@@ -887,6 +951,173 @@ const COMMANDS: Record<string, Command> = {
     createBodyReactiveSchema,
     createBodyReactiveImpl,
     "Drive a visual from tracked body motion (camera-reactive performance).",
+    { mutates: true },
+  ),
+  // Phase 14 — live mixing, content & parameter fidelity (v0.5.0):
+  transition: r(
+    createTransitionSchema,
+    createTransitionImpl,
+    "Build an A→B transition (dissolve/luma_wipe/slide/zoom/glitch_cut) over a Progress knob.",
+    { mutates: true },
+  ),
+  "live-source": r(
+    createLiveSourceSchema,
+    createLiveSourceImpl,
+    "Build a live input layer (screen-grab/ndi/syphon-spout/camera/stream) → a previewed Null.",
+    { mutates: true },
+  ),
+  "layer-stack": r(
+    createLayerStackSchema,
+    createLayerStackImpl,
+    "Build an N-layer VJ compositor (per-layer blend + opacity + mute/solo + control strip).",
+    { mutates: true },
+  ),
+  "media-bin": r(
+    createMediaBinSchema,
+    createMediaBinImpl,
+    "Build a folder-fed clip bin (Movie File In + Switch) with Index/Next/Prev/Crossfade.",
+    { mutates: true },
+  ),
+  keyer: r(
+    createKeyerSchema,
+    createKeyerImpl,
+    "Key a source (chroma/luma/rgb) and composite it over a background.",
+    { mutates: true },
+  ),
+  "react-audio": r(
+    bindAudioReactiveSchema,
+    bindAudioReactiveImpl,
+    "One-shot: auto-map a COMP's knobs to audio bands and bind them to a feature CHOP.",
+    { mutates: true },
+  ),
+  "params-modes": r(
+    readParameterModesSchema,
+    readParameterModesImpl,
+    "Read each parameter's mode (constant/expression/export/bind) + raw expr/bind/export.",
+  ),
+  "set-expr": r(
+    setParameterExpressionSchema,
+    setParameterExpressionImpl,
+    "Set a parameter to an expression/bind/constant without raw Python.",
+    { mutates: true },
+  ),
+  disconnect: r(
+    disconnectNodesSchema,
+    disconnectNodesImpl,
+    "Remove input wire(s) from a node (the inverse of connect).",
+    { mutates: true },
+  ),
+  // Phase 14 — signature effects, multipass 3D, data-driven cloning, runtime reads:
+  datamosh: r(
+    createDatamoshSchema,
+    createDatamoshImpl,
+    "Build a datamosh / time-echo / frame-blend smear (feedback ghost trails).",
+    { mutates: true },
+  ),
+  warp: r(
+    createDisplacementWarpSchema,
+    createDisplacementWarpImpl,
+    "Warp a source by noise / a second TOP / audio (displacement).",
+    { mutates: true },
+  ),
+  halftone: r(
+    createHalftoneSchema,
+    createHalftoneImpl,
+    "Stylise a source as halftone dots / CMYK / dither / posterize (GLSL).",
+    { mutates: true },
+  ),
+  "feedback-tunnel": r(
+    createFeedbackTunnelSchema,
+    createFeedbackTunnelImpl,
+    "Build an infinite zoom/rotate/hue feedback tunnel generator.",
+    { mutates: true },
+  ),
+  "multipass-3d": r(
+    multipass3dDepthSchema,
+    multipass3dDepthImpl,
+    "Build a multipass 3D scene (Render + SSAO + a synthetic Depth output).",
+    { mutates: true },
+  ),
+  replicator: r(
+    createReplicatorSchema,
+    createReplicatorImpl,
+    "Clone a template COMP per row of a Table DAT (Replicator COMP).",
+    { mutates: true },
+  ),
+  "node-state": r(
+    getNodeStateRuntimeSchema,
+    getNodeStateRuntimeImpl,
+    "Read an operator's runtime telemetry (cook time/count, res, channels, GPU mem).",
+  ),
+  logs: r(
+    getBridgeLogsSchema,
+    getBridgeLogsImpl,
+    "Collect recent cook errors/warnings (+ best-effort textport) for debugging.",
+  ),
+  // Phase 15 — set navigation, sequencing, data reactivity, round-trip, introspection:
+  "set-nav": r(
+    createSetNavigatorSchema,
+    createSetNavigatorImpl,
+    "Build a stage cue-list navigator (Index/Next/Prev/Go, QLab model).",
+    { mutates: true },
+  ),
+  "pop-field": r(
+    createPopFieldSchema,
+    createPopFieldImpl,
+    "Build a GPU POP point field (experimental — live-validation pending).",
+    { mutates: true },
+  ),
+  "beat-grid": r(
+    createBeatGridSequencerSchema,
+    createBeatGridSequencerImpl,
+    "Build a beat/bar step-grid sequencer (param or cue per active step).",
+    { mutates: true },
+  ),
+  "react-data": r(
+    createDataReactiveSchema,
+    createDataReactiveImpl,
+    "Map live data-source channels onto a COMP's knobs with per-mapping range remap.",
+    { mutates: true },
+  ),
+  serialize: r(
+    serializeNetworkSchema,
+    serializeNetworkImpl,
+    "Serialize a COMP's children to a diffable JSON spec (params + modes + wires).",
+  ),
+  rebuild: r(
+    rebuildNetworkSchema,
+    rebuildNetworkImpl,
+    "Rebuild a network from a serialize_network spec (create + params + wires).",
+    { mutates: true },
+  ),
+  "inspect-comp": r(
+    inspectComponentSchema,
+    inspectComponentImpl,
+    "Read a COMP's storage, promoted extension members, and custom-parameter definitions.",
+  ),
+  // Phase 15 — 3D text, sidechain envelope, MIDI (hardware path held pending gear):
+  "text-3d": r(
+    createText3dSchema,
+    createText3dImpl,
+    "Build extruded 3D text with spin/depth/material.",
+    { mutates: true },
+  ),
+  envelope: r(
+    createEnvelopeFollowerSchema,
+    createEnvelopeFollowerImpl,
+    "Shape a reactive signal: attack/release + gate/duck (sidechain). Experimental.",
+    { mutates: true },
+  ),
+  "midi-map": r(
+    createMidiMapSchema,
+    createMidiMapImpl,
+    "Build a MIDI controller preset map (APC/Launchpad/MIDI Mix/nanoKONTROL). Hardware-UNVERIFIED.",
+    { mutates: true },
+  ),
+  "midi-notes": r(
+    createMidiNoteReactiveSchema,
+    createMidiNoteReactiveImpl,
+    "Build a MIDI-note reactive chain (synthetic source previews without gear).",
     { mutates: true },
   ),
 };
