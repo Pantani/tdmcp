@@ -21,13 +21,15 @@ export const createDataSourceSchema = z.object({
   port: z.coerce
     .number()
     .int()
+    .positive()
+    .max(65535)
     .optional()
     .describe("(osc) UDP port to listen on. Defaults to 7000."),
   device: z
     .string()
     .optional()
     .describe("(serial) Serial port, e.g. 'COM3' on Windows or '/dev/tty.usbserial' on macOS."),
-  baud: z.coerce.number().int().default(9600).describe("(serial) Baud rate."),
+  baud: z.coerce.number().int().positive().default(9600).describe("(serial) Baud rate."),
   fields: z
     .array(z.string())
     .default(["value"])
@@ -64,8 +66,10 @@ interface DataSourceReport {
 // One Python pass builds a self-contained data-source sub-network per kind. For
 // json/csv it seeds a static sample table (one column per field) so the output
 // Null CHOP always carries the named channels offline, and wires a Web Client DAT
-// alongside for live fetching (whose callback can overwrite the sample). For osc/
-// serial it creates the matching In operator pair. Everything degrades to a
+// alongside for live fetching whose onResponse callback parses the fetched body
+// (JSON or CSV) and rewrites the sample table's value row — so polling actually
+// drives the channels, falling back to the static seed on any parse failure. For
+// osc/serial it creates the matching In operator pair. Everything degrades to a
 // warning instead of throwing: a partial network still returns a useful report.
 const DATA_SOURCE_SCRIPT = `
 import json, base64, traceback
@@ -154,7 +158,8 @@ try:
             _refresh.par.active = 1
             _raw_dat = _c.create(nullDAT, "raw"); _connect(_src, _raw_dat)
             # Static sample: header row of field names + two numeric sample rows so
-            # the Null CHOP carries the named channels even before any fetch.
+            # the Null CHOP carries the named channels even before any fetch. A live
+            # fetch overwrites the value row via the parse callback below.
             _sample = _c.create(tableDAT, "sample")
             _sample.clear()
             _sample.appendRow(_fields)
@@ -164,8 +169,74 @@ try:
             _setpar(_datto, "firstrow", "names")
             _setpar(_datto, "firstcolumn", "values")
             _setpar(_datto, "output", "chanpercol")
-            _connect(_sample, _datto)
+            # A DAT-to-CHOP reads its source DAT from the 'dat' parameter, NOT from an
+            # input connector (a CHOP-family op has no DAT input connector — wiring it
+            # silently fails). Point it at the sample table so the static seed AND every
+            # parsed fetch actually reach the Null CHOP channels.
+            _setpar(_datto, "dat", _sample.name)
             _null_chop = _c.create(nullCHOP, "out"); _connect(_datto, _null_chop)
+            # Parse callback: the Web Client DAT delivers a fetched body to onResponse as
+            # bytes (verified live: onResponse(webClientDAT, statusCode, headerDict, data),
+            # statusCode is a dict, data is bytes). Decode it, parse JSON or CSV, pull each
+            # numeric field, and rewrite the sample table's value row so the DAT-to-CHOP ->
+            # Null CHOP channels update from real data. On any parse failure the static
+            # seed is left untouched, so the network still cooks offline / on a bad payload.
+            _is_csv = "1" if _kind == "csv" else "0"
+            _fields_lit = repr(_fields)
+            _cb = _c.create(textDAT, "parse")
+            _ctext = (
+                "import json\\n"
+                "def _write_sample(sample, fields, vals):\\n"
+                "\\tif not vals:\\n"
+                "\\t\\treturn False\\n"
+                "\\tsample.clear()\\n"
+                "\\tsample.appendRow(fields)\\n"
+                "\\tsample.appendRow([('%%.6f' %% vals[f]) if f in vals else '0' for f in fields])\\n"
+                "\\treturn True\\n"
+                "def _parse_body(body, fields, is_csv):\\n"
+                "\\tvals = {}\\n"
+                "\\tif body is None:\\n"
+                "\\t\\treturn vals\\n"
+                "\\tif isinstance(body, (bytes, bytearray)):\\n"
+                "\\t\\tbody = body.decode('utf-8', 'replace')\\n"
+                "\\tif is_csv:\\n"
+                "\\t\\trows = [ln for ln in body.replace('\\\\r', '').split('\\\\n') if ln.strip()]\\n"
+                "\\t\\tif rows:\\n"
+                "\\t\\t\\theader = [h.strip() for h in rows[0].split(',')]\\n"
+                "\\t\\t\\tlast = [c.strip() for c in rows[-1].split(',')]\\n"
+                "\\t\\t\\tlookup = dict(zip(header, last))\\n"
+                "\\t\\t\\tfor f in fields:\\n"
+                "\\t\\t\\t\\tif f in lookup:\\n"
+                "\\t\\t\\t\\t\\ttry:\\n"
+                "\\t\\t\\t\\t\\t\\tvals[f] = float(lookup[f])\\n"
+                "\\t\\t\\t\\t\\texcept Exception:\\n"
+                "\\t\\t\\t\\t\\t\\tpass\\n"
+                "\\telse:\\n"
+                "\\t\\ttry:\\n"
+                "\\t\\t\\tdata = json.loads(body)\\n"
+                "\\t\\texcept Exception:\\n"
+                "\\t\\t\\treturn vals\\n"
+                "\\t\\tif isinstance(data, list) and data:\\n"
+                "\\t\\t\\tdata = data[-1]\\n"
+                "\\t\\tif isinstance(data, dict):\\n"
+                "\\t\\t\\tfor f in fields:\\n"
+                "\\t\\t\\t\\tif f in data:\\n"
+                "\\t\\t\\t\\t\\ttry:\\n"
+                "\\t\\t\\t\\t\\t\\tvals[f] = float(data[f])\\n"
+                "\\t\\t\\t\\t\\texcept Exception:\\n"
+                "\\t\\t\\t\\t\\t\\tpass\\n"
+                "\\treturn vals\\n"
+                "def onResponse(webClientDAT, statusCode, headerDict, data):\\n"
+                "\\tfields = %s\\n"
+                "\\tis_csv = bool(%s)\\n"
+                "\\tsample = webClientDAT.parent().op('sample')\\n"
+                "\\tif sample is None:\\n"
+                "\\t\\treturn\\n"
+                "\\t_write_sample(sample, fields, _parse_body(data, fields, is_csv))\\n"
+                "\\treturn\\n"
+            ) % (_fields_lit, _is_csv)
+            _cb.text = _ctext
+            _setpar(_src, "callbacks", _cb.name)
             if _p.get("expose_controls"):
                 # Real controls (not just a label list): Active drives the Web Client DAT's enable,
                 # Poll sets the fetch interval the refresh Execute DAT reads above.
@@ -201,7 +272,8 @@ try:
             _setpar(_datto, "firstrow", "values")
             _setpar(_datto, "firstcolumn", "values")
             _setpar(_datto, "output", "chanpercol")
-            _connect(_src, _datto)
+            # DAT-to-CHOP takes its source via the 'dat' parameter, not an input connector.
+            _setpar(_datto, "dat", _src.name)
             _null_chop = _c.create(nullCHOP, "out"); _connect(_datto, _null_chop)
             if _p.get("expose_controls"):
                 _controls = _expose_active(_src, "active")

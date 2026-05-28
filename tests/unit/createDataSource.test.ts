@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   buildDataSourceScript,
   createDataSourceImpl,
+  createDataSourceSchema,
 } from "../../src/tools/layer2/createDataSource.js";
 import type { ToolContext } from "../../src/tools/types.js";
 import { silentLogger } from "../../src/utils/logger.js";
@@ -146,6 +147,82 @@ describe("buildDataSourceScript", () => {
     expect(script).toContain("_c.create(oscinDAT");
     expect(script).toContain("_c.create(oscinCHOP");
     expect(script).toContain("_c.create(serialDAT");
+  });
+
+  it("parses a fetched body into the sample table so polling actually drives the channels", () => {
+    // The substantive contract: a Web Client DAT callback parses the fetched body and rewrites
+    // the sample table's value row, which feeds DAT-to-CHOP -> Null CHOP. Verified live: feeding
+    // the generated onResponse a JSON body changed the out CHOP from the static seed to the parsed
+    // values (bass/mid/high 0.5/.. -> 0.91/0.22/0.77). Here we assert the machinery is emitted.
+    const script = buildDataSourceScript({ kind: "json", fields: ["bass", "mid", "high"] });
+    // A callbacks DAT is created and wired to the Web Client DAT's 'callbacks' parameter.
+    expect(script).toContain('_c.create(textDAT, "parse")');
+    expect(script).toContain('_setpar(_src, "callbacks", _cb.name)');
+    // The callback is the live-verified onResponse(webClientDAT, statusCode, headerDict, data).
+    expect(script).toContain("def onResponse(webClientDAT, statusCode, headerDict, data)");
+    // The fetched body arrives as bytes (verified live) and is decoded before parsing.
+    expect(script).toContain("body.decode('utf-8', 'replace')");
+    // JSON bodies go through json.loads; the parsed numeric fields are written back to the sample
+    // table (header row + a value row) which the DAT-to-CHOP reads.
+    expect(script).toContain("json.loads(body)");
+    expect(script).toContain("sample.appendRow(fields)");
+    expect(script).toContain("def _parse_body(body, fields, is_csv)");
+    // The field list and the csv flag are injected into the callback at build time: the field
+    // names come from repr(_fields) and the csv flag from a kind-derived "1"/"0".
+    expect(script).toContain("fields = %s");
+    expect(script).toContain("is_csv = bool(%s)");
+    expect(script).toContain("_fields_lit = repr(_fields)");
+    expect(script).toContain(") % (_fields_lit, _is_csv)");
+  });
+
+  it("flags csv kind so the callback splits a CSV body instead of json.loads", () => {
+    const script = buildDataSourceScript({ kind: "csv", fields: ["temp", "humidity"] });
+    // The csv flag is derived from the kind ("1" for csv, "0" otherwise) and fed to the callback.
+    expect(script).toContain('_is_csv = "1" if _kind == "csv" else "0"');
+    // CSV path: split on newline, take the last data row keyed by the header.
+    expect(script).toContain("rows[-1].split(',')");
+    expect(script).toContain("dict(zip(header, last))");
+  });
+
+  it("feeds the DAT-to-CHOP via its 'dat' parameter, not a (silently-failing) input connector", () => {
+    // A CHOP-family DAT-to-CHOP has no DAT input connector — wiring it with inputConnectors fails
+    // silently, so the sample never reaches the channels. Verified live: setting par.dat made the
+    // out CHOP carry the seed AND every parsed fetch. Assert both kinds set the dat parameter.
+    const json = buildDataSourceScript({ kind: "json" });
+    expect(json).toContain('_setpar(_datto, "dat", _sample.name)');
+    const serial = buildDataSourceScript({ kind: "serial" });
+    expect(serial).toContain('_setpar(_datto, "dat", _src.name)');
+  });
+});
+
+describe("createDataSourceSchema validation", () => {
+  const base = {
+    kind: "osc" as const,
+    parent_path: "/project1",
+    fields: ["value"],
+    poll_seconds: 1,
+    expose_controls: true,
+  };
+
+  it("rejects an out-of-range OSC port (0, negative, or > 65535)", () => {
+    expect(createDataSourceSchema.safeParse({ ...base, port: 0 }).success).toBe(false);
+    expect(createDataSourceSchema.safeParse({ ...base, port: -1 }).success).toBe(false);
+    expect(createDataSourceSchema.safeParse({ ...base, port: 70000 }).success).toBe(false);
+    // A valid port still passes.
+    expect(createDataSourceSchema.safeParse({ ...base, port: 7000 }).success).toBe(true);
+  });
+
+  it("rejects a non-positive serial baud rate", () => {
+    expect(createDataSourceSchema.safeParse({ ...base, kind: "serial", baud: 0 }).success).toBe(
+      false,
+    );
+    expect(createDataSourceSchema.safeParse({ ...base, kind: "serial", baud: -9600 }).success).toBe(
+      false,
+    );
+    // A valid baud still passes.
+    expect(
+      createDataSourceSchema.safeParse({ ...base, kind: "serial", baud: 115200 }).success,
+    ).toBe(true);
   });
 });
 
