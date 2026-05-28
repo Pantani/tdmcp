@@ -351,7 +351,7 @@ validate).
 
 ---
 
-## Phase 13 — v0.4.0 · Components, agent-DX & reactivity ☐ planned
+## Phase 13 — v0.4.0 · Components, agent-DX & reactivity ☑ shipped
 
 The first post-0.3 wave. The thesis shifts from *generating* visuals (0.3.0 already covers that
 with 102 tools) to **packaging, documenting and cheaply operating** them. tdmcp already ships
@@ -372,27 +372,28 @@ self-documentation niceties + perform mode. Table is ordered by priority.
 | Feature | Delivers | Effort | Status |
 |---|---|---|---|
 | ~~`export_component` / `import_component`~~ — **already shipped** | `.tox` `save` / `loadTox` / live-linked `externaltox` already exist as **`manage_component`** (BL-01 was a false gap). Remaining tox gap: portable bundle via `saveExternalTox` → v0.5.0 `make_portable_tox` | — | ☑ |
-| `scaffold_extension` | Extension DAT stub + Extension Object + Promote flag + re-init — make a COMP scriptable (BL-03) | M | ☐ |
-| `add_custom_parameters` | Declarative custom-parameter pages (`appendCustomPage`/`appendFloat…`), TDJSON in/out — expose knobs (BL-03) | M | ☐ |
-| `sync_external_clock` +Link/MIDI | Add `ableton_link` + `midi_clock` modes alongside tap-tempo — lock to the DJ's clock (BL-08) | S | ☐ |
-| Body tracking (merge in-flight) | `setup_body_tracking` / `create_pose_tracking` / `create_pose_skeleton` / `create_body_reactive` — **already exposed by the build** (parallel branch); merge here, live-validate webcam, add `body_tracking_reactive` recipe (BL-02) | M | ◐ |
-| `analyze_project` | Unused/dead ops, broken file deps, orphan COMPs, dependency graph via `findChildren`/connectors (BL-04) | M | ☐ |
-| `generate_readme` | Markdown project doc: params table (TDJSON), I/O, child inventory, deps, preview thumbnail (BL-04) | M | ☐ |
-| `analyze_screenshot` | Prompt+tool: `get_preview` image + topology + `get_td_node_errors` → explain/diagnose ("why is it black?") (BL-09) | M | ☐ |
-| `edit_dat_content` | Surgical `old_string`/`new_string` DAT edit (unique-match + opt-in `replace_all`) — token-cheap edits *(Embody-mined)* | S | ☐ |
-| `set_dat_content` (anti-wipe) | Safe whole-DAT write with a `confirm_wipe` guardrail (refuses silent clears) *(Embody-mined)* | S | ☐ |
-| `batch_operations` | Many create/connect/set-param in one bridge round-trip, fail-forward with per-item warnings — expose the Layer-1 builder as a primitive *(Embody-mined)* | M | ☐ |
-| `snapshot_td_graph` compact mode | Token-optimized TDN-style read (type-default hoisting, expr/bind shorthand, inline short arrays) — Embody's `read_tdn` is ~20–90× cheaper than op-walks *(Embody-mined)* | M | ☐ |
-| `manage_annotation` + enclosed ops | Agents add network boxes/comments + query ops enclosed by a box → self-documenting networks *(Embody-mined)* | S | ☐ |
-| `write_agent_guide` | Emit a project-local `CLAUDE.md`/`AGENTS.md` seeded with TDMCP operator conventions + render-coordinate rules *(Embody-mined)* | S | ☐ |
-| `set_perform_mode` | Bridge suspends nonessential MCP/externalization compute during a live show — VJ-critical *(Embody-mined)* | M | ☐ |
+| `scaffold_extension` | Extension DAT stub + Extension Object + Promote flag + re-init — make a COMP scriptable (BL-03) | M | ☑ |
+| `add_custom_parameters` | Declarative custom-parameter pages (`appendCustomPage`/`appendFloat…`), TDJSON in/out — expose knobs (BL-03) | M | ☑ |
+| `sync_external_clock` +Link/MIDI | Add `ableton_link` + `midi_clock` modes alongside tap-tempo — lock to the DJ's clock (BL-08) | S | ☑ |
+| Body tracking (merge in-flight) | `setup_body_tracking` / `create_pose_tracking` / `create_pose_skeleton` / `create_body_reactive` — **already exposed by the build** (parallel branch); merge here, live-validate webcam, add `body_tracking_reactive` recipe (BL-02) | M | ☑ |
+| `analyze_project` | Unused/dead ops, broken file deps, orphan COMPs, dependency graph via `findChildren`/connectors (BL-04) | M | ☑ |
+| `generate_readme` | Markdown project doc: params table (TDJSON), I/O, child inventory, deps, preview thumbnail (BL-04) | M | ☑ |
+| `analyze_screenshot` | Prompt+tool: `get_preview` image + topology + `get_td_node_errors` → explain/diagnose ("why is it black?") (BL-09) | M | ☑ |
+| `edit_dat_content` | Surgical `old_string`/`new_string` DAT edit (unique-match + opt-in `replace_all`) — token-cheap edits *(Embody-mined)* | S | ☑ |
+| `set_dat_content` (anti-wipe) | Safe whole-DAT write with a `confirm_wipe` guardrail (refuses silent clears) *(Embody-mined)* | S | ☑ |
+| `batch_operations` | Many create/connect/set-param in one bridge round-trip, fail-forward with per-item warnings — expose the Layer-1 builder as a primitive *(Embody-mined)* | M | ☑ |
+| `snapshot_td_graph` compact mode | Token-optimized TDN-style read (type-default hoisting, expr/bind shorthand, inline short arrays) — Embody's `read_tdn` is ~20–90× cheaper than op-walks *(Embody-mined)* | M | ☑ |
+| `manage_annotation` + enclosed ops | Agents add network boxes/comments + query ops enclosed by a box → self-documenting networks *(Embody-mined)* | S | ☑ |
+| `write_agent_guide` | Emit a project-local `CLAUDE.md`/`AGENTS.md` seeded with TDMCP operator conventions + render-coordinate rules *(Embody-mined)* | S | ☑ |
+| `set_perform_mode` | Bridge suspends nonessential MCP/externalization compute during a live show — VJ-critical *(Embody-mined)* | M | ☑ |
 
-**Already in flight (verify + merge first):** the connected build already exposes
-`setup_body_tracking`, `create_pose_tracking`, `create_pose_skeleton`, `create_body_reactive` —
-built in a **parallel worktree, not yet on this branch** (git log + `src/` grep confirm absence
-here). v0.4.0 should merge them, live-validate (webcam, create→verify→preview, post-cook error
-check), and add the artist-facing `body_tracking_reactive` recipe. See
-[[concurrent-agents-workflow]] — re-verify before duplicating work.
+**Body tracking — merged.** `setup_body_tracking`, `create_pose_tracking`,
+`create_pose_skeleton` and `create_body_reactive` (with the shared `poseSource` helper) were
+merged here from the parallel worktree, wired into the registry + CLI, and live-validated in
+TouchDesigner (synthetic sources build clean; `setup_body_tracking` loaded the MediaPipe engine,
+emitted a 33-landmark pose CHOP, built a skeleton, and cooked error-free with no camera-permission
+hang). The artist-facing **`body_tracking_reactive`** recipe (33 landmark dots + a feedback motion
+trail) ships with it.
 
 **Areas:** new L2/L3 tools (`scaffoldExtension`, `addCustomParameters` — the reusable-component
 complement to the existing `manageComponent`; `analyzeProject`, `generateReadme`, `editDatContent`, `setDatContent`,

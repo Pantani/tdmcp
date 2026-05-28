@@ -4,6 +4,68 @@ All notable changes to **tdmcp** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-05-28
+
+Phase 13 — the first post-0.3 wave. The focus shifts from *generating* visuals to
+**packaging, documenting and cheaply operating** them: reusable components, project
+intelligence, token-cheap agent-DX primitives, external-clock locking, and body
+tracking. Every new tool was built → integrated → live-validated in TouchDesigner.
+
+### Added
+
+- **`add_custom_parameters`** (CLI `add-params`) — append a declarative
+  custom-parameter page to any COMP: Float/Int/Toggle/Menu/Str/Pulse/RGB/XYZ, with
+  clamp, separate menu names/labels, and vector size. Duplicate names are skipped,
+  not fatal. The lower-level, declarative complement to `create_control_panel`.
+- **`scaffold_extension`** (CLI `extension`) — make a COMP scriptable: a Text DAT
+  extension class (`op('./<DAT>').module.<Class>(me)`) + Promote flag + re-init, with
+  the extension parameter names probed live (they vary by build). `comp.ext.<Class>`
+  works immediately.
+- **`analyze_project`** (CLI `analyze`) — find likely-dead operators, broken
+  external-file dependencies, and orphan COMPs, plus a dependency map (op()/Select
+  refs + CHOP exports). Conservative, with a reason per flag. Complements
+  `describe_project`.
+- **`generate_readme`** (CLI `readme`) — a Markdown project document: family/type
+  counts, a custom-parameter table, inputs/outputs, child inventory, external-file
+  deps, and an optional preview thumbnail.
+- **`edit_dat_content`** (CLI `dat-edit`) — surgical old/new string replace in a
+  Text/Table DAT, requiring a unique match unless `replace_all` is set.
+- **`set_dat_content`** (CLI `dat-set`) — overwrite a DAT's whole text, with a
+  `confirm_wipe` anti-wipe guard that refuses silent clears.
+- **`batch_operations`** (CLI `batch`) — run many create/connect/setParam ops in one
+  fail-forward call (per-item warnings; not transactional), reusing the Layer-1
+  network builder. Distinct from `set_parameters_batch` (params only).
+- **`manage_annotation`** (CLI `annotate`) — create titled Annotate-COMP boxes, set
+  per-op comments, list a network's annotations, and list the ops a box geometrically
+  encloses — self-documenting networks.
+- **`write_agent_guide`** (CLI `agent-guide`) — emit a project-local
+  `CLAUDE.md`/`AGENTS.md` seeded with tdmcp operator conventions + TD render-coordinate
+  rules.
+- **`set_perform_mode`** (CLI `perform-mode`) — toggle a perform-mode flag (stored on
+  the TD root + `ui.performMode`) so the bridge and MCP tools skip nonessential
+  compute (preview captures, event streaming, externalization) during a live show.
+- **Body / pose tracking (MediaPipe, webcam):** `setup_body_tracking` (CLI
+  `body-tracking`) one-shot loads the free torinmb/mediapipe-touchdesigner engine,
+  builds an adapter that emits a 33-landmark pose CHOP (tx/ty/tz/confidence), and a
+  live skeleton; `create_pose_tracking` (`pose-track`), `create_pose_skeleton`
+  (`skeleton`) and `create_body_reactive` (`body-reactive`) build pose sources,
+  skeletons and camera-reactive visuals (synthetic / MediaPipe / OSC sources). New
+  recipe **`body_tracking_reactive`** — 33 landmark dots with a feedback motion trail.
+- **`analyze_screenshot`** prompt — captures a node's preview + topology + node errors
+  and diagnoses what it shows or why it looks wrong ("why is it black?").
+- **Feature-build harness** (`.claude/`): a `tdmcp-tool-builder` skill +
+  `tdmcp-feature-lead` / `tdmcp-tool-builder` agents that build tool batches as
+  parallel one-tool-per-agent waves with a single-writer integrator.
+
+### Changed
+
+- **`sync_external_clock`** gains a `mode` (`tap` | `ableton_link` | `midi_clock`):
+  Ableton Link locks to a Link session via an Ableton Link CHOP; MIDI clock derives
+  BPM from 24-PPQN timing. `tap` stays the default. Link/MIDI are hardware-gated
+  (manual Bpm fallback when no source is present).
+- **`snapshot_td_graph`** gains a `compact` mode — hoists per-type default parameters
+  and delta-encodes each node for token-cheap whole-COMP reads.
+
 ## [0.3.1] - 2026-05-27
 
 Packaging and docs for the Anthropic Connectors Directory submission (Desktop

@@ -170,3 +170,5 @@ spawn (sonnet for prescriptive tools, opus for the ones needing design judgment)
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
 | 2026-05-28 | Initial build | full harness | implement Phase 13 (v0.4.0) tool backlog as parallel waves |
+| 2026-05-28 | Shipped Phase 13 | 14 tools + body-tracking merge + recipe | 3 parallel waves (10 builders) + lead integration; live-validated; v0.4.0 |
+| 2026-05-28 | Hardened builder skill | `tdmcp-tool-builder` SKILL | builders ran vitest but not `tsc`; added "defaulted fields are required when calling the impl; run typecheck too" |
