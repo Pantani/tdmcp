@@ -45,6 +45,7 @@ import { registerGetPreview } from "./getPreview.js";
 import { registerImportModel } from "./importModel.js";
 import { registerListRecipes } from "./listRecipes.js";
 import { registerScaffoldShow } from "./scaffoldShow.js";
+import { registerSetupBodyTracking } from "./setupBodyTracking.js";
 import { registerSetupOutput } from "./setupOutput.js";
 
 export const layer1Registrars: ToolRegistrar[] = [
@@ -98,4 +99,5 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreatePoseTracking,
   registerCreatePoseSkeleton,
   registerCreateBodyReactive,
+  registerSetupBodyTracking,
 ];

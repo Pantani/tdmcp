@@ -36,16 +36,29 @@ Depois itere:
 
 ## 2. Instale o plugin do MediaPipe (para um performer de verdade)
 
-Para rastrear uma pessoa real, adicione o plugin gratuito do MediaPipe (acelerado
-por GPU) — ele **não precisa de instalação** e roda no Mac e no PC:
+Para rastrear uma pessoa real você precisa do plugin gratuito do MediaPipe
+(acelerado por GPU, roda no Mac e no PC). O tdmcp baixa pra você — num terminal:
 
-1. Baixe a última release em
-   [torinmb/mediapipe-touchdesigner](https://github.com/torinmb/mediapipe-touchdesigner/releases).
-2. Abra o `MediaPipe TouchDesigner.toe`, ou arraste o componente `.tox` para o seu
-   projeto.
-3. Escolha sua webcam e ligue o rastreamento de **Pose**. O componente entrega um
-   CHOP com 33 pontos de pose (canais `tx`/`ty`/`tz`, um sample por ponto).
-4. Anote o caminho desse CHOP de landmarks — você vai apontar o tdmcp para ele.
+```bash
+npx @dpantani/tdmcp install-mediapipe
+```
+
+Isso baixa a release oficial (licença MIT) do
+[torinmb/mediapipe-touchdesigner](https://github.com/torinmb/mediapipe-touchdesigner)
+e extrai em `~/tdmcp-mediapipe`.
+
+Depois, com o TouchDesigner aberto, peça ao assistente:
+
+> *"configure o rastreamento de corpo"*
+
+A tool **setup_body_tracking** carrega o plugin no seu projeto, acha o CHOP de
+landmarks de pose e já fia o `create_pose_tracking` mais um esqueleto ao vivo — você
+só escolhe sua webcam no novo componente `mediapipe_pose` e liga **Pose**.
+
+Prefere na mão? Abra o `MediaPipe TouchDesigner.toe` (ou arraste um `.tox` de
+`~/tdmcp-mediapipe/release/toxes/`) para o seu projeto, ligue **Pose**, e aponte o
+`mediapipe_chop_path` de uma tool para o CHOP de landmarks do plugin (33 samples,
+canais `tx`/`ty`/`tz`).
 
 ::: warning Permissão de câmera no macOS
 Na primeira vez que o TouchDesigner lê a webcam, o macOS abre um diálogo de

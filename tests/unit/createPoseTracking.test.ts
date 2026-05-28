@@ -93,8 +93,8 @@ describe("create_pose_tracking", () => {
 
     // Synthetic source is a Script CHOP (no camera permission).
     expect(bodies.find((b) => b.name === "posein")?.type).toBe("scriptCHOP");
-    // Smoothing then the canonical pose Null.
-    expect(bodies.find((b) => b.name === "smooth")?.type).toBe("lagCHOP");
+    // Smoothing (sample-preserving Script CHOP) then the canonical pose Null.
+    expect(bodies.find((b) => b.name === "smooth")?.type).toBe("scriptCHOP");
     expect(bodies.find((b) => b.name === "pose")?.type).toBe("nullCHOP");
     // Scalar keypoints CHOP for easy binding.
     expect(bodies.find((b) => b.name === "keypoints")?.type).toBe("scriptCHOP");
@@ -157,15 +157,13 @@ describe("create_pose_tracking", () => {
     expect(bodies.some((b) => b.name === "mirrored" && b.type === "mergeCHOP")).toBe(true);
   });
 
-  it("exposes a Smoothing knob bound to both Lag CHOP directions", async () => {
+  it("exposes a Smoothing knob the smoother reads directly (no bind_to)", async () => {
     const scripts = captureExecScripts();
     await run({ source: "synthetic", expose_controls: true });
     const smoothing = panelControls(scripts).find((c) => c.name === "Smoothing");
-    expect(smoothing?.bind_to).toEqual(
-      expect.arrayContaining([
-        expect.stringMatching(/smooth\.lag1$/),
-        expect.stringMatching(/smooth\.lag2$/),
-      ]),
-    );
+    expect(smoothing).toBeDefined();
+    expect(smoothing?.bind_to ?? []).toEqual([]);
+    // The smoother callback blends with the previous frame (preserving the 33 samples).
+    expect(scripts.some((s) => s.includes("prev_vals") && s.includes("scriptOp.copy"))).toBe(true);
   });
 });

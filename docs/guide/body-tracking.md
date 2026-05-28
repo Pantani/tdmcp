@@ -34,16 +34,30 @@ knees, ankles) joined by glowing lines — moving on its own. Then iterate:
 
 ## 2. Install the MediaPipe plugin (for a real performer)
 
-To track a real person, add the free, GPU-accelerated MediaPipe plugin — it needs
-**no installation** and runs on Mac and PC:
+To track a real person you need the free, GPU-accelerated MediaPipe plugin
+(Mac + PC). tdmcp can fetch it for you — in a terminal:
 
-1. Download the latest release from
-   [torinmb/mediapipe-touchdesigner](https://github.com/torinmb/mediapipe-touchdesigner/releases).
-2. Open `MediaPipe TouchDesigner.toe`, or drag the `.tox` component into your own
-   project.
-3. Pick your webcam and enable **Pose** tracking. The component outputs a CHOP of
-   33 pose landmarks (channels `tx`/`ty`/`tz`, one sample per landmark).
-4. Note the path of that landmarks CHOP — you'll point tdmcp at it.
+```bash
+npx @dpantani/tdmcp install-mediapipe
+```
+
+That downloads the official, MIT-licensed
+[torinmb/mediapipe-touchdesigner](https://github.com/torinmb/mediapipe-touchdesigner)
+release and extracts it to `~/tdmcp-mediapipe`.
+
+Then, with TouchDesigner open, ask the assistant:
+
+> *"set up body tracking"*
+
+The **setup_body_tracking** tool loads the plugin into your project, finds its
+pose-landmarks CHOP, and wires up `create_pose_tracking` plus a live skeleton —
+all you do is pick your webcam on the new `mediapipe_pose` component and enable
+**Pose**.
+
+Prefer to do it by hand? Open `MediaPipe TouchDesigner.toe` (or drag a `.tox` from
+`~/tdmcp-mediapipe/release/toxes/`) into your project, enable **Pose**, then point a
+tool's `mediapipe_chop_path` at the plugin's pose-landmarks CHOP (33 samples,
+channels `tx`/`ty`/`tz`).
 
 ::: warning macOS camera permission
 The first time TouchDesigner reads your webcam, macOS pops a permission dialog.

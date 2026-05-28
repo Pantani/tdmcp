@@ -11,10 +11,10 @@ export const createPoseTrackingSchema = z.object({
   smoothing: z.coerce
     .number()
     .min(0)
-    .max(1)
+    .max(0.95)
     .default(0.08)
     .describe(
-      "Temporal smoothing (Lag CHOP, in seconds) applied to every landmark so jittery tracking glides instead of snapping. 0 = raw/instant; higher = smoother but laggier. Exposed as a live knob.",
+      "Temporal smoothing (0..0.95): each landmark is blended with its previous frame so jittery tracking glides instead of snapping. 0 = raw/instant; higher = smoother but laggier. Exposed as a live knob.",
     ),
   mirror: z
     .boolean()
@@ -22,10 +22,7 @@ export const createPoseTrackingSchema = z.object({
     .describe(
       "Flip the pose horizontally (negate tx) so a webcam feed reads like a mirror — the performer's right hand is on the right of the frame. Build-time; off by default.",
     ),
-  expose_controls: z
-    .boolean()
-    .default(true)
-    .describe("Expose a live 'Smoothing' knob bound to the Lag CHOP."),
+  expose_controls: z.boolean().default(true).describe("Expose a live 'Smoothing' knob (0 = raw)."),
   parent_path: z.string().default("/project1"),
 });
 type CreatePoseTrackingArgs = z.infer<typeof createPoseTrackingSchema>;
@@ -69,6 +66,43 @@ function keypointsCallback(posePath: string): string {
   ].join("\n");
 }
 
+/**
+ * The Python onCook for the 'smooth' Script CHOP: copies the input pose and exponentially blends
+ * each landmark with its previous frame, reading a live 'Smoothing' custom par when one exists (it
+ * falls back to the build-time default). This preserves the 33 spatial samples — a Lag/Filter CHOP
+ * would collapse them to 1, because those operate on the time axis (verified live).
+ */
+function smootherCallback(defaultAmt: number): string {
+  const amt = Number.isFinite(defaultAmt) ? defaultAmt : 0;
+  return [
+    `DEFAULT_AMT = ${amt}`,
+    "",
+    "def onCook(scriptOp):",
+    "    inp = scriptOp.inputs[0] if scriptOp.inputs else None",
+    "    if inp is None or inp.numChans == 0:",
+    "        scriptOp.clear()",
+    "        return",
+    "    scriptOp.copy(inp)",
+    "    try:",
+    "        amt = float(getattr(parent().par, 'Smoothing'))",
+    "    except Exception:",
+    "        amt = DEFAULT_AMT",
+    "    amt = max(0.0, min(0.95, amt))",
+    "    if amt > 0:",
+    "        prev = scriptOp.fetch('prev_vals', None)",
+    "        if prev and len(prev) == scriptOp.numChans:",
+    "            for ci in range(scriptOp.numChans):",
+    "                col = prev[ci]",
+    "                if len(col) == scriptOp.numSamples:",
+    "                    ch = scriptOp[ci]",
+    "                    for si in range(scriptOp.numSamples):",
+    "                        ch[si] = col[si] * amt + ch[si] * (1.0 - amt)",
+    "        scriptOp.store('prev_vals', [[float(scriptOp[ci][si]) for si in range(scriptOp.numSamples)] for ci in range(scriptOp.numChans)])",
+    "    return",
+    "",
+  ].join("\n");
+}
+
 export async function createPoseTrackingImpl(ctx: ToolContext, args: CreatePoseTrackingArgs) {
   return runBuild(async () => {
     const builder = await createSystemContainer(ctx, args.parent_path, "pose_tracking");
@@ -90,15 +124,17 @@ export async function createPoseTrackingImpl(ctx: ToolContext, args: CreatePoseT
       feed = merged;
     }
 
-    // Smoothing then a Null as the canonical bind point (33 samples × tx/ty/tz/confidence).
-    const lag = await builder.add("lagCHOP", "smooth", {
-      lag1: args.smoothing,
-      lag2: args.smoothing,
-      lagunit: "seconds",
-    });
-    if (feed) await builder.connect(feed, lag);
+    // Smoothing (sample-preserving) then a Null as the canonical bind point (33 samples ×
+    // tx/ty/tz/confidence). A Script CHOP blends each landmark with its previous frame — a Lag/
+    // Filter CHOP would collapse the 33 landmarks to 1 (they filter the time axis).
+    const smooth = await builder.add("scriptCHOP", "smooth");
+    const smoothCb = await builder.add("textDAT", "smooth_cb");
+    await builder.python(
+      `_cb = op(${q(smoothCb)})\n_cb.text = ${q(smootherCallback(args.smoothing))}\nop(${q(smooth)}).par.callbacks = _cb.name`,
+    );
+    if (feed) await builder.connect(feed, smooth);
     const pose = await builder.add("nullCHOP", "pose");
-    await builder.connect(lag, pose);
+    await builder.connect(smooth, pose);
 
     // A second output: named scalar channels for easy binding (no sample indexing).
     const keypoints = await builder.add("scriptCHOP", "keypoints");
@@ -110,17 +146,10 @@ export async function createPoseTrackingImpl(ctx: ToolContext, args: CreatePoseT
     // Keep the chain warm: the Script CHOPs read via op() references, so force-cook each frame.
     await installFrameCooker(builder, keypoints, "cooker");
 
+    // The 'smooth' Script CHOP reads this 'Smoothing' par directly each cook, so it needs no
+    // bind_to — the custom par just has to exist on the container.
     const controls: ControlSpec[] = args.expose_controls
-      ? [
-          {
-            name: "Smoothing",
-            type: "float",
-            min: 0,
-            max: 0.5,
-            default: args.smoothing,
-            bind_to: [`${lag}.lag1`, `${lag}.lag2`],
-          },
-        ]
+      ? [{ name: "Smoothing", type: "float", min: 0, max: 0.95, default: args.smoothing }]
       : [];
 
     return finalize(ctx, {
