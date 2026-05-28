@@ -295,6 +295,34 @@ describe("create_point_cloud", () => {
     expect(select?.parameters?.top).toBe("/project1/my_depth");
   });
 
+  it("reports the synthetic fallback + a warning when source='existing' has no path", async () => {
+    const bodies = captureCreateBodies();
+    const result = await createPointCloudImpl(makeCtx(), {
+      source: "existing",
+      // no `existing` path → buildSource falls back to a synthetic Noise TOP
+      resolution: 32,
+      depth_scale: 1,
+      point_size: 0.02,
+      rotate: 0,
+      expose_controls: false,
+      parent_path: "/project1",
+    });
+    // Fail-forward: the build still cooks (no isError) on a synthetic noise source.
+    expect(result.isError).toBeFalsy();
+    expect(bodies.some((b) => b.name === "src" && b.type === "noiseTOP")).toBe(true);
+    // No Select TOP is created since there was no existing path to pull in.
+    expect(bodies.some((b) => b.type === "selectTOP")).toBe(false);
+
+    const text = result.content.find((c) => c.type === "text");
+    const body = text?.type === "text" ? text.text : "";
+    // The report is honest: the summary names the source actually used (synthetic), the structured
+    // block records both the effective and requested source, and a warning explains the fallback.
+    expect(body.split("\n")[0]).toContain("source: synthetic");
+    expect(body).toContain('"source": "synthetic"');
+    expect(body).toContain('"requested_source": "existing"');
+    expect(body).toContain("fell back to a synthetic");
+  });
+
   it("returns a friendly isError result (never throws) when the bridge fails", async () => {
     server.use(
       http.post(`${TD_BASE}/api/nodes`, () =>

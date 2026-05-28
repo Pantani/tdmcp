@@ -238,6 +238,40 @@ describe("create_cubemap_dome", () => {
     expect(controls.map((c) => c.name)).toEqual(["Rotation"]);
   });
 
+  it("binds the shader uniforms to constant defaults even with expose_controls:false", async () => {
+    captureCreateBodies();
+    const scripts = captureExecScripts();
+    const result = await createCubemapDomeImpl(makeCtx(), { ...baseArgs, expose_controls: false });
+    expect(result.isError).toBeFalsy();
+
+    // No custom-par controls are built when controls are off.
+    expect(panelControls(scripts)).toEqual([]);
+
+    // But the uniforms are STILL bound on the Vectors sequence so an unexposed fisheye does not
+    // render with uFov=0 (which would collapse the dome to black). uRotation defaults to 0 and
+    // uFov to the supplied fov, set as constants rather than read from custom pars.
+    const uni = scripts.find((s) => s.includes("seq.vec") && s.includes('vec0name = "uRotation"'));
+    expect(uni).toBeDefined();
+    expect(uni).toContain("vec0valuex = 0");
+    expect(uni).toContain('vec1name = "uFov"');
+    expect(uni).toContain(`vec1valuex = ${baseArgs.fov}`);
+  });
+
+  it("still binds uRotation for an unexposed equirectangular master (no inert uFov block)", async () => {
+    captureCreateBodies();
+    const scripts = captureExecScripts();
+    await createCubemapDomeImpl(makeCtx(), {
+      ...baseArgs,
+      projection: "equirectangular",
+      expose_controls: false,
+    });
+    const uni = scripts.find((s) => s.includes("seq.vec") && s.includes('vec0name = "uRotation"'));
+    expect(uni).toBeDefined();
+    expect(uni).toContain("vec0valuex = 0");
+    // Equirectangular has no uFov uniform, so no uFov block is raised.
+    expect(uni).not.toContain("uFov");
+  });
+
   it("returns a friendly error (never throws) when the bridge fails", async () => {
     server.use(
       http.post(`${TD_BASE}/api/nodes`, () =>

@@ -30,7 +30,7 @@ export const createCubemapDomeSchema = z.object({
     .string()
     .optional()
     .describe(
-      "Optional path to an existing Cube Map TOP (or any TOP delivering a cube-map texture) to remap. When omitted, a simple test scene (sphere on a grid + camera + light) is rendered into a new Cube Map TOP so the tool is self-contained.",
+      "Optional path to an existing TOP delivering a cube-map texture (e.g. a Render TOP in cube-map mode) to remap. When omitted, a simple test scene (sphere on a grid + camera + light) is rendered by a Render TOP in cube-map mode so the tool is self-contained.",
     ),
   resolution: z
     .enum(["1024", "2048", "4096"])
@@ -154,11 +154,18 @@ export async function createCubemapDomeImpl(ctx: ToolContext, args: CreateCubema
       `op(${q(frag)}).text = ${q(shader)}\nop(${q(remap)}).par.pixeldat = op(${q(frag)}).name`,
     );
 
-    // Expose the uRotation (+ uFov for fisheye) uniforms on the GLSL TOP's "Vectors" page so the
-    // Fov / Rotation controls can drive them live. uRotation = block 0, uFov = block 1.
-    if (args.expose_controls) {
+    // ALWAYS bind the uRotation (+ uFov for fisheye) uniforms on the GLSL TOP's "Vectors" page —
+    // not just when controls are exposed. Otherwise TD leaves the uniform values at 0, so an
+    // unexposed fisheye renders with uFov=0 and the dome collapses to black. uRotation = block 0,
+    // uFov = block 1. The values seed the constant defaults here (rotation 0, fov args.fov); when
+    // controls are exposed the Fov/Rotation knobs then drive vec0valuex/vec1valuex live via their
+    // ControlSpec bind_to. Only the custom-par CONTROLS are conditional, never the uniform binding.
+    {
       const blocks = args.projection === "fisheye" ? 2 : 1;
-      const names = [`op(${q(remap)}).par.vec0name = "uRotation"`];
+      const names = [
+        `op(${q(remap)}).par.vec0name = "uRotation"`,
+        `op(${q(remap)}).par.vec0valuex = 0`,
+      ];
       if (args.projection === "fisheye") {
         names.push(`op(${q(remap)}).par.vec1name = "uFov"`);
         names.push(`op(${q(remap)}).par.vec1valuex = ${args.fov}`);
@@ -229,7 +236,7 @@ export const registerCreateCubemapDome: ToolRegistrar = (server, ctx) => {
     {
       title: "Create cube-map dome",
       description:
-        "Render a true cube-map dome master — the higher-fidelity follow-up to create_dome_output (which only warps a flat equirectangular source). A 3D scene is rendered into a Cube Map TOP (or an existing cube-map source is pulled in via a Select TOP), then a GLSL TOP samples that cube map by 3D direction (TD's built-in samplerCube sTDCubeInputs[0]) to produce a fisheye fulldome master or a full 360°×180° equirectangular image, ending on a Null ready for setup_output. Sampling a real cube map avoids the equirect pole-pinch/seam. With expose_controls, a live Fov knob sets fisheye coverage and a Rotation knob spins the dome horizon.",
+        "Render a true cube-map dome master — the higher-fidelity follow-up to create_dome_output (which only warps a flat equirectangular source). A 3D scene is rendered by a Render TOP in cube-map mode (rendermode 'cubemap', which outputs a real cube-map texture in one render — no separate Cube Map TOP), or an existing cube-map source is pulled in via a Select TOP; then a GLSL TOP samples that cube map by 3D direction (TD's built-in samplerCube sTDCubeInputs[0]) to produce a fisheye fulldome master or a full 360°×180° equirectangular image, ending on a Null ready for setup_output. Sampling a real cube map avoids the equirect pole-pinch/seam. With expose_controls, a live Fov knob sets fisheye coverage and a Rotation knob spins the dome horizon.",
       inputSchema: createCubemapDomeSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

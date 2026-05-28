@@ -122,6 +122,17 @@ describe("buildDataSourceScript", () => {
     expect(script).toContain('("op(%r).par.Poll" % _c.path) if _p.get("expose_controls") else');
   });
 
+  it("keeps the refresh poller active=1 unconditionally (callback no-ops while there is no URL)", () => {
+    // Gating active on the URL meant a later-set URL never started polling. The poller is now
+    // always active; its onFrameStart callback early-returns while src.par.url is empty, so it is a
+    // harmless no-op when built without a URL but starts the moment one is set.
+    const script = buildDataSourceScript({ kind: "json", expose_controls: true });
+    expect(script).toContain("_refresh.par.active = 1");
+    expect(script).not.toContain('_refresh.par.active = 1 if _p.get("url") else 0');
+    // The callback guards on the URL so the always-on poller no-ops cleanly with no endpoint.
+    expect(script).toContain("not src.par.url.eval()");
+  });
+
   it("creates a real Active control for osc/serial sources too", () => {
     const osc = buildDataSourceScript({ kind: "osc", expose_controls: true });
     expect(osc).toContain("_expose_active(_src");

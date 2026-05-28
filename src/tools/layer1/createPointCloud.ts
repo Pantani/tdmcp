@@ -115,7 +115,18 @@ export async function createPointCloudImpl(ctx: ToolContext, args: CreatePointCl
   return runBuild(async () => {
     const builder = await createSystemContainer(ctx, args.parent_path, "point_cloud");
     const container = builder.containerPath;
-    const source = (await buildSource(builder, args)) ?? (await builder.add("noiseTOP", "src"));
+    const built = await buildSource(builder, args);
+    // buildSource returns undefined only when source='existing' was requested without a path: it
+    // then falls back to a synthetic Noise TOP so the build still cooks. Report the source ACTUALLY
+    // used (synthetic) and warn, rather than claiming 'existing' for a node that was never sampled.
+    const fellBackToSynthetic = built === undefined;
+    const effectiveSource = fellBackToSynthetic ? "synthetic" : args.source;
+    if (fellBackToSynthetic) {
+      builder.warnings.push(
+        "source='existing' was requested without an `existing` path, so the point cloud fell back to a synthetic animated Noise source. Pass `existing` (a TOP path, e.g. a real depth map) to sample your own texture.",
+      );
+    }
+    const source = built ?? (await builder.add("noiseTOP", "src"));
 
     // A monochrome version of the source is the depth map: one luminance value per pixel, sampled
     // by the position-pack shader to set each point's Z.
@@ -248,12 +259,13 @@ export async function createPointCloudImpl(ctx: ToolContext, args: CreatePointCl
 
     const count = args.resolution * args.resolution;
     return finalize(ctx, {
-      summary: `Built a point cloud (source: ${args.source}) — ${args.resolution}×${args.resolution} = ${count} points whose XYZ comes from the depth/luminance map (grid X/Y + Z = brightness × ${args.depth_scale}) via TOP-instancing, rendered to ${out}.`,
+      summary: `Built a point cloud (source: ${effectiveSource}) — ${args.resolution}×${args.resolution} = ${count} points whose XYZ comes from the depth/luminance map (grid X/Y + Z = brightness × ${args.depth_scale}) via TOP-instancing, rendered to ${out}.`,
       builder,
       outputPath: out,
       controls,
       extra: {
-        source: args.source,
+        source: effectiveSource,
+        requested_source: args.source,
         resolution: args.resolution,
         count,
         depth_scale: args.depth_scale,

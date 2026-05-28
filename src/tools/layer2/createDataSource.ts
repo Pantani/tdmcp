@@ -147,7 +147,11 @@ try:
             _refresh.text = _rtext
             if hasattr(_refresh.par, "framestart"):
                 _refresh.par.framestart = True
-            _refresh.par.active = 1 if _p.get("url") else 0
+            # Keep the refresh poller ALWAYS active: the onFrameStart callback already early-returns
+            # while there is no URL, so it no-ops cleanly when built without one. Gating active on the
+            # URL at build time meant a later-set URL never started polling unless the user manually
+            # re-enabled the DAT; an always-on poller picks up a URL the moment it is set.
+            _refresh.par.active = 1
             _raw_dat = _c.create(nullDAT, "raw"); _connect(_src, _raw_dat)
             # Static sample: header row of field names + two numeric sample rows so
             # the Null CHOP carries the named channels even before any fetch.
