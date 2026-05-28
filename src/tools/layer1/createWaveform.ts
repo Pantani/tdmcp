@@ -43,7 +43,10 @@ export const createWaveformSchema = z.object({
     .describe(
       "Expose live Color / Scale / TimeWindow controls bound to the right node parameters.",
     ),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent COMP path the self-contained 'waveform' container is created inside."),
 });
 type CreateWaveformArgs = z.infer<typeof createWaveformSchema>;
 

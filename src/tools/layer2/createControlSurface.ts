@@ -6,14 +6,14 @@ import { MORPH_HOOK } from "./manageCue.js";
 
 const faderSchema = z.object({
   param: z.string().describe("Parameter the fader drives, written as 'nodePath.parName'."),
-  label: z.string().optional(),
+  label: z.string().optional().describe("Text shown above the fader; defaults to no label."),
   min: z.coerce.number().default(0).describe("Value at the bottom of the fader."),
   max: z.coerce.number().default(1).describe("Value at the top of the fader."),
 });
 
 const cueButtonSchema = z.object({
   cue: z.string().describe("Name of a cue (stored with manage_cue) to fire."),
-  label: z.string().optional(),
+  label: z.string().optional().describe("Text shown on the button; defaults to the cue name."),
   morph_seconds: z.coerce
     .number()
     .min(0)

@@ -41,7 +41,10 @@ export const createCubemapDomeSchema = z.object({
     .default(true)
     .describe("Expose a live Fov knob (and a Rotation knob that spins the dome horizon)."),
   name: z.string().default("cubemap_dome").describe("Base name for the system container."),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent network where the dome container is created (default '/project1')."),
 });
 type CreateCubemapDomeArgs = z.infer<typeof createCubemapDomeSchema>;
 
@@ -236,7 +239,7 @@ export const registerCreateCubemapDome: ToolRegistrar = (server, ctx) => {
     {
       title: "Create cube-map dome",
       description:
-        "Render a true cube-map dome master — the higher-fidelity follow-up to create_dome_output (which only warps a flat equirectangular source). A 3D scene is rendered by a Render TOP in cube-map mode (rendermode 'cubemap', which outputs a real cube-map texture in one render — no separate Cube Map TOP), or an existing cube-map source is pulled in via a Select TOP; then a GLSL TOP samples that cube map by 3D direction (TD's built-in samplerCube sTDCubeInputs[0]) to produce a fisheye fulldome master or a full 360°×180° equirectangular image, ending on a Null ready for setup_output. Sampling a real cube map avoids the equirect pole-pinch/seam. With expose_controls, a live Fov knob sets fisheye coverage and a Rotation knob spins the dome horizon.",
+        "Render a true cube-map dome master — the higher-fidelity follow-up to create_dome_output (which only warps a flat equirectangular source). A 3D scene is rendered by a Render TOP in cube-map mode (rendermode 'cubemap', which outputs a real cube-map texture in one render — no separate Cube Map TOP), or an existing cube-map source is pulled in via a Select TOP; then a GLSL TOP samples that cube map by 3D direction (TD's built-in samplerCube sTDCubeInputs[0]) to produce a fisheye fulldome master or a full 360°×180° equirectangular image, ending on a Null ready for setup_output. Creates a new baseCOMP under `parent_path` (named by `name`) holding the cube-map source (or the test scene's Geometry/Camera/Light/Render TOP), GLSL remap, and Null output. Sampling a real cube map avoids the equirect pole-pinch/seam. With expose_controls, a live Fov knob sets fisheye coverage and a Rotation knob spins the dome horizon. Returns a summary plus a JSON block with the container path, created node paths, the cube-source/output paths, exposed controls, any node errors, warnings, and an inline preview image.",
       inputSchema: createCubemapDomeSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

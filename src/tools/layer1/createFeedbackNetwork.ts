@@ -61,7 +61,12 @@ const TRANSFORM_TYPES = {
 } as const;
 
 export const createFeedbackNetworkSchema = z.object({
-  seed_type: z.enum(["noise", "shape", "image", "video", "webcam", "glsl"]).default("noise"),
+  seed_type: z
+    .enum(["noise", "shape", "image", "video", "webcam", "glsl"])
+    .default("noise")
+    .describe(
+      "What feeds the loop each frame: 'noise' (monochrome Noise TOP), 'shape' (Circle TOP), 'image'/'video' (Movie File In TOP), 'webcam' (Video Device In TOP — may prompt for camera permission), or 'glsl' (a generative shader). Default 'noise'.",
+    ),
   transformations: z
     .array(
       z.enum([
@@ -76,18 +81,35 @@ export const createFeedbackNetworkSchema = z.object({
         "luma_blur",
       ]),
     )
-    .default(["blur", "displace", "level"]),
-  feedback_gain: z.coerce.number().min(0).max(1).default(0.95),
+    .default(["blur", "displace", "level"])
+    .describe(
+      "TOP effects applied in order inside the loop each frame (blur, displace, edge, level, hsv_adjust, transform, mirror, tile, luma_blur). Default ['blur','displace','level'].",
+    ),
+  feedback_gain: z.coerce
+    .number()
+    .min(0)
+    .max(1)
+    .default(0.95)
+    .describe(
+      "Loop decay multiplier (0–1) applied via a Level TOP's brightness1: how much of the fed-back frame survives each cycle. Higher = longer-lived, more saturated trails; default 0.95.",
+    ),
   colors: z
     .array(z.string())
     .max(2)
     .optional()
-    .describe("Up to two hex colors to colorize the otherwise-grayscale output."),
+    .describe(
+      "Up to two hex colors ('#rrggbb') used to colorize the otherwise-grayscale output via a final GLSL gradient (one color = black→color, two = color0→color1). Omit to leave it grayscale.",
+    ),
   expose_controls: z
     .boolean()
     .default(true)
-    .describe("Expose a live 'Feedback' knob on the system container, bound to the loop's decay."),
-  parent_path: z.string().default("/project1"),
+    .describe(
+      "When true (default), expose a live 'Feedback' knob on the system container, bound to the loop's decay.",
+    ),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent network where the feedback container is created (default '/project1')."),
 });
 type CreateFeedbackNetworkArgs = z.infer<typeof createFeedbackNetworkSchema>;
 
@@ -182,7 +204,7 @@ export const registerCreateFeedbackNetwork: ToolRegistrar = (server, ctx) => {
     {
       title: "Create feedback network",
       description:
-        "Build a feedback-based visual system: a seed feeds a loop that is transformed (blur/displace/etc.) and fed back each frame. Great for evolving, hypnotic visuals.",
+        "Build a feedback-based visual system: a seed feeds a loop that is transformed (blur/displace/etc.) and fed back each frame. Creates a new baseCOMP under `parent_path` holding the seed, a Feedback TOP, a 'maximum' Composite, the transform chain, a Level decay node, an optional GLSL colorize pass, and a Null output (the Feedback TOP samples the Level node to close the loop). Great for evolving, hypnotic visuals. Exposes a live 'Feedback' decay knob. Returns a summary plus a JSON block with the container path, created node paths, the output path, exposed controls, any node errors, warnings, and an inline preview image.",
       inputSchema: createFeedbackNetworkSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

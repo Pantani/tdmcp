@@ -73,8 +73,11 @@ export const createPbrSceneSchema = z.object({
   expose_controls: z
     .boolean()
     .default(true)
-    .describe("Expose live Metallic, Roughness, BaseColor and Spin controls."),
-  parent_path: z.string().default("/project1"),
+    .describe("When true (default), expose live Metallic, Roughness, BaseColor and Spin controls."),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent network where the PBR-scene container is created (default '/project1')."),
 });
 type CreatePbrSceneArgs = z.infer<typeof createPbrSceneSchema>;
 
@@ -207,7 +210,7 @@ export const registerCreatePbrScene: ToolRegistrar = (server, ctx) => {
     {
       title: "Create PBR scene",
       description:
-        "Build a physically-based 3D scene: a Geometry COMP holding the chosen primitive (sphere/torus/box) shaded by a PBR MAT (base colour, metallic, roughness), lit by an Environment Light for image-based lighting (fed a Constant TOP of `env_color` so it works with no HDRI file) plus a key Light, framed by a Camera and rendered to a Null. The PBR/IBL upgrade to create_3d_scene's basic shading — for realistic metal/glass/clay looks. Exposes Metallic, Roughness, BaseColor and Spin controls; set `rotate` to turn the object so its reflections move.",
+        "Build a physically-based 3D scene: a Geometry COMP holding the chosen primitive (sphere/torus/box) shaded by a PBR MAT (base colour, metallic, roughness), lit by an Environment Light for image-based lighting (fed a Constant TOP of `env_color` so it works with no HDRI file) plus a key Light, framed by a Camera and rendered to a Null. Creates a new baseCOMP under `parent_path` holding the Environment Light + envmap Constant TOP, the PBR MAT, a Geometry COMP, a key Light, a Camera, a Render TOP, and a Null output. Use create_3d_scene instead for basic (non-PBR) shading or GPU instancing. Exposes Metallic, Roughness, BaseColor and Spin controls; set `rotate` to turn the object so its reflections move. Returns a summary plus a JSON block with the container path, created node paths, the material/lights/geometry/camera/render/output paths, exposed controls, any node errors, warnings, and an inline preview image.",
       inputSchema: createPbrSceneSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

@@ -155,7 +155,12 @@ export const createVideoSynthSchema = z.object({
     .describe(
       "Expose live Speed / FreqX / FreqY / Scale / Color controls on the system container.",
     ),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe(
+      "Parent COMP path the self-contained 'video_synth_<mode>' container is created inside.",
+    ),
 });
 type CreateVideoSynthArgs = z.infer<typeof createVideoSynthSchema>;
 
@@ -303,7 +308,7 @@ export const registerCreateVideoSynth: ToolRegistrar = (server, ctx) => {
     {
       title: "Create video synth",
       description:
-        "Instantiate an analog video-synthesizer pattern (lissajous oscillator curve, moving interference fringes, or CRT scanline modulation) into a GLSL TOP with live Speed / FreqX / FreqY / Scale / Color controls. An oscillator/interference generator for VJ work — distinct from create_shader_lib's tunnel/raymarch/fractal/metaball looks.",
+        "Instantiate an analog video-synthesizer pattern (lissajous oscillator curve, moving interference fringes, or CRT scanline modulation) into a GLSL TOP with live Speed / FreqX / FreqY / Scale / Color controls, output as a Null TOP inside a new 'video_synth_<mode>' container under parent_path. An oscillator/interference generator for VJ work — distinct from create_shader_lib's tunnel/raymarch/fractal/metaball looks. Use create_video_player instead when you want to play a real movie file rather than generate a pattern. Returns the chosen mode, its parameters, and a preview of the output TOP.",
       inputSchema: createVideoSynthSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

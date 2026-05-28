@@ -3,8 +3,10 @@ import { guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
 const UpdateSchema = z.object({
-  path: z.string(),
-  parameters: z.record(z.string(), z.unknown()),
+  path: z.string().describe("Path of the node whose parameters to update."),
+  parameters: z
+    .record(z.string(), z.unknown())
+    .describe("Parameter values to set on that node, as a { parName: value } map."),
 });
 
 export const setParametersBatchSchema = z.object({

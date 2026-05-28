@@ -20,7 +20,7 @@ export const registerDeleteTdNode: ToolRegistrar = (server, ctx) => {
     {
       title: "Delete TouchDesigner node",
       description:
-        "Delete a single node by path. Destructive — only call this when the user explicitly asks to remove a node.",
+        "DESTRUCTIVE: permanently remove one node from the project by path (a COMP also takes its children with it); this cannot be undone via the API. Returns {deleted} with the path that was removed. Only call this when the user explicitly asks to delete a node.",
       inputSchema: deleteTdNodeSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },

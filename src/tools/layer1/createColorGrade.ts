@@ -60,9 +60,12 @@ export const createColorGradeSchema = z.object({
     .boolean()
     .default(true)
     .describe(
-      "Expose live Brightness / Gamma / Contrast / Saturation / Hue knobs bound to the right node parameters.",
+      "When true (default), expose live Brightness / Gamma / Contrast / Saturation / Hue knobs bound to the right node parameters.",
     ),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent network where the color-grade container is created (default '/project1')."),
 });
 type CreateColorGradeArgs = z.infer<typeof createColorGradeSchema>;
 
@@ -193,7 +196,7 @@ export const registerCreateColorGrade: ToolRegistrar = (server, ctx) => {
     {
       title: "Create color grade",
       description:
-        "Build a colour-grading / LUT finishing stage over a source — the 'make the final output look graded' tool for VJ sets. A Level TOP applies lift/gamma/gain (brightness1 / gamma1 / contrast + black level), then an HSV Adjust TOP applies saturation + hue rotation; an optional LUT image file is loaded via a Movie File In TOP and fed into a Lookup TOP's second input to remap every colour. With an input_path the source is pulled in via a Select TOP (so it can live in another container); without one, a Ramp TOP test gradient is graded so it builds and previews standalone. Live Brightness / Gamma / Contrast / Saturation / Hue knobs are exposed. Output is a Null TOP.",
+        "Build a colour-grading / LUT finishing stage over a source — the 'make the final output look graded' tool for VJ sets. A Level TOP applies lift/gamma/gain (brightness1 / gamma1 / contrast + black level), then an HSV Adjust TOP applies saturation + hue rotation; an optional LUT image file is loaded via a Movie File In TOP and fed into a Lookup TOP's second input to remap every colour. Creates a new baseCOMP under `parent_path` holding the chain. With an input_path the source is pulled in via a Select TOP (so it can live in another container); without one, a Ramp TOP test gradient is graded so it builds and previews standalone. Live Brightness / Gamma / Contrast / Saturation / Hue knobs are exposed. Output is a Null TOP. Returns a summary plus a JSON block with the container path, created node paths, the Level/HSV/output paths, exposed controls, any node errors, warnings, and an inline preview image. Use apply_post_processing instead to chain several distinct effects in series.",
       inputSchema: createColorGradeSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

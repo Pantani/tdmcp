@@ -57,6 +57,19 @@ describe("integration: Layer 3 over the MCP protocol", () => {
     expect(exec?.annotations?.destructiveHint).toBe(true);
   });
 
+  // Regression guard: tools that remove nodes or overwrite saved state must keep
+  // destructiveHint=true so a future docs/annotation pass cannot silently downgrade
+  // the safety signal MCP clients rely on. listTools() returns every layer's tools.
+  it("marks node-removing and state-overwriting tools as destructive", async () => {
+    const client = await connectClient();
+    const tools = (await client.listTools()).tools;
+    for (const name of ["delete_td_node", "create_panic", "manage_component"]) {
+      const tool = tools.find((t) => t.name === name);
+      expect(tool, `${name} should be registered`).toBeDefined();
+      expect(tool?.annotations?.destructiveHint, `${name} should stay destructive`).toBe(true);
+    }
+  });
+
   it("creates a Noise TOP, then a Null TOP, then lists them", async () => {
     const client = await connectClient();
     const noise = await client.callTool({

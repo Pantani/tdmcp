@@ -28,7 +28,8 @@ export const registerUpdateTdNodeParameters: ToolRegistrar = (server, ctx) => {
     "update_td_node_parameters",
     {
       title: "Update node parameters",
-      description: "Set one or more parameters on an existing node.",
+      description:
+        "Modify an existing node by setting one or more of its parameters to constant values. The update is strict (not best-effort): an unknown parameter name fails the whole call atomically without changing anything, and a bad value (wrong type or out of range) returns an error naming which parameters applied and which failed. On success returns the updated {node}. To inspect valid parameter names/current values first use get_td_node_parameters; to make a parameter move over time use animate_parameter instead of a static value.",
       inputSchema: updateTdNodeParametersSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

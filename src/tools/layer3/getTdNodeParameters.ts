@@ -49,10 +49,10 @@ export const registerGetTdNodeParameters: ToolRegistrar = (server, ctx) => {
     {
       title: "Get node parameters",
       description:
-        "Read the current parameters (and I/O) of a node. Pass `keys` to project specific parameters or `omit_io:true` to drop the inputs/outputs lists.",
+        "Read-only: read the current parameters (and inputs/outputs) of one node. Returns {path, type, name, parameters, inputs, outputs}. Pass `keys` to project specific parameters or `omit_io:true` to drop the inputs/outputs lists. Use compare_td_nodes to diff two nodes' parameters at once.",
       inputSchema: getTdNodeParametersSchema.shape,
       outputSchema: NodeDetailSchema.shape,
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     },
     (args) => getTdNodeParametersImpl(ctx, args),
   );

@@ -10,8 +10,18 @@ export const logPerformanceSchema = z.object({
   comp_path: z.string().default("/project1").describe("Network to snapshot for the log."),
   output_path: z.string().optional().describe("TOP to capture as the entry's thumbnail."),
   notes: z.string().optional().describe("Free-form notes: what played, what worked."),
-  width: z.coerce.number().int().positive().default(640),
-  height: z.coerce.number().int().positive().default(360),
+  width: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(640)
+    .describe("Thumbnail width in pixels for the captured output_path preview."),
+  height: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(360)
+    .describe("Thumbnail height in pixels for the captured output_path preview."),
 });
 type LogPerformanceArgs = z.infer<typeof logPerformanceSchema>;
 
@@ -100,7 +110,7 @@ export const registerLogPerformance: ToolRegistrar = (server, ctx) => {
     {
       title: "Log a performance to the vault",
       description:
-        "Capture a dated performance-journal entry in the vault: a network snapshot (node/connection counts + any errors) and an optional preview thumbnail, written to Performances/<date>-<title>.md. Build a diary of your shows. Requires TDMCP_VAULT_PATH.",
+        "READ a snapshot of a TD network (node/connection counts plus any errors) and, optionally, a preview image of an output TOP, then WRITE a dated journal entry to Performances/<date>-<title>.md in the vault (the thumbnail is saved as a binary attachment). Use this to build a diary of your shows over time. Returns the note path, whether a thumbnail was saved, and the node/issue counts. Requires a configured TDMCP_VAULT_PATH.",
       inputSchema: logPerformanceSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

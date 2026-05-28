@@ -93,7 +93,7 @@ export const registerGenerateFromMoodboard: ToolRegistrar = (server, ctx) => {
     {
       title: "Generate art from a moodboard note",
       description:
-        "Read a moodboard note (frontmatter `technique`/`palette`/`colors`/`speed` + a prose description) and create a matching generative system via create_generative_art. Best-effort: the palette is a hint. Requires TDMCP_VAULT_PATH.",
+        "READ a moodboard note (frontmatter `technique`/`palette`/`colors`/`speed` plus a prose description) and CREATE a matching generative system in TouchDesigner via create_generative_art. Side effect is node creation in TD, not file writes; the palette/mood is passed only as a best-effort color hint. Use this to seed a system from a vault moodboard; call create_generative_art directly to specify the technique and palette inline. Returns the created generative-art network (same result as create_generative_art). Requires a configured TDMCP_VAULT_PATH.",
       inputSchema: generateFromMoodboardSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

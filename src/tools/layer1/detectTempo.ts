@@ -52,7 +52,10 @@ export const detectTempoSchema = z.object({
       "Expose live 'Threshold' (onset sensitivity — lower fires on more beats) and 'Smoothing' (how many recent intervals the median locks over — higher = steadier, slower to react) knobs.",
     ),
   name: z.string().default("detect_tempo").describe("Name for the generated system container."),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent COMP path the generated system container (see `name`) is created inside."),
 });
 type DetectTempoArgs = z.infer<typeof detectTempoSchema>;
 

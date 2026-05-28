@@ -38,9 +38,12 @@ export const createDomeOutputSchema = z.object({
     .boolean()
     .default(true)
     .describe(
-      "Expose a Rotation knob bound to the shader uniform that spins the dome horizon (degrees).",
+      "When true (default), expose a Rotation knob bound to the shader uniform that spins the dome horizon (degrees).",
     ),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent network where the dome-output container is created (default '/project1')."),
 });
 type CreateDomeOutputArgs = z.infer<typeof createDomeOutputSchema>;
 
@@ -164,7 +167,7 @@ export const registerCreateDomeOutput: ToolRegistrar = (server, ctx) => {
     {
       title: "Create dome output",
       description:
-        "Remap a source TOP (treated as an equirectangular / panoramic master) into a square single-output dome master for planetarium fulldomes / 360 — the curved complement to create_multi_output's flat tiling. A Select TOP pulls the master in, a GLSL TOP warps it (fisheye: equirect → centred dome disc using `fov`; equirectangular: near-passthrough identity remap) via a shader held in a Text DAT, ending on a Null ready for setup_output. With expose_controls a Rotation knob spins the dome horizon. Note: this GLSL-remaps an existing source — a true cubemap render is the higher-fidelity follow-up.",
+        "Remap a source TOP (treated as an equirectangular / panoramic master) into a square single-output dome master for planetarium fulldomes / 360 — the curved complement to create_multi_output's flat tiling. A Select TOP pulls the master in, a GLSL TOP warps it (fisheye: equirect → centred dome disc using `fov`; equirectangular: near-passthrough identity remap) via a shader held in a Text DAT, ending on a Null ready for setup_output. Creates a new baseCOMP under `parent_path` holding the Select TOP, GLSL remap, and Null output. With expose_controls a Rotation knob spins the dome horizon. Note: this GLSL-remaps an existing flat source — use create_cubemap_dome instead for a true cube-map render (higher fidelity, no equirect pole-pinch/seam). Returns a summary plus a JSON block with the container path, created node paths, the output path, exposed controls, any node errors, warnings (including the cubemap-follow-up note), and an inline preview image.",
       inputSchema: createDomeOutputSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

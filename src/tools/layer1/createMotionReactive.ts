@@ -12,11 +12,14 @@ export const createMotionReactiveSchema = z.object({
     .describe(
       "Video source. 'camera' = live webcam/capture device (the real-world default; creating it may pop a one-time macOS camera-permission dialog — click Allow). 'file' = a movie file. 'synthetic' = an animated noise pattern, handy for testing without any device permission. 'existing_top' = analyze a TOP you already have.",
     ),
-  movie_file_path: z.string().optional().describe("Movie file path (source='file')."),
+  movie_file_path: z
+    .string()
+    .optional()
+    .describe("Path to a movie file to play as the source; used only when source='file'."),
   existing_top_path: z
     .string()
     .optional()
-    .describe("Path of an existing TOP to analyze (source='existing_top')."),
+    .describe("Path of an existing TOP to analyze; used only when source='existing_top'."),
   analysis_resolution: z.coerce
     .number()
     .int()
@@ -28,8 +31,15 @@ export const createMotionReactiveSchema = z.object({
   expose_controls: z
     .boolean()
     .default(true)
-    .describe("Expose a live 'Sensitivity' knob (a gain over every feature channel)."),
-  parent_path: z.string().default("/project1"),
+    .describe(
+      "When true (default), expose a live 'Sensitivity' knob (a gain over every feature channel).",
+    ),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe(
+      "Parent network where the motion-reactive container is created (default '/project1').",
+    ),
 });
 type CreateMotionReactiveArgs = z.infer<typeof createMotionReactiveSchema>;
 
@@ -161,7 +171,7 @@ export const registerCreateMotionReactive: ToolRegistrar = (server, ctx) => {
     {
       title: "Create motion reactive",
       description:
-        "Build a video-analysis chain that exposes ready-to-bind reactive channels — overall brightness plus frame-to-frame motion energy — on a Null CHOP. The camera counterpart to extract_audio_features: bind any parameter to op('…/motion_reactive/features')['motion'] and it responds to movement in front of the camera, or ['brightness'] to ambient light. A Sensitivity knob scales both. Source can be the live camera (may prompt for macOS permission), a movie file, an animated synthetic pattern (for testing without a camera), or an existing TOP. Optical flow is unavailable on macOS, so direction isn't exposed.",
+        "Build a video-analysis chain that exposes ready-to-bind reactive channels — overall brightness plus frame-to-frame motion energy — on a Null CHOP. The camera counterpart to extract_audio_features: bind any parameter to op('…/motion_reactive/features')['motion'] and it responds to movement in front of the camera, or ['brightness'] to ambient light. A Sensitivity knob scales both. Creates a new baseCOMP under `parent_path` holding the source, a downsized monochrome analysis chain, and a 'features' Null CHOP output. Source can be the live camera (may prompt for macOS permission), a movie file, an animated synthetic pattern (for testing without a camera), or an existing TOP. Optical flow is unavailable on macOS, so direction isn't exposed. Returns a summary plus a JSON block with the container path, created node paths, the features Null path, the channel names, exposed controls, any node errors, and warnings (no preview image — the output is a CHOP, not a TOP).",
       inputSchema: createMotionReactiveSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

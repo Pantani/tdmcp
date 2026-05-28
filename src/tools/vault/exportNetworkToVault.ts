@@ -98,7 +98,7 @@ export const registerExportNetworkToVault: ToolRegistrar = (server, ctx) => {
     {
       title: "Export network docs to the vault",
       description:
-        "Document an existing TD network into an Obsidian note: a Mermaid flowchart plus [[wikilinks]] for every operator and connection, so the vault's graph view becomes a clickable map of the patch. Requires TDMCP_VAULT_PATH.",
+        "READ an existing TD network's topology and WRITE it as an Obsidian note: a Mermaid flowchart plus [[wikilinks]] for every operator and connection, so the vault's graph view becomes a clickable map of the patch. The note (Networks/<path>.md by default) is fully rewritten on each call. Use this to persist a browsable map in the vault; use document_network to get the same documentation back as a tool result without touching the vault. Returns the note path and the node/connection counts (and whether output was truncated). Requires a configured TDMCP_VAULT_PATH.",
       inputSchema: exportNetworkToVaultSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

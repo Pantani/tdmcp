@@ -10,7 +10,7 @@ const TYPE_MAP = {
 
 export const createPythonScriptSchema = z.object({
   parent_path: z.string().describe("Parent COMP to create the DAT inside."),
-  name: z.string().optional(),
+  name: z.string().optional().describe("Name for the new DAT; auto-generated when omitted."),
   code: z.string().min(1).describe("Python source to place in the DAT."),
   dat_type: z
     .enum(["text", "execute", "script"])
@@ -59,7 +59,8 @@ export const registerCreatePythonScript: ToolRegistrar = (server, ctx) => {
     "create_python_script",
     {
       title: "Create Python DAT",
-      description: "Create a DAT (text/execute/script) preloaded with Python code.",
+      description:
+        "Create one DAT under parent_path preloaded with your Python `code`. `dat_type` chooses a Text DAT (plain code), an Execute DAT (event hooks like onFrameStart), or a Script DAT (table builder); for a Script DAT the code is written to its auto-created companion callbacks DAT, since the Script DAT's own text is read-only. Returns the created DAT's path. This only stores code as a node; use execute_python_script instead to run Python immediately against the live project.",
       inputSchema: createPythonScriptSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

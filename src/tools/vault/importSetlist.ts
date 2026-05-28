@@ -136,7 +136,7 @@ export const registerImportSetlist: ToolRegistrar = (server, ctx) => {
     {
       title: "Import a setlist from the vault",
       description:
-        "Read a setlist note (frontmatter `tracks`: an array of recipe ids, or {title, recipe, preset, bpm, notes} objects) and build each track's recipe into the project — pre-staging a show's visuals. Recipes resolve against built-in and vault recipes. Use dry_run to validate first. Requires TDMCP_VAULT_PATH.",
+        "READ a setlist note (frontmatter `tracks`: an array of recipe ids, or {title, recipe, preset, bpm, notes} objects) and build each track's recipe — CREATING the operators in TouchDesigner under parent_path — to pre-stage a show's visuals. Recipe ids resolve against both built-in and vault recipes; preset-only tracks are skipped (recall them live instead). Use dry_run:true to validate the note without touching TD. Returns the resolved note path and the lists of built vs skipped tracks. Requires a configured TDMCP_VAULT_PATH.",
       inputSchema: importSetlistSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

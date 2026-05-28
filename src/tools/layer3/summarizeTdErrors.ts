@@ -15,17 +15,28 @@ export const summarizeTdErrorsSchema = z.object({
 type SummarizeTdErrorsArgs = z.infer<typeof summarizeTdErrorsSchema>;
 
 export const summarizeTdErrorsOutputSchema = z.object({
-  path: z.string(),
-  total: z.number(),
-  group_by: z.enum(["message", "type", "parent"]),
-  groups: z.array(
-    z.object({
-      key: z.string(),
-      count: z.number(),
-      sample: z.object({ path: z.string(), message: z.string() }),
-    }),
-  ),
-  suggestions: z.array(z.string()),
+  path: z.string().describe("The network root errors were collected under, echoing the request."),
+  total: z.number().describe("Total number of errors found across the network (0 means clean)."),
+  group_by: z
+    .enum(["message", "type", "parent"])
+    .describe("How the errors were clustered, echoing the request."),
+  groups: z
+    .array(
+      z.object({
+        key: z.string().describe("The shared message, type, or parent path for this cluster."),
+        count: z.number().describe("How many errors fall into this cluster."),
+        sample: z
+          .object({
+            path: z.string().describe("Path of one representative node in this cluster."),
+            message: z.string().describe("That node's error message, as a concrete example."),
+          })
+          .describe("One representative error from the cluster."),
+      }),
+    )
+    .describe("Error clusters, largest first; fixing a big cluster's cause clears it at once."),
+  suggestions: z
+    .array(z.string())
+    .describe("Plain-language next steps, e.g. the common cause and which nodes to check first."),
 });
 
 export async function summarizeTdErrorsImpl(ctx: ToolContext, args: SummarizeTdErrorsArgs) {
@@ -97,10 +108,10 @@ export const registerSummarizeTdErrors: ToolRegistrar = (server, ctx) => {
     {
       title: "Summarize network errors",
       description:
-        "Collect errors across a network and cluster them by message, type, or parent container, with the worst-offending nodes and a suggested order to investigate. Use this instead of reading every node's errors one by one.",
+        "Read-only: collect errors across a network and cluster them by message, type, or parent container, with the worst-offending nodes and a suggested order to investigate. Returns {total, groups[], suggestions[]}. Use this for network-wide triage instead of reading every node's errors one by one; use get_td_node_errors when you just want the raw error list for one node or sub-tree.",
       inputSchema: summarizeTdErrorsSchema.shape,
       outputSchema: summarizeTdErrorsOutputSchema.shape,
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     },
     (args) => summarizeTdErrorsImpl(ctx, args),
   );

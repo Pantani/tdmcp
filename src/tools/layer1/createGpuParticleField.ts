@@ -142,8 +142,15 @@ export const createGpuParticleFieldSchema = z.object({
   expose_controls: z
     .boolean()
     .default(true)
-    .describe("Expose live PointSize and Zoom (camera distance) knobs on the system container."),
-  parent_path: z.string().default("/project1"),
+    .describe(
+      "When true (default), expose live PointSize and Zoom (camera distance) knobs on the system container.",
+    ),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe(
+      "Parent network where the particle-field container is created (default '/project1').",
+    ),
 });
 type CreateGpuParticleFieldArgs = z.infer<typeof createGpuParticleFieldSchema>;
 
@@ -347,7 +354,7 @@ export const registerCreateGpuParticleField: ToolRegistrar = (server, ctx) => {
     {
       title: "Create GPU particle field",
       description:
-        "Build a high-count GPU particle / point field: position and velocity are simulated entirely on the GPU in two RGBA32float feedback-TOP loops (velocity integrates forces — noise/curl/gravity; position integrates velocity), then a Geometry COMP instances a tiny dot once per texel, reading XYZ from the position texture. Reaches counts (side², up to 512²≈262k) well beyond the CPU create_particle_system, flowing as curl-noise streams. Exposes PointSize and Zoom knobs. Optional reactivity energises the field live: 'audio' drives it from mic/line RMS, 'motion' from camera frame-difference energy (both bound to the velocity shader's uReact uniform).",
+        "Build a high-count GPU particle / point field: position and velocity are simulated entirely on the GPU in two RGBA32float feedback-TOP loops (velocity integrates forces — noise/curl/gravity; position integrates velocity), then a Geometry COMP instances a tiny dot once per texel, reading XYZ from the position texture. Creates a new baseCOMP under `parent_path` holding the velocity/position feedback loops, the instanced Geometry COMP, Camera, Light, and Render TOP ending in a Null output. Reaches counts (side², up to 512²≈262k) well beyond the CPU create_particle_system (use that for a simpler, lower-count CPU emitter). Exposes PointSize and Zoom knobs. Optional reactivity energises the field live: 'audio' drives it from mic/line RMS, 'motion' from camera frame-difference energy (both bound to the velocity shader's uReact uniform). Returns a summary plus a JSON block with the container path, created node paths, the particle count, the output path, exposed controls, any node errors, warnings, and an inline preview image.",
       inputSchema: createGpuParticleFieldSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

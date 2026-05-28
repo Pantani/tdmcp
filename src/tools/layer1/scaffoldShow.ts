@@ -3,7 +3,10 @@ import { createSystemContainer, finalize, runBuild } from "./orchestration.js";
 
 export const scaffoldShowSchema = z.object({
   name: z.string().default("show").describe("Name of the show container to create."),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent COMP path the show container is created inside."),
 });
 type ScaffoldShowArgs = z.infer<typeof scaffoldShowSchema>;
 
@@ -41,7 +44,7 @@ export const registerScaffoldShow: ToolRegistrar = (server, ctx) => {
     {
       title: "Scaffold a show",
       description:
-        "Create a starting skeleton for a live show: a container with a 'master' output Null (where your mix lands) and a 'tempo' beat clock for reactivity. A blank-canvas starting point — then add scenes, audio features, a layer mixer into master, cues and a control surface.",
+        "Create a starting skeleton for a live show: a new container under parent_path with a 'master' output Null (where your mix lands) and a 'tempo' beat clock for reactivity, but NO scenes or look. Use scaffold_genre instead when you want a genre-flavored start (tempo + a ready-made look + palette already wired in). Returns the container path plus the 'master' and 'tempo' node paths. A blank-canvas starting point — then add scenes, audio features, a layer mixer into master, cues and a control surface.",
       inputSchema: scaffoldShowSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

@@ -41,7 +41,10 @@ export const createStrobeSchema = z.object({
     .boolean()
     .default(true)
     .describe("Expose live Rate / Intensity / Duty knobs bound to the right node parameters."),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent COMP path the self-contained 'strobe' container is created inside."),
 });
 type CreateStrobeArgs = z.infer<typeof createStrobeSchema>;
 

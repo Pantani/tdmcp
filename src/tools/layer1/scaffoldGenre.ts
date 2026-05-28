@@ -71,7 +71,10 @@ export const scaffoldGenreSchema = z.object({
       "Override the preset BPM (written to the global tempo). For 'installation' (no clock by default), supplying a bpm adds a beat clock at that tempo.",
     ),
   name: z.string().optional().describe("Name of the show container (default: '<genre>_show')."),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent COMP path the show container is created inside."),
 });
 type ScaffoldGenreArgs = z.infer<typeof scaffoldGenreSchema>;
 
@@ -267,7 +270,7 @@ export const registerScaffoldGenre: ToolRegistrar = (server, ctx) => {
     {
       title: "Scaffold a genre show",
       description:
-        "Create a genre-flavored starting network — beyond scaffold_show's blank skeleton. Picks a tempo, look, and palette per genre: 'techno' (fast ~130 BPM clock + a hard strobe-y feedback look + dark palette), 'ambient' (slow ~70 BPM + a soft blurred-feedback look + warm palette), or 'installation' (no clock + a slow generative noise look + muted palette). Each builds a 'master' output Null and a genre look already wired into it. Then add scenes, a layer mixer into master, cues, and a control surface.",
+        "Create a genre-flavored starting network under parent_path — beyond scaffold_show's blank skeleton. Picks a tempo, look, and palette per genre: 'techno' (fast ~130 BPM clock + a hard strobe-y feedback look + dark palette), 'ambient' (slow ~70 BPM + a soft blurred-feedback look + warm palette), or 'installation' (no clock + a slow generative noise look + muted palette). Each builds a 'master' output Null and a genre look already wired into it, and (when a tempo applies) writes the project's global tempo (op('/').time.tempo). Use scaffold_show instead for an empty skeleton with no look or palette. Returns the container path, the master/tempo/look node paths, the BPM written, and the palette. Then add scenes, a layer mixer into master, cues, and a control surface.",
       inputSchema: scaffoldGenreSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

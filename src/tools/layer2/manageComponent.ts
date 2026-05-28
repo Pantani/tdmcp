@@ -155,9 +155,9 @@ export const registerManageComponent: ToolRegistrar = (server, ctx) => {
     {
       title: "Save / load component (.tox)",
       description:
-        "Build a reusable component library: save any COMP as a .tox file, or load a .tox back into the project (as an independent copy, or a live-linked instance via `linked`). Paths are on the machine running TouchDesigner.",
+        "Build a reusable component library by moving COMPs to/from .tox files on disk. Two actions: 'save' writes the COMP at comp_path to file_path as a .tox (overwriting any existing file, optionally creating parent folders) and returns the saved path and byte size; 'load' reads file_path back into parent_path, either as an independent copy or a live-linked instance (via `linked`) that re-reads the file on change, returning the loaded node's path, type, and child names. Paths are on the machine running TouchDesigner. Marked destructive because 'save' can overwrite an existing file.",
       inputSchema: manageComponentSchema.shape,
-      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     (args) => manageComponentImpl(ctx, args),
   );

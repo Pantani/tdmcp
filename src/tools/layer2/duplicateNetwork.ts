@@ -40,7 +40,7 @@ export const registerDuplicateNetwork: ToolRegistrar = (server, ctx) => {
     {
       title: "Duplicate a network",
       description:
-        "Copy a node or whole COMP (and its contents) to a new node, optionally into another parent.",
+        "Copy a node or whole COMP (and all its contents) to a new node, placed in the source's parent or another parent_path. Returns the source path and the new copy's path. Use duplicate this way to clone a built network; use create_container instead when you just need a fresh empty COMP.",
       inputSchema: duplicateNetworkSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

@@ -17,10 +17,16 @@ export const getTdNodeErrorsSchema = z.object({
 type GetTdNodeErrorsArgs = z.infer<typeof getTdNodeErrorsSchema>;
 
 export const getTdNodeErrorsOutputSchema = z.object({
-  path: z.string(),
-  total: z.number(),
-  errors: z.array(NodeErrorSchema).optional(),
-  by_type: z.record(z.string(), z.number()).optional(),
+  path: z.string().describe("The node or network root that was checked, echoing the request."),
+  total: z.number().describe("Total number of errors/warnings found (0 means clean)."),
+  errors: z
+    .array(NodeErrorSchema)
+    .optional()
+    .describe("Full mode: each error/warning with its node path, type and message."),
+  by_type: z
+    .record(z.string(), z.number())
+    .optional()
+    .describe("summary mode: count of errors grouped by error type."),
 });
 
 export async function getTdNodeErrorsImpl(ctx: ToolContext, args: GetTdNodeErrorsArgs) {
@@ -56,10 +62,10 @@ export const registerGetTdNodeErrors: ToolRegistrar = (server, ctx) => {
     {
       title: "Get node errors",
       description:
-        "Check a node (or its whole sub-network) for cook/compile errors and warnings. Pass `summary:true` for grouped counts instead of the full list.",
+        "Read-only: check one node (or, with recursive:true, its whole sub-network) for cook/compile errors and warnings. Pass `summary:true` for grouped counts instead of the full list. Returns {total, errors[] or by_type}. For a large network prefer summarize_td_errors, which clusters errors by shared cause and points at the worst-offending nodes.",
       inputSchema: getTdNodeErrorsSchema.shape,
       outputSchema: getTdNodeErrorsOutputSchema.shape,
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     },
     (args) => getTdNodeErrorsImpl(ctx, args),
   );

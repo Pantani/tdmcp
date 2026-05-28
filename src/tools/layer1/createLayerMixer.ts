@@ -29,8 +29,13 @@ export const createLayerMixerSchema = z.object({
   expose_controls: z
     .boolean()
     .default(true)
-    .describe("Expose a live 'Crossfade' knob (crossfade mode only)."),
-  parent_path: z.string().default("/project1"),
+    .describe(
+      "When true (default), expose a live 'Crossfade' knob on the container (crossfade mode only).",
+    ),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent network where the mixer container is created (default '/project1')."),
 });
 type CreateLayerMixerArgs = z.infer<typeof createLayerMixerSchema>;
 
@@ -95,7 +100,7 @@ export const registerCreateLayerMixer: ToolRegistrar = (server, ctx) => {
     {
       title: "Create layer mixer",
       description:
-        "Build a VJ-style layer mixer: combine source TOPs into one output. 'crossfade' makes an A/B Cross TOP with a Crossfade knob (the classic two-deck mix); any other blend mode composites the inputs (add, difference, hardlight, glow, …). Sources are pulled in via Select TOPs so they can live anywhere; with fewer than two, demo sources are created. Output is a Null ready for post-processing or setup_output.",
+        "Build a VJ-style layer mixer: combine source TOPs into one output. Creates a new baseCOMP under `parent_path`. 'crossfade' makes an A/B Cross TOP with a Crossfade knob (the classic two-deck mix); any other blend mode composites the inputs (add, difference, hardlight, glow, …). Sources are pulled in via Select TOPs so they can live anywhere; with fewer than two, demo sources (noise + ramp) are created. Output is a Null ready for post-processing or setup_output. Returns a summary plus a JSON block with the container path, created node paths, the source and output paths, exposed controls, any node errors, warnings, and an inline preview image.",
       inputSchema: createLayerMixerSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
