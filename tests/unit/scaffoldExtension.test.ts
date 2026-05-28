@@ -122,7 +122,7 @@ describe("buildExtensionScript", () => {
 });
 
 describe("scaffoldExtensionImpl", () => {
-  it("sanitizes the class name and builds a matching mod(...) extension expression", async () => {
+  it("sanitizes the class name and builds a matching op('./…').module extension expression", async () => {
     const exec = okReport();
     await scaffoldExtensionImpl(fakeCtx(exec), args({ class_name: "myWidget" }));
     const payload = decodePayload(scriptArg(exec));

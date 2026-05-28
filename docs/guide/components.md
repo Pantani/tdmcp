@@ -78,12 +78,12 @@ tdmcp probes for them so it keeps working across TouchDesigner builds.
 
 ## 4. Save it as a `.tox` (`manage_component`)
 
-> *"Save `/project1/tunnel` as `~/td-components/tunnel.tox`."*
+> *"Save `/project1/tunnel` as `/Users/me/td-components/tunnel.tox`."*
 
 Now you have a single file that carries the network, its knobs and its extension
 class. Drop it into any project:
 
-> *"Load `~/td-components/tunnel.tox` into `/project1` as a live-linked instance."*
+> *"Load `/Users/me/td-components/tunnel.tox` into `/project1` as a live-linked instance."*
 
 A live-linked instance (`externaltox`) re-reads the file whenever it changes, so
 fixing the component once updates every show that uses it.
@@ -114,7 +114,7 @@ tdmcp-agent scaffold-ext --params '{
 tdmcp-agent component --params '{
   "action": "save",
   "comp_path": "/project1/tunnel",
-  "file_path": "~/td-components/tunnel.tox"
+  "file_path": "/Users/me/td-components/tunnel.tox"
 }'
 ```
 

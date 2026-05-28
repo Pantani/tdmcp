@@ -79,12 +79,12 @@ COMP; o tdmcp sonda eles para continuar funcionando entre builds do TouchDesigne
 
 ## 4. Salve como um `.tox` (`manage_component`)
 
-> *"Salve `/project1/tunnel` como `~/td-components/tunnel.tox`."*
+> *"Salve `/project1/tunnel` como `/Users/me/td-components/tunnel.tox`."*
 
 Agora você tem um único arquivo que carrega a rede, os knobs e a classe de
 extensão. Solte em qualquer projeto:
 
-> *"Carregue `~/td-components/tunnel.tox` em `/project1` como uma instância com
+> *"Carregue `/Users/me/td-components/tunnel.tox` em `/project1` como uma instância com
 > link ao vivo."*
 
 Uma instância com link ao vivo (`externaltox`) relê o arquivo sempre que ele muda,
@@ -117,7 +117,7 @@ tdmcp-agent scaffold-ext --params '{
 tdmcp-agent component --params '{
   "action": "save",
   "comp_path": "/project1/tunnel",
-  "file_path": "~/td-components/tunnel.tox"
+  "file_path": "/Users/me/td-components/tunnel.tox"
 }'
 ```
 
