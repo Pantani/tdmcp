@@ -4,7 +4,7 @@ All notable changes to **tdmcp** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.0] - Unreleased
+## [0.5.0] - Unreleased
 
 ### Added
 
@@ -24,6 +24,59 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (save as `.tox`), this completes the build → parameterize → script → package story
   for reusable components — see the new [Reusable components](https://pantani.github.io/tdmcp/guide/components)
   guide.
+
+## [0.4.0] - 2026-05-27
+
+Fifteen new tools and prompts, built as a coordinated parallel pipeline (design →
+develop → QA → deploy) and live-validated against TouchDesigner 2025.32820:
+live-performance control, signature 3D/GPU visuals, more creation primitives,
+spatial output, data + audio I/O, and AI authoring prompts.
+
+### Added
+
+- **`create_cue_sequencer`** (CLI `cue-sequencer`) — a bar-quantized cue timeline: a Beat
+  CHOP + CHOP Execute DAT advances through an ordered list of steps, recalling/morphing each
+  step's cue on the beat. The deterministic, musically-timed counterpart to `create_autopilot`.
+- **`create_stage_dashboard`** (CLI `dashboard`) — one unified web performance surface from a
+  Web Server DAT: cue-launch buttons + master faders + a panic blackout + a live beat/VU
+  readout. Trusted networks only (accepts writes without auth, like the bridge).
+- **`create_raymarch_scene`** (CLI `raymarch`) — a self-contained GLSL TOP raymarcher: SDF
+  scenes (sphere-field / menger fractal / tunnel) with camera, step-count and color controls —
+  the volumetric complement to `create_shader_lib`.
+- **`detect_tempo`** (CLI `detect-tempo`) — auto-BPM from audio onsets (no tapping): inter-onset
+  intervals → median → BPM on a Null CHOP, optionally driving the global tempo. Complements
+  `sync_external_clock`. Experimental — BPM lock needs live tuning.
+- **`create_palette`** (CLI `palette`) — a color palette / gradient generator: harmony rules
+  (complementary/triad/analogous/tetrad/monochrome) or sampled from a source TOP → a Ramp TOP +
+  a swatch CHOP, ready for `create_color_grade` / `generate_from_moodboard` / `bind_to_channel`.
+- **`create_pbr_scene`** (CLI `pbr-scene`) — a 3D scene with a PBR material
+  (metallic/roughness/base color) + an environment light rig for image-based lighting, beyond
+  `create_3d_scene`'s basic light.
+- **`create_particle_flock`** (CLI `flock`) — boids-style GPU particle flocking
+  (separation/alignment/cohesion in a feedback-TOP velocity loop) feeding TOP-instancing — a
+  behavioral complement to `create_gpu_particle_field`.
+- **`create_point_cloud`** (CLI `point-cloud`) — render a point cloud from a depth/luminance map
+  or a synthetic source via texture-packed TOP-instancing, with depth-scale / point-size / spin.
+- **`create_data_source`** (CLI `data-source`) — ingest live external data (JSON/CSV over a Web
+  Client DAT, OSC In, or Serial) onto a binding-ready Null CHOP, the input that feeds
+  `create_data_visualization` / `bind_to_channel`.
+- **`create_generative_audio`** (CLI `gen-audio`) — synthesize audio (oscillator / FM / noise)
+  onto a Null CHOP, with optional opt-in audio-device output — generate sound, not just react.
+- **`create_cubemap_dome`** (CLI `cubemap-dome`) — a true cube-map render (Render TOP in
+  cube-map mode → GLSL fisheye/equirectangular remap) for planetarium domes / 360, the
+  higher-fidelity follow-up to `create_dome_output`.
+- **`create_led_mapper`** (CLI `led-mapper`) — pixel-map regions of a source TOP to an LED
+  fixture layout (strip/grid; horizontal/vertical/serpentine) → per-pixel colors out as
+  DMX/Art-Net, building on `create_external_io`'s `artnet_out`.
+- **`scaffold_genre`** (CLI `genre`) — genre show scaffolds (techno / ambient / installation): a
+  styled starting network with a genre-appropriate tempo, look and palette, beyond
+  `scaffold_show`'s generic skeleton.
+- **`text_to_recipe`** prompt — author a schema-valid recipe JSON (matching `RecipeSchema`) from
+  a plain-language description, ready to save under `recipes/` and instantiate with `apply_recipe`.
+- **`style_reference`** prompt — recreate a reference look (image or text description) by mapping
+  it onto an ordered plan of concrete tdmcp tool calls + parameters.
+
+[0.4.0]: https://github.com/Pantani/tdmcp/releases/tag/v0.4.0
 
 ## [0.3.1] - 2026-05-27
 

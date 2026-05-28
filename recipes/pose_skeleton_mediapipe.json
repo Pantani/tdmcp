@@ -1,0 +1,67 @@
+{
+  "id": "pose_skeleton_mediapipe",
+  "name": "Pose Skeleton (MediaPipe)",
+  "description": "A live stick-figure skeleton drawn from the 33 MediaPipe body landmarks (the classic body-tracking look). Point the 'posein' Select CHOP at the pose-landmarks CHOP from the free torinmb/mediapipe-touchdesigner plugin. Webcam only — no Kinect or extra hardware. Or use create_pose_skeleton for a self-contained synthetic preview.",
+  "tags": ["mediapipe", "pose", "skeleton", "body-tracking", "camera"],
+  "difficulty": "advanced",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "posein",
+      "type": "selectCHOP",
+      "comment": "Set 'chops' to the MediaPipe plugin's pose-landmarks CHOP (33 samples, tx/ty/tz)"
+    },
+    { "name": "geo", "type": "geometryCOMP" },
+    {
+      "name": "skeleton",
+      "type": "scriptSOP",
+      "parent": "geo",
+      "render": true,
+      "comment": "onCook builds a point per landmark + a polyline per bone"
+    },
+    { "name": "skel_cb", "type": "textDAT", "parent": "geo", "comment": "Script SOP callbacks" },
+    {
+      "name": "wire",
+      "type": "lineMAT",
+      "parameters": {
+        "linenearcolorr": 0.2,
+        "linenearcolorg": 1.0,
+        "linenearcolorb": 0.9,
+        "widthnear": 3
+      }
+    },
+    { "name": "cam", "type": "cameraCOMP", "parameters": { "tz": 4.6 } },
+    {
+      "name": "render",
+      "type": "renderTOP",
+      "parameters": {
+        "outputresolution": "custom",
+        "resolutionw": 1280,
+        "resolutionh": 720,
+        "antialias": "3"
+      }
+    },
+    { "name": "out1", "type": "nullTOP" }
+  ],
+  "connections": [{ "from": "render", "to": "out1" }],
+  "parameters": [
+    { "name": "callbacks", "node": "skeleton", "param": "callbacks", "value": "skel_cb" },
+    { "name": "material", "node": "geo", "param": "material", "value": "wire" },
+    { "name": "geometry", "node": "render", "param": "geometry", "value": "geo" },
+    { "name": "camera", "node": "render", "param": "camera", "value": "cam" }
+  ],
+  "python_code": {
+    "skel_cb": "BONES = [[0,1],[1,2],[2,3],[3,7],[0,4],[4,5],[5,6],[6,8],[9,10],[11,12],[11,13],[13,15],[15,17],[15,19],[15,21],[17,19],[12,14],[14,16],[16,18],[16,20],[16,22],[18,20],[11,23],[12,24],[23,24],[23,25],[25,27],[27,29],[27,31],[29,31],[24,26],[26,28],[28,30],[28,32],[30,32]]\n\ndef onCook(scriptOp):\n    scriptOp.clear()\n    pose = op('../posein')\n    if pose is None or pose.numChans < 3 or pose.numSamples < 1:\n        return\n    tx = pose['tx']; ty = pose['ty']; tz = pose['tz']\n    if tx is None or ty is None or tz is None:\n        return\n    n = pose.numSamples\n    pts = []\n    for i in range(n):\n        p = scriptOp.appendPoint()\n        p.x = float(tx[i]); p.y = float(ty[i]); p.z = float(tz[i])\n        pts.append(p)\n    for a, b in BONES:\n        if a < n and b < n:\n            poly = scriptOp.appendPoly(2, closed=False, addPoints=False)\n            poly[0].point = pts[a]\n            poly[1].point = pts[b]\n    return\n"
+  },
+  "controls": [
+    {
+      "name": "LineWidth",
+      "type": "float",
+      "min": 0,
+      "max": 20,
+      "default": 3,
+      "bind_to": ["wire.widthnear"]
+    }
+  ],
+  "preview_description": "A glowing cyan skeleton mirroring the performer's body in real time against black."
+}

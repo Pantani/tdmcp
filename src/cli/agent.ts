@@ -26,6 +26,10 @@ import {
 import { createAutopilotImpl, createAutopilotSchema } from "../tools/layer1/createAutopilot.js";
 import { createColorGradeImpl, createColorGradeSchema } from "../tools/layer1/createColorGrade.js";
 import {
+  createCubemapDomeImpl,
+  createCubemapDomeSchema,
+} from "../tools/layer1/createCubemapDome.js";
+import {
   createDataVisualizationImpl,
   createDataVisualizationSchema,
 } from "../tools/layer1/createDataVisualization.js";
@@ -46,6 +50,10 @@ import {
   createGenerativeArtImpl,
   createGenerativeArtSchema,
 } from "../tools/layer1/createGenerativeArt.js";
+import {
+  createGenerativeAudioImpl,
+  createGenerativeAudioSchema,
+} from "../tools/layer1/createGenerativeAudio.js";
 import { createGlitchImpl, createGlitchSchema } from "../tools/layer1/createGlitch.js";
 import {
   createGpuParticleFieldImpl,
@@ -74,13 +82,23 @@ import {
   createMultiOutputSchema,
 } from "../tools/layer1/createMultiOutput.js";
 import {
+  createParticleFlockImpl,
+  createParticleFlockSchema,
+} from "../tools/layer1/createParticleFlock.js";
+import {
   createParticleSystemImpl,
   createParticleSystemSchema,
 } from "../tools/layer1/createParticleSystem.js";
+import { createPbrSceneImpl, createPbrSceneSchema } from "../tools/layer1/createPbrScene.js";
+import { createPointCloudImpl, createPointCloudSchema } from "../tools/layer1/createPointCloud.js";
 import {
   createProjectionMappingImpl,
   createProjectionMappingSchema,
 } from "../tools/layer1/createProjectionMapping.js";
+import {
+  createRaymarchSceneImpl,
+  createRaymarchSceneSchema,
+} from "../tools/layer1/createRaymarchScene.js";
 import { createShaderLibImpl, createShaderLibSchema } from "../tools/layer1/createShaderLib.js";
 import { createSimulationImpl, createSimulationSchema } from "../tools/layer1/createSimulation.js";
 import { createSpectrumImpl, createSpectrumSchema } from "../tools/layer1/createSpectrum.js";
@@ -107,6 +125,7 @@ import { createWaveformImpl, createWaveformSchema } from "../tools/layer1/create
 import { describeProjectImpl, describeProjectSchema } from "../tools/layer1/describeProject.js";
 import { detectOnsetsImpl, detectOnsetsSchema } from "../tools/layer1/detectOnsets.js";
 import { detectPitchImpl, detectPitchSchema } from "../tools/layer1/detectPitch.js";
+import { detectTempoImpl, detectTempoSchema } from "../tools/layer1/detectTempo.js";
 import {
   extractAudioFeaturesImpl,
   extractAudioFeaturesSchema,
@@ -114,6 +133,7 @@ import {
 import { getPreviewSchema } from "../tools/layer1/getPreview.js";
 import { importModelImpl, importModelSchema } from "../tools/layer1/importModel.js";
 import { listRecipesImpl, listRecipesSchema } from "../tools/layer1/listRecipes.js";
+import { scaffoldGenreImpl, scaffoldGenreSchema } from "../tools/layer1/scaffoldGenre.js";
 import { scaffoldShowImpl, scaffoldShowSchema } from "../tools/layer1/scaffoldShow.js";
 import { setupOutputImpl, setupOutputSchema } from "../tools/layer1/setupOutput.js";
 import {
@@ -137,11 +157,18 @@ import {
   createControlSurfaceImpl,
   createControlSurfaceSchema,
 } from "../tools/layer2/createControlSurface.js";
+import {
+  createCueSequencerImpl,
+  createCueSequencerSchema,
+} from "../tools/layer2/createCueSequencer.js";
+import { createDataSourceImpl, createDataSourceSchema } from "../tools/layer2/createDataSource.js";
 import { createDecksImpl, createDecksSchema } from "../tools/layer2/createDecks.js";
 import { createExternalIoImpl, createExternalIoSchema } from "../tools/layer2/createExternalIo.js";
 import { createGlslShaderImpl, createGlslShaderSchema } from "../tools/layer2/createGlslShader.js";
+import { createLedMapperImpl, createLedMapperSchema } from "../tools/layer2/createLedMapper.js";
 import { createMacroImpl, createMacroSchema } from "../tools/layer2/createMacro.js";
 import { createNodeChainImpl, createNodeChainSchema } from "../tools/layer2/createNodeChain.js";
+import { createPaletteImpl, createPaletteSchema } from "../tools/layer2/createPalette.js";
 import { createPanicImpl, createPanicSchema } from "../tools/layer2/createPanic.js";
 import {
   createPhoneRemoteImpl,
@@ -151,6 +178,10 @@ import {
   createPythonScriptImpl,
   createPythonScriptSchema,
 } from "../tools/layer2/createPythonScript.js";
+import {
+  createStageDashboardImpl,
+  createStageDashboardSchema,
+} from "../tools/layer2/createStageDashboard.js";
 import { duplicateNetworkImpl, duplicateNetworkSchema } from "../tools/layer2/duplicateNetwork.js";
 import { learnControlImpl, learnControlSchema } from "../tools/layer2/learnControl.js";
 import { manageCheckpointImpl, manageCheckpointSchema } from "../tools/layer2/manageCheckpoint.js";
@@ -679,6 +710,87 @@ const COMMANDS: Record<string, Command> = {
     learnControlSchema,
     learnControlImpl,
     "MIDI/OSC learn: snapshot an input CHOP, then bind the moved control (experimental).",
+    { mutates: true },
+  ),
+  // Post-0.3.0 parallel build — wave 1:
+  "cue-sequencer": r(
+    createCueSequencerSchema,
+    createCueSequencerImpl,
+    "Bar-quantized cue timeline: fire stored cues at musical positions on a loop.",
+    { mutates: true },
+  ),
+  dashboard: r(
+    createStageDashboardSchema,
+    createStageDashboardImpl,
+    "Unified web performance surface: cue buttons + faders + panic + live readout.",
+    { mutates: true },
+  ),
+  raymarch: r(
+    createRaymarchSceneSchema,
+    createRaymarchSceneImpl,
+    "Volumetric GLSL raymarcher: SDF scenes (sphere-field/menger/tunnel).",
+    { mutates: true },
+  ),
+  "detect-tempo": r(
+    detectTempoSchema,
+    detectTempoImpl,
+    "Auto-BPM from audio onsets; optionally drive the global tempo (experimental).",
+    { mutates: true },
+  ),
+  palette: r(
+    createPaletteSchema,
+    createPaletteImpl,
+    "Generate a color palette/gradient (harmony rules or sampled from a source).",
+    { mutates: true },
+  ),
+  // Post-0.3.0 parallel build — wave 2:
+  "pbr-scene": r(
+    createPbrSceneSchema,
+    createPbrSceneImpl,
+    "3D scene with a PBR material + environment light rig.",
+    { mutates: true },
+  ),
+  flock: r(
+    createParticleFlockSchema,
+    createParticleFlockImpl,
+    "Boids-style GPU particle flocking (separation/alignment/cohesion).",
+    { mutates: true },
+  ),
+  "point-cloud": r(
+    createPointCloudSchema,
+    createPointCloudImpl,
+    "Render a point cloud from a depth/luminance map or synthetic source.",
+    { mutates: true },
+  ),
+  "data-source": r(
+    createDataSourceSchema,
+    createDataSourceImpl,
+    "Ingest live external data (json/csv/osc/serial) onto a bindable CHOP.",
+    { mutates: true },
+  ),
+  "gen-audio": r(
+    createGenerativeAudioSchema,
+    createGenerativeAudioImpl,
+    "Synthesize audio (oscillator/fm/noise); optional device output.",
+    { mutates: true },
+  ),
+  // Post-0.3.0 parallel build — wave 3:
+  "cubemap-dome": r(
+    createCubemapDomeSchema,
+    createCubemapDomeImpl,
+    "True cube-map dome render → fisheye/equirectangular for planetarium/360.",
+    { mutates: true },
+  ),
+  "led-mapper": r(
+    createLedMapperSchema,
+    createLedMapperImpl,
+    "Pixel-map a source TOP to an LED fixture layout → DMX/Art-Net out.",
+    { mutates: true },
+  ),
+  genre: r(
+    scaffoldGenreSchema,
+    scaffoldGenreImpl,
+    "Scaffold a genre-flavored show (techno/ambient/installation).",
     { mutates: true },
   ),
 };

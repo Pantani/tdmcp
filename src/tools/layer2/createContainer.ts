@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { placeBelowSiblingsScript } from "../layout.js";
+import { placeInGridScript } from "../layout.js";
 import { guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
@@ -26,12 +26,9 @@ export async function createContainerImpl(ctx: ToolContext, args: CreateContaine
         type: COMP_MAP[args.comp_type],
         name: args.name,
       });
-      // Place it clear of existing siblings (cosmetic — never block creation).
+      // Tile it into the 2D grid clear of existing siblings (cosmetic — never block creation).
       try {
-        await ctx.client.executePythonScript(
-          placeBelowSiblingsScript(args.parent_path, node.path),
-          false,
-        );
+        await ctx.client.executePythonScript(placeInGridScript(args.parent_path, node.path), false);
       } catch (err) {
         ctx.logger.debug("container placement skipped", { err: String(err) });
       }

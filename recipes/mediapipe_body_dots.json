@@ -1,0 +1,86 @@
+{
+  "id": "mediapipe_body_dots",
+  "name": "MediaPipe Body Dots",
+  "description": "Glowing dots that track the 33 MediaPipe body landmarks. Point the 'posein' Select CHOP at the pose-landmarks CHOP from the free torinmb/mediapipe-touchdesigner plugin (33 samples, tx/ty/tz). Webcam only — no Kinect or extra hardware. Or use create_body_reactive for a self-contained synthetic preview.",
+  "tags": ["mediapipe", "pose", "body-tracking", "interactive", "camera"],
+  "difficulty": "intermediate",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "posein",
+      "type": "selectCHOP",
+      "comment": "Set 'chops' to the MediaPipe plugin's pose-landmarks CHOP (33 samples, tx/ty/tz)"
+    },
+    { "name": "geo", "type": "geometryCOMP" },
+    {
+      "name": "dot",
+      "type": "sphereSOP",
+      "parameters": { "radx": 0.03, "rady": 0.03, "radz": 0.03 },
+      "parent": "geo",
+      "comment": "The mark stamped on each landmark"
+    },
+    {
+      "name": "pts",
+      "type": "choptoSOP",
+      "parent": "geo",
+      "comment": "33 landmark samples become 33 points (tx/ty/tz map to position)"
+    },
+    {
+      "name": "copy",
+      "type": "copySOP",
+      "parent": "geo",
+      "render": true,
+      "comment": "Stamp the dot on every landmark point"
+    },
+    {
+      "name": "dotmat",
+      "type": "constantMAT",
+      "parameters": { "colorr": 1, "colorg": 0.25, "colorb": 0.8 }
+    },
+    { "name": "cam", "type": "cameraCOMP", "parameters": { "tz": 4.6 } },
+    {
+      "name": "render",
+      "type": "renderTOP",
+      "parameters": {
+        "outputresolution": "custom",
+        "resolutionw": 1280,
+        "resolutionh": 720,
+        "antialias": "3"
+      }
+    },
+    { "name": "bloom", "type": "blurTOP", "parameters": { "size": 16 } },
+    { "name": "glow", "type": "compositeTOP", "parameters": { "operand": "add" } },
+    { "name": "out1", "type": "nullTOP" }
+  ],
+  "connections": [
+    { "from": "dot", "to": "copy", "to_input": 0 },
+    { "from": "pts", "to": "copy", "to_input": 1 },
+    { "from": "render", "to": "bloom" },
+    { "from": "render", "to": "glow", "to_input": 0 },
+    { "from": "bloom", "to": "glow", "to_input": 1 },
+    { "from": "glow", "to": "out1" }
+  ],
+  "parameters": [
+    {
+      "name": "landmarks_chop",
+      "node": "pts",
+      "param": "chop",
+      "value": "posein",
+      "label": "Landmarks CHOP"
+    },
+    { "name": "material", "node": "geo", "param": "material", "value": "dotmat" },
+    { "name": "geometry", "node": "render", "param": "geometry", "value": "geo" },
+    { "name": "camera", "node": "render", "param": "camera", "value": "cam" }
+  ],
+  "controls": [
+    {
+      "name": "GlowAmount",
+      "type": "float",
+      "min": 0,
+      "max": 64,
+      "default": 16,
+      "bind_to": ["bloom.size"]
+    }
+  ],
+  "preview_description": "Hot-pink glowing dots tracing a person's joints — head, hands, elbows, hips, knees, feet — as they move in front of the webcam."
+}
