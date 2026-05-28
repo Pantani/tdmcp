@@ -1205,7 +1205,9 @@ function usage(): string {
   lines.push("  preview <nodePath>   Capture a TOP to a PNG file (-o/--out).  [writes a file]");
   lines.push("  watch                Stream TD events as ndjson until Ctrl-C.  [long-running]");
   lines.push("  repl                 Interactive mode: run commands line-by-line.  [interactive]");
-  lines.push("  doctor               Diagnose your setup (TD bridge, LLM, vault, config).");
+  lines.push(
+    "  doctor               Diagnose your setup (TD/LLM/vault/config/tools); --fix suggests commands, --output json, -q/--quiet.",
+  );
   return lines.join("\n");
 }
 
@@ -1289,6 +1291,8 @@ function parseCliArgs(argv: string[]) {
       "td-port": { type: "string" },
       timeout: { type: "string" },
       "write-env": { type: "boolean", default: false },
+      quiet: { type: "boolean", short: "q", default: false },
+      fix: { type: "boolean", default: false },
     },
   });
 }
@@ -1406,7 +1410,22 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   // reachable even when TD is offline, so it bypasses the CallToolResult command table.
   if (positionals[0] === "doctor") {
     const make = opts.makeCtx;
-    const { stdout, stderr, code } = await runDoctor(make ? { makeCtx: () => make() } : {});
+    let cfg: TdmcpConfig | undefined;
+    if (!make) {
+      try {
+        cfg = loadConfig(process.env, cliLoadOptions(values));
+      } catch (err) {
+        return { stdout: "", stderr: `${(err as Error).message}\n`, code: 2 };
+      }
+    }
+    const { stdout, stderr, code, report } = await runDoctor(
+      make ? { makeCtx: () => make(), fix: values.fix } : { config: cfg, fix: values.fix },
+    );
+    // --output json (explicit) → structured report; --quiet → exit code only.
+    if (argv.includes("--output") && values.output === "json") {
+      return { stdout: `${JSON.stringify(report, null, 2)}\n`, stderr: "", code };
+    }
+    if (values.quiet) return { stdout: "", stderr: "", code };
     return { stdout, stderr, code };
   }
 

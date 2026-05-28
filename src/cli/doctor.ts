@@ -37,6 +37,8 @@ export interface DoctorCheck {
 export interface DoctorReport {
   ok: boolean;
   checks: DoctorCheck[];
+  /** Suggested remediation commands for non-passing checks (populated when `fix` is set). */
+  fixes?: Array<{ id: string; command: string }>;
   /** Resolved configuration the checks ran against (handy for bug reports). */
   config: {
     tdBaseUrl: string;
@@ -56,6 +58,8 @@ export interface DoctorResult {
 }
 
 export interface RunDoctorOptions {
+  /** When set, append a "Suggested fixes" section: a remediation command per non-passing check. */
+  fix?: boolean;
   /** Inject a config (tests / callers that already loaded one); defaults to env. */
   config?: TdmcpConfig;
   /** Inject a context (tests); production builds one from the config. */
@@ -183,6 +187,43 @@ function checkVault(
   return { ...base, status: "pass", detail: `folder found at ${absPath}.`, data };
 }
 
+/** Tool-exposure state: surfaces whether raw-Python / destructive tools are locked out. Never fatal. */
+function checkTools(config: TdmcpConfig): DoctorCheck {
+  const locked: string[] = [];
+  if (config.rawPython === "off") locked.push("raw-Python escape hatches (TDMCP_RAW_PYTHON=off)");
+  if (config.toolProfile === "safe")
+    locked.push("destructive/raw-code tools (TDMCP_TOOL_PROFILE=safe)");
+  return {
+    id: "tools",
+    title: "Tool exposure",
+    status: "pass",
+    critical: false,
+    detail: locked.length
+      ? `restricted: ${locked.join("; ")} are hidden. If a tool is unexpectedly missing, this is why.`
+      : `full surface (profile ${config.toolProfile}, raw-Python ${config.rawPython}).`,
+    data: { rawPython: config.rawPython, toolProfile: config.toolProfile },
+  };
+}
+
+/** Maps a non-passing check id to a remediation command/hint for `doctor --fix`. */
+function suggestFix(check: DoctorCheck, config: TdmcpConfig): string | undefined {
+  if (check.status === "pass") return undefined;
+  switch (check.id) {
+    case "bridge":
+      return "Start TouchDesigner, then run `tdmcp install-bridge` and paste the Textport one-liner it prints.";
+    case "llm":
+      return `Start the local LLM and pull the model:  ollama serve  &&  ollama pull ${config.llmModel}`;
+    case "vault":
+      return config.vaultPath
+        ? `Create the folder or fix the path:  mkdir -p "${config.vaultPath}"  (or unset TDMCP_VAULT_PATH).`
+        : undefined;
+    case "config":
+      return "Fix the invalid setting shown above (check your env vars / config file), then re-run `tdmcp doctor`.";
+    default:
+      return undefined;
+  }
+}
+
 /** Config sanity: surfaces the effective TD/LLM settings. Critical (anchors the exit code). */
 function checkConfig(config: TdmcpConfig): DoctorCheck {
   const td = tdBaseUrl(config);
@@ -217,6 +258,10 @@ function render(report: DoctorReport): string {
     lines.push(
       `Setup is not ready: ${failed.length} critical check(s) failed (see the ✖ lines above).`,
     );
+  }
+  if (report.fixes?.length) {
+    lines.push("", "Suggested fixes:");
+    for (const fix of report.fixes) lines.push(`  • ${fix.command}`);
   }
   return lines.join("\n");
 }
@@ -267,14 +312,21 @@ export async function runDoctor(opts: RunDoctorOptions = {}): Promise<DoctorResu
   const checks: DoctorCheck[] = [
     await checkBridge(ctx),
     checkConfig(config),
+    checkTools(config),
     await checkLlm(config, makeLlmClient),
     checkVault(config, vaultProbe),
   ];
 
   const ok = !checks.some((c) => c.critical && c.status === "fail");
+  const fixes = opts.fix
+    ? checks
+        .map((c) => ({ id: c.id, command: suggestFix(c, config) }))
+        .filter((f): f is { id: string; command: string } => f.command !== undefined)
+    : undefined;
   const report: DoctorReport = {
     ok,
     checks,
+    ...(fixes && fixes.length ? { fixes } : {}),
     config: {
       tdBaseUrl: tdBaseUrl(config),
       llmBaseUrl: config.llmBaseUrl,
