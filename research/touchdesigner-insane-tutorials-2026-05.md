@@ -229,7 +229,7 @@ Selected for *potential to become a real feature × AI/automation fit × artist 
 New tools (none duplicate the existing 102). Grouped; `*` = highest priority for v0.4.0.
 
 **Component & serialization**
-- ✅ **Already ships as `manage_component`** — `.tox` `save`/`saveExternalTox`/`loadTox` (+ live-linked `externaltox`) load. Do **not** rebuild as `export_component`/`import_component`.
+- ✅ **Already ships as `manage_component`** — `.tox` `save` + `loadTox` (+ live-linked `externaltox`) load. Do **not** rebuild as `export_component`/`import_component`. (`saveExternalTox`-based externalization is *not* in `manage_component` yet — it's the future `make_portable_tox` gap.)
 - `make_portable_tox` — collect external asset deps into one self-contained `.tox`.
 - `serialize_network` / `rebuild_network` — subnet ↔ portable JSON (operators, params, wires, positions) for git-diffable round-trips.
 
@@ -359,7 +359,7 @@ The theme is **turn AI builds into reusable, documented, body-reactive component
 Format per item: **motivation · user story · technical design · MCP API · tools/work · usage · risks · tests · docs · priority · effort.** Detailed for the v0.4.0 set; condensed thereafter.
 
 ### BL-01 — `.tox` export/import ✅ ALREADY SHIPPED as `manage_component`
-- **Status:** **superseded — do not build.** `.tox` `save`/`saveExternalTox`/`loadTox` (+ live-linked `externaltox` load) already exist in `src/tools/layer2/manageComponent.ts` (the `manage_component` tool, actions `save`/`load`, with `create_folders`/`linked`/`name`). This was a false gap — the generic tool name hid it from the gap scan.
+- **Status:** **superseded — do not build.** `.tox` `save` (via `COMP.save`) + `loadTox` (+ live-linked `externaltox` load) already exist in `src/tools/layer2/manageComponent.ts` (the `manage_component` tool, actions `save`/`load`, with `create_folders`/`linked`/`name`). This was a false gap — the generic tool name hid it from the gap scan. Note: `manage_component` does **not** expose `COMP.saveExternalTox` — that externalization is the future `make_portable_tox` gap (BL-11).
 - **Remaining gap → v0.5.0:** a portable/externalized **bundle** that collects external asset deps into one self-contained `.tox` (see `make_portable_tox`, BL-11). The reusable-component work that *complements* `manage_component` — exposing knobs + a Python class so a saved `.tox` is actually reusable — is **BL-03** (`add_custom_parameters` + `scaffold_extension`), the real v0.4.0 P0.
 
 ### BL-02 — `create_body_tracking` (P0, M)
@@ -428,7 +428,7 @@ Every feature follows TDMCP's existing two-tier pattern:
 - **Bridge changes:** `python3 -m py_compile` on changed `td/` files + `python3 -m unittest discover -s td/tests`. Remember the bridge can be stale in a running TD — `reload_bridge` / restart before concluding.
 - **Recipes:** `npm run validate:recipes` for every new recipe JSON.
 - **Hardware/AI features (BL-06/07/12, Link/MIDI):** probe-first — confirm the operator/`.tox`/sensor exists in the build before shaping the schema; ship a **synthetic/offline fallback** and gate live tests behind hardware. Document what couldn't be validated on the dev Mac (GPU diffusion, depth cameras, Link/MIDI hardware), matching the ROADMAP's "won't ship unvalidated" stance.
-- **The four PR gates** stay green: `typecheck`, `build`, `lint` (run `./node_modules/.bin/biome` directly — RTK proxy breaks `npm run lint`), `test`.
+- **The four PR gates** stay green: `npm run typecheck`, `npm run build`, `npm run lint` (`biome check .`), `npm test`.
 
 ## Documentation Plan
 
