@@ -36,6 +36,7 @@ export const snapshotTdGraphOutputSchema = z.object({
       type: z.string(),
       name: z.string(),
       parameters: z.record(z.string(), z.unknown()).optional(),
+      params_unfetched: z.boolean().optional(),
     }),
   ),
   connections: z.array(ConnectionSchema),
@@ -46,6 +47,12 @@ interface SnapshotNode {
   type: string;
   name: string;
   parameters?: Record<string, unknown>;
+  /**
+   * True when parameters were requested for this node but never fetched (truncated past
+   * MAX_PARAM_NODES, or the per-node read failed). Distinguishes "params unknown" from
+   * "params match the type default", which both otherwise carry no `parameters` field.
+   */
+  params_unfetched?: boolean;
 }
 
 /**
@@ -102,13 +109,20 @@ export function toCompactNodes(
   typeDefaults: Record<string, Record<string, unknown>>,
 ): SnapshotNode[] {
   return nodes.map((node) => {
-    if (!node.parameters) return { path: node.path, type: node.type, name: node.name };
+    const base: SnapshotNode = { path: node.path, type: node.type, name: node.name };
+    // Carry the "params unknown" marker through unchanged — these nodes have no
+    // fetched parameters to delta-encode, and dropping the marker would make them
+    // look like they match the type default.
+    if (node.params_unfetched) {
+      base.params_unfetched = true;
+      return base;
+    }
+    if (!node.parameters) return base;
     const def = typeDefaults[node.type] ?? {};
     const delta: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(node.parameters)) {
       if (JSON.stringify(value ?? null) !== JSON.stringify(def[key] ?? null)) delta[key] = value;
     }
-    const base: SnapshotNode = { path: node.path, type: node.type, name: node.name };
     if (Object.keys(delta).length > 0) base.parameters = delta;
     return base;
   });
@@ -132,12 +146,20 @@ export async function snapshotTdGraphImpl(ctx: ToolContext, args: SnapshotTdGrap
           if (detail.status === "fulfilled") params.set(detail.value.path, detail.value.parameters);
         }
       }
-      const nodes: SnapshotNode[] = refs.map((n) => ({
-        path: n.path,
-        type: n.type,
-        name: n.name,
-        ...(wantParams ? { parameters: params.get(n.path) ?? {} } : {}),
-      }));
+      const nodes: SnapshotNode[] = refs.map((n) => {
+        const node: SnapshotNode = { path: n.path, type: n.type, name: n.name };
+        if (wantParams) {
+          // Only attach `parameters` when this node was actually read. Nodes past the
+          // MAX_PARAM_NODES cap or whose read failed are flagged `params_unfetched` so a
+          // missing `parameters` field isn't misread as "no params / matches default".
+          if (params.has(n.path)) {
+            node.parameters = params.get(n.path);
+          } else {
+            node.params_unfetched = true;
+          }
+        }
+        return node;
+      });
       return { report, nodes, paramsTruncated };
     },
     ({ report, nodes, paramsTruncated }) => {

@@ -114,7 +114,6 @@ spatial output, data + audio I/O, and AI authoring prompts.
 - **`style_reference`** prompt — recreate a reference look (image or text description) by mapping
   it onto an ordered plan of concrete tdmcp tool calls + parameters.
 
-[0.5.0]: https://github.com/Pantani/tdmcp/releases/tag/v0.5.0
 [0.4.0]: https://github.com/Pantani/tdmcp/releases/tag/v0.4.0
 
 ## [0.3.1] - 2026-05-27

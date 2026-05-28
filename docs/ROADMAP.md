@@ -41,7 +41,7 @@ Every feature follows the existing patterns:
 | 7 | 0.3.0 ☑ | Stage I/O & sensor reactivity | Send video out, fan across projectors, react to the camera, follow an external clock, run hands-free |
 | 8–11 | 0.3.0 ◐ | Effects, reactivity, control & AI | Parallel waves — signature effects, deeper reactivity, creation, live control/AI/DX (detailed below) |
 | 12 | 0.3.0 ☑ | Dimensional: 3D, depth & spatial mapping | Take visuals off the flat plane — react in 3D, sculpt with depth, map onto real surfaces |
-| 13 | 0.4.0 ☐ | Components, agent-DX & reactivity | Package AI builds as reusable `.tox`, document/analyze projects, cheaper agent reads/edits, body- and clock-reactivity |
+| 13 | 0.5.0 ☑ | Components, agent-DX & reactivity | Package AI builds as reusable `.tox`, document/analyze projects, cheaper agent reads/edits, body- and clock-reactivity |
 
 ---
 

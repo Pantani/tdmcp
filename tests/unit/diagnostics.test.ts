@@ -196,6 +196,9 @@ describe("snapshot_td_graph", () => {
     const a = sc(r).nodes.find((n: { path: string }) => n.path === "/project1/a");
     const b = sc(r).nodes.find((n: { path: string }) => n.path === "/project1/b");
     expect(a.parameters).toMatchObject({ period: 1 });
-    expect(b.parameters).toEqual({}); // unreadable node degrades to empty params, not a hard error
+    // Unreadable node fails forward: params are left unfetched (not a misleading empty {})
+    // and flagged so downstream can't mistake it for "matches the type default".
+    expect(b.parameters).toBeUndefined();
+    expect(b.params_unfetched).toBe(true);
   });
 });

@@ -289,15 +289,14 @@ async function tryBridgeReport(
 
 export async function writeAgentGuideImpl(ctx: ToolContext, args: WriteAgentGuideArgs) {
   // ── Step 1: fetch the project summary via a bridge pass ──────────────────
-  // Use a provisional (no-summary) guide as the guide_text payload.  If
-  // output_dir is set the bridge will also write the file; we later overwrite
-  // it once we have the real summary.  Fail-forward: any bridge failure just
-  // leaves summary undefined and we still produce the static guide.
-  const provisionalGuide = buildAgentGuide(undefined);
+  // This pass only FETCHES the project summary — it never writes (output_dir is
+  // null), so there is no provisional file left behind if the single write below
+  // later fails. Fail-forward: any bridge failure just leaves summary undefined
+  // and we still produce the static guide.
   const firstReport = await tryBridgeReport(ctx, {
     path: args.path,
-    guide_text: provisionalGuide,
-    output_dir: args.output_dir ?? null,
+    guide_text: "",
+    output_dir: null,
     filename: args.filename,
   });
 
@@ -316,8 +315,8 @@ export async function writeAgentGuideImpl(ctx: ToolContext, args: WriteAgentGuid
   // ── Step 2: build the real guide (with summary, if any) ──────────────────
   const guide = buildAgentGuide(summary);
 
-  // ── Step 3: if output_dir is set and we have a summary, re-write the file
-  //    with the finalised guide text (which now contains the dynamic header). ─
+  // ── Step 3: if output_dir is set, write the file once with the finalised
+  //    guide text (the only write — the summary fetch above never writes). ─
   if (args.output_dir) {
     const writeReport = await tryBridgeReport(ctx, {
       path: args.path,

@@ -9,7 +9,7 @@
     {
       "name": "posein",
       "type": "selectCHOP",
-      "comment": "Set 'chops' to the MediaPipe plugin's pose-landmarks CHOP (33 samples, tx/ty/tz)"
+      "comment": "Set 'chop' to the MediaPipe plugin's pose-landmarks CHOP (33 samples, tx/ty/tz)"
     },
     { "name": "geo", "type": "geometryCOMP" },
     {

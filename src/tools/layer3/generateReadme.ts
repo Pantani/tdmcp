@@ -122,23 +122,22 @@ try:
                     report["warnings"].append("custom-par: " + traceback.format_exc().splitlines()[-1])
     except Exception:
         report["warnings"].append("custom-params-block: " + traceback.format_exc().splitlines()[-1])
-    # I/O
+    # I/O terminals: a node is a network *input* (source) when it has input connectors
+    # none of which are wired, and a network *output* (sink) when it has output
+    # connectors none of which are wired. (op.inputs/op.outputs are empty lists when
+    # unconnected, so iterating them never fires — inspect the connectors' state instead.)
     try:
         for _c in _children:
             try:
-                if hasattr(_c, "inputs"):
-                    for _inp in _c.inputs:
-                        if _inp is None or _inp.outputConnectors[0].connections == []:
-                            report["io"]["inputs"].append(_c.name)
-                            break
+                _in_cons = getattr(_c, "inputConnectors", None) or []
+                if _in_cons and all(len(_k.connections) == 0 for _k in _in_cons):
+                    report["io"]["inputs"].append(_c.name)
             except Exception:
                 pass
             try:
-                if hasattr(_c, "outputs"):
-                    for _outp in _c.outputs:
-                        if _outp is None or _outp.inputConnectors == []:
-                            report["io"]["outputs"].append(_c.name)
-                            break
+                _out_cons = getattr(_c, "outputConnectors", None) or []
+                if _out_cons and all(len(_k.connections) == 0 for _k in _out_cons):
+                    report["io"]["outputs"].append(_c.name)
             except Exception:
                 pass
     except Exception:
