@@ -102,6 +102,20 @@ describe("buildExtensionScript", () => {
     expect(script).toContain("_comp.create(textDAT");
     expect(script).toContain('_dat.text = _p["code"]');
   });
+
+  it("treats a non-Text-DAT name collision as fatal instead of overwriting it", () => {
+    const script = buildExtensionScript({
+      comp: "/c",
+      class_name: "WidgetExt",
+      code: "",
+      extension: "",
+      promote: true,
+      slot: 1,
+      methods: [],
+    });
+    expect(script).toContain('_dat.type != "text"');
+    expect(script).toContain("not a Text DAT");
+  });
 });
 
 describe("scaffoldExtensionImpl", () => {

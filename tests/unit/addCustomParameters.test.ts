@@ -108,6 +108,11 @@ describe("buildParamsScript", () => {
     const guards = script.match(/isinstance\(_dflt, \(list, tuple\)\)/g) ?? [];
     expect(guards.length).toBeGreaterThanOrEqual(2);
   });
+
+  it("parses string Toggle defaults instead of trusting bool() ('false'/'0' → False)", () => {
+    const script = buildParamsScript({ comp: "/c", page: "Custom", params: [] });
+    expect(script).toContain('("", "0", "false", "no", "off")');
+  });
 });
 
 describe("addCustomParametersImpl", () => {

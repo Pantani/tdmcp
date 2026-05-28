@@ -157,7 +157,13 @@ try:
                                 _pp.default = _dflt; _pp.val = _dflt
                 elif _typ == "Toggle":
                     if _dflt is not None:
-                        _p0.default = bool(_dflt); _p0.val = bool(_dflt)
+                        # A string default ("false"/"0"/"off") is truthy under bool(),
+                        # so parse common falsey strings explicitly first.
+                        if isinstance(_dflt, str):
+                            _b = _dflt.strip().lower() not in ("", "0", "false", "no", "off")
+                        else:
+                            _b = bool(_dflt)
+                        _p0.default = _b; _p0.val = _b
                 elif _typ == "Menu":
                     _names = [str(x) for x in (_spec.get("menu_names") or [])]
                     _labels = [str(x) for x in (_spec.get("menu_labels") or [])] or _names

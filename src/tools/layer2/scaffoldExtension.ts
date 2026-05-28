@@ -156,8 +156,10 @@ try:
     else:
         _cname = _p["class_name"]; _slot = _p["slot"]; _idx = _slot - 1
         _dat = _comp.op(_cname)
-        if _dat is not None and not _dat.isDAT:
-            report["fatal"] = "A non-DAT named '%s' already exists in %s." % (_cname, _p["comp"])
+        if _dat is not None and _dat.type != "text":
+            # Only a Text DAT can hold the class; never overwrite a Table/Execute DAT
+            # (or any other op) that happens to share the name.
+            report["fatal"] = "An operator named '%s' already exists in %s and is a %s, not a Text DAT, so it can't hold the extension class." % (_cname, _p["comp"], _dat.type)
         else:
             if _dat is None:
                 _dat = _comp.create(textDAT, _cname)
