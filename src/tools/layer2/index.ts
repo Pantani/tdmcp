@@ -2,6 +2,7 @@ import type { ToolRegistrar } from "../types.js";
 import { registerAddCustomParameters } from "./addCustomParameters.js";
 import { registerAnimateParameter } from "./animateParameter.js";
 import { registerArrangeNetwork } from "./arrangeNetwork.js";
+import { registerBatchOperations } from "./batchOperations.js";
 import { registerBindToChannel } from "./bindToChannel.js";
 import { registerConnectNodes } from "./connectNodes.js";
 import { registerCreateClipLauncher } from "./createClipLauncher.js";
@@ -18,6 +19,7 @@ import { registerCreatePhoneRemote } from "./createPhoneRemote.js";
 import { registerCreatePythonScript } from "./createPythonScript.js";
 import { registerDuplicateNetwork } from "./duplicateNetwork.js";
 import { registerLearnControl } from "./learnControl.js";
+import { registerManageAnnotation } from "./manageAnnotation.js";
 import { registerManageCheckpoint } from "./manageCheckpoint.js";
 import { registerManageComponent } from "./manageComponent.js";
 import { registerManageCue } from "./manageCue.js";
@@ -25,6 +27,7 @@ import { registerManagePresets } from "./managePresets.js";
 import { registerRandomizeControls } from "./randomizeControls.js";
 import { registerScaffoldExtension } from "./scaffoldExtension.js";
 import { registerSetParametersBatch } from "./setParametersBatch.js";
+import { registerSetPerformMode } from "./setPerformMode.js";
 
 export const layer2Registrars: ToolRegistrar[] = [
   registerCreateNodeChain,
@@ -56,4 +59,7 @@ export const layer2Registrars: ToolRegistrar[] = [
   // Phase 13 — reusable components & agent-DX:
   registerAddCustomParameters,
   registerScaffoldExtension,
+  registerBatchOperations,
+  registerManageAnnotation,
+  registerSetPerformMode,
 ];

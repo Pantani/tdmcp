@@ -122,6 +122,7 @@ import {
 } from "../tools/layer2/addCustomParameters.js";
 import { animateParameterImpl, animateParameterSchema } from "../tools/layer2/animateParameter.js";
 import { arrangeNetworkImpl, arrangeNetworkSchema } from "../tools/layer2/arrangeNetwork.js";
+import { batchOperationsImpl, batchOperationsSchema } from "../tools/layer2/batchOperations.js";
 import { bindToChannelImpl, bindToChannelSchema } from "../tools/layer2/bindToChannel.js";
 import { connectNodesImpl, connectNodesSchema } from "../tools/layer2/connectNodes.js";
 import {
@@ -153,6 +154,7 @@ import {
 } from "../tools/layer2/createPythonScript.js";
 import { duplicateNetworkImpl, duplicateNetworkSchema } from "../tools/layer2/duplicateNetwork.js";
 import { learnControlImpl, learnControlSchema } from "../tools/layer2/learnControl.js";
+import { manageAnnotationImpl, manageAnnotationSchema } from "../tools/layer2/manageAnnotation.js";
 import { manageCheckpointImpl, manageCheckpointSchema } from "../tools/layer2/manageCheckpoint.js";
 import { manageComponentImpl, manageComponentSchema } from "../tools/layer2/manageComponent.js";
 import { manageCueImpl, manageCueSchema } from "../tools/layer2/manageCue.js";
@@ -169,17 +171,21 @@ import {
   setParametersBatchImpl,
   setParametersBatchSchema,
 } from "../tools/layer2/setParametersBatch.js";
+import { setPerformModeImpl, setPerformModeSchema } from "../tools/layer2/setPerformMode.js";
+import { analyzeProjectImpl, analyzeProjectSchema } from "../tools/layer3/analyzeProject.js";
 import { compareTdNodesImpl, compareTdNodesSchema } from "../tools/layer3/compareTdNodes.js";
 import { createTdNodeImpl, createTdNodeSchema } from "../tools/layer3/createTdNode.js";
 import { deleteTdNodeImpl, deleteTdNodeSchema } from "../tools/layer3/deleteTdNode.js";
 import { diffSnapshotsImpl, diffSnapshotsSchema } from "../tools/layer3/diffSnapshots.js";
 import { documentNetworkImpl, documentNetworkSchema } from "../tools/layer3/documentNetwork.js";
+import { editDatContentImpl, editDatContentSchema } from "../tools/layer3/editDatContent.js";
 import { execNodeMethodImpl, execNodeMethodSchema } from "../tools/layer3/execNodeMethod.js";
 import {
   executePythonScriptImpl,
   executePythonScriptSchema,
 } from "../tools/layer3/executePythonScript.js";
 import { findTdNodesImpl, findTdNodesSchema } from "../tools/layer3/findTdNodes.js";
+import { generateReadmeImpl, generateReadmeSchema } from "../tools/layer3/generateReadme.js";
 import { getModuleHelpImpl, getModuleHelpSchema } from "../tools/layer3/getModuleHelp.js";
 import {
   getTdClassDetailsImpl,
@@ -203,6 +209,7 @@ import { recordMovieImpl, recordMovieSchema } from "../tools/layer3/recordMovie.
 import { reloadBridgeImpl, reloadBridgeSchema } from "../tools/layer3/reloadBridge.js";
 import { renderOutputImpl, renderOutputSchema } from "../tools/layer3/renderOutput.js";
 import { searchOperatorsImpl, searchOperatorsSchema } from "../tools/layer3/searchOperators.js";
+import { setDatContentImpl, setDatContentSchema } from "../tools/layer3/setDatContent.js";
 import { snapshotTdGraphImpl, snapshotTdGraphSchema } from "../tools/layer3/snapshotTdGraph.js";
 import {
   summarizeTdErrorsImpl,
@@ -212,6 +219,7 @@ import {
   updateTdNodeParametersImpl,
   updateTdNodeParametersSchema,
 } from "../tools/layer3/updateTdNodeParameters.js";
+import { writeAgentGuideImpl, writeAgentGuideSchema } from "../tools/layer3/writeAgentGuide.js";
 import type { ToolContext } from "../tools/types.js";
 import { loadConfig, type TdmcpConfig, tdBaseUrl } from "../utils/config.js";
 import { silentLogger } from "../utils/logger.js";
@@ -680,6 +688,53 @@ const COMMANDS: Record<string, Command> = {
     learnControlSchema,
     learnControlImpl,
     "MIDI/OSC learn: snapshot an input CHOP, then bind the moved control (experimental).",
+    { mutates: true },
+  ),
+  // Phase 13 — project intelligence & agent-DX.
+  analyze: r(
+    analyzeProjectSchema,
+    analyzeProjectImpl,
+    "Find dead ops, broken file deps, orphan COMPs + a dependency map.",
+  ),
+  readme: r(
+    generateReadmeSchema,
+    generateReadmeImpl,
+    "Generate a Markdown project doc (params, I/O, deps, preview).",
+  ),
+  "dat-edit": r(
+    editDatContentSchema,
+    editDatContentImpl,
+    "Surgically replace text in a DAT (unique-match or replace_all).",
+    { mutates: true },
+  ),
+  "dat-set": r(
+    setDatContentSchema,
+    setDatContentImpl,
+    "Overwrite a DAT's whole text (refuses silent wipes unless confirm_wipe).",
+    { mutates: true },
+  ),
+  batch: r(
+    batchOperationsSchema,
+    batchOperationsImpl,
+    "Run many create/connect/setParam ops in one fail-forward call.",
+    { mutates: true },
+  ),
+  annotate: r(
+    manageAnnotationSchema,
+    manageAnnotationImpl,
+    "Create/list annotation boxes + comments; list ops enclosed by a box.",
+    { mutates: true },
+  ),
+  "perform-mode": r(
+    setPerformModeSchema,
+    setPerformModeImpl,
+    "Toggle perform mode: suspend nonessential MCP/externalization compute during a show.",
+    { mutates: true },
+  ),
+  "agent-guide": r(
+    writeAgentGuideSchema,
+    writeAgentGuideImpl,
+    "Emit a project-local CLAUDE.md/AGENTS.md with tdmcp conventions.",
     { mutates: true },
   ),
 };

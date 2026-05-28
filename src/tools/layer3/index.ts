@@ -1,12 +1,15 @@
 import type { ToolRegistrar } from "../types.js";
+import { registerAnalyzeProject } from "./analyzeProject.js";
 import { registerCompareTdNodes } from "./compareTdNodes.js";
 import { registerCreateTdNode } from "./createTdNode.js";
 import { registerDeleteTdNode } from "./deleteTdNode.js";
 import { registerDiffSnapshots } from "./diffSnapshots.js";
 import { registerDocumentNetwork } from "./documentNetwork.js";
+import { registerEditDatContent } from "./editDatContent.js";
 import { registerExecNodeMethod } from "./execNodeMethod.js";
 import { registerExecutePythonScript } from "./executePythonScript.js";
 import { registerFindTdNodes } from "./findTdNodes.js";
+import { registerGenerateReadme } from "./generateReadme.js";
 import { registerGetModuleHelp } from "./getModuleHelp.js";
 import { registerGetTdClassDetails } from "./getTdClassDetails.js";
 import { registerGetTdClasses } from "./getTdClasses.js";
@@ -21,9 +24,11 @@ import { registerRecordMovie } from "./recordMovie.js";
 import { registerReloadBridge } from "./reloadBridge.js";
 import { registerRenderOutput } from "./renderOutput.js";
 import { registerSearchOperators } from "./searchOperators.js";
+import { registerSetDatContent } from "./setDatContent.js";
 import { registerSnapshotTdGraph } from "./snapshotTdGraph.js";
 import { registerSummarizeTdErrors } from "./summarizeTdErrors.js";
 import { registerUpdateTdNodeParameters } from "./updateTdNodeParameters.js";
+import { registerWriteAgentGuide } from "./writeAgentGuide.js";
 
 export const layer3Registrars: ToolRegistrar[] = [
   registerGetTdInfo,
@@ -51,4 +56,10 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerOptimizePerformance,
   registerRenderOutput,
   registerRecordMovie,
+  // Phase 13 — project intelligence & agent-DX:
+  registerAnalyzeProject,
+  registerGenerateReadme,
+  registerEditDatContent,
+  registerSetDatContent,
+  registerWriteAgentGuide,
 ];
