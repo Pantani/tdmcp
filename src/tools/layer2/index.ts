@@ -1,4 +1,5 @@
 import type { ToolRegistrar } from "../types.js";
+import { registerAddCustomParameters } from "./addCustomParameters.js";
 import { registerAnimateParameter } from "./animateParameter.js";
 import { registerArrangeNetwork } from "./arrangeNetwork.js";
 import { registerBindToChannel } from "./bindToChannel.js";
@@ -22,6 +23,7 @@ import { registerManageComponent } from "./manageComponent.js";
 import { registerManageCue } from "./manageCue.js";
 import { registerManagePresets } from "./managePresets.js";
 import { registerRandomizeControls } from "./randomizeControls.js";
+import { registerScaffoldExtension } from "./scaffoldExtension.js";
 import { registerSetParametersBatch } from "./setParametersBatch.js";
 
 export const layer2Registrars: ToolRegistrar[] = [
@@ -39,6 +41,9 @@ export const layer2Registrars: ToolRegistrar[] = [
   registerManageCheckpoint,
   registerManageCue,
   registerManageComponent,
+  // Make a generated COMP into a reusable, parameterized, scriptable component:
+  registerAddCustomParameters,
+  registerScaffoldExtension,
   registerCreateMacro,
   registerRandomizeControls,
   registerCreatePhoneRemote,

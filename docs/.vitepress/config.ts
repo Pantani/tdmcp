@@ -34,6 +34,7 @@ const artistGuide = (base: string) => [
   },
   { text: "Your first visual", link: `${base}/first-visual` },
   { text: "Prompt cookbook", link: `${base}/prompt-cookbook` },
+  { text: "Reusable components", link: `${base}/components` },
   { text: "Recipe gallery", link: `${base}/recipes` },
   { text: "Troubleshooting", link: `${base}/troubleshooting` },
   { text: "Glossary", link: `${base}/glossary` },
