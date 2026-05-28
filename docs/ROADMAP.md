@@ -41,7 +41,7 @@ Every feature follows the existing patterns:
 | 7 | 0.3.0 ☑ | Stage I/O & sensor reactivity | Send video out, fan across projectors, react to the camera, follow an external clock, run hands-free |
 | 8–11 | 0.3.0 ◐ | Effects, reactivity, control & AI | Parallel waves — signature effects, deeper reactivity, creation, live control/AI/DX (detailed below) |
 | 12 | 0.3.0 ☑ | Dimensional: 3D, depth & spatial mapping | Take visuals off the flat plane — react in 3D, sculpt with depth, map onto real surfaces |
-| 13 | 0.5.0 ☐ | Components, agent-DX & reactivity | Reusable-component scaffolding, project analysis/auto-docs, token-cheap agent-DX, Link/MIDI — the gaps left after 0.4.0 shipped body/3D/sim/particle tools |
+| 13 | 0.5.0 ☐ | Components, agent-DX & reactivity | Reusable-component scaffolding, project analysis/auto-docs, token-cheap agent-DX, Link/MIDI — the gaps left after the 0.4.0 generators + the body-tracking tools already on `main` |
 
 ---
 
@@ -353,9 +353,11 @@ validate).
 
 ## Phase 13 — v0.5.0 · Components, agent-DX & reactivity ☐ planned
 
-**v0.4.0 shipped 2026-05-27** — a large parallel build landed body/pose tracking, 3D/PBR/point-cloud,
-raymarch & particle-flock generators, tempo detection, and LED/palette/dashboard tools. Phase 13 is
-the **next** wave (v0.5.0): the thesis shifts from *generating* visuals (0.4.x already covers that,
+**v0.4.0 shipped 2026-05-27** — fifteen new tools/prompts (raymarch & particle-flock generators,
+point-cloud/PBR/cubemap-dome, tempo detection, LED/palette/cue/dashboard, generative audio, and
+recipe/style prompts). Body/pose tracking (`setup_body_tracking`, `create_pose_tracking`,
+`create_pose_skeleton`, `create_body_reactive`) is also already on `main` (in-tree, **not** in the
+0.4.0 CHANGELOG). Phase 13 is the **next** wave (v0.5.0): the thesis shifts from *generating* visuals (0.4.x already covers that,
 100+ tools) to **packaging, documenting and cheaply operating** them. tdmcp already ships `.tox`
 save/load (`manage_component`); v0.5.0 completes the *reusable-component* story (custom parameters +
 extensions) and adds the analysis + agent-DX gaps no competing TD-MCP owns.
