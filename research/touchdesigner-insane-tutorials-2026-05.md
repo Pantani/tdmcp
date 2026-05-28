@@ -17,7 +17,7 @@ TDMCP is already a deep MCP server (102 tools across 3 layers: full generation, 
 
 So TDMCP's winning move is **not** to re-implement diffusion or node CRUD, but to own the **unclaimed, high-value gaps** that fit its agent-side + knowledge-base + offline-safe identity:
 
-1. **`.tox`/`.toe` component packaging** (export/import, externalize, portable bundle) — the TD Python API is fully documented and only one competitor touches it.
+1. **Reusable-component scaffolding** — custom-parameter pages + extension classes that make AI-built networks parameterized and savable. (`.tox` save/load itself **already ships as `manage_component`**; the only remaining packaging gap is a portable/externalized bundle via `saveExternalTox`.)
 2. **Extension + custom-parameter scaffolding** — turn AI-built networks into *reusable, parameterized components*.
 3. **Project analysis & education** (unused-op/dead-node detection, dependency graph, auto-README, screenshot-to-debug) — **no competitor emphasizes documentation/teaching**, and it aligns with TDMCP's KB.
 4. **MediaPipe body/hand/face tracking template** — flagship reactive feature; the MIT plugin already exists, webcam-only (no sensor), and it serves the owner's VJ / camera-reactive use case.
@@ -30,7 +30,7 @@ The single biggest 2025–2026 community shift is **POPs** (the new GPU particle
 1. *Most valuable material* → the Top-15 selection below (MediaPipe plugin, Embody/tox API, StreamDiffusionTD, RayTK, GLSL particle capstone, POPs, Ableton Link, ComfyUI bridges…).
 2. *New techniques* → tox save/loadTox/saveByteArray, extension scaffolding via `mod().Ext(me)`, TDJSON serialization, MediaPipe→WebSocket→CHOP, GPU Navier-Stokes, node-based SDF raymarching, compute-shader boids, real-time img2img.
 3. *Real features* → the Implementation Backlog (BL-01…BL-22).
-4. *Next version (v0.4.0)* → tox packaging, extension/param scaffolding, project analysis + auto-README, MediaPipe body-tracking, Ableton Link, screenshot-to-debug.
+4. *Next version (v0.4.0)* → custom-param + extension scaffolding (the reusable-component complement to the already-shipped `manage_component`), project analysis + auto-README, MediaPipe body-tracking, Ableton Link, screenshot-to-debug.
 5. *Examples/demos* → see Demo Ideas (body-tracking reactive, live AI-VJ, externalize-to-git, package-a-component, screenshot-to-debug).
 6. *Becoming truly useful for artists with AI* → see Final Recommendations.
 
@@ -189,7 +189,7 @@ These are the concrete, transferable techniques the research surfaced — each i
 
 The research maps cleanly onto **six opportunity clusters**, ranked by *fit × differentiation × effort*:
 
-1. **Component packaging & version control** (highest differentiation) — export/import `.tox`, externalize, portable bundle, network↔JSON, parameter-state serialization. Only Embody competes here.
+1. **Component packaging & version control** — `.tox` save/load already ships as `manage_component`; the open gaps are a portable/externalized bundle (`saveExternalTox`) and network↔JSON + parameter-state serialization (git-diffable, Embody-style).
 2. **Reusability scaffolding** — extension stubs, custom-parameter pages, "package this subnet as a component." Turns one-shot AI builds into a library.
 3. **Project intelligence / education** (no competitor) — unused-op & dead-node detection, dependency graph, auto-README, screenshot-to-debug, performance advisor.
 4. **Sensor & body reactivity** — MediaPipe body/hand/face template, depth-camera input, OSC body-tracking path. Serves the VJ / camera-reactive use case.
@@ -206,7 +206,7 @@ Selected for *potential to become a real feature × AI/automation fit × artist 
 
 | # | Source | What it teaches | TDMCP implementation | New tools | Difficulty | Impact |
 |---|---|---|---|---|---|---|
-| 1 | [COMP Class API](https://docs.derivative.ca/COMP_Class) + [Embody](https://github.com/dylanroscover/Embody) | tox `save`/`loadTox`/`saveByteArray`/`saveExternalTox` | Programmatic component export/import | `export_component`, `import_component` | M | ★★★★★ |
+| 1 | [COMP Class API](https://docs.derivative.ca/COMP_Class) + [Embody](https://github.com/dylanroscover/Embody) | tox `save`/`loadTox`/`saveByteArray`/`saveExternalTox` | `.tox` save/load **already ships as `manage_component`**; open gap = portable bundle + network↔JSON | `make_portable_tox`, `serialize_network` (v0.5.0) | M | ★★★☆☆ |
 | 2 | [torinmb/mediapipe-touchdesigner](https://github.com/torinmb/mediapipe-touchdesigner) | GPU MediaPipe → WebSocket → CHOP, webcam-only | Body-tracking template + skeleton-driven visuals | `create_body_tracking` | M | ★★★★★ |
 | 3 | [Extensions](https://docs.derivative.ca/Extensions) + [Custom Parameters](https://docs.derivative.ca/Custom_Parameters) + [TDJSON](https://docs.derivative.ca/TDJSON) | `mod().Ext(me)`, `appendCustomPage`, JSON par specs | Scaffold reusable parameterized components | `scaffold_extension`, `add_custom_parameters` | M | ★★★★☆ |
 | 4 | [Working with OPs in Python](https://docs.derivative.ca/Working_with_OPs_in_Python) | `findChildren`, connectors, `op()` deps | Unused-op/dead-node + dependency analysis | `analyze_project` | M | ★★★★☆ |
@@ -229,8 +229,7 @@ Selected for *potential to become a real feature × AI/automation fit × artist 
 New tools (none duplicate the existing 102). Grouped; `*` = highest priority for v0.4.0.
 
 **Component & serialization**
-- `export_component`* — write a COMP to `.tox` (`save`/`saveExternalTox`, optional recurse/password, path-validated).
-- `import_component`* — `loadTox` a `.tox` into the network (optional unwired/pattern).
+- ✅ **Already ships as `manage_component`** — `.tox` `save`/`saveExternalTox`/`loadTox` (+ live-linked `externaltox`) load. Do **not** rebuild as `export_component`/`import_component`.
 - `make_portable_tox` — collect external asset deps into one self-contained `.tox`.
 - `serialize_network` / `rebuild_network` — subnet ↔ portable JSON (operators, params, wires, positions) for git-diffable round-trips.
 
@@ -326,12 +325,12 @@ No competitor emphasizes teaching — this is a clean differentiator and fits th
 
 ## Roadmap Proposal
 
-> **Version note:** the prompt template assumed v0.3.0 was next, but **0.3.1 already shipped (Phases 0–12, 102 tools)**. The roadmap below is therefore shifted: the "next release" is **v0.4.0**. Mapping = template-v0.3.0 → **v0.4.0**, template-v0.4.0 → **v0.5.0**, template-v0.5.0+ → **v0.6.0+**. This also threads around the existing ROADMAP's v1.0.0 consolidation milestone — these features are post-1.0 candidates, but the high-value, low-risk ones (tox packaging, analysis, MediaPipe, Link) are strong enough to pull forward.
+> **Version note:** the prompt template assumed v0.3.0 was next, but **0.3.1 already shipped (Phases 0–12, 102 tools)**. The roadmap below is therefore shifted: the "next release" is **v0.4.0**. Mapping = template-v0.3.0 → **v0.4.0**, template-v0.4.0 → **v0.5.0**, template-v0.5.0+ → **v0.6.0+**. This also threads around the existing ROADMAP's v1.0.0 consolidation milestone — these features are post-1.0 candidates, but the high-value, low-risk ones (component scaffolding, analysis, MediaPipe, Link) are strong enough to pull forward.
 
 ### v0.4.0 — "Components & Reactivity" (next, realistic, differentiated)
 The theme is **turn AI builds into reusable, documented, body-reactive components** — all validatable on the dev Mac (webcam-only), no exotic hardware.
-- **P0** `export_component` / `import_component` (BL-01) — the headline differentiator.
-- **P0** `scaffold_extension` + `add_custom_parameters` (BL-03) — reusability.
+- ✅ `.tox` save/load (BL-01) **already ships as `manage_component`** — not a v0.4.0 item; the remaining portable-bundle gap (`make_portable_tox`) is v0.5.0.
+- **P0** `scaffold_extension` + `add_custom_parameters` (BL-03) — reusability; the component work that complements `manage_component`.
 - **P0** `create_body_tracking` (BL-02) — flagship reactive feature, webcam-only.
 - **P0** extend `sync_external_clock` with Ableton Link + MIDI clock (BL-08) — small, high VJ impact.
 - **P1** `analyze_project` + `generate_readme` (BL-04) — the education differentiator.
@@ -359,16 +358,9 @@ The theme is **turn AI builds into reusable, documented, body-reactive component
 
 Format per item: **motivation · user story · technical design · MCP API · tools/work · usage · risks · tests · docs · priority · effort.** Detailed for the v0.4.0 set; condensed thereafter.
 
-### BL-01 — `export_component` / `import_component` (P0, M)
-- **Motivation:** the clearest differentiator — only Embody does tox packaging; the two leading MCPs don't. Turns ephemeral AI builds into shippable assets.
-- **User story:** *"As an artist, after Claude builds a feedback system, I say 'save this as a reusable component' and get a `.tox` I can drop into any project."*
-- **Technical design:** new L3 tools. Bridge Python uses `op(path).save(filepath, createFolders=True)` / `saveExternalTox(recurse)` for export and `parent.loadTox(filepath, unwired, pattern)` for import, built with the existing `buildPayloadScript`/`parsePythonReport` pattern. Path validation reuses the vault's path-traversal-safe IO. Optional `password`. Return saved path + byte size (or imported node path + child count).
-- **MCP API:** `export_component({ nodePath, filePath, recurse?, password? }) → { path, bytes }`; `import_component({ filePath, parentPath, unwired?, pattern?, password? }) → { nodePath, children }`.
-- **Tools/work:** `src/tools/layer3/exportComponent.ts`, `importComponent.ts` (+ register in layer3 index); CLI `export-tox` / `import-tox`.
-- **Usage:** `tdmcp export-tox --node /project1/feedback1 -o feedback.tox`.
-- **Risks:** absolute-path safety; password handling; very large toxes (report bytes, no inline blob). `saveExternalTox` writes a folder tree — document the difference from a single `.tox`.
-- **Tests:** msw unit test mocking the bridge `execute` endpoint for both paths; live validate by exporting a built network and re-importing into a fresh container (create→verify→preview).
-- **Docs:** new `docs/guide/components.md`; tools.md auto-regenerates; troubleshooting entry on external-tox folder layout.
+### BL-01 — `.tox` export/import ✅ ALREADY SHIPPED as `manage_component`
+- **Status:** **superseded — do not build.** `.tox` `save`/`saveExternalTox`/`loadTox` (+ live-linked `externaltox` load) already exist in `src/tools/layer2/manageComponent.ts` (the `manage_component` tool, actions `save`/`load`, with `create_folders`/`linked`/`name`). This was a false gap — the generic tool name hid it from the gap scan.
+- **Remaining gap → v0.5.0:** a portable/externalized **bundle** that collects external asset deps into one self-contained `.tox` (see `make_portable_tox`, BL-11). The reusable-component work that *complements* `manage_component` — exposing knobs + a Python class so a saved `.tox` is actually reusable — is **BL-03** (`add_custom_parameters` + `scaffold_extension`), the real v0.4.0 P0.
 
 ### BL-02 — `create_body_tracking` (P0, M)
 - **Motivation:** flagship reactive input; webcam-only (no sensor), MIT plugin exists, directly serves the VJ/camera-reactive use case.
@@ -382,14 +374,14 @@ Format per item: **motivation · user story · technical design · MCP API · to
 - **Docs:** `docs/guide/body-tracking.md` (artist-friendly, the easy-install audience); troubleshooting (permissions, plugin install).
 
 ### BL-03 — `scaffold_extension` + `add_custom_parameters` (P0, M)
-- **Motivation:** without parameters + extensions, AI builds aren't real reusable components. This is the other half of BL-01.
+- **Motivation:** without parameters + extensions, AI builds aren't real reusable components. This is the half that's *missing* — it complements the already-shipped `manage_component` (BL-01) so a saved `.tox` is actually reusable.
 - **User story:** *"'Expose Speed and Color as knobs and give this a Python class' → a parameterized component."*
 - **Technical design:** L3 tools. `add_custom_parameters` drives `comp.appendCustomPage(name)` then `appendFloat/Int/Menu/Pulse/...` from a spec; accepts/emits TDJSON so par layouts are declarative. `scaffold_extension` creates a Text DAT with `class XxxExt: def __init__(self, ownerComp)`, sets `comp.par.extension/extObject = "mod('XxxExt').XxxExt(me)"`, sets Promote, re-inits.
 - **MCP API:** `add_custom_parameters({ nodePath, page, params:[{name,type,default,min?,max?,menu?}] })`; `scaffold_extension({ nodePath, className, methods?[] }) → { datPath }`.
 - **Tools/work:** `src/tools/layer3/addCustomParameters.ts`, `scaffoldExtension.ts`; CLI `add-params` / `scaffold-ext`.
 - **Risks:** capitalized-name requirement for par/page names; re-init timing; name collisions.
 - **Tests:** msw unit (spec→script); live validate (params appear, extension method callable via `exec_node_method`).
-- **Docs:** `docs/guide/components.md` (shared with BL-01).
+- **Docs:** `docs/guide/components.md` (the components guide).
 
 ### BL-04 — `analyze_project` + `generate_readme` (P1, M)
 - **Motivation:** education/cleanup differentiator; no competitor does this.
@@ -440,7 +432,7 @@ Every feature follows TDMCP's existing two-tier pattern:
 
 ## Documentation Plan
 
-- **New guide pages:** `components.md` (export/import + scaffolding), `body-tracking.md` (artist-friendly), `analyze-and-document.md`, `ai-bridges.md` (driving StreamDiffusion/ComfyUI), `show-control.md` (Link/MIDI/DMX/MQTT/NDI). Note the repo convention: only the artist guide is bilingual EN+PT; reference/legal pages stay English.
+- **New guide pages:** `components.md` (custom params + extension scaffolding + `manage_component` save/load), `body-tracking.md` (artist-friendly), `analyze-and-document.md`, `ai-bridges.md` (driving StreamDiffusion/ComfyUI), `show-control.md` (Link/MIDI/DMX/MQTT/NDI). Note the repo convention: only the artist guide is bilingual EN+PT; reference/legal pages stay English.
 - **Auto-generated:** `docs/reference/tools.md` regenerates from the registry on every docs build — never hand-edit.
 - **Recipes:** add entries to `docs/guide/recipes.md` for each new recipe JSON.
 - **README + prompt cookbook:** add the new "package a component", "track my body", "drive ComfyUI", "document my project" prompts.
@@ -449,7 +441,7 @@ Every feature follows TDMCP's existing two-tier pattern:
 
 ## Demo Ideas (GIF/video, README-ready)
 
-1. **"Package this as a component"** — Claude builds a feedback system → `export_component` → drop the `.tox` into a fresh project → it works. (Best differentiator demo.)
+1. **"Package this as a component"** — Claude builds a feedback system → `add_custom_parameters` + `scaffold_extension` → `manage_component` save → drop the `.tox` into a fresh project → it works, with knobs. (Best differentiator demo.)
 2. **"Be the controller"** — webcam body tracking → particles follow hands, beat-synced. (Flagship reactive demo, webcam-only.)
 3. **"Document my project"** — `analyze_project` flags 3 unused nodes + `generate_readme` writes a Markdown doc with a thumbnail.
 4. **"Why is it black?"** — `analyze_screenshot` reads a broken preview and names the fix.
@@ -458,18 +450,18 @@ Every feature follows TDMCP's existing two-tier pattern:
 
 ## Risks and Open Questions
 
-- **Competitive overlap with dotsimulate LOPs** (ships an in-TD MCP Server + "Claude Code" operator). *Resolution:* stay agent-side; differentiate on KB + component packaging + analysis/education; treat AI generation as orchestration of existing `.tox`es.
+- **Competitive overlap with dotsimulate LOPs** (ships an in-TD MCP Server + "Claude Code" operator). *Resolution:* stay agent-side; differentiate on KB + component reusability (params/extensions on top of the shipped `manage_component`) + analysis/education; treat AI generation as orchestration of existing `.tox`es.
 - **Hardware/GPU validation gaps:** diffusion (CUDA), depth cameras, Ableton Link/MIDI clock can't be fully validated on the dev Mac — probe-first, synthetic fallbacks, document clearly (do not ship unvalidated APIs).
 - **Third-party dependencies:** the MediaPipe plugin (MIT) and diffusion `.tox`es are external — decide vendor vs. install-step; pin versions; surface license. Keep setup dead-simple for the artist audience.
 - **Path & security:** tox save/load must reuse the path-traversal-safe IO; never write outside allowed roots; password params handled carefully. The bridge already runs arbitrary Python — these tools don't widen that surface but should respect `allowRawPython`/token gating.
 - **POPs are an experimental, version-gated operator family** (~2025.30060) — probe for availability; provide a non-POP fallback.
 - **Marketplace distribution** is local-first (no hosted publish flow) — likely realized via the TD Palette + the Obsidian vault + an awesome-list/npm index rather than a hosted service. *Open question:* index format + trust/curation model.
 - **Open question:** should TDMCP eventually ship its *own* in-TD MCP/agent operator (like LOPs/satoruhiga) or stay purely agent-side? This is an architecture fork worth an explicit decision.
-- **Scope vs. v1.0.0 consolidation:** the existing ROADMAP reserves v1.0.0 for stabilization. Pulling BL-01–04/08 into v0.4.0 is justified by differentiation, but the advanced-generator wave (BL-18–20) should not delay 1.0.
+- **Scope vs. v1.0.0 consolidation:** the existing ROADMAP reserves v1.0.0 for stabilization. Pulling BL-02/03/04/08 into v0.4.0 is justified by differentiation (BL-01 already shipped as `manage_component`), but the advanced-generator wave (BL-18–20) should not delay 1.0.
 
 ## Final Recommendations
 
-1. **Ship the component story first (v0.4.0).** `export_component`/`import_component` + extension/param scaffolding is the single most differentiated, fully-documented, low-risk capability — and no leading competitor has it. It also unlocks a recipe/marketplace future.
+1. **Ship the component story first (v0.4.0).** `.tox` save/load already ships as `manage_component`; the missing, differentiated piece is the reusability scaffolding — `add_custom_parameters` + `scaffold_extension` — that makes a saved `.tox` actually reusable (knobs + a Python class). Fully documented, low-risk, and it unlocks a recipe/marketplace future.
 2. **Make body tracking the flagship reactive feature.** Webcam-only, MIT plugin, serves the owner's VJ use case, and demos beautifully — the best "wow" with the least hardware.
 3. **Own documentation & analysis.** `analyze_project`, `generate_readme`, `analyze_screenshot` are a clean, uncontested differentiator that leverages the 629-op KB and the teaching audience.
 4. **Treat AI generation as orchestration, not reimplementation.** Drive StreamDiffusion/ComfyUI/A1111 `.tox`es; don't compete with diffusion engines or LOPs head-on.
@@ -491,7 +483,7 @@ An architectural twin (MCP server + Python bridge) but **embedded inside TD as a
 | Embody capability | TDMCP? | Net-new TDMCP feature | Effort |
 |---|---|---|---|
 | Core CRUD, exec_python, class/help, errors, perf, `capture_top` | Yes | — | — |
-| `create_extension`, `export/import_network` (TDN), portable `.tox` export | No (already-known gaps) | → BL-01 / BL-03 / BL-10 | — |
+| `create_extension`, `export/import_network` (TDN), portable `.tox` export | Partial — basic `.tox` save/load ships as `manage_component`; no scaffolding/TDN/portable-bundle | → BL-03 (extension) / BL-10 (TDN) / BL-11 (portable bundle) | — |
 | **`read_tdn`** — token-efficient compact graph read ("~20–90× fewer tokens than op-walks") | No | Compact mode on `snapshot_td_graph` (type-default hoisting, `=`/`~` expr/bind shorthand, inline arrays) | M |
 | **`edit_dat_content`** — surgical `old_string`/`new_string` DAT edit | No | `edit_dat_content` tool (unique-match + opt-in replace_all) | S |
 | **`set_dat_content`** with `confirm_wipe` guardrail | Partial (via exec) | `set_dat_content` with baked-in anti-wipe guardrail | S |
