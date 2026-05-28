@@ -353,7 +353,7 @@ validate).
 
 ## Phase 13 — v0.4.0 · Components, agent-DX & reactivity ☐ planned
 
-The first post-0.3 wave. The thesis shifts from *generating* visuals (0.3.0 already covers that
+The first post-0.3 wave. The thesis shifts from *generating* visuals (0.3.x already covers that
 with 102 tools) to **packaging, documenting and cheaply operating** them. tdmcp already ships
 `.tox` save/load (`manage_component`); v0.4.0 completes the *reusable-component* story (custom
 parameters + extensions) and adds the analysis + agent-DX gaps no competing TD-MCP owns.
@@ -371,7 +371,7 @@ self-documentation niceties + perform mode. Table is ordered by priority.
 
 | Feature | Delivers | Effort | Status |
 |---|---|---|---|
-| ~~`export_component` / `import_component`~~ — **already shipped** | `.tox` `save` / `loadTox` / live-linked `externaltox` already exist as **`manage_component`** (BL-01 was a false gap). Remaining tox gap: portable bundle via `saveExternalTox` → v0.5.0 `make_portable_tox` | — | ☑ |
+| ~~`export_component` / `import_component`~~ — **already shipped** | `.tox` `save` / `loadTox` / live-linked `externaltox` already exist as **`manage_component`** (BL-01 was a false gap). Remaining gap: a self-contained, dependency-collected portable bundle — note `saveExternalTox` only externalizes to a folder tree, not a single portable `.tox` (→ v0.5.0 `make_portable_tox`) | — | ☑ |
 | `scaffold_extension` | Extension DAT stub + Extension Object + Promote flag + re-init — make a COMP scriptable (BL-03) | M | ☐ |
 | `add_custom_parameters` | Declarative custom-parameter pages (`appendCustomPage`/`appendFloat…`), TDJSON in/out — expose knobs (BL-03) | M | ☐ |
 | `sync_external_clock` +Link/MIDI | Add `ableton_link` + `midi_clock` modes alongside tap-tempo — lock to the DJ's clock (BL-08) | S | ☐ |
