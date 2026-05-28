@@ -86,7 +86,8 @@ describe("buildAgentGuide (pure)", () => {
   it("references the knowledge base resources", () => {
     const guide = buildAgentGuide();
     expect(guide).toContain("tdmcp://operators/");
-    expect(guide).toContain("tdmcp://classes/");
+    expect(guide).toContain("tdmcp://python-api/");
+    expect(guide).toContain("tdmcp://glsl/");
     expect(guide).toContain("tdmcp://recipes/");
   });
 });
