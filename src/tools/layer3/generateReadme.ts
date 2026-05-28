@@ -106,7 +106,13 @@ try:
     # custom params
     try:
         for _c in _children:
-            for _par in _c.customPars:
+            # Guard per-node: customPars exists on most ops, but a single node that
+            # lacks it (or errors) must not abort the scan and lose every COMP's params.
+            try:
+                _cpars = getattr(_c, "customPars", None) or []
+            except Exception:
+                _cpars = []
+            for _par in _cpars:
                 try:
                     _val = ""
                     try: _val = str(_par.eval())
