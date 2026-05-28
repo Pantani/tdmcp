@@ -42,7 +42,7 @@ export const registerArrangeNetwork: ToolRegistrar = (server, ctx) => {
     {
       title: "Arrange network layout",
       description:
-        "Tidy an existing network: reposition a COMP's children into a readable left→right data-flow layout (sources on the left, output on the right). Use this to clean up nodes that are piled on top of each other. Set recursive to also arrange the contents of nested COMPs.",
+        "Tidy an existing network: reposition a COMP's children into a readable left→right data-flow layout (sources on the left, output on the right). Use this to clean up nodes that are piled on top of each other. Set recursive to also arrange the contents of nested COMPs. Only moves node positions — it never adds, deletes, or rewires nodes. Returns the COMP path and how many nodes were repositioned.",
       inputSchema: arrangeNetworkSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

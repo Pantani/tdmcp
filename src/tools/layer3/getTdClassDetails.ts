@@ -32,9 +32,9 @@ export const registerGetTdClassDetails: ToolRegistrar = (server, ctx) => {
     {
       title: "Get TD Python class details",
       description:
-        "Full documentation for one TouchDesigner Python class (members + methods) from the knowledge base.",
+        "Read-only: full STRUCTURED documentation for one TouchDesigner Python class (members + methods) from the embedded knowledge base (offline). Returns the class object, or {found:false, suggestions[]} of near-name matches if unknown. Use get_module_help instead when you want the same content as ready-to-read Markdown rather than structured JSON.",
       inputSchema: getTdClassDetailsSchema.shape,
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
     },
     (args) => getTdClassDetailsImpl(ctx, args),
   );

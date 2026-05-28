@@ -14,7 +14,10 @@ export const createVideoPlayerSchema = z.object({
     .boolean()
     .default(true)
     .describe("Expose live Play / Speed (and Clip, for a playlist) controls."),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent COMP path the self-contained 'video_player' container is created inside."),
 });
 type CreateVideoPlayerArgs = z.infer<typeof createVideoPlayerSchema>;
 
@@ -84,7 +87,7 @@ export const registerCreateVideoPlayer: ToolRegistrar = (server, ctx) => {
     {
       title: "Create video player",
       description:
-        "Build a movie/clip player: one Movie File In TOP, or a playlist of clips fed through a Switch TOP with a Clip selector. Exposes live Play / Speed (and Clip) controls, output as a Null. Pass file paths, or none to get an empty player you point at a file in TD. For VJ clip playback — mix it with create_layer_mixer or make it react with bind_to_channel.",
+        "Build a movie/clip player inside a new 'video_player' container under parent_path: one Movie File In TOP, or a playlist of clips fed through a Switch TOP with a Clip selector. Exposes live Play / Speed (and Clip) controls, output as a Null TOP. Pass file paths, or none to get an empty player you point at a file in TD. Use create_video_synth instead when you want a procedurally generated (oscillator/CRT) image rather than playing a video file. Returns the created clip paths, the output Null path, and whether a playlist was built. For VJ clip playback — mix it with create_layer_mixer or make it react with bind_to_channel.",
       inputSchema: createVideoPlayerSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

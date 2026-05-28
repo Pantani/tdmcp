@@ -46,9 +46,12 @@ export const createKineticTextSchema = z.object({
     .boolean()
     .default(true)
     .describe(
-      "Expose live Text / Size / Color / Rate controls bound to the right node parameters.",
+      "When true (default), expose live Text / Size / Color / Rate controls bound to the right node parameters.",
     ),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent network where the kinetic-text container is created (default '/project1')."),
 });
 type CreateKineticTextArgs = z.infer<typeof createKineticTextSchema>;
 
@@ -258,7 +261,7 @@ export const registerCreateKineticText: ToolRegistrar = (server, ctx) => {
     {
       title: "Create kinetic text",
       description:
-        "Build a self-contained animated / kinetic typography layer — a word or line that flashes, pulses, or slides, the signature live-VJ lyric-flash effect. A Text TOP renders the text; an LFO CHOP at the given Rate (Hz) drives the animation: 'flash' gates a Level TOP's alpha/opacity hard on/off (a square wave — the text vanishes between flashes rather than turning black, so it pops cleanly in and out over a background), 'pulse' drives a Transform TOP's scale plus a Level TOP alpha fade (a sine, the text breathes), and 'slide' scrolls the Transform TOP's translate-X. With an input_path the text is composited OVER that source (pulled in by a Select TOP, so it can live in another container); without one it animates on a transparent frame. Output is a Null TOP. Rate is free-running for v1 — bind the LFO's frequency to a beat CHOP (or a Trigger to a detect_onsets channel) to lock the flashes to the tempo.",
+        "Build a self-contained animated / kinetic typography layer — a word or line that flashes, pulses, or slides, the signature live-VJ lyric-flash effect. A Text TOP renders the text; an LFO CHOP at the given Rate (Hz) drives the animation: 'flash' gates a Level TOP's alpha/opacity hard on/off (a square wave — the text vanishes between flashes rather than turning black, so it pops cleanly in and out over a background), 'pulse' drives a Transform TOP's scale plus a Level TOP alpha fade (a sine, the text breathes), and 'slide' scrolls the Transform TOP's translate-X. Creates a new baseCOMP under `parent_path` holding the Text TOP, the LFO, the per-mode Transform/Level nodes, an optional Composite, and a Null output. With an input_path the text is composited OVER that source (pulled in by a Select TOP, so it can live in another container); without one it animates on a transparent frame. Rate is free-running for v1 — bind the LFO's frequency to a beat CHOP (or a Trigger to a detect_onsets channel) to lock the flashes to the tempo. Returns a summary plus a JSON block with the container path, created node paths, the text/lfo/output paths, exposed controls, any node errors, warnings, and an inline preview image.",
       inputSchema: createKineticTextSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

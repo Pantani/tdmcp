@@ -37,7 +37,7 @@ export const registerApplyRecipe: ToolRegistrar = (server, ctx) => {
     {
       title: "Apply recipe",
       description:
-        "Instantiate a built-in recipe by id (from list_recipes) inside a COMP — a tested, ready-made network you can build in one call, then tweak. Verifies and previews the result.",
+        "Instantiate a built-in recipe by id (from list_recipes) inside a COMP — a tested, ready-made network you can build in one call, then tweak. Creates a new baseCOMP under `parent_path`, adds and wires every node the recipe declares, exposes its controls, then auto-layouts, verifies, and previews. Returns a summary plus a JSON block with the container path, all created node paths, the output path, the recipe id, exposed controls, any node errors, warnings, and an inline preview image. Returns a friendly error listing available ids if `id` is unknown.",
       inputSchema: applyRecipeSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

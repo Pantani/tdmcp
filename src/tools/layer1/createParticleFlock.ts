@@ -190,9 +190,12 @@ export const createParticleFlockSchema = z.object({
     .boolean()
     .default(true)
     .describe(
-      "Expose live Separation / Alignment / Cohesion / Speed knobs on the system container.",
+      "When true (default), expose live Separation / Alignment / Cohesion / Speed knobs on the system container.",
     ),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent network where the flock container is created (default '/project1')."),
 });
 type CreateParticleFlockArgs = z.infer<typeof createParticleFlockSchema>;
 
@@ -374,7 +377,7 @@ export const registerCreateParticleFlock: ToolRegistrar = (server, ctx) => {
     {
       title: "Create particle flock",
       description:
-        "Build a boids-style GPU particle flock: position and velocity are simulated entirely on the GPU in two RGBA32float feedback-TOP loops, where the velocity shader implements the three classic boids rules — separation, alignment, cohesion — by scanning a stencil of neighbouring texels in the agent texture (each texel is one agent), then renormalising toward a cruise speed. Positions drive TOP-instancing of a tiny dot once per agent. The behavioural complement to create_gpu_particle_field (curl-noise/gravity). Exposes live Separation / Alignment / Cohesion / Speed knobs. Note: the flock only evolves while the TD timeline plays.",
+        "Build a boids-style GPU particle flock: position and velocity are simulated entirely on the GPU in two RGBA32float feedback-TOP loops, where the velocity shader implements the three classic boids rules — separation, alignment, cohesion — by scanning a stencil of neighbouring texels in the agent texture (each texel is one agent), then renormalising toward a cruise speed. Positions drive TOP-instancing of a tiny dot once per agent. Creates a new baseCOMP under `parent_path` holding the velocity/position feedback loops, the instanced Geometry COMP, Camera, Light, and Render TOP ending in a Null output. The behavioural complement to create_gpu_particle_field (use that instead for curl-noise/gravity drift rather than flocking). Exposes live Separation / Alignment / Cohesion / Speed knobs. Note: the flock only evolves while the TD timeline plays. Returns a summary plus a JSON block with the container path, created node paths, the agent count, the output path, exposed controls, any node errors, warnings, and an inline preview image.",
       inputSchema: createParticleFlockSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

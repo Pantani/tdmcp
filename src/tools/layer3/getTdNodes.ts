@@ -32,15 +32,32 @@ type GetTdNodesArgs = z.infer<typeof getTdNodesSchema>;
 const SAMPLE_SIZE = 10;
 
 export const getTdNodesOutputSchema = z.object({
-  parent_path: z.string(),
-  count: z.number(),
-  detail_level: z.enum(["summary", "full"]),
-  truncated: z.boolean(),
-  by_type: z.record(z.string(), z.number()).optional(),
-  sample: z.array(z.string()).optional(),
-  paths: z.array(z.string()).optional(),
-  nodes: z.array(NodeRefSchema).optional(),
-  hint: z.string().optional(),
+  parent_path: z.string().describe("The parent COMP whose children were listed."),
+  count: z.number().describe("Number of children matched (before any limit truncation)."),
+  detail_level: z
+    .enum(["summary", "full"])
+    .describe("Which detail level produced this result, echoing the request."),
+  truncated: z.boolean().describe("True if `limit` cut the list short of the full match count."),
+  by_type: z
+    .record(z.string(), z.number())
+    .optional()
+    .describe("Summary mode: count of matched nodes per operator type."),
+  sample: z
+    .array(z.string())
+    .optional()
+    .describe("Summary mode: paths of the first few matched nodes."),
+  paths: z
+    .array(z.string())
+    .optional()
+    .describe("path_only mode: the matched node paths and nothing else."),
+  nodes: z
+    .array(NodeRefSchema)
+    .optional()
+    .describe("Full mode: every matched node as {path, name, type}."),
+  hint: z
+    .string()
+    .optional()
+    .describe("Summary mode: note that the list was sampled, with how to get all of it."),
 });
 
 export async function getTdNodesImpl(ctx: ToolContext, args: GetTdNodesArgs) {
@@ -106,10 +123,10 @@ export const registerGetTdNodes: ToolRegistrar = (server, ctx) => {
     {
       title: "List TouchDesigner nodes",
       description:
-        'List the direct child nodes of a COMP. Defaults to a compact summary (count + type breakdown + sample paths); pass detail_level:"full" or path_only:true for the complete list, and `pattern` to filter by name.',
+        'Read-only: list the DIRECT child nodes of one COMP. Defaults to a compact summary (count + type breakdown + sample paths); pass detail_level:"full" or path_only:true for the complete list, and `pattern` to filter by name. Returns {count, by_type/sample or paths/nodes}. Use this to browse one level; use find_td_nodes to search recursively and by operator type, or get_td_topology when you also need the connections between nodes.',
       inputSchema: getTdNodesSchema.shape,
       outputSchema: getTdNodesOutputSchema.shape,
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     },
     (args) => getTdNodesImpl(ctx, args),
   );

@@ -6,8 +6,18 @@ import { connectNodesViaBridge } from "./connectHelper.js";
 export const connectNodesSchema = z.object({
   source_path: z.string().describe("Path of the source node (output side)."),
   target_path: z.string().describe("Path of the target node (input side)."),
-  source_output: z.number().int().nonnegative().default(0),
-  target_input: z.number().int().nonnegative().default(0),
+  source_output: z
+    .number()
+    .int()
+    .nonnegative()
+    .default(0)
+    .describe("Which output connector of the source node to wire from (0-based; default 0)."),
+  target_input: z
+    .number()
+    .int()
+    .nonnegative()
+    .default(0)
+    .describe("Which input connector of the target node to wire into (0-based; default 0)."),
 });
 type ConnectNodesArgs = z.infer<typeof connectNodesSchema>;
 
@@ -38,7 +48,7 @@ export const registerConnectNodes: ToolRegistrar = (server, ctx) => {
     {
       title: "Connect two nodes",
       description:
-        "Wire one node's output into another node's input. Uses the batch endpoint when available, with a Python fallback.",
+        "Wire one node's output connector into another node's input connector inside TouchDesigner, creating a single link between two existing nodes. Uses the bridge's batch endpoint when available and falls back to a Python connect otherwise. Use create_node_chain instead when you are creating several new nodes and want them auto-wired in sequence. Returns the source and target paths, the connector indices used, and which method made the connection.",
       inputSchema: connectNodesSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

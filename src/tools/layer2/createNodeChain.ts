@@ -8,8 +8,11 @@ import { connectNodesViaBridge } from "./connectHelper.js";
 
 const ChainNodeSchema = z.object({
   type: z.string().describe("Operator type, e.g. 'noiseTOP'."),
-  name: z.string().optional(),
-  parameters: z.record(z.string(), z.unknown()).optional(),
+  name: z.string().optional().describe("Name for this node; auto-generated when omitted."),
+  parameters: z
+    .record(z.string(), z.unknown())
+    .optional()
+    .describe("Initial parameter values for this node, as a { parName: value } map."),
 });
 
 export const createNodeChainSchema = z.object({

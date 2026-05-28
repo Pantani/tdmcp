@@ -82,20 +82,49 @@ function particleDynamicsPython(
 export const createParticleSystemSchema = z.object({
   // Default to "sphere": its varied normals give particles a radial initial velocity, so the
   // out-of-the-box system is a full cloud. ("point" has no normals and stays a thin stream.)
-  emitter_shape: z.enum(["point", "line", "circle", "sphere", "mesh", "image"]).default("sphere"),
-  particle_count: z.coerce.number().int().positive().default(10000),
+  emitter_shape: z
+    .enum(["point", "line", "circle", "sphere", "mesh", "image"])
+    .default("sphere")
+    .describe(
+      "Source SOP particles are born from: point (Add SOP), line, circle, sphere, mesh (Box), or image (Grid). Default 'sphere' — its varied normals spray a full radial cloud; 'point' has no normals and stays a thin turbulence-driven stream.",
+    ),
+  particle_count: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(10000)
+    .describe(
+      "Target number of live particles at steady state; sets the Particle SOP birth rate (birth ≈ count / lifetime). Default 10000.",
+    ),
   forces: z
     .array(z.enum(["gravity", "noise", "attract", "repel", "vortex", "turbulence", "drag"]))
-    .default(["noise", "gravity"]),
+    .default(["noise", "gravity"])
+    .describe(
+      "Forces applied to the sim, mapped to native Particle SOP params (gravity→external -Y, noise/turbulence→turbulence, drag→drag). attract/repel/vortex have no native equivalent and are approximated with turbulence (a warning is returned). Default ['noise','gravity'].",
+    ),
   render_style: z
     .enum(["points", "sprites", "lines", "trails", "instanced_geo"])
-    .default("sprites"),
-  lifetime: z.coerce.number().positive().default(3),
+    .default("sprites")
+    .describe(
+      "How particles are drawn. 'sprites' uses a Point Sprite MAT, 'points' a Constant MAT; 'lines'/'trails'/'instanced_geo' currently fall back to point/sprite rendering (a warning is returned). Default 'sprites'.",
+    ),
+  lifetime: z.coerce
+    .number()
+    .positive()
+    .default(3)
+    .describe("Particle life span in seconds before it dies and is reborn. Default 3."),
   expose_controls: z
     .boolean()
     .default(true)
-    .describe("Expose live Drag / Turbulence / Gravity / Lifetime knobs on the system container."),
-  parent_path: z.string().default("/project1"),
+    .describe(
+      "When true (default), expose live Drag / Turbulence / Gravity / Lifetime knobs on the system container.",
+    ),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe(
+      "Parent network where the particle-system container is created (default '/project1').",
+    ),
 });
 type CreateParticleSystemArgs = z.infer<typeof createParticleSystemSchema>;
 
@@ -239,7 +268,7 @@ export const registerCreateParticleSystem: ToolRegistrar = (server, ctx) => {
     {
       title: "Create particle system",
       description:
-        "Build a particle system: an emitter feeds a particle SOP inside a Geometry COMP, rendered with a camera + light. Forces and render style are scaffolded for further tuning.",
+        "Build a CPU particle system: an emitter SOP feeds a Particle SOP inside a Geometry COMP, rendered with a camera + light. Creates a new baseCOMP under `parent_path` holding the Geometry COMP (emitter + particle SOP), a material, Camera, Light, Render TOP, and a Null output. Forces and render style are scaffolded for further tuning. Exposes live Drag / Turbulence / Gravity / Lifetime knobs. Use create_gpu_particle_field instead for much higher counts (GPU-simulated, up to ~262k particles). Returns a summary plus a JSON block with the container path, created node paths, the output path, exposed controls, any node errors, warnings (e.g. approximated forces or fallback render styles), and an inline preview image.",
       inputSchema: createParticleSystemSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

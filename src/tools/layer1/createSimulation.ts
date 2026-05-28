@@ -24,8 +24,14 @@ export const createSimulationSchema = z.object({
     .max(1)
     .default(0.96)
     .describe("(slime/fluid) Trail persistence — higher holds longer."),
-  expose_controls: z.boolean().default(true),
-  parent_path: z.string().default("/project1"),
+  expose_controls: z
+    .boolean()
+    .default(true)
+    .describe("(slime/fluid) Expose a live 'Decay' knob bound to the gain Level TOP."),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent COMP path the self-contained simulation container is created inside."),
 });
 type CreateSimulationArgs = z.infer<typeof createSimulationSchema>;
 

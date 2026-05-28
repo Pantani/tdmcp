@@ -86,9 +86,12 @@ export const createKaleidoscopeSchema = z.object({
     .boolean()
     .default(true)
     .describe(
-      "Expose live Segments / Rotation / Zoom / Center X / Center Y knobs on the container.",
+      "When true (default), expose live Segments / Rotation / Zoom / Center X / Center Y knobs on the container.",
     ),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent network where the kaleidoscope container is created (default '/project1')."),
 });
 type CreateKaleidoscopeArgs = z.infer<typeof createKaleidoscopeSchema>;
 
@@ -193,7 +196,7 @@ export const registerCreateKaleidoscope: ToolRegistrar = (server, ctx) => {
     {
       title: "Create kaleidoscope",
       description:
-        "Wrap a source in a kaleidoscope / radial-mirror symmetry effect — a signature VJ look. Folds the image into N identical mirrored wedges around a centre, with live Segments / Rotation / Zoom / Center controls. Pass input_path (an absolute TOP path) to kaleidoscope an existing visual, or omit it to generate a self-contained noise source that previews on its own. Output is a TOP.",
+        "Wrap a source in a kaleidoscope / radial-mirror symmetry effect — a signature VJ look. Folds the image into N identical mirrored wedges around a centre, with live Segments / Rotation / Zoom / Center controls. Creates a new baseCOMP under `parent_path` holding the source, a single GLSL fold pass, and a Null output. Pass input_path (an absolute TOP path) to kaleidoscope an existing visual, or omit it to generate a self-contained noise source that previews on its own. Returns a summary plus a JSON block with the container path, created node paths, the output path, exposed controls, any node errors, warnings, and an inline preview image.",
       inputSchema: createKaleidoscopeSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

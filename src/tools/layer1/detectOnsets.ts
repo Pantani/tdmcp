@@ -50,7 +50,10 @@ export const detectOnsetsSchema = z.object({
     .boolean()
     .default(true)
     .describe("Expose live 'Sensitivity' (output gain) and 'Threshold' (hit sensitivity) knobs."),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent COMP path the self-contained 'onsets' container is created inside."),
 });
 type DetectOnsetsArgs = z.infer<typeof detectOnsetsSchema>;
 

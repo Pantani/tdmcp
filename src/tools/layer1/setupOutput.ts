@@ -23,10 +23,28 @@ const RESOLUTIONS = {
 
 export const setupOutputSchema = z.object({
   source_path: z.string().describe("Path of the final TOP to output."),
-  output_type: z.enum(["window", "ndi", "syphon_spout", "record", "touch_out"]).default("window"),
-  resolution: z.enum(["720p", "1080p", "4K"]).default("1080p"),
-  record_format: z.enum(["mp4", "mov", "image_sequence"]).optional(),
-  parent_path: z.string().default("/project1"),
+  output_type: z
+    .enum(["window", "ndi", "syphon_spout", "record", "touch_out"])
+    .default("window")
+    .describe(
+      "Destination: 'window' (a Window COMP display), 'ndi' (NDI Out TOP network stream), 'syphon_spout' (Syphon/Spout Out TOP for other apps), 'record' (Movie File Out TOP to disk), or 'touch_out' (Touch Out TOP to another TD instance).",
+    ),
+  resolution: z
+    .enum(["720p", "1080p", "4K"])
+    .default("1080p")
+    .describe(
+      "Window size for output_type='window' (720p=1280×720, 1080p=1920×1080, 4K=3840×2160); ignored by the other output types.",
+    ),
+  record_format: z
+    .enum(["mp4", "mov", "image_sequence"])
+    .optional()
+    .describe(
+      "File format for output_type='record' (sets the Movie File Out TOP's type); ignored otherwise.",
+    ),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent COMP path the output node (and any bridging Select TOP) is created inside."),
 });
 type SetupOutputArgs = z.infer<typeof setupOutputSchema>;
 
@@ -92,7 +110,7 @@ export const registerSetupOutput: ToolRegistrar = (server, ctx) => {
     {
       title: "Set up output",
       description:
-        "Route a TOP to an output: a display window, NDI stream, Syphon/Spout, a recording, or Touch Out.",
+        "Route a finished TOP to an output destination: a display window, NDI stream, Syphon/Spout, a recording, or Touch Out. Creates the matching output node ('<output_type>_out') under parent_path; for a window it points the Window COMP's winop at the source and sets its size, and for the other types it bridges the source in through a Select TOP (TD wires can't cross COMP boundaries). Typically the LAST step after building a visual — feed it the output Null from a create_* tool or a create_layer_mixer. Returns the created output node path, the output type, the source path, and any non-fatal warnings (e.g. if wiring or window config failed).",
       inputSchema: setupOutputSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

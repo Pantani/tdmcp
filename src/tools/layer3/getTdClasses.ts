@@ -30,9 +30,9 @@ export const registerGetTdClasses: ToolRegistrar = (server, ctx) => {
     {
       title: "List TD Python classes",
       description:
-        "List TouchDesigner Python API classes from the embedded knowledge base (works offline). Optionally filter by name.",
+        "Read-only: list TouchDesigner Python API class names from the embedded knowledge base (works offline, never touches TD). Returns {classes[]} of name/displayName entries. Optionally filter by name. Use get_td_class_details or get_module_help to expand one class into its members and methods.",
       inputSchema: getTdClassesSchema.shape,
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
     },
     (args) => getTdClassesImpl(ctx, args),
   );

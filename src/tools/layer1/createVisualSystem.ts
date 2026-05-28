@@ -10,7 +10,10 @@ import { buildFromRecipe, finalize, runBuild } from "./orchestration.js";
 
 export const createVisualSystemSchema = z.object({
   description: z.string().min(1).describe("Natural-language description of the visual system."),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent COMP path the generated visual-system container is created inside."),
   resolution: z
     .enum(["720p", "1080p", "4K", "custom"])
     .default("1080p")
@@ -210,7 +213,7 @@ export const registerCreateVisualSystem: ToolRegistrar = (server, ctx) => {
     {
       title: "Create visual system",
       description:
-        "Create a complete visual system from a natural-language description. Classifies intent (audio-reactive, particle, feedback, reaction-diffusion, landscape, generative) and builds it in a self-contained COMP, then verifies and previews it.",
+        "Create a complete visual system from a natural-language description. Classifies intent (audio-reactive, particle, feedback, reaction-diffusion, landscape, generative) and delegates to the matching Layer-1 builder (or a tag-matched recipe), creating a self-contained COMP under parent_path, then verifies and previews it. Use plan_visual instead for a dry run that reports which tool/recipe would be chosen without building anything. Returns a note on how the description was interpreted plus the underlying builder's result (created nodes, exposed controls, and a preview image).",
       inputSchema: createVisualSystemSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

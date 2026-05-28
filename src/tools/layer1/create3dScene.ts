@@ -37,8 +37,11 @@ export const create3dSceneSchema = z.object({
   expose_controls: z
     .boolean()
     .default(true)
-    .describe("Expose live RotateY (spin) and Zoom (camera distance) knobs."),
-  parent_path: z.string().default("/project1"),
+    .describe("When true (default), expose live RotateY (spin) and Zoom (camera distance) knobs."),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent network where the 3D-scene container is created (default '/project1')."),
 });
 type Create3dSceneArgs = z.infer<typeof create3dSceneSchema>;
 
@@ -164,7 +167,7 @@ export const registerCreate3dScene: ToolRegistrar = (server, ctx) => {
     {
       title: "Create 3D scene",
       description:
-        "Build a renderable 3D scene: a Geometry COMP holding the chosen primitive (sphere/box/grid), a Camera, a Light, and a Render TOP, output as a Null — optionally instanced into a grid of `instances` copies via GPU instancing, with `scale_variation` for per-copy random sizes and `spin` for per-copy rotation over time. Exposes RotateY (whole-scene spin) and Zoom (camera distance) knobs. The starting point for 3D visuals — bind RotateY to a tempo ramp or an audio feature to make it move.",
+        "Build a renderable 3D scene: a Geometry COMP holding the chosen primitive (sphere/box/grid), a Camera, a Light, and a Render TOP, output as a Null. Creates a new baseCOMP under `parent_path` holding all of these — optionally instanced into a grid of `instances` copies via GPU instancing, with `scale_variation` for per-copy random sizes and `spin` for per-copy rotation over time. Exposes RotateY (whole-scene spin) and Zoom (camera distance) knobs. The starting point for 3D visuals — bind RotateY to a tempo ramp or an audio feature to make it move. Use create_3d_audio_reactive instead when you want the geometry driven by sound, or create_pbr_scene for physically-based materials. Returns a summary plus a JSON block with the container path, created node paths, the geometry/camera/render/output paths, exposed controls, any node errors, warnings, and an inline preview image.",
       inputSchema: create3dSceneSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

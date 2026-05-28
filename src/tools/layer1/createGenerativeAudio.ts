@@ -59,8 +59,13 @@ export const createGenerativeAudioSchema = z.object({
   expose_controls: z
     .boolean()
     .default(true)
-    .describe("Expose live Frequency / Volume knobs (and FmRatio / FmDepth for the fm synth)."),
-  parent_path: z.string().default("/project1"),
+    .describe(
+      "When true (default), expose live Frequency / Volume knobs (and FmRatio / FmDepth for the fm synth).",
+    ),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent network where the synth container is created (default '/project1')."),
 });
 type CreateGenerativeAudioArgs = z.infer<typeof createGenerativeAudioSchema>;
 
@@ -256,7 +261,7 @@ export const registerCreateGenerativeAudio: ToolRegistrar = (server, ctx) => {
     {
       title: "Create generative audio",
       description:
-        "SYNTHESIZE audio — generate sound rather than react to it. Builds an audio synthesis chain ending on a Null CHOP carrying the signal: 'oscillator' (a single tone, choose sine/triangle/sawtooth/square + frequency), 'fm' (two oscillators, one frequency-modulating the other for metallic/bell timbres), or 'noise' (a Noise CHOP shaped by a low-pass filter for textures). A Volume gain sets the level. Playback is opt-in: set to_device=true to route it to an Audio Device Out CHOP (default off, so the build stays silent and never prompts for audio hardware). The output Null feeds create_spectrum/create_waveform, bind_to_channel, or the speakers. Audio CHOPs are time-dependent — the signal is silent while the TD timeline is paused.",
+        "SYNTHESIZE audio — generate sound rather than react to it. Builds an audio synthesis chain ending on a Null CHOP carrying the signal: 'oscillator' (a single tone, choose sine/triangle/sawtooth/square + frequency), 'fm' (two oscillators, one frequency-modulating the other for metallic/bell timbres), or 'noise' (a Noise CHOP shaped by a low-pass filter for textures). A Volume gain sets the level. Playback is opt-in: set to_device=true to route it to an Audio Device Out CHOP (default off, so the build stays silent and never prompts for audio hardware). Creates a new baseCOMP under `parent_path` holding the synth chain. The output Null feeds create_spectrum/create_waveform, bind_to_channel, or the speakers. Audio CHOPs are time-dependent — the signal is silent while the TD timeline is paused. Returns a summary plus a JSON block with the container path, created node paths, the audio Null path, the synth settings, the device-out path (if any), any node errors, and warnings (no preview image — the output is a CHOP, not a TOP).",
       inputSchema: createGenerativeAudioSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

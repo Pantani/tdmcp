@@ -21,7 +21,10 @@ export const createTempoSyncSchema = z.object({
     .boolean()
     .default(true)
     .describe("Expose a live 'Period' knob to retune the beat division on the fly."),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent COMP path the self-contained 'tempo_sync' container is created inside."),
 });
 type CreateTempoSyncArgs = z.infer<typeof createTempoSyncSchema>;
 

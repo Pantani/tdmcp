@@ -35,7 +35,10 @@ export const detectPitchSchema = z.object({
     .describe(
       "Expose live 'Sensitivity' (magnitude gain) and 'Threshold' (minimum peak magnitude below which the pitch is treated as silence) knobs.",
     ),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent COMP path the self-contained 'pitch' container is created inside."),
 });
 type DetectPitchArgs = z.infer<typeof detectPitchSchema>;
 

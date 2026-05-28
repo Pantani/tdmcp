@@ -152,7 +152,7 @@ export const registerCreateAutopilot: ToolRegistrar = (server, ctx) => {
     {
       title: "Create autopilot",
       description:
-        "Build a beat-driven auto-VJ: a Beat CHOP + a CHOP Execute DAT that, every N beats, either randomizes a target COMP's numeric controls (a hands-free drift, set by Amount) or cycles through its stored cues — so a set keeps evolving on its own. Live Active/Beats/Amount knobs let you pause or retune on stage. Reuses the tempo clock, randomize_controls and manage_cue mechanisms. Pair with a generated system (or a control panel) as the target.",
+        "Build a beat-driven auto-VJ: a Beat CHOP + a CHOP Execute DAT that, every N beats, either randomizes a target COMP's numeric controls (a hands-free drift, set by Amount) or cycles through its stored cues — so a set keeps evolving on its own. Creates a new baseCOMP under `parent_path` holding the Beat CHOP and the engine DAT; it modifies the target COMP at `comp_path` (its custom controls or stored cues) live at runtime. Live Active/Beats/Amount knobs let you pause or retune on stage. Reuses the tempo clock, randomize_controls and manage_cue mechanisms. Pair with a generated system (or a control panel) as the target. Returns a summary plus a JSON block with the container path, created node paths, the target, mode, beats, amount, engine path, any node errors, and warnings (no preview image — the output is a CHOP engine, not a TOP).",
       inputSchema: createAutopilotSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

@@ -12,11 +12,16 @@ export const createDepthDisplacementSchema = z.object({
     .describe(
       "Depth/luminance source that drives the relief. 'camera' = live webcam/capture device (creating it may pop a one-time macOS camera-permission dialog — click Allow). 'file' = a movie file. 'synthetic' = an animated noise pattern, so the relief moves and the chain is testable without any device permission (the default). 'existing_top' = displace by a TOP you already have (e.g. a real depth map).",
     ),
-  movie_file_path: z.string().optional().describe("Movie file path (source='file')."),
+  movie_file_path: z
+    .string()
+    .optional()
+    .describe("Path to a movie file to play as the source; used only when source='file'."),
   existing_top_path: z
     .string()
     .optional()
-    .describe("Path of an existing TOP to sample as the height map (source='existing_top')."),
+    .describe(
+      "Path of an existing TOP to sample as the height map; used only when source='existing_top'.",
+    ),
   subdivisions: z.coerce
     .number()
     .int()
@@ -41,8 +46,13 @@ export const createDepthDisplacementSchema = z.object({
   expose_controls: z
     .boolean()
     .default(true)
-    .describe("Expose live Depth (displacement amount) and Zoom (camera distance) knobs."),
-  parent_path: z.string().default("/project1"),
+    .describe(
+      "When true (default), expose live Depth (displacement amount) and Zoom (camera distance) knobs.",
+    ),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent network where the displacement container is created (default '/project1')."),
 });
 type CreateDepthDisplacementArgs = z.infer<typeof createDepthDisplacementSchema>;
 
@@ -221,7 +231,7 @@ export const registerCreateDepthDisplacement: ToolRegistrar = (server, ctx) => {
     {
       title: "Create depth displacement",
       description:
-        "Push a flat plane into real 3D relief by a depth/luminance map: a subdivided grid whose vertices are offset along Z by a GLSL displacement material sampling the source's brightness, rendered with a camera + light so it reads as depth that shifts with the view. Unlike create_depth_silhouette (a flat 2D mask), this is true geometry — a 2.5D landscape. Source can be the live camera (may prompt for macOS permission), a movie file, an animated synthetic pattern (testable without a camera), or an existing TOP (e.g. a real depth map). `subdivisions` sets the relief resolution, `depth` the push amount, `invert` flips bright↔near. Exposes Depth and Zoom knobs — bind Depth to a tempo ramp or an audio feature to make the surface heave.",
+        "Push a flat plane into real 3D relief by a depth/luminance map: a subdivided grid whose vertices are offset along Z by a GLSL displacement material sampling the source's brightness, rendered with a camera + light so it reads as depth that shifts with the view. Unlike create_depth_silhouette (a flat 2D mask), this is true geometry — a 2.5D landscape. Source can be the live camera (may prompt for macOS permission), a movie file, an animated synthetic pattern (testable without a camera), or an existing TOP (e.g. a real depth map). `subdivisions` sets the relief resolution, `depth` the push amount, `invert` flips bright↔near. Creates a new baseCOMP under `parent_path` holding the source, height map, Geometry COMP + GLSL displacement MAT, Camera, Light, Render TOP, and a Null output. Exposes Depth and Zoom knobs — bind Depth to a tempo ramp or an audio feature to make the surface heave. Returns a summary plus a JSON block with the container path, created node paths, the output path, exposed controls, any node errors, warnings, and an inline preview image.",
       inputSchema: createDepthDisplacementSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

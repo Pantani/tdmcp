@@ -86,7 +86,7 @@ export const registerDiffSnapshots: ToolRegistrar = (server, ctx) => {
       description:
         "Compare two network snapshots (from snapshot_td_graph) and return a readable diff: which nodes were added or removed, which connections changed, and which parameters changed (with before/after values). Snapshot before an edit and after to see exactly what changed, or to version a patch over time. Pure analysis — touches nothing in TouchDesigner.",
       inputSchema: diffSnapshotsSchema.shape,
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
     },
     (args) => diffSnapshotsImpl(ctx, args),
   );

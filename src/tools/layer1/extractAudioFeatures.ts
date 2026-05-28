@@ -26,7 +26,10 @@ export const extractAudioFeaturesSchema = z.object({
     .boolean()
     .default(true)
     .describe("Expose a live 'Sensitivity' knob (a gain over every feature channel)."),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent COMP path the self-contained 'audio_features' container is created inside."),
 });
 type ExtractAudioFeaturesArgs = z.infer<typeof extractAudioFeaturesSchema>;
 

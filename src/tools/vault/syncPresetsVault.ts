@@ -147,7 +147,7 @@ export const registerSyncPresetsVault: ToolRegistrar = (server, ctx) => {
     {
       title: "Sync presets with the vault",
       description:
-        "Export a COMP's manage_presets snapshots to a markdown note (diffable, shareable), or import a note's presets back into TD storage. Requires TDMCP_VAULT_PATH.",
+        "Bridge a COMP's manage_presets snapshots with the Obsidian vault. With action 'export' it READS TD storage and WRITES a Markdown note (diffable, shareable) under Presets/; with action 'import' it READS that note and WRITES the presets back into TD storage (merging by name). Returns the note path plus the affected preset names. Use this to version-control or share presets across machines; use manage_presets to capture/recall them live. Requires a configured TDMCP_VAULT_PATH.",
       inputSchema: syncPresetsVaultSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

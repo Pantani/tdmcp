@@ -12,7 +12,10 @@ export const createSyncExternalClockSchema = z.object({
     .max(220)
     .default(120)
     .describe("Starting tempo in BPM (match the DJ's displayed BPM, then fine-tune by tapping)."),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent COMP path the self-contained 'tempo_clock' container is created inside."),
 });
 type CreateSyncExternalClockArgs = z.infer<typeof createSyncExternalClockSchema>;
 

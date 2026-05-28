@@ -76,9 +76,21 @@ const EFFECTS = [
 ] as const;
 
 export const applyPostProcessingSchema = z.object({
-  source_path: z.string().describe("Path of the TOP to post-process."),
-  effects: z.array(z.enum(EFFECTS)).min(1).describe("Effects to apply in order."),
-  parent_path: z.string().default("/project1"),
+  source_path: z
+    .string()
+    .describe(
+      "Path of the existing TOP to post-process (e.g. '/project1/render1'); pulled in via a Select TOP so it may live in another container.",
+    ),
+  effects: z
+    .array(z.enum(EFFECTS))
+    .min(1)
+    .describe(
+      "Effects to apply, chained in the order listed. Each is one of: bloom, chromatic_aberration, film_grain, vignette, color_grade, sharpen, blur, edge_detect, invert, threshold, posterize, glitch, rgb_split, scanlines.",
+    ),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent network where the effect-chain container is created (default '/project1')."),
 });
 type ApplyPostProcessingArgs = z.infer<typeof applyPostProcessingSchema>;
 
@@ -141,7 +153,7 @@ export const registerApplyPostProcessing: ToolRegistrar = (server, ctx) => {
     {
       title: "Apply post-processing",
       description:
-        "Chain post-processing effects (bloom, glitch, rgb_split, vignette, etc.) onto an existing TOP. Returns the processed output.",
+        "Chain post-processing effects (bloom, glitch, rgb_split, vignette, etc.) onto an existing TOP, applied in the order given. Creates a new baseCOMP under `parent_path` that pulls the source in via a Select TOP, wires each effect (built-in TOPs or inline-GLSL passes) in series, and ends in a Null TOP. Returns a summary plus a JSON block with the container path, all created node paths, the output Null path, any node errors, warnings, and an inline preview image. Use create_color_grade or create_glitch instead when you want a single dedicated effect with its own exposed controls.",
       inputSchema: applyPostProcessingSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

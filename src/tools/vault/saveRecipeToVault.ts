@@ -16,13 +16,24 @@ export const saveRecipeToVaultSchema = z.object({
     .default("/project1")
     .describe("COMP whose direct children are captured as the recipe."),
   name: z.string().optional().describe("Human-friendly title (defaults to the id)."),
-  description: z.string().optional(),
-  tags: z.array(z.string()).optional(),
-  difficulty: z.enum(["beginner", "intermediate", "advanced"]).optional(),
+  description: z
+    .string()
+    .optional()
+    .describe("One-line summary stored in the recipe note's frontmatter (defaults to empty)."),
+  tags: z
+    .array(z.string())
+    .optional()
+    .describe("Free-form tags for searching/filtering the recipe later (defaults to none)."),
+  difficulty: z
+    .enum(["beginner", "intermediate", "advanced"])
+    .optional()
+    .describe("Skill-level label saved in the recipe metadata (defaults to 'intermediate')."),
   overwrite: z
     .boolean()
     .default(false)
-    .describe("Overwrite an existing recipe note with the same id."),
+    .describe(
+      "When false, refuse to replace an existing Recipes/<id>.md note; set true to overwrite it.",
+    ),
 });
 type SaveRecipeToVaultArgs = z.infer<typeof saveRecipeToVaultSchema>;
 
@@ -173,7 +184,7 @@ export const registerSaveRecipeToVault: ToolRegistrar = (server, ctx) => {
     {
       title: "Save network as a vault recipe",
       description:
-        "Capture a COMP's network (nodes, parameters, wiring, text/script DAT bodies) as a reusable recipe note in the Obsidian vault (Recipes/<id>.md). list_recipes/apply_recipe then see it alongside the built-in recipes. Requires TDMCP_VAULT_PATH.",
+        "Capture an existing COMP's network (child nodes, non-default parameters, wiring, and text/script DAT bodies) by reading TD, then WRITE it as a reusable recipe note in the Obsidian vault at Recipes/<id>.md; list_recipes/apply_recipe then see it alongside the built-in recipes. Use this to turn a patch you already built into a template — to instantiate a template instead, use apply_recipe. Refuses to overwrite an existing note unless overwrite:true. Returns the note path, recipe id, and node/connection counts. Requires a configured TDMCP_VAULT_PATH.",
       inputSchema: saveRecipeToVaultSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

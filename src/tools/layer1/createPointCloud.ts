@@ -12,11 +12,16 @@ export const createPointCloudSchema = z.object({
     .describe(
       "Texture whose brightness drives each point's depth (Z). 'synthetic' = an animated Noise pattern, so the cloud moves and the chain is testable without any device permission (the default). 'file' = a movie file. 'camera' = live webcam/capture device (creating it may pop a one-time macOS camera-permission dialog — click Allow). 'existing' = sample a TOP you already have (e.g. a real depth map).",
     ),
-  file: z.string().optional().describe("Movie file path (source='file')."),
+  file: z
+    .string()
+    .optional()
+    .describe("Path to a movie file to play as the source; used only when source='file'."),
   existing: z
     .string()
     .optional()
-    .describe("Path of an existing TOP to sample as the depth map (source='existing')."),
+    .describe(
+      "Path of an existing TOP to sample as the depth map; used only when source='existing' (falls back to synthetic noise with a warning if missing).",
+    ),
   resolution: z.coerce
     .number()
     .int()
@@ -48,8 +53,13 @@ export const createPointCloudSchema = z.object({
   expose_controls: z
     .boolean()
     .default(true)
-    .describe("Expose live DepthScale, PointSize, and Spin knobs on the system container."),
-  parent_path: z.string().default("/project1"),
+    .describe(
+      "When true (default), expose live DepthScale, PointSize, and Spin knobs on the system container.",
+    ),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent network where the point-cloud container is created (default '/project1')."),
 });
 type CreatePointCloudArgs = z.infer<typeof createPointCloudSchema>;
 
@@ -290,7 +300,7 @@ export const registerCreatePointCloud: ToolRegistrar = (server, ctx) => {
     {
       title: "Create point cloud",
       description:
-        "Render a point cloud from a depth/luminance map (or a synthetic source): scatter a resolution×resolution grid of points and push each point's XYZ from the texture — X/Y from its grid position, Z from the map's brightness × `depth_scale`. Unlike create_depth_displacement (a continuous shaded mesh), this is a cloud of discrete dots. A GLSL TOP packs each point's position into one RGBA32float buffer, then a Geometry COMP TOP-instances a tiny sphere once per texel (reaching resolution², up to 512²≈262k points). Source can be an animated synthetic pattern (testable without any device, the default), a movie file, the live camera (may prompt for macOS permission), or an existing TOP (e.g. a real depth map). Exposes DepthScale, PointSize, and Spin knobs — bind DepthScale to a tempo ramp or an audio feature to make the cloud heave.",
+        "Render a point cloud from a depth/luminance map (or a synthetic source): scatter a resolution×resolution grid of points and push each point's XYZ from the texture — X/Y from its grid position, Z from the map's brightness × `depth_scale`. Unlike create_depth_displacement (a continuous shaded mesh), this is a cloud of discrete dots. A GLSL TOP packs each point's position into one RGBA32float buffer, then a Geometry COMP TOP-instances a tiny sphere once per texel (reaching resolution², up to 512²≈262k points). Creates a new baseCOMP under `parent_path` holding the source, a monochrome heightmap, a GLSL position-pack buffer, the instanced Geometry COMP, Camera, Light, and Render TOP ending in a Null output. Source can be an animated synthetic pattern (testable without any device, the default), a movie file, the live camera (may prompt for macOS permission), or an existing TOP (e.g. a real depth map). Use create_depth_displacement instead for a continuous shaded mesh rather than discrete dots. Exposes DepthScale, PointSize, and Spin knobs — bind DepthScale to a tempo ramp or an audio feature to make the cloud heave. Returns a summary plus a JSON block with the container path, created node paths, the effective and requested source, the point count, the output path, exposed controls, any node errors, warnings, and an inline preview image.",
       inputSchema: createPointCloudSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

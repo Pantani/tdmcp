@@ -30,7 +30,10 @@ export const createPanicSchema = z.object({
     .describe(
       "Expose big Blackout and Freeze toggle buttons on the container so a performer can hit them instantly.",
     ),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent COMP the panic container is built inside (default '/project1')."),
 });
 type CreatePanicArgs = z.infer<typeof createPanicSchema>;
 
@@ -147,9 +150,9 @@ export const registerCreatePanic: ToolRegistrar = (server, ctx) => {
     {
       title: "Create panic control",
       description:
-        "Build a live-performance safety control — the 'oh no' button every VJ needs. Wraps a source in a small COMP with two instant kill switches: Blackout forces the output to black (a Level TOP's brightness1 driven to 0) and Freeze holds the last frame (a Cache TOP stops capturing, active → 0). With an input_path the source is pulled in by a Select TOP (so it can live in another container); without one a built-in Ramp TOP test source is used so it builds and previews standalone. Output is a Null TOP. Big Blackout / Freeze toggle buttons are exposed on the container so a performer can hit them instantly.",
+        "Build a live-performance safety control — the 'oh no' button every VJ needs. Wraps a source in a small COMP with two instant kill switches: Blackout forces the output to black (a Level TOP's brightness1 driven to 0) and Freeze holds the last frame (a Cache TOP stops capturing, active → 0). With an input_path the source is pulled in by a Select TOP (so it can live in another container); without one a built-in Ramp TOP test source is used so it builds and previews standalone. Output is a Null TOP. Big Blackout / Freeze toggle buttons are exposed on the container so a performer can hit them instantly. Marked destructive because firing Blackout/Freeze disables the live output. Returns the container, the source/freeze/blackout/output node paths, and the initial toggle states.",
       inputSchema: createPanicSchema.shape,
-      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     (args) => createPanicImpl(ctx, args),
   );

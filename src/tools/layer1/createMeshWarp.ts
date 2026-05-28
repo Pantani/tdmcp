@@ -49,8 +49,14 @@ export const createMeshWarpSchema = z.object({
     .max(1)
     .default(0.3)
     .describe("Deformation strength (0 = flat, 1 = full bend). Ignored when warp is 'flat'."),
-  expose_controls: z.boolean().default(true).describe("Expose a live Zoom (camera distance) knob."),
-  parent_path: z.string().default("/project1"),
+  expose_controls: z
+    .boolean()
+    .default(true)
+    .describe("When true (default), expose a live Zoom (camera distance) knob."),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent network where the mesh-warp container is created (default '/project1')."),
 });
 type CreateMeshWarpArgs = z.infer<typeof createMeshWarpSchema>;
 
@@ -148,7 +154,7 @@ export const registerCreateMeshWarp: ToolRegistrar = (server, ctx) => {
     {
       title: "Create mesh warp",
       description:
-        "Map a source TOP onto a curved or irregular surface via a deformable textured grid — the curved-surface upgrade to create_projection_mapping's flat corner-pin, for domes, columns, and sculptures. Builds a Geometry COMP holding a grid that is bent into a dome (bulge), ripples (wave), half-cylinder (cylinder), or left flat, textured with the source through a Constant MAT, and rendered through an orthographic Camera + Light + Render TOP. Output is a Null ready for setup_output; exposes a Zoom knob.",
+        "Map a source TOP onto a curved or irregular surface via a deformable textured grid — the curved-surface upgrade to create_projection_mapping's flat corner-pin, for domes, columns, and sculptures. Builds a Geometry COMP holding a grid that is bent into a dome (bulge), ripples (wave), half-cylinder (cylinder), or left flat, textured with the source through a Constant MAT, and rendered through an orthographic Camera + Light + Render TOP. Creates a new baseCOMP under `parent_path` holding all of these; output is a Null ready for setup_output; exposes a Zoom knob. Returns a summary plus a JSON block with the container path, created node paths, the output path, exposed controls, any node errors, warnings, and an inline preview image.",
       inputSchema: createMeshWarpSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

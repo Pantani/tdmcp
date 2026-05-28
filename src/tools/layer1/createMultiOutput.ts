@@ -40,7 +40,10 @@ export const createMultiOutputSchema = z.object({
     .describe(
       "Also create a borderless Window COMP per tile, offset across the desktop so each lands on its own display. Left closed — open them in Perform mode when ready.",
     ),
-  parent_path: z.string().default("/project1"),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent network where the multi-output container is created (default '/project1')."),
 });
 type CreateMultiOutputArgs = z.infer<typeof createMultiOutputSchema>;
 
@@ -163,7 +166,7 @@ export const registerCreateMultiOutput: ToolRegistrar = (server, ctx) => {
     {
       title: "Create multi-output",
       description:
-        "Fan a master TOP across N projectors/displays: each output is a cropped slice (horizontal or vertical) resized to full projector resolution and ended on a Null, ready for setup_output. Set `overlap` for edge-blending — tiles widen into their neighbours and a GLSL feather fades the shared seams so physically-overlapping projectors blend smoothly. With as_windows, each tile also gets a borderless Window COMP offset across the desktop so it lands on its own display (left closed — open in Perform mode). The multi-projector counterpart to setup_output's single window.",
+        "Fan a master TOP across N projectors/displays: each output is a cropped slice (horizontal or vertical) resized to full projector resolution and ended on a Null, ready for setup_output. Set `overlap` for edge-blending — tiles widen into their neighbours and a GLSL feather fades the shared seams so physically-overlapping projectors blend smoothly. Creates a new baseCOMP under `parent_path` holding the Select TOP, per-tile Crop (+ optional GLSL feather) and Null outputs, and optional Window COMPs. With as_windows, each tile also gets a borderless Window COMP offset across the desktop so it lands on its own display (left closed — open in Perform mode). Use setup_output instead for a single-window output; create_dome_output/create_cubemap_dome for curved/fulldome instead of flat tiling. Returns a summary plus a JSON block with the container path, created node paths, the first output path, the full list of output and window paths, and any node errors/warnings, with an inline preview image of the first tile.",
       inputSchema: createMultiOutputSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
