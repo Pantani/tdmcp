@@ -622,3 +622,57 @@ describe("tdmcp-agent CLI — phase 7 (stage I/O & sensor reactivity)", () => {
     expect(doc.args.bpm).toBe(128);
   });
 });
+
+describe("tdmcp-agent CLI — reusable-component tools", () => {
+  it("lists add-params and scaffold-ext in --help", async () => {
+    const r = await runCli(["--help"]);
+    expect(r.code).toBe(0);
+    expect(r.stdout).toContain("add-params");
+    expect(r.stdout).toContain("scaffold-ext");
+  });
+
+  it("emits a JSON Schema for add-params", async () => {
+    const r = await runCli(["schema", "add-params"]);
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.command).toBe("add-params");
+    expect(JSON.stringify(doc.input)).toContain("params");
+  });
+
+  it("dry-runs add-params without calling TD", async () => {
+    const r = await runCli([
+      "add-params",
+      "--dry-run",
+      "--params",
+      '{"comp_path":"/project1/sys","params":[{"name":"Speed","type":"Float"}]}',
+    ]);
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.dryRun).toBe(true);
+    expect(doc.command).toBe("add-params");
+    expect(doc.mutates).toBe(true);
+    expect(doc.args.comp_path).toBe("/project1/sys");
+  });
+
+  it("emits a JSON Schema for scaffold-ext", async () => {
+    const r = await runCli(["schema", "scaffold-ext"]);
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.command).toBe("scaffold-ext");
+    expect(JSON.stringify(doc.input)).toContain("class_name");
+  });
+
+  it("dry-runs scaffold-ext without calling TD", async () => {
+    const r = await runCli([
+      "scaffold-ext",
+      "--dry-run",
+      "--params",
+      '{"comp_path":"/project1/sys","class_name":"WidgetExt","methods":["Reset"]}',
+    ]);
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.dryRun).toBe(true);
+    expect(doc.command).toBe("scaffold-ext");
+    expect(doc.args.class_name).toBe("WidgetExt");
+  });
+});

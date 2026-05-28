@@ -4,6 +4,29 @@ All notable changes to **tdmcp** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - Unreleased
+
+### Added
+
+- **`add_custom_parameters`** — append a custom-parameter page (Float/Int sliders,
+  Toggle, Menu, Str, Pulse, RGB, XYZ) to any COMP so a generated network becomes a
+  tunable, reusable component (CLI `add-params`). Sets defaults, slider ranges
+  (`normMin`/`normMax`) and optional hard clamps; a parameter that already exists is
+  **skipped with a warning**, never overwritten, so re-running to add one more knob is
+  safe.
+- **`scaffold_extension`** — give a COMP a Python **extension class**: create a Text
+  DAT holding the class (with optional method stubs), wire it into an extension slot,
+  optionally **promote** it (so members are callable directly on the COMP, e.g.
+  `op('…').Reset()`), and reinitialize (CLI `scaffold-ext`). The extension parameter
+  names live on the COMP's built-in Extensions page and vary by TouchDesigner build,
+  so the tool **probes** for them (and notes any difference as a warning) instead of
+  hardcoding. Together with `add_custom_parameters` (knobs) and `manage_component`
+  (save as `.tox`), this completes the build → parameterize → script → package story
+  for reusable components — see the new [Reusable components](https://pantani.github.io/tdmcp/guide/components)
+  guide.
+
+[0.5.0]: https://github.com/Pantani/tdmcp/compare/v0.4.0...HEAD
+
 ## [0.4.0] - 2026-05-27
 
 Fifteen new tools and prompts, built as a coordinated parallel pipeline (design →
