@@ -5,6 +5,7 @@ import { registerCreate3dAudioReactive } from "./create3dAudioReactive.js";
 import { registerCreate3dScene } from "./create3dScene.js";
 import { registerCreateAudioReactive } from "./createAudioReactive.js";
 import { registerCreateAutopilot } from "./createAutopilot.js";
+import { registerCreateBodyReactive } from "./createBodyReactive.js";
 import { registerCreateColorGrade } from "./createColorGrade.js";
 import { registerCreateCubemapDome } from "./createCubemapDome.js";
 import { registerCreateDataVisualization } from "./createDataVisualization.js";
@@ -27,6 +28,8 @@ import { registerCreateParticleFlock } from "./createParticleFlock.js";
 import { registerCreateParticleSystem } from "./createParticleSystem.js";
 import { registerCreatePbrScene } from "./createPbrScene.js";
 import { registerCreatePointCloud } from "./createPointCloud.js";
+import { registerCreatePoseSkeleton } from "./createPoseSkeleton.js";
+import { registerCreatePoseTracking } from "./createPoseTracking.js";
 import { registerCreateProjectionMapping } from "./createProjectionMapping.js";
 import { registerCreateRaymarchScene } from "./createRaymarchScene.js";
 import { registerCreateShaderLib } from "./createShaderLib.js";
@@ -50,6 +53,7 @@ import { registerImportModel } from "./importModel.js";
 import { registerListRecipes } from "./listRecipes.js";
 import { registerScaffoldGenre } from "./scaffoldGenre.js";
 import { registerScaffoldShow } from "./scaffoldShow.js";
+import { registerSetupBodyTracking } from "./setupBodyTracking.js";
 import { registerSetupOutput } from "./setupOutput.js";
 
 export const layer1Registrars: ToolRegistrar[] = [
@@ -110,4 +114,9 @@ export const layer1Registrars: ToolRegistrar[] = [
   // Post-0.3.0 parallel build — wave 3:
   registerCreateCubemapDome,
   registerScaffoldGenre,
+  // Body / pose tracking (MediaPipe-driven, camera-reactive performance):
+  registerCreatePoseTracking,
+  registerCreatePoseSkeleton,
+  registerCreateBodyReactive,
+  registerSetupBodyTracking,
 ];

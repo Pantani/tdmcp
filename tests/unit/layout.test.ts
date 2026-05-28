@@ -6,7 +6,7 @@ import {
   layoutScript,
   type Positions,
   parentOf,
-  placeBelowSiblingsScript,
+  placeInGridScript,
 } from "../../src/tools/layout.js";
 
 /** Reads a node's coordinate, failing loudly if the layout omitted it. */
@@ -99,15 +99,16 @@ describe("layoutScript", () => {
   });
 });
 
-describe("placeBelowSiblingsScript", () => {
-  it("emits Python that drops a new node below its siblings", () => {
-    const script = placeBelowSiblingsScript("/project1", "/project1/sys2");
+describe("placeInGridScript", () => {
+  it("emits Python that tiles a new node into the first free grid cell", () => {
+    const script = placeInGridScript("/project1", "/project1/sys2");
     expect(script).toContain('_parent = op("/project1")');
     expect(script).toContain('_new = op("/project1/sys2")');
-    expect(script).toContain("_new.nodeX = min(c.nodeX for c in _sibs)");
-    // Sits one gap below the lowest sibling, accounting for the new node's height.
-    expect(script).toContain("- _new.nodeHeight - 80");
-    // First node in an empty network falls back to the origin.
-    expect(script).toContain("_new.nodeY = 0");
+    // Occupied cells are derived from every sibling except the new node.
+    expect(script).toContain("_occ = {_cell(_c) for _c in _parent.children if _c is not _new}");
+    // Scans forward to the first free (col, row), wrapping columns after _rows.
+    expect(script).toContain("while (_k // _rows, _k % _rows) in _occ:");
+    expect(script).toContain("_new.nodeX = (_k // _rows) * _cw");
+    expect(script).toContain("_new.nodeY = -((_k % _rows) * _ch)");
   });
 });

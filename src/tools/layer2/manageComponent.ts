@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { placeInGridScript } from "../layout.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -119,7 +120,19 @@ export async function manageComponentImpl(ctx: ToolContext, args: ManageComponen
         create_folders: args.create_folders,
       });
       const exec = await ctx.client.executePythonScript(script, true);
-      return parsePythonReport<ComponentReport>(exec.stdout);
+      const report = parsePythonReport<ComponentReport>(exec.stdout);
+      // A freshly loaded .tox lands at the origin; tile it into the grid (cosmetic).
+      if (args.action === "load" && report.loaded && !report.fatal) {
+        try {
+          await ctx.client.executePythonScript(
+            placeInGridScript(args.parent_path, report.loaded),
+            false,
+          );
+        } catch (err) {
+          ctx.logger.debug("component placement skipped", { err: String(err) });
+        }
+      }
+      return report;
     },
     (report) => {
       if (report.fatal) {

@@ -9,7 +9,7 @@ import {
   computeLayoutByParent,
   type LayoutEdge,
   layoutScript,
-  placeBelowSiblingsScript,
+  placeInGridScript,
 } from "../layout.js";
 import { parsePythonReport } from "../pythonReport.js";
 import { errorResult } from "../result.js";
@@ -190,14 +190,11 @@ export async function createSystemContainer(
     type: "baseCOMP",
     name,
   });
-  // Drop the container clear of any existing siblings so repeated generations
-  // stack into a column instead of overlapping at the origin. Cosmetic only —
+  // Tile the container into a 2D grid clear of existing siblings, so repeated
+  // generations read as a grid instead of overlapping at the origin. Cosmetic only —
   // a failure here must never abort the build.
   try {
-    await ctx.client.executePythonScript(
-      placeBelowSiblingsScript(parentPath, container.path),
-      false,
-    );
+    await ctx.client.executePythonScript(placeInGridScript(parentPath, container.path), false);
   } catch (err) {
     ctx.logger.debug("container placement skipped", { err: String(err) });
   }
