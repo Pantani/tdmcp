@@ -21,6 +21,14 @@ export const ConfigSchema = z.object({
    */
   rawPython: z.enum(["on", "off"]).default("on"),
   /**
+   * Tool exposure profile. `full` (default) registers every tool; `safe`
+   * additionally hides the destructive/raw-code tools (a superset of
+   * TDMCP_RAW_PYTHON=off) so an autonomous in-TD agent (e.g. via LOPs) gets a
+   * curated, non-destructive surface. Default `full` keeps existing clients
+   * unaffected.
+   */
+  toolProfile: z.enum(["full", "safe"]).default("full"),
+  /**
    * Optional shared bearer token for the TD bridge. When set, the server sends it
    * as `Authorization: Bearer <token>` and the bridge requires a match. Leave unset
    * (default) for the zero-config local flow. Set the SAME value in TouchDesigner's
@@ -69,6 +77,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): TdmcpConfig {
     httpPort: env.TDMCP_HTTP_PORT,
     events: env.TDMCP_EVENTS,
     rawPython: env.TDMCP_RAW_PYTHON,
+    toolProfile: env.TDMCP_TOOL_PROFILE,
     bridgeToken: env.TDMCP_BRIDGE_TOKEN || undefined,
     llmBaseUrl: env.TDMCP_LLM_BASE_URL,
     llmModel: env.TDMCP_LLM_MODEL,

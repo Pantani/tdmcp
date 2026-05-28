@@ -6,6 +6,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.5.0] - Unreleased
 
+Reusable components (build → parameterize → script → package), a way to drive tdmcp from
+*inside* TouchDesigner via dotsimulate's LOPs "MCP Client", and an optional curated tool
+profile for autonomous in-TD agents. Additive and backward-compatible — existing clients are
+unaffected (the default profile is `full`).
+
 ### Added
 
 - **`add_custom_parameters`** — append a custom-parameter page (Float/Int sliders,
@@ -24,6 +29,19 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (save as `.tox`), this completes the build → parameterize → script → package story
   for reusable components — see the new [Reusable components](https://pantani.github.io/tdmcp/guide/components)
   guide.
+- **`TDMCP_TOOL_PROFILE`** (`full` | `safe`, default `full`) — `safe` additionally hides the
+  six destructive / raw-code tools (`execute_python_script`, `exec_node_method`,
+  `delete_td_node`, `create_panic`, `manage_checkpoint`, `manage_component`), a strict
+  superset of `TDMCP_RAW_PYTHON=off`. Use it to hand an autonomous in-TD agent a curated,
+  non-destructive toolset.
+- **`scripts/tdmcp-lops.mjs`** — a dependency-free launcher for dotsimulate's LOPs MCP
+  Client. Point the LOPs `command` at it; it injects the hardened env
+  (`TDMCP_RAW_PYTHON=off`, `TDMCP_TOOL_PROFILE=safe`) then execs `dist/index.js`, since
+  LOPs' `servers_config.json` has no documented `env` field.
+- **LOPs integration guide** (EN + PT) — setup, the hardened `servers_config.json` snippet,
+  the TD → tdmcp → bridge → TD architecture, and an explicit callout that this does **not**
+  replace the local `tdmcp chat` copilot. Plus reference docs for the new env var and the
+  in-TD topology.
 
 [0.5.0]: https://github.com/Pantani/tdmcp/compare/v0.4.0...HEAD
 
