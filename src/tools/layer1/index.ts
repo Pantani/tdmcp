@@ -23,6 +23,7 @@ import { registerCreateMotionReactive } from "./createMotionReactive.js";
 import { registerCreateMultiOutput } from "./createMultiOutput.js";
 import { registerCreateParticleSystem } from "./createParticleSystem.js";
 import { registerCreateProjectionMapping } from "./createProjectionMapping.js";
+import { registerCreateRaymarchScene } from "./createRaymarchScene.js";
 import { registerCreateShaderLib } from "./createShaderLib.js";
 import { registerCreateSimulation } from "./createSimulation.js";
 import { registerCreateSpectrum } from "./createSpectrum.js";
@@ -37,6 +38,7 @@ import { registerCreateWaveform } from "./createWaveform.js";
 import { registerDescribeProject } from "./describeProject.js";
 import { registerDetectOnsets } from "./detectOnsets.js";
 import { registerDetectPitch } from "./detectPitch.js";
+import { registerDetectTempo } from "./detectTempo.js";
 import { registerExtractAudioFeatures } from "./extractAudioFeatures.js";
 import { registerGetPreview } from "./getPreview.js";
 import { registerImportModel } from "./importModel.js";
@@ -91,4 +93,7 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateMeshWarp,
   registerCreateDepthDisplacement,
   registerCreateGpuParticleField,
+  // Post-0.3.0 parallel build — wave 1:
+  registerCreateRaymarchScene,
+  registerDetectTempo,
 ];

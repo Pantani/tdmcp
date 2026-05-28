@@ -81,6 +81,10 @@ import {
   createProjectionMappingImpl,
   createProjectionMappingSchema,
 } from "../tools/layer1/createProjectionMapping.js";
+import {
+  createRaymarchSceneImpl,
+  createRaymarchSceneSchema,
+} from "../tools/layer1/createRaymarchScene.js";
 import { createShaderLibImpl, createShaderLibSchema } from "../tools/layer1/createShaderLib.js";
 import { createSimulationImpl, createSimulationSchema } from "../tools/layer1/createSimulation.js";
 import { createSpectrumImpl, createSpectrumSchema } from "../tools/layer1/createSpectrum.js";
@@ -107,6 +111,7 @@ import { createWaveformImpl, createWaveformSchema } from "../tools/layer1/create
 import { describeProjectImpl, describeProjectSchema } from "../tools/layer1/describeProject.js";
 import { detectOnsetsImpl, detectOnsetsSchema } from "../tools/layer1/detectOnsets.js";
 import { detectPitchImpl, detectPitchSchema } from "../tools/layer1/detectPitch.js";
+import { detectTempoImpl, detectTempoSchema } from "../tools/layer1/detectTempo.js";
 import {
   extractAudioFeaturesImpl,
   extractAudioFeaturesSchema,
@@ -133,11 +138,16 @@ import {
   createControlSurfaceImpl,
   createControlSurfaceSchema,
 } from "../tools/layer2/createControlSurface.js";
+import {
+  createCueSequencerImpl,
+  createCueSequencerSchema,
+} from "../tools/layer2/createCueSequencer.js";
 import { createDecksImpl, createDecksSchema } from "../tools/layer2/createDecks.js";
 import { createExternalIoImpl, createExternalIoSchema } from "../tools/layer2/createExternalIo.js";
 import { createGlslShaderImpl, createGlslShaderSchema } from "../tools/layer2/createGlslShader.js";
 import { createMacroImpl, createMacroSchema } from "../tools/layer2/createMacro.js";
 import { createNodeChainImpl, createNodeChainSchema } from "../tools/layer2/createNodeChain.js";
+import { createPaletteImpl, createPaletteSchema } from "../tools/layer2/createPalette.js";
 import { createPanicImpl, createPanicSchema } from "../tools/layer2/createPanic.js";
 import {
   createPhoneRemoteImpl,
@@ -147,6 +157,10 @@ import {
   createPythonScriptImpl,
   createPythonScriptSchema,
 } from "../tools/layer2/createPythonScript.js";
+import {
+  createStageDashboardImpl,
+  createStageDashboardSchema,
+} from "../tools/layer2/createStageDashboard.js";
 import { duplicateNetworkImpl, duplicateNetworkSchema } from "../tools/layer2/duplicateNetwork.js";
 import { learnControlImpl, learnControlSchema } from "../tools/layer2/learnControl.js";
 import { manageCheckpointImpl, manageCheckpointSchema } from "../tools/layer2/manageCheckpoint.js";
@@ -659,6 +673,37 @@ const COMMANDS: Record<string, Command> = {
     learnControlSchema,
     learnControlImpl,
     "MIDI/OSC learn: snapshot an input CHOP, then bind the moved control (experimental).",
+    { mutates: true },
+  ),
+  // Post-0.3.0 parallel build — wave 1:
+  "cue-sequencer": r(
+    createCueSequencerSchema,
+    createCueSequencerImpl,
+    "Bar-quantized cue timeline: fire stored cues at musical positions on a loop.",
+    { mutates: true },
+  ),
+  dashboard: r(
+    createStageDashboardSchema,
+    createStageDashboardImpl,
+    "Unified web performance surface: cue buttons + faders + panic + live readout.",
+    { mutates: true },
+  ),
+  raymarch: r(
+    createRaymarchSceneSchema,
+    createRaymarchSceneImpl,
+    "Volumetric GLSL raymarcher: SDF scenes (sphere-field/menger/tunnel).",
+    { mutates: true },
+  ),
+  "detect-tempo": r(
+    detectTempoSchema,
+    detectTempoImpl,
+    "Auto-BPM from audio onsets; optionally drive the global tempo (experimental).",
+    { mutates: true },
+  ),
+  palette: r(
+    createPaletteSchema,
+    createPaletteImpl,
+    "Generate a color palette/gradient (harmony rules or sampled from a source).",
     { mutates: true },
   ),
 };
