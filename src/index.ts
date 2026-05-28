@@ -10,9 +10,9 @@ async function main(): Promise<void> {
     runInstallBridge(argv.slice(1));
     return;
   }
-  if (argv[0] === "install-mediapipe") {
-    const { runInstallMediapipe } = await import("./cli/installMediapipe.js");
-    await runInstallMediapipe(argv.slice(1));
+  if (argv[0] === "install") {
+    const { runInstall } = await import("./cli/install.js");
+    await runInstall(argv.slice(1));
     return;
   }
   if (argv[0] === "chat" || argv[0] === "llm-run") {

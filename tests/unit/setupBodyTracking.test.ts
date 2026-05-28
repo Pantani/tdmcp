@@ -113,7 +113,7 @@ describe("setup_body_tracking", () => {
     mockBridge({ error: "tox_missing" });
     const result = await run({ tox_path: "/nope/pose_tracking.tox" });
     expect(result.isError).toBe(true);
-    expect(textOf(result)).toContain("install-mediapipe");
+    expect(textOf(result)).toContain("tdmcp install torinmb/mediapipe-touchdesigner");
   });
 
   it("reports when no pose CHOP is found inside the loaded plugin", async () => {

@@ -11,9 +11,16 @@ import { createPoseTrackingImpl } from "./createPoseTracking.js";
 
 const q = (value: string): string => JSON.stringify(value);
 
-/** Default location the `tdmcp install-mediapipe` CLI extracts the plugin to. */
+/** Default location `tdmcp install torinmb/mediapipe-touchdesigner` extracts the plugin to. */
 function defaultPoseToxPath(): string {
-  return join(homedir(), "tdmcp-mediapipe", "release", "toxes", "pose_tracking.tox");
+  return join(
+    homedir(),
+    "tdmcp-packages",
+    "mediapipe-touchdesigner",
+    "release",
+    "toxes",
+    "pose_tracking.tox",
+  );
 }
 
 export const setupBodyTrackingSchema = z.object({
@@ -21,7 +28,7 @@ export const setupBodyTrackingSchema = z.object({
     .string()
     .optional()
     .describe(
-      "Path to the MediaPipe plugin's pose_tracking.tox. Defaults to where `tdmcp install-mediapipe` puts it (~/tdmcp-mediapipe/release/toxes/pose_tracking.tox).",
+      "Path to the MediaPipe plugin's pose_tracking.tox. Defaults to where `tdmcp install torinmb/mediapipe-touchdesigner` puts it (~/tdmcp-packages/mediapipe-touchdesigner/release/toxes/pose_tracking.tox).",
     ),
   parent_path: z.string().default("/project1").describe("COMP to load the plugin into."),
   build_skeleton: z
@@ -116,7 +123,7 @@ export async function setupBodyTrackingImpl(ctx: ToolContext, args: SetupBodyTra
 
   if (report.error === "tox_missing") {
     return errorResult(
-      `MediaPipe plugin not found at ${toxPath}. Install it first by running 'tdmcp install-mediapipe' in a terminal (it downloads the free, MIT-licensed torinmb/mediapipe-touchdesigner plugin), or pass tox_path to an existing pose_tracking.tox.`,
+      `MediaPipe plugin not found at ${toxPath}. Install it first by running 'tdmcp install torinmb/mediapipe-touchdesigner' in a terminal (the free, MIT-licensed GPU MediaPipe tracker), or pass tox_path to an existing pose_tracking.tox.`,
     );
   }
   if (report.error === "parent_missing") {
@@ -193,7 +200,7 @@ export const registerSetupBodyTracking: ToolRegistrar = (server, ctx) => {
     {
       title: "Set up body tracking",
       description:
-        "One-shot body tracking from a webcam: loads the free torinmb/mediapipe-touchdesigner plugin (install it first with the `tdmcp install-mediapipe` CLI) into your project, finds its pose-landmarks CHOP, and wires up create_pose_tracking (+ a live skeleton) so you only need to pick your webcam and enable Pose. If the plugin isn't installed yet, it tells you how. Loading the plugin will prompt for camera permission on macOS (click Allow).",
+        "One-shot body tracking from a webcam: loads the free torinmb/mediapipe-touchdesigner plugin (install it first with `tdmcp install torinmb/mediapipe-touchdesigner`) into your project, finds its pose-landmarks CHOP, and wires up create_pose_tracking (+ a live skeleton) so you only need to pick your webcam and enable Pose. If the plugin isn't installed yet, it tells you how. Loading the plugin will prompt for camera permission on macOS (click Allow).",
       inputSchema: setupBodyTrackingSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
