@@ -77,11 +77,16 @@ describe("buildSetExprScript", () => {
     expect(decodePayload(script)).toEqual(payload);
   });
 
-  it("embeds the ParMode.EXPRESSION/BIND/CONSTANT references in the script", () => {
+  it("switches mode via the live par enum (type(par.mode)), not a ParMode global", () => {
     const script = buildSetExprScript({ path: "/x", assignments: [] });
-    expect(script).toContain("ParMode.EXPRESSION");
-    expect(script).toContain("ParMode.BIND");
-    expect(script).toContain("ParMode.CONSTANT");
+    // ParMode is not a global in the bridge exec scope; the enum must be derived from
+    // the live parameter so the mode actually switches and the expression cooks.
+    expect(script).toContain("type(_par.mode)");
+    expect(script).toContain("_PM.EXPRESSION");
+    expect(script).toContain("_PM.BIND");
+    expect(script).toContain("_PM.CONSTANT");
+    // The bare ParMode global must no longer be referenced.
+    expect(script).not.toContain("ParMode.EXPRESSION");
   });
 
   it("captures stdout (second executePythonScript arg is true) via the bridge pattern", () => {

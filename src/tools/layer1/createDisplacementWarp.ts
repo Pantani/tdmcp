@@ -102,10 +102,26 @@ export async function createDisplacementWarpImpl(
         resolutionh: resH,
       });
       // Drive the noise translate via absTime so it moves when TD is paused too.
-      // We set the expressions via Python because the structured param setter
-      // cannot write expression strings.
+      // We set the expressions via Python because the structured param setter cannot
+      // write expression strings. Assigning .expr alone does NOT activate the
+      // expression in TD — the par must also be switched to EXPRESSION mode, or the
+      // noise stays static and the warp never animates. ParMode isn't a global in the
+      // bridge exec scope, so derive it from the live par (type(par.mode)), as
+      // bind_to_channel does.
+      const txExpr = `absTime.seconds * ${args.speed}`;
+      const tyExpr = `absTime.seconds * ${args.speed} * 0.7`;
       await builder.python(
-        `_n = op(${JSON.stringify(modulator)})\ntry:\n    _n.par.tx.expr = ${JSON.stringify(`absTime.seconds * ${args.speed}`)}\n    _n.par.ty.expr = ${JSON.stringify(`absTime.seconds * ${args.speed} * 0.7`)}\nexcept Exception:\n    pass`,
+        [
+          `_n = op(${JSON.stringify(modulator)})`,
+          "try:",
+          "    _pm = type(_n.par.tx.mode)",
+          `    _n.par.tx.expr = ${JSON.stringify(txExpr)}`,
+          "    _n.par.tx.mode = _pm.EXPRESSION",
+          `    _n.par.ty.expr = ${JSON.stringify(tyExpr)}`,
+          "    _n.par.ty.mode = _pm.EXPRESSION",
+          "except Exception:",
+          "    pass",
+        ].join("\n"),
       );
     } else if (args.modulator === "second_top") {
       // Use the caller's supplied TOP as the displacement map directly.

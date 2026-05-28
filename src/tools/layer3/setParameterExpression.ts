@@ -85,36 +85,55 @@ try:
                         pass
                     _probe_done = True
                 _m = _a.get("mode", "expression")
+                # Derive the ParMode enum from the live parameter — ParMode is NOT a global in
+                # the bridge exec scope, so we mirror bind_to_channel and read it off the par.
+                # Setting .expr/.bindExpr alone does NOT activate the mode in TD; the mode must
+                # actually be switched or the new expression/bind never cooks.
+                try:
+                    _PM = type(_par.mode)
+                except Exception:
+                    _PM = None
                 if _m == "expression":
                     _e = _a.get("expr")
                     if not _e:
                         report["warnings"].append("param '" + str(_a["param"]) + "': expr required for mode 'expression'")
                         continue
                     _par.expr = _e
-                    try:
-                        _par.mode = ParMode.EXPRESSION
-                    except Exception:
-                        report["warnings"].append("ParMode enum unavailable; set raw attribute only")
+                    _switched = False
+                    if _PM is not None:
+                        try:
+                            _par.mode = _PM.EXPRESSION
+                            _switched = True
+                        except Exception:
+                            pass
+                    if not _switched:
+                        report["warnings"].append("param '" + str(_a["param"]) + "': could not switch to EXPRESSION mode; .expr set but may not be active")
                 elif _m == "bind":
                     _e = _a.get("expr")
                     if not _e:
                         report["warnings"].append("param '" + str(_a["param"]) + "': expr required for mode 'bind'")
                         continue
                     _par.bindExpr = _e
-                    try:
-                        _par.mode = ParMode.BIND
-                    except Exception:
-                        report["warnings"].append("ParMode enum unavailable; set raw attribute only")
+                    _switched = False
+                    if _PM is not None:
+                        try:
+                            _par.mode = _PM.BIND
+                            _switched = True
+                        except Exception:
+                            pass
+                    if not _switched:
+                        report["warnings"].append("param '" + str(_a["param"]) + "': could not switch to BIND mode; .bindExpr set but may not be active")
                 else:
                     _v = _a.get("value")
                     if _v is None:
                         report["warnings"].append("param '" + str(_a["param"]) + "': value required for mode 'constant'")
                         continue
                     _par.val = _v
-                    try:
-                        _par.mode = ParMode.CONSTANT
-                    except Exception:
-                        pass
+                    if _PM is not None:
+                        try:
+                            _par.mode = _PM.CONSTANT
+                        except Exception:
+                            pass
                 report["applied"].append({
                     "param": _a["param"],
                     "mode": _m,

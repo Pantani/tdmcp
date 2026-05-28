@@ -144,6 +144,10 @@ describe("create_displacement_warp", () => {
       const expr = scripts.find((s) => s.includes("absTime.seconds") && s.includes("tx"));
       expect(expr).toBeDefined();
       expect(expr).toContain("1.5");
+      // Setting .expr alone doesn't animate it — the par must be switched to EXPRESSION
+      // mode (via the live enum), or the noise stays static and the warp never moves.
+      expect(expr).toContain("type(_n.par.tx.mode)");
+      expect(expr).toContain("_pm.EXPRESSION");
     });
 
     it("sets displaceweight defensively on the Displace TOP", async () => {
