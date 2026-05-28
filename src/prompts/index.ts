@@ -9,6 +9,8 @@ import { registerFixShader } from "./fixShader.js";
 import { registerImageToVisual } from "./imageToVisual.js";
 import { registerOptimizePerformance } from "./optimizePerformance.js";
 import { registerRemixVisual } from "./remixVisual.js";
+import { registerStyleReference } from "./styleReference.js";
+import { registerTextToRecipe } from "./textToRecipe.js";
 import { registerTextToShader } from "./textToShader.js";
 import { registerTweakVisual } from "./tweakVisual.js";
 import type { PromptContext } from "./types.js";
@@ -31,6 +33,8 @@ export function registerAllPrompts(server: McpServer, ctx: PromptContext): void 
   registerTextToShader(server, ctx);
   registerAudioToShow(server, ctx);
   registerAutoFix(server, ctx);
+  registerTextToRecipe(server, ctx);
+  registerStyleReference(server, ctx);
 }
 
 export type { PromptContext } from "./types.js";
