@@ -332,7 +332,13 @@ import {
 } from "../tools/layer3/updateTdNodeParameters.js";
 import { writeAgentGuideImpl, writeAgentGuideSchema } from "../tools/layer3/writeAgentGuide.js";
 import type { ToolContext } from "../tools/types.js";
-import { loadConfig, type TdmcpConfig, tdBaseUrl } from "../utils/config.js";
+import {
+  describeConfig,
+  type LoadConfigOptions,
+  loadConfig,
+  type TdmcpConfig,
+  tdBaseUrl,
+} from "../utils/config.js";
 import { silentLogger } from "../utils/logger.js";
 import { runDoctor } from "./doctor.js";
 
@@ -1179,6 +1185,11 @@ function usage(): string {
   lines.push("  --allow-unsafe    Required for `exec` escape-hatch commands.");
   lines.push("  -o, --out <file>  (preview) Output PNG path. Defaults to ./preview.png.");
   lines.push("  --include-high-frequency  (watch) Also stream timeline.frame / node.cook events.");
+  lines.push("  --profile <name>  Use a named profile from your config file (tdmcp.json).");
+  lines.push("  --config <path>   Use a specific config file instead of the search order.");
+  lines.push(
+    "  --td-host <h> / --td-port <p> / --timeout <ms>  Override the bridge for this call.",
+  );
   lines.push("  -h, --help        Show this help.", "");
   lines.push("Commands:");
   for (const [key, cmd] of Object.entries(COMMANDS)) {
@@ -1188,6 +1199,9 @@ function usage(): string {
     lines.push(`  ${key.padEnd(20)} ${cmd.summary}${tags ? `  [${tags}]` : ""}`);
   }
   lines.push("  schema <command>     Print a command's JSON Schema and metadata.");
+  lines.push(
+    "  config               Print the effective config (redacted); --write-env for a paste-ready block.",
+  );
   lines.push("  preview <nodePath>   Capture a TOP to a PNG file (-o/--out).  [writes a file]");
   lines.push("  watch                Stream TD events as ndjson until Ctrl-C.  [long-running]");
   lines.push("  repl                 Interactive mode: run commands line-by-line.  [interactive]");
@@ -1200,8 +1214,59 @@ export interface RunCliOptions {
   makeCtx?: () => ToolContext;
 }
 
-function buildCtx(opts: RunCliOptions): ToolContext {
-  return opts.makeCtx ? opts.makeCtx() : buildToolContext(loadConfig(), { logger: silentLogger });
+/** Build {@link LoadConfigOptions} from the global CLI flags (profile / config / host / port / timeout). */
+function cliLoadOptions(values: Record<string, unknown>): LoadConfigOptions {
+  const overrides: Record<string, unknown> = {};
+  if (typeof values["td-host"] === "string") overrides.tdHost = values["td-host"];
+  if (typeof values["td-port"] === "string") overrides.tdPort = values["td-port"];
+  if (typeof values.timeout === "string") overrides.requestTimeoutMs = values.timeout;
+  return {
+    useFiles: true,
+    profile: typeof values.profile === "string" ? values.profile : undefined,
+    configPath: typeof values.config === "string" ? values.config : undefined,
+    overrides,
+  };
+}
+
+function buildCtx(
+  opts: RunCliOptions,
+  loadOpts: LoadConfigOptions = { useFiles: true },
+): ToolContext {
+  return opts.makeCtx
+    ? opts.makeCtx()
+    : buildToolContext(loadConfig(process.env, loadOpts), { logger: silentLogger });
+}
+
+/** Config key → TDMCP_* env var name, for the `config --write-env` exporter. */
+const ENV_NAMES: Record<keyof TdmcpConfig, string> = {
+  tdHost: "TDMCP_TD_HOST",
+  tdPort: "TDMCP_TD_PORT",
+  transport: "TDMCP_TRANSPORT",
+  logLevel: "TDMCP_LOG_LEVEL",
+  requestTimeoutMs: "TDMCP_REQUEST_TIMEOUT_MS",
+  httpPort: "TDMCP_HTTP_PORT",
+  events: "TDMCP_EVENTS",
+  rawPython: "TDMCP_RAW_PYTHON",
+  toolProfile: "TDMCP_TOOL_PROFILE",
+  bridgeToken: "TDMCP_BRIDGE_TOKEN",
+  llmBaseUrl: "TDMCP_LLM_BASE_URL",
+  llmModel: "TDMCP_LLM_MODEL",
+  llmApiKey: "TDMCP_LLM_API_KEY",
+  chatPort: "TDMCP_CHAT_PORT",
+  vaultPath: "TDMCP_VAULT_PATH",
+};
+const SECRET_ENV: ReadonlySet<keyof TdmcpConfig> = new Set(["bridgeToken", "llmApiKey"]);
+
+/** A paste-ready `export TDMCP_*=...` block; secrets are emitted commented-out (set manually). */
+function envExportLines(config: TdmcpConfig): string[] {
+  const lines: string[] = ["# tdmcp effective config (secrets redacted — set them manually)"];
+  for (const [key, name] of Object.entries(ENV_NAMES) as [keyof TdmcpConfig, string][]) {
+    const value = config[key];
+    if (value === undefined) continue;
+    if (SECRET_ENV.has(key)) lines.push(`# export ${name}=<set manually>`);
+    else lines.push(`export ${name}=${JSON.stringify(String(value))}`);
+  }
+  return lines;
 }
 
 function parseCliArgs(argv: string[]) {
@@ -1217,6 +1282,13 @@ function parseCliArgs(argv: string[]) {
       out: { type: "string", short: "o" },
       "include-high-frequency": { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false },
+      // Global config selection / overrides (apply to any command).
+      profile: { type: "string" },
+      config: { type: "string" },
+      "td-host": { type: "string" },
+      "td-port": { type: "string" },
+      timeout: { type: "string" },
+      "write-env": { type: "boolean", default: false },
     },
   });
 }
@@ -1249,6 +1321,26 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
     return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
   }
 
+  // `config` — print the effective resolved config (secrets redacted), honoring
+  // --profile/--config and the host/port overrides; --write-env emits a paste-ready
+  // export block. Read-only and reachable even when TD is offline.
+  if (positionals[0] === "config") {
+    let cfg: TdmcpConfig;
+    try {
+      cfg = loadConfig(process.env, cliLoadOptions(values));
+    } catch (err) {
+      return { stdout: "", stderr: `${(err as Error).message}\n`, code: 2 };
+    }
+    if (values["write-env"]) {
+      return { stdout: `${envExportLines(cfg).join("\n")}\n`, stderr: "", code: 0 };
+    }
+    return {
+      stdout: `${JSON.stringify({ tdBaseUrl: tdBaseUrl(cfg), ...describeConfig(cfg) }, null, 2)}\n`,
+      stderr: "",
+      code: 0,
+    };
+  }
+
   // `preview <nodePath> -o file.png` — capture a TOP and write it to disk. This is a
   // side effect that doesn't fit the CallToolResult command table, so it's handled here.
   if (positionals[0] === "preview") {
@@ -1277,7 +1369,12 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
       const doc = { dryRun: true, command: "preview", args: parsed.data, out: resolve(outPath) };
       return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
     }
-    const ctx = buildCtx(opts);
+    let ctx: ToolContext;
+    try {
+      ctx = buildCtx(opts, cliLoadOptions(values));
+    } catch (err) {
+      return { stdout: "", stderr: `${(err as Error).message}\n`, code: 2 };
+    }
     try {
       const preview = await capturePreview(
         ctx.client,
@@ -1355,7 +1452,12 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
     return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
   }
 
-  const ctx = buildCtx(opts);
+  let ctx: ToolContext;
+  try {
+    ctx = buildCtx(opts, cliLoadOptions(values));
+  } catch (err) {
+    return { stdout: "", stderr: `${(err as Error).message}\n`, code: 2 };
+  }
 
   if (cmd.unsafe) {
     if (ctx.allowRawPython === false) {
@@ -1408,7 +1510,7 @@ export interface RunWatchOptions {
  * Runs outside `runCli` because it is a long-lived stream, not a request/response.
  */
 export function runWatch(opts: RunWatchOptions = {}): Promise<void> {
-  const config = opts.config ?? loadConfig();
+  const config = opts.config ?? loadConfig(process.env, { useFiles: true });
   const url = `${tdBaseUrl(config).replace(/^http/, "ws")}/`;
   const write = opts.write ?? ((line: string) => process.stdout.write(`${line}\n`));
   const includeHighFrequency = opts.includeHighFrequency ?? false;
