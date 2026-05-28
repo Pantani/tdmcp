@@ -42,7 +42,15 @@ const artistGuide = (base: string) => [
 
 const artistGuidePt = [
   { text: "O que é o tdmcp?", link: "/pt/guide/what-is-tdmcp" },
-  { text: "Instalação", link: "/pt/guide/install" },
+  {
+    text: "Primeiros passos",
+    collapsed: false,
+    items: [
+      { text: "Claude (Desktop e Code)", link: "/pt/guide/install" },
+      { text: "Codex", link: "/pt/guide/codex" },
+      { text: "Copiloto local — sem API", link: "/pt/guide/local-copilot" },
+    ],
+  },
   { text: "Seu primeiro visual", link: "/pt/guide/first-visual" },
   { text: "Receitas de prompt", link: "/pt/guide/prompt-cookbook" },
   { text: "Galeria de receitas", link: "/pt/guide/recipes" },

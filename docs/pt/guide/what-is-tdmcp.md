@@ -48,7 +48,9 @@ junta duas coisas:
 - **[TouchDesigner](https://derivative.ca/download)** — a edição gratuita
   (não comercial) serve.
 - Uma IA compatível: **Claude Desktop** (mais fácil — sem terminal), Claude Code,
-  Codex ou Cursor.
+  Codex ou Cursor. Sem API paga? O tdmcp também inclui um
+  [copiloto local](/pt/guide/local-copilot) gratuito que roda um modelo na sua
+  própria máquina.
 
 ## Próximos passos
 

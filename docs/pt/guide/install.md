@@ -2,12 +2,14 @@
 description: "Instale o tdmcp, o servidor MCP para TouchDesigner, no Claude Desktop em uns 3 minutos — sem terminal, sem Node. Extensão .dxt de um clique e a ponte ligada."
 ---
 
-# Instalação
+# Claude — Desktop e Code
 
 **A forma mais fácil é o Claude Desktop** — sem terminal, sem Node, sem arquivos de
 configuração. O servidor tdmcp inteiro vem embutido em um único arquivo de
-extensão. Três passos, cerca de 3 minutos. Usa **Claude Code, Codex ou Cursor**?
-Veja a seção mais abaixo.
+extensão. Três passos, cerca de 3 minutos. Usa **Claude Code ou Cursor**? Veja
+[a seção mais abaixo](#other-clients). Prefere **Codex**, ou um **modelo local
+gratuito, sem API**? Veja [Codex](/pt/guide/codex) ou
+[Copiloto local](/pt/guide/local-copilot).
 
 ::: tip Usa Claude Code, Cursor ou Codex?
 Você não precisa fazer nada disso na mão. Cole esta mensagem na sua IA e ela
@@ -77,11 +79,13 @@ Wi-Fi público sem firewall. Desenvolvedores podem reforçar isso — veja
 [Security](/reference/architecture#security) (em inglês).
 :::
 
-## Outros clientes de IA: Claude Code, Codex & Cursor
+## Claude Code, Cursor e outros clientes MCP {#other-clients}
 
-O Claude Desktop (acima) é a rota sem terminal. Para **Claude Code**, **Codex** ou
-**Cursor**, conecte o tdmcp a partir do código-fonte — você vai precisar do
-**[Node.js 20+](https://nodejs.org)**.
+O Claude Desktop (acima) é a rota sem terminal. Para **Claude Code** ou **Cursor**,
+conecte o tdmcp a partir do código-fonte — você vai precisar do
+**[Node.js 20+](https://nodejs.org)**. (O **Codex** tem o próprio passo a passo na
+[página do Codex](/pt/guide/codex); o mesmo build a partir do código-fonte também
+roda o [copiloto local](/pt/guide/local-copilot).)
 
 ::: tip Mais fácil — deixe a IA fazer
 Cole o comando do topo desta página na sua IA; ela clona, compila e conecta tudo
