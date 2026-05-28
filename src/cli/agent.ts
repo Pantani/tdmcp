@@ -26,6 +26,10 @@ import {
 import { createAutopilotImpl, createAutopilotSchema } from "../tools/layer1/createAutopilot.js";
 import { createColorGradeImpl, createColorGradeSchema } from "../tools/layer1/createColorGrade.js";
 import {
+  createCubemapDomeImpl,
+  createCubemapDomeSchema,
+} from "../tools/layer1/createCubemapDome.js";
+import {
   createDataVisualizationImpl,
   createDataVisualizationSchema,
 } from "../tools/layer1/createDataVisualization.js";
@@ -129,6 +133,7 @@ import {
 import { getPreviewSchema } from "../tools/layer1/getPreview.js";
 import { importModelImpl, importModelSchema } from "../tools/layer1/importModel.js";
 import { listRecipesImpl, listRecipesSchema } from "../tools/layer1/listRecipes.js";
+import { scaffoldGenreImpl, scaffoldGenreSchema } from "../tools/layer1/scaffoldGenre.js";
 import { scaffoldShowImpl, scaffoldShowSchema } from "../tools/layer1/scaffoldShow.js";
 import { setupOutputImpl, setupOutputSchema } from "../tools/layer1/setupOutput.js";
 import { animateParameterImpl, animateParameterSchema } from "../tools/layer2/animateParameter.js";
@@ -156,6 +161,7 @@ import { createDataSourceImpl, createDataSourceSchema } from "../tools/layer2/cr
 import { createDecksImpl, createDecksSchema } from "../tools/layer2/createDecks.js";
 import { createExternalIoImpl, createExternalIoSchema } from "../tools/layer2/createExternalIo.js";
 import { createGlslShaderImpl, createGlslShaderSchema } from "../tools/layer2/createGlslShader.js";
+import { createLedMapperImpl, createLedMapperSchema } from "../tools/layer2/createLedMapper.js";
 import { createMacroImpl, createMacroSchema } from "../tools/layer2/createMacro.js";
 import { createNodeChainImpl, createNodeChainSchema } from "../tools/layer2/createNodeChain.js";
 import { createPaletteImpl, createPaletteSchema } from "../tools/layer2/createPalette.js";
@@ -746,6 +752,25 @@ const COMMANDS: Record<string, Command> = {
     createGenerativeAudioSchema,
     createGenerativeAudioImpl,
     "Synthesize audio (oscillator/fm/noise); optional device output.",
+    { mutates: true },
+  ),
+  // Post-0.3.0 parallel build — wave 3:
+  "cubemap-dome": r(
+    createCubemapDomeSchema,
+    createCubemapDomeImpl,
+    "True cube-map dome render → fisheye/equirectangular for planetarium/360.",
+    { mutates: true },
+  ),
+  "led-mapper": r(
+    createLedMapperSchema,
+    createLedMapperImpl,
+    "Pixel-map a source TOP to an LED fixture layout → DMX/Art-Net out.",
+    { mutates: true },
+  ),
+  genre: r(
+    scaffoldGenreSchema,
+    scaffoldGenreImpl,
+    "Scaffold a genre-flavored show (techno/ambient/installation).",
     { mutates: true },
   ),
 };

@@ -6,6 +6,7 @@ import { registerCreate3dScene } from "./create3dScene.js";
 import { registerCreateAudioReactive } from "./createAudioReactive.js";
 import { registerCreateAutopilot } from "./createAutopilot.js";
 import { registerCreateColorGrade } from "./createColorGrade.js";
+import { registerCreateCubemapDome } from "./createCubemapDome.js";
 import { registerCreateDataVisualization } from "./createDataVisualization.js";
 import { registerCreateDepthDisplacement } from "./createDepthDisplacement.js";
 import { registerCreateDepthSilhouette } from "./createDepthSilhouette.js";
@@ -47,6 +48,7 @@ import { registerExtractAudioFeatures } from "./extractAudioFeatures.js";
 import { registerGetPreview } from "./getPreview.js";
 import { registerImportModel } from "./importModel.js";
 import { registerListRecipes } from "./listRecipes.js";
+import { registerScaffoldGenre } from "./scaffoldGenre.js";
 import { registerScaffoldShow } from "./scaffoldShow.js";
 import { registerSetupOutput } from "./setupOutput.js";
 
@@ -105,4 +107,7 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateParticleFlock,
   registerCreatePointCloud,
   registerCreateGenerativeAudio,
+  // Post-0.3.0 parallel build — wave 3:
+  registerCreateCubemapDome,
+  registerScaffoldGenre,
 ];

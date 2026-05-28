@@ -12,6 +12,7 @@ import { registerCreateDataSource } from "./createDataSource.js";
 import { registerCreateDecks } from "./createDecks.js";
 import { registerCreateExternalIo } from "./createExternalIo.js";
 import { registerCreateGlslShader } from "./createGlslShader.js";
+import { registerCreateLedMapper } from "./createLedMapper.js";
 import { registerCreateMacro } from "./createMacro.js";
 import { registerCreateNodeChain } from "./createNodeChain.js";
 import { registerCreatePalette } from "./createPalette.js";
@@ -61,4 +62,6 @@ export const layer2Registrars: ToolRegistrar[] = [
   registerCreatePalette,
   // Post-0.3.0 parallel build — wave 2:
   registerCreateDataSource,
+  // Post-0.3.0 parallel build — wave 3:
+  registerCreateLedMapper,
 ];
