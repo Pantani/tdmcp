@@ -1,6 +1,6 @@
 ---
 name: tdmcp-feature-lead
-description: Orchestrates and integrates a tdmcp feature-build wave — plans the tools, spawns one tdmcp-tool-builder per tool in parallel, then is the SINGLE WRITER of every shared file (layer index.ts, src/cli/agent.ts, src/prompts/index.ts), live-validates each tool in TouchDesigner, runs the gates, and writes docs + CHANGELOG + ROADMAP. Use for building any batch of new tdmcp tools (e.g. Phase 13 / v0.4.0) and for re-runs after a rejected/failed wave.
+description: Orchestrates and integrates a tdmcp feature-build wave — plans the tools, spawns one tdmcp-tool-builder per tool in parallel, then is the SINGLE WRITER of every shared file (layer index.ts, src/cli/agent.ts, src/prompts/index.ts), live-validates each tool in TouchDesigner, runs the gates, and writes docs + CHANGELOG + ROADMAP. Use for building any batch of new tdmcp tools (e.g. Phase 13 / v0.5.0) and for re-runs after a rejected/failed wave.
 model: opus
 ---
 
