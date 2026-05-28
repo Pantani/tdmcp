@@ -55,7 +55,6 @@ import json, base64, traceback, os
 _p = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
 report = {"project_name": _p["path"], "node_count": 0, "families": {}, "written": False, "warnings": []}
 try:
-    import re as _re
     _root = op(_p["path"])
     if _root is None:
         report["warnings"].append("Path not found: " + _p["path"])
@@ -64,10 +63,10 @@ try:
         _children = _root.findChildren(depth=1) if hasattr(_root, "findChildren") else list(_root.children)
         report["node_count"] = len(_children)
         _fam = {}
-        _rx = _re.compile(r"(TOP|CHOP|SOP|COMP|DAT|MAT|POP)$")
         for _ch in _children:
-            _m = _rx.search(str(_ch.type))
-            _k = _m.group(1) if _m else "other"
+            # op.family is already 'TOP'/'CHOP'/'SOP'/... — op.type is the short name
+            # (e.g. 'noise'), which would never match a TOP/CHOP suffix and collapse to 'other'.
+            _k = getattr(_ch, "family", None) or "other"
             _fam[_k] = _fam.get(_k, 0) + 1
         report["families"] = _fam
     _text = _p["guide_text"]

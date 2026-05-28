@@ -29,7 +29,9 @@ export const snapshotTdGraphOutputSchema = z.object({
   issues: z.array(z.string()).describe("Plain-language structural problems detected in the graph."),
   params_truncated: z
     .boolean()
-    .describe("True if include_params was set but the graph exceeded the per-node fetch cap."),
+    .describe(
+      "True if params were requested (`include_params` or `compact`) but the graph exceeded the per-node fetch cap.",
+    ),
   compact: z
     .boolean()
     .optional()

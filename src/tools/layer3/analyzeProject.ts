@@ -156,7 +156,7 @@ try:
         _referenced = set()  # paths of ops that something else depends on
         for _c in _kids:
             try:
-                _fam = getattr(_c, "family", "") or ""
+                _fam = getattr(_c, "family", "") or "other"
                 report["counts"]["by_family"][_fam] = report["counts"]["by_family"].get(_fam, 0) + 1
                 _by_path[_c.path] = _c
             except Exception:
