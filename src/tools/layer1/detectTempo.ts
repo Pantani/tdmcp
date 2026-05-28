@@ -152,7 +152,11 @@ ${driveLine}    return
 
 async function buildSource(builder: NetworkBuilder, args: DetectTempoArgs): Promise<string> {
   if (args.source === "existing" && args.audio_in) {
-    return args.audio_in;
+    // Pull the external CHOP in through a Select CHOP living inside the container; a direct
+    // builder.connect(externalPath, filt) would be rejected ("cannot wire across containers").
+    // The Select CHOP's source par is `chops` (verified live). Named `audioin` so the rest of
+    // the chain — which wires from the conventional source name — stays source-agnostic.
+    return builder.add("selectCHOP", "audioin", { chops: args.audio_in });
   }
   if (args.source === "file") {
     return builder.add("audiofileinCHOP", "audioin", {

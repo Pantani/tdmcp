@@ -243,7 +243,7 @@ describe("detect_tempo", () => {
     expect(onEngine).toContain("op('/').time.tempo = bpm");
   });
 
-  it("reuses an existing CHOP as the source without creating an audio input node", async () => {
+  it("pulls an existing CHOP in through a Select CHOP (no cross-container wire)", async () => {
     const bodies = captureCreateBodies();
     await detectTempoImpl(makeCtx(), {
       source: "existing",
@@ -256,11 +256,17 @@ describe("detect_tempo", () => {
       name: "detect_tempo",
       parent_path: "/project1",
     });
-    // No audio source node should be created when reusing an existing CHOP.
+    // No fresh audio source node should be created when reusing an existing CHOP.
     const audioInputs = bodies.filter((b) =>
       ["audiodeviceinCHOP", "audiofileinCHOP", "audiooscillatorCHOP", "beatCHOP"].includes(b.type),
     );
     expect(audioInputs).toHaveLength(0);
+    // Instead, a Select CHOP inside the container references the external CHOP via its `chops`
+    // par — TD rejects cross-container wires, so the source must be pulled in this way before it
+    // can feed the beat filter.
+    const select = bodies.find((b) => b.type === "selectCHOP" && b.name === "audioin");
+    expect(select).toBeDefined();
+    expect(select?.parameters?.chops).toBe("/project1/my_audio");
   });
 
   it("gates a tone with a Beat CHOP for the device-free synthetic source", async () => {

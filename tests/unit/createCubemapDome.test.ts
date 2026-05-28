@@ -134,6 +134,9 @@ describe("create_cubemap_dome", () => {
     expect(shaderScript).not.toContain("sTD2DInputs");
     // Fisheye clips the unit disc to black.
     expect(shaderScript).toContain("r > 1.0");
+    // The Rotation control is in DEGREES, so the shader converts uRotation with radians()
+    // before adding it to the azimuth — not a raw (radians) add.
+    expect(shaderScript).toContain("radians(uRotation)");
 
     // A preview image is captured.
     expect(result.content.some((c) => c.type === "image")).toBe(true);
@@ -161,6 +164,8 @@ describe("create_cubemap_dome", () => {
     // Equirectangular sweeps longitude/latitude — no fisheye disc clip.
     expect(shaderScript).not.toContain("r > 1.0");
     expect(shaderScript).toContain("lon");
+    // The Rotation control is in DEGREES, so the longitude offset is radians(uRotation).
+    expect(shaderScript).toContain("radians(uRotation)");
 
     // fov is ignored for equirectangular, so the summary prose must NOT state "(fov …°)".
     // (The structured JSON block still carries the fov key; only the prose suffix is conditional.)

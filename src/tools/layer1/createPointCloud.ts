@@ -57,15 +57,23 @@ type CreatePointCloudArgs = z.infer<typeof createPointCloudSchema>;
  * Builds the depth/luminance source TOP (mirrors create_depth_displacement's buildSource):
  * synthetic → an animated Noise (a tz expression scrolls it so the cloud breathes and the chain
  * is verifiable without a camera), file → Movie File In (playing), camera → Video Device In,
- * existing → the given path. Returns the source path, or undefined when an 'existing' path is
- * missing (the caller falls back to a synthetic noise so the build still cooks).
+ * existing → a Select TOP INSIDE the container whose `top` par points at the external path
+ * (TD rejects cross-container wires, so the external source must be pulled in through a Select TOP
+ * before it can be connected into the chain — same trick create_layer_mixer uses for its sources).
+ * Returns the source path, or undefined when an 'existing' path is missing (the caller falls back
+ * to a synthetic noise so the build still cooks).
  */
 async function buildSource(
   builder: NetworkBuilder,
   args: CreatePointCloudArgs,
 ): Promise<string | undefined> {
   if (args.source === "existing") {
-    return args.existing;
+    if (!args.existing) {
+      return undefined;
+    }
+    // Pull the external TOP in through a Select TOP living inside the container; a direct
+    // builder.connect(externalPath, …) would be rejected ("cannot wire across containers").
+    return builder.add("selectTOP", "src", { top: args.existing });
   }
   if (args.source === "file") {
     return builder.add("moviefileinTOP", "src", {

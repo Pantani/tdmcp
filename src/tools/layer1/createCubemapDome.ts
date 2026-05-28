@@ -50,7 +50,8 @@ type CreateCubemapDomeArgs = z.infer<typeof createCubemapDomeSchema>;
  * `samplerCube sTDCubeInputs[0]`, populated by the cube-map source wired into input 0) by 3D
  * direction to produce a dome master. Unlike create_dome_output (which warps a flat
  * equirectangular 2D source), this reads a real cube map, so there is no equirect pole-pinch or
- * seam. `uRotation` (radians) spins the azimuth; `uFov` (degrees) sets the fisheye coverage live.
+ * seam. `uRotation` (degrees, converted with `radians()` in the shader) spins the azimuth; `uFov`
+ * (degrees) sets the fisheye coverage live.
  *
  * - "fisheye": the output disc (centred vUV, radius 1 at the edge) maps radius → polar angle θ
  *   (via `uFov`) and disc angle → azimuth φ (+ `uRotation`); the spherical direction samples the
@@ -76,7 +77,7 @@ function remapShader(projection: "fisheye" | "equirectangular"): string {
       "    }",
       "    // Disc radius → polar angle (0 at zenith); disc angle → azimuth (+ rotation).",
       `    float theta = r * radians(uFov) * 0.5;`,
-      "    float phi = atan(p.y, p.x) + uRotation;",
+      "    float phi = atan(p.y, p.x) + radians(uRotation);",
       "    // Spherical direction, then sample the cube map by that direction.",
       "    vec3 dir = vec3(sin(theta) * cos(phi), cos(theta), sin(theta) * sin(phi));",
       "    fragColor = TDOutputSwizzle(texture(sTDCubeInputs[0], dir));",
@@ -88,7 +89,7 @@ function remapShader(projection: "fisheye" | "equirectangular"): string {
     "uniform float uRotation;",
     "out vec4 fragColor;",
     "void main() {",
-    `    float lon = (vUV.s + uRotation / ${TWO_PI}) * ${TWO_PI} - ${PI};`,
+    `    float lon = vUV.s * ${TWO_PI} - ${PI} + radians(uRotation);`,
     `    float lat = (vUV.t - 0.5) * ${PI};`,
     "    vec3 dir = vec3(sin(lon) * cos(lat), sin(lat), -cos(lon) * cos(lat));",
     "    fragColor = TDOutputSwizzle(texture(sTDCubeInputs[0], dir));",

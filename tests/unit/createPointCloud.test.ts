@@ -275,6 +275,26 @@ describe("create_point_cloud", () => {
     expect(bodies.some((b) => b.name === "src" && b.type === "videodeviceinTOP")).toBe(true);
   });
 
+  it("pulls an existing TOP in through a Select TOP when source='existing'", async () => {
+    const bodies = captureCreateBodies();
+    const result = await createPointCloudImpl(makeCtx(), {
+      source: "existing",
+      existing: "/project1/my_depth",
+      resolution: 32,
+      depth_scale: 1,
+      point_size: 0.02,
+      rotate: 0,
+      expose_controls: false,
+      parent_path: "/project1",
+    });
+    expect(result.isError).toBeFalsy();
+    // TD rejects cross-container wires, so the external TOP is pulled in through a Select TOP
+    // (inside the container) whose `top` par points at it — not connected directly.
+    const select = bodies.find((b) => b.name === "src" && b.type === "selectTOP");
+    expect(select).toBeDefined();
+    expect(select?.parameters?.top).toBe("/project1/my_depth");
+  });
+
   it("returns a friendly isError result (never throws) when the bridge fails", async () => {
     server.use(
       http.post(`${TD_BASE}/api/nodes`, () =>
