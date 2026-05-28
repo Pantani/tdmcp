@@ -227,4 +227,40 @@ describe("addCustomParametersSchema (input validation)", () => {
       expect(payload.params[1]?.default).toEqual([1, 2, 3]);
     }
   });
+
+  it("rejects a Menu parameter with no menu_names (would build an empty dropdown)", () => {
+    expect(
+      addCustomParametersSchema.safeParse({
+        comp_path: "/c",
+        params: [{ name: "Mode", type: "Menu" }],
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejects a Menu parameter with an empty menu_names array", () => {
+    expect(
+      addCustomParametersSchema.safeParse({
+        comp_path: "/c",
+        params: [{ name: "Mode", type: "Menu", menu_names: [] }],
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejects a Menu whose menu_labels length differs from menu_names", () => {
+    expect(
+      addCustomParametersSchema.safeParse({
+        comp_path: "/c",
+        params: [{ name: "Mode", type: "Menu", menu_names: ["a", "b"], menu_labels: ["Only one"] }],
+      }).success,
+    ).toBe(false);
+  });
+
+  it("accepts a Menu with non-empty menu_names and matching menu_labels", () => {
+    expect(
+      addCustomParametersSchema.safeParse({
+        comp_path: "/c",
+        params: [{ name: "Mode", type: "Menu", menu_names: ["a", "b"], menu_labels: ["A", "B"] }],
+      }).success,
+    ).toBe(true);
+  });
 });

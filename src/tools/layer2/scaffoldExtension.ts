@@ -3,15 +3,32 @@ import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
+// A valid Python identifier: a leading letter/underscore then letters/digits/
+// underscores. The class name is written verbatim into generated Python source,
+// so reject non-identifiers at the boundary rather than relying on downstream
+// sanitization (which could still mangle source in surprising ways).
+const PY_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
 export const scaffoldExtensionSchema = z.object({
   comp_path: z.string().describe("The COMP to give a Python extension class."),
   class_name: z
     .string()
+    .regex(
+      PY_IDENTIFIER,
+      "class_name must be a valid Python identifier (a letter or underscore, then letters/digits/underscores).",
+    )
     .describe(
-      "Extension class name, e.g. 'WidgetExt' (sanitized to a valid, capitalized identifier).",
+      "Extension class name, e.g. 'WidgetExt' (capitalized to a valid identifier; must already be identifier-safe).",
     ),
   methods: z
-    .array(z.string())
+    .array(
+      z
+        .string()
+        .regex(
+          PY_IDENTIFIER,
+          "each method name must be a valid Python identifier (a letter or underscore, then letters/digits/underscores).",
+        ),
+    )
     .optional()
     .describe("Optional method-name stubs to add to the class (each takes only `self`)."),
   promote: z

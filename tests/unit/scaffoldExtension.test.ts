@@ -132,23 +132,13 @@ describe("scaffoldExtensionImpl", () => {
     expect(exec.mock.calls[0]?.[1]).toBe(true);
   });
 
-  it("sanitizes, dedupes and keeps method stubs in the class source", async () => {
-    const exec = okReport({ methods: ["doThing", "dothing", "m123bad"] });
-    await scaffoldExtensionImpl(
-      fakeCtx(exec),
-      args({ methods: ["doThing", "do thing", "123bad", "doThing"] }),
-    );
+  it("dedupes method names and keeps the stubs in the class source", async () => {
+    const exec = okReport({ methods: ["doThing", "Reset"] });
+    await scaffoldExtensionImpl(fakeCtx(exec), args({ methods: ["doThing", "doThing", "Reset"] }));
     const payload = decodePayload(scriptArg(exec));
-    expect(payload.methods).toEqual(["doThing", "dothing", "m123bad"]);
+    expect(payload.methods).toEqual(["doThing", "Reset"]);
     expect(payload.code).toContain("def doThing(self):");
-    expect(payload.code).toContain("def m123bad(self):");
-  });
-
-  it("rejects an unusable class name without touching TD", async () => {
-    const exec = vi.fn();
-    const result = await scaffoldExtensionImpl(fakeCtx(exec), args({ class_name: "!!!" }));
-    expect(result.isError).toBe(true);
-    expect(exec).not.toHaveBeenCalled();
+    expect(payload.code).toContain("def Reset(self):");
   });
 
   it("escapes a Python-keyword class name so the source stays valid", async () => {
@@ -262,5 +252,28 @@ describe("scaffoldExtensionSchema (input validation)", () => {
     expect(
       scaffoldExtensionSchema.safeParse({ comp_path: "/c", class_name: "W", slot: 99 }).success,
     ).toBe(false);
+  });
+
+  it("rejects a class_name that is not a valid Python identifier", () => {
+    for (const bad of ["!!!", "9bad", "has space", "Widget-Ext", "Widget.Ext"]) {
+      expect(scaffoldExtensionSchema.safeParse({ comp_path: "/c", class_name: bad }).success).toBe(
+        false,
+      );
+    }
+  });
+
+  it("accepts a lowercase-first class_name (capitalized downstream, but identifier-safe)", () => {
+    expect(
+      scaffoldExtensionSchema.safeParse({ comp_path: "/c", class_name: "myWidget" }).success,
+    ).toBe(true);
+  });
+
+  it("rejects a method name that is not a valid Python identifier", () => {
+    for (const bad of ["do thing", "123bad", "drop-it", "a.b"]) {
+      expect(
+        scaffoldExtensionSchema.safeParse({ comp_path: "/c", class_name: "W", methods: [bad] })
+          .success,
+      ).toBe(false);
+    }
   });
 });

@@ -3,39 +3,67 @@ import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
-const paramSchema = z.object({
-  name: z
-    .string()
-    .describe("Parameter name; sanitized to a valid TD custom-par name (e.g. 'blur amount')."),
-  type: z
-    .enum(["Float", "Int", "Toggle", "Menu", "Str", "Pulse", "RGB", "XYZ"])
-    .describe("Widget kind. TD's append* picks the underlying parameter family."),
-  label: z.string().optional().describe("Display label (defaults to `name`)."),
-  default: z
-    .union([z.number(), z.string(), z.boolean(), z.array(z.number())])
-    .optional()
-    .describe(
-      "Initial value: a number; a string for Str/Menu (or '#rrggbb' for RGB); a bool for Toggle; or a number array for RGB/XYZ or a multi-component (size > 1) Float/Int.",
-    ),
-  min: z.coerce.number().optional().describe("Slider lower bound (Float/Int) — sets normMin."),
-  max: z.coerce.number().optional().describe("Slider upper bound (Float/Int) — sets normMax."),
-  clamp: z
-    .boolean()
-    .default(false)
-    .describe("Hard-clamp the value to [min,max] (sets min/max + clampMin/clampMax)."),
-  menu_names: z.array(z.string()).optional().describe("(Menu) stored option keys."),
-  menu_labels: z
-    .array(z.string())
-    .optional()
-    .describe("(Menu) display labels (defaults to names)."),
-  size: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(4)
-    .optional()
-    .describe("(Float/Int) number of components for a multi-value parameter (1–4)."),
-});
+const paramSchema = z
+  .object({
+    name: z
+      .string()
+      .describe("Parameter name; sanitized to a valid TD custom-par name (e.g. 'blur amount')."),
+    type: z
+      .enum(["Float", "Int", "Toggle", "Menu", "Str", "Pulse", "RGB", "XYZ"])
+      .describe("Widget kind. TD's append* picks the underlying parameter family."),
+    label: z.string().optional().describe("Display label (defaults to `name`)."),
+    default: z
+      .union([z.number(), z.string(), z.boolean(), z.array(z.number())])
+      .optional()
+      .describe(
+        "Initial value: a number; a string for Str/Menu (or '#rrggbb' for RGB); a bool for Toggle; or a number array for RGB/XYZ or a multi-component (size > 1) Float/Int.",
+      ),
+    min: z.coerce.number().optional().describe("Slider lower bound (Float/Int) — sets normMin."),
+    max: z.coerce.number().optional().describe("Slider upper bound (Float/Int) — sets normMax."),
+    clamp: z
+      .boolean()
+      .default(false)
+      .describe("Hard-clamp the value to [min,max] (sets min/max + clampMin/clampMax)."),
+    menu_names: z.array(z.string()).optional().describe("(Menu) stored option keys."),
+    menu_labels: z
+      .array(z.string())
+      .optional()
+      .describe("(Menu) display labels (defaults to names)."),
+    size: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(4)
+      .optional()
+      .describe("(Float/Int) number of components for a multi-value parameter (1–4)."),
+  })
+  .superRefine((param, ctx) => {
+    // A Menu with no options is a broken widget (an empty dropdown), so require
+    // menu_names at the schema boundary rather than letting Python build one silently.
+    if (
+      param.type === "Menu" &&
+      (param.menu_names === undefined || param.menu_names.length === 0)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["menu_names"],
+        message: "menu_names is required and must be non-empty for Menu parameters.",
+      });
+    }
+    // Labels are paired positionally with names, so a length mismatch silently drops
+    // or misaligns options — reject it when both are given.
+    if (
+      param.menu_labels !== undefined &&
+      param.menu_names !== undefined &&
+      param.menu_labels.length !== param.menu_names.length
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["menu_labels"],
+        message: "menu_labels must have the same length as menu_names.",
+      });
+    }
+  });
 
 export const addCustomParametersSchema = z.object({
   comp_path: z.string().describe("The COMP to add custom parameters to."),
