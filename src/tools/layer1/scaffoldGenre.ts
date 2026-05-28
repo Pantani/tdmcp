@@ -238,7 +238,7 @@ export async function scaffoldGenreImpl(ctx: ToolContext, args: ScaffoldGenreArg
         show: builder.containerPath,
         master,
         tempo,
-        bpm: bpm ?? null,
+        bpm: writtenBpm ?? null,
         look,
         palette: preset.palette,
       },

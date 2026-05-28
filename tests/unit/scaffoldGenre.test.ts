@@ -138,6 +138,9 @@ describe("scaffoldGenreImpl", () => {
     const text = textOf(result);
     expect(text).toContain("220 BPM beat clock");
     expect(text).not.toContain("300 BPM");
+    // The structured JSON also reports the CLAMPED value (not the raw 300).
+    expect(text).toContain('"bpm": 220');
+    expect(text).not.toContain('"bpm": 300');
   });
 
   it("ambient: builds a soft blurred-feedback look with slow decay at 70 BPM", async () => {
