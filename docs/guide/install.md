@@ -2,11 +2,13 @@
 description: "Install tdmcp, the TouchDesigner MCP server, in Claude Desktop in about 3 minutes — no terminal, no Node. One-click .dxt extension, then flip on the bridge."
 ---
 
-# Install
+# Claude — Desktop & Code
 
 **The easiest way is Claude Desktop** — no terminal, no Node, no setup files. The
 whole tdmcp server is bundled inside one extension file. Three steps, about 3
-minutes. On **Claude Code, Codex, or Cursor** instead? See the section below.
+minutes. Using **Claude Code or Cursor**? See [the section below](#other-clients).
+Prefer **Codex**, or a **free local model with no API**? See
+[Codex](/guide/codex) or [Local copilot](/guide/local-copilot).
 
 ::: tip Using Claude Code, Cursor, or Codex instead?
 You don't need to do any of this by hand. Paste this one message into your AI and
@@ -74,11 +76,12 @@ without a firewall. Developers can lock it down further — see
 [Security](/reference/architecture#security).
 :::
 
-## Other AI clients: Claude Code, Codex & Cursor
+## Claude Code, Cursor & other MCP clients {#other-clients}
 
-Claude Desktop (above) is the no-terminal route. For **Claude Code**, **Codex**, or
-**Cursor**, connect tdmcp from source — you'll need
-**[Node.js 20+](https://nodejs.org)**.
+Claude Desktop (above) is the no-terminal route. For **Claude Code** or **Cursor**,
+connect tdmcp from source — you'll need **[Node.js 20+](https://nodejs.org)**.
+(**Codex** has its own walkthrough on the [Codex page](/guide/codex); the same
+source build also powers the [local copilot](/guide/local-copilot).)
 
 ::: tip Easiest — let your AI do it
 Paste the one-liner from the top of this page into your client; it clones, builds

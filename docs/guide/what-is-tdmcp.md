@@ -47,7 +47,8 @@ things:
 - **[TouchDesigner](https://derivative.ca/download)** — the free non-commercial
   edition is fine.
 - An AI assistant that supports it: **Claude Desktop** (easiest — no terminal),
-  Claude Code, Codex, or Cursor.
+  Claude Code, Codex, or Cursor. No paid API? tdmcp also ships a free
+  [local copilot](/guide/local-copilot) that runs a model on your own machine.
 
 ## Next steps
 

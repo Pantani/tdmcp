@@ -36,6 +36,9 @@ are tagged `mutates`; the Python escape hatches require `--allow-unsafe` and hon
 
 ## Local copilot (`tdmcp chat`)
 
+> For an artist-friendly walkthrough, see [Local copilot (no API)](/guide/local-copilot).
+> This section is the reference detail.
+
 For **simple tasks** you can talk to a **local LLM** instead of a paid API.
 `tdmcp chat` boots a small chat UI in your browser, wired to the same
 TouchDesigner bridge — and **starts Ollama for you** if it isn't already running:

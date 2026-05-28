@@ -23,8 +23,15 @@ function pageUrl(relativePath: string): string {
 // Artist track — the only section that is translated (EN + PT-BR).
 const artistGuide = (base: string) => [
   { text: "What is tdmcp?", link: `${base}/what-is-tdmcp` },
-  { text: "Install", link: `${base}/install` },
-  { text: "Codex + TouchDesigner", link: `${base}/codex` },
+  {
+    text: "Get started",
+    collapsed: false,
+    items: [
+      { text: "Claude (Desktop & Code)", link: `${base}/install` },
+      { text: "Codex", link: `${base}/codex` },
+      { text: "Local copilot — no API", link: `${base}/local-copilot` },
+    ],
+  },
   { text: "Your first visual", link: `${base}/first-visual` },
   { text: "Prompt cookbook", link: `${base}/prompt-cookbook` },
   { text: "Recipe gallery", link: `${base}/recipes` },
