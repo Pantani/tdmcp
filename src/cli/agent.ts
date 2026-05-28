@@ -1,4 +1,5 @@
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { resolve } from "node:path";
 import { createInterface } from "node:readline";
 import { pathToFileURL } from "node:url";
@@ -1190,6 +1191,12 @@ function usage(): string {
   lines.push(
     "  --td-host <h> / --td-port <p> / --timeout <ms>  Override the bridge for this call.",
   );
+  lines.push(
+    "  --params-file <f> / --params -   Read --params JSON from a file or stdin (Unix pipe).",
+  );
+  lines.push("  --filter / --exclude <csv>  (watch) Only/never stream these event types.");
+  lines.push("  -q, --quiet       Suppress the stderr summary (stdout=data, for pipelines/CI).");
+  lines.push("  -V, --version     Print the version and exit.");
   lines.push("  -h, --help        Show this help.", "");
   lines.push("Commands:");
   for (const [key, cmd] of Object.entries(COMMANDS)) {
@@ -1293,8 +1300,98 @@ function parseCliArgs(argv: string[]) {
       "write-env": { type: "boolean", default: false },
       quiet: { type: "boolean", short: "q", default: false },
       fix: { type: "boolean", default: false },
+      version: { type: "boolean", short: "V", default: false },
+      "params-file": { type: "string" },
+      filter: { type: "string" },
+      exclude: { type: "string" },
     },
   });
+}
+
+/** The installed package version (read once from package.json next to the bundle). */
+function packageVersion(): string {
+  try {
+    const require = createRequire(import.meta.url);
+    return (require("../../package.json") as { version?: string }).version ?? "unknown";
+  } catch {
+    return "unknown";
+  }
+}
+
+/** Levenshtein distance — for "did you mean" suggestions on an unknown command. */
+function editDistance(a: string, b: string): number {
+  const n = b.length;
+  let prev = Array.from({ length: n + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const curr = [i];
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      curr[j] = Math.min((prev[j] ?? 0) + 1, (curr[j - 1] ?? 0) + 1, (prev[j - 1] ?? 0) + cost);
+    }
+    prev = curr;
+  }
+  return prev[n] ?? 0;
+}
+
+/** Nearest known command to an unknown input (within a small edit distance), or undefined. */
+function nearestCommand(input: string): string | undefined {
+  let best: string | undefined;
+  let bestDist = Number.POSITIVE_INFINITY;
+  // Candidates: full command keys, their first token (so "noeds" → "nodes"), and the specials.
+  const firstTokens = new Set(Object.keys(COMMANDS).map((k) => k.split(" ")[0] ?? k));
+  const keys = [
+    ...Object.keys(COMMANDS),
+    ...firstTokens,
+    "schema",
+    "config",
+    "preview",
+    "watch",
+    "repl",
+    "doctor",
+    "version",
+  ];
+  for (const key of keys) {
+    const d = editDistance(input, key);
+    if (d < bestDist) {
+      bestDist = d;
+      best = key;
+    }
+  }
+  // Only suggest a genuinely close match (≤ a third of the input length, min 2).
+  return best !== undefined && bestDist <= Math.max(2, Math.floor(input.length / 3))
+    ? best
+    : undefined;
+}
+
+/** Reads stdin to a string (for `--params -`). Synchronous: the CLI is a one-shot. */
+function readStdin(): string {
+  try {
+    return readFileSync(0, "utf8");
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Assembles the args object from --params (inline, `-` for stdin, or via --params-file)
+ * merged with --json. Completes the Unix-filter story: `… | tdmcp-agent x --params -`.
+ */
+function assembleParams(
+  values: Record<string, unknown>,
+): { raw: Record<string, unknown> } | { error: string } {
+  const raw: Record<string, unknown> = {};
+  try {
+    let paramsStr = typeof values.params === "string" ? values.params : undefined;
+    if (paramsStr === "-") paramsStr = readStdin();
+    else if (typeof values["params-file"] === "string")
+      paramsStr = readFileSync(values["params-file"], "utf8");
+    if (typeof paramsStr === "string" && paramsStr.trim())
+      Object.assign(raw, JSON.parse(paramsStr));
+    if (typeof values.json === "string") Object.assign(raw, JSON.parse(values.json));
+  } catch (err) {
+    return { error: (err as Error).message };
+  }
+  return { raw };
 }
 
 export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<CliResult> {
@@ -1306,6 +1403,13 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   }
 
   const { values, positionals } = parsed;
+  if (values.version || positionals[0] === "version") {
+    return {
+      stdout: `tdmcp-agent ${packageVersion()} (node ${process.version})\n`,
+      stderr: "",
+      code: 0,
+    };
+  }
   if (values.help || positionals.length === 0) {
     return { stdout: `${usage()}\n`, stderr: "", code: 0 };
   }
@@ -1348,17 +1452,15 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   // `preview <nodePath> -o file.png` — capture a TOP and write it to disk. This is a
   // side effect that doesn't fit the CallToolResult command table, so it's handled here.
   if (positionals[0] === "preview") {
-    const raw: Record<string, unknown> = {};
-    try {
-      if (typeof values.params === "string") Object.assign(raw, JSON.parse(values.params));
-      if (typeof values.json === "string") Object.assign(raw, JSON.parse(values.json));
-    } catch (err) {
+    const assembled = assembleParams(values);
+    if ("error" in assembled) {
       return {
         stdout: "",
-        stderr: `Invalid JSON in --params/--json: ${(err as Error).message}\n`,
+        stderr: `Invalid JSON in --params/--json: ${assembled.error}\n`,
         code: 2,
       };
     }
+    const raw = assembled.raw;
     if (positionals[1]) raw.node_path = positionals[1];
     const parsed = getPreviewSchema.safeParse(raw);
     if (!parsed.success) {
@@ -1431,25 +1533,21 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
 
   const resolved = resolveCommand(positionals);
   if (!resolved) {
+    const guess = nearestCommand(positionals[0] ?? "");
+    const hint = guess ? ` Did you mean "${guess}"?` : "";
     return {
       stdout: "",
-      stderr: `Unknown command: "${positionals.join(" ")}". Run with --help.\n`,
+      stderr: `Unknown command: "${positionals.join(" ")}".${hint} Run with --help.\n`,
       code: 2,
     };
   }
   const { key, cmd } = resolved;
 
-  const raw: Record<string, unknown> = {};
-  try {
-    if (typeof values.params === "string") Object.assign(raw, JSON.parse(values.params));
-    if (typeof values.json === "string") Object.assign(raw, JSON.parse(values.json));
-  } catch (err) {
-    return {
-      stdout: "",
-      stderr: `Invalid JSON in --params/--json: ${(err as Error).message}\n`,
-      code: 2,
-    };
+  const assembled = assembleParams(values);
+  if ("error" in assembled) {
+    return { stdout: "", stderr: `Invalid JSON in --params/--json: ${assembled.error}\n`, code: 2 };
   }
+  const raw = assembled.raw;
 
   const args = cmd.schema.safeParse(raw);
   if (!args.success) {
@@ -1492,7 +1590,8 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   }
 
   const result = await cmd.run(ctx, args.data);
-  const summary = textOf(result).split("\n")[0] ?? "";
+  // -q/--quiet keeps stdout=data and silences the friendly stderr summary (for pipelines/CI).
+  const summary = values.quiet ? "" : (textOf(result).split("\n")[0] ?? "");
   if (result.isError) return { stdout: "", stderr: `${textOf(result)}\n`, code: 1 };
 
   const output = String(values.output);
@@ -1513,6 +1612,10 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
 export interface RunWatchOptions {
   config?: TdmcpConfig;
   includeHighFrequency?: boolean;
+  /** Only emit events whose `type` is in this list (e.g. ["beat","onset"]). */
+  filter?: string[];
+  /** Drop events whose `type` is in this list (e.g. ["timeline.frame"]). */
+  exclude?: string[];
   /** Where each event line goes; defaults to stdout. Overridable for tests. */
   write?: (line: string) => void;
   /** Inject a stream factory for tests; defaults to a real `TdEventStream`. */
@@ -1533,7 +1636,14 @@ export function runWatch(opts: RunWatchOptions = {}): Promise<void> {
   const url = `${tdBaseUrl(config).replace(/^http/, "ws")}/`;
   const write = opts.write ?? ((line: string) => process.stdout.write(`${line}\n`));
   const includeHighFrequency = opts.includeHighFrequency ?? false;
-  const onEvent: TdEventHandler = (event) => write(JSON.stringify(event));
+  const filter = opts.filter?.length ? opts.filter : undefined;
+  const exclude = opts.exclude?.length ? opts.exclude : undefined;
+  const onEvent: TdEventHandler = (event) => {
+    const type = (event as { type?: string }).type;
+    if (filter && (type === undefined || !filter.includes(type))) return;
+    if (exclude && type !== undefined && exclude.includes(type)) return;
+    write(JSON.stringify(event));
+  };
   const stream = opts.makeStream
     ? opts.makeStream({ url, onEvent, includeHighFrequency })
     : new TdEventStream({ url, onEvent, includeHighFrequency });
@@ -1586,12 +1696,35 @@ export async function runRepl(opts: RunCliOptions = {}): Promise<void> {
   rl.close();
 }
 
+/** Pull a `--name value` (or `--name=value`) string out of a raw argv list. */
+function rawFlag(argv: string[], name: string): string | undefined {
+  const eq = argv.find((a) => a.startsWith(`--${name}=`));
+  if (eq) return eq.slice(name.length + 3);
+  const i = argv.indexOf(`--${name}`);
+  return i !== -1 ? argv[i + 1] : undefined;
+}
+
+/** Split a comma-separated flag value into a trimmed list, or undefined if absent/empty. */
+function csvFlag(argv: string[], name: string): string[] | undefined {
+  const raw = rawFlag(argv, name);
+  if (!raw) return undefined;
+  const list = raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return list.length ? list : undefined;
+}
+
 async function main(): Promise<void> {
   const argv = process.argv.slice(2);
   const wantsHelp = argv.includes("--help") || argv.includes("-h");
   // `watch` (a long-lived stream) and `repl` (interactive) bypass runCli's request/response model.
   if (argv[0] === "watch" && !wantsHelp) {
-    await runWatch({ includeHighFrequency: argv.includes("--include-high-frequency") });
+    await runWatch({
+      includeHighFrequency: argv.includes("--include-high-frequency"),
+      filter: csvFlag(argv, "filter"),
+      exclude: csvFlag(argv, "exclude"),
+    });
     return;
   }
   if (argv[0] === "repl" && !wantsHelp) {
