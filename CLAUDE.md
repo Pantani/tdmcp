@@ -154,3 +154,28 @@ environment runs the team as sub-agents (no `TeamCreate`).
 |------|--------|--------|--------|
 | 2026-05-27 | Initial harness | all (5 agents + 6 skills) | design→develop→QA→deploy pipeline for the open post-0.3.0 feature backlog |
 | 2026-05-27 | Initial build | full harness | prep tdmcp Connectors Directory submission |
+
+## Harness: feature build
+
+**Goal:** implement batches of new tdmcp tools (e.g. Phase 13 / v0.5.0) as parallel
+one-tool-per-agent waves with a single-writer integrator — the repo's established
+parallel-feature-build workflow, codified.
+
+**Trigger:** for any work that adds new tdmcp tools in bulk — "build the Phase 13
+tools", "implement these new tools", or re-running a wave after a gate failure —
+act as the `tdmcp-feature-lead` agent (`.claude/agents/tdmcp-feature-lead.md`):
+plan waves, spawn one `tdmcp-tool-builder` per tool in parallel (each loads the
+`tdmcp-tool-builder` skill and creates only its two new files — tool + msw test),
+then be the SINGLE WRITER of all shared files (layer `index.ts`, `src/cli/agent.ts`,
+`src/prompts/index.ts`), live-validate in TD, run the gates, and update
+docs/CHANGELOG/ROADMAP. Single new tools or questions can be handled directly.
+Note: this environment runs the team as sub-agents (no `TeamCreate`); the
+orchestrator spawns builders with the `Agent` tool. Builder model is chosen per
+spawn (sonnet for prescriptive tools, opus for the ones needing design judgment).
+
+**Change log:**
+| Date | Change | Target | Reason |
+|------|--------|--------|--------|
+| 2026-05-28 | Initial build | full harness | implement Phase 13 (v0.5.0) tool backlog as parallel waves |
+| 2026-05-28 | Built Phase 13 | 14 tools + body-tracking merge + recipe | 3 parallel waves (10 builders) + lead integration; live-validated; targets v0.5.0 (next release after main's 0.4.0) |
+| 2026-05-28 | Hardened builder skill | `tdmcp-tool-builder` SKILL | builders ran vitest but not `tsc`; added "defaulted fields are required when calling the impl; run typecheck too" |

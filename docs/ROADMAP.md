@@ -252,8 +252,8 @@ No new bridge endpoints expected (Execute-DAT + `buildPayloadScript` patterns su
 Built as parallel waves (one subagent per feature — new files + offline `msw` unit tests only, no
 registry edits — then integrated single-writer) alongside Phase 7. Each ships as a new tool + CLI
 command + unit tests, all green offline (104 unit tests). **Live TD validation + per-feature tuning
-is the remaining step** (each build flagged its own ⚠ live-tuning unknown). See
-[[parallel-feature-build-workflow]].
+is the remaining step** (each build flagged its own ⚠ live-tuning unknown), following the
+repo's parallel feature-build workflow.
 
 ### Phase 8 — Signature VJ effects ⭐
 | Feature | Delivers | CLI | Status |

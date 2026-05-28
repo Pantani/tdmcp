@@ -83,6 +83,7 @@ describe("sync_external_clock", () => {
     const scripts = captureExecScripts();
     const result = await createSyncExternalClockImpl(makeCtx(), {
       bpm: 120,
+      mode: "tap",
       parent_path: "/project1",
     });
     expect(result.isError).toBeFalsy();
@@ -106,7 +107,11 @@ describe("sync_external_clock", () => {
 
   it("exposes a Bpm knob (seeded from the arg) and a Tap pulse", async () => {
     const scripts = captureExecScripts();
-    await createSyncExternalClockImpl(makeCtx(), { bpm: 140, parent_path: "/project1" });
+    await createSyncExternalClockImpl(makeCtx(), {
+      bpm: 140,
+      mode: "tap",
+      parent_path: "/project1",
+    });
     const controls = panelControls(scripts);
     const bpm = controls.find((c) => c.name === "Bpm");
     expect(bpm?.type).toBe("float");
@@ -116,7 +121,11 @@ describe("sync_external_clock", () => {
 
   it("writes the custom starting tempo into the setup script", async () => {
     const scripts = captureExecScripts();
-    await createSyncExternalClockImpl(makeCtx(), { bpm: 140, parent_path: "/project1" });
+    await createSyncExternalClockImpl(makeCtx(), {
+      bpm: 140,
+      mode: "tap",
+      parent_path: "/project1",
+    });
     expect(scripts.some((s) => s.includes("op('/').time.tempo = 140"))).toBe(true);
   });
 
@@ -125,5 +134,60 @@ describe("sync_external_clock", () => {
     expect(() => createSyncExternalClockSchema.parse({ bpm: 10 })).toThrow();
     // Default is a sensible 120 when omitted.
     expect(createSyncExternalClockSchema.parse({}).bpm).toBe(120);
+  });
+
+  it("defaults to tap mode and rejects an unknown mode", () => {
+    expect(createSyncExternalClockSchema.parse({}).mode).toBe("tap");
+    expect(() => createSyncExternalClockSchema.parse({ mode: "wishful" })).toThrow();
+  });
+
+  it("ableton_link mode adds an Ableton Link CHOP + CHOP Execute that drives the global tempo", async () => {
+    const bodies = captureCreateBodies();
+    const scripts = captureExecScripts();
+    const result = await createSyncExternalClockImpl(makeCtx(), {
+      bpm: 128,
+      mode: "ableton_link",
+      parent_path: "/project1",
+    });
+    expect(result.isError).toBeFalsy();
+    expect(bodies.some((b) => b.type === "abletonlinkCHOP")).toBe(true);
+    expect(bodies.some((b) => b.type === "chopexecuteDAT")).toBe(true);
+    // The CHOP Execute forwards the link tempo channel to the global clock.
+    const cb = scripts.find((s) => s.includes("def onValueChange(channel"));
+    expect(cb).toBeDefined();
+    expect(cb).toContain("channel.name == 'tempo'");
+    expect(cb).toContain("op('/').time.tempo");
+    // The result flags that Link can't be confirmed without a live session.
+    const text = result.content.find((c) => c.type === "text") as { text: string } | undefined;
+    expect(text?.text).toContain("Ableton Link");
+  });
+
+  it("midi_clock mode adds a MIDI In DAT + callbacks DAT that derives BPM from clock", async () => {
+    const bodies = captureCreateBodies();
+    const scripts = captureExecScripts();
+    const result = await createSyncExternalClockImpl(makeCtx(), {
+      bpm: 120,
+      mode: "midi_clock",
+      parent_path: "/project1",
+    });
+    expect(result.isError).toBeFalsy();
+    expect(bodies.some((b) => b.type === "midiinDAT")).toBe(true);
+    expect(bodies.some((b) => b.type === "textDAT" && b.name === "midiclock")).toBe(true);
+    const cb = scripts.find((s) => s.includes("def onReceiveMIDI"));
+    expect(cb).toBeDefined();
+    expect(cb).toContain("message != 'Clock'");
+    expect(cb).toContain("op('/').time.tempo");
+  });
+
+  it("tap mode (default) does not create Link/MIDI nodes", async () => {
+    const bodies = captureCreateBodies();
+    captureExecScripts();
+    await createSyncExternalClockImpl(makeCtx(), {
+      bpm: 120,
+      mode: "tap",
+      parent_path: "/project1",
+    });
+    expect(bodies.some((b) => b.type === "abletonlinkCHOP")).toBe(false);
+    expect(bodies.some((b) => b.type === "midiinDAT")).toBe(false);
   });
 });

@@ -156,6 +156,6 @@ describe("create_pose_skeleton", () => {
     });
     const posein = bodies.find((b) => b.name === "posein");
     expect(posein?.type).toBe("selectCHOP");
-    expect(posein?.parameters).toMatchObject({ chops: "/project1/pose_tracking/pose" });
+    expect(posein?.parameters).toMatchObject({ chop: "/project1/pose_tracking/pose" });
   });
 });

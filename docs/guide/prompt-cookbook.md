@@ -76,6 +76,25 @@ plus a *Sensitivity* knob. Like the mic, the live camera triggers the
 [macOS permission popup](/guide/troubleshooting#macos-microphone-camera-permission)
 — or ask for a **synthetic test source** to experiment without a camera.
 
+### Body tracking (webcam, no extra hardware)
+
+Full-body **pose tracking** from a plain webcam, via the free
+[MediaPipe plugin](https://github.com/torinmb/mediapipe-touchdesigner) (install once
+with `tdmcp install torinmb/mediapipe-touchdesigner`).
+
+> *"Set up body tracking from my webcam and show me the skeleton."*
+
+> *"Make glowing dots track my joints and leave motion trails as I move."* (the
+> `body_tracking_reactive` recipe)
+
+> *"Drive the visual's intensity from how much my body is moving."*
+
+**What you'll get:** the MediaPipe engine loaded + an adapter that emits a 33-landmark
+pose CHOP (tx/ty/tz/confidence), then a live skeleton or a camera-reactive visual. Keep
+the TD timeline **playing** (the plugin captures through an embedded browser that only
+runs while playing) and grant camera permission if macOS asks. No webcam handy? Ask for
+a **synthetic** pose source to build and preview the look offline.
+
 ## Particles & 3D
 
 > *"Create a particle system emitted from a sphere with turbulence and gravity,
@@ -148,11 +167,17 @@ Great for lyrics, titles, song names and credits.
 
 > *"Make a tempo clock at 128 BPM and sync the movement to the beat."*
 
+> *"Lock the tempo to Ableton Link so it follows whatever's on the network."*
+
+> *"Follow the MIDI clock coming from my DJ software."*
+
 > *"Set up two cues — 'intro' and 'drop' — that I can morph between."*
 
 > *"Let me control the main knobs from my phone."*
 
 > *"Map my MIDI controller's first fader to the Sensitivity knob."*
+
+> *"Going live now — turn on perform mode so nothing hitches mid-show."*
 
 ## Output & mapping
 
@@ -173,11 +198,37 @@ up with a wall, screen or object.*
 
 > *"Something looks broken — check the network for errors and fix them."*
 
+> *"The output is black — look at it and tell me why."* (combines the preview,
+> topology and node errors to diagnose)
+
 > *"Explain what this network is doing, step by step."*
 
 > *"This is running slow — find the bottleneck and optimize it."*
 
+> *"Audit this project — what's unused, what file paths are broken, which COMPs are
+> orphaned?"*
+
 > *"Tidy up the layout so I can read it."*
+
+> *"Box up the audio chain with an annotation and label it, then list what's inside."*
+
+## Reusable components & documentation
+
+Turn a working network into something you can reuse, share and hand to another agent.
+
+> *"Add Speed, Color and a Glow toggle as custom parameters on this component."*
+
+> *"Give this COMP a Python extension class with `play` and `reset` methods."*
+
+> *"Write a README for this project — what it does, its controls and inputs."*
+
+> *"Drop a project CLAUDE.md so the next session knows the conventions."*
+
+> *"Save this look as a reusable .tox component."* (`manage_component`)
+
+**What you'll get:** declarative custom-parameter pages, scriptable extensions, a
+generated Markdown README (with a preview thumbnail), or a project-local agent guide —
+the *packaging* side of tdmcp that complements the generators above.
 
 ## Working from your own notes (Obsidian vault)
 

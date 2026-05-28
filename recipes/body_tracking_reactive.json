@@ -1,0 +1,127 @@
+{
+  "id": "body_tracking_reactive",
+  "name": "Body Tracking Reactive",
+  "description": "A camera-reactive performance look: the 33 MediaPipe body landmarks become glowing dots that leave luminous motion trails as the performer moves, via a feedback loop. Point the 'posein' Select CHOP at the pose-landmarks CHOP from the free torinmb/mediapipe-touchdesigner plugin (33 samples, tx/ty/tz) — webcam only, no Kinect or extra hardware. Run setup_body_tracking first to load the engine and emit that CHOP, or use create_body_reactive for a self-contained synthetic preview.",
+  "tags": ["mediapipe", "pose", "body-tracking", "reactive", "feedback", "camera", "performance"],
+  "difficulty": "advanced",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "posein",
+      "type": "selectCHOP",
+      "comment": "Set 'chop' to the MediaPipe plugin's pose-landmarks CHOP (33 samples, tx/ty/tz)"
+    },
+    { "name": "geo", "type": "geometryCOMP" },
+    {
+      "name": "dot",
+      "type": "sphereSOP",
+      "parameters": { "radx": 0.035, "rady": 0.035, "radz": 0.035 },
+      "parent": "geo",
+      "comment": "The mark stamped on each landmark"
+    },
+    {
+      "name": "pts",
+      "type": "choptoSOP",
+      "parent": "geo",
+      "comment": "33 landmark samples become 33 points (tx/ty/tz map to position)"
+    },
+    {
+      "name": "copy",
+      "type": "copySOP",
+      "parent": "geo",
+      "render": true,
+      "comment": "Stamp the dot on every landmark point"
+    },
+    {
+      "name": "dotmat",
+      "type": "constantMAT",
+      "parameters": { "colorr": 0.2, "colorg": 1, "colorb": 0.9 }
+    },
+    { "name": "cam", "type": "cameraCOMP", "parameters": { "tz": 4.6 } },
+    {
+      "name": "render",
+      "type": "renderTOP",
+      "parameters": {
+        "outputresolution": "custom",
+        "resolutionw": 1280,
+        "resolutionh": 720,
+        "antialias": "3"
+      }
+    },
+    {
+      "name": "feedback1",
+      "type": "feedbackTOP",
+      "comment": "Holds the previous (decayed) frame — the motion trail"
+    },
+    {
+      "name": "comp1",
+      "type": "compositeTOP",
+      "parameters": { "operand": "add" },
+      "comment": "Add the live dots over the fed-back trail"
+    },
+    {
+      "name": "decay",
+      "type": "levelTOP",
+      "parameters": { "brightness1": 0.92 },
+      "comment": "Trail decay / feedback gain — higher = longer trails"
+    },
+    { "name": "bloom", "type": "blurTOP", "parameters": { "size": 12 } },
+    {
+      "name": "glow",
+      "type": "compositeTOP",
+      "parameters": { "operand": "add" },
+      "comment": "Add a bloom of the trail for the luminous glow"
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "Output of the system" }
+  ],
+  "connections": [
+    { "from": "dot", "to": "copy", "to_input": 0 },
+    { "from": "pts", "to": "copy", "to_input": 1 },
+    { "from": "render", "to": "feedback1" },
+    { "from": "render", "to": "comp1", "to_input": 0 },
+    { "from": "feedback1", "to": "comp1", "to_input": 1 },
+    { "from": "comp1", "to": "decay" },
+    { "from": "decay", "to": "bloom" },
+    { "from": "decay", "to": "glow", "to_input": 0 },
+    { "from": "bloom", "to": "glow", "to_input": 1 },
+    { "from": "glow", "to": "out1" }
+  ],
+  "parameters": [
+    {
+      "name": "landmarks_chop",
+      "node": "pts",
+      "param": "chop",
+      "value": "posein",
+      "label": "Landmarks CHOP"
+    },
+    { "name": "material", "node": "geo", "param": "material", "value": "dotmat" },
+    { "name": "geometry", "node": "render", "param": "geometry", "value": "geo" },
+    { "name": "camera", "node": "render", "param": "camera", "value": "cam" },
+    {
+      "name": "feedback_target",
+      "node": "feedback1",
+      "param": "top",
+      "value": "decay",
+      "description": "feedbackTOP samples the decayed composite (decay), forming the trail loop. Value resolves to the created node path."
+    }
+  ],
+  "controls": [
+    {
+      "name": "TrailLength",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 0.92,
+      "bind_to": ["decay.brightness1"]
+    },
+    {
+      "name": "GlowAmount",
+      "type": "float",
+      "min": 0,
+      "max": 48,
+      "default": 12,
+      "bind_to": ["bloom.size"]
+    }
+  ],
+  "preview_description": "Cyan glowing dots tracing a person's joints, smearing into luminous trails as they move in front of the webcam — a hands-free reactive performance look."
+}

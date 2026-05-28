@@ -6,34 +6,61 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.5.0] - Unreleased
 
-Reusable components (build → parameterize → script → package), a way to drive tdmcp from
-*inside* TouchDesigner via dotsimulate's LOPs "MCP Client", and an optional curated tool
-profile for autonomous in-TD agents. Additive and backward-compatible — existing clients are
-unaffected (the default profile is `full`).
+Phase 13 plus the dotsimulate LOPs integration. The focus shifts from *generating* visuals to
+**packaging, documenting and cheaply operating** them: reusable components (build → parameterize →
+script → package), project intelligence, token-cheap agent-DX primitives, and external-clock
+locking. It also adds a way to drive tdmcp from *inside* TouchDesigner via dotsimulate's LOPs
+"MCP Client" plus an optional curated tool profile for autonomous in-TD agents — additive and
+backward-compatible (the default profile is `full`). Every new tool was built → integrated →
+live-validated in TouchDesigner.
 
 ### Added
 
-- **`add_custom_parameters`** — append a custom-parameter page (Float/Int sliders,
-  Toggle, Menu, Str, Pulse, RGB, XYZ) to any COMP so a generated network becomes a
-  tunable, reusable component (CLI `add-params`). Sets defaults, slider ranges
+- **`add_custom_parameters`** (CLI `add-params`) — append a custom-parameter page
+  (Float/Int sliders, Toggle, Menu, Str, Pulse, RGB, XYZ) to any COMP so a generated
+  network becomes a tunable, reusable component. Sets defaults, slider ranges
   (`normMin`/`normMax`) and optional hard clamps; a parameter that already exists is
-  **skipped with a warning**, never overwritten, so re-running to add one more knob is
-  safe.
-- **`scaffold_extension`** — give a COMP a Python **extension class**: create a Text
-  DAT holding the class (with optional method stubs), wire it into an extension slot,
-  optionally **promote** it (so members are callable directly on the COMP, e.g.
-  `op('…').Reset()`), and reinitialize (CLI `scaffold-ext`). The extension parameter
-  names live on the COMP's built-in Extensions page and vary by TouchDesigner build,
-  so the tool **probes** for them (and notes any difference as a warning) instead of
-  hardcoding. Together with `add_custom_parameters` (knobs) and `manage_component`
-  (save as `.tox`), this completes the build → parameterize → script → package story
-  for reusable components — see the new [Reusable components](https://pantani.github.io/tdmcp/guide/components)
-  guide.
-- **`TDMCP_TOOL_PROFILE`** (`full` | `safe`, default `full`) — `safe` additionally hides the
-  six destructive / raw-code tools (`execute_python_script`, `exec_node_method`,
-  `delete_td_node`, `create_panic`, `manage_checkpoint`, `manage_component`), a strict
-  superset of `TDMCP_RAW_PYTHON=off`. Use it to hand an autonomous in-TD agent a curated,
-  non-destructive toolset.
+  **skipped with a warning**, never overwritten, so re-running to add one more knob is safe.
+- **`scaffold_extension`** (CLI `scaffold-ext`) — give a COMP a Python **extension
+  class**: a Text DAT holding the class (with optional method stubs), wired into an
+  extension slot, optionally **promoted** (members callable directly on the COMP), and
+  reinitialized. The extension parameter names vary by TouchDesigner build, so the tool
+  **probes** for them (noting any difference as a warning) instead of hardcoding. With
+  `add_custom_parameters` (knobs) and `manage_component` (save as `.tox`), this completes
+  the build → parameterize → script → package story — see the new
+  [Reusable components](https://pantani.github.io/tdmcp/guide/components) guide.
+- **`analyze_project`** (CLI `analyze`) — find likely-dead operators, broken
+  external-file dependencies, and orphan COMPs, plus a dependency map (op()/Select
+  refs + CHOP exports). Conservative, with a reason per flag. Complements
+  `describe_project`.
+- **`generate_readme`** (CLI `readme`) — a Markdown project document: family/type
+  counts, a custom-parameter table, inputs/outputs, child inventory, external-file
+  deps, and an optional preview thumbnail.
+- **`edit_dat_content`** (CLI `dat-edit`) — surgical old/new string replace in a
+  Text/Table DAT, requiring a unique match unless `replace_all` is set.
+- **`set_dat_content`** (CLI `dat-set`) — overwrite a DAT's whole text, with a
+  `confirm_wipe` anti-wipe guard that refuses silent clears.
+- **`batch_operations`** (CLI `batch`) — run many create/connect/setParam ops in one
+  fail-forward call (per-item warnings; not transactional), reusing the Layer-1
+  network builder. Distinct from `set_parameters_batch` (params only).
+- **`manage_annotation`** (CLI `annotate`) — create titled Annotate-COMP boxes, set
+  per-op comments, list a network's annotations, and list the ops a box geometrically
+  encloses — self-documenting networks.
+- **`write_agent_guide`** (CLI `agent-guide`) — emit a project-local
+  `CLAUDE.md`/`AGENTS.md` seeded with tdmcp operator conventions + TD render-coordinate
+  rules.
+- **`set_perform_mode`** (CLI `perform-mode`) — toggle a perform-mode flag (stored on
+  the TD root + `ui.performMode`) so the bridge and MCP tools skip nonessential
+  compute (preview captures, event streaming, externalization) during a live show.
+- **Body-tracking CLI + recipe:** 1:1 CLI commands for the MediaPipe body-tracking
+  tools that shipped in 0.4.0 (`body-tracking`, `pose-track`, `skeleton`,
+  `body-reactive`), plus a new recipe **`body_tracking_reactive`** — 33 MediaPipe
+  landmark dots with a feedback motion trail. Re-validated live against the engine.
+- **`analyze_screenshot`** prompt — captures a node's preview + topology + node errors
+  and diagnoses what it shows or why it looks wrong ("why is it black?").
+- **Feature-build harness** (`.claude/`): a `tdmcp-tool-builder` skill +
+  `tdmcp-feature-lead` / `tdmcp-tool-builder` agents that build tool batches as
+  parallel one-tool-per-agent waves with a single-writer integrator.
 - **`scripts/tdmcp-lops.mjs`** — a dependency-free launcher for dotsimulate's LOPs MCP
   Client. Point the LOPs `command` at it; it injects the hardened env
   (`TDMCP_RAW_PYTHON=off`, `TDMCP_TOOL_PROFILE=safe`) then execs `dist/index.js`, since
@@ -42,6 +69,20 @@ unaffected (the default profile is `full`).
   the TD → tdmcp → bridge → TD architecture, and an explicit callout that this does **not**
   replace the local `tdmcp chat` copilot. Plus reference docs for the new env var and the
   in-TD topology.
+
+### Changed
+
+- **`sync_external_clock`** gains a `mode` (`tap` | `ableton_link` | `midi_clock`):
+  Ableton Link locks to a Link session via an Ableton Link CHOP; MIDI clock derives
+  BPM from 24-PPQN timing. `tap` stays the default. Link/MIDI are hardware-gated
+  (manual Bpm fallback when no source is present).
+- **`snapshot_td_graph`** gains a `compact` mode — hoists per-type default parameters
+  and delta-encodes each node for token-cheap whole-COMP reads.
+- **`TDMCP_TOOL_PROFILE`** (`full` | `safe`, default `full`) — `safe` additionally hides the
+  six destructive / raw-code tools (`execute_python_script`, `exec_node_method`,
+  `delete_td_node`, `create_panic`, `manage_checkpoint`, `manage_component`), a strict
+  superset of `TDMCP_RAW_PYTHON=off`. Use it to hand an autonomous in-TD agent a curated,
+  non-destructive toolset.
 
 [0.5.0]: https://github.com/Pantani/tdmcp/compare/v0.4.0...HEAD
 
