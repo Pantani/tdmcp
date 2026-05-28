@@ -40,7 +40,9 @@ export const getTdPerformanceOutputSchema = z.object({
     .describe("Per-node cook times, slowest first."),
   warnings: z
     .array(z.string())
-    .describe("Nodes flagged as exceeding the frame budget, with their cook time."),
+    .describe(
+      "Budget warnings: one line per node whose cook time exceeds the frame budget, plus a final aggregate line when the summed total cook time exceeds the budget. Empty when everything is within budget.",
+    ),
 });
 
 export async function getTdPerformanceImpl(ctx: ToolContext, args: GetTdPerformanceArgs) {
