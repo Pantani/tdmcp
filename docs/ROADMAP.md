@@ -461,11 +461,17 @@ ships a `probe` block that surfaces the real TD API on first live run, and is fa
 `create_midi_note_reactive` / `create_midi_map` (need real MIDI gear; the synthetic note source is
 validatable offline).
 
-**Still deferred to v0.6.0+ (from the backlog, not built this wave):** CLI ergonomics
-(`config_file_and_profiles`, `doctor --fix`, `install-client`, host/port flags, `watch --filter/--exec`,
-`preview --inline/--watch`, shell completion, repl history) and the local-copilot tier changes
-(curated `creative` generator tier, read-only KB tools, conversation persistence, smarter handoff,
-voice) — a coherent single-writer CLI/DX pass best done together against the now-130-command CLI;
-`video_device_out` / `dmx_fixture_pipeline` (hardware), `gpu_fluid` / `optical_flow_particles`
-(GPU/macOS), `richer_event_stream`, `run_bridge_tests`, `model_import_fbx_usd`,
-`bridge_self_version_check`, and the recipe marketplace.
+**CLI / config / copilot DX — shipped in the follow-on pass (◐, offline-gated):**
+`config_file_and_profiles` + per-call `--profile/--config/--td-host/--td-port/--timeout` flags + a
+`config` command (`--write-env`); `doctor` Tools check + `--fix` (suggested commands) + `--output
+json` + `-q/--quiet`; CLI `-V/--version`, did-you-mean, `--params -`/`--params-file`, `-q/--quiet`,
+`watch --filter/--exclude`; copilot `search_operators`+`list_recipes` in every tier + an opt-in
+`creative` generator tier; `get_td_info` bridge-staleness warning; `video_device_out`.
+
+**Still deferred to v0.6.0+ (not built):** `install-client` per-OS config writers + `install-bridge
+--verify` (need real per-client testing); `doctor --fix` auto-execution (start Ollama / pull / recopy
+bridge); `watch --exec`, `preview --inline/--watch`, shell-completion generator, repl
+history+completion, `chat --prompt`/`--read-only`; copilot conversation persistence / smarter handoff
+/ voice; `model_import_fbx_usd`; `dmx_fixture_pipeline` (hardware), `gpu_fluid` /
+`optical_flow_particles` (GPU/macOS), `richer_event_stream`, `run_bridge_tests`, and the recipe
+marketplace.

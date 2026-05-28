@@ -137,8 +137,38 @@ API on its first live run, and is fail-forward (per-item warnings, never throws)
   model — including the local copilot, which can't see MCP prompts — can discover the creative
   recipes available.
 
+#### CLI, config & copilot DX (post-discovery follow-on)
+
+- **Config files + named profiles** — `loadConfig` optionally reads a `tdmcp.json` / `.tdmcprc` /
+  `~/.config/tdmcp/config.json` with named `profiles`, so an artist can save per-venue setups and
+  switch with `--profile club` instead of editing their shell rc. Precedence: defaults < file base <
+  file profile < env < CLI flags. The stdio server honors it too (`TDMCP_PROFILE`); env still wins,
+  so existing setups are unchanged, and a malformed file warns rather than crashing.
+- **Per-call CLI overrides** — global `--profile` / `--config` / `--td-host` / `--td-port` /
+  `--timeout` on any `tdmcp-agent` command, plus a `config` command that prints the effective
+  resolved config (secrets redacted) or, with `--write-env`, a paste-ready export block.
+- **`doctor` upgrades** — a new **Tools** check (surfaces `TDMCP_RAW_PYTHON` / `TDMCP_TOOL_PROFILE`
+  lockouts so a missing tool has a named cause); `--fix` appends a "Suggested fixes" section
+  (a remediation command per non-passing check); `--output json` + `-q/--quiet` make it
+  scriptable/CI-friendly; honors the global config flags.
+- **CLI ergonomics** — `-V/--version`; a "did you mean" suggestion on an unknown command;
+  `--params -` (stdin) and `--params-file <path>` to complete the Unix-filter story; `-q/--quiet`
+  to silence the stderr summary; and `watch --filter`/`--exclude <csv>` to select event types.
+- **Local copilot tier** — `search_operators` + `list_recipes` added to every tier (read-only KB
+  browse), and a new **opt-in `creative` tier** (a `creative` checkbox) that adds a curated set of
+  safe Layer-1 generators (`create_generative_art` / `create_feedback_network` /
+  `create_audio_reactive`) so the local model can build a whole look offline. Off by default —
+  small-model generator-call accuracy is unbenchmarked.
+
 ### Changed
 
+- **`apply_post_processing`** gains five chainable inline-GLSL effects: `halftone`, `dither`,
+  `crt`, `mirror`, `vhs`.
+- **`create_external_io`** gains a `video_device_out` kind (SDI / capture-card via a Video Device
+  Out TOP; device par probed defensively) — hardware-gated, build-only verification.
+- **`get_td_info`** now warns when the **running** Python bridge is older than this build
+  (comparing to the shipped bridge version), pointing at `reload_bridge` — catching the recurring
+  "edited td/ but it didn't take effect" gotcha.
 - **`sync_external_clock`** gains a `mode` (`tap` | `ableton_link` | `midi_clock`):
   Ableton Link locks to a Link session via an Ableton Link CHOP; MIDI clock derives
   BPM from 24-PPQN timing. `tap` stays the default. Link/MIDI are hardware-gated
