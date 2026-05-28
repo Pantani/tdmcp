@@ -40,12 +40,57 @@ interface ExtensionReport {
   fatal?: string;
 }
 
+// Python keywords/constants that are syntactically invalid as identifiers. A
+// sanitized name that lands on one would emit broken source (e.g. `class None:` or
+// `def return(self):`), so it gets a trailing underscore — the idiomatic Python
+// escape (`class_`, `None_`). Capitalized class names can only collide with
+// None/True/False; lowercase method names can hit any keyword.
+const PY_KEYWORDS = new Set([
+  "False",
+  "None",
+  "True",
+  "and",
+  "as",
+  "assert",
+  "async",
+  "await",
+  "break",
+  "class",
+  "continue",
+  "def",
+  "del",
+  "elif",
+  "else",
+  "except",
+  "finally",
+  "for",
+  "from",
+  "global",
+  "if",
+  "import",
+  "in",
+  "is",
+  "lambda",
+  "nonlocal",
+  "not",
+  "or",
+  "pass",
+  "raise",
+  "return",
+  "try",
+  "while",
+  "with",
+  "yield",
+]);
+
 /** Sanitize to a valid, capitalized Python class identifier (empty if nothing usable). */
 function toClassName(raw: string): string {
   let s = raw.replace(/[^A-Za-z0-9_]/g, "");
   if (!s) return "";
   if (!/[A-Za-z_]/.test(s[0] ?? "")) s = `C${s}`;
-  return (s[0] ?? "").toUpperCase() + s.slice(1);
+  s = (s[0] ?? "").toUpperCase() + s.slice(1);
+  if (PY_KEYWORDS.has(s)) s = `${s}_`;
+  return s;
 }
 
 /** Sanitize to a valid Python method identifier (empty if nothing usable). */
@@ -53,6 +98,7 @@ function toMethodName(raw: string): string {
   let s = raw.replace(/[^A-Za-z0-9_]/g, "");
   if (!s) return "";
   if (/[0-9]/.test(s[0] ?? "")) s = `m${s}`;
+  if (PY_KEYWORDS.has(s)) s = `${s}_`;
   return s;
 }
 

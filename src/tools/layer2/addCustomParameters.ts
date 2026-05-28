@@ -12,9 +12,11 @@ const paramSchema = z.object({
     .describe("Widget kind. TD's append* picks the underlying parameter family."),
   label: z.string().optional().describe("Display label (defaults to `name`)."),
   default: z
-    .union([z.number(), z.string(), z.boolean()])
+    .union([z.number(), z.string(), z.boolean(), z.array(z.number())])
     .optional()
-    .describe("Initial value (a number, a string for Str/Menu, or a bool for Toggle)."),
+    .describe(
+      "Initial value: a number; a string for Str/Menu (or '#rrggbb' for RGB); a bool for Toggle; or an [r,g,b] / [x,y,z] number array for RGB / XYZ.",
+    ),
   min: z.coerce.number().optional().describe("Slider lower bound (Float/Int) — sets normMin."),
   max: z.coerce.number().optional().describe("Slider upper bound (Float/Int) — sets normMax."),
   clamp: z

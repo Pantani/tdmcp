@@ -188,4 +188,23 @@ describe("addCustomParametersSchema (input validation)", () => {
     });
     expect(parsed.page).toBe("Custom");
   });
+
+  it("accepts an [r,g,b] / [x,y,z] array default for RGB and XYZ parameters", () => {
+    const parsed = addCustomParametersSchema.safeParse({
+      comp_path: "/c",
+      params: [
+        { name: "Tint", type: "RGB", default: [1, 0, 0] },
+        { name: "Pos", type: "XYZ", default: [1, 2, 3] },
+      ],
+    });
+    expect(parsed.success).toBe(true);
+    // The vector default survives into the payload the bridge receives.
+    if (parsed.success) {
+      const payload = decodePayload(
+        buildParamsScript({ comp: "/c", page: "Custom", params: parsed.data.params }),
+      );
+      expect(payload.params[0]?.default).toEqual([1, 0, 0]);
+      expect(payload.params[1]?.default).toEqual([1, 2, 3]);
+    }
+  });
 });

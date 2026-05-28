@@ -134,6 +134,24 @@ describe("scaffoldExtensionImpl", () => {
     expect(exec).not.toHaveBeenCalled();
   });
 
+  it("escapes a Python-keyword class name so the source stays valid", async () => {
+    const exec = okReport();
+    await scaffoldExtensionImpl(fakeCtx(exec), args({ class_name: "None" }));
+    const payload = decodePayload(scriptArg(exec));
+    expect(payload.class_name).toBe("None_");
+    expect(payload.code).toContain("class None_:");
+    expect(payload.extension).toBe("op('./None_').module.None_(me)");
+  });
+
+  it("escapes Python-keyword method names (class/def/return → class_/def_/return_)", async () => {
+    const exec = okReport();
+    await scaffoldExtensionImpl(fakeCtx(exec), args({ methods: ["class", "def", "return"] }));
+    const payload = decodePayload(scriptArg(exec));
+    expect(payload.methods).toEqual(["class_", "def_", "return_"]);
+    expect(payload.code).toContain("def class_(self):");
+    expect(payload.code).toContain("def return_(self):");
+  });
+
   it("summarizes the class, promotion and method count on success", async () => {
     const result = await scaffoldExtensionImpl(fakeCtx(okReport()), args());
     expect(result.isError).toBeFalsy();
