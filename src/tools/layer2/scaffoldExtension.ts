@@ -70,20 +70,24 @@ export function buildClassSource(className: string, methods: string[]): string {
 }
 
 // An extension is a Text DAT holding a Python class plus a few parameters on the
-// COMP's built-in "Extensions" page. Those parameter names (extensionN /
-// promoteextensionN / reinitextensions) can vary by TouchDesigner build, so the
-// script probes for them — exact name first, then a fuzzy fallback — and notes in
-// `warnings` when a build differs, rather than hardcoding and silently failing.
+// COMP's built-in "Extensions" page. Current builds name those parameters with a
+// zero-based sequence ("ext0object" / "ext0promote" for the first slot — also what
+// this repo's *_comp.json metadata records), while older builds used the one-based
+// "extension1" / "promoteextension1"; "reinitextensions" is the refresh pulse on
+// both. The script tries BOTH naming schemes (exact), then a fuzzy fallback, and
+// only warns when it had to fall back — rather than hardcoding one scheme and
+// silently failing on the other (which would leave the COMP unwired but "ok").
 const EXTENSION_SCRIPT = `
 import json, base64, traceback
 _p = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
 report = {"comp": _p["comp"], "methods": _p["methods"], "warnings": []}
 _comp = op(_p["comp"])
 
-def _find(comp, exact, contains_all, exclude=()):
-    _pe = getattr(comp.par, exact, None)
-    if _pe is not None:
-        return _pe
+def _find(comp, exacts, contains_all, exclude=()):
+    for _ex in exacts:
+        _pe = getattr(comp.par, _ex, None)
+        if _pe is not None:
+            return _pe
     try:
         _all = comp.pars("*")
     except Exception:
@@ -100,7 +104,7 @@ try:
     elif not _comp.isCOMP:
         report["fatal"] = _p["comp"] + " is not a COMP, so it cannot hold an extension."
     else:
-        _cname = _p["class_name"]; _slot = _p["slot"]
+        _cname = _p["class_name"]; _slot = _p["slot"]; _idx = _slot - 1
         _dat = _comp.op(_cname)
         if _dat is not None and not _dat.isDAT:
             report["fatal"] = "A non-DAT named '%s' already exists in %s." % (_cname, _p["comp"])
@@ -109,24 +113,29 @@ try:
                 _dat = _comp.create(textDAT, _cname)
             _dat.text = _p["code"]
             report["dat"] = _dat.path
-            _extp = _find(_comp, "extension" + str(_slot), ["extension", str(_slot)], exclude=("promote", "reinit"))
+            # Extension expression par: zero-based "ext0object" on current builds,
+            # one-based "extension1" on legacy ones. Try both, then fuzzy-match.
+            _ext_cands = ["ext%dobject" % _idx, "extension%d" % _slot]
+            _extp = _find(_comp, _ext_cands, ["ext", "object"], exclude=("promote", "name", "reinit"))
             if _extp is not None:
                 _extp.val = _p["extension"]
                 report["extension"] = _p["extension"]
-                if _extp.name != "extension" + str(_slot):
-                    report["warnings"].append("Used '%s' for the extension slot (this build differs from 'extension%s')." % (_extp.name, _slot))
+                if _extp.name not in _ext_cands:
+                    report["warnings"].append("Used '%s' for the extension slot (build names differ from %s)." % (_extp.name, _ext_cands))
             else:
                 report["warnings"].append("Could not find an extension parameter for slot %s on %s." % (_slot, _p["comp"]))
-            _promp = _find(_comp, "promoteextension" + str(_slot), ["promote", "extension"])
+            # Promote flag: "ext0promote" (current) / "promoteextension1" (legacy).
+            _prom_cands = ["ext%dpromote" % _idx, "promoteextension%d" % _slot]
+            _promp = _find(_comp, _prom_cands, ["ext", "promote"])
             if _promp is not None:
                 _promp.val = bool(_p["promote"])
                 report["promoted"] = bool(_p["promote"])
-                if _promp.name != "promoteextension" + str(_slot):
-                    report["warnings"].append("Used '%s' to set promotion (differs from 'promoteextension%s')." % (_promp.name, _slot))
+                if _promp.name not in _prom_cands:
+                    report["warnings"].append("Used '%s' to set promotion (build names differ from %s)." % (_promp.name, _prom_cands))
             else:
                 report["promoted"] = False
                 report["warnings"].append("Could not find a promote-extension parameter for slot %s." % _slot)
-            _reinit = _find(_comp, "reinitextensions", ["reinit", "ext"], exclude=("promote",))
+            _reinit = _find(_comp, ["reinitextensions", "reinitextensionspulse"], ["reinit", "ext"], exclude=("promote",))
             if _reinit is not None:
                 try:
                     _reinit.pulse()

@@ -90,8 +90,13 @@ describe("buildExtensionScript", () => {
     expect(payload.comp).toBe("/project1/sys");
     expect(payload.extension).toBe("op('./WidgetExt').module.WidgetExt(me)");
     // The script probes the build-specific extension parameter names and refreshes.
-    expect(script).toContain("extension");
-    expect(script).toContain("promoteextension");
+    // It must cover BOTH the current zero-based scheme (ext0object/ext0promote) and
+    // the legacy one-based scheme (extension1/promoteextension1), or it silently
+    // fails to wire the COMP on current builds.
+    expect(script).toContain("ext%dobject");
+    expect(script).toContain("ext%dpromote");
+    expect(script).toContain("extension%d");
+    expect(script).toContain("promoteextension%d");
     expect(script).toContain("reinitextensions");
     expect(script).toContain("_reinit.pulse()");
     expect(script).toContain("_comp.create(textDAT");
