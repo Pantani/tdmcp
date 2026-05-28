@@ -119,8 +119,23 @@ async function buildAmbientLook(builder: NetworkBuilder, palette: GenrePreset["p
 async function buildInstallationLook(builder: NetworkBuilder, palette: GenrePreset["palette"]) {
   const seed = await builder.add("noiseTOP", "seed", { monochrome: 1, period: 8 });
   // A slow translate so the field drifts rather than sits still — gentle, ambient evolution.
-  const move = await builder.add("transformTOP", "drift", { translate1: 0.02, translate2: 0.01 });
+  // The Transform TOP's translate params are `tx`/`ty` (translate X/Y, NOT translate1/translate2 —
+  // verified against a live transformTOP). A CONSTANT tx/ty only offsets the field ONCE; to make it
+  // actually DRIFT over time the params must be TIME-BASED EXPRESSIONS, set the same way
+  // createKineticText drives its slide: `_p.expr = …; _p.mode = type(_p.mode).EXPRESSION`. Here the
+  // expressions are `absTime.seconds * <speed>` so the field creeps continuously while the timeline
+  // plays (different X/Y speeds so it drifts diagonally rather than straight).
+  const move = await builder.add("transformTOP", "drift", { tx: 0, ty: 0 });
   await builder.connect(seed, move);
+  await builder.python(
+    [
+      `_t = op(${q(move)})`,
+      `for _name, _speed in (('tx', 0.02), ('ty', 0.01)):`,
+      `    _p = getattr(_t.par, _name)`,
+      `    _p.expr = f'absTime.seconds * {_speed}'`,
+      `    _p.mode = type(_p.mode).EXPRESSION`,
+    ].join("\n"),
+  );
   const look = await colorizeInto(builder, move, palette);
   return { look, periodPath: `${seed}.period`, periodDefault: 8 };
 }

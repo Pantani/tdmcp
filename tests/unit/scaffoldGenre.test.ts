@@ -174,8 +174,36 @@ describe("scaffoldGenreImpl", () => {
     expect(scripts.some((s) => s.includes("time.tempo"))).toBe(false);
     // Generative noise look: a noiseTOP seed + a transformTOP drift, colorized.
     expect(bodies.some((b) => b.name === "seed" && b.type === "noiseTOP")).toBe(true);
-    expect(bodies.some((b) => b.name === "drift" && b.type === "transformTOP")).toBe(true);
+    const drift = bodies.find((b) => b.name === "drift" && b.type === "transformTOP");
+    expect(drift).toBeDefined();
+    // The Transform TOP's translate params are tx/ty (NOT translate1/translate2). The node starts
+    // with constant zeros; the drift comes from the time expressions set below.
+    expect(drift?.parameters).toMatchObject({ tx: 0, ty: 0 });
+    expect(drift?.parameters).not.toHaveProperty("translate1");
+    expect(drift?.parameters).not.toHaveProperty("translate2");
     expect(textOf(result)).toContain("installation");
+  });
+
+  it("installation: drives the drift Transform TOP's tx/ty as time expressions (so it ACTUALLY drifts)", async () => {
+    captureCreateBodies();
+    const scripts = captureExecScripts();
+    await scaffoldGenreImpl(makeCtx(), {
+      genre: "installation",
+      parent_path: "/project1",
+    });
+    // The bug: constant translate1/translate2 (a) were the wrong param names and (b) only offset the
+    // field once — it never moved. The fix sets tx/ty to absTime.seconds-based EXPRESSIONS so the
+    // noise field continuously drifts while the timeline plays.
+    const driftScript = scripts.find(
+      (s) => s.includes("absTime.seconds") && s.includes("EXPRESSION"),
+    );
+    expect(driftScript).toBeDefined();
+    // Both translate axes are driven (different speeds → a diagonal creep).
+    expect(driftScript).toContain("'tx', 0.02");
+    expect(driftScript).toContain("'ty', 0.01");
+    expect(driftScript).toContain("_p.mode = type(_p.mode).EXPRESSION");
+    // The wrong param names never appear anywhere.
+    expect(scripts.some((s) => s.includes("translate1") || s.includes("translate2"))).toBe(false);
   });
 
   it("installation: a bpm override adds a beat clock at that tempo", async () => {
