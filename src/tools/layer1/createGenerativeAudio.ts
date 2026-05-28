@@ -86,6 +86,16 @@ async function buildSource(
       cutofffrequency: args.frequency,
     });
     await builder.connect(noise, filter);
+    // The cutoff is an expression reading the container's Frequency custom par, so the exposed
+    // Frequency knob retunes the noise "brightness" (the only pitch-like control in noise mode).
+    // This MODULATES the cutoff rather than binding Frequency straight onto cutofffrequency, which
+    // keeps the same modulate-don't-clobber pattern the fm path uses for its modulator frequency.
+    // The hasattr fallback keeps it cooking before exposeControls appends Frequency (and when
+    // controls are off). Custom-par names are sanitized to Initialcap-then-lowercase, so the par
+    // is `Frequency`.
+    const container = builder.containerPath;
+    const cutoffExpr = `op(${q(container)}).par.Frequency.eval() if hasattr(op(${q(container)}).par, 'Frequency') else ${args.frequency}`;
+    await builder.python(`op(${q(filter)}).par.cutofffrequency.expr = ${q(cutoffExpr)}`);
     return filter;
   }
 
@@ -145,17 +155,31 @@ export async function createGenerativeAudioImpl(ctx: ToolContext, args: CreateGe
     const container = builder.containerPath;
     const controls: ControlSpec[] = [];
     if (args.expose_controls) {
-      const oscPath =
-        args.synth === "fm" ? builder.pathOf("carrier") : builder.pathOf("oscillator");
-      if (oscPath) {
+      if (args.synth === "noise") {
+        // Noise has no oscillator: the Frequency knob is read by the filter's cutoff EXPRESSION
+        // (set in buildSource) to retune the texture's brightness. No bind_to — a direct bind would
+        // overwrite that expression with a constant. This is the same modulate-don't-clobber shape
+        // the fm path uses for FmRatio. Always emit it so the documented Frequency knob actually works.
         controls.push({
           name: "Frequency",
           type: "float",
           min: 20,
           max: 4000,
           default: args.frequency,
-          bind_to: [`${oscPath}.frequency`],
         });
+      } else {
+        const oscPath =
+          args.synth === "fm" ? builder.pathOf("carrier") : builder.pathOf("oscillator");
+        if (oscPath) {
+          controls.push({
+            name: "Frequency",
+            type: "float",
+            min: 20,
+            max: 4000,
+            default: args.frequency,
+            bind_to: [`${oscPath}.frequency`],
+          });
+        }
       }
       controls.push({
         name: "Volume",

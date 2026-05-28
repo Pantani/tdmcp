@@ -180,6 +180,41 @@ describe("create_generative_audio", () => {
     expect(filter?.parameters).toMatchObject({ filter: "lowpass", cutofffrequency: 800 });
   });
 
+  it("noise mode exposes an (unbound) Frequency knob and drives the filter cutoff from it", async () => {
+    captureCreateBodies();
+    const scripts = captureExecScripts();
+    await createGenerativeAudioImpl(makeCtx(), {
+      synth: "noise",
+      frequency: 800,
+      waveform: "sine",
+      fm_ratio: 2,
+      fm_depth: 100,
+      volume: 0.5,
+      to_device: false,
+      expose_controls: true,
+      parent_path: "/project1",
+    });
+
+    // The documented Frequency knob exists in noise mode (previously only Volume was exposed),
+    // and it is NOT bound: the filter cutoff reads it via an expression instead, so turning the
+    // knob retunes the texture brightness rather than clobbering the cutoff expression.
+    const controls = panelControls(scripts);
+    const freq = controls.find((c) => c.name === "Frequency");
+    expect(freq?.default).toBe(800);
+    expect(freq?.bind_to).toBeUndefined();
+    expect(controls.some((c) => c.name === "Volume")).toBe(true);
+
+    // The filter's cutofffrequency becomes an abs' expression reading the container's Frequency
+    // custom par (with the build-time value as a hasattr fallback).
+    const cutoffExpr = scripts.find(
+      (s) => s.includes("filter") && s.includes("cutofffrequency.expr"),
+    );
+    expect(cutoffExpr).toBeDefined();
+    expect(cutoffExpr).toContain("par.Frequency");
+    expect(cutoffExpr).toContain("hasattr");
+    expect(cutoffExpr).toContain("else 800");
+  });
+
   it("omits the audio device out by default and adds exactly one when to_device is true", async () => {
     const off = captureCreateBodies();
     await createGenerativeAudioImpl(makeCtx(), {

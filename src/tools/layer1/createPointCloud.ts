@@ -126,7 +126,15 @@ export async function createPointCloudImpl(ctx: ToolContext, args: CreatePointCl
         "source='existing' was requested without an `existing` path, so the point cloud fell back to a synthetic animated Noise source. Pass `existing` (a TOP path, e.g. a real depth map) to sample your own texture.",
       );
     }
-    const source = built ?? (await builder.add("noiseTOP", "src"));
+    let source = built;
+    if (source === undefined) {
+      // Fallback for source='existing' with no path: a synthetic Noise TOP carrying the SAME tz
+      // time animation the synthetic source path uses, so the fallback breathes consistently rather
+      // than sitting static while the summary implies movement.
+      const fallbackNoise = await builder.add("noiseTOP", "src");
+      await builder.python(`op(${q(fallbackNoise)}).par.tz.expr = "absTime.seconds * 0.5"`);
+      source = fallbackNoise;
+    }
 
     // A monochrome version of the source is the depth map: one luminance value per pixel, sampled
     // by the position-pack shader to set each point's Z.

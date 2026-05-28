@@ -297,6 +297,7 @@ describe("create_point_cloud", () => {
 
   it("reports the synthetic fallback + a warning when source='existing' has no path", async () => {
     const bodies = captureCreateBodies();
+    const scripts = captureExecScripts();
     const result = await createPointCloudImpl(makeCtx(), {
       source: "existing",
       // no `existing` path → buildSource falls back to a synthetic Noise TOP
@@ -309,9 +310,17 @@ describe("create_point_cloud", () => {
     });
     // Fail-forward: the build still cooks (no isError) on a synthetic noise source.
     expect(result.isError).toBeFalsy();
-    expect(bodies.some((b) => b.name === "src" && b.type === "noiseTOP")).toBe(true);
+    const noiseSrcs = bodies.filter((b) => b.name === "src" && b.type === "noiseTOP");
+    // Exactly one Noise source — the fallback is no longer created twice.
+    expect(noiseSrcs).toHaveLength(1);
     // No Select TOP is created since there was no existing path to pull in.
     expect(bodies.some((b) => b.type === "selectTOP")).toBe(false);
+
+    // The fallback Noise carries the SAME tz time animation as the synthetic source path, so it
+    // breathes rather than sitting static while the summary implies movement.
+    const tzScript = scripts.find((s) => s.includes(".par.tz.expr"));
+    expect(tzScript).toBeDefined();
+    expect(tzScript).toContain("absTime.seconds * 0.5");
 
     const text = result.content.find((c) => c.type === "text");
     const body = text?.type === "text" ? text.text : "";
