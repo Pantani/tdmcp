@@ -8,6 +8,7 @@ import { registerCreateContainer } from "./createContainer.js";
 import { registerCreateControlPanel } from "./createControlPanel.js";
 import { registerCreateControlSurface } from "./createControlSurface.js";
 import { registerCreateCueSequencer } from "./createCueSequencer.js";
+import { registerCreateDataSource } from "./createDataSource.js";
 import { registerCreateDecks } from "./createDecks.js";
 import { registerCreateExternalIo } from "./createExternalIo.js";
 import { registerCreateGlslShader } from "./createGlslShader.js";
@@ -58,4 +59,6 @@ export const layer2Registrars: ToolRegistrar[] = [
   registerCreateCueSequencer,
   registerCreateStageDashboard,
   registerCreatePalette,
+  // Post-0.3.0 parallel build — wave 2:
+  registerCreateDataSource,
 ];

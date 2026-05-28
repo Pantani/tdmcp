@@ -12,6 +12,7 @@ import { registerCreateDepthSilhouette } from "./createDepthSilhouette.js";
 import { registerCreateDomeOutput } from "./createDomeOutput.js";
 import { registerCreateFeedbackNetwork } from "./createFeedbackNetwork.js";
 import { registerCreateGenerativeArt } from "./createGenerativeArt.js";
+import { registerCreateGenerativeAudio } from "./createGenerativeAudio.js";
 import { registerCreateGlitch } from "./createGlitch.js";
 import { registerCreateGpuParticleField } from "./createGpuParticleField.js";
 import { registerCreateKaleidoscope } from "./createKaleidoscope.js";
@@ -21,7 +22,10 @@ import { registerCreateLayerMixer } from "./createLayerMixer.js";
 import { registerCreateMeshWarp } from "./createMeshWarp.js";
 import { registerCreateMotionReactive } from "./createMotionReactive.js";
 import { registerCreateMultiOutput } from "./createMultiOutput.js";
+import { registerCreateParticleFlock } from "./createParticleFlock.js";
 import { registerCreateParticleSystem } from "./createParticleSystem.js";
+import { registerCreatePbrScene } from "./createPbrScene.js";
+import { registerCreatePointCloud } from "./createPointCloud.js";
 import { registerCreateProjectionMapping } from "./createProjectionMapping.js";
 import { registerCreateRaymarchScene } from "./createRaymarchScene.js";
 import { registerCreateShaderLib } from "./createShaderLib.js";
@@ -96,4 +100,9 @@ export const layer1Registrars: ToolRegistrar[] = [
   // Post-0.3.0 parallel build — wave 1:
   registerCreateRaymarchScene,
   registerDetectTempo,
+  // Post-0.3.0 parallel build — wave 2:
+  registerCreatePbrScene,
+  registerCreateParticleFlock,
+  registerCreatePointCloud,
+  registerCreateGenerativeAudio,
 ];

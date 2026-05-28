@@ -46,6 +46,10 @@ import {
   createGenerativeArtImpl,
   createGenerativeArtSchema,
 } from "../tools/layer1/createGenerativeArt.js";
+import {
+  createGenerativeAudioImpl,
+  createGenerativeAudioSchema,
+} from "../tools/layer1/createGenerativeAudio.js";
 import { createGlitchImpl, createGlitchSchema } from "../tools/layer1/createGlitch.js";
 import {
   createGpuParticleFieldImpl,
@@ -74,9 +78,15 @@ import {
   createMultiOutputSchema,
 } from "../tools/layer1/createMultiOutput.js";
 import {
+  createParticleFlockImpl,
+  createParticleFlockSchema,
+} from "../tools/layer1/createParticleFlock.js";
+import {
   createParticleSystemImpl,
   createParticleSystemSchema,
 } from "../tools/layer1/createParticleSystem.js";
+import { createPbrSceneImpl, createPbrSceneSchema } from "../tools/layer1/createPbrScene.js";
+import { createPointCloudImpl, createPointCloudSchema } from "../tools/layer1/createPointCloud.js";
 import {
   createProjectionMappingImpl,
   createProjectionMappingSchema,
@@ -142,6 +152,7 @@ import {
   createCueSequencerImpl,
   createCueSequencerSchema,
 } from "../tools/layer2/createCueSequencer.js";
+import { createDataSourceImpl, createDataSourceSchema } from "../tools/layer2/createDataSource.js";
 import { createDecksImpl, createDecksSchema } from "../tools/layer2/createDecks.js";
 import { createExternalIoImpl, createExternalIoSchema } from "../tools/layer2/createExternalIo.js";
 import { createGlslShaderImpl, createGlslShaderSchema } from "../tools/layer2/createGlslShader.js";
@@ -704,6 +715,37 @@ const COMMANDS: Record<string, Command> = {
     createPaletteSchema,
     createPaletteImpl,
     "Generate a color palette/gradient (harmony rules or sampled from a source).",
+    { mutates: true },
+  ),
+  // Post-0.3.0 parallel build — wave 2:
+  "pbr-scene": r(
+    createPbrSceneSchema,
+    createPbrSceneImpl,
+    "3D scene with a PBR material + environment light rig.",
+    { mutates: true },
+  ),
+  flock: r(
+    createParticleFlockSchema,
+    createParticleFlockImpl,
+    "Boids-style GPU particle flocking (separation/alignment/cohesion).",
+    { mutates: true },
+  ),
+  "point-cloud": r(
+    createPointCloudSchema,
+    createPointCloudImpl,
+    "Render a point cloud from a depth/luminance map or synthetic source.",
+    { mutates: true },
+  ),
+  "data-source": r(
+    createDataSourceSchema,
+    createDataSourceImpl,
+    "Ingest live external data (json/csv/osc/serial) onto a bindable CHOP.",
+    { mutates: true },
+  ),
+  "gen-audio": r(
+    createGenerativeAudioSchema,
+    createGenerativeAudioImpl,
+    "Synthesize audio (oscillator/fm/noise); optional device output.",
     { mutates: true },
   ),
 };
