@@ -8,7 +8,7 @@ const q = (value: string): string => JSON.stringify(value);
 /**
  * Halftone / print-look fragment shader for TouchDesigner's GLSL TOP.
  *
- * Implements four print/comic styles selected by the uStyle int uniform:
+ * Implements four print/comic styles selected by the uStyle uniform (float in GLSL, cast to int inside shader):
  *   0 = dots    — monochrome halftone dots on a rotated grid
  *   1 = cmyk    — 4-colour halftone separation (C/M/Y/K channels at staggered angles)
  *   2 = dither  — 4×4 ordered (Bayer) dithering → pixelated retro look

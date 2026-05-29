@@ -420,6 +420,9 @@ describe("create_halftone", () => {
       expect(shaderScript).toContain("uniform float uDotSize");
       expect(shaderScript).toContain("uniform float uAngle");
       expect(shaderScript).toContain("uniform float uMix");
+      // pixel-size source must be the output-info built-in, not the input texture's res.zw
+      expect(shaderScript).toContain("uTDOutputInfo.res.xy");
+      expect(shaderScript).not.toContain("uTD2DInfos[0].res.zw");
     });
 
     it("shader does not reference undefined globals (no uTime)", async () => {
