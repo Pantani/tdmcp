@@ -85,7 +85,20 @@ function safeRelativeSubdir(value: string, field: string): string {
 
 function resolveInside(base: string, rel: string): string {
   const root = resolve(base);
-  const target = resolve(root, ...rel.split("/"));
+  const normalized = rel.replace(/\\/g, "/");
+  if (
+    !normalized ||
+    normalized.includes("\0") ||
+    normalized.startsWith("/") ||
+    /^[a-zA-Z]:(?:\/|$)/.test(normalized)
+  ) {
+    throw new Error(`Path escapes package directory: ${rel}`);
+  }
+  const parts = normalized.split("/").filter(Boolean);
+  if (parts.some((part) => part === "..")) {
+    throw new Error(`Path escapes package directory: ${rel}`);
+  }
+  const target = resolve(root, ...parts);
   if (target !== root && !target.startsWith(`${root}${sep}`)) {
     throw new Error(`Path escapes package directory: ${rel}`);
   }

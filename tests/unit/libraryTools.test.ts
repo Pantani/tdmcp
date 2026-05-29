@@ -303,6 +303,52 @@ describe("library and packaging tools", () => {
     }
   });
 
+  it("rejects absolute and drive-qualified manifest references before resolving", async () => {
+    const dir = tmp();
+    try {
+      const pkg = join(dir, "pkg");
+      mkdirSync(join(pkg, "tmp"), { recursive: true });
+      mkdirSync(join(pkg, "C:"), { recursive: true });
+      writeFileSync(join(pkg, "tmp", "secret.tox"), "internal", "utf8");
+      writeFileSync(join(pkg, "C:", "secret.tox"), "internal", "utf8");
+      writeFileSync(join(pkg, "secret.tox"), "internal", "utf8");
+      writeFileSync(
+        join(pkg, "tdmcp-component.json"),
+        JSON.stringify({
+          id: "widget",
+          assets: ["/tmp/secret.tox", "C:/secret.tox", "safe/../secret.tox", "bad\u0000name.tox"],
+        }),
+        "utf8",
+      );
+
+      const inspected = await inspectComponentManifestImpl(makeCtx(), { path: pkg });
+      expect(inspected.isError).toBeFalsy();
+      expect(inspected.structuredContent?.missing).toEqual([
+        "/tmp/secret.tox",
+        "C:/secret.tox",
+        "safe/../secret.tox",
+        "bad\u0000name.tox",
+      ]);
+
+      const valid = await validateLibraryAssetImpl(makeCtx(), {
+        path: join(pkg, "tmp", "secret.tox"),
+        manifest_path: pkg,
+      });
+
+      expect(valid.structuredContent?.issues).toEqual(
+        expect.arrayContaining([
+          "Manifest reference escapes package directory: /tmp/secret.tox",
+          "Manifest reference escapes package directory: C:/secret.tox",
+          "Manifest reference escapes package directory: safe/../secret.tox",
+          "Manifest reference escapes package directory: bad\u0000name.tox",
+          "Asset is not referenced by the manifest.",
+        ]),
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("rejects manifest asset references that escape the package directory", async () => {
     const dir = tmp();
     try {

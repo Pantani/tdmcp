@@ -23,7 +23,7 @@ do cliente MCP continuam simples. Toda variável é opcional e tem um padrão se
 | `TDMCP_LOG_LEVEL` | `info` | `debug` / `info` / `warn` / `error` / `silent` (registrado no stderr). |
 | `TDMCP_REQUEST_TIMEOUT_MS` | `10000` | Timeout por requisição à ponte, em milissegundos. |
 | `TDMCP_CONFIG_FILE` | _(não definido)_ | Arquivo JSON de configuração opcional. As chaves usam os nomes internos (`tdHost`, `tdPort`, `requestTimeoutMs`, etc.). |
-| `TDMCP_PROFILE` | _(não definido)_ | Nome de perfil opcional dentro de `TDMCP_CONFIG_FILE` (`profiles.<nome>`). O arquivo base carrega primeiro, o perfil sobrescreve, e as variáveis de ambiente vencem ambos. |
+| `TDMCP_PROFILE` | _(não definido)_ | Nome de perfil opcional dentro do arquivo de configuração selecionado (`profiles.<nome>`), seja ele definido por `TDMCP_CONFIG_FILE` ou encontrado pelos caminhos de busca padrão. O arquivo base carrega primeiro, o perfil sobrescreve, e as variáveis de ambiente vencem ambos. |
 | `TDMCP_VAULT_PATH` | _(não definido)_ | Caminho absoluto para um vault do Obsidian (uma pasta de notas Markdown). Habilita as [tools de vault](/reference/tools#obsidian-vault) (em inglês); um `~/` inicial é expandido. Deixe sem definir para desabilitá-las. |
 
 ## Copiloto local (`tdmcp chat`)

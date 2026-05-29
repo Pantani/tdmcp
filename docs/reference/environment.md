@@ -23,7 +23,7 @@ config stay simple. Every variable is optional and has a sensible default.
 | `TDMCP_LOG_LEVEL` | `info` | `debug` / `info` / `warn` / `error` / `silent` (logged to stderr). |
 | `TDMCP_REQUEST_TIMEOUT_MS` | `10000` | Per-request timeout to the bridge, in milliseconds. |
 | `TDMCP_CONFIG_FILE` | _(unset)_ | Optional JSON config file. Keys match the internal config names (`tdHost`, `tdPort`, `requestTimeoutMs`, etc.). |
-| `TDMCP_PROFILE` | _(unset)_ | Optional profile name inside `TDMCP_CONFIG_FILE` (`profiles.<name>`). File base values load first, profile values override them, env vars override both. |
+| `TDMCP_PROFILE` | _(unset)_ | Optional profile name inside the selected config file (`profiles.<name>`), whether that file is set with `TDMCP_CONFIG_FILE` or found through the default search paths. File base values load first, profile values override them, env vars override both. |
 | `TDMCP_VAULT_PATH` | _(unset)_ | Absolute path to an Obsidian vault (a folder of Markdown notes). Enables the [vault tools](/reference/tools#obsidian-vault); a leading `~/` is expanded. Leave unset to disable them. |
 
 ## Local copilot (`tdmcp chat`)
