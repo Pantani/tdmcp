@@ -5,7 +5,7 @@ import { z } from "zod";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
 import { RecipeLibrary } from "../../src/recipes/loader.js";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
-import { TdApiError, TdConnectionError } from "../../src/td-client/types.js";
+import { isMissingEndpoint, TdApiError, TdConnectionError } from "../../src/td-client/types.js";
 import { connectNodesViaBridge } from "../../src/tools/layer2/connectHelper.js";
 import { connectNodesImpl } from "../../src/tools/layer2/connectNodes.js";
 import type { ToolContext } from "../../src/tools/types.js";
@@ -319,7 +319,7 @@ describe("connectNodesViaBridge — fallback chain", () => {
     expect(executePythonScript).not.toHaveBeenCalled();
   });
 
-  it("falls back to batch on TdApiError, then python when batch reports not-ok", async () => {
+  it("falls back to batch on a 404 (missing route), then python when batch reports not-ok", async () => {
     const connectNodes = vi.fn(async () => {
       throw new TdApiError("no endpoint", { status: 404 });
     });
@@ -343,6 +343,22 @@ describe("connectNodesViaBridge — fallback chain", () => {
 
     await expect(connectNodesViaBridge(client, "/p/a", "/p/b")).rejects.toBeInstanceOf(
       TdConnectionError,
+    );
+    expect(batch).not.toHaveBeenCalled();
+  });
+
+  it("propagates a validation TdApiError (400) instead of falling back", async () => {
+    // A current bridge rejecting the wire (e.g. cross-container) returns 400 with
+    // a specific message — NOT a missing route — so it must surface, not silently
+    // retry via batch/python (which would reintroduce the old no-op behavior).
+    const connectNodes = vi.fn(async () => {
+      throw new TdApiError("connect: cannot wire across containers", { status: 400 });
+    });
+    const batch = vi.fn();
+    const client = { connectNodes, batch, executePythonScript: vi.fn() } as never;
+
+    await expect(connectNodesViaBridge(client, "/p/a", "/p/b")).rejects.toThrow(
+      /cannot wire across containers/,
     );
     expect(batch).not.toHaveBeenCalled();
   });
@@ -405,5 +421,36 @@ describe("connect endpoint fallback chain", () => {
     const result = await connectNodesViaBridge(makeClient(), "/project1/a", "/project1/b");
     expect(result.method).toBe("python");
     expect(result.batchError).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// isMissingEndpoint — the shared signal that gates every endpoint→exec fallback
+// ---------------------------------------------------------------------------
+describe("isMissingEndpoint", () => {
+  it("treats HTTP 404 as a missing endpoint (older bridge / proxy)", () => {
+    expect(isMissingEndpoint(new TdApiError("nope", { status: 404 }))).toBe(true);
+  });
+
+  it("treats a 400 'Unsupported <METHOD> <path>' as a missing endpoint", () => {
+    // The bridge router answers an unmatched route with this exact 400 message.
+    expect(
+      isMissingEndpoint(new TdApiError("Unsupported POST /api/connect", { status: 400 })),
+    ).toBe(true);
+  });
+
+  it("does NOT treat a real validation 400 as missing (it must surface)", () => {
+    expect(
+      isMissingEndpoint(new TdApiError("connect: cannot wire across containers", { status: 400 })),
+    ).toBe(false);
+    expect(isMissingEndpoint(new TdApiError("No such parameter: foo", { status: 400 }))).toBe(
+      false,
+    );
+  });
+
+  it("returns false for connection/timeout/other errors (they propagate)", () => {
+    expect(isMissingEndpoint(new TdConnectionError("offline"))).toBe(false);
+    expect(isMissingEndpoint(new Error("x"))).toBe(false);
+    expect(isMissingEndpoint(undefined)).toBe(false);
   });
 });

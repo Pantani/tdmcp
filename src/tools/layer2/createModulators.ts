@@ -155,7 +155,17 @@ try:
     elif not hasattr(_parent, "create"):
         report["fatal"] = _p["parent_path"] + " cannot contain operators."
     else:
-        _comp = _parent.create(containerCOMP, _p["name"])
+        # Reuse-or-create the named container so it is NEVER auto-renamed on a
+        # collision: a bare create() would yield e.g. "modulators1" while the
+        # pre-built freq/rate expressions still point at parent_path/name, binding
+        # the bank to the wrong/missing tempo control. Clear children so a re-run
+        # rebuilds cleanly at deterministic child paths (beat / lfo_* / mod_out).
+        _comp = _parent.op(_p["name"])
+        if _comp is not None and not hasattr(_comp, "create"):
+            raise TypeError("%s exists and is not a container; pass a different name." % _comp.path)
+        _comp = _comp or _parent.create(containerCOMP, _p["name"])
+        for _old in list(_comp.children):
+            _old.destroy()
         report["comp"] = _comp.path
 
         # Resolve the tempo source: an external Null/Beat CHOP, or a fresh internal Beat CHOP.

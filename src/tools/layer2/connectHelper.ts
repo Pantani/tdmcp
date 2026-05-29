@@ -1,5 +1,5 @@
 import type { TouchDesignerClient } from "../../td-client/touchDesignerClient.js";
-import { friendlyTdError, TdApiError } from "../../td-client/types.js";
+import { friendlyTdError, isMissingEndpoint, TdApiError } from "../../td-client/types.js";
 
 export interface ConnectResult {
   method: "endpoint" | "batch" | "python";
@@ -31,8 +31,10 @@ export async function connectNodesViaBridge(
     await client.connectNodes(sourcePath, targetPath, sourceOutput, targetInput);
     return { method: "endpoint" };
   } catch (err) {
-    if (!(err instanceof TdApiError)) throw err; // connection/timeout propagate
-    // older bridge (404/unsupported) -> fall through to batch/python
+    // Fall back ONLY when the endpoint is absent (older bridge). A real
+    // validation rejection (e.g. cross-container wire, HTTP 400) must surface —
+    // retrying via batch/python would reintroduce the old silent no-op.
+    if (!isMissingEndpoint(err)) throw err;
   }
 
   let batchError: string | undefined;

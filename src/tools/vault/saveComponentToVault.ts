@@ -112,12 +112,23 @@ export async function saveComponentToVaultImpl(ctx: ToolContext, args: SaveCompo
     const noteRelPath = `${args.folder}/${resolvedName}.md`;
     const noteDate = new Date().toISOString().slice(0, 10);
 
-    // Capture a sibling thumbnail of the COMP's output before writing the note.
-    const thumb = args.thumbnail
-      ? await captureThumbnail(ctx.client, vault, args.folder, resolvedName, {
-          topPath: args.preview_top ?? args.comp_path,
-        })
-      : { imageRel: null as string | null, embed: "", warning: undefined as string | undefined };
+    // Capture a sibling thumbnail before writing the note. The preview endpoint
+    // only renders TOPs, so capture only when an explicit preview_top is given;
+    // otherwise skip with a clear, actionable warning (don't default to comp_path
+    // — a COMP can't be captured, so that path always failed silently).
+    const thumb =
+      args.thumbnail && args.preview_top
+        ? await captureThumbnail(ctx.client, vault, args.folder, resolvedName, {
+            topPath: args.preview_top,
+          })
+        : {
+            imageRel: null as string | null,
+            embed: "",
+            warning:
+              args.thumbnail && !args.preview_top
+                ? "Thumbnail skipped: a component has no single output TOP — pass preview_top=<a TOP path inside the component> to capture one."
+                : undefined,
+          };
 
     // Write the vault note — failure becomes a warning, not a fatal.
     let noteWarning: string | undefined;

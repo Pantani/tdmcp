@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TdApiError } from "../../td-client/types.js";
+import { isMissingEndpoint, TdApiError } from "../../td-client/types.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -168,13 +168,16 @@ export async function setParameterExpressionImpl(
             readback_expr: r.readback_expr,
           });
         } catch (err) {
+          // Only a genuinely missing endpoint (older bridge) on the FIRST call
+          // triggers the whole-batch exec fallback. A validation error (unknown
+          // param, missing node — also a TdApiError) is fail-forward per-param,
+          // so later valid assignments still apply and ALLOW_EXEC=0 users get the
+          // real reason instead of an exec-disabled error.
+          if (i === 0 && isMissingEndpoint(err)) {
+            endpointUsable = false;
+            break;
+          }
           if (err instanceof TdApiError) {
-            // First call on an older bridge -> exec fallback for the whole batch.
-            if (i === 0) {
-              endpointUsable = false;
-              break;
-            }
-            // A later per-param failure (e.g. unknown param) is fail-forward.
             warnings.push(`param '${a.param}': ${err.message}`);
             continue;
           }

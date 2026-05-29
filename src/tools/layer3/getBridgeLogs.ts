@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TdApiError } from "../../td-client/types.js";
+import { isMissingEndpoint } from "../../td-client/types.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -189,7 +189,10 @@ export async function getBridgeLogsImpl(ctx: ToolContext, args: GetBridgeLogsArg
       //    existing {source:"cook", level, text, op} shape. Fall back to the exec
       //    op-walk when the endpoint 404s OR reports available:false (older bridge).
       try {
-        const logs = await ctx.client.getLogs(args.scope, args.max_lines);
+        // getLogs(severity, maxLines, scope) — request all severities, the
+        // caller's max_lines, and pass the scope through so the endpoint filters
+        // to that operator path (was previously sending scope as the severity).
+        const logs = await ctx.client.getLogs("all", args.max_lines, args.scope);
         if (logs.available) {
           const lines = logs.lines.map((l) => ({
             source: "cook",
@@ -207,8 +210,9 @@ export async function getBridgeLogsImpl(ctx: ToolContext, args: GetBridgeLogsArg
         }
         // available:false -> fall through to the exec op-walk.
       } catch (err) {
-        if (!(err instanceof TdApiError)) throw err; // connection/timeout -> guardTd
-        // older bridge (404/unsupported) -> fall through to the exec path
+        // Fall back to the exec op-walk ONLY when the endpoint is absent (older
+        // bridge); a current bridge's validation 400 (bad scope) must surface.
+        if (!isMissingEndpoint(err)) throw err;
       }
       const script = buildGetBridgeLogsScript({
         scope: args.scope,
