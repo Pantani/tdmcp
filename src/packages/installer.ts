@@ -222,6 +222,7 @@ export async function installPackage(
   const imported = bridge.connected && bridge.imported && !bridge.fatal;
   const report: PackageInstallReport = {
     ...baseReport,
+    download,
     status: imported ? "imported" : "staged",
     cachePath: archivePath,
     stagedPath,

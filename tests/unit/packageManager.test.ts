@@ -186,6 +186,45 @@ describe("package install planning", () => {
     });
   });
 
+  it("reports the release asset that was actually fetched", async () => {
+    const root = tempRoot();
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        tag_name: "v1.2.3",
+        zipball_url: "https://zipball",
+        assets: [{ name: "MediaPipe.tox", browser_download_url: "https://asset/mediapipe.tox" }],
+      }),
+    })) as unknown as typeof fetch;
+    const downloader = vi.fn(async (_url: string, filePath: string) => {
+      writeFileSync(filePath, "tox");
+    });
+    try {
+      const report = await installPackage("mediapipe-touchdesigner", {
+        rootDir: root,
+        fetchImpl,
+        downloader,
+        bridge: { mode: "offline" },
+        yes: true,
+      });
+      expect(report.download).toMatchObject({
+        ref: "v1.2.3",
+        archiveName: "MediaPipe.tox",
+        kind: "file",
+        strategy: "github-release-asset",
+        url: "https://asset/mediapipe.tox",
+      });
+      expect(downloader).toHaveBeenCalledWith(
+        "https://asset/mediapipe.tox",
+        expect.stringContaining("MediaPipe.tox"),
+      );
+      const state = readPackageState(createPackagePaths({ rootDir: root }));
+      expect(state.packages[0]?.ref).toBe("v1.2.3");
+    } finally {
+      cleanup(root);
+    }
+  });
+
   it("mock-installs every MVP package and records one idempotent state entry each", async () => {
     const root = tempRoot();
     const downloader = vi.fn(async (_url: string, filePath: string) => {
