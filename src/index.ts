@@ -1,4 +1,5 @@
 import { runInstallBridge } from "./cli/installBridge.js";
+import { isPackageCommand, runPackageCli } from "./packages/cli.js";
 import { createTdmcpServer } from "./server/tdmcpServer.js";
 import { startTransport } from "./server/transportFactory.js";
 import { loadConfig } from "./utils/config.js";
@@ -10,9 +11,11 @@ async function main(): Promise<void> {
     runInstallBridge(argv.slice(1));
     return;
   }
-  if (argv[0] === "install") {
-    const { runInstall } = await import("./cli/install.js");
-    await runInstall(argv.slice(1));
+  if (isPackageCommand(argv[0])) {
+    const result = await runPackageCli(argv);
+    if (result.stdout) process.stdout.write(result.stdout);
+    if (result.stderr) process.stderr.write(result.stderr);
+    process.exitCode = result.code;
     return;
   }
   if (argv[0] === "chat" || argv[0] === "llm-run") {

@@ -40,13 +40,13 @@ Para rastrear uma pessoa real você precisa do plugin gratuito do MediaPipe
 (acelerado por GPU, roda no Mac e no PC). O tdmcp baixa pra você — num terminal:
 
 ```bash
-npx @dpantani/tdmcp install torinmb/mediapipe-touchdesigner
+npx @dpantani/tdmcp install mediapipe-touchdesigner
 ```
 
-O `tdmcp install <owner/repo>` baixa qualquer release do GitHub (estilo go-get); aqui
-ele pega a release oficial (licença MIT) do
+O `tdmcp install <lib>` prepara bibliotecas da comunidade a partir de manifestos seguros; aqui
+ele pega o pacote MIT
 [torinmb/mediapipe-touchdesigner](https://github.com/torinmb/mediapipe-touchdesigner)
-e extrai em `~/tdmcp-packages/mediapipe-touchdesigner`.
+e extrai em `~/.tdmcp/packages`.
 
 Depois, com o TouchDesigner aberto, peça ao assistente:
 
@@ -57,7 +57,7 @@ landmarks de pose e já fia o `create_pose_tracking` mais um esqueleto ao vivo �
 só escolhe sua webcam no novo componente `mediapipe_pose` e liga **Pose**.
 
 Prefere na mão? Abra o `MediaPipe TouchDesigner.toe` (ou arraste um `.tox` de
-`~/tdmcp-packages/mediapipe-touchdesigner/release/toxes/`) para o seu projeto, ligue
+do pacote preparado em `~/.tdmcp/packages`) para o seu projeto, ligue
 **Pose**, e aponte o `mediapipe_chop_path` de uma tool para o CHOP de landmarks do
 plugin (33 samples, canais `tx`/`ty`/`tz`).
 

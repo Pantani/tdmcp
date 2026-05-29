@@ -38,13 +38,13 @@ To track a real person you need the free, GPU-accelerated MediaPipe plugin
 (Mac + PC). tdmcp can fetch it for you — in a terminal:
 
 ```bash
-npx @dpantani/tdmcp install torinmb/mediapipe-touchdesigner
+npx @dpantani/tdmcp install mediapipe-touchdesigner
 ```
 
-`tdmcp install <owner/repo>` fetches any GitHub release (go-get style); here it grabs
-the official, MIT-licensed
+`tdmcp install <lib>` stages manifest-listed community libraries safely; here it grabs
+the MIT-licensed
 [torinmb/mediapipe-touchdesigner](https://github.com/torinmb/mediapipe-touchdesigner)
-and extracts it to `~/tdmcp-packages/mediapipe-touchdesigner`.
+and extracts it under `~/.tdmcp/packages`.
 
 Then, with TouchDesigner open, ask the assistant:
 
@@ -56,7 +56,7 @@ all you do is pick your webcam on the new `mediapipe_pose` component and enable
 **Pose**.
 
 Prefer to do it by hand? Open `MediaPipe TouchDesigner.toe` (or drag a `.tox` from
-`~/tdmcp-packages/mediapipe-touchdesigner/release/toxes/`) into your project, enable
+the staged package under `~/.tdmcp/packages`) into your project, enable
 **Pose**, then point a tool's `mediapipe_chop_path` at the plugin's pose-landmarks
 CHOP (33 samples, channels `tx`/`ty`/`tz`).
 

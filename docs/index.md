@@ -30,7 +30,7 @@ features:
     details: Audio-reactive, generative and particle systems arrive playable — with control panels, presets, cues, tempo sync, MIDI/OSC/DMX I/O and a phone remote.
   - title: Works offline-friendly
     details: A local LLM copilot (tdmcp chat) handles simple tasks without a paid API, and the server stays usable even when TouchDesigner is closed.
-  - title: 102 tools, three layers
+  - title: 130 tools, three layers
     details: From one-line artist generators down to atomic node CRUD and Python escape hatches — see the full, always-current Tools reference.
 ---
 
