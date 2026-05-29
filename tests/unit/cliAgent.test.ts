@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { HttpResponse, http } from "msw";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { runCli, runWatch } from "../../src/cli/agent.js";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
 import { RecipeLibrary } from "../../src/recipes/loader.js";
@@ -335,39 +335,49 @@ describe("tdmcp-agent CLI — phase 0 additions", () => {
 
 describe("tdmcp-agent watch", () => {
   it("writes events as ndjson and stops when the signal aborts", async () => {
+    const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     const lines: string[] = [];
     const controller = new AbortController();
     let emit: ((e: { event: string; data?: unknown }) => void) | undefined;
     let closed = false;
-    const done = runWatch({
-      write: (line) => lines.push(line),
-      signal: controller.signal,
-      makeStream: ({ onEvent }) => {
-        emit = onEvent;
-        return { start: () => {}, close: () => (closed = true) };
-      },
-    });
-    emit?.({ event: "node.created", data: { path: "/project1/x" } });
-    controller.abort();
-    await done;
-    expect(closed).toBe(true);
-    expect(lines).toContain('{"event":"node.created","data":{"path":"/project1/x"}}');
+    try {
+      const done = runWatch({
+        write: (line) => lines.push(line),
+        signal: controller.signal,
+        makeStream: ({ onEvent }) => {
+          emit = onEvent;
+          return { start: () => {}, close: () => (closed = true) };
+        },
+      });
+      emit?.({ event: "node.created", data: { path: "/project1/x" } });
+      controller.abort();
+      await done;
+      expect(closed).toBe(true);
+      expect(lines).toContain('{"event":"node.created","data":{"path":"/project1/x"}}');
+    } finally {
+      stderr.mockRestore();
+    }
   });
 
   it("derives a ws:// url ending in / from config", async () => {
+    const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     let url = "";
     const controller = new AbortController();
-    const done = runWatch({
-      write: () => {},
-      signal: controller.signal,
-      makeStream: (args) => {
-        url = args.url;
-        return { start: () => {}, close: () => {} };
-      },
-    });
-    controller.abort();
-    await done;
-    expect(url).toMatch(/^ws:\/\/.+\/$/);
+    try {
+      const done = runWatch({
+        write: () => {},
+        signal: controller.signal,
+        makeStream: (args) => {
+          url = args.url;
+          return { start: () => {}, close: () => {} };
+        },
+      });
+      controller.abort();
+      await done;
+      expect(url).toMatch(/^ws:\/\/.+\/$/);
+    } finally {
+      stderr.mockRestore();
+    }
   });
 });
 

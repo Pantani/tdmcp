@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { describeConfig, loadConfig, tdBaseUrl } from "../../src/utils/config.js";
 
 describe("loadConfig", () => {
@@ -121,8 +121,13 @@ describe("loadConfig — config files & profiles", () => {
   });
 
   it("ignores a malformed config file instead of throwing", () => {
+    const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     writeFileSync(join(dir, "tdmcp.json"), "{ not valid json");
-    expect(loadConfig({}, { useFiles: true, cwd: dir }).tdPort).toBe(9980);
+    try {
+      expect(loadConfig({}, { useFiles: true, cwd: dir }).tdPort).toBe(9980);
+    } finally {
+      stderr.mockRestore();
+    }
   });
 });
 
