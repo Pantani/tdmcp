@@ -1525,6 +1525,15 @@ function runStepArgv(step: RunStep): string[] {
   return argv;
 }
 
+function forwardedGlobalArgv(values: Record<string, unknown>): string[] {
+  const argv: string[] = [];
+  for (const key of ["config", "profile", "td-host", "td-port", "timeout"]) {
+    const value = values[key];
+    if (typeof value === "string") argv.push(`--${key}`, value);
+  }
+  return argv;
+}
+
 function parseStdout(stdout: string): unknown {
   const trimmed = stdout.trim();
   if (!trimmed) return "";
@@ -1677,8 +1686,9 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
       stdout: unknown;
       stderr: string;
     }> = [];
+    const globalArgv = forwardedGlobalArgv(values);
     for (const [index, step] of steps.entries()) {
-      const stepArgv = runStepArgv(step);
+      const stepArgv = [...globalArgv, ...runStepArgv(step)];
       const result = await runCli(stepArgv, opts);
       results.push({
         index,

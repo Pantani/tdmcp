@@ -40,6 +40,12 @@ export const snapshotTdGraphOutputSchema = z.object({
     .describe(
       "True if params were requested (`include_params` or `compact`) but the graph exceeded the per-node fetch cap.",
     ),
+  parameter_modes_truncated: z
+    .boolean()
+    .optional()
+    .describe(
+      "True if parameter modes were requested (`include_parameter_modes` or `compact`) but the graph exceeded the per-node fetch cap.",
+    ),
   compact: z
     .boolean()
     .optional()
@@ -293,7 +299,8 @@ export async function snapshotTdGraphImpl(ctx: ToolContext, args: SnapshotTdGrap
             nodeCount: report.nodeCount,
             connectionCount: report.connectionCount,
             issues: report.issues,
-            params_truncated: paramsTruncated || modesTruncated,
+            params_truncated: paramsTruncated,
+            parameter_modes_truncated: modesTruncated,
             compact: true,
             typeDefaults,
             nodes: compactNodes,
@@ -308,7 +315,8 @@ export async function snapshotTdGraphImpl(ctx: ToolContext, args: SnapshotTdGrap
           nodeCount: report.nodeCount,
           connectionCount: report.connectionCount,
           issues: report.issues,
-          params_truncated: paramsTruncated || modesTruncated,
+          params_truncated: paramsTruncated,
+          parameter_modes_truncated: modesTruncated,
           nodes,
           connections: report.topology.connections,
         },

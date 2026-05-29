@@ -236,6 +236,31 @@ describe("library and packaging tools", () => {
     }
   });
 
+  it("rejects doc asset directories that escape the package", async () => {
+    const dir = tmp();
+    try {
+      const pkg = join(dir, "pkg");
+      mkdirSync(pkg, { recursive: true });
+      const manifestPath = join(pkg, "tdmcp-component.json");
+      writeFileSync(manifestPath, JSON.stringify({ id: "widget", docs: [] }), "utf8");
+      const doc = join(dir, "README.md");
+      writeFileSync(doc, "# Widget\n", "utf8");
+
+      const attached = await attachDocsAsAssetsImpl(makeCtx(), {
+        manifest_path: manifestPath,
+        docs: [doc],
+        asset_dir: "../outside",
+      });
+
+      expect(attached.isError).toBe(true);
+      expect(existsSync(join(dir, "outside", "README.md"))).toBe(false);
+      const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as { docs?: string[] };
+      expect(manifest.docs).toEqual([]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("installs a local package directory without overwriting by default", async () => {
     const dir = tmp();
     try {
@@ -256,6 +281,43 @@ describe("library and packaging tools", () => {
         overwrite: false,
       });
       expect(second.isError).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("installs a manifest file by copying its containing package directory", async () => {
+    const dir = tmp();
+    try {
+      const src = join(dir, "srcpkg");
+      const docs = join(src, "docs");
+      const dest = join(dir, "packages");
+      mkdirSync(docs, { recursive: true });
+      writeFileSync(join(src, "widget.tox"), "tox", "utf8");
+      writeFileSync(join(docs, "guide.md"), "# Guide\n", "utf8");
+      const manifestPath = join(src, "tdmcp-component.json");
+      writeFileSync(
+        manifestPath,
+        JSON.stringify({
+          id: "srcpkg",
+          tox: "widget.tox",
+          assets: ["widget.tox"],
+          docs: ["docs/guide.md"],
+        }),
+        "utf8",
+      );
+
+      const installed = await installLibraryPackageImpl(makeCtx(), {
+        source: manifestPath,
+        dest_dir: dest,
+        overwrite: false,
+      });
+
+      expect(installed.isError).toBeFalsy();
+      expect(existsSync(join(dest, "srcpkg", "tdmcp-component.json"))).toBe(true);
+      expect(existsSync(join(dest, "srcpkg", "widget.tox"))).toBe(true);
+      expect(existsSync(join(dest, "srcpkg", "docs", "guide.md"))).toBe(true);
+      expect(existsSync(join(dest, "tdmcp-component", "tdmcp-component.json"))).toBe(false);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

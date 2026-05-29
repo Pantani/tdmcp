@@ -27,6 +27,7 @@ const SAFE_PROFILE_EXCLUDE = new Set<string>([
   "create_panic", // bypasses & deletes
   "manage_checkpoint", // overwrites saved state
   "manage_component", // can delete/replace components
+  "manage_packages", // stages/uninstalls community package files
   "make_portable_tox", // writes/overwrites .tox packages on disk
   "export_recipe_bundle", // writes bundle files
   "import_recipe_bundle", // writes recipe files

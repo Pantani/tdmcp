@@ -9,7 +9,7 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
-import { basename, dirname, extname, join, resolve } from "node:path";
+import { basename, dirname, extname, join, resolve, sep } from "node:path";
 import { z } from "zod";
 import { capturePreview } from "../../feedback/previewCapture.js";
 import { type Recipe, RecipeSchema } from "../../recipes/schema.js";
@@ -67,6 +67,52 @@ function recipeFileName(recipe: Recipe): string {
 
 function safeFileStem(name: string, fallback: string): string {
   return name.replace(/[^a-zA-Z0-9_.-]+/g, "_") || fallback;
+}
+
+function safeRelativeSubdir(value: string, field: string): string {
+  const normalized = value.trim().replace(/\\/g, "/");
+  if (!normalized || normalized === ".") return "";
+  if (normalized.startsWith("/") || /^[a-zA-Z]:(?:\/|$)/.test(normalized)) {
+    throw new Error(`${field} must be a relative subdirectory inside the package.`);
+  }
+  const parts = normalized.split("/").filter(Boolean);
+  if (parts.some((part) => part === "." || part === "..")) {
+    throw new Error(`${field} must not contain "." or ".." path segments.`);
+  }
+  return parts.join("/");
+}
+
+function resolveInside(base: string, rel: string): string {
+  const root = resolve(base);
+  const target = resolve(root, ...rel.split("/"));
+  if (target !== root && !target.startsWith(`${root}${sep}`)) {
+    throw new Error(`Path escapes package directory: ${rel}`);
+  }
+  return target;
+}
+
+function relativeAssetPath(dir: string, fileName: string): string {
+  return dir ? `${dir}/${fileName}` : fileName;
+}
+
+const MANIFEST_FILE_NAMES = new Set(["tdmcp-component.json", "manifest.json", "package.json"]);
+
+function installPackageSource(source: string): {
+  source: string;
+  packageName: string;
+  kind: "directory" | "zip" | "file";
+} {
+  const stats = statSync(source);
+  if (stats.isDirectory()) {
+    return { source, packageName: basename(source), kind: "directory" };
+  }
+  if (source.toLowerCase().endsWith(".zip")) {
+    return { source, packageName: basename(source, extname(source)), kind: "zip" };
+  }
+  if (MANIFEST_FILE_NAMES.has(basename(source))) {
+    return { source: dirname(source), packageName: basename(dirname(source)), kind: "directory" };
+  }
+  return { source, packageName: basename(source, extname(source)), kind: "file" };
 }
 
 export function zipExtractCommand(
@@ -382,10 +428,11 @@ export async function attachDocsAsAssetsImpl(_ctx: ToolContext, args: AttachDocs
   try {
     const { path: manifestPath, manifest } = readManifest(args.manifest_path);
     const base = dirname(manifestPath);
+    const assetDir = safeRelativeSubdir(args.asset_dir, "asset_dir");
     const attached: string[] = [];
     for (const doc of args.docs) {
-      const rel = join(args.asset_dir, basename(doc));
-      const dest = join(base, rel);
+      const rel = relativeAssetPath(assetDir, basename(doc));
+      const dest = resolveInside(base, rel);
       mkdirSync(dirname(dest), { recursive: true });
       copyFileSync(doc, dest);
       attached.push(rel);
@@ -557,21 +604,21 @@ export async function installLibraryPackageImpl(
   try {
     const source = resolve(args.source);
     if (!existsSync(source)) return errorResult(`Package source not found: ${source}`);
-    const baseName = basename(source, extname(source));
-    const dest = resolve(args.dest_dir, baseName);
+    const packageSource = installPackageSource(source);
+    const dest = resolve(args.dest_dir, packageSource.packageName);
     if (existsSync(dest) && !args.overwrite) {
       return errorResult(
         `Destination already exists: ${dest}. Pass overwrite:true to replace/update it.`,
       );
     }
     mkdirSync(dirname(dest), { recursive: true });
-    if (statSync(source).isDirectory()) {
-      cpSync(source, dest, { recursive: true, force: args.overwrite });
-    } else if (source.toLowerCase().endsWith(".zip")) {
-      extractZip(source, dest);
+    if (packageSource.kind === "directory") {
+      cpSync(packageSource.source, dest, { recursive: true, force: args.overwrite });
+    } else if (packageSource.kind === "zip") {
+      extractZip(packageSource.source, dest);
     } else {
       mkdirSync(dest, { recursive: true });
-      copyFileSync(source, join(dest, basename(source)));
+      copyFileSync(packageSource.source, join(dest, basename(packageSource.source)));
     }
     return jsonResult(`Installed library package to ${dest}.`, { source, dest });
   } catch (err) {

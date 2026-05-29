@@ -34,6 +34,7 @@ const SAFE_PROFILE_EXCLUDE = [
   "create_panic",
   "manage_checkpoint",
   "manage_component",
+  "manage_packages",
   "make_portable_tox",
   "export_recipe_bundle",
   "import_recipe_bundle",
@@ -87,6 +88,7 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
     expect(names).not.toContain("create_panic");
     expect(names).not.toContain("manage_checkpoint");
     expect(names).not.toContain("manage_component");
+    expect(names).not.toContain("manage_packages");
     expect(names).not.toContain("make_portable_tox");
     expect(names).not.toContain("export_recipe_bundle");
     expect(names).not.toContain("import_recipe_bundle");
@@ -107,7 +109,7 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
     const safe = await toolNames({ TDMCP_TOOL_PROFILE: "safe" });
     expect(safe.length).toBeLessThan(full.length);
     expect(full.length - safe.length).toBe(SAFE_PROFILE_EXCLUDE.length);
-    expect(SAFE_PROFILE_EXCLUDE.length).toBe(17);
+    expect(SAFE_PROFILE_EXCLUDE.length).toBe(18);
   });
 
   it("safe ⊇ rawPython=off (composition): safe hides everything rawPython=off hides", async () => {

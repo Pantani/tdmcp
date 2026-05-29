@@ -84,6 +84,42 @@ describe("tdmcp-agent CLI", () => {
     }
   });
 
+  it("propagates global config flags into JSON run-file steps", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-agent-run-"));
+    try {
+      const config = join(dir, "tdmcp.json");
+      const file = join(dir, "show-plan.json");
+      writeFileSync(
+        config,
+        JSON.stringify({
+          tdHost: "base-host",
+          tdPort: 9980,
+          profiles: {
+            club: { tdHost: "club-host", tdPort: 9981 },
+          },
+        }),
+      );
+      writeFileSync(file, JSON.stringify([{ command: "config" }]));
+
+      const r = await runCli([
+        "run",
+        file,
+        "--config",
+        config,
+        "--profile",
+        "club",
+        "--td-port",
+        "9982",
+      ]);
+
+      expect(r.code).toBe(0);
+      const doc = JSON.parse(r.stdout);
+      expect(doc.steps[0].stdout.tdBaseUrl).toBe("http://club-host:9982");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("suggests the nearest command on a typo (did-you-mean)", async () => {
     const r = await runCli(["noeds"]);
     expect(r.code).toBe(2);

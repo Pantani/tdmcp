@@ -160,4 +160,52 @@ describe("snapshotTdGraphImpl", () => {
       period: { name: "period", mode: "EXPRESSION", expr: "absTime.seconds" },
     });
   });
+
+  it("reports parameter-mode truncation separately from parameter-value truncation", async () => {
+    server.use(
+      http.get(`${TD_BASE}/api/network/:seg/topology`, () =>
+        HttpResponse.json({
+          ok: true,
+          data: {
+            nodes: Array.from({ length: 61 }, (_, i) => ({
+              path: `/project1/node${i}`,
+              type: "noiseTOP",
+              name: `node${i}`,
+            })),
+            connections: [],
+          },
+        }),
+      ),
+      http.post(`${TD_BASE}/api/exec`, () =>
+        HttpResponse.json({
+          ok: true,
+          data: {
+            result: null,
+            stdout: JSON.stringify({
+              parameters: {
+                period: { name: "period", mode: "CONSTANT", value: 1 },
+              },
+            }),
+          },
+        }),
+      ),
+    );
+
+    const result = await snapshotTdGraphImpl(makeCtx(), {
+      path: "/project1",
+      include_params: false,
+      compact: false,
+      include_parameter_modes: true,
+    });
+
+    expect(result.isError).toBeFalsy();
+    const data = result.structuredContent as {
+      params_truncated: boolean;
+      parameter_modes_truncated?: boolean;
+      nodes: Array<{ parameter_modes_unfetched?: boolean }>;
+    };
+    expect(data.params_truncated).toBe(false);
+    expect(data.parameter_modes_truncated).toBe(true);
+    expect(data.nodes.filter((node) => node.parameter_modes_unfetched)).toHaveLength(1);
+  });
 });
