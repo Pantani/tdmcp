@@ -192,6 +192,38 @@ describe("library and packaging tools", () => {
     }
   });
 
+  it("preflights duplicate recipe bundle target paths before writing", async () => {
+    const dir = tmp();
+    try {
+      const bundle = join(dir, "bundle.json");
+      const outDir = join(dir, "imported");
+      writeFileSync(
+        bundle,
+        JSON.stringify({
+          recipes: [
+            { id: "a/b", name: "Slash", nodes: [{ name: "noise1", type: "noiseTOP" }] },
+            { id: "a_b", name: "Underscore", nodes: [{ name: "noise1", type: "noiseTOP" }] },
+          ],
+        }),
+        "utf8",
+      );
+
+      const imported = await importRecipeBundleImpl(makeCtx(), {
+        bundle_file: bundle,
+        out_dir: outDir,
+        overwrite: true,
+      });
+
+      expect(imported.isError).toBe(true);
+      expect(imported.content[0]?.type === "text" ? imported.content[0].text : "").toMatch(
+        /Duplicate recipe target path/,
+      );
+      expect(existsSync(join(outDir, "a_b.json"))).toBe(false);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("inspects manifests, attaches docs, validates assets, and writes a local marketplace index", async () => {
     const dir = tmp();
     try {

@@ -336,6 +336,16 @@ export async function importRecipeBundleImpl(_ctx: ToolContext, args: ImportReci
       recipe,
       out: join(args.out_dir, recipeFileName(recipe)),
     }));
+    const seenTargets = new Map<string, string>();
+    for (const { recipe, out } of targets) {
+      const existingRecipeId = seenTargets.get(out);
+      if (existingRecipeId) {
+        return errorResult(
+          `Duplicate recipe target path: ${out} (${existingRecipeId} and ${recipe.id}).`,
+        );
+      }
+      seenTargets.set(out, recipe.id);
+    }
     if (!args.overwrite) {
       for (const { out } of targets) {
         if (existsSync(out)) {
