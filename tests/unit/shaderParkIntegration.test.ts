@@ -29,4 +29,35 @@ describe("Shader Park integration", () => {
       /Shader Park compile failed/i,
     );
   });
+
+  it("retries loading shader-park-core after a rejected dynamic import", async () => {
+    vi.resetModules();
+    let attempts = 0;
+    vi.doMock("shader-park-core", () => {
+      attempts += 1;
+      if (attempts === 1) throw new Error("temporary import failure");
+      return {
+        sculptToTouchDesignerShaderSource: () => ({
+          frag: "void main() {}",
+          uniforms: [],
+        }),
+      };
+    });
+
+    try {
+      const { compileShaderParkToTouchDesigner: compileWithMock } = await import(
+        "../../src/integrations/shaderPark.js"
+      );
+      await expect(compileWithMock("sphere(0.5);")).rejects.toThrow(
+        /temporary import failure|error when mocking a module/,
+      );
+      const compiled = await compileWithMock("sphere(0.5);");
+
+      expect(attempts).toBe(2);
+      expect(compiled.pixelShader).toBe("void main() {}");
+    } finally {
+      vi.doUnmock("shader-park-core");
+      vi.resetModules();
+    }
+  });
 });

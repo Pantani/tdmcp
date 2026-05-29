@@ -158,6 +158,19 @@ function expressionForUniform(
   return undefined;
 }
 
+function expressionForUniformComponent(
+  uniform: ShaderParkUniform,
+  args: CreateShaderParkArgs,
+  component: number,
+  fallback: number,
+): string | undefined {
+  if (uniform.name === "cameraPosition" && component === 2) {
+    return `parent().op('cam').par.tz.eval() if parent().op('cam') else ${fallback}`;
+  }
+  if (component !== 0) return undefined;
+  return expressionForUniform(uniform, args, fallback);
+}
+
 function uniformComponents(uniform: ShaderParkUniform, args: CreateShaderParkArgs): number[] {
   const custom = args.uniform_values[uniform.name];
   if (uniform.name === "resolution") return [...args.resolution];
@@ -180,17 +193,17 @@ function buildUniformScript(
   ];
   uniforms.forEach((uniform, index) => {
     const components = uniformComponents(uniform, args);
-    const fallback = components[0] ?? 0;
-    const expr = expressionForUniform(uniform, args, fallback);
     lines.push(`_m.par.vec${index}name = ${q(uniform.name)}`);
-    if (expr) {
-      lines.push(`_m.par.vec${index}valuex.expr = ${q(expr)}`);
-    } else {
-      lines.push(`_m.par.vec${index}valuex = ${fallback}`);
-    }
-    for (const [offset, suffix] of ["valuey", "valuez", "valuew"].entries()) {
-      const value = components[offset + 1];
-      if (value !== undefined) lines.push(`_m.par.vec${index}${suffix} = ${value}`);
+    for (const [component, suffix] of ["valuex", "valuey", "valuez", "valuew"].entries()) {
+      const value = components[component];
+      if (value === undefined && component > 0) continue;
+      const fallback = value ?? 0;
+      const expr = expressionForUniformComponent(uniform, args, component, fallback);
+      if (expr) {
+        lines.push(`_m.par.vec${index}${suffix}.expr = ${q(expr)}`);
+      } else {
+        lines.push(`_m.par.vec${index}${suffix} = ${fallback}`);
+      }
     }
   });
   return lines.join("\n");

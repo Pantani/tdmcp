@@ -26,7 +26,7 @@ let shaderParkCorePromise: Promise<ShaderParkCoreModule> | undefined;
 async function loadShaderParkCore(): Promise<ShaderParkCoreModule> {
   if (!shaderParkCorePromise) {
     const originalLog = console.log;
-    shaderParkCorePromise = (async () => {
+    const importPromise = (async () => {
       try {
         console.log = () => {};
         const mod = (await import("shader-park-core")) as unknown as ShaderParkCoreModule;
@@ -35,6 +35,11 @@ async function loadShaderParkCore(): Promise<ShaderParkCoreModule> {
         console.log = originalLog;
       }
     })();
+    const retryablePromise = importPromise.catch((error) => {
+      if (shaderParkCorePromise === retryablePromise) shaderParkCorePromise = undefined;
+      throw error;
+    });
+    shaderParkCorePromise = retryablePromise;
   }
   return shaderParkCorePromise;
 }

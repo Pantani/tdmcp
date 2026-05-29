@@ -179,6 +179,9 @@ describe("createShaderPark build", () => {
     const uniformScript = scripts.find((s) => s.includes("seq.vec") && s.includes("uBaseColor"));
     expect(uniformScript).toContain('vec6name = "uShadowStrength"');
     expect(uniformScript).toContain('vec8name = "uBaseColor"');
+    expect(uniformScript).toContain('vec13name = "cameraPosition"');
+    expect(uniformScript).toContain("_m.par.vec13valuez.expr");
+    expect(uniformScript).toContain("parent().op('cam').par.tz.eval()");
     expect(uniformScript).toContain('vec14name = "useTDLighting"');
     const samplerScript = scripts.find((s) => s.includes("sampler0name"));
     expect(samplerScript).toContain("base_color_map");
