@@ -155,11 +155,15 @@ def disconnect(to_path, from_path=None, to_input=None):
                 continue
             if from_path is not None and src_op.path != from_path:
                 continue
-            # Prefer the single-wire connection.disconnect(); fall back to clearing
-            # the whole input slot.
+            # Disconnect ONLY the wire between THIS target input and that specific
+            # upstream output connector. `connection` is the upstream OUTPUT
+            # connector, so connection.disconnect() would tear down its wires to
+            # EVERY downstream target; connector.disconnect(connection) is scoped to
+            # this one input<-output link. Fall back to clearing just this input
+            # slot (which still only affects to_path, never the source's outputs).
             disconnected = False
             try:
-                connection.disconnect()
+                connector.disconnect(connection)
                 disconnected = True
             except Exception as exc1:  # noqa: BLE001
                 try:
@@ -168,7 +172,7 @@ def disconnect(to_path, from_path=None, to_input=None):
                 except Exception as exc2:  # noqa: BLE001
                     warnings.append(
                         "disconnect failed for inputConnectors[%d] from %s: "
-                        "connection.disconnect -> %s; connector.disconnect -> %s"
+                        "connector.disconnect(conn) -> %s; connector.disconnect() -> %s"
                         % (index, src_op.path, exc1, exc2)
                     )
             if disconnected:

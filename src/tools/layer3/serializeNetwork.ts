@@ -13,9 +13,12 @@ export const serializeNetworkSchema = z.object({
 });
 type SerializeNetworkArgs = z.infer<typeof serializeNetworkSchema>;
 
-// SHARED SPEC SHAPE — this output is the exact INPUT that the sibling `rebuild_network`
-// tool consumes. The two MUST stay identical so a subtree round-trips: serialize →
-// JSON spec → rebuild reconstructs the same nodes/types/params/wires.
+// SHARED SPEC SHAPE — the name/type/params/inputs/x/y of this output are the exact
+// INPUT that the sibling `rebuild_network` tool consumes, and MUST stay identical so a
+// subtree round-trips: serialize → JSON spec → rebuild reconstructs the same
+// nodes/types/params/wires. The extra fields below (flags/comment/color/custom_params)
+// are inspection/diff metadata only — `rebuild_network` does NOT consume them, so a
+// round-trip intentionally does not restore them.
 const SerializedParamSchema = z.object({
   value: z.unknown().optional().describe("Evaluated parameter value."),
   mode: z
@@ -51,7 +54,7 @@ const SerializedNodeSchema = z.object({
     .record(z.string(), z.boolean())
     .optional()
     .describe(
-      "Operator flags (bypass/render/display/lock/allowCooking) for a faithful round-trip.",
+      "Operator flags (bypass/render/display/lock/allowCooking) — inspection/diff metadata; rebuild_network does not restore these.",
     ),
   comment: z.string().optional().describe("Node comment (cosmetic)."),
   color: z.array(z.number()).optional().describe("Node color RGB (cosmetic)."),

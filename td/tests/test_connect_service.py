@@ -56,13 +56,18 @@ class FakeConnector:
         # Record both directions so disconnect / re-scan can see the wire.
         self.connections.append(out_conn)
 
-    def disconnect(self):
+    def disconnect(self, other=None):
+        # Mirrors TD's Connector.disconnect(connector=None): with no arg, clear all
+        # wires on this connector; with a connector arg on an INPUT, remove ONLY the
+        # wire to that specific upstream output connector (the scoped form the
+        # disconnect service now uses so it can't tear down a source's other wires).
         if self.isInput:
-            # Clearing an input slot removes all its wires.
-            self.connections = []
+            if other is None:
+                self.connections = []
+            else:
+                self.connections = [c for c in self.connections if c is not other]
         else:
-            # Clearing a single upstream wire: drop this output from every input
-            # that currently lists it.
+            # Clearing an output wire: drop this output from every input listing it.
             for ic in self.owner._graph_inputs_listing(self):
                 ic.connections = [c for c in ic.connections if c is not self]
 
