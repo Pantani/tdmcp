@@ -9,7 +9,7 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
-import { basename, dirname, extname, join, resolve, sep } from "node:path";
+import { basename, dirname, extname, join, parse, resolve, sep } from "node:path";
 import { z } from "zod";
 import { capturePreview } from "../../feedback/previewCapture.js";
 import { listZipEntries, validateArchiveEntries } from "../../packages/archive.js";
@@ -119,22 +119,33 @@ function manifestRefs(manifest: ComponentManifest): string[] {
 
 const MANIFEST_FILE_NAMES = new Set(["tdmcp-component.json", "manifest.json", "package.json"]);
 
+function assertNotFilesystemRoot(path: string): void {
+  const full = resolve(path);
+  if (full === parse(full).root) {
+    throw new Error(`Package source must not be a filesystem root: ${full}`);
+  }
+}
+
 function installPackageSource(source: string): {
   source: string;
   packageName: string;
   kind: "directory" | "zip" | "file";
 } {
-  const stats = statSync(source);
+  const full = resolve(source);
+  assertNotFilesystemRoot(full);
+  const stats = statSync(full);
   if (stats.isDirectory()) {
-    return { source, packageName: basename(source), kind: "directory" };
+    return { source: full, packageName: basename(full), kind: "directory" };
   }
-  if (source.toLowerCase().endsWith(".zip")) {
-    return { source, packageName: basename(source, extname(source)), kind: "zip" };
+  if (full.toLowerCase().endsWith(".zip")) {
+    return { source: full, packageName: basename(full, extname(full)), kind: "zip" };
   }
-  if (MANIFEST_FILE_NAMES.has(basename(source))) {
-    return { source: dirname(source), packageName: basename(dirname(source)), kind: "directory" };
+  if (MANIFEST_FILE_NAMES.has(basename(full))) {
+    const packageDir = dirname(full);
+    assertNotFilesystemRoot(packageDir);
+    return { source: packageDir, packageName: basename(packageDir), kind: "directory" };
   }
-  return { source, packageName: basename(source, extname(source)), kind: "file" };
+  return { source: full, packageName: basename(full, extname(full)), kind: "file" };
 }
 
 export function zipExtractCommand(
@@ -635,10 +646,13 @@ export async function refreshAssetPreviewsImpl(ctx: ToolContext, args: RefreshAs
       warnings.push(`${target.node_path}: ${friendlyTdError(err)}`);
     }
   }
-  return jsonResult(`Refreshed ${written.length}/${args.targets.length} preview asset(s).`, {
+  const summary = `Refreshed ${written.length}/${args.targets.length} preview asset(s).`;
+  const report = {
     written,
     warnings,
-  });
+  };
+  if (written.length === 0) return errorResult(summary, report);
+  return jsonResult(summary, report);
 }
 
 export const installLibraryPackageSchema = z.object({

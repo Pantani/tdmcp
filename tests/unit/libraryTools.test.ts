@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { basename, dirname, join, resolve } from "node:path";
+import { basename, dirname, join, parse, resolve } from "node:path";
 import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
@@ -473,6 +473,25 @@ describe("library and packaging tools", () => {
     }
   });
 
+  it("rejects filesystem root package sources before resolving a destination", async () => {
+    const dir = tmp();
+    try {
+      const rootSource = parse(resolve(dir)).root;
+      const result = await installLibraryPackageImpl(makeCtx(), {
+        source: rootSource,
+        dest_dir: dir,
+        overwrite: false,
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0]?.type === "text" ? result.content[0].text : "").toMatch(
+        /filesystem root/,
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("installs a manifest file by copying its containing package directory", async () => {
     const dir = tmp();
     try {
@@ -538,6 +557,30 @@ describe("library and packaging tools", () => {
     expect(result.isError).toBeFalsy();
     expect(result.content[0]?.type).toBe("text");
     expect(result.content[0]?.type === "text" ? result.content[0].text : "").toContain("1 issue");
+  });
+
+  it("returns an error when every asset preview capture fails", async () => {
+    server.use(http.get(`${TD_BASE}/api/preview/:seg`, () => HttpResponse.error()));
+    const dir = tmp();
+    try {
+      const result = await refreshAssetPreviewsImpl(makeCtx(), {
+        targets: [
+          { node_path: "/project1/out1", file_path: join(dir, "out1.png") },
+          { node_path: "/project1/out2", file_path: join(dir, "out2.png") },
+        ],
+        width: 64,
+        height: 64,
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0]?.type === "text" ? result.content[0].text : "").toContain(
+        "Refreshed 0/2 preview asset(s).",
+      );
+      expect(existsSync(join(dir, "out1.png"))).toBe(false);
+      expect(existsSync(join(dir, "out2.png"))).toBe(false);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("refreshes preview image files from TOP nodes", async () => {
