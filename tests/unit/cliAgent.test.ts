@@ -120,6 +120,36 @@ describe("tdmcp-agent CLI", () => {
     }
   });
 
+  it("propagates top-level --dry-run into JSON run-file steps", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-agent-run-"));
+    try {
+      const file = join(dir, "show-plan.json");
+      writeFileSync(
+        file,
+        JSON.stringify([
+          {
+            command: "nodes create",
+            params: { parent_path: "/project1", type: "noiseTOP" },
+          },
+        ]),
+      );
+
+      const r = await runCli(["run", file, "--dry-run"], {
+        makeCtx: () => {
+          throw new Error("dry-run run-file steps must not build a TD context");
+        },
+      });
+
+      expect(r.code).toBe(0);
+      const doc = JSON.parse(r.stdout);
+      expect(doc.steps[0].command).toContain("--dry-run");
+      expect(doc.steps[0].stdout.dryRun).toBe(true);
+      expect(doc.steps[0].stdout.command).toBe("nodes create");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("suggests the nearest command on a typo (did-you-mean)", async () => {
     const r = await runCli(["noeds"]);
     expect(r.code).toBe(2);

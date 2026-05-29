@@ -1531,6 +1531,7 @@ function forwardedGlobalArgv(values: Record<string, unknown>): string[] {
     const value = values[key];
     if (typeof value === "string") argv.push(`--${key}`, value);
   }
+  if (values["dry-run"] === true) argv.push("--dry-run");
   return argv;
 }
 
