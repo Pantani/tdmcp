@@ -790,7 +790,8 @@ export function searchPackages(query = ""): PackageManifest[] {
   });
 }
 
-export function listPackages(_opts: { available?: boolean } = {}): PackageManifest[] {
+export function listPackages(opts: { available?: boolean } = {}): PackageManifest[] {
+  if (opts.available === false) return [];
   return [...PACKAGE_MANIFESTS];
 }
 

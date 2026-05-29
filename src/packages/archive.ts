@@ -2,6 +2,16 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 
+function isMissingCommandError(err: unknown): boolean {
+  return err instanceof Error && "code" in err && (err as NodeJS.ErrnoException).code === "ENOENT";
+}
+
+function missingUnzipError(): Error {
+  return new Error(
+    "Required zip tool 'unzip' was not found. Install unzip or choose a package/release asset that stages a .tox directly.",
+  );
+}
+
 function unsafeReason(entry: string): string | undefined {
   const normalized = entry.replace(/\\/g, "/");
   if (!normalized || normalized.includes("\0")) return "empty or NUL-containing path";
@@ -20,6 +30,16 @@ export function validateArchiveEntries(entries: string[]): void {
   }
 }
 
+export function assertZipToolAvailable(): void {
+  if (process.platform === "win32") return;
+  try {
+    execFileSync("unzip", ["-v"], { stdio: "ignore" });
+  } catch (err) {
+    if (isMissingCommandError(err)) throw missingUnzipError();
+    throw err;
+  }
+}
+
 export function listZipEntries(zipPath: string): string[] {
   if (process.platform === "win32") {
     const output = execFileSync(
@@ -33,7 +53,14 @@ export function listZipEntries(zipPath: string): string[] {
     );
     return output.split(/\r?\n/).filter(Boolean);
   }
-  const output = execFileSync("unzip", ["-Z1", zipPath], { encoding: "utf8" });
+  assertZipToolAvailable();
+  let output: string;
+  try {
+    output = execFileSync("unzip", ["-Z1", zipPath], { encoding: "utf8" });
+  } catch (err) {
+    if (isMissingCommandError(err)) throw missingUnzipError();
+    throw err;
+  }
   return output.split(/\r?\n/).filter(Boolean);
 }
 
@@ -52,5 +79,10 @@ export async function extractZipSafe(zipPath: string, destDir: string): Promise<
     );
     return;
   }
-  execFileSync("unzip", ["-o", "-q", zipPath, "-d", destDir], { stdio: "inherit" });
+  try {
+    execFileSync("unzip", ["-o", "-q", zipPath, "-d", destDir], { stdio: "inherit" });
+  } catch (err) {
+    if (isMissingCommandError(err)) throw missingUnzipError();
+    throw err;
+  }
 }

@@ -44,6 +44,7 @@ describe("package registry", () => {
     for (const manifest of manifests) {
       expect(() => PackageManifestSchema.parse(manifest)).not.toThrow();
     }
+    expect(listPackages({ available: false })).toHaveLength(0);
     expect(FULL_SUPPORT_PACKAGE_IDS).toEqual([...fullSupportIds]);
     for (const id of fullSupportIds) {
       expect(resolvePackage(id)?.supportLevel).toBe("full");
@@ -276,6 +277,17 @@ describe("package install planning", () => {
       expect(report.status).toBe("manual");
       expect(report.warnings.join("\n")).toMatch(/doctor-only|model/i);
       expect(downloader).not.toHaveBeenCalled();
+    } finally {
+      cleanup(root);
+    }
+  });
+
+  it("names deferred packages when rejecting an install target", async () => {
+    const root = tempRoot();
+    try {
+      await expect(installPackage("pytorchtop", { rootDir: root })).rejects.toThrow(
+        /pytorchtop is deferred and not an install target: .*too heavy/i,
+      );
     } finally {
       cleanup(root);
     }

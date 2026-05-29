@@ -109,7 +109,9 @@ export async function runPackageCli(
       });
       const values = parsed.values as ParsedValues;
       const paths = createPackagePaths({ rootDir: opts.rootDir });
-      const available = values.installed && !values.available ? [] : listPackages();
+      const available = listPackages({
+        available: !(values.installed && !values.available),
+      });
       const installed = values.installed ? readPackageState(paths).packages : [];
       const doc = { available, installed };
       if (values.json) return ok(json(doc));

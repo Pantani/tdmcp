@@ -1,6 +1,6 @@
 import { copyFileSync, existsSync, mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { extractZipSafe } from "./archive.js";
+import { assertZipToolAvailable, extractZipSafe } from "./archive.js";
 import { scanPackageArtifacts } from "./artifacts.js";
 import { importPackageViaBridge } from "./bridge.js";
 import {
@@ -103,7 +103,9 @@ export async function installPackage(
   const pkg = resolveInstallManifest(idOrAlias);
   if (!pkg) {
     const deferred = getDeferredPackage(idOrAlias);
-    const reason = deferred?.reason ?? `Unknown package: ${idOrAlias}`;
+    const reason = deferred
+      ? `${idOrAlias} is deferred and not an install target: ${deferred.reason}`
+      : `Unknown package: ${idOrAlias}`;
     throw new Error(reason);
   }
 
@@ -186,6 +188,7 @@ export async function installPackage(
   const archiveDir = join(paths.cache, segment);
   const archivePath = join(archiveDir, download.archiveName);
   const stagedPath = join(paths.installRoot, segment);
+  if (download.kind === "zip" && !opts.extractor) assertZipToolAvailable();
   mkdirSync(archiveDir, { recursive: true });
   mkdirSync(paths.installRoot, { recursive: true });
   rmSync(stagedPath, { recursive: true, force: true });
