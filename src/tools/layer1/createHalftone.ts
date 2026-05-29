@@ -20,7 +20,7 @@ const q = (value: string): string => JSON.stringify(value);
  *   - There is NO built-in uTime; we bind it ourselves via the vec sequence.
  *   - Avoid preamble macro collisions — use lowercase local variable names only;
  *     never name anything F1, F2, etc. (reserved in TD's GLSL preamble).
- *   - uTDOutputInfo.res.xy gives output resolution [width, height]; pixel size = 1.0/res.xy.
+ *   - TDTexInfo.res = (1/width, 1/height, width, height); uTDOutputInfo.res.xy is already texel size.
  *   - uStyle must be float (TD vec slot) — cast to int inside the shader.
  */
 const HALFTONE_SHADER = `out vec4 fragColor;
@@ -40,8 +40,8 @@ vec2 rotateUV(vec2 uv, float angle) {
 
 // Dot-grid halftone: returns 0 (dot) or 1 (paper) for a single channel value
 float dotCell(vec2 uv, float val, float cellPx, float angle) {
-    // pixel size derived from output resolution
-    vec2 px = 1.0 / uTDOutputInfo.res.xy;
+    // res.xy = (1/width, 1/height) per TDTexInfo layout — already texel size
+    vec2 px = uTDOutputInfo.res.xy;
     vec2 uvr = rotateUV(uv, angle);
     vec2 cell = fract(uvr / (cellPx * px)) - 0.5;
     float dist = length(cell);
