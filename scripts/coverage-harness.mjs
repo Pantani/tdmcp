@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -66,8 +66,16 @@ function runCoverage() {
   return result.status ?? 1;
 }
 
+function coverageSummaryPath() {
+  return path.join(rootDir, "coverage", "coverage-summary.json");
+}
+
+function removeStaleSummary() {
+  rmSync(coverageSummaryPath(), { force: true });
+}
+
 function readSummary() {
-  const summaryPath = path.join(rootDir, "coverage", "coverage-summary.json");
+  const summaryPath = coverageSummaryPath();
   if (!existsSync(summaryPath)) {
     return undefined;
   }
@@ -224,6 +232,7 @@ const options = parseArgs(process.argv.slice(2));
 let exitStatus = 0;
 
 if (!options.summaryOnly) {
+  removeStaleSummary();
   exitStatus = runCoverage();
 }
 
