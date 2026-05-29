@@ -87,6 +87,9 @@ describe("package paths and archive safety", () => {
     expect(() => validateArchiveEntries(["repo/file.tox", "repo/docs/readme.md"])).not.toThrow();
     expect(() => validateArchiveEntries(["repo/../../evil.py"])).toThrow(/Unsafe archive path/);
     expect(() => validateArchiveEntries(["/absolute/evil.tox"])).toThrow(/Unsafe archive path/);
+    expect(() => validateArchiveEntries([{ path: "repo/link", isSymlink: true }])).toThrow(
+      /Unsafe archive path.*symlink/,
+    );
   });
 });
 

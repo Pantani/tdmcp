@@ -105,6 +105,24 @@ describe("library and packaging tools", () => {
     }
   });
 
+  it("rejects zip symlink entries before extraction", () => {
+    const dir = tmp();
+    try {
+      const dest = join(dir, "tdmcp-package");
+      const exec = vi.fn();
+
+      expect(() =>
+        extractZip(join(dir, "package.zip"), dest, exec as never, () => [
+          { path: "package/link", isSymlink: true },
+        ]),
+      ).toThrow(/Unsafe archive path.*symlink/);
+      expect(exec).not.toHaveBeenCalled();
+      expect(existsSync(dest)).toBe(false);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("sanitizes explicit portable tox names before resolving the output path", async () => {
     const dir = tmp();
     let capturedScript = "";
@@ -354,7 +372,13 @@ describe("library and packaging tools", () => {
         join(pkg, "tdmcp-component.json"),
         JSON.stringify({
           id: "widget",
-          assets: ["/tmp/secret.tox", "C:/secret.tox", "safe/../secret.tox", "bad\u0000name.tox"],
+          assets: [
+            "/tmp/secret.tox",
+            "C:/secret.tox",
+            "C:secret.tox",
+            "safe/../secret.tox",
+            "bad\u0000name.tox",
+          ],
         }),
         "utf8",
       );
@@ -364,6 +388,7 @@ describe("library and packaging tools", () => {
       expect(inspected.structuredContent?.missing).toEqual([
         "/tmp/secret.tox",
         "C:/secret.tox",
+        "C:secret.tox",
         "safe/../secret.tox",
         "bad\u0000name.tox",
       ]);
@@ -377,6 +402,7 @@ describe("library and packaging tools", () => {
         expect.arrayContaining([
           "Manifest reference escapes package directory: /tmp/secret.tox",
           "Manifest reference escapes package directory: C:/secret.tox",
+          "Manifest reference escapes package directory: C:secret.tox",
           "Manifest reference escapes package directory: safe/../secret.tox",
           "Manifest reference escapes package directory: bad\u0000name.tox",
           "Asset is not referenced by the manifest.",
@@ -479,6 +505,31 @@ describe("library and packaging tools", () => {
 
       expect(attached.isError).toBe(true);
       expect(existsSync(join(dir, "outside", "README.md"))).toBe(false);
+      const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as { docs?: string[] };
+      expect(manifest.docs).toEqual([]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects Windows drive-relative doc asset directories", async () => {
+    const dir = tmp();
+    try {
+      const pkg = join(dir, "pkg");
+      mkdirSync(pkg, { recursive: true });
+      const manifestPath = join(pkg, "tdmcp-component.json");
+      writeFileSync(manifestPath, JSON.stringify({ id: "widget", docs: [] }), "utf8");
+      const doc = join(dir, "README.md");
+      writeFileSync(doc, "# Widget\n", "utf8");
+
+      const attached = await attachDocsAsAssetsImpl(makeCtx(), {
+        manifest_path: manifestPath,
+        docs: [doc],
+        asset_dir: "C:docs",
+      });
+
+      expect(attached.isError).toBe(true);
+      expect(existsSync(join(pkg, "C:docs", "README.md"))).toBe(false);
       const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as { docs?: string[] };
       expect(manifest.docs).toEqual([]);
     } finally {

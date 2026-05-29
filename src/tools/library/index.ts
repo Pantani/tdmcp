@@ -12,7 +12,11 @@ import {
 import { basename, dirname, extname, join, parse, resolve, sep } from "node:path";
 import { z } from "zod";
 import { capturePreview } from "../../feedback/previewCapture.js";
-import { listZipEntries, validateArchiveEntries } from "../../packages/archive.js";
+import {
+  listZipEntryInfo,
+  validateArchiveEntries,
+  type ZipEntryInfo,
+} from "../../packages/archive.js";
 import { type Recipe, RecipeSchema } from "../../recipes/schema.js";
 import { friendlyTdError } from "../../td-client/types.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
@@ -73,7 +77,7 @@ function safeFileStem(name: string, fallback: string): string {
 function safeRelativeSubdir(value: string, field: string): string {
   const normalized = value.trim().replace(/\\/g, "/");
   if (!normalized || normalized === ".") return "";
-  if (normalized.startsWith("/") || /^[a-zA-Z]:(?:\/|$)/.test(normalized)) {
+  if (normalized.startsWith("/") || /^[a-zA-Z]:/.test(normalized)) {
     throw new Error(`${field} must be a relative subdirectory inside the package.`);
   }
   const parts = normalized.split("/").filter(Boolean);
@@ -90,7 +94,7 @@ function resolveInside(base: string, rel: string): string {
     !normalized ||
     normalized.includes("\0") ||
     normalized.startsWith("/") ||
-    /^[a-zA-Z]:(?:\/|$)/.test(normalized)
+    /^[a-zA-Z]:/.test(normalized)
   ) {
     throw new Error(`Path escapes package directory: ${rel}`);
   }
@@ -172,7 +176,7 @@ export function extractZip(
   zipPath: string,
   destDir: string,
   exec: typeof execFileSync = execFileSync,
-  listEntries: (zipPath: string) => string[] = listZipEntries,
+  listEntries: (zipPath: string) => Array<string | ZipEntryInfo> = listZipEntryInfo,
 ): void {
   validateArchiveEntries(listEntries(zipPath));
   mkdirSync(destDir, { recursive: true });

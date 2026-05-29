@@ -48,10 +48,41 @@ describe("archive extraction diagnostics", () => {
     }
   });
 
+  it("lists Unix zip symlink metadata before extraction", async () => {
+    const platform = Object.getOwnPropertyDescriptor(process, "platform");
+    Object.defineProperty(process, "platform", { value: "linux" });
+    const execFileSync = vi.fn((command: string, args: string[]) => {
+      if (command === "unzip" && args[0] === "-v") return "";
+      return [
+        "Archive: package.zip",
+        "Zip file size: 42 bytes, number of entries: 2",
+        "lrwxrwxrwx  3.0 unx        8 bx stor 26-May-29 04:00 pkg/link",
+        "-rw-r--r--  3.0 unx        4 tx stor 26-May-29 04:00 pkg/file.tox",
+        "2 files, 12 bytes uncompressed, 12 bytes compressed:  0.0%",
+      ].join("\n");
+    });
+    vi.doMock("node:child_process", () => ({ execFileSync }));
+
+    try {
+      const { listZipEntryInfo } = await import("../../src/packages/archive.js");
+      expect(listZipEntryInfo("package.zip")).toEqual([
+        { path: "pkg/link", isSymlink: true },
+        { path: "pkg/file.tox", isSymlink: false },
+      ]);
+    } finally {
+      if (platform) Object.defineProperty(process, "platform", platform);
+    }
+  });
+
   it("extracts Windows zips without embedding paths in PowerShell code", async () => {
     const platform = Object.getOwnPropertyDescriptor(process, "platform");
     Object.defineProperty(process, "platform", { value: "win32" });
-    const execFileSync = vi.fn(() => "pkg/widget.tox\n");
+    const execFileSync = vi.fn((_command: string, args: string[]) => {
+      if (args[2]?.includes("ConvertTo-Json")) {
+        return JSON.stringify({ FullName: "pkg/widget.tox", ExternalAttributes: 0 });
+      }
+      return "";
+    });
     vi.doMock("node:child_process", () => ({ execFileSync }));
     const dir = mkdtempSync(join(tmpdir(), "tdmcp-archive-"));
 
