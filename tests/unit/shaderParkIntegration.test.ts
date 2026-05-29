@@ -65,6 +65,32 @@ describe("Shader Park integration", () => {
     );
   });
 
+  it("preserves Shader Park failure context for circular compiler errors", async () => {
+    vi.resetModules();
+    const circularError: Record<string, unknown> = {};
+    circularError.self = circularError;
+    vi.doMock("shader-park-core", () => ({
+      sculptToTouchDesignerShaderSource: () => ({
+        error: circularError,
+        frag: "void main() {}",
+        uniforms: [],
+      }),
+    }));
+
+    try {
+      const { compileShaderParkToTouchDesigner: compileWithMock } = await import(
+        "../../src/integrations/shaderPark.js"
+      );
+
+      await expect(compileWithMock("sphere(0.5);")).rejects.toThrow(
+        /^Shader Park compile failed: \[object Object\]/,
+      );
+    } finally {
+      vi.doUnmock("shader-park-core");
+      vi.resetModules();
+    }
+  });
+
   it("retries loading shader-park-core after a rejected dynamic import", async () => {
     vi.resetModules();
     let attempts = 0;

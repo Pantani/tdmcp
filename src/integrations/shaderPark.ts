@@ -86,7 +86,11 @@ function isUniform(value: unknown): value is ShaderParkUniform {
 function formatCompilerError(error: unknown): string {
   if (error instanceof Error) return error.message;
   if (typeof error === "string") return error;
-  return JSON.stringify(error);
+  try {
+    return JSON.stringify(error) ?? String(error);
+  } catch {
+    return String(error);
+  }
 }
 
 export async function compileShaderParkToTouchDesigner(
