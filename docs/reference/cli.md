@@ -18,6 +18,18 @@ The package installs two binaries: `tdmcp` (the MCP server + utilities) and
 | `tdmcp install-bridge` | Stage the TouchDesigner bridge to `~/tdmcp-bridge` and print the one line to paste into TD's Textport. See [Bridge & REST API](/reference/bridge-api). |
 | `tdmcp install-client <claude\|codex\|cursor>` | Print a client-specific MCP config snippet for the current package. |
 | `tdmcp --version` | Print the package version. |
+| `tdmcp search/list/info/install/uninstall/doctor/packages path` | Manage TouchDesigner community packages. See [Package manager](/reference/packages). |
+
+Common package-manager examples:
+
+```bash
+tdmcp search shader
+tdmcp list --available
+tdmcp info shader-park-td --json
+tdmcp install mediapipe-touchdesigner --dry-run --json
+tdmcp doctor comfyui-td --json
+tdmcp packages path
+```
 
 ## `tdmcp-agent` — command-line agent
 

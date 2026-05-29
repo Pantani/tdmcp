@@ -1,7 +1,9 @@
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
+import { createPackagePaths } from "../../packages/paths.js";
+import { readPackageState } from "../../packages/state.js";
 import { friendlyTdError } from "../../td-client/types.js";
 import { parsePythonReport } from "../pythonReport.js";
 import { errorResult } from "../result.js";
@@ -10,8 +12,7 @@ import { createPoseSkeletonImpl } from "./createPoseSkeleton.js";
 
 const q = (value: string): string => JSON.stringify(value);
 
-/** Default location `tdmcp install torinmb/mediapipe-touchdesigner` extracts the engine .tox to. */
-function defaultEngineToxPath(): string {
+function legacyEngineToxPath(): string {
   return join(
     homedir(),
     "tdmcp-packages",
@@ -22,12 +23,26 @@ function defaultEngineToxPath(): string {
   );
 }
 
+/** Finds the engine .tox staged by `tdmcp install mediapipe-touchdesigner`. */
+function defaultEngineToxPath(): string {
+  const paths = createPackagePaths();
+  const record = readPackageState(paths).packages.find(
+    (pkg) => pkg.id === "mediapipe-touchdesigner",
+  );
+  const artifact =
+    record?.artifacts.find(
+      (item) => basename(item.absolutePath).toLowerCase() === "mediapipe.tox",
+    ) ?? record?.artifacts.find((item) => item.kind === "tox");
+  if (artifact) return artifact.absolutePath;
+  return legacyEngineToxPath();
+}
+
 export const setupBodyTrackingSchema = z.object({
   tox_path: z
     .string()
     .optional()
     .describe(
-      "Path to the MediaPipe ENGINE .tox (MediaPipe.tox — the full tracker that captures the webcam, not the bare pose_tracking.tox processor). Defaults to where `tdmcp install torinmb/mediapipe-touchdesigner` puts it (~/tdmcp-packages/mediapipe-touchdesigner/release/toxes/MediaPipe.tox).",
+      "Path to the MediaPipe ENGINE .tox (MediaPipe.tox — the full tracker that captures the webcam, not the bare pose_tracking.tox processor). Defaults to the package staged by `tdmcp install mediapipe-touchdesigner`, falling back to the legacy ~/tdmcp-packages path.",
     ),
   parent_path: z.string().default("/project1").describe("COMP to load the engine into."),
   build_skeleton: z
@@ -170,7 +185,7 @@ export async function setupBodyTrackingImpl(ctx: ToolContext, args: SetupBodyTra
 
   if (report.error === "tox_missing") {
     return errorResult(
-      `MediaPipe engine not found at ${toxPath}. Install it first by running 'tdmcp install torinmb/mediapipe-touchdesigner' in a terminal (the free, MIT-licensed GPU MediaPipe tracker), or pass tox_path to an existing MediaPipe.tox.`,
+      `MediaPipe engine not found at ${toxPath}. Install it first by running 'tdmcp install mediapipe-touchdesigner' in a terminal (the free, MIT-licensed GPU MediaPipe tracker), or pass tox_path to an existing MediaPipe.tox. Legacy installs are also checked at ${legacyEngineToxPath()}.`,
     );
   }
   if (report.error === "parent_missing") {
@@ -231,7 +246,7 @@ export const registerSetupBodyTracking: ToolRegistrar = (server, ctx) => {
     {
       title: "Set up body tracking",
       description:
-        "One-shot body tracking from a webcam: loads the free torinmb/mediapipe-touchdesigner ENGINE (install it first with `tdmcp install torinmb/mediapipe-touchdesigner`) into your project, starts the timeline (the engine captures the webcam through an embedded browser that only runs while playing), reads its pose JSON DAT through an adapter that emits a 33-landmark pose CHOP, and builds a live skeleton so you only need to pick your webcam and enable Pose. If the engine isn't installed yet, it tells you how. Loading the engine will prompt for camera permission on macOS (click Allow).",
+        "One-shot body tracking from a webcam: loads the free mediapipe-touchdesigner ENGINE (install it first with `tdmcp install mediapipe-touchdesigner`) into your project, starts the timeline (the engine captures the webcam through an embedded browser that only runs while playing), reads its pose JSON DAT through an adapter that emits a 33-landmark pose CHOP, and builds a live skeleton so you only need to pick your webcam and enable Pose. If the engine isn't installed yet, it tells you how. Loading the engine will prompt for camera permission on macOS (click Allow).",
       inputSchema: setupBodyTrackingSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
