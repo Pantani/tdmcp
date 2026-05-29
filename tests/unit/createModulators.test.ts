@@ -367,7 +367,7 @@ describe("expose_controls", () => {
     expect(payload.modulators[0]?.freq_expr).not.toContain(".par.Rate");
   });
 
-  it("random S&H period folds the Rate factor in as a divisor when controls are exposed", async () => {
+  it("random S&H period folds the Rate factor in as a CLAMPED divisor when controls are exposed", async () => {
     const exec = vi.fn(async () => ({ stdout: happyReport({ channels: ["rnd"] }) }));
     await createModulatorsImpl(
       fakeCtx(exec),
@@ -377,8 +377,10 @@ describe("expose_controls", () => {
       }),
     );
     const m = decodePayload(scriptArg(exec)).modulators[0];
+    // The divisor is clamped with max(.., 1e-6) so Rate=0 freezes (huge period)
+    // instead of a divide-by-zero cook error.
     expect(m?.period_expr).toBe(
-      "(60.0 / op('/project1/modulators/beat')['bpm'] * 2) / op('/project1/modulators').par.Rate",
+      "(60.0 / op('/project1/modulators/beat')['bpm'] * 2) / max(op('/project1/modulators').par.Rate, 1e-6)",
     );
   });
 });

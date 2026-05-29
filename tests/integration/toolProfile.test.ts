@@ -43,6 +43,7 @@ const SAFE_PROFILE_EXCLUDE = [
   "local_marketplace_index",
   "refresh_asset_previews",
   "install_library_package",
+  "create_modulators",
 ];
 
 // Build/inspect surface that the safe profile must keep available.
@@ -97,6 +98,7 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
     expect(names).not.toContain("local_marketplace_index");
     expect(names).not.toContain("refresh_asset_previews");
     expect(names).not.toContain("install_library_package");
+    expect(names).not.toContain("create_modulators");
   });
 
   it("safe keeps the build/inspect surface", async () => {
@@ -109,7 +111,7 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
     const safe = await toolNames({ TDMCP_TOOL_PROFILE: "safe" });
     expect(safe.length).toBeLessThan(full.length);
     expect(full.length - safe.length).toBe(SAFE_PROFILE_EXCLUDE.length);
-    expect(SAFE_PROFILE_EXCLUDE.length).toBe(18);
+    expect(SAFE_PROFILE_EXCLUDE.length).toBe(19);
   });
 
   it("safe ⊇ rawPython=off (composition): safe hides everything rawPython=off hides", async () => {

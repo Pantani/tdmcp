@@ -123,11 +123,16 @@ function loadSnippet(
   }
 }
 
+/** Escape a value for a Markdown table cell: a raw `|` splits columns, a newline splits rows. */
+function mdCell(s: string): string {
+  return s.replace(/\|/g, "\\|").replace(/\r?\n/g, " ");
+}
+
 /** One contact-sheet cell: thumbnail, bold title, dim tags, load snippet. */
 function renderCell(card: IndexCard): string {
   const thumb = card.png ? `![[${basename(card.png)}]]` : "_(no preview)_";
-  const tags = card.tags.join(", ");
-  return `${thumb}<br>**${card.title}**<br><small>${tags}</small><br>${card.snippet}`;
+  const tags = mdCell(card.tags.join(", "));
+  return `${thumb}<br>**${mdCell(card.title)}**<br><small>${tags}</small><br>${mdCell(card.snippet)}`;
 }
 
 /** Render one category's cards into a Markdown grid table `columns` wide. */

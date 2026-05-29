@@ -279,8 +279,11 @@ export function buildModulatorSpecs(
   const masterRate = args.expose_controls
     ? ` * op(${pyStr(`${args.parent_path}/${args.name}`)}).par.Rate`
     : "";
+  // Clamp the divisor: Rate=0 is a valid "freeze" for LFOs (freq * 0), but it would
+  // divide-by-zero in the noise/random PERIOD expression. max(.., 1e-6) makes the
+  // hold period huge (effectively frozen) instead of raising a cook error.
   const masterRateDiv = args.expose_controls
-    ? ` / op(${pyStr(`${args.parent_path}/${args.name}`)}).par.Rate`
+    ? ` / max(op(${pyStr(`${args.parent_path}/${args.name}`)}).par.Rate, 1e-6)`
     : "";
   const specs: ModulatorSpec[] = args.modulators.map((m, i) => {
     // Resolve and de-duplicate the channel name (suffix _2, _3, … on collision) so two
@@ -376,9 +379,9 @@ export const registerCreateModulators: ToolRegistrar = (server, ctx) => {
     {
       title: "Create modulators",
       description:
-        "Build a bank of N BPM-synced LFOs in one self-contained container — each an oscillator (sine/triangle/saw/square or a random sample-&-hold) with its own rate-in-beats, output range and phase offset. Every rate locks to a tempo source (a create_tempo_sync Null, or TouchDesigner's global tempo) by expression, so the whole bank speeds up/slows down with the music and stays phase-continuous across tempo changes. All outputs land on one Null CHOP (mod_out) with one named channel per modulator, ready for bind_to_channel — the 'everything breathes' lever. Note: modulators are timeline-driven, so they only move while the timeline is playing.",
+        "Build a bank of N BPM-synced LFOs in one self-contained container — each an oscillator (sine/triangle/saw/square or a random sample-&-hold) with its own rate-in-beats, output range and phase offset. Every rate locks to a tempo source (a create_tempo_sync Null, or TouchDesigner's global tempo) by expression, so the whole bank speeds up/slows down with the music and stays phase-continuous across tempo changes. All outputs land on one Null CHOP (mod_out) with one named channel per modulator, ready for bind_to_channel — the 'everything breathes' lever. Note: modulators are timeline-driven, so they only move while the timeline is playing. Re-running with an existing container name rebuilds it in place (clearing that container's children), so this tool is marked destructive and hidden from the safe profile.",
       inputSchema: createModulatorsSchema.shape,
-      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     (args) => createModulatorsImpl(ctx, args),
   );
