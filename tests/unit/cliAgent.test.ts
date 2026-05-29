@@ -150,6 +150,31 @@ describe("tdmcp-agent CLI", () => {
     }
   });
 
+  it("propagates top-level --allow-unsafe into JSON run-file steps", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-agent-run-"));
+    try {
+      const file = join(dir, "unsafe-plan.json");
+      writeFileSync(
+        file,
+        JSON.stringify([
+          {
+            command: "exec python",
+            params: { script: "print(1)" },
+          },
+        ]),
+      );
+
+      const r = await runCli(["run", file, "--allow-unsafe"], { makeCtx });
+
+      expect(r.code).toBe(0);
+      const doc = JSON.parse(r.stdout);
+      expect(doc.steps[0].command).toContain("--allow-unsafe");
+      expect(doc.steps[0].stdout).toHaveProperty("stdout");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("suggests the nearest command on a typo (did-you-mean)", async () => {
     const r = await runCli(["noeds"]);
     expect(r.code).toBe(2);

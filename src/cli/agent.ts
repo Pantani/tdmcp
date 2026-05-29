@@ -1532,6 +1532,7 @@ function forwardedGlobalArgv(values: Record<string, unknown>): string[] {
     if (typeof value === "string") argv.push(`--${key}`, value);
   }
   if (values["dry-run"] === true) argv.push("--dry-run");
+  if (values["allow-unsafe"] === true) argv.push("--allow-unsafe");
   return argv;
 }
 
