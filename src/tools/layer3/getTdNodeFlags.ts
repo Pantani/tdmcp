@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { friendlyTdError, isMissingEndpoint } from "../../td-client/types.js";
+import type { TdNodeDetail } from "../../td-client/validators.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -258,9 +260,89 @@ export function buildGetFlagsScript(payload: object): string {
   return buildPayloadScript(GET_FLAGS_SCRIPT, payload);
 }
 
+// Map a structured node_detail (REST) into the flags-entry shape. NodeDetail's
+// flags/wires_in are the SAME shapes this tool emits (kept identical on purpose),
+// so this is a faithful copy plus the same suspect classification the exec walk
+// applies (bypass on / cooking disabled / cook error present).
+function detailToFlagsEntry(d: TdNodeDetail): NodeFlagsEntry {
+  const errors = d.errors ?? [];
+  const flags = (d.flags ?? {}) as Record<string, unknown>;
+  const entry: NodeFlagsEntry = {
+    path: d.path,
+    type: d.type,
+    name: d.name,
+    flags,
+    wires_in: d.wires_in ?? [],
+    errors,
+  };
+  if (d.nodeX !== undefined) entry.nodeX = d.nodeX;
+  if (d.nodeY !== undefined) entry.nodeY = d.nodeY;
+  if (d.color !== undefined) entry.color = d.color;
+  if (d.comment) entry.comment = d.comment;
+  const reasons: string[] = [];
+  if (flags.bypass === true) reasons.push("bypass on");
+  if (flags.allowCooking === false) reasons.push("cooking disabled");
+  if (errors.length > 0) reasons.push("cook error");
+  if (reasons.length > 0) entry.suspect_reason = reasons.join(", ");
+  return entry;
+}
+
 export async function getTdNodeFlagsImpl(ctx: ToolContext, args: GetTdNodeFlagsArgs) {
   return guardTd(
     async () => {
+      // REST-first: the structured node_detail endpoint carries the SAME
+      // flags/wires_in/errors/position/color/comment and survives
+      // TDMCP_BRIDGE_ALLOW_EXEC=0. Fall back to the exec walk only on an older
+      // bridge — no /api/nodes route (isMissingEndpoint) or a node_detail that
+      // predates the flags extension (root.flags is undefined).
+      try {
+        const root = await ctx.client.getNode(args.path);
+        if (root.flags !== undefined) {
+          const report: GetTdNodeFlagsReport = {
+            path: args.path,
+            scanned: 0,
+            nodes: [],
+            warnings: [],
+          };
+          const details: TdNodeDetail[] = [root];
+          if (args.recursive) {
+            // One list call for the immediate children (depth 1), then a detail
+            // read each — N+1 requests, but exec-gate-free. Capped at max_nodes.
+            try {
+              const list = await ctx.client.getNodes(args.path);
+              for (const child of list.nodes) {
+                if (details.length >= args.max_nodes) {
+                  report.warnings.push(
+                    `max_nodes (${args.max_nodes}) reached; subtree scan truncated.`,
+                  );
+                  break;
+                }
+                try {
+                  details.push(await ctx.client.getNode(child.path));
+                } catch (childErr) {
+                  report.warnings.push(`Error reading ${child.path}: ${friendlyTdError(childErr)}`);
+                }
+              }
+            } catch (listErr) {
+              report.warnings.push(`findChildren failed: ${friendlyTdError(listErr)}`);
+            }
+          }
+          for (const d of details) {
+            report.scanned += 1;
+            const entry = detailToFlagsEntry(d);
+            if (args.only_problems && !entry.suspect_reason) continue;
+            report.nodes.push(entry);
+          }
+          report.probe = { endpoint: "node_detail", flags_present: Object.keys(root.flags).sort() };
+          return report;
+        }
+        // node_detail without flags -> older bridge -> exec fallback below.
+      } catch (err) {
+        // connection/timeout/validation propagate; only a missing route falls back.
+        if (!isMissingEndpoint(err)) throw err;
+      }
+
+      // Fallback: the exec walk (older bridge, or with ALLOW_EXEC on). Same shape.
       const script = buildGetFlagsScript({
         path: args.path,
         recursive: args.recursive,

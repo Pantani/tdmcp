@@ -1,6 +1,6 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { describe, expect, it, vi } from "vitest";
-import { TdConnectionError } from "../../src/td-client/types.js";
+import { TdApiError, TdConnectionError } from "../../src/td-client/types.js";
 import {
   buildGetFlagsScript,
   getTdNodeFlagsImpl,
@@ -26,9 +26,23 @@ function decodePayload(script: string): Payload {
   return JSON.parse(Buffer.from(b64, "base64").toString("utf8")) as Payload;
 }
 
-function fakeCtx(exec: ReturnType<typeof vi.fn>): ToolContext {
+// By default getNode pretends the node_detail endpoint is absent (older bridge), so
+// the impl falls back to the exec walk these tests drive. Pass overrides to exercise
+// the REST-first path or an offline getNode.
+function fakeCtx(
+  exec: ReturnType<typeof vi.fn>,
+  overrides?: Partial<{ getNode: unknown; getNodes: unknown }>,
+): ToolContext {
   return {
-    client: { executePythonScript: exec },
+    client: {
+      executePythonScript: exec,
+      getNode:
+        overrides?.getNode ??
+        vi.fn(async () => {
+          throw new TdApiError("Unsupported GET /api/nodes/x", { status: 404 });
+        }),
+      getNodes: overrides?.getNodes ?? vi.fn(async () => ({ nodes: [] })),
+    },
     logger: silentLogger,
   } as unknown as ToolContext;
 }
@@ -263,11 +277,13 @@ describe("getTdNodeFlagsImpl — fatal & offline", () => {
   });
 
   it("converts a thrown TdConnectionError into a friendly isError (TD offline)", async () => {
-    const exec = vi.fn(async () => {
+    // REST-first: getNode is hit first; offline -> TdConnectionError -> propagates
+    // (not a missing endpoint) -> guardTd turns it into a friendly error.
+    const offline = vi.fn(async () => {
       throw new TdConnectionError("Could not reach the TouchDesigner bridge on 127.0.0.1:9980.");
     });
 
-    const result = await getTdNodeFlagsImpl(fakeCtx(exec), {
+    const result = await getTdNodeFlagsImpl(fakeCtx(offline, { getNode: offline }), {
       path: "/project1/blur1",
       recursive: false,
       only_problems: false,
@@ -276,5 +292,107 @@ describe("getTdNodeFlagsImpl — fatal & offline", () => {
 
     expect(result.isError).toBe(true);
     expect(textOf(result)).toContain("Could not reach the TouchDesigner bridge");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getTdNodeFlagsImpl — REST-first path (structured node_detail, exec-gate-free)
+// ---------------------------------------------------------------------------
+
+describe("getTdNodeFlagsImpl — REST node_detail path", () => {
+  it("serves flags via the node_detail endpoint without exec (survives ALLOW_EXEC=0)", async () => {
+    const exec = vi.fn(); // must NOT be called when the endpoint serves flags
+    const getNode = vi.fn(async () => ({
+      path: "/project1/blur1",
+      type: "blurTOP",
+      name: "blur1",
+      parameters: {},
+      flags: { bypass: true, allowCooking: true },
+      wires_in: [{ in_index: 0, from: "/project1/noise1", out_index: 0 }],
+      nodeX: 10,
+      nodeY: 20,
+      color: [0.5, 0.5, 0.5],
+      comment: "muted for the drop",
+      errors: [],
+    }));
+
+    const result = await getTdNodeFlagsImpl(fakeCtx(exec, { getNode }), {
+      path: "/project1/blur1",
+      recursive: false,
+      only_problems: false,
+      max_nodes: 200,
+    });
+
+    expect(result.isError).toBeFalsy();
+    expect(getNode).toHaveBeenCalledOnce();
+    expect(exec).not.toHaveBeenCalled(); // exec-gate-free path
+
+    const sc = result.structuredContent as {
+      scanned: number;
+      nodes: Array<{
+        flags: { bypass?: boolean };
+        wires_in: Array<{ in_index: number | null; from: string; out_index: number }>;
+        comment?: string;
+        suspect_reason?: string;
+      }>;
+      probe?: { endpoint?: string };
+    };
+    expect(sc.scanned).toBe(1);
+    expect(sc.nodes[0]?.flags.bypass).toBe(true);
+    expect(sc.nodes[0]?.suspect_reason).toBe("bypass on");
+    expect(sc.nodes[0]?.comment).toBe("muted for the drop");
+    expect(sc.nodes[0]?.wires_in[0]).toEqual({
+      in_index: 0,
+      from: "/project1/noise1",
+      out_index: 0,
+    });
+    expect(sc.probe?.endpoint).toBe("node_detail");
+  });
+
+  it("recursive: lists children and reads each via node_detail, applying only_problems", async () => {
+    const exec = vi.fn();
+    const detailByPath: Record<string, unknown> = {
+      "/project1/geo1": {
+        path: "/project1/geo1",
+        type: "geometryCOMP",
+        name: "geo1",
+        parameters: {},
+        flags: { allowCooking: true },
+        wires_in: [],
+        errors: [],
+      },
+      "/project1/geo1/blur1": {
+        path: "/project1/geo1/blur1",
+        type: "blurTOP",
+        name: "blur1",
+        parameters: {},
+        flags: { bypass: true, allowCooking: true },
+        wires_in: [],
+        errors: [],
+      },
+    };
+    const getNode = vi.fn(async (path: string) => detailByPath[path]);
+    const getNodes = vi.fn(async () => ({
+      nodes: [{ path: "/project1/geo1/blur1", type: "blurTOP", name: "blur1" }],
+    }));
+
+    const result = await getTdNodeFlagsImpl(fakeCtx(exec, { getNode, getNodes }), {
+      path: "/project1/geo1",
+      recursive: true,
+      only_problems: true,
+      max_nodes: 200,
+    });
+
+    expect(result.isError).toBeFalsy();
+    expect(exec).not.toHaveBeenCalled();
+    const sc = result.structuredContent as {
+      scanned: number;
+      nodes: Array<{ path: string; suspect_reason?: string }>;
+    };
+    // Both nodes scanned (root + 1 child), but only the bypassed child is reported.
+    expect(sc.scanned).toBe(2);
+    expect(sc.nodes).toHaveLength(1);
+    expect(sc.nodes[0]?.path).toBe("/project1/geo1/blur1");
+    expect(sc.nodes[0]?.suspect_reason).toBe("bypass on");
   });
 });
