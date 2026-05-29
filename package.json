@@ -26,7 +26,11 @@
     "scripts/fetch-shader-park-td.mjs",
     "scripts/tdmcp-lops.mjs",
     "recipes",
-    "td",
+    "td/bootstrap.py",
+    "td/modules",
+    "td/README.md",
+    "td/startup.py",
+    "td/templates",
     "README.md",
     "LICENSE"
   ],

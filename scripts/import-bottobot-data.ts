@@ -38,6 +38,26 @@ function writeJson(path: string, data: unknown): void {
   writeFileSync(path, JSON.stringify(data));
 }
 
+function readExistingMeta(): {
+  importedAt?: string;
+  source?: string;
+  bottobotVersion?: string;
+  counts?: unknown;
+} {
+  const metaPath = join(outDir, "meta.json");
+  if (!existsSync(metaPath)) return {};
+  try {
+    return readJson(metaPath) as {
+      importedAt?: string;
+      source?: string;
+      bottobotVersion?: string;
+      counts?: unknown;
+    };
+  } catch {
+    return {};
+  }
+}
+
 function listJson(dir: string): string[] {
   if (!existsSync(dir)) return [];
   return readdirSync(dir).filter((f) => f.endsWith(".json") && f !== "index.json");
@@ -66,6 +86,7 @@ function writeEmpty(): void {
 
 function main(): void {
   const bb = bottobotPackageDir();
+  const existingMeta = readExistingMeta();
   if (!bb) {
     console.warn(
       "[import] @bottobot/td-mcp not found. Run `npm install @bottobot/td-mcp`, then re-run `npm run import:bottobot`.",
@@ -134,10 +155,14 @@ function main(): void {
     patterns: patterns.length,
     glsl: glsl.length,
   };
+  const unchangedMeta =
+    existingMeta.source === "bottobot" &&
+    existingMeta.bottobotVersion === bottobotVersion &&
+    JSON.stringify(existingMeta.counts) === JSON.stringify(counts);
   writeJson(join(outDir, "meta.json"), {
     source: "bottobot",
     bottobotVersion,
-    importedAt: new Date().toISOString(),
+    importedAt: unchangedMeta ? existingMeta.importedAt : new Date().toISOString(),
     counts,
   });
 

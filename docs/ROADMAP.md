@@ -41,7 +41,7 @@ Every feature follows the existing patterns:
 | 7 | 0.3.0 ☑ | Stage I/O & sensor reactivity | Send video out, fan across projectors, react to the camera, follow an external clock, run hands-free |
 | 8–11 | 0.3.0 ◐ | Effects, reactivity, control & AI | Parallel waves — signature effects, deeper reactivity, creation, live control/AI/DX (detailed below) |
 | 12 | 0.3.0 ☑ | Dimensional: 3D, depth & spatial mapping | Take visuals off the flat plane — react in 3D, sculpt with depth, map onto real surfaces |
-| 13 | 0.5.0 ☐ | Components, agent-DX & reactivity | Reusable-component scaffolding, project analysis/auto-docs, token-cheap agent-DX, Link/MIDI — the gaps left after the 0.4.0 generators + the body-tracking tools already on `main` |
+| 13 | 0.5.0 ◐ | Components, agent-DX & reactivity | Reusable-component scaffolding, project analysis/auto-docs, token-cheap agent-DX, Link/MIDI — integrated for 0.5.0, with hardware/live validation called out below |
 | 14–15 | 0.5.0 ◐ | Live mixing, parameter fidelity & creative direction | Post-discovery wave: transitions/layer-stack/keyer/media-bin, one-shot reactivity, signature effects, network round-trip, 11 AI prompts — built offline, live-validation pending |
 
 ---
@@ -352,14 +352,14 @@ validate).
 
 ---
 
-## Phase 13 — v0.5.0 · Components, agent-DX & reactivity ☐ planned
+## Phase 13 — v0.5.0 · Components, agent-DX & reactivity ◐ integrated
 
 **v0.4.0 shipped 2026-05-27** — fifteen new tools/prompts (raymarch & particle-flock generators,
 point-cloud/PBR/cubemap-dome, tempo detection, LED/palette/cue/dashboard, generative audio, and
 recipe/style prompts). Body/pose tracking (`setup_body_tracking`, `create_pose_tracking`,
 `create_pose_skeleton`, `create_body_reactive`) is also already on `main` (in-tree, **not** in the
-0.4.0 CHANGELOG). Phase 13 is the **next** wave (v0.5.0): the thesis shifts from *generating* visuals (0.4.x already covers that,
-100+ tools) to **packaging, documenting and cheaply operating** them. tdmcp already ships `.tox`
+0.4.0 CHANGELOG). Phase 13 is integrated for **v0.5.0**: the thesis shifts from *generating* visuals (0.4.x already covers that,
+175 tools) to **packaging, documenting and cheaply operating** them. tdmcp already ships `.tox`
 save/load (`manage_component`); v0.5.0 completes the *reusable-component* story (custom parameters +
 extensions) and adds the analysis + agent-DX gaps no competing TD-MCP owns.
 Benchmarked against the two leaders: **`8beeeaaat/touchdesigner-mcp`** (~330★,
@@ -378,20 +378,20 @@ tracking is on `main` in-tree, not in the 0.4.0 CHANGELOG.)
 | Feature | Delivers | Effort | Status |
 |---|---|---|---|
 | ~~`export_component` / `import_component`~~ — **already shipped** | `.tox` `save` / `loadTox` / live-linked `externaltox` already exist as **`manage_component`** (BL-01 was a false gap). Remaining gap: a self-contained, dependency-collected portable bundle — note `saveExternalTox` only externalizes to a folder tree, not a single portable `.tox` (→ v0.6.0 `make_portable_tox`) | — | ☑ |
-| `scaffold_extension` | Extension DAT stub + Extension Object + Promote flag + re-init — make a COMP scriptable (BL-03) | M | ☐ |
-| `add_custom_parameters` | Declarative custom-parameter pages (`appendCustomPage`/`appendFloat…`), TDJSON in/out — expose knobs (BL-03) | M | ☐ |
-| `sync_external_clock` + Link/MIDI | Add `ableton_link` + `midi_clock` modes alongside tap-tempo — lock to the DJ's clock (BL-08) | S | ☐ |
+| `scaffold_extension` | Extension DAT stub + Extension Object + Promote flag + re-init — make a COMP scriptable (BL-03) | M | ◐ |
+| `add_custom_parameters` | Declarative custom-parameter pages (`appendCustomPage`/`appendFloat…`), TDJSON in/out — expose knobs (BL-03) | M | ◐ |
+| `sync_external_clock` + Link/MIDI | Add `ableton_link` + `midi_clock` modes alongside tap-tempo — lock to the DJ's clock (BL-08); Link/MIDI device paths still need live hardware validation | S | ◐ ⚠ |
 | Body tracking ✅ on `main` (in-tree) | `setup_body_tracking` / `create_pose_tracking` / `create_pose_skeleton` / `create_body_reactive` (+ recipes `mediapipe_body_dots`, `pose_skeleton_mediapipe`) are in-tree on `main` (not in the 0.4.0 CHANGELOG). Remaining (incremental): hand/face modes, more reactive templates, live webcam validation (BL-02) | — | ☑ |
-| `analyze_project` | Unused/dead ops, broken file deps, orphan COMPs, dependency graph via `findChildren`/connectors (BL-04) | M | ☐ |
-| `generate_readme` | Markdown project doc: params table (TDJSON), I/O, child inventory, deps, preview thumbnail (BL-04) | M | ☐ |
-| `analyze_screenshot` | Prompt+tool: `get_preview` image + topology + `get_td_node_errors` → explain/diagnose ("why is it black?") (BL-09) | M | ☐ |
-| `edit_dat_content` | Surgical `old_string`/`new_string` DAT edit (unique-match + opt-in `replace_all`) — token-cheap edits *(Embody-mined)* | S | ☐ |
-| `set_dat_content` (anti-wipe) | Safe whole-DAT write with a `confirm_wipe` guardrail (refuses silent clears) *(Embody-mined)* | S | ☐ |
-| `batch_operations` | Many create/connect/set-param in one bridge round-trip, fail-forward with per-item warnings — expose the Layer-1 builder as a primitive *(Embody-mined)* | M | ☐ |
-| `snapshot_td_graph` compact mode | Token-optimized TDN-style read (type-default hoisting, expr/bind shorthand, inline short arrays) — Embody's `read_tdn` is ~20–90× cheaper than op-walks *(Embody-mined)* | M | ☐ |
-| `manage_annotation` + enclosed ops | Agents add network boxes/comments + query ops enclosed by a box → self-documenting networks *(Embody-mined)* | S | ☐ |
-| `write_agent_guide` | Emit a project-local `CLAUDE.md`/`AGENTS.md` seeded with TDMCP operator conventions + render-coordinate rules *(Embody-mined)* | S | ☐ |
-| `set_perform_mode` | Advisory live-show flag; built-in guard suppresses preview captures, and future tools can opt in before expensive work — VJ-critical *(Embody-mined)* | M | ☐ |
+| `analyze_project` | Unused/dead ops, broken file deps, orphan COMPs, dependency graph via `findChildren`/connectors (BL-04) | M | ◐ |
+| `generate_readme` | Markdown project doc: params table (TDJSON), I/O, child inventory, deps, preview thumbnail (BL-04) | M | ◐ |
+| `analyze_screenshot` | Prompt+tool: `get_preview` image + topology + `get_td_node_errors` → explain/diagnose ("why is it black?") (BL-09) | M | ◐ |
+| `edit_dat_content` | Surgical `old_string`/`new_string` DAT edit (unique-match + opt-in `replace_all`) — token-cheap edits *(Embody-mined)* | S | ◐ |
+| `set_dat_content` (anti-wipe) | Safe whole-DAT write with a `confirm_wipe` guardrail (refuses silent clears) *(Embody-mined)* | S | ◐ |
+| `batch_operations` | Many create/connect/set-param in one bridge round-trip, fail-forward with per-item warnings — expose the Layer-1 builder as a primitive *(Embody-mined)* | M | ◐ |
+| `snapshot_td_graph` compact mode | Token-optimized TDN-style read (type-default hoisting, expr/bind shorthand, inline short arrays) — Embody's `read_tdn` is ~20–90× cheaper than op-walks *(Embody-mined)* | M | ◐ |
+| `manage_annotation` + enclosed ops | Agents add network boxes/comments + query ops enclosed by a box → self-documenting networks *(Embody-mined)* | S | ◐ |
+| `write_agent_guide` | Emit a project-local `CLAUDE.md`/`AGENTS.md` seeded with TDMCP operator conventions + render-coordinate rules *(Embody-mined)* | S | ◐ |
+| `set_perform_mode` | Advisory live-show flag; built-in guard suppresses preview captures, and future tools can opt in before expensive work — VJ-critical *(Embody-mined)* | M | ◐ |
 
 **Body tracking — on `main` (in-tree; not in the 0.4.0 CHANGELOG):** `setup_body_tracking`, `create_pose_tracking`,
 `create_pose_skeleton`, `create_body_reactive` are registered in `src/tools/layer1/`, with recipes
@@ -427,7 +427,8 @@ local-first distribution model).
 ## Phases 14–15 — v0.5.0 · Live mixing, parameter fidelity & creative direction ◐ integrated (live-validation pending)
 
 The post-discovery feature wave (sourced from `_workspace/discovery/FEATURE_BACKLOG.md`, reconciled
-against the Phase-13 merge so already-shipped items were dropped). Built as parallel
+against the Phase-13 merge so already-shipped items were treated as validation/hardening rather than
+rebuilt). Built as parallel
 one-tool-per-agent waves with a single-writer integrator. **TouchDesigner was offline during the
 build**, so all new tools/prompts are offline-gated (typecheck + build + Biome + vitest + recipes +
 bridge tests) with live create→cook→preview validation **UNVERIFIED-pending** — each TD-touching tool
@@ -456,7 +457,7 @@ ships a `probe` block that surfaces the real TD API on first live run, and is fa
 | 11 AI prompts | `fix_reactivity`, `recover_show`, `auto_vj_director`, `color_story`, `setlist_planner`, `lyric_show`, `genre_visual_language`, `visual_ab_compare`, `motion_critique`, `match_reference_loop`, `explain_param` | (prompts) | ◐ |
 | `tdmcp://prompts` resource | Prompt catalog for prompt-blind clients (local copilot) | (resource) | ◐ |
 
-**Held pending validation (⚠ — keep out of a tagged release until they cook clean live):**
+**Held pending validation (⚠ — ship only with the experimental / hardware-gated caveat until they cook clean live):**
 `create_pop_field` (POPs experimental + render path uncertain), and the device paths of
 `create_midi_note_reactive` / `create_midi_map` (need real MIDI gear; the synthetic note source is
 validatable offline).
