@@ -91,21 +91,29 @@ def connect(source_path, target_path, source_output=0, target_input=0):
         )
 
     out_conn = out_connectors[source_output]
-    in_connectors[target_input].connect(out_conn)
 
-    # Re-scan: multi-input TOPs pack contiguously, so the wire may have landed on
-    # a slot other than the one requested. Report what TD actually did.
-    actual_input = target_input
-    for ic in dst.inputConnectors:
-        landed = False
-        for oc in ic.connections:
-            owner = _src_owner(oc)
-            if owner is not None and owner.path == src.path and oc.index == source_output:
-                actual_input = ic.index
-                landed = True
-                break
-        if landed:
-            break
+    # Snapshot which input slots already carry this exact (src, source_output) wire
+    # BEFORE connecting, so afterwards we can identify the NEW slot. Multi-input TOPs
+    # pack contiguously, and the same source output may already feed another input —
+    # scanning only after the connect could report a pre-existing slot.
+    def _slots_carrying_src():
+        found = set()
+        for ic in dst.inputConnectors:
+            for oc in ic.connections:
+                owner = _src_owner(oc)
+                if owner is not None and owner.path == src.path and oc.index == source_output:
+                    found.add(ic.index)
+        return found
+
+    before = _slots_carrying_src()
+    in_connectors[target_input].connect(out_conn)
+    after = _slots_carrying_src()
+
+    # The slot that appeared is the one TD actually used (packing may differ from
+    # the requested index). Fall back to the requested index if the diff is empty
+    # (e.g. the wire already existed) or ambiguous.
+    _new = sorted(after - before)
+    actual_input = _new[0] if _new else target_input
 
     return {
         "source_path": src.path,

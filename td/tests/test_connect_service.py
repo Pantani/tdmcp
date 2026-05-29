@@ -234,6 +234,18 @@ class ConnectTests(unittest.TestCase):
         self.assertEqual(second["requested_input"], 2)
         self.assertEqual(second["actual_input"], 1)  # packed down from 2 -> 1
 
+    def test_actual_input_with_preexisting_wire_from_same_source(self):
+        # src.out0 already feeds dst input 0; connecting it again into input 1 must
+        # report the NEW slot (1), not the pre-existing one (0) — the before/after
+        # diff identifies the freshly added wire.
+        src = FakeOp("/p/src1", num_in=0, num_out=1)
+        dst = FakeOp("/p/dst1", num_in=3, num_out=1)
+        dst.inputConnectors[0].connections.append(src.outputConnectors[0])
+        with _OpPatch(_registry(src, dst)):
+            result = ce.connect("/p/src1", "/p/dst1", target_input=1)
+        self.assertEqual(result["actual_input"], 1)
+        self.assertIs(dst.inputConnectors[1].connections[0], src.outputConnectors[0])
+
 
 class DisconnectTests(unittest.TestCase):
     def _wired(self):

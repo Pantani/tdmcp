@@ -217,6 +217,14 @@ def _ensure_morph(comp, text):
     h.par.active = True
     return h
 
+def _btn_name(s):
+    # Button COMP names must be valid TD identifiers; slot labels are arbitrary and
+    # may contain spaces/slashes/punctuation that would break create() or make
+    # bank.op() resolve as a path (e.g. 'recall_intro/drop'). Map to [A-Za-z0-9_];
+    # the displayed label and the cue key keep the raw slot string.
+    _safe = ''.join(_ch if (_ch.isalnum() or _ch == '_') else '_' for _ch in str(s))
+    return 'recall_' + (_safe.strip('_') or 'slot')
+
 def _rebuild_buttons(bank, comp, btn_cb):
     # One momentary buttonCOMP per slot + one Panel Execute DAT dispatching them via the shared
     # tdmcp_surface_cues map (same shape create_control_surface uses), so SURFACE_BUTTON_CB fires
@@ -226,7 +234,8 @@ def _rebuild_buttons(bank, comp, btn_cb):
     cmap = {}
     paths = []
     for s in slots:
-        bt = bank.op('recall_' + s) or bank.create(td.buttonCOMP, 'recall_' + s)
+        _nm = _btn_name(s)
+        bt = bank.op(_nm) or bank.create(td.buttonCOMP, _nm)
         try:
             bt.par.w = 110; bt.par.h = 60
             bt.par.label = s
@@ -408,7 +417,7 @@ try:
             _hdr = _header(_tbl)
             if _slot in _hdr:
                 _tbl.deleteCol(_hdr.index(_slot))
-                _bt = _bank.op('recall_' + _slot)
+                _bt = _bank.op(_btn_name(_slot))
                 if _bt is not None:
                     _bt.destroy()
                 _cues = dict(_c.fetch("tdmcp_cues", {}))

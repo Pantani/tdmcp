@@ -25,7 +25,8 @@ export const saveComponentToVaultSchema = z.object({
     .optional()
     .describe(
       "Output TOP to thumbnail for the component note (e.g. <comp_path>/out1). " +
-        "Defaults to <comp_path>; omit to skip the thumbnail.",
+        "A COMP itself can't be captured (the preview endpoint renders TOPs), so the " +
+        "thumbnail is skipped unless you pass an explicit TOP path here.",
     ),
   thumbnail: z
     .boolean()

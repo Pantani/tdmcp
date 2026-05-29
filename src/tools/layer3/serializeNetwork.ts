@@ -171,7 +171,7 @@ try:
                 _node["y"] = _o.nodeY
             except Exception:
                 pass
-            # Flags (cosmetic + behavioral) for a faithful round-trip.
+            # Flags (cosmetic + behavioral) — inspection/diff metadata; rebuild_network does not restore these.
             _flags = {}
             for _fa in ("bypass", "render", "display", "lock", "allowCooking"):
                 try:
