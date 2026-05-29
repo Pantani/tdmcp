@@ -248,7 +248,14 @@ def _route(method, path, query, body):
                 body.get("value"),
             )
         if rest[-1] == "text" and method == "GET":
-            return param_text_service.get_dat_text(_node_path(rest[1:-1]))
+            # Disambiguate a node literally named "text": the /text suffix only means
+            # "read this DAT's text" when the PARENT is actually a DAT. Otherwise the
+            # WebServer DAT decoded the path's slashes and "text" is the node's own
+            # name, so return that node's detail instead of the parent's DAT text.
+            _txt_parent = _node_path(rest[1:-1])
+            if param_text_service.is_dat(_txt_parent):
+                return param_text_service.get_dat_text(_txt_parent)
+            return api_service.get_node(_node_path(rest[1:]))
         if rest[-1] == "text" and method == "PUT":
             _require(body, "text")
             return param_text_service.put_dat_text(_node_path(rest[1:-1]), body["text"])

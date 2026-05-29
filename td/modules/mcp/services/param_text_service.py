@@ -171,6 +171,13 @@ def set_param_mode(path, param, mode, expr=None, value=None):
     }
 
 
+def is_dat(path):
+    """True when ``path`` resolves to a DAT. Used to disambiguate the ``…/text``
+    route from a node literally named ``text``: the WebServer DAT decodes %2F, so the
+    router cannot tell a 'text' endpoint suffix from a 'text' node name by shape."""
+    return bool(getattr(op(path), "isDAT", False))  # noqa: F821 - TD global
+
+
 def get_dat_text(path):
     """Return {path, text, is_table, num_rows, num_cols} for a DAT.
 

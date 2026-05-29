@@ -202,7 +202,9 @@ export async function getBridgeLogsImpl(ctx: ToolContext, args: GetBridgeLogsArg
               source: "cook",
               level: (l.severity || "error").toLowerCase(),
               text: l.message,
-              op: l.source,
+              // Omit op when the Error-DAT row has a blank source — the schema makes
+              // it optional, and op:"" would force callers to special-case an empty path.
+              ...(l.source ? { op: l.source } : {}),
             }));
             return {
               scope: args.scope,

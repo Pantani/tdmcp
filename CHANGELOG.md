@@ -50,8 +50,9 @@ Expression/Bind mode.
 - **`connect_nodes`**, **`disconnect_nodes`**, **`read_parameter_modes`**,
   **`set_parameter_expression`**, **`edit_dat_content`**, **`set_dat_content`** and
   **`get_bridge_logs`** now call their dedicated REST endpoint first and **fall back to the
-  raw-Python path only on a bridge API error** (connection/timeout errors still propagate), so
-  they work against both current and older bridges. `connect_nodes` now reports the actual
+  raw-Python path only when that endpoint is missing on an older bridge** — a current bridge's
+  validation errors surface instead of silently retrying via exec, and connection/timeout
+  errors still propagate — so they work against both current and older bridges. `connect_nodes` now reports the actual
   packed input slot; `edit_dat_content` refuses to write when the replacement target matches
   zero or more than one location.
 
