@@ -3,7 +3,7 @@ import {
   compileShaderParkToTouchDesigner,
   type ShaderParkUniform,
 } from "../../integrations/shaderPark.js";
-import type { ControlSpec } from "../layer2/createControlPanel.js";
+import { type ControlSpec, toTdCustomParameterName } from "../layer2/createControlPanel.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { createSystemContainer, finalize, runBuild } from "./orchestration.js";
 
@@ -152,7 +152,7 @@ function expressionForUniform(
     return `parent().par.Stepsize.eval() if hasattr(parent().par, 'Stepsize') else ${fallback}`;
   }
   if (!BASE_UNIFORMS.has(uniform.name) && uniform.type === "float") {
-    const control = controlNameForUniform(uniform.name);
+    const control = toTdCustomParameterName(controlNameForUniform(uniform.name));
     return `parent().par.${control}.eval() if hasattr(parent().par, '${control}') else ${fallback}`;
   }
   return undefined;

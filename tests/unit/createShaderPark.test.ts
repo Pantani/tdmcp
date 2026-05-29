@@ -157,6 +157,21 @@ describe("createShaderPark build", () => {
     expect(uniformScript).toContain("else 0.6");
   });
 
+  it("uses TD custom-parameter normalization for camelCase Shader Park inputs", async () => {
+    const { scripts } = captureBuild();
+    await run({
+      code: "let ringRadius = input();\nsphere(ringRadius);",
+      uniform_values: { ringRadius: 0.7 },
+    });
+
+    const uniformScript = scripts.find((s) => s.includes("seq.vec") && s.includes("ringRadius"));
+    expect(uniformScript).toBeDefined();
+    expect(uniformScript).toContain("parent().par.Ringradius.eval()");
+    expect(uniformScript).toContain("hasattr(parent().par, 'Ringradius')");
+    expect(uniformScript).not.toContain("parent().par.RingRadius.eval()");
+    expect(uniformScript).not.toContain("hasattr(parent().par, 'RingRadius')");
+  });
+
   it("assigns Shader Park material defaults and the base-color sampler", async () => {
     const { scripts } = captureBuild();
     await run({ code: "sphere(0.45);" });

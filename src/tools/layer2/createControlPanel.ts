@@ -49,6 +49,13 @@ export const createControlPanelSchema = z.object({
 });
 type CreateControlPanelArgs = z.infer<typeof createControlPanelSchema>;
 
+export function toTdCustomParameterName(value: string): string {
+  let name = value.replace(/[^a-zA-Z0-9]/g, "");
+  if (!name) name = "Par";
+  if (!/^[a-zA-Z]/.test(name)) name = `P${name}`;
+  return `${name.charAt(0).toUpperCase()}${name.slice(1).toLowerCase()}`;
+}
+
 interface ControlReport {
   comp: string;
   page: string;
