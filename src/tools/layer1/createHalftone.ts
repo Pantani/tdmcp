@@ -20,11 +20,12 @@ const q = (value: string): string => JSON.stringify(value);
  *   - There is NO built-in uTime; we bind it ourselves via the vec sequence.
  *   - Avoid preamble macro collisions — use lowercase local variable names only;
  *     never name anything F1, F2, etc. (reserved in TD's GLSL preamble).
- *   - uTD2DInfos[0].res.zw gives pixel size (1/width, 1/height) — no manual binding.
+ *   - uTDOutputInfo.res.xy gives output resolution [width, height]; pixel size = 1.0/res.xy.
+ *   - uStyle must be float (TD vec slot) — cast to int inside the shader.
  */
 const HALFTONE_SHADER = `out vec4 fragColor;
 
-uniform int   uStyle;
+uniform float uStyle;
 uniform float uDotSize;
 uniform float uAngle;
 uniform float uMix;
@@ -39,8 +40,8 @@ vec2 rotateUV(vec2 uv, float angle) {
 
 // Dot-grid halftone: returns 0 (dot) or 1 (paper) for a single channel value
 float dotCell(vec2 uv, float val, float cellPx, float angle) {
-    // pixel size from TD built-in (no manual binding needed)
-    vec2 px = uTD2DInfos[0].res.zw;
+    // pixel size derived from output resolution
+    vec2 px = 1.0 / uTDOutputInfo.res.xy;
     vec2 uvr = rotateUV(uv, angle);
     vec2 cell = fract(uvr / (cellPx * px)) - 0.5;
     float dist = length(cell);
@@ -64,17 +65,18 @@ float bayer4(vec2 pos) {
 void main() {
     vec2 uv = vUV.st;
     vec4 orig = texture(sTD2DInputs[0], uv);
+    int style = int(uStyle);
 
     vec4 styled;
 
-    if (uStyle == 0) {
+    if (style == 0) {
         // ---- DOTS: monochrome halftone ----
         float lum = dot(orig.rgb, vec3(0.299, 0.587, 0.114));
         float angleRad = uAngle * 3.14159265 / 180.0;
         float paper = dotCell(uv, lum, uDotSize, angleRad);
         styled = vec4(vec3(paper), orig.a);
 
-    } else if (uStyle == 1) {
+    } else if (style == 1) {
         // ---- CMYK: 4-colour halftone separation ----
         // Convert RGB → CMY; K = min component
         float k = 1.0 - max(max(orig.r, orig.g), orig.b);
@@ -94,9 +96,9 @@ void main() {
         col -= (1.0 - kDot) * vec3(1.0, 1.0, 1.0);  // black ink
         styled = vec4(clamp(col, 0.0, 1.0), orig.a);
 
-    } else if (uStyle == 2) {
+    } else if (style == 2) {
         // ---- DITHER: 4×4 Bayer ordered dither ----
-        vec2 px = uTD2DInfos[0].res.zw;
+        vec2 px = 1.0 / uTDOutputInfo.res.xy;
         vec2 screenPos = uv / px;
         float thresh = bayer4(screenPos);
         // Quantise each channel against the dither threshold
@@ -112,7 +114,7 @@ void main() {
         float levels = 6.0;
         vec3 post = floor(orig.rgb * levels) / levels;
         // Edge detect via luminance gradient (centre-difference, 1-pixel step)
-        vec2 px = uTD2DInfos[0].res.zw;
+        vec2 px = 1.0 / uTDOutputInfo.res.xy;
         float lc = dot(orig.rgb,                                    vec3(0.299, 0.587, 0.114));
         float lr = dot(texture(sTD2DInputs[0], uv + vec2(px.x, 0.0)).rgb, vec3(0.299, 0.587, 0.114));
         float lu = dot(texture(sTD2DInputs[0], uv + vec2(0.0, px.y)).rgb, vec3(0.299, 0.587, 0.114));

@@ -416,7 +416,7 @@ describe("create_halftone", () => {
       });
 
       const shaderScript = scripts.find((s) => s.includes("out vec4 fragColor"));
-      expect(shaderScript).toContain("uniform int   uStyle");
+      expect(shaderScript).toContain("uniform float uStyle");
       expect(shaderScript).toContain("uniform float uDotSize");
       expect(shaderScript).toContain("uniform float uAngle");
       expect(shaderScript).toContain("uniform float uMix");
