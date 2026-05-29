@@ -98,7 +98,7 @@ void main() {
 
     } else if (style == 2) {
         // ---- DITHER: 4×4 Bayer ordered dither ----
-        vec2 px = 1.0 / uTDOutputInfo.res.xy;
+        vec2 px = uTDOutputInfo.res.xy;
         vec2 screenPos = uv / px;
         float thresh = bayer4(screenPos);
         // Quantise each channel against the dither threshold
@@ -114,7 +114,7 @@ void main() {
         float levels = 6.0;
         vec3 post = floor(orig.rgb * levels) / levels;
         // Edge detect via luminance gradient (centre-difference, 1-pixel step)
-        vec2 px = 1.0 / uTDOutputInfo.res.xy;
+        vec2 px = uTDOutputInfo.res.xy;
         float lc = dot(orig.rgb,                                    vec3(0.299, 0.587, 0.114));
         float lr = dot(texture(sTD2DInputs[0], uv + vec2(px.x, 0.0)).rgb, vec3(0.299, 0.587, 0.114));
         float lu = dot(texture(sTD2DInputs[0], uv + vec2(0.0, px.y)).rgb, vec3(0.299, 0.587, 0.114));
