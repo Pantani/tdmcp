@@ -30,8 +30,6 @@ npm run typecheck            # tsc --noEmit
 npm run build
 npm run lint                 # biome check .  (npm run format to auto-fix)
 npm test                     # vitest run
-npm run test:coverage        # vitest run --coverage, TS sources only
-npm run coverage:harness     # coverage report + ranked next test gaps
 
 npm run dev                  # run the server from TS (tsx src/index.ts), no build
 npm run validate:recipes     # validate recipes/*.json against RecipeSchema
@@ -40,6 +38,10 @@ npm run validate:recipes     # validate recipes/*.json against RecipeSchema
 npx vitest run tests/unit/createWaveform.test.ts   # single file
 npx vitest run -t "edge-blend"                      # single test by name
 npm run test:bridge          # Python bridge tests: python3 -m unittest discover -s td/tests
+
+# Local coverage harness (not a CI gate unless the workflow is updated)
+npm run test:coverage        # vitest run --coverage, TS sources only
+npm run coverage:harness     # coverage report + ranked next test gaps
 
 # Docs (VitePress site under docs/)
 npm run docs:dev             # docs:gen then vitepress dev

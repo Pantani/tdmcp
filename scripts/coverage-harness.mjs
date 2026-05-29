@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { spawnSync } from "node:child_process";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -50,13 +50,14 @@ function runCoverage() {
     },
   );
 
-  if (result.status !== 0) {
-    process.exit(result.status ?? 1);
-  }
+  return result.status ?? 1;
 }
 
 function readSummary() {
   const summaryPath = path.join(rootDir, "coverage", "coverage-summary.json");
+  if (!existsSync(summaryPath)) {
+    return undefined;
+  }
   return JSON.parse(readFileSync(summaryPath, "utf8"));
 }
 
@@ -207,19 +208,33 @@ function writeReport(markdown, output) {
 }
 
 const options = parseArgs(process.argv.slice(2));
+let exitStatus = 0;
 
-if (!options.summaryOnly) runCoverage();
+if (!options.summaryOnly) {
+  exitStatus = runCoverage();
+}
 
 const summary = readSummary();
+if (!summary) {
+  console.error("coverage/coverage-summary.json was not found; no coverage report was written.");
+  process.exit(exitStatus || 1);
+}
+
 const rows = fileRows(summary);
 const markdown = makeMarkdown(summary, rows, options);
 const reportPath = writeReport(markdown, options.output);
 
 console.log(`Coverage report written to ${path.relative(rootDir, reportPath)}`);
 
+if (exitStatus !== 0) {
+  console.error(`Coverage command failed with exit code ${exitStatus}; report was still written.`);
+}
+
 if (options.minLines !== undefined && summary.total.lines.pct < options.minLines) {
   console.error(
     `Line coverage ${pct(summary.total.lines.pct)} is below required ${pct(options.minLines)}.`,
   );
-  process.exit(1);
+  exitStatus = 1;
 }
+
+process.exit(exitStatus);
