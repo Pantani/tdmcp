@@ -1,4 +1,12 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, parse, resolve } from "node:path";
 import { HttpResponse, http } from "msw";
@@ -576,6 +584,33 @@ describe("library and packaging tools", () => {
       expect(result.content[0]?.type === "text" ? result.content[0].text : "").toMatch(
         /filesystem root/,
       );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects local package directories that contain symlinks", async () => {
+    const dir = tmp();
+    try {
+      const src = join(dir, "srcpkg");
+      const dest = join(dir, "packages");
+      const outside = join(dir, "outside.txt");
+      mkdirSync(src, { recursive: true });
+      writeFileSync(join(src, "tdmcp-component.json"), JSON.stringify({ id: "srcpkg" }), "utf8");
+      writeFileSync(outside, "external", "utf8");
+      symlinkSync(outside, join(src, "outside-link.txt"));
+
+      const installed = await installLibraryPackageImpl(makeCtx(), {
+        source: src,
+        dest_dir: dest,
+        overwrite: false,
+      });
+
+      expect(installed.isError).toBe(true);
+      expect(installed.content[0]?.type === "text" ? installed.content[0].text : "").toMatch(
+        /symlink/,
+      );
+      expect(existsSync(join(dest, "srcpkg", "outside-link.txt"))).toBe(false);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

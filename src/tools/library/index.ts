@@ -3,6 +3,7 @@ import {
   copyFileSync,
   cpSync,
   existsSync,
+  lstatSync,
   mkdirSync,
   readdirSync,
   readFileSync,
@@ -127,6 +128,17 @@ function assertNotFilesystemRoot(path: string): void {
   const full = resolve(path);
   if (full === parse(full).root) {
     throw new Error(`Package source must not be a filesystem root: ${full}`);
+  }
+}
+
+function assertNoSymlinksInTree(path: string): void {
+  const info = lstatSync(path);
+  if (info.isSymbolicLink()) {
+    throw new Error(`Package source must not contain symlinks: ${path}`);
+  }
+  if (!info.isDirectory()) return;
+  for (const entry of readdirSync(path)) {
+    assertNoSymlinksInTree(join(path, entry));
   }
 }
 
@@ -688,6 +700,7 @@ export async function installLibraryPackageImpl(
     }
     mkdirSync(dirname(dest), { recursive: true });
     if (packageSource.kind === "directory") {
+      assertNoSymlinksInTree(packageSource.source);
       cpSync(packageSource.source, dest, { recursive: true, force: args.overwrite });
     } else if (packageSource.kind === "zip") {
       extractZip(packageSource.source, dest);
