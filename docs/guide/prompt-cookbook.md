@@ -199,7 +199,7 @@ a flat-shaded toy.*
 > *"Make a slowly-drifting point cloud of a sphere, tiny glowing points that twinkle,
 > on deep black."*
 
-![A point cloud of a sphere rendered as thousands of tiny glowing points on black](/examples/point-cloud-drift.png)
+<video src="/examples/point-cloud-drift.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *A point-cloud render of a sampled surface (sphere, grid or model) as thousands of GPU
 points with size/jitter and drift controls — the LiDAR/scan look without a scanner or
@@ -274,7 +274,7 @@ Great for lyrics, titles, song names and credits.
 > *"Flash the word 'DROP' big and centered, snapping to the beat and vanishing
 > between hits."*
 
-![The word DROP flashed large and centered over a visual](/examples/kinetic-lyrics-flash.png)
+<video src="/examples/kinetic-lyrics-flash.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *Animated lyric typography that flashes, pulses or slides; the flash modulates alpha
 so the text disappears over your visual instead of going to black, and it's
@@ -396,7 +396,7 @@ default test source (swap in your clip).*
 > *"Turn this into warm, amber-tinted halftone dots like a vintage newspaper print,
 > and preview it."*
 
-![A photo rendered as warm amber halftone ink dots on paper white](/examples/halftone-amber-print.png)
+<video src="/examples/halftone-amber-print.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *A GLSL halftone screen converts the image into a grid of ink dots whose size tracks
 brightness; exposes Dot scale / Angle / tint. Amber tint plus paper-white background
@@ -413,7 +413,7 @@ with Amount/Speed controls — that premium "liquid morph" / heat-haze warp over
 > *"Give this a moody teal-and-orange cinematic grade — crush the blacks a touch and
 > lift the highlights."*
 
-![A frame with a moody teal-and-orange cinematic color grade applied](/examples/cinematic-color-grade.png)
+<video src="/examples/cinematic-color-grade.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *A lift/gamma/gain + saturation/hue grade (with optional LUT) on any source, exposing
 the wheels as knobs — the Hollywood teal/orange look as a finishing layer, the thing
