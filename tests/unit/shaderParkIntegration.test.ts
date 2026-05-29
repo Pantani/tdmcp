@@ -2,25 +2,60 @@ import { describe, expect, it, vi } from "vitest";
 import { compileShaderParkToTouchDesigner } from "../../src/integrations/shaderPark.js";
 
 describe("Shader Park integration", () => {
-  it("compiles Shader Park sculpture code into TouchDesigner GLSL without leaking stdout", async () => {
-    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+  it("compiles Shader Park sculpture code into TouchDesigner GLSL", async () => {
+    const originalLog = console.log;
+    const compiled = await compileShaderParkToTouchDesigner("let size = input();\nsphere(size);");
+
+    expect(console.log).toBe(originalLog);
+    expect(compiled.pixelShader).toContain("uniform float size;");
+    expect(compiled.pixelShader).toContain("surfaceDistance");
+    expect(compiled.uniforms).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "time", type: "float", value: 0 }),
+        expect.objectContaining({ name: "opacity", type: "float", value: 1 }),
+        expect.objectContaining({ name: "_scale", type: "float", value: 1 }),
+        expect.objectContaining({ name: "size", type: "float", value: 0 }),
+      ]),
+    );
+  });
+
+  it("suppresses shader-park-core import-time stream writes without replacing console.log", async () => {
+    vi.resetModules();
+    const originalLog = console.log;
+    const stdoutWrite = vi.spyOn(process.stdout, "write");
+    const stderrWrite = vi.spyOn(process.stderr, "write");
+    let consoleLogDuringImport: typeof console.log | undefined;
+
+    vi.doMock("shader-park-core", () => {
+      consoleLogDuringImport = console.log;
+      process.stdout.write("shader park import stdout\n");
+      process.stderr.write("shader park import stderr\n");
+      return {
+        sculptToTouchDesignerShaderSource: () => ({
+          frag: "void main() {}",
+          uniforms: [],
+        }),
+      };
+    });
 
     try {
-      const compiled = await compileShaderParkToTouchDesigner("let size = input();\nsphere(size);");
-
-      expect(log).not.toHaveBeenCalled();
-      expect(compiled.pixelShader).toContain("uniform float size;");
-      expect(compiled.pixelShader).toContain("surfaceDistance");
-      expect(compiled.uniforms).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ name: "time", type: "float", value: 0 }),
-          expect.objectContaining({ name: "opacity", type: "float", value: 1 }),
-          expect.objectContaining({ name: "_scale", type: "float", value: 1 }),
-          expect.objectContaining({ name: "size", type: "float", value: 0 }),
-        ]),
+      const { compileShaderParkToTouchDesigner: compileWithMock } = await import(
+        "../../src/integrations/shaderPark.js"
       );
+      const compiled = await compileWithMock("sphere(0.5);");
+      const stdoutText = stdoutWrite.mock.calls.map((call) => String(call[0])).join("");
+      const stderrText = stderrWrite.mock.calls.map((call) => String(call[0])).join("");
+
+      expect(compiled.pixelShader).toBe("void main() {}");
+      expect(consoleLogDuringImport).toBe(originalLog);
+      expect(console.log).toBe(originalLog);
+      expect(stdoutText).not.toContain("shader park import stdout");
+      expect(stderrText).not.toContain("shader park import stderr");
     } finally {
-      log.mockRestore();
+      stdoutWrite.mockRestore();
+      stderrWrite.mockRestore();
+      vi.doUnmock("shader-park-core");
+      vi.resetModules();
     }
   });
 

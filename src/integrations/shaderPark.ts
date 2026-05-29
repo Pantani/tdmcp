@@ -22,19 +22,46 @@ interface RawShaderParkCompileResult {
 }
 
 let shaderParkCorePromise: Promise<ShaderParkCoreModule> | undefined;
+// shader-park-core writes during module evaluation; serialize stream suppression
+// so nested import attempts restore the original writers in order.
+let shaderParkImportOutputMutex = Promise.resolve();
+
+type StreamWriteCallback = (error?: Error | null) => void;
+
+function suppressStreamWrite(...args: unknown[]): boolean {
+  const callback = args.find((arg): arg is StreamWriteCallback => typeof arg === "function");
+  if (callback) queueMicrotask(() => callback());
+  return true;
+}
+
+async function withSuppressedImportOutput<T>(operation: () => Promise<T>): Promise<T> {
+  const previousImport = shaderParkImportOutputMutex;
+  let releaseImport!: () => void;
+  shaderParkImportOutputMutex = new Promise<void>((resolve) => {
+    releaseImport = resolve;
+  });
+
+  await previousImport;
+
+  const originalStdoutWrite = process.stdout.write;
+  const originalStderrWrite = process.stderr.write;
+
+  try {
+    process.stdout.write = suppressStreamWrite as typeof process.stdout.write;
+    process.stderr.write = suppressStreamWrite as typeof process.stderr.write;
+    return await operation();
+  } finally {
+    process.stdout.write = originalStdoutWrite;
+    process.stderr.write = originalStderrWrite;
+    releaseImport();
+  }
+}
 
 async function loadShaderParkCore(): Promise<ShaderParkCoreModule> {
   if (!shaderParkCorePromise) {
-    const originalLog = console.log;
-    const importPromise = (async () => {
-      try {
-        console.log = () => {};
-        const mod = (await import("shader-park-core")) as unknown as ShaderParkCoreModule;
-        return mod;
-      } finally {
-        console.log = originalLog;
-      }
-    })();
+    const importPromise = withSuppressedImportOutput(
+      async () => (await import("shader-park-core")) as unknown as ShaderParkCoreModule,
+    );
     const retryablePromise = importPromise.catch((error) => {
       if (shaderParkCorePromise === retryablePromise) shaderParkCorePromise = undefined;
       throw error;
