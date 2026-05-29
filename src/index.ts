@@ -24,7 +24,9 @@ async function main(): Promise<void> {
     return;
   }
 
-  const config = loadConfig();
+  // The server honors a saved config file too (tdmcp.json / .tdmcprc / ~/.config/tdmcp);
+  // pick a profile via TDMCP_PROFILE. Env vars still win over the file.
+  const config = loadConfig(process.env, { useFiles: true, profile: process.env.TDMCP_PROFILE });
   const logger = createLogger(config.logLevel);
 
   try {

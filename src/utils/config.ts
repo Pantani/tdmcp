@@ -1,3 +1,6 @@
+import { existsSync, readFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import { z } from "zod";
 
 export const ConfigSchema = z.object({
@@ -63,12 +66,30 @@ export const ConfigSchema = z.object({
 
 export type TdmcpConfig = z.infer<typeof ConfigSchema>;
 
-/**
- * Loads and validates configuration from environment variables. Missing values
- * fall back to sensible defaults; invalid values throw a descriptive ZodError.
- */
-export function loadConfig(env: NodeJS.ProcessEnv = process.env): TdmcpConfig {
-  return ConfigSchema.parse({
+/** Options for {@link loadConfig}. File loading is opt-in (entry points pass `useFiles`). */
+export interface LoadConfigOptions {
+  /** Read a `tdmcp.json` / `.tdmcprc` / global config file (off by default so unit tests stay env-pure). */
+  useFiles?: boolean;
+  /** Select a named profile from the config file's `profiles` map (errors if missing). */
+  profile?: string;
+  /** Explicit config file path; overrides the search order when set. */
+  configPath?: string;
+  /** Per-invocation overrides (CLI flags) — highest precedence. Undefined keys are ignored. */
+  overrides?: Partial<Record<keyof TdmcpConfig, unknown>>;
+  /** Directory to search for cwd config files (defaults to process.cwd()). */
+  cwd?: string;
+}
+
+/** A loaded config file: the base settings, any named profiles, and where it came from. */
+interface ConfigFile {
+  base: Record<string, unknown>;
+  profiles: Record<string, Record<string, unknown>>;
+  source?: string;
+}
+
+/** Maps env vars to config keys (values may be undefined; pruned before merge). */
+function envValues(env: NodeJS.ProcessEnv): Record<string, unknown> {
+  return {
     tdHost: env.TDMCP_TD_HOST,
     tdPort: env.TDMCP_TD_PORT,
     transport: env.TDMCP_TRANSPORT,
@@ -84,7 +105,94 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): TdmcpConfig {
     llmApiKey: env.TDMCP_LLM_API_KEY || undefined,
     chatPort: env.TDMCP_CHAT_PORT,
     vaultPath: env.TDMCP_VAULT_PATH || undefined,
-  });
+  };
+}
+
+/** Drop keys whose value is `undefined` so they don't clobber a lower-precedence layer. */
+function pruneUndefined(obj: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined));
+}
+
+/** Candidate config-file paths in precedence order (first existing wins). */
+function configSearchPaths(env: NodeJS.ProcessEnv, cwd: string): string[] {
+  const globalDir = env.XDG_CONFIG_HOME?.trim() || join(homedir(), ".config");
+  return [join(cwd, "tdmcp.json"), join(cwd, ".tdmcprc"), join(globalDir, "tdmcp", "config.json")];
+}
+
+/**
+ * Reads the first existing config file (or `configPath` when given). Fail-safe: a
+ * missing file yields empty config; a malformed file warns to stderr and is ignored,
+ * never throwing — a broken config must not take the server/CLI down.
+ */
+function readConfigFile(env: NodeJS.ProcessEnv, opts: LoadConfigOptions): ConfigFile {
+  const cwd = opts.cwd ?? process.cwd();
+  const candidates = opts.configPath ? [opts.configPath] : configSearchPaths(env, cwd);
+  for (const path of candidates) {
+    if (!existsSync(path)) continue;
+    try {
+      const raw = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
+      const { profiles, ...base } = raw;
+      const profileMap =
+        profiles && typeof profiles === "object"
+          ? (profiles as Record<string, Record<string, unknown>>)
+          : {};
+      return { base, profiles: profileMap, source: path };
+    } catch (err) {
+      process.stderr.write(
+        `tdmcp: ignoring malformed config file ${path}: ${(err as Error).message}\n`,
+      );
+      return { base: {}, profiles: {} };
+    }
+  }
+  return { base: {}, profiles: {} };
+}
+
+/**
+ * Loads and validates configuration. By default reads **environment variables only**
+ * (missing values fall back to defaults; invalid values throw a descriptive ZodError),
+ * which keeps the bare `loadConfig()` deterministic for tests and existing callers.
+ *
+ * Entry points opt into config files with `{ useFiles: true }`. Precedence, lowest →
+ * highest: schema defaults < file base < file profile (`{ profile }`) < environment <
+ * CLI `{ overrides }`. So an artist can save per-venue setups in `tdmcp.json`
+ * (`{ profiles: { club: { tdHost, tdPort } } }`) and switch with `--profile club`,
+ * while env vars and one-off flags still win.
+ */
+export function loadConfig(
+  env: NodeJS.ProcessEnv = process.env,
+  opts: LoadConfigOptions = {},
+): TdmcpConfig {
+  const file = opts.useFiles ? readConfigFile(env, opts) : { base: {}, profiles: {} };
+  let profilePart: Record<string, unknown> = {};
+  if (opts.profile) {
+    const found = (file as ConfigFile).profiles?.[opts.profile];
+    if (!found) {
+      const where = (file as ConfigFile).source ? ` (${(file as ConfigFile).source})` : "";
+      throw new Error(
+        `Config profile "${opts.profile}" not found${where}. Define it under "profiles" in your config file.`,
+      );
+    }
+    profilePart = found;
+  }
+  const merged = {
+    ...file.base,
+    ...profilePart,
+    ...pruneUndefined(envValues(env)),
+    ...pruneUndefined(opts.overrides ?? {}),
+  };
+  return ConfigSchema.parse(merged);
+}
+
+/** Sensitive keys redacted by {@link describeConfig} for safe printing/sharing. */
+const SECRET_KEYS: ReadonlyArray<keyof TdmcpConfig> = ["bridgeToken", "llmApiKey"];
+
+/** A copy of the config safe to print/share — secrets are masked. */
+export function describeConfig(config: TdmcpConfig): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...config };
+  for (const key of SECRET_KEYS) {
+    if (out[key] !== undefined) out[key] = "***redacted***";
+  }
+  return out;
 }
 
 /** Base URL for the TouchDesigner REST bridge. */

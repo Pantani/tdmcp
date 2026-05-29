@@ -1,0 +1,167 @@
+import { z } from "zod";
+import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
+import { errorResult, guardTd, jsonResult } from "../result.js";
+import type { ToolContext, ToolRegistrar } from "../types.js";
+import { requireVault } from "./shared.js";
+
+export const saveComponentToVaultSchema = z.object({
+  comp_path: z.string().describe("The COMP to package as a reusable .tox component."),
+  name: z
+    .string()
+    .optional()
+    .describe(
+      "Component name (defaults to the COMP's name). Used for the .tox filename and the note title.",
+    ),
+  folder: z.string().default("Components").describe("Vault subfolder for the .tox + note."),
+  tags: z
+    .array(z.string())
+    .default([])
+    .describe("Tags for the note frontmatter (for browse_vault_library)."),
+  description: z.string().optional().describe("A short description stored in the note."),
+});
+type SaveComponentToVaultArgs = z.infer<typeof saveComponentToVaultSchema>;
+
+interface SaveComponentReport {
+  comp: string;
+  tox_path: string;
+  saved?: string;
+  size?: number | null;
+  comp_name?: string;
+  warnings: string[];
+  fatal?: string;
+}
+
+// Saves a COMP as a .tox file. Probes comp.name for the default component name,
+// checks isCOMP, and reports the saved path and byte size via os.path.getsize.
+const SAVE_COMP_SCRIPT = `
+import json, base64, traceback, os
+_p = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
+report = {"comp": _p["comp"], "tox_path": _p["tox_path"], "warnings": []}
+try:
+    _c = op(_p["comp"])
+    if _c is None:
+        report["fatal"] = "COMP not found: " + str(_p["comp"])
+    elif not _c.isCOMP:
+        report["fatal"] = str(_p["comp"]) + " is not a COMP, so it cannot be saved as a .tox."
+    else:
+        report["comp_name"] = _c.name
+        _saved = _c.save(_p["tox_path"], createFolders=True)
+        report["saved"] = str(_saved)
+        report["size"] = os.path.getsize(_p["tox_path"]) if os.path.isfile(_p["tox_path"]) else None
+except Exception:
+    report["fatal"] = traceback.format_exc().splitlines()[-1]
+print(json.dumps(report))
+`;
+
+export function buildSaveCompScript(payload: object): string {
+  return buildPayloadScript(SAVE_COMP_SCRIPT, payload);
+}
+
+export async function saveComponentToVaultImpl(ctx: ToolContext, args: SaveComponentToVaultArgs) {
+  const v = requireVault(ctx);
+  if ("error" in v) return v.error;
+  const { vault } = v;
+
+  // Derive a safe component name: if not supplied we default to the last segment
+  // of comp_path (the actual TD name will be confirmed by the bridge).
+  const fallbackName = args.comp_path.split("/").filter(Boolean).pop() ?? "component";
+  const compName = args.name ?? fallbackName;
+
+  // Resolve the absolute tox path INSIDE the vault — vault.resolve() throws if
+  // the path would escape the vault root, so user-supplied folder/name cannot reach
+  // outside the vault directory.
+  const toxRelPath = `${args.folder}/${compName}.tox`;
+  let toxAbsPath: string;
+  try {
+    toxAbsPath = vault.resolve(toxRelPath);
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    return errorResult(`Invalid vault path for component: ${reason}`);
+  }
+
+  return guardTd(
+    async () => {
+      const script = buildSaveCompScript({
+        comp: args.comp_path,
+        tox_path: toxAbsPath,
+      });
+      const exec = await ctx.client.executePythonScript(script, true);
+      return parsePythonReport<SaveComponentReport>(exec.stdout);
+    },
+    (report) => {
+      if (report.fatal) {
+        return errorResult(`Component save failed: ${report.fatal}`, report);
+      }
+
+      // Use the TD-confirmed comp name if available, fall back to our derived name.
+      const resolvedName = report.comp_name ?? compName;
+      const noteRelPath = `${args.folder}/${resolvedName}.md`;
+      const noteDate = new Date().toISOString().slice(0, 10);
+
+      // Write the vault note — failure becomes a warning, not a fatal.
+      let noteWarning: string | undefined;
+      try {
+        vault.writeNote(
+          noteRelPath,
+          {
+            type: "component",
+            tox: toxRelPath,
+            tags: args.tags,
+            created: noteDate,
+          },
+          [
+            `# ${resolvedName}`,
+            "",
+            args.description ? `${args.description}\n` : "",
+            `**Source COMP:** \`${args.comp_path}\``,
+            "",
+            "## How to load",
+            "",
+            "Use the `manage_component` tool:",
+            "",
+            "```",
+            `manage_component action=load file_path=<vault>/${toxRelPath}`,
+            "```",
+            "",
+            `Or link from any note: [[${resolvedName}]]`,
+          ]
+            .join("\n")
+            .replace(/\n{3,}/g, "\n\n"),
+        );
+      } catch (err) {
+        noteWarning = `Note write failed (tox was saved): ${err instanceof Error ? err.message : String(err)}`;
+      }
+
+      const warnings = [...(report.warnings ?? [])];
+      if (noteWarning) warnings.push(noteWarning);
+
+      const sizeStr = report.size != null ? ` (${report.size} bytes)` : "";
+      const noteStr = noteWarning
+        ? " (note write failed — see warnings)"
+        : ` → vault note ${noteRelPath}`;
+      const summary = `Saved ${args.comp_path} as ${resolvedName}.tox${sizeStr}${noteStr}.`;
+
+      return jsonResult(summary, {
+        tox_path: toxRelPath,
+        note_path: noteWarning ? null : noteRelPath,
+        comp_name: resolvedName,
+        size: report.size ?? null,
+        warnings,
+      });
+    },
+  );
+}
+
+export const registerSaveComponentToVault: ToolRegistrar = (server, ctx) => {
+  server.registerTool(
+    "save_component_to_vault",
+    {
+      title: "Package a COMP as a .tox in the vault",
+      description:
+        "Save a live TouchDesigner COMP as a reusable .tox component file inside the Obsidian vault (at <folder>/<name>.tox) and write a companion markdown note with frontmatter, a description, and load instructions — completing the build→parameterize→script→package-to-library loop. The saved .tox can later be loaded back with manage_component (load action). Requires a configured TDMCP_VAULT_PATH. The target COMP must exist and be a COMP (not a non-COMP operator).",
+      inputSchema: saveComponentToVaultSchema.shape,
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
+    },
+    (args) => saveComponentToVaultImpl(ctx, args),
+  );
+};

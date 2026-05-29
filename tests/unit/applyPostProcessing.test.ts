@@ -95,6 +95,20 @@ describe("applyPostProcessingImpl", () => {
     expect(bodies.some((b) => b.type === "textDAT")).toBe(true);
   });
 
+  it("supports the Phase-14 GLSL effects (halftone, crt, mirror) as glslTOP passes", async () => {
+    const bodies = captureCreateBodies();
+    const result = await applyPostProcessingImpl(makeCtx(), {
+      source_path: "/project1/render1",
+      effects: ["halftone", "crt", "mirror"],
+      parent_path: "/project1",
+    });
+    expect(result.isError).toBeFalsy();
+    // Three GLSL effects → three glslTOP + three textDAT.
+    expect(bodies.filter((b) => b.type === "glslTOP").length).toBe(3);
+    expect(bodies.filter((b) => b.type === "textDAT").length).toBe(3);
+    expect(textOf(result)).toContain("3/3");
+  });
+
   it("chains multiple effects in order and reports the applied count in the summary", async () => {
     const bodies = captureCreateBodies();
     const result = await applyPostProcessingImpl(makeCtx(), {
