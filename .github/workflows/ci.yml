@@ -43,5 +43,8 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Build .mcpb bundle
+        run: npm run build:mcpb
+
       - name: Test bridge (Python)
         run: npm run test:bridge
