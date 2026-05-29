@@ -60,6 +60,17 @@ describe("feedback engine", () => {
     expect(preview.width).toBe(320);
   });
 
+  it("capturePreview skips nonessential work while perform mode is active", async () => {
+    server.use(
+      http.post(`${TD_BASE}/api/exec`, () =>
+        HttpResponse.json({ ok: true, data: { result: null, stdout: '{"perform": true}' } }),
+      ),
+    );
+    await expect(capturePreview(client(), "/project1/viz/out1", 320, 180)).rejects.toThrow(
+      /Perform mode is active/,
+    );
+  });
+
   it("verifyNetwork reports node and connection counts", async () => {
     const report = await verifyNetwork(client(), "/project1/viz");
     expect(report.nodeCount).toBeGreaterThanOrEqual(1);

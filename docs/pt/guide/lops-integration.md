@@ -102,11 +102,11 @@ reforce a superfície:
   código. Isto **não** é um botão que desliga toda execução de código: muitas
   ferramentas de nível mais alto ainda mandam o próprio Python *em template* para
   a ponte.
-- **`TDMCP_TOOL_PROFILE=safe`** vai além e também esconde as ferramentas
-  destrutivas (`delete_td_node`, `create_panic`, `manage_checkpoint`,
-  `manage_component`) — um superconjunto estrito de `RAW_PYTHON=off`. O launcher
-  define isto por você. Veja [Variáveis de ambiente](/reference/environment) (em
-  inglês).
+- **`TDMCP_TOOL_PROFILE=safe`** vai além e também esconde ferramentas destrutivas
+  (deleção de nós, reescrita de DATs, writes de checkpoint/componente/pacote,
+  writes de previews e controles de panic) — um superconjunto estrito de
+  `RAW_PYTHON=off`. O launcher define isto por você. Veja
+  [Variáveis de ambiente](/reference/environment) (em inglês).
 - Para **realmente** fechar a execução de código, defina
   **`TDMCP_BRIDGE_ALLOW_EXEC=0`** no ambiente do *próprio TouchDesigner* — essa é
   a trava autoritativa, do lado da ponte, e ela vale até contra um chamador

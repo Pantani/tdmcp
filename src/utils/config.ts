@@ -1,3 +1,4 @@
+import { existsSync, readFileSync } from "node:fs";
 import { z } from "zod";
 
 export const ConfigSchema = z.object({
@@ -63,27 +64,43 @@ export const ConfigSchema = z.object({
 
 export type TdmcpConfig = z.infer<typeof ConfigSchema>;
 
+type ConfigFileShape = Partial<TdmcpConfig> & {
+  profiles?: Record<string, Partial<TdmcpConfig>>;
+};
+
+function readConfigFile(env: NodeJS.ProcessEnv): Partial<TdmcpConfig> {
+  const file = env.TDMCP_CONFIG_FILE;
+  if (!file || !existsSync(file)) return {};
+  const parsed = JSON.parse(readFileSync(file, "utf8")) as ConfigFileShape;
+  const profileName = env.TDMCP_PROFILE;
+  const profile = profileName ? (parsed.profiles?.[profileName] ?? {}) : {};
+  const { profiles: _profiles, ...base } = parsed;
+  return { ...base, ...profile };
+}
+
 /**
  * Loads and validates configuration from environment variables. Missing values
  * fall back to sensible defaults; invalid values throw a descriptive ZodError.
  */
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): TdmcpConfig {
+  const fileConfig = readConfigFile(env);
   return ConfigSchema.parse({
-    tdHost: env.TDMCP_TD_HOST,
-    tdPort: env.TDMCP_TD_PORT,
-    transport: env.TDMCP_TRANSPORT,
-    logLevel: env.TDMCP_LOG_LEVEL,
-    requestTimeoutMs: env.TDMCP_REQUEST_TIMEOUT_MS,
-    httpPort: env.TDMCP_HTTP_PORT,
-    events: env.TDMCP_EVENTS,
-    rawPython: env.TDMCP_RAW_PYTHON,
-    toolProfile: env.TDMCP_TOOL_PROFILE,
-    bridgeToken: env.TDMCP_BRIDGE_TOKEN || undefined,
-    llmBaseUrl: env.TDMCP_LLM_BASE_URL,
-    llmModel: env.TDMCP_LLM_MODEL,
-    llmApiKey: env.TDMCP_LLM_API_KEY || undefined,
-    chatPort: env.TDMCP_CHAT_PORT,
-    vaultPath: env.TDMCP_VAULT_PATH || undefined,
+    ...fileConfig,
+    tdHost: env.TDMCP_TD_HOST ?? fileConfig.tdHost,
+    tdPort: env.TDMCP_TD_PORT ?? fileConfig.tdPort,
+    transport: env.TDMCP_TRANSPORT ?? fileConfig.transport,
+    logLevel: env.TDMCP_LOG_LEVEL ?? fileConfig.logLevel,
+    requestTimeoutMs: env.TDMCP_REQUEST_TIMEOUT_MS ?? fileConfig.requestTimeoutMs,
+    httpPort: env.TDMCP_HTTP_PORT ?? fileConfig.httpPort,
+    events: env.TDMCP_EVENTS ?? fileConfig.events,
+    rawPython: env.TDMCP_RAW_PYTHON ?? fileConfig.rawPython,
+    toolProfile: env.TDMCP_TOOL_PROFILE ?? fileConfig.toolProfile,
+    bridgeToken: env.TDMCP_BRIDGE_TOKEN || fileConfig.bridgeToken || undefined,
+    llmBaseUrl: env.TDMCP_LLM_BASE_URL ?? fileConfig.llmBaseUrl,
+    llmModel: env.TDMCP_LLM_MODEL ?? fileConfig.llmModel,
+    llmApiKey: env.TDMCP_LLM_API_KEY || fileConfig.llmApiKey || undefined,
+    chatPort: env.TDMCP_CHAT_PORT ?? fileConfig.chatPort,
+    vaultPath: env.TDMCP_VAULT_PATH || fileConfig.vaultPath || undefined,
   });
 }
 

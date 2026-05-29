@@ -1,6 +1,18 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
+import {
+  createAudioReactiveImpl,
+  createAudioReactiveSchema,
+} from "../tools/layer1/createAudioReactive.js";
+import {
+  createFeedbackNetworkImpl,
+  createFeedbackNetworkSchema,
+} from "../tools/layer1/createFeedbackNetwork.js";
+import { createGlitchImpl, createGlitchSchema } from "../tools/layer1/createGlitch.js";
+import { createStrobeImpl, createStrobeSchema } from "../tools/layer1/createStrobe.js";
+import { getPreviewImpl, getPreviewSchema } from "../tools/layer1/getPreview.js";
 import { connectNodesImpl, connectNodesSchema } from "../tools/layer2/connectNodes.js";
+import { createPaletteImpl, createPaletteSchema } from "../tools/layer2/createPalette.js";
 import { compareTdNodesImpl, compareTdNodesSchema } from "../tools/layer3/compareTdNodes.js";
 import { createTdNodeImpl, createTdNodeSchema } from "../tools/layer3/createTdNode.js";
 import { deleteTdNodeImpl, deleteTdNodeSchema } from "../tools/layer3/deleteTdNode.js";
@@ -19,6 +31,10 @@ import {
 } from "../tools/layer3/getTdNodeParameters.js";
 import { getTdNodesImpl, getTdNodesSchema } from "../tools/layer3/getTdNodes.js";
 import { getTdTopologyImpl, getTdTopologySchema } from "../tools/layer3/getTdTopology.js";
+import {
+  readParameterModesImpl,
+  readParameterModesSchema,
+} from "../tools/layer3/readParameterModes.js";
 import {
   summarizeTdErrorsImpl,
   summarizeTdErrorsSchema,
@@ -91,6 +107,12 @@ export const LLM_TOOLS: LlmTool[] = [
     getTdNodeParametersImpl,
   ),
   t(
+    "read_parameter_modes",
+    "Read one node's parameter modes, expressions, and binding/export hints.",
+    readParameterModesSchema,
+    readParameterModesImpl,
+  ),
+  t(
     "get_td_node_errors",
     "Check a node or network for errors and warnings.",
     getTdNodeErrorsSchema,
@@ -158,12 +180,59 @@ export const LLM_TOOLS: LlmTool[] = [
   ),
 ];
 
-/** Tool exposure tiers. `safe` = inspection only; `standard` = inspection + simple CRUD. */
-export type ToolTier = "standard" | "safe";
+export const CREATIVE_LLM_TOOLS: LlmTool[] = [
+  ...LLM_TOOLS,
+  t(
+    "get_preview",
+    "Capture a TOP preview after a creative build or change.",
+    getPreviewSchema,
+    getPreviewImpl,
+  ),
+  t(
+    "create_feedback_network",
+    "Build a complete feedback visual network with controls and preview.",
+    createFeedbackNetworkSchema,
+    createFeedbackNetworkImpl,
+    true,
+  ),
+  t(
+    "create_audio_reactive",
+    "Build a complete audio-reactive visual system.",
+    createAudioReactiveSchema,
+    createAudioReactiveImpl,
+    true,
+  ),
+  t(
+    "create_glitch",
+    "Build a glitch/RGB-tear layer over a source TOP.",
+    createGlitchSchema,
+    createGlitchImpl,
+    true,
+  ),
+  t(
+    "create_strobe",
+    "Build a beat-syncable strobe/flash layer.",
+    createStrobeSchema,
+    createStrobeImpl,
+    true,
+  ),
+  t(
+    "create_palette",
+    "Generate a color palette/gradient utility network.",
+    createPaletteSchema,
+    createPaletteImpl,
+    true,
+  ),
+];
+
+/** Tool exposure tiers. `safe` = inspection only; `standard` = CRUD; `creative` adds selected generators. */
+export type ToolTier = "standard" | "safe" | "creative";
 
 /** Resolve the tool set for a tier. `safe` drops every mutating tool (read-only copilot). */
 export function resolveTools(tier: ToolTier = "standard"): LlmTool[] {
-  return tier === "safe" ? LLM_TOOLS.filter((tool) => !tool.mutates) : LLM_TOOLS;
+  if (tier === "safe") return LLM_TOOLS.filter((tool) => !tool.mutates);
+  if (tier === "creative") return CREATIVE_LLM_TOOLS;
+  return LLM_TOOLS;
 }
 
 /** Flatten a CallToolResult's text blocks into a single string. */

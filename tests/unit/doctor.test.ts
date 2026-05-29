@@ -153,4 +153,12 @@ describe("tdmcp doctor", () => {
     expect(r.report.checks).toHaveLength(4);
     for (const c of r.report.checks) expect(r.stdout).toContain(c.title);
   });
+
+  it("accepts fix mode conservatively without changing project files", async () => {
+    server.use(llmModels("qwen2.5:3b"));
+    const r = await runDoctor({ config: makeConfig(), makeCtx, fix: true });
+    expect(r.code).toBe(0);
+    expect(r.stdout).toContain("Auto-fix");
+    expect(r.stdout).toContain("no project files were changed");
+  });
 });

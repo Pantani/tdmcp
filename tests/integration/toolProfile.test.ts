@@ -22,15 +22,25 @@ async function connectClient(env: NodeJS.ProcessEnv = {}) {
   return client;
 }
 
-// The 6 tools the `safe` profile drops. Must equal the set flagged
+// The tools the `safe` profile drops. Must equal the set flagged
 // `destructiveHint: true` (and SAFE_PROFILE_EXCLUDE in src/tools/index.ts).
 const SAFE_PROFILE_EXCLUDE = [
   "execute_python_script",
   "exec_node_method",
   "delete_td_node",
+  "edit_dat_content",
+  "set_dat_content",
   "create_panic",
   "manage_checkpoint",
   "manage_component",
+  "make_portable_tox",
+  "export_recipe_bundle",
+  "import_recipe_bundle",
+  "scaffold_recipe_template",
+  "attach_docs_as_assets",
+  "local_marketplace_index",
+  "refresh_asset_previews",
+  "install_library_package",
 ];
 
 // Build/inspect surface that the safe profile must keep available.
@@ -70,9 +80,19 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
   it("safe drops the destructive tools", async () => {
     const names = await toolNames({ TDMCP_TOOL_PROFILE: "safe" });
     expect(names).not.toContain("delete_td_node");
+    expect(names).not.toContain("edit_dat_content");
+    expect(names).not.toContain("set_dat_content");
     expect(names).not.toContain("create_panic");
     expect(names).not.toContain("manage_checkpoint");
     expect(names).not.toContain("manage_component");
+    expect(names).not.toContain("make_portable_tox");
+    expect(names).not.toContain("export_recipe_bundle");
+    expect(names).not.toContain("import_recipe_bundle");
+    expect(names).not.toContain("scaffold_recipe_template");
+    expect(names).not.toContain("attach_docs_as_assets");
+    expect(names).not.toContain("local_marketplace_index");
+    expect(names).not.toContain("refresh_asset_previews");
+    expect(names).not.toContain("install_library_package");
   });
 
   it("safe keeps the build/inspect surface", async () => {
@@ -80,12 +100,12 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
     expect(names).toEqual(expect.arrayContaining(SAFE_PROFILE_KEEP));
   });
 
-  it("safe hides exactly SAFE_PROFILE_EXCLUDE.size (6) fewer tools than full", async () => {
+  it("safe hides exactly SAFE_PROFILE_EXCLUDE.size fewer tools than full", async () => {
     const full = await toolNames({ TDMCP_TOOL_PROFILE: "full" });
     const safe = await toolNames({ TDMCP_TOOL_PROFILE: "safe" });
     expect(safe.length).toBeLessThan(full.length);
     expect(full.length - safe.length).toBe(SAFE_PROFILE_EXCLUDE.length);
-    expect(SAFE_PROFILE_EXCLUDE.length).toBe(6);
+    expect(SAFE_PROFILE_EXCLUDE.length).toBe(16);
   });
 
   it("safe ⊇ rawPython=off (composition): safe hides everything rawPython=off hides", async () => {

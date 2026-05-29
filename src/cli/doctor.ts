@@ -64,6 +64,8 @@ export interface RunDoctorOptions {
   makeLlmClient?: (config: TdmcpConfig) => Pick<LlmClient, "health">;
   /** Overridable filesystem probe for the vault check (tests); defaults to real fs. */
   vaultProbe?: (absPath: string) => { exists: boolean; isDir: boolean };
+  /** Accept `doctor --fix`; currently only reports conservative next steps. */
+  fix?: boolean;
 }
 
 const ICON: Record<CheckStatus, string> = { pass: "✔", warn: "!", fail: "✖" };
@@ -201,7 +203,7 @@ function checkConfig(config: TdmcpConfig): DoctorCheck {
   };
 }
 
-function render(report: DoctorReport): string {
+function render(report: DoctorReport, fix = false): string {
   const lines: string[] = ["tdmcp doctor — environment check", ""];
   for (const c of report.checks) {
     lines.push(`  ${ICON[c.status]} ${c.title}: ${c.detail}`);
@@ -216,6 +218,12 @@ function render(report: DoctorReport): string {
   } else {
     lines.push(
       `Setup is not ready: ${failed.length} critical check(s) failed (see the ✖ lines above).`,
+    );
+  }
+  if (fix) {
+    lines.push("");
+    lines.push(
+      "Auto-fix: no project files were changed. Start/repair TouchDesigner or the optional LLM/vault services shown above, then re-run doctor.",
     );
   }
   return lines.join("\n");
@@ -251,7 +259,7 @@ export async function runDoctor(opts: RunDoctorOptions = {}): Promise<DoctorResu
       },
     };
     return {
-      stdout: `${render(report)}\n`,
+      stdout: `${render(report, opts.fix)}\n`,
       stderr: "Setup is not ready: invalid configuration.\n",
       code: 1,
       report,
@@ -287,5 +295,10 @@ export async function runDoctor(opts: RunDoctorOptions = {}): Promise<DoctorResu
   const summary = ok
     ? "Setup is ready."
     : "Setup is not ready: a critical check failed (run `tdmcp doctor` for details).";
-  return { stdout: `${render(report)}\n`, stderr: `${summary}\n`, code: ok ? 0 : 1, report };
+  return {
+    stdout: `${render(report, opts.fix)}\n`,
+    stderr: `${summary}\n`,
+    code: ok ? 0 : 1,
+    report,
+  };
 }

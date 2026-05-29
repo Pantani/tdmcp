@@ -1,4 +1,4 @@
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { createInterface } from "node:readline";
 import { pathToFileURL } from "node:url";
@@ -153,6 +153,24 @@ import {
 } from "../tools/layer1/setupBodyTracking.js";
 import { setupOutputImpl, setupOutputSchema } from "../tools/layer1/setupOutput.js";
 import {
+  bindAudioReactiveImpl,
+  bindAudioReactiveSchema,
+  createDatamoshImpl,
+  createDatamoshSchema,
+  createDisplacementWarpImpl,
+  createDisplacementWarpSchema,
+  createKeyerImpl,
+  createKeyerSchema,
+  createLayerStackImpl,
+  createLayerStackSchema,
+  createLiveSourceImpl,
+  createLiveSourceSchema,
+  createMediaBinImpl,
+  createMediaBinSchema,
+  createTransitionImpl,
+  createTransitionSchema,
+} from "../tools/layer1/vjTools.js";
+import {
   addCustomParametersImpl,
   addCustomParametersSchema,
 } from "../tools/layer2/addCustomParameters.js";
@@ -252,11 +270,19 @@ import {
   optimizePerformanceImpl,
   optimizePerformanceSchema,
 } from "../tools/layer3/optimizePerformance.js";
+import {
+  readParameterModesImpl,
+  readParameterModesSchema,
+} from "../tools/layer3/readParameterModes.js";
 import { recordMovieImpl, recordMovieSchema } from "../tools/layer3/recordMovie.js";
 import { reloadBridgeImpl, reloadBridgeSchema } from "../tools/layer3/reloadBridge.js";
 import { renderOutputImpl, renderOutputSchema } from "../tools/layer3/renderOutput.js";
 import { searchOperatorsImpl, searchOperatorsSchema } from "../tools/layer3/searchOperators.js";
 import { setDatContentImpl, setDatContentSchema } from "../tools/layer3/setDatContent.js";
+import {
+  setParameterExpressionImpl,
+  setParameterExpressionSchema,
+} from "../tools/layer3/setParameterExpression.js";
 import { snapshotTdGraphImpl, snapshotTdGraphSchema } from "../tools/layer3/snapshotTdGraph.js";
 import {
   summarizeTdErrorsImpl,
@@ -267,9 +293,36 @@ import {
   updateTdNodeParametersSchema,
 } from "../tools/layer3/updateTdNodeParameters.js";
 import { writeAgentGuideImpl, writeAgentGuideSchema } from "../tools/layer3/writeAgentGuide.js";
+import {
+  attachDocsAsAssetsImpl,
+  attachDocsAsAssetsSchema,
+  browseLibraryImpl,
+  browseLibrarySchema,
+  componentLinkHealthImpl,
+  componentLinkHealthSchema,
+  exportRecipeBundleImpl,
+  exportRecipeBundleSchema,
+  importRecipeBundleImpl,
+  importRecipeBundleSchema,
+  inspectComponentManifestImpl,
+  inspectComponentManifestSchema,
+  installLibraryPackageImpl,
+  installLibraryPackageSchema,
+  localMarketplaceIndexImpl,
+  localMarketplaceIndexSchema,
+  makePortableToxImpl,
+  makePortableToxSchema,
+  refreshAssetPreviewsImpl,
+  refreshAssetPreviewsSchema,
+  scaffoldRecipeTemplateImpl,
+  scaffoldRecipeTemplateSchema,
+  validateLibraryAssetImpl,
+  validateLibraryAssetSchema,
+} from "../tools/library/index.js";
 import type { ToolContext } from "../tools/types.js";
 import { loadConfig, type TdmcpConfig, tdBaseUrl } from "../utils/config.js";
 import { silentLogger } from "../utils/logger.js";
+import { getVersion } from "../utils/version.js";
 import { runDoctor } from "./doctor.js";
 
 // biome-ignore lint/suspicious/noExplicitAny: args are validated by each command's zod schema before use.
@@ -305,6 +358,11 @@ const COMMANDS: Record<string, Command> = {
   ),
   "nodes find": r(findTdNodesSchema, findTdNodesImpl, "Search nodes by name pattern and/or type."),
   "nodes get": r(getTdNodeParametersSchema, getTdNodeParametersImpl, "Read a node's parameters."),
+  "nodes modes": r(
+    readParameterModesSchema,
+    readParameterModesImpl,
+    "Read parameter modes/expressions/binds for a node.",
+  ),
   "nodes errors": r(getTdNodeErrorsSchema, getTdNodeErrorsImpl, "Check a node/network for errors."),
   "nodes compare": r(compareTdNodesSchema, compareTdNodesImpl, "Diff two nodes' parameters."),
   "nodes snapshot": r(snapshotTdGraphSchema, snapshotTdGraphImpl, "Capture a network snapshot."),
@@ -314,6 +372,12 @@ const COMMANDS: Record<string, Command> = {
     updateTdNodeParametersSchema,
     updateTdNodeParametersImpl,
     "Set node parameters.",
+    { mutates: true },
+  ),
+  "nodes expr": r(
+    setParameterExpressionSchema,
+    setParameterExpressionImpl,
+    "Set one parameter to expression mode.",
     { mutates: true },
   ),
   "nodes create": r(createTdNodeSchema, createTdNodeImpl, "Create an operator.", { mutates: true }),
@@ -889,6 +953,119 @@ const COMMANDS: Record<string, Command> = {
     "Drive a visual from tracked body motion (camera-reactive performance).",
     { mutates: true },
   ),
+  // Post-0.5.0 — live controls / VJ utility stack.
+  "bind-audio": r(
+    bindAudioReactiveSchema,
+    bindAudioReactiveImpl,
+    "Ensure audio features exist, then bind parameters to level/bass/mid/treble.",
+    { mutates: true },
+  ),
+  transition: r(
+    createTransitionSchema,
+    createTransitionImpl,
+    "Build a crossfade/wipe/luma transition.",
+    {
+      mutates: true,
+    },
+  ),
+  "live-source": r(
+    createLiveSourceSchema,
+    createLiveSourceImpl,
+    "Create a camera/NDI/Syphon/screen/movie source wrapper.",
+    { mutates: true },
+  ),
+  "layer-stack": r(
+    createLayerStackSchema,
+    createLayerStackImpl,
+    "Composite a stack of TOP layers.",
+    {
+      mutates: true,
+    },
+  ),
+  "media-bin": r(createMediaBinSchema, createMediaBinImpl, "Create a clip-bin/player surface.", {
+    mutates: true,
+  }),
+  keyer: r(createKeyerSchema, createKeyerImpl, "Create a chroma/RGB/matte keying chain.", {
+    mutates: true,
+  }),
+  datamosh: r(createDatamoshSchema, createDatamoshImpl, "Create a feedback datamosh-style smear.", {
+    mutates: true,
+  }),
+  "displace-warp": r(
+    createDisplacementWarpSchema,
+    createDisplacementWarpImpl,
+    "Create a displacement warp driven by a TOP.",
+    { mutates: true },
+  ),
+  // Post-0.5.0 — library / packaging.
+  library: r(
+    browseLibrarySchema,
+    browseLibraryImpl,
+    "Browse recipes and local component packages.",
+  ),
+  manifest: r(
+    inspectComponentManifestSchema,
+    inspectComponentManifestImpl,
+    "Inspect a component package manifest.",
+  ),
+  "portable-tox": r(
+    makePortableToxSchema,
+    makePortableToxImpl,
+    "Save a COMP as a portable .tox package with a manifest.",
+    { mutates: true },
+  ),
+  "recipe-bundle-export": r(
+    exportRecipeBundleSchema,
+    exportRecipeBundleImpl,
+    "Export recipes to a portable bundle file.",
+    { mutates: true },
+  ),
+  "recipe-bundle-import": r(
+    importRecipeBundleSchema,
+    importRecipeBundleImpl,
+    "Import recipes from a portable bundle file.",
+    { mutates: true },
+  ),
+  "asset-validate": r(
+    validateLibraryAssetSchema,
+    validateLibraryAssetImpl,
+    "Validate a local library asset and manifest reference.",
+  ),
+  "recipe-template": r(
+    scaffoldRecipeTemplateSchema,
+    scaffoldRecipeTemplateImpl,
+    "Write a minimal valid recipe JSON template.",
+    { mutates: true },
+  ),
+  "docs-assets": r(
+    attachDocsAsAssetsSchema,
+    attachDocsAsAssetsImpl,
+    "Copy docs into a package and update its manifest.",
+    { mutates: true },
+  ),
+  "marketplace-index": r(
+    localMarketplaceIndexSchema,
+    localMarketplaceIndexImpl,
+    "Write an index.json for a local package directory.",
+    { mutates: true },
+  ),
+  "component-health": r(
+    componentLinkHealthSchema,
+    componentLinkHealthImpl,
+    "Check live externaltox links for missing component files.",
+  ),
+  "preview-assets": r(
+    refreshAssetPreviewsSchema,
+    refreshAssetPreviewsImpl,
+    "Capture TOP previews into package asset files.",
+    { mutates: true },
+  ),
+  "install-library": r(
+    installLibraryPackageSchema,
+    installLibraryPackageImpl,
+    "Install a local package folder, zip, tox, or manifest into a package directory.",
+    { mutates: true },
+  ),
 };
 
 export interface CliResult {
@@ -967,10 +1144,25 @@ function usage(): string {
 export interface RunCliOptions {
   /** Inject a context (used by tests); production builds one from env config. */
   makeCtx?: () => ToolContext;
+  /** Inject or override config (used by tests / recursive run files). */
+  config?: TdmcpConfig;
 }
 
-function buildCtx(opts: RunCliOptions): ToolContext {
-  return opts.makeCtx ? opts.makeCtx() : buildToolContext(loadConfig(), { logger: silentLogger });
+function withCliConfigOverrides(
+  config: TdmcpConfig,
+  values: ReturnType<typeof parseCliArgs>["values"],
+): TdmcpConfig {
+  return {
+    ...config,
+    tdHost: typeof values["td-host"] === "string" ? values["td-host"] : config.tdHost,
+    tdPort: typeof values["td-port"] === "string" ? Number(values["td-port"]) : config.tdPort,
+    requestTimeoutMs:
+      typeof values.timeout === "string" ? Number(values.timeout) : config.requestTimeoutMs,
+  };
+}
+
+function buildCtx(opts: RunCliOptions, config: TdmcpConfig): ToolContext {
+  return opts.makeCtx ? opts.makeCtx() : buildToolContext(config, { logger: silentLogger });
 }
 
 function parseCliArgs(argv: string[]) {
@@ -979,15 +1171,99 @@ function parseCliArgs(argv: string[]) {
     allowPositionals: true,
     options: {
       params: { type: "string" },
+      "params-file": { type: "string" },
       json: { type: "string" },
       output: { type: "string", default: "json" },
       "dry-run": { type: "boolean", default: false },
       "allow-unsafe": { type: "boolean", default: false },
+      "td-host": { type: "string" },
+      "td-port": { type: "string" },
+      timeout: { type: "string" },
+      version: { type: "boolean", default: false },
+      quiet: { type: "boolean", default: false },
+      "no-color": { type: "boolean", default: false },
+      fix: { type: "boolean", default: false },
       out: { type: "string", short: "o" },
       "include-high-frequency": { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false },
     },
   });
+}
+
+function readJsonArg(_label: string, raw: string): Record<string, unknown> {
+  return JSON.parse(raw) as Record<string, unknown>;
+}
+
+function readParams(values: ReturnType<typeof parseCliArgs>["values"]): Record<string, unknown> {
+  const raw: Record<string, unknown> = {};
+  if (typeof values["params-file"] === "string") {
+    Object.assign(raw, readJsonArg("--params-file", readFileSync(values["params-file"], "utf8")));
+  }
+  if (typeof values.params === "string") {
+    const source = values.params === "-" ? readFileSync(0, "utf8") : values.params;
+    Object.assign(raw, readJsonArg("--params", source));
+  }
+  if (typeof values.json === "string") Object.assign(raw, readJsonArg("--json", values.json));
+  return raw;
+}
+
+function completion(shell: string): string {
+  const commands = [
+    ...Object.keys(COMMANDS),
+    "schema",
+    "preview",
+    "watch",
+    "repl",
+    "doctor",
+    "completion",
+    "run",
+  ].join(" ");
+  if (shell === "fish") {
+    return `complete -c tdmcp-agent -a "${commands}"\ncomplete -c tdmcp-agent -l params -r\ncomplete -c tdmcp-agent -l params-file -r\ncomplete -c tdmcp-agent -l output -a "json ndjson text"\n`;
+  }
+  const opts =
+    "--params --params-file --json --output --dry-run --allow-unsafe --td-host --td-port --timeout --version --quiet --no-color --help";
+  return `_tdmcp_agent_complete() {\n  COMPREPLY=( $(compgen -W "${commands} ${opts}" -- "\${COMP_WORDS[COMP_CWORD]}") )\n}\ncomplete -F _tdmcp_agent_complete tdmcp-agent\n`;
+}
+
+async function runFile(
+  file: string,
+  opts: RunCliOptions,
+  values: ReturnType<typeof parseCliArgs>["values"],
+): Promise<CliResult> {
+  const spec = JSON.parse(readFileSync(file, "utf8")) as
+    | { command: string | string[]; params?: Record<string, unknown>; output?: string }
+    | Array<{ command: string | string[]; params?: Record<string, unknown>; output?: string }>;
+  const steps = Array.isArray(spec) ? spec : [spec];
+  const results: Array<{
+    command: string | string[];
+    code: number;
+    stdout: unknown;
+    stderr: string;
+  }> = [];
+  for (const step of steps) {
+    const command = Array.isArray(step.command) ? step.command : step.command.split(/\s+/);
+    const argv = [...command, "--params", JSON.stringify(step.params ?? {})];
+    if (step.output) argv.push("--output", step.output);
+    if (values["dry-run"]) argv.push("--dry-run");
+    if (values.quiet) argv.push("--quiet");
+    const result = await runCli(argv, opts);
+    let stdout: unknown = result.stdout.trim();
+    try {
+      stdout = stdout ? JSON.parse(result.stdout) : null;
+    } catch {
+      // keep raw text
+    }
+    results.push({ command: step.command, code: result.code, stdout, stderr: result.stderr });
+    if (result.code !== 0) {
+      return {
+        stdout: `${JSON.stringify({ results }, null, 2)}\n`,
+        stderr: result.stderr,
+        code: result.code,
+      };
+    }
+  }
+  return { stdout: `${JSON.stringify({ results }, null, 2)}\n`, stderr: "", code: 0 };
 }
 
 export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<CliResult> {
@@ -999,8 +1275,23 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   }
 
   const { values, positionals } = parsed;
+  if (values.version) {
+    return { stdout: `${getVersion()}\n`, stderr: "", code: 0 };
+  }
   if (values.help || positionals.length === 0) {
     return { stdout: `${usage()}\n`, stderr: "", code: 0 };
+  }
+
+  const config = withCliConfigOverrides(opts.config ?? loadConfig(), values);
+
+  if (positionals[0] === "completion") {
+    const shell = positionals[1] ?? "bash";
+    return { stdout: completion(shell), stderr: "", code: 0 };
+  }
+
+  if (positionals[0] === "run") {
+    if (!positionals[1]) return { stdout: "", stderr: "Usage: tdmcp-agent run <file>\n", code: 2 };
+    return runFile(positionals[1], { ...opts, config }, values);
   }
 
   // `schema <command>` — emit the input contract without touching TD.
@@ -1023,8 +1314,7 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   if (positionals[0] === "preview") {
     const raw: Record<string, unknown> = {};
     try {
-      if (typeof values.params === "string") Object.assign(raw, JSON.parse(values.params));
-      if (typeof values.json === "string") Object.assign(raw, JSON.parse(values.json));
+      Object.assign(raw, readParams(values));
     } catch (err) {
       return {
         stdout: "",
@@ -1046,7 +1336,7 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
       const doc = { dryRun: true, command: "preview", args: parsed.data, out: resolve(outPath) };
       return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
     }
-    const ctx = buildCtx(opts);
+    const ctx = buildCtx(opts, config);
     try {
       const preview = await capturePreview(
         ctx.client,
@@ -1078,8 +1368,12 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   // reachable even when TD is offline, so it bypasses the CallToolResult command table.
   if (positionals[0] === "doctor") {
     const make = opts.makeCtx;
-    const { stdout, stderr, code } = await runDoctor(make ? { makeCtx: () => make() } : {});
-    return { stdout, stderr, code };
+    const { stdout, stderr, code } = await runDoctor(
+      make
+        ? { config, makeCtx: () => make(), fix: Boolean(values.fix) }
+        : { config, fix: Boolean(values.fix) },
+    );
+    return { stdout, stderr: values.quiet ? "" : stderr, code };
   }
 
   const resolved = resolveCommand(positionals);
@@ -1094,8 +1388,7 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
 
   const raw: Record<string, unknown> = {};
   try {
-    if (typeof values.params === "string") Object.assign(raw, JSON.parse(values.params));
-    if (typeof values.json === "string") Object.assign(raw, JSON.parse(values.json));
+    Object.assign(raw, readParams(values));
   } catch (err) {
     return {
       stdout: "",
@@ -1124,7 +1417,7 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
     return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
   }
 
-  const ctx = buildCtx(opts);
+  const ctx = buildCtx(opts, config);
 
   if (cmd.unsafe) {
     if (ctx.allowRawPython === false) {
@@ -1149,11 +1442,11 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   if (output === "ndjson") {
     const arr = firstArray(data);
     const body = arr ? arr.map((item) => JSON.stringify(item)).join("\n") : JSON.stringify(data);
-    return { stdout: `${body}\n`, stderr: summary ? `${summary}\n` : "", code: 0 };
+    return { stdout: `${body}\n`, stderr: summary && !values.quiet ? `${summary}\n` : "", code: 0 };
   }
   return {
     stdout: `${JSON.stringify(data, null, 2)}\n`,
-    stderr: summary ? `${summary}\n` : "",
+    stderr: summary && !values.quiet ? `${summary}\n` : "",
     code: 0,
   };
 }

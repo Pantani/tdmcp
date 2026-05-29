@@ -55,6 +55,16 @@ import { registerScaffoldGenre } from "./scaffoldGenre.js";
 import { registerScaffoldShow } from "./scaffoldShow.js";
 import { registerSetupBodyTracking } from "./setupBodyTracking.js";
 import { registerSetupOutput } from "./setupOutput.js";
+import {
+  registerBindAudioReactive,
+  registerCreateDatamosh,
+  registerCreateDisplacementWarp,
+  registerCreateKeyer,
+  registerCreateLayerStack,
+  registerCreateLiveSource,
+  registerCreateMediaBin,
+  registerCreateTransition,
+} from "./vjTools.js";
 
 export const layer1Registrars: ToolRegistrar[] = [
   registerCreateFeedbackNetwork,
@@ -119,4 +129,13 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreatePoseSkeleton,
   registerCreateBodyReactive,
   registerSetupBodyTracking,
+  // Post-0.5.0 — live controls / VJ utility stack:
+  registerBindAudioReactive,
+  registerCreateTransition,
+  registerCreateLiveSource,
+  registerCreateLayerStack,
+  registerCreateMediaBin,
+  registerCreateKeyer,
+  registerCreateDatamosh,
+  registerCreateDisplacementWarp,
 ];

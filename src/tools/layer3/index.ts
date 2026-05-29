@@ -20,11 +20,13 @@ import { registerGetTdNodes } from "./getTdNodes.js";
 import { registerGetTdPerformance } from "./getTdPerformance.js";
 import { registerGetTdTopology } from "./getTdTopology.js";
 import { registerOptimizePerformance } from "./optimizePerformance.js";
+import { registerReadParameterModes } from "./readParameterModes.js";
 import { registerRecordMovie } from "./recordMovie.js";
 import { registerReloadBridge } from "./reloadBridge.js";
 import { registerRenderOutput } from "./renderOutput.js";
 import { registerSearchOperators } from "./searchOperators.js";
 import { registerSetDatContent } from "./setDatContent.js";
+import { registerSetParameterExpression } from "./setParameterExpression.js";
 import { registerSnapshotTdGraph } from "./snapshotTdGraph.js";
 import { registerSummarizeTdErrors } from "./summarizeTdErrors.js";
 import { registerUpdateTdNodeParameters } from "./updateTdNodeParameters.js";
@@ -37,6 +39,7 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerUpdateTdNodeParameters,
   registerGetTdNodes,
   registerGetTdNodeParameters,
+  registerReadParameterModes,
   registerGetTdNodeErrors,
   registerExecutePythonScript,
   registerExecNodeMethod,
@@ -61,5 +64,6 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerGenerateReadme,
   registerEditDatContent,
   registerSetDatContent,
+  registerSetParameterExpression,
   registerWriteAgentGuide,
 ];

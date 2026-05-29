@@ -12,7 +12,8 @@ script → package), project intelligence, token-cheap agent-DX primitives, and 
 locking. It also adds a way to drive tdmcp from *inside* TouchDesigner via dotsimulate's LOPs
 "MCP Client" plus an optional curated tool profile for autonomous in-TD agents — additive and
 backward-compatible (the default profile is `full`). Every new tool was built → integrated →
-live-validated in TouchDesigner.
+validated with automated coverage; live TD validation is called out where hardware or an open TD
+session is still required.
 
 ### Added
 
@@ -52,6 +53,28 @@ live-validated in TouchDesigner.
 - **`set_perform_mode`** (CLI `perform-mode`) — toggle a perform-mode flag (stored on
   the TD root + `ui.performMode`) so the bridge and MCP tools skip nonessential
   compute (preview captures, event streaming, externalization) during a live show.
+- **TD-depth foundation:** `read_parameter_modes` (CLI `nodes modes`) reads constant /
+  expression / bind / export state for a node's parameters, and `set_parameter_expression`
+  (CLI `nodes expr`) switches a single parameter into expression mode with rollback on
+  failure. `snapshot_td_graph compact` now preserves reactive parameter state when possible.
+- **Live controls / VJ tools:** `bind_audio_reactive` (CLI `bind-audio`),
+  `create_transition` (`transition`), `create_live_source` (`live-source`),
+  `create_layer_stack` (`layer-stack`), `create_media_bin` (`media-bin`),
+  `create_keyer` (`keyer`), `create_datamosh` (`datamosh`), and
+  `create_displacement_warp` (`displace-warp`).
+- **CLI/DX:** JSON config files and named profiles (`TDMCP_CONFIG_FILE`,
+  `TDMCP_PROFILE`), `tdmcp install-client`, `tdmcp-agent run <file>`,
+  `--params-file`, `--params -`, `--td-host`, `--td-port`, `--timeout`, shell
+  completion, `--version`, `--quiet`, `--no-color`, and advisory `doctor --fix`.
+- **AI prompt/copilot surface:** new prompts for `fix_reactivity`, `recover_show`,
+  `auto_vj_director`, `color_story`, `lyric_show`, `setlist_planner`,
+  `visual_ab_compare`, `motion_critique`, and `explain_param`; a prompt catalog
+  resource at `tdmcp://prompts/{prompt_name}`; and a `creative` copilot tier.
+- **Library / packaging tools:** `browse_library`, `inspect_component_manifest`,
+  `make_portable_tox`, `export_recipe_bundle`, `import_recipe_bundle`,
+  `validate_library_asset`, `scaffold_recipe_template`, `attach_docs_as_assets`,
+  `local_marketplace_index`, `component_link_health`, `refresh_asset_previews`, and
+  `install_library_package`.
 - **Body-tracking CLI + recipe:** 1:1 CLI commands for the MediaPipe body-tracking
   tools that shipped in 0.4.0 (`body-tracking`, `pose-track`, `skeleton`,
   `body-reactive`), plus a new recipe **`body_tracking_reactive`** — 33 MediaPipe
@@ -79,10 +102,9 @@ live-validated in TouchDesigner.
 - **`snapshot_td_graph`** gains a `compact` mode — hoists per-type default parameters
   and delta-encodes each node for token-cheap whole-COMP reads.
 - **`TDMCP_TOOL_PROFILE`** (`full` | `safe`, default `full`) — `safe` additionally hides the
-  six destructive / raw-code tools (`execute_python_script`, `exec_node_method`,
-  `delete_td_node`, `create_panic`, `manage_checkpoint`, `manage_component`), a strict
-  superset of `TDMCP_RAW_PYTHON=off`. Use it to hand an autonomous in-TD agent a curated,
-  non-destructive toolset.
+  destructive / raw-code tools, including DAT overwrite/edit, component/package writes and
+  preview-asset writes, as a strict superset of `TDMCP_RAW_PYTHON=off`. Use it to hand an
+  autonomous in-TD agent a curated, non-destructive toolset.
 
 [0.5.0]: https://github.com/Pantani/tdmcp/compare/v0.4.0...HEAD
 

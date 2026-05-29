@@ -1,8 +1,10 @@
 import { z } from "zod";
 import { verifyNetwork } from "../../feedback/networkVerifier.js";
 import { ConnectionSchema } from "../../td-client/validators.js";
+import { parsePythonReport } from "../pythonReport.js";
 import { guardTd, structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { buildReadParameterModesScript, parameterModeInfoSchema } from "./readParameterModes.js";
 
 /** Cap on per-node parameter fetches so a big graph can't fan out into hundreds of requests. */
 const MAX_PARAM_NODES = 60;
@@ -18,6 +20,12 @@ export const snapshotTdGraphSchema = z.object({
     .default(false)
     .describe(
       "Token-cheap whole-COMP read: hoist each operator type's most-common parameter values into a shared `typeDefaults` map and store only each node's *deltas* from them (Embody-style read_tdn). Implies fetching parameters. Use for feeding a large network to an agent without paying for repeated identical values.",
+    ),
+  include_parameter_modes: z
+    .boolean()
+    .default(false)
+    .describe(
+      "Also preserve TouchDesigner parameter modes/expressions/binds where available. Compact mode implies this so reactive expressions are not flattened to their current value.",
     ),
 });
 type SnapshotTdGraphArgs = z.infer<typeof snapshotTdGraphSchema>;
@@ -62,6 +70,16 @@ export const snapshotTdGraphOutputSchema = z.object({
           .describe(
             "True when parameters were requested (`include_params` or `compact`) but not fetched for this node (past the per-node cap or a failed read), so a missing `parameters` field isn't mistaken for matching the type default.",
           ),
+        parameter_modes: z
+          .record(z.string(), parameterModeInfoSchema)
+          .optional()
+          .describe(
+            "Parameter state keyed by par name. Present when `include_parameter_modes` is true, and in compact mode only for expression/bind/export-like non-constant state.",
+          ),
+        parameter_modes_unfetched: z
+          .boolean()
+          .optional()
+          .describe("True when parameter modes were requested but not fetched for this node."),
       }),
     )
     .describe("Every captured node, optionally with its parameters."),
@@ -75,12 +93,19 @@ interface SnapshotNode {
   type: string;
   name: string;
   parameters?: Record<string, unknown>;
+  parameter_modes?: Record<string, unknown>;
   /**
    * True when parameters were requested for this node but never fetched (truncated past
    * MAX_PARAM_NODES, or the per-node read failed). Distinguishes "params unknown" from
    * "params match the type default", which both otherwise carry no `parameters` field.
    */
   params_unfetched?: boolean;
+  parameter_modes_unfetched?: boolean;
+}
+
+interface ParameterModesReport {
+  parameters: Record<string, unknown>;
+  fatal?: string;
 }
 
 /**
@@ -138,6 +163,11 @@ export function toCompactNodes(
 ): SnapshotNode[] {
   return nodes.map((node) => {
     const base: SnapshotNode = { path: node.path, type: node.type, name: node.name };
+    if (node.parameter_modes) {
+      const reactiveModes = compactParameterModes(node.parameter_modes);
+      if (Object.keys(reactiveModes).length > 0) base.parameter_modes = reactiveModes;
+    }
+    if (node.parameter_modes_unfetched) base.parameter_modes_unfetched = true;
     // Carry the "params unknown" marker through unchanged — these nodes have no
     // fetched parameters to delta-encode, and dropping the marker would make them
     // look like they match the type default.
@@ -156,15 +186,35 @@ export function toCompactNodes(
   });
 }
 
+function compactParameterModes(modes: Record<string, unknown>): Record<string, unknown> {
+  const compact: Record<string, unknown> = {};
+  for (const [name, raw] of Object.entries(modes)) {
+    if (!raw || typeof raw !== "object") continue;
+    const info = raw as Record<string, unknown>;
+    const mode = String(info.mode ?? "").toLowerCase();
+    const hasReactiveState =
+      typeof info.expression === "string" ||
+      typeof info.bind_expression === "string" ||
+      typeof info.export_source === "string" ||
+      (mode !== "" && mode !== "constant" && mode !== "mode.constant");
+    if (!hasReactiveState) continue;
+    compact[name] = info;
+  }
+  return compact;
+}
+
 export async function snapshotTdGraphImpl(ctx: ToolContext, args: SnapshotTdGraphArgs) {
   // Compact mode is only useful with parameters, so it implies fetching them.
   const wantParams = args.include_params || args.compact;
+  const wantModes = args.include_parameter_modes || args.compact;
   return guardTd(
     async () => {
       const report = await verifyNetwork(ctx.client, args.path);
       const refs = report.topology.nodes;
       let paramsTruncated = false;
+      let modesTruncated = false;
       const params = new Map<string, Record<string, unknown>>();
+      const modes = new Map<string, Record<string, unknown>>();
       if (wantParams) {
         const targets = refs.slice(0, MAX_PARAM_NODES);
         paramsTruncated = refs.length > MAX_PARAM_NODES;
@@ -172,6 +222,24 @@ export async function snapshotTdGraphImpl(ctx: ToolContext, args: SnapshotTdGrap
         const details = await Promise.allSettled(targets.map((n) => ctx.client.getNode(n.path)));
         for (const detail of details) {
           if (detail.status === "fulfilled") params.set(detail.value.path, detail.value.parameters);
+        }
+      }
+      if (wantModes) {
+        const targets = refs.slice(0, MAX_PARAM_NODES);
+        modesTruncated = refs.length > MAX_PARAM_NODES;
+        const details = await Promise.allSettled(
+          targets.map(async (n) => {
+            const exec = await ctx.client.executePythonScript(
+              buildReadParameterModesScript({ path: n.path }),
+              true,
+            );
+            const parsed = parsePythonReport<ParameterModesReport>(exec.stdout);
+            if (parsed.fatal) throw new Error(parsed.fatal);
+            return { path: n.path, parameters: parsed.parameters };
+          }),
+        );
+        for (const detail of details) {
+          if (detail.status === "fulfilled") modes.set(detail.value.path, detail.value.parameters);
         }
       }
       const nodes: SnapshotNode[] = refs.map((n) => {
@@ -186,11 +254,18 @@ export async function snapshotTdGraphImpl(ctx: ToolContext, args: SnapshotTdGrap
             node.params_unfetched = true;
           }
         }
+        if (wantModes) {
+          if (modes.has(n.path)) {
+            node.parameter_modes = modes.get(n.path);
+          } else {
+            node.parameter_modes_unfetched = true;
+          }
+        }
         return node;
       });
-      return { report, nodes, paramsTruncated };
+      return { report, nodes, paramsTruncated, modesTruncated };
     },
-    ({ report, nodes, paramsTruncated }) => {
+    ({ report, nodes, paramsTruncated, modesTruncated }) => {
       if (args.compact) {
         const typeDefaults = computeTypeDefaults(nodes);
         const compactNodes = toCompactNodes(nodes, typeDefaults);
@@ -201,7 +276,7 @@ export async function snapshotTdGraphImpl(ctx: ToolContext, args: SnapshotTdGrap
             nodeCount: report.nodeCount,
             connectionCount: report.connectionCount,
             issues: report.issues,
-            params_truncated: paramsTruncated,
+            params_truncated: paramsTruncated || modesTruncated,
             compact: true,
             typeDefaults,
             nodes: compactNodes,
@@ -216,7 +291,7 @@ export async function snapshotTdGraphImpl(ctx: ToolContext, args: SnapshotTdGrap
           nodeCount: report.nodeCount,
           connectionCount: report.connectionCount,
           issues: report.issues,
-          params_truncated: paramsTruncated,
+          params_truncated: paramsTruncated || modesTruncated,
           nodes,
           connections: report.topology.connections,
         },

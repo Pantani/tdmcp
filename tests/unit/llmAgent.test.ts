@@ -72,6 +72,15 @@ describe("local copilot — curated tool registry", () => {
     expect(resolveTools("standard")).toHaveLength(LLM_TOOLS.length);
   });
 
+  it("the creative tier adds selected Layer-1 generators but still excludes raw Python", () => {
+    const names = resolveTools("creative").map((t) => t.name);
+    expect(names).toContain("create_feedback_network");
+    expect(names).toContain("create_audio_reactive");
+    expect(names).toContain("get_preview");
+    expect(names).not.toContain("execute_python_script");
+    expect(names).not.toContain("exec_node_method");
+  });
+
   it("converts tools to OpenAI function specs with object parameters", () => {
     const specs = toOpenAITools();
     expect(specs).toHaveLength(LLM_TOOLS.length);

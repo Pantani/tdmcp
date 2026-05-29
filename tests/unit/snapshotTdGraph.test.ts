@@ -1,3 +1,4 @@
+import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
 import { RecipeLibrary } from "../../src/recipes/loader.js";
@@ -63,6 +64,7 @@ describe("snapshotTdGraphImpl", () => {
       path: "/project1",
       include_params: false,
       compact: false,
+      include_parameter_modes: false,
     });
     expect(result.isError).toBeFalsy();
     const data = (result as { structuredContent?: Record<string, unknown> }).structuredContent;
@@ -76,6 +78,7 @@ describe("snapshotTdGraphImpl", () => {
       path: "/project1",
       include_params: false,
       compact: true,
+      include_parameter_modes: false,
     });
     expect(result.isError).toBeFalsy();
     const data = (result as { structuredContent?: Record<string, unknown> }).structuredContent;
@@ -86,5 +89,39 @@ describe("snapshotTdGraphImpl", () => {
     expect(Object.keys(typeDefaults)).toContain("noiseTOP");
     const nodes = data?.nodes as Array<{ name: string; parameters?: unknown }>;
     expect(nodes[0]?.parameters).toBeUndefined();
+  });
+
+  it("compact mode preserves reactive parameter state when available", async () => {
+    server.use(
+      http.post(`${TD_BASE}/api/exec`, () =>
+        HttpResponse.json({
+          ok: true,
+          data: {
+            result: null,
+            stdout: JSON.stringify({
+              path: "/project1/noise1",
+              parameters: {
+                period: { name: "period", mode: "EXPRESSION", expression: "absTime.seconds" },
+                amplitude: { name: "amplitude", mode: "CONSTANT", value: 1 },
+              },
+              warnings: [],
+            }),
+          },
+        }),
+      ),
+    );
+    const result = await snapshotTdGraphImpl(makeCtx(), {
+      path: "/project1",
+      include_params: false,
+      compact: true,
+      include_parameter_modes: false,
+    });
+    expect(result.isError).toBeFalsy();
+    const data = result.structuredContent as {
+      nodes: Array<{ parameter_modes?: Record<string, unknown> }>;
+    };
+    expect(data.nodes[0]?.parameter_modes).toEqual({
+      period: { name: "period", mode: "EXPRESSION", expression: "absTime.seconds" },
+    });
   });
 });

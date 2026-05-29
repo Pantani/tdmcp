@@ -35,14 +35,17 @@ Rules:
 
 const READ_ONLY_NOTE = `\n- READ-ONLY MODE is on: you can inspect freely but cannot create, modify, wire or delete anything. If the user asks for a change, explain what you would do and suggest they turn off read-only mode or hand off to Claude/Codex.`;
 
-function systemPrompt(readOnly: boolean): string {
-  return readOnly ? BASE_PROMPT + READ_ONLY_NOTE : BASE_PROMPT;
+const CREATIVE_NOTE = `\n- CREATIVE MODE is on: you may use the selected Layer-1 generators for small complete looks. Still work probe-first: inspect, build one focused system, check errors, capture a preview, and keep the user informed. Do not use raw Python or destructive restore/delete workflows.`;
+
+function systemPrompt(readOnly: boolean, creative: boolean): string {
+  if (readOnly) return BASE_PROMPT + READ_ONLY_NOTE;
+  return creative ? BASE_PROMPT + CREATIVE_NOTE : BASE_PROMPT;
 }
 
 /** Re-inject an authoritative system prompt for the current tier (drops any stale one). */
-function ensureSystem(history: ChatMessage[], readOnly: boolean): ChatMessage[] {
+function ensureSystem(history: ChatMessage[], readOnly: boolean, creative: boolean): ChatMessage[] {
   const rest = history.filter((m) => m.role !== "system");
-  return [{ role: "system", content: systemPrompt(readOnly) }, ...rest];
+  return [{ role: "system", content: systemPrompt(readOnly, creative) }, ...rest];
 }
 
 function isAbort(err: unknown): boolean {
@@ -65,7 +68,8 @@ export async function runAgentTurn(
 ): Promise<ChatMessage[]> {
   const toolset = opts.tools ?? LLM_TOOLS;
   const readOnly = !toolset.some((tool) => tool.mutates);
-  const messages = ensureSystem(history, readOnly);
+  const creative = toolset.some((tool) => tool.name === "create_feedback_network");
+  const messages = ensureSystem(history, readOnly, creative);
   const tools = toOpenAITools(toolset);
 
   for (let step = 0; step < MAX_STEPS; step++) {

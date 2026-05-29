@@ -2,19 +2,28 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerAnalyzeScreenshot } from "./analyzeScreenshot.js";
 import { registerAudioToShow } from "./audioToShow.js";
 import { registerAutoFix } from "./autoFix.js";
+import { registerAutoVjDirector } from "./autoVjDirector.js";
 import { registerBeatReactiveDesigner } from "./beatReactiveDesigner.js";
+import { registerColorStory } from "./colorStory.js";
 import { registerCritiqueVisual } from "./critiqueVisual.js";
 import { registerDebugNetwork } from "./debugNetwork.js";
 import { registerExplainNetwork } from "./explainNetwork.js";
+import { registerExplainParam } from "./explainParam.js";
+import { registerFixReactivity } from "./fixReactivity.js";
 import { registerFixShader } from "./fixShader.js";
 import { registerImageToVisual } from "./imageToVisual.js";
+import { registerLyricShow } from "./lyricShow.js";
+import { registerMotionCritique } from "./motionCritique.js";
 import { registerOptimizePerformance } from "./optimizePerformance.js";
+import { registerRecoverShow } from "./recoverShow.js";
 import { registerRemixVisual } from "./remixVisual.js";
+import { registerSetlistPlanner } from "./setlistPlanner.js";
 import { registerStyleReference } from "./styleReference.js";
 import { registerTextToRecipe } from "./textToRecipe.js";
 import { registerTextToShader } from "./textToShader.js";
 import { registerTweakVisual } from "./tweakVisual.js";
 import type { PromptContext } from "./types.js";
+import { registerVisualAbCompare } from "./visualAbCompare.js";
 import { registerVisualArtistMode } from "./visualArtistMode.js";
 import { registerVjSetBuilder } from "./vjSetBuilder.js";
 
@@ -37,6 +46,15 @@ export function registerAllPrompts(server: McpServer, ctx: PromptContext): void 
   registerAutoFix(server, ctx);
   registerTextToRecipe(server, ctx);
   registerStyleReference(server, ctx);
+  registerFixReactivity(server, ctx);
+  registerRecoverShow(server, ctx);
+  registerAutoVjDirector(server, ctx);
+  registerColorStory(server, ctx);
+  registerLyricShow(server, ctx);
+  registerSetlistPlanner(server, ctx);
+  registerVisualAbCompare(server, ctx);
+  registerMotionCritique(server, ctx);
+  registerExplainParam(server, ctx);
 }
 
 export type { PromptContext } from "./types.js";
