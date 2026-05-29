@@ -271,7 +271,6 @@ function buildControls(
       min: -10,
       max: 10,
       default: scalarValue(uniform, args, args.uniform_values[uniform.name]),
-      description: `Shader Park input() uniform '${uniform.name}'.`,
     })),
   ];
 }

@@ -236,12 +236,13 @@ describe("createShaderPark build", () => {
     const b64 = /b64decode\("([^"]+)"\)/.exec(panel ?? "")?.[1];
     if (b64 === undefined) throw new Error("panel script did not embed a base64 payload");
     const payload = JSON.parse(Buffer.from(b64, "base64").toString("utf8")) as {
-      controls: Array<{ name: string; type: string }>;
+      controls: Array<{ name: string; type: string; description?: unknown }>;
     };
     const names = payload.controls.map((c) => c.name);
     expect(names).toEqual(
       expect.arrayContaining(["Speed", "Scale", "Opacity", "StepSize", "Size"]),
     );
+    expect(payload.controls.every((control) => control.description === undefined)).toBe(true);
   });
 
   it("returns an isError result when Shader Park compilation fails", async () => {
