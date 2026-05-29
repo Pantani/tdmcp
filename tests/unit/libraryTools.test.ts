@@ -87,6 +87,24 @@ describe("library and packaging tools", () => {
     expect(exec).not.toHaveBeenCalled();
   });
 
+  it("does not create a zip destination when entry validation fails", () => {
+    const dir = tmp();
+    try {
+      const dest = join(dir, "tdmcp-package");
+      const exec = vi.fn();
+
+      expect(() =>
+        extractZip(join(dir, "package.zip"), dest, exec as never, () => [
+          "package/../../outside.tox",
+        ]),
+      ).toThrow(/Unsafe archive path/);
+      expect(exec).not.toHaveBeenCalled();
+      expect(existsSync(dest)).toBe(false);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("sanitizes explicit portable tox names before resolving the output path", async () => {
     const dir = tmp();
     let capturedScript = "";
@@ -155,6 +173,26 @@ describe("library and packaging tools", () => {
       });
       expect(imported.isError).toBeFalsy();
       expect(existsSync(join(importedDir, "pulse.json"))).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("treats a file package_dir as an empty package listing", async () => {
+    const dir = tmp();
+    try {
+      const packageFile = join(dir, "packages.json");
+      writeFileSync(packageFile, "not a directory", "utf8");
+
+      const browse = await browseLibraryImpl(makeCtx(), {
+        package_dir: packageFile,
+        tags: [],
+        include_recipes: false,
+        include_packages: true,
+      });
+
+      expect(browse.isError).toBeFalsy();
+      expect(browse.structuredContent?.packages).toEqual([]);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

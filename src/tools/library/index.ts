@@ -174,8 +174,8 @@ export function extractZip(
   exec: typeof execFileSync = execFileSync,
   listEntries: (zipPath: string) => string[] = listZipEntries,
 ): void {
-  mkdirSync(destDir, { recursive: true });
   validateArchiveEntries(listEntries(zipPath));
+  mkdirSync(destDir, { recursive: true });
   const { command, args } = zipExtractCommand(zipPath, destDir);
   exec(command, args, { stdio: "pipe" });
 }
@@ -201,9 +201,15 @@ export async function browseLibraryImpl(ctx: ToolContext, args: BrowseLibraryArg
       })
     : [];
   const packages: Array<{ path: string; id?: string; name?: string; version?: string }> = [];
-  if (args.include_packages && args.package_dir && existsSync(args.package_dir)) {
-    for (const entry of readdirSync(args.package_dir)) {
-      const path = join(args.package_dir, entry);
+  const packageDir = args.package_dir ? resolve(args.package_dir) : undefined;
+  if (
+    args.include_packages &&
+    packageDir &&
+    existsSync(packageDir) &&
+    statSync(packageDir).isDirectory()
+  ) {
+    for (const entry of readdirSync(packageDir)) {
+      const path = join(packageDir, entry);
       if (!statSync(path).isDirectory()) continue;
       try {
         const { manifest } = readManifest(path);
