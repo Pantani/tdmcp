@@ -31,14 +31,22 @@ export async function connectNodesImpl(ctx: ToolContext, args: ConnectNodesArgs)
         args.source_output,
         args.target_input,
       ),
-    (result) =>
-      jsonResult(`Connected ${args.source_path} → ${args.target_path} (via ${result.method}).`, {
-        source: args.source_path,
-        target: args.target_path,
-        source_output: args.source_output,
-        target_input: args.target_input,
-        method: result.method,
-      }),
+    (result) => {
+      const note = result.batchError
+        ? ` Batch connect first failed (${result.batchError}); used the Python fallback.`
+        : "";
+      return jsonResult(
+        `Connected ${args.source_path} → ${args.target_path} (via ${result.method}).${note}`,
+        {
+          source: args.source_path,
+          target: args.target_path,
+          source_output: args.source_output,
+          target_input: args.target_input,
+          method: result.method,
+          ...(result.batchError ? { batch_error: result.batchError } : {}),
+        },
+      );
+    },
   );
 }
 

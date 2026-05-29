@@ -1,8 +1,16 @@
 import type { TouchDesignerClient } from "../../td-client/touchDesignerClient.js";
-import { TdApiError } from "../../td-client/types.js";
+import { friendlyTdError, TdApiError } from "../../td-client/types.js";
 
 export interface ConnectResult {
   method: "batch" | "python";
+  /**
+   * Present only when the bridge's `/api/batch` connect op resolved but reported
+   * `ok:false` and the Python fallback then recovered. Carries that op's `error`
+   * string so callers can surface *why* the faster path failed (cross-container
+   * wire, missing op, …) instead of silently dropping to Python. Absent on a
+   * clean batch success.
+   */
+  batchError?: string;
 }
 
 /**
@@ -17,6 +25,7 @@ export async function connectNodesViaBridge(
   sourceOutput = 0,
   targetInput = 0,
 ): Promise<ConnectResult> {
+  let batchError: string | undefined;
   try {
     const result = await client.batch([
       {
@@ -27,7 +36,11 @@ export async function connectNodesViaBridge(
         target_input: targetInput,
       },
     ]);
-    if (result.results[0]?.ok) return { method: "batch" };
+    const op = result.results[0];
+    if (op?.ok) return { method: "batch" };
+    // Batch resolved but the connect op failed inside it. Keep its reason so we
+    // can surface *why* instead of silently dropping to the Python fallback.
+    batchError = op?.error;
   } catch (err) {
     if (!(err instanceof TdApiError)) throw err;
   }
@@ -43,6 +56,18 @@ export async function connectNodesViaBridge(
     `if __s.parent() is None or __d.parent() is None or __s.parent().path != __d.parent().path: raise ValueError('connect: cannot wire across containers (%s -> %s); use a Select/In OP to bring an operator across networks' % (${src}, ${dst}))`,
     `__d.inputConnectors[${targetInput}].connect(__s.outputConnectors[${sourceOutput}])`,
   ].join("\n");
-  await client.executePythonScript(python, false);
-  return { method: "python" };
+  try {
+    await client.executePythonScript(python, false);
+  } catch (err) {
+    // Both transports failed. If the batch op had reported a reason, fold it
+    // into the thrown message so the caller learns *why* the connect failed —
+    // not just that the Python fallback did.
+    if (batchError) {
+      throw new TdApiError(`${friendlyTdError(err)} (batch connect also failed: ${batchError})`, {
+        cause: err,
+      });
+    }
+    throw err;
+  }
+  return batchError ? { method: "python", batchError } : { method: "python" };
 }
