@@ -47,7 +47,8 @@ export function listZipEntries(zipPath: string): string[] {
       [
         "-NoProfile",
         "-Command",
-        `Add-Type -AssemblyName System.IO.Compression.FileSystem; [IO.Compression.ZipFile]::OpenRead(${JSON.stringify(zipPath)}).Entries | ForEach-Object { $_.FullName }`,
+        "Add-Type -AssemblyName System.IO.Compression.FileSystem; [IO.Compression.ZipFile]::OpenRead($args[0]).Entries | ForEach-Object { $_.FullName }",
+        zipPath,
       ],
       { encoding: "utf8" },
     );
@@ -73,7 +74,9 @@ export async function extractZipSafe(zipPath: string, destDir: string): Promise<
       [
         "-NoProfile",
         "-Command",
-        `Expand-Archive -Path ${JSON.stringify(zipPath)} -DestinationPath ${JSON.stringify(destDir)} -Force`,
+        "Expand-Archive -LiteralPath $args[0] -DestinationPath $args[1] -Force",
+        zipPath,
+        destDir,
       ],
       { stdio: "inherit" },
     );
