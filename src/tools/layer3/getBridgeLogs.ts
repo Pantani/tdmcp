@@ -94,14 +94,20 @@ try:
                 )
             for _o in _all_ops:
                 try:
-                    for _msg in (_o.errors(recurse=False) or []):
+                    # op.errors()/op.warnings() return a STRING, not a list. Wrap
+                    # each in a single-element list so a (possibly multi-line)
+                    # message becomes exactly ONE log line — iterating the string
+                    # directly would emit one bogus line per character.
+                    _err = _o.errors(recurse=False)
+                    for _msg in ([str(_err)] if _err else []):
                         report["lines"].append({
                             "source": "cook",
                             "level": "error",
                             "text": str(_msg),
                             "op": _o.path,
                         })
-                    for _msg in (_o.warnings(recurse=False) or []):
+                    _warn = _o.warnings(recurse=False)
+                    for _msg in ([str(_warn)] if _warn else []):
                         report["lines"].append({
                             "source": "cook",
                             "level": "warning",

@@ -98,6 +98,29 @@ describe("get_bridge_logs", () => {
       expect(payload.include_cook_errors).toBe(true);
     });
 
+    it("wraps each op's cook errors/warnings in a single-element list (one line, not one per character)", async () => {
+      // op.errors(recurse=False) / op.warnings(recurse=False) return a STRING,
+      // not a list. The old exec-fallback script iterated it directly —
+      //   for _msg in (_o.errors(recurse=False) or []):
+      // — so a 20-character error string produced 20 bogus single-character log
+      // lines. The fix wraps the string in a single-element list, so any message
+      // (however long or multi-line) yields exactly ONE line per operator.
+      const { scripts } = captureWithReport(HAPPY_REPORT);
+      await getBridgeLogsImpl(makeCtx(), {
+        scope: "/project1",
+        max_lines: 100,
+        include_cook_errors: true,
+      });
+      const script = scripts[0] ?? "";
+
+      // Fixed form: wrap the whole string as one element, don't iterate it.
+      expect(script).toContain("[str(_err)] if _err else []");
+      expect(script).toContain("[str(_warn)] if _warn else []");
+      // The buggy char-iterating forms must be gone.
+      expect(script).not.toContain("_o.errors(recurse=False) or []");
+      expect(script).not.toContain("_o.warnings(recurse=False) or []");
+    });
+
     it("passes a custom scope through to the payload", async () => {
       const { scripts } = captureWithReport({ ...HAPPY_REPORT, scope: "/project1/fx" });
       await getBridgeLogsImpl(makeCtx(), {
