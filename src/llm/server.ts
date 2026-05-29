@@ -99,7 +99,9 @@ async function handleChat(
 ): Promise<void> {
   const body = (await readJsonBody(req)) as { messages?: ChatMessage[]; tier?: string };
   const history = Array.isArray(body.messages) ? body.messages : [];
-  const tools = resolveTools(body.tier === "safe" ? "safe" : "standard");
+  // safe (read-only) wins over creative if both are somehow set; default is standard.
+  const tier = body.tier === "safe" ? "safe" : body.tier === "creative" ? "creative" : "standard";
+  const tools = resolveTools(tier);
 
   const controller = new AbortController();
   req.on("close", () => controller.abort());

@@ -72,6 +72,7 @@ const devReference = [
   { text: "Tools reference", link: "/reference/tools" },
   { text: "Environment variables", link: "/reference/environment" },
   { text: "CLI (agent & local copilot)", link: "/reference/cli" },
+  { text: "Package manager", link: "/reference/packages" },
   { text: "Bridge & REST API", link: "/reference/bridge-api" },
 ];
 

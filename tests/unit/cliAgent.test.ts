@@ -36,6 +36,19 @@ describe("tdmcp-agent CLI", () => {
     expect(JSON.stringify(doc.input)).toContain("parent_path");
   });
 
+  it("prints the version with --version (no TD needed)", async () => {
+    const r = await runCli(["--version"]);
+    expect(r.code).toBe(0);
+    expect(r.stdout).toMatch(/tdmcp-agent \d+\.\d+\.\d+/);
+  });
+
+  it("suggests the nearest command on a typo (did-you-mean)", async () => {
+    const r = await runCli(["noeds"]);
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain("Did you mean");
+    expect(r.stderr).toContain("nodes");
+  });
+
   it("rejects an unknown command with exit code 2", async () => {
     const r = await runCli(["nodes", "frobnicate"]);
     expect(r.code).toBe(2);

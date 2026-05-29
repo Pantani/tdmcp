@@ -1,4 +1,5 @@
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { resolve } from "node:path";
 import { createInterface } from "node:readline";
 import { pathToFileURL } from "node:url";
@@ -33,6 +34,7 @@ import {
   createCubemapDomeImpl,
   createCubemapDomeSchema,
 } from "../tools/layer1/createCubemapDome.js";
+import { createDatamoshImpl, createDatamoshSchema } from "../tools/layer1/createDatamosh.js";
 import {
   createDataVisualizationImpl,
   createDataVisualizationSchema,
@@ -45,11 +47,19 @@ import {
   createDepthSilhouetteImpl,
   createDepthSilhouetteSchema,
 } from "../tools/layer1/createDepthSilhouette.js";
+import {
+  createDisplacementWarpImpl,
+  createDisplacementWarpSchema,
+} from "../tools/layer1/createDisplacementWarp.js";
 import { createDomeOutputImpl, createDomeOutputSchema } from "../tools/layer1/createDomeOutput.js";
 import {
   createFeedbackNetworkImpl,
   createFeedbackNetworkSchema,
 } from "../tools/layer1/createFeedbackNetwork.js";
+import {
+  createFeedbackTunnelImpl,
+  createFeedbackTunnelSchema,
+} from "../tools/layer1/createFeedbackTunnel.js";
 import {
   createGenerativeArtImpl,
   createGenerativeArtSchema,
@@ -63,10 +73,12 @@ import {
   createGpuParticleFieldImpl,
   createGpuParticleFieldSchema,
 } from "../tools/layer1/createGpuParticleField.js";
+import { createHalftoneImpl, createHalftoneSchema } from "../tools/layer1/createHalftone.js";
 import {
   createKaleidoscopeImpl,
   createKaleidoscopeSchema,
 } from "../tools/layer1/createKaleidoscope.js";
+import { createKeyerImpl, createKeyerSchema } from "../tools/layer1/createKeyer.js";
 import {
   createKeyframeAnimationImpl,
   createKeyframeAnimationSchema,
@@ -76,7 +88,14 @@ import {
   createKineticTextSchema,
 } from "../tools/layer1/createKineticText.js";
 import { createLayerMixerImpl, createLayerMixerSchema } from "../tools/layer1/createLayerMixer.js";
+import { createLayerStackImpl, createLayerStackSchema } from "../tools/layer1/createLayerStack.js";
+import { createLiveSourceImpl, createLiveSourceSchema } from "../tools/layer1/createLiveSource.js";
+import { createMediaBinImpl, createMediaBinSchema } from "../tools/layer1/createMediaBin.js";
 import { createMeshWarpImpl, createMeshWarpSchema } from "../tools/layer1/createMeshWarp.js";
+import {
+  createMidiNoteReactiveImpl,
+  createMidiNoteReactiveSchema,
+} from "../tools/layer1/createMidiNoteReactive.js";
 import {
   createMotionReactiveImpl,
   createMotionReactiveSchema,
@@ -85,6 +104,10 @@ import {
   createMultiOutputImpl,
   createMultiOutputSchema,
 } from "../tools/layer1/createMultiOutput.js";
+import {
+  multipass3dDepthImpl,
+  multipass3dDepthSchema,
+} from "../tools/layer1/createMultipass3dDepth.js";
 import {
   createParticleFlockImpl,
   createParticleFlockSchema,
@@ -95,6 +118,7 @@ import {
 } from "../tools/layer1/createParticleSystem.js";
 import { createPbrSceneImpl, createPbrSceneSchema } from "../tools/layer1/createPbrScene.js";
 import { createPointCloudImpl, createPointCloudSchema } from "../tools/layer1/createPointCloud.js";
+import { createPopFieldImpl, createPopFieldSchema } from "../tools/layer1/createPopField.js";
 import {
   createPoseSkeletonImpl,
   createPoseSkeletonSchema,
@@ -111,6 +135,10 @@ import {
   createRaymarchSceneImpl,
   createRaymarchSceneSchema,
 } from "../tools/layer1/createRaymarchScene.js";
+import {
+  createSetNavigatorImpl,
+  createSetNavigatorSchema,
+} from "../tools/layer1/createSetNavigator.js";
 import { createShaderLibImpl, createShaderLibSchema } from "../tools/layer1/createShaderLib.js";
 import { createShaderParkImpl, createShaderParkSchema } from "../tools/layer1/createShaderPark.js";
 import { createSimulationImpl, createSimulationSchema } from "../tools/layer1/createSimulation.js";
@@ -121,10 +149,12 @@ import {
   createSyncExternalClockSchema,
 } from "../tools/layer1/createSyncExternalClock.js";
 import { createTempoSyncImpl, createTempoSyncSchema } from "../tools/layer1/createTempoSync.js";
+import { createText3dImpl, createText3dSchema } from "../tools/layer1/createText3d.js";
 import {
   createTextOverlayImpl,
   createTextOverlaySchema,
 } from "../tools/layer1/createTextOverlay.js";
+import { createTransitionImpl, createTransitionSchema } from "../tools/layer1/createTransition.js";
 import {
   createVideoPlayerImpl,
   createVideoPlayerSchema,
@@ -160,8 +190,16 @@ import {
 import { animateParameterImpl, animateParameterSchema } from "../tools/layer2/animateParameter.js";
 import { arrangeNetworkImpl, arrangeNetworkSchema } from "../tools/layer2/arrangeNetwork.js";
 import { batchOperationsImpl, batchOperationsSchema } from "../tools/layer2/batchOperations.js";
+import {
+  bindAudioReactiveImpl,
+  bindAudioReactiveSchema,
+} from "../tools/layer2/bindAudioReactive.js";
 import { bindToChannelImpl, bindToChannelSchema } from "../tools/layer2/bindToChannel.js";
 import { connectNodesImpl, connectNodesSchema } from "../tools/layer2/connectNodes.js";
+import {
+  createBeatGridSequencerImpl,
+  createBeatGridSequencerSchema,
+} from "../tools/layer2/createBeatGridSequencer.js";
 import {
   createClipLauncherImpl,
   createClipLauncherSchema,
@@ -179,12 +217,21 @@ import {
   createCueSequencerImpl,
   createCueSequencerSchema,
 } from "../tools/layer2/createCueSequencer.js";
+import {
+  createDataReactiveImpl,
+  createDataReactiveSchema,
+} from "../tools/layer2/createDataReactive.js";
 import { createDataSourceImpl, createDataSourceSchema } from "../tools/layer2/createDataSource.js";
 import { createDecksImpl, createDecksSchema } from "../tools/layer2/createDecks.js";
+import {
+  createEnvelopeFollowerImpl,
+  createEnvelopeFollowerSchema,
+} from "../tools/layer2/createEnvelopeFollower.js";
 import { createExternalIoImpl, createExternalIoSchema } from "../tools/layer2/createExternalIo.js";
 import { createGlslShaderImpl, createGlslShaderSchema } from "../tools/layer2/createGlslShader.js";
 import { createLedMapperImpl, createLedMapperSchema } from "../tools/layer2/createLedMapper.js";
 import { createMacroImpl, createMacroSchema } from "../tools/layer2/createMacro.js";
+import { createMidiMapImpl, createMidiMapSchema } from "../tools/layer2/createMidiMap.js";
 import { createNodeChainImpl, createNodeChainSchema } from "../tools/layer2/createNodeChain.js";
 import { createPaletteImpl, createPaletteSchema } from "../tools/layer2/createPalette.js";
 import { createPanicImpl, createPanicSchema } from "../tools/layer2/createPanic.js";
@@ -196,6 +243,7 @@ import {
   createPythonScriptImpl,
   createPythonScriptSchema,
 } from "../tools/layer2/createPythonScript.js";
+import { createReplicatorImpl, createReplicatorSchema } from "../tools/layer2/createReplicator.js";
 import {
   createStageDashboardImpl,
   createStageDashboardSchema,
@@ -211,6 +259,7 @@ import {
   randomizeControlsImpl,
   randomizeControlsSchema,
 } from "../tools/layer2/randomizeControls.js";
+import { rebuildNetworkImpl, rebuildNetworkSchema } from "../tools/layer2/rebuildNetwork.js";
 import {
   scaffoldExtensionImpl,
   scaffoldExtensionSchema,
@@ -225,6 +274,7 @@ import { compareTdNodesImpl, compareTdNodesSchema } from "../tools/layer3/compar
 import { createTdNodeImpl, createTdNodeSchema } from "../tools/layer3/createTdNode.js";
 import { deleteTdNodeImpl, deleteTdNodeSchema } from "../tools/layer3/deleteTdNode.js";
 import { diffSnapshotsImpl, diffSnapshotsSchema } from "../tools/layer3/diffSnapshots.js";
+import { disconnectNodesImpl, disconnectNodesSchema } from "../tools/layer3/disconnectNodes.js";
 import { documentNetworkImpl, documentNetworkSchema } from "../tools/layer3/documentNetwork.js";
 import { editDatContentImpl, editDatContentSchema } from "../tools/layer3/editDatContent.js";
 import { execNodeMethodImpl, execNodeMethodSchema } from "../tools/layer3/execNodeMethod.js";
@@ -234,7 +284,12 @@ import {
 } from "../tools/layer3/executePythonScript.js";
 import { findTdNodesImpl, findTdNodesSchema } from "../tools/layer3/findTdNodes.js";
 import { generateReadmeImpl, generateReadmeSchema } from "../tools/layer3/generateReadme.js";
+import { getBridgeLogsImpl, getBridgeLogsSchema } from "../tools/layer3/getBridgeLogs.js";
 import { getModuleHelpImpl, getModuleHelpSchema } from "../tools/layer3/getModuleHelp.js";
+import {
+  getNodeStateRuntimeImpl,
+  getNodeStateRuntimeSchema,
+} from "../tools/layer3/getNodeStateRuntime.js";
 import {
   getTdClassDetailsImpl,
   getTdClassDetailsSchema,
@@ -249,15 +304,25 @@ import {
 import { getTdNodesImpl, getTdNodesSchema } from "../tools/layer3/getTdNodes.js";
 import { getTdPerformanceImpl, getTdPerformanceSchema } from "../tools/layer3/getTdPerformance.js";
 import { getTdTopologyImpl, getTdTopologySchema } from "../tools/layer3/getTdTopology.js";
+import { inspectComponentImpl, inspectComponentSchema } from "../tools/layer3/inspectComponent.js";
 import {
   optimizePerformanceImpl,
   optimizePerformanceSchema,
 } from "../tools/layer3/optimizePerformance.js";
+import {
+  readParameterModesImpl,
+  readParameterModesSchema,
+} from "../tools/layer3/readParameterModes.js";
 import { recordMovieImpl, recordMovieSchema } from "../tools/layer3/recordMovie.js";
 import { reloadBridgeImpl, reloadBridgeSchema } from "../tools/layer3/reloadBridge.js";
 import { renderOutputImpl, renderOutputSchema } from "../tools/layer3/renderOutput.js";
 import { searchOperatorsImpl, searchOperatorsSchema } from "../tools/layer3/searchOperators.js";
+import { serializeNetworkImpl, serializeNetworkSchema } from "../tools/layer3/serializeNetwork.js";
 import { setDatContentImpl, setDatContentSchema } from "../tools/layer3/setDatContent.js";
+import {
+  setParameterExpressionImpl,
+  setParameterExpressionSchema,
+} from "../tools/layer3/setParameterExpression.js";
 import { snapshotTdGraphImpl, snapshotTdGraphSchema } from "../tools/layer3/snapshotTdGraph.js";
 import {
   summarizeTdErrorsImpl,
@@ -269,7 +334,13 @@ import {
 } from "../tools/layer3/updateTdNodeParameters.js";
 import { writeAgentGuideImpl, writeAgentGuideSchema } from "../tools/layer3/writeAgentGuide.js";
 import type { ToolContext } from "../tools/types.js";
-import { loadConfig, type TdmcpConfig, tdBaseUrl } from "../utils/config.js";
+import {
+  describeConfig,
+  type LoadConfigOptions,
+  loadConfig,
+  type TdmcpConfig,
+  tdBaseUrl,
+} from "../utils/config.js";
 import { silentLogger } from "../utils/logger.js";
 import { runDoctor } from "./doctor.js";
 
@@ -896,6 +967,173 @@ const COMMANDS: Record<string, Command> = {
     "Drive a visual from tracked body motion (camera-reactive performance).",
     { mutates: true },
   ),
+  // Phase 14 — live mixing, content & parameter fidelity (v0.5.0):
+  transition: r(
+    createTransitionSchema,
+    createTransitionImpl,
+    "Build an A→B transition (dissolve/luma_wipe/slide/zoom/glitch_cut) over a Progress knob.",
+    { mutates: true },
+  ),
+  "live-source": r(
+    createLiveSourceSchema,
+    createLiveSourceImpl,
+    "Build a live input layer (screen-grab/ndi/syphon-spout/camera/stream) → a previewed Null.",
+    { mutates: true },
+  ),
+  "layer-stack": r(
+    createLayerStackSchema,
+    createLayerStackImpl,
+    "Build an N-layer VJ compositor (per-layer blend + opacity + mute/solo + control strip).",
+    { mutates: true },
+  ),
+  "media-bin": r(
+    createMediaBinSchema,
+    createMediaBinImpl,
+    "Build a folder-fed clip bin (Movie File In + Switch) with Index/Next/Prev/Crossfade.",
+    { mutates: true },
+  ),
+  keyer: r(
+    createKeyerSchema,
+    createKeyerImpl,
+    "Key a source (chroma/luma/rgb) and composite it over a background.",
+    { mutates: true },
+  ),
+  "react-audio": r(
+    bindAudioReactiveSchema,
+    bindAudioReactiveImpl,
+    "One-shot: auto-map a COMP's knobs to audio bands and bind them to a feature CHOP.",
+    { mutates: true },
+  ),
+  "params-modes": r(
+    readParameterModesSchema,
+    readParameterModesImpl,
+    "Read each parameter's mode (constant/expression/export/bind) + raw expr/bind/export.",
+  ),
+  "set-expr": r(
+    setParameterExpressionSchema,
+    setParameterExpressionImpl,
+    "Set a parameter to an expression/bind/constant without raw Python.",
+    { mutates: true },
+  ),
+  disconnect: r(
+    disconnectNodesSchema,
+    disconnectNodesImpl,
+    "Remove input wire(s) from a node (the inverse of connect).",
+    { mutates: true },
+  ),
+  // Phase 14 — signature effects, multipass 3D, data-driven cloning, runtime reads:
+  datamosh: r(
+    createDatamoshSchema,
+    createDatamoshImpl,
+    "Build a datamosh / time-echo / frame-blend smear (feedback ghost trails).",
+    { mutates: true },
+  ),
+  warp: r(
+    createDisplacementWarpSchema,
+    createDisplacementWarpImpl,
+    "Warp a source by noise / a second TOP / audio (displacement).",
+    { mutates: true },
+  ),
+  halftone: r(
+    createHalftoneSchema,
+    createHalftoneImpl,
+    "Stylise a source as halftone dots / CMYK / dither / posterize (GLSL).",
+    { mutates: true },
+  ),
+  "feedback-tunnel": r(
+    createFeedbackTunnelSchema,
+    createFeedbackTunnelImpl,
+    "Build an infinite zoom/rotate/hue feedback tunnel generator.",
+    { mutates: true },
+  ),
+  "multipass-3d": r(
+    multipass3dDepthSchema,
+    multipass3dDepthImpl,
+    "Build a multipass 3D scene (Render + SSAO + a synthetic Depth output).",
+    { mutates: true },
+  ),
+  replicator: r(
+    createReplicatorSchema,
+    createReplicatorImpl,
+    "Clone a template COMP per row of a Table DAT (Replicator COMP).",
+    { mutates: true },
+  ),
+  "node-state": r(
+    getNodeStateRuntimeSchema,
+    getNodeStateRuntimeImpl,
+    "Read an operator's runtime telemetry (cook time/count, res, channels, GPU mem).",
+  ),
+  logs: r(
+    getBridgeLogsSchema,
+    getBridgeLogsImpl,
+    "Collect recent cook errors/warnings (+ best-effort textport) for debugging.",
+  ),
+  // Phase 15 — set navigation, sequencing, data reactivity, round-trip, introspection:
+  "set-nav": r(
+    createSetNavigatorSchema,
+    createSetNavigatorImpl,
+    "Build a stage cue-list navigator (Index/Next/Prev/Go, QLab model).",
+    { mutates: true },
+  ),
+  "pop-field": r(
+    createPopFieldSchema,
+    createPopFieldImpl,
+    "Build a GPU POP point field (experimental — live-validation pending).",
+    { mutates: true },
+  ),
+  "beat-grid": r(
+    createBeatGridSequencerSchema,
+    createBeatGridSequencerImpl,
+    "Build a beat/bar step-grid sequencer (param or cue per active step).",
+    { mutates: true },
+  ),
+  "react-data": r(
+    createDataReactiveSchema,
+    createDataReactiveImpl,
+    "Map live data-source channels onto a COMP's knobs with per-mapping range remap.",
+    { mutates: true },
+  ),
+  serialize: r(
+    serializeNetworkSchema,
+    serializeNetworkImpl,
+    "Serialize a COMP's children to a diffable JSON spec (params + modes + wires).",
+  ),
+  rebuild: r(
+    rebuildNetworkSchema,
+    rebuildNetworkImpl,
+    "Rebuild a network from a serialize_network spec (create + params + wires).",
+    { mutates: true },
+  ),
+  "inspect-comp": r(
+    inspectComponentSchema,
+    inspectComponentImpl,
+    "Read a COMP's storage, promoted extension members, and custom-parameter definitions.",
+  ),
+  // Phase 15 — 3D text, sidechain envelope, MIDI (hardware path held pending gear):
+  "text-3d": r(
+    createText3dSchema,
+    createText3dImpl,
+    "Build extruded 3D text with spin/depth/material.",
+    { mutates: true },
+  ),
+  envelope: r(
+    createEnvelopeFollowerSchema,
+    createEnvelopeFollowerImpl,
+    "Shape a reactive signal: attack/release + gate/duck (sidechain). Experimental.",
+    { mutates: true },
+  ),
+  "midi-map": r(
+    createMidiMapSchema,
+    createMidiMapImpl,
+    "Build a MIDI controller preset map (APC/Launchpad/MIDI Mix/nanoKONTROL). Hardware-UNVERIFIED.",
+    { mutates: true },
+  ),
+  "midi-notes": r(
+    createMidiNoteReactiveSchema,
+    createMidiNoteReactiveImpl,
+    "Build a MIDI-note reactive chain (synthetic source previews without gear).",
+    { mutates: true },
+  ),
 };
 
 export interface CliResult {
@@ -955,6 +1193,17 @@ function usage(): string {
   lines.push("  --allow-unsafe    Required for `exec` escape-hatch commands.");
   lines.push("  -o, --out <file>  (preview) Output PNG path. Defaults to ./preview.png.");
   lines.push("  --include-high-frequency  (watch) Also stream timeline.frame / node.cook events.");
+  lines.push("  --profile <name>  Use a named profile from your config file (tdmcp.json).");
+  lines.push("  --config <path>   Use a specific config file instead of the search order.");
+  lines.push(
+    "  --td-host <h> / --td-port <p> / --timeout <ms>  Override the bridge for this call.",
+  );
+  lines.push(
+    "  --params-file <f> / --params -   Read --params JSON from a file or stdin (Unix pipe).",
+  );
+  lines.push("  --filter / --exclude <csv>  (watch) Only/never stream these event types.");
+  lines.push("  -q, --quiet       Suppress the stderr summary (stdout=data, for pipelines/CI).");
+  lines.push("  -V, --version     Print the version and exit.");
   lines.push("  -h, --help        Show this help.", "");
   lines.push("Commands:");
   for (const [key, cmd] of Object.entries(COMMANDS)) {
@@ -964,10 +1213,15 @@ function usage(): string {
     lines.push(`  ${key.padEnd(20)} ${cmd.summary}${tags ? `  [${tags}]` : ""}`);
   }
   lines.push("  schema <command>     Print a command's JSON Schema and metadata.");
+  lines.push(
+    "  config               Print the effective config (redacted); --write-env for a paste-ready block.",
+  );
   lines.push("  preview <nodePath>   Capture a TOP to a PNG file (-o/--out).  [writes a file]");
   lines.push("  watch                Stream TD events as ndjson until Ctrl-C.  [long-running]");
   lines.push("  repl                 Interactive mode: run commands line-by-line.  [interactive]");
-  lines.push("  doctor               Diagnose your setup (TD bridge, LLM, vault, config).");
+  lines.push(
+    "  doctor               Diagnose your setup (TD/LLM/vault/config/tools); --fix suggests commands, --output json, -q/--quiet.",
+  );
   return lines.join("\n");
 }
 
@@ -976,8 +1230,59 @@ export interface RunCliOptions {
   makeCtx?: () => ToolContext;
 }
 
-function buildCtx(opts: RunCliOptions): ToolContext {
-  return opts.makeCtx ? opts.makeCtx() : buildToolContext(loadConfig(), { logger: silentLogger });
+/** Build {@link LoadConfigOptions} from the global CLI flags (profile / config / host / port / timeout). */
+function cliLoadOptions(values: Record<string, unknown>): LoadConfigOptions {
+  const overrides: Record<string, unknown> = {};
+  if (typeof values["td-host"] === "string") overrides.tdHost = values["td-host"];
+  if (typeof values["td-port"] === "string") overrides.tdPort = values["td-port"];
+  if (typeof values.timeout === "string") overrides.requestTimeoutMs = values.timeout;
+  return {
+    useFiles: true,
+    profile: typeof values.profile === "string" ? values.profile : undefined,
+    configPath: typeof values.config === "string" ? values.config : undefined,
+    overrides,
+  };
+}
+
+function buildCtx(
+  opts: RunCliOptions,
+  loadOpts: LoadConfigOptions = { useFiles: true },
+): ToolContext {
+  return opts.makeCtx
+    ? opts.makeCtx()
+    : buildToolContext(loadConfig(process.env, loadOpts), { logger: silentLogger });
+}
+
+/** Config key → TDMCP_* env var name, for the `config --write-env` exporter. */
+const ENV_NAMES: Record<keyof TdmcpConfig, string> = {
+  tdHost: "TDMCP_TD_HOST",
+  tdPort: "TDMCP_TD_PORT",
+  transport: "TDMCP_TRANSPORT",
+  logLevel: "TDMCP_LOG_LEVEL",
+  requestTimeoutMs: "TDMCP_REQUEST_TIMEOUT_MS",
+  httpPort: "TDMCP_HTTP_PORT",
+  events: "TDMCP_EVENTS",
+  rawPython: "TDMCP_RAW_PYTHON",
+  toolProfile: "TDMCP_TOOL_PROFILE",
+  bridgeToken: "TDMCP_BRIDGE_TOKEN",
+  llmBaseUrl: "TDMCP_LLM_BASE_URL",
+  llmModel: "TDMCP_LLM_MODEL",
+  llmApiKey: "TDMCP_LLM_API_KEY",
+  chatPort: "TDMCP_CHAT_PORT",
+  vaultPath: "TDMCP_VAULT_PATH",
+};
+const SECRET_ENV: ReadonlySet<keyof TdmcpConfig> = new Set(["bridgeToken", "llmApiKey"]);
+
+/** A paste-ready `export TDMCP_*=...` block; secrets are emitted commented-out (set manually). */
+function envExportLines(config: TdmcpConfig): string[] {
+  const lines: string[] = ["# tdmcp effective config (secrets redacted — set them manually)"];
+  for (const [key, name] of Object.entries(ENV_NAMES) as [keyof TdmcpConfig, string][]) {
+    const value = config[key];
+    if (value === undefined) continue;
+    if (SECRET_ENV.has(key)) lines.push(`# export ${name}=<set manually>`);
+    else lines.push(`export ${name}=${JSON.stringify(String(value))}`);
+  }
+  return lines;
 }
 
 function parseCliArgs(argv: string[]) {
@@ -993,8 +1298,107 @@ function parseCliArgs(argv: string[]) {
       out: { type: "string", short: "o" },
       "include-high-frequency": { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false },
+      // Global config selection / overrides (apply to any command).
+      profile: { type: "string" },
+      config: { type: "string" },
+      "td-host": { type: "string" },
+      "td-port": { type: "string" },
+      timeout: { type: "string" },
+      "write-env": { type: "boolean", default: false },
+      quiet: { type: "boolean", short: "q", default: false },
+      fix: { type: "boolean", default: false },
+      version: { type: "boolean", short: "V", default: false },
+      "params-file": { type: "string" },
+      filter: { type: "string" },
+      exclude: { type: "string" },
     },
   });
+}
+
+/** The installed package version (read once from package.json next to the bundle). */
+function packageVersion(): string {
+  try {
+    const require = createRequire(import.meta.url);
+    return (require("../../package.json") as { version?: string }).version ?? "unknown";
+  } catch {
+    return "unknown";
+  }
+}
+
+/** Levenshtein distance — for "did you mean" suggestions on an unknown command. */
+function editDistance(a: string, b: string): number {
+  const n = b.length;
+  let prev = Array.from({ length: n + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const curr = [i];
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      curr[j] = Math.min((prev[j] ?? 0) + 1, (curr[j - 1] ?? 0) + 1, (prev[j - 1] ?? 0) + cost);
+    }
+    prev = curr;
+  }
+  return prev[n] ?? 0;
+}
+
+/** Nearest known command to an unknown input (within a small edit distance), or undefined. */
+function nearestCommand(input: string): string | undefined {
+  let best: string | undefined;
+  let bestDist = Number.POSITIVE_INFINITY;
+  // Candidates: full command keys, their first token (so "noeds" → "nodes"), and the specials.
+  const firstTokens = new Set(Object.keys(COMMANDS).map((k) => k.split(" ")[0] ?? k));
+  const keys = [
+    ...Object.keys(COMMANDS),
+    ...firstTokens,
+    "schema",
+    "config",
+    "preview",
+    "watch",
+    "repl",
+    "doctor",
+    "version",
+  ];
+  for (const key of keys) {
+    const d = editDistance(input, key);
+    if (d < bestDist) {
+      bestDist = d;
+      best = key;
+    }
+  }
+  // Only suggest a genuinely close match (≤ a third of the input length, min 2).
+  return best !== undefined && bestDist <= Math.max(2, Math.floor(input.length / 3))
+    ? best
+    : undefined;
+}
+
+/** Reads stdin to a string (for `--params -`). Synchronous: the CLI is a one-shot. */
+function readStdin(): string {
+  try {
+    return readFileSync(0, "utf8");
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Assembles the args object from --params (inline, `-` for stdin, or via --params-file)
+ * merged with --json. Completes the Unix-filter story: `… | tdmcp-agent x --params -`.
+ */
+function assembleParams(
+  values: Record<string, unknown>,
+): { raw: Record<string, unknown> } | { error: string } {
+  const raw: Record<string, unknown> = {};
+  try {
+    let paramsStr = typeof values.params === "string" ? values.params : undefined;
+    if (paramsStr === "-") paramsStr = readStdin();
+    else if (typeof values["params-file"] === "string")
+      paramsStr = readFileSync(values["params-file"], "utf8");
+    if (typeof paramsStr === "string" && paramsStr.trim())
+      Object.assign(raw, JSON.parse(paramsStr));
+    if (typeof values.json === "string") Object.assign(raw, JSON.parse(values.json));
+  } catch (err) {
+    return { error: (err as Error).message };
+  }
+  return { raw };
 }
 
 export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<CliResult> {
@@ -1006,6 +1410,13 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   }
 
   const { values, positionals } = parsed;
+  if (values.version || positionals[0] === "version") {
+    return {
+      stdout: `tdmcp-agent ${packageVersion()} (node ${process.version})\n`,
+      stderr: "",
+      code: 0,
+    };
+  }
   if (values.help || positionals.length === 0) {
     return { stdout: `${usage()}\n`, stderr: "", code: 0 };
   }
@@ -1025,20 +1436,38 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
     return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
   }
 
+  // `config` — print the effective resolved config (secrets redacted), honoring
+  // --profile/--config and the host/port overrides; --write-env emits a paste-ready
+  // export block. Read-only and reachable even when TD is offline.
+  if (positionals[0] === "config") {
+    let cfg: TdmcpConfig;
+    try {
+      cfg = loadConfig(process.env, cliLoadOptions(values));
+    } catch (err) {
+      return { stdout: "", stderr: `${(err as Error).message}\n`, code: 2 };
+    }
+    if (values["write-env"]) {
+      return { stdout: `${envExportLines(cfg).join("\n")}\n`, stderr: "", code: 0 };
+    }
+    return {
+      stdout: `${JSON.stringify({ tdBaseUrl: tdBaseUrl(cfg), ...describeConfig(cfg) }, null, 2)}\n`,
+      stderr: "",
+      code: 0,
+    };
+  }
+
   // `preview <nodePath> -o file.png` — capture a TOP and write it to disk. This is a
   // side effect that doesn't fit the CallToolResult command table, so it's handled here.
   if (positionals[0] === "preview") {
-    const raw: Record<string, unknown> = {};
-    try {
-      if (typeof values.params === "string") Object.assign(raw, JSON.parse(values.params));
-      if (typeof values.json === "string") Object.assign(raw, JSON.parse(values.json));
-    } catch (err) {
+    const assembled = assembleParams(values);
+    if ("error" in assembled) {
       return {
         stdout: "",
-        stderr: `Invalid JSON in --params/--json: ${(err as Error).message}\n`,
+        stderr: `Invalid JSON in --params/--json: ${assembled.error}\n`,
         code: 2,
       };
     }
+    const raw = assembled.raw;
     if (positionals[1]) raw.node_path = positionals[1];
     const parsed = getPreviewSchema.safeParse(raw);
     if (!parsed.success) {
@@ -1053,7 +1482,12 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
       const doc = { dryRun: true, command: "preview", args: parsed.data, out: resolve(outPath) };
       return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
     }
-    const ctx = buildCtx(opts);
+    let ctx: ToolContext;
+    try {
+      ctx = buildCtx(opts, cliLoadOptions(values));
+    } catch (err) {
+      return { stdout: "", stderr: `${(err as Error).message}\n`, code: 2 };
+    }
     try {
       const preview = await capturePreview(
         ctx.client,
@@ -1085,31 +1519,42 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   // reachable even when TD is offline, so it bypasses the CallToolResult command table.
   if (positionals[0] === "doctor") {
     const make = opts.makeCtx;
-    const { stdout, stderr, code } = await runDoctor(make ? { makeCtx: () => make() } : {});
+    let cfg: TdmcpConfig | undefined;
+    if (!make) {
+      try {
+        cfg = loadConfig(process.env, cliLoadOptions(values));
+      } catch (err) {
+        return { stdout: "", stderr: `${(err as Error).message}\n`, code: 2 };
+      }
+    }
+    const { stdout, stderr, code, report } = await runDoctor(
+      make ? { makeCtx: () => make(), fix: values.fix } : { config: cfg, fix: values.fix },
+    );
+    // --output json (explicit) → structured report; --quiet → exit code only.
+    if (argv.includes("--output") && values.output === "json") {
+      return { stdout: `${JSON.stringify(report, null, 2)}\n`, stderr: "", code };
+    }
+    if (values.quiet) return { stdout: "", stderr: "", code };
     return { stdout, stderr, code };
   }
 
   const resolved = resolveCommand(positionals);
   if (!resolved) {
+    const guess = nearestCommand(positionals[0] ?? "");
+    const hint = guess ? ` Did you mean "${guess}"?` : "";
     return {
       stdout: "",
-      stderr: `Unknown command: "${positionals.join(" ")}". Run with --help.\n`,
+      stderr: `Unknown command: "${positionals.join(" ")}".${hint} Run with --help.\n`,
       code: 2,
     };
   }
   const { key, cmd } = resolved;
 
-  const raw: Record<string, unknown> = {};
-  try {
-    if (typeof values.params === "string") Object.assign(raw, JSON.parse(values.params));
-    if (typeof values.json === "string") Object.assign(raw, JSON.parse(values.json));
-  } catch (err) {
-    return {
-      stdout: "",
-      stderr: `Invalid JSON in --params/--json: ${(err as Error).message}\n`,
-      code: 2,
-    };
+  const assembled = assembleParams(values);
+  if ("error" in assembled) {
+    return { stdout: "", stderr: `Invalid JSON in --params/--json: ${assembled.error}\n`, code: 2 };
   }
+  const raw = assembled.raw;
 
   const args = cmd.schema.safeParse(raw);
   if (!args.success) {
@@ -1131,7 +1576,12 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
     return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
   }
 
-  const ctx = buildCtx(opts);
+  let ctx: ToolContext;
+  try {
+    ctx = buildCtx(opts, cliLoadOptions(values));
+  } catch (err) {
+    return { stdout: "", stderr: `${(err as Error).message}\n`, code: 2 };
+  }
 
   if (cmd.unsafe) {
     if (ctx.allowRawPython === false) {
@@ -1147,7 +1597,8 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   }
 
   const result = await cmd.run(ctx, args.data);
-  const summary = textOf(result).split("\n")[0] ?? "";
+  // -q/--quiet keeps stdout=data and silences the friendly stderr summary (for pipelines/CI).
+  const summary = values.quiet ? "" : (textOf(result).split("\n")[0] ?? "");
   if (result.isError) return { stdout: "", stderr: `${textOf(result)}\n`, code: 1 };
 
   const output = String(values.output);
@@ -1168,6 +1619,10 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
 export interface RunWatchOptions {
   config?: TdmcpConfig;
   includeHighFrequency?: boolean;
+  /** Only emit events whose `type` is in this list (e.g. ["beat","onset"]). */
+  filter?: string[];
+  /** Drop events whose `type` is in this list (e.g. ["timeline.frame"]). */
+  exclude?: string[];
   /** Where each event line goes; defaults to stdout. Overridable for tests. */
   write?: (line: string) => void;
   /** Inject a stream factory for tests; defaults to a real `TdEventStream`. */
@@ -1184,11 +1639,18 @@ export interface RunWatchOptions {
  * Runs outside `runCli` because it is a long-lived stream, not a request/response.
  */
 export function runWatch(opts: RunWatchOptions = {}): Promise<void> {
-  const config = opts.config ?? loadConfig();
+  const config = opts.config ?? loadConfig(process.env, { useFiles: true });
   const url = `${tdBaseUrl(config).replace(/^http/, "ws")}/`;
   const write = opts.write ?? ((line: string) => process.stdout.write(`${line}\n`));
   const includeHighFrequency = opts.includeHighFrequency ?? false;
-  const onEvent: TdEventHandler = (event) => write(JSON.stringify(event));
+  const filter = opts.filter?.length ? opts.filter : undefined;
+  const exclude = opts.exclude?.length ? opts.exclude : undefined;
+  const onEvent: TdEventHandler = (event) => {
+    const type = (event as { type?: string }).type;
+    if (filter && (type === undefined || !filter.includes(type))) return;
+    if (exclude && type !== undefined && exclude.includes(type)) return;
+    write(JSON.stringify(event));
+  };
   const stream = opts.makeStream
     ? opts.makeStream({ url, onEvent, includeHighFrequency })
     : new TdEventStream({ url, onEvent, includeHighFrequency });
@@ -1241,12 +1703,35 @@ export async function runRepl(opts: RunCliOptions = {}): Promise<void> {
   rl.close();
 }
 
+/** Pull a `--name value` (or `--name=value`) string out of a raw argv list. */
+function rawFlag(argv: string[], name: string): string | undefined {
+  const eq = argv.find((a) => a.startsWith(`--${name}=`));
+  if (eq) return eq.slice(name.length + 3);
+  const i = argv.indexOf(`--${name}`);
+  return i !== -1 ? argv[i + 1] : undefined;
+}
+
+/** Split a comma-separated flag value into a trimmed list, or undefined if absent/empty. */
+function csvFlag(argv: string[], name: string): string[] | undefined {
+  const raw = rawFlag(argv, name);
+  if (!raw) return undefined;
+  const list = raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return list.length ? list : undefined;
+}
+
 async function main(): Promise<void> {
   const argv = process.argv.slice(2);
   const wantsHelp = argv.includes("--help") || argv.includes("-h");
   // `watch` (a long-lived stream) and `repl` (interactive) bypass runCli's request/response model.
   if (argv[0] === "watch" && !wantsHelp) {
-    await runWatch({ includeHighFrequency: argv.includes("--include-high-frequency") });
+    await runWatch({
+      includeHighFrequency: argv.includes("--include-high-frequency"),
+      filter: csvFlag(argv, "filter"),
+      exclude: csvFlag(argv, "exclude"),
+    });
     return;
   }
   if (argv[0] === "repl" && !wantsHelp) {

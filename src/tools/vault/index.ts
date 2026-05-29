@@ -1,10 +1,14 @@
 import type { ToolRegistrar } from "../types.js";
 import { registerApplyShaderFromVault } from "./applyShaderFromVault.js";
 import { registerBindVaultText } from "./bindVaultText.js";
+import { registerBrowseVaultLibrary } from "./browseVaultLibrary.js";
+import { registerCaptureToVault } from "./captureToVault.js";
 import { registerExportNetworkToVault } from "./exportNetworkToVault.js";
+import { registerExportSetlistToVault } from "./exportSetlistToVault.js";
 import { registerGenerateFromMoodboard } from "./generateFromMoodboard.js";
 import { registerImportSetlist } from "./importSetlist.js";
 import { registerLogPerformance } from "./logPerformance.js";
+import { registerSaveComponentToVault } from "./saveComponentToVault.js";
 import { registerSaveRecipeToVault } from "./saveRecipeToVault.js";
 import { registerScaffoldVault } from "./scaffoldVault.js";
 import { registerSyncPresetsVault } from "./syncPresetsVault.js";
@@ -24,4 +28,10 @@ export const vaultRegistrars: ToolRegistrar[] = [
   registerImportSetlist,
   registerBindVaultText,
   registerGenerateFromMoodboard,
+  // Phase 14 — component library in the vault:
+  registerSaveComponentToVault,
+  registerBrowseVaultLibrary,
+  // Phase 15 — visual gallery + setlist round-trip:
+  registerCaptureToVault,
+  registerExportSetlistToVault,
 ];

@@ -45,6 +45,7 @@
     "validate:recipes": "tsx scripts/validate-recipes.ts",
     "smoke:live": "tsx scripts/smoke-live.ts",
     "shader-park:tox": "node scripts/fetch-shader-park-td.mjs",
+    "smoke:packages": "tsx scripts/smoke-packages.ts",
     "build:mcpb": "node scripts/build-dxt.mjs",
     "docs:gen": "tsx scripts/gen-tool-docs.ts",
     "docs:dev": "npm run docs:gen && vitepress dev docs",

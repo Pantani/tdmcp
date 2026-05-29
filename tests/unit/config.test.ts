@@ -1,5 +1,8 @@
-import { describe, expect, it } from "vitest";
-import { loadConfig, tdBaseUrl } from "../../src/utils/config.js";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { describeConfig, loadConfig, tdBaseUrl } from "../../src/utils/config.js";
 
 describe("loadConfig", () => {
   it("falls back to defaults with empty env", () => {
@@ -37,5 +40,84 @@ describe("loadConfig", () => {
 
   it("builds the TD base URL", () => {
     expect(tdBaseUrl({ tdHost: "127.0.0.1", tdPort: 9980 })).toBe("http://127.0.0.1:9980");
+  });
+
+  it("ignores config files unless useFiles is set (deterministic for tests)", () => {
+    // Even with a config file in cwd, the bare call must not read it.
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-cfg-"));
+    writeFileSync(join(dir, "tdmcp.json"), JSON.stringify({ tdPort: 1234 }));
+    try {
+      expect(loadConfig({}, { cwd: dir }).tdPort).toBe(9980); // useFiles not set → file ignored
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("loadConfig — config files & profiles", () => {
+  let dir: string;
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), "tdmcp-cfg-"));
+  });
+  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+
+  function writeConfig(data: unknown): void {
+    writeFileSync(join(dir, "tdmcp.json"), JSON.stringify(data));
+  }
+
+  it("reads base values from a config file when useFiles is set", () => {
+    writeConfig({ tdHost: "10.0.0.9", vaultPath: "/v" });
+    const cfg = loadConfig({}, { useFiles: true, cwd: dir });
+    expect(cfg.tdHost).toBe("10.0.0.9");
+    expect(cfg.vaultPath).toBe("/v");
+  });
+
+  it("applies a named profile over the file base", () => {
+    writeConfig({ tdPort: 9980, profiles: { club: { tdHost: "192.168.1.5", tdPort: 9981 } } });
+    const cfg = loadConfig({}, { useFiles: true, cwd: dir, profile: "club" });
+    expect(cfg.tdHost).toBe("192.168.1.5");
+    expect(cfg.tdPort).toBe(9981);
+  });
+
+  it("throws a clear error for an unknown profile", () => {
+    writeConfig({ profiles: { club: {} } });
+    expect(() => loadConfig({}, { useFiles: true, cwd: dir, profile: "nope" })).toThrow(
+      /not found/,
+    );
+  });
+
+  it("precedence: CLI overrides > env > profile > file base > defaults", () => {
+    writeConfig({ tdHost: "file-host", tdPort: 1, profiles: { club: { tdHost: "club-host" } } });
+    // profile beats base; env beats profile; override beats env.
+    const cfg = loadConfig(
+      { TDMCP_TD_HOST: "env-host" },
+      { useFiles: true, cwd: dir, profile: "club", overrides: { tdHost: "cli-host" } },
+    );
+    expect(cfg.tdHost).toBe("cli-host");
+    // env wins over the profile when no CLI override is given.
+    const cfg2 = loadConfig(
+      { TDMCP_TD_HOST: "env-host" },
+      { useFiles: true, cwd: dir, profile: "club" },
+    );
+    expect(cfg2.tdHost).toBe("env-host");
+    // profile wins over file base when neither env nor CLI is set.
+    const cfg3 = loadConfig({}, { useFiles: true, cwd: dir, profile: "club" });
+    expect(cfg3.tdHost).toBe("club-host");
+    expect(cfg3.tdPort).toBe(1); // from base, profile didn't set it
+  });
+
+  it("ignores a malformed config file instead of throwing", () => {
+    writeFileSync(join(dir, "tdmcp.json"), "{ not valid json");
+    expect(loadConfig({}, { useFiles: true, cwd: dir }).tdPort).toBe(9980);
+  });
+});
+
+describe("describeConfig", () => {
+  it("redacts secret keys", () => {
+    const cfg = loadConfig({ TDMCP_BRIDGE_TOKEN: "s3cret", TDMCP_LLM_API_KEY: "k3y" });
+    const safe = describeConfig(cfg);
+    expect(safe.bridgeToken).toBe("***redacted***");
+    expect(safe.llmApiKey).toBe("***redacted***");
+    expect(safe.tdHost).toBe("127.0.0.1");
   });
 });

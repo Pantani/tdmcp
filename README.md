@@ -2,7 +2,11 @@
 
 [![CI](https://github.com/Pantani/tdmcp/actions/workflows/ci.yml/badge.svg)](https://github.com/Pantani/tdmcp/actions/workflows/ci.yml)
 [![Docs](https://github.com/Pantani/tdmcp/actions/workflows/docs.yml/badge.svg)](https://pantani.github.io/tdmcp/)
+[![npm version](https://img.shields.io/npm/v/@dpantani/tdmcp?logo=npm&color=cb3837)](https://www.npmjs.com/package/@dpantani/tdmcp)
+[![Node.js](https://img.shields.io/node/v/@dpantani/tdmcp?logo=nodedotjs&color=339933)](https://nodejs.org)
+[![MCP server](https://img.shields.io/badge/MCP-server-000?logo=modelcontextprotocol&logoColor=white)](https://modelcontextprotocol.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![tdmcp MCP server](https://glama.ai/mcp/servers/Pantani/tdmcp/badges/score.svg)](https://glama.ai/mcp/servers/Pantani/tdmcp)
 
 **tdmcp is a [Model Context Protocol](https://modelcontextprotocol.io) (MCP) server
 for [TouchDesigner](https://derivative.ca)** — build TouchDesigner from plain

@@ -149,8 +149,27 @@ describe("tdmcp doctor", () => {
     server.use(llmModels("qwen2.5:3b"));
     const r = await runDoctor({ config: makeConfig(), makeCtx });
     expect(r.stdout).toContain("tdmcp doctor");
-    // one line per check (bridge, config, llm, vault)
-    expect(r.report.checks).toHaveLength(4);
+    // one line per check (bridge, config, tools, llm, vault)
+    expect(r.report.checks).toHaveLength(5);
     for (const c of r.report.checks) expect(r.stdout).toContain(c.title);
+  });
+
+  it("reports a Tools check that flags a restricted surface", async () => {
+    server.use(llmModels("qwen2.5:3b"));
+    const r = await runDoctor({
+      config: makeConfig({ rawPython: "off", toolProfile: "safe" }),
+      makeCtx,
+    });
+    const tools = r.report.checks.find((c) => c.id === "tools");
+    expect(tools?.detail).toContain("restricted");
+    expect(tools?.critical).toBe(false);
+  });
+
+  it("--fix appends suggested remediation commands for non-passing checks", async () => {
+    // No LLM mock → llm check warns → a fix suggestion appears.
+    const r = await runDoctor({ config: makeConfig(), makeCtx, fix: true });
+    expect(r.report.fixes && r.report.fixes.length).toBeTruthy();
+    expect(r.stdout).toContain("Suggested fixes");
+    expect(r.report.fixes?.some((f) => f.id === "llm")).toBe(true);
   });
 });

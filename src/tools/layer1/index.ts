@@ -8,30 +8,42 @@ import { registerCreateAutopilot } from "./createAutopilot.js";
 import { registerCreateBodyReactive } from "./createBodyReactive.js";
 import { registerCreateColorGrade } from "./createColorGrade.js";
 import { registerCreateCubemapDome } from "./createCubemapDome.js";
+import { registerCreateDatamosh } from "./createDatamosh.js";
 import { registerCreateDataVisualization } from "./createDataVisualization.js";
 import { registerCreateDepthDisplacement } from "./createDepthDisplacement.js";
 import { registerCreateDepthSilhouette } from "./createDepthSilhouette.js";
+import { registerCreateDisplacementWarp } from "./createDisplacementWarp.js";
 import { registerCreateDomeOutput } from "./createDomeOutput.js";
 import { registerCreateFeedbackNetwork } from "./createFeedbackNetwork.js";
+import { registerCreateFeedbackTunnel } from "./createFeedbackTunnel.js";
 import { registerCreateGenerativeArt } from "./createGenerativeArt.js";
 import { registerCreateGenerativeAudio } from "./createGenerativeAudio.js";
 import { registerCreateGlitch } from "./createGlitch.js";
 import { registerCreateGpuParticleField } from "./createGpuParticleField.js";
+import { registerCreateHalftone } from "./createHalftone.js";
 import { registerCreateKaleidoscope } from "./createKaleidoscope.js";
+import { registerCreateKeyer } from "./createKeyer.js";
 import { registerCreateKeyframeAnimation } from "./createKeyframeAnimation.js";
 import { registerCreateKineticText } from "./createKineticText.js";
 import { registerCreateLayerMixer } from "./createLayerMixer.js";
+import { registerCreateLayerStack } from "./createLayerStack.js";
+import { registerCreateLiveSource } from "./createLiveSource.js";
+import { registerCreateMediaBin } from "./createMediaBin.js";
 import { registerCreateMeshWarp } from "./createMeshWarp.js";
+import { registerCreateMidiNoteReactive } from "./createMidiNoteReactive.js";
 import { registerCreateMotionReactive } from "./createMotionReactive.js";
 import { registerCreateMultiOutput } from "./createMultiOutput.js";
+import { registerMultipass3dDepth } from "./createMultipass3dDepth.js";
 import { registerCreateParticleFlock } from "./createParticleFlock.js";
 import { registerCreateParticleSystem } from "./createParticleSystem.js";
 import { registerCreatePbrScene } from "./createPbrScene.js";
 import { registerCreatePointCloud } from "./createPointCloud.js";
+import { registerCreatePopField } from "./createPopField.js";
 import { registerCreatePoseSkeleton } from "./createPoseSkeleton.js";
 import { registerCreatePoseTracking } from "./createPoseTracking.js";
 import { registerCreateProjectionMapping } from "./createProjectionMapping.js";
 import { registerCreateRaymarchScene } from "./createRaymarchScene.js";
+import { registerCreateSetNavigator } from "./createSetNavigator.js";
 import { registerCreateShaderLib } from "./createShaderLib.js";
 import { registerCreateShaderPark } from "./createShaderPark.js";
 import { registerCreateSimulation } from "./createSimulation.js";
@@ -39,7 +51,9 @@ import { registerCreateSpectrum } from "./createSpectrum.js";
 import { registerCreateStrobe } from "./createStrobe.js";
 import { registerCreateSyncExternalClock } from "./createSyncExternalClock.js";
 import { registerCreateTempoSync } from "./createTempoSync.js";
+import { registerCreateText3d } from "./createText3d.js";
 import { registerCreateTextOverlay } from "./createTextOverlay.js";
+import { registerCreateTransition } from "./createTransition.js";
 import { registerCreateVideoPlayer } from "./createVideoPlayer.js";
 import { registerCreateVideoSynth } from "./createVideoSynth.js";
 import { registerCreateVisualSystem } from "./createVisualSystem.js";
@@ -121,4 +135,22 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreatePoseSkeleton,
   registerCreateBodyReactive,
   registerSetupBodyTracking,
+  // Phase 14 — live mixing & external content (v0.5.0):
+  registerCreateTransition,
+  registerCreateLiveSource,
+  registerCreateLayerStack,
+  registerCreateMediaBin,
+  registerCreateKeyer,
+  // Phase 14 — signature effects + multipass 3D:
+  registerCreateDatamosh,
+  registerCreateDisplacementWarp,
+  registerCreateHalftone,
+  registerCreateFeedbackTunnel,
+  registerMultipass3dDepth,
+  // Phase 15 — set navigation + POP (experimental, live-validation pending):
+  registerCreateSetNavigator,
+  registerCreatePopField,
+  // Phase 15 — 3D text + MIDI note reactivity (device path held pending hardware):
+  registerCreateText3d,
+  registerCreateMidiNoteReactive,
 ];

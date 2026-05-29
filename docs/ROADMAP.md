@@ -42,6 +42,7 @@ Every feature follows the existing patterns:
 | 8–11 | 0.3.0 ◐ | Effects, reactivity, control & AI | Parallel waves — signature effects, deeper reactivity, creation, live control/AI/DX (detailed below) |
 | 12 | 0.3.0 ☑ | Dimensional: 3D, depth & spatial mapping | Take visuals off the flat plane — react in 3D, sculpt with depth, map onto real surfaces |
 | 13 | 0.5.0 ☐ | Components, agent-DX & reactivity | Reusable-component scaffolding, project analysis/auto-docs, token-cheap agent-DX, Link/MIDI — the gaps left after the 0.4.0 generators + the body-tracking tools already on `main` |
+| 14–15 | 0.5.0 ◐ | Live mixing, parameter fidelity & creative direction | Post-discovery wave: transitions/layer-stack/keyer/media-bin, one-shot reactivity, signature effects, network round-trip, 11 AI prompts — built offline, live-validation pending |
 
 ---
 
@@ -420,3 +421,57 @@ idea agent-side), `caption_top`, depth-camera input (Kinect Azure / RealSense, h
 The recipe/template
 **marketplace** stays v0.6.0+ (local-first via TD Palette + Obsidian vault, per the project's
 local-first distribution model).
+
+---
+
+## Phases 14–15 — v0.5.0 · Live mixing, parameter fidelity & creative direction ◐ integrated (live-validation pending)
+
+The post-discovery feature wave (sourced from `_workspace/discovery/FEATURE_BACKLOG.md`, reconciled
+against the Phase-13 merge so already-shipped items were dropped). Built as parallel
+one-tool-per-agent waves with a single-writer integrator. **TouchDesigner was offline during the
+build**, so all new tools/prompts are offline-gated (typecheck + build + Biome + vitest + recipes +
+bridge tests) with live create→cook→preview validation **UNVERIFIED-pending** — each TD-touching tool
+ships a `probe` block that surfaces the real TD API on first live run, and is fail-forward.
+
+| Feature | Delivers | CLI | Status |
+|---|---|---|---|
+| `create_transition` | A→B dissolve/luma_wipe/slide/zoom/glitch_cut over a Progress knob (subsumes `transition_designer`) | `transition` | ◐ |
+| `create_live_source` | Input layer: screen-grab/NDI/Syphon-Spout/camera/stream → previewed Null | `live-source` | ◐ |
+| `create_layer_stack` | N-layer compositor: per-layer blend+opacity+mute/solo + control strip | `layer-stack` | ◐ |
+| `create_media_bin` | Folder-fed clip bin (Movie File In + Switch) + Index/Next/Prev/crossfade | `media-bin` | ◐ |
+| `create_keyer` | Chroma/luma/rgb key + matte composite | `keyer` | ◐ |
+| `bind_audio_reactive` | One-shot: auto-map a COMP's knobs to audio bands + master Reactivity | `react-audio` | ◐ |
+| `create_data_reactive` | Map live data-source channels onto params (range-remapped) | `react-data` | ◐ |
+| `create_envelope_follower` | Attack/release + gate/duck sidechain (experimental) | `envelope` | ◐ |
+| `create_datamosh` / `create_displacement_warp` / `create_halftone` / `create_feedback_tunnel` / `create_text_3d` | Signature effects + 3D type | `datamosh`/`warp`/`halftone`/`feedback-tunnel`/`text-3d` | ◐ |
+| `apply_post_processing` +5 | Chainable `halftone`/`dither`/`crt`/`mirror`/`vhs` GLSL effects | `post-fx` | ◐ |
+| `create_set_navigator` / `create_beat_grid_sequencer` | QLab cue-list navigator + deterministic step grid | `set-nav`/`beat-grid` | ◐ |
+| `read_parameter_modes` / `set_parameter_expression` / `disconnect_nodes` | Parameter mode/expr read+write; remove a wire | `params-modes`/`set-expr`/`disconnect` | ◐ |
+| `serialize_network` / `rebuild_network` | COMP subtree ↔ diffable JSON round-trip (pulled forward from v0.6.0+) | `serialize`/`rebuild` | ◐ |
+| `inspect_op_extensions_storage` / `get_node_state_runtime` / `get_bridge_logs` | Component introspection + runtime telemetry + cook logs | `inspect-comp`/`node-state`/`logs` | ◐ |
+| `create_replicator` / `multipass_3d_depth` | Data-driven cloning + SSAO/synthetic-depth 3D pass | `replicator`/`multipass-3d` | ◐ |
+| `create_pop_field` | First GPU POP-family generator (**experimental** — render path held pending live validation) | `pop-field` | ◐ ⚠ |
+| `create_midi_note_reactive` / `create_midi_map` | MIDI notes → reactivity (synthetic previews); controller presets (**hardware-gated** — held pending gear) | `midi-notes`/`midi-map` | ◐ ⚠ |
+| Vault: `save_component_to_vault` / `browse_vault_library` / `capture_to_vault` / `export_setlist_to_vault` | Component packaging, library browse, gallery capture, setlist round-trip | (MCP-only) | ◐ |
+| 11 AI prompts | `fix_reactivity`, `recover_show`, `auto_vj_director`, `color_story`, `setlist_planner`, `lyric_show`, `genre_visual_language`, `visual_ab_compare`, `motion_critique`, `match_reference_loop`, `explain_param` | (prompts) | ◐ |
+| `tdmcp://prompts` resource | Prompt catalog for prompt-blind clients (local copilot) | (resource) | ◐ |
+
+**Held pending validation (⚠ — keep out of a tagged release until they cook clean live):**
+`create_pop_field` (POPs experimental + render path uncertain), and the device paths of
+`create_midi_note_reactive` / `create_midi_map` (need real MIDI gear; the synthetic note source is
+validatable offline).
+
+**CLI / config / copilot DX — shipped in the follow-on pass (◐, offline-gated):**
+`config_file_and_profiles` + per-call `--profile/--config/--td-host/--td-port/--timeout` flags + a
+`config` command (`--write-env`); `doctor` Tools check + `--fix` (suggested commands) + `--output
+json` + `-q/--quiet`; CLI `-V/--version`, did-you-mean, `--params -`/`--params-file`, `-q/--quiet`,
+`watch --filter/--exclude`; copilot `search_operators`+`list_recipes` in every tier + an opt-in
+`creative` generator tier; `get_td_info` bridge-staleness warning; `video_device_out`.
+
+**Still deferred to v0.6.0+ (not built):** `install-client` per-OS config writers + `install-bridge
+--verify` (need real per-client testing); `doctor --fix` auto-execution (start Ollama / pull / recopy
+bridge); `watch --exec`, `preview --inline/--watch`, shell-completion generator, repl
+history+completion, `chat --prompt`/`--read-only`; copilot conversation persistence / smarter handoff
+/ voice; `model_import_fbx_usd`; `dmx_fixture_pipeline` (hardware), `gpu_fluid` /
+`optical_flow_particles` (GPU/macOS), `richer_event_stream`, `run_bridge_tests`, and the recipe
+marketplace.
