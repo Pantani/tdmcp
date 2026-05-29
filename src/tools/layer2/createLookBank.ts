@@ -134,7 +134,7 @@ def onPulse(par):
 // (button_cb) can fire them. A recall writes the same tdmcp_cue_transition record MORPH_HOOK
 // (morph_text) consumes; quantize defers the start to the next beat/bar boundary.
 const LOOKBANK_SCRIPT = `
-import json, base64, traceback
+import ast, json, base64, traceback
 import td
 _p = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
 report = {"action": _p["action"], "comp": _p["comp"], "warnings": []}
@@ -197,7 +197,10 @@ def _col_dict(tbl, slot):
             continue
         v = raw
         try:
-            v = eval(raw, {'__builtins__': {}}, {})
+            # literal_eval safely round-trips the repr() values written by store
+            # (numbers, strings, bool, None, tuples/lists) and REJECTS code, so a
+            # hand-edited look slot cannot execute arbitrary expressions in TD.
+            v = ast.literal_eval(raw)
         except Exception:
             try:
                 v = float(raw)

@@ -145,9 +145,10 @@ describe("resolveOutputTop", () => {
     expect(resolveOutputTop([], "/project1")).toBeUndefined();
   });
 
-  it("falls back to the last node when no TOP is present (CHOP-only recipe)", () => {
-    const top = resolveOutputTop([{ name: "lfo1", type: "lfoCHOP" }], "/project1");
-    expect(top).toBe("/project1/lfo1");
+  it("returns undefined when no TOP is present (CHOP-only recipe -> caller skips)", () => {
+    // The preview endpoint only renders TOPs, so a CHOP/DAT/SOP-only recipe must
+    // resolve to undefined and take captureThumbnail's cheap no-op skip path.
+    expect(resolveOutputTop([{ name: "lfo1", type: "lfoCHOP" }], "/project1")).toBeUndefined();
   });
 
   it("prefers a TOP even when it is not the last node", () => {

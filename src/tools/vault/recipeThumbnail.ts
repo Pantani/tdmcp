@@ -61,20 +61,20 @@ export async function captureThumbnail(
 }
 
 /**
- * Pick the output TOP of a captured recipe: the last node whose type ends in "TOP",
- * else the last node, expressed as "<compPath>/<nodeName>". Returns undefined when
- * there are no nodes (caller then skips the thumbnail).
+ * Pick the output TOP of a captured recipe: the last node whose type ends in
+ * "TOP", expressed as "<compPath>/<nodeName>". Returns undefined when the recipe
+ * has no TOP node (or no nodes at all) — the preview endpoint only renders TOPs,
+ * so the caller then takes captureThumbnail's cheap no-op skip instead of a
+ * wasted bridge call (and a misleading warning) on a CHOP/DAT/SOP node.
  */
 export function resolveOutputTop(
   nodes: Array<{ name: string; type: string }>,
   compPath: string,
 ): string | undefined {
-  if (nodes.length === 0) return undefined;
   let chosen: { name: string; type: string } | undefined;
   for (const node of nodes) {
     if (node.type.endsWith("TOP")) chosen = node;
   }
-  if (!chosen) chosen = nodes[nodes.length - 1];
   if (!chosen) return undefined;
   return `${compPath}/${chosen.name}`;
 }
