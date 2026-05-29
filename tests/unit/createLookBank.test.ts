@@ -103,6 +103,22 @@ describe("buildLookBankScript", () => {
     expect(payload.button_cb).toBe("BTN_CB");
   });
 
+  it("creates the A↔B watcher via the parameterexecuteDAT optype (regression: not parexecDAT)", () => {
+    const script = buildLookBankScript({
+      action: "build",
+      comp: "/project1",
+      name: "look_bank",
+      morph_text: MORPH_HOOK,
+      ab_cb: AB_BLEND_CB,
+      button_cb: "BTN_CB",
+    });
+    // td.parexecDAT does not exist in TouchDesigner — it raises AttributeError and made every
+    // build/store fail (the A↔B blend watcher was never created). The correct optype, shared with
+    // createSetNavigator/createMediaBin/createSyncExternalClock, is td.parameterexecuteDAT.
+    expect(script).toContain("td.parameterexecuteDAT");
+    expect(script).not.toContain("td.parexecDAT");
+  });
+
   it("the impl forwards the real shared callbacks (button_cb is the recall dispatcher)", async () => {
     const exec = reportMock({ action: "build", slots: [], buttons: [] });
     await createLookBankImpl(fakeCtx(exec), { ...DEFAULTS, action: "build" });
