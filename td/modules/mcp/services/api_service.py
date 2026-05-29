@@ -167,6 +167,14 @@ def node_detail(node):
     # --- NEW (node_flags_in_detail): flags + index-aware wiring + position/comment/color/tags ---
     detail["flags"] = _flags(node)
     detail["wires_in"] = _indexed_inputs(node)
+    # op.errors() returns a STRING (not a list) — wrap it so a multi-line message is
+    # ONE entry, never iterated char-by-char. Lets get_td_node_flags' REST path flag
+    # "cook error" suspects (and honor only_problems) the same as the exec walk.
+    try:
+        _err = node.errors(recurse=False)
+        detail["errors"] = [str(_err)] if _err else []
+    except Exception:  # noqa: BLE001
+        pass
     try:
         detail["nodeX"] = node.nodeX
         detail["nodeY"] = node.nodeY

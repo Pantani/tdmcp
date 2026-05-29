@@ -108,8 +108,10 @@ export async function saveComponentToVaultImpl(ctx: ToolContext, args: SaveCompo
       return errorResult(`Component save failed: ${report.fatal}`, report);
     }
 
-    // Use the TD-confirmed comp name if available, fall back to our derived name.
-    const resolvedName = report.comp_name ?? compName;
+    // Keep the note name aligned with the .tox filename: prefer the caller's
+    // explicit name (which named the .tox), then TD's confirmed comp name, then our
+    // derived fallback — so Components/<name>.tox and Components/<name>.md pair up.
+    const resolvedName = args.name ?? report.comp_name ?? compName;
     const noteRelPath = `${args.folder}/${resolvedName}.md`;
     const noteDate = new Date().toISOString().slice(0, 10);
 

@@ -224,13 +224,21 @@ try:
         _tail = _merge
         _controls = []
         if _p["expose_controls"]:
-            _depth = _comp.create(mathCHOP, "depth")
+            _depth = _comp.op("depth") or _comp.create(mathCHOP, "depth")
             _depth.inputConnectors[0].connect(_merge)
-            _page = _comp.appendCustomPage("Modulators")
-            _rate_par = _page.appendFloat("Rate", label="Rate")[0]
+            # Reuse existing Rate/Depth controls on a re-run: children were cleared,
+            # but the container's custom page/params persist — re-appending would make
+            # Rate1/Depth1 while the expressions still bind .par.Rate/.par.Depth.
+            _rate_par = getattr(_comp.par, "Rate", None)
+            _depth_par = getattr(_comp.par, "Depth", None)
+            if _rate_par is None or _depth_par is None:
+                _page = _comp.appendCustomPage("Modulators")
+                if _rate_par is None:
+                    _rate_par = _page.appendFloat("Rate", label="Rate")[0]
+                if _depth_par is None:
+                    _depth_par = _page.appendFloat("Depth", label="Depth")[0]
             _rate_par.normMin = 0.0; _rate_par.normMax = 4.0
             _rate_par.default = 1.0; _rate_par.val = 1.0
-            _depth_par = _page.appendFloat("Depth", label="Depth")[0]
             _depth_par.normMin = 0.0; _depth_par.normMax = 2.0
             _depth_par.default = 1.0; _depth_par.val = 1.0
             # Master Depth scales the whole bank's amplitude via the Math CHOP gain.
