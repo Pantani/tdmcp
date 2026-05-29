@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { HttpResponse, http } from "msw";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
 import { RecipeLibrary } from "../../src/recipes/loader.js";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
@@ -71,9 +71,20 @@ describe("library and packaging tools", () => {
       return Buffer.from("");
     }) as never;
 
-    extractZip("/tmp/package.zip", "/tmp/tdmcp-package", exec);
+    extractZip("/tmp/package.zip", "/tmp/tdmcp-package", exec, () => ["package/widget.tox"]);
 
     expect(calls[0]?.options.stdio).toBe("pipe");
+  });
+
+  it("rejects unsafe zip entries before extraction", () => {
+    const exec = vi.fn();
+
+    expect(() =>
+      extractZip("/tmp/package.zip", "/tmp/tdmcp-package", exec as never, () => [
+        "package/../../outside.tox",
+      ]),
+    ).toThrow(/Unsafe archive path/);
+    expect(exec).not.toHaveBeenCalled();
   });
 
   it("sanitizes explicit portable tox names before resolving the output path", async () => {

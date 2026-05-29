@@ -12,6 +12,7 @@ import {
 import { basename, dirname, extname, join, resolve, sep } from "node:path";
 import { z } from "zod";
 import { capturePreview } from "../../feedback/previewCapture.js";
+import { listZipEntries, validateArchiveEntries } from "../../packages/archive.js";
 import { type Recipe, RecipeSchema } from "../../recipes/schema.js";
 import { friendlyTdError } from "../../td-client/types.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
@@ -147,8 +148,10 @@ export function extractZip(
   zipPath: string,
   destDir: string,
   exec: typeof execFileSync = execFileSync,
+  listEntries: (zipPath: string) => string[] = listZipEntries,
 ): void {
   mkdirSync(destDir, { recursive: true });
+  validateArchiveEntries(listEntries(zipPath));
   const { command, args } = zipExtractCommand(zipPath, destDir);
   exec(command, args, { stdio: "pipe" });
 }
