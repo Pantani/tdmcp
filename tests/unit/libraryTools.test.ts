@@ -236,6 +236,74 @@ describe("library and packaging tools", () => {
     }
   });
 
+  it("flags manifest entries that escape the package directory", async () => {
+    const dir = tmp();
+    try {
+      const pkg = join(dir, "pkg");
+      mkdirSync(pkg, { recursive: true });
+      writeFileSync(join(dir, "outside.tox"), "external", "utf8");
+      writeFileSync(
+        join(pkg, "tdmcp-component.json"),
+        JSON.stringify({
+          id: "widget",
+          assets: ["../outside.tox"],
+        }),
+        "utf8",
+      );
+
+      const inspected = await inspectComponentManifestImpl(makeCtx(), { path: pkg });
+
+      expect(inspected.isError).toBeFalsy();
+      expect(inspected.structuredContent?.missing).toContain("../outside.tox");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects manifest asset references that escape the package directory", async () => {
+    const dir = tmp();
+    try {
+      const pkg = join(dir, "pkg");
+      const outside = join(dir, "outside.tox");
+      mkdirSync(pkg, { recursive: true });
+      writeFileSync(outside, "external", "utf8");
+      writeFileSync(
+        join(pkg, "tdmcp-component.json"),
+        JSON.stringify({
+          id: "widget",
+          assets: ["../outside.tox"],
+        }),
+        "utf8",
+      );
+
+      const valid = await validateLibraryAssetImpl(makeCtx(), {
+        path: outside,
+        manifest_path: pkg,
+      });
+
+      expect(valid.structuredContent?.issues).toContain(
+        "Manifest reference escapes package directory: ../outside.tox",
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("returns an error result when recipe bundle export cannot write the output file", async () => {
+    const dir = tmp();
+    try {
+      await expect(
+        exportRecipeBundleImpl(makeCtx(), {
+          out_file: dir,
+          recipe_ids: [],
+          include_all: false,
+        }),
+      ).resolves.toMatchObject({ isError: true });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("rejects doc asset directories that escape the package", async () => {
     const dir = tmp();
     try {

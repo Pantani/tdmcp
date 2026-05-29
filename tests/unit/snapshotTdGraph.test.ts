@@ -26,6 +26,12 @@ function makeCtx(): ToolContext {
   };
 }
 
+function decodePayload(script: string): Record<string, unknown> {
+  const b64 = /b64decode\("([^"]+)"\)/.exec(script)?.[1];
+  if (!b64) throw new Error("No b64decode payload found");
+  return JSON.parse(Buffer.from(b64, "base64").toString("utf8")) as Record<string, unknown>;
+}
+
 describe("computeTypeDefaults / toCompactNodes (pure)", () => {
   const nodes = [
     { path: "/p/a", type: "noiseTOP", name: "a", parameters: { period: 1, amp: 1 } },
@@ -92,9 +98,12 @@ describe("snapshotTdGraphImpl", () => {
   });
 
   it("compact mode preserves reactive parameter state when available", async () => {
+    let capturedScript = "";
     server.use(
-      http.post(`${TD_BASE}/api/exec`, () =>
-        HttpResponse.json({
+      http.post(`${TD_BASE}/api/exec`, async ({ request }) => {
+        const body = (await request.json()) as { script?: string };
+        capturedScript = body.script ?? "";
+        return HttpResponse.json({
           ok: true,
           data: {
             result: null,
@@ -107,8 +116,8 @@ describe("snapshotTdGraphImpl", () => {
               warnings: [],
             }),
           },
-        }),
-      ),
+        });
+      }),
     );
     const result = await snapshotTdGraphImpl(makeCtx(), {
       path: "/project1",
@@ -117,11 +126,53 @@ describe("snapshotTdGraphImpl", () => {
       include_parameter_modes: false,
     });
     expect(result.isError).toBeFalsy();
+    const payload = decodePayload(capturedScript);
+    expect(payload.non_default_only).toBe(true);
     const data = result.structuredContent as {
       nodes: Array<{ parameter_modes?: Record<string, unknown> }>;
     };
     expect(data.nodes[0]?.parameter_modes).toEqual({
       period: { name: "period", mode: "EXPRESSION", expression: "absTime.seconds" },
+    });
+  });
+
+  it("non-compact parameter-mode snapshots keep full mode reads", async () => {
+    let capturedScript = "";
+    server.use(
+      http.post(`${TD_BASE}/api/exec`, async ({ request }) => {
+        const body = (await request.json()) as { script?: string };
+        capturedScript = body.script ?? "";
+        return HttpResponse.json({
+          ok: true,
+          data: {
+            result: null,
+            stdout: JSON.stringify({
+              path: "/project1/noise1",
+              parameters: {
+                period: { name: "period", mode: "EXPRESSION", expression: "absTime.seconds" },
+                amplitude: { name: "amplitude", mode: "CONSTANT", value: 1 },
+              },
+              warnings: [],
+            }),
+          },
+        });
+      }),
+    );
+    const result = await snapshotTdGraphImpl(makeCtx(), {
+      path: "/project1",
+      include_params: false,
+      compact: false,
+      include_parameter_modes: true,
+    });
+    expect(result.isError).toBeFalsy();
+    const payload = decodePayload(capturedScript);
+    expect(payload.non_default_only).toBe(false);
+    const data = result.structuredContent as {
+      nodes: Array<{ parameter_modes?: Record<string, unknown> }>;
+    };
+    expect(data.nodes[0]?.parameter_modes).toEqual({
+      period: { name: "period", mode: "EXPRESSION", expression: "absTime.seconds" },
+      amplitude: { name: "amplitude", mode: "CONSTANT", value: 1 },
     });
   });
 

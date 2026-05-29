@@ -253,7 +253,10 @@ export async function snapshotTdGraphImpl(ctx: ToolContext, args: SnapshotTdGrap
         const details = await Promise.allSettled(
           targets.map(async (n) => {
             const exec = await ctx.client.executePythonScript(
-              buildReadParameterModesScript({ path: n.path }),
+              buildReadParameterModesScript({
+                path: n.path,
+                non_default_only: args.compact,
+              }),
               true,
             );
             const parsed = parsePythonReport<ParameterModesReport>(exec.stdout);

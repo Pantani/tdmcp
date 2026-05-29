@@ -95,6 +95,14 @@ function relativeAssetPath(dir: string, fileName: string): string {
   return dir ? `${dir}/${fileName}` : fileName;
 }
 
+function manifestRefs(manifest: ComponentManifest): string[] {
+  return [
+    ...(manifest.assets ?? []),
+    ...(manifest.docs ?? []),
+    ...(manifest.tox ? [manifest.tox] : []),
+  ];
+}
+
 const MANIFEST_FILE_NAMES = new Set(["tdmcp-component.json", "manifest.json", "package.json"]);
 
 function installPackageSource(source: string): {
@@ -197,11 +205,13 @@ export async function inspectComponentManifestImpl(
   try {
     const { path, manifest } = readManifest(args.path);
     const base = dirname(path);
-    const missing = [
-      ...(manifest.assets ?? []),
-      ...(manifest.docs ?? []),
-      ...(manifest.tox ? [manifest.tox] : []),
-    ].filter((rel) => !existsSync(join(base, rel)));
+    const missing = manifestRefs(manifest).filter((rel) => {
+      try {
+        return !existsSync(resolveInside(base, rel));
+      } catch {
+        return true;
+      }
+    });
     return structuredResult(`Read component manifest ${path}.`, { path, manifest, missing });
   } catch (err) {
     return errorResult(err instanceof Error ? err.message : String(err));
@@ -289,19 +299,23 @@ export const exportRecipeBundleSchema = z.object({
 type ExportRecipeBundleArgs = z.infer<typeof exportRecipeBundleSchema>;
 
 export async function exportRecipeBundleImpl(ctx: ToolContext, args: ExportRecipeBundleArgs) {
-  const recipes = args.include_all
-    ? ctx.recipes.all()
-    : args.recipe_ids.map((id) => ctx.recipes.get(id)).filter((r): r is Recipe => Boolean(r));
-  const missing = args.include_all ? [] : args.recipe_ids.filter((id) => !ctx.recipes.get(id));
-  const bundle = {
-    kind: "tdmcp-recipe-bundle",
-    version: 1,
-    exported_at: new Date().toISOString(),
-    recipes,
-    missing,
-  };
-  writeJson(args.out_file, bundle);
-  return jsonResult(`Exported ${recipes.length} recipe(s) to ${args.out_file}.`, bundle);
+  try {
+    const recipes = args.include_all
+      ? ctx.recipes.all()
+      : args.recipe_ids.map((id) => ctx.recipes.get(id)).filter((r): r is Recipe => Boolean(r));
+    const missing = args.include_all ? [] : args.recipe_ids.filter((id) => !ctx.recipes.get(id));
+    const bundle = {
+      kind: "tdmcp-recipe-bundle",
+      version: 1,
+      exported_at: new Date().toISOString(),
+      recipes,
+      missing,
+    };
+    writeJson(args.out_file, bundle);
+    return jsonResult(`Exported ${recipes.length} recipe(s) to ${args.out_file}.`, bundle);
+  } catch (err) {
+    return errorResult(err instanceof Error ? err.message : String(err));
+  }
 }
 
 export const importRecipeBundleSchema = z.object({
@@ -353,12 +367,15 @@ export async function validateLibraryAssetImpl(_ctx: ToolContext, args: Validate
     try {
       const found = readManifest(manifestPath);
       const base = dirname(found.path);
-      const rels = [
-        ...(found.manifest.assets ?? []),
-        ...(found.manifest.docs ?? []),
-        ...(found.manifest.tox ? [found.manifest.tox] : []),
-      ];
-      if (!rels.some((rel) => resolve(base, rel) === full)) {
+      let referenced = false;
+      for (const rel of manifestRefs(found.manifest)) {
+        try {
+          if (resolveInside(base, rel) === full) referenced = true;
+        } catch {
+          issues.push(`Manifest reference escapes package directory: ${rel}`);
+        }
+      }
+      if (!referenced) {
         issues.push("Asset is not referenced by the manifest.");
       }
     } catch (err) {
