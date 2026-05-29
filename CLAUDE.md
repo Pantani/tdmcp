@@ -39,6 +39,10 @@ npx vitest run tests/unit/createWaveform.test.ts   # single file
 npx vitest run -t "edge-blend"                      # single test by name
 npm run test:bridge          # Python bridge tests: python3 -m unittest discover -s td/tests
 
+# Local coverage harness (not a CI gate unless the workflow is updated)
+npm run test:coverage        # vitest run --coverage, TS sources only
+npm run coverage:harness     # coverage report + ranked next test gaps
+
 # Docs (VitePress site under docs/)
 npm run docs:dev             # docs:gen then vitepress dev
 npm run build:mcpb           # bundle the one-click Claude Desktop .mcpb (formerly .dxt)
@@ -199,3 +203,21 @@ spawn (sonnet for prescriptive tools, opus for the ones needing design judgment)
 | 2026-05-28 | Hardened builder skill | `tdmcp-tool-builder` SKILL | builders ran vitest but not `tsc`; added "defaulted fields are required when calling the impl; run typecheck too" |
 | 2026-05-28 | Built Phases 14–15 | 32 tools + 11 prompts + `tdmcp://prompts` resource + `apply_post_processing` +5 effects | discovery backlog wave; Wave 0 reconciled out already-shipped Phase-13 items; 5 parallel waves (33 builders) + single-writer integration; offline-gated (1395 tests / 14 recipes / 51 bridge), TD offline so live-validation UNVERIFIED-pending; CLI/copilot-infra + hardware/GPU items deferred to v0.6.0+ |
 | 2026-05-28 | CLI/config/copilot follow-on | config files + profiles, doctor --fix/--json, CLI ergonomics, copilot creative tier, +3 tool extensions | single-writer pass (no builders — all shared files: config.ts/agent.ts/doctor.ts/llm); committed in 4 gated chunks; 1410 tests; install-client + heavier CLI items + hardware/GPU still deferred to v0.6.0+ |
+
+## Harness: test coverage
+
+**Goal:** raise tdmcp's executable TypeScript coverage through focused Vitest/msw,
+integration, CLI/config, resource, and bridge-adjacent regression tests without
+excluding production code or weakening thresholds.
+
+**Trigger:** when asked to raise coverage, improve tests, add broad regression
+coverage, build or re-run a test/coverage harness, or fix a coverage gate, use
+the `tdmcp-test-coverage` skill. It runs `npm run coverage:harness`, ranks gaps,
+coordinates `tdmcp-coverage-lead` / `tdmcp-coverage-writer` /
+`tdmcp-coverage-qa`, and gates the wave. Simple questions can be answered
+directly.
+
+**Change log:**
+| Date | Change | Target | Reason |
+|------|--------|--------|--------|
+| 2026-05-28 | Initial build | coverage harness + 3 agents + 2 skills | make coverage work repeatable, code-scoped, and gate-backed |
