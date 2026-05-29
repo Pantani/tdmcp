@@ -326,7 +326,7 @@ export async function runDoctor(opts: RunDoctorOptions = {}): Promise<DoctorResu
   const report: DoctorReport = {
     ok,
     checks,
-    ...(fixes && fixes.length ? { fixes } : {}),
+    ...(fixes?.length ? { fixes } : {}),
     config: {
       tdBaseUrl: tdBaseUrl(config),
       llmBaseUrl: config.llmBaseUrl,

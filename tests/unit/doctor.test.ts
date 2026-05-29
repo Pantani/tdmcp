@@ -168,7 +168,7 @@ describe("tdmcp doctor", () => {
   it("--fix appends suggested remediation commands for non-passing checks", async () => {
     // No LLM mock → llm check warns → a fix suggestion appears.
     const r = await runDoctor({ config: makeConfig(), makeCtx, fix: true });
-    expect(r.report.fixes && r.report.fixes.length).toBeTruthy();
+    expect(r.report.fixes?.length).toBeTruthy();
     expect(r.stdout).toContain("Suggested fixes");
     expect(r.report.fixes?.some((f) => f.id === "llm")).toBe(true);
   });

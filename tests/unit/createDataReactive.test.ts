@@ -63,7 +63,8 @@ describe("createDataReactiveSchema", () => {
       source_chop: "/project1/data/out",
       mappings: [{ param: "Speed", channel: "temperature" }],
     });
-    const m = parsed.mappings[0]!;
+    const [m] = parsed.mappings;
+    if (!m) throw new Error("expected one mapping");
     expect(m.in_min).toBe(0);
     expect(m.in_max).toBe(1);
     expect(m.out_min).toBe(0);
@@ -133,7 +134,8 @@ describe("createDataReactiveImpl — payload", () => {
 
     const mappings = payload.mappings as Array<Record<string, unknown>>;
     expect(mappings).toHaveLength(1);
-    const m = mappings[0]!;
+    const [m] = mappings;
+    if (!m) throw new Error("expected one mapping");
     expect(m.param).toBe("Speed");
     expect(m.channel).toBe("temperature");
     expect(m.in_min).toBe(0);

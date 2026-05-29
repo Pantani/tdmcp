@@ -113,9 +113,9 @@ describe("saveComponentToVaultImpl", () => {
       expect(result.isError).toBeFalsy();
 
       const payload = decodePayloadFromScript(capturedScript);
-      expect(payload["comp"]).toBe("/project1/myComp");
+      expect(payload.comp).toBe("/project1/myComp");
       // tox path must be inside the vault and end with .tox
-      const toxPath = payload["tox_path"] as string;
+      const toxPath = payload.tox_path as string;
       expect(toxPath).toContain("Components");
       expect(toxPath).toContain("myComp.tox");
       expect(toxPath.startsWith(vault.root)).toBe(true);
@@ -141,10 +141,10 @@ describe("saveComponentToVaultImpl", () => {
 
       // Note has expected frontmatter fields
       const note = vault.readNote("Components/myComp.md");
-      expect(note.data["type"]).toBe("component");
-      expect(note.data["tox"]).toBe("Components/myComp.tox");
-      expect(Array.isArray(note.data["tags"])).toBe(true);
-      expect(note.data["created"]).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(note.data.type).toBe("component");
+      expect(note.data.tox).toBe("Components/myComp.tox");
+      expect(Array.isArray(note.data.tags)).toBe(true);
+      expect(note.data.created).toMatch(/^\d{4}-\d{2}-\d{2}$/);
 
       // Note body contains source comp path and load instructions
       expect(note.body).toContain("/project1/myComp");
