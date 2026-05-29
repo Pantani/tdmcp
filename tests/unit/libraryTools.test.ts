@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
@@ -11,10 +11,12 @@ import {
   browseLibraryImpl,
   componentLinkHealthImpl,
   exportRecipeBundleImpl,
+  extractZip,
   importRecipeBundleImpl,
   inspectComponentManifestImpl,
   installLibraryPackageImpl,
   localMarketplaceIndexImpl,
+  makePortableToxImpl,
   refreshAssetPreviewsImpl,
   scaffoldRecipeTemplateImpl,
   validateLibraryAssetImpl,
@@ -42,6 +44,12 @@ function tmp(): string {
   return mkdtempSync(join(tmpdir(), "tdmcp-library-"));
 }
 
+function decodePayload(script: string): Record<string, unknown> {
+  const b64 = /b64decode\("([^"]+)"\)/.exec(script)?.[1];
+  if (!b64) throw new Error("No b64decode payload found");
+  return JSON.parse(Buffer.from(b64, "base64").toString("utf8")) as Record<string, unknown>;
+}
+
 describe("library and packaging tools", () => {
   it("builds a Windows zip extraction command without interpolating paths", () => {
     const zipPath = "C:\\packages\\widget'; Remove-Item C:\\important.zip";
@@ -54,6 +62,49 @@ describe("library and packaging tools", () => {
     expect(command.args).toContain(zipPath);
     expect(command.args).toContain(destDir);
     expect(command.args[2]).not.toContain("Remove-Item");
+  });
+
+  it("extracts zip packages without inheriting MCP stdio", () => {
+    const calls: Array<{ options: { stdio?: unknown } }> = [];
+    const exec = ((_command: string, _args: string[], options: { stdio?: unknown }) => {
+      calls.push({ options });
+      return Buffer.from("");
+    }) as never;
+
+    extractZip("/tmp/package.zip", "/tmp/tdmcp-package", exec);
+
+    expect(calls[0]?.options.stdio).toBe("pipe");
+  });
+
+  it("sanitizes explicit portable tox names before resolving the output path", async () => {
+    const dir = tmp();
+    let capturedScript = "";
+    try {
+      const ctx = {
+        ...makeCtx(),
+        client: {
+          executePythonScript: async (script: string) => {
+            capturedScript = script;
+            return { stdout: JSON.stringify({ saved: "/ignored/widget.tox", size: 1 }) };
+          },
+        },
+      } as unknown as ToolContext;
+
+      const result = await makePortableToxImpl(ctx, {
+        comp_path: "/project1/widget",
+        out_dir: dir,
+        name: "../shared/widget",
+        docs: [],
+      });
+
+      expect(result.isError).toBeFalsy();
+      const payload = decodePayload(capturedScript);
+      const toxPath = String(payload.tox_path);
+      expect(dirname(toxPath)).toBe(resolve(dir));
+      expect(basename(toxPath)).toBe(".._shared_widget.tox");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("scaffolds, browses, exports, and imports valid recipe bundles", async () => {

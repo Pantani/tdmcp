@@ -65,6 +65,10 @@ function recipeFileName(recipe: Recipe): string {
   return `${recipe.id.replace(/[^a-zA-Z0-9_.-]+/g, "_")}.json`;
 }
 
+function safeFileStem(name: string, fallback: string): string {
+  return name.replace(/[^a-zA-Z0-9_.-]+/g, "_") || fallback;
+}
+
 export function zipExtractCommand(
   zipPath: string,
   destDir: string,
@@ -85,10 +89,14 @@ export function zipExtractCommand(
   return { command: "unzip", args: ["-o", "-q", zipPath, "-d", destDir] };
 }
 
-function extractZip(zipPath: string, destDir: string): void {
+export function extractZip(
+  zipPath: string,
+  destDir: string,
+  exec: typeof execFileSync = execFileSync,
+): void {
   mkdirSync(destDir, { recursive: true });
   const { command, args } = zipExtractCommand(zipPath, destDir);
-  execFileSync(command, args, { stdio: "inherit" });
+  exec(command, args, { stdio: "pipe" });
 }
 
 export const browseLibrarySchema = z.object({
@@ -188,7 +196,7 @@ print(json.dumps(report))
 `;
 
 export async function makePortableToxImpl(ctx: ToolContext, args: MakePortableToxArgs) {
-  const name = args.name ?? basename(args.comp_path).replace(/[^a-zA-Z0-9_.-]+/g, "_");
+  const name = safeFileStem(args.name ?? basename(args.comp_path), "component");
   const outDir = resolve(args.out_dir);
   const toxPath = join(outDir, `${name}.tox`);
   return guardTd(
