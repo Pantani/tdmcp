@@ -102,6 +102,9 @@ describe("setPerformModeImpl", () => {
     const text = result.content.find((c) => c.type === "text") as { text: string } | undefined;
     expect(text?.text).toContain("ON");
     expect(text?.text).toContain("skip");
+    expect(text?.text).toContain("preview capture");
+    expect(text?.text).not.toContain("event streaming");
+    expect(text?.text).not.toContain("externalization");
   });
 
   it("disabling → result not isError, summary says OFF", async () => {

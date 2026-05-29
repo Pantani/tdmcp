@@ -952,7 +952,7 @@ const COMMANDS: Record<string, Command> = {
   "perform-mode": r(
     setPerformModeSchema,
     setPerformModeImpl,
-    "Toggle perform mode: suspend nonessential MCP/externalization compute during a show.",
+    "Toggle perform mode: store advisory flag; built-in guard skips preview captures.",
     { mutates: true },
   ),
   "agent-guide": r(

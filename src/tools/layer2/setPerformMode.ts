@@ -8,9 +8,9 @@ export const setPerformModeSchema = z.object({
     .boolean()
     .describe(
       "true to enter perform mode before a live show, false to leave it afterward. " +
-        "While perform mode is ON the bridge and MCP tools will skip nonessential compute: " +
-        "auto preview captures, high-frequency event streaming, snapshots, and externalization " +
-        "are suppressed. This flag is advisory — tools that honour it check " +
+        "While perform mode is ON, tools that honor the advisory flag skip nonessential compute. " +
+        "The built-in guard currently suppresses auto preview captures; future tools can opt in " +
+        "by checking " +
         "op('/').fetch('tdmcp_perform_mode', False) before doing expensive work. " +
         "It does NOT stop the TD timeline or kill audio/video processing.",
     ),
@@ -82,8 +82,8 @@ export async function setPerformModeImpl(ctx: ToolContext, args: SetPerformModeA
       const action = report.enabled ? "skip" : "resume";
       const summary =
         `Perform mode ${onOff(report.enabled)} (was ${onOff(report.was)}). ` +
-        `The bridge and MCP tools will ${action} nonessential compute ` +
-        "(preview captures, event streaming, externalization).";
+        `Tools that honor the advisory flag will ${action} nonessential compute; ` +
+        "the built-in guard currently covers preview captures.";
       return jsonResult(summary, report);
     },
   );
@@ -96,10 +96,9 @@ export const registerSetPerformMode: ToolRegistrar = (server, ctx) => {
       title: "Set perform mode",
       description:
         "Toggle perform mode — the one switch the artist flips before going live. " +
-        "When enabled, the bridge and MCP tools skip nonessential compute: auto preview " +
-        "captures, high-frequency event streaming, snapshots, and externalization are " +
-        "suppressed, reducing the risk of a hitch mid-show. The flag is stored on the " +
-        "TD root op (op('/').store('tdmcp_perform_mode', ...)) so any tool can read it. " +
+        "When enabled, tdmcp stores an advisory flag that tools can read before doing " +
+        "nonessential compute; the built-in guard currently suppresses auto preview captures. " +
+        "The flag is stored on the TD root op (op('/').store('tdmcp_perform_mode', ...)). " +
         "Advisory: this does not stop the TD timeline or kill audio/video processing. " +
         "Call with enabled=false after the show to resume normal operation.",
       inputSchema: setPerformModeSchema.shape,

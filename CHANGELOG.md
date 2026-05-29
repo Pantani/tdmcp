@@ -51,8 +51,9 @@ session is still required.
   `CLAUDE.md`/`AGENTS.md` seeded with tdmcp operator conventions + TD render-coordinate
   rules.
 - **`set_perform_mode`** (CLI `perform-mode`) — toggle a perform-mode flag (stored on
-  the TD root + `ui.performMode`) so the bridge and MCP tools skip nonessential
-  compute (preview captures, event streaming, externalization) during a live show.
+  the TD root + `ui.performMode`) so tools can skip nonessential compute during a
+  live show. The built-in guard currently suppresses preview captures; other tools
+  can opt in by reading `tdmcp_perform_mode`.
 - **TD-depth foundation:** `read_parameter_modes` (CLI `nodes modes`) reads constant /
   expression / bind / export state for a node's parameters, and `set_parameter_expression`
   (CLI `nodes expr`) switches a single parameter into expression mode with rollback on

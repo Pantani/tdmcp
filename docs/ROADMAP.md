@@ -391,7 +391,7 @@ tracking is on `main` in-tree, not in the 0.4.0 CHANGELOG.)
 | `snapshot_td_graph` compact mode | Token-optimized TDN-style read (type-default hoisting, expr/bind shorthand, inline short arrays) — Embody's `read_tdn` is ~20–90× cheaper than op-walks *(Embody-mined)* | M | ☐ |
 | `manage_annotation` + enclosed ops | Agents add network boxes/comments + query ops enclosed by a box → self-documenting networks *(Embody-mined)* | S | ☐ |
 | `write_agent_guide` | Emit a project-local `CLAUDE.md`/`AGENTS.md` seeded with TDMCP operator conventions + render-coordinate rules *(Embody-mined)* | S | ☐ |
-| `set_perform_mode` | Bridge suspends nonessential MCP/externalization compute during a live show — VJ-critical *(Embody-mined)* | M | ☐ |
+| `set_perform_mode` | Advisory live-show flag; built-in guard suppresses preview captures, and future tools can opt in before expensive work — VJ-critical *(Embody-mined)* | M | ☐ |
 
 **Body tracking — on `main` (in-tree; not in the 0.4.0 CHANGELOG):** `setup_body_tracking`, `create_pose_tracking`,
 `create_pose_skeleton`, `create_body_reactive` are registered in `src/tools/layer1/`, with recipes
