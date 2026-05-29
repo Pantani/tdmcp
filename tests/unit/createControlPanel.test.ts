@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildPanelScript, parseReport } from "../../src/tools/layer2/createControlPanel.js";
+import {
+  buildPanelScript,
+  parseReport,
+  toTdCustomParameterName,
+} from "../../src/tools/layer2/createControlPanel.js";
 
 /** Decodes the base64 payload the generated script embeds, so tests can assert on it. */
 function decodePayload(script: string): unknown {
@@ -45,6 +49,15 @@ describe("buildPanelScript", () => {
     expect(script).toContain("_PM = type(_tp.mode)");
     expect(script).toContain("_tp.mode = _PM.EXPRESSION");
     expect(script).toContain("print(json.dumps(report))");
+  });
+});
+
+describe("toTdCustomParameterName", () => {
+  it("matches TD custom-parameter normalization for labels with camelCase and symbols", () => {
+    expect(toTdCustomParameterName("CamZoom")).toBe("Camzoom");
+    expect(toTdCustomParameterName("ring Radius")).toBe("Ringradius");
+    expect(toTdCustomParameterName("3d size")).toBe("P3dsize");
+    expect(toTdCustomParameterName("")).toBe("Par");
   });
 });
 

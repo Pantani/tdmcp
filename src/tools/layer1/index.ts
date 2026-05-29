@@ -45,6 +45,7 @@ import { registerCreateProjectionMapping } from "./createProjectionMapping.js";
 import { registerCreateRaymarchScene } from "./createRaymarchScene.js";
 import { registerCreateSetNavigator } from "./createSetNavigator.js";
 import { registerCreateShaderLib } from "./createShaderLib.js";
+import { registerCreateShaderPark } from "./createShaderPark.js";
 import { registerCreateSimulation } from "./createSimulation.js";
 import { registerCreateSpectrum } from "./createSpectrum.js";
 import { registerCreateStrobe } from "./createStrobe.js";
@@ -106,6 +107,7 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateColorGrade,
   registerImportModel,
   registerCreateShaderLib,
+  registerCreateShaderPark,
   registerCreateVideoSynth,
   registerCreateDepthSilhouette,
   registerCreateKineticText,

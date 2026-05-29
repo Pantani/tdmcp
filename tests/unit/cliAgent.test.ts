@@ -504,6 +504,15 @@ describe("tdmcp-agent CLI — pending items (0.9.0)", () => {
     expect(JSON.stringify(JSON.parse(r.stdout).input)).toContain("instances");
   });
 
+  it("schema shaderpark exposes code and uniform_values", async () => {
+    const r = await runCli(["schema", "shaderpark"]);
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.command).toBe("shaderpark");
+    expect(JSON.stringify(doc.input)).toContain("uniform_values");
+    expect(JSON.stringify(doc.input)).toContain("Shader Park sculpture code");
+  });
+
   it("schema operators exposes the semantic opt-in", async () => {
     const r = await runCli(["schema", "operators"]);
     expect(r.code).toBe(0);

@@ -27,3 +27,7 @@ docs/.vitepress/cache/
 # Generated tool reference — rebuilt by `npm run docs:gen` (runs before every docs
 # build, locally and in CI), so it's a build artifact, not source.
 docs/reference/tools.md
+
+# External Shader Park TouchDesigner plugin fetched on demand by
+# `npm run shader-park:tox`; do not vendor release binaries into source.
+vendor/shader-park/*.tox
