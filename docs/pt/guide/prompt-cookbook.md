@@ -44,6 +44,42 @@ capturada ao vivo do TouchDesigner.*
 
 *Um atrator estranho de verdade (de Jong) — pontos de órbita brilhando no preto, com um botão de Velocidade para evoluí-lo.*
 
+> *"Me dê um visual de sintetizador de vídeo analógico dos anos 70 — padrões de
+> interferência suaves e scanlines rolando em verde-azulado elétrico e rosa."*
+
+<video src="/examples/analog-video-synth.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Padrões procedurais de lissajous / interferência / scanline animados ao longo do
+tempo com controles de frequência e cor — uma lavagem de osciloscópio estilo
+Rutt-Etra autossuficiente, sem precisar de nenhuma filmagem.*
+
+> *"Construa um túnel fractal por raymarching que eu possa atravessar voando, ciano
+> brilhante no preto, com um botão de Velocidade."*
+
+<video src="/examples/raymarched-tunnel.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Uma cena de campo de distância com sinal (SDF) renderizada inteiramente num GLSL
+TOP — um túnel infinito que você atravessa voando, com controles de Velocidade da
+câmera e de cor. Sem nós de geometria, só matemática.*
+
+> *"Esculpa um blob de metaball macio e morfando em 3D que respira devagar,
+> superfície iridescente num palco escuro."*
+
+<video src="/examples/shader-park-blobs.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Uma escultura SDF estilo Shader Park (esferas e ruído mesclados) compilada num GLSL
+TOP, com controles de Velocidade de morph e de superfície — volumes orgânicos, tipo
+argila, que pulsam e se fundem.*
+
+> *"Me puxe para um túnel de feedback infinito com zoom da minha webcam, deixando
+> rastros e girando, magenta profundo."*
+
+<video src="/examples/feedback-tunnel-infinite.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Um loop de feedback de zoom infinito dedicado (zoom + rotação + decay) semeado a
+partir de qualquer fonte, com botões de Zoom / Giro / Rastro — o clássico túnel de
+"cair dentro da tela".*
+
 ## Reativo a áudio
 
 > *"Faça um analisador de espectro com barras coloridas que reagem à minha música."*
@@ -63,6 +99,33 @@ um visual, geralmente com um botão de *Sensibilidade*. Veja a
 [nota sobre permissão de microfone](/pt/guide/troubleshooting#macos-microphone-camera-permission)
 no macOS, ou peça um **tom de teste** em vez do mic enquanto experimenta.
 
+> *"Construa uma bola 3D de espinhos que se projetam para fora no grave e brilham
+> nos agudos — mostre o preview num beat de teste."*
+
+<video src="/examples/audio-reactive-3d-spikes.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Uma geometria 3D renderizada cujo deslocamento, escala e rotação são ligados a
+bandas de áudio ao vivo (grave / médio / agudo) com um botão de Sensibilidade — um
+sólido espinhento e respirante que dança com a faixa. Usa uma fonte sintética, então
+dá preview sem permissão do mic.*
+
+> *"Faça sidechain desta camada com o bumbo para ela abaixar e voltar pulsando a
+> cada batida, como um compressor."*
+
+*Um seguidor de envelope com ataque/release e gate/duck — faça sidechain da
+opacidade ou do brilho de uma camada com o bumbo para ela pulsar no tempo, indo além
+de um simples Lag de suavização. O "pump de sidechain" que todo produtor de
+eletrônica conhece, aplicado a um visual.*
+
+### MIDI & instrumentos
+
+> *"Faça cada nota do meu teclado MIDI disparar um estouro de cor diferente — e me
+> deixe testar sem plugar nada."*
+
+*Mapeia notas MIDI recebidas para canais reativos por nota (um flash ou estouro por
+altura), com uma fonte de notas sintética embutida, então dá preview e você pode
+ensaiar o look antes do equipamento estar conectado.*
+
 ## Reativo a câmera & movimento
 
 A contraparte da reatividade ao áudio — guie um visual pelo movimento ou pelo
@@ -79,6 +142,16 @@ brilho na frente da sua webcam.
 *brilho* mais um botão de *Sensibilidade*. Como o mic, a câmera ao vivo dispara o
 [popup de permissão do macOS](/pt/guide/troubleshooting#macos-microphone-camera-permission)
 — ou peça uma **fonte sintética de teste** para experimentar sem câmera.
+
+> *"Recorte meu corpo como uma silhueta limpa que eu possa preencher com uma textura
+> em movimento — sem câmera de profundidade, use minha webcam."*
+
+<video src="/examples/depth-silhouette-mask.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Um matte de silhueta/corpo extraído de uma fonte de profundidade ou vídeo (sem
+dispositivo por padrão), gerado como uma máscara onde você encaixa um visual — sua
+forma vira uma janela para outra camada. Normalmente isso exige um Kinect; aqui
+funciona com uma webcam comum.*
 
 ## Partículas & 3D
 
@@ -105,6 +178,42 @@ demais para um clipe leve).*
 **O que você recebe:** um sistema de partículas ou geometria com botões de *Arrasto
 / Turbulência / Gravidade / Vida* para moldar o movimento.
 
+> *"Mostre uma esfera metálica polida numa mesa giratória com iluminação de estúdio
+> realista e reflexos suaves."*
+
+<video src="/examples/pbr-product-spin.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Uma cena 3D baseada em física (material PBR + iluminação de ambiente + Render TOP)
+com controles de rugosidade/metalicidade e um botão de giro — um render de estúdio
+convincente de uma primitiva, não um cubo chapado padrão do TD.*
+
+> *"Faça uma nuvem de pontos de uma esfera flutuando devagar, pontinhos brilhantes
+> que cintilam, no preto profundo."*
+
+![Uma nuvem de pontos de uma esfera, milhares de pontos brilhantes cintilando no preto](/examples/point-cloud-drift.png)
+
+*Um render de nuvem de pontos de uma superfície amostrada (esfera/grade/modelo) como
+milhares de pontos na GPU com controles de tamanho/jitter e deriva — um brilho
+volumétrico parecido com uma constelação.*
+
+> *"Empurre a imagem da minha webcam para um relevo 3D, onde as áreas claras saltam
+> em direção à câmera, iluminadas de lado."*
+
+<video src="/examples/depth-displacement-relief.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Um plano deslocado em geometria 2.5D real por um mapa de profundidade/luminância via
+um estágio de vértice GLSL MAT, com controle de Quantidade de profundidade e
+iluminação — sua imagem vira um terreno esculpido e iluminado de lado.*
+
+> *"Renderize uma cena 3D com sombras de oclusão de ambiente e use a profundidade
+> dela para empurrar outra imagem em relevo — e eu não tenho câmera de profundidade."*
+
+<video src="/examples/multipass-depth-no-camera.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Um render 3D multi-passe (Render + passe de SSAO) que também emite uma saída de
+**profundidade sintética**, que então alimenta o depth-displacement/silhueta — 3D com
+sombras de contato mais um mapa de profundidade fabricado por software.*
+
 ## Vídeo & câmera
 
 > *"Passe minha webcam por detecção de bordas, um RGB split e um loop de feedback
@@ -124,6 +233,15 @@ sintética em vez de uma webcam ao vivo).*
 ([Big Buck Bunny](https://peach.blender.org), CC-BY).*
 
 > *"Pegue minha webcam e deixe com cara de fita VHS velha e degradada."*
+
+> *"Monte dois decks de vídeo com um crossfader grande para eu misturar dois clipes
+> como um DJ."*
+
+<video src="/examples/dj-decks-crossfade.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Decks A/B mesclados por um crossfader mestre (Cross TOP) com ganho por deck; cada
+deck puxa uma fonte TOP ou uma fonte de teste embutida — o equivalente visual de uma
+mesa de DJ.*
 
 ## Texto & títulos
 
@@ -145,6 +263,24 @@ sintética em vez de uma webcam ao vivo).*
 composta sobre seu visual ou em fundo transparente — pronta para mandar à saída.
 Ótimo para letras, títulos, nomes de músicas e créditos.
 
+> *"Pisque a palavra 'DROP' grande e centralizada, no ritmo da batida e sumindo
+> entre os golpes."*
+
+![A palavra DROP grande e centralizada sobre um visual, piscando no ritmo](/examples/kinetic-lyrics-flash.png)
+
+*Tipografia de letra animada que pisca/pulsa/desliza; o flash modula o **alpha**,
+então o texto desaparece (sobre seu visual) em vez de ir para o preto, sincronizável
+à batida. Expõe a palavra, o tamanho e a taxa do flash.*
+
+> *"Faça o nome do meu festival em letras 3D extrudadas grossas de cromo, girando
+> devagar com um holofote."*
+
+<video src="/examples/3d-extruded-title.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Tipo 3D extrudado (Text SOP → bevel/extrude → material + Render) com rotação e
+iluminação — letras volumétricas de verdade que você pode iluminar e girar, não uma
+sobreposição de texto chapada.*
+
 ## Performance ao vivo & controle
 
 > *"Adicione botões de feedback, zoom, giro e blur para eu tocar isto ao vivo."*
@@ -159,6 +295,20 @@ composta sobre seu visual ou em fundo transparente — pronta para mandar à sa�
 
 > *"Mapeie o primeiro fader do meu controlador MIDI para o botão de
 > Sensibilidade."*
+
+> *"Monte uma grade de botões estilo Ableton para eu disparar meus looks salvos ao
+> vivo, um toque cada."*
+
+*Uma grade de botões que disparam cues (reaproveitando o motor de recall/morph do
+manage_cue) — toque numa célula para pular ou morfar para uma cena salva, abrível no
+modo Perform como uma superfície de toque.*
+
+> *"Faça uma grade de 16 passos que dispara um strobe nas batidas fortes e um efeito
+> nas fracas, travada no meu tempo."*
+
+*Uma grade de passos por compasso/batida que dispara um parâmetro ou cue por passo
+ativo — a contraparte determinística e programável do auto-VJ; ligue e desligue
+passos para compor um padrão repetido travado no relógio.*
 
 ## Saída & mapeamento
 
@@ -184,6 +334,95 @@ alinhar com uma parede, tela ou objeto.*
 > *"Isto está lento — ache o gargalo e otimize."*
 
 > *"Arrume o layout para eu conseguir ler."*
+
+## Efeitos e looks marcantes
+
+> *"Dobre minha webcam num caleidoscópio de seis lados girando devagar, em tons de
+> joia profundos, e me mostre um preview."*
+
+<video src="/examples/kaleidoscope-webcam.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Um espelho de dobra polar em GLSL ao vivo transforma qualquer fonte numa mandala
+simétrica; expõe os Segmentos e um botão de rotação/Velocidade. Apontado para a
+webcam, faz a sala desabrochar em pétalas caleidoscópicas.*
+
+> *"Faça meu vídeo parecer um arquivo corrompido que borra e derrete a cada corte
+> seco — datamosh pesado."*
+
+<video src="/examples/datamosh-pixel-melt.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Um borrão de deslocamento de pixels guiado por feedback que sangra vetores de
+movimento entre quadros, com controles de Quantidade/Decay — o clássico look de
+"codec quebrado" que floresce e derrete, numa fonte de teste padrão (troque pelo seu
+clipe).*
+
+> *"Transforme isto em pontos de meio-tom âmbar quentes, como impressão de jornal
+> antigo, e mostre o preview."*
+
+![Uma imagem convertida em pontos de meio-tom âmbar, estilo impressão de jornal antigo](/examples/halftone-amber-print.png)
+
+*Uma tela de meio-tom em GLSL converte a imagem numa grade de pontos de tinta cujo
+tamanho acompanha o brilho; expõe a escala dos pontos / Ângulo / matiz. O tom âmbar
+mais o fundo branco-papel dão uma sensação de impressão retrô.*
+
+> *"Distorça esta filmagem com uma distorção líquida fluida que ondula como calor
+> sobre o quadro inteiro."*
+
+<video src="/examples/displacement-warp-liquid.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Guia um Displace TOP a partir de um campo de ruído animado, então a fonte ondula e
+flui, com controles de Quantidade/Velocidade — uma distorção de calor / submersa
+sobre qualquer entrada.*
+
+> *"Dê a isto uma correção de cor cinematográfica teal-and-orange — afunde um pouco
+> os pretos e levante as altas-luzes."*
+
+![Uma imagem com correção de cor cinematográfica teal-and-orange](/examples/cinematic-color-grade.png)
+
+*Uma correção de lift/gamma/gain + saturação/matiz (com LUT opcional) sobre qualquer
+fonte, expondo as rodas como botões — o look teal/laranja de Hollywood como uma
+camada de finalização.*
+
+> *"Quando eu mover este slider, faça um corte com glitch do primeiro clipe para o
+> segundo, com um estouro de ruído digital."*
+
+<video src="/examples/transition-glitch-cut.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Uma transição A→B sobre um único botão de Progresso de 0–1 com estilos selecionáveis
+(dissolve / luma_wipe / slide / zoom / glitch_cut) — arraste o fader para fazer um
+wipe entre duas fontes no meio do show.*
+
+## Mixagem e camadas
+
+> *"Empilhe quatro camadas com modos de mistura e opacidade, cada uma com mute e
+> solo, para eu mixar um look na hora."*
+
+*Um compositor de N camadas com modo de mistura + opacidade + mute/solo por camada e
+uma faixa de controle gerada — uma pilha de camadas estilo Photoshop/After Effects
+que você pode tocar.*
+
+## Visuais orientados a dados
+
+> *"Puxe o preço do BTC ao vivo de uma API web e controle a cor e a velocidade do
+> visual pela rapidez com que ele se move."*
+
+*O create_data_source puxa um feed JSON/web ao vivo para canais CHOP; o
+create_data_reactive mapeia esses canais nos parâmetros de um visual com remapeamento
+de faixa por mapeamento — a contraparte de dados da reatividade ao áudio.*
+
+> *"Transforme esta planilha de vendas mensais em barras 3D animadas que crescem, com
+> rótulos de valor."*
+
+*Uma rede de visualização orientada a dados (barras/gráfico a partir de uma tabela)
+com um botão de Escala e uma entrada animada — um infográfico em tempo real e
+tocável, não um gráfico estático.*
+
+> *"Clone este cartãozinho uma vez por linha da minha tabela, cada um com o nome
+> daquela linha."*
+
+*Um Replicator COMP que clona um COMP de template por linha de um Table DAT,
+parametrizando cada clone a partir da sua linha — instanciamento orientado a dados de
+sub-redes inteiras, não só de geometria.*
 
 ## Trabalhando a partir das suas notas (vault Obsidian)
 

@@ -221,3 +221,14 @@ directly.
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
 | 2026-05-28 | Initial build | coverage harness + 3 agents + 2 skills | make coverage work repeatable, code-scoped, and gate-backed |
+
+## Harness: cookbook examples
+
+**Goal:** curate and write new visual examples for the prompt cookbook docs (EN + PT) — surprising things tdmcp can do that aren't shown yet.
+
+**Trigger:** when asked to add more cookbook examples, create visual examples for the documentation, show more surprising things you can do with tdmcp, expand the prompt cookbook, "mais exemplos visuais", or any request to add prompts + results to the cookbook — use the `tdmcp-cookbook-examples` skill (curator → EN writer ∥ PT writer → QA). Simple questions can be answered directly.
+
+**Change log:**
+| Date | Change | Target | Reason |
+|------|--------|--------|--------|
+| 2026-05-29 | Initial build | 2 agents + 1 skill | extend prompt cookbook with surprising examples for all tools not yet shown |
