@@ -784,10 +784,9 @@ export function searchPackages(query = ""): PackageManifest[] {
       pkg.supportLevel,
       ...pkg.aliases,
       ...pkg.tags,
-    ]
-      .join(" ")
-      .toLowerCase();
-    return haystack.includes(q);
+    ].join(" ");
+    const normalizedHaystack = normalizePackageId(haystack);
+    return normalizedHaystack.includes(q);
   });
 }
 

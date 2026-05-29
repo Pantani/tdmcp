@@ -14,6 +14,38 @@ interface GithubRelease {
   assets?: GithubReleaseAsset[];
 }
 
+function isZipAsset(asset: GithubReleaseAsset): boolean {
+  return asset.name.toLowerCase().endsWith(".zip");
+}
+
+function isToxAsset(asset: GithubReleaseAsset): boolean {
+  return asset.name.toLowerCase().endsWith(".tox");
+}
+
+function filterAssetsByName(
+  assets: GithubReleaseAsset[],
+  assetFilter?: string,
+): GithubReleaseAsset[] {
+  if (!assetFilter) return assets;
+  const needle = assetFilter.toLowerCase();
+  const filtered = assets.filter((asset) => asset.name.toLowerCase().includes(needle));
+  if (filtered.length === 0) {
+    const available = assets.map((asset) => asset.name).join(", ") || "(none)";
+    throw new Error(`No release asset matching '${assetFilter}'. Available: ${available}`);
+  }
+  return filtered;
+}
+
+function findPreferredAsset(
+  assets: GithubReleaseAsset[],
+  predicate: (asset: GithubReleaseAsset) => boolean,
+  pattern?: RegExp,
+): GithubReleaseAsset | undefined {
+  return (
+    assets.find((asset) => pattern?.test(asset.name) && predicate(asset)) ?? assets.find(predicate)
+  );
+}
+
 function refKind(ref: string): "heads" | "tags" {
   if (/^(v?\d+\.\d+|release[-/]|tags\/)/i.test(ref)) return "tags";
   return "heads";
@@ -42,6 +74,7 @@ export function createGithubDownloadPlan(pkg: PackageManifest, pin?: string): Pa
 export async function resolveGithubReleaseDownloadPlan(
   pkg: PackageManifest,
   fetchImpl: typeof fetch = fetch,
+  assetFilter?: string,
 ): Promise<PackageDownloadPlan | undefined> {
   if (pkg.source.type !== "github" || !pkg.source.repo) return undefined;
   const response = await fetchImpl(
@@ -53,16 +86,20 @@ export async function resolveGithubReleaseDownloadPlan(
       },
     },
   );
-  if (!response.ok) return undefined;
+  if (!response.ok) {
+    if (assetFilter) {
+      throw new Error(
+        `GitHub API returned ${response.status} while resolving release asset '${assetFilter}'.`,
+      );
+    }
+    return undefined;
+  }
   const release = (await response.json()) as GithubRelease;
   const pattern = pkg.installStrategy.releaseAssetPattern
     ? new RegExp(pkg.installStrategy.releaseAssetPattern, "i")
     : undefined;
-  const assets = release.assets ?? [];
-  const zipAsset =
-    assets.find(
-      (asset) => pattern?.test(asset.name) && asset.name.toLowerCase().endsWith(".zip"),
-    ) ?? assets.find((asset) => asset.name.toLowerCase().endsWith(".zip"));
+  const assets = filterAssetsByName(release.assets ?? [], assetFilter);
+  const zipAsset = findPreferredAsset(assets, isZipAsset, pattern);
   if (zipAsset) {
     return {
       ref: release.tag_name,
@@ -72,10 +109,7 @@ export async function resolveGithubReleaseDownloadPlan(
       url: zipAsset.browser_download_url,
     };
   }
-  const toxAsset =
-    assets.find(
-      (asset) => pattern?.test(asset.name) && asset.name.toLowerCase().endsWith(".tox"),
-    ) ?? assets.find((asset) => asset.name.toLowerCase().endsWith(".tox"));
+  const toxAsset = findPreferredAsset(assets, isToxAsset, pattern);
   if (toxAsset) {
     return {
       ref: release.tag_name,
@@ -84,6 +118,12 @@ export async function resolveGithubReleaseDownloadPlan(
       strategy: "github-release-asset",
       url: toxAsset.browser_download_url,
     };
+  }
+  if (assetFilter) {
+    const available = assets.map((asset) => asset.name).join(", ") || "(none)";
+    throw new Error(
+      `No downloadable .zip or .tox release asset matching '${assetFilter}'. Available: ${available}`,
+    );
   }
   if (release.zipball_url) {
     return {

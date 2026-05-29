@@ -61,6 +61,11 @@ function fail(message: string, code = 2): PackageCliResult {
   return { stdout: "", stderr: `${message}\n`, code };
 }
 
+function legacyVersionPin(version: string | boolean | undefined): string | undefined {
+  if (typeof version !== "string") return undefined;
+  return version.toLowerCase() === "latest" ? undefined : version;
+}
+
 function usage(): string {
   return textList([
     "tdmcp packages — community library package manager",
@@ -166,12 +171,8 @@ export async function runPackageCli(
         dryRun: Boolean(values["dry-run"]),
         projectPath: typeof values.project === "string" ? values.project : undefined,
         name: typeof values.name === "string" ? values.name : undefined,
-        pin:
-          typeof values.pin === "string"
-            ? values.pin
-            : typeof values.version === "string"
-              ? values.version
-              : undefined,
+        pin: typeof values.pin === "string" ? values.pin : legacyVersionPin(values.version),
+        assetFilter: typeof values.asset === "string" ? values.asset : undefined,
         yes: Boolean(values.yes),
         allowPythonDeps: Boolean(values["allow-python-deps"]),
         allowExternal: Boolean(values["allow-external"]),

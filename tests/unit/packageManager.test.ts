@@ -59,6 +59,10 @@ describe("package registry", () => {
 
   it("searches manifests without including deferred packages as install targets", () => {
     expect(searchPackages("shader").map((pkg) => pkg.id)).toContain("shader-park-td");
+    expect(searchPackages("body tracking").map((pkg) => pkg.id)).toContain(
+      "mediapipe-touchdesigner",
+    );
+    expect(searchPackages("object detection").map((pkg) => pkg.id)).toContain("td-yolo");
     expect(resolvePackage("pytorchtop")).toBeUndefined();
     expect(getDeferredPackage("pytorchtop")?.reason).toMatch(/too heavy/i);
   });
@@ -154,6 +158,31 @@ describe("package install planning", () => {
       archiveName: "ShaderPark.tox",
       kind: "file",
       url: "https://asset/tox",
+    });
+  });
+
+  it("honors an explicit release asset selector", async () => {
+    const manifest = resolvePackage("shader-park-td");
+    expect(manifest).toBeDefined();
+    if (!manifest) throw new Error("shader-park-td manifest missing");
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        tag_name: "v1.2.3",
+        zipball_url: "https://zipball",
+        assets: [
+          { name: "ShaderPark-windows.zip", browser_download_url: "https://asset/windows" },
+          { name: "ShaderPark-mac.zip", browser_download_url: "https://asset/mac" },
+        ],
+      }),
+    })) as unknown as typeof fetch;
+    await expect(resolveGithubReleaseDownloadPlan(manifest, fetchImpl, "linux")).rejects.toThrow(
+      /No release asset matching/,
+    );
+    const plan = await resolveGithubReleaseDownloadPlan(manifest, fetchImpl, "mac");
+    expect(plan).toMatchObject({
+      archiveName: "ShaderPark-mac.zip",
+      url: "https://asset/mac",
     });
   });
 
@@ -310,6 +339,15 @@ describe("package doctor and CLI", () => {
       );
       expect(dry.code).toBe(0);
       expect(JSON.parse(dry.stdout).dryRun).toBe(true);
+
+      const latest = await runPackageCli(
+        ["install", "owner/repo", "--version", "latest", "--dry-run", "--json"],
+        { rootDir: root },
+      );
+      expect(latest.code).toBe(0);
+      const latestReport = JSON.parse(latest.stdout);
+      expect(latestReport.download.ref).toBe("main");
+      expect(latestReport.download.url).not.toContain("refs/heads/latest");
 
       const doctor = await runPackageCli(["doctor", "comfyui-td", "--json"], { rootDir: root });
       expect(doctor.code).toBe(0);

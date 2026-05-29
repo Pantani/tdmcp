@@ -164,14 +164,16 @@ export async function installPackage(
   }
 
   if (
-    pkg.installStrategy.preferReleaseAsset &&
+    (pkg.installStrategy.preferReleaseAsset || opts.assetFilter) &&
     !opts.pin &&
-    !opts.downloader &&
+    (!opts.downloader || opts.fetchImpl || opts.assetFilter) &&
     pkg.source.type === "github"
   ) {
     try {
-      download = (await resolveGithubReleaseDownloadPlan(pkg, opts.fetchImpl)) ?? download;
+      download =
+        (await resolveGithubReleaseDownloadPlan(pkg, opts.fetchImpl, opts.assetFilter)) ?? download;
     } catch (err) {
+      if (opts.assetFilter) throw err;
       warnings.push(
         `Could not resolve latest release asset; falling back to source archive: ${
           err instanceof Error ? err.message : String(err)

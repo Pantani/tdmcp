@@ -206,6 +206,7 @@ export interface PackageManagerOptions {
   projectPath?: string;
   name?: string;
   pin?: string;
+  assetFilter?: string;
   yes?: boolean;
   allowPythonDeps?: boolean;
   allowExternal?: boolean;
