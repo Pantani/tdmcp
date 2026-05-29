@@ -1,0 +1,37 @@
+{
+  "id": "animus_rings_visualizer",
+  "name": "Animus Rings Visualizer",
+  "description": "A native TouchDesigner audio rings visualizer inspired by codygibb/animus-visualizer. It uses a synthetic oscillator by default, so it previews without microphone permissions or any Processing/Java runtime.",
+  "tags": ["audio-reactive", "rings", "music", "animus", "native-td"],
+  "difficulty": "beginner",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "osc",
+      "type": "audiooscillatorCHOP",
+      "parameters": { "freq": 96, "amp": 0.85 },
+      "comment": "Synthetic audio driver; swap for Audio Device In or Audio File In for a live set"
+    },
+    {
+      "name": "audio_tex",
+      "type": "choptoTOP",
+      "comment": "Converts the audio channel into a tiny texture the shader can sample"
+    },
+    {
+      "name": "rings",
+      "type": "glslTOP",
+      "parameters": { "outputresolution": "custom", "resolutionw": 1280, "resolutionh": 720 },
+      "comment": "Draws radial rings and droplets from the audio texture"
+    },
+    { "name": "out1", "type": "nullTOP" }
+  ],
+  "connections": [
+    { "from": "osc", "to": "audio_tex" },
+    { "from": "audio_tex", "to": "rings" },
+    { "from": "rings", "to": "out1" }
+  ],
+  "glsl_code": {
+    "rings": "out vec4 fragColor;\nvoid main(){\n    vec2 uv = vUV.st;\n    vec2 p = (uv - 0.5) * vec2(1.777, 1.0) * 2.0;\n    float radius = length(p);\n    float angle = atan(p.y, p.x);\n    float amp = abs(texture(sTD2DInputs[0], vec2(fract(radius * 0.35), 0.5)).r);\n    float ringPhase = fract(radius * 9.0 - amp * 2.5);\n    float ring = 1.0 - smoothstep(0.035, 0.09, abs(ringPhase - 0.5));\n    float droplets = smoothstep(0.96, 1.0, sin(angle * 18.0 + amp * 12.0) * 0.5 + 0.5);\n    float core = smoothstep(0.55 + amp * 0.25, 0.0, radius);\n    vec3 ink = vec3(0.025, 0.015, 0.045);\n    vec3 cyan = vec3(0.10, 0.92, 1.0);\n    vec3 magenta = vec3(1.0, 0.15, 0.55);\n    vec3 col = ink + cyan * ring * (0.45 + amp * 1.8);\n    col += magenta * droplets * ring * (0.2 + amp * 1.4);\n    col += vec3(1.0, 0.75, 0.35) * core * (0.3 + amp);\n    fragColor = TDOutputSwizzle(vec4(col, 1.0));\n}\n"
+  },
+  "preview_description": "Concentric neon rings pulse from a warm center, with small radial droplet accents reacting to the audio signal."
+}

@@ -112,6 +112,7 @@ import {
   createRaymarchSceneSchema,
 } from "../tools/layer1/createRaymarchScene.js";
 import { createShaderLibImpl, createShaderLibSchema } from "../tools/layer1/createShaderLib.js";
+import { createShaderParkImpl, createShaderParkSchema } from "../tools/layer1/createShaderPark.js";
 import { createSimulationImpl, createSimulationSchema } from "../tools/layer1/createSimulation.js";
 import { createSpectrumImpl, createSpectrumSchema } from "../tools/layer1/createSpectrum.js";
 import { createStrobeImpl, createStrobeSchema } from "../tools/layer1/createStrobe.js";
@@ -686,6 +687,12 @@ const COMMANDS: Record<string, Command> = {
     createShaderLibSchema,
     createShaderLibImpl,
     "Instantiate a curated GLSL shader (tunnel/raymarch/fractal/…).",
+    { mutates: true },
+  ),
+  shaderpark: r(
+    createShaderParkSchema,
+    createShaderParkImpl,
+    "Compile Shader Park sculpture code into a GLSL MAT render network.",
     { mutates: true },
   ),
   videosynth: r(

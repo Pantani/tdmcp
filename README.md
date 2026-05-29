@@ -34,9 +34,10 @@ Full guides and reference live on the **docs site → <https://pantani.github.io
 | [What is tdmcp?](https://pantani.github.io/tdmcp/guide/what-is-tdmcp) | [Architecture](https://pantani.github.io/tdmcp/reference/architecture) |
 | [Install (no terminal)](https://pantani.github.io/tdmcp/guide/install) | [Tools reference](https://pantani.github.io/tdmcp/reference/tools) |
 | [Your first visual](https://pantani.github.io/tdmcp/guide/first-visual) | [Environment variables](https://pantani.github.io/tdmcp/reference/environment) |
-| [Prompt cookbook](https://pantani.github.io/tdmcp/guide/prompt-cookbook) | [CLI & local copilot](https://pantani.github.io/tdmcp/reference/cli) |
-| [Recipe gallery](https://pantani.github.io/tdmcp/guide/recipes) | [Bridge & REST API](https://pantani.github.io/tdmcp/reference/bridge-api) |
-| [Troubleshooting](https://pantani.github.io/tdmcp/guide/troubleshooting) | [Roadmap](docs/ROADMAP.md) · [Deployment](docs/DEPLOYMENT.md) |
+| [Shader Park](https://pantani.github.io/tdmcp/guide/shader-park) | [CLI & local copilot](https://pantani.github.io/tdmcp/reference/cli) |
+| [Prompt cookbook](https://pantani.github.io/tdmcp/guide/prompt-cookbook) | [Bridge & REST API](https://pantani.github.io/tdmcp/reference/bridge-api) |
+| [Recipe gallery](https://pantani.github.io/tdmcp/guide/recipes) | [Roadmap](docs/ROADMAP.md) |
+| [Troubleshooting](https://pantani.github.io/tdmcp/guide/troubleshooting) | [Deployment](docs/DEPLOYMENT.md) |
 
 🇧🇷 **Documentação em português:** <https://pantani.github.io/tdmcp/pt/>
 
