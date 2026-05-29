@@ -218,12 +218,18 @@ def _ensure_morph(comp, text):
     return h
 
 def _btn_name(s):
-    # Button COMP names must be valid TD identifiers; slot labels are arbitrary and
-    # may contain spaces/slashes/punctuation that would break create() or make
-    # bank.op() resolve as a path (e.g. 'recall_intro/drop'). Map to [A-Za-z0-9_];
-    # the displayed label and the cue key keep the raw slot string.
-    _safe = ''.join(_ch if (_ch.isalnum() or _ch == '_') else '_' for _ch in str(s))
-    return 'recall_' + (_safe.strip('_') or 'slot')
+    # Deterministic, INJECTIVE op name: ASCII-alnum chars pass through, every other
+    # char (including '_' and non-ASCII) is escaped as _<HEX>_, so distinct slot
+    # labels can NEVER collide to the same buttonCOMP (e.g. 'intro/drop' vs
+    # 'intro_drop'). Pure function of the label, so create and delete agree; the
+    # displayed label (par.label) and the cue key keep the raw slot string.
+    _out = []
+    for _ch in str(s):
+        if _ch.isascii() and _ch.isalnum():
+            _out.append(_ch)
+        else:
+            _out.append('_%X_' % ord(_ch))
+    return 'recall_' + (''.join(_out) or 'slot')
 
 def _rebuild_buttons(bank, comp, btn_cb):
     # One momentary buttonCOMP per slot + one Panel Execute DAT dispatching them via the shared
@@ -323,6 +329,10 @@ try:
                 _tbl.appendCol([_slot])
                 _hdr = _header(_tbl)
             _ci = _hdr.index(_slot)
+            # Clear the column first: a re-store capturing FEWER params must not leave
+            # stale cells behind (recall reads the Table column, skipping blank cells).
+            for _r in range(1, _tbl.numRows):
+                _tbl[_r, _ci] = ''
             # Ensure a row exists for each captured param, then write repr() into the slot cell.
             _rows = {_tbl[_r, 0].val: _r for _r in range(1, _tbl.numRows)}
             for _k, _v in _vals.items():
