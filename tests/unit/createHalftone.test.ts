@@ -416,10 +416,19 @@ describe("create_halftone", () => {
       });
 
       const shaderScript = scripts.find((s) => s.includes("out vec4 fragColor"));
-      expect(shaderScript).toContain("uniform int   uStyle");
+      expect(shaderScript).toContain("uniform float uStyle");
       expect(shaderScript).toContain("uniform float uDotSize");
       expect(shaderScript).toContain("uniform float uAngle");
       expect(shaderScript).toContain("uniform float uMix");
+      // pixel-size source must be the output-info built-in, not the input texture's res.zw
+      expect(shaderScript).toContain("uTDOutputInfo.res.xy");
+      expect(shaderScript).not.toContain("uTD2DInfos[0].res.zw");
+      // uStyle float→int cast and branch variable must use 'style', not raw 'uStyle'
+      expect(shaderScript).toContain("int style = int(uStyle)");
+      expect(shaderScript).toContain("style == 0");
+      expect(shaderScript).toContain("style == 1");
+      expect(shaderScript).toContain("style == 2");
+      expect(shaderScript).not.toContain("uStyle == ");
     });
 
     it("shader does not reference undefined globals (no uTime)", async () => {
