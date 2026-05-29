@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { runCli, runWatch } from "../../src/cli/agent.js";
@@ -40,6 +43,45 @@ describe("tdmcp-agent CLI", () => {
     const r = await runCli(["--version"]);
     expect(r.code).toBe(0);
     expect(r.stdout).toMatch(/tdmcp-agent \d+\.\d+\.\d+/);
+  });
+
+  it("prints a shell completion script", async () => {
+    const r = await runCli(["completion", "bash"]);
+    expect(r.code).toBe(0);
+    expect(r.stdout).toContain("complete -F _tdmcp_agent tdmcp-agent");
+    expect(r.stdout).toContain("nodes find");
+  });
+
+  it("accepts --no-color for script compatibility", async () => {
+    const r = await runCli(["info", "--dry-run", "--no-color"]);
+    expect(r.code).toBe(0);
+    expect(JSON.parse(r.stdout).command).toBe("info");
+  });
+
+  it("runs a JSON command file", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-agent-run-"));
+    try {
+      const file = join(dir, "show-plan.json");
+      writeFileSync(
+        file,
+        JSON.stringify([
+          {
+            command: "nodes create",
+            dry_run: true,
+            params: { parent_path: "/project1", type: "noiseTOP" },
+          },
+        ]),
+      );
+
+      const r = await runCli(["run", file]);
+      expect(r.code).toBe(0);
+      const doc = JSON.parse(r.stdout);
+      expect(doc.steps).toHaveLength(1);
+      expect(doc.steps[0].stdout.dryRun).toBe(true);
+      expect(doc.steps[0].stdout.command).toBe("nodes create");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("suggests the nearest command on a typo (did-you-mean)", async () => {

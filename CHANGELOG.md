@@ -69,7 +69,7 @@ session is still required.
 - **AI prompt/copilot surface:** new prompts for `fix_reactivity`, `recover_show`,
   `auto_vj_director`, `color_story`, `lyric_show`, `setlist_planner`,
   `visual_ab_compare`, `motion_critique`, and `explain_param`; a prompt catalog
-  resource at `tdmcp://prompts/{prompt_name}`; and a `creative` copilot tier.
+  resource at `tdmcp://prompts`; and a `creative` copilot tier.
 - **Library / packaging tools:** `browse_library`, `inspect_component_manifest`,
   `make_portable_tox`, `export_recipe_bundle`, `import_recipe_bundle`,
   `validate_library_asset`, `scaffold_recipe_template`, `attach_docs_as_assets`,

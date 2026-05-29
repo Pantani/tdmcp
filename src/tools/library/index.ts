@@ -287,7 +287,6 @@ export async function validateLibraryAssetImpl(_ctx: ToolContext, args: Validate
   const full = resolve(args.path);
   if (!existsSync(full)) issues.push(`Missing asset: ${full}`);
   const ext = extname(full).toLowerCase();
-  if (full.endsWith(".tox") && ext !== ".tox") issues.push("Expected a .tox extension.");
   if (args.manifest_path) {
     const manifestPath = args.manifest_path;
     try {
