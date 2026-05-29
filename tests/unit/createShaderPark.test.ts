@@ -188,6 +188,18 @@ describe("createShaderPark build", () => {
     expect(samplerScript).toContain('sampler0name = "sBaseColorMap"');
   });
 
+  it("merges partial vector uniform overrides with Shader Park defaults", async () => {
+    const { scripts } = captureBuild();
+    await run({ code: "sphere(0.45);", uniform_values: { uBaseColor: [0.25] } });
+
+    const uniformScript = scripts.find((s) => s.includes("seq.vec") && s.includes("uBaseColor"));
+    expect(uniformScript).toContain('vec8name = "uBaseColor"');
+    expect(uniformScript).toContain("_m.par.vec8valuex = 0.25");
+    expect(uniformScript).toContain("_m.par.vec8valuey = 1");
+    expect(uniformScript).toContain("_m.par.vec8valuez = 1");
+    expect(uniformScript).toContain("_m.par.vec8valuew = 1");
+  });
+
   it("exposes standard controls plus custom float inputs when expose_controls is on", async () => {
     const { scripts } = captureBuild();
     await run({ code: "let size = input();\nsphere(size);", uniform_values: { size: 0.6 } });

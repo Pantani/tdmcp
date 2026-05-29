@@ -110,6 +110,29 @@ function arrayValue(value: UniformValue | ShaderParkUniform["value"] | undefined
   return [];
 }
 
+function componentCountForUniform(uniform: ShaderParkUniform): number | undefined {
+  const vectorMatch = /^vec([2-4])$/.exec(uniform.type);
+  if (vectorMatch) return Number(vectorMatch[1]);
+  const defaults = arrayValue(uniform.value);
+  return defaults.length || undefined;
+}
+
+function vectorComponents(
+  uniform: ShaderParkUniform,
+  customValue: UniformValue | undefined,
+  defaultValue: ShaderParkUniform["value"] = uniform.value,
+): number[] {
+  const customValues = arrayValue(customValue);
+  const defaults = arrayValue(defaultValue);
+  const componentCount =
+    componentCountForUniform(uniform) ?? Math.max(customValues.length, defaults.length);
+
+  return Array.from(
+    { length: componentCount },
+    (_, component) => customValues[component] ?? defaults[component] ?? 0,
+  );
+}
+
 function scalarValue(
   uniform: ShaderParkUniform,
   args: CreateShaderParkArgs,
@@ -174,12 +197,9 @@ function expressionForUniformComponent(
 function uniformComponents(uniform: ShaderParkUniform, args: CreateShaderParkArgs): number[] {
   const custom = args.uniform_values[uniform.name];
   if (uniform.name === "resolution") return [...args.resolution];
-  if (uniform.name === "mouse")
-    return arrayValue(custom).length ? arrayValue(custom) : [0.5, 0.5, 0.5];
+  if (uniform.name === "mouse") return vectorComponents(uniform, custom, [0.5, 0.5, 0.5]);
   if (uniform.type === "float") return [scalarValue(uniform, args, custom)];
-  const customValues = arrayValue(custom);
-  if (customValues.length) return customValues;
-  return arrayValue(uniform.value);
+  return vectorComponents(uniform, custom);
 }
 
 function buildUniformScript(
