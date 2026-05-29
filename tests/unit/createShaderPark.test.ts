@@ -77,6 +77,24 @@ function parseResultData(result: { content: Array<{ type: string; text?: string 
   return JSON.parse(json);
 }
 
+function uniformScriptFor(scripts: string[], uniformName: string): string {
+  const nameAssignment = `name = ${JSON.stringify(uniformName)}`;
+  const script = scripts.find((s) => s.includes("seq.vec") && s.includes(nameAssignment));
+  if (!script) throw new Error(`uniform script did not include ${uniformName}`);
+  return script;
+}
+
+function uniformBlock(script: string, uniformName: string): string {
+  for (const line of script.split("\n")) {
+    const match = /^_m\.par\.vec(\d+)name = (.+)$/.exec(line);
+    if (!match) continue;
+    const [, index, encodedName] = match;
+    if (!index || !encodedName) continue;
+    if (JSON.parse(encodedName) === uniformName) return `vec${index}`;
+  }
+  throw new Error(`uniform script did not assign a block for ${uniformName}`);
+}
+
 describe("createShaderPark schema", () => {
   it("defaults to a self-contained Shader Park sphere render", () => {
     const parsed = createShaderParkSchema.parse({});
@@ -142,18 +160,21 @@ describe("createShaderPark build", () => {
     const { scripts } = captureBuild();
     await run({ code: "let size = input();\nsphere(size);", uniform_values: { size: 0.6 } });
 
-    const uniformScript = scripts.find((s) => s.includes("seq.vec") && s.includes("time"));
-    expect(uniformScript).toBeDefined();
-    expect(uniformScript).toContain('vec0name = "time"');
-    expect(uniformScript).toContain("absTime.seconds");
+    const uniformScript = uniformScriptFor(scripts, "time");
+    const timeBlock = uniformBlock(uniformScript, "time");
+    const opacityBlock = uniformBlock(uniformScript, "opacity");
+    const scaleBlock = uniformBlock(uniformScript, "_scale");
+    const mouseBlock = uniformBlock(uniformScript, "mouse");
+    const sizeBlock = uniformBlock(uniformScript, "size");
+
+    expect(uniformScript).toContain(`_m.par.${timeBlock}valuex.expr = "absTime.seconds`);
     expect(uniformScript).toContain("parent().par.Speed.eval()");
-    expect(uniformScript).toContain('vec1name = "opacity"');
-    expect(uniformScript).toContain("parent().par.Opacity.eval()");
-    expect(uniformScript).toContain('vec2name = "_scale"');
-    expect(uniformScript).toContain("parent().par.Scale.eval()");
-    expect(uniformScript).toContain('vec3name = "mouse"');
-    expect(uniformScript).toContain('vec6name = "size"');
-    expect(uniformScript).toContain("parent().par.Size.eval()");
+    expect(uniformScript).toContain(
+      `_m.par.${opacityBlock}valuex.expr = "parent().par.Opacity.eval()`,
+    );
+    expect(uniformScript).toContain(`_m.par.${scaleBlock}valuex.expr = "parent().par.Scale.eval()`);
+    expect(uniformScript).toContain(`_m.par.${mouseBlock}name = "mouse"`);
+    expect(uniformScript).toContain(`_m.par.${sizeBlock}valuex.expr = "parent().par.Size.eval()`);
     expect(uniformScript).toContain("else 0.6");
   });
 
@@ -176,13 +197,18 @@ describe("createShaderPark build", () => {
     const { scripts } = captureBuild();
     await run({ code: "sphere(0.45);" });
 
-    const uniformScript = scripts.find((s) => s.includes("seq.vec") && s.includes("uBaseColor"));
-    expect(uniformScript).toContain('vec6name = "uShadowStrength"');
-    expect(uniformScript).toContain('vec8name = "uBaseColor"');
-    expect(uniformScript).toContain('vec13name = "cameraPosition"');
-    expect(uniformScript).toContain("_m.par.vec13valuez.expr");
+    const uniformScript = uniformScriptFor(scripts, "uBaseColor");
+    const shadowStrengthBlock = uniformBlock(uniformScript, "uShadowStrength");
+    const baseColorBlock = uniformBlock(uniformScript, "uBaseColor");
+    const cameraPositionBlock = uniformBlock(uniformScript, "cameraPosition");
+    const useTdLightingBlock = uniformBlock(uniformScript, "useTDLighting");
+
+    expect(uniformScript).toContain(`_m.par.${shadowStrengthBlock}name = "uShadowStrength"`);
+    expect(uniformScript).toContain(`_m.par.${baseColorBlock}name = "uBaseColor"`);
+    expect(uniformScript).toContain(`_m.par.${cameraPositionBlock}name = "cameraPosition"`);
+    expect(uniformScript).toContain(`_m.par.${cameraPositionBlock}valuez.expr`);
     expect(uniformScript).toContain("parent().op('cam').par.tz.eval()");
-    expect(uniformScript).toContain('vec14name = "useTDLighting"');
+    expect(uniformScript).toContain(`_m.par.${useTdLightingBlock}name = "useTDLighting"`);
     const samplerScript = scripts.find((s) => s.includes("sampler0name"));
     expect(samplerScript).toContain("base_color_map");
     expect(samplerScript).toContain('sampler0name = "sBaseColorMap"');
@@ -192,12 +218,13 @@ describe("createShaderPark build", () => {
     const { scripts } = captureBuild();
     await run({ code: "sphere(0.45);", uniform_values: { uBaseColor: [0.25] } });
 
-    const uniformScript = scripts.find((s) => s.includes("seq.vec") && s.includes("uBaseColor"));
-    expect(uniformScript).toContain('vec8name = "uBaseColor"');
-    expect(uniformScript).toContain("_m.par.vec8valuex = 0.25");
-    expect(uniformScript).toContain("_m.par.vec8valuey = 1");
-    expect(uniformScript).toContain("_m.par.vec8valuez = 1");
-    expect(uniformScript).toContain("_m.par.vec8valuew = 1");
+    const uniformScript = uniformScriptFor(scripts, "uBaseColor");
+    const baseColorBlock = uniformBlock(uniformScript, "uBaseColor");
+    expect(uniformScript).toContain(`_m.par.${baseColorBlock}name = "uBaseColor"`);
+    expect(uniformScript).toContain(`_m.par.${baseColorBlock}valuex = 0.25`);
+    expect(uniformScript).toContain(`_m.par.${baseColorBlock}valuey = 1`);
+    expect(uniformScript).toContain(`_m.par.${baseColorBlock}valuez = 1`);
+    expect(uniformScript).toContain(`_m.par.${baseColorBlock}valuew = 1`);
   });
 
   it("exposes standard controls plus custom float inputs when expose_controls is on", async () => {
