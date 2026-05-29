@@ -47,7 +47,7 @@ export const createDatamoshSchema = z.object({
     .min(0)
     .default(0.0)
     .describe(
-      "Pixel displacement of the fed-back frame each cycle (the 'mosh wobble'). Applied via displaceTOP displaceweight. 0 = no wobble. Default 0.0.",
+      "Pixel displacement of the fed-back frame each cycle (the 'mosh wobble'). Applied via displaceTOP displaceweight1 (falls back to displaceweight on older builds). 0 = no wobble. Default 0.0.",
     ),
   resolution: z
     .tuple([z.number(), z.number()])
@@ -111,12 +111,17 @@ async function buildFeedbackEcho(
 
   // Optional displace: wobbles the fed-back frame for the mosh effect.
   // The displace map comes from the source itself (creates texture-dependent shimmer).
-  // displaceweight is the confirmed par name from KB.
+  // Par token is `displaceweight1` on TD 2025.x builds; older builds use `displaceweight`.
+  // Set defensively via Python (try displaceweight1 first) to survive across builds.
+  let dispPath: string | null = null;
   if (args.displace > 0) {
     const disp = await builder.add("displaceTOP", "displace1");
-    await builder.setParams(disp, { displaceweight: args.displace });
+    await builder.python(
+      `_d = op(${q(disp)})\n_set = False\nfor _pn in ['displaceweight1', 'displaceweight']:\n    try:\n        setattr(_d.par, _pn, ${args.displace})\n        _set = True\n        break\n    except Exception:\n        pass`,
+    );
     await builder.connect(last, disp, 0, 0);
     await builder.connect(src, disp, 0, 1);
+    dispPath = disp;
     last = disp;
   }
 
@@ -144,7 +149,7 @@ async function buildFeedbackEcho(
       default: args.decay,
       bind_to: [`${decay}.brightness1`],
     },
-    ...(args.displace > 0
+    ...(dispPath !== null
       ? [
           {
             name: "Displace",
@@ -152,7 +157,7 @@ async function buildFeedbackEcho(
             min: 0,
             max: 1,
             default: args.displace,
-            bind_to: [`${decay}.displaceweight`] as string[],
+            bind_to: [`${dispPath}.displaceweight1`] as string[],
           } satisfies ControlSpec,
         ]
       : []),
@@ -196,7 +201,9 @@ async function buildFrameBlend(
   let last: string = comp;
   if (args.displace > 0) {
     const disp = await builder.add("displaceTOP", "displace1");
-    await builder.setParams(disp, { displaceweight: args.displace });
+    await builder.python(
+      `_d = op(${q(disp)})\n_set = False\nfor _pn in ['displaceweight1', 'displaceweight']:\n    try:\n        setattr(_d.par, _pn, ${args.displace})\n        _set = True\n        break\n    except Exception:\n        pass`,
+    );
     await builder.connect(last, disp, 0, 0);
     await builder.connect(src, disp, 0, 1);
     last = disp;
@@ -280,7 +287,9 @@ async function buildTimeEcho(
   let last: string = timeMachine;
   if (args.displace > 0) {
     const disp = await builder.add("displaceTOP", "displace1");
-    await builder.setParams(disp, { displaceweight: args.displace });
+    await builder.python(
+      `_d = op(${q(disp)})\n_set = False\nfor _pn in ['displaceweight1', 'displaceweight']:\n    try:\n        setattr(_d.par, _pn, ${args.displace})\n        _set = True\n        break\n    except Exception:\n        pass`,
+    );
     await builder.connect(last, disp, 0, 0);
     await builder.connect(noiseMap, disp, 0, 1);
     last = disp;

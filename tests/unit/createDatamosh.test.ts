@@ -204,6 +204,45 @@ describe("create_datamosh", () => {
       expect(controls.some((c) => c.name === "Displace")).toBe(true);
     });
 
+    it("sets displace weight via defensive probe (displaceweight1 before displaceweight)", async () => {
+      const scripts = captureExecScripts();
+      await createDatamoshImpl(makeCtx(), {
+        name: "datamosh",
+        parent_path: "/project1",
+        mode: "feedback_echo",
+        decay: 0.9,
+        displace: 0.3,
+        resolution: [1280, 720],
+      });
+      const dispScript = scripts.find(
+        (s) => s.includes("displaceweight1") && s.includes("displaceweight"),
+      );
+      expect(dispScript).toBeDefined();
+      // displaceweight1 must be attempted before displaceweight
+      expect(dispScript!.indexOf("displaceweight1")).toBeLessThan(
+        dispScript!.lastIndexOf("displaceweight"),
+      );
+    });
+
+    it("Displace control bind_to targets the displace node with displaceweight1", async () => {
+      const scripts = captureExecScripts();
+      await createDatamoshImpl(makeCtx(), {
+        name: "datamosh",
+        parent_path: "/project1",
+        mode: "feedback_echo",
+        decay: 0.9,
+        displace: 0.3,
+        resolution: [1280, 720],
+      });
+      const controls = panelControls(scripts);
+      const displace = controls.find((c) => c.name === "Displace");
+      expect(displace).toBeDefined();
+      const bindTo = displace?.bind_to ?? [];
+      // Must target displaceweight1 (not the old displaceweight on the decay node)
+      expect(bindTo.some((t) => t.includes("displaceweight1"))).toBe(true);
+      expect(bindTo.every((t) => !t.includes("decay1"))).toBe(true);
+    });
+
     it("does NOT add a displaceTOP when displace is 0", async () => {
       const bodies = captureCreateBodies();
       await createDatamoshImpl(makeCtx(), {
