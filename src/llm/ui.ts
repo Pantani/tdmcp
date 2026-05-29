@@ -93,12 +93,9 @@ export const CHAT_HTML = `<!doctype html>
   <span class="status" id="status">connecting…</span>
   <span class="spacer"></span>
   <select class="model" id="model" title="Active local model (switches live)"></select>
-  <select class="model" id="tier" title="Tool tier">
-    <option value="standard">standard</option>
-    <option value="creative">creative</option>
-  </select>
   <button class="ghost" id="settings" title="Model endpoint settings">⚙</button>
   <label class="toggle" title="Read-only: inspect but never modify the project"><input type="checkbox" id="readonly" /> read-only</label>
+  <label class="toggle" title="Creative: also allow a few whole-look generators (offline builds). Experimental on small models."><input type="checkbox" id="creative" /> creative</label>
   <button class="ghost" id="escalate" title="Build a prompt to continue in Claude/Codex">Escalate ⇪</button>
   <button class="ghost" id="newchat">New chat</button>
 </header>
@@ -256,7 +253,7 @@ async function send(text) {
   try {
     const res = await fetch("./chat", {
       method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ messages: history, tier: $("readonly").checked ? "safe" : $("tier").value }),
+      body: JSON.stringify({ messages: history, tier: $("readonly").checked ? "safe" : $("creative").checked ? "creative" : "standard" }),
       signal: abort.signal,
     });
     await readStream(res, (ev) => {

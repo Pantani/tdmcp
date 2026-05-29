@@ -1,146 +1,161 @@
 import { z } from "zod";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
-import { errorResult, guardTd, structuredResult } from "../result.js";
+import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
-const expressionTarget = z
-  .string()
-  .regex(/^\/.+\.[A-Za-z_][A-Za-z0-9_]*$/, "target must look like /path/to/node.param");
-
 export const setParameterExpressionSchema = z.object({
-  target: expressionTarget.describe(
-    "Parameter to switch to expression mode, written as '/node/path.param'.",
-  ),
-  expression: z
-    .string()
+  path: z.string().describe("Full path of the node whose parameters to set."),
+  assignments: z
+    .array(
+      z.object({
+        param: z.string().describe("Parameter name (case-sensitive), e.g. 'tx'."),
+        mode: z
+          .enum(["expression", "bind", "constant"])
+          .default("expression")
+          .describe(
+            "expression: set par.expr; bind: set par.bindExpr; constant: set par.val from `value`.",
+          ),
+        expr: z
+          .string()
+          .optional()
+          .describe(
+            "The expression or bind string (required for mode expression/bind), e.g. 'me.time.seconds' or 'op(\"audio\")[\"level\"]'.",
+          ),
+        value: z
+          .union([z.number(), z.string(), z.boolean()])
+          .optional()
+          .describe("Constant value (for mode 'constant')."),
+      }),
+    )
     .min(1)
-    .describe(
-      "TouchDesigner Python expression to assign to the parameter, e.g. \"op('/x')['bass'] * 2\".",
-    ),
-  preserve_on_error: z
-    .boolean()
-    .default(true)
-    .describe(
-      "If switching mode fails after editing the expression, try to restore the prior state.",
-    ),
+    .describe("One or more parameter assignments."),
 });
+
 type SetParameterExpressionArgs = z.infer<typeof setParameterExpressionSchema>;
 
-const modeSnapshotSchema = z.object({
-  mode: z.string(),
-  expression: z.string().optional(),
-  value: z.unknown().optional(),
-});
-
-export const setParameterExpressionOutputSchema = z.object({
-  target: z.string(),
-  node: z.string(),
-  parameter: z.string(),
-  before: modeSnapshotSchema,
-  after: modeSnapshotSchema,
-  warnings: z.array(z.string()),
-});
+interface AppliedEntry {
+  param: string;
+  mode: string;
+  readback_mode: string;
+  readback_expr: string;
+}
 
 interface SetParameterExpressionReport {
-  target: string;
-  node: string;
-  parameter: string;
-  before: z.infer<typeof modeSnapshotSchema>;
-  after: z.infer<typeof modeSnapshotSchema>;
+  path: string;
+  applied: AppliedEntry[];
   warnings: string[];
+  probe?: {
+    has_mode: boolean;
+    has_expr: boolean;
+    has_bindExpr: boolean;
+    ParMode_available: boolean;
+  };
   fatal?: string;
 }
 
-const SET_PARAMETER_EXPRESSION_SCRIPT = `
+// All TD globals (op, ParMode) live inside this string — never reference them
+// from TS. The payload travels as base64 so quotes/newlines in artist strings
+// cannot break Python quoting.
+const SET_EXPR_SCRIPT = `
 import json, base64, traceback
 _p = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
-report = {"target": _p["target"], "node": "", "parameter": "", "before": {}, "after": {}, "warnings": []}
-
-def _mode_name(par):
-    try:
-        m = par.mode
-        return getattr(m, "name", None) or str(m).split(".")[-1]
-    except Exception:
-        return "unknown"
-
-def _snapshot(par):
-    snap = {"mode": _mode_name(par)}
-    try:
-        snap["value"] = par.eval()
-    except Exception:
-        try:
-            snap["value"] = par.val
-        except Exception:
-            pass
-    try:
-        expr = str(par.expr)
-        if expr:
-            snap["expression"] = expr
-    except Exception:
-        pass
-    return snap
-
+report = {"path": _p["path"], "applied": [], "warnings": []}
 try:
-    target = _p["target"]
-    node_path, par_name = target.rsplit(".", 1)
-    report["node"] = node_path
-    report["parameter"] = par_name
-    node = op(node_path)
-    if node is None:
-        report["fatal"] = "Node not found: " + node_path
-    elif not hasattr(node.par, par_name):
-        report["fatal"] = "Parameter not found: " + target
+    _c = op(_p["path"])
+    if _c is None:
+        report["fatal"] = "Node not found: " + str(_p["path"])
     else:
-        par = getattr(node.par, par_name)
-        report["before"] = _snapshot(par)
-        old_expr = getattr(par, "expr", "")
-        old_mode = getattr(par, "mode", None)
-        try:
-            par.expr = _p["expression"]
-            par.mode = type(par.mode).EXPRESSION
-        except Exception as exc:
-            if _p.get("preserve_on_error", True):
-                try:
-                    par.expr = old_expr
-                    if old_mode is not None:
-                        par.mode = old_mode
-                except Exception as restore_exc:
-                    report["warnings"].append("Could not restore prior parameter state: " + str(restore_exc))
-            report["fatal"] = "Failed to set expression on " + target + ": " + str(exc)
-        report["after"] = _snapshot(par)
+        _probe_done = False
+        for _a in _p["assignments"]:
+            try:
+                _par = getattr(_c.par, _a["param"], None)
+                if _par is None:
+                    report["warnings"].append("No such parameter: " + str(_a["param"]))
+                    continue
+                # Capture probe info from the first accessible parameter.
+                if not _probe_done:
+                    try:
+                        report["probe"] = {
+                            "has_mode": hasattr(_par, "mode"),
+                            "has_expr": hasattr(_par, "expr"),
+                            "has_bindExpr": hasattr(_par, "bindExpr"),
+                            "ParMode_available": ("ParMode" in dir()),
+                        }
+                    except Exception:
+                        pass
+                    _probe_done = True
+                _m = _a.get("mode", "expression")
+                if _m == "expression":
+                    _e = _a.get("expr")
+                    if not _e:
+                        report["warnings"].append("param '" + str(_a["param"]) + "': expr required for mode 'expression'")
+                        continue
+                    _par.expr = _e
+                    try:
+                        _par.mode = ParMode.EXPRESSION
+                    except Exception:
+                        report["warnings"].append("ParMode enum unavailable; set raw attribute only")
+                elif _m == "bind":
+                    _e = _a.get("expr")
+                    if not _e:
+                        report["warnings"].append("param '" + str(_a["param"]) + "': expr required for mode 'bind'")
+                        continue
+                    _par.bindExpr = _e
+                    try:
+                        _par.mode = ParMode.BIND
+                    except Exception:
+                        report["warnings"].append("ParMode enum unavailable; set raw attribute only")
+                else:
+                    _v = _a.get("value")
+                    if _v is None:
+                        report["warnings"].append("param '" + str(_a["param"]) + "': value required for mode 'constant'")
+                        continue
+                    _par.val = _v
+                    try:
+                        _par.mode = ParMode.CONSTANT
+                    except Exception:
+                        pass
+                report["applied"].append({
+                    "param": _a["param"],
+                    "mode": _m,
+                    "readback_mode": str(getattr(_par, "mode", "")),
+                    "readback_expr": str(getattr(_par, "expr", "")),
+                })
+            except Exception:
+                report["warnings"].append("param '" + str(_a.get("param", "?")) + "': " + traceback.format_exc().splitlines()[-1])
 except Exception:
     report["fatal"] = traceback.format_exc().splitlines()[-1]
 print(json.dumps(report))
 `;
 
-export function buildSetParameterExpressionScript(payload: object): string {
-  return buildPayloadScript(SET_PARAMETER_EXPRESSION_SCRIPT, payload);
+export function buildSetExprScript(payload: object): string {
+  return buildPayloadScript(SET_EXPR_SCRIPT, payload);
 }
 
 export async function setParameterExpressionImpl(
   ctx: ToolContext,
   args: SetParameterExpressionArgs,
-) {
+): Promise<import("@modelcontextprotocol/sdk/types.js").CallToolResult> {
   return guardTd(
     async () => {
-      const exec = await ctx.client.executePythonScript(
-        buildSetParameterExpressionScript({
-          target: args.target,
-          expression: args.expression,
-          preserve_on_error: args.preserve_on_error,
-        }),
-        true,
-      );
+      const script = buildSetExprScript({
+        path: args.path,
+        assignments: args.assignments,
+      });
+      const exec = await ctx.client.executePythonScript(script, true);
       return parsePythonReport<SetParameterExpressionReport>(exec.stdout);
     },
     (report) => {
       if (report.fatal) {
-        return errorResult(`set_parameter_expression failed: ${report.fatal}`, report);
+        return errorResult(
+          `set_parameter_expression failed on ${args.path}: ${report.fatal}`,
+          report,
+        );
       }
-      return structuredResult(
-        `Set ${report.target} to expression mode (${report.after.expression ?? args.expression}).`,
-        report,
-      );
+      const nApplied = report.applied.length;
+      const nWarn = report.warnings.length;
+      const summary = `Set ${nApplied} parameter(s) on ${args.path}${nWarn > 0 ? ` (${nWarn} warning(s))` : ""}.`;
+      return jsonResult(summary, report);
     },
   );
 }
@@ -149,11 +164,10 @@ export const registerSetParameterExpression: ToolRegistrar = (server, ctx) => {
   server.registerTool(
     "set_parameter_expression",
     {
-      title: "Set parameter expression",
+      title: "Set parameter expression / bind / constant",
       description:
-        "Switch one parameter into expression mode and assign a TouchDesigner Python expression. Use this when update_td_node_parameters would incorrectly replace a live/reactive expression with a constant value.",
+        "Set one or more parameters on a node to an expression, bind expression, or constant value without needing the raw-Python escape hatch. Supports three modes: 'expression' (par.expr = ...), 'bind' (par.bindExpr = ...), and 'constant' (par.val = ...). Multiple assignments are applied fail-forward — per-item failures accumulate as warnings so a partial batch still returns useful results. Use this instead of execute_python_script when TDMCP_RAW_PYTHON is off.",
       inputSchema: setParameterExpressionSchema.shape,
-      outputSchema: setParameterExpressionOutputSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
     (args) => setParameterExpressionImpl(ctx, args),

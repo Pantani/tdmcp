@@ -65,21 +65,30 @@ function recipeFileName(recipe: Recipe): string {
   return `${recipe.id.replace(/[^a-zA-Z0-9_.-]+/g, "_")}.json`;
 }
 
-function extractZip(zipPath: string, destDir: string): void {
-  mkdirSync(destDir, { recursive: true });
-  if (process.platform === "win32") {
-    execFileSync(
-      "powershell",
-      [
+export function zipExtractCommand(
+  zipPath: string,
+  destDir: string,
+  platform: NodeJS.Platform = process.platform,
+): { command: string; args: string[] } {
+  if (platform === "win32") {
+    return {
+      command: "powershell",
+      args: [
         "-NoProfile",
         "-Command",
-        `Expand-Archive -Path '${zipPath}' -DestinationPath '${destDir}' -Force`,
+        "Expand-Archive -LiteralPath $args[0] -DestinationPath $args[1] -Force",
+        zipPath,
+        destDir,
       ],
-      { stdio: "inherit" },
-    );
-  } else {
-    execFileSync("unzip", ["-o", "-q", zipPath, "-d", destDir], { stdio: "inherit" });
+    };
   }
+  return { command: "unzip", args: ["-o", "-q", zipPath, "-d", destDir] };
+}
+
+function extractZip(zipPath: string, destDir: string): void {
+  mkdirSync(destDir, { recursive: true });
+  const { command, args } = zipExtractCommand(zipPath, destDir);
+  execFileSync(command, args, { stdio: "inherit" });
 }
 
 export const browseLibrarySchema = z.object({
@@ -282,13 +291,14 @@ export async function validateLibraryAssetImpl(_ctx: ToolContext, args: Validate
   if (args.manifest_path) {
     const manifestPath = args.manifest_path;
     try {
-      const { manifest } = readManifest(manifestPath);
+      const found = readManifest(manifestPath);
+      const base = dirname(found.path);
       const rels = [
-        ...(manifest.assets ?? []),
-        ...(manifest.docs ?? []),
-        ...(manifest.tox ? [manifest.tox] : []),
+        ...(found.manifest.assets ?? []),
+        ...(found.manifest.docs ?? []),
+        ...(found.manifest.tox ? [found.manifest.tox] : []),
       ];
-      if (!rels.some((rel) => resolve(dirname(manifestPath), rel) === full)) {
+      if (!rels.some((rel) => resolve(base, rel) === full)) {
         issues.push("Asset is not referenced by the manifest.");
       }
     } catch (err) {
@@ -356,8 +366,8 @@ type AttachDocsAsAssetsArgs = z.infer<typeof attachDocsAsAssetsSchema>;
 
 export async function attachDocsAsAssetsImpl(_ctx: ToolContext, args: AttachDocsAsAssetsArgs) {
   try {
-    const { manifest } = readManifest(args.manifest_path);
-    const base = dirname(args.manifest_path);
+    const { path: manifestPath, manifest } = readManifest(args.manifest_path);
+    const base = dirname(manifestPath);
     const attached: string[] = [];
     for (const doc of args.docs) {
       const rel = join(args.asset_dir, basename(doc));
@@ -367,9 +377,9 @@ export async function attachDocsAsAssetsImpl(_ctx: ToolContext, args: AttachDocs
       attached.push(rel);
     }
     const next = { ...manifest, docs: [...new Set([...(manifest.docs ?? []), ...attached])] };
-    writeJson(args.manifest_path, next);
+    writeJson(manifestPath, next);
     return jsonResult(`Attached ${attached.length} doc asset(s).`, {
-      manifest_path: args.manifest_path,
+      manifest_path: manifestPath,
       attached,
       manifest: next,
     });

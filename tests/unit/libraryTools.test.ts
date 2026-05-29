@@ -18,6 +18,7 @@ import {
   refreshAssetPreviewsImpl,
   scaffoldRecipeTemplateImpl,
   validateLibraryAssetImpl,
+  zipExtractCommand,
 } from "../../src/tools/library/index.js";
 import type { ToolContext } from "../../src/tools/types.js";
 import { silentLogger } from "../../src/utils/logger.js";
@@ -42,6 +43,19 @@ function tmp(): string {
 }
 
 describe("library and packaging tools", () => {
+  it("builds a Windows zip extraction command without interpolating paths", () => {
+    const zipPath = "C:\\packages\\widget'; Remove-Item C:\\important.zip";
+    const destDir = "C:\\tdmcp\\packages\\widget";
+    const command = zipExtractCommand(zipPath, destDir, "win32");
+    expect(command.command).toBe("powershell");
+    expect(command.args[2]).toBe(
+      "Expand-Archive -LiteralPath $args[0] -DestinationPath $args[1] -Force",
+    );
+    expect(command.args).toContain(zipPath);
+    expect(command.args).toContain(destDir);
+    expect(command.args[2]).not.toContain("Remove-Item");
+  });
+
   it("scaffolds, browses, exports, and imports valid recipe bundles", async () => {
     const dir = tmp();
     try {
@@ -121,6 +135,12 @@ describe("library and packaging tools", () => {
         manifest_path: join(pkg, "tdmcp-component.json"),
       });
       expect(valid.structuredContent?.issues).toEqual([]);
+
+      const validFromDir = await validateLibraryAssetImpl(makeCtx(), {
+        path: join(pkg, "widget.tox"),
+        manifest_path: pkg,
+      });
+      expect(validFromDir.structuredContent?.issues).toEqual([]);
 
       const indexed = await localMarketplaceIndexImpl(makeCtx(), { package_dir: dir });
       expect(indexed.isError).toBeFalsy();

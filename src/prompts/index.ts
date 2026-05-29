@@ -11,8 +11,10 @@ import { registerExplainNetwork } from "./explainNetwork.js";
 import { registerExplainParam } from "./explainParam.js";
 import { registerFixReactivity } from "./fixReactivity.js";
 import { registerFixShader } from "./fixShader.js";
+import { registerGenreVisualLanguage } from "./genreVisualLanguage.js";
 import { registerImageToVisual } from "./imageToVisual.js";
 import { registerLyricShow } from "./lyricShow.js";
+import { registerMatchReferenceLoop } from "./matchReferenceLoop.js";
 import { registerMotionCritique } from "./motionCritique.js";
 import { registerOptimizePerformance } from "./optimizePerformance.js";
 import { registerRecoverShow } from "./recoverShow.js";
@@ -46,15 +48,19 @@ export function registerAllPrompts(server: McpServer, ctx: PromptContext): void 
   registerAutoFix(server, ctx);
   registerTextToRecipe(server, ctx);
   registerStyleReference(server, ctx);
+  // Phase 14 — live-operation diagnostics:
   registerFixReactivity(server, ctx);
   registerRecoverShow(server, ctx);
   registerAutoVjDirector(server, ctx);
+  // Phase 14 — creative direction & critique:
   registerColorStory(server, ctx);
-  registerLyricShow(server, ctx);
   registerSetlistPlanner(server, ctx);
-  registerVisualAbCompare(server, ctx);
-  registerMotionCritique(server, ctx);
   registerExplainParam(server, ctx);
+  registerVisualAbCompare(server, ctx);
+  registerLyricShow(server, ctx);
+  registerGenreVisualLanguage(server, ctx);
+  registerMotionCritique(server, ctx);
+  registerMatchReferenceLoop(server, ctx);
 }
 
 export type { PromptContext } from "./types.js";

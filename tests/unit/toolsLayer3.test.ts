@@ -49,6 +49,35 @@ describe("layer 3 tool handlers", () => {
     expect(textOf(result)).toContain("not reachable");
   });
 
+  it("get_td_info warns when the running bridge is stale vs the build", async () => {
+    // The default mock reports bridge_version 0.3.0, older than this build's expected 0.5.0.
+    const result = await getTdInfoImpl(makeCtx());
+    expect(result.isError).toBeFalsy();
+    expect(textOf(result)).toContain("stale");
+    expect(textOf(result)).toContain("reload_bridge");
+  });
+
+  it("get_td_info does not warn when the bridge version matches the build", async () => {
+    server.use(
+      http.get(`${TD_BASE}/api/info`, () =>
+        HttpResponse.json({
+          ok: true,
+          data: {
+            td_version: "2023.12000",
+            python_version: "3.11.1",
+            bridge_version: "0.5.0",
+            build: "2023.12000",
+          },
+        }),
+      ),
+    );
+    const result = await getTdInfoImpl(makeCtx());
+    expect(result.isError).toBeFalsy();
+    // The summary line must not warn; the body carries bridge_stale:false.
+    expect(textOf(result).split("\n")[0]).not.toContain("stale");
+    expect(textOf(result)).toContain('"bridge_stale": false');
+  });
+
   it("create_td_node creates a node and warns on unknown type", async () => {
     const good = await createTdNodeImpl(makeCtx(), { parent_path: "/project1", type: "noiseTOP" });
     expect(textOf(good)).toContain("/project1/noisetop1");

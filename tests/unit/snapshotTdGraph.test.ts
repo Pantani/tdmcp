@@ -124,4 +124,40 @@ describe("snapshotTdGraphImpl", () => {
       period: { name: "period", mode: "EXPRESSION", expression: "absTime.seconds" },
     });
   });
+
+  it("compact mode also accepts read_parameter_modes array output", async () => {
+    server.use(
+      http.post(`${TD_BASE}/api/exec`, () =>
+        HttpResponse.json({
+          ok: true,
+          data: {
+            result: null,
+            stdout: JSON.stringify({
+              path: "/project1/noise1",
+              type: "noiseTOP",
+              name: "noise1",
+              parameters: [
+                { name: "period", mode: "EXPRESSION", expr: "absTime.seconds" },
+                { name: "amplitude", mode: "CONSTANT", value: 1 },
+              ],
+              warnings: [],
+            }),
+          },
+        }),
+      ),
+    );
+    const result = await snapshotTdGraphImpl(makeCtx(), {
+      path: "/project1",
+      include_params: false,
+      compact: true,
+      include_parameter_modes: false,
+    });
+    expect(result.isError).toBeFalsy();
+    const data = result.structuredContent as {
+      nodes: Array<{ parameter_modes?: Record<string, unknown> }>;
+    };
+    expect(data.nodes[0]?.parameter_modes).toEqual({
+      period: { name: "period", mode: "EXPRESSION", expr: "absTime.seconds" },
+    });
+  });
 });

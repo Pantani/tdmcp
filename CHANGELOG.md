@@ -93,8 +93,105 @@ session is still required.
   replace the local `tdmcp chat` copilot. Plus reference docs for the new env var and the
   in-TD topology.
 
+#### Phases 14–15 — live mixing, parameter fidelity, network round-trip & creative direction
+
+The post-discovery feature wave: built as parallel one-tool-per-agent waves with a single-writer
+integrator, all offline-gated (typecheck + build + Biome + vitest + recipes + bridge tests).
+**TouchDesigner was offline during the build, so every new tool/prompt is shipped with offline
+unit coverage and its live create→cook→preview validation marked UNVERIFIED-pending** — each
+TD-touching tool carries a `probe` block (and `extra.unverified`) that surfaces the real TD
+API on its first live run, and is fail-forward (per-item warnings, never throws).
+
+- **Live mixing & external content** — `create_transition` (CLI `transition`): A→B transitions
+  over a 0–1 Progress knob (dissolve / luma_wipe / slide / zoom / glitch_cut; folds in the planned
+  `transition_designer` prompt). `create_live_source` (`live-source`): an input layer
+  (screen-grab / NDI / Syphon-Spout / camera / video stream) → a previewed Null — default
+  screen-grab is zero-permission (camera is opt-in; can hang TD on a macOS modal).
+  `create_layer_stack` (`layer-stack`): an N-layer compositor with per-layer blend + opacity +
+  mute/solo and a generated control strip. `create_media_bin` (`media-bin`): a folder-fed clip bin
+  (Movie File In + Switch) with Index/Next/Prev + crossfade-on-switch. `create_keyer` (`keyer`):
+  chroma/luma/rgb key + matte composite over a background.
+- **One-shot reactivity** — `bind_audio_reactive` (`react-audio`): auto-maps a COMP's numeric knobs
+  to audio bands (brightness↔level, scale↔bass, hue↔treble) and wires them in one call, with a
+  master Reactivity knob. `create_data_reactive` (`react-data`): the data counterpart, mapping live
+  `create_data_source` channels onto params with per-mapping range remap.
+  `create_envelope_follower` (`envelope`, **experimental**): attack/release + gate/duck (sidechain a
+  layer to the kick), beyond `bind_to_channel`'s plain Lag.
+- **Signature effects** — `create_datamosh` (`datamosh`), `create_displacement_warp` (`warp`),
+  `create_halftone` (`halftone`), `create_feedback_tunnel` (`feedback-tunnel`), and `create_text_3d`
+  (`text-3d`, extruded 3D type). Plus **`apply_post_processing` gains five chainable GLSL effects**:
+  `halftone`, `dither`, `crt`, `mirror`, `vhs`.
+- **Sequencing & set navigation** — `create_set_navigator` (`set-nav`): a QLab-style cue-list
+  navigator (Index/Next/Prev/Go, GO-on-beat). `create_beat_grid_sequencer` (`beat-grid`): a
+  bar/beat step grid firing a param or cue per active step (the deterministic counterpart to
+  `create_autopilot`'s drift and `create_cue_sequencer`'s linear list).
+- **Parameter fidelity & wiring** — `read_parameter_modes` (`params-modes`): reports each
+  parameter's mode (constant/expression/export/bind) + raw expr/bind/export, not just the value —
+  the precondition for any faithful serialize/diff. `set_parameter_expression` (`set-expr`): set a
+  parameter to an expression/bind/constant without the raw-Python escape hatch.
+  `disconnect_nodes` (`disconnect`): remove input wire(s) — the inverse of `connect_nodes`.
+- **Network round-trip & introspection** — `serialize_network` (`serialize`) + `rebuild_network`
+  (`rebuild`): a COMP subtree ↔ a diffable JSON spec (params with modes/exprs + wires), reconstructed
+  via the batch builder. `inspect_op_extensions_storage` (`inspect-comp`): read back a COMP's
+  storage, promoted extension members, and custom-parameter definitions (the read side of the
+  reusable-component loop). `get_node_state_runtime` (`node-state`): per-operator runtime telemetry
+  (cook time/count, resolution, channels, GPU memory). `get_bridge_logs` (`logs`): recent cook
+  errors/warnings (+ best-effort textport) for less-blind debugging.
+- **Data-driven & dimensional** — `create_replicator` (`replicator`): clone a template COMP per
+  Table-DAT row. `multipass_3d_depth` (`multipass-3d`): a 3D scene with a Render + SSAO pass and a
+  synthetic Depth output that feeds `create_depth_displacement`/`create_depth_silhouette` without a
+  depth camera. `create_pop_field` (`pop-field`, **experimental — POPs are experimental in this
+  build**): a first Layer-1 generator for TD's GPU POP family; held for live render-path validation.
+- **MIDI (hardware-gated)** — `create_midi_note_reactive` (`midi-notes`): MIDI notes → per-note
+  reactive channels, with a **synthetic source** that previews without gear (the device path is held
+  pending hardware). `create_midi_map` (`midi-map`): one-call controller presets (APC Mini /
+  Launchpad / MIDI Mix / nanoKONTROL) — CC/note maps are best-effort and held pending hardware.
+- **Vault library** — `save_component_to_vault` (save a built COMP as a `.tox` + a referencing
+  note), `browse_vault_library` (list recipes/shaders/presets/components/setlists),
+  `capture_to_vault` (still captures into a dated gallery look-book note), and
+  `export_setlist_to_vault` (serialize live cues/tempo back to an `import_setlist`-compatible note —
+  closing the round-trip). MCP-only (no CLI), gated on `TDMCP_VAULT_PATH`.
+- **AI prompts (11 new)** — live operation: `fix_reactivity` (diagnose a wired-but-dead signal),
+  `recover_show` (fast mid-show panic recovery), `auto_vj_director` (hands-free AI VJ over the event
+  stream). Creative direction: `color_story`, `setlist_planner`, `lyric_show`,
+  `genre_visual_language`. Critique & matching: `visual_ab_compare`, `motion_critique`,
+  `match_reference_loop`. Education: `explain_param` (grounded in the 629-operator KB).
+- **`tdmcp://prompts` resource** — a catalog of every MCP prompt (name + one-line purpose) so a
+  model — including the local copilot, which can't see MCP prompts — can discover the creative
+  recipes available.
+
+#### CLI, config & copilot DX (post-discovery follow-on)
+
+- **Config files + named profiles** — `loadConfig` optionally reads a `tdmcp.json` / `.tdmcprc` /
+  `~/.config/tdmcp/config.json` with named `profiles`, so an artist can save per-venue setups and
+  switch with `--profile club` instead of editing their shell rc. Precedence: defaults < file base <
+  file profile < env < CLI flags. The stdio server honors it too (`TDMCP_PROFILE`); env still wins,
+  so existing setups are unchanged, and a malformed file warns rather than crashing.
+- **Per-call CLI overrides** — global `--profile` / `--config` / `--td-host` / `--td-port` /
+  `--timeout` on any `tdmcp-agent` command, plus a `config` command that prints the effective
+  resolved config (secrets redacted) or, with `--write-env`, a paste-ready export block.
+- **`doctor` upgrades** — a new **Tools** check (surfaces `TDMCP_RAW_PYTHON` / `TDMCP_TOOL_PROFILE`
+  lockouts so a missing tool has a named cause); `--fix` appends a "Suggested fixes" section
+  (a remediation command per non-passing check); `--output json` + `-q/--quiet` make it
+  scriptable/CI-friendly; honors the global config flags.
+- **CLI ergonomics** — `-V/--version`; a "did you mean" suggestion on an unknown command;
+  `--params -` (stdin) and `--params-file <path>` to complete the Unix-filter story; `-q/--quiet`
+  to silence the stderr summary; and `watch --filter`/`--exclude <csv>` to select event types.
+- **Local copilot tier** — `search_operators` + `list_recipes` added to every tier (read-only KB
+  browse), and a new **opt-in `creative` tier** (a `creative` checkbox) that adds a curated set of
+  safe Layer-1 generators (`create_generative_art` / `create_feedback_network` /
+  `create_audio_reactive`) so the local model can build a whole look offline. Off by default —
+  small-model generator-call accuracy is unbenchmarked.
+
 ### Changed
 
+- **`apply_post_processing`** gains five chainable inline-GLSL effects: `halftone`, `dither`,
+  `crt`, `mirror`, `vhs`.
+- **`create_external_io`** gains a `video_device_out` kind (SDI / capture-card via a Video Device
+  Out TOP; device par probed defensively) — hardware-gated, build-only verification.
+- **`get_td_info`** now warns when the **running** Python bridge is older than this build
+  (comparing to the shipped bridge version), pointing at `reload_bridge` — catching the recurring
+  "edited td/ but it didn't take effect" gotcha.
 - **`sync_external_clock`** gains a `mode` (`tap` | `ableton_link` | `midi_clock`):
   Ableton Link locks to a Link session via an Ableton Link CHOP; MIDI clock derives
   BPM from 24-PPQN timing. `tap` stays the default. Link/MIDI are hardware-gated

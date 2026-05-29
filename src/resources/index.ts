@@ -2,7 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerGlslPatternResource } from "./glslPatternResource.js";
 import { registerOperatorResource } from "./operatorResource.js";
 import { registerPatternResource } from "./patternResource.js";
-import { registerPromptResource } from "./promptResource.js";
+import { registerPromptCatalogResource } from "./promptCatalogResource.js";
 import { registerPythonApiResource } from "./pythonApiResource.js";
 import { registerRecipeResource } from "./recipeResource.js";
 import type { ResourceContext } from "./shared.js";
@@ -16,7 +16,7 @@ export function registerAllResources(server: McpServer, ctx: ResourceContext): v
   registerGlslPatternResource(server, ctx);
   registerRecipeResource(server, ctx);
   registerTutorialResource(server, ctx);
-  registerPromptResource(server, ctx);
+  registerPromptCatalogResource(server, ctx);
 }
 
 export type { ResourceContext } from "./shared.js";

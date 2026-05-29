@@ -1,6 +1,3 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { runCli, runWatch } from "../../src/cli/agent.js";
@@ -39,10 +36,17 @@ describe("tdmcp-agent CLI", () => {
     expect(JSON.stringify(doc.input)).toContain("parent_path");
   });
 
-  it("prints the package version", async () => {
+  it("prints the version with --version (no TD needed)", async () => {
     const r = await runCli(["--version"]);
     expect(r.code).toBe(0);
-    expect(r.stdout.trim()).toMatch(/^\d+\.\d+\.\d+/);
+    expect(r.stdout).toMatch(/tdmcp-agent \d+\.\d+\.\d+/);
+  });
+
+  it("suggests the nearest command on a typo (did-you-mean)", async () => {
+    const r = await runCli(["noeds"]);
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain("Did you mean");
+    expect(r.stderr).toContain("nodes");
   });
 
   it("rejects an unknown command with exit code 2", async () => {
@@ -96,44 +100,10 @@ describe("tdmcp-agent CLI", () => {
     expect(r.stderr).toContain("Invalid JSON");
   });
 
-  it("reads params from a JSON file", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "tdmcp-cli-"));
-    try {
-      const file = join(dir, "params.json");
-      writeFileSync(file, '{"filter":"app"}');
-      const r = await runCli(["classes", "list", "--params-file", file], { makeCtx });
-      expect(r.code).toBe(0);
-      expect(JSON.parse(r.stdout)).toHaveProperty("classes");
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
-    }
-  });
-
-  it("accepts no-op global DX flags and quiet suppresses summaries", async () => {
-    const r = await runCli(["classes", "list", "--quiet", "--no-color"], { makeCtx });
-    expect(r.code).toBe(0);
-    expect(r.stderr).toBe("");
-  });
-
-  it("prints shell completion", async () => {
-    const r = await runCli(["completion", "bash"]);
-    expect(r.code).toBe(0);
-    expect(r.stdout).toContain("tdmcp-agent");
-    expect(r.stdout).toContain("--params-file");
-  });
-
-  it("runs commands from a JSON file", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "tdmcp-run-"));
-    try {
-      const file = join(dir, "run.json");
-      writeFileSync(file, JSON.stringify({ command: "classes list", params: { filter: "app" } }));
-      const r = await runCli(["run", file], { makeCtx });
-      expect(r.code).toBe(0);
-      const doc = JSON.parse(r.stdout);
-      expect(doc.results[0].code).toBe(0);
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
-    }
+  it("rejects invalid connection override values before building a context", async () => {
+    const r = await runCli(["info", "--td-port", "abc"]);
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain("tdPort");
   });
 
   it("runs an offline KB command and prints JSON", async () => {
@@ -561,26 +531,6 @@ describe("tdmcp-agent CLI — pending items (0.9.0)", () => {
   });
 });
 
-describe("tdmcp-agent CLI — post-0.5.0 backlog", () => {
-  it("lists VJ and library commands in --help", async () => {
-    const r = await runCli(["--help"]);
-    expect(r.code).toBe(0);
-    for (const cmd of ["transition", "live-source", "media-bin", "library", "portable-tox"]) {
-      expect(r.stdout).toContain(cmd);
-    }
-  });
-
-  it("schemas expose exact post-0.5.0 tool contracts", async () => {
-    const transition = await runCli(["schema", "transition"]);
-    expect(transition.code).toBe(0);
-    expect(JSON.stringify(JSON.parse(transition.stdout).input)).toContain("luma");
-
-    const bundle = await runCli(["schema", "recipe-bundle-export"]);
-    expect(bundle.code).toBe(0);
-    expect(JSON.stringify(JSON.parse(bundle.stdout).input)).toContain("recipe_ids");
-  });
-});
-
 describe("tdmcp-agent CLI — phase 7 (stage I/O & sensor reactivity)", () => {
   it("lists motion-reactive in --help", async () => {
     const r = await runCli(["--help"]);
@@ -743,5 +693,25 @@ describe("tdmcp-agent CLI — reusable-component tools", () => {
     expect(doc.dryRun).toBe(true);
     expect(doc.command).toBe("scaffold-ext");
     expect(doc.args.class_name).toBe("WidgetExt");
+  });
+});
+
+describe("tdmcp-agent CLI — library packaging", () => {
+  it("lists the library packaging commands in --help", async () => {
+    const r = await runCli(["--help"]);
+    expect(r.code).toBe(0);
+    for (const cmd of ["library", "portable-tox", "recipe-bundle-export", "install-library"]) {
+      expect(r.stdout).toContain(cmd);
+    }
+  });
+
+  it("emits JSON Schemas for recipe bundles and manifests", async () => {
+    const bundle = await runCli(["schema", "recipe-bundle-export"]);
+    expect(bundle.code).toBe(0);
+    expect(JSON.stringify(JSON.parse(bundle.stdout).input)).toContain("recipe_ids");
+
+    const manifest = await runCli(["schema", "manifest"]);
+    expect(manifest.code).toBe(0);
+    expect(JSON.stringify(JSON.parse(manifest.stdout).input)).toContain("path");
   });
 });

@@ -7,27 +7,34 @@ export const registerAutoVjDirector: PromptRegistrar = (server) => {
     {
       title: "Auto VJ director",
       description:
-        "Plan and wire an auto-VJ layer: looks, cues, beat cadence, dashboard, and autopilot.",
+        "Run a hands-free AI VJ: watch the live beat/onset event stream and fire cue recalls, transitions, and control randomization on the song's structure — an AI conductor over the create_autopilot engine, reasoning about builds/drops instead of randomizing mechanically.",
       argsSchema: {
-        style: z.string().describe("Musical/aesthetic direction for the automated set."),
-        target_comp: z
+        target_path: z
           .string()
-          .default("/project1")
-          .describe("Where to build or control the show."),
+          .optional()
+          .describe("The show/visual system to drive (the COMP whose cues/controls you'll fire)."),
+        structure: z
+          .string()
+          .optional()
+          .describe(
+            "Known song structure or vibe arc, e.g. 'long ambient intro, drop at ~2:00, breakdown, double drop'.",
+          ),
       },
     },
-    ({ style, target_comp }) =>
+    ({ target_path, structure }) =>
       userPrompt(
         [
-          `Design an auto-VJ director for ${target_comp}: ${style}.`,
+          `Act as a live VJ director for ${target_path ? target_path : "the current show"}, reacting to the music in real time. Your job is to make musically-intelligent decisions — hold through builds, slam a change on the drop, ease back in breakdowns — not to randomize blindly (that's what create_autopilot already does mechanically).`,
           "",
-          "Build in this order:",
-          "1. Inspect existing visuals/cues and tempo with snapshot_td_graph/get_td_nodes.",
-          "2. Choose or create 2-4 compatible looks using existing generators; keep it playable, not maximal.",
-          "3. Store cues with manage_cue and set musical morph/quantize values.",
-          "4. Add create_autopilot for beat-driven cue cycling or control randomization.",
-          "5. Add create_stage_dashboard or create_clip_launcher only when useful.",
-          "6. Verify errors, preview the master output, and state how to disable or retime the director live.",
+          "First, prove the loop is fast enough before committing to a tight cadence:",
+          "1. Confirm the building blocks exist: cues to recall (manage_cue list), a tempo/beat source (create_tempo_sync with emit_events on, or detect_onsets with its onset event), and an output you can preview. If a beat/onset event stream isn't running, set it up first — your reactions ride those events.",
+          "2. LATENCY PROBE (do this before locking your cadence — it is unproven over MCP): subscribe to the event stream (the bridge broadcasts `beat`/`onset` events; `tdmcp watch --filter beat,onset` tails them) and measure how quickly you can observe an event and act on it. If the round-trip is slower than a beat, do NOT try to hit every beat — operate on bars/phrases/sections instead, or pre-arm a cue and let create_autopilot/create_cue_sequencer fire the beat-tight part. State the cadence you chose and why.",
+          "",
+          "Then conduct:",
+          `3. Map the music to moves. ${structure ? `Use the given structure: ${structure}. ` : "Infer structure from the energy you observe (onset density, level, tempo). "}Decide a plan: which cue/look per section, when to transition (create_transition), when to intensify (raise reactivity via bind_audio_reactive / randomize_controls with a small amount), when to hold.`,
+          "4. Execute on musical boundaries, not arbitrarily: recall/morph cues quantized to the beat/bar (manage_cue quantize), fire a transition on a drop, nudge controls during a build. Prefer eased morphs over hard cuts except on a deliberate drop.",
+          "5. Stay safe and legible: keep create_panic within reach (if the output breaks, recover_show), and after each major move get_preview to confirm the change landed. Narrate your decisions briefly ('holding through the build → cue \"drop\" on the next bar') so the human operator can follow or override.",
+          "6. This is a loop: keep watching, keep deciding, until told to stop. Don't over-trigger — restraint reads as musicality; a change every 8–16 bars usually beats a change every beat.",
         ].join("\n"),
       ),
   );

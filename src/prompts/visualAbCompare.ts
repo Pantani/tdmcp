@@ -7,24 +7,34 @@ export const registerVisualAbCompare: PromptRegistrar = (server) => {
     {
       title: "Visual A/B compare",
       description:
-        "Compare two visuals or before/after states using snapshots, previews, errors, and performance.",
+        "Capture two looks/cues (or before/after a tweak) with get_preview and judge which better matches a stated goal (palette, energy, focal point) — the comparative VJ decision critique_visual doesn't do.",
       argsSchema: {
-        a: z.string().describe("First TOP/COMP/snapshot scope."),
-        b: z.string().describe("Second TOP/COMP/snapshot scope."),
+        a: z
+          .string()
+          .optional()
+          .describe("First option: a cue name to recall, or a node path to preview."),
+        b: z
+          .string()
+          .optional()
+          .describe("Second option: a cue name to recall, or a node path to preview."),
         goal: z
           .string()
           .optional()
-          .describe("What to judge for: clarity, energy, performance, etc."),
+          .describe(
+            "What you're optimizing for, e.g. 'higher energy for the drop' or 'cleaner focal point'.",
+          ),
       },
     },
     ({ a, b, goal }) =>
       userPrompt(
         [
-          `Compare A (${a}) vs B (${b})${goal ? ` for ${goal}` : ""}.`,
+          `Compare two visual options${a && b ? ` — A (${a}) vs B (${b})` : ""} and recommend the keeper${goal ? ` for this goal: ${goal}` : ""}.`,
           "",
-          "Collect evidence: previews for both outputs, snapshot_td_graph compact:true for both scopes, get_td_node_errors, and performance if relevant.",
-          "Use diff_snapshots/compare_td_nodes for structural or parameter differences.",
-          "Conclude with a clear recommendation, tradeoffs, and one concrete tweak to try next.",
+          "1. Capture both, fairly. If A and B are cues, recall A (manage_cue recall), get_preview the output, THEN recall B and get_preview — you need each state captured while it is live (sequence the recalls; don't preview both before switching). If they're two node paths, preview each directly. Note: confirm the timeline is playing so motion-dependent looks aren't captured frozen.",
+          "2. Judge against the goal on concrete axes: palette/color, overall energy/density, focal point and readability, motion feel, and fit to the stated goal. Be specific about what each image actually shows — reference the previews, don't speak generically.",
+          "3. Pick a winner and say WHY in one or two lines, plus the single biggest weakness of the loser. If it's close or context-dependent (e.g. 'A for the build, B for the drop'), say that.",
+          "4. Offer one quick improvement to the winner (a param tweak) if there's an obvious one — but keep the recommendation decisive.",
+          "5. If a cue was recalled to capture it, leave the project where the user wants it (ask or restore the original state).",
         ].join("\n"),
       ),
   );

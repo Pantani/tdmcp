@@ -42,6 +42,7 @@ Every feature follows the existing patterns:
 | 8–11 | 0.3.0 ◐ | Effects, reactivity, control & AI | Parallel waves — signature effects, deeper reactivity, creation, live control/AI/DX (detailed below) |
 | 12 | 0.3.0 ☑ | Dimensional: 3D, depth & spatial mapping | Take visuals off the flat plane — react in 3D, sculpt with depth, map onto real surfaces |
 | 13 | 0.5.0 ☐ | Components, agent-DX & reactivity | Reusable-component scaffolding, project analysis/auto-docs, token-cheap agent-DX, Link/MIDI — the gaps left after the 0.4.0 generators + the body-tracking tools already on `main` |
+| 14–15 | 0.5.0 ◐ | Live mixing, parameter fidelity & creative direction | Post-discovery wave: transitions/layer-stack/keyer/media-bin, one-shot reactivity, signature effects, network round-trip, 11 AI prompts — built offline, live-validation pending |
 
 ---
 
@@ -337,8 +338,8 @@ a model; `create_depth_silhouette` makes a flat mask — both distinct from the 
 `createDepthDisplacement`, `createGpuParticleField` (each `*Impl` + `register*` + msw unit test),
 registered in `src/tools/layer1/index.ts`; CLI commands `audio3d` / `dome` / `mesh-warp` /
 `depth-displace` / `gpu-particles` in `src/cli/agent.ts`. Built one-subagent-per-feature
-(new files + offline tests only), then single-writer wiring + live tuning. After the post-0.5.0
-backlog sweep, the generated tool reference lists 151 tools (64 Layer 1).
+(new files + offline tests only), then single-writer wiring + live tuning. The tool registry is now
+119 tools (56 Layer 1).
 
 **Stretch / hardware- or model-blocked (won't ship unvalidated):** depth-camera input
 (Kinect / RealSense / Azure) in `create_external_io`; pose / body tracking (MediaPipe / ML) →
@@ -377,20 +378,20 @@ tracking is on `main` in-tree, not in the 0.4.0 CHANGELOG.)
 | Feature | Delivers | Effort | Status |
 |---|---|---|---|
 | ~~`export_component` / `import_component`~~ — **already shipped** | `.tox` `save` / `loadTox` / live-linked `externaltox` already exist as **`manage_component`** (BL-01 was a false gap). Remaining gap: a self-contained, dependency-collected portable bundle — note `saveExternalTox` only externalizes to a folder tree, not a single portable `.tox` (→ v0.6.0 `make_portable_tox`) | — | ☑ |
-| `scaffold_extension` | Extension DAT stub + Extension Object + Promote flag + re-init — make a COMP scriptable (BL-03) | M | ☑ |
-| `add_custom_parameters` | Declarative custom-parameter pages (`appendCustomPage`/`appendFloat…`), TDJSON in/out — expose knobs (BL-03) | M | ☑ |
+| `scaffold_extension` | Extension DAT stub + Extension Object + Promote flag + re-init — make a COMP scriptable (BL-03) | M | ☐ |
+| `add_custom_parameters` | Declarative custom-parameter pages (`appendCustomPage`/`appendFloat…`), TDJSON in/out — expose knobs (BL-03) | M | ☐ |
 | `sync_external_clock` + Link/MIDI | Add `ableton_link` + `midi_clock` modes alongside tap-tempo — lock to the DJ's clock (BL-08) | S | ☐ |
 | Body tracking ✅ on `main` (in-tree) | `setup_body_tracking` / `create_pose_tracking` / `create_pose_skeleton` / `create_body_reactive` (+ recipes `mediapipe_body_dots`, `pose_skeleton_mediapipe`) are in-tree on `main` (not in the 0.4.0 CHANGELOG). Remaining (incremental): hand/face modes, more reactive templates, live webcam validation (BL-02) | — | ☑ |
-| `analyze_project` | Unused/dead ops, broken file deps, orphan COMPs, dependency graph via `findChildren`/connectors (BL-04) | M | ☑ |
-| `generate_readme` | Markdown project doc: params table (TDJSON), I/O, child inventory, deps, preview thumbnail (BL-04) | M | ☑ |
-| `analyze_screenshot` | Prompt+tool: `get_preview` image + topology + `get_td_node_errors` → explain/diagnose ("why is it black?") (BL-09) | M | ◐ |
-| `edit_dat_content` | Surgical `old_string`/`new_string` DAT edit (unique-match + opt-in `replace_all`) — token-cheap edits *(Embody-mined)* | S | ☑ |
-| `set_dat_content` (anti-wipe) | Safe whole-DAT write with a `confirm_wipe` guardrail (refuses silent clears) *(Embody-mined)* | S | ☑ |
-| `batch_operations` | Many create/connect/set-param in one bridge round-trip, fail-forward with per-item warnings — expose the Layer-1 builder as a primitive *(Embody-mined)* | M | ☑ |
-| `snapshot_td_graph` compact mode | Token-optimized TDN-style read (type-default hoisting, expr/bind shorthand, inline short arrays) — Embody's `read_tdn` is ~20–90× cheaper than op-walks *(Embody-mined)* | M | ◐ |
-| `manage_annotation` + enclosed ops | Agents add network boxes/comments + query ops enclosed by a box → self-documenting networks *(Embody-mined)* | S | ☑ |
-| `write_agent_guide` | Emit a project-local `CLAUDE.md`/`AGENTS.md` seeded with TDMCP operator conventions + render-coordinate rules *(Embody-mined)* | S | ☑ |
-| `set_perform_mode` | Bridge suspends nonessential MCP/externalization compute during a live show — VJ-critical *(Embody-mined)* | M | ◐ |
+| `analyze_project` | Unused/dead ops, broken file deps, orphan COMPs, dependency graph via `findChildren`/connectors (BL-04) | M | ☐ |
+| `generate_readme` | Markdown project doc: params table (TDJSON), I/O, child inventory, deps, preview thumbnail (BL-04) | M | ☐ |
+| `analyze_screenshot` | Prompt+tool: `get_preview` image + topology + `get_td_node_errors` → explain/diagnose ("why is it black?") (BL-09) | M | ☐ |
+| `edit_dat_content` | Surgical `old_string`/`new_string` DAT edit (unique-match + opt-in `replace_all`) — token-cheap edits *(Embody-mined)* | S | ☐ |
+| `set_dat_content` (anti-wipe) | Safe whole-DAT write with a `confirm_wipe` guardrail (refuses silent clears) *(Embody-mined)* | S | ☐ |
+| `batch_operations` | Many create/connect/set-param in one bridge round-trip, fail-forward with per-item warnings — expose the Layer-1 builder as a primitive *(Embody-mined)* | M | ☐ |
+| `snapshot_td_graph` compact mode | Token-optimized TDN-style read (type-default hoisting, expr/bind shorthand, inline short arrays) — Embody's `read_tdn` is ~20–90× cheaper than op-walks *(Embody-mined)* | M | ☐ |
+| `manage_annotation` + enclosed ops | Agents add network boxes/comments + query ops enclosed by a box → self-documenting networks *(Embody-mined)* | S | ☐ |
+| `write_agent_guide` | Emit a project-local `CLAUDE.md`/`AGENTS.md` seeded with TDMCP operator conventions + render-coordinate rules *(Embody-mined)* | S | ☐ |
+| `set_perform_mode` | Bridge suspends nonessential MCP/externalization compute during a live show — VJ-critical *(Embody-mined)* | M | ☐ |
 
 **Body tracking — on `main` (in-tree; not in the 0.4.0 CHANGELOG):** `setup_body_tracking`, `create_pose_tracking`,
 `create_pose_skeleton`, `create_body_reactive` are registered in `src/tools/layer1/`, with recipes
@@ -408,29 +409,69 @@ pattern — the TD Python API is fully documented (tox: `COMP.save`/`saveExterna
 `findChildren`/`inputConnectors`/`outputConnectors`; serialization: TDJSON). No new REST endpoints
 expected. Reuse the vault's path-traversal-safe IO for all `.tox`/file writes.
 
-## Post-0.5.0 backlog sweep — current branch
-
-Legend: ☑ = implemented with automated coverage; ◐ = implemented/foundation in place, with live
-TD/hardware validation or deeper round-trip work still pending.
-
-| Area | Items | Status |
-|---|---|---|
-| TD-depth foundation | `read_parameter_modes`, `set_parameter_expression`, compact snapshot expression/bind preservation | ☑ / ☑ / ◐ |
-| Serialization base | `serialize_network` / `rebuild_network` groundwork via parameter-mode snapshots and compact graph deltas | ◐ |
-| Live controls / VJ | `bind_audio_reactive`, `create_transition`, `create_live_source`, `create_layer_stack`, `create_media_bin`, `create_keyer`, `create_datamosh`, `create_displacement_warp` | ◐ |
-| CLI/DX | config files/profiles, `install-client`, `doctor --fix`, `tdmcp-agent run <file>`, `--params-file`, `--params -`, `--td-host`, `--td-port`, `--timeout`, completion, `--version`, `--quiet`, `--no-color` | ☑ |
-| AI/prompts/copilot | `fix_reactivity`, `recover_show`, `auto_vj_director`, `color_story`, `lyric_show`, `setlist_planner`, `visual_ab_compare`, `motion_critique`, `explain_param`, `tdmcp://prompts`, copilot `creative` tier | ☑ |
-| Library / packaging | `browse_library`, `inspect_component_manifest`, `make_portable_tox`, `export_recipe_bundle`, `import_recipe_bundle`, `validate_library_asset`, `scaffold_recipe_template`, `attach_docs_as_assets`, `local_marketplace_index`, `component_link_health`, `refresh_asset_previews`, `install_library_package` | ◐ |
-
 **Deferred to v0.6.0+:** `control_diffusion` / `drive_streamdiffusion` + `connect_comfyui` (drive an
 *installed* StreamDiffusionTD/ComfyUI `.tox`; need GPU/CUDA to live-validate — probe-first),
-full `serialize_network` / `rebuild_network` (git-diffable JSON round-trip beyond the current
-parameter-mode/compact-snapshot foundation),
+`serialize_network` / `rebuild_network` + `make_portable_tox` (git-diffable JSON round-trip),
 TD process lifecycle + multi-instance routing (`manage_td_process` / `switch_instance`),
 `run_bridge_tests`, `get_bridge_logs`, `register_custom_tool` (artist-defined tools, LOPs' Tool-DAT
 idea agent-side), `caption_top`, depth-camera input (Kinect Azure / RealSense, hardware-gated),
 `create_pose_reactive`, and the remaining advanced generators. Note 0.4.0 already shipped
 `create_raymarch_scene` (SDF), `create_particle_flock` (boids) and `create_point_cloud`; still open: `create_gpu_fluid`, `create_optical_flow_particles`,
 `create_vertex_displacement_mat`, `create_strange_attractor`, `create_pop_field`, `create_sdf_text`.
-The hosted recipe/template **marketplace** stays v0.6.0+; the current branch ships the local-first
-package index and installer foundation.
+The recipe/template
+**marketplace** stays v0.6.0+ (local-first via TD Palette + Obsidian vault, per the project's
+local-first distribution model).
+
+---
+
+## Phases 14–15 — v0.5.0 · Live mixing, parameter fidelity & creative direction ◐ integrated (live-validation pending)
+
+The post-discovery feature wave (sourced from `_workspace/discovery/FEATURE_BACKLOG.md`, reconciled
+against the Phase-13 merge so already-shipped items were dropped). Built as parallel
+one-tool-per-agent waves with a single-writer integrator. **TouchDesigner was offline during the
+build**, so all new tools/prompts are offline-gated (typecheck + build + Biome + vitest + recipes +
+bridge tests) with live create→cook→preview validation **UNVERIFIED-pending** — each TD-touching tool
+ships a `probe` block that surfaces the real TD API on first live run, and is fail-forward.
+
+| Feature | Delivers | CLI | Status |
+|---|---|---|---|
+| `create_transition` | A→B dissolve/luma_wipe/slide/zoom/glitch_cut over a Progress knob (subsumes `transition_designer`) | `transition` | ◐ |
+| `create_live_source` | Input layer: screen-grab/NDI/Syphon-Spout/camera/stream → previewed Null | `live-source` | ◐ |
+| `create_layer_stack` | N-layer compositor: per-layer blend+opacity+mute/solo + control strip | `layer-stack` | ◐ |
+| `create_media_bin` | Folder-fed clip bin (Movie File In + Switch) + Index/Next/Prev/crossfade | `media-bin` | ◐ |
+| `create_keyer` | Chroma/luma/rgb key + matte composite | `keyer` | ◐ |
+| `bind_audio_reactive` | One-shot: auto-map a COMP's knobs to audio bands + master Reactivity | `react-audio` | ◐ |
+| `create_data_reactive` | Map live data-source channels onto params (range-remapped) | `react-data` | ◐ |
+| `create_envelope_follower` | Attack/release + gate/duck sidechain (experimental) | `envelope` | ◐ |
+| `create_datamosh` / `create_displacement_warp` / `create_halftone` / `create_feedback_tunnel` / `create_text_3d` | Signature effects + 3D type | `datamosh`/`warp`/`halftone`/`feedback-tunnel`/`text-3d` | ◐ |
+| `apply_post_processing` +5 | Chainable `halftone`/`dither`/`crt`/`mirror`/`vhs` GLSL effects | `post-fx` | ◐ |
+| `create_set_navigator` / `create_beat_grid_sequencer` | QLab cue-list navigator + deterministic step grid | `set-nav`/`beat-grid` | ◐ |
+| `read_parameter_modes` / `set_parameter_expression` / `disconnect_nodes` | Parameter mode/expr read+write; remove a wire | `params-modes`/`set-expr`/`disconnect` | ◐ |
+| `serialize_network` / `rebuild_network` | COMP subtree ↔ diffable JSON round-trip (pulled forward from v0.6.0+) | `serialize`/`rebuild` | ◐ |
+| `inspect_op_extensions_storage` / `get_node_state_runtime` / `get_bridge_logs` | Component introspection + runtime telemetry + cook logs | `inspect-comp`/`node-state`/`logs` | ◐ |
+| `create_replicator` / `multipass_3d_depth` | Data-driven cloning + SSAO/synthetic-depth 3D pass | `replicator`/`multipass-3d` | ◐ |
+| `create_pop_field` | First GPU POP-family generator (**experimental** — render path held pending live validation) | `pop-field` | ◐ ⚠ |
+| `create_midi_note_reactive` / `create_midi_map` | MIDI notes → reactivity (synthetic previews); controller presets (**hardware-gated** — held pending gear) | `midi-notes`/`midi-map` | ◐ ⚠ |
+| Vault: `save_component_to_vault` / `browse_vault_library` / `capture_to_vault` / `export_setlist_to_vault` | Component packaging, library browse, gallery capture, setlist round-trip | (MCP-only) | ◐ |
+| 11 AI prompts | `fix_reactivity`, `recover_show`, `auto_vj_director`, `color_story`, `setlist_planner`, `lyric_show`, `genre_visual_language`, `visual_ab_compare`, `motion_critique`, `match_reference_loop`, `explain_param` | (prompts) | ◐ |
+| `tdmcp://prompts` resource | Prompt catalog for prompt-blind clients (local copilot) | (resource) | ◐ |
+
+**Held pending validation (⚠ — keep out of a tagged release until they cook clean live):**
+`create_pop_field` (POPs experimental + render path uncertain), and the device paths of
+`create_midi_note_reactive` / `create_midi_map` (need real MIDI gear; the synthetic note source is
+validatable offline).
+
+**CLI / config / copilot DX — shipped in the follow-on pass (◐, offline-gated):**
+`config_file_and_profiles` + per-call `--profile/--config/--td-host/--td-port/--timeout` flags + a
+`config` command (`--write-env`); `doctor` Tools check + `--fix` (suggested commands) + `--output
+json` + `-q/--quiet`; CLI `-V/--version`, did-you-mean, `--params -`/`--params-file`, `-q/--quiet`,
+`watch --filter/--exclude`; copilot `search_operators`+`list_recipes` in every tier + an opt-in
+`creative` generator tier; `get_td_info` bridge-staleness warning; `video_device_out`.
+
+**Still deferred to v0.6.0+ (not built):** `install-client` per-OS config writers + `install-bridge
+--verify` (need real per-client testing); `doctor --fix` auto-execution (start Ollama / pull / recopy
+bridge); `watch --exec`, `preview --inline/--watch`, shell-completion generator, repl
+history+completion, `chat --prompt`/`--read-only`; copilot conversation persistence / smarter handoff
+/ voice; `model_import_fbx_usd`; `dmx_fixture_pipeline` (hardware), `gpu_fluid` /
+`optical_flow_particles` (GPU/macOS), `richer_event_stream`, `run_bridge_tests`, and the recipe
+marketplace.

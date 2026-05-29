@@ -8,11 +8,12 @@ import {
   createFeedbackNetworkImpl,
   createFeedbackNetworkSchema,
 } from "../tools/layer1/createFeedbackNetwork.js";
-import { createGlitchImpl, createGlitchSchema } from "../tools/layer1/createGlitch.js";
-import { createStrobeImpl, createStrobeSchema } from "../tools/layer1/createStrobe.js";
-import { getPreviewImpl, getPreviewSchema } from "../tools/layer1/getPreview.js";
+import {
+  createGenerativeArtImpl,
+  createGenerativeArtSchema,
+} from "../tools/layer1/createGenerativeArt.js";
+import { listRecipesImpl, listRecipesSchema } from "../tools/layer1/listRecipes.js";
 import { connectNodesImpl, connectNodesSchema } from "../tools/layer2/connectNodes.js";
-import { createPaletteImpl, createPaletteSchema } from "../tools/layer2/createPalette.js";
 import { compareTdNodesImpl, compareTdNodesSchema } from "../tools/layer3/compareTdNodes.js";
 import { createTdNodeImpl, createTdNodeSchema } from "../tools/layer3/createTdNode.js";
 import { deleteTdNodeImpl, deleteTdNodeSchema } from "../tools/layer3/deleteTdNode.js";
@@ -31,10 +32,7 @@ import {
 } from "../tools/layer3/getTdNodeParameters.js";
 import { getTdNodesImpl, getTdNodesSchema } from "../tools/layer3/getTdNodes.js";
 import { getTdTopologyImpl, getTdTopologySchema } from "../tools/layer3/getTdTopology.js";
-import {
-  readParameterModesImpl,
-  readParameterModesSchema,
-} from "../tools/layer3/readParameterModes.js";
+import { searchOperatorsImpl, searchOperatorsSchema } from "../tools/layer3/searchOperators.js";
 import {
   summarizeTdErrorsImpl,
   summarizeTdErrorsSchema,
@@ -107,12 +105,6 @@ export const LLM_TOOLS: LlmTool[] = [
     getTdNodeParametersImpl,
   ),
   t(
-    "read_parameter_modes",
-    "Read one node's parameter modes, expressions, and binding/export hints.",
-    readParameterModesSchema,
-    readParameterModesImpl,
-  ),
-  t(
     "get_td_node_errors",
     "Check a node or network for errors and warnings.",
     getTdNodeErrorsSchema,
@@ -137,6 +129,18 @@ export const LLM_TOOLS: LlmTool[] = [
     compareTdNodesImpl,
   ),
   // --- offline knowledge base (no TD required) ---
+  t(
+    "search_operators",
+    "Search the 629-operator knowledge base by keyword to find the right operator type (offline).",
+    searchOperatorsSchema,
+    searchOperatorsImpl,
+  ),
+  t(
+    "list_recipes",
+    "Browse the built-in recipe library (pre-validated network templates) by id (offline).",
+    listRecipesSchema,
+    listRecipesImpl,
+  ),
   t(
     "get_td_classes",
     "List TouchDesigner Python API classes from the offline knowledge base.",
@@ -180,58 +184,51 @@ export const LLM_TOOLS: LlmTool[] = [
   ),
 ];
 
-export const CREATIVE_LLM_TOOLS: LlmTool[] = [
-  ...LLM_TOOLS,
+/**
+ * A small, safe set of Layer-1 *generators* offered only in the opt-in `creative` tier,
+ * so the local copilot can build a whole look offline (no cloud handoff) for a no-internet
+ * gig. Each generator orchestrates a network server-side and returns a friendly error on
+ * failure, so a misfire can't corrupt the project. Kept deliberately tiny — small-model
+ * tool-call accuracy on multi-arg generator schemas is unbenchmarked, so this is off by
+ * default; widen it only after benchmarking the configured model.
+ */
+export const CREATIVE_TOOLS: LlmTool[] = [
   t(
-    "get_preview",
-    "Capture a TOP preview after a creative build or change.",
-    getPreviewSchema,
-    getPreviewImpl,
+    "create_generative_art",
+    "Build a whole generative-art visual system from a short description (noise/feedback/flow).",
+    createGenerativeArtSchema,
+    createGenerativeArtImpl,
+    true,
   ),
   t(
     "create_feedback_network",
-    "Build a complete feedback visual network with controls and preview.",
+    "Build a feedback-loop visual network (trails / tunnels) in one call.",
     createFeedbackNetworkSchema,
     createFeedbackNetworkImpl,
     true,
   ),
   t(
     "create_audio_reactive",
-    "Build a complete audio-reactive visual system.",
+    "Build an audio-reactive visual that responds to the music in one call.",
     createAudioReactiveSchema,
     createAudioReactiveImpl,
     true,
   ),
-  t(
-    "create_glitch",
-    "Build a glitch/RGB-tear layer over a source TOP.",
-    createGlitchSchema,
-    createGlitchImpl,
-    true,
-  ),
-  t(
-    "create_strobe",
-    "Build a beat-syncable strobe/flash layer.",
-    createStrobeSchema,
-    createStrobeImpl,
-    true,
-  ),
-  t(
-    "create_palette",
-    "Generate a color palette/gradient utility network.",
-    createPaletteSchema,
-    createPaletteImpl,
-    true,
-  ),
 ];
 
-/** Tool exposure tiers. `safe` = inspection only; `standard` = CRUD; `creative` adds selected generators. */
+/**
+ * Tool exposure tiers. `safe` = inspection only; `standard` = inspection + simple CRUD;
+ * `creative` = standard + a curated set of safe Layer-1 generators (opt-in).
+ */
 export type ToolTier = "standard" | "safe" | "creative";
 
-/** Resolve the tool set for a tier. `safe` drops every mutating tool (read-only copilot). */
+/**
+ * Resolve the tool set for a tier. `safe` drops every mutating tool (read-only copilot);
+ * `creative` adds the curated Layer-1 generators on top of `standard`.
+ */
 export function resolveTools(tier: ToolTier = "standard"): LlmTool[] {
   if (tier === "safe") return LLM_TOOLS.filter((tool) => !tool.mutates);
-  if (tier === "creative") return CREATIVE_LLM_TOOLS;
+  if (tier === "creative") return [...LLM_TOOLS, ...CREATIVE_TOOLS];
   return LLM_TOOLS;
 }
 

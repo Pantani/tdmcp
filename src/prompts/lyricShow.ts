@@ -7,24 +7,36 @@ export const registerLyricShow: PromptRegistrar = (server) => {
     {
       title: "Lyric show",
       description:
-        "Plan kinetic lyric typography synced to beat/onsets and composited over a visual.",
+        "Turn a block of lyrics/credits + a vibe into a timed kinetic-text layer — choosing create_kinetic_text mode (flash/pulse/slide), font/color from the palette, and beat-syncing the flashes.",
       argsSchema: {
-        lyrics: z.string().describe("Lyric lines or text fragments to stage."),
-        source_path: z.string().optional().describe("Optional TOP to composite lyrics over."),
+        lyrics: z
+          .string()
+          .optional()
+          .describe(
+            "The lyrics, title cards, or credits to display (one line/phrase per beat-drop).",
+          ),
+        vibe: z
+          .string()
+          .optional()
+          .describe(
+            "The aesthetic, e.g. 'aggressive techno, hard flashes' or 'dreamy, slow slide-ins'.",
+          ),
+        over: z
+          .string()
+          .optional()
+          .describe("The visual/COMP the text should sit over (so it composites, not replaces)."),
       },
     },
-    ({ lyrics, source_path }) =>
+    ({ lyrics, vibe, over }) =>
       userPrompt(
         [
-          "Build a lyric-driven visual pass.",
+          `Build a typographic layer that tells the words${vibe ? ` with this vibe: ${vibe}` : ""}.${lyrics ? `\n\nText:\n${lyrics}` : " (Ask for the lyrics/credits if not given.)"}${over ? `\n\nComposite it over: ${over}.` : ""}`,
           "",
-          `Lyrics:\n${lyrics}`,
-          "",
-          "Use create_kinetic_text for the text system, create_tempo_sync/detect_onsets for timing, and create_text_overlay or Composite TOPs when layering over a source.",
-          source_path
-            ? `Composite over ${source_path}.`
-            : "If no source is supplied, build a standalone transparent lyric layer.",
-          "Verify readability at output resolution, check node errors, and capture a preview.",
+          "1. Choose the delivery to match the vibe: create_kinetic_text mode — flash (punchy, beat-locked), pulse (breathing), or slide (smooth reveals). Aggressive genres → flash on the beat; ambient → slow slide/fade. Pick font weight, size, and a color drawn from the set's palette (tie to color_story if one exists).",
+          "2. For text that should sit ON the visuals, composite it (create_text_overlay over the source, or kinetic-text's own background-transparent path) — don't replace the look. For a full title card, standalone is fine.",
+          "3. Time it to the music: drive the flash/reveal from the beat (create_tempo_sync's pulse/beat channel via bind_to_channel, or quantize cue changes to the bar). One phrase per drop usually reads better than a stream of words.",
+          "4. Keep it legible: enough contrast against the background, not too many words on screen at once, and safe margins. get_preview to confirm it's readable over the actual visual, not just on black.",
+          "5. Report the sequence (phrase → timing → mode) and how to advance it live (cue list / set-navigator) so the operator can fire lines on cue.",
         ].join("\n"),
       ),
   );

@@ -104,7 +104,7 @@ interface SnapshotNode {
 }
 
 interface ParameterModesReport {
-  parameters: Record<string, unknown>;
+  parameters: unknown;
   fatal?: string;
 }
 
@@ -194,13 +194,30 @@ function compactParameterModes(modes: Record<string, unknown>): Record<string, u
     const mode = String(info.mode ?? "").toLowerCase();
     const hasReactiveState =
       typeof info.expression === "string" ||
+      typeof info.expr === "string" ||
       typeof info.bind_expression === "string" ||
+      typeof info.bind_expr === "string" ||
       typeof info.export_source === "string" ||
+      typeof info.export_op === "string" ||
       (mode !== "" && mode !== "constant" && mode !== "mode.constant");
     if (!hasReactiveState) continue;
     compact[name] = info;
   }
   return compact;
+}
+
+function normalizeParameterModes(raw: unknown): Record<string, unknown> {
+  if (!raw || typeof raw !== "object") return {};
+  if (Array.isArray(raw)) {
+    const out: Record<string, unknown> = {};
+    for (const item of raw) {
+      if (!item || typeof item !== "object") continue;
+      const name = (item as Record<string, unknown>).name;
+      if (typeof name === "string" && name.length > 0) out[name] = item;
+    }
+    return out;
+  }
+  return raw as Record<string, unknown>;
 }
 
 export async function snapshotTdGraphImpl(ctx: ToolContext, args: SnapshotTdGraphArgs) {
@@ -235,7 +252,7 @@ export async function snapshotTdGraphImpl(ctx: ToolContext, args: SnapshotTdGrap
             );
             const parsed = parsePythonReport<ParameterModesReport>(exec.stdout);
             if (parsed.fatal) throw new Error(parsed.fatal);
-            return { path: n.path, parameters: parsed.parameters };
+            return { path: n.path, parameters: normalizeParameterModes(parsed.parameters) };
           }),
         );
         for (const detail of details) {

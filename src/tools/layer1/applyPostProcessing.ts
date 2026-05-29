@@ -56,6 +56,46 @@ void main(){ vec2 uv=vUV.st; float band=floor(uv.y*24.0);
   float off=(hash(band)-0.5)*0.06*step(0.7,hash(band*1.7));
   fragColor=TDOutputSwizzle(texture(sTD2DInputs[0],uv+vec2(off,0.0))); }
 `,
+  halftone: `out vec4 fragColor;
+void main(){ vec2 uv=vUV.st; vec4 c=texture(sTD2DInputs[0],uv);
+  vec2 px=uv*uTD2DInfos[0].res.zw; float cell=6.0;
+  vec2 g=fract(px/cell)-0.5; float d=length(g);
+  float lum=dot(c.rgb,vec3(0.299,0.587,0.114));
+  float dotmask=step(d*2.0,sqrt(lum));
+  fragColor=TDOutputSwizzle(vec4(vec3(dotmask),c.a)); }
+`,
+  dither: `out vec4 fragColor;
+float hash(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}
+void main(){ vec2 uv=vUV.st; vec4 c=texture(sTD2DInputs[0],uv);
+  vec2 px=floor(uv*uTD2DInfos[0].res.zw); float t=hash(px);
+  vec3 q=step(vec3(t),c.rgb);
+  fragColor=TDOutputSwizzle(vec4(q,c.a)); }
+`,
+  crt: `out vec4 fragColor;
+void main(){ vec2 uv=vUV.st; vec2 cc=uv-0.5; float dist=dot(cc,cc);
+  vec2 wuv=uv+cc*dist*0.15;
+  vec4 c=texture(sTD2DInputs[0],wuv);
+  float scan=0.9+0.1*step(0.5,fract(wuv.y*uTD2DInfos[0].res.w*0.5));
+  float vig=smoothstep(0.85,0.3,length(cc));
+  vec3 col=c.rgb*scan*vig;
+  if(wuv.x<0.0||wuv.x>1.0||wuv.y<0.0||wuv.y>1.0) col=vec3(0.0);
+  fragColor=TDOutputSwizzle(vec4(col,c.a)); }
+`,
+  mirror: `out vec4 fragColor;
+void main(){ vec2 uv=vUV.st; if(uv.x>0.5) uv.x=1.0-uv.x;
+  fragColor=TDOutputSwizzle(texture(sTD2DInputs[0],uv)); }
+`,
+  vhs: `out vec4 fragColor;
+float hash(float x){return fract(sin(x*127.1)*43758.5453);}
+void main(){ vec2 uv=vUV.st; float line=hash(floor(uv.y*240.0));
+  float jit=(line-0.5)*0.01*step(0.85,line); vec2 u=uv+vec2(jit,0.0);
+  float r=texture(sTD2DInputs[0],u+vec2(0.004,0.0)).r;
+  float g=texture(sTD2DInputs[0],u).g;
+  float b=texture(sTD2DInputs[0],u-vec2(0.004,0.0)).b;
+  float scan=0.92+0.08*step(0.5,fract(uv.y*uTD2DInfos[0].res.w*0.5));
+  float a=texture(sTD2DInputs[0],u).a;
+  fragColor=TDOutputSwizzle(vec4(vec3(r,g,b)*scan,a)); }
+`,
 };
 
 const EFFECTS = [
@@ -73,6 +113,11 @@ const EFFECTS = [
   "glitch",
   "rgb_split",
   "scanlines",
+  "halftone",
+  "dither",
+  "crt",
+  "mirror",
+  "vhs",
 ] as const;
 
 export const applyPostProcessingSchema = z.object({
@@ -85,7 +130,7 @@ export const applyPostProcessingSchema = z.object({
     .array(z.enum(EFFECTS))
     .min(1)
     .describe(
-      "Effects to apply, chained in the order listed. Each is one of: bloom, chromatic_aberration, film_grain, vignette, color_grade, sharpen, blur, edge_detect, invert, threshold, posterize, glitch, rgb_split, scanlines.",
+      "Effects to apply, chained in the order listed. Each is one of: bloom, chromatic_aberration, film_grain, vignette, color_grade, sharpen, blur, edge_detect, invert, threshold, posterize, glitch, rgb_split, scanlines, halftone, dither, crt, mirror, vhs.",
     ),
   parent_path: z
     .string()

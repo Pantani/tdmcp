@@ -3,103 +3,162 @@ import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
+export const readParameterModesSchema = z.object({
+  path: z.string().describe("Full path of the node whose parameters to inspect."),
+  keys: z
+    .array(z.string())
+    .optional()
+    .describe("Only report these parameter names (case-sensitive). Omit for all parameters."),
+  non_default_only: z
+    .boolean()
+    .default(false)
+    .describe(
+      "Only return parameters whose mode is not plain constant (i.e. expression/export/bind) — the ones that matter for a faithful round-trip.",
+    ),
+});
+type ReadParameterModesArgs = z.infer<typeof readParameterModesSchema>;
+
 export const parameterModeInfoSchema = z.object({
   name: z.string(),
-  mode: z.string(),
   value: z.unknown().optional(),
+  mode: z.string(),
+  expr: z.string().optional(),
+  bind_expr: z.string().optional(),
+  export_op: z.string().optional(),
   expression: z.string().optional(),
   bind_expression: z.string().optional(),
   export_source: z.string().optional(),
 });
 
-export const readParameterModesSchema = z.object({
-  path: z.string().describe("Full path of the node whose parameter modes should be inspected."),
-  keys: z
-    .array(z.string())
-    .optional()
-    .describe("Optional parameter names to return. Omit to inspect every custom/built-in par."),
-});
-type ReadParameterModesArgs = z.infer<typeof readParameterModesSchema>;
-
 export const readParameterModesOutputSchema = z.object({
   path: z.string(),
-  parameters: z.record(z.string(), parameterModeInfoSchema),
+  type: z.string(),
+  name: z.string(),
+  parameters: z.array(parameterModeInfoSchema),
+  probe: z.record(z.string(), z.unknown()).optional(),
   warnings: z.array(z.string()),
 });
 
-export type ParameterModeInfo = z.infer<typeof parameterModeInfoSchema>;
+interface ParameterEntry {
+  name: string;
+  value?: unknown;
+  mode: string;
+  expr?: string;
+  bind_expr?: string;
+  export_op?: string;
+}
 
 interface ReadParameterModesReport {
   path: string;
-  parameters: Record<string, ParameterModeInfo>;
+  type: string;
+  name: string;
+  parameters: ParameterEntry[];
+  probe?: Record<string, unknown>;
   warnings: string[];
   fatal?: string;
 }
 
+// The payload travels as base64 so arbitrary strings cannot break Python quoting.
+// All TD globals (op, app, etc.) live inside this script string — never outside it.
 const READ_PARAMETER_MODES_SCRIPT = `
-import json, base64, traceback
+import json, base64, math, traceback
 _p = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
-report = {"path": _p["path"], "parameters": {}, "warnings": []}
+report = {"path": _p["path"], "type": "", "name": "", "parameters": [], "warnings": []}
 
-def _mode_name(par):
+def _json_safe(value):
+    if value is None or isinstance(value, (str, bool)):
+        return value
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return value if math.isfinite(value) else str(value)
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(v) for v in value]
+    if isinstance(value, dict):
+        return {str(k): _json_safe(v) for k, v in value.items()}
     try:
-        m = par.mode
-        return getattr(m, "name", None) or str(m).split(".")[-1]
+        _path = getattr(value, "path", None)
+        if _path is not None:
+            return str(_path)
     except Exception:
-        return "unknown"
-
-def _safe_value(par):
+        pass
     try:
-        return par.eval()
-    except Exception:
-        try:
-            return par.val
-        except Exception:
-            return None
-
-def _safe_str(value):
-    if value is None:
-        return None
-    try:
-        text = str(value)
-        return text if text else None
+        return str(value)
     except Exception:
         return None
-
-def _par_info(par):
-    info = {"name": par.name, "mode": _mode_name(par), "value": _safe_value(par)}
-    expr = _safe_str(getattr(par, "expr", None))
-    if expr is not None:
-        info["expression"] = expr
-    bind_expr = _safe_str(getattr(par, "bindExpr", None))
-    if bind_expr is not None:
-        info["bind_expression"] = bind_expr
-    export_source = None
-    for attr in ("exportSource", "exportOP", "exportPath"):
-        try:
-            v = getattr(par, attr, None)
-            if v:
-                export_source = getattr(v, "path", None) or str(v)
-                break
-        except Exception:
-            pass
-    if export_source:
-        info["export_source"] = export_source
-    return info
-
 try:
-    node = op(_p["path"])
-    if node is None:
-        report["fatal"] = "Node not found: " + _p["path"]
+    _c = op(_p["path"])
+    if _c is None:
+        report["fatal"] = "Node not found: " + str(_p["path"])
     else:
-        keys = set(_p.get("keys") or [])
-        for par in node.pars():
-            if keys and par.name not in keys:
-                continue
+        report["type"] = _c.type
+        report["name"] = _c.name
+        _keys = _p.get("keys") or None
+        _non_default_only = bool(_p.get("non_default_only", False))
+        _pars = _c.pars()
+        _first = True
+        for par in _pars:
             try:
-                report["parameters"][par.name] = _par_info(par)
+                _pname = par.name
+                if _keys is not None and _pname not in _keys:
+                    continue
+                # Probe attributes on the first parameter to help confirm the real TD API.
+                if _first:
+                    _first = False
+                    try:
+                        _probe = {
+                            "has_mode": hasattr(par, "mode"),
+                            "has_expr": hasattr(par, "expr"),
+                            "has_bindExpr": hasattr(par, "bindExpr"),
+                            "has_exportOP": hasattr(par, "exportOP"),
+                            "mode_repr": str(par.mode) if hasattr(par, "mode") else None,
+                            "par_attrs": sorted([a for a in dir(par) if not a.startswith("_")])[:60],
+                        }
+                        report["probe"] = _probe
+                    except Exception:
+                        report["probe"] = {"error": traceback.format_exc().splitlines()[-1]}
+                # Read mode; normalize "ParMode.CONSTANT" → "CONSTANT".
+                try:
+                    _raw_mode = par.mode
+                    _mode = str(_raw_mode).split(".")[-1].upper() if _raw_mode is not None else "UNKNOWN"
+                except Exception:
+                    _mode = "UNKNOWN"
+                # Skip constant parameters when the caller only wants non-defaults.
+                if _non_default_only and _mode == "CONSTANT":
+                    continue
+                _entry = {"name": _pname, "mode": _mode}
+                # Evaluated value — some pars raise on eval() (e.g. disconnected references).
+                try:
+                    _entry["value"] = _json_safe(par.eval())
+                except Exception as _ve:
+                    report["warnings"].append("Could not eval " + _pname + ": " + str(_ve))
+                # Raw expression string — only meaningful when mode is EXPRESSION.
+                try:
+                    _expr = par.expr
+                    if _expr:
+                        _entry["expr"] = str(_expr)
+                except Exception:
+                    pass
+                # Bind expression.
+                try:
+                    _be = getattr(par, "bindExpr", "")
+                    if _be:
+                        _entry["bind_expr"] = str(_be)
+                except Exception:
+                    pass
+                # Export source operator path.
+                try:
+                    _eop = par.exportOP
+                    if _eop is not None:
+                        _entry["export_op"] = _eop.path
+                except Exception:
+                    pass
+                report["parameters"].append(_entry)
             except Exception:
-                report["warnings"].append("Could not inspect parameter " + getattr(par, "name", "?"))
+                try:
+                    report["warnings"].append("Error reading par " + str(par.name) + ": " + traceback.format_exc().splitlines()[-1])
+                except Exception:
+                    report["warnings"].append("Error reading unknown par: " + traceback.format_exc().splitlines()[-1])
 except Exception:
     report["fatal"] = traceback.format_exc().splitlines()[-1]
 print(json.dumps(report))
@@ -112,19 +171,28 @@ export function buildReadParameterModesScript(payload: object): string {
 export async function readParameterModesImpl(ctx: ToolContext, args: ReadParameterModesArgs) {
   return guardTd(
     async () => {
-      const exec = await ctx.client.executePythonScript(
-        buildReadParameterModesScript({
-          path: args.path,
-          keys: args.keys,
-        }),
-        true,
-      );
+      const script = buildReadParameterModesScript({
+        path: args.path,
+        keys: args.keys ?? null,
+        non_default_only: args.non_default_only,
+      });
+      const exec = await ctx.client.executePythonScript(script, true);
       return parsePythonReport<ReadParameterModesReport>(exec.stdout);
     },
     (report) => {
-      if (report.fatal) return errorResult(`read_parameter_modes failed: ${report.fatal}`, report);
-      const count = Object.keys(report.parameters).length;
-      return structuredResult(`Read ${count} parameter mode(s) for ${report.path}.`, report);
+      if (report.fatal) {
+        return errorResult(`read_parameter_modes failed: ${report.fatal}`, report);
+      }
+      const nonConst = report.parameters.filter((p) => p.mode !== "CONSTANT").length;
+      const summary = `${report.parameters.length} parameter(s) for ${report.path} (${report.type}) — ${nonConst} non-constant.`;
+      return structuredResult(summary, {
+        path: report.path,
+        type: report.type,
+        name: report.name,
+        parameters: report.parameters,
+        probe: report.probe,
+        warnings: report.warnings,
+      });
     },
   );
 }
@@ -135,7 +203,7 @@ export const registerReadParameterModes: ToolRegistrar = (server, ctx) => {
     {
       title: "Read parameter modes",
       description:
-        "Read a node's parameter modes (constant/expression/bind/export where TouchDesigner exposes them) plus expressions and binding/export hints. Use this before serializing or safely changing reactive parameters; get_td_node_parameters only returns evaluated values.",
+        "Read-only: for each parameter of a node, report its mode (CONSTANT / EXPRESSION / EXPORT / BIND), its evaluated value, and its raw expression / bind-expression / export-source strings. Use this to faithfully serialize a network for round-trip editing, diffing, or debugging — the evaluated value alone hides which parameters are driven by expressions or exports. Set `non_default_only` to surface only the parameters that would be lost in a plain value copy.",
       inputSchema: readParameterModesSchema.shape,
       outputSchema: readParameterModesOutputSchema.shape,
       annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },

@@ -25,6 +25,7 @@ export const createExternalIoSchema = z.object({
       "dmx_out",
       "artnet_out",
       "rtmp_out",
+      "video_device_out",
       "ndi_in",
       "syphon_spout_in",
     ])
@@ -52,7 +53,7 @@ export const createExternalIoSchema = z.object({
     .string()
     .optional()
     .describe(
-      "(dmx_out/artnet_out/osc_out/midi_out) CHOP whose channel values are sent out, or (rtmp_out) the TOP to stream. Should live in the same COMP as parent_path so the wire/source connects.",
+      "(dmx_out/artnet_out/osc_out/midi_out) CHOP whose channel values are sent out, or (rtmp_out / video_device_out) the TOP to send. Should live in the same COMP as parent_path so the wire/source connects.",
     ),
   interface: z
     .enum(["artnet", "sacn", "enttecusbpro", "enttecusbpromk2", "serial", "kinet"])
@@ -95,7 +96,9 @@ export const createExternalIoSchema = z.object({
   source_name: z
     .string()
     .optional()
-    .describe("(ndi_in/syphon_spout_in) Name of the NDI source or Spout sender to receive."),
+    .describe(
+      "(ndi_in/syphon_spout_in) Name of the NDI source or Spout sender to receive, or (video_device_out) the SDI/capture-card output device name.",
+    ),
 });
 type CreateExternalIoArgs = z.infer<typeof createExternalIoSchema>;
 
@@ -118,7 +121,7 @@ const IO_SCRIPT = `
 import json, base64, traceback
 _p = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
 report = {"kind": _p["kind"], "warnings": []}
-_TYPEMAP = {"osc_in": oscinCHOP, "midi_in": midiinCHOP, "keyboard_in": keyboardinCHOP, "gamepad_in": joystickCHOP, "mouse_in": mouseinCHOP, "osc_out": oscoutCHOP, "midi_out": midioutCHOP, "dmx_out": dmxoutCHOP, "artnet_out": dmxoutCHOP, "rtmp_out": videostreamoutTOP, "ndi_in": ndiinTOP, "syphon_spout_in": syphonspoutinTOP}
+_TYPEMAP = {"osc_in": oscinCHOP, "midi_in": midiinCHOP, "keyboard_in": keyboardinCHOP, "gamepad_in": joystickCHOP, "mouse_in": mouseinCHOP, "osc_out": oscoutCHOP, "midi_out": midioutCHOP, "dmx_out": dmxoutCHOP, "artnet_out": dmxoutCHOP, "rtmp_out": videostreamoutTOP, "video_device_out": videodeviceoutTOP, "ndi_in": ndiinTOP, "syphon_spout_in": syphonspoutinTOP}
 try:
     _kind = _p["kind"]; _parent = op(_p["parent"])
     if _parent is None:
@@ -168,6 +171,21 @@ try:
             _setpar("mode", "rtmpsender"); _setpar("url", _p.get("url")); _setpar("fps", _p.get("fps"))
             _connect_source()
             _setpar("active", _p.get("active"))
+        elif _kind == "video_device_out":
+            _connect_source()
+            # The device-selector par name varies by build/driver — probe a few spellings.
+            _dev = _p.get("source_name")
+            if _dev:
+                for _dpn in ["device", "outputdevice", "devicename"]:
+                    pr = getattr(_node.par, _dpn, None)
+                    if pr is not None:
+                        try:
+                            pr.val = _dev
+                            break
+                        except Exception:
+                            pass
+                else:
+                    report["warnings"].append("Could not set output device (tried device/outputdevice/devicename) — driver/build-dependent.")
         elif _kind == "ndi_in":
             _setpar("name", _p.get("source_name"))
         elif _kind == "syphon_spout_in":
