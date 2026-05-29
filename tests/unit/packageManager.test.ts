@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { validateArchiveEntries } from "../../src/packages/archive.js";
 import { isPackageCommand, runPackageCli } from "../../src/packages/cli.js";
 import { doctorPackage } from "../../src/packages/doctor.js";
+import { resolveGithubReleaseDownloadPlan } from "../../src/packages/github.js";
 import { installPackage, uninstallPackage } from "../../src/packages/installer.js";
 import { createPackagePaths } from "../../src/packages/paths.js";
 import {
@@ -133,6 +134,27 @@ describe("package install planning", () => {
     } finally {
       cleanup(root);
     }
+  });
+
+  it("prefers standalone .tox release assets when a release exposes no zip asset", async () => {
+    const manifest = resolvePackage("shader-park-td");
+    expect(manifest).toBeDefined();
+    if (!manifest) throw new Error("shader-park-td manifest missing");
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        tag_name: "v1.2.3",
+        zipball_url: "https://zipball",
+        assets: [{ name: "ShaderPark.tox", browser_download_url: "https://asset/tox" }],
+      }),
+    })) as unknown as typeof fetch;
+    const plan = await resolveGithubReleaseDownloadPlan(manifest, fetchImpl);
+    expect(plan).toMatchObject({
+      ref: "v1.2.3",
+      archiveName: "ShaderPark.tox",
+      kind: "file",
+      url: "https://asset/tox",
+    });
   });
 
   it("mock-installs every MVP package and records one idempotent state entry each", async () => {

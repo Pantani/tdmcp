@@ -1,7 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { createWriteStream, mkdirSync, rmSync } from "node:fs";
-import { homedir } from "node:os";
-import { join } from "node:path";
+import { createWriteStream, mkdirSync } from "node:fs";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { runPackageCli } from "../packages/cli.js";

@@ -1,9 +1,13 @@
-import { existsSync, mkdirSync, rmSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { extractZipSafe } from "./archive.js";
 import { scanPackageArtifacts } from "./artifacts.js";
 import { importPackageViaBridge } from "./bridge.js";
-import { createGithubDownloadPlan, downloadToFile } from "./github.js";
+import {
+  createGithubDownloadPlan,
+  downloadToFile,
+  resolveGithubReleaseDownloadPlan,
+} from "./github.js";
 import { createPackagePaths, safePackageSegment } from "./paths.js";
 import {
   createAdHocGithubManifest,
@@ -104,7 +108,7 @@ export async function installPackage(
   }
 
   const dryRun = Boolean(opts.dryRun);
-  const download = downloadPlanFor(pkg, opts.pin);
+  let download = downloadPlanFor(pkg, opts.pin);
   const warnings: string[] = [];
   if (pkg.externalDependencies.length > 0) {
     for (const dep of pkg.externalDependencies) {
@@ -159,6 +163,23 @@ export async function installPackage(
     return report;
   }
 
+  if (
+    pkg.installStrategy.preferReleaseAsset &&
+    !opts.pin &&
+    !opts.downloader &&
+    pkg.source.type === "github"
+  ) {
+    try {
+      download = (await resolveGithubReleaseDownloadPlan(pkg, opts.fetchImpl)) ?? download;
+    } catch (err) {
+      warnings.push(
+        `Could not resolve latest release asset; falling back to source archive: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
+  }
+
   const segment = safePackageSegment(pkg.id);
   const archiveDir = join(paths.cache, segment);
   const archivePath = join(archiveDir, download.archiveName);
@@ -171,7 +192,11 @@ export async function installPackage(
   const downloader = opts.downloader ?? downloadToFile;
   const extractor = opts.extractor ?? extractZipSafe;
   await downloader(download.url, archivePath);
-  await extractor(archivePath, stagedPath);
+  if (download.kind === "file") {
+    copyFileSync(archivePath, join(stagedPath, download.archiveName));
+  } else {
+    await extractor(archivePath, stagedPath);
+  }
 
   const artifacts = scanPackageArtifacts(stagedPath);
   if (artifacts.length === 0) warnings.push("No files were detected after extraction.");

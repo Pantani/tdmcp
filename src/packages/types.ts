@@ -139,6 +139,7 @@ export interface PackageDownloadPlan {
   url: string;
   ref: string;
   archiveName: string;
+  kind: "zip" | "file";
   strategy: "github-archive" | "github-release-asset";
 }
 
@@ -210,6 +211,7 @@ export interface PackageManagerOptions {
   allowExternal?: boolean;
   downloader?: (url: string, filePath: string) => Promise<void>;
   extractor?: (archivePath: string, destDir: string) => Promise<void>;
+  fetchImpl?: typeof fetch;
   bridge?: PackageBridge;
   now?: () => Date;
 }
