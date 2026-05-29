@@ -98,6 +98,38 @@ describe("library and packaging tools", () => {
     }
   });
 
+  it("preflights recipe bundle conflicts before writing any imported recipe", async () => {
+    const dir = tmp();
+    try {
+      const bundle = join(dir, "bundle.json");
+      const outDir = join(dir, "imported");
+      mkdirSync(outDir, { recursive: true });
+      writeFileSync(
+        bundle,
+        JSON.stringify({
+          recipes: [
+            { id: "first", name: "First", nodes: [{ name: "noise1", type: "noiseTOP" }] },
+            { id: "second", name: "Second", nodes: [{ name: "noise1", type: "noiseTOP" }] },
+          ],
+        }),
+        "utf8",
+      );
+      writeFileSync(join(outDir, "second.json"), "existing", "utf8");
+
+      const imported = await importRecipeBundleImpl(makeCtx(), {
+        bundle_file: bundle,
+        out_dir: outDir,
+        overwrite: false,
+      });
+
+      expect(imported.isError).toBe(true);
+      expect(existsSync(join(outDir, "first.json"))).toBe(false);
+      expect(readFileSync(join(outDir, "second.json"), "utf8")).toBe("existing");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("inspects manifests, attaches docs, validates assets, and writes a local marketplace index", async () => {
     const dir = tmp();
     try {

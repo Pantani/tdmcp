@@ -28,6 +28,7 @@ const SAFE_PROFILE_EXCLUDE = [
   "execute_python_script",
   "exec_node_method",
   "delete_td_node",
+  "rebuild_network",
   "edit_dat_content",
   "set_dat_content",
   "create_panic",
@@ -80,6 +81,7 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
   it("safe drops the destructive tools", async () => {
     const names = await toolNames({ TDMCP_TOOL_PROFILE: "safe" });
     expect(names).not.toContain("delete_td_node");
+    expect(names).not.toContain("rebuild_network");
     expect(names).not.toContain("edit_dat_content");
     expect(names).not.toContain("set_dat_content");
     expect(names).not.toContain("create_panic");
@@ -105,7 +107,7 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
     const safe = await toolNames({ TDMCP_TOOL_PROFILE: "safe" });
     expect(safe.length).toBeLessThan(full.length);
     expect(full.length - safe.length).toBe(SAFE_PROFILE_EXCLUDE.length);
-    expect(SAFE_PROFILE_EXCLUDE.length).toBe(16);
+    expect(SAFE_PROFILE_EXCLUDE.length).toBe(17);
   });
 
   it("safe ⊇ rawPython=off (composition): safe hides everything rawPython=off hides", async () => {

@@ -261,12 +261,19 @@ export async function importRecipeBundleImpl(_ctx: ToolContext, args: ImportReci
   try {
     const raw = JSON.parse(readFileSync(args.bundle_file, "utf8")) as { recipes?: unknown[] };
     const recipes = z.array(RecipeSchema).parse(raw.recipes ?? []);
-    const written: string[] = [];
-    for (const recipe of recipes) {
-      const out = join(args.out_dir, recipeFileName(recipe));
-      if (existsSync(out) && !args.overwrite) {
-        return errorResult(`Recipe already exists: ${out}. Pass overwrite:true to replace it.`);
+    const targets = recipes.map((recipe) => ({
+      recipe,
+      out: join(args.out_dir, recipeFileName(recipe)),
+    }));
+    if (!args.overwrite) {
+      for (const { out } of targets) {
+        if (existsSync(out)) {
+          return errorResult(`Recipe already exists: ${out}. Pass overwrite:true to replace it.`);
+        }
       }
+    }
+    const written: string[] = [];
+    for (const { recipe, out } of targets) {
       writeJson(out, recipe);
       written.push(out);
     }
