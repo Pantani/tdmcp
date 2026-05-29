@@ -22,7 +22,7 @@
 import { spawnSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -42,6 +42,13 @@ const INCLUDE = [
   [join(root, "LICENSE"), "LICENSE"],
   [join(root, "package.json"), "package.json"],
 ];
+
+function shouldStage(src) {
+  const rel = relative(root, src).split(/[\\/]/).join("/");
+  if (rel === "td/tests" || rel.startsWith("td/tests/")) return false;
+  if (rel.includes("__pycache__")) return false;
+  return !rel.endsWith(".pyc");
+}
 
 function log(msg) {
   process.stdout.write(`[build-dxt] ${msg}\n`);
@@ -77,7 +84,7 @@ function stageFiles(stageDir) {
     if (!existsSync(src)) continue;
     const target = join(stageDir, dest);
     mkdirSync(dirname(target), { recursive: true });
-    cpSync(src, target, { recursive: true });
+    cpSync(src, target, { recursive: true, filter: shouldStage });
   }
 }
 
@@ -166,7 +173,7 @@ function zipFallback() {
       }
       const target = join(stageDir, dest);
       mkdirSync(dirname(target), { recursive: true });
-      cpSync(src, target, { recursive: true });
+      cpSync(src, target, { recursive: true, filter: shouldStage });
       log(`staged ${dest}`);
     }
     stageNodeModules(stageDir);
