@@ -433,31 +433,35 @@ export async function scaffoldRecipeTemplateImpl(
   _ctx: ToolContext,
   args: ScaffoldRecipeTemplateArgs,
 ) {
-  if (existsSync(args.out_file) && !args.overwrite) {
-    return errorResult(
-      `Recipe template already exists: ${args.out_file}. Pass overwrite:true to replace it.`,
-    );
+  try {
+    if (existsSync(args.out_file) && !args.overwrite) {
+      return errorResult(
+        `Recipe template already exists: ${args.out_file}. Pass overwrite:true to replace it.`,
+      );
+    }
+    const recipe = RecipeSchema.parse({
+      id: args.id,
+      name: args.name,
+      description: "Describe what this recipe builds.",
+      tags: ["template"],
+      difficulty: "beginner",
+      nodes: [
+        { name: "source", type: "noiseTOP", parameters: {} },
+        { name: "out1", type: "nullTOP", parameters: {} },
+      ],
+      connections: [{ from: "source", to: "out1" }],
+      parameters: [],
+      controls: [],
+      preview_description: "A starter recipe template.",
+    });
+    writeJson(args.out_file, recipe);
+    return jsonResult(`Scaffolded recipe template ${args.out_file}.`, {
+      recipe,
+      out_file: args.out_file,
+    });
+  } catch (err) {
+    return errorResult(err instanceof Error ? err.message : String(err));
   }
-  const recipe = RecipeSchema.parse({
-    id: args.id,
-    name: args.name,
-    description: "Describe what this recipe builds.",
-    tags: ["template"],
-    difficulty: "beginner",
-    nodes: [
-      { name: "source", type: "noiseTOP", parameters: {} },
-      { name: "out1", type: "nullTOP", parameters: {} },
-    ],
-    connections: [{ from: "source", to: "out1" }],
-    parameters: [],
-    controls: [],
-    preview_description: "A starter recipe template.",
-  });
-  writeJson(args.out_file, recipe);
-  return jsonResult(`Scaffolded recipe template ${args.out_file}.`, {
-    recipe,
-    out_file: args.out_file,
-  });
 }
 
 export const attachDocsAsAssetsSchema = z.object({
@@ -502,39 +506,43 @@ export async function localMarketplaceIndexImpl(
   _ctx: ToolContext,
   args: LocalMarketplaceIndexArgs,
 ) {
-  const entries: Array<{
-    path: string;
-    id?: string;
-    name?: string;
-    version?: string;
-    manifest: string;
-  }> = [];
-  if (existsSync(args.package_dir)) {
-    for (const entry of readdirSync(args.package_dir)) {
-      const path = join(args.package_dir, entry);
-      if (!statSync(path).isDirectory()) continue;
-      try {
-        const found = readManifest(path);
-        entries.push({
-          path,
-          id: found.manifest.id,
-          name: found.manifest.name,
-          version: found.manifest.version,
-          manifest: found.path,
-        });
-      } catch {
-        // skip non-package folders
+  try {
+    const entries: Array<{
+      path: string;
+      id?: string;
+      name?: string;
+      version?: string;
+      manifest: string;
+    }> = [];
+    if (existsSync(args.package_dir)) {
+      for (const entry of readdirSync(args.package_dir)) {
+        const path = join(args.package_dir, entry);
+        if (!statSync(path).isDirectory()) continue;
+        try {
+          const found = readManifest(path);
+          entries.push({
+            path,
+            id: found.manifest.id,
+            name: found.manifest.name,
+            version: found.manifest.version,
+            manifest: found.path,
+          });
+        } catch {
+          // skip non-package folders
+        }
       }
     }
+    const index = {
+      kind: "tdmcp-local-marketplace-index",
+      generated_at: new Date().toISOString(),
+      entries,
+    };
+    const out = args.out_file ?? join(args.package_dir, "index.json");
+    writeJson(out, index);
+    return jsonResult(`Indexed ${entries.length} local package(s) at ${out}.`, index);
+  } catch (err) {
+    return errorResult(err instanceof Error ? err.message : String(err));
   }
-  const index = {
-    kind: "tdmcp-local-marketplace-index",
-    generated_at: new Date().toISOString(),
-    entries,
-  };
-  const out = args.out_file ?? join(args.package_dir, "index.json");
-  writeJson(out, index);
-  return jsonResult(`Indexed ${entries.length} local package(s) at ${out}.`, index);
 }
 
 export const componentLinkHealthSchema = z.object({

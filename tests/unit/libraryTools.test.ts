@@ -393,6 +393,36 @@ describe("library and packaging tools", () => {
     }
   });
 
+  it("returns an error result when recipe template scaffold cannot write the output file", async () => {
+    const dir = tmp();
+    try {
+      await expect(
+        scaffoldRecipeTemplateImpl(makeCtx(), {
+          out_file: dir,
+          id: "blocked",
+          name: "Blocked",
+          overwrite: true,
+        }),
+      ).resolves.toMatchObject({ isError: true });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("returns an error result when local marketplace index cannot write the output file", async () => {
+    const dir = tmp();
+    try {
+      await expect(
+        localMarketplaceIndexImpl(makeCtx(), {
+          package_dir: dir,
+          out_file: dir,
+        }),
+      ).resolves.toMatchObject({ isError: true });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("rejects doc asset directories that escape the package", async () => {
     const dir = tmp();
     try {
