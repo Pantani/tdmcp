@@ -4,6 +4,12 @@ import { friendlyTdError, isMissingEndpoint, TdApiError } from "../../td-client/
 export interface ConnectResult {
   method: "endpoint" | "batch" | "python";
   /**
+   * The input slot TD actually used. A multi-input TOP can pack a requested slot
+   * down to a different live index; the `/api/connect` endpoint reports it. Only
+   * set on the "endpoint" path (batch/python don't report packing).
+   */
+  actualInput?: number;
+  /**
    * Present only when the bridge's `/api/batch` connect op resolved but reported
    * `ok:false` and the Python fallback then recovered. Carries that op's `error`
    * string so callers can surface *why* the faster path failed (cross-container
@@ -28,8 +34,9 @@ export async function connectNodesViaBridge(
 ): Promise<ConnectResult> {
   // 1) first-class endpoint (survives ALLOW_EXEC=0)
   try {
-    await client.connectNodes(sourcePath, targetPath, sourceOutput, targetInput);
-    return { method: "endpoint" };
+    const r = await client.connectNodes(sourcePath, targetPath, sourceOutput, targetInput);
+    // Carry the slot TD actually used (multi-input packing) back to the caller.
+    return { method: "endpoint", actualInput: r.actual_input };
   } catch (err) {
     // Fall back ONLY when the endpoint is absent (older bridge). A real
     // validation rejection (e.g. cross-container wire, HTTP 400) must surface —

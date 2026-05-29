@@ -142,11 +142,16 @@ export async function setParameterExpressionImpl(
       // 1) first-class per-param endpoint (survives ALLOW_EXEC=0). It flips par.mode
       //    via type(par.mode), which also fixes the silent `ParMode` NameError the
       //    exec path hit. Loop fail-forward — per-item failures become warnings.
-      //    If the FIRST call hits a TdApiError (older bridge / 404), abandon the
-      //    loop and fall back to the whole-batch exec script below.
+      //    If a missing-endpoint error hits BEFORE the endpoint is proven present
+      //    (older bridge / 404), abandon the loop and fall back to whole-batch exec.
       const applied: AppliedEntry[] = [];
       const warnings: string[] = [];
       let endpointUsable = true;
+      // "Proven present" = any call returned — a success OR a non-missing rejection
+      // (the route exists, it just refused that param). Tracking this instead of
+      // `i === 0` is correct when earlier assignments are skipped locally (missing
+      // expr/value), so the first ACTUAL endpoint call can land at index > 0.
+      let endpointProven = false;
       for (let i = 0; i < args.assignments.length; i++) {
         const a = args.assignments[i];
         if (!a) continue;
@@ -161,6 +166,7 @@ export async function setParameterExpressionImpl(
         }
         try {
           const r = await ctx.client.setParameterMode(args.path, a.param, a.mode, a.expr, a.value);
+          endpointProven = true;
           applied.push({
             param: r.param,
             mode: a.mode,
@@ -168,16 +174,19 @@ export async function setParameterExpressionImpl(
             readback_expr: r.readback_expr,
           });
         } catch (err) {
-          // Only a genuinely missing endpoint (older bridge) on the FIRST call
+          // A missing endpoint BEFORE the route is proven present (older bridge)
           // triggers the whole-batch exec fallback. A validation error (unknown
           // param, missing node — also a TdApiError) is fail-forward per-param,
           // so later valid assignments still apply and ALLOW_EXEC=0 users get the
           // real reason instead of an exec-disabled error.
-          if (i === 0 && isMissingEndpoint(err)) {
+          if (!endpointProven && isMissingEndpoint(err)) {
             endpointUsable = false;
             break;
           }
           if (err instanceof TdApiError) {
+            // The route exists (it rejected this param), so any later error is not
+            // a missing endpoint — keep going fail-forward as a per-param warning.
+            endpointProven = true;
             warnings.push(`param '${a.param}': ${err.message}`);
             continue;
           }

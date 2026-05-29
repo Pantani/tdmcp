@@ -145,8 +145,11 @@ def run(
     err.par.source = "*"
     try:
         # Watch the artist's whole network by default (not just the bridge container).
+        # Set the VALUE directly (a constant op path) — assigning .expr alone would
+        # not switch the par into Expression mode, so it would keep its default/
+        # constant fromop and never watch parent_path/error_scope.
         scope = error_scope or parent_path
-        err.par.fromop.expr = repr(scope)
+        err.par.fromop.val = scope
     except Exception:
         pass
 

@@ -275,7 +275,7 @@ export function buildModulatorSpecs(
   tempoOp: string,
 ): { specs: ModulatorSpec[]; dupeWarnings: string[] } {
   const dupeWarnings: string[] = [];
-  const used = new Map<string, number>();
+  const usedNames = new Set<string>();
   const masterRate = args.expose_controls
     ? ` * op(${pyStr(`${args.parent_path}/${args.name}`)}).par.Rate`
     : "";
@@ -286,15 +286,19 @@ export function buildModulatorSpecs(
     // Resolve and de-duplicate the channel name (suffix _2, _3, … on collision) so two
     // modulators given the same name both survive the Merge instead of one clobbering the other.
     const base = toChannelName(m.name ?? `mod${i + 1}`, i);
-    const seen = used.get(base) ?? 0;
     let channel = base;
-    if (seen > 0) {
-      channel = `${base}_${seen + 1}`;
+    if (usedNames.has(channel)) {
+      // Check the FINAL name against every name already used (not just the base),
+      // so a user-supplied suffix (e.g. "foo_2") can't collide with an auto one
+      // and get silently dropped by the Merge.
+      let n = 2;
+      while (usedNames.has(`${base}_${n}`)) n++;
+      channel = `${base}_${n}`;
       dupeWarnings.push(
         `Duplicate channel name '${base}' renamed to '${channel}' so both modulators survive the Merge.`,
       );
     }
-    used.set(base, seen + 1);
+    usedNames.add(channel);
 
     const span = m.depth_max - m.depth_min;
     const bipolar = BIPOLAR_SHAPES.has(m.shape);
