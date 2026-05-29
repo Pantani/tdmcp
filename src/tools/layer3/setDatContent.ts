@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TdApiError } from "../../td-client/types.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -75,6 +76,21 @@ export async function setDatContentImpl(ctx: ToolContext, args: SetDatContentArg
   }
   return guardTd(
     async () => {
+      // 1) first-class endpoint (survives ALLOW_EXEC=0): PUT the whole text. The
+      //    endpoint returns old_length/new_length, so no extra read round-trip.
+      try {
+        const w = await ctx.client.putDatText(args.dat_path, args.text);
+        return {
+          dat: args.dat_path,
+          old_length: w.old_length,
+          new_length: w.new_length,
+          wiped: args.text.trim() === "",
+          warnings: [],
+        } as SetDatReport;
+      } catch (err) {
+        if (!(err instanceof TdApiError)) throw err; // connection/timeout -> guardTd
+        // older bridge (404/unsupported) -> fall through to the exec path
+      }
       const script = buildSetDatContentScript({ dat: args.dat_path, text: args.text });
       const exec = await ctx.client.executePythonScript(script, true);
       return parsePythonReport<SetDatReport>(exec.stdout);

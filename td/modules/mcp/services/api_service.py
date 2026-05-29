@@ -98,6 +98,58 @@ def get_nodes(parent_path=None):
     return {"nodes": [node_ref(c) for c in children]}
 
 
+def _flags(node):
+    out = {}
+    for attr in ("bypass", "render", "display", "lock", "allowCooking", "cloneImmune"):
+        try:
+            v = getattr(node, attr)
+            if isinstance(v, bool):
+                out[attr] = v
+        except Exception:  # noqa: BLE001
+            pass
+    # clone is COMP-only and lives on .par.clone (path to master), NOT op.clone.
+    try:
+        if hasattr(node, "isClone"):
+            out["is_clone"] = bool(node.isClone)
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        cp = getattr(node.par, "clone", None)
+        if cp is not None:
+            cv = cp.eval()
+            out["clone"] = str(cv) if cv else None
+    except Exception:  # noqa: BLE001
+        pass
+    return out
+
+
+def _indexed_inputs(node):
+    # Faithful, index-aware: iterate inputConnectors (NOT node.inputs, which omits empty
+    # slots). Each wire => {in_index, from, out_index}. Multi-input TOPs pack contiguously,
+    # so the indices reported are the live/current ones.
+    wires = []
+    try:
+        for ic in node.inputConnectors:
+            try:
+                in_index = ic.index
+            except Exception:  # noqa: BLE001
+                in_index = None
+            try:
+                conns = list(ic.connections)
+            except Exception:  # noqa: BLE001
+                conns = []
+            for oc in conns:
+                try:
+                    wires.append(
+                        {"in_index": in_index, "from": oc.owner.path, "out_index": oc.index}
+                    )
+                except Exception:  # noqa: BLE001
+                    pass
+    except Exception:  # noqa: BLE001
+        pass
+    return wires
+
+
 def node_detail(node):
     pars = {}
     try:
@@ -112,6 +164,28 @@ def node_detail(node):
     outputs = [c.path for c in getattr(node, "outputs", []) if c]
     detail = node_ref(node)
     detail.update({"parameters": pars, "inputs": inputs, "outputs": outputs})
+    # --- NEW (node_flags_in_detail): flags + index-aware wiring + position/comment/color/tags ---
+    detail["flags"] = _flags(node)
+    detail["wires_in"] = _indexed_inputs(node)
+    try:
+        detail["nodeX"] = node.nodeX
+        detail["nodeY"] = node.nodeY
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        if node.comment:
+            detail["comment"] = node.comment
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        detail["color"] = list(node.color)  # tuple -> JSON list
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        if node.tags:
+            detail["tags"] = sorted(str(t) for t in node.tags)  # set -> sorted list
+    except Exception:  # noqa: BLE001
+        pass
     return detail
 
 

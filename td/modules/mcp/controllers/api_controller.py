@@ -13,7 +13,15 @@ import os
 from urllib.parse import parse_qs, unquote, urlparse
 
 from mcp import events
-from mcp.services import analysis_service, api_service, batch_service, preview_service
+from mcp.services import (
+    analysis_service,
+    api_service,
+    batch_service,
+    connect_service,
+    log_service,
+    param_text_service,
+    preview_service,
+)
 
 
 class _Unauthorized(PermissionError):
@@ -184,6 +192,28 @@ def _route(method, path, query, body):
     if rest == ["batch"] and method == "POST":
         return batch_service.run(body.get("operations", []))
 
+    # Structured wiring + logs endpoints — NO exec gate (they must survive
+    # TDMCP_BRIDGE_ALLOW_EXEC=0). Top-level paths, so no collision with nodes/network.
+    if rest == ["connect"] and method == "POST":
+        _require(body, "source_path", "target_path")
+        return connect_service.connect(
+            body["source_path"],
+            body["target_path"],
+            int(body.get("source_output", 0)),
+            int(body.get("target_input", 0)),
+        )
+    if rest == ["disconnect"] and method == "POST":
+        _require(body, "to_path")
+        return connect_service.disconnect(
+            body["to_path"], body.get("from_path"), body.get("to_input")
+        )
+    if rest == ["logs"] and method == "GET":
+        return log_service.get_logs(
+            _qs(query, "severity", "all"),
+            int(_qs(query, "max_lines", 200)),
+            _qs(query, "scope") or None,
+        )
+
     if rest[0] == "nodes" and len(rest) >= 2:
         if rest[-1] == "method" and method == "POST":
             if not _exec_allowed():
@@ -199,6 +229,29 @@ def _route(method, path, query, body):
             )
         if rest[-1] == "errors" and method == "GET":
             return api_service.get_node_errors(_node_path(rest[1:-1]), recursive=False)
+        # Param-mode + DAT-text suffixes — MORE SPECIFIC than the generic node CRUD
+        # below, so they MUST be matched first (else `…/text` GET is swallowed by
+        # get_node). No exec gate — structured endpoints survive ALLOW_EXEC=0.
+        if rest[-1] == "params" and method == "GET" and _qs(query, "modes") == "true":
+            return param_text_service.read_param_modes(
+                _node_path(rest[1:-1]),
+                (_qs(query, "keys").split(",") if _qs(query, "keys") else None),
+                _qs(query, "non_default_only") == "true",
+            )
+        if len(rest) >= 4 and rest[-1] == "mode" and rest[-3] == "params" and method == "PATCH":
+            # /api/nodes/<path…>/params/<param>/mode
+            return param_text_service.set_param_mode(
+                _node_path(rest[1:-3]),
+                unquote(rest[-2]),
+                body.get("mode", "expression"),
+                body.get("expr"),
+                body.get("value"),
+            )
+        if rest[-1] == "text" and method == "GET":
+            return param_text_service.get_dat_text(_node_path(rest[1:-1]))
+        if rest[-1] == "text" and method == "PUT":
+            _require(body, "text")
+            return param_text_service.put_dat_text(_node_path(rest[1:-1]), body["text"])
         node_path = _node_path(rest[1:])
         if method == "GET":
             return api_service.get_node(node_path)

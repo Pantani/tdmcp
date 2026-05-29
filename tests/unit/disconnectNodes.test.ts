@@ -1,5 +1,6 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { describe, expect, it, vi } from "vitest";
+import { TdApiError, TdConnectionError } from "../../src/td-client/types.js";
 import {
   buildDisconnectScript,
   disconnectNodesImpl,
@@ -26,7 +27,14 @@ function decodePayload(script: string): Payload {
 
 function fakeCtx(exec: ReturnType<typeof vi.fn>): ToolContext {
   return {
-    client: { executePythonScript: exec },
+    client: {
+      // Endpoint-first: simulate an older bridge (404 -> TdApiError) so the impl
+      // falls back to the exec path these legacy tests assert against.
+      disconnectNodes: vi.fn(async () => {
+        throw new TdApiError("not supported", { status: 404 });
+      }),
+      executePythonScript: exec,
+    },
     logger: silentLogger,
   } as unknown as ToolContext;
 }
@@ -162,6 +170,53 @@ describe("disconnectNodesImpl", () => {
       to_input: undefined,
     });
     expect(result.isError).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// disconnectNodesImpl — endpoint-first path (the rewire)
+// ---------------------------------------------------------------------------
+
+describe("disconnectNodesImpl — endpoint-first", () => {
+  it("uses the /api/disconnect endpoint when available and does NOT call exec", async () => {
+    const disconnectNodes = vi.fn(async () => ({
+      to_path: "/project1/blur1",
+      from_path: "/project1/noise1",
+      to_input: 0,
+      removed: [{ input: 0, from: "/project1/noise1" }],
+      warnings: [],
+    }));
+    const exec = vi.fn(async () => ({ stdout: "{}" }));
+    const ctx = {
+      client: { disconnectNodes, executePythonScript: exec },
+      logger: silentLogger,
+    } as unknown as ToolContext;
+
+    const result = await disconnectNodesImpl(ctx, {
+      to_path: "/project1/blur1",
+      from_path: "/project1/noise1",
+      to_input: 0,
+    });
+
+    expect(result.isError).toBeFalsy();
+    expect(disconnectNodes).toHaveBeenCalledOnce();
+    expect(exec).not.toHaveBeenCalled();
+    expect(textOf(result)).toContain("Removed 1 wire(s) into /project1/blur1");
+  });
+
+  it("propagates a connection error (not TdApiError) without falling back to exec", async () => {
+    const disconnectNodes = vi.fn(async () => {
+      throw new TdConnectionError("offline");
+    });
+    const exec = vi.fn(async () => ({ stdout: "{}" }));
+    const ctx = {
+      client: { disconnectNodes, executePythonScript: exec },
+      logger: silentLogger,
+    } as unknown as ToolContext;
+
+    const result = await disconnectNodesImpl(ctx, { to_path: "/project1/blur1" });
+    expect(result.isError).toBe(true);
+    expect(exec).not.toHaveBeenCalled();
   });
 });
 

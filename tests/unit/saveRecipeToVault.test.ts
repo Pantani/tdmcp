@@ -73,6 +73,7 @@ describe("saveRecipeToVaultImpl", () => {
       id: "myrec",
       comp_path: "/project1",
       overwrite: false,
+      thumbnail: false,
     });
     expect(result.isError).toBe(true);
     expect(textOf(result)).toContain("TDMCP_VAULT_PATH");
@@ -85,6 +86,7 @@ describe("saveRecipeToVaultImpl", () => {
         id: "myrec",
         comp_path: "/project1",
         overwrite: false,
+        thumbnail: false,
       });
       expect(result.isError).toBe(true);
       expect(textOf(result)).toContain("overwrite:true");
@@ -99,6 +101,7 @@ describe("saveRecipeToVaultImpl", () => {
         comp_path: "/project1",
         name: "My Recipe",
         overwrite: false,
+        thumbnail: false,
       });
       expect(result.isError).toBeFalsy();
       // The recipe note now exists in the vault.
@@ -117,6 +120,7 @@ describe("saveRecipeToVaultImpl", () => {
         id: "empty",
         comp_path: "/project1",
         overwrite: false,
+        thumbnail: false,
       });
       expect(result.isError).toBe(true);
       expect(textOf(result)).toContain("No operators found");
@@ -137,6 +141,7 @@ describe("saveRecipeToVaultImpl", () => {
         id: "rec",
         comp_path: "/nope",
         overwrite: false,
+        thumbnail: false,
       });
       expect(result.isError).toBe(true);
       expect(textOf(result)).toContain("Capture failed");

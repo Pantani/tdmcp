@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TdApiError } from "../../td-client/types.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -177,6 +178,32 @@ export function buildGetBridgeLogsScript(payload: object): string {
 export async function getBridgeLogsImpl(ctx: ToolContext, args: GetBridgeLogsArgs) {
   return guardTd(
     async () => {
+      // 1) first-class /api/logs endpoint (survives ALLOW_EXEC=0): reads the bridge
+      //    Error DAT instead of char-iterating op.errors(). Map its rows into the
+      //    existing {source:"cook", level, text, op} shape. Fall back to the exec
+      //    op-walk when the endpoint 404s OR reports available:false (older bridge).
+      try {
+        const logs = await ctx.client.getLogs(args.scope, args.max_lines);
+        if (logs.available) {
+          const lines = logs.lines.map((l) => ({
+            source: "cook",
+            level: (l.severity || "error").toLowerCase(),
+            text: l.message,
+            op: l.source,
+          }));
+          return {
+            scope: args.scope,
+            lines,
+            count: lines.length,
+            probe: { endpoint: true, error_dat: logs.error_dat },
+            warnings: logs.warnings,
+          } as BridgeLogsReport;
+        }
+        // available:false -> fall through to the exec op-walk.
+      } catch (err) {
+        if (!(err instanceof TdApiError)) throw err; // connection/timeout -> guardTd
+        // older bridge (404/unsupported) -> fall through to the exec path
+      }
       const script = buildGetBridgeLogsScript({
         scope: args.scope,
         max_lines: args.max_lines,

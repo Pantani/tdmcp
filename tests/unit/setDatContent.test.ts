@@ -3,6 +3,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest
 import { KnowledgeBase } from "../../src/knowledge/index.js";
 import { RecipeLibrary } from "../../src/recipes/loader.js";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
+import { TdApiError } from "../../src/td-client/types.js";
 import {
   buildSetDatContentScript,
   setDatContentImpl,
@@ -42,7 +43,17 @@ function decodePayload(script: string): Payload {
 }
 
 function fakeCtx(exec: ReturnType<typeof vi.fn>): ToolContext {
-  return { client: { executePythonScript: exec }, logger: silentLogger } as unknown as ToolContext;
+  return {
+    client: {
+      // Endpoint-first: simulate an older bridge (404 -> TdApiError) so the impl
+      // falls back to the exec path these legacy tests assert against.
+      putDatText: vi.fn(async () => {
+        throw new TdApiError("not supported", { status: 404 });
+      }),
+      executePythonScript: exec,
+    },
+    logger: silentLogger,
+  } as unknown as ToolContext;
 }
 
 // ---------------------------------------------------------------------------

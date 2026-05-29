@@ -4,9 +4,14 @@ import { TdApiError, TdConnectionError, TdTimeoutError } from "./types.js";
 import {
   ApiEnvelopeSchema,
   BatchResultSchema,
+  BridgeLogsSchema,
+  ConnectResultSchema,
   type CreateNodeInput,
   CreateNodeInputSchema,
+  DatTextSchema,
+  DatTextWriteSchema,
   DeleteResultSchema,
+  DisconnectResultSchema,
   ExecResultSchema,
   InfoSchema,
   MethodResultSchema,
@@ -14,8 +19,10 @@ import {
   NodeErrorsSchema,
   NodeListSchema,
   NodeRefSchema,
+  ParamModesSchema,
   PerformanceSchema,
   PreviewSchema,
+  SetParamModeResultSchema,
   type TdBatchOperation,
   TopologySchema,
 } from "./validators.js";
@@ -288,5 +295,58 @@ export class TouchDesignerClient {
       undefined,
       recursive ? { recursive: true } : undefined,
     );
+  }
+
+  // --- First-class wiring (survives TDMCP_BRIDGE_ALLOW_EXEC=0) ---
+  connectNodes(sourcePath: string, targetPath: string, sourceOutput = 0, targetInput = 0) {
+    return this.request("POST", "/api/connect", ConnectResultSchema, {
+      source_path: sourcePath,
+      target_path: targetPath,
+      source_output: sourceOutput,
+      target_input: targetInput,
+    });
+  }
+
+  disconnectNodes(toPath: string, fromPath?: string, toInput?: number) {
+    return this.request("POST", "/api/disconnect", DisconnectResultSchema, {
+      to_path: toPath,
+      from_path: fromPath ?? null,
+      to_input: toInput ?? null,
+    });
+  }
+
+  // --- Param-mode + DAT-text endpoints (survive ALLOW_EXEC=0) ---
+  readParameterModes(path: string, keys?: string[], nonDefaultOnly = false) {
+    return this.request("GET", `/api/nodes/${segment(path)}/params`, ParamModesSchema, undefined, {
+      modes: true,
+      keys: keys?.join(","),
+      non_default_only: nonDefaultOnly || undefined,
+    });
+  }
+
+  setParameterMode(path: string, param: string, mode: string, expr?: string, value?: unknown) {
+    return this.request(
+      "PATCH",
+      `/api/nodes/${segment(path)}/params/${encodeURIComponent(param)}/mode`,
+      SetParamModeResultSchema,
+      { mode, expr, value },
+    );
+  }
+
+  getDatText(path: string) {
+    return this.request("GET", `/api/nodes/${segment(path)}/text`, DatTextSchema);
+  }
+
+  putDatText(path: string, text: string) {
+    return this.request("PUT", `/api/nodes/${segment(path)}/text`, DatTextWriteSchema, { text });
+  }
+
+  // --- Structured bridge logs (Error DAT reader) ---
+  getLogs(severity = "all", maxLines = 200, scope?: string) {
+    return this.request("GET", "/api/logs", BridgeLogsSchema, undefined, {
+      severity,
+      max_lines: maxLines,
+      scope,
+    });
   }
 }

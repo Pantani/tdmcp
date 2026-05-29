@@ -221,4 +221,92 @@ describe("get_bridge_logs", () => {
       ).resolves.toBeDefined();
     });
   });
+
+  describe("endpoint-first path (GET /api/logs)", () => {
+    it("maps Error-DAT rows into {source:'cook', level, text, op} and never calls exec", async () => {
+      let execCalled = false;
+      server.use(
+        http.get(`${TD_BASE}/api/logs`, () =>
+          HttpResponse.json({
+            ok: true,
+            data: {
+              lines: [
+                {
+                  source: "/project1/moviein1",
+                  message: "File not found",
+                  severity: "Error",
+                  type: "TOP",
+                },
+              ],
+              count: 1,
+              error_dat: "/project1/tdmcp_bridge/error_log",
+              available: true,
+              warnings: [],
+            },
+          }),
+        ),
+        http.post(`${TD_BASE}/api/exec`, () => {
+          execCalled = true;
+          return HttpResponse.json({ ok: true, data: { result: null, stdout: "{}" } });
+        }),
+      );
+
+      const result = await getBridgeLogsImpl(makeCtx(), {
+        scope: "/project1",
+        max_lines: 100,
+        include_cook_errors: true,
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(execCalled).toBe(false);
+      const sc = result.structuredContent as {
+        lines: Array<{ source: string; level: string; text: string; op?: string }>;
+        count: number;
+      };
+      expect(sc.count).toBe(1);
+      expect(sc.lines[0]).toMatchObject({
+        source: "cook",
+        level: "error",
+        text: "File not found",
+        op: "/project1/moviein1",
+      });
+    });
+
+    it("falls back to the exec op-walk when the endpoint reports available:false", async () => {
+      let execCalled = false;
+      server.use(
+        http.get(`${TD_BASE}/api/logs`, () =>
+          HttpResponse.json({
+            ok: true,
+            data: { lines: [], count: 0, available: false, warnings: ["Error DAT not found"] },
+          }),
+        ),
+        http.post(`${TD_BASE}/api/exec`, () => {
+          execCalled = true;
+          return HttpResponse.json({
+            ok: true,
+            data: {
+              result: null,
+              stdout: JSON.stringify({
+                scope: "/project1",
+                lines: [],
+                count: 0,
+                probe: { cook_errors_available: true },
+                warnings: [],
+              }),
+            },
+          });
+        }),
+      );
+
+      const result = await getBridgeLogsImpl(makeCtx(), {
+        scope: "/project1",
+        max_lines: 100,
+        include_cook_errors: true,
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(execCalled).toBe(true);
+    });
+  });
 });

@@ -47,6 +47,14 @@ const SerializedNodeSchema = z.object({
   inputs: z.array(SerializedInputSchema).describe("Input wires, by source node NAME."),
   x: z.number().optional().describe("Node X position (cosmetic)."),
   y: z.number().optional().describe("Node Y position (cosmetic)."),
+  flags: z
+    .record(z.string(), z.boolean())
+    .optional()
+    .describe(
+      "Operator flags (bypass/render/display/lock/allowCooking) for a faithful round-trip.",
+    ),
+  comment: z.string().optional().describe("Node comment (cosmetic)."),
+  color: z.array(z.number()).optional().describe("Node color RGB (cosmetic)."),
   custom_params: z
     .array(SerializedCustomParSchema)
     .optional()
@@ -158,6 +166,26 @@ try:
                 pass
             try:
                 _node["y"] = _o.nodeY
+            except Exception:
+                pass
+            # Flags (cosmetic + behavioral) for a faithful round-trip.
+            _flags = {}
+            for _fa in ("bypass", "render", "display", "lock", "allowCooking"):
+                try:
+                    _fv = getattr(_o, _fa)
+                    if isinstance(_fv, bool):
+                        _flags[_fa] = _fv
+                except Exception:
+                    pass
+            if _flags:
+                _node["flags"] = _flags
+            try:
+                if _o.comment:
+                    _node["comment"] = _o.comment
+            except Exception:
+                pass
+            try:
+                _node["color"] = list(_o.color)
             except Exception:
                 pass
             # Parameters: value + normalized mode + raw expression, defensively per attribute.

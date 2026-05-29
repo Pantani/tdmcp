@@ -1,5 +1,6 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { describe, expect, it, vi } from "vitest";
+import { TdApiError } from "../../src/td-client/types.js";
 import {
   buildSetExprScript,
   setParameterExpressionImpl,
@@ -29,7 +30,18 @@ function decodePayload(script: string): Payload {
 }
 
 function fakeCtx(exec: ReturnType<typeof vi.fn>): ToolContext {
-  return { client: { executePythonScript: exec }, logger: silentLogger } as unknown as ToolContext;
+  return {
+    client: {
+      // Endpoint-first: simulate an older bridge (404 -> TdApiError) on the FIRST
+      // per-param call so the impl falls back to the whole-batch exec path these
+      // legacy tests assert against.
+      setParameterMode: vi.fn(async () => {
+        throw new TdApiError("not supported", { status: 404 });
+      }),
+      executePythonScript: exec,
+    },
+    logger: silentLogger,
+  } as unknown as ToolContext;
 }
 
 function scriptArg(exec: ReturnType<typeof vi.fn>): string {
@@ -256,5 +268,65 @@ describe("setParameterExpressionSchema", () => {
       assignments: [{ param: "active", mode: "constant", value: true }],
     });
     expect(parsed.success).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Endpoint-first path (per-param PATCH …/params/<p>/mode) — the rewire + ParMode fix
+// ---------------------------------------------------------------------------
+describe("setParameterExpressionImpl — endpoint-first", () => {
+  it("loops setParameterMode once per assignment, aggregates applied[], and never calls exec", async () => {
+    const setParameterMode = vi.fn(async (_path: string, param: string, mode: string) => ({
+      path: "/project1/geo1",
+      param,
+      mode,
+      readback_mode: mode.toUpperCase(),
+      readback_expr: mode === "expression" ? "me.time.seconds" : "",
+    }));
+    const exec = vi.fn(async () => ({ stdout: "{}" }));
+    const ctx = {
+      client: { setParameterMode, executePythonScript: exec },
+      logger: silentLogger,
+    } as unknown as ToolContext;
+
+    const result = await setParameterExpressionImpl(ctx, {
+      path: "/project1/geo1",
+      assignments: [
+        { param: "tx", mode: "expression", expr: "me.time.seconds" },
+        { param: "ty", mode: "constant", value: 1 },
+      ],
+    });
+
+    expect(result.isError).toBeFalsy();
+    expect(setParameterMode).toHaveBeenCalledTimes(2);
+    expect(exec).not.toHaveBeenCalled();
+    expect(textOf(result)).toContain("Set 2 parameter(s)");
+  });
+
+  it("falls back to the whole-batch exec when the FIRST endpoint call hits TdApiError", async () => {
+    const setParameterMode = vi.fn(async () => {
+      throw new TdApiError("not supported", { status: 404 });
+    });
+    const exec = vi.fn(async () => ({
+      stdout: JSON.stringify({
+        path: "/project1/geo1",
+        applied: [
+          { param: "tx", mode: "expression", readback_mode: "EXPRESSION", readback_expr: "x" },
+        ],
+        warnings: [],
+      }),
+    }));
+    const ctx = {
+      client: { setParameterMode, executePythonScript: exec },
+      logger: silentLogger,
+    } as unknown as ToolContext;
+
+    const result = await setParameterExpressionImpl(ctx, {
+      path: "/project1/geo1",
+      assignments: [{ param: "tx", mode: "expression", expr: "x" }],
+    });
+
+    expect(result.isError).toBeFalsy();
+    expect(exec).toHaveBeenCalledOnce();
   });
 });

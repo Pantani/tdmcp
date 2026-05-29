@@ -83,6 +83,7 @@ describe("saveComponentToVaultImpl", () => {
       folder: "Components",
       tags: [],
       description: undefined,
+      thumbnail: false,
     });
     expect(result.isError).toBe(true);
     expect(textOf(result)).toContain("TDMCP_VAULT_PATH");
@@ -108,6 +109,7 @@ describe("saveComponentToVaultImpl", () => {
         folder: "Components",
         tags: ["vj", "generative"],
         description: "A cool component",
+        thumbnail: false,
       });
 
       expect(result.isError).toBeFalsy();
@@ -132,6 +134,7 @@ describe("saveComponentToVaultImpl", () => {
         folder: "Components",
         tags: ["vj"],
         description: "Great comp",
+        thumbnail: false,
       });
 
       expect(result.isError).toBeFalsy();
@@ -183,6 +186,7 @@ describe("saveComponentToVaultImpl", () => {
         folder: "Components",
         tags: [],
         description: undefined,
+        thumbnail: false,
       });
 
       expect(result.isError).toBeFalsy();
@@ -205,6 +209,7 @@ describe("saveComponentToVaultImpl", () => {
         folder: "Components",
         tags: [],
         description: undefined,
+        thumbnail: false,
       });
 
       expect(result.isError).toBe(true);
@@ -229,6 +234,7 @@ describe("saveComponentToVaultImpl", () => {
         folder: "Components",
         tags: [],
         description: undefined,
+        thumbnail: false,
       });
 
       expect(result.isError).toBe(true);

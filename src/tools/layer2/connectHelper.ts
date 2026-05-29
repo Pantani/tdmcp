@@ -2,12 +2,13 @@ import type { TouchDesignerClient } from "../../td-client/touchDesignerClient.js
 import { TdApiError } from "../../td-client/types.js";
 
 export interface ConnectResult {
-  method: "batch" | "python";
+  method: "endpoint" | "batch" | "python";
 }
 
 /**
- * Connects two nodes. Prefers the bridge `/api/batch` connect op; if the bridge
- * responds with an API error (e.g. batch not supported), falls back to a Python
+ * Connects two nodes. Prefers the first-class `/api/connect` endpoint (which
+ * survives TDMCP_BRIDGE_ALLOW_EXEC=0); on an API error (older bridge / 404) falls
+ * back to the `/api/batch` connect op, then to a Python
  * `inputConnectors[...].connect(...)` call. Connection/timeout errors propagate.
  */
 export async function connectNodesViaBridge(
@@ -17,6 +18,15 @@ export async function connectNodesViaBridge(
   sourceOutput = 0,
   targetInput = 0,
 ): Promise<ConnectResult> {
+  // 1) first-class endpoint (survives ALLOW_EXEC=0)
+  try {
+    await client.connectNodes(sourcePath, targetPath, sourceOutput, targetInput);
+    return { method: "endpoint" };
+  } catch (err) {
+    if (!(err instanceof TdApiError)) throw err; // connection/timeout propagate
+    // older bridge (404/unsupported) -> fall through to batch/python
+  }
+
   try {
     const result = await client.batch([
       {

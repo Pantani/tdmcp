@@ -274,6 +274,49 @@ describe("readParameterModesImpl — fatal bridge error", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Endpoint-first path (GET …/params?modes=true)
+// ---------------------------------------------------------------------------
+describe("readParameterModesImpl — endpoint-first", () => {
+  it("reads via the params endpoint, maps to structuredContent, and never calls exec", async () => {
+    let execCalled = false;
+    server.use(
+      http.get(`${TD_BASE}/api/nodes/:seg/params`, () =>
+        HttpResponse.json({
+          ok: true,
+          data: {
+            path: "/project1/noise1",
+            type: "noiseTOP",
+            name: "noise1",
+            parameters: [
+              { name: "tx", value: 0.5, mode: "EXPRESSION", expr: "absTime.frame * 0.01" },
+            ],
+            warnings: [],
+          },
+        }),
+      ),
+      http.post(`${TD_BASE}/api/exec`, () => {
+        execCalled = true;
+        return HttpResponse.json({ ok: true, data: { result: null, stdout: "{}" } });
+      }),
+    );
+
+    const result = await readParameterModesImpl(makeCtx(), {
+      path: "/project1/noise1",
+      keys: undefined,
+      non_default_only: false,
+    });
+
+    expect(result.isError).toBeFalsy();
+    expect(execCalled).toBe(false);
+    const sc = result.structuredContent as {
+      parameters: Array<{ name: string; mode: string; expr?: string }>;
+    };
+    expect(sc.parameters).toHaveLength(1);
+    expect(sc.parameters[0]?.mode).toBe("EXPRESSION");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Bad input — missing required field
 // ---------------------------------------------------------------------------
 describe("readParameterModesImpl — bad input", () => {

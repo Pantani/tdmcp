@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TdApiError } from "../../td-client/types.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -152,6 +153,15 @@ export async function disconnectNodesImpl(
 ): Promise<import("@modelcontextprotocol/sdk/types.js").CallToolResult> {
   return guardTd(
     async () => {
+      // 1) first-class endpoint (survives ALLOW_EXEC=0). Same response shape as the
+      //    exec path, minus the connector probe (absent on the structured route).
+      try {
+        const r = await ctx.client.disconnectNodes(args.to_path, args.from_path, args.to_input);
+        return { ...r, probe: null } as DisconnectReport;
+      } catch (err) {
+        if (!(err instanceof TdApiError)) throw err; // connection/timeout -> guardTd
+        // older bridge (404/unsupported) -> fall through to the exec path
+      }
       const script = buildDisconnectScript({
         to_path: args.to_path,
         from_path: args.from_path ?? null,

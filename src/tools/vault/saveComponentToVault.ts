@@ -1,7 +1,9 @@
 import { z } from "zod";
+import { friendlyTdError } from "../../td-client/types.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
-import { errorResult, guardTd, jsonResult } from "../result.js";
+import { errorResult, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { captureThumbnail } from "./recipeThumbnail.js";
 import { requireVault } from "./shared.js";
 
 export const saveComponentToVaultSchema = z.object({
@@ -18,6 +20,17 @@ export const saveComponentToVaultSchema = z.object({
     .default([])
     .describe("Tags for the note frontmatter (for browse_vault_library)."),
   description: z.string().optional().describe("A short description stored in the note."),
+  preview_top: z
+    .string()
+    .optional()
+    .describe(
+      "Output TOP to thumbnail for the component note (e.g. <comp_path>/out1). " +
+        "Defaults to <comp_path>; omit to skip the thumbnail.",
+    ),
+  thumbnail: z
+    .boolean()
+    .default(true)
+    .describe("Capture a preview PNG next to the component note and embed it. Set false to skip."),
 });
 type SaveComponentToVaultArgs = z.infer<typeof saveComponentToVaultSchema>;
 
@@ -79,77 +92,89 @@ export async function saveComponentToVaultImpl(ctx: ToolContext, args: SaveCompo
     return errorResult(`Invalid vault path for component: ${reason}`);
   }
 
-  return guardTd(
-    async () => {
-      const script = buildSaveCompScript({
-        comp: args.comp_path,
-        tox_path: toxAbsPath,
-      });
-      const exec = await ctx.client.executePythonScript(script, true);
-      return parsePythonReport<SaveComponentReport>(exec.stdout);
-    },
-    (report) => {
-      if (report.fatal) {
-        return errorResult(`Component save failed: ${report.fatal}`, report);
-      }
+  // Plain try/catch (not guardTd) so the awaited thumbnail capture sits naturally
+  // before the note write. captureThumbnail never throws, so a thumbnail failure
+  // never fails the .tox save or the note write.
+  try {
+    const script = buildSaveCompScript({
+      comp: args.comp_path,
+      tox_path: toxAbsPath,
+    });
+    const exec = await ctx.client.executePythonScript(script, true);
+    const report = parsePythonReport<SaveComponentReport>(exec.stdout);
 
-      // Use the TD-confirmed comp name if available, fall back to our derived name.
-      const resolvedName = report.comp_name ?? compName;
-      const noteRelPath = `${args.folder}/${resolvedName}.md`;
-      const noteDate = new Date().toISOString().slice(0, 10);
+    if (report.fatal) {
+      return errorResult(`Component save failed: ${report.fatal}`, report);
+    }
 
-      // Write the vault note — failure becomes a warning, not a fatal.
-      let noteWarning: string | undefined;
-      try {
-        vault.writeNote(
-          noteRelPath,
-          {
-            type: "component",
-            tox: toxRelPath,
-            tags: args.tags,
-            created: noteDate,
-          },
-          [
-            `# ${resolvedName}`,
-            "",
-            args.description ? `${args.description}\n` : "",
-            `**Source COMP:** \`${args.comp_path}\``,
-            "",
-            "## How to load",
-            "",
-            "Use the `manage_component` tool:",
-            "",
-            "```",
-            `manage_component action=load file_path=<vault>/${toxRelPath}`,
-            "```",
-            "",
-            `Or link from any note: [[${resolvedName}]]`,
-          ]
-            .join("\n")
-            .replace(/\n{3,}/g, "\n\n"),
-        );
-      } catch (err) {
-        noteWarning = `Note write failed (tox was saved): ${err instanceof Error ? err.message : String(err)}`;
-      }
+    // Use the TD-confirmed comp name if available, fall back to our derived name.
+    const resolvedName = report.comp_name ?? compName;
+    const noteRelPath = `${args.folder}/${resolvedName}.md`;
+    const noteDate = new Date().toISOString().slice(0, 10);
 
-      const warnings = [...(report.warnings ?? [])];
-      if (noteWarning) warnings.push(noteWarning);
+    // Capture a sibling thumbnail of the COMP's output before writing the note.
+    const thumb = args.thumbnail
+      ? await captureThumbnail(ctx.client, vault, args.folder, resolvedName, {
+          topPath: args.preview_top ?? args.comp_path,
+        })
+      : { imageRel: null as string | null, embed: "", warning: undefined as string | undefined };
 
-      const sizeStr = report.size != null ? ` (${report.size} bytes)` : "";
-      const noteStr = noteWarning
-        ? " (note write failed — see warnings)"
-        : ` → vault note ${noteRelPath}`;
-      const summary = `Saved ${args.comp_path} as ${resolvedName}.tox${sizeStr}${noteStr}.`;
+    // Write the vault note — failure becomes a warning, not a fatal.
+    let noteWarning: string | undefined;
+    try {
+      vault.writeNote(
+        noteRelPath,
+        {
+          type: "component",
+          tox: toxRelPath,
+          tags: args.tags,
+          created: noteDate,
+        },
+        [
+          `# ${resolvedName}`,
+          "",
+          thumb.embed ? `${thumb.embed}\n` : "",
+          args.description ? `${args.description}\n` : "",
+          `**Source COMP:** \`${args.comp_path}\``,
+          "",
+          "## How to load",
+          "",
+          "Use the `manage_component` tool:",
+          "",
+          "```",
+          `manage_component action=load file_path=<vault>/${toxRelPath}`,
+          "```",
+          "",
+          `Or link from any note: [[${resolvedName}]]`,
+        ]
+          .join("\n")
+          .replace(/\n{3,}/g, "\n\n"),
+      );
+    } catch (err) {
+      noteWarning = `Note write failed (tox was saved): ${err instanceof Error ? err.message : String(err)}`;
+    }
 
-      return jsonResult(summary, {
-        tox_path: toxRelPath,
-        note_path: noteWarning ? null : noteRelPath,
-        comp_name: resolvedName,
-        size: report.size ?? null,
-        warnings,
-      });
-    },
-  );
+    const warnings = [...(report.warnings ?? [])];
+    if (noteWarning) warnings.push(noteWarning);
+
+    const sizeStr = report.size != null ? ` (${report.size} bytes)` : "";
+    const noteStr = noteWarning
+      ? " (note write failed — see warnings)"
+      : ` → vault note ${noteRelPath}`;
+    const summary = `Saved ${args.comp_path} as ${resolvedName}.tox${sizeStr}${noteStr}.`;
+
+    return jsonResult(summary, {
+      tox_path: toxRelPath,
+      note_path: noteWarning ? null : noteRelPath,
+      comp_name: resolvedName,
+      size: report.size ?? null,
+      warnings,
+      thumbnail: thumb.imageRel,
+      ...(thumb.warning ? { thumbnail_warning: thumb.warning } : {}),
+    });
+  } catch (err) {
+    return errorResult(friendlyTdError(err));
+  }
 }
 
 export const registerSaveComponentToVault: ToolRegistrar = (server, ctx) => {

@@ -1,9 +1,16 @@
 import { z } from "zod";
 import { recipeToMarkdown } from "../../recipes/markdown.js";
 import { RecipeSchema } from "../../recipes/schema.js";
+import { friendlyTdError } from "../../td-client/types.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
-import { errorResult, guardTd, jsonResult } from "../result.js";
+import { errorResult, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import {
+  captureThumbnail,
+  injectAfterFrontmatter,
+  resolveOutputTop,
+  type ThumbnailResult,
+} from "./recipeThumbnail.js";
 import { requireVault } from "./shared.js";
 
 export const saveRecipeToVaultSchema = z.object({
@@ -34,6 +41,17 @@ export const saveRecipeToVaultSchema = z.object({
     .describe(
       "When false, refuse to replace an existing Recipes/<id>.md note; set true to overwrite it.",
     ),
+  preview_top: z
+    .string()
+    .optional()
+    .describe(
+      "Output TOP to thumbnail for the recipe note (e.g. <comp_path>/out1). " +
+        "Defaults to the comp's first/last TOP child; omit a TOP entirely to skip the thumbnail.",
+    ),
+  thumbnail: z
+    .boolean()
+    .default(true)
+    .describe("Capture a preview PNG next to the recipe note and embed it. Set false to skip."),
 });
 type SaveRecipeToVaultArgs = z.infer<typeof saveRecipeToVaultSchema>;
 
@@ -133,49 +151,65 @@ export async function saveRecipeToVaultImpl(ctx: ToolContext, args: SaveRecipeTo
     );
   }
 
-  return guardTd(
-    async () => {
-      const script = buildPayloadScript(CAPTURE_SCRIPT, { comp: args.comp_path });
-      const exec = await ctx.client.executePythonScript(script, true);
-      return parsePythonReport<CaptureReport>(exec.stdout);
-    },
-    (report) => {
-      if (report.fatal) return errorResult(`Capture failed: ${report.fatal}`);
-      if (report.nodes.length === 0) {
-        return errorResult(`No operators found under ${args.comp_path} to capture as a recipe.`);
-      }
-      const parsed = RecipeSchema.safeParse({
-        id: args.id,
-        name: args.name ?? args.id,
-        description: args.description ?? "",
-        tags: args.tags ?? [],
-        difficulty: args.difficulty ?? "intermediate",
-        nodes: report.nodes,
-        connections: report.connections,
-        python_code: Object.keys(report.python_code).length > 0 ? report.python_code : undefined,
-      });
-      if (!parsed.success) {
-        const issues = parsed.error.issues
-          .slice(0, 3)
-          .map((i) => `${i.path.join(".")}: ${i.message}`)
-          .join("; ");
-        return errorResult(`Captured network is not a valid recipe: ${issues}`);
-      }
-      const recipe = parsed.data;
-      vault.write(relPath, recipeToMarkdown(recipe));
-      return jsonResult(
-        `Saved recipe "${recipe.id}" to ${relPath} (${recipe.nodes.length} node(s), ${recipe.connections.length} connection(s)). Apply it later with apply_recipe.`,
-        {
-          path: relPath,
-          id: recipe.id,
-          nodes: recipe.nodes.length,
-          connections: recipe.connections.length,
-          captured_text: Object.keys(report.python_code),
-          warnings: report.warnings,
-        },
-      );
-    },
-  );
+  // Plain try/catch (not guardTd) because the thumbnail capture is an awaited step
+  // AFTER the report parse, and guardTd's onOk mapper is synchronous. captureThumbnail
+  // itself never throws, so a thumbnail failure never fails the note save.
+  try {
+    const script = buildPayloadScript(CAPTURE_SCRIPT, { comp: args.comp_path });
+    const exec = await ctx.client.executePythonScript(script, true);
+    const report = parsePythonReport<CaptureReport>(exec.stdout);
+
+    if (report.fatal) return errorResult(`Capture failed: ${report.fatal}`);
+    if (report.nodes.length === 0) {
+      return errorResult(`No operators found under ${args.comp_path} to capture as a recipe.`);
+    }
+    const parsed = RecipeSchema.safeParse({
+      id: args.id,
+      name: args.name ?? args.id,
+      description: args.description ?? "",
+      tags: args.tags ?? [],
+      difficulty: args.difficulty ?? "intermediate",
+      nodes: report.nodes,
+      connections: report.connections,
+      python_code: Object.keys(report.python_code).length > 0 ? report.python_code : undefined,
+    });
+    if (!parsed.success) {
+      const issues = parsed.error.issues
+        .slice(0, 3)
+        .map((i) => `${i.path.join(".")}: ${i.message}`)
+        .join("; ");
+      return errorResult(`Captured network is not a valid recipe: ${issues}`);
+    }
+    const recipe = parsed.data;
+
+    // Capture a sibling thumbnail and embed it after the note's frontmatter. The
+    // PNG stem matches the note stem (slug(args.id)) so they pair up in the vault.
+    const baseName = slug(args.id);
+    let thumb: ThumbnailResult = { imageRel: null, embed: "" };
+    if (args.thumbnail) {
+      const topPath = args.preview_top ?? resolveOutputTop(report.nodes, args.comp_path);
+      thumb = await captureThumbnail(ctx.client, vault, "Recipes", baseName, { topPath });
+    }
+    const md = recipeToMarkdown(recipe);
+    const withThumb = thumb.embed ? injectAfterFrontmatter(md, `${thumb.embed}\n`) : md;
+    vault.write(relPath, withThumb);
+
+    return jsonResult(
+      `Saved recipe "${recipe.id}" to ${relPath} (${recipe.nodes.length} node(s), ${recipe.connections.length} connection(s)). Apply it later with apply_recipe.`,
+      {
+        path: relPath,
+        id: recipe.id,
+        nodes: recipe.nodes.length,
+        connections: recipe.connections.length,
+        captured_text: Object.keys(report.python_code),
+        warnings: report.warnings,
+        thumbnail: thumb.imageRel,
+        ...(thumb.warning ? { thumbnail_warning: thumb.warning } : {}),
+      },
+    );
+  } catch (err) {
+    return errorResult(friendlyTdError(err));
+  }
 }
 
 export const registerSaveRecipeToVault: ToolRegistrar = (server, ctx) => {

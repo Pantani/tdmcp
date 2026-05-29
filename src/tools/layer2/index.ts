@@ -19,8 +19,10 @@ import { registerCreateEnvelopeFollower } from "./createEnvelopeFollower.js";
 import { registerCreateExternalIo } from "./createExternalIo.js";
 import { registerCreateGlslShader } from "./createGlslShader.js";
 import { registerCreateLedMapper } from "./createLedMapper.js";
+import { registerCreateLookBank } from "./createLookBank.js";
 import { registerCreateMacro } from "./createMacro.js";
 import { registerCreateMidiMap } from "./createMidiMap.js";
+import { registerCreateModulators } from "./createModulators.js";
 import { registerCreateNodeChain } from "./createNodeChain.js";
 import { registerCreatePalette } from "./createPalette.js";
 import { registerCreatePanic } from "./createPanic.js";
@@ -94,4 +96,7 @@ export const layer2Registrars: ToolRegistrar[] = [
   // Phase 15 — envelope/sidechain + MIDI map (hardware path held pending gear):
   registerCreateEnvelopeFollower,
   registerCreateMidiMap,
+  // v0.6.0 — controls instruments:
+  registerCreateModulators,
+  registerCreateLookBank,
 ];

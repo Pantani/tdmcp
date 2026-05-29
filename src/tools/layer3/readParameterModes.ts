@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TdApiError } from "../../td-client/types.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -171,6 +172,22 @@ export function buildReadParameterModesScript(payload: object): string {
 export async function readParameterModesImpl(ctx: ToolContext, args: ReadParameterModesArgs) {
   return guardTd(
     async () => {
+      // 1) first-class endpoint (survives ALLOW_EXEC=0). Field names already match
+      //    the report shape (name/mode/value/expr/bind_expr/export_op); `probe` is
+      //    exec-only, so it is simply absent on this path.
+      try {
+        const r = await ctx.client.readParameterModes(args.path, args.keys, args.non_default_only);
+        return {
+          path: r.path,
+          type: r.type,
+          name: r.name,
+          parameters: r.parameters as ParameterEntry[],
+          warnings: r.warnings,
+        } as ReadParameterModesReport;
+      } catch (err) {
+        if (!(err instanceof TdApiError)) throw err; // connection/timeout -> guardTd
+        // older bridge (404/unsupported) -> fall through to the exec path
+      }
       const script = buildReadParameterModesScript({
         path: args.path,
         keys: args.keys ?? null,

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TdApiError } from "../../td-client/types.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -138,6 +139,52 @@ export async function setParameterExpressionImpl(
 ): Promise<import("@modelcontextprotocol/sdk/types.js").CallToolResult> {
   return guardTd(
     async () => {
+      // 1) first-class per-param endpoint (survives ALLOW_EXEC=0). It flips par.mode
+      //    via type(par.mode), which also fixes the silent `ParMode` NameError the
+      //    exec path hit. Loop fail-forward — per-item failures become warnings.
+      //    If the FIRST call hits a TdApiError (older bridge / 404), abandon the
+      //    loop and fall back to the whole-batch exec script below.
+      const applied: AppliedEntry[] = [];
+      const warnings: string[] = [];
+      let endpointUsable = true;
+      for (let i = 0; i < args.assignments.length; i++) {
+        const a = args.assignments[i];
+        if (!a) continue;
+        // Mirror the exec path's pre-flight: expr is required for expression/bind.
+        if ((a.mode === "expression" || a.mode === "bind") && !a.expr) {
+          warnings.push(`param '${a.param}': expr required for mode '${a.mode}'`);
+          continue;
+        }
+        if (a.mode === "constant" && a.value === undefined) {
+          warnings.push(`param '${a.param}': value required for mode 'constant'`);
+          continue;
+        }
+        try {
+          const r = await ctx.client.setParameterMode(args.path, a.param, a.mode, a.expr, a.value);
+          applied.push({
+            param: r.param,
+            mode: a.mode,
+            readback_mode: r.readback_mode,
+            readback_expr: r.readback_expr,
+          });
+        } catch (err) {
+          if (err instanceof TdApiError) {
+            // First call on an older bridge -> exec fallback for the whole batch.
+            if (i === 0) {
+              endpointUsable = false;
+              break;
+            }
+            // A later per-param failure (e.g. unknown param) is fail-forward.
+            warnings.push(`param '${a.param}': ${err.message}`);
+            continue;
+          }
+          throw err; // connection/timeout -> guardTd
+        }
+      }
+      if (endpointUsable) {
+        return { path: args.path, applied, warnings } as SetParameterExpressionReport;
+      }
+      // fallback: whole-batch exec (older bridge).
       const script = buildSetExprScript({
         path: args.path,
         assignments: args.assignments,
