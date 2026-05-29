@@ -9,6 +9,19 @@ import { fileURLToPath } from "node:url";
 const rootDir = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const defaultOutput = "_workspace/coverage/latest.md";
 
+function parseCoverageFloor(value) {
+  if (value === undefined || value.trim() === "") {
+    console.error("--min-lines must be a numeric percentage between 0 and 100.");
+    process.exit(1);
+  }
+  const floor = Number(value);
+  if (!Number.isFinite(floor) || floor < 0 || floor > 100) {
+    console.error("--min-lines must be a numeric percentage between 0 and 100.");
+    process.exit(1);
+  }
+  return floor;
+}
+
 function parseArgs(argv) {
   const options = {
     limit: 20,
@@ -25,7 +38,7 @@ function parseArgs(argv) {
 
     const [name, value] = arg.split("=", 2);
     if (name === "--limit" && value) options.limit = Number.parseInt(value, 10);
-    if (name === "--min-lines" && value) options.minLines = Number.parseFloat(value);
+    if (name === "--min-lines") options.minLines = parseCoverageFloor(value);
     if (name === "--output" && value) options.output = value;
   }
 
