@@ -157,7 +157,7 @@ async function buildFeedbackEcho(
             min: 0,
             max: 1,
             default: args.displace,
-            bind_to: [`${dispPath}.displaceweight1`] as string[],
+            bind_to: [`${dispPath}.displaceweight1`, `${dispPath}.displaceweight`] as string[],
           } satisfies ControlSpec,
         ]
       : []),

@@ -238,8 +238,10 @@ describe("create_datamosh", () => {
       const displace = controls.find((c) => c.name === "Displace");
       expect(displace).toBeDefined();
       const bindTo = displace?.bind_to ?? [];
-      // Must target displaceweight1 (not the old displaceweight on the decay node)
+      // Both tokens must be present so the bind works on current (displaceweight1)
+      // and older (displaceweight) TD builds. Must not target the decay node.
       expect(bindTo.some((t) => t.includes("displaceweight1"))).toBe(true);
+      expect(bindTo.some((t) => /\.displaceweight$/.test(t))).toBe(true);
       expect(bindTo.every((t) => !t.includes("decay1"))).toBe(true);
     });
 
