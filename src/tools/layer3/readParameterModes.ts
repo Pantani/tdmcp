@@ -18,20 +18,23 @@ export const readParameterModesSchema = z.object({
 });
 type ReadParameterModesArgs = z.infer<typeof readParameterModesSchema>;
 
+export const parameterModeInfoSchema = z.object({
+  name: z.string(),
+  value: z.unknown().optional(),
+  mode: z.string(),
+  expr: z.string().optional(),
+  bind_expr: z.string().optional(),
+  export_op: z.string().optional(),
+  expression: z.string().optional(),
+  bind_expression: z.string().optional(),
+  export_source: z.string().optional(),
+});
+
 export const readParameterModesOutputSchema = z.object({
   path: z.string(),
   type: z.string(),
   name: z.string(),
-  parameters: z.array(
-    z.object({
-      name: z.string(),
-      value: z.unknown().optional(),
-      mode: z.string(),
-      expr: z.string().optional(),
-      bind_expr: z.string().optional(),
-      export_op: z.string().optional(),
-    }),
-  ),
+  parameters: z.array(parameterModeInfoSchema),
   probe: z.record(z.string(), z.unknown()).optional(),
   warnings: z.array(z.string()),
 });
@@ -58,9 +61,31 @@ interface ReadParameterModesReport {
 // The payload travels as base64 so arbitrary strings cannot break Python quoting.
 // All TD globals (op, app, etc.) live inside this script string — never outside it.
 const READ_PARAMETER_MODES_SCRIPT = `
-import json, base64, traceback
+import json, base64, math, traceback
 _p = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
 report = {"path": _p["path"], "type": "", "name": "", "parameters": [], "warnings": []}
+
+def _json_safe(value):
+    if value is None or isinstance(value, (str, bool)):
+        return value
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return value if math.isfinite(value) else str(value)
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(v) for v in value]
+    if isinstance(value, dict):
+        return {str(k): _json_safe(v) for k, v in value.items()}
+    try:
+        _path = getattr(value, "path", None)
+        if _path is not None:
+            return str(_path)
+    except Exception:
+        pass
+    try:
+        return str(value)
+    except Exception:
+        return None
 try:
     _c = op(_p["path"])
     if _c is None:
@@ -104,7 +129,7 @@ try:
                 _entry = {"name": _pname, "mode": _mode}
                 # Evaluated value — some pars raise on eval() (e.g. disconnected references).
                 try:
-                    _entry["value"] = par.eval()
+                    _entry["value"] = _json_safe(par.eval())
                 except Exception as _ve:
                     report["warnings"].append("Could not eval " + _pname + ": " + str(_ve))
                 # Raw expression string — only meaningful when mode is EXPRESSION.

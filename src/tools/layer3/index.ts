@@ -45,6 +45,7 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerUpdateTdNodeParameters,
   registerGetTdNodes,
   registerGetTdNodeParameters,
+  registerReadParameterModes,
   registerGetTdNodeErrors,
   registerExecutePythonScript,
   registerExecNodeMethod,
@@ -70,10 +71,9 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerGenerateReadme,
   registerEditDatContent,
   registerSetDatContent,
+  registerSetParameterExpression,
   registerWriteAgentGuide,
   // Phase 14 — parameter fidelity & wiring:
-  registerReadParameterModes,
-  registerSetParameterExpression,
   registerDisconnectNodes,
   // Phase 14 — runtime telemetry & logs:
   registerGetNodeStateRuntime,

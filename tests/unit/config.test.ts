@@ -72,11 +72,25 @@ describe("loadConfig — config files & profiles", () => {
     expect(cfg.vaultPath).toBe("/v");
   });
 
+  it("can select a config file through TDMCP_CONFIG_FILE", () => {
+    const file = join(dir, "venue.json");
+    writeFileSync(file, JSON.stringify({ tdHost: "venue-host", tdPort: 9982 }));
+    const cfg = loadConfig({ TDMCP_CONFIG_FILE: file }, { useFiles: true, cwd: dir });
+    expect(cfg.tdHost).toBe("venue-host");
+    expect(cfg.tdPort).toBe(9982);
+  });
+
   it("applies a named profile over the file base", () => {
     writeConfig({ tdPort: 9980, profiles: { club: { tdHost: "192.168.1.5", tdPort: 9981 } } });
     const cfg = loadConfig({}, { useFiles: true, cwd: dir, profile: "club" });
     expect(cfg.tdHost).toBe("192.168.1.5");
     expect(cfg.tdPort).toBe(9981);
+  });
+
+  it("can select a profile through TDMCP_PROFILE when files are enabled", () => {
+    writeConfig({ tdHost: "base-host", profiles: { club: { tdHost: "club-host" } } });
+    const cfg = loadConfig({ TDMCP_PROFILE: "club" }, { useFiles: true, cwd: dir });
+    expect(cfg.tdHost).toBe("club-host");
   });
 
   it("throws a clear error for an unknown profile", () => {

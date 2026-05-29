@@ -115,6 +115,8 @@ function pruneUndefined(obj: Record<string, unknown>): Record<string, unknown> {
 
 /** Candidate config-file paths in precedence order (first existing wins). */
 function configSearchPaths(env: NodeJS.ProcessEnv, cwd: string): string[] {
+  const explicit = env.TDMCP_CONFIG_FILE?.trim();
+  if (explicit) return [explicit];
   const globalDir = env.XDG_CONFIG_HOME?.trim() || join(homedir(), ".config");
   return [join(cwd, "tdmcp.json"), join(cwd, ".tdmcprc"), join(globalDir, "tdmcp", "config.json")];
 }
@@ -163,13 +165,14 @@ export function loadConfig(
   opts: LoadConfigOptions = {},
 ): TdmcpConfig {
   const file = opts.useFiles ? readConfigFile(env, opts) : { base: {}, profiles: {} };
+  const profileName = opts.profile ?? (opts.useFiles ? env.TDMCP_PROFILE : undefined);
   let profilePart: Record<string, unknown> = {};
-  if (opts.profile) {
-    const found = (file as ConfigFile).profiles?.[opts.profile];
+  if (profileName) {
+    const found = (file as ConfigFile).profiles?.[profileName];
     if (!found) {
       const where = (file as ConfigFile).source ? ` (${(file as ConfigFile).source})` : "";
       throw new Error(
-        `Config profile "${opts.profile}" not found${where}. Define it under "profiles" in your config file.`,
+        `Config profile "${profileName}" not found${where}. Define it under "profiles" in your config file.`,
       );
     }
     profilePart = found;

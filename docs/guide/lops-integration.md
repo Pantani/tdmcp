@@ -97,9 +97,9 @@ surface:
   (`execute_python_script`, `exec_node_method`) where the *client* authors the
   code. It is **not** a code-execution kill-switch: many higher-level tools still
   send their own *templated* Python to the bridge.
-- **`TDMCP_TOOL_PROFILE=safe`** goes further and also hides the destructive tools
-  (`delete_td_node`, `create_panic`, `manage_checkpoint`, `manage_component`) — a
-  strict superset of `RAW_PYTHON=off`. The launcher sets this for you. See
+- **`TDMCP_TOOL_PROFILE=safe`** goes further and also hides destructive tools
+  (node deletion, DAT rewrites, checkpoint/component/package writes, preview-asset
+  writes, panic controls) — a strict superset of `RAW_PYTHON=off`. The launcher sets this for you. See
   [Environment variables](/reference/environment).
 - To **truly** close code execution, set **`TDMCP_BRIDGE_ALLOW_EXEC=0`** in
   *TouchDesigner's* own environment — that is the authoritative, bridge-side gate,

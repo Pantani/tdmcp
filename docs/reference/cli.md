@@ -16,6 +16,8 @@ The package installs two binaries: `tdmcp` (the MCP server + utilities) and
 | `tdmcp` | Start the MCP server (default `stdio` transport). Configured via [environment variables](/reference/environment). |
 | `tdmcp chat` _(alias `tdmcp llm-run`)_ | Start the local LLM copilot UI (see below). |
 | `tdmcp install-bridge` | Stage the TouchDesigner bridge to `~/tdmcp-bridge` and print the one line to paste into TD's Textport. See [Bridge & REST API](/reference/bridge-api). |
+| `tdmcp install-client <claude\|codex\|cursor>` | Print a client-specific MCP config snippet for the current package. |
+| `tdmcp --version` | Print the package version. |
 | `tdmcp search/list/info/install/uninstall/doctor/packages path` | Manage TouchDesigner community packages. See [Package manager](/reference/packages). |
 
 Common package-manager examples:
@@ -40,11 +42,16 @@ tdmcp-agent info                   # health check + TD/bridge info
 tdmcp-agent nodes find --params '{"parent_path":"/project1","type":"TOP"}'
 tdmcp-agent nodes create --dry-run --params '{"parent_path":"/project1","type":"noiseTOP"}'
 tdmcp-agent schema "nodes create" # print a command's JSON Schema
+tdmcp-agent run ./show-plan.json  # run a JSON file of command steps
+tdmcp-agent completion bash       # shell completion snippet
 ```
 
 Output format is `--output json` (default) / `ndjson` / `text`. Mutating commands
 are tagged `mutates`; the Python escape hatches require `--allow-unsafe` and honour
-`TDMCP_RAW_PYTHON=off`.
+`TDMCP_RAW_PYTHON=off`. Argument JSON can come from `--params '<json>'`,
+`--params-file file.json`, `--params -` (stdin), or `--json '<json>'`. Connection
+overrides are available per call with `--td-host`, `--td-port`, and `--timeout`;
+script-friendly flags include `--version`, `--quiet`, and `--no-color`.
 
 ## Local copilot (`tdmcp chat`)
 

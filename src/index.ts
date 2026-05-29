@@ -4,9 +4,14 @@ import { createTdmcpServer } from "./server/tdmcpServer.js";
 import { startTransport } from "./server/transportFactory.js";
 import { loadConfig } from "./utils/config.js";
 import { createLogger } from "./utils/logger.js";
+import { getVersion } from "./utils/version.js";
 
 async function main(): Promise<void> {
   const argv = process.argv.slice(2);
+  if (argv[0] === "--version" || argv[0] === "-v") {
+    process.stdout.write(`${getVersion()}\n`);
+    return;
+  }
   if (argv[0] === "install-bridge") {
     runInstallBridge(argv.slice(1));
     return;
@@ -16,6 +21,11 @@ async function main(): Promise<void> {
     if (result.stdout) process.stdout.write(result.stdout);
     if (result.stderr) process.stderr.write(result.stderr);
     process.exitCode = result.code;
+    return;
+  }
+  if (argv[0] === "install-client") {
+    const { runInstallClient } = await import("./cli/installClient.js");
+    await runInstallClient(argv.slice(1));
     return;
   }
   if (argv[0] === "chat" || argv[0] === "llm-run") {

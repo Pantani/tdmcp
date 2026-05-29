@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { runCli, runWatch } from "../../src/cli/agent.js";
@@ -40,6 +43,136 @@ describe("tdmcp-agent CLI", () => {
     const r = await runCli(["--version"]);
     expect(r.code).toBe(0);
     expect(r.stdout).toMatch(/tdmcp-agent \d+\.\d+\.\d+/);
+  });
+
+  it("prints a shell completion script", async () => {
+    const r = await runCli(["completion", "bash"]);
+    expect(r.code).toBe(0);
+    expect(r.stdout).toContain("complete -F _tdmcp_agent tdmcp-agent");
+    expect(r.stdout).toContain("nodes find");
+  });
+
+  it("accepts --no-color for script compatibility", async () => {
+    const r = await runCli(["info", "--dry-run", "--no-color"]);
+    expect(r.code).toBe(0);
+    expect(JSON.parse(r.stdout).command).toBe("info");
+  });
+
+  it("runs a JSON command file", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-agent-run-"));
+    try {
+      const file = join(dir, "show-plan.json");
+      writeFileSync(
+        file,
+        JSON.stringify([
+          {
+            command: "nodes create",
+            dry_run: true,
+            params: { parent_path: "/project1", type: "noiseTOP" },
+          },
+        ]),
+      );
+
+      const r = await runCli(["run", file]);
+      expect(r.code).toBe(0);
+      const doc = JSON.parse(r.stdout);
+      expect(doc.steps).toHaveLength(1);
+      expect(doc.steps[0].stdout.dryRun).toBe(true);
+      expect(doc.steps[0].stdout.command).toBe("nodes create");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("propagates global config flags into JSON run-file steps", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-agent-run-"));
+    try {
+      const config = join(dir, "tdmcp.json");
+      const file = join(dir, "show-plan.json");
+      writeFileSync(
+        config,
+        JSON.stringify({
+          tdHost: "base-host",
+          tdPort: 9980,
+          profiles: {
+            club: { tdHost: "club-host", tdPort: 9981 },
+          },
+        }),
+      );
+      writeFileSync(file, JSON.stringify([{ command: "config" }]));
+
+      const r = await runCli([
+        "run",
+        file,
+        "--config",
+        config,
+        "--profile",
+        "club",
+        "--td-port",
+        "9982",
+      ]);
+
+      expect(r.code).toBe(0);
+      const doc = JSON.parse(r.stdout);
+      expect(doc.steps[0].stdout.tdBaseUrl).toBe("http://club-host:9982");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("propagates top-level --dry-run into JSON run-file steps", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-agent-run-"));
+    try {
+      const file = join(dir, "show-plan.json");
+      writeFileSync(
+        file,
+        JSON.stringify([
+          {
+            command: "nodes create",
+            params: { parent_path: "/project1", type: "noiseTOP" },
+          },
+        ]),
+      );
+
+      const r = await runCli(["run", file, "--dry-run"], {
+        makeCtx: () => {
+          throw new Error("dry-run run-file steps must not build a TD context");
+        },
+      });
+
+      expect(r.code).toBe(0);
+      const doc = JSON.parse(r.stdout);
+      expect(doc.steps[0].command).toContain("--dry-run");
+      expect(doc.steps[0].stdout.dryRun).toBe(true);
+      expect(doc.steps[0].stdout.command).toBe("nodes create");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("propagates top-level --allow-unsafe into JSON run-file steps", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-agent-run-"));
+    try {
+      const file = join(dir, "unsafe-plan.json");
+      writeFileSync(
+        file,
+        JSON.stringify([
+          {
+            command: "exec python",
+            params: { script: "print(1)" },
+          },
+        ]),
+      );
+
+      const r = await runCli(["run", file, "--allow-unsafe"], { makeCtx });
+
+      expect(r.code).toBe(0);
+      const doc = JSON.parse(r.stdout);
+      expect(doc.steps[0].command).toContain("--allow-unsafe");
+      expect(doc.steps[0].stdout).toHaveProperty("stdout");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("suggests the nearest command on a typo (did-you-mean)", async () => {
@@ -98,6 +231,12 @@ describe("tdmcp-agent CLI", () => {
     const r = await runCli(["nodes", "list", "--params", "{not json"]);
     expect(r.code).toBe(2);
     expect(r.stderr).toContain("Invalid JSON");
+  });
+
+  it("rejects invalid connection override values before building a context", async () => {
+    const r = await runCli(["info", "--td-port", "abc"]);
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain("tdPort");
   });
 
   it("runs an offline KB command and prints JSON", async () => {
@@ -696,5 +835,25 @@ describe("tdmcp-agent CLI — reusable-component tools", () => {
     expect(doc.dryRun).toBe(true);
     expect(doc.command).toBe("scaffold-ext");
     expect(doc.args.class_name).toBe("WidgetExt");
+  });
+});
+
+describe("tdmcp-agent CLI — library packaging", () => {
+  it("lists the library packaging commands in --help", async () => {
+    const r = await runCli(["--help"]);
+    expect(r.code).toBe(0);
+    for (const cmd of ["library", "portable-tox", "recipe-bundle-export", "install-library"]) {
+      expect(r.stdout).toContain(cmd);
+    }
+  });
+
+  it("emits JSON Schemas for recipe bundles and manifests", async () => {
+    const bundle = await runCli(["schema", "recipe-bundle-export"]);
+    expect(bundle.code).toBe(0);
+    expect(JSON.stringify(JSON.parse(bundle.stdout).input)).toContain("recipe_ids");
+
+    const manifest = await runCli(["schema", "manifest"]);
+    expect(manifest.code).toBe(0);
+    expect(JSON.stringify(JSON.parse(manifest.stdout).input)).toContain("path");
   });
 });

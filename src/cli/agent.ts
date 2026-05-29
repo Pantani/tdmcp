@@ -333,6 +333,32 @@ import {
   updateTdNodeParametersSchema,
 } from "../tools/layer3/updateTdNodeParameters.js";
 import { writeAgentGuideImpl, writeAgentGuideSchema } from "../tools/layer3/writeAgentGuide.js";
+import {
+  attachDocsAsAssetsImpl,
+  attachDocsAsAssetsSchema,
+  browseLibraryImpl,
+  browseLibrarySchema,
+  componentLinkHealthImpl,
+  componentLinkHealthSchema,
+  exportRecipeBundleImpl,
+  exportRecipeBundleSchema,
+  importRecipeBundleImpl,
+  importRecipeBundleSchema,
+  inspectComponentManifestImpl,
+  inspectComponentManifestSchema,
+  installLibraryPackageImpl,
+  installLibraryPackageSchema,
+  localMarketplaceIndexImpl,
+  localMarketplaceIndexSchema,
+  makePortableToxImpl,
+  makePortableToxSchema,
+  refreshAssetPreviewsImpl,
+  refreshAssetPreviewsSchema,
+  scaffoldRecipeTemplateImpl,
+  scaffoldRecipeTemplateSchema,
+  validateLibraryAssetImpl,
+  validateLibraryAssetSchema,
+} from "../tools/library/index.js";
 import type { ToolContext } from "../tools/types.js";
 import {
   describeConfig,
@@ -933,7 +959,7 @@ const COMMANDS: Record<string, Command> = {
   "perform-mode": r(
     setPerformModeSchema,
     setPerformModeImpl,
-    "Toggle perform mode: suspend nonessential MCP/externalization compute during a show.",
+    "Toggle perform mode: store advisory flag; built-in guard skips preview captures.",
     { mutates: true },
   ),
   "agent-guide": r(
@@ -1134,6 +1160,75 @@ const COMMANDS: Record<string, Command> = {
     "Build a MIDI-note reactive chain (synthetic source previews without gear).",
     { mutates: true },
   ),
+  // Library / packaging — local-first .tox packages, recipe bundles and package indexes.
+  library: r(
+    browseLibrarySchema,
+    browseLibraryImpl,
+    "Browse recipes and local component packages.",
+  ),
+  manifest: r(
+    inspectComponentManifestSchema,
+    inspectComponentManifestImpl,
+    "Inspect a component package manifest.",
+  ),
+  "portable-tox": r(
+    makePortableToxSchema,
+    makePortableToxImpl,
+    "Save a COMP as a portable .tox package with a manifest.",
+    { mutates: true },
+  ),
+  "recipe-bundle-export": r(
+    exportRecipeBundleSchema,
+    exportRecipeBundleImpl,
+    "Export recipes to a portable bundle file.",
+    { mutates: true },
+  ),
+  "recipe-bundle-import": r(
+    importRecipeBundleSchema,
+    importRecipeBundleImpl,
+    "Import recipes from a portable bundle file.",
+    { mutates: true },
+  ),
+  "asset-validate": r(
+    validateLibraryAssetSchema,
+    validateLibraryAssetImpl,
+    "Validate a local library asset and manifest reference.",
+  ),
+  "recipe-template": r(
+    scaffoldRecipeTemplateSchema,
+    scaffoldRecipeTemplateImpl,
+    "Write a minimal valid recipe JSON template.",
+    { mutates: true },
+  ),
+  "docs-assets": r(
+    attachDocsAsAssetsSchema,
+    attachDocsAsAssetsImpl,
+    "Copy docs into a package and update its manifest.",
+    { mutates: true },
+  ),
+  "marketplace-index": r(
+    localMarketplaceIndexSchema,
+    localMarketplaceIndexImpl,
+    "Write an index.json for a local package directory.",
+    { mutates: true },
+  ),
+  "component-health": r(
+    componentLinkHealthSchema,
+    componentLinkHealthImpl,
+    "Check externaltox links for missing local component files.",
+  ),
+  "preview-assets": r(
+    refreshAssetPreviewsSchema,
+    refreshAssetPreviewsImpl,
+    "Capture TOP previews into package asset files.",
+    { mutates: true },
+  ),
+  "install-library": r(
+    installLibraryPackageSchema,
+    installLibraryPackageImpl,
+    "Install a local package folder, zip, tox, or manifest into a package directory.",
+    { mutates: true },
+  ),
 };
 
 export interface CliResult {
@@ -1202,6 +1297,9 @@ function usage(): string {
     "  --params-file <f> / --params -   Read --params JSON from a file or stdin (Unix pipe).",
   );
   lines.push("  --filter / --exclude <csv>  (watch) Only/never stream these event types.");
+  lines.push(
+    "  --no-color       Disable terminal color output (accepted for script compatibility).",
+  );
   lines.push("  -q, --quiet       Suppress the stderr summary (stdout=data, for pipelines/CI).");
   lines.push("  -V, --version     Print the version and exit.");
   lines.push("  -h, --help        Show this help.", "");
@@ -1216,6 +1314,8 @@ function usage(): string {
   lines.push(
     "  config               Print the effective config (redacted); --write-env for a paste-ready block.",
   );
+  lines.push("  run <file>           Run a JSON file containing command steps.");
+  lines.push("  completion <shell>   Print a completion snippet for bash, zsh, or fish.");
   lines.push("  preview <nodePath>   Capture a TOP to a PNG file (-o/--out).  [writes a file]");
   lines.push("  watch                Stream TD events as ndjson until Ctrl-C.  [long-running]");
   lines.push("  repl                 Interactive mode: run commands line-by-line.  [interactive]");
@@ -1306,6 +1406,7 @@ function parseCliArgs(argv: string[]) {
       timeout: { type: "string" },
       "write-env": { type: "boolean", default: false },
       quiet: { type: "boolean", short: "q", default: false },
+      "no-color": { type: "boolean", default: false },
       fix: { type: "boolean", default: false },
       version: { type: "boolean", short: "V", default: false },
       "params-file": { type: "string" },
@@ -1351,6 +1452,8 @@ function nearestCommand(input: string): string | undefined {
     ...firstTokens,
     "schema",
     "config",
+    "run",
+    "completion",
     "preview",
     "watch",
     "repl",
@@ -1399,6 +1502,109 @@ function assembleParams(
     return { error: (err as Error).message };
   }
   return { raw };
+}
+
+const runStepSchema = z
+  .object({
+    command: z.union([z.string(), z.array(z.string()).min(1)]),
+    params: z.record(z.string(), z.unknown()).optional(),
+    json: z.record(z.string(), z.unknown()).optional(),
+    output: z.enum(["json", "ndjson", "text"]).optional(),
+    dry_run: z.boolean().optional(),
+    allow_unsafe: z.boolean().optional(),
+    quiet: z.boolean().optional(),
+  })
+  .passthrough();
+const runFileSchema = z.union([
+  z.array(runStepSchema),
+  z.object({ steps: z.array(runStepSchema) }),
+]);
+type RunStep = z.infer<typeof runStepSchema>;
+
+function runStepArgv(step: RunStep): string[] {
+  const argv = Array.isArray(step.command) ? [...step.command] : tokenizeLine(step.command);
+  if (step.params !== undefined) argv.push("--params", JSON.stringify(step.params));
+  if (step.json !== undefined) argv.push("--json", JSON.stringify(step.json));
+  if (step.output !== undefined) argv.push("--output", step.output);
+  if (step.dry_run === true) argv.push("--dry-run");
+  if (step.allow_unsafe === true) argv.push("--allow-unsafe");
+  if (step.quiet === true) argv.push("--quiet");
+  return argv;
+}
+
+function forwardedGlobalArgv(values: Record<string, unknown>): string[] {
+  const argv: string[] = [];
+  for (const key of ["config", "profile", "td-host", "td-port", "timeout"]) {
+    const value = values[key];
+    if (typeof value === "string") argv.push(`--${key}`, value);
+  }
+  if (values["dry-run"] === true) argv.push("--dry-run");
+  if (values["allow-unsafe"] === true) argv.push("--allow-unsafe");
+  return argv;
+}
+
+function parseStdout(stdout: string): unknown {
+  const trimmed = stdout.trim();
+  if (!trimmed) return "";
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return stdout;
+  }
+}
+
+function completionScript(shell: string): string | undefined {
+  const commands = [
+    ...Object.keys(COMMANDS),
+    "schema",
+    "config",
+    "run",
+    "completion",
+    "preview",
+    "watch",
+    "repl",
+    "doctor",
+    "version",
+  ];
+  const flags = [
+    "--params",
+    "--json",
+    "--output",
+    "--dry-run",
+    "--allow-unsafe",
+    "--out",
+    "--include-high-frequency",
+    "--profile",
+    "--config",
+    "--td-host",
+    "--td-port",
+    "--timeout",
+    "--params-file",
+    "--filter",
+    "--exclude",
+    "--quiet",
+    "--no-color",
+    "--version",
+    "--help",
+  ];
+  const words = [...commands, ...flags].join(" ");
+  if (shell === "bash") {
+    return [
+      "_tdmcp_agent() {",
+      `  local cur="\${COMP_WORDS[COMP_CWORD]}"`,
+      `  COMPREPLY=( $(compgen -W '${words}' -- "$cur") )`,
+      "}",
+      "complete -F _tdmcp_agent tdmcp-agent",
+      "",
+    ].join("\n");
+  }
+  if (shell === "zsh") {
+    return ["#compdef tdmcp-agent", `_arguments '*::command:(${words})'`, ""].join("\n");
+  }
+  if (shell === "fish") {
+    return [`complete -c tdmcp-agent -f -a '${words}'`, ""].join("\n");
+  }
+  return undefined;
 }
 
 export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<CliResult> {
@@ -1454,6 +1660,61 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
       stderr: "",
       code: 0,
     };
+  }
+
+  // `completion <shell>` — print a static completion snippet without touching TD.
+  if (positionals[0] === "completion") {
+    const shell = positionals[1] ?? "";
+    const script = completionScript(shell);
+    if (!script) {
+      return {
+        stdout: "",
+        stderr: 'Unsupported shell for completion. Use "bash", "zsh", or "fish".\n',
+        code: 2,
+      };
+    }
+    return { stdout: script, stderr: "", code: 0 };
+  }
+
+  // `run <file>` — execute a JSON file of command steps through the same dispatcher.
+  if (positionals[0] === "run") {
+    const file = positionals[1];
+    if (!file) return { stdout: "", stderr: 'Missing file for "run".\n', code: 2 };
+    let steps: RunStep[];
+    try {
+      const parsedFile = runFileSchema.parse(JSON.parse(readFileSync(file, "utf8")));
+      steps = Array.isArray(parsedFile) ? parsedFile : parsedFile.steps;
+    } catch (err) {
+      return { stdout: "", stderr: `Invalid run file: ${(err as Error).message}\n`, code: 2 };
+    }
+
+    const results: Array<{
+      index: number;
+      command: string[];
+      code: number;
+      stdout: unknown;
+      stderr: string;
+    }> = [];
+    const globalArgv = forwardedGlobalArgv(values);
+    for (const [index, step] of steps.entries()) {
+      const stepArgv = [...globalArgv, ...runStepArgv(step)];
+      const result = await runCli(stepArgv, opts);
+      results.push({
+        index,
+        command: stepArgv,
+        code: result.code,
+        stdout: parseStdout(result.stdout),
+        stderr: result.stderr,
+      });
+      if (result.code !== 0) {
+        return {
+          stdout: `${JSON.stringify({ steps: results }, null, 2)}\n`,
+          stderr: "",
+          code: result.code,
+        };
+      }
+    }
+    return { stdout: `${JSON.stringify({ steps: results }, null, 2)}\n`, stderr: "", code: 0 };
   }
 
   // `preview <nodePath> -o file.png` — capture a TOP and write it to disk. This is a

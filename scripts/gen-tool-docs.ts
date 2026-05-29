@@ -16,6 +16,7 @@ import { z } from "zod";
 import { layer1Registrars } from "../src/tools/layer1/index.js";
 import { layer2Registrars } from "../src/tools/layer2/index.js";
 import { layer3Registrars } from "../src/tools/layer3/index.js";
+import { libraryRegistrars } from "../src/tools/library/index.js";
 import type { ToolContext, ToolRegistrar } from "../src/tools/types.js";
 import { vaultRegistrars } from "../src/tools/vault/index.js";
 
@@ -181,6 +182,13 @@ function main(): void {
       tools: capture(layer3Registrars),
     },
     {
+      id: "library",
+      heading: "Library & packaging",
+      blurb:
+        "Local-first component, recipe and package tooling: browse libraries, inspect manifests, bundle/import recipes, package .tox components, refresh previews, and maintain a local marketplace index.",
+      tools: capture(libraryRegistrars),
+    },
+    {
       id: "vault",
       heading: "Obsidian vault",
       blurb:
@@ -195,7 +203,7 @@ function main(): void {
   const header = [
     "---",
     "title: Tools reference",
-    `description: "Every tdmcp tool — the TouchDesigner MCP server exposes ${total} tools across three layers plus an Obsidian vault, from one-line artist generators down to atomic node control."`,
+    `description: "Every tdmcp tool — the TouchDesigner MCP server exposes ${total} tools across three layers, library/packaging and an Obsidian vault, from one-line artist generators down to atomic node control."`,
     "---",
     "",
     "<!--",
@@ -204,7 +212,7 @@ function main(): void {
     "-->",
     "# Tools reference",
     "",
-    `tdmcp exposes **${total} tools** organized into three layers plus the Obsidian vault integration. Build with the highest-level tool that fits and drop to a lower layer for fine control. Tools tagged <Badge type="tip" text="read-only" /> only inspect; <Badge type="warning" text="mutates" /> changes your project; <Badge type="danger" text="destructive" /> can delete or run arbitrary code.`,
+    `tdmcp exposes **${total} tools** organized into three layers, library/packaging, and the Obsidian vault integration. Build with the highest-level tool that fits and drop to a lower layer for fine control. Tools tagged <Badge type="tip" text="read-only" /> only inspect; <Badge type="warning" text="mutates" /> changes your project; <Badge type="danger" text="destructive" /> can delete, overwrite, run code, or write package assets.`,
     "",
     "> This page is generated from the running tool registry, so it always matches the installed version.",
     "",

@@ -148,6 +148,7 @@ describe("snapshot_td_graph", () => {
       path: "/project1",
       include_params: false,
       compact: false,
+      include_parameter_modes: false,
     });
     expect(sc(bare).nodeCount).toBe(1);
     expect(sc(bare).connectionCount).toBe(0);
@@ -157,6 +158,7 @@ describe("snapshot_td_graph", () => {
       path: "/project1",
       include_params: true,
       compact: false,
+      include_parameter_modes: false,
     });
     expect(sc(withParams).nodes[0].parameters).toMatchObject({ period: 1 });
   });
@@ -190,6 +192,7 @@ describe("snapshot_td_graph", () => {
       path: "/project1",
       include_params: true,
       compact: false,
+      include_parameter_modes: false,
     });
     expect(r.isError).toBeFalsy();
     expect(sc(r).nodeCount).toBe(2);

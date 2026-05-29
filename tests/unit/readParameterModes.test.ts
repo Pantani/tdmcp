@@ -81,6 +81,17 @@ describe("buildReadParameterModesScript", () => {
     const script = buildReadParameterModesScript(payload);
     expect(decodePayload(script)).toEqual(payload);
   });
+
+  it("normalizes evaluated parameter values before JSON encoding", () => {
+    const script = buildReadParameterModesScript({
+      path: "/project1/noise1",
+      keys: null,
+      non_default_only: false,
+    });
+    expect(script).toContain("def _json_safe(value):");
+    expect(script).toContain('_entry["value"] = _json_safe(par.eval())');
+    expect(script).toContain('getattr(value, "path", None)');
+  });
 });
 
 // ---------------------------------------------------------------------------
