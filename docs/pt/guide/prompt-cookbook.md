@@ -190,7 +190,7 @@ convincente de uma primitiva, não um cubo chapado padrão do TD.*
 > *"Faça uma nuvem de pontos de uma esfera flutuando devagar, pontinhos brilhantes
 > que cintilam, no preto profundo."*
 
-![Uma nuvem de pontos de uma esfera, milhares de pontos brilhantes cintilando no preto](/examples/point-cloud-drift.png)
+<video src="/examples/point-cloud-drift.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *Um render de nuvem de pontos de uma superfície amostrada (esfera/grade/modelo) como
 milhares de pontos na GPU com controles de tamanho/jitter e deriva — um brilho
@@ -266,7 +266,7 @@ composta sobre seu visual ou em fundo transparente — pronta para mandar à sa�
 > *"Pisque a palavra 'DROP' grande e centralizada, no ritmo da batida e sumindo
 > entre os golpes."*
 
-![A palavra DROP grande e centralizada sobre um visual, piscando no ritmo](/examples/kinetic-lyrics-flash.png)
+<video src="/examples/kinetic-lyrics-flash.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *Tipografia de letra animada que pisca/pulsa/desliza; o flash modula o **alpha**,
 então o texto desaparece (sobre seu visual) em vez de ir para o preto, sincronizável
@@ -359,7 +359,7 @@ clipe).*
 > *"Transforme isto em pontos de meio-tom âmbar quentes, como impressão de jornal
 > antigo, e mostre o preview."*
 
-![Uma imagem convertida em pontos de meio-tom âmbar, estilo impressão de jornal antigo](/examples/halftone-amber-print.png)
+<video src="/examples/halftone-amber-print.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *Uma tela de meio-tom em GLSL converte a imagem numa grade de pontos de tinta cujo
 tamanho acompanha o brilho; expõe a escala dos pontos / Ângulo / matiz. O tom âmbar
@@ -377,7 +377,7 @@ sobre qualquer entrada.*
 > *"Dê a isto uma correção de cor cinematográfica teal-and-orange — afunde um pouco
 > os pretos e levante as altas-luzes."*
 
-![Uma imagem com correção de cor cinematográfica teal-and-orange](/examples/cinematic-color-grade.png)
+<video src="/examples/cinematic-color-grade.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *Uma correção de lift/gamma/gain + saturação/matiz (com LUT opcional) sobre qualquer
 fonte, expondo as rodas como botões — o look teal/laranja de Hollywood como uma

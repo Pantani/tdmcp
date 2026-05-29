@@ -1,28 +1,68 @@
-import { describe, expect, it, vi } from "vitest";
+import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { HttpResponse, http } from "msw";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
+import { KnowledgeBase } from "../../src/knowledge/index.js";
+import { RecipeLibrary } from "../../src/recipes/loader.js";
+import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
 import { TdApiError, TdConnectionError } from "../../src/td-client/types.js";
 import { connectNodesViaBridge } from "../../src/tools/layer2/connectHelper.js";
+import { connectNodesImpl } from "../../src/tools/layer2/connectNodes.js";
+import type { ToolContext } from "../../src/tools/types.js";
+import { silentLogger } from "../../src/utils/logger.js";
+import { makeTdServer, TD_BASE } from "../helpers/tdMock.js";
 
 // ---------------------------------------------------------------------------
-// connect_disconnect_endpoint — Builder 2 (isolated)
+// connect_disconnect_endpoint
 //
 // The first-class POST /api/connect + /api/disconnect endpoints survive
-// TDMCP_BRIDGE_ALLOW_EXEC=0. The tool rewires (connectHelper.ts /
-// disconnectNodes.ts / touchDesignerClient.ts / validators.ts) are INTEGRATOR
-// work — this builder cannot edit those shared files, so this test cannot depend
-// on them. Instead it pins down exactly what Builder 2 owns:
-//   1. the response SHAPES (ConnectResultSchema / DisconnectResultSchema, copied
-//      verbatim from design §3.6) parse a canonical bridge response, including
-//      the actual_input != requested_input packing case;
-//   2. the request-body SHAPES the new client methods must send (design §3.2 /
-//      §3.5) — including null-coalescing the optional disconnect fields.
-//
-// Keeping these here (rather than importing the post-integration validators)
-// gives the integrator a frozen contract to paste into validators.ts and a
-// behavioral test that is GREEN IN ISOLATION today. The post-integration tool
-// rewire tests are documented in _workspace/02_build_connect-endpoint.md for the
-// integrator to add once connectHelper.ts / disconnectNodes.ts are wired.
+// TDMCP_BRIDGE_ALLOW_EXEC=0. This file pins down three layers:
+//   1. the response SHAPES (ConnectResultSchema / DisconnectResultSchema, design
+//      §3.6) and the request-body SHAPES the client methods send (design §3.2);
+//   2. the connectNodesViaBridge fallback chain (endpoint → batch → python) via
+//      direct client mocks — endpoint-success + connection-error propagation;
+//   3. the integrated batch-error surfacing through the real client + msw mock
+//      (the merged tdMock 404s /api/connect, so the endpoint cleanly falls
+//      through to the batch path these tests exercise).
 // ---------------------------------------------------------------------------
+
+const server = makeTdServer();
+beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
+
+function makeClient(): TouchDesignerClient {
+  return new TouchDesignerClient({ baseUrl: TD_BASE, timeoutMs: 2000 });
+}
+
+function makeCtx(): ToolContext {
+  return {
+    client: makeClient(),
+    knowledge: new KnowledgeBase(),
+    recipes: new RecipeLibrary(),
+    logger: silentLogger,
+  };
+}
+
+function textOf(result: CallToolResult): string {
+  return result.content
+    .filter((c): c is { type: "text"; text: string } => c.type === "text")
+    .map((c) => c.text)
+    .join("\n");
+}
+
+/**
+ * `/api/batch` resolves (HTTP 200) but reports the connect op failed inside the
+ * batch — the case the helper used to swallow before falling through to Python.
+ */
+function batchReportsConnectFailure(error?: string) {
+  return http.post(`${TD_BASE}/api/batch`, () =>
+    HttpResponse.json({
+      ok: true,
+      data: { results: [{ action: "connect", ok: false, ...(error ? { error } : {}) }] },
+    }),
+  );
+}
 
 // --- Response schemas (verbatim from design §3.6) --------------------------
 const ConnectResultSchema = z.object({
@@ -43,9 +83,6 @@ const DisconnectResultSchema = z.object({
 });
 
 // --- Request-body shapers (the contract the client methods §3.5 must send) --
-// These mirror exactly the body the new touchDesignerClient methods build, so a
-// builder-side test can assert the REST contract (§3.2) without editing the
-// shared client. The integrator's client methods must produce these same bodies.
 interface ConnectBody {
   source_path: string;
   target_path: string;
@@ -260,7 +297,7 @@ describe("disconnectBody", () => {
 });
 
 // ---------------------------------------------------------------------------
-// connectNodesViaBridge — the integrator rewire (endpoint → batch → python)
+// connectNodesViaBridge — direct-mock fallback chain (endpoint → batch → python)
 // ---------------------------------------------------------------------------
 describe("connectNodesViaBridge — fallback chain", () => {
   it("uses the /api/connect endpoint first and reports method 'endpoint'", async () => {
@@ -308,5 +345,65 @@ describe("connectNodesViaBridge — fallback chain", () => {
       TdConnectionError,
     );
     expect(batch).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// connect endpoint fallback chain — integrated (real client + msw, /api/connect
+// 404s so the batch path runs) — proves the batch error is surfaced, not dropped
+// ---------------------------------------------------------------------------
+describe("connect endpoint fallback chain", () => {
+  it("happy path: a clean batch connect reports method 'batch' and no batchError", async () => {
+    const result = await connectNodesViaBridge(makeClient(), "/project1/a", "/project1/b");
+    expect(result.method).toBe("batch");
+    expect(result.batchError).toBeUndefined();
+  });
+
+  it("captures the batch op error on the recovered ConnectResult", async () => {
+    server.use(batchReportsConnectFailure("connect op not supported by batch"));
+    const result = await connectNodesViaBridge(makeClient(), "/project1/a", "/project1/b");
+    expect(result.method).toBe("python");
+    expect(result.batchError).toBe("connect op not supported by batch");
+  });
+
+  it("connect_nodes mentions the batch error in its output when Python recovers", async () => {
+    server.use(batchReportsConnectFailure("cannot wire across containers"));
+    const result = await connectNodesImpl(makeCtx(), {
+      source_path: "/project1/a",
+      target_path: "/project1/b",
+      source_output: 0,
+      target_input: 0,
+    });
+    expect(result.isError).toBeFalsy();
+    const text = textOf(result);
+    expect(text).toContain("via python");
+    expect(text).toContain("cannot wire across containers");
+  });
+
+  it("folds the batch error into the thrown message when the Python fallback also fails", async () => {
+    server.use(
+      batchReportsConnectFailure("batch connect rejected"),
+      http.post(`${TD_BASE}/api/exec`, () =>
+        HttpResponse.json({ ok: false, error: { message: "python connect raised" } }),
+      ),
+    );
+    const result = await connectNodesImpl(makeCtx(), {
+      source_path: "/project1/a",
+      target_path: "/project1/b",
+      source_output: 0,
+      target_input: 0,
+    });
+    expect(result.isError).toBe(true);
+    const text = textOf(result);
+    // Both the Python error and the discarded batch reason are surfaced.
+    expect(text).toContain("python connect raised");
+    expect(text).toContain("batch connect rejected");
+  });
+
+  it("does not invent a batchError when the batch op fails without an error string", async () => {
+    server.use(batchReportsConnectFailure(undefined));
+    const result = await connectNodesViaBridge(makeClient(), "/project1/a", "/project1/b");
+    expect(result.method).toBe("python");
+    expect(result.batchError).toBeUndefined();
   });
 });
