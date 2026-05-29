@@ -119,7 +119,7 @@ describe("setup_body_tracking", () => {
     mockBridge({ error: "tox_missing" });
     const result = await run({ tox_path: "/nope/MediaPipe.tox" });
     expect(result.isError).toBe(true);
-    expect(textOf(result)).toContain("tdmcp install torinmb/mediapipe-touchdesigner");
+    expect(textOf(result)).toContain("tdmcp install mediapipe-touchdesigner");
   });
 
   it("tells the user to enable Pose when no pose JSON DAT is found", async () => {

@@ -4,6 +4,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
+import { runPackageCli } from "../packages/cli.js";
 
 export interface InstallArgs {
   repo: string;
@@ -160,56 +161,19 @@ export function extractZip(zipPath: string, destDir: string): void {
 }
 
 /**
- * `tdmcp install <owner/repo> [--version <tag>] [--asset <substring>] [--dir <path>]`
+ * `tdmcp install <lib> [--pin <ref>] [--dry-run] [--json]`
  *
- * Fetches a release from any GitHub repo (go-get style) and lands it under
- * `~/tdmcp-packages/<repo>` — for installing TouchDesigner plugins/components like the free
- * MediaPipe tracker: `tdmcp install torinmb/mediapipe-touchdesigner`.
+ * Delegates to the manifest-driven package manager. Legacy owner/repo installs are still
+ * accepted as ad-hoc stage-only packages for compatibility.
  */
 export async function runInstall(args: string[]): Promise<void> {
-  const { repo, version, asset, dir } = parseInstallArgs(args);
-  if (!isRepoSlug(repo)) {
-    console.error(
-      "Usage: tdmcp install <owner/repo> [--version <tag>] [--asset <substring>] [--dir <path>]\n" +
-        "  e.g. tdmcp install torinmb/mediapipe-touchdesigner",
-    );
-    process.exitCode = 1;
-    return;
-  }
-  const repoName = repo.split("/")[1] as string;
-  const targetDir = dir ?? join(homedir(), "tdmcp-packages", repoName);
-  mkdirSync(targetDir, { recursive: true });
-
-  try {
-    console.log(`[tdmcp] Resolving ${repo} (${version})…`);
-    const { tag, name, url, kind } = await resolveAsset(repo, version, asset);
-    const filePath = join(targetDir, name);
-    console.log(`[tdmcp] Downloading ${tag} — ${name} → ${filePath}`);
-    await downloadTo(url, filePath);
-    if (kind === "zip") {
-      console.log("[tdmcp] Extracting…");
-      extractZip(filePath, targetDir);
-      rmSync(filePath, { force: true });
-    }
-
-    const lines = ["", `  Installed ${repo} (${tag}).`, `  Folder:  ${targetDir}`, ""];
-    if (repo.toLowerCase().includes("mediapipe-touchdesigner")) {
-      lines.push(
-        "  This is the MediaPipe tracker. With TouchDesigner open, ask the assistant",
-        '  "set up body tracking" to load it and wire up pose tracking automatically.',
-        "",
-        "  ⚠ macOS: it will ask for camera permission the first time — click Allow.",
-        "",
-      );
-    } else {
-      lines.push(
-        "  Open the .toe, or drag a .tox from the folder into your TouchDesigner project.",
-        "",
-      );
-    }
-    console.log(lines.join("\n"));
-  } catch (err) {
-    console.error(`[tdmcp] install failed: ${err instanceof Error ? err.message : String(err)}`);
-    process.exitCode = 1;
-  }
+  const translated = [...args];
+  const versionIndex = translated.indexOf("--version");
+  if (versionIndex !== -1) translated[versionIndex] = "--pin";
+  const dirIndex = translated.indexOf("--dir");
+  if (dirIndex !== -1) translated[dirIndex] = "--packages-root";
+  const result = await runPackageCli(["install", ...translated]);
+  if (result.stdout) process.stdout.write(result.stdout);
+  if (result.stderr) process.stderr.write(result.stderr);
+  process.exitCode = result.code;
 }

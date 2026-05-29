@@ -80,7 +80,7 @@ plus a *Sensitivity* knob. Like the mic, the live camera triggers the
 
 Full-body **pose tracking** from a plain webcam, via the free
 [MediaPipe plugin](https://github.com/torinmb/mediapipe-touchdesigner) (install once
-with `tdmcp install torinmb/mediapipe-touchdesigner`).
+with `tdmcp install mediapipe-touchdesigner`).
 
 > *"Set up body tracking from my webcam and show me the skeleton."*
 

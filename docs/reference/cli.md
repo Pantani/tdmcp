@@ -16,6 +16,18 @@ The package installs two binaries: `tdmcp` (the MCP server + utilities) and
 | `tdmcp` | Start the MCP server (default `stdio` transport). Configured via [environment variables](/reference/environment). |
 | `tdmcp chat` _(alias `tdmcp llm-run`)_ | Start the local LLM copilot UI (see below). |
 | `tdmcp install-bridge` | Stage the TouchDesigner bridge to `~/tdmcp-bridge` and print the one line to paste into TD's Textport. See [Bridge & REST API](/reference/bridge-api). |
+| `tdmcp search/list/info/install/uninstall/doctor/packages path` | Manage TouchDesigner community packages. See [Package manager](/reference/packages). |
+
+Common package-manager examples:
+
+```bash
+tdmcp search shader
+tdmcp list --available
+tdmcp info shader-park-td --json
+tdmcp install mediapipe-touchdesigner --dry-run --json
+tdmcp doctor comfyui-td --json
+tdmcp packages path
+```
 
 ## `tdmcp-agent` — command-line agent
 
