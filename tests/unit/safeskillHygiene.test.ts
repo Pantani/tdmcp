@@ -76,17 +76,23 @@ describe("SafeSkill hygiene", () => {
 
   it("publishes repository metadata for security scanners", () => {
     const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
+      scripts?: { version?: string };
       repository?: { type?: string; url?: string };
+      version?: string;
       files?: string[];
     };
+    const manifest = JSON.parse(readFileSync(join(root, "safeskill.manifest.json"), "utf8")) as {
+      version?: string;
+    };
+    const syncScript = readFileSync(join(root, "scripts", "sync-manifest-version.mjs"), "utf8");
 
     expect(pkg.repository).toEqual({
       type: "git",
       url: "https://github.com/Pantani/tdmcp.git",
     });
     expect(pkg.files).toContain("safeskill.manifest.json");
-    expect(() =>
-      JSON.parse(readFileSync(join(root, "safeskill.manifest.json"), "utf8")),
-    ).not.toThrow();
+    expect(manifest.version).toBe(pkg.version);
+    expect(syncScript).toContain("safeskill.manifest.json");
+    expect(pkg.scripts?.version).toContain("safeskill.manifest.json");
   });
 });
