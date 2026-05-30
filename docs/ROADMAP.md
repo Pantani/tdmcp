@@ -45,7 +45,7 @@ Every feature follows the existing patterns:
 | 13 | 0.5.0 ☑ | Components, agent-DX & reactivity | Reusable-component scaffolding, project analysis/auto-docs, token-cheap agent-DX, Link/MIDI — integrated for 0.5.0, with hardware/live validation called out below |
 | 14–15 | 0.5.0 ☑ | Live mixing, parameter fidelity & creative direction | Post-discovery wave: transitions/layer-stack/keyer/media-bin, one-shot reactivity, signature effects, network round-trip, 11 AI prompts |
 | 16 | 0.6.0 ☑ | TouchDesigner-depth & library fidelity | 7 P0s from discovery round-1: bridge read/write fidelity (flags/wiring/structured endpoints + `cook.error`), `create_modulators` + `create_look_bank` instruments, library contact-sheet — 179 tools |
-| 17 | 0.7.0+ ☐ | Composition, automation & intelligence | Discovery rounds 2–3: time-based show automation, beat-locked montage, pattern generation, own-work memory, MCP sampling — **plus the external community-sources round** (Shadertoy/ISF import, missing iconic looks, color-finish, artist-publishing) |
+| 17 | 0.7.0+ ◐ | Composition, automation & intelligence | In progress via the backlog-campaign harness (Wave 3 artist controls + Wave 4 library/packaging shipped + live-validated). Discovery rounds 2–3: time-based show automation, beat-locked montage, pattern generation, own-work memory, MCP sampling — **plus the external community-sources round** (Shadertoy/ISF import, missing iconic looks, color-finish, artist-publishing) |
 
 ---
 
@@ -525,7 +525,7 @@ size-capped (SSRF/oversize hardening). Plus `.safeskillignore` to focus the Safe
 
 ---
 
-## Phase 17 — v0.7.0 → v1.0.0 · Composition, automation & intelligence ☐ planned
+## Phase 17 — v0.7.0 → v1.0.0 · Composition, automation & intelligence ◐ in progress
 
 The forward wave is sourced from **four discovery passes**, all preserved in full in the
 [Appendix](#full-backlog) (the source files live under the gitignored `_workspace/`, so they are
@@ -653,7 +653,9 @@ Reproduced from the four discovery runs (round-0 2026-05-28 → round-3 2026-05-
 catalog survives in git (`_workspace/` is gitignored — the source files would otherwise be lost).
 **Legend:** Priority **P0/P1/P2** · Effort **S** ≤1 day / **M** 2–4 days / **L** ~1 week ·
 Impact/Conf High/Med/Low · Novelty **NEW** / **EXTENSION** / **ROADMAP** · Status **✅ v0.5.0** /
-**✅ 0.6.0** = shipped since that run · `gated` = GPU/hardware/CUDA/license-deferred. Round-3 rows carry
+**✅ 0.6.0** = shipped since that run · **✅ 0.7.0** = shipped in the Phase-17 backlog-campaign waves
+(artist controls + library/packaging, live-validated in TD) · **◐ 0.7.0** = built + integrated, live
+validation pending · `gated` = GPU/hardware/CUDA/license-deferred. Round-3 rows carry
 a **Source** (the external repo/site/artist) instead of a probe column, since attribution is the point of
 an external round; `probe-live` notes are inline where they apply.
 
