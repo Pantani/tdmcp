@@ -303,5 +303,93 @@ class HandleTests(unittest.TestCase):
         self.assertIn("Missing required field", resp["data"])
 
 
+class StructuredEndpointTests(unittest.TestCase):
+    """The 0.6.0 structured routes dispatch correctly AND are NOT behind the exec
+    gate — they must keep working with TDMCP_BRIDGE_ALLOW_EXEC=0. Exec is disabled
+    for every test here, so a passing dispatch also proves exec-gate survival."""
+
+    def setUp(self):
+        os.environ["TDMCP_BRIDGE_ALLOW_EXEC"] = "0"  # the routes below must ignore this
+        self._saved = {
+            "connect": ac.connect_service,
+            "log": ac.log_service,
+            "param_text": ac.param_text_service,
+            "api": ac.api_service,
+        }
+        ac.connect_service = mock.MagicMock(name="connect_service")
+        ac.log_service = mock.MagicMock(name="log_service")
+        ac.param_text_service = mock.MagicMock(name="param_text_service")
+        ac.api_service = mock.MagicMock(name="api_service")
+
+    def tearDown(self):
+        ac.connect_service = self._saved["connect"]
+        ac.log_service = self._saved["log"]
+        ac.param_text_service = self._saved["param_text"]
+        ac.api_service = self._saved["api"]
+        _clear_exec_env()
+
+    def test_connect_dispatches_with_exec_disabled(self):
+        ac._route(
+            "POST",
+            "/api/connect",
+            {},
+            {"source_path": "/p/a", "target_path": "/p/b", "source_output": 1, "target_input": 2},
+        )
+        ac.connect_service.connect.assert_called_once_with("/p/a", "/p/b", 1, 2)
+
+    def test_disconnect_dispatches_with_exec_disabled(self):
+        ac._route(
+            "POST",
+            "/api/disconnect",
+            {},
+            {"to_path": "/p/b", "from_path": "/p/a", "to_input": 0},
+        )
+        ac.connect_service.disconnect.assert_called_once_with("/p/b", "/p/a", 0)
+
+    def test_logs_dispatches_with_exec_disabled(self):
+        ac._route("GET", "/api/logs", {"severity": ["error"], "max_lines": ["50"]}, {})
+        ac.log_service.get_logs.assert_called_once()
+        args = ac.log_service.get_logs.call_args.args
+        self.assertEqual(args[0], "error")
+        self.assertEqual(args[1], 50)
+
+    def test_param_modes_read_dispatches_with_exec_disabled(self):
+        ac._route(
+            "GET",
+            "/api/nodes/project1/noise1/params",
+            {"modes": ["true"], "keys": ["tx,ty"]},
+            {},
+        )
+        ac.param_text_service.read_param_modes.assert_called_once_with(
+            "/project1/noise1", ["tx", "ty"], False
+        )
+
+    def test_param_mode_patch_dispatches_with_exec_disabled(self):
+        ac._route(
+            "PATCH",
+            "/api/nodes/project1/noise1/params/tx/mode",
+            {},
+            {"mode": "expression", "expr": "absTime.seconds"},
+        )
+        ac.param_text_service.set_param_mode.assert_called_once_with(
+            "/project1/noise1", "tx", "expression", "absTime.seconds", None
+        )
+
+    def test_dat_text_get_dispatches_with_exec_disabled(self):
+        ac.param_text_service.is_dat.return_value = True
+        ac._route("GET", "/api/nodes/project1/text1/text", {}, {})
+        ac.param_text_service.get_dat_text.assert_called_once_with("/project1/text1")
+
+    def test_dat_text_put_dispatches_with_exec_disabled(self):
+        ac._route("PUT", "/api/nodes/project1/text1/text", {}, {"text": "hello"})
+        ac.param_text_service.put_dat_text.assert_called_once_with("/project1/text1", "hello")
+
+    def test_exec_is_still_blocked_in_this_mode(self):
+        # Sanity: the gate IS active here, so the routes above pass because they are
+        # ungated — not because exec happens to be enabled.
+        with self.assertRaises(PermissionError):
+            ac._route("POST", "/api/exec", {}, {"script": "1"})
+
+
 if __name__ == "__main__":
     unittest.main()

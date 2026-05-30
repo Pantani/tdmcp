@@ -1,7 +1,7 @@
 {
   "name": "@dpantani/tdmcp",
   "mcpName": "io.github.Pantani/tdmcp",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "tdmcp — the TouchDesigner MCP server. Build real TouchDesigner visual systems from plain language with Claude, Cursor, or Codex (Model Context Protocol).",
   "type": "module",
   "license": "MIT",
