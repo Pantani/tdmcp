@@ -232,3 +232,30 @@ directly.
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
 | 2026-05-29 | Initial build | 2 agents + 1 skill | extend prompt cookbook with surprising examples for all tools not yet shown |
+
+## Harness: backlog campaign
+
+**Goal:** drive the ENTIRE prioritized feature backlog
+(`_workspace/discovery/FEATURE_BACKLOG.md`, 77 build-target candidates) to a shipped
+release across many dependency-ordered waves and many sessions — **idempotently** (a
+durable ledger that never redoes or duplicates finished work) and **resiliently**
+(1 retry → skip → resume; TouchDesigner-offline never blocks the build).
+
+**Trigger:** when asked to implement the **whole / entire / all of** the backlog,
+run the **build campaign**, do it **in waves**, or with **resilience/idempotency**
+— and for every follow-up: continue / resume / re-run the campaign, run the next
+wave, "what's left / where is the campaign", fix a blocked feature, or cut the final
+release — use the `tdmcp-backlog-campaign` skill. It is the **supervisor above**
+`tdmcp-pipeline`/`tdmcp-feature-lead`: the `tdmcp-campaign-lead` agent owns the
+ledger (`_workspace/build/ledger.json`, seeded/reconciled by
+`_workspace/build/init-ledger.mjs`) + the wave plan, and dispatches each wave
+through the existing machinery — parallel `tdmcp-tool-builder`s for isolated tool
+builds, **sequential** `tdmcp-bridge-engineer`s for bridge slices (new REST
+endpoints + client + validator + exec-fallback, per `tdmcp-bridge-endpoint`),
+single-writer integrate, incremental `td-qa`, and `td-releaser` at the chosen
+cadence. For a single feature or one small batch use `tdmcp-pipeline` instead.
+
+**Change log:**
+| Date | Change | Target | Reason |
+|------|--------|--------|--------|
+| 2026-05-30 | Initial build | 2 agents (`tdmcp-campaign-lead`, `tdmcp-bridge-engineer`) + 2 skills (`tdmcp-backlog-campaign`, `tdmcp-bridge-endpoint`) + ledger | campaign layer over the existing feature-build harness: idempotent (ledger) + resilient (retry/skip/resume) delivery of the whole 77-feature backlog as waves → one final v0.7.0 |
