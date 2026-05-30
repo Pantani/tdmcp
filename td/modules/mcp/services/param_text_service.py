@@ -157,9 +157,15 @@ def set_param_mode(path, param, mode, expr=None, value=None):
     else:
         raise ValueError("Unknown mode %r (expected expression|bind|constant)" % mode)
 
+    # Read back from the attribute that matches the mode just written: bind lives in
+    # par.bindExpr, expression in par.expr; a constant has no expression (par.expr may
+    # hold a stale one, so report empty rather than something misleading).
     readback_expr = ""
     try:
-        readback_expr = str(getattr(par, "expr", "") or "")
+        if norm == "bind":
+            readback_expr = str(getattr(par, "bindExpr", "") or "")
+        elif norm == "expression":
+            readback_expr = str(getattr(par, "expr", "") or "")
     except Exception:  # noqa: BLE001
         readback_expr = ""
     return {

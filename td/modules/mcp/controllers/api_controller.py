@@ -166,7 +166,23 @@ def _require(body, *keys):
         raise ValueError("Missing required field(s): %s." % ", ".join(missing))
 
 
-def _route(method, path, query, body):
+def _bridge_error_log_path(webserver):
+    """Resolve the installed Error DAT's path from the webserver that serves this
+    request. The API is served by the webserver DAT INSIDE the bridge container, so
+    the Error DAT is ``webserver.parent().op('error_log')`` regardless of a custom
+    ``parent_path``/``container``. Returns None when it can't be resolved (e.g. the
+    webserver isn't threaded, as in tests) so the caller falls back to the default."""
+    if webserver is None:
+        return None
+    try:
+        bridge = webserver.parent()
+        ed = bridge.op("error_log") if bridge is not None else None
+        return ed.path if ed is not None else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _route(method, path, query, body, webserver=None):
     parts = [p for p in path.split("/") if p]
     if not parts or parts[0] != "api":
         raise ValueError("Not found: %s" % path)
@@ -208,10 +224,18 @@ def _route(method, path, query, body):
             body["to_path"], body.get("from_path"), body.get("to_input")
         )
     if rest == ["logs"] and method == "GET":
+        # Resolve the Error DAT relative to the webserver's own container so a custom
+        # install (parent_path/container) works; fall back to get_logs' default when
+        # the webserver isn't threaded (e.g. tests).
+        log_kwargs = {}
+        error_dat = _bridge_error_log_path(webserver)
+        if error_dat:
+            log_kwargs["error_dat_path"] = error_dat
         return log_service.get_logs(
             _qs(query, "severity", "all"),
             int(_qs(query, "max_lines", 200)),
             _qs(query, "scope") or None,
+            **log_kwargs,
         )
 
     if rest[0] == "nodes" and len(rest) >= 2:
@@ -354,7 +378,7 @@ def handle(request, response, webserver=None):
         parsed = urlparse(request.get("uri", "/"))
         query = _merge_query(request, parse_qs(parsed.query))
         body = _parse_body(request)
-        data = _route(method, parsed.path, query, body)
+        data = _route(method, parsed.path, query, body, webserver)
         _emit_event(webserver, method, parsed.path, data)
         return _send(response, 200, {"ok": True, "data": data})
     except PermissionError as exc:

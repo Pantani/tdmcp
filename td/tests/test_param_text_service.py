@@ -170,15 +170,20 @@ class SetParamModeTests(unittest.TestCase):
         self.assertIs(par.mode, FakeParMode.BIND)
         self.assertEqual(par.bindExpr, "parent().par.X")
         self.assertEqual(res["readback_mode"], "BIND")
+        # Bind readback comes from par.bindExpr, not par.expr (which stays empty).
+        self.assertEqual(res["readback_expr"], "parent().par.X")
 
     def test_constant_sets_val_and_mode(self):
         par = FakePar("tz", mode=FakeParMode.EXPRESSION)
+        par.expr = "me.time.seconds"  # a stale expression from the prior mode
         node = FakeNode("/project1/geo1", [par])
         with _patch_op(node):
             res = pme.set_param_mode("/project1/geo1", "tz", "constant", value=3.5)
         self.assertIs(par.mode, FakeParMode.CONSTANT)
         self.assertEqual(par.val, 3.5)
         self.assertEqual(res["readback_mode"], "CONSTANT")
+        # A constant has no expression — readback must not leak the stale par.expr.
+        self.assertEqual(res["readback_expr"], "")
 
     def test_unknown_param_raises(self):
         node = FakeNode("/project1/geo1", [FakePar("tx")])
