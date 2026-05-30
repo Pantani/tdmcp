@@ -1,11 +1,11 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { validateArchiveEntries } from "../../src/packages/archive.js";
 import { isPackageCommand, runPackageCli } from "../../src/packages/cli.js";
 import { doctorPackage } from "../../src/packages/doctor.js";
-import { resolveGithubReleaseDownloadPlan } from "../../src/packages/github.js";
+import { downloadToFile, resolveGithubReleaseDownloadPlan } from "../../src/packages/github.js";
 import { installPackage, uninstallPackage } from "../../src/packages/installer.js";
 import { createPackagePaths } from "../../src/packages/paths.js";
 import {
@@ -90,6 +90,108 @@ describe("package paths and archive safety", () => {
     expect(() => validateArchiveEntries([{ path: "repo/link", isSymlink: true }])).toThrow(
       /Unsafe archive path.*symlink/,
     );
+  });
+});
+
+describe("downloadToFile host + size hardening", () => {
+  function jsonHeaders(init: Record<string, string>): Headers {
+    return new Headers(init);
+  }
+
+  it("refuses a non-HTTPS URL before any fetch", async () => {
+    const fetchImpl = vi.fn();
+    await expect(
+      downloadToFile("http://github.com/x/y/archive/main.zip", join(tmpdir(), "x.zip"), {
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+      }),
+    ).rejects.toThrow(/non-HTTPS/);
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("refuses a non-GitHub host before any fetch", async () => {
+    const fetchImpl = vi.fn();
+    await expect(
+      downloadToFile("https://evil.example.com/payload.zip", join(tmpdir(), "x.zip"), {
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+      }),
+    ).rejects.toThrow(/non-GitHub host/);
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("refuses a redirect that points off GitHub", async () => {
+    const fetchImpl = vi.fn(
+      async () =>
+        new Response(null, {
+          status: 302,
+          headers: jsonHeaders({ location: "https://evil.example.com/p.zip" }),
+        }),
+    );
+    await expect(
+      downloadToFile(
+        "https://github.com/x/y/archive/refs/heads/main.zip",
+        join(tmpdir(), "x.zip"),
+        {
+          fetchImpl: fetchImpl as unknown as typeof fetch,
+        },
+      ),
+    ).rejects.toThrow(/non-GitHub host/);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it("throws a dedicated error when the redirect chain exceeds the hop limit", async () => {
+    // Always-redirect (to an allowed host) so the loop hits its 10-hop budget.
+    const fetchImpl = vi.fn(
+      async () =>
+        new Response(null, {
+          status: 302,
+          headers: jsonHeaders({ location: "https://codeload.github.com/x/y/zip/main" }),
+        }),
+    );
+    await expect(
+      downloadToFile("https://github.com/x/y/archive/main.zip", join(tmpdir(), "x.zip"), {
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+      }),
+    ).rejects.toThrow(/Too many redirects/);
+  });
+
+  it("rejects a response whose declared content-length exceeds the cap", async () => {
+    const fetchImpl = vi.fn(
+      async () =>
+        new Response("x".repeat(10), {
+          status: 200,
+          headers: jsonHeaders({ "content-length": "999999" }),
+        }),
+    );
+    await expect(
+      downloadToFile("https://github.com/x/y/archive/main.zip", join(tmpdir(), "big.zip"), {
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+        maxBytes: 8,
+      }),
+    ).rejects.toThrow(/size limit/);
+  });
+
+  it("follows an allowed GitHub redirect and writes the body within the cap", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-dl-"));
+    const out = join(dir, "ok.zip");
+    const fetchImpl = vi.fn(async (input: string | URL) => {
+      const u = typeof input === "string" ? input : input.toString();
+      if (u.includes("codeload.github.com")) {
+        return new Response("PKpayload", { status: 200, headers: jsonHeaders({}) });
+      }
+      return new Response(null, {
+        status: 302,
+        headers: jsonHeaders({ location: "https://codeload.github.com/x/y/zip/main" }),
+      });
+    });
+    try {
+      await downloadToFile("https://github.com/x/y/archive/main.zip", out, {
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+      });
+      expect(readFileSync(out, "utf8")).toContain("payload");
+      expect(fetchImpl).toHaveBeenCalledTimes(2);
+    } finally {
+      cleanup(dir);
+    }
   });
 });
 

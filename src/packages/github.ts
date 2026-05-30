@@ -137,11 +137,133 @@ export async function resolveGithubReleaseDownloadPlan(
   return undefined;
 }
 
-export async function downloadToFile(url: string, filePath: string): Promise<void> {
-  const res = await fetch(url, { headers: { "User-Agent": "tdmcp" } });
-  if (!res.ok || !res.body) throw new Error(`Download failed (${res.status}) for ${url}`);
-  await pipeline(
-    Readable.fromWeb(res.body as Parameters<typeof Readable.fromWeb>[0]),
-    createWriteStream(filePath),
+// Package downloads only ever come from GitHub. Archive URLs 302 to
+// codeload.github.com and release assets to *.githubusercontent.com, so we pin
+// every hop — including redirect targets — to this allowlist. A compromised or
+// misconfigured endpoint that tries to bounce the download to an arbitrary host
+// (SSRF / internal-network probe) is refused before a single byte is read.
+const ALLOWED_DOWNLOAD_HOSTS = [
+  "github.com",
+  "api.github.com",
+  "codeload.github.com",
+  // GitHub serves release assets and zipballs from rotating subdomains of
+  // githubusercontent.com (objects., release-assets., …). The suffix match below
+  // accepts any of them while still rejecting every non-GitHub host.
+  "githubusercontent.com",
+];
+
+// Hard ceiling on a single package download. The largest real packages are a few
+// hundred MB; 1 GB is comfortably above that and still bounds a malicious or
+// runaway response that would otherwise fill the disk.
+const MAX_DOWNLOAD_BYTES = 1024 * 1024 * 1024;
+
+// Abort a stalled download instead of hanging the install forever.
+const DOWNLOAD_TIMEOUT_MS = 5 * 60 * 1000;
+
+function isAllowedDownloadHost(host: string): boolean {
+  const lower = host.toLowerCase();
+  return ALLOWED_DOWNLOAD_HOSTS.some(
+    (allowed) => lower === allowed || lower.endsWith(`.${allowed}`),
   );
+}
+
+function assertAllowedDownloadUrl(rawUrl: string): URL {
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    throw new Error(`Refusing download from malformed URL: ${rawUrl}`);
+  }
+  if (parsed.protocol !== "https:") {
+    throw new Error(`Refusing non-HTTPS download URL: ${rawUrl}`);
+  }
+  if (!isAllowedDownloadHost(parsed.hostname)) {
+    throw new Error(
+      `Refusing download from non-GitHub host '${parsed.hostname}'. Allowed: ${ALLOWED_DOWNLOAD_HOSTS.join(", ")}.`,
+    );
+  }
+  return parsed;
+}
+
+export interface DownloadOptions {
+  fetchImpl?: typeof fetch;
+  maxBytes?: number;
+  timeoutMs?: number;
+}
+
+export async function downloadToFile(
+  url: string,
+  filePath: string,
+  opts: DownloadOptions = {},
+): Promise<void> {
+  const fetchImpl = opts.fetchImpl ?? fetch;
+  const maxBytes = opts.maxBytes ?? MAX_DOWNLOAD_BYTES;
+  const timeoutMs = opts.timeoutMs ?? DOWNLOAD_TIMEOUT_MS;
+
+  // Validate the initial URL, then follow redirects by hand so every hop is
+  // re-checked against the host allowlist (fetch's automatic redirect would
+  // silently follow a Location to anywhere).
+  let current = assertAllowedDownloadUrl(url);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    let res: Response | undefined;
+    for (let hop = 0; hop < 10; hop++) {
+      res = await fetchImpl(current.toString(), {
+        headers: { "User-Agent": "tdmcp" },
+        redirect: "manual",
+        signal: controller.signal,
+      });
+      if (res.status >= 300 && res.status < 400) {
+        const location = res.headers.get("location");
+        // Release the redirect response body before the next hop so undici can
+        // free the socket — an unconsumed body keeps the connection busy.
+        await res.body?.cancel().catch(() => {});
+        if (!location) throw new Error(`Redirect with no Location for ${current.toString()}`);
+        current = assertAllowedDownloadUrl(new URL(location, current).toString());
+        continue;
+      }
+      break;
+    }
+    if (!res) throw new Error(`Download failed (no response) for ${url}`);
+    // Still a redirect after the hop budget → say so explicitly instead of a
+    // generic "Download failed (3xx)".
+    if (res.status >= 300 && res.status < 400) {
+      await res.body?.cancel().catch(() => {});
+      throw new Error(`Too many redirects (>10) for ${url}`);
+    }
+    if (!res.ok || !res.body) {
+      await res.body?.cancel().catch(() => {});
+      throw new Error(`Download failed (${res.status}) for ${url}`);
+    }
+
+    // Reject oversize responses up front when the server declares a length…
+    const declared = Number(res.headers.get("content-length"));
+    if (Number.isFinite(declared) && declared > maxBytes) {
+      await res.body?.cancel().catch(() => {});
+      throw new Error(`Download exceeds size limit (${declared} > ${maxBytes} bytes) for ${url}`);
+    }
+
+    // …and enforce the cap while streaming, in case content-length is absent or lies.
+    let received = 0;
+    const limit = new TransformStream<Uint8Array, Uint8Array>({
+      transform(chunk, controllerTs) {
+        received += chunk.byteLength;
+        if (received > maxBytes) {
+          controllerTs.error(
+            new Error(`Download exceeds size limit (> ${maxBytes} bytes) for ${url}`),
+          );
+          return;
+        }
+        controllerTs.enqueue(chunk);
+      },
+    });
+    const limited = res.body.pipeThrough(limit);
+    await pipeline(
+      Readable.fromWeb(limited as Parameters<typeof Readable.fromWeb>[0]),
+      createWriteStream(filePath),
+    );
+  } finally {
+    clearTimeout(timer);
+  }
 }

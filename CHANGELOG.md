@@ -4,6 +4,32 @@ All notable changes to **tdmcp** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+
+- **`rebuild_network` no longer `eval()`s the operator-type string.** The bridge
+  script ran `eval(_type)` on a caller/LLM-controlled `nodes[].type`, an ungated
+  arbitrary-Python path inside the TouchDesigner process reachable from an
+  ordinary tool call. It now resolves the type by name off the `td` module
+  (`getattr(td, _type)` guarded by `isidentifier()`), the same safe pattern
+  `manage_checkpoint` already uses. Unknown types still fail-forward as warnings.
+- **TD bridge adds a loopback `Host`-header check.** `_check_host` complements the
+  existing `Origin` guard to close a DNS-rebinding gap (the Web Server DAT binds
+  all interfaces), mirroring the Node HTTP transport's `allowedHosts`. It is active
+  only in the default token-less config; authenticated remote use via
+  `TDMCP_BRIDGE_TOKEN` is unaffected, and a missing `Host` is allowed.
+- **Package downloads are pinned to GitHub and size-capped.** `downloadToFile`
+  validates every hop (including redirects) against a GitHub host allowlist,
+  requires HTTPS, and enforces a maximum response size — hardening against SSRF and
+  oversized/runaway payloads.
+
+### Added
+
+- **`.safeskillignore`** so the SafeSkill scanner skips generated knowledge-base
+  data, build output and binary media (the source of the substring false
+  positives) and focuses on the actual server code.
+
 ## [0.6.1] - 2026-05-30
 
 Release-hygiene and documentation patch that makes 0.6.x consistent across npm, the

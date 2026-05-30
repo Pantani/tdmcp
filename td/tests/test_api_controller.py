@@ -259,6 +259,62 @@ class OriginTests(unittest.TestCase):
         self.assertIn("cross-origin", resp["data"])
 
 
+class HostTests(unittest.TestCase):
+    """The Host guard closes the DNS-rebinding gap when auth is off."""
+
+    def tearDown(self):
+        _clear_token_env()
+
+    def test_no_host_is_allowed(self):
+        _clear_token_env()
+        ac._check_host({"method": "GET"})  # missing Host header must not raise
+
+    def test_loopback_hosts_allowed(self):
+        _clear_token_env()
+        for host in ("127.0.0.1:9980", "localhost", "localhost:9980", "[::1]:9980"):
+            ac._check_host({"Host": host})  # must not raise
+
+    def test_non_loopback_host_rejected_when_auth_off(self):
+        _clear_token_env()
+        for host in ("evil.com", "evil.com:9980", "192.168.1.5:9980"):
+            with self.assertRaises(PermissionError, msg=host):
+                ac._check_host({"Host": host})
+
+    def test_userinfo_smuggled_loopback_host_rejected(self):
+        # A forged Host that parses to a loopback hostname only because of
+        # userinfo/path syntax must NOT slip the guard.
+        _clear_token_env()
+        for host in (
+            "evil.com@127.0.0.1",
+            "127.0.0.1/evil",
+            "127.0.0.1@evil.com",
+            "127.0.0.1:9980/x",
+            "127.0.0.1\r\nHost: evil.com",
+            "127.0.0.1\tevil",
+        ):
+            with self.assertRaises(PermissionError, msg=host):
+                ac._check_host({"Host": host})
+
+    def test_non_loopback_host_allowed_when_token_set(self):
+        # Authenticated remote use is documented; the token is the gate, so a
+        # LAN/remote Host must pass once a token is configured.
+        os.environ["TDMCP_BRIDGE_TOKEN"] = "s3cret"
+        ac._check_host({"Host": "192.168.1.5:9980"})  # must not raise
+
+    def test_host_lookup_is_case_insensitive_and_nested(self):
+        _clear_token_env()
+        with self.assertRaises(PermissionError):
+            ac._check_host({"headers": {"host": "evil.com"}})
+
+    def test_handle_rejects_non_loopback_host_with_403(self):
+        _clear_token_env()
+        resp = ac.handle(
+            {"method": "GET", "uri": "/api/info", "Host": "evil.com"}, {}
+        )
+        self.assertEqual(resp["statusCode"], 403)
+        self.assertIn("Host", resp["data"])
+
+
 class HandleTests(unittest.TestCase):
     def tearDown(self):
         _clear_exec_env()
@@ -268,8 +324,11 @@ class HandleTests(unittest.TestCase):
         return {}
 
     def test_ok_envelope(self):
+        _clear_token_env()
         with mock.patch.object(ac, "_route", return_value={"hello": "world"}):
-            resp = ac.handle({"method": "GET", "uri": "/api/info"}, self._resp())
+            resp = ac.handle(
+                {"method": "GET", "uri": "/api/info", "Host": "127.0.0.1:9980"}, self._resp()
+            )
         self.assertEqual(resp["statusCode"], 200)
         self.assertIn('"ok": true', resp["data"])
         self.assertIn("world", resp["data"])

@@ -91,6 +91,7 @@ interface RebuildNetworkReport {
 // name→path map so later wires resolve to the freshly created paths.
 const REBUILD_SCRIPT = `
 import json, base64, traceback
+import td  # operator classes are resolved by name off the td module; exec globals don't expose 'td'
 _p = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
 report = {"parent_path": _p["parent_path"], "created": [], "wired": 0, "params_set": 0, "cleared": 0, "warnings": []}
 try:
@@ -112,9 +113,13 @@ try:
         for _n in _nodes:
             _name = _n.get("name")
             _type = _n.get("type")
-            try:
-                _optype = eval(_type)
-            except Exception:
+            # Resolve the operator type by NAME off the td module — never hand the
+            # caller-supplied string to a Python evaluator (that would be arbitrary
+            # code execution in the TD process). getattr can't run code, and
+            # isidentifier() rejects any non-name input. Unknown type -> fail-forward
+            # warning, like every other pass.
+            _optype = getattr(td, _type, None) if isinstance(_type, str) and _type.isidentifier() else None
+            if _optype is None:
                 report["warnings"].append("Unknown operator type '" + str(_type) + "' for node '" + str(_name) + "'")
                 continue
             try:
