@@ -28,6 +28,7 @@ const scannedMarkdownFiles = [
 ];
 
 const scannedPublicInstructionFiles = [...scannedMarkdownFiles, join(root, "td", "bootstrap.py")];
+const directRemoteContentUrlPattern = /https?:\/\/[^\s/]+\/[^\s]*\.(?:txt|md|prompt)\b/i;
 
 describe("SafeSkill hygiene", () => {
   it("keeps public instructions out of SafeSkill prompt-injection trigger patterns", () => {
@@ -42,7 +43,7 @@ describe("SafeSkill hygiene", () => {
       },
       {
         name: "direct remote markdown or prompt URL",
-        pattern: /https?:\/\/[^\s]*\.(?:txt|md|prompt)\b/i,
+        pattern: directRemoteContentUrlPattern,
       },
       {
         name: "instruction-following URL",
@@ -74,6 +75,12 @@ describe("SafeSkill hygiene", () => {
     }
 
     expect(violations).toEqual([]);
+  });
+
+  it("allows dot-md hostnames while rejecting direct remote content files", () => {
+    expect(directRemoteContentUrlPattern.test("https://obsidian.md")).toBe(false);
+    expect(directRemoteContentUrlPattern.test("https://example.com/docs/install.md")).toBe(true);
+    expect(directRemoteContentUrlPattern.test("https://example.com/install.prompt")).toBe(true);
   });
 
   it("publishes repository metadata for security scanners", () => {
