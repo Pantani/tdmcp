@@ -139,6 +139,11 @@ Then the **parallel** sub-batch, exactly the `tdmcp-pipeline` Phase 2–4 loop:
   features to `shipped` and resets file-less in-flight ones to `pending`.
 - A feature is rebuilt only from `pending`. `shipped` is never demoted; `quarantined`
   is retried only on an explicit re-run request for that id.
+- **Recoverable side states never strand a wave:** on reconcile the planner clears
+  `blocked-td` → `pending` when TD is reachable and `blocked-dep` → `pending` once deps
+  ship (re-entering the ready pool), and wave selection **skips past** a wave whose only
+  leftover rows are `quarantined`/permanently-blocked — so a half-shipped wave can never
+  loop on an empty manifest.
 - `build-ledger.mjs` is merge-safe — editing the plan and regenerating preserves live
   state. Always go through it (or live-field edits), never blow away `ledger.json`.
 

@@ -537,17 +537,18 @@ before the schema locks.
 
 ### Delivery — the round-2 campaign (idempotent, 5 waves → 5 releases)
 
-The round-2 *"beyond"* backlog (**66 buildable**: 2 shared-schema foundations + 64
-features) is being implemented by the **`tdmcp-backlog-campaign`** harness — a resumable,
+The round-2 *"beyond"* backlog (**66 buildable**: **2 foundation modules** + **64
+features**) is being implemented by the **`tdmcp-backlog-campaign`** harness — a resumable,
 ledger-driven loop over the existing design→build→integrate→QA→release pipeline (see
 CLAUDE.md → *"Harness: backlog campaign"*). The ledger
 (`_workspace/campaign_beyond_20260530/ledger.json`, merge-safe) makes re-runs **idempotent**
 (shipped work is never rebuilt, interrupted work resumes); a stuck tool is **quarantined**
 rather than blocking its wave. Policy: **staged by priority, checkpoint after wave 1,
-commit + push (no tag),** TD-connected before each build wave. The shared-schema
-foundations (`setlist_schema`, `memory_note`, `llm_client` via `server_sampling_assist`,
-`timer_primitive` via `create_scheduler`) are designed **once** and ship before their
-consumers fan out.
+commit + push (no tag),** TD-connected before each build wave. **Four shared-schema
+*contracts*** are designed **once** and ship before their consumers fan out — two are the
+standalone foundation modules (`setlist_schema`, `memory_note`), and two are owned by
+features that ship first within wave 1 (`server_sampling_assist` → `llm_client`,
+`create_scheduler` → `timer_primitive`).
 
 | Wave | Release | Theme | Items | Status |
 |---|---|---|---|---|
@@ -557,10 +558,39 @@ consumers fan out.
 | 4 | v0.10.0 | TD-depth authoring + DX accelerators | 12 | ☐ planned |
 | 5 | v0.11.0 | P2 tail (raw-reach builders, protocol gaps) | 19 | ☐ planned |
 
-The P0/P1 tables below are the curated highlights; the **complete per-wave roster** lives in
-the campaign ledger + `_workspace/campaign_beyond_20260530/WAVE_PLAN.md`. A few round-1
-leftovers listed below (`caption_top`, `install_client_writers`, `create_test_pattern`) are
-tracked separately from the round-2 ledger and slot into later waves.
+The curated P0/P1 tables below, plus the full per-surface catalog in the
+[Appendix](#full-backlog), are the **tracked, durable** reference. The campaign's
+`ledger.json` + `WAVE_PLAN.md` under the gitignored `_workspace/campaign_beyond_20260530/`
+are **generated runtime state** (regenerable from the backlog via `build-ledger.mjs`), not
+the canonical source — so the per-wave assignment is reproduced here to survive a clean
+checkout. A few round-1 leftovers listed below (`caption_top`, `install_client_writers`,
+`create_test_pattern`) are tracked separately from the round-2 ledger and slot into later
+waves.
+
+**Per-wave roster** (the 66 buildable items; full metadata — impact/confidence/novelty/probe
+flags — in the [Appendix](#full-backlog)):
+
+- **Wave 1 · v0.7.0** — `foundation_setlist_schema`, `foundation_memory_note`,
+  `create_scheduler`, `server_sampling_assist`, `create_auto_montage`,
+  `create_euclidean_sequencer`, `create_preset_morph`, `create_scene_timeline`,
+  `auto_tag_library_asset`, `lint_recipe_library`, `setlist_runner`, `panic_blackout_hotkey`,
+  `live_dashboard_tui`, `recall_similar_work`, `style_memory`, `create_glsl_material`
+- **Wave 2 · v0.8.0** — `create_prob_sequencer`, `create_two_way_surface`,
+  `create_chroma_reactive`, `create_transient_reactive`, `create_energy_structure`,
+  `create_automation_lane`, `create_phone_gesture`, `compose_cue_list`, `scene_scheduler`
+- **Wave 3 · v0.9.0** — `morph_pack`, `provenance_stamp`, `checksum_and_verify_pack`,
+  `library_lineage_graph`, `scene_summary_resource`, `prompt_eval_harness`,
+  `moodboard_to_system`, `score_build`, `learn_conventions`, `audio_fingerprint_to_visual`
+- **Wave 4 · v0.10.0** — `bridge_watch_build`, `scaffold_tool_generator`, `profile_cook_cost`,
+  `macro_recorder`, `soundcheck_monitor`, `create_engine_comp`, `build_chop_chain`,
+  `control_timeline_transport`, `extend_data_source_fabric`, `author_script_operator`,
+  `create_dmx_fixture_pipeline`, `inspect_gpu_and_displays`
+- **Wave 5 · v0.11.0** — `create_growth_system`, `curated_collection_pack`, `merge_vaults`,
+  `component_changelog_trail`, `vault_repo_sync`, `variant_pack`, `learn_from_my_corpus`,
+  `log_tail_filtered`, `fixture_recorder`, `remote_and_fanout`, `controller_to_cli_bridge`,
+  `elicit_missing_args`, `enhance_build`, `run_macro_script`, `voice_copilot_chat`,
+  `create_shared_memory_bridge`, `build_sop_geometry`, `sync_timecode`,
+  `manage_component_storage`
 
 ### P0 — the live-thesis core (round-2) · wave 1 → v0.7.0 ◐ building
 

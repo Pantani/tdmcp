@@ -50,10 +50,26 @@ side states: blocked-dep | blocked-td | quarantined | merged | tracked-elsewhere
      marked `building`/`integrating` with **no** files → reset to `pending`
      (interrupted; safe to restart). Record each correction in the feature's
      `history[]` with a one-line reason.
-2. **Compute the next ready wave.** A feature is *ready* when: `status` is `pending`,
-   every id in `depends_on[]` is `shipped`, and (if `needs_td`) the bridge is
-   reachable. Pick the lowest-numbered wave that still has unshipped features; within
-   it return only the ready ones. **Shared-schema-first:** a `foundation_*` row or a
+   - **Clear recoverable side states so they re-enter the ready pool:** a
+     `blocked-td` row → `pending` once `get_td_info` reports connected; a `blocked-dep`
+     row → `pending` once every id in its `depends_on[]` is `shipped`. Leave
+     `quarantined` as-is (retried only on an explicit re-run request for that id), and
+     keep a `blocked-*` row blocked only while its blocker truly persists. Record each
+     transition in `history[]`. This is what stops a blocked row from being silently
+     skipped forever when its blocker lifts.
+2. **Compute the next ready wave — never strand a wave on a side state.** A feature is
+   *ready* when: `status` is `pending`, every id in `depends_on[]` is `shipped`, and (if
+   `needs_td`) the bridge is reachable. Pick the **lowest-numbered wave that still has an
+   *actionable* feature** — a `pending` row (ready now), or a still-recoverable
+   `blocked-*` row. A wave whose only non-`shipped` rows are `quarantined` (non-retryable)
+   or permanently blocked is **done for advancement — skip past it** to the next wave;
+   never let those statuses keep re-selecting a wave whose ready set is empty (that is the
+   empty-manifest-forever trap the offline-TD path would otherwise hit). Within the chosen
+   wave return only the ready ones; if it has recoverable-blocked rows but none ready yet
+   (e.g. TD still offline this run), **say so in the report** rather than emitting a silent
+   empty manifest. If no wave has any actionable feature, the campaign is **complete or
+   fully blocked** — report the `quarantined` + still-`blocked-*` remainder explicitly and
+   stop; do not loop. **Shared-schema-first:** a `foundation_*` row or a
    row that *owns* a `shared_schema` (e.g. `server_sampling_assist` owns `llm_client`,
    `create_scheduler` owns `timer_primitive`) must be sequenced as an early sub-batch
    of its wave, ahead of the rows that consume that schema — even within one wave.
