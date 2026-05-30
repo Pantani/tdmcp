@@ -232,3 +232,25 @@ directly.
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
 | 2026-05-29 | Initial build | 2 agents + 1 skill | extend prompt cookbook with surprising examples for all tools not yet shown |
+
+## Harness: backlog campaign
+
+**Goal:** drive an entire feature **backlog/discovery file** to completion as
+resumable, wave-by-wave themed releases — the campaign layer **above**
+`tdmcp-pipeline`/`tdmcp-feature-lead`, adding idempotency, resilience and
+shared-schema sequencing without re-implementing the per-wave build.
+
+**Trigger:** when asked to implement a whole backlog/discovery file (e.g.
+`_workspace/discovery*/FEATURE_BACKLOG*.md`), "all the features", many features
+across multiple releases, or a long autonomous build campaign — **and every
+follow-up**: continue/resume the campaign, run the next wave, re-run a failed wave,
+fold in QA results, or check campaign status — use the `tdmcp-backlog-campaign`
+skill (drives `tdmcp-backlog-planner` → the existing design→build→integrate→QA→release
+specialists, gated by a merge-safe `ledger.json`). For a **single** feature or one
+small batch, use `tdmcp-pipeline` instead. Simple questions can be answered directly.
+Note: this environment runs the team as sub-agents (no `TeamCreate`).
+
+**Change log:**
+| Date | Change | Target | Reason |
+|------|--------|--------|--------|
+| 2026-05-30 | Initial build | 1 agent (`tdmcp-backlog-planner`) + 1 skill (`tdmcp-backlog-campaign`) + ledger | drive the round-2 "BEYOND" backlog (66 buildable: 2 foundations + 64 features, 5 waves) to completion idempotently; reuses the whole per-wave pipeline. Policy: staged-by-priority, checkpoint after wave 1, commit+push **no-tag**, TD-required before build waves |
