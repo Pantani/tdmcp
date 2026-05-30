@@ -316,4 +316,16 @@ describe("createLookBankImpl — fatal", () => {
     expect(textOf(result)).toContain("COMP not found");
     expect(exec.mock.calls[0]?.[1]).toBe(true);
   });
+
+  it("rejects the reserved slot name 'param' before touching the bridge", async () => {
+    const exec = vi.fn();
+    const result = await createLookBankImpl(fakeCtx(exec), {
+      ...DEFAULTS,
+      action: "store",
+      slot: "param",
+    });
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("reserved slot name");
+    expect(exec).not.toHaveBeenCalled();
+  });
 });

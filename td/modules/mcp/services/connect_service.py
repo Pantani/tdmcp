@@ -147,6 +147,12 @@ def disconnect(to_path, from_path=None, to_input=None):
     removed = []
     warnings = []
 
+    # PASS 1 — snapshot every wire to remove BEFORE mutating anything. On a packing
+    # multi-input op, disconnecting repacks the remaining wires to lower indices, so
+    # iterating the live connectors while disconnecting can skip a wire that just
+    # moved into a slot we already passed. The `connection` (upstream OUTPUT
+    # connector) is stable across repacks, so pass 2 re-finds each wire by it.
+    targets = []  # list of (input_index, connection, src_path)
     for connector in to.inputConnectors:
         index = connector.index
         if to_input is not None and index != to_input:
@@ -163,28 +169,40 @@ def disconnect(to_path, from_path=None, to_input=None):
                 continue
             if from_path is not None and src_op.path != from_path:
                 continue
-            # Disconnect ONLY the wire between THIS target input and that specific
-            # upstream output connector. `connection` is the upstream OUTPUT
-            # connector, so connection.disconnect() would tear down its wires to
-            # EVERY downstream target; connector.disconnect(connection) is scoped to
-            # this one input<-output link. Fall back to clearing just this input
-            # slot (which still only affects to_path, never the source's outputs).
-            disconnected = False
+            targets.append((index, connection, src_op.path))
+
+    # PASS 2 — disconnect each snapshotted wire. Re-find the connector that currently
+    # holds it (repacking may have moved it to a lower index) and scope the disconnect
+    # to that one input<-output link; connection.disconnect() would tear down the
+    # source output's wires to EVERY downstream target. Fall back to clearing the
+    # holding input slot (still only affects to_path, never the source's outputs).
+    for index, connection, src_path in targets:
+        holder = None
+        for connector in to.inputConnectors:
             try:
-                connector.disconnect(connection)
-                disconnected = True
-            except Exception as exc1:  # noqa: BLE001
-                try:
-                    connector.disconnect()
-                    disconnected = True
-                except Exception as exc2:  # noqa: BLE001
-                    warnings.append(
-                        "disconnect failed for inputConnectors[%d] from %s: "
-                        "connector.disconnect(conn) -> %s; connector.disconnect() -> %s"
-                        % (index, src_op.path, exc1, exc2)
-                    )
-            if disconnected:
-                removed.append({"input": index, "from": src_op.path})
+                if connection in connector.connections:
+                    holder = connector
+                    break
+            except Exception:  # noqa: BLE001
+                continue
+        if holder is None:
+            # Already gone (removed alongside another wire's repack) — the net effect
+            # we wanted is achieved, so still count it.
+            removed.append({"input": index, "from": src_path})
+            continue
+        try:
+            holder.disconnect(connection)
+            removed.append({"input": index, "from": src_path})
+        except Exception as exc1:  # noqa: BLE001
+            try:
+                holder.disconnect()
+                removed.append({"input": index, "from": src_path})
+            except Exception as exc2:  # noqa: BLE001
+                warnings.append(
+                    "disconnect failed for inputConnectors[%d] from %s: "
+                    "connector.disconnect(conn) -> %s; connector.disconnect() -> %s"
+                    % (index, src_path, exc1, exc2)
+                )
 
     return {
         "to_path": to.path,

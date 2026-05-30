@@ -460,6 +460,15 @@ export async function createLookBankImpl(ctx: ToolContext, args: CreateLookBankA
   if (args.action === "set_ab" && (!args.slot_a || !args.slot_b)) {
     return errorResult("set_ab needs both slot_a and slot_b (the two looks the A↔B knob blends).");
   }
+  // 'param' is the look table's reserved first column (the parameter-name keys). A
+  // slot by that name resolves to column 0 — store would overwrite param names and
+  // delete would drop the key column — so reject it across every slot-acting action.
+  const RESERVED_SLOT = "param";
+  if ([args.slot, args.slot_a, args.slot_b].includes(RESERVED_SLOT)) {
+    return errorResult(
+      `'${RESERVED_SLOT}' is a reserved slot name (the look table's parameter-key column). Choose a different slot name.`,
+    );
+  }
 
   return guardTd(
     async () => {

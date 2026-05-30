@@ -114,6 +114,14 @@ class PackingConnector(FakeConnector):
             out_conn = other.outputConnectors[0]
         self.owner._pack_connect(out_conn)
 
+    def disconnect(self, other=None):
+        # Remove the wire(s) on this slot, then repack remaining inputs to lower
+        # indices like TD's multi-input ops — the repacking the two-pass disconnect
+        # in connect_service must survive (a live-iterating disconnect would skip a
+        # wire that just repacked into a slot it already passed).
+        super().disconnect(other)
+        self.owner._repack(self.owner._wires())
+
 
 class PackingOp(FakeOp):
     """Multi-input op whose inputs pack contiguous and renumber."""
@@ -312,6 +320,24 @@ class DisconnectTests(unittest.TestCase):
         self.assertEqual(result["warnings"], [])
         # Original wire intact.
         self.assertEqual(len(dst.inputConnectors[0].connections), 1)
+
+    def test_disconnect_all_on_packing_op_removes_every_wire(self):
+        # Three wires from distinct sources on a PACKING op; disconnect-all must
+        # remove all three even though each removal repacks the remaining wires to
+        # lower indices. A live-iterating disconnect would skip the wire that just
+        # repacked into a slot it already passed — the two-pass snapshot prevents it.
+        s1 = FakeOp("/p/s1", num_in=0, num_out=1)
+        s2 = FakeOp("/p/s2", num_in=0, num_out=1)
+        s3 = FakeOp("/p/s3", num_in=0, num_out=1)
+        comp = PackingOp("/p/comp1", num_in=3, num_out=1)
+        reg = _registry(s1, s2, s3, comp)
+        with _OpPatch(reg):
+            ce.connect("/p/s1", "/p/comp1", target_input=0)
+            ce.connect("/p/s2", "/p/comp1", target_input=1)
+            ce.connect("/p/s3", "/p/comp1", target_input=2)
+            result = ce.disconnect("/p/comp1")  # remove every input wire
+        self.assertEqual(len(result["removed"]), 3)
+        self.assertEqual(comp._wires(), [])
 
 
 if __name__ == "__main__":
