@@ -232,11 +232,15 @@ export async function downloadToFile(
       await res.body?.cancel().catch(() => {});
       throw new Error(`Too many redirects (>10) for ${url}`);
     }
-    if (!res.ok || !res.body) throw new Error(`Download failed (${res.status}) for ${url}`);
+    if (!res.ok || !res.body) {
+      await res.body?.cancel().catch(() => {});
+      throw new Error(`Download failed (${res.status}) for ${url}`);
+    }
 
     // Reject oversize responses up front when the server declares a length…
     const declared = Number(res.headers.get("content-length"));
     if (Number.isFinite(declared) && declared > maxBytes) {
+      await res.body?.cancel().catch(() => {});
       throw new Error(`Download exceeds size limit (${declared} > ${maxBytes} bytes) for ${url}`);
     }
 

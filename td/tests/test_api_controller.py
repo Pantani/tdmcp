@@ -289,6 +289,8 @@ class HostTests(unittest.TestCase):
             "127.0.0.1/evil",
             "127.0.0.1@evil.com",
             "127.0.0.1:9980/x",
+            "127.0.0.1\r\nHost: evil.com",
+            "127.0.0.1\tevil",
         ):
             with self.assertRaises(PermissionError, msg=host):
                 ac._check_host({"Host": host})
