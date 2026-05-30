@@ -45,11 +45,7 @@ Every feature follows the existing patterns:
 | 13 | 0.5.0 ☑ | Components, agent-DX & reactivity | Reusable-component scaffolding, project analysis/auto-docs, token-cheap agent-DX, Link/MIDI — integrated for 0.5.0, with hardware/live validation called out below |
 | 14–15 | 0.5.0 ☑ | Live mixing, parameter fidelity & creative direction | Post-discovery wave: transitions/layer-stack/keyer/media-bin, one-shot reactivity, signature effects, network round-trip, 11 AI prompts |
 | 16 | 0.6.0 ☑ | TouchDesigner-depth & library fidelity | 7 P0s from discovery round-1: bridge read/write fidelity (flags/wiring/structured endpoints + `cook.error`), `create_modulators` + `create_look_bank` instruments, library contact-sheet — 179 tools |
-<<<<<<< HEAD
-| 17 | 0.7.0+ ◐ | Composition, automation & intelligence | In progress via the backlog-campaign harness. Wave 3 (artist controls — 9 tools) shipped + live-validated; then td-depth telemetry, library/packaging, CLI/DX, and round-2 (beyond-backlog): time-based show automation, beat-locked montage, pattern generation, own-work retrieval/memory, MCP sampling |
-=======
-| 17 | 0.7.0+ ☐ | Composition, automation & intelligence | Discovery rounds 2–3: time-based show automation, beat-locked montage, pattern generation, own-work memory, MCP sampling — **plus the external community-sources round** (Shadertoy/ISF import, missing iconic looks, color-finish, artist-publishing) |
->>>>>>> origin/main
+| 17 | 0.7.0+ ◐ | Composition, automation & intelligence | In progress via the backlog-campaign harness (Wave 3 artist controls + Wave 4 library/packaging shipped + live-validated). Discovery rounds 2–3: time-based show automation, beat-locked montage, pattern generation, own-work memory, MCP sampling — **plus the external community-sources round** (Shadertoy/ISF import, missing iconic looks, color-finish, artist-publishing) |
 
 ---
 
@@ -720,37 +716,15 @@ TD Palette + Obsidian vault, per the project's distribution model).
 
 ## Appendix — Full discovery backlog {#full-backlog}
 
-<<<<<<< HEAD
-Reproduced from the two discovery runs so the complete catalog survives in git (`_workspace/` is
-gitignored — the source files would otherwise be lost). **Legend:** Priority **P0/P1/P2** · Effort
-**S** ≤1 day / **M** 2–4 days / **L** ~1 week · Impact/Conf High/Med/Low · Novelty **NEW** /
-**EXTENSION** / **ROADMAP** · **✅ 0.6.0** = shipped since the round-1 run (see [Phase 16](#phase-16)) ·
-**✅ 0.7.0** = shipped in the Phase-17 artist-controls campaign wave (live-validated in TD) ·
-**◐ 0.7.0** = built + integrated, live validation pending.
-=======
 Reproduced from the four discovery runs (round-0 2026-05-28 → round-3 2026-05-30) so the complete
 catalog survives in git (`_workspace/` is gitignored — the source files would otherwise be lost).
 **Legend:** Priority **P0/P1/P2** · Effort **S** ≤1 day / **M** 2–4 days / **L** ~1 week ·
 Impact/Conf High/Med/Low · Novelty **NEW** / **EXTENSION** / **ROADMAP** · Status **✅ v0.5.0** /
-**✅ 0.6.0** = shipped since that run · `gated` = GPU/hardware/CUDA/license-deferred. Round-3 rows carry
+**✅ 0.6.0** = shipped since that run · **✅ 0.7.0** = shipped in the Phase-17 backlog-campaign waves
+(artist controls + library/packaging, live-validated in TD) · **◐ 0.7.0** = built + integrated, live
+validation pending · `gated` = GPU/hardware/CUDA/license-deferred. Round-3 rows carry
 a **Source** (the external repo/site/artist) instead of a probe column, since attribution is the point of
 an external round; `probe-live` notes are inline where they apply.
-
-### 0 · Round-0 — 2026-05-28 (harvested into v0.5.0)
-
-Source: `_workspace/discovery_20260528/FEATURE_BACKLOG.md`. **78 distinct features** (93 raw; controls
-23 · CLI 22 · AI 26 · td-depth 22) — the discovery that **fed v0.5.0 (Phases 13–15)**. Almost the entire
-backlog shipped (round-1 below confirms "Phases 13–15 / v0.5.0 harvested almost the entire 2026-05-28
-backlog"), so its open remainder is carried transitively into round-1; recorded here for a complete git
-lineage rather than reproduced row-by-row. Its **Top-12 recommended-next — all ✅ shipped in v0.5.0/0.6.0:**
-`batch_operations`, `bind_audio_reactive`, `create_transition`, `fix_reactivity` (prompt),
-`create_live_source`, `read_parameter_modes`, `recover_show` (prompt), `create_layer_stack`,
-`auto_vj_director` (prompt), `snapshot_td_graph` compact mode, `create_media_bin`, `set_perform_mode`.
-Just-missed tier (`create_keyer`, `edit_dat_content`/`set_dat_content`, `config_file_and_profiles`,
-`set_parameter_expression`, `create_datamosh`/`create_displacement_warp`) also shipped; only
-`wrap_pop_family` (90 unreached GPU POP operators, L) remains open — tracked as round-1 `create_pop_geometry`
-and round-3 `create_pop_fluid`.
->>>>>>> origin/main
 
 ### A · Round-1 backlog — 2026-05-29
 
