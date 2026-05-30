@@ -118,6 +118,38 @@ describe("rebuildNetworkImpl", () => {
     expect(text).toContain("Rebuilt 2 node(s), 1 wire(s) under /project1");
   });
 
+  it("resolves the operator type by name off td — never eval()s caller input", async () => {
+    let captured = "";
+    server.use(
+      http.post(`${TD_BASE}/api/exec`, async ({ request }) => {
+        captured = ((await request.json()) as { script: string }).script;
+        return HttpResponse.json({
+          ok: true,
+          data: {
+            stdout: JSON.stringify({
+              parent_path: "/project1",
+              created: ["noise1", "level1"],
+              wired: 1,
+              params_set: 2,
+              cleared: 0,
+              warnings: [],
+            }),
+          },
+        });
+      }),
+    );
+
+    await rebuildNetworkImpl(makeCtx(), TWO_NODE_SPEC);
+
+    // The operator type is a caller/LLM-controlled string; it must NEVER reach a
+    // Python eval() (that would be arbitrary code execution inside TouchDesigner).
+    // It must be resolved by name off the td module, which cannot run code.
+    expect(captured).not.toMatch(/\beval\s*\(/);
+    expect(captured).toContain("getattr(td, _type");
+    expect(captured).toContain("isidentifier()");
+    expect(captured).toContain("import td");
+  });
+
   it("reports warnings and a cleared count in the summary", async () => {
     server.use(
       http.post(`${TD_BASE}/api/exec`, () =>

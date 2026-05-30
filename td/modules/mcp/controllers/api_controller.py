@@ -125,6 +125,33 @@ def _check_origin(request):
         raise _Forbidden("Forbidden: cross-origin request rejected (origin %r)." % origin)
 
 
+def _check_host(request):
+    """Reject non-loopback `Host` headers when auth is off (DNS-rebinding guard).
+
+    The WebServer DAT binds all interfaces, so `_check_origin` alone leaves a
+    DNS-rebinding gap: an attacker page on a domain that re-resolves to 127.0.0.1
+    can drive a request whose `Host` is the attacker domain. We close it the same
+    way the Node HTTP transport does (an `allowedHosts` loopback allowlist) — but
+    only in the default zero-token config, which is the one exposed to drive-by
+    RCE. When `TDMCP_BRIDGE_TOKEN` is set the operator has opted into authenticated
+    use (documented for trusted networks, where `Host` is the machine's LAN name),
+    and the bearer token — which a rebinding attacker cannot forge — is the gate,
+    so the host is not second-guessed. A missing `Host` is allowed, mirroring the
+    Origin logic and older/non-HTTP TD builds.
+    """
+    if _required_token():
+        return  # authenticated use: the token defends against rebinding
+    host_header = _find_header(request, "host")
+    if not host_header:
+        return
+    hostname = urlparse("//" + host_header).hostname
+    if hostname not in _LOOPBACK_HOSTS:
+        raise _Forbidden(
+            "Forbidden: non-loopback Host %r rejected (set TDMCP_BRIDGE_TOKEN for "
+            "authenticated remote use)." % host_header
+        )
+
+
 def _qs(query, key, default=None):
     values = query.get(key)
     return values[0] if values else default
@@ -373,6 +400,7 @@ def _emit_event(webserver, method, path, data):
 def handle(request, response, webserver=None):
     try:
         _check_origin(request)
+        _check_host(request)
         _check_auth(request)
         method = (request.get("method") or "GET").upper()
         parsed = urlparse(request.get("uri", "/"))

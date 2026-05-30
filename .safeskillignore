@@ -1,0 +1,33 @@
+# SafeSkill scan exclusions — gitignore syntax, matched from the repo root.
+# Honored by `npx skillsafe scan` (and the safeskill.dev web scanner) via its
+# file-discovery step. Only GENERATED data, BUILD output, and BINARY MEDIA are
+# excluded here — never hand-written server source (src/tools, src/server, …),
+# the TD bridge (td/), or any docs/content, so the security and prompt-injection
+# review still sees everything that actually runs or instructs the model.
+
+# --- Generated reference data (NOT executed by the server) ---
+# ~700 TouchDesigner operator/Python/GLSL example snippets produced by
+# `npm run import:bottobot` from the pinned @bottobot/td-mcp dataset. Exposed
+# read-only as MCP resources (tdmcp://operators/…); regenerated, never edited.
+# These are the source of most "eval()/network" substring false positives:
+# they contain TouchDesigner's `Par.eval()` value-read API, which is not
+# JavaScript/Python code execution.
+src/knowledge/data/
+
+# --- Build / derived output (also gitignored) ---
+dist/
+coverage/
+docs/.vitepress/cache/
+docs/.vitepress/dist/
+
+# --- Binary media (cookbook captures) — cannot carry code or prompt injection ---
+*.mp4
+*.webm
+*.mov
+*.gif
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.mp3
+*.wav
