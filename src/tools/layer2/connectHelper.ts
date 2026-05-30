@@ -1,8 +1,14 @@
 import type { TouchDesignerClient } from "../../td-client/touchDesignerClient.js";
-import { friendlyTdError, TdApiError } from "../../td-client/types.js";
+import { friendlyTdError, isMissingEndpoint, TdApiError } from "../../td-client/types.js";
 
 export interface ConnectResult {
-  method: "batch" | "python";
+  method: "endpoint" | "batch" | "python";
+  /**
+   * The input slot TD actually used. A multi-input TOP can pack a requested slot
+   * down to a different live index; the `/api/connect` endpoint reports it. Only
+   * set on the "endpoint" path (batch/python don't report packing).
+   */
+  actualInput?: number;
   /**
    * Present only when the bridge's `/api/batch` connect op resolved but reported
    * `ok:false` and the Python fallback then recovered. Carries that op's `error`
@@ -14,8 +20,9 @@ export interface ConnectResult {
 }
 
 /**
- * Connects two nodes. Prefers the bridge `/api/batch` connect op; if the bridge
- * responds with an API error (e.g. batch not supported), falls back to a Python
+ * Connects two nodes. Prefers the first-class `/api/connect` endpoint (which
+ * survives TDMCP_BRIDGE_ALLOW_EXEC=0); on an API error (older bridge / 404) falls
+ * back to the `/api/batch` connect op, then to a Python
  * `inputConnectors[...].connect(...)` call. Connection/timeout errors propagate.
  */
 export async function connectNodesViaBridge(
@@ -25,6 +32,18 @@ export async function connectNodesViaBridge(
   sourceOutput = 0,
   targetInput = 0,
 ): Promise<ConnectResult> {
+  // 1) first-class endpoint (survives ALLOW_EXEC=0)
+  try {
+    const r = await client.connectNodes(sourcePath, targetPath, sourceOutput, targetInput);
+    // Carry the slot TD actually used (multi-input packing) back to the caller.
+    return { method: "endpoint", actualInput: r.actual_input };
+  } catch (err) {
+    // Fall back ONLY when the endpoint is absent (older bridge). A real
+    // validation rejection (e.g. cross-container wire, HTTP 400) must surface —
+    // retrying via batch/python would reintroduce the old silent no-op.
+    if (!isMissingEndpoint(err)) throw err;
+  }
+
   let batchError: string | undefined;
   try {
     const result = await client.batch([

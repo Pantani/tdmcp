@@ -32,9 +32,15 @@ export async function connectNodesImpl(ctx: ToolContext, args: ConnectNodesArgs)
         args.target_input,
       ),
     (result) => {
-      const note = result.batchError
-        ? ` Batch connect first failed (${result.batchError}); used the Python fallback.`
-        : "";
+      // Surface the slot TD actually used: a multi-input TOP can pack a requested
+      // slot to a different live index, and the endpoint reports it.
+      const actualInput = result.actualInput ?? args.target_input;
+      const packed = result.actualInput !== undefined && result.actualInput !== args.target_input;
+      const note =
+        (result.batchError
+          ? ` Batch connect first failed (${result.batchError}); used the Python fallback.`
+          : "") +
+        (packed ? ` Requested input ${args.target_input} packed to live slot ${actualInput}.` : "");
       return jsonResult(
         `Connected ${args.source_path} → ${args.target_path} (via ${result.method}).${note}`,
         {
@@ -42,6 +48,7 @@ export async function connectNodesImpl(ctx: ToolContext, args: ConnectNodesArgs)
           target: args.target_path,
           source_output: args.source_output,
           target_input: args.target_input,
+          actual_input: actualInput,
           method: result.method,
           ...(result.batchError ? { batch_error: result.batchError } : {}),
         },

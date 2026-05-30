@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isMissingEndpoint, TdApiError } from "../../td-client/types.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -138,6 +139,64 @@ export async function setParameterExpressionImpl(
 ): Promise<import("@modelcontextprotocol/sdk/types.js").CallToolResult> {
   return guardTd(
     async () => {
+      // 1) first-class per-param endpoint (survives ALLOW_EXEC=0). It flips par.mode
+      //    via type(par.mode), which also fixes the silent `ParMode` NameError the
+      //    exec path hit. Loop fail-forward — per-item failures become warnings.
+      //    If a missing-endpoint error hits BEFORE the endpoint is proven present
+      //    (older bridge / 404), abandon the loop and fall back to whole-batch exec.
+      const applied: AppliedEntry[] = [];
+      const warnings: string[] = [];
+      let endpointUsable = true;
+      // "Proven present" = any call returned — a success OR a non-missing rejection
+      // (the route exists, it just refused that param). Tracking this instead of
+      // `i === 0` is correct when earlier assignments are skipped locally (missing
+      // expr/value), so the first ACTUAL endpoint call can land at index > 0.
+      let endpointProven = false;
+      for (let i = 0; i < args.assignments.length; i++) {
+        const a = args.assignments[i];
+        if (!a) continue;
+        // Mirror the exec path's pre-flight: expr is required for expression/bind.
+        if ((a.mode === "expression" || a.mode === "bind") && !a.expr) {
+          warnings.push(`param '${a.param}': expr required for mode '${a.mode}'`);
+          continue;
+        }
+        if (a.mode === "constant" && a.value === undefined) {
+          warnings.push(`param '${a.param}': value required for mode 'constant'`);
+          continue;
+        }
+        try {
+          const r = await ctx.client.setParameterMode(args.path, a.param, a.mode, a.expr, a.value);
+          endpointProven = true;
+          applied.push({
+            param: r.param,
+            mode: a.mode,
+            readback_mode: r.readback_mode,
+            readback_expr: r.readback_expr,
+          });
+        } catch (err) {
+          // A missing endpoint BEFORE the route is proven present (older bridge)
+          // triggers the whole-batch exec fallback. A validation error (unknown
+          // param, missing node — also a TdApiError) is fail-forward per-param,
+          // so later valid assignments still apply and ALLOW_EXEC=0 users get the
+          // real reason instead of an exec-disabled error.
+          if (!endpointProven && isMissingEndpoint(err)) {
+            endpointUsable = false;
+            break;
+          }
+          if (err instanceof TdApiError) {
+            // The route exists (it rejected this param), so any later error is not
+            // a missing endpoint — keep going fail-forward as a per-param warning.
+            endpointProven = true;
+            warnings.push(`param '${a.param}': ${err.message}`);
+            continue;
+          }
+          throw err; // connection/timeout -> guardTd
+        }
+      }
+      if (endpointUsable) {
+        return { path: args.path, applied, warnings } as SetParameterExpressionReport;
+      }
+      // fallback: whole-batch exec (older bridge).
       const script = buildSetExprScript({
         path: args.path,
         assignments: args.assignments,

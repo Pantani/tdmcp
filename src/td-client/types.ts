@@ -45,6 +45,24 @@ export function friendlyTdError(err: unknown): string {
   return String(err);
 }
 
+/**
+ * True when a {@link TdApiError} means the REST route is ABSENT on the bridge —
+ * an older bridge that predates this endpoint — as opposed to a *validation*
+ * rejection from a current bridge. Both an unmatched route and a validation
+ * failure come back as HTTP 400 (the bridge's router raises
+ * `ValueError("Unsupported <METHOD> <path>")` for an unknown route, and 400 for
+ * a bad request); some setups/proxies answer 404. Only the missing-route case
+ * may fall back to the exec path — a real validation 400 (e.g. "cannot wire
+ * across containers", "No such parameter", "is not a DAT") must surface so
+ * `TDMCP_BRIDGE_ALLOW_EXEC=0` users see the reason and exec-enabled users don't
+ * silently run a second implementation after the endpoint already rejected.
+ */
+export function isMissingEndpoint(err: unknown): boolean {
+  if (!(err instanceof TdApiError)) return false;
+  if (err.status === 404) return true;
+  return /^Unsupported (GET|POST|PUT|PATCH|DELETE) /.test(err.message);
+}
+
 export type {
   ApiEnvelope,
   CreateNodeInput,

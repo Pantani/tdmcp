@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isMissingEndpoint } from "../../td-client/types.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -183,6 +184,43 @@ export function buildGetBridgeLogsScript(payload: object): string {
 export async function getBridgeLogsImpl(ctx: ToolContext, args: GetBridgeLogsArgs) {
   return guardTd(
     async () => {
+      // 1) first-class /api/logs endpoint (survives ALLOW_EXEC=0): reads the bridge
+      //    Error DAT instead of char-iterating op.errors(). Map its rows into the
+      //    existing {source:"cook", level, text, op} shape. Fall back to the exec
+      //    op-walk when the endpoint 404s OR reports available:false (older bridge).
+      //    /api/logs IS the Error-DAT cook source, so only hit it when the caller
+      //    wants cook errors; otherwise skip to the exec path, which honors the
+      //    include_cook_errors flag and returns only the non-cook probe logs.
+      if (args.include_cook_errors) {
+        try {
+          // getLogs(severity, maxLines, scope) — request all severities, the
+          // caller's max_lines, and pass the scope through so the endpoint filters
+          // to that operator path (was previously sending scope as the severity).
+          const logs = await ctx.client.getLogs("all", args.max_lines, args.scope);
+          if (logs.available) {
+            const lines = logs.lines.map((l) => ({
+              source: "cook",
+              level: (l.severity || "error").toLowerCase(),
+              text: l.message,
+              // Omit op when the Error-DAT row has a blank source — the schema makes
+              // it optional, and op:"" would force callers to special-case an empty path.
+              ...(l.source ? { op: l.source } : {}),
+            }));
+            return {
+              scope: args.scope,
+              lines,
+              count: lines.length,
+              probe: { endpoint: true, error_dat: logs.error_dat },
+              warnings: logs.warnings,
+            } as BridgeLogsReport;
+          }
+          // available:false -> fall through to the exec op-walk.
+        } catch (err) {
+          // Fall back to the exec op-walk ONLY when the endpoint is absent (older
+          // bridge); a current bridge's validation 400 (bad scope) must surface.
+          if (!isMissingEndpoint(err)) throw err;
+        }
+      }
       const script = buildGetBridgeLogsScript({
         scope: args.scope,
         max_lines: args.max_lines,

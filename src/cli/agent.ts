@@ -230,8 +230,10 @@ import {
 import { createExternalIoImpl, createExternalIoSchema } from "../tools/layer2/createExternalIo.js";
 import { createGlslShaderImpl, createGlslShaderSchema } from "../tools/layer2/createGlslShader.js";
 import { createLedMapperImpl, createLedMapperSchema } from "../tools/layer2/createLedMapper.js";
+import { createLookBankImpl, createLookBankSchema } from "../tools/layer2/createLookBank.js";
 import { createMacroImpl, createMacroSchema } from "../tools/layer2/createMacro.js";
 import { createMidiMapImpl, createMidiMapSchema } from "../tools/layer2/createMidiMap.js";
+import { createModulatorsImpl, createModulatorsSchema } from "../tools/layer2/createModulators.js";
 import { createNodeChainImpl, createNodeChainSchema } from "../tools/layer2/createNodeChain.js";
 import { createPaletteImpl, createPaletteSchema } from "../tools/layer2/createPalette.js";
 import { createPanicImpl, createPanicSchema } from "../tools/layer2/createPanic.js";
@@ -297,6 +299,7 @@ import {
 import { getTdClassesImpl, getTdClassesSchema } from "../tools/layer3/getTdClasses.js";
 import { getTdInfoImpl } from "../tools/layer3/getTdInfo.js";
 import { getTdNodeErrorsImpl, getTdNodeErrorsSchema } from "../tools/layer3/getTdNodeErrors.js";
+import { getTdNodeFlagsImpl, getTdNodeFlagsSchema } from "../tools/layer3/getTdNodeFlags.js";
 import {
   getTdNodeParametersImpl,
   getTdNodeParametersSchema,
@@ -361,6 +364,10 @@ import {
 } from "../tools/library/index.js";
 import type { ToolContext } from "../tools/types.js";
 import {
+  generateLibraryIndexImpl,
+  generateLibraryIndexSchema,
+} from "../tools/vault/generateLibraryIndex.js";
+import {
   describeConfig,
   type LoadConfigOptions,
   loadConfig,
@@ -404,6 +411,11 @@ const COMMANDS: Record<string, Command> = {
   "nodes find": r(findTdNodesSchema, findTdNodesImpl, "Search nodes by name pattern and/or type."),
   "nodes get": r(getTdNodeParametersSchema, getTdNodeParametersImpl, "Read a node's parameters."),
   "nodes errors": r(getTdNodeErrorsSchema, getTdNodeErrorsImpl, "Check a node/network for errors."),
+  "nodes flags": r(
+    getTdNodeFlagsSchema,
+    getTdNodeFlagsImpl,
+    "Inspect node flags + wiring (why-is-it-black).",
+  ),
   "nodes compare": r(compareTdNodesSchema, compareTdNodesImpl, "Diff two nodes' parameters."),
   "nodes snapshot": r(snapshotTdGraphSchema, snapshotTdGraphImpl, "Capture a network snapshot."),
   "nodes topology": r(getTdTopologySchema, getTdTopologyImpl, "Map nodes + connections."),
@@ -719,6 +731,18 @@ const COMMANDS: Record<string, Command> = {
   macro: r(createMacroSchema, createMacroImpl, "Add one knob that drives many parameters.", {
     mutates: true,
   }),
+  modulators: r(
+    createModulatorsSchema,
+    createModulatorsImpl,
+    "Build a bank of BPM-synced LFOs on one Null (the 'everything breathes' lever).",
+    { mutates: true },
+  ),
+  "look-bank": r(
+    createLookBankSchema,
+    createLookBankImpl,
+    "Snapshot/morph look bank: store, recall, A↔B blend named looks on a control COMP.",
+    { mutates: true },
+  ),
   randomize: r(
     randomizeControlsSchema,
     randomizeControlsImpl,
@@ -1227,6 +1251,12 @@ const COMMANDS: Record<string, Command> = {
     installLibraryPackageSchema,
     installLibraryPackageImpl,
     "Install a local package folder, zip, tox, or manifest into a package directory.",
+    { mutates: true },
+  ),
+  "library-index": r(
+    generateLibraryIndexSchema,
+    generateLibraryIndexImpl,
+    "Write a Markdown contact-sheet of the whole vault library (thumbnails + load snippets).",
     { mutates: true },
   ),
 };

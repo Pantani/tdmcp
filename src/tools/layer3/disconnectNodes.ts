@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isMissingEndpoint } from "../../td-client/types.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -152,6 +153,17 @@ export async function disconnectNodesImpl(
 ): Promise<import("@modelcontextprotocol/sdk/types.js").CallToolResult> {
   return guardTd(
     async () => {
+      // 1) first-class endpoint (survives ALLOW_EXEC=0). Same response shape as the
+      //    exec path, minus the connector probe (absent on the structured route).
+      try {
+        const r = await ctx.client.disconnectNodes(args.to_path, args.from_path, args.to_input);
+        return { ...r, probe: null } as DisconnectReport;
+      } catch (err) {
+        // Fall back ONLY when the endpoint is absent (older bridge). A current
+        // bridge's validation 400 (e.g. to_path not found) must surface, not run
+        // the exec path after the structured route already rejected the request.
+        if (!isMissingEndpoint(err)) throw err;
+      }
       const script = buildDisconnectScript({
         to_path: args.to_path,
         from_path: args.from_path ?? null,

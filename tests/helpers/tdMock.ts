@@ -5,6 +5,19 @@ export const TD_BASE = "http://127.0.0.1:9980";
 
 const ok = (data: unknown) => HttpResponse.json({ ok: true, data });
 
+/**
+ * Default 404 for the v0.6.0 first-class endpoints (connect/disconnect, param-mode,
+ * DAT-text, logs). The rewired tools try these FIRST and, on a 404 (→ TdApiError),
+ * fall back to the legacy `/api/exec` path that the existing tests already mock.
+ * Returning 404 here keeps every legacy test exercising its original exec path with
+ * no per-test changes; tests that want to assert the endpoint path override these.
+ */
+const notFound = () =>
+  HttpResponse.json(
+    { ok: false, error: { message: "endpoint not supported (older bridge)" } },
+    { status: 404 },
+  );
+
 function seg(params: { seg?: string | readonly string[] }): string {
   const raw = params.seg;
   if (raw === undefined) return "";
@@ -41,6 +54,17 @@ export const tdHandlers = [
   http.get(`${TD_BASE}/api/nodes/:seg/errors`, ({ params }) =>
     ok({ errors: [], _path: seg(params) }),
   ),
+
+  // v0.6.0 first-class endpoints — default to 404 so the rewired tools fall back to
+  // the legacy /api/exec path (which the existing tests mock). Tests asserting the
+  // endpoint path override these per-test.
+  http.get(`${TD_BASE}/api/nodes/:seg/params`, notFound),
+  http.patch(`${TD_BASE}/api/nodes/:seg/params/:param/mode`, notFound),
+  http.get(`${TD_BASE}/api/nodes/:seg/text`, notFound),
+  http.put(`${TD_BASE}/api/nodes/:seg/text`, notFound),
+  http.post(`${TD_BASE}/api/connect`, notFound),
+  http.post(`${TD_BASE}/api/disconnect`, notFound),
+  http.get(`${TD_BASE}/api/logs`, notFound),
 
   http.post(`${TD_BASE}/api/nodes/:seg/method`, () => ok({ result: "ok" })),
 

@@ -286,4 +286,71 @@ describe("edit_dat_content", () => {
       expect(result.isError).toBe(true);
     });
   });
+
+  describe("endpoint-first path (GET/PUT …/text)", () => {
+    it("reads via the text endpoint, replaces in TS, PUTs back, and never calls exec", async () => {
+      let putBody: { text?: string } | null = null;
+      let execCalled = false;
+      server.use(
+        http.get(`${TD_BASE}/api/nodes/:seg/text`, () =>
+          HttpResponse.json({
+            ok: true,
+            data: { path: "/project1/mydat1", text: "hello world", is_table: false },
+          }),
+        ),
+        http.put(`${TD_BASE}/api/nodes/:seg/text`, async ({ request }) => {
+          putBody = (await request.json()) as { text?: string };
+          return HttpResponse.json({
+            ok: true,
+            data: { path: "/project1/mydat1", old_length: 11, new_length: 13 },
+          });
+        }),
+        http.post(`${TD_BASE}/api/exec`, () => {
+          execCalled = true;
+          return HttpResponse.json({ ok: true, data: { result: null, stdout: "{}" } });
+        }),
+      );
+
+      const result = await editDatContentImpl(makeCtx(), {
+        dat_path: "/project1/mydat1",
+        old_string: "hello",
+        new_string: "goodbye",
+        replace_all: false,
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(execCalled).toBe(false);
+      expect(putBody).not.toBeNull();
+      expect((putBody as unknown as { text: string }).text).toBe("goodbye world");
+    });
+
+    it("on the endpoint path, 0 matches returns isError and does NOT PUT", async () => {
+      let putCalled = false;
+      server.use(
+        http.get(`${TD_BASE}/api/nodes/:seg/text`, () =>
+          HttpResponse.json({
+            ok: true,
+            data: { path: "/project1/mydat1", text: "nothing here", is_table: false },
+          }),
+        ),
+        http.put(`${TD_BASE}/api/nodes/:seg/text`, () => {
+          putCalled = true;
+          return HttpResponse.json({
+            ok: true,
+            data: { path: "/project1/mydat1", old_length: 12, new_length: 12 },
+          });
+        }),
+      );
+
+      const result = await editDatContentImpl(makeCtx(), {
+        dat_path: "/project1/mydat1",
+        old_string: "absent",
+        new_string: "x",
+        replace_all: false,
+      });
+
+      expect(result.isError).toBe(true);
+      expect(putCalled).toBe(false);
+    });
+  });
 });

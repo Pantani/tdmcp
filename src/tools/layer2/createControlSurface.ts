@@ -54,7 +54,7 @@ interface SurfaceReport {
 // press it looks the button up in the surface's stored button→cue map and either snaps the
 // cue's values onto the control COMP or, when a morph time is set, writes a transition record
 // and kicks the cue_morph hook (the same engine manage_cue uses).
-const SURFACE_BUTTON_CB = `import td
+export const SURFACE_BUTTON_CB = `import td
 
 def onOffToOn(panelValue):
     btn = panelValue.owner

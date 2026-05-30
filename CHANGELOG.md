@@ -4,7 +4,87 @@ All notable changes to **tdmcp** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.0] - Unreleased
+## [0.6.0] - 2026-05-29
+
+TouchDesigner-depth and library wave. Seven P0 features sharpen the bridge's read/write
+fidelity and add two performance instruments plus a library contact-sheet. The bridge gains
+**structured REST endpoints** for the operations that previously rode the raw-Python escape
+hatch — connect/disconnect, parameter modes + expression/bind, DAT text, and a logs feed backed
+by an in-bridge Error DAT — and the affected tools were rewired **endpoint-first with an
+exec-fallback**, so they keep working against an older bridge while routing through the fast,
+exec-gate-free path on a current one. This also fixes a silent parameter-mode bug that left
+`set_parameter_expression` writing the expression text without ever flipping the parameter into
+Expression/Bind mode.
+
+### Added
+
+- **`get_td_node_flags`** (CLI `nodes flags`) — read an operator's flags
+  (bypass / render / display / lock / allowCooking / clone), index-aware input wiring
+  (`wires_in`), and position / comment / color in one call. Supports recursive sweeps with
+  `max_nodes`, an `only_problems` filter, and a per-node `suspect_reason` (e.g. "bypass on").
+  `node_detail` / `NodeDetailSchema` / `serialize_network` were extended with the same
+  flags / wiring / comment / color fields (back-compatibly).
+- **`create_modulators`** (CLI `modulators`) — a BPM-synced multi-LFO bank: tempo-locked
+  sine / saw / noise modulators on one Null with named output channels, a master Rate/Depth,
+  and a paused-timeline warning. Bind `mod_out` to any parameter to make a network breathe in
+  time with the music.
+- **`create_look_bank`** (CLI `look-bank`) — a snapshot + A↔B-morph instrument: capture the
+  current look (morph-safe — pulse and string parameters are skipped), store named looks, and
+  recall them with an instant snap or a quantized, timed morph, plus a live A↔B blend knob.
+- **`generate_library_index`** (CLI `library-index`) — render a Markdown contact-sheet of a
+  vault's saved recipes and components, embedding each asset's preview thumbnail
+  (`![[stem.png]]`, or _(no preview)_ when none was captured).
+- **Recipe / component preview thumbnails** — `save_recipe_to_vault` and
+  `save_component_to_vault` accept `preview_top` / `thumbnail` and capture a sibling `<stem>.png`
+  next to the saved note, embedding it after the frontmatter. Thumbnail capture **never throws**:
+  a capture failure leaves the note intact and unembedded.
+- **New bridge REST endpoints** (no exec gate — they survive `TDMCP_BRIDGE_ALLOW_EXEC=0`):
+  `POST /api/connect` + `POST /api/disconnect` (index-aware multi-input packing and
+  disconnect-by-source); `GET …/params?modes=true`, `PATCH …/params/<p>/mode` and
+  `GET`/`PUT …/text` (parameter modes, expression/bind, and DAT text); and `GET /api/logs`
+  backed by a new in-bridge **Error DAT** (scoped to the artist's `/project1` network,
+  header-name column mapping) with edge-triggered `cook.error` / `error.cleared` events.
+
+### Changed
+
+- **`connect_nodes`**, **`disconnect_nodes`**, **`read_parameter_modes`**,
+  **`set_parameter_expression`**, **`edit_dat_content`**, **`set_dat_content`** and
+  **`get_bridge_logs`** now call their dedicated REST endpoint first and **fall back to the
+  raw-Python path only when that endpoint is missing on an older bridge** — a current bridge's
+  validation errors surface instead of silently retrying via exec, and connection/timeout
+  errors still propagate — so they work against both current and older bridges. `connect_nodes` now reports the actual
+  packed input slot; `edit_dat_content` refuses to write when the replacement target matches
+  zero or more than one location.
+
+### Fixed
+
+- **Silent parameter-mode bug in `set_parameter_expression`** — setting an expression or bind
+  previously wrote the expression text but never switched the parameter out of Constant mode
+  (a latent `ParMode` `NameError` meant the mode change was silently dropped). The new
+  `PATCH …/params/<p>/mode` endpoint resolves the enum via `type(par.mode)` and the parameter
+  now actually flips to Expression / Bind (verified live).
+
+### Live validation
+
+All seven features passed QA: the four PR gates were green (1614 tests, 15/15 recipes,
+86 bridge tests) and each feature's bridge logic was validated live in TouchDesigner
+(connect/disconnect packing, the parameter-mode flip, the Error DAT scope + header mapping,
+the modulator and look-bank networks cooking with zero errors). The following were validated by
+static check + live-mechanism only and are **pending an end-to-end re-check after the owner
+reinstalls the bridge and restarts the server** (acceptable per release policy):
+
+- MCP tool calls for all seven features routed through the **new HTTP dispatcher**
+  (the relocated bridge logic itself was validated live; the live routing through the
+  controller was not).
+- `TDMCP_BRIDGE_ALLOW_EXEC=0` survival of the five new structured routes (static-passed:
+  no exec gate on any of them).
+- Edge-triggered `cook.error` / `error.cleared` events from the bridge's frame hook.
+- The save-tool thumbnail end-to-end (sibling PNG written + embedded) against a live vault,
+  and `generate_library_index` rendering the contact-sheet from real assets.
+- The live client→bridge round-trip shape for the seven rewired tools (the Zod schemas were
+  diffed statically against the bridge dicts produced live; the live HTTP round-trip is pending).
+
+## [0.5.0] - 2026-05-29
 
 Phase 13 plus the dotsimulate LOPs integration. The focus shifts from *generating* visuals to
 **packaging, documenting and cheaply operating** them: reusable components (build → parameterize →
@@ -204,7 +284,8 @@ API on its first live run, and is fail-forward (per-item warnings, never throws)
   preview-asset writes, as a strict superset of `TDMCP_RAW_PYTHON=off`. Use it to hand an
   autonomous in-TD agent a curated, non-destructive toolset.
 
-[0.5.0]: https://github.com/Pantani/tdmcp/compare/v0.4.0...HEAD
+[0.6.0]: https://github.com/Pantani/tdmcp/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/Pantani/tdmcp/compare/v0.4.0...v0.5.0
 
 ## [0.4.0] - 2026-05-27
 

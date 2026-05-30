@@ -70,6 +70,27 @@ def _event_hooks_source(modules_dir=None):
         "                        emitted += 1\n"
         "                        if emitted >= 10:\n"
         "                            break\n"
+        "        # Edge-triggered cook.error / error.cleared from the bridge Error DAT.\n"
+        "        # Broadcast on a row-count delta OR a newest-row identity change. At\n"
+        "        # the maxlines cap, clamp replaces old rows so numRows stops growing —\n"
+        "        # tracking the newest (absframe, message) too keeps cook.error firing\n"
+        "        # for fresh errors after the buffer fills (still <=1 per frame).\n"
+        "        _ed = me.parent().op('error_log')\n"
+        "        if _ed is not None and _ed.numRows > 0:\n"
+        "            _rows = _ed.numRows - 1   # data rows, minus header\n"
+        "            _prev = getattr(me, '_tdmcp_err_rows', 0)\n"
+        "            _prev_new = getattr(me, '_tdmcp_err_newest', None)\n"
+        "            _new = (str(_ed[_rows, 2]), str(_ed[_rows, 1])) if _rows > 0 else None\n"
+        "            if _rows != _prev or _new != _prev_new:\n"
+        "                me._tdmcp_err_rows = _rows\n"
+        "                me._tdmcp_err_newest = _new\n"
+        "                if _rows == 0:\n"
+        "                    _broadcast('error.cleared', {'count': 0})\n"
+        "                else:\n"
+        "                    _broadcast('cook.error', {\n"
+        "                        'source': str(_ed[_rows, 0]), 'message': str(_ed[_rows, 1]),\n"
+        "                        'severity': str(_ed[_rows, 4]), 'type': str(_ed[_rows, 5]), 'count': _rows,\n"
+        "                    })\n"
         "    except Exception:\n"
         "        pass\n\n"
         "def onProjectPostSave():\n"
@@ -82,7 +103,14 @@ def _event_hooks_source(modules_dir=None):
     )
 
 
-def run(port=9980, parent_path="/project1", container="tdmcp_bridge", modules_dir=None, export_tox=None):
+def run(
+    port=9980,
+    parent_path="/project1",
+    container="tdmcp_bridge",
+    modules_dir=None,
+    export_tox=None,
+    error_scope=None,
+):
     import td  # TouchDesigner globals are only available via the td module here
 
     if modules_dir:
@@ -108,6 +136,26 @@ def run(port=9980, parent_path="/project1", container="tdmcp_bridge", modules_di
     hooks.par.active = True
     hooks.par.frameend = True
     hooks.par.projectpostsave = True
+
+    # Error DAT: structured cook-error/warning capture for GET /api/logs + the
+    # edge-triggered cook.error / error.cleared events. Idempotent like the rest.
+    # The path /<container>/error_log must stay in sync with log_service.get_logs'
+    # error_dat_path default and getBridgeLogs' fallback assumption.
+    err = comp.op("error_log") or comp.create(td.errorDAT, "error_log")
+    err.par.active = True
+    err.par.maxlines = 200  # default 10 is too small for a show
+    err.par.clamp = True  # keep newest within maxlines
+    err.par.severity = "*"  # capture errors AND warnings
+    err.par.source = "*"
+    try:
+        # Watch the artist's whole network by default (not just the bridge container).
+        # Set the VALUE directly (a constant op path) — assigning .expr alone would
+        # not switch the par into Expression mode, so it would keep its default/
+        # constant fromop and never watch parent_path/error_scope.
+        scope = error_scope or parent_path
+        err.par.fromop.val = scope
+    except Exception:
+        pass
 
     if export_tox:
         comp.save(export_tox)

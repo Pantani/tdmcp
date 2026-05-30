@@ -6,6 +6,7 @@ import { registerCaptureToVault } from "./captureToVault.js";
 import { registerExportNetworkToVault } from "./exportNetworkToVault.js";
 import { registerExportSetlistToVault } from "./exportSetlistToVault.js";
 import { registerGenerateFromMoodboard } from "./generateFromMoodboard.js";
+import { registerGenerateLibraryIndex } from "./generateLibraryIndex.js";
 import { registerImportSetlist } from "./importSetlist.js";
 import { registerLogPerformance } from "./logPerformance.js";
 import { registerSaveComponentToVault } from "./saveComponentToVault.js";
@@ -34,4 +35,6 @@ export const vaultRegistrars: ToolRegistrar[] = [
   // Phase 15 — visual gallery + setlist round-trip:
   registerCaptureToVault,
   registerExportSetlistToVault,
+  // Phase 16 — library contact-sheet:
+  registerGenerateLibraryIndex,
 ];

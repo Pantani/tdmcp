@@ -18,6 +18,7 @@ import { registerGetTdClassDetails } from "./getTdClassDetails.js";
 import { registerGetTdClasses } from "./getTdClasses.js";
 import { registerGetTdInfo } from "./getTdInfo.js";
 import { registerGetTdNodeErrors } from "./getTdNodeErrors.js";
+import { registerGetTdNodeFlags } from "./getTdNodeFlags.js";
 import { registerGetTdNodeParameters } from "./getTdNodeParameters.js";
 import { registerGetTdNodes } from "./getTdNodes.js";
 import { registerGetTdPerformance } from "./getTdPerformance.js";
@@ -75,6 +76,7 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerWriteAgentGuide,
   // Phase 14 — parameter fidelity & wiring:
   registerDisconnectNodes,
+  registerGetTdNodeFlags,
   // Phase 14 — runtime telemetry & logs:
   registerGetNodeStateRuntime,
   registerGetBridgeLogs,

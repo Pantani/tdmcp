@@ -36,6 +36,7 @@ const SAFE_PROFILE_EXCLUDE = new Set<string>([
   "local_marketplace_index", // writes index files
   "refresh_asset_previews", // writes preview images
   "install_library_package", // copies/extracts package files
+  "create_modulators", // rebuilds a same-named container, clearing its children
 ]);
 
 /** Registers every tool (all layers) against the MCP server, honoring the profile. */
