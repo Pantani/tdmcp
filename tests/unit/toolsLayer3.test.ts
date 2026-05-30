@@ -50,7 +50,7 @@ describe("layer 3 tool handlers", () => {
   });
 
   it("get_td_info warns when the running bridge is stale vs the build", async () => {
-    // The default mock reports bridge_version 0.3.0, older than this build's expected 0.6.0.
+    // The default mock reports bridge_version 0.3.0, older than this build's expected 0.6.1.
     const result = await getTdInfoImpl(makeCtx());
     expect(result.isError).toBeFalsy();
     expect(textOf(result)).toContain("stale");
@@ -65,7 +65,7 @@ describe("layer 3 tool handlers", () => {
           data: {
             td_version: "2023.12000",
             python_version: "3.11.1",
-            bridge_version: "0.6.0",
+            bridge_version: "0.6.1",
             build: "2023.12000",
           },
         }),
