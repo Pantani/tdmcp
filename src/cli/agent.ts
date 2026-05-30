@@ -26,6 +26,10 @@ import {
 } from "../tools/layer1/createAudioReactive.js";
 import { createAutopilotImpl, createAutopilotSchema } from "../tools/layer1/createAutopilot.js";
 import {
+  createBlobReactiveImpl,
+  createBlobReactiveSchema,
+} from "../tools/layer1/createBlobReactive.js";
+import {
   createBodyReactiveImpl,
   createBodyReactiveSchema,
 } from "../tools/layer1/createBodyReactive.js";
@@ -149,7 +153,12 @@ import {
   createSyncExternalClockSchema,
 } from "../tools/layer1/createSyncExternalClock.js";
 import { createTempoSyncImpl, createTempoSyncSchema } from "../tools/layer1/createTempoSync.js";
+import {
+  createTestPatternImpl,
+  createTestPatternSchema,
+} from "../tools/layer1/createTestPattern.js";
 import { createText3dImpl, createText3dSchema } from "../tools/layer1/createText3d.js";
+import { createTextCrawlImpl, createTextCrawlSchema } from "../tools/layer1/createTextCrawl.js";
 import {
   createTextOverlayImpl,
   createTextOverlaySchema,
@@ -196,10 +205,16 @@ import {
 } from "../tools/layer2/bindAudioReactive.js";
 import { bindToChannelImpl, bindToChannelSchema } from "../tools/layer2/bindToChannel.js";
 import { connectNodesImpl, connectNodesSchema } from "../tools/layer2/connectNodes.js";
+// Campaign Wave 3 — artist controls (backlog 2026-05-29):
+import { createBandRouterImpl, createBandRouterSchema } from "../tools/layer2/createBandRouter.js";
 import {
   createBeatGridSequencerImpl,
   createBeatGridSequencerSchema,
 } from "../tools/layer2/createBeatGridSequencer.js";
+import {
+  createCaptureLoopImpl,
+  createCaptureLoopSchema,
+} from "../tools/layer2/createCaptureLoop.js";
 import {
   createClipLauncherImpl,
   createClipLauncherSchema,
@@ -247,9 +262,19 @@ import {
 } from "../tools/layer2/createPythonScript.js";
 import { createReplicatorImpl, createReplicatorSchema } from "../tools/layer2/createReplicator.js";
 import {
+  createSidechainPumpImpl,
+  createSidechainPumpSchema,
+} from "../tools/layer2/createSidechainPump.js";
+import {
   createStageDashboardImpl,
   createStageDashboardSchema,
 } from "../tools/layer2/createStageDashboard.js";
+import { createTimeEchoImpl, createTimeEchoSchema } from "../tools/layer2/createTimeEcho.js";
+import {
+  createVectorLinesImpl,
+  createVectorLinesSchema,
+} from "../tools/layer2/createVectorLines.js";
+import { createXyPadImpl, createXyPadSchema } from "../tools/layer2/createXyPad.js";
 import { duplicateNetworkImpl, duplicateNetworkSchema } from "../tools/layer2/duplicateNetwork.js";
 import { learnControlImpl, learnControlSchema } from "../tools/layer2/learnControl.js";
 import { manageAnnotationImpl, manageAnnotationSchema } from "../tools/layer2/manageAnnotation.js";
@@ -1158,6 +1183,61 @@ const COMMANDS: Record<string, Command> = {
     inspectComponentSchema,
     inspectComponentImpl,
     "Read a COMP's storage, promoted extension members, and custom-parameter definitions.",
+  ),
+  // Campaign Wave 3 — artist controls (backlog 2026-05-29):
+  "test-pattern": r(
+    createTestPatternSchema,
+    createTestPatternImpl,
+    "Build a projector calibration/test pattern (grid/crosshair/color-bars/ramp/circle-grid).",
+    { mutates: true },
+  ),
+  "text-crawl": r(
+    createTextCrawlSchema,
+    createTextCrawlImpl,
+    "Build a multi-line crawl/ticker/typewriter text source.",
+    { mutates: true },
+  ),
+  "blob-reactive": r(
+    createBlobReactiveSchema,
+    createBlobReactiveImpl,
+    "Track blob/hand positions from a camera or TOP and bind params to them.",
+    { mutates: true },
+  ),
+  sidechain: r(
+    createSidechainPumpSchema,
+    createSidechainPumpImpl,
+    "Pump many target params on a trigger channel (one-call sidechain duck).",
+    { mutates: true },
+  ),
+  "band-router": r(
+    createBandRouterSchema,
+    createBandRouterImpl,
+    "Split audio into EQ bands and route each band level to its own target(s).",
+    { mutates: true },
+  ),
+  "xy-pad": r(
+    createXyPadSchema,
+    createXyPadImpl,
+    "Build a draggable 2D XY gesture pad that drives target parameters.",
+    { mutates: true },
+  ),
+  "time-echo": r(
+    createTimeEchoSchema,
+    createTimeEchoImpl,
+    "Per-pixel time effect (echo trails / slit-scan / time-displace) on a source TOP.",
+    { mutates: true },
+  ),
+  "capture-loop": r(
+    createCaptureLoopSchema,
+    createCaptureLoopImpl,
+    "Bidirectional Spout/Syphon/NDI bridge (receive + publish in one container).",
+    { mutates: true },
+  ),
+  "vector-lines": r(
+    createVectorLinesSchema,
+    createVectorLinesImpl,
+    "Turn an image/video into animated line-art / contour / plotter via edge-trace.",
+    { mutates: true },
   ),
   // Phase 15 — 3D text, sidechain envelope, MIDI (hardware path held pending gear):
   "text-3d": r(

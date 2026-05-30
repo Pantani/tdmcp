@@ -45,7 +45,7 @@ Every feature follows the existing patterns:
 | 13 | 0.5.0 ☑ | Components, agent-DX & reactivity | Reusable-component scaffolding, project analysis/auto-docs, token-cheap agent-DX, Link/MIDI — integrated for 0.5.0, with hardware/live validation called out below |
 | 14–15 | 0.5.0 ☑ | Live mixing, parameter fidelity & creative direction | Post-discovery wave: transitions/layer-stack/keyer/media-bin, one-shot reactivity, signature effects, network round-trip, 11 AI prompts |
 | 16 | 0.6.0 ☑ | TouchDesigner-depth & library fidelity | 7 P0s from discovery round-1: bridge read/write fidelity (flags/wiring/structured endpoints + `cook.error`), `create_modulators` + `create_look_bank` instruments, library contact-sheet — 179 tools |
-| 17 | 0.7.0+ ☐ | Composition, automation & intelligence | Discovery rounds 2–3: time-based show automation, beat-locked montage, pattern generation, own-work memory, MCP sampling — **plus the external community-sources round** (Shadertoy/ISF import, missing iconic looks, color-finish, artist-publishing) |
+| 17 | 0.7.0+ ◐ | Composition, automation & intelligence | In progress via the backlog-campaign harness (Wave 3 artist controls + Wave 4 library/packaging shipped + live-validated). Discovery rounds 2–3: time-based show automation, beat-locked montage, pattern generation, own-work memory, MCP sampling — **plus the external community-sources round** (Shadertoy/ISF import, missing iconic looks, color-finish, artist-publishing) |
 
 ---
 
@@ -525,7 +525,17 @@ size-capped (SSRF/oversize hardening). Plus `.safeskillignore` to focus the Safe
 
 ---
 
-## Phase 17 — v0.7.0 → v1.0.0 · Composition, automation & intelligence ☐ planned
+## Phase 17 — v0.7.0 → v0.11.0 · Composition, automation & intelligence ◐ in progress {#phase-17}
+
+> **v0.7.0 is underway.** A first increment already shipped via a parallel build effort
+> (consolidated in PR #29): **nine round-1 artist-control tools** — `create_test_pattern`,
+> `create_text_crawl`, `create_band_router`, `create_sidechain_pump`, `create_xy_pad`,
+> `create_time_echo`, `create_capture_loop`, `create_vector_lines`, `create_blob_reactive`
+> — integrated with 1:1 CLI verbs + offline tests and **live-validated in TouchDesigner 099**
+> (eight clean; `create_blob_reactive` awaits a live-camera pass), marked ✅/◐ in
+> [Appendix A.1](#full-backlog). The **round-2 "beyond" campaign** below (the
+> `tdmcp-backlog-campaign` harness + `tdmcp-backlog-planner`) continues from there across
+> v0.7.0 → v0.11.0.
 
 The forward wave is sourced from **four discovery passes**, all preserved in full in the
 [Appendix](#full-backlog) (the source files live under the gitignored `_workspace/`, so they are
@@ -550,7 +560,64 @@ P0), then v0.8.0 (show automation + musical reactivity), v0.9.0 (intelligence + 
 (TD-depth authoring + DX accelerators), v0.11.0 (P2 tail) — each with a go/no-go checkpoint. The round-3
 external items slot into the same wave structure once chosen.
 
-### P0 — the live-thesis core (round-2)
+### Delivery — the round-2 campaign (idempotent, 5 waves → 5 releases)
+
+The round-2 *"beyond"* backlog (**66 buildable**: **2 foundation modules** + **64
+features**) is being implemented by the **`tdmcp-backlog-campaign`** harness — a resumable,
+ledger-driven loop over the existing design→build→integrate→QA→release pipeline (see
+CLAUDE.md → *"Harness: backlog campaign"*). The ledger
+(`_workspace/campaign_beyond_20260530/ledger.json`, merge-safe) makes re-runs **idempotent**
+(shipped work is never rebuilt, interrupted work resumes); a stuck tool is **quarantined**
+rather than blocking its wave. Policy: **staged by priority, checkpoint after wave 1,
+commit + push (no tag),** TD-connected before each build wave. **Four shared-schema
+*contracts*** are designed **once** and ship before their consumers fan out — two are the
+standalone foundation modules (`setlist_schema`, `memory_note`), and two are owned by
+features that ship first within wave 1 (`server_sampling_assist` → `llm_client`,
+`create_scheduler` → `timer_primitive`).
+
+| Wave | Release | Theme | Items | Status |
+|---|---|---|---|---|
+| 1 | v0.7.0 | Live-show foundation + all P0 (incl. Top-12) | 16 | ◐ building — launched 2026-05-30 |
+| 2 | v0.8.0 | Show automation + musical reactivity | 9 | ☐ planned |
+| 3 | v0.9.0 | Intelligence + library trust | 10 | ☐ planned |
+| 4 | v0.10.0 | TD-depth authoring + DX accelerators | 12 | ☐ planned |
+| 5 | v0.11.0 | P2 tail (raw-reach builders, protocol gaps) | 19 | ☐ planned |
+
+The curated P0/P1 tables below, plus the full per-surface catalog in the
+[Appendix](#full-backlog), are the **tracked, durable** reference. The campaign's
+`ledger.json` + `WAVE_PLAN.md` under the gitignored `_workspace/campaign_beyond_20260530/`
+are **generated runtime state** (regenerable from the backlog via `build-ledger.mjs`), not
+the canonical source — so the per-wave assignment is reproduced here to survive a clean
+checkout. A few round-1 leftovers listed below (`caption_top`, `install_client_writers`,
+`create_test_pattern`) are tracked separately from the round-2 ledger and slot into later
+waves.
+
+**Per-wave roster** (the 66 buildable items; full metadata — impact/confidence/novelty/probe
+flags — in the [Appendix](#full-backlog)):
+
+- **Wave 1 · v0.7.0** — `foundation_setlist_schema`, `foundation_memory_note`,
+  `create_scheduler`, `server_sampling_assist`, `create_auto_montage`,
+  `create_euclidean_sequencer`, `create_preset_morph`, `create_scene_timeline`,
+  `auto_tag_library_asset`, `lint_recipe_library`, `setlist_runner`, `panic_blackout_hotkey`,
+  `live_dashboard_tui`, `recall_similar_work`, `style_memory`, `create_glsl_material`
+- **Wave 2 · v0.8.0** — `create_prob_sequencer`, `create_two_way_surface`,
+  `create_chroma_reactive`, `create_transient_reactive`, `create_energy_structure`,
+  `create_automation_lane`, `create_phone_gesture`, `compose_cue_list`, `scene_scheduler`
+- **Wave 3 · v0.9.0** — `morph_pack`, `provenance_stamp`, `checksum_and_verify_pack`,
+  `library_lineage_graph`, `scene_summary_resource`, `prompt_eval_harness`,
+  `moodboard_to_system`, `score_build`, `learn_conventions`, `audio_fingerprint_to_visual`
+- **Wave 4 · v0.10.0** — `bridge_watch_build`, `scaffold_tool_generator`, `profile_cook_cost`,
+  `macro_recorder`, `soundcheck_monitor`, `create_engine_comp`, `build_chop_chain`,
+  `control_timeline_transport`, `extend_data_source_fabric`, `author_script_operator`,
+  `create_dmx_fixture_pipeline`, `inspect_gpu_and_displays`
+- **Wave 5 · v0.11.0** — `create_growth_system`, `curated_collection_pack`, `merge_vaults`,
+  `component_changelog_trail`, `vault_repo_sync`, `variant_pack`, `learn_from_my_corpus`,
+  `log_tail_filtered`, `fixture_recorder`, `remote_and_fanout`, `controller_to_cli_bridge`,
+  `elicit_missing_args`, `enhance_build`, `run_macro_script`, `voice_copilot_chat`,
+  `create_shared_memory_bridge`, `build_sop_geometry`, `sync_timecode`,
+  `manage_component_storage`
+
+### P0 — the live-thesis core (round-2) · wave 1 → v0.7.0 ◐ building
 
 | Feature | Surface | Delivers | Effort |
 |---|---|---|---|
@@ -561,7 +628,7 @@ external items slot into the same wave structure once chosen.
 | `auto_tag_library_asset` | library | Derive tags / operator-family / difficulty / description from the captured `nodes[].type` via the KB — makes the whole library searchable **by default** (the keystone read) | M |
 | `panic_blackout_hotkey` | cli | Instant top-level `tdmcp panic` / `blackout` (+ `--restore` / `--hold`), idempotent re-fire — a safety verb you can type under pressure | S |
 
-### P1 — automation, intelligence & authoring (round-2 headliners + top still-open round-1)
+### P1 — automation, intelligence & authoring (round-2 headliners + top still-open round-1) · waves 1–4
 
 | Feature | Surface | Delivers | Effort |
 |---|---|---|---|
@@ -653,24 +720,11 @@ Reproduced from the four discovery runs (round-0 2026-05-28 → round-3 2026-05-
 catalog survives in git (`_workspace/` is gitignored — the source files would otherwise be lost).
 **Legend:** Priority **P0/P1/P2** · Effort **S** ≤1 day / **M** 2–4 days / **L** ~1 week ·
 Impact/Conf High/Med/Low · Novelty **NEW** / **EXTENSION** / **ROADMAP** · Status **✅ v0.5.0** /
-**✅ 0.6.0** = shipped since that run · `gated` = GPU/hardware/CUDA/license-deferred. Round-3 rows carry
+**✅ 0.6.0** = shipped since that run · **✅ 0.7.0** = shipped in the Phase-17 backlog-campaign waves
+(artist controls + library/packaging, live-validated in TD) · **◐ 0.7.0** = built + integrated, live
+validation pending · `gated` = GPU/hardware/CUDA/license-deferred. Round-3 rows carry
 a **Source** (the external repo/site/artist) instead of a probe column, since attribution is the point of
 an external round; `probe-live` notes are inline where they apply.
-
-### 0 · Round-0 — 2026-05-28 (harvested into v0.5.0)
-
-Source: `_workspace/discovery_20260528/FEATURE_BACKLOG.md`. **78 distinct features** (93 raw; controls
-23 · CLI 22 · AI 26 · td-depth 22) — the discovery that **fed v0.5.0 (Phases 13–15)**. Almost the entire
-backlog shipped (round-1 below confirms "Phases 13–15 / v0.5.0 harvested almost the entire 2026-05-28
-backlog"), so its open remainder is carried transitively into round-1; recorded here for a complete git
-lineage rather than reproduced row-by-row. Its **Top-12 recommended-next — all ✅ shipped in v0.5.0/0.6.0:**
-`batch_operations`, `bind_audio_reactive`, `create_transition`, `fix_reactivity` (prompt),
-`create_live_source`, `read_parameter_modes`, `recover_show` (prompt), `create_layer_stack`,
-`auto_vj_director` (prompt), `snapshot_td_graph` compact mode, `create_media_bin`, `set_perform_mode`.
-Just-missed tier (`create_keyer`, `edit_dat_content`/`set_dat_content`, `config_file_and_profiles`,
-`set_parameter_expression`, `create_datamosh`/`create_displacement_warp`) also shipped; only
-`wrap_pop_family` (90 unreached GPU POP operators, L) remains open — tracked as round-1 `create_pop_geometry`
-and round-3 `create_pop_fluid`.
 
 ### A · Round-1 backlog — 2026-05-29
 
@@ -684,16 +738,16 @@ work shipped in **v0.6.0** (marked ✅).
 |---|---|---|---|---|---|---|---|
 | `create_modulators` ✅ 0.6.0 | BPM-synced multi-LFO modulation bank `bind_to_channel` can target | M | High | High | P0 | NEW | phase-lock + paused-timeline |
 | `create_look_bank` ✅ 0.6.0 | Snapshot-slot + A↔B morph instrument | M | High | Med | P0 | EXTENSION | animatable-par filter |
-| `create_test_pattern` | Projector calibration generator (grid/bars/sweep/per-output #) | S | Med | High | P1 | NEW | none |
-| `create_text_crawl` | Multi-line crawl/ticker/typewriter text | M | Med | High | P1 | NEW | typewriter substring expr |
-| `create_band_router` | Musician-friendly EQ-band → multi-target routing | M | Med | High | P1 | EXTENSION | Analyze `rmspower` not `rms` |
+| `create_test_pattern` ✅ 0.7.0 | Projector calibration generator (grid/bars/sweep/per-output #) | S | Med | High | P1 | NEW | none |
+| `create_text_crawl` ✅ 0.7.0 | Multi-line crawl/ticker/typewriter text | M | Med | High | P1 | NEW | typewriter substring expr |
+| `create_band_router` ✅ 0.7.0 | Musician-friendly EQ-band → multi-target routing | M | Med | High | P1 | EXTENSION | Analyze `rmspower` not `rms` |
 | `create_decks` N-channel | 3–4 decks + transition cut + per-deck FX send | M | Med | High | P1 | EXTENSION | none |
-| `create_sidechain_pump` | One-call "pump the rig on the kick" | S | Med | Med | P1 | EXTENSION | gate threshold tuning |
-| `create_xy_pad` | 2D/XYZ control widget on panel + phone remote | M | Med | Med | P1 | EXTENSION | `appendXY` + phone 2D-drag |
-| `create_time_echo` | Per-pixel time-displacement / slit-scan trails | M | Med | Med | P1 | NEW | buffer fill + displace par names |
-| `create_blob_reactive` | Camera object/hand position tracking (vs aggregate motion) | M | Med | Med | P2 | NEW | camera permission hang + tune |
-| `create_capture_loop` | Bidirectional Spout/Syphon/NDI bridge (in+out, one tool) | M | Med | Med | P2 | EXTENSION | platform-gated; no feedback-storm |
-| `create_vector_lines` | Image → animated line-art / contour / plotter look | L | Med | Med | P2 | NEW | trace cook cost on live video |
+| `create_sidechain_pump` ✅ 0.7.0 | One-call "pump the rig on the kick" | S | Med | Med | P1 | EXTENSION | gate threshold tuning |
+| `create_xy_pad` ✅ 0.7.0 | 2D/XYZ control widget on panel + phone remote | M | Med | Med | P1 | EXTENSION | `appendXY` + phone 2D-drag |
+| `create_time_echo` ✅ 0.7.0 | Per-pixel time-displacement / slit-scan trails | M | Med | Med | P1 | NEW | buffer fill + displace par names |
+| `create_blob_reactive` ◐ 0.7.0 | Camera object/hand position tracking (vs aggregate motion) | M | Med | Med | P2 | NEW | camera permission hang + tune |
+| `create_capture_loop` ✅ 0.7.0 | Bidirectional Spout/Syphon/NDI bridge (in+out, one tool) | M | Med | Med | P2 | EXTENSION | platform-gated; no feedback-storm |
+| `create_vector_lines` ✅ 0.7.0 | Image → animated line-art / contour / plotter look | L | Med | Med | P2 | NEW | trace cook cost on live video |
 | `create_pop_geometry` | POP-family generative GPU geometry | L | Med | Low | P2 | EXTENSION | probe-live (render path) |
 
 #### A.2 · Library, packaging & distribution
