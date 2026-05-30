@@ -216,6 +216,9 @@ export async function downloadToFile(
       });
       if (res.status >= 300 && res.status < 400) {
         const location = res.headers.get("location");
+        // Release the redirect response body before the next hop so undici can
+        // free the socket — an unconsumed body keeps the connection busy.
+        await res.body?.cancel().catch(() => {});
         if (!location) throw new Error(`Redirect with no Location for ${current.toString()}`);
         current = assertAllowedDownloadUrl(new URL(location, current).toString());
         continue;
