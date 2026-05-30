@@ -54,9 +54,12 @@ interface SetParameterExpressionReport {
   fatal?: string;
 }
 
-// All TD globals (op, ParMode) live inside this string — never reference them
-// from TS. The payload travels as base64 so quotes/newlines in artist strings
-// cannot break Python quoting.
+// All TD globals (op) live inside this string — never reference them from TS.
+// The payload travels as base64 so quotes/newlines in artist strings cannot
+// break Python quoting. The mode flip resolves the enum via `type(_par.mode)`
+// (mirroring the bridge's param-text service) — never a bare `ParMode`, which is
+// not a name in the exec namespace and used to NameError, silently leaving the
+// parameter in Constant mode.
 const SET_EXPR_SCRIPT = `
 import json, base64, traceback
 _p = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
@@ -93,9 +96,9 @@ try:
                         continue
                     _par.expr = _e
                     try:
-                        _par.mode = ParMode.EXPRESSION
+                        _par.mode = type(_par.mode).EXPRESSION
                     except Exception:
-                        report["warnings"].append("ParMode enum unavailable; set raw attribute only")
+                        report["warnings"].append("param '" + str(_a["param"]) + "': could not flip to Expression mode")
                 elif _m == "bind":
                     _e = _a.get("expr")
                     if not _e:
@@ -103,9 +106,9 @@ try:
                         continue
                     _par.bindExpr = _e
                     try:
-                        _par.mode = ParMode.BIND
+                        _par.mode = type(_par.mode).BIND
                     except Exception:
-                        report["warnings"].append("ParMode enum unavailable; set raw attribute only")
+                        report["warnings"].append("param '" + str(_a["param"]) + "': could not flip to Bind mode")
                 else:
                     _v = _a.get("value")
                     if _v is None:
@@ -113,7 +116,7 @@ try:
                         continue
                     _par.val = _v
                     try:
-                        _par.mode = ParMode.CONSTANT
+                        _par.mode = type(_par.mode).CONSTANT
                     except Exception:
                         pass
                 report["applied"].append({
