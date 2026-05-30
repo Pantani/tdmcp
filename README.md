@@ -1,4 +1,4 @@
-# tdmcp — TouchDesigner MCP server
+# MindDesigner (tdmcp) — TouchDesigner MCP server
 
 [![CI](https://github.com/Pantani/tdmcp/actions/workflows/ci.yml/badge.svg)](https://github.com/Pantani/tdmcp/actions/workflows/ci.yml)
 [![Docs](https://github.com/Pantani/tdmcp/actions/workflows/docs.yml/badge.svg)](https://pantani.github.io/tdmcp/)

@@ -45,7 +45,7 @@ Every feature follows the existing patterns:
 | 13 | 0.5.0 ☑ | Components, agent-DX & reactivity | Reusable-component scaffolding, project analysis/auto-docs, token-cheap agent-DX, Link/MIDI — integrated for 0.5.0, with hardware/live validation called out below |
 | 14–15 | 0.5.0 ☑ | Live mixing, parameter fidelity & creative direction | Post-discovery wave: transitions/layer-stack/keyer/media-bin, one-shot reactivity, signature effects, network round-trip, 11 AI prompts |
 | 16 | 0.6.0 ☑ | TouchDesigner-depth & library fidelity | 7 P0s from discovery round-1: bridge read/write fidelity (flags/wiring/structured endpoints + `cook.error`), `create_modulators` + `create_look_bank` instruments, library contact-sheet — 179 tools |
-| 17 | 0.7.0+ ◐ | Composition, automation & intelligence | In progress via the backlog-campaign harness. Wave 3 (artist controls — 9 tools) shipped + live-validated; then td-depth telemetry, library/packaging, CLI/DX, and round-2 (beyond-backlog): time-based show automation, beat-locked montage, pattern generation, own-work retrieval/memory, MCP sampling |
+| 17 | 0.7.0+ ☐ | Composition, automation & intelligence | Discovery rounds 2–3: time-based show automation, beat-locked montage, pattern generation, own-work memory, MCP sampling — **plus the external community-sources round** (Shadertoy/ISF import, missing iconic looks, color-finish, artist-publishing) |
 
 ---
 
@@ -525,31 +525,30 @@ size-capped (SSRF/oversize hardening). Plus `.safeskillignore` to focus the Safe
 
 ---
 
-## Phase 17 — v0.7.0 → v1.0.0 · Composition, automation & intelligence ◐ in progress
+## Phase 17 — v0.7.0 → v1.0.0 · Composition, automation & intelligence ☐ planned
 
-> **v0.7.0 is underway**, delivered by a resumable **backlog-campaign harness**
-> (`tdmcp-backlog-campaign` skill + `tdmcp-campaign-lead` / `tdmcp-bridge-engineer`
-> agents) that grinds the remaining backlog to one final v0.7.0 in dependency-ordered
-> waves against a durable ledger. It is **idempotent** — every feature is reconciled
-> against the live 188-tool registry before building, so it never duplicates a tool (a
-> reconcile against the 0.6.x surface confirmed all seven round-1 P0s already shipped in
-> Phase 16) — and **resilient** (1 retry → skip → resume; TD-offline never blocks).
-> **Wave 3 — artist controls** is the first v0.7.0 increment: nine tools
-> (`create_test_pattern`, `create_text_crawl`, `create_band_router`,
-> `create_sidechain_pump`, `create_xy_pad`, `create_time_echo`, `create_capture_loop`,
-> `create_vector_lines`, `create_blob_reactive`) integrated with 1:1 CLI verbs + offline
-> tests and **live-validated in TouchDesigner 099** (eight clean; `create_blob_reactive`
-> awaits a live-camera pass). Marked ✅/◐ 0.7.0 in [Appendix A.1](#full-backlog).
-> Remaining waves: td-depth telemetry, library/packaging, CLI/DX, and the AI/composition
-> tracks below.
+The forward wave is sourced from **four discovery passes**, all preserved in full in the
+[Appendix](#full-backlog) (the source files live under the gitignored `_workspace/`, so they are
+reproduced here to stay in version control):
 
-The next wave is sourced from **two discovery passes**: the 2026-05-29 round-1 backlog
-(`_workspace/discovery/FEATURE_BACKLOG.md` — 77 items; its 7 P0s shipped in 0.6.0) and the
-2026-05-30 round-2 *"beyond the backlog"* pass (`_workspace/discovery_beyond_20260530/FEATURE_BACKLOG_BEYOND.md`
-— **63 net-new** items, 58 genuinely new). With the primitive set now mature (~179 tools), the durable
-value has moved **up a level** — from *generating* visuals to **composing, automating and intelligently
-operating** a show. Ordered by the `live-show` weighting profile; `probe-live` items validate in TD
-before the schema locks.
+- **Round-0** (2026-05-28, `discovery_20260528/` — 78 items) — the discovery that **fed v0.5.0
+  (Phases 13–15)**; almost entirely shipped, open remainder carried into round-1.
+- **Round-1** (2026-05-29, `discovery/FEATURE_BACKLOG.md` — 77 items) — its 7 P0s shipped in 0.6.0.
+- **Round-2 "beyond the backlog"** (2026-05-30, `discovery_beyond_20260530/` — **63 net-new** items).
+- **Round-3 external** (2026-05-30, `discovery_external/` — alltd.org + awesome-touchdesigner + artist
+  Anya Maryina, **75 deduped ideas**) — the community-sources pass.
+
+With the primitive set now mature (~179 tools), the durable value has moved **up a level** — from
+*generating* visuals to **composing, automating and intelligently operating** a show (rounds 1–2), and
+to **ingesting the wider TouchDesigner ecosystem** (round-3: Shadertoy/ISF import, the missing iconic
+looks, color-finish, an artist-publishing layer). Ordered by the `live-show` weighting profile;
+`probe-live` items validate in TD before the schema locks.
+
+The round-2 backlog is being executed as a **staged wave campaign**
+(`_workspace/campaign_beyond_20260530/`, gitignored): **wave 1 → v0.7.0** (live-show foundation + all
+P0), then v0.8.0 (show automation + musical reactivity), v0.9.0 (intelligence + library trust), v0.10.0
+(TD-depth authoring + DX accelerators), v0.11.0 (P2 tail) — each with a go/no-go checkpoint. The round-3
+external items slot into the same wave structure once chosen.
 
 ### P0 — the live-thesis core (round-2)
 
@@ -577,7 +576,44 @@ before the schema locks.
 | `control_timeline_transport` | td-depth | Transport read/write (play/pause/seek/rate) over `me.time` — and self-diagnoses the paused-timeline "why is it dead?" false alarm | S |
 | `caption_top` | ai | _(round-1)_ Preview → plain-text description (vision endpoint + histogram fallback) — the headless "is it alive?" primitive | M |
 | `install_client_writers` + `doctor_fix_autoexec` | cli | _(round-1)_ `install-client --write` deep-merges the client MCP config; `doctor --fix` *executes* safe repairs — finishes the artist-easy install story | M |
-| `create_test_pattern` | controls | _(round-1)_ Projector calibration/alignment generator (grid / bars / sweep / per-output #) — every show starts here | S |
+| `create_test_pattern` ✅ 0.7.0 | controls | _(round-1)_ Projector calibration/alignment generator (grid / bars / sweep / per-output #) — every show starts here | S |
+
+### P0/P1 — external round (round-3, community sources, 2026-05-30)
+
+Mined from **alltd.org**, **awesome-touchdesigner** and artist **Anya Maryina** (full list in
+[Appendix C](#appendix-c-round3)). Reconciliation thesis: tdmcp is a strong *generator* but an *island* —
+the new high-leverage field is **ecosystem ingestion** + **the missing iconic VJ looks** + an
+**artist-publishing layer**. Licensing discipline is carried per item (GPL/CC-BY repos = technique-only,
+Lygia not bundled, Anya never cloned; gated AI/depth kept only as drive-installed-tox / cloud / docs deltas).
+
+| Feature | Surface | Delivers | Effort |
+|---|---|---|---|
+| `import_shadertoy` | integrations | Paste a Shadertoy URL/code → wired GLSL TOP (map `iTime`/`iResolution`/`iChannel`) — the largest shader corpus on earth becomes tdmcp's catalog (translate-on-demand, never store source) | M |
+| `import_isf_shader` | integrations | Parse the **ISF** cross-VJ shader standard → GLSL TOP + auto custom-param page — instant access to existing VDMX/Resolume shader libraries | M |
+| `create_fluid_sim` | controls | Own-GLSL 2D Navier-Stokes (ink/dye/smoke advection) — the iconic VJ fluid look tdmcp lacks (**4 sources**) | M–L |
+| `image_to_particles` | controls | Any image/logo/mesh → controllable particle cloud (+ a source mode on `create_gpu_particle_field`) | M |
+| Color-finish suite | controls | `apply_lut` (.cube/OCIO) + color wheels/curves on `create_color_grade` + `create_video_scopes` (waveform/vectorscope/histogram) — grade a show to spec | M |
+| `setup_tdableton` | integrations | React to the Ableton *set* (clips/tracks/devices/transport over OSC), not just the Link clock — ship a synthetic-OSC fallback | M |
+| `export_look_tox` | library | Extract a look into a standalone parameterized `.tox` ("your look in a box") — the artist-publishing primitive | S–M |
+| `create_chop_recorder` | controls | Record/replay/loop any reactive signal (audio/pose/MIDI/OSC) — rehearse a whole show offline | M |
+| `create_machine_sync` | integrations | Genlock + CHOP/DAT/TOP link across machines (Sync + Touch In/Out) — projector-wall / LED-volume output | M · probe ≥2 machines |
+| MediaPipe face/hand/segmentation | controls | Finger-gesture + face + live subject-mask on the engine **already in-tree** for pose | M |
+| `tutorial_companion_pack` | cli | One command → a shareable/sellable teaching bundle (.tox + annotated walkthrough + README + preview) | M |
+| `swap_operator` | td-depth | Replace an op's type while keeping its wires/params — non-destructive AI iteration | S–M |
+| `create_fixture_control` | controls | Moving-head pan/tilt/dimmer/gobo + 3D rig previz — **hardens the planned `create_dmx_fixture_pipeline`** | M |
+| Signature-look cluster | controls | `create_dither` (1-bit retro) · `create_jfa_voronoi` (stained-glass) · `create_npr_filter` (oil/pencil) · `create_flow_abstraction` (painterly camera) | S–M ea |
+| `create_data_source` HTTP/WS | integrations | HTTP-request + WebSocket modes → local AI image servers + REST/WS web APIs (folds into the planned MQTT/WebSocket fabric) | M |
+| `create_interaction_zones` | controls | Camera/pose enter/exit/dwell zones fire cues — interactive installs **without** a depth-cam | M |
+| `generative_classics` pack | library | Recipes recreating canonical generative-art *techniques* (controlled-disorder grid, L-system, asemic, Truchet, 10-PRINT) — credit lineage, never a named/estate artist | M |
+| `export_sop_to_svg` | library | TD generative geometry → plotter/laser/print SVG (no external dependency) | M |
+
+**Pipeline-ready 10** (dev-box-validatable, no hardware/Ableton gate): `import_shadertoy`,
+`import_isf_shader`, `create_fluid_sim`, `image_to_particles`, `apply_lut` + color-wheels/curves,
+`create_video_scopes`, `create_dither`, `create_jfa_voronoi`, `swap_operator`, `export_look_tox`.
+**Recommended deepening:** alltd.org returned HTTP 403 to direct fetch, so its items are summary-level —
+re-fetch alltd-only P1s (`create_machine_sync`, `clip_sequencer`, `auto_ui`, `create_fixture_control`) via
+a browser before the schema locks; cross-corroborated items (fluid, color-finish, fixtures, laser, palette)
+are already safe.
 
 ### Cross-cutting prerequisites & themes
 
@@ -604,8 +640,8 @@ MediaPipe modes + `create_pose_reactive` (need a live webcam + ML), `manage_td_p
 TD Palette + Obsidian vault, per the project's distribution model).
 
 > **Scope note.** The P0/P1 tables above are the **curated forward plan**. The **complete backlog** —
-> every candidate from both discovery passes with impact / confidence / novelty / probe flags — is
-> preserved in full in the [Appendix](#full-backlog) below. The source files live
+> every candidate from all four discovery passes (round-0 → round-3) with impact / confidence / novelty /
+> probe / source flags — is preserved in full in the [Appendix](#full-backlog) below. The source files live
 > under the **gitignored `_workspace/`**, so they are reproduced here to stay in version control. Pick
 > items and hand them to the `tdmcp-pipeline` build harness.
 
@@ -613,12 +649,28 @@ TD Palette + Obsidian vault, per the project's distribution model).
 
 ## Appendix — Full discovery backlog {#full-backlog}
 
-Reproduced from the two discovery runs so the complete catalog survives in git (`_workspace/` is
-gitignored — the source files would otherwise be lost). **Legend:** Priority **P0/P1/P2** · Effort
-**S** ≤1 day / **M** 2–4 days / **L** ~1 week · Impact/Conf High/Med/Low · Novelty **NEW** /
-**EXTENSION** / **ROADMAP** · **✅ 0.6.0** = shipped since the round-1 run (see [Phase 16](#phase-16)) ·
-**✅ 0.7.0** = shipped in the Phase-17 artist-controls campaign wave (live-validated in TD) ·
-**◐ 0.7.0** = built + integrated, live validation pending.
+Reproduced from the four discovery runs (round-0 2026-05-28 → round-3 2026-05-30) so the complete
+catalog survives in git (`_workspace/` is gitignored — the source files would otherwise be lost).
+**Legend:** Priority **P0/P1/P2** · Effort **S** ≤1 day / **M** 2–4 days / **L** ~1 week ·
+Impact/Conf High/Med/Low · Novelty **NEW** / **EXTENSION** / **ROADMAP** · Status **✅ v0.5.0** /
+**✅ 0.6.0** = shipped since that run · `gated` = GPU/hardware/CUDA/license-deferred. Round-3 rows carry
+a **Source** (the external repo/site/artist) instead of a probe column, since attribution is the point of
+an external round; `probe-live` notes are inline where they apply.
+
+### 0 · Round-0 — 2026-05-28 (harvested into v0.5.0)
+
+Source: `_workspace/discovery_20260528/FEATURE_BACKLOG.md`. **78 distinct features** (93 raw; controls
+23 · CLI 22 · AI 26 · td-depth 22) — the discovery that **fed v0.5.0 (Phases 13–15)**. Almost the entire
+backlog shipped (round-1 below confirms "Phases 13–15 / v0.5.0 harvested almost the entire 2026-05-28
+backlog"), so its open remainder is carried transitively into round-1; recorded here for a complete git
+lineage rather than reproduced row-by-row. Its **Top-12 recommended-next — all ✅ shipped in v0.5.0/0.6.0:**
+`batch_operations`, `bind_audio_reactive`, `create_transition`, `fix_reactivity` (prompt),
+`create_live_source`, `read_parameter_modes`, `recover_show` (prompt), `create_layer_stack`,
+`auto_vj_director` (prompt), `snapshot_td_graph` compact mode, `create_media_bin`, `set_perform_mode`.
+Just-missed tier (`create_keyer`, `edit_dat_content`/`set_dat_content`, `config_file_and_profiles`,
+`set_parameter_expression`, `create_datamosh`/`create_displacement_warp`) also shipped; only
+`wrap_pop_family` (90 unreached GPU POP operators, L) remains open — tracked as round-1 `create_pop_geometry`
+and round-3 `create_pop_fluid`.
 
 ### A · Round-1 backlog — 2026-05-29
 
@@ -847,3 +899,140 @@ Value that spans surfaces (kept once above under its best-fit surface; relations
 - **Morph at two altitudes** — `create_preset_morph` (live instrument) ⇄ `morph_pack` (saved asset).
 - **Engine pipeline** — `create_engine_comp` (process) ⇄ a "compile for Engine" bake on `make_portable_tox`.
 - **Library keystone** — `auto_tag_library_asset` feeds `library_lineage_graph`, `recall_similar_work` and `lint_recipe_library`.
+
+### C · Round-3 external backlog — 2026-05-30 (community sources) {#appendix-c-round3}
+
+Source: `_workspace/discovery_external/` (`EXTERNAL_IDEAS_BACKLOG.md` + `02_raw_ideas.md`). **157 raw
+records → ~62 deduped candidates** (75 `EX` rows incl. sub-merges) from four community sources —
+[alltd.org](https://www.alltd.org), [awesome-touchdesigner](https://github.com/monkeymonk/awesome-touchdesigner)
+(creative ∥ integrations), and artist [Anya Maryina](https://anyamaryina.gumroad.com) (studied for
+technique/packaging only, never asset-copied). Distribution **6 P0 · ~30 P1 · ~39 P2**. The new field vs
+the inward rounds 0–2: **ecosystem ingestion**, **the missing iconic looks**, and an **artist-publishing
+layer**. **Source codes:** `aw-cre`/`aw-int` = the two awesome-touchdesigner agents · `alltd` · `anya`.
+
+> ⚠️ **alltd.org returned HTTP 403** to direct fetch — its rows are search-summary-level; re-fetch
+> alltd-only items via a browser before specccing. **Licensing:** GPL-3.0 (TD-Flow-ABS, TDComponents,
+> TDNeuron) + CC-BY (RayTK) = technique/idea only, no code copy; **Lygia not bundled**; Anya never cloned
+> (highest-attention: `generative_classics` — recreate *techniques*, credit lineage, never a named/estate
+> artist). `gated` = drive-installed-tox / cloud / docs delta only.
+
+#### C.1 · Integrations & protocols
+
+| Feature | EX | Delivers | Eff | Impact | Conf | Pri | Status | Source(s) |
+|---|---|---|---|---|---|---|---|---|
+| `import_shadertoy` | EX-01 | Paste a Shadertoy URL/code → wired GLSL TOP (map iTime/iResolution/iMouse/iChannel) | M | High | High | P0 | NEW | aw-cre, aw-int (ShaderToyTD) |
+| `import_isf_shader` | EX-02 | Parse ISF JSON header → GLSL TOP + auto custom-param page | M | High | High | P0 | NEW | aw-int, aw-cre (isf-touchdesigner, MIT) |
+| `setup_tdableton` | EX-03 | Ableton clips/tracks/devices/transport over OSC → named CHOPs | M | High | High | P0 | NEW | aw-int (TDAbleton docs), alltd |
+| `create_data_source` HTTP/WS | EX-04 | HTTP-request + WebSocket data modes (AI servers + web APIs) | M | Med-Hi | High | P1 | EXTENSION (planned MQTT/WS) | aw-int |
+| `create_fixture_control` + 3D previz | EX-45 | Moving-head pan/tilt/dimmer/gobo via DMX + 3D rig preview | M | High | Med | P1 | NEW (builds planned DMX pipeline) | alltd, GeoPix, aw-cre |
+| `create_machine_sync` | EX-08 | Sync + Touch In/Out genlock + CHOP/DAT/TOP across machines | M | High | Med | P1 | NEW | alltd · probe ≥2 machines |
+| `create_detection_reactive` (YOLO) | EX-05 | Object/person presence/count → params (ONNX/WS, no CUDA) | M | Med | Med | P1 | NEW | aw-int (TDYolo, MIT) |
+| `create_depth_from_2d` (DepthAnything) | EX-06 | Monocular depth from any TOP → feeds depth/displace/point-cloud | M | High | Med | P1 | NEW·gated | aw-int, alltd · NVIDIA/CUDA |
+| `create_sensor_input` (Arduino/serial) | EX-10 | Serial parse + lag/filter/clamp/remap + calibration presets | M | Med | Med | P2 | EXTENSION | alltd · hardware |
+| `create_laser_output` (ILDA) | EX-09 | Laser CHOP → Lasercube/Etherdream/Helios | M | Med | Low | P2 | NEW | aw-int, aw-cre, alltd · hardware |
+| `create_multitouch_surface` / TUIO | EX-11 | Multi Touch In DAT + TUIO tangibles → CHOPs | M | Med | Med | P2 | NEW | alltd · touchscreen |
+| `create_geo_visualization` (OSM) | EX-12 | GeoJSON/OSM → project lat-long → instance a city | L | Med | Med | P2 | NEW | alltd · ODbL attribution |
+| `drive_diffusion_tox` / cloud-SD | EX-07 | Drive an installed ComfyUI/A1111/SD tox; cloud mode = no local GPU | M | Med | Med | P2 | NEW·gated | aw-int, alltd · NVIDIA or paid cloud |
+| Marketplace catalog index seed | EX-13 | Index public .tox catalogs (link-only) into `local_marketplace_index` | S | Low-Med | Med | P2 | EXTENSION | aw-int, aw-cre, alltd |
+| Synesthesia/Unreal-OSC presets | EX-14 | Named OSC-out presets for Synesthesia / Unreal | S | Low-Med | Med | P2 | EXTENSION | alltd |
+
+#### C.2 · Controls — effects, generators, reactivity, performance, mapping
+
+| Feature | EX | Delivers | Eff | Impact | Conf | Pri | Status | Source(s) |
+|---|---|---|---|---|---|---|---|---|
+| `create_fluid_sim` | EX-15 | Own-GLSL 2D Navier-Stokes ink/dye/smoke (advection/vorticity/buoyancy) | M–L | High | High | P0 | NEW | aw-int (touchFluid MIT), aw-cre, alltd |
+| `image_to_particles` / `mesh_to_particles` | EX-26 | Any image/logo/mesh → controllable particle cloud (+ source mode on gpu_particle_field) | M | High | High | P0 | NEW | anya, aw-cre |
+| Color-finish suite | EX-47/46 | `apply_lut` (.cube/OCIO) + color wheels/curves + `create_video_scopes` | M | High | High | P0 | NEW/ENH | alltd, aw-cre |
+| `create_chop_recorder` / `record_osc` | EX-39 | Record/replay/loop any reactive signal (audio/pose/MIDI/OSC) | M | High | High | P1 | NEW | aw-cre (GPL idea-only), alltd |
+| `create_flow_abstraction` | EX-16 | Painterly/comic coherent-line filter on live camera | M | Med-Hi | High | P1 | NEW | aw-int, aw-cre (GPL idea-only) |
+| MediaPipe face/hand/segmentation | EX-34 | Finger-gesture + face + selfie-segmentation on the in-tree engine | M | High | Med | P1 | ENH | aw-int (mediapipe-td, MIT) |
+| `create_interaction_zones` + optical-flow trigger | EX-36 | Camera/pose enter/exit/dwell zones fire cues (no depth-cam) | M | Med-Hi | High | P1 | NEW | alltd |
+| `create_dither` | EX-18 | Ordered 1-bit/retro dither (Bayer, gameboy, low-palette) | S–M | Med | High | P1 | NEW | aw-cre |
+| `create_jfa_voronoi` | EX-19 | Jump-flood Voronoi → mosaic/stained-glass | M | Med | High | P1 | NEW | aw-int, aw-cre (TD_Voronoi MIT) |
+| `create_npr_filter` (Kuwahara) | EX-17 | Oil-paint / pencil / watercolor non-photoreal filters | M | Med | High | P1 | NEW | aw-cre (chungbwc) |
+| `controlled_disorder_grid` | EX-27 | Grid of quads/lines with a tunable order↔chaos `disorder` knob | M | Med-Hi | High | P1 | NEW | anya, aw-cre · name generically |
+| `create_terrain` | EX-29 | Heightmap landscape + PBR splat + water + volumetric fog | L | Med | Med | P1 | NEW | aw-int, aw-cre (Terrain-Tools MIT) |
+| `create_l_system` + `create_asemic_writing` | EX-28 | Lindenmayer branching geometry + procedural glyph strokes | M–L | Med | Med | P1 | NEW | aw-cre, anya |
+| `create_clip_sequencer` + `create_audio_transport` | EX-40 | Cached clip seq (trim/reverse/beat-advance) + audio-file master transport | M | High | Med | P1 | NEW/EXT | alltd |
+| `extract_palette` (cross-ai) | EX-67 | k-means N-color extraction from any image → palette/grade/instances | S–M | Med | High | P1 | NEW/ENH | alltd, aw-cre, anya |
+| musical-bands + spectrogram heatmap | EX-38 | FFT→named musical bands (per-band attack/release) + heatmap trail | S–M | Med | High | P1 | NEW/ENH | aw-cre, alltd |
+| `create_pointer_reactive` | EX-37 | Mouse/multitouch position as a first-class creative seed/force | S–M | Med | High | P1 | NEW | anya, alltd |
+| `create_plexus` | EX-20 | Points + lines between near neighbours (constellation/network) | M | Med | Med | P1 | NEW | aw-cre |
+| `create_pixel_sort` | EX-21 | Threshold pixel-sort via feedback translation | S–M | Med | High | P2 | NEW | alltd |
+| `add_timecode_overlay` | EX-42 | HH:MM:SS:FF / countdown overlay | S | Low-Med | High | P2 | NEW | aw-cre (GPL idea-only) |
+| `create_step_repeat` | EX-23 | Brick/grid tiling with gap/jitter/rotation | S | Low | High | P2 | NEW | aw-cre (GPL idea-only) |
+| Lens/CA/vignette finishing pass | EX-24 | Barrel distortion + chromatic aberration + vignette | S | Low-Med | Med | P2 | ENH (check glitch overlap) | alltd, aw-cre |
+| Feedback/displace preset library | EX-25 | Pixel-drip, mirror/trail/decay, video-displaces-video presets | S | Low | Med | P2 | EXTENSION | alltd |
+| `create_lidar_reactive` | EX-35 | 2D LiDAR → blob-cluster → touch coords → bind (installs) | M | High | Med | P2 | NEW | anya · RPLidar hardware |
+| Kinetic-text path-follow / presets | EX-43 | Sentence-instancing path-follow + smoke-logo/ramp-text presets | M | Med | Med | P2 | EXTENSION | alltd, anya |
+| `scaffold_vj_deck` | EX-44 | Compose decks + control-surface + MIDI-map into a VJ deck UI | M | Med | Med | P2 | EXTENSION | alltd (PATCHDECK pattern) |
+| `create_pop_fluid` / `create_surface_flow` | EX-30 | POP-family GPU fluid + surface-flow (extends create_pop_field) | M–L | Med | Low | P2 | EXTENSION | alltd · probe POPs |
+| `create_volumetric_fire` (NVIDIA Flow) | EX-31 | Volumetric fire/smoke/water emitter | M | Med | Low | P2 | NEW·gated | alltd · NVIDIA/Windows |
+| `create_blob_trace` / `create_vector_lines` | EX-74/75 | Contour outline trace + image→line-art/plotter look (pairs w/ SVG export) | M | Med | Med | P2 | NEW | aw-cre, alltd |
+| Fractal SDF presets + particles-in-SDF | EX-33 | Mandelbulb/menger presets + instanced particles in a raymarched SDF | M | Low-Med | Med | P2 | EXTENSION | alltd · GPU |
+| `create_virtual_projection_set` / camera-match | EX-48 | Virtual room+projector cam previz; match cam to real projector | M | Med | Med | P2 | NEW | alltd |
+| VR180 stereo dome mode | EX-49 | 180° stereo equirect render on dome/cubemap output | S | Low | Med | P2 | EXTENSION | alltd |
+
+#### C.3 · TouchDesigner depth — bridge, operators, editing
+
+| Feature | EX | Delivers | Eff | Impact | Conf | Pri | Status | Source(s) |
+|---|---|---|---|---|---|---|---|---|
+| 3D post passes (SSAO/SSR/DOF/motion-blur) | EX-22 | Screen-space AO/reflections/DOF/motion-blur on `apply_post_processing` | M | Med-Hi | High | P1 | ENH | aw-int, aw-cre (PostEffects MIT) |
+| `swap_operator` | EX-50 | Replace an op's type while preserving wires + params | S–M | Med | High | P1 | NEW | aw-int (FunctionStore MIT) |
+| `create_raymarch_scene` → SDF expr-graph | EX-51 | Compose SDF primitives/booleans/domain-ops → one GLSL | L | Med-Hi | Med | P1 | ENH | aw-int, aw-cre (RayTK CC-BY) |
+| `complete_python_at` | EX-52 | Valid op paths/params/channels from the live graph for the LLM | S–M | Med | Med | P2 | NEW | aw-int, aw-cre |
+| `create_physics_constraints` (Bullet) | EX-32 | Hinges/springs/ragdoll/stacking rigid-body sims | L | Med | Low | P2 | NEW | aw-cre · probe-live |
+| `create_engine_comp` / TouchEngine headless | EX-53 | Run a `.tox` headlessly (zero-copy) — builds planned engine-COMP | M | Med | Low | P2 | EXTENSION·gated | aw-int, alltd · paid TD license |
+| Cook-on-change optimizer mode | EX-54 | Cook only when input changes (null-cache gating) | S | Low | Med | P2 | EXTENSION | aw-cre (GPL idea-only) |
+
+#### C.4 · Library, packaging & product
+
+| Feature | EX | Delivers | Eff | Impact | Conf | Pri | Status | Source(s) |
+|---|---|---|---|---|---|---|---|---|
+| `export_look_tox` | EX-56 | Extract a look into a standalone parameterized `.tox` | S–M | High | High | P1 | NEW | anya |
+| `export_sop_to_svg` | EX-55 | SOP geometry → SVG paths (plotter/laser/print; no dep) | M | Med | High | P1 | NEW | aw-int, aw-cre (MIT) |
+| `generative_classics` recipe pack | EX-57 | Recipes recreating canonical generative-art *techniques* | M | Med-Hi | High | P1 | NEW | anya, aw-cre · credit lineage |
+| `tdmcp://glsl-snippets` catalog | EX-58 | Vetted, license-clean noise/SDF/color/blend GLSL the AI assembles from | M | Med | High | P1 | NEW | aw-cre · author own, not Lygia |
+| License-tier + provenance/funnel metadata | EX-59 | Revenue-tiered license templates + price/tier fields in the index | S | Med | High | P1 | EXTENSION (planned provenance) | anya |
+| `vendor_python_lib` | EX-60 | Vendor pip libs into Text DATs → self-contained `.toe` | M | Med | Med | P2 | NEW | alltd |
+| Own starter recipe pack + cover art | EX-61 | First-party curated recipe pack (the "free pack" funnel) | M | Med | Med | P2 | EXTENSION (content) | alltd, anya · author own |
+
+#### C.5 · CLI & DX
+
+| Feature | EX | Delivers | Eff | Impact | Conf | Pri | Status | Source(s) |
+|---|---|---|---|---|---|---|---|---|
+| `tutorial_companion_pack` | EX-62 | One command → teaching/selling bundle (.tox + walkthrough + README + preview) | M | High | High | P1 | NEW | anya |
+| `auto_ui` from custom params | EX-63 | Auto-generate a control panel from a COMP's custom params | M | Med | High | P1 | NEW | alltd |
+| Codec export presets + offline render | EX-41 | HAP/NotchLC/ProRes presets + non-realtime no-frame-drop render | S–M | Med | High | P2 | EXTENSION | alltd |
+| `scaffold_state_machine` | EX-64 | FSM show-flow + extension-driven structure skeleton | M | Med | Med | P2 | NEW | alltd |
+| `edit_shader` hot-reload | EX-65 | Edit-DAT → re-cook → errors+preview round-trip aggregator | S | Low-Med | Med | P2 | NEW | aw-cre (ShaderBuilder MIT) |
+| `genuary_daily` scaffold | EX-66 | Dated daily-sketch folder + variant capture + auto-gallery | S | Low | High | P2 | NEW | anya |
+
+#### C.6 · AI & LLM
+
+| Feature | EX | Delivers | Eff | Impact | Conf | Pri | Status | Source(s) |
+|---|---|---|---|---|---|---|---|---|
+| `extract_palette` | EX-67 | (see C.2) image → constrained palette for grade/instances | S–M | Med | High | P1 | NEW/ENH | alltd, aw-cre, anya |
+| "generative-classic" + "one-source-five-ways" prompts | EX-68 | Steer a build toward a generative-art lineage; emit N labeled variants | S | Med | Med | P2 | NEW | anya |
+| KB enrichment + `tdmcp://cheatsheets` | EX-69 | Common-ops/Python/SOP cheat sheets → KB + resource | M | Med | Med | P2 | NEW | aw-int |
+| `teach_touchdesigner` tutor + learning resource | EX-70 | KB-grounded concept tutor + curated learning-path resource | S | Med | Med | P2 | NEW | aw-int |
+
+#### C.7 · Docs / examples
+
+| Feature | EX | Delivers | Eff | Impact | Conf | Pri | Status | Source(s) |
+|---|---|---|---|---|---|---|---|---|
+| Cookbook: famous-tutorial mirrors | EX-71 | Recreate iconic tutorials with tdmcp tools (dither/plexus/point-cloud/blob/video→particles) | S ea | Med | High | P1 | docs | aw-cre, alltd, aw-int |
+| Cookbook: everyday-object→generative + beginner psychedelia | EX-72 | Rebuild a real-world pattern procedurally; beginner audio-reactive stack | S | Med | High | P2 | NEW docs | anya |
+| Docs: "tdmcp as a source for Resolume/VDMX/Disguise" | EX-73 | Document the downstream NDI/Spout/Syphon chain into other VJ apps | S | Med | High | P2 | exists-complete + docs | aw-int, alltd |
+
+#### C.8 · Reconciled OUT (already shipped / planned / gated / ignore)
+
+Recorded for honesty: **exists-complete** — Shader Park (`create_shader_park`), full VJ-mixer stack
+(decks+layer-mixer+output+record), Spout/NDI/Syphon capture (`create_live_source`). **gated/planned** —
+optical-flow particles, Unreal/TouchEngine bridge (paid), StreamDiffusion/ComfyUI/DepthAnything bundling
+(kept only as drive-installed-tox / cloud deltas), Kinect/Azure depth-cams (kept as the lighter
+optical-flow/MediaPipe path). **ignore** — TDNeuron / TF Style-Transfer (GPL/Windows/legacy-heavy),
+Cables.gl (not TD). Cross-cutting: round-3 `create_data_source` HTTP/WS folds into round-2's planned
+MQTT/WebSocket fabric; `create_fixture_control` builds round-2's `create_dmx_fixture_pipeline`;
+`license-tier metadata` hardens round-2's `provenance_stamp`; `extract_palette`/`generative_classics`
+relate to the shipped `create_palette` / `generate_from_moodboard`.
