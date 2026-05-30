@@ -1,176 +1,206 @@
 ---
 name: tdmcp-backlog-campaign
-description: "Drive the ENTIRE tdmcp feature backlog (_workspace/discovery/FEATURE_BACKLOG.md) to completion across many dependency-ordered waves and many sessions — idempotently (a durable ledger; never redo or duplicate finished work) and resiliently (1 retry → skip → resume; TD-offline never blocks). Use whenever the user wants to implement ALL / the whole / the entire backlog, run the build campaign, do it in waves, or with resilience/idempotency; and for every follow-up: continue / resume / re-run the campaign, run the next wave, what's left / where is the campaign, fix a blocked feature, or cut the final release. This is the SUPERVISOR above tdmcp-pipeline/tdmcp-feature-lead: it owns the ledger + wave plan and dispatches each wave through them. For a single feature or one small batch, use tdmcp-pipeline instead."
+description: "Drive a whole tdmcp feature BACKLOG to completion as resumable, wave-by-wave releases — the campaign layer ABOVE tdmcp-pipeline/tdmcp-feature-lead. Use whenever the user wants to implement an ENTIRE backlog or discovery file (e.g. _workspace/discovery*/FEATURE_BACKLOG*.md), 'all the features', many features across multiple releases, or a long autonomous build campaign, AND for every follow-up: continue/resume the campaign, run the next wave, re-run a failed wave, fold in QA results, or check campaign status. Backed by a ledger.json so re-running is idempotent (skips shipped work, resumes interrupted work) and resilient (retry-once then quarantine-and-continue). For a SINGLE feature or one small batch, use tdmcp-pipeline instead; this skill is for the whole ledger."
 ---
 
-# tdmcp-backlog-campaign — whole-backlog build supervisor
+# tdmcp-backlog-campaign — whole-backlog delivery
 
-Take the entire prioritized backlog from list to shipped, wave by wave, surviving
-interruption. One wave is `tdmcp-feature-lead`'s job; the **campaign** — 77+
-features across sessions — is this skill's. The two things that make a long build
-work are the two things this skill is about: **idempotency** (the ledger) and
-**resilience** (fail forward, resume). Spawn the `tdmcp-campaign-lead` agent to run
-it, or act as it yourself.
+A single feature-build wave is already handled well by **`tdmcp-pipeline`** (the
+five specialists) and **`tdmcp-feature-lead`** (parallel builders + single-writer
+integrate). This skill is the layer they do not provide: driving an entire **backlog**
+of dozens of features to completion across **multiple themed releases**, *resumably*.
+It is a thin, ledger-driven loop over the existing pipeline — it adds idempotency,
+resilience, shared-schema sequencing, and a checkpoint/release policy; it does **not**
+re-implement building.
 
-## Execution mode: hybrid (campaign over the existing harness)
+> **When NOT to use this:** one feature, or one small ad-hoc batch → `tdmcp-pipeline`.
+> A whole survey/backlog file, "all the features", or "continue the campaign" → here.
 
-| Layer | Mode | Tooling |
+## The two things this skill owns
+
+1. **The ledger** (`_workspace/campaign_<id>/ledger.json`, in the **main repo
+   checkout** — resolve with `dirname "$(git rev-parse --path-format=absolute
+   --git-common-dir)"`, never the worktree, so state survives worktree cleanup and is
+   shared across sessions). One row per feature; `build-ledger.mjs` beside it
+   regenerates the static plan **merge-safely** (preserves live state). This is the
+   idempotency + resilience substrate. Status vocabulary:
+   ```
+   pending → designing → building → integrating → qa → shipped
+   side: blocked-dep | blocked-td | quarantined | merged | tracked-elsewhere
+   ```
+2. **The wave/release loop** — pick the next ready wave (via `tdmcp-backlog-planner`),
+   run it through the pipeline foundations-first, release it under policy, fold the
+   results back into the ledger, then checkpoint or continue.
+
+## Execution policy — read it from `ledger.policy`, do not assume
+
+The ledger carries the policy the user chose; honor it literally. For the current
+campaign (`beyond_20260530`):
+
+| Policy | Value | Meaning |
 |---|---|---|
-| Campaign (waves, ledger, resume, release) | supervisor | this skill + `tdmcp-campaign-lead` |
-| Isolated tool builds (new files only) | sub-agent fan-out, parallel | `tdmcp-tool-builder` (×N, single message) |
-| Bridge slices (shared `td/`+client+validators) | sub-agent, **sequential** | `tdmcp-bridge-engineer` (one at a time) |
-| Integrate · QA · release | single writer / small team | `td-integrator` · `td-qa` · `td-releaser` |
+| `scope` | `staged-by-priority` | Run waves in order; **pause after `checkpoint_after_wave`** for a go/no-go before continuing. |
+| `checkpoint_after_wave` | `1` | After wave 1 (P0 + Top-12) ships, **stop and report**; wait for the user to say continue. |
+| `release` | `commit-and-push-NO-tag` | The releaser writes CHANGELOG + bumps version + commits + **pushes the branch**, but must **NOT `git tag`** (the repo's tags diverged; tagging is held). |
+| `td_required_before_build_waves` | `true` | A wave touching `needs_td` features only runs when `get_td_info` reports connected. If offline, hold those features (`blocked-td`) and say so; never fake a live pass. |
+| `builder_retry` | `1` | One retry per failing builder/feature. |
+| `on_repeat_fail` | `quarantine-and-continue` | After the retry, mark `quarantined`, record the gap, and **keep the wave moving** — one stuck tool never blocks the rest. |
 
-Why hybrid: new-file builders are conflict-free → parallel; bridge slices share
-files → serialize; integration/QA/release is a tight fix-and-verify loop → single
-writer or a small team. This is the proven `tdmcp-pipeline` shape, wrapped in a
-ledger-driven campaign loop so it spans the whole backlog and many sessions.
+## Agent roster (all reused except the planner)
 
-## Phase 0 — context check (ALWAYS first; this is what makes it resumable)
+| Role | Agent / skill | New? |
+|---|---|---|
+| Campaign brain / ledger steward | `tdmcp-backlog-planner` | **NEW** |
+| Per-feature design spec | `td-architect` (`td-feature-design`) | reused |
+| Isolated tool builder (×N parallel) | `td-builder` / `tdmcp-tool-builder` | reused |
+| Single-writer integrator | `td-integrator` (`td-feature-integrate`) | reused |
+| Live + gate QA (incremental) | `td-qa` (`td-feature-qa`) | reused |
+| Release (CHANGELOG/bump/commit/push) | `td-releaser` (`td-feature-release`) | reused |
 
-1. Is there a `_workspace/build/ledger.json`?
-   - **Yes →** resume. Run `node _workspace/build/init-ledger.mjs` (merge-aware —
-     refreshes the plan from the backlog, **preserves every live status**). Then
-     **reconcile with disk** (below). Pick up at the first incomplete wave.
-   - **No →** seed it: ensure `_workspace/discovery/FEATURE_BACKLOG.md` exists in
-     this checkout (copy from the main checkout if you are in a worktree —
-     `_workspace/` is gitignored, so each checkout has its own), then run the
-     generator.
-2. **Reconcile (self-heal drift).** For each feature the ledger calls
-   `built`/`integrated`/`done`, confirm its files exist and are wired; if not,
-   downgrade its status so it rebuilds. For each `pending` feature, grep for an
-   existing tool/endpoint of that name — if it already ships, mark it `done` (or
-   switch it to extend-mode). The ledger must match reality before you build.
-3. Read the user's intent and branch: continue (next wave) · re-run wave N · fix
-   feature X · status only (report, don't build) · release.
+All `Agent` calls use `model: "opus"` for design/integrate/QA/release/planner;
+**builders** follow the project convention — `sonnet` for prescriptive tools, `opus`
+for the ones needing design judgment (probe-live / novel topology). This env has **no
+`TeamCreate`** — the integrate↔QA↔fix loop runs as coordinated `Agent`-tool sub-agents
+(spawn integrator, then QA, then a builder-fixer on each defect), exactly as
+`tdmcp-feature-lead` and `tdmcp-submission` do.
 
-## The ledger (idempotency) — `_workspace/build/ledger.json`
+## Workflow
 
-Source of truth. Per feature: `id, surface, priority, effort, novelty, kind, wave,
-bundle?, depends_on[], probe_live, status, assignee, files[], attempts, notes,
-last_updated`. Status lifecycle:
+### Phase 0 — locate + decide run mode (idempotency entry point)
 
-```
-pending → in_progress → built → integrated → (qa_pass | qa_unverified) → done
-                              ↘ blocked (after 1 retry)        deferred (gated)
-```
+1. Resolve `CAMPAIGN_DIR = <main-root>/_workspace/campaign_<id>/`. If no `ledger.json`,
+   run `build-ledger.mjs` to create it (or, for a brand-new backlog, author a
+   `build-ledger.mjs` for it first — see "Starting a campaign for a new backlog").
+2. Read `ledger.json`. Decide:
+   - **All buildable features `shipped`** → campaign complete; report and stop.
+   - **A wave is mid-flight** (features in `designing`/`building`/`integrating`/`qa`)
+     → resume: spawn the planner to reconcile reality first (it verifies files/wiring
+     against the tree and repairs lying statuses), then continue that wave.
+   - **Otherwise** → start the next ready wave.
+3. Ensure a working branch exists and record it in `ledger.policy.branch` (commits land
+   here; never commit straight to `main`).
 
-**Rules that enforce idempotency**
-- Never start a feature that is `done`/`deferred`. Never start one whose
-  `depends_on` are not yet `done`/`qa_unverified`.
-- Before building, **grep the codebase** — ~31 backlog items are `EXTENSION` and a
-  few already ship. Extend the existing file (single-writer), don't create a
-  duplicate tool.
-- Write the ledger back after **every** state change (in_progress on dispatch,
-  built/blocked on report, integrated on wire, qa_* on QA). A crash mid-wave loses
-  at most one feature's step.
-- Regenerate `LEDGER.md` (the human view) whenever you write `ledger.json` — the
-  generator does both.
+### Phase 1 — plan the wave
 
-## Wave plan
+Spawn **`tdmcp-backlog-planner`** (`model: "opus"`). It reconciles the ledger against
+the tree, computes the next ready wave (deps + shared-schema-first satisfied,
+`needs_td` honored against live bridge state), and writes `wave_<N>_manifest.json` +
+`wave_<N>_planner_report.md`. Read the manifest; respect its `foundations` →
+`parallel` sub-batch order and its `blocked[]` exclusions.
 
-Waves are dependency-ordered; nothing in a later wave is blocked by an unbuilt
-earlier tool. **Bundles** (features sharing one file/change) are built together by
-one agent.
+### Phase 2 — TD gate
 
-1. **Bridge robustness + live instruments + visible library** (the 7 P0 + same-file
-   siblings): `node_detail_fidelity` (flags+connector-order+layout), `connect_endpoint`,
-   `param_dat_endpoints` (param-modes+DAT-text), `error_logs_event` (Error DAT + cook.error),
-   `create_modulators`, `create_look_bank`, `library_visibility` (thumbnail+index).
-2. **td-depth depth & telemetry:** createable-truth, info-CHOP telemetry, health
-   watchdog, watch_node, param/error events, engine-COMP, KB refresh (← createable).
-3. **Artist controls:** test-pattern, text-crawl, band-router, decks(N), sidechain,
-   xy-pad, time-echo, blob, capture-loop, vector-lines, POP-geometry.
-4. **Library & packaging:** bundle-deps, publish-bundle, externalize-tree, diff,
-   version, tag/search, doc-site, component-readme, recipe-expansion, url-import,
-   collect-assets, recipe-from-live (← node_detail), palette-export.
-5. **CLI & DX:** install-client/doctor writers, watch-exec, config-init, top-help,
-   command-index, bridge-verify, REPL, preview-inline, help/run/output/flags polish.
-6. **AI & LLM:** caption_top, prompt-catalog-autogen → copilot-awareness, handoff,
-   chat-flags, session-persistence, llm-grounded plan, teach, design-brief, repair
-   (← error event + DAT endpoint), vision, cookbook, knobs, search, narrate.
+If the wave has `needs_td` features, call `get_td_info`. Connected → proceed with full
+live validation. Offline → build only the wave's offline-safe features now, mark the
+`needs_td` ones `blocked-td`, and tell the user which tools await TD (per
+`td_required_before_build_waves`). Never block the whole campaign on a missing bridge,
+and never claim a live pass you could not observe.
 
-(Deferred wave 99 = GPU/macOS/hardware/multi-instance-gated; tracked, never built
-here.) The authoritative per-feature wave/bundle/deps live in `ledger.json`.
+### Phase 3 — run the wave (foundations first, then fan out)
 
-## Phase 1..N — run a wave
+For the **foundations** sub-batch (shared schemas / promoted primitives), run them
+**first and serially-ish** so their contract is fixed before dependents consume it:
+`td-architect` spec → 1 builder → integrate → QA → mark `shipped`. Update the ledger
+after each transition.
 
-1. Mark the wave's features `in_progress`; write the ledger.
-2. **Split by kind.** `kind: bridge` (or any tool rewiring off `/api/exec`, or
-   editing `td/`/`touchDesignerClient.ts`/`validators.ts`) → bridge slice. Else →
-   isolated tool/cli/ai/library/recipe build.
-3. **Dispatch isolated builds in parallel:** spawn `tdmcp-tool-builder` ×N in a
-   **single message**, `model: "opus"`. Brief each cold (see "Briefing"). They
-   create ONLY their two files.
-4. **Dispatch bridge slices sequentially:** one `tdmcp-bridge-engineer` at a time,
-   `model: "opus"`, each a full vertical slice (endpoint + client + validator +
-   tool rewire + exec-fallback + offline tests). Never two at once.
-5. **Integrate (single writer)** as reports land: read the agent's *actual files*,
-   then wire imports + layer `index.ts` + a 1:1 CLI verb in `src/cli/agent.ts`
-   (prompts → `src/prompts/index.ts`). Mark `integrated`.
-6. **Gate** after each integration: `npm run typecheck` · `npm run build` ·
-   `./node_modules/.bin/biome check .` (NOT `npm run lint` — RTK breaks it) · `npm
-   test` · `npm run validate:recipes` (if recipes) · `npm run test:bridge` (if
-   `td/` changed). Fix forward.
-7. **Incremental QA** with `td-qa` per feature. If `get_td_info` shows TD up →
-   live-validate (preview + **post-cook `get_td_node_errors`**) → `qa_pass`. If TD
-   offline → offline gates only → `qa_unverified` (record what is unverified).
-8. **Accumulate** per cadence (below): append to `CHANGELOG.md`, flip ROADMAP,
-   write `_workspace/build/NN_wave<n>_report.md`, update the ledger, commit + push
-   the wave branch.
+Then the **parallel** sub-batch, exactly the `tdmcp-pipeline` Phase 2–4 loop:
+1. `td-architect` fan-out (one per feature, `run_in_background`), specs to
+   `_workspace/01_design_<id>.md`. Resolve any flagged cross-feature contention
+   (especially shared-schema consumers) before building.
+2. `td-builder` fan-out in a **single message** (~4–6 at a time; a larger ready set
+   becomes ordered sub-batches). Each: **new files only**, green-in-isolation (vitest
+   + biome + typecheck). Set each feature `building`.
+3. `td-integrator` as the **single writer** wires every built tool into the layer
+   `index.ts` / `src/cli/agent.ts` / `src/prompts/index.ts`, then the four gates
+   (`typecheck`, `build`, `./node_modules/.bin/biome check .`, `test`; +
+   `validate:recipes` if a recipe changed). Set features `integrating`.
+4. `td-qa` **incrementally** as each feature integrates — gate pass + (TD up) live
+   create→cook→`get_td_node_errors`→`get_preview`. Defects go back to a builder-fixer
+   (`file:line` + fix), re-validate, cap ~2–3 rounds. Set `qa`, then `shipped` on PASS.
+5. Update each feature's `status/qa/files/history` in the ledger as it resolves.
 
-## Briefing a builder (it walked in cold)
+### Phase 4 — release the wave, fold results, checkpoint
 
-Give it, in the spawn prompt: tool name + file path + layer; the **full Zod
-schema** (every field/type/default/describe); the **exact bridge calls** (Python
-API methods; par/method names to *probe* not hardcode); the closest **reference
-file** to copy; the fail-forward/warning rules; the **test to mirror**; "load the
-`tdmcp-tool-builder` skill first"; and "create ONLY your two files; report the CLI
-key + index entry to wire." For a bridge slice, point at `tdmcp-bridge-endpoint`
-and name the endpoint + the tool(s) to rewire + the exec-fallback requirement.
+1. **Docs/CHANGELOG/ROADMAP** for everything that shipped this wave (the integrator/QA
+   already do per `tdmcp-feature-lead`; confirm `docs/reference/tools.md` is generated
+   not hand-edited, build the docs).
+2. **Release under policy** — spawn `td-releaser` with the explicit override:
+   *write the CHANGELOG entry, bump to `version_target`, commit, **push the branch** —
+   but do **NOT** create a git tag.* (Honor `commit-and-push-NO-tag`.)
+3. **Fold outcomes** — re-spawn `tdmcp-backlog-planner` to apply this wave's results
+   (`shipped` / `quarantined` / `blocked`) to the ledger and compute the next wave.
+4. **Checkpoint** — if this wave == `checkpoint_after_wave`, **stop**: report shipped /
+   quarantined / blocked-td, the new version + pushed SHA (no tag), and what wave 2
+   holds. Wait for the user to continue. Otherwise loop to Phase 1.
 
-## Resilience
+## Idempotency rules (never redo finished work)
+
+- Trust the tree over the ledger on resume: the planner promotes built+wired+green
+  features to `shipped` and resets file-less in-flight ones to `pending`.
+- A feature is rebuilt only from `pending`. `shipped` is never demoted; `quarantined`
+  is retried only on an explicit re-run request for that id.
+- **Recoverable side states never strand a wave:** on reconcile the planner clears
+  `blocked-td` → `pending` when TD is reachable and `blocked-dep` → `pending` once deps
+  ship (re-entering the ready pool), and wave selection **skips past** a wave whose only
+  leftover rows are `quarantined`/permanently-blocked — so a half-shipped wave can never
+  loop on an empty manifest.
+- `build-ledger.mjs` is merge-safe — editing the plan and regenerating preserves live
+  state. Always go through it (or live-field edits), never blow away `ledger.json`.
+
+## Resilience / error handling
 
 | Situation | Strategy |
 |---|---|
-| Builder/bridge/QA fails | One retry with the precise failure fed back. Still failing → `blocked` + reason in the ledger; **continue the wave**. |
-| Build breaks on integrate | Bisect, wire the rest, send the offender a precise fix; never block the wave for one tool. |
-| Bridge offline | Build offline-gated; mark probe-dependent items `qa_unverified` (UNVERIFIED-live); hold them for a live pass before the final release; never fail the campaign for a missing TD. |
-| Probe finding conflicts (par name varies by build) | Record both with source in `notes`; pick the KB default; flag UNVERIFIED-live. |
-| Session ends mid-wave | Ledger already has per-feature state → next run resumes from the first incomplete feature. |
-| A feature turns out already shipped | Mark `done` with a note; don't rebuild. |
+| Builder fails in isolation | One retry (re-spawn with the precise failure). Then `quarantined` + continue; ship the rest of the wave. |
+| Integrate breaks the build | Integrator bisects, wires the rest, sends the offender a fix; campaign continues with the green subset. |
+| QA finds a boundary bug | Fix request to **both** sides; re-validate; cap ~3 rounds, else `quarantined` with the blocker noted. |
+| Bridge offline mid-wave | `needs_td` features → `blocked-td`, ship offline-safe ones, report; resume the blocked set next time TD is up. |
+| Dependency not yet shipped | Planner marks `blocked-dep`, excludes from the wave; it becomes ready once its dep ships. |
+| A whole wave regresses on re-run | Treat feedback as a diff: re-spawn only affected builders / re-touch only affected shared files; don't rebuild green tools. |
+| Context window fills mid-campaign | The ledger IS the handoff. A fresh session re-enters at Phase 0 and resumes exactly where it stopped. |
 
-Hard git rails (even autonomous): branch off, never force-push, never `--no-verify`,
-never tag a tree with failing gates.
+## Release specifics — NO tag
 
-## Release (cadence-driven — `ledger.release_cadence`)
+The releaser's default tags; for this campaign it must not. Pass it: *"Per campaign
+policy `commit-and-push-NO-tag`: do CHANGELOG + version bump + commit + `git push` the
+branch; skip `git tag` entirely. Honor the repo's hard git safety rails otherwise."*
+If the user later flips the policy to allow tags, update `ledger.policy.release` and
+the releaser brief together.
 
-- `single-final` (default): accumulate every wave under the target version's
-  *Unreleased* CHANGELOG section; **do not tag** per wave. After the last build wave,
-  do a **live-probe pass** of all `qa_unverified` items (when TD is up), then hand to
-  `td-releaser`: bump version across all manifests, finalize CHANGELOG, commit, tag,
-  push. Gate on QA = PASS for everything shipping; hold FAILs to a follow-up.
-- `per-wave`: `td-releaser` cuts a themed minor at each wave boundary.
-- `ask`: stop at each wave boundary and ask release-or-continue.
+## Starting a campaign for a new backlog
 
-## Reporting (every run, last line)
+If pointed at a backlog file with no campaign yet: create `_workspace/campaign_<slug>/`,
+author a `build-ledger.mjs` that encodes that backlog's features (id, surface, priority,
+`probe_live`, `needs_td`, `depends_on`, `shared_schema`, `wave`, `version_target`) and
+its `policy`, run it, then enter Phase 0. Mirror the `beyond_20260530` generator's
+shape; keep merge-safe seeding so re-runs preserve progress.
 
-Counts by status (done/qa_unverified/blocked/pending), the current wave, and the
-single most useful next action ("run: continue the campaign" / "TD is offline — N
-items await a live-probe pass" / "blocked: X — needs Y").
+## Data flow
+
+```
+ledger.json ──▶ planner ──▶ wave_N_manifest.json
+                                  │ foundations first
+        ┌─────────────────────────┴───────────────────────────┐
+        │ architect(s) → builders(∥) → integrator(1) → qa(∥)   │  ← per wave
+        │      ↑ fix (file:line) ↓   gates + live (TD up)       │     = tdmcp-pipeline
+        └─────────────────────────┬───────────────────────────┘
+                                  ▼
+        releaser (CHANGELOG/bump/commit/PUSH, NO tag) ──▶ planner folds results
+                                  ▼
+              ledger.json updated ──▶ checkpoint? stop : next wave
+```
 
 ## Test scenarios
 
-**Normal (fresh):** no ledger → seed (77+13) → Wave 1: 3 tool-builders in parallel +
-4 bridge slices sequential → integrate + gate green → TD offline so QA marks the 4
-bridge bundles `qa_unverified`, the 3 builds `qa_pass` (offline) → CHANGELOG under
-Unreleased, ledger updated, wave branch pushed, no tag → report: "11/77 done-ish,
-Wave 2 next, 4 await live probe."
+**Normal (resume):** session 2 opens, reads `ledger.json` — 9 of wave 1 `shipped`, 3
+`building` with files present, 4 `pending`. Planner reconciles: the 3 `building`+green
+→ `shipped`; computes the remaining 4 ready. Campaign builds the 4, integrates, QA
+PASS, releaser commits+pushes v0.7.0 (no tag), planner folds, wave 1 == checkpoint →
+stop and report. No shipped feature was rebuilt.
 
-**Resume:** ledger shows Wave 1 done, Wave 3's `create_decks_nchan` `blocked`
-(2 attempts) → "continue" → reconcile, skip done, start Wave 2; leave the blocked
-item flagged for a targeted re-run.
-
-**Error:** a bridge slice can't be made green in 2 attempts → `blocked` + reason;
-the other Wave-1 features still integrate, QA, and ship; the report names the gap
-and the exact next action to unblock it.
+**Error (quarantine + offline TD):** wave 1, `create_euclidean_sequencer` cooks to a TD
+error QA catches; builder-fixer's two rounds don't clear it → `quarantined`, gap
+recorded, the other 15 ship. Mid-wave the bridge drops; `create_glsl_material`
+(`needs_td`) can't be live-validated → `blocked-td`, reported as awaiting TD. Releaser
+ships the 14 PASS features as v0.7.0 (commit+push, no tag). Report names the 1
+quarantined + 1 blocked-td; both are picked up on the next run automatically.

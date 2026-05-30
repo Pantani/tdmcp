@@ -525,23 +525,17 @@ size-capped (SSRF/oversize hardening). Plus `.safeskillignore` to focus the Safe
 
 ---
 
-## Phase 17 — v0.7.0 → v1.0.0 · Composition, automation & intelligence ◐ in progress
+## Phase 17 — v0.7.0 → v0.11.0 · Composition, automation & intelligence ◐ in progress {#phase-17}
 
-> **v0.7.0 is underway**, delivered by a resumable **backlog-campaign harness**
-> (`tdmcp-backlog-campaign` skill + `tdmcp-campaign-lead` / `tdmcp-bridge-engineer`
-> agents) that grinds the remaining backlog to one final v0.7.0 in dependency-ordered
-> waves against a durable ledger. It is **idempotent** — every feature is reconciled
-> against the live 188-tool registry before building, so it never duplicates a tool (a
-> reconcile against the 0.6.x surface confirmed all seven round-1 P0s already shipped in
-> Phase 16) — and **resilient** (1 retry → skip → resume; TD-offline never blocks).
-> **Wave 3 — artist controls** is the first v0.7.0 increment: nine tools
-> (`create_test_pattern`, `create_text_crawl`, `create_band_router`,
-> `create_sidechain_pump`, `create_xy_pad`, `create_time_echo`, `create_capture_loop`,
-> `create_vector_lines`, `create_blob_reactive`) integrated with 1:1 CLI verbs + offline
-> tests and **live-validated in TouchDesigner 099** (eight clean; `create_blob_reactive`
-> awaits a live-camera pass). Marked ✅/◐ 0.7.0 in [Appendix A.1](#full-backlog).
-> Remaining waves: td-depth telemetry, library/packaging, CLI/DX, and the AI/composition
-> tracks below.
+> **v0.7.0 is underway.** A first increment already shipped via a parallel build effort
+> (consolidated in PR #29): **nine round-1 artist-control tools** — `create_test_pattern`,
+> `create_text_crawl`, `create_band_router`, `create_sidechain_pump`, `create_xy_pad`,
+> `create_time_echo`, `create_capture_loop`, `create_vector_lines`, `create_blob_reactive`
+> — integrated with 1:1 CLI verbs + offline tests and **live-validated in TouchDesigner 099**
+> (eight clean; `create_blob_reactive` awaits a live-camera pass), marked ✅/◐ in
+> [Appendix A.1](#full-backlog). The **round-2 "beyond" campaign** below (the
+> `tdmcp-backlog-campaign` harness + `tdmcp-backlog-planner`) continues from there across
+> v0.7.0 → v0.11.0.
 
 The next wave is sourced from **two discovery passes**: the 2026-05-29 round-1 backlog
 (`_workspace/discovery/FEATURE_BACKLOG.md` — 77 items; its 7 P0s shipped in 0.6.0) and the
@@ -551,7 +545,64 @@ value has moved **up a level** — from *generating* visuals to **composing, aut
 operating** a show. Ordered by the `live-show` weighting profile; `probe-live` items validate in TD
 before the schema locks.
 
-### P0 — the live-thesis core (round-2)
+### Delivery — the round-2 campaign (idempotent, 5 waves → 5 releases)
+
+The round-2 *"beyond"* backlog (**66 buildable**: **2 foundation modules** + **64
+features**) is being implemented by the **`tdmcp-backlog-campaign`** harness — a resumable,
+ledger-driven loop over the existing design→build→integrate→QA→release pipeline (see
+CLAUDE.md → *"Harness: backlog campaign"*). The ledger
+(`_workspace/campaign_beyond_20260530/ledger.json`, merge-safe) makes re-runs **idempotent**
+(shipped work is never rebuilt, interrupted work resumes); a stuck tool is **quarantined**
+rather than blocking its wave. Policy: **staged by priority, checkpoint after wave 1,
+commit + push (no tag),** TD-connected before each build wave. **Four shared-schema
+*contracts*** are designed **once** and ship before their consumers fan out — two are the
+standalone foundation modules (`setlist_schema`, `memory_note`), and two are owned by
+features that ship first within wave 1 (`server_sampling_assist` → `llm_client`,
+`create_scheduler` → `timer_primitive`).
+
+| Wave | Release | Theme | Items | Status |
+|---|---|---|---|---|
+| 1 | v0.7.0 | Live-show foundation + all P0 (incl. Top-12) | 16 | ◐ building — launched 2026-05-30 |
+| 2 | v0.8.0 | Show automation + musical reactivity | 9 | ☐ planned |
+| 3 | v0.9.0 | Intelligence + library trust | 10 | ☐ planned |
+| 4 | v0.10.0 | TD-depth authoring + DX accelerators | 12 | ☐ planned |
+| 5 | v0.11.0 | P2 tail (raw-reach builders, protocol gaps) | 19 | ☐ planned |
+
+The curated P0/P1 tables below, plus the full per-surface catalog in the
+[Appendix](#full-backlog), are the **tracked, durable** reference. The campaign's
+`ledger.json` + `WAVE_PLAN.md` under the gitignored `_workspace/campaign_beyond_20260530/`
+are **generated runtime state** (regenerable from the backlog via `build-ledger.mjs`), not
+the canonical source — so the per-wave assignment is reproduced here to survive a clean
+checkout. A few round-1 leftovers listed below (`caption_top`, `install_client_writers`,
+`create_test_pattern`) are tracked separately from the round-2 ledger and slot into later
+waves.
+
+**Per-wave roster** (the 66 buildable items; full metadata — impact/confidence/novelty/probe
+flags — in the [Appendix](#full-backlog)):
+
+- **Wave 1 · v0.7.0** — `foundation_setlist_schema`, `foundation_memory_note`,
+  `create_scheduler`, `server_sampling_assist`, `create_auto_montage`,
+  `create_euclidean_sequencer`, `create_preset_morph`, `create_scene_timeline`,
+  `auto_tag_library_asset`, `lint_recipe_library`, `setlist_runner`, `panic_blackout_hotkey`,
+  `live_dashboard_tui`, `recall_similar_work`, `style_memory`, `create_glsl_material`
+- **Wave 2 · v0.8.0** — `create_prob_sequencer`, `create_two_way_surface`,
+  `create_chroma_reactive`, `create_transient_reactive`, `create_energy_structure`,
+  `create_automation_lane`, `create_phone_gesture`, `compose_cue_list`, `scene_scheduler`
+- **Wave 3 · v0.9.0** — `morph_pack`, `provenance_stamp`, `checksum_and_verify_pack`,
+  `library_lineage_graph`, `scene_summary_resource`, `prompt_eval_harness`,
+  `moodboard_to_system`, `score_build`, `learn_conventions`, `audio_fingerprint_to_visual`
+- **Wave 4 · v0.10.0** — `bridge_watch_build`, `scaffold_tool_generator`, `profile_cook_cost`,
+  `macro_recorder`, `soundcheck_monitor`, `create_engine_comp`, `build_chop_chain`,
+  `control_timeline_transport`, `extend_data_source_fabric`, `author_script_operator`,
+  `create_dmx_fixture_pipeline`, `inspect_gpu_and_displays`
+- **Wave 5 · v0.11.0** — `create_growth_system`, `curated_collection_pack`, `merge_vaults`,
+  `component_changelog_trail`, `vault_repo_sync`, `variant_pack`, `learn_from_my_corpus`,
+  `log_tail_filtered`, `fixture_recorder`, `remote_and_fanout`, `controller_to_cli_bridge`,
+  `elicit_missing_args`, `enhance_build`, `run_macro_script`, `voice_copilot_chat`,
+  `create_shared_memory_bridge`, `build_sop_geometry`, `sync_timecode`,
+  `manage_component_storage`
+
+### P0 — the live-thesis core (round-2) · wave 1 → v0.7.0 ◐ building
 
 | Feature | Surface | Delivers | Effort |
 |---|---|---|---|
@@ -562,7 +613,7 @@ before the schema locks.
 | `auto_tag_library_asset` | library | Derive tags / operator-family / difficulty / description from the captured `nodes[].type` via the KB — makes the whole library searchable **by default** (the keystone read) | M |
 | `panic_blackout_hotkey` | cli | Instant top-level `tdmcp panic` / `blackout` (+ `--restore` / `--hold`), idempotent re-fire — a safety verb you can type under pressure | S |
 
-### P1 — automation, intelligence & authoring (round-2 headliners + top still-open round-1)
+### P1 — automation, intelligence & authoring (round-2 headliners + top still-open round-1) · waves 1–4
 
 | Feature | Surface | Delivers | Effort |
 |---|---|---|---|

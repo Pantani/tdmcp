@@ -235,29 +235,25 @@ directly.
 
 ## Harness: backlog campaign
 
-**Goal:** drive the ENTIRE prioritized feature backlog
-(`_workspace/discovery/FEATURE_BACKLOG.md`, 77 build-target candidates) to a shipped
-release across many dependency-ordered waves and many sessions — **idempotently** (a
-durable ledger that never redoes or duplicates finished work) and **resiliently**
-(1 retry → skip → resume; TouchDesigner-offline never blocks the build).
+**Goal:** drive an entire feature **backlog/discovery file** to completion as
+resumable, wave-by-wave themed releases — the campaign layer **above**
+`tdmcp-pipeline`/`tdmcp-feature-lead`, adding idempotency, resilience and
+shared-schema sequencing without re-implementing the per-wave build.
 
-**Trigger:** when asked to implement the **whole / entire / all of** the backlog,
-run the **build campaign**, do it **in waves**, or with **resilience/idempotency**
-— and for every follow-up: continue / resume / re-run the campaign, run the next
-wave, "what's left / where is the campaign", fix a blocked feature, or cut the final
-release — use the `tdmcp-backlog-campaign` skill. It is the **supervisor above**
-`tdmcp-pipeline`/`tdmcp-feature-lead`: the `tdmcp-campaign-lead` agent owns the
-ledger (`_workspace/build/ledger.json`, seeded/reconciled by
-`_workspace/build/init-ledger.mjs`) + the wave plan, and dispatches each wave
-through the existing machinery — parallel `tdmcp-tool-builder`s for isolated tool
-builds, **sequential** `tdmcp-bridge-engineer`s for bridge slices (new REST
-endpoints + client + validator + exec-fallback, per `tdmcp-bridge-endpoint`),
-single-writer integrate, incremental `td-qa`, and `td-releaser` at the chosen
-cadence. For a single feature or one small batch use `tdmcp-pipeline` instead.
+**Trigger:** when asked to implement a whole backlog/discovery file (e.g.
+`_workspace/discovery*/FEATURE_BACKLOG*.md`), "all the features", many features
+across multiple releases, or a long autonomous build campaign — **and every
+follow-up**: continue/resume the campaign, run the next wave, re-run a failed wave,
+fold in QA results, or check campaign status — use the `tdmcp-backlog-campaign`
+skill (drives `tdmcp-backlog-planner` → the existing design→build→integrate→QA→release
+specialists, gated by a merge-safe `ledger.json`). For a **single** feature or one
+small batch, use `tdmcp-pipeline` instead. Simple questions can be answered directly.
+Note: this environment runs the team as sub-agents (no `TeamCreate`). When a wave needs
+a new bridge REST endpoint, the `tdmcp-bridge-engineer` agent + `tdmcp-bridge-endpoint`
+skill author the endpoint + client + validator + exec-fallback slice.
 
 **Change log:**
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
-| 2026-05-30 | Initial build | 2 agents (`tdmcp-campaign-lead`, `tdmcp-bridge-engineer`) + 2 skills (`tdmcp-backlog-campaign`, `tdmcp-bridge-endpoint`) + ledger | campaign layer over the existing feature-build harness: idempotent (ledger) + resilient (retry/skip/resume) delivery of the whole 77-feature backlog as waves → one final v0.7.0 |
-| 2026-05-30 | Reconciled backlog | `reconcile.mjs` ledger | the 2026-05-29 backlog predated v0.6.0; a 179-tool ground-truth scan found 16/77 already shipped (all 7 P0), 8 extend-in-place, 53 genuine gaps — idempotency layer prevented 16 duplicate tools |
-| 2026-05-30 | Built Wave 3 (artist controls) | 9 new tools (test_pattern, text_crawl, band_router, sidechain_pump, xy_pad, time_echo, capture_loop, vector_lines, blob_reactive) | parallel tool-builders + single-writer integrate; live-validated in TD 099 (8 qa_pass, blob_reactive qa_unverified pending live camera); accrues to v0.7.0 (single-final). 44 gaps + 8 extend-in-place remain (Waves 2,4,5,6) |
+| 2026-05-30 | Initial build | 1 agent (`tdmcp-backlog-planner`) + 1 skill (`tdmcp-backlog-campaign`) + ledger | drive the round-2 "BEYOND" backlog (66 buildable: 2 foundations + 64 features, 5 waves) to completion idempotently; reuses the whole per-wave pipeline. Policy: staged-by-priority, checkpoint after wave 1, commit+push **no-tag**, TD-required before build waves |
+| 2026-05-30 | Consolidated a parallel campaign (PR #29) | +9 artist-control tools (`create_test_pattern`, `create_text_crawl`, `create_band_router`, `create_sidechain_pump`, `create_xy_pad`, `create_time_echo`, `create_capture_loop`, `create_vector_lines`, `create_blob_reactive`) + `tdmcp-bridge-engineer` agent + `tdmcp-bridge-endpoint` skill | a concurrent session built these round-1 tools (live-validated TD 099: 8 qa_pass, `create_blob_reactive` unverified pending live camera) on a duplicate harness; merged into this line keeping its tools + bridge authoring, dropping the duplicate campaign agent/scripts in favour of `tdmcp-backlog-planner` |
