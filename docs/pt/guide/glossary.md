@@ -114,7 +114,7 @@ e dar preview dos nós. Você liga uma vez (veja [Instalação](/pt/guide/instal
 [Galeria de receitas](/pt/guide/recipes).
 
 **Vault**
-: Uma pasta de notas do [Obsidian](https://obsidian.md) que o tdmcp lê e escreve —
+: Uma pasta de notas do Obsidian que o tdmcp lê e escreve —
 receitas, setlists, moodboards, presets e um diário de shows.
 
 **`.mcpb`**

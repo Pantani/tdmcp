@@ -19,7 +19,7 @@ idempotent, and can be undone with `from mcp import install; install.uninstall()
 (`Dialogs → Textport and DATs`):
 
 ```python
-import urllib.request; exec(urllib.request.urlopen("https://raw.githubusercontent.com/Pantani/tdmcp/main/td/bootstrap.py").read().decode())
+import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/main/td/bootstrap.py").read().decode())
 ```
 
 It downloads the bridge to `~/tdmcp-bridge/modules` and starts it on port 9980.

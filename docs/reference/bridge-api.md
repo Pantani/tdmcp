@@ -23,7 +23,7 @@ callbacks), are idempotent, and can be undone with
 (`Dialogs → Textport and DATs`):
 
 ```python
-import urllib.request; exec(urllib.request.urlopen("https://raw.githubusercontent.com/Pantani/tdmcp/main/td/bootstrap.py").read().decode())
+import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/main/td/bootstrap.py").read().decode())
 ```
 
 Downloads the bridge to `~/tdmcp-bridge/modules` and starts it on port 9980.
@@ -63,8 +63,8 @@ install is just dragging the component in.
 Save your project as your **Default Project**, or use the self-installing
 `td/startup.py` in an Execute DAT (toggle **Start** and **Create** on). `install()`
 is idempotent, so it's safe to leave in place permanently. Full manual
-(Web-Server-DAT-by-hand) steps are in
-[`td/README.md`](https://github.com/Pantani/tdmcp/blob/main/td/README.md).
+(Web-Server-DAT-by-hand) steps are in the
+[TouchDesigner bridge folder](https://github.com/Pantani/tdmcp/tree/main/td).
 
 ## Endpoints
 

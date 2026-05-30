@@ -110,7 +110,7 @@ and preview nodes. You switch it on once (see [Install](/guide/install)).
 [Recipe gallery](/guide/recipes).
 
 **Vault**
-: An [Obsidian](https://obsidian.md) folder of notes tdmcp can read and write —
+: An Obsidian folder of notes tdmcp can read and write —
 recipes, setlists, moodboards, presets and a show diary.
 
 **`.mcpb`**

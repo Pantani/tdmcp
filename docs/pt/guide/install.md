@@ -16,8 +16,8 @@ Você não precisa fazer nada disso na mão. Cole esta mensagem na sua IA e ela
 instala tudo para você:
 
 ```text
-Install and connect tdmcp for me by reading and following
-https://raw.githubusercontent.com/Pantani/tdmcp/main/tdmcp-install-prompt.md
+Install and connect tdmcp for me using the official install guide:
+https://pantani.github.io/tdmcp/pt/guide/install
 Do every step yourself; only stop when you need me to paste one line into TouchDesigner.
 ```
 :::
@@ -56,7 +56,7 @@ vez.
 3. Cole esta **única linha** e aperte **Enter**:
 
    ```python
-   import urllib.request; exec(urllib.request.urlopen("https://raw.githubusercontent.com/Pantani/tdmcp/main/td/bootstrap.py").read().decode())
+   import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/main/td/bootstrap.py").read().decode())
    ```
 
 Você deve ver:

@@ -167,7 +167,7 @@ a **synthetic** pose source to build and preview the look offline.
 > *"Create a particle system emitted from a sphere with turbulence and gravity,
 > rendered as glowing sprites."*
 
-![A particle system built by tdmcp — thousands of sprites bursting from a sphere](/examples/particle-galaxy.png)
+![Particle galaxy made with tdmcp — thousands of sprites bursting from a sphere](/examples/particle-galaxy.png)
 
 *A particle galaxy (still frame — particle motion is too fine-grained to embed as
 a light clip).*

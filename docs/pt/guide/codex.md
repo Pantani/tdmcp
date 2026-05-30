@@ -32,8 +32,8 @@ Cole isto no Codex e ele instala e conecta tudo sozinho, parando só na única l
 do TouchDesigner:
 
 ```text
-Install and connect tdmcp for me by reading and following
-https://raw.githubusercontent.com/Pantani/tdmcp/main/tdmcp-install-prompt.md
+Install and connect tdmcp for me using the official install guide:
+https://pantani.github.io/tdmcp/pt/guide/install
 Do every step yourself; only stop when you need me to paste one line into TouchDesigner.
 ```
 :::
@@ -78,7 +78,7 @@ O tdmcp precisa de uma pequena ponte rodando *dentro* do TouchDesigner. Abra o
 Enter:
 
 ```python
-import urllib.request; exec(urllib.request.urlopen("https://raw.githubusercontent.com/Pantani/tdmcp/main/td/bootstrap.py").read().decode())
+import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/main/td/bootstrap.py").read().decode())
 ```
 
 Você deve ver `[tdmcp] bridge running on port 9980`. Este é o único passo que tem
