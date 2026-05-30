@@ -297,6 +297,10 @@ import {
 } from "../tools/layer2/setParametersBatch.js";
 import { setPerformModeImpl, setPerformModeSchema } from "../tools/layer2/setPerformMode.js";
 import { analyzeProjectImpl, analyzeProjectSchema } from "../tools/layer3/analyzeProject.js";
+import {
+  collectProjectAssetsImpl,
+  collectProjectAssetsSchema,
+} from "../tools/layer3/collectProjectAssets.js";
 import { compareTdNodesImpl, compareTdNodesSchema } from "../tools/layer3/compareTdNodes.js";
 import { createTdNodeImpl, createTdNodeSchema } from "../tools/layer3/createTdNode.js";
 import { deleteTdNodeImpl, deleteTdNodeSchema } from "../tools/layer3/deleteTdNode.js";
@@ -338,6 +342,10 @@ import {
   optimizePerformanceSchema,
 } from "../tools/layer3/optimizePerformance.js";
 import {
+  projectDocumentationSiteImpl,
+  projectDocumentationSiteSchema,
+} from "../tools/layer3/projectDocumentationSite.js";
+import {
   readParameterModesImpl,
   readParameterModesSchema,
 } from "../tools/layer3/readParameterModes.js";
@@ -361,6 +369,19 @@ import {
   updateTdNodeParametersSchema,
 } from "../tools/layer3/updateTdNodeParameters.js";
 import { writeAgentGuideImpl, writeAgentGuideSchema } from "../tools/layer3/writeAgentGuide.js";
+// Campaign Wave 4 — library/packaging (backlog 2026-05-29):
+import {
+  diffLibraryAssetsImpl,
+  diffLibraryAssetsSchema,
+} from "../tools/library/diffLibraryAssets.js";
+import {
+  exportPaletteComponentImpl,
+  exportPaletteComponentSchema,
+} from "../tools/library/exportPaletteComponent.js";
+import {
+  importRecipeFromUrlImpl,
+  importRecipeFromUrlSchema,
+} from "../tools/library/importRecipeFromUrl.js";
 import {
   attachDocsAsAssetsImpl,
   attachDocsAsAssetsSchema,
@@ -1183,6 +1204,36 @@ const COMMANDS: Record<string, Command> = {
     inspectComponentSchema,
     inspectComponentImpl,
     "Read a COMP's storage, promoted extension members, and custom-parameter definitions.",
+  ),
+  // Campaign Wave 4 — library/packaging (backlog 2026-05-29):
+  "library-diff": r(
+    diffLibraryAssetsSchema,
+    diffLibraryAssetsImpl,
+    "Offline deep-diff two saved library assets (recipe/manifest/spec JSON).",
+  ),
+  "recipe-from-url": r(
+    importRecipeFromUrlSchema,
+    importRecipeFromUrlImpl,
+    "Fetch + validate + import a recipe/bundle JSON from an HTTPS URL.",
+    { mutates: true },
+  ),
+  "palette-export": r(
+    exportPaletteComponentSchema,
+    exportPaletteComponentImpl,
+    "Save a COMP as a .tox into TouchDesigner's Palette folder for drag-and-drop reuse.",
+    { mutates: true },
+  ),
+  "collect-assets": r(
+    collectProjectAssetsSchema,
+    collectProjectAssetsImpl,
+    "Scan a COMP subtree for external file dependencies into an inventory + optional manifest.",
+    { mutates: true },
+  ),
+  "doc-site": r(
+    projectDocumentationSiteSchema,
+    projectDocumentationSiteImpl,
+    "Compose a multi-file documentation package (README + topology + optional gallery) for a network.",
+    { mutates: true },
   ),
   // Campaign Wave 3 — artist controls (backlog 2026-05-29):
   "test-pattern": r(

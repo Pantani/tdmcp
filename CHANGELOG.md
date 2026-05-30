@@ -26,6 +26,22 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Five new library/packaging tools** (campaign Wave 4 — library surface of the
+  discovery backlog), gates green and (the bridge ones) live-validated in TouchDesigner 099:
+  - **`diff_library_assets`** (`library-diff`) — offline deep-diff of two saved
+    assets (recipe / component-manifest / serialize-spec JSON), with recipe-aware
+    node/param/connection diffing. The on-disk counterpart to live `diff_snapshots`.
+  - **`import_recipe_from_url`** (`recipe-from-url`) — fetch + validate + import a
+    recipe/bundle JSON from an HTTPS URL, reusing the hardened GitHub-allowlisted,
+    size-capped downloader (SSRF/redirect guards inherited).
+  - **`export_palette_component`** (`palette-export`) — save a COMP as a `.tox` into
+    TouchDesigner's native Palette folder (resolved live via `app.userPaletteFolder`)
+    for drag-and-drop reuse.
+  - **`collect_project_assets`** (`collect-assets`) — scan a COMP subtree for every
+    external file dependency (movies/images/fonts/LUTs/externaltox) into an inventory
+    + optional JSON manifest, flagging which files are missing.
+  - **`project_documentation_site`** (`doc-site`) — compose a multi-file handoff doc
+    package (README + Mermaid topology + optional thumbnail gallery) for a network.
 - **Nine new artist-control tools** (campaign Wave 3 — artist-controls surface of
   the discovery backlog), all live-validated in TouchDesigner 099 (create → cook →
   zero post-cook errors):

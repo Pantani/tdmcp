@@ -1,5 +1,6 @@
 import type { ToolRegistrar } from "../types.js";
 import { registerAnalyzeProject } from "./analyzeProject.js";
+import { registerCollectProjectAssets } from "./collectProjectAssets.js";
 import { registerCompareTdNodes } from "./compareTdNodes.js";
 import { registerCreateTdNode } from "./createTdNode.js";
 import { registerDeleteTdNode } from "./deleteTdNode.js";
@@ -26,6 +27,7 @@ import { registerGetTdTopology } from "./getTdTopology.js";
 import { registerInspectComponent } from "./inspectComponent.js";
 import { registerManagePackages } from "./managePackages.js";
 import { registerOptimizePerformance } from "./optimizePerformance.js";
+import { registerProjectDocumentationSite } from "./projectDocumentationSite.js";
 import { registerReadParameterModes } from "./readParameterModes.js";
 import { registerRecordMovie } from "./recordMovie.js";
 import { registerReloadBridge } from "./reloadBridge.js";
@@ -83,4 +85,7 @@ export const layer3Registrars: ToolRegistrar[] = [
   // Phase 15 — component introspection + network serialization:
   registerInspectComponent,
   registerSerializeNetwork,
+  // Campaign Wave 4 — library/packaging (backlog 2026-05-29):
+  registerCollectProjectAssets,
+  registerProjectDocumentationSite,
 ];

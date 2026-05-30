@@ -23,6 +23,10 @@ import { friendlyTdError } from "../../td-client/types.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult, structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+// Campaign Wave 4 — library/packaging (backlog 2026-05-29):
+import { registerDiffLibraryAssets } from "./diffLibraryAssets.js";
+import { registerExportPaletteComponent } from "./exportPaletteComponent.js";
+import { registerImportRecipeFromUrl } from "./importRecipeFromUrl.js";
 
 const ComponentManifestSchema = z
   .object({
@@ -855,4 +859,8 @@ export const libraryRegistrars: ToolRegistrar[] = [
       },
       (args) => installLibraryPackageImpl(ctx, args),
     ),
+  // Campaign Wave 4 — library/packaging (backlog 2026-05-29):
+  registerDiffLibraryAssets,
+  registerImportRecipeFromUrl,
+  registerExportPaletteComponent,
 ];
