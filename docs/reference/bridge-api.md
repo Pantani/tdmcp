@@ -87,10 +87,21 @@ All responses use the envelope `{ "ok": true, "data": … }` or
 | GET | `/api/network/{path}/errors` | recursive errors |
 | GET | `/api/network/{path}/topology` | nodes + connections |
 | GET | `/api/network/{path}/performance` | cook times |
+| POST | `/api/connect` | connect `{source_path,target_path,source_output?,target_input?}` (index-aware) |
+| POST | `/api/disconnect` | disconnect `{to_path,from_path?,to_input?}` (by target, optionally by source/input) |
+| GET | `/api/nodes/{path}/params?modes=true` | parameter values **+ modes** (`keys?`, `non_default_only?`) |
+| PATCH | `/api/nodes/{path}/params/{param}/mode` | set a parameter's mode `{mode,expr?,value?}` (constant/expression/bind) |
+| GET | `/api/nodes/{path}/text` | read a DAT's text |
+| PUT | `/api/nodes/{path}/text` | replace a DAT's text `{text}` |
+| GET | `/api/logs` | recent bridge/cook errors from the in-bridge Error DAT (`severity?`, `max_lines?`, `scope?`) |
 
 The `/api/exec` and node-`method` endpoints can be disabled bridge-side with
 `TDMCP_BRIDGE_ALLOW_EXEC=0`, and the whole API can require a bearer token via
-`TDMCP_BRIDGE_TOKEN` — see [Security](/reference/architecture#security).
+`TDMCP_BRIDGE_TOKEN` — see [Security](/reference/architecture#security). The
+structured endpoints added in 0.6.0 — `/api/connect`, `/api/disconnect`,
+`/api/logs`, the `?modes=true` parameter reads, `…/params/{param}/mode` and the
+DAT `…/text` reads/writes — are **not** behind the exec gate, so they keep
+working with `TDMCP_BRIDGE_ALLOW_EXEC=0`.
 
 ## Developing the bridge
 
