@@ -335,6 +335,26 @@ alinhar com uma parede, tela ou objeto.*
 
 > *"Arrume o layout para eu conseguir ler."*
 
+## Componentes reutilizáveis & documentação
+
+Transforme uma rede que funciona em algo que você pode reutilizar, compartilhar e
+entregar a outro agente.
+
+> *"Adicione Speed, Color e um toggle de Glow como parâmetros customizados neste componente."*
+
+> *"Dê a este COMP uma classe de extensão Python com os métodos `play` e `reset`."*
+
+> *"Escreva um README para este projeto — o que ele faz, seus controles e entradas."*
+
+> *"Solte um CLAUDE.md de projeto para a próxima sessão já conhecer as convenções."*
+
+> *"Salve este look como um componente .tox reutilizável."* (`manage_component`)
+
+**O que você recebe:** páginas declarativas de parâmetros customizados, extensões
+programáveis, um README em Markdown gerado (com thumbnail de preview) ou um guia de
+agente local do projeto — o lado de *empacotamento* do tdmcp que complementa os
+geradores acima.
+
 ## Efeitos e looks marcantes
 
 > *"Dobre minha webcam num caleidoscópio de seis lados girando devagar, em tons de

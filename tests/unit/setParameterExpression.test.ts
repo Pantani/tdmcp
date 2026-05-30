@@ -89,11 +89,15 @@ describe("buildSetExprScript", () => {
     expect(decodePayload(script)).toEqual(payload);
   });
 
-  it("embeds the ParMode.EXPRESSION/BIND/CONSTANT references in the script", () => {
+  it("flips par.mode via type(_par.mode) in the fallback (no bare ParMode NameError)", () => {
     const script = buildSetExprScript({ path: "/x", assignments: [] });
-    expect(script).toContain("ParMode.EXPRESSION");
-    expect(script).toContain("ParMode.BIND");
-    expect(script).toContain("ParMode.CONSTANT");
+    // The exec fallback resolves the enum from the parameter itself, mirroring the
+    // bridge's `type(par.mode)` fix — never the bare `ParMode.*` that NameError'd and
+    // silently left the parameter in Constant mode.
+    expect(script).toContain("type(_par.mode).EXPRESSION");
+    expect(script).toContain("type(_par.mode).BIND");
+    expect(script).toContain("type(_par.mode).CONSTANT");
+    expect(script).not.toContain("ParMode.EXPRESSION");
   });
 
   it("captures stdout (second executePythonScript arg is true) via the bridge pattern", () => {

@@ -4,6 +4,45 @@ All notable changes to **tdmcp** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-05-30
+
+Release-hygiene and documentation patch that makes 0.6.x consistent across npm, the
+GitHub Release and the tag. **0.6.0 shipped to GitHub only** (the `.mcpb` asset) and
+never reached npm, because the release workflow skips `npm publish` when `NPM_TOKEN`
+is unset; 0.6.1 is the npm catch-up and folds in the fixes and docs that landed on
+`main` after the 0.6.0 tag was cut. No tool API changes.
+
+### Fixed
+
+- **`set_parameter_expression` exec-fallback no longer drops the mode flip.** The
+  endpoint path already flipped `par.mode` via `type(par.mode)`, but the legacy
+  whole-batch exec fallback (used only against a pre-0.6.0 bridge) still assigned the
+  bare `ParMode.EXPRESSION` / `.BIND` / `.CONSTANT`, which `NameError`'d and silently
+  left the parameter in Constant mode. The fallback now resolves the enum the same
+  way (`type(_par.mode).EXPRESSION`), so expression/bind/constant flips also land on
+  older bridges.
+
+### Added
+
+- **Controller-level regression test for the structured REST routes.** A new
+  `StructuredEndpointTests` proves `POST /api/connect`, `POST /api/disconnect`,
+  `GET /api/logs`, `GET …/params?modes=true`, `PATCH …/params/<p>/mode` and `GET` /
+  `PUT …/text` dispatch to their services **and survive `TDMCP_BRIDGE_ALLOW_EXEC=0`** —
+  previously asserted only by code inspection.
+
+### Changed
+
+- **`docs/reference/bridge-api.md`** now lists the seven structured endpoints added in
+  0.6.0 and documents that they are not behind the exec gate.
+- **Advertised tool count corrected to 179** in the README and docs home page (0.6.0
+  added four tools; the hand-written copy still said 175 — the generated tools
+  reference was already correct).
+- **PT prompt cookbook** gains the "Componentes reutilizáveis & documentação" section
+  that previously existed only in the English guide.
+- **Release workflow** writes a prominent job-summary banner when `npm publish` is
+  skipped (missing `NPM_TOKEN`) or succeeds, so a GitHub-only release can't pass
+  unnoticed again.
+
 ## [0.6.0] - 2026-05-29
 
 TouchDesigner-depth and library wave. Seven P0 features sharpen the bridge's read/write
@@ -284,6 +323,7 @@ API on its first live run, and is fail-forward (per-item warnings, never throws)
   preview-asset writes, as a strict superset of `TDMCP_RAW_PYTHON=off`. Use it to hand an
   autonomous in-TD agent a curated, non-destructive toolset.
 
+[0.6.1]: https://github.com/Pantani/tdmcp/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/Pantani/tdmcp/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Pantani/tdmcp/compare/v0.4.0...v0.5.0
 

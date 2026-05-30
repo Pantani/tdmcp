@@ -103,10 +103,22 @@ jobs:
           else
             echo "present=false" >> "$GITHUB_OUTPUT"
             echo "::warning::NPM_TOKEN secret is not set — skipping npm publish. Add it in Settings → Secrets and variables → Actions to enable 'npx -y tdmcp'."
+            {
+              echo "### ⚠️ npm publish SKIPPED"
+              echo ""
+              echo "\`NPM_TOKEN\` is not set, so **${GITHUB_REF_NAME} shipped to GitHub only** (the \`.mcpb\` asset) and is **missing from npm**."
+              echo "Set the \`NPM_TOKEN\` Actions secret and re-run this release (or \`npm publish\` the tag manually) so \`npx @dpantani/tdmcp@${GITHUB_REF_NAME#v}\` resolves."
+            } >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Publish to npm
         if: steps.npmtoken.outputs.present == 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --provenance --access public
+        run: |
+          npm publish --provenance --access public
+          {
+            echo "### ✅ Published to npm"
+            echo ""
+            echo "\`@dpantani/tdmcp@${GITHUB_REF_NAME#v}\` is live on npm."
+          } >> "$GITHUB_STEP_SUMMARY"
