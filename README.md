@@ -7,6 +7,7 @@
 [![MCP server](https://img.shields.io/badge/MCP-server-000?logo=modelcontextprotocol&logoColor=white)](https://modelcontextprotocol.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![tdmcp MCP server](https://glama.ai/mcp/servers/Pantani/tdmcp/badges/score.svg)](https://glama.ai/mcp/servers/Pantani/tdmcp)
+[![SafeSkill 20/100](https://img.shields.io/badge/SafeSkill-20%2F100_Blocked-red)](https://safeskill.dev/scan/pantani-tdmcp)
 
 **tdmcp is a [Model Context Protocol](https://modelcontextprotocol.io) (MCP) server
 for [TouchDesigner](https://derivative.ca)** — build TouchDesigner from plain
