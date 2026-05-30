@@ -185,7 +185,7 @@ parallel-feature-build workflow, codified.
 
 **Trigger:** for any work that adds new tdmcp tools in bulk — "build the Phase 13
 tools", "implement these new tools", or re-running a wave after a gate failure —
-act as the `tdmcp-feature-lead` agent (`.claude/agents/tdmcp-feature-lead.md`):
+use the `tdmcp-feature-lead` workflow (`.claude/agents/tdmcp-feature-lead.md`):
 plan waves, spawn one `tdmcp-tool-builder` per tool in parallel (each loads the
 `tdmcp-tool-builder` skill and creates only its two new files — tool + msw test),
 then be the SINGLE WRITER of all shared files (layer `index.ts`, `src/cli/agent.ts`,

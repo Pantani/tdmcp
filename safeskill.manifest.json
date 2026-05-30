@@ -1,0 +1,37 @@
+{
+  "name": "@dpantani/tdmcp",
+  "version": "0.6.1",
+  "summary": "TouchDesigner MCP server for local creative-control workflows.",
+  "expectedCapabilities": {
+    "filesystem": {
+      "read": [
+        "project recipes, docs, package manifests and optional user-selected vault/package folders",
+        "tdmcp config files from the current project or user config directory"
+      ],
+      "write": [
+        "generated bridge files under the user's selected install directory",
+        "optional user-selected vault notes and exported media"
+      ]
+    },
+    "network": {
+      "loopback": [
+        "TouchDesigner bridge on the configured host and port",
+        "optional local LLM endpoint for tdmcp chat"
+      ],
+      "remote": [
+        "GitHub release/package downloads when the user installs optional library packages",
+        "OpenAI-compatible LLM endpoint only when the user configures a remote base URL"
+      ]
+    },
+    "process": [
+      "opens the local chat UI in a browser",
+      "starts local Ollama only when auto-start is enabled and the endpoint is local",
+      "uses the platform zip utility when extracting user-requested package archives"
+    ]
+  },
+  "securityNotes": [
+    "Secrets are loaded from explicit environment/config fields and redacted before diagnostic printing.",
+    "Archive extraction validates paths and rejects traversal or symlink entries before unpacking.",
+    "Raw Python tools can be disabled with TDMCP_RAW_PYTHON=off or hidden with TDMCP_TOOL_PROFILE=safe."
+  ]
+}

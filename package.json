@@ -6,6 +6,10 @@
   "type": "module",
   "license": "MIT",
   "homepage": "https://pantani.github.io/tdmcp/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Pantani/tdmcp.git"
+  },
   "engines": {
     "node": ">=20"
   },
@@ -25,6 +29,7 @@
     "dist",
     "scripts/fetch-shader-park-td.mjs",
     "scripts/tdmcp-lops.mjs",
+    "safeskill.manifest.json",
     "recipes",
     "td/bootstrap.py",
     "td/modules",
@@ -57,7 +62,7 @@
     "docs:dev": "npm run docs:gen && vitepress dev docs",
     "docs:build": "npm run docs:gen && vitepress build docs",
     "docs:preview": "vitepress preview docs",
-    "version": "node scripts/sync-manifest-version.mjs && git add dxt/manifest.json",
+    "version": "node scripts/sync-manifest-version.mjs && git add dxt/manifest.json safeskill.manifest.json",
     "prepack": "node scripts/clean-pycache.mjs",
     "prepublishOnly": "npm run build && npm test"
   },
@@ -99,5 +104,19 @@
     "typescript": "^6.0.3",
     "vitepress": "^1.6.4",
     "vitest": "^4.1.7"
+  },
+  "overrides": {
+    "vitepress": {
+      "vite": "5.4.21"
+    },
+    "vitest": {
+      "vite": "6.4.2"
+    },
+    "@vitest/mocker": {
+      "vite": "6.4.2"
+    },
+    "vite-node": {
+      "vite": "6.4.2"
+    }
   }
 }

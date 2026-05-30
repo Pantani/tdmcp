@@ -3,7 +3,7 @@
 Paste this single line into the Textport (Dialogs -> Textport and DATs) and the
 bridge installs itself and starts:
 
-    import urllib.request; exec(urllib.request.urlopen("https://raw.githubusercontent.com/Pantani/tdmcp/main/td/bootstrap.py").read().decode())
+    import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/main/td/bootstrap.py").read().decode())
 
 It downloads just the bridge modules to ~/tdmcp-bridge/modules, puts them on
 sys.path for this session, and runs install.run() -> a tdmcp_bridge on port 9980.
@@ -15,6 +15,7 @@ private, point REPO_ZIP at a public release asset, or use `install-bridge`
 
 import io
 import os
+import stat
 import sys
 import zipfile
 import urllib.request
@@ -22,6 +23,37 @@ import urllib.request
 REPO_ZIP = "https://github.com/Pantani/tdmcp/archive/refs/heads/main.zip"
 DEST = os.path.expanduser("~/tdmcp-bridge")
 _MARKER = "/td/modules/"
+_SKIP_RUN_ENV = "TDMCP_BOOTSTRAP_SKIP_RUN"
+
+
+def _is_symlink(info):
+    return stat.S_ISLNK((info.external_attr >> 16) & 0o170000)
+
+
+def _safe_module_path(name, modules_dir):
+    idx = name.find(_MARKER)
+    if idx == -1:
+        return None
+
+    rel = name[idx + len(_MARKER):].replace("\\", "/")
+    if not rel or rel.endswith("/"):
+        return None
+
+    parts = rel.split("/")
+    if (
+        rel.startswith("/")
+        or rel.startswith("\\")
+        or (len(parts[0]) >= 2 and parts[0][1] == ":")
+        or any(part in ("", ".", "..") for part in parts)
+    ):
+        raise RuntimeError("[tdmcp] Refusing unsafe archive entry: %s" % name)
+
+    root = os.path.realpath(modules_dir)
+    target = os.path.realpath(os.path.join(modules_dir, *parts))
+    if target != root and not target.startswith(root + os.sep):
+        raise RuntimeError("[tdmcp] Refusing archive entry outside modules: %s" % name)
+
+    return target
 
 
 def fetch_modules(repo_zip=REPO_ZIP, dest=DEST):
@@ -39,16 +71,15 @@ def fetch_modules(repo_zip=REPO_ZIP, dest=DEST):
     zf = zipfile.ZipFile(io.BytesIO(data))
     os.makedirs(modules_dir, exist_ok=True)
     extracted = 0
-    for name in zf.namelist():
+    for info in zf.infolist():
+        name = info.filename
         if name.endswith("/"):
             continue
-        idx = name.find(_MARKER)
-        if idx == -1:
+        target = _safe_module_path(name, modules_dir)
+        if target is None:
             continue
-        rel = name[idx + len(_MARKER):]
-        if not rel:
-            continue
-        target = os.path.join(modules_dir, rel)
+        if _is_symlink(info):
+            raise RuntimeError("[tdmcp] Refusing symlink archive entry: %s" % name)
         os.makedirs(os.path.dirname(target), exist_ok=True)
         with zf.open(name) as src, open(target, "wb") as out:
             out.write(src.read())
@@ -70,4 +101,5 @@ def run(repo_zip=REPO_ZIP, dest=DEST, port=9980):
 
 
 # Running via exec(urlopen(...).read()) or as a script kicks off the install.
-run()
+if os.environ.get(_SKIP_RUN_ENV) != "1":
+    run()

@@ -218,9 +218,10 @@ describe("create_datamosh", () => {
         (s) => s.includes("displaceweight1") && s.includes("displaceweight"),
       );
       expect(dispScript).toBeDefined();
+      if (!dispScript) throw new Error("Expected a displace weight setup script");
       // displaceweight1 must be attempted before displaceweight
-      expect(dispScript!.indexOf("displaceweight1")).toBeLessThan(
-        dispScript!.lastIndexOf("displaceweight"),
+      expect(dispScript.indexOf("displaceweight1")).toBeLessThan(
+        dispScript.lastIndexOf("displaceweight"),
       );
     });
 

@@ -82,8 +82,8 @@ You set up **two sides**: your **AI** (so it gets the tdmcp tools) and
 **Cursor**? Paste this one message in:
 
 ```text
-Install and connect tdmcp for me by reading and following
-https://raw.githubusercontent.com/Pantani/tdmcp/main/tdmcp-install-prompt.md
+Install and connect tdmcp for me using the official install guide:
+https://pantani.github.io/tdmcp/guide/install
 Do every step yourself; only stop when you need me to paste one line into TouchDesigner.
 ```
 
@@ -110,7 +110,7 @@ Open TouchDesigner, open the **Textport** (`Dialogs → Textport and DATs`), pas
 this **one line** and press Enter:
 
 ```python
-import urllib.request; exec(urllib.request.urlopen("https://raw.githubusercontent.com/Pantani/tdmcp/main/td/bootstrap.py").read().decode())
+import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/main/td/bootstrap.py").read().decode())
 ```
 
 You should see `[tdmcp] bridge running on port 9980 (/project1/tdmcp_bridge)`. ✅

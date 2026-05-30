@@ -89,8 +89,7 @@ Recipes são templates de rede validados (JSON) que a IA pode instanciar com
 `apply_recipe`. Elas cobrem pontos de partida comuns — túneis de feedback,
 reaction-diffusion, galáxias de partículas, barras de espectro de áudio, projection
 mapping e mais. Veja a [Galeria de receitas](/pt/guide/recipes) para o que cada uma
-constrói, e o [Contributing](https://github.com/Pantani/tdmcp/blob/main/CONTRIBUTING.md)
-(em inglês) para adicionar as suas.
+constrói, e o guia `CONTRIBUTING.md` do repositório (em inglês) para adicionar as suas.
 
 ## Transportes e eventos
 

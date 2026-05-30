@@ -84,8 +84,7 @@ Recipes are validated network templates (JSON) the AI can instantiate with
 `apply_recipe`. They cover common starting points — feedback tunnels,
 reaction-diffusion, particle galaxies, audio spectrum bars, projection mapping
 and more. See the [Recipe gallery](/guide/recipes) for what each one builds, and
-[Contributing](https://github.com/Pantani/tdmcp/blob/main/CONTRIBUTING.md) to add
-your own.
+the repository's `CONTRIBUTING.md` guide to add your own.
 
 ## Transports & events
 
