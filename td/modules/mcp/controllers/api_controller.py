@@ -144,6 +144,12 @@ def _check_host(request):
     host_header = _find_header(request, "host")
     if not host_header:
         return
+    # A real Host header is only `host[:port]`. Reject anything carrying userinfo,
+    # a path/query/fragment or whitespace BEFORE parsing — otherwise a forged value
+    # like "evil.com@127.0.0.1" or "127.0.0.1/x" would make urlparse report a
+    # loopback hostname and slip the guard.
+    if any(ch in host_header for ch in "@/\\?# \t"):
+        raise _Forbidden("Forbidden: malformed Host header %r rejected." % host_header)
     hostname = urlparse("//" + host_header).hostname
     if hostname not in _LOOPBACK_HOSTS:
         raise _Forbidden(

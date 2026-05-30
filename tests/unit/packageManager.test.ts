@@ -138,6 +138,22 @@ describe("downloadToFile host + size hardening", () => {
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
+  it("throws a dedicated error when the redirect chain exceeds the hop limit", async () => {
+    // Always-redirect (to an allowed host) so the loop hits its 10-hop budget.
+    const fetchImpl = vi.fn(
+      async () =>
+        new Response(null, {
+          status: 302,
+          headers: jsonHeaders({ location: "https://codeload.github.com/x/y/zip/main" }),
+        }),
+    );
+    await expect(
+      downloadToFile("https://github.com/x/y/archive/main.zip", join(tmpdir(), "x.zip"), {
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+      }),
+    ).rejects.toThrow(/Too many redirects/);
+  });
+
   it("rejects a response whose declared content-length exceeds the cap", async () => {
     const fetchImpl = vi.fn(
       async () =>

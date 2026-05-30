@@ -280,6 +280,19 @@ class HostTests(unittest.TestCase):
             with self.assertRaises(PermissionError, msg=host):
                 ac._check_host({"Host": host})
 
+    def test_userinfo_smuggled_loopback_host_rejected(self):
+        # A forged Host that parses to a loopback hostname only because of
+        # userinfo/path syntax must NOT slip the guard.
+        _clear_token_env()
+        for host in (
+            "evil.com@127.0.0.1",
+            "127.0.0.1/evil",
+            "127.0.0.1@evil.com",
+            "127.0.0.1:9980/x",
+        ):
+            with self.assertRaises(PermissionError, msg=host):
+                ac._check_host({"Host": host})
+
     def test_non_loopback_host_allowed_when_token_set(self):
         # Authenticated remote use is documented; the token is the gate, so a
         # LAN/remote Host must pass once a token is configured.

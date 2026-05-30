@@ -226,6 +226,12 @@ export async function downloadToFile(
       break;
     }
     if (!res) throw new Error(`Download failed (no response) for ${url}`);
+    // Still a redirect after the hop budget → say so explicitly instead of a
+    // generic "Download failed (3xx)".
+    if (res.status >= 300 && res.status < 400) {
+      await res.body?.cancel().catch(() => {});
+      throw new Error(`Too many redirects (>10) for ${url}`);
+    }
     if (!res.ok || !res.body) throw new Error(`Download failed (${res.status}) for ${url}`);
 
     // Reject oversize responses up front when the server declares a length…
