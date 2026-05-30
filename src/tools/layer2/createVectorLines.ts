@@ -252,22 +252,42 @@ try:
                     report["warnings"].append(
                         "style '%s' vectorizes the edge image into geometry every frame; this is COOK-COSTLY on live video. For real-time use prefer style='contour'." % _style
                     )
+                    # A Geometry COMP renders the SOP(s) that live INSIDE it with the
+                    # render flag set — its input connectors are 3D OBJ inputs, not SOP
+                    # inputs (connecting a SOP raises "Cannot connect a SOP to a OBJ").
+                    # So create the geo first and build the Trace SOP as its child; the
+                    # trace reads its source TOP via a path parameter, not a wire, so it
+                    # works fine inside the geo.
+                    _geo = None
+                    try:
+                        _geo = _cont.create(geometryCOMP, "geo")
+                    except Exception as _e:
+                        report["warnings"].append("Geometry COMP create failed: " + str(_e))
+                        _geo = None
+                    _trace_parent = _geo if _geo is not None else _cont
                     # Trace SOP: PROBE the optype + threshold par.
                     _trace = None
                     try:
-                        _trace = _cont.create(traceSOP, "trace")
+                        _trace = _trace_parent.create(traceSOP, "trace")
                         report["trace_optype_used"] = "traceSOP"
                     except Exception as _e1:
                         try:
-                            _tt = getattr(__import__("td"), "traceSOP", None)
+                            _tt = globals().get("traceSOP")
                             if _tt is not None:
-                                _trace = _cont.create(_tt, "trace")
+                                _trace = _trace_parent.create(_tt, "trace")
                                 report["trace_optype_used"] = "traceSOP(via td)"
                             else:
                                 report["warnings"].append("traceSOP optype not found (UNVERIFIED TD build): " + str(_e1))
                         except Exception as _e2:
                             report["warnings"].append("Could not create Trace SOP: " + str(_e2))
                             _trace = None
+                    # Make the geo render this SOP: set its render + display flags.
+                    if _trace is not None and _geo is not None:
+                        for _flag in ("render", "display"):
+                            try:
+                                setattr(_trace, _flag, True)
+                            except Exception:
+                                pass
                     if _trace is not None:
                         report["trace_sop"] = _trace.path
                         if _edge is not None:
@@ -300,10 +320,11 @@ try:
                             report["warnings"].append(
                                 "traceSOP threshold par not found among ['threshold','edgethreshold','steps'] (UNVERIFIED TD build)."
                             )
-                    # Render the SOP via a Geometry COMP + Camera + Render TOP.
+                    # Render the traced SOP (built inside _geo above) via Camera + Render TOP.
                     _rtop = None
                     try:
-                        _geo = _cont.create(geometryCOMP, "geo")
+                        if _geo is None:
+                            _geo = _cont.create(geometryCOMP, "geo")
                         try:
                             _mat = _cont.create(constantMAT, "line_mat")
                             _mat.par.colorr = float(_lc[0])

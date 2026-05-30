@@ -256,8 +256,11 @@ try:
                 "\\t\\tos[0] = cs[0] if cs is not None else 0.0\\n"
                 "\\treturn\\n"
             ) % _maxb
-            _ok = _try("script DAT text", lambda: setattr(_script.par.callbacks.eval(), "text", _code))
-            if _ok is None:
+            _ok = _try(
+                "script DAT text",
+                lambda: (setattr(_script.par.callbacks.eval(), "text", _code), True)[1],
+            )
+            if not _ok:
                 # Some builds expose the script body via .par.callbacks pointing to a DAT
                 # we must create; fall back to writing the op's own text if editable.
                 _try("script inline text", lambda: setattr(_script, "text", _code))

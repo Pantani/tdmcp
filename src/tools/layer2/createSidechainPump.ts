@@ -215,7 +215,16 @@ try:
 
                 # Build the expression string.
                 # e.g.: 1.0 * (1 - 0.8 * op('/project1/sidechain_pump/pump')['level'])
-                _expr = "%r * (1 - %r * op(%r)[%r])" % (_rest, _depth, _pump_path, _chan0)
+                # If the whole pump chain failed, _pump_path is "" and op('') would bind to
+                # an unintended operator (or error at cook). Fall back to a constant
+                # rest_value so targets stay at a sane value instead.
+                if _pump_path:
+                    _expr = "%r * (1 - %r * op(%r)[%r])" % (_rest, _depth, _pump_path, _chan0)
+                else:
+                    _expr = "%r" % _rest
+                    report["warnings"].append(
+                        "No pump output (chain failed); binding targets to constant rest_value %r." % _rest
+                    )
 
                 for _t in _p.get("targets", []):
                     try:
