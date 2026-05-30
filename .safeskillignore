@@ -20,7 +20,7 @@ coverage/
 docs/.vitepress/cache/
 docs/.vitepress/dist/
 
-# --- Binary media (cookbook captures) — cannot carry code or prompt injection ---
+# --- Binary media (cookbook captures) — not executed by the server or bridge at runtime; excluded to reduce scan noise ---
 *.mp4
 *.webm
 *.mov
