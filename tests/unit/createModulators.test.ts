@@ -275,8 +275,13 @@ describe("tempo-lock expression", () => {
     const fast = mods.find((m) => m.channel === "fast");
     expect(slow?.cpb).toBe(0.25);
     expect(fast?.cpb).toBe(2);
-    expect(slow?.freq_expr).toBe("op('/project1/modulators/beat')['bpm'] / 60.0 * 0.25");
-    expect(fast?.freq_expr).toBe("op('/project1/modulators/beat')['bpm'] / 60.0 * 2");
+    // tempoRef is None-safe (op() missing -> BPM 0 -> frozen) — see the missing-source test.
+    expect(slow?.freq_expr).toBe(
+      "(op('/project1/modulators/beat')['bpm'] if op('/project1/modulators/beat') else 0.0) / 60.0 * 0.25",
+    );
+    expect(fast?.freq_expr).toBe(
+      "(op('/project1/modulators/beat')['bpm'] if op('/project1/modulators/beat') else 0.0) / 60.0 * 2",
+    );
   });
 });
 
@@ -331,9 +336,35 @@ describe("random sample-&-hold", () => {
     const m = decodePayload(scriptArg(exec)).modulators[0];
     expect(m?.kind).toBe("noise");
     expect(m?.wavetype).toBeUndefined();
-    expect(m?.period_expr).toBe("60.0 / op('/project1/modulators/beat')['bpm'] * 2");
+    expect(m?.period_expr).toBe(
+      "60.0 / max((op('/project1/modulators/beat')['bpm'] if op('/project1/modulators/beat') else 0.0), 1e-6) * 2",
+    );
     // beats_per_cycle is the reciprocal of cpb (hold = one modulator cycle).
     expect(m?.beats_per_cycle).toBe(2);
+  });
+
+  it("degrades to frozen (no None-index / divide-by-zero) when the tempo source is missing", async () => {
+    const exec = vi.fn(async () => ({ stdout: happyReport({ channels: ["lfo", "rnd"] }) }));
+    await createModulatorsImpl(
+      fakeCtx(exec),
+      args({
+        tempo_source: "/project1/missing_tempo",
+        modulators: [
+          { name: "lfo", shape: "sine", rate_beats: 1 },
+          { name: "rnd", shape: "random", rate_beats: 1 },
+        ],
+      }),
+    );
+    const mods = decodePayload(scriptArg(exec)).modulators;
+    const lfo = mods.find((mm) => mm.channel === "lfo");
+    const rnd = mods.find((mm) => mm.channel === "rnd");
+    // None-safe BPM read: a missing op() yields 0, so the LFO frequency is 0 (frozen)
+    // rather than indexing None.
+    expect(lfo?.freq_expr).toContain("if op('/project1/missing_tempo') else 0.0");
+    // The random hold period clamps the None-safe BPM divisor with max(.., 1e-6), so a
+    // missing source or 0 BPM yields a huge (frozen) period, never a divide-by-zero.
+    expect(rnd?.period_expr).toContain("max(");
+    expect(rnd?.period_expr).toContain("if op('/project1/missing_tempo') else 0.0");
   });
 });
 
@@ -380,7 +411,7 @@ describe("expose_controls", () => {
     // The divisor is clamped with max(.., 1e-6) so Rate=0 freezes (huge period)
     // instead of a divide-by-zero cook error.
     expect(m?.period_expr).toBe(
-      "(60.0 / op('/project1/modulators/beat')['bpm'] * 2) / max(op('/project1/modulators').par.Rate, 1e-6)",
+      "(60.0 / max((op('/project1/modulators/beat')['bpm'] if op('/project1/modulators/beat') else 0.0), 1e-6) * 2) / max(op('/project1/modulators').par.Rate, 1e-6)",
     );
   });
 });

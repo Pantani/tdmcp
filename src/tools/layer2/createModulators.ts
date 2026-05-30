@@ -319,7 +319,12 @@ export function buildModulatorSpecs(
     const beatsPerCycle = m.rate_beats;
     const isNoise = m.shape === "random";
 
-    const tempoRef = `op(${pyStr(tempoOp)})[${pyStr(args.bpm_channel)}]`;
+    // None-safe BPM read, used as the freq numerator AND (clamped) the period
+    // denominator: if the tempo op is missing, op() is None, so the BPM reads 0 —
+    // LFOs freeze (freq * 0) and random/period clamps to 1e-6 — honoring the build's
+    // "rates read 0 until it exists" warning instead of a None-index / div-by-zero.
+    const tempoExpr = `op(${pyStr(tempoOp)})`;
+    const tempoRef = `(${tempoExpr}[${pyStr(args.bpm_channel)}] if ${tempoExpr} else 0.0)`;
     return {
       channel,
       shape: m.shape,
@@ -334,8 +339,8 @@ export function buildModulatorSpecs(
       freq_expr: isNoise ? undefined : `${tempoRef} / 60.0 * ${cpb}${masterRate}`,
       period_expr: isNoise
         ? args.expose_controls
-          ? `(60.0 / ${tempoRef} * ${beatsPerCycle})${masterRateDiv}`
-          : `60.0 / ${tempoRef} * ${beatsPerCycle}`
+          ? `(60.0 / max(${tempoRef}, 1e-6) * ${beatsPerCycle})${masterRateDiv}`
+          : `60.0 / max(${tempoRef}, 1e-6) * ${beatsPerCycle}`
         : undefined,
     };
   });
