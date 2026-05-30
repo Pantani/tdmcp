@@ -27,6 +27,8 @@ const scannedMarkdownFiles = [
   ...collectMarkdownFiles(join(root, "docs")),
 ];
 
+const scannedPublicInstructionFiles = [...scannedMarkdownFiles, join(root, "td", "bootstrap.py")];
+
 describe("SafeSkill hygiene", () => {
   it("keeps public instructions out of SafeSkill prompt-injection trigger patterns", () => {
     const forbidden = [
@@ -53,7 +55,7 @@ describe("SafeSkill hygiene", () => {
     ];
 
     const violations: string[] = [];
-    for (const file of scannedMarkdownFiles) {
+    for (const file of scannedPublicInstructionFiles) {
       const text = readFileSync(file, "utf8");
       for (const { name, pattern } of forbidden) {
         for (const match of text.matchAll(new RegExp(pattern.source, `${pattern.flags}g`))) {
