@@ -525,7 +525,7 @@ size-capped (SSRF/oversize hardening). Plus `.safeskillignore` to focus the Safe
 
 ---
 
-## Phase 17 — v0.7.0 → v1.0.0 · Composition, automation & intelligence ☐ planned
+## Phase 17 — v0.7.0 → v0.11.0 · Composition, automation & intelligence ◐ in progress {#phase-17}
 
 The next wave is sourced from **two discovery passes**: the 2026-05-29 round-1 backlog
 (`_workspace/discovery/FEATURE_BACKLOG.md` — 77 items; its 7 P0s shipped in 0.6.0) and the
@@ -535,7 +535,34 @@ value has moved **up a level** — from *generating* visuals to **composing, aut
 operating** a show. Ordered by the `live-show` weighting profile; `probe-live` items validate in TD
 before the schema locks.
 
-### P0 — the live-thesis core (round-2)
+### Delivery — the round-2 campaign (idempotent, 5 waves → 5 releases)
+
+The round-2 *"beyond"* backlog (**66 buildable**: 2 shared-schema foundations + 64
+features) is being implemented by the **`tdmcp-backlog-campaign`** harness — a resumable,
+ledger-driven loop over the existing design→build→integrate→QA→release pipeline (see
+CLAUDE.md → *"Harness: backlog campaign"*). The ledger
+(`_workspace/campaign_beyond_20260530/ledger.json`, merge-safe) makes re-runs **idempotent**
+(shipped work is never rebuilt, interrupted work resumes); a stuck tool is **quarantined**
+rather than blocking its wave. Policy: **staged by priority, checkpoint after wave 1,
+commit + push (no tag),** TD-connected before each build wave. The shared-schema
+foundations (`setlist_schema`, `memory_note`, `llm_client` via `server_sampling_assist`,
+`timer_primitive` via `create_scheduler`) are designed **once** and ship before their
+consumers fan out.
+
+| Wave | Release | Theme | Items | Status |
+|---|---|---|---|---|
+| 1 | v0.7.0 | Live-show foundation + all P0 (incl. Top-12) | 16 | ◐ building — launched 2026-05-30 |
+| 2 | v0.8.0 | Show automation + musical reactivity | 9 | ☐ planned |
+| 3 | v0.9.0 | Intelligence + library trust | 10 | ☐ planned |
+| 4 | v0.10.0 | TD-depth authoring + DX accelerators | 12 | ☐ planned |
+| 5 | v0.11.0 | P2 tail (raw-reach builders, protocol gaps) | 19 | ☐ planned |
+
+The P0/P1 tables below are the curated highlights; the **complete per-wave roster** lives in
+the campaign ledger + `_workspace/campaign_beyond_20260530/WAVE_PLAN.md`. A few round-1
+leftovers listed below (`caption_top`, `install_client_writers`, `create_test_pattern`) are
+tracked separately from the round-2 ledger and slot into later waves.
+
+### P0 — the live-thesis core (round-2) · wave 1 → v0.7.0 ◐ building
 
 | Feature | Surface | Delivers | Effort |
 |---|---|---|---|
@@ -546,7 +573,7 @@ before the schema locks.
 | `auto_tag_library_asset` | library | Derive tags / operator-family / difficulty / description from the captured `nodes[].type` via the KB — makes the whole library searchable **by default** (the keystone read) | M |
 | `panic_blackout_hotkey` | cli | Instant top-level `tdmcp panic` / `blackout` (+ `--restore` / `--hold`), idempotent re-fire — a safety verb you can type under pressure | S |
 
-### P1 — automation, intelligence & authoring (round-2 headliners + top still-open round-1)
+### P1 — automation, intelligence & authoring (round-2 headliners + top still-open round-1) · waves 1–4
 
 | Feature | Surface | Delivers | Effort |
 |---|---|---|---|
