@@ -248,9 +248,12 @@ fold in QA results, or check campaign status — use the `tdmcp-backlog-campaign
 skill (drives `tdmcp-backlog-planner` → the existing design→build→integrate→QA→release
 specialists, gated by a merge-safe `ledger.json`). For a **single** feature or one
 small batch, use `tdmcp-pipeline` instead. Simple questions can be answered directly.
-Note: this environment runs the team as sub-agents (no `TeamCreate`).
+Note: this environment runs the team as sub-agents (no `TeamCreate`). When a wave needs
+a new bridge REST endpoint, the `tdmcp-bridge-engineer` agent + `tdmcp-bridge-endpoint`
+skill author the endpoint + client + validator + exec-fallback slice.
 
 **Change log:**
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
 | 2026-05-30 | Initial build | 1 agent (`tdmcp-backlog-planner`) + 1 skill (`tdmcp-backlog-campaign`) + ledger | drive the round-2 "BEYOND" backlog (66 buildable: 2 foundations + 64 features, 5 waves) to completion idempotently; reuses the whole per-wave pipeline. Policy: staged-by-priority, checkpoint after wave 1, commit+push **no-tag**, TD-required before build waves |
+| 2026-05-30 | Consolidated a parallel campaign (PR #29) | +9 artist-control tools (`create_test_pattern`, `create_text_crawl`, `create_band_router`, `create_sidechain_pump`, `create_xy_pad`, `create_time_echo`, `create_capture_loop`, `create_vector_lines`, `create_blob_reactive`) + `tdmcp-bridge-engineer` agent + `tdmcp-bridge-endpoint` skill | a concurrent session built these round-1 tools (live-validated TD 099: 8 qa_pass, `create_blob_reactive` unverified pending live camera) on a duplicate harness; merged into this line keeping its tools + bridge authoring, dropping the duplicate campaign agent/scripts in favour of `tdmcp-backlog-planner` |

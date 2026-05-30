@@ -45,7 +45,7 @@ Every feature follows the existing patterns:
 | 13 | 0.5.0 ☑ | Components, agent-DX & reactivity | Reusable-component scaffolding, project analysis/auto-docs, token-cheap agent-DX, Link/MIDI — integrated for 0.5.0, with hardware/live validation called out below |
 | 14–15 | 0.5.0 ☑ | Live mixing, parameter fidelity & creative direction | Post-discovery wave: transitions/layer-stack/keyer/media-bin, one-shot reactivity, signature effects, network round-trip, 11 AI prompts |
 | 16 | 0.6.0 ☑ | TouchDesigner-depth & library fidelity | 7 P0s from discovery round-1: bridge read/write fidelity (flags/wiring/structured endpoints + `cook.error`), `create_modulators` + `create_look_bank` instruments, library contact-sheet — 179 tools |
-| 17 | 0.7.0+ ☐ | Composition, automation & intelligence | Discovery round-2 (beyond-backlog): time-based show automation, beat-locked montage, pattern generation, own-work retrieval/memory, MCP sampling |
+| 17 | 0.7.0+ ◐ | Composition, automation & intelligence | In progress via the backlog-campaign harness. Wave 3 (artist controls — 9 tools) shipped + live-validated; then td-depth telemetry, library/packaging, CLI/DX, and round-2 (beyond-backlog): time-based show automation, beat-locked montage, pattern generation, own-work retrieval/memory, MCP sampling |
 
 ---
 
@@ -527,6 +527,16 @@ size-capped (SSRF/oversize hardening). Plus `.safeskillignore` to focus the Safe
 
 ## Phase 17 — v0.7.0 → v0.11.0 · Composition, automation & intelligence ◐ in progress {#phase-17}
 
+> **v0.7.0 is underway.** A first increment already shipped via a parallel build effort
+> (consolidated in PR #29): **nine round-1 artist-control tools** — `create_test_pattern`,
+> `create_text_crawl`, `create_band_router`, `create_sidechain_pump`, `create_xy_pad`,
+> `create_time_echo`, `create_capture_loop`, `create_vector_lines`, `create_blob_reactive`
+> — integrated with 1:1 CLI verbs + offline tests and **live-validated in TouchDesigner 099**
+> (eight clean; `create_blob_reactive` awaits a live-camera pass), marked ✅/◐ in
+> [Appendix A.1](#full-backlog). The **round-2 "beyond" campaign** below (the
+> `tdmcp-backlog-campaign` harness + `tdmcp-backlog-planner`) continues from there across
+> v0.7.0 → v0.11.0.
+
 The next wave is sourced from **two discovery passes**: the 2026-05-29 round-1 backlog
 (`_workspace/discovery/FEATURE_BACKLOG.md` — 77 items; its 7 P0s shipped in 0.6.0) and the
 2026-05-30 round-2 *"beyond the backlog"* pass (`_workspace/discovery_beyond_20260530/FEATURE_BACKLOG_BEYOND.md`
@@ -657,7 +667,9 @@ TD Palette + Obsidian vault, per the project's distribution model).
 Reproduced from the two discovery runs so the complete catalog survives in git (`_workspace/` is
 gitignored — the source files would otherwise be lost). **Legend:** Priority **P0/P1/P2** · Effort
 **S** ≤1 day / **M** 2–4 days / **L** ~1 week · Impact/Conf High/Med/Low · Novelty **NEW** /
-**EXTENSION** / **ROADMAP** · **✅ 0.6.0** = shipped since the round-1 run (see [Phase 16](#phase-16)).
+**EXTENSION** / **ROADMAP** · **✅ 0.6.0** = shipped since the round-1 run (see [Phase 16](#phase-16)) ·
+**✅ 0.7.0** = shipped in the Phase-17 artist-controls campaign wave (live-validated in TD) ·
+**◐ 0.7.0** = built + integrated, live validation pending.
 
 ### A · Round-1 backlog — 2026-05-29
 
@@ -671,16 +683,16 @@ work shipped in **v0.6.0** (marked ✅).
 |---|---|---|---|---|---|---|---|
 | `create_modulators` ✅ 0.6.0 | BPM-synced multi-LFO modulation bank `bind_to_channel` can target | M | High | High | P0 | NEW | phase-lock + paused-timeline |
 | `create_look_bank` ✅ 0.6.0 | Snapshot-slot + A↔B morph instrument | M | High | Med | P0 | EXTENSION | animatable-par filter |
-| `create_test_pattern` | Projector calibration generator (grid/bars/sweep/per-output #) | S | Med | High | P1 | NEW | none |
-| `create_text_crawl` | Multi-line crawl/ticker/typewriter text | M | Med | High | P1 | NEW | typewriter substring expr |
-| `create_band_router` | Musician-friendly EQ-band → multi-target routing | M | Med | High | P1 | EXTENSION | Analyze `rmspower` not `rms` |
+| `create_test_pattern` ✅ 0.7.0 | Projector calibration generator (grid/bars/sweep/per-output #) | S | Med | High | P1 | NEW | none |
+| `create_text_crawl` ✅ 0.7.0 | Multi-line crawl/ticker/typewriter text | M | Med | High | P1 | NEW | typewriter substring expr |
+| `create_band_router` ✅ 0.7.0 | Musician-friendly EQ-band → multi-target routing | M | Med | High | P1 | EXTENSION | Analyze `rmspower` not `rms` |
 | `create_decks` N-channel | 3–4 decks + transition cut + per-deck FX send | M | Med | High | P1 | EXTENSION | none |
-| `create_sidechain_pump` | One-call "pump the rig on the kick" | S | Med | Med | P1 | EXTENSION | gate threshold tuning |
-| `create_xy_pad` | 2D/XYZ control widget on panel + phone remote | M | Med | Med | P1 | EXTENSION | `appendXY` + phone 2D-drag |
-| `create_time_echo` | Per-pixel time-displacement / slit-scan trails | M | Med | Med | P1 | NEW | buffer fill + displace par names |
-| `create_blob_reactive` | Camera object/hand position tracking (vs aggregate motion) | M | Med | Med | P2 | NEW | camera permission hang + tune |
-| `create_capture_loop` | Bidirectional Spout/Syphon/NDI bridge (in+out, one tool) | M | Med | Med | P2 | EXTENSION | platform-gated; no feedback-storm |
-| `create_vector_lines` | Image → animated line-art / contour / plotter look | L | Med | Med | P2 | NEW | trace cook cost on live video |
+| `create_sidechain_pump` ✅ 0.7.0 | One-call "pump the rig on the kick" | S | Med | Med | P1 | EXTENSION | gate threshold tuning |
+| `create_xy_pad` ✅ 0.7.0 | 2D/XYZ control widget on panel + phone remote | M | Med | Med | P1 | EXTENSION | `appendXY` + phone 2D-drag |
+| `create_time_echo` ✅ 0.7.0 | Per-pixel time-displacement / slit-scan trails | M | Med | Med | P1 | NEW | buffer fill + displace par names |
+| `create_blob_reactive` ◐ 0.7.0 | Camera object/hand position tracking (vs aggregate motion) | M | Med | Med | P2 | NEW | camera permission hang + tune |
+| `create_capture_loop` ✅ 0.7.0 | Bidirectional Spout/Syphon/NDI bridge (in+out, one tool) | M | Med | Med | P2 | EXTENSION | platform-gated; no feedback-storm |
+| `create_vector_lines` ✅ 0.7.0 | Image → animated line-art / contour / plotter look | L | Med | Med | P2 | NEW | trace cook cost on live video |
 | `create_pop_geometry` | POP-family generative GPU geometry | L | Med | Low | P2 | EXTENSION | probe-live (render path) |
 
 #### A.2 · Library, packaging & distribution

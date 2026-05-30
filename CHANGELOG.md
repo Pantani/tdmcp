@@ -26,6 +26,29 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Nine new artist-control tools** (campaign Wave 3 — artist-controls surface of
+  the discovery backlog), all live-validated in TouchDesigner 099 (create → cook →
+  zero post-cook errors):
+  - **`create_test_pattern`** — projector calibration source (grid / crosshair /
+    color-bars / ramp / circle-grid) with a per-output number overlay; baked-GLSL,
+    no probe risk.
+  - **`create_text_crawl`** — multi-line crawl / ticker / typewriter text
+    (vs single-string `create_kinetic_text`).
+  - **`create_band_router`** — split audio into N EQ bands (`audiofilter` +
+    `analyze rmspower`) and route each band level to its own target(s); output
+    channels `band0…bandN`.
+  - **`create_sidechain_pump`** — one-call "pump the whole rig on the kick": a
+    Limit-CHOP-clamped ducking envelope bound to many targets with a single depth knob.
+  - **`create_xy_pad`** — a draggable 2D XY gesture pad (Panel CHOP) driving target
+    parameters by expression, with an optional Z slider.
+  - **`create_time_echo`** — per-pixel time effect on a source TOP: echo trails
+    (feedback + Level-TOP decay), slit-scan and time-displace (`timeMachineTOP`).
+  - **`create_capture_loop`** — bidirectional Spout/Syphon/NDI bridge (receive +
+    publish in one container), anti-feedback by design.
+  - **`create_vector_lines`** — image/video → animated line-art (contour shader) or
+    Trace-SOP plotter geometry.
+  - **`create_blob_reactive`** — camera/TOP blob-position tracking (`blobtrackTOP`)
+    bound to parameters (blob-channel layout pending a live-camera validation pass).
 - **`.safeskillignore`** so the SafeSkill scanner skips generated knowledge-base
   data, build output and binary media (the source of the substring false
   positives) and focuses on the actual server code.
