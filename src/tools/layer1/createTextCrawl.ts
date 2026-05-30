@@ -224,12 +224,14 @@ try:
             _loop = _p["loop"]
 
             if _mode == "crawl_horizontal":
-                # tx: continuous rightward wrap. At speed S (screen-widths/s),
-                # after T seconds the offset is -(S*T) % 2 mapped to [-1, 1] so
-                # the text exits left and re-enters from the right.  When loop=False
-                # the motion simply continues past the edge (no extra clamp added —
-                # the artist can stop playback).
-                _expr = "((-me.time.seconds * %s) %% 2.0) - 1.0" % repr(_speed)
+                # tx: at speed S (screen-widths/s) the text enters from the right and
+                # moves left. loop=True wraps with modulo so it re-enters from the right
+                # forever; loop=False is a single pass that clamps once fully off-screen
+                # left (-2.0) and stops.
+                if _loop:
+                    _expr = "((-me.time.seconds * %s) %% 2.0) - 1.0" % repr(_speed)
+                else:
+                    _expr = "max(-2.0, 1.0 - me.time.seconds * %s)" % repr(_speed)
                 if _xfm is not None:
                     try:
                         _tp = _xfm.par.tx
@@ -246,8 +248,12 @@ try:
                         pass
 
             elif _mode == "roll_vertical":
-                # ty: continuous upward roll.
-                _expr = "((me.time.seconds * %s) %% 2.0) - 1.0" % repr(_speed)
+                # ty: upward roll. loop=True wraps with modulo (continuous); loop=False is
+                # a single pass that rises from the bottom and clamps once off-screen top.
+                if _loop:
+                    _expr = "((me.time.seconds * %s) %% 2.0) - 1.0" % repr(_speed)
+                else:
+                    _expr = "min(2.0, -1.0 + me.time.seconds * %s)" % repr(_speed)
                 if _xfm is not None:
                     try:
                         _tp = _xfm.par.ty

@@ -29,19 +29,22 @@ export const createTestPatternSchema = z.object({
   width: z.coerce
     .number()
     .int()
+    .positive()
     .default(1920)
-    .describe("Output width in pixels (e.g. 1920, 2560, 3840)."),
+    .describe("Output width in pixels (must be > 0; e.g. 1920, 2560, 3840)."),
   height: z.coerce
     .number()
     .int()
+    .positive()
     .default(1080)
-    .describe("Output height in pixels (e.g. 1080, 1440, 2160)."),
+    .describe("Output height in pixels (must be > 0; e.g. 1080, 1440, 2160)."),
   divisions: z.coerce
     .number()
     .int()
+    .min(1)
     .default(16)
     .describe(
-      "Number of grid cells across the frame for grid and circle_grid patterns. Ignored by other patterns.",
+      "Number of grid cells across the frame for grid and circle_grid patterns (must be >= 1). Ignored by other patterns.",
     ),
   output_number: z.coerce
     .number()
