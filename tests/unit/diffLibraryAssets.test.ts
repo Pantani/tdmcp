@@ -120,6 +120,24 @@ describe("diff_library_assets", () => {
     expect(res.structuredContent?.mode_used).toBe("json");
   });
 
+  it("reports top-level primitive changes at the root path", async () => {
+    const a = writeJson("a.json", 1);
+    const b = writeJson("b.json", 2);
+    const res = (await diffLibraryAssetsImpl(makeCtx(), {
+      a_path: a,
+      b_path: b,
+      mode: "json",
+    })) as DiffResult;
+
+    expect(res.isError).toBeFalsy();
+    expect(res.structuredContent?.summary.changed).toBe(1);
+    expect(res.structuredContent?.details.deep.changed).toContainEqual({
+      path: "$",
+      old: 1,
+      new: 2,
+    });
+  });
+
   it("reports a removed key (present in a, absent in b)", async () => {
     const a = writeJson("a.json", { gone: "bye", stay: 1 });
     const b = writeJson("b.json", { stay: 1 });

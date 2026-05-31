@@ -56,6 +56,12 @@ function stubDownload(content: string | Buffer, opts: { calls?: { count: number 
 
 let dir: string;
 
+type ImportRecipeFromUrlModule = typeof import("../../src/tools/library/importRecipeFromUrl.js") & {
+  fileOps?: {
+    cleanup: (path: string) => void;
+  };
+};
+
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), "tdmcp-recipe-url-test-"));
 });
@@ -115,6 +121,37 @@ describe("importRecipeFromUrlImpl", () => {
     expect(firstWritten).toContain("my-recipe.json");
     const onDisk = JSON.parse(readFileSync(firstWritten, "utf8"));
     expect(onDisk.name).toBe("My Recipe");
+  });
+
+  it("swallows temporary cleanup failures after a successful download", async () => {
+    const recipe = {
+      id: "cleanup-failure",
+      name: "Cleanup Failure",
+      nodes: [{ name: "n1", type: "noiseTOP" }],
+    };
+    stubDownload(JSON.stringify(recipe));
+    const module = (await import(
+      "../../src/tools/library/importRecipeFromUrl.js"
+    )) as ImportRecipeFromUrlModule;
+    const { fileOps } = module;
+    expect(fileOps).toBeDefined();
+    if (!fileOps) throw new Error("fileOps export missing");
+    const cleanupSpy = vi.spyOn(fileOps, "cleanup").mockImplementation(() => {
+      throw new Error("cleanup locked");
+    });
+
+    const res = await importRecipeFromUrlImpl(makeCtx(), {
+      url: "https://raw.githubusercontent.com/acme/repo/main/cleanup-failure.json",
+      out_dir: join(dir, "out"),
+      overwrite: false,
+      max_bytes: 1048576,
+    });
+
+    expect(cleanupSpy).toHaveBeenCalled();
+    expect(res.isError).toBeFalsy();
+    const parsed = resultJson(res);
+    expect(parsed.count).toBe(1);
+    expect(parsed.written[0]).toContain("cleanup-failure.json");
   });
 
   it("test downloader can write byte buffers without UTF-8 transcoding", async () => {

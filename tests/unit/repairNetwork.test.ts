@@ -213,6 +213,17 @@ describe("repair_network", () => {
     expect(script).toContain("findChildren()");
   });
 
+  it("uses constant-time stack pops in the manual fallback walk", () => {
+    const script = buildRepairNetworkScript({
+      parent_path: "/project1",
+      max_steps: 3,
+      dry_run: true,
+    });
+
+    expect(script).not.toContain("pop(0)");
+    expect(script).toContain("_stack.pop()");
+  });
+
   it("only clears the parameter identified by an expression error", () => {
     const script = buildRepairNetworkScript({
       parent_path: "/project1",

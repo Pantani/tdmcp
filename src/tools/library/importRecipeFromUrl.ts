@@ -59,6 +59,18 @@ export const downloaders = {
     downloadToFile(url, dest, { maxBytes }),
 };
 
+export const fileOps = {
+  cleanup: (path: string): void => rmSync(path, { recursive: true, force: true }),
+};
+
+function cleanupWorkDir(path: string): void {
+  try {
+    fileOps.cleanup(path);
+  } catch {
+    // Best-effort temp cleanup must not change the tool's result contract.
+  }
+}
+
 /** Same filename derivation as importRecipeBundleImpl: sanitize the recipe id. */
 function recipeFileName(recipe: Recipe): string {
   const stem = recipe.id.replace(/[^a-zA-Z0-9_.-]+/g, "_") || "recipe";
@@ -99,12 +111,12 @@ export async function importRecipeFromUrlImpl(_ctx: ToolContext, args: ImportRec
     await downloaders.download(url, tempFile, max_bytes);
     raw = readFileSync(tempFile, "utf8");
   } catch (error) {
-    rmSync(workDir, { recursive: true, force: true });
     return errorResult(
       `Failed to download recipe: ${error instanceof Error ? error.message : String(error)}`,
     );
+  } finally {
+    cleanupWorkDir(workDir);
   }
-  rmSync(workDir, { recursive: true, force: true });
 
   let data: unknown;
   try {

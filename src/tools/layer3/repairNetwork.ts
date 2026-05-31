@@ -108,7 +108,7 @@ def _collect_errors(root):
         try:
             _stack = list(root.children)
             while _stack:
-                _child = _stack.pop(0)
+                _child = _stack.pop()
                 _ops.append(_child)
                 try:
                     _stack.extend(list(_child.children))

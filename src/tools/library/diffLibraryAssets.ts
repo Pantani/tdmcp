@@ -66,6 +66,10 @@ function joinIndex(prefix: string, index: number): string {
   return `${prefix}[${index}]`;
 }
 
+function displayPath(prefix: string): string {
+  return prefix || "$";
+}
+
 /** Deterministic structural equality via a canonical JSON string with sorted object keys. */
 function canonical(value: Json): string {
   if (Array.isArray(value)) {
@@ -117,7 +121,7 @@ function deepDiff(a: Json, b: Json, prefix: string, out: DeepDiff): void {
     return;
   }
   if (!valuesEqual(a, b)) {
-    out.changed.push({ path: prefix, old: a, new: b });
+    out.changed.push({ path: displayPath(prefix), old: a, new: b });
   }
 }
 
