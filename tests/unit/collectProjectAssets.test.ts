@@ -31,7 +31,7 @@ function makeCtx(): ToolContext {
 /** Pull the base64 payload out of a captured exec script and JSON.parse it. */
 function decodePayload(script: string): Record<string, unknown> {
   const match = script.match(/b64decode\("([^"]+)"\)/);
-  if (!match || !match[1]) throw new Error(`No base64 payload in script: ${script.slice(0, 120)}`);
+  if (!match?.[1]) throw new Error(`No base64 payload in script: ${script.slice(0, 120)}`);
   return JSON.parse(Buffer.from(match[1], "base64").toString("utf8")) as Record<string, unknown>;
 }
 

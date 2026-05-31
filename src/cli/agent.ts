@@ -297,6 +297,11 @@ import {
 } from "../tools/layer2/setParametersBatch.js";
 import { setPerformModeImpl, setPerformModeSchema } from "../tools/layer2/setPerformMode.js";
 import { analyzeProjectImpl, analyzeProjectSchema } from "../tools/layer3/analyzeProject.js";
+import { captionTopImpl, captionTopSchema } from "../tools/layer3/captionTop.js";
+import {
+  collectProjectAssetsImpl,
+  collectProjectAssetsSchema,
+} from "../tools/layer3/collectProjectAssets.js";
 import { compareTdNodesImpl, compareTdNodesSchema } from "../tools/layer3/compareTdNodes.js";
 import { createTdNodeImpl, createTdNodeSchema } from "../tools/layer3/createTdNode.js";
 import { deleteTdNodeImpl, deleteTdNodeSchema } from "../tools/layer3/deleteTdNode.js";
@@ -338,12 +343,17 @@ import {
   optimizePerformanceSchema,
 } from "../tools/layer3/optimizePerformance.js";
 import {
+  projectDocumentationSiteImpl,
+  projectDocumentationSiteSchema,
+} from "../tools/layer3/projectDocumentationSite.js";
+import {
   readParameterModesImpl,
   readParameterModesSchema,
 } from "../tools/layer3/readParameterModes.js";
 import { recordMovieImpl, recordMovieSchema } from "../tools/layer3/recordMovie.js";
 import { reloadBridgeImpl, reloadBridgeSchema } from "../tools/layer3/reloadBridge.js";
 import { renderOutputImpl, renderOutputSchema } from "../tools/layer3/renderOutput.js";
+import { repairNetworkImpl, repairNetworkSchema } from "../tools/layer3/repairNetwork.js";
 import { searchOperatorsImpl, searchOperatorsSchema } from "../tools/layer3/searchOperators.js";
 import { serializeNetworkImpl, serializeNetworkSchema } from "../tools/layer3/serializeNetwork.js";
 import { setDatContentImpl, setDatContentSchema } from "../tools/layer3/setDatContent.js";
@@ -361,6 +371,18 @@ import {
   updateTdNodeParametersSchema,
 } from "../tools/layer3/updateTdNodeParameters.js";
 import { writeAgentGuideImpl, writeAgentGuideSchema } from "../tools/layer3/writeAgentGuide.js";
+import {
+  diffLibraryAssetsImpl,
+  diffLibraryAssetsSchema,
+} from "../tools/library/diffLibraryAssets.js";
+import {
+  exportPaletteComponentImpl,
+  exportPaletteComponentSchema,
+} from "../tools/library/exportPaletteComponent.js";
+import {
+  importRecipeFromUrlImpl,
+  importRecipeFromUrlSchema,
+} from "../tools/library/importRecipeFromUrl.js";
 import {
   attachDocsAsAssetsImpl,
   attachDocsAsAssetsSchema,

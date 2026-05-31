@@ -1,5 +1,8 @@
 import type { ToolRegistrar } from "../types.js";
 import { registerAnalyzeProject } from "./analyzeProject.js";
+// Campaign Waves 4 & 6 (backlog 2026-05-29):
+import { registerCaptionTop } from "./captionTop.js";
+import { registerCollectProjectAssets } from "./collectProjectAssets.js";
 import { registerCompareTdNodes } from "./compareTdNodes.js";
 import { registerCreateTdNode } from "./createTdNode.js";
 import { registerDeleteTdNode } from "./deleteTdNode.js";
@@ -26,10 +29,12 @@ import { registerGetTdTopology } from "./getTdTopology.js";
 import { registerInspectComponent } from "./inspectComponent.js";
 import { registerManagePackages } from "./managePackages.js";
 import { registerOptimizePerformance } from "./optimizePerformance.js";
+import { registerProjectDocumentationSite } from "./projectDocumentationSite.js";
 import { registerReadParameterModes } from "./readParameterModes.js";
 import { registerRecordMovie } from "./recordMovie.js";
 import { registerReloadBridge } from "./reloadBridge.js";
 import { registerRenderOutput } from "./renderOutput.js";
+import { registerRepairNetwork } from "./repairNetwork.js";
 import { registerSearchOperators } from "./searchOperators.js";
 import { registerSerializeNetwork } from "./serializeNetwork.js";
 import { registerSetDatContent } from "./setDatContent.js";
@@ -38,11 +43,6 @@ import { registerSnapshotTdGraph } from "./snapshotTdGraph.js";
 import { registerSummarizeTdErrors } from "./summarizeTdErrors.js";
 import { registerUpdateTdNodeParameters } from "./updateTdNodeParameters.js";
 import { registerWriteAgentGuide } from "./writeAgentGuide.js";
-// Campaign Waves 4 & 6 (backlog 2026-05-29):
-import { registerCaptionTop } from "./captionTop.js";
-import { registerCollectProjectAssets } from "./collectProjectAssets.js";
-import { registerProjectDocumentationSite } from "./projectDocumentationSite.js";
-import { registerRepairNetwork } from "./repairNetwork.js";
 
 export const layer3Registrars: ToolRegistrar[] = [
   registerGetTdInfo,

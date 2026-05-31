@@ -25,7 +25,7 @@ function makeCtx(): ToolContext {
 /** Pull the JSON payload back out of a captured /api/exec script body. */
 function decodePayload(scriptBody: string): Record<string, unknown> {
   const m = scriptBody.match(/b64decode\("([^"]+)"\)/);
-  if (!m || !m[1]) throw new Error("no base64 payload in script");
+  if (!m?.[1]) throw new Error("no base64 payload in script");
   return JSON.parse(Buffer.from(m[1], "base64").toString("utf8"));
 }
 
@@ -254,6 +254,6 @@ function text(res: { content: Array<{ type: string; text?: string }> }): string 
 function structured(res: { content: Array<{ type: string; text?: string }> }): string {
   const t = text(res);
   const m = t.match(/```json\n([\s\S]*?)\n```/);
-  if (!m || !m[1]) throw new Error("no json fence in result text");
+  if (!m?.[1]) throw new Error("no json fence in result text");
   return m[1];
 }
