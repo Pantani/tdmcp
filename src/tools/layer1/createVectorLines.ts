@@ -9,6 +9,7 @@ const q = (value: string): string => JSON.stringify(value);
 const vectorLineSourceSchema = z.enum(["synthetic", "camera", "file", "existing_top"]);
 const vectorLineModeSchema = z.enum(["hybrid_foreground", "foreground_mask", "full_frame"]);
 const overlayModeSchema = z.enum(["over", "add", "screen", "multiply"]);
+const vectorLineColorRegex = /^#([0-9a-fA-F]{6})$/;
 
 export const createVectorLinesSchema = z
   .object({
@@ -73,7 +74,11 @@ export const createVectorLinesSchema = z
       .boolean()
       .default(false)
       .describe("Fit Trace SOP output to Bezier curves; off by default until live-probed."),
-    line_color: z.string().default("#49dcb2").describe("Vector material color as '#rrggbb'."),
+    line_color: z
+      .string()
+      .regex(vectorLineColorRegex, "line_color must be a hex color in '#rrggbb' format.")
+      .default("#49dcb2")
+      .describe("Vector material color as '#rrggbb'."),
     line_width: z.coerce
       .number()
       .positive()
@@ -123,15 +128,9 @@ interface Rgb {
 }
 
 function hexToRgb(hex: string): Rgb {
-  const match = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex.trim());
-  if (!match) return { r: 0.286, g: 0.862, b: 0.698 };
-  let value = match[1] as string;
-  if (value.length === 3) {
-    value = value
-      .split("")
-      .map((c) => c + c)
-      .join("");
-  }
+  const match = vectorLineColorRegex.exec(hex.trim());
+  if (!match) throw new Error(`Invalid line_color: ${hex}. Expected '#rrggbb'.`);
+  const value = match[1] as string;
   const int = Number.parseInt(value, 16);
   return {
     r: ((int >> 16) & 0xff) / 255,

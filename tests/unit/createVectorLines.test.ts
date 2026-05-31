@@ -256,6 +256,9 @@ describe("create_vector_lines", () => {
     expect(() => createVectorLinesSchema.parse({ threshold: 2 })).toThrow();
     expect(() => createVectorLinesSchema.parse({ opacity: -0.1 })).toThrow();
     expect(() => createVectorLinesSchema.parse({ step_size: 0 })).toThrow();
+    expect(() => createVectorLinesSchema.parse({ line_color: "green" })).toThrow(/line_color/);
+    expect(() => createVectorLinesSchema.parse({ line_color: "#abc" })).toThrow(/line_color/);
+    expect(() => createVectorLinesSchema.parse({ line_color: "49dcb2" })).toThrow(/line_color/);
     expect(() => createVectorLinesSchema.parse({ source: "existing_top" })).toThrow();
     expect(() => createVectorLinesSchema.parse({ source: "file" })).toThrow();
   });
