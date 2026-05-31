@@ -74,6 +74,40 @@ is now **221** (was 213); resources gain a live scene-summary view.
 - `fix_shader` prompt description expanded past the 50-char quality threshold
   so the harness can enforce it without a whitelist.
 
+**Wave 4 — TD-depth authoring + DX accelerators** (campaign `beyond_20260530`).
+Ten new MCP tools (across Layer 1/2/3 plus a new `cli` tool group) and two
+long-running CLI streamers, bringing the registry to **231** tools.
+
+### Added
+
+- **`create_engine_comp`** — build a load-balanced Engine COMP cluster that
+  offloads a sub-network to worker processes for parallel cooking.
+- **`create_dmx_fixture_pipeline`** — build a DMX / Art-Net fixture pipeline
+  (parameter channels → patch matrix → Art-Net Out) for lighting integration.
+- **`scaffold_tool_generator`** — scaffold a new tdmcp tool file + msw unit
+  test from an inline spec; accelerates wave authoring.
+- **`extend_data_source_fabric`** — extend `create_data_source` with new feed
+  adapters (websocket / sse / mqtt / file-tail / process).
+- **`build_chop_chain`** — assemble a typed CHOP-processing chain from a recipe
+  of stages, with per-stage parameter validation.
+- **`author_script_operator`** — author a Script CHOP/TOP/SOP/DAT with validated
+  callbacks + parameters; eliminates raw-Python ceremony.
+- **`profile_cook_cost`** — read-only profiler that samples per-node cook cost
+  across N frames and ranks hot spots.
+- **`control_timeline_transport`** — drive TD timeline transport (play/pause/
+  seek/rate/range) as a structured tool instead of raw exec.
+- **`inspect_gpu_and_displays`** — offline-friendly host GPU + display inventory
+  for stage prep + capability sniffing.
+- **`macro_recorder`** — start/stop/list/load tool-call macros to portable JSON
+  via a process-wide `wrapHandler` hook installed at server boot. Replay ships
+  in wave 5 as `run_macro_script`.
+- **`tdmcp-agent watch-build`** — long-running dev-loop CLI (chokidar-based)
+  that re-runs `tsc --noEmit` + `tsup` on debounced changes under `src/` and
+  `td/`.
+- **`tdmcp-agent soundcheck-monitor`** — long-running audio-features poller
+  that emits rolling-window RMS/peak/silence alert events (ndjson on stdout).
+- Adds `chokidar ^4.0.3` as a devDependency for the watch-build streamer.
+
 [Unreleased]: https://github.com/Pantani/tdmcp/compare/v0.7.1...HEAD
 
 ## [0.7.1] - 2026-05-31

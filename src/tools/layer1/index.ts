@@ -19,8 +19,10 @@ import { registerCreateDataVisualization } from "./createDataVisualization.js";
 import { registerCreateDepthDisplacement } from "./createDepthDisplacement.js";
 import { registerCreateDepthSilhouette } from "./createDepthSilhouette.js";
 import { registerCreateDisplacementWarp } from "./createDisplacementWarp.js";
+import { registerCreateDmxFixturePipeline } from "./createDmxFixturePipeline.js";
 import { registerCreateDomeOutput } from "./createDomeOutput.js";
 import { registerCreateEnergyStructure } from "./createEnergyStructure.js";
+import { registerCreateEngineComp } from "./createEngineComp.js";
 import { registerCreateFeedbackNetwork } from "./createFeedbackNetwork.js";
 import { registerCreateFeedbackTunnel } from "./createFeedbackTunnel.js";
 import { registerCreateGenerativeArt } from "./createGenerativeArt.js";
@@ -185,4 +187,7 @@ export const layer1Registrars: ToolRegistrar[] = [
   // Campaign BEYOND Wave 3 (backlog 2026-05-30 — v0.7.0):
   registerMoodboardToSystem,
   registerAudioFingerprintToVisual,
+  // Campaign BEYOND Wave 4 (backlog 2026-05-30 — v0.7.0):
+  registerCreateEngineComp,
+  registerCreateDmxFixturePipeline,
 ];

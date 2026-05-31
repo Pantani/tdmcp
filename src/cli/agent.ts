@@ -10,6 +10,8 @@ import { capturePreview } from "../feedback/previewCapture.js";
 import { buildToolContext } from "../server/context.js";
 import { type TdEventHandler, TdEventStream } from "../td-client/eventStream.js";
 import { friendlyTdError } from "../td-client/types.js";
+// Campaign BEYOND Wave 4 (backlog 2026-05-30 — v0.7.0):
+import { macroRecorderImpl, macroRecorderSchema } from "../tools/cli/macroRecorder.js";
 import {
   applyPostProcessingImpl,
   applyPostProcessingSchema,
@@ -68,11 +70,16 @@ import {
   createDisplacementWarpImpl,
   createDisplacementWarpSchema,
 } from "../tools/layer1/createDisplacementWarp.js";
+import {
+  createDmxFixturePipelineImpl,
+  createDmxFixturePipelineSchema,
+} from "../tools/layer1/createDmxFixturePipeline.js";
 import { createDomeOutputImpl, createDomeOutputSchema } from "../tools/layer1/createDomeOutput.js";
 import {
   createEnergyStructureImpl,
   createEnergyStructureSchema,
 } from "../tools/layer1/createEnergyStructure.js";
+import { createEngineCompImpl, createEngineCompSchema } from "../tools/layer1/createEngineComp.js";
 import {
   createFeedbackNetworkImpl,
   createFeedbackNetworkSchema,
@@ -239,12 +246,17 @@ import {
 } from "../tools/layer2/addCustomParameters.js";
 import { animateParameterImpl, animateParameterSchema } from "../tools/layer2/animateParameter.js";
 import { arrangeNetworkImpl, arrangeNetworkSchema } from "../tools/layer2/arrangeNetwork.js";
+import {
+  authorScriptOperatorImpl,
+  authorScriptOperatorSchema,
+} from "../tools/layer2/authorScriptOperator.js";
 import { batchOperationsImpl, batchOperationsSchema } from "../tools/layer2/batchOperations.js";
 import {
   bindAudioReactiveImpl,
   bindAudioReactiveSchema,
 } from "../tools/layer2/bindAudioReactive.js";
 import { bindToChannelImpl, bindToChannelSchema } from "../tools/layer2/bindToChannel.js";
+import { buildChopChainImpl, buildChopChainSchema } from "../tools/layer2/buildChopChain.js";
 import { connectNodesImpl, connectNodesSchema } from "../tools/layer2/connectNodes.js";
 // Campaign Wave 3 — artist controls (backlog 2026-05-29):
 import { createBandRouterImpl, createBandRouterSchema } from "../tools/layer2/createBandRouter.js";
@@ -313,6 +325,10 @@ import {
 import { createTimeEchoImpl, createTimeEchoSchema } from "../tools/layer2/createTimeEcho.js";
 import { createXyPadImpl, createXyPadSchema } from "../tools/layer2/createXyPad.js";
 import { duplicateNetworkImpl, duplicateNetworkSchema } from "../tools/layer2/duplicateNetwork.js";
+import {
+  extendDataSourceFabricImpl,
+  extendDataSourceFabricSchema,
+} from "../tools/layer2/extendDataSourceFabric.js";
 import { learnControlImpl, learnControlSchema } from "../tools/layer2/learnControl.js";
 import { manageAnnotationImpl, manageAnnotationSchema } from "../tools/layer2/manageAnnotation.js";
 import { manageCheckpointImpl, manageCheckpointSchema } from "../tools/layer2/manageCheckpoint.js";
@@ -329,6 +345,10 @@ import {
   scaffoldExtensionSchema,
 } from "../tools/layer2/scaffoldExtension.js";
 import {
+  scaffoldToolGeneratorImpl,
+  scaffoldToolGeneratorSchema,
+} from "../tools/layer2/scaffoldToolGenerator.js";
+import {
   setParametersBatchImpl,
   setParametersBatchSchema,
 } from "../tools/layer2/setParametersBatch.js";
@@ -340,6 +360,10 @@ import {
   collectProjectAssetsSchema,
 } from "../tools/layer3/collectProjectAssets.js";
 import { compareTdNodesImpl, compareTdNodesSchema } from "../tools/layer3/compareTdNodes.js";
+import {
+  controlTimelineTransportImpl,
+  controlTimelineTransportSchema,
+} from "../tools/layer3/controlTimelineTransport.js";
 import { createTdNodeImpl, createTdNodeSchema } from "../tools/layer3/createTdNode.js";
 import { deleteTdNodeImpl, deleteTdNodeSchema } from "../tools/layer3/deleteTdNode.js";
 import { diffSnapshotsImpl, diffSnapshotsSchema } from "../tools/layer3/diffSnapshots.js";
@@ -376,9 +400,14 @@ import { getTdPerformanceImpl, getTdPerformanceSchema } from "../tools/layer3/ge
 import { getTdTopologyImpl, getTdTopologySchema } from "../tools/layer3/getTdTopology.js";
 import { inspectComponentImpl, inspectComponentSchema } from "../tools/layer3/inspectComponent.js";
 import {
+  inspectGpuAndDisplaysImpl,
+  inspectGpuAndDisplaysSchema,
+} from "../tools/layer3/inspectGpuAndDisplays.js";
+import {
   optimizePerformanceImpl,
   optimizePerformanceSchema,
 } from "../tools/layer3/optimizePerformance.js";
+import { profileCookCostImpl, profileCookCostSchema } from "../tools/layer3/profileCookCost.js";
 import {
   projectDocumentationSiteImpl,
   projectDocumentationSiteSchema,
@@ -471,6 +500,7 @@ import {
   tdBaseUrl,
 } from "../utils/config.js";
 import { silentLogger } from "../utils/logger.js";
+import { runBridgeWatchBuild } from "./bridgeWatchBuild.js";
 import { runDoctor } from "./doctor.js";
 import { type PanicSubVerb, runPanic } from "./panicBlackout.js";
 import {
@@ -487,6 +517,7 @@ import {
   runSetlist,
   setlistRunnerCliSchema,
 } from "./setlistRunner.js";
+import { runSoundcheckMonitor, soundcheckMonitorSchema } from "./soundcheckMonitor.js";
 
 // biome-ignore lint/suspicious/noExplicitAny: args are validated by each command's zod schema before use.
 type Runner = (ctx: ToolContext, args: any) => CallToolResult | Promise<CallToolResult>;
@@ -1561,6 +1592,65 @@ const COMMANDS: Record<string, Command> = {
     scoreBuildImpl,
     "Score a built network 0–100 (palette/motion/complexity/errors/perf) with improvement suggestions.",
   ),
+  // Campaign BEYOND Wave 4 (backlog 2026-05-30 — v0.7.0):
+  "engine-comp": r(
+    createEngineCompSchema,
+    createEngineCompImpl,
+    "Build a load-balanced Engine COMP cluster for offloading sub-networks to worker processes.",
+    { mutates: true },
+  ),
+  "dmx-fixture-pipeline": r(
+    createDmxFixturePipelineSchema,
+    createDmxFixturePipelineImpl,
+    "Build a DMX/Art-Net fixture pipeline (channels → patch → Art-Net Out).",
+    { mutates: true },
+  ),
+  "scaffold-tool-generator": r(
+    scaffoldToolGeneratorSchema,
+    scaffoldToolGeneratorImpl,
+    "Scaffold a new tdmcp tool file + msw unit test from an inline spec.",
+    { mutates: true },
+  ),
+  "extend-data-source-fabric": r(
+    extendDataSourceFabricSchema,
+    extendDataSourceFabricImpl,
+    "Extend create_data_source with new feed adapters (websocket/sse/mqtt/file-tail/process).",
+    { mutates: true },
+  ),
+  "build-chop-chain": r(
+    buildChopChainSchema,
+    buildChopChainImpl,
+    "Assemble a typed CHOP-processing chain from a recipe of stages.",
+    { mutates: true },
+  ),
+  "author-script-operator": r(
+    authorScriptOperatorSchema,
+    authorScriptOperatorImpl,
+    "Author a Script CHOP/TOP/SOP/DAT with validated callbacks + parameters.",
+    { mutates: true },
+  ),
+  "nodes profile": r(
+    profileCookCostSchema,
+    profileCookCostImpl,
+    "Profile per-node cook cost (n samples) and rank hot spots.",
+  ),
+  timeline: r(
+    controlTimelineTransportSchema,
+    controlTimelineTransportImpl,
+    "Control TD timeline transport (play/pause/seek/rate/range).",
+    { mutates: true },
+  ),
+  "gpu-displays": r(
+    inspectGpuAndDisplaysSchema,
+    inspectGpuAndDisplaysImpl,
+    "Inspect host GPU + connected displays (offline-friendly).",
+  ),
+  "macro-record": r(
+    macroRecorderSchema,
+    macroRecorderImpl,
+    "Record / stop / list / load tool-call macros (replay ships in wave 5).",
+    { mutates: true },
+  ),
 };
 
 export interface CliResult {
@@ -1818,6 +1908,8 @@ function nearestCommand(input: string): string | undefined {
     "setlist",
     "schedule",
     "version",
+    "watch-build",
+    "soundcheck-monitor",
   ];
   for (const key of keys) {
     const d = editDistance(input, key);
@@ -1927,6 +2019,8 @@ function completionScript(shell: string): string | undefined {
     "setlist",
     "schedule",
     "version",
+    "watch-build",
+    "soundcheck-monitor",
   ];
   const flags = [
     "--params",
@@ -2630,6 +2724,48 @@ function csvFlag(argv: string[], name: string): string[] | undefined {
 async function main(): Promise<void> {
   const argv = process.argv.slice(2);
   const wantsHelp = argv.includes("--help") || argv.includes("-h");
+  // `watch-build` (dev-loop tsc/tsup watcher) and `soundcheck-monitor` (long-running
+  // audio-features poller) bypass runCli's request/response model. Campaign BEYOND Wave 4.
+  if (argv[0] === "watch-build" && !wantsHelp) {
+    process.exitCode = await runBridgeWatchBuild(argv.slice(1));
+    return;
+  }
+  if (argv[0] === "soundcheck-monitor" && !wantsHelp) {
+    const raw = assembleParams(parseCliArgs(argv).values);
+    if ("error" in raw) {
+      process.stderr.write(`Invalid soundcheck-monitor params: ${raw.error}\n`);
+      process.exitCode = 2;
+      return;
+    }
+    const parsed = soundcheckMonitorSchema.safeParse(raw.raw);
+    if (!parsed.success) {
+      process.stderr.write(`Invalid soundcheck-monitor params: ${parsed.error.message}\n`);
+      process.exitCode = 2;
+      return;
+    }
+    let ctx: ToolContext;
+    try {
+      ctx = buildToolContext(loadConfig(process.env, { useFiles: true }), {
+        logger: silentLogger,
+      });
+    } catch (err) {
+      process.stderr.write(`${(err as Error).message}\n`);
+      process.exitCode = 2;
+      return;
+    }
+    const ac = new AbortController();
+    const onSig = () => ac.abort();
+    process.on("SIGINT", onSig);
+    process.on("SIGTERM", onSig);
+    try {
+      await runSoundcheckMonitor(ctx, parsed.data, ac.signal);
+      process.exitCode = 0;
+    } catch (err) {
+      process.stderr.write(`${(err as Error).message}\n`);
+      process.exitCode = 1;
+    }
+    return;
+  }
   // `watch` (a long-lived stream) and `repl` (interactive) bypass runCli's request/response model.
   if (argv[0] === "watch" && !wantsHelp) {
     await runWatch({

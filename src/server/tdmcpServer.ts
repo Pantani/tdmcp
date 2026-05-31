@@ -1,4 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { getMacroRecorder } from "../automation/macroSchema.js";
 import { createLazyLlmClient } from "../llm/resolve.js";
 import { registerAllPrompts } from "../prompts/index.js";
 import { registerAllResources } from "../resources/index.js";
@@ -40,7 +41,29 @@ export function createTdmcpServer(
   // before the client's initialize request arrives.
   ctx.llm = createLazyLlmClient(config, server.server);
 
-  registerAllTools(server, ctx);
+  // Wrap registerTool so each registered handler is recorded when a macro is
+  // active (macro_recorder itself is exempt via the recorder's own guard).
+  // Installed BEFORE registerAllTools so every tool picks up the hook.
+  const macroRecorder = getMacroRecorder();
+  // biome-ignore lint/suspicious/noExplicitAny: registerTool is heavily overloaded — type the bound copy as variadic so we can transparently wrap the final handler.
+  const realRegisterTool = server.registerTool.bind(server) as (...args: any[]) => unknown;
+  // biome-ignore lint/suspicious/noExplicitAny: forwarding the SDK's variadic registerTool signature.
+  (server as any).registerTool = (name: string, ...rest: any[]) => {
+    const handler = rest[rest.length - 1];
+    if (typeof handler === "function") {
+      // biome-ignore lint/suspicious/noExplicitAny: handler args/return are tool-specific.
+      const wrapped = macroRecorder.wrapHandler<any, any>(name, handler);
+      rest[rest.length - 1] = wrapped;
+    }
+    return realRegisterTool(name, ...rest);
+  };
+
+  try {
+    registerAllTools(server, ctx);
+  } finally {
+    // biome-ignore lint/suspicious/noExplicitAny: restore the original method post-registration.
+    (server as any).registerTool = realRegisterTool;
+  }
   registerAllResources(server, { knowledge, recipes, logger, client: ctx.client });
   registerAllPrompts(server, { knowledge, recipes, logger });
 

@@ -245,6 +245,30 @@ NL pass). `create_phone_gesture` and `create_two_way_surface` are gated
   **`create_phone_gesture`** *(pending hardware)* — IMU + multitouch from a phone
   over a Web Server DAT.
 
+### Milestone 1.7 — TD-depth authoring + DX accelerators · (Unreleased — pending version bump)
+
+*Campaign `beyond_20260530` Wave 4 — drops 10 new MCP tools (Layer 1/2/3 +
+a new `cli` tool group) and 2 long-running CLI streamers. Registry now **231**
+(was 221). Pushes the TouchDesigner authoring depth (Engine COMP clustering,
+DMX/Art-Net pipelines, Script-OP authoring, CHOP-chain recipes, timeline
+transport, GPU/display inventory, cook-cost profiler) and the agent DX
+(tool scaffolder, macro recorder, dev-loop watcher, soundcheck monitor).*
+
+- **TD-depth authoring** — **`create_engine_comp`** (load-balanced Engine COMP
+  cluster), **`create_dmx_fixture_pipeline`** (DMX/Art-Net fixture pipeline),
+  **`build_chop_chain`** (typed CHOP-processing recipes), and
+  **`author_script_operator`** (validated Script CHOP/TOP/SOP/DAT authoring).
+- **Telemetry & control** — **`profile_cook_cost`** (per-node cook profiler),
+  **`control_timeline_transport`** (structured play/pause/seek/rate/range), and
+  **`inspect_gpu_and_displays`** (offline-friendly host capability inventory).
+- **Agent DX** — **`scaffold_tool_generator`** (scaffold a tool + msw test from
+  a spec), **`extend_data_source_fabric`** (new data-feed adapters), and the
+  **`macro_recorder`** tool with a process-wide `wrapHandler` hook (replay
+  ships next wave as `run_macro_script`).
+- **CLI streamers** — **`tdmcp-agent watch-build`** (chokidar dev-loop with
+  debounced tsc/tsup) and **`tdmcp-agent soundcheck-monitor`** (rolling-window
+  RMS/peak/silence alert streamer).
+
 ### Milestone 2 — Plug into the ecosystem & the iconic looks · ~v0.9.0
 
 *A wide, mostly independent content wave — ideal to build side by side.*

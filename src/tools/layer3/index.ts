@@ -4,6 +4,7 @@ import { registerAnalyzeProject } from "./analyzeProject.js";
 import { registerCaptionTop } from "./captionTop.js";
 import { registerCollectProjectAssets } from "./collectProjectAssets.js";
 import { registerCompareTdNodes } from "./compareTdNodes.js";
+import { registerControlTimelineTransport } from "./controlTimelineTransport.js";
 import { registerCreateTdNode } from "./createTdNode.js";
 import { registerDeleteTdNode } from "./deleteTdNode.js";
 import { registerDiffSnapshots } from "./diffSnapshots.js";
@@ -27,9 +28,11 @@ import { registerGetTdNodes } from "./getTdNodes.js";
 import { registerGetTdPerformance } from "./getTdPerformance.js";
 import { registerGetTdTopology } from "./getTdTopology.js";
 import { registerInspectComponent } from "./inspectComponent.js";
+import { registerInspectGpuAndDisplays } from "./inspectGpuAndDisplays.js";
 import { registerLintRecipeLibrary } from "./lintRecipeLibrary.js";
 import { registerManagePackages } from "./managePackages.js";
 import { registerOptimizePerformance } from "./optimizePerformance.js";
+import { registerProfileCookCost } from "./profileCookCost.js";
 import { registerProjectDocumentationSite } from "./projectDocumentationSite.js";
 import { registerReadParameterModes } from "./readParameterModes.js";
 import { registerRecordMovie } from "./recordMovie.js";
@@ -100,4 +103,8 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerLintRecipeLibrary,
   // Campaign BEYOND Wave 3 (backlog 2026-05-30 — v0.7.0):
   registerScoreBuild,
+  // Campaign BEYOND Wave 4 (backlog 2026-05-30 — v0.7.0):
+  registerProfileCookCost,
+  registerControlTimelineTransport,
+  registerInspectGpuAndDisplays,
 ];
