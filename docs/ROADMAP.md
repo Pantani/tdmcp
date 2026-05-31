@@ -14,9 +14,10 @@ rough, and what's coming next** on the way to a stable 1.0.
 [npm](https://www.npmjs.com/package/@dpantani/tdmcp) and
 [GitHub](https://github.com/Pantani/tdmcp) — exposing **179 tools**. `main` is
 ahead of that release: the package manifests are on the **v0.7.0** line and the
-BEYOND campaign has landed through Waves 1-5, bringing the registry to **245**
-tools. There is no public `v0.7.x` tag, GitHub Release or npm publish yet, so
-read the 0.7.x sections below as **merged on `main`, pending release**.
+BEYOND campaign has landed through Waves 1-5, bringing the generated Tools
+reference to **243 tools**. There is no public `v0.7.x` tag, GitHub Release or
+npm publish yet, so read the 0.7.x sections below as **merged on `main`,
+pending release**.
 
 The project has grown through five arcs:
 
@@ -590,18 +591,26 @@ BEYOND campaign has now harvested most of this round into `main`; rows marked
 
 #### B.6 · Cross-cutting (Round 2)
 
-Value that spans surfaces (kept once above under its best-fit surface; relationships explicit here):
+Value that spans surfaces (kept once above under its best-fit surface;
+relationships explicit here). Most of these relationships are now real `main`
+architecture rather than speculative planning:
 
-- **Time-based show automation** — `create_scheduler` (td-depth primitive) → `create_scene_timeline`
-  (controls) ∥ `setlist_runner` (cli) ∥ `compose_cue_list` (ai); share **one** setlist/scene schema.
-- **Run AI tools via the connected model** + a structured/image method on the LLM client — the shared
-  prerequisite for `compose_cue_list`, `score_build`, `moodboard_to_system`, `reference_to_plan` and
-  Round-1's `caption_top`/`copilot_vision`; the platform move that runs them via the connected model.
-- **"Do it my way" cluster** — `recall_similar_work` ⇄ `style_memory` ⇄ `learn_from_my_corpus`
-  ⇄ `learn_conventions` over one `Memory/` vault note schema.
-- **Morph at two altitudes** — `create_preset_morph` (live instrument) ⇄ `morph_pack` (saved asset).
-- **Engine pipeline** — `create_engine_comp` (process) ⇄ a "compile for Engine" bake on `make_portable_tox`.
-- **Library keystone** — `auto_tag_library_asset` feeds `library_lineage_graph`, `recall_similar_work` and `lint_recipe_library`.
+- **Time-based show automation** — `create_scheduler` (td-depth primitive) →
+  `create_scene_timeline` (controls) ∥ `setlist_runner` (cli) ∥
+  `compose_cue_list` (ai); all share **one** setlist/scene schema.
+- **Run AI tools via the connected model** + a structured/image method on the LLM
+  client — now used by `compose_cue_list`, `score_build`,
+  `moodboard_to_system` and Round-1's `caption_top`; `copilot_vision` remains a
+  next-step consumer.
+- **"Do it my way" cluster** — `recall_similar_work` ⇄ `style_memory` ⇄
+  `learn_from_my_corpus` ⇄ `learn_conventions` over one `Memory/` vault note
+  schema.
+- **Morph at two altitudes** — `create_preset_morph` (live instrument) ⇄
+  `morph_pack` / `variant_pack` (saved assets).
+- **Engine pipeline** — `create_engine_comp` (process) ⇄ a future "compile for
+  Engine" bake on `make_portable_tox`.
+- **Library keystone** — `auto_tag_library_asset` feeds
+  `library_lineage_graph`, `recall_similar_work` and `lint_recipe_library`.
 
 ### Round 3 — external / community sources — 2026-05-30 {#appendix-c-round3}
 
