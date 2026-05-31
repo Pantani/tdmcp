@@ -3,6 +3,7 @@ import { friendlyTdError } from "../../td-client/types.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { suggestTags } from "./autoTagLibraryAsset.js";
 import { captureThumbnail } from "./recipeThumbnail.js";
 import { requireVault } from "./shared.js";
 
@@ -32,6 +33,12 @@ export const saveComponentToVaultSchema = z.object({
     .boolean()
     .default(true)
     .describe("Capture a preview PNG next to the component note and embed it. Set false to skip."),
+  auto_tag: z
+    .boolean()
+    .optional()
+    .describe(
+      "When true, inspect the COMP's child nodes via the bridge and union the auto_tag_library_asset suggestions into the note frontmatter's `tags`.",
+    ),
 });
 type SaveComponentToVaultArgs = z.infer<typeof saveComponentToVaultSchema>;
 
@@ -70,6 +77,36 @@ print(json.dumps(report))
 export function buildSaveCompScript(payload: object): string {
   return buildPayloadScript(SAVE_COMP_SCRIPT, payload);
 }
+
+// Lightweight child-node capture used for the optional auto_tag pass —
+// matches autoTagLibraryAsset's CAPTURE_SCRIPT shape so suggestTags can read it.
+const CAPTURE_CHILDREN_SCRIPT = `
+import json, base64, traceback
+_p = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
+report = {"comp": _p["comp"], "nodes": [], "connections": [], "warnings": []}
+try:
+    _root = op(_p["comp"])
+    if _root is None:
+        report["fatal"] = "Operator not found: " + _p["comp"]
+    elif not hasattr(_root, "children"):
+        report["fatal"] = _p["comp"] + " is not a COMP."
+    else:
+        _kids = list(_root.children)
+        _names = set(c.name for c in _kids)
+        for _c in _kids:
+            report["nodes"].append({"name": _c.name, "type": _c.OPType})
+            try:
+                for _ic in _c.inputConnectors:
+                    for _oc in _ic.connections:
+                        _src = _oc.owner
+                        if _src is not None and _src.name in _names:
+                            report["connections"].append({"from": _src.name, "to": _c.name})
+            except Exception:
+                pass
+except Exception:
+    report["fatal"] = traceback.format_exc().splitlines()[-1]
+print(json.dumps(report))
+`;
 
 export async function saveComponentToVaultImpl(ctx: ToolContext, args: SaveComponentToVaultArgs) {
   const v = requireVault(ctx);
@@ -133,6 +170,41 @@ export async function saveComponentToVaultImpl(ctx: ToolContext, args: SaveCompo
                 : undefined,
           };
 
+    // Optional auto-tag — capture child nodes and union the suggested tags
+    // with the caller's. Best-effort: a capture failure simply leaves tags alone.
+    let mergedTags = args.tags;
+    let autoTagsApplied: string[] | undefined;
+    if (args.auto_tag) {
+      try {
+        const childScript = buildPayloadScript(CAPTURE_CHILDREN_SCRIPT, { comp: args.comp_path });
+        const childExec = await ctx.client.executePythonScript(childScript, true);
+        const childReport = parsePythonReport<{
+          nodes?: Array<{ name: string; type: string }>;
+          connections?: Array<{ from: string; to: string }>;
+          fatal?: string;
+        }>(childExec.stdout);
+        if (!childReport.fatal && childReport.nodes && childReport.nodes.length > 0) {
+          const suggestion = suggestTags(
+            { nodes: childReport.nodes, connections: childReport.connections ?? [] },
+            ctx.knowledge,
+          );
+          const seen = new Set(mergedTags.map((t) => t.toLowerCase()));
+          const additions: string[] = [];
+          for (const t of suggestion.suggested_tags) {
+            const k = t.toLowerCase();
+            if (!seen.has(k)) {
+              seen.add(k);
+              additions.push(t);
+            }
+          }
+          mergedTags = [...mergedTags, ...additions];
+          autoTagsApplied = suggestion.suggested_tags;
+        }
+      } catch {
+        // auto_tag is opt-in best-effort; don't fail the save.
+      }
+    }
+
     // Write the vault note — failure becomes a warning, not a fatal.
     let noteWarning: string | undefined;
     try {
@@ -141,7 +213,7 @@ export async function saveComponentToVaultImpl(ctx: ToolContext, args: SaveCompo
         {
           type: "component",
           tox: toxRelPath,
-          tags: args.tags,
+          tags: mergedTags,
           created: noteDate,
         },
         [
@@ -185,6 +257,7 @@ export async function saveComponentToVaultImpl(ctx: ToolContext, args: SaveCompo
       warnings,
       thumbnail: thumb.imageRel,
       ...(thumb.warning ? { thumbnail_warning: thumb.warning } : {}),
+      ...(autoTagsApplied ? { auto_tags: autoTagsApplied } : {}),
     });
   } catch (err) {
     return errorResult(friendlyTdError(err));

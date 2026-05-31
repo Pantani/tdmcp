@@ -127,6 +127,48 @@ describe("saveRecipeToVaultImpl", () => {
     });
   });
 
+  it("auto_tag: false (default) does not add heuristic tags to the recipe", async () => {
+    await withVault(async (vault) => {
+      mockCapture(FULL_CAPTURE);
+      const result = await saveRecipeToVaultImpl(ctxWith(vault), {
+        id: "default_tags",
+        comp_path: "/project1",
+        tags: ["custom"],
+        overwrite: false,
+        thumbnail: false,
+      });
+      expect(result.isError).toBeFalsy();
+      const md = vault.read("Recipes/default_tags.md");
+      // Only the caller's tag(s) should be present — no auto-tag families.
+      expect(md).toContain("custom");
+      expect(md).not.toContain("post-fx");
+      const data = jsonOf<{ auto_tags?: unknown }>(result);
+      expect(data.auto_tags).toBeUndefined();
+    });
+  });
+
+  it("auto_tag: true merges heuristic tags into the recipe frontmatter", async () => {
+    await withVault(async (vault) => {
+      mockCapture(FULL_CAPTURE);
+      const result = await saveRecipeToVaultImpl(ctxWith(vault), {
+        id: "tagged_rec",
+        comp_path: "/project1",
+        tags: ["custom"],
+        overwrite: false,
+        thumbnail: false,
+        auto_tag: true,
+      });
+      expect(result.isError).toBeFalsy();
+      const data = jsonOf<{ auto_tags?: string[] }>(result);
+      expect(Array.isArray(data.auto_tags)).toBe(true);
+      // blurTOP is in POST_FX_FAMILIES → expect post-fx tag suggested.
+      expect(data.auto_tags).toEqual(expect.arrayContaining(["post-fx"]));
+      const md = vault.read("Recipes/tagged_rec.md");
+      expect(md).toContain("post-fx");
+      expect(md).toContain("custom");
+    });
+  });
+
   it("surfaces a capture fatal as an error", async () => {
     await withVault(async (vault) => {
       mockCapture({

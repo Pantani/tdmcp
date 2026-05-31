@@ -242,6 +242,84 @@ describe("saveComponentToVaultImpl", () => {
     });
   });
 
+  it("auto_tag: true unions heuristic tags from a child-capture pass into the note", async () => {
+    await withVault(async (vault) => {
+      // First /api/exec call → SaveComponentReport (.tox save).
+      // Second /api/exec call → child capture report (for auto_tag).
+      let call = 0;
+      server.use(
+        http.post(`${TD_BASE}/api/exec`, () => {
+          call += 1;
+          const payload =
+            call === 1
+              ? GOOD_REPORT
+              : {
+                  comp: "/project1/myComp",
+                  nodes: [
+                    { name: "noise1", type: "noiseTOP" },
+                    { name: "blur1", type: "blurTOP" },
+                  ],
+                  connections: [{ from: "noise1", to: "blur1" }],
+                  warnings: [],
+                };
+          return HttpResponse.json({
+            ok: true,
+            data: { result: null, stdout: JSON.stringify(payload) },
+          });
+        }),
+      );
+
+      const result = await saveComponentToVaultImpl(ctxWith(vault), {
+        comp_path: "/project1/myComp",
+        name: "myComp",
+        folder: "Components",
+        tags: ["custom"],
+        description: undefined,
+        thumbnail: false,
+        auto_tag: true,
+      });
+      expect(result.isError).toBeFalsy();
+
+      const data = jsonOf<{ auto_tags?: string[] }>(result);
+      expect(Array.isArray(data.auto_tags)).toBe(true);
+      expect(data.auto_tags).toEqual(expect.arrayContaining(["post-fx"]));
+
+      const note = vault.readNote("Components/myComp.md");
+      const tags = note.data.tags as string[];
+      expect(tags).toEqual(expect.arrayContaining(["custom", "post-fx"]));
+    });
+  });
+
+  it("auto_tag default (false) does not call a second exec and leaves tags untouched", async () => {
+    await withVault(async (vault) => {
+      let call = 0;
+      server.use(
+        http.post(`${TD_BASE}/api/exec`, () => {
+          call += 1;
+          return HttpResponse.json({
+            ok: true,
+            data: { result: null, stdout: JSON.stringify(GOOD_REPORT) },
+          });
+        }),
+      );
+
+      const result = await saveComponentToVaultImpl(ctxWith(vault), {
+        comp_path: "/project1/myComp",
+        name: "myComp",
+        folder: "Components",
+        tags: ["custom"],
+        description: undefined,
+        thumbnail: false,
+      });
+      expect(result.isError).toBeFalsy();
+      expect(call).toBe(1);
+      const data = jsonOf<{ auto_tags?: unknown }>(result);
+      expect(data.auto_tags).toBeUndefined();
+      const note = vault.readNote("Components/myComp.md");
+      expect(note.data.tags).toEqual(["custom"]);
+    });
+  });
+
   it("schema defaults: folder defaults to Components, tags defaults to []", () => {
     const parsed = saveComponentToVaultSchema.parse({ comp_path: "/project1/foo" });
     expect(parsed.folder).toBe("Components");

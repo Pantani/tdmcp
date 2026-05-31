@@ -66,6 +66,41 @@ describe("import_setlist (dry_run)", () => {
     }
   });
 
+  it("accepts the new scenes[] frontmatter shape (dry_run)", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-setlist-"));
+    try {
+      const vault = new Vault(dir);
+      const demo = RecipeSchema.parse({
+        id: "vault_demo",
+        name: "Vault Demo",
+        nodes: [{ name: "n", type: "nullTOP" }],
+      });
+      vault.write("Recipes/vault_demo.md", recipeToMarkdown(demo));
+      vault.writeNote(
+        "Setlists/show_scenes.md",
+        {
+          scenes: [
+            { id: "opener", title: "Opener", recipe: "vault_demo" },
+            { id: "drop", title: "Drop", cue: "drop_cue" },
+            { id: "outro", title: "Outro", preset: "calm" },
+          ],
+        },
+        "scenes show",
+      );
+
+      const res = await importSetlistImpl(ctxWith(vault), {
+        note: "show_scenes",
+        parent_path: "/project1",
+        dry_run: true,
+      });
+      const data = jsonOf((res.content[0] as { text: string }).text);
+      expect(data.built.map((b) => b.recipe)).toEqual(["vault_demo"]);
+      expect(data.skipped).toHaveLength(2);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("errors when the note has no tracks", async () => {
     const dir = mkdtempSync(join(tmpdir(), "tdmcp-setlist-"));
     try {

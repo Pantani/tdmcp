@@ -43,6 +43,21 @@ describe("scaffold_vault", () => {
     }
   });
 
+  it("seeds the Memory/ folder with a style.md note and a README", () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-scaffold-mem-"));
+    try {
+      const vault = new Vault(dir);
+      scaffoldVaultImpl(ctxWith(vault), { overwrite: false });
+      expect(vault.exists("Memory/README.md")).toBe(true);
+      expect(vault.exists("Memory/style.md")).toBe(true);
+      const note = vault.readNote("Memory/style.md");
+      expect(note.data.type).toBe("tdmcp-memory");
+      expect(note.data.topic).toBe("style");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("skips existing files unless overwrite is set", () => {
     const dir = mkdtempSync(join(tmpdir(), "tdmcp-scaffold-"));
     try {
