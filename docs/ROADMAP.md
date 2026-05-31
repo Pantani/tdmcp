@@ -746,16 +746,16 @@ work shipped in **v0.6.0** (marked ✅).
 
 | Feature | Delivers | Effort | Impact | Conf | Priority | Novelty | Probe-first |
 |---|---|---|---|---|---|---|---|
-| `caption_top` | Preview → plain-text description (vision + histogram fallback) | M | High | Med | P1 | ROADMAP | probe-live (vision model) |
+| `caption_top` ◐ 0.7.0 | Preview → plain-text description (vision + histogram fallback) | M | High | Med | P1 | ROADMAP | probe-live (vision model) |
 | `copilot_prompt_awareness` | Feed `tdmcp://prompts` into the copilot BASE_PROMPT | S | Med | High | P1 | EXTENSION | none |
 | `copilot_smarter_handoff` | Auto-surface the Claude/Codex handoff on a dead-end | S | Med | High | P1 | ROADMAP | none |
 | `chat_cli_flags` | `chat --read-only`/`--creative`/`--prompt` (headless) | M | Med | High | P1 | ROADMAP | chat server accepts fixed tier |
 | `copilot_session_persistence` | Resume transcript + last model/tier | M | Med | High | P1 | ROADMAP | none |
 | `plan_visual`→LLM-grounded | Upgrade `describe_project` to an optional LLM planner | M | Med | High | P1 | EXTENSION | none (keyword stays default) |
 | `prompt_catalog_autogen` | Generate `tdmcp://prompts` from the registry | S | Med | High | P1 | NEW | none |
-| `teach_touchdesigner` | KB-grounded concept-tutor prompt | S | Med | High | P1 | NEW | none |
-| `design_brief` | Persistent session aesthetic direction | S | Med | High | P1 | NEW | none |
-| `repair_network` | Bounded autonomous repair tool | M | Med | Med | P2 | NEW | probe-live (bound+rollback) |
+| `teach_touchdesigner` ✅ 0.7.0 | KB-grounded concept-tutor prompt | S | Med | High | P1 | NEW | none |
+| `design_brief` ✅ 0.7.0 | Persistent session aesthetic direction | S | Med | High | P1 | NEW | none |
+| `repair_network` ◐ 0.7.0 | Bounded autonomous repair tool | M | Med | Med | P2 | NEW | probe-live (bound+rollback) |
 | `copilot_vision` | Image-aware local copilot | M | Med | Med | P2 | EXTENSION | probe-live (image blocks) |
 | `cookbook_resource` | Expose the prompt-cookbook as `tdmcp://cookbook` | S | Med | Med | P2 | NEW | machine-readable source |
 | `llm_config_knobs` | `TDMCP_LLM_TIER`/`_MAX_STEPS`/`_TEMPERATURE` keys | S | Low | High | P2 | NEW | none |
