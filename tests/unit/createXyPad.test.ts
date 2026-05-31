@@ -198,6 +198,11 @@ describe("createXyPadSchema defaults", () => {
     expect(parsed.size).toBe(256);
   });
 
+  it("rejects degenerate pad sizes", () => {
+    expect(() => createXyPadSchema.parse({ size: 0 })).toThrow();
+    expect(() => createXyPadSchema.parse({ size: -1 })).toThrow();
+  });
+
   it("rejects a range that is not length 2", () => {
     expect(() => createXyPadSchema.parse({ x_range: [0] })).toThrow();
   });

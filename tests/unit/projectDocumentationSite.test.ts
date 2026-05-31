@@ -222,7 +222,7 @@ describe("projectDocumentationSiteImpl", () => {
     expect(existsSync(join(dir, "thumbs", "out1.png"))).toBe(true);
     expect(existsSync(join(dir, "thumbs", "noise1.png"))).toBe(true);
     expect(existsSync(join(dir, "thumbs", "blur1.png"))).toBe(false);
-    expect(readFileSync(join(dir, "gallery.md"), "utf8")).toContain("![out1](out1.png)");
+    expect(readFileSync(join(dir, "gallery.md"), "utf8")).toContain("![out1](thumbs/out1.png)");
   });
 
   it("returns an isError result when the Python report carries a fatal field", async () => {

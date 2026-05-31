@@ -51,8 +51,8 @@ export interface DocSiteReport {
 }
 
 // ---------------------------------------------------------------------------
-// Python script: walk the subtree in ONE pass inside TD and report nodes +
-// connections. Mirrors the bridge's get_network_topology connector walk
+// Python script: walk the direct children in ONE pass inside TD and report
+// nodes + connections. Mirrors the bridge's get_network_topology connector walk
 // (child.inputConnectors -> .connections -> cab.outOP.path), so the edge data
 // matches what document_network/generate_readme already rely on. Every section
 // is guarded so a single bad node lands in warnings[] instead of dropping the
@@ -285,7 +285,7 @@ export async function projectDocumentationSiteImpl(
           writeFileSync(join(outDir, rel), Buffer.from(preview.base64, "base64"));
           filesWritten.push(rel);
           thumbnails.push(rel);
-          gallery.push({ name: node.name, file: `${node.name}.png` });
+          gallery.push({ name: node.name, file: rel });
         } catch (err) {
           warnings.push(
             `thumbnail ${node.name}: ${err instanceof Error ? err.message : String(err)}`,
@@ -325,7 +325,7 @@ export const registerProjectDocumentationSite: ToolRegistrar = (server, ctx) => 
       description:
         "Compose a one-folder handoff/portfolio documentation PACKAGE for a network: a README.md (title, node count, per-family summary, how-to-load note), a topology.md with a Mermaid graph of the connections, and - when include_thumbnails is set - preview PNGs of output TOPs under thumbs/ linked from gallery.md, all written into out_dir. Unlike generate_readme (a single file), this assembles a small multi-file site folder for sharing or archiving a project.",
       inputSchema: projectDocumentationSiteSchema.shape,
-      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     (args) => projectDocumentationSiteImpl(ctx, args),
   );

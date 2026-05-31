@@ -48,6 +48,7 @@ export const createXyPadSchema = z.object({
   size: z.coerce
     .number()
     .int()
+    .min(1)
     .default(400)
     .describe("Pad size in pixels (square: width = height = size)."),
 });

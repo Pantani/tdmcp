@@ -37,6 +37,10 @@ const SAFE_PROFILE_EXCLUDE = new Set<string>([
   "refresh_asset_previews", // writes preview images
   "install_library_package", // copies/extracts package files
   "create_modulators", // rebuilds a same-named container, clearing its children
+  "project_documentation_site", // writes/overwrites documentation files
+  "import_recipe_from_url", // downloads and writes recipe files
+  "export_palette_component", // writes .tox files into the Palette
+  "collect_project_assets", // may overwrite the local asset manifest
 ]);
 
 /** Registers every tool (all layers) against the MCP server, honoring the profile. */
