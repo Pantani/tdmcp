@@ -25,6 +25,14 @@ interface PatchedNodeBody {
   parameters: Record<string, unknown>;
 }
 
+interface BatchOperation {
+  action: string;
+  source_path?: string;
+  target_path?: string;
+  source_output?: number;
+  target_input?: number;
+}
+
 interface PanelControl {
   name: string;
   type?: string;
@@ -108,6 +116,21 @@ function captureExecScripts(): string[] {
     }),
   );
   return scripts;
+}
+
+function captureBatchOperations(): BatchOperation[] {
+  const operations: BatchOperation[] = [];
+  server.use(
+    http.post(`${TD_BASE}/api/batch`, async ({ request }) => {
+      const body = (await request.json()) as { operations: BatchOperation[] };
+      operations.push(...body.operations);
+      return HttpResponse.json({
+        ok: true,
+        data: { results: body.operations.map((op) => ({ action: op.action, ok: true })) },
+      });
+    }),
+  );
+  return operations;
 }
 
 function panelControls(scripts: string[]): PanelControl[] {
@@ -241,13 +264,16 @@ describe("create_vector_lines", () => {
     const bodies = captureCreateBodies();
     const patches = captureParameterPatches();
     const scripts = captureExecScripts();
+    const batchOps = captureBatchOperations();
 
     const result = await createVectorLinesImpl(makeCtx(), defaultArgs());
 
     expect(result.isError).toBeFalsy();
     const byName = new Map(bodies.map((b) => [b.name, b]));
     expect(byName.get("vector_lines")?.type).toBe("baseCOMP");
-    expect(byName.get("source_noise")?.type).toBe("noiseTOP");
+    expect(byName.get("source_card")?.type).toBe("glslTOP");
+    expect(byName.get("source_card_frag")?.type).toBe("textDAT");
+    expect(bodies.some((b) => b.type === "noiseTOP" && b.name === "source_noise")).toBe(false);
     expect(byName.get("fit_source")?.type).toBe("fitTOP");
     expect(byName.get("source_display")?.type).toBe("nullTOP");
     expect(byName.get("monochrome")?.type).toBe("monochromeTOP");
@@ -261,6 +287,8 @@ describe("create_vector_lines", () => {
     expect(byName.get("wire")?.type).toBe("wireframeMAT");
     expect(byName.get("cam")?.type).toBe("cameraCOMP");
     expect(byName.get("render_vectors")?.type).toBe("renderTOP");
+    expect(byName.get("line_art")?.type).toBe("glslTOP");
+    expect(byName.get("line_art_frag")?.type).toBe("textDAT");
     expect(byName.get("vectors_opacity")?.type).toBe("levelTOP");
     expect(byName.get("vectors_out")?.type).toBe("nullTOP");
     expect(byName.get("overlay")?.type).toBe("compositeTOP");
@@ -278,6 +306,31 @@ describe("create_vector_lines", () => {
     expect(scripts.some((s) => s.includes("def onPulse(par)") && s.includes("prep_out"))).toBe(
       true,
     );
+    const allScripts = scripts.join("\n");
+    expect(allScripts).toContain("static contour source card");
+    expect(allScripts).toContain("uniform vec3 uLineColor");
+    expect(allScripts).toContain("uniform float uWidth");
+    expect(allScripts).toContain("uTD2DInfos[0].res.xy");
+    expect(allScripts).toContain("uLineColor * alpha");
+    expect(allScripts).toContain("alpha *= inside");
+    expect(allScripts).not.toContain("uTD2DInfos[0].res.zw * max(uWidth");
+    expect(allScripts).not.toContain("absTime.seconds");
+    expect(
+      batchOps.some(
+        (op) =>
+          op.source_path?.endsWith("/vectors_opacity") &&
+          op.target_path?.endsWith("/overlay") &&
+          op.target_input === 0,
+      ),
+    ).toBe(true);
+    expect(
+      batchOps.some(
+        (op) =>
+          op.source_path?.endsWith("/source_display") &&
+          op.target_path?.endsWith("/overlay") &&
+          op.target_input === 1,
+      ),
+    ).toBe(true);
   });
 
   it("uses Select TOP for existing TOP source and does not create camera/file inputs", async () => {
@@ -361,6 +414,13 @@ describe("create_vector_lines", () => {
     expect(callbackText).toContain('"Linecolorr"');
     expect(callbackText).toContain('"Linecolorg"');
     expect(callbackText).toContain('"Linecolorb"');
+
+    const lineArtBind = scripts.find((s) => s.includes("uLineColor") && s.includes("uWidth"));
+    expect(lineArtBind).toContain("parent().par.Linecolorr.eval()");
+    expect(lineArtBind).toContain("parent().par.Linecolorg.eval()");
+    expect(lineArtBind).toContain("parent().par.Linecolorb.eval()");
+    expect(lineArtBind).toContain("parent().par.Linewidth.eval()");
+    expect(lineArtBind).toContain("else 5");
   });
 
   it("exposes the vectorize pulse and core controls", async () => {
@@ -395,7 +455,7 @@ describe("create_vector_lines", () => {
     const report = textJson(result);
 
     expect(report.container).toBe("/project1/vector_lines");
-    expect(report.source_path).toBe("/project1/vector_lines/source_noise");
+    expect(report.source_path).toBe("/project1/vector_lines/source_card");
     expect(report.prep_path).toBe("/project1/vector_lines/prep_out");
     expect(report.snapshot_path).toContain("tdmcp_snapshots/vector_lines/vector_lines_latest.png");
     expect(report.trace_sop).toBe("/project1/vector_lines/trace1");

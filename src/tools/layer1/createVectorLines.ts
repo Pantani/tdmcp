@@ -159,6 +159,74 @@ function pyDict(entries: Array<[string, string | number | boolean]>): string {
   return `{${entries.map(([key, value]) => `'${key}': ${pyValue(value)}`).join(", ")}}`;
 }
 
+function syntheticSourceShader(): string {
+  return `out vec4 fragColor;
+
+float circle_sdf(vec2 p, vec2 c, float r) {
+    return length(p - c) - r;
+}
+
+float box_sdf(vec2 p, vec2 c, vec2 b) {
+    vec2 d = abs(p - c) - b;
+    return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
+}
+
+float fill_shape(float d) {
+    return 1.0 - smoothstep(0.0, 0.006, d);
+}
+
+float stroke_shape(float d, float w) {
+    return 1.0 - smoothstep(w, w + 0.006, abs(d));
+}
+
+void main() {
+    vec2 uv = vUV.st;
+    vec2 p = uv - 0.5;
+    p.x *= 16.0 / 9.0;
+
+    float shape = 0.0;
+    shape = max(shape, stroke_shape(circle_sdf(p, vec2(-0.42, 0.08), 0.22), 0.018));
+    shape = max(shape, fill_shape(circle_sdf(p, vec2(0.42, 0.16), 0.13)));
+    shape = max(shape, fill_shape(box_sdf(p, vec2(0.0, -0.16), vec2(0.22, 0.11))));
+    shape = max(shape, stroke_shape(box_sdf(p, vec2(0.0, -0.16), vec2(0.34, 0.2)), 0.014));
+
+    vec2 q = mat2(0.866, -0.5, 0.5, 0.866) * (p - vec2(0.25, -0.18));
+    shape = max(shape, fill_shape(box_sdf(q, vec2(0.0), vec2(0.36, 0.035))));
+
+    float grid_x = 1.0 - smoothstep(0.006, 0.011, abs(fract(uv.x * 8.0) - 0.5));
+    float grid_y = 1.0 - smoothstep(0.006, 0.011, abs(fract(uv.y * 5.0) - 0.5));
+    float grid = 0.22 * max(grid_x, grid_y);
+
+    float value = max(shape, grid);
+    vec3 bg = vec3(0.02, 0.025, 0.03);
+    vec3 fg = vec3(0.95, 0.97, 1.0);
+    // static contour source card: crisp synthetic shapes for first-run vector tracing.
+    fragColor = TDOutputSwizzle(vec4(mix(bg, fg, value), 1.0));
+}`;
+}
+
+function lineArtShader(): string {
+  return `out vec4 fragColor;
+uniform vec3 uLineColor;
+uniform float uWidth;
+
+void main() {
+    vec2 uv = vUV.st;
+    vec2 px = uTD2DInfos[0].res.xy * max(uWidth, 1.0);
+    float c = texture(sTD2DInputs[0], uv).r;
+    float r = texture(sTD2DInputs[0], uv + vec2(px.x, 0.0)).r;
+    float l = texture(sTD2DInputs[0], uv - vec2(px.x, 0.0)).r;
+    float u = texture(sTD2DInputs[0], uv + vec2(0.0, px.y)).r;
+    float d = texture(sTD2DInputs[0], uv - vec2(0.0, px.y)).r;
+    float edge = max(max(abs(c - r), abs(c - l)), max(abs(c - u), abs(c - d)));
+    float alpha = smoothstep(0.05, 0.22, edge);
+    float margin = max(px.x, px.y) * 1.5;
+    float inside = step(margin, uv.x) * step(margin, uv.y) * step(uv.x, 1.0 - margin) * step(uv.y, 1.0 - margin);
+    alpha *= inside;
+    fragColor = TDOutputSwizzle(vec4(uLineColor * alpha, alpha));
+}`;
+}
+
 async function buildSource(builder: NetworkBuilder, args: CreateVectorLinesArgs): Promise<string> {
   if (args.source === "existing_top") {
     const select = await builder.add("selectTOP", "source_select");
@@ -183,15 +251,17 @@ async function buildSource(builder: NetworkBuilder, args: CreateVectorLinesArgs)
     return camera;
   }
 
-  const noise = await builder.add("noiseTOP", "source_noise", {
-    monochrome: 0,
-    period: 3,
-    harmonics: 3,
+  const card = await builder.add("glslTOP", "source_card");
+  await builder.setParams(card, {
+    outputresolution: "custom",
+    resolutionw: args.analysis_resolution[0],
+    resolutionh: args.analysis_resolution[1],
   });
+  const frag = await builder.add("textDAT", "source_card_frag");
   await builder.python(
-    `_n = op(${q(noise)})\nfor _name, _expr in [("tx", "absTime.seconds * 0.06"), ("tz", "absTime.seconds * 0.09")]:\n    try:\n        _p = getattr(_n.par, _name)\n        _p.expr = _expr\n        _p.mode = type(_p.mode).EXPRESSION\n    except Exception:\n        pass`,
+    `_g = op(${q(card)})\n_f = op(${q(frag)})\nif _f is not None:\n    _f.text = ${q(syntheticSourceShader())}\nif _g is not None and _f is not None:\n    try:\n        _g.par.pixeldat = _f.name\n    except Exception:\n        pass`,
   );
-  return noise;
+  return card;
 }
 
 function traceValues(args: CreateVectorLinesArgs): Array<[string, number]> {
@@ -481,6 +551,43 @@ _e.text = ${q(options.callback)}
 `;
 }
 
+function bindLineArtShaderScript(options: {
+  lineArt: string;
+  frag: string;
+  args: CreateVectorLinesArgs;
+  rgb: Rgb;
+}) {
+  return [
+    `_g = op(${q(options.lineArt)})`,
+    `_f = op(${q(options.frag)})`,
+    `if _f is not None:`,
+    `    _f.text = ${q(lineArtShader())}`,
+    `if _g is not None and _f is not None:`,
+    `    try:`,
+    `        _g.par.pixeldat = _f.name`,
+    `    except Exception:`,
+    `        pass`,
+    `    try:`,
+    `        _g.seq.color.numBlocks = max(_g.seq.color.numBlocks, 1)`,
+    `        _g.par.color0name = 'uLineColor'`,
+    `        _g.par.color0rgbr.expr = ${q(`parent().par.Linecolorr.eval() if hasattr(parent().par, 'Linecolorr') else ${options.rgb.r}`)}`,
+    `        _g.par.color0rgbg.expr = ${q(`parent().par.Linecolorg.eval() if hasattr(parent().par, 'Linecolorg') else ${options.rgb.g}`)}`,
+    `        _g.par.color0rgbb.expr = ${q(`parent().par.Linecolorb.eval() if hasattr(parent().par, 'Linecolorb') else ${options.rgb.b}`)}`,
+    `        _g.par.color0rgbr.mode = type(_g.par.color0rgbr.mode).EXPRESSION`,
+    `        _g.par.color0rgbg.mode = type(_g.par.color0rgbg.mode).EXPRESSION`,
+    `        _g.par.color0rgbb.mode = type(_g.par.color0rgbb.mode).EXPRESSION`,
+    `    except Exception:`,
+    `        pass`,
+    `    try:`,
+    `        _g.seq.vec.numBlocks = max(_g.seq.vec.numBlocks, 1)`,
+    `        _g.par.vec0name = 'uWidth'`,
+    `        _g.par.vec0valuex.expr = ${q(`parent().par.Linewidth.eval() if hasattr(parent().par, 'Linewidth') else ${options.args.line_width}`)}`,
+    `        _g.par.vec0valuex.mode = type(_g.par.vec0valuex.mode).EXPRESSION`,
+    `    except Exception:`,
+    `        pass`,
+  ].join("\n");
+}
+
 function controlsFor(args: CreateVectorLinesArgs, paths: Record<string, string>): ControlSpec[] {
   if (!args.expose_controls) return [];
 
@@ -617,7 +724,7 @@ export async function createVectorLinesImpl(ctx: ToolContext, args: CreateVector
       }),
     );
 
-    const cam = await builder.add("cameraCOMP", "cam", { tz: 3, projection: "orthographic" });
+    const cam = await builder.add("cameraCOMP", "cam", { tz: 3, projection: "ortho" });
     const light = await builder.add("lightCOMP", "light", { tz: 4 });
     const render = await builder.add("renderTOP", "render_vectors");
     await builder.setParams(render, {
@@ -629,9 +736,19 @@ export async function createVectorLinesImpl(ctx: ToolContext, args: CreateVector
       lights: light,
     });
 
+    const lineArt = await builder.add("glslTOP", "line_art");
+    await builder.setParams(lineArt, {
+      outputresolution: "custom",
+      resolutionw: resW,
+      resolutionh: resH,
+    });
+    await builder.connect(frozen, lineArt);
+    const lineArtFrag = await builder.add("textDAT", "line_art_frag");
+    await builder.python(bindLineArtShaderScript({ lineArt, frag: lineArtFrag, args, rgb }));
+
     const vectorsOpacity = await builder.add("levelTOP", "vectors_opacity");
     await builder.setParams(vectorsOpacity, { opacity: args.opacity });
-    await builder.connect(render, vectorsOpacity);
+    await builder.connect(lineArt, vectorsOpacity);
 
     const vectorsOut = await builder.add("nullTOP", "vectors_out");
     await builder.connect(vectorsOpacity, vectorsOut);
@@ -641,8 +758,8 @@ export async function createVectorLinesImpl(ctx: ToolContext, args: CreateVector
     if (args.show_source) {
       overlay = await builder.add("compositeTOP", "overlay");
       await builder.setParams(overlay, { operand: args.overlay_mode });
-      await builder.connect(sourceDisplay, overlay, 0, 0);
-      await builder.connect(vectorsOpacity, overlay, 0, 1);
+      await builder.connect(vectorsOpacity, overlay, 0, 0);
+      await builder.connect(sourceDisplay, overlay, 0, 1);
       outputInput = overlay;
     }
 
@@ -737,7 +854,7 @@ export const registerCreateVectorLines: ToolRegistrar = (server, ctx) => {
     {
       title: "Create vector lines",
       description:
-        "Build a pulse-driven image-to-vector-lines system: capture a still frame from a synthetic, camera, file, or existing TOP source, prepare a monochrome mask, freeze it to a snapshot, trace it through a Trace SOP into editable vector geometry, render the vectors, and composite them over the source. Phase 1 is intentionally not realtime: the artist presses the Vectorize pulse to update trace1/frozen_frame, keeping cook cost bounded. Source defaults to synthetic so it previews without camera permissions; camera is opt-in. Exposes Vectorize, Threshold, PreBlur, StepSize, Smooth/Fit/Border toggles, line color/width, opacity, overlay mode, and calibration knobs. Returns the container, source/prep/frozen/trace/vector/output paths, warnings for unverified Trace/snapshot details, and a preview.",
+        "Build a pulse-driven image-to-vector-lines system: capture a still frame from a synthetic, camera, file, or existing TOP source, prepare a monochrome mask, freeze it to a snapshot, trace it through a Trace SOP for editable vector geometry, generate a clean TOP line-art overlay, and composite it over the source. Phase 1 is intentionally not realtime: the artist presses the Vectorize pulse to update trace1/frozen_frame, keeping cook cost bounded. Source defaults to a static synthetic contour card so it previews without camera permissions or moving noise; camera is opt-in. Exposes Vectorize, Threshold, PreBlur, StepSize, Smooth/Fit/Border toggles, line color/width, opacity, overlay mode, and calibration knobs. Returns the container, source/prep/frozen/trace/vector/output paths, warnings for unverified Trace/snapshot details, and a preview.",
       inputSchema: createVectorLinesSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
