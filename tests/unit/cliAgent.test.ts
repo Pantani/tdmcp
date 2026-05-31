@@ -39,6 +39,15 @@ describe("tdmcp-agent CLI", () => {
     expect(JSON.stringify(doc.input)).toContain("parent_path");
   });
 
+  it("emits a JSON Schema for the vector-lines shorthand", async () => {
+    const r = await runCli(["schema", "vector-lines"]);
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.command).toBe("vector-lines");
+    expect(JSON.stringify(doc.input)).toContain("existing_top_path");
+    expect(JSON.stringify(doc.input)).toContain("overlay_mode");
+  });
+
   it("prints the version with --version (no TD needed)", async () => {
     const r = await runCli(["--version"]);
     expect(r.code).toBe(0);

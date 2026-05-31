@@ -1,322 +1,493 @@
-import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { describe, expect, it, vi } from "vitest";
+import { HttpResponse, http } from "msw";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { KnowledgeBase } from "../../src/knowledge/index.js";
+import { RecipeLibrary } from "../../src/recipes/loader.js";
+import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
 import {
-  buildVectorLinesScript,
   createVectorLinesImpl,
   createVectorLinesSchema,
-} from "../../src/tools/layer2/createVectorLines.js";
+  registerCreateVectorLines,
+} from "../../src/tools/layer1/createVectorLines.js";
+import { layer1Registrars } from "../../src/tools/layer1/index.js";
 import type { ToolContext } from "../../src/tools/types.js";
 import { silentLogger } from "../../src/utils/logger.js";
+import { makeTdServer, TD_BASE } from "../helpers/tdMock.js";
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-interface Payload {
+interface CreatedNodeBody {
   parent_path: string;
+  type: string;
+  name?: string;
+  parameters?: Record<string, unknown>;
+}
+
+interface PatchedNodeBody {
+  path: string;
+  parameters: Record<string, unknown>;
+}
+
+interface BatchOperation {
+  action: string;
+  source_path?: string;
+  target_path?: string;
+  source_output?: number;
+  target_input?: number;
+}
+
+interface PanelControl {
   name: string;
-  source_top: string;
-  style: "contour" | "trace" | "plotter";
-  threshold: number;
-  line_width: number;
-  line_color: number[];
-  bg_color: number[];
-  animate: boolean;
-  resolution: number[];
+  type?: string;
+  default?: unknown;
+  min?: number;
+  max?: number;
+  menu_items?: string[];
+  bind_to?: string[];
 }
 
-function decodePayload(script: string): Payload {
-  const b64 = /b64decode\("([^"]+)"\)/.exec(script)?.[1];
-  if (b64 === undefined) throw new Error("no base64 payload found in script");
-  return JSON.parse(Buffer.from(b64, "base64").toString("utf8")) as Payload;
+interface VectorLinesReport {
+  container: string;
+  source_path: string;
+  prep_path: string;
+  snapshot_path: string;
+  trace_sop: string;
+  vectors_output: string;
+  output_path: string;
+  controls?: { added: string[]; bound: number };
+  warnings: string[];
 }
 
-function fakeCtx(exec: ReturnType<typeof vi.fn>): ToolContext {
+const server = makeTdServer();
+beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
+
+function makeCtx(): ToolContext {
   return {
-    client: { executePythonScript: exec },
+    client: new TouchDesignerClient({ baseUrl: TD_BASE, timeoutMs: 2000 }),
+    knowledge: new KnowledgeBase(),
+    recipes: new RecipeLibrary(),
     logger: silentLogger,
-  } as unknown as ToolContext;
+  };
 }
 
-function scriptArg(exec: ReturnType<typeof vi.fn>): string {
-  const s = exec.mock.calls[0]?.[0];
-  if (typeof s !== "string") throw new Error("executePythonScript not called with a string");
-  return s;
+function defaultArgs(): Parameters<typeof createVectorLinesImpl>[1] {
+  return createVectorLinesSchema.parse({});
 }
 
-function textOf(result: CallToolResult): string {
+function captureCreateBodies(): CreatedNodeBody[] {
+  const bodies: CreatedNodeBody[] = [];
+  server.use(
+    http.post(`${TD_BASE}/api/nodes`, async ({ request }) => {
+      const body = (await request.json()) as CreatedNodeBody;
+      bodies.push(body);
+      const name = body.name ?? `${body.type.replace(/[^a-zA-Z0-9]/g, "").toLowerCase()}1`;
+      return HttpResponse.json({
+        ok: true,
+        data: { path: `${body.parent_path}/${name}`, type: body.type, name },
+      });
+    }),
+  );
+  return bodies;
+}
+
+function captureParameterPatches(): PatchedNodeBody[] {
+  const patches: PatchedNodeBody[] = [];
+  server.use(
+    http.patch(`${TD_BASE}/api/nodes/:seg`, async ({ params, request }) => {
+      const body = (await request.json()) as { parameters: Record<string, unknown> };
+      const raw = params.seg;
+      const path = decodeURIComponent(Array.isArray(raw) ? (raw[0] ?? "") : String(raw ?? ""));
+      patches.push({ path, parameters: body.parameters });
+      return HttpResponse.json({
+        ok: true,
+        data: { path, type: "unknown", name: path.split("/").at(-1), parameters: body.parameters },
+      });
+    }),
+  );
+  return patches;
+}
+
+function captureExecScripts(): string[] {
+  const scripts: string[] = [];
+  server.use(
+    http.post(`${TD_BASE}/api/exec`, async ({ request }) => {
+      const body = (await request.json()) as { script: string };
+      scripts.push(body.script);
+      return HttpResponse.json({ ok: true, data: { result: null, stdout: "" } });
+    }),
+  );
+  return scripts;
+}
+
+function captureBatchOperations(): BatchOperation[] {
+  const operations: BatchOperation[] = [];
+  server.use(
+    http.post(`${TD_BASE}/api/batch`, async ({ request }) => {
+      const body = (await request.json()) as { operations: BatchOperation[] };
+      operations.push(...body.operations);
+      return HttpResponse.json({
+        ok: true,
+        data: { results: body.operations.map((op) => ({ action: op.action, ok: true })) },
+      });
+    }),
+  );
+  return operations;
+}
+
+function panelControls(scripts: string[]): PanelControl[] {
+  const panel = scripts.find((s) => s.includes("appendCustomPage"));
+  const b64 = /b64decode\("([^"]+)"\)/.exec(panel ?? "")?.[1];
+  if (b64 === undefined) return [];
+  const payload = JSON.parse(Buffer.from(b64, "base64").toString("utf8")) as {
+    controls: PanelControl[];
+  };
+  return payload.controls;
+}
+
+function textJson(result: Awaited<ReturnType<typeof createVectorLinesImpl>>): VectorLinesReport {
+  const text = result.content.find((c) => c.type === "text") as { text: string } | undefined;
+  const match = /```json\n([\s\S]+?)\n```/.exec(text?.text ?? "");
+  expect(match?.[1]).toBeDefined();
+  return JSON.parse(match?.[1] ?? "{}") as VectorLinesReport;
+}
+
+function contentText(result: Awaited<ReturnType<typeof createVectorLinesImpl>>): string {
   return result.content
     .filter((c): c is { type: "text"; text: string } => c.type === "text")
     .map((c) => c.text)
     .join("\n");
 }
 
-/** A representative success report the Python pass would emit. */
-function happyReport(
-  overrides: Partial<{
-    style: string;
-    output_top: string;
-    edge_par_used: string;
-    trace_optype_used: string;
-    warnings: string[];
-  }> = {},
-) {
-  return JSON.stringify({
-    container: "/project1/vector_lines",
-    output_top: overrides.output_top ?? "/project1/vector_lines/out",
-    edge_top: "/project1/vector_lines/edge",
-    trace_sop: "",
-    style: overrides.style ?? "contour",
-    edge_par_used: overrides.edge_par_used ?? "strength",
-    trace_optype_used: overrides.trace_optype_used ?? "",
-    warnings: overrides.warnings ?? [],
-  });
-}
+describe("create_vector_lines", () => {
+  it("registers the tool with the expected annotations and schema", () => {
+    const calls: Array<{ name: string; config: Record<string, unknown> }> = [];
+    const fakeServer = {
+      registerTool(name: string, config: Record<string, unknown>) {
+        calls.push({ name, config });
+      },
+    };
 
-/** Full args object — every defaulted field passed explicitly (impl bypasses schema parsing). */
-function args(overrides: Partial<Payload> = {}): Payload {
-  return {
-    parent_path: "/project1",
-    name: "vector_lines",
-    source_top: "/project1/moviein1",
-    style: "contour",
-    threshold: 0.3,
-    line_width: 2,
-    line_color: [1, 1, 1],
-    bg_color: [0, 0, 0],
-    animate: true,
-    resolution: [1280, 720],
-    ...overrides,
-  };
-}
+    registerCreateVectorLines(fakeServer as never, makeCtx());
 
-// ---------------------------------------------------------------------------
-// buildVectorLinesScript — pure, no TD needed
-// ---------------------------------------------------------------------------
-
-describe("buildVectorLinesScript (pure payload)", () => {
-  it("embeds all schema fields in the base64 payload", () => {
-    const script = buildVectorLinesScript(args());
-    const payload = decodePayload(script);
-    expect(payload.parent_path).toBe("/project1");
-    expect(payload.name).toBe("vector_lines");
-    expect(payload.source_top).toBe("/project1/moviein1");
-    expect(payload.style).toBe("contour");
-    expect(payload.threshold).toBe(0.3);
-    expect(payload.line_width).toBe(2);
-    expect(payload.line_color).toEqual([1, 1, 1]);
-    expect(payload.bg_color).toEqual([0, 0, 0]);
-    expect(payload.animate).toBe(true);
-    expect(payload.resolution).toEqual([1280, 720]);
-  });
-
-  it("embeds trace style with custom colors and resolution", () => {
-    const script = buildVectorLinesScript(
-      args({
-        style: "trace",
-        line_color: [1, 0.2, 0],
-        bg_color: [0.05, 0.05, 0.1],
-        resolution: [1920, 1080],
-        threshold: 0.6,
-        animate: false,
-      }),
-    );
-    const payload = decodePayload(script);
-    expect(payload.style).toBe("trace");
-    expect(payload.line_color).toEqual([1, 0.2, 0]);
-    expect(payload.bg_color).toEqual([0.05, 0.05, 0.1]);
-    expect(payload.resolution).toEqual([1920, 1080]);
-    expect(payload.threshold).toBe(0.6);
-    expect(payload.animate).toBe(false);
-  });
-
-  it("uses only base64 for the payload — no raw source_top literal in the script outside the blob", () => {
-    const tricky = "/project1/UNIQUEMARKER_xyzzy";
-    const script = buildVectorLinesScript(args({ source_top: tricky }));
-    const b64 = /b64decode\("([^"]+)"\)/.exec(script)?.[1] ?? "";
-    expect(b64.length).toBeGreaterThan(0);
-    const decoded = Buffer.from(b64, "base64").toString("utf8");
-    expect(decoded).toContain(tricky);
-    const templateWithoutBlob = script.replace(b64, "REDACTED");
-    expect(templateWithoutBlob).not.toContain("UNIQUEMARKER_xyzzy");
-  });
-
-  it("script imports json and base64 and prints json.dumps(report)", () => {
-    const script = buildVectorLinesScript(args());
-    expect(script).toContain("import json, base64");
-    expect(script).toContain("print(json.dumps(report))");
-    // The TOP/SOP stages are present in the template.
-    expect(script).toContain("selectTOP");
-    expect(script).toContain("edgeTOP");
-    expect(script).toContain("glslTOP");
-    expect(script).toContain("traceSOP");
-    expect(script).toContain("nullTOP");
-  });
-
-  it("GLSL contour shader obeys the house rules (out fragColor, vUV.st, baked me.time.seconds)", () => {
-    const script = buildVectorLinesScript(args());
-    expect(script).toContain("out vec4 fragColor;");
-    expect(script).toContain("vUV.st");
-    expect(script).toContain("me.time.seconds");
-    expect(script).toContain("TDOutputSwizzle");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Schema defaults & validation
-// ---------------------------------------------------------------------------
-
-describe("createVectorLinesSchema defaults", () => {
-  it("applies all documented defaults", () => {
-    const parsed = createVectorLinesSchema.parse({ source_top: "/project1/moviein1" });
-    expect(parsed.parent_path).toBe("/project1");
-    expect(parsed.name).toBe("vector_lines");
-    expect(parsed.style).toBe("contour");
-    expect(parsed.threshold).toBe(0.3);
-    expect(parsed.line_width).toBe(2);
-    expect(parsed.line_color).toEqual([1, 1, 1]);
-    expect(parsed.bg_color).toEqual([0, 0, 0]);
-    expect(parsed.animate).toBe(true);
-    expect(parsed.resolution).toEqual([1280, 720]);
-  });
-
-  it("coerces numeric strings for threshold and line_width", () => {
-    const parsed = createVectorLinesSchema.parse({
-      source_top: "/s",
-      threshold: "0.7",
-      line_width: "4",
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.name).toBe("create_vector_lines");
+    expect(calls[0]?.config.annotations).toEqual({
+      readOnlyHint: false,
+      destructiveHint: false,
+      openWorldHint: true,
     });
-    expect(parsed.threshold).toBe(0.7);
-    expect(parsed.line_width).toBe(4);
+    expect(calls[0]?.config.inputSchema).toBe(createVectorLinesSchema.shape);
   });
 
-  it("rejects threshold > 1", () => {
-    expect(() => createVectorLinesSchema.parse({ source_top: "/s", threshold: 1.5 })).toThrow();
+  it("validates source-specific paths in the registered MCP handler", async () => {
+    const bodies = captureCreateBodies();
+    const calls: Array<{
+      name: string;
+      config: Record<string, unknown>;
+      handler: (args: unknown) => unknown;
+    }> = [];
+    const fakeServer = {
+      registerTool(
+        name: string,
+        config: Record<string, unknown>,
+        handler: (args: unknown) => unknown,
+      ) {
+        calls.push({ name, config, handler });
+      },
+    };
+
+    registerCreateVectorLines(fakeServer as never, makeCtx());
+
+    const handler = calls[0]?.handler;
+    if (handler === undefined) throw new Error("create_vector_lines handler was not registered");
+
+    const existingTopResult = (await handler({
+      source: "existing_top",
+    })) as Awaited<ReturnType<typeof createVectorLinesImpl>>;
+    expect(existingTopResult.isError).toBe(true);
+    expect(contentText(existingTopResult)).toContain("existing_top_path");
+
+    const fileResult = (await handler({ source: "file" })) as Awaited<
+      ReturnType<typeof createVectorLinesImpl>
+    >;
+    expect(fileResult.isError).toBe(true);
+    expect(contentText(fileResult)).toContain("movie_file_path");
+    expect(bodies).toHaveLength(0);
   });
 
-  it("rejects an invalid style", () => {
-    expect(() => createVectorLinesSchema.parse({ source_top: "/s", style: "scribble" })).toThrow();
+  it("is wired into the Layer 1 registrar list", () => {
+    const calls: Array<{ name: string; config: Record<string, unknown> }> = [];
+    const fakeServer = {
+      registerTool(name: string, config: Record<string, unknown>) {
+        calls.push({ name, config });
+      },
+    };
+
+    for (const register of layer1Registrars) register(fakeServer as never, makeCtx());
+
+    expect(calls.some((c) => c.name === "create_vector_lines")).toBe(true);
   });
 
-  it("rejects a line_color that is not length 3", () => {
-    expect(() => createVectorLinesSchema.parse({ source_top: "/s", line_color: [1, 1] })).toThrow();
-  });
-
-  it("rejects a resolution that is not length 2", () => {
-    expect(() => createVectorLinesSchema.parse({ source_top: "/s", resolution: [1280] })).toThrow();
-  });
-
-  it("requires source_top", () => {
-    expect(() => createVectorLinesSchema.parse({})).toThrow();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Happy path — impl integration
-// ---------------------------------------------------------------------------
-
-describe("createVectorLinesImpl — happy path", () => {
-  it("returns a non-error result with a summary line", async () => {
-    const exec = vi.fn(async () => ({ stdout: happyReport() }));
-    const result = await createVectorLinesImpl(fakeCtx(exec), args());
-    expect(result.isError).toBeFalsy();
-    const text = textOf(result);
-    expect(text).toContain("contour line-art");
-    expect(text).toContain("/project1/moviein1");
-    expect(text).toContain("/project1/vector_lines/out");
-    expect(text).toContain("(marching/animated)");
-  });
-
-  it("sends the correct payload (source_top, style, threshold, colors, resolution)", async () => {
-    const exec = vi.fn(async () => ({ stdout: happyReport({ style: "trace" }) }));
-    await createVectorLinesImpl(
-      fakeCtx(exec),
-      args({
-        source_top: "/project1/cam1",
-        style: "trace",
-        threshold: 0.55,
-        line_width: 3,
-        line_color: [0, 1, 0],
-        bg_color: [0.1, 0, 0.1],
-        resolution: [1920, 1080],
-        animate: false,
-      }),
-    );
-    const payload = decodePayload(scriptArg(exec));
-    expect(payload.source_top).toBe("/project1/cam1");
-    expect(payload.style).toBe("trace");
-    expect(payload.threshold).toBe(0.55);
-    expect(payload.line_width).toBe(3);
-    expect(payload.line_color).toEqual([0, 1, 0]);
-    expect(payload.bg_color).toEqual([0.1, 0, 0.1]);
-    expect(payload.resolution).toEqual([1920, 1080]);
-    expect(payload.animate).toBe(false);
-  });
-
-  it("omits the marching note for non-animated / non-contour styles", async () => {
-    const exec = vi.fn(async () => ({
-      stdout: happyReport({ style: "plotter", warnings: ["cook-costly"] }),
-    }));
-    const result = await createVectorLinesImpl(
-      fakeCtx(exec),
-      args({ style: "plotter", animate: false }),
-    );
-    const text = textOf(result);
-    expect(text).toContain("plotter line-art");
-    expect(text).not.toContain("(marching/animated)");
-  });
-
-  it("includes a warning count in the summary when warnings are present", async () => {
-    const exec = vi.fn(async () => ({
-      stdout: happyReport({
-        warnings: ["edgeTOP strength par not found (UNVERIFIED TD build); using Edge defaults."],
-      }),
-    }));
-    const result = await createVectorLinesImpl(fakeCtx(exec), args());
-    expect(result.isError).toBeFalsy();
-    const text = textOf(result);
-    expect(text).toContain("1 warning(s)");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Fatal — source not found
-// ---------------------------------------------------------------------------
-
-describe("createVectorLinesImpl — fatal (source not found)", () => {
-  it("returns isError:true and does not throw", async () => {
-    const exec = vi.fn(async () => ({
-      stdout: JSON.stringify({
-        container: "",
-        output_top: "",
-        edge_top: "",
-        trace_sop: "",
-        style: "contour",
-        edge_par_used: "",
-        trace_optype_used: "",
-        warnings: [],
-        fatal: "Source TOP not found: /project1/missing",
-      }),
-    }));
-    const result = await createVectorLinesImpl(
-      fakeCtx(exec),
-      args({ source_top: "/project1/missing" }),
-    );
-    expect(result.isError).toBe(true);
-    expect(textOf(result)).toContain("Source TOP not found");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// TD offline — guardTd swallows the connection error
-// ---------------------------------------------------------------------------
-
-describe("createVectorLinesImpl — TD offline", () => {
-  it("returns isError:true and does not throw when the bridge is unreachable", async () => {
-    const exec = vi.fn(async () => {
-      throw new Error("ECONNREFUSED");
+  it("defaults to safe synthetic, pulse-driven vectorization settings", () => {
+    const parsed = createVectorLinesSchema.parse({});
+    expect(parsed).toMatchObject({
+      name: "vector_lines",
+      parent_path: "/project1",
+      source: "synthetic",
+      mode: "hybrid_foreground",
+      analysis_resolution: [640, 360],
+      threshold: 0.45,
+      pre_blur: 2,
+      invert: false,
+      remove_borders: true,
+      resample: true,
+      step_size: 4,
+      smooth_shapes: true,
+      fit_curves: false,
+      line_color: "#49dcb2",
+      line_width: 2,
+      opacity: 0.9,
+      overlay_mode: "over",
+      show_source: true,
+      expose_controls: true,
     });
-    const result = await createVectorLinesImpl(fakeCtx(exec), args());
+  });
+
+  it("rejects invalid ranges and missing source-specific paths", () => {
+    expect(() => createVectorLinesSchema.parse({ threshold: 2 })).toThrow();
+    expect(() => createVectorLinesSchema.parse({ opacity: -0.1 })).toThrow();
+    expect(() => createVectorLinesSchema.parse({ step_size: 0 })).toThrow();
+    expect(() => createVectorLinesSchema.parse({ line_color: "green" })).toThrow(/line_color/);
+    expect(() => createVectorLinesSchema.parse({ line_color: "#abc" })).toThrow(/line_color/);
+    expect(() => createVectorLinesSchema.parse({ line_color: "49dcb2" })).toThrow(/line_color/);
+    expect(() => createVectorLinesSchema.parse({ source: "existing_top" })).toThrow();
+    expect(() => createVectorLinesSchema.parse({ source: "file" })).toThrow();
+  });
+
+  it("creates the synthetic source, prep chain, frozen frame, trace/render chain, and outputs", async () => {
+    const bodies = captureCreateBodies();
+    const patches = captureParameterPatches();
+    const scripts = captureExecScripts();
+    const batchOps = captureBatchOperations();
+
+    const result = await createVectorLinesImpl(makeCtx(), defaultArgs());
+
+    expect(result.isError).toBeFalsy();
+    const byName = new Map(bodies.map((b) => [b.name, b]));
+    expect(byName.get("vector_lines")?.type).toBe("baseCOMP");
+    expect(byName.get("source_card")?.type).toBe("glslTOP");
+    expect(byName.get("source_card_frag")?.type).toBe("textDAT");
+    expect(bodies.some((b) => b.type === "noiseTOP" && b.name === "source_noise")).toBe(false);
+    expect(byName.get("fit_source")?.type).toBe("fitTOP");
+    expect(byName.get("source_display")?.type).toBe("nullTOP");
+    expect(byName.get("monochrome")?.type).toBe("monochromeTOP");
+    expect(byName.get("pre_blur")?.type).toBe("blurTOP");
+    expect(byName.get("mask")?.type).toBe("thresholdTOP");
+    expect(byName.get("invert")?.type).toBe("levelTOP");
+    expect(byName.get("prep_out")?.type).toBe("nullTOP");
+    expect(byName.get("frozen_frame")?.type).toBe("moviefileinTOP");
+    expect(byName.get("trace1")?.type).toBe("traceSOP");
+    expect(byName.get("vector_geo")?.type).toBe("geometryCOMP");
+    expect(byName.get("wire")?.type).toBe("wireframeMAT");
+    expect(byName.get("cam")?.type).toBe("cameraCOMP");
+    expect(byName.get("render_vectors")?.type).toBe("renderTOP");
+    expect(byName.get("line_art")?.type).toBe("glslTOP");
+    expect(byName.get("line_art_frag")?.type).toBe("textDAT");
+    expect(byName.get("vectors_opacity")?.type).toBe("levelTOP");
+    expect(byName.get("vectors_out")?.type).toBe("nullTOP");
+    expect(byName.get("overlay")?.type).toBe("compositeTOP");
+    expect(byName.get("out1")?.type).toBe("nullTOP");
+
+    expect(
+      patches.some((p) => p.path.endsWith("/fit_source") && p.parameters.resolutionw === 640),
+    ).toBe(true);
+    expect(patches.some((p) => p.path.endsWith("/mask") && p.parameters.threshold === 0.45)).toBe(
+      true,
+    );
+    expect(
+      patches.some((p) => p.path.endsWith("/overlay") && p.parameters.operand === "over"),
+    ).toBe(true);
+    expect(scripts.some((s) => s.includes("def onPulse(par)") && s.includes("prep_out"))).toBe(
+      true,
+    );
+    const allScripts = scripts.join("\n");
+    expect(allScripts).toContain("static contour source card");
+    expect(allScripts).toContain("uniform vec3 uLineColor");
+    expect(allScripts).toContain("uniform float uWidth");
+    expect(allScripts).toContain("uTD2DInfos[0].res.xy");
+    expect(allScripts).toContain("uLineColor * alpha");
+    expect(allScripts).toContain("alpha *= inside");
+    expect(allScripts).not.toContain("uTD2DInfos[0].res.zw * max(uWidth");
+    expect(allScripts).not.toContain("absTime.seconds");
+    expect(
+      batchOps.some(
+        (op) =>
+          op.source_path?.endsWith("/render_vectors") &&
+          op.target_path?.endsWith("/line_art") &&
+          op.target_input === 0,
+      ),
+    ).toBe(true);
+    expect(
+      batchOps.some(
+        (op) => op.source_path?.endsWith("/frozen_frame") && op.target_path?.endsWith("/line_art"),
+      ),
+    ).toBe(false);
+    expect(
+      batchOps.some(
+        (op) =>
+          op.source_path?.endsWith("/vectors_opacity") &&
+          op.target_path?.endsWith("/overlay") &&
+          op.target_input === 0,
+      ),
+    ).toBe(true);
+    expect(
+      batchOps.some(
+        (op) =>
+          op.source_path?.endsWith("/source_display") &&
+          op.target_path?.endsWith("/overlay") &&
+          op.target_input === 1,
+      ),
+    ).toBe(true);
+  });
+
+  it("uses Select TOP for existing TOP source and does not create camera/file inputs", async () => {
+    const bodies = captureCreateBodies();
+    captureParameterPatches();
+    captureExecScripts();
+
+    await createVectorLinesImpl(makeCtx(), {
+      ...defaultArgs(),
+      source: "existing_top",
+      existing_top_path: "/project1/movie1",
+    });
+
+    expect(bodies.some((b) => b.type === "selectTOP" && b.name === "source_select")).toBe(true);
+    expect(bodies.some((b) => b.type === "videodeviceinTOP")).toBe(false);
+    expect(bodies.some((b) => b.type === "moviefileinTOP" && b.name === "source_file")).toBe(false);
+  });
+
+  it("creates a Video Device In TOP only when camera source is explicitly requested", async () => {
+    const bodies = captureCreateBodies();
+    captureParameterPatches();
+    captureExecScripts();
+
+    await createVectorLinesImpl(makeCtx(), {
+      ...defaultArgs(),
+      source: "camera",
+      camera_device: "FaceTime HD Camera",
+    });
+
+    expect(bodies.some((b) => b.type === "videodeviceinTOP" && b.name === "source_camera")).toBe(
+      true,
+    );
+    expect(bodies.some((b) => b.type === "noiseTOP" && b.name === "source_noise")).toBe(false);
+  });
+
+  it("maps args into prep, trace, opacity, overlay, and callback behavior", async () => {
+    captureCreateBodies();
+    const patches = captureParameterPatches();
+    const scripts = captureExecScripts();
+
+    await createVectorLinesImpl(makeCtx(), {
+      ...defaultArgs(),
+      threshold: 0.72,
+      pre_blur: 6,
+      remove_borders: false,
+      smooth_shapes: false,
+      opacity: 0.55,
+      overlay_mode: "screen",
+      step_size: 8,
+      line_color: "#ff8800",
+      line_width: 5,
+    });
+
+    expect(patches.some((p) => p.path.endsWith("/pre_blur") && p.parameters.size === 6)).toBe(true);
+    expect(patches.some((p) => p.path.endsWith("/mask") && p.parameters.threshold === 0.72)).toBe(
+      true,
+    );
+    expect(
+      patches.some((p) => p.path.endsWith("/vectors_opacity") && p.parameters.opacity === 0.55),
+    ).toBe(true);
+    expect(
+      patches.some((p) => p.path.endsWith("/overlay") && p.parameters.operand === "screen"),
+    ).toBe(true);
+
+    const setup = scripts.find((s) => s.includes("TRACE_PARAM_VALUES"));
+    expect(setup).toContain("'thresh': 0.72");
+    expect(setup).toContain("'delborder': 0");
+    expect(setup).toContain("'dosmooth': 0");
+    expect(setup).toContain("'step': 8");
+    expect(setup).toContain("#ff8800");
+    expect(setup).toContain("linewidth");
+    expect(setup).toContain('["sop", "soppath", "input"]');
+    expect(setup).toContain('["sop", "soppath"]');
+    expect(setup).not.toContain('["sop", "soppath", "soppath"');
+    expect(scripts.join("\n")).not.toContain("has none of parameters");
+    expect(scripts.join("\n")).toContain("has none of the parameters");
+
+    const callback = scripts.find((s) => s.includes("def _sync_look(owner, warnings):"));
+    const callbackText = callback?.replaceAll('\\"', '"') ?? "";
+    expect(callbackText).toContain('values["colorr"]');
+    expect(callbackText).toContain('"Linecolorr"');
+    expect(callbackText).toContain('"Linecolorg"');
+    expect(callbackText).toContain('"Linecolorb"');
+
+    const lineArtBind = scripts.find((s) => s.includes("uLineColor") && s.includes("uWidth"));
+    expect(lineArtBind).toContain("parent().par.Linecolorr.eval()");
+    expect(lineArtBind).toContain("parent().par.Linecolorg.eval()");
+    expect(lineArtBind).toContain("parent().par.Linecolorb.eval()");
+    expect(lineArtBind).toContain("parent().par.Linewidth.eval()");
+    expect(lineArtBind).toContain("else 5");
+  });
+
+  it("exposes the vectorize pulse and core controls", async () => {
+    captureCreateBodies();
+    captureParameterPatches();
+    const scripts = captureExecScripts();
+
+    await createVectorLinesImpl(makeCtx(), defaultArgs());
+
+    const controls = panelControls(scripts);
+    expect(controls.find((c) => c.name === "Vectorize")?.type).toBe("pulse");
+    expect(controls.find((c) => c.name === "Threshold")?.default).toBe(0.45);
+    expect(controls.find((c) => c.name === "PreBlur")?.default).toBe(2);
+    expect(controls.find((c) => c.name === "StepSize")?.default).toBe(4);
+    expect(controls.find((c) => c.name === "OverlayMode")?.menu_items).toEqual([
+      "over",
+      "add",
+      "screen",
+      "multiply",
+    ]);
+    expect(controls.find((c) => c.name === "LineColor")?.type).toBe("rgb");
+    expect(controls.find((c) => c.name === "Mode")).toBeUndefined();
+    expect(controls.find((c) => c.name === "ShowSource")).toBeUndefined();
+  });
+
+  it("returns the expected vector-line paths and warnings", async () => {
+    captureCreateBodies();
+    captureParameterPatches();
+    captureExecScripts();
+
+    const result = await createVectorLinesImpl(makeCtx(), defaultArgs());
+    const report = textJson(result);
+
+    expect(report.container).toBe("/project1/vector_lines");
+    expect(report.source_path).toBe("/project1/vector_lines/source_card");
+    expect(report.prep_path).toBe("/project1/vector_lines/prep_out");
+    expect(report.snapshot_path).toContain("tdmcp_snapshots/vector_lines/vector_lines_latest.png");
+    expect(report.trace_sop).toBe("/project1/vector_lines/trace1");
+    expect(report.vectors_output).toBe("/project1/vector_lines/vectors_out");
+    expect(report.output_path).toBe("/project1/vector_lines/out1");
+    expect(report.warnings.join("\n")).toContain("Trace SOP source parameter");
+  });
+
+  it("returns isError and does not throw when the bridge is unreachable", async () => {
+    server.use(
+      http.post(`${TD_BASE}/api/nodes`, () => HttpResponse.error()),
+      http.post(`${TD_BASE}/api/exec`, () => HttpResponse.error()),
+    );
+
+    const result = await createVectorLinesImpl(makeCtx(), defaultArgs());
+    expect(result).toBeDefined();
     expect(result.isError).toBe(true);
   });
 });

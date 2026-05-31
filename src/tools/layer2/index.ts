@@ -41,7 +41,6 @@ import { registerCreateScheduler } from "./createScheduler.js";
 import { registerCreateSidechainPump } from "./createSidechainPump.js";
 import { registerCreateStageDashboard } from "./createStageDashboard.js";
 import { registerCreateTimeEcho } from "./createTimeEcho.js";
-import { registerCreateVectorLines } from "./createVectorLines.js";
 import { registerCreateXyPad } from "./createXyPad.js";
 import { registerDuplicateNetwork } from "./duplicateNetwork.js";
 import { registerLearnControl } from "./learnControl.js";
@@ -118,7 +117,6 @@ export const layer2Registrars: ToolRegistrar[] = [
   registerCreateXyPad,
   registerCreateTimeEcho,
   registerCreateCaptureLoop,
-  registerCreateVectorLines,
   // Campaign BEYOND Wave 1 (backlog 2026-05-30 — v0.7.0):
   registerCreateAutoMontage,
   registerCreateEuclideanSequencer,

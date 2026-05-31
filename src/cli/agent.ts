@@ -165,6 +165,10 @@ import {
 } from "../tools/layer1/createTextOverlay.js";
 import { createTransitionImpl, createTransitionSchema } from "../tools/layer1/createTransition.js";
 import {
+  createVectorLinesImpl,
+  createVectorLinesSchema,
+} from "../tools/layer1/createVectorLines.js";
+import {
   createVideoPlayerImpl,
   createVideoPlayerSchema,
 } from "../tools/layer1/createVideoPlayer.js";
@@ -270,10 +274,6 @@ import {
   createStageDashboardSchema,
 } from "../tools/layer2/createStageDashboard.js";
 import { createTimeEchoImpl, createTimeEchoSchema } from "../tools/layer2/createTimeEcho.js";
-import {
-  createVectorLinesImpl,
-  createVectorLinesSchema,
-} from "../tools/layer2/createVectorLines.js";
 import { createXyPadImpl, createXyPadSchema } from "../tools/layer2/createXyPad.js";
 import { duplicateNetworkImpl, duplicateNetworkSchema } from "../tools/layer2/duplicateNetwork.js";
 import { learnControlImpl, learnControlSchema } from "../tools/layer2/learnControl.js";
@@ -1145,6 +1145,12 @@ const COMMANDS: Record<string, Command> = {
     "Stylise a source as halftone dots / CMYK / dither / posterize (GLSL).",
     { mutates: true },
   ),
+  "vector-lines": r(
+    createVectorLinesSchema,
+    createVectorLinesImpl,
+    "Pulse-capture a source image into editable Trace SOP vector lines composited over the source.",
+    { mutates: true },
+  ),
   "feedback-tunnel": r(
     createFeedbackTunnelSchema,
     createFeedbackTunnelImpl,
@@ -1261,12 +1267,6 @@ const COMMANDS: Record<string, Command> = {
     createCaptureLoopSchema,
     createCaptureLoopImpl,
     "Bidirectional Spout/Syphon/NDI bridge (receive + publish in one container).",
-    { mutates: true },
-  ),
-  "vector-lines": r(
-    createVectorLinesSchema,
-    createVectorLinesImpl,
-    "Turn an image/video into animated line-art / contour / plotter via edge-trace.",
     { mutates: true },
   ),
   "library-diff": r(

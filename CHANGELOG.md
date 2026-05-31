@@ -134,8 +134,8 @@ artist controls, library/vault, and the CLI. Live-validated in TD 099.
     (feedback + Level-TOP decay), slit-scan and time-displace (`timeMachineTOP`).
   - **`create_capture_loop`** — bidirectional Spout/Syphon/NDI bridge (receive +
     publish in one container), anti-feedback by design.
-  - **`create_vector_lines`** — image/video → animated line-art (contour shader) or
-    Trace-SOP plotter geometry.
+  - **`create_vector_lines`** — image/video → pulse-captured Trace-SOP vector
+    geometry composited back over the source.
   - **`create_blob_reactive`** — camera/TOP blob-position tracking (`blobtrackTOP`)
     bound to parameters (blob-channel layout pending a live-camera validation pass).
 - **`.safeskillignore`** so the SafeSkill scanner skips generated knowledge-base
