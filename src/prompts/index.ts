@@ -27,6 +27,9 @@ import { registerTweakVisual } from "./tweakVisual.js";
 import type { PromptContext } from "./types.js";
 import { registerVisualAbCompare } from "./visualAbCompare.js";
 import { registerVisualArtistMode } from "./visualArtistMode.js";
+// Campaign Wave 6 — AI & LLM (backlog 2026-05-29):
+import { registerDesignBrief } from "./designBrief.js";
+import { registerTeachTouchDesigner } from "./teachTouchDesigner.js";
 import { registerVjSetBuilder } from "./vjSetBuilder.js";
 
 /** Registers every MCP prompt against the server. */
@@ -59,6 +62,9 @@ export function registerAllPrompts(server: McpServer, ctx: PromptContext): void 
   registerVisualAbCompare(server, ctx);
   registerLyricShow(server, ctx);
   registerGenreVisualLanguage(server, ctx);
+  // Campaign Wave 6 — AI & LLM (backlog 2026-05-29):
+  registerTeachTouchDesigner(server, ctx);
+  registerDesignBrief(server, ctx);
   registerMotionCritique(server, ctx);
   registerMatchReferenceLoop(server, ctx);
 }

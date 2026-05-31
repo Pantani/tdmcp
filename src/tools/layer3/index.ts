@@ -38,6 +38,11 @@ import { registerSnapshotTdGraph } from "./snapshotTdGraph.js";
 import { registerSummarizeTdErrors } from "./summarizeTdErrors.js";
 import { registerUpdateTdNodeParameters } from "./updateTdNodeParameters.js";
 import { registerWriteAgentGuide } from "./writeAgentGuide.js";
+// Campaign Waves 4 & 6 (backlog 2026-05-29):
+import { registerCaptionTop } from "./captionTop.js";
+import { registerCollectProjectAssets } from "./collectProjectAssets.js";
+import { registerProjectDocumentationSite } from "./projectDocumentationSite.js";
+import { registerRepairNetwork } from "./repairNetwork.js";
 
 export const layer3Registrars: ToolRegistrar[] = [
   registerGetTdInfo,
@@ -83,4 +88,10 @@ export const layer3Registrars: ToolRegistrar[] = [
   // Phase 15 — component introspection + network serialization:
   registerInspectComponent,
   registerSerializeNetwork,
+  // Campaign Wave 4 — library/packaging (backlog 2026-05-29):
+  registerCollectProjectAssets,
+  registerProjectDocumentationSite,
+  // Campaign Wave 6 — AI & LLM (backlog 2026-05-29):
+  registerCaptionTop,
+  registerRepairNetwork,
 ];
