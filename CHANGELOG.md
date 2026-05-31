@@ -4,6 +4,139 @@ All notable changes to **tdmcp** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+**Wave 2 — Show automation + musical reactivity** (campaign `beyond_20260530`).
+Eight new Layer-1 tools and one CLI verb turn the v0.7.0 live-show foundation
+into a smarter, more musical conductor. Tool registry is now **213** (was 205).
+Three reactivity tools ship marked `[experimental]`; two control surfaces are
+gated `unverified_pending_hardware` (live phone + motorized-controller probes
+required before they leave that flag).
+
+### Added (Wave 2)
+
+- **`compose_cue_list`** — natural language → fireable cue sequence. Uses the
+  local LLM when configured, with a grammar fallback so it works offline.
+- **`create_prob_sequencer`** — Markov-chain step sequencer with beat-pointer
+  deduplication; drives recipe / scene / cue triggers from a probability matrix.
+- **`create_two_way_surface`** *(unverified_pending_hardware)* — closed-loop
+  OSC/MIDI feedback to motorized faders and lit pads, so the controller mirrors
+  the live parameter state.
+- **`create_automation_lane`** — record + loop a parameter sweep on a bar phase
+  using `beatCHOP`; turns any knob move into a reusable automation clip.
+- **`create_chroma_reactive`** *(experimental)* — FFT into 12 pitch-class
+  channels, for key-aware and harmony-aware reactivity.
+- **`create_transient_reactive`** *(experimental)* — `analyzeCHOP` RMS plus
+  `filterCHOP` lag to split a signal into a transient and a sustain channel.
+- **`create_energy_structure`** *(experimental)* — adaptive energy envelope
+  with build / drop / breakdown edge detection, for song-structure-aware shows.
+- **`create_phone_gesture`** *(unverified_pending_hardware)* — IMU + multitouch
+  from a phone over a Web Server DAT, exposed as CHOP channels.
+- **`scene_scheduler`** — new CLI verb `tdmcp-agent schedule <file>`: cron-lite,
+  DST-faithful wall-clock driver for unattended installations.
+
+**Wave 3 — Library provenance + AI dispatch + scene resource** (campaign
+`beyond_20260530`). Eight new tools (across library, vault, Layer-1, Layer-3)
+plus one new MCP resource and a strengthened prompt-eval harness. Tool registry
+is now **221** (was 213); resources gain a live scene-summary view.
+
+### Added (Wave 3)
+
+- **`provenance_stamp`** — write a `.provenance.json` sidecar (sha256, source
+  COMP path, toolchain versions, git metadata, author, tags) next to any saved
+  artifact. Offline, no TD bridge.
+- **`checksum_and_verify_pack`** — compute (writes `tdmcp-checksums.json`) or
+  verify SHA-256 manifests for tdmcp artifacts (.tox, recipes, bundles).
+- **`library_lineage_graph`** — scan the vault library, extract lineage
+  frontmatter (parent_recipe, source_assets, remix_of, forked_from), and emit a
+  graph as JSON / Mermaid / Graphviz DOT.
+- **`morph_pack`** — pack a `create_preset_morph` container's slots to a
+  sha256-verified vault JSON; unpack to (re)hydrate the container.
+- **`learn_conventions`** — read-only sweep of a live TD subtree to extract
+  naming/colour/topology/parameter conventions into the vault Memory notes.
+- **`moodboard_to_system`** — ingest 1–6 moodboard images and dispatch a
+  matching generative system (palette + motion + generator pick via local LLM,
+  deterministic fallback otherwise).
+- **`audio_fingerprint_to_visual`** — sample audio, compute a 4-feature
+  fingerprint (tempo / centroid / onset density / dynamic range), and dispatch
+  the matching Layer-1 generator tuned to the fingerprint.
+- **`score_build`** — read-only 0–100 rubric scoring of a built network
+  (palette / motion / complexity / errors / perf) with deterministic improvement
+  suggestions, optional LLM critique.
+- **resource `tdmcp://scene/{view}`** — live MCP resource exposing scene
+  topology, operators, and errors views; `ResourceContext` now carries the TD
+  client.
+- New offline `prompt_eval_harness` test that catches description-quality,
+  rendering, and token-budget regressions across every registered prompt.
+
+### Changed (Wave 3)
+
+- `fix_shader` prompt description expanded past the 50-char quality threshold
+  so the harness can enforce it without a whitelist.
+
+**Wave 4 — TD-depth authoring + DX accelerators** (campaign `beyond_20260530`).
+Ten new MCP tools (across Layer 1/2/3 plus a new `cli` tool group) and two
+long-running CLI streamers, bringing the registry to **231** tools.
+
+### Added (Wave 4)
+
+- **`create_engine_comp`** — build a load-balanced Engine COMP cluster that
+  offloads a sub-network to worker processes for parallel cooking.
+- **`create_dmx_fixture_pipeline`** — build a DMX / Art-Net fixture pipeline
+  (parameter channels → patch matrix → Art-Net Out) for lighting integration.
+- **`scaffold_tool_generator`** — scaffold a new tdmcp tool file + msw unit
+  test from an inline spec; accelerates wave authoring.
+- **`extend_data_source_fabric`** — extend `create_data_source` with new feed
+  adapters (websocket / sse / mqtt / file-tail / process).
+- **`build_chop_chain`** — assemble a typed CHOP-processing chain from a recipe
+  of stages, with per-stage parameter validation.
+- **`author_script_operator`** — author a Script CHOP/TOP/SOP/DAT with validated
+  callbacks + parameters; eliminates raw-Python ceremony.
+- **`profile_cook_cost`** — read-only profiler that samples per-node cook cost
+  across N frames and ranks hot spots.
+- **`control_timeline_transport`** — drive TD timeline transport (play/pause/
+  seek/rate/range) as a structured tool instead of raw exec.
+- **`inspect_gpu_and_displays`** — offline-friendly host GPU + display inventory
+  for stage prep + capability sniffing.
+- **`macro_recorder`** — start/stop/list/load tool-call macros to portable JSON
+  via a process-wide `wrapHandler` hook installed at server boot. Replay ships
+  in wave 5 as `run_macro_script`.
+- **`tdmcp-agent watch-build`** — long-running dev-loop CLI (chokidar-based)
+  that re-runs `tsc --noEmit` + `tsup` on debounced changes under `src/` and
+  `td/`.
+- **`tdmcp-agent soundcheck-monitor`** — long-running audio-features poller
+  that emits rolling-window RMS/peak/silence alert events (ndjson on stdout).
+- Adds `chokidar ^4.0.3` as a devDependency for the watch-build streamer.
+
+**Wave 5 — Final P2 tail: library trust + CLI/remote ergonomics + AI copilot polish + TD-depth long-tail** (campaign `beyond_20260530`). Thirteen new MCP tools (Layer 1/2/3, library, vault, cli group) plus six long-running CLI streamers/dispatchers, bringing the registry to **245** tools. Closes out the BEYOND backlog.
+
+### Added (Wave 5)
+
+- **`curated_collection_pack`** — bundle a curated set of vault/library assets into a verifiable, checksummed pack with provenance metadata.
+- **`component_changelog_trail`** — write/read a per-component changelog trail across versions; offline, scoped to a vault folder.
+- **`merge_vaults`** — safely merge two Obsidian vaults with conflict detection (sha256), `--dry-run` planning, and a Markdown audit log.
+- **`vault_repo_sync`** — sync a vault directory to a git remote (clone / pull / push) with auth guard rails.
+- **`variant_pack`** — generate a variant pack from a base vault asset (parametric mutations + manifest).
+- **`learn_from_my_corpus`** — mine the vault corpus to surface style/usage conventions and emit a structured learnings report.
+- **`create_shared_memory_bridge`** — wire a SharedMem In/Out bridge between TD processes (textures + CHOPs) for low-latency IPC.
+- **`build_sop_geometry`** — assemble a typed SOP geometry chain from a recipe of stages, with per-stage param validation (mirrors `build_chop_chain`).
+- **`sync_timecode`** — lock the show clock to external LTC / MTC / OSC / MIDI timecode and optionally drive the TD timeline.
+- **`manage_component_storage`** — structured read/write of COMP `storage` slots (get / set / delete / list) replacing raw exec.
+- **`enhance_build`** — apply targeted improvements to an existing built network and rescore via `score_build`, reporting before/after deltas.
+- **`create_growth_system`** *(Layer 1)* — build an organic growth/branching system (L-system flavour) with audio-modulated growth rate.
+- **`run_macro_script`** *(cli group)* — replay a recorded macro script of tool calls (closes the loop on Wave-4's `macro_recorder`).
+- **`tdmcp-agent log-tail`** — long-running, filterable tail of the bridge log stream with regex include/exclude.
+- **`tdmcp-agent record-fixtures`** — record live bridge HTTP traffic to a replayable msw fixture (adds `fetchImpl` plumbing on `buildToolContext`).
+- **`tdmcp-agent fanout`** — fan a single CLI invocation out to N remote tdmcp agents and aggregate results.
+- **`tdmcp-agent controller-bridge`** — bridge a MIDI/OSC control surface to CLI commands for hands-on driving.
+- **`tdmcp-agent voice`** / **`llm-voice`** — voice-driven copilot chat loop (push-to-talk → STT → tool dispatch).
+
+### Changed (Wave 5)
+
+- `buildToolContext` accepts an optional `fetchImpl` override (forwarded to the TouchDesigner client) so the fixture-recorder CLI can wrap bridge calls.
+
+[Unreleased]: https://github.com/Pantani/tdmcp/compare/v0.7.1...HEAD
+
 ## [0.7.1] - 2026-05-31
 
 **Wave 1.5 — deferred items from v0.7.0**. Folds in the three follow-ups that

@@ -12,7 +12,7 @@ rough, and what's coming next** on the way to a stable 1.0.
 
 **Where things stand today.** The current release is **v0.7.0** — on
 [npm](https://www.npmjs.com/package/@dpantani/tdmcp) and
-[GitHub](https://github.com/Pantani/tdmcp) — exposing **179 tools**. The project
+[GitHub](https://github.com/Pantani/tdmcp) — exposing **179 tools** (245 on `main` pending release). The project
 has grown through four arcs:
 
 1. **Generate** — one-line tools that build a whole wired network (audio-reactive,
@@ -220,7 +220,77 @@ plus the P0 show-automation consumers (`setlist_runner`, `create_scene_timeline`
 - **Library keystone** — **`auto_tag_library_asset`** (one of the foundations
   above).
 
-### Milestone 2 — Plug into the ecosystem & the iconic looks · ~v0.8.0
+### Milestone 1.5 — Show automation + musical reactivity · (Unreleased — pending version bump)
+
+*Campaign `beyond_20260530` Wave 2 — turns the v0.7.0 live-show foundation into
+a smarter, more musical conductor. Eight Layer-1 tools and one CLI verb (registry
+now 213). `compose_cue_list` lands here (carries into Milestone 3 for the deeper
+NL pass). `create_phone_gesture` and `create_two_way_surface` are gated
+`unverified_pending_hardware` (live phone + motorized-controller probe required).
+`create_chroma_reactive`, `create_transient_reactive`, and
+`create_energy_structure` ship marked `[experimental]`.*
+
+- **Show automation** — **`compose_cue_list`** (natural language → fireable cue
+  sequence, LLM with grammar fallback), **`create_automation_lane`** (record + loop
+  a param sweep on a bar phase via beatCHOP), and **`scene_scheduler`**
+  (`tdmcp-agent schedule <file>` — cron-lite, DST-faithful wall-clock driver for
+  unattended installations).
+- **Musical reactivity** *(experimental)* — **`create_chroma_reactive`** (FFT → 12
+  pitch-class channels), **`create_transient_reactive`** (analyzeCHOP RMS +
+  filterCHOP lag → transient/sustain split), **`create_energy_structure`**
+  (adaptive energy with build/drop/breakdown edges).
+- **Sequencing & control** — **`create_prob_sequencer`** (Markov-chain step
+  sequencer with beat-pointer dedup), **`create_two_way_surface`** *(pending
+  hardware)* — closed-loop OSC/MIDI feedback to motorized/lit controllers — and
+  **`create_phone_gesture`** *(pending hardware)* — IMU + multitouch from a phone
+  over a Web Server DAT.
+
+### Milestone 1.7 — TD-depth authoring + DX accelerators · (Unreleased — pending version bump)
+
+*Campaign `beyond_20260530` Wave 4 — drops 10 new MCP tools (Layer 1/2/3 +
+a new `cli` tool group) and 2 long-running CLI streamers. Registry now **231**
+(was 221). Pushes the TouchDesigner authoring depth (Engine COMP clustering,
+DMX/Art-Net pipelines, Script-OP authoring, CHOP-chain recipes, timeline
+transport, GPU/display inventory, cook-cost profiler) and the agent DX
+(tool scaffolder, macro recorder, dev-loop watcher, soundcheck monitor).*
+
+- **TD-depth authoring** — **`create_engine_comp`** (load-balanced Engine COMP
+  cluster), **`create_dmx_fixture_pipeline`** (DMX/Art-Net fixture pipeline),
+  **`build_chop_chain`** (typed CHOP-processing recipes), and
+  **`author_script_operator`** (validated Script CHOP/TOP/SOP/DAT authoring).
+- **Telemetry & control** — **`profile_cook_cost`** (per-node cook profiler),
+  **`control_timeline_transport`** (structured play/pause/seek/rate/range), and
+  **`inspect_gpu_and_displays`** (offline-friendly host capability inventory).
+- **Agent DX** — **`scaffold_tool_generator`** (scaffold a tool + msw test from
+  a spec), **`extend_data_source_fabric`** (new data-feed adapters), and the
+  **`macro_recorder`** tool with a process-wide `wrapHandler` hook (replay
+  ships next wave as `run_macro_script`).
+- **CLI streamers** — **`tdmcp-agent watch-build`** (chokidar dev-loop with
+  debounced tsc/tsup) and **`tdmcp-agent soundcheck-monitor`** (rolling-window
+  RMS/peak/silence alert streamer).
+
+### Milestone 1.9 — Library trust + CLI/remote ergonomics + AI copilot polish · (Unreleased — pending version bump)
+
+*Campaign `beyond_20260530` Wave 5 (FINAL) — drops 13 new MCP tools (Layer 1/2/3,
+library, vault, cli group) and 6 long-running CLI streamers/dispatchers. Registry
+now **245** (was 231). Closes out the BEYOND backlog: vault provenance + git
+sync + corpus mining, structured COMP storage, build rescoring, organic growth,
+timecode sync, SharedMem IPC, SOP-geometry recipes, macro replay, and the voice/
+controller/fanout/log-tail/fixture-recorder CLI ergonomics.*
+
+- **Library trust** — **`curated_collection_pack`**, **`component_changelog_trail`**,
+  **`merge_vaults`**, **`vault_repo_sync`**, **`variant_pack`**, and
+  **`learn_from_my_corpus`**.
+- **TD-depth long-tail** — **`create_shared_memory_bridge`** (SharedMem In/Out
+  IPC), **`build_sop_geometry`** (typed SOP-chain recipes), **`sync_timecode`**
+  (LTC/MTC/OSC/MIDI clock lock), **`manage_component_storage`** (structured COMP
+  `storage` slots), and **`create_growth_system`** (organic growth / L-system).
+- **AI copilot polish** — **`enhance_build`** (apply improvements + rescore via
+  `score_build`) and **`run_macro_script`** (replay the Wave-4 macro recorder).
+- **CLI streamers** — **`tdmcp-agent log-tail`**, **`record-fixtures`**,
+  **`fanout`**, **`controller-bridge`**, and **`voice`** / **`llm-voice`**.
+
+### Milestone 2 — Plug into the ecosystem & the iconic looks · ~v0.9.0
 
 *A wide, mostly independent content wave — ideal to build side by side.*
 

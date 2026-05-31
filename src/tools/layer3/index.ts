@@ -4,12 +4,15 @@ import { registerAnalyzeProject } from "./analyzeProject.js";
 import { registerCaptionTop } from "./captionTop.js";
 import { registerCollectProjectAssets } from "./collectProjectAssets.js";
 import { registerCompareTdNodes } from "./compareTdNodes.js";
+import { registerControlTimelineTransport } from "./controlTimelineTransport.js";
 import { registerCreateTdNode } from "./createTdNode.js";
 import { registerDeleteTdNode } from "./deleteTdNode.js";
 import { registerDiffSnapshots } from "./diffSnapshots.js";
 import { registerDisconnectNodes } from "./disconnectNodes.js";
 import { registerDocumentNetwork } from "./documentNetwork.js";
 import { registerEditDatContent } from "./editDatContent.js";
+import { registerElicitMissingArgs } from "./elicitMissingArgs.js";
+import { registerEnhanceBuild } from "./enhanceBuild.js";
 import { registerExecNodeMethod } from "./execNodeMethod.js";
 import { registerExecutePythonScript } from "./executePythonScript.js";
 import { registerFindTdNodes } from "./findTdNodes.js";
@@ -27,15 +30,19 @@ import { registerGetTdNodes } from "./getTdNodes.js";
 import { registerGetTdPerformance } from "./getTdPerformance.js";
 import { registerGetTdTopology } from "./getTdTopology.js";
 import { registerInspectComponent } from "./inspectComponent.js";
+import { registerInspectGpuAndDisplays } from "./inspectGpuAndDisplays.js";
 import { registerLintRecipeLibrary } from "./lintRecipeLibrary.js";
+import { registerManageComponentStorage } from "./manageComponentStorage.js";
 import { registerManagePackages } from "./managePackages.js";
 import { registerOptimizePerformance } from "./optimizePerformance.js";
+import { registerProfileCookCost } from "./profileCookCost.js";
 import { registerProjectDocumentationSite } from "./projectDocumentationSite.js";
 import { registerReadParameterModes } from "./readParameterModes.js";
 import { registerRecordMovie } from "./recordMovie.js";
 import { registerReloadBridge } from "./reloadBridge.js";
 import { registerRenderOutput } from "./renderOutput.js";
 import { registerRepairNetwork } from "./repairNetwork.js";
+import { registerScoreBuild } from "./scoreBuild.js";
 import { registerSearchOperators } from "./searchOperators.js";
 import { registerSerializeNetwork } from "./serializeNetwork.js";
 import { registerSetDatContent } from "./setDatContent.js";
@@ -97,4 +104,14 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerRepairNetwork,
   // Campaign BEYOND Wave 1 (backlog 2026-05-30 — v0.7.0):
   registerLintRecipeLibrary,
+  // Campaign BEYOND Wave 3 (backlog 2026-05-30 — v0.7.0):
+  registerScoreBuild,
+  // Campaign BEYOND Wave 4 (backlog 2026-05-30 — v0.7.0):
+  registerProfileCookCost,
+  registerControlTimelineTransport,
+  registerInspectGpuAndDisplays,
+  // Campaign BEYOND Wave 5 (backlog 2026-05-30 — v0.7.0):
+  registerManageComponentStorage,
+  registerEnhanceBuild,
+  registerElicitMissingArgs,
 ];

@@ -10,11 +10,20 @@ import { capturePreview } from "../feedback/previewCapture.js";
 import { buildToolContext } from "../server/context.js";
 import { type TdEventHandler, TdEventStream } from "../td-client/eventStream.js";
 import { friendlyTdError } from "../td-client/types.js";
+// Campaign BEYOND Wave 4 (backlog 2026-05-30 — v0.7.0):
+import { macroRecorderImpl, macroRecorderSchema } from "../tools/cli/macroRecorder.js";
+// Campaign BEYOND Wave 5 (backlog 2026-05-30 — v0.7.0):
+import { runMacroScriptImpl, runMacroScriptSchema } from "../tools/cli/runMacroScript.js";
 import {
   applyPostProcessingImpl,
   applyPostProcessingSchema,
 } from "../tools/layer1/applyPostProcessing.js";
 import { applyRecipeImpl, applyRecipeSchema } from "../tools/layer1/applyRecipe.js";
+import {
+  audioFingerprintToVisualImpl,
+  audioFingerprintToVisualSchema,
+} from "../tools/layer1/audioFingerprintToVisual.js";
+import { composeCueListImpl, composeCueListSchema } from "../tools/layer1/composeCueList.js";
 import {
   create3dAudioReactiveImpl,
   create3dAudioReactiveSchema,
@@ -24,6 +33,10 @@ import {
   createAudioReactiveImpl,
   createAudioReactiveSchema,
 } from "../tools/layer1/createAudioReactive.js";
+import {
+  createAutomationLaneImpl,
+  createAutomationLaneSchema,
+} from "../tools/layer1/createAutomationLane.js";
 import { createAutopilotImpl, createAutopilotSchema } from "../tools/layer1/createAutopilot.js";
 import {
   createBlobReactiveImpl,
@@ -33,6 +46,10 @@ import {
   createBodyReactiveImpl,
   createBodyReactiveSchema,
 } from "../tools/layer1/createBodyReactive.js";
+import {
+  createChromaReactiveImpl,
+  createChromaReactiveSchema,
+} from "../tools/layer1/createChromaReactive.js";
 import { createColorGradeImpl, createColorGradeSchema } from "../tools/layer1/createColorGrade.js";
 import {
   createCubemapDomeImpl,
@@ -55,7 +72,16 @@ import {
   createDisplacementWarpImpl,
   createDisplacementWarpSchema,
 } from "../tools/layer1/createDisplacementWarp.js";
+import {
+  createDmxFixturePipelineImpl,
+  createDmxFixturePipelineSchema,
+} from "../tools/layer1/createDmxFixturePipeline.js";
 import { createDomeOutputImpl, createDomeOutputSchema } from "../tools/layer1/createDomeOutput.js";
+import {
+  createEnergyStructureImpl,
+  createEnergyStructureSchema,
+} from "../tools/layer1/createEnergyStructure.js";
+import { createEngineCompImpl, createEngineCompSchema } from "../tools/layer1/createEngineComp.js";
 import {
   createFeedbackNetworkImpl,
   createFeedbackNetworkSchema,
@@ -77,6 +103,10 @@ import {
   createGpuParticleFieldImpl,
   createGpuParticleFieldSchema,
 } from "../tools/layer1/createGpuParticleField.js";
+import {
+  createGrowthSystemImpl,
+  createGrowthSystemSchema,
+} from "../tools/layer1/createGrowthSystem.js";
 import { createHalftoneImpl, createHalftoneSchema } from "../tools/layer1/createHalftone.js";
 import {
   createKaleidoscopeImpl,
@@ -121,6 +151,10 @@ import {
   createParticleSystemSchema,
 } from "../tools/layer1/createParticleSystem.js";
 import { createPbrSceneImpl, createPbrSceneSchema } from "../tools/layer1/createPbrScene.js";
+import {
+  createPhoneGestureImpl,
+  createPhoneGestureSchema,
+} from "../tools/layer1/createPhoneGesture.js";
 import { createPointCloudImpl, createPointCloudSchema } from "../tools/layer1/createPointCloud.js";
 import { createPopFieldImpl, createPopFieldSchema } from "../tools/layer1/createPopField.js";
 import {
@@ -131,6 +165,10 @@ import {
   createPoseTrackingImpl,
   createPoseTrackingSchema,
 } from "../tools/layer1/createPoseTracking.js";
+import {
+  createProbSequencerImpl,
+  createProbSequencerSchema,
+} from "../tools/layer1/createProbSequencer.js";
 import {
   createProjectionMappingImpl,
   createProjectionMappingSchema,
@@ -163,7 +201,15 @@ import {
   createTextOverlayImpl,
   createTextOverlaySchema,
 } from "../tools/layer1/createTextOverlay.js";
+import {
+  createTransientReactiveImpl,
+  createTransientReactiveSchema,
+} from "../tools/layer1/createTransientReactive.js";
 import { createTransitionImpl, createTransitionSchema } from "../tools/layer1/createTransition.js";
+import {
+  createTwoWaySurfaceImpl,
+  createTwoWaySurfaceSchema,
+} from "../tools/layer1/createTwoWaySurface.js";
 import {
   createVectorLinesImpl,
   createVectorLinesSchema,
@@ -189,6 +235,10 @@ import {
 import { getPreviewSchema } from "../tools/layer1/getPreview.js";
 import { importModelImpl, importModelSchema } from "../tools/layer1/importModel.js";
 import { listRecipesImpl, listRecipesSchema } from "../tools/layer1/listRecipes.js";
+import {
+  moodboardToSystemImpl,
+  moodboardToSystemSchema,
+} from "../tools/layer1/moodboardToSystem.js";
 import { scaffoldGenreImpl, scaffoldGenreSchema } from "../tools/layer1/scaffoldGenre.js";
 import { scaffoldShowImpl, scaffoldShowSchema } from "../tools/layer1/scaffoldShow.js";
 import {
@@ -202,12 +252,18 @@ import {
 } from "../tools/layer2/addCustomParameters.js";
 import { animateParameterImpl, animateParameterSchema } from "../tools/layer2/animateParameter.js";
 import { arrangeNetworkImpl, arrangeNetworkSchema } from "../tools/layer2/arrangeNetwork.js";
+import {
+  authorScriptOperatorImpl,
+  authorScriptOperatorSchema,
+} from "../tools/layer2/authorScriptOperator.js";
 import { batchOperationsImpl, batchOperationsSchema } from "../tools/layer2/batchOperations.js";
 import {
   bindAudioReactiveImpl,
   bindAudioReactiveSchema,
 } from "../tools/layer2/bindAudioReactive.js";
 import { bindToChannelImpl, bindToChannelSchema } from "../tools/layer2/bindToChannel.js";
+import { buildChopChainImpl, buildChopChainSchema } from "../tools/layer2/buildChopChain.js";
+import { buildSopGeometryImpl, buildSopGeometrySchema } from "../tools/layer2/buildSopGeometry.js";
 import { connectNodesImpl, connectNodesSchema } from "../tools/layer2/connectNodes.js";
 // Campaign Wave 3 — artist controls (backlog 2026-05-29):
 import { createBandRouterImpl, createBandRouterSchema } from "../tools/layer2/createBandRouter.js";
@@ -266,6 +322,10 @@ import {
 } from "../tools/layer2/createPythonScript.js";
 import { createReplicatorImpl, createReplicatorSchema } from "../tools/layer2/createReplicator.js";
 import {
+  createSharedMemoryBridgeImpl,
+  createSharedMemoryBridgeSchema,
+} from "../tools/layer2/createSharedMemoryBridge.js";
+import {
   createSidechainPumpImpl,
   createSidechainPumpSchema,
 } from "../tools/layer2/createSidechainPump.js";
@@ -276,6 +336,10 @@ import {
 import { createTimeEchoImpl, createTimeEchoSchema } from "../tools/layer2/createTimeEcho.js";
 import { createXyPadImpl, createXyPadSchema } from "../tools/layer2/createXyPad.js";
 import { duplicateNetworkImpl, duplicateNetworkSchema } from "../tools/layer2/duplicateNetwork.js";
+import {
+  extendDataSourceFabricImpl,
+  extendDataSourceFabricSchema,
+} from "../tools/layer2/extendDataSourceFabric.js";
 import { learnControlImpl, learnControlSchema } from "../tools/layer2/learnControl.js";
 import { manageAnnotationImpl, manageAnnotationSchema } from "../tools/layer2/manageAnnotation.js";
 import { manageCheckpointImpl, manageCheckpointSchema } from "../tools/layer2/manageCheckpoint.js";
@@ -292,10 +356,15 @@ import {
   scaffoldExtensionSchema,
 } from "../tools/layer2/scaffoldExtension.js";
 import {
+  scaffoldToolGeneratorImpl,
+  scaffoldToolGeneratorSchema,
+} from "../tools/layer2/scaffoldToolGenerator.js";
+import {
   setParametersBatchImpl,
   setParametersBatchSchema,
 } from "../tools/layer2/setParametersBatch.js";
 import { setPerformModeImpl, setPerformModeSchema } from "../tools/layer2/setPerformMode.js";
+import { syncTimecodeImpl, syncTimecodeSchema } from "../tools/layer2/syncTimecode.js";
 import { analyzeProjectImpl, analyzeProjectSchema } from "../tools/layer3/analyzeProject.js";
 import { captionTopImpl, captionTopSchema } from "../tools/layer3/captionTop.js";
 import {
@@ -303,12 +372,21 @@ import {
   collectProjectAssetsSchema,
 } from "../tools/layer3/collectProjectAssets.js";
 import { compareTdNodesImpl, compareTdNodesSchema } from "../tools/layer3/compareTdNodes.js";
+import {
+  controlTimelineTransportImpl,
+  controlTimelineTransportSchema,
+} from "../tools/layer3/controlTimelineTransport.js";
 import { createTdNodeImpl, createTdNodeSchema } from "../tools/layer3/createTdNode.js";
 import { deleteTdNodeImpl, deleteTdNodeSchema } from "../tools/layer3/deleteTdNode.js";
 import { diffSnapshotsImpl, diffSnapshotsSchema } from "../tools/layer3/diffSnapshots.js";
 import { disconnectNodesImpl, disconnectNodesSchema } from "../tools/layer3/disconnectNodes.js";
 import { documentNetworkImpl, documentNetworkSchema } from "../tools/layer3/documentNetwork.js";
 import { editDatContentImpl, editDatContentSchema } from "../tools/layer3/editDatContent.js";
+import {
+  elicitMissingArgsImpl,
+  elicitMissingArgsSchema,
+} from "../tools/layer3/elicitMissingArgs.js";
+import { enhanceBuildImpl, enhanceBuildSchema } from "../tools/layer3/enhanceBuild.js";
 import { execNodeMethodImpl, execNodeMethodSchema } from "../tools/layer3/execNodeMethod.js";
 import {
   executePythonScriptImpl,
@@ -339,9 +417,18 @@ import { getTdPerformanceImpl, getTdPerformanceSchema } from "../tools/layer3/ge
 import { getTdTopologyImpl, getTdTopologySchema } from "../tools/layer3/getTdTopology.js";
 import { inspectComponentImpl, inspectComponentSchema } from "../tools/layer3/inspectComponent.js";
 import {
+  inspectGpuAndDisplaysImpl,
+  inspectGpuAndDisplaysSchema,
+} from "../tools/layer3/inspectGpuAndDisplays.js";
+import {
+  manageComponentStorageImpl,
+  manageComponentStorageSchema,
+} from "../tools/layer3/manageComponentStorage.js";
+import {
   optimizePerformanceImpl,
   optimizePerformanceSchema,
 } from "../tools/layer3/optimizePerformance.js";
+import { profileCookCostImpl, profileCookCostSchema } from "../tools/layer3/profileCookCost.js";
 import {
   projectDocumentationSiteImpl,
   projectDocumentationSiteSchema,
@@ -354,6 +441,7 @@ import { recordMovieImpl, recordMovieSchema } from "../tools/layer3/recordMovie.
 import { reloadBridgeImpl, reloadBridgeSchema } from "../tools/layer3/reloadBridge.js";
 import { renderOutputImpl, renderOutputSchema } from "../tools/layer3/renderOutput.js";
 import { repairNetworkImpl, repairNetworkSchema } from "../tools/layer3/repairNetwork.js";
+import { scoreBuildImpl, scoreBuildSchema } from "../tools/layer3/scoreBuild.js";
 import { searchOperatorsImpl, searchOperatorsSchema } from "../tools/layer3/searchOperators.js";
 import { serializeNetworkImpl, serializeNetworkSchema } from "../tools/layer3/serializeNetwork.js";
 import { setDatContentImpl, setDatContentSchema } from "../tools/layer3/setDatContent.js";
@@ -371,6 +459,18 @@ import {
   updateTdNodeParametersSchema,
 } from "../tools/layer3/updateTdNodeParameters.js";
 import { writeAgentGuideImpl, writeAgentGuideSchema } from "../tools/layer3/writeAgentGuide.js";
+import {
+  checksumAndVerifyPackImpl,
+  checksumAndVerifyPackSchema,
+} from "../tools/library/checksumAndVerifyPack.js";
+import {
+  componentChangelogTrailImpl,
+  componentChangelogTrailSchema,
+} from "../tools/library/componentChangelogTrail.js";
+import {
+  curatedCollectionPackImpl,
+  curatedCollectionPackSchema,
+} from "../tools/library/curatedCollectionPack.js";
 import {
   diffLibraryAssetsImpl,
   diffLibraryAssetsSchema,
@@ -409,11 +509,25 @@ import {
   validateLibraryAssetImpl,
   validateLibraryAssetSchema,
 } from "../tools/library/index.js";
+import { provenanceStampImpl, provenanceStampSchema } from "../tools/library/provenanceStamp.js";
 import type { ToolContext } from "../tools/types.js";
 import {
   generateLibraryIndexImpl,
   generateLibraryIndexSchema,
 } from "../tools/vault/generateLibraryIndex.js";
+import { learnConventionsImpl, learnConventionsSchema } from "../tools/vault/learnConventions.js";
+import {
+  learnFromMyCorpusImpl,
+  learnFromMyCorpusSchema,
+} from "../tools/vault/learnFromMyCorpus.js";
+import {
+  libraryLineageGraphImpl,
+  libraryLineageGraphSchema,
+} from "../tools/vault/libraryLineageGraph.js";
+import { mergeVaultsImpl, mergeVaultsSchema } from "../tools/vault/mergeVaults.js";
+import { morphPackImpl, morphPackSchema } from "../tools/vault/morphPack.js";
+import { variantPackImpl, variantPackSchema } from "../tools/vault/variantPack.js";
+import { vaultRepoSyncImpl, vaultRepoSyncSchema } from "../tools/vault/vaultRepoSync.js";
 import {
   describeConfig,
   type LoadConfigOptions,
@@ -422,8 +536,20 @@ import {
   tdBaseUrl,
 } from "../utils/config.js";
 import { silentLogger } from "../utils/logger.js";
+import { runBridgeWatchBuild } from "./bridgeWatchBuild.js";
+import { controllerBridgeCliSchema, runControllerBridge } from "./controllerToCliBridge.js";
 import { runDoctor } from "./doctor.js";
+import { runFixtureRecorder } from "./fixtureRecorder.js";
+import { runLogTailFiltered } from "./logTailFiltered.js";
 import { type PanicSubVerb, runPanic } from "./panicBlackout.js";
+import { runRemoteFanout } from "./remoteAndFanout.js";
+import {
+  loadScheduleFile,
+  realClock,
+  runScheduler,
+  schedulerCliSchema,
+  tzInfo,
+} from "./scheduler.js";
 import {
   type CueCaller,
   loadCanonicalSetlist,
@@ -431,6 +557,8 @@ import {
   runSetlist,
   setlistRunnerCliSchema,
 } from "./setlistRunner.js";
+import { runSoundcheckMonitor, soundcheckMonitorSchema } from "./soundcheckMonitor.js";
+import { runVoiceCopilotChat } from "./voiceCopilotChat.js";
 
 // biome-ignore lint/suspicious/noExplicitAny: args are validated by each command's zod schema before use.
 type Runner = (ctx: ToolContext, args: any) => CallToolResult | Promise<CallToolResult>;
@@ -1239,6 +1367,55 @@ const COMMANDS: Record<string, Command> = {
     "Track blob/hand positions from a camera or TOP and bind params to them.",
     { mutates: true },
   ),
+  // Campaign Wave 2 — composition/scheduling/reactivity/interaction (v0.8.0):
+  "compose-cue-list": r(
+    composeCueListSchema,
+    composeCueListImpl,
+    "Author a cue list from rows: scaffolds cues + step sequencer wired to a navigator.",
+    { mutates: true },
+  ),
+  "prob-sequencer": r(
+    createProbSequencerSchema,
+    createProbSequencerImpl,
+    "Probabilistic Markov-style state sequencer driving params/cues per state.",
+    { mutates: true },
+  ),
+  "two-way-surface": r(
+    createTwoWaySurfaceSchema,
+    createTwoWaySurfaceImpl,
+    "Bidirectional control surface: parameter <-> external channel sync with guards.",
+    { mutates: true },
+  ),
+  "automation-lane": r(
+    createAutomationLaneSchema,
+    createAutomationLaneImpl,
+    "Timeline automation lane: animate target parameters from a CHOP curve.",
+    { mutates: true },
+  ),
+  "chroma-reactive": r(
+    createChromaReactiveSchema,
+    createChromaReactiveImpl,
+    "Harmonic/chroma audio analysis -> chroma_* channels driving target params.",
+    { mutates: true },
+  ),
+  "transient-reactive": r(
+    createTransientReactiveSchema,
+    createTransientReactiveImpl,
+    "Transient vs sustain detection: emits transient/sustain channels for routing.",
+    { mutates: true },
+  ),
+  "energy-structure": r(
+    createEnergyStructureSchema,
+    createEnergyStructureImpl,
+    "Multi-band energy state machine with edge-triggered state changes.",
+    { mutates: true },
+  ),
+  "phone-gesture": r(
+    createPhoneGestureSchema,
+    createPhoneGestureImpl,
+    "Phone IMU/gesture WebSocket receiver (orientation + gestures) as control channels.",
+    { mutates: true },
+  ),
   sidechain: r(
     createSidechainPumpSchema,
     createSidechainPumpImpl,
@@ -1409,6 +1586,192 @@ const COMMANDS: Record<string, Command> = {
     "Write a Markdown contact-sheet of the whole vault library (thumbnails + load snippets).",
     { mutates: true },
   ),
+  // Campaign BEYOND Wave 3 (backlog 2026-05-30 — v0.7.0):
+  "provenance-stamp": r(
+    provenanceStampSchema,
+    provenanceStampImpl,
+    "Write a .provenance.json sidecar (sha256 + source + toolchain + git) next to a saved artifact.",
+    { mutates: true },
+  ),
+  "checksum-verify-pack": r(
+    checksumAndVerifyPackSchema,
+    checksumAndVerifyPackImpl,
+    "Compute or verify SHA-256 checksums for tdmcp artifacts (tox/recipes/bundles).",
+    { mutates: true },
+  ),
+  "library-lineage-graph": r(
+    libraryLineageGraphSchema,
+    libraryLineageGraphImpl,
+    "Scan the vault library and emit a lineage graph (JSON / Mermaid / Graphviz DOT).",
+  ),
+  "morph-pack": r(
+    morphPackSchema,
+    morphPackImpl,
+    "Pack/unpack a create_preset_morph slot set as a portable, sha256-verified vault JSON.",
+    { mutates: true },
+  ),
+  "learn-conventions": r(
+    learnConventionsSchema,
+    learnConventionsImpl,
+    "Read a live TD subtree and write the artist's house conventions into the vault Memory notes.",
+    { mutates: true },
+  ),
+  "moodboard-to-system": r(
+    moodboardToSystemSchema,
+    moodboardToSystemImpl,
+    "Ingest moodboard images and build a matching generative system in TouchDesigner.",
+    { mutates: true },
+  ),
+  "audio-fingerprint-to-visual": r(
+    audioFingerprintToVisualSchema,
+    audioFingerprintToVisualImpl,
+    "Sample audio, fingerprint it, and dispatch a matching Layer 1 generator tuned to it.",
+    { mutates: true },
+  ),
+  "score-build": r(
+    scoreBuildSchema,
+    scoreBuildImpl,
+    "Score a built network 0–100 (palette/motion/complexity/errors/perf) with improvement suggestions.",
+  ),
+  // Campaign BEYOND Wave 4 (backlog 2026-05-30 — v0.7.0):
+  "engine-comp": r(
+    createEngineCompSchema,
+    createEngineCompImpl,
+    "Build a load-balanced Engine COMP cluster for offloading sub-networks to worker processes.",
+    { mutates: true },
+  ),
+  "dmx-fixture-pipeline": r(
+    createDmxFixturePipelineSchema,
+    createDmxFixturePipelineImpl,
+    "Build a DMX/Art-Net fixture pipeline (channels → patch → Art-Net Out).",
+    { mutates: true },
+  ),
+  "scaffold-tool-generator": r(
+    scaffoldToolGeneratorSchema,
+    scaffoldToolGeneratorImpl,
+    "Scaffold a new tdmcp tool file + msw unit test from an inline spec.",
+    { mutates: true },
+  ),
+  "extend-data-source-fabric": r(
+    extendDataSourceFabricSchema,
+    extendDataSourceFabricImpl,
+    "Extend create_data_source with new feed adapters (websocket/sse/mqtt/file-tail/process).",
+    { mutates: true },
+  ),
+  "build-chop-chain": r(
+    buildChopChainSchema,
+    buildChopChainImpl,
+    "Assemble a typed CHOP-processing chain from a recipe of stages.",
+    { mutates: true },
+  ),
+  "author-script-operator": r(
+    authorScriptOperatorSchema,
+    authorScriptOperatorImpl,
+    "Author a Script CHOP/TOP/SOP/DAT with validated callbacks + parameters.",
+    { mutates: true },
+  ),
+  "nodes profile": r(
+    profileCookCostSchema,
+    profileCookCostImpl,
+    "Profile per-node cook cost (n samples) and rank hot spots.",
+  ),
+  timeline: r(
+    controlTimelineTransportSchema,
+    controlTimelineTransportImpl,
+    "Control TD timeline transport (play/pause/seek/rate/range).",
+    { mutates: true },
+  ),
+  "gpu-displays": r(
+    inspectGpuAndDisplaysSchema,
+    inspectGpuAndDisplaysImpl,
+    "Inspect host GPU + connected displays (offline-friendly).",
+  ),
+  "macro-record": r(
+    macroRecorderSchema,
+    macroRecorderImpl,
+    "Record / stop / list / load tool-call macros (replay ships in wave 5).",
+    { mutates: true },
+  ),
+  // Campaign BEYOND Wave 5 (backlog 2026-05-30 — v0.7.0):
+  "curated-collection-pack": r(
+    curatedCollectionPackSchema,
+    curatedCollectionPackImpl,
+    "Bundle a curated collection of library assets into a verifiable pack.",
+    { mutates: true },
+  ),
+  "component-changelog-trail": r(
+    componentChangelogTrailSchema,
+    componentChangelogTrailImpl,
+    "Track a component's changelog trail across versions.",
+    { mutates: true },
+  ),
+  "merge-vaults": r(mergeVaultsSchema, mergeVaultsImpl, "Merge two Obsidian vaults safely.", {
+    mutates: true,
+  }),
+  "vault-repo-sync": r(
+    vaultRepoSyncSchema,
+    vaultRepoSyncImpl,
+    "Sync a vault with a git remote (clone/pull/push).",
+    { mutates: true },
+  ),
+  "variant-pack": r(
+    variantPackSchema,
+    variantPackImpl,
+    "Generate a variant pack from a base vault asset.",
+    { mutates: true },
+  ),
+  "learn-from-my-corpus": r(
+    learnFromMyCorpusSchema,
+    learnFromMyCorpusImpl,
+    "Mine the vault corpus to surface style/usage conventions.",
+  ),
+  "shared-memory-bridge": r(
+    createSharedMemoryBridgeSchema,
+    createSharedMemoryBridgeImpl,
+    "Wire a Shared-Mem (in/out) bridge between processes.",
+    { mutates: true },
+  ),
+  "build-sop-geometry": r(
+    buildSopGeometrySchema,
+    buildSopGeometryImpl,
+    "Assemble a typed SOP geometry chain from a recipe of stages.",
+    { mutates: true },
+  ),
+  "sync-timecode": r(
+    syncTimecodeSchema,
+    syncTimecodeImpl,
+    "Lock the show clock to external timecode (LTC/MTC/MIDI).",
+    { mutates: true },
+  ),
+  "manage-component-storage": r(
+    manageComponentStorageSchema,
+    manageComponentStorageImpl,
+    "Read/write COMP `storage` slots safely.",
+    { mutates: true },
+  ),
+  "enhance-build": r(
+    enhanceBuildSchema,
+    enhanceBuildImpl,
+    "Apply targeted improvements to an existing build and rescore.",
+    { mutates: true },
+  ),
+  "elicit-missing-args": r(
+    elicitMissingArgsSchema,
+    elicitMissingArgsImpl,
+    "Elicit missing required tool args from partial input + context.",
+  ),
+  "growth-system": r(
+    createGrowthSystemSchema,
+    createGrowthSystemImpl,
+    "Build an organic growth/branching system (L-system flavour).",
+    { mutates: true },
+  ),
+  "run-macro-script": r(
+    runMacroScriptSchema,
+    runMacroScriptImpl,
+    "Replay a recorded macro script of tool calls.",
+    { mutates: true },
+  ),
 };
 
 export interface CliResult {
@@ -1507,6 +1870,9 @@ function usage(): string {
   );
   lines.push(
     "  setlist run <file>   Walk a setlist scene-by-scene through manage_cue. Flags: --mode, --start, --loop, --comp-path, --beats-per-bar, --quantize.",
+  );
+  lines.push(
+    "  schedule <file>      Run scene_scheduler: fire commands/cues/setlists on at/every/cron triggers. Flags: --dry-run, --once, --tz-info, --loop, --comp-path.",
   );
   return lines.join("\n");
 }
@@ -1610,6 +1976,9 @@ function parseCliArgs(argv: string[]) {
       "comp-path": { type: "string" },
       "beats-per-bar": { type: "string" },
       quantize: { type: "string" },
+      // `schedule` subcommand:
+      once: { type: "boolean", default: false },
+      "tz-info": { type: "boolean", default: false },
     },
   });
 }
@@ -1658,7 +2027,16 @@ function nearestCommand(input: string): string | undefined {
     "doctor",
     "panic",
     "setlist",
+    "schedule",
     "version",
+    "watch-build",
+    "soundcheck-monitor",
+    "log-tail",
+    "record-fixtures",
+    "fanout",
+    "controller-bridge",
+    "voice",
+    "llm-voice",
   ];
   for (const key of keys) {
     const d = editDistance(input, key);
@@ -1766,7 +2144,16 @@ function completionScript(shell: string): string | undefined {
     "doctor",
     "panic",
     "setlist",
+    "schedule",
     "version",
+    "watch-build",
+    "soundcheck-monitor",
+    "log-tail",
+    "record-fixtures",
+    "fanout",
+    "controller-bridge",
+    "voice",
+    "llm-voice",
   ];
   const flags = [
     "--params",
@@ -2129,6 +2516,160 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
     };
   }
 
+  // `schedule <file>` — scene scheduler (at/every/cron triggers → command|cue|setlist).
+  if (positionals[0] === "schedule") {
+    const file = positionals[1];
+    if (!file) {
+      return { stdout: "", stderr: 'Missing schedule path for "schedule <file>".\n', code: 2 };
+    }
+    const loaded = loadScheduleFile(file);
+    if (!loaded.ok) {
+      return { stdout: "", stderr: `error: ${loaded.message}\n`, code: 2 };
+    }
+    const parsedCli = schedulerCliSchema.safeParse({
+      file,
+      dry_run: values["dry-run"] === true,
+      once: values.once === true,
+      loop: values.loop === true,
+      tz_info: values["tz-info"] === true,
+      comp_path: typeof values["comp-path"] === "string" ? values["comp-path"] : undefined,
+      json: values.output === "json",
+    });
+    if (!parsedCli.success) {
+      return {
+        stdout: "",
+        stderr: `Invalid schedule args: ${parsedCli.error.message}\n`,
+        code: 2,
+      };
+    }
+    if (parsedCli.data.tz_info) {
+      const lines = tzInfo(loaded.schedule, new Date());
+      return { stdout: `${lines.join("\n")}\n`, stderr: "", code: 0 };
+    }
+    let ctx: ToolContext;
+    try {
+      ctx = buildCtx(opts, cliLoadOptions(values));
+    } catch (err) {
+      return { stdout: "", stderr: `${(err as Error).message}\n`, code: 2 };
+    }
+    const { manageCueImpl } = await import("../tools/layer2/manageCue.js");
+    const { runSetlist: runSetlistImpl } = await import("./setlistRunner.js");
+    const { spawn } = await import("node:child_process");
+    const dryRun = parsedCli.data.dry_run;
+    const compPath = parsedCli.data.comp_path;
+    const runner = {
+      async command(a: { cmd: string; args: string[]; timeout_ms: number }): Promise<void> {
+        if (dryRun) return;
+        await new Promise<void>((resolve, reject) => {
+          const child = spawn(a.cmd, a.args, { stdio: "ignore" });
+          const t = setTimeout(() => {
+            child.kill("SIGTERM");
+            reject(new Error(`command "${a.cmd}" timed out after ${a.timeout_ms}ms`));
+          }, a.timeout_ms);
+          child.on("error", (err) => {
+            clearTimeout(t);
+            reject(err);
+          });
+          child.on("exit", (code) => {
+            clearTimeout(t);
+            if (code === 0) resolve();
+            else reject(new Error(`command "${a.cmd}" exited with code ${code}`));
+          });
+        });
+      },
+      async cue(a: {
+        cue_action: "store" | "recall" | "morph" | "delete";
+        name: string;
+        duration?: number;
+        quantize: "off" | "beat" | "bar";
+      }): Promise<void> {
+        if (dryRun) return;
+        const res = await manageCueImpl(ctx, {
+          action: a.cue_action,
+          comp_path: compPath,
+          name: a.name,
+          duration: a.duration ?? 0,
+          quantize: a.quantize,
+        });
+        if (res.isError) {
+          const text = res.content
+            .map((c) => (c.type === "text" ? c.text : ""))
+            .join("")
+            .trim();
+          throw new Error(text || `manage_cue ${a.cue_action} failed`);
+        }
+      },
+      async setlist(a: {
+        file: string;
+        mode: "duration" | "beat" | "manual";
+        loop: boolean;
+      }): Promise<void> {
+        if (dryRun) return;
+        let raw: string;
+        try {
+          raw = readFileSync(a.file, "utf8");
+        } catch (err) {
+          throw new Error(`could not read setlist: ${(err as Error).message}`);
+        }
+        const parsedInput = parseSetlistInput(raw, a.file);
+        if (!parsedInput.ok) throw new Error(parsedInput.message);
+        const loadedSetlist = loadCanonicalSetlist(parsedInput.input);
+        if (!loadedSetlist.ok) throw new Error(loadedSetlist.message);
+        const cueCaller: CueCaller = {
+          async fire(call) {
+            const res = await manageCueImpl(ctx, {
+              action: call.action,
+              comp_path: call.comp_path,
+              name: call.name,
+              duration: call.duration,
+              quantize: call.quantize,
+            });
+            if (res.isError) {
+              const text = res.content
+                .map((c) => (c.type === "text" ? c.text : ""))
+                .join("")
+                .trim();
+              throw new Error(text || `manage_cue ${call.action} failed`);
+            }
+          },
+        };
+        await runSetlistImpl({
+          setlist: loadedSetlist.setlist,
+          args: {
+            setlist: a.file,
+            mode: a.mode,
+            loop: a.loop,
+            comp_path: compPath,
+            dry_run: false,
+            json: false,
+            beats_per_bar: 4,
+            quantize: "off",
+          },
+          client: cueCaller,
+          clock: {
+            setTimeout: (cb, ms) => setTimeout(cb, ms),
+            clearTimeout: (h) => clearTimeout(h as ReturnType<typeof setTimeout>),
+            now: () => Date.now(),
+          },
+          emit: () => {},
+        });
+      },
+    };
+    const lines: string[] = [];
+    const summary = await runScheduler({
+      schedule: loaded.schedule,
+      args: parsedCli.data,
+      runner,
+      clock: realClock,
+      emit: (e) => lines.push(JSON.stringify(e)),
+    });
+    return {
+      stdout: `${lines.join("\n")}\n${JSON.stringify(summary)}\n`,
+      stderr: "",
+      code: summary.ended_reason === "complete" || summary.ended_reason === "once" ? 0 : 1,
+    };
+  }
+
   const resolved = resolveCommand(positionals);
   if (!resolved) {
     const guess = nearestCommand(positionals[0] ?? "");
@@ -2316,6 +2857,109 @@ function csvFlag(argv: string[], name: string): string[] | undefined {
 async function main(): Promise<void> {
   const argv = process.argv.slice(2);
   const wantsHelp = argv.includes("--help") || argv.includes("-h");
+  // `watch-build` (dev-loop tsc/tsup watcher) and `soundcheck-monitor` (long-running
+  // audio-features poller) bypass runCli's request/response model. Campaign BEYOND Wave 4.
+  if (argv[0] === "watch-build" && !wantsHelp) {
+    process.exitCode = await runBridgeWatchBuild(argv.slice(1));
+    return;
+  }
+  if (argv[0] === "soundcheck-monitor" && !wantsHelp) {
+    const raw = assembleParams(parseCliArgs(argv).values);
+    if ("error" in raw) {
+      process.stderr.write(`Invalid soundcheck-monitor params: ${raw.error}\n`);
+      process.exitCode = 2;
+      return;
+    }
+    const parsed = soundcheckMonitorSchema.safeParse(raw.raw);
+    if (!parsed.success) {
+      process.stderr.write(`Invalid soundcheck-monitor params: ${parsed.error.message}\n`);
+      process.exitCode = 2;
+      return;
+    }
+    let ctx: ToolContext;
+    try {
+      ctx = buildToolContext(loadConfig(process.env, { useFiles: true }), {
+        logger: silentLogger,
+      });
+    } catch (err) {
+      process.stderr.write(`${(err as Error).message}\n`);
+      process.exitCode = 2;
+      return;
+    }
+    const ac = new AbortController();
+    const onSig = () => ac.abort();
+    process.on("SIGINT", onSig);
+    process.on("SIGTERM", onSig);
+    try {
+      await runSoundcheckMonitor(ctx, parsed.data, ac.signal);
+      process.exitCode = 0;
+    } catch (err) {
+      process.stderr.write(`${(err as Error).message}\n`);
+      process.exitCode = 1;
+    }
+    return;
+  }
+  // Long-running CLI streamers (wave-5 follow-up). Each owns its own argv parsing.
+  if (argv[0] === "log-tail" && !wantsHelp) {
+    process.exitCode = await runLogTailFiltered(argv.slice(1));
+    return;
+  }
+  if (argv[0] === "record-fixtures" && !wantsHelp) {
+    try {
+      await runFixtureRecorder(argv.slice(1));
+      process.exitCode = 0;
+    } catch (err) {
+      process.stderr.write(`${(err as Error).message}\n`);
+      process.exitCode = 1;
+    }
+    return;
+  }
+  if (argv[0] === "fanout" && !wantsHelp) {
+    process.exitCode = await runRemoteFanout(argv.slice(1));
+    return;
+  }
+  if (argv[0] === "controller-bridge" && !wantsHelp) {
+    const raw = assembleParams(parseCliArgs(argv).values);
+    if ("error" in raw) {
+      process.stderr.write(`Invalid controller-bridge params: ${raw.error}\n`);
+      process.exitCode = 2;
+      return;
+    }
+    const parsed = controllerBridgeCliSchema.safeParse(raw.raw);
+    if (!parsed.success) {
+      process.stderr.write(`Invalid controller-bridge params: ${parsed.error.message}\n`);
+      process.exitCode = 2;
+      return;
+    }
+    let ctx: ToolContext;
+    try {
+      ctx = buildToolContext(loadConfig(process.env, { useFiles: true }), {
+        logger: silentLogger,
+      });
+    } catch (err) {
+      process.stderr.write(`${(err as Error).message}\n`);
+      process.exitCode = 2;
+      return;
+    }
+    try {
+      const summary = await runControllerBridge(ctx, parsed.data);
+      process.exitCode = summary.exit_code;
+    } catch (err) {
+      process.stderr.write(`${(err as Error).message}\n`);
+      process.exitCode = 1;
+    }
+    return;
+  }
+  if ((argv[0] === "voice" || argv[0] === "llm-voice") && !wantsHelp) {
+    try {
+      await runVoiceCopilotChat(argv.slice(1));
+      process.exitCode = 0;
+    } catch (err) {
+      process.stderr.write(`${(err as Error).message}\n`);
+      process.exitCode = 1;
+    }
+    return;
+  }
   // `watch` (a long-lived stream) and `repl` (interactive) bypass runCli's request/response model.
   if (argv[0] === "watch" && !wantsHelp) {
     await runWatch({

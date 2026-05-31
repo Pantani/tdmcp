@@ -136,7 +136,7 @@ export async function createGlslMaterialImpl(ctx: ToolContext, args: CreateGlslM
 
       // Static MAT params — set inside try/except so an unexpected internal name
       // doesn't abort the whole payload.
-      wiring.push("m = op(" + q(mat.path) + ")");
+      wiring.push(`m = op(${q(mat.path)})`);
       wiring.push(`try: m.par.glslversion = ${q(args.glsl_version)}`);
       wiring.push("except Exception: pass");
       wiring.push(`try: m.par.twoside = ${args.two_sided ? "True" : "False"}`);

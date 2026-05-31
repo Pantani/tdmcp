@@ -31,6 +31,12 @@ export interface ToolContext {
    * Tools must degrade gracefully when this is undefined or unreachable.
    */
   llm?: LlmClientLike;
+  /**
+   * The MCP server instance. Assigned by `createTdmcpServer` before tool
+   * registration so a few tools (e.g. `elicit_missing_args`) can introspect the
+   * live tool registry.
+   */
+  server?: McpServer;
 }
 
 /** A function that registers one tool against the MCP server. */

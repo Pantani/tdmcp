@@ -1,4 +1,5 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { cliRegistrars } from "./cli/index.js";
 import { layer1Registrars } from "./layer1/index.js";
 import { layer2Registrars } from "./layer2/index.js";
 import { layer3Registrars } from "./layer3/index.js";
@@ -52,6 +53,7 @@ export function registerAllTools(server: McpServer, ctx: ToolContext): void {
     ...layer1Registrars,
     ...libraryRegistrars,
     ...vaultRegistrars,
+    ...cliRegistrars,
   ];
 
   // For `safe`, intercept registerTool and drop excluded names. We wrap rather
