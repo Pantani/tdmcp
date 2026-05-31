@@ -5,6 +5,7 @@ import { friendlyTdError } from "../../td-client/types.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { suggestTags } from "./autoTagLibraryAsset.js";
 import {
   captureThumbnail,
   injectAfterFrontmatter,
@@ -52,6 +53,12 @@ export const saveRecipeToVaultSchema = z.object({
     .boolean()
     .default(true)
     .describe("Capture a preview PNG next to the recipe note and embed it. Set false to skip."),
+  auto_tag: z
+    .boolean()
+    .optional()
+    .describe(
+      "When true, run the auto_tag_library_asset heuristic on the captured network and merge the suggested tags (union, deduped) into the recipe frontmatter before writing.",
+    ),
 });
 type SaveRecipeToVaultArgs = z.infer<typeof saveRecipeToVaultSchema>;
 
@@ -163,11 +170,33 @@ export async function saveRecipeToVaultImpl(ctx: ToolContext, args: SaveRecipeTo
     if (report.nodes.length === 0) {
       return errorResult(`No operators found under ${args.comp_path} to capture as a recipe.`);
     }
+    // Optional auto-tag: run the deterministic heuristic on the captured network
+    // and union its suggestions with the caller's tags (no overwrite, dedup).
+    let mergedTags = args.tags ?? [];
+    let autoTagsApplied: string[] | undefined;
+    if (args.auto_tag) {
+      const suggestion = suggestTags(
+        { nodes: report.nodes, connections: report.connections, python_code: report.python_code },
+        ctx.knowledge,
+      );
+      const seen = new Set(mergedTags.map((t) => t.toLowerCase()));
+      const additions: string[] = [];
+      for (const t of suggestion.suggested_tags) {
+        const k = t.toLowerCase();
+        if (!seen.has(k)) {
+          seen.add(k);
+          additions.push(t);
+        }
+      }
+      mergedTags = [...mergedTags, ...additions];
+      autoTagsApplied = suggestion.suggested_tags;
+    }
+
     const parsed = RecipeSchema.safeParse({
       id: args.id,
       name: args.name ?? args.id,
       description: args.description ?? "",
-      tags: args.tags ?? [],
+      tags: mergedTags,
       difficulty: args.difficulty ?? "intermediate",
       nodes: report.nodes,
       connections: report.connections,
@@ -205,6 +234,7 @@ export async function saveRecipeToVaultImpl(ctx: ToolContext, args: SaveRecipeTo
         warnings: report.warnings,
         thumbnail: thumb.imageRel,
         ...(thumb.warning ? { thumbnail_warning: thumb.warning } : {}),
+        ...(autoTagsApplied ? { auto_tags: autoTagsApplied } : {}),
       },
     );
   } catch (err) {

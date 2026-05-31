@@ -7,6 +7,7 @@ import { registerBindAudioReactive } from "./bindAudioReactive.js";
 import { registerBindToChannel } from "./bindToChannel.js";
 import { registerConnectNodes } from "./connectNodes.js";
 // Campaign Wave 3 — artist controls (backlog 2026-05-29):
+import { registerCreateAutoMontage } from "./createAutoMontage.js";
 import { registerCreateBandRouter } from "./createBandRouter.js";
 import { registerCreateBeatGridSequencer } from "./createBeatGridSequencer.js";
 import { registerCreateCaptureLoop } from "./createCaptureLoop.js";
@@ -19,7 +20,9 @@ import { registerCreateDataReactive } from "./createDataReactive.js";
 import { registerCreateDataSource } from "./createDataSource.js";
 import { registerCreateDecks } from "./createDecks.js";
 import { registerCreateEnvelopeFollower } from "./createEnvelopeFollower.js";
+import { registerCreateEuclideanSequencer } from "./createEuclideanSequencer.js";
 import { registerCreateExternalIo } from "./createExternalIo.js";
+import { registerCreateGlslMaterial } from "./createGlslMaterial.js";
 import { registerCreateGlslShader } from "./createGlslShader.js";
 import { registerCreateLedMapper } from "./createLedMapper.js";
 import { registerCreateLookBank } from "./createLookBank.js";
@@ -30,8 +33,11 @@ import { registerCreateNodeChain } from "./createNodeChain.js";
 import { registerCreatePalette } from "./createPalette.js";
 import { registerCreatePanic } from "./createPanic.js";
 import { registerCreatePhoneRemote } from "./createPhoneRemote.js";
+import { registerCreatePresetMorph } from "./createPresetMorph.js";
 import { registerCreatePythonScript } from "./createPythonScript.js";
 import { registerCreateReplicator } from "./createReplicator.js";
+import { registerCreateSceneTimeline } from "./createSceneTimeline.js";
+import { registerCreateScheduler } from "./createScheduler.js";
 import { registerCreateSidechainPump } from "./createSidechainPump.js";
 import { registerCreateStageDashboard } from "./createStageDashboard.js";
 import { registerCreateTimeEcho } from "./createTimeEcho.js";
@@ -111,4 +117,11 @@ export const layer2Registrars: ToolRegistrar[] = [
   registerCreateXyPad,
   registerCreateTimeEcho,
   registerCreateCaptureLoop,
+  // Campaign BEYOND Wave 1 (backlog 2026-05-30 — v0.7.0):
+  registerCreateAutoMontage,
+  registerCreateEuclideanSequencer,
+  registerCreatePresetMorph,
+  registerCreateSceneTimeline,
+  registerCreateScheduler,
+  registerCreateGlslMaterial,
 ];

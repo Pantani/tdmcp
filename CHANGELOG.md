@@ -4,7 +4,93 @@ All notable changes to **tdmcp** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.7.1] - 2026-05-31
+
+**Wave 1.5 — deferred items from v0.7.0**. Folds in the three follow-ups that
+were called out as deferred during the v0.7.0 integration pass: wiring the
+existing setlist tools onto the shared setlist schema, seeding the new Memory/
+folder during `scaffold_vault`, and exposing the auto-tag heuristic on the save
+tools as an opt-in.
+
+### Changed
+
+- `import_setlist` / `export_setlist_to_vault` now consume the shared
+  `SetlistSchema` from `src/automation/setlistSchema.ts` (introduced in 0.7.0).
+  Both still accept the legacy `tracks[]` shape; `import_setlist` additionally
+  accepts the new `scenes[]` shape (`{id, title, cue, recipe, preset, steps,
+  …}`), so a setlist authored for `setlist_runner` / `compose_cue_list` can be
+  pre-staged with one tool call. `export_setlist_to_vault` now validates the
+  frontmatter it writes against `SetlistSchema` before persisting, guaranteeing
+  round-trip with `import_setlist`.
+- `scaffold_vault` now also seeds `Memory/README.md` and `Memory/style.md`
+  (empty `StyleMemorySchema`) so the Memory layer added in 0.7.0 has a
+  ready-to-merge home in fresh vaults.
+
+### Added
+
+- `save_recipe_to_vault` and `save_component_to_vault` learn an opt-in
+  `auto_tag?: boolean` (default `false`). When `true`, the deterministic
+  `auto_tag_library_asset` heuristic runs against the captured network and the
+  suggested tags are union-merged (dedup, case-insensitive) into the note's
+  frontmatter alongside any caller-supplied `tags`. Default behaviour is
+  unchanged.
+
+## [0.7.0] - 2026-05-31
+
+**Live-show foundation + all P0** — campaign `beyond_20260530` Wave 1.
+Ships the shared show-automation foundations (setlist/scene schema, memory-note
+schema, server-sampling-backed LLM fallback) and 13 P0 consumer features across
+artist controls, library/vault, and the CLI. Live-validated in TD 099.
+
+### Added
+
+- **Show-automation foundations.**
+  - **`src/automation/setlistSchema.ts`** — shared Zod setlist/scenes/steps
+    schema with `parseSetlist` and normalizers, the single source of truth reused
+    by `setlist_runner`, `create_scene_timeline`, and future vault setlist tools.
+  - **`src/vault/memoryNote.ts`** — shared `MemoryNoteSchema` and
+    `StyleMemorySchema` plus readers/writers/mergers consumed by
+    `recall_similar_work`, `style_memory`, and `auto_tag_library_asset`.
+  - **MCP-server-sampling LLM fallback** (`src/llm/samplingClient.ts` +
+    `src/llm/resolve.ts`) — wired into `ctx.llm` so the local-copilot tier can ask
+    the connected client to sample when no local model is configured.
+- **Six new artist Layer-2 tools.**
+  - **`create_scheduler`** — Timer-CHOP-backed event scheduler primitive driving
+    bar/beat/wall-clock callbacks.
+  - **`create_auto_montage`** — beat/bar-synced media-bin sequencer with
+    sequential / random / shuffle / weighted modes.
+  - **`create_euclidean_sequencer`** — Bjorklund pattern generator driving
+    step-callbacks for algorithmic rhythm.
+  - **`create_preset_morph`** — multi-preset weighted parameter blend with a
+    lookup table and Script-CHOP runner.
+  - **`create_scene_timeline`** — scrubbable show-master timeline above
+    `cue_sequencer` / `scheduler` for arranged sets.
+  - **`create_glsl_material`** — `glslMAT` scaffolder with the F1/F2 preamble,
+    `uTime`, `fragColor`, and a lint-warnings pass for common GLSL pitfalls.
+- **Four new library / vault tools.**
+  - **`auto_tag_library_asset`** — auto-suggest tags for a vault asset by KB
+    operator overlap (offline).
+  - **`recall_similar_work`** — rank past memory notes by similarity to a new
+    visual goal (Jaccard + tag + operator overlap, offline).
+  - **`style_memory`** — show / read / update `Memory/style.md`
+    (palettes / banned / favourites).
+  - **`lint_recipe_library`** — Layer-3 tool plus a `scripts/lint-recipes.ts`
+    runner for offline validation of the recipe library.
+- **Three new CLI verbs.**
+  - **`tdmcp setlist run <file>`** — headless setlist driver synced to a Beat CHOP.
+  - **`tdmcp panic [on|off|toggle|freeze|unfreeze|clear|status]`** — one-word
+    blackout / freeze with auto-detect of existing Blackout / Freeze nodes.
+  - **`tdmcp dashboard`** — live TUI of performance, errors, and events
+    (no new dependencies).
+
+### Deferred (to Wave 1.5)
+
+- Migrating `importSetlist` / `exportSetlistToVault` to consume the new
+  `src/automation/setlistSchema.ts` (still uses the legacy inline `tracks[]`
+  schemas).
+- Extending `scaffold_vault` to seed the `Memory/` folder.
+- An opt-in `auto_tag?: boolean` on `save_recipe_to_vault` and
+  `save_component_to_vault`.
 
 ### Security
 
@@ -375,6 +461,8 @@ API on its first live run, and is fail-forward (per-item warnings, never throws)
   preview-asset writes, as a strict superset of `TDMCP_RAW_PYTHON=off`. Use it to hand an
   autonomous in-TD agent a curated, non-destructive toolset.
 
+[0.7.1]: https://github.com/Pantani/tdmcp/compare/v0.7.0...v0.7.1
+[0.7.0]: https://github.com/Pantani/tdmcp/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/Pantani/tdmcp/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/Pantani/tdmcp/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Pantani/tdmcp/compare/v0.4.0...v0.5.0

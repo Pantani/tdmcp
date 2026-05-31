@@ -33,6 +33,10 @@ async function main(): Promise<void> {
     await runChat(argv.slice(1));
     return;
   }
+  if (argv[0] === "dashboard") {
+    const { runDashboard } = await import("./cli/tui.js");
+    process.exit(await runDashboard(argv.slice(1)));
+  }
 
   // The server honors a saved config file too (tdmcp.json / .tdmcprc / ~/.config/tdmcp);
   // pick a profile via TDMCP_PROFILE. Env vars still win over the file.

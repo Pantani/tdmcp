@@ -1,5 +1,6 @@
 import type { ToolRegistrar } from "../types.js";
 import { registerApplyShaderFromVault } from "./applyShaderFromVault.js";
+import { registerAutoTagLibraryAsset } from "./autoTagLibraryAsset.js";
 import { registerBindVaultText } from "./bindVaultText.js";
 import { registerBrowseVaultLibrary } from "./browseVaultLibrary.js";
 import { registerCaptureToVault } from "./captureToVault.js";
@@ -9,9 +10,11 @@ import { registerGenerateFromMoodboard } from "./generateFromMoodboard.js";
 import { registerGenerateLibraryIndex } from "./generateLibraryIndex.js";
 import { registerImportSetlist } from "./importSetlist.js";
 import { registerLogPerformance } from "./logPerformance.js";
+import { registerRecallSimilarWork } from "./recallSimilarWork.js";
 import { registerSaveComponentToVault } from "./saveComponentToVault.js";
 import { registerSaveRecipeToVault } from "./saveRecipeToVault.js";
 import { registerScaffoldVault } from "./scaffoldVault.js";
+import { registerStyleMemory } from "./styleMemory.js";
 import { registerSyncPresetsVault } from "./syncPresetsVault.js";
 
 /**
@@ -37,4 +40,8 @@ export const vaultRegistrars: ToolRegistrar[] = [
   registerExportSetlistToVault,
   // Phase 16 — library contact-sheet:
   registerGenerateLibraryIndex,
+  // Campaign BEYOND Wave 1 (backlog 2026-05-30 — v0.7.0):
+  registerAutoTagLibraryAsset,
+  registerRecallSimilarWork,
+  registerStyleMemory,
 ];

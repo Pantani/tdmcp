@@ -10,7 +10,7 @@ can build real visual systems from plain language — no node-wiring by hand. Th
 page is the honest, bird's-eye picture of **what already works, what's still
 rough, and what's coming next** on the way to a stable 1.0.
 
-**Where things stand today.** The current release is **v0.6.1** — on
+**Where things stand today.** The current release is **v0.7.0** — on
 [npm](https://www.npmjs.com/package/@dpantani/tdmcp) and
 [GitHub](https://github.com/Pantani/tdmcp) — exposing **179 tools**. The project
 has grown through four arcs:
@@ -195,10 +195,16 @@ features that depend on them:
 - **`auto_tag_library_asset`** — makes the library searchable by default and feeds
   search, lineage and linting across the library track.
 
-### Milestone 1 — Run a whole show · ~v0.7.0
+### Milestone 1 — Run a whole show · v0.7.0 (shipped 2026-05-31)
 
-*The single biggest gap: tdmcp can build and trigger scenes, but nothing yet drives
-an arranged set across time. Close that, plus the live-safety basics.*
+*Campaign `beyond_20260530` Wave 1 — the live-show foundation. Shared
+setlist/scene schema, memory-note schema, and a server-sampling LLM fallback,
+plus the P0 show-automation consumers (`setlist_runner`, `create_scene_timeline`,
+`create_auto_montage`, `create_euclidean_sequencer`, `create_preset_morph`,
+`create_scheduler`, `create_glsl_material`), the library/vault keystone
+(`auto_tag_library_asset`, `recall_similar_work`, `style_memory`,
+`lint_recipe_library`), and the live-safety CLI verbs (`tdmcp panic`,
+`tdmcp dashboard`).*
 
 - **Show automation** — build the shared scene schema first, then in parallel:
   **`setlist_runner`** (headless show driver), **`create_scene_timeline`** (in-TD
