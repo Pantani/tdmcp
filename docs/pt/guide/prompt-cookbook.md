@@ -310,6 +310,59 @@ modo Perform como uma superfície de toque.*
 ativo — a contraparte determinística e programável do auto-VJ; ligue e desligue
 passos para compor um padrão repetido travado no relógio.*
 
+> *"Monte uma timeline de três cenas para um set a 128 BPM: intro é um túnel de
+> feedback, drop é uma bola de espinhos reativa ao áudio, breakdown é uma correção
+> de cor cinematográfica. Deixe scrubbable e mantenha os ids dos slots do setlist."*
+
+<video src="/examples/scene-timeline-arranger.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Uma timeline mestra de show: cenas viram blocos sobre um playhead de Timer CHOP,
+recalls de cue caem nas fronteiras das cenas e ferramentas seguintes conseguem
+manter as referências de slot do setlist em cada cena.*
+
+> *"Escaneie esta pasta de loops e monte um auto-montage quantizado na batida, que
+> embaralha clipes a cada compasso com meio segundo de crossfade."*
+
+<video src="/examples/auto-montage-shuffle.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Um seletor automático de media-bin: clipes/imagens alimentam um Switch TOP, um
+relógio de compasso/batida/intervalo avança o índice, e modos shuffle/random/weighted
+evitam deixar o mesmo clipe tempo demais.*
+
+> *"Crie um sequenciador Euclidiano com 5 batidas em 16 passos e conecte os hits a
+> um strobe, um estouro de glitch e a quantidade de preset-morph."*
+
+<video src="/examples/euclidean-strobe-pattern.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Ritmo estilo Bjorklund para visuais — pulsos esparsos e musicais que disparam cues,
+parâmetros ou scripts em vez de um metrônomo simples.*
+
+> *"Misture quatro looks salvos com um único botão Morph, com pesos para eu ficar
+> no meio entre neon ciano e âmbar quente durante o breakdown."*
+
+<video src="/examples/preset-morph-blend.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Um blend real entre N presets: em vez de saltar de um cue para outro, estados de
+parâmetros salvos viram pesos numa tabela de morph que você pode automatizar, mapear
+em MIDI ou guiar por uma timeline de cenas.*
+
+> *"No compasso 32 dispare o cue do drop, no compasso 64 inicie o auto-montage e no
+> fim da faixa congele a saída até eu limpar."*
+
+**O que você recebe:** uma primitiva de scheduler baseada em timers/segmentos
+nomeados. Use para callbacks temporizados pequenos, ou coloque `create_scene_timeline`
+por cima quando quiser um arranjador de música scrubbable.
+
+> *"Monte um dashboard de celular com botões de cue para intro/drop/break, dois
+> faders mestres, uma faixa VU ao vivo e botões grandes de Blackout / Freeze para
+> recuperação de emergência."*
+
+<video src="/examples/live-dashboard-panic.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Um cockpit único de performance servido pelo TouchDesigner: disparo de cues,
+faders, leitura ao vivo e controles de panic numa página para celular/laptop. Use
+apenas numa rede confiável.*
+
 ## Saída & mapeamento
 
 > *"Mande o visual final para uma janela em tela cheia no meu segundo monitor."*
@@ -354,6 +407,24 @@ entregar a outro agente.
 programáveis, um README em Markdown gerado (com thumbnail de preview) ou um guia de
 agente local do projeto — o lado de *empacotamento* do tdmcp que complementa os
 geradores acima.
+
+## Autoria de shader & material
+
+> *"Crie um material GLSL para esta esfera: faixas iridescentes tipo óleo, rim light
+> suave e um uniform `uTime` que eu possa guiar pela timeline."*
+
+<video src="/examples/glsl-material-iridescent.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_glsl_material` cria o GLSL MAT mais os Text DATs auxiliares, conecta os
+shaders de pixel/vértice e avisa sobre armadilhas de GLSL no TouchDesigner, como
+`fragColor` ausente, colisões com o preâmbulo F1/F2 e `uTime` não declarado.*
+
+> *"Transforme este sketch de GLSL TOP num material no logo 3D, exponha Color, Speed
+> e Fresnel, depois renderize um preview."*
+
+**O que você recebe:** uma etapa de autoria de shader que mantém o código editável em
+DATs enquanto transforma os uniforms importantes em controles tocáveis no
+TouchDesigner.
 
 ## Efeitos e looks marcantes
 
@@ -452,5 +523,20 @@ Se você mantém um [vault Obsidian](/reference/tools#obsidian-vault) conectado:
 
 > *"Gere um visual a partir do meu moodboard 'fundo do oceano'."*
 
-> *"Salve este visual como uma receita no meu vault e registre no meu diário de
-> shows."*
+> *"Salve este visual como uma receita no meu vault, rode auto-tagging e registre no
+> meu diário de shows."*
+
+> *"Lembre que meu estilo de show evita gradientes arco-íris chapados, prefere névoa
+> fria, luz de borda âmbar e câmera lenta, e use essa memória no próximo look."*
+
+> *"Ache trabalhos anteriores no meu vault parecidos com 'catedral submersa, névoa
+> azul, strobes lentos' e use o mais próximo como ponto de partida."*
+
+> *"Faça lint da minha biblioteca de receitas antes do show e me diga quais notas
+> têm assets ausentes, ids duplicados ou operadores desconhecidos."*
+
+**O que você recebe:** uma biblioteca local de show, amigável a git.
+`scaffold_vault` cria as pastas iniciais, incluindo `Memory/style.md`; as ferramentas
+de salvar podem usar auto-tags determinísticas; `recall_similar_work` busca seus
+próprios looks anteriores; e `lint_recipe_library` pega notas ruins antes delas
+chegarem ao projetor.

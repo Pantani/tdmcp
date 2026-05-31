@@ -60,6 +60,7 @@
     "smoke:packages": "tsx scripts/smoke-packages.ts",
     "build:mcpb": "node scripts/build-dxt.mjs",
     "docs:gen": "tsx scripts/gen-tool-docs.ts",
+    "docs:clips": "node scripts/generate-doc-example-clips.mjs",
     "docs:dev": "npm run docs:gen && vitepress dev docs",
     "docs:build": "npm run docs:gen && vitepress build docs",
     "docs:preview": "vitepress preview docs",
