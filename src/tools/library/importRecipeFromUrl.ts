@@ -71,9 +71,11 @@ function cleanupWorkDir(path: string): void {
   }
 }
 
-/** Same filename derivation as importRecipeBundleImpl: sanitize the recipe id. */
-function recipeFileName(recipe: Recipe): string {
-  const stem = recipe.id.replace(/[^a-zA-Z0-9_.-]+/g, "_") || "recipe";
+/** Same filename derivation as importRecipeBundleImpl: sanitize the recipe id.
+ * Returns null when the sanitized stem is empty or starts with '.' (hidden files). */
+function recipeFileName(recipe: Recipe): string | null {
+  const stem = recipe.id.replace(/[^a-zA-Z0-9_.-]+/g, "_");
+  if (!stem || stem.startsWith(".")) return null;
   return `${stem}.json`;
 }
 
@@ -156,7 +158,17 @@ export async function importRecipeFromUrlImpl(_ctx: ToolContext, args: ImportRec
   }
 
   // Duplicate-target guard (mirrors importRecipeBundleImpl).
-  const targets = recipes.map((recipe) => ({ recipe, out: join(out_dir, recipeFileName(recipe)) }));
+  const targets: Array<{ recipe: Recipe; out: string }> = [];
+  for (const recipe of recipes) {
+    const fn = recipeFileName(recipe);
+    if (!fn) {
+      return errorResult(
+        `Recipe id "${recipe.id}" produces a hidden or empty filename after sanitization. ` +
+          "Rename the recipe id to not start with '.' and contain at least one alphanumeric character.",
+      );
+    }
+    targets.push({ recipe, out: join(out_dir, fn) });
+  }
   const seenTargets = new Map<string, string>();
   for (const { recipe, out } of targets) {
     const existingId = seenTargets.get(out);

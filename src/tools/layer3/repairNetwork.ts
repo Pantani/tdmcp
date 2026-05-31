@@ -290,12 +290,15 @@ export function buildRepairNetworkScript(payload: object): string {
 }
 
 export async function repairNetworkImpl(ctx: ToolContext, args: RepairNetworkArgs) {
+  const parsed = repairNetworkSchema.safeParse(args);
+  if (!parsed.success) return errorResult(`Invalid arguments: ${parsed.error.message}`);
+  const { parent_path, max_steps, dry_run } = parsed.data;
   return guardTd(
     async () => {
       const script = buildRepairNetworkScript({
-        parent_path: args.parent_path,
-        max_steps: args.max_steps,
-        dry_run: args.dry_run,
+        parent_path,
+        max_steps,
+        dry_run,
       });
       const exec = await ctx.client.executePythonScript(script, true);
       return parsePythonReport<RepairNetworkReport>(exec.stdout);

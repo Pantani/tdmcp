@@ -196,7 +196,7 @@ describe("importRecipeFromUrlImpl", () => {
     expect(parsed.written).toHaveLength(2);
   });
 
-  it("uses a non-hidden fallback filename when recipe id is empty", async () => {
+  it("rejects a recipe whose id sanitizes to an empty or hidden filename", async () => {
     const recipe = {
       id: "",
       name: "Unnamed Recipe",
@@ -211,17 +211,30 @@ describe("importRecipeFromUrlImpl", () => {
       max_bytes: 1048576,
     });
 
-    expect(res.isError).toBeFalsy();
-    const parsed = resultJson(res);
-    expect(parsed.written[0]).toContain("recipe.json");
-    expect(parsed.written[0]).not.toContain(`${join(dir, "out")}/.json`);
+    expect(res.isError).toBe(true);
+    expect(resultText(res)).toContain("hidden or empty filename");
   });
 
-  it("rejects duplicate fallback targets before writing", async () => {
+  it("rejects a recipe whose id starts with '.' (would create a hidden file)", async () => {
+    const recipe = { id: ".hidden", name: "Hidden", nodes: [{ name: "n1", type: "noiseTOP" }] };
+    stubDownload(JSON.stringify(recipe));
+
+    const res = await importRecipeFromUrlImpl(makeCtx(), {
+      url: "https://raw.githubusercontent.com/acme/repo/main/hidden.json",
+      out_dir: join(dir, "out"),
+      overwrite: false,
+      max_bytes: 1048576,
+    });
+
+    expect(res.isError).toBe(true);
+    expect(resultText(res)).toContain("hidden or empty filename");
+  });
+
+  it("rejects duplicate targets before writing", async () => {
     const bundle = {
       recipes: [
-        { id: "", name: "First", nodes: [{ name: "n1", type: "noiseTOP" }] },
-        { id: "", name: "Second", nodes: [{ name: "n2", type: "rampTOP" }] },
+        { id: "same", name: "First", nodes: [{ name: "n1", type: "noiseTOP" }] },
+        { id: "same", name: "Second", nodes: [{ name: "n2", type: "rampTOP" }] },
       ],
     };
     const outDir = join(dir, "out");

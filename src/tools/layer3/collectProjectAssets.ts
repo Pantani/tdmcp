@@ -219,17 +219,20 @@ export function buildCollectProjectAssetsScript(payload: object): string {
 }
 
 export async function collectProjectAssetsImpl(ctx: ToolContext, args: CollectProjectAssetsArgs) {
+  const parsed = collectProjectAssetsSchema.safeParse(args);
+  if (!parsed.success) return errorResult(`Invalid arguments: ${parsed.error.message}`);
+  const { parent_path, out_manifest, include_missing_only } = parsed.data;
   return guardTd(
     async () => {
       const script = buildCollectProjectAssetsScript({
-        parent_path: args.parent_path,
-        include_missing_only: args.include_missing_only,
+        parent_path,
+        include_missing_only,
       });
       const exec = await ctx.client.executePythonScript(script, true);
       const report = parsePythonReport<CollectProjectAssetsReport>(exec.stdout);
       let manifestPath: string | undefined;
-      if (!report.fatal && args.out_manifest.trim()) {
-        const requestedManifestPath = args.out_manifest.trim();
+      if (!report.fatal && out_manifest.trim()) {
+        const requestedManifestPath = out_manifest.trim();
         const manifest = {
           kind: "tdmcp-project-assets",
           generated_at: new Date().toISOString(),
