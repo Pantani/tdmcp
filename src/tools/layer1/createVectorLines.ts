@@ -741,7 +741,7 @@ export async function createVectorLinesImpl(ctx: ToolContext, args: CreateVector
       resolutionw: resW,
       resolutionh: resH,
     });
-    await builder.connect(frozen, lineArt);
+    await builder.connect(render, lineArt);
     const lineArtFrag = await builder.add("textDAT", "line_art_frag");
     await builder.python(bindLineArtShaderScript({ lineArt, frag: lineArtFrag, args, rgb }));
 

@@ -321,6 +321,19 @@ describe("create_vector_lines", () => {
     expect(
       batchOps.some(
         (op) =>
+          op.source_path?.endsWith("/render_vectors") &&
+          op.target_path?.endsWith("/line_art") &&
+          op.target_input === 0,
+      ),
+    ).toBe(true);
+    expect(
+      batchOps.some(
+        (op) => op.source_path?.endsWith("/frozen_frame") && op.target_path?.endsWith("/line_art"),
+      ),
+    ).toBe(false);
+    expect(
+      batchOps.some(
+        (op) =>
           op.source_path?.endsWith("/vectors_opacity") &&
           op.target_path?.endsWith("/overlay") &&
           op.target_input === 0,
