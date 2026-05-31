@@ -242,7 +242,7 @@ def _set_par(node, names, value, warnings):
                 return True
         except Exception as exc:
             warnings.append("%s.%s rejected %r: %s" % (node.path, name, value, exc))
-    warnings.append("%s has none of parameters %s" % (node.path, ", ".join(names)))
+    warnings.append("%s has none of the parameters %s" % (node.path, ", ".join(names)))
     return False
 
 _warnings = []
@@ -365,7 +365,7 @@ def _set_par(node, names, value, warnings):
                 return True
         except Exception as exc:
             warnings.append("%s.%s rejected %r: %s" % (node.path, name, value, exc))
-    warnings.append("%s has none of parameters %s" % (node.path, ", ".join(names)))
+    warnings.append("%s has none of the parameters %s" % (node.path, ", ".join(names)))
     return False
 
 def _owner_par(owner, name, fallback):
@@ -487,13 +487,6 @@ function controlsFor(args: CreateVectorLinesArgs, paths: Record<string, string>)
   return [
     { name: "Vectorize", type: "pulse", bind_to: [] },
     {
-      name: "Mode",
-      type: "menu",
-      default: args.mode,
-      menu_items: vectorLineModeSchema.options,
-      bind_to: [],
-    },
-    {
       name: "Threshold",
       type: "float",
       min: 0,
@@ -539,7 +532,6 @@ function controlsFor(args: CreateVectorLinesArgs, paths: Record<string, string>)
       menu_items: overlayModeSchema.options,
       bind_to: paths.overlay ? [`${paths.overlay}.operand`] : [],
     },
-    { name: "ShowSource", type: "toggle", default: args.show_source, bind_to: [] },
     {
       name: "Scale",
       type: "float",

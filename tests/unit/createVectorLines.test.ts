@@ -349,6 +349,8 @@ describe("create_vector_lines", () => {
     expect(setup).toContain("'step': 8");
     expect(setup).toContain("#ff8800");
     expect(setup).toContain("linewidth");
+    expect(scripts.join("\n")).not.toContain("has none of parameters");
+    expect(scripts.join("\n")).toContain("has none of the parameters");
 
     const callback = scripts.find((s) => s.includes("def _sync_look(owner, warnings):"));
     const callbackText = callback?.replaceAll('\\"', '"') ?? "";
@@ -376,7 +378,9 @@ describe("create_vector_lines", () => {
       "screen",
       "multiply",
     ]);
-    expect(controls.find((c) => c.name === "ShowSource")?.type).toBe("toggle");
+    expect(controls.find((c) => c.name === "LineColor")?.type).toBe("rgb");
+    expect(controls.find((c) => c.name === "Mode")).toBeUndefined();
+    expect(controls.find((c) => c.name === "ShowSource")).toBeUndefined();
   });
 
   it("returns the expected vector-line paths and warnings", async () => {
