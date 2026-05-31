@@ -5,7 +5,7 @@ import {
   type NetworkBuilder,
   runBuild,
 } from "../layer1/orchestration.js";
-import type { ControlSpec } from "../layer2/createControlPanel.js";
+import { type ControlSpec, toTdCustomParameterName } from "../layer2/createControlPanel.js";
 import { errorResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
@@ -268,7 +268,9 @@ export function mapIsfInputsToBindings(isfInputs: ReadonlyArray<IsfInput>): {
   for (const input of isfInputs) {
     const name = input.NAME;
     const label = input.LABEL ?? name;
-    const controlName = name.charAt(0).toUpperCase() + name.slice(1);
+    // Mirror create_control_panel's sanitization so uniform expressions match the
+    // actual par names TD creates (e.g. "inputGain" -> "Inputgain", not "InputGain").
+    const controlName = toTdCustomParameterName(name);
     switch (input.TYPE) {
       case "float": {
         const dflt = typeof input.DEFAULT === "number" ? input.DEFAULT : 0;
@@ -324,10 +326,20 @@ export function mapIsfInputsToBindings(isfInputs: ReadonlyArray<IsfInput>): {
       }
       case "color": {
         const dflt = Array.isArray(input.DEFAULT) ? input.DEFAULT : [1, 1, 1, 1];
+        // Bind the RGB control's sub-params (r/g/b) to the uniform via
+        // expressions so changing the swatch after import drives the shader.
+        // Alpha stays a static default (the RGB control type only exposes 3 channels).
         uniforms.push({
           name,
           kind: "color",
-          value: dflt,
+          // RGB slots get overwritten by exprs (mode flips to EXPRESSION); only the
+          // alpha slot survives as a constant default.
+          value: [0, 0, 0, dflt[3] ?? 1],
+          expr: [
+            `parent().par.${controlName}r.eval()`,
+            `parent().par.${controlName}g.eval()`,
+            `parent().par.${controlName}b.eval()`,
+          ],
         });
         const rgbDefault = Array.isArray(input.DEFAULT) ? input.DEFAULT : [1, 1, 1];
         const hex = `#${[rgbDefault[0] ?? 1, rgbDefault[1] ?? 1, rgbDefault[2] ?? 1]

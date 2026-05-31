@@ -103,6 +103,25 @@ describe("buildIsfMapping + applyShadertoyUniforms sugar", () => {
     expect(mapping.channels[0]?.index).toBe(0);
     expect(mapping.controls.some((c) => c.name === "Brightness")).toBe(true);
     expect(mapping.provenance.dialect).toBe("isf");
+    // color INPUTs must be expression-bound to the RGB control's r/g/b sub-pars
+    // so changing the swatch at runtime drives the shader (not just build-time).
+    const tint = mapping.uniforms.find((u) => u.name === "tint");
+    expect(Array.isArray(tint?.expr)).toBe(true);
+    expect((tint?.expr as string[])[0]).toMatch(/parent\(\)\.par\.Tintr\.eval\(\)/);
+    expect((tint?.expr as string[])[1]).toMatch(/parent\(\)\.par\.Tintg\.eval\(\)/);
+    expect((tint?.expr as string[])[2]).toMatch(/parent\(\)\.par\.Tintb\.eval\(\)/);
+  });
+
+  it("sanitizes camelCase ISF input names so uniform exprs match TD's par naming", () => {
+    const mapping = buildIsfMapping({
+      fragment: "void main(){}",
+      inputs: [{ NAME: "inputGain", TYPE: "float", DEFAULT: 0.5 }],
+    });
+    // create_control_panel lowercases everything after the first letter:
+    // "inputGain" -> "Inputgain" (NOT "InputGain"). The uniform expr must match.
+    expect(mapping.controls.some((c) => c.name === "Inputgain")).toBe(true);
+    const u = mapping.uniforms.find((x) => x.name === "inputGain");
+    expect(u?.expr).toBe("parent().par.Inputgain.eval()");
   });
 
   it("applyShadertoyUniforms produces translated fragment + Speed control + warnings empty for happy path", () => {
