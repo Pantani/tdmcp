@@ -63,9 +63,10 @@ interface RepairNetworkReport {
 //
 // Auto-fix classes (only known-safe ones are applied; everything else is
 // PLAN-ONLY even when dry_run=false):
-//   * clear_expression — a parameter stuck in expression/export mode whose
-//     broken expression is the cook error: reset that par's mode back to
-//     constant (ParMode.CONSTANT) so the bad expression stops cooking. SAFE.
+//   * clear_expression — a named parameter stuck in expression/export mode
+//     whose broken expression is the cook error: reset that specific par's mode
+//     back to constant (ParMode.CONSTANT) so the bad expression stops cooking.
+//     Ambiguous expression errors are planned but left untouched. SAFE.
 //   * enable_op — an op left bypassed or display-off that is reporting an
 //     error: clear .bypass / set .display back on. SAFE (a flag toggle).
 //   * note — DAT syntax errors, missing-input warnings, and anything we cannot
@@ -75,13 +76,14 @@ interface RepairNetworkReport {
 // Par-name / API notes (probed at runtime where they vary by build):
 //   * op.errors(recurse=True) — preferred; falls back to errors() with no args.
 //   * Par.mode / ParMode.CONSTANT — read from the live `ParMode` global; if it
-//     is unavailable we record a warning and leave the par untouched (no guess).
+//     is unavailable, or if the error does not name a specific parameter, we
+//     record a warning and leave the par untouched (no guess).
 //   * op.bypass / op.display — flags exist on most COMP/TOP/CHOP families; reads
 //     and writes are wrapped so a missing attr degrades to a warning, not a crash.
 // All of the above are UNVERIFIED-live until run against a real TD build.
 // ---------------------------------------------------------------------------
 const REPAIR_NETWORK_SCRIPT = `
-import json, base64, traceback
+import json, base64, re, traceback
 _p = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
 report = {
     "parent_path": _p["parent_path"],
@@ -98,19 +100,22 @@ report = {
 def _collect_errors(root):
     """Return a flat list of (op, message) under root, including root itself."""
     out = []
-    try:
-        _kids = list(root.findChildren(type=baseCOMP)) if False else None
-    except Exception:
-        _kids = None
     # Walk root + all descendants regardless of family.
     _ops = [root]
     try:
-        _ops.extend(root.findChildren(depth=10))
+        _ops.extend(root.findChildren())
     except Exception:
         try:
-            _ops.extend(root.findChildren())
+            _stack = list(root.children)
+            while _stack:
+                _child = _stack.pop(0)
+                _ops.append(_child)
+                try:
+                    _stack.extend(list(_child.children))
+                except Exception:
+                    pass
         except Exception as _e:
-            report["warnings"].append("findChildren: " + str(_e))
+            report["warnings"].append("findChildren/manual walk: " + str(_e))
     for _o in _ops:
         try:
             try:
@@ -133,11 +138,11 @@ def _classify(_o, _msg):
     # DAT / script syntax errors — never auto-fixed (needs human edit).
     if ("syntax" in _low) or ("traceback" in _low) or ("indentation" in _low):
         return ("note", "DAT/script syntax error — needs a manual edit; left as-is.", False)
-    # Broken parameter expression — the safe fix is to reset the par to constant.
+    # Broken parameter expression — the safe fix is to reset the named par to constant.
     if ("expression" in _low) or ("invalid" in _low and "par" in _low) or ("name '" in _low):
         return (
             "clear_expression",
-            "Reset the broken parameter expression to constant mode.",
+            "Reset the named broken parameter expression to constant mode.",
             True,
         )
     # Bypassed / disabled op that still errors — safe to re-enable.
@@ -149,9 +154,46 @@ def _classify(_o, _msg):
     return ("note", "Unclassified error — left as-is for manual review.", False)
 
 
-def _apply_clear_expression(_o):
-    """Reset any expression/export-mode par on this op back to constant. Returns
-    True if at least one par mode was changed."""
+def _message_targets_par(_name, _msg):
+    """Return true when the error text names this specific parameter."""
+    _escaped = re.escape(str(_name).lower())
+    _low = str(_msg).lower()
+    _patterns = (
+        r"(?:par|parameter)\\s*[:=]?\\s*['\\"]?" + _escaped + r"['\\"]?",
+        r"\\.par\\." + _escaped + r"\\b",
+        r"\\['" + _escaped + r"'\\]",
+        r'\\["' + _escaped + r'"\\]',
+        r"['\\"]" + _escaped + r"['\\"]",
+    )
+    return any(re.search(_pat, _low) for _pat in _patterns)
+
+
+def _target_expression_pars(_o, _msg):
+    """Find only the par(s) named by this expression error. Empty means no-op."""
+    _targets = []
+    try:
+        _pars = _o.pars()
+    except Exception as _e:
+        report["warnings"].append("pars() while clearing expression on " + _o.path + ": " + str(_e))
+        return _targets
+    for _par in _pars:
+        try:
+            _name = getattr(_par, "name", "")
+        except Exception:
+            _name = ""
+        if _name and _message_targets_par(_name, _msg):
+            _targets.append(_par)
+    if not _targets:
+        report["warnings"].append(
+            "expression error did not identify a specific parameter on "
+            + _o.path
+            + "; left expressions unchanged"
+        )
+    return _targets
+
+
+def _apply_clear_expression(_o, _msg):
+    """Reset only the expression/export-mode par named in this error."""
     _changed = False
     try:
         _const = None
@@ -164,7 +206,7 @@ def _apply_clear_expression(_o):
                 "ParMode.CONSTANT unavailable — cannot reset expression on " + _o.path
             )
             return False
-        for _par in _o.pars():
+        for _par in _target_expression_pars(_o, _msg):
             try:
                 if _par.mode != _const:
                     _par.mode = _const
@@ -215,7 +257,7 @@ try:
             _applied = False
             if (not report["dry_run"]) and _safe:
                 if _kind == "clear_expression":
-                    _applied = _apply_clear_expression(_o)
+                    _applied = _apply_clear_expression(_o, _msg)
                 elif _kind == "enable_op":
                     _applied = _apply_enable_op(_o)
             report["steps"].append({

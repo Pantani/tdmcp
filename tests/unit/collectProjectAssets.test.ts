@@ -9,6 +9,7 @@ import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js"
 import {
   collectProjectAssetsImpl,
   collectProjectAssetsSchema,
+  registerCollectProjectAssets,
 } from "../../src/tools/layer3/collectProjectAssets.js";
 import type { ToolContext } from "../../src/tools/types.js";
 import { silentLogger } from "../../src/utils/logger.js";
@@ -193,6 +194,27 @@ describe("collect_project_assets", () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+
+  it("does not advertise as read-only because out_manifest writes a local file", () => {
+    const calls: Array<{
+      name: string;
+      options: { annotations?: Record<string, boolean> };
+    }> = [];
+    const fakeServer = {
+      registerTool(name: string, options: { annotations?: Record<string, boolean> }) {
+        calls.push({ name, options });
+      },
+    };
+
+    registerCollectProjectAssets(fakeServer as never, makeCtx());
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.name).toBe("collect_project_assets");
+    expect(calls[0]?.options.annotations).toMatchObject({
+      readOnlyHint: false,
+      destructiveHint: true,
+    });
   });
 
   it("returns an isError result (no throw) when the bridge reports fatal", async () => {

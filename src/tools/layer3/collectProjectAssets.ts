@@ -81,8 +81,9 @@ interface CollectProjectAssetsReport {
 //
 // Walks op(parent_path) recursively (children, recursing into COMPs) and reads
 // every operator's pars() looking for ones that reference an external file. This
-// is a READ-ONLY inventory — a sibling of make_portable_tox / bundle_dependencies
-// but across a whole subtree, doing no copying or rewriting.
+// is a read-only TouchDesigner inventory — a sibling of make_portable_tox /
+// bundle_dependencies but across a whole subtree, doing no copying or rewriting
+// inside TD. The optional out_manifest path is a local filesystem write.
 //
 // Detection is two-tier and PROBE-LIVE (the exact attribute names vary by TD
 // build, so each access is guarded and we report what worked):
@@ -268,10 +269,10 @@ export const registerCollectProjectAssets: ToolRegistrar = (server, ctx) => {
     {
       title: "Collect project assets",
       description:
-        "Read-only inventory: scan a COMP subtree for every external file dependency (movie/image file pars, fonts, LUTs, externaltox links, DAT/GLSL file references) and report each referenced file, the node+parameter that references it, and whether the file currently exists on disk. The project-wide 'gather everything this touches' inventory — a sibling of make_portable_tox / bundle_dependencies, but read-only across a whole subtree (it copies and rewrites nothing). Optionally writes a JSON manifest to out_manifest. File-par detection uses par.style ('File'/'Folder') when readable, falling back to a name heuristic (*file*, *fontfile*, *lut*, *externaltox*, *dat*) — both UNVERIFIED across TD builds; `style_supported` records whether par.style was available.",
+        "Scan a COMP subtree for every external file dependency (movie/image file pars, fonts, LUTs, externaltox links, DAT/GLSL file references) and report each referenced file, the node+parameter that references it, and whether the file currently exists on disk. The TouchDesigner scan is read-only and copies/rewrites nothing in the network; when out_manifest is set, this tool writes that local JSON path and may overwrite an existing manifest. File-par detection uses par.style ('File'/'Folder') when readable, falling back to a name heuristic (*file*, *fontfile*, *lut*, *externaltox*, *dat*) — both UNVERIFIED across TD builds; `style_supported` records whether par.style was available.",
       inputSchema: collectProjectAssetsSchema.shape,
       outputSchema: collectProjectAssetsOutputSchema.shape,
-      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     (args) => collectProjectAssetsImpl(ctx, args),
   );

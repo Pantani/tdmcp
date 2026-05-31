@@ -18,8 +18,8 @@ export const diffLibraryAssetsSchema = z.object({
     .describe(
       "How to interpret both files. 'auto' picks by parsing (recipe-aware if both validate " +
         "against the recipe schema, otherwise a generic deep diff). 'recipe' forces recipe-aware " +
-        "diffing (node/param/connection level). 'manifest' and 'json' both do a generic deep " +
-        "object diff of the parsed JSON.",
+        "diffing (node/param/connection level). 'manifest' uses the same generic deep object " +
+        "diff as 'json' but reports mode_used='manifest' for component-manifest callers.",
     ),
 });
 type DiffLibraryAssetsArgs = z.infer<typeof diffLibraryAssetsSchema>;
@@ -214,7 +214,7 @@ export async function diffLibraryAssetsImpl(_ctx: ToolContext, args: DiffLibrary
     return errorResult(err instanceof Error ? err.message : String(err));
   }
 
-  let modeUsed: "recipe" | "json" = "json";
+  let modeUsed: "recipe" | "manifest" | "json" = args.mode === "manifest" ? "manifest" : "json";
   let recipeDiff: RecipeDiff | undefined;
 
   if (args.mode === "recipe" || args.mode === "auto") {
@@ -227,7 +227,7 @@ export async function diffLibraryAssetsImpl(_ctx: ToolContext, args: DiffLibrary
       const which = !aRecipe && !bRecipe ? "both files" : !aRecipe ? "a_path" : "b_path";
       return errorResult(
         `recipe mode requested but ${which} did not validate against the recipe schema. ` +
-          "Use mode 'json' for a generic diff.",
+          "Use mode 'json' or 'manifest' for a generic diff.",
       );
     }
   }
@@ -258,7 +258,7 @@ export async function diffLibraryAssetsImpl(_ctx: ToolContext, args: DiffLibrary
 export const diffLibraryAssetsOutputSchema = z.object({
   a_path: z.string(),
   b_path: z.string(),
-  mode_used: z.enum(["recipe", "json"]),
+  mode_used: z.enum(["recipe", "manifest", "json"]),
   summary: z.object({
     added: z.number(),
     removed: z.number(),

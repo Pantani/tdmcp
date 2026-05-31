@@ -3,7 +3,11 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
 import { RecipeLibrary } from "../../src/recipes/loader.js";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
-import { repairNetworkImpl, repairNetworkSchema } from "../../src/tools/layer3/repairNetwork.js";
+import {
+  buildRepairNetworkScript,
+  repairNetworkImpl,
+  repairNetworkSchema,
+} from "../../src/tools/layer3/repairNetwork.js";
 import type { ToolContext } from "../../src/tools/types.js";
 import { silentLogger } from "../../src/utils/logger.js";
 import { makeTdServer, TD_BASE } from "../helpers/tdMock.js";
@@ -196,6 +200,28 @@ describe("repair_network", () => {
     // The risky note stays unapplied even with dry_run=false.
     const note = data.steps.find((s: { kind: string }) => s.kind === "note");
     expect(note.applied).toBe(false);
+  });
+
+  it("builds a whole-subtree scan without a hard-coded depth cap", () => {
+    const script = buildRepairNetworkScript({
+      parent_path: "/project1",
+      max_steps: 3,
+      dry_run: true,
+    });
+
+    expect(script).not.toContain("findChildren(depth=10)");
+    expect(script).toContain("findChildren()");
+  });
+
+  it("only clears the parameter identified by an expression error", () => {
+    const script = buildRepairNetworkScript({
+      parent_path: "/project1",
+      max_steps: 3,
+      dry_run: false,
+    });
+
+    expect(script).toContain("_apply_clear_expression(_o, _msg)");
+    expect(script).toContain("expression error did not identify a specific parameter");
   });
 
   it("a clean network returns errors_before:0 and no steps", async () => {

@@ -27,7 +27,7 @@ interface DiffResult {
   structuredContent?: {
     a_path: string;
     b_path: string;
-    mode_used: "recipe" | "json";
+    mode_used: "recipe" | "manifest" | "json";
     summary: { added: number; removed: number; changed: number };
     details: {
       deep: {
@@ -147,6 +147,33 @@ describe("diff_library_assets", () => {
     expect(res.structuredContent?.details.deep.added).toContainEqual({
       path: "fresh",
       value: [1, 2, 3],
+    });
+  });
+
+  it("reports manifest mode distinctly while using the generic deep diff", async () => {
+    const a = writeJson("a.manifest.json", { id: "demo", version: "1.0.0", assets: ["a.tox"] });
+    const b = writeJson("b.manifest.json", {
+      id: "demo",
+      version: "1.1.0",
+      assets: ["a.tox", "thumb.png"],
+    });
+
+    const res = (await diffLibraryAssetsImpl(makeCtx(), {
+      a_path: a,
+      b_path: b,
+      mode: "manifest",
+    })) as DiffResult;
+
+    expect(res.isError).toBeFalsy();
+    expect(res.structuredContent?.mode_used).toBe("manifest");
+    expect(res.structuredContent?.details.deep.changed).toContainEqual({
+      path: "version",
+      old: "1.0.0",
+      new: "1.1.0",
+    });
+    expect(res.structuredContent?.details.deep.added).toContainEqual({
+      path: "assets[1]",
+      value: "thumb.png",
     });
   });
 
