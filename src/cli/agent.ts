@@ -15,6 +15,10 @@ import { macroRecorderImpl, macroRecorderSchema } from "../tools/cli/macroRecord
 // Campaign BEYOND Wave 5 (backlog 2026-05-30 — v0.7.0):
 import { runMacroScriptImpl, runMacroScriptSchema } from "../tools/cli/runMacroScript.js";
 import {
+  applyGlslTopMappingImpl,
+  applyGlslTopMappingSchema,
+} from "../tools/foundation/glslTopMapping.js";
+import {
   applyPostProcessingImpl,
   applyPostProcessingSchema,
 } from "../tools/layer1/applyPostProcessing.js";
@@ -72,6 +76,7 @@ import {
   createDisplacementWarpImpl,
   createDisplacementWarpSchema,
 } from "../tools/layer1/createDisplacementWarp.js";
+import { createDitherImpl, createDitherSchema } from "../tools/layer1/createDither.js";
 import {
   createDmxFixturePipelineImpl,
   createDmxFixturePipelineSchema,
@@ -90,6 +95,7 @@ import {
   createFeedbackTunnelImpl,
   createFeedbackTunnelSchema,
 } from "../tools/layer1/createFeedbackTunnel.js";
+import { createFluidSimImpl, createFluidSimSchema } from "../tools/layer1/createFluidSim.js";
 import {
   createGenerativeArtImpl,
   createGenerativeArtSchema,
@@ -108,6 +114,11 @@ import {
   createGrowthSystemSchema,
 } from "../tools/layer1/createGrowthSystem.js";
 import { createHalftoneImpl, createHalftoneSchema } from "../tools/layer1/createHalftone.js";
+import {
+  createImageToParticlesImpl,
+  createImageToParticlesSchema,
+} from "../tools/layer1/createImageToParticles.js";
+import { createJfaVoronoiImpl, createJfaVoronoiSchema } from "../tools/layer1/createJfaVoronoi.js";
 import {
   createKaleidoscopeImpl,
   createKaleidoscopeSchema,
@@ -233,7 +244,9 @@ import {
   extractAudioFeaturesSchema,
 } from "../tools/layer1/extractAudioFeatures.js";
 import { getPreviewSchema } from "../tools/layer1/getPreview.js";
+import { importIsfShaderImpl, importIsfShaderSchema } from "../tools/layer1/importIsfShader.js";
 import { importModelImpl, importModelSchema } from "../tools/layer1/importModel.js";
+import { importShadertoyImpl, importShadertoySchema } from "../tools/layer1/importShadertoy.js";
 import { listRecipesImpl, listRecipesSchema } from "../tools/layer1/listRecipes.js";
 import {
   moodboardToSystemImpl,
@@ -1770,6 +1783,49 @@ const COMMANDS: Record<string, Command> = {
     runMacroScriptSchema,
     runMacroScriptImpl,
     "Replay a recorded macro script of tool calls.",
+    { mutates: true },
+  ),
+  // Ingest-extend Wave 1 (2026-05-31) — shader ingest foundation + consumers + new looks:
+  "apply-glsl-mapping": r(
+    applyGlslTopMappingSchema,
+    applyGlslTopMappingImpl,
+    "Build a GLSL TOP from a pre-translated mapping (fragment + uniforms + channels + controls).",
+    { mutates: true },
+  ),
+  "import-shadertoy": r(
+    importShadertoySchema,
+    importShadertoyImpl,
+    "Import a Shadertoy shader (URL/ID/source) into a native GLSL TOP network.",
+    { mutates: true },
+  ),
+  "import-isf": r(
+    importIsfShaderSchema,
+    importIsfShaderImpl,
+    "Import an ISF shader into a native GLSL TOP network.",
+    { mutates: true },
+  ),
+  "fluid-sim": r(
+    createFluidSimSchema,
+    createFluidSimImpl,
+    "Build a real-time fluid simulation (advect/diffuse/project feedback chain).",
+    { mutates: true },
+  ),
+  "image-to-particles": r(
+    createImageToParticlesSchema,
+    createImageToParticlesImpl,
+    "Convert an image into a particle field whose colours/positions sample the source.",
+    { mutates: true },
+  ),
+  dither: r(
+    createDitherSchema,
+    createDitherImpl,
+    "Apply 1-bit / Bayer / error-diffusion dither with palette modes (mono/duotone/rgb).",
+    { mutates: true },
+  ),
+  "jfa-voronoi": r(
+    createJfaVoronoiSchema,
+    createJfaVoronoiImpl,
+    "Build a Jump Flood Algorithm Voronoi / distance-field network from seed points.",
     { mutates: true },
   ),
 };
