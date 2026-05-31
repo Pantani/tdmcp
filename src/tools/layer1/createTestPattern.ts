@@ -49,9 +49,10 @@ export const createTestPatternSchema = z.object({
   output_number: z.coerce
     .number()
     .int()
+    .min(0)
     .default(0)
     .describe(
-      "Projector / output ID drawn as a large label in the lower-right corner. 0 = no number.",
+      "Projector / output ID drawn as a large label in the lower-right corner (must be >= 0). 0 = no number.",
     ),
   label: z
     .string()

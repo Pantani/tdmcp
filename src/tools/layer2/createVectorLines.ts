@@ -21,7 +21,7 @@ export const createVectorLinesSchema = z.object({
     .enum(["contour", "trace", "plotter"])
     .default("contour")
     .describe(
-      "contour: keep it a TOP look — edges colorized to line_color over bg_color (cheap, real-time on video). trace: vectorize the edges into geometry with a Trace SOP and render them as crisp lines (COSTLY on live video — see warnings). plotter: same vectorization but thin single-weight strokes for a pen-plotter aesthetic.",
+      "contour: keep it a TOP look — edges colorized to line_color over bg_color (cheap, real-time on video). trace: vectorize the edges into geometry with a Trace SOP and render them as crisp lines (COSTLY on live video — see warnings). plotter: a pen-plotter-intent alias of trace — currently renders the same single-weight vectorized geometry as trace (no distinct stroke weight yet).",
     ),
   threshold: z.coerce
     .number()
@@ -35,7 +35,7 @@ export const createVectorLinesSchema = z.object({
     .number()
     .default(2)
     .describe(
-      "Stroke thickness in pixels. For contour style this scales the edge bloom; for trace/plotter it sets the line width of the rendered geometry.",
+      "Stroke thickness in pixels. Applied to the contour style (scales the edge bloom). NOTE: trace/plotter render the vectorized SOP as native single-weight lines and do not yet apply line_width — this param is a no-op for those styles.",
     ),
   line_color: z
     .array(z.number())
@@ -85,7 +85,8 @@ interface VectorLinesReport {
 //     trace / plotter: a Trace SOP vectorizes the edge image into geometry, rendered via a Geometry
 //       COMP + Camera + Render TOP. PROBE-LIVE: the Trace SOP optype + its threshold/source-TOP par
 //       names vary by build, so we probe and record report["trace_optype_used"]. This stage is
-//       COOK-COSTLY on live video — we FLAG it as a warning. plotter differs only in line_width.
+//       COOK-COSTLY on live video — we FLAG it as a warning. trace and plotter currently render the
+//       same single-weight geometry (line_width is not applied to the SOP render path).
 //   Per-op failures are collected as warnings; report["fatal"] only when the source TOP or the
 //   parent COMP is missing. Never throws.
 const VECTOR_LINES_SCRIPT = `

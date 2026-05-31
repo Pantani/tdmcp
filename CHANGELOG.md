@@ -27,8 +27,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 
 - **Nine new artist-control tools** (campaign Wave 3 — artist-controls surface of
-  the discovery backlog), all live-validated in TouchDesigner 099 (create → cook →
-  zero post-cook errors):
+  the discovery backlog). Eight were live-validated in TouchDesigner 099 (create →
+  cook → zero post-cook errors); `create_blob_reactive` is built + unit-tested but
+  still awaits a live-camera validation pass (noted on its entry below):
   - **`create_test_pattern`** — projector calibration source (grid / crosshair /
     color-bars / ramp / circle-grid) with a per-output number overlay; baked-GLSL,
     no probe risk.
