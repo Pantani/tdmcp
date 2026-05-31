@@ -205,29 +205,32 @@ function tryRecipe(value: Json): Recipe | undefined {
 }
 
 export async function diffLibraryAssetsImpl(_ctx: ToolContext, args: DiffLibraryAssetsArgs) {
+  const parsedArgs = diffLibraryAssetsSchema.safeParse(args);
+  if (!parsedArgs.success) return errorResult(`Invalid arguments: ${parsedArgs.error.message}`);
+  const { a_path, b_path, mode } = parsedArgs.data;
   let a: Json;
   let b: Json;
   try {
-    a = readJsonFile(args.a_path);
+    a = readJsonFile(a_path);
   } catch (err) {
     return errorResult(err instanceof Error ? err.message : String(err));
   }
   try {
-    b = readJsonFile(args.b_path);
+    b = readJsonFile(b_path);
   } catch (err) {
     return errorResult(err instanceof Error ? err.message : String(err));
   }
 
-  let modeUsed: "recipe" | "manifest" | "json" = args.mode === "manifest" ? "manifest" : "json";
+  let modeUsed: "recipe" | "manifest" | "json" = mode === "manifest" ? "manifest" : "json";
   let recipeDiff: RecipeDiff | undefined;
 
-  if (args.mode === "recipe" || args.mode === "auto") {
+  if (mode === "recipe" || mode === "auto") {
     const aRecipe = tryRecipe(a);
     const bRecipe = tryRecipe(b);
     if (aRecipe && bRecipe) {
       modeUsed = "recipe";
       recipeDiff = diffRecipes(aRecipe, bRecipe);
-    } else if (args.mode === "recipe") {
+    } else if (mode === "recipe") {
       const which = !aRecipe && !bRecipe ? "both files" : !aRecipe ? "a_path" : "b_path";
       return errorResult(
         `recipe mode requested but ${which} did not validate against the recipe schema. ` +
@@ -251,8 +254,8 @@ export async function diffLibraryAssetsImpl(_ctx: ToolContext, args: DiffLibrary
   const humanSummary = `${summary.changed} changed, ${summary.added} added, ${summary.removed} removed`;
 
   return structuredResult(humanSummary, {
-    a_path: resolve(args.a_path),
-    b_path: resolve(args.b_path),
+    a_path: resolve(a_path),
+    b_path: resolve(b_path),
     mode_used: modeUsed,
     summary,
     details,

@@ -41,6 +41,7 @@ const SAFE_PROFILE_EXCLUDE = new Set<string>([
   "import_recipe_from_url", // downloads and writes recipe files
   "export_palette_component", // writes .tox files into the Palette
   "collect_project_assets", // may overwrite the local asset manifest
+  "repair_network", // can reset parameter expressions and re-enable ops when dry_run:false
 ]);
 
 /** Registers every tool (all layers) against the MCP server, honoring the profile. */

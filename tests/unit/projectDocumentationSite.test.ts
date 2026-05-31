@@ -40,7 +40,7 @@ function makeCtx(): ToolContext {
 // ---------------------------------------------------------------------------
 // Per-test temp dir, cleaned up afterwards.
 // ---------------------------------------------------------------------------
-let tmp: string;
+let tmp = "";
 afterEach(() => {
   if (tmp) {
     rmSync(tmp, { recursive: true, force: true });

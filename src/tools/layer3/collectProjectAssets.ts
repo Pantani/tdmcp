@@ -90,9 +90,9 @@ interface CollectProjectAssetsReport {
 //   1. par.style in ("File", "Folder") — the authoritative way a file par is
 //      flagged. The `style` attribute is UNVERIFIED across builds; if reading it
 //      raises, we set style_supported=False and lean on the name heuristic.
-//   2. Name heuristic fallback — pars whose name looks file-ish (*file*,
-//      *fontfile*, *lut*, *externaltox*, *dat*) AND whose string value contains a
-//      path separator or a dotted extension. This catches builds/pars where
+//   2. Name heuristic fallback — pars whose name ends with or equals a file-ish
+//      stem (*file*, *fontfile*, *lut*, *externaltox*, *moviefile*, *imagefile*)
+//      AND whose string value looks like a path. This catches builds/pars where
 //      style is absent and avoids flagging plain text fields.
 //
 // par.eval() is preferred for the value (resolves expressions); falls back to
@@ -281,7 +281,7 @@ export const registerCollectProjectAssets: ToolRegistrar = (server, ctx) => {
     {
       title: "Collect project assets",
       description:
-        "Scan a COMP subtree for every external file dependency (movie/image file pars, fonts, LUTs, externaltox links, DAT/GLSL file references) and report each referenced file, the node+parameter that references it, and whether the file currently exists on disk. The TouchDesigner scan is read-only and copies/rewrites nothing in the network; when out_manifest is set, this tool writes that local JSON path and may overwrite an existing manifest. File-par detection uses par.style ('File'/'Folder') when readable, falling back to a name heuristic (*file*, *fontfile*, *lut*, *externaltox*, *dat*) — both UNVERIFIED across TD builds; `style_supported` records whether par.style was available.",
+        "Scan a COMP subtree for every external file dependency (movie/image file pars, fonts, LUTs, externaltox links) and report each referenced file, the node+parameter that references it, and whether the file currently exists on disk. The TouchDesigner scan is read-only and copies/rewrites nothing in the network; when out_manifest is set, this tool writes that local JSON path and may overwrite an existing manifest. File-par detection uses par.style ('File'/'Folder') when readable, falling back to a suffix/exact name heuristic (*file*, *fontfile*, *lut*, *externaltox*, *moviefile*, *imagefile*) — both UNVERIFIED across TD builds; `style_supported` records whether par.style was available.",
       inputSchema: collectProjectAssetsSchema.shape,
       outputSchema: collectProjectAssetsOutputSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },

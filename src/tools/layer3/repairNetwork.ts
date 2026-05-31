@@ -329,7 +329,7 @@ export const registerRepairNetwork: ToolRegistrar = (server, ctx) => {
       description:
         "Bounded, autonomous repair: scan cook errors under a subtree, classify each, and plan a safe fix, capped at max_steps so it can never run away. Defaults to dry_run (PLAN only, no changes). Set dry_run:false to apply the known-safe fixes — resetting a broken parameter expression to constant mode, and re-enabling a bypassed/display-off op — within the same bound; risky cases (DAT syntax errors, missing inputs, unclassified errors) are always PLAN-only. Re-checks errors after applying and stops at the bound or when errors clear. Returns {parent_path, dry_run, max_steps, errors_before, errors_after, steps[], remaining[], warnings}. Use it as the diagnostic 'try the obvious safe fixes' loop after a build; for raw triage use summarize_td_errors / get_td_node_errors instead.",
       inputSchema: repairNetworkSchema.shape,
-      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     (args) => repairNetworkImpl(ctx, args),
   );
