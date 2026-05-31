@@ -26,6 +26,32 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Five new library/packaging tools** (campaign Wave 4 — library surface), all live-validated in TD 099: diff_library_assets, import_recipe_from_url, export_palette_component, collect_project_assets, project_documentation_site.
+- **Four new AI/LLM features** (campaign Wave 6): caption_top, repair_network (tools; qa_unverified — offline unit-tested); teach_touchdesigner, design_brief (prompts; qa_pass).
+- **Nine new artist-control tools** (campaign Wave 3 — artist-controls surface of
+  the discovery backlog). Eight were live-validated in TouchDesigner 099 (create →
+  cook → zero post-cook errors); `create_blob_reactive` is built + unit-tested but
+  still awaits a live-camera validation pass (noted on its entry below):
+  - **`create_test_pattern`** — projector calibration source (grid / crosshair /
+    color-bars / ramp / circle-grid) with a per-output number overlay; baked-GLSL,
+    no probe risk.
+  - **`create_text_crawl`** — multi-line crawl / ticker / typewriter text
+    (vs single-string `create_kinetic_text`).
+  - **`create_band_router`** — split audio into N EQ bands (`audiofilter` +
+    `analyze rmspower`) and route each band level to its own target(s); output
+    channels `band0…bandN`.
+  - **`create_sidechain_pump`** — one-call "pump the whole rig on the kick": a
+    Limit-CHOP-clamped ducking envelope bound to many targets with a single depth knob.
+  - **`create_xy_pad`** — a draggable 2D XY gesture pad (Panel CHOP) driving target
+    parameters by expression, with an optional Z slider.
+  - **`create_time_echo`** — per-pixel time effect on a source TOP: echo trails
+    (feedback + Level-TOP decay), slit-scan and time-displace (`timeMachineTOP`).
+  - **`create_capture_loop`** — bidirectional Spout/Syphon/NDI bridge (receive +
+    publish in one container), anti-feedback by design.
+  - **`create_vector_lines`** — image/video → pulse-captured Trace-SOP vector
+    geometry composited back over the source.
+  - **`create_blob_reactive`** — camera/TOP blob-position tracking (`blobtrackTOP`)
+    bound to parameters (blob-channel layout pending a live-camera validation pass).
 - **`.safeskillignore`** so the SafeSkill scanner skips generated knowledge-base
   data, build output and binary media (the source of the substring false
   positives) and focuses on the actual server code.

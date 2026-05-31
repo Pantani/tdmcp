@@ -34,7 +34,7 @@ has grown through four arcs:
 > - ⬜ **Planned** — designed and prioritized, not yet built.
 >
 > The dated, line-by-line record of every change is the
-> `CHANGELOG.md`; the
+> **CHANGELOG** (`CHANGELOG.md` in the repository root); the
 > always-current, complete tool list is the [Tools reference](/reference/tools).
 > This page is the overview. Curious about the long tail of ideas? The full,
 > unfiltered brainstorm is preserved in the [planning archive](#full-backlog) at
@@ -347,16 +347,16 @@ in **v0.6.0** (marked ✅).
 |---|---|---|---|---|---|---|---|
 | `create_modulators` ✅ 0.6.0 | BPM-synced multi-LFO modulation bank `bind_to_channel` can target | M | High | High | P0 | NEW | phase-lock + paused-timeline |
 | `create_look_bank` ✅ 0.6.0 | Snapshot-slot + A↔B morph instrument | M | High | Med | P0 | EXTENSION | animatable-par filter |
-| `create_test_pattern` | Projector calibration generator (grid/bars/sweep/per-output #) | S | Med | High | P1 | NEW | none |
-| `create_text_crawl` | Multi-line crawl/ticker/typewriter text | M | Med | High | P1 | NEW | typewriter substring expr |
-| `create_band_router` | Musician-friendly EQ-band → multi-target routing | M | Med | High | P1 | EXTENSION | Analyze `rmspower` not `rms` |
+| `create_test_pattern` ✅ 0.7.0 | Projector calibration generator (grid/bars/sweep/per-output #) | S | Med | High | P1 | NEW | none |
+| `create_text_crawl` ✅ 0.7.0 | Multi-line crawl/ticker/typewriter text | M | Med | High | P1 | NEW | typewriter substring expr |
+| `create_band_router` ✅ 0.7.0 | Musician-friendly EQ-band → multi-target routing | M | Med | High | P1 | EXTENSION | Analyze `rmspower` not `rms` |
 | `create_decks` N-channel | 3–4 decks + transition cut + per-deck FX send | M | Med | High | P1 | EXTENSION | none |
-| `create_sidechain_pump` | One-call "pump the rig on the kick" | S | Med | Med | P1 | EXTENSION | gate threshold tuning |
-| `create_xy_pad` | 2D/XYZ control widget on panel + phone remote | M | Med | Med | P1 | EXTENSION | `appendXY` + phone 2D-drag |
-| `create_time_echo` | Per-pixel time-displacement / slit-scan trails | M | Med | Med | P1 | NEW | buffer fill + displace par names |
-| `create_blob_reactive` | Camera object/hand position tracking (vs aggregate motion) | M | Med | Med | P2 | NEW | camera permission hang + tune |
-| `create_capture_loop` | Bidirectional Spout/Syphon/NDI bridge (in+out, one tool) | M | Med | Med | P2 | EXTENSION | platform-gated; no feedback-storm |
-| `create_vector_lines` | Image → animated line-art / contour / plotter look | L | Med | Med | P2 | NEW | trace cook cost on live video |
+| `create_sidechain_pump` ✅ 0.7.0 | One-call "pump the rig on the kick" | S | Med | Med | P1 | EXTENSION | gate threshold tuning |
+| `create_xy_pad` ✅ 0.7.0 | 2D/XYZ control widget on panel + phone remote | M | Med | Med | P1 | EXTENSION | `appendXY` + phone 2D-drag |
+| `create_time_echo` ✅ 0.7.0 | Per-pixel time-displacement / slit-scan trails | M | Med | Med | P1 | NEW | buffer fill + displace par names |
+| `create_blob_reactive` ◐ 0.7.0 | Camera object/hand position tracking (vs aggregate motion) | M | Med | Med | P2 | NEW | camera permission hang + tune |
+| `create_capture_loop` ✅ 0.7.0 | Bidirectional Spout/Syphon/NDI bridge (in+out, one tool) | M | Med | Med | P2 | EXTENSION | platform-gated; no feedback-storm |
+| `create_vector_lines` ✅ 0.7.0 | Image → pulse-captured Trace SOP vector lines / overlay | L | Med | Med | P2 | NEW | trace cook cost on live video |
 | `create_pop_geometry` | POP-family generative GPU geometry | L | Med | Low | P2 | EXTENSION | probe-live (render path) |
 
 #### A.2 · Library, packaging & distribution
@@ -368,16 +368,16 @@ in **v0.6.0** (marked ✅).
 | `bundle_dependencies` | Make `make_portable_tox` actually self-contained | M | High | Med | P1 | EXTENSION | file-par enum + path-rewrite |
 | `publish_recipe_bundle` | Checksummed/versioned publish artifact | M | Med | High | P1 | NEW | none |
 | `export_externalized_tree` | `save_external` → git-diffable `.tox` tree | S | Med | High | P1 | EXTENSION | tree shape on first run |
-| `diff_library_assets` | Offline diff of two saved recipes/specs | M | Med | High | P1 | EXTENSION | none |
+| `diff_library_assets` ✅ 0.7.0 | Offline diff of two saved recipes/specs | M | Med | High | P1 | EXTENSION | none |
 | `version_library_asset` | Semver + changelog + retained-prior on save tools | M | Med | High | P1 | EXTENSION | none |
 | `tag_and_search_library` | Faceted browse over recipe metadata | M | Med | High | P1 | EXTENSION | none |
-| `project_documentation_site` | Compose readme + Mermaid + thumbnails into a handoff doc | M | Med | High | P2 | EXTENSION | none |
+| `project_documentation_site` ✅ 0.7.0 | Compose readme + Mermaid + thumbnails into a handoff doc | M | Med | High | P2 | EXTENSION | none |
 | `component_readme_in_package` | Auto-write a params/IO doc into the portable-tox package | S | Med | High | P2 | EXTENSION | none |
 | `expand_recipe_library` | First-party recipes for the new generators | M | Med | High | P2 | NEW (content) | live cook-check each |
-| `import_recipe_from_url` | Fetch + validate + import a recipe pack from a URL | S | Med | Med | P2 | NEW | path-escape guards; size cap |
-| `collect_project_assets` | Project-wide "gather everything" staging folder + manifest | M | Med | Med | P2 | NEW | file-par enum; size cap |
+| `import_recipe_from_url` ✅ 0.7.0 | Fetch + validate + import recipe/bundle JSON from a URL | S | Med | Med | P2 | NEW | path-escape guards; size cap |
+| `collect_project_assets` ✅ 0.7.0 | Scan a COMP subtree for external file dependencies + optional JSON manifest | M | Med | Med | P2 | NEW | file-par enum; size cap |
 | `recipe_from_live_network` | Faithful round-trip recipe capture via `serialize_network` | M | Med | Med | P2 | EXTENSION | GLSL-uniform round-trip |
-| `export_palette_component` | Export `.tox` into TD's native Palette folder | M | Med | Low | P2 | NEW | probe-live (Palette layout) |
+| `export_palette_component` ✅ 0.7.0 | Export `.tox` into TD's native Palette folder | M | Med | Low | P2 | NEW | probe-live (Palette layout) |
 
 #### A.3 · CLI & developer DX
 
@@ -407,16 +407,16 @@ in **v0.6.0** (marked ✅).
 
 | Feature | Delivers | Effort | Impact | Conf | Priority | Novelty | Probe-first |
 |---|---|---|---|---|---|---|---|
-| `caption_top` | Preview → plain-text description (vision + histogram fallback) | M | High | Med | P1 | ROADMAP | probe-live (vision model) |
+| `caption_top` ◐ 0.7.0 | Preview → plain-text description (vision + histogram fallback) | M | High | Med | P1 | ROADMAP | probe-live (vision model) |
 | `copilot_prompt_awareness` | Feed `tdmcp://prompts` into the copilot BASE_PROMPT | S | Med | High | P1 | EXTENSION | none |
 | `copilot_smarter_handoff` | Auto-surface the Claude/Codex handoff on a dead-end | S | Med | High | P1 | ROADMAP | none |
 | `chat_cli_flags` | `chat --read-only`/`--creative`/`--prompt` (headless) | M | Med | High | P1 | ROADMAP | chat server accepts fixed tier |
 | `copilot_session_persistence` | Resume transcript + last model/tier | M | Med | High | P1 | ROADMAP | none |
 | `plan_visual`→LLM-grounded | Upgrade `describe_project` to an optional LLM planner | M | Med | High | P1 | EXTENSION | none (keyword stays default) |
 | `prompt_catalog_autogen` | Generate `tdmcp://prompts` from the registry | S | Med | High | P1 | NEW | none |
-| `teach_touchdesigner` | KB-grounded concept-tutor prompt | S | Med | High | P1 | NEW | none |
-| `design_brief` | Persistent session aesthetic direction | S | Med | High | P1 | NEW | none |
-| `repair_network` | Bounded autonomous repair tool | M | Med | Med | P2 | NEW | probe-live (bound+rollback) |
+| `teach_touchdesigner` ✅ 0.7.0 | KB-grounded concept-tutor prompt | S | Med | High | P1 | NEW | none |
+| `design_brief` ✅ 0.7.0 | Persistent session aesthetic direction | S | Med | High | P1 | NEW | none |
+| `repair_network` ◐ 0.7.0 | Bounded autonomous repair tool | M | Med | Med | P2 | NEW | probe-live (bound+rollback) |
 | `copilot_vision` | Image-aware local copilot | M | Med | Med | P2 | EXTENSION | probe-live (image blocks) |
 | `cookbook_resource` | Expose the prompt-cookbook as `tdmcp://cookbook` | S | Med | Med | P2 | NEW | machine-readable source |
 | `llm_config_knobs` | `TDMCP_LLM_TIER`/`_MAX_STEPS`/`_TEMPERATURE` keys | S | Low | High | P2 | NEW | none |

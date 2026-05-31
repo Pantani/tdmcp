@@ -5,6 +5,8 @@ import { registerCreate3dAudioReactive } from "./create3dAudioReactive.js";
 import { registerCreate3dScene } from "./create3dScene.js";
 import { registerCreateAudioReactive } from "./createAudioReactive.js";
 import { registerCreateAutopilot } from "./createAutopilot.js";
+// Campaign Wave 3 — artist controls (backlog 2026-05-29):
+import { registerCreateBlobReactive } from "./createBlobReactive.js";
 import { registerCreateBodyReactive } from "./createBodyReactive.js";
 import { registerCreateColorGrade } from "./createColorGrade.js";
 import { registerCreateCubemapDome } from "./createCubemapDome.js";
@@ -51,7 +53,9 @@ import { registerCreateSpectrum } from "./createSpectrum.js";
 import { registerCreateStrobe } from "./createStrobe.js";
 import { registerCreateSyncExternalClock } from "./createSyncExternalClock.js";
 import { registerCreateTempoSync } from "./createTempoSync.js";
+import { registerCreateTestPattern } from "./createTestPattern.js";
 import { registerCreateText3d } from "./createText3d.js";
+import { registerCreateTextCrawl } from "./createTextCrawl.js";
 import { registerCreateTextOverlay } from "./createTextOverlay.js";
 import { registerCreateTransition } from "./createTransition.js";
 import { registerCreateVectorLines } from "./createVectorLines.js";
@@ -155,4 +159,8 @@ export const layer1Registrars: ToolRegistrar[] = [
   // Phase 15 — 3D text + MIDI note reactivity (device path held pending hardware):
   registerCreateText3d,
   registerCreateMidiNoteReactive,
+  // Campaign Wave 3 — artist controls (backlog 2026-05-29):
+  registerCreateTestPattern,
+  registerCreateTextCrawl,
+  registerCreateBlobReactive,
 ];

@@ -6,7 +6,10 @@ import { registerBatchOperations } from "./batchOperations.js";
 import { registerBindAudioReactive } from "./bindAudioReactive.js";
 import { registerBindToChannel } from "./bindToChannel.js";
 import { registerConnectNodes } from "./connectNodes.js";
+// Campaign Wave 3 — artist controls (backlog 2026-05-29):
+import { registerCreateBandRouter } from "./createBandRouter.js";
 import { registerCreateBeatGridSequencer } from "./createBeatGridSequencer.js";
+import { registerCreateCaptureLoop } from "./createCaptureLoop.js";
 import { registerCreateClipLauncher } from "./createClipLauncher.js";
 import { registerCreateContainer } from "./createContainer.js";
 import { registerCreateControlPanel } from "./createControlPanel.js";
@@ -29,7 +32,10 @@ import { registerCreatePanic } from "./createPanic.js";
 import { registerCreatePhoneRemote } from "./createPhoneRemote.js";
 import { registerCreatePythonScript } from "./createPythonScript.js";
 import { registerCreateReplicator } from "./createReplicator.js";
+import { registerCreateSidechainPump } from "./createSidechainPump.js";
 import { registerCreateStageDashboard } from "./createStageDashboard.js";
+import { registerCreateTimeEcho } from "./createTimeEcho.js";
+import { registerCreateXyPad } from "./createXyPad.js";
 import { registerDuplicateNetwork } from "./duplicateNetwork.js";
 import { registerLearnControl } from "./learnControl.js";
 import { registerManageAnnotation } from "./manageAnnotation.js";
@@ -99,4 +105,10 @@ export const layer2Registrars: ToolRegistrar[] = [
   // v0.6.0 — controls instruments:
   registerCreateModulators,
   registerCreateLookBank,
+  // Campaign Wave 3 — artist controls (backlog 2026-05-29):
+  registerCreateSidechainPump,
+  registerCreateBandRouter,
+  registerCreateXyPad,
+  registerCreateTimeEcho,
+  registerCreateCaptureLoop,
 ];

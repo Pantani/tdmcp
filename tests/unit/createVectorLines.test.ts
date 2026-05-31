@@ -127,6 +127,13 @@ function textJson(result: Awaited<ReturnType<typeof createVectorLinesImpl>>): Ve
   return JSON.parse(match?.[1] ?? "{}") as VectorLinesReport;
 }
 
+function contentText(result: Awaited<ReturnType<typeof createVectorLinesImpl>>): string {
+  return result.content
+    .filter((c): c is { type: "text"; text: string } => c.type === "text")
+    .map((c) => c.text)
+    .join("\n");
+}
+
 describe("create_vector_lines", () => {
   it("registers the tool with the expected annotations and schema", () => {
     const calls: Array<{ name: string; config: Record<string, unknown> }> = [];
@@ -146,6 +153,42 @@ describe("create_vector_lines", () => {
       openWorldHint: true,
     });
     expect(calls[0]?.config.inputSchema).toBe(createVectorLinesSchema.shape);
+  });
+
+  it("validates source-specific paths in the registered MCP handler", async () => {
+    const bodies = captureCreateBodies();
+    const calls: Array<{
+      name: string;
+      config: Record<string, unknown>;
+      handler: (args: unknown) => unknown;
+    }> = [];
+    const fakeServer = {
+      registerTool(
+        name: string,
+        config: Record<string, unknown>,
+        handler: (args: unknown) => unknown,
+      ) {
+        calls.push({ name, config, handler });
+      },
+    };
+
+    registerCreateVectorLines(fakeServer as never, makeCtx());
+
+    const handler = calls[0]?.handler;
+    if (handler === undefined) throw new Error("create_vector_lines handler was not registered");
+
+    const existingTopResult = (await handler({
+      source: "existing_top",
+    })) as Awaited<ReturnType<typeof createVectorLinesImpl>>;
+    expect(existingTopResult.isError).toBe(true);
+    expect(contentText(existingTopResult)).toContain("existing_top_path");
+
+    const fileResult = (await handler({ source: "file" })) as Awaited<
+      ReturnType<typeof createVectorLinesImpl>
+    >;
+    expect(fileResult.isError).toBe(true);
+    expect(contentText(fileResult)).toContain("movie_file_path");
+    expect(bodies).toHaveLength(0);
   });
 
   it("is wired into the Layer 1 registrar list", () => {
@@ -306,6 +349,13 @@ describe("create_vector_lines", () => {
     expect(setup).toContain("'step': 8");
     expect(setup).toContain("#ff8800");
     expect(setup).toContain("linewidth");
+
+    const callback = scripts.find((s) => s.includes("def _sync_look(owner, warnings):"));
+    const callbackText = callback?.replaceAll('\\"', '"') ?? "";
+    expect(callbackText).toContain('values["colorr"]');
+    expect(callbackText).toContain('"Linecolorr"');
+    expect(callbackText).toContain('"Linecolorg"');
+    expect(callbackText).toContain('"Linecolorb"');
   });
 
   it("exposes the vectorize pulse and core controls", async () => {

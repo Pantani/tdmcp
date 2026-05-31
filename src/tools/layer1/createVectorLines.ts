@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ControlSpec } from "../layer2/createControlPanel.js";
+import { errorResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { createSystemContainer, finalize, type NetworkBuilder, runBuild } from "./orchestration.js";
 
@@ -137,6 +138,15 @@ function hexToRgb(hex: string): Rgb {
     g: ((int >> 8) & 0xff) / 255,
     b: (int & 0xff) / 255,
   };
+}
+
+function formatZodIssues(error: z.ZodError): string {
+  return error.issues
+    .map((issue) => {
+      const path = issue.path.map(String).join(".") || "args";
+      return `${path}: ${issue.message}`;
+    })
+    .join("; ");
 }
 
 function pyValue(value: string | number | boolean): string {
@@ -367,6 +377,12 @@ def _owner_par(owner, name, fallback):
         pass
     return fallback
 
+def _clamp01(value):
+    try:
+        return max(0.0, min(1.0, float(value)))
+    except Exception:
+        return 0.0
+
 def _sync_trace(owner, snapshot_path, warnings):
     trace = op(TRACE_SOP)
     values = dict(TRACE_PARAM_VALUES)
@@ -384,6 +400,9 @@ def _sync_look(owner, warnings):
     mat = op(WIRE_MAT)
     values = dict(MATERIAL_PARAM_VALUES)
     opacity = float(_owner_par(owner, "Opacity", ${options.args.opacity}))
+    values["colorr"] = _clamp01(_owner_par(owner, "Linecolorr", values["colorr"]))
+    values["colorg"] = _clamp01(_owner_par(owner, "Linecolorg", values["colorg"]))
+    values["colorb"] = _clamp01(_owner_par(owner, "Linecolorb", values["colorb"]))
     values["linewidth"] = float(_owner_par(owner, "Linewidth", values["linewidth"]))
     for key, value in values.items():
         _set_par(mat, [key], value, warnings)
@@ -730,6 +749,14 @@ export const registerCreateVectorLines: ToolRegistrar = (server, ctx) => {
       inputSchema: createVectorLinesSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
-    (args) => createVectorLinesImpl(ctx, args),
+    (args) => {
+      const parsed = createVectorLinesSchema.safeParse(args);
+      if (!parsed.success) {
+        return errorResult(
+          `Invalid create_vector_lines arguments: ${formatZodIssues(parsed.error)}`,
+        );
+      }
+      return createVectorLinesImpl(ctx, parsed.data);
+    },
   );
 };
