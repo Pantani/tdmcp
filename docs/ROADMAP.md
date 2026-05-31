@@ -10,9 +10,9 @@ can build real visual systems from plain language — no node-wiring by hand. Th
 page is the honest, bird's-eye picture of **what already works, what's still
 rough, and what's coming next** on the way to a stable 1.0.
 
-**Where things stand today.** The current release is **v0.8.0** — on
+**Where things stand today.** The current release is **v0.7.0** — on
 [npm](https://www.npmjs.com/package/@dpantani/tdmcp) and
-[GitHub](https://github.com/Pantani/tdmcp) — exposing **213 tools**. The project
+[GitHub](https://github.com/Pantani/tdmcp) — exposing **179 tools** (213 on `main` pending release). The project
 has grown through four arcs:
 
 1. **Generate** — one-line tools that build a whole wired network (audio-reactive,
@@ -220,7 +220,7 @@ plus the P0 show-automation consumers (`setlist_runner`, `create_scene_timeline`
 - **Library keystone** — **`auto_tag_library_asset`** (one of the foundations
   above).
 
-### Milestone 1.5 — Show automation + musical reactivity · v0.8.0 (shipped 2026-05-31)
+### Milestone 1.5 — Show automation + musical reactivity · (Unreleased — pending version bump)
 
 *Campaign `beyond_20260530` Wave 2 — turns the v0.7.0 live-show foundation into
 a smarter, more musical conductor. Eight Layer-1 tools and one CLI verb (registry

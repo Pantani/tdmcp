@@ -4,7 +4,7 @@ All notable changes to **tdmcp** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.8.0] - 2026-05-31
+## [Unreleased]
 
 **Wave 2 — Show automation + musical reactivity** (campaign `beyond_20260530`).
 Eight new Layer-1 tools and one CLI verb turn the v0.7.0 live-show foundation
@@ -35,7 +35,7 @@ required before they leave that flag).
 - **`scene_scheduler`** — new CLI verb `tdmcp-agent schedule <file>`: cron-lite,
   DST-faithful wall-clock driver for unattended installations.
 
-[0.8.0]: https://github.com/Pantani/tdmcp/compare/v0.7.1...v0.8.0
+[Unreleased]: https://github.com/Pantani/tdmcp/compare/v0.7.1...HEAD
 
 ## [0.7.1] - 2026-05-31
 
