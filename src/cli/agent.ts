@@ -1239,6 +1239,46 @@ const COMMANDS: Record<string, Command> = {
     "Turn an image/video into animated line-art / contour / plotter via edge-trace.",
     { mutates: true },
   ),
+  "library-diff": r(
+    diffLibraryAssetsSchema,
+    diffLibraryAssetsImpl,
+    "Offline deep-diff two saved library assets (recipe/manifest/spec JSON).",
+  ),
+  "recipe-from-url": r(
+    importRecipeFromUrlSchema,
+    importRecipeFromUrlImpl,
+    "Fetch + validate + import a recipe/bundle JSON from an HTTPS URL.",
+    { mutates: true },
+  ),
+  "palette-export": r(
+    exportPaletteComponentSchema,
+    exportPaletteComponentImpl,
+    "Save a COMP as a .tox into the TouchDesigner Palette folder for drag-and-drop reuse.",
+    { mutates: true },
+  ),
+  "collect-assets": r(
+    collectProjectAssetsSchema,
+    collectProjectAssetsImpl,
+    "Scan a COMP subtree for external file dependencies into an inventory + optional manifest.",
+    { mutates: true },
+  ),
+  "doc-site": r(
+    projectDocumentationSiteSchema,
+    projectDocumentationSiteImpl,
+    "Compose a multi-file documentation package (README + topology + optional gallery) for a network.",
+    { mutates: true },
+  ),
+  "caption-top": r(
+    captionTopSchema,
+    captionTopImpl,
+    "Caption a TOP: plain-text description of colors/brightness/motion (vision LLM or histogram).",
+  ),
+  "repair-network": r(
+    repairNetworkSchema,
+    repairNetworkImpl,
+    "Bounded autonomous network repair: read errors, plan/apply safe fixes (dry-run by default), re-check.",
+    { mutates: true },
+  ),
   // Phase 15 — 3D text, sidechain envelope, MIDI (hardware path held pending gear):
   "text-3d": r(
     createText3dSchema,
