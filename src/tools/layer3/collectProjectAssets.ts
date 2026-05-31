@@ -103,7 +103,9 @@ const COLLECT_PROJECT_ASSETS_SCRIPT = `
 import json, base64, os, traceback
 _p = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
 report = {"parent": _p["parent_path"], "assets": [], "count": 0, "missing_count": 0, "warnings": []}
-_NAME_HINTS = ("file", "fontfile", "lut", "externaltox", "dat", "moviefile", "imagefile")
+# Name heuristic: suffix/exact match only — substring hits on "dat" (→"update", "validate") caused
+# false positives, so the matching is now _nm == _hint or _nm.endswith(_hint).
+_NAME_HINTS = ("file", "fontfile", "lut", "externaltox", "moviefile", "imagefile")
 
 def _looks_like_path(_s):
     if not isinstance(_s, str) or not _s.strip():
@@ -147,7 +149,7 @@ def _detect(_par):
     except Exception:
         return False, None
     for _hint in _NAME_HINTS:
-        if _hint in _nm:
+        if _nm == _hint or _nm.endswith(_hint):
             return True, "name:" + _hint
     return False, None
 
