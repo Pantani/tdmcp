@@ -322,6 +322,57 @@ Ableton Session-view clip grid for your visuals.*
 deterministic, programmable counterpart to the auto-VJ. Toggle steps to compose a
 repeating pattern locked to the clock, like a drum machine for visual events.*
 
+> *"Build a three-scene timeline for a 128 BPM set: intro is a feedback tunnel,
+> drop is an audio-reactive spike ball, breakdown is a cinematic color wash. Make
+> it scrubbable and keep the setlist slot ids."*
+
+<video src="/examples/scene-timeline-arranger.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*A show-master timeline: scenes become blocks on a Timer-CHOP playhead, cue recalls
+land at scene boundaries, and downstream tools can keep setlist slot references
+attached to each scene.*
+
+> *"Scan this folder of loops and make a beat-quantized auto-montage that shuffles
+> clips every bar with a half-second crossfade."*
+
+<video src="/examples/auto-montage-shuffle.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*A self-running media-bin switcher: source clips/stills feed a Switch TOP, a
+bar/beat/interval clock advances the index, and shuffle/random/weighted modes avoid
+the same clip hanging around too long.*
+
+> *"Create a Euclidean sequencer with 5 hits over 16 steps, and bind the hits to a
+> strobe, a glitch burst and the preset-morph amount."*
+
+<video src="/examples/euclidean-strobe-pattern.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Bjorklund-style rhythm for visuals — sparse, musical pulses that can fire cue,
+parameter or script callbacks instead of a plain metronome.*
+
+> *"Blend between four stored looks with a single Morph knob, weighted so I can sit
+> halfway between neon cyan and warm amber during the breakdown."*
+
+<video src="/examples/preset-morph-blend.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*A true N-way preset blend: instead of snapping from one cue to another, saved
+parameter states become weights in a morph table you can automate, MIDI-map or drive
+from a scene timeline.*
+
+> *"At bar 32 fire the drop cue, at bar 64 start the auto-montage, and at the end of
+> the track freeze the output until I clear it."*
+
+**What you'll get:** a scheduler primitive built around named timers/segments. Use it
+for small timed callbacks, or put `create_scene_timeline` above it when you want a
+scrubbable song-mode arranger.
+
+> *"Build a phone dashboard with cue buttons for intro/drop/break, two master
+> faders, a live VU strip, and big Blackout / Freeze buttons for panic recovery."*
+
+<video src="/examples/live-dashboard-panic.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*A single live-performance cockpit served from TouchDesigner: cue launch, faders,
+readout and panic controls in one phone/laptop page. Keep it on a trusted network.*
+
 ## Output & mapping
 
 > *"Output the final visual to a full-screen window on my second monitor."*
@@ -372,6 +423,23 @@ Turn a working network into something you can reuse, share and hand to another a
 **What you'll get:** declarative custom-parameter pages, scriptable extensions, a
 generated Markdown README (with a preview thumbnail), or a project-local agent guide —
 the *packaging* side of tdmcp that complements the generators above.
+
+## Shader & material authoring
+
+> *"Create a GLSL material for this sphere: iridescent oil-slick bands, a soft rim
+> light and a `uTime` uniform I can drive from the timeline."*
+
+<video src="/examples/glsl-material-iridescent.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_glsl_material` scaffolds the GLSL MAT plus companion Text DATs, wires the
+pixel/vertex shader sources, and warns about TouchDesigner GLSL footguns such as
+missing `fragColor`, F1/F2 preamble collisions and undeclared `uTime`.*
+
+> *"Turn this GLSL TOP sketch into a material on the 3D logo, expose Color, Speed
+> and Fresnel, then render a preview."*
+
+**What you'll get:** a shader-authoring pass that keeps the code editable in DATs
+while making the important uniforms performable as TouchDesigner controls.
 
 ## Signature effects & looks
 
@@ -469,4 +537,19 @@ If you keep an [Obsidian vault](/reference/tools#obsidian-vault) wired up:
 
 > *"Generate a visual from my 'deep ocean' moodboard."*
 
-> *"Save this look as a recipe in my vault and log it to my show diary."*
+> *"Save this look as a recipe in my vault, run auto-tagging, and log it to my show
+> diary."*
+
+> *"Remember that my show style avoids flat rainbow gradients, prefers cold fog,
+> amber edge lights and slow camera drift, then use that memory for the next look."*
+
+> *"Find previous work in my vault similar to 'submerged cathedral, blue haze,
+> slow strobes' and use the closest one as a starting point."*
+
+> *"Lint my recipe library before the show and tell me which notes have missing
+> assets, duplicate ids or unknown operators."*
+
+**What you'll get:** a local, git-friendly show library. `scaffold_vault` creates the
+starter folders, including `Memory/style.md`; save tools can opt into deterministic
+auto-tags; `recall_similar_work` searches your own past looks; and
+`lint_recipe_library` catches bad notes before they reach the projector.
