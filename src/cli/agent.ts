@@ -15,6 +15,10 @@ import {
   applyPostProcessingSchema,
 } from "../tools/layer1/applyPostProcessing.js";
 import { applyRecipeImpl, applyRecipeSchema } from "../tools/layer1/applyRecipe.js";
+import {
+  audioFingerprintToVisualImpl,
+  audioFingerprintToVisualSchema,
+} from "../tools/layer1/audioFingerprintToVisual.js";
 import { composeCueListImpl, composeCueListSchema } from "../tools/layer1/composeCueList.js";
 import {
   create3dAudioReactiveImpl,
@@ -218,6 +222,10 @@ import {
 import { getPreviewSchema } from "../tools/layer1/getPreview.js";
 import { importModelImpl, importModelSchema } from "../tools/layer1/importModel.js";
 import { listRecipesImpl, listRecipesSchema } from "../tools/layer1/listRecipes.js";
+import {
+  moodboardToSystemImpl,
+  moodboardToSystemSchema,
+} from "../tools/layer1/moodboardToSystem.js";
 import { scaffoldGenreImpl, scaffoldGenreSchema } from "../tools/layer1/scaffoldGenre.js";
 import { scaffoldShowImpl, scaffoldShowSchema } from "../tools/layer1/scaffoldShow.js";
 import {
@@ -383,6 +391,7 @@ import { recordMovieImpl, recordMovieSchema } from "../tools/layer3/recordMovie.
 import { reloadBridgeImpl, reloadBridgeSchema } from "../tools/layer3/reloadBridge.js";
 import { renderOutputImpl, renderOutputSchema } from "../tools/layer3/renderOutput.js";
 import { repairNetworkImpl, repairNetworkSchema } from "../tools/layer3/repairNetwork.js";
+import { scoreBuildImpl, scoreBuildSchema } from "../tools/layer3/scoreBuild.js";
 import { searchOperatorsImpl, searchOperatorsSchema } from "../tools/layer3/searchOperators.js";
 import { serializeNetworkImpl, serializeNetworkSchema } from "../tools/layer3/serializeNetwork.js";
 import { setDatContentImpl, setDatContentSchema } from "../tools/layer3/setDatContent.js";
@@ -400,6 +409,10 @@ import {
   updateTdNodeParametersSchema,
 } from "../tools/layer3/updateTdNodeParameters.js";
 import { writeAgentGuideImpl, writeAgentGuideSchema } from "../tools/layer3/writeAgentGuide.js";
+import {
+  checksumAndVerifyPackImpl,
+  checksumAndVerifyPackSchema,
+} from "../tools/library/checksumAndVerifyPack.js";
 import {
   diffLibraryAssetsImpl,
   diffLibraryAssetsSchema,
@@ -438,11 +451,18 @@ import {
   validateLibraryAssetImpl,
   validateLibraryAssetSchema,
 } from "../tools/library/index.js";
+import { provenanceStampImpl, provenanceStampSchema } from "../tools/library/provenanceStamp.js";
 import type { ToolContext } from "../tools/types.js";
 import {
   generateLibraryIndexImpl,
   generateLibraryIndexSchema,
 } from "../tools/vault/generateLibraryIndex.js";
+import { learnConventionsImpl, learnConventionsSchema } from "../tools/vault/learnConventions.js";
+import {
+  libraryLineageGraphImpl,
+  libraryLineageGraphSchema,
+} from "../tools/vault/libraryLineageGraph.js";
+import { morphPackImpl, morphPackSchema } from "../tools/vault/morphPack.js";
 import {
   describeConfig,
   type LoadConfigOptions,
@@ -1493,6 +1513,53 @@ const COMMANDS: Record<string, Command> = {
     generateLibraryIndexImpl,
     "Write a Markdown contact-sheet of the whole vault library (thumbnails + load snippets).",
     { mutates: true },
+  ),
+  // Campaign BEYOND Wave 3 (backlog 2026-05-30 — v0.7.0):
+  "provenance-stamp": r(
+    provenanceStampSchema,
+    provenanceStampImpl,
+    "Write a .provenance.json sidecar (sha256 + source + toolchain + git) next to a saved artifact.",
+    { mutates: true },
+  ),
+  "checksum-verify-pack": r(
+    checksumAndVerifyPackSchema,
+    checksumAndVerifyPackImpl,
+    "Compute or verify SHA-256 checksums for tdmcp artifacts (tox/recipes/bundles).",
+    { mutates: true },
+  ),
+  "library-lineage-graph": r(
+    libraryLineageGraphSchema,
+    libraryLineageGraphImpl,
+    "Scan the vault library and emit a lineage graph (JSON / Mermaid / Graphviz DOT).",
+  ),
+  "morph-pack": r(
+    morphPackSchema,
+    morphPackImpl,
+    "Pack/unpack a create_preset_morph slot set as a portable, sha256-verified vault JSON.",
+    { mutates: true },
+  ),
+  "learn-conventions": r(
+    learnConventionsSchema,
+    learnConventionsImpl,
+    "Read a live TD subtree and write the artist's house conventions into the vault Memory notes.",
+    { mutates: true },
+  ),
+  "moodboard-to-system": r(
+    moodboardToSystemSchema,
+    moodboardToSystemImpl,
+    "Ingest moodboard images and build a matching generative system in TouchDesigner.",
+    { mutates: true },
+  ),
+  "audio-fingerprint-to-visual": r(
+    audioFingerprintToVisualSchema,
+    audioFingerprintToVisualImpl,
+    "Sample audio, fingerprint it, and dispatch a matching Layer 1 generator tuned to it.",
+    { mutates: true },
+  ),
+  "score-build": r(
+    scoreBuildSchema,
+    scoreBuildImpl,
+    "Score a built network 0–100 (palette/motion/complexity/errors/perf) with improvement suggestions.",
   ),
 };
 

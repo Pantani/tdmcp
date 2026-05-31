@@ -41,7 +41,7 @@ export function createTdmcpServer(
   ctx.llm = createLazyLlmClient(config, server.server);
 
   registerAllTools(server, ctx);
-  registerAllResources(server, { knowledge, recipes, logger });
+  registerAllResources(server, { knowledge, recipes, logger, client: ctx.client });
   registerAllPrompts(server, { knowledge, recipes, logger });
 
   logger.info("tdmcp server initialized", {

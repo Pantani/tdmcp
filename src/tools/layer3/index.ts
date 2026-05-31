@@ -36,6 +36,7 @@ import { registerRecordMovie } from "./recordMovie.js";
 import { registerReloadBridge } from "./reloadBridge.js";
 import { registerRenderOutput } from "./renderOutput.js";
 import { registerRepairNetwork } from "./repairNetwork.js";
+import { registerScoreBuild } from "./scoreBuild.js";
 import { registerSearchOperators } from "./searchOperators.js";
 import { registerSerializeNetwork } from "./serializeNetwork.js";
 import { registerSetDatContent } from "./setDatContent.js";
@@ -97,4 +98,6 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerRepairNetwork,
   // Campaign BEYOND Wave 1 (backlog 2026-05-30 — v0.7.0):
   registerLintRecipeLibrary,
+  // Campaign BEYOND Wave 3 (backlog 2026-05-30 — v0.7.0):
+  registerScoreBuild,
 ];

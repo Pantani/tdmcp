@@ -9,7 +9,10 @@ import { registerExportSetlistToVault } from "./exportSetlistToVault.js";
 import { registerGenerateFromMoodboard } from "./generateFromMoodboard.js";
 import { registerGenerateLibraryIndex } from "./generateLibraryIndex.js";
 import { registerImportSetlist } from "./importSetlist.js";
+import { registerLearnConventions } from "./learnConventions.js";
+import { registerLibraryLineageGraph } from "./libraryLineageGraph.js";
 import { registerLogPerformance } from "./logPerformance.js";
+import { registerMorphPack } from "./morphPack.js";
 import { registerRecallSimilarWork } from "./recallSimilarWork.js";
 import { registerSaveComponentToVault } from "./saveComponentToVault.js";
 import { registerSaveRecipeToVault } from "./saveRecipeToVault.js";
@@ -44,4 +47,8 @@ export const vaultRegistrars: ToolRegistrar[] = [
   registerAutoTagLibraryAsset,
   registerRecallSimilarWork,
   registerStyleMemory,
+  // Campaign BEYOND Wave 3 (backlog 2026-05-30 — v0.7.0):
+  registerLibraryLineageGraph,
+  registerMorphPack,
+  registerLearnConventions,
 ];

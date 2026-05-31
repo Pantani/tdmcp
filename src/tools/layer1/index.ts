@@ -1,6 +1,7 @@
 import type { ToolRegistrar } from "../types.js";
 import { registerApplyPostProcessing } from "./applyPostProcessing.js";
 import { registerApplyRecipe } from "./applyRecipe.js";
+import { registerAudioFingerprintToVisual } from "./audioFingerprintToVisual.js";
 import { registerComposeCueList } from "./composeCueList.js";
 import { registerCreate3dAudioReactive } from "./create3dAudioReactive.js";
 import { registerCreate3dScene } from "./create3dScene.js";
@@ -79,6 +80,7 @@ import { registerExtractAudioFeatures } from "./extractAudioFeatures.js";
 import { registerGetPreview } from "./getPreview.js";
 import { registerImportModel } from "./importModel.js";
 import { registerListRecipes } from "./listRecipes.js";
+import { registerMoodboardToSystem } from "./moodboardToSystem.js";
 import { registerScaffoldGenre } from "./scaffoldGenre.js";
 import { registerScaffoldShow } from "./scaffoldShow.js";
 import { registerSetupBodyTracking } from "./setupBodyTracking.js";
@@ -180,4 +182,7 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateTransientReactive,
   registerCreateEnergyStructure,
   registerCreatePhoneGesture,
+  // Campaign BEYOND Wave 3 (backlog 2026-05-30 — v0.7.0):
+  registerMoodboardToSystem,
+  registerAudioFingerprintToVisual,
 ];

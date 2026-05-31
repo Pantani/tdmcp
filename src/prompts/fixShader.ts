@@ -6,7 +6,8 @@ export const registerFixShader: PromptRegistrar = (server) => {
     "fix_shader",
     {
       title: "Fix shader",
-      description: "Diagnose and fix a GLSL TOP that won't compile.",
+      description:
+        "Diagnose and fix a GLSL TOP that won't compile: read the compiler error, check the Text DAT against TD's GLSL conventions, edit it, and re-verify with errors + preview.",
       argsSchema: {
         glsl_path: z
           .string()

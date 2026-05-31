@@ -1,0 +1,36 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`prompt name list snapshot 1`] = `
+[
+  "analyze_screenshot",
+  "audio_to_show",
+  "auto_fix",
+  "auto_vj_director",
+  "beat_reactive_designer",
+  "color_story",
+  "critique_visual",
+  "debug_network",
+  "design_brief",
+  "explain_network",
+  "explain_param",
+  "fix_reactivity",
+  "fix_shader",
+  "genre_visual_language",
+  "image_to_visual",
+  "lyric_show",
+  "match_reference_loop",
+  "motion_critique",
+  "optimize_performance",
+  "recover_show",
+  "remix_visual",
+  "setlist_planner",
+  "style_reference",
+  "teach_touchdesigner",
+  "text_to_recipe",
+  "text_to_shader",
+  "tweak_visual",
+  "visual_ab_compare",
+  "visual_artist_mode",
+  "vj_set_builder",
+]
+`;

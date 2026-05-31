@@ -2,12 +2,15 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ReadResourceResult } from "@modelcontextprotocol/sdk/types.js";
 import type { KnowledgeBase } from "../knowledge/index.js";
 import type { RecipeLibrary } from "../recipes/loader.js";
+import type { TouchDesignerClient } from "../td-client/touchDesignerClient.js";
 import type { Logger } from "../utils/logger.js";
 
 export interface ResourceContext {
   knowledge: KnowledgeBase;
   recipes: RecipeLibrary;
   logger: Logger;
+  /** Optional TD client — present for live-scene resources (Campaign BEYOND Wave 3). */
+  client?: TouchDesignerClient;
 }
 
 export type ResourceRegistrar = (server: McpServer, ctx: ResourceContext) => void;

@@ -35,6 +35,45 @@ required before they leave that flag).
 - **`scene_scheduler`** — new CLI verb `tdmcp-agent schedule <file>`: cron-lite,
   DST-faithful wall-clock driver for unattended installations.
 
+**Wave 3 — Library provenance + AI dispatch + scene resource** (campaign
+`beyond_20260530`). Eight new tools (across library, vault, Layer-1, Layer-3)
+plus one new MCP resource and a strengthened prompt-eval harness. Tool registry
+is now **221** (was 213); resources gain a live scene-summary view.
+
+### Added
+
+- **`provenance_stamp`** — write a `.provenance.json` sidecar (sha256, source
+  COMP path, toolchain versions, git metadata, author, tags) next to any saved
+  artifact. Offline, no TD bridge.
+- **`checksum_and_verify_pack`** — compute (writes `tdmcp-checksums.json`) or
+  verify SHA-256 manifests for tdmcp artifacts (.tox, recipes, bundles).
+- **`library_lineage_graph`** — scan the vault library, extract lineage
+  frontmatter (parent_recipe, source_assets, remix_of, forked_from), and emit a
+  graph as JSON / Mermaid / Graphviz DOT.
+- **`morph_pack`** — pack a `create_preset_morph` container's slots to a
+  sha256-verified vault JSON; unpack to (re)hydrate the container.
+- **`learn_conventions`** — read-only sweep of a live TD subtree to extract
+  naming/colour/topology/parameter conventions into the vault Memory notes.
+- **`moodboard_to_system`** — ingest 1–6 moodboard images and dispatch a
+  matching generative system (palette + motion + generator pick via local LLM,
+  deterministic fallback otherwise).
+- **`audio_fingerprint_to_visual`** — sample audio, compute a 4-feature
+  fingerprint (tempo / centroid / onset density / dynamic range), and dispatch
+  the matching Layer-1 generator tuned to the fingerprint.
+- **`score_build`** — read-only 0–100 rubric scoring of a built network
+  (palette / motion / complexity / errors / perf) with deterministic improvement
+  suggestions, optional LLM critique.
+- **resource `tdmcp://scene/{view}`** — live MCP resource exposing scene
+  topology, operators, and errors views; `ResourceContext` now carries the TD
+  client.
+- New offline `prompt_eval_harness` test that catches description-quality,
+  rendering, and token-budget regressions across every registered prompt.
+
+### Changed
+
+- `fix_shader` prompt description expanded past the 50-char quality threshold
+  so the harness can enforce it without a whitelist.
+
 [Unreleased]: https://github.com/Pantani/tdmcp/compare/v0.7.1...HEAD
 
 ## [0.7.1] - 2026-05-31
