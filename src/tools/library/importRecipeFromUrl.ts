@@ -36,8 +36,9 @@ export const importRecipeFromUrlSchema = z.object({
     .number()
     .int()
     .positive()
+    .max(10485760)
     .default(1048576)
-    .describe("Maximum download size in bytes (default 1 MiB)."),
+    .describe("Maximum download size in bytes (default 1 MiB, hard cap 10 MiB)."),
 });
 
 export type ImportRecipeFromUrlArgs = z.infer<typeof importRecipeFromUrlSchema>;

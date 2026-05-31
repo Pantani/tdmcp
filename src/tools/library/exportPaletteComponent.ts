@@ -125,7 +125,7 @@ export async function exportPaletteComponentImpl(
 ) {
   const parsed = exportPaletteComponentSchema.safeParse(args);
   if (!parsed.success) {
-    return errorResult(`export_palette_component invalid args: ${parsed.error.message}`);
+    return errorResult(`Invalid arguments: ${parsed.error.message}`);
   }
   const safeArgs = parsed.data;
   const payload = {
