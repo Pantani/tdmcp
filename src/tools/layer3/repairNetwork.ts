@@ -139,7 +139,11 @@ def _classify(_o, _msg):
     if ("syntax" in _low) or ("traceback" in _low) or ("indentation" in _low):
         return ("note", "DAT/script syntax error — needs a manual edit; left as-is.", False)
     # Broken parameter expression — the safe fix is to reset the named par to constant.
-    if ("expression" in _low) or ("invalid" in _low and "par" in _low) or ("name '" in _low):
+    if (
+        ("expression" in _low)
+        or ("invalid" in _low and "par" in _low)
+        or ("name '" in _low and ("expression" in _low or "par" in _low or "parameter" in _low))
+    ):
         return (
             "clear_expression",
             "Reset the named broken parameter expression to constant mode.",

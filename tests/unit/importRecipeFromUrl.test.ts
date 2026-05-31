@@ -75,6 +75,20 @@ describe("importRecipeFromUrlImpl", () => {
     expect(parsed.overwrite).toBe(false);
   });
 
+  it("schema trims out_dir and rejects blank output directories", () => {
+    const parsed = importRecipeFromUrlSchema.parse({
+      url: "https://raw.githubusercontent.com/a/b/main/r.json",
+      out_dir: "  /tmp/x  ",
+    });
+    expect(parsed.out_dir).toBe("/tmp/x");
+    expect(() =>
+      importRecipeFromUrlSchema.parse({
+        url: "https://raw.githubusercontent.com/a/b/main/r.json",
+        out_dir: "   ",
+      }),
+    ).toThrow();
+  });
+
   it("writes a single recipe fetched from a URL", async () => {
     const recipe = {
       id: "my-recipe",
@@ -143,6 +157,49 @@ describe("importRecipeFromUrlImpl", () => {
     const parsed = resultJson(res);
     expect(parsed.count).toBe(2);
     expect(parsed.written).toHaveLength(2);
+  });
+
+  it("uses a non-hidden fallback filename when recipe id is empty", async () => {
+    const recipe = {
+      id: "",
+      name: "Unnamed Recipe",
+      nodes: [{ name: "n1", type: "noiseTOP" }],
+    };
+    stubDownload(JSON.stringify(recipe));
+
+    const res = await importRecipeFromUrlImpl(makeCtx(), {
+      url: "https://raw.githubusercontent.com/acme/repo/main/unnamed.json",
+      out_dir: join(dir, "out"),
+      overwrite: false,
+      max_bytes: 1048576,
+    });
+
+    expect(res.isError).toBeFalsy();
+    const parsed = resultJson(res);
+    expect(parsed.written[0]).toContain("recipe.json");
+    expect(parsed.written[0]).not.toContain(`${join(dir, "out")}/.json`);
+  });
+
+  it("rejects duplicate fallback targets before writing", async () => {
+    const bundle = {
+      recipes: [
+        { id: "", name: "First", nodes: [{ name: "n1", type: "noiseTOP" }] },
+        { id: "", name: "Second", nodes: [{ name: "n2", type: "rampTOP" }] },
+      ],
+    };
+    const outDir = join(dir, "out");
+    stubDownload(JSON.stringify(bundle));
+
+    const res = await importRecipeFromUrlImpl(makeCtx(), {
+      url: "https://raw.githubusercontent.com/acme/repo/main/unnamed-bundle.json",
+      out_dir: outDir,
+      overwrite: false,
+      max_bytes: 1048576,
+    });
+
+    expect(res.isError).toBe(true);
+    expect(resultText(res)).toContain("Duplicate recipe target path");
+    expect(existsSync(outDir)).toBe(false);
   });
 
   it("returns isError on invalid JSON (never throws)", async () => {
@@ -215,6 +272,32 @@ describe("importRecipeFromUrlImpl", () => {
     expect(res.isError).toBeFalsy();
     const onDisk = JSON.parse(readFileSync(join(outDir, "my-recipe.json"), "utf8"));
     expect(onDisk.name).toBe("New Name");
+  });
+
+  it("returns isError when writing an imported recipe fails", async () => {
+    const recipe = {
+      id: "write-fails",
+      name: "Write Fails",
+      nodes: [{ name: "n1", type: "noiseTOP" }],
+    };
+    const outDir = join(dir, "not-a-dir");
+    writeFileSync(outDir, "occupied", "utf8");
+    stubDownload(JSON.stringify(recipe));
+
+    let res: Awaited<ReturnType<typeof importRecipeFromUrlImpl>> | undefined;
+    await expect(
+      (async () => {
+        res = await importRecipeFromUrlImpl(makeCtx(), {
+          url: "https://raw.githubusercontent.com/acme/repo/main/write-fails.json",
+          out_dir: outDir,
+          overwrite: false,
+          max_bytes: 1048576,
+        });
+      })(),
+    ).resolves.toBeUndefined();
+
+    expect(res?.isError).toBe(true);
+    expect(resultText(res as CallToolResult)).toContain("Failed to write recipe");
   });
 
   it("returns isError when the download exceeds the byte cap (never throws)", async () => {

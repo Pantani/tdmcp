@@ -224,6 +224,17 @@ describe("repair_network", () => {
     expect(script).toContain("expression error did not identify a specific parameter");
   });
 
+  it("does not classify every generic Python NameError as clear_expression", () => {
+    const script = buildRepairNetworkScript({
+      parent_path: "/project1",
+      max_steps: 3,
+      dry_run: false,
+    });
+
+    expect(script).not.toContain(`("name '" in _low)`);
+    expect(script).toContain('"name \'" in _low and');
+  });
+
   it("a clean network returns errors_before:0 and no steps", async () => {
     stubExec(reportWith({ dry_run: true, before: 0, after: 0, steps: [], remaining: [] }));
     const res = await repairNetworkImpl(makeCtx(), {

@@ -30,7 +30,7 @@ export const importRecipeFromUrlSchema = z.object({
     .string()
     .url()
     .describe("HTTPS URL of a recipe or recipe-bundle JSON (e.g. a git-raw link)."),
-  out_dir: z.string().describe("Recipe directory to write imported recipes into."),
+  out_dir: z.string().trim().min(1).describe("Recipe directory to write imported recipes into."),
   overwrite: z.boolean().default(false).describe("Overwrite existing recipe files."),
   max_bytes: z.coerce
     .number()
@@ -61,7 +61,8 @@ export const downloaders = {
 
 /** Same filename derivation as importRecipeBundleImpl: sanitize the recipe id. */
 function recipeFileName(recipe: Recipe): string {
-  return `${recipe.id.replace(/[^a-zA-Z0-9_.-]+/g, "_")}.json`;
+  const stem = recipe.id.replace(/[^a-zA-Z0-9_.-]+/g, "_") || "recipe";
+  return `${stem}.json`;
 }
 
 /** Write pretty JSON, creating parent dirs (mirrors index.ts writeJson). */
@@ -147,7 +148,7 @@ export async function importRecipeFromUrlImpl(_ctx: ToolContext, args: ImportRec
   const seenTargets = new Map<string, string>();
   for (const { recipe, out } of targets) {
     const existingId = seenTargets.get(out);
-    if (existingId) {
+    if (existingId !== undefined) {
       return errorResult(`Duplicate recipe target path: ${out} (${existingId} and ${recipe.id}).`);
     }
     seenTargets.set(out, recipe.id);
@@ -166,7 +167,13 @@ export async function importRecipeFromUrlImpl(_ctx: ToolContext, args: ImportRec
 
   const written: string[] = [];
   for (const { recipe, out } of targets) {
-    writeJson(out, recipe);
+    try {
+      writeJson(out, recipe);
+    } catch (error) {
+      return errorResult(
+        `Failed to write recipe ${out}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
     written.push(out);
   }
 

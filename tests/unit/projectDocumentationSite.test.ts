@@ -283,6 +283,27 @@ describe("projectDocumentationSiteImpl", () => {
     expect(parsed.max_thumbnails).toBe(6);
   });
 
+  it("trims out_dir and rejects blank output directories", () => {
+    const parsed = projectDocumentationSiteSchema.parse({ out_dir: "  /tmp/x  " });
+    expect(parsed.out_dir).toBe("/tmp/x");
+    expect(() => projectDocumentationSiteSchema.parse({ out_dir: "   " })).toThrow();
+  });
+
+  it("returns isError instead of writing to cwd when out_dir is blank", async () => {
+    overrideExec(JSON.stringify(makeReport()));
+
+    const result = await projectDocumentationSiteImpl(makeCtx(), {
+      parent_path: "/project1",
+      out_dir: "   ",
+      title: "",
+      include_thumbnails: false,
+      max_thumbnails: 6,
+    });
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("Invalid arguments");
+  });
+
   it("requires out_dir (schema rejects when missing)", () => {
     expect(() => projectDocumentationSiteSchema.parse({})).toThrow();
   });

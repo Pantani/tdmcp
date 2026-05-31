@@ -14,6 +14,8 @@ export const projectDocumentationSiteSchema = z.object({
     .describe("The network to document (project or COMP), e.g. /project1 or /project1/myComp."),
   out_dir: z
     .string()
+    .trim()
+    .min(1)
     .describe("Folder to write the documentation package into (relative or absolute)."),
   title: z
     .string()
@@ -223,9 +225,15 @@ export async function projectDocumentationSiteImpl(
   ctx: ToolContext,
   args: ProjectDocumentationSiteArgs,
 ) {
+  const parsedArgs = projectDocumentationSiteSchema.safeParse(args);
+  if (!parsedArgs.success) {
+    return errorResult(`Invalid arguments: ${parsedArgs.error.message}`);
+  }
+  const safeArgs = parsedArgs.data;
+
   let report: DocSiteReport;
   try {
-    const script = buildDocSiteScript({ parent_path: args.parent_path });
+    const script = buildDocSiteScript({ parent_path: safeArgs.parent_path });
     const exec = await ctx.client.executePythonScript(script, true);
     report = parsePythonReport<DocSiteReport>(exec.stdout);
   } catch (err) {
@@ -236,8 +244,8 @@ export async function projectDocumentationSiteImpl(
     return errorResult(`project_documentation_site failed: ${report.fatal}`, report);
   }
 
-  const title = args.title.trim() || basename(args.parent_path) || "project";
-  const outDir = resolve(args.out_dir);
+  const title = safeArgs.title.trim() || basename(safeArgs.parent_path) || "project";
+  const outDir = resolve(safeArgs.out_dir);
   const warnings = [...report.warnings];
   const filesWritten: string[] = [];
 
@@ -268,8 +276,8 @@ export async function projectDocumentationSiteImpl(
 
   // Thumbnails - fail-forward: a broken preview must not fail the package.
   const thumbnails: string[] = [];
-  if (args.include_thumbnails) {
-    const targets = pickOutputTops(report.nodes, args.max_thumbnails);
+  if (safeArgs.include_thumbnails) {
+    const targets = pickOutputTops(report.nodes, safeArgs.max_thumbnails);
     if (targets.length > 0) {
       const thumbsDir = join(outDir, "thumbs");
       try {
@@ -311,7 +319,7 @@ export async function projectDocumentationSiteImpl(
     return errorResult("project_documentation_site wrote no files.", result);
   }
 
-  const summary = `Wrote ${filesWritten.length} file(s) for ${args.parent_path} (${report.nodes.length} nodes${
+  const summary = `Wrote ${filesWritten.length} file(s) for ${safeArgs.parent_path} (${report.nodes.length} nodes${
     thumbnails.length > 0 ? `, ${thumbnails.length} thumbnail(s)` : ""
   }) into ${outDir}.`;
   return jsonResult(summary, result);
