@@ -1,3 +1,4 @@
+import matter from "gray-matter";
 import { z } from "zod";
 import {
   type CanonicalScene,
@@ -503,6 +504,39 @@ export async function runSetlist(opts: RunnerOptions): Promise<RunnerSummary> {
 }
 
 // ---------- input loader (pure; consumed by the CLI wrapper) ----------
+
+/**
+ * Parse a setlist file's raw text into a JS object suitable for
+ * {@link loadCanonicalSetlist}, dispatching on extension (`.md` → YAML
+ * frontmatter via gray-matter; `.yaml`/`.yml` → pure YAML; anything else →
+ * leave as raw string for the JSON path). Exported so the CLI wrapper can
+ * stay thin and tests can cover the round-trip without spawning the CLI.
+ */
+export function parseSetlistInput(
+  raw: string,
+  filename?: string,
+): { ok: true; input: unknown } | { ok: false; message: string } {
+  const ext = filename ? filename.toLowerCase().split(".").pop() : undefined;
+  try {
+    if (ext === "md" || ext === "markdown") {
+      // Markdown note with YAML frontmatter — `data` is the parsed
+      // frontmatter object, which holds the `tracks`/`scenes` list.
+      const file = matter(raw);
+      return { ok: true, input: file.data };
+    }
+    if (ext === "yaml" || ext === "yml") {
+      // Pure YAML — wrap with frontmatter delimiters so gray-matter parses it
+      // without pulling js-yaml as a direct dep.
+      const file = matter(`---\n${raw}\n---\n`);
+      return { ok: true, input: file.data };
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { ok: false, message: `could not parse ${ext ?? "setlist"}: ${msg}` };
+  }
+  // Default: hand the raw string to loadCanonicalSetlist's JSON path.
+  return { ok: true, input: raw };
+}
 
 /**
  * Parse a raw setlist (JSON string or already-decoded object) into a

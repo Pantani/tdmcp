@@ -427,6 +427,7 @@ import { type PanicSubVerb, runPanic } from "./panicBlackout.js";
 import {
   type CueCaller,
   loadCanonicalSetlist,
+  parseSetlistInput,
   runSetlist,
   setlistRunnerCliSchema,
 } from "./setlistRunner.js";
@@ -2071,7 +2072,11 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
     if (!parsedCli.success) {
       return { stdout: "", stderr: `Invalid setlist args: ${parsedCli.error.message}\n`, code: 2 };
     }
-    const loaded = loadCanonicalSetlist(raw);
+    const parsedInput = parseSetlistInput(raw, file);
+    if (!parsedInput.ok) {
+      return { stdout: "", stderr: `error: ${parsedInput.message}\n`, code: 2 };
+    }
+    const loaded = loadCanonicalSetlist(parsedInput.input);
     if (!loaded.ok) {
       return { stdout: "", stderr: `error: ${loaded.message}\n`, code: 2 };
     }
@@ -2084,13 +2089,25 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
     const { manageCueImpl } = await import("../tools/layer2/manageCue.js");
     const cueCaller: CueCaller = {
       async fire(call) {
-        await manageCueImpl(ctx, {
+        // manageCueImpl returns a CallToolResult with isError=true on TD/cue
+        // failures (missing COMP, unknown cue name, bridge offline) — it does
+        // NOT throw. Convert that into a thrown error here so runSetlist's
+        // warnings/dry-run-on-bridge-loss path engages instead of silently
+        // marking every fire as success.
+        const res = await manageCueImpl(ctx, {
           action: call.action,
           comp_path: call.comp_path,
           name: call.name,
           duration: call.duration,
           quantize: call.quantize,
         });
+        if (res.isError) {
+          const text = res.content
+            .map((c) => (c.type === "text" ? c.text : ""))
+            .join("")
+            .trim();
+          throw new Error(text || `manage_cue ${call.action} failed`);
+        }
       },
     };
     const lines: string[] = [];

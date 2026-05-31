@@ -1,5 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { resolveLlmClient } from "../llm/resolve.js";
+import { createLazyLlmClient } from "../llm/resolve.js";
 import { registerAllPrompts } from "../prompts/index.js";
 import { registerAllResources } from "../resources/index.js";
 import { registerAllTools } from "../tools/index.js";
@@ -33,9 +33,12 @@ export function createTdmcpServer(
     { instructions: INSTRUCTIONS },
   );
 
-  // Wire the LLM shim now that the underlying Server exists. Sampling capability is
-  // probed lazily inside resolveLlmClient — no `sampling` server capability declared.
-  ctx.llm = resolveLlmClient(config, server.server);
+  // Wire the LLM shim now that the underlying Server exists. Sampling capability
+  // is probed on first method call (post-initialize) — no `sampling` server
+  // capability declared. Eager resolution here would race the MCP handshake and
+  // always fall through to LlmClient because getClientCapabilities() is empty
+  // before the client's initialize request arrives.
+  ctx.llm = createLazyLlmClient(config, server.server);
 
   registerAllTools(server, ctx);
   registerAllResources(server, { knowledge, recipes, logger });

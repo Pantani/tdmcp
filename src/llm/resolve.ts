@@ -1,5 +1,13 @@
 import type { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import type { TdmcpConfig } from "../utils/config.js";
+import type {
+  ChatMessage,
+  CompleteOptions,
+  CompleteResult,
+  MultimodalMessage,
+  OpenAITool,
+  StreamOptions,
+} from "./client.js";
 import { LlmClient } from "./client.js";
 import { clientSupportsSampling, type LlmClientLike, SamplingLlmClient } from "./samplingClient.js";
 
@@ -42,4 +50,31 @@ export function resolveLlmClient(
     return new SamplingLlmClient(server);
   }
   return new LlmClient(config);
+}
+
+/**
+ * Wrap {@link resolveLlmClient} in a lazy LlmClientLike whose backend is picked
+ * on first call. `createTdmcpServer()` runs before `server.connect()` and before
+ * the MCP `initialize` handshake, so `getClientCapabilities()` is empty at
+ * wiring time. Resolving eagerly would always fall through to `LlmClient` and
+ * miss sampling-capable clients (Claude Desktop, etc.). Calling resolution at
+ * first tool-invocation guarantees `getClientCapabilities()` is populated.
+ */
+export function createLazyLlmClient(
+  config: TdmcpConfig,
+  server: Pick<Server, "getClientCapabilities" | "createMessage"> | undefined,
+): LlmClientLike {
+  let cached: LlmClientLike | null = null;
+  const get = (): LlmClientLike => {
+    if (cached === null) cached = resolveLlmClient(config, server);
+    return cached;
+  };
+  return {
+    chatStream(messages: ChatMessage[], tools: OpenAITool[], opts?: StreamOptions) {
+      return get().chatStream(messages, tools, opts);
+    },
+    complete(messages: MultimodalMessage[], opts?: CompleteOptions): Promise<CompleteResult> {
+      return get().complete(messages, opts);
+    },
+  };
 }

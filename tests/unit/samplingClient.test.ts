@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { LlmClient } from "../../src/llm/client.js";
-import { DEFAULT_LLM_BASE_URL, resolveLlmClient } from "../../src/llm/resolve.js";
+import {
+  createLazyLlmClient,
+  DEFAULT_LLM_BASE_URL,
+  resolveLlmClient,
+} from "../../src/llm/resolve.js";
 import {
   clientSupportsSampling,
   DEFAULT_MAX_TOKENS,
@@ -276,5 +280,55 @@ describe("resolveLlmClient routing", () => {
   it("no server (CLI) → LlmClient", () => {
     const c = resolveLlmClient(baseConfig(), undefined);
     expect(c).toBeInstanceOf(LlmClient);
+  });
+});
+
+describe("createLazyLlmClient", () => {
+  it("does not call getClientCapabilities until first use (defers past initialize)", () => {
+    const capSpy = vi.fn(() => ({ sampling: {} }));
+    const server = {
+      createMessage: vi.fn(),
+      getClientCapabilities: capSpy,
+    };
+    const lazy = createLazyLlmClient(baseConfig(), server as never);
+    expect(capSpy).not.toHaveBeenCalled();
+    // sanity: lazy wrapper exposes the LlmClientLike surface
+    expect(typeof lazy.complete).toBe("function");
+    expect(typeof lazy.chatStream).toBe("function");
+  });
+
+  it("picks SamplingLlmClient on first call when capabilities arrive post-initialize", async () => {
+    let caps: { sampling?: Record<string, unknown> } | undefined;
+    const server = {
+      createMessage: vi.fn(async () => ({
+        role: "assistant",
+        content: { type: "text", text: "hi" },
+      })),
+      getClientCapabilities: () => caps,
+    };
+    const lazy = createLazyLlmClient(baseConfig(), server as never);
+    // simulate the MCP initialize handshake completing
+    caps = { sampling: {} };
+    const out = await lazy.complete([{ role: "user", content: "ping" }]);
+    expect(out.text).toBe("hi");
+    expect(server.createMessage).toHaveBeenCalledOnce();
+  });
+
+  it("caches the resolved backend across calls (no re-probe)", async () => {
+    let probes = 0;
+    const server = {
+      createMessage: vi.fn(async () => ({
+        role: "assistant",
+        content: { type: "text", text: "" },
+      })),
+      getClientCapabilities: () => {
+        probes++;
+        return { sampling: {} };
+      },
+    };
+    const lazy = createLazyLlmClient(baseConfig(), server as never);
+    await lazy.complete([{ role: "user", content: "a" }]);
+    await lazy.complete([{ role: "user", content: "b" }]);
+    expect(probes).toBe(1);
   });
 });

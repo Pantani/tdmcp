@@ -4,6 +4,7 @@ import {
   type BeatSource,
   type CueCaller,
   loadCanonicalSetlist,
+  parseSetlistInput,
   type RunnerClock,
   type RunnerEvent,
   runSetlist,
@@ -455,6 +456,38 @@ describe("setlistRunner", () => {
       expect(res.setlist.scenes).toHaveLength(1);
       expect(res.setlist.scenes[0]?.cue).toBe("a");
     }
+  });
+
+  it("parseSetlistInput reads YAML frontmatter from a .md setlist note", () => {
+    const md = `---\nscenes:\n  - cue: a\n    morph_seconds: 0\n  - cue: b\n    morph_seconds: 0.5\n---\nbody text ignored\n`;
+    const parsed = parseSetlistInput(md, "Setlists/show.md");
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok) {
+      const loaded = loadCanonicalSetlist(parsed.input);
+      expect(loaded.ok).toBe(true);
+      if (loaded.ok) {
+        expect(loaded.setlist.scenes).toHaveLength(2);
+        expect(loaded.setlist.scenes[0]?.cue).toBe("a");
+      }
+    }
+  });
+
+  it("parseSetlistInput parses a pure .yaml setlist", () => {
+    const yaml = `scenes:\n  - cue: only\n    morph_seconds: 0\n`;
+    const parsed = parseSetlistInput(yaml, "show.yaml");
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok) {
+      const loaded = loadCanonicalSetlist(parsed.input);
+      expect(loaded.ok).toBe(true);
+      if (loaded.ok) expect(loaded.setlist.scenes[0]?.cue).toBe("only");
+    }
+  });
+
+  it("parseSetlistInput falls back to raw string for unknown extensions (JSON path)", () => {
+    const json = JSON.stringify({ scenes: [{ cue: "x", morph_seconds: 0 }] });
+    const parsed = parseSetlistInput(json, "show.json");
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok) expect(parsed.input).toBe(json);
   });
 
   it("schema accepts start as string or non-negative number; rejects mode='nope'", () => {
