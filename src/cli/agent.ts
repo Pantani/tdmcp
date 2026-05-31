@@ -15,6 +15,7 @@ import {
   applyPostProcessingSchema,
 } from "../tools/layer1/applyPostProcessing.js";
 import { applyRecipeImpl, applyRecipeSchema } from "../tools/layer1/applyRecipe.js";
+import { composeCueListImpl, composeCueListSchema } from "../tools/layer1/composeCueList.js";
 import {
   create3dAudioReactiveImpl,
   create3dAudioReactiveSchema,
@@ -24,6 +25,10 @@ import {
   createAudioReactiveImpl,
   createAudioReactiveSchema,
 } from "../tools/layer1/createAudioReactive.js";
+import {
+  createAutomationLaneImpl,
+  createAutomationLaneSchema,
+} from "../tools/layer1/createAutomationLane.js";
 import { createAutopilotImpl, createAutopilotSchema } from "../tools/layer1/createAutopilot.js";
 import {
   createBlobReactiveImpl,
@@ -33,6 +38,10 @@ import {
   createBodyReactiveImpl,
   createBodyReactiveSchema,
 } from "../tools/layer1/createBodyReactive.js";
+import {
+  createChromaReactiveImpl,
+  createChromaReactiveSchema,
+} from "../tools/layer1/createChromaReactive.js";
 import { createColorGradeImpl, createColorGradeSchema } from "../tools/layer1/createColorGrade.js";
 import {
   createCubemapDomeImpl,
@@ -56,6 +65,10 @@ import {
   createDisplacementWarpSchema,
 } from "../tools/layer1/createDisplacementWarp.js";
 import { createDomeOutputImpl, createDomeOutputSchema } from "../tools/layer1/createDomeOutput.js";
+import {
+  createEnergyStructureImpl,
+  createEnergyStructureSchema,
+} from "../tools/layer1/createEnergyStructure.js";
 import {
   createFeedbackNetworkImpl,
   createFeedbackNetworkSchema,
@@ -121,6 +134,10 @@ import {
   createParticleSystemSchema,
 } from "../tools/layer1/createParticleSystem.js";
 import { createPbrSceneImpl, createPbrSceneSchema } from "../tools/layer1/createPbrScene.js";
+import {
+  createPhoneGestureImpl,
+  createPhoneGestureSchema,
+} from "../tools/layer1/createPhoneGesture.js";
 import { createPointCloudImpl, createPointCloudSchema } from "../tools/layer1/createPointCloud.js";
 import { createPopFieldImpl, createPopFieldSchema } from "../tools/layer1/createPopField.js";
 import {
@@ -131,6 +148,10 @@ import {
   createPoseTrackingImpl,
   createPoseTrackingSchema,
 } from "../tools/layer1/createPoseTracking.js";
+import {
+  createProbSequencerImpl,
+  createProbSequencerSchema,
+} from "../tools/layer1/createProbSequencer.js";
 import {
   createProjectionMappingImpl,
   createProjectionMappingSchema,
@@ -163,7 +184,15 @@ import {
   createTextOverlayImpl,
   createTextOverlaySchema,
 } from "../tools/layer1/createTextOverlay.js";
+import {
+  createTransientReactiveImpl,
+  createTransientReactiveSchema,
+} from "../tools/layer1/createTransientReactive.js";
 import { createTransitionImpl, createTransitionSchema } from "../tools/layer1/createTransition.js";
+import {
+  createTwoWaySurfaceImpl,
+  createTwoWaySurfaceSchema,
+} from "../tools/layer1/createTwoWaySurface.js";
 import {
   createVectorLinesImpl,
   createVectorLinesSchema,
@@ -424,6 +453,13 @@ import {
 import { silentLogger } from "../utils/logger.js";
 import { runDoctor } from "./doctor.js";
 import { type PanicSubVerb, runPanic } from "./panicBlackout.js";
+import {
+  loadScheduleFile,
+  realClock,
+  runScheduler,
+  schedulerCliSchema,
+  tzInfo,
+} from "./scheduler.js";
 import {
   type CueCaller,
   loadCanonicalSetlist,
@@ -1239,6 +1275,55 @@ const COMMANDS: Record<string, Command> = {
     "Track blob/hand positions from a camera or TOP and bind params to them.",
     { mutates: true },
   ),
+  // Campaign Wave 2 — composition/scheduling/reactivity/interaction (v0.8.0):
+  "compose-cue-list": r(
+    composeCueListSchema,
+    composeCueListImpl,
+    "Author a cue list from rows: scaffolds cues + step sequencer wired to a navigator.",
+    { mutates: true },
+  ),
+  "prob-sequencer": r(
+    createProbSequencerSchema,
+    createProbSequencerImpl,
+    "Probabilistic Markov-style state sequencer driving params/cues per state.",
+    { mutates: true },
+  ),
+  "two-way-surface": r(
+    createTwoWaySurfaceSchema,
+    createTwoWaySurfaceImpl,
+    "Bidirectional control surface: parameter <-> external channel sync with guards.",
+    { mutates: true },
+  ),
+  "automation-lane": r(
+    createAutomationLaneSchema,
+    createAutomationLaneImpl,
+    "Timeline automation lane: animate target parameters from a CHOP curve.",
+    { mutates: true },
+  ),
+  "chroma-reactive": r(
+    createChromaReactiveSchema,
+    createChromaReactiveImpl,
+    "Harmonic/chroma audio analysis -> chroma_* channels driving target params.",
+    { mutates: true },
+  ),
+  "transient-reactive": r(
+    createTransientReactiveSchema,
+    createTransientReactiveImpl,
+    "Transient vs sustain detection: emits transient/sustain channels for routing.",
+    { mutates: true },
+  ),
+  "energy-structure": r(
+    createEnergyStructureSchema,
+    createEnergyStructureImpl,
+    "Multi-band energy state machine with edge-triggered state changes.",
+    { mutates: true },
+  ),
+  "phone-gesture": r(
+    createPhoneGestureSchema,
+    createPhoneGestureImpl,
+    "Phone IMU/gesture WebSocket receiver (orientation + gestures) as control channels.",
+    { mutates: true },
+  ),
   sidechain: r(
     createSidechainPumpSchema,
     createSidechainPumpImpl,
@@ -1508,6 +1593,9 @@ function usage(): string {
   lines.push(
     "  setlist run <file>   Walk a setlist scene-by-scene through manage_cue. Flags: --mode, --start, --loop, --comp-path, --beats-per-bar, --quantize.",
   );
+  lines.push(
+    "  schedule <file>      Run scene_scheduler: fire commands/cues/setlists on at/every/cron triggers. Flags: --dry-run, --once, --tz-info, --loop, --comp-path.",
+  );
   return lines.join("\n");
 }
 
@@ -1610,6 +1698,9 @@ function parseCliArgs(argv: string[]) {
       "comp-path": { type: "string" },
       "beats-per-bar": { type: "string" },
       quantize: { type: "string" },
+      // `schedule` subcommand:
+      once: { type: "boolean", default: false },
+      "tz-info": { type: "boolean", default: false },
     },
   });
 }
@@ -1658,6 +1749,7 @@ function nearestCommand(input: string): string | undefined {
     "doctor",
     "panic",
     "setlist",
+    "schedule",
     "version",
   ];
   for (const key of keys) {
@@ -1766,6 +1858,7 @@ function completionScript(shell: string): string | undefined {
     "doctor",
     "panic",
     "setlist",
+    "schedule",
     "version",
   ];
   const flags = [
@@ -2126,6 +2219,160 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
       stdout: `${lines.join("\n")}\n${JSON.stringify(summary)}\n`,
       stderr: "",
       code: summary.ended_reason === "complete" ? 0 : 1,
+    };
+  }
+
+  // `schedule <file>` — scene scheduler (at/every/cron triggers → command|cue|setlist).
+  if (positionals[0] === "schedule") {
+    const file = positionals[1];
+    if (!file) {
+      return { stdout: "", stderr: 'Missing schedule path for "schedule <file>".\n', code: 2 };
+    }
+    const loaded = loadScheduleFile(file);
+    if (!loaded.ok) {
+      return { stdout: "", stderr: `error: ${loaded.message}\n`, code: 2 };
+    }
+    const parsedCli = schedulerCliSchema.safeParse({
+      file,
+      dry_run: values["dry-run"] === true,
+      once: values.once === true,
+      loop: values.loop === true,
+      tz_info: values["tz-info"] === true,
+      comp_path: typeof values["comp-path"] === "string" ? values["comp-path"] : undefined,
+      json: values.output === "json",
+    });
+    if (!parsedCli.success) {
+      return {
+        stdout: "",
+        stderr: `Invalid schedule args: ${parsedCli.error.message}\n`,
+        code: 2,
+      };
+    }
+    if (parsedCli.data.tz_info) {
+      const lines = tzInfo(loaded.schedule, new Date());
+      return { stdout: `${lines.join("\n")}\n`, stderr: "", code: 0 };
+    }
+    let ctx: ToolContext;
+    try {
+      ctx = buildCtx(opts, cliLoadOptions(values));
+    } catch (err) {
+      return { stdout: "", stderr: `${(err as Error).message}\n`, code: 2 };
+    }
+    const { manageCueImpl } = await import("../tools/layer2/manageCue.js");
+    const { runSetlist: runSetlistImpl } = await import("./setlistRunner.js");
+    const { spawn } = await import("node:child_process");
+    const dryRun = parsedCli.data.dry_run;
+    const compPath = parsedCli.data.comp_path;
+    const runner = {
+      async command(a: { cmd: string; args: string[]; timeout_ms: number }): Promise<void> {
+        if (dryRun) return;
+        await new Promise<void>((resolve, reject) => {
+          const child = spawn(a.cmd, a.args, { stdio: "ignore" });
+          const t = setTimeout(() => {
+            child.kill("SIGTERM");
+            reject(new Error(`command "${a.cmd}" timed out after ${a.timeout_ms}ms`));
+          }, a.timeout_ms);
+          child.on("error", (err) => {
+            clearTimeout(t);
+            reject(err);
+          });
+          child.on("exit", (code) => {
+            clearTimeout(t);
+            if (code === 0) resolve();
+            else reject(new Error(`command "${a.cmd}" exited with code ${code}`));
+          });
+        });
+      },
+      async cue(a: {
+        cue_action: "store" | "recall" | "morph" | "delete";
+        name: string;
+        duration?: number;
+        quantize: "off" | "beat" | "bar";
+      }): Promise<void> {
+        if (dryRun) return;
+        const res = await manageCueImpl(ctx, {
+          action: a.cue_action,
+          comp_path: compPath,
+          name: a.name,
+          duration: a.duration ?? 0,
+          quantize: a.quantize,
+        });
+        if (res.isError) {
+          const text = res.content
+            .map((c) => (c.type === "text" ? c.text : ""))
+            .join("")
+            .trim();
+          throw new Error(text || `manage_cue ${a.cue_action} failed`);
+        }
+      },
+      async setlist(a: {
+        file: string;
+        mode: "duration" | "beat" | "manual";
+        loop: boolean;
+      }): Promise<void> {
+        if (dryRun) return;
+        let raw: string;
+        try {
+          raw = readFileSync(a.file, "utf8");
+        } catch (err) {
+          throw new Error(`could not read setlist: ${(err as Error).message}`);
+        }
+        const parsedInput = parseSetlistInput(raw, a.file);
+        if (!parsedInput.ok) throw new Error(parsedInput.message);
+        const loadedSetlist = loadCanonicalSetlist(parsedInput.input);
+        if (!loadedSetlist.ok) throw new Error(loadedSetlist.message);
+        const cueCaller: CueCaller = {
+          async fire(call) {
+            const res = await manageCueImpl(ctx, {
+              action: call.action,
+              comp_path: call.comp_path,
+              name: call.name,
+              duration: call.duration,
+              quantize: call.quantize,
+            });
+            if (res.isError) {
+              const text = res.content
+                .map((c) => (c.type === "text" ? c.text : ""))
+                .join("")
+                .trim();
+              throw new Error(text || `manage_cue ${call.action} failed`);
+            }
+          },
+        };
+        await runSetlistImpl({
+          setlist: loadedSetlist.setlist,
+          args: {
+            setlist: a.file,
+            mode: a.mode,
+            loop: a.loop,
+            comp_path: compPath,
+            dry_run: false,
+            json: false,
+            beats_per_bar: 4,
+            quantize: "off",
+          },
+          client: cueCaller,
+          clock: {
+            setTimeout: (cb, ms) => setTimeout(cb, ms),
+            clearTimeout: (h) => clearTimeout(h as ReturnType<typeof setTimeout>),
+            now: () => Date.now(),
+          },
+          emit: () => {},
+        });
+      },
+    };
+    const lines: string[] = [];
+    const summary = await runScheduler({
+      schedule: loaded.schedule,
+      args: parsedCli.data,
+      runner,
+      clock: realClock,
+      emit: (e) => lines.push(JSON.stringify(e)),
+    });
+    return {
+      stdout: `${lines.join("\n")}\n${JSON.stringify(summary)}\n`,
+      stderr: "",
+      code: summary.ended_reason === "complete" || summary.ended_reason === "once" ? 0 : 1,
     };
   }
 

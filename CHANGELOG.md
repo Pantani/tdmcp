@@ -4,6 +4,39 @@ All notable changes to **tdmcp** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-05-31
+
+**Wave 2 — Show automation + musical reactivity** (campaign `beyond_20260530`).
+Eight new Layer-1 tools and one CLI verb turn the v0.7.0 live-show foundation
+into a smarter, more musical conductor. Tool registry is now **213** (was 205).
+Three reactivity tools ship marked `[experimental]`; two control surfaces are
+gated `unverified_pending_hardware` (live phone + motorized-controller probes
+required before they leave that flag).
+
+### Added
+
+- **`compose_cue_list`** — natural language → fireable cue sequence. Uses the
+  local LLM when configured, with a grammar fallback so it works offline.
+- **`create_prob_sequencer`** — Markov-chain step sequencer with beat-pointer
+  deduplication; drives recipe / scene / cue triggers from a probability matrix.
+- **`create_two_way_surface`** *(unverified_pending_hardware)* — closed-loop
+  OSC/MIDI feedback to motorized faders and lit pads, so the controller mirrors
+  the live parameter state.
+- **`create_automation_lane`** — record + loop a parameter sweep on a bar phase
+  using `beatCHOP`; turns any knob move into a reusable automation clip.
+- **`create_chroma_reactive`** *(experimental)* — FFT into 12 pitch-class
+  channels, for key-aware and harmony-aware reactivity.
+- **`create_transient_reactive`** *(experimental)* — `analyzeCHOP` RMS plus
+  `filterCHOP` lag to split a signal into a transient and a sustain channel.
+- **`create_energy_structure`** *(experimental)* — adaptive energy envelope
+  with build / drop / breakdown edge detection, for song-structure-aware shows.
+- **`create_phone_gesture`** *(unverified_pending_hardware)* — IMU + multitouch
+  from a phone over a Web Server DAT, exposed as CHOP channels.
+- **`scene_scheduler`** — new CLI verb `tdmcp-agent schedule <file>`: cron-lite,
+  DST-faithful wall-clock driver for unattended installations.
+
+[0.8.0]: https://github.com/Pantani/tdmcp/compare/v0.7.1...v0.8.0
+
 ## [0.7.1] - 2026-05-31
 
 **Wave 1.5 — deferred items from v0.7.0**. Folds in the three follow-ups that

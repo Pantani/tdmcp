@@ -10,9 +10,9 @@ can build real visual systems from plain language — no node-wiring by hand. Th
 page is the honest, bird's-eye picture of **what already works, what's still
 rough, and what's coming next** on the way to a stable 1.0.
 
-**Where things stand today.** The current release is **v0.7.0** — on
+**Where things stand today.** The current release is **v0.8.0** — on
 [npm](https://www.npmjs.com/package/@dpantani/tdmcp) and
-[GitHub](https://github.com/Pantani/tdmcp) — exposing **179 tools**. The project
+[GitHub](https://github.com/Pantani/tdmcp) — exposing **213 tools**. The project
 has grown through four arcs:
 
 1. **Generate** — one-line tools that build a whole wired network (audio-reactive,
@@ -220,7 +220,32 @@ plus the P0 show-automation consumers (`setlist_runner`, `create_scene_timeline`
 - **Library keystone** — **`auto_tag_library_asset`** (one of the foundations
   above).
 
-### Milestone 2 — Plug into the ecosystem & the iconic looks · ~v0.8.0
+### Milestone 1.5 — Show automation + musical reactivity · v0.8.0 (shipped 2026-05-31)
+
+*Campaign `beyond_20260530` Wave 2 — turns the v0.7.0 live-show foundation into
+a smarter, more musical conductor. Eight Layer-1 tools and one CLI verb (registry
+now 213). `compose_cue_list` lands here (carries into Milestone 3 for the deeper
+NL pass). `create_phone_gesture` and `create_two_way_surface` are gated
+`unverified_pending_hardware` (live phone + motorized-controller probe required).
+`create_chroma_reactive`, `create_transient_reactive`, and
+`create_energy_structure` ship marked `[experimental]`.*
+
+- **Show automation** — **`compose_cue_list`** (natural language → fireable cue
+  sequence, LLM with grammar fallback), **`create_automation_lane`** (record + loop
+  a param sweep on a bar phase via beatCHOP), and **`scene_scheduler`**
+  (`tdmcp-agent schedule <file>` — cron-lite, DST-faithful wall-clock driver for
+  unattended installations).
+- **Musical reactivity** *(experimental)* — **`create_chroma_reactive`** (FFT → 12
+  pitch-class channels), **`create_transient_reactive`** (analyzeCHOP RMS +
+  filterCHOP lag → transient/sustain split), **`create_energy_structure`**
+  (adaptive energy with build/drop/breakdown edges).
+- **Sequencing & control** — **`create_prob_sequencer`** (Markov-chain step
+  sequencer with beat-pointer dedup), **`create_two_way_surface`** *(pending
+  hardware)* — closed-loop OSC/MIDI feedback to motorized/lit controllers — and
+  **`create_phone_gesture`** *(pending hardware)* — IMU + multitouch from a phone
+  over a Web Server DAT.
+
+### Milestone 2 — Plug into the ecosystem & the iconic looks · ~v0.9.0
 
 *A wide, mostly independent content wave — ideal to build side by side.*
 

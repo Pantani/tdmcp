@@ -1,13 +1,16 @@
 import type { ToolRegistrar } from "../types.js";
 import { registerApplyPostProcessing } from "./applyPostProcessing.js";
 import { registerApplyRecipe } from "./applyRecipe.js";
+import { registerComposeCueList } from "./composeCueList.js";
 import { registerCreate3dAudioReactive } from "./create3dAudioReactive.js";
 import { registerCreate3dScene } from "./create3dScene.js";
 import { registerCreateAudioReactive } from "./createAudioReactive.js";
+import { registerCreateAutomationLane } from "./createAutomationLane.js";
 import { registerCreateAutopilot } from "./createAutopilot.js";
 // Campaign Wave 3 — artist controls (backlog 2026-05-29):
 import { registerCreateBlobReactive } from "./createBlobReactive.js";
 import { registerCreateBodyReactive } from "./createBodyReactive.js";
+import { registerCreateChromaReactive } from "./createChromaReactive.js";
 import { registerCreateColorGrade } from "./createColorGrade.js";
 import { registerCreateCubemapDome } from "./createCubemapDome.js";
 import { registerCreateDatamosh } from "./createDatamosh.js";
@@ -16,6 +19,7 @@ import { registerCreateDepthDisplacement } from "./createDepthDisplacement.js";
 import { registerCreateDepthSilhouette } from "./createDepthSilhouette.js";
 import { registerCreateDisplacementWarp } from "./createDisplacementWarp.js";
 import { registerCreateDomeOutput } from "./createDomeOutput.js";
+import { registerCreateEnergyStructure } from "./createEnergyStructure.js";
 import { registerCreateFeedbackNetwork } from "./createFeedbackNetwork.js";
 import { registerCreateFeedbackTunnel } from "./createFeedbackTunnel.js";
 import { registerCreateGenerativeArt } from "./createGenerativeArt.js";
@@ -39,10 +43,12 @@ import { registerMultipass3dDepth } from "./createMultipass3dDepth.js";
 import { registerCreateParticleFlock } from "./createParticleFlock.js";
 import { registerCreateParticleSystem } from "./createParticleSystem.js";
 import { registerCreatePbrScene } from "./createPbrScene.js";
+import { registerCreatePhoneGesture } from "./createPhoneGesture.js";
 import { registerCreatePointCloud } from "./createPointCloud.js";
 import { registerCreatePopField } from "./createPopField.js";
 import { registerCreatePoseSkeleton } from "./createPoseSkeleton.js";
 import { registerCreatePoseTracking } from "./createPoseTracking.js";
+import { registerCreateProbSequencer } from "./createProbSequencer.js";
 import { registerCreateProjectionMapping } from "./createProjectionMapping.js";
 import { registerCreateRaymarchScene } from "./createRaymarchScene.js";
 import { registerCreateSetNavigator } from "./createSetNavigator.js";
@@ -57,7 +63,9 @@ import { registerCreateTestPattern } from "./createTestPattern.js";
 import { registerCreateText3d } from "./createText3d.js";
 import { registerCreateTextCrawl } from "./createTextCrawl.js";
 import { registerCreateTextOverlay } from "./createTextOverlay.js";
+import { registerCreateTransientReactive } from "./createTransientReactive.js";
 import { registerCreateTransition } from "./createTransition.js";
+import { registerCreateTwoWaySurface } from "./createTwoWaySurface.js";
 import { registerCreateVectorLines } from "./createVectorLines.js";
 import { registerCreateVideoPlayer } from "./createVideoPlayer.js";
 import { registerCreateVideoSynth } from "./createVideoSynth.js";
@@ -163,4 +171,13 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateTestPattern,
   registerCreateTextCrawl,
   registerCreateBlobReactive,
+  // Campaign Wave 2 — composition/scheduling/reactivity/interaction (v0.8.0):
+  registerComposeCueList,
+  registerCreateProbSequencer,
+  registerCreateTwoWaySurface,
+  registerCreateAutomationLane,
+  registerCreateChromaReactive,
+  registerCreateTransientReactive,
+  registerCreateEnergyStructure,
+  registerCreatePhoneGesture,
 ];
