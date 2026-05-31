@@ -1,17 +1,32 @@
-# tdmcp Roadmap — v0.3.0 → v1.0.0
+---
+title: Roadmap
+description: "What's shipped, what's experimental, and what's planned for tdmcp — the TouchDesigner MCP server — on the way to a stable 1.0."
+---
 
-A phased plan toward 1.0. Each phase ships as its own minor release with a
-CHANGELOG entry and live validation in TouchDesigner. Phases are ordered by
-**technical dependency + impact on live audiovisual / VJ workflows** (audio-,
-camera- and beat-reactive performance).
+# tdmcp Roadmap
 
-> **Status legend:** ☐ planned · ◐ in progress · ☑ shipped
-> **Effort legend:** **S** ≤1 day · **M** 2–4 days · **L** ~1 week
+tdmcp connects an AI assistant (Claude, Cursor, Codex…) to TouchDesigner so you
+can build real visual systems from plain language — no node-wiring by hand. This
+page is the honest, bird's-eye picture of **what already works, what's still
+rough, and what's coming next** on the way to a stable 1.0.
 
-## Cross-cutting conventions
+**Where things stand today.** The current release is **v0.6.1** — on
+[npm](https://www.npmjs.com/package/@dpantani/tdmcp) and
+[GitHub](https://github.com/Pantani/tdmcp) — exposing **179 tools**. The project
+has grown through four arcs:
 
-Every feature follows the existing patterns:
+1. **Generate** — one-line tools that build a whole wired network (audio-reactive,
+   generative, feedback, 3D, particles, shaders).
+2. **Perform** — turn those networks into playable instruments (cues, macros,
+   control surfaces, a phone remote, beat sync, a hands-free auto-VJ).
+3. **Package & operate** — reusable components, project analysis, token-cheap
+   editing primitives, and a structured bridge that keeps working in a
+   locked-down venue.
+4. **Compose & ingest** *(next)* — run a whole arranged show over time, and pull
+   in the wider TouchDesigner world (Shadertoy / ISF shaders, Ableton, the iconic
+   VJ looks).
 
+<<<<<<< HEAD
 - New tool in `src/tools/layerN/<name>.ts` — Zod schema + `*Impl` + `register*`,
   registered in the layer's `index.ts`.
 - Bridge work happens via a Python script built with `buildPayloadScript`
@@ -46,168 +61,283 @@ Every feature follows the existing patterns:
 | 14–15 | 0.5.0 ☑ | Live mixing, parameter fidelity & creative direction | Post-discovery wave: transitions/layer-stack/keyer/media-bin, one-shot reactivity, signature effects, network round-trip, 11 AI prompts |
 | 16 | 0.6.0 ☑ | TouchDesigner-depth & library fidelity | 7 P0s from discovery round-1: bridge read/write fidelity (flags/wiring/structured endpoints + `cook.error`), `create_modulators` + `create_look_bank` instruments, library contact-sheet — 179 tools |
 | 17 | 0.7.0+ ◐ | Composition, automation & intelligence | In progress via the backlog-campaign harness (Wave 3 artist controls + Wave 4 library/packaging shipped + live-validated). Discovery rounds 2–3: time-based show automation, beat-locked montage, pattern generation, own-work memory, MCP sampling — **plus the external community-sources round** (Shadertoy/ISF import, missing iconic looks, color-finish, artist-publishing) |
+=======
+> **How to read this page**
+>
+> - ✅ **Shipped** — in a released version you can install today.
+> - 🧪 **Experimental** — shipped and usable, but needs live tuning or specific
+>   hardware to shine (flagged so you know what to expect).
+> - ⬜ **Planned** — designed and prioritized, not yet built.
+>
+> The dated, line-by-line record of every change is the
+> [CHANGELOG](https://github.com/Pantani/tdmcp/blob/main/CHANGELOG.md); the
+> always-current, complete tool list is the [Tools reference](/reference/tools).
+> This page is the overview. Curious about the long tail of ideas? The full,
+> unfiltered brainstorm is preserved in the [planning archive](#full-backlog) at
+> the end.
+>>>>>>> origin/main
 
 ---
 
-## Phase 0 — v0.3.0 · DX & CLI foundation ☑ shipped
+## ✅ Shipped
 
-First because it has a multiplier effect: hot-reload kills the bridge-staleness
-pain, and the event producer is a prerequisite for musical reactivity.
+### v0.6.x — TouchDesigner depth & library fidelity
 
-| Feature | Delivers | Effort | Status |
-|---|---|---|---|
-| Bridge hot-reload | `reload_bridge` tool + `reload` CLI reimport `mcp.*` in place (logic already in `dev.py`) | S | ☑ |
-| Bridge event producer | `timeline.frame` / `node.cook` / `project.saved` broadcast — already shipped in the bridge's `events_hook` Execute DAT | M | ☑ |
-| CLI: expose L1/L2 | All generators + building blocks in `agent.ts` (`visual`, `audio-reactive`, `post-fx`, `preset`, `animate`, `io`, `checkpoint`, …) | M | ☑ |
-| CLI `watch` | `runWatch` tails the bridge WebSocket as ndjson (`--include-high-frequency`) | S | ☑ |
-| CLI `preview` | `preview <nodePath> -o file.png` writes the PNG to disk | S | ☑ |
-| Checkpoint / restore | `manage_checkpoint` (store/restore/list/delete): params + topology, recreate deleted, prune created | M | ☑ |
+*A sharper, safer bridge plus two performance instruments.* Reads now report the
+operator flags that explain the classic "why is it black?" (bypass / render /
+display / lock), and the core editing operations — connect, parameter modes, DAT
+text, logs — moved to **structured endpoints that keep working even with
+raw-Python execution turned off**, the security-conscious venue setup.
 
-**Areas:** `td/modules/mcp/dev.py` (already had reload), `src/cli/agent.ts`
-(`runWatch`, preview, L1/L2 commands), `src/tools/layer3/reloadBridge.ts`,
-`src/tools/layer2/manageCheckpoint.ts`. The bridge itself was unchanged — the
-event producer and reload logic already shipped in 0.2.0, so no reinstall needed.
+- **`create_modulators`** — a tempo-locked bank of LFOs (sine / saw / noise) on
+  one output; bind it to any parameter to make a network breathe in time.
+- **`create_look_bank`** — capture, store and recall named "looks," with an
+  instant snap or a quantized A↔B morph.
+- **`generate_library_index`** + preview thumbnails — a Markdown contact-sheet of
+  your saved recipes and components.
+- **`get_td_node_flags`**, structured connect / disconnect / parameter / text /
+  logs endpoints, and edge-triggered cook-error events for fast live recovery.
 
----
+### v0.5.0 — Reusable components, agent-DX & live mixing
 
-## Phase 1 — v0.3.0 · Musical reactivity ⭐ ☑ shipped
+*The shift from generating visuals to packaging, documenting and cheaply
+operating them.* Build a network → add knobs → script it → save it as a reusable
+`.tox`.
 
-The heart of the live workflow. Beat events ride the phase-0 event producer.
+- **Components:** `add_custom_parameters`, `scaffold_extension`, `analyze_project`,
+  `generate_readme`.
+- **Token-cheap editing:** `edit_dat_content`, `set_dat_content`,
+  `batch_operations`, `manage_annotation`, a compact whole-network read, and
+  `serialize_network` / `rebuild_network` (a diffable JSON round-trip).
+- **Live mixing & content:** `create_transition`, `create_live_source`,
+  `create_layer_stack`, `create_media_bin`, `create_keyer`, plus signature effects
+  (`create_datamosh`, `create_displacement_warp`, `create_halftone`,
+  `create_feedback_tunnel`, `create_text_3d`) and five new `apply_post_processing`
+  effects.
+- **One-shot reactivity:** `bind_audio_reactive`, `create_data_reactive`.
+- **Library & packaging:** portable `.tox` bundles, checksummed recipe bundles,
+  asset validation, and a local marketplace index.
+- **11 new AI prompts** (fix a dead signal, recover a show mid-set, hands-free AI
+  VJ, color story, setlist planner…) and a `tdmcp://prompts` catalog.
+- **Use tdmcp from inside TouchDesigner** via dotsimulate's LOPs MCP Client.
 
-| Feature | Delivers | Effort | Status |
-|---|---|---|---|
-| `extract_audio_features` | Audio chain exposing level + bass/mid/treble band energies on a Null CHOP, with a Sensitivity knob; device/file/oscillator/existing source | M | ☑ |
-| `create_tempo_sync` | Beat CHOP clock → `ramp`/`pulse`/`count`/`beat`/`bar`/`bpm`; emits a `beat` event over the WebSocket each beat (via a CHOP Execute DAT) | M | ☑ |
-| `bind_to_channel` | The link: drive any parameter from a CHOP channel (audio feature / beat) by expression, with scale + offset | M | ☑ |
-| Prompt "beat-reactive designer" | Guides the AI to wire audio features + beat into a visual's parameters | S | ☑ |
+### v0.4.0 — Signature 3D / GPU visuals & more creation
 
-**Areas:** `src/tools/layer1/extractAudioFeatures.ts`,
-`src/tools/layer1/createTempoSync.ts`, `src/tools/layer2/bindToChannel.ts`,
-`src/prompts/beatReactiveDesigner.ts`, CLI commands `audio-features` /
-`tempo-sync` / `bind`. Notes from the live probe: this build has **no Tempo
-CHOP** (the Beat CHOP is the clock) and the bass/mid/treble split uses Audio
-Filter → Analyze (RMS) rather than the spectrum. `bind_to_channel` was added as
-the missing link that actually wires reactive signals into visuals.
+Fifteen tools, live-validated in TouchDesigner: `create_raymarch_scene`,
+`create_particle_flock`, `create_point_cloud`, `create_pbr_scene`,
+`create_cubemap_dome`, `detect_tempo`, `create_palette`, `create_led_mapper`,
+`create_cue_sequencer`, `create_stage_dashboard`, `create_generative_audio`,
+`scaffold_genre`, plus the `text_to_recipe` and `style_reference` prompts.
+**Body & pose tracking** (MediaPipe) also landed around this time.
 
----
+### v0.3.0 — The big release: reactivity, performance, 3D & AI
 
-## Phase 2 — v0.3.0 · Live performance ⭐ ☑ shipped
+The largest single release — a scriptable CLI, musical reactivity, live-performance
+instruments, advanced creation, a dimensional 3D/depth layer, assistant
+intelligence, and robustness/export.
 
-Turns generated systems into instruments. Builds on the preset/control-panel/external-I/O work.
+- **Musical reactivity:** `extract_audio_features`, `create_tempo_sync`,
+  `bind_to_channel` (the link that actually wires a signal into a visual),
+  `create_spectrum`, `detect_onsets`, `create_waveform`.
+- **Live performance:** `manage_cue` (scenes + eased morph), `create_macro`,
+  `randomize_controls`, `create_control_surface`, `create_phone_remote`,
+  `create_autopilot` (beat-driven auto-VJ), `create_panic`, `create_clip_launcher`.
+- **Stage I/O & sensors:** `create_motion_reactive` (the camera counterpart to
+  audio), `create_multi_output` (multi-projector with soft edge-blending),
+  `create_text_overlay`, `sync_external_clock`.
+- **Advanced creation:** `create_3d_scene`, `create_video_player`,
+  `create_layer_mixer`, `create_projection_mapping`, `create_keyframe_animation`,
+  `create_simulation`, the signature effects (`create_strobe`,
+  `create_kaleidoscope`, `create_glitch`, `create_kinetic_text`),
+  `create_color_grade`, `create_shader_lib`, `create_video_synth`, `import_model`.
+- **Dimensional (3D / depth / mapping):** `create_3d_audio_reactive`,
+  `create_dome_output`, `create_mesh_warp`, `create_depth_displacement`,
+  `create_gpu_particle_field`.
+- **Intelligence:** `search_operators` over a 629-operator knowledge base,
+  `document_network`, and AI prompts (recreate a reference image, plain-language
+  tweaks, aesthetic critique, build a VJ set, fix a shader).
+- **Robustness & export:** `render_output`, `record_movie`, `optimize_performance`,
+  `diff_snapshots`, `manage_checkpoint`, a recipe library, `reload_bridge`, a full
+  CLI, and a `doctor` diagnostic.
+- **Obsidian vault integration** — bridge a folder of Markdown notes to
+  TouchDesigner: recipes, setlists, shaders, presets and a dated show diary.
+  *(See the caveat below — currently offline-tested.)*
+- **Local LLM copilot** (`tdmcp chat`) — a browser chat driven by a local model
+  (Ollama) for simple tasks, with no API key required.
 
-| Feature | Delivers | Effort | Status |
-|---|---|---|---|
-| `manage_cue` (scene system) | Store/recall/list/delete cues + a timed, eased **morph** crossfade between looks (Execute DAT engine) | L | ☑ |
-| `create_macro` | One 0–1 knob → N parameters, each remapped into its own range with a curve | M | ☑ |
-| `randomize_controls` | Randomize numeric controls within range, with an `amount` blend (nudge → full scramble) | S | ☑ |
-| `create_control_surface` | Playable panel COMP: faders that drive params + buttons that recall/morph cues | M | ☑ |
-| `create_phone_remote` | Mobile web panel served from a Web Server DAT — touch sliders, no app to install | M | ☑ |
-| OSC/MIDI output | `osc_out` / `midi_out` in `create_external_io` for bidirectional feedback | S | ☑ |
+### v0.3.1 — Easy install & privacy
 
-**Areas:** new L2 tools (`manageCue`, `createMacro`, `randomizeControls`,
-`createControlSurface`, `createPhoneRemote`), extended `createExternalIo`, CLI
-commands `cue`/`macro`/`randomize`/`surface`/`remote`. Note: "MIDI learn" is
-covered declaratively — wiggle a control, read the input CHOP with `get_td_nodes`,
-then `bind_to_channel` — rather than an interactive capture mode.
+The one-click Claude Desktop bundle (now `.mcpb`, the current Anthropic format)
+and a privacy policy: tdmcp runs **entirely on your machine**, collects nothing,
+and has no telemetry.
 
----
+### v0.2.0 — Live control
 
-## Phase 3 — v0.3.0 · Advanced creation (TouchDesigner) ☑ shipped
-
-Heavy but mutually independent creation tools — each builds, verifies and previews a network.
-
-| Feature | Delivers | Effort | Status |
-|---|---|---|---|
-| `create_video_player` | Movie File In, or a playlist via a Switch TOP, with Play/Speed/Clip controls | M | ☑ |
-| `create_layer_mixer` | A/B Cross TOP (Crossfade knob) or composite blend modes; sources via Select TOPs | M | ☑ |
-| `create_3d_scene` | Geometry + Camera + Light + Render TOP (sphere/box/grid) with RotateY/Zoom | L | ☑ |
-| `create_projection_mapping` | Corner Pin warp with draggable handles, output for setup_output | L | ☑ |
-| `create_keyframe_animation` | Keyframed curve (time/value, easing) looping in sync — choreographed motion | M | ☑ |
-| `create_simulation` | reaction_diffusion (recipe) + slime/fluid feedback flow fields, Decay knob | L | ☑ |
-
-**Areas:** new L1 tools (`createLayerMixer`, `createVideoPlayer`, `create3dScene`,
-`createProjectionMapping`, `createKeyframeAnimation`, `createSimulation`), CLI
-commands `mixer`/`video`/`scene3d`/`mapping`/`keyframe`/`simulation`. Note:
-"more recipes" is folded into these generators (they are the creation primitives);
-`create_simulation` reuses the existing `reaction_diffusion` recipe, and
-`create_generative_art` already covers cellular-automata / flow-field / attractor
-techniques.
-
----
-
-## Phase 4 — v0.3.0 · Intelligence (AI) ☑ shipped
-
-The intelligence layer on top of everything already built.
-
-| Feature | Delivers | Effort | Status |
-|---|---|---|---|
-| Visual reference → network | `image_to_visual` prompt — recreate a reference image's look in real nodes (multimodal) | L | ☑ |
-| Natural-language tweaks | `tweak_visual` prompt — "darker/faster/more chaotic" → the right params | M | ☑ |
-| Operator KB search | `search_operators` — relevance-ranked keyword search over the 629 operators (no embedding dependency) | M | ☑ |
-| Aesthetic critique | `critique_visual` prompt — evaluates preview/topology/perf, proposes concrete fixes | M | ☑ |
-| Patch doc / diagram | `document_network` — counts by family/type + a Mermaid flowchart of the real network | S | ☑ |
-| Remaining prompts | `vj_set_builder` and `fix_shader` | S | ☑ |
-
-**Areas:** `src/tools/layer3/searchOperators.ts` & `documentNetwork.ts`,
-`src/prompts/` (image_to_visual, tweak_visual, critique_visual, vj_set_builder,
-fix_shader), CLI commands `operators` / `document`. Note: "semantic" search is
-relevance-ranked keyword matching over the KB rather than a heavyweight embedding
-index; multimodal / natural-language / critique ship as prompts (the model already
-sees images and the patch) instead of bespoke tools.
+The first step from static renders to playable instruments:
+`create_control_panel`, `animate_parameter`, `manage_presets`,
+`create_external_io` (OSC/MIDI in, DMX/Art-Net out, NDI/Syphon-Spout in) and
+`manage_component` (save / load `.tox`). From here on, every generator arrives
+with knobs.
 
 ---
 
-## Phase 5 — v0.3.0 · Robustness & export ☑ shipped
+## 🧪 Experimental & needs validation
 
-| Feature | Delivers | Effort | Status |
-|---|---|---|---|
-| `render_output` | Save a TOP to disk at full resolution (PNG/JPG/EXR/TIFF) — export a finished frame | M | ☑ |
-| `optimize_performance` | Rank cook-time bottlenecks with suggestions; apply:true lowers flagged TOPs' resolution | M | ☑ |
-| `diff_snapshots` | Readable diff between two snapshots — nodes/connections/params added, removed, changed | M | ☑ |
-| `list_recipes` / `apply_recipe` | Browse and instantiate the recipe library from a tool/CLI | M | ☑ |
-| Keyboard / gamepad / mouse input | `keyboard_in` / `gamepad_in` / `mouse_in` in `create_external_io` | S | ☑ |
+These ship today and are usable, but they carry an honest caveat — they need live
+tuning, specific hardware, or a final on-hardware check before they're considered
+solid.
 
-**Areas:** new L3 tools (`renderOutput`, `optimizePerformance`, `diffSnapshots`),
-L1 (`listRecipes`, `applyRecipe`), extended `createExternalIo`, CLI commands
-`render`/`optimize`/`diff`/`recipes`/`recipe`. Follow-ups (Unreleased) finished the
-items deferred during the build: `record_movie` (movie/sequence beyond a single
-frame), a show scaffold (`scaffold_show` / CLI `init`), an interactive CLI `repl`,
-GPU instancing in `create_3d_scene`, and an opt-in `semantic` re-rank for
-`search_operators` via the LLM endpoint (keyword stays the zero-config default).
+- **Obsidian vault tools** — fully unit-tested, but their live round-trip inside a
+  running TouchDesigner hasn't been exercised end-to-end yet.
+- **Signal-detection tools** — `detect_pitch` (reads near-zero with the default
+  threshold), `detect_tempo` (BPM lock needs live tuning) and
+  `create_envelope_follower` (sidechain gate/duck) all need a real source to dial
+  in.
+- **`learn_control`** — interactive MIDI/OSC "learn"; depends on live input state.
+- **`create_pop_field`** — a first generator for TouchDesigner's GPU **POP**
+  family, which is itself experimental in this build; the render path is held
+  pending live validation.
+- **MIDI hardware tools** — `create_midi_note_reactive` and `create_midi_map`
+  preview fine from a synthetic note source, but the real device paths need a
+  controller to confirm.
+- **External-clock sync** — `sync_external_clock`'s tap-tempo is solid; its
+  Ableton Link and MIDI-clock modes need hardware to validate (with a manual-BPM
+  fallback when no source is present).
+- **v0.6.0 live re-check** — the seven v0.6.0 features were each validated live in
+  TouchDesigner; a full end-to-end re-check of the new HTTP routing after a bridge
+  reinstall is the last pending step (acceptable per release policy).
+
+---
+
+## ⬜ Planned — the road to 1.0 {#planned}
+
+With the tool set mature (~179 tools), the highest-value work has moved **up a
+level** — from *making* a single visual to *running a whole show* and *connecting
+to the wider TouchDesigner world*. The next steps are grouped into **four
+milestones, ordered by dependency and live-show impact**. Within a milestone the
+tools are largely independent and build in parallel; a few share a foundation that
+comes first. Version targets are a rough sequence, **not a promise** — order can
+shift. The exhaustive, item-by-item backlog (with effort and impact) lives in the
+[planning archive](#full-backlog).
+
+### Foundations first
+
+Three pieces each unlock a whole cluster, so they're worth building *before* the
+features that depend on them:
+
+- **One shared setlist / scene schema** (plus a Timer-CHOP scheduler primitive) —
+  unlocks the entire show-automation stack in Milestone 1.
+- **Running LLM-backed tools through the connected agent's own model** (instead of
+  a local Ollama setup) — unlocks the whole AI family in Milestone 3.
+- **`auto_tag_library_asset`** — makes the library searchable by default and feeds
+  search, lineage and linting across the library track.
+
+### Milestone 1 — Run a whole show · ~v0.7.0
+
+*The single biggest gap: tdmcp can build and trigger scenes, but nothing yet drives
+an arranged set across time. Close that, plus the live-safety basics.*
+
+- **Show automation** — build the shared scene schema first, then in parallel:
+  **`setlist_runner`** (headless show driver), **`create_scene_timeline`** (in-TD
+  bar-timed arranger), and **`scene_scheduler`** (wall-clock, for unattended
+  installations). **`compose_cue_list`** (words → a fireable cue sequence) starts
+  here and gets smarter in Milestone 3.
+- **Content for the auto-VJ** *(independent → parallel)* — **`create_auto_montage`**
+  (beat-quantized cutting across sources — what the hands-free AI-VJ director has
+  nothing to drive today), **`create_euclidean_sequencer`** (algorithmic rhythm),
+  **`create_preset_morph`** (a true N-way mood blend).
+- **Ship-it-now safety win** — **`tdmcp panic` / `blackout`**, a one-word verb you
+  can type under pressure.
+- **Library keystone** — **`auto_tag_library_asset`** (one of the foundations
+  above).
+
+### Milestone 2 — Plug into the ecosystem & the iconic looks · ~v0.8.0
+
+*A wide, mostly independent content wave — ideal to build side by side.*
+
+- **Ecosystem importers** *(share the GLSL-TOP mapping layer → build together)* —
+  **`import_shadertoy`** (the largest shader corpus on earth, translated on demand)
+  and **`import_isf_shader`** (the cross-VJ ISF standard, with an auto-generated
+  control panel).
+- **External inputs** — **`setup_tdableton`** (react to the whole Ableton set, not
+  just the Link clock) and **HTTP / WebSocket data sources** for web APIs and local
+  AI image servers.
+- **The signature looks** *(all independent → parallel)* — **`create_fluid_sim`**
+  (real 2D ink/dye/smoke), **`image_to_particles`**, **`create_dither`** (1-bit
+  retro), **`create_jfa_voronoi`** (stained-glass), **`create_npr_filter`**
+  (oil/pencil), **`create_flow_abstraction`** (painterly), and a **color-finish
+  suite** (LUTs + color wheels/curves + video scopes).
+- **Rehearsal & deeper reactivity** — **`create_chop_recorder`** (record / loop /
+  replay any reactive signal), plus chroma / percussive-vs-tonal / song-structure
+  reactivity as it's tuned.
+
+### Milestone 3 — Smarter assistance & a library you can trust · ~v0.9.0
+
+*Gated on two foundations above (connected-model access + auto-tagging). Build the
+connected-model bridge first, then the rest in parallel.*
+
+- **AI tools** — **`caption_top`** ("is it alive? why is it black?"),
+  **`score_build`** (a build scorecard), a **moodboard → full-system** pipeline, and
+  the `compose_cue_list` deepening carried from Milestone 1.
+- **"Do it my way"** — **`recall_similar_work`** (RAG over your own vault) and
+  **personal style memory** that persists across sessions.
+- **Trust & publish** — **`lint_recipe_library`** (catch a bad operator before the
+  venue), **provenance + checksums** (safe USB / venue handoff),
+  **`export_look_tox`** ("your look in a box"), **`export_sop_to_svg`** for
+  plotters/lasers, and a pack of canonical generative-art *technique* recipes.
+
+### Milestone 4 — Deeper authoring & operator DX · ~v0.10.0
+
+*Unwrap the last big TouchDesigner authoring surfaces and finish the operator /
+install story.*
+
+- **Authoring** — **`create_glsl_material`** (3D surface shading),
+  **`build_chop_chain`** (composable CHOP DSP), **`control_timeline_transport`**
+  (play / seek + the "paused timeline looks dead" self-diagnosis),
+  **`swap_operator`** (change a type, keep the wires), and **MediaPipe face / hand /
+  segmentation** on the in-tree tracking engine.
+- **Developer & live-operator DX** — finish the **easy-install** story (a
+  client-config writer + a `doctor --fix` that performs safe repairs),
+  **`live_dashboard_tui`** (front-of-house HUD, even over SSH),
+  **`create_test_pattern`** (projector calibration), and a
+  **`tutorial_companion_pack`** for teaching or selling a build.
+
+### Later / deferred
+
+The P2 long tail (the full list is in the [planning archive](#full-backlog)) plus
+anything that needs hardware, a specific GPU/OS, a paid license, or a hosted
+server — see **Out of scope** just below.
 
 ---
 
-## Phase 6 — v0.3.0 · Obsidian vault integration ◐ integrated (live-validation pending)
+## Out of scope (for now)
 
-Bridges an Obsidian vault (a folder of markdown notes) and TouchDesigner, gated on
-`TDMCP_VAULT_PATH`. The vault layer is `src/vault/`; tools live in `src/tools/vault/`.
+Being honest about the edges. These need hardware, a specific GPU/OS, a paid
+license, or cut against tdmcp's local-first design — so they're parked until they
+can be validated properly:
 
-| Feature | Delivers | Effort | Status |
-|---|---|---|---|
-| Vault infra | `src/vault/` (path-traversal-safe IO + frontmatter), `TDMCP_VAULT_PATH`, `ToolContext.vault` | S | ☑ |
-| Recipes ↔ vault | `RecipeLibrary` merges `<vault>/Recipes/*.md`; `save_recipe_to_vault` captures a live network | M | ☑ |
-| `apply_shader_from_vault` | Build a GLSL TOP from a fenced-`glsl` note | S | ☑ |
-| `sync_presets_vault` | Export/import `manage_presets` snapshots as markdown | S | ☑ |
-| `export_network_to_vault` | Mermaid + `[[wikilink]]` patch-map note | S | ☑ |
-| `log_performance` | Dated show diary with snapshot + thumbnail | S | ☑ |
-| `import_setlist` | Build a show from a setlist note's `tracks` | M | ☑ |
-| `bind_vault_text` | Text DAT live-synced to a vault note | S | ☑ |
-| `generate_from_moodboard` | Seed `create_generative_art` from a palette/mood note | S | ☑ |
-| `scaffold_vault` | Write a starter vault layout with worked examples | S | ☑ |
-
-**Areas:** `src/vault/{index,frontmatter}.ts`, `src/recipes/markdown.ts`,
-`src/tools/vault/*`, `TDMCP_VAULT_PATH` in `src/utils/config.ts`. Offline-tested
-(vitest); live TD validation pending. Depends on `gray-matter` for frontmatter.
-
----
+- **GPU / CUDA-bound:** real-time AI generation (StreamDiffusion / ComfyUI /
+  DepthAnything) is kept only as a way to *drive an already-installed* component
+  or as a cloud option — never bundled. GPU fluid and optical-flow particles can't
+  be validated on the current macOS dev machine.
+- **Hardware-bound:** depth cameras (Kinect / Azure / RealSense), SMPTE/LTC
+  timecode genlock, and laser (ILDA) output. Where possible we prefer the lighter,
+  camera-only paths (MediaPipe, optical flow).
+- **Multi-machine / multi-instance:** managing several TouchDesigner processes and
+  cross-machine genlock — parked until there's hardware to test against.
+- **Paid TouchDesigner license:** the Engine COMP / TouchEngine headless path.
+- **A hosted marketplace:** sharing stays **local-first** — TouchDesigner's
+  Palette plus an Obsidian vault — matching tdmcp's no-server, runs-on-your-machine
+  design.
 
 ## v1.0.0 — Consolidation
 
-Tool-API stabilization, docs (README + per-feature), test coverage, expanded
-recipe library, bridge hardening.
+Before 1.0: stabilize the tool API, round out the docs and per-feature guides,
+raise test coverage, expand the recipe library, and harden the bridge.
 
 ---
 
+<<<<<<< HEAD
 ## Phase 7 — v0.3.0 · Stage I/O & sensor reactivity ☑ shipped
 
 Features resume after the 1.0 stabilization milestone. The completed phases make
@@ -679,6 +809,48 @@ and round-3 `create_pop_fluid`.
 Source: `_workspace/discovery/FEATURE_BACKLOG.md`. **77 candidates** (7 P0 · 38 P1 · 32 P2; 36 NEW ·
 31 EXTENSION · 10 ROADMAP). The 7 P0s + the two control instruments + the library thumbnail/index
 work shipped in **v0.6.0** (marked ✅).
+=======
+## Planning archive — the full idea backlog {#full-backlog}
+
+> **What this is.** Everything below is the raw, unfiltered output of several
+> brainstorming passes over the project — a *catalog of ideas to choose from*, not
+> a list of promises. Most of it will never ship as written; it's kept here in the
+> open for transparency and so the project's thinking stays on the record. The
+> curated, prioritized plan is the [Planned](#planned) section above — **that's**
+> what's actually being built. Skim this only if you're curious about the long
+> tail.
+>
+> **Legend:** Priority **P0 / P1 / P2** · Effort **S** ≤1 day / **M** 2–4 days /
+> **L** ~1 week · Impact & Confidence High / Med / Low · Novelty **NEW** /
+> **EXTENSION** (extends an existing tool) / **ROADMAP** (already on the plan).
+> A ✅ marks an idea that has since shipped. `gated` = deferred for
+> GPU / hardware / CUDA / license reasons.
+
+These four passes are labelled in the order they happened (Round 0 → Round 3).
+
+### Round 0 — 2026-05-28 (harvested into v0.5.0)
+
+**78 distinct features** (93 raw; controls 23 · CLI 22 · AI 26 · TD-depth 22) — the
+discovery that **fed v0.5.0 (Phases 13–15)**. Almost the entire backlog shipped
+(Round 1 below confirms "Phases 13–15 / v0.5.0 harvested almost the entire
+2026-05-28 backlog"), so its open remainder is carried transitively into Round 1;
+it's recorded here for a complete lineage rather than reproduced row-by-row. Its
+**Top-12 recommended-next — all ✅ shipped in v0.5.0 / 0.6.0:** `batch_operations`,
+`bind_audio_reactive`, `create_transition`, `fix_reactivity` (prompt),
+`create_live_source`, `read_parameter_modes`, `recover_show` (prompt),
+`create_layer_stack`, `auto_vj_director` (prompt), `snapshot_td_graph` compact
+mode, `create_media_bin`, `set_perform_mode`. The just-missed tier
+(`create_keyer`, `edit_dat_content` / `set_dat_content`, config files + profiles,
+`set_parameter_expression`, `create_datamosh` / `create_displacement_warp`) also
+shipped; only `wrap_pop_family` (90 unreached GPU POP operators, L) remains open —
+tracked as Round-1 `create_pop_geometry` and Round-3 `create_pop_fluid`.
+
+### Round 1 — 2026-05-29
+
+**77 candidates** (7 P0 · 38 P1 · 32 P2; 36 NEW · 31 EXTENSION · 10 ROADMAP). The
+7 P0s plus the two control instruments and the library thumbnail/index work shipped
+in **v0.6.0** (marked ✅).
+>>>>>>> origin/main
 
 #### A.1 · Artist controls & creative tools
 
@@ -782,18 +954,18 @@ work shipped in **v0.6.0** (marked ✅).
 | `param_change_event` | Opt-in `param.changed` via a Parameter Execute DAT | M | Low | Med | P2 | NEW | onValueChange freq/scope |
 | `refresh_operator_kb` | Live-derived KB delta vs the static import | L | Low | Med | P2 | NEW | enumeration (depends on createable) |
 
-#### A.6 · Deferred (round-1, v0.6.0+ / gated)
+#### A.6 · Deferred (Round 1 — v0.6.0+ / gated)
 
 `create_gpu_fluid`, `create_optical_flow_particles` (GPU/macOS), `create_sdf_text`,
-`create_strange_attractor`, `create_vertex_displacement_mat`, hand/face MediaPipe modes,
-`create_pose_reactive`, `manage_td_process` / `switch_instance`, `control_diffusion` /
-`drive_streamdiffusion` / `connect_comfyui`, and the recipe/template marketplace (local-first).
+`create_strange_attractor`, `create_vertex_displacement_mat`, hand/face MediaPipe
+modes, `create_pose_reactive`, `manage_td_process` / `switch_instance`,
+`control_diffusion` / `drive_streamdiffusion` / `connect_comfyui`, and the
+recipe/template marketplace (local-first).
 
-### B · Round-2 "beyond the backlog" — 2026-05-30
+### Round 2 — "beyond the backlog" — 2026-05-30
 
-Source: `_workspace/discovery_beyond_20260530/FEATURE_BACKLOG_BEYOND.md`. **63 distinct candidates**
-(6 P0 · 35 P1 · 22 P2; 58 NEW · 5 EXTENSION · 0 ROADMAP), every one deliberately beyond round-1 and
-beyond what v0.6.0 shipped.
+**63 distinct candidates** (6 P0 · 35 P1 · 22 P2; 58 NEW · 5 EXTENSION · 0 ROADMAP),
+every one deliberately beyond Round 1 and beyond what v0.6.0 shipped.
 
 #### B.1 · Artist controls & creative tools
 
@@ -885,38 +1057,42 @@ beyond what v0.6.0 shipped.
 | `build_sop_geometry` | Procedural SOP modelling (noise/copy/sweep/extrude → Null) | L | Med | Med | P2 | NEW | probe-live chains cook within budget |
 | `sync_timecode` | SMPTE/LTC timecode lock (Timecode CHOP) | M | Low | Med | P2 | NEW | probe-live (audio-LTC decode first) |
 | `manage_component_storage` | Write a COMP's storage dict + `opShortcut`/`parentShortcut` | M | Low | High | P2 | NEW | none significant (JSON-serialize) |
-| `param_changed_event` | `param.changed` via a Parameter Execute DAT (round-1 tracked, still open) | M | Low | Med | P2 | tracked | onValueChange freq/scope |
+| `param_changed_event` | `param.changed` via a Parameter Execute DAT (Round 1 tracked, still open) | M | Low | Med | P2 | tracked | onValueChange freq/scope |
 
-#### B.6 · Cross-cutting (round-2)
+#### B.6 · Cross-cutting (Round 2)
 
 Value that spans surfaces (kept once above under its best-fit surface; relationships explicit here):
 
 - **Time-based show automation** — `create_scheduler` (td-depth primitive) → `create_scene_timeline`
   (controls) ∥ `setlist_runner` (cli) ∥ `compose_cue_list` (ai); share **one** setlist/scene schema.
-- **`server_sampling_assist` + a structured/image method on `src/llm/client.ts`** — the shared
+- **Run AI tools via the connected model** + a structured/image method on the LLM client — the shared
   prerequisite for `compose_cue_list`, `score_build`, `moodboard_to_system`, `reference_to_plan` and
-  round-1's `caption_top`/`copilot_vision`; the platform move that runs them via the connected model.
+  Round-1's `caption_top`/`copilot_vision`; the platform move that runs them via the connected model.
 - **"Do it my way" cluster** — `recall_similar_work` ⇄ `style_memory` ⇄ `learn_from_my_corpus`
   ⇄ `learn_conventions` over one `Memory/` vault note schema.
 - **Morph at two altitudes** — `create_preset_morph` (live instrument) ⇄ `morph_pack` (saved asset).
 - **Engine pipeline** — `create_engine_comp` (process) ⇄ a "compile for Engine" bake on `make_portable_tox`.
 - **Library keystone** — `auto_tag_library_asset` feeds `library_lineage_graph`, `recall_similar_work` and `lint_recipe_library`.
 
-### C · Round-3 external backlog — 2026-05-30 (community sources) {#appendix-c-round3}
+### Round 3 — external / community sources — 2026-05-30 {#appendix-c-round3}
 
-Source: `_workspace/discovery_external/` (`EXTERNAL_IDEAS_BACKLOG.md` + `02_raw_ideas.md`). **157 raw
-records → ~62 deduped candidates** (75 `EX` rows incl. sub-merges) from four community sources —
-[alltd.org](https://www.alltd.org), [awesome-touchdesigner](https://github.com/monkeymonk/awesome-touchdesigner)
-(creative ∥ integrations), and artist [Anya Maryina](https://anyamaryina.gumroad.com) (studied for
-technique/packaging only, never asset-copied). Distribution **6 P0 · ~30 P1 · ~39 P2**. The new field vs
-the inward rounds 0–2: **ecosystem ingestion**, **the missing iconic looks**, and an **artist-publishing
-layer**. **Source codes:** `aw-cre`/`aw-int` = the two awesome-touchdesigner agents · `alltd` · `anya`.
+**157 raw records → ~62 deduped candidates** (75 `EX` rows including sub-merges)
+from four community sources — [alltd.org](https://www.alltd.org),
+[awesome-touchdesigner](https://github.com/monkeymonk/awesome-touchdesigner)
+(surveyed by two agents, creative ∥ integrations), and artist
+[Anya Maryina](https://anyamaryina.gumroad.com) (studied for technique and
+packaging only, never asset-copied). Distribution **6 P0 · ~30 P1 · ~39 P2**. The
+new field versus the inward Rounds 0–2: **ecosystem ingestion**, **the missing
+iconic looks**, and an **artist-publishing layer**. **Source codes:**
+`aw-cre`/`aw-int` = the two awesome-touchdesigner agents · `alltd` · `anya`.
 
-> ⚠️ **alltd.org returned HTTP 403** to direct fetch — its rows are search-summary-level; re-fetch
-> alltd-only items via a browser before specccing. **Licensing:** GPL-3.0 (TD-Flow-ABS, TDComponents,
-> TDNeuron) + CC-BY (RayTK) = technique/idea only, no code copy; **Lygia not bundled**; Anya never cloned
-> (highest-attention: `generative_classics` — recreate *techniques*, credit lineage, never a named/estate
-> artist). `gated` = drive-installed-tox / cloud / docs delta only.
+> ⚠️ **alltd.org returned HTTP 403** to direct fetch — its rows are
+> search-summary-level; re-fetch alltd-only items via a browser before speccing.
+> **Licensing discipline:** GPL-3.0 (TD-Flow-ABS, TDComponents, TDNeuron) + CC-BY
+> (RayTK) = technique/idea only, no code copied; **Lygia not bundled**; Anya never
+> cloned (highest attention: `generative_classics` recreates *techniques*, credits
+> lineage, and never copies a named/estate artist). `gated` =
+> drive-installed-tox / cloud / docs-delta only.
 
 #### C.1 · Integrations & protocols
 
@@ -1027,14 +1203,17 @@ layer**. **Source codes:** `aw-cre`/`aw-int` = the two awesome-touchdesigner age
 | Cookbook: everyday-object→generative + beginner psychedelia | EX-72 | Rebuild a real-world pattern procedurally; beginner audio-reactive stack | S | Med | High | P2 | NEW docs | anya |
 | Docs: "tdmcp as a source for Resolume/VDMX/Disguise" | EX-73 | Document the downstream NDI/Spout/Syphon chain into other VJ apps | S | Med | High | P2 | exists-complete + docs | aw-int, alltd |
 
-#### C.8 · Reconciled OUT (already shipped / planned / gated / ignore)
+#### C.8 · Reconciled out (already shipped / planned / gated / ignore)
 
-Recorded for honesty: **exists-complete** — Shader Park (`create_shader_park`), full VJ-mixer stack
-(decks+layer-mixer+output+record), Spout/NDI/Syphon capture (`create_live_source`). **gated/planned** —
-optical-flow particles, Unreal/TouchEngine bridge (paid), StreamDiffusion/ComfyUI/DepthAnything bundling
-(kept only as drive-installed-tox / cloud deltas), Kinect/Azure depth-cams (kept as the lighter
-optical-flow/MediaPipe path). **ignore** — TDNeuron / TF Style-Transfer (GPL/Windows/legacy-heavy),
-Cables.gl (not TD). Cross-cutting: round-3 `create_data_source` HTTP/WS folds into round-2's planned
-MQTT/WebSocket fabric; `create_fixture_control` builds round-2's `create_dmx_fixture_pipeline`;
-`license-tier metadata` hardens round-2's `provenance_stamp`; `extract_palette`/`generative_classics`
-relate to the shipped `create_palette` / `generate_from_moodboard`.
+Recorded for honesty: **exists-complete** — Shader Park (`create_shader_park`), the
+full VJ-mixer stack (decks + layer-mixer + output + record), and Spout/NDI/Syphon
+capture (`create_live_source`). **gated/planned** — optical-flow particles, the
+Unreal/TouchEngine bridge (paid), StreamDiffusion/ComfyUI/DepthAnything bundling
+(kept only as drive-installed-tox / cloud deltas), and Kinect/Azure depth-cams
+(kept as the lighter optical-flow/MediaPipe path). **ignore** — TDNeuron / TF
+Style-Transfer (GPL/Windows/legacy-heavy) and Cables.gl (not TD). Cross-cutting:
+Round-3 `create_data_source` HTTP/WS folds into Round-2's planned MQTT/WebSocket
+fabric; `create_fixture_control` builds Round-2's `create_dmx_fixture_pipeline`;
+license-tier metadata hardens Round-2's `provenance_stamp`; and
+`extract_palette` / `generative_classics` relate to the shipped `create_palette` /
+`generate_from_moodboard`.
