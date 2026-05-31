@@ -253,7 +253,7 @@ export async function variantPackImpl(ctx: ToolContext, args: VariantPackArgs) {
         name: args.name,
         created: new Date().toISOString(),
         provenance: {
-          tdmcp_version: "0.9.0",
+          tdmcp_version: "0.7.0",
           container_path: `${args.parent}/${args.name}`,
           target_path: args.target_path ?? "",
           target_optype: report.target_optype ?? "",

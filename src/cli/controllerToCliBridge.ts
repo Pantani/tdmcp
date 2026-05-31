@@ -278,6 +278,9 @@ export function tickOnce(
 export function shapeArgv(command: string[], useShell: boolean): { file: string; args: string[] } {
   if (useShell) {
     const joined = command.join(" ");
+    if (process.platform === "win32") {
+      return { file: process.env.COMSPEC || "cmd.exe", args: ["/c", joined] };
+    }
     return { file: "/bin/sh", args: ["-lc", joined] };
   }
   const file = command[0];

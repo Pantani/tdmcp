@@ -172,7 +172,8 @@ export async function runBridgeWatchBuild(argv: string[]): Promise<number> {
   });
 
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-  let inFlight: ChildProcess | null = null;
+  // Builds are serial: debounce coalesces rapid changes into a single run, and
+  // the run runs to completion before the next is allowed to fire.
   const pendingPaths = new Set<string>();
 
   let resolveMain: (code: number) => void;
@@ -189,11 +190,6 @@ export async function runBridgeWatchBuild(argv: string[]): Promise<number> {
       const first = [...pendingPaths][0] ?? "";
       const extra = count > 1 ? ` (+${count - 1} more)` : "";
       pendingPaths.clear();
-
-      if (inFlight !== null) {
-        inFlight.kill("SIGTERM");
-        inFlight = null;
-      }
 
       process.stdout.write(`\n${sep}\n`);
       process.stdout.write(`[watch] ${count} change(s): ${first}${extra} → ${args.runOn}\n`);
@@ -221,7 +217,6 @@ export async function runBridgeWatchBuild(argv: string[]): Promise<number> {
   });
 
   const onSigint = () => {
-    if (inFlight !== null) inFlight.kill("SIGTERM");
     void watcher.close().then(() => resolveMain(0));
   };
   process.once("SIGINT", onSigint);

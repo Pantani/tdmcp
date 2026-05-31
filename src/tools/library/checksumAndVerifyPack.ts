@@ -10,6 +10,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, join, posix, relative, resolve, sep } from "node:path";
+import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { errorResult, structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -222,7 +223,7 @@ async function computeChecksums(
   const tdmcpVersion = (() => {
     try {
       const pkg = JSON.parse(
-        readFileSync(new URL("../../../../package.json", import.meta.url).pathname, "utf8"),
+        readFileSync(fileURLToPath(new URL("../../../../package.json", import.meta.url)), "utf8"),
       ) as { version?: string };
       return pkg.version ?? "unknown";
     } catch {

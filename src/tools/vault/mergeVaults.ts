@@ -51,9 +51,20 @@ function walkRel(root: string, sub: string): string[] {
     const cur = stack.pop();
     if (cur === undefined) break;
     const curFull = join(root, cur);
-    const stat = statSync(curFull);
+    let stat: ReturnType<typeof statSync>;
+    try {
+      stat = statSync(curFull);
+    } catch {
+      continue;
+    }
     if (stat.isDirectory()) {
-      for (const entry of readdirSync(curFull)) {
+      let entries: string[];
+      try {
+        entries = readdirSync(curFull);
+      } catch {
+        continue;
+      }
+      for (const entry of entries) {
         stack.push(join(cur, entry));
       }
     } else {
@@ -148,7 +159,7 @@ export async function mergeVaultsImpl(
     );
   }
 
-  const targetVault = new Vault(targetRoot);
+  const targetVault = new Vault(targetRoot, ctx.logger);
 
   // Expand kinds
   const kindKeys = args.kinds.includes("all")

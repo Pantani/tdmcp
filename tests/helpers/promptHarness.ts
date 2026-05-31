@@ -40,6 +40,9 @@ export const CRITERIA = {
   maxDescLen: 280,
 } as const;
 
+/** Sentinel returned by synthesizeValue when the key should be omitted entirely. */
+export const OMIT_KEY = Symbol("OMIT_KEY");
+
 /** Synthesize a deterministic fixture value for a single Zod type. */
 export function synthesizeValue(schema: z.ZodTypeAny, argName: string): unknown {
   // Zod v4 uses _def.type; Zod v3 uses _def.typeName — support both
@@ -47,19 +50,23 @@ export function synthesizeValue(schema: z.ZodTypeAny, argName: string): unknown 
   const typeName: string =
     (def.typeName as string | undefined) ?? (def.type as string | undefined) ?? "";
 
-  // Unwrap optional / default
+  // Optional → omit the key entirely; the consumer drops it from the args object.
   if (typeName === "ZodOptional" || typeName === "optional") {
-    const inner =
-      (def.innerType as z.ZodTypeAny | undefined) ?? (def.type as z.ZodTypeAny | undefined);
-    if (inner && typeof inner === "object" && "_def" in inner) {
-      return synthesizeValue(inner as z.ZodTypeAny, argName);
-    }
-    return `${argName}_FIXTURE`;
+    return OMIT_KEY;
   }
+  // Default → use the schema's actual default if we can extract it; otherwise omit.
   if (typeName === "ZodDefault" || typeName === "default") {
-    const inner = def.innerType as z.ZodTypeAny | undefined;
-    if (inner) return synthesizeValue(inner, argName);
-    return `${argName}_FIXTURE`;
+    const defaultValue = def.defaultValue;
+    if (typeof defaultValue === "function") {
+      try {
+        return (defaultValue as () => unknown)();
+      } catch {
+        // fall through
+      }
+    } else if (defaultValue !== undefined) {
+      return defaultValue;
+    }
+    return OMIT_KEY;
   }
 
   if (typeName === "ZodString" || typeName === "string") return `${argName}_FIXTURE`;
@@ -84,7 +91,9 @@ export function synthesizeValue(schema: z.ZodTypeAny, argName: string): unknown 
 export function synthesizeArgs(argsSchema: Record<string, z.ZodTypeAny>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [key, schema] of Object.entries(argsSchema)) {
-    out[key] = synthesizeValue(schema, key);
+    const value = synthesizeValue(schema, key);
+    if (value === OMIT_KEY) continue;
+    out[key] = value;
   }
   return out;
 }

@@ -542,7 +542,11 @@ export async function moodboardToSystemImpl(
   rawArgs: MoodboardToSystemArgs,
   depsOverride?: MoodboardToSystemDeps,
 ) {
-  const args = moodboardToSystemSchema.parse(rawArgs);
+  const parsed = moodboardToSystemSchema.safeParse(rawArgs);
+  if (!parsed.success) {
+    return errorResult(`Invalid moodboard arguments: ${parsed.error.message}`);
+  }
+  const args = parsed.data;
   const warnings: string[] = [];
   const deps: DispatchDeps = {
     createAudioReactive: depsOverride?.createAudioReactive ?? createAudioReactiveImpl,

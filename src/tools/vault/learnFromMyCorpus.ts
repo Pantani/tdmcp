@@ -1,6 +1,7 @@
 import { readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { z } from "zod";
+import { parseNote } from "../../vault/frontmatter.js";
 import { Vault } from "../../vault/index.js";
 import {
   memoryNoteRel,
@@ -294,8 +295,6 @@ function walkFiles(vault: Vault, subdir: string, ext: string, cap: number): stri
 // ---------------------------------------------------------------------------
 // Scan
 // ---------------------------------------------------------------------------
-
-import { parseNote } from "../../vault/frontmatter.js";
 
 function readSafe(vault: Vault, abs: string): string | undefined {
   try {

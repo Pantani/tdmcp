@@ -230,6 +230,7 @@ function renderDot(graph: LineageGraph, clusterBy: string): string {
   ];
 
   if (clusterBy !== "none") {
+    const emitted = new Set<string>();
     for (const cluster of graph.clusters) {
       const cSlug = slug(cluster.key);
       lines.push(`  subgraph cluster_${cSlug} {`);
@@ -238,9 +239,16 @@ function renderDot(graph: LineageGraph, clusterBy: string): string {
         const node = graph.nodes.find((n) => n.id === memberId);
         if (node) {
           lines.push(`    "${node.path}" [label="${node.title.replace(/"/g, '\\"')}"];`);
+          emitted.add(node.id);
         }
       }
       lines.push("  }");
+    }
+    // Emit any nodes that didn't end up in any cluster so edges still resolve.
+    for (const node of graph.nodes) {
+      if (!emitted.has(node.id)) {
+        lines.push(`  "${node.path}" [label="${node.title.replace(/"/g, '\\"')}"];`);
+      }
     }
   } else {
     for (const node of graph.nodes) {

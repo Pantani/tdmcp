@@ -462,20 +462,11 @@ function extractLayout(rows: ConventionsRow[]): string | undefined {
     const ys = kids.map((k) => k.nodeY as number);
     const dx = Math.max(...xs) - Math.min(...xs);
     const dy = Math.max(...ys) - Math.min(...ys);
-    if (dx >= dy) {
-      // Left-to-right if xs roughly increase with array order.
-      const sorted = [...kids].sort((a, b) => (a.nodeX as number) - (b.nodeX as number));
-      const lr = sorted[0]?.nodeX as number;
-      const rl = sorted[sorted.length - 1]?.nodeX as number;
-      const dir = rl >= lr ? "left-to-right" : "right-to-left";
-      votes[dir] = (votes[dir] ?? 0) + 1;
-    } else {
-      const sorted = [...kids].sort((a, b) => (a.nodeY as number) - (b.nodeY as number));
-      const bot = sorted[0]?.nodeY as number;
-      const top = sorted[sorted.length - 1]?.nodeY as number;
-      const dir = top >= bot ? "bottom-to-top" : "top-to-bottom";
-      votes[dir] = (votes[dir] ?? 0) + 1;
-    }
+    // We can determine the dominant axis from the bounding box, but not
+    // direction: sorting by coordinate then re-checking the same coordinate is
+    // a tautology. Collapse to axis-only labels.
+    const dir = dx >= dy ? "horizontal" : "vertical";
+    votes[dir] = (votes[dir] ?? 0) + 1;
   }
   let best: string | undefined;
   let bestN = 0;

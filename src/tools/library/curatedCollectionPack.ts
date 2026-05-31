@@ -4,8 +4,10 @@ import {
   createReadStream,
   createWriteStream,
   existsSync,
+  lstatSync,
   mkdirSync,
   readFileSync,
+  realpathSync,
   rmSync,
   statSync,
   writeFileSync,
@@ -190,6 +192,15 @@ async function packImpl(
     if (!existsSync(absPath)) {
       return errorResult(`Item not found: ${absPath} (original: ${item.path})`);
     }
+    try {
+      if (!statSync(absPath).isFile()) {
+        return errorResult(`Item is not a file: ${absPath} (original: ${item.path})`);
+      }
+    } catch (err) {
+      return errorResult(
+        `Cannot stat item: ${absPath} (${err instanceof Error ? err.message : String(err)})`,
+      );
+    }
     resolvedItems.push({ item, absPath });
   }
 
@@ -211,6 +222,7 @@ async function packImpl(
 
   const manifestItems: PackManifestItem[] = [];
   let totalBytes = 0;
+  const seenPackPaths = new Set<string>();
 
   for (const { item, absPath } of resolvedItems) {
     const ext = extname(absPath);
@@ -218,6 +230,12 @@ async function packImpl(
     const alias = item.alias ?? rawBase;
     const subdir = KIND_SUBDIR[item.kind] ?? "assets";
     const packRelPath = toPackPath(subdir, alias, ext);
+    if (seenPackPaths.has(packRelPath)) {
+      return errorResult(
+        `Duplicate pack destination: ${packRelPath} (set distinct alias per item)`,
+      );
+    }
+    seenPackPaths.add(packRelPath);
     const destAbs = join(packDir, subdir, `${alias}${ext}`);
 
     await copyFile(absPath, destAbs);
@@ -413,6 +431,30 @@ async function unpackImpl(
 
     if (!existsSync(srcAbs)) {
       return errorResult(`Packed file missing: ${srcAbs} (pack_path: ${item.pack_path})`);
+    }
+
+    // Reject symlinks (could escape packDir).
+    try {
+      if (lstatSync(srcAbs).isSymbolicLink()) {
+        return errorResult(`Symlinked entry rejected: ${item.pack_path}`);
+      }
+    } catch (err) {
+      return errorResult(
+        `Cannot lstat packed entry: ${srcAbs} (${err instanceof Error ? err.message : String(err)})`,
+      );
+    }
+    // Ensure realpath is inside packDir.
+    try {
+      const realSrc = realpathSync(srcAbs);
+      const realPack = realpathSync(packDir);
+      const realPackWithSep = realPack.endsWith(sep) ? realPack : realPack + sep;
+      if (realSrc !== realPack && !realSrc.startsWith(realPackWithSep)) {
+        return errorResult(`Packed entry escapes pack dir: ${item.pack_path}`);
+      }
+    } catch (err) {
+      return errorResult(
+        `Cannot resolve realpath: ${srcAbs} (${err instanceof Error ? err.message : String(err)})`,
+      );
     }
 
     if (existsSync(destAbs) && !args.overwrite) {

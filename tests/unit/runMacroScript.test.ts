@@ -118,12 +118,15 @@ describe("runMacroScriptImpl", () => {
     expect(sc.skipped).toBe(1);
   });
 
-  it("calls raw-Python handler when ctx.allowRawPython is undefined (default allowed)", async () => {
+  it("calls raw-Python handler when caller opts in via args.allowRawPython=true", async () => {
     const file = join(tmp, "py-ok.json");
     await writeRecord(file, [{ tool: "execute_python_script", args: { script: "x" } }]);
     const spy = vi.fn(async () => ({ content: [{ type: "text", text: "ran" }] }) as CallToolResult);
     __setHandlersForTests(new Map<string, Handler>([["execute_python_script", spy]]));
-    const r = await runMacroScriptImpl(baseCtx, makeArgs({ macroPath: file }));
+    const r = await runMacroScriptImpl(
+      baseCtx,
+      makeArgs({ macroPath: file, allowRawPython: true }),
+    );
     expect(spy).toHaveBeenCalledOnce();
     const sc = r.structuredContent as { ok: number; failed: number };
     expect(sc.ok).toBe(1);

@@ -104,18 +104,21 @@ describe("synthesizeArgs", () => {
     expect(synthesizeValue(z.enum(["a", "b", "c"]), "choice")).toBe("a");
   });
 
-  it("optional string → unwraps to string fixture", () => {
-    expect(synthesizeValue(z.string().optional(), "note")).toBe("note_FIXTURE");
+  it("optional string → omitted (returns OMIT_KEY sentinel)", () => {
+    // Optional keys are dropped from the synthesized args object so the schema
+    // sees the actual shape an MCP client would send when omitting the field.
+    const result = synthesizeValue(z.string().optional(), "note");
+    expect(typeof result).toBe("symbol");
   });
 
-  it("synthesizeArgs produces a value for each key", () => {
+  it("synthesizeArgs omits optional keys", () => {
     const args = synthesizeArgs(schema);
-    expect(Object.keys(args).sort()).toEqual(["enabled", "label", "level", "mode", "note"]);
+    expect(Object.keys(args).sort()).toEqual(["enabled", "label", "level", "mode"]);
     expect(args.label).toBe("label_FIXTURE");
     expect(args.level).toBe(1);
     expect(args.enabled).toBe(true);
     expect(args.mode).toBe("fast");
-    expect(args.note).toBe("note_FIXTURE");
+    expect(args.note).toBeUndefined();
   });
 });
 

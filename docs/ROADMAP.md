@@ -12,7 +12,7 @@ rough, and what's coming next** on the way to a stable 1.0.
 
 **Where things stand today.** The current release is **v0.7.0** — on
 [npm](https://www.npmjs.com/package/@dpantani/tdmcp) and
-[GitHub](https://github.com/Pantani/tdmcp) — exposing **179 tools** (213 on `main` pending release). The project
+[GitHub](https://github.com/Pantani/tdmcp) — exposing **179 tools** (245 on `main` pending release). The project
 has grown through four arcs:
 
 1. **Generate** — one-line tools that build a whole wired network (audio-reactive,

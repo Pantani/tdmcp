@@ -145,7 +145,7 @@ function renderMarkdown(componentPath: string, entries: TrailEntry[]): string {
 export async function componentChangelogTrailImpl(
   ctx: ToolContext,
   args: ComponentChangelogTrailArgs,
-): Promise<ReturnType<typeof jsonResult>> {
+): Promise<ReturnType<typeof jsonResult | typeof errorResult>> {
   const vaultResult = requireVault(ctx);
   if ("error" in vaultResult) return vaultResult.error;
   const { vault } = vaultResult;

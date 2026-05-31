@@ -11,7 +11,7 @@ import { createGlitchImpl } from "./createGlitch.js";
 import { createGpuParticleFieldImpl } from "./createGpuParticleField.js";
 import { createKaleidoscopeImpl } from "./createKaleidoscope.js";
 
-export const audioFingerprintToVisualSchema = z.object({
+const audioFingerprintToVisualBase = z.object({
   audio_source: z
     .enum(["synthetic", "file", "device", "existing_chop"])
     .default("synthetic")
@@ -61,6 +61,24 @@ export const audioFingerprintToVisualSchema = z.object({
     .default(true)
     .describe("Forwarded to the dispatched generator's expose_controls flag."),
 });
+export const audioFingerprintToVisualSchema = audioFingerprintToVisualBase.superRefine(
+  (data, ctx) => {
+    if (data.audio_source === "file" && !data.audio_file_path?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["audio_file_path"],
+        message: "audio_file_path is required when audio_source='file'",
+      });
+    }
+    if (data.audio_source === "existing_chop" && !data.existing_chop_path?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["existing_chop_path"],
+        message: "existing_chop_path is required when audio_source='existing_chop'",
+      });
+    }
+  },
+);
 export type AudioFingerprintToVisualArgs = z.infer<typeof audioFingerprintToVisualSchema>;
 
 /** The four scalars read off the sampler. Defaults to 0 if a branch reports nothing. */
@@ -321,7 +339,8 @@ try:
 
                 # Let the chain settle.
                 sample_sec = float(_p.get("sample_sec", 4))
-                time.sleep(min(sample_sec, 6.0))
+                _waited_sec = min(sample_sec, 6.0)
+                time.sleep(_waited_sec)
 
                 def _safe(node, ch_index=0, default=0.0):
                     try:
@@ -331,7 +350,7 @@ try:
 
                 # Tempo: density (events/window) × 60 / window ≈ BPM proxy when no detect_tempo chain.
                 dens_val = _safe(dens_an)
-                onset_density_per_sec = dens_val / max(sample_sec, 1e-3) * 60.0
+                onset_density_per_sec = dens_val / max(_waited_sec, 1e-3) * 60.0
                 # Tempo approx: each gate=1 frame is a beat; estimate via density (rough but offline-safe).
                 tempo_bpm = clamp_val = max(0.0, min(220.0, onset_density_per_sec * 60.0))
 
@@ -476,6 +495,17 @@ export async function audioFingerprintToVisualImpl(
       decision,
     });
   }
+  if (generatorResult.isError === true) {
+    const genBlock = generatorResult.content.find((c) => c.type === "text") as
+      | { type: "text"; text: string }
+      | undefined;
+    const genMsg = genBlock?.text ?? "unknown generator error";
+    return errorResult(`Generator ${decision.generator_tool} failed: ${genMsg}`, {
+      fingerprint: fp,
+      decision,
+      sampler_warnings: report.warnings,
+    });
+  }
 
   // 5. Pull output path out of the generator's JSON fence (best-effort).
   let generatorOutput: string | undefined;
@@ -511,7 +541,7 @@ export async function audioFingerprintToVisualImpl(
     generator: {
       container: generatorContainer,
       output: generatorOutput,
-      is_error: generatorResult.isError === true,
+      is_error: false,
     },
     applied_composite: appliedComposite,
     sampler_warnings: report.warnings,
@@ -525,7 +555,7 @@ export const registerAudioFingerprintToVisual: ToolRegistrar = (server, ctx) => 
       title: "Audio fingerprint → visual",
       description:
         "Sample a few seconds of audio inside TouchDesigner, compute a 4-feature fingerprint (tempo, spectral centroid, onset density, dynamic range), run a deterministic heuristic mapping to pick a matching Layer 1 generator (create_glitch / create_audio_reactive / create_kaleidoscope / create_feedback_tunnel / create_feedback_network / create_gpu_particle_field), and dispatch it with parameters tuned to the fingerprint. Default audio_source='synthetic' to avoid macOS mic-permission hangs. dry_run=true returns the chosen mapping without building. apply_top_op composites the result over an existing TOP.",
-      inputSchema: audioFingerprintToVisualSchema.shape,
+      inputSchema: audioFingerprintToVisualBase.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
     (args) => audioFingerprintToVisualImpl(ctx, args),

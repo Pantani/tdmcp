@@ -9,7 +9,7 @@
  */
 
 import { mkdir, readdir, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { basename, dirname, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { z } from "zod";
 
@@ -318,8 +318,8 @@ export async function runFixtureRecorder(argv: string[]): Promise<void> {
     const parentDir = dirname(outPath);
     await mkdir(parentDir, { recursive: true });
     const files = await readdir(dirname(outPath));
-    const basename = outPath.split("/").pop() ?? "";
-    if (files.includes(basename)) {
+    const outBase = basename(outPath);
+    if (files.includes(outBase)) {
       console.error(
         `[fixture-recorder] error: ${outPath} already exists. Use a different --out path.`,
       );

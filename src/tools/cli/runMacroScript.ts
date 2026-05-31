@@ -29,18 +29,28 @@ export type RunMacroScriptArgs = z.infer<typeof runMacroScriptSchema>;
 type Handler = (args: unknown) => Promise<CallToolResult> | CallToolResult;
 type HandlerMap = Map<string, Handler>;
 
-let cachedHandlers: HandlerMap | undefined;
-let injectedHandlers: HandlerMap | undefined;
+const cachedHandlers = new WeakMap<ToolContext, HandlerMap>();
+const injectedHandlers = new WeakMap<ToolContext, HandlerMap>();
+const SENTINEL_CTX: ToolContext = {} as ToolContext;
 
 /** Test-only: inject a handler registry instead of building one from registerAllTools. */
-export function __setHandlersForTests(handlers: HandlerMap | undefined): void {
-  injectedHandlers = handlers;
-  cachedHandlers = undefined;
+export function __setHandlersForTests(
+  handlers: HandlerMap | undefined,
+  ctx: ToolContext = SENTINEL_CTX,
+): void {
+  if (handlers === undefined) {
+    injectedHandlers.delete(ctx);
+  } else {
+    injectedHandlers.set(ctx, handlers);
+  }
+  cachedHandlers.delete(ctx);
 }
 
 async function getOrBuildToolHandlers(ctx: ToolContext): Promise<HandlerMap> {
-  if (injectedHandlers) return injectedHandlers;
-  if (cachedHandlers) return cachedHandlers;
+  const injectedCtx = injectedHandlers.get(ctx) ?? injectedHandlers.get(SENTINEL_CTX);
+  if (injectedCtx) return injectedCtx;
+  const cached = cachedHandlers.get(ctx);
+  if (cached) return cached;
   const map: HandlerMap = new Map();
   // Stub MCP server that captures only registerTool(name, _meta, handler).
   const stub = {
@@ -54,7 +64,7 @@ async function getOrBuildToolHandlers(ctx: ToolContext): Promise<HandlerMap> {
     registerAllTools: (s: McpServer, c: ToolContext) => void;
   };
   mod.registerAllTools(stub, ctx);
-  cachedHandlers = map;
+  cachedHandlers.set(ctx, map);
   return map;
 }
 
@@ -129,7 +139,10 @@ export async function runMacroScriptImpl(
     // biome-ignore lint/style/noNonNullAssertion: loop bounded by length.
     const entry = record.entries[i]!;
 
-    if (isRawPythonTool(entry.tool) && ctx.allowRawPython === false) {
+    if (
+      isRawPythonTool(entry.tool) &&
+      (ctx.allowRawPython === false || args.allowRawPython !== true)
+    ) {
       report.push({ index: i, tool: entry.tool, ok: false, skipped: "raw-python-blocked" });
       skipped++;
       if (args.stopOnError) {

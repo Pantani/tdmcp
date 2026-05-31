@@ -304,22 +304,44 @@ async function callOneTarget(opts: CallOneOpts): Promise<TargetResult> {
 // Chunked allSettled
 // ---------------------------------------------------------------------------
 
-async function runChunked<T>(tasks: Array<() => Promise<T>>, concurrency: number): Promise<T[]> {
+async function runChunked<T>(
+  tasks: Array<() => Promise<T>>,
+  concurrency: number,
+  opts: {
+    failFast?: boolean;
+    isFailure?: (v: T) => boolean;
+    abortedMarker?: (i: number) => T;
+  } = {},
+): Promise<T[]> {
+  const { failFast = false, isFailure, abortedMarker } = opts;
   if (concurrency <= 0) {
     const settled = await Promise.allSettled(tasks.map((t) => t()));
     return settled.map((r) => {
       if (r.status === "fulfilled") return r.value;
-      // tasks never reject (they return TargetResult), but TypeScript requires handling
       throw r.reason as unknown;
     });
   }
 
   const results: T[] = [];
+  let aborted = false;
+  let nextIndex = 0;
   for (let i = 0; i < tasks.length; i += concurrency) {
+    if (aborted) break;
     const chunk = tasks.slice(i, i + concurrency);
     const settled = await Promise.allSettled(chunk.map((t) => t()));
     for (const r of settled) {
-      if (r.status === "fulfilled") results.push(r.value);
+      if (r.status === "fulfilled") {
+        results.push(r.value);
+        if (failFast && isFailure?.(r.value)) {
+          aborted = true;
+        }
+      }
+    }
+    nextIndex = i + chunk.length;
+  }
+  if (aborted && abortedMarker) {
+    for (let j = nextIndex; j < tasks.length; j++) {
+      results.push(abortedMarker(j));
     }
   }
   return results;
@@ -391,7 +413,16 @@ export async function runRemoteFanout(argv: string[], opts: FanoutOpts = {}): Pr
       }),
   );
 
-  const targetResults = await runChunked(tasks, fanoutArgs.concurrency);
+  const targetResults = await runChunked(tasks, fanoutArgs.concurrency, {
+    failFast: fanoutArgs.failFast,
+    isFailure: (r: TargetResult) => !r.ok,
+    abortedMarker: (i): TargetResult => ({
+      target: `${fanoutArgs.targets[i]?.host ?? "?"}:${fanoutArgs.targets[i]?.port ?? "?"}`,
+      ok: false,
+      durationMs: 0,
+      error: { kind: "unknown", message: "aborted by failFast" },
+    }),
+  });
 
   const totalMs = (opts.now !== undefined ? opts.now() : Date.now()) - globalT0;
   const okCount = targetResults.filter((r) => r.ok).length;

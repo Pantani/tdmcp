@@ -151,6 +151,8 @@ function classifyField(name: string, schema: z.ZodTypeAny): { required: boolean;
   };
 }
 
+// NOTE: `_registeredTools` is a PRIVATE MCP SDK field, not part of its public
+// API. TODO: replace with a public registry abstraction when the SDK exposes one.
 function getRegistry(server: unknown): Record<string, RegisteredToolEntry> | undefined {
   const reg = (server as { _registeredTools?: unknown })?._registeredTools;
   if (reg && typeof reg === "object") return reg as Record<string, RegisteredToolEntry>;

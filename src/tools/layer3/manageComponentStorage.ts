@@ -103,11 +103,42 @@ export async function manageComponentStorageImpl(
     if (args.value === undefined) {
       return errorResult("value is required for set");
     }
-    // JSON-serialisability check
-    try {
-      JSON.parse(JSON.stringify(args.value));
-    } catch {
-      return errorResult("value must be JSON-serialisable");
+    // JSON-serialisability check: walk the value, reject non-JSON primitives,
+    // functions, undefined, BigInt, and cycles. Zod's `z.lazy` schema also
+    // expresses this but would StackOverflow on a circular structure before it
+    // reported it, so we hand-roll the walk.
+    const seen = new WeakSet<object>();
+    const check = (v: unknown, path: string): string | null => {
+      if (v === null) return null;
+      const t = typeof v;
+      if (t === "string" || t === "boolean") return null;
+      if (t === "number") return Number.isFinite(v as number) ? null : `${path}: non-finite number`;
+      if (t === "undefined") return `${path}: undefined is not JSON`;
+      if (t === "function") return `${path}: function is not JSON`;
+      if (t === "bigint") return `${path}: bigint is not JSON`;
+      if (t === "symbol") return `${path}: symbol is not JSON`;
+      if (t === "object") {
+        const o = v as object;
+        if (seen.has(o)) return `${path}: circular reference`;
+        seen.add(o);
+        if (Array.isArray(v)) {
+          for (let i = 0; i < v.length; i++) {
+            const err = check(v[i], `${path}[${i}]`);
+            if (err) return err;
+          }
+          return null;
+        }
+        for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
+          const err = check(val, `${path}.${k}`);
+          if (err) return err;
+        }
+        return null;
+      }
+      return `${path}: unsupported type ${t}`;
+    };
+    const jsonErr = check(args.value, "value");
+    if (jsonErr) {
+      return errorResult(`value must be JSON-serialisable: ${jsonErr}`);
     }
   }
 
@@ -121,7 +152,13 @@ export async function manageComponentStorageImpl(
     return errorResult(`Bridge error: ${msg}`);
   }
 
-  const report = parsePythonReport<StorageReport>(stdout);
+  let report: StorageReport;
+  try {
+    report = parsePythonReport<StorageReport>(stdout);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return errorResult(`Failed to parse bridge response: ${msg}`);
+  }
   if (!report.ok) {
     return errorResult(report.error ?? "Unknown bridge error");
   }

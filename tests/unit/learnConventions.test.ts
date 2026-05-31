@@ -298,7 +298,7 @@ describe("learnConventionsImpl — happy path", () => {
     expect(opacityEntry).toBeDefined();
     expect(opacityEntry?.value).toBe(0.94);
     expect(opacityEntry?.support).toBe(5);
-    expect(conv.layout).toBe("left-to-right");
+    expect(conv.layout).toBe("horizontal");
     expect(data?.wrote_note).toBe(true);
     expect(data?.wrote_style_memory).toBe(true);
 
@@ -313,7 +313,7 @@ describe("learnConventionsImpl — happy path", () => {
     expect(vault.exists(STYLE_NOTE_REL)).toBe(true);
     const styleNote = vault.readNote(STYLE_NOTE_REL);
     expect(styleNote.data.naming).toBe("snake_case");
-    expect(styleNote.data.layout).toBe("left-to-right");
+    expect(styleNote.data.layout).toBe("horizontal");
   });
 
   it("dry_run: extracts but does NOT write any vault file", async () => {

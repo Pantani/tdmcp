@@ -283,29 +283,43 @@ export async function scoreBuildImpl(ctx: ToolContext, args: ScoreBuildArgs) {
   try {
     // errors
     if (wanted.has("errors")) {
-      const errs = await ctx.client.getNetworkErrors(args.scopePath);
-      const groups = new Set(errs.errors.map((e) => e.message)).size;
-      per.errors = scoreErrors(errs.errors);
-      evidence.errorCount = errs.errors.length;
-      evidence.errorGroupCount = groups;
+      try {
+        const errs = await ctx.client.getNetworkErrors(args.scopePath);
+        const groups = new Set(errs.errors.map((e) => e.message)).size;
+        per.errors = scoreErrors(errs.errors);
+        evidence.errorCount = errs.errors.length;
+        evidence.errorGroupCount = groups;
+      } catch (err) {
+        warnings.push(`errors probe failed: ${err instanceof Error ? err.message : String(err)}`);
+      }
     }
 
     // perf
     if (wanted.has("perf")) {
-      const perf = await checkPerformance(ctx.client, args.scopePath, args.targetFps, true);
-      const overBudget = perf.nodes.filter((n) => n.cook_time_ms > perf.frameBudgetMs).length;
-      per.perf = scorePerf(perf.totalCookMs, perf.frameBudgetMs, overBudget);
-      evidence.totalCookMs = perf.totalCookMs;
-      evidence.frameBudgetMs = perf.frameBudgetMs;
+      try {
+        const perf = await checkPerformance(ctx.client, args.scopePath, args.targetFps, true);
+        const overBudget = perf.nodes.filter((n) => n.cook_time_ms > perf.frameBudgetMs).length;
+        per.perf = scorePerf(perf.totalCookMs, perf.frameBudgetMs, overBudget);
+        evidence.totalCookMs = perf.totalCookMs;
+        evidence.frameBudgetMs = perf.frameBudgetMs;
+      } catch (err) {
+        warnings.push(`perf probe failed: ${err instanceof Error ? err.message : String(err)}`);
+      }
     }
 
     // complexity
     if (wanted.has("complexity")) {
-      const topo = await ctx.client.getNetworkTopology(args.scopePath, true);
-      const nodes = topo.nodes.filter((n) => !/(base|baseCOMP)$/i.test(n.type ?? ""));
-      const n = nodes.length;
-      per.complexity = scoreComplexity(n);
-      evidence.nodeCount = n;
+      try {
+        const topo = await ctx.client.getNetworkTopology(args.scopePath, true);
+        const nodes = topo.nodes.filter((n) => !/(base|baseCOMP)$/i.test(n.type ?? ""));
+        const n = nodes.length;
+        per.complexity = scoreComplexity(n);
+        evidence.nodeCount = n;
+      } catch (err) {
+        warnings.push(
+          `complexity probe failed: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
     }
 
     // palette + motion (share a preview TOP)

@@ -99,7 +99,6 @@ try:
         elif _src == "mtc":
             # MTC operator type UNVERIFIED on this build — try midiinCHOP, fall back
             # to midiinDAT + Script CHOP shim is out-of-scope; surface a warning.
-            _mtype = getattr(__builtins__, "midiinCHOP", None) if isinstance(__builtins__, dict) is False else __builtins__.get("midiinCHOP")
             try:
                 _in = _sys.create(midiinCHOP, "midi_in")
             except Exception:

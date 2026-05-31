@@ -223,10 +223,17 @@ export const register = (_server: unknown) => {
 `;
 }
 
-function templateTest(_snake: string, _pascal: string, camel: string, surface: string): string {
+function templateTest(
+  _snake: string,
+  _pascal: string,
+  camel: string,
+  surface: string,
+  layer: string,
+): string {
+  const layerDir = layerToDir(layer);
   if (surface === "bridge") {
     return `import { describe, expect, it, vi } from "vitest";
-import { ${camel}Impl, ${camel}Schema } from "../../src/tools/layer2/${camel}.js";
+import { ${camel}Impl, ${camel}Schema } from "../../src/tools/${layerDir}/${camel}.js";
 import type { ToolContext } from "../../src/tools/types.js";
 import { silentLogger } from "../../src/utils/logger.js";
 
@@ -264,7 +271,7 @@ describe("${camel}", () => {
 
   if (surface === "local_only" || surface === "prompt") {
     return `import { describe, expect, it } from "vitest";
-import { ${camel}Impl, ${camel}Schema } from "../../src/tools/layer2/${camel}.js";
+import { ${camel}Impl, ${camel}Schema } from "../../src/tools/${layerDir}/${camel}.js";
 import type { ToolContext } from "../../src/tools/types.js";
 import { silentLogger } from "../../src/utils/logger.js";
 
@@ -286,7 +293,7 @@ describe("${camel}", () => {
 
   // layer1_build
   return `import { describe, expect, it, vi } from "vitest";
-import { ${camel}Impl, ${camel}Schema } from "../../src/tools/layer1/${camel}.js";
+import { ${camel}Impl, ${camel}Schema } from "../../src/tools/${layerDir}/${camel}.js";
 import type { ToolContext } from "../../src/tools/types.js";
 import { silentLogger } from "../../src/utils/logger.js";
 
@@ -371,14 +378,14 @@ export async function scaffoldToolGeneratorImpl(
     testContent = `// TODO: add tests for prompt ${camel}\n`;
   } else if (args.surface === "layer1_build") {
     toolContent = templateB(args.name, pascal, camel, args.description);
-    testContent = templateTest(args.name, pascal, camel, args.surface);
+    testContent = templateTest(args.name, pascal, camel, args.surface, args.layer);
   } else if (args.surface === "local_only") {
     toolContent = templateC(args.name, pascal, camel, args.description);
-    testContent = templateTest(args.name, pascal, camel, args.surface);
+    testContent = templateTest(args.name, pascal, camel, args.surface, args.layer);
   } else {
     // bridge (default)
     toolContent = templateA(args.name, pascal, camel, args.description);
-    testContent = templateTest(args.name, pascal, camel, args.surface);
+    testContent = templateTest(args.name, pascal, camel, args.surface, args.layer);
   }
 
   // Write files

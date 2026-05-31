@@ -70,6 +70,7 @@ function resetSpawn(mocks: Array<{ exitCode: number }> = []) {
   activeChildren.length = 0;
   spawnMocks = mocks;
   spawnMockIdx = 0;
+  watcherBox.current = undefined;
 }
 
 describe("bridgeWatchBuildSchema", () => {

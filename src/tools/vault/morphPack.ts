@@ -332,7 +332,7 @@ async function doPack(ctx: ToolContext, args: MorphPackArgs) {
         name: args.name,
         created: new Date().toISOString(),
         provenance: {
-          tdmcp_version: "0.9.0",
+          tdmcp_version: "0.7.0",
           container_path: report.container ?? containerPath,
           target_path: report.target ?? "",
           target_optype: report.target_optype ?? "",

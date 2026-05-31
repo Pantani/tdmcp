@@ -20,6 +20,15 @@ import { structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { type ScoreBuildOutput, scoreBuildImpl, scoreBuildSchema } from "./scoreBuild.js";
 
+/** Returns true if `p` is `scope` itself or a descendant of `scope` (posix-ish TD paths). */
+function isUnderScope(p: string, scope: string): boolean {
+  const norm = (s: string) => s.replace(/\/+$/, "") || "/";
+  const a = norm(p);
+  const b = norm(scope);
+  if (a === b) return true;
+  return a.startsWith(b === "/" ? "/" : `${b}/`);
+}
+
 export const enhanceBuildSchema = z.object({
   scopePath: z
     .string()
@@ -300,9 +309,28 @@ export async function enhanceBuildImpl(ctx: ToolContext, args: EnhanceBuildArgs)
             ["palette", "motion", "complexity", "errors", "perf"].includes(t),
         ) as Criterion[])
       : [];
+    // Validate that path-bearing args stay under args.scopePath.
+    const pathKeys = ["parentPath", "sourceTopPath", "targetNodePath", "path", "scopePath"];
+    const dataArgs = parsedArgs.data as Record<string, unknown>;
+    let escapingKey: string | undefined;
+    let escapingValue: string | undefined;
+    for (const key of pathKeys) {
+      const v = dataArgs[key];
+      if (typeof v === "string" && !isUnderScope(v, args.scopePath)) {
+        escapingKey = key;
+        escapingValue = v;
+        break;
+      }
+    }
+    if (escapingKey) {
+      warnings.push(
+        `Dropped proposal ${toolName}: ${escapingKey}=${escapingValue} escapes scopePath ${args.scopePath}.`,
+      );
+      continue;
+    }
     proposals.push({
       tool: toolName,
-      args: parsedArgs.data as Record<string, unknown>,
+      args: dataArgs,
       rationale: typeof obj.rationale === "string" ? obj.rationale : "",
       targets: targetsArr,
     });

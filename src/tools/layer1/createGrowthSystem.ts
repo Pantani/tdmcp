@@ -89,6 +89,22 @@ def cook(scriptOp):
         cfg = json.loads(op('rules').text)
     except Exception:
         return
+    # Live-override JSON defaults from parent COMP custom params if present, so
+    # exposed controls (Generations/BranchAngle/StepLength/Seed) actually drive
+    # the grammar instead of being inert.
+    try:
+        p = parent()
+        for json_key, par_name in (
+            ('generations', 'Generations'),
+            ('branchAngle', 'BranchAngle'),
+            ('step_length', 'StepLength'),
+            ('seed', 'Seed'),
+        ):
+            par = getattr(p.par, par_name, None)
+            if par is not None:
+                cfg[json_key] = par.eval()
+    except Exception:
+        pass
     rules_by_from = {}
     for r in cfg.get('rules', []):
         rules_by_from.setdefault(r['from'], []).append(r)
@@ -211,9 +227,24 @@ export async function createGrowthSystemImpl(ctx: ToolContext, args: CreateGrowt
     });
     await builder.connect(grow, thicken);
 
-    // Recentre bbox around origin so camera framing is stable.
+    // Recentre bbox around origin so camera framing is stable. A boundSOP
+    // computes the centre, and the transform translates the geometry by its
+    // negation. Wrapped in try/except in Python in case bound par names differ
+    // across TD builds — a missing par falls back to a no-op transform.
+    const bounds = await builder.add("boundSOP", "bounds");
+    await builder.connect(thicken, bounds);
     const center = await builder.add("transformSOP", "center");
     await builder.connect(thicken, center);
+    await builder.python(
+      `try:\n` +
+        `    _b = op(${q(bounds)})\n` +
+        `    _c = op(${q(center)})\n` +
+        `    _c.par.tx.expr = "-op('bounds').par.centerx"\n` +
+        `    _c.par.ty.expr = "-op('bounds').par.centery"\n` +
+        `    _c.par.tz.expr = "-op('bounds').par.centerz"\n` +
+        `except Exception as _e:\n` +
+        `    pass`,
+    );
 
     // Geometry COMP renders the centred SOP. NetworkBuilder.add clears the default torus.
     const geo = await builder.add("geometryCOMP", "geo");

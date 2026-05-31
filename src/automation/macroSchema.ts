@@ -22,7 +22,7 @@ export const MacroEntrySchema = z.object({
 export const MacroRecordSchema = z.object({
   schema_version: z.literal(1),
   name: z.string().min(1),
-  created_at: z.string().datetime(),
+  created_at: z.iso.datetime(),
   tdmcp_version: z.string().min(1),
   entries: z.array(MacroEntrySchema),
 });

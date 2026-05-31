@@ -13,7 +13,7 @@ Three reactivity tools ship marked `[experimental]`; two control surfaces are
 gated `unverified_pending_hardware` (live phone + motorized-controller probes
 required before they leave that flag).
 
-### Added
+### Added (Wave 2)
 
 - **`compose_cue_list`** — natural language → fireable cue sequence. Uses the
   local LLM when configured, with a grammar fallback so it works offline.
@@ -40,7 +40,7 @@ required before they leave that flag).
 plus one new MCP resource and a strengthened prompt-eval harness. Tool registry
 is now **221** (was 213); resources gain a live scene-summary view.
 
-### Added
+### Added (Wave 3)
 
 - **`provenance_stamp`** — write a `.provenance.json` sidecar (sha256, source
   COMP path, toolchain versions, git metadata, author, tags) next to any saved
@@ -69,7 +69,7 @@ is now **221** (was 213); resources gain a live scene-summary view.
 - New offline `prompt_eval_harness` test that catches description-quality,
   rendering, and token-budget regressions across every registered prompt.
 
-### Changed
+### Changed (Wave 3)
 
 - `fix_shader` prompt description expanded past the 50-char quality threshold
   so the harness can enforce it without a whitelist.
@@ -78,7 +78,7 @@ is now **221** (was 213); resources gain a live scene-summary view.
 Ten new MCP tools (across Layer 1/2/3 plus a new `cli` tool group) and two
 long-running CLI streamers, bringing the registry to **231** tools.
 
-### Added
+### Added (Wave 4)
 
 - **`create_engine_comp`** — build a load-balanced Engine COMP cluster that
   offloads a sub-network to worker processes for parallel cooking.
@@ -110,7 +110,7 @@ long-running CLI streamers, bringing the registry to **231** tools.
 
 **Wave 5 — Final P2 tail: library trust + CLI/remote ergonomics + AI copilot polish + TD-depth long-tail** (campaign `beyond_20260530`). Thirteen new MCP tools (Layer 1/2/3, library, vault, cli group) plus six long-running CLI streamers/dispatchers, bringing the registry to **245** tools. Closes out the BEYOND backlog.
 
-### Added
+### Added (Wave 5)
 
 - **`curated_collection_pack`** — bundle a curated set of vault/library assets into a verifiable, checksummed pack with provenance metadata.
 - **`component_changelog_trail`** — write/read a per-component changelog trail across versions; offline, scoped to a vault folder.
@@ -131,7 +131,7 @@ long-running CLI streamers, bringing the registry to **231** tools.
 - **`tdmcp-agent controller-bridge`** — bridge a MIDI/OSC control surface to CLI commands for hands-on driving.
 - **`tdmcp-agent voice`** / **`llm-voice`** — voice-driven copilot chat loop (push-to-talk → STT → tool dispatch).
 
-### Changed
+### Changed (Wave 5)
 
 - `buildToolContext` accepts an optional `fetchImpl` override (forwarded to the TouchDesigner client) so the fixture-recorder CLI can wrap bridge calls.
 
