@@ -297,6 +297,8 @@ import {
 } from "../tools/layer2/setParametersBatch.js";
 import { setPerformModeImpl, setPerformModeSchema } from "../tools/layer2/setPerformMode.js";
 import { analyzeProjectImpl, analyzeProjectSchema } from "../tools/layer3/analyzeProject.js";
+// Campaign Wave 6 — AI & LLM (backlog 2026-05-29):
+import { captionTopImpl, captionTopSchema } from "../tools/layer3/captionTop.js";
 import {
   collectProjectAssetsImpl,
   collectProjectAssetsSchema,
@@ -352,6 +354,7 @@ import {
 import { recordMovieImpl, recordMovieSchema } from "../tools/layer3/recordMovie.js";
 import { reloadBridgeImpl, reloadBridgeSchema } from "../tools/layer3/reloadBridge.js";
 import { renderOutputImpl, renderOutputSchema } from "../tools/layer3/renderOutput.js";
+import { repairNetworkImpl, repairNetworkSchema } from "../tools/layer3/repairNetwork.js";
 import { searchOperatorsImpl, searchOperatorsSchema } from "../tools/layer3/searchOperators.js";
 import { serializeNetworkImpl, serializeNetworkSchema } from "../tools/layer3/serializeNetwork.js";
 import { setDatContentImpl, setDatContentSchema } from "../tools/layer3/setDatContent.js";
@@ -1233,6 +1236,18 @@ const COMMANDS: Record<string, Command> = {
     projectDocumentationSiteSchema,
     projectDocumentationSiteImpl,
     "Compose a multi-file documentation package (README + topology + optional gallery) for a network.",
+    { mutates: true },
+  ),
+  // Campaign Wave 6 — AI & LLM (backlog 2026-05-29):
+  "caption-top": r(
+    captionTopSchema,
+    captionTopImpl,
+    "Caption a TOP — plain-text description of colors/brightness/motion (vision LLM or deterministic histogram).",
+  ),
+  "repair-network": r(
+    repairNetworkSchema,
+    repairNetworkImpl,
+    "Bounded autonomous network repair — read errors, plan/apply safe fixes (dry-run by default), re-check.",
     { mutates: true },
   ),
   // Campaign Wave 3 — artist controls (backlog 2026-05-29):

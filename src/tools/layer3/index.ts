@@ -1,5 +1,6 @@
 import type { ToolRegistrar } from "../types.js";
 import { registerAnalyzeProject } from "./analyzeProject.js";
+import { registerCaptionTop } from "./captionTop.js";
 import { registerCollectProjectAssets } from "./collectProjectAssets.js";
 import { registerCompareTdNodes } from "./compareTdNodes.js";
 import { registerCreateTdNode } from "./createTdNode.js";
@@ -32,6 +33,7 @@ import { registerReadParameterModes } from "./readParameterModes.js";
 import { registerRecordMovie } from "./recordMovie.js";
 import { registerReloadBridge } from "./reloadBridge.js";
 import { registerRenderOutput } from "./renderOutput.js";
+import { registerRepairNetwork } from "./repairNetwork.js";
 import { registerSearchOperators } from "./searchOperators.js";
 import { registerSerializeNetwork } from "./serializeNetwork.js";
 import { registerSetDatContent } from "./setDatContent.js";
@@ -88,4 +90,7 @@ export const layer3Registrars: ToolRegistrar[] = [
   // Campaign Wave 4 — library/packaging (backlog 2026-05-29):
   registerCollectProjectAssets,
   registerProjectDocumentationSite,
+  // Campaign Wave 6 — AI & LLM (backlog 2026-05-29):
+  registerCaptionTop,
+  registerRepairNetwork,
 ];

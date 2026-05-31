@@ -26,6 +26,20 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Four new AI/LLM features** (campaign Wave 6 — AI surface of the discovery
+  backlog), built by parallel agents + single-writer integrate, gates green:
+  - **`caption_top`** (`caption-top`) — caption a TOP as plain text (colors /
+    brightness / motion / "looks black") via the configured vision LLM, with a
+    deterministic dependency-free PNG luma/color-histogram fallback for headless use.
+  - **`repair_network`** (`repair-network`) — bounded autonomous repair tool:
+    read post-cook errors, plan/apply a capped number of safe fixes (dry-run by
+    default), re-check, and report before/after error counts.
+  - **`teach_touchdesigner`** prompt — KB-grounded concept tutor over the operator
+    knowledge base + the `tdmcp://tutorials` resource.
+  - **`design_brief`** prompt — establish a persistent session aesthetic direction
+    the assistant honors across subsequent builds.
+  (`caption_top`/`repair_network` are `qa_unverified` — built + unit-tested offline;
+  the vision-endpoint and live-fix-application paths await a TD-reachable pass.)
 - **Five new library/packaging tools** (campaign Wave 4 — library surface of the
   discovery backlog), gates green and (the bridge ones) live-validated in TouchDesigner 099:
   - **`diff_library_assets`** (`library-diff`) — offline deep-diff of two saved

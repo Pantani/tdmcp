@@ -7,6 +7,7 @@ import { registerBeatReactiveDesigner } from "./beatReactiveDesigner.js";
 import { registerColorStory } from "./colorStory.js";
 import { registerCritiqueVisual } from "./critiqueVisual.js";
 import { registerDebugNetwork } from "./debugNetwork.js";
+import { registerDesignBrief } from "./designBrief.js";
 import { registerExplainNetwork } from "./explainNetwork.js";
 import { registerExplainParam } from "./explainParam.js";
 import { registerFixReactivity } from "./fixReactivity.js";
@@ -21,6 +22,7 @@ import { registerRecoverShow } from "./recoverShow.js";
 import { registerRemixVisual } from "./remixVisual.js";
 import { registerSetlistPlanner } from "./setlistPlanner.js";
 import { registerStyleReference } from "./styleReference.js";
+import { registerTeachTouchDesigner } from "./teachTouchDesigner.js";
 import { registerTextToRecipe } from "./textToRecipe.js";
 import { registerTextToShader } from "./textToShader.js";
 import { registerTweakVisual } from "./tweakVisual.js";
@@ -61,6 +63,9 @@ export function registerAllPrompts(server: McpServer, ctx: PromptContext): void 
   registerGenreVisualLanguage(server, ctx);
   registerMotionCritique(server, ctx);
   registerMatchReferenceLoop(server, ctx);
+  // Campaign Wave 6 — AI & LLM (backlog 2026-05-29):
+  registerTeachTouchDesigner(server, ctx);
+  registerDesignBrief(server, ctx);
 }
 
 export type { PromptContext } from "./types.js";
