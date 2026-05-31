@@ -227,7 +227,7 @@ export async function collectProjectAssetsImpl(ctx: ToolContext, args: CollectPr
       const report = parsePythonReport<CollectProjectAssetsReport>(exec.stdout);
       let manifestPath: string | undefined;
       if (!report.fatal && args.out_manifest.trim()) {
-        manifestPath = args.out_manifest.trim();
+        const requestedManifestPath = args.out_manifest.trim();
         const manifest = {
           kind: "tdmcp-project-assets",
           generated_at: new Date().toISOString(),
@@ -237,8 +237,15 @@ export async function collectProjectAssetsImpl(ctx: ToolContext, args: CollectPr
           assets: report.assets,
           warnings: report.warnings,
         };
-        mkdirSync(dirname(manifestPath), { recursive: true });
-        writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+        try {
+          mkdirSync(dirname(requestedManifestPath), { recursive: true });
+          writeFileSync(requestedManifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+          manifestPath = requestedManifestPath;
+        } catch (err) {
+          report.warnings.push(
+            `manifest ${requestedManifestPath}: ${err instanceof Error ? err.message : String(err)}`,
+          );
+        }
       }
       return { report, manifestPath };
     },

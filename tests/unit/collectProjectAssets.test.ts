@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { HttpResponse, http } from "msw";
@@ -191,6 +191,34 @@ describe("collect_project_assets", () => {
       expect(structured.manifest_path).toBe(manifestPath);
       const text = result.content[0]?.type === "text" ? result.content[0].text : "";
       expect(text).toContain(manifestPath);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("keeps the collected inventory when manifest writing fails", async () => {
+    captureExec(TWO_ASSETS_REPORT);
+    const ctx = makeCtx();
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-assets-"));
+    const blocker = join(dir, "not-a-dir");
+    writeFileSync(blocker, "occupied", "utf8");
+
+    try {
+      const result = await collectProjectAssetsImpl(ctx, {
+        parent_path: "/project1",
+        out_manifest: join(blocker, "assets.json"),
+        include_missing_only: false,
+      });
+
+      expect(result.isError).toBeFalsy();
+      const structured = result.structuredContent as {
+        count: number;
+        manifest_path?: string;
+        warnings: string[];
+      };
+      expect(structured.count).toBe(2);
+      expect(structured.manifest_path).toBeUndefined();
+      expect(structured.warnings.join("\n")).toContain("manifest");
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
