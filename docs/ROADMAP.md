@@ -33,8 +33,8 @@ has grown through four arcs:
 >   hardware to shine (flagged so you know what to expect).
 > - ⬜ **Planned** — designed and prioritized, not yet built.
 >
-> The dated, line-by-line record of every change is the
-> [CHANGELOG](../CHANGELOG.md); the
+> The dated, line-by-line record of every change is the **CHANGELOG** (`CHANGELOG.md`
+> in the repository root); the
 > always-current, complete tool list is the [Tools reference](/reference/tools).
 > This page is the overview. Curious about the long tail of ideas? The full,
 > unfiltered brainstorm is preserved in the [planning archive](#full-backlog) at
