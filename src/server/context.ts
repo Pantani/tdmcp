@@ -12,6 +12,8 @@ export interface ToolContextOverrides {
   recipes?: RecipeLibrary;
   connection?: ConnectionManager;
   vault?: Vault;
+  /** Override fetch (used by the fixture-recorder CLI to wrap bridge calls). */
+  fetchImpl?: typeof fetch;
 }
 
 /**
@@ -24,7 +26,8 @@ export function buildToolContext(
   overrides: ToolContextOverrides = {},
 ): ToolContext {
   const logger = overrides.logger ?? createLogger(config.logLevel);
-  const connection = overrides.connection ?? new ConnectionManager(config, logger);
+  const connection =
+    overrides.connection ?? new ConnectionManager(config, logger, overrides.fetchImpl);
   const knowledge = overrides.knowledge ?? new KnowledgeBase({ logger });
   const vault =
     overrides.vault ?? (config.vaultPath ? new Vault(config.vaultPath, logger) : undefined);

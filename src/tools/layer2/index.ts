@@ -7,6 +7,7 @@ import { registerBatchOperations } from "./batchOperations.js";
 import { registerBindAudioReactive } from "./bindAudioReactive.js";
 import { registerBindToChannel } from "./bindToChannel.js";
 import { registerBuildChopChain } from "./buildChopChain.js";
+import { registerBuildSopGeometry } from "./buildSopGeometry.js";
 import { registerConnectNodes } from "./connectNodes.js";
 // Campaign Wave 3 — artist controls (backlog 2026-05-29):
 import { registerCreateAutoMontage } from "./createAutoMontage.js";
@@ -40,6 +41,7 @@ import { registerCreatePythonScript } from "./createPythonScript.js";
 import { registerCreateReplicator } from "./createReplicator.js";
 import { registerCreateSceneTimeline } from "./createSceneTimeline.js";
 import { registerCreateScheduler } from "./createScheduler.js";
+import { registerCreateSharedMemoryBridge } from "./createSharedMemoryBridge.js";
 import { registerCreateSidechainPump } from "./createSidechainPump.js";
 import { registerCreateStageDashboard } from "./createStageDashboard.js";
 import { registerCreateTimeEcho } from "./createTimeEcho.js";
@@ -58,6 +60,7 @@ import { registerScaffoldExtension } from "./scaffoldExtension.js";
 import { registerScaffoldToolGenerator } from "./scaffoldToolGenerator.js";
 import { registerSetParametersBatch } from "./setParametersBatch.js";
 import { registerSetPerformMode } from "./setPerformMode.js";
+import { registerSyncTimecode } from "./syncTimecode.js";
 
 export const layer2Registrars: ToolRegistrar[] = [
   registerCreateNodeChain,
@@ -133,4 +136,8 @@ export const layer2Registrars: ToolRegistrar[] = [
   registerExtendDataSourceFabric,
   registerBuildChopChain,
   registerAuthorScriptOperator,
+  // Campaign BEYOND Wave 5 (backlog 2026-05-30 — v0.7.0):
+  registerCreateSharedMemoryBridge,
+  registerBuildSopGeometry,
+  registerSyncTimecode,
 ];

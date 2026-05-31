@@ -269,6 +269,27 @@ transport, GPU/display inventory, cook-cost profiler) and the agent DX
   debounced tsc/tsup) and **`tdmcp-agent soundcheck-monitor`** (rolling-window
   RMS/peak/silence alert streamer).
 
+### Milestone 1.9 — Library trust + CLI/remote ergonomics + AI copilot polish · (Unreleased — pending version bump)
+
+*Campaign `beyond_20260530` Wave 5 (FINAL) — drops 13 new MCP tools (Layer 1/2/3,
+library, vault, cli group) and 6 long-running CLI streamers/dispatchers. Registry
+now **245** (was 231). Closes out the BEYOND backlog: vault provenance + git
+sync + corpus mining, structured COMP storage, build rescoring, organic growth,
+timecode sync, SharedMem IPC, SOP-geometry recipes, macro replay, and the voice/
+controller/fanout/log-tail/fixture-recorder CLI ergonomics.*
+
+- **Library trust** — **`curated_collection_pack`**, **`component_changelog_trail`**,
+  **`merge_vaults`**, **`vault_repo_sync`**, **`variant_pack`**, and
+  **`learn_from_my_corpus`**.
+- **TD-depth long-tail** — **`create_shared_memory_bridge`** (SharedMem In/Out
+  IPC), **`build_sop_geometry`** (typed SOP-chain recipes), **`sync_timecode`**
+  (LTC/MTC/OSC/MIDI clock lock), **`manage_component_storage`** (structured COMP
+  `storage` slots), and **`create_growth_system`** (organic growth / L-system).
+- **AI copilot polish** — **`enhance_build`** (apply improvements + rescore via
+  `score_build`) and **`run_macro_script`** (replay the Wave-4 macro recorder).
+- **CLI streamers** — **`tdmcp-agent log-tail`**, **`record-fixtures`**,
+  **`fanout`**, **`controller-bridge`**, and **`voice`** / **`llm-voice`**.
+
 ### Milestone 2 — Plug into the ecosystem & the iconic looks · ~v0.9.0
 
 *A wide, mostly independent content wave — ideal to build side by side.*

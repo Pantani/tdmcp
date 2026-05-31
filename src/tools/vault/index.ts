@@ -10,8 +10,10 @@ import { registerGenerateFromMoodboard } from "./generateFromMoodboard.js";
 import { registerGenerateLibraryIndex } from "./generateLibraryIndex.js";
 import { registerImportSetlist } from "./importSetlist.js";
 import { registerLearnConventions } from "./learnConventions.js";
+import { registerLearnFromMyCorpus } from "./learnFromMyCorpus.js";
 import { registerLibraryLineageGraph } from "./libraryLineageGraph.js";
 import { registerLogPerformance } from "./logPerformance.js";
+import { registerMergeVaults } from "./mergeVaults.js";
 import { registerMorphPack } from "./morphPack.js";
 import { registerRecallSimilarWork } from "./recallSimilarWork.js";
 import { registerSaveComponentToVault } from "./saveComponentToVault.js";
@@ -19,6 +21,8 @@ import { registerSaveRecipeToVault } from "./saveRecipeToVault.js";
 import { registerScaffoldVault } from "./scaffoldVault.js";
 import { registerStyleMemory } from "./styleMemory.js";
 import { registerSyncPresetsVault } from "./syncPresetsVault.js";
+import { registerVariantPack } from "./variantPack.js";
+import { registerVaultRepoSync } from "./vaultRepoSync.js";
 
 /**
  * Tools that bridge an Obsidian vault and TouchDesigner. All of them are gated on
@@ -51,4 +55,9 @@ export const vaultRegistrars: ToolRegistrar[] = [
   registerLibraryLineageGraph,
   registerMorphPack,
   registerLearnConventions,
+  // Campaign BEYOND Wave 5 (backlog 2026-05-30 — v0.7.0):
+  registerMergeVaults,
+  registerVaultRepoSync,
+  registerVariantPack,
+  registerLearnFromMyCorpus,
 ];

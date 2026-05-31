@@ -88,9 +88,9 @@ export async function controlTimelineTransportImpl(
   }
 
   const payload: Record<string, unknown> = { action: args.action };
-  if (args.frame !== undefined) payload["frame"] = args.frame;
-  if (args.rate !== undefined) payload["rate"] = args.rate;
-  if (args.cueName !== undefined) payload["cueName"] = args.cueName;
+  if (args.frame !== undefined) payload.frame = args.frame;
+  if (args.rate !== undefined) payload.rate = args.rate;
+  if (args.cueName !== undefined) payload.cueName = args.cueName;
 
   const script = buildPayloadScript(PAYLOAD_TEMPLATE, payload);
 

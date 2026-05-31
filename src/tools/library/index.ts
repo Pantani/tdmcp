@@ -25,6 +25,8 @@ import { errorResult, guardTd, jsonResult, structuredResult } from "../result.js
 import type { ToolContext, ToolRegistrar } from "../types.js";
 // Campaign Wave 4 — library/packaging (backlog 2026-05-29):
 import { registerChecksumAndVerifyPack } from "./checksumAndVerifyPack.js";
+import { registerComponentChangelogTrail } from "./componentChangelogTrail.js";
+import { registerCuratedCollectionPack } from "./curatedCollectionPack.js";
 import { registerDiffLibraryAssets } from "./diffLibraryAssets.js";
 import { registerExportPaletteComponent } from "./exportPaletteComponent.js";
 import { registerImportRecipeFromUrl } from "./importRecipeFromUrl.js";
@@ -868,4 +870,7 @@ export const libraryRegistrars: ToolRegistrar[] = [
   // Campaign BEYOND Wave 3 (backlog 2026-05-30 — v0.7.0):
   registerProvenanceStamp,
   registerChecksumAndVerifyPack,
+  // Campaign BEYOND Wave 5 (backlog 2026-05-30 — v0.7.0):
+  registerCuratedCollectionPack,
+  registerComponentChangelogTrail,
 ];

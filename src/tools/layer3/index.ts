@@ -11,6 +11,8 @@ import { registerDiffSnapshots } from "./diffSnapshots.js";
 import { registerDisconnectNodes } from "./disconnectNodes.js";
 import { registerDocumentNetwork } from "./documentNetwork.js";
 import { registerEditDatContent } from "./editDatContent.js";
+import { registerElicitMissingArgs } from "./elicitMissingArgs.js";
+import { registerEnhanceBuild } from "./enhanceBuild.js";
 import { registerExecNodeMethod } from "./execNodeMethod.js";
 import { registerExecutePythonScript } from "./executePythonScript.js";
 import { registerFindTdNodes } from "./findTdNodes.js";
@@ -30,6 +32,7 @@ import { registerGetTdTopology } from "./getTdTopology.js";
 import { registerInspectComponent } from "./inspectComponent.js";
 import { registerInspectGpuAndDisplays } from "./inspectGpuAndDisplays.js";
 import { registerLintRecipeLibrary } from "./lintRecipeLibrary.js";
+import { registerManageComponentStorage } from "./manageComponentStorage.js";
 import { registerManagePackages } from "./managePackages.js";
 import { registerOptimizePerformance } from "./optimizePerformance.js";
 import { registerProfileCookCost } from "./profileCookCost.js";
@@ -107,4 +110,8 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerProfileCookCost,
   registerControlTimelineTransport,
   registerInspectGpuAndDisplays,
+  // Campaign BEYOND Wave 5 (backlog 2026-05-30 — v0.7.0):
+  registerManageComponentStorage,
+  registerEnhanceBuild,
+  registerElicitMissingArgs,
 ];

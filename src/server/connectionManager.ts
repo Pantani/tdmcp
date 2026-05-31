@@ -9,12 +9,13 @@ import type { Logger } from "../utils/logger.js";
 export class ConnectionManager {
   readonly client: TouchDesignerClient;
 
-  constructor(config: TdmcpConfig, logger: Logger) {
+  constructor(config: TdmcpConfig, logger: Logger, fetchImpl?: typeof fetch) {
     this.client = new TouchDesignerClient({
       baseUrl: tdBaseUrl(config),
       timeoutMs: config.requestTimeoutMs,
       token: config.bridgeToken,
       logger,
+      fetchImpl,
     });
   }
 

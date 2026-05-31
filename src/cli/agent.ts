@@ -12,6 +12,8 @@ import { type TdEventHandler, TdEventStream } from "../td-client/eventStream.js"
 import { friendlyTdError } from "../td-client/types.js";
 // Campaign BEYOND Wave 4 (backlog 2026-05-30 — v0.7.0):
 import { macroRecorderImpl, macroRecorderSchema } from "../tools/cli/macroRecorder.js";
+// Campaign BEYOND Wave 5 (backlog 2026-05-30 — v0.7.0):
+import { runMacroScriptImpl, runMacroScriptSchema } from "../tools/cli/runMacroScript.js";
 import {
   applyPostProcessingImpl,
   applyPostProcessingSchema,
@@ -101,6 +103,10 @@ import {
   createGpuParticleFieldImpl,
   createGpuParticleFieldSchema,
 } from "../tools/layer1/createGpuParticleField.js";
+import {
+  createGrowthSystemImpl,
+  createGrowthSystemSchema,
+} from "../tools/layer1/createGrowthSystem.js";
 import { createHalftoneImpl, createHalftoneSchema } from "../tools/layer1/createHalftone.js";
 import {
   createKaleidoscopeImpl,
@@ -257,6 +263,7 @@ import {
 } from "../tools/layer2/bindAudioReactive.js";
 import { bindToChannelImpl, bindToChannelSchema } from "../tools/layer2/bindToChannel.js";
 import { buildChopChainImpl, buildChopChainSchema } from "../tools/layer2/buildChopChain.js";
+import { buildSopGeometryImpl, buildSopGeometrySchema } from "../tools/layer2/buildSopGeometry.js";
 import { connectNodesImpl, connectNodesSchema } from "../tools/layer2/connectNodes.js";
 // Campaign Wave 3 — artist controls (backlog 2026-05-29):
 import { createBandRouterImpl, createBandRouterSchema } from "../tools/layer2/createBandRouter.js";
@@ -315,6 +322,10 @@ import {
 } from "../tools/layer2/createPythonScript.js";
 import { createReplicatorImpl, createReplicatorSchema } from "../tools/layer2/createReplicator.js";
 import {
+  createSharedMemoryBridgeImpl,
+  createSharedMemoryBridgeSchema,
+} from "../tools/layer2/createSharedMemoryBridge.js";
+import {
   createSidechainPumpImpl,
   createSidechainPumpSchema,
 } from "../tools/layer2/createSidechainPump.js";
@@ -353,6 +364,7 @@ import {
   setParametersBatchSchema,
 } from "../tools/layer2/setParametersBatch.js";
 import { setPerformModeImpl, setPerformModeSchema } from "../tools/layer2/setPerformMode.js";
+import { syncTimecodeImpl, syncTimecodeSchema } from "../tools/layer2/syncTimecode.js";
 import { analyzeProjectImpl, analyzeProjectSchema } from "../tools/layer3/analyzeProject.js";
 import { captionTopImpl, captionTopSchema } from "../tools/layer3/captionTop.js";
 import {
@@ -370,6 +382,11 @@ import { diffSnapshotsImpl, diffSnapshotsSchema } from "../tools/layer3/diffSnap
 import { disconnectNodesImpl, disconnectNodesSchema } from "../tools/layer3/disconnectNodes.js";
 import { documentNetworkImpl, documentNetworkSchema } from "../tools/layer3/documentNetwork.js";
 import { editDatContentImpl, editDatContentSchema } from "../tools/layer3/editDatContent.js";
+import {
+  elicitMissingArgsImpl,
+  elicitMissingArgsSchema,
+} from "../tools/layer3/elicitMissingArgs.js";
+import { enhanceBuildImpl, enhanceBuildSchema } from "../tools/layer3/enhanceBuild.js";
 import { execNodeMethodImpl, execNodeMethodSchema } from "../tools/layer3/execNodeMethod.js";
 import {
   executePythonScriptImpl,
@@ -403,6 +420,10 @@ import {
   inspectGpuAndDisplaysImpl,
   inspectGpuAndDisplaysSchema,
 } from "../tools/layer3/inspectGpuAndDisplays.js";
+import {
+  manageComponentStorageImpl,
+  manageComponentStorageSchema,
+} from "../tools/layer3/manageComponentStorage.js";
 import {
   optimizePerformanceImpl,
   optimizePerformanceSchema,
@@ -442,6 +463,14 @@ import {
   checksumAndVerifyPackImpl,
   checksumAndVerifyPackSchema,
 } from "../tools/library/checksumAndVerifyPack.js";
+import {
+  componentChangelogTrailImpl,
+  componentChangelogTrailSchema,
+} from "../tools/library/componentChangelogTrail.js";
+import {
+  curatedCollectionPackImpl,
+  curatedCollectionPackSchema,
+} from "../tools/library/curatedCollectionPack.js";
 import {
   diffLibraryAssetsImpl,
   diffLibraryAssetsSchema,
@@ -488,10 +517,17 @@ import {
 } from "../tools/vault/generateLibraryIndex.js";
 import { learnConventionsImpl, learnConventionsSchema } from "../tools/vault/learnConventions.js";
 import {
+  learnFromMyCorpusImpl,
+  learnFromMyCorpusSchema,
+} from "../tools/vault/learnFromMyCorpus.js";
+import {
   libraryLineageGraphImpl,
   libraryLineageGraphSchema,
 } from "../tools/vault/libraryLineageGraph.js";
+import { mergeVaultsImpl, mergeVaultsSchema } from "../tools/vault/mergeVaults.js";
 import { morphPackImpl, morphPackSchema } from "../tools/vault/morphPack.js";
+import { variantPackImpl, variantPackSchema } from "../tools/vault/variantPack.js";
+import { vaultRepoSyncImpl, vaultRepoSyncSchema } from "../tools/vault/vaultRepoSync.js";
 import {
   describeConfig,
   type LoadConfigOptions,
@@ -501,8 +537,12 @@ import {
 } from "../utils/config.js";
 import { silentLogger } from "../utils/logger.js";
 import { runBridgeWatchBuild } from "./bridgeWatchBuild.js";
+import { controllerBridgeCliSchema, runControllerBridge } from "./controllerToCliBridge.js";
 import { runDoctor } from "./doctor.js";
+import { runFixtureRecorder } from "./fixtureRecorder.js";
+import { runLogTailFiltered } from "./logTailFiltered.js";
 import { type PanicSubVerb, runPanic } from "./panicBlackout.js";
+import { runRemoteFanout } from "./remoteAndFanout.js";
 import {
   loadScheduleFile,
   realClock,
@@ -518,6 +558,7 @@ import {
   setlistRunnerCliSchema,
 } from "./setlistRunner.js";
 import { runSoundcheckMonitor, soundcheckMonitorSchema } from "./soundcheckMonitor.js";
+import { runVoiceCopilotChat } from "./voiceCopilotChat.js";
 
 // biome-ignore lint/suspicious/noExplicitAny: args are validated by each command's zod schema before use.
 type Runner = (ctx: ToolContext, args: any) => CallToolResult | Promise<CallToolResult>;
@@ -1651,6 +1692,86 @@ const COMMANDS: Record<string, Command> = {
     "Record / stop / list / load tool-call macros (replay ships in wave 5).",
     { mutates: true },
   ),
+  // Campaign BEYOND Wave 5 (backlog 2026-05-30 — v0.7.0):
+  "curated-collection-pack": r(
+    curatedCollectionPackSchema,
+    curatedCollectionPackImpl,
+    "Bundle a curated collection of library assets into a verifiable pack.",
+    { mutates: true },
+  ),
+  "component-changelog-trail": r(
+    componentChangelogTrailSchema,
+    componentChangelogTrailImpl,
+    "Track a component's changelog trail across versions.",
+    { mutates: true },
+  ),
+  "merge-vaults": r(mergeVaultsSchema, mergeVaultsImpl, "Merge two Obsidian vaults safely.", {
+    mutates: true,
+  }),
+  "vault-repo-sync": r(
+    vaultRepoSyncSchema,
+    vaultRepoSyncImpl,
+    "Sync a vault with a git remote (clone/pull/push).",
+    { mutates: true },
+  ),
+  "variant-pack": r(
+    variantPackSchema,
+    variantPackImpl,
+    "Generate a variant pack from a base vault asset.",
+    { mutates: true },
+  ),
+  "learn-from-my-corpus": r(
+    learnFromMyCorpusSchema,
+    learnFromMyCorpusImpl,
+    "Mine the vault corpus to surface style/usage conventions.",
+  ),
+  "shared-memory-bridge": r(
+    createSharedMemoryBridgeSchema,
+    createSharedMemoryBridgeImpl,
+    "Wire a Shared-Mem (in/out) bridge between processes.",
+    { mutates: true },
+  ),
+  "build-sop-geometry": r(
+    buildSopGeometrySchema,
+    buildSopGeometryImpl,
+    "Assemble a typed SOP geometry chain from a recipe of stages.",
+    { mutates: true },
+  ),
+  "sync-timecode": r(
+    syncTimecodeSchema,
+    syncTimecodeImpl,
+    "Lock the show clock to external timecode (LTC/MTC/MIDI).",
+    { mutates: true },
+  ),
+  "manage-component-storage": r(
+    manageComponentStorageSchema,
+    manageComponentStorageImpl,
+    "Read/write COMP `storage` slots safely.",
+    { mutates: true },
+  ),
+  "enhance-build": r(
+    enhanceBuildSchema,
+    enhanceBuildImpl,
+    "Apply targeted improvements to an existing build and rescore.",
+    { mutates: true },
+  ),
+  "elicit-missing-args": r(
+    elicitMissingArgsSchema,
+    elicitMissingArgsImpl,
+    "Elicit missing required tool args from partial input + context.",
+  ),
+  "growth-system": r(
+    createGrowthSystemSchema,
+    createGrowthSystemImpl,
+    "Build an organic growth/branching system (L-system flavour).",
+    { mutates: true },
+  ),
+  "run-macro-script": r(
+    runMacroScriptSchema,
+    runMacroScriptImpl,
+    "Replay a recorded macro script of tool calls.",
+    { mutates: true },
+  ),
 };
 
 export interface CliResult {
@@ -1910,6 +2031,12 @@ function nearestCommand(input: string): string | undefined {
     "version",
     "watch-build",
     "soundcheck-monitor",
+    "log-tail",
+    "record-fixtures",
+    "fanout",
+    "controller-bridge",
+    "voice",
+    "llm-voice",
   ];
   for (const key of keys) {
     const d = editDistance(input, key);
@@ -2021,6 +2148,12 @@ function completionScript(shell: string): string | undefined {
     "version",
     "watch-build",
     "soundcheck-monitor",
+    "log-tail",
+    "record-fixtures",
+    "fanout",
+    "controller-bridge",
+    "voice",
+    "llm-voice",
   ];
   const flags = [
     "--params",
@@ -2759,6 +2892,67 @@ async function main(): Promise<void> {
     process.on("SIGTERM", onSig);
     try {
       await runSoundcheckMonitor(ctx, parsed.data, ac.signal);
+      process.exitCode = 0;
+    } catch (err) {
+      process.stderr.write(`${(err as Error).message}\n`);
+      process.exitCode = 1;
+    }
+    return;
+  }
+  // Long-running CLI streamers (wave-5 follow-up). Each owns its own argv parsing.
+  if (argv[0] === "log-tail" && !wantsHelp) {
+    process.exitCode = await runLogTailFiltered(argv.slice(1));
+    return;
+  }
+  if (argv[0] === "record-fixtures" && !wantsHelp) {
+    try {
+      await runFixtureRecorder(argv.slice(1));
+      process.exitCode = 0;
+    } catch (err) {
+      process.stderr.write(`${(err as Error).message}\n`);
+      process.exitCode = 1;
+    }
+    return;
+  }
+  if (argv[0] === "fanout" && !wantsHelp) {
+    process.exitCode = await runRemoteFanout(argv.slice(1));
+    return;
+  }
+  if (argv[0] === "controller-bridge" && !wantsHelp) {
+    const raw = assembleParams(parseCliArgs(argv).values);
+    if ("error" in raw) {
+      process.stderr.write(`Invalid controller-bridge params: ${raw.error}\n`);
+      process.exitCode = 2;
+      return;
+    }
+    const parsed = controllerBridgeCliSchema.safeParse(raw.raw);
+    if (!parsed.success) {
+      process.stderr.write(`Invalid controller-bridge params: ${parsed.error.message}\n`);
+      process.exitCode = 2;
+      return;
+    }
+    let ctx: ToolContext;
+    try {
+      ctx = buildToolContext(loadConfig(process.env, { useFiles: true }), {
+        logger: silentLogger,
+      });
+    } catch (err) {
+      process.stderr.write(`${(err as Error).message}\n`);
+      process.exitCode = 2;
+      return;
+    }
+    try {
+      const summary = await runControllerBridge(ctx, parsed.data);
+      process.exitCode = summary.exit_code;
+    } catch (err) {
+      process.stderr.write(`${(err as Error).message}\n`);
+      process.exitCode = 1;
+    }
+    return;
+  }
+  if ((argv[0] === "voice" || argv[0] === "llm-voice") && !wantsHelp) {
+    try {
+      await runVoiceCopilotChat(argv.slice(1));
       process.exitCode = 0;
     } catch (err) {
       process.stderr.write(`${(err as Error).message}\n`);

@@ -58,6 +58,10 @@ export function createTdmcpServer(
     return realRegisterTool(name, ...rest);
   };
 
+  // Expose the live server to tools that introspect the registry
+  // (e.g. elicit_missing_args). Set BEFORE registerAllTools runs.
+  ctx.server = server;
+
   try {
     registerAllTools(server, ctx);
   } finally {

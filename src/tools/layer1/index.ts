@@ -29,6 +29,7 @@ import { registerCreateGenerativeArt } from "./createGenerativeArt.js";
 import { registerCreateGenerativeAudio } from "./createGenerativeAudio.js";
 import { registerCreateGlitch } from "./createGlitch.js";
 import { registerCreateGpuParticleField } from "./createGpuParticleField.js";
+import { registerCreateGrowthSystem } from "./createGrowthSystem.js";
 import { registerCreateHalftone } from "./createHalftone.js";
 import { registerCreateKaleidoscope } from "./createKaleidoscope.js";
 import { registerCreateKeyer } from "./createKeyer.js";
@@ -190,4 +191,6 @@ export const layer1Registrars: ToolRegistrar[] = [
   // Campaign BEYOND Wave 4 (backlog 2026-05-30 — v0.7.0):
   registerCreateEngineComp,
   registerCreateDmxFixturePipeline,
+  // Campaign BEYOND Wave 5 (backlog 2026-05-30 — v0.7.0):
+  registerCreateGrowthSystem,
 ];

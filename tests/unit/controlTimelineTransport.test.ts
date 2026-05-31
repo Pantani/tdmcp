@@ -100,11 +100,11 @@ describe("controlTimelineTransportImpl", () => {
           string,
           unknown
         >;
-        expect(payload["action"]).toBe(action);
+        expect(payload.action).toBe(action);
 
-        if (action === "seek") expect(payload["frame"]).toBe(120);
-        if (action === "cue") expect(payload["cueName"]).toBe("verse");
-        if (action === "rate") expect(payload["rate"]).toBe(0.5);
+        if (action === "seek") expect(payload.frame).toBe(120);
+        if (action === "cue") expect(payload.cueName).toBe("verse");
+        if (action === "rate") expect(payload.rate).toBe(0.5);
       });
     }
   });
@@ -196,13 +196,13 @@ describe("controlTimelineTransportImpl", () => {
       expect(msg).toContain("1.00x"); // rate
       expect(msg).toContain("60"); // fps
       const sc = result.structuredContent as Record<string, unknown>;
-      expect(sc["action"]).toBe("play");
-      expect(sc["play"]).toBe(true);
-      expect(sc["frame"]).toBe(142);
-      expect(sc["rate"]).toBe(1.0);
-      expect(sc["startFrame"]).toBe(0);
-      expect(sc["endFrame"]).toBe(600);
-      expect(sc["fps"]).toBe(60);
+      expect(sc.action).toBe("play");
+      expect(sc.play).toBe(true);
+      expect(sc.frame).toBe(142);
+      expect(sc.rate).toBe(1.0);
+      expect(sc.startFrame).toBe(0);
+      expect(sc.endFrame).toBe(600);
+      expect(sc.fps).toBe(60);
     });
   });
 

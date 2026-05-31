@@ -136,31 +136,31 @@ function normalizeEntry(raw: Record<string, unknown>, idx: number): Record<strin
   const out: Record<string, unknown> = { ...raw };
 
   // trigger shorthands
-  if (typeof raw["at"] === "string" && !raw["trigger"]) {
-    out["trigger"] = { kind: "at", time: raw["at"] };
-    delete out["at"];
+  if (typeof raw.at === "string" && !raw.trigger) {
+    out.trigger = { kind: "at", time: raw.at };
+    delete out.at;
   }
-  if (typeof raw["every"] === "string" && !raw["trigger"]) {
-    const s = parseEveryString(raw["every"]);
-    out["trigger"] = { kind: "every", seconds: s };
-    delete out["every"];
+  if (typeof raw.every === "string" && !raw.trigger) {
+    const s = parseEveryString(raw.every);
+    out.trigger = { kind: "every", seconds: s };
+    delete out.every;
   }
-  if (typeof raw["cron"] === "string" && !raw["trigger"]) {
-    out["trigger"] = { kind: "cron", at: raw["cron"] };
-    delete out["cron"];
+  if (typeof raw.cron === "string" && !raw.trigger) {
+    out.trigger = { kind: "cron", at: raw.cron };
+    delete out.cron;
   }
 
   // action shorthands
-  if (typeof raw["command"] === "string" && !raw["action"]) {
-    const parts = shellSplit(raw["command"] as string);
+  if (typeof raw.command === "string" && !raw.action) {
+    const parts = shellSplit(raw.command as string);
     const cmd = parts[0] ?? "";
-    out["action"] = { type: "command", cmd, args: parts.slice(1) };
-    delete out["command"];
+    out.action = { type: "command", cmd, args: parts.slice(1) };
+    delete out.command;
   }
 
   // auto-assign id
-  if (!out["id"]) {
-    out["id"] = `entry_${idx}`;
+  if (!out.id) {
+    out.id = `entry_${idx}`;
   }
 
   return out;
@@ -206,7 +206,7 @@ export function loadCanonicalSchedule(
   try {
     const raw = input as Record<string, unknown>;
     // normalize entries
-    const rawEntries = Array.isArray(raw["entries"]) ? raw["entries"] : [];
+    const rawEntries = Array.isArray(raw.entries) ? raw.entries : [];
     const normalizedEntries = rawEntries.map((e: unknown, idx: number) =>
       normalizeEntry(e as Record<string, unknown>, idx),
     );

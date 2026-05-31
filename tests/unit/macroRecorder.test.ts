@@ -150,7 +150,7 @@ describe("control surface", () => {
   });
 
   it("clips long result summaries to a single line ≤240 chars", () => {
-    const long = "x".repeat(500) + "\nmore\nlines";
+    const long = `${"x".repeat(500)}\nmore\nlines`;
     const out = summarizeResult({ content: [{ type: "text", text: long }] });
     expect(out).toBeDefined();
     expect((out as string).length).toBeLessThanOrEqual(240);

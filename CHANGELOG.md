@@ -108,6 +108,33 @@ long-running CLI streamers, bringing the registry to **231** tools.
   that emits rolling-window RMS/peak/silence alert events (ndjson on stdout).
 - Adds `chokidar ^4.0.3` as a devDependency for the watch-build streamer.
 
+**Wave 5 — Final P2 tail: library trust + CLI/remote ergonomics + AI copilot polish + TD-depth long-tail** (campaign `beyond_20260530`). Thirteen new MCP tools (Layer 1/2/3, library, vault, cli group) plus six long-running CLI streamers/dispatchers, bringing the registry to **245** tools. Closes out the BEYOND backlog.
+
+### Added
+
+- **`curated_collection_pack`** — bundle a curated set of vault/library assets into a verifiable, checksummed pack with provenance metadata.
+- **`component_changelog_trail`** — write/read a per-component changelog trail across versions; offline, scoped to a vault folder.
+- **`merge_vaults`** — safely merge two Obsidian vaults with conflict detection (sha256), `--dry-run` planning, and a Markdown audit log.
+- **`vault_repo_sync`** — sync a vault directory to a git remote (clone / pull / push) with auth guard rails.
+- **`variant_pack`** — generate a variant pack from a base vault asset (parametric mutations + manifest).
+- **`learn_from_my_corpus`** — mine the vault corpus to surface style/usage conventions and emit a structured learnings report.
+- **`create_shared_memory_bridge`** — wire a SharedMem In/Out bridge between TD processes (textures + CHOPs) for low-latency IPC.
+- **`build_sop_geometry`** — assemble a typed SOP geometry chain from a recipe of stages, with per-stage param validation (mirrors `build_chop_chain`).
+- **`sync_timecode`** — lock the show clock to external LTC / MTC / OSC / MIDI timecode and optionally drive the TD timeline.
+- **`manage_component_storage`** — structured read/write of COMP `storage` slots (get / set / delete / list) replacing raw exec.
+- **`enhance_build`** — apply targeted improvements to an existing built network and rescore via `score_build`, reporting before/after deltas.
+- **`create_growth_system`** *(Layer 1)* — build an organic growth/branching system (L-system flavour) with audio-modulated growth rate.
+- **`run_macro_script`** *(cli group)* — replay a recorded macro script of tool calls (closes the loop on Wave-4's `macro_recorder`).
+- **`tdmcp-agent log-tail`** — long-running, filterable tail of the bridge log stream with regex include/exclude.
+- **`tdmcp-agent record-fixtures`** — record live bridge HTTP traffic to a replayable msw fixture (adds `fetchImpl` plumbing on `buildToolContext`).
+- **`tdmcp-agent fanout`** — fan a single CLI invocation out to N remote tdmcp agents and aggregate results.
+- **`tdmcp-agent controller-bridge`** — bridge a MIDI/OSC control surface to CLI commands for hands-on driving.
+- **`tdmcp-agent voice`** / **`llm-voice`** — voice-driven copilot chat loop (push-to-talk → STT → tool dispatch).
+
+### Changed
+
+- `buildToolContext` accepts an optional `fetchImpl` override (forwarded to the TouchDesigner client) so the fixture-recorder CLI can wrap bridge calls.
+
 [Unreleased]: https://github.com/Pantani/tdmcp/compare/v0.7.1...HEAD
 
 ## [0.7.1] - 2026-05-31

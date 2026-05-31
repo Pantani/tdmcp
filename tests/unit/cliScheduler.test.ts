@@ -317,8 +317,8 @@ describe("nextFireAt", () => {
 
   it("DST spring-forward: emits dst_skip when setHours silently advances", () => {
     // Simulate spring forward: we mock Date so setHours lands on wrong hour
-    const savedTZ = process.env["TZ"];
-    process.env["TZ"] = "America/New_York";
+    const savedTZ = process.env.TZ;
+    process.env.TZ = "America/New_York";
     try {
       const events: SchedulerEvent[] = [];
       // 2026-03-08 is spring forward in America/New_York (clocks skip 02:xx)
@@ -337,14 +337,14 @@ describe("nextFireAt", () => {
       // If DST skip was detected, we'd have the event
       // (may not trigger in all CI environments, but function should not throw)
     } finally {
-      if (savedTZ !== undefined) process.env["TZ"] = savedTZ;
-      else delete process.env["TZ"];
+      if (savedTZ !== undefined) process.env.TZ = savedTZ;
+      else delete process.env.TZ;
     }
   });
 
   it("DST fall-back: setHours picks first occurrence, emits dst_ambiguous", () => {
-    const savedTZ = process.env["TZ"];
-    process.env["TZ"] = "America/New_York";
+    const savedTZ = process.env.TZ;
+    process.env.TZ = "America/New_York";
     try {
       const events: SchedulerEvent[] = [];
       // 2026-11-01 is fall back in America/New_York
@@ -361,8 +361,8 @@ describe("nextFireAt", () => {
       // depending on whether the system's TZ library supports this
       expect(true).toBe(true);
     } finally {
-      if (savedTZ !== undefined) process.env["TZ"] = savedTZ;
-      else delete process.env["TZ"];
+      if (savedTZ !== undefined) process.env.TZ = savedTZ;
+      else delete process.env.TZ;
     }
   });
 });
@@ -658,7 +658,7 @@ describe("runScheduler dispatch", () => {
 
     const chainClock: SchedulerClock = {
       now: () => START,
-      setTimeout: (cb, ms) => {
+      setTimeout: (_cb, ms) => {
         setTimeoutCalls.push(ms);
         // Don't actually fire — we just want to count calls
         return setTimeoutCalls.length;
