@@ -1,7 +1,7 @@
 {
   "name": "@dpantani/tdmcp",
   "mcpName": "io.github.Pantani/tdmcp",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "tdmcp — the TouchDesigner MCP server. Build real TouchDesigner visual systems from plain language with Claude, Cursor, or Codex (Model Context Protocol).",
   "type": "module",
   "license": "MIT",
@@ -54,6 +54,7 @@
     "typecheck": "tsc --noEmit",
     "import:bottobot": "tsx scripts/import-bottobot-data.ts",
     "validate:recipes": "tsx scripts/validate-recipes.ts",
+    "lint:recipes": "tsx scripts/lint-recipes.ts",
     "smoke:live": "tsx scripts/smoke-live.ts",
     "shader-park:tox": "node scripts/fetch-shader-park-td.mjs",
     "smoke:packages": "tsx scripts/smoke-packages.ts",

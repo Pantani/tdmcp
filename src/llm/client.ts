@@ -1,5 +1,67 @@
 import type { TdmcpConfig } from "../utils/config.js";
 
+// ---------- Multimodal / completion shapes (shared between LlmClient + SamplingLlmClient) ----------
+
+/** Image part for a multimodal user turn (base64 payload + mime type). */
+export interface ImagePart {
+  type: "image";
+  /** Base64-encoded image bytes (no `data:` URI prefix). */
+  data: string;
+  /** e.g. "image/png", "image/jpeg". */
+  mimeType: string;
+}
+
+/** Text part for a multimodal user turn. */
+export interface TextPart {
+  type: "text";
+  text: string;
+}
+
+export type ContentPart = TextPart | ImagePart;
+
+/** A multimodal message: string content stays valid; arrays carry images. */
+export interface MultimodalMessage {
+  role: "system" | "user" | "assistant";
+  content: string | ContentPart[];
+}
+
+/** Options for {@link LlmClientLike.complete}. */
+export interface CompleteOptions {
+  /** System instruction. Overrides any leading `system` message in `messages`. */
+  system?: string;
+  /** Upper bound on sampled tokens. */
+  maxTokens?: number;
+  temperature?: number;
+  stopSequences?: string[];
+  /** Cancel an in-flight completion. */
+  signal?: AbortSignal;
+  /** Per-call timeout in ms. */
+  timeoutMs?: number;
+}
+
+/** Result of {@link LlmClientLike.complete}. */
+export interface CompleteResult {
+  /** Assembled assistant text. Empty string when the model returned non-text content. */
+  text: string;
+  /** Model id the backend reports, when known. */
+  model?: string;
+  /** `"endTurn" | "stopSequence" | "maxTokens" | string`, when known. */
+  stopReason?: string;
+}
+
+/**
+ * Structural capability set every LLM backend must satisfy: streaming chat for
+ * the agentic copilot, plus a one-shot `complete()` for vision/captioning tools.
+ */
+export interface LlmClientLike {
+  chatStream(
+    messages: ChatMessage[],
+    tools: OpenAITool[],
+    opts?: StreamOptions,
+  ): Promise<ChatMessage>;
+  complete(messages: MultimodalMessage[], opts?: CompleteOptions): Promise<CompleteResult>;
+}
+
 /** A single chat message in the OpenAI chat-completions shape. */
 export interface ChatMessage {
   role: "system" | "user" | "assistant" | "tool";
@@ -154,8 +216,85 @@ async function readLines(
  * target is a local Ollama server, but the same code talks to LM Studio, a cloud
  * GPU, or a paid API — the only knobs are base URL, model and an optional token.
  */
-export class LlmClient {
+export class LlmClient implements LlmClientLike {
   constructor(private readonly cfg: LlmConfig) {}
+
+  /**
+   * One-shot non-streaming completion against OpenAI-compatible /chat/completions.
+   * Multimodal image parts are forwarded in OpenAI's `image_url` form (data URL).
+   */
+  async complete(
+    messages: MultimodalMessage[],
+    opts: CompleteOptions = {},
+  ): Promise<CompleteResult> {
+    const oaiMessages = messages.map((m) => {
+      if (typeof m.content === "string") {
+        if (m.role === "system" && opts.system !== undefined) {
+          return { role: m.role, content: opts.system };
+        }
+        return { role: m.role, content: m.content };
+      }
+      const parts = m.content.map((p) =>
+        p.type === "text"
+          ? { type: "text" as const, text: p.text }
+          : {
+              type: "image_url" as const,
+              image_url: { url: `data:${p.mimeType};base64,${p.data}` },
+            },
+      );
+      return { role: m.role, content: parts };
+    });
+    // Honor an explicit system override even when no system message was given.
+    const finalMessages =
+      opts.system !== undefined && !messages.some((m) => m.role === "system")
+        ? [{ role: "system" as const, content: opts.system }, ...oaiMessages]
+        : oaiMessages;
+
+    const body: Record<string, unknown> = {
+      model: this.cfg.llmModel,
+      messages: finalMessages,
+      stream: false,
+    };
+    if (opts.maxTokens != null) body.max_tokens = opts.maxTokens;
+    if (opts.temperature != null) body.temperature = opts.temperature;
+    if (opts.stopSequences?.length) body.stop = opts.stopSequences;
+
+    let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+    let signal = opts.signal;
+    if (opts.timeoutMs != null) {
+      const ctrl = new AbortController();
+      timeoutHandle = setTimeout(() => ctrl.abort(), opts.timeoutMs);
+      if (opts.signal) {
+        if (opts.signal.aborted) ctrl.abort();
+        else opts.signal.addEventListener("abort", () => ctrl.abort(), { once: true });
+      }
+      signal = ctrl.signal;
+    }
+    try {
+      const res = await fetch(`${this.cfg.llmBaseUrl}/chat/completions`, {
+        method: "POST",
+        headers: this.headers(),
+        body: JSON.stringify(body),
+        signal,
+      });
+      if (!res.ok) {
+        const errBody = await res.text();
+        throw new Error(`LLM endpoint returned HTTP ${res.status}: ${errBody.slice(0, 300)}`);
+      }
+      const data = (await res.json()) as {
+        choices?: Array<{ message?: { content?: string }; finish_reason?: string }>;
+        model?: string;
+      };
+      const choice = data.choices?.[0];
+      return {
+        text: choice?.message?.content ?? "",
+        ...(data.model ? { model: data.model } : {}),
+        ...(choice?.finish_reason ? { stopReason: choice.finish_reason } : {}),
+      };
+    } finally {
+      if (timeoutHandle) clearTimeout(timeoutHandle);
+    }
+  }
 
   private headers(): Record<string, string> {
     const h: Record<string, string> = { "content-type": "application/json" };

@@ -1,4 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { resolveLlmClient } from "../llm/resolve.js";
 import { registerAllPrompts } from "../prompts/index.js";
 import { registerAllResources } from "../resources/index.js";
 import { registerAllTools } from "../tools/index.js";
@@ -31,6 +32,10 @@ export function createTdmcpServer(
     { name: "tdmcp", version: getVersion() },
     { instructions: INSTRUCTIONS },
   );
+
+  // Wire the LLM shim now that the underlying Server exists. Sampling capability is
+  // probed lazily inside resolveLlmClient — no `sampling` server capability declared.
+  ctx.llm = resolveLlmClient(config, server.server);
 
   registerAllTools(server, ctx);
   registerAllResources(server, { knowledge, recipes, logger });
