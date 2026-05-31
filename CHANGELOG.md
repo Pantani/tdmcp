@@ -26,6 +26,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Five new library/packaging tools** (campaign Wave 4 — library surface), all live-validated in TD 099: diff_library_assets, import_recipe_from_url, export_palette_component, collect_project_assets, project_documentation_site.
+- **Four new AI/LLM features** (campaign Wave 6): caption_top, repair_network (tools; qa_unverified — offline unit-tested); teach_touchdesigner, design_brief (prompts; qa_pass).
 - **Nine new artist-control tools** (campaign Wave 3 — artist-controls surface of
   the discovery backlog). Eight were live-validated in TouchDesigner 099 (create →
   cook → zero post-cook errors); `create_blob_reactive` is built + unit-tested but
