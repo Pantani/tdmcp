@@ -113,7 +113,7 @@ export function shellSplit(input: string): string[] {
   let inSingle = false;
 
   for (let i = 0; i < input.length; i++) {
-    const ch = input[i]!;
+    const ch = input[i] ?? "";
     if (ch === '"' && !inSingle) {
       inDouble = !inDouble;
     } else if (ch === "'" && !inDouble) {
@@ -169,8 +169,8 @@ function normalizeEntry(raw: Record<string, unknown>, idx: number): Record<strin
 function parseEveryString(s: string): number {
   const m = /^(\d+(\.\d+)?)\s*([smh])$/.exec(s.trim());
   if (!m) throw new Error(`Cannot parse interval "${s}" — use Ns, Nm, or Nh`);
-  const n = parseFloat(m[1]!);
-  const unit = m[3]!;
+  const n = parseFloat(m[1] ?? "0");
+  const unit = m[3] ?? "s";
   if (unit === "s") return Math.round(n);
   if (unit === "m") return Math.round(n * 60);
   return Math.round(n * 3600);
@@ -193,8 +193,9 @@ export function parseScheduleInput(
     // Plain YAML (no front-matter) — parse the raw body via gray-matter's
     // bundled YAML engine. Returning `parsed.data` here would always be `{}`,
     // which would later fail with an empty `entries` list.
-    const yamlEngine = (matter as unknown as { engines: { yaml: { parse: (s: string) => unknown } } })
-      .engines.yaml;
+    const yamlEngine = (
+      matter as unknown as { engines: { yaml: { parse: (s: string) => unknown } } }
+    ).engines.yaml;
     const yamlInput = yamlEngine.parse(raw);
     return { ok: true, input: yamlInput ?? {} };
   } catch (e: unknown) {
@@ -319,7 +320,7 @@ function parseCronAt(s: string): Date {
   const [datePart, timePart] = s.split(" ");
   const [y, mo, d] = (datePart ?? "").split("/").map(Number);
   const [hh, mm, ss] = (timePart ?? "").split(":").map(Number);
-  return new Date(y!, (mo ?? 1) - 1, d!, hh!, mm!, ss ?? 0, 0);
+  return new Date(y ?? 0, (mo ?? 1) - 1, d ?? 1, hh ?? 0, mm ?? 0, ss ?? 0, 0);
 }
 
 function pad2(n: number): string {
@@ -498,7 +499,7 @@ export async function runScheduler(opts: RunSchedulerOpts): Promise<SchedulerSum
     if (entry.trigger.kind === "at") {
       if (args.loop) {
         // Re-schedule for tomorrow same wall-clock
-        state.nextFire = nextFireAt(entry, new Date(clock.now()), emit)!;
+        state.nextFire = nextFireAt(entry, new Date(clock.now()), emit) ?? state.nextFire;
         state.fired = false;
         emit({
           t: "scheduled",

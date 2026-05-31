@@ -190,7 +190,8 @@ describe("runBridgeWatchBuild (watch mode)", () => {
     // Use a short debounce so the test completes quickly with real timers.
     const watchPromise = runBridgeWatchBuild(["--debounce-ms", "50"]);
     await waitForWatcher();
-    const watcher = watcherBox.current!;
+    const watcher = watcherBox.current;
+    if (!watcher) throw new Error("watcher not initialised");
 
     // emit 5 changes quickly — all within the 50 ms debounce window
     for (let i = 0; i < 5; i++) {
@@ -212,7 +213,8 @@ describe("runBridgeWatchBuild (watch mode)", () => {
     resetSpawn([{ exitCode: 0 }]);
     const watchPromise = runBridgeWatchBuild(["--debounce-ms", "50"]);
     await waitForWatcher();
-    const watcher = watcherBox.current!;
+    const watcher = watcherBox.current;
+    if (!watcher) throw new Error("watcher not initialised");
 
     // Give the event loop a tick so the SIGINT listener is registered.
     await new Promise((r) => setTimeout(r, 10));

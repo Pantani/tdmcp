@@ -48,7 +48,8 @@ function walkRel(root: string, sub: string): string[] {
   const results: string[] = [];
   const stack = [sub];
   while (stack.length > 0) {
-    const cur = stack.pop()!;
+    const cur = stack.pop();
+    if (cur === undefined) break;
     const curFull = join(root, cur);
     const stat = statSync(curFull);
     if (stat.isDirectory()) {
@@ -101,7 +102,7 @@ function buildMergeLog(
   }
 
   for (const kind of Object.keys(byKind)) {
-    const group = byKind[kind]!;
+    const group = byKind[kind] ?? [];
     const counts: Record<string, number> = {};
     for (const e of group) counts[e.action] = (counts[e.action] ?? 0) + 1;
     const summary = Object.entries(counts)

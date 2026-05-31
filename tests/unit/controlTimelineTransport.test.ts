@@ -96,10 +96,9 @@ describe("controlTimelineTransportImpl", () => {
         // Decode the __PAYLOAD_B64__ from the script
         const match = capturedScript.match(/_payload_b64 = "([^"]+)"/);
         expect(match).not.toBeNull();
-        const payload = JSON.parse(Buffer.from(match![1]!, "base64").toString("utf-8")) as Record<
-          string,
-          unknown
-        >;
+        const payload = JSON.parse(
+          Buffer.from(match?.[1] ?? "", "base64").toString("utf-8"),
+        ) as Record<string, unknown>;
         expect(payload.action).toBe(action);
 
         if (action === "seek") expect(payload.frame).toBe(120);
