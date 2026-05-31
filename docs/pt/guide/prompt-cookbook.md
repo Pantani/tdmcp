@@ -71,6 +71,24 @@ câmera e de cor. Sem nós de geometria, só matemática.*
 TOP, com controles de Velocidade de morph e de superfície — volumes orgânicos, tipo
 argila, que pulsam e se fundem.*
 
+> *"Use estas três imagens de moodboard — oceano enevoado, cobre oxidado e luz fria
+> de catedral — e construa um sistema generativo compatível com post-FX."*
+
+<video src="/examples/moodboard-to-system-dispatch.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`moodboard_to_system` lê de 1 a 6 imagens, extrai intenção de paleta / movimento /
+gerador com o LLM configurado (ou fallback determinístico) e dispara um sistema
+Layer-1 compatível, com pós-processamento.*
+
+> *"Faça crescer um sistema orgânico de galhos a partir de um único caule, verde
+> musgo no preto, e deixe a taxa de crescimento reagir à música."*
+
+<video src="/examples/growth-system-branching.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Um gerador de L-system / turtle-growth engrossado como geometria SOP renderizável,
+com controles de gerações, ângulo de galho, passo e espessura — útil para vinhas,
+raízes, circuitos e line-art viva.*
+
 > *"Me puxe para um túnel de feedback infinito com zoom da minha webcam, deixando
 > rastros e girando, magenta profundo."*
 
@@ -116,6 +134,25 @@ dá preview sem permissão do mic.*
 opacidade ou do brilho de uma camada com o bumbo para ela pulsar no tempo, indo além
 de um simples Lag de suavização. O "pump de sidechain" que todo produtor de
 eletrônica conhece, aplicado a um visual.*
+
+> *"Divida esta faixa em cor por classe de nota, flashes de transiente e uma
+> estrutura lenta de energia, então conecte cada fluxo a uma parte diferente do
+> visual."*
+
+<video src="/examples/chroma-transient-energy.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Três caminhos novos de análise musical: `create_chroma_reactive` expõe 12 canais de
+classe de nota, `create_transient_reactive` separa percussão de sustain, e
+`create_energy_structure` detecta build / drop / breakdown com limiares adaptativos.*
+
+> *"Escute esta faixa de referência, extraia fingerprint de tempo / brilho / densidade
+> de ataques / dinâmica, e escolha automaticamente um sistema visual compatível."*
+
+<video src="/examples/audio-fingerprint-dispatch.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`audio_fingerprint_to_visual` amostra áudio, classifica o fingerprint e dispara um
+gerador ajustado, como glitch, caleidoscópio, feedback, partículas na GPU ou geometria
+reativa a áudio. Use `dry_run` primeiro quando quiser inspecionar a escolha.*
 
 ### MIDI & instrumentos
 
@@ -310,6 +347,16 @@ modo Perform como uma superfície de toque.*
 ativo — a contraparte determinística e programável do auto-VJ; ligue e desligue
 passos para compor um padrão repetido travado no relógio.*
 
+> *"Monte um sequenciador probabilístico onde calm quase sempre deriva para shimmer,
+> shimmer às vezes salta para um estouro de glitch, e blackout só acontece em drops
+> raros."*
+
+<video src="/examples/prob-sequencer-markov.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Um sequenciador de passos Markov para estados de show: a cada batida ele amostra a
+tabela de transições ponderadas, emite `state` e `trigger`, e guia cues ou parâmetros
+sem repetir um loop fixo.*
+
 > *"Monte uma timeline de três cenas para um set a 128 BPM: intro é um túnel de
 > feedback, drop é uma bola de espinhos reativa ao áudio, breakdown é uma correção
 > de cor cinematográfica. Deixe scrubbable e mantenha os ids dos slots do setlist."*
@@ -346,6 +393,15 @@ parâmetros ou scripts em vez de um metrônomo simples.*
 parâmetros salvos viram pesos numa tabela de morph que você pode automatizar, mapear
 em MIDI ou guiar por uma timeline de cenas.*
 
+> *"Grave minha varredura de cutoff do filtro por quatro compassos, então faça loop
+> como uma automation lane para eu tirar as mãos durante o drop."*
+
+<video src="/examples/automation-lane-loop.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_automation_lane` amostra um parâmetro-alvo num buffer em fase com o compasso
+e depois toca isso de volta por um Lookup CHOP. Chame a mesma lane em modo `record`
+ou `loop` para armar, capturar e tocar movimentos reutilizáveis de botão.*
+
 > *"No compasso 32 dispare o cue do drop, no compasso 64 inicie o auto-montage e no
 > fim da faixa congele a saída até eu limpar."*
 
@@ -363,6 +419,29 @@ por cima quando quiser um arranjador de música scrubbable.
 faders, leitura ao vivo e controles de panic numa página para celular/laptop. Use
 apenas numa rede confiável.*
 
+> *"Trave o show em timecode OSC de entrada, siga a timeline quadro a quadro e pule
+> para cues nomeados se o rótulo de timecode disser chorus ou blackout."*
+
+<video src="/examples/timecode-sync-lock.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`sync_timecode` conecta MTC / LTC / OSC timecode a um CHOP normalizado e pode guiar
+a timeline do TD. Combine com `control_timeline_transport` para comandos explícitos
+de play, pause, seek, rate e cue.*
+
+> *"Agende a instalação do lobby: iniciar a cena ocean todo dia útil às 09:00,
+> trocar para o set dusk às 18:00 e rodar um dry-run do agendamento primeiro."*
+
+*`tdmcp-agent schedule` é o companheiro cron-lite para instalações sem operador. Ele
+usa agendamento por relógio de parede com timezone, pode fazer dry-run e pode disparar
+comandos, cues ou setlists.*
+
+> *"Grave as próximas chamadas MCP como uma macro chamada soundcheck, então rode de
+> novo na segunda máquina depois que a rede do palco estiver online."*
+
+*Use `macro_recorder` para capturar uma macro JSON portátil e `run_macro_script` para
+reproduzi-la depois. O lado CLI também consegue fazer fanout de um comando para
+vários agentes remotos quando várias máquinas TD precisam do mesmo setup.*
+
 ## Saída & mapeamento
 
 > *"Mande o visual final para uma janela em tela cheia no meu segundo monitor."*
@@ -378,6 +457,20 @@ alinhar com uma parede, tela ou objeto.*
 
 > *"Grave a saída em um arquivo de vídeo por 30 segundos."*
 
+> *"Inspecione a GPU e os displays conectados, então me diga qual plano de saída é
+> seguro para este rig de projetores."*
+
+> *"Faça bridge deste TOP por shared memory para a máquina Unreal, e receba de volta
+> um fluxo CHOP de controle vindo do processo de luz."*
+
+> *"Monte uma pipeline de fixtures DMX para oito barras RGBW via Art-Net universo 1,
+> com canais de dimmer, cor e strobe expostos."*
+
+**O que você recebe:** ferramentas de preparação de palco para displays, capacidade
+de GPU, DMX / Art-Net, IPC por shared memory e fanout multi-agente. Nesses casos de
+infraestrutura, a saída útil costuma ser um relatório de roteamento verificado em vez
+de um preview bonito.
+
 ## Consertar & entender
 
 > *"Algo parece quebrado — confira a rede em busca de erros e conserte."*
@@ -385,6 +478,18 @@ alinhar com uma parede, tela ou objeto.*
 > *"Explique o que esta rede está fazendo, passo a passo."*
 
 > *"Isto está lento — ache o gargalo e otimize."*
+
+> *"Pontue este build em paleta, movimento, complexidade, erros e performance, então
+> sugira as menores mudanças que melhorariam o resultado."*
+
+<video src="/examples/score-enhance-loop.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`score_build` é read-only e devolve uma rubrica de 0 a 100 com sugestões
+determinísticas. `enhance_build` pode pré-visualizar ou aplicar um pequeno ciclo de
+melhoria permitido, então pontuar de novo para mostrar se a intervenção ajudou.*
+
+> *"Faça profile de cook cost por 60 frames e ranqueie os nós com maior chance de
+> causar queda de frame."*
 
 > *"Arrume o layout para eu conseguir ler."*
 
@@ -407,6 +512,31 @@ entregar a outro agente.
 programáveis, um README em Markdown gerado (com thumbnail de preview) ou um guia de
 agente local do projeto — o lado de *empacotamento* do tdmcp que complementa os
 geradores acima.
+
+> *"Monte uma cadeia CHOP que suaviza o grave, detecta picos, escala para 0-1 e
+> termina num Null pronto para bind_to_channel."*
+
+> *"Monte uma cadeia SOP para uma fita varrida: line, noise deform, resample, sweep e
+> null para eu instanciar partículas ao longo dela."*
+
+> *"Crie um Script CHOP chamado gate_logic com parâmetros customizados Threshold e
+> Hold e um stub onCook pronto para editar."*
+
+**O que você recebe:** autoria estruturada Layer-2 sem cerimônia de Python cru:
+`build_chop_chain`, `build_sop_geometry` e `author_script_operator` montam cadeias e
+stubs tipados mantendo os avisos localizados no estágio que falhou.
+
+> *"Carimbe provenance neste .tox, gere checksum do pack e crie um grafo de lineage
+> para tudo que faz remix dele."*
+
+> *"Empacote estes quatro slots de preset-morph num JSON do vault, gere três
+> variantes e escreva um changelog de componente antes de sincronizar o vault com
+> git."*
+
+**O que você recebe:** ferramentas de confiança de biblioteca em torno de arquivos
+reais: sidecars de provenance, manifests sha256, grafos de lineage, curated packs,
+morph packs, variant packs, helpers de merge/sync de vault e changelogs por
+componente. Bom para rigs de turnê onde "qual versão está neste laptop?" importa.
 
 ## Autoria de shader & material
 

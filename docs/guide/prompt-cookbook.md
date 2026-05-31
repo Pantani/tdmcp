@@ -67,6 +67,24 @@ you fly through, with camera-Speed and color controls. No geometry nodes, all ma
 *A Shader Park-style SDF sculpt (blended spheres and noise) compiled to a GLSL TOP,
 with morph-Speed and surface controls — organic, clay-like volumes that pulse and merge.*
 
+> *"Use these three moodboard images — foggy ocean, oxidized copper and cold
+> cathedral light — and build a matching generative system with post-FX."*
+
+<video src="/examples/moodboard-to-system-dispatch.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`moodboard_to_system` reads 1–6 images, extracts palette / motion / generator
+intent with the configured LLM (or deterministic fallback), then dispatches a
+matching Layer-1 system plus post-processing.*
+
+> *"Grow an organic branching system from a single stem, moss green on black, and
+> let the growth rate react to the music."*
+
+<video src="/examples/growth-system-branching.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*An L-system / turtle-growth generator thickened into renderable SOP geometry, with
+controls for generations, branch angle, step length and thickness — useful for vines,
+roots, circuitry and living line-art.*
+
 > *"Pull me into an endless zooming feedback tunnel of my webcam, trailing and
 > spinning, deep magenta."*
 
@@ -108,6 +126,25 @@ that dances to the track. Uses a synthetic source so it previews without mic per
 *An attack/release envelope follower with gate/duck — sidechain a layer's opacity or
 brightness to the kick so it pumps in time, going beyond a plain Lag smoothing. The
 "sidechain pump" every electronic producer knows, applied to a visual.*
+
+> *"Split this track into pitch-class color, transient flashes and a slow energy
+> structure, then bind each stream to a different part of the look."*
+
+<video src="/examples/chroma-transient-energy.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Three newer music-analysis paths: `create_chroma_reactive` exposes 12 pitch-class
+channels, `create_transient_reactive` separates percussion from sustain, and
+`create_energy_structure` detects build / drop / breakdown edges with adaptive
+thresholds.*
+
+> *"Listen to this reference track, fingerprint its tempo / brightness / onset
+> density / dynamics, and choose a matching visual system automatically."*
+
+<video src="/examples/audio-fingerprint-dispatch.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`audio_fingerprint_to_visual` samples audio, classifies the fingerprint, and
+dispatches a tuned generator such as glitch, kaleidoscope, feedback, GPU particles
+or audio-reactive geometry. Use `dry_run` first when you want to inspect the choice.*
 
 ### MIDI & instruments
 
@@ -322,6 +359,15 @@ Ableton Session-view clip grid for your visuals.*
 deterministic, programmable counterpart to the auto-VJ. Toggle steps to compose a
 repeating pattern locked to the clock, like a drum machine for visual events.*
 
+> *"Build a probabilistic sequencer where calm usually drifts to shimmer, shimmer
+> sometimes jumps to a glitch burst, and blackout only happens on rare drops."*
+
+<video src="/examples/prob-sequencer-markov.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*A Markov step sequencer for show states: on each beat it samples the weighted
+transition table, emits `state` and `trigger`, and drives cues or parameters without
+repeating a fixed loop.*
+
 > *"Build a three-scene timeline for a 128 BPM set: intro is a feedback tunnel,
 > drop is an audio-reactive spike ball, breakdown is a cinematic color wash. Make
 > it scrubbable and keep the setlist slot ids."*
@@ -358,6 +404,15 @@ parameter or script callbacks instead of a plain metronome.*
 parameter states become weights in a morph table you can automate, MIDI-map or drive
 from a scene timeline.*
 
+> *"Record my filter cutoff sweep over four bars, then loop it as an automation
+> lane so I can take my hands off during the drop."*
+
+<video src="/examples/automation-lane-loop.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_automation_lane` samples a target parameter into a bar-phased buffer, then
+plays it back through a Lookup CHOP. Re-call the same lane in `record` or `loop` mode
+to arm, capture and perform reusable knob moves.*
+
 > *"At bar 32 fire the drop cue, at bar 64 start the auto-montage, and at the end of
 > the track freeze the output until I clear it."*
 
@@ -372,6 +427,29 @@ scrubbable song-mode arranger.
 
 *A single live-performance cockpit served from TouchDesigner: cue launch, faders,
 readout and panic controls in one phone/laptop page. Keep it on a trusted network.*
+
+> *"Lock the show to incoming OSC timecode, follow the timeline frame-for-frame, and
+> jump to named cues if the timecode label says chorus or blackout."*
+
+<video src="/examples/timecode-sync-lock.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`sync_timecode` wires MTC / LTC / OSC timecode into a normalized CHOP and can drive
+the TD timeline. Pair it with `control_timeline_transport` for explicit play, pause,
+seek, rate and cue commands.*
+
+> *"Schedule the lobby installation: start the ocean scene every weekday at 09:00,
+> switch to the dusk set at 18:00, and dry-run the schedule first."*
+
+*`tdmcp-agent schedule` is the cron-lite companion for unattended installs. It uses
+wall-clock scheduling with timezone handling, can dry-run, and can fire commands,
+cues or setlists.*
+
+> *"Record the next few MCP tool calls as a macro called soundcheck, then replay it
+> on the second machine after the stage network comes online."*
+
+*Use `macro_recorder` to capture a portable JSON macro and `run_macro_script` to
+replay it later. The CLI side can also fan out a command to multiple remote agents
+when several TD machines need the same setup.*
 
 ## Output & mapping
 
@@ -388,6 +466,19 @@ up with a wall, screen or object.*
 
 > *"Record the output to a movie file for 30 seconds."*
 
+> *"Inspect the GPU and connected displays, then tell me which output plan is safe
+> for this projector rig."*
+
+> *"Bridge this TOP over shared memory to the Unreal machine, and receive a CHOP
+> control stream back from the lighting process."*
+
+> *"Build a DMX fixture pipeline for eight RGBW bars over Art-Net universe 1, with
+> dimmer, color and strobe channels exposed."*
+
+**What you'll get:** stage-prep tools for displays, GPU capability, DMX / Art-Net,
+shared-memory IPC and multi-agent fanout. These are infrastructure surfaces, so the
+useful output is usually a verified routing report rather than a pretty preview.
+
 ## Fixing & understanding
 
 > *"Something looks broken — check the network for errors and fix them."*
@@ -398,6 +489,18 @@ up with a wall, screen or object.*
 > *"Explain what this network is doing, step by step."*
 
 > *"This is running slow — find the bottleneck and optimize it."*
+
+> *"Score this build on palette, motion, complexity, errors and performance, then
+> suggest the smallest changes that would improve it."*
+
+<video src="/examples/score-enhance-loop.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`score_build` is read-only and returns a 0–100 rubric with deterministic
+suggestions. `enhance_build` can preview or apply a small allowlisted improvement
+loop, then rescore so you can see whether the intervention helped.*
+
+> *"Profile cook cost for 60 frames and rank the nodes most likely to cause a frame
+> drop."*
 
 > *"Audit this project — what's unused, what file paths are broken, which COMPs are
 > orphaned?"*
@@ -423,6 +526,30 @@ Turn a working network into something you can reuse, share and hand to another a
 **What you'll get:** declarative custom-parameter pages, scriptable extensions, a
 generated Markdown README (with a preview thumbnail), or a project-local agent guide —
 the *packaging* side of tdmcp that complements the generators above.
+
+> *"Build a CHOP chain that smooths the bass, detects peaks, scales it to 0-1 and
+> ends in a Null ready for bind_to_channel."*
+
+> *"Build a SOP chain for a swept ribbon: line, noise deform, resample, sweep and
+> null it so I can instance particles along it."*
+
+> *"Author a Script CHOP called gate_logic with custom Threshold and Hold parameters
+> and a ready-to-edit onCook stub."*
+
+**What you'll get:** structured Layer-2 authoring without raw Python ceremony:
+`build_chop_chain`, `build_sop_geometry` and `author_script_operator` assemble typed
+chains and stubs while keeping warnings localized to the failing stage.
+
+> *"Stamp provenance on this .tox, checksum the pack, and generate a lineage graph
+> for everything that remixes it."*
+
+> *"Pack these four preset-morph slots into a vault JSON, make three variants, and
+> write a component changelog trail before I sync the vault to git."*
+
+**What you'll get:** library-trust tools around real files: provenance sidecars,
+sha256 manifests, lineage graphs, curated packs, morph packs, variant packs, vault
+merge/sync helpers and per-component changelogs. Good for touring rigs where "which
+version is on this laptop?" matters.
 
 ## Shader & material authoring
 
