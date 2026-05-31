@@ -10,10 +10,15 @@ can build real visual systems from plain language — no node-wiring by hand. Th
 page is the honest, bird's-eye picture of **what already works, what's still
 rough, and what's coming next** on the way to a stable 1.0.
 
-**Where things stand today.** The current release is **v0.7.0** — on
+**Where things stand today.** The latest public release is **v0.6.1** — on
 [npm](https://www.npmjs.com/package/@dpantani/tdmcp) and
-[GitHub](https://github.com/Pantani/tdmcp) — exposing **179 tools** (245 on `main` pending release). The project
-has grown through four arcs:
+[GitHub](https://github.com/Pantani/tdmcp) — exposing **179 tools**. `main` is
+ahead of that release: the package manifests are on the **v0.7.0** line and the
+BEYOND campaign has landed through Waves 1-5, bringing the registry to **245**
+tools. There is no public `v0.7.x` tag, GitHub Release or npm publish yet, so
+read the 0.7.x sections below as **merged on `main`, pending release**.
+
+The project has grown through five arcs:
 
 1. **Generate** — one-line tools that build a whole wired network (audio-reactive,
    generative, feedback, 3D, particles, shaders).
@@ -22,13 +27,18 @@ has grown through four arcs:
 3. **Package & operate** — reusable components, project analysis, token-cheap
    editing primitives, and a structured bridge that keeps working in a
    locked-down venue.
-4. **Compose & ingest** *(next)* — run a whole arranged show over time, and pull
-   in the wider TouchDesigner world (Shadertoy / ISF shaders, Ableton, the iconic
-   VJ looks).
+4. **Compose & automate** *(merged on `main`, pending release)* — run a whole
+   arranged show over time, with timelines, setlists, schedulers, cue composition
+   and live-safety controls.
+5. **Ingest & extend** *(next)* — pull in the wider TouchDesigner world
+   (Shadertoy / ISF shaders, Ableton, the iconic VJ looks) and finish the last
+   operator/deployment ergonomics.
 
 > **How to read this page**
 >
 > - ✅ **Shipped** — in a released version you can install today.
+> - 🚧 **Merged on `main`** — implemented in the repository, but not yet in a
+>   public npm/GitHub release.
 > - 🧪 **Experimental** — shipped and usable, but needs live tuning or specific
 >   hardware to shine (flagged so you know what to expect).
 > - ⬜ **Planned** — designed and prioritized, not yet built.
@@ -42,7 +52,52 @@ has grown through four arcs:
 
 ---
 
-## ✅ Shipped
+## 🚧 Merged on `main`, pending release
+
+### v0.7.x — BEYOND campaign · main line, not yet public
+
+The BEYOND work is already in the repository and documented in `CHANGELOG.md`,
+but it has not been tagged or published to npm/GitHub Releases yet. Treat this
+as the next release train: installable users still get v0.6.1 until the public
+release is cut.
+
+- **Wave 1 / v0.7.0 manifest — live-show foundation + all P0.** Shared
+  setlist/scene schema, memory-note schema, server-sampling LLM fallback,
+  `setlist_runner`, `create_scene_timeline`, `create_auto_montage`,
+  `create_euclidean_sequencer`, `create_preset_morph`, `create_scheduler`,
+  `create_glsl_material`, `auto_tag_library_asset`, `recall_similar_work`,
+  `style_memory`, `lint_recipe_library`, plus `tdmcp panic` and
+  `tdmcp dashboard`.
+- **Wave 1.5 / changelog v0.7.1, not tagged.** `import_setlist` and
+  `export_setlist_to_vault` now share `SetlistSchema`; `scaffold_vault` seeds
+  `Memory/README.md` and `Memory/style.md`; `save_recipe_to_vault` and
+  `save_component_to_vault` can opt into deterministic auto-tagging.
+- **Wave 2 — show automation + musical reactivity.** `compose_cue_list`,
+  `create_prob_sequencer`, `create_automation_lane`, `scene_scheduler`,
+  `create_chroma_reactive`, `create_transient_reactive`,
+  `create_energy_structure`, `create_two_way_surface` and
+  `create_phone_gesture`. The last two remain hardware-gated; the three
+  musical-reactivity tools are experimental.
+- **Wave 3 — library provenance + AI dispatch + scene resource.**
+  `provenance_stamp`, `checksum_and_verify_pack`, `library_lineage_graph`,
+  `morph_pack`, `learn_conventions`, `moodboard_to_system`,
+  `audio_fingerprint_to_visual`, `score_build`, and the live
+  `tdmcp://scene/{view}` resource.
+- **Wave 4 — TD-depth authoring + DX accelerators.** `create_engine_comp`,
+  `create_dmx_fixture_pipeline`, `scaffold_tool_generator`,
+  `extend_data_source_fabric`, `build_chop_chain`, `author_script_operator`,
+  `profile_cook_cost`, `control_timeline_transport`,
+  `inspect_gpu_and_displays`, `macro_recorder`, `tdmcp-agent watch-build` and
+  `tdmcp-agent soundcheck-monitor`.
+- **Wave 5 — final BEYOND tail.** `curated_collection_pack`,
+  `component_changelog_trail`, `merge_vaults`, `vault_repo_sync`,
+  `variant_pack`, `learn_from_my_corpus`, `create_shared_memory_bridge`,
+  `build_sop_geometry`, `sync_timecode`, `manage_component_storage`,
+  `enhance_build`, `create_growth_system`, `run_macro_script`,
+  `tdmcp-agent log-tail`, `record-fixtures`, `fanout`, `controller-bridge`,
+  and `voice` / `llm-voice`.
+
+## ✅ Published releases
 
 ### v0.6.x — TouchDesigner depth & library fidelity
 
@@ -146,10 +201,15 @@ with knobs.
 
 ## 🧪 Experimental & needs validation
 
-These ship today and are usable, but they carry an honest caveat — they need live
-tuning, specific hardware, or a final on-hardware check before they're considered
-solid.
+These are usable in the latest public release or on the current `main` branch,
+but they carry an honest caveat — they need live tuning, specific hardware, or a
+final on-hardware check before they're considered solid.
 
+- **0.7.x main-only experimental/gated tools** — `create_chroma_reactive`,
+  `create_transient_reactive` and `create_energy_structure` are merged as
+  experimental; `create_two_way_surface` and `create_phone_gesture` remain
+  `unverified_pending_hardware`; `caption_top` and `repair_network` are
+  offline-tested but still need live vision / rollback tuning.
 - **Obsidian vault tools** — fully unit-tested, but their live round-trip inside a
   running TouchDesigner hasn't been exercised end-to-end yet.
 - **Signal-detection tools** — `detect_pitch` (reads near-zero with the default
@@ -174,121 +234,20 @@ solid.
 
 ## ⬜ Planned — the road to 1.0 {#planned}
 
-With the tool set mature (~179 tools), the highest-value work has moved **up a
-level** — from *making* a single visual to *running a whole show* and *connecting
-to the wider TouchDesigner world*. The next steps are grouped into **four
-milestones, ordered by dependency and live-show impact**. Within a milestone the
-tools are largely independent and build in parallel; a few share a foundation that
-comes first. Version targets are a rough sequence, **not a promise** — order can
-shift. The exhaustive, item-by-item backlog (with effort and impact) lives in the
-[planning archive](#full-backlog).
+With the BEYOND campaign merged on `main`, the next public roadmap is no longer
+about proving tdmcp can run a whole show — that line is now in the release train.
+The highest-value open work is to **ship the 0.7.x train cleanly**, then connect
+tdmcp to the wider TouchDesigner/VJ ecosystem and finish the last deployment,
+operator and AI ergonomics. Version targets are a rough sequence, **not a
+promise** — order can shift. The exhaustive, item-by-item backlog (with effort
+and impact) lives in the [planning archive](#full-backlog).
 
-### Foundations first
+### Release gate — publish the 0.7.x train
 
-Three pieces each unlock a whole cluster, so they're worth building *before* the
-features that depend on them:
-
-- **One shared setlist / scene schema** (plus a Timer-CHOP scheduler primitive) —
-  unlocks the entire show-automation stack in Milestone 1.
-- **Running LLM-backed tools through the connected agent's own model** (instead of
-  a local Ollama setup) — unlocks the whole AI family in Milestone 3.
-- **`auto_tag_library_asset`** — makes the library searchable by default and feeds
-  search, lineage and linting across the library track.
-
-### Milestone 1 — Run a whole show · v0.7.0 (shipped 2026-05-31)
-
-*Campaign `beyond_20260530` Wave 1 — the live-show foundation. Shared
-setlist/scene schema, memory-note schema, and a server-sampling LLM fallback,
-plus the P0 show-automation consumers (`setlist_runner`, `create_scene_timeline`,
-`create_auto_montage`, `create_euclidean_sequencer`, `create_preset_morph`,
-`create_scheduler`, `create_glsl_material`), the library/vault keystone
-(`auto_tag_library_asset`, `recall_similar_work`, `style_memory`,
-`lint_recipe_library`), and the live-safety CLI verbs (`tdmcp panic`,
-`tdmcp dashboard`).*
-
-- **Show automation** — build the shared scene schema first, then in parallel:
-  **`setlist_runner`** (headless show driver), **`create_scene_timeline`** (in-TD
-  bar-timed arranger), and **`scene_scheduler`** (wall-clock, for unattended
-  installations). **`compose_cue_list`** (words → a fireable cue sequence) starts
-  here and gets smarter in Milestone 3.
-- **Content for the auto-VJ** *(independent → parallel)* — **`create_auto_montage`**
-  (beat-quantized cutting across sources — what the hands-free AI-VJ director has
-  nothing to drive today), **`create_euclidean_sequencer`** (algorithmic rhythm),
-  **`create_preset_morph`** (a true N-way mood blend).
-- **Ship-it-now safety win** — **`tdmcp panic` / `blackout`**, a one-word verb you
-  can type under pressure.
-- **Library keystone** — **`auto_tag_library_asset`** (one of the foundations
-  above).
-
-### Milestone 1.5 — Show automation + musical reactivity · (Unreleased — pending version bump)
-
-*Campaign `beyond_20260530` Wave 2 — turns the v0.7.0 live-show foundation into
-a smarter, more musical conductor. Eight Layer-1 tools and one CLI verb (registry
-now 213). `compose_cue_list` lands here (carries into Milestone 3 for the deeper
-NL pass). `create_phone_gesture` and `create_two_way_surface` are gated
-`unverified_pending_hardware` (live phone + motorized-controller probe required).
-`create_chroma_reactive`, `create_transient_reactive`, and
-`create_energy_structure` ship marked `[experimental]`.*
-
-- **Show automation** — **`compose_cue_list`** (natural language → fireable cue
-  sequence, LLM with grammar fallback), **`create_automation_lane`** (record + loop
-  a param sweep on a bar phase via beatCHOP), and **`scene_scheduler`**
-  (`tdmcp-agent schedule <file>` — cron-lite, DST-faithful wall-clock driver for
-  unattended installations).
-- **Musical reactivity** *(experimental)* — **`create_chroma_reactive`** (FFT → 12
-  pitch-class channels), **`create_transient_reactive`** (analyzeCHOP RMS +
-  filterCHOP lag → transient/sustain split), **`create_energy_structure`**
-  (adaptive energy with build/drop/breakdown edges).
-- **Sequencing & control** — **`create_prob_sequencer`** (Markov-chain step
-  sequencer with beat-pointer dedup), **`create_two_way_surface`** *(pending
-  hardware)* — closed-loop OSC/MIDI feedback to motorized/lit controllers — and
-  **`create_phone_gesture`** *(pending hardware)* — IMU + multitouch from a phone
-  over a Web Server DAT.
-
-### Milestone 1.7 — TD-depth authoring + DX accelerators · (Unreleased — pending version bump)
-
-*Campaign `beyond_20260530` Wave 4 — drops 10 new MCP tools (Layer 1/2/3 +
-a new `cli` tool group) and 2 long-running CLI streamers. Registry now **231**
-(was 221). Pushes the TouchDesigner authoring depth (Engine COMP clustering,
-DMX/Art-Net pipelines, Script-OP authoring, CHOP-chain recipes, timeline
-transport, GPU/display inventory, cook-cost profiler) and the agent DX
-(tool scaffolder, macro recorder, dev-loop watcher, soundcheck monitor).*
-
-- **TD-depth authoring** — **`create_engine_comp`** (load-balanced Engine COMP
-  cluster), **`create_dmx_fixture_pipeline`** (DMX/Art-Net fixture pipeline),
-  **`build_chop_chain`** (typed CHOP-processing recipes), and
-  **`author_script_operator`** (validated Script CHOP/TOP/SOP/DAT authoring).
-- **Telemetry & control** — **`profile_cook_cost`** (per-node cook profiler),
-  **`control_timeline_transport`** (structured play/pause/seek/rate/range), and
-  **`inspect_gpu_and_displays`** (offline-friendly host capability inventory).
-- **Agent DX** — **`scaffold_tool_generator`** (scaffold a tool + msw test from
-  a spec), **`extend_data_source_fabric`** (new data-feed adapters), and the
-  **`macro_recorder`** tool with a process-wide `wrapHandler` hook (replay
-  ships next wave as `run_macro_script`).
-- **CLI streamers** — **`tdmcp-agent watch-build`** (chokidar dev-loop with
-  debounced tsc/tsup) and **`tdmcp-agent soundcheck-monitor`** (rolling-window
-  RMS/peak/silence alert streamer).
-
-### Milestone 1.9 — Library trust + CLI/remote ergonomics + AI copilot polish · (Unreleased — pending version bump)
-
-*Campaign `beyond_20260530` Wave 5 (FINAL) — drops 13 new MCP tools (Layer 1/2/3,
-library, vault, cli group) and 6 long-running CLI streamers/dispatchers. Registry
-now **245** (was 231). Closes out the BEYOND backlog: vault provenance + git
-sync + corpus mining, structured COMP storage, build rescoring, organic growth,
-timecode sync, SharedMem IPC, SOP-geometry recipes, macro replay, and the voice/
-controller/fanout/log-tail/fixture-recorder CLI ergonomics.*
-
-- **Library trust** — **`curated_collection_pack`**, **`component_changelog_trail`**,
-  **`merge_vaults`**, **`vault_repo_sync`**, **`variant_pack`**, and
-  **`learn_from_my_corpus`**.
-- **TD-depth long-tail** — **`create_shared_memory_bridge`** (SharedMem In/Out
-  IPC), **`build_sop_geometry`** (typed SOP-chain recipes), **`sync_timecode`**
-  (LTC/MTC/OSC/MIDI clock lock), **`manage_component_storage`** (structured COMP
-  `storage` slots), and **`create_growth_system`** (organic growth / L-system).
-- **AI copilot polish** — **`enhance_build`** (apply improvements + rescore via
-  `score_build`) and **`run_macro_script`** (replay the Wave-4 macro recorder).
-- **CLI streamers** — **`tdmcp-agent log-tail`**, **`record-fixtures`**,
-  **`fanout`**, **`controller-bridge`**, and **`voice`** / **`llm-voice`**.
+Before the next roadmap wave, the repo needs the release surface to catch up with
+`main`: pick the version boundary, tag it, publish the `.mcpb`/GitHub Release,
+and verify npm. This is a release-management step rather than a feature wave,
+but it is the highest-priority status gap in the project right now.
 
 ### Milestone 2 — Plug into the ecosystem & the iconic looks · ~v0.9.0
 
@@ -307,39 +266,40 @@ controller/fanout/log-tail/fixture-recorder CLI ergonomics.*
   (oil/pencil), **`create_flow_abstraction`** (painterly), and a **color-finish
   suite** (LUTs + color wheels/curves + video scopes).
 - **Rehearsal & deeper reactivity** — **`create_chop_recorder`** (record / loop /
-  replay any reactive signal), plus chroma / percussive-vs-tonal / song-structure
-  reactivity as it's tuned.
+  replay any reactive signal), plus live tuning for the chroma /
+  percussive-vs-tonal / song-structure tools already merged on `main`.
 
-### Milestone 3 — Smarter assistance & a library you can trust · ~v0.9.0
+### Milestone 3 — Smarter assistance & library publishing · ~v0.9.0
 
-*Gated on two foundations above (connected-model access + auto-tagging). Build the
-connected-model bridge first, then the rest in parallel.*
+*Build on the AI/library primitives already merged on `main`: server sampling,
+caption/repair/score tools, personal memory, provenance, checksums, lineage and
+corpus learning.*
 
-- **AI tools** — **`caption_top`** ("is it alive? why is it black?"),
-  **`score_build`** (a build scorecard), a **moodboard → full-system** pipeline, and
-  the `compose_cue_list` deepening carried from Milestone 1.
-- **"Do it my way"** — **`recall_similar_work`** (RAG over your own vault) and
-  **personal style memory** that persists across sessions.
-- **Trust & publish** — **`lint_recipe_library`** (catch a bad operator before the
-  venue), **provenance + checksums** (safe USB / venue handoff),
-  **`export_look_tox`** ("your look in a box"), **`export_sop_to_svg`** for
-  plotters/lasers, and a pack of canonical generative-art *technique* recipes.
+- **AI deepening** — live-tune `caption_top` and `repair_network`, add
+  `copilot_vision`, `elicit_missing_args`, richer chat flags, transcript
+  persistence and smarter handoff when the local copilot reaches its limits.
+- **"Do it my way"** — turn `recall_similar_work`, `style_memory`,
+  `learn_conventions` and `learn_from_my_corpus` into a persistent session
+  profile the agent reads before every new build.
+- **Trust & publish** — with `lint_recipe_library`, provenance, checksums,
+  lineage, curated packs and vault sync in place, finish `tag_and_search_library`,
+  `version_library_asset`, `export_look_tox`, `export_sop_to_svg` and the first
+  canonical technique recipe pack.
 
 ### Milestone 4 — Deeper authoring & operator DX · ~v0.10.0
 
 *Unwrap the last big TouchDesigner authoring surfaces and finish the operator /
 install story.*
 
-- **Authoring** — **`create_glsl_material`** (3D surface shading),
-  **`build_chop_chain`** (composable CHOP DSP), **`control_timeline_transport`**
-  (play / seek + the "paused timeline looks dead" self-diagnosis),
-  **`swap_operator`** (change a type, keep the wires), and **MediaPipe face / hand /
-  segmentation** on the in-tree tracking engine.
+- **Authoring** — **`swap_operator`** (change a type, keep the wires),
+  `create_pop_geometry`, the GPU / optical-flow / SDF / strange-attractor
+  deferred generators, and MediaPipe face / hand / segmentation on the in-tree
+  tracking engine.
 - **Developer & live-operator DX** — finish the **easy-install** story (a
   client-config writer + a `doctor --fix` that performs safe repairs),
-  **`live_dashboard_tui`** (front-of-house HUD, even over SSH),
-  **`create_test_pattern`** (projector calibration), and a
-  **`tutorial_companion_pack`** for teaching or selling a build.
+  `tdmcp config init`, profile listing, help/completion parity, inline preview,
+  a richer front-of-house dashboard mode and a **`tutorial_companion_pack`** for
+  teaching or selling a build.
 
 ### Later / deferred
 
@@ -389,8 +349,10 @@ raise test coverage, expand the recipe library, and harden the bridge.
 > **Legend:** Priority **P0 / P1 / P2** · Effort **S** ≤1 day / **M** 2–4 days /
 > **L** ~1 week · Impact & Confidence High / Med / Low · Novelty **NEW** /
 > **EXTENSION** (extends an existing tool) / **ROADMAP** (already on the plan).
-> A ✅ marks an idea that has since shipped. `gated` = deferred for
-> GPU / hardware / CUDA / license reasons.
+> A ✅ marks an idea that has since shipped or merged; `✅ main` means merged on
+> `main` but pending public release, and `◐ main` means merged with an
+> experimental / hardware-gated caveat. `gated` = deferred for GPU / hardware /
+> CUDA / license reasons.
 
 These four passes are labelled in the order they happened (Round 0 → Round 3).
 
@@ -530,41 +492,43 @@ recipe/template marketplace (local-first).
 ### Round 2 — "beyond the backlog" — 2026-05-30
 
 **63 distinct candidates** (6 P0 · 35 P1 · 22 P2; 58 NEW · 5 EXTENSION · 0 ROADMAP),
-every one deliberately beyond Round 1 and beyond what v0.6.0 shipped.
+every one deliberately beyond Round 1 and beyond what v0.6.0 shipped. The
+BEYOND campaign has now harvested most of this round into `main`; rows marked
+`✅ main` / `◐ main` are pending public release, not still-open ideas.
 
 #### B.1 · Artist controls & creative tools
 
 | Feature | Delivers | Effort | Impact | Conf | Priority | Novelty | Probe-first |
 |---|---|---|---|---|---|---|---|
-| `create_auto_montage` | Beat-quantized content switcher across N source TOPs | M | High | High | P0 | NEW | next-index once/boundary; Select-TOP wires |
-| `create_euclidean_sequencer` | Bank of Bjorklund Euclidean rhythm generators | M | High | High | P0 | NEW | per-step prob + phase-lock; paused-timeline |
-| `create_preset_morph` | True N-way weighted parameter-space blend | M | High | High | P0 | NEW | interpolate-vs-blend; exclude menu pars |
-| `create_scene_timeline` | Bar-timed song-mode arranger (Timer playhead + crossfades) | M | High | High | P1 | NEW | segment callback; tempo re-time; paused |
-| `create_prob_sequencer` | Probabilistic / Markov step engine + drunk-walk lane | M | Med | High | P1 | NEW | Markov state survives beats; fire once/step |
-| `create_two_way_surface` | Closed-loop control surface (osc/midi state back out) | M | Med | High | P1 | EXTENSION | value-change guard vs oscillation |
-| `create_chroma_reactive` | 12-bin chroma / key / major-minor reactivity | M | Med | Med | P1 | NEW | FFT-bin→pitch-class fold; experimental |
-| `create_transient_reactive` | Percussive-vs-tonal split (drums→snappy, pads→swells) | M | Med | Med | P1 | NEW | two distinct streams; experimental |
-| `create_energy_structure` | Song-structure tracker (build/drop/breakdown + energy) | M | Med | Med | P1 | NEW | adaptive thresholds; experimental |
-| `create_automation_lane` | Looping/recorded parameter-automation lane | M | Med | Med | P1 | NEW | record cadence vs loop-phase quantize |
-| `create_phone_gesture` | Phone IMU (tilt/gyro/shake) + multitouch → CHOPs | M | Med | Med | P1 | EXTENSION | iOS sensor permission / HTTPS |
-| `create_growth_system` | Differential-growth / space-colonization line-art | L | Med | Low | P2 | NEW | probe-live (iterative render path) |
+| `create_auto_montage` ✅ main | Beat-quantized content switcher across N source TOPs | M | High | High | P0 | NEW | next-index once/boundary; Select-TOP wires |
+| `create_euclidean_sequencer` ✅ main | Bank of Bjorklund Euclidean rhythm generators | M | High | High | P0 | NEW | per-step prob + phase-lock; paused-timeline |
+| `create_preset_morph` ✅ main | True N-way weighted parameter-space blend | M | High | High | P0 | NEW | interpolate-vs-blend; exclude menu pars |
+| `create_scene_timeline` ✅ main | Bar-timed song-mode arranger (Timer playhead + crossfades) | M | High | High | P1 | NEW | segment callback; tempo re-time; paused |
+| `create_prob_sequencer` ✅ main | Probabilistic / Markov step engine + drunk-walk lane | M | Med | High | P1 | NEW | Markov state survives beats; fire once/step |
+| `create_two_way_surface` ◐ main | Closed-loop control surface (osc/midi state back out) | M | Med | High | P1 | EXTENSION | value-change guard vs oscillation; hardware-gated |
+| `create_chroma_reactive` ◐ main | 12-bin chroma / key / major-minor reactivity | M | Med | Med | P1 | NEW | FFT-bin→pitch-class fold; experimental |
+| `create_transient_reactive` ◐ main | Percussive-vs-tonal split (drums→snappy, pads→swells) | M | Med | Med | P1 | NEW | two distinct streams; experimental |
+| `create_energy_structure` ◐ main | Song-structure tracker (build/drop/breakdown + energy) | M | Med | Med | P1 | NEW | adaptive thresholds; experimental |
+| `create_automation_lane` ✅ main | Looping/recorded parameter-automation lane | M | Med | Med | P1 | NEW | record cadence vs loop-phase quantize |
+| `create_phone_gesture` ◐ main | Phone IMU (tilt/gyro/shake) + multitouch → CHOPs | M | Med | Med | P1 | EXTENSION | iOS sensor permission / HTTPS; hardware-gated |
+| `create_growth_system` ✅ main | Differential-growth / space-colonization line-art | L | Med | Low | P2 | NEW | probe-live (iterative render path) |
 
 #### B.2 · Library, packaging & distribution
 
 | Feature | Delivers | Effort | Impact | Conf | Priority | Novelty | Probe-first |
 |---|---|---|---|---|---|---|---|
-| `auto_tag_library_asset` | Derive tags/op-family/difficulty/description from captured `nodes[].type` | M | High | High | P0 | NEW (extends save) | none |
-| `lint_recipe_library` | CI-grade linter: operator-existence + reference integrity + id-collision | M | High | High | P1 | NEW | KB-unknown types are warnings |
-| `morph_pack` | Capture an N-preset blend-space as a saved/shareable asset | M | High | Med | P1 | NEW | probe-live the live rebuild |
-| `provenance_stamp` | author/license(SPDX)/created/version/`derived_from` on assets | S | Med | High | P1 | NEW | none |
-| `checksum_and_verify_pack` | SHA-256 manifest + verify-on-install | S | Med | High | P1 | NEW | none |
-| `library_lineage_graph` | Cross-asset family tree (Mermaid + JSON, offline) | M | Med | High | P1 | NEW | none |
-| `curated_collection_pack` | Named, ordered "awesome-list" collection → README/bundle | M | Med | High | P2 | NEW | none |
-| `merge_vaults` | Conflict-aware two-vault merge (dry-run) | M | Med | High | P2 | NEW | mandatory dry-run |
-| `component_changelog_trail` | Append-only CHANGELOG in a package + param-delta | M | Med | Med | P2 | NEW | live param-read degrades |
-| `vault_repo_sync` | Round-trippable vault ⇄ git repo | M | Med | Med | P2 | NEW | git shell-out optional; never auto-commit |
-| `variant_pack` | Seeded, thumbnailed pack of N parameter variants | M | Med | Med | P2 | NEW | range covers target pars; seed reproducible |
-| `learn_from_my_corpus` | Personal-style index (op combos, ranges, palettes) → profile | L | Med | Med | P2 | NEW | offline (recipe/serialized) |
+| `auto_tag_library_asset` ✅ main | Derive tags/op-family/difficulty/description from captured `nodes[].type` | M | High | High | P0 | NEW (extends save) | none |
+| `lint_recipe_library` ✅ main | CI-grade linter: operator-existence + reference integrity + id-collision | M | High | High | P1 | NEW | KB-unknown types are warnings |
+| `morph_pack` ✅ main | Capture an N-preset blend-space as a saved/shareable asset | M | High | Med | P1 | NEW | probe-live the live rebuild |
+| `provenance_stamp` ✅ main | author/license(SPDX)/created/version/`derived_from` on assets | S | Med | High | P1 | NEW | none |
+| `checksum_and_verify_pack` ✅ main | SHA-256 manifest + verify-on-install | S | Med | High | P1 | NEW | none |
+| `library_lineage_graph` ✅ main | Cross-asset family tree (Mermaid + JSON, offline) | M | Med | High | P1 | NEW | none |
+| `curated_collection_pack` ✅ main | Named, ordered "awesome-list" collection → README/bundle | M | Med | High | P2 | NEW | none |
+| `merge_vaults` ✅ main | Conflict-aware two-vault merge (dry-run) | M | Med | High | P2 | NEW | mandatory dry-run |
+| `component_changelog_trail` ✅ main | Append-only CHANGELOG in a package + param-delta | M | Med | Med | P2 | NEW | live param-read degrades |
+| `vault_repo_sync` ✅ main | Round-trippable vault ⇄ git repo | M | Med | Med | P2 | NEW | git shell-out optional; never auto-commit |
+| `variant_pack` ✅ main | Seeded, thumbnailed pack of N parameter variants | M | Med | Med | P2 | NEW | range covers target pars; seed reproducible |
+| `learn_from_my_corpus` ✅ main | Personal-style index (op combos, ranges, palettes) → profile | L | Med | Med | P2 | NEW | offline (recipe/serialized) |
 
 > `semantic_library_search` (raised here) was **merged into ai `recall_similar_work`** — same
 > intent-retrieval capability; retrieval is owned by the AI surface.
@@ -573,55 +537,55 @@ every one deliberately beyond Round 1 and beyond what v0.6.0 shipped.
 
 | Feature | Delivers | Effort | Impact | Conf | Priority | Novelty | Probe-first |
 |---|---|---|---|---|---|---|---|
-| `setlist_runner` | Headless show driver: advance scenes by duration/beat/manual | M | High | High | P0 | NEW | beat-event fidelity; wall-clock fallback |
-| `panic_blackout_hotkey` | Instant top-level `tdmcp panic`/`blackout` (+`--restore`/`--hold`) | S | High | High | P0 | NEW (wraps `create_panic`) | idempotent re-fire |
-| `live_dashboard_tui` | Always-on operator HUD (FPS/drops/GPU/errors/beat) over SSH | M | High | High | P1 | NEW | refresh adds no cook load |
-| `scene_scheduler` | Wall-clock cron-lite (`at`/`every` → command/cue/setlist) | M | Med | High | P1 | NEW | DST/timezone for `at HH:MM` |
-| `bridge_watch_build` | Watch `td/` → auto-`reload_bridge` on save (+`py_compile` gate) | S | Med | High | P1 | NEW | debounce "save all" |
-| `scaffold_tool_generator` | `scaffold tool <name> --layer N` emits the 3-file boilerplate | S | Med | High | P1 | NEW | none |
-| `profile_cook_cost` | Ranked most-expensive operators + frame-budget bar | S | Med | High | P1 | NEW | confirm `get_td_performance` per-op |
-| `macro_recorder` | `record start/stop` captures mutating CLI commands into a `run` file | M | Med | High | P1 | NEW | record across invocations |
-| `soundcheck_monitor` | Live meter of the audio-reactive chain at line-check | M | Med | Med | P1 | NEW | probe-live band-energy path |
-| `log_tail_filtered` | `logs --follow [--level] [--grep]` | S | Med | Med | P2 | NEW | probe-live incremental `since`/cursor |
-| `fixture_recorder` | Capture a real bridge response → a frozen msw fixture | M | Med | Med | P2 | NEW | probe-live pre-validation capture |
-| `remote_and_fanout` | `fanout <hostsfile> <cmd>` across several bridges | M | Med | Med | P2 | NEW | failure policy |
-| `controller_to_cli_bridge` | OSC/MIDI input → CLI tool-call | L | Med | Low | P2 | NEW | probe-live (OSC-first; no zero-dep MIDI) |
+| `setlist_runner` ✅ main | Headless show driver: advance scenes by duration/beat/manual | M | High | High | P0 | NEW | beat-event fidelity; wall-clock fallback |
+| `panic_blackout_hotkey` ✅ main | Instant top-level `tdmcp panic`/`blackout` (+`--restore`/`--hold`) | S | High | High | P0 | NEW (wraps `create_panic`) | idempotent re-fire |
+| `live_dashboard_tui` ✅ main | Always-on operator HUD (FPS/drops/GPU/errors/beat) over SSH | M | High | High | P1 | NEW | refresh adds no cook load |
+| `scene_scheduler` ✅ main | Wall-clock cron-lite (`at`/`every` → command/cue/setlist) | M | Med | High | P1 | NEW | DST/timezone for `at HH:MM` |
+| `bridge_watch_build` | Watch `td/` → auto-`reload_bridge` on save (+`py_compile` gate) | S | Med | High | P1 | NEW | partially covered by `tdmcp-agent watch-build`; auto-reload still open |
+| `scaffold_tool_generator` ✅ main | `scaffold tool <name> --layer N` emits the 3-file boilerplate | S | Med | High | P1 | NEW | none |
+| `profile_cook_cost` ✅ main | Ranked most-expensive operators + frame-budget bar | S | Med | High | P1 | NEW | confirm `get_td_performance` per-op |
+| `macro_recorder` ✅ main | `record start/stop` captures mutating CLI commands into a `run` file | M | Med | High | P1 | NEW | record across invocations |
+| `soundcheck_monitor` ✅ main | Live meter of the audio-reactive chain at line-check | M | Med | Med | P1 | NEW | probe-live band-energy path |
+| `log_tail_filtered` ✅ main | `logs --follow [--level] [--grep]` | S | Med | Med | P2 | NEW | probe-live incremental `since`/cursor |
+| `fixture_recorder` ✅ main | Capture a real bridge response → a frozen msw fixture | M | Med | Med | P2 | NEW | probe-live pre-validation capture |
+| `remote_and_fanout` ✅ main | `fanout <hostsfile> <cmd>` across several bridges | M | Med | Med | P2 | NEW | failure policy |
+| `controller_to_cli_bridge` ✅ main | OSC/MIDI input → CLI tool-call | L | Med | Low | P2 | NEW | probe-live (OSC-first; no zero-dep MIDI) |
 
 #### B.4 · AI & LLM integration
 
 | Feature | Delivers | Effort | Impact | Conf | Priority | Novelty | Probe-first |
 |---|---|---|---|---|---|---|---|
-| `recall_similar_work` | RAG over the user's own vault (merges `semantic_library_search`) | M | High | High | P1 | NEW | none (offline keyword/tag) |
-| `style_memory` | Persistent accrued aesthetic profile read every session | M | High | High | P1 | NEW | none (frontmatter IO) |
-| `scene_summary_resource` | `tdmcp://scene` — live token-cheap project digest as a resource | S | Med | High | P1 | NEW | none |
-| `prompt_eval_harness` | Offline vitest gate for the 28 prompts | S | Med | High | P1 | NEW | none |
-| `moodboard_to_system` | LLM-grounded multi-tool moodboard pipeline | M | Med | High | P1 | EXTENSION | none (keyword fallback) |
-| `compose_cue_list` | Natural-language → a built, fireable cue sequence | M | High | Med | P1 | NEW | probe-live cue→trigger; `client.ts` parse |
-| `score_build` | Scorecard tool (palette/motion/complexity/errors/perf 0–10) | M | Med | Med | P1 | NEW | probe-live no-LLM card |
-| `learn_conventions` | Infer naming/layout/color from the live project | M | Med | Med | P1 | NEW | probe-live (`node_detail` flags/pos/color) |
-| `audio_fingerprint_to_visual` | Audio reference → matched reactive build | M | Med | Med | P1 | NEW | probe-live (real clip; tune) |
+| `recall_similar_work` ✅ main | RAG over the user's own vault (merges `semantic_library_search`) | M | High | High | P1 | NEW | none (offline keyword/tag) |
+| `style_memory` ✅ main | Persistent accrued aesthetic profile read every session | M | High | High | P1 | NEW | none (frontmatter IO) |
+| `scene_summary_resource` ✅ main | `tdmcp://scene` — live token-cheap project digest as a resource | S | Med | High | P1 | NEW | none |
+| `prompt_eval_harness` ✅ main | Offline vitest gate for the 28 prompts | S | Med | High | P1 | NEW | none |
+| `moodboard_to_system` ✅ main | LLM-grounded multi-tool moodboard pipeline | M | Med | High | P1 | EXTENSION | none (keyword fallback) |
+| `compose_cue_list` ✅ main | Natural-language → a built, fireable cue sequence | M | High | Med | P1 | NEW | probe-live cue→trigger; `client.ts` parse |
+| `score_build` ✅ main | Scorecard tool (palette/motion/complexity/errors/perf 0–10) | M | Med | Med | P1 | NEW | probe-live no-LLM card |
+| `learn_conventions` ✅ main | Infer naming/layout/color from the live project | M | Med | Med | P1 | NEW | probe-live (`node_detail` flags/pos/color) |
+| `audio_fingerprint_to_visual` ✅ main | Audio reference → matched reactive build | M | Med | Med | P1 | NEW | probe-live (real clip; tune) |
 | `elicit_missing_args` | MCP elicitation — ask the client for a missing field | M | Med | Med | P2 | NEW | probe-live SDK + client support |
-| `enhance_build` | Goal-directed "make it better" loop (score→change→re-score) | L | Med | Med | P2 | NEW | probe-live bound + rollback |
-| `run_macro_script` | NL/DSL imperative script → fail-forward `batch_operations` | L | Med | Med | P2 | NEW | probe-live allow-list verbs |
-| `voice_copilot_chat` | Browser Web-Speech push-to-talk in the copilot page | S | Med | Med | P2 | NEW | probe-live `SpeechRecognition` (Chromium) |
+| `enhance_build` ✅ main | Goal-directed "make it better" loop (score→change→re-score) | L | Med | Med | P2 | NEW | probe-live bound + rollback |
+| `run_macro_script` ✅ main | NL/DSL imperative script → fail-forward `batch_operations` | L | Med | Med | P2 | NEW | probe-live allow-list verbs |
+| `voice_copilot_chat` ◐ main | Browser Web-Speech push-to-talk in the copilot page | S | Med | Med | P2 | NEW | CLI alias exists; STT/Web Speech wiring still needs probe |
 
 #### B.5 · TouchDesigner depth (bridge + operators)
 
 | Feature | Delivers | Effort | Impact | Conf | Priority | Novelty | Probe-first |
 |---|---|---|---|---|---|---|---|
-| `create_engine_comp` | General Engine-COMP wrapper (compiled `.tox` in a separate process) | M | High | Med | P1 | NEW | probe-live (baked tox; cross-process IO) |
-| `create_glsl_material` | Author a GLSL MAT (vertex+pixel+compute) on geometry | M | Med | High | P1 | NEW | low (`create_depth_displacement` maps it) |
-| `build_chop_chain` | Composable CHOP-DSP pipeline → Null | M | Med | High | P1 | NEW | low (Lookup input + Analyze enum) |
-| `control_timeline_transport` | Transport read/write over `me.time` + paused self-diagnose | S | Med | High | P1 | NEW | none significant (keep off exec gate) |
-| `extend_data_source_fabric` | Add MQTT/WebSocket/Web-Server-DAT to `create_data_source` | M | Med | High | P1 | EXTENSION | none significant (MQTT topic parse) |
-| `author_script_operator` | Extend Python authoring to Script CHOP/SOP/TOP | M | Med | High | P1 | EXTENSION | low (per-family `onCook`) |
-| `create_dmx_fixture_pipeline` | Fixture-aware DMX/Art-Net (named pan/tilt/dimmer/gobo via Map DAT) | M | Med | Med | P1 | NEW | probe-live DMX Map DAT layout |
-| `inspect_gpu_and_displays` | System/GPU pool + monitor topology read | S | Med | Med | P1 | NEW | probe-live SysInfo/monitors attrs |
-| `create_shared_memory_bridge` | Shared-Memory In/Out TOP/CHOP — lowest-latency local link | M | Med | Med | P2 | NEW | probe-live shared-name/size handshake |
-| `create_scheduler` | Atomic Timer-CHOP scheduler primitive (named timers, callbacks) | M | Med | Med | P2 | NEW | probe-live Timer units + callbacks |
-| `build_sop_geometry` | Procedural SOP modelling (noise/copy/sweep/extrude → Null) | L | Med | Med | P2 | NEW | probe-live chains cook within budget |
-| `sync_timecode` | SMPTE/LTC timecode lock (Timecode CHOP) | M | Low | Med | P2 | NEW | probe-live (audio-LTC decode first) |
-| `manage_component_storage` | Write a COMP's storage dict + `opShortcut`/`parentShortcut` | M | Low | High | P2 | NEW | none significant (JSON-serialize) |
+| `create_engine_comp` ✅ main | General Engine-COMP wrapper (compiled `.tox` in a separate process) | M | High | Med | P1 | NEW | probe-live (baked tox; cross-process IO) |
+| `create_glsl_material` ✅ main | Author a GLSL MAT (vertex+pixel+compute) on geometry | M | Med | High | P1 | NEW | low (`create_depth_displacement` maps it) |
+| `build_chop_chain` ✅ main | Composable CHOP-DSP pipeline → Null | M | Med | High | P1 | NEW | low (Lookup input + Analyze enum) |
+| `control_timeline_transport` ✅ main | Transport read/write over `me.time` + paused self-diagnose | S | Med | High | P1 | NEW | none significant (keep off exec gate) |
+| `extend_data_source_fabric` ✅ main | Add MQTT/WebSocket/Web-Server-DAT to `create_data_source` | M | Med | High | P1 | EXTENSION | none significant (MQTT topic parse) |
+| `author_script_operator` ✅ main | Extend Python authoring to Script CHOP/SOP/TOP | M | Med | High | P1 | EXTENSION | low (per-family `onCook`) |
+| `create_dmx_fixture_pipeline` ✅ main | Fixture-aware DMX/Art-Net (named pan/tilt/dimmer/gobo via Map DAT) | M | Med | Med | P1 | NEW | probe-live DMX Map DAT layout |
+| `inspect_gpu_and_displays` ✅ main | System/GPU pool + monitor topology read | S | Med | Med | P1 | NEW | probe-live SysInfo/monitors attrs |
+| `create_shared_memory_bridge` ✅ main | Shared-Memory In/Out TOP/CHOP — lowest-latency local link | M | Med | Med | P2 | NEW | probe-live shared-name/size handshake |
+| `create_scheduler` ✅ main | Atomic Timer-CHOP scheduler primitive (named timers, callbacks) | M | Med | Med | P2 | NEW | probe-live Timer units + callbacks |
+| `build_sop_geometry` ✅ main | Procedural SOP modelling (noise/copy/sweep/extrude → Null) | L | Med | Med | P2 | NEW | probe-live chains cook within budget |
+| `sync_timecode` ✅ main | SMPTE/LTC timecode lock (Timecode CHOP) | M | Low | Med | P2 | NEW | probe-live (audio-LTC decode first) |
+| `manage_component_storage` ✅ main | Write a COMP's storage dict + `opShortcut`/`parentShortcut` | M | Low | High | P2 | NEW | none significant (JSON-serialize) |
 | `param_changed_event` | `param.changed` via a Parameter Execute DAT (Round 1 tracked, still open) | M | Low | Med | P2 | tracked | onValueChange freq/scope |
 
 #### B.6 · Cross-cutting (Round 2)
