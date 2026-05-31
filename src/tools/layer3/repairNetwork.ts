@@ -74,7 +74,9 @@ interface RepairNetworkReport {
 //     NEVER applied (applied stays false regardless of dry_run).
 //
 // Par-name / API notes (probed at runtime where they vary by build):
-//   * op.errors(recurse=True) — preferred; falls back to errors() with no args.
+//   * op.errors(recurse=False) — per-op only; _collect_errors walks descendants
+//     itself, so recurse=False avoids double-counting. Falls back to errors() with
+//     no args on older TD builds that don't accept the keyword.
 //   * Par.mode / ParMode.CONSTANT — read from the live `ParMode` global; if it
 //     is unavailable, or if the error does not name a specific parameter, we
 //     record a warning and leave the par untouched (no guess).
