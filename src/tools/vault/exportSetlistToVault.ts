@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseSetlist } from "../../automation/setlistSchema.js";
 import { buildNote } from "../../vault/frontmatter.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
@@ -147,6 +148,27 @@ export async function exportSetlistToVaultImpl(
       }
 
       const content = buildSetlistNote(report, args.note);
+
+      // Validate the produced frontmatter against the shared SetlistSchema —
+      // guarantees what we write here can be re-read by import_setlist.
+      // Re-parse the buildNote output by extracting its YAML frontmatter is
+      // overkill; we have the frontmatter in-memory above, so re-check it.
+      const fmCheck = parseSetlist({
+        title: args.note,
+        source_comp: report.comp,
+        tracks: report.cues.map((cue) => {
+          const entry: Record<string, unknown> = { title: cue.name };
+          if (report.tempo !== null && report.tempo > 0) entry.bpm = Math.round(report.tempo);
+          return entry;
+        }),
+        ...(report.tempo !== null && report.tempo > 0 ? { tempo: Math.round(report.tempo) } : {}),
+      });
+      if (!fmCheck.success && report.cues.length > 0) {
+        return errorResult(
+          `Built setlist note would not round-trip through SetlistSchema: ${fmCheck.error.message}`,
+        );
+      }
+
       vault.write(relPath, content);
 
       const summary =

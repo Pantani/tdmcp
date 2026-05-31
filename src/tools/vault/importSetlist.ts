@@ -1,21 +1,11 @@
 import { z } from "zod";
+import { normalize, parseSetlist } from "../../automation/setlistSchema.js";
 import { friendlyTdError } from "../../td-client/types.js";
 import type { Vault } from "../../vault/index.js";
 import { buildFromRecipe, finalize } from "../layer1/orchestration.js";
 import { errorResult, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { readNoteSafe, requireVault } from "./shared.js";
-
-const TrackSchema = z.union([
-  z.string(),
-  z.object({
-    title: z.string().optional(),
-    recipe: z.string().optional(),
-    preset: z.string().optional(),
-    bpm: z.number().optional(),
-    notes: z.string().optional(),
-  }),
-]);
 
 export const importSetlistSchema = z.object({
   note: z
@@ -34,14 +24,6 @@ export const importSetlistSchema = z.object({
     .describe("Only resolve and report what would be built; do not touch TouchDesigner."),
 });
 type ImportSetlistArgs = z.infer<typeof importSetlistSchema>;
-
-interface NormalizedTrack {
-  title?: string;
-  recipe?: string;
-  preset?: string;
-  bpm?: number;
-  notes?: string;
-}
 
 function resolveNotePath(vault: Vault, note: string): string | undefined {
   const candidates = note.endsWith(".md")
@@ -70,32 +52,36 @@ export async function importSetlistImpl(ctx: ToolContext, args: ImportSetlistArg
   const note = readNoteSafe(vault, rel);
   if ("error" in note) return note.error;
   const { data } = note;
-  const parsed = z.array(TrackSchema).safeParse(data.tracks);
+  // Use the shared schema — accepts both legacy `tracks[]` and new `scenes[]`.
+  const parsed = parseSetlist(data);
   if (!parsed.success) {
     return errorResult(
-      `Setlist note "${rel}" has no valid \`tracks\` list in its frontmatter (expected an array of recipe ids or {title, recipe, preset, bpm, notes} objects).`,
+      `Setlist note "${rel}" has no valid \`tracks\` or \`scenes\` list in its frontmatter (expected an array of recipe ids, or {title, recipe, preset, bpm, notes} track objects, or {id, cue, recipe, preset, …} scene objects).`,
     );
   }
-  const tracks: NormalizedTrack[] = parsed.data.map((t) =>
-    typeof t === "string" ? { recipe: t } : t,
-  );
+  // Canonicalise both shapes onto a single scene list.
+  const canonical = normalize(data);
 
   const built: Array<{ track?: string; recipe: string; container?: string; warnings?: string[] }> =
     [];
   const skipped: Array<{ track?: string; reason: string }> = [];
 
-  for (const track of tracks) {
-    const label = track.title ?? track.recipe ?? track.preset;
-    if (!track.recipe) {
+  for (const scene of canonical.scenes) {
+    const label = scene.title ?? scene.id ?? scene.recipe ?? scene.preset;
+    if (!scene.recipe) {
       skipped.push({
         track: label,
-        reason: track.preset ? "preset track — recall it live, not buildable" : "no recipe id",
+        reason: scene.preset
+          ? "preset track — recall it live, not buildable"
+          : scene.cue || scene.steps
+            ? "cue/scene step — recall live via setlist_runner, not buildable"
+            : "no recipe id",
       });
       continue;
     }
-    const recipe = ctx.recipes.get(track.recipe);
+    const recipe = ctx.recipes.get(scene.recipe);
     if (!recipe) {
-      skipped.push({ track: label, reason: `recipe "${track.recipe}" not found` });
+      skipped.push({ track: label, reason: `recipe "${scene.recipe}" not found` });
       continue;
     }
     if (args.dry_run) {
@@ -136,7 +122,7 @@ export const registerImportSetlist: ToolRegistrar = (server, ctx) => {
     {
       title: "Import a setlist from the vault",
       description:
-        "READ a setlist note (frontmatter `tracks`: an array of recipe ids, or {title, recipe, preset, bpm, notes} objects) and build each track's recipe — CREATING the operators in TouchDesigner under parent_path — to pre-stage a show's visuals. Recipe ids resolve against both built-in and vault recipes; preset-only tracks are skipped (recall them live instead). Use dry_run:true to validate the note without touching TD. Returns the resolved note path and the lists of built vs skipped tracks. Requires a configured TDMCP_VAULT_PATH.",
+        "READ a setlist note (frontmatter `tracks`: an array of recipe ids or {title, recipe, preset, bpm, notes} objects, OR the newer `scenes`: an array of {id, cue, recipe, preset, steps, …} scene objects) and build each scene's recipe — CREATING the operators in TouchDesigner under parent_path — to pre-stage a show's visuals. Recipe ids resolve against both built-in and vault recipes; preset-only and cue-only scenes are skipped (recall them live via setlist_runner instead). Use dry_run:true to validate the note without touching TD. Returns the resolved note path and the lists of built vs skipped tracks. Requires a configured TDMCP_VAULT_PATH.",
       inputSchema: importSetlistSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

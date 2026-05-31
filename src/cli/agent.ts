@@ -423,6 +423,14 @@ import {
 } from "../utils/config.js";
 import { silentLogger } from "../utils/logger.js";
 import { runDoctor } from "./doctor.js";
+import { type PanicSubVerb, runPanic } from "./panicBlackout.js";
+import {
+  type CueCaller,
+  loadCanonicalSetlist,
+  parseSetlistInput,
+  runSetlist,
+  setlistRunnerCliSchema,
+} from "./setlistRunner.js";
 
 // biome-ignore lint/suspicious/noExplicitAny: args are validated by each command's zod schema before use.
 type Runner = (ctx: ToolContext, args: any) => CallToolResult | Promise<CallToolResult>;
@@ -1494,6 +1502,12 @@ function usage(): string {
   lines.push(
     "  doctor               Diagnose your setup (TD/LLM/vault/config/tools); --fix suggests commands, --output json, -q/--quiet.",
   );
+  lines.push(
+    "  panic <sub>          Live blackout/freeze hotkey: on|off|toggle|freeze|unfreeze|clear|status. Flags: --target, --auto-build, --all.",
+  );
+  lines.push(
+    "  setlist run <file>   Walk a setlist scene-by-scene through manage_cue. Flags: --mode, --start, --loop, --comp-path, --beats-per-bar, --quantize.",
+  );
   return lines.join("\n");
 }
 
@@ -1584,6 +1598,18 @@ function parseCliArgs(argv: string[]) {
       "params-file": { type: "string" },
       filter: { type: "string" },
       exclude: { type: "string" },
+      // `panic` top-level verb:
+      target: { type: "string" },
+      "auto-build": { type: "boolean", default: false },
+      all: { type: "boolean", default: false },
+      // `setlist` subcommand:
+      setlist: { type: "string" },
+      mode: { type: "string" },
+      start: { type: "string" },
+      loop: { type: "boolean", default: false },
+      "comp-path": { type: "string" },
+      "beats-per-bar": { type: "string" },
+      quantize: { type: "string" },
     },
   });
 }
@@ -1630,6 +1656,8 @@ function nearestCommand(input: string): string | undefined {
     "watch",
     "repl",
     "doctor",
+    "panic",
+    "setlist",
     "version",
   ];
   for (const key of keys) {
@@ -1736,6 +1764,8 @@ function completionScript(shell: string): string | undefined {
     "watch",
     "repl",
     "doctor",
+    "panic",
+    "setlist",
     "version",
   ];
   const flags = [
@@ -1969,6 +1999,134 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
     }
     if (values.quiet) return { stdout: "", stderr: "", code };
     return { stdout, stderr, code };
+  }
+
+  // `panic <sub>` — live-show hotkey verb (Campaign BEYOND wave 1, v0.7.0).
+  if (positionals[0] === "panic") {
+    const sub = (positionals[1] ?? "status") as PanicSubVerb;
+    const allowed: ReadonlySet<PanicSubVerb> = new Set([
+      "on",
+      "off",
+      "toggle",
+      "freeze",
+      "unfreeze",
+      "clear",
+      "status",
+    ]);
+    if (!allowed.has(sub)) {
+      return {
+        stdout: "",
+        stderr: `error: unknown panic sub-verb "${sub}". Use one of: on, off, toggle, freeze, unfreeze, clear, status.\n`,
+        code: 2,
+      };
+    }
+    let ctx: ToolContext;
+    try {
+      ctx = buildCtx(opts, cliLoadOptions(values));
+    } catch (err) {
+      return { stdout: "", stderr: `${(err as Error).message}\n`, code: 2 };
+    }
+    const result = await runPanic(ctx, {
+      sub,
+      target: typeof values.target === "string" ? values.target : undefined,
+      autoBuild: values["auto-build"] === true,
+      all: values.all === true,
+      json: values.output === "json",
+      dryRun: values["dry-run"] === true,
+    });
+    return { stdout: result.stdout, stderr: result.stderr, code: result.code };
+  }
+
+  // `setlist run <file>` — drive a setlist via runSetlist + manageCueImpl adapter.
+  if (positionals[0] === "setlist") {
+    const verb = positionals[1] ?? "run";
+    if (verb !== "run") {
+      return { stdout: "", stderr: `error: unknown setlist verb "${verb}". Use "run".\n`, code: 2 };
+    }
+    const file =
+      positionals[2] ?? (typeof values.setlist === "string" ? values.setlist : undefined);
+    if (!file) return { stdout: "", stderr: 'Missing setlist path for "setlist run".\n', code: 2 };
+    let raw: string;
+    try {
+      raw = readFileSync(file, "utf8");
+    } catch (err) {
+      return {
+        stdout: "",
+        stderr: `error: could not read setlist: ${(err as Error).message}\n`,
+        code: 2,
+      };
+    }
+    const parsedCli = setlistRunnerCliSchema.safeParse({
+      setlist: file,
+      ...(typeof values.mode === "string" ? { mode: values.mode } : {}),
+      ...(typeof values.start === "string" ? { start: values.start } : {}),
+      ...(values.loop === true ? { loop: true } : {}),
+      ...(values["dry-run"] === true ? { dry_run: true } : {}),
+      ...(typeof values["comp-path"] === "string" ? { comp_path: values["comp-path"] } : {}),
+      ...(typeof values["beats-per-bar"] === "string"
+        ? { beats_per_bar: Number(values["beats-per-bar"]) }
+        : {}),
+      ...(typeof values.quantize === "string" ? { quantize: values.quantize } : {}),
+      json: values.output === "json",
+    });
+    if (!parsedCli.success) {
+      return { stdout: "", stderr: `Invalid setlist args: ${parsedCli.error.message}\n`, code: 2 };
+    }
+    const parsedInput = parseSetlistInput(raw, file);
+    if (!parsedInput.ok) {
+      return { stdout: "", stderr: `error: ${parsedInput.message}\n`, code: 2 };
+    }
+    const loaded = loadCanonicalSetlist(parsedInput.input);
+    if (!loaded.ok) {
+      return { stdout: "", stderr: `error: ${loaded.message}\n`, code: 2 };
+    }
+    let ctx: ToolContext;
+    try {
+      ctx = buildCtx(opts, cliLoadOptions(values));
+    } catch (err) {
+      return { stdout: "", stderr: `${(err as Error).message}\n`, code: 2 };
+    }
+    const { manageCueImpl } = await import("../tools/layer2/manageCue.js");
+    const cueCaller: CueCaller = {
+      async fire(call) {
+        // manageCueImpl returns a CallToolResult with isError=true on TD/cue
+        // failures (missing COMP, unknown cue name, bridge offline) — it does
+        // NOT throw. Convert that into a thrown error here so runSetlist's
+        // warnings/dry-run-on-bridge-loss path engages instead of silently
+        // marking every fire as success.
+        const res = await manageCueImpl(ctx, {
+          action: call.action,
+          comp_path: call.comp_path,
+          name: call.name,
+          duration: call.duration,
+          quantize: call.quantize,
+        });
+        if (res.isError) {
+          const text = res.content
+            .map((c) => (c.type === "text" ? c.text : ""))
+            .join("")
+            .trim();
+          throw new Error(text || `manage_cue ${call.action} failed`);
+        }
+      },
+    };
+    const lines: string[] = [];
+    const summary = await runSetlist({
+      setlist: loaded.setlist,
+      args: parsedCli.data,
+      client: cueCaller,
+      clock: {
+        setTimeout: (cb, ms) => setTimeout(cb, ms),
+        clearTimeout: (h) => clearTimeout(h as ReturnType<typeof setTimeout>),
+        now: () => Date.now(),
+      },
+      emit: (e) => lines.push(JSON.stringify(e)),
+    });
+    return {
+      stdout: `${lines.join("\n")}\n${JSON.stringify(summary)}\n`,
+      stderr: "",
+      code: summary.ended_reason === "complete" ? 0 : 1,
+    };
   }
 
   const resolved = resolveCommand(positionals);

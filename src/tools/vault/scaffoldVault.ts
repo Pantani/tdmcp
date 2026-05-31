@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { recipeToMarkdown } from "../../recipes/markdown.js";
 import { RecipeSchema } from "../../recipes/schema.js";
+import { STYLE_NOTE_REL, StyleMemorySchema, writeStyleMemory } from "../../vault/memoryNote.js";
 import { jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { requireVault } from "./shared.js";
@@ -25,6 +26,23 @@ This Obsidian vault is wired into TouchDesigner through tdmcp. Folders:
 - **Presets/** — preset snapshots exported by \`sync_presets_vault\`.
 - **Networks/** — patch maps written by \`export_network_to_vault\`.
 - **Performances/** — a dated diary written by \`log_performance\`.
+- **Memory/** — standing notes the assistant reads/merges (e.g. \`style.md\`)
+  to remember the artist's palettes, banned moves, and conventions across
+  sessions. Edit \`style.md\`'s frontmatter to seed the memory.
+`;
+
+const MEMORY_README = `# Memory
+
+Standing notes the assistant reads/merges to remember preferences across
+sessions. Each note's frontmatter is the structured payload; the body is
+free-form notes the artist can edit.
+
+- **style.md** — palettes, banned moves, favourite generators, naming/layout
+  conventions. Read by every tool that benefits from artist context; written
+  back when the assistant learns something new.
+
+Add more topic notes here as \`Memory/<topic>.md\` (loose schema — see
+\`MemoryNoteSchema\` in \`src/vault/memoryNote.ts\`).
 `;
 
 const PLASMA_SHADER = `out vec4 fragColor;
@@ -84,6 +102,14 @@ export function scaffoldVaultImpl(ctx: ToolContext, args: ScaffoldVaultArgs) {
           { type: "tdmcp-shader", name: "plasma" },
           `A static plasma gradient — drop it into a GLSL TOP with apply_shader_from_vault.\n\n\`\`\`glsl\n${PLASMA_SHADER}\`\`\`\n`,
         ),
+    },
+    {
+      rel: "Memory/README.md",
+      render: () => vault.write("Memory/README.md", MEMORY_README),
+    },
+    {
+      rel: STYLE_NOTE_REL,
+      render: () => writeStyleMemory(vault, StyleMemorySchema.parse({})),
     },
     {
       rel: "Moodboards/sunset.md",

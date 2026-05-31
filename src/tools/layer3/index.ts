@@ -27,6 +27,7 @@ import { registerGetTdNodes } from "./getTdNodes.js";
 import { registerGetTdPerformance } from "./getTdPerformance.js";
 import { registerGetTdTopology } from "./getTdTopology.js";
 import { registerInspectComponent } from "./inspectComponent.js";
+import { registerLintRecipeLibrary } from "./lintRecipeLibrary.js";
 import { registerManagePackages } from "./managePackages.js";
 import { registerOptimizePerformance } from "./optimizePerformance.js";
 import { registerProjectDocumentationSite } from "./projectDocumentationSite.js";
@@ -94,4 +95,6 @@ export const layer3Registrars: ToolRegistrar[] = [
   // Campaign Wave 6 — AI & LLM (backlog 2026-05-29):
   registerCaptionTop,
   registerRepairNetwork,
+  // Campaign BEYOND Wave 1 (backlog 2026-05-30 — v0.7.0):
+  registerLintRecipeLibrary,
 ];
