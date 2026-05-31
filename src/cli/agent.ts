@@ -156,6 +156,10 @@ import {
 } from "../tools/layer1/createTextOverlay.js";
 import { createTransitionImpl, createTransitionSchema } from "../tools/layer1/createTransition.js";
 import {
+  createVectorLinesImpl,
+  createVectorLinesSchema,
+} from "../tools/layer1/createVectorLines.js";
+import {
   createVideoPlayerImpl,
   createVideoPlayerSchema,
 } from "../tools/layer1/createVideoPlayer.js";
@@ -1088,6 +1092,12 @@ const COMMANDS: Record<string, Command> = {
     createHalftoneSchema,
     createHalftoneImpl,
     "Stylise a source as halftone dots / CMYK / dither / posterize (GLSL).",
+    { mutates: true },
+  ),
+  "vector-lines": r(
+    createVectorLinesSchema,
+    createVectorLinesImpl,
+    "Pulse-capture a source image into editable Trace SOP vector lines composited over the source.",
     { mutates: true },
   ),
   "feedback-tunnel": r(

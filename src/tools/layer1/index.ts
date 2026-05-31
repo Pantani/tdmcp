@@ -54,6 +54,7 @@ import { registerCreateTempoSync } from "./createTempoSync.js";
 import { registerCreateText3d } from "./createText3d.js";
 import { registerCreateTextOverlay } from "./createTextOverlay.js";
 import { registerCreateTransition } from "./createTransition.js";
+import { registerCreateVectorLines } from "./createVectorLines.js";
 import { registerCreateVideoPlayer } from "./createVideoPlayer.js";
 import { registerCreateVideoSynth } from "./createVideoSynth.js";
 import { registerCreateVisualSystem } from "./createVisualSystem.js";
@@ -145,6 +146,7 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateDatamosh,
   registerCreateDisplacementWarp,
   registerCreateHalftone,
+  registerCreateVectorLines,
   registerCreateFeedbackTunnel,
   registerMultipass3dDepth,
   // Phase 15 — set navigation + POP (experimental, live-validation pending):

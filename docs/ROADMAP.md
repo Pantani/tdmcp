@@ -34,7 +34,7 @@ has grown through four arcs:
 > - ⬜ **Planned** — designed and prioritized, not yet built.
 >
 > The dated, line-by-line record of every change is the
-> [CHANGELOG](https://github.com/Pantani/tdmcp/blob/main/CHANGELOG.md); the
+> `CHANGELOG.md`; the
 > always-current, complete tool list is the [Tools reference](/reference/tools).
 > This page is the overview. Curious about the long tail of ideas? The full,
 > unfiltered brainstorm is preserved in the [planning archive](#full-backlog) at
