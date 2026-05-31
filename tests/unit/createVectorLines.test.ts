@@ -349,6 +349,9 @@ describe("create_vector_lines", () => {
     expect(setup).toContain("'step': 8");
     expect(setup).toContain("#ff8800");
     expect(setup).toContain("linewidth");
+    expect(setup).toContain('["sop", "soppath", "input"]');
+    expect(setup).toContain('["sop", "soppath"]');
+    expect(setup).not.toContain('["sop", "soppath", "soppath"');
     expect(scripts.join("\n")).not.toContain("has none of parameters");
     expect(scripts.join("\n")).toContain("has none of the parameters");
 

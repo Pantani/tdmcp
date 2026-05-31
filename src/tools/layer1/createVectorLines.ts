@@ -258,7 +258,7 @@ if _trace is not None:
         _set_par(_trace, [_name], _value, _warnings)
 
 if _sel is not None:
-    _set_par(_sel, ["sop", "soppath", "soppath", "input"], ${q(options.trace)}, _warnings)
+    _set_par(_sel, ["sop", "soppath", "input"], ${q(options.trace)}, _warnings)
     try:
         _sel.render = True
         _sel.display = True
@@ -271,7 +271,7 @@ if _wire is not None:
 
 if _geo is not None:
     _set_par(_geo, ["material", "mat"], ${q(options.wire)}, _warnings)
-    _set_par(_geo, ["sop", "soppath", "soppath"], ${q(options.traceSelect)}, _warnings)
+    _set_par(_geo, ["sop", "soppath"], ${q(options.traceSelect)}, _warnings)
     try:
         _geo.render = True
         _geo.display = True
