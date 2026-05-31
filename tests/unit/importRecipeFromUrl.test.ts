@@ -36,19 +36,21 @@ function resultJson(res: CallToolResult): {
 // Override the documented download indirection so the test never touches the
 // network. The override writes the supplied fixture to the temp dest file,
 // honoring the byte cap exactly like the real hardened downloader would.
-function stubDownload(content: string, opts: { calls?: { count: number } } = {}) {
+function stubDownload(content: string | Buffer, opts: { calls?: { count: number } } = {}) {
   return vi
     .spyOn(downloaders, "download")
     .mockImplementation(async (_url: string, dest: string, maxBytes: number) => {
       if (opts.calls) {
         opts.calls.count += 1;
       }
-      const bytes = Buffer.byteLength(content, "utf8");
+      const bytes = Buffer.isBuffer(content)
+        ? content.byteLength
+        : Buffer.byteLength(content, "utf8");
       if (bytes > maxBytes) {
         throw new Error(`Download exceeds size limit (> ${maxBytes} bytes)`);
       }
       mkdirSync(dirname(dest), { recursive: true });
-      writeFileSync(dest, content, "utf8");
+      writeFileSync(dest, content);
     });
 }
 
@@ -101,7 +103,27 @@ describe("importRecipeFromUrlImpl", () => {
     expect(onDisk.name).toBe("My Recipe");
   });
 
-  it("writes every recipe in a bundle", async () => {
+  it("test downloader can write byte buffers without UTF-8 transcoding", async () => {
+    const recipe = {
+      id: "buffered-recipe",
+      name: "Buffered Recipe",
+      nodes: [{ name: "n1", type: "noiseTOP" }],
+    };
+    const spy = stubDownload(Buffer.from(JSON.stringify(recipe), "utf8"));
+
+    const res = await importRecipeFromUrlImpl(makeCtx(), {
+      url: "https://raw.githubusercontent.com/acme/repo/main/buffered.json",
+      out_dir: join(dir, "out"),
+      overwrite: false,
+      max_bytes: 1048576,
+    });
+
+    expect(res.isError).toBeFalsy();
+    expect(resultJson(res).count).toBe(1);
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it("writes every recipe in a recipe-bundle JSON document", async () => {
     const bundle = {
       recipes: [
         { id: "alpha", name: "Alpha", nodes: [{ name: "n1", type: "noiseTOP" }] },

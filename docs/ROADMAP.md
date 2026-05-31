@@ -374,7 +374,7 @@ in **v0.6.0** (marked ✅).
 | `project_documentation_site` ✅ 0.7.0 | Compose readme + Mermaid + thumbnails into a handoff doc | M | Med | High | P2 | EXTENSION | none |
 | `component_readme_in_package` | Auto-write a params/IO doc into the portable-tox package | S | Med | High | P2 | EXTENSION | none |
 | `expand_recipe_library` | First-party recipes for the new generators | M | Med | High | P2 | NEW (content) | live cook-check each |
-| `import_recipe_from_url` ✅ 0.7.0 | Fetch + validate + import a recipe pack from a URL | S | Med | Med | P2 | NEW | path-escape guards; size cap |
+| `import_recipe_from_url` ✅ 0.7.0 | Fetch + validate + import recipe/bundle JSON from a URL | S | Med | Med | P2 | NEW | path-escape guards; size cap |
 | `collect_project_assets` ✅ 0.7.0 | Project-wide "gather everything" staging folder + manifest | M | Med | Med | P2 | NEW | file-par enum; size cap |
 | `recipe_from_live_network` | Faithful round-trip recipe capture via `serialize_network` | M | Med | Med | P2 | EXTENSION | GLSL-uniform round-trip |
 | `export_palette_component` ✅ 0.7.0 | Export `.tox` into TD's native Palette folder | M | Med | Low | P2 | NEW | probe-live (Palette layout) |
