@@ -185,13 +185,18 @@ export function parseScheduleInput(
     if (raw.trimStart().startsWith("{") || raw.trimStart().startsWith("[")) {
       return { ok: true, input: JSON.parse(raw) };
     }
-    // Markdown front-matter or YAML
+    // Markdown front-matter
     const parsed = matter(raw);
     if (parsed.data && Object.keys(parsed.data).length > 0) {
       return { ok: true, input: parsed.data };
     }
-    // Plain YAML
-    return { ok: true, input: parsed.data };
+    // Plain YAML (no front-matter) — parse the raw body via gray-matter's
+    // bundled YAML engine. Returning `parsed.data` here would always be `{}`,
+    // which would later fail with an empty `entries` list.
+    const yamlEngine = (matter as unknown as { engines: { yaml: { parse: (s: string) => unknown } } })
+      .engines.yaml;
+    const yamlInput = yamlEngine.parse(raw);
+    return { ok: true, input: yamlInput ?? {} };
   } catch (e: unknown) {
     return {
       ok: false,
