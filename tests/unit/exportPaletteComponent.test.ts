@@ -57,6 +57,21 @@ describe("export_palette_component", () => {
     expect(parsed.name).toBeUndefined();
   });
 
+  it("rejects path traversal or separators in palette category and tox name", () => {
+    expect(() =>
+      exportPaletteComponentSchema.parse({ comp_path: "/project1/base1", category: "../.." }),
+    ).toThrow();
+    expect(() =>
+      exportPaletteComponentSchema.parse({ comp_path: "/project1/base1", category: "nested/lib" }),
+    ).toThrow();
+    expect(() =>
+      exportPaletteComponentSchema.parse({ comp_path: "/project1/base1", name: "nested/foo" }),
+    ).toThrow();
+    expect(() =>
+      exportPaletteComponentSchema.parse({ comp_path: "/project1/base1", name: ".." }),
+    ).toThrow();
+  });
+
   it("saves the tox into the palette and reports the saved path + payload", async () => {
     server.use(
       captureExec({

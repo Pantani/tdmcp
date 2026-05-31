@@ -4,13 +4,30 @@ import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
+const paletteSegmentMessage = "Must be a single filename segment without path separators.";
+
+function isSafePaletteSegment(value: string): boolean {
+  return (
+    value.length > 0 &&
+    value.trim() === value &&
+    value !== "." &&
+    value !== ".." &&
+    !/[\\/]/.test(value)
+  );
+}
+
 export const exportPaletteComponentSchema = z.object({
   comp_path: z.string().describe("Path to the COMP to export, e.g. /project1/base1"),
   name: z
     .string()
+    .refine((value) => value === "" || isSafePaletteSegment(value), paletteSegmentMessage)
     .optional()
     .describe("File stem for the .tox (default: the basename of comp_path)"),
-  category: z.string().default("tdmcp").describe("Palette subfolder to group the component under"),
+  category: z
+    .string()
+    .refine(isSafePaletteSegment, paletteSegmentMessage)
+    .default("tdmcp")
+    .describe("Palette subfolder to group the component under"),
   palette_dir: z
     .string()
     .default("")
@@ -106,11 +123,16 @@ export async function exportPaletteComponentImpl(
   ctx: ToolContext,
   args: ExportPaletteComponentArgs,
 ) {
+  const parsed = exportPaletteComponentSchema.safeParse(args);
+  if (!parsed.success) {
+    return errorResult(`export_palette_component invalid args: ${parsed.error.message}`);
+  }
+  const safeArgs = parsed.data;
   const payload = {
-    comp_path: args.comp_path,
-    name: args.name ?? basename(args.comp_path),
-    category: args.category,
-    palette_dir: args.palette_dir,
+    comp_path: safeArgs.comp_path,
+    name: safeArgs.name || basename(safeArgs.comp_path),
+    category: safeArgs.category,
+    palette_dir: safeArgs.palette_dir,
   };
   return guardTd(
     async () => {
