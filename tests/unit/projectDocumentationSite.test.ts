@@ -10,6 +10,7 @@ import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js"
 import type { DocSiteReport } from "../../src/tools/layer3/projectDocumentationSite.js";
 import {
   buildDocSiteScript,
+  buildReadmeMd,
   buildTopologyMd,
   pickOutputTops,
   projectDocumentationSiteImpl,
@@ -100,6 +101,14 @@ describe("buildTopologyMd (pure)", () => {
     // Exact edges from the 2 connections.
     expect(md).toContain("n0 --> n1");
     expect(md).toContain("n1 --> n2");
+  });
+});
+
+describe("buildReadmeMd (pure)", () => {
+  it("does not imply project_documentation_site exported a tox", () => {
+    const md = buildReadmeMd(makeReport(), "MyProj");
+    expect(md).toContain("Open the `.toe` or `.tox` that contains this network in TouchDesigner.");
+    expect(md).not.toContain("drag the saved `.tox`");
   });
 });
 

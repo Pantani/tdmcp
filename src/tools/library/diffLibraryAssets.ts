@@ -66,7 +66,7 @@ function joinIndex(prefix: string, index: number): string {
   return `${prefix}[${index}]`;
 }
 
-/** Order-independent structural equality via a canonical (sorted-key) JSON string. */
+/** Deterministic structural equality via a canonical JSON string with sorted object keys. */
 function canonical(value: Json): string {
   if (Array.isArray(value)) {
     return `[${value.map(canonical).join(",")}]`;

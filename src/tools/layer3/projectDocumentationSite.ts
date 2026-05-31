@@ -162,7 +162,7 @@ export function buildReadmeMd(report: DocSiteReport, title: string): string {
 
   lines.push("## How to load", "");
   lines.push(
-    "Open this project in TouchDesigner, or drag the saved `.tox` into a network. See",
+    "Open the `.toe` or `.tox` that contains this network in TouchDesigner. See",
     "`topology.md` for the data-flow diagram and `gallery.md` (when present) for previews.",
     "",
   );
