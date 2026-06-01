@@ -234,6 +234,8 @@ describe("tdmcp doctor", () => {
       expect(r.report.repairs).toContainEqual(
         expect.objectContaining({ id: "vault", status: "failed" }),
       );
+      expect(r.stdout).not.toContain("Applied fixes");
+      expect(r.stdout).toContain("Failed fixes");
       expect(r.report.fixes).toContainEqual(expect.objectContaining({ id: "vault" }));
       expect(r.report.checks.find((check) => check.id === "vault")?.status).toBe("warn");
     } finally {

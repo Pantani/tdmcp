@@ -295,12 +295,15 @@ function render(report: DoctorReport): string {
       `Setup is not ready: ${failed.length} critical check(s) failed (see the ✖ lines above).`,
     );
   }
-  if (report.repairs?.length) {
+  const appliedRepairs = report.repairs?.filter((repair) => repair.status === "applied") ?? [];
+  const failedRepairs = report.repairs?.filter((repair) => repair.status === "failed") ?? [];
+  if (appliedRepairs.length) {
     lines.push("", "Applied fixes:");
-    for (const repair of report.repairs) {
-      const marker = repair.status === "applied" ? "✔" : "✖";
-      lines.push(`  ${marker} ${repair.id}: ${repair.detail}`);
-    }
+    for (const repair of appliedRepairs) lines.push(`  ✔ ${repair.id}: ${repair.detail}`);
+  }
+  if (failedRepairs.length) {
+    lines.push("", "Failed fixes:");
+    for (const repair of failedRepairs) lines.push(`  ✖ ${repair.id}: ${repair.detail}`);
   }
   if (report.fixes?.length) {
     lines.push("", "Suggested fixes:");

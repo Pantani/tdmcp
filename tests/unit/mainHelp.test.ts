@@ -33,6 +33,15 @@ describe("tdmcp top-level help", () => {
     expect(completion).toContain("--json");
   });
 
+  it("does not suggest packages path as a fake top-level path command", () => {
+    const completion = renderMainCompletion("bash");
+    const words = completion?.match(/compgen -W '([^']+)'/)?.[1]?.split(" ") ?? [];
+
+    expect(words).toContain("packages");
+    expect(words).toContain("--path");
+    expect(words).not.toContain("path");
+  });
+
   it("returns undefined for unsupported completion shells", () => {
     expect(renderMainCompletion("powershell")).toBeUndefined();
   });

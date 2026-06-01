@@ -12,7 +12,6 @@ const TOP_LEVEL_COMPLETION_WORDS = [
   "uninstall",
   "doctor",
   "packages",
-  "path",
   "completion",
   "--http",
   "--port",
