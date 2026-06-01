@@ -125,7 +125,7 @@ describe("create_pop_geometry", () => {
     expect(prim?.parameters).toMatchObject({ text: "hello" });
   });
 
-  it("exposes RotateY/NoiseAmount/NoisePeriod when expose_controls=true", async () => {
+  it("exposes RotateY/NoiseAmount/NoisePeriod when expose_controls=true with noise>0", async () => {
     const scripts: string[] = [];
     server.use(
       http.post(`${TD_BASE}/api/exec`, async ({ request }) => {
@@ -149,5 +149,35 @@ describe("create_pop_geometry", () => {
     expect(names).toContain("RotateY");
     expect(names).toContain("NoiseAmount");
     expect(names).toContain("NoisePeriod");
+    // The Noise* controls must be bound to the displace SOP (not inert).
+    const noiseAmt = payload.controls.find((c) => c.name === "NoiseAmount");
+    expect(noiseAmt?.bind_to?.[0]).toMatch(/\/displace\.amp$/);
+  });
+
+  it("omits NoiseAmount/NoisePeriod when expose_controls=true but noise_amount=0", async () => {
+    const scripts: string[] = [];
+    server.use(
+      http.post(`${TD_BASE}/api/exec`, async ({ request }) => {
+        scripts.push(((await request.json()) as { script: string }).script);
+        return HttpResponse.json({ ok: true, data: { result: null, stdout: "" } });
+      }),
+    );
+    await createPopGeometryImpl(makeCtx(), {
+      ...DEFAULTS,
+      expose_controls: true,
+      // noise_amount stays 0 — no Noise SOP in chain, so Noise* controls would
+      // be inert and must be omitted.
+    });
+    const panel = scripts.find((s) => s.includes("appendCustomPage"));
+    expect(panel).toBeDefined();
+    const b64 = /b64decode\("([^"]+)"\)/.exec(panel ?? "")?.[1];
+    if (b64 === undefined) throw new Error("panel script did not embed a base64 payload");
+    const payload = JSON.parse(Buffer.from(b64, "base64").toString("utf8")) as {
+      controls: Array<{ name: string }>;
+    };
+    const names = payload.controls.map((c) => c.name);
+    expect(names).toContain("RotateY");
+    expect(names).not.toContain("NoiseAmount");
+    expect(names).not.toContain("NoisePeriod");
   });
 });

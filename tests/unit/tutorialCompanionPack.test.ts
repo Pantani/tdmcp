@@ -68,7 +68,7 @@ describe("tutorialCompanionPackImpl", () => {
     expect(result.isError).toBe(true);
   });
 
-  it("writes tutorial.md + topology.json + recipe.json and captures a preview", async () => {
+  it("writes tutorial.md + topology.json + network_snapshot.json and captures a preview", async () => {
     const vault = makeVault();
     mockTopology([
       { path: "/project1/scene/noise1", type: "noiseTOP", name: "noise1" },
@@ -98,11 +98,22 @@ describe("tutorialCompanionPackImpl", () => {
     expect(r.node_count).toBe(2);
     expect(vault.exists(r.tutorial_path)).toBe(true);
     expect(vault.exists(r.topology_path)).toBe(true);
-    expect(vault.exists(r.recipe_path)).toBe(true);
+    expect(vault.exists(r.network_snapshot_path)).toBe(true);
+    expect(r.network_snapshot_path.endsWith("network_snapshot.json")).toBe(true);
     expect(r.previews.length).toBeGreaterThan(0);
     const note = vault.readNote(r.tutorial_path);
     expect(note.data.type).toBe("tutorial");
     expect((note.data.tags as string[]).includes("beginner")).toBe(true);
+    // The tutorial body should warn that the snapshot is not an installable recipe.
+    expect(note.body).toContain("network_snapshot.json");
+    expect(note.body).toContain("Not an installable recipe");
+    // Snapshot file shape: tagged with kind="network_snapshot", not RecipeSchema.
+    const snapshot = JSON.parse(vault.read(r.network_snapshot_path)) as {
+      kind: string;
+      nodes: Array<{ source_path: string }>;
+    };
+    expect(snapshot.kind).toBe("network_snapshot");
+    expect(snapshot.nodes[0]?.source_path).toBe("/project1/scene/noise1");
   });
 
   it("surfaces a bridge failure as an error result", async () => {

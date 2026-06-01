@@ -1,5 +1,5 @@
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { renderStarterConfig, runConfigInit } from "../../src/cli/configInit.js";
@@ -87,6 +87,21 @@ describe("runConfigInit", () => {
     const result = runConfigInit({ out: target });
     expect(result.code).toBe(0);
     expect(existsSync(target)).toBe(true);
+  });
+
+  it("expands ~/ in the target path to the user's home directory", () => {
+    const result = runConfigInit({ out: "~/some-tdmcp-test/config.env", dryRun: true });
+    expect(result.code).toBe(0);
+    expect(result.path).toBe(join(homedir(), "some-tdmcp-test", "config.env"));
+  });
+
+  it("expands ~\\\\ (Windows separator) in the target path to the user's home directory", () => {
+    const result = runConfigInit({ out: "~\\some-tdmcp-test\\config.env", dryRun: true });
+    expect(result.code).toBe(0);
+    // After expanding the leading ~\\, `path.resolve` normalises separators per
+    // platform; on POSIX the rest stays as a single literal segment, so we just
+    // assert the home directory was substituted in.
+    expect(result.path.startsWith(homedir())).toBe(true);
   });
 
   it("--dry-run prints the body but does not touch the filesystem", () => {

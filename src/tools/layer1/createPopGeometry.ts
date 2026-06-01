@@ -173,22 +173,29 @@ export async function createPopGeometryImpl(ctx: ToolContext, args: CreatePopGeo
             default: 0,
             bind_to: [`${geo}.ry`],
           },
-          {
-            name: "NoiseAmount",
-            type: "float",
-            min: 0,
-            max: 5,
-            default: args.noise_amount,
-            bind_to: args.noise_amount > 0 ? [`${geo}/displace.amp`] : [],
-          },
-          {
-            name: "NoisePeriod",
-            type: "float",
-            min: 0.01,
-            max: 10,
-            default: args.noise_period,
-            bind_to: args.noise_amount > 0 ? [`${geo}/displace.period`] : [],
-          },
+          // Only expose Noise* controls when a Noise SOP is actually in the chain
+          // (noise_amount > 0). Otherwise the controls would be inert (bind_to:[])
+          // and confuse the artist.
+          ...(args.noise_amount > 0
+            ? [
+                {
+                  name: "NoiseAmount",
+                  type: "float" as const,
+                  min: 0,
+                  max: 5,
+                  default: args.noise_amount,
+                  bind_to: [`${geo}/displace.amp`],
+                },
+                {
+                  name: "NoisePeriod",
+                  type: "float" as const,
+                  min: 0.01,
+                  max: 10,
+                  default: args.noise_period,
+                  bind_to: [`${geo}/displace.period`],
+                },
+              ]
+            : []),
         ]
       : [];
 

@@ -23,9 +23,10 @@ export interface ConfigInitOptions {
   dryRun?: boolean;
 }
 
-/** Expand a leading `~/` in a path to the user's home directory. */
+/** Expand a leading `~`, `~/`, or `~\\` in a path to the user's home directory. */
 function expandHome(p: string): string {
-  if (p.startsWith("~/") || p === "~") return resolve(homedir(), p.slice(2));
+  if (p === "~") return resolve(homedir());
+  if (p.startsWith("~/") || p.startsWith("~\\")) return resolve(homedir(), p.slice(2));
   return resolve(p);
 }
 

@@ -11,8 +11,11 @@ import { requireVault } from "./shared.js";
  *   - tutorial.md (steps + node list + embedded preview links)
  *   - topology.json (full node/connection dump from get_network_topology)
  *   - previews/*.png (per-output-TOP base64 PNG decoded to disk)
- *   - recipe.json (a SHALLOW recipe export of the COMP's children — not a full
- *     recipe round-trip; just a starting point an artist can hand-edit)
+ *   - network_snapshot.json (a documentary snapshot of the COMP's children and
+ *     connections by TD path — NOT a RecipeSchema-compatible installable
+ *     recipe; the captured topology references absolute TD paths that can't
+ *     always be re-instantiated. Use it as reference, not as `apply_recipe`
+ *     input.)
  *
  * Composes existing read-only bridge calls. Vault-gated.
  */
@@ -79,7 +82,7 @@ interface TutorialPackReport {
   pack_path: string;
   tutorial_path: string;
   topology_path: string;
-  recipe_path: string;
+  network_snapshot_path: string;
   previews: Array<{ source_top: string; file: string; width: number; height: number }>;
   node_count: number;
   warnings: string[];
@@ -162,7 +165,13 @@ export async function tutorialCompanionPackImpl(ctx: ToolContext, args: Tutorial
     const intro = args.description
       ? `${args.description}\n`
       : `A short lesson built around \`${args.source_comp}\`. Walk the network, tune one operator per step, and watch the output preview change.\n`;
-    const body = `# ${name}\n\n${intro}${stepSection}${previewSection}${nodeSection}`;
+    const snapshotNote =
+      "\n## Files\n\n" +
+      "- `topology.json` — raw `get_network_topology` dump.\n" +
+      "- `network_snapshot.json` — documentary snapshot of nodes + connections by TD path. " +
+      "**Not an installable recipe** (not `RecipeSchema`-compatible); for reference only, " +
+      "not for `apply_recipe`.\n";
+    const body = `# ${name}\n\n${intro}${stepSection}${previewSection}${nodeSection}${snapshotNote}`;
 
     const frontmatter: Record<string, unknown> = {
       id: stem,
@@ -179,7 +188,7 @@ export async function tutorialCompanionPackImpl(ctx: ToolContext, args: Tutorial
 
     const tutorialRel = `${packRel}/tutorial.md`;
     const topologyRel = `${packRel}/topology.json`;
-    const recipeRel = `${packRel}/recipe.json`;
+    const snapshotRel = `${packRel}/network_snapshot.json`;
 
     try {
       vault.writeNote(tutorialRel, frontmatter, body);
@@ -187,24 +196,28 @@ export async function tutorialCompanionPackImpl(ctx: ToolContext, args: Tutorial
         topologyRel,
         `${JSON.stringify({ source_comp: args.source_comp, nodes, connections }, null, 2)}\n`,
       );
-      // Shallow recipe scaffold — an editable starting point.
-      const recipeScaffold = {
+      // Documentary snapshot — NOT a RecipeSchema-compatible installable recipe.
+      // Captured topology references absolute TD paths and cannot always be
+      // re-instantiated by `apply_recipe`; use for reference only.
+      const networkSnapshot = {
+        kind: "network_snapshot",
         id: stem,
         name,
-        description: args.description ?? `Scaffolded from ${args.source_comp}.`,
-        version: "0.1.0",
+        description: args.description ?? `Snapshot captured from ${args.source_comp}.`,
+        source_comp: args.source_comp,
+        captured_at: new Date().toISOString(),
         nodes: nodes.map((n) => ({
           name: n.name,
           type: n.type,
           source_path: n.path,
         })),
         connections: connections.map((c) => ({
-          from: c.source_path,
-          to: c.target_path,
+          from_path: c.source_path,
+          to_path: c.target_path,
           to_input: c.target_input ?? 0,
         })),
       };
-      vault.write(recipeRel, `${JSON.stringify(recipeScaffold, null, 2)}\n`);
+      vault.write(snapshotRel, `${JSON.stringify(networkSnapshot, null, 2)}\n`);
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
       return errorResult(`Could not write tutorial pack files: ${reason}`);
@@ -215,7 +228,7 @@ export async function tutorialCompanionPackImpl(ctx: ToolContext, args: Tutorial
       pack_path: packRel,
       tutorial_path: tutorialRel,
       topology_path: topologyRel,
-      recipe_path: recipeRel,
+      network_snapshot_path: snapshotRel,
       previews,
       node_count: nodes.length,
       warnings,
@@ -235,7 +248,7 @@ export const registerTutorialCompanionPack: ToolRegistrar = (server, ctx) => {
     {
       title: "Scaffold a teaching companion pack from a COMP",
       description:
-        "Build a teaching/selling companion for a network: snapshot the COMP's topology, capture preview PNGs of its output TOPs, scaffold an N-step lesson plan in Markdown, and emit a shallow recipe scaffold. Writes into `<vault>/<folder>/<slug>/` as `tutorial.md` + `topology.json` + `recipe.json` + `previews/*.png`. Composes existing read-only bridge calls — the artist edits the lesson body afterwards. Requires TDMCP_VAULT_PATH and a running TouchDesigner bridge.",
+        "Build a teaching/selling companion for a network: snapshot the COMP's topology, capture preview PNGs of its output TOPs, scaffold an N-step lesson plan in Markdown, and emit a documentary network snapshot. Writes into `<vault>/<folder>/<slug>/` as `tutorial.md` + `topology.json` + `network_snapshot.json` + `previews/*.png`. The snapshot captures nodes + connections by TD path for reference only — it is not a `RecipeSchema`-compatible installable recipe. Composes existing read-only bridge calls — the artist edits the lesson body afterwards. Requires TDMCP_VAULT_PATH and a running TouchDesigner bridge.",
       inputSchema: tutorialCompanionPackSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

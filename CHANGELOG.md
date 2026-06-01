@@ -120,8 +120,10 @@ node errors after the cook, networks cleaned up.
   offset, then an HSV Adjust TOP applies master saturation. Builds a new
   `baseCOMP` under `parent_path`; with `source_path` the upstream TOP is pulled
   in via a Select TOP, without one a Ramp TOP is graded so the chain previews
-  standalone. Exposes LiftRGB / GammaRGB / GainRGB swatches plus Offset and
-  Saturation knobs.
+  standalone. Exposes nine per-channel float controls — LiftR/LiftG/LiftB,
+  GammaR/GammaG/GammaB, GainR/GainG/GainB — each bound to the corresponding
+  Level TOP `redmult1` / `greenmult1` / `bluemult1` parameter on its tier, plus
+  master Offset (black-level) and Saturation knobs.
 - **`create_pop_geometry`** *(layer1, M4 authoring)* — Procedural Op Pattern
   geometry generator: build a SOP chain inside a Geometry COMP — primitive
   (`box` / `sphere` / `tube` / `torus` / `grid` / `line` / `text`) → Transform

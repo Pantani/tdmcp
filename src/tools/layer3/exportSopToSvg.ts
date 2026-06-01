@@ -23,7 +23,7 @@ import type { ToolContext, ToolRegistrar } from "../types.js";
 const cssColorSchema = z
   .string()
   .regex(
-    /^(?:#[0-9a-fA-F]{3,8}|(?:rgb|rgba|hsl|hsla)\([0-9eE+\-.,%\s/]+\)|[a-zA-Z]+)$/,
+    /^(?:#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|(?:rgb|rgba|hsl|hsla)\([0-9eE+\-.,%\s/]+\)|[a-zA-Z]+)$/,
     "Must be a CSS hex (#rrggbb), rgb()/rgba()/hsl()/hsla(), or a named colour keyword.",
   );
 

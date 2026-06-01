@@ -140,6 +140,10 @@ describe("exportSopToSvgImpl", () => {
 
     it("accepts the standard CSS color forms", () => {
       for (const value of [
+        "#abc",
+        "#abcd",
+        "#aabbcc",
+        "#aabbccdd",
         "#000",
         "#ffffff",
         "#11223344",
@@ -156,6 +160,16 @@ describe("exportSopToSvgImpl", () => {
           fill_color: value,
         });
         expect(parsed.success, `should accept ${JSON.stringify(value)}`).toBe(true);
+      }
+    });
+
+    it("rejects hex strings of non-standard length (only #rgb/#rgba/#rrggbb/#rrggbbaa allowed)", () => {
+      for (const value of ["#12", "#12345", "#1234567"]) {
+        const parsed = exportSopToSvgSchema.safeParse({
+          source_path: "/project1/empty",
+          stroke_color: value,
+        });
+        expect(parsed.success, `should reject ${JSON.stringify(value)}`).toBe(false);
       }
     });
 
