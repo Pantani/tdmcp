@@ -2,7 +2,7 @@
 
 Date: 2026-06-01
 Status: product/architecture plan ready for implementation scoping
-Harness: `harness` discovery -> `tdmcp-pipeline` delivery
+Harness: `tdmcp-feature-discovery` -> `tdmcp-pipeline`
 Working title: AI-Controlled Party
 
 ## Summary
@@ -35,8 +35,8 @@ TDMCP already has enough core pieces to support a staged demo:
   output setup, and recording/rendering paths.
 - Physical control: `create_dmx_fixture_pipeline`, external I/O for OSC/MIDI/DMX/Art-Net
   style workflows, MIDI reactive controls, and control surfaces.
-- Safety and operations: stage dashboard, panic/freeze/blackout controls, `tdmcp-agent
-  panic`, bridge health, and safe tool profiles.
+- Safety and operations: stage dashboard, panic/freeze/blackout controls,
+  `tdmcp-agent panic`, bridge health, and safe tool profiles.
 - LLM surface: local copilot, OpenAI-compatible `TDMCP_LLM_BASE_URL`, server-side sampling
   fallbacks, and CLI automation commands.
 
