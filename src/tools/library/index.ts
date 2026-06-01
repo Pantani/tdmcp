@@ -29,6 +29,7 @@ import { registerComponentChangelogTrail } from "./componentChangelogTrail.js";
 import { registerCuratedCollectionPack } from "./curatedCollectionPack.js";
 import { registerDiffLibraryAssets } from "./diffLibraryAssets.js";
 import { registerExportPaletteComponent } from "./exportPaletteComponent.js";
+import { registerGenerativeClassicsPack } from "./generativeClassicsPack.js";
 import { registerImportRecipeFromUrl } from "./importRecipeFromUrl.js";
 import { registerProvenanceStamp } from "./provenanceStamp.js";
 
@@ -873,4 +874,6 @@ export const libraryRegistrars: ToolRegistrar[] = [
   // Campaign BEYOND Wave 5 (backlog 2026-05-30 — v0.7.0):
   registerCuratedCollectionPack,
   registerComponentChangelogTrail,
+  // Ingest-extend Wave 3 sub-batch A (campaign 2026-05-31 — v0.9.0):
+  registerGenerativeClassicsPack,
 ];

@@ -21,8 +21,10 @@ import { registerSaveRecipeToVault } from "./saveRecipeToVault.js";
 import { registerScaffoldVault } from "./scaffoldVault.js";
 import { registerStyleMemory } from "./styleMemory.js";
 import { registerSyncPresetsVault } from "./syncPresetsVault.js";
+import { registerTagAndSearchLibrary } from "./tagAndSearchLibrary.js";
 import { registerVariantPack } from "./variantPack.js";
 import { registerVaultRepoSync } from "./vaultRepoSync.js";
+import { registerVersionLibraryAsset } from "./versionLibraryAsset.js";
 
 /**
  * Tools that bridge an Obsidian vault and TouchDesigner. All of them are gated on
@@ -60,4 +62,7 @@ export const vaultRegistrars: ToolRegistrar[] = [
   registerVaultRepoSync,
   registerVariantPack,
   registerLearnFromMyCorpus,
+  // Ingest-extend Wave 3 sub-batch A (campaign 2026-05-31 — v0.9.0):
+  registerTagAndSearchLibrary,
+  registerVersionLibraryAsset,
 ];

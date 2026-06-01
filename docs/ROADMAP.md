@@ -100,6 +100,24 @@ release is cut.
   `tdmcp-agent log-tail`, `record-fixtures`, `fanout`, `controller-bridge`,
   and `voice` / `llm-voice`.
 
+### v0.9.0 — Smarter assistance & library publishing (Wave 3 sub-batch A) · main line, not yet public
+
+The first three Milestone-3 features shipped on `main` as the opening sub-batch
+of the Ingest-extend Wave 3. Pure-Node/library work — no TouchDesigner bridge
+required. The remaining six Wave-3 features (TD-required) follow in a separate
+session.
+
+- ✅ **`tag_and_search_library`** — faceted browse + tag editing over the vault
+  library (Recipes/ + Components/ markdown notes). `op:list`/`op:search`/`op:tag`,
+  preserves `'*'`-pinned user tags.
+- ✅ **`version_library_asset`** — SemVer patch/minor/major bumps for a vault
+  asset, recorded in a sidecar `<asset>.versions.json` and written back to the
+  note's frontmatter `version`.
+- ✅ **First canonical recipe pack — `generative_classics_pack`** — curated
+  6-technique pack (feedback tunnel, audio spectrum, noise landscape, particle
+  galaxy, reaction-diffusion, webcam glitch) that emits an `import_recipe_bundle`-
+  compatible bundle JSON.
+
 ### v0.8.0 — Ingest & extend (Waves 1 & 2) · main line, not yet public
 
 The Ingest & Extend campaign opened the next minor line. Two waves shipped on
@@ -312,9 +330,10 @@ corpus learning.*
   `learn_conventions` and `learn_from_my_corpus` into a persistent session
   profile the agent reads before every new build.
 - **Trust & publish** — with `lint_recipe_library`, provenance, checksums,
-  lineage, curated packs and vault sync in place, finish `tag_and_search_library`,
-  `version_library_asset`, `export_look_tox`, `export_sop_to_svg` and the first
-  canonical technique recipe pack.
+  lineage, curated packs and vault sync in place, 🚧 `tag_and_search_library`,
+  🚧 `version_library_asset` and the 🚧 first canonical technique recipe pack
+  (`generative_classics_pack`) are now merged on `main` (v0.9.0 line, pending
+  release); `export_look_tox` and `export_sop_to_svg` are still ⬜ planned.
 
 ### Milestone 4 — Deeper authoring & operator DX · ~v0.10.0
 

@@ -6,6 +6,37 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (Ingest-extend Wave 3 sub-batch A — targeting v0.9.0)
+
+Three pure-Node library/publishing tools — no TouchDesigner bridge required.
+Lands the first three Milestone-3 (M3 — Smarter assistance & library publishing)
+features as a partial Wave 3; the remaining six Wave-3 features (TD-required)
+follow in a separate session.
+
+- **`tag_and_search_library`** — faceted browse + tag editing over the vault
+  library (`<vault>/Recipes/*.md` + `<vault>/Components/*.md`). `op:"list"`
+  enumerates every asset and its tags; `op:"search"` filters by free-text
+  `query` and/or `tags_any` / `tags_all` set logic; `op:"tag"` edits one
+  asset's frontmatter tags (union or replace, always preserving `'*'`-pinned
+  user tags — same convention as `auto_tag_library_asset`). Pure vault I/O.
+- **`version_library_asset`** — SemVer `patch`/`minor`/`major` bumps for a vault
+  recipe or component note, recorded in a sidecar `<asset>.versions.json`
+  (`asset_path` + `current` + `history` list with version/bump/note/timestamp)
+  and reflected in the note's frontmatter `version`. Pass `read_only:true` to
+  inspect without bumping. Pre-existing frontmatter versions are captured as the
+  history root on the first bump.
+- **`generative_classics_pack`** — the first canonical technique recipe pack:
+  curated subset of 6 built-in recipes that recreate well-known generative looks
+  (`feedback_tunnel`, `audio_spectrum_bars`, `noise_landscape`, `particle_galaxy`,
+  `reaction_diffusion`, `webcam_glitch`). `list_only:true` (default) returns
+  the technique cards + availability; `list_only:false` writes a portable
+  `import_recipe_bundle`-compatible bundle JSON at `install_path` (default
+  `recipes/generative_classics.pack.json`). Recipes pulled live from the recipe
+  library so the pack always reflects the authoritative validated copies.
+
+Tool registry: 257 → 260. Unit tests: 2935 → 2953 (+18 new assertions across the
+three tools).
+
 ### Fixed (targeting v0.8.1 — `create_data_source_http_ws` hotfix)
 
 - **`create_data_source_http_ws`** no longer fails with
