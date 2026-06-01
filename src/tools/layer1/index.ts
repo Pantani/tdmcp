@@ -19,18 +19,22 @@ import { registerCreateDataVisualization } from "./createDataVisualization.js";
 import { registerCreateDepthDisplacement } from "./createDepthDisplacement.js";
 import { registerCreateDepthSilhouette } from "./createDepthSilhouette.js";
 import { registerCreateDisplacementWarp } from "./createDisplacementWarp.js";
+import { registerCreateDither } from "./createDither.js";
 import { registerCreateDmxFixturePipeline } from "./createDmxFixturePipeline.js";
 import { registerCreateDomeOutput } from "./createDomeOutput.js";
 import { registerCreateEnergyStructure } from "./createEnergyStructure.js";
 import { registerCreateEngineComp } from "./createEngineComp.js";
 import { registerCreateFeedbackNetwork } from "./createFeedbackNetwork.js";
 import { registerCreateFeedbackTunnel } from "./createFeedbackTunnel.js";
+import { registerCreateFluidSim } from "./createFluidSim.js";
 import { registerCreateGenerativeArt } from "./createGenerativeArt.js";
 import { registerCreateGenerativeAudio } from "./createGenerativeAudio.js";
 import { registerCreateGlitch } from "./createGlitch.js";
 import { registerCreateGpuParticleField } from "./createGpuParticleField.js";
 import { registerCreateGrowthSystem } from "./createGrowthSystem.js";
 import { registerCreateHalftone } from "./createHalftone.js";
+import { registerCreateImageToParticles } from "./createImageToParticles.js";
+import { registerCreateJfaVoronoi } from "./createJfaVoronoi.js";
 import { registerCreateKaleidoscope } from "./createKaleidoscope.js";
 import { registerCreateKeyer } from "./createKeyer.js";
 import { registerCreateKeyframeAnimation } from "./createKeyframeAnimation.js";
@@ -81,7 +85,9 @@ import { registerDetectPitch } from "./detectPitch.js";
 import { registerDetectTempo } from "./detectTempo.js";
 import { registerExtractAudioFeatures } from "./extractAudioFeatures.js";
 import { registerGetPreview } from "./getPreview.js";
+import { registerImportIsfShader } from "./importIsfShader.js";
 import { registerImportModel } from "./importModel.js";
+import { registerImportShadertoy } from "./importShadertoy.js";
 import { registerListRecipes } from "./listRecipes.js";
 import { registerMoodboardToSystem } from "./moodboardToSystem.js";
 import { registerScaffoldGenre } from "./scaffoldGenre.js";
@@ -193,4 +199,11 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateDmxFixturePipeline,
   // Campaign BEYOND Wave 5 (backlog 2026-05-30 — v0.7.0):
   registerCreateGrowthSystem,
+  // Campaign ingest-extend Wave 1 (2026-05-31): shader ingest + new looks:
+  registerImportShadertoy,
+  registerImportIsfShader,
+  registerCreateFluidSim,
+  registerCreateImageToParticles,
+  registerCreateDither,
+  registerCreateJfaVoronoi,
 ];

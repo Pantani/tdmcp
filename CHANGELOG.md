@@ -6,6 +6,37 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+**Ingest-extend Wave 1 — Ecosystem on-ramp + signature looks** (campaign
+`ingest_extend_20260531`, Arc 5 "Ingest & extend" / ROADMAP Milestone 2, targeting
+the v0.8.0 line). One shared foundation module plus six new Layer-1 tools open
+tdmcp to the wider GLSL ecosystem (Shadertoy + ISF) and add four signature looks
+(fluid sim, image-to-particles, dither, JFA voronoi).
+
+### Added (Ingest-extend Wave 1)
+
+- **`apply_glsl_top_mapping`** (foundation, new `src/tools/foundation/` directory)
+  — shared GLSL-TOP translation layer: preamble injection, `out fragColor`,
+  `iTime`→`absTime.seconds`/uniform, `iResolution`/`iMouse`/`iChannelN`→TOP
+  inputs + uniform CHOP, ISF `INPUTS`→custom-page mapping. Pure Node/TS, no TD.
+  Consumed by both importers below so they share one mapping contract.
+- **`import_shadertoy`** — paste a Shadertoy URL or `mainImage` source and get a
+  translated, wired, previewable GLSL TOP. Translate-on-demand only (never
+  stored/redistributed); offline-safe via `raw_source`.
+- **`import_isf_shader`** — parse ISF (`.fs`) JSON header + translate to a
+  glslTOP with an auto-generated `add_custom_parameters` page (INPUTS →
+  float/color/bool/event/long). Own parser, no bundled `.tox`.
+- **`create_fluid_sim`** — GPU 2D Navier-Stokes ink/dye/smoke simulation
+  (advection → divergence → pressure-Jacobi → gradient-subtract → vorticity)
+  with audio/motion/pointer force binding and Viscosity/Vorticity/Dissipation
+  knobs.
+- **`image_to_particles`** — turn an image/video into a particle reconstruction
+  that springs toward rest, with audio-driven scatter; Reorder TOP → CHOP →
+  TOP-instancing.
+- **`create_dither`** — 1-bit/N-bit Bayer ordered dither + error-diffusion
+  effect (palette size, gameboy preset). Own GLSL.
+- **`create_jfa_voronoi`** — Jump-Flood-Algorithm Voronoi / stained-glass
+  generator, multipass GLSL, with three palette modes.
+
 **Wave 2 — Show automation + musical reactivity** (campaign `beyond_20260530`).
 Eight new Layer-1 tools and one CLI verb turn the v0.7.0 live-show foundation
 into a smarter, more musical conductor. Tool registry is now **213** (was 205).
