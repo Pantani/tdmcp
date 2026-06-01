@@ -572,6 +572,7 @@ import { vaultRepoSyncImpl, vaultRepoSyncSchema } from "../tools/vault/vaultRepo
 import {
   describeConfig,
   type LoadConfigOptions,
+  listConfigProfiles,
   loadConfig,
   type TdmcpConfig,
   tdBaseUrl,
@@ -1985,6 +1986,7 @@ function usage(): string {
   lines.push(
     "  --params-file <f> / --params -   Read --params JSON from a file or stdin (Unix pipe).",
   );
+  lines.push("  --continue-on-error  With `run`, execute remaining steps after a failure.");
   lines.push("  --filter / --exclude <csv>  (watch) Only/never stream these event types.");
   lines.push(
     "  --no-color       Disable terminal color output (accepted for script compatibility).",
@@ -2003,10 +2005,12 @@ function usage(): string {
   lines.push(
     "  config               Print the effective config (redacted); --write-env for a paste-ready block.",
   );
+  lines.push("  config profiles      List saved config profile names and keys (values hidden).");
+  lines.push("  config profile <n>   Show one profile as an effective redacted config.");
   lines.push(
     "  config init [path]   Write a starter ~/.tdmcp/config.env (or [path]); --force to overwrite, --dry-run to preview.",
   );
-  lines.push("  run <file>           Run a JSON file containing command steps.");
+  lines.push("  run <file|->         Run a JSON file, or stdin, containing command steps.");
   lines.push("  completion <shell>   Print a completion snippet for bash, zsh, or fish.");
   lines.push("  preview <nodePath>   Capture a TOP to a PNG file (-o/--out).  [writes a file]");
   lines.push("  watch                Stream TD events as ndjson until Ctrl-C.  [long-running]");
@@ -2029,6 +2033,8 @@ function usage(): string {
 export interface RunCliOptions {
   /** Inject a context (used by tests); production builds one from env config. */
   makeCtx?: () => ToolContext;
+  /** Inject stdin for tests; production reads fd 0. */
+  stdin?: string;
 }
 
 /** Build {@link LoadConfigOptions} from the global CLI flags (profile / config / host / port / timeout). */
@@ -2112,6 +2118,7 @@ function parseCliArgs(argv: string[]) {
       fix: { type: "boolean", default: false },
       version: { type: "boolean", short: "V", default: false },
       "params-file": { type: "string" },
+      "continue-on-error": { type: "boolean", default: false },
       filter: { type: "string" },
       exclude: { type: "string" },
       // `panic` top-level verb:
@@ -2202,7 +2209,8 @@ function nearestCommand(input: string): string | undefined {
 }
 
 /** Reads stdin to a string (for `--params -`). Synchronous: the CLI is a one-shot. */
-function readStdin(): string {
+function readStdin(opts: Pick<RunCliOptions, "stdin"> = {}): string {
+  if (opts.stdin !== undefined) return opts.stdin;
   try {
     return readFileSync(0, "utf8");
   } catch {
@@ -2216,11 +2224,12 @@ function readStdin(): string {
  */
 function assembleParams(
   values: Record<string, unknown>,
+  opts: Pick<RunCliOptions, "stdin"> = {},
 ): { raw: Record<string, unknown> } | { error: string } {
   const raw: Record<string, unknown> = {};
   try {
     let paramsStr = typeof values.params === "string" ? values.params : undefined;
-    if (paramsStr === "-") paramsStr = readStdin();
+    if (paramsStr === "-") paramsStr = readStdin(opts);
     else if (typeof values["params-file"] === "string")
       paramsStr = readFileSync(values["params-file"], "utf8");
     if (typeof paramsStr === "string" && paramsStr.trim())
@@ -2319,6 +2328,7 @@ function completionScript(shell: string): string | undefined {
     "--td-port",
     "--timeout",
     "--params-file",
+    "--continue-on-error",
     "--filter",
     "--exclude",
     "--quiet",
@@ -2397,6 +2407,34 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
     return { stdout: result.stdout, stderr: result.stderr, code: result.code };
   }
 
+  // `config profiles` — list named profiles from the selected config file without
+  // leaking values. `config profile <name>` resolves one named profile and redacts
+  // secrets just like `config`.
+  if (positionals[0] === "config" && positionals[1] === "profiles") {
+    const listed = listConfigProfiles(process.env, cliLoadOptions(values));
+    return { stdout: `${JSON.stringify(listed, null, 2)}\n`, stderr: "", code: 0 };
+  }
+  if (positionals[0] === "config" && positionals[1] === "profile") {
+    const profile = positionals[2];
+    if (!profile)
+      return { stdout: "", stderr: 'Missing profile name for "config profile".\n', code: 2 };
+    let cfg: TdmcpConfig;
+    try {
+      cfg = loadConfig(process.env, { ...cliLoadOptions(values), profile });
+    } catch (err) {
+      return { stdout: "", stderr: `${(err as Error).message}\n`, code: 2 };
+    }
+    return {
+      stdout: `${JSON.stringify(
+        { profile, tdBaseUrl: tdBaseUrl(cfg), ...describeConfig(cfg) },
+        null,
+        2,
+      )}\n`,
+      stderr: "",
+      code: 0,
+    };
+  }
+
   // `config` — print the effective resolved config (secrets redacted), honoring
   // --profile/--config and the host/port overrides; --write-env emits a paste-ready
   // export block. Read-only and reachable even when TD is offline.
@@ -2437,7 +2475,8 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
     if (!file) return { stdout: "", stderr: 'Missing file for "run".\n', code: 2 };
     let steps: RunStep[];
     try {
-      const parsedFile = runFileSchema.parse(JSON.parse(readFileSync(file, "utf8")));
+      const rawFile = file === "-" ? readStdin(opts) : readFileSync(file, "utf8");
+      const parsedFile = runFileSchema.parse(JSON.parse(rawFile));
       steps = Array.isArray(parsedFile) ? parsedFile : parsedFile.steps;
     } catch (err) {
       return { stdout: "", stderr: `Invalid run file: ${(err as Error).message}\n`, code: 2 };
@@ -2451,6 +2490,7 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
       stderr: string;
     }> = [];
     const globalArgv = forwardedGlobalArgv(values);
+    let finalCode = 0;
     for (const [index, step] of steps.entries()) {
       const stepArgv = [...globalArgv, ...runStepArgv(step)];
       const result = await runCli(stepArgv, opts);
@@ -2462,20 +2502,27 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
         stderr: result.stderr,
       });
       if (result.code !== 0) {
-        return {
-          stdout: `${JSON.stringify({ steps: results }, null, 2)}\n`,
-          stderr: "",
-          code: result.code,
-        };
+        if (finalCode === 0) finalCode = result.code;
+        if (!values["continue-on-error"]) {
+          return {
+            stdout: `${JSON.stringify({ steps: results }, null, 2)}\n`,
+            stderr: "",
+            code: result.code,
+          };
+        }
       }
     }
-    return { stdout: `${JSON.stringify({ steps: results }, null, 2)}\n`, stderr: "", code: 0 };
+    return {
+      stdout: `${JSON.stringify({ steps: results }, null, 2)}\n`,
+      stderr: "",
+      code: finalCode,
+    };
   }
 
   // `preview <nodePath> -o file.png` — capture a TOP and write it to disk. This is a
   // side effect that doesn't fit the CallToolResult command table, so it's handled here.
   if (positionals[0] === "preview") {
-    const assembled = assembleParams(values);
+    const assembled = assembleParams(values, opts);
     if ("error" in assembled) {
       return {
         stdout: "",
@@ -2848,7 +2895,7 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   }
   const { key, cmd } = resolved;
 
-  const assembled = assembleParams(values);
+  const assembled = assembleParams(values, opts);
   if ("error" in assembled) {
     return { stdout: "", stderr: `Invalid JSON in --params/--json: ${assembled.error}\n`, code: 2 };
   }

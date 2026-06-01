@@ -31,6 +31,8 @@
     "scripts/tdmcp-lops.mjs",
     "safeskill.manifest.json",
     "recipes",
+    "docs/guide/prompt-cookbook.md",
+    "docs/pt/guide/prompt-cookbook.md",
     "td/bootstrap.py",
     "td/modules",
     "td/README.md",

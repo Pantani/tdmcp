@@ -2,7 +2,12 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { describeConfig, loadConfig, tdBaseUrl } from "../../src/utils/config.js";
+import {
+  describeConfig,
+  listConfigProfiles,
+  loadConfig,
+  tdBaseUrl,
+} from "../../src/utils/config.js";
 
 describe("loadConfig", () => {
   it("falls back to defaults with empty env", () => {
@@ -85,6 +90,23 @@ describe("loadConfig — config files & profiles", () => {
     const cfg = loadConfig({}, { useFiles: true, cwd: dir, profile: "club" });
     expect(cfg.tdHost).toBe("192.168.1.5");
     expect(cfg.tdPort).toBe(9981);
+  });
+
+  it("lists named profiles without resolving secrets", () => {
+    writeConfig({
+      tdHost: "base-host",
+      profiles: {
+        club: { tdHost: "club-host", bridgeToken: "secret" },
+        studio: { tdPort: 9999 },
+      },
+    });
+
+    const listed = listConfigProfiles({}, { useFiles: true, cwd: dir });
+    expect(listed.profiles).toEqual([
+      { name: "club", keys: ["bridgeToken", "tdHost"] },
+      { name: "studio", keys: ["tdPort"] },
+    ]);
+    expect(JSON.stringify(listed)).not.toContain("secret");
   });
 
   it("can select a profile through TDMCP_PROFILE when files are enabled", () => {

@@ -93,6 +93,42 @@ describe("tdmcp-agent CLI", () => {
     }
   });
 
+  it("runs a JSON command file from stdin with run -", async () => {
+    const r = await runCli(["run", "-"], {
+      stdin: JSON.stringify([
+        {
+          command: "nodes create",
+          dry_run: true,
+          params: { parent_path: "/project1", type: "noiseTOP" },
+        },
+      ]),
+    });
+
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.steps).toHaveLength(1);
+    expect(doc.steps[0].stdout.dryRun).toBe(true);
+    expect(doc.steps[0].stdout.command).toBe("nodes create");
+  });
+
+  it("continues a JSON run file after a failed step when requested", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-agent-run-"));
+    try {
+      const file = join(dir, "continue-plan.json");
+      writeFileSync(file, JSON.stringify([{ command: "nodes frobnicate" }, { command: "config" }]));
+
+      const r = await runCli(["run", file, "--continue-on-error"]);
+      expect(r.code).toBe(2);
+      const doc = JSON.parse(r.stdout);
+      expect(doc.steps).toHaveLength(2);
+      expect(doc.steps[0].code).toBe(2);
+      expect(doc.steps[1].code).toBe(0);
+      expect(doc.steps[1].stdout.tdBaseUrl).toBe("http://127.0.0.1:9980");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("propagates global config flags into JSON run-file steps", async () => {
     const dir = mkdtempSync(join(tmpdir(), "tdmcp-agent-run-"));
     try {
@@ -124,6 +160,57 @@ describe("tdmcp-agent CLI", () => {
       expect(r.code).toBe(0);
       const doc = JSON.parse(r.stdout);
       expect(doc.steps[0].stdout.tdBaseUrl).toBe("http://club-host:9982");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("lists profiles from the selected config file", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-agent-cfg-"));
+    try {
+      const config = join(dir, "tdmcp.json");
+      writeFileSync(
+        config,
+        JSON.stringify({
+          profiles: {
+            club: { tdHost: "club-host" },
+            studio: { tdPort: 9999 },
+          },
+        }),
+      );
+
+      const r = await runCli(["config", "profiles", "--config", config]);
+      expect(r.code).toBe(0);
+      const doc = JSON.parse(r.stdout);
+      expect(doc.profiles).toEqual([
+        { name: "club", keys: ["tdHost"] },
+        { name: "studio", keys: ["tdPort"] },
+      ]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("shows a named profile as an effective redacted config", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-agent-cfg-"));
+    try {
+      const config = join(dir, "tdmcp.json");
+      writeFileSync(
+        config,
+        JSON.stringify({
+          tdPort: 9980,
+          profiles: {
+            club: { tdHost: "club-host", bridgeToken: "secret" },
+          },
+        }),
+      );
+
+      const r = await runCli(["config", "profile", "club", "--config", config]);
+      expect(r.code).toBe(0);
+      const doc = JSON.parse(r.stdout);
+      expect(doc.profile).toBe("club");
+      expect(doc.tdBaseUrl).toBe("http://club-host:9980");
+      expect(doc.bridgeToken).toBe("***redacted***");
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

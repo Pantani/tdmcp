@@ -328,6 +328,11 @@ polish around the parts that still need extra live tuning or unfinished panels.*
 about making those primitives feel continuous across sessions and strong under a
 real multimodal setup.*
 
+- **Main progress after v0.7.0 (unreleased).** The prompt/resource plumbing now
+  has three small v0.8.x pieces on `main`: `tdmcp://prompts` is generated from
+  the actual prompt registry, `tdmcp://recipes/search/{query}` searches the
+  recipe catalog, and `tdmcp://cookbook` / `tdmcp://cookbook/{en|pt}` expose the
+  prompt cookbook to MCP clients.
 - **AI deepening** — live-tune `caption_top`, `copilot_vision` and
   `repair_network`; add richer chat flags, transcript persistence and smarter
   handoff when the local copilot reaches its limits.
@@ -343,6 +348,10 @@ real multimodal setup.*
 *Unwrap the last big TouchDesigner authoring surfaces and finish the operator /
 install story.*
 
+- **Main progress after v0.7.0 (unreleased).** The operator/DX lane now includes
+  `tdmcp --help`, `tdmcp-agent run -`, `tdmcp-agent run --continue-on-error`,
+  `tdmcp-agent config profiles`, `tdmcp-agent config profile <name>`, and
+  opt-in `get_node_state_runtime include_info_chop:true` Info CHOP telemetry.
 - **Authoring** — tackle the GPU / optical-flow / SDF / strange-attractor
   deferred generators, plus MediaPipe face / hand / segmentation on the in-tree
   tracking engine.
@@ -454,13 +463,13 @@ or partial work.
 | `install_client_writers` | `install-client --write` deep-merges + verifies the config | M | High | High | P1 | ROADMAP | per-client config paths |
 | `doctor_fix_autoexec` | `doctor --fix` executes safe repairs | M | High | High | P1 | ROADMAP | none |
 | `watch_exec_hook` | `watch --on beat --exec '<cmd>'` reactive engine | M | Med | High | P1 | ROADMAP | event-storm debounce |
-| `tdmcp_top_level_help` | Real `tdmcp --help` on the primary binary | S | Med | High | P1 | NEW | never intercept empty argv |
+| ✅ `tdmcp_top_level_help` | Real `tdmcp --help` on the primary binary | S | Med | High | P1 | NEW | landed on main after v0.7.0 |
 | `agent_command_index_resource` | `tdmcp-agent commands --json` + `tdmcp://commands` | S | Med | High | P1 | NEW | none |
 | `install_bridge_verify` | `install-bridge --verify`/`--wait`/`--port` polls the bridge | S | Med | High | P1 | ROADMAP | none |
 | `repl_history_and_completion` | Persistent history + Tab-completion in the REPL | M | Med | High | P1 | ROADMAP | none |
 | `preview_inline_and_watch` | `preview --inline` (iTerm/Kitty/sixel) + `--watch` | M | Med | Med | P1 | ROADMAP | terminal-protocol detect |
 | `help_grouping_and_per_command_help` | Group `usage()` by theme + `help <command>` | M | Med | High | P2 | NEW | none |
-| `run_file_stdin_and_continue` | `run -` (stdin) + `--continue-on-error` | S | Med | High | P2 | EXTENSION | none |
+| ✅ `run_file_stdin_and_continue` | `run -` (stdin) + `--continue-on-error` | S | Med | High | P2 | EXTENSION | landed on main after v0.7.0 |
 | `show_mode_oneliner` | `tdmcp show <profile>` — load+doctor+perform+pre-flight | M | Med | Med | P2 | NEW | abort semantics |
 | `output_format_table_and_csv` | `--output table`/`csv` for list results | S | Low | High | P2 | EXTENSION | none |
 | `error_exit_code_taxonomy` | Distinct exit codes (offline/TD-error/config) | S | Low | Med | P2 | NEW | error subclass survives |
@@ -468,7 +477,7 @@ or partial work.
 | `watch_pretty_and_count` | `watch --pretty` + heartbeat | S | Low | High | P2 | EXTENSION | none |
 | `http_transport_oneflag_launch` | `tdmcp serve --http [--port]` | S | Low | High | P2 | NEW | keep bare `tdmcp`=stdio |
 | `packages_cli_help_and_completion_parity` | Fold `packages` tree into top-level help/completion | S | Low | High | P2 | EXTENSION | none |
-| `profile_list_and_show` | `tdmcp config profiles` lists saved venue profiles | S | Low | Med | P2 | NEW | small refactor |
+| ✅ `profile_list_and_show` | `tdmcp-agent config profiles` lists saved venue profiles; `config profile <name>` shows a redacted effective profile | S | Low | Med | P2 | NEW | landed on main after v0.7.0 |
 
 #### A.4 · AI & LLM integration
 
@@ -479,17 +488,17 @@ or partial work.
 | `chat_cli_flags` | `chat --read-only`/`--creative`/`--prompt` (headless) | M | Med | High | P1 | ROADMAP | chat server accepts fixed tier |
 | `copilot_session_persistence` | Resume transcript + last model/tier | M | Med | High | P1 | ROADMAP | none |
 | `plan_visual`→LLM-grounded | Upgrade `describe_project` to an optional LLM planner | M | Med | High | P1 | EXTENSION | none (keyword stays default) |
-| `prompt_catalog_autogen` | Generate `tdmcp://prompts` from the registry | S | Med | High | P1 | NEW | none |
-| `cookbook_resource` | Expose the prompt-cookbook as `tdmcp://cookbook` | S | Med | Med | P2 | NEW | machine-readable source |
+| ✅ `prompt_catalog_autogen` | Generate `tdmcp://prompts` from the registry | S | Med | High | P1 | NEW | landed on main after v0.7.0 |
+| ✅ `cookbook_resource` | Expose the prompt-cookbook as `tdmcp://cookbook` / `tdmcp://cookbook/{en|pt}` | S | Med | Med | P2 | NEW | landed on main after v0.7.0 |
 | `llm_config_knobs` | `TDMCP_LLM_TIER`/`_MAX_STEPS`/`_TEMPERATURE` keys | S | Low | High | P2 | NEW | none |
-| `recipe_resource_search` | Keyword search over recipes | S | Low | High | P2 | EXTENSION | none |
+| ✅ `recipe_resource_search` | Keyword search over recipes via `tdmcp://recipes/search/{query}` | S | Low | High | P2 | EXTENSION | landed on main after v0.7.0 |
 | `narrate_set` | Persisted narration during `auto_vj_director` | S | Low | Med | P2 | NEW | none |
 
 #### A.5 · TouchDesigner depth (bridge + operators)
 
 | Feature | Delivers | Effort | Impact | Conf | Priority | Novelty | Probe-first |
 |---|---|---|---|---|---|---|---|
-| `info_chop_telemetry` | Info-CHOP/DAT path in `get_node_state_runtime` | M | Med | High | P1 | EXTENSION | channel names per family |
+| ✅ `info_chop_telemetry` | Opt-in Info CHOP sampling in `get_node_state_runtime` (`include_info_chop:true`) | M | Med | High | P1 | EXTENSION | landed on main after v0.7.0; live channel names still vary by TD build |
 | `createable_truth_flag` | `GET /api/optypes` ground truth → mark createable/deprecated | M | Med | Med | P1 | NEW | probe-live (enumeration) |
 | `bridge_health_watchdog` | `GET /api/health` — cook-rate/dropped-frame/GPU + staleness | S | Med | Med | P1 | NEW | realtime attr names |
 | `watch_node` | Sample one op's state/param/channel over an interval | S | Low | High | P2 | NEW | none |

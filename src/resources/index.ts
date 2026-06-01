@@ -1,4 +1,5 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { registerCookbookResource } from "./cookbookResource.js";
 import { registerGlslPatternResource } from "./glslPatternResource.js";
 import { registerOperatorResource } from "./operatorResource.js";
 import { registerPatternResource } from "./patternResource.js";
@@ -17,6 +18,7 @@ export function registerAllResources(server: McpServer, ctx: ResourceContext): v
   registerGlslPatternResource(server, ctx);
   registerRecipeResource(server, ctx);
   registerTutorialResource(server, ctx);
+  registerCookbookResource(server, ctx);
   registerPromptCatalogResource(server, ctx);
   // Campaign BEYOND Wave 3 (backlog 2026-05-30 — v0.7.0):
   registerSceneSummaryResource(server, ctx);

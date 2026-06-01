@@ -81,6 +81,16 @@ export interface LoadConfigOptions {
   cwd?: string;
 }
 
+export interface ConfigProfileSummary {
+  name: string;
+  keys: string[];
+}
+
+export interface ConfigProfileList {
+  source?: string;
+  profiles: ConfigProfileSummary[];
+}
+
 /** A loaded config file: the base settings, any named profiles, and where it came from. */
 interface ConfigFile {
   base: Record<string, unknown>;
@@ -148,6 +158,21 @@ function readConfigFile(env: NodeJS.ProcessEnv, opts: LoadConfigOptions): Config
     }
   }
   return { base: {}, profiles: {} };
+}
+
+/** Lists named profiles from the selected config file without exposing their values. */
+export function listConfigProfiles(
+  env: NodeJS.ProcessEnv = process.env,
+  opts: LoadConfigOptions = {},
+): ConfigProfileList {
+  const file = readConfigFile(env, { ...opts, useFiles: true });
+  const profiles = Object.entries(file.profiles)
+    .map(([name, values]) => ({
+      name,
+      keys: Object.keys(values).sort(),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  return { source: file.source, profiles };
 }
 
 /**

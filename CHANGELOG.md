@@ -6,7 +6,22 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-No changes yet.
+### Added
+
+- **CLI/operator DX follow-through (main, unreleased):** `tdmcp --help` now
+  prints top-level usage without starting the MCP server; `tdmcp-agent run -`
+  reads run-file JSON from stdin; `tdmcp-agent run --continue-on-error` executes
+  the remaining steps and returns the first non-zero status at the end; and
+  `tdmcp-agent config profiles` / `config profile <name>` list and inspect saved
+  venue profiles with secrets redacted.
+- **MCP resources:** `tdmcp://prompts` is now generated from the real prompt
+  registry (removing manual drift), `tdmcp://recipes/search/{query}` searches the
+  recipe catalog, and `tdmcp://cookbook` plus `tdmcp://cookbook/{en|pt}` expose
+  the prompt cookbook as an MCP resource. The npm package now includes the EN/PT
+  cookbook Markdown needed by that resource.
+- **Runtime telemetry:** `get_node_state_runtime` accepts
+  `include_info_chop:true` to fail-forward sample a temporary Info CHOP and
+  return its numeric channels under `info_chop`.
 
 ## [0.7.0] - 2026-06-01
 

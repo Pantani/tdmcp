@@ -1,4 +1,5 @@
 import { runInstallBridge } from "./cli/installBridge.js";
+import { renderMainHelp } from "./cli/mainHelp.js";
 import { isPackageCommand, runPackageCli } from "./packages/cli.js";
 import { createTdmcpServer } from "./server/tdmcpServer.js";
 import { startTransport } from "./server/transportFactory.js";
@@ -8,6 +9,10 @@ import { getVersion } from "./utils/version.js";
 
 async function main(): Promise<void> {
   const argv = process.argv.slice(2);
+  if (argv[0] === "--help" || argv[0] === "-h") {
+    process.stdout.write(`${renderMainHelp()}\n`);
+    return;
+  }
   if (argv[0] === "--version" || argv[0] === "-v") {
     process.stdout.write(`${getVersion()}\n`);
     return;
