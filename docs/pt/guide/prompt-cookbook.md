@@ -22,15 +22,16 @@ operadores.
 
 <video src="/examples/feedback-tunnel.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
-*Resultado real do prompt acima — uma rede de feedback (blur + displace),
-capturada ao vivo do TouchDesigner.*
+*Uma rede de feedback de alto contraste (blur + displace + bloom), ajustada como
+showpiece em vez de uma demonstração técnica simples.*
 
 > *"Faça um padrão de reação-difusão em evolução, em verdes e pretos, lento e
 > orgânico."*
 
 <video src="/examples/reaction-diffusion.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
-*Reação-difusão, simulada na GPU.*
+*Padrão estilo reação-difusão na GPU, com contraste mais forte e cor pronta para
+palco, não uma simulação de laboratório chapada.*
 
 > *"Construa uma paisagem de ruído fluida em 3D com uma câmera orbitando."*
 
@@ -98,19 +99,28 @@ raízes, circuitos e line-art viva.*
 partir de qualquer fonte, com botões de Zoom / Giro / Rastro — o clássico túnel de
 "cair dentro da tela".*
 
+> *"Preencha o quadro com uma simulação de fluido de tinta em tempo real, ciano e
+> magenta, com splats de áudio no bumbo mas auto-LFO quando não houver mic ligado."*
+
+<video src="/examples/fluid-sim-ink.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_fluid_sim` constrói a pilha de advection / pressão / vorticity / dye em
+GLSL TOPs, expõe controles de viscosidade / dissipação / splat e consegue se
+autoanimar antes de você ligar uma fonte ao vivo.*
+
+> *"Transforme este poster em milhares de partículas que explodem no drop e depois
+> voltam como mola para formar a imagem original."*
+
+<video src="/examples/image-particles-burst.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`image_to_particles` amostra os pixels da fonte como posições e cores de repouso, e
+usa um loop de partículas na GPU para a imagem dissolver, espalhar e se recompor no
+tempo da música.*
+
 ## Reativo a áudio
 
-> *"Faça um analisador de espectro com barras coloridas que reagem à minha música."*
-
-![Um espectro de áudio FFT desenhado como barras coloridas pelo tdmcp](/examples/audio-spectrum.png)
-
-*Áudio ao vivo convertido em espectro de frequências (aqui guiado por um sinal de
-teste — aponte para o mic ou uma faixa).*
-
-> *"Crie uma galáxia de partículas reativa ao áudio guiada pela batida, e dê
-> preview."*
-
-> *"Construa um espectro radial que pulsa no grave, cores quentes."*
+> *"Construa um espectro radial que floresce no grave e solta faíscas cromáticas
+> nos agudos."*
 
 **O que você recebe:** uma cadeia de análise (espectro + nível + batida) alimentando
 um visual, geralmente com um botão de *Sensibilidade*. Veja a
@@ -180,37 +190,38 @@ brilho na frente da sua webcam.
 [popup de permissão do macOS](/pt/guide/troubleshooting#macos-microphone-camera-permission)
 — ou peça uma **fonte sintética de teste** para experimentar sem câmera.
 
-> *"Recorte meu corpo como uma silhueta limpa que eu possa preencher com uma textura
-> em movimento — sem câmera de profundidade, use minha webcam."*
+### Body tracking (webcam, sem hardware extra)
 
-<video src="/examples/depth-silhouette-mask.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+Rastreamento de corpo inteiro por uma webcam comum, via o plugin gratuito
+[MediaPipe](https://github.com/torinmb/mediapipe-touchdesigner) (instale uma vez com
+`tdmcp install mediapipe-touchdesigner`).
 
-*Um matte de silhueta/corpo extraído de uma fonte de profundidade ou vídeo (sem
-dispositivo por padrão), gerado como uma máscara onde você encaixa um visual — sua
-forma vira uma janela para outra camada. Normalmente isso exige um Kinect; aqui
-funciona com uma webcam comum.*
+> *"Configure body tracking pela minha webcam e mostre o esqueleto."*
+
+> *"Faça fitas brilhantes seguirem meus pulsos e ombros, deixando rastros neon longos
+> enquanto eu me movo — use uma pose sintética no preview se a câmera ainda não
+> estiver pronta."*
+
+<video src="/examples/pose-trails-skeleton.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+> *"Controle a intensidade do visual pelo quanto meu corpo está se mexendo."*
+
+**O que você recebe:** o engine MediaPipe carregado + um adaptador que emite um CHOP
+de pose com 33 landmarks (tx/ty/tz/confidence), então um esqueleto ao vivo, trilhas
+de fita ou um visual reativo à câmera. Mantenha a timeline do TD **tocando** (o
+plugin captura por um browser embutido que só roda com a timeline ativa) e permita a
+câmera se o macOS pedir. Sem webcam agora? Peça uma fonte de pose **sintética** para
+montar e pré-visualizar o look offline.
 
 ## Partículas & 3D
 
-> *"Crie um sistema de partículas emitido de uma esfera com turbulência e
-> gravidade, renderizado como sprites brilhantes."*
-
-![Um sistema de partículas criado pelo tdmcp — milhares de sprites saindo de uma esfera](/examples/particle-galaxy.png)
-
-*Uma galáxia de partículas (quadro estático — o movimento das partículas é fino
-demais para um clipe leve).*
-
-> *"Faça 10.000 partículas que rodopiam como uma galáxia."*
-
-![10.000 partículas na GPU rodopiando como uma galáxia no preto](/examples/particles-swirl.png)
-
-*Uma galáxia de pontos rodopiada por um vórtice (quadro estático).*
-
-> *"Construa uma cena 3D com cubos instanciados reagindo a um campo de ruído."*
+> *"Construa um campo denso de blocos 3D instanciados que respira com uma onda de
+> ruído e deixa rastro neon de profundidade enquanto a câmera orbita."*
 
 <video src="/examples/scene-3d.mp4" autoplay loop muted playsinline style="width:100%;max-width:560px;border-radius:8px;display:block"></video>
 
-*Cubos 3D instanciados, girando.*
+*Uma cena de geometria instanciada mais densa, com profundidade, variação de cor e
+movimento vivo, boa como base para áudio, câmera ou modulação de timeline.*
 
 **O que você recebe:** um sistema de partículas ou geometria com botões de *Arrasto
 / Turbulência / Gravidade / Vida* para moldar o movimento.
@@ -251,6 +262,15 @@ iluminação — sua imagem vira um terreno esculpido e iluminado de lado.*
 **profundidade sintética**, que então alimenta o depth-displacement/silhueta — 3D com
 sombras de contato mais um mapa de profundidade fabricado por software.*
 
+> *"Adicione passes cinematográficos de pós 3D a esta cena: sombras SSAO de contato,
+> um pouco de SSR, profundidade de campo rasa e motion blur nos movimentos rápidos."*
+
+<video src="/examples/post-passes-3d-cinematic.mp4" autoplay loop muted playsinline style="width:100%;max-width:560px;border-radius:8px;display:block"></video>
+
+*`post_passes_3d` é a cadeia dedicada para acabamento 3D com depth/normal/velocity;
+`apply_post_processing` redireciona pedidos de SSAO / SSR / DOF / motion-blur para
+ela em vez de fingir que esses passes funcionam num TOP chapado.*
+
 ## Vídeo & câmera
 
 > *"Passe minha webcam por detecção de bordas, um RGB split e um loop de feedback
@@ -260,14 +280,6 @@ sombras de contato mais um mapa de profundidade fabricado por software.*
 
 *O look de glitch / VHS — scanlines, RGB split e datamosh (mostrado sobre uma fonte
 sintética em vez de uma webcam ao vivo).*
-
-> *"Toque este arquivo de vídeo em loop com controle de velocidade."* (passe o
-> caminho)
-
-<video src="/examples/video-player.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
-
-*Um arquivo de vídeo carregado num player com controles de Play / Velocidade
-([Big Buck Bunny](https://peach.blender.org), CC-BY).*
 
 > *"Pegue minha webcam e deixe com cara de fita VHS velha e degradada."*
 
@@ -280,25 +292,16 @@ sintética em vez de uma webcam ao vivo).*
 deck puxa uma fonte TOP ou uma fonte de teste embutida — o equivalente visual de uma
 mesa de DJ.*
 
+> *"Coloque waveform, RGB parade e vectorscope ao lado deste feed de câmera para eu
+> ajustar a grade antes da abertura do show."*
+
+<video src="/examples/video-scopes-monitor.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_video_scopes` monta uma superfície de monitoramento estilo broadcast para
+uma fonte TOP: painéis de waveform, parade e vectorscope que mostram problemas de
+cor / exposição antes de eles virarem problema no projetor.*
+
 ## Texto & títulos
-
-> *"Adicione o título 'ABERTURA' centralizado sobre este visual, em branco."*
-
-![Um título em branco, centralizado sobre um visual](/examples/text-title.png)
-
-> *"Coloque o nome da música no canto inferior esquerdo, em rosa-choque."*
-
-![O nome de uma música em rosa-choque no canto inferior esquerdo de um visual](/examples/text-songname.png)
-
-> *"Faça uma camada de texto (lower-third) transparente para eu compor depois."*
-
-![Uma faixa de título (lower-third) sobre um visual](/examples/text-lowerthird.png)
-
-*Mostrado sobre um visual; a camada real é transparente, pronta para compor.*
-
-**O que você recebe:** uma camada de texto estilizada (tamanho, cor, alinhamento)
-composta sobre seu visual ou em fundo transparente — pronta para mandar à saída.
-Ótimo para letras, títulos, nomes de músicas e créditos.
 
 > *"Pisque a palavra 'DROP' grande e centralizada, no ritmo da batida e sumindo
 > entre os golpes."*
@@ -318,6 +321,10 @@ então o texto desaparece (sobre seu visual) em vez de ir para o preto, sincroni
 iluminação — letras volumétricas de verdade que você pode iluminar e girar, não uma
 sobreposição de texto chapada.*
 
+**O que você recebe:** texto cinético e tocável em vez de uma legenda estática:
+flashes no beat, letras com alpha seguro, títulos 3D extrudados, luzes, materiais e
+controles amigáveis para timeline.
+
 ## Performance ao vivo & controle
 
 > *"Adicione botões de feedback, zoom, giro e blur para eu tocar isto ao vivo."*
@@ -325,6 +332,16 @@ sobreposição de texto chapada.*
 > *"Anime o botão de giro com um LFO lento."*
 
 > *"Crie um relógio de tempo a 128 BPM e sincronize o movimento à batida."*
+
+> *"Faça bridge do Ableton Live para o TouchDesigner: clips, tracks, transporte e
+> macros de device como canais CHOP nomeados, com fallback OSC se o TDAbleton não
+> estiver instalado."*
+
+<video src="/examples/tdableton-bridge.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`setup_tdableton` procura primeiro o componente Palette e depois cai para um OSC In
+simples, então o mesmo patch de show consegue ensaiar mesmo sem setup perfeito de
+estúdio.*
 
 > *"Monte dois cues — 'intro' e 'drop' — entre os quais eu possa transicionar."*
 
@@ -401,6 +418,15 @@ em MIDI ou guiar por uma timeline de cenas.*
 *`create_automation_lane` amostra um parâmetro-alvo num buffer em fase com o compasso
 e depois toca isso de volta por um Lookup CHOP. Chame a mesma lane em modo `record`
 ou `loop` para armar, capturar e tocar movimentos reutilizáveis de botão.*
+
+> *"Grave meu CHOP do controlador manual por oito compassos, faça loop do melhor
+> take e toque de volta como fonte de modulação reutilizável."*
+
+<video src="/examples/chop-recorder-replay.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_chop_recorder` transforma qualquer fluxo CHOP (OSC, MIDI, feature de áudio,
+pose ou controle customizado) numa superfície de captura / playback / loop, então um
+gesto ao vivo vira parte do rig em vez de sumir depois do ensaio.*
 
 > *"No compasso 32 dispare o cue do drop, no compasso 64 inicie o auto-montage e no
 > fim da faixa congele a saída até eu limpar."*
@@ -549,6 +575,24 @@ componente. Bom para rigs de turnê onde "qual versão está neste laptop?" impo
 shaders de pixel/vértice e avisa sobre armadilhas de GLSL no TouchDesigner, como
 `fragColor` ausente, colisões com o preâmbulo F1/F2 e `uTime` não declarado.*
 
+> *"Importe este sketch do Shadertoy, conecte placeholders nos iChannels se precisar,
+> exponha controles de Speed e Mouse, e faça preview do GLSL TOP traduzido."*
+
+<video src="/examples/import-shadertoy-nebula.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`import_shadertoy` mapeia `iTime`, `iResolution`, `iMouse` e `iChannelN` para
+uniforms / entradas TOP amigáveis ao TouchDesigner. Cole `raw_source` quando quiser
+manter a importação inteira offline.*
+
+> *"Importe este shader ISF, gere uma página limpa de parâmetros customizados a partir
+> dos INPUTS e mantenha o GLSL editável no TouchDesigner."*
+
+<video src="/examples/import-isf-plasma-controls.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`import_isf_shader` parseia o cabeçalho JSON do ISF e transforma entradas float /
+color / bool / event / long em controles TouchDesigner, então sketches de biblioteca
+viram redes tocáveis em vez de blocos de código colados.*
+
 > *"Transforme este sketch de GLSL TOP num material no logo 3D, exponha Color, Speed
 > e Fresnel, depois renderize um preview."*
 
@@ -586,6 +630,23 @@ clipe).*
 tamanho acompanha o brilho; expõe a escala dos pontos / Ângulo / matiz. O tom âmbar
 mais o fundo branco-papel dão uma sensação de impressão retrô.*
 
+> *"Deixe esta fonte como um sonho febril de Game Boy: dither ordenado de 4 cores,
+> pixels crocantes, threshold animado e controle Mix ao vivo."*
+
+<video src="/examples/dither-gameboy-poster.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_dither` monta dither Bayer / checker / noise / error-diffusion com
+quantização mono, duotone ou RGB. É um look, não só um filtro utilitário.*
+
+> *"Gere um campo Voronoi de vitral com sementes animadas, linhas escuras grossas e
+> controles de paleta para Color A / Color B."*
+
+<video src="/examples/jfa-voronoi-stained-glass.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_jfa_voronoi` usa uma cadeia Jump-Flooding (seed init, passes por metade,
+color pass) para criar mosaicos / vitrais animados com controles ao vivo de sementes
+e bordas.*
+
 > *"Distorça esta filmagem com uma distorção líquida fluida que ondula como calor
 > sobre o quadro inteiro."*
 
@@ -595,6 +656,24 @@ mais o fundo branco-papel dão uma sensação de impressão retrô.*
 flui, com controles de Quantidade/Velocidade — uma distorção de calor / submersa
 sobre qualquer entrada.*
 
+> *"Transforme este feed de câmera em linhas de tinta fluindo, como um frame de
+> videoclipe desenhado com edge tangent flow e carvão animado."*
+
+<video src="/examples/flow-abstraction-ink-lines.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_flow_abstraction` monta o caminho ETF / FDoG painterly: fluxo coerente de
+linhas em vez de bordas Sobel simples, bom para looks de quadrinho, tinta e câmera
+gravada em metal.*
+
+> *"Dê a este shot um filtro Kuwahara de pintura a óleo, e me deixe alternar entre
+> oil, pencil e watercolor durante o set."*
+
+<video src="/examples/npr-kuwahara-paint.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_npr_filter` expõe o look não-fotorrealista como componente controlável;
+`apply_post_processing` também entende `npr_oil`, `npr_pencil` e `npr_watercolor`
+para cadeias rápidas.*
+
 > *"Dê a isto uma correção de cor cinematográfica teal-and-orange — afunde um pouco
 > os pretos e levante as altas-luzes."*
 
@@ -603,6 +682,15 @@ sobre qualquer entrada.*
 *Uma correção de lift/gamma/gain + saturação/matiz (com LUT opcional) sobre qualquer
 fonte, expondo as rodas como botões — o look teal/laranja de Hollywood como uma
 camada de finalização.*
+
+> *"Aplique este LUT .cube ao feed de câmera, mostre um split antes/depois e caia
+> para GLSL se OCIO não estiver disponível."*
+
+<video src="/examples/lut-film-grade.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`apply_lut` escolhe a melhor rota disponível: OCIO quando existe, lookup por imagem
+para previews de LUT, ou fallback GLSL a partir de `.cube` parseado quando a máquina
+está sem dependências extras.*
 
 > *"Quando eu mover este slider, faça um corte com glitch do primeiro clipe para o
 > segundo, com um estouro de ruído digital."*
@@ -630,6 +718,15 @@ que você pode tocar.*
 *O create_data_source puxa um feed JSON/web ao vivo para canais CHOP; o
 create_data_reactive mapeia esses canais nos parâmetros de um visual com remapeamento
 de faixa por mapeamento — a contraparte de dados da reatividade ao áudio.*
+
+> *"Prototipe um dashboard visual guiado por WebSocket a partir deste stream de
+> eventos, mas rode em modo dry-run / experimental primeiro e relate erros de bridge
+> antes de ligar no show."*
+
+*`create_data_source_http_ws` está documentado como experimental no v0.8.0: o caminho
+HTTP-poll tem um erro fatal rastreado, enquanto a ferramenta continua descoberta para
+planejamento de protótipos e trabalho WebSocket/data-fabric. Use quando você quer que
+o agente seja honesto sobre prontidão em vez de esconder a borda áspera.*
 
 > *"Transforme esta planilha de vendas mensais em barras 3D animadas que crescem, com
 > rótulos de valor."*

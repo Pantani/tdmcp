@@ -20,15 +20,16 @@ tunnel" works better than naming operators. The AI picks the operators.
 
 <video src="/examples/feedback-tunnel.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
-*Real output from the prompt above — a feedback network (blur + displace),
-captured live from TouchDesigner.*
+*A high-contrast feedback network (blur + displace + bloom), tuned as a showpiece
+instead of a plain technical demo.*
 
 > *"Make an evolving reaction-diffusion pattern in greens and blacks, slow and
 > organic."*
 
 <video src="/examples/reaction-diffusion.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
-*Reaction-diffusion, simulated on the GPU.*
+*Reaction-diffusion style GPU patterning with sharper contrast and stage-friendly
+color, not a flat lab simulation.*
 
 > *"Build a flowing noise landscape in 3D with an orbiting camera."*
 
@@ -93,18 +94,27 @@ roots, circuitry and living line-art.*
 *A dedicated infinite-zoom feedback loop (zoom + rotate + decay) seeded from any
 source, with Zoom / Spin / Trail knobs — the classic "falling into the screen" tunnel.*
 
+> *"Fill the frame with a real-time ink-and-dye fluid simulation, cyan and magenta,
+> with audio splats on the kick but an auto-LFO when no mic is connected."*
+
+<video src="/examples/fluid-sim-ink.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_fluid_sim` builds the advection / pressure / vorticity / dye feedback stack
+as GLSL TOPs, exposes viscosity / dissipation / splat controls, and can self-animate
+before you plug in a live source.*
+
+> *"Turn this poster image into thousands of particles that explode on the drop and
+> then spring back into the original image."*
+
+<video src="/examples/image-particles-burst.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`image_to_particles` samples the source pixels as rest positions and colors, then
+uses a GPU particle loop so the image can dissolve, scatter and re-form musically.*
+
 ## Audio-reactive
 
-> *"Make an audio spectrum analyzer with colored bars that react to my music."*
-
-![An FFT audio spectrum drawn as colored bars by tdmcp](/examples/audio-spectrum.png)
-
-*Live audio analyzed into a frequency spectrum (shown driven by a test signal —
-point it at your mic or a track).*
-
-> *"Create an audio-reactive particle galaxy driven by the beat, and preview it."*
-
-> *"Build a radial spectrum that pulses on the bass, warm colors."*
+> *"Build a radial spectrum that blooms on the bass and throws chromatic sparks on
+> the highs."*
 
 **What you'll get:** an analysis chain (spectrum + level + beat) feeding a visual,
 usually with a *Sensitivity* knob. See the
@@ -171,15 +181,6 @@ plus a *Sensitivity* knob. Like the mic, the live camera triggers the
 [macOS permission popup](/guide/troubleshooting#macos-microphone-camera-permission)
 — or ask for a **synthetic test source** to experiment without a camera.
 
-> *"Cut my body out as a clean silhouette I can fill with a moving texture — no
-> depth camera, use my webcam."*
-
-<video src="/examples/depth-silhouette-mask.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
-
-*A silhouette/body matte extracted from a depth or video source (device-free by
-default), output as a mask you can key a visual into — your shape becomes a window
-onto another layer. Normally this implies a Kinect; here it works from a plain webcam.*
-
 ### Body tracking (webcam, no extra hardware)
 
 Full-body **pose tracking** from a plain webcam, via the free
@@ -188,38 +189,29 @@ with `tdmcp install mediapipe-touchdesigner`).
 
 > *"Set up body tracking from my webcam and show me the skeleton."*
 
-> *"Make glowing dots track my joints and leave motion trails as I move."* (the
-> `body_tracking_reactive` recipe)
+> *"Make glowing ribbons track my wrists and shoulders, leaving long neon trails as
+> I move — use a synthetic pose source for the preview if the camera is not ready."*
+
+<video src="/examples/pose-trails-skeleton.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 > *"Drive the visual's intensity from how much my body is moving."*
 
 **What you'll get:** the MediaPipe engine loaded + an adapter that emits a 33-landmark
-pose CHOP (tx/ty/tz/confidence), then a live skeleton or a camera-reactive visual. Keep
-the TD timeline **playing** (the plugin captures through an embedded browser that only
-runs while playing) and grant camera permission if macOS asks. No webcam handy? Ask for
-a **synthetic** pose source to build and preview the look offline.
+pose CHOP (tx/ty/tz/confidence), then a live skeleton, ribbon trail or
+camera-reactive visual. Keep the TD timeline **playing** (the plugin captures through
+an embedded browser that only runs while playing) and grant camera permission if
+macOS asks. No webcam handy? Ask for a **synthetic** pose source to build and preview
+the look offline.
 
 ## Particles & 3D
 
-> *"Create a particle system emitted from a sphere with turbulence and gravity,
-> rendered as glowing sprites."*
-
-![Particle galaxy made with tdmcp — thousands of sprites bursting from a sphere](/examples/particle-galaxy.png)
-
-*A particle galaxy (still frame — particle motion is too fine-grained to embed as
-a light clip).*
-
-> *"Make 10,000 particles that swirl like a galaxy."*
-
-![10,000 GPU particles swirling like a galaxy on black](/examples/particles-swirl.png)
-
-*A galaxy of points swirled by a vortex (still frame).*
-
-> *"Build a 3D scene with instanced cubes reacting to a noise field."*
+> *"Build a dense field of instanced 3D blocks that breathe with a noise wave and
+> leave a neon depth trail as the camera orbits."*
 
 <video src="/examples/scene-3d.mp4" autoplay loop muted playsinline style="width:100%;max-width:560px;border-radius:8px;display:block"></video>
 
-*Instanced 3D cubes, spinning.*
+*A denser instanced-geometry scene with depth, color variation and live motion, useful
+as a base for audio, camera or timeline modulation.*
 
 **What you'll get:** a particle or geometry system with live *Drag / Turbulence /
 Gravity / Lifetime* knobs to shape the motion.
@@ -260,6 +252,15 @@ terrain you can light and orbit.*
 which then feeds depth-displacement or silhouette — contact-shadowed 3D plus a depth
 map manufactured in software, no depth sensor required.*
 
+> *"Add cinematic 3D post passes to this scene: SSAO contact shadows, a little SSR,
+> shallow depth of field and motion blur on fast moves."*
+
+<video src="/examples/post-passes-3d-cinematic.mp4" autoplay loop muted playsinline style="width:100%;max-width:560px;border-radius:8px;display:block"></video>
+
+*`post_passes_3d` is the dedicated 3D finishing chain for depth/normal/velocity-aware
+looks; `apply_post_processing` redirects SSAO / SSR / DOF / motion-blur requests here
+instead of pretending those passes work on a flat TOP.*
+
 ## Video & camera
 
 > *"Pipe my webcam through edge detection, an RGB split and a feedback loop for a
@@ -269,13 +270,6 @@ map manufactured in software, no depth sensor required.*
 
 *The glitch / VHS look — scanlines, RGB split and datamosh (shown on a synthetic
 source rather than a live webcam).*
-
-> *"Play this video file on a loop with speed control."* (give it the path)
-
-<video src="/examples/video-player.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
-
-*A movie file loaded into a player with live Play / Speed controls
-([Big Buck Bunny](https://peach.blender.org), CC-BY).*
 
 > *"Take my webcam and make it look like an old, degraded VHS tape."*
 
@@ -288,25 +282,16 @@ source rather than a live webcam).*
 pulls a source TOP or a built-in test source — the visual equivalent of a DJ mixer,
 the core of any VJ rig.*
 
+> *"Put waveform, RGB parade and vectorscope next to this camera feed so I can tune
+> the grade before the show opens."*
+
+<video src="/examples/video-scopes-monitor.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_video_scopes` builds a broadcast-style monitoring surface for a TOP source:
+waveform, parade and vectorscope panels that make color / exposure problems visible
+before they become projector problems.*
+
 ## Text & titles
-
-> *"Add the title 'OPENING SET' centered over this visual in white."*
-
-![The title OPENING SET in white, centered over a visual](/examples/text-title.png)
-
-> *"Put the song name in the bottom-left corner in hot pink."*
-
-![A song name in hot pink in the lower-left corner of a visual](/examples/text-songname.png)
-
-> *"Make a transparent lower-third text layer I can composite later."*
-
-![A lower-third title bar over a visual](/examples/text-lowerthird.png)
-
-*Shown over a visual; the real layer is transparent, ready to composite.*
-
-**What you'll get:** a styled text layer (font size, color, alignment) composited
-over your visual or on its own transparent background — ready to send to output.
-Great for lyrics, titles, song names and credits.
 
 > *"Flash the word 'DROP' big and centered, snapping to the beat and vanishing
 > between hits."*
@@ -325,6 +310,10 @@ beat-syncable. Exposes the word, size and flash rate.*
 *Extruded 3D type (Text SOP → bevel/extrude → material + Render) with rotation and
 lighting — real volumetric letters you can light and spin, not a flat text overlay.*
 
+**What you'll get:** kinetic, performable text rather than a static caption: beat
+flashes, alpha-safe lyric hits, extruded title geometry, lights, materials and
+timeline-friendly controls.
+
 ## Live performance & control
 
 > *"Add knobs for feedback, zoom, spin and blur so I can perform this live."*
@@ -334,6 +323,14 @@ lighting — real volumetric letters you can light and spin, not a flat text ove
 > *"Make a tempo clock at 128 BPM and sync the movement to the beat."*
 
 > *"Lock the tempo to Ableton Link so it follows whatever's on the network."*
+
+> *"Bridge Ableton Live into TouchDesigner: clips, tracks, transport and device
+> macros as named CHOP channels, with an OSC fallback if TDAbleton is not installed."*
+
+<video src="/examples/tdableton-bridge.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`setup_tdableton` probes for the Palette component first, then falls back to a plain
+OSC In bridge, so the same show patch can rehearse without a perfect studio setup.*
 
 > *"Follow the MIDI clock coming from my DJ software."*
 
@@ -412,6 +409,15 @@ from a scene timeline.*
 *`create_automation_lane` samples a target parameter into a bar-phased buffer, then
 plays it back through a Lookup CHOP. Re-call the same lane in `record` or `loop` mode
 to arm, capture and perform reusable knob moves.*
+
+> *"Record my hand-controller CHOP for eight bars, loop the best take, and scrub it
+> back as a reusable modulation source."*
+
+<video src="/examples/chop-recorder-replay.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_chop_recorder` turns any CHOP stream (OSC, MIDI, audio feature, pose or
+custom control) into a capture / playback / loop surface, so a live gesture can become
+part of the rig instead of disappearing after rehearsal.*
 
 > *"At bar 32 fire the drop cue, at bar 64 start the auto-montage, and at the end of
 > the track freeze the output until I clear it."*
@@ -562,6 +568,24 @@ version is on this laptop?" matters.
 pixel/vertex shader sources, and warns about TouchDesigner GLSL footguns such as
 missing `fragColor`, F1/F2 preamble collisions and undeclared `uTime`.*
 
+> *"Import this Shadertoy sketch, wire the iChannels with placeholders if needed,
+> expose Speed and Mouse controls, and preview the translated GLSL TOP."*
+
+<video src="/examples/import-shadertoy-nebula.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`import_shadertoy` maps `iTime`, `iResolution`, `iMouse` and `iChannelN` into
+TouchDesigner-friendly uniforms / TOP inputs. Paste `raw_source` when you want the
+whole import to stay offline.*
+
+> *"Import this ISF shader, generate a clean custom-parameter page from its INPUTS,
+> and keep the GLSL editable in TouchDesigner."*
+
+<video src="/examples/import-isf-plasma-controls.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`import_isf_shader` parses the ISF JSON header and turns float / color / bool /
+event / long inputs into TouchDesigner controls, so shader-library sketches become
+performable networks instead of pasted code blobs.*
+
 > *"Turn this GLSL TOP sketch into a material on the 3D logo, expose Color, Speed
 > and Fresnel, then render a preview."*
 
@@ -597,6 +621,23 @@ default test source (swap in your clip).*
 brightness; exposes Dot scale / Angle / tint. Amber tint plus paper-white background
 gives a retro-print feel.*
 
+> *"Make this source look like a Game Boy fever dream: 4-color ordered dither,
+> crunchy pixels, animated threshold and live Mix control."*
+
+<video src="/examples/dither-gameboy-poster.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_dither` builds ordered Bayer / checker / noise / error-diffusion dither
+with mono, duotone or RGB quantization. It is a look, not just a utility filter.*
+
+> *"Generate a stained-glass Voronoi field with animated seeds, thick dark lead
+> lines and palette controls for Color A / Color B."*
+
+<video src="/examples/jfa-voronoi-stained-glass.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_jfa_voronoi` uses a Jump-Flooding pass chain (seed init, halving passes,
+color pass) to make animated mosaic / stained-glass cells with live seed and edge
+controls.*
+
 > *"Warp this footage with a flowing liquid distortion that ripples like heat haze
 > over the whole frame."*
 
@@ -604,6 +645,23 @@ gives a retro-print feel.*
 
 *Drives a Displace TOP from an animated noise field so the source ripples and flows,
 with Amount/Speed controls — that premium "liquid morph" / heat-haze warp over any clip.*
+
+> *"Turn this live camera feed into flowing ink lines, like a music-video frame
+> drawn with edge tangent flow and animated charcoal."*
+
+<video src="/examples/flow-abstraction-ink-lines.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_flow_abstraction` builds the ETF / FDoG painterly path: coherent line flow
+instead of simple Sobel edges, useful for comic, ink and etched-camera looks.*
+
+> *"Give this shot a Kuwahara oil-paint filter, then let me switch between oil,
+> pencil and watercolor modes during the set."*
+
+<video src="/examples/npr-kuwahara-paint.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_npr_filter` exposes the non-photoreal look as a controllable component;
+`apply_post_processing` also understands `npr_oil`, `npr_pencil` and
+`npr_watercolor` for quick one-off chains.*
 
 > *"Give this a moody teal-and-orange cinematic grade — crush the blacks a touch and
 > lift the highlights."*
@@ -613,6 +671,14 @@ with Amount/Speed controls — that premium "liquid morph" / heat-haze warp over
 *A lift/gamma/gain + saturation/hue grade (with optional LUT) on any source, exposing
 the wheels as knobs — the Hollywood teal/orange look as a finishing layer, the thing
 people buy plugins for.*
+
+> *"Apply this .cube LUT to the camera feed, show me a before/after split, and fall
+> back to GLSL if OCIO is not available."*
+
+<video src="/examples/lut-film-grade.mp4" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`apply_lut` chooses the best available route: OCIO when present, image lookup for
+preview LUTs, or a parsed `.cube` GLSL fallback when the machine is bare.*
 
 > *"When I move this slider, glitch-cut from the first clip to the second with a burst
 > of digital noise."*
@@ -642,6 +708,15 @@ Reactivity beyond sound — drive visuals from a live web feed, a spreadsheet or
 *One tool pulls a live JSON/web feed into CHOP channels; a second maps those channels
 onto a visual's parameters with per-mapping range remap — the data counterpart to audio
 reactivity. Your visuals react to a live internet data feed (price, weather, anything).*
+
+> *"Prototype a WebSocket-driven visual dashboard from this event stream, but run it
+> in dry-run / experimental mode first and report any bridge errors before wiring it
+> into the show."*
+
+*`create_data_source_http_ws` is intentionally documented as experimental in v0.8.0:
+the HTTP-poll path has a tracked fatal issue, while the tool remains discoverable for
+prototype planning and WebSocket/data-fabric work. Use it when you want the agent to
+be honest about readiness instead of hiding the rough edge.*
 
 > *"Turn this spreadsheet of monthly sales into animated 3D bars that grow in, with
 > value labels."*

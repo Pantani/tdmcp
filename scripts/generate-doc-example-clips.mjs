@@ -57,6 +57,11 @@ function hash(x, y, seed = 0) {
   return (Math.sin(x * 12.9898 + y * 78.233 + seed * 37.719) * 43758.5453123) % 1;
 }
 
+function rand(x, y, seed = 0) {
+  const h = Math.sin(x * 12.9898 + y * 78.233 + seed * 37.719) * 43758.5453123;
+  return h - Math.floor(h);
+}
+
 function set(buf, x, y, color, alpha = 1) {
   if (x < 0 || y < 0 || x >= width || y >= height) return;
   const i = (Math.floor(y) * width + Math.floor(x)) * 3;
@@ -110,6 +115,27 @@ function line(buf, x0, y0, x1, y1, color, alpha = 1) {
   for (let i = 0; i <= steps; i++) {
     const t = i / Math.max(1, steps);
     set(buf, mix(x0, x1, t), mix(y0, y1, t), color, alpha);
+  }
+}
+
+function polygon(buf, points, color, alpha = 1) {
+  const xs = points.map((p) => p[0]);
+  const ys = points.map((p) => p[1]);
+  const x0 = Math.max(0, Math.floor(Math.min(...xs)));
+  const y0 = Math.max(0, Math.floor(Math.min(...ys)));
+  const x1 = Math.min(width - 1, Math.ceil(Math.max(...xs)));
+  const y1 = Math.min(height - 1, Math.ceil(Math.max(...ys)));
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      let inside = false;
+      for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+        const [xi, yi] = points[i];
+        const [xj, yj] = points[j];
+        const intersects = yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+        if (intersects) inside = !inside;
+      }
+      if (inside) set(buf, x, y, color, alpha);
+    }
   }
 }
 
@@ -583,10 +609,10 @@ function growthSystemFrame(t) {
       if (grain > 0.92) set(buf, x, y, [28, 55, 44], 0.42);
     }
   }
-  const progress = (t * 1.35) % 3.8;
-  drawGrowthBranch(buf, width / 2, 246, -Math.PI / 2, 54, 6, progress);
+  const progress = 1.2 + (Math.sin(t * 1.25) * 0.5 + 0.5) * 2.7;
+  drawGrowthBranch(buf, width / 2, 252, -Math.PI / 2, 66, 7, progress);
   rect(buf, 92, 226, 296, 9, [24, 42, 32], 0.9);
-  rect(buf, 92, 226, 296 * Math.min(1, progress / 3.8), 9, [122, 236, 150], 0.82);
+  rect(buf, 92, 226, 296 * Math.min(1, progress / 3.9), 9, [122, 236, 150], 0.82);
   return buf;
 }
 
@@ -652,7 +678,800 @@ function timecodeSyncFrame(t) {
   return buf;
 }
 
+function feedbackTunnelFrame(t) {
+  const buf = baseFrame();
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const u = (x / width - 0.5) * 2;
+      const v = (y / height - 0.5) * 2;
+      const r = Math.hypot(u, v);
+      const a = Math.atan2(v, u);
+      const tunnel = Math.sin(34 / (r + 0.09) + a * 6 + t * 8);
+      const ribs = Math.sin(a * 18 + t * 3 + r * 9);
+      const pulse = smoothstep(1.18, 0.08, r);
+      const c = mixColor(
+        [4, 6, 14],
+        mixColor([23, 229, 255], [255, 54, 150], ribs * 0.5 + 0.5),
+        pulse,
+      );
+      set(buf, x, y, c, (tunnel * 0.5 + 0.5) * 0.9);
+    }
+  }
+  glow(buf, width / 2, height / 2, 92 + Math.sin(t * 6) * 18, [255, 255, 255], 0.22);
+  circle(buf, width / 2, height / 2, 18 + Math.sin(t * 7) * 4, [2, 4, 12], 0.9);
+  return buf;
+}
+
+function reactionDiffusionFrame(t) {
+  const buf = baseFrame();
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const u = x / 42;
+      const v = y / 42;
+      const cell =
+        Math.sin(u * 2.4 + Math.sin(v * 1.7 + t * 1.9) * 1.8) +
+        Math.sin(v * 2.9 - t * 1.3) +
+        Math.sin((u + v) * 1.35 + t * 2.1);
+      const edge = smoothstep(0.1, 0.9, Math.abs(cell));
+      const color = mixColor([4, 12, 8], [104, 255, 182], edge);
+      set(buf, x, y, mixColor(color, [8, 245, 255], smoothstep(1.25, 2.4, cell) * 0.65), 0.94);
+    }
+  }
+  glow(buf, width * 0.32, height * 0.48, 120, [72, 255, 184], 0.18);
+  glow(buf, width * 0.72, height * 0.4, 96, [255, 214, 86], 0.12);
+  return buf;
+}
+
+function noiseLandscapeFrame(t) {
+  const buf = Buffer.alloc(width * height * 3);
+  backdrop(buf, [6, 12, 24], [2, 3, 8]);
+  const horizon = 76;
+  glow(buf, width * 0.64, horizon + 8, 110, [255, 92, 145], 0.18);
+  for (let row = 0; row < 30; row++) {
+    const z = row / 29;
+    const yBase = horizon + z * z * 168;
+    let prev;
+    for (let col = -4; col <= 52; col++) {
+      const x = col * 10 - z * 86 + 60;
+      const wave =
+        Math.sin(col * 0.46 + t * 2.1) * (8 + z * 24) +
+        Math.sin(col * 0.19 + row * 0.7 - t * 1.3) * (5 + z * 16);
+      const p = [x, yBase + wave];
+      if (prev) {
+        line(
+          buf,
+          prev[0],
+          prev[1],
+          p[0],
+          p[1],
+          mixColor([57, 232, 190], [255, 84, 145], z),
+          0.24 + z * 0.32,
+        );
+      }
+      prev = p;
+    }
+  }
+  for (let col = 0; col < 28; col++) {
+    let prev;
+    for (let row = 0; row < 30; row++) {
+      const z = row / 29;
+      const x = col * 18 - z * 96 + 16;
+      const y = horizon + z * z * 168 + Math.sin(col * 0.7 + row * 0.35 + t) * (4 + z * 18);
+      if (prev) line(buf, prev[0], prev[1], x, y, [54, 72, 104], 0.18 + z * 0.18);
+      prev = [x, y];
+    }
+  }
+  return buf;
+}
+
+function audioSpikesFrame(t) {
+  const buf = baseFrame();
+  const cx = width / 2;
+  const cy = height / 2;
+  const bass = Math.max(0, Math.sin(t * 9.2)) ** 4;
+  const treble = Math.max(0, Math.sin(t * 21.7 + 0.8)) ** 6;
+  glow(buf, cx, cy, 132 + bass * 50, [45, 220, 255], 0.22 + bass * 0.35);
+  for (let i = 0; i < 96; i++) {
+    const a = (i / 96) * Math.PI * 2 + t * 0.4;
+    const amp = 52 + Math.sin(i * 1.7 + t * 5) * 14 + bass * 34 + treble * (i % 3 === 0 ? 24 : 0);
+    const x0 = cx + Math.cos(a) * 34;
+    const y0 = cy + Math.sin(a) * 34;
+    const x1 = cx + Math.cos(a) * amp;
+    const y1 = cy + Math.sin(a) * amp;
+    const color = mixColor([55, 232, 190], [255, 84, 145], (Math.sin(i * 0.21 + t * 2) + 1) / 2);
+    line(buf, x0, y0, x1, y1, color, 0.54 + bass * 0.28);
+    if (i % 6 === 0) glow(buf, x1, y1, 16 + bass * 14, color, 0.38);
+  }
+  circle(buf, cx, cy, 42 + bass * 8, [255, 255, 255], 0.12 + bass * 0.16);
+  rect(buf, 74, 224, 332, 9, [22, 28, 44], 0.95);
+  rect(buf, 74, 224, 332 * (0.42 + bass * 0.48), 9, [255, 214, 86], 0.85);
+  return buf;
+}
+
+function feedbackTunnelInfiniteFrame(t) {
+  const buf = baseFrame();
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const u = (x / width - 0.5) * 2;
+      const v = (y / height - 0.5) * 2;
+      const r = Math.hypot(u, v);
+      const a = Math.atan2(v, u);
+      const zoom = Math.sin(Math.log(r + 0.03) * 18 - t * 8 + a * 3);
+      const spin = Math.sin(a * 8 + r * 20 + t * 4);
+      const cam = proceduralClip(x + Math.sin(t * 2) * 20, y + Math.cos(t * 1.4) * 12, t, 1);
+      set(
+        buf,
+        x,
+        y,
+        mixColor(cam, [12, 4, 22], r * 0.6),
+        smoothstep(1.3, 0.1, r) * (0.48 + zoom * 0.32),
+      );
+      if (spin > 0.82) set(buf, x, y, [255, 42, 152], 0.55);
+    }
+  }
+  circle(buf, width / 2, height / 2, 22, [3, 4, 9], 0.82);
+  glow(buf, width / 2, height / 2, 118, [255, 42, 152], 0.32);
+  return buf;
+}
+
+function projectPoint(x, y, z, rot, scale = 58) {
+  const cr = Math.cos(rot);
+  const sr = Math.sin(rot);
+  const xr = x * cr - z * sr;
+  const zr = x * sr + z * cr + 4.2;
+  const s = scale / zr;
+  return [width / 2 + xr * s, height / 2 + y * s, s];
+}
+
+function scene3dFrame(t) {
+  const buf = baseFrame();
+  const rot = t * 1.4;
+  glow(buf, width / 2, height / 2, 170, [44, 200, 255], 0.13);
+  const pts = [];
+  for (let xi = -4; xi <= 4; xi++) {
+    for (let yi = -2; yi <= 2; yi++) {
+      for (let zi = -4; zi <= 4; zi++) {
+        const wave = Math.sin(xi * 0.8 + zi * 0.9 + t * 4) * 0.34;
+        pts.push({
+          p: projectPoint(xi * 0.42, yi * 0.38 + wave, zi * 0.42, rot),
+          phase: xi + zi + yi,
+        });
+      }
+    }
+  }
+  pts.sort((a, b) => a.p[2] - b.p[2]);
+  for (const { p, phase } of pts) {
+    const color = mixColor([55, 232, 190], [255, 84, 145], (Math.sin(phase + t * 3) + 1) / 2);
+    glow(buf, p[0], p[1], 13 * p[2], color, 0.12);
+    rect(buf, p[0] - 3.5 * p[2], p[1] - 3.5 * p[2], 7 * p[2], 7 * p[2], color, 0.85);
+  }
+  return buf;
+}
+
+function pbrProductFrame(t) {
+  const buf = Buffer.alloc(width * height * 3);
+  backdrop(buf, [18, 25, 34], [4, 7, 13]);
+  const cx = width / 2;
+  const cy = height / 2 + 8;
+  polygon(
+    buf,
+    [
+      [94, 228],
+      [386, 228],
+      [340, 160],
+      [138, 160],
+    ],
+    [12, 16, 22],
+    0.94,
+  );
+  glow(buf, cx - 56, cy - 38, 124, [255, 255, 255], 0.16);
+  for (let y = cy - 82; y <= cy + 82; y++) {
+    for (let x = cx - 82; x <= cx + 82; x++) {
+      const u = (x - cx) / 82;
+      const v = (y - cy) / 82;
+      const r2 = u * u + v * v;
+      if (r2 <= 1) {
+        const z = Math.sqrt(1 - r2);
+        const spin = Math.sin((u * Math.cos(t) + z * Math.sin(t)) * 8);
+        const light = clamp(u * -0.28 + v * -0.35 + z * 0.98, 0, 1);
+        const base = mixColor([32, 48, 64], [184, 214, 238], light);
+        set(buf, x, y, mixColor(base, [255, 180, 90], smoothstep(0.5, 1, spin) * 0.34), 0.98);
+        if (u < -0.42 && v < -0.38) set(buf, x, y, [255, 255, 255], 0.38);
+      }
+    }
+  }
+  glow(buf, cx + 60, cy + 44, 58, [40, 120, 255], 0.2);
+  rect(buf, 346, 42, 68 + Math.sin(t * 2.4) * 22, 8, [255, 214, 86], 0.78);
+  rect(buf, 346, 58, 52 + Math.cos(t * 2.1) * 18, 8, [57, 232, 190], 0.75);
+  return buf;
+}
+
+function multipassDepthFrame(t) {
+  const buf = baseFrame();
+  const panels = [
+    [18, 30, 138, 206],
+    [172, 30, 138, 206],
+    [326, 30, 138, 206],
+  ];
+  panels.forEach(([x, y, w, h]) => {
+    rect(buf, x, y, w, h, [10, 14, 22], 0.95);
+  });
+  for (let i = 0; i < 3; i++) {
+    const [px, py, pw, ph] = panels[i];
+    for (let y = py + 8; y < py + ph - 8; y++) {
+      for (let x = px + 8; x < px + pw - 8; x++) {
+        const u = (x - px) / pw;
+        const v = (y - py) / ph;
+        const depth = smoothstep(0.95, 0.1, Math.hypot(u - 0.5, v - 0.54));
+        if (i === 0) set(buf, x, y, mixColor([5, 12, 26], [116, 192, 255], depth), 0.86);
+        if (i === 1) set(buf, x, y, [depth * 255, depth * 255, depth * 255], 0.92);
+        if (i === 2) set(buf, x, y, mixColor([2, 4, 10], [255, 230, 190], depth ** 0.7), 0.9);
+      }
+    }
+    const cx = px + pw / 2 + Math.sin(t * 1.5 + i) * 8;
+    const cy = py + 112;
+    glow(buf, cx, cy, 58, i === 2 ? [255, 180, 85] : [80, 180, 255], 0.24);
+    circle(buf, cx, cy, 32, i === 1 ? [220, 220, 220] : [255, 255, 255], i === 1 ? 0.36 : 0.13);
+  }
+  return buf;
+}
+
+function shaderParkBlobsFrame(t) {
+  const buf = baseFrame();
+  const centers = [
+    [0.43 + Math.sin(t * 1.8) * 0.12, 0.48 + Math.cos(t * 1.2) * 0.09, 0.22],
+    [0.57 + Math.cos(t * 1.4) * 0.1, 0.5 + Math.sin(t * 1.7) * 0.1, 0.2],
+    [0.5 + Math.sin(t * 1.1 + 2) * 0.08, 0.39 + Math.cos(t * 1.6) * 0.08, 0.18],
+  ];
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const u = x / width;
+      const v = y / height;
+      let field = 0;
+      for (const [cx, cy, r] of centers) {
+        field += (r * r) / (((u - cx) * 1.35) ** 2 + (v - cy) ** 2 + 0.008);
+      }
+      const shell = smoothstep(1.55, 1.95, field) - smoothstep(2.55, 3.2, field);
+      const body = smoothstep(1.72, 2.6, field);
+      const color = mixColor(
+        [40, 180, 255],
+        [255, 128, 210],
+        Math.sin(field * 1.8 + t * 2) * 0.5 + 0.5,
+      );
+      set(buf, x, y, color, body * 0.88);
+      if (shell > 0.02) set(buf, x, y, [255, 255, 255], shell * 0.45);
+    }
+  }
+  glow(buf, width / 2, height / 2, 128, [130, 80, 255], 0.26);
+  return buf;
+}
+
+function projectionMappingFrame(t) {
+  const buf = baseFrame();
+  const quad = [
+    [102 + Math.sin(t) * 6, 62],
+    [394 + Math.cos(t * 0.9) * 8, 82],
+    [354 + Math.sin(t * 1.2) * 10, 230],
+    [74 + Math.cos(t * 0.8) * 7, 208],
+  ];
+  polygon(buf, quad, [25, 35, 52], 0.96);
+  for (let i = 0; i < 18; i++) {
+    const u = i / 17;
+    line(
+      buf,
+      mix(quad[0][0], quad[3][0], u),
+      mix(quad[0][1], quad[3][1], u),
+      mix(quad[1][0], quad[2][0], u),
+      mix(quad[1][1], quad[2][1], u),
+      [72, 92, 120],
+      0.3,
+    );
+  }
+  for (let i = 0; i < 7; i++) {
+    const a = t * 2 + i;
+    const cx = mix(quad[0][0], quad[2][0], 0.5) + Math.cos(a) * 84;
+    const cy = mix(quad[0][1], quad[2][1], 0.5) + Math.sin(a * 1.4) * 48;
+    glow(buf, cx, cy, 70, i % 2 ? [255, 84, 145] : [57, 232, 190], 0.38);
+  }
+  for (const p of quad) circle(buf, p[0], p[1], 7, [255, 214, 86], 0.92);
+  return buf;
+}
+
+function transitionGlitchFrame(t) {
+  const buf = baseFrame();
+  const progress = (Math.sin(t * 1.6) + 1) / 2;
+  for (let y = 0; y < height; y++) {
+    const offset = Math.sin(y * 0.13 + t * 12) * 34 * smoothstep(0.22, 0.8, progress);
+    for (let x = 0; x < width; x++) {
+      const wipe = x / width < progress + Math.sin(y * 0.09 + t * 8) * 0.08;
+      const src = wipe
+        ? proceduralClip(x + offset, y, t, 1)
+        : proceduralClip(x - offset, y, t + 0.2, 0);
+      set(buf, x, y, src, 0.92);
+      if (rand(Math.floor(x / 9), Math.floor(y / 7), Math.floor(t * 9)) > 0.975) {
+        set(buf, x, y, [255, 255, 255], 0.8);
+      }
+    }
+  }
+  rect(buf, 68, 226, 344, 9, [7, 10, 18], 0.92);
+  rect(buf, 68, 226, 344 * progress, 9, [255, 214, 86], 0.84);
+  return buf;
+}
+
+function videoGlitchFrame(t) {
+  const buf = baseFrame();
+  for (let y = 0; y < height; y++) {
+    const tear =
+      Math.sin(y * 0.19 + t * 18) * 18 +
+      (rand(Math.floor(y / 9), Math.floor(t * 8), 2) > 0.78 ? 34 : 0);
+    for (let x = 0; x < width; x++) {
+      const src = proceduralClip(x + tear, y + Math.sin(t * 3) * 12, t, 0);
+      const scan = y % 4 < 2 ? 0.82 : 0.55;
+      const noise = rand(Math.floor(x / 4), Math.floor(y / 4), Math.floor(t * 16));
+      const color = [
+        clamp(src[0] * scan + noise * 42),
+        clamp(src[1] * (scan * 0.92) + noise * 18),
+        clamp(src[2] * (scan * 1.08) + noise * 58),
+      ];
+      set(buf, x, y, color, 0.9);
+      if (x + 3 < width && Math.sin(y * 0.08 + t * 12) > 0.9)
+        set(buf, x + 3, y, [255, 50, 142], 0.22);
+      if (x - 3 >= 0 && Math.sin(y * 0.07 - t * 10) > 0.92)
+        set(buf, x - 3, y, [42, 230, 255], 0.22);
+    }
+  }
+  for (let i = 0; i < 8; i++) {
+    const y = (rand(i, Math.floor(t * 7), 4) * height) | 0;
+    rect(buf, 0, y, width, 4 + rand(i, y, 9) * 12, i % 2 ? [255, 84, 145] : [57, 232, 190], 0.18);
+  }
+  return buf;
+}
+
+function poseTrailsFrame(t) {
+  const buf = baseFrame();
+  const centerX = width / 2 + Math.sin(t * 1.5) * 34;
+  const centerY = 82 + Math.sin(t * 1.1) * 8;
+  const shoulders = 54 + Math.sin(t * 1.8) * 8;
+  const hips = 36 + Math.cos(t * 1.3) * 5;
+  const pose = {
+    head: [centerX + Math.sin(t * 2) * 5, centerY - 72],
+    chest: [centerX, centerY - 30],
+    pelvis: [centerX + Math.sin(t * 1.2) * 8, centerY + 34],
+    lShoulder: [centerX - shoulders, centerY - 36],
+    rShoulder: [centerX + shoulders, centerY - 36],
+    lElbow: [centerX - 82 + Math.sin(t * 3.1) * 28, centerY + 4 + Math.cos(t * 2.2) * 20],
+    rElbow: [centerX + 82 + Math.cos(t * 2.7) * 26, centerY - 4 + Math.sin(t * 2.4) * 20],
+    lWrist: [centerX - 112 + Math.sin(t * 4) * 44, centerY + 44 + Math.cos(t * 2.5) * 34],
+    rWrist: [centerX + 112 + Math.cos(t * 3.6) * 44, centerY + 38 + Math.sin(t * 2.8) * 34],
+    lHip: [centerX - hips, centerY + 42],
+    rHip: [centerX + hips, centerY + 42],
+    lKnee: [centerX - 54 + Math.sin(t * 1.9) * 14, centerY + 102],
+    rKnee: [centerX + 54 + Math.cos(t * 1.7) * 14, centerY + 102],
+    lAnkle: [centerX - 76 + Math.sin(t * 2.2) * 10, centerY + 164],
+    rAnkle: [centerX + 76 + Math.cos(t * 2.1) * 10, centerY + 164],
+  };
+  const links = [
+    ["head", "chest"],
+    ["lShoulder", "rShoulder"],
+    ["chest", "pelvis"],
+    ["lShoulder", "lElbow"],
+    ["lElbow", "lWrist"],
+    ["rShoulder", "rElbow"],
+    ["rElbow", "rWrist"],
+    ["pelvis", "lHip"],
+    ["pelvis", "rHip"],
+    ["lHip", "lKnee"],
+    ["lKnee", "lAnkle"],
+    ["rHip", "rKnee"],
+    ["rKnee", "rAnkle"],
+  ];
+  for (let trail = 12; trail >= 0; trail--) {
+    const tt = t - trail * 0.045;
+    const alpha = (1 - trail / 13) ** 1.6;
+    const left = [centerX - 112 + Math.sin(tt * 4) * 44, centerY + 44 + Math.cos(tt * 2.5) * 34];
+    const right = [centerX + 112 + Math.cos(tt * 3.6) * 44, centerY + 38 + Math.sin(tt * 2.8) * 34];
+    glow(buf, left[0], left[1], 28 + alpha * 20, [57, 232, 190], alpha * 0.24);
+    glow(buf, right[0], right[1], 28 + alpha * 20, [255, 84, 145], alpha * 0.24);
+    if (trail < 12) {
+      line(
+        buf,
+        left[0],
+        left[1],
+        centerX - 112 + Math.sin((tt - 0.045) * 4) * 44,
+        centerY + 44 + Math.cos((tt - 0.045) * 2.5) * 34,
+        [57, 232, 190],
+        alpha * 0.62,
+      );
+      line(
+        buf,
+        right[0],
+        right[1],
+        centerX + 112 + Math.cos((tt - 0.045) * 3.6) * 44,
+        centerY + 38 + Math.sin((tt - 0.045) * 2.8) * 34,
+        [255, 84, 145],
+        alpha * 0.62,
+      );
+    }
+  }
+  for (const [a, b] of links) {
+    line(buf, pose[a][0], pose[a][1], pose[b][0], pose[b][1], [198, 232, 255], 0.42);
+  }
+  Object.entries(pose).forEach(([name, point], index) => {
+    const accent = name.includes("Wrist")
+      ? [255, 214, 86]
+      : index % 2
+        ? [57, 232, 190]
+        : [255, 84, 145];
+    glow(
+      buf,
+      point[0],
+      point[1],
+      name.includes("Wrist") ? 24 : 14,
+      accent,
+      name.includes("Wrist") ? 0.54 : 0.24,
+    );
+    circle(buf, point[0], point[1], name === "head" ? 9 : 5, accent, 0.88);
+  });
+  for (let i = 0; i < 18; i++) {
+    const x = 42 + i * 22;
+    const barH = Math.max(6, Math.sin(t * 5 + i * 0.6) * 26 + 30);
+    rect(buf, x, 238 - barH, 12, barH, i % 3 ? [57, 232, 190] : [255, 84, 145], 0.4);
+  }
+  return buf;
+}
+
+function shadertoyImportFrame(t) {
+  const buf = baseFrame();
+  rect(buf, 24, 28, 164, 214, [9, 12, 18], 0.96);
+  for (let i = 0; i < 14; i++) {
+    const y = 46 + i * 12;
+    const len = 44 + rand(i, 0, 3) * 86;
+    rect(buf, 42, y, len, 4, i % 3 === 0 ? [255, 84, 145] : [72, 92, 120], 0.75);
+  }
+  line(buf, 196, 135, 246, 135, [255, 255, 255], 0.35);
+  for (let y = 20; y < 250; y++) {
+    for (let x = 254; x < 456; x++) {
+      const u = (x - 355) / 92;
+      const v = (y - 135) / 92;
+      const r = Math.hypot(u, v);
+      const a = Math.atan2(v, u);
+      const nebula = Math.sin(18 * r - t * 5 + Math.sin(a * 5)) + Math.cos(a * 7 + t * 2);
+      set(
+        buf,
+        x,
+        y,
+        mixColor(
+          [8, 9, 24],
+          [62, 236, 255],
+          smoothstep(-0.4, 1.8, nebula) * smoothstep(1.3, 0.1, r),
+        ),
+        0.9,
+      );
+      if (Math.abs(Math.sin(1 / (r + 0.08) + t * 2)) > 0.94) set(buf, x, y, [255, 84, 145], 0.38);
+    }
+  }
+  glow(buf, 356, 136, 108, [62, 236, 255], 0.18);
+  return buf;
+}
+
+function isfImportFrame(t) {
+  const buf = baseFrame();
+  for (let y = 18; y < 252; y++) {
+    for (let x = 20; x < 334; x++) {
+      const plasma =
+        Math.sin(x * 0.045 + t * 2) + Math.sin(y * 0.057 - t * 1.7) + Math.sin((x + y) * 0.025);
+      set(buf, x, y, hsv((plasma * 0.08 + t * 0.05 + 0.62) % 1, 0.72, 0.92), 0.82);
+    }
+  }
+  rect(buf, 352, 28, 92, 204, [10, 14, 22], 0.92);
+  for (let i = 0; i < 6; i++) {
+    const y = 50 + i * 28;
+    rect(buf, 370, y, 54, 5, i % 2 ? [255, 84, 145] : [57, 232, 190], 0.82);
+    circle(buf, 370 + 54 * ((Math.sin(t * 2 + i) + 1) / 2), y + 2, 6, [255, 255, 255], 0.72);
+  }
+  return buf;
+}
+
+function fluidSimFrame(t) {
+  const buf = baseFrame();
+  const splats = [
+    [0.38 + Math.sin(t * 1.7) * 0.18, 0.52 + Math.cos(t * 1.2) * 0.12, [36, 225, 255]],
+    [0.62 + Math.cos(t * 1.4) * 0.16, 0.46 + Math.sin(t * 1.5) * 0.14, [255, 76, 142]],
+    [0.5 + Math.sin(t * 1.1 + 3) * 0.12, 0.42, [255, 214, 86]],
+  ];
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const u = x / width;
+      const v = y / height;
+      let color = [5, 7, 14];
+      let alpha = 0;
+      splats.forEach(([cx, cy, c], i) => {
+        const dx = u - cx;
+        const dy = v - cy;
+        const swirl = Math.sin(Math.atan2(dy, dx) * 4 + Math.hypot(dx, dy) * 34 - t * (4 + i));
+        const plume = smoothstep(0.56, 0.02, Math.hypot(dx, dy) + swirl * 0.026);
+        color = mixColor(color, c, plume * 0.72);
+        alpha = Math.max(alpha, plume);
+      });
+      const smoke = rand(Math.floor((u + t * 0.04) * 80), Math.floor((v - t * 0.02) * 80), 9);
+      set(buf, x, y, mixColor(color, [255, 255, 255], smoke * alpha * 0.12), 0.96);
+    }
+  }
+  glow(buf, width * 0.5, height * 0.5, 140, [60, 220, 255], 0.16);
+  return buf;
+}
+
+function imageParticlesFrame(t) {
+  const buf = baseFrame();
+  const scatter = Math.max(0, Math.sin(t * 4.2)) ** 3;
+  for (let i = 0; i < 2400; i++) {
+    const a = i * 2.399963;
+    const r = Math.sqrt(i / 2400);
+    const sx = Math.cos(a) * r;
+    const sy = Math.sin(a) * r * 0.72;
+    const shape =
+      Math.abs(sx) < 0.72 && sy > -0.54 && sy < 0.54
+        ? 1
+        : smoothstep(0.88, 0.12, Math.hypot(sx, sy));
+    if (shape <= 0.02) continue;
+    const burst = scatter * (26 + rand(i, 2, 8) * 118);
+    const px = width / 2 + sx * 128 + Math.cos(a + t * 2) * burst;
+    const py = height / 2 + sy * 108 + Math.sin(a * 1.7 - t * 3) * burst;
+    const color = mixColor([57, 232, 190], [255, 84, 145], rand(i, 0, 4));
+    set(buf, px, py, color, 0.72);
+    if (i % 43 === 0) glow(buf, px, py, 10, color, 0.2);
+  }
+  rect(buf, 92, 228, 296, 8, [22, 28, 44], 0.9);
+  rect(buf, 92, 228, 296 * scatter, 8, [255, 214, 86], 0.82);
+  return buf;
+}
+
+function ditherFrame(t) {
+  const buf = baseFrame();
+  const bayer = [
+    [0, 8, 2, 10],
+    [12, 4, 14, 6],
+    [3, 11, 1, 9],
+    [15, 7, 13, 5],
+  ];
+  const palette = [
+    [15, 56, 15],
+    [48, 98, 48],
+    [139, 172, 15],
+    [155, 188, 15],
+  ];
+  for (let by = 0; by < height; by += 4) {
+    for (let bx = 0; bx < width; bx += 4) {
+      const u = bx / width;
+      const v = by / height;
+      const shade =
+        0.45 +
+        0.38 * Math.sin(u * 8 + t * 2) * Math.cos(v * 9 - t * 1.3) +
+        0.3 * smoothstep(0.72, 0.1, Math.hypot(u - 0.52, v - 0.5));
+      const threshold = bayer[(by / 4) % 4][(bx / 4) % 4] / 16;
+      const idx = clamp(Math.floor((shade + threshold * 0.24) * 4), 0, 3);
+      rect(buf, bx, by, 4, 4, palette[idx], 0.98);
+    }
+  }
+  for (let i = 0; i < 18; i++) {
+    const y = 42 + i * 9;
+    line(buf, 58, y, 414, y + Math.sin(t * 2 + i) * 4, [15, 56, 15], 0.24);
+  }
+  return buf;
+}
+
+function jfaVoronoiFrame(t) {
+  const buf = baseFrame();
+  const seeds = [];
+  for (let i = 0; i < 24; i++) {
+    seeds.push([
+      (rand(i, 2, 1) * width + Math.sin(t * 1.2 + i) * 22 + width) % width,
+      (rand(i, 4, 2) * height + Math.cos(t * 1.4 + i * 0.7) * 18 + height) % height,
+      hsv((i / 24 + 0.58) % 1, 0.55, 0.95),
+    ]);
+  }
+  for (let y = 0; y < height; y += 2) {
+    for (let x = 0; x < width; x += 2) {
+      let best = Infinity;
+      let color = [0, 0, 0];
+      for (const [sx, sy, sc] of seeds) {
+        const d = (x - sx) ** 2 + (y - sy) ** 2;
+        if (d < best) {
+          best = d;
+          color = sc;
+        }
+      }
+      const edge = smoothstep(110, 0, best % 260);
+      rect(buf, x, y, 2, 2, mixColor(color, [8, 10, 18], edge * 0.7), 0.96);
+      if (edge > 0.72) rect(buf, x, y, 2, 2, [255, 240, 210], 0.32);
+    }
+  }
+  return buf;
+}
+
+function videoScopesFrame(t) {
+  const buf = baseFrame();
+  rect(buf, 24, 26, 184, 116, [10, 14, 22], 0.96);
+  for (let y = 32; y < 136; y++) {
+    for (let x = 30; x < 202; x++) {
+      set(buf, x, y, proceduralClip(x, y, t, 2), 0.86);
+    }
+  }
+  rect(buf, 236, 26, 206, 54, [6, 10, 18], 0.94);
+  rect(buf, 236, 98, 206, 54, [6, 10, 18], 0.94);
+  rect(buf, 236, 170, 206, 72, [6, 10, 18], 0.94);
+  for (let i = 0; i < 180; i++) {
+    const x = 250 + i;
+    const wave = 52 + Math.sin(i * 0.08 + t * 3) * 18 + Math.sin(i * 0.22) * 9;
+    set(buf, x, wave, [57, 232, 190], 0.86);
+    rect(buf, x, 130 - Math.abs(Math.sin(i * 0.04 + t + 0.2)) * 28, 2, 2, [255, 84, 145], 0.64);
+    const a = (i / 180) * Math.PI * 2;
+    set(
+      buf,
+      338 + Math.cos(a) * (32 + Math.sin(t * 2 + i) * 8),
+      206 + Math.sin(a) * 24,
+      [255, 214, 86],
+      0.72,
+    );
+  }
+  return buf;
+}
+
+function chopRecorderFrame(t) {
+  const buf = baseFrame();
+  rect(buf, 32, 34, 416, 156, [10, 14, 22], 0.96);
+  for (let i = 0; i <= 8; i++) line(buf, 54 + i * 46, 46, 54 + i * 46, 176, [42, 50, 68], 0.42);
+  const phase = (t * 0.55) % 1;
+  let prev;
+  for (let i = 0; i <= 220; i++) {
+    const u = i / 220;
+    const y = 110 - Math.sin(u * Math.PI * 6 + t * 4) * 42 - Math.sin(u * Math.PI * 17) * 10;
+    const p = [56 + u * 368, y];
+    if (prev)
+      line(buf, prev[0], prev[1], p[0], p[1], u < phase ? [255, 84, 145] : [57, 232, 190], 0.86);
+    prev = p;
+  }
+  const x = 56 + phase * 368;
+  line(buf, x, 38, x, 186, [255, 255, 255], 0.9);
+  glow(buf, x, 110, 42, [255, 84, 145], 0.5);
+  rect(buf, 84, 220, 312, 10, [22, 28, 44], 0.92);
+  rect(buf, 84, 220, 312 * phase, 10, [57, 232, 190], 0.8);
+  return buf;
+}
+
+function tdabletonFrame(t) {
+  const buf = baseFrame();
+  rect(buf, 30, 24, 208, 212, [13, 17, 24], 0.96);
+  for (let r = 0; r < 5; r++) {
+    for (let c = 0; c < 5; c++) {
+      const active = (Math.floor(t * 3) + r * 2 + c) % 7 === 0;
+      const color = active ? [57, 232, 190] : c % 2 ? [48, 58, 78] : [34, 42, 60];
+      rect(buf, 48 + c * 34, 44 + r * 30, 24, 20, color, active ? 0.92 : 0.78);
+      if (active) glow(buf, 60 + c * 34, 54 + r * 30, 22, [57, 232, 190], 0.7);
+    }
+  }
+  rect(buf, 270, 36, 150, 184, [8, 12, 20], 0.94);
+  for (let i = 0; i < 8; i++) {
+    const h = 32 + Math.sin(t * 3 + i * 0.8) * 28 + (i % 3) * 8;
+    rect(buf, 288 + i * 16, 198 - h, 10, h, i % 2 ? [255, 84, 145] : [255, 214, 86], 0.78);
+  }
+  line(buf, 238, 130, 270, 130, [255, 255, 255], 0.42);
+  return buf;
+}
+
+function lutFilmGradeFrame(t) {
+  const buf = baseFrame();
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const base = proceduralClip(x, y, t, 2);
+      const graded = mixColor(
+        [base[0] * 0.65, base[1] * 0.9, base[2] * 1.08],
+        [255, 142, 72],
+        0.24,
+      );
+      set(buf, x, y, x < width / 2 ? base : graded, 0.92);
+    }
+  }
+  line(buf, width / 2, 0, width / 2, height, [255, 255, 255], 0.92);
+  rect(buf, 72, 218, 132, 8, [160, 180, 210], 0.65);
+  rect(buf, 276, 218, 132, 8, [255, 168, 78], 0.86);
+  return buf;
+}
+
+function flowAbstractionFrame(t) {
+  const buf = Buffer.alloc(width * height * 3);
+  backdrop(buf, [232, 228, 205], [178, 190, 180]);
+  for (let i = 0; i < 520; i++) {
+    let x = rand(i, 1, 0) * width;
+    let y = rand(i, 2, 0) * height;
+    const color = i % 4 === 0 ? [20, 30, 34] : [46, 72, 82];
+    for (let s = 0; s < 12; s++) {
+      const a = Math.sin(x * 0.018 + y * 0.026 + t * 1.5) * Math.PI;
+      const nx = x + Math.cos(a) * 7;
+      const ny = y + Math.sin(a) * 5;
+      line(buf, x, y, nx, ny, color, 0.18);
+      x = nx;
+      y = ny;
+    }
+  }
+  glow(buf, 250 + Math.sin(t) * 18, 130, 96, [255, 214, 86], 0.08);
+  return buf;
+}
+
+function nprFilterFrame(t) {
+  const buf = baseFrame();
+  for (let y = 0; y < height; y += 3) {
+    for (let x = 0; x < width; x += 3) {
+      const u = x / width;
+      const v = y / height;
+      const shade = Math.sin(u * 12 + t * 1.4) * Math.cos(v * 10 - t * 1.1);
+      const color = mixColor([28, 50, 62], [238, 190, 118], smoothstep(-0.8, 0.9, shade));
+      rect(buf, x, y, 4, 4, color, 0.9);
+    }
+  }
+  for (let i = 0; i < 42; i++) {
+    const y = 42 + i * 4;
+    line(
+      buf,
+      70 + Math.sin(i) * 12,
+      y,
+      410 + Math.cos(i * 0.8) * 16,
+      y + Math.sin(t * 2 + i) * 7,
+      [5, 8, 12],
+      0.12,
+    );
+  }
+  return buf;
+}
+
+function postPasses3dFrame(t) {
+  const buf = Buffer.alloc(width * height * 3);
+  backdrop(buf, [12, 16, 26], [2, 4, 8]);
+  polygon(
+    buf,
+    [
+      [74, 222],
+      [404, 224],
+      [334, 144],
+      [138, 144],
+    ],
+    [8, 11, 17],
+    0.95,
+  );
+  const orbs = [
+    [170 + Math.sin(t) * 18, 138, 34, [255, 94, 122]],
+    [248, 116 + Math.cos(t * 1.3) * 12, 46, [78, 210, 255]],
+    [326 + Math.cos(t * 1.1) * 12, 148, 28, [255, 214, 86]],
+  ];
+  for (const [cx, cy, r, c] of orbs) {
+    glow(buf, cx, cy, r * 2.2, c, 0.28);
+    circle(buf, cx, cy, r, mixColor(c, [255, 255, 255], 0.2), 0.76);
+    circle(buf, cx - r * 0.32, cy - r * 0.28, r * 0.18, [255, 255, 255], 0.35);
+  }
+  for (let i = 0; i < 9; i++) {
+    const x = 72 + i * 42;
+    line(buf, x, 226, x + 24, 160 + Math.sin(t * 2 + i) * 12, [255, 255, 255], 0.08);
+  }
+  rect(buf, 348, 34, 68, 8, [57, 232, 190], 0.76);
+  rect(buf, 348, 50, 92, 8, [255, 84, 145], 0.56);
+  rect(buf, 348, 66, 48 + Math.sin(t * 3) * 20, 8, [255, 214, 86], 0.76);
+  return buf;
+}
+
 const clips = [
+  ["feedback-tunnel.mp4", feedbackTunnelFrame],
+  ["reaction-diffusion.mp4", reactionDiffusionFrame],
+  ["noise-landscape.mp4", noiseLandscapeFrame],
+  ["audio-reactive-3d-spikes.mp4", audioSpikesFrame],
+  ["feedback-tunnel-infinite.mp4", feedbackTunnelInfiniteFrame],
+  ["scene-3d.mp4", scene3dFrame],
+  ["pbr-product-spin.mp4", pbrProductFrame],
+  ["multipass-depth-no-camera.mp4", multipassDepthFrame],
+  ["shader-park-blobs.mp4", shaderParkBlobsFrame],
+  ["projection-mapping.mp4", projectionMappingFrame],
+  ["transition-glitch-cut.mp4", transitionGlitchFrame],
+  ["video-glitch.mp4", videoGlitchFrame],
+  ["pose-trails-skeleton.mp4", poseTrailsFrame],
   ["auto-montage-shuffle.mp4", autoMontageFrame],
   ["euclidean-strobe-pattern.mp4", euclideanFrame],
   ["preset-morph-blend.mp4", presetMorphFrame],
@@ -667,6 +1486,19 @@ const clips = [
   ["growth-system-branching.mp4", growthSystemFrame],
   ["score-enhance-loop.mp4", scoreEnhanceFrame],
   ["timecode-sync-lock.mp4", timecodeSyncFrame],
+  ["import-shadertoy-nebula.mp4", shadertoyImportFrame],
+  ["import-isf-plasma-controls.mp4", isfImportFrame],
+  ["fluid-sim-ink.mp4", fluidSimFrame],
+  ["image-particles-burst.mp4", imageParticlesFrame],
+  ["dither-gameboy-poster.mp4", ditherFrame],
+  ["jfa-voronoi-stained-glass.mp4", jfaVoronoiFrame],
+  ["video-scopes-monitor.mp4", videoScopesFrame],
+  ["chop-recorder-replay.mp4", chopRecorderFrame],
+  ["tdableton-bridge.mp4", tdabletonFrame],
+  ["lut-film-grade.mp4", lutFilmGradeFrame],
+  ["flow-abstraction-ink-lines.mp4", flowAbstractionFrame],
+  ["npr-kuwahara-paint.mp4", nprFilterFrame],
+  ["post-passes-3d-cinematic.mp4", postPasses3dFrame],
 ];
 
 function writePpm(file, buf) {
