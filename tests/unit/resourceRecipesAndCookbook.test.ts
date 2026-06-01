@@ -1,6 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
 import { RecipeLibrary } from "../../src/recipes/loader.js";
 import {
+  cookbookPathFromModuleDir,
   readCookbookResource,
   readCookbookResourceFromPath,
   registerCookbookResource,
@@ -9,6 +13,14 @@ import {
   registerRecipeResource,
   searchRecipeSummaries,
 } from "../../src/resources/recipeResource.js";
+
+let tempDirs: string[] = [];
+
+afterEach(() => {
+  const dirs = tempDirs;
+  tempDirs = [];
+  for (const dir of dirs) rmSync(dir, { force: true, recursive: true });
+});
 
 describe("recipe search resource helpers", () => {
   it("searches recipes by keyword across id, name, description and tags", () => {
@@ -92,6 +104,25 @@ describe("cookbook resource helpers", () => {
     expect(result.bytes).toBe(0);
     expect(result.text).toBe("");
     expect(result.error).toContain("Could not read prompt cookbook");
+  });
+
+  it("resolves the cookbook from the package root when running from bundled dist", () => {
+    const parent = mkdtempSync(join(tmpdir(), "tdmcp-cookbook-root-"));
+    tempDirs.push(parent);
+
+    const packageRoot = join(parent, "tdmcp");
+    const moduleDir = join(packageRoot, "dist");
+    const parentCookbook = join(parent, "docs", "guide", "prompt-cookbook.md");
+    const packageCookbook = join(packageRoot, "docs", "guide", "prompt-cookbook.md");
+
+    mkdirSync(join(parent, "docs", "guide"), { recursive: true });
+    mkdirSync(join(packageRoot, "docs", "guide"), { recursive: true });
+    mkdirSync(moduleDir, { recursive: true });
+    writeFileSync(join(packageRoot, "package.json"), JSON.stringify({ name: "@dpantani/tdmcp" }));
+    writeFileSync(parentCookbook, "# Wrong Cookbook");
+    writeFileSync(packageCookbook, "# Prompt Cookbook");
+
+    expect(cookbookPathFromModuleDir("en", moduleDir)).toBe(packageCookbook);
   });
 
   it("declares JSON mime types to match the returned cookbook payload", async () => {

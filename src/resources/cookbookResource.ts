@@ -17,15 +17,35 @@ export interface CookbookPayload {
   error?: string;
 }
 
-function cookbookPath(locale: CookbookLocale): string {
-  const relative =
-    locale === "pt" ? "docs/pt/guide/prompt-cookbook.md" : "docs/guide/prompt-cookbook.md";
+function cookbookRelativePath(locale: CookbookLocale): string {
+  return locale === "pt" ? "docs/pt/guide/prompt-cookbook.md" : "docs/guide/prompt-cookbook.md";
+}
+
+function packageRootFromModuleDir(startDir: string): string | undefined {
+  let current = resolve(startDir);
+  for (let depth = 0; depth < 8; depth += 1) {
+    if (existsSync(resolve(current, "package.json"))) return current;
+    const parent = dirname(current);
+    if (parent === current) break;
+    current = parent;
+  }
+  return undefined;
+}
+
+export function cookbookPathFromModuleDir(locale: CookbookLocale, startDir: string): string {
+  const relative = cookbookRelativePath(locale);
+  const packageRoot = packageRootFromModuleDir(startDir);
   const candidates = [
-    resolve(moduleDir, "../../", relative),
-    resolve(moduleDir, "../", relative),
+    ...(packageRoot ? [resolve(packageRoot, relative)] : []),
+    resolve(startDir, "../../", relative),
+    resolve(startDir, "../", relative),
     resolve(process.cwd(), relative),
   ];
   return candidates.find((candidate) => existsSync(candidate)) ?? candidates[0] ?? relative;
+}
+
+function cookbookPath(locale: CookbookLocale): string {
+  return cookbookPathFromModuleDir(locale, moduleDir);
 }
 
 function firstHeading(markdown: string, fallback: string): string {
