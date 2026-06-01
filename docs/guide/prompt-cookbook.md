@@ -828,6 +828,116 @@ animated entrance — a real-time, performable infographic rather than a static 
 clone from its row — data-driven instancing of whole sub-networks, not just geometry,
 the way motion designers fake "100 of these."*
 
+## Agent workflows, resources & health
+
+Use these when the output is an operator loop, resource readout, config change or
+health report rather than a TOP preview.
+
+> *"Before the show, discover the `tdmcp-agent` commands as JSON, flag anything
+> mutating or unsafe, then show focused help for `nodes find` and `run`."*
+
+<video :src="withBase('/examples/command-catalog-discovery.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`tdmcp-agent commands --json`, `tdmcp-agent help <command>` and the
+`tdmcp://commands` resource expose the same catalog, including mutating/unsafe
+flags and command schemas. Good for agents that need to choose shell-safe commands
+without scraping help text.*
+
+> *"Read this show plan from stdin, keep going after the first failed step, and
+> return the first non-zero status only after collecting every result."*
+
+<video :src="withBase('/examples/agent-run-continue.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`tdmcp-agent run - --continue-on-error` is for rehearsal automation: one broken
+step is recorded, later setup steps still run, and the final exit code remains
+script-friendly.*
+
+> *"List my saved venue profiles, inspect the `club` profile with secrets redacted,
+> then run a health check against that profile."*
+
+<video :src="withBase('/examples/config-profiles-redacted.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Profiles let one config file hold rehearsal, club, studio and install settings.
+`tdmcp-agent config profiles` lists them; `config profile <name>` resolves one
+without leaking tokens.*
+
+> *"Install the Codex client config into this explicit TOML path, deep-merge it
+> instead of replacing the file, and verify the resulting command points at this
+> package."*
+
+<video :src="withBase('/examples/client-config-merge.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`tdmcp install-client --write --path <file>` writes Claude/Cursor JSON or Codex
+TOML by merging the target file and then verifying the tdmcp command entry. This
+is the safer setup path for machines that already have MCP clients configured.*
+
+> *"Install the TouchDesigner bridge, wait for `/api/info` on port 9980, and report
+> the bridge status before I launch the show."*
+
+<video :src="withBase('/examples/bridge-install-verify.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`tdmcp install-bridge --verify --wait --port 9980` turns bridge staging into a
+preflight: copy the modules, print the Textport one-liner, then poll the live TD
+bridge until it answers.*
+
+> *"Serve tdmcp over loopback Streamable HTTP on port 3939 for this client that
+> cannot spawn stdio, while keeping bare `tdmcp` on stdio."*
+
+<video :src="withBase('/examples/streamable-http-loopback.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`tdmcp serve --http --port 3939` adds a loopback HTTP transport without changing
+the default package behavior. Useful for clients that speak HTTP MCP but cannot
+launch a stdio child process.*
+
+> *"Watch bridge events with pretty output, print a heartbeat every five seconds,
+> and run `./cue-next.sh` when a beat event lands, debounced to 250 ms."*
+
+<video :src="withBase('/examples/agent-watch-hooks.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`tdmcp-agent watch --pretty --heartbeat-ms ... --on ... --exec ...` turns bridge
+events into a lightweight local automation bus. Keep hooks small and idempotent so
+the monitor stays reliable during a set.*
+
+> *"Open the local copilot in read-only mode to inspect errors, then rerun with
+> `--creative` for a quick local idea sketch; use `--prompt` for the headless
+> one-shot answer."*
+
+<video :src="withBase('/examples/copilot-tier-switch.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`tdmcp chat --read-only`, `--creative`, `--prompt`, `--profile` and `--config`
+let the local copilot switch between safe inspection, warmer creative sketches and
+scriptable one-shot answers. The default model/tier/step budget can also come from
+`TDMCP_LLM_*`.*
+
+> *"Expose `tdmcp://prompts`, search `tdmcp://recipes/search/audio`, and read
+> `tdmcp://cookbook/pt` before choosing which full-system prompt to run."*
+
+<video :src="withBase('/examples/mcp-resource-catalog.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*The prompt catalog, recipe search and localized cookbook are MCP resources now,
+so agents can ground their next move in the same docs a human reads instead of
+remembering stale prompt names.*
+
+> *"Sample `/project1/out1` for two seconds with `watch_node`, include readable
+> parameters and CHOP channels, then inspect the slow node with
+> `get_node_state_runtime` and `include_info_chop:true`."*
+
+<video :src="withBase('/examples/watch-node-telemetry.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`watch_node` captures short-window snapshots of one operator. Pair it with
+`get_node_state_runtime` when a build is black, slow or unstable and you need
+per-op cook time, channels, resolution, errors and optional Info CHOP data.*
+
+> *"Poll `/api/health`, summarize uptime, heartbeat, TouchDesigner info and any
+> available cook/frame/drop/GPU metrics; fail forward if this build returns nulls."*
+
+<video :src="withBase('/examples/bridge-health-watchdog.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*The bridge health watchdog is a read-only status surface for local scripts and
+preflight dashboards. Some performance fields depend on the TD build, so prompts
+should ask for explicit `null` handling instead of treating missing metrics as a
+fatal error.*
+
 ## Working from your own notes (Obsidian vault)
 
 If you keep an [Obsidian vault](/reference/tools#obsidian-vault) wired up:
