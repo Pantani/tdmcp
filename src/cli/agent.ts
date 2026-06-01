@@ -2613,6 +2613,7 @@ const runStepSchema = z
     dry_run: z.boolean().optional(),
     allow_unsafe: z.boolean().optional(),
     quiet: z.boolean().optional(),
+    no_color: z.boolean().optional(),
   })
   .passthrough();
 const runFileSchema = z.union([
@@ -2629,6 +2630,7 @@ function runStepArgv(step: RunStep): string[] {
   if (step.dry_run === true) argv.push("--dry-run");
   if (step.allow_unsafe === true) argv.push("--allow-unsafe");
   if (step.quiet === true) argv.push("--quiet");
+  if (step.no_color === true) argv.push("--no-color");
   return argv;
 }
 
@@ -2640,6 +2642,7 @@ function forwardedGlobalArgv(values: Record<string, unknown>): string[] {
   }
   if (values["dry-run"] === true) argv.push("--dry-run");
   if (values["allow-unsafe"] === true) argv.push("--allow-unsafe");
+  if (values["no-color"] === true) argv.push("--no-color");
   return argv;
 }
 

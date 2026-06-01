@@ -55,6 +55,24 @@ The project has grown through five arcs:
 
 ## ✅ Current Release Line
 
+### main — v0.7.2 candidate (unreleased)
+
+The repository now has a small, unreleased CLI/operator-DX follow-through on top
+of v0.7.1. It does **not** change the public npm release or tool count yet.
+
+- **Top-level package-manager discoverability.** `tdmcp --help` now expands the
+  package-manager tree (`search`, `list`, `info`, `install`, `uninstall`,
+  `doctor`, `packages path`) instead of hiding it behind one summary row, and
+  `tdmcp packages --help` / `tdmcp completion <bash|zsh|fish>` include those
+  package commands and common package flags.
+- **First safe `doctor --fix` repair.** `tdmcp-agent doctor --fix` now creates a
+  missing configured `TDMCP_VAULT_PATH` directory idempotently, reruns the vault
+  check, reports the applied repair, and still prints suggestions for checks that
+  need manual action. Broader config/bridge repairs remain planned.
+- **Script-compatible run files.** `tdmcp-agent run` now forwards global
+  `--no-color` into nested JSON/stdin steps, and individual run-file steps can
+  set `"no_color": true`.
+
 ### v0.7.1 — Operator DX, local copilot & bridge-health patch
 
 v0.7.1 is a patch release on top of v0.7.0. It keeps the public story focused on
@@ -392,8 +410,9 @@ install story.*
   deferred generators, plus MediaPipe face / hand / segmentation on the in-tree
   tracking engine.
 - **Developer & live-operator DX** — finish the **easy-install** story with a
-  `doctor --fix` that performs safe repairs; then round out completion parity,
-  inline preview and the next front-of-house dashboard pass.
+  `doctor --fix` that performs more safe repairs beyond the current
+  vault-folder creation; then round out inline preview and the next
+  front-of-house dashboard pass.
 
 ### Later / deferred
 
@@ -495,12 +514,17 @@ or partial work.
 
 | Feature | Delivers | Effort | Impact | Conf | Priority | Novelty | Probe-first |
 |---|---|---|---|---|---|---|---|
-| `doctor_fix_autoexec` | `doctor --fix` executes safe repairs | M | High | High | P1 | ROADMAP | none |
+| `doctor_fix_autoexec` | Extend `doctor --fix` beyond the shipped missing-vault-folder repair into config/bridge safe repairs | M | High | High | P1 | ROADMAP | none |
 | `preview_inline_and_watch` | `preview --inline` (iTerm/Kitty/sixel) + `--watch` | M | Med | Med | P1 | ROADMAP | terminal-protocol detect |
 | `show_mode_oneliner` | `tdmcp show <profile>` — load+doctor+perform+pre-flight | M | Med | Med | P2 | NEW | abort semantics |
 | `error_exit_code_taxonomy` | Distinct exit codes (offline/TD-error/config) | S | Low | Med | P2 | NEW | error subclass survives |
-| `no_color_flag_is_dead` | Honor parsed-but-dead `--no-color`/`NO_COLOR` | S | Low | High | P2 | NEW | none |
-| `packages_cli_help_and_completion_parity` | Fold `packages` tree into top-level help/completion | S | Low | High | P2 | EXTENSION | none |
+
+`packages_cli_help_and_completion_parity` is implemented on main after v0.7.1
+and is no longer repeated as open backlog; it will move into the release section
+when the next patch is cut.
+`no_color_flag_is_dead` is also implemented on main for the script-facing agent
+surface; dashboard/TUI already honored `NO_COLOR`, and `tdmcp-agent run` now
+propagates `--no-color` into nested steps.
 
 #### A.4 · AI & LLM integration
 

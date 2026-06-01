@@ -1,5 +1,5 @@
 import { runInstallBridge } from "./cli/installBridge.js";
-import { renderMainHelp } from "./cli/mainHelp.js";
+import { renderMainCompletion, renderMainHelp } from "./cli/mainHelp.js";
 import { parseServeArgs, renderServeHelp, resolveServeInvocation } from "./cli/serverArgs.js";
 import { isPackageCommand, runPackageCli } from "./packages/cli.js";
 import { createTdmcpServer } from "./server/tdmcpServer.js";
@@ -16,6 +16,17 @@ async function main(): Promise<void> {
   }
   if (argv[0] === "--version" || argv[0] === "-v") {
     process.stdout.write(`${getVersion()}\n`);
+    return;
+  }
+  if (argv[0] === "completion") {
+    const shell = argv[1] ?? "";
+    const script = renderMainCompletion(shell);
+    if (!script) {
+      process.stderr.write('Unsupported shell for completion. Use "bash", "zsh", or "fish".\n');
+      process.exitCode = 2;
+      return;
+    }
+    process.stdout.write(script);
     return;
   }
   if (argv[0] === "install-bridge") {

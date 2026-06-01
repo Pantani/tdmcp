@@ -6,6 +6,23 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **Top-level CLI completion/package parity:** `tdmcp completion <bash|zsh|fish>` now
+  prints a static completion snippet for the primary binary, including the
+  package-manager shortcuts (`search`, `list`, `info`, `install`, `uninstall`,
+  `doctor`, and `packages path`) and their common flags. `tdmcp --help` now also
+  lists those package subcommands directly instead of hiding them behind one
+  summary row, and `tdmcp packages --help` prints package-manager usage instead
+  of failing parse.
+- **First safe `tdmcp-agent doctor --fix` repair:** when `TDMCP_VAULT_PATH`
+  points at a missing folder, `doctor --fix` now creates it idempotently, reruns
+  the vault check, and reports the applied repair while continuing to surface
+  suggestions for checks that still need manual action.
+- **Run-file flag propagation:** `tdmcp-agent run` now carries `--no-color`
+  through to nested JSON/stdin command steps, and run-file steps can also set
+  `"no_color": true`.
+
 ## [0.7.1] - 2026-06-01
 
 ### Added

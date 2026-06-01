@@ -1,4 +1,4 @@
-import { existsSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve, sep } from "node:path";
 import { LlmClient } from "../llm/client.js";
@@ -37,6 +37,8 @@ export interface DoctorCheck {
 export interface DoctorReport {
   ok: boolean;
   checks: DoctorCheck[];
+  /** Safe repairs actually attempted by `doctor --fix`. */
+  repairs?: Array<{ id: string; status: "applied" | "failed"; detail: string }>;
   /** Suggested remediation commands for non-passing checks (populated when `fix` is set). */
   fixes?: Array<{ id: string; command: string }>;
   /** Resolved configuration the checks ran against (handy for bug reports). */
@@ -68,6 +70,8 @@ export interface RunDoctorOptions {
   makeLlmClient?: (config: TdmcpConfig) => Pick<LlmClient, "health">;
   /** Overridable filesystem probe for the vault check (tests); defaults to real fs. */
   vaultProbe?: (absPath: string) => { exists: boolean; isDir: boolean };
+  /** Overridable vault repair hook for tests; defaults to mkdir -p. */
+  vaultRepair?: (absPath: string) => void;
 }
 
 const ICON: Record<CheckStatus, string> = { pass: "✔", warn: "!", fail: "✖" };
@@ -86,6 +90,10 @@ function defaultVaultProbe(absPath: string): { exists: boolean; isDir: boolean }
   } catch {
     return { exists: true, isDir: false };
   }
+}
+
+function defaultVaultRepair(absPath: string): void {
+  mkdirSync(absPath, { recursive: true });
 }
 
 /** TD bridge reachability + version. Critical: a failure here fails the whole doctor. */
@@ -224,6 +232,34 @@ function suggestFix(check: DoctorCheck, config: TdmcpConfig): string | undefined
   }
 }
 
+function repairVault(
+  config: TdmcpConfig,
+  check: DoctorCheck | undefined,
+  repair: (absPath: string) => void,
+): DoctorReport["repairs"] {
+  if (!check || check.status === "pass" || !config.vaultPath) return undefined;
+  const absPath = resolve(expandHome(config.vaultPath));
+  const dataPath = typeof check.data?.path === "string" ? check.data.path : absPath;
+  try {
+    repair(absPath);
+    return [
+      {
+        id: "vault",
+        status: "applied",
+        detail: `created vault folder at ${dataPath}.`,
+      },
+    ];
+  } catch (err) {
+    return [
+      {
+        id: "vault",
+        status: "failed",
+        detail: `could not create vault folder at ${dataPath}: ${(err as Error).message}`,
+      },
+    ];
+  }
+}
+
 /** Config sanity: surfaces the effective TD/LLM settings. Critical (anchors the exit code). */
 function checkConfig(config: TdmcpConfig): DoctorCheck {
   const td = tdBaseUrl(config);
@@ -258,6 +294,13 @@ function render(report: DoctorReport): string {
     lines.push(
       `Setup is not ready: ${failed.length} critical check(s) failed (see the ✖ lines above).`,
     );
+  }
+  if (report.repairs?.length) {
+    lines.push("", "Applied fixes:");
+    for (const repair of report.repairs) {
+      const marker = repair.status === "applied" ? "✔" : "✖";
+      lines.push(`  ${marker} ${repair.id}: ${repair.detail}`);
+    }
   }
   if (report.fixes?.length) {
     lines.push("", "Suggested fixes:");
@@ -308,14 +351,27 @@ export async function runDoctor(opts: RunDoctorOptions = {}): Promise<DoctorResu
     : buildToolContext(config, { logger: silentLogger });
   const makeLlmClient = opts.makeLlmClient ?? ((c: TdmcpConfig) => new LlmClient(c));
   const vaultProbe = opts.vaultProbe ?? defaultVaultProbe;
+  const vaultRepair = opts.vaultRepair ?? defaultVaultRepair;
 
-  const checks: DoctorCheck[] = [
+  let checks: DoctorCheck[] = [
     await checkBridge(ctx),
     checkConfig(config),
     checkTools(config),
     await checkLlm(config, makeLlmClient),
     checkVault(config, vaultProbe),
   ];
+
+  const repairs = opts.fix
+    ? repairVault(
+        config,
+        checks.find((c) => c.id === "vault"),
+        vaultRepair,
+      )
+    : undefined;
+  if (repairs?.some((repair) => repair.status === "applied")) {
+    const refreshedVault = checkVault(config, vaultProbe);
+    checks = checks.map((check) => (check.id === "vault" ? refreshedVault : check));
+  }
 
   const ok = !checks.some((c) => c.critical && c.status === "fail");
   const fixes = opts.fix
@@ -326,6 +382,7 @@ export async function runDoctor(opts: RunDoctorOptions = {}): Promise<DoctorResu
   const report: DoctorReport = {
     ok,
     checks,
+    ...(repairs?.length ? { repairs } : {}),
     ...(fixes?.length ? { fixes } : {}),
     config: {
       tdBaseUrl: tdBaseUrl(config),
