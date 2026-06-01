@@ -1782,6 +1782,263 @@ function configInitFrame(t) {
   return buf;
 }
 
+function terminalPanel(buf, x, y, w, h, accent = [57, 232, 190]) {
+  rect(buf, x, y, w, h, [12, 18, 30], 0.96);
+  rect(buf, x, y, w, 18, [28, 38, 58], 0.92);
+  circle(buf, x + 12, y + 9, 3, [255, 86, 134], 0.92);
+  circle(buf, x + 24, y + 9, 3, [255, 214, 86], 0.92);
+  circle(buf, x + 36, y + 9, 3, accent, 0.92);
+}
+
+function agentRunContinueFrame(t) {
+  const buf = baseFrame();
+  terminalPanel(buf, 32, 30, 416, 198);
+  const scan = Math.floor((t * 6) % 5);
+  for (let i = 0; i < 5; i++) {
+    const y = 62 + i * 28;
+    const done = scan > i;
+    const failed = i === 2 && scan > i;
+    rect(buf, 62, y, 220 - i * 18, 6, [255, 255, 255], done ? 0.3 : 0.18);
+    rect(
+      buf,
+      314,
+      y - 5,
+      42,
+      16,
+      failed ? [255, 86, 134] : done ? [57, 232, 190] : [74, 88, 112],
+      done ? 0.82 : 0.46,
+    );
+    if (i === 2 && scan <= i) rect(buf, 314, y - 5, 42, 16, [255, 214, 86], 0.42);
+    if (done) circle(buf, 382, y + 2, 5, failed ? [255, 86, 134] : [57, 232, 190], 0.92);
+  }
+  const p = smoothstep(0.08, 0.82, (t * 0.55) % 1);
+  rect(buf, 62, 212, 260, 8, [255, 255, 255], 0.14);
+  rect(buf, 62, 212, 260 * p, 8, [57, 232, 190], 0.8);
+  rect(buf, 338, 206, 80, 20, [255, 214, 86], 0.22 + 0.2 * Math.sin(t * 5));
+  return buf;
+}
+
+function commandCatalogFrame(t) {
+  const buf = baseFrame();
+  terminalPanel(buf, 26, 28, 190, 214, [255, 214, 86]);
+  rect(buf, 246, 28, 206, 214, [15, 22, 34], 0.96);
+  const active = Math.floor((t * 2.2) % 6);
+  for (let i = 0; i < 7; i++) {
+    const y = 62 + i * 22;
+    rect(buf, 48, y, 78 + (i % 3) * 18, 5, [255, 255, 255], i === active ? 0.5 : 0.22);
+    rect(
+      buf,
+      148,
+      y - 4,
+      36,
+      13,
+      i % 3 === 0 ? [255, 86, 134] : [57, 232, 190],
+      i === active ? 0.82 : 0.38,
+    );
+    if (i === active) rect(buf, 38, y - 8, 168, 20, [255, 255, 255], 0.08);
+  }
+  for (let i = 0; i < 6; i++) {
+    const y = 58 + i * 25;
+    rect(buf, 270, y, 120 - (i % 3) * 16, 6, [255, 255, 255], 0.28);
+    rect(buf, 270, y + 12, 52 + i * 12, 5, i % 2 ? [255, 214, 86] : [57, 232, 190], 0.62);
+  }
+  rect(buf, 278, 214, 62, 8, [255, 86, 134], 0.72);
+  rect(buf, 354, 214, 44, 8, [57, 232, 190], 0.72);
+  return buf;
+}
+
+function configProfilesFrame(t) {
+  const buf = baseFrame();
+  const selected = Math.floor((t * 1.8) % 3);
+  for (let i = 0; i < 3; i++) {
+    const x = 42 + i * 132;
+    const on = i === selected;
+    rect(buf, x, 46, 102, 164, on ? [28, 42, 62] : [16, 24, 38], on ? 0.98 : 0.9);
+    rect(buf, x + 14, 66, 54, 6, [255, 255, 255], on ? 0.42 : 0.22);
+    rect(buf, x + 14, 88, 70, 5, [57, 232, 190], on ? 0.76 : 0.34);
+    rect(buf, x + 14, 106, 58, 5, [255, 214, 86], on ? 0.7 : 0.3);
+    for (let j = 0; j < 6; j++) circle(buf, x + 18 + j * 10, 132, 2.6, [190, 198, 210], 0.6);
+    rect(buf, x + 14, 158, 70, 14, [255, 86, 134], on ? 0.52 : 0.18);
+    if (on) glow(buf, x + 51, 128, 60, [57, 232, 190], 0.32);
+  }
+  rect(buf, 152, 224, 176, 8, [255, 255, 255], 0.16);
+  rect(buf, 152, 224, 58 + selected * 58, 8, [57, 232, 190], 0.7);
+  return buf;
+}
+
+function clientConfigMergeFrame(t) {
+  const buf = baseFrame();
+  const p = smoothstep(0.1, 0.78, (t * 0.65) % 1);
+  rect(buf, 34, 42, 132, 168, [236, 240, 245], 0.92);
+  rect(buf, 314, 42, 132, 168, [236, 240, 245], 0.92);
+  for (let i = 0; i < 7; i++) {
+    const y = 66 + i * 18;
+    rect(buf, 54, y, 62 + (i % 2) * 24, 5, [18, 24, 34], 0.38);
+    rect(buf, 334, y, 62 + (i % 3) * 18, 5, [18, 24, 34], 0.38);
+    if (i > 3) rect(buf, 334, y + 9, 54, 4, [57, 160, 190], 0.62);
+  }
+  line(buf, 166, 126, 314, 126, [255, 255, 255], 0.28);
+  circle(buf, 166 + 148 * p, 126, 6, [255, 214, 86], 0.92);
+  rect(buf, 204, 98, 72, 56, [15, 22, 34], 0.96);
+  rect(buf, 218, 114, 42, 5, [57, 232, 190], 0.74);
+  rect(buf, 218, 132, 28, 5, [255, 86, 134], 0.62);
+  if (p > 0.85) circle(buf, 416, 190, 10, [57, 232, 190], 0.9);
+  return buf;
+}
+
+function bridgeInstallVerifyFrame(t) {
+  const buf = baseFrame();
+  terminalPanel(buf, 32, 34, 152, 186, [255, 214, 86]);
+  rect(buf, 250, 34, 166, 186, [16, 24, 38], 0.96);
+  const p = smoothstep(0.1, 0.9, (t * 0.72) % 1);
+  for (let i = 0; i < 5; i++) {
+    rect(buf, 56, 70 + i * 26, 84 - i * 7, 5, [255, 255, 255], 0.24);
+  }
+  line(buf, 184, 126, 250, 126, [255, 255, 255], 0.24);
+  circle(buf, 184 + 66 * p, 126, 5, [57, 232, 190], 0.94);
+  rect(buf, 276, 64, 114, 34, [32, 48, 72], 0.92);
+  rect(buf, 276, 118, 114, 34, [32, 48, 72], 0.92);
+  rect(buf, 276, 172, 114, 22, [57, 232, 190], p > 0.7 ? 0.72 : 0.25);
+  for (let i = 0; i < 3; i++) circle(buf, 294 + i * 36, 82, 6, [255, 214, 86], 0.68);
+  if (p > 0.72) glow(buf, 334, 183, 48, [57, 232, 190], 0.45);
+  return buf;
+}
+
+function streamableHttpLoopbackFrame(t) {
+  const buf = baseFrame();
+  const cx = 240;
+  const cy = 134;
+  circle(buf, cx, cy, 58, [22, 32, 50], 0.98);
+  circle(buf, cx, cy, 28, [57, 232, 190], 0.28 + 0.18 * Math.sin(t * 4));
+  for (let i = 0; i < 5; i++) {
+    const a = t * 0.7 + (i / 5) * Math.PI * 2;
+    const x = cx + Math.cos(a) * 148;
+    const y = cy + Math.sin(a) * 82;
+    line(buf, cx, cy, x, y, [255, 255, 255], 0.14);
+    rect(buf, x - 34, y - 16, 68, 32, [18, 26, 40], 0.95);
+    rect(buf, x - 22, y - 4, 44, 5, i % 2 ? [255, 214, 86] : [57, 232, 190], 0.72);
+  }
+  const p = (t * 1.4) % 1;
+  circle(
+    buf,
+    cx + Math.cos(p * Math.PI * 2) * 78,
+    cy + Math.sin(p * Math.PI * 2) * 44,
+    4,
+    [255, 86, 134],
+    0.92,
+  );
+  return buf;
+}
+
+function agentWatchHooksFrame(t) {
+  const buf = baseFrame();
+  rect(buf, 34, 42, 412, 164, [14, 21, 34], 0.96);
+  const cursor = Math.floor((t * 9) % 12);
+  for (let i = 0; i < 12; i++) {
+    const x = 58 + i * 31;
+    const hit = i % 4 === 0 || i === 7;
+    const now = i === cursor;
+    rect(buf, x, 82, 16, hit ? 72 : 38, hit ? [57, 232, 190] : [74, 88, 112], hit ? 0.7 : 0.36);
+    if (now) {
+      rect(buf, x - 5, 62, 26, 120, [255, 214, 86], 0.16);
+      circle(buf, x + 8, 70, 7, [255, 214, 86], 0.92);
+    }
+  }
+  rect(buf, 86, 220, 102, 8, [255, 255, 255], 0.16);
+  rect(buf, 210, 220, 72, 8, [255, 86, 134], 0.62);
+  rect(buf, 306, 220, 88, 8, [57, 232, 190], 0.7);
+  return buf;
+}
+
+function copilotTierSwitchFrame(t) {
+  const buf = baseFrame();
+  rect(buf, 40, 28, 400, 214, [16, 24, 38], 0.96);
+  const safe = Math.sin(t * 1.8) > 0;
+  rect(buf, 64, 54, 120, 26, safe ? [57, 232, 190] : [38, 48, 66], safe ? 0.76 : 0.62);
+  rect(buf, 202, 54, 120, 26, safe ? [38, 48, 66] : [255, 86, 134], safe ? 0.62 : 0.76);
+  for (let i = 0; i < 4; i++) {
+    const y = 104 + i * 28;
+    rect(buf, 68, y, 150 + (i % 2) * 42, 14, [28, 38, 58], 0.94);
+    rect(buf, 82, y + 5, 64 + i * 18, 4, [255, 255, 255], 0.26);
+    if (i % 2 === 1) rect(buf, 258, y, 94, 14, safe ? [57, 232, 190] : [255, 214, 86], 0.48);
+  }
+  rect(buf, 68, 214, 252, 9, [255, 255, 255], 0.14);
+  rect(buf, 68, 214, 92 + (safe ? 20 : 120), 9, safe ? [57, 232, 190] : [255, 86, 134], 0.74);
+  return buf;
+}
+
+function mcpResourceCatalogFrame(t) {
+  const buf = baseFrame();
+  circle(buf, 240, 136, 24, [57, 232, 190], 0.36);
+  const names = [
+    [72, 58, [57, 232, 190]],
+    [300, 56, [255, 214, 86]],
+    [58, 176, [255, 86, 134]],
+    [306, 174, [118, 75, 255]],
+  ];
+  for (let i = 0; i < names.length; i++) {
+    const [x, y, color] = names[i];
+    const pulse = smoothstep(0, 0.4, (t * 0.55 + i * 0.18) % 1);
+    rect(buf, x, y, 124, 48, [16, 24, 38], 0.96);
+    rect(buf, x + 16, y + 14, 68, 5, [255, 255, 255], 0.28);
+    rect(buf, x + 16, y + 28, 86, 5, color, 0.7);
+    line(buf, x + 62, y + 24, 240, 136, [255, 255, 255], 0.12 + pulse * 0.15);
+    circle(buf, mix(x + 62, 240, pulse), mix(y + 24, 136, pulse), 4, color, 0.86);
+  }
+  return buf;
+}
+
+function watchNodeTelemetryFrame(t) {
+  const buf = baseFrame();
+  rect(buf, 38, 46, 148, 154, [16, 24, 38], 0.96);
+  rect(buf, 66, 74, 92, 62, [28, 42, 62], 0.95);
+  circle(buf, 112, 105, 22, [57, 232, 190], 0.24 + 0.16 * Math.sin(t * 5));
+  rect(buf, 74, 160, 76, 7, [255, 255, 255], 0.22);
+  rect(buf, 238, 44, 190, 158, [12, 18, 30], 0.96);
+  for (let i = 0; i < 8; i++) {
+    const x = 262 + i * 18;
+    const h = 24 + Math.sin(t * 3 + i * 0.7) * 14 + i * 2;
+    rect(buf, x, 166 - h, 10, h, i % 3 === 0 ? [255, 214, 86] : [57, 232, 190], 0.72);
+  }
+  for (let i = 0; i < 4; i++) {
+    const y = 62 + i * 22;
+    rect(buf, 352, y, 42, 5, [255, 255, 255], 0.22);
+    rect(buf, 352, y + 10, 24 + i * 12, 5, [255, 86, 134], 0.5);
+  }
+  line(buf, 186, 122, 238, 122, [255, 255, 255], 0.2);
+  circle(buf, 186 + ((t * 45) % 52), 122, 4, [255, 214, 86], 0.9);
+  return buf;
+}
+
+function bridgeHealthWatchdogFrame(t) {
+  const buf = baseFrame();
+  rect(buf, 34, 32, 412, 208, [14, 21, 34], 0.96);
+  const beat = smoothstep(0, 0.22, (t * 1.4) % 1) * (1 - smoothstep(0.28, 0.76, (t * 1.4) % 1));
+  circle(buf, 102, 88, 24 + beat * 12, [57, 232, 190], 0.42 + beat * 0.42);
+  for (let i = 0; i < 4; i++) {
+    const x = 176 + (i % 2) * 116;
+    const y = 58 + Math.floor(i / 2) * 72;
+    rect(buf, x, y, 86, 46, [28, 38, 58], 0.94);
+    rect(buf, x + 14, y + 14, 42, 5, [255, 255, 255], 0.24);
+    rect(
+      buf,
+      x + 14,
+      y + 28,
+      44 + Math.sin(t * 2 + i) * 14,
+      5,
+      i === 3 ? [255, 214, 86] : [57, 232, 190],
+      0.66,
+    );
+  }
+  for (let i = 0; i < 12; i++) {
+    const x = 70 + i * 26;
+    const y = 202 + Math.sin(t * 4 + i * 0.8) * 10;
+    line(buf, x, 202, x + 18, y, [255, 255, 255], 0.22);
+    circle(buf, x + 18, y, 2.5, [255, 86, 134], 0.6);
+  }
+  return buf;
+}
+
 const clips = [
   ["feedback-tunnel.mp4", feedbackTunnelFrame],
   ["reaction-diffusion.mp4", reactionDiffusionFrame],
@@ -1835,6 +2092,17 @@ const clips = [
   ["data-source-http-ws-hotfix.mp4", dataSourceHotfixFrame],
   ["missing-args-elicit.mp4", elicitMissingArgsFrame],
   ["config-init-env-scan.mp4", configInitFrame],
+  ["agent-run-continue.mp4", agentRunContinueFrame],
+  ["command-catalog-discovery.mp4", commandCatalogFrame],
+  ["config-profiles-redacted.mp4", configProfilesFrame],
+  ["client-config-merge.mp4", clientConfigMergeFrame],
+  ["bridge-install-verify.mp4", bridgeInstallVerifyFrame],
+  ["streamable-http-loopback.mp4", streamableHttpLoopbackFrame],
+  ["agent-watch-hooks.mp4", agentWatchHooksFrame],
+  ["copilot-tier-switch.mp4", copilotTierSwitchFrame],
+  ["mcp-resource-catalog.mp4", mcpResourceCatalogFrame],
+  ["watch-node-telemetry.mp4", watchNodeTelemetryFrame],
+  ["bridge-health-watchdog.mp4", bridgeHealthWatchdogFrame],
 ];
 
 function writePpm(file, buf) {
