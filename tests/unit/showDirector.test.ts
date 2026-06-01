@@ -167,6 +167,65 @@ describe("showDirectorRuntime", () => {
     expect(approved.state.audit_log.at(-1)?.status).toBe("approved");
   });
 
+  it("submits an approve_effect intent as an approval state transition", () => {
+    const queued = submitShowIntent(createShowDirectorState(), {
+      type: "arm_effect",
+      effect: "fog",
+      duration_seconds: 3,
+      intensity: 0.4,
+    });
+
+    const approved = submitShowIntent(queued.state, {
+      type: "approve_effect",
+      approval_id: queued.approval?.id,
+      operator: "operator-a",
+    });
+
+    expect(approved.decision.decision).toBe("allow");
+    expect(approved.plan[0]).toMatchObject({
+      kind: "effect",
+      effect: "fog",
+      dry_run_only: true,
+      operator: "operator-a",
+    });
+    expect(approved.state.approvals[0]?.status).toBe("approved");
+  });
+
+  it("turns a policy-allowed effect into a dry-run plan with a policy operator marker", () => {
+    const allowed = submitShowIntent(
+      createShowDirectorState(),
+      {
+        type: "arm_effect",
+        effect: "fog",
+        duration_seconds: 3,
+        intensity: 0.4,
+      },
+      {
+        effects: [
+          {
+            effect: "fog",
+            decision: "allow",
+            max_duration_seconds: 3,
+            max_intensity: 0.5,
+            operator_only: false,
+          },
+        ],
+      },
+    );
+
+    expect(allowed.decision.decision).toBe("allow");
+    expect(allowed.plan).toEqual([
+      {
+        kind: "effect",
+        effect: "fog",
+        duration_seconds: 3,
+        intensity: 0.4,
+        operator: "policy",
+        dry_run_only: true,
+      },
+    ]);
+  });
+
   it("cancels a queued approval and records the operator decision", () => {
     const queued = submitShowIntent(createShowDirectorState(), {
       type: "arm_effect",
@@ -180,5 +239,54 @@ describe("showDirectorRuntime", () => {
     expect(cancelled.ok).toBe(true);
     expect(cancelled.state.approvals[0]?.status).toBe("cancelled");
     expect(cancelled.state.audit_log.at(-1)?.status).toBe("cancelled");
+  });
+
+  it("submits a cancel_effect intent as a cancellation state transition", () => {
+    const queued = submitShowIntent(createShowDirectorState(), {
+      type: "arm_effect",
+      effect: "fog",
+      duration_seconds: 3,
+      intensity: 0.4,
+    });
+
+    const cancelled = submitShowIntent(queued.state, {
+      type: "cancel_effect",
+      approval_id: queued.approval?.id,
+      operator: "operator-a",
+    });
+
+    expect(cancelled.decision.decision).toBe("allow");
+    expect(cancelled.plan).toEqual([]);
+    expect(cancelled.state.approvals[0]?.status).toBe("cancelled");
+    expect(cancelled.state.audit_log.at(-1)?.status).toBe("cancelled");
+  });
+
+  it("returns a structured cancellation error for persisted approvals with invalid decisions", () => {
+    const queued = submitShowIntent(createShowDirectorState(), {
+      type: "arm_effect",
+      effect: "fog",
+      duration_seconds: 3,
+      intensity: 0.4,
+    });
+    const approval = queued.state.approvals[0];
+    expect(approval).toBeDefined();
+    const corrupted = {
+      ...queued.state,
+      approvals: approval
+        ? [
+            {
+              ...approval,
+              decision: { decision: "nonsense" },
+            },
+          ]
+        : [],
+    };
+
+    const cancelled = cancelShowIntent(corrupted, queued.approval?.id ?? "", "operator-a");
+
+    expect(cancelled.ok).toBe(false);
+    if (cancelled.ok) throw new Error("expected cancellation to fail");
+    expect(cancelled.reason).toContain("invalid decision");
+    expect(cancelled.state.approvals[0]?.status).toBe("pending");
   });
 });

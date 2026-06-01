@@ -86,16 +86,18 @@ export const ShowDirectorStateSchema = z.object({
 
 export type ShowDirectorState = z.infer<typeof ShowDirectorStateSchema>;
 
+export type ResolveApprovalResult =
+  | { ok: true; state: ShowDirectorState; approval: ShowApproval; plan: ShowActionPlan[] }
+  | { ok: false; state: ShowDirectorState; reason: string; plan: [] };
+
 export interface SubmitShowIntentResult {
   state: ShowDirectorState;
   decision: PolicyDecision;
   plan: ShowActionPlan[];
   approval?: ShowApproval;
+  ok?: boolean;
+  reason?: string;
 }
-
-export type ResolveApprovalResult =
-  | { ok: true; state: ShowDirectorState; approval: ShowApproval; plan: ShowActionPlan[] }
-  | { ok: false; state: ShowDirectorState; reason: string; plan: [] };
 
 function cloneState(state: ShowDirectorState): ShowDirectorState {
   return ShowDirectorStateSchema.parse(state);
@@ -175,6 +177,16 @@ function planForAllowedIntent(intent: ShowIntent, operator?: string): ShowAction
   }
 }
 
+function controlIntentDecision(intent: ShowIntent): PolicyDecision {
+  return {
+    decision: "allow",
+    reason: `${intent.type} records operator/control state and does not drive hardware`,
+    intent_type: intent.type,
+    limits_applied: [],
+    requires_operator: false,
+  };
+}
+
 export function submitShowIntent(
   state: ShowDirectorState,
   rawIntent: unknown,
@@ -187,8 +199,26 @@ export function submitShowIntent(
     return { state: next, decision: parsed.decision, plan: [] };
   }
 
+  if (parsed.intent.type === "approve_effect") {
+    const approved = approveShowIntent(
+      next,
+      parsed.intent.approval_id,
+      parsed.intent.operator,
+      policy,
+    );
+    return { ...approved, decision: controlIntentDecision(parsed.intent) };
+  }
+
+  if (parsed.intent.type === "cancel_effect") {
+    const cancelled = cancelShowIntent(next, parsed.intent.approval_id, parsed.intent.operator);
+    return { ...cancelled, decision: controlIntentDecision(parsed.intent) };
+  }
+
   if (parsed.decision.decision === "allow") {
-    const plan = planForAllowedIntent(parsed.intent);
+    const plan = planForAllowedIntent(
+      parsed.intent,
+      parsed.intent.type === "arm_effect" ? "policy" : undefined,
+    );
     next.audit_log.push(auditEntry(next, "allowed", parsed.decision));
     return { state: next, decision: parsed.decision, plan };
   }
@@ -283,6 +313,16 @@ export function cancelShowIntent(
     };
   }
 
+  const decision = PolicyDecisionSchema.safeParse(approval.decision);
+  if (!decision.success) {
+    return {
+      ok: false,
+      state: next,
+      reason: `approval ${approvalId} has invalid decision`,
+      plan: [],
+    };
+  }
+
   const resolved: ShowApproval = {
     ...approval,
     status: "cancelled",
@@ -290,9 +330,8 @@ export function cancelShowIntent(
     operator,
   };
   next.approvals[idx] = resolved;
-  const decision = PolicyDecisionSchema.parse(approval.decision);
   next.audit_log.push(
-    auditEntry(next, "cancelled", decision, { approval_id: approvalId, operator }),
+    auditEntry(next, "cancelled", decision.data, { approval_id: approvalId, operator }),
   );
   return { ok: true, state: next, approval: resolved, plan: [] };
 }
