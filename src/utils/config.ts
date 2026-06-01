@@ -177,9 +177,9 @@ function envValues(env: NodeJS.ProcessEnv): Record<string, unknown> {
     llmBaseUrl: env.TDMCP_LLM_BASE_URL,
     llmModel: env.TDMCP_LLM_MODEL,
     llmApiKey: env.TDMCP_LLM_API_KEY || undefined,
-    llmTier: env.TDMCP_LLM_TIER,
-    llmMaxSteps: env.TDMCP_LLM_MAX_STEPS,
-    llmTemperature: env.TDMCP_LLM_TEMPERATURE,
+    llmTier: env.TDMCP_LLM_TIER || undefined,
+    llmMaxSteps: env.TDMCP_LLM_MAX_STEPS || undefined,
+    llmTemperature: env.TDMCP_LLM_TEMPERATURE || undefined,
     chatPort: env.TDMCP_CHAT_PORT,
     vaultPath: env.TDMCP_VAULT_PATH || undefined,
   };

@@ -246,6 +246,7 @@ class HealthTests(unittest.TestCase):
         self.assertEqual(result["touchdesigner"]["td_version"], "2023.12000")
         self.assertEqual(result["touchdesigner"]["project"], "watchdog.toe")
         self.assertTrue(result["performance"]["available"])
+        # TouchDesigner already reports cookTime in milliseconds and GPU memory in MB.
         self.assertEqual(result["performance"]["cook_time_ms"], 0.25)
         self.assertEqual(result["performance"]["cook_count"], 42)
         self.assertEqual(result["performance"]["cook_frame"], 1234)

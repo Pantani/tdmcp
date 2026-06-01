@@ -14,6 +14,7 @@ export interface CookbookPayload {
   source: string;
   bytes: number;
   text: string;
+  error?: string;
 }
 
 function cookbookPath(locale: CookbookLocale): string {
@@ -37,16 +38,43 @@ function firstHeading(markdown: string, fallback: string): string {
   );
 }
 
-export function readCookbookResource(locale: CookbookLocale = "en"): CookbookPayload {
-  const source = cookbookPath(locale);
-  const text = readFileSync(source, "utf8");
+function fallbackTitle(locale: CookbookLocale): string {
+  return locale === "pt" ? "Livro de Receitas de Prompts" : "Prompt Cookbook";
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+export function readCookbookResourceFromPath(
+  locale: CookbookLocale,
+  source: string,
+): CookbookPayload {
+  let text: string;
+  try {
+    text = readFileSync(source, "utf8");
+  } catch (error) {
+    return {
+      locale,
+      title: fallbackTitle(locale),
+      source,
+      bytes: 0,
+      text: "",
+      error: `Could not read prompt cookbook from ${source}: ${errorMessage(error)}`,
+    };
+  }
+
   return {
     locale,
-    title: firstHeading(text, locale === "pt" ? "Prompt Cookbook" : "Prompt Cookbook"),
+    title: firstHeading(text, fallbackTitle(locale)),
     source,
     bytes: Buffer.byteLength(text, "utf8"),
     text,
   };
+}
+
+export function readCookbookResource(locale: CookbookLocale = "en"): CookbookPayload {
+  return readCookbookResourceFromPath(locale, cookbookPath(locale));
 }
 
 export const registerCookbookResource: ResourceRegistrar = (server) => {

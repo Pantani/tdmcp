@@ -2,9 +2,13 @@ import { describe, expect, it } from "vitest";
 import { RecipeLibrary } from "../../src/recipes/loader.js";
 import {
   readCookbookResource,
+  readCookbookResourceFromPath,
   registerCookbookResource,
 } from "../../src/resources/cookbookResource.js";
-import { searchRecipeSummaries } from "../../src/resources/recipeResource.js";
+import {
+  registerRecipeResource,
+  searchRecipeSummaries,
+} from "../../src/resources/recipeResource.js";
 
 describe("recipe search resource helpers", () => {
   it("searches recipes by keyword across id, name, description and tags", () => {
@@ -21,6 +25,44 @@ describe("recipe search resource helpers", () => {
           .includes("feedback"),
       ),
     ).toBe(true);
+  });
+
+  it("returns a JSON error payload for malformed encoded search queries", async () => {
+    const calls: Array<{
+      name: string;
+      handler: (
+        uri: URL,
+        variables?: Record<string, string>,
+      ) => Promise<{
+        contents: Array<{ text?: string }>;
+      }>;
+    }> = [];
+    const server = {
+      registerResource: (
+        name: string,
+        _uriOrTemplate: unknown,
+        _metadata: unknown,
+        handler: (
+          uri: URL,
+          variables?: Record<string, string>,
+        ) => Promise<{
+          contents: Array<{ text?: string }>;
+        }>,
+      ) => {
+        calls.push({ name, handler });
+      },
+    };
+
+    registerRecipeResource(server as never, { recipes: new RecipeLibrary() } as never);
+
+    const search = calls.find((call) => call.name === "td-recipes-search");
+    const result = await search?.handler(new URL("tdmcp://recipes/search/%GG"), { query: "%GG" });
+    const payload = JSON.parse(result?.contents[0]?.text ?? "{}");
+
+    expect(payload).toEqual({
+      error: "Invalid query encoding.",
+      query: "%GG",
+    });
   });
 });
 
@@ -40,6 +82,16 @@ describe("cookbook resource helpers", () => {
     expect(result.locale).toBe("pt");
     expect(result.title.toLowerCase()).toContain("prompt");
     expect(result.text).toContain("tdmcp");
+  });
+
+  it("returns an explanatory payload instead of throwing when the cookbook file is missing", () => {
+    const result = readCookbookResourceFromPath("pt", "/tmp/tdmcp-missing-cookbook.md");
+
+    expect(result.locale).toBe("pt");
+    expect(result.title).toBe("Livro de Receitas de Prompts");
+    expect(result.bytes).toBe(0);
+    expect(result.text).toBe("");
+    expect(result.error).toContain("Could not read prompt cookbook");
   });
 
   it("declares JSON mime types to match the returned cookbook payload", async () => {

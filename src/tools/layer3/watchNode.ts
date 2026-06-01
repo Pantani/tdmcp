@@ -198,6 +198,7 @@ export function buildWatchNodeScript(payload: object): string {
 export async function watchNodeImpl(ctx: ToolContext, args: WatchNodeArgs) {
   const snapshots: WatchNodeSnapshot[] = [];
   const warnings: string[] = [];
+  const startedAt = Date.now();
 
   for (let i = 0; i < args.samples; i++) {
     try {
@@ -219,9 +220,10 @@ export async function watchNodeImpl(ctx: ToolContext, args: WatchNodeArgs) {
 
       const sampleWarnings = report.warnings ?? [];
       warnings.push(...sampleWarnings);
+      const elapsedMs = Math.max(0, Date.now() - startedAt);
       snapshots.push({
         sample_index: i,
-        elapsed_ms: i * args.interval_ms,
+        elapsed_ms: elapsedMs,
         path: report.path ?? args.path,
         type: report.type ?? "",
         family: report.family,
@@ -257,7 +259,7 @@ export async function watchNodeImpl(ctx: ToolContext, args: WatchNodeArgs) {
     requested_samples: args.samples,
     collected_samples: snapshots.length,
     interval_ms: args.interval_ms,
-    window_ms: Math.max(0, (snapshots.length - 1) * args.interval_ms),
+    window_ms: snapshots.at(-1)?.elapsed_ms ?? 0,
     warnings: unique(warnings),
     snapshots,
   };

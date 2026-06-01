@@ -135,6 +135,18 @@ describe("install-bridge CLI", () => {
     expect(process.exitCode).toBe(2);
   });
 
+  it("rejects --port without a value", async () => {
+    const fetchImpl = vi.fn();
+    vi.stubGlobal("fetch", fetchImpl);
+
+    await runInstallBridge(["--port"]);
+
+    expect(mocks.cpSync).not.toHaveBeenCalled();
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(erroredText()).toContain("Missing install-bridge --port value");
+    expect(process.exitCode).toBe(2);
+  });
+
   it("polls until the bridge responds when --wait is passed", async () => {
     const fetchImpl = vi
       .fn()

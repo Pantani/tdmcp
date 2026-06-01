@@ -1,6 +1,6 @@
 import { runInstallBridge } from "./cli/installBridge.js";
 import { renderMainHelp } from "./cli/mainHelp.js";
-import { parseServeArgs, renderServeHelp } from "./cli/serverArgs.js";
+import { parseServeArgs, renderServeHelp, resolveServeInvocation } from "./cli/serverArgs.js";
 import { isPackageCommand, runPackageCli } from "./packages/cli.js";
 import { createTdmcpServer } from "./server/tdmcpServer.js";
 import { startTransport } from "./server/transportFactory.js";
@@ -46,7 +46,13 @@ async function main(): Promise<void> {
 
   // The server honors a saved config file too (tdmcp.json / .tdmcprc / ~/.config/tdmcp);
   // pick a profile via TDMCP_PROFILE. Env vars still win over the file.
-  const serveArgs = parseServeArgs(argv[0] === "serve" ? argv.slice(1) : [], process.env);
+  const serveInvocation = resolveServeInvocation(argv);
+  if (serveInvocation.kind === "error") {
+    process.stderr.write(`${serveInvocation.message}\n`);
+    process.exitCode = 2;
+    return;
+  }
+  const serveArgs = parseServeArgs(serveInvocation.argv, process.env);
   if (serveArgs.showHelp) {
     process.stdout.write(`${renderServeHelp()}\n`);
     return;

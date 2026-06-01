@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { parseServeArgs, renderServeHelp } from "../../src/cli/serverArgs.js";
+import {
+  parseServeArgs,
+  renderServeHelp,
+  resolveServeInvocation,
+} from "../../src/cli/serverArgs.js";
 
 describe("tdmcp serve args", () => {
   it("maps --http and --port into config overrides", () => {
@@ -34,5 +38,18 @@ describe("tdmcp serve args", () => {
     const parsed = parseServeArgs(["surprise"], {});
 
     expect(parsed.error).toContain("surprise");
+  });
+
+  it("rejects unknown top-level commands instead of falling back to the default server", () => {
+    expect(resolveServeInvocation([])).toEqual({ kind: "serve", argv: [] });
+    expect(resolveServeInvocation(["serve", "--http"])).toEqual({
+      kind: "serve",
+      argv: ["--http"],
+    });
+
+    expect(resolveServeInvocation(["foobr"])).toEqual({
+      kind: "error",
+      message: 'Unknown command "foobr". Run `tdmcp --help` for available commands.',
+    });
   });
 });

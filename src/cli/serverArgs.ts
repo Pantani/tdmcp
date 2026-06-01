@@ -7,6 +7,10 @@ export interface ServeArgsResult {
   error?: string;
 }
 
+export type ServeInvocation =
+  | { kind: "serve"; argv: string[] }
+  | { kind: "error"; message: string };
+
 export function renderServeHelp(): string {
   return [
     "Usage: tdmcp serve [--http] [--port <port>] [--profile <name>] [--config <path>]",
@@ -20,6 +24,17 @@ export function renderServeHelp(): string {
     "  --config <path>     Use a specific config file.",
     "  --help, -h          Show this help.",
   ].join("\n");
+}
+
+export function resolveServeInvocation(argv: string[]): ServeInvocation {
+  if (argv.length === 0) return { kind: "serve", argv: [] };
+  const command = argv[0];
+  if (command === "serve") return { kind: "serve", argv: argv.slice(1) };
+  if (command?.startsWith("-")) return { kind: "serve", argv };
+  return {
+    kind: "error",
+    message: `Unknown command "${command}". Run \`tdmcp --help\` for available commands.`,
+  };
 }
 
 export function parseServeArgs(

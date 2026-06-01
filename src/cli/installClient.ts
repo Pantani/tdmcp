@@ -39,7 +39,7 @@ function codexTomlSnippet(): string {
 
 export function installClientSnippet(client: string): object | string {
   if (client === "codex") return codexTomlSnippet();
-  return { client, ...installClientConfig(client) };
+  return installClientConfig(client);
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -161,7 +161,7 @@ export async function writeInstallClientConfig(
 const HELP = `tdmcp install-client <claude|codex|cursor> [--write --path <file>]
 
 Print a ready-to-paste MCP client configuration snippet for tdmcp ${getVersion()}.
-Without --write, this command only prints JSON and does not modify files.
+Without --write, this command only prints a snippet and does not modify files.
 With --write, it deep-merges Claude/Cursor JSON or Codex TOML into the explicit config file.`;
 
 type ParsedArgs =

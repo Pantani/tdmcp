@@ -69,7 +69,16 @@ export const registerRecipeResource: ResourceRegistrar = (server, ctx) => {
       mimeType: "application/json",
     },
     async (uri, variables) => {
-      const query = decodeURIComponent(firstVar(variables.query));
+      const encodedQuery = firstVar(variables.query);
+      let query: string;
+      try {
+        query = decodeURIComponent(encodedQuery);
+      } catch {
+        return jsonContents(uri, {
+          error: "Invalid query encoding.",
+          query: encodedQuery,
+        });
+      }
       return jsonContents(uri, searchRecipeSummaries(ctx.recipes, query));
     },
   );

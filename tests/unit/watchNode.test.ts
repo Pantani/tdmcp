@@ -43,39 +43,45 @@ describe("watchNodeImpl", () => {
   it("samples runtime state, parameters, and channels across deterministic intervals", async () => {
     const exec = vi
       .fn()
-      .mockResolvedValueOnce({
-        stdout: JSON.stringify({
-          path: "/project1/audio1",
-          type: "audiodeviceinCHOP",
-          family: "CHOP",
-          state: {
-            cook_time_ms: 0.5,
-            cook_count: 10,
-            num_chans: 2,
-            num_samples: 512,
-            errors: [],
-          },
-          parameters: { active: true, gain: 0.8 },
-          channels: { chan1: 0.25, chan2: 0.75 },
-          warnings: [],
-        }),
+      .mockImplementationOnce(async () => {
+        vi.advanceTimersByTime(7);
+        return {
+          stdout: JSON.stringify({
+            path: "/project1/audio1",
+            type: "audiodeviceinCHOP",
+            family: "CHOP",
+            state: {
+              cook_time_ms: 0.5,
+              cook_count: 10,
+              num_chans: 2,
+              num_samples: 512,
+              errors: [],
+            },
+            parameters: { active: true, gain: 0.8 },
+            channels: { chan1: 0.25, chan2: 0.75 },
+            warnings: [],
+          }),
+        };
       })
-      .mockResolvedValueOnce({
-        stdout: JSON.stringify({
-          path: "/project1/audio1",
-          type: "audiodeviceinCHOP",
-          family: "CHOP",
-          state: {
-            cook_time_ms: 0.75,
-            cook_count: 11,
-            num_chans: 2,
-            num_samples: 512,
-            errors: [],
-          },
-          parameters: { active: true, gain: 0.8 },
-          channels: { chan1: 0.3, chan2: 0.7 },
-          warnings: [],
-        }),
+      .mockImplementationOnce(async () => {
+        vi.advanceTimersByTime(11);
+        return {
+          stdout: JSON.stringify({
+            path: "/project1/audio1",
+            type: "audiodeviceinCHOP",
+            family: "CHOP",
+            state: {
+              cook_time_ms: 0.75,
+              cook_count: 11,
+              num_chans: 2,
+              num_samples: 512,
+              errors: [],
+            },
+            parameters: { active: true, gain: 0.8 },
+            channels: { chan1: 0.3, chan2: 0.7 },
+            warnings: [],
+          }),
+        };
       });
 
     const promise = watchNodeImpl(fakeCtx(exec), {
@@ -94,6 +100,7 @@ describe("watchNodeImpl", () => {
       path: string;
       collected_samples: number;
       interval_ms: number;
+      window_ms: number;
       snapshots: Array<{
         sample_index: number;
         elapsed_ms: number;
@@ -106,7 +113,8 @@ describe("watchNodeImpl", () => {
     expect(data.path).toBe("/project1/audio1");
     expect(data.collected_samples).toBe(2);
     expect(data.interval_ms).toBe(50);
-    expect(data.snapshots.map((s) => s.elapsed_ms)).toEqual([0, 50]);
+    expect(data.window_ms).toBe(68);
+    expect(data.snapshots.map((s) => s.elapsed_ms)).toEqual([7, 68]);
     expect(data.snapshots[0]).toMatchObject({
       sample_index: 0,
       state: { cook_count: 10, num_chans: 2 },

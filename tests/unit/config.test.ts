@@ -140,6 +140,31 @@ describe("loadConfig — config files & profiles", () => {
     expect(cfg.tdHost).toBe("club-host");
   });
 
+  it("treats empty local LLM env knobs as unset so profile values survive", () => {
+    writeConfig({
+      profiles: {
+        creative: {
+          llmTier: "creative",
+          llmMaxSteps: 12,
+          llmTemperature: 0.75,
+        },
+      },
+    });
+
+    const cfg = loadConfig(
+      {
+        TDMCP_LLM_TIER: "",
+        TDMCP_LLM_MAX_STEPS: "",
+        TDMCP_LLM_TEMPERATURE: "",
+      },
+      { useFiles: true, cwd: dir, profile: "creative" },
+    );
+
+    expect(cfg.llmTier).toBe("creative");
+    expect(cfg.llmMaxSteps).toBe(12);
+    expect(cfg.llmTemperature).toBe(0.75);
+  });
+
   it("throws a clear error for an unknown profile", () => {
     writeConfig({ profiles: { club: {} } });
     expect(() => loadConfig({}, { useFiles: true, cwd: dir, profile: "nope" })).toThrow(

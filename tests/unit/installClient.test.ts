@@ -31,6 +31,7 @@ describe("install-client CLI", () => {
     expect(stdout).toHaveBeenCalledOnce();
     const printed = JSON.parse(String(stdout.mock.calls[0]?.[0]));
     expect(printed).toEqual(installClientSnippet("claude"));
+    expect(printed).not.toHaveProperty("client");
     expect(printed.mcpServers.tdmcp.command).toBe("tdmcp");
   });
 
