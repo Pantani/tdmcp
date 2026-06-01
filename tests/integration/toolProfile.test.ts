@@ -50,6 +50,8 @@ const SAFE_PROFILE_EXCLUDE = [
   "collect_project_assets",
   "repair_network",
   "swap_operator",
+  "export_sop_to_svg",
+  "generative_classics_pack",
 ];
 
 // Build/inspect surface that the safe profile must keep available.
@@ -111,6 +113,8 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
     expect(names).not.toContain("collect_project_assets");
     expect(names).not.toContain("repair_network");
     expect(names).not.toContain("swap_operator");
+    expect(names).not.toContain("export_sop_to_svg");
+    expect(names).not.toContain("generative_classics_pack");
   });
 
   it("safe keeps the build/inspect surface", async () => {
@@ -123,7 +127,7 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
     const safe = await toolNames({ TDMCP_TOOL_PROFILE: "safe" });
     expect(safe.length).toBeLessThan(full.length);
     expect(full.length - safe.length).toBe(SAFE_PROFILE_EXCLUDE.length);
-    expect(SAFE_PROFILE_EXCLUDE.length).toBe(25);
+    expect(SAFE_PROFILE_EXCLUDE.length).toBe(27);
   });
 
   it("safe ⊇ rawPython=off (composition): safe hides everything rawPython=off hides", async () => {

@@ -11,7 +11,9 @@ import { createSystemContainer, finalize, runBuild } from "./orchestration.js";
 // would not move the underlying Level TOP's R/G/B multipliers. Three floats per
 // channel are individually bindable and drive the grade live.
 
-// A 0..1 RGB triple, used for each colour-wheel tint. We model lift/gamma/gain
+// A 0..2 RGB triple (per-channel multiplier; `[1,1,1]` is neutral, values
+// below 1 darken that channel, above 1 brighten). Used for each colour-wheel
+// tint. We model lift/gamma/gain
 // (shadows / midtones / highlights) as three separately-tinted Level TOPs run
 // in series: each stage shifts its target tonal range toward the chosen colour
 // by multiplying R/G/B individually. `[1,1,1]` is neutral (no tint).

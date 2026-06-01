@@ -124,7 +124,9 @@ export const registerGenerativeClassicsPack: ToolRegistrar = (server, ctx) => {
         "list of recipes the active library can satisfy; list_only=false also writes a portable bundle JSON " +
         "(import_recipe_bundle-compatible) at install_path. Pure Node — no TouchDesigner bridge required.",
       inputSchema: generativeClassicsPackSchema.shape,
-      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+      // destructiveHint:true because `install_path` writes a bundle JSON to a
+      // user-controlled filesystem path and can overwrite when overwrite:true.
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: false },
     },
     (args) => generativeClassicsPackImpl(ctx, args),
   );

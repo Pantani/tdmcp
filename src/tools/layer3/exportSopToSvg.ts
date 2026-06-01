@@ -214,7 +214,9 @@ export const registerExportSopToSvg: ToolRegistrar = (server, ctx) => {
       description:
         "Walk a SOP's primitives via the bridge and emit an SVG document of polylines (each primitive becomes one `<polyline>`). Projects to x/y (drops z), auto-fits viewBox, supports stroke/fill/scale/flip_y. Writes to disk when `output_path` is supplied and always returns the SVG string in the report. Pen-plotter / laser / print deliverable.",
       inputSchema: exportSopToSvgSchema.shape,
-      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
+      // destructiveHint:true because `output_path` writes to a user-controlled
+      // filesystem location and can overwrite existing files.
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     (args) => exportSopToSvgImpl(ctx, args),
   );
