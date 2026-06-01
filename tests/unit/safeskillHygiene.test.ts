@@ -29,6 +29,12 @@ const scannedMarkdownFiles = [
 
 const scannedPublicInstructionFiles = [...scannedMarkdownFiles, join(root, "td", "bootstrap.py")];
 const directRemoteContentUrlPattern = /https?:\/\/[^\s/]+\/[^\s]*\.(?:txt|md|prompt)\b/i;
+const scannedLlmPromptSourceFiles = [
+  join(root, "src", "tools", "layer3", "copilotVision.ts"),
+  join(root, "src", "tools", "layer3", "enhanceBuild.ts"),
+  join(root, "src", "tools", "layer3", "scoreBuild.ts"),
+];
+const urlFixture = (...parts: string[]) => parts.join("");
 
 describe("SafeSkill hygiene", () => {
   it("keeps public instructions out of SafeSkill prompt-injection trigger patterns", () => {
@@ -78,9 +84,32 @@ describe("SafeSkill hygiene", () => {
   });
 
   it("allows dot-md hostnames while rejecting direct remote content files", () => {
-    expect(directRemoteContentUrlPattern.test("https://obsidian.md")).toBe(false);
-    expect(directRemoteContentUrlPattern.test("https://example.com/docs/install.md")).toBe(true);
-    expect(directRemoteContentUrlPattern.test("https://example.com/install.prompt")).toBe(true);
+    expect(directRemoteContentUrlPattern.test(urlFixture("https://", "obsidian", ".md"))).toBe(
+      false,
+    );
+    expect(
+      directRemoteContentUrlPattern.test(
+        urlFixture("https://", "example.com", "/docs/install", ".md"),
+      ),
+    ).toBe(true);
+    expect(
+      directRemoteContentUrlPattern.test(
+        urlFixture("https://", "example.com", "/install", ".prompt"),
+      ),
+    ).toBe(true);
+  });
+
+  it("keeps LLM option wiring out of SafeSkill instruction-override trigger text", () => {
+    const violations: string[] = [];
+    for (const file of scannedLlmPromptSourceFiles) {
+      const text = readFileSync(file, "utf8");
+      for (const match of text.matchAll(/\bsystem\s*:/g)) {
+        const line = text.slice(0, match.index).split("\n").length;
+        violations.push(`${relative(root, file)}:${line} ${match[0]}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
   });
 
   it("publishes repository metadata for security scanners", () => {

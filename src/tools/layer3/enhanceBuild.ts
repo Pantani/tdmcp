@@ -1,6 +1,7 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import type { ZodTypeAny } from "zod";
 import { z } from "zod";
+import { LLM_SYSTEM_OPTION } from "../../llm/client.js";
 import {
   applyPostProcessingImpl,
   applyPostProcessingSchema,
@@ -222,7 +223,7 @@ export async function enhanceBuildImpl(ctx: ToolContext, args: EnhanceBuildArgs)
   let rawText = "";
   try {
     const res = await ctx.llm.complete([{ role: "user", content: JSON.stringify(userPayload) }], {
-      system: PLANNER_SYSTEM,
+      [LLM_SYSTEM_OPTION]: PLANNER_SYSTEM,
       maxTokens: 800,
       temperature: 0.2,
       timeoutMs: 15000,

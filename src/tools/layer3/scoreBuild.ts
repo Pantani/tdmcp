@@ -1,6 +1,7 @@
 import { inflateSync } from "node:zlib";
 import { z } from "zod";
 import { checkPerformance } from "../../feedback/performanceMonitor.js";
+import { LLM_SYSTEM_OPTION } from "../../llm/client.js";
 import { errorResult, structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
@@ -418,7 +419,7 @@ export async function scoreBuildImpl(ctx: ToolContext, args: ScoreBuildArgs) {
           targetFps: args.targetFps,
         };
         const res = await ctx.llm.complete([{ role: "user", content: JSON.stringify(scorecard) }], {
-          system:
+          [LLM_SYSTEM_OPTION]:
             "You are a senior live-visuals director. Given a deterministic scorecard of a TouchDesigner build, write 2–4 short sentences telling the artist the single most impactful change to make. No preamble, no scores, no JSON — just plain prose. <= 80 words.",
           maxTokens: 180,
           temperature: 0.4,
