@@ -250,11 +250,12 @@ function repairVault(
       },
     ];
   } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
     return [
       {
         id: "vault",
         status: "failed",
-        detail: `could not create vault folder at ${dataPath}: ${(err as Error).message}`,
+        detail: `could not create vault folder at ${dataPath}: ${reason}`,
       },
     ];
   }

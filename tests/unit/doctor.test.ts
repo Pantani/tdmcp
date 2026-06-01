@@ -242,4 +242,30 @@ describe("tdmcp doctor", () => {
       rmSync(dir, { recursive: true, force: true });
     }
   });
+
+  it("--fix formats non-Error vault repair failures", async () => {
+    server.use(llmModels("qwen2.5:3b"));
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-doctor-fix-non-error-"));
+    const vaultPath = join(dir, "missing-vault");
+    try {
+      const r = await runDoctor({
+        config: makeConfig({ vaultPath, llmModel: "qwen2.5:3b" }),
+        makeCtx,
+        fix: true,
+        vaultRepair: () => {
+          throw "permission denied";
+        },
+      });
+
+      const detail = r.report.repairs?.[0]?.detail ?? "";
+      expect(r.code).toBe(0);
+      expect(r.report.repairs).toContainEqual(
+        expect.objectContaining({ id: "vault", status: "failed" }),
+      );
+      expect(detail).toContain("permission denied");
+      expect(detail).not.toContain("undefined");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
 });

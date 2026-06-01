@@ -72,7 +72,7 @@ const CHEATSHEETS: CheatsheetEntry[] = [
     resourceRefs: [
       "tdmcp://operators/CHOP",
       "tdmcp://tutorials/anatomy_of_a_chop",
-      "tdmcp://recipes/audio_reactive_feedback",
+      "tdmcp://recipes/audio_spectrum_bars",
     ],
   },
   {

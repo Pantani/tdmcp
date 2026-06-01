@@ -28,6 +28,17 @@ describe("cheatsheet resource", () => {
     expect(catalog.cheatsheets.flatMap((sheet) => sheet.resourceRefs)).toContain(
       "tdmcp://operators/TOP",
     );
+    expect(catalog.cheatsheets.flatMap((sheet) => sheet.resourceRefs)).toContain(
+      "tdmcp://recipes/audio_spectrum_bars",
+    );
+    const recipes = new RecipeLibrary();
+    const missingRecipeRefs = catalog.cheatsheets
+      .flatMap((sheet) => sheet.resourceRefs)
+      .filter(
+        (ref) => ref.startsWith("tdmcp://recipes/") && !ref.startsWith("tdmcp://recipes/search/"),
+      )
+      .filter((ref) => !recipes.get(ref.replace("tdmcp://recipes/", "")));
+    expect(missingRecipeRefs).toEqual([]);
     const firstSheet = catalog.cheatsheets[0];
     expect(firstSheet).toBeDefined();
     expect("resource_refs" in (firstSheet ?? {})).toBe(false);
