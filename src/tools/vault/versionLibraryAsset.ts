@@ -101,25 +101,54 @@ export const registerVersionLibraryAsset: ToolRegistrar = (server, ctx) => {
   );
 };
 
+type SidecarLoad =
+  | { kind: "missing" }
+  | { kind: "ok"; sidecar: VersionSidecar }
+  | { kind: "malformed"; reason: string };
+
 function loadSidecar(
   vault: { exists: (p: string) => boolean; read: (p: string) => string },
   sidecarPath: string,
-): VersionSidecar | null {
-  if (!vault.exists(sidecarPath)) return null;
+): SidecarLoad {
+  if (!vault.exists(sidecarPath)) return { kind: "missing" };
+  let raw: string;
   try {
-    const raw = vault.read(sidecarPath);
-    const parsed = JSON.parse(raw) as unknown;
-    if (!parsed || typeof parsed !== "object") return null;
-    const obj = parsed as Partial<VersionSidecar>;
-    if (typeof obj.current !== "string" || !Array.isArray(obj.history)) return null;
+    raw = vault.read(sidecarPath);
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    return { kind: "malformed", reason: `unreadable: ${reason}` };
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    return { kind: "malformed", reason: `invalid JSON: ${reason}` };
+  }
+  if (!parsed || typeof parsed !== "object") {
+    return { kind: "malformed", reason: "expected a JSON object at the top level" };
+  }
+  const obj = parsed as Partial<VersionSidecar>;
+  if (typeof obj.current !== "string") {
+    return { kind: "malformed", reason: "missing or non-string `current` field" };
+  }
+  if (!parseSemver(obj.current)) {
     return {
+      kind: "malformed",
+      reason: `\`current\` is not a valid SemVer: ${JSON.stringify(obj.current)}`,
+    };
+  }
+  if (!Array.isArray(obj.history)) {
+    return { kind: "malformed", reason: "missing or non-array `history` field" };
+  }
+  return {
+    kind: "ok",
+    sidecar: {
       asset_path: typeof obj.asset_path === "string" ? obj.asset_path : "",
       current: obj.current,
       history: obj.history as VersionHistoryEntry[],
-    };
-  } catch {
-    return null;
-  }
+    },
+  };
 }
 
 export async function versionLibraryAssetImpl(ctx: ToolContext, args: VersionLibraryAssetArgs) {
@@ -141,7 +170,14 @@ export async function versionLibraryAssetImpl(ctx: ToolContext, args: VersionLib
   if ("error" in note) return note.error;
 
   const sidecarPath = sidecarPathFor(args.asset_path);
-  const existing = loadSidecar(vault, sidecarPath);
+  const loaded = loadSidecar(vault, sidecarPath);
+  if (loaded.kind === "malformed") {
+    return errorResult(
+      `Refusing to proceed: existing sidecar "${sidecarPath}" is malformed (${loaded.reason}). ` +
+        `Fix or delete the file so version history isn't overwritten.`,
+    );
+  }
+  const existing = loaded.kind === "ok" ? loaded.sidecar : null;
 
   if (args.read_only) {
     const current =

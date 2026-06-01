@@ -137,4 +137,37 @@ describe("versionLibraryAssetImpl", () => {
     // No sidecar written.
     expect(vault.exists("Recipes/a.versions.json")).toBe(false);
   });
+
+  it("refuses to overwrite a malformed sidecar (invalid JSON)", async () => {
+    const vault = makeVault();
+    vault.writeNote("Recipes/a.md", { id: "a" }, "body\n");
+    vault.write("Recipes/a.versions.json", "{ not valid json");
+    const result = await versionLibraryAssetImpl(ctxWith(vault), {
+      asset_path: "Recipes/a.md",
+      bump: "patch",
+      read_only: false,
+    });
+    expect(result.isError).toBe(true);
+    const msg = textOf(result);
+    expect(msg).toContain("malformed");
+    expect(msg).toContain("invalid JSON");
+    // Sidecar untouched.
+    expect(vault.read("Recipes/a.versions.json")).toBe("{ not valid json");
+  });
+
+  it("refuses to overwrite a sidecar whose `current` is not a valid SemVer", async () => {
+    const vault = makeVault();
+    vault.writeNote("Recipes/a.md", { id: "a" }, "body\n");
+    vault.write(
+      "Recipes/a.versions.json",
+      JSON.stringify({ asset_path: "Recipes/a.md", current: "not-semver", history: [] }),
+    );
+    const result = await versionLibraryAssetImpl(ctxWith(vault), {
+      asset_path: "Recipes/a.md",
+      bump: "patch",
+      read_only: false,
+    });
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("not a valid SemVer");
+  });
 });
