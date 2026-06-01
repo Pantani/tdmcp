@@ -5,6 +5,7 @@ import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { firstVar, jsonContents, type ResourceRegistrar } from "./shared.js";
 
 const moduleDir = dirname(fileURLToPath(import.meta.url));
+const MAX_PACKAGE_SEARCH_DEPTH = 8;
 
 export type CookbookLocale = "en" | "pt";
 
@@ -23,7 +24,7 @@ function cookbookRelativePath(locale: CookbookLocale): string {
 
 function packageRootFromModuleDir(startDir: string): string | undefined {
   let current = resolve(startDir);
-  for (let depth = 0; depth < 8; depth += 1) {
+  for (let depth = 0; depth < MAX_PACKAGE_SEARCH_DEPTH; depth += 1) {
     if (existsSync(resolve(current, "package.json"))) return current;
     const parent = dirname(current);
     if (parent === current) break;
