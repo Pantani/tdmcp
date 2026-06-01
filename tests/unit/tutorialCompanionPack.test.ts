@@ -159,4 +159,36 @@ describe("tutorialCompanionPackImpl", () => {
     expect(txt).toContain("Invalid vault folder");
     expect(topologyCalls).toBe(0);
   });
+
+  it("strips leading dots from `name` so a '..' slug can't escape into the vault root", async () => {
+    const vault = makeVault();
+    mockTopology([{ path: "/project1/scene/n1", type: "noiseTOP", name: "n1" }]);
+    server.use(
+      http.get(`${TD_BASE}/api/preview/:seg`, () =>
+        ok({
+          path: "/project1/scene/n1",
+          width: 128,
+          height: 72,
+          base64: Buffer.from("fakepng").toString("base64"),
+          mime_type: "image/png",
+        }),
+      ),
+    );
+    const result = await tutorialCompanionPackImpl(makeCtx(vault), {
+      source_comp: "/project1/scene",
+      folder: "Tutorials",
+      name: "..",
+      lesson_count: 2,
+      preview_width: 128,
+      preview_height: 72,
+      tags: [],
+    });
+    expect(result.isError).toBeFalsy();
+    const r = jsonOf(result);
+    // The pack must live under Tutorials/<sluggified> — never at the vault root.
+    expect(r.tutorial_path.startsWith("Tutorials/")).toBe(true);
+    expect(r.tutorial_path).not.toBe("tutorial.md");
+    // The bad slug falls back to the default "tutorial" once leading dots are stripped.
+    expect(r.tutorial_path).toBe("Tutorials/tutorial/tutorial.md");
+  });
 });

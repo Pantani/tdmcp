@@ -44,7 +44,11 @@ function slugify(name: string): string {
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9._-]+/g, "_")
-    .replace(/^_+|_+$/g, "");
+    .replace(/^_+|_+$/g, "")
+    // Strip leading dots so the slug can never be "." / ".." / ".hidden",
+    // which would let Vault.resolve() normalize the pack path back to the
+    // vault root (or a sibling) and clobber unrelated files.
+    .replace(/^\.+/, "");
   return slug || "tutorial";
 }
 
