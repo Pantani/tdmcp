@@ -811,9 +811,9 @@ reactivity. Your visuals react to a live internet data feed (price, weather, any
 <video :src="withBase('/examples/data-source-http-ws-hotfix.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`create_data_source_http_ws` is the HTTP/WebSocket bridge for turning JSON selectors
-into CHOP channels. v0.8.0 documented a fatal HTTP-poll edge; current main carries the
-hotfix, so prompts can now ask for status, selectors, channel names and warnings as
-part of the build report.*
+into CHOP channels. The v0.7.0 public cut includes the HTTP-poll hotfix, so prompts
+can ask for status, selectors, channel names and warnings as part of the build
+report.*
 
 > *"Turn this spreadsheet of monthly sales into animated 3D bars that grow in, with
 > value labels."*

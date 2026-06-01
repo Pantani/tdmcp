@@ -827,9 +827,9 @@ de faixa por mapeamento — a contraparte de dados da reatividade ao áudio.*
 <video :src="withBase('/examples/data-source-http-ws-hotfix.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`create_data_source_http_ws` é a ponte HTTP/WebSocket para transformar seletores JSON
-em canais CHOP. O v0.8.0 documentava uma borda fatal em HTTP-poll; o `main` atual
-carrega o hotfix, então o prompt já pode pedir status, seletores, nomes de canais e
-warnings como parte do relatório de build.*
+em canais CHOP. O corte público v0.7.0 inclui o hotfix de HTTP-poll, então o prompt
+já pode pedir status, seletores, nomes de canais e warnings como parte do relatório
+de build.*
 
 > *"Transforme esta planilha de vendas mensais em barras 3D animadas que crescem, com
 > rótulos de valor."*

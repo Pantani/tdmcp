@@ -10,16 +10,12 @@ can build real visual systems from plain language — no node-wiring by hand. Th
 page is the honest, bird's-eye picture of **what already works, what's still
 rough, and what's coming next** on the way to a stable 1.0.
 
-**Where things stand today.** The latest public release is **v0.6.1** — on
-[npm](https://www.npmjs.com/package/@dpantani/tdmcp) and
-[GitHub](https://github.com/Pantani/tdmcp) — exposing **179 tools**. `main` is
-well ahead of that release: the BEYOND campaign landed through Waves 1-5
-(v0.7.x), **Ingest & extend** has landed Waves 1-3, the v0.8.1
-`create_data_source_http_ws` hotfix is in, and the generated Tools reference now
-lists **268 tools**. The current unreleased line targets **v0.9.0**, while the
-package manifests still sit on the v0.8.0 line until the next public cut. There
-is no public `v0.7.x`, `v0.8.x` or `v0.9.x` tag, GitHub Release or npm publish
-yet, so read those sections below as **merged on `main`, pending release**.
+**Where things stand today.** The current public cut is **v0.7.0**, built from
+the latest `main` line and exposing **268 tools**. It folds the full BEYOND
+campaign (Waves 1-5), the Ingest & Extend Waves 1-3, and the
+`create_data_source_http_ws` hotfix into one release instead of skipping ahead to
+later version labels. The package manifests, changelog, docs and generated Tools
+reference all use **v0.7.0** as the release boundary.
 
 The project has grown through five arcs:
 
@@ -30,14 +26,14 @@ The project has grown through five arcs:
 3. **Package & operate** — reusable components, project analysis, token-cheap
    editing primitives, and a structured bridge that keeps working in a
    locked-down venue.
-4. **Compose & automate** *(merged on `main`, pending release)* — run a whole
+4. **Compose & automate** *(v0.7.0)* — run a whole
    arranged show over time, with timelines, setlists, schedulers, cue composition
    and live-safety controls.
-5. **Ingest & extend** *(in flight on `main`, pending release)* — pull in the
+5. **Ingest & extend** *(v0.7.0, with follow-up work planned for v0.8.x)* — pull in the
    wider TouchDesigner world (Shadertoy / ISF shaders, Ableton, the iconic VJ
-   looks), then deepen AI/library publishing and operator DX. Waves 1-3 have
-   landed on `main`; the remaining work is the last Milestone-4 / deployment
-   ergonomics plus the release cut.
+   looks), then deepen AI/library publishing and operator DX. Waves 1-3 are in
+   v0.7.0; the remaining work is the last Milestone-4 / deployment ergonomics
+   plus the next v0.8.x planning.
 
 > **How to read this page**
 >
@@ -57,14 +53,12 @@ The project has grown through five arcs:
 
 ---
 
-## 🚧 Merged on `main`, pending release
+## ✅ Current Release Line
 
-### v0.7.x — BEYOND campaign · main line, not yet public
+### v0.7.0 — BEYOND campaign
 
-The BEYOND work is already in the repository and documented in `CHANGELOG.md`,
-but it has not been tagged or published to npm/GitHub Releases yet. Treat this
-as the next release train: installable users still get v0.6.1 until the public
-release is cut.
+The BEYOND work is documented in `CHANGELOG.md` and is part of the v0.7.0
+release train.
 
 - **Wave 1 / v0.7.0 manifest — live-show foundation + all P0.** Shared
   setlist/scene schema, memory-note schema, server-sampling LLM fallback,
@@ -73,7 +67,7 @@ release is cut.
   `create_glsl_material`, `auto_tag_library_asset`, `recall_similar_work`,
   `style_memory`, `lint_recipe_library`, plus `tdmcp panic` and
   `tdmcp dashboard`.
-- **Wave 1.5 / changelog v0.7.1, not tagged.** `import_setlist` and
+- **Wave 1.5 / folded into v0.7.0.** `import_setlist` and
   `export_setlist_to_vault` now share `SetlistSchema`; `scaffold_vault` seeds
   `Memory/README.md` and `Memory/style.md`; `save_recipe_to_vault` and
   `save_component_to_vault` can opt into deterministic auto-tagging.
@@ -102,10 +96,10 @@ release is cut.
   `tdmcp-agent log-tail`, `record-fixtures`, `fanout`, `controller-bridge`,
   and `voice` / `llm-voice`.
 
-### v0.9.0 — Smarter assistance, library publishing & operator DX (Wave 3, sub-batches A-C) · main line, not yet public
+### v0.7.0 — Smarter assistance, library publishing & operator DX
 
 The Wave-3 backlog of the Ingest-extend campaign is now merged on this branch
-ahead of the v0.9.0 cut. Sub-batch A shipped 3 pure-Node library/publishing
+ahead of the v0.7.0 cut. Sub-batch A shipped 3 pure-Node library/publishing
 tools, sub-batch B shipped 6 TD-required AI/library tools, and sub-batch C closed
 the colour-finish polish while opening the Milestone-4 operator-DX lane.
 
@@ -146,18 +140,19 @@ Sub-batch C — colour finish + authoring/DX:
 - ✅ **`elicit_missing_args`** — verified shipped on this branch after the
   Wave-3C audit; schema-driven elicitation has offline / no-server fallbacks.
 
-### v0.8.x — Ingest & extend (Waves 1 & 2 + hotfix) · main line, not yet public
+### v0.7.0 — Ingest & Extend
 
-The Ingest & Extend campaign opened the next minor line. Two waves shipped on
+The Ingest & Extend campaign is folded into this release line. Two waves shipped on
 `main` (commits `828228f4` and `736dda37`); tool registry grew from 243 → 257.
-The follow-up v0.8.1 hotfix fixes the previously fatal HTTP-poll path.
+The follow-up hotfix fixes the previously fatal HTTP-poll path before the public
+v0.7.0 cut.
 
-- **Wave 1 / v0.8.0 — ecosystem on-ramp + signature looks (✅ shipped on `main`).**
+- **Wave 1 / v0.7.0 — ecosystem on-ramp + signature looks (✅ shipped on `main`).**
   Shared `foundation_glsl_top_mapping` (preamble injection, ISF INPUTS →
   custom-page mapping) plus the importers and signature looks it unlocks:
   `import_shadertoy`, `import_isf_shader`, `create_fluid_sim`,
   `image_to_particles`, `create_dither`, `create_jfa_voronoi`.
-- **Wave 2 / v0.8.0 — external inputs + color-finish + rehearsal (🚧 merged on `main`).**
+- **Wave 2 / v0.7.0 — external inputs + color-finish + rehearsal (✅ included in v0.7.0).**
   `apply_lut` (OCIO / image-lookup / .cube fallback), `create_video_scopes`
   (waveform / RGB parade / vectorscope — histogram deferred, TD 099 lacks
   `histogramCHOP`), `setup_tdableton` (Palette probe + OSC synthetic fallback),
@@ -166,7 +161,7 @@ The follow-up v0.8.1 hotfix fixes the previously fatal HTTP-poll path.
   `apply_post_processing` mode keys), and `post_passes_3d` (SSAO / SSR / DOF /
   motion-blur for 3D scenes — `apply_post_processing` now redirects 3D-only mode
   callers here with a friendly error).
-- **v0.8.1 hotfix — `create_data_source_http_ws`** *(✅ fixed on `main`).*
+- **`create_data_source_http_ws` hotfix** *(✅ fixed before v0.7.0).*
   The HTTP-poll path no longer raises `TypeError: must be real number, not str`;
   the dattoCHOP menu settings, selector table shape and live-readout custom
   parameters were corrected and live-validated against TD 099 build 2025.32820.
@@ -308,50 +303,41 @@ final on-hardware check before they're considered solid.
 
 ## ⬜ Planned — the road to 1.0 {#planned}
 
-With the BEYOND campaign merged on `main`, the next public roadmap is no longer
-about proving tdmcp can run a whole show — that line is now in the release train.
-The highest-value open work is to **ship the accumulated unreleased train
-cleanly**, then finish the last deployment, operator and AI ergonomics. Version
-targets are a rough sequence, **not a
-promise** — order can shift. The exhaustive, item-by-item backlog (with effort
-and impact) lives in the [planning archive](#full-backlog).
+With the v0.7.0 release line cut from `main`, the next public roadmap is no
+longer about proving tdmcp can run a whole show — that line is now installable.
+The highest-value open work is to finish the last deployment, operator and AI
+ergonomics. Version targets are a rough sequence, **not a promise** — order can
+shift. The exhaustive, item-by-item backlog (with effort and impact) lives in
+the [planning archive](#full-backlog).
 
-### Release gate — publish the accumulated unreleased train
-
-Before the next roadmap wave, the repo needs the release surface to catch up with
-`main`: choose the public version boundary for the accumulated v0.7.x / v0.8.x /
-v0.9.0 work, align the manifests, tag it, publish the `.mcpb`/GitHub Release,
-and verify npm. This is a release-management step rather than a feature wave,
-but it is the highest-priority status gap in the project right now.
-
-### Milestone 2 — Plug into the ecosystem & the iconic looks · ~v0.8.0–v0.9.0
+### Milestone 2 — Plug into the ecosystem & the iconic looks · v0.7.0
 
 *A wide, mostly independent content wave. **Waves 1 and 2 have shipped on `main`
-(v0.8.0)**, the HTTP/WS data-source fatal is fixed on the v0.8.1 line, and
+(v0.7.0)**, the HTTP/WS data-source fatal was fixed before the public cut, and
 Wave 3C has shipped the first colour-wheels tool. The remaining colour-finish
 work is mostly curves/histogram polish.*
 
-- ✅ **Ecosystem importers** *(shipped v0.8.0 Wave 1)* — **`import_shadertoy`**
+- ✅ **Ecosystem importers** *(shipped v0.7.0 Wave 1)* — **`import_shadertoy`**
   and **`import_isf_shader`** both on the shared GLSL-TOP mapping layer.
-- ✅ **The signature looks** *(shipped v0.8.0 Wave 1)* — **`create_fluid_sim`**,
+- ✅ **The signature looks** *(shipped v0.7.0 Wave 1)* — **`create_fluid_sim`**,
   **`image_to_particles`**, **`create_dither`**, **`create_jfa_voronoi`**.
-  *(shipped v0.8.0 Wave 2)* — **`create_npr_filter`** (Kuwahara),
+  *(shipped v0.7.0 Wave 2)* — **`create_npr_filter`** (Kuwahara),
   **`create_flow_abstraction`** (painterly).
-- ✅ **External inputs — Ableton + HTTP/WS** *(shipped v0.8.0 Wave 2; fixed
-  v0.8.1)* — **`setup_tdableton`** (Palette probe + OSC fallback) and
+- ✅ **External inputs — Ableton + HTTP/WS** *(shipped v0.7.0 Wave 2; hotfix
+  included before release)* — **`setup_tdableton`** (Palette probe + OSC fallback) and
   **`create_data_source_http_ws`** (HTTP poll path fixed and live-validated on
   `main`).
-- ✅ **Rehearsal & deeper reactivity** *(shipped v0.8.0 Wave 2)* —
+- ✅ **Rehearsal & deeper reactivity** *(shipped v0.7.0 Wave 2)* —
   **`create_chop_recorder`** (record / loop / replay any reactive signal). Live
   tuning for the chroma / percussive-vs-tonal / song-structure tools already
   merged on `main` is still ⬜ planned.
-- ✅ **Color-finish — Part 1** *(shipped v0.8.0 Wave 2)* — **`apply_lut`** and
+- ✅ **Color-finish — Part 1** *(shipped v0.7.0 Wave 2)* — **`apply_lut`** and
   **`create_video_scopes`** (waveform / parade / vectorscope).
-- ✅ **Color-finish — Part 2** *(merged v0.9.0 Wave 3C)* —
+- ✅ **Color-finish — Part 2** *(merged v0.7.0 Wave 3C)* —
   **`create_color_wheels`** (lift / gamma / gain RGB tints + master offset +
   saturation). The deferred **histogram** scope panel remains planned.
 
-### Milestone 3 — Smarter assistance & library publishing · ~v0.9.0
+### Milestone 3 — Smarter assistance & library publishing · ~v0.7.0
 
 *Build on the AI/library primitives already merged on `main`: server sampling,
 caption/repair/score tools, personal memory, provenance, checksums, lineage and
@@ -360,7 +346,7 @@ corpus learning.*
 - **AI deepening** — live-tune `caption_top` and `repair_network`, ✅
   `copilot_vision` (multimodal-LLM frame analysis; live-tuning still UNVERIFIED
   pending a configured multimodal endpoint), ✅ `elicit_missing_args` (shipped
-  v0.9.0 Wave 3C — schema-driven LLM elicitation with offline + no-server
+  v0.7.0 Wave 3C — schema-driven LLM elicitation with offline + no-server
   fallbacks), richer chat flags, transcript persistence and smarter handoff
   when the local copilot reaches its limits. ✅ `extract_palette` adds a
   deterministic K-color sampler feeding AI grading prompts.
@@ -371,7 +357,7 @@ corpus learning.*
   lineage, curated packs and vault sync in place, ✅ `tag_and_search_library`,
   ✅ `version_library_asset`, ✅ `generative_classics_pack`, ✅ `export_look_tox`,
   ✅ `export_sop_to_svg` and ✅ `tutorial_companion_pack` are now merged on
-  this branch (v0.9.0 line, pending release).
+  this branch (v0.7.0 line, pending release).
 
 ### Milestone 4 — Deeper authoring & operator DX · ~v0.10.0
 
@@ -379,19 +365,19 @@ corpus learning.*
 install story.*
 
 - **Authoring** — ✅ `swap_operator` (change a type, keep the wires — shipped
-  v0.9.0 Wave 3B), ✅ `create_pop_geometry` (shipped v0.9.0 Wave 3C — primitive
+  v0.7.0 Wave 3B), ✅ `create_pop_geometry` (shipped v0.7.0 Wave 3C — primitive
   → transform → subdiv → noise → mat SOP chain rendered via Geometry COMP +
   Render TOP), the GPU / optical-flow / SDF / strange-attractor deferred
   generators, and MediaPipe face / hand / segmentation on the in-tree tracking
   engine.
 - **Developer & live-operator DX** — finish the **easy-install** story (a
   client-config writer + a `doctor --fix` that performs safe repairs),
-  ✅ `tdmcp config init` (shipped v0.9.0 Wave 3C — writes a starter
+  ✅ `tdmcp config init` (shipped v0.7.0 Wave 3C — writes a starter
   `.env`-style config with every `TDMCP_*` var, sane defaults and per-line
   comments; safe re-run via `--force` / `--dry-run`), profile listing,
   help/completion parity, inline preview, and a richer front-of-house dashboard
   mode. ✅ `tutorial_companion_pack` (teaching/selling a build) is now shipped
-  (v0.9.0 Wave 3B).
+  (v0.7.0 Wave 3B).
 
 ### Later / deferred
 
@@ -487,7 +473,7 @@ in **v0.6.0** (marked ✅).
 | `create_blob_reactive` ◐ 0.7.0 | Camera object/hand position tracking (vs aggregate motion) | M | Med | Med | P2 | NEW | camera permission hang + tune |
 | `create_capture_loop` ✅ 0.7.0 | Bidirectional Spout/Syphon/NDI bridge (in+out, one tool) | M | Med | Med | P2 | EXTENSION | platform-gated; no feedback-storm |
 | `create_vector_lines` ✅ 0.7.0 | Image → pulse-captured Trace SOP vector lines / overlay | L | Med | Med | P2 | NEW | trace cook cost on live video |
-| `create_pop_geometry` ✅ main | POP-family-style procedural geometry rig | L | Med | Low | P2 | EXTENSION | shipped v0.9.0 Wave 3C |
+| `create_pop_geometry` ✅ main | POP-family-style procedural geometry rig | L | Med | Low | P2 | EXTENSION | shipped v0.7.0 Wave 3C |
 
 #### A.2 · Library, packaging & distribution
 
@@ -499,8 +485,8 @@ in **v0.6.0** (marked ✅).
 | `publish_recipe_bundle` | Checksummed/versioned publish artifact | M | Med | High | P1 | NEW | none |
 | `export_externalized_tree` | `save_external` → git-diffable `.tox` tree | S | Med | High | P1 | EXTENSION | tree shape on first run |
 | `diff_library_assets` ✅ 0.7.0 | Offline diff of two saved recipes/specs | M | Med | High | P1 | EXTENSION | none |
-| `version_library_asset` ✅ main | Semver + changelog + retained-prior on save tools | M | Med | High | P1 | EXTENSION | shipped v0.9.0 Wave 3A |
-| `tag_and_search_library` ✅ main | Faceted browse over recipe metadata | M | Med | High | P1 | EXTENSION | shipped v0.9.0 Wave 3A |
+| `version_library_asset` ✅ main | Semver + changelog + retained-prior on save tools | M | Med | High | P1 | EXTENSION | shipped v0.7.0 Wave 3A |
+| `tag_and_search_library` ✅ main | Faceted browse over recipe metadata | M | Med | High | P1 | EXTENSION | shipped v0.7.0 Wave 3A |
 | `project_documentation_site` ✅ 0.7.0 | Compose readme + Mermaid + thumbnails into a handoff doc | M | Med | High | P2 | EXTENSION | none |
 | `component_readme_in_package` | Auto-write a params/IO doc into the portable-tox package | S | Med | High | P2 | EXTENSION | none |
 | `expand_recipe_library` | First-party recipes for the new generators | M | Med | High | P2 | NEW (content) | live cook-check each |
@@ -516,7 +502,7 @@ in **v0.6.0** (marked ✅).
 | `install_client_writers` | `install-client --write` deep-merges + verifies the config | M | High | High | P1 | ROADMAP | per-client config paths |
 | `doctor_fix_autoexec` | `doctor --fix` executes safe repairs | M | High | High | P1 | ROADMAP | none |
 | `watch_exec_hook` | `watch --on beat --exec '<cmd>'` reactive engine | M | Med | High | P1 | ROADMAP | event-storm debounce |
-| `config_init_scaffolder` ✅ main | `tdmcp config init` writes a commented `.env`-style config | S | Med | High | P1 | NEW | shipped v0.9.0 Wave 3C; refuses clobber unless `--force` |
+| `config_init_scaffolder` ✅ main | `tdmcp config init` writes a commented `.env`-style config | S | Med | High | P1 | NEW | shipped v0.7.0 Wave 3C; refuses clobber unless `--force` |
 | `tdmcp_top_level_help` | Real `tdmcp --help` on the primary binary | S | Med | High | P1 | NEW | never intercept empty argv |
 | `agent_command_index_resource` | `tdmcp-agent commands --json` + `tdmcp://commands` | S | Med | High | P1 | NEW | none |
 | `install_bridge_verify` | `install-bridge --verify`/`--wait`/`--port` polls the bridge | S | Med | High | P1 | ROADMAP | none |
@@ -547,7 +533,7 @@ in **v0.6.0** (marked ✅).
 | `teach_touchdesigner` ✅ 0.7.0 | KB-grounded concept-tutor prompt | S | Med | High | P1 | NEW | none |
 | `design_brief` ✅ 0.7.0 | Persistent session aesthetic direction | S | Med | High | P1 | NEW | none |
 | `repair_network` ◐ 0.7.0 | Bounded autonomous repair tool | M | Med | Med | P2 | NEW | probe-live (bound+rollback) |
-| `copilot_vision` ◐ main | Image-aware local copilot | M | Med | Med | P2 | EXTENSION | shipped v0.9.0 Wave 3B; multimodal endpoint still needs live tuning |
+| `copilot_vision` ◐ main | Image-aware local copilot | M | Med | Med | P2 | EXTENSION | shipped v0.7.0 Wave 3B; multimodal endpoint still needs live tuning |
 | `cookbook_resource` | Expose the prompt-cookbook as `tdmcp://cookbook` | S | Med | Med | P2 | NEW | machine-readable source |
 | `llm_config_knobs` | `TDMCP_LLM_TIER`/`_MAX_STEPS`/`_TEMPERATURE` keys | S | Low | High | P2 | NEW | none |
 | `recipe_resource_search` | Keyword search over recipes | S | Low | High | P2 | EXTENSION | none |
@@ -656,7 +642,7 @@ BEYOND campaign has now harvested most of this round into `main`; rows marked
 | `score_build` ✅ main | Scorecard tool (palette/motion/complexity/errors/perf 0–10) | M | Med | Med | P1 | NEW | probe-live no-LLM card |
 | `learn_conventions` ✅ main | Infer naming/layout/color from the live project | M | Med | Med | P1 | NEW | probe-live (`node_detail` flags/pos/color) |
 | `audio_fingerprint_to_visual` ✅ main | Audio reference → matched reactive build | M | Med | Med | P1 | NEW | probe-live (real clip; tune) |
-| `elicit_missing_args` ✅ main | MCP elicitation — ask the client for a missing field | M | Med | Med | P2 | NEW | verified shipped v0.9.0 Wave 3C |
+| `elicit_missing_args` ✅ main | MCP elicitation — ask the client for a missing field | M | Med | Med | P2 | NEW | verified shipped v0.7.0 Wave 3C |
 | `enhance_build` ✅ main | Goal-directed "make it better" loop (score→change→re-score) | L | Med | Med | P2 | NEW | probe-live bound + rollback |
 | `run_macro_script` ✅ main | NL/DSL imperative script → fail-forward `batch_operations` | L | Med | Med | P2 | NEW | probe-live allow-list verbs |
 | `voice_copilot_chat` ◐ main | Browser Web-Speech push-to-talk in the copilot page | S | Med | Med | P2 | NEW | CLI alias exists; STT/Web Speech wiring still needs probe |
@@ -727,10 +713,10 @@ iconic looks**, and an **artist-publishing layer**. **Source codes:**
 
 | Feature | EX | Delivers | Eff | Impact | Conf | Pri | Status | Source(s) |
 |---|---|---|---|---|---|---|---|---|
-| `import_shadertoy` | EX-01 | Paste a Shadertoy URL/code → wired GLSL TOP (map iTime/iResolution/iMouse/iChannel) | M | High | High | P0 | ✅ shipped (v0.8.0) | aw-cre, aw-int (ShaderToyTD) |
-| `import_isf_shader` | EX-02 | Parse ISF JSON header → GLSL TOP + auto custom-param page | M | High | High | P0 | ✅ shipped (v0.8.0) | aw-int, aw-cre (isf-touchdesigner, MIT) |
-| `setup_tdableton` | EX-03 | Ableton clips/tracks/devices/transport over OSC → named CHOPs | M | High | High | P0 | ✅ shipped (v0.8.0) | aw-int (TDAbleton docs), alltd |
-| `create_data_source_http_ws` | EX-04 | HTTP-request + WebSocket data modes (AI servers + web APIs) | M | Med-Hi | High | P1 | ✅ fixed on main (v0.8.1 hotfix after v0.8.0 experimental) | aw-int |
+| `import_shadertoy` | EX-01 | Paste a Shadertoy URL/code → wired GLSL TOP (map iTime/iResolution/iMouse/iChannel) | M | High | High | P0 | ✅ shipped (v0.7.0) | aw-cre, aw-int (ShaderToyTD) |
+| `import_isf_shader` | EX-02 | Parse ISF JSON header → GLSL TOP + auto custom-param page | M | High | High | P0 | ✅ shipped (v0.7.0) | aw-int, aw-cre (isf-touchdesigner, MIT) |
+| `setup_tdableton` | EX-03 | Ableton clips/tracks/devices/transport over OSC → named CHOPs | M | High | High | P0 | ✅ shipped (v0.7.0) | aw-int (TDAbleton docs), alltd |
+| `create_data_source_http_ws` | EX-04 | HTTP-request + WebSocket data modes (AI servers + web APIs) | M | Med-Hi | High | P1 | ✅ fixed before v0.7.0 public cut | aw-int |
 | `create_fixture_control` + 3D previz | EX-45 | Moving-head pan/tilt/dimmer/gobo via DMX + 3D rig preview | M | High | Med | P1 | NEW (builds planned DMX pipeline) | alltd, GeoPix, aw-cre |
 | `create_machine_sync` | EX-08 | Sync + Touch In/Out genlock + CHOP/DAT/TOP across machines | M | High | Med | P1 | NEW | alltd · probe ≥2 machines |
 | `create_detection_reactive` (YOLO) | EX-05 | Object/person presence/count → params (ONNX/WS, no CUDA) | M | Med | Med | P1 | NEW | aw-int (TDYolo, MIT) |
@@ -747,21 +733,21 @@ iconic looks**, and an **artist-publishing layer**. **Source codes:**
 
 | Feature | EX | Delivers | Eff | Impact | Conf | Pri | Status | Source(s) |
 |---|---|---|---|---|---|---|---|---|
-| `create_fluid_sim` | EX-15 | Own-GLSL 2D Navier-Stokes ink/dye/smoke (advection/vorticity/buoyancy) | M–L | High | High | P0 | ✅ shipped (v0.8.0) | aw-int (touchFluid MIT), aw-cre, alltd |
-| `image_to_particles` / `mesh_to_particles` | EX-26 | Any image/logo/mesh → controllable particle cloud (+ source mode on gpu_particle_field) | M | High | High | P0 | ✅ shipped (v0.8.0, image mode) | anya, aw-cre |
-| Color-finish suite | EX-47/46 | `apply_lut` (.cube/OCIO) + color wheels/curves + `create_video_scopes` | M | High | High | P0 | ✅ main (`apply_lut` + scopes in v0.8.0; `create_color_wheels` in v0.9.0 Wave 3C; curves/histogram still open) | alltd, aw-cre |
-| `create_chop_recorder` / `record_osc` | EX-39 | Record/replay/loop any reactive signal (audio/pose/MIDI/OSC) | M | High | High | P1 | ✅ shipped (v0.8.0) | aw-cre (GPL idea-only), alltd |
-| `create_flow_abstraction` | EX-16 | Painterly/comic coherent-line filter on live camera | M | Med-Hi | High | P1 | ✅ shipped (v0.8.0) | aw-int, aw-cre (GPL idea-only) |
+| `create_fluid_sim` | EX-15 | Own-GLSL 2D Navier-Stokes ink/dye/smoke (advection/vorticity/buoyancy) | M–L | High | High | P0 | ✅ shipped (v0.7.0) | aw-int (touchFluid MIT), aw-cre, alltd |
+| `image_to_particles` / `mesh_to_particles` | EX-26 | Any image/logo/mesh → controllable particle cloud (+ source mode on gpu_particle_field) | M | High | High | P0 | ✅ shipped (v0.7.0, image mode) | anya, aw-cre |
+| Color-finish suite | EX-47/46 | `apply_lut` (.cube/OCIO) + color wheels/curves + `create_video_scopes` | M | High | High | P0 | ✅ main (`apply_lut` + scopes in v0.7.0; `create_color_wheels` in v0.7.0 Wave 3C; curves/histogram still open) | alltd, aw-cre |
+| `create_chop_recorder` / `record_osc` | EX-39 | Record/replay/loop any reactive signal (audio/pose/MIDI/OSC) | M | High | High | P1 | ✅ shipped (v0.7.0) | aw-cre (GPL idea-only), alltd |
+| `create_flow_abstraction` | EX-16 | Painterly/comic coherent-line filter on live camera | M | Med-Hi | High | P1 | ✅ shipped (v0.7.0) | aw-int, aw-cre (GPL idea-only) |
 | MediaPipe face/hand/segmentation | EX-34 | Finger-gesture + face + selfie-segmentation on the in-tree engine | M | High | Med | P1 | ENH | aw-int (mediapipe-td, MIT) |
 | `create_interaction_zones` + optical-flow trigger | EX-36 | Camera/pose enter/exit/dwell zones fire cues (no depth-cam) | M | Med-Hi | High | P1 | NEW | alltd |
-| `create_dither` | EX-18 | Ordered 1-bit/retro dither (Bayer, gameboy, low-palette) | S–M | Med | High | P1 | ✅ shipped (v0.8.0) | aw-cre |
-| `create_jfa_voronoi` | EX-19 | Jump-flood Voronoi → mosaic/stained-glass | M | Med | High | P1 | ✅ shipped (v0.8.0) | aw-int, aw-cre (TD_Voronoi MIT) |
-| `create_npr_filter` (Kuwahara) | EX-17 | Oil-paint / pencil / watercolor non-photoreal filters | M | Med | High | P1 | ✅ shipped (v0.8.0 — also `apply_post_processing` mode keys) | aw-cre (chungbwc) |
+| `create_dither` | EX-18 | Ordered 1-bit/retro dither (Bayer, gameboy, low-palette) | S–M | Med | High | P1 | ✅ shipped (v0.7.0) | aw-cre |
+| `create_jfa_voronoi` | EX-19 | Jump-flood Voronoi → mosaic/stained-glass | M | Med | High | P1 | ✅ shipped (v0.7.0) | aw-int, aw-cre (TD_Voronoi MIT) |
+| `create_npr_filter` (Kuwahara) | EX-17 | Oil-paint / pencil / watercolor non-photoreal filters | M | Med | High | P1 | ✅ shipped (v0.7.0 — also `apply_post_processing` mode keys) | aw-cre (chungbwc) |
 | `controlled_disorder_grid` | EX-27 | Grid of quads/lines with a tunable order↔chaos `disorder` knob | M | Med-Hi | High | P1 | NEW | anya, aw-cre · name generically |
 | `create_terrain` | EX-29 | Heightmap landscape + PBR splat + water + volumetric fog | L | Med | Med | P1 | NEW | aw-int, aw-cre (Terrain-Tools MIT) |
 | `create_l_system` + `create_asemic_writing` | EX-28 | Lindenmayer branching geometry + procedural glyph strokes | M–L | Med | Med | P1 | NEW | aw-cre, anya |
 | `create_clip_sequencer` + `create_audio_transport` | EX-40 | Cached clip seq (trim/reverse/beat-advance) + audio-file master transport | M | High | Med | P1 | NEW/EXT | alltd |
-| `extract_palette` (cross-ai) | EX-67 | k-means N-color extraction from any image → palette/grade/instances | S–M | Med | High | P1 | ✅ main (v0.9.0 Wave 3B) | alltd, aw-cre, anya |
+| `extract_palette` (cross-ai) | EX-67 | k-means N-color extraction from any image → palette/grade/instances | S–M | Med | High | P1 | ✅ main (v0.7.0 Wave 3B) | alltd, aw-cre, anya |
 | musical-bands + spectrogram heatmap | EX-38 | FFT→named musical bands (per-band attack/release) + heatmap trail | S–M | Med | High | P1 | NEW/ENH | aw-cre, alltd |
 | `create_pointer_reactive` | EX-37 | Mouse/multitouch position as a first-class creative seed/force | S–M | Med | High | P1 | NEW | anya, alltd |
 | `create_plexus` | EX-20 | Points + lines between near neighbours (constellation/network) | M | Med | Med | P1 | NEW | aw-cre |
@@ -784,8 +770,8 @@ iconic looks**, and an **artist-publishing layer**. **Source codes:**
 
 | Feature | EX | Delivers | Eff | Impact | Conf | Pri | Status | Source(s) |
 |---|---|---|---|---|---|---|---|---|
-| `post_passes_3d` (SSAO/SSR/DOF/motion-blur) | EX-22 | Screen-space AO/reflections/DOF/motion-blur for 3D scenes | M | Med-Hi | High | P1 | ✅ shipped (v0.8.0 — standalone L2 tool; `apply_post_processing` redirects 3D modes here) | aw-int, aw-cre (PostEffects MIT) |
-| `swap_operator` | EX-50 | Replace an op's type while preserving wires + params | S–M | Med | High | P1 | ✅ main (v0.9.0 Wave 3B) | aw-int (FunctionStore MIT) |
+| `post_passes_3d` (SSAO/SSR/DOF/motion-blur) | EX-22 | Screen-space AO/reflections/DOF/motion-blur for 3D scenes | M | Med-Hi | High | P1 | ✅ shipped (v0.7.0 — standalone L2 tool; `apply_post_processing` redirects 3D modes here) | aw-int, aw-cre (PostEffects MIT) |
+| `swap_operator` | EX-50 | Replace an op's type while preserving wires + params | S–M | Med | High | P1 | ✅ main (v0.7.0 Wave 3B) | aw-int (FunctionStore MIT) |
 | `create_raymarch_scene` → SDF expr-graph | EX-51 | Compose SDF primitives/booleans/domain-ops → one GLSL | L | Med-Hi | Med | P1 | ENH | aw-int, aw-cre (RayTK CC-BY) |
 | `complete_python_at` | EX-52 | Valid op paths/params/channels from the live graph for the LLM | S–M | Med | Med | P2 | NEW | aw-int, aw-cre |
 | `create_physics_constraints` (Bullet) | EX-32 | Hinges/springs/ragdoll/stacking rigid-body sims | L | Med | Low | P2 | NEW | aw-cre · probe-live |
@@ -796,9 +782,9 @@ iconic looks**, and an **artist-publishing layer**. **Source codes:**
 
 | Feature | EX | Delivers | Eff | Impact | Conf | Pri | Status | Source(s) |
 |---|---|---|---|---|---|---|---|---|
-| `export_look_tox` | EX-56 | Extract a look into a standalone parameterized `.tox` | S–M | High | High | P1 | ✅ main (v0.9.0 Wave 3B) | anya |
-| `export_sop_to_svg` | EX-55 | SOP geometry → SVG paths (plotter/laser/print; no dep) | M | Med | High | P1 | ✅ main (v0.9.0 Wave 3B) | aw-int, aw-cre (MIT) |
-| `generative_classics` recipe pack | EX-57 | Recipes recreating canonical generative-art *techniques* | M | Med-Hi | High | P1 | ✅ main (`generative_classics_pack`, v0.9.0 Wave 3A) | anya, aw-cre · credit lineage |
+| `export_look_tox` | EX-56 | Extract a look into a standalone parameterized `.tox` | S–M | High | High | P1 | ✅ main (v0.7.0 Wave 3B) | anya |
+| `export_sop_to_svg` | EX-55 | SOP geometry → SVG paths (plotter/laser/print; no dep) | M | Med | High | P1 | ✅ main (v0.7.0 Wave 3B) | aw-int, aw-cre (MIT) |
+| `generative_classics` recipe pack | EX-57 | Recipes recreating canonical generative-art *techniques* | M | Med-Hi | High | P1 | ✅ main (`generative_classics_pack`, v0.7.0 Wave 3A) | anya, aw-cre · credit lineage |
 | `tdmcp://glsl-snippets` catalog | EX-58 | Vetted, license-clean noise/SDF/color/blend GLSL the AI assembles from | M | Med | High | P1 | NEW | aw-cre · author own, not Lygia |
 | License-tier + provenance/funnel metadata | EX-59 | Revenue-tiered license templates + price/tier fields in the index | S | Med | High | P1 | EXTENSION (planned provenance) | anya |
 | `vendor_python_lib` | EX-60 | Vendor pip libs into Text DATs → self-contained `.toe` | M | Med | Med | P2 | NEW | alltd |
@@ -808,7 +794,7 @@ iconic looks**, and an **artist-publishing layer**. **Source codes:**
 
 | Feature | EX | Delivers | Eff | Impact | Conf | Pri | Status | Source(s) |
 |---|---|---|---|---|---|---|---|---|
-| `tutorial_companion_pack` | EX-62 | One command → teaching/selling bundle (.tox + walkthrough + README + preview) | M | High | High | P1 | ✅ main (v0.9.0 Wave 3B) | anya |
+| `tutorial_companion_pack` | EX-62 | One command → teaching/selling bundle (.tox + walkthrough + README + preview) | M | High | High | P1 | ✅ main (v0.7.0 Wave 3B) | anya |
 | `auto_ui` from custom params | EX-63 | Auto-generate a control panel from a COMP's custom params | M | Med | High | P1 | NEW | alltd |
 | Codec export presets + offline render | EX-41 | HAP/NotchLC/ProRes presets + non-realtime no-frame-drop render | S–M | Med | High | P2 | EXTENSION | alltd |
 | `scaffold_state_machine` | EX-64 | FSM show-flow + extension-driven structure skeleton | M | Med | Med | P2 | NEW | alltd |
@@ -819,7 +805,7 @@ iconic looks**, and an **artist-publishing layer**. **Source codes:**
 
 | Feature | EX | Delivers | Eff | Impact | Conf | Pri | Status | Source(s) |
 |---|---|---|---|---|---|---|---|---|
-| `extract_palette` | EX-67 | (see C.2) image → constrained palette for grade/instances | S–M | Med | High | P1 | ✅ main (v0.9.0 Wave 3B) | alltd, aw-cre, anya |
+| `extract_palette` | EX-67 | (see C.2) image → constrained palette for grade/instances | S–M | Med | High | P1 | ✅ main (v0.7.0 Wave 3B) | alltd, aw-cre, anya |
 | "generative-classic" + "one-source-five-ways" prompts | EX-68 | Steer a build toward a generative-art lineage; emit N labeled variants | S | Med | Med | P2 | NEW | anya |
 | KB enrichment + `tdmcp://cheatsheets` | EX-69 | Common-ops/Python/SOP cheat sheets → KB + resource | M | Med | Med | P2 | NEW | aw-int |
 | `teach_touchdesigner` tutor + learning resource | EX-70 | KB-grounded concept tutor + curated learning-path resource | S | Med | Med | P2 | NEW | aw-int |

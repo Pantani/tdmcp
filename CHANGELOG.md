@@ -6,7 +6,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Added (Ingest-extend Wave 3 sub-batch A — targeting v0.9.0)
+No changes yet.
+
+## [0.7.0] - 2026-06-01
+
+### Added (Ingest-extend Wave 3 sub-batch A)
 
 Three pure-Node library/publishing tools — no TouchDesigner bridge required.
 Lands the first three Milestone-3 (M3 — Smarter assistance & library publishing)
@@ -37,7 +41,7 @@ follow in a separate session.
 Tool registry: 257 → 260. Unit tests: 2935 → 2953 (+18 new assertions across the
 three tools).
 
-### Fixed (targeting v0.8.1 — `create_data_source_http_ws` hotfix)
+### Fixed (`create_data_source_http_ws` hotfix)
 
 - **`create_data_source_http_ws`** no longer fails with
   `TypeError: must be real number, not str` after node creation. Three layered
@@ -64,10 +68,10 @@ three tools).
   test count goes from 2923 → 2935 (+12 tests, 4 new regression assertions on
   this tool).
 
-### Added (Ingest-extend Wave 3 sub-batch B — targeting v0.9.0)
+### Added (Ingest-extend Wave 3 sub-batch B)
 
 Six TD-required Wave-3 features (mix of Layer-3 and vault tools), closing out the
-Wave-3 backlog ahead of the v0.9.0 cut. All gates pass (typecheck, build, biome,
+Wave-3 backlog ahead of the v0.7.0 cut. All gates pass (typecheck, build, biome,
 2971 vitest tests, 15/15 recipes, 106 bridge tests). Live-validated against TD
 099 build 2025.32820 (project `laser_dedo.1.toe`).
 
@@ -104,7 +108,7 @@ Wave-3 backlog ahead of the v0.9.0 cut. All gates pass (typecheck, build, biome,
   `<vault>/<folder>/<slug>/`. Composes existing read-only bridge calls; outputs
   are an editable starting point for an artist. Vault-gated.
 
-### Added (Ingest-extend Wave 3 sub-batch C — targeting v0.9.0)
+### Added (Ingest-extend Wave 3 sub-batch C)
 
 Closes out Milestone 3's colour-finish polish (Part 2) and opens Milestone 4
 (deeper authoring / operator DX) with three new tools + one CLI subcommand. All
@@ -148,11 +152,11 @@ node errors after the cook, networks cleaned up.
 
 Tool registry: 266 → 268. Unit tests: 2971 → 2987 (+16 new assertions).
 
-## [0.8.0] - 2026-05-31
+### Added (Ingest-extend Waves 1-2)
 
 **Ingest-extend Wave 1 — Ecosystem on-ramp + signature looks** (campaign
-`ingest_extend_20260531`, Arc 5 "Ingest & extend" / ROADMAP Milestone 2, targeting
-the v0.8.0 line). One shared foundation module plus six new Layer-1 tools open
+`ingest_extend_20260531`, Arc 5 "Ingest & extend" / ROADMAP Milestone 2, folded
+into the v0.7.0 line). One shared foundation module plus six new Layer-1 tools open
 tdmcp to the wider GLSL ecosystem (Shadertoy + ISF) and add four signature looks
 (fluid sim, image-to-particles, dither, JFA voronoi).
 
@@ -219,7 +223,7 @@ post-processing. Seven tools are live-validated in TD 099; one ships flagged
   WebSocket data source. The `http_poll` path raises
   `TypeError: must be real number, not str` after node creation; the network
   still builds but the tool surfaces `status: "fatal"`. Tool is registered and
-  discoverable. Tracked for v0.8.1.
+  discoverable. Fixed before the v0.7.0 public cut.
 
 **Wave 2 — Show automation + musical reactivity** (campaign `beyond_20260530`).
 Eight new Layer-1 tools and one CLI verb turn the v0.7.0 live-show foundation
@@ -350,10 +354,7 @@ long-running CLI streamers, bringing the registry to **231** tools.
 
 - `buildToolContext` accepts an optional `fetchImpl` override (forwarded to the TouchDesigner client) so the fixture-recorder CLI can wrap bridge calls.
 
-[Unreleased]: https://github.com/Pantani/tdmcp/compare/v0.8.0...HEAD
-[0.8.0]: https://github.com/Pantani/tdmcp/compare/v0.7.1...v0.8.0
-
-## [0.7.1] - 2026-05-31
+### Changed (BEYOND Wave 1.5 deferred items)
 
 **Wave 1.5 — deferred items from v0.7.0**. Folds in the three follow-ups that
 were called out as deferred during the v0.7.0 integration pass: wiring the
@@ -384,7 +385,7 @@ tools as an opt-in.
   frontmatter alongside any caller-supplied `tags`. Default behaviour is
   unchanged.
 
-## [0.7.0] - 2026-05-31
+### Added (BEYOND Wave 1 — live-show foundation + all P0)
 
 **Live-show foundation + all P0** — campaign `beyond_20260530` Wave 1.
 Ships the shared show-automation foundations (setlist/scene schema, memory-note
@@ -810,8 +811,8 @@ API on its first live run, and is fail-forward (per-item warnings, never throws)
   preview-asset writes, as a strict superset of `TDMCP_RAW_PYTHON=off`. Use it to hand an
   autonomous in-TD agent a curated, non-destructive toolset.
 
-[0.7.1]: https://github.com/Pantani/tdmcp/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/Pantani/tdmcp/compare/v0.6.1...v0.7.0
+[Unreleased]: https://github.com/Pantani/tdmcp/compare/v0.7.0...HEAD
 [0.6.1]: https://github.com/Pantani/tdmcp/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/Pantani/tdmcp/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Pantani/tdmcp/compare/v0.4.0...v0.5.0
