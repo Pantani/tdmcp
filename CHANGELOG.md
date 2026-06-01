@@ -6,6 +6,148 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (Ingest-extend Wave 3 sub-batch A — targeting v0.9.0)
+
+Three pure-Node library/publishing tools — no TouchDesigner bridge required.
+Lands the first three Milestone-3 (M3 — Smarter assistance & library publishing)
+features as a partial Wave 3; the remaining six Wave-3 features (TD-required)
+follow in a separate session.
+
+- **`tag_and_search_library`** — faceted browse + tag editing over the vault
+  library (`<vault>/Recipes/*.md` + `<vault>/Components/*.md`). `op:"list"`
+  enumerates every asset and its tags; `op:"search"` filters by free-text
+  `query` and/or `tags_any` / `tags_all` set logic; `op:"tag"` edits one
+  asset's frontmatter tags (union or replace, always preserving `'*'`-pinned
+  user tags — same convention as `auto_tag_library_asset`). Pure vault I/O.
+- **`version_library_asset`** — SemVer `patch`/`minor`/`major` bumps for a vault
+  recipe or component note, recorded in a sidecar `<asset>.versions.json`
+  (`asset_path` + `current` + `history` list with version/bump/note/timestamp)
+  and reflected in the note's frontmatter `version`. Pass `read_only:true` to
+  inspect without bumping. Pre-existing frontmatter versions are captured as the
+  history root on the first bump.
+- **`generative_classics_pack`** — the first canonical technique recipe pack:
+  curated subset of 6 built-in recipes that recreate well-known generative looks
+  (`feedback_tunnel`, `audio_spectrum_bars`, `noise_landscape`, `particle_galaxy`,
+  `reaction_diffusion`, `webcam_glitch`). `list_only:true` (default) returns
+  the technique cards + availability; `list_only:false` writes a portable
+  `import_recipe_bundle`-compatible bundle JSON at `install_path` (default
+  `recipes/generative_classics.pack.json`). Recipes pulled live from the recipe
+  library so the pack always reflects the authoritative validated copies.
+
+Tool registry: 257 → 260. Unit tests: 2935 → 2953 (+18 new assertions across the
+three tools).
+
+### Fixed (targeting v0.8.1 — `create_data_source_http_ws` hotfix)
+
+- **`create_data_source_http_ws`** no longer fails with
+  `TypeError: must be real number, not str` after node creation. Three layered
+  bugs (all live-validated against TD 099 build 2025.32820):
+  - The `dattoCHOP` menu parameters (`firstrow`, `firstcolumn`, `output`) were
+    set with integer indices (`1/0/1`), which TD silently coerced through the
+    menu list — landing on `'names'/'ignored'/'chanperrow'`. The latter two are
+    wrong for this layout, so the CHOP produced zero or wrongly-named channels.
+    Now uses the explicit menu names (`'values'/'names'/'chanperrow'`).
+  - The sample `tableDAT` was laid out as a header-row + value-row table, which
+    `dattoCHOP` cannot turn into one channel-per-selector. It is now transposed
+    (one row per selector: `[name, value]`), matching the corrected datto
+    config. The parser callback (`_parse_and_update`) was updated to emit the
+    same shape.
+  - The live-readout custom parameters were named `LastValue_<selector>`, which
+    TD rejects (custom-param names must be one uppercase letter followed by
+    lowercase letters only, no underscores). They are now `Last<lowercase>`
+    (e.g. `Lasturl`, `Lastn`), and the expression explicitly calls `.eval()` on
+    the channel so the float parameter receives a real number instead of a
+    `Channel` object.
+- Live-validated against TD 099 (build 2025.32820) with two selectors over
+  `httpbin.org/get`: the tool now returns 2 channels, 0 warnings, 0 node errors,
+  and 4 working controls (`Active`, `Poll`, `Lasturl`, `Lastn`). The full unit
+  test count goes from 2923 → 2935 (+12 tests, 4 new regression assertions on
+  this tool).
+
+### Added (Ingest-extend Wave 3 sub-batch B — targeting v0.9.0)
+
+Six TD-required Wave-3 features (mix of Layer-3 and vault tools), closing out the
+Wave-3 backlog ahead of the v0.9.0 cut. All gates pass (typecheck, build, biome,
+2971 vitest tests, 15/15 recipes, 106 bridge tests). Live-validated against TD
+099 build 2025.32820 (project `laser_dedo.1.toe`).
+
+- **`extract_palette`** *(layer3, ai)* — sample dominant colors from a TOP by
+  capturing its preview PNG and running deterministic k-means on the decoded
+  RGB pixels. Returns `{hex_colors[], swatches[{hex,rgb,weight}]}` sorted by
+  dominance. Read-only; mechanism identical to `caption_top`. Live-validated
+  via `get_preview` round-trip against a `constantTOP`.
+- **`export_sop_to_svg`** *(layer3, library)* — read a SOP's primitives via the
+  bridge and emit an SVG document of polylines (each prim → one `<polyline>`),
+  auto-fit viewBox, configurable stroke/fill/scale/flip_y, optional `output_path`
+  to disk. Pen-plotter / laser / print deliverable. Live-validated by extracting
+  40-point polyline from a probe `circleSOP` (Poly-iteration path).
+- **`swap_operator`** *(layer3, td-depth)* — change an op's TYPE in place,
+  preserving name, position, input + output wires, and any parameters that exist
+  on the new type. Fail-forward per-wire / per-param. Live-validated: swapped a
+  `noiseTOP` → `rampTOP` while keeping 19 parameters and a downstream `nullTOP`
+  wire (0 post-cook errors).
+- **`copilot_vision`** *(layer3, ai)* — route a vision query to the configured
+  multimodal LLM with a TOP rendered as an inline image. Uses
+  `ctx.llm.complete()` with a `MultimodalMessage` (text + image part); falls back
+  with a friendly error pointing at `TDMCP_LLM_*` when no LLM backend is wired.
+  Live-tuning UNVERIFIED — no multimodal LLM endpoint configured in this
+  session; mechanism (preview capture + LLM contract) is covered by tests.
+- **`export_look_tox`** *(vault, library)* — save a COMP as a portable `.tox`
+  inside `<vault>/<folder>/<slug>.tox` with a sibling Markdown sidecar
+  (id/type=look + name + tags + assets + created + source_path). The artist-
+  publishing primitive for shareable looks. Vault-gated. Live-validated via a
+  probe `baseCOMP.save()` (238-byte tox written).
+- **`tutorial_companion_pack`** *(vault, cli)* — scaffold a teaching companion
+  for a build: snapshot the COMP's topology, capture previews of its output TOPs,
+  write `tutorial.md` + `topology.json` + `network_snapshot.json` (a documentary
+  snapshot — explicitly NOT a RecipeSchema-installable recipe) + `previews/*.png` into
+  `<vault>/<folder>/<slug>/`. Composes existing read-only bridge calls; outputs
+  are an editable starting point for an artist. Vault-gated.
+
+### Added (Ingest-extend Wave 3 sub-batch C — targeting v0.9.0)
+
+Closes out Milestone 3's colour-finish polish (Part 2) and opens Milestone 4
+(deeper authoring / operator DX) with three new tools + one CLI subcommand. All
+gates pass (typecheck, build, biome, 2987 vitest tests, 15/15 recipes, 106
+bridge tests). Two TD-required tools live-validated against TD 099 build
+2025.32820 (project `laser_dedo.1.toe`) under isolated probe containers — zero
+node errors after the cook, networks cleaned up.
+
+- **`create_color_wheels`** *(layer1, M3 colour-finish)* — classic lift / gamma
+  / gain colour-grading wheels. Three tinted Level TOPs run in series (shadows
+  via a gamma-biased Level, midtones via a neutral Level, highlights via a
+  brightness-biased Level), each multiplying R/G/B channels (`redmult1` /
+  `greenmult1` / `bluemult1`). A master Level TOP applies a global black-level
+  offset, then an HSV Adjust TOP applies master saturation. Builds a new
+  `baseCOMP` under `parent_path`; with `source_path` the upstream TOP is pulled
+  in via a Select TOP, without one a Ramp TOP is graded so the chain previews
+  standalone. Exposes nine per-channel float controls — LiftR/LiftG/LiftB,
+  GammaR/GammaG/GammaB, GainR/GainG/GainB — each bound to the corresponding
+  Level TOP `redmult1` / `greenmult1` / `bluemult1` parameter on its tier, plus
+  master Offset (black-level) and Saturation knobs.
+- **`create_pop_geometry`** *(layer1, M4 authoring)* — Procedural Op Pattern
+  geometry generator: build a SOP chain inside a Geometry COMP — primitive
+  (`box` / `sphere` / `tube` / `torus` / `grid` / `line` / `text`) → Transform
+  SOP (translate / rotate / scale) → optional Subdivide SOP → optional per-point
+  Noise SOP displacement → Material SOP (Constant MAT) → Null SOP — then render
+  through a Camera + Light + Render TOP to a Null TOP. Mirrors the
+  `build_sop_geometry` declarative chain pattern but wraps it in a full
+  Layer-1 render rig. Exposes RotateY, NoiseAmount and NoisePeriod controls.
+- **`tdmcp config init`** *(cli, M4 DX)* — new CLI subcommand: writes a starter
+  `.env`-style config file with every `TDMCP_*` env var the server reads, sane
+  defaults, and a one-line comment per setting. Default target is
+  `~/.tdmcp/config.env`; pass a positional path to override. Secrets
+  (`TDMCP_BRIDGE_TOKEN`, `TDMCP_LLM_API_KEY`) are emitted commented-out for
+  manual setting. Refuses to clobber existing files unless `--force`;
+  `--dry-run` prints the body without touching the filesystem. Pure Node, no
+  TD bridge required.
+- **`elicit_missing_args`** *(layer3, M3 — verified shipped)* — already shipped
+  in this branch (10 unit tests across LLM-elicit / offline / schema-feedback /
+  long-context truncation / unknown-tool / no-server paths). Audited as part of
+  this sub-batch; no changes needed — flipped to ✅ on the roadmap.
+
+Tool registry: 266 → 268. Unit tests: 2971 → 2987 (+16 new assertions).
+
 ## [0.8.0] - 2026-05-31
 
 **Ingest-extend Wave 1 — Ecosystem on-ramp + signature looks** (campaign

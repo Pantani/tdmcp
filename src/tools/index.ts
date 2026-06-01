@@ -44,6 +44,9 @@ const SAFE_PROFILE_EXCLUDE = new Set<string>([
   "export_palette_component", // writes .tox files into the Palette
   "collect_project_assets", // may overwrite the local asset manifest
   "repair_network", // can reset parameter expressions and re-enable ops when dry_run:false
+  "swap_operator", // deletes the old node and creates a replacement (destructive even with rollback)
+  "export_sop_to_svg", // writes/overwrites an SVG at a user-controlled filesystem path
+  "generative_classics_pack", // writes/overwrites a bundle JSON at a user-controlled filesystem path
 ]);
 
 /** Registers every tool (all layers) against the MCP server, honoring the profile. */

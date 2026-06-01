@@ -108,6 +108,13 @@ try:
         _selectors = _p.get("selectors") or []
         _sel_names = [s[0] for s in _selectors]
         _sel_paths = [s[1] for s in _selectors]
+        # Single shared sanitizer used by BOTH the appendFloat call and the
+        # report's controls list — keep alphanumerics (digits included), lowercase,
+        # then prefix "Last". TD custom-param rule: starts uppercase, rest is
+        # lowercase letters/digits.
+        def _to_custom_par_name(s):
+            _safe = ''.join(ch for ch in s if ch.isalnum()).lower() or 'x'
+            return "Last" + _safe
         _static = _p.get("static_sample") or {}
         def _setpar(node, parname, val):
             if val is None:
@@ -127,16 +134,20 @@ try:
             except Exception:
                 report["warnings"].append("Could not connect %s -> %s" % (src.name, dst.name))
                 return False
-        # Build sample table: header row of selector names + value row from static_sample (default 0.5)
+        # Build sample table TRANSPOSED: one row per selector, col0 = name, col1 = value.
+        # Combined with datto firstcolumn='names'+output='chanperrow', this yields a
+        # CHOP with one channel per selector named by the selector. (Header-row layout
+        # only emits the last column in 'chanpercol' mode, which is why we transpose.)
         _sample = _c.create(tableDAT, "sample")
         _sample.clear()
-        _sample.appendRow(_sel_names)
-        _sample.appendRow([str(_static.get(n, 0.5)) for n in _sel_names])
-        # DAT-to-CHOP reads from the 'dat' parameter, not input connector
+        for _n in _sel_names:
+            _sample.appendRow([_n, str(_static.get(_n, 0.5))])
+        # DAT-to-CHOP reads from the 'dat' parameter, not input connector.
+        # Menu params on dattoCHOP take string menu names, NOT integer indices.
         _datto = _c.create(dattoCHOP, "datto")
-        _setpar(_datto, "firstrow", 1)
-        _setpar(_datto, "firstcolumn", 0)
-        _setpar(_datto, "output", 1)
+        _setpar(_datto, "firstrow", "values")
+        _setpar(_datto, "firstcolumn", "names")
+        _setpar(_datto, "output", "chanperrow")
         _setpar(_datto, "dat", _sample.name)
         _null_chop = _c.create(nullCHOP, "out")
         _connect(_datto, _null_chop)
@@ -185,8 +196,8 @@ try:
             "    if sample is None:\\n"
             "        return\\n"
             "    sample.clear()\\n"
-            "    sample.appendRow(sel_names)\\n"
-            "    sample.appendRow(['%%.6f' %% v for v in vals])\\n"
+            "    for n, v in zip(sel_names, vals):\\n"
+            "        sample.appendRow([n, '%%.6f' %% v])\\n"
         )
         _sel_names_lit = repr(_sel_names)
         _sel_paths_lit = repr(_sel_paths)
@@ -269,14 +280,24 @@ try:
                 except Exception:
                     report["warnings"].append("Could not bind Poll to timerCHOP.")
                 for s in _sel_names:
-                    _lp = _pg.appendFloat("LastValue_" + s)[0]
+                    # Shared sanitizer keeps digits (e.g. "cam1" -> "Lastcam1")
+                    # so two selectors differing only in trailing digits stay distinct.
+                    _parname = _to_custom_par_name(s)
                     try:
-                        _lp.expr = "op(%r).op('out')[%r]" % (_c.path, s)
+                        _lp = _pg.appendFloat(_parname)[0]
+                    except Exception as _e:
+                        report["warnings"].append("Could not create LastValue par for %s: %s" % (s, _e))
+                        continue
+                    try:
+                        _lp.expr = "op(%r).op('out')[%r].eval()" % (_c.path, s)
                         _lp.mode = type(_lp.mode).EXPRESSION
+                    except Exception as _e:
+                        report["warnings"].append("Could not bind LastValue expr for %s: %s" % (s, _e))
+                    try:
                         _lp.readOnly = True
                     except Exception:
                         pass
-                _controls = ["Active", "Poll"] + ["LastValue_" + s for s in _sel_names]
+                _controls = ["Active", "Poll"] + [_to_custom_par_name(s) for s in _sel_names]
             report["controls"] = _controls
         else:
             # websocket mode
@@ -323,14 +344,24 @@ try:
                 except Exception:
                     report["warnings"].append("Could not bind Reconnect to websocketDAT.")
                 for s in _sel_names:
-                    _lp = _pg.appendFloat("LastValue_" + s)[0]
+                    # Shared sanitizer keeps digits (e.g. "cam1" -> "Lastcam1")
+                    # so two selectors differing only in trailing digits stay distinct.
+                    _parname = _to_custom_par_name(s)
                     try:
-                        _lp.expr = "op(%r).op('out')[%r]" % (_c.path, s)
+                        _lp = _pg.appendFloat(_parname)[0]
+                    except Exception as _e:
+                        report["warnings"].append("Could not create LastValue par for %s: %s" % (s, _e))
+                        continue
+                    try:
+                        _lp.expr = "op(%r).op('out')[%r].eval()" % (_c.path, s)
                         _lp.mode = type(_lp.mode).EXPRESSION
+                    except Exception as _e:
+                        report["warnings"].append("Could not bind LastValue expr for %s: %s" % (s, _e))
+                    try:
                         _lp.readOnly = True
                     except Exception:
                         pass
-                _controls = ["Active", "Reconnect"] + ["LastValue_" + s for s in _sel_names]
+                _controls = ["Active", "Reconnect"] + [_to_custom_par_name(s) for s in _sel_names]
             report["controls"] = _controls
         report["selectors"] = [{"name": n, "path": p} for n, p in zip(_sel_names, _sel_paths)]
         report["channels"] = [c.name for c in _null_chop.chans()]

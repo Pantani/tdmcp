@@ -14,6 +14,7 @@ import { registerCreateBodyReactive } from "./createBodyReactive.js";
 import { registerCreateChopRecorder } from "./createChopRecorder.js";
 import { registerCreateChromaReactive } from "./createChromaReactive.js";
 import { registerCreateColorGrade } from "./createColorGrade.js";
+import { registerCreateColorWheels } from "./createColorWheels.js";
 import { registerCreateCubemapDome } from "./createCubemapDome.js";
 import { registerCreateDatamosh } from "./createDatamosh.js";
 import { registerCreateDataVisualization } from "./createDataVisualization.js";
@@ -55,6 +56,7 @@ import { registerCreatePbrScene } from "./createPbrScene.js";
 import { registerCreatePhoneGesture } from "./createPhoneGesture.js";
 import { registerCreatePointCloud } from "./createPointCloud.js";
 import { registerCreatePopField } from "./createPopField.js";
+import { registerCreatePopGeometry } from "./createPopGeometry.js";
 import { registerCreatePoseSkeleton } from "./createPoseSkeleton.js";
 import { registerCreatePoseTracking } from "./createPoseTracking.js";
 import { registerCreateProbSequencer } from "./createProbSequencer.js";
@@ -132,6 +134,7 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateSpectrum,
   registerDetectOnsets,
   registerCreateColorGrade,
+  registerCreateColorWheels,
   registerImportModel,
   registerCreateShaderLib,
   registerCreateShaderPark,
@@ -178,6 +181,7 @@ export const layer1Registrars: ToolRegistrar[] = [
   // Phase 15 — set navigation + POP (experimental, live-validation pending):
   registerCreateSetNavigator,
   registerCreatePopField,
+  registerCreatePopGeometry,
   // Phase 15 — 3D text + MIDI note reactivity (device path held pending hardware):
   registerCreateText3d,
   registerCreateMidiNoteReactive,

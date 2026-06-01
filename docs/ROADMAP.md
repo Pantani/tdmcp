@@ -100,6 +100,38 @@ release is cut.
   `tdmcp-agent log-tail`, `record-fixtures`, `fanout`, `controller-bridge`,
   and `voice` / `llm-voice`.
 
+### v0.9.0 — Smarter assistance & library publishing (Wave 3, sub-batches A + B) · main line, not yet public
+
+The Wave-3 backlog of the Ingest-extend campaign — nine Milestone-3 features
+across two sub-batches. Sub-batch A (3 pure-Node tools) and sub-batch B (6
+TD-required tools) are now both merged on this branch ahead of the v0.9.0 cut.
+
+Sub-batch A — pure-Node library/publishing:
+- ✅ **`tag_and_search_library`** — faceted browse + tag editing over the vault
+  library (Recipes/ + Components/ markdown notes). `op:list`/`op:search`/`op:tag`,
+  preserves `'*'`-pinned user tags.
+- ✅ **`version_library_asset`** — SemVer patch/minor/major bumps for a vault
+  asset, recorded in a sidecar `<asset>.versions.json` and written back to the
+  note's frontmatter `version`.
+- ✅ **First canonical recipe pack — `generative_classics_pack`** — curated
+  6-technique pack that emits an `import_recipe_bundle`-compatible bundle JSON.
+
+Sub-batch B — TD-required (live-validated against TD 099 build 2025.32820):
+- ✅ **`extract_palette`** — K-color palette from a TOP via deterministic
+  k-means on its preview PNG.
+- ✅ **`export_sop_to_svg`** — SOP polylines → SVG (pen-plotter / laser / print).
+- ✅ **`swap_operator`** — change an op's TYPE in place, preserving wires +
+  matching parameters (fail-forward).
+- ✅ **`export_look_tox`** — save a COMP as a portable `.tox` into the vault
+  with a Markdown sidecar for `browse_vault_library` / `tag_and_search_library`.
+- ✅ **`tutorial_companion_pack`** — scaffold a teaching companion (lesson
+  markdown + topology + previews + a `network_snapshot.json` documentary snapshot,
+  explicitly not a RecipeSchema-installable recipe) into the vault.
+- 🧪 **`copilot_vision`** — multimodal LLM query over a TOP preview.
+  Live-tuning UNVERIFIED — no multimodal LLM endpoint configured in this
+  session; mechanism (preview capture + `ctx.llm.complete()` contract) is
+  covered by tests.
+
 ### v0.8.0 — Ingest & extend (Waves 1 & 2) · main line, not yet public
 
 The Ingest & Extend campaign opened the next minor line. Two waves shipped on
@@ -296,8 +328,10 @@ HTTP/WS data-source fix.*
   tuning for the chroma / percussive-vs-tonal / song-structure tools already
   merged on `main` is still ⬜ planned.
 - ✅ **Color-finish — Part 1** *(shipped v0.8.0 Wave 2)* — **`apply_lut`** and
-  **`create_video_scopes`** (waveform / parade / vectorscope). ⬜ **Color wheels
-  / curves** and the deferred **histogram** scope panel remain planned.
+  **`create_video_scopes`** (waveform / parade / vectorscope).
+- ✅ **Color-finish — Part 2** *(shipped v0.9.0 Wave 3C)* —
+  **`create_color_wheels`** (lift / gamma / gain RGB tints + master offset +
+  saturation). The deferred **histogram** scope panel remains planned.
 
 ### Milestone 3 — Smarter assistance & library publishing · ~v0.9.0
 
@@ -305,31 +339,41 @@ HTTP/WS data-source fix.*
 caption/repair/score tools, personal memory, provenance, checksums, lineage and
 corpus learning.*
 
-- **AI deepening** — live-tune `caption_top` and `repair_network`, add
-  `copilot_vision`, `elicit_missing_args`, richer chat flags, transcript
-  persistence and smarter handoff when the local copilot reaches its limits.
+- **AI deepening** — live-tune `caption_top` and `repair_network`, ✅
+  `copilot_vision` (multimodal-LLM frame analysis; live-tuning still UNVERIFIED
+  pending a configured multimodal endpoint), ✅ `elicit_missing_args` (shipped
+  v0.9.0 Wave 3C — schema-driven LLM elicitation with offline + no-server
+  fallbacks), richer chat flags, transcript persistence and smarter handoff
+  when the local copilot reaches its limits. ✅ `extract_palette` adds a
+  deterministic K-color sampler feeding AI grading prompts.
 - **"Do it my way"** — turn `recall_similar_work`, `style_memory`,
   `learn_conventions` and `learn_from_my_corpus` into a persistent session
   profile the agent reads before every new build.
 - **Trust & publish** — with `lint_recipe_library`, provenance, checksums,
-  lineage, curated packs and vault sync in place, finish `tag_and_search_library`,
-  `version_library_asset`, `export_look_tox`, `export_sop_to_svg` and the first
-  canonical technique recipe pack.
+  lineage, curated packs and vault sync in place, ✅ `tag_and_search_library`,
+  ✅ `version_library_asset`, ✅ `generative_classics_pack`, ✅ `export_look_tox`,
+  ✅ `export_sop_to_svg` and ✅ `tutorial_companion_pack` are now merged on
+  this branch (v0.9.0 line, pending release).
 
 ### Milestone 4 — Deeper authoring & operator DX · ~v0.10.0
 
 *Unwrap the last big TouchDesigner authoring surfaces and finish the operator /
 install story.*
 
-- **Authoring** — **`swap_operator`** (change a type, keep the wires),
-  `create_pop_geometry`, the GPU / optical-flow / SDF / strange-attractor
-  deferred generators, and MediaPipe face / hand / segmentation on the in-tree
-  tracking engine.
+- **Authoring** — ✅ `swap_operator` (change a type, keep the wires — shipped
+  v0.9.0 Wave 3B), ✅ `create_pop_geometry` (shipped v0.9.0 Wave 3C — primitive
+  → transform → subdiv → noise → mat SOP chain rendered via Geometry COMP +
+  Render TOP), the GPU / optical-flow / SDF / strange-attractor deferred
+  generators, and MediaPipe face / hand / segmentation on the in-tree tracking
+  engine.
 - **Developer & live-operator DX** — finish the **easy-install** story (a
   client-config writer + a `doctor --fix` that performs safe repairs),
-  `tdmcp config init`, profile listing, help/completion parity, inline preview,
-  a richer front-of-house dashboard mode and a **`tutorial_companion_pack`** for
-  teaching or selling a build.
+  ✅ `tdmcp config init` (shipped v0.9.0 Wave 3C — writes a starter
+  `.env`-style config with every `TDMCP_*` var, sane defaults and per-line
+  comments; safe re-run via `--force` / `--dry-run`), profile listing,
+  help/completion parity, inline preview, and a richer front-of-house dashboard
+  mode. ✅ `tutorial_companion_pack` (teaching/selling a build) is now shipped
+  (v0.9.0 Wave 3B).
 
 ### Later / deferred
 

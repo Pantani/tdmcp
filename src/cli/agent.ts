@@ -60,6 +60,10 @@ import {
 } from "../tools/layer1/createChromaReactive.js";
 import { createColorGradeImpl, createColorGradeSchema } from "../tools/layer1/createColorGrade.js";
 import {
+  createColorWheelsImpl,
+  createColorWheelsSchema,
+} from "../tools/layer1/createColorWheels.js";
+import {
   createCubemapDomeImpl,
   createCubemapDomeSchema,
 } from "../tools/layer1/createCubemapDome.js";
@@ -172,6 +176,10 @@ import {
 } from "../tools/layer1/createPhoneGesture.js";
 import { createPointCloudImpl, createPointCloudSchema } from "../tools/layer1/createPointCloud.js";
 import { createPopFieldImpl, createPopFieldSchema } from "../tools/layer1/createPopField.js";
+import {
+  createPopGeometryImpl,
+  createPopGeometrySchema,
+} from "../tools/layer1/createPopGeometry.js";
 import {
   createPoseSkeletonImpl,
   createPoseSkeletonSchema,
@@ -570,6 +578,7 @@ import {
 } from "../utils/config.js";
 import { silentLogger } from "../utils/logger.js";
 import { runBridgeWatchBuild } from "./bridgeWatchBuild.js";
+import { runConfigInit } from "./configInit.js";
 import { controllerBridgeCliSchema, runControllerBridge } from "./controllerToCliBridge.js";
 import { runDoctor } from "./doctor.js";
 import { runFixtureRecorder } from "./fixtureRecorder.js";
@@ -1017,6 +1026,12 @@ const COMMANDS: Record<string, Command> = {
     "Color-grade a source (lift/gamma/gain + saturation/hue + LUT).",
     { mutates: true },
   ),
+  colorwheels: r(
+    createColorWheelsSchema,
+    createColorWheelsImpl,
+    "Colour wheels: lift/gamma/gain RGB tints + offset + saturation chain.",
+    { mutates: true },
+  ),
   model: r(importModelSchema, importModelImpl, "Import a 3D model file and render it.", {
     mutates: true,
   }),
@@ -1116,6 +1131,12 @@ const COMMANDS: Record<string, Command> = {
     createPbrSceneSchema,
     createPbrSceneImpl,
     "3D scene with a PBR material + environment light rig.",
+    { mutates: true },
+  ),
+  "pop-geometry": r(
+    createPopGeometrySchema,
+    createPopGeometryImpl,
+    "Procedural Op Pattern geometry: SOP chain (primitive→transform→subdiv→noise→mat) rendered to a TOP.",
     { mutates: true },
   ),
   flock: r(
@@ -1982,6 +2003,9 @@ function usage(): string {
   lines.push(
     "  config               Print the effective config (redacted); --write-env for a paste-ready block.",
   );
+  lines.push(
+    "  config init [path]   Write a starter ~/.tdmcp/config.env (or [path]); --force to overwrite, --dry-run to preview.",
+  );
   lines.push("  run <file>           Run a JSON file containing command steps.");
   lines.push("  completion <shell>   Print a completion snippet for bash, zsh, or fish.");
   lines.push("  preview <nodePath>   Capture a TOP to a PNG file (-o/--out).  [writes a file]");
@@ -2082,6 +2106,7 @@ function parseCliArgs(argv: string[]) {
       "td-port": { type: "string" },
       timeout: { type: "string" },
       "write-env": { type: "boolean", default: false },
+      force: { type: "boolean", default: false },
       quiet: { type: "boolean", short: "q", default: false },
       "no-color": { type: "boolean", default: false },
       fix: { type: "boolean", default: false },
@@ -2298,6 +2323,7 @@ function completionScript(shell: string): string | undefined {
     "--exclude",
     "--quiet",
     "--no-color",
+    "--force",
     "--version",
     "--help",
   ];
@@ -2354,6 +2380,21 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
       input: z.toJSONSchema(cmd.schema),
     };
     return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
+  }
+
+  // `config init [path]` — write a starter .env-style config file (with sane
+  // defaults + per-line comments) that an artist can edit and source. Default
+  // target is ~/.tdmcp/config.env. Refuses to clobber existing files unless
+  // `--force`. `--dry-run` prints the body without touching the filesystem.
+  // Pure Node, reachable even when TD is offline.
+  if (positionals[0] === "config" && positionals[1] === "init") {
+    const out = positionals[2];
+    const result = runConfigInit({
+      out,
+      force: Boolean(values.force),
+      dryRun: Boolean(values["dry-run"]),
+    });
+    return { stdout: result.stdout, stderr: result.stderr, code: result.code };
   }
 
   // `config` — print the effective resolved config (secrets redacted), honoring
