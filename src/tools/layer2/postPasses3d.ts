@@ -198,9 +198,9 @@ export async function postPasses3dImpl(ctx: ToolContext, args: PostPasses3dArgs)
         });
         await ctx.client.updateNodeParameters(selDepth.path, { top: depthSourcePath });
         selDepthPath = selDepth.path;
-      } else if (args.ssao_enable || args.dof_enable) {
+      } else if (args.ssao_enable || args.dof_enable || args.ssr_enable) {
         warnings.push(
-          "No depth_top provided and color_top is not a render TOP; SSAO/DOF will read constant depth.",
+          "No depth_top provided and color_top is not a render TOP; depth-dependent passes (SSAO/SSR/DOF) will be skipped.",
         );
       }
 
@@ -303,25 +303,33 @@ export async function postPasses3dImpl(ctx: ToolContext, args: PostPasses3dArgs)
 
       // SSAO
       if (args.ssao_enable) {
-        const depthForSsao = selDepthPath ?? selColor.path; // graceful fallback
-        const extras = [depthForSsao];
-        if (selNormalPath) extras.push(selNormalPath);
-        await buildPass("glsl_ssao", SSAO_FRAG, extras, [
-          { name: "uRadius", value: args.ssao_radius },
-          { name: "uIntensity", value: args.ssao_intensity },
-        ]);
+        if (!selDepthPath) {
+          warnings.push(
+            "SSAO skipped: no depth TOP available (depth_top not provided and color_top is not a render TOP).",
+          );
+        } else {
+          const extras = [selDepthPath];
+          if (selNormalPath) extras.push(selNormalPath);
+          await buildPass("glsl_ssao", SSAO_FRAG, extras, [
+            { name: "uRadius", value: args.ssao_radius },
+            { name: "uIntensity", value: args.ssao_intensity },
+          ]);
+        }
       }
 
       // SSR — requires normal_top.
       if (args.ssr_enable) {
         if (!selNormalPath) {
           warnings.push("SSR requires normal_top — skipped.");
+        } else if (!selDepthPath) {
+          warnings.push(
+            "SSR skipped: no depth TOP available (depth_top not provided and color_top is not a render TOP).",
+          );
         } else {
-          const depthForSsr = selDepthPath ?? selColor.path;
           await buildPass(
             "glsl_ssr",
             SSR_FRAG,
-            [depthForSsr, selNormalPath],
+            [selDepthPath, selNormalPath],
             [{ name: "uIntensity", value: args.ssr_intensity }],
           );
         }
@@ -329,16 +337,21 @@ export async function postPasses3dImpl(ctx: ToolContext, args: PostPasses3dArgs)
 
       // DOF
       if (args.dof_enable) {
-        const depthForDof = selDepthPath ?? selColor.path;
-        await buildPass(
-          "glsl_dof",
-          DOF_FRAG,
-          [depthForDof],
-          [
-            { name: "uFocus", value: args.dof_focus },
-            { name: "uAperture", value: args.dof_aperture },
-          ],
-        );
+        if (!selDepthPath) {
+          warnings.push(
+            "DOF skipped: no depth TOP available (depth_top not provided and color_top is not a render TOP).",
+          );
+        } else {
+          await buildPass(
+            "glsl_dof",
+            DOF_FRAG,
+            [selDepthPath],
+            [
+              { name: "uFocus", value: args.dof_focus },
+              { name: "uAperture", value: args.dof_aperture },
+            ],
+          );
+        }
       }
 
       // Motion blur

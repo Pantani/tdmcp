@@ -347,7 +347,7 @@ def onPulse(par):
                         _ab_par = getattr(_ab_op.par, _ab_parts[1], None)
                         if _ab_par is not None:
                             _null_out_path = _comp.path + "/null_out"
-                            _ab_par.bindExpr = "op('" + _null_out_path + "')['chan1']"
+                            _ab_par.bindExpr = "op('" + _null_out_path + "')['chan0']"
                             _ab_par.bindMode = 1
                         else:
                             report["warnings"].append("autoBind par not found: " + _ab_parts[1])

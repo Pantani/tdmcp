@@ -440,7 +440,10 @@ export const registerApplyLut: ToolRegistrar = (server, ctx) =>
       inputSchema: applyLutSchema.shape,
     },
     (rawArgs) => {
-      const args = applyLutSchema.parse(rawArgs) as ApplyLutArgs;
-      return applyLutImpl(ctx, args);
+      const parsed = applyLutSchema.safeParse(rawArgs);
+      if (!parsed.success) {
+        return errorResult(`Invalid apply_lut arguments: ${parsed.error.message}`);
+      }
+      return applyLutImpl(ctx, parsed.data as ApplyLutArgs);
     },
   );

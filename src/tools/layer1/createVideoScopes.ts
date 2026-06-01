@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ControlSpec } from "../layer2/createControlPanel.js";
+import { errorResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { createSystemContainer, finalize, type NetworkBuilder, runBuild } from "./orchestration.js";
 
@@ -58,6 +59,27 @@ export const createVideoScopesSchema = z.object({
     .default("/project1")
     .describe("Parent COMP path; the scopes container is created as 'video_scopes' inside it."),
 });
+
+/** Cross-field validation: source-dependent required fields. */
+const refineSource = (val: CreateVideoScopesArgs, ctx: z.RefinementCtx) => {
+  if (val.source === "existing_top" && !val.existing_top_path?.trim()) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["existing_top_path"],
+      message: "existing_top_path is required when source='existing_top'",
+    });
+  }
+  if (val.source === "file" && !val.video_file_path?.trim()) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["video_file_path"],
+      message: "video_file_path is required when source='file'",
+    });
+  }
+};
+
+/** Refined schema used for cross-field validation in the impl. */
+export const createVideoScopesValidatedSchema = createVideoScopesSchema.superRefine(refineSource);
 
 type CreateVideoScopesArgs = z.infer<typeof createVideoScopesSchema>;
 
@@ -239,7 +261,12 @@ async function buildParadePanel(
     },
   ];
 
-  const geo = await builder.add("geometryCOMP", "parade_geo");
+  // Per-channel geometryCOMP — geometryCOMP.par.material applies to the whole
+  // geometry, so sharing one geo across R/G/B would let the last channel's
+  // material overwrite the others. Each channel gets its own geo + its own
+  // renderTOP, and the three channel renders are composited side-by-side.
+  const channelGeos: string[] = [];
+  const channelRenders: string[] = [];
   const xOffsets = [-0.66, 0, 0.66];
 
   for (const [idx, ch] of channelSetups.entries()) {
@@ -275,6 +302,9 @@ async function buildParadePanel(
       alpha: 1,
     });
 
+    const geo = await builder.add("geometryCOMP", `parade_geo_${ch.suffix}`);
+    channelGeos.push(geo);
+
     const line = await builder.add("choptoSOP", ch.lineName, {}, geo);
     await builder.connect(ypos, line);
 
@@ -285,30 +315,43 @@ async function buildParadePanel(
         "_l.render = True",
         "_l.display = True",
         `op(${q(geo)}).par.material = ${q(mat)}`,
-        // offset each line SOP in X so the three channels sit side-by-side
-        `_l.par.tx = ${xOff}`,
+        // offset each channel's geo in X so the three sit side-by-side
+        `op(${q(geo)}).par.tx = ${xOff}`,
       ].join("\n"),
     );
   }
 
-  const cam = await builder.add("cameraCOMP", "parade_cam", {
+  const camera = await builder.add("cameraCOMP", "parade_cam", {
     projection: "ortho",
     orthowidth: 2.2,
     tz: 5,
   });
   const lightComp = await builder.add("lightCOMP", "parade_light", { tx: 0, ty: 0, tz: 5 });
-  const render = await builder.add("renderTOP", "parade_render", {
-    camera: cam,
-    geometry: geo,
-    lights: lightComp,
-    bgcolorr: 0.01,
-    bgcolorg: 0.02,
-    bgcolorb: 0.02,
-    bgcolora: 1,
-    outputresolution: "custom",
-    resolutionw: panelRes,
-    resolutionh: panelRes,
-  });
+
+  // Render each channel geo to its own renderTOP, then composite side-by-side
+  for (const [idx, ch] of channelSetups.entries()) {
+    const geo = channelGeos[idx];
+    if (!geo) continue;
+    const r = await builder.add("renderTOP", `parade_render_${ch.suffix}`, {
+      camera: camera,
+      geometry: geo,
+      lights: lightComp,
+      bgcolorr: 0.01,
+      bgcolorg: 0.02,
+      bgcolorb: 0.02,
+      bgcolora: 1,
+      outputresolution: "custom",
+      resolutionw: panelRes,
+      resolutionh: panelRes,
+    });
+    channelRenders.push(r);
+  }
+
+  // Composite the three channel renders into the parade panel
+  const render = await builder.add("compositeTOP", "parade_render", { operand: "add" });
+  for (const [i, r] of channelRenders.entries()) {
+    await builder.connect(r, render, 0, i);
+  }
 
   const out = await builder.add("nullTOP", "parade_out");
   await builder.connect(render, out);
@@ -417,6 +460,12 @@ async function buildVectorscopePanel(
 // enable_histogram=true is accepted by the schema but silently skipped at build time.
 
 export async function createVideoScopesImpl(ctx: ToolContext, args: CreateVideoScopesArgs) {
+  // Cross-field validation: source-dependent required fields.
+  const parsed = createVideoScopesValidatedSchema.safeParse(args);
+  if (!parsed.success) {
+    const issues = parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
+    return errorResult(`create_video_scopes: invalid arguments — ${issues}`);
+  }
   return runBuild(async () => {
     const builder = await createSystemContainer(ctx, args.parent_path, "video_scopes");
     const rgb = hexToRgb(args.trace_color);
@@ -460,18 +509,29 @@ export async function createVideoScopesImpl(ctx: ToolContext, args: CreateVideoS
     // enable_histogram: histogramCHOP absent in TD 099 — panel silently skipped.
     // TODO: rebuild once analyzeTOP histogram mode is confirmed (see comment above).
 
-    // Composite layout
+    // Composite layout — honour requested output_resolution at the composite stage.
+    const [outW, outH] = args.output_resolution;
     let layoutTop: string;
     if (panelPaths.length === 0) {
-      // No panels — just a black constant
+      // No panels — just a black constant at the requested resolution
       layoutTop = await builder.add("constantTOP", "panels", {
         colorr: 0,
         colorg: 0,
         colorb: 0,
         alpha: 1,
+        outputresolution: "custom",
+        resolutionw: outW,
+        resolutionh: outH,
       });
     } else if (panelPaths.length === 1) {
-      layoutTop = panelPaths[0] as string;
+      // Single panel — wrap in a resolutionTOP so the output honours the requested size.
+      const resize = await builder.add("resolutionTOP", "panels", {
+        outputresolution: "custom",
+        resolutionw: outW,
+        resolutionh: outH,
+      });
+      await builder.connect(panelPaths[0] as string, resize);
+      layoutTop = resize;
     } else {
       const alignParam =
         args.layout === "row" ? "horizontal" : args.layout === "column" ? "vertical" : "grid";
@@ -479,6 +539,9 @@ export async function createVideoScopesImpl(ctx: ToolContext, args: CreateVideoS
       layoutTop = await builder.add("layoutTOP", "panels", {
         align: alignParam,
         columns: cols,
+        outputresolution: "custom",
+        resolutionw: outW,
+        resolutionh: outH,
       });
       for (const [i, p] of panelPaths.entries()) {
         await builder.connect(p, layoutTop, 0, i);

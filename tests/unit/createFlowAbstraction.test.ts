@@ -161,7 +161,7 @@ describe("create_flow_abstraction", () => {
     expect(joined).toContain("pixeldat");
   });
 
-  it("wires Select → ETF[0]; ETF → FDoG[0]; Select → FDoG[1]; FDoG → Null", async () => {
+  it("wires Select → ETF[0]; ETF → FDoG[0]; FDoG → Null (no second FDoG input)", async () => {
     captureNodes();
     captureScripts();
     const conns = captureConnects();
@@ -170,8 +170,9 @@ describe("create_flow_abstraction", () => {
       conns.some((c) => c.source_path === s && c.target_path === t && c.target_input === ti);
     expect(has("/project1/fab_in", "/project1/fab_etf", 0)).toBe(true);
     expect(has("/project1/fab_etf", "/project1/fab_fdog", 0)).toBe(true);
-    expect(has("/project1/fab_in", "/project1/fab_fdog", 1)).toBe(true);
     expect(has("/project1/fab_fdog", "/project1/fab_out", 0)).toBe(true);
+    // Dropped: Select → FDoG[1] wire removed (FDoG shader only uses sTD2DInputs[0]).
+    expect(has("/project1/fab_in", "/project1/fab_fdog", 1)).toBe(false);
   });
 
   it("never creates a feedbackTOP or wires a second input into ETF (single-input pass)", async () => {

@@ -85,9 +85,17 @@ describe("create_video_scopes", () => {
     expect(bodies.some((b) => b.type === "choptoSOP" && b.name === "wave_line")).toBe(true);
     expect(bodies.some((b) => b.type === "renderTOP" && b.name === "wave_render")).toBe(true);
 
-    // Parade panel — three channel isolations
-    expect(bodies.some((b) => b.type === "renderTOP" && b.name === "parade_render")).toBe(true);
-    expect(bodies.some((b) => b.type === "geometryCOMP" && b.name === "parade_geo")).toBe(true);
+    // Parade panel — three channel isolations, each with its own geometryCOMP
+    // (geometryCOMP.par.material applies to the whole geo, so sharing one would
+    // let the last channel's material overwrite the others).
+    expect(bodies.some((b) => b.type === "geometryCOMP" && b.name === "parade_geo_r")).toBe(true);
+    expect(bodies.some((b) => b.type === "geometryCOMP" && b.name === "parade_geo_g")).toBe(true);
+    expect(bodies.some((b) => b.type === "geometryCOMP" && b.name === "parade_geo_b")).toBe(true);
+    expect(bodies.some((b) => b.type === "renderTOP" && b.name === "parade_render_r")).toBe(true);
+    expect(bodies.some((b) => b.type === "renderTOP" && b.name === "parade_render_g")).toBe(true);
+    expect(bodies.some((b) => b.type === "renderTOP" && b.name === "parade_render_b")).toBe(true);
+    // The per-channel renders are composited into parade_render (compositeTOP).
+    expect(bodies.some((b) => b.type === "compositeTOP" && b.name === "parade_render")).toBe(true);
 
     // Vectorscope panel
     expect(bodies.some((b) => b.type === "glslTOP" && b.name === "vec_yuv")).toBe(true);
@@ -160,7 +168,7 @@ describe("create_video_scopes", () => {
     expect(bodies.some((b) => b.name === "vec_render")).toBe(false);
     // Other two panels still built (histogram dropped in TD 099)
     expect(bodies.some((b) => b.name === "wave_render")).toBe(true);
-    expect(bodies.some((b) => b.name === "parade_render")).toBe(true);
+    expect(bodies.some((b) => b.name === "parade_render_r")).toBe(true);
   });
 
   it("all panels disabled: still creates a container and out1 with no error", async () => {
@@ -271,5 +279,72 @@ describe("create_video_scopes", () => {
     // histogram panel dropped in TD 099 — no hist_tint node
     const histTint = bodies.find((b) => b.type === "constantTOP" && b.name === "hist_tint");
     expect(histTint).toBeUndefined();
+  });
+
+  // 8. Cross-field schema validation
+  it("source='existing_top' without existing_top_path returns an isError result", async () => {
+    const result = await createVideoScopesImpl(makeCtx(), {
+      ...defaultArgs(),
+      source: "existing_top",
+    });
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toMatch(/existing_top_path/);
+  });
+
+  it("source='file' without video_file_path returns an isError result", async () => {
+    const result = await createVideoScopesImpl(makeCtx(), {
+      ...defaultArgs(),
+      source: "file",
+    });
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toMatch(/video_file_path/);
+  });
+
+  // 9. Output resolution propagation
+  it("output_resolution propagates to layoutTOP when 2+ panels are enabled", async () => {
+    const bodies = captureCreateBodies();
+    await createVideoScopesImpl(makeCtx(), {
+      ...defaultArgs(),
+      output_resolution: [1920, 1080],
+    });
+    const layoutNode = bodies.find((b) => b.type === "layoutTOP" && b.name === "panels");
+    expect(layoutNode).toBeDefined();
+    expect(layoutNode?.parameters?.outputresolution).toBe("custom");
+    expect(layoutNode?.parameters?.resolutionw).toBe(1920);
+    expect(layoutNode?.parameters?.resolutionh).toBe(1080);
+  });
+
+  it("output_resolution propagates to the constantTOP fallback when 0 panels enabled", async () => {
+    const bodies = captureCreateBodies();
+    await createVideoScopesImpl(makeCtx(), {
+      ...defaultArgs(),
+      enable_waveform: false,
+      enable_parade: false,
+      enable_vectorscope: false,
+      enable_histogram: false,
+      output_resolution: [800, 600],
+    });
+    const fallback = bodies.find((b) => b.type === "constantTOP" && b.name === "panels");
+    expect(fallback).toBeDefined();
+    expect(fallback?.parameters?.outputresolution).toBe("custom");
+    expect(fallback?.parameters?.resolutionw).toBe(800);
+    expect(fallback?.parameters?.resolutionh).toBe(600);
+  });
+
+  it("output_resolution propagates via a resolutionTOP wrapper when exactly 1 panel is enabled", async () => {
+    const bodies = captureCreateBodies();
+    await createVideoScopesImpl(makeCtx(), {
+      ...defaultArgs(),
+      enable_waveform: true,
+      enable_parade: false,
+      enable_vectorscope: false,
+      enable_histogram: false,
+      output_resolution: [640, 480],
+    });
+    const wrapper = bodies.find((b) => b.type === "resolutionTOP" && b.name === "panels");
+    expect(wrapper).toBeDefined();
+    expect(wrapper?.parameters?.outputresolution).toBe("custom");
+    expect(wrapper?.parameters?.resolutionw).toBe(640);
+    expect(wrapper?.parameters?.resolutionh).toBe(480);
   });
 });

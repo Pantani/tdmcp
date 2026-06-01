@@ -186,7 +186,7 @@ try:
             "        return\\n"
             "    sample.clear()\\n"
             "    sample.appendRow(sel_names)\\n"
-            "    sample.appendRow(['%.6f' % v for v in vals])\\n"
+            "    sample.appendRow(['%%.6f' %% v for v in vals])\\n"
         )
         _sel_names_lit = repr(_sel_names)
         _sel_paths_lit = repr(_sel_paths)
@@ -399,6 +399,12 @@ export const registerCreateDataSourceHttpWs: ToolRegistrar = (server, ctx) => {
       inputSchema: createDataSourceHttpWsSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
-    (args) => createDataSourceHttpWsImpl(ctx, args),
+    (rawArgs) => {
+      const parsed = createDataSourceHttpWsSchema.safeParse(rawArgs);
+      if (!parsed.success) {
+        return errorResult(`Invalid create_data_source_http_ws arguments: ${parsed.error.message}`);
+      }
+      return createDataSourceHttpWsImpl(ctx, parsed.data);
+    },
   );
 };

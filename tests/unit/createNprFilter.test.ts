@@ -141,7 +141,12 @@ describe("create_npr_filter", () => {
     expect(setup).toContain(".EXPRESSION");
     expect(setup).toContain("vec3name = 'uSmoothness'");
     expect(setup).toContain("vec4name = 'uStrength'");
-    expect(setup).toContain("parent().par.Radius");
+    // Prefixed param names — "npr1" → prefix "Npr1" so params are Npr1Radius etc.
+    expect(setup).toContain("parent().par.Npr1Radius");
+    expect(setup).toContain("parent().par.Npr1Smoothness");
+    expect(setup).toContain("parent().par.Npr1Strength");
+    // Idempotency guard uses the same prefix
+    expect(setup).toContain("_prefix + 'Radius'");
 
     // Source TOP set on the Select TOP.
     expect(setup).toContain("/project1/render1");

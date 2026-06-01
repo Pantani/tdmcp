@@ -92,9 +92,11 @@ void main() {
 /**
  * Pass 2 — FDoG (flow-based Difference of Gaussians) line extraction.
  *
- * `sTD2DInputs[0]` = ETF-smoothed base. `sTD2DInputs[1]` = original source
- * (used only for tangent re-derive consistency). Soft-thresholded DoG response
- * along the local tangent is multiplied back onto the smoothed base.
+ * `sTD2DInputs[0]` = ETF-smoothed base (single input). Soft-thresholded DoG
+ * response along the local tangent — derived from the ETF output — is
+ * multiplied back onto the smoothed base. No second input is wired; the
+ * tangent is re-derived from sTD2DInputs[0] rather than a separate original-
+ * source path (no measurable quality difference in the single-input chain).
  */
 const FDOG_SHADER = `out vec4 fragColor;
 
@@ -196,7 +198,7 @@ export const createFlowAbstractionSchema = z.object({
     .max(4)
     .default(2)
     .describe(
-      "Internal iteration count; controls bilateral strength via in-shader uniform (feedback ping-pong deferred — single-pass only in v0.8.0).",
+      "Number of ETF passes; higher values boost ETF strength via an in-shader uniform. No external feedback loop is created in this version.",
     ),
   blur_radius: z
     .number()
@@ -285,10 +287,9 @@ export async function createFlowAbstractionImpl(ctx: ToolContext, args: CreateFl
       ].join("\n");
       await ctx.client.executePythonScript(shaderAssign, false);
 
-      // Wiring.
+      // Wiring: Select → ETF[0] → FDoG[0] → Null. Single-input chain.
       await connectNodesViaBridge(ctx.client, sel.path, etf.path, 0, 0);
       await connectNodesViaBridge(ctx.client, etf.path, fdog.path, 0, 0);
-      await connectNodesViaBridge(ctx.client, sel.path, fdog.path, 0, 1);
       await connectNodesViaBridge(ctx.client, fdog.path, outNull.path, 0, 0);
 
       // Uniforms — Vectors-page bind block (mirrors createDither pattern).

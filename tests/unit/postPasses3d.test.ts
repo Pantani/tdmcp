@@ -341,6 +341,78 @@ describe("postPasses3dImpl", () => {
     expect(result.isError).toBe(true);
   });
 
+  it("SSAO/DOF skipped with warning when depth_top absent and color_top is not a render TOP", async () => {
+    const cap = capture();
+    const result = await postPasses3dImpl(makeCtx(), {
+      parent_path: "/project1",
+      name: "post_passes_3d",
+      color_top: "/project1/null1", // not a renderTOP path
+      depth_top: "",
+      normal_top: "",
+      velocity_top: "",
+      ssao_enable: true,
+      ssao_radius: 0.05,
+      ssao_intensity: 1.0,
+      ssr_enable: false,
+      ssr_intensity: 0.5,
+      dof_enable: true,
+      dof_focus: 0.3,
+      dof_aperture: 0.02,
+      motion_blur_enable: false,
+      motion_blur_amount: 0.3,
+      resolution: [1280, 720],
+    });
+    expect(result.isError).toBeFalsy();
+    const data = getResultData<ResultShape>(result);
+
+    // Neither glsl_ssao nor glsl_dof should be created.
+    expect(cap.creates.find((b) => b.type === "glslTOP" && b.name === "glsl_ssao")).toBeUndefined();
+    expect(cap.creates.find((b) => b.type === "glslTOP" && b.name === "glsl_dof")).toBeUndefined();
+
+    // Passes array must be empty.
+    expect(data.passes).toEqual([]);
+
+    // Warnings must describe the skip.
+    expect(data.warnings.some((w) => w.includes("SSAO skipped"))).toBe(true);
+    expect(data.warnings.some((w) => w.includes("DOF skipped"))).toBe(true);
+
+    // sel_depth must NOT be created (no depth source).
+    expect(
+      cap.creates.find((b) => b.type === "selectTOP" && b.name === "sel_depth"),
+    ).toBeUndefined();
+  });
+
+  it("SSR skipped with warning when depth_top absent and color_top is not a render TOP", async () => {
+    const cap = capture();
+    const result = await postPasses3dImpl(makeCtx(), {
+      parent_path: "/project1",
+      name: "post_passes_3d",
+      color_top: "/project1/null1",
+      depth_top: "",
+      normal_top: "/project1/normal1",
+      velocity_top: "",
+      ssao_enable: false,
+      ssao_radius: 0.05,
+      ssao_intensity: 1.0,
+      ssr_enable: true,
+      ssr_intensity: 0.5,
+      dof_enable: false,
+      dof_focus: 0.3,
+      dof_aperture: 0.02,
+      motion_blur_enable: false,
+      motion_blur_amount: 0.3,
+      resolution: [1280, 720],
+    });
+    expect(result.isError).toBeFalsy();
+    const data = getResultData<ResultShape>(result);
+
+    expect(cap.creates.find((b) => b.type === "glslTOP" && b.name === "glsl_ssr")).toBeUndefined();
+    expect(data.passes).toEqual([]);
+    expect(data.warnings.some((w) => w.includes("SSR skipped") && w.includes("depth TOP"))).toBe(
+      true,
+    );
+  });
+
   it("returned JSON exposes the expected fields", async () => {
     const result = await postPasses3dImpl(makeCtx(), {
       parent_path: "/project1",

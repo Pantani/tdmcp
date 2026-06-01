@@ -197,19 +197,26 @@ describe("applyLutImpl", () => {
   // 4. Missing file → errorResult (no bridge call beyond guardTd check)
   // -------------------------------------------------------------------------
   it("missing LUT file → errorResult with 'LUT file not found' message", async () => {
-    const _ctx = fakeCtx({});
-    // Bypass the existsSync check by not setting VITEST — but in the test
-    // environment VITEST=true is already set by vitest itself, so the
-    // existsSync check is skipped. We instead simulate by having the bridge
-    // return an error report.
-    const errorReport = happyReport({
-      errors: ["LUT file not found: /does/not/exist.cube"],
-    });
-    const errorCtx = fakeCtx(errorReport);
+    const ctx = fakeCtx({});
+    const execMock = ctx.client.executePythonScript as ReturnType<typeof vi.fn>;
     const args = applyLutSchema.parse({ lut_path: "/does/not/exist.cube" });
-    const result = await applyLutImpl(errorCtx, args);
-    expect(result.isError).toBe(true);
-    expect(textOf(result)).toContain("LUT file not found");
+
+    // Temporarily unset VITEST so the existsSync early-return branch actually runs.
+    const prev = process.env.VITEST;
+    delete process.env.VITEST;
+    let result: Awaited<ReturnType<typeof applyLutImpl>> | undefined;
+    try {
+      result = await applyLutImpl(ctx, args);
+    } finally {
+      if (prev !== undefined) process.env.VITEST = prev;
+      else delete process.env.VITEST;
+    }
+
+    expect(execMock).not.toHaveBeenCalled();
+    expect(result?.isError).toBe(true);
+    expect(textOf(result as Awaited<ReturnType<typeof applyLutImpl>>)).toContain(
+      "LUT file not found",
+    );
   });
 
   // -------------------------------------------------------------------------

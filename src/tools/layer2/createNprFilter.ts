@@ -174,10 +174,19 @@ const RESOLUTIONS = {
 
 const MODE_INT: Record<string, number> = { oil: 0, pencil: 1, watercolor: 2 };
 
+/** Convert a snake_case or camelCase name into a PascalCase prefix, e.g. "kuwa_oil" → "KuwaOil", "npr1" → "Npr1". */
+function toParamPrefix(name: string): string {
+  return name
+    .split(/[_\s-]+/)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join("");
+}
+
 export async function createNprFilterImpl(ctx: ToolContext, args: CreateNprFilterArgs) {
   return guardTd(
     async () => {
       const baseName = args.name;
+      const prefix = toParamPrefix(baseName); // e.g. "npr1" → "Npr1"
       const select = await ctx.client.createNode({
         parent_path: args.parent_path,
         type: "selectTOP",
@@ -209,8 +218,11 @@ export async function createNprFilterImpl(ctx: ToolContext, args: CreateNprFilte
         `op(${q(frag.path)}).text = ${q(NPR_SHADER)}`,
         `_g = op(${q(glsl.path)})`,
         `_g.par.pixeldat = ${q(frag.name || `${baseName}_frag`)}`,
-        // Best-effort add custom parameters on the parent COMP.
+        // Best-effort add custom parameters on the parent COMP — namespaced by
+        // prefix so multiple NPR filter instances under the same parent don't
+        // collide (e.g. "Npr1_Radius" vs "KuwaOil_Radius").
         `_parent = op(${q(args.parent_path)})`,
+        `_prefix = ${q(prefix)}`,
         "try:",
         "    _page = None",
         "    for _p in _parent.customPages:",
@@ -219,28 +231,28 @@ export async function createNprFilterImpl(ctx: ToolContext, args: CreateNprFilte
         "            break",
         "    if _page is None:",
         "        _page = _parent.appendCustomPage('NPR')",
-        "    if not hasattr(_parent.par, 'Radius'):",
-        `        _pr = _page.appendFloat('Radius'); _pr[0].default = ${args.radius}; _pr[0].val = ${args.radius}; _pr[0].normMin = 1; _pr[0].normMax = 12`,
-        "    if not hasattr(_parent.par, 'Smoothness'):",
-        `        _ps = _page.appendFloat('Smoothness'); _ps[0].default = ${args.smoothness}; _ps[0].val = ${args.smoothness}; _ps[0].normMin = 0; _ps[0].normMax = 1`,
-        "    if not hasattr(_parent.par, 'Strength'):",
-        `        _pst = _page.appendFloat('Strength'); _pst[0].default = ${args.strength}; _pst[0].val = ${args.strength}; _pst[0].normMin = 0; _pst[0].normMax = 1`,
+        `    if not hasattr(_parent.par, _prefix + 'Radius'):`,
+        `        _pr = _page.appendFloat(_prefix + 'Radius'); _pr[0].default = ${args.radius}; _pr[0].val = ${args.radius}; _pr[0].normMin = 1; _pr[0].normMax = 12`,
+        `    if not hasattr(_parent.par, _prefix + 'Smoothness'):`,
+        `        _ps = _page.appendFloat(_prefix + 'Smoothness'); _ps[0].default = ${args.smoothness}; _ps[0].val = ${args.smoothness}; _ps[0].normMin = 0; _ps[0].normMax = 1`,
+        `    if not hasattr(_parent.par, _prefix + 'Strength'):`,
+        `        _pst = _page.appendFloat(_prefix + 'Strength'); _pst[0].default = ${args.strength}; _pst[0].val = ${args.strength}; _pst[0].normMin = 0; _pst[0].normMax = 1`,
         "except Exception:",
         "    pass",
-        // Vector-page uniforms.
+        // Vector-page uniforms — expressions reference the namespaced parent params.
         "_g.seq.vec.numBlocks = max(_g.seq.vec.numBlocks, 5)",
         `_g.par.vec0name = 'uMode'`,
         `_g.par.vec0valuex = ${modeInt}`,
         `_g.par.vec1name = 'uSectors'`,
         `_g.par.vec1valuex = ${args.sectors}`,
         `_g.par.vec2name = 'uRadius'`,
-        `_g.par.vec2valuex.expr = ${q(`(parent().par.Radius.eval() if hasattr(parent().par, 'Radius') else ${args.radius})`)}`,
+        `_g.par.vec2valuex.expr = ${q(`(parent().par.${prefix}Radius.eval() if hasattr(parent().par, '${prefix}Radius') else ${args.radius})`)}`,
         `_g.par.vec2valuex.mode = type(_g.par.vec2valuex.mode).EXPRESSION`,
         `_g.par.vec3name = 'uSmoothness'`,
-        `_g.par.vec3valuex.expr = ${q(`(parent().par.Smoothness.eval() if hasattr(parent().par, 'Smoothness') else ${args.smoothness})`)}`,
+        `_g.par.vec3valuex.expr = ${q(`(parent().par.${prefix}Smoothness.eval() if hasattr(parent().par, '${prefix}Smoothness') else ${args.smoothness})`)}`,
         `_g.par.vec3valuex.mode = type(_g.par.vec3valuex.mode).EXPRESSION`,
         `_g.par.vec4name = 'uStrength'`,
-        `_g.par.vec4valuex.expr = ${q(`(parent().par.Strength.eval() if hasattr(parent().par, 'Strength') else ${args.strength})`)}`,
+        `_g.par.vec4valuex.expr = ${q(`(parent().par.${prefix}Strength.eval() if hasattr(parent().par, '${prefix}Strength') else ${args.strength})`)}`,
         `_g.par.vec4valuex.mode = type(_g.par.vec4valuex.mode).EXPRESSION`,
       ].join("\n");
 
@@ -265,7 +277,7 @@ export async function createNprFilterImpl(ctx: ToolContext, args: CreateNprFilte
         output_path: out.path,
         frag_dat: frag.path,
         source_select: select.path,
-        controls: ["Radius", "Smoothness", "Strength"] as const,
+        controls: [`${prefix}Radius`, `${prefix}Smoothness`, `${prefix}Strength`],
         mode: args.mode,
         sectors: args.sectors,
         radius: args.radius,
