@@ -13,11 +13,12 @@ rough, and what's coming next** on the way to a stable 1.0.
 **Where things stand today.** The latest public release is **v0.6.1** — on
 [npm](https://www.npmjs.com/package/@dpantani/tdmcp) and
 [GitHub](https://github.com/Pantani/tdmcp) — exposing **179 tools**. `main` is
-ahead of that release: the package manifests are on the **v0.7.0** line and the
-BEYOND campaign has landed through Waves 1-5, bringing the generated Tools
-reference to **243 tools**. There is no public `v0.7.x` tag, GitHub Release or
-npm publish yet, so read the 0.7.x sections below as **merged on `main`,
-pending release**.
+ahead of that release: the package manifests are on the **v0.8.0** line. The
+BEYOND campaign landed through Waves 1-5 (v0.7.x), and the **Ingest & extend**
+campaign has now landed both **Wave 1** and **Wave 2** (v0.8.0), bringing the
+generated Tools reference to **257 tools**. There is no public `v0.7.x` or
+`v0.8.0` tag, GitHub Release or npm publish yet, so read the 0.7.x / 0.8.x
+sections below as **merged on `main`, pending release**.
 
 The project has grown through five arcs:
 
@@ -31,9 +32,10 @@ The project has grown through five arcs:
 4. **Compose & automate** *(merged on `main`, pending release)* — run a whole
    arranged show over time, with timelines, setlists, schedulers, cue composition
    and live-safety controls.
-5. **Ingest & extend** *(next)* — pull in the wider TouchDesigner world
-   (Shadertoy / ISF shaders, Ableton, the iconic VJ looks) and finish the last
-   operator/deployment ergonomics.
+5. **Ingest & extend** *(in flight on `main`, pending release)* — pull in the
+   wider TouchDesigner world (Shadertoy / ISF shaders, Ableton, the iconic VJ
+   looks) and finish the last operator/deployment ergonomics. Waves 1 and 2 have
+   landed on `main`; Wave 3 (AI deepening + library publishing) is planned next.
 
 > **How to read this page**
 >
@@ -97,6 +99,30 @@ release is cut.
   `enhance_build`, `create_growth_system`, `run_macro_script`,
   `tdmcp-agent log-tail`, `record-fixtures`, `fanout`, `controller-bridge`,
   and `voice` / `llm-voice`.
+
+### v0.8.0 — Ingest & extend (Waves 1 & 2) · main line, not yet public
+
+The Ingest & Extend campaign opened the next minor line. Two waves shipped on
+`main` (commits `828228f4` and `736dda37`); tool registry grew from 243 → 257.
+
+- **Wave 1 / v0.8.0 — ecosystem on-ramp + signature looks (✅ shipped on `main`).**
+  Shared `foundation_glsl_top_mapping` (preamble injection, ISF INPUTS →
+  custom-page mapping) plus the importers and signature looks it unlocks:
+  `import_shadertoy`, `import_isf_shader`, `create_fluid_sim`,
+  `image_to_particles`, `create_dither`, `create_jfa_voronoi`.
+- **Wave 2 / v0.8.0 — external inputs + color-finish + rehearsal (🚧 merged on `main`).**
+  `apply_lut` (OCIO / image-lookup / .cube fallback), `create_video_scopes`
+  (waveform / RGB parade / vectorscope — histogram deferred, TD 099 lacks
+  `histogramCHOP`), `setup_tdableton` (Palette probe + OSC synthetic fallback),
+  `create_chop_recorder`, `create_flow_abstraction` (ETF→FDoG painterly),
+  `create_npr_filter` (Kuwahara oil/pencil/watercolor — also three new
+  `apply_post_processing` mode keys), and `post_passes_3d` (SSAO / SSR / DOF /
+  motion-blur for 3D scenes — `apply_post_processing` now redirects 3D-only mode
+  callers here with a friendly error).
+- **Wave 2 experimental — `create_data_source_http_ws`** *(🧪 experimental — known fatal).*
+  HTTP-poll path raises `TypeError: must be real number, not str` after node
+  creation; network still builds but the tool reports `status: "fatal"`. Shipped
+  discoverable for parity with the rest of the wave; **tracked for v0.8.1**.
 
 ## ✅ Published releases
 
@@ -250,25 +276,28 @@ Before the next roadmap wave, the repo needs the release surface to catch up wit
 and verify npm. This is a release-management step rather than a feature wave,
 but it is the highest-priority status gap in the project right now.
 
-### Milestone 2 — Plug into the ecosystem & the iconic looks · ~v0.9.0
+### Milestone 2 — Plug into the ecosystem & the iconic looks · ~v0.8.0–v0.9.0
 
-*A wide, mostly independent content wave — ideal to build side by side.*
+*A wide, mostly independent content wave. **Waves 1 and 2 have shipped on `main`
+(v0.8.0)**; the remaining ~v0.9.0 work is mostly color-finish polish and the
+HTTP/WS data-source fix.*
 
-- **Ecosystem importers** *(share the GLSL-TOP mapping layer → build together)* —
-  **`import_shadertoy`** (the largest shader corpus on earth, translated on demand)
-  and **`import_isf_shader`** (the cross-VJ ISF standard, with an auto-generated
-  control panel).
-- **External inputs** — **`setup_tdableton`** (react to the whole Ableton set, not
-  just the Link clock) and **HTTP / WebSocket data sources** for web APIs and local
-  AI image servers.
-- **The signature looks** *(all independent → parallel)* — **`create_fluid_sim`**
-  (real 2D ink/dye/smoke), **`image_to_particles`**, **`create_dither`** (1-bit
-  retro), **`create_jfa_voronoi`** (stained-glass), **`create_npr_filter`**
-  (oil/pencil), **`create_flow_abstraction`** (painterly), and a **color-finish
-  suite** (LUTs + color wheels/curves + video scopes).
-- **Rehearsal & deeper reactivity** — **`create_chop_recorder`** (record / loop /
-  replay any reactive signal), plus live tuning for the chroma /
-  percussive-vs-tonal / song-structure tools already merged on `main`.
+- ✅ **Ecosystem importers** *(shipped v0.8.0 Wave 1)* — **`import_shadertoy`**
+  and **`import_isf_shader`** both on the shared GLSL-TOP mapping layer.
+- ✅ **The signature looks** *(shipped v0.8.0 Wave 1)* — **`create_fluid_sim`**,
+  **`image_to_particles`**, **`create_dither`**, **`create_jfa_voronoi`**.
+  *(shipped v0.8.0 Wave 2)* — **`create_npr_filter`** (Kuwahara),
+  **`create_flow_abstraction`** (painterly).
+- ✅ **External inputs — Ableton** *(shipped v0.8.0 Wave 2)* — **`setup_tdableton`**
+  (Palette probe + OSC fallback). 🧪 **HTTP/WebSocket data sources** shipped but
+  the http_poll path errors — tracked for v0.8.1.
+- ✅ **Rehearsal & deeper reactivity** *(shipped v0.8.0 Wave 2)* —
+  **`create_chop_recorder`** (record / loop / replay any reactive signal). Live
+  tuning for the chroma / percussive-vs-tonal / song-structure tools already
+  merged on `main` is still ⬜ planned.
+- ✅ **Color-finish — Part 1** *(shipped v0.8.0 Wave 2)* — **`apply_lut`** and
+  **`create_video_scopes`** (waveform / parade / vectorscope). ⬜ **Color wheels
+  / curves** and the deferred **histogram** scope panel remain planned.
 
 ### Milestone 3 — Smarter assistance & library publishing · ~v0.9.0
 
@@ -638,8 +667,8 @@ iconic looks**, and an **artist-publishing layer**. **Source codes:**
 |---|---|---|---|---|---|---|---|---|
 | `import_shadertoy` | EX-01 | Paste a Shadertoy URL/code → wired GLSL TOP (map iTime/iResolution/iMouse/iChannel) | M | High | High | P0 | ✅ shipped (v0.8.0) | aw-cre, aw-int (ShaderToyTD) |
 | `import_isf_shader` | EX-02 | Parse ISF JSON header → GLSL TOP + auto custom-param page | M | High | High | P0 | ✅ shipped (v0.8.0) | aw-int, aw-cre (isf-touchdesigner, MIT) |
-| `setup_tdableton` | EX-03 | Ableton clips/tracks/devices/transport over OSC → named CHOPs | M | High | High | P0 | NEW | aw-int (TDAbleton docs), alltd |
-| `create_data_source` HTTP/WS | EX-04 | HTTP-request + WebSocket data modes (AI servers + web APIs) | M | Med-Hi | High | P1 | EXTENSION (planned MQTT/WS) | aw-int |
+| `setup_tdableton` | EX-03 | Ableton clips/tracks/devices/transport over OSC → named CHOPs | M | High | High | P0 | ✅ shipped (v0.8.0) | aw-int (TDAbleton docs), alltd |
+| `create_data_source_http_ws` | EX-04 | HTTP-request + WebSocket data modes (AI servers + web APIs) | M | Med-Hi | High | P1 | 🧪 shipped experimental (v0.8.0 — http_poll TypeError, tracked v0.8.1) | aw-int |
 | `create_fixture_control` + 3D previz | EX-45 | Moving-head pan/tilt/dimmer/gobo via DMX + 3D rig preview | M | High | Med | P1 | NEW (builds planned DMX pipeline) | alltd, GeoPix, aw-cre |
 | `create_machine_sync` | EX-08 | Sync + Touch In/Out genlock + CHOP/DAT/TOP across machines | M | High | Med | P1 | NEW | alltd · probe ≥2 machines |
 | `create_detection_reactive` (YOLO) | EX-05 | Object/person presence/count → params (ONNX/WS, no CUDA) | M | Med | Med | P1 | NEW | aw-int (TDYolo, MIT) |
@@ -658,14 +687,14 @@ iconic looks**, and an **artist-publishing layer**. **Source codes:**
 |---|---|---|---|---|---|---|---|---|
 | `create_fluid_sim` | EX-15 | Own-GLSL 2D Navier-Stokes ink/dye/smoke (advection/vorticity/buoyancy) | M–L | High | High | P0 | ✅ shipped (v0.8.0) | aw-int (touchFluid MIT), aw-cre, alltd |
 | `image_to_particles` / `mesh_to_particles` | EX-26 | Any image/logo/mesh → controllable particle cloud (+ source mode on gpu_particle_field) | M | High | High | P0 | ✅ shipped (v0.8.0, image mode) | anya, aw-cre |
-| Color-finish suite | EX-47/46 | `apply_lut` (.cube/OCIO) + color wheels/curves + `create_video_scopes` | M | High | High | P0 | NEW/ENH | alltd, aw-cre |
-| `create_chop_recorder` / `record_osc` | EX-39 | Record/replay/loop any reactive signal (audio/pose/MIDI/OSC) | M | High | High | P1 | NEW | aw-cre (GPL idea-only), alltd |
-| `create_flow_abstraction` | EX-16 | Painterly/comic coherent-line filter on live camera | M | Med-Hi | High | P1 | NEW | aw-int, aw-cre (GPL idea-only) |
+| Color-finish suite | EX-47/46 | `apply_lut` (.cube/OCIO) + color wheels/curves + `create_video_scopes` | M | High | High | P0 | ✅ shipped (v0.8.0 — `apply_lut` + `create_video_scopes`; color wheels still planned) | alltd, aw-cre |
+| `create_chop_recorder` / `record_osc` | EX-39 | Record/replay/loop any reactive signal (audio/pose/MIDI/OSC) | M | High | High | P1 | ✅ shipped (v0.8.0) | aw-cre (GPL idea-only), alltd |
+| `create_flow_abstraction` | EX-16 | Painterly/comic coherent-line filter on live camera | M | Med-Hi | High | P1 | ✅ shipped (v0.8.0) | aw-int, aw-cre (GPL idea-only) |
 | MediaPipe face/hand/segmentation | EX-34 | Finger-gesture + face + selfie-segmentation on the in-tree engine | M | High | Med | P1 | ENH | aw-int (mediapipe-td, MIT) |
 | `create_interaction_zones` + optical-flow trigger | EX-36 | Camera/pose enter/exit/dwell zones fire cues (no depth-cam) | M | Med-Hi | High | P1 | NEW | alltd |
 | `create_dither` | EX-18 | Ordered 1-bit/retro dither (Bayer, gameboy, low-palette) | S–M | Med | High | P1 | ✅ shipped (v0.8.0) | aw-cre |
 | `create_jfa_voronoi` | EX-19 | Jump-flood Voronoi → mosaic/stained-glass | M | Med | High | P1 | ✅ shipped (v0.8.0) | aw-int, aw-cre (TD_Voronoi MIT) |
-| `create_npr_filter` (Kuwahara) | EX-17 | Oil-paint / pencil / watercolor non-photoreal filters | M | Med | High | P1 | NEW | aw-cre (chungbwc) |
+| `create_npr_filter` (Kuwahara) | EX-17 | Oil-paint / pencil / watercolor non-photoreal filters | M | Med | High | P1 | ✅ shipped (v0.8.0 — also `apply_post_processing` mode keys) | aw-cre (chungbwc) |
 | `controlled_disorder_grid` | EX-27 | Grid of quads/lines with a tunable order↔chaos `disorder` knob | M | Med-Hi | High | P1 | NEW | anya, aw-cre · name generically |
 | `create_terrain` | EX-29 | Heightmap landscape + PBR splat + water + volumetric fog | L | Med | Med | P1 | NEW | aw-int, aw-cre (Terrain-Tools MIT) |
 | `create_l_system` + `create_asemic_writing` | EX-28 | Lindenmayer branching geometry + procedural glyph strokes | M–L | Med | Med | P1 | NEW | aw-cre, anya |
@@ -693,7 +722,7 @@ iconic looks**, and an **artist-publishing layer**. **Source codes:**
 
 | Feature | EX | Delivers | Eff | Impact | Conf | Pri | Status | Source(s) |
 |---|---|---|---|---|---|---|---|---|
-| 3D post passes (SSAO/SSR/DOF/motion-blur) | EX-22 | Screen-space AO/reflections/DOF/motion-blur on `apply_post_processing` | M | Med-Hi | High | P1 | ENH | aw-int, aw-cre (PostEffects MIT) |
+| `post_passes_3d` (SSAO/SSR/DOF/motion-blur) | EX-22 | Screen-space AO/reflections/DOF/motion-blur for 3D scenes | M | Med-Hi | High | P1 | ✅ shipped (v0.8.0 — standalone L2 tool; `apply_post_processing` redirects 3D modes here) | aw-int, aw-cre (PostEffects MIT) |
 | `swap_operator` | EX-50 | Replace an op's type while preserving wires + params | S–M | Med | High | P1 | NEW | aw-int (FunctionStore MIT) |
 | `create_raymarch_scene` → SDF expr-graph | EX-51 | Compose SDF primitives/booleans/domain-ops → one GLSL | L | Med-Hi | Med | P1 | ENH | aw-int, aw-cre (RayTK CC-BY) |
 | `complete_python_at` | EX-52 | Valid op paths/params/channels from the live graph for the LLM | S–M | Med | Med | P2 | NEW | aw-int, aw-cre |
