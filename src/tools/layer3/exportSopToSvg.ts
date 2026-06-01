@@ -32,7 +32,9 @@ export const exportSopToSvgSchema = z.object({
   output_path: z
     .string()
     .optional()
-    .describe("Absolute filesystem path to write the SVG to. Omit to only return it inline."),
+    .describe(
+      "Filesystem path to write the SVG to. Absolute is recommended; relative paths are resolved against the server's current working directory. Omit to only return the SVG inline.",
+    ),
   stroke_color: cssColorSchema
     .default("#000000")
     .describe(

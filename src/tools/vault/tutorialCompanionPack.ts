@@ -7,7 +7,8 @@ import { requireVault } from "./shared.js";
 /**
  * `tutorial_companion_pack` — scaffold a teaching/selling companion for a build:
  * a Markdown lesson plan + annotated topology snapshot + previews of any output
- * TOPs found inside the COMP. Writes into `<vault>/Tutorials/<slug>/` with:
+ * TOPs found inside the COMP. Writes into `<vault>/<folder>/<slug>/` (folder
+ * defaults to "Tutorials" but is user-configurable via the `folder` arg) with:
  *   - tutorial.md (steps + node list + embedded preview links)
  *   - topology.json (full node/connection dump from get_network_topology)
  *   - previews/*.png (per-output-TOP base64 PNG decoded to disk)

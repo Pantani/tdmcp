@@ -72,7 +72,7 @@ export const createPopGeometrySchema = z.object({
     .boolean()
     .default(true)
     .describe(
-      "When true (default), expose live NoiseAmount + NoisePeriod + RotateY knobs on the container.",
+      "When true (default), expose live knobs on the container: RotateY always, plus NoiseAmount + NoisePeriod only when noise_amount > 0 (otherwise the Noise SOP is omitted and exposing the knobs would be inert).",
     ),
   base_name: z
     .string()
@@ -232,7 +232,7 @@ export const registerCreatePopGeometry: ToolRegistrar = (server, ctx) => {
     {
       title: "Create POP geometry",
       description:
-        "Procedural Op Pattern (POP) geometry generator: build a SOP chain inside a Geometry COMP — primitive (box/sphere/tube/torus/grid/line/text) → Transform SOP (translate/rotate/scale) → optional Subdivide SOP → optional per-point Noise SOP displacement → Material SOP (Constant MAT) → Null SOP — then render through a Camera + Light + Render TOP to a Null TOP. Creates a new baseCOMP under `parent_path`. Exposes RotateY, NoiseAmount and NoisePeriod controls. Use build_sop_geometry for a fully declarative SOP chain without a render rig; use create_3d_scene for instanced primitives, create_pbr_scene for PBR shading.",
+        "Procedural Op Pattern (POP) geometry generator: build a SOP chain inside a Geometry COMP — primitive (box/sphere/tube/torus/grid/line/text) → Transform SOP (translate/rotate/scale) → optional Subdivide SOP → optional per-point Noise SOP displacement → Material SOP (Constant MAT) → Null SOP — then render through a Camera + Light + Render TOP to a Null TOP. Creates a new baseCOMP under `parent_path`. Exposes a RotateY control; NoiseAmount + NoisePeriod are exposed only when noise_amount > 0 (otherwise the Noise SOP is omitted and those knobs would be inert). Use build_sop_geometry for a fully declarative SOP chain without a render rig; use create_3d_scene for instanced primitives, create_pbr_scene for PBR shading.",
       inputSchema: createPopGeometrySchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
