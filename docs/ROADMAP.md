@@ -13,7 +13,7 @@ rough, and what's coming next** on the way to a stable 1.0.
 **Where things stand today.** The current public cut is **v0.7.1**, tagged and
 published on 2026-06-01, exposing **269 tools**. It keeps the full v0.7.0 release
 line intact (BEYOND Waves 1-5, Ingest & Extend Waves 1-3, and the
-`create_data_source_http_ws` hotfix) and adds the first operator-DX, local
+`create_data_source_http_ws` hotfix) and adds the first operator DX, local
 copilot, MCP-resource and bridge-health follow-through. The package manifests,
 changelog, docs and generated Tools reference all use **v0.7.1** as the release
 boundary.
@@ -92,7 +92,7 @@ copilot context, more MCP resources, and a small read-only runtime diagnostic.
   `whatwg-encoding` chain or the staged production-install `mute-stream`
   `EBADENGINE` warning fixed after v0.7.0.
 
-### v0.7.0 — BEYOND, Ingest & Extend, and operator-DX foundation
+### v0.7.0 — BEYOND, Ingest & Extend, and operator DX foundation
 
 v0.7.0 was one consolidated release train. It shipped the BEYOND campaign, the
 Ingest & Extend waves, the Wave-3 smarter-assistance/library-publishing work, and
@@ -138,10 +138,10 @@ the `create_data_source_http_ws` hotfix documented in `CHANGELOG.md`.
 
 **Smarter assistance, library publishing & operator DX.**
 
-The Wave-3 backlog of the Ingest-extend campaign shipped in v0.7.0. Sub-batch A
+The Wave-3 backlog of the Ingest & Extend campaign shipped in v0.7.0. Sub-batch A
 delivered 3 pure-Node library/publishing tools, sub-batch B shipped 6 TD-required
 AI/library tools, and sub-batch C closed the colour-finish polish while opening
-the Milestone-4 operator-DX lane.
+the Milestone-4 operator DX lane.
 
 Sub-batch A — pure-Node library/publishing:
 - ✅ **`tag_and_search_library`** — faceted browse + tag editing over the vault
