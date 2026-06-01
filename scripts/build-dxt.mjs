@@ -20,7 +20,15 @@
 // Usage:
 //   node scripts/build-dxt.mjs
 import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -89,6 +97,18 @@ function stageFiles(stageDir) {
   }
 }
 
+function productionInstallManifest() {
+  const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+  return {
+    name: pkg.name,
+    version: pkg.version,
+    type: pkg.type,
+    engines: pkg.engines,
+    dependencies: pkg.dependencies,
+    overrides: pkg.overrides,
+  };
+}
+
 /**
  * Stage a PRODUCTION-only node_modules into the bundle so the .mcpb stays small —
  * no dev tooling (TypeScript, Biome, Vitest) and no build-only data
@@ -98,7 +118,9 @@ function stageFiles(stageDir) {
  * produces a working — if larger — bundle.
  */
 function stageNodeModules(stageDir) {
-  cpSync(join(root, "package.json"), join(stageDir, "package.json"));
+  const stagedPackageJson = join(stageDir, "package.json");
+  const fullPackageJson = readFileSync(join(root, "package.json"), "utf8");
+  writeFileSync(stagedPackageJson, `${JSON.stringify(productionInstallManifest(), null, 2)}\n`);
   cpSync(join(root, "package-lock.json"), join(stageDir, "package-lock.json"));
   log("installing production dependencies into the bundle (npm ci --omit=dev)…");
   const res = spawnSync(
@@ -109,6 +131,7 @@ function stageNodeModules(stageDir) {
       stdio: "inherit",
     },
   );
+  writeFileSync(stagedPackageJson, fullPackageJson);
   if (res.status === 0 && existsSync(join(stageDir, "node_modules"))) return;
   log("prod-only install failed — copying the repo node_modules as a fallback (larger bundle).");
   cpSync(join(root, "node_modules"), join(stageDir, "node_modules"), { recursive: true });
