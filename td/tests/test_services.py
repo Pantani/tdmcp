@@ -16,6 +16,7 @@ import os
 import sys
 import types
 import unittest
+from datetime import datetime, timedelta, timezone
 from unittest import mock
 
 # --- Make the bridge importable without TouchDesigner --------------------------
@@ -240,7 +241,8 @@ class HealthTests(unittest.TestCase):
         self.assertRegex(result["timestamp"], r"^\d{4}-\d{2}-\d{2}T")
         self.assertGreaterEqual(result["uptime_seconds"], 0)
         self.assertFalse(result["heartbeat"]["stale"])
-        self.assertEqual(result["heartbeat"]["age_seconds"], 0)
+        self.assertGreaterEqual(result["heartbeat"]["age_seconds"], 0)
+        self.assertRegex(result["heartbeat"]["last_seen_at"], r"^\d{4}-\d{2}-\d{2}T")
         self.assertEqual(result["touchdesigner"]["td_version"], "2023.12000")
         self.assertEqual(result["touchdesigner"]["project"], "watchdog.toe")
         self.assertTrue(result["performance"]["available"])
@@ -266,6 +268,18 @@ class HealthTests(unittest.TestCase):
         self.assertIsNone(result["performance"]["dropped_frames"])
         self.assertIsNone(result["performance"]["gpu_memory_mb"])
         self.assertFalse(result["heartbeat"]["stale"])
+
+    def test_health_marks_stale_when_last_health_is_old(self):
+        old = datetime.now(timezone.utc) - timedelta(
+            seconds=api_service._HEARTBEAT_STALE_AFTER_SECONDS + 5
+        )
+        with mock.patch.object(api_service, "_LAST_HEALTH_AT", old):
+            result = api_service.get_health(_HealthWebServer())
+
+        self.assertTrue(result["heartbeat"]["stale"])
+        self.assertGreater(
+            result["heartbeat"]["age_seconds"], api_service._HEARTBEAT_STALE_AFTER_SECONDS
+        )
 
 
 if __name__ == "__main__":

@@ -24,6 +24,7 @@ project = td.project
 _TYPE_RE = re.compile(r"[A-Za-z][A-Za-z0-9_]*$")
 _STARTED_AT = datetime.now(timezone.utc)
 _STARTED_MONOTONIC = time.monotonic()
+_LAST_HEALTH_AT = _STARTED_AT
 _HEARTBEAT_STALE_AFTER_SECONDS = 10.0
 
 
@@ -405,8 +406,13 @@ def get_info():
 
 
 def get_health(webserver=None):
+    global _LAST_HEALTH_AT
     now = datetime.now(timezone.utc)
     timestamp = _iso_utc(now)
+    last_seen_at = _LAST_HEALTH_AT
+    heartbeat_age_seconds = round(max(0.0, (now - last_seen_at).total_seconds()), 3)
+    heartbeat_stale = heartbeat_age_seconds > _HEARTBEAT_STALE_AFTER_SECONDS
+    _LAST_HEALTH_AT = now
     info = _health_touchdesigner_info()
     performance = _health_performance(webserver)
     degraded_signals = []
@@ -427,9 +433,9 @@ def get_health(webserver=None):
         "started_at": _iso_utc(_STARTED_AT),
         "uptime_seconds": round(max(0.0, time.monotonic() - _STARTED_MONOTONIC), 3),
         "heartbeat": {
-            "last_seen_at": timestamp,
-            "age_seconds": 0,
-            "stale": False,
+            "last_seen_at": _iso_utc(last_seen_at),
+            "age_seconds": heartbeat_age_seconds,
+            "stale": heartbeat_stale,
             "stale_after_seconds": _HEARTBEAT_STALE_AFTER_SECONDS,
         },
         "touchdesigner": info,

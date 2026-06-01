@@ -10,7 +10,7 @@ export type LlmTier = (typeof LLM_TIER_VALUES)[number];
 export const DEFAULT_LLM_TIER: LlmTier = "standard";
 export const DEFAULT_LLM_MAX_STEPS = 8;
 export const DEFAULT_LLM_TEMPERATURE = 0.4;
-const MAX_LLM_MAX_STEPS = 32;
+export const MAX_LLM_MAX_STEPS = 32;
 const MAX_LLM_TEMPERATURE = 2;
 
 function sanitizeLlmTier(value: unknown): LlmTier | undefined {

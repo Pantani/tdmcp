@@ -21,6 +21,7 @@ import {
 import { RecipeLibrary } from "../../src/recipes/loader.js";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
 import type { ToolContext } from "../../src/tools/types.js";
+import { MAX_LLM_MAX_STEPS } from "../../src/utils/config.js";
 import { silentLogger } from "../../src/utils/logger.js";
 
 const makeCtx = (): ToolContext => ({
@@ -303,6 +304,36 @@ describe("local copilot — agent loop", () => {
     expect(calls).toBe(2);
     expect(messages.at(-1)?.content).toContain("maximum number of steps");
     expect(events.at(-1)).toEqual({ type: "answer", content: messages.at(-1)?.content });
+  });
+
+  it("caps programmatic maximum step overrides", async () => {
+    let calls = 0;
+    const client = {
+      chatStream: async () => {
+        calls += 1;
+        return {
+          role: "assistant",
+          content: null,
+          tool_calls: [
+            {
+              id: `c${calls}`,
+              type: "function",
+              function: { name: "get_td_classes", arguments: "{}" },
+            },
+          ],
+        };
+      },
+    } as unknown as LlmClient;
+
+    await runAgentTurn(
+      makeCtx(),
+      client,
+      [{ role: "user", content: "keep inspecting forever" }],
+      () => {},
+      { maxSteps: 10_000 },
+    );
+
+    expect(calls).toBe(MAX_LLM_MAX_STEPS);
   });
 
   it("injects the registered MCP prompt catalog into the system prompt", async () => {

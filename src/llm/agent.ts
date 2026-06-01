@@ -3,7 +3,7 @@ import {
   type PromptCatalogEntry,
 } from "../resources/promptCatalogResource.js";
 import type { ToolContext } from "../tools/types.js";
-import { DEFAULT_LLM_MAX_STEPS } from "../utils/config.js";
+import { DEFAULT_LLM_MAX_STEPS, MAX_LLM_MAX_STEPS } from "../utils/config.js";
 import type { ChatMessage, LlmClient } from "./client.js";
 import { dispatchTool, LLM_TOOLS, type LlmTool, toOpenAITools } from "./tools.js";
 
@@ -104,7 +104,7 @@ export async function runAgentTurn(
   const tools = toOpenAITools(toolset);
   const maxSteps =
     opts.maxSteps !== undefined && Number.isFinite(opts.maxSteps)
-      ? Math.max(1, Math.trunc(opts.maxSteps))
+      ? Math.min(MAX_LLM_MAX_STEPS, Math.max(1, Math.trunc(opts.maxSteps)))
       : DEFAULT_LLM_MAX_STEPS;
 
   for (let step = 0; step < maxSteps; step++) {

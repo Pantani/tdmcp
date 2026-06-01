@@ -258,7 +258,11 @@ export async function runChat(argv: string[] = [], deps: ChatRuntimeDeps = {}): 
 
   writeStdout(`\n  tdmcp local copilot → ${handle.url}\n`);
   writeStdout(`  model: ${config.llmModel}  ·  endpoint: ${config.llmBaseUrl}\n`);
-  writeStdout(`  tier: ${config.llmTier}  ·  temperature: ${config.llmTemperature}\n`);
+  writeStdout(
+    `  tier: ${config.llmTier}  ·  temperature: ${
+      config.llmTemperature ?? DEFAULT_LLM_TEMPERATURE
+    }\n`,
+  );
   if (!health.ok) {
     writeStdout(
       `\n  ⚠ LLM endpoint unreachable (${health.detail}).\n` +
@@ -279,6 +283,8 @@ export async function runChat(argv: string[] = [], deps: ChatRuntimeDeps = {}): 
 
   await new Promise<void>((resolve) => {
     const stop = () => {
+      process.off("SIGINT", stop);
+      process.off("SIGTERM", stop);
       void handle.close().finally(() => resolve());
     };
     process.once("SIGINT", stop);

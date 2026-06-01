@@ -11,7 +11,7 @@ import { resolveRequestedTier } from "../../src/llm/server.js";
 import { RecipeLibrary } from "../../src/recipes/loader.js";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
 import type { ToolContext } from "../../src/tools/types.js";
-import { loadConfig } from "../../src/utils/config.js";
+import { DEFAULT_LLM_TEMPERATURE, loadConfig } from "../../src/utils/config.js";
 import { silentLogger } from "../../src/utils/logger.js";
 
 const makeCtx = (): ToolContext => ({
@@ -162,5 +162,44 @@ describe("tdmcp chat CLI flags", () => {
     );
     expect(stdout).toBe("Loaded venue config.\n");
     expect(seen.messages?.some((message) => message.content === "Use the venue model")).toBe(true);
+  });
+
+  it("prints the default temperature when the runtime config omits one", async () => {
+    const ensure = vi.fn(async () => true);
+    const close = vi.fn(async () => {});
+    let stdout = "";
+
+    const run = runChat(["--no-open", "--no-ollama"], {
+      loadConfig: () =>
+        ({
+          ...loadConfig({}),
+          llmTemperature: undefined,
+        }) as unknown as ReturnType<typeof loadConfig>,
+      createLogger: () => silentLogger,
+      buildToolContext: () => makeCtx(),
+      createClient: () =>
+        ({
+          health: vi.fn(async () => ({ ok: true, modelReady: true, detail: "ready" })),
+        }) as unknown as LlmClient,
+      startChatServer: vi.fn(async () => ({
+        url: "http://127.0.0.1:4141",
+        port: 4141,
+        close,
+      })),
+      ensureOllamaUp: ensure,
+      writeStdout: (chunk) => {
+        stdout += chunk;
+      },
+    });
+
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      if (stdout.includes(`temperature: ${DEFAULT_LLM_TEMPERATURE}`)) break;
+      await Promise.resolve();
+    }
+    expect(stdout).toContain(`temperature: ${DEFAULT_LLM_TEMPERATURE}`);
+    process.emit("SIGINT");
+    await run;
+
+    expect(close).toHaveBeenCalledOnce();
   });
 });

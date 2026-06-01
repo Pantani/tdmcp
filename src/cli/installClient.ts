@@ -148,7 +148,6 @@ export async function writeInstallClientConfig(
   const merged = deepMergeConfig(existing, installClientConfig(client));
   const serialized = `${JSON.stringify(merged, null, 2)}\n`;
 
-  JSON.parse(serialized);
   await mkdir(dirname(configPath), { recursive: true });
   await writeFile(configPath, serialized, "utf8");
 
