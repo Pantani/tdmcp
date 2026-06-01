@@ -34,21 +34,17 @@ describe("install-client CLI", () => {
     expect(printed.mcpServers.tdmcp.command).toBe("tdmcp");
   });
 
-  it("uses the Codex snake_case MCP server shape", () => {
-    expect(installClientSnippet("codex")).toEqual({
-      client: "codex",
-      mcp_servers: {
-        tdmcp: {
-          command: "tdmcp",
-          args: [],
-          env: {
-            TDMCP_TD_HOST: "127.0.0.1",
-            TDMCP_TD_PORT: "9980",
-          },
-        },
-      },
-    });
-    expect(installClientSnippet("codex")).not.toHaveProperty("mcpServers");
+  it("prints Codex as a TOML config snippet", async () => {
+    const stdout = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+
+    await runInstallClient(["codex"]);
+
+    expect(stderr).not.toHaveBeenCalled();
+    expect(stdout).toHaveBeenCalledWith(expect.stringContaining("[mcp_servers.tdmcp]"));
+    expect(stdout).toHaveBeenCalledWith(expect.stringContaining('command = "tdmcp"'));
+    expect(stdout).toHaveBeenCalledWith(expect.stringContaining("[mcp_servers.tdmcp.env]"));
+    expect(installClientSnippet("codex")).toContain("[mcp_servers.tdmcp]");
   });
 
   it("deep-merges the selected client config without removing existing keys", async () => {
@@ -125,14 +121,55 @@ describe("install-client CLI", () => {
     });
   });
 
+  it("merges the Codex TOML config without removing unrelated sections", async () => {
+    const stdout = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    const configPath = await tempConfigPath(join("codex", "config.toml"));
+    await mkdir(dirname(configPath), { recursive: true });
+    await writeFile(
+      configPath,
+      [
+        'model = "gpt-5.3-codex"',
+        "",
+        "[mcp_servers.other]",
+        'command = "other"',
+        "",
+        "[mcp_servers.tdmcp]",
+        'command = "old-tdmcp"',
+        'args = ["--old"]',
+        "",
+        "[mcp_servers.tdmcp.env]",
+        'TDMCP_TD_HOST = "192.0.2.10"',
+        "",
+      ].join("\n"),
+    );
+
+    await runInstallClient(["codex", "--write", "--path", configPath]);
+    const firstWrite = await readFile(configPath, "utf8");
+    await runInstallClient(["codex", "--write", "--path", configPath]);
+    const secondWrite = await readFile(configPath, "utf8");
+
+    expect(stderr).not.toHaveBeenCalled();
+    expect(stdout).toHaveBeenCalledWith(`Wrote ${configPath}\n`);
+    expect(secondWrite).toBe(firstWrite);
+    expect(secondWrite).toContain('model = "gpt-5.3-codex"');
+    expect(secondWrite).toContain("[mcp_servers.other]");
+    expect(secondWrite).toContain("[mcp_servers.tdmcp]");
+    expect(secondWrite).toContain('command = "tdmcp"');
+    expect(secondWrite).toContain("[mcp_servers.tdmcp.env]");
+    expect(secondWrite).toContain('TDMCP_TD_HOST = "127.0.0.1"');
+    expect(secondWrite).not.toContain("old-tdmcp");
+    expect(secondWrite).not.toContain("192.0.2.10");
+  });
+
   it("fails clearly without destroying an invalid JSON config", async () => {
     const stdout = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
     const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
-    const configPath = await tempConfigPath(join("codex", "config.json"));
+    const configPath = await tempConfigPath(join("claude", "config.json"));
     await mkdir(dirname(configPath), { recursive: true });
     await writeFile(configPath, "{ invalid json");
 
-    await runInstallClient(["codex", "--write", "--path", configPath]);
+    await runInstallClient(["claude", "--write", "--path", configPath]);
 
     expect(stdout).not.toHaveBeenCalled();
     expect(stderr).toHaveBeenCalledWith(expect.stringContaining(`Invalid JSON in ${configPath}:`));

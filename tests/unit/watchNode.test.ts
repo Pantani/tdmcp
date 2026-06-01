@@ -88,6 +88,7 @@ describe("watchNodeImpl", () => {
 
     expect(result.isError).toBeFalsy();
     expect(exec).toHaveBeenCalledTimes(2);
+    expect(String(exec.mock.calls[0]?.[0])).not.toContain("* 1000.0");
 
     const data = dataOf(result) as {
       path: string;

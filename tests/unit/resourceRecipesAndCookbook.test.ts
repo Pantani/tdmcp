@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { RecipeLibrary } from "../../src/recipes/loader.js";
-import { readCookbookResource } from "../../src/resources/cookbookResource.js";
+import {
+  readCookbookResource,
+  registerCookbookResource,
+} from "../../src/resources/cookbookResource.js";
 import { searchRecipeSummaries } from "../../src/resources/recipeResource.js";
 
 describe("recipe search resource helpers", () => {
@@ -37,5 +40,42 @@ describe("cookbook resource helpers", () => {
     expect(result.locale).toBe("pt");
     expect(result.title.toLowerCase()).toContain("prompt");
     expect(result.text).toContain("tdmcp");
+  });
+
+  it("declares JSON mime types to match the returned cookbook payload", async () => {
+    const calls: Array<{
+      name: string;
+      metadata: { mimeType?: string };
+      handler: (
+        uri: URL,
+        variables?: Record<string, string>,
+      ) => Promise<{
+        contents: Array<{ mimeType?: string }>;
+      }>;
+    }> = [];
+    const server = {
+      registerResource: (
+        name: string,
+        _uriOrTemplate: unknown,
+        metadata: { mimeType?: string },
+        handler: (
+          uri: URL,
+          variables?: Record<string, string>,
+        ) => Promise<{
+          contents: Array<{ mimeType?: string }>;
+        }>,
+      ) => {
+        calls.push({ name, metadata, handler });
+      },
+    };
+
+    registerCookbookResource(server as never, {} as never);
+
+    expect(calls.map((call) => call.metadata.mimeType)).toEqual([
+      "application/json",
+      "application/json",
+    ]);
+    const result = await calls[0]?.handler(new URL("tdmcp://cookbook"));
+    expect(result?.contents[0]?.mimeType).toBe("application/json");
   });
 });

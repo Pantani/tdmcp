@@ -36,12 +36,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   attributes/channels fail forward as warnings so the diagnostic loop stays useful
   across TD builds. Tool registry: 268 → 269.
 - **Roadmap CLI/DX follow-through:** `tdmcp install-client --write --path <file>`
-  now deep-merges and verifies explicit client JSON config files; `tdmcp serve --http [--port]`
-  starts loopback Streamable HTTP without changing bare `tdmcp` stdio defaults;
-  `tdmcp-agent --output table|csv` renders list results for shell
-  use; the REPL has persistent history + Tab completion; and `tdmcp-agent watch`
-  gained `--pretty`, event counts, `--heartbeat-ms`, and `--on <events> --exec
-  <cmd> --debounce-ms <ms>` hooks for reactive local scripts.
+  now deep-merges and verifies explicit client config files (JSON for
+  Claude/Cursor, TOML for Codex); `tdmcp serve --http [--port]` starts loopback
+  Streamable HTTP without changing bare `tdmcp` stdio defaults;
+  `tdmcp-agent --output table|csv` renders list results for shell use; the REPL
+  has persistent history + Tab completion; and `tdmcp-agent watch` gained
+  `--pretty`, event counts, `--heartbeat-ms`, and exec hooks (`--on <events>`,
+  `--exec <cmd>`, `--debounce-ms <ms>`) for reactive local scripts.
 - **Local copilot CLI flags:** `tdmcp chat --read-only` locks browser/API turns
   to the safe tool tier, `--creative` selects the creative tier with a warmer
   sampling preset, `--prompt <text>` runs a headless one-shot answer without

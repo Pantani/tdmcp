@@ -18,7 +18,7 @@ The package installs two binaries: `tdmcp` (the MCP server + utilities) and
 | `tdmcp --help` | Print top-level usage without starting the MCP server. |
 | `tdmcp chat` _(alias `tdmcp llm-run`)_ | Start the local LLM copilot UI (see below). |
 | `tdmcp install-bridge` | Stage the TouchDesigner bridge to `~/tdmcp-bridge` and print the one line to paste into TD's Textport. Add `--verify` to check `/api/info` once, `--wait` to poll until it is up, and `--port <port>` for non-default bridges. See [Bridge & REST API](/reference/bridge-api). |
-| `tdmcp install-client <claude\|codex\|cursor>` | Print a client-specific MCP config snippet for the current package. Add `--write --path <file>` to deep-merge and verify an explicit JSON client config file. |
+| `tdmcp install-client <claude\|codex\|cursor>` | Print a client-specific MCP config snippet for the current package. Add `--write --path <file>` to deep-merge and verify an explicit client config file (JSON for Claude/Cursor, TOML for Codex). |
 | `tdmcp --version` | Print the package version. |
 | `tdmcp search/list/info/install/uninstall/doctor/packages path` | Manage TouchDesigner community packages. See [Package manager](/reference/packages). |
 

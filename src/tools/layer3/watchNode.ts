@@ -121,10 +121,7 @@ try:
             try:
                 _v = getattr(_o, _attr, None)
                 if _v is not None:
-                    _vv = _cast(_v)
-                    if _key == "cook_time_ms":
-                        _vv = _vv * 1000.0
-                    report["state"][_key] = _vv
+                    report["state"][_key] = _cast(_v)
             except Exception:
                 pass
 

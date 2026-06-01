@@ -61,6 +61,7 @@ function erroredText(): string {
 }
 
 beforeEach(() => {
+  vi.clearAllMocks();
   mocks.bridgeModulesDir.mockReturnValue("/pkg/td/modules");
   mocks.existsSync.mockReturnValue(true);
   mocks.homedir.mockReturnValue("/home/artist");
@@ -109,6 +110,9 @@ describe("install-bridge CLI", () => {
     await runInstallBridge(["--verify", "--port", "12001"]);
 
     expect(fetchUrl(fetchImpl)).toBe("http://127.0.0.1:12001/api/info");
+    expect(loggedText()).toContain("install.run(port=12001)");
+    expect(loggedText()).toContain("bridge running on port 12001");
+    expect(loggedText()).toContain("firewall port 12001");
     expect(mocks.cpSync).toHaveBeenCalledWith(
       "/pkg/td/modules",
       "/home/artist/tdmcp-bridge/modules",
@@ -117,6 +121,18 @@ describe("install-bridge CLI", () => {
       },
     );
     expect(process.exitCode).toBeUndefined();
+  });
+
+  it("rejects --dir without a path", async () => {
+    const fetchImpl = vi.fn();
+    vi.stubGlobal("fetch", fetchImpl);
+
+    await runInstallBridge(["--dir", "--verify"]);
+
+    expect(mocks.cpSync).not.toHaveBeenCalled();
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(erroredText()).toContain("Missing install-bridge --dir value");
+    expect(process.exitCode).toBe(2);
   });
 
   it("polls until the bridge responds when --wait is passed", async () => {

@@ -7,9 +7,8 @@ const CLIENTS = new Set<string>(SUPPORTED_CLIENTS);
 type Client = (typeof SUPPORTED_CLIENTS)[number];
 
 function tdmcpServerConfig(): object {
-  const command = "tdmcp";
   return {
-    command,
+    command: "tdmcp",
     args: [],
     env: {
       TDMCP_TD_HOST: "127.0.0.1",
@@ -26,7 +25,20 @@ function installClientConfig(client: string): Record<string, unknown> {
   return { mcpServers: { tdmcp: server } };
 }
 
-export function installClientSnippet(client: string): object {
+function codexTomlSnippet(): string {
+  return [
+    "[mcp_servers.tdmcp]",
+    'command = "tdmcp"',
+    "args = []",
+    "",
+    "[mcp_servers.tdmcp.env]",
+    'TDMCP_TD_HOST = "127.0.0.1"',
+    'TDMCP_TD_PORT = "9980"',
+  ].join("\n");
+}
+
+export function installClientSnippet(client: string): object | string {
+  if (client === "codex") return codexTomlSnippet();
   return { client, ...installClientConfig(client) };
 }
 
@@ -81,10 +93,57 @@ async function readExistingJsonConfig(configPath: string): Promise<Record<string
   return parsed;
 }
 
+async function readExistingTextConfig(configPath: string): Promise<string> {
+  try {
+    return await readFile(configPath, "utf8");
+  } catch (error) {
+    if (hasCode(error, "ENOENT")) return "";
+    throw new Error(`Failed to read ${configPath}: ${errorMessage(error)}`);
+  }
+}
+
+function tomlSectionName(line: string): string | undefined {
+  const match = line.trim().match(/^\[([^\]]+)\]$/);
+  return match?.[1]?.trim();
+}
+
+function withoutCodexTdmcpServer(raw: string): string {
+  const kept: string[] = [];
+  let skip = false;
+  for (const line of raw.split(/\r?\n/)) {
+    const section = tomlSectionName(line);
+    if (section !== undefined) {
+      skip = section === "mcp_servers.tdmcp" || section.startsWith("mcp_servers.tdmcp.");
+    }
+    if (!skip) kept.push(line);
+  }
+  return kept.join("\n").trimEnd();
+}
+
+async function writeCodexConfig(configPath: string): Promise<string> {
+  const existing = await readExistingTextConfig(configPath);
+  const preserved = withoutCodexTdmcpServer(existing);
+  const serialized = `${preserved ? `${preserved}\n\n` : ""}${codexTomlSnippet()}\n`;
+
+  await mkdir(dirname(configPath), { recursive: true });
+  await writeFile(configPath, serialized, "utf8");
+
+  const verified = await readFile(configPath, "utf8");
+  if (!verified.includes("[mcp_servers.tdmcp]")) {
+    throw new Error(`Failed to verify ${configPath}: missing [mcp_servers.tdmcp].`);
+  }
+  if (!verified.includes("[mcp_servers.tdmcp.env]")) {
+    throw new Error(`Failed to verify ${configPath}: missing [mcp_servers.tdmcp.env].`);
+  }
+  return verified;
+}
+
 export async function writeInstallClientConfig(
   client: Client,
   configPath: string,
-): Promise<Record<string, unknown>> {
+): Promise<Record<string, unknown> | string> {
+  if (client === "codex") return writeCodexConfig(configPath);
+
   const existing = await readExistingJsonConfig(configPath);
   const merged = deepMergeConfig(existing, installClientConfig(client));
   const serialized = `${JSON.stringify(merged, null, 2)}\n`;
@@ -104,7 +163,7 @@ const HELP = `tdmcp install-client <claude|codex|cursor> [--write --path <file>]
 
 Print a ready-to-paste MCP client configuration snippet for tdmcp ${getVersion()}.
 Without --write, this command only prints JSON and does not modify files.
-With --write, it deep-merges the client config into the explicit JSON file.`;
+With --write, it deep-merges Claude/Cursor JSON or Codex TOML into the explicit config file.`;
 
 type ParsedArgs =
   | { kind: "help" }
@@ -173,7 +232,10 @@ export async function runInstallClient(argv: string[] = []): Promise<void> {
   }
 
   if (!parsed.write) {
-    process.stdout.write(`${JSON.stringify(installClientSnippet(client), null, 2)}\n`);
+    const snippet = installClientSnippet(client);
+    process.stdout.write(
+      typeof snippet === "string" ? `${snippet}\n` : `${JSON.stringify(snippet, null, 2)}\n`,
+    );
     return;
   }
 

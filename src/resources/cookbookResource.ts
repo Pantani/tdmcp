@@ -57,7 +57,7 @@ export const registerCookbookResource: ResourceRegistrar = (server) => {
       title: "Prompt cookbook",
       description:
         "The English prompt cookbook as Markdown, exposed as a resource for agents that want worked examples before building.",
-      mimeType: "text/markdown",
+      mimeType: "application/json",
     },
     async (uri) => jsonContents(uri, readCookbookResource("en")),
   );
@@ -68,12 +68,12 @@ export const registerCookbookResource: ResourceRegistrar = (server) => {
         {
           uri: "tdmcp://cookbook/en",
           name: "Prompt cookbook (English)",
-          mimeType: "text/markdown",
+          mimeType: "application/json",
         },
         {
           uri: "tdmcp://cookbook/pt",
           name: "Prompt cookbook (Portuguese)",
-          mimeType: "text/markdown",
+          mimeType: "application/json",
         },
       ],
     }),
@@ -85,7 +85,7 @@ export const registerCookbookResource: ResourceRegistrar = (server) => {
     {
       title: "Localized prompt cookbook",
       description: "Read the prompt cookbook in English (`en`) or Portuguese (`pt`).",
-      mimeType: "text/markdown",
+      mimeType: "application/json",
     },
     async (uri, variables) => {
       const raw = firstVar(variables.locale).toLowerCase();

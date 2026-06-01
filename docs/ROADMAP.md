@@ -465,7 +465,7 @@ or partial work.
 
 | Feature | Delivers | Effort | Impact | Conf | Priority | Novelty | Probe-first |
 |---|---|---|---|---|---|---|---|
-| ✅ `install_client_writers` | `install-client --write` deep-merges + verifies the config | M | High | High | P1 | ROADMAP | implemented after v0.7.0; uses explicit `--path` / positional file path, preserving unrelated JSON keys |
+| ✅ `install_client_writers` | `install-client --write` deep-merges + verifies the config | M | High | High | P1 | ROADMAP | implemented after v0.7.0; explicit `--path` / positional path, preserving unrelated JSON/TOML keys |
 | `doctor_fix_autoexec` | `doctor --fix` executes safe repairs | M | High | High | P1 | ROADMAP | none |
 | ✅ `watch_exec_hook` | `watch --on beat --exec '<cmd>'` reactive engine | M | Med | High | P1 | ROADMAP | implemented after v0.7.0 with per-event `--debounce-ms` |
 | ✅ `tdmcp_top_level_help` | Real `tdmcp --help` on the primary binary | S | Med | High | P1 | NEW | landed on main after v0.7.0 |

@@ -46,8 +46,11 @@ export function runInstallBridge(args: string[]): Promise<void> | void {
 
   cpSync(src, dest, { recursive: true });
 
-  const oneLiner = "from mcp import install; install.run()";
-  const noPrefs = `import sys; sys.path.insert(0, ${JSON.stringify(dest)})\n${oneLiner.replace("install.run()", `install.run(modules_dir=${JSON.stringify(dest)})`)}`;
+  const oneLiner = `from mcp import install; ${installRunCall(options.port)}`;
+  const noPrefs = `import sys; sys.path.insert(0, ${JSON.stringify(dest)})\n${installRunCall(
+    options.port,
+    dest,
+  )}`;
 
   console.log(
     [
@@ -66,11 +69,11 @@ export function runInstallBridge(args: string[]): Promise<void> | void {
       "",
       `       ${oneLiner}`,
       "",
-      "  You should see: [tdmcp] bridge running on port 9980 (/project1/tdmcp_bridge)",
+      `  You should see: [tdmcp] bridge running on port ${options.port} (/project1/tdmcp_bridge)`,
       "",
       "  ⚠ Security: the bridge runs arbitrary Python inside TouchDesigner and the",
       "    Web Server DAT listens on all network interfaces with no auth. Only run it",
-      "    on a trusted network, or firewall port 9980 to localhost.",
+      `    on a trusted network, or firewall port ${options.port} to localhost.`,
       "",
       "  Prefer not to touch Preferences? Paste this in the Textport instead:",
       "",
@@ -87,8 +90,19 @@ export function runInstallBridge(args: string[]): Promise<void> | void {
 function parseInstallBridgeArgs(args: string[]): InstallBridgeOptions | undefined {
   const dirFlag = args.indexOf("--dir");
   const explicitDir = dirFlag !== -1 ? args[dirFlag + 1] : undefined;
+  if (dirFlag !== -1 && (!explicitDir || explicitDir.startsWith("-"))) {
+    console.error("[tdmcp] Missing install-bridge --dir value.");
+    process.exitCode = 2;
+    return undefined;
+  }
+
   const portFlag = args.indexOf("--port");
   const explicitPort = portFlag !== -1 ? args[portFlag + 1] : undefined;
+  if (portFlag !== -1 && (!explicitPort || explicitPort.startsWith("-"))) {
+    console.error("[tdmcp] Missing install-bridge --port value.");
+    process.exitCode = 2;
+    return undefined;
+  }
   const port = explicitPort === undefined ? DEFAULT_BRIDGE_PORT : Number(explicitPort);
 
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
@@ -105,6 +119,13 @@ function parseInstallBridgeArgs(args: string[]): InstallBridgeOptions | undefine
     wait: args.includes("--wait"),
     port,
   };
+}
+
+function installRunCall(port: number, modulesDir?: string): string {
+  const args: string[] = [];
+  if (modulesDir) args.push(`modules_dir=${JSON.stringify(modulesDir)}`);
+  if (port !== DEFAULT_BRIDGE_PORT) args.push(`port=${port}`);
+  return `install.run(${args.join(", ")})`;
 }
 
 async function verifyInstalledBridge(options: InstallBridgeOptions): Promise<void> {
