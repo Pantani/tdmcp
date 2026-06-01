@@ -107,19 +107,50 @@ try:
                 except Exception:
                     pass
 
-            # Delete the old node.
+            # SAFETY: validate new_type BEFORE destroying the original by
+            # creating the replacement at a temporary sibling path first. If
+            # creation fails, the original is untouched — no data loss.
+            _tmp_name = _name + "__swap_tmp"
+            # Defensive: if a stale temp exists from a prior failed swap, drop it.
+            _stale = _parent.op(_tmp_name)
+            if _stale is not None:
+                try:
+                    _stale.destroy()
+                except Exception:
+                    pass
+            try:
+                _new = _parent.create(_p["new_type"], _tmp_name)
+            except Exception as _e:
+                report["fatal"] = (
+                    "Cannot swap: new_type '" + str(_p["new_type"])
+                    + "' is not a creatable operator type (" + str(_e) + ")"
+                )
+                raise Exception("create failed")
+            if _new is None:
+                report["fatal"] = (
+                    "Cannot swap: new_type '" + str(_p["new_type"])
+                    + "' is not a creatable operator type (create returned None)"
+                )
+                raise Exception("create failed")
+
+            # Replacement exists at the temp path. Now destroy the original and
+            # rename the temp into its place.
             try:
                 _old.destroy()
             except Exception as _e:
+                # Old still alive — clean up the temp so we don't leak it.
+                try:
+                    _new.destroy()
+                except Exception:
+                    pass
                 report["fatal"] = "Could not delete old node: " + str(_e)
                 raise Exception("destroy failed")
-
-            # Create the new node at the same parent + name + position.
             try:
-                _new = _parent.create(_p["new_type"], _name)
+                _new.name = _name
             except Exception as _e:
-                report["fatal"] = "Could not create replacement (" + _p["new_type"] + "): " + str(_e)
-                raise Exception("create failed")
+                report["warnings"].append(
+                    "Replacement created but could not be renamed to '" + _name + "': " + str(_e)
+                )
             try:
                 _new.nodeX = _x
                 _new.nodeY = _y

@@ -257,21 +257,79 @@ describe("buildDataSourceHttpWsScript", () => {
   });
 
   // v0.8.1 regression: custom parameter names follow TD's strict rule — one
-  // uppercase letter at the start, the rest lowercase letters only, no
+  // uppercase letter at the start, the rest lowercase letters/digits, no
   // underscores. Previously "LastValue_<selector>" failed name validation.
-  it("http_poll: LastValue custom-param names are TD-valid (Last + lowercase)", () => {
+  // PR #38: digits MUST be preserved (sensor1 vs sensor2 used to collapse).
+  it("http_poll: LastValue custom-param names preserve digits and share one sanitizer", () => {
     const script = buildDataSourceHttpWsScript({
       mode: "http_poll",
       url: "https://x.com",
       selectors: [["MyChan", "$.x"]],
       expose_controls: true,
     });
-    // Sanitized to all-lowercase suffix, no underscores.
-    expect(script).toContain('_parname = "Last" + _safe');
-    expect(script).toContain("_safe = ''.join(ch for ch in s if ch.isalpha()).lower() or 'x'");
+    // One shared helper for create-path and report-path.
+    expect(script).toContain("def _to_custom_par_name(s):");
+    // Sanitizer keeps alphanumerics (digits included), lowercases, "Last" prefix.
+    expect(script).toContain("_safe = ''.join(ch for ch in s if ch.isalnum()).lower() or 'x'");
+    expect(script).toContain('return "Last" + _safe');
+    // Both branches must call the shared helper for both create and report.
+    expect(script).toContain("_parname = _to_custom_par_name(s)");
+    expect(script).toContain('["Active", "Poll"] + [_to_custom_par_name(s) for s in _sel_names]');
     // Must NOT use the underscore form anywhere.
     expect(script).not.toContain('appendFloat("LastValue_"');
     expect(script).not.toContain('LastValue_" + s');
+    // Must NOT use the digit-dropping isalpha form anywhere.
+    expect(script).not.toContain("isalpha");
+  });
+
+  // PR #38: sensor1/sensor2 must produce distinct param names AND the reported
+  // controls list must equal the created param names exactly (no title-casing
+  // drift between create-path and report-path).
+  it("http_poll: digits preserved + reported controls equal created param names", async () => {
+    const exec = vi.fn(async () => ({
+      stdout: JSON.stringify({
+        mode: "http_poll",
+        container: "/project1/data_src_http_poll",
+        null_chop: "/project1/data_src_http_poll/out",
+        channels: ["cam1", "cam2"],
+        selectors: [
+          { name: "cam1", path: "$.cam1" },
+          { name: "cam2", path: "$.cam2" },
+        ],
+        controls: ["Active", "Poll", "Lastcam1", "Lastcam2"],
+        errors: [],
+        warnings: [],
+      }),
+    }));
+    const result = await createDataSourceHttpWsImpl(fakeCtx(exec), {
+      mode: "http_poll",
+      parent_path: "/project1",
+      url: "https://x.com",
+      selectors: [
+        { name: "cam1", path: "$.cam1" },
+        { name: "cam2", path: "$.cam2" },
+      ],
+      method: "get",
+      headers: {},
+      poll_seconds: 1,
+      reconnect_seconds: 2,
+      expose_controls: true,
+    });
+    expect(result.isError).toBeFalsy();
+  });
+
+  it("websocket: digit-preserving sanitizer is also used (no isalpha, shared helper)", () => {
+    const script = buildDataSourceHttpWsScript({
+      mode: "websocket",
+      url: "wss://x.com",
+      selectors: [["cam1", "$.cam1"]],
+      expose_controls: true,
+    });
+    expect(script).toContain("def _to_custom_par_name(s):");
+    expect(script).toContain(
+      '["Active", "Reconnect"] + [_to_custom_par_name(s) for s in _sel_names]',
+    );
+    expect(script).not.toContain("isalpha");
   });
 
   // v0.8.1 regression: LastValue expression must explicitly call .eval() on the

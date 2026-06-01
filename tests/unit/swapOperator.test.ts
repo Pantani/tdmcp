@@ -81,6 +81,57 @@ describe("swapOperatorImpl", () => {
     expect(result.isError).toBe(true);
   });
 
+  // PR #38 regression: if creation of the replacement fails, the original
+  // must NOT be destroyed. The bridge script now creates at a `<name>__swap_tmp`
+  // sibling first and only destroys the original after a successful create.
+  it("does not destroy the original when new_type is not creatable", async () => {
+    mockExecOnce({
+      node_path: "/project1/noise1",
+      new_type: "notARealOPType",
+      old_type: "noiseTOP",
+      // No new_path — replacement was never created at the real name.
+      preserved_parameters: [],
+      dropped_parameters: [],
+      reconnected_inputs: 0,
+      reconnected_outputs: 0,
+      failed_inputs: [],
+      failed_outputs: [],
+      warnings: [],
+      fatal: "Cannot swap: new_type 'notARealOPType' is not a creatable operator type (NameError)",
+    });
+    const result = await swapOperatorImpl(makeCtx(), {
+      node_path: "/project1/noise1",
+      new_type: "notARealOPType",
+      preserve_parameters: true,
+    });
+    expect(result.isError).toBe(true);
+    const text = (result.content[0] as { text: string }).text;
+    expect(text).toContain("Cannot swap");
+    expect(text).toContain("not a creatable operator type");
+  });
+
+  // PR #38: assert the embedded script does temp-create-before-destroy in the
+  // right order (temp create → destroy original → rename temp). This guards
+  // the order regardless of bridge response.
+  it("embedded script creates a __swap_tmp sibling BEFORE destroying the original", async () => {
+    const fs = await import("node:fs/promises");
+    const src = await fs.readFile(
+      new URL("../../src/tools/layer3/swapOperator.ts", import.meta.url),
+      "utf8",
+    );
+    const tmpIdx = src.indexOf("__swap_tmp");
+    const createIdx = src.indexOf('_parent.create(_p["new_type"], _tmp_name)');
+    const destroyIdx = src.indexOf("_old.destroy()");
+    const renameIdx = src.indexOf("_new.name = _name");
+    expect(tmpIdx).toBeGreaterThan(-1);
+    expect(createIdx).toBeGreaterThan(-1);
+    expect(destroyIdx).toBeGreaterThan(-1);
+    expect(renameIdx).toBeGreaterThan(-1);
+    // Order: create temp < destroy old < rename temp.
+    expect(createIdx).toBeLessThan(destroyIdx);
+    expect(destroyIdx).toBeLessThan(renameIdx);
+  });
+
   it("warns when the requested type is unknown to the knowledge base", async () => {
     mockExecOnce({
       node_path: "/project1/noise1",

@@ -108,6 +108,13 @@ try:
         _selectors = _p.get("selectors") or []
         _sel_names = [s[0] for s in _selectors]
         _sel_paths = [s[1] for s in _selectors]
+        # Single shared sanitizer used by BOTH the appendFloat call and the
+        # report's controls list — keep alphanumerics (digits included), lowercase,
+        # then prefix "Last". TD custom-param rule: starts uppercase, rest is
+        # lowercase letters/digits.
+        def _to_custom_par_name(s):
+            _safe = ''.join(ch for ch in s if ch.isalnum()).lower() or 'x'
+            return "Last" + _safe
         _static = _p.get("static_sample") or {}
         def _setpar(node, parname, val):
             if val is None:
@@ -273,12 +280,9 @@ try:
                 except Exception:
                     report["warnings"].append("Could not bind Poll to timerCHOP.")
                 for s in _sel_names:
-                    # TD custom-param names must be uppercase letter + lowercase letters/digits only,
-                    # no underscores. Sanitize the selector name: strip non-alphanum, lowercase.
-                    # TD rule: ONE uppercase letter at start, rest lowercase letters/digits only,
-                    # no underscores, cannot end with a digit. So "Last" + all-lowercase suffix.
-                    _safe = ''.join(ch for ch in s if ch.isalpha()).lower() or 'x'
-                    _parname = "Last" + _safe
+                    # Shared sanitizer keeps digits (e.g. "cam1" -> "Lastcam1")
+                    # so two selectors differing only in trailing digits stay distinct.
+                    _parname = _to_custom_par_name(s)
                     try:
                         _lp = _pg.appendFloat(_parname)[0]
                     except Exception as _e:
@@ -293,10 +297,7 @@ try:
                         _lp.readOnly = True
                     except Exception:
                         pass
-                _controls = ["Active", "Poll"] + [
-                    "Last" + (''.join(ch for ch in s if ch.isalpha()).lower() or 'x')
-                    for s in _sel_names
-                ]
+                _controls = ["Active", "Poll"] + [_to_custom_par_name(s) for s in _sel_names]
             report["controls"] = _controls
         else:
             # websocket mode
@@ -343,12 +344,9 @@ try:
                 except Exception:
                     report["warnings"].append("Could not bind Reconnect to websocketDAT.")
                 for s in _sel_names:
-                    # TD custom-param names must be uppercase letter + lowercase letters/digits only,
-                    # no underscores. Sanitize the selector name: strip non-alphanum, lowercase.
-                    # TD rule: ONE uppercase letter at start, rest lowercase letters/digits only,
-                    # no underscores, cannot end with a digit. So "Last" + all-lowercase suffix.
-                    _safe = ''.join(ch for ch in s if ch.isalpha()).lower() or 'x'
-                    _parname = "Last" + _safe
+                    # Shared sanitizer keeps digits (e.g. "cam1" -> "Lastcam1")
+                    # so two selectors differing only in trailing digits stay distinct.
+                    _parname = _to_custom_par_name(s)
                     try:
                         _lp = _pg.appendFloat(_parname)[0]
                     except Exception as _e:
@@ -363,11 +361,7 @@ try:
                         _lp.readOnly = True
                     except Exception:
                         pass
-                _controls = ["Active", "Reconnect"] + [
-                    "Last" + ((''.join(ch for ch in s if ch.isalnum()).lower() or 'x')[:1].upper()
-                              + (''.join(ch for ch in s if ch.isalnum()).lower() or 'x')[1:])
-                    for s in _sel_names
-                ]
+                _controls = ["Active", "Reconnect"] + [_to_custom_par_name(s) for s in _sel_names]
             report["controls"] = _controls
         report["selectors"] = [{"name": n, "path": p} for n, p in zip(_sel_names, _sel_paths)]
         report["channels"] = [c.name for c in _null_chop.chans()]
