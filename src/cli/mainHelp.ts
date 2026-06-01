@@ -33,6 +33,14 @@ const TOP_LEVEL_COMPLETION_WORDS = [
   "--help",
 ];
 const PACKAGE_COMPLETION_WORDS = ["path", "--help", "-h"];
+const UNSUPPORTED_COMPLETION_SHELL_MESSAGE =
+  'Unsupported shell for completion. Use "bash", "zsh", or "fish".';
+
+export interface MainCompletionCommandResult {
+  stdout?: string;
+  stderr?: string;
+  exitCode?: number;
+}
 
 export function renderMainHelp(): string {
   return [
@@ -66,6 +74,14 @@ export function renderMainHelp(): string {
   ].join("\n");
 }
 
+export function renderMainCompletionHelp(): string {
+  return [
+    "Usage: tdmcp completion <bash|zsh|fish>",
+    "",
+    "Print a shell completion snippet for bash, zsh, or fish.",
+  ].join("\n");
+}
+
 export function renderMainCompletion(shell: string): string | undefined {
   const words = TOP_LEVEL_COMPLETION_WORDS.join(" ");
   if (shell === "bash") {
@@ -90,4 +106,17 @@ export function renderMainCompletion(shell: string): string | undefined {
     return [`complete -c tdmcp -f -a '${words}'`, ""].join("\n");
   }
   return undefined;
+}
+
+export function resolveMainCompletionCommand(
+  shell: string | undefined,
+): MainCompletionCommandResult {
+  if (!shell || shell === "--help" || shell === "-h") {
+    return { stdout: `${renderMainCompletionHelp()}\n` };
+  }
+  const script = renderMainCompletion(shell);
+  if (script) {
+    return { stdout: script };
+  }
+  return { stderr: `${UNSUPPORTED_COMPLETION_SHELL_MESSAGE}\n`, exitCode: 2 };
 }

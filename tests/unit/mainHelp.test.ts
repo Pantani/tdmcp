@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { renderMainCompletion, renderMainHelp } from "../../src/cli/mainHelp.js";
+import {
+  renderMainCompletion,
+  renderMainCompletionHelp,
+  renderMainHelp,
+  resolveMainCompletionCommand,
+} from "../../src/cli/mainHelp.js";
 
 describe("tdmcp top-level help", () => {
   it("documents the primary binary commands without starting the MCP server", () => {
@@ -33,6 +38,25 @@ describe("tdmcp top-level help", () => {
     expect(completion).toContain("--json");
   });
 
+  it("documents the completion subcommand help", () => {
+    const help = renderMainCompletionHelp();
+
+    expect(help).toContain("Usage: tdmcp completion <bash|zsh|fish>");
+    expect(help).toContain("bash");
+    expect(help).toContain("zsh");
+    expect(help).toContain("fish");
+  });
+
+  it("resolves completion help for help flags and omitted shells", () => {
+    for (const shell of [undefined, "--help", "-h"]) {
+      const result = resolveMainCompletionCommand(shell);
+
+      expect(result.stdout).toContain("Usage: tdmcp completion <bash|zsh|fish>");
+      expect(result.stderr).toBeUndefined();
+      expect(result.exitCode).toBeUndefined();
+    }
+  });
+
   it("does not suggest packages path as a fake top-level path command", () => {
     const completion = renderMainCompletion("bash");
     const wordLists = [...(completion?.matchAll(/compgen -W '([^']+)'/g) ?? [])].map(
@@ -55,5 +79,12 @@ describe("tdmcp top-level help", () => {
 
   it("returns undefined for unsupported completion shells", () => {
     expect(renderMainCompletion("powershell")).toBeUndefined();
+  });
+
+  it("resolves unsupported completion shells as a command error", () => {
+    expect(resolveMainCompletionCommand("powershell")).toEqual({
+      stderr: 'Unsupported shell for completion. Use "bash", "zsh", or "fish".\n',
+      exitCode: 2,
+    });
   });
 });
