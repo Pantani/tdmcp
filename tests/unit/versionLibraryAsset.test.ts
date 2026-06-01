@@ -138,6 +138,22 @@ describe("versionLibraryAssetImpl", () => {
     expect(vault.exists("Recipes/a.versions.json")).toBe(false);
   });
 
+  it("read_only falls back to 0.0.0 when frontmatter version is not a valid SemVer", async () => {
+    // Matches the bumping path's behavior: a non-SemVer frontmatter `version`
+    // is treated as 0.0.0 rather than reported as-is.
+    const vault = makeVault();
+    vault.writeNote("Recipes/a.md", { id: "a", version: "draft-7" }, "body\n");
+    const result = await versionLibraryAssetImpl(ctxWith(vault), {
+      asset_path: "Recipes/a.md",
+      bump: "patch",
+      read_only: true,
+    });
+    expect(result.isError).toBeFalsy();
+    const data = jsonOf<{ current: string; has_sidecar: boolean }>(result);
+    expect(data.current).toBe("0.0.0");
+    expect(data.has_sidecar).toBe(false);
+  });
+
   it("refuses to overwrite a malformed sidecar (invalid JSON)", async () => {
     const vault = makeVault();
     vault.writeNote("Recipes/a.md", { id: "a" }, "body\n");

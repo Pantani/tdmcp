@@ -180,8 +180,13 @@ export async function versionLibraryAssetImpl(ctx: ToolContext, args: VersionLib
   const existing = loaded.kind === "ok" ? loaded.sidecar : null;
 
   if (args.read_only) {
-    const current =
-      existing?.current ?? (typeof note.data.version === "string" ? note.data.version : "0.0.0");
+    // When there's no sidecar, only accept a frontmatter `version` that's a
+    // valid SemVer — otherwise fall back to "0.0.0", matching the bumping path.
+    const frontmatterVersion =
+      typeof note.data.version === "string" && parseSemver(note.data.version)
+        ? note.data.version
+        : "0.0.0";
+    const current = existing?.current ?? frontmatterVersion;
     return jsonResult(`Read current version ${current} for ${args.asset_path}.`, {
       asset_path: args.asset_path,
       sidecar_path: sidecarPath,
