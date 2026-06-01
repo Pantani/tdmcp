@@ -1,5 +1,6 @@
 import { runInstallBridge } from "./cli/installBridge.js";
 import { renderMainHelp } from "./cli/mainHelp.js";
+import { parseServeArgs, renderServeHelp } from "./cli/serverArgs.js";
 import { isPackageCommand, runPackageCli } from "./packages/cli.js";
 import { createTdmcpServer } from "./server/tdmcpServer.js";
 import { startTransport } from "./server/transportFactory.js";
@@ -18,7 +19,7 @@ async function main(): Promise<void> {
     return;
   }
   if (argv[0] === "install-bridge") {
-    runInstallBridge(argv.slice(1));
+    await runInstallBridge(argv.slice(1));
     return;
   }
   if (isPackageCommand(argv[0])) {
@@ -45,7 +46,17 @@ async function main(): Promise<void> {
 
   // The server honors a saved config file too (tdmcp.json / .tdmcprc / ~/.config/tdmcp);
   // pick a profile via TDMCP_PROFILE. Env vars still win over the file.
-  const config = loadConfig(process.env, { useFiles: true, profile: process.env.TDMCP_PROFILE });
+  const serveArgs = parseServeArgs(argv[0] === "serve" ? argv.slice(1) : [], process.env);
+  if (serveArgs.showHelp) {
+    process.stdout.write(`${renderServeHelp()}\n`);
+    return;
+  }
+  if (serveArgs.error) {
+    process.stderr.write(`${serveArgs.error}\n`);
+    process.exitCode = 2;
+    return;
+  }
+  const config = loadConfig(process.env, serveArgs.loadOptions);
   const logger = createLogger(config.logLevel);
 
   try {

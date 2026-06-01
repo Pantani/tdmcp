@@ -1,4 +1,8 @@
-import type { TdmcpConfig } from "../utils/config.js";
+import {
+  DEFAULT_LLM_TEMPERATURE,
+  type LlmRuntimeConfig,
+  type TdmcpConfig,
+} from "../utils/config.js";
 
 // ---------- Multimodal / completion shapes (shared between LlmClient + SamplingLlmClient) ----------
 
@@ -86,7 +90,8 @@ export interface OpenAITool {
   function: { name: string; description: string; parameters: unknown };
 }
 
-export type LlmConfig = Pick<TdmcpConfig, "llmBaseUrl" | "llmModel" | "llmApiKey">;
+export type LlmConfig = Pick<TdmcpConfig, "llmBaseUrl" | "llmModel" | "llmApiKey"> &
+  Partial<Pick<LlmRuntimeConfig, "llmTemperature">>;
 
 /** A partial settings update from the UI (only provided fields change). */
 export interface SettingsPatch {
@@ -351,7 +356,7 @@ export class LlmClient implements LlmClientLike {
         messages,
         tools,
         tool_choice: "auto",
-        temperature: 0.4,
+        temperature: this.cfg.llmTemperature ?? DEFAULT_LLM_TEMPERATURE,
         stream: true,
       }),
       signal: opts.signal,

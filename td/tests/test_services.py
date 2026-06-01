@@ -205,5 +205,68 @@ class PerformanceRecursiveTests(unittest.TestCase):
         self.assertEqual(result["total_cook_time_ms"], 3.0)
 
 
+class _HealthApp:
+    version = "2023.12000"
+    build = "2023.12000"
+    fps = 60
+    droppedFrames = 3
+    gpuMemory = 512
+    gpuMemoryTotal = 8192
+
+
+class _HealthProject:
+    name = "watchdog.toe"
+
+
+class _HealthWebServer:
+    cookTime = 0.25
+    cookCount = 42
+    cookFrame = 1234
+
+
+class _MissingAttrs:
+    def __getattr__(self, _name):
+        raise RuntimeError("attribute unavailable")
+
+
+class HealthTests(unittest.TestCase):
+    def test_health_reports_uptime_heartbeat_and_optional_performance(self):
+        with mock.patch.object(api_service, "app", _HealthApp()), mock.patch.object(
+            api_service, "project", _HealthProject()
+        ):
+            result = api_service.get_health(_HealthWebServer())
+
+        self.assertEqual(result["state"], "ok")
+        self.assertRegex(result["timestamp"], r"^\d{4}-\d{2}-\d{2}T")
+        self.assertGreaterEqual(result["uptime_seconds"], 0)
+        self.assertFalse(result["heartbeat"]["stale"])
+        self.assertEqual(result["heartbeat"]["age_seconds"], 0)
+        self.assertEqual(result["touchdesigner"]["td_version"], "2023.12000")
+        self.assertEqual(result["touchdesigner"]["project"], "watchdog.toe")
+        self.assertTrue(result["performance"]["available"])
+        self.assertEqual(result["performance"]["cook_time_ms"], 0.25)
+        self.assertEqual(result["performance"]["cook_count"], 42)
+        self.assertEqual(result["performance"]["cook_frame"], 1234)
+        self.assertEqual(result["performance"]["dropped_frames"], 3)
+        self.assertEqual(result["performance"]["gpu_memory_mb"], 512)
+        self.assertEqual(result["performance"]["gpu_memory_total_mb"], 8192)
+
+    def test_health_degrades_when_td_attrs_are_missing(self):
+        with mock.patch.object(api_service, "app", _MissingAttrs()), mock.patch.object(
+            api_service, "project", _MissingAttrs()
+        ):
+            result = api_service.get_health(object())
+
+        self.assertEqual(result["state"], "degraded")
+        self.assertIn("touchdesigner", result["degraded_signals"])
+        self.assertIn("performance", result["degraded_signals"])
+        self.assertFalse(result["performance"]["available"])
+        self.assertIsNone(result["performance"]["cook_time_ms"])
+        self.assertIsNone(result["performance"]["cook_count"])
+        self.assertIsNone(result["performance"]["dropped_frames"])
+        self.assertIsNone(result["performance"]["gpu_memory_mb"])
+        self.assertFalse(result["heartbeat"]["stale"])
+
+
 if __name__ == "__main__":
     unittest.main()

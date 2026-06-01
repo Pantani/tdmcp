@@ -5,10 +5,13 @@ available, which is the case when this package is imported from a running TD.
 """
 
 import io
+import math
 import re
 import sys
+import time
 import traceback
 from contextlib import redirect_stdout
+from datetime import datetime, timezone
 
 import td
 
@@ -19,6 +22,9 @@ app = td.app
 project = td.project
 
 _TYPE_RE = re.compile(r"[A-Za-z][A-Za-z0-9_]*$")
+_STARTED_AT = datetime.now(timezone.utc)
+_STARTED_MONOTONIC = time.monotonic()
+_HEARTBEAT_STALE_AFTER_SECONDS = 10.0
 
 
 def op_type(node):
@@ -48,6 +54,105 @@ def _jsonable(value):
         return value
     except Exception:  # noqa: BLE001
         return str(value)
+
+
+def _iso_utc(value):
+    return value.isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+
+def _safe_attr(obj, *names):
+    if obj is None:
+        return None
+    for name in names:
+        try:
+            value = getattr(obj, name)
+        except Exception:  # noqa: BLE001
+            continue
+        if value is not None:
+            return value
+    return None
+
+
+def _safe_number(obj, *names, integer=False):
+    value = _safe_attr(obj, *names)
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        number = float(value)
+    except Exception:  # noqa: BLE001
+        return None
+    if not math.isfinite(number):
+        return None
+    return int(number) if integer else number
+
+
+def _first_number(sources, integer=False):
+    for obj, names in sources:
+        number = _safe_number(obj, *names, integer=integer)
+        if number is not None:
+            return number
+    return None
+
+
+def _health_performance(webserver):
+    performance = {
+        "available": False,
+        "cook_time_ms": _first_number(
+            (
+                (webserver, ("cookTime", "cook_time", "cookTimeMS")),
+                (app, ("cookTime", "cook_time", "cookTimeMS")),
+            )
+        ),
+        "cook_count": _first_number(
+            (
+                (webserver, ("cookCount", "cook_count")),
+                (app, ("cookCount", "cook_count")),
+            ),
+            integer=True,
+        ),
+        "cook_frame": _first_number(
+            (
+                (webserver, ("cookFrame", "cook_frame", "cookAbsFrame")),
+                (app, ("cookFrame", "cook_frame", "cookAbsFrame", "frame")),
+            ),
+            integer=True,
+        ),
+        "dropped_frames": _first_number(
+            (
+                (app, ("droppedFrames", "dropped_frames", "numDroppedFrames")),
+                (project, ("droppedFrames", "dropped_frames", "numDroppedFrames")),
+            ),
+            integer=True,
+        ),
+        "fps": _first_number(
+            (
+                (app, ("fps", "cookRate", "rate")),
+                (project, ("fps", "cookRate", "rate")),
+            )
+        ),
+        "gpu_memory_mb": _first_number(
+            ((app, ("gpuMemory", "gpuMemoryMB", "gpuMemoryUsed", "gpu_memory_mb")),)
+        ),
+        "gpu_memory_total_mb": _first_number(
+            ((app, ("gpuMemoryTotal", "gpuMemoryTotalMB", "gpu_memory_total_mb")),)
+        ),
+        "gpu_memory_free_mb": _first_number(
+            ((app, ("gpuMemoryFree", "gpuMemoryFreeMB", "gpu_memory_free_mb")),)
+        ),
+    }
+    performance["available"] = any(
+        value is not None for key, value in performance.items() if key != "available"
+    )
+    return performance
+
+
+def _health_touchdesigner_info():
+    raw = get_info()
+    info = {}
+    for key, value in raw.items():
+        if value is not None:
+            info[key] = _jsonable(value)
+    return info
 
 
 def apply_parameters(node, parameters):
@@ -297,3 +402,38 @@ def get_info():
     except Exception:  # noqa: BLE001
         info["bridge_version"] = "unknown"
     return info
+
+
+def get_health(webserver=None):
+    now = datetime.now(timezone.utc)
+    timestamp = _iso_utc(now)
+    info = _health_touchdesigner_info()
+    performance = _health_performance(webserver)
+    degraded_signals = []
+    warnings = []
+
+    if not any(info.get(key) for key in ("td_version", "build", "project")):
+        degraded_signals.append("touchdesigner")
+        warnings.append("TouchDesigner app/project metadata is unavailable.")
+    if not performance["available"]:
+        degraded_signals.append("performance")
+        warnings.append("Optional TouchDesigner performance metrics are unavailable.")
+
+    state = "degraded" if degraded_signals else "ok"
+    return {
+        "state": state,
+        "status": state,
+        "timestamp": timestamp,
+        "started_at": _iso_utc(_STARTED_AT),
+        "uptime_seconds": round(max(0.0, time.monotonic() - _STARTED_MONOTONIC), 3),
+        "heartbeat": {
+            "last_seen_at": timestamp,
+            "age_seconds": 0,
+            "stale": False,
+            "stale_after_seconds": _HEARTBEAT_STALE_AFTER_SECONDS,
+        },
+        "touchdesigner": info,
+        "performance": performance,
+        "degraded_signals": degraded_signals,
+        "warnings": warnings,
+    }

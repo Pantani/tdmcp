@@ -125,6 +125,11 @@ class RoutingTests(unittest.TestCase):
         ac._route("GET", "/api/info", {}, {})
         ac.api_service.get_info.assert_called_once_with()
 
+    def test_get_health(self):
+        webserver = object()
+        ac._route("GET", "/api/health", {}, {}, webserver)
+        ac.api_service.get_health.assert_called_once_with(webserver)
+
     def test_create_node(self):
         ac._route("POST", "/api/nodes", {}, {"parent_path": "/project1", "type": "noiseTOP"})
         ac.api_service.create_node.assert_called_once()

@@ -17,6 +17,9 @@ describe("loadConfig", () => {
     expect(config.transport).toBe("stdio");
     expect(config.logLevel).toBe("info");
     expect(config.requestTimeoutMs).toBe(10000);
+    expect(config.llmTier).toBe("standard");
+    expect(config.llmMaxSteps).toBe(8);
+    expect(config.llmTemperature).toBe(0.4);
   });
 
   it("reads overrides and coerces numeric ports", () => {
@@ -41,6 +44,28 @@ describe("loadConfig", () => {
 
   it("reads a bridge token from the environment", () => {
     expect(loadConfig({ TDMCP_BRIDGE_TOKEN: "s3cret" }).bridgeToken).toBe("s3cret");
+  });
+
+  it("reads local LLM copilot knobs from the environment", () => {
+    const config = loadConfig({
+      TDMCP_LLM_TIER: " creative ",
+      TDMCP_LLM_MAX_STEPS: "12",
+      TDMCP_LLM_TEMPERATURE: "0.75",
+    });
+
+    expect(config.llmTier).toBe("creative");
+    expect(config.llmMaxSteps).toBe(12);
+    expect(config.llmTemperature).toBe(0.75);
+  });
+
+  it("sanitizes local LLM copilot knobs instead of leaking unsafe values", () => {
+    expect(loadConfig({ TDMCP_LLM_TIER: "unsafe" }).llmTier).toBe("standard");
+    expect(loadConfig({ TDMCP_LLM_MAX_STEPS: "0" }).llmMaxSteps).toBe(1);
+    expect(loadConfig({ TDMCP_LLM_MAX_STEPS: "99" }).llmMaxSteps).toBe(32);
+    expect(loadConfig({ TDMCP_LLM_MAX_STEPS: "not-a-number" }).llmMaxSteps).toBe(8);
+    expect(loadConfig({ TDMCP_LLM_TEMPERATURE: "-1" }).llmTemperature).toBe(0);
+    expect(loadConfig({ TDMCP_LLM_TEMPERATURE: "3" }).llmTemperature).toBe(2);
+    expect(loadConfig({ TDMCP_LLM_TEMPERATURE: "not-a-number" }).llmTemperature).toBe(0.4);
   });
 
   it("builds the TD base URL", () => {
@@ -160,5 +185,17 @@ describe("describeConfig", () => {
     expect(safe.bridgeToken).toBe("***redacted***");
     expect(safe.llmApiKey).toBe("***redacted***");
     expect(safe.tdHost).toBe("127.0.0.1");
+  });
+
+  it("exposes non-secret local LLM knobs in the safe config description", () => {
+    const cfg = loadConfig({
+      TDMCP_LLM_TIER: "safe",
+      TDMCP_LLM_MAX_STEPS: "5",
+      TDMCP_LLM_TEMPERATURE: "0.2",
+    });
+    const safe = describeConfig(cfg);
+    expect(safe.llmTier).toBe("safe");
+    expect(safe.llmMaxSteps).toBe(5);
+    expect(safe.llmTemperature).toBe(0.2);
   });
 });

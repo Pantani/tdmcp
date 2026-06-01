@@ -1,6 +1,8 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { resolve } from "node:path";
+import { homedir } from "node:os";
+import { dirname, join, resolve } from "node:path";
 import { createInterface } from "node:readline";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
@@ -612,6 +614,14 @@ interface Command {
   summary: string;
   mutates: boolean;
   unsafe: boolean;
+}
+
+export interface AgentCommandCatalogEntry {
+  command: string;
+  summary: string;
+  mutates: boolean;
+  unsafe: boolean;
+  source: "tool" | "cli";
 }
 
 const r = (
@@ -1921,6 +1931,258 @@ const COMMANDS: Record<string, Command> = {
   ),
 };
 
+const SPECIAL_COMMANDS: AgentCommandCatalogEntry[] = [
+  {
+    command: "commands",
+    summary: "Print the machine-readable tdmcp-agent command catalog.",
+    mutates: false,
+    unsafe: false,
+    source: "cli",
+  },
+  {
+    command: "help <command>",
+    summary: "Print focused help for one command without contacting TouchDesigner.",
+    mutates: false,
+    unsafe: false,
+    source: "cli",
+  },
+  {
+    command: "schema <command>",
+    summary: "Print a command's JSON Schema and metadata.",
+    mutates: false,
+    unsafe: false,
+    source: "cli",
+  },
+  {
+    command: "config",
+    summary: "Print the effective config, list profiles, or initialize a starter config.",
+    mutates: false,
+    unsafe: false,
+    source: "cli",
+  },
+  {
+    command: "run <file|->",
+    summary: "Run a JSON command file or stdin command stream.",
+    mutates: true,
+    unsafe: false,
+    source: "cli",
+  },
+  {
+    command: "completion <shell>",
+    summary: "Print a completion snippet for bash, zsh, or fish.",
+    mutates: false,
+    unsafe: false,
+    source: "cli",
+  },
+  {
+    command: "preview <nodePath>",
+    summary: "Capture a TOP to a PNG file.",
+    mutates: false,
+    unsafe: false,
+    source: "cli",
+  },
+  {
+    command: "watch",
+    summary: "Stream TouchDesigner events as newline-delimited JSON.",
+    mutates: false,
+    unsafe: false,
+    source: "cli",
+  },
+  {
+    command: "repl",
+    summary: "Interactive tdmcp-agent command loop.",
+    mutates: true,
+    unsafe: false,
+    source: "cli",
+  },
+  {
+    command: "doctor",
+    summary: "Diagnose TD bridge, LLM, vault, config and tool setup.",
+    mutates: false,
+    unsafe: false,
+    source: "cli",
+  },
+  {
+    command: "panic <sub>",
+    summary: "Live blackout/freeze hotkey verbs.",
+    mutates: true,
+    unsafe: false,
+    source: "cli",
+  },
+  {
+    command: "setlist run <file>",
+    summary: "Drive a setlist scene-by-scene.",
+    mutates: true,
+    unsafe: false,
+    source: "cli",
+  },
+  {
+    command: "schedule <file>",
+    summary: "Run scene scheduler triggers.",
+    mutates: true,
+    unsafe: false,
+    source: "cli",
+  },
+  {
+    command: "version",
+    summary: "Print the installed package version.",
+    mutates: false,
+    unsafe: false,
+    source: "cli",
+  },
+  {
+    command: "watch-build",
+    summary: "Watch the bridge/source files and rebuild on change.",
+    mutates: false,
+    unsafe: false,
+    source: "cli",
+  },
+  {
+    command: "soundcheck-monitor",
+    summary: "Monitor soundcheck health and emit operator-friendly status.",
+    mutates: false,
+    unsafe: false,
+    source: "cli",
+  },
+  {
+    command: "log-tail",
+    summary: "Tail and filter TouchDesigner bridge logs.",
+    mutates: false,
+    unsafe: false,
+    source: "cli",
+  },
+  {
+    command: "record-fixtures",
+    summary: "Record bridge fixtures for offline tests.",
+    mutates: false,
+    unsafe: false,
+    source: "cli",
+  },
+  {
+    command: "fanout",
+    summary: "Fan out commands to multiple bridge targets.",
+    mutates: true,
+    unsafe: false,
+    source: "cli",
+  },
+  {
+    command: "controller-bridge",
+    summary: "Bridge controller events into tdmcp commands.",
+    mutates: true,
+    unsafe: false,
+    source: "cli",
+  },
+  {
+    command: "voice",
+    summary: "Run the voice copilot command interface.",
+    mutates: true,
+    unsafe: false,
+    source: "cli",
+  },
+  {
+    command: "llm-voice",
+    summary: "Run the LLM-backed voice copilot.",
+    mutates: true,
+    unsafe: false,
+    source: "cli",
+  },
+];
+
+export function listAgentCommands(): AgentCommandCatalogEntry[] {
+  const commandEntries: AgentCommandCatalogEntry[] = Object.entries(COMMANDS).map(
+    ([command, cmd]) => ({
+      command,
+      summary: cmd.summary,
+      mutates: cmd.mutates,
+      unsafe: cmd.unsafe,
+      source: "tool",
+    }),
+  );
+  return [...commandEntries, ...SPECIAL_COMMANDS].sort((a, b) =>
+    a.command.localeCompare(b.command),
+  );
+}
+
+function commandTags(entry: Pick<AgentCommandCatalogEntry, "mutates" | "unsafe">): string {
+  return [entry.mutates ? "mutates" : "", entry.unsafe ? "unsafe" : ""].filter(Boolean).join(",");
+}
+
+function commandGroup(entry: AgentCommandCatalogEntry): string {
+  if (entry.unsafe) return "Unsafe escape hatches";
+  if (entry.source === "cli") return "CLI workflow";
+  if (
+    /^(info|reload|nodes|errors|document|diff|optimize|analyze|params-modes|node-state|logs|serialize|inspect-comp|score-build|gpu-displays)/.test(
+      entry.command,
+    )
+  ) {
+    return "Inspection & diagnostics";
+  }
+  if (
+    /^(classes|module|operators|recipes|plan|library|manifest|asset-validate)/.test(entry.command)
+  ) {
+    return "Knowledge & resources";
+  }
+  if (
+    /(library|recipe|bundle|pack|package|tox|vault|asset|marketplace|provenance|checksum|changelog|component)/.test(
+      entry.command,
+    )
+  ) {
+    return "Library, packaging & vaults";
+  }
+  if (entry.mutates) return "Creative builders & operations";
+  return "Knowledge & resources";
+}
+
+function groupedCommandCatalog(): Array<{ title: string; entries: AgentCommandCatalogEntry[] }> {
+  const order = [
+    "Inspection & diagnostics",
+    "Creative builders & operations",
+    "Library, packaging & vaults",
+    "Knowledge & resources",
+    "CLI workflow",
+    "Unsafe escape hatches",
+  ];
+  const grouped = new Map<string, AgentCommandCatalogEntry[]>();
+  for (const entry of listAgentCommands()) {
+    const title = commandGroup(entry);
+    grouped.set(title, [...(grouped.get(title) ?? []), entry]);
+  }
+  return order
+    .map((title) => ({ title, entries: grouped.get(title) ?? [] }))
+    .filter((group) => group.entries.length > 0);
+}
+
+function findSpecialCommand(target: string): AgentCommandCatalogEntry | undefined {
+  const normalized = target.trim();
+  return SPECIAL_COMMANDS.find((entry) => {
+    const base = entry.command.replace(/\s+<[^>]+>/g, "");
+    return entry.command === normalized || base === normalized;
+  });
+}
+
+function formatCommandHelp(target: string): string | undefined {
+  const cmd = COMMANDS[target];
+  const entry: AgentCommandCatalogEntry | undefined = cmd
+    ? {
+        command: target,
+        summary: cmd.summary,
+        mutates: cmd.mutates,
+        unsafe: cmd.unsafe,
+        source: "tool",
+      }
+    : findSpecialCommand(target);
+  if (!entry) return undefined;
+
+  const lines = [`tdmcp-agent ${target}`, "", entry.summary, ""];
+  lines.push(`source: ${entry.source}`);
+  lines.push(`mutates: ${entry.mutates}`);
+  lines.push(`unsafe: ${entry.unsafe}`);
+  if (cmd) {
+    lines.push("", "Input schema:", JSON.stringify(z.toJSONSchema(cmd.schema), null, 2));
+  }
+  return lines.join("\n");
+}
+
 export interface CliResult {
   stdout: string;
   stderr: string;
@@ -1957,6 +2219,66 @@ function firstArray(data: unknown): unknown[] | null {
   return null;
 }
 
+function rowValue(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+}
+
+function tableRows(data: unknown): Record<string, unknown>[] {
+  const list = firstArray(data) ?? [data];
+  return list.map((item) => {
+    if (item && typeof item === "object" && !Array.isArray(item)) {
+      return item as Record<string, unknown>;
+    }
+    return { value: item };
+  });
+}
+
+function tableHeaders(rows: Record<string, unknown>[]): string[] {
+  const seen = new Set<string>();
+  const headers: string[] = [];
+  for (const row of rows) {
+    for (const key of Object.keys(row)) {
+      if (seen.has(key)) continue;
+      seen.add(key);
+      headers.push(key);
+    }
+  }
+  return headers.length ? headers : ["value"];
+}
+
+function formatTable(data: unknown): string {
+  const rows = tableRows(data);
+  if (!rows.length) return "";
+  const headers = tableHeaders(rows);
+  const body = rows.map((row) => headers.map((header) => rowValue(row[header])));
+  const widths = headers.map((header, index) =>
+    Math.max(header.length, ...body.map((row) => row[index]?.length ?? 0)),
+  );
+  const line = (cells: string[]) =>
+    cells
+      .map((cell, index) => cell.padEnd(widths[index] ?? cell.length))
+      .join("  ")
+      .trimEnd();
+  const divider = widths.map((width) => "-".repeat(Math.max(width, 1))).join("  ");
+  return [line(headers), divider, ...body.map(line)].join("\n");
+}
+
+function csvCell(value: unknown): string {
+  const text = rowValue(value);
+  return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+}
+
+function formatCsv(data: unknown): string {
+  const rows = tableRows(data);
+  if (!rows.length) return "";
+  const headers = tableHeaders(rows);
+  const lines = [headers.map(csvCell).join(",")];
+  for (const row of rows) lines.push(headers.map((header) => csvCell(row[header])).join(","));
+  return lines.join("\n");
+}
+
 function resolveCommand(positionals: string[]): { key: string; cmd: Command } | undefined {
   const key2 = positionals.slice(0, 2).join(" ");
   if (COMMANDS[key2]) return { key: key2, cmd: COMMANDS[key2] };
@@ -1973,7 +2295,7 @@ function usage(): string {
     "  --params <json>   Arguments object (validated against the command's input schema).",
   );
   lines.push("  --json <json>     Merged into --params (e.g. for request bodies).");
-  lines.push("  --output <fmt>    json (default) | ndjson | text.");
+  lines.push("  --output <fmt>    json (default) | ndjson | text | table | csv.");
   lines.push("  --dry-run         Validate and print the intended call without executing.");
   lines.push("  --allow-unsafe    Required for `exec` escape-hatch commands.");
   lines.push("  -o, --out <file>  (preview) Output PNG path. Defaults to ./preview.png.");
@@ -1988,6 +2310,10 @@ function usage(): string {
   );
   lines.push("  --continue-on-error  With `run`, execute remaining steps after a failure.");
   lines.push("  --filter / --exclude <csv>  (watch) Only/never stream these event types.");
+  lines.push("  --on <csv> --exec <cmd>  (watch) Run a shell command for matching events.");
+  lines.push("  --debounce-ms <ms>  (watch) Minimum gap between --exec runs per event type.");
+  lines.push("  --heartbeat-ms <ms>  (watch) Periodically print an event-count heartbeat.");
+  lines.push("  --pretty         (watch) Render compact event labels instead of raw ndjson.");
   lines.push(
     "  --no-color       Disable terminal color output (accepted for script compatibility).",
   );
@@ -1995,38 +2321,13 @@ function usage(): string {
   lines.push("  -V, --version     Print the version and exit.");
   lines.push("  -h, --help        Show this help.", "");
   lines.push("Commands:");
-  for (const [key, cmd] of Object.entries(COMMANDS)) {
-    const tags = [cmd.mutates ? "mutates" : "", cmd.unsafe ? "unsafe" : ""]
-      .filter(Boolean)
-      .join(",");
-    lines.push(`  ${key.padEnd(20)} ${cmd.summary}${tags ? `  [${tags}]` : ""}`);
+  for (const group of groupedCommandCatalog()) {
+    lines.push(`  ${group.title}:`);
+    for (const entry of group.entries) {
+      const tags = commandTags(entry);
+      lines.push(`    ${entry.command.padEnd(24)} ${entry.summary}${tags ? `  [${tags}]` : ""}`);
+    }
   }
-  lines.push("  schema <command>     Print a command's JSON Schema and metadata.");
-  lines.push(
-    "  config               Print the effective config (redacted); --write-env for a paste-ready block.",
-  );
-  lines.push("  config profiles      List saved config profile names and keys (values hidden).");
-  lines.push("  config profile <n>   Show one profile as an effective redacted config.");
-  lines.push(
-    "  config init [path]   Write a starter ~/.tdmcp/config.env (or [path]); --force to overwrite, --dry-run to preview.",
-  );
-  lines.push("  run <file|->         Run a JSON file, or stdin, containing command steps.");
-  lines.push("  completion <shell>   Print a completion snippet for bash, zsh, or fish.");
-  lines.push("  preview <nodePath>   Capture a TOP to a PNG file (-o/--out).  [writes a file]");
-  lines.push("  watch                Stream TD events as ndjson until Ctrl-C.  [long-running]");
-  lines.push("  repl                 Interactive mode: run commands line-by-line.  [interactive]");
-  lines.push(
-    "  doctor               Diagnose your setup (TD/LLM/vault/config/tools); --fix suggests commands, --output json, -q/--quiet.",
-  );
-  lines.push(
-    "  panic <sub>          Live blackout/freeze hotkey: on|off|toggle|freeze|unfreeze|clear|status. Flags: --target, --auto-build, --all.",
-  );
-  lines.push(
-    "  setlist run <file>   Walk a setlist scene-by-scene through manage_cue. Flags: --mode, --start, --loop, --comp-path, --beats-per-bar, --quantize.",
-  );
-  lines.push(
-    "  schedule <file>      Run scene_scheduler: fire commands/cues/setlists on at/every/cron triggers. Flags: --dry-run, --once, --tz-info, --loop, --comp-path.",
-  );
   return lines.join("\n");
 }
 
@@ -2075,6 +2376,9 @@ const ENV_NAMES: Record<keyof TdmcpConfig, string> = {
   llmBaseUrl: "TDMCP_LLM_BASE_URL",
   llmModel: "TDMCP_LLM_MODEL",
   llmApiKey: "TDMCP_LLM_API_KEY",
+  llmTier: "TDMCP_LLM_TIER",
+  llmMaxSteps: "TDMCP_LLM_MAX_STEPS",
+  llmTemperature: "TDMCP_LLM_TEMPERATURE",
   chatPort: "TDMCP_CHAT_PORT",
   vaultPath: "TDMCP_VAULT_PATH",
 };
@@ -2094,7 +2398,7 @@ function envExportLines(config: TdmcpConfig): string[] {
 
 function parseCliArgs(argv: string[]) {
   return parseArgs({
-    args: argv,
+    args: normalizeCatalogJsonFlag(argv),
     allowPositionals: true,
     options: {
       params: { type: "string" },
@@ -2121,6 +2425,11 @@ function parseCliArgs(argv: string[]) {
       "continue-on-error": { type: "boolean", default: false },
       filter: { type: "string" },
       exclude: { type: "string" },
+      pretty: { type: "boolean", default: false },
+      on: { type: "string" },
+      exec: { type: "string" },
+      "debounce-ms": { type: "string" },
+      "heartbeat-ms": { type: "string" },
       // `panic` top-level verb:
       target: { type: "string" },
       "auto-build": { type: "boolean", default: false },
@@ -2138,6 +2447,58 @@ function parseCliArgs(argv: string[]) {
       "tz-info": { type: "boolean", default: false },
     },
   });
+}
+
+function normalizeCatalogJsonFlag(argv: string[]): string[] {
+  if (firstPositionalArg(argv) !== "commands") return argv;
+  let seenCommand = false;
+  return argv.filter((arg, index) => {
+    if (!seenCommand && arg === "commands") seenCommand = true;
+    if (!seenCommand) return true;
+    if (arg !== "--json") return true;
+    const next = argv[index + 1];
+    return typeof next === "string" && next !== "" && !next.startsWith("-");
+  });
+}
+
+const CLI_VALUE_OPTIONS = new Set([
+  "--params",
+  "--json",
+  "--output",
+  "--out",
+  "-o",
+  "--profile",
+  "--config",
+  "--td-host",
+  "--td-port",
+  "--timeout",
+  "--params-file",
+  "--filter",
+  "--exclude",
+  "--on",
+  "--exec",
+  "--debounce-ms",
+  "--heartbeat-ms",
+  "--target",
+  "--setlist",
+  "--mode",
+  "--start",
+  "--comp-path",
+  "--beats-per-bar",
+  "--quantize",
+]);
+
+function firstPositionalArg(argv: string[]): string | undefined {
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    if (arg === undefined) continue;
+    if (arg === "--") return argv[i + 1];
+    if (!arg.startsWith("-")) return arg;
+    const equals = arg.indexOf("=");
+    const flag = equals === -1 ? arg : arg.slice(0, equals);
+    if (CLI_VALUE_OPTIONS.has(flag) && !arg.includes("=")) i++;
+  }
+  return undefined;
 }
 
 /** The installed package version (read once from package.json next to the bundle). */
@@ -2175,6 +2536,8 @@ function nearestCommand(input: string): string | undefined {
     ...Object.keys(COMMANDS),
     ...firstTokens,
     "schema",
+    "commands",
+    "help",
     "config",
     "run",
     "completion",
@@ -2290,10 +2653,12 @@ function parseStdout(stdout: string): unknown {
   }
 }
 
-function completionScript(shell: string): string | undefined {
+function completionWords(): string[] {
   const commands = [
     ...Object.keys(COMMANDS),
     "schema",
+    "commands",
+    "help",
     "config",
     "run",
     "completion",
@@ -2331,13 +2696,63 @@ function completionScript(shell: string): string | undefined {
     "--continue-on-error",
     "--filter",
     "--exclude",
+    "--on",
+    "--exec",
+    "--debounce-ms",
+    "--heartbeat-ms",
+    "--pretty",
     "--quiet",
     "--no-color",
     "--force",
     "--version",
     "--help",
   ];
-  const words = [...commands, ...flags].join(" ");
+  return [...commands, ...flags];
+}
+
+export function completeReplLine(line: string): [string[], string] {
+  const words = [...completionWords(), "exit", "quit"];
+  const trimmedLeft = line.trimStart();
+  const prefix = trimmedLeft.includes(" ") ? (trimmedLeft.match(/\S*$/)?.[0] ?? "") : trimmedLeft;
+  const matches = words.filter((word) => word.startsWith(prefix));
+  return [matches.length ? matches : words, prefix];
+}
+
+export function replHistoryPath(env: NodeJS.ProcessEnv = process.env): string {
+  const explicit = env.TDMCP_AGENT_HISTORY?.trim();
+  if (explicit) return explicit;
+  const stateHome = env.XDG_STATE_HOME?.trim() || join(homedir(), ".local", "state");
+  return join(stateHome, "tdmcp-agent", "history");
+}
+
+export function loadReplHistory(path = replHistoryPath()): string[] {
+  if (!existsSync(path)) return [];
+  try {
+    return readFileSync(path, "utf8")
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .slice(-1000);
+  } catch {
+    return [];
+  }
+}
+
+export function saveReplHistory(lines: string[], path = replHistoryPath()): void {
+  const cleaned = lines
+    .map((line) => line.trim())
+    .filter((line, index, all) => line.length > 0 && all.indexOf(line) === index)
+    .slice(-1000);
+  try {
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, cleaned.length ? `${cleaned.join("\n")}\n` : "", "utf8");
+  } catch {
+    // History is a convenience; never fail the interactive session because it cannot be saved.
+  }
+}
+
+function completionScript(shell: string): string | undefined {
+  const words = completionWords().join(" ");
   if (shell === "bash") {
     return [
       "_tdmcp_agent() {",
@@ -2375,6 +2790,30 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   }
   if (values.help || positionals.length === 0) {
     return { stdout: `${usage()}\n`, stderr: "", code: 0 };
+  }
+
+  // `help <command>` — focused offline help for humans and agents that need the
+  // exact schema/side-effect flags for one verb.
+  if (positionals[0] === "help") {
+    const target = positionals.slice(1).join(" ");
+    if (!target) return { stdout: `${usage()}\n`, stderr: "", code: 0 };
+    const help = formatCommandHelp(target);
+    if (!help) {
+      return { stdout: "", stderr: `Unknown command for help: "${target}".\n`, code: 2 };
+    }
+    return { stdout: `${help}\n`, stderr: "", code: 0 };
+  }
+
+  // `commands --json` — expose the same command catalog used by docs/resources.
+  // It is intentionally offline so CI and agent clients can discover commands
+  // without a running TouchDesigner bridge.
+  if (positionals[0] === "commands") {
+    const commands = listAgentCommands();
+    return {
+      stdout: `${JSON.stringify({ count: commands.length, commands }, null, 2)}\n`,
+      stderr: "",
+      code: 0,
+    };
   }
 
   // `schema <command>` — emit the input contract without touching TD.
@@ -2954,6 +3393,12 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
     const body = arr ? arr.map((item) => JSON.stringify(item)).join("\n") : JSON.stringify(data);
     return { stdout: `${body}\n`, stderr: summary ? `${summary}\n` : "", code: 0 };
   }
+  if (output === "table") {
+    return { stdout: `${formatTable(data)}\n`, stderr: summary ? `${summary}\n` : "", code: 0 };
+  }
+  if (output === "csv") {
+    return { stdout: `${formatCsv(data)}\n`, stderr: summary ? `${summary}\n` : "", code: 0 };
+  }
   return {
     stdout: `${JSON.stringify(data, null, 2)}\n`,
     stderr: summary ? `${summary}\n` : "",
@@ -2968,8 +3413,24 @@ export interface RunWatchOptions {
   filter?: string[];
   /** Drop events whose `type` is in this list (e.g. ["timeline.frame"]). */
   exclude?: string[];
+  /** Only run `exec` for matching event names; defaults to `filter` when unset. */
+  execOn?: string[];
+  /** Shell command to run for each matching event. */
+  exec?: string;
+  /** Minimum gap between exec runs for the same event name. */
+  execDebounceMs?: number;
+  /** Periodically report how many events have passed the watch filters. */
+  heartbeatMs?: number;
+  /** Inject command execution for tests. */
+  execCommand?: (command: string, event: unknown) => void;
+  /** Inject time for debounce tests. */
+  now?: () => number;
+  /** Render compact event labels instead of raw ndjson. */
+  pretty?: boolean;
   /** Where each event line goes; defaults to stdout. Overridable for tests. */
   write?: (line: string) => void;
+  /** Where lifecycle/status lines go; defaults to stderr. Overridable for tests. */
+  writeStatus?: (line: string) => void;
   /** Inject a stream factory for tests; defaults to a real `TdEventStream`. */
   makeStream?: (args: { url: string; onEvent: TdEventHandler; includeHighFrequency: boolean }) => {
     start: () => void;
@@ -2977,6 +3438,38 @@ export interface RunWatchOptions {
   };
   /** Resolve the returned promise when aborted; defaults to listening for SIGINT. */
   signal?: AbortSignal;
+}
+
+function eventName(event: unknown): string | undefined {
+  if (!event || typeof event !== "object") return undefined;
+  const candidate = event as { type?: unknown; event?: unknown };
+  if (typeof candidate.type === "string") return candidate.type;
+  if (typeof candidate.event === "string") return candidate.event;
+  return undefined;
+}
+
+function prettyEventLine(event: unknown): string {
+  const name = eventName(event) ?? "event";
+  if (event && typeof event === "object" && "data" in event) {
+    const data = (event as { data?: unknown }).data;
+    return data === undefined ? name : `${name} ${rowValue(data)}`;
+  }
+  return `${name} ${rowValue(event)}`.trimEnd();
+}
+
+function defaultExecCommand(command: string, event: unknown): void {
+  const child = spawn(command, {
+    shell: true,
+    stdio: "inherit",
+    env: {
+      ...process.env,
+      TDMCP_EVENT: eventName(event) ?? "",
+      TDMCP_EVENT_JSON: JSON.stringify(event),
+    },
+  });
+  child.on("error", (err) => {
+    process.stderr.write(`watch --exec failed: ${String(err)}\n`);
+  });
 }
 
 /**
@@ -2987,23 +3480,50 @@ export function runWatch(opts: RunWatchOptions = {}): Promise<void> {
   const config = opts.config ?? loadConfig(process.env, { useFiles: true });
   const url = `${tdBaseUrl(config).replace(/^http/, "ws")}/`;
   const write = opts.write ?? ((line: string) => process.stdout.write(`${line}\n`));
+  const writeStatus = opts.writeStatus ?? ((line: string) => process.stderr.write(`${line}\n`));
   const includeHighFrequency = opts.includeHighFrequency ?? false;
   const filter = opts.filter?.length ? opts.filter : undefined;
   const exclude = opts.exclude?.length ? opts.exclude : undefined;
+  const execOn = opts.execOn?.length ? opts.execOn : filter;
+  const exec = opts.exec;
+  const execCommand = opts.execCommand ?? defaultExecCommand;
+  const execDebounceMs = Math.max(0, opts.execDebounceMs ?? 0);
+  const heartbeatMs = opts.heartbeatMs !== undefined ? Math.max(0, opts.heartbeatMs) : undefined;
+  const lastExecByEvent = new Map<string, number>();
+  const now = opts.now ?? (() => Date.now());
+  let count = 0;
   const onEvent: TdEventHandler = (event) => {
-    const type = (event as { type?: string }).type;
+    const type = eventName(event);
     if (filter && (type === undefined || !filter.includes(type))) return;
     if (exclude && type !== undefined && exclude.includes(type)) return;
-    write(JSON.stringify(event));
+    count += 1;
+    write(opts.pretty ? prettyEventLine(event) : JSON.stringify(event));
+    if (!exec) return;
+    if (execOn && (type === undefined || !execOn.includes(type))) return;
+    const key = type ?? "*";
+    const timestamp = now();
+    const last = lastExecByEvent.get(key);
+    if (last !== undefined && timestamp - last < execDebounceMs) return;
+    lastExecByEvent.set(key, timestamp);
+    execCommand(exec, event);
   };
   const stream = opts.makeStream
     ? opts.makeStream({ url, onEvent, includeHighFrequency })
     : new TdEventStream({ url, onEvent, includeHighFrequency });
   stream.start();
-  process.stderr.write(`Watching ${url} for TouchDesigner events (Ctrl-C to stop)…\n`);
+  writeStatus(`Watching ${url} for TouchDesigner events (Ctrl-C to stop).`);
+  const heartbeat =
+    heartbeatMs && heartbeatMs > 0
+      ? setInterval(() => {
+          writeStatus(`Heartbeat: ${count} event${count === 1 ? "" : "s"}.`);
+        }, heartbeatMs)
+      : undefined;
+  heartbeat?.unref?.();
   return new Promise<void>((resolveDone) => {
     const stop = () => {
       stream.close();
+      if (heartbeat) clearInterval(heartbeat);
+      writeStatus(`Stopped after ${count} event${count === 1 ? "" : "s"}.`);
       resolveDone();
     };
     if (opts.signal) {
@@ -3029,7 +3549,15 @@ function tokenizeLine(line: string): string[] {
 
 /** Interactive read-eval-print loop: each line is tokenized and run through runCli. */
 export async function runRepl(opts: RunCliOptions = {}): Promise<void> {
-  const rl = createInterface({ input: process.stdin, output: process.stderr });
+  const historyPath = replHistoryPath();
+  const history = loadReplHistory(historyPath);
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stderr,
+    completer: completeReplLine,
+    historySize: 1000,
+  }) as ReturnType<typeof createInterface> & { history: string[] };
+  rl.history = [...history].reverse();
   process.stderr.write(
     "tdmcp REPL — enter a command (e.g. `info`, `nodes list`); `help` for commands, `exit` to quit.\n> ",
   );
@@ -3045,6 +3573,7 @@ export async function runRepl(opts: RunCliOptions = {}): Promise<void> {
     }
     process.stderr.write("> ");
   }
+  saveReplHistory([...rl.history].reverse(), historyPath);
   rl.close();
 }
 
@@ -3065,6 +3594,13 @@ function csvFlag(argv: string[], name: string): string[] | undefined {
     .map((s) => s.trim())
     .filter(Boolean);
   return list.length ? list : undefined;
+}
+
+function numberFlag(argv: string[], name: string): number | undefined {
+  const raw = rawFlag(argv, name);
+  if (!raw) return undefined;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : undefined;
 }
 
 async function main(): Promise<void> {
@@ -3175,10 +3711,16 @@ async function main(): Promise<void> {
   }
   // `watch` (a long-lived stream) and `repl` (interactive) bypass runCli's request/response model.
   if (argv[0] === "watch" && !wantsHelp) {
+    const on = csvFlag(argv, "on");
     await runWatch({
       includeHighFrequency: argv.includes("--include-high-frequency"),
-      filter: csvFlag(argv, "filter"),
+      filter: csvFlag(argv, "filter") ?? on,
       exclude: csvFlag(argv, "exclude"),
+      pretty: argv.includes("--pretty"),
+      execOn: on,
+      exec: rawFlag(argv, "exec"),
+      execDebounceMs: numberFlag(argv, "debounce-ms"),
+      heartbeatMs: numberFlag(argv, "heartbeat-ms"),
     });
     return;
   }

@@ -332,7 +332,9 @@ real multimodal setup.*
   has three small v0.8.x pieces on `main`: `tdmcp://prompts` is generated from
   the actual prompt registry, `tdmcp://recipes/search/{query}` searches the
   recipe catalog, and `tdmcp://cookbook` / `tdmcp://cookbook/{en|pt}` expose the
-  prompt cookbook to MCP clients.
+  prompt cookbook to MCP clients. The local copilot now also reads that prompt
+  catalog into its system prompt and can be tuned with `TDMCP_LLM_TIER`,
+  `TDMCP_LLM_MAX_STEPS`, and `TDMCP_LLM_TEMPERATURE`.
 - **AI deepening** — live-tune `caption_top`, `copilot_vision` and
   `repair_network`; add richer chat flags, transcript persistence and smarter
   handoff when the local copilot reaches its limits.
@@ -350,15 +352,18 @@ install story.*
 
 - **Main progress after v0.7.0 (unreleased).** The operator/DX lane now includes
   `tdmcp --help`, `tdmcp-agent run -`, `tdmcp-agent run --continue-on-error`,
-  `tdmcp-agent config profiles`, `tdmcp-agent config profile <name>`, and
-  opt-in `get_node_state_runtime include_info_chop:true` Info CHOP telemetry.
+  `tdmcp-agent config profiles`, `tdmcp-agent config profile <name>`,
+  `tdmcp-agent commands --json`, `tdmcp://commands`, grouped agent help,
+  `tdmcp-agent help <command>`, `tdmcp install-bridge --verify` / `--wait` /
+  `--port`, opt-in `get_node_state_runtime include_info_chop:true` Info CHOP
+  telemetry, and the read-only `watch_node` sampler.
 - **Authoring** — tackle the GPU / optical-flow / SDF / strange-attractor
   deferred generators, plus MediaPipe face / hand / segmentation on the in-tree
   tracking engine.
 - **Developer & live-operator DX** — finish the **easy-install** story with a
   client-config writer and a `doctor --fix` that performs safe repairs; then
-  round out profile listing, help/completion parity, inline preview and the next
-  front-of-house dashboard pass.
+  round out completion parity, inline preview and the next front-of-house
+  dashboard pass.
 
 ### Later / deferred
 
@@ -460,22 +465,22 @@ or partial work.
 
 | Feature | Delivers | Effort | Impact | Conf | Priority | Novelty | Probe-first |
 |---|---|---|---|---|---|---|---|
-| `install_client_writers` | `install-client --write` deep-merges + verifies the config | M | High | High | P1 | ROADMAP | per-client config paths |
+| ✅ `install_client_writers` | `install-client --write` deep-merges + verifies the config | M | High | High | P1 | ROADMAP | implemented after v0.7.0; uses explicit `--path` / positional file path, preserving unrelated JSON keys |
 | `doctor_fix_autoexec` | `doctor --fix` executes safe repairs | M | High | High | P1 | ROADMAP | none |
-| `watch_exec_hook` | `watch --on beat --exec '<cmd>'` reactive engine | M | Med | High | P1 | ROADMAP | event-storm debounce |
+| ✅ `watch_exec_hook` | `watch --on beat --exec '<cmd>'` reactive engine | M | Med | High | P1 | ROADMAP | implemented after v0.7.0 with per-event `--debounce-ms` |
 | ✅ `tdmcp_top_level_help` | Real `tdmcp --help` on the primary binary | S | Med | High | P1 | NEW | landed on main after v0.7.0 |
-| `agent_command_index_resource` | `tdmcp-agent commands --json` + `tdmcp://commands` | S | Med | High | P1 | NEW | none |
-| `install_bridge_verify` | `install-bridge --verify`/`--wait`/`--port` polls the bridge | S | Med | High | P1 | ROADMAP | none |
-| `repl_history_and_completion` | Persistent history + Tab-completion in the REPL | M | Med | High | P1 | ROADMAP | none |
+| ✅ `agent_command_index_resource` | `tdmcp-agent commands --json` + `tdmcp://commands` | S | Med | High | P1 | NEW | landed on main after v0.7.0 |
+| ✅ `install_bridge_verify` | `install-bridge --verify`/`--wait`/`--port` polls the bridge | S | Med | High | P1 | ROADMAP | landed on main after v0.7.0 |
+| ✅ `repl_history_and_completion` | Persistent history + Tab-completion in the REPL | M | Med | High | P1 | ROADMAP | implemented after v0.7.0; history stored under XDG state / `TDMCP_AGENT_HISTORY` |
 | `preview_inline_and_watch` | `preview --inline` (iTerm/Kitty/sixel) + `--watch` | M | Med | Med | P1 | ROADMAP | terminal-protocol detect |
-| `help_grouping_and_per_command_help` | Group `usage()` by theme + `help <command>` | M | Med | High | P2 | NEW | none |
+| ✅ `help_grouping_and_per_command_help` | Group `usage()` by theme + `help <command>` | M | Med | High | P2 | NEW | landed on main after v0.7.0 |
 | ✅ `run_file_stdin_and_continue` | `run -` (stdin) + `--continue-on-error` | S | Med | High | P2 | EXTENSION | landed on main after v0.7.0 |
 | `show_mode_oneliner` | `tdmcp show <profile>` — load+doctor+perform+pre-flight | M | Med | Med | P2 | NEW | abort semantics |
-| `output_format_table_and_csv` | `--output table`/`csv` for list results | S | Low | High | P2 | EXTENSION | none |
+| ✅ `output_format_table_and_csv` | `--output table`/`csv` for list results | S | Low | High | P2 | EXTENSION | implemented after v0.7.0 |
 | `error_exit_code_taxonomy` | Distinct exit codes (offline/TD-error/config) | S | Low | Med | P2 | NEW | error subclass survives |
 | `no_color_flag_is_dead` | Honor parsed-but-dead `--no-color`/`NO_COLOR` | S | Low | High | P2 | NEW | none |
-| `watch_pretty_and_count` | `watch --pretty` + heartbeat | S | Low | High | P2 | EXTENSION | none |
-| `http_transport_oneflag_launch` | `tdmcp serve --http [--port]` | S | Low | High | P2 | NEW | keep bare `tdmcp`=stdio |
+| ✅ `watch_pretty_and_count` | `watch --pretty` + heartbeat | S | Low | High | P2 | EXTENSION | implemented after v0.7.0 with event counts and `--heartbeat-ms` |
+| ✅ `http_transport_oneflag_launch` | `tdmcp serve --http [--port]` | S | Low | High | P2 | NEW | implemented after v0.7.0; bare `tdmcp` still uses stdio |
 | `packages_cli_help_and_completion_parity` | Fold `packages` tree into top-level help/completion | S | Low | High | P2 | EXTENSION | none |
 | ✅ `profile_list_and_show` | `tdmcp-agent config profiles` lists saved venue profiles; `config profile <name>` shows a redacted effective profile | S | Low | Med | P2 | NEW | landed on main after v0.7.0 |
 
@@ -483,14 +488,14 @@ or partial work.
 
 | Feature | Delivers | Effort | Impact | Conf | Priority | Novelty | Probe-first |
 |---|---|---|---|---|---|---|---|
-| `copilot_prompt_awareness` | Feed `tdmcp://prompts` into the copilot BASE_PROMPT | S | Med | High | P1 | EXTENSION | none |
+| ✅ `copilot_prompt_awareness` | Feed `tdmcp://prompts` into the copilot BASE_PROMPT | S | Med | High | P1 | EXTENSION | landed on main after v0.7.0 |
 | `copilot_smarter_handoff` | Auto-surface the Claude/Codex handoff on a dead-end | S | Med | High | P1 | ROADMAP | none |
-| `chat_cli_flags` | `chat --read-only`/`--creative`/`--prompt` (headless) | M | Med | High | P1 | ROADMAP | chat server accepts fixed tier |
+| ✅ `chat_cli_flags` | `chat --read-only`/`--creative`/`--prompt` (headless) | M | Med | High | P1 | ROADMAP | implemented after v0.7.0; server accepts fixed read-only tier |
 | `copilot_session_persistence` | Resume transcript + last model/tier | M | Med | High | P1 | ROADMAP | none |
 | `plan_visual`→LLM-grounded | Upgrade `describe_project` to an optional LLM planner | M | Med | High | P1 | EXTENSION | none (keyword stays default) |
 | ✅ `prompt_catalog_autogen` | Generate `tdmcp://prompts` from the registry | S | Med | High | P1 | NEW | landed on main after v0.7.0 |
 | ✅ `cookbook_resource` | Expose the prompt-cookbook as `tdmcp://cookbook` / `tdmcp://cookbook/{en|pt}` | S | Med | Med | P2 | NEW | landed on main after v0.7.0 |
-| `llm_config_knobs` | `TDMCP_LLM_TIER`/`_MAX_STEPS`/`_TEMPERATURE` keys | S | Low | High | P2 | NEW | none |
+| ✅ `llm_config_knobs` | `TDMCP_LLM_TIER`/`_MAX_STEPS`/`_TEMPERATURE` keys | S | Low | High | P2 | NEW | landed on main after v0.7.0 |
 | ✅ `recipe_resource_search` | Keyword search over recipes via `tdmcp://recipes/search/{query}` | S | Low | High | P2 | EXTENSION | landed on main after v0.7.0 |
 | `narrate_set` | Persisted narration during `auto_vj_director` | S | Low | Med | P2 | NEW | none |
 
@@ -500,8 +505,8 @@ or partial work.
 |---|---|---|---|---|---|---|---|
 | ✅ `info_chop_telemetry` | Opt-in Info CHOP sampling in `get_node_state_runtime` (`include_info_chop:true`) | M | Med | High | P1 | EXTENSION | landed on main after v0.7.0; live channel names still vary by TD build |
 | `createable_truth_flag` | `GET /api/optypes` ground truth → mark createable/deprecated | M | Med | Med | P1 | NEW | probe-live (enumeration) |
-| `bridge_health_watchdog` | `GET /api/health` — cook-rate/dropped-frame/GPU + staleness | S | Med | Med | P1 | NEW | realtime attr names |
-| `watch_node` | Sample one op's state/param/channel over an interval | S | Low | High | P2 | NEW | none |
+| ✅ `bridge_health_watchdog` | `GET /api/health` — cook-rate/dropped-frame/GPU + staleness | S | Med | Med | P1 | NEW | implemented after v0.7.0; missing realtime attrs degrade to null/warnings |
+| ✅ `watch_node` | Sample one op's state/param/channel over an interval | S | Low | High | P2 | NEW | landed on main after v0.7.0; live channel names still vary by TD build |
 | `param_change_event` | Opt-in `param.changed` via a Parameter Execute DAT | M | Low | Med | P2 | NEW | onValueChange freq/scope |
 | `refresh_operator_kb` | Live-derived KB delta vs the static import | L | Low | Med | P2 | NEW | enumeration (depends on createable) |
 

@@ -62,9 +62,15 @@ O `tdmcp chat` **inicia o Ollama para você** se o daemon não estiver de pé �
 destacado e deixado rodando, então fechar o chat nunca tira seu modelo do ar.
 Flags úteis:
 
+- **`--read-only`** — força o tier seguro/somente leitura na sessão inteira.
+- **`--creative`** — usa o tier criativo e uma temperatura mais quente.
+- **`--prompt <texto>`** — roda um prompt headless e imprime a resposta sem abrir
+  o navegador.
 - **`--no-ollama`** — não iniciar automaticamente (para um endpoint remoto ou um
   daemon que você gerencia).
 - **`--no-open`** — não abrir o navegador automaticamente.
+- **`--profile <nome>`** / **`--config <caminho>`** — usa uma config/perfil salvo
+  para esta execução do chat.
 - **`--help`** — listar tudo.
 
 ::: tip Qual modelo local?
@@ -97,6 +103,9 @@ de ambiente:
 | --- | --- | --- |
 | `TDMCP_LLM_BASE_URL` | `http://127.0.0.1:11434/v1` | LM Studio, uma GPU na nuvem ou uma API paga. |
 | `TDMCP_LLM_MODEL` | `qwen2.5:3b` | Qualquer id de modelo disponível naquele endpoint. |
+| `TDMCP_LLM_TIER` | `standard` | Inicia a UI em modo `standard`, `safe` ou `creative`. |
+| `TDMCP_LLM_MAX_STEPS` | `8` | Limita iterações modelo/tool em um turno. |
+| `TDMCP_LLM_TEMPERATURE` | `0.4` | Ajusta a temperatura de amostragem do endpoint de chat. |
 
 A lista completa (incluindo `TDMCP_LLM_API_KEY` e a porta do chat) está em
 [variáveis de ambiente](/pt/reference/environment#copiloto-local-tdmcp-chat).

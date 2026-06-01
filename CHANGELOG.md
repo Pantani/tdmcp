@@ -13,15 +13,45 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   reads run-file JSON from stdin; `tdmcp-agent run --continue-on-error` executes
   the remaining steps and returns the first non-zero status at the end; and
   `tdmcp-agent config profiles` / `config profile <name>` list and inspect saved
-  venue profiles with secrets redacted.
+  venue profiles with secrets redacted. The same lane now also exposes
+  `tdmcp-agent commands --json`, the matching `tdmcp://commands` resource,
+  grouped `tdmcp-agent --help`, focused `tdmcp-agent help <command>`, and
+  `tdmcp install-bridge --verify` / `--wait` / `--port` bridge polling against
+  `/api/info`.
 - **MCP resources:** `tdmcp://prompts` is now generated from the real prompt
   registry (removing manual drift), `tdmcp://recipes/search/{query}` searches the
   recipe catalog, and `tdmcp://cookbook` plus `tdmcp://cookbook/{en|pt}` expose
   the prompt cookbook as an MCP resource. The npm package now includes the EN/PT
   cookbook Markdown needed by that resource.
+- **Local copilot knobs:** `TDMCP_LLM_TIER`, `TDMCP_LLM_MAX_STEPS`, and
+  `TDMCP_LLM_TEMPERATURE` configure the default chat tier, model/tool-loop step
+  budget, and sampling temperature. The copilot system prompt now also includes
+  the real registered prompt catalog from `tdmcp://prompts`, so it can guide users
+  toward the right MCP prompt instead of relying on stale prompt names.
 - **Runtime telemetry:** `get_node_state_runtime` accepts
   `include_info_chop:true` to fail-forward sample a temporary Info CHOP and
   return its numeric channels under `info_chop`.
+- **`watch_node`** *(layer3, td-depth)* — read-only short-window sampling of one
+  operator's runtime state, readable parameters, and CHOP channel values. Missing
+  attributes/channels fail forward as warnings so the diagnostic loop stays useful
+  across TD builds. Tool registry: 268 → 269.
+- **Roadmap CLI/DX follow-through:** `tdmcp install-client --write --path <file>`
+  now deep-merges and verifies explicit client JSON config files; `tdmcp serve --http [--port]`
+  starts loopback Streamable HTTP without changing bare `tdmcp` stdio defaults;
+  `tdmcp-agent --output table|csv` renders list results for shell
+  use; the REPL has persistent history + Tab completion; and `tdmcp-agent watch`
+  gained `--pretty`, event counts, `--heartbeat-ms`, and `--on <events> --exec
+  <cmd> --debounce-ms <ms>` hooks for reactive local scripts.
+- **Local copilot CLI flags:** `tdmcp chat --read-only` locks browser/API turns
+  to the safe tool tier, `--creative` selects the creative tier with a warmer
+  sampling preset, `--prompt <text>` runs a headless one-shot answer without
+  opening the browser/server, and `--profile` / `--config` select saved configs
+  for chat runs.
+- **Bridge health watchdog:** the TouchDesigner bridge now serves
+  `GET /api/health` with state/status, timestamp, uptime, heartbeat metadata,
+  TouchDesigner info and fail-forward optional performance metrics
+  (cook/frame/drop/GPU fields are `null` when the current TD build does not
+  expose them).
 
 ## [0.7.0] - 2026-06-01
 
