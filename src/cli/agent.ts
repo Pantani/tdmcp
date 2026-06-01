@@ -8,7 +8,18 @@ import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import { EffectPolicySchema, parseShowIntent } from "../automation/showDirectorSchema.js";
+import {
+  approveShowIntent,
+  cancelShowIntent,
+  createShowDirectorState,
+  ShowDirectorStateSchema,
+  submitShowIntent,
+} from "../automation/showDirectorRuntime.js";
+import {
+  EffectPolicySchema,
+  parseShowIntent,
+  ShowIntentSchema,
+} from "../automation/showDirectorSchema.js";
 import { capturePreview } from "../feedback/previewCapture.js";
 import { buildToolContext } from "../server/context.js";
 import { type TdEventHandler, TdEventStream } from "../td-client/eventStream.js";
@@ -618,10 +629,14 @@ interface Command {
 }
 
 const showDirectorCliSchema = z.object({
-  intent: z.unknown().describe("Raw AI Show Director intent to validate and policy-check."),
+  intent: ShowIntentSchema.optional().describe(
+    "Structured AI Show Director intent to validate and policy-check.",
+  ),
+  state: ShowDirectorStateSchema.optional().describe("Prior show-director queue/log state."),
   policy: EffectPolicySchema.optional().describe(
     "Optional effect policy override for dry-run tests.",
   ),
+  operator: z.string().trim().min(1).optional().describe("Human operator resolving approval."),
 });
 
 export interface AgentCommandCatalogEntry {
@@ -2870,11 +2885,59 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
     }
     const args = showDirectorCliSchema.safeParse(assembled.raw);
     if (!args.success) {
+      const intentIssues = args.error.issues.filter((issue) => issue.path[0] === "intent");
+      if (intentIssues.length > 0) {
+        const issues = intentIssues.map((issue) => `${issue.path.join(".")}: ${issue.message}`);
+        return {
+          stdout: "",
+          stderr: `Malformed show intent: ${issues.join("; ")}\n`,
+          code: 2,
+        };
+      }
       return {
         stdout: "",
         stderr: `Invalid arguments for "show-director": ${args.error.message}\n`,
         code: 2,
       };
+    }
+    const sub = positionals[1];
+    const state = args.data.state ?? createShowDirectorState();
+    if (sub === "approve" || sub === "cancel") {
+      const approvalId = positionals[2];
+      if (!approvalId) {
+        return {
+          stdout: "",
+          stderr: `Missing approval id for "show-director ${sub}".\n`,
+          code: 2,
+        };
+      }
+      const operator = args.data.operator;
+      if (sub === "approve" && !operator) {
+        return {
+          stdout: "",
+          stderr: 'Missing operator for "show-director approve".\n',
+          code: 2,
+        };
+      }
+      const resolved =
+        sub === "approve"
+          ? approveShowIntent(state, approvalId, operator ?? "", args.data.policy)
+          : cancelShowIntent(state, approvalId, operator);
+      if (!resolved.ok) return { stdout: "", stderr: `${resolved.reason}\n`, code: 2 };
+      const doc = {
+        dryRun: true,
+        approval: resolved.approval,
+        plan: resolved.plan,
+        state: resolved.state,
+      };
+      return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
+    }
+    if (sub !== undefined) {
+      return { stdout: "", stderr: `Unknown show-director verb "${sub}".\n`, code: 2 };
+    }
+
+    if (args.data.intent === undefined) {
+      return { stdout: "", stderr: 'Missing intent for "show-director".\n', code: 2 };
     }
     const parsedIntent = parseShowIntent(args.data.intent, args.data.policy);
     if (!parsedIntent.ok) {
@@ -2884,10 +2947,14 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
         code: 2,
       };
     }
+    const submitted = submitShowIntent(state, parsedIntent.intent, args.data.policy);
     const doc = {
       dryRun: true,
       intent: parsedIntent.intent,
-      decision: parsedIntent.decision,
+      decision: submitted.decision,
+      approval: submitted.approval,
+      plan: submitted.plan,
+      state: submitted.state,
     };
     return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
   }

@@ -37,7 +37,7 @@ export const ShowIntentSchema = z.discriminatedUnion("type", [
     type: z.literal("request_cue"),
     cue: NonEmptyString,
     scene_id: z.string().trim().optional(),
-    preapproved: z.boolean().default(true),
+    preapproved: z.boolean().default(false),
   }),
   z.object({
     type: z.literal("arm_effect"),
@@ -180,6 +180,11 @@ function policyMap(policy: EffectPolicy): Map<ShowEffect, EffectPolicyEntry> {
   return new Map(policy.effects.map((entry) => [entry.effect, entry]));
 }
 
+function formatIssue(issue: z.ZodIssue): string {
+  const path = issue.path.length > 0 ? issue.path.join(".") : "<root>";
+  return `${path}: ${issue.message}`;
+}
+
 function malformedDecision(issues: string[]): PolicyDecision {
   return {
     decision: "block",
@@ -278,12 +283,14 @@ export function evaluateShowIntent(
 
   if (
     entry.max_intensity !== undefined &&
-    intent.intensity !== undefined &&
-    intent.intensity > entry.max_intensity
+    (intent.intensity === undefined || intent.intensity > entry.max_intensity)
   ) {
     return {
       decision: "block",
-      reason: `${intent.effect} intensity exceeds policy limit`,
+      reason:
+        intent.intensity === undefined
+          ? `${intent.effect} intensity is required by policy`
+          : `${intent.effect} intensity exceeds policy limit`,
       intent_type: intent.type,
       effect: intent.effect,
       limits_applied: limits,
@@ -304,10 +311,11 @@ export function evaluateShowIntent(
 export function parseShowIntent(raw: unknown, policy?: EffectPolicy): ParsedShowIntent {
   const parsed = ShowIntentSchema.safeParse(raw);
   if (!parsed.success) {
+    const issues = parsed.error.issues.map(formatIssue);
     return {
       ok: false,
-      decision: malformedDecision(parsed.error.issues.map((issue) => issue.message)),
-      issues: parsed.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`),
+      decision: malformedDecision(issues),
+      issues,
     };
   }
 

@@ -56,6 +56,7 @@ tdmcp-agent completion bash       # shell completion snippet
 tdmcp-agent repl                  # interactive mode with persistent history + Tab completion
 tdmcp-agent watch --pretty --heartbeat-ms 5000
 tdmcp-agent watch --on beat --exec './cue-next.sh' --debounce-ms 250
+tdmcp-agent show-director --params '{"intent":{"type":"request_cue","cue":"band_intro","preapproved":true}}'
 ```
 
 Output format is `--output json` (default) / `ndjson` / `text` / `table` /
@@ -69,6 +70,12 @@ Run files also accept stdin via `run -`; add `--continue-on-error` to execute th
 whole file and return the first non-zero step code after recording every result.
 For agent clients, `tdmcp://commands` exposes the same command catalog as an MCP
 resource.
+
+`tdmcp-agent show-director` is a dry-run only AI Show Director policy surface. It
+validates a `ShowIntent`, returns `allow`, `require_approval` or `block`, and
+emits updated approval/audit state as JSON. It never connects to TouchDesigner or
+hardware; use it to gate future voice/OpenClaw/dashboard integrations before any
+cue or effect is mapped to real execution.
 
 ## Local copilot (`tdmcp chat`)
 

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  approveShowIntent,
+  cancelShowIntent,
+  createShowDirectorState,
+  submitShowIntent,
+} from "../../src/automation/showDirectorRuntime.js";
+import {
   evaluateShowIntent,
   parseShowIntent,
   ShowIntentSchema,
@@ -49,6 +55,31 @@ describe("showDirectorSchema", () => {
     expect(decision.reason).toContain("duration");
   });
 
+  it("blocks capped effects when intensity is omitted", () => {
+    const intent = ShowIntentSchema.parse({
+      type: "arm_effect",
+      effect: "strobe",
+      duration_seconds: 5,
+    });
+
+    const decision = evaluateShowIntent(intent);
+
+    expect(decision.decision).toBe("block");
+    expect(decision.reason).toContain("intensity is required");
+  });
+
+  it("requires approval for cue requests unless they are explicitly pre-approved", () => {
+    const intent = ShowIntentSchema.parse({
+      type: "request_cue",
+      cue: "band_intro",
+    });
+
+    const decision = evaluateShowIntent(intent);
+
+    expect(decision.decision).toBe("require_approval");
+    expect(decision.reason).toContain("not pre-approved");
+  });
+
   it("blocks blackout, mixer and PA intents by default", () => {
     const effects = ["blackout", "mixer_gain", "pa_mute", "audio_routing"] as const;
 
@@ -73,5 +104,81 @@ describe("showDirectorSchema", () => {
     expect(parsed.ok).toBe(false);
     expect(parsed.decision.decision).toBe("block");
     expect(parsed.decision.reason).toContain("Malformed");
+    expect(parsed.decision.reason).toContain("duration_seconds");
+  });
+});
+
+describe("showDirectorRuntime", () => {
+  it("turns an allowed pre-approved cue into an abstract execution plan", () => {
+    const state = createShowDirectorState();
+
+    const result = submitShowIntent(state, {
+      type: "request_cue",
+      cue: "band_intro",
+      preapproved: true,
+    });
+
+    expect(result.decision.decision).toBe("allow");
+    expect(result.plan).toEqual([
+      {
+        kind: "cue",
+        cue: "band_intro",
+        dry_run_only: true,
+      },
+    ]);
+    expect(result.state.audit_log[0]?.status).toBe("allowed");
+  });
+
+  it("queues approval-gated fog without producing a hardware execution plan", () => {
+    const state = createShowDirectorState();
+
+    const result = submitShowIntent(state, {
+      type: "arm_effect",
+      effect: "fog",
+      duration_seconds: 3,
+      intensity: 0.4,
+    });
+
+    expect(result.decision.decision).toBe("require_approval");
+    expect(result.plan).toEqual([]);
+    expect(result.approval?.effect).toBe("fog");
+    expect(result.state.approvals).toHaveLength(1);
+    expect(result.state.audit_log[0]?.status).toBe("queued");
+  });
+
+  it("approves a queued effect into an operator-approved abstract effect plan", () => {
+    const queued = submitShowIntent(createShowDirectorState(), {
+      type: "arm_effect",
+      effect: "fog",
+      duration_seconds: 3,
+      intensity: 0.4,
+    });
+
+    const approved = approveShowIntent(queued.state, queued.approval?.id ?? "", "operator-a");
+
+    expect(approved.ok).toBe(true);
+    expect(approved.plan[0]).toMatchObject({
+      kind: "effect",
+      effect: "fog",
+      dry_run_only: true,
+      operator: "operator-a",
+    });
+    expect(approved.state.approvals[0]?.status).toBe("approved");
+    expect(approved.state.audit_log.at(-1)?.status).toBe("approved");
+  });
+
+  it("cancels a queued approval and records the operator decision", () => {
+    const queued = submitShowIntent(createShowDirectorState(), {
+      type: "arm_effect",
+      effect: "fog",
+      duration_seconds: 3,
+      intensity: 0.4,
+    });
+
+    const cancelled = cancelShowIntent(queued.state, queued.approval?.id ?? "", "operator-a");
+
+    expect(cancelled.ok).toBe(true);
+    expect(cancelled.state.approvals[0]?.status).toBe("cancelled");
+    expect(cancelled.state.audit_log.at(-1)?.status).toBe("cancelled");
   });
 });
