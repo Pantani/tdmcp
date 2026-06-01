@@ -133,4 +133,30 @@ describe("tutorialCompanionPackImpl", () => {
     });
     expect(result.isError).toBe(true);
   });
+
+  it("rejects an escaping `folder` before issuing any TD topology call", async () => {
+    const vault = makeVault();
+    let topologyCalls = 0;
+    server.use(
+      http.get(`${TD_BASE}/api/network/:seg/topology`, () => {
+        topologyCalls += 1;
+        return HttpResponse.json({ ok: true, value: { nodes: [], connections: [] } });
+      }),
+    );
+    const result = await tutorialCompanionPackImpl(makeCtx(vault), {
+      source_comp: "/project1/scene",
+      folder: "../escape",
+      lesson_count: 3,
+      preview_width: 128,
+      preview_height: 72,
+      tags: [],
+    });
+    expect(result.isError).toBe(true);
+    const txt = result.content
+      .filter((c): c is { type: "text"; text: string } => c.type === "text")
+      .map((c) => c.text)
+      .join("\n");
+    expect(txt).toContain("Invalid vault folder");
+    expect(topologyCalls).toBe(0);
+  });
 });

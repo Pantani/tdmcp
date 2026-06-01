@@ -2323,6 +2323,7 @@ function completionScript(shell: string): string | undefined {
     "--exclude",
     "--quiet",
     "--no-color",
+    "--force",
     "--version",
     "--help",
   ];

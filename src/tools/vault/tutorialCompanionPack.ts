@@ -98,6 +98,16 @@ export async function tutorialCompanionPackImpl(ctx: ToolContext, args: Tutorial
   const name = args.name ?? fallback;
   const stem = slugify(name);
   const packRel = `${args.folder}/${stem}`;
+
+  // Validate destination early so an invalid/escaping `folder` (e.g. "../")
+  // fails fast — before paying for TD topology + preview calls.
+  try {
+    vault.resolve(packRel);
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    return errorResult(`Invalid vault folder "${args.folder}": ${reason}`);
+  }
+
   const warnings: string[] = [];
 
   try {

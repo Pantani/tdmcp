@@ -15,7 +15,7 @@ export interface ConfigInitResult {
 }
 
 export interface ConfigInitOptions {
-  /** Target file path. Defaults to `~/.tdmcp/config.env`. Leading `~/` is expanded. */
+  /** Target file path. Defaults to `~/.tdmcp/config.env`. A leading `~`, `~/`, or `~\` is expanded to the user's home directory. */
   out?: string;
   /** Overwrite an existing file. Without it, refuses (code 1) if the path exists. */
   force?: boolean;
