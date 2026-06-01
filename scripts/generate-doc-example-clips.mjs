@@ -1458,6 +1458,330 @@ function postPasses3dFrame(t) {
   return buf;
 }
 
+function colorWheelsFrame(t) {
+  const buf = baseFrame();
+  for (let x = 22; x < 458; x++) {
+    const u = (x - 22) / 436;
+    const source = mixColor([24, 32, 46], [226, 214, 180], u);
+    const grade = mixColor(source, [34, 190, 210], smoothstep(0.05, 0.62, u) * 0.28);
+    const warm = mixColor(grade, [255, 150, 72], smoothstep(0.52, 1, u) * 0.32);
+    rect(buf, x, 36, 1, 70, source, 0.96);
+    rect(buf, x, 112, 1, 70, warm, 0.96);
+  }
+  for (let i = 0; i < 3; i++) {
+    const cx = 118 + i * 122;
+    const cy = 220;
+    const spin = t * 0.8 + i * 2.1;
+    glow(buf, cx, cy, 50, [60, 210, 230], 0.22);
+    for (let j = 0; j < 48; j++) {
+      const a = (j / 48) * Math.PI * 2;
+      const color = hsv((a / (Math.PI * 2) + i * 0.1 + t * 0.04) % 1, 0.78, 0.95);
+      line(buf, cx, cy, cx + Math.cos(a) * 34, cy + Math.sin(a) * 34, color, 0.35);
+    }
+    circle(buf, cx, cy, 35, [8, 12, 18], 0.18);
+    circle(buf, cx + Math.cos(spin) * 18, cy + Math.sin(spin) * 18, 6, [255, 255, 255], 0.9);
+  }
+  rect(buf, 76, 18, 94, 6, [57, 232, 190], 0.85);
+  rect(buf, 190, 18, 118, 6, [255, 143, 94], 0.72);
+  rect(buf, 328, 18, 72, 6, [130, 160, 255], 0.74);
+  return buf;
+}
+
+function popGeometryFrame(t) {
+  const buf = baseFrame();
+  const cx = width / 2;
+  const cy = 128;
+  const points = [];
+  for (let i = 0; i < 34; i++) {
+    const a = (i / 34) * Math.PI * 2 + t * 0.9;
+    const warp = Math.sin(i * 0.7 + t * 2.4) * 16;
+    points.push([cx + Math.cos(a) * (104 + warp), cy + Math.sin(a) * (42 + warp * 0.18)]);
+  }
+  for (let i = 0; i < points.length; i++) {
+    const [x0, y0] = points[i];
+    const [x1, y1] = points[(i + 1) % points.length];
+    line(buf, x0, y0, x1, y1, [70, 220, 245], 0.8);
+    line(buf, x0, y0, cx, cy, [255, 255, 255], 0.08);
+    circle(buf, x0, y0, 3.5, [255, 219, 90], 0.7);
+  }
+  glow(buf, cx, cy, 142, [60, 220, 245], 0.18);
+  rect(buf, 44, 208, 392, 8, [26, 36, 56], 0.95);
+  rect(buf, 44, 208, 100 + Math.sin(t * 2) * 32, 8, [57, 232, 190], 0.92);
+  rect(buf, 44, 230, 392, 8, [26, 36, 56], 0.95);
+  rect(buf, 44, 230, 225 + Math.cos(t * 1.4) * 38, 8, [255, 87, 142], 0.82);
+  rect(buf, 44, 252, 392, 8, [26, 36, 56], 0.95);
+  rect(buf, 44, 252, 304 + Math.sin(t * 1.8) * 50, 8, [255, 218, 92], 0.82);
+  return buf;
+}
+
+function extractPaletteFrame(t) {
+  const buf = baseFrame();
+  for (let y = 34; y < 220; y++) {
+    for (let x = 26; x < 284; x++) {
+      const c = proceduralClip(x - 26, y - 34, t, 2);
+      const vignette = 1 - Math.hypot((x - 155) / 160, (y - 126) / 120) * 0.28;
+      set(
+        buf,
+        x,
+        y,
+        c.map((v) => v * vignette),
+        0.92,
+      );
+    }
+  }
+  const swatches = [
+    [24, 188, 126],
+    [68, 84, 232],
+    [255, 197, 72],
+    [235, 72, 128],
+    [18, 26, 42],
+  ];
+  swatches.forEach((color, i) => {
+    const reveal = smoothstep(i * 0.18, i * 0.18 + 0.24, (t * 0.62) % 1);
+    const y = 42 + i * 35;
+    glow(buf, 340, y + 13, 36, color, 0.14 * reveal);
+    rect(buf, 322, y, 60 * reveal, 26, color, 0.9);
+    rect(buf, 388, y + 6, 54 * reveal, 5, [255, 255, 255], 0.35);
+    rect(buf, 388, y + 17, 36 * reveal, 4, [255, 255, 255], 0.18);
+  });
+  const scanX = 26 + ((t * 82) % 258);
+  rect(buf, scanX, 34, 2, 186, [255, 255, 255], 0.65);
+  return buf;
+}
+
+function sopToSvgFrame(t) {
+  const buf = baseFrame();
+  const path = [];
+  for (let i = 0; i < 80; i++) {
+    const x = 38 + i * 3.6;
+    const y = 136 + Math.sin(i * 0.28 + t * 2.5) * 48 + Math.sin(i * 0.71) * 12;
+    path.push([x, y]);
+  }
+  for (let i = 0; i < path.length - 1; i++)
+    line(buf, path[i][0], path[i][1], path[i + 1][0], path[i + 1][1], [68, 220, 255], 0.66);
+  rect(buf, 316, 34, 128, 190, [244, 239, 224], 0.96);
+  rect(buf, 328, 48, 104, 162, [255, 255, 255], 0.86);
+  const p = Math.floor(((t * 0.5) % 1) * (path.length - 1));
+  for (let i = 0; i < p; i++) {
+    const x0 = 336 + (path[i][0] - 38) * 0.34;
+    const y0 = 130 + (path[i][1] - 136) * 0.52;
+    const x1 = 336 + (path[i + 1][0] - 38) * 0.34;
+    const y1 = 130 + (path[i + 1][1] - 136) * 0.52;
+    line(buf, x0, y0, x1, y1, [18, 24, 32], 0.92);
+  }
+  circle(
+    buf,
+    336 + (path[p][0] - 38) * 0.34,
+    130 + (path[p][1] - 136) * 0.52,
+    4,
+    [255, 82, 126],
+    0.95,
+  );
+  rect(buf, 92, 230, 120, 8, [57, 232, 190], 0.8);
+  rect(buf, 332, 230, 88, 8, [255, 214, 86], 0.8);
+  return buf;
+}
+
+function swapOperatorFrame(t) {
+  const buf = baseFrame();
+  const nodes = [
+    [56, 102, 84, 48, [65, 198, 235]],
+    [
+      198,
+      94,
+      96,
+      64,
+      mixColor([255, 88, 132], [255, 208, 80], smoothstep(0.18, 0.86, (t * 0.5) % 1)),
+    ],
+    [350, 102, 84, 48, [88, 230, 164]],
+  ];
+  for (let i = 0; i < 3; i++) {
+    const [x, y, w, h, c] = nodes[i];
+    glow(buf, x + w / 2, y + h / 2, 50, c, 0.2);
+    rect(buf, x, y, w, h, [9, 13, 21], 0.96);
+    rect(buf, x + 8, y + 10, w - 16, 8, c, 0.82);
+    rect(buf, x + 8, y + 26, w - 26, 5, [255, 255, 255], 0.25);
+    rect(buf, x + 8, y + 36, w - 38, 5, [255, 255, 255], 0.16);
+  }
+  line(buf, 140, 126, 198, 126, [255, 255, 255], 0.75);
+  line(buf, 294, 126, 350, 126, [255, 255, 255], 0.75);
+  const sweep = 198 + smoothstep(0.12, 0.78, (t * 0.65) % 1) * 96;
+  rect(buf, sweep - 3, 90, 6, 72, [255, 255, 255], 0.62);
+  for (let i = 0; i < 7; i++) {
+    const x = 74 + i * 48;
+    rect(buf, x, 205, 32, 8, [42, 54, 76], 0.86);
+    rect(buf, x, 221, 32, 8, i % 2 === 0 ? [57, 232, 190] : [255, 214, 86], 0.76);
+  }
+  return buf;
+}
+
+function copilotVisionFrame(t) {
+  const buf = baseFrame();
+  for (let y = 38; y < 220; y++) {
+    for (let x = 34; x < 245; x++) {
+      set(buf, x, y, proceduralClip(x, y, t, 0), 0.94);
+    }
+  }
+  const scanY = 42 + ((t * 72) % 174);
+  rect(buf, 34, scanY, 211, 2, [255, 255, 255], 0.62);
+  rect(buf, 280, 44, 156, 24, [22, 30, 46], 0.94);
+  rect(buf, 292, 54, 94 + Math.sin(t * 2) * 24, 5, [57, 232, 190], 0.8);
+  for (let i = 0; i < 5; i++) {
+    const y = 88 + i * 26;
+    rect(buf, 280, y, 156, 18, [18, 24, 36], 0.92);
+    rect(
+      buf,
+      292,
+      y + 6,
+      56 + Math.sin(t * 1.5 + i) * 22,
+      5,
+      i % 2 ? [255, 214, 86] : [255, 86, 134],
+      0.72,
+    );
+    rect(buf, 362, y + 6, 46 + Math.cos(t * 1.3 + i) * 12, 5, [255, 255, 255], 0.22);
+  }
+  glow(buf, 140, 126, 120, [80, 210, 255], 0.14);
+  return buf;
+}
+
+function lookToxTutorialFrame(t) {
+  const buf = baseFrame();
+  rect(buf, 38, 64, 120, 86, [16, 24, 36], 0.96);
+  for (let i = 0; i < 5; i++) {
+    rect(
+      buf,
+      52 + (i % 2) * 48,
+      80 + Math.floor(i / 2) * 22,
+      36,
+      12,
+      i % 2 ? [255, 214, 86] : [57, 232, 190],
+      0.72,
+    );
+  }
+  const progress = smoothstep(0.1, 0.88, (t * 0.55) % 1);
+  line(buf, 158, 108, 246, 108, [255, 255, 255], 0.32 + progress * 0.45);
+  circle(buf, 158 + progress * 88, 108, 5, [255, 86, 134], 0.9);
+  rect(buf, 246, 72, 68, 76, [235, 241, 244], 0.9);
+  rect(buf, 258, 88, 44, 8, [18, 24, 34], 0.5);
+  rect(buf, 258, 106, 34, 8, [57, 232, 190], 0.66);
+  rect(buf, 258, 124, 46, 8, [255, 214, 86], 0.66);
+  rect(buf, 352, 48, 90, 154, [18, 26, 40], 0.94);
+  for (let i = 0; i < 4; i++) {
+    const y = 64 + i * 32;
+    rect(buf, 366, y, 48, 10, [255, 255, 255], 0.24);
+    rect(buf, 366, y + 16, 60, 8, i % 2 ? [255, 86, 134] : [57, 232, 190], 0.58);
+  }
+  return buf;
+}
+
+function libraryTagVersionFrame(t) {
+  const buf = baseFrame();
+  for (let i = 0; i < 5; i++) {
+    const y = 36 + i * 40;
+    rect(buf, 36, y, 186, 28, [18, 26, 40], 0.95);
+    rect(buf, 50, y + 8, 74, 5, [255, 255, 255], 0.24);
+    rect(
+      buf,
+      136,
+      y + 8,
+      24 + ((i + 1) % 3) * 16,
+      5,
+      i % 2 ? [57, 232, 190] : [255, 214, 86],
+      0.72,
+    );
+    if ((t * 2 + i) % 5 < 1.2) rect(buf, 198, y + 6, 12, 12, [255, 86, 134], 0.85);
+  }
+  rect(buf, 270, 46, 142, 150, [15, 22, 34], 0.96);
+  for (let i = 0; i < 4; i++) {
+    const x = 294 + i * 28;
+    circle(buf, x, 92 + i * 22, 8, [57, 232, 190], 0.78);
+    if (i > 0) line(buf, x - 28, 70 + i * 22, x, 92 + i * 22, [255, 255, 255], 0.28);
+    rect(buf, x + 14, 88 + i * 22, 42, 5, [255, 255, 255], 0.26);
+  }
+  rect(buf, 292, 218, 104 + Math.sin(t * 2) * 22, 8, [255, 214, 86], 0.78);
+  return buf;
+}
+
+function generativeClassicsPackFrame(t) {
+  const buf = baseFrame();
+  for (let i = 0; i < 6; i++) {
+    const x0 = 34 + (i % 3) * 138;
+    const y0 = 34 + Math.floor(i / 3) * 84;
+    for (let y = y0; y < y0 + 62; y++) {
+      for (let x = x0; x < x0 + 112; x++) {
+        set(buf, x, y, proceduralClip(x - x0, y - y0, t + i * 0.7, i % 3), 0.92);
+      }
+    }
+    rect(buf, x0, y0 + 68, 72, 5, [255, 255, 255], 0.24);
+    rect(buf, x0, y0 + 76, 42 + i * 7, 5, i % 2 ? [255, 214, 86] : [57, 232, 190], 0.7);
+  }
+  rect(buf, 134, 224, 212, 18, [18, 26, 40], 0.94);
+  rect(buf, 150, 231, 82 + Math.sin(t * 2) * 20, 5, [255, 255, 255], 0.3);
+  rect(buf, 254, 231, 54, 5, [255, 86, 134], 0.72);
+  return buf;
+}
+
+function dataSourceHotfixFrame(t) {
+  const buf = baseFrame();
+  rect(buf, 38, 46, 110, 46, [18, 26, 40], 0.95);
+  rect(buf, 332, 46, 110, 46, [18, 26, 40], 0.95);
+  const pulse = smoothstep(0.1, 0.4, (t * 1.3) % 1) * (1 - smoothstep(0.55, 0.95, (t * 1.3) % 1));
+  line(buf, 148, 68, 332, 68, [255, 255, 255], 0.32);
+  circle(buf, 148 + pulse * 184, 68, 5, [57, 232, 190], 0.95);
+  rect(buf, 186, 116, 108, 96, [12, 18, 28], 0.96);
+  for (let i = 0; i < 5; i++) {
+    const value = 22 + Math.sin(t * 2.4 + i * 0.8) * 16 + i * 8;
+    rect(buf, 206 + i * 14, 190 - value, 9, value, [57, 232, 190], 0.74);
+    rect(buf, 206 + i * 14, 196, 9, 6, [255, 214, 86], 0.72);
+  }
+  rect(buf, 58, 58, 58, 5, [255, 255, 255], 0.28);
+  rect(buf, 352, 58, 48, 5, [255, 255, 255], 0.28);
+  rect(buf, 218, 126, 44, 5, [255, 86, 134], 0.72);
+  return buf;
+}
+
+function elicitMissingArgsFrame(t) {
+  const buf = baseFrame();
+  rect(buf, 52, 36, 376, 198, [14, 21, 34], 0.96);
+  const fill = smoothstep(0.12, 0.82, (t * 0.55) % 1);
+  for (let i = 0; i < 5; i++) {
+    const y = 62 + i * 32;
+    rect(buf, 74, y, 92, 8, [255, 255, 255], 0.22);
+    rect(buf, 190, y - 5, 178, 18, [28, 38, 58], 0.88);
+    const local = smoothstep(i * 0.15, i * 0.15 + 0.24, fill);
+    rect(buf, 202, y + 1, (70 + i * 18) * local, 5, i % 2 ? [255, 214, 86] : [57, 232, 190], 0.86);
+    if (local > 0.8) circle(buf, 388, y + 4, 6, [88, 230, 164], 0.86);
+  }
+  rect(buf, 96, 210, 74, 7, [255, 86, 134], 0.72);
+  rect(buf, 190, 210, 156 * fill, 7, [57, 232, 190], 0.82);
+  return buf;
+}
+
+function configInitFrame(t) {
+  const buf = baseFrame();
+  rect(buf, 74, 28, 332, 214, [235, 241, 244], 0.94);
+  for (let i = 0; i < 9; i++) {
+    const y = 52 + i * 19;
+    const enabled = i !== 2 && i !== 7;
+    rect(buf, 96, y, enabled ? 72 : 48, 5, enabled ? [18, 24, 34] : [120, 128, 140], 0.52);
+    rect(
+      buf,
+      184,
+      y,
+      144 - (i % 3) * 18,
+      5,
+      i % 2 ? [57, 160, 190] : [196, 92, 122],
+      enabled ? 0.7 : 0.22,
+    );
+    if (!enabled) rect(buf, 84, y - 1, 6, 6, [120, 128, 140], 0.75);
+  }
+  const cursor = 58 + Math.floor((t * 8) % 9) * 19;
+  rect(buf, 84, cursor - 5, 312, 15, [255, 214, 86], 0.18);
+  rect(buf, 118, 216, 112, 8, [57, 232, 190], 0.72);
+  rect(buf, 248, 216, 70, 8, [255, 86, 134], 0.62);
+  return buf;
+}
+
 const clips = [
   ["feedback-tunnel.mp4", feedbackTunnelFrame],
   ["reaction-diffusion.mp4", reactionDiffusionFrame],
@@ -1499,6 +1823,18 @@ const clips = [
   ["flow-abstraction-ink-lines.mp4", flowAbstractionFrame],
   ["npr-kuwahara-paint.mp4", nprFilterFrame],
   ["post-passes-3d-cinematic.mp4", postPasses3dFrame],
+  ["color-wheels-lift-gamma-gain.mp4", colorWheelsFrame],
+  ["pop-geometry-noise-rig.mp4", popGeometryFrame],
+  ["palette-extraction-swatches.mp4", extractPaletteFrame],
+  ["sop-to-svg-plotter.mp4", sopToSvgFrame],
+  ["swap-operator-rewire.mp4", swapOperatorFrame],
+  ["copilot-vision-critique.mp4", copilotVisionFrame],
+  ["look-tox-tutorial-pack.mp4", lookToxTutorialFrame],
+  ["library-tag-version-loop.mp4", libraryTagVersionFrame],
+  ["generative-classics-pack.mp4", generativeClassicsPackFrame],
+  ["data-source-http-ws-hotfix.mp4", dataSourceHotfixFrame],
+  ["missing-args-elicit.mp4", elicitMissingArgsFrame],
+  ["config-init-env-scan.mp4", configInitFrame],
 ];
 
 function writePpm(file, buf) {
