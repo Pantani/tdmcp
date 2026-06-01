@@ -1,6 +1,7 @@
 import type { ToolRegistrar } from "../types.js";
 import { registerAddCustomParameters } from "./addCustomParameters.js";
 import { registerAnimateParameter } from "./animateParameter.js";
+import { registerApplyLut } from "./applyLut.js";
 import { registerArrangeNetwork } from "./arrangeNetwork.js";
 import { registerAuthorScriptOperator } from "./authorScriptOperator.js";
 import { registerBatchOperations } from "./batchOperations.js";
@@ -21,10 +22,12 @@ import { registerCreateControlSurface } from "./createControlSurface.js";
 import { registerCreateCueSequencer } from "./createCueSequencer.js";
 import { registerCreateDataReactive } from "./createDataReactive.js";
 import { registerCreateDataSource } from "./createDataSource.js";
+import { registerCreateDataSourceHttpWs } from "./createDataSourceHttpWs.js";
 import { registerCreateDecks } from "./createDecks.js";
 import { registerCreateEnvelopeFollower } from "./createEnvelopeFollower.js";
 import { registerCreateEuclideanSequencer } from "./createEuclideanSequencer.js";
 import { registerCreateExternalIo } from "./createExternalIo.js";
+import { registerCreateFlowAbstraction } from "./createFlowAbstraction.js";
 import { registerCreateGlslMaterial } from "./createGlslMaterial.js";
 import { registerCreateGlslShader } from "./createGlslShader.js";
 import { registerCreateLedMapper } from "./createLedMapper.js";
@@ -33,6 +36,7 @@ import { registerCreateMacro } from "./createMacro.js";
 import { registerCreateMidiMap } from "./createMidiMap.js";
 import { registerCreateModulators } from "./createModulators.js";
 import { registerCreateNodeChain } from "./createNodeChain.js";
+import { registerCreateNprFilter } from "./createNprFilter.js";
 import { registerCreatePalette } from "./createPalette.js";
 import { registerCreatePanic } from "./createPanic.js";
 import { registerCreatePhoneRemote } from "./createPhoneRemote.js";
@@ -54,6 +58,7 @@ import { registerManageCheckpoint } from "./manageCheckpoint.js";
 import { registerManageComponent } from "./manageComponent.js";
 import { registerManageCue } from "./manageCue.js";
 import { registerManagePresets } from "./managePresets.js";
+import { registerPostPasses3d } from "./postPasses3d.js";
 import { registerRandomizeControls } from "./randomizeControls.js";
 import { registerRebuildNetwork } from "./rebuildNetwork.js";
 import { registerScaffoldExtension } from "./scaffoldExtension.js";
@@ -140,4 +145,10 @@ export const layer2Registrars: ToolRegistrar[] = [
   registerCreateSharedMemoryBridge,
   registerBuildSopGeometry,
   registerSyncTimecode,
+  // Campaign ingest-extend Wave 2 (2026-05-31): LUT/NPR/post-3d/flow/HTTP+WS:
+  registerApplyLut,
+  registerCreateNprFilter,
+  registerPostPasses3d,
+  registerCreateFlowAbstraction,
+  registerCreateDataSourceHttpWs,
 ];

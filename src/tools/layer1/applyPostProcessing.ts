@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { NPR_SHADER } from "../layer2/createNprFilter.js";
+import { errorResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { createSystemContainer, finalize, type NetworkBuilder, runBuild } from "./orchestration.js";
 
@@ -98,6 +100,22 @@ void main(){ vec2 uv=vUV.st; float line=hash(floor(uv.y*240.0));
 `,
 };
 
+/** Modes that need extra G-buffer AOVs (depth/normal/velocity) the post-fx chain
+ * doesn't have — redirect the artist to the dedicated 3D-aware tool. */
+const REDIRECT_3D_MODES: Record<string, string> = {
+  ssao: "post_passes_3d",
+  ssr: "post_passes_3d",
+  dof: "post_passes_3d",
+  motion_blur: "post_passes_3d",
+};
+
+/** NPR modes share one shader (NPR_SHADER) and pick a branch via uMode. */
+const NPR_MODES: Record<string, number> = {
+  npr_oil: 0,
+  npr_pencil: 1,
+  npr_watercolor: 2,
+};
+
 const EFFECTS = [
   "bloom",
   "chromatic_aberration",
@@ -118,6 +136,15 @@ const EFFECTS = [
   "crt",
   "mirror",
   "vhs",
+  // NPR painterly (shared NPR_SHADER from createNprFilter, branch via uMode):
+  "npr_oil",
+  "npr_pencil",
+  "npr_watercolor",
+  // 3D post passes — redirected to post_passes_3d (needs depth/normal AOVs):
+  "ssao",
+  "ssr",
+  "dof",
+  "motion_blur",
 ] as const;
 
 export const applyPostProcessingSchema = z.object({
@@ -130,7 +157,7 @@ export const applyPostProcessingSchema = z.object({
     .array(z.enum(EFFECTS))
     .min(1)
     .describe(
-      "Effects to apply, chained in the order listed. Each is one of: bloom, chromatic_aberration, film_grain, vignette, color_grade, sharpen, blur, edge_detect, invert, threshold, posterize, glitch, rgb_split, scanlines, halftone, dither, crt, mirror, vhs.",
+      "Effects to apply, chained in the order listed. Each is one of: bloom, chromatic_aberration, film_grain, vignette, color_grade, sharpen, blur, edge_detect, invert, threshold, posterize, glitch, rgb_split, scanlines, halftone, dither, crt, mirror, vhs, npr_oil, npr_pencil, npr_watercolor. The 3D-aware modes ssao / ssr / dof / motion_blur are recognized but redirect to the dedicated `post_passes_3d` tool (they need depth/normal/velocity AOVs that this chain doesn't have).",
     ),
   parent_path: z
     .string()
@@ -152,7 +179,45 @@ async function addGlslEffect(
   return glsl;
 }
 
+/**
+ * Add the shared NPR shader as an inline post-fx pass, mode-switched by uMode.
+ * Uses sensible defaults (sectors=8, radius=4, smoothness=0.5, strength=1.0) —
+ * for parent-bound live controls use the dedicated `create_npr_filter` tool.
+ */
+async function addNprEffect(builder: NetworkBuilder, name: string, mode: number): Promise<string> {
+  const glsl = await builder.add("glslTOP", name);
+  const frag = await builder.add("textDAT", `${name}_frag`);
+  const setup = [
+    `op(${q(frag)}).text = ${q(NPR_SHADER)}`,
+    `_g = op(${q(glsl)})`,
+    `_g.par.pixeldat = op(${q(frag)}).name`,
+    `_g.seq.vec.numBlocks = max(_g.seq.vec.numBlocks, 5)`,
+    `_g.par.vec0name = 'uMode'`,
+    `_g.par.vec0valuex = ${mode}`,
+    `_g.par.vec1name = 'uSectors'`,
+    `_g.par.vec1valuex = 8`,
+    `_g.par.vec2name = 'uRadius'`,
+    `_g.par.vec2valuex = 4`,
+    `_g.par.vec3name = 'uSmoothness'`,
+    `_g.par.vec3valuex = 0.5`,
+    `_g.par.vec4name = 'uStrength'`,
+    `_g.par.vec4valuex = 1.0`,
+  ].join("\n");
+  await builder.python(setup);
+  return glsl;
+}
+
 export async function applyPostProcessingImpl(ctx: ToolContext, args: ApplyPostProcessingArgs) {
+  // Friendly redirect for modes that require depth/normal/velocity AOVs — the
+  // post-fx chain only has the colour TOP, so route the artist to the dedicated
+  // 3D-aware tool instead of silently doing the wrong thing.
+  const redirect = args.effects.find((e) => REDIRECT_3D_MODES[e]);
+  if (redirect) {
+    return errorResult(
+      `Mode '${redirect}' requires depth/normal/velocity AOVs that apply_post_processing doesn't have — use the dedicated \`${REDIRECT_3D_MODES[redirect]}\` tool instead, which renders the G-buffer alongside the colour pass.`,
+      { unsupported_effect: redirect, use_tool_instead: REDIRECT_3D_MODES[redirect] },
+    );
+  }
   return runBuild(async () => {
     const builder = await createSystemContainer(ctx, args.parent_path, "post_fx");
     // Wires can't cross COMPs, so pull the external source in via a Select TOP (references by path).
@@ -170,6 +235,8 @@ export async function applyPostProcessingImpl(ctx: ToolContext, args: ApplyPostP
         nodePath = await builder.add(direct.type, `${effect}${i}`, direct.parameters);
       } else if (GLSL_EFFECTS[effect]) {
         nodePath = await addGlslEffect(builder, `${effect}${i}`, GLSL_EFFECTS[effect]);
+      } else if (effect in NPR_MODES) {
+        nodePath = await addNprEffect(builder, `${effect}${i}`, NPR_MODES[effect] ?? 0);
       }
       if (!nodePath) {
         builder.warnings.push(`Effect "${effect}" is not supported and was skipped.`);

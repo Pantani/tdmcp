@@ -11,6 +11,7 @@ import { registerCreateAutopilot } from "./createAutopilot.js";
 // Campaign Wave 3 — artist controls (backlog 2026-05-29):
 import { registerCreateBlobReactive } from "./createBlobReactive.js";
 import { registerCreateBodyReactive } from "./createBodyReactive.js";
+import { registerCreateChopRecorder } from "./createChopRecorder.js";
 import { registerCreateChromaReactive } from "./createChromaReactive.js";
 import { registerCreateColorGrade } from "./createColorGrade.js";
 import { registerCreateCubemapDome } from "./createCubemapDome.js";
@@ -76,6 +77,7 @@ import { registerCreateTransition } from "./createTransition.js";
 import { registerCreateTwoWaySurface } from "./createTwoWaySurface.js";
 import { registerCreateVectorLines } from "./createVectorLines.js";
 import { registerCreateVideoPlayer } from "./createVideoPlayer.js";
+import { registerCreateVideoScopes } from "./createVideoScopes.js";
 import { registerCreateVideoSynth } from "./createVideoSynth.js";
 import { registerCreateVisualSystem } from "./createVisualSystem.js";
 import { registerCreateWaveform } from "./createWaveform.js";
@@ -94,6 +96,7 @@ import { registerScaffoldGenre } from "./scaffoldGenre.js";
 import { registerScaffoldShow } from "./scaffoldShow.js";
 import { registerSetupBodyTracking } from "./setupBodyTracking.js";
 import { registerSetupOutput } from "./setupOutput.js";
+import { registerSetupTdableton } from "./setupTdableton.js";
 
 export const layer1Registrars: ToolRegistrar[] = [
   registerCreateFeedbackNetwork,
@@ -206,4 +209,8 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateImageToParticles,
   registerCreateDither,
   registerCreateJfaVoronoi,
+  // Campaign ingest-extend Wave 2 (2026-05-31): live integrations + scopes + recording:
+  registerSetupTdableton,
+  registerCreateChopRecorder,
+  registerCreateVideoScopes,
 ];

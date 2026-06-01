@@ -51,6 +51,10 @@ import {
   createBodyReactiveSchema,
 } from "../tools/layer1/createBodyReactive.js";
 import {
+  createChopRecorderImpl,
+  createChopRecorderSchema,
+} from "../tools/layer1/createChopRecorder.js";
+import {
   createChromaReactiveImpl,
   createChromaReactiveSchema,
 } from "../tools/layer1/createChromaReactive.js";
@@ -229,6 +233,10 @@ import {
   createVideoPlayerImpl,
   createVideoPlayerSchema,
 } from "../tools/layer1/createVideoPlayer.js";
+import {
+  createVideoScopesImpl,
+  createVideoScopesSchema,
+} from "../tools/layer1/createVideoScopes.js";
 import { createVideoSynthImpl, createVideoSynthSchema } from "../tools/layer1/createVideoSynth.js";
 import {
   createVisualSystemImpl,
@@ -259,11 +267,13 @@ import {
   setupBodyTrackingSchema,
 } from "../tools/layer1/setupBodyTracking.js";
 import { setupOutputImpl, setupOutputSchema } from "../tools/layer1/setupOutput.js";
+import { setupTdabletonImpl, setupTdabletonSchema } from "../tools/layer1/setupTdableton.js";
 import {
   addCustomParametersImpl,
   addCustomParametersSchema,
 } from "../tools/layer2/addCustomParameters.js";
 import { animateParameterImpl, animateParameterSchema } from "../tools/layer2/animateParameter.js";
+import { applyLutImpl, applyLutSchema } from "../tools/layer2/applyLut.js";
 import { arrangeNetworkImpl, arrangeNetworkSchema } from "../tools/layer2/arrangeNetwork.js";
 import {
   authorScriptOperatorImpl,
@@ -310,12 +320,20 @@ import {
   createDataReactiveSchema,
 } from "../tools/layer2/createDataReactive.js";
 import { createDataSourceImpl, createDataSourceSchema } from "../tools/layer2/createDataSource.js";
+import {
+  createDataSourceHttpWsImpl,
+  createDataSourceHttpWsSchema,
+} from "../tools/layer2/createDataSourceHttpWs.js";
 import { createDecksImpl, createDecksSchema } from "../tools/layer2/createDecks.js";
 import {
   createEnvelopeFollowerImpl,
   createEnvelopeFollowerSchema,
 } from "../tools/layer2/createEnvelopeFollower.js";
 import { createExternalIoImpl, createExternalIoSchema } from "../tools/layer2/createExternalIo.js";
+import {
+  createFlowAbstractionImpl,
+  createFlowAbstractionSchema,
+} from "../tools/layer2/createFlowAbstraction.js";
 import { createGlslShaderImpl, createGlslShaderSchema } from "../tools/layer2/createGlslShader.js";
 import { createLedMapperImpl, createLedMapperSchema } from "../tools/layer2/createLedMapper.js";
 import { createLookBankImpl, createLookBankSchema } from "../tools/layer2/createLookBank.js";
@@ -323,6 +341,7 @@ import { createMacroImpl, createMacroSchema } from "../tools/layer2/createMacro.
 import { createMidiMapImpl, createMidiMapSchema } from "../tools/layer2/createMidiMap.js";
 import { createModulatorsImpl, createModulatorsSchema } from "../tools/layer2/createModulators.js";
 import { createNodeChainImpl, createNodeChainSchema } from "../tools/layer2/createNodeChain.js";
+import { createNprFilterImpl, createNprFilterSchema } from "../tools/layer2/createNprFilter.js";
 import { createPaletteImpl, createPaletteSchema } from "../tools/layer2/createPalette.js";
 import { createPanicImpl, createPanicSchema } from "../tools/layer2/createPanic.js";
 import {
@@ -359,6 +378,7 @@ import { manageCheckpointImpl, manageCheckpointSchema } from "../tools/layer2/ma
 import { manageComponentImpl, manageComponentSchema } from "../tools/layer2/manageComponent.js";
 import { manageCueImpl, manageCueSchema } from "../tools/layer2/manageCue.js";
 import { managePresetsImpl, managePresetsSchema } from "../tools/layer2/managePresets.js";
+import { postPasses3dImpl, postPasses3dSchema } from "../tools/layer2/postPasses3d.js";
 import {
   randomizeControlsImpl,
   randomizeControlsSchema,
@@ -1826,6 +1846,55 @@ const COMMANDS: Record<string, Command> = {
     createJfaVoronoiSchema,
     createJfaVoronoiImpl,
     "Build a Jump Flood Algorithm Voronoi / distance-field network from seed points.",
+    { mutates: true },
+  ),
+  // Ingest-extend Wave 2 (2026-05-31) — live integrations, scopes, recording, LUTs, NPR, post-3d:
+  "setup-tdableton": r(
+    setupTdabletonSchema,
+    setupTdabletonImpl,
+    "Bridge Ableton Live <-> TouchDesigner via TDAbleton (CHOPs for tempo, transport, params).",
+    { mutates: true },
+  ),
+  "chop-recorder": r(
+    createChopRecorderSchema,
+    createChopRecorderImpl,
+    "Record an incoming CHOP stream to disk and play it back as an animation/curve.",
+    { mutates: true },
+  ),
+  "video-scopes": r(
+    createVideoScopesSchema,
+    createVideoScopesImpl,
+    "Build broadcast video scopes (waveform / RGB parade / vectorscope) for a source TOP.",
+    { mutates: true },
+  ),
+  "apply-lut": r(
+    applyLutSchema,
+    applyLutImpl,
+    "Apply a .cube/.3dl LUT to a TOP via lookupTOP, with optional strength + before/after preview.",
+    { mutates: true },
+  ),
+  "data-source-http-ws": r(
+    createDataSourceHttpWsSchema,
+    createDataSourceHttpWsImpl,
+    "Create an HTTP poller or WebSocket data source feeding a CHOP/DAT channel.",
+    { mutates: true },
+  ),
+  "flow-abstraction": r(
+    createFlowAbstractionSchema,
+    createFlowAbstractionImpl,
+    "Painterly flow-abstraction effect (edge-tangent-flow → flow-based DoG, Kyprianidis style) over a source TOP.",
+    { mutates: true },
+  ),
+  "npr-filter": r(
+    createNprFilterSchema,
+    createNprFilterImpl,
+    "Non-photorealistic painterly filter (Kuwahara → oil / pencil / watercolor).",
+    { mutates: true },
+  ),
+  "post-passes-3d": r(
+    postPasses3dSchema,
+    postPasses3dImpl,
+    "Composited 3D post-passes (SSAO / SSR / DOF / motion blur) using depth/normal/velocity AOVs.",
     { mutates: true },
   ),
 };
