@@ -1,7 +1,9 @@
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
   copyFileSync,
   cpSync,
+  createReadStream,
   existsSync,
   lstatSync,
   mkdirSync,
@@ -20,6 +22,12 @@ import {
 } from "../../packages/archive.js";
 import { type Recipe, RecipeSchema } from "../../recipes/schema.js";
 import { friendlyTdError } from "../../td-client/types.js";
+import { getVersion } from "../../utils/version.js";
+import {
+  buildGenerateReadmeScript,
+  buildReadme,
+  type ReadmeReport,
+} from "../layer3/generateReadme.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult, structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -281,8 +289,14 @@ export const makePortableToxSchema = z.object({
   out_dir: z.string(),
   name: z.string().optional(),
   docs: z.array(z.string()).default([]),
+  include_readme: z
+    .boolean()
+    .default(true)
+    .describe(
+      "Write a package README.md with node inventory, custom parameters, inputs/outputs, and external file references.",
+    ),
 });
-type MakePortableToxArgs = z.infer<typeof makePortableToxSchema>;
+type MakePortableToxArgs = z.input<typeof makePortableToxSchema>;
 
 interface SaveToxReport {
   saved?: string;
@@ -323,7 +337,29 @@ export async function makePortableToxImpl(ctx: ToolContext, args: MakePortableTo
       const report = parsePythonReport<SaveToxReport>(exec.stdout);
       if (report.fatal) return { report };
       const copiedDocs: string[] = [];
-      for (const doc of args.docs) {
+      const readmeWarnings: string[] = [];
+      let readmePath: string | undefined;
+
+      if (args.include_readme ?? true) {
+        try {
+          const readmeExec = await ctx.client.executePythonScript(
+            buildGenerateReadmeScript({ path: args.comp_path }),
+            true,
+          );
+          const readmeReport = parsePythonReport<ReadmeReport>(readmeExec.stdout);
+          if (readmeReport.fatal) {
+            readmeWarnings.push(`README skipped: ${readmeReport.fatal}`);
+          } else {
+            readmePath = join(outDir, "README.md");
+            writeFileSync(readmePath, buildReadme(readmeReport, { title: name }), "utf8");
+            copiedDocs.push("README.md");
+          }
+        } catch (err) {
+          readmeWarnings.push(`README skipped: ${friendlyTdError(err)}`);
+        }
+      }
+
+      for (const doc of args.docs ?? []) {
         const target = join(outDir, "docs", basename(doc));
         mkdirSync(dirname(target), { recursive: true });
         copyFileSync(doc, target);
@@ -340,7 +376,13 @@ export async function makePortableToxImpl(ctx: ToolContext, args: MakePortableTo
         recipes: [],
       };
       writeJson(join(outDir, "tdmcp-component.json"), manifest);
-      return { report, manifest_path: join(outDir, "tdmcp-component.json"), manifest };
+      return {
+        report,
+        manifest_path: join(outDir, "tdmcp-component.json"),
+        manifest,
+        readme_path: readmePath,
+        readme_warnings: readmeWarnings,
+      };
     },
     (data) => {
       if (data.report.fatal) return errorResult(`Portable tox failed: ${data.report.fatal}`, data);
@@ -371,6 +413,119 @@ export async function exportRecipeBundleImpl(ctx: ToolContext, args: ExportRecip
     };
     writeJson(args.out_file, bundle);
     return jsonResult(`Exported ${recipes.length} recipe(s) to ${args.out_file}.`, bundle);
+  } catch (err) {
+    return errorResult(err instanceof Error ? err.message : String(err));
+  }
+}
+
+const RECIPE_PUBLISH_MANIFEST = "tdmcp-recipe-publish.json";
+const CHECKSUM_MANIFEST = "tdmcp-checksums.json";
+
+async function sha256File(path: string): Promise<string> {
+  const hash = createHash("sha256");
+  for await (const chunk of createReadStream(path, { highWaterMark: 1024 * 1024 })) {
+    hash.update(chunk);
+  }
+  return hash.digest("hex");
+}
+
+async function fileChecksumEntry(
+  rootDir: string,
+  relPath: string,
+): Promise<{
+  path: string;
+  sha256: string;
+  size: number;
+}> {
+  const abs = join(rootDir, relPath);
+  return {
+    path: relPath,
+    sha256: await sha256File(abs),
+    size: statSync(abs).size,
+  };
+}
+
+export const publishRecipeBundleSchema = z.object({
+  out_dir: z.string(),
+  name: z.string().default("recipe-bundle"),
+  version: z.string().default("0.1.0"),
+  recipe_ids: z.array(z.string()).default([]),
+  include_all: z.boolean().default(false),
+  overwrite: z.boolean().default(false),
+});
+type PublishRecipeBundleArgs = z.input<typeof publishRecipeBundleSchema>;
+
+export async function publishRecipeBundleImpl(ctx: ToolContext, args: PublishRecipeBundleArgs) {
+  try {
+    const outDir = resolve(args.out_dir);
+    const name = safeFileStem(args.name ?? "recipe-bundle", "recipe-bundle");
+    const bundleRel = `${name}.recipes.json`;
+    const bundlePath = join(outDir, bundleRel);
+    const publishManifestPath = join(outDir, RECIPE_PUBLISH_MANIFEST);
+    const checksumManifestPath = join(outDir, CHECKSUM_MANIFEST);
+    const overwrite = args.overwrite ?? false;
+
+    for (const path of [bundlePath, publishManifestPath, checksumManifestPath]) {
+      if (existsSync(path) && !overwrite) {
+        return errorResult(
+          `Publish artifact already exists: ${path}. Pass overwrite:true to replace it.`,
+        );
+      }
+    }
+
+    const recipeIds = args.recipe_ids ?? [];
+    const includeAll = args.include_all ?? false;
+    const recipes = includeAll
+      ? ctx.recipes.all()
+      : recipeIds.map((id) => ctx.recipes.get(id)).filter((r): r is Recipe => Boolean(r));
+    const missing = includeAll ? [] : recipeIds.filter((id) => !ctx.recipes.get(id));
+    const exportedAt = new Date().toISOString();
+    const bundle = {
+      kind: "tdmcp-recipe-bundle",
+      version: 1,
+      exported_at: exportedAt,
+      recipes,
+      missing,
+    };
+
+    mkdirSync(outDir, { recursive: true });
+    writeJson(bundlePath, bundle);
+
+    const bundleEntry = await fileChecksumEntry(outDir, bundleRel);
+    const publishManifest = {
+      kind: "tdmcp-recipe-publish",
+      schema_version: 1,
+      name,
+      version: args.version ?? "0.1.0",
+      exported_at: exportedAt,
+      bundle: bundleRel,
+      recipe_count: recipes.length,
+      recipes: recipes.map((recipe) => recipe.id),
+      missing,
+      files: [bundleEntry],
+    };
+    writeJson(publishManifestPath, publishManifest);
+
+    const checksumManifest = {
+      kind: "tdmcp-checksum-manifest",
+      version: 1,
+      tdmcp_version: getVersion(),
+      created_at: new Date().toISOString(),
+      root: outDir,
+      files: [bundleEntry, await fileChecksumEntry(outDir, RECIPE_PUBLISH_MANIFEST)].sort((a, b) =>
+        a.path.localeCompare(b.path),
+      ),
+    };
+    writeJson(checksumManifestPath, checksumManifest);
+
+    return jsonResult(`Published ${recipes.length} recipe(s) to ${outDir}.`, {
+      out_dir: outDir,
+      bundle_path: bundlePath,
+      manifest_path: publishManifestPath,
+      checksum_manifest_path: checksumManifestPath,
+      manifest: publishManifest,
+      checksums: checksumManifest,
+    });
   } catch (err) {
     return errorResult(err instanceof Error ? err.message : String(err));
   }
@@ -755,7 +910,7 @@ export const libraryRegistrars: ToolRegistrar[] = [
       {
         title: "Make portable tox",
         description:
-          "Save a COMP as a .tox package and write a tdmcp-component manifest beside it.",
+          "Save a COMP as a .tox package, write a tdmcp-component manifest beside it, and by default include a README.md documenting node inventory, custom parameters, inputs/outputs and external file references.",
         inputSchema: makePortableToxSchema.shape,
         annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
       },
@@ -771,6 +926,18 @@ export const libraryRegistrars: ToolRegistrar[] = [
         annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
       },
       (args) => exportRecipeBundleImpl(ctx, args),
+    ),
+  (server, ctx) =>
+    server.registerTool(
+      "publish_recipe_bundle",
+      {
+        title: "Publish recipe bundle",
+        description:
+          "Write a local, versioned recipe-bundle publish artifact: the recipe bundle JSON, a tdmcp-recipe-publish manifest, and a SHA-256 checksum manifest for repeatable handoff or CI upload.",
+        inputSchema: publishRecipeBundleSchema.shape,
+        annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
+      },
+      (args) => publishRecipeBundleImpl(ctx, args),
     ),
   (server, ctx) =>
     server.registerTool(

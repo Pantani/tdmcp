@@ -15,6 +15,7 @@ tdmcp info shader-park-td --json
 tdmcp install mediapipe-touchdesigner --dry-run --json
 tdmcp install raytk
 tdmcp doctor comfyui-td
+tdmcp packages --help
 tdmcp packages path
 ```
 

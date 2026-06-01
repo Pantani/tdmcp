@@ -109,6 +109,9 @@ describe("tdmcp-agent CLI", () => {
     expect(commands).toContainEqual(
       expect.objectContaining({ command: "exec python", mutates: true, unsafe: true }),
     );
+    expect(commands).toContainEqual(
+      expect.objectContaining({ command: "watch-build", mutates: true, unsafe: false }),
+    );
     expect(commands.map((entry) => entry.command)).toEqual(
       [...commands.map((entry) => entry.command)].sort((a, b) => a.localeCompare(b)),
     );
@@ -162,6 +165,23 @@ describe("tdmcp-agent CLI", () => {
     expect(doc.steps).toHaveLength(1);
     expect(doc.steps[0].stdout.dryRun).toBe(true);
     expect(doc.steps[0].stdout.command).toBe("nodes create");
+  });
+
+  it("propagates --no-color into JSON run-file steps", async () => {
+    const r = await runCli(["run", "-", "--no-color"], {
+      stdin: JSON.stringify([
+        {
+          command: "info",
+          dry_run: true,
+          no_color: true,
+        },
+      ]),
+    });
+
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.steps[0].command).toContain("--no-color");
+    expect(doc.steps[0].stdout.command).toBe("info");
   });
 
   it("continues a JSON run file after a failed step when requested", async () => {

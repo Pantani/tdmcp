@@ -91,6 +91,7 @@ export async function runPackageCli(
 ): Promise<PackageCliResult> {
   const command = argv[0];
   if (!isPackageCommand(command)) return fail(usage());
+  if (argv.includes("--help") || argv.includes("-h")) return ok(usage());
   try {
     if (command === "search") {
       const parsed = parse(argv.slice(1), { json: { type: "boolean", default: false } });
