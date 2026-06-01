@@ -338,9 +338,13 @@ describe("library and packaging tools", () => {
 
       const checksums = JSON.parse(readFileSync(checksumPath, "utf8")) as {
         kind: string;
+        tdmcp_version: string;
         files: Array<{ path: string }>;
       };
+      const pkg = JSON.parse(readFileSync(resolve("package.json"), "utf8")) as { version: string };
       expect(checksums.kind).toBe("tdmcp-checksum-manifest");
+      expect(checksums.tdmcp_version).toBe(pkg.version);
+      expect(checksums.tdmcp_version).not.toBe("unknown");
       expect(checksums.files.map((f) => f.path).sort()).toEqual([
         "stage_pack.recipes.json",
         "tdmcp-recipe-publish.json",

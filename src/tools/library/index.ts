@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import {
   copyFileSync,
   cpSync,
+  createReadStream,
   existsSync,
   lstatSync,
   mkdirSync,
@@ -21,6 +22,7 @@ import {
 } from "../../packages/archive.js";
 import { type Recipe, RecipeSchema } from "../../recipes/schema.js";
 import { friendlyTdError } from "../../td-client/types.js";
+import { getVersion } from "../../utils/version.js";
 import {
   buildGenerateReadmeScript,
   buildReadme,
@@ -419,18 +421,26 @@ export async function exportRecipeBundleImpl(ctx: ToolContext, args: ExportRecip
 const RECIPE_PUBLISH_MANIFEST = "tdmcp-recipe-publish.json";
 const CHECKSUM_MANIFEST = "tdmcp-checksums.json";
 
-function fileChecksumEntry(
+async function sha256File(path: string): Promise<string> {
+  const hash = createHash("sha256");
+  for await (const chunk of createReadStream(path, { highWaterMark: 1024 * 1024 })) {
+    hash.update(chunk);
+  }
+  return hash.digest("hex");
+}
+
+async function fileChecksumEntry(
   rootDir: string,
   relPath: string,
-): {
+): Promise<{
   path: string;
   sha256: string;
   size: number;
-} {
+}> {
   const abs = join(rootDir, relPath);
   return {
     path: relPath,
-    sha256: createHash("sha256").update(readFileSync(abs)).digest("hex"),
+    sha256: await sha256File(abs),
     size: statSync(abs).size,
   };
 }
@@ -481,7 +491,7 @@ export async function publishRecipeBundleImpl(ctx: ToolContext, args: PublishRec
     mkdirSync(outDir, { recursive: true });
     writeJson(bundlePath, bundle);
 
-    const bundleEntry = fileChecksumEntry(outDir, bundleRel);
+    const bundleEntry = await fileChecksumEntry(outDir, bundleRel);
     const publishManifest = {
       kind: "tdmcp-recipe-publish",
       schema_version: 1,
@@ -499,10 +509,10 @@ export async function publishRecipeBundleImpl(ctx: ToolContext, args: PublishRec
     const checksumManifest = {
       kind: "tdmcp-checksum-manifest",
       version: 1,
-      tdmcp_version: "unknown",
+      tdmcp_version: getVersion(),
       created_at: new Date().toISOString(),
       root: outDir,
-      files: [bundleEntry, fileChecksumEntry(outDir, RECIPE_PUBLISH_MANIFEST)].sort((a, b) =>
+      files: [bundleEntry, await fileChecksumEntry(outDir, RECIPE_PUBLISH_MANIFEST)].sort((a, b) =>
         a.path.localeCompare(b.path),
       ),
     };

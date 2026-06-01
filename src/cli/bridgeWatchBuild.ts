@@ -67,10 +67,22 @@ async function spawnAsync(
 ): Promise<{ code: number; ms: number }> {
   const start = Date.now();
   return new Promise((resolve) => {
-    const child: ChildProcess = spawn(cmd, args, { stdio: "inherit" });
-    child.on("close", (code) => {
+    let settled = false;
+    const settle = (code: number) => {
+      if (settled) return;
+      settled = true;
       resolve({ code: code ?? 1, ms: Date.now() - start });
-    });
+    };
+
+    let child: ChildProcess;
+    try {
+      child = spawn(cmd, args, { stdio: "inherit" });
+    } catch {
+      settle(1);
+      return;
+    }
+    child.once("error", () => settle(1));
+    child.once("close", (code) => settle(code ?? 1));
   });
 }
 

@@ -45,12 +45,12 @@ describe("tdmcp top-level help", () => {
     expect(words).not.toContain("path");
   });
 
-  it("suggests path only in the bash completion context after packages", () => {
+  it("suggests path and help flags in the bash completion context after packages", () => {
     const completion = renderMainCompletion("bash");
 
     expect(completion).toContain("COMP_WORDS[COMP_CWORD - 1]");
     expect(completion).toContain('== "packages"');
-    expect(completion).toContain("compgen -W 'path'");
+    expect(completion).toContain("compgen -W 'path --help -h'");
   });
 
   it("returns undefined for unsupported completion shells", () => {

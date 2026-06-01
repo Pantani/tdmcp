@@ -32,6 +32,7 @@ const TOP_LEVEL_COMPLETION_WORDS = [
   "--version",
   "--help",
 ];
+const PACKAGE_COMPLETION_WORDS = ["path", "--help", "-h"];
 
 export function renderMainHelp(): string {
   return [
@@ -68,11 +69,12 @@ export function renderMainHelp(): string {
 export function renderMainCompletion(shell: string): string | undefined {
   const words = TOP_LEVEL_COMPLETION_WORDS.join(" ");
   if (shell === "bash") {
+    const packageWords = PACKAGE_COMPLETION_WORDS.join(" ");
     return [
       "_tdmcp() {",
       `  local cur="\${COMP_WORDS[COMP_CWORD]}"`,
       `  if [[ "\${COMP_WORDS[COMP_CWORD - 1]}" == "packages" ]]; then`,
-      `    COMPREPLY=( $(compgen -W 'path' -- "$cur") )`,
+      `    COMPREPLY=( $(compgen -W '${packageWords}' -- "$cur") )`,
       "    return",
       "  fi",
       `  COMPREPLY=( $(compgen -W '${words}' -- "$cur") )`,

@@ -37,7 +37,7 @@ interface MockChild extends EventEmitter {
 }
 
 const spawnCalls: SpawnMockCall[] = [];
-let spawnMocks: Array<{ exitCode: number }> = [];
+let spawnMocks: Array<{ exitCode?: number; error?: Error }> = [];
 let spawnMockIdx = 0;
 const activeChildren: MockChild[] = [];
 
@@ -50,8 +50,10 @@ vi.mock("node:child_process", () => ({
     const mockDef = spawnMocks[spawnMockIdx] ?? { exitCode: 0 };
     spawnMockIdx++;
     // resolve on next tick unless exitCode is -1 (stays pending)
-    if (mockDef.exitCode !== -1) {
-      setTimeout(() => child.emit("close", mockDef.exitCode), 0);
+    if (mockDef.error) {
+      setTimeout(() => child.emit("error", mockDef.error), 0);
+    } else if (mockDef.exitCode !== -1) {
+      setTimeout(() => child.emit("close", mockDef.exitCode ?? 0), 0);
     }
     return child;
   }),
@@ -65,7 +67,7 @@ vi.mock("node:module", () => ({
   })),
 }));
 
-function resetSpawn(mocks: Array<{ exitCode: number }> = []) {
+function resetSpawn(mocks: Array<{ exitCode?: number; error?: Error }> = []) {
   spawnCalls.length = 0;
   activeChildren.length = 0;
   spawnMocks = mocks;
@@ -125,6 +127,20 @@ describe("runBridgeWatchBuild (once mode)", () => {
     resetSpawn([{ exitCode: 1 }]);
     const code = await runBridgeWatchBuild(["--once"]);
     expect(code).toBe(1);
+    expect(spawnCalls).toHaveLength(1);
+  });
+
+  it("--once: spawn error returns 1 without waiting for close", async () => {
+    resetSpawn([{ error: new Error("spawn ENOENT") }]);
+
+    await expect(
+      Promise.race([
+        runBridgeWatchBuild(["--once"]),
+        new Promise<number>((_, reject) =>
+          setTimeout(() => reject(new Error("spawn did not settle")), 100),
+        ),
+      ]),
+    ).resolves.toBe(1);
     expect(spawnCalls).toHaveLength(1);
   });
 
@@ -268,6 +284,28 @@ describe("runBridgeWatchBuild (watch mode)", () => {
     expect(spawnCalls.some((call) => call.args.includes("py_compile"))).toBe(true);
     expect(reloadBridge).not.toHaveBeenCalled();
     expect(writeSpy.mock.calls.map((c) => String(c[0])).join("")).toContain("py_compile");
+
+    process.emit("SIGINT");
+    await Promise.race([watchPromise, new Promise((r) => setTimeout(r, 100))]);
+  });
+
+  it("skips reload_bridge when py_compile spawn emits an error", async () => {
+    resetSpawn([{ exitCode: 0 }, { exitCode: 0 }, { error: new Error("spawn ENOENT") }]);
+    const reloadBridge = vi.fn();
+    const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const watchPromise = runBridgeWatchBuild(["--debounce-ms", "50"], { reloadBridge });
+    await waitForWatcher();
+    const watcher = watcherBox.current;
+    if (!watcher) throw new Error("watcher not initialised");
+
+    watcher.emit("change", "td/modules/mcp/dev.py");
+
+    await new Promise((r) => setTimeout(r, 250));
+
+    expect(spawnCalls[2]?.args).toEqual(["-m", "py_compile", "td/modules/mcp/dev.py"]);
+    expect(reloadBridge).not.toHaveBeenCalled();
+    expect(writeSpy.mock.calls.map((c) => String(c[0])).join("")).toContain("py_compile");
+    expect(writeSpy.mock.calls.map((c) => String(c[0])).join("")).toContain("failed, exit 1");
 
     process.emit("SIGINT");
     await Promise.race([watchPromise, new Promise((r) => setTimeout(r, 100))]);
