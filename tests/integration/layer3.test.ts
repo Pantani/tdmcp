@@ -36,6 +36,7 @@ describe("integration: Layer 3 over the MCP protocol", () => {
         "get_td_node_errors",
         "execute_python_script",
         "exec_node_method",
+        "create_python_script",
       ]),
     );
   });
@@ -45,6 +46,7 @@ describe("integration: Layer 3 over the MCP protocol", () => {
     const names = (await client.listTools()).tools.map((t) => t.name);
     expect(names).not.toContain("execute_python_script");
     expect(names).not.toContain("exec_node_method");
+    expect(names).not.toContain("create_python_script");
     // Structured tools stay available.
     expect(names).toContain("find_td_nodes");
     expect(names).toContain("get_td_nodes");
@@ -53,8 +55,11 @@ describe("integration: Layer 3 over the MCP protocol", () => {
   it("marks the Python escape hatches as destructive", async () => {
     const client = await connectClient();
     const tools = (await client.listTools()).tools;
-    const exec = tools.find((t) => t.name === "execute_python_script");
-    expect(exec?.annotations?.destructiveHint).toBe(true);
+    for (const name of ["execute_python_script", "exec_node_method", "create_python_script"]) {
+      const tool = tools.find((t) => t.name === name);
+      expect(tool, `${name} should be registered`).toBeDefined();
+      expect(tool?.annotations?.destructiveHint, `${name} should stay destructive`).toBe(true);
+    }
   });
 
   // Regression guard: tools that remove nodes or overwrite saved state must keep

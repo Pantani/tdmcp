@@ -27,6 +27,7 @@ async function connectClient(env: NodeJS.ProcessEnv = {}) {
 const SAFE_PROFILE_EXCLUDE = [
   "execute_python_script",
   "exec_node_method",
+  "create_python_script",
   "delete_td_node",
   "rebuild_network",
   "edit_dat_content",
@@ -86,6 +87,7 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
     const names = await toolNames({ TDMCP_TOOL_PROFILE: "safe" });
     expect(names).not.toContain("execute_python_script");
     expect(names).not.toContain("exec_node_method");
+    expect(names).not.toContain("create_python_script");
   });
 
   it("safe drops the destructive tools", async () => {
@@ -127,7 +129,7 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
     const safe = await toolNames({ TDMCP_TOOL_PROFILE: "safe" });
     expect(safe.length).toBeLessThan(full.length);
     expect(full.length - safe.length).toBe(SAFE_PROFILE_EXCLUDE.length);
-    expect(SAFE_PROFILE_EXCLUDE.length).toBe(27);
+    expect(SAFE_PROFILE_EXCLUDE.length).toBe(28);
   });
 
   it("safe ⊇ rawPython=off (composition): safe hides everything rawPython=off hides", async () => {

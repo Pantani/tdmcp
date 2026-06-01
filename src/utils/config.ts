@@ -19,7 +19,8 @@ export const ConfigSchema = z.object({
   /** Subscribe to TD WebSocket events and forward them as MCP logging notifications. */
   events: z.enum(["on", "off"]).default("on"),
   /**
-   * Raw Python escape-hatch tools (`execute_python_script`, `exec_node_method`).
+   * Raw Python escape-hatch tools (`execute_python_script`, `exec_node_method`,
+   * `create_python_script`).
    * Set to "off" to lock them out for restricted setups; on by default.
    */
   rawPython: z.enum(["on", "off"]).default("on"),

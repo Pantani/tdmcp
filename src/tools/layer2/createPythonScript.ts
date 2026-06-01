@@ -55,6 +55,7 @@ export async function createPythonScriptImpl(ctx: ToolContext, args: CreatePytho
 }
 
 export const registerCreatePythonScript: ToolRegistrar = (server, ctx) => {
+  if (ctx.allowRawPython === false) return;
   server.registerTool(
     "create_python_script",
     {
@@ -62,7 +63,7 @@ export const registerCreatePythonScript: ToolRegistrar = (server, ctx) => {
       description:
         "Create one DAT under parent_path preloaded with your Python `code`. `dat_type` chooses a Text DAT (plain code), an Execute DAT (event hooks like onFrameStart), or a Script DAT (table builder); for a Script DAT the code is written to its auto-created companion callbacks DAT, since the Script DAT's own text is read-only. Returns the created DAT's path. This only stores code as a node; use execute_python_script instead to run Python immediately against the live project.",
       inputSchema: createPythonScriptSchema.shape,
-      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     (args) => createPythonScriptImpl(ctx, args),
   );

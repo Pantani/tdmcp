@@ -41,6 +41,7 @@ const INCLUDE = [
   [join(root, "README.md"), "README.md"],
   [join(root, "LICENSE"), "LICENSE"],
   [join(root, "package.json"), "package.json"],
+  [join(root, "safeskill.manifest.json"), "safeskill.manifest.json"],
 ];
 
 function shouldStage(src) {

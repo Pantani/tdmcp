@@ -43,13 +43,28 @@ jobs:
           TAG="${GITHUB_REF_NAME#v}"
           PKG="$(node -p "require('./package.json').version")"
           MANIFEST="$(node -p "require('./dxt/manifest.json').version")"
-          echo "tag=$TAG  package.json=$PKG  manifest=$MANIFEST"
+          SERVER="$(node -p "require('./server.json').version")"
+          SERVER_PKG="$(node -p "require('./server.json').packages[0].version")"
+          SAFESKILL="$(node -p "require('./safeskill.manifest.json').version")"
+          echo "tag=$TAG  package.json=$PKG  manifest=$MANIFEST  server.json=$SERVER  server package=$SERVER_PKG  safeskill=$SAFESKILL"
           if [ "$TAG" != "$PKG" ]; then
             echo "::error::Tag v$TAG does not match package.json version $PKG. Bump with 'npm version' before tagging."
             exit 1
           fi
           if [ "$MANIFEST" != "$PKG" ]; then
             echo "::error::dxt/manifest.json version $MANIFEST does not match package.json $PKG (the 'version' npm script keeps them in sync)."
+            exit 1
+          fi
+          if [ "$SERVER" != "$PKG" ]; then
+            echo "::error::server.json version $SERVER does not match package.json $PKG."
+            exit 1
+          fi
+          if [ "$SERVER_PKG" != "$PKG" ]; then
+            echo "::error::server.json package version $SERVER_PKG does not match package.json $PKG."
+            exit 1
+          fi
+          if [ "$SAFESKILL" != "$PKG" ]; then
+            echo "::error::safeskill.manifest.json version $SAFESKILL does not match package.json $PKG."
             exit 1
           fi
 
@@ -102,7 +117,7 @@ jobs:
             echo "present=true" >> "$GITHUB_OUTPUT"
           else
             echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::NPM_TOKEN secret is not set — skipping npm publish. Add it in Settings → Secrets and variables → Actions to enable 'npx -y tdmcp'."
+            echo "::warning::NPM_TOKEN secret is not set — skipping npm publish. Add it in Settings → Secrets and variables → Actions to enable 'npx -y @dpantani/tdmcp'."
             {
               echo "### ⚠️ npm publish SKIPPED"
               echo ""

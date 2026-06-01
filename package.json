@@ -64,7 +64,7 @@
     "docs:dev": "npm run docs:gen && vitepress dev docs",
     "docs:build": "npm run docs:gen && vitepress build docs",
     "docs:preview": "vitepress preview docs",
-    "version": "node scripts/sync-manifest-version.mjs && git add dxt/manifest.json safeskill.manifest.json",
+    "version": "node scripts/sync-manifest-version.mjs && git add dxt/manifest.json safeskill.manifest.json server.json",
     "prepack": "node scripts/clean-pycache.mjs",
     "prepublishOnly": "npm run build && npm test"
   },
