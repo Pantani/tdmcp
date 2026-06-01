@@ -145,4 +145,35 @@ describe("extractPaletteImpl", () => {
     const r = reportOf(result);
     expect(r.warnings.some((w: string) => w.includes("byte-histogram"))).toBe(true);
   });
+
+  it("falls back gracefully on a truncated PNG with a valid signature (does not throw)", async () => {
+    // Valid 8-byte PNG signature followed by a malformed IHDR chunk whose
+    // declared length (13) exceeds the bytes actually present (5). Without the
+    // length guard, readUInt32BE(4) would throw RangeError and crash the tool.
+    const sig = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    const chunkLen = Buffer.from([0x00, 0x00, 0x00, 0x0d]); // 13 bytes declared
+    const chunkType = Buffer.from("IHDR", "ascii");
+    const truncatedData = Buffer.from([0x00, 0x00, 0x00, 0x10, 0x00]); // only 5 bytes
+    const malformed = Buffer.concat([sig, chunkLen, chunkType, truncatedData]);
+    server.use(
+      http.get(`${TD_BASE}/api/preview/:seg`, () =>
+        ok({
+          path: "/project1/out1",
+          width: 4,
+          height: 2,
+          base64: malformed.toString("base64"),
+          mime_type: "image/png",
+        }),
+      ),
+    );
+    const result = await extractPaletteImpl(makeCtx(), {
+      source_top: "/project1/out1",
+      k: 2,
+      width: 4,
+      height: 2,
+    });
+    expect(result.isError).toBeFalsy();
+    const r = reportOf(result);
+    expect(r.warnings.some((w: string) => w.includes("byte-histogram"))).toBe(true);
+  });
 });

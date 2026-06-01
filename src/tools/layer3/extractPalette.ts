@@ -89,54 +89,65 @@ function unfilter(raw: Buffer, width: number, height: number, bpp: number): Buff
 function decodePngRgb(
   png: Buffer,
 ): { width: number; height: number; pixels: Buffer; channels: number } | null {
-  if (png.length < 8 || png.subarray(0, 8).toString("hex") !== PNG_SIG) return null;
-  let off = 8;
-  let width = 0;
-  let height = 0;
-  let bitDepth = 0;
-  let colorType = 0;
-  const idat: Buffer[] = [];
-  while (off + 8 <= png.length) {
-    const len = png.readUInt32BE(off);
-    const type = png.toString("ascii", off + 4, off + 8);
-    const start = off + 8;
-    const end = start + len;
-    if (end > png.length) break;
-    const data = png.subarray(start, end);
-    if (type === "IHDR") {
-      width = data.readUInt32BE(0);
-      height = data.readUInt32BE(4);
-      bitDepth = data[8] ?? 0;
-      colorType = data[9] ?? 0;
-    } else if (type === "IDAT") {
-      idat.push(Buffer.from(data));
-    } else if (type === "IEND") {
-      break;
-    }
-    off = end + 4;
-  }
-  if (bitDepth !== 8 || width <= 0 || height <= 0 || idat.length === 0) return null;
-  let channels: number;
-  switch (colorType) {
-    case 0:
-      channels = 1;
-      break;
-    case 2:
-      channels = 3;
-      break;
-    case 4:
-      channels = 2;
-      break;
-    case 6:
-      channels = 4;
-      break;
-    default:
-      return null;
-  }
+  // Wrap the entire chunk-walk in a try/catch: malformed-but-PNG-signature inputs
+  // can produce out-of-bounds reads (e.g. a truncated IHDR whose declared length
+  // is < 13 bytes makes readUInt32BE(4) throw). Any decode failure should fall
+  // back to the byte-histogram path, never crash the tool.
   try {
-    const raw = zlib.inflateSync(Buffer.concat(idat));
-    const pixels = unfilter(raw, width, height, channels);
-    return { width, height, pixels, channels };
+    if (png.length < 8 || png.subarray(0, 8).toString("hex") !== PNG_SIG) return null;
+    let off = 8;
+    let width = 0;
+    let height = 0;
+    let bitDepth = 0;
+    let colorType = 0;
+    const idat: Buffer[] = [];
+    while (off + 8 <= png.length) {
+      const len = png.readUInt32BE(off);
+      const type = png.toString("ascii", off + 4, off + 8);
+      const start = off + 8;
+      const end = start + len;
+      if (end > png.length) break;
+      const data = png.subarray(start, end);
+      if (type === "IHDR") {
+        // IHDR is exactly 13 bytes; reject anything shorter so readUInt32BE
+        // and the bit-depth/colour-type reads can't throw or silently zero.
+        if (data.length < 13) return null;
+        width = data.readUInt32BE(0);
+        height = data.readUInt32BE(4);
+        bitDepth = data[8] ?? 0;
+        colorType = data[9] ?? 0;
+      } else if (type === "IDAT") {
+        idat.push(Buffer.from(data));
+      } else if (type === "IEND") {
+        break;
+      }
+      off = end + 4;
+    }
+    if (bitDepth !== 8 || width <= 0 || height <= 0 || idat.length === 0) return null;
+    let channels: number;
+    switch (colorType) {
+      case 0:
+        channels = 1;
+        break;
+      case 2:
+        channels = 3;
+        break;
+      case 4:
+        channels = 2;
+        break;
+      case 6:
+        channels = 4;
+        break;
+      default:
+        return null;
+    }
+    try {
+      const raw = zlib.inflateSync(Buffer.concat(idat));
+      const pixels = unfilter(raw, width, height, channels);
+      return { width, height, pixels, channels };
+    } catch {
+      return null;
+    }
   } catch {
     return null;
   }
