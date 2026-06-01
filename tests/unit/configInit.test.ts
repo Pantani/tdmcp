@@ -1,0 +1,97 @@
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { renderStarterConfig, runConfigInit } from "../../src/cli/configInit.js";
+
+let tmp: string;
+
+beforeEach(() => {
+  tmp = mkdtempSync(join(tmpdir(), "tdmcp-cfg-init-"));
+});
+afterEach(() => {
+  try {
+    rmSync(tmp, { recursive: true, force: true });
+  } catch {
+    // ignore
+  }
+});
+
+describe("renderStarterConfig", () => {
+  it("includes every TDMCP_* env var the config schema recognises", () => {
+    const body = renderStarterConfig();
+    const required = [
+      "TDMCP_TD_HOST",
+      "TDMCP_TD_PORT",
+      "TDMCP_TRANSPORT",
+      "TDMCP_LOG_LEVEL",
+      "TDMCP_REQUEST_TIMEOUT_MS",
+      "TDMCP_HTTP_PORT",
+      "TDMCP_EVENTS",
+      "TDMCP_RAW_PYTHON",
+      "TDMCP_TOOL_PROFILE",
+      "TDMCP_BRIDGE_TOKEN",
+      "TDMCP_LLM_BASE_URL",
+      "TDMCP_LLM_MODEL",
+      "TDMCP_LLM_API_KEY",
+      "TDMCP_CHAT_PORT",
+      "TDMCP_VAULT_PATH",
+    ];
+    for (const key of required) {
+      expect(body).toContain(key);
+    }
+  });
+
+  it("comments out secrets rather than seeding them with empty values", () => {
+    const body = renderStarterConfig();
+    expect(body).toMatch(/^# TDMCP_BRIDGE_TOKEN=/m);
+    expect(body).toMatch(/^# TDMCP_LLM_API_KEY=/m);
+  });
+});
+
+describe("runConfigInit", () => {
+  it("writes a fresh file at the requested path (code 0)", () => {
+    const target = join(tmp, "config.env");
+    const result = runConfigInit({ out: target });
+    expect(result.code).toBe(0);
+    expect(existsSync(target)).toBe(true);
+    const written = readFileSync(target, "utf8");
+    expect(written).toContain("TDMCP_TD_HOST");
+    expect(result.stderr).toContain("Wrote starter tdmcp config");
+  });
+
+  it("refuses to overwrite an existing file without --force (code 1)", () => {
+    const target = join(tmp, "config.env");
+    writeFileSync(target, "PRE-EXISTING\n");
+    const result = runConfigInit({ out: target });
+    expect(result.code).toBe(1);
+    expect(result.stderr).toContain("Refusing to overwrite");
+    expect(readFileSync(target, "utf8")).toBe("PRE-EXISTING\n");
+  });
+
+  it("overwrites an existing file with force=true", () => {
+    const target = join(tmp, "config.env");
+    writeFileSync(target, "PRE-EXISTING\n");
+    const result = runConfigInit({ out: target, force: true });
+    expect(result.code).toBe(0);
+    const written = readFileSync(target, "utf8");
+    expect(written).toContain("TDMCP_TD_HOST");
+    expect(written).not.toContain("PRE-EXISTING");
+  });
+
+  it("creates missing parent directories", () => {
+    const target = join(tmp, "nested", "deeper", "config.env");
+    const result = runConfigInit({ out: target });
+    expect(result.code).toBe(0);
+    expect(existsSync(target)).toBe(true);
+  });
+
+  it("--dry-run prints the body but does not touch the filesystem", () => {
+    const target = join(tmp, "config.env");
+    const result = runConfigInit({ out: target, dryRun: true });
+    expect(result.code).toBe(0);
+    expect(existsSync(target)).toBe(false);
+    expect(result.stdout).toContain("TDMCP_TD_HOST");
+    expect(result.stderr).toContain("Dry run");
+  });
+});

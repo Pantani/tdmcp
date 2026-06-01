@@ -103,6 +103,48 @@ Wave-3 backlog ahead of the v0.9.0 cut. All gates pass (typecheck, build, biome,
   `<vault>/<folder>/<slug>/`. Composes existing read-only bridge calls; outputs
   are an editable starting point for an artist. Vault-gated.
 
+### Added (Ingest-extend Wave 3 sub-batch C — targeting v0.9.0)
+
+Closes out Milestone 3's colour-finish polish (Part 2) and opens Milestone 4
+(deeper authoring / operator DX) with three new tools + one CLI subcommand. All
+gates pass (typecheck, build, biome, 2987 vitest tests, 15/15 recipes, 106
+bridge tests). Two TD-required tools live-validated against TD 099 build
+2025.32820 (project `laser_dedo.1.toe`) under isolated probe containers — zero
+node errors after the cook, networks cleaned up.
+
+- **`create_color_wheels`** *(layer1, M3 colour-finish)* — classic lift / gamma
+  / gain colour-grading wheels. Three tinted Level TOPs run in series (shadows
+  via a gamma-biased Level, midtones via a neutral Level, highlights via a
+  brightness-biased Level), each multiplying R/G/B channels (`redmult1` /
+  `greenmult1` / `bluemult1`). A master Level TOP applies a global black-level
+  offset, then an HSV Adjust TOP applies master saturation. Builds a new
+  `baseCOMP` under `parent_path`; with `source_path` the upstream TOP is pulled
+  in via a Select TOP, without one a Ramp TOP is graded so the chain previews
+  standalone. Exposes LiftRGB / GammaRGB / GainRGB swatches plus Offset and
+  Saturation knobs.
+- **`create_pop_geometry`** *(layer1, M4 authoring)* — Procedural Op Pattern
+  geometry generator: build a SOP chain inside a Geometry COMP — primitive
+  (`box` / `sphere` / `tube` / `torus` / `grid` / `line` / `text`) → Transform
+  SOP (translate / rotate / scale) → optional Subdivide SOP → optional per-point
+  Noise SOP displacement → Material SOP (Constant MAT) → Null SOP — then render
+  through a Camera + Light + Render TOP to a Null TOP. Mirrors the
+  `build_sop_geometry` declarative chain pattern but wraps it in a full
+  Layer-1 render rig. Exposes RotateY, NoiseAmount and NoisePeriod controls.
+- **`tdmcp config init`** *(cli, M4 DX)* — new CLI subcommand: writes a starter
+  `.env`-style config file with every `TDMCP_*` env var the server reads, sane
+  defaults, and a one-line comment per setting. Default target is
+  `~/.tdmcp/config.env`; pass a positional path to override. Secrets
+  (`TDMCP_BRIDGE_TOKEN`, `TDMCP_LLM_API_KEY`) are emitted commented-out for
+  manual setting. Refuses to clobber existing files unless `--force`;
+  `--dry-run` prints the body without touching the filesystem. Pure Node, no
+  TD bridge required.
+- **`elicit_missing_args`** *(layer3, M3 — verified shipped)* — already shipped
+  in this branch (10 unit tests across LLM-elicit / offline / schema-feedback /
+  long-context truncation / unknown-tool / no-server paths). Audited as part of
+  this sub-batch; no changes needed — flipped to ✅ on the roadmap.
+
+Tool registry: 266 → 268. Unit tests: 2971 → 2987 (+16 new assertions).
+
 ## [0.8.0] - 2026-05-31
 
 **Ingest-extend Wave 1 — Ecosystem on-ramp + signature looks** (campaign

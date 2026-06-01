@@ -327,8 +327,10 @@ HTTP/WS data-source fix.*
   tuning for the chroma / percussive-vs-tonal / song-structure tools already
   merged on `main` is still ⬜ planned.
 - ✅ **Color-finish — Part 1** *(shipped v0.8.0 Wave 2)* — **`apply_lut`** and
-  **`create_video_scopes`** (waveform / parade / vectorscope). ⬜ **Color wheels
-  / curves** and the deferred **histogram** scope panel remain planned.
+  **`create_video_scopes`** (waveform / parade / vectorscope).
+- ✅ **Color-finish — Part 2** *(shipped v0.9.0 Wave 3C)* —
+  **`create_color_wheels`** (lift / gamma / gain RGB tints + master offset +
+  saturation). The deferred **histogram** scope panel remains planned.
 
 ### Milestone 3 — Smarter assistance & library publishing · ~v0.9.0
 
@@ -338,10 +340,11 @@ corpus learning.*
 
 - **AI deepening** — live-tune `caption_top` and `repair_network`, ✅
   `copilot_vision` (multimodal-LLM frame analysis; live-tuning still UNVERIFIED
-  pending a configured multimodal endpoint), `elicit_missing_args`, richer
-  chat flags, transcript persistence and smarter handoff when the local copilot
-  reaches its limits. ✅ `extract_palette` adds a deterministic K-color sampler
-  feeding AI grading prompts.
+  pending a configured multimodal endpoint), ✅ `elicit_missing_args` (shipped
+  v0.9.0 Wave 3C — schema-driven LLM elicitation with offline + no-server
+  fallbacks), richer chat flags, transcript persistence and smarter handoff
+  when the local copilot reaches its limits. ✅ `extract_palette` adds a
+  deterministic K-color sampler feeding AI grading prompts.
 - **"Do it my way"** — turn `recall_similar_work`, `style_memory`,
   `learn_conventions` and `learn_from_my_corpus` into a persistent session
   profile the agent reads before every new build.
@@ -357,14 +360,19 @@ corpus learning.*
 install story.*
 
 - **Authoring** — ✅ `swap_operator` (change a type, keep the wires — shipped
-  v0.9.0 Wave 3B), `create_pop_geometry`, the GPU / optical-flow / SDF /
-  strange-attractor deferred generators, and MediaPipe face / hand /
-  segmentation on the in-tree tracking engine.
+  v0.9.0 Wave 3B), ✅ `create_pop_geometry` (shipped v0.9.0 Wave 3C — primitive
+  → transform → subdiv → noise → mat SOP chain rendered via Geometry COMP +
+  Render TOP), the GPU / optical-flow / SDF / strange-attractor deferred
+  generators, and MediaPipe face / hand / segmentation on the in-tree tracking
+  engine.
 - **Developer & live-operator DX** — finish the **easy-install** story (a
   client-config writer + a `doctor --fix` that performs safe repairs),
-  `tdmcp config init`, profile listing, help/completion parity, inline preview,
-  and a richer front-of-house dashboard mode. ✅ `tutorial_companion_pack`
-  (teaching/selling a build) is now shipped (v0.9.0 Wave 3B).
+  ✅ `tdmcp config init` (shipped v0.9.0 Wave 3C — writes a starter
+  `.env`-style config with every `TDMCP_*` var, sane defaults and per-line
+  comments; safe re-run via `--force` / `--dry-run`), profile listing,
+  help/completion parity, inline preview, and a richer front-of-house dashboard
+  mode. ✅ `tutorial_companion_pack` (teaching/selling a build) is now shipped
+  (v0.9.0 Wave 3B).
 
 ### Later / deferred
 
