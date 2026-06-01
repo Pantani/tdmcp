@@ -152,8 +152,8 @@ describe("buildDataSourceHttpWsScript", () => {
     expect(script).toContain("src.par.request.pulse()");
     // Selector paths and URL live in the embedded payload
     const p = decodePayload(script);
-    expect(p["url"]).toBe("https://example.com/api");
-    const selectors = p["selectors"] as Array<[string, string]>;
+    expect(p.url).toBe("https://example.com/api");
+    const selectors = p.selectors as Array<[string, string]>;
     expect(selectors[0]).toEqual(["volume", "$.data.volume"]);
     expect(selectors[1]).toEqual(["bpm", "$.data.bpm"]);
   });
@@ -175,9 +175,9 @@ describe("buildDataSourceHttpWsScript", () => {
     expect(script).toContain("tdmcp_ws_status");
     // Payload carries mode=websocket and the selector
     const p = decodePayload(script);
-    expect(p["mode"]).toBe("websocket");
-    expect(p["reconnect_seconds"]).toBe(3.0);
-    const selectors = p["selectors"] as Array<[string, string]>;
+    expect(p.mode).toBe("websocket");
+    expect(p.reconnect_seconds).toBe(3.0);
+    const selectors = p.selectors as Array<[string, string]>;
     expect(selectors[0]).toEqual(["volume", "$.volume"]);
   });
 
@@ -377,13 +377,13 @@ describe("createDataSourceHttpWsImpl", () => {
       expose_controls: true,
     });
     const p = decodePayload(scriptArg(exec));
-    expect(p["mode"]).toBe("http_poll");
-    expect(p["url"]).toBe("https://example.com/api");
-    expect(p["method"]).toBe("post");
-    expect(p["body"]).toBe('{"query":"test"}');
+    expect(p.mode).toBe("http_poll");
+    expect(p.url).toBe("https://example.com/api");
+    expect(p.method).toBe("post");
+    expect(p.body).toBe('{"query":"test"}');
     // parent_path must be forwarded as "parent" key so TD builds in the right container
-    expect(p["parent"]).toBe("/project1");
-    const selectors = p["selectors"] as Array<[string, string]>;
+    expect(p.parent).toBe("/project1");
+    const selectors = p.selectors as Array<[string, string]>;
     expect(selectors).toHaveLength(2);
     expect(selectors[0]).toEqual(["volume", "$.data.volume"]);
     expect(selectors[1]).toEqual(["bpm", "$.data.bpm"]);
@@ -415,8 +415,8 @@ describe("createDataSourceHttpWsImpl", () => {
       expose_controls: false,
     });
     const p = decodePayload(scriptArg(exec));
-    expect(p["parent"]).toBe("/project1/qa");
-    expect(p["name"]).toBe("foo");
+    expect(p.parent).toBe("/project1/qa");
+    expect(p.name).toBe("foo");
   });
 
   it("websocket happy path: mode websocket, body/method ignored without error", async () => {
@@ -438,8 +438,8 @@ describe("createDataSourceHttpWsImpl", () => {
     expect(scriptArg(exec)).toContain("websocketDAT");
     // mode=websocket payload
     const p = decodePayload(scriptArg(exec));
-    expect(p["mode"]).toBe("websocket");
-    expect(p["reconnect_seconds"]).toBe(3);
+    expect(p.mode).toBe("websocket");
+    expect(p.reconnect_seconds).toBe(3);
   });
 
   it("returns errorResult on bridge fatal", async () => {
