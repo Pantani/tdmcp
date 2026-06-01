@@ -245,6 +245,41 @@ def onPulse(par):
     comp.store('tdmcp_chop_recorder', state)
 """
 
+            # param_exec DAT — routes pulse/value-change events from the container's
+            # custom parameters to the onPulse/onValueChange handlers in callbacks_dat
+            _param_exec = _comp.create(td.parameterexecuteDAT, "param_exec")
+            try:
+                _param_exec.par.op = _comp.path
+            except Exception as e:
+                report["warnings"].append("param_exec op: " + str(e))
+            try:
+                _param_exec.par.pars = "Record Stop Play Loop Scrub Length Takename"
+            except Exception as e:
+                report["warnings"].append("param_exec pars: " + str(e))
+            try:
+                _param_exec.par.custom = True
+            except Exception as e:
+                report["warnings"].append("param_exec custom: " + str(e))
+            try:
+                _param_exec.par.builtin = False
+            except Exception as e:
+                report["warnings"].append("param_exec builtin: " + str(e))
+            try:
+                _param_exec.par.valuechange = True
+            except Exception as e:
+                report["warnings"].append("param_exec valuechange: " + str(e))
+            try:
+                _param_exec.par.onpulse = True
+            except Exception as e:
+                report["warnings"].append("param_exec onpulse: " + str(e))
+            try:
+                _param_exec.par.active = True
+            except Exception as e:
+                report["warnings"].append("param_exec active: " + str(e))
+            # Write the callback functions directly into the parameterexecuteDAT
+            # so pressing Record/Stop/Play on the custom page actually fires
+            _param_exec.text = _callbacks.text
+
             # state DAT — human-readable state
             _state_dat = _comp.create(td.textDAT, "state_dat")
             _state_dat.text = "state: idle"

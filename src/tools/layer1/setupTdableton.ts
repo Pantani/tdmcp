@@ -286,7 +286,7 @@ try:
 except Exception as _fatal:
     report["fatal"] = traceback.format_exc(limit=5)
 
-result = json.dumps(report)
+print(json.dumps(report))
 `;
 
 // ---------------------------------------------------------------------------

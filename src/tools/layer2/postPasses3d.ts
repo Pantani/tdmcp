@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { connectNodesViaBridge } from "./connectHelper.js";
 
 export const postPasses3dSchema = z.object({
   parent_path: z.string().default("/project1").describe("Parent COMP for the post-pass container."),
@@ -252,16 +253,18 @@ export async function postPasses3dImpl(ctx: ToolContext, args: PostPasses3dArgs)
         ].join("\n");
         await ctx.client.executePythonScript(setupScript, false);
 
-        // Wire previous color first (input 0), then auxiliary AOV selects in order.
-        await ctx.client.connectNodes(prevPath, glsl.path, 0, 0).catch(() => {
-          warnings.push(`Failed to wire ${prevPath} → ${glsl.path} (input 0).`);
-        });
+        // Wire previous color first (input 0) — required; fail the build if it fails.
+        await connectNodesViaBridge(ctx.client, prevPath, glsl.path, 0, 0);
         for (let i = 0; i < extraInputs.length; i++) {
           const src = extraInputs[i];
           if (!src) continue;
-          await ctx.client.connectNodes(src, glsl.path, 0, i + 1).catch(() => {
-            warnings.push(`Failed to wire ${src} → ${glsl.path} (input ${i + 1}).`);
-          });
+          await connectNodesViaBridge(ctx.client, src, glsl.path, 0, i + 1).catch(
+            (err: unknown) => {
+              warnings.push(
+                `Failed to wire ${src} → ${glsl.path} (input ${i + 1}): ${err instanceof Error ? err.message : String(err)}`,
+              );
+            },
+          );
         }
 
         // Resolution best-effort.
@@ -367,9 +370,7 @@ export async function postPasses3dImpl(ctx: ToolContext, args: PostPasses3dArgs)
         type: "nullTOP",
         name: "out1",
       });
-      await ctx.client.connectNodes(prevPath, nullOut.path, 0, 0).catch(() => {
-        warnings.push(`Failed to wire ${prevPath} → ${nullOut.path}.`);
-      });
+      await connectNodesViaBridge(ctx.client, prevPath, nullOut.path, 0, 0);
 
       // Best-effort expose container custom params bound to per-pass uniforms.
       const bindings: Array<[string, string, string, number]> = [];

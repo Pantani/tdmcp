@@ -92,6 +92,7 @@ describe("buildChopRecorderScript", () => {
     expect(script).toContain("dattoCHOP");
     expect(script).toContain("scriptCHOP");
     expect(script).toContain("textDAT");
+    expect(script).toContain("parameterexecuteDAT");
   });
 
   it("embeds storage key tdmcp_chop_recorder", () => {
@@ -169,6 +170,8 @@ describe("createChopRecorderImpl", () => {
     expect(script).toContain("dattoCHOP");
     expect(script).toContain("scriptCHOP");
     expect(script).toContain("textDAT");
+    expect(script).toContain("parameterexecuteDAT");
+    expect(script).toContain("param_exec");
     expect(script).toContain("tdmcp_chop_recorder");
     expect(script).toContain("Record");
     expect(script).toContain("Stop");

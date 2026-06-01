@@ -59,7 +59,14 @@ function capture(): Captured {
     http.post(`${TD_BASE}/api/connect`, async ({ request }) => {
       const body = (await request.json()) as ConnectBody;
       connects.push(body);
-      return HttpResponse.json({ ok: true, data: { connected: true } });
+      return HttpResponse.json({
+        ok: true,
+        data: {
+          source_path: body.source_path,
+          target_path: body.target_path,
+          connected: true,
+        },
+      });
     }),
     http.post(`${TD_BASE}/api/exec`, async ({ request }) => {
       const body = (await request.json()) as { script: string };
@@ -78,7 +85,7 @@ function getResultData<T = unknown>(result: {
     .map((c) => c.text)
     .join("\n");
   const match = text.match(/```json\n([\s\S]+?)\n```/);
-  if (!match || !match[1]) throw new Error(`no json fence in: ${text}`);
+  if (!match?.[1]) throw new Error(`no json fence in: ${text}`);
   return JSON.parse(match[1]) as T;
 }
 
@@ -287,6 +294,51 @@ describe("postPasses3dImpl", () => {
       expect(s).toContain("TDOutputSwizzle");
       expect(s).not.toContain("uTime");
     }
+  });
+
+  it("required color→pass wire failure returns isError (connect endpoint absent, batch+python both fail)", async () => {
+    const creates: CreatedNodeBody[] = [];
+    server.use(
+      http.post(`${TD_BASE}/api/nodes`, async ({ request }) => {
+        const body = (await request.json()) as CreatedNodeBody;
+        creates.push(body);
+        const name = body.name ?? `${body.type.replace(/[^a-zA-Z0-9]/g, "").toLowerCase()}1`;
+        return HttpResponse.json({
+          ok: true,
+          data: { path: `${body.parent_path}/${name}`, type: body.type, name },
+        });
+      }),
+      // /api/connect returns 404 — simulates older bridge without the endpoint.
+      http.post(`${TD_BASE}/api/connect`, () => HttpResponse.json({ ok: false }, { status: 404 })),
+      // /api/batch connect op fails inside.
+      http.post(`${TD_BASE}/api/batch`, () =>
+        HttpResponse.json({ ok: true, data: { results: [{ ok: false, error: "no such op" }] } }),
+      ),
+      // /api/exec also fails — Python fallback rejects too.
+      http.post(`${TD_BASE}/api/exec`, () =>
+        HttpResponse.json({ ok: false, error: "exec failed" }, { status: 500 }),
+      ),
+    );
+    const result = await postPasses3dImpl(makeCtx(), {
+      parent_path: "/project1",
+      name: "post_passes_3d",
+      color_top: "/project1/render1",
+      depth_top: "/project1/depth1",
+      normal_top: "",
+      velocity_top: "",
+      ssao_enable: true,
+      ssao_radius: 0.05,
+      ssao_intensity: 1.0,
+      ssr_enable: false,
+      ssr_intensity: 0.5,
+      dof_enable: false,
+      dof_focus: 0.3,
+      dof_aperture: 0.02,
+      motion_blur_enable: false,
+      motion_blur_amount: 0.3,
+      resolution: [1280, 720],
+    });
+    expect(result.isError).toBe(true);
   });
 
   it("returned JSON exposes the expected fields", async () => {

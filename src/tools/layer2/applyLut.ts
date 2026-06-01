@@ -351,7 +351,7 @@ def onCook(scriptOp):
 except Exception as _exc:
     report["errors"].append(traceback.format_exc())
 
-result = json.dumps(report)
+print(json.dumps(report))
 `;
 
 // ---------------------------------------------------------------------------

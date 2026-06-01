@@ -64,7 +64,7 @@ post-processing. Seven tools are live-validated in TD 099; one ships flagged
   (edge tangent flow + flow-based difference-of-Gaussians, Kyprianidis style).
 - **`create_npr_filter`** *(Layer 2)* — Kuwahara non-photorealistic filter with
   oil / pencil / watercolor variants; also exposes three new mode keys
-  (`kuwahara_oil`, `kuwahara_pencil`, `kuwahara_watercolor`) on
+  (`npr_oil`, `npr_pencil`, `npr_watercolor`) on
   `apply_post_processing`.
 - **`post_passes_3d`** *(Layer 2)* — SSAO / SSR / depth-of-field / motion-blur
   3D post-passes for `create_3d_scene` / `create_pbr_scene` outputs.

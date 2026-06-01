@@ -1864,7 +1864,7 @@ const COMMANDS: Record<string, Command> = {
   "video-scopes": r(
     createVideoScopesSchema,
     createVideoScopesImpl,
-    "Build broadcast video scopes (waveform / vectorscope / histogram / parade) for a source TOP.",
+    "Build broadcast video scopes (waveform / RGB parade / vectorscope) for a source TOP.",
     { mutates: true },
   ),
   "apply-lut": r(
@@ -1882,7 +1882,7 @@ const COMMANDS: Record<string, Command> = {
   "flow-abstraction": r(
     createFlowAbstractionSchema,
     createFlowAbstractionImpl,
-    "Wrap a selection of nodes into a reusable parameterized COMP (flow abstraction).",
+    "Painterly flow-abstraction effect (edge-tangent-flow → flow-based DoG, Kyprianidis style) over a source TOP.",
     { mutates: true },
   ),
   "npr-filter": r(

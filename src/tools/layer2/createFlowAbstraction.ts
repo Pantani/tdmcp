@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { connectNodesViaBridge } from "./connectHelper.js";
 
 const q = (value: string): string => JSON.stringify(value);
 
@@ -14,7 +15,8 @@ const q = (value: string): string => JSON.stringify(value);
  * early-out via `uRadius`.
  *
  * GLSL gotchas honored: declares `out vec4 fragColor;`, writes through
- * `TDOutputSwizzle(...)`, uses `uTDOutputInfo.res.zw` for texel size, no
+ * `TDOutputSwizzle(...)`, uses `uTDOutputInfo.res.xy` for texel size (the
+ * reciprocal of resolution, per TDTexInfo layout), no
  * `uTime`, no preamble `#define` collisions (no F1/F2 locals). Note: any GLSL
  * compile errors here surface via `warnings()` / the Info DAT, not `errors()`.
  */
@@ -49,7 +51,7 @@ vec2 sobelTangent(vec2 uv, vec2 px) {
 
 void main() {
     vec2 uv = vUV.st;
-    vec2 px = uTDOutputInfo.res.zw;
+    vec2 px = uTDOutputInfo.res.xy;
     vec2 tang = sobelTangent(uv, px);
 
     vec3 center = texture(sTD2DInputs[0], uv).rgb;
@@ -122,7 +124,7 @@ vec2 sobelTangent(vec2 uv, vec2 px) {
 
 void main() {
     vec2 uv = vUV.st;
-    vec2 px = uTDOutputInfo.res.zw;
+    vec2 px = uTDOutputInfo.res.xy;
     vec2 tang = sobelTangent(uv, px);
     // Normal direction: perpendicular to tangent, used for cross-DoG sampling.
     vec2 norm = vec2(-tang.y, tang.x);
@@ -193,7 +195,9 @@ export const createFlowAbstractionSchema = z.object({
     .min(1)
     .max(4)
     .default(2)
-    .describe("ETF bilateral passes. 1 = single pass, 2+ enables ping-pong feedback."),
+    .describe(
+      "Internal iteration count; controls bilateral strength via in-shader uniform (feedback ping-pong deferred — single-pass only in v0.8.0).",
+    ),
   blur_radius: z
     .number()
     .int()
@@ -282,10 +286,10 @@ export async function createFlowAbstractionImpl(ctx: ToolContext, args: CreateFl
       await ctx.client.executePythonScript(shaderAssign, false);
 
       // Wiring.
-      await ctx.client.connectNodes(sel.path, etf.path, 0, 0);
-      await ctx.client.connectNodes(etf.path, fdog.path, 0, 0);
-      await ctx.client.connectNodes(sel.path, fdog.path, 0, 1);
-      await ctx.client.connectNodes(fdog.path, outNull.path, 0, 0);
+      await connectNodesViaBridge(ctx.client, sel.path, etf.path, 0, 0);
+      await connectNodesViaBridge(ctx.client, etf.path, fdog.path, 0, 0);
+      await connectNodesViaBridge(ctx.client, sel.path, fdog.path, 0, 1);
+      await connectNodesViaBridge(ctx.client, fdog.path, outNull.path, 0, 0);
 
       // Uniforms — Vectors-page bind block (mirrors createDither pattern).
       const bindEtf = [

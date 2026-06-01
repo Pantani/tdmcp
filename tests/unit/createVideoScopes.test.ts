@@ -106,7 +106,7 @@ describe("create_video_scopes", () => {
   });
 
   // 2. Source switch
-  it("source='existing_top' does NOT create a source node", async () => {
+  it("source='existing_top' does NOT create a source node but creates a selectTOP bridge", async () => {
     const bodies = captureCreateBodies();
     await createVideoScopesImpl(makeCtx(), {
       ...defaultArgs(),
@@ -115,6 +115,10 @@ describe("create_video_scopes", () => {
     });
     expect(bodies.some((b) => b.type === "moviefileinTOP")).toBe(false);
     expect(bodies.some((b) => b.type === "videodeviceinTOP")).toBe(false);
+    // A selectTOP must be created to bridge the external TOP into the container
+    const sel = bodies.find((b) => b.type === "selectTOP" && b.name === "src_select");
+    expect(sel).toBeDefined();
+    expect(sel?.parameters?.top).toBe("/project1/my_cam");
   });
 
   it("source='file' creates a moviefileinTOP", async () => {

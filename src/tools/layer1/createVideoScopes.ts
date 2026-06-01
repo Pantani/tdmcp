@@ -432,8 +432,10 @@ export async function createVideoScopesImpl(ctx: ToolContext, args: CreateVideoS
     if (args.source !== "existing_top") {
       await builder.connect(sourceTop, pre);
     } else {
-      // existing_top: set source via parameter instead of wire since it's outside container
-      await builder.setParams(pre, { top: sourceTop });
+      // existing_top: cross-container ingress — Level TOP has no `top` param, so route through
+      // a Select TOP whose .par.top points at the external path, then wire into pre.
+      const srcSelect = await builder.add("selectTOP", "src_select", { top: sourceTop });
+      await builder.connect(srcSelect, pre);
     }
 
     // Build enabled panels
