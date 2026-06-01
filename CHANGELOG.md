@@ -64,6 +64,45 @@ three tools).
   test count goes from 2923 → 2935 (+12 tests, 4 new regression assertions on
   this tool).
 
+### Added (Ingest-extend Wave 3 sub-batch B — targeting v0.9.0)
+
+Six TD-required Wave-3 features (mix of Layer-3 and vault tools), closing out the
+Wave-3 backlog ahead of the v0.9.0 cut. All gates pass (typecheck, build, biome,
+2971 vitest tests, 15/15 recipes, 106 bridge tests). Live-validated against TD
+099 build 2025.32820 (project `laser_dedo.1.toe`).
+
+- **`extract_palette`** *(layer3, ai)* — sample dominant colors from a TOP by
+  capturing its preview PNG and running deterministic k-means on the decoded
+  RGB pixels. Returns `{hex_colors[], swatches[{hex,rgb,weight}]}` sorted by
+  dominance. Read-only; mechanism identical to `caption_top`. Live-validated
+  via `get_preview` round-trip against a `constantTOP`.
+- **`export_sop_to_svg`** *(layer3, library)* — read a SOP's primitives via the
+  bridge and emit an SVG document of polylines (each prim → one `<polyline>`),
+  auto-fit viewBox, configurable stroke/fill/scale/flip_y, optional `output_path`
+  to disk. Pen-plotter / laser / print deliverable. Live-validated by extracting
+  40-point polyline from a probe `circleSOP` (Poly-iteration path).
+- **`swap_operator`** *(layer3, td-depth)* — change an op's TYPE in place,
+  preserving name, position, input + output wires, and any parameters that exist
+  on the new type. Fail-forward per-wire / per-param. Live-validated: swapped a
+  `noiseTOP` → `rampTOP` while keeping 19 parameters and a downstream `nullTOP`
+  wire (0 post-cook errors).
+- **`copilot_vision`** *(layer3, ai)* — route a vision query to the configured
+  multimodal LLM with a TOP rendered as an inline image. Uses
+  `ctx.llm.complete()` with a `MultimodalMessage` (text + image part); falls back
+  with a friendly error pointing at `TDMCP_LLM_*` when no LLM backend is wired.
+  Live-tuning UNVERIFIED — no multimodal LLM endpoint configured in this
+  session; mechanism (preview capture + LLM contract) is covered by tests.
+- **`export_look_tox`** *(vault, library)* — save a COMP as a portable `.tox`
+  inside `<vault>/<folder>/<slug>.tox` with a sibling Markdown sidecar
+  (id/type=look + name + tags + assets + created + source_path). The artist-
+  publishing primitive for shareable looks. Vault-gated. Live-validated via a
+  probe `baseCOMP.save()` (238-byte tox written).
+- **`tutorial_companion_pack`** *(vault, cli)* — scaffold a teaching companion
+  for a build: snapshot the COMP's topology, capture previews of its output TOPs,
+  write `tutorial.md` + `topology.json` + `recipe.json` + `previews/*.png` into
+  `<vault>/<folder>/<slug>/`. Composes existing read-only bridge calls; outputs
+  are an editable starting point for an artist. Vault-gated.
+
 ## [0.8.0] - 2026-05-31
 
 **Ingest-extend Wave 1 — Ecosystem on-ramp + signature looks** (campaign

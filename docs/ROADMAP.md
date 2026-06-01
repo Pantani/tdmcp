@@ -100,13 +100,13 @@ release is cut.
   `tdmcp-agent log-tail`, `record-fixtures`, `fanout`, `controller-bridge`,
   and `voice` / `llm-voice`.
 
-### v0.9.0 — Smarter assistance & library publishing (Wave 3 sub-batch A) · main line, not yet public
+### v0.9.0 — Smarter assistance & library publishing (Wave 3, sub-batches A + B) · main line, not yet public
 
-The first three Milestone-3 features shipped on `main` as the opening sub-batch
-of the Ingest-extend Wave 3. Pure-Node/library work — no TouchDesigner bridge
-required. The remaining six Wave-3 features (TD-required) follow in a separate
-session.
+The Wave-3 backlog of the Ingest-extend campaign — nine Milestone-3 features
+across two sub-batches. Sub-batch A (3 pure-Node tools) and sub-batch B (6
+TD-required tools) are now both merged on this branch ahead of the v0.9.0 cut.
 
+Sub-batch A — pure-Node library/publishing:
 - ✅ **`tag_and_search_library`** — faceted browse + tag editing over the vault
   library (Recipes/ + Components/ markdown notes). `op:list`/`op:search`/`op:tag`,
   preserves `'*'`-pinned user tags.
@@ -114,9 +114,22 @@ session.
   asset, recorded in a sidecar `<asset>.versions.json` and written back to the
   note's frontmatter `version`.
 - ✅ **First canonical recipe pack — `generative_classics_pack`** — curated
-  6-technique pack (feedback tunnel, audio spectrum, noise landscape, particle
-  galaxy, reaction-diffusion, webcam glitch) that emits an `import_recipe_bundle`-
-  compatible bundle JSON.
+  6-technique pack that emits an `import_recipe_bundle`-compatible bundle JSON.
+
+Sub-batch B — TD-required (live-validated against TD 099 build 2025.32820):
+- ✅ **`extract_palette`** — K-color palette from a TOP via deterministic
+  k-means on its preview PNG.
+- ✅ **`export_sop_to_svg`** — SOP polylines → SVG (pen-plotter / laser / print).
+- ✅ **`swap_operator`** — change an op's TYPE in place, preserving wires +
+  matching parameters (fail-forward).
+- ✅ **`export_look_tox`** — save a COMP as a portable `.tox` into the vault
+  with a Markdown sidecar for `browse_vault_library` / `tag_and_search_library`.
+- ✅ **`tutorial_companion_pack`** — scaffold a teaching companion (lesson
+  markdown + topology + previews + shallow recipe) into the vault.
+- 🧪 **`copilot_vision`** — multimodal LLM query over a TOP preview.
+  Live-tuning UNVERIFIED — no multimodal LLM endpoint configured in this
+  session; mechanism (preview capture + `ctx.llm.complete()` contract) is
+  covered by tests.
 
 ### v0.8.0 — Ingest & extend (Waves 1 & 2) · main line, not yet public
 
@@ -323,32 +336,35 @@ HTTP/WS data-source fix.*
 caption/repair/score tools, personal memory, provenance, checksums, lineage and
 corpus learning.*
 
-- **AI deepening** — live-tune `caption_top` and `repair_network`, add
-  `copilot_vision`, `elicit_missing_args`, richer chat flags, transcript
-  persistence and smarter handoff when the local copilot reaches its limits.
+- **AI deepening** — live-tune `caption_top` and `repair_network`, ✅
+  `copilot_vision` (multimodal-LLM frame analysis; live-tuning still UNVERIFIED
+  pending a configured multimodal endpoint), `elicit_missing_args`, richer
+  chat flags, transcript persistence and smarter handoff when the local copilot
+  reaches its limits. ✅ `extract_palette` adds a deterministic K-color sampler
+  feeding AI grading prompts.
 - **"Do it my way"** — turn `recall_similar_work`, `style_memory`,
   `learn_conventions` and `learn_from_my_corpus` into a persistent session
   profile the agent reads before every new build.
 - **Trust & publish** — with `lint_recipe_library`, provenance, checksums,
-  lineage, curated packs and vault sync in place, 🚧 `tag_and_search_library`,
-  🚧 `version_library_asset` and the 🚧 first canonical technique recipe pack
-  (`generative_classics_pack`) are now merged on `main` (v0.9.0 line, pending
-  release); `export_look_tox` and `export_sop_to_svg` are still ⬜ planned.
+  lineage, curated packs and vault sync in place, ✅ `tag_and_search_library`,
+  ✅ `version_library_asset`, ✅ `generative_classics_pack`, ✅ `export_look_tox`,
+  ✅ `export_sop_to_svg` and ✅ `tutorial_companion_pack` are now merged on
+  this branch (v0.9.0 line, pending release).
 
 ### Milestone 4 — Deeper authoring & operator DX · ~v0.10.0
 
 *Unwrap the last big TouchDesigner authoring surfaces and finish the operator /
 install story.*
 
-- **Authoring** — **`swap_operator`** (change a type, keep the wires),
-  `create_pop_geometry`, the GPU / optical-flow / SDF / strange-attractor
-  deferred generators, and MediaPipe face / hand / segmentation on the in-tree
-  tracking engine.
+- **Authoring** — ✅ `swap_operator` (change a type, keep the wires — shipped
+  v0.9.0 Wave 3B), `create_pop_geometry`, the GPU / optical-flow / SDF /
+  strange-attractor deferred generators, and MediaPipe face / hand /
+  segmentation on the in-tree tracking engine.
 - **Developer & live-operator DX** — finish the **easy-install** story (a
   client-config writer + a `doctor --fix` that performs safe repairs),
   `tdmcp config init`, profile listing, help/completion parity, inline preview,
-  a richer front-of-house dashboard mode and a **`tutorial_companion_pack`** for
-  teaching or selling a build.
+  and a richer front-of-house dashboard mode. ✅ `tutorial_companion_pack`
+  (teaching/selling a build) is now shipped (v0.9.0 Wave 3B).
 
 ### Later / deferred
 

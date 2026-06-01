@@ -4,6 +4,7 @@ import { registerAutoTagLibraryAsset } from "./autoTagLibraryAsset.js";
 import { registerBindVaultText } from "./bindVaultText.js";
 import { registerBrowseVaultLibrary } from "./browseVaultLibrary.js";
 import { registerCaptureToVault } from "./captureToVault.js";
+import { registerExportLookTox } from "./exportLookTox.js";
 import { registerExportNetworkToVault } from "./exportNetworkToVault.js";
 import { registerExportSetlistToVault } from "./exportSetlistToVault.js";
 import { registerGenerateFromMoodboard } from "./generateFromMoodboard.js";
@@ -22,6 +23,7 @@ import { registerScaffoldVault } from "./scaffoldVault.js";
 import { registerStyleMemory } from "./styleMemory.js";
 import { registerSyncPresetsVault } from "./syncPresetsVault.js";
 import { registerTagAndSearchLibrary } from "./tagAndSearchLibrary.js";
+import { registerTutorialCompanionPack } from "./tutorialCompanionPack.js";
 import { registerVariantPack } from "./variantPack.js";
 import { registerVaultRepoSync } from "./vaultRepoSync.js";
 import { registerVersionLibraryAsset } from "./versionLibraryAsset.js";
@@ -65,4 +67,7 @@ export const vaultRegistrars: ToolRegistrar[] = [
   // Ingest-extend Wave 3 sub-batch A (campaign 2026-05-31 — v0.9.0):
   registerTagAndSearchLibrary,
   registerVersionLibraryAsset,
+  // Ingest-extend Wave 3 sub-batch B (campaign 2026-06-01 — v0.9.0):
+  registerExportLookTox,
+  registerTutorialCompanionPack,
 ];
