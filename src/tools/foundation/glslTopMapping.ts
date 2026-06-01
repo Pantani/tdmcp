@@ -72,11 +72,11 @@ export interface IsfInput {
 const channelPlaceholderSchema: z.ZodType<GlslChannelPlaceholder> = z.union([
   z.object({
     kind: z.literal("noise"),
-    resolution: z.tuple([z.number(), z.number()]).optional(),
+    resolution: z.tuple([z.number().int().min(1), z.number().int().min(1)]).optional(),
   }),
   z.object({
     kind: z.literal("ramp"),
-    resolution: z.tuple([z.number(), z.number()]).optional(),
+    resolution: z.tuple([z.number().int().min(1), z.number().int().min(1)]).optional(),
   }),
   z.object({
     kind: z.literal("constant"),
@@ -392,6 +392,15 @@ export function mapIsfInputsToBindings(isfInputs: ReadonlyArray<IsfInput>): {
         break;
       }
       case "image": {
+        // GLSL TOP / Shadertoy convention only declares iChannel0..iChannel3.
+        // Extra ISF image inputs would need samplers we don't generate, so
+        // skip and warn rather than assigning out-of-range channel indices.
+        if (imageIndex > 3) {
+          warnings.push(
+            `ISF image input "${name}" exceeds iChannel3 limit (max 4 image inputs); skipped.`,
+          );
+          break;
+        }
         channels.push({
           index: imageIndex,
           source: { kind: "noise" },
@@ -814,7 +823,7 @@ export const applyGlslTopMappingSchema = z.object({
     .default("glsl_mapping")
     .describe("Name of the container COMP created under parent_path."),
   resolution: z
-    .tuple([z.number().int(), z.number().int()])
+    .tuple([z.number().int().min(1), z.number().int().min(1)])
     .default([1280, 720])
     .describe("GLSL TOP output resolution [width, height]."),
   pixel_format: z

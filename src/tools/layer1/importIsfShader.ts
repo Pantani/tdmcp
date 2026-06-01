@@ -311,8 +311,9 @@ export function applyControlDefaults(
 function isCompatibleDefault(type: IsfInput["TYPE"], value: unknown): boolean {
   switch (type) {
     case "float":
-    case "long":
       return typeof value === "number" && Number.isFinite(value);
+    case "long":
+      return typeof value === "number" && Number.isInteger(value);
     case "bool":
       return typeof value === "boolean";
     case "color":

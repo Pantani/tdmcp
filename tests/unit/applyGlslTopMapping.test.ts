@@ -112,6 +112,22 @@ describe("buildIsfMapping + applyShadertoyUniforms sugar", () => {
     expect((tint?.expr as string[])[2]).toMatch(/parent\(\)\.par\.Tintb\.eval\(\)/);
   });
 
+  it("caps ISF image inputs at iChannel3 and warns on overflow", () => {
+    const mapping = buildIsfMapping({
+      fragment: "void main(){}",
+      inputs: [
+        { NAME: "a", TYPE: "image" },
+        { NAME: "b", TYPE: "image" },
+        { NAME: "c", TYPE: "image" },
+        { NAME: "d", TYPE: "image" },
+        { NAME: "e", TYPE: "image" },
+      ],
+    });
+    expect(mapping.channels.length).toBe(4);
+    expect(mapping.channels.every((ch) => ch.index <= 3)).toBe(true);
+    expect(mapping.warnings.some((w) => w.includes("iChannel3 limit"))).toBe(true);
+  });
+
   it("sanitizes camelCase ISF input names so uniform exprs match TD's par naming", () => {
     const mapping = buildIsfMapping({
       fragment: "void main(){}",
