@@ -2032,8 +2032,8 @@ const SPECIAL_COMMANDS: AgentCommandCatalogEntry[] = [
   },
   {
     command: "watch-build",
-    summary: "Watch the bridge/source files and rebuild on change.",
-    mutates: false,
+    summary: "Watch bridge/source files, rebuild, and reload TD bridge changes.",
+    mutates: true,
     unsafe: false,
     source: "cli",
   },

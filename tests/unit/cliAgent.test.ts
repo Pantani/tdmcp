@@ -109,6 +109,9 @@ describe("tdmcp-agent CLI", () => {
     expect(commands).toContainEqual(
       expect.objectContaining({ command: "exec python", mutates: true, unsafe: true }),
     );
+    expect(commands).toContainEqual(
+      expect.objectContaining({ command: "watch-build", mutates: true, unsafe: false }),
+    );
     expect(commands.map((entry) => entry.command)).toEqual(
       [...commands.map((entry) => entry.command)].sort((a, b) => a.localeCompare(b)),
     );

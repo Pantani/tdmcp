@@ -210,6 +210,90 @@ describe("runBridgeWatchBuild (watch mode)", () => {
     await Promise.race([watchPromise, new Promise((r) => setTimeout(r, 100))]);
   });
 
+  it("td/ Python changes compile and reload the bridge after a passing build", async () => {
+    resetSpawn([{ exitCode: 0 }, { exitCode: 0 }, { exitCode: 0 }]);
+    const reloadBridge = vi.fn().mockResolvedValue({
+      content: [{ type: "text", text: "Reloaded 3 bridge module(s)." }],
+    });
+    const watchPromise = runBridgeWatchBuild(["--debounce-ms", "50"], { reloadBridge });
+    await waitForWatcher();
+    const watcher = watcherBox.current;
+    if (!watcher) throw new Error("watcher not initialised");
+
+    watcher.emit("change", "td/modules/mcp/dev.py");
+
+    await new Promise((r) => setTimeout(r, 250));
+
+    expect(spawnCalls).toHaveLength(3);
+    expect(spawnCalls[2]?.args).toEqual(["-m", "py_compile", "td/modules/mcp/dev.py"]);
+    expect(reloadBridge).toHaveBeenCalledTimes(1);
+
+    process.emit("SIGINT");
+    await Promise.race([watchPromise, new Promise((r) => setTimeout(r, 100))]);
+  });
+
+  it("src changes do not run py_compile or reload_bridge", async () => {
+    resetSpawn([{ exitCode: 0 }, { exitCode: 0 }]);
+    const reloadBridge = vi.fn();
+    const watchPromise = runBridgeWatchBuild(["--debounce-ms", "50"], { reloadBridge });
+    await waitForWatcher();
+    const watcher = watcherBox.current;
+    if (!watcher) throw new Error("watcher not initialised");
+
+    watcher.emit("change", "src/cli/agent.ts");
+
+    await new Promise((r) => setTimeout(r, 200));
+
+    expect(spawnCalls).toHaveLength(2);
+    expect(spawnCalls.some((call) => call.args.includes("py_compile"))).toBe(false);
+    expect(reloadBridge).not.toHaveBeenCalled();
+
+    process.emit("SIGINT");
+    await Promise.race([watchPromise, new Promise((r) => setTimeout(r, 100))]);
+  });
+
+  it("skips reload_bridge when the td/ py_compile gate fails", async () => {
+    resetSpawn([{ exitCode: 0 }, { exitCode: 0 }, { exitCode: 1 }]);
+    const reloadBridge = vi.fn();
+    const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const watchPromise = runBridgeWatchBuild(["--debounce-ms", "50"], { reloadBridge });
+    await waitForWatcher();
+    const watcher = watcherBox.current;
+    if (!watcher) throw new Error("watcher not initialised");
+
+    watcher.emit("change", "td/modules/mcp/dev.py");
+
+    await new Promise((r) => setTimeout(r, 250));
+
+    expect(spawnCalls.some((call) => call.args.includes("py_compile"))).toBe(true);
+    expect(reloadBridge).not.toHaveBeenCalled();
+    expect(writeSpy.mock.calls.map((c) => String(c[0])).join("")).toContain("py_compile");
+
+    process.emit("SIGINT");
+    await Promise.race([watchPromise, new Promise((r) => setTimeout(r, 100))]);
+  });
+
+  it("--no-reload-bridge still compiles td/ Python but skips the runtime reload", async () => {
+    resetSpawn([{ exitCode: 0 }, { exitCode: 0 }, { exitCode: 0 }]);
+    const reloadBridge = vi.fn();
+    const watchPromise = runBridgeWatchBuild(["--debounce-ms", "50", "--no-reload-bridge"], {
+      reloadBridge,
+    });
+    await waitForWatcher();
+    const watcher = watcherBox.current;
+    if (!watcher) throw new Error("watcher not initialised");
+
+    watcher.emit("change", "td/modules/mcp/dev.py");
+
+    await new Promise((r) => setTimeout(r, 250));
+
+    expect(spawnCalls.some((call) => call.args.includes("py_compile"))).toBe(true);
+    expect(reloadBridge).not.toHaveBeenCalled();
+
+    process.emit("SIGINT");
+    await Promise.race([watchPromise, new Promise((r) => setTimeout(r, 100))]);
+  });
+
   it("SIGINT closes watcher and returns 0", async () => {
     resetSpawn([{ exitCode: 0 }]);
     const watchPromise = runBridgeWatchBuild(["--debounce-ms", "50"]);

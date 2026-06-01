@@ -57,8 +57,9 @@ The project has grown through five arcs:
 
 ### main — v0.7.2 candidate (unreleased)
 
-The repository now has a small, unreleased CLI/operator-DX follow-through on top
-of v0.7.1. It does **not** change the public npm release or tool count yet.
+The repository now has a small, unreleased CLI/operator-DX and MCP-resource
+follow-through on top of v0.7.1. It does **not** change the public npm release
+or tool count yet.
 
 - **Top-level package-manager discoverability.** `tdmcp --help` now expands the
   package-manager tree (`search`, `list`, `info`, `install`, `uninstall`,
@@ -72,6 +73,16 @@ of v0.7.1. It does **not** change the public npm release or tool count yet.
 - **Script-compatible run files.** `tdmcp-agent run` now forwards global
   `--no-color` into nested JSON/stdin steps, and individual run-file steps can
   set `"no_color": true`.
+- **Bridge watch-build hot reload.** `tdmcp-agent watch-build` now treats saved
+  changes under `td/` as runtime bridge edits: after typecheck/build pass, it
+  runs `python -m py_compile` on changed `.py` files and calls `reload_bridge`.
+  `--no-py-compile` and `--no-reload-bridge` provide opt-outs for build-only
+  loops.
+- **Offline MCP resource follow-through.** `tdmcp://glsl-snippets` exposes the
+  vetted in-repo GLSL snippet catalog, `tdmcp://cheatsheets` adds compact
+  workflow reminders with resource refs, and `tdmcp://learning/touchdesigner`
+  pairs the existing `teach_touchdesigner` prompt with a curated KB-backed
+  learning path.
 
 ### v0.7.1 — Operator DX, local copilot & bridge-health patch
 
@@ -525,6 +536,9 @@ when the next patch is cut.
 `no_color_flag_is_dead` is also implemented on main for the script-facing agent
 surface; dashboard/TUI already honored `NO_COLOR`, and `tdmcp-agent run` now
 propagates `--no-color` into nested steps.
+`bridge_watch_build` is implemented on main after v0.7.1; the existing watcher
+now gates changed bridge Python with `py_compile` and reloads the running bridge
+automatically unless disabled.
 
 #### A.4 · AI & LLM integration
 
@@ -574,9 +588,8 @@ lives under Milestone 3 above.
 
 #### B.3 · CLI & developer DX
 
-| Feature | Delivers | Effort | Impact | Conf | Priority | Novelty | Probe-first |
-|---|---|---|---|---|---|---|---|
-| `bridge_watch_build` | Watch `td/` → auto-`reload_bridge` on save (+`py_compile` gate) | S | Med | High | P1 | NEW | partially covered by `tdmcp-agent watch-build`; auto-reload still open |
+`bridge_watch_build` is implemented on main after v0.7.1 and is no longer
+tracked as open backlog.
 
 #### B.4 · AI & LLM integration
 
@@ -692,7 +705,6 @@ iconic looks**, and an **artist-publishing layer**. **Source codes:**
 
 | Feature | EX | Delivers | Eff | Impact | Conf | Pri | Status | Source(s) |
 |---|---|---|---|---|---|---|---|---|
-| `tdmcp://glsl-snippets` catalog | EX-58 | Vetted, license-clean noise/SDF/color/blend GLSL the AI assembles from | M | Med | High | P1 | NEW | aw-cre · author own, not Lygia |
 | License-tier + provenance/funnel metadata | EX-59 | Revenue-tiered license templates + price/tier fields in the index | S | Med | High | P1 | EXTENSION (planned provenance) | anya |
 | `vendor_python_lib` | EX-60 | Vendor pip libs into Text DATs → self-contained `.toe` | M | Med | Med | P2 | NEW | alltd |
 | Own starter recipe pack + cover art | EX-61 | First-party curated recipe pack (the "free pack" funnel) | M | Med | Med | P2 | EXTENSION (content) | alltd, anya · author own |
@@ -712,8 +724,10 @@ iconic looks**, and an **artist-publishing layer**. **Source codes:**
 | Feature | EX | Delivers | Eff | Impact | Conf | Pri | Status | Source(s) |
 |---|---|---|---|---|---|---|---|---|
 | "generative-classic" + "one-source-five-ways" prompts | EX-68 | Steer a build toward a generative-art lineage; emit N labeled variants | S | Med | Med | P2 | NEW | anya |
-| KB enrichment + `tdmcp://cheatsheets` | EX-69 | Common-ops/Python/SOP cheat sheets → KB + resource | M | Med | Med | P2 | NEW | aw-int |
-| `teach_touchdesigner` tutor + learning resource | EX-70 | KB-grounded concept tutor + curated learning-path resource | S | Med | Med | P2 | NEW | aw-int |
+
+`tdmcp://glsl-snippets`, `tdmcp://cheatsheets`, and the
+`teach_touchdesigner` learning resource are implemented on main after v0.7.1 and
+are no longer tracked as open backlog.
 
 #### C.7 · Docs / examples
 

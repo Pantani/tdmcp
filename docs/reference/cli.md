@@ -58,6 +58,8 @@ tdmcp-agent config profile club   # show one profile, secrets redacted
 tdmcp-agent completion bash       # shell completion snippet
 tdmcp-agent repl                  # interactive mode with persistent history + Tab completion
 tdmcp-agent doctor --fix          # apply safe repairs, then report remaining guidance
+tdmcp-agent watch-build           # watch src/ + td/, rebuild, py_compile + reload td/*.py edits
+tdmcp-agent watch-build --no-reload-bridge  # build-only watcher
 tdmcp-agent watch --pretty --heartbeat-ms 5000
 tdmcp-agent watch --on beat --exec './cue-next.sh' --debounce-ms 250
 ```

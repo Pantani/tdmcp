@@ -22,6 +22,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Run-file flag propagation:** `tdmcp-agent run` now carries `--no-color`
   through to nested JSON/stdin command steps, and run-file steps can also set
   `"no_color": true`.
+- **Bridge watch-build hot reload:** `tdmcp-agent watch-build` now treats edits
+  under `td/` as bridge-runtime changes: after a passing typecheck/build it runs
+  `python -m py_compile` on changed `.py` files and then calls `reload_bridge`.
+  `--no-py-compile` and `--no-reload-bridge` keep the old build-only loop when
+  needed.
+- **MCP resource follow-through:** new offline resources expose
+  `tdmcp://glsl-snippets`, `tdmcp://cheatsheets`, and
+  `tdmcp://learning/touchdesigner` so agents can discover vetted shader
+  snippets, common workflow reminders, and the `teach_touchdesigner` learning
+  path without guessing IDs.
 
 ## [0.7.1] - 2026-06-01
 
