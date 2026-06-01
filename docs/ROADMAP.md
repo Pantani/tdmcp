@@ -98,7 +98,7 @@ v0.7.0 was one consolidated release train. It shipped the BEYOND campaign, the
 Ingest & Extend waves, the Wave-3 smarter-assistance/library-publishing work, and
 the `create_data_source_http_ws` hotfix documented in `CHANGELOG.md`.
 
-**BEYOND campaign.**
+#### BEYOND campaign
 
 - **Wave 1 / v0.7.0 manifest — live-show foundation + all P0.** Shared
   setlist/scene schema, memory-note schema, server-sampling LLM fallback,
@@ -136,7 +136,7 @@ the `create_data_source_http_ws` hotfix documented in `CHANGELOG.md`.
   `tdmcp-agent log-tail`, `record-fixtures`, `fanout`, `controller-bridge`,
   and `voice` / `llm-voice`.
 
-**Smarter assistance, library publishing & operator DX.**
+#### Smarter assistance, library publishing & operator DX
 
 The Wave-3 backlog of the Ingest & Extend campaign shipped in v0.7.0. Sub-batch A
 delivered 3 pure-Node library/publishing tools, sub-batch B shipped 6 TD-required
@@ -180,7 +180,7 @@ Sub-batch C — colour finish + authoring/DX:
 - ✅ **`elicit_missing_args`** — verified shipped in v0.7.0 after the Wave-3C
   audit; schema-driven elicitation has offline / no-server fallbacks.
 
-**Ingest & Extend.**
+#### Ingest & Extend
 
 The Ingest & Extend campaign is folded into this release line. Waves 1-2 grew the
 tool registry from 243 → 257, and Wave 3 completed the v0.7.0 release at 268
