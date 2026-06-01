@@ -19,23 +19,30 @@ import { vaultRepoSyncImpl } from "../../src/tools/vault/vaultRepoSync.js";
 
 function hasGit(): boolean {
   try {
-    execSync("git --version", { stdio: "ignore" });
+    execSync("git --version", { env: gitTestEnv(), stdio: "ignore" });
     return true;
   } catch {
     return false;
   }
 }
 
+function gitTestEnv(): NodeJS.ProcessEnv {
+  return {
+    ...process.env,
+    GIT_CONFIG_GLOBAL: os.devNull,
+    GIT_CONFIG_NOSYSTEM: "1",
+    GIT_AUTHOR_NAME: "Test",
+    GIT_AUTHOR_EMAIL: "test@test",
+    GIT_COMMITTER_NAME: "Test",
+    GIT_COMMITTER_EMAIL: "test@test",
+    GIT_TERMINAL_PROMPT: "0",
+  };
+}
+
 function git(args: string[], cwd: string): void {
   const r = spawnSync("git", args, {
     cwd,
-    env: {
-      ...process.env,
-      GIT_AUTHOR_NAME: "Test",
-      GIT_AUTHOR_EMAIL: "test@test",
-      GIT_COMMITTER_NAME: "Test",
-      GIT_COMMITTER_EMAIL: "test@test",
-    },
+    env: gitTestEnv(),
     encoding: "utf8",
   });
   if (r.status !== 0) {
@@ -44,7 +51,7 @@ function git(args: string[], cwd: string): void {
 }
 
 function gitOut(args: string[], cwd: string): string {
-  const r = spawnSync("git", args, { cwd, encoding: "utf8" });
+  const r = spawnSync("git", args, { cwd, env: gitTestEnv(), encoding: "utf8" });
   return (r.stdout ?? "").trim();
 }
 
@@ -182,13 +189,7 @@ describe.skipIf(!hasGit())("vaultRepoSyncImpl", () => {
     // Merge will conflict
     spawnSync("git", ["merge", "--no-ff", "branch-a"], {
       cwd: repo,
-      env: {
-        ...process.env,
-        GIT_AUTHOR_NAME: "Test",
-        GIT_AUTHOR_EMAIL: "test@test",
-        GIT_COMMITTER_NAME: "Test",
-        GIT_COMMITTER_EMAIL: "test@test",
-      },
+      env: gitTestEnv(),
     });
 
     const result = await vaultRepoSyncImpl(makeCtx(repo), {

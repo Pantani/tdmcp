@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { isLocalOllama } from "../../src/cli/chat.js";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
 import { type AgentEvent, runAgentTurn } from "../../src/llm/agent.js";
@@ -6,10 +6,11 @@ import {
   applySettings,
   ChatAccumulator,
   type ChatMessage,
-  type LlmClient,
+  LlmClient,
   type LlmConfig,
 } from "../../src/llm/client.js";
 import { buildHandoffPrompt } from "../../src/llm/handoff.js";
+import { resolveRequestedTier } from "../../src/llm/server.js";
 import {
   CREATIVE_TOOLS,
   dispatchTool,
@@ -20,6 +21,7 @@ import {
 import { RecipeLibrary } from "../../src/recipes/loader.js";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
 import type { ToolContext } from "../../src/tools/types.js";
+import { MAX_LLM_MAX_STEPS } from "../../src/utils/config.js";
 import { silentLogger } from "../../src/utils/logger.js";
 
 const makeCtx = (): ToolContext => ({
@@ -270,6 +272,91 @@ describe("local copilot — agent loop", () => {
     // The tool runs through dispatch but is rejected as unknown (not in the safe set).
     expect(events.some((e) => e.type === "tool" && e.status === "done" && !e.ok)).toBe(true);
   });
+
+  it("respects a configured maximum step budget", async () => {
+    let calls = 0;
+    const client = {
+      chatStream: async () => {
+        calls += 1;
+        return {
+          role: "assistant",
+          content: null,
+          tool_calls: [
+            {
+              id: `c${calls}`,
+              type: "function",
+              function: { name: "get_td_classes", arguments: "{}" },
+            },
+          ],
+        };
+      },
+    } as unknown as LlmClient;
+
+    const events: AgentEvent[] = [];
+    const messages = await runAgentTurn(
+      makeCtx(),
+      client,
+      [{ role: "user", content: "keep inspecting" }],
+      (e) => events.push(e),
+      { maxSteps: 2 },
+    );
+
+    expect(calls).toBe(2);
+    expect(messages.at(-1)?.content).toContain("maximum number of steps");
+    expect(events.at(-1)).toEqual({ type: "answer", content: messages.at(-1)?.content });
+  });
+
+  it("caps programmatic maximum step overrides", async () => {
+    let calls = 0;
+    const client = {
+      chatStream: async () => {
+        calls += 1;
+        return {
+          role: "assistant",
+          content: null,
+          tool_calls: [
+            {
+              id: `c${calls}`,
+              type: "function",
+              function: { name: "get_td_classes", arguments: "{}" },
+            },
+          ],
+        };
+      },
+    } as unknown as LlmClient;
+
+    await runAgentTurn(
+      makeCtx(),
+      client,
+      [{ role: "user", content: "keep inspecting forever" }],
+      () => {},
+      { maxSteps: 10_000 },
+    );
+
+    expect(calls).toBe(MAX_LLM_MAX_STEPS);
+  });
+
+  it("injects the registered MCP prompt catalog into the system prompt", async () => {
+    let seen: ChatMessage[] = [];
+    const client = {
+      chatStream: async (messages: ChatMessage[]) => {
+        seen = messages;
+        return { role: "assistant", content: "ok" };
+      },
+    } as unknown as LlmClient;
+
+    await runAgentTurn(
+      makeCtx(),
+      client,
+      [{ role: "user", content: "which prompts can guide a visual?" }],
+      () => {},
+    );
+
+    const system = seen[0]?.content ?? "";
+    expect(system).toContain("tdmcp://prompts");
+    expect(system).toContain("visual_artist_mode");
+    expect(system).toContain("debug_network");
+  });
 });
 
 describe("local copilot — live settings", () => {
@@ -292,6 +379,49 @@ describe("local copilot — live settings", () => {
     const withKey: LlmConfig = { ...base, llmApiKey: "sk-123" };
     expect(applySettings(withKey, { apiKey: "" }).llmApiKey).toBeUndefined();
     expect(applySettings(withKey, {}).llmApiKey).toBe("sk-123");
+  });
+
+  it("passes the configured streaming temperature to the LLM endpoint", async () => {
+    const bodies: Array<Record<string, unknown>> = [];
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
+      bodies.push(JSON.parse(String(init?.body)));
+      return new Response('data: {"choices":[{"delta":{"content":"ok"}}]}\n\ndata: [DONE]\n\n', {
+        status: 200,
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const client = new LlmClient({
+        llmBaseUrl: "http://llm.test/v1",
+        llmModel: "test-model",
+        llmApiKey: undefined,
+        llmTemperature: 0.85,
+      });
+
+      const message = await client.chatStream([], []);
+
+      expect(message.content).toBe("ok");
+      expect(bodies[0]?.temperature).toBe(0.85);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
+
+describe("local copilot — configured tier", () => {
+  it("uses the configured default tier when a request omits a tier", () => {
+    expect(resolveRequestedTier(undefined, "creative")).toBe("creative");
+    expect(resolveRequestedTier("", "safe")).toBe("safe");
+  });
+
+  it("lets an explicit request tier override the configured default", () => {
+    expect(resolveRequestedTier("safe", "creative")).toBe("safe");
+    expect(resolveRequestedTier("creative", "safe")).toBe("creative");
+    expect(resolveRequestedTier("standard", "creative")).toBe("standard");
+  });
+
+  it("falls back to the configured default for unknown request tiers", () => {
+    expect(resolveRequestedTier("unsafe", "safe")).toBe("safe");
   });
 });
 

@@ -1,4 +1,6 @@
 import { runInstallBridge } from "./cli/installBridge.js";
+import { renderMainHelp } from "./cli/mainHelp.js";
+import { parseServeArgs, renderServeHelp, resolveServeInvocation } from "./cli/serverArgs.js";
 import { isPackageCommand, runPackageCli } from "./packages/cli.js";
 import { createTdmcpServer } from "./server/tdmcpServer.js";
 import { startTransport } from "./server/transportFactory.js";
@@ -8,12 +10,16 @@ import { getVersion } from "./utils/version.js";
 
 async function main(): Promise<void> {
   const argv = process.argv.slice(2);
+  if (argv[0] === "--help" || argv[0] === "-h") {
+    process.stdout.write(`${renderMainHelp()}\n`);
+    return;
+  }
   if (argv[0] === "--version" || argv[0] === "-v") {
     process.stdout.write(`${getVersion()}\n`);
     return;
   }
   if (argv[0] === "install-bridge") {
-    runInstallBridge(argv.slice(1));
+    await runInstallBridge(argv.slice(1));
     return;
   }
   if (isPackageCommand(argv[0])) {
@@ -40,7 +46,23 @@ async function main(): Promise<void> {
 
   // The server honors a saved config file too (tdmcp.json / .tdmcprc / ~/.config/tdmcp);
   // pick a profile via TDMCP_PROFILE. Env vars still win over the file.
-  const config = loadConfig(process.env, { useFiles: true, profile: process.env.TDMCP_PROFILE });
+  const serveInvocation = resolveServeInvocation(argv);
+  if (serveInvocation.kind === "error") {
+    process.stderr.write(`${serveInvocation.message}\n`);
+    process.exitCode = 2;
+    return;
+  }
+  const serveArgs = parseServeArgs(serveInvocation.argv, process.env);
+  if (serveArgs.showHelp) {
+    process.stdout.write(`${renderServeHelp()}\n`);
+    return;
+  }
+  if (serveArgs.error) {
+    process.stderr.write(`${serveArgs.error}\n`);
+    process.exitCode = 2;
+    return;
+  }
+  const config = loadConfig(process.env, serveArgs.loadOptions);
   const logger = createLogger(config.logLevel);
 
   try {

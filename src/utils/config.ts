@@ -3,6 +3,55 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { z } from "zod";
 
+const LLM_TIER_VALUES = ["standard", "safe", "creative"] as const;
+
+export type LlmTier = (typeof LLM_TIER_VALUES)[number];
+
+export const DEFAULT_LLM_TIER: LlmTier = "standard";
+export const DEFAULT_LLM_MAX_STEPS = 8;
+export const DEFAULT_LLM_TEMPERATURE = 0.4;
+export const MAX_LLM_MAX_STEPS = 32;
+const MAX_LLM_TEMPERATURE = 2;
+
+function sanitizeLlmTier(value: unknown): LlmTier | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== "string") return DEFAULT_LLM_TIER;
+  const normalized = value.trim().toLowerCase();
+  return LLM_TIER_VALUES.includes(normalized as LlmTier)
+    ? (normalized as LlmTier)
+    : DEFAULT_LLM_TIER;
+}
+
+function sanitizeBoundedNumber(
+  value: unknown,
+  fallback: number,
+  min: number,
+  max: number,
+  integer: boolean,
+): number | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value === "string" && value.trim() === "") return undefined;
+  const parsed = typeof value === "number" ? value : Number(String(value).trim());
+  if (!Number.isFinite(parsed)) return fallback;
+  const bounded = Math.min(max, Math.max(min, parsed));
+  return integer ? Math.trunc(bounded) : bounded;
+}
+
+const LlmTierSchema = z.preprocess(
+  sanitizeLlmTier,
+  z.enum(LLM_TIER_VALUES).default(DEFAULT_LLM_TIER),
+);
+
+const LlmMaxStepsSchema = z.preprocess(
+  (value) => sanitizeBoundedNumber(value, DEFAULT_LLM_MAX_STEPS, 1, MAX_LLM_MAX_STEPS, true),
+  z.number().int().min(1).max(MAX_LLM_MAX_STEPS).default(DEFAULT_LLM_MAX_STEPS),
+);
+
+const LlmTemperatureSchema = z.preprocess(
+  (value) => sanitizeBoundedNumber(value, DEFAULT_LLM_TEMPERATURE, 0, MAX_LLM_TEMPERATURE, false),
+  z.number().min(0).max(MAX_LLM_TEMPERATURE).default(DEFAULT_LLM_TEMPERATURE),
+);
+
 export const ConfigSchema = z.object({
   /** TouchDesigner bridge host. */
   tdHost: z.string().min(1).default("127.0.0.1"),
@@ -55,6 +104,15 @@ export const ConfigSchema = z.object({
   llmModel: z.string().min(1).default("qwen2.5:3b"),
   /** Optional bearer token for the LLM endpoint (ignored by local Ollama; needed for paid/cloud APIs). */
   llmApiKey: z.string().min(1).optional(),
+  /**
+   * Default tool tier for `tdmcp chat`: `standard` (inspection + simple CRUD),
+   * `safe` (read-only), or `creative` (standard + curated generators).
+   */
+  llmTier: LlmTierSchema,
+  /** Maximum model/tool loop iterations for one local copilot turn. */
+  llmMaxSteps: LlmMaxStepsSchema,
+  /** Sampling temperature for the local copilot's streaming chat calls. */
+  llmTemperature: LlmTemperatureSchema,
   /** Loopback port the `tdmcp chat` web UI binds to. */
   chatPort: z.coerce.number().int().positive().max(65535).default(4141),
   /**
@@ -65,7 +123,12 @@ export const ConfigSchema = z.object({
   vaultPath: z.string().min(1).optional(),
 });
 
-export type TdmcpConfig = z.infer<typeof ConfigSchema>;
+type ParsedConfig = z.infer<typeof ConfigSchema>;
+
+export type LlmRuntimeConfig = Pick<ParsedConfig, "llmTier" | "llmMaxSteps" | "llmTemperature">;
+
+export type TdmcpConfig = ParsedConfig;
+export type LoadedTdmcpConfig = ParsedConfig;
 
 /** Options for {@link loadConfig}. File loading is opt-in (entry points pass `useFiles`). */
 export interface LoadConfigOptions {
@@ -76,9 +139,19 @@ export interface LoadConfigOptions {
   /** Explicit config file path; overrides the search order when set. */
   configPath?: string;
   /** Per-invocation overrides (CLI flags) — highest precedence. Undefined keys are ignored. */
-  overrides?: Partial<Record<keyof TdmcpConfig, unknown>>;
+  overrides?: Partial<Record<keyof LoadedTdmcpConfig, unknown>>;
   /** Directory to search for cwd config files (defaults to process.cwd()). */
   cwd?: string;
+}
+
+export interface ConfigProfileSummary {
+  name: string;
+  keys: string[];
+}
+
+export interface ConfigProfileList {
+  source?: string;
+  profiles: ConfigProfileSummary[];
 }
 
 /** A loaded config file: the base settings, any named profiles, and where it came from. */
@@ -104,6 +177,9 @@ function envValues(env: NodeJS.ProcessEnv): Record<string, unknown> {
     llmBaseUrl: env.TDMCP_LLM_BASE_URL,
     llmModel: env.TDMCP_LLM_MODEL,
     llmApiKey: env.TDMCP_LLM_API_KEY || undefined,
+    llmTier: env.TDMCP_LLM_TIER || undefined,
+    llmMaxSteps: env.TDMCP_LLM_MAX_STEPS || undefined,
+    llmTemperature: env.TDMCP_LLM_TEMPERATURE || undefined,
     chatPort: env.TDMCP_CHAT_PORT,
     vaultPath: env.TDMCP_VAULT_PATH || undefined,
   };
@@ -150,6 +226,21 @@ function readConfigFile(env: NodeJS.ProcessEnv, opts: LoadConfigOptions): Config
   return { base: {}, profiles: {} };
 }
 
+/** Lists named profiles from the selected config file without exposing their values. */
+export function listConfigProfiles(
+  env: NodeJS.ProcessEnv = process.env,
+  opts: LoadConfigOptions = {},
+): ConfigProfileList {
+  const file = readConfigFile(env, { ...opts, useFiles: true });
+  const profiles = Object.entries(file.profiles)
+    .map(([name, values]) => ({
+      name,
+      keys: Object.keys(values).sort(),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  return { source: file.source, profiles };
+}
+
 /**
  * Loads and validates configuration. By default reads **environment variables only**
  * (missing values fall back to defaults; invalid values throw a descriptive ZodError),
@@ -164,7 +255,7 @@ function readConfigFile(env: NodeJS.ProcessEnv, opts: LoadConfigOptions): Config
 export function loadConfig(
   env: NodeJS.ProcessEnv = process.env,
   opts: LoadConfigOptions = {},
-): TdmcpConfig {
+): LoadedTdmcpConfig {
   const file = opts.useFiles ? readConfigFile(env, opts) : { base: {}, profiles: {} };
   const profileName = opts.profile ?? (opts.useFiles ? env.TDMCP_PROFILE : undefined);
   let profilePart: Record<string, unknown> = {};
@@ -188,10 +279,10 @@ export function loadConfig(
 }
 
 /** Sensitive keys redacted by {@link describeConfig} for safe printing/sharing. */
-const SECRET_KEYS: ReadonlyArray<keyof TdmcpConfig> = ["bridgeToken", "llmApiKey"];
+const SECRET_KEYS: ReadonlyArray<keyof LoadedTdmcpConfig> = ["bridgeToken", "llmApiKey"];
 
 /** A copy of the config safe to print/share — secrets are masked. */
-export function describeConfig(config: TdmcpConfig): Record<string, unknown> {
+export function describeConfig(config: TdmcpConfig | LoadedTdmcpConfig): Record<string, unknown> {
   const out: Record<string, unknown> = { ...config };
   for (const key of SECRET_KEYS) {
     if (out[key] !== undefined) out[key] = "***redacted***";

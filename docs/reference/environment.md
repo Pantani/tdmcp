@@ -35,6 +35,9 @@ These configure the [local LLM copilot](/reference/cli#local-copilot-tdmcp-chat)
 | `TDMCP_LLM_BASE_URL` | `http://127.0.0.1:11434/v1` | OpenAI-compatible chat endpoint. Defaults to local Ollama; point it at LM Studio, a cloud GPU or a paid API. |
 | `TDMCP_LLM_MODEL` | `qwen2.5:3b` | Model id the copilot requests (must be pulled in the backend, e.g. `ollama pull qwen2.5:3b`). Bump to `qwen2.5:7b` for more headroom. |
 | `TDMCP_LLM_API_KEY` | _(unset)_ | Optional bearer token for the LLM endpoint (ignored by local Ollama; needed for paid/cloud APIs). |
+| `TDMCP_LLM_TIER` | `standard` | Default chat tool tier: `standard`, `safe` (read-only), or `creative` (adds curated generators). The browser toggles can still override it per turn. |
+| `TDMCP_LLM_MAX_STEPS` | `8` | Maximum model/tool loop iterations for one local copilot turn. Values are clamped to `1..32`. |
+| `TDMCP_LLM_TEMPERATURE` | `0.4` | Sampling temperature sent to the OpenAI-compatible chat endpoint. Values are clamped to `0..2`. |
 | `TDMCP_CHAT_PORT` | `4141` | Loopback port the `tdmcp chat` web UI binds to. |
 
 ## TouchDesigner side

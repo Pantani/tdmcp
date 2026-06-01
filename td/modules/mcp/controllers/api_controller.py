@@ -226,6 +226,9 @@ def _route(method, path, query, body, webserver=None):
     if rest == ["info"] and method == "GET":
         return api_service.get_info()
 
+    if rest == ["health"] and method == "GET":
+        return api_service.get_health(webserver)
+
     if rest == ["nodes"] and method == "POST":
         _require(body, "parent_path", "type")
         return api_service.create_node(

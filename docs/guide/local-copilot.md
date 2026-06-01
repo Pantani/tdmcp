@@ -60,9 +60,15 @@ the command is simply `tdmcp chat` (or `node dist/index.js chat`).
 `tdmcp chat` **starts Ollama for you** if the daemon isn't up — detached and left
 running, so closing the chat never takes your model offline. Useful flags:
 
+- **`--read-only`** — force the safe/read-only tool tier for the whole session.
+- **`--creative`** — use the creative tool tier and a warmer sampling preset.
+- **`--prompt <text>`** — run one headless prompt and print the answer without
+  opening the browser.
 - **`--no-ollama`** — don't auto-start it (for a remote endpoint or a daemon you
   manage yourself).
 - **`--no-open`** — don't open the browser automatically.
+- **`--profile <name>`** / **`--config <path>`** — use a saved venue/profile
+  config for this chat run.
 - **`--help`** — list everything.
 
 ::: tip Which local model?
@@ -92,6 +98,9 @@ OpenAI-compatible API — so you can aim it anywhere with two environment variab
 | --- | --- | --- |
 | `TDMCP_LLM_BASE_URL` | `http://127.0.0.1:11434/v1` | LM Studio, a cloud GPU, or a paid API. |
 | `TDMCP_LLM_MODEL` | `qwen2.5:3b` | Any model id available at that endpoint. |
+| `TDMCP_LLM_TIER` | `standard` | Start the UI in `standard`, `safe`, or `creative` mode. |
+| `TDMCP_LLM_MAX_STEPS` | `8` | Cap model/tool loop iterations for one turn. |
+| `TDMCP_LLM_TEMPERATURE` | `0.4` | Tune sampling temperature for the chat endpoint. |
 
 Full list (including `TDMCP_LLM_API_KEY` and the chat port) is in
 [environment variables](/reference/environment#local-copilot-tdmcp-chat).

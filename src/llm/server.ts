@@ -1,10 +1,17 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { ToolContext } from "../tools/types.js";
-import type { TdmcpConfig } from "../utils/config.js";
+import {
+  DEFAULT_LLM_MAX_STEPS,
+  DEFAULT_LLM_TEMPERATURE,
+  DEFAULT_LLM_TIER,
+  type LlmRuntimeConfig,
+  type LlmTier,
+  type TdmcpConfig,
+} from "../utils/config.js";
 import { runAgentTurn } from "./agent.js";
 import { applySettings, type ChatMessage, LlmClient, type LlmConfig } from "./client.js";
 import { buildHandoffPrompt } from "./handoff.js";
-import { resolveTools } from "./tools.js";
+import { resolveTools, type ToolTier } from "./tools.js";
 import { CHAT_HTML } from "./ui.js";
 
 export interface ChatServerHandle {
@@ -20,6 +27,12 @@ const SSE_HEADERS = {
 } as const;
 
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "::1"]);
+
+type ChatServerConfig = TdmcpConfig &
+  Partial<LlmRuntimeConfig> & {
+    /** When set by the CLI, every browser/API chat request is forced to this tier. */
+    llmLockedTier?: ToolTier;
+  };
 
 /** Extracts the bare hostname from a `Host` header (`h:port`, `[::1]:port`) or an `Origin` URL. */
 function hostnameOf(value: string | undefined): string | undefined {
@@ -91,16 +104,34 @@ function sseWriter(res: ServerResponse): (data: unknown) => void {
   };
 }
 
+export function resolveRequestedTier(
+  requested: unknown,
+  fallback: LlmTier = DEFAULT_LLM_TIER,
+  locked?: ToolTier,
+): ToolTier {
+  if (locked) return locked;
+  if (requested === "safe" || requested === "creative" || requested === "standard") {
+    return requested;
+  }
+  return fallback ?? DEFAULT_LLM_TIER;
+}
+
 async function handleChat(
   req: IncomingMessage,
   res: ServerResponse,
   ctx: ToolContext,
   client: LlmClient,
+  config: Pick<ChatServerConfig, "llmTier" | "llmMaxSteps" | "llmLockedTier">,
 ): Promise<void> {
   const body = (await readJsonBody(req)) as { messages?: ChatMessage[]; tier?: string };
   const history = Array.isArray(body.messages) ? body.messages : [];
-  // safe (read-only) wins over creative if both are somehow set; default is standard.
-  const tier = body.tier === "safe" ? "safe" : body.tier === "creative" ? "creative" : "standard";
+  // safe (read-only) wins over creative in the browser UI; API callers can also
+  // omit tier and use the configured default.
+  const tier = resolveRequestedTier(
+    body.tier,
+    config.llmTier ?? DEFAULT_LLM_TIER,
+    config.llmLockedTier,
+  );
   const tools = resolveTools(tier);
 
   const controller = new AbortController();
@@ -112,6 +143,7 @@ async function handleChat(
   const messages = await runAgentTurn(ctx, client, history, sse, {
     signal: controller.signal,
     tools,
+    maxSteps: config.llmMaxSteps ?? DEFAULT_LLM_MAX_STEPS,
   });
   if (!controller.signal.aborted) sse({ type: "final", messages });
   if (!res.writableEnded) res.end();
@@ -143,12 +175,16 @@ async function handlePull(
  * `/health` probe, a streaming `/chat` turn endpoint, and a `/pull` endpoint that
  * downloads the model via Ollama. Bound to 127.0.0.1 so it never leaves the machine.
  */
-export function startChatServer(ctx: ToolContext, config: TdmcpConfig): Promise<ChatServerHandle> {
+export function startChatServer(
+  ctx: ToolContext,
+  config: ChatServerConfig,
+): Promise<ChatServerHandle> {
   // Live, mutable settings so the UI can switch model/endpoint without a restart.
   let settings: LlmConfig = {
     llmBaseUrl: config.llmBaseUrl,
     llmModel: config.llmModel,
     llmApiKey: config.llmApiKey,
+    llmTemperature: config.llmTemperature,
   };
   const clientFor = () => new LlmClient(settings);
 
@@ -176,6 +212,10 @@ export function startChatServer(ctx: ToolContext, config: TdmcpConfig): Promise<
             model: settings.llmModel,
             baseUrl: settings.llmBaseUrl,
             hasKey: Boolean(settings.llmApiKey),
+            defaultTier: config.llmTier ?? DEFAULT_LLM_TIER,
+            lockedTier: config.llmLockedTier,
+            maxSteps: config.llmMaxSteps ?? DEFAULT_LLM_MAX_STEPS,
+            temperature: settings.llmTemperature ?? DEFAULT_LLM_TEMPERATURE,
           }),
         );
         return;
@@ -205,7 +245,7 @@ export function startChatServer(ctx: ToolContext, config: TdmcpConfig): Promise<
         return;
       }
       if (method === "POST" && path === "/chat") {
-        await handleChat(req, res, ctx, clientFor());
+        await handleChat(req, res, ctx, clientFor(), config);
         return;
       }
       if (method === "POST" && path === "/pull") {

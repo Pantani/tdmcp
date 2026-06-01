@@ -1,9 +1,17 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { runCli, runWatch } from "../../src/cli/agent.js";
+import {
+  completeReplLine,
+  listAgentCommands,
+  loadReplHistory,
+  replHistoryPath,
+  runCli,
+  runWatch,
+  saveReplHistory,
+} from "../../src/cli/agent.js";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
 import { RecipeLibrary } from "../../src/recipes/loader.js";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
@@ -29,6 +37,8 @@ describe("tdmcp-agent CLI", () => {
     expect(r.code).toBe(0);
     expect(r.stdout).toContain("tdmcp-agent");
     expect(r.stdout).toContain("nodes find");
+    expect(r.stdout).toContain("Inspection & diagnostics:");
+    expect(r.stdout).toContain("Unsafe escape hatches:");
   });
 
   it("emits a JSON Schema for `schema <command>`", async () => {
@@ -37,6 +47,19 @@ describe("tdmcp-agent CLI", () => {
     const doc = JSON.parse(r.stdout);
     expect(doc.command).toBe("nodes list");
     expect(JSON.stringify(doc.input)).toContain("parent_path");
+  });
+
+  it("prints command-specific help without contacting TD", async () => {
+    const r = await runCli(["help", "nodes", "find"], {
+      makeCtx: () => {
+        throw new Error("command help must not build a TD context");
+      },
+    });
+    expect(r.code).toBe(0);
+    expect(r.stdout).toContain("tdmcp-agent nodes find");
+    expect(r.stdout).toContain("Search nodes");
+    expect(r.stdout).toContain("mutates: false");
+    expect(r.stdout).toContain("Input schema:");
   });
 
   it("emits a JSON Schema for the vector-lines shorthand", async () => {
@@ -59,6 +82,36 @@ describe("tdmcp-agent CLI", () => {
     expect(r.code).toBe(0);
     expect(r.stdout).toContain("complete -F _tdmcp_agent tdmcp-agent");
     expect(r.stdout).toContain("nodes find");
+  });
+
+  it("emits a machine-readable command catalog without contacting TD", async () => {
+    const r = await runCli(["commands", "--json"], {
+      makeCtx: () => {
+        throw new Error("commands catalog must not build a TD context");
+      },
+    });
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.count).toBeGreaterThan(100);
+    expect(doc.commands).toContainEqual(
+      expect.objectContaining({
+        command: "nodes find",
+        summary: expect.stringContaining("Search nodes"),
+        mutates: false,
+        unsafe: false,
+      }),
+    );
+  });
+
+  it("lists stable command metadata for resources and docs", () => {
+    const commands = listAgentCommands();
+
+    expect(commands).toContainEqual(
+      expect.objectContaining({ command: "exec python", mutates: true, unsafe: true }),
+    );
+    expect(commands.map((entry) => entry.command)).toEqual(
+      [...commands.map((entry) => entry.command)].sort((a, b) => a.localeCompare(b)),
+    );
   });
 
   it("accepts --no-color for script compatibility", async () => {
@@ -88,6 +141,42 @@ describe("tdmcp-agent CLI", () => {
       expect(doc.steps).toHaveLength(1);
       expect(doc.steps[0].stdout.dryRun).toBe(true);
       expect(doc.steps[0].stdout.command).toBe("nodes create");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("runs a JSON command file from stdin with run -", async () => {
+    const r = await runCli(["run", "-"], {
+      stdin: JSON.stringify([
+        {
+          command: "nodes create",
+          dry_run: true,
+          params: { parent_path: "/project1", type: "noiseTOP" },
+        },
+      ]),
+    });
+
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.steps).toHaveLength(1);
+    expect(doc.steps[0].stdout.dryRun).toBe(true);
+    expect(doc.steps[0].stdout.command).toBe("nodes create");
+  });
+
+  it("continues a JSON run file after a failed step when requested", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-agent-run-"));
+    try {
+      const file = join(dir, "continue-plan.json");
+      writeFileSync(file, JSON.stringify([{ command: "nodes frobnicate" }, { command: "config" }]));
+
+      const r = await runCli(["run", file, "--continue-on-error"]);
+      expect(r.code).toBe(2);
+      const doc = JSON.parse(r.stdout);
+      expect(doc.steps).toHaveLength(2);
+      expect(doc.steps[0].code).toBe(2);
+      expect(doc.steps[1].code).toBe(0);
+      expect(doc.steps[1].stdout.tdBaseUrl).toBe("http://127.0.0.1:9980");
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -127,6 +216,70 @@ describe("tdmcp-agent CLI", () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+
+  it("lists profiles from the selected config file", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-agent-cfg-"));
+    try {
+      const config = join(dir, "tdmcp.json");
+      writeFileSync(
+        config,
+        JSON.stringify({
+          profiles: {
+            club: { tdHost: "club-host" },
+            studio: { tdPort: 9999 },
+          },
+        }),
+      );
+
+      const r = await runCli(["config", "profiles", "--config", config]);
+      expect(r.code).toBe(0);
+      const doc = JSON.parse(r.stdout);
+      expect(doc.profiles).toEqual([
+        { name: "club", keys: ["tdHost"] },
+        { name: "studio", keys: ["tdPort"] },
+      ]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("shows a named profile as an effective redacted config", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-agent-cfg-"));
+    try {
+      const config = join(dir, "tdmcp.json");
+      writeFileSync(
+        config,
+        JSON.stringify({
+          tdPort: 9980,
+          profiles: {
+            club: { tdHost: "club-host", bridgeToken: "secret" },
+          },
+        }),
+      );
+
+      const r = await runCli(["config", "profile", "club", "--config", config]);
+      expect(r.code).toBe(0);
+      const doc = JSON.parse(r.stdout);
+      expect(doc.profile).toBe("club");
+      expect(doc.tdBaseUrl).toBe("http://club-host:9980");
+      expect(doc.bridgeToken).toBe("***redacted***");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("includes local copilot knobs in config --write-env", async () => {
+    const r = await runCli(["config", "--write-env"], {
+      makeCtx: () => {
+        throw new Error("config --write-env must not build a TD context");
+      },
+    });
+
+    expect(r.code).toBe(0);
+    expect(r.stdout).toContain("TDMCP_LLM_TIER");
+    expect(r.stdout).toContain("TDMCP_LLM_MAX_STEPS");
+    expect(r.stdout).toContain("TDMCP_LLM_TEMPERATURE");
   });
 
   it("propagates top-level --dry-run into JSON run-file steps", async () => {
@@ -275,6 +428,54 @@ describe("tdmcp-agent CLI", () => {
     expect(r.stdout).toContain("noise1");
     expect(r.stdout).toContain("null1");
   });
+
+  it("offers REPL completions for command prefixes and last-token flag prefixes", () => {
+    const [commandMatches, commandPrefix] = completeReplLine("nod");
+    expect(commandPrefix).toBe("nod");
+    expect(commandMatches).toContain("nodes list");
+
+    const [flagMatches, flagPrefix] = completeReplLine("nodes list --out");
+    expect(flagPrefix).toBe("--out");
+    expect(flagMatches).toContain("--output");
+    expect(flagMatches).toContain("--out");
+  });
+
+  it("persists REPL history in a deterministic state path", () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-agent-history-"));
+    try {
+      const historyPath = replHistoryPath({ XDG_STATE_HOME: dir });
+      saveReplHistory(["nodes list", "", "nodes list", "info"], historyPath);
+
+      expect(historyPath).toBe(join(dir, "tdmcp-agent", "history"));
+      expect(loadReplHistory(historyPath)).toEqual(["nodes list", "info"]);
+      expect(readFileSync(historyPath, "utf8")).toBe("nodes list\ninfo\n");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("renders list results as a table", async () => {
+    const r = await runCli(
+      ["nodes", "list", "--output", "table", "--params", '{"detail_level":"full"}'],
+      { makeCtx },
+    );
+    expect(r.code).toBe(0);
+    expect(r.stdout.split("\n")[0]).toContain("path");
+    expect(r.stdout).toContain("/project1/noise1");
+    expect(r.stdout).toContain("/project1/null1");
+  });
+
+  it("renders list results as CSV", async () => {
+    const r = await runCli(
+      ["nodes", "list", "--output", "csv", "--params", '{"detail_level":"full"}'],
+      { makeCtx },
+    );
+    expect(r.code).toBe(0);
+    const lines = r.stdout.trim().split("\n");
+    expect(lines[0]?.split(",")).toContain("path");
+    expect(r.stdout).toContain("/project1/noise1");
+    expect(r.stdout).toContain("/project1/null1");
+  });
 });
 
 describe("tdmcp-agent CLI — phase 0 additions", () => {
@@ -386,6 +587,125 @@ describe("tdmcp-agent watch", () => {
       expect(url).toMatch(/^ws:\/\/.+\/$/);
     } finally {
       stderr.mockRestore();
+    }
+  });
+
+  it("filters event names from the bridge `event` key and reports a count", async () => {
+    const lines: string[] = [];
+    const status: string[] = [];
+    const controller = new AbortController();
+    let emit: ((e: unknown) => void) | undefined;
+    let closed = false;
+
+    const done = runWatch({
+      filter: ["node.created"],
+      write: (line) => lines.push(line),
+      writeStatus: (line) => status.push(line),
+      signal: controller.signal,
+      makeStream: ({ onEvent }) => {
+        emit = onEvent as (e: unknown) => void;
+        return { start: () => {}, close: () => (closed = true) };
+      },
+    });
+
+    emit?.({ event: "node.updated", data: { path: "/project1/nope" } });
+    emit?.({ event: "node.created", data: { path: "/project1/x" } });
+    controller.abort();
+    await done;
+
+    expect(closed).toBe(true);
+    expect(lines).toEqual(['{"event":"node.created","data":{"path":"/project1/x"}}']);
+    expect(status.at(-1)).toBe("Stopped after 1 event.");
+  });
+
+  it("pretty-prints event names from the bridge `type` key", async () => {
+    const lines: string[] = [];
+    const controller = new AbortController();
+    let emit: ((e: unknown) => void) | undefined;
+
+    const done = runWatch({
+      pretty: true,
+      write: (line) => lines.push(line),
+      writeStatus: () => {},
+      signal: controller.signal,
+      makeStream: ({ onEvent }) => {
+        emit = onEvent as (e: unknown) => void;
+        return { start: () => {}, close: () => {} };
+      },
+    });
+
+    emit?.({ type: "beat", data: { bar: 2 } });
+    controller.abort();
+    await done;
+
+    expect(lines).toEqual(['beat {"bar":2}']);
+  });
+
+  it("runs watch exec hooks for matching events with per-event debounce", async () => {
+    const lines: string[] = [];
+    const execs: Array<{ command: string; event: unknown }> = [];
+    const controller = new AbortController();
+    let emit: ((e: unknown) => void) | undefined;
+    let time = 1000;
+
+    const done = runWatch({
+      filter: ["beat"],
+      execOn: ["beat"],
+      exec: "echo beat",
+      execDebounceMs: 100,
+      now: () => time,
+      execCommand: (command, event) => execs.push({ command, event }),
+      write: (line) => lines.push(line),
+      writeStatus: () => {},
+      signal: controller.signal,
+      makeStream: ({ onEvent }) => {
+        emit = onEvent as (e: unknown) => void;
+        return { start: () => {}, close: () => {} };
+      },
+    });
+
+    emit?.({ event: "node.created", data: { path: "/project1/x" } });
+    emit?.({ event: "beat", data: { bar: 1 } });
+    time += 50;
+    emit?.({ event: "beat", data: { bar: 1 } });
+    time += 100;
+    emit?.({ event: "beat", data: { bar: 2 } });
+    controller.abort();
+    await done;
+
+    expect(lines).toHaveLength(3);
+    expect(execs).toEqual([
+      { command: "echo beat", event: { event: "beat", data: { bar: 1 } } },
+      { command: "echo beat", event: { event: "beat", data: { bar: 2 } } },
+    ]);
+  });
+
+  it("prints watch heartbeats with the current filtered event count", async () => {
+    vi.useFakeTimers();
+    const status: string[] = [];
+    const controller = new AbortController();
+    let emit: ((e: unknown) => void) | undefined;
+
+    try {
+      const done = runWatch({
+        heartbeatMs: 1000,
+        write: () => {},
+        writeStatus: (line) => status.push(line),
+        signal: controller.signal,
+        makeStream: ({ onEvent }) => {
+          emit = onEvent as (e: unknown) => void;
+          return { start: () => {}, close: () => {} };
+        },
+      });
+
+      emit?.({ event: "beat", data: { bar: 1 } });
+      await vi.advanceTimersByTimeAsync(1000);
+      controller.abort();
+      await done;
+
+      expect(status).toContain("Heartbeat: 1 event.");
+    } finally {
+      vi.useRealTimers();
     }
   });
 });

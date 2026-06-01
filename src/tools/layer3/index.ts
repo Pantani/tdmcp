@@ -54,6 +54,7 @@ import { registerSnapshotTdGraph } from "./snapshotTdGraph.js";
 import { registerSummarizeTdErrors } from "./summarizeTdErrors.js";
 import { registerSwapOperator } from "./swapOperator.js";
 import { registerUpdateTdNodeParameters } from "./updateTdNodeParameters.js";
+import { registerWatchNode } from "./watchNode.js";
 import { registerWriteAgentGuide } from "./writeAgentGuide.js";
 
 export const layer3Registrars: ToolRegistrar[] = [
@@ -96,6 +97,7 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerGetTdNodeFlags,
   // Phase 14 — runtime telemetry & logs:
   registerGetNodeStateRuntime,
+  registerWatchNode,
   registerGetBridgeLogs,
   // Phase 15 — component introspection + network serialization:
   registerInspectComponent,

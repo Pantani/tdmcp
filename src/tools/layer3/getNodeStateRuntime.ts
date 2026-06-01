@@ -5,6 +5,12 @@ import type { ToolContext, ToolRegistrar } from "../types.js";
 
 export const getNodeStateRuntimeSchema = z.object({
   path: z.string().describe("Full path of the operator to inspect (e.g. '/project1/noise1')."),
+  include_info_chop: z
+    .boolean()
+    .optional()
+    .describe(
+      "When true, create a temporary Info CHOP beside the operator and sample its channels for deeper per-op telemetry. Fail-forward: unreadable Info CHOP data becomes warnings.",
+    ),
 });
 type GetNodeStateRuntimeArgs = z.infer<typeof getNodeStateRuntimeSchema>;
 
@@ -44,6 +50,13 @@ export const getNodeStateRuntimeOutputSchema = z.object({
     .describe("GPU memory used in bytes for TOPs (op.gpuMemory). UNVERIFIED attr name."),
   errors: z.array(z.string()).describe("Cook errors from op.errors(recurse=False)."),
   warnings: z.array(z.string()).describe("Bridge-level warnings about unreadable attributes."),
+  info_chop: z
+    .object({
+      channels: z.record(z.string(), z.number()).describe("Numeric Info CHOP channels by name."),
+      warnings: z.array(z.string()).describe("Info CHOP sampling warnings."),
+    })
+    .optional()
+    .describe("Optional Info CHOP telemetry when include_info_chop=true."),
   extra: z
     .record(z.string(), z.unknown())
     .optional()
@@ -65,6 +78,7 @@ interface NodeStateRuntimeReport {
   gpu_memory?: number;
   errors: string[];
   warnings: string[];
+  info_chop?: { channels: Record<string, number>; warnings: string[] };
   extra?: Record<string, unknown>;
   fatal?: string;
 }
@@ -199,6 +213,44 @@ try:
         except Exception as _e:
             report["warnings"].append("errors(recurse=False): " + str(_e))
 
+        # Optional Info CHOP telemetry. This is deliberately fail-forward:
+        # Info CHOP parameter names and channel names can vary by TD build, so
+        # every step records a warning instead of failing the whole read.
+        if _p.get("include_info_chop"):
+            _info_report = {"channels": {}, "warnings": []}
+            _info = None
+            try:
+                _parent = _o.parent()
+                _info = _parent.create(infoCHOP, "_tdmcp_info_probe")
+                try:
+                    setattr(_info.par, "op", _o.path)
+                except Exception as _e:
+                    _info_report["warnings"].append("info op par: " + str(_e))
+                try:
+                    _info.cook(force=True)
+                except Exception as _e:
+                    _info_report["warnings"].append("info cook: " + str(_e))
+                try:
+                    for _chan in _info.chans():
+                        try:
+                            _name = str(_chan.name)
+                            _val = _chan.eval()
+                            if _val is not None:
+                                _info_report["channels"][_name] = float(_val)
+                        except Exception as _e:
+                            _info_report["warnings"].append("info channel: " + str(_e))
+                except Exception as _e:
+                    _info_report["warnings"].append("info chans: " + str(_e))
+            except Exception as _e:
+                _info_report["warnings"].append("info create: " + str(_e))
+            finally:
+                try:
+                    if _info is not None:
+                        _info.destroy()
+                except Exception as _e:
+                    _info_report["warnings"].append("info destroy: " + str(_e))
+            report["info_chop"] = _info_report
+
         if not report["extra"]:
             del report["extra"]
 
@@ -214,7 +266,10 @@ export function buildNodeStateRuntimeScript(payload: object): string {
 export async function getNodeStateRuntimeImpl(ctx: ToolContext, args: GetNodeStateRuntimeArgs) {
   return guardTd(
     async () => {
-      const script = buildNodeStateRuntimeScript({ path: args.path });
+      const script = buildNodeStateRuntimeScript({
+        path: args.path,
+        include_info_chop: args.include_info_chop === true,
+      });
       const exec = await ctx.client.executePythonScript(script, true);
       return parsePythonReport<NodeStateRuntimeReport>(exec.stdout);
     },
@@ -232,6 +287,8 @@ export async function getNodeStateRuntimeImpl(ctx: ToolContext, args: GetNodeSta
       if (report.num_chans !== undefined) parts.push(`${report.num_chans} ch`);
       if (report.gpu_memory !== undefined)
         parts.push(`GPU ${(report.gpu_memory / 1024 / 1024).toFixed(1)}MB`);
+      if (report.info_chop !== undefined)
+        parts.push(`Info CHOP ${Object.keys(report.info_chop.channels).length} ch`);
       if (report.errors.length > 0) parts.push(`${report.errors.length} error(s)`);
 
       const detail = parts.length > 0 ? `: ${parts.join(", ")}` : "";
@@ -250,6 +307,7 @@ export async function getNodeStateRuntimeImpl(ctx: ToolContext, args: GetNodeSta
         gpu_memory: report.gpu_memory,
         errors: report.errors,
         warnings: report.warnings,
+        info_chop: report.info_chop,
         extra: report.extra,
       });
     },
@@ -262,7 +320,7 @@ export const registerGetNodeStateRuntime: ToolRegistrar = (server, ctx) => {
     {
       title: "Get operator runtime state",
       description:
-        "Read-only: inspect a single operator's runtime telemetry — cook time, cook count, last-cook frame, resolution (TOPs), channel/sample counts (CHOPs), GPU memory usage, and cook errors. Complements get_td_performance (which aggregates cook times across a network) by providing deep per-op detail for the 'why is it black / why is it slow' diagnostic loop. Returns {path, type, family, cook_time_ms, cook_count, last_cook_frame, resolution, num_chans, num_samples, gpu_memory, errors[], warnings[], extra}. Attribute names are flagged UNVERIFIED and vary by TD build; the `extra` map records which attrs were actually present for live confirmation.",
+        "Read-only: inspect a single operator's runtime telemetry — cook time, cook count, last-cook frame, resolution (TOPs), channel/sample counts (CHOPs), GPU memory usage, cook errors, and optional Info CHOP channels via include_info_chop. Complements get_td_performance (which aggregates cook times across a network) by providing deep per-op detail for the 'why is it black / why is it slow' diagnostic loop. Returns {path, type, family, cook_time_ms, cook_count, last_cook_frame, resolution, num_chans, num_samples, gpu_memory, info_chop?, errors[], warnings[], extra}. Attribute names are flagged UNVERIFIED and vary by TD build; the `extra` map records which attrs were actually present for live confirmation.",
       inputSchema: getNodeStateRuntimeSchema.shape,
       outputSchema: getNodeStateRuntimeOutputSchema.shape,
       annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },

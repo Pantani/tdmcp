@@ -34,6 +34,9 @@ describe("renderStarterConfig", () => {
       "TDMCP_LLM_BASE_URL",
       "TDMCP_LLM_MODEL",
       "TDMCP_LLM_API_KEY",
+      "TDMCP_LLM_TIER",
+      "TDMCP_LLM_MAX_STEPS",
+      "TDMCP_LLM_TEMPERATURE",
       "TDMCP_CHAT_PORT",
       "TDMCP_VAULT_PATH",
       // Config-resolution vars consumed by loadConfig (src/utils/config.ts):

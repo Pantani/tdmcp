@@ -60,6 +60,15 @@ describe("getNodeStateRuntimeSchema", () => {
     expect(() => getNodeStateRuntimeSchema.parse({ path: "/project1/noise1" })).not.toThrow();
   });
 
+  it("accepts opt-in Info CHOP sampling", () => {
+    expect(() =>
+      getNodeStateRuntimeSchema.parse({
+        path: "/project1/noise1",
+        include_info_chop: true,
+      }),
+    ).not.toThrow();
+  });
+
   it("rejects missing path", () => {
     expect(() => getNodeStateRuntimeSchema.parse({})).toThrow();
   });
@@ -188,6 +197,53 @@ describe("getNodeStateRuntimeImpl — happy path (CHOP)", () => {
     const sc = (result as { structuredContent?: Record<string, unknown> }).structuredContent;
     expect(sc?.num_chans).toBe(2);
     expect(sc?.num_samples).toBe(512);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Optional Info CHOP telemetry
+// ---------------------------------------------------------------------------
+describe("getNodeStateRuntimeImpl — Info CHOP telemetry", () => {
+  it("surfaces sampled Info CHOP channels when include_info_chop is true", async () => {
+    server.use(
+      http.post(`${TD_BASE}/api/exec`, () =>
+        HttpResponse.json({
+          ok: true,
+          data: {
+            result: null,
+            stdout: JSON.stringify({
+              path: "/project1/noise1",
+              type: "noiseTOP",
+              family: "TOP",
+              cook_time_ms: 0.5,
+              errors: [],
+              warnings: [],
+              info_chop: {
+                channels: {
+                  cook_time: 0.0005,
+                  total_cooks: 12,
+                },
+                warnings: [],
+              },
+            }),
+          },
+        }),
+      ),
+    );
+
+    const result = await getNodeStateRuntimeImpl(makeCtx(), {
+      path: "/project1/noise1",
+      include_info_chop: true,
+    });
+
+    expect(result.isError).toBeFalsy();
+    const summary = textOf(result);
+    expect(summary).toContain("Info CHOP");
+    const sc = (result as { structuredContent?: Record<string, unknown> }).structuredContent;
+    expect(sc?.info_chop).toMatchObject({
+      channels: { cook_time: 0.0005, total_cooks: 12 },
+      warnings: [],
+    });
   });
 });
 

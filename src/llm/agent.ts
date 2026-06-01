@@ -1,4 +1,9 @@
+import {
+  collectPromptCatalog,
+  type PromptCatalogEntry,
+} from "../resources/promptCatalogResource.js";
 import type { ToolContext } from "../tools/types.js";
+import { DEFAULT_LLM_MAX_STEPS, MAX_LLM_MAX_STEPS } from "../utils/config.js";
 import type { ChatMessage, LlmClient } from "./client.js";
 import { dispatchTool, LLM_TOOLS, type LlmTool, toOpenAITools } from "./tools.js";
 
@@ -15,9 +20,11 @@ export interface RunOptions {
   signal?: AbortSignal;
   /** Tool set to expose this turn. Defaults to the full curated registry. */
   tools?: LlmTool[];
+  /** Maximum model/tool loop iterations for this turn. Defaults to the historic budget. */
+  maxSteps?: number;
 }
 
-const MAX_STEPS = 8;
+const MAX_PROMPT_CATALOG_ENTRIES = 40;
 
 const BASE_PROMPT = `You are the tdmcp local copilot — a small, fast model embedded in TouchDesigner through the tdmcp bridge.
 
@@ -37,15 +44,38 @@ const READ_ONLY_NOTE = `\n- READ-ONLY MODE is on: you can inspect freely but can
 
 const CREATIVE_NOTE = `\n- CREATIVE MODE is on: you may use the selected Layer-1 generators for small complete looks. Still work probe-first: inspect, build one focused system, check errors, capture a preview, and keep the user informed. Do not use raw Python or destructive restore/delete workflows.`;
 
-function systemPrompt(readOnly: boolean, creative: boolean): string {
-  if (readOnly) return BASE_PROMPT + READ_ONLY_NOTE;
-  return creative ? BASE_PROMPT + CREATIVE_NOTE : BASE_PROMPT;
+function promptCatalogNote(prompts: PromptCatalogEntry[]): string {
+  if (prompts.length === 0) return "";
+  const lines = prompts.slice(0, MAX_PROMPT_CATALOG_ENTRIES).map((prompt) => {
+    const summary = (prompt.summary || prompt.title).replace(/\s+/g, " ").trim();
+    const args = prompt.args.length > 0 ? ` (args: ${prompt.args.join(", ")})` : "";
+    return `- ${prompt.name}: ${summary}${args}`;
+  });
+  return `\n\nRegistered MCP prompts from tdmcp://prompts:
+${lines.join("\n")}
+
+You cannot invoke these MCP prompts directly from this local chat, but you should know they exist. When the user's request matches one, name the prompt and explain that Claude/Codex or an MCP client can invoke it.`;
+}
+
+function systemPrompt(
+  readOnly: boolean,
+  creative: boolean,
+  prompts: PromptCatalogEntry[] = [],
+): string {
+  const prompt = BASE_PROMPT + promptCatalogNote(prompts);
+  if (readOnly) return prompt + READ_ONLY_NOTE;
+  return creative ? prompt + CREATIVE_NOTE : prompt;
 }
 
 /** Re-inject an authoritative system prompt for the current tier (drops any stale one). */
-function ensureSystem(history: ChatMessage[], readOnly: boolean, creative: boolean): ChatMessage[] {
+function ensureSystem(
+  history: ChatMessage[],
+  readOnly: boolean,
+  creative: boolean,
+  prompts: PromptCatalogEntry[],
+): ChatMessage[] {
   const rest = history.filter((m) => m.role !== "system");
-  return [{ role: "system", content: systemPrompt(readOnly, creative) }, ...rest];
+  return [{ role: "system", content: systemPrompt(readOnly, creative, prompts) }, ...rest];
 }
 
 function isAbort(err: unknown): boolean {
@@ -69,10 +99,15 @@ export async function runAgentTurn(
   const toolset = opts.tools ?? LLM_TOOLS;
   const readOnly = !toolset.some((tool) => tool.mutates);
   const creative = toolset.some((tool) => tool.name === "create_feedback_network");
-  const messages = ensureSystem(history, readOnly, creative);
+  const prompts = collectPromptCatalog(ctx);
+  const messages = ensureSystem(history, readOnly, creative, prompts);
   const tools = toOpenAITools(toolset);
+  const maxSteps =
+    opts.maxSteps !== undefined && Number.isFinite(opts.maxSteps)
+      ? Math.min(MAX_LLM_MAX_STEPS, Math.max(1, Math.trunc(opts.maxSteps)))
+      : DEFAULT_LLM_MAX_STEPS;
 
-  for (let step = 0; step < MAX_STEPS; step++) {
+  for (let step = 0; step < maxSteps; step++) {
     if (opts.signal?.aborted) {
       emit({ type: "error", message: "cancelled" });
       return messages;

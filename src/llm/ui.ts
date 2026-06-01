@@ -137,6 +137,7 @@ const STORE = "tdmcp.chat.history";
 let history = load();      // full opaque message array (incl. tool turns) resent each request
 let liveBubble = null;     // assistant bubble currently being streamed into
 let abort = null;          // AbortController for the in-flight turn
+let tierInitialized = false; // set once from /health so env defaults do not fight user toggles
 
 function load() { try { return JSON.parse(localStorage.getItem(STORE)) || []; } catch { return []; } }
 function save() { try { localStorage.setItem(STORE, JSON.stringify(history)); } catch {} }
@@ -182,12 +183,21 @@ function setBusy(on) {
 async function refreshHealth() {
   try {
     const r = await fetch("./health"); const h = await r.json();
+    applyDefaultTier(h.defaultTier);
     refreshModels(h.model);
     const dot = $("dot");
     if (h.ok && h.modelReady) { dot.className = "dot ok"; $("status").textContent = "ready"; hint.innerHTML = ""; }
     else if (h.ok) { dot.className = "dot warn"; $("status").textContent = "model not pulled"; showPull(h.model); }
     else { dot.className = "dot err"; $("status").textContent = "LLM offline"; hint.textContent = h.detail || "Start Ollama, then reload."; }
   } catch { $("dot").className = "dot err"; $("status").textContent = "offline"; }
+}
+
+function applyDefaultTier(tier) {
+  if (tierInitialized) return;
+  if (tier === "safe") { $("readonly").checked = true; $("creative").checked = false; }
+  else if (tier === "creative") { $("readonly").checked = false; $("creative").checked = true; }
+  else { $("readonly").checked = false; $("creative").checked = false; }
+  tierInitialized = true;
 }
 
 let lastModels = "";
