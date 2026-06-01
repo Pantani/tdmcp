@@ -32,6 +32,19 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `tdmcp://learning/touchdesigner` so agents can discover vetted shader
   snippets, common workflow reminders, and the `teach_touchdesigner` learning
   path without guessing IDs.
+- **N-channel `create_decks`:** the legacy A/B mixer remains compatible, and a
+  new `decks[]` mode builds 2-8 deck rigs with per-deck gain, per-deck FX-send
+  branches into an additive bus/return, a running Cross TOP program mix, and a
+  hard-cut Switch TOP blended back into program with `cut_mix`.
+- **Portable component README:** `make_portable_tox` now writes a package
+  `README.md` by default, documenting node inventory, custom parameters,
+  inputs/outputs and external file references beside the `.tox` and
+  `tdmcp-component.json`; pass `include_readme:false` for the old minimal
+  package.
+- **`publish_recipe_bundle`** *(library)* — writes a local, versioned recipe
+  publish artifact: the recipe-bundle JSON, a `tdmcp-recipe-publish.json`
+  manifest, and a `tdmcp-checksums.json` SHA-256 manifest. Tool registry:
+  269 → 270.
 
 ## [0.7.1] - 2026-06-01
 

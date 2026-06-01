@@ -25,6 +25,7 @@ import {
   installLibraryPackageImpl,
   localMarketplaceIndexImpl,
   makePortableToxImpl,
+  publishRecipeBundleImpl,
   refreshAssetPreviewsImpl,
   scaffoldRecipeTemplateImpl,
   validateLibraryAssetImpl,
@@ -150,6 +151,7 @@ describe("library and packaging tools", () => {
         out_dir: dir,
         name: "../shared/widget",
         docs: [],
+        include_readme: false,
       });
 
       expect(result.isError).toBeFalsy();
@@ -157,6 +159,81 @@ describe("library and packaging tools", () => {
       const toxPath = String(payload.tox_path);
       expect(dirname(toxPath)).toBe(resolve(dir));
       expect(basename(toxPath)).toBe(".._shared_widget.tox");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("writes an automatic component README into portable tox packages", async () => {
+    const dir = tmp();
+    const scripts: string[] = [];
+    try {
+      const ctx = {
+        ...makeCtx(),
+        client: {
+          executePythonScript: async (script: string) => {
+            scripts.push(script);
+            if (scripts.length === 1) {
+              return { stdout: JSON.stringify({ saved: join(dir, "widget.tox"), size: 1 }) };
+            }
+            return {
+              stdout: JSON.stringify({
+                title_default: "widget",
+                node_count: 2,
+                nodes: [
+                  {
+                    path: "/project1/widget/in1",
+                    name: "in1",
+                    type: "inTOP",
+                    family: "TOP",
+                  },
+                  {
+                    path: "/project1/widget/out1",
+                    name: "out1",
+                    type: "outTOP",
+                    family: "TOP",
+                  },
+                ],
+                custom_params: [
+                  {
+                    comp: "widget",
+                    name: "Speed",
+                    label: "Speed",
+                    value: "0.5",
+                    style: "Float",
+                  },
+                ],
+                io: { inputs: ["in1"], outputs: ["out1"] },
+                file_deps: [],
+                output_top: "/project1/widget/out1",
+                warnings: [],
+              }),
+            };
+          },
+        },
+      } as unknown as ToolContext;
+
+      const result = await makePortableToxImpl(ctx, {
+        comp_path: "/project1/widget",
+        out_dir: dir,
+        name: "widget",
+        docs: [],
+        include_readme: true,
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(scripts).toHaveLength(2);
+      const readme = readFileSync(join(dir, "README.md"), "utf8");
+      expect(readme).toContain("# widget");
+      expect(readme).toContain("## Custom parameters");
+      expect(readme).toContain("| widget | Speed | Speed | 0.5 | Float |");
+      expect(readme).toContain("**Inputs:** in1");
+      expect(readme).toContain("**Outputs:** out1");
+
+      const manifest = JSON.parse(readFileSync(join(dir, "tdmcp-component.json"), "utf8")) as {
+        docs: string[];
+      };
+      expect(manifest.docs).toContain("README.md");
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -199,6 +276,75 @@ describe("library and packaging tools", () => {
       });
       expect(imported.isError).toBeFalsy();
       expect(existsSync(join(importedDir, "pulse.json"))).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("publishes a versioned recipe bundle artifact with checksums", async () => {
+    const dir = tmp();
+    try {
+      const recipePath = join(dir, "pulse.json");
+      await scaffoldRecipeTemplateImpl(makeCtx(), {
+        out_file: recipePath,
+        id: "pulse",
+        name: "Pulse",
+        overwrite: false,
+      });
+
+      const outDir = join(dir, "published");
+      const result = await publishRecipeBundleImpl(makeCtx(dir), {
+        out_dir: outDir,
+        name: "stage pack",
+        version: "1.2.3",
+        recipe_ids: ["pulse"],
+        include_all: false,
+        overwrite: false,
+      });
+
+      expect(result.isError).toBeFalsy();
+      const bundlePath = join(outDir, "stage_pack.recipes.json");
+      const manifestPath = join(outDir, "tdmcp-recipe-publish.json");
+      const checksumPath = join(outDir, "tdmcp-checksums.json");
+      expect(existsSync(bundlePath)).toBe(true);
+      expect(existsSync(manifestPath)).toBe(true);
+      expect(existsSync(checksumPath)).toBe(true);
+
+      const bundle = JSON.parse(readFileSync(bundlePath, "utf8")) as {
+        kind: string;
+        recipes: Array<{ id: string }>;
+      };
+      expect(bundle.kind).toBe("tdmcp-recipe-bundle");
+      expect(bundle.recipes.map((r) => r.id)).toEqual(["pulse"]);
+
+      const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as {
+        kind: string;
+        name: string;
+        version: string;
+        bundle: string;
+        recipe_count: number;
+        files: Array<{ path: string; sha256: string; size: number }>;
+      };
+      expect(manifest).toMatchObject({
+        kind: "tdmcp-recipe-publish",
+        name: "stage_pack",
+        version: "1.2.3",
+        bundle: "stage_pack.recipes.json",
+        recipe_count: 1,
+      });
+      expect(manifest.files.map((f) => f.path)).toEqual(["stage_pack.recipes.json"]);
+      expect(manifest.files[0]?.sha256).toMatch(/^[a-f0-9]{64}$/);
+      expect(manifest.files[0]?.size).toBeGreaterThan(0);
+
+      const checksums = JSON.parse(readFileSync(checksumPath, "utf8")) as {
+        kind: string;
+        files: Array<{ path: string }>;
+      };
+      expect(checksums.kind).toBe("tdmcp-checksum-manifest");
+      expect(checksums.files.map((f) => f.path).sort()).toEqual([
+        "stage_pack.recipes.json",
+        "tdmcp-recipe-publish.json",
+      ]);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

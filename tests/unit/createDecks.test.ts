@@ -206,4 +206,98 @@ describe("create_decks", () => {
     expect(text).toContain("/project1/decks/out1");
     expect(text).toContain('"crossfade": 0.25');
   });
+
+  it("builds an N-channel deck mixer with transition cut and per-deck FX sends", async () => {
+    const created = captureCreates();
+    const connects = captureConnections();
+    const result = await createDecksImpl(makeCtx(), {
+      parent_path: "/project1",
+      crossfade: 0.4,
+      cut_deck: 2,
+      cut_mix: 1,
+      expose_controls: false,
+      decks: [
+        { name: "camera", source: "/project1/cam/out", gain: 1.1, fx_send: 0.15 },
+        { name: "clip", source: "/project1/media/out", gain: 0.9, fx_send: 0.25 },
+        { name: "synth", gain: 1, fx_send: 0.5 },
+        { name: "feedback", gain: 0.8, fx_send: 0 },
+      ],
+    });
+
+    const text = textOf(result);
+    expect(result.isError).toBeFalsy();
+    expect(text).toContain("4-channel");
+    expect(text).toContain("transition_cut");
+    expect(text).toContain("fx_send_bus");
+    expect(text).toContain('"cut_deck": 2');
+
+    const types = created.map((c) => c.type);
+    expect(types.filter((t) => t === "selectTOP")).toHaveLength(2);
+    expect(types.filter((t) => t === "levelTOP")).toHaveLength(9);
+    expect(types.filter((t) => t === "crossTOP")).toHaveLength(4);
+    expect(types.filter((t) => t === "switchTOP")).toHaveLength(1);
+    expect(types.filter((t) => t === "compositeTOP")).toHaveLength(2);
+
+    const transitionCut = created.find((c) => c.name === "transition_cut");
+    expect(transitionCut?.parameters).toMatchObject({ index: 2 });
+    const programCut = created.find((c) => c.name === "program_cut_mix");
+    expect(programCut?.parameters).toMatchObject({ cross: 1 });
+    const fxReturn = created.find((c) => c.name === "fx_return");
+    expect(fxReturn?.parameters).toMatchObject({ operand: "add" });
+    const gains = created.filter((c) => c.name?.endsWith("_gain"));
+    expect(gains.map((g) => g.parameters?.brightness1)).toEqual([1.1, 0.9, 1, 0.8]);
+    const sends = created.filter((c) => c.name?.endsWith("_fx_send"));
+    expect(sends.map((s) => s.parameters?.opacity)).toEqual([0.15, 0.25, 0.5, 0]);
+
+    for (let i = 0; i < 4; i++) {
+      expect(
+        connects.find(
+          (c) =>
+            String(c.source_path).endsWith(`/deck${i + 1}_gain`) &&
+            String(c.target_path).endsWith("/transition_cut") &&
+            Number(c.target_input) === i,
+        ),
+      ).toBeDefined();
+      expect(
+        connects.find(
+          (c) =>
+            String(c.source_path).endsWith(`/deck${i + 1}_fx_send`) &&
+            String(c.target_path).endsWith("/fx_send_bus") &&
+            Number(c.target_input) === i,
+        ),
+      ).toBeDefined();
+    }
+    expect(
+      connects.find(
+        (c) =>
+          String(c.source_path).endsWith("/program_cut_mix") &&
+          String(c.target_path).endsWith("/fx_return") &&
+          Number(c.target_input) === 0,
+      ),
+    ).toBeDefined();
+    expect(
+      connects.find(
+        (c) =>
+          String(c.source_path).endsWith("/fx_send_bus") &&
+          String(c.target_path).endsWith("/fx_return") &&
+          Number(c.target_input) === 1,
+      ),
+    ).toBeDefined();
+  });
+
+  it("keeps the legacy A/B topology when decks[] is not supplied", async () => {
+    const created = captureCreates();
+    await createDecksImpl(makeCtx(), {
+      parent_path: "/project1",
+      crossfade: 0.5,
+      cut_deck: 1,
+      cut_mix: 1,
+      expose_controls: false,
+    });
+
+    const types = created.map((c) => c.type);
+    expect(types.filter((t) => t === "crossTOP")).toHaveLength(1);
+    expect(types).not.toContain("switchTOP");
+    expect(created.some((c) => c.name?.endsWith("_fx_send"))).toBe(false);
+  });
 });

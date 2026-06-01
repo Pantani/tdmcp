@@ -15,8 +15,8 @@ published on 2026-06-01, exposing **269 tools**. It keeps the full v0.7.0 releas
 line intact (BEYOND Waves 1-5, Ingest & Extend Waves 1-3, and the
 `create_data_source_http_ws` hotfix) and adds the first operator DX, local
 copilot, MCP-resource and bridge-health follow-through. The package manifests,
-changelog, docs and generated Tools reference all use **v0.7.1** as the release
-boundary.
+changelog and public package line still use **v0.7.1** as the release boundary;
+the unreleased main candidate below has begun the next tool-count move.
 
 The project has grown through five arcs:
 
@@ -57,9 +57,10 @@ The project has grown through five arcs:
 
 ### main — v0.7.2 candidate (unreleased)
 
-The repository now has a small, unreleased CLI/operator-DX and MCP-resource
-follow-through on top of v0.7.1. It does **not** change the public npm release
-or tool count yet.
+The repository now has unreleased CLI/operator-DX, MCP-resource, deck-mixing and
+library-publishing follow-through on top of v0.7.1. It does **not** change the
+public npm release yet; the generated Tools reference in this branch exposes
+**270 tools** because `publish_recipe_bundle` is new.
 
 - **Top-level package-manager discoverability.** `tdmcp --help` now expands the
   package-manager tree (`search`, `list`, `info`, `install`, `uninstall`,
@@ -83,6 +84,20 @@ or tool count yet.
   workflow reminders with resource refs, and `tdmcp://learning/touchdesigner`
   pairs the existing `teach_touchdesigner` prompt with a curated KB-backed
   learning path.
+- **N-channel `create_decks`.** `create_decks` now keeps the legacy A/B
+  crossfader path intact while adding an explicit `decks[]` mode for 2-8 decks:
+  per-deck source/gain chains, per-deck FX-send branches into an additive bus,
+  an additive FX return into the master, a running Cross TOP program mix, and a
+  hard-cut Switch TOP blended back into program with `cut_mix`.
+- **Portable component docs.** `make_portable_tox` now writes a package
+  `README.md` by default, documenting node inventory, custom parameters,
+  inputs/outputs and external file references beside the `.tox` and manifest.
+  `include_readme:false` keeps the old lean package shape.
+- **Versioned recipe-bundle publishing.** New `publish_recipe_bundle` writes a
+  local publish artifact folder: the recipe bundle JSON, a
+  `tdmcp-recipe-publish.json` manifest with release version/recipe IDs, and a
+  `tdmcp-checksums.json` SHA-256 manifest for repeatable handoff or later CI
+  upload.
 
 ### v0.7.1 — Operator DX, local copilot & bridge-health patch
 
@@ -509,18 +524,16 @@ or partial work.
 
 #### A.1 · Artist controls & creative tools
 
-| Feature | Delivers | Effort | Impact | Conf | Priority | Novelty | Probe-first |
-|---|---|---|---|---|---|---|---|
-| `create_decks` N-channel | 3–4 decks + transition cut + per-deck FX send | M | Med | High | P1 | EXTENSION | none |
+The only remaining Round-1 A.1 row targeted by this PR,
+`create_decks` N-channel, is now carried in the unreleased v0.7.2 candidate
+above.
 
 #### A.2 · Library, packaging & distribution
 
 | Feature | Delivers | Effort | Impact | Conf | Priority | Novelty | Probe-first |
 |---|---|---|---|---|---|---|---|
 | `bundle_dependencies` | Make `make_portable_tox` actually self-contained | M | High | Med | P1 | EXTENSION | file-par enum + path-rewrite |
-| `publish_recipe_bundle` | Checksummed/versioned publish artifact | M | Med | High | P1 | NEW | none |
 | `export_externalized_tree` | `save_external` → git-diffable `.tox` tree | S | Med | High | P1 | EXTENSION | tree shape on first run |
-| `component_readme_in_package` | Auto-write a params/IO doc into the portable-tox package | S | Med | High | P2 | EXTENSION | none |
 | `expand_recipe_library` | First-party recipes for the new generators | M | Med | High | P2 | NEW (content) | live cook-check each |
 | `recipe_from_live_network` | Faithful round-trip recipe capture via `serialize_network` | M | Med | Med | P2 | EXTENSION | GLSL-uniform round-trip |
 
