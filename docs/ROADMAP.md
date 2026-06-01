@@ -92,10 +92,13 @@ copilot context, more MCP resources, and a small read-only runtime diagnostic.
   `whatwg-encoding` chain or the staged production-install `mute-stream`
   `EBADENGINE` warning fixed after v0.7.0.
 
-### v0.7.0 — BEYOND campaign
+### v0.7.0 — BEYOND, Ingest & Extend, and operator-DX foundation
 
-The BEYOND work is documented in `CHANGELOG.md` and is part of the v0.7.0
-release train.
+v0.7.0 was one consolidated release train. It shipped the BEYOND campaign, the
+Ingest & Extend waves, the Wave-3 smarter-assistance/library-publishing work, and
+the `create_data_source_http_ws` hotfix documented in `CHANGELOG.md`.
+
+**BEYOND campaign.**
 
 - **Wave 1 / v0.7.0 manifest — live-show foundation + all P0.** Shared
   setlist/scene schema, memory-note schema, server-sampling LLM fallback,
@@ -133,7 +136,7 @@ release train.
   `tdmcp-agent log-tail`, `record-fixtures`, `fanout`, `controller-bridge`,
   and `voice` / `llm-voice`.
 
-### v0.7.0 — Smarter assistance, library publishing & operator DX
+**Smarter assistance, library publishing & operator DX.**
 
 The Wave-3 backlog of the Ingest-extend campaign shipped in v0.7.0. Sub-batch A
 delivered 3 pure-Node library/publishing tools, sub-batch B shipped 6 TD-required
@@ -177,7 +180,7 @@ Sub-batch C — colour finish + authoring/DX:
 - ✅ **`elicit_missing_args`** — verified shipped in v0.7.0 after the Wave-3C
   audit; schema-driven elicitation has offline / no-server fallbacks.
 
-### v0.7.0 — Ingest & Extend
+**Ingest & Extend.**
 
 The Ingest & Extend campaign is folded into this release line. Waves 1-2 grew the
 tool registry from 243 → 257, and Wave 3 completed the v0.7.0 release at 268
@@ -519,13 +522,15 @@ or partial work.
 | `param_change_event` | Opt-in `param.changed` via a Parameter Execute DAT | M | Low | Med | P2 | NEW | onValueChange freq/scope |
 | `refresh_operator_kb` | Live-derived KB delta vs the static import | L | Low | Med | P2 | NEW | enumeration (depends on createable) |
 
-#### A.6 · Deferred (Round 1 — v0.6.0+ / gated)
+#### A.6 · Deferred (Round 1 — still gated / post-v0.7.x candidates)
 
 `create_gpu_fluid`, `create_optical_flow_particles` (GPU/macOS), `create_sdf_text`,
 `create_strange_attractor`, `create_vertex_displacement_mat`, hand/face MediaPipe
 modes, `create_pose_reactive`, `manage_td_process` / `switch_instance`,
 `control_diffusion` / `drive_streamdiffusion` / `connect_comfyui`, and the
-recipe/template marketplace (local-first).
+recipe/template marketplace (local-first). These are kept here because they are
+still blocked by hardware/GPU/license or product-scope gates after the v0.6.x and
+v0.7.x releases, not because v0.6.0 is a future target.
 
 ### Round 2 — "beyond the backlog" — 2026-05-30
 
