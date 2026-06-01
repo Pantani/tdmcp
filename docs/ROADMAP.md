@@ -10,12 +10,13 @@ can build real visual systems from plain language — no node-wiring by hand. Th
 page is the honest, bird's-eye picture of **what already works, what's still
 rough, and what's coming next** on the way to a stable 1.0.
 
-**Where things stand today.** The current public cut is **v0.7.0**, tagged and
-published on 2026-06-01, exposing **268 tools**. It folds the full BEYOND
-campaign (Waves 1-5), the Ingest & Extend Waves 1-3, and the
-`create_data_source_http_ws` hotfix into one release instead of skipping ahead to
-later version labels. The package manifests, changelog, docs and generated Tools
-reference all use **v0.7.0** as the release boundary.
+**Where things stand today.** The current public cut is **v0.7.1**, tagged and
+published on 2026-06-01, exposing **269 tools**. It keeps the full v0.7.0 release
+line intact (BEYOND Waves 1-5, Ingest & Extend Waves 1-3, and the
+`create_data_source_http_ws` hotfix) and adds the first operator-DX, local
+copilot, MCP-resource and bridge-health follow-through. The package manifests,
+changelog, docs and generated Tools reference all use **v0.7.1** as the release
+boundary.
 
 The project has grown through five arcs:
 
@@ -29,11 +30,12 @@ The project has grown through five arcs:
 4. **Compose & automate** *(v0.7.0)* — run a whole
    arranged show over time, with timelines, setlists, schedulers, cue composition
    and live-safety controls.
-5. **Ingest & extend** *(v0.7.0, with follow-up work planned for v0.8.x)* — pull in the
-   wider TouchDesigner world (Shadertoy / ISF shaders, Ableton, the iconic VJ
-   looks), then deepen AI/library publishing and operator DX. Waves 1-3 are in
-   v0.7.0; the remaining work is the last Milestone-4 / deployment ergonomics
-   plus the next v0.8.x planning.
+5. **Ingest & extend** *(v0.7.x, with follow-up work planned for v0.8.x)* — pull
+   in the wider TouchDesigner world (Shadertoy / ISF shaders, Ableton, the
+   iconic VJ looks), then deepen AI/library publishing and operator DX. Waves
+   1-3 are in v0.7.0; v0.7.1 ships the first CLI/copilot/resource/bridge
+   follow-through; the remaining work is the last deployment ergonomics plus
+   the next v0.8.x planning.
 
 > **How to read this page**
 >
@@ -52,6 +54,43 @@ The project has grown through five arcs:
 ---
 
 ## ✅ Current Release Line
+
+### v0.7.1 — Operator DX, local copilot & bridge-health patch
+
+v0.7.1 is a patch release on top of v0.7.0. It keeps the public story focused on
+operator reliability rather than introducing a new campaign label: the same
+BEYOND / Ingest & Extend release line, now with a cleaner CLI, richer local
+copilot context, more MCP resources, and a small read-only runtime diagnostic.
+
+- **CLI/operator DX.** `tdmcp --help` prints usage without starting the MCP
+  server; `tdmcp-agent run -` reads run files from stdin; `--continue-on-error`
+  finishes a batch and returns the first failure; saved venue profiles can be
+  listed/inspected with secrets redacted; `tdmcp-agent commands --json` and
+  `tdmcp://commands` expose the command catalog; grouped help and
+  `tdmcp-agent help <command>` make the CLI easier to scan.
+- **Install, transport and watch ergonomics.** `tdmcp install-client --write`
+  deep-merges and verifies Claude/Cursor/Codex config files; the bridge
+  installer now has `--verify`, `--wait` and `--port` polling against
+  `/api/info`; `tdmcp serve --http [--port]` starts loopback Streamable HTTP
+  without changing the default stdio behavior; list commands can render
+  table/CSV; the REPL has persistent history and Tab completion; and
+  `tdmcp-agent watch` adds pretty output, event counts, heartbeats and debounced
+  exec hooks.
+- **Local copilot and resources.** `tdmcp://prompts` is generated from the real
+  prompt registry, `tdmcp://recipes/search/{query}` searches recipes, and
+  `tdmcp://cookbook` / `tdmcp://cookbook/{en|pt}` expose the prompt cookbook to
+  MCP clients. The local copilot reads that prompt catalog, accepts
+  `--read-only`, `--creative`, `--prompt`, `--profile` and `--config`, and can be
+  tuned with `TDMCP_LLM_TIER`, `TDMCP_LLM_MAX_STEPS` and
+  `TDMCP_LLM_TEMPERATURE`.
+- **Bridge/runtime diagnostics.** `get_node_state_runtime` can opt into temporary
+  Info CHOP sampling with `include_info_chop:true`; the bridge now serves
+  `GET /api/health`; and **`watch_node`** adds a read-only short-window sampler
+  for one operator's state, parameters and CHOP channels. Tool registry:
+  **268 → 269**.
+- **Packaging hygiene.** The release/bundle path no longer emits the deprecated
+  `whatwg-encoding` chain or the staged production-install `mute-stream`
+  `EBADENGINE` warning fixed after v0.7.0.
 
 ### v0.7.0 — BEYOND campaign
 
@@ -272,7 +311,7 @@ These are usable in the latest public release, but they carry an honest caveat �
 they need live tuning, specific hardware, or a final on-hardware check before
 they're considered solid.
 
-- **v0.7.0 experimental/gated tools** — `create_chroma_reactive`,
+- **v0.7.x experimental/gated tools** — `create_chroma_reactive`,
   `create_transient_reactive` and `create_energy_structure` are shipped as
   experimental; `create_two_way_surface` and `create_phone_gesture` remain
   `unverified_pending_hardware`; `caption_top`, `copilot_vision` and
@@ -302,12 +341,12 @@ they're considered solid.
 
 ## ⬜ Planned — the road to 1.0 {#planned}
 
-With v0.7.0 published, the next public roadmap is no longer about proving tdmcp
+With v0.7.1 published, the next public roadmap is no longer about proving tdmcp
 can run a whole show — that line is now installable.
-The highest-value open work is to finish the last deployment, operator and AI
-ergonomics. Version targets are a rough sequence, **not a promise** — order can
-shift. The exhaustive, item-by-item backlog (with effort and impact) lives in
-the [planning archive](#full-backlog).
+The highest-value open work is to finish the remaining deployment, publishing and
+AI-session ergonomics. Version targets are a rough sequence, **not a promise** —
+order can shift. The exhaustive, item-by-item backlog (with effort and impact)
+lives in the [planning archive](#full-backlog).
 
 ### Milestone 2 — Ecosystem & colour polish · v0.8.x
 
@@ -324,20 +363,14 @@ polish around the parts that still need extra live tuning or unfinished panels.*
 
 ### Milestone 3 — Smarter assistance & library publishing · v0.8.x
 
-*The first AI/library publishing wave shipped in v0.7.0. The remaining work is
-about making those primitives feel continuous across sessions and strong under a
-real multimodal setup.*
+*The first AI/library publishing wave shipped in v0.7.0, and v0.7.1 shipped the
+prompt/recipe/cookbook resources plus local-copilot prompt awareness and tuning
+knobs. The remaining work is about making those primitives feel continuous
+across sessions and strong under a real multimodal setup.*
 
-- **Main progress after v0.7.0 (unreleased).** The prompt/resource plumbing now
-  has three small v0.8.x pieces on `main`: `tdmcp://prompts` is generated from
-  the actual prompt registry, `tdmcp://recipes/search/{query}` searches the
-  recipe catalog, and `tdmcp://cookbook` / `tdmcp://cookbook/{en|pt}` expose the
-  prompt cookbook to MCP clients. The local copilot now also reads that prompt
-  catalog into its system prompt and can be tuned with `TDMCP_LLM_TIER`,
-  `TDMCP_LLM_MAX_STEPS`, and `TDMCP_LLM_TEMPERATURE`.
 - **AI deepening** — live-tune `caption_top`, `copilot_vision` and
-  `repair_network`; add richer chat flags, transcript persistence and smarter
-  handoff when the local copilot reaches its limits.
+  `repair_network`; add transcript persistence and smarter handoff when the
+  local copilot reaches its limits.
 - **"Do it my way"** — turn `recall_similar_work`, `style_memory`,
   `learn_conventions` and `learn_from_my_corpus` into a persistent session
   profile the agent reads before every new build.
@@ -350,20 +383,17 @@ real multimodal setup.*
 *Unwrap the last big TouchDesigner authoring surfaces and finish the operator /
 install story.*
 
-- **Main progress after v0.7.0 (unreleased).** The operator/DX lane now includes
-  `tdmcp --help`, `tdmcp-agent run -`, `tdmcp-agent run --continue-on-error`,
-  `tdmcp-agent config profiles`, `tdmcp-agent config profile <name>`,
-  `tdmcp-agent commands --json`, `tdmcp://commands`, grouped agent help,
-  `tdmcp-agent help <command>`, `tdmcp install-bridge --verify` / `--wait` /
-  `--port`, opt-in `get_node_state_runtime include_info_chop:true` Info CHOP
-  telemetry, and the read-only `watch_node` sampler.
+- **v0.7.1 baseline.** Top-level help, grouped/per-command agent help,
+  command-catalog resources, config/profile inspection, `run -`,
+  `--continue-on-error`, client-config writing, bridge verification, loopback
+  HTTP serving, table/CSV output, REPL history/completion, watch hooks,
+  Info-CHOP telemetry, bridge health and `watch_node` are now shipped.
 - **Authoring** — tackle the GPU / optical-flow / SDF / strange-attractor
   deferred generators, plus MediaPipe face / hand / segmentation on the in-tree
   tracking engine.
 - **Developer & live-operator DX** — finish the **easy-install** story with a
-  client-config writer and a `doctor --fix` that performs safe repairs; then
-  round out completion parity, inline preview and the next front-of-house
-  dashboard pass.
+  `doctor --fix` that performs safe repairs; then round out completion parity,
+  inline preview and the next front-of-house dashboard pass.
 
 ### Later / deferred
 
@@ -441,7 +471,7 @@ tracked as Round-1 `create_pop_geometry` and Round-3 `create_pop_fluid`.
 
 **77 candidates** (7 P0 · 38 P1 · 32 P2; 36 NEW · 31 EXTENSION · 10 ROADMAP). The
 P0 set, control instruments, library thumbnail/index work, and several later
-rows shipped in v0.6.0 / v0.7.0; the tables below keep only the remaining open
+rows shipped in v0.6.0 / v0.7.x; the tables below keep only the remaining open
 or partial work.
 
 #### A.1 · Artist controls & creative tools
@@ -465,48 +495,27 @@ or partial work.
 
 | Feature | Delivers | Effort | Impact | Conf | Priority | Novelty | Probe-first |
 |---|---|---|---|---|---|---|---|
-| ✅ `install_client_writers` | `install-client --write` deep-merges + verifies the config | M | High | High | P1 | ROADMAP | implemented after v0.7.0; explicit `--path` / positional path, preserving unrelated JSON/TOML keys |
 | `doctor_fix_autoexec` | `doctor --fix` executes safe repairs | M | High | High | P1 | ROADMAP | none |
-| ✅ `watch_exec_hook` | `watch --on beat --exec '<cmd>'` reactive engine | M | Med | High | P1 | ROADMAP | implemented after v0.7.0 with per-event `--debounce-ms` |
-| ✅ `tdmcp_top_level_help` | Real `tdmcp --help` on the primary binary | S | Med | High | P1 | NEW | landed on main after v0.7.0 |
-| ✅ `agent_command_index_resource` | `tdmcp-agent commands --json` + `tdmcp://commands` | S | Med | High | P1 | NEW | landed on main after v0.7.0 |
-| ✅ `install_bridge_verify` | `install-bridge --verify`/`--wait`/`--port` polls the bridge | S | Med | High | P1 | ROADMAP | landed on main after v0.7.0 |
-| ✅ `repl_history_and_completion` | Persistent history + Tab-completion in the REPL | M | Med | High | P1 | ROADMAP | implemented after v0.7.0; history stored under XDG state / `TDMCP_AGENT_HISTORY` |
 | `preview_inline_and_watch` | `preview --inline` (iTerm/Kitty/sixel) + `--watch` | M | Med | Med | P1 | ROADMAP | terminal-protocol detect |
-| ✅ `help_grouping_and_per_command_help` | Group `usage()` by theme + `help <command>` | M | Med | High | P2 | NEW | landed on main after v0.7.0 |
-| ✅ `run_file_stdin_and_continue` | `run -` (stdin) + `--continue-on-error` | S | Med | High | P2 | EXTENSION | landed on main after v0.7.0 |
 | `show_mode_oneliner` | `tdmcp show <profile>` — load+doctor+perform+pre-flight | M | Med | Med | P2 | NEW | abort semantics |
-| ✅ `output_format_table_and_csv` | `--output table`/`csv` for list results | S | Low | High | P2 | EXTENSION | implemented after v0.7.0 |
 | `error_exit_code_taxonomy` | Distinct exit codes (offline/TD-error/config) | S | Low | Med | P2 | NEW | error subclass survives |
 | `no_color_flag_is_dead` | Honor parsed-but-dead `--no-color`/`NO_COLOR` | S | Low | High | P2 | NEW | none |
-| ✅ `watch_pretty_and_count` | `watch --pretty` + heartbeat | S | Low | High | P2 | EXTENSION | implemented after v0.7.0 with event counts and `--heartbeat-ms` |
-| ✅ `http_transport_oneflag_launch` | `tdmcp serve --http [--port]` | S | Low | High | P2 | NEW | implemented after v0.7.0; bare `tdmcp` still uses stdio |
 | `packages_cli_help_and_completion_parity` | Fold `packages` tree into top-level help/completion | S | Low | High | P2 | EXTENSION | none |
-| ✅ `profile_list_and_show` | `tdmcp-agent config profiles` lists saved venue profiles; `config profile <name>` shows a redacted effective profile | S | Low | Med | P2 | NEW | landed on main after v0.7.0 |
 
 #### A.4 · AI & LLM integration
 
 | Feature | Delivers | Effort | Impact | Conf | Priority | Novelty | Probe-first |
 |---|---|---|---|---|---|---|---|
-| ✅ `copilot_prompt_awareness` | Feed `tdmcp://prompts` into the copilot BASE_PROMPT | S | Med | High | P1 | EXTENSION | landed on main after v0.7.0 |
 | `copilot_smarter_handoff` | Auto-surface the Claude/Codex handoff on a dead-end | S | Med | High | P1 | ROADMAP | none |
-| ✅ `chat_cli_flags` | `chat --read-only`/`--creative`/`--prompt` (headless) | M | Med | High | P1 | ROADMAP | implemented after v0.7.0; server accepts fixed read-only tier |
 | `copilot_session_persistence` | Resume transcript + last model/tier | M | Med | High | P1 | ROADMAP | none |
 | `plan_visual`→LLM-grounded | Upgrade `describe_project` to an optional LLM planner | M | Med | High | P1 | EXTENSION | none (keyword stays default) |
-| ✅ `prompt_catalog_autogen` | Generate `tdmcp://prompts` from the registry | S | Med | High | P1 | NEW | landed on main after v0.7.0 |
-| ✅ `cookbook_resource` | Expose the prompt-cookbook as `tdmcp://cookbook` / `tdmcp://cookbook/{en|pt}` | S | Med | Med | P2 | NEW | landed on main after v0.7.0 |
-| ✅ `llm_config_knobs` | `TDMCP_LLM_TIER`/`_MAX_STEPS`/`_TEMPERATURE` keys | S | Low | High | P2 | NEW | landed on main after v0.7.0 |
-| ✅ `recipe_resource_search` | Keyword search over recipes via `tdmcp://recipes/search/{query}` | S | Low | High | P2 | EXTENSION | landed on main after v0.7.0 |
 | `narrate_set` | Persisted narration during `auto_vj_director` | S | Low | Med | P2 | NEW | none |
 
 #### A.5 · TouchDesigner depth (bridge + operators)
 
 | Feature | Delivers | Effort | Impact | Conf | Priority | Novelty | Probe-first |
 |---|---|---|---|---|---|---|---|
-| ✅ `info_chop_telemetry` | Opt-in Info CHOP sampling in `get_node_state_runtime` (`include_info_chop:true`) | M | Med | High | P1 | EXTENSION | landed on main after v0.7.0; live channel names still vary by TD build |
 | `createable_truth_flag` | `GET /api/optypes` ground truth → mark createable/deprecated | M | Med | Med | P1 | NEW | probe-live (enumeration) |
-| ✅ `bridge_health_watchdog` | `GET /api/health` — cook-rate/dropped-frame/GPU + staleness | S | Med | Med | P1 | NEW | implemented after v0.7.0; missing realtime attrs degrade to null/warnings |
-| ✅ `watch_node` | Sample one op's state/param/channel over an interval | S | Low | High | P2 | NEW | landed on main after v0.7.0; live channel names still vary by TD build |
 | `param_change_event` | Opt-in `param.changed` via a Parameter Execute DAT | M | Low | Med | P2 | NEW | onValueChange freq/scope |
 | `refresh_operator_kb` | Live-derived KB delta vs the static import | L | Low | Med | P2 | NEW | enumeration (depends on createable) |
 

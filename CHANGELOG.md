@@ -6,9 +6,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-06-01
+
 ### Added
 
-- **CLI/operator DX follow-through (main, unreleased):** `tdmcp --help` now
+- **CLI/operator DX follow-through:** `tdmcp --help` now
   prints top-level usage without starting the MCP server; `tdmcp-agent run -`
   reads run-file JSON from stdin; `tdmcp-agent run --continue-on-error` executes
   the remaining steps and returns the first non-zero status at the end; and
@@ -53,6 +55,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   TouchDesigner info and fail-forward optional performance metrics
   (cook/frame/drop/GPU fields are `null` when the current TD build does not
   expose them).
+
+### Fixed
+
+- **Release/package warning cleanup:** the dependency override now keeps the
+  nested `@bottobot/td-mcp`/Cheerio chain off the deprecated `whatwg-encoding`
+  path, and `build:mcpb` strips dev-only overrides before the staged production
+  install so the bundle build no longer emits the transient `mute-stream`
+  `EBADENGINE` warning.
 
 ## [0.7.0] - 2026-06-01
 
@@ -857,8 +867,9 @@ API on its first live run, and is fail-forward (per-item warnings, never throws)
   preview-asset writes, as a strict superset of `TDMCP_RAW_PYTHON=off`. Use it to hand an
   autonomous in-TD agent a curated, non-destructive toolset.
 
+[0.7.1]: https://github.com/Pantani/tdmcp/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/Pantani/tdmcp/compare/v0.6.1...v0.7.0
-[Unreleased]: https://github.com/Pantani/tdmcp/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/Pantani/tdmcp/compare/v0.7.1...HEAD
 [0.6.1]: https://github.com/Pantani/tdmcp/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/Pantani/tdmcp/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Pantani/tdmcp/compare/v0.4.0...v0.5.0
