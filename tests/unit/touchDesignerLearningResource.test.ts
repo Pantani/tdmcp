@@ -19,7 +19,7 @@ describe("TouchDesigner learning resource", () => {
   it("builds a teach_touchdesigner learning path from existing KB resources", () => {
     const knowledge = new KnowledgeBase();
     const recipes = new RecipeLibrary();
-    const resource = readTouchDesignerLearningResource(knowledge);
+    const resource = readTouchDesignerLearningResource(knowledge, recipes);
     const categories = new Set(knowledge.listOperatorCategories());
 
     expect(resource.uri).toBe("tdmcp://learning/touchdesigner");
@@ -46,6 +46,17 @@ describe("TouchDesigner learning resource", () => {
         expect(recipes.get(id)).toBeDefined();
       }
     }
+  });
+
+  it("filters recipe resources against the active recipe library", () => {
+    const knowledge = new KnowledgeBase();
+    const recipes = { get: () => undefined } as unknown as RecipeLibrary;
+    const resource = readTouchDesignerLearningResource(knowledge, recipes);
+
+    expect(resource.modules.flatMap((mod) => mod.recipeResources)).not.toContain(
+      "tdmcp://recipes/audio_spectrum_bars",
+    );
+    expect(resource.modules.map((mod) => mod.id)).toContain("chop-control");
   });
 
   it("registers tdmcp://learning/touchdesigner as an application/json resource", async () => {
@@ -81,5 +92,33 @@ describe("TouchDesigner learning resource", () => {
     expect(payload.prompt.resource_uri).toBeUndefined();
     expect(payload.modules[0].operatorResources).toBeDefined();
     expect(payload.modules[0].operator_resources).toBeUndefined();
+  });
+
+  it("uses ctx.recipes when serving the registered learning resource", async () => {
+    const calls: Array<{
+      handler: (uri: URL) => Promise<{ contents: Array<{ text?: string }> }>;
+    }> = [];
+    const server = {
+      registerResource: (
+        _name: string,
+        _uri: string,
+        _metadata: { mimeType?: string },
+        handler: (uri: URL) => Promise<{ contents: Array<{ text?: string }> }>,
+      ) => {
+        calls.push({ handler });
+      },
+    };
+    const ctx = {
+      ...resourceCtx(),
+      recipes: { get: () => undefined } as unknown as RecipeLibrary,
+    };
+
+    registerTouchDesignerLearningResource(server as never, ctx as never);
+    const result = await calls[0]?.handler(new URL("tdmcp://learning/touchdesigner"));
+    const payload = JSON.parse(result?.contents[0]?.text ?? "{}");
+
+    expect(
+      payload.modules.flatMap((mod: { recipeResources: string[] }) => mod.recipeResources),
+    ).not.toContain("tdmcp://recipes/audio_spectrum_bars");
   });
 });

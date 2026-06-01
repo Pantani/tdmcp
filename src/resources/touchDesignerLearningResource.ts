@@ -1,4 +1,5 @@
 import type { KnowledgeBase } from "../knowledge/index.js";
+import type { RecipeLibrary } from "../recipes/loader.js";
 import { jsonContents, type ResourceRegistrar } from "./shared.js";
 
 export interface TouchDesignerLearningModule {
@@ -85,7 +86,10 @@ const CURATED_MODULES: TouchDesignerLearningModule[] = [
   },
 ];
 
-function existingModules(knowledge: KnowledgeBase): TouchDesignerLearningModule[] {
+function existingModules(
+  knowledge: KnowledgeBase,
+  recipes?: RecipeLibrary,
+): TouchDesignerLearningModule[] {
   const categories = new Set(knowledge.listOperatorCategories());
   return CURATED_MODULES.map((mod) => ({
     ...mod,
@@ -95,6 +99,11 @@ function existingModules(knowledge: KnowledgeBase): TouchDesignerLearningModule[
     tutorialResources: mod.tutorialResources.filter((uri) =>
       Boolean(knowledge.getTutorial(uri.replace("tdmcp://tutorials/", ""))),
     ),
+    recipeResources: recipes
+      ? mod.recipeResources.filter((uri) =>
+          Boolean(recipes.get(uri.replace("tdmcp://recipes/", ""))),
+        )
+      : mod.recipeResources,
   })).filter(
     (mod) =>
       mod.operatorResources.length > 0 ||
@@ -105,6 +114,7 @@ function existingModules(knowledge: KnowledgeBase): TouchDesignerLearningModule[
 
 export function readTouchDesignerLearningResource(
   knowledge: KnowledgeBase,
+  recipes?: RecipeLibrary,
 ): TouchDesignerLearningResource {
   return {
     uri: "tdmcp://learning/touchdesigner",
@@ -113,7 +123,7 @@ export function readTouchDesignerLearningResource(
       name: "teach_touchdesigner",
       resourceUri: "tdmcp://prompts",
     },
-    modules: existingModules(knowledge),
+    modules: existingModules(knowledge, recipes),
   };
 }
 
@@ -127,6 +137,6 @@ export const registerTouchDesignerLearningResource: ResourceRegistrar = (server,
         "A curated learning path that pairs the teach_touchdesigner prompt with embedded operator and tutorial resources.",
       mimeType: "application/json",
     },
-    async (uri) => jsonContents(uri, readTouchDesignerLearningResource(ctx.knowledge)),
+    async (uri) => jsonContents(uri, readTouchDesignerLearningResource(ctx.knowledge, ctx.recipes)),
   );
 };
