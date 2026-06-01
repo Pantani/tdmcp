@@ -214,6 +214,78 @@ describe("buildDataSourceHttpWsScript", () => {
     expect(script).toContain('_setpar(_datto, "dat"');
     expect(script).toContain("nullCHOP");
   });
+
+  // v0.8.1 regression: previously the dattoCHOP menu params were passed as ints
+  // (firstrow=1/firstcolumn=0/output=1) which TD silently coerced to wrong menu
+  // entries — producing 0-channel or wrongly-named CHOPs and a follow-on
+  // "must be real number, not str" error when LastValue_* params tried to coerce.
+  it("http_poll: dattoCHOP menu params use string menu names, not int indices", () => {
+    const script = buildDataSourceHttpWsScript({
+      mode: "http_poll",
+      url: "https://x.com",
+      selectors: [["a", "$.a"]],
+    });
+    expect(script).toContain('_setpar(_datto, "firstrow", "values")');
+    expect(script).toContain('_setpar(_datto, "firstcolumn", "names")');
+    expect(script).toContain('_setpar(_datto, "output", "chanperrow")');
+    // Must NOT use the buggy integer form anywhere.
+    expect(script).not.toContain('_setpar(_datto, "firstrow", 1)');
+    expect(script).not.toContain('_setpar(_datto, "firstcolumn", 0)');
+    expect(script).not.toContain('_setpar(_datto, "output", 1)');
+  });
+
+  // v0.8.1 regression: sample table must be TRANSPOSED (one row per selector,
+  // col0=name, col1=value) so 'firstcolumn=names'+'output=chanperrow' yields one
+  // channel per selector. The previous header-row + value-row layout returned
+  // either 0 channels (chanpercol) or wrong names (chanperrow).
+  it("http_poll: sample table is transposed (one row per selector, [name,value])", () => {
+    const script = buildDataSourceHttpWsScript({
+      mode: "http_poll",
+      url: "https://x.com",
+      selectors: [
+        ["a", "$.a"],
+        ["b", "$.b"],
+      ],
+      static_sample: { a: 0.5, b: 0.7 },
+    });
+    // Per-selector loop, appending [name, str(value)] rows.
+    expect(script).toContain("for _n in _sel_names:");
+    expect(script).toContain("_sample.appendRow([_n, str(_static.get(_n, 0.5))])");
+    // Parser callback must mirror the transposed layout.
+    expect(script).toContain("for n, v in zip(sel_names, vals):");
+    expect(script).toContain("sample.appendRow([n, '%%.6f' %% v])");
+  });
+
+  // v0.8.1 regression: custom parameter names follow TD's strict rule — one
+  // uppercase letter at the start, the rest lowercase letters only, no
+  // underscores. Previously "LastValue_<selector>" failed name validation.
+  it("http_poll: LastValue custom-param names are TD-valid (Last + lowercase)", () => {
+    const script = buildDataSourceHttpWsScript({
+      mode: "http_poll",
+      url: "https://x.com",
+      selectors: [["MyChan", "$.x"]],
+      expose_controls: true,
+    });
+    // Sanitized to all-lowercase suffix, no underscores.
+    expect(script).toContain('_parname = "Last" + _safe');
+    expect(script).toContain("_safe = ''.join(ch for ch in s if ch.isalpha()).lower() or 'x'");
+    // Must NOT use the underscore form anywhere.
+    expect(script).not.toContain('appendFloat("LastValue_"');
+    expect(script).not.toContain('LastValue_" + s');
+  });
+
+  // v0.8.1 regression: LastValue expression must explicitly call .eval() on the
+  // channel so the float param receives a real number rather than a Channel
+  // object that triggers "float() argument must be a string or a real number".
+  it("LastValue expression calls .eval() on the channel (not bare indexing)", () => {
+    const script = buildDataSourceHttpWsScript({
+      mode: "http_poll",
+      url: "https://x.com",
+      selectors: [["a", "$.a"]],
+      expose_controls: true,
+    });
+    expect(script).toContain("op('out')[%r].eval()");
+  });
 });
 
 describe("createDataSourceHttpWsImpl", () => {

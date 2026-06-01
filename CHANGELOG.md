@@ -6,6 +6,33 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (targeting v0.8.1 — `create_data_source_http_ws` hotfix)
+
+- **`create_data_source_http_ws`** no longer fails with
+  `TypeError: must be real number, not str` after node creation. Three layered
+  bugs (all live-validated against TD 099 build 2025.32820):
+  - The `dattoCHOP` menu parameters (`firstrow`, `firstcolumn`, `output`) were
+    set with integer indices (`1/0/1`), which TD silently coerced through the
+    menu list — landing on `'names'/'ignored'/'chanperrow'`. The latter two are
+    wrong for this layout, so the CHOP produced zero or wrongly-named channels.
+    Now uses the explicit menu names (`'values'/'names'/'chanperrow'`).
+  - The sample `tableDAT` was laid out as a header-row + value-row table, which
+    `dattoCHOP` cannot turn into one channel-per-selector. It is now transposed
+    (one row per selector: `[name, value]`), matching the corrected datto
+    config. The parser callback (`_parse_and_update`) was updated to emit the
+    same shape.
+  - The live-readout custom parameters were named `LastValue_<selector>`, which
+    TD rejects (custom-param names must be one uppercase letter followed by
+    lowercase letters only, no underscores). They are now `Last<lowercase>`
+    (e.g. `Lasturl`, `Lastn`), and the expression explicitly calls `.eval()` on
+    the channel so the float parameter receives a real number instead of a
+    `Channel` object.
+- Live-validated against TD 099 (build 2025.32820) with two selectors over
+  `httpbin.org/get`: the tool now returns 2 channels, 0 warnings, 0 node errors,
+  and 4 working controls (`Active`, `Poll`, `Lasturl`, `Lastn`). The full unit
+  test count goes from 2923 → 2935 (+12 tests, 4 new regression assertions on
+  this tool).
+
 ## [0.8.0] - 2026-05-31
 
 **Ingest-extend Wave 1 — Ecosystem on-ramp + signature looks** (campaign
