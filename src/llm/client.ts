@@ -29,6 +29,8 @@ export interface MultimodalMessage {
   content: string | ContentPart[];
 }
 
+export const LLM_SYSTEM_OPTION = "system" as const;
+
 /** Options for {@link LlmClientLike.complete}. */
 export interface CompleteOptions {
   /** System instruction. Overrides any leading `system` message in `messages`. */

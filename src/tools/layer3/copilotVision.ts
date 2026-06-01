@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { capturePreview } from "../../feedback/previewCapture.js";
+import { LLM_SYSTEM_OPTION } from "../../llm/client.js";
 import { friendlyTdError } from "../../td-client/types.js";
 import { errorResult, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -40,7 +41,7 @@ export const copilotVisionSchema = z.object({
     .max(4096)
     .default(512)
     .describe("Upper bound on response tokens."),
-  system: z
+  [LLM_SYSTEM_OPTION]: z
     .string()
     .optional()
     .describe("Optional system instruction (defaults to a TouchDesigner vision-assistant prompt)."),
@@ -83,7 +84,7 @@ export async function copilotVisionImpl(ctx: ToolContext, args: CopilotVisionArg
         },
       ],
       {
-        system: args.system ?? DEFAULT_SYSTEM,
+        [LLM_SYSTEM_OPTION]: args[LLM_SYSTEM_OPTION] ?? DEFAULT_SYSTEM,
         maxTokens: args.max_tokens,
       },
     );
