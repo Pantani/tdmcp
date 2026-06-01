@@ -125,7 +125,8 @@ Sub-batch B — TD-required (live-validated against TD 099 build 2025.32820):
 - ✅ **`export_look_tox`** — save a COMP as a portable `.tox` into the vault
   with a Markdown sidecar for `browse_vault_library` / `tag_and_search_library`.
 - ✅ **`tutorial_companion_pack`** — scaffold a teaching companion (lesson
-  markdown + topology + previews + shallow recipe) into the vault.
+  markdown + topology + previews + a `network_snapshot.json` documentary snapshot,
+  explicitly not a RecipeSchema-installable recipe) into the vault.
 - 🧪 **`copilot_vision`** — multimodal LLM query over a TOP preview.
   Live-tuning UNVERIFIED — no multimodal LLM endpoint configured in this
   session; mechanism (preview capture + `ctx.llm.complete()` contract) is

@@ -99,7 +99,8 @@ Wave-3 backlog ahead of the v0.9.0 cut. All gates pass (typecheck, build, biome,
   probe `baseCOMP.save()` (238-byte tox written).
 - **`tutorial_companion_pack`** *(vault, cli)* — scaffold a teaching companion
   for a build: snapshot the COMP's topology, capture previews of its output TOPs,
-  write `tutorial.md` + `topology.json` + `recipe.json` + `previews/*.png` into
+  write `tutorial.md` + `topology.json` + `network_snapshot.json` (a documentary
+  snapshot — explicitly NOT a RecipeSchema-installable recipe) + `previews/*.png` into
   `<vault>/<folder>/<slug>/`. Composes existing read-only bridge calls; outputs
   are an editable starting point for an artist. Vault-gated.
 
