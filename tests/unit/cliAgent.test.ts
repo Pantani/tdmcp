@@ -103,6 +103,52 @@ describe("tdmcp-agent CLI", () => {
     );
   });
 
+  it("dry-runs show-director policy decisions without contacting TD", async () => {
+    const r = await runCli(
+      [
+        "show-director",
+        "--params",
+        JSON.stringify({
+          intent: {
+            type: "arm_effect",
+            effect: "fog",
+            duration_seconds: 3,
+            intensity: 0.4,
+          },
+        }),
+      ],
+      {
+        makeCtx: () => {
+          throw new Error("show-director dry-run must not build a TD context");
+        },
+      },
+    );
+
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.dryRun).toBe(true);
+    expect(doc.intent.type).toBe("arm_effect");
+    expect(doc.decision.decision).toBe("require_approval");
+    expect(doc.decision.limits_applied).toContain("duration_seconds<=3");
+  });
+
+  it("blocks malformed show-director input before execution", async () => {
+    const r = await runCli([
+      "show-director",
+      "--params",
+      JSON.stringify({
+        intent: {
+          type: "arm_effect",
+          effect: "mixer_gain",
+          duration_seconds: "loud",
+        },
+      }),
+    ]);
+
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain("Malformed show intent");
+  });
+
   it("lists stable command metadata for resources and docs", () => {
     const commands = listAgentCommands();
 

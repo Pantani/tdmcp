@@ -4,3 +4,4 @@
  * `scene_scheduler`, `import_setlist`, and `export_setlist_to_vault`.
  */
 export * from "./setlistSchema.js";
+export * from "./showDirectorSchema.js";

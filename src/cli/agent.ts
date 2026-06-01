@@ -8,6 +8,7 @@ import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
+import { EffectPolicySchema, parseShowIntent } from "../automation/showDirectorSchema.js";
 import { capturePreview } from "../feedback/previewCapture.js";
 import { buildToolContext } from "../server/context.js";
 import { type TdEventHandler, TdEventStream } from "../td-client/eventStream.js";
@@ -615,6 +616,13 @@ interface Command {
   mutates: boolean;
   unsafe: boolean;
 }
+
+const showDirectorCliSchema = z.object({
+  intent: z.unknown().describe("Raw AI Show Director intent to validate and policy-check."),
+  policy: EffectPolicySchema.optional().describe(
+    "Optional effect policy override for dry-run tests.",
+  ),
+});
 
 export interface AgentCommandCatalogEntry {
   command: string;
@@ -2017,6 +2025,13 @@ const SPECIAL_COMMANDS: AgentCommandCatalogEntry[] = [
     source: "cli",
   },
   {
+    command: "show-director",
+    summary: "Dry-run AI Show Director intent policy decisions.",
+    mutates: false,
+    unsafe: false,
+    source: "cli",
+  },
+  {
     command: "schedule <file>",
     summary: "Run scene scheduler triggers.",
     mutates: true,
@@ -2819,6 +2834,16 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   // `schema <command>` — emit the input contract without touching TD.
   if (positionals[0] === "schema") {
     const target = positionals.slice(1).join(" ");
+    if (target === "show-director") {
+      const doc = {
+        command: target,
+        summary: "Dry-run AI Show Director intent policy decisions.",
+        mutates: false,
+        unsafe: false,
+        input: z.toJSONSchema(showDirectorCliSchema),
+      };
+      return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
+    }
     const cmd = COMMANDS[target];
     if (!cmd) return { stdout: "", stderr: `Unknown command for schema: "${target}".\n`, code: 2 };
     const doc = {
@@ -2827,6 +2852,42 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
       mutates: cmd.mutates,
       unsafe: cmd.unsafe,
       input: z.toJSONSchema(cmd.schema),
+    };
+    return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
+  }
+
+  // `show-director` is intentionally policy-only for now: it validates a raw
+  // LLM/show-control intent and explains the dry-run decision without building a
+  // TD context or touching hardware.
+  if (positionals[0] === "show-director") {
+    const assembled = assembleParams(values, opts);
+    if ("error" in assembled) {
+      return {
+        stdout: "",
+        stderr: `Invalid JSON in --params/--json: ${assembled.error}\n`,
+        code: 2,
+      };
+    }
+    const args = showDirectorCliSchema.safeParse(assembled.raw);
+    if (!args.success) {
+      return {
+        stdout: "",
+        stderr: `Invalid arguments for "show-director": ${args.error.message}\n`,
+        code: 2,
+      };
+    }
+    const parsedIntent = parseShowIntent(args.data.intent, args.data.policy);
+    if (!parsedIntent.ok) {
+      return {
+        stdout: "",
+        stderr: `${parsedIntent.decision.reason}\n`,
+        code: 2,
+      };
+    }
+    const doc = {
+      dryRun: true,
+      intent: parsedIntent.intent,
+      decision: parsedIntent.decision,
     };
     return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
   }
