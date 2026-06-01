@@ -71,7 +71,13 @@ export async function exportLookToxImpl(ctx: ToolContext, args: ExportLookToxArg
   const stem = slugify(lookName);
   const toxRel = `${args.folder}/${stem}.tox`;
   const noteRel = `${args.folder}/${stem}.md`;
-  const toxAbs = vault.resolve(toxRel);
+  let toxAbs: string;
+  try {
+    toxAbs = vault.resolve(toxRel);
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    return errorResult(`Invalid vault path: ${reason}`);
+  }
 
   try {
     const exec = await ctx.client.executePythonScript(

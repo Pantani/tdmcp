@@ -92,6 +92,19 @@ describe("exportLookToxImpl", () => {
     expect(note.data.tags).toContain("dark");
   });
 
+  it("returns errorResult when the vault path escapes the root", async () => {
+    const vault = makeVault();
+    const result = await exportLookToxImpl(makeCtx(vault), {
+      source_path: "/project1/myLook",
+      folder: "../escape",
+      tags: [],
+      assets: [],
+    });
+    expect(result.isError).toBe(true);
+    const text = (result.content[0] as { text: string }).text;
+    expect(text.toLowerCase()).toContain("invalid vault path");
+  });
+
   it("surfaces a python fatal as a friendly error", async () => {
     const vault = makeVault();
     mockExecOnce({ fatal: "COMP not found: /nope" });

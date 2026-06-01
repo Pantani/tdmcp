@@ -50,6 +50,17 @@ describe("versionLibraryAssetImpl", () => {
     expect(textOf(result)).toContain("TDMCP_VAULT_PATH");
   });
 
+  it("returns errorResult when the asset_path escapes the vault root", async () => {
+    const vault = makeVault();
+    const result = await versionLibraryAssetImpl(ctxWith(vault), {
+      asset_path: "../escape.md",
+      bump: "patch",
+      read_only: false,
+    });
+    expect(result.isError).toBe(true);
+    expect(textOf(result).toLowerCase()).toContain("invalid vault path");
+  });
+
   it("errors when the asset does not exist", async () => {
     const vault = makeVault();
     const result = await versionLibraryAssetImpl(ctxWith(vault), {

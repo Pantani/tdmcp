@@ -115,7 +115,14 @@ export async function tagAndSearchLibraryImpl(ctx: ToolContext, args: TagAndSear
     if (!args.asset_path) {
       return errorResult("asset_path is required for op='tag'.");
     }
-    if (!vault.exists(args.asset_path)) {
+    let assetExists: boolean;
+    try {
+      assetExists = vault.exists(args.asset_path);
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      return errorResult(`Invalid vault path: ${reason}`);
+    }
+    if (!assetExists) {
       return errorResult(`Vault asset not found: ${args.asset_path}`);
     }
     const note = readNoteSafe(vault, args.asset_path);
@@ -175,7 +182,13 @@ export async function tagAndSearchLibraryImpl(ctx: ToolContext, args: TagAndSear
   // ---- list / search ----
   const allAssets: AssetEntry[] = [];
   for (const folder of args.folders) {
-    const files = vault.list(folder, ".md");
+    let files: string[];
+    try {
+      files = vault.list(folder, ".md");
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      return errorResult(`Invalid vault folder "${folder}": ${reason}`);
+    }
     for (const file of files) {
       const rel = `${folder}/${file}`;
       const note = readNoteSafe(vault, rel);

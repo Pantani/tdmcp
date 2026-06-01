@@ -70,6 +70,29 @@ describe("tagAndSearchLibraryImpl", () => {
     expect(textOf(result)).toContain("asset_path is required");
   });
 
+  it("op='tag' returns errorResult when asset_path escapes the vault root", async () => {
+    const vault = makeVault();
+    const result = await tagAndSearchLibraryImpl(ctxWith(vault), {
+      ...DEFAULTS,
+      op: "tag",
+      asset_path: "../escape.md",
+      tags: ["foo"],
+    });
+    expect(result.isError).toBe(true);
+    expect(textOf(result).toLowerCase()).toContain("invalid vault path");
+  });
+
+  it("op='list' returns errorResult when a folder escapes the vault root", async () => {
+    const vault = makeVault();
+    const result = await tagAndSearchLibraryImpl(ctxWith(vault), {
+      ...DEFAULTS,
+      op: "list",
+      folders: ["../escape"],
+    });
+    expect(result.isError).toBe(true);
+    expect(textOf(result).toLowerCase()).toContain("invalid vault folder");
+  });
+
   it("op='tag' errors when the asset is missing", async () => {
     const vault = makeVault();
     const result = await tagAndSearchLibraryImpl(ctxWith(vault), {

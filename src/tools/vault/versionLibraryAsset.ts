@@ -127,7 +127,14 @@ export async function versionLibraryAssetImpl(ctx: ToolContext, args: VersionLib
   if ("error" in v) return v.error;
   const { vault } = v;
 
-  if (!vault.exists(args.asset_path)) {
+  let assetExists: boolean;
+  try {
+    assetExists = vault.exists(args.asset_path);
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    return errorResult(`Invalid vault path: ${reason}`);
+  }
+  if (!assetExists) {
     return errorResult(`Vault asset not found: ${args.asset_path}`);
   }
   const note = readNoteSafe(vault, args.asset_path);
