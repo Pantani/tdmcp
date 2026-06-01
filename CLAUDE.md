@@ -233,6 +233,24 @@ directly.
 |------|--------|--------|--------|
 | 2026-05-29 | Initial build | 2 agents + 1 skill | extend prompt cookbook with surprising examples for all tools not yet shown |
 
+## Harness: docs & roadmap update
+
+**Goal:** keep the roadmap, high-level docs, generated reference docs, and EN/PT
+prompt cookbook aligned with newly shipped or newly merged tdmcp capabilities,
+grounded in verified package/GitHub release state.
+
+**Trigger:** when asked to update docs, update the roadmap/rodamap, document new
+features, reconcile docs with a release, refresh cookbook examples after a
+feature wave, or check whether `docs/ROADMAP.md` is current — including
+follow-ups (re-run, continue, fix, update only cookbook/roadmap) — use the
+`tdmcp-docs-roadmap-update` skill. Simple questions can be answered directly.
+Note: this environment runs the team as sub-agents (no `TeamCreate`).
+
+**Change log:**
+| Date | Change | Target | Reason |
+|------|--------|--------|--------|
+| 2026-06-01 | Initial build | docs-roadmap harness + 4 agents + 1 skill | recurring team for release-grounded docs/roadmap/cookbook updates |
+
 ## Harness: backlog campaign
 
 **Goal:** drive an entire feature **backlog/discovery file** to completion as

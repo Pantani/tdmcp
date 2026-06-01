@@ -336,9 +336,10 @@ they're considered solid.
 - **External-clock sync** — `sync_external_clock`'s tap-tempo is solid; its
   Ableton Link and MIDI-clock modes need hardware to validate (with a manual-BPM
   fallback when no source is present).
-- **v0.6.0 live re-check** — the seven v0.6.0 features were each validated live in
-  TouchDesigner; a full end-to-end re-check of the new HTTP routing after a bridge
-  reinstall is the last pending step (acceptable per release policy).
+- **v0.6.x bridge-routing regression check** — the seven v0.6.0 features were
+  each validated live in TouchDesigner, and the bridge reinstall/reconnect path
+  has been rechecked. Keep this as a recurring smoke check after bridge or
+  installer changes rather than a release-blocking open item.
 
 ---
 
