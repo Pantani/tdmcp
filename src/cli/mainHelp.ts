@@ -71,6 +71,10 @@ export function renderMainCompletion(shell: string): string | undefined {
     return [
       "_tdmcp() {",
       `  local cur="\${COMP_WORDS[COMP_CWORD]}"`,
+      `  if [[ "\${COMP_WORDS[COMP_CWORD - 1]}" == "packages" ]]; then`,
+      `    COMPREPLY=( $(compgen -W 'path' -- "$cur") )`,
+      "    return",
+      "  fi",
       `  COMPREPLY=( $(compgen -W '${words}' -- "$cur") )`,
       "}",
       "complete -F _tdmcp tdmcp",

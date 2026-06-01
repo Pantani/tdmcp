@@ -6,18 +6,18 @@ export interface GlslSnippetCatalogEntry {
   name: string;
   difficulty: string;
   description: string;
-  resource_uri: string;
+  resourceUri: string;
   operators: string[];
   tags: string[];
   snippet: string;
-  snippet_bytes: number;
-  assembly_hint: string;
+  snippetBytes: number;
+  assemblyHint: string;
 }
 
 export interface GlslSnippetCatalog {
   uri: "tdmcp://glsl-snippets";
   count: number;
-  license_policy: {
+  licensePolicy: {
     status: "tdmcp-vetted";
     note: string;
   };
@@ -36,12 +36,12 @@ export function readGlslSnippetCatalog(knowledge: KnowledgeBase): GlslSnippetCat
         name: full.name,
         difficulty: full.difficulty ?? summary.difficulty,
         description: full.description ?? summary.description,
-        resource_uri: `tdmcp://glsl/${full.id}`,
+        resourceUri: `tdmcp://glsl/${full.id}`,
         operators: full.operators ?? [],
         tags: full.tags ?? [],
         snippet,
-        snippet_bytes: Buffer.byteLength(snippet, "utf8"),
-        assembly_hint:
+        snippetBytes: Buffer.byteLength(snippet, "utf8"),
+        assemblyHint:
           full.setup ??
           "Create a GLSL TOP, write this fragment shader into a sibling Text DAT, and assign that DAT to the GLSL TOP pixeldat parameter.",
       };
@@ -51,7 +51,7 @@ export function readGlslSnippetCatalog(knowledge: KnowledgeBase): GlslSnippetCat
   return {
     uri: "tdmcp://glsl-snippets",
     count: snippets.length,
-    license_policy: {
+    licensePolicy: {
       status: "tdmcp-vetted",
       note: "Curated snippets shipped with tdmcp for agent assembly. Prefer these over unvetted web shader libraries.",
     },

@@ -35,11 +35,22 @@ describe("tdmcp top-level help", () => {
 
   it("does not suggest packages path as a fake top-level path command", () => {
     const completion = renderMainCompletion("bash");
-    const words = completion?.match(/compgen -W '([^']+)'/)?.[1]?.split(" ") ?? [];
+    const wordLists = [...(completion?.matchAll(/compgen -W '([^']+)'/g) ?? [])].map(
+      (match) => match[1]?.split(" ") ?? [],
+    );
+    const words = wordLists.find((list) => list.includes("packages")) ?? [];
 
     expect(words).toContain("packages");
     expect(words).toContain("--path");
     expect(words).not.toContain("path");
+  });
+
+  it("suggests path only in the bash completion context after packages", () => {
+    const completion = renderMainCompletion("bash");
+
+    expect(completion).toContain("COMP_WORDS[COMP_CWORD - 1]");
+    expect(completion).toContain('== "packages"');
+    expect(completion).toContain("compgen -W 'path'");
   });
 
   it("returns undefined for unsupported completion shells", () => {

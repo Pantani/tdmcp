@@ -24,22 +24,24 @@ describe("TouchDesigner learning resource", () => {
 
     expect(resource.uri).toBe("tdmcp://learning/touchdesigner");
     expect(resource.prompt.name).toBe("teach_touchdesigner");
-    expect(resource.prompt.resource_uri).toBe("tdmcp://prompts");
+    expect(resource.prompt.resourceUri).toBe("tdmcp://prompts");
     expect(resource.modules.length).toBeGreaterThanOrEqual(4);
 
     for (const module of resource.modules) {
-      expect(module.operator_resources.length + module.tutorial_resources.length).toBeGreaterThan(
-        0,
-      );
-      for (const uri of module.operator_resources) {
+      expect(module.operatorResources.length + module.tutorialResources.length).toBeGreaterThan(0);
+      expect("prompt_topic" in module).toBe(false);
+      expect("operator_resources" in module).toBe(false);
+      expect("tutorial_resources" in module).toBe(false);
+      expect("recipe_resources" in module).toBe(false);
+      for (const uri of module.operatorResources) {
         const category = uri.replace("tdmcp://operators/", "");
         expect(categories.has(category)).toBe(true);
       }
-      for (const uri of module.tutorial_resources) {
+      for (const uri of module.tutorialResources) {
         const id = uri.replace("tdmcp://tutorials/", "");
         expect(knowledge.getTutorial(id)).toBeDefined();
       }
-      for (const uri of module.recipe_resources) {
+      for (const uri of module.recipeResources) {
         const id = uri.replace("tdmcp://recipes/", "");
         expect(recipes.get(id)).toBeDefined();
       }
@@ -75,5 +77,9 @@ describe("TouchDesigner learning resource", () => {
 
     expect(result?.contents[0]?.mimeType).toBe("application/json");
     expect(payload.modules.map((mod: { id: string }) => mod.id)).toContain("glsl-shaders");
+    expect(payload.prompt.resourceUri).toBe("tdmcp://prompts");
+    expect(payload.prompt.resource_uri).toBeUndefined();
+    expect(payload.modules[0].operatorResources).toBeDefined();
+    expect(payload.modules[0].operator_resources).toBeUndefined();
   });
 });

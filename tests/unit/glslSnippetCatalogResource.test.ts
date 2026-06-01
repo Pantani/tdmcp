@@ -21,14 +21,18 @@ describe("GLSL snippet catalog resource", () => {
 
     expect(catalog.uri).toBe("tdmcp://glsl-snippets");
     expect(catalog.count).toBeGreaterThan(0);
-    expect(catalog.license_policy.status).toBe("tdmcp-vetted");
+    expect(catalog.licensePolicy.status).toBe("tdmcp-vetted");
     expect(
-      catalog.snippets.every((snippet) => snippet.resource_uri.startsWith("tdmcp://glsl/")),
+      catalog.snippets.every((snippet) => snippet.resourceUri.startsWith("tdmcp://glsl/")),
     ).toBe(true);
     expect(catalog.snippets.some((snippet) => snippet.id === "raymarching_basic")).toBe(true);
     const raymarch = catalog.snippets.find((snippet) => snippet.id === "raymarching_basic");
     expect(raymarch?.snippet).toContain("raymarch");
     expect(raymarch?.operators).toContain("GLSL TOP");
+    expect("license_policy" in catalog).toBe(false);
+    expect("resource_uri" in (raymarch ?? {})).toBe(false);
+    expect("snippet_bytes" in (raymarch ?? {})).toBe(false);
+    expect("assembly_hint" in (raymarch ?? {})).toBe(false);
   });
 
   it("registers tdmcp://glsl-snippets as an application/json resource", async () => {
@@ -60,6 +64,8 @@ describe("GLSL snippet catalog resource", () => {
 
     expect(result?.contents[0]?.mimeType).toBe("application/json");
     expect(payload.count).toBeGreaterThan(0);
-    expect(payload.snippets[0].resource_uri).toMatch(/^tdmcp:\/\/glsl\//);
+    expect(payload.licensePolicy.status).toBe("tdmcp-vetted");
+    expect(payload.snippets[0].resourceUri).toMatch(/^tdmcp:\/\/glsl\//);
+    expect(payload.snippets[0].resource_uri).toBeUndefined();
   });
 });
