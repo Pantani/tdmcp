@@ -92,34 +92,16 @@ The manifest lives at `dxt/manifest.json`. It declares a `node` server with
 
 ## 3. Publish to npm
 
-The package is public and unscoped (`tdmcp`).
+The package is public and scoped as `@dpantani/tdmcp`.
 
 ```bash
 npm run build
-npm publish --access public
+npm publish
 ```
 
-### Required `package.json` additions
-
-The Docker/dxt/npm work above does **not** modify `package.json`. To make
-publishing safe and correct, add the following keys to `package.json` (this
-change is owned by the process editing `package.json`, not this doc):
-
-```jsonc
-{
-  "scripts": {
-    // …existing scripts…
-    "prepublishOnly": "npm run build && npm test"
-  },
-  "publishConfig": {
-    "access": "public"
-  }
-}
-```
+### Existing `package.json` release guards
 
 - `prepublishOnly` guarantees a fresh build and a passing test suite run before
   anything is published.
 - `publishConfig.access = "public"` lets the scoped package publish publicly
   without needing the `--access public` flag every time.
-
-After those are in place, `npm publish` alone is sufficient.

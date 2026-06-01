@@ -27,6 +27,7 @@ async function connectClient(env: NodeJS.ProcessEnv = {}) {
 const SAFE_PROFILE_EXCLUDE = [
   "execute_python_script",
   "exec_node_method",
+  "create_python_script",
   "delete_td_node",
   "rebuild_network",
   "edit_dat_content",
@@ -65,9 +66,14 @@ const SAFE_PROFILE_KEEP = [
   "search_operators",
 ];
 
-async function toolNames(env: NodeJS.ProcessEnv = {}): Promise<string[]> {
+async function toolList(env: NodeJS.ProcessEnv = {}) {
   const client = await connectClient(env);
   const { tools } = await client.listTools();
+  return tools;
+}
+
+async function toolNames(env: NodeJS.ProcessEnv = {}): Promise<string[]> {
+  const tools = await toolList(env);
   return tools.map((t) => t.name);
 }
 
@@ -86,6 +92,7 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
     const names = await toolNames({ TDMCP_TOOL_PROFILE: "safe" });
     expect(names).not.toContain("execute_python_script");
     expect(names).not.toContain("exec_node_method");
+    expect(names).not.toContain("create_python_script");
   });
 
   it("safe drops the destructive tools", async () => {
@@ -127,7 +134,16 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
     const safe = await toolNames({ TDMCP_TOOL_PROFILE: "safe" });
     expect(safe.length).toBeLessThan(full.length);
     expect(full.length - safe.length).toBe(SAFE_PROFILE_EXCLUDE.length);
-    expect(SAFE_PROFILE_EXCLUDE.length).toBe(27);
+    expect(SAFE_PROFILE_EXCLUDE.length).toBe(28);
+  });
+
+  it("safe exclusion list matches destructive tool annotations", async () => {
+    const fullTools = await toolList({ TDMCP_TOOL_PROFILE: "full" });
+    const destructiveNames = fullTools
+      .filter((tool) => tool.annotations?.destructiveHint === true)
+      .map((tool) => tool.name)
+      .sort();
+    expect(destructiveNames).toEqual([...SAFE_PROFILE_EXCLUDE].sort());
   });
 
   it("safe ⊇ rawPython=off (composition): safe hides everything rawPython=off hides", async () => {

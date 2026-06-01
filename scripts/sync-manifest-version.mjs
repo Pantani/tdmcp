@@ -1,4 +1,4 @@
-// Syncs published manifest "version" fields to match `package.json`.
+// Syncs published metadata "version" fields to match `package.json`.
 //
 // Runs automatically as the npm `version` lifecycle script: `npm version <bump>`
 // bumps package.json, then this runs and stages the manifests, then npm makes
@@ -13,6 +13,7 @@ import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const manifestPaths = [join(root, "dxt", "manifest.json"), join(root, "safeskill.manifest.json")];
+const serverPath = join(root, "server.json");
 
 const { version } = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 if (!version) {
@@ -31,5 +32,19 @@ for (const manifestPath of manifestPaths) {
   } else {
     writeFileSync(manifestPath, after);
     process.stdout.write(`[sync-manifest-version] ${manifestPath} -> ${version}\n`);
+  }
+}
+
+{
+  const before = readFileSync(serverPath, "utf8");
+  const after = before
+    .replace(/("version"\s*:\s*")[^"]*"/, `$1${version}"`)
+    .replace(/("packages"\s*:\s*\[\s*\{[\s\S]*?"version"\s*:\s*")[^"]*"/, `$1${version}"`);
+
+  if (after === before) {
+    process.stdout.write(`[sync-manifest-version] ${serverPath} already at ${version}\n`);
+  } else {
+    writeFileSync(serverPath, after);
+    process.stdout.write(`[sync-manifest-version] ${serverPath} -> ${version}\n`);
   }
 }

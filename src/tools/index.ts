@@ -10,8 +10,8 @@ import { vaultRegistrars } from "./vault/index.js";
 
 /**
  * Tools hidden by the `safe` profile: every tool flagged `destructiveHint: true`.
- * This is a strict superset of TDMCP_RAW_PYTHON=off (which hides only the first
- * two), so `safe` ⊇ rawPython=off. Keep in sync with `destructiveHint: true`
+ * This is a strict superset of TDMCP_RAW_PYTHON=off (which hides the raw-code
+ * authoring/execution tools), so `safe` ⊇ rawPython=off. Keep in sync with `destructiveHint: true`
  * annotations (a registration test guards this — see toolProfile.test.ts).
  *
  * NOTE: this is deliberately NOT the copilot's `LLM_TOOLS` `mutates` classification
@@ -22,6 +22,7 @@ import { vaultRegistrars } from "./vault/index.js";
 const SAFE_PROFILE_EXCLUDE = new Set<string>([
   "execute_python_script", // raw client-authored code (also gated by rawPython)
   "exec_node_method", // raw client-authored code (also gated by rawPython)
+  "create_python_script", // raw client-authored code stored in DATs (also gated by rawPython)
   "delete_td_node", // removes nodes
   "rebuild_network", // can clear/recreate a parent's children
   "edit_dat_content", // destructive DAT rewrite, even though scoped/guarded
