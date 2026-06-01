@@ -6,6 +6,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-05-31
+
 **Ingest-extend Wave 1 — Ecosystem on-ramp + signature looks** (campaign
 `ingest_extend_20260531`, Arc 5 "Ingest & extend" / ROADMAP Milestone 2, targeting
 the v0.8.0 line). One shared foundation module plus six new Layer-1 tools open
@@ -36,6 +38,46 @@ tdmcp to the wider GLSL ecosystem (Shadertoy + ISF) and add four signature looks
   effect (palette size, gameboy preset). Own GLSL.
 - **`create_jfa_voronoi`** — Jump-Flood-Algorithm Voronoi / stained-glass
   generator, multipass GLSL, with three palette modes.
+
+**Ingest-extend Wave 2 — Color pipeline + show automation + stylization +
+3D post** (campaign `ingest_extend_20260531`, Arc 5 "Ingest & extend" / ROADMAP
+Milestone 2). Eight new tools (3 Layer-1, 4 Layer-2, 1 quarantined Layer-2) plus
+new mode keys on `apply_post_processing` extend tdmcp into color management,
+performance instrumentation, Live integration, painterly stylization, and 3D
+post-processing. Seven tools are live-validated in TD 099; one ships flagged
+**experimental** with a tracked known issue.
+
+### Added (Ingest-extend Wave 2)
+
+- **`create_video_scopes`** *(Layer 1)* — broadcast-style video monitor with
+  waveform / RGB parade / vectorscope panels (histogram deferred — TD 099 lacks
+  `histogramCHOP`).
+- **`create_chop_recorder`** *(Layer 1)* — capture-and-playback for any CHOP
+  source; record a take, scrub or loop it back as a CHOP feed.
+- **`setup_tdableton`** *(Layer 1)* — Ableton Live bridge: probes for the
+  TDAbleton Palette component first, falls back to a plain OSC In bridge so it
+  works without the Palette installed.
+- **`apply_lut`** *(Layer 2)* — apply a LUT to any TOP via OCIO when available,
+  image-based lookup for `.png`/`.cube` previews, or a parsed-`.cube` GLSL
+  fallback. Color-management pipeline foundation.
+- **`create_flow_abstraction`** *(Layer 2)* — ETF→FDoG painterly flow effect
+  (edge tangent flow + flow-based difference-of-Gaussians, Kyprianidis style).
+- **`create_npr_filter`** *(Layer 2)* — Kuwahara non-photorealistic filter with
+  oil / pencil / watercolor variants; also exposes three new mode keys
+  (`kuwahara_oil`, `kuwahara_pencil`, `kuwahara_watercolor`) on
+  `apply_post_processing`.
+- **`post_passes_3d`** *(Layer 2)* — SSAO / SSR / depth-of-field / motion-blur
+  3D post-passes for `create_3d_scene` / `create_pbr_scene` outputs.
+  `apply_post_processing` now emits friendly redirect errors when invoked with
+  3D-only mode keys, pointing callers to `post_passes_3d`.
+
+### Known issues (Ingest-extend Wave 2)
+
+- **`create_data_source_http_ws`** *(Layer 2, experimental)* — HTTP-poll +
+  WebSocket data source. The `http_poll` path raises
+  `TypeError: must be real number, not str` after node creation; the network
+  still builds but the tool surfaces `status: "fatal"`. Tool is registered and
+  discoverable. Tracked for v0.8.1.
 
 **Wave 2 — Show automation + musical reactivity** (campaign `beyond_20260530`).
 Eight new Layer-1 tools and one CLI verb turn the v0.7.0 live-show foundation
@@ -166,7 +208,8 @@ long-running CLI streamers, bringing the registry to **231** tools.
 
 - `buildToolContext` accepts an optional `fetchImpl` override (forwarded to the TouchDesigner client) so the fixture-recorder CLI can wrap bridge calls.
 
-[Unreleased]: https://github.com/Pantani/tdmcp/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/Pantani/tdmcp/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/Pantani/tdmcp/compare/v0.7.1...v0.8.0
 
 ## [0.7.1] - 2026-05-31
 
