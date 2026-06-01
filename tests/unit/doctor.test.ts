@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { HttpResponse, http } from "msw";
@@ -171,5 +171,101 @@ describe("tdmcp doctor", () => {
     expect(r.report.fixes?.length).toBeTruthy();
     expect(r.stdout).toContain("Suggested fixes");
     expect(r.report.fixes?.some((f) => f.id === "llm")).toBe(true);
+  });
+
+  it("--fix creates a missing configured vault folder and reports the repair", async () => {
+    server.use(llmModels("qwen2.5:3b"));
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-doctor-fix-"));
+    const vaultPath = join(dir, "missing-vault");
+    try {
+      const r = await runDoctor({
+        config: makeConfig({ vaultPath, llmModel: "qwen2.5:3b" }),
+        makeCtx,
+        fix: true,
+      });
+
+      expect(r.code).toBe(0);
+      expect(existsSync(vaultPath)).toBe(true);
+      expect(r.report.repairs).toContainEqual(
+        expect.objectContaining({ id: "vault", status: "applied" }),
+      );
+      expect(r.stdout).toContain("Applied fixes");
+      expect(r.report.checks.find((check) => check.id === "vault")?.status).toBe("pass");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("does not create a missing vault folder without --fix", async () => {
+    server.use(llmModels("qwen2.5:3b"));
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-doctor-no-fix-"));
+    const vaultPath = join(dir, "missing-vault");
+    try {
+      const r = await runDoctor({
+        config: makeConfig({ vaultPath, llmModel: "qwen2.5:3b" }),
+        makeCtx,
+      });
+
+      expect(r.code).toBe(0);
+      expect(existsSync(vaultPath)).toBe(false);
+      expect(r.report.repairs).toBeUndefined();
+      expect(r.report.checks.find((check) => check.id === "vault")?.status).toBe("warn");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("--fix reports a failed vault repair and preserves manual guidance", async () => {
+    server.use(llmModels("qwen2.5:3b"));
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-doctor-fix-fail-"));
+    const vaultPath = join(dir, "missing-vault");
+    try {
+      const r = await runDoctor({
+        config: makeConfig({ vaultPath, llmModel: "qwen2.5:3b" }),
+        makeCtx,
+        fix: true,
+        vaultRepair: () => {
+          throw new Error("permission denied");
+        },
+      });
+
+      expect(r.code).toBe(0);
+      expect(existsSync(vaultPath)).toBe(false);
+      expect(r.report.repairs).toContainEqual(
+        expect.objectContaining({ id: "vault", status: "failed" }),
+      );
+      expect(r.stdout).not.toContain("Applied fixes");
+      expect(r.stdout).toContain("Failed fixes");
+      expect(r.report.fixes).toContainEqual(expect.objectContaining({ id: "vault" }));
+      expect(r.report.checks.find((check) => check.id === "vault")?.status).toBe("warn");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("--fix formats non-Error vault repair failures", async () => {
+    server.use(llmModels("qwen2.5:3b"));
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-doctor-fix-non-error-"));
+    const vaultPath = join(dir, "missing-vault");
+    try {
+      const r = await runDoctor({
+        config: makeConfig({ vaultPath, llmModel: "qwen2.5:3b" }),
+        makeCtx,
+        fix: true,
+        vaultRepair: () => {
+          throw "permission denied";
+        },
+      });
+
+      const detail = r.report.repairs?.[0]?.detail ?? "";
+      expect(r.code).toBe(0);
+      expect(r.report.repairs).toContainEqual(
+        expect.objectContaining({ id: "vault", status: "failed" }),
+      );
+      expect(detail).toContain("permission denied");
+      expect(detail).not.toContain("undefined");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

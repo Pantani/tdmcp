@@ -19,6 +19,7 @@ The package installs two binaries: `tdmcp` (the MCP server + utilities) and
 | `tdmcp chat` _(alias `tdmcp llm-run`)_ | Start the local LLM copilot UI (see below). |
 | `tdmcp install-bridge` | Stage the TouchDesigner bridge to `~/tdmcp-bridge` and print the one line to paste into TD's Textport. Add `--verify` to check `/api/info` once, `--wait` to poll until it is up, and `--port <port>` for non-default bridges. See [Bridge & REST API](/reference/bridge-api). |
 | `tdmcp install-client <claude\|codex\|cursor>` | Print a client-specific MCP config snippet for the current package. Add `--write --path <file>` to deep-merge and verify an explicit client config file (JSON for Claude/Cursor, TOML for Codex). |
+| `tdmcp completion bash` | Print a shell completion snippet for the primary binary. Supports `bash`, `zsh`, and `fish`, including package-manager shortcuts and common flags. |
 | `tdmcp --version` | Print the package version. |
 | `tdmcp search/list/info/install/uninstall/doctor/packages path` | Manage TouchDesigner community packages. See [Package manager](/reference/packages). |
 
@@ -30,7 +31,9 @@ tdmcp list --available
 tdmcp info shader-park-td --json
 tdmcp install mediapipe-touchdesigner --dry-run --json
 tdmcp doctor comfyui-td --json
+tdmcp packages --help
 tdmcp packages path
+tdmcp completion bash
 ```
 
 ## `tdmcp-agent` — command-line agent
@@ -54,6 +57,9 @@ tdmcp-agent config profiles       # list saved config profiles
 tdmcp-agent config profile club   # show one profile, secrets redacted
 tdmcp-agent completion bash       # shell completion snippet
 tdmcp-agent repl                  # interactive mode with persistent history + Tab completion
+tdmcp-agent doctor --fix          # apply safe repairs, then report remaining guidance
+tdmcp-agent watch-build           # watch src/ + td/, rebuild, py_compile + reload td/*.py edits
+tdmcp-agent watch-build --no-reload-bridge  # build-only watcher
 tdmcp-agent watch --pretty --heartbeat-ms 5000
 tdmcp-agent watch --on beat --exec './cue-next.sh' --debounce-ms 250
 tdmcp-agent show-director --params '{"intent":{"type":"request_cue","cue":"band_intro","preapproved":true}}'
@@ -61,13 +67,18 @@ tdmcp-agent show-director --params '{"intent":{"type":"request_cue","cue":"band_
 
 Output format is `--output json` (default) / `ndjson` / `text` / `table` /
 `csv`. Mutating commands are tagged `mutates`; the Python escape hatches require
-`--allow-unsafe` and honour `TDMCP_RAW_PYTHON=off`. Argument JSON can come from
+`--allow-unsafe` and honour `TDMCP_RAW_PYTHON=off`. `tdmcp-agent doctor --fix`
+currently applies safe local repairs, such as creating a missing configured
+`TDMCP_VAULT_PATH` folder, and prints suggestions for the remaining manual
+items. Argument JSON can come from
 `--params '<json>'`, `--params-file file.json`, `--params -` (stdin), or
 `--json '<json>'`. Connection overrides are available per call with `--td-host`,
 `--td-port`, and `--timeout`; script-friendly flags include `--version`,
 `--quiet`, and `--no-color`.
 Run files also accept stdin via `run -`; add `--continue-on-error` to execute the
 whole file and return the first non-zero step code after recording every result.
+Global `--no-color` is forwarded into run-file steps, and an individual step can
+set `"no_color": true` when a generated plan needs script-compatible output.
 For agent clients, `tdmcp://commands` exposes the same command catalog as an MCP
 resource.
 

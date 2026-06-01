@@ -113,6 +113,12 @@ from mcp import dev
 dev.reload_bridge()   # reimports every mcp.* / utils.* module; returns the names reloaded
 ```
 
+For the local dev loop, `tdmcp-agent watch-build` watches `src/` and `td/`.
+When a saved change touches `td/`, it waits for typecheck/build to pass, runs
+`python -m py_compile` over the changed Python files, then calls the
+`reload_bridge` tool automatically. Use `--no-reload-bridge` for a build-only
+watcher, or `--no-py-compile` when you need to skip the Python syntax gate.
+
 Bump `BRIDGE_VERSION` in `td/modules/utils/version.py` on every bridge change.
 `get_td_info` reports the *running* bridge's version, so when it lags the repo you
 know the running bridge is stale and should be reloaded.

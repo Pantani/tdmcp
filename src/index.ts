@@ -1,5 +1,5 @@
 import { runInstallBridge } from "./cli/installBridge.js";
-import { renderMainHelp } from "./cli/mainHelp.js";
+import { renderMainHelp, resolveMainCompletionCommand } from "./cli/mainHelp.js";
 import { parseServeArgs, renderServeHelp, resolveServeInvocation } from "./cli/serverArgs.js";
 import { isPackageCommand, runPackageCli } from "./packages/cli.js";
 import { createTdmcpServer } from "./server/tdmcpServer.js";
@@ -16,6 +16,13 @@ async function main(): Promise<void> {
   }
   if (argv[0] === "--version" || argv[0] === "-v") {
     process.stdout.write(`${getVersion()}\n`);
+    return;
+  }
+  if (argv[0] === "completion") {
+    const result = resolveMainCompletionCommand(argv[1]);
+    if (result.stdout) process.stdout.write(result.stdout);
+    if (result.stderr) process.stderr.write(result.stderr);
+    if (result.exitCode !== undefined) process.exitCode = result.exitCode;
     return;
   }
   if (argv[0] === "install-bridge") {
