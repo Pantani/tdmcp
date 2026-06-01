@@ -14,21 +14,36 @@ import type { ToolContext, ToolRegistrar } from "../types.js";
  * SVG string in the report.
  */
 
+// Accepts: #rgb / #rgba / #rrggbb / #rrggbbaa hex, rgb(...) / rgba(...) /
+// hsl(...) / hsla(...) functional notation, a CSS named colour (letters only),
+// or the keywords 'none' / 'transparent' / 'currentColor'. Rejects anything
+// containing quotes, angle brackets, semicolons, or whitespace outside the
+// parenthesised functional forms — so a value can never break out of an SVG
+// attribute and inject markup or event handlers.
+const cssColorSchema = z
+  .string()
+  .regex(
+    /^(?:#[0-9a-fA-F]{3,8}|(?:rgb|rgba|hsl|hsla)\([0-9eE+\-.,%\s/]+\)|[a-zA-Z]+)$/,
+    "Must be a CSS hex (#rrggbb), rgb()/rgba()/hsl()/hsla(), or a named colour keyword.",
+  );
+
 export const exportSopToSvgSchema = z.object({
   source_path: z.string().describe("SOP path to export (e.g. '/project1/geo1/circle1')."),
   output_path: z
     .string()
     .optional()
     .describe("Absolute filesystem path to write the SVG to. Omit to only return it inline."),
-  stroke_color: z
-    .string()
+  stroke_color: cssColorSchema
     .default("#000000")
-    .describe("CSS color for polyline strokes (default black)."),
+    .describe(
+      "CSS color for polyline strokes (default black). Accepts hex, rgb()/rgba()/hsl()/hsla(), or a named colour; anything that could break out of an SVG attribute is rejected.",
+    ),
   stroke_width: z.coerce.number().positive().default(1).describe("Stroke width in SVG units."),
-  fill_color: z
-    .string()
+  fill_color: cssColorSchema
     .default("none")
-    .describe("CSS color for fills (default 'none' — outlines only, plotter-style)."),
+    .describe(
+      "CSS color for fills (default 'none' — outlines only, plotter-style). Same allowlist as stroke_color.",
+    ),
   scale: z.coerce
     .number()
     .positive()
@@ -97,6 +112,19 @@ except Exception:
 print(json.dumps(report))
 `;
 
+// Escape a string for safe interpolation into a double-quoted XML/SVG attribute
+// value. Defence-in-depth alongside the schema allowlist — even if the regex
+// ever broadens, attribute breakouts (`"`, `<`, `>`, `&`, `'`) get neutralised
+// here before they reach the SVG document.
+function escapeXmlAttr(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function buildSvg(report: SopExportReport, args: ExportSopToSvgArgs): string {
   const polys = report.polylines ?? [];
   // Compute bounds in projected x/y, applying scale + optional flip_y.
@@ -126,10 +154,12 @@ function buildSvg(report: SopExportReport, args: ExportSopToSvgArgs): string {
   const h = Math.max(1, maxY - minY) + pad * 2;
   const tx = -minX + pad;
   const ty = -minY + pad;
+  const fillAttr = escapeXmlAttr(args.fill_color);
+  const strokeAttr = escapeXmlAttr(args.stroke_color);
   const lines = projected
     .map((poly) => {
       const points = poly.map((p) => `${(p[0] ?? 0) + tx},${(p[1] ?? 0) + ty}`).join(" ");
-      return `  <polyline points="${points}" fill="${args.fill_color}" stroke="${args.stroke_color}" stroke-width="${args.stroke_width}" />`;
+      return `  <polyline points="${points}" fill="${fillAttr}" stroke="${strokeAttr}" stroke-width="${args.stroke_width}" />`;
     })
     .join("\n");
   return `<?xml version="1.0" encoding="UTF-8"?>

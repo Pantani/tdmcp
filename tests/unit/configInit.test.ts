@@ -36,6 +36,9 @@ describe("renderStarterConfig", () => {
       "TDMCP_LLM_API_KEY",
       "TDMCP_CHAT_PORT",
       "TDMCP_VAULT_PATH",
+      // Config-resolution vars consumed by loadConfig (src/utils/config.ts):
+      "TDMCP_CONFIG_FILE",
+      "TDMCP_PROFILE",
     ];
     for (const key of required) {
       expect(body).toContain(key);

@@ -3,6 +3,14 @@ import type { ControlSpec } from "../layer2/createControlPanel.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { createSystemContainer, finalize, runBuild } from "./orchestration.js";
 
+// NOTE: we deliberately expose lift/gamma/gain as three separate float controls
+// per channel (LiftR/LiftG/LiftB, …) instead of a single `rgb` swatch. The shared
+// control-panel builder ignores `bind_to` on `rgb`-typed controls (see
+// createControlPanel.ts — "bind_to ignored for '%s' (a %s control cannot drive a
+// single parameter)"), so an RGB swatch would be display-only and changing it
+// would not move the underlying Level TOP's R/G/B multipliers. Three floats per
+// channel are individually bindable and drive the grade live.
+
 // A 0..1 RGB triple, used for each colour-wheel tint. We model lift/gamma/gain
 // (shadows / midtones / highlights) as three separately-tinted Level TOPs run
 // in series: each stage shifts its target tonal range toward the chosen colour
@@ -52,7 +60,7 @@ export const createColorWheelsSchema = z.object({
     .boolean()
     .default(true)
     .describe(
-      "When true (default), expose live LiftRGB / GammaRGB / GainRGB swatches plus Offset and Saturation knobs.",
+      "When true (default), expose live per-channel float knobs LiftR/G/B, GammaR/G/B, GainR/G/B (0..2, 1 = neutral) plus Offset and Saturation. Three floats per wheel — instead of a single RGB swatch — because the shared control-panel builder cannot bind an `rgb` control to a parameter, so the swatch would be display-only.",
     ),
   base_name: z
     .string()
@@ -67,16 +75,29 @@ export const createColorWheelsSchema = z.object({
 });
 export type CreateColorWheelsArgs = z.infer<typeof createColorWheelsSchema>;
 
-// Helper: format a 0..1 RGB triple as a "#rrggbb" hex string for the control
-// panel's rgb swatch (the BaseColor convention used elsewhere in Layer 1).
-const toHex = (rgb: readonly [number, number, number]): string =>
-  `#${rgb
-    .map((c) =>
-      Math.round(Math.max(0, Math.min(1, c)) * 255)
-        .toString(16)
-        .padStart(2, "0"),
-    )
-    .join("")}`;
+// Helper: build three bindable float controls (R/G/B channel multipliers) for a
+// given wheel stage. Each control drives one of the Level TOP's redmult1 /
+// greenmult1 / bluemult1 params, in 0..2 (1 = neutral). Replaces the previous
+// single `rgb` swatch, which was display-only (bind_to ignored on rgb controls).
+const wheelChannelControls = (
+  prefix: string,
+  rgb: readonly [number, number, number],
+  nodePath: string,
+): ControlSpec[] => {
+  const channels: Array<["R" | "G" | "B", number, "redmult1" | "greenmult1" | "bluemult1"]> = [
+    ["R", rgb[0], "redmult1"],
+    ["G", rgb[1], "greenmult1"],
+    ["B", rgb[2], "bluemult1"],
+  ];
+  return channels.map(([letter, value, par]) => ({
+    name: `${prefix}${letter}`,
+    type: "float" as const,
+    min: 0,
+    max: 2,
+    default: value,
+    bind_to: [`${nodePath}.${par}`],
+  }));
+};
 
 export async function createColorWheelsImpl(ctx: ToolContext, args: CreateColorWheelsArgs) {
   return runBuild(async () => {
@@ -142,9 +163,9 @@ export async function createColorWheelsImpl(ctx: ToolContext, args: CreateColorW
 
     const controls: ControlSpec[] = args.expose_controls
       ? [
-          { name: "LiftRGB", type: "rgb", default: toHex([lr / 2, lg / 2, lb / 2]) },
-          { name: "GammaRGB", type: "rgb", default: toHex([gr / 2, gg / 2, gb / 2]) },
-          { name: "GainRGB", type: "rgb", default: toHex([hr / 2, hg / 2, hb / 2]) },
+          ...wheelChannelControls("Lift", [lr, lg, lb], lift),
+          ...wheelChannelControls("Gamma", [gr, gg, gb], gammaW),
+          ...wheelChannelControls("Gain", [hr, hg, hb], gain),
           {
             name: "Offset",
             type: "float",
@@ -185,7 +206,19 @@ export async function createColorWheelsImpl(ctx: ToolContext, args: CreateColorW
         hsv_path: hsv,
         output_path: out,
         exposed_params: args.expose_controls
-          ? ["LiftRGB", "GammaRGB", "GainRGB", "Offset", "Saturation"]
+          ? [
+              "LiftR",
+              "LiftG",
+              "LiftB",
+              "GammaR",
+              "GammaG",
+              "GammaB",
+              "GainR",
+              "GainG",
+              "GainB",
+              "Offset",
+              "Saturation",
+            ]
           : [],
       },
     });
@@ -198,7 +231,7 @@ export const registerCreateColorWheels: ToolRegistrar = (server, ctx) => {
     {
       title: "Create colour wheels (lift/gamma/gain)",
       description:
-        "Classic colour-grading wheels — three tinted Level TOPs run in series for shadows (lift, gamma-biased), midtones (gamma) and highlights (gain, brightness-biased), then a master Level TOP for global offset (blacklevel), then an HSV Adjust TOP for saturation. Each wheel is an [r,g,b] multiplier in 0..2 (1,1,1 = neutral). Builds a new baseCOMP under `parent_path` holding the chain; with `source_path` the upstream TOP is pulled in via a Select TOP, without one a Ramp TOP test gradient is graded so the chain previews standalone. Exposes LiftRGB / GammaRGB / GainRGB swatches plus Offset and Saturation knobs. Output is a Null TOP. Use create_color_grade for a simpler single-Level + HSV chain, or apply_post_processing to chain several distinct effects.",
+        "Classic colour-grading wheels — three tinted Level TOPs run in series for shadows (lift, gamma-biased), midtones (gamma) and highlights (gain, brightness-biased), then a master Level TOP for global offset (blacklevel), then an HSV Adjust TOP for saturation. Each wheel is an [r,g,b] multiplier in 0..2 (1,1,1 = neutral). Builds a new baseCOMP under `parent_path` holding the chain; with `source_path` the upstream TOP is pulled in via a Select TOP, without one a Ramp TOP test gradient is graded so the chain previews standalone. Exposes per-channel LiftR/G/B, GammaR/G/B, GainR/G/B float knobs plus Offset and Saturation (live-bound to the underlying Level/HSV pars). Output is a Null TOP. Use create_color_grade for a simpler single-Level + HSV chain, or apply_post_processing to chain several distinct effects.",
       inputSchema: createColorWheelsSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

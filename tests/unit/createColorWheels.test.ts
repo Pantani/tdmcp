@@ -111,7 +111,7 @@ describe("create_color_wheels", () => {
     expect(bodies.some((b) => b.type === "rampTOP")).toBe(false);
   });
 
-  it("exposes 5 controls with the right bindings when expose_controls is true", async () => {
+  it("exposes 11 bindable float controls (3 per wheel + offset + saturation) when expose_controls is true", async () => {
     const scripts: string[] = [];
     server.use(
       http.post(`${TD_BASE}/api/exec`, async ({ request }) => {
@@ -119,19 +119,61 @@ describe("create_color_wheels", () => {
         return HttpResponse.json({ ok: true, data: { result: null, stdout: "" } });
       }),
     );
-    await createColorWheelsImpl(makeCtx(), { ...DEFAULTS, expose_controls: true });
+    await createColorWheelsImpl(makeCtx(), {
+      ...DEFAULTS,
+      lift: [1.2, 1, 0.9],
+      gamma: [1, 0.8, 1],
+      gain: [1, 1.1, 1.4],
+      expose_controls: true,
+    });
     const panel = scripts.find((s) => s.includes("appendCustomPage"));
     expect(panel).toBeDefined();
     const b64 = /b64decode\("([^"]+)"\)/.exec(panel ?? "")?.[1];
     if (b64 === undefined) throw new Error("panel script did not embed a base64 payload");
     const payload = JSON.parse(Buffer.from(b64, "base64").toString("utf8")) as {
-      controls: Array<{ name: string; bind_to?: string[]; type: string }>;
+      controls: Array<{
+        name: string;
+        bind_to?: string[];
+        type: string;
+        default?: unknown;
+      }>;
     };
     const by = (name: string) => payload.controls.find((c) => c.name === name);
-    expect(by("LiftRGB")?.type).toBe("rgb");
-    expect(by("GammaRGB")?.type).toBe("rgb");
-    expect(by("GainRGB")?.type).toBe("rgb");
+
+    // Three floats per wheel, each individually bound to the matching Level TOP
+    // R/G/B multiplier — `rgb` swatches would be ignored by createControlPanel.
+    for (const name of [
+      "LiftR",
+      "LiftG",
+      "LiftB",
+      "GammaR",
+      "GammaG",
+      "GammaB",
+      "GainR",
+      "GainG",
+      "GainB",
+    ]) {
+      const c = by(name);
+      expect(c, `missing control ${name}`).toBeDefined();
+      expect(c?.type).toBe("float");
+      expect(c?.bind_to?.[0]).toBeDefined();
+    }
+    expect(by("LiftR")?.bind_to?.[0]).toMatch(/lift_wheel\.redmult1$/);
+    expect(by("LiftG")?.bind_to?.[0]).toMatch(/lift_wheel\.greenmult1$/);
+    expect(by("LiftB")?.bind_to?.[0]).toMatch(/lift_wheel\.bluemult1$/);
+    expect(by("GammaR")?.bind_to?.[0]).toMatch(/gamma_wheel\.redmult1$/);
+    expect(by("GammaG")?.bind_to?.[0]).toMatch(/gamma_wheel\.greenmult1$/);
+    expect(by("GammaB")?.bind_to?.[0]).toMatch(/gamma_wheel\.bluemult1$/);
+    expect(by("GainR")?.bind_to?.[0]).toMatch(/gain_wheel\.redmult1$/);
+    expect(by("GainG")?.bind_to?.[0]).toMatch(/gain_wheel\.greenmult1$/);
+    expect(by("GainB")?.bind_to?.[0]).toMatch(/gain_wheel\.bluemult1$/);
+    // Per-channel defaults should match the user-supplied RGB triples.
+    expect(by("LiftR")?.default).toBe(1.2);
+    expect(by("GammaG")?.default).toBe(0.8);
+    expect(by("GainB")?.default).toBe(1.4);
+
     expect(by("Offset")?.bind_to?.[0]).toMatch(/master_level\.blacklevel$/);
     expect(by("Saturation")?.bind_to?.[0]).toMatch(/saturation\.saturationmult$/);
+    expect(payload.controls).toHaveLength(11);
   });
 });
