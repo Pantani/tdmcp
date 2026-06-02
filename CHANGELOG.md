@@ -8,6 +8,19 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **First-party recipe `feedback_network_basic`** (6 nodes, 6 connections, 2
+  exposed controls) — minimal recursive feedback pattern (noise seed →
+  `compositeTOP` operand=maximum + `feedbackTOP` → `blurTOP` → `levelTOP`
+  brightness1 decay → `nullTOP`), the standalone showcase of
+  `create_feedback_network`. Offline-validated against `RecipeSchema` via
+  `npm run validate:recipes`; live cook-check pending.
+- **First-party recipe `glsl_shader_basic`** (2 nodes, 1 connection, 4 GLSL
+  uniforms exposed as controls) — single `glslTOP` with inline plasma fragment
+  shader mixing layered sines across a two-color gradient (`uTime`, `uScale`,
+  `uColorA`, `uColorB`), the showcase of `create_glsl_shader`. `uTime` needs a
+  one-line manual binding to `absTime.seconds * speed` after import (schema
+  parameters take constants only). Offline-validated against `RecipeSchema`;
+  live cook-check pending.
 - **First-party recipe `kinetic_text_audio_reactive`** (7 nodes, 5
   connections) wiring `text` → `transform` → `level` → `out` alongside an
   audio band-split chain (`audioin` → `bass` → `analyze1`). Recipe delivers

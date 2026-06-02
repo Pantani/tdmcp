@@ -381,6 +381,7 @@ class StructuredEndpointTests(unittest.TestCase):
             "api": ac.api_service,
             "transport": ac.transport_service,
             "system": ac.system_service,
+            "project_analysis": ac.project_analysis_service,
         }
         ac.connect_service = mock.MagicMock(name="connect_service")
         ac.log_service = mock.MagicMock(name="log_service")
@@ -396,6 +397,7 @@ class StructuredEndpointTests(unittest.TestCase):
         ac.api_service = self._saved["api"]
         ac.transport_service = self._saved["transport"]
         ac.system_service = self._saved["system"]
+        ac.project_analysis_service = self._saved["project_analysis"]
         _clear_exec_env()
 
     def test_connect_dispatches_with_exec_disabled(self):
@@ -431,6 +433,22 @@ class StructuredEndpointTests(unittest.TestCase):
         with self.assertRaises(ValueError) as cm:
             ac._route("POST", "/api/transport", {}, {})
         self.assertIn("action", str(cm.exception))
+
+    def test_project_analysis_dispatches_with_exec_disabled(self):
+        ac.project_analysis_service = mock.MagicMock(name="project_analysis_service")
+        ac._route("GET", "/api/projects/project1/sys/analysis", {}, {})
+        ac.project_analysis_service.analyze.assert_called_once_with(
+            "/project1/sys", recursive=True
+        )
+
+    def test_project_analysis_recursive_false_query(self):
+        ac.project_analysis_service = mock.MagicMock(name="project_analysis_service")
+        ac._route(
+            "GET", "/api/projects/project1/analysis", {"recursive": ["false"]}, {}
+        )
+        ac.project_analysis_service.analyze.assert_called_once_with(
+            "/project1", recursive=False
+        )
 
     def test_system_dispatches_with_exec_disabled(self):
         ac._route("GET", "/api/system", {}, {})

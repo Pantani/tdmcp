@@ -21,6 +21,7 @@ from mcp.services import (
     log_service,
     param_text_service,
     preview_service,
+    project_analysis_service,
     system_service,
     transport_service,
 )
@@ -294,6 +295,19 @@ def _route(method, path, query, body, webserver=None):
             _qs(query, "scope") or None,
             **log_kwargs,
         )
+
+    if (
+        rest[0] == "projects"
+        and len(rest) >= 3
+        and rest[-1] == "analysis"
+        and method == "GET"
+    ):
+        # /api/projects/<path…>/analysis — diagnostic scan, survives ALLOW_EXEC=0.
+        # ``recursive`` is an optional query flag (default true) to match the
+        # legacy exec script's default.
+        recursive_raw = _qs(query, "recursive")
+        recursive = True if recursive_raw is None else (recursive_raw == "true")
+        return project_analysis_service.analyze(_node_path(rest[1:-1]), recursive=recursive)
 
     if rest[0] == "nodes" and len(rest) >= 2:
         if rest[-1] == "method" and method == "POST":

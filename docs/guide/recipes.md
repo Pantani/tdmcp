@@ -37,6 +37,8 @@ language like any other visual.
 | **3D Scene Basic** | Foundational `create_3d_scene` template: geometry + camera + light + render pipeline — the starting point for 3D visuals. | Intermediate |
 | **Video Synth Oscillator** | Procedural Lissajous oscillator color synth from `create_video_synth` — analog video-synth look with live Speed / Freq / Color controls. | Beginner |
 | **Kinetic Text (Standalone)** | Text-only showcase of `create_kinetic_text` styles (Transform + Level + LFO) without any audio binding — pure typography pulse. | Beginner |
+| **Feedback Network Basic** | Minimal feedback TOP + level + composite pattern, the classic recursive look from `create_feedback_network`. | Beginner |
+| **GLSL Shader Basic** | Single GLSL TOP with inline shader showcasing `create_glsl_shader` with exposed uniform controls. | Intermediate |
 
 ::: tip Browse them live
 Ask *"list the available recipes"* and the AI will read them straight from the

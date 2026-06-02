@@ -1,0 +1,66 @@
+{
+  "id": "glsl_shader_basic",
+  "name": "GLSL Shader Basic",
+  "description": "Minimal showcase of `create_glsl_shader`: a single GLSL TOP runs an inline plasma fragment shader with uniforms (uTime float, uScale float, uColorA / uColorB colors) exposed via the Vectors/Colors sequences and surfaced as live controls. The shader mixes layered sines into a plasma field and remaps it across a two-color gradient. A nullTOP terminates the chain. After import, bind uTime's value to `absTime.seconds * <speed>` to animate (manual-wire — RecipeSchema parameters take constants only). Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "tags": ["glsl", "shader", "generative", "plasma", "showcase", "basic"],
+  "difficulty": "intermediate",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "glsl1",
+      "type": "glslTOP",
+      "parameters": {
+        "outputresolution": "custom",
+        "resolutionw": 1280,
+        "resolutionh": 720
+      },
+      "comment": "Inline plasma shader; uniforms wired through Vectors/Colors sequences via glsl_uniforms."
+    },
+    {
+      "name": "out1",
+      "type": "nullTOP",
+      "comment": "Final output TOP."
+    }
+  ],
+  "connections": [{ "from": "glsl1", "to": "out1" }],
+  "glsl_code": {
+    "glsl1": "out vec4 fragColor;\nuniform float uTime;\nuniform float uScale;\nuniform vec3 uColorA;\nuniform vec3 uColorB;\nvoid main(){\n  vec2 uv = (vUV.st - 0.5) * 2.0 * max(uScale, 0.0001);\n  float v = sin(uv.x * 6.0 + uTime)\n          + sin(uv.y * 6.0 + uTime * 1.3)\n          + sin((uv.x + uv.y) * 4.0 + uTime * 0.7)\n          + sin(length(uv) * 8.0 - uTime * 1.7);\n  float t = 0.5 + 0.25 * v;\n  vec3 col = mix(uColorA, uColorB, clamp(t, 0.0, 1.0));\n  fragColor = TDOutputSwizzle(vec4(col, 1.0));\n}\n"
+  },
+  "glsl_uniforms": [
+    {
+      "node": "glsl1",
+      "name": "uTime",
+      "kind": "float",
+      "value": 0,
+      "label": "Time",
+      "description": "Animation phase. After import, set this uniform's value expression to `absTime.seconds * <speed>` so the plasma flows (manual-wire — RecipeSchema parameters take constants only)."
+    },
+    {
+      "node": "glsl1",
+      "name": "uScale",
+      "kind": "float",
+      "value": 1.0,
+      "min": 0.1,
+      "max": 4.0,
+      "label": "Scale",
+      "description": "Spatial zoom of the plasma field."
+    },
+    {
+      "node": "glsl1",
+      "name": "uColorA",
+      "kind": "color",
+      "value": [0.05, 0.1, 0.4, 1.0],
+      "label": "Color A",
+      "description": "Low end of the two-color gradient."
+    },
+    {
+      "node": "glsl1",
+      "name": "uColorB",
+      "kind": "color",
+      "value": [1.0, 0.4, 0.7, 1.0],
+      "label": "Color B",
+      "description": "High end of the two-color gradient."
+    }
+  ],
+  "preview_description": "A slow, flowing plasma field of interfering sine waves remapped across a deep-blue to hot-pink gradient — a clean GLSL showcase that immediately feels generative."
+}

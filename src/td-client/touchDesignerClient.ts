@@ -22,9 +22,11 @@ import {
   ParamModesSchema,
   PerformanceSchema,
   PreviewSchema,
+  ProjectAnalysisSchema,
   SetParamModeResultSchema,
   SystemInfoSchema,
   type TdBatchOperation,
+  type TdProjectAnalysis,
   type TdSystemInfo,
   TopologySchema,
   TransportStateSchema,
@@ -363,6 +365,17 @@ export class TouchDesignerClient {
     return this.request("GET", "/api/system", SystemInfoSchema, undefined, {
       include: include?.length ? include.join(",") : undefined,
     });
+  }
+
+  // --- Project diagnostic scan (survives ALLOW_EXEC=0) ---
+  analyzeProject(path: string, recursive = true): Promise<TdProjectAnalysis> {
+    return this.request(
+      "GET",
+      `/api/projects/${segment(path)}/analysis`,
+      ProjectAnalysisSchema,
+      undefined,
+      { recursive: recursive ? "true" : "false" },
+    );
   }
 
   // --- Structured bridge logs (Error DAT reader) ---

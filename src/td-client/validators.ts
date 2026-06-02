@@ -298,3 +298,48 @@ export const SystemInfoSchema = z.object({
     .optional(),
 });
 export type TdSystemInfo = z.infer<typeof SystemInfoSchema>;
+
+// --- Project analysis (GET /api/projects/<path>/analysis) ---
+// Diagnostic walk for analyze_project. Survives ALLOW_EXEC=0. Mirrors the legacy
+// exec-stdout shape so the tool can keep its one result handler. Every list is
+// optional + defaultable for forward-compat with older/newer bridges.
+export const ProjectAnalysisSchema = z.object({
+  path: z.string().optional(),
+  recursive: z.boolean().optional(),
+  counts: z
+    .object({
+      nodes: z.number().int().optional(),
+      by_family: z.record(z.string(), z.number()).optional(),
+    })
+    .optional(),
+  unused: z
+    .array(
+      z.object({
+        path: z.string(),
+        type: z.string(),
+        reason: z.string(),
+      }),
+    )
+    .optional(),
+  broken_file_deps: z
+    .array(
+      z.object({
+        path: z.string(),
+        par: z.string(),
+        file: z.string(),
+      }),
+    )
+    .optional(),
+  orphan_comps: z
+    .array(
+      z.object({
+        path: z.string(),
+        reason: z.string(),
+      }),
+    )
+    .optional(),
+  dependency_map: z.record(z.string(), z.array(z.string())).optional(),
+  warnings: z.array(z.string()).optional(),
+  fatal: z.string().optional(),
+});
+export type TdProjectAnalysis = z.infer<typeof ProjectAnalysisSchema>;

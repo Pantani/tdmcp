@@ -1,0 +1,80 @@
+{
+  "id": "feedback_network_basic",
+  "name": "Feedback Network Basic",
+  "description": "The minimal recursive feedback pattern that `create_feedback_network` is built around: a noise seed flows into a Composite TOP (operand 'maximum' so it stays bounded under feedback gain), a Feedback TOP samples the loop output (a Level TOP whose brightness1 acts as the decay multiplier) and re-injects it next frame; a Blur TOP softens the loop so trails smear instead of aliasing. Standalone — no audio, no transform spin — so the classic recursive look is isolated. Live controls expose decay and blur for performance. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "tags": ["feedback", "generative", "basic", "loop", "showcase"],
+  "difficulty": "beginner",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "seed",
+      "type": "noiseTOP",
+      "parameters": { "period": 4, "mono": 1 },
+      "comment": "Grayscale noise seed that feeds the loop each frame (param is 'mono', not 'monochrome')."
+    },
+    {
+      "name": "feedback1",
+      "type": "feedbackTOP",
+      "comment": "Holds the previous output frame; target is wired to 'gain' via the feedback_target parameter."
+    },
+    {
+      "name": "comp1",
+      "type": "compositeTOP",
+      "parameters": { "operand": "maximum" },
+      "comment": "Combines seed (input 0) with fed-back frame (input 1). 'maximum' stays bounded under feedback gain (default multiply collapses to black)."
+    },
+    {
+      "name": "blur1",
+      "type": "blurTOP",
+      "parameters": { "size": 2 },
+      "comment": "Soft blur inside the loop so trails smear smoothly."
+    },
+    {
+      "name": "gain",
+      "type": "levelTOP",
+      "parameters": { "brightness1": 0.95 },
+      "comment": "Decay multiplier (brightness1) — the one knob a feedback system lives by. levelTOP has no 'gain' parameter."
+    },
+    {
+      "name": "out1",
+      "type": "nullTOP",
+      "comment": "Final output of the system."
+    }
+  ],
+  "connections": [
+    { "from": "seed", "to": "feedback1" },
+    { "from": "seed", "to": "comp1", "to_input": 0 },
+    { "from": "feedback1", "to": "comp1", "to_input": 1 },
+    { "from": "comp1", "to": "blur1" },
+    { "from": "blur1", "to": "gain" },
+    { "from": "gain", "to": "out1" }
+  ],
+  "parameters": [
+    {
+      "name": "feedback_target",
+      "node": "feedback1",
+      "param": "top",
+      "value": "gain",
+      "description": "feedbackTOP samples the loop output (gain). Value resolves to the created node path at build time."
+    }
+  ],
+  "controls": [
+    {
+      "name": "Feedback",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 0.95,
+      "bind_to": ["gain.brightness1"]
+    },
+    {
+      "name": "Blur",
+      "type": "float",
+      "min": 0,
+      "max": 8,
+      "default": 2,
+      "bind_to": ["blur1.size"]
+    }
+  ],
+  "preview_description": "A field of grayscale noise that smears into itself frame by frame, building soft, evolving cloud-like trails — the classic recursive feedback look in its simplest form."
+}
