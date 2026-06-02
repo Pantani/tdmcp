@@ -156,7 +156,7 @@ describe("exportLookToxImpl", () => {
     });
     expect(result.isError).toBeFalsy();
     const note = vault.readNote("Looks/mylook.md");
-    expect(Object.prototype.hasOwnProperty.call(note.data, "license")).toBe(false);
-    expect(Object.prototype.hasOwnProperty.call(note.data, "license_tier")).toBe(false);
+    expect(Object.hasOwn(note.data, "license")).toBe(false);
+    expect(Object.hasOwn(note.data, "license_tier")).toBe(false);
   });
 });
