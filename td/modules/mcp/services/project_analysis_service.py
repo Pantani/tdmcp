@@ -163,7 +163,20 @@ def analyze(path, recursive=True):
                         val = pr.eval()
                         if isinstance(val, str) and val.strip():
                             expanded = os.path.expandvars(os.path.expanduser(val.strip()))
-                            if not os.path.exists(expanded):
+                            candidate = expanded
+                            if not os.path.isabs(candidate):
+                                project_dir = ""
+                                try:
+                                    project_dir = (
+                                        getattr(getattr(td, "project", None), "folder", "") or ""
+                                    )
+                                except Exception:  # noqa: BLE001
+                                    project_dir = ""
+                                if project_dir:
+                                    candidate = os.path.normpath(
+                                        os.path.join(project_dir, candidate)
+                                    )
+                            if not os.path.exists(candidate):
                                 report["broken_file_deps"].append(
                                     {"path": c.path, "par": pr.name, "file": val.strip()}
                                 )

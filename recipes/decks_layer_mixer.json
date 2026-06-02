@@ -1,8 +1,8 @@
 {
   "id": "decks_layer_mixer",
   "name": "Decks + Layer Mixer (VJ A/B)",
-  "description": "Simple VJ-style two-deck setup: two source decks (A/B) each with their own gain, crossfaded through a compositeTOP layer mixer to a single out. Mirrors what create_decks (N-channel, v0.8.1) + create_layer_mixer build at the tool level. Offline-validated against RecipeSchema; live cook-check UNVERIFIED pending TD run.",
-  "tags": ["vj", "decks", "mixer", "crossfader", "performable", "controls"],
+  "description": "Simple VJ-style two-deck setup: two source decks (A/B) each with their own independent gain, combined through a compositeTOP layer mixer (additive two-gain blend, not a true crossfader — both decks sum and each gain is set independently). Mirrors what create_decks (N-channel, v0.8.1) + create_layer_mixer build at the tool level. Offline-validated against RecipeSchema; live cook-check UNVERIFIED pending TD run.",
+  "tags": ["vj", "decks", "mixer", "additive-blend", "performable", "controls"],
   "difficulty": "beginner",
   "td_version_min": "2022",
   "nodes": [
@@ -34,7 +34,7 @@
       "name": "mixer",
       "type": "compositeTOP",
       "parameters": { "operand": "add" },
-      "comment": "Layer mixer combining the two decks (additive blend; per-deck gain acts as crossfader when driven inversely)."
+      "comment": "Layer mixer combining the two decks via additive blend. Each deck's gain is independent — drive them inversely by hand if you want crossfader-like behavior."
     },
     { "name": "out1", "type": "nullTOP", "comment": "Final output of the deck mixer." }
   ],
@@ -64,5 +64,5 @@
       "bind_to": ["deckB_gain.brightness1"]
     }
   ],
-  "preview_description": "Two source decks (noise + radial ramp) summed through a compositeTOP mixer, with per-deck gain knobs to crossfade between them."
+  "preview_description": "Two source decks (noise + radial ramp) summed through a compositeTOP mixer in additive blend, with two independent per-deck gain knobs."
 }

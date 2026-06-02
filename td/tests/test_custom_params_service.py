@@ -41,6 +41,7 @@ class _FakePar:
         normMin=0.0,
         normMax=1.0,
         menuNames=None,
+        menuLabels=None,
         eval_raises=False,
         default_raises=False,
     ):
@@ -53,6 +54,7 @@ class _FakePar:
         self.normMin = normMin
         self.normMax = normMax
         self.menuNames = menuNames
+        self.menuLabels = menuLabels
         self._eval_raises = eval_raises
         self._default_raises = default_raises
 
@@ -166,6 +168,29 @@ class TestCustomParamsService(unittest.TestCase):
         self.assertEqual(len(out["params"]), 1)
         self.assertIsNone(out["params"][0]["default"])
         self.assertTrue(any("default of X" in w for w in out["warnings"]))
+
+    def test_menu_prefers_labels_over_names(self):
+        node = _FakeNode(
+            customPars=[
+                _FakePar(
+                    "Mode",
+                    style="Menu",
+                    menuNames=["a", "b", "c"],
+                    menuLabels=["Alpha", "Beta", "Gamma"],
+                )
+            ]
+        )
+        with _TdPatch({"/c": node}):
+            out = svc.get_custom_params("/c")
+        self.assertEqual(out["params"][0]["options"], ["Alpha", "Beta", "Gamma"])
+
+    def test_menu_falls_back_to_names_when_labels_absent(self):
+        node = _FakeNode(
+            customPars=[_FakePar("Mode", style="Menu", menuNames=["a", "b"], menuLabels=None)]
+        )
+        with _TdPatch({"/c": node}):
+            out = svc.get_custom_params("/c")
+        self.assertEqual(out["params"][0]["options"], ["a", "b"])
 
     def test_menu_without_menuNames(self):
         node = _FakeNode(customPars=[_FakePar("Mode", style="Menu", menuNames=None)])

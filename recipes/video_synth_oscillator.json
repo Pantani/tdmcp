@@ -1,7 +1,7 @@
 {
   "id": "video_synth_oscillator",
   "name": "Video Synth Oscillator",
-  "description": "An analog video-synth Lissajous oscillator pattern: two sine oscillators trace an X/Y curve in a GLSL TOP, drawn as a glowing line via per-pixel distance falloff and tinted by a uColor uniform. Mirrors what `create_video_synth` builds in lissajous mode (oscillator/interference flavour — distinct from create_shader_lib's tunnel/raymarch). Uniforms `uTime`, `uScale`, `uFreqX`, `uFreqY` (vectors page) and `uColor` (colors page) are declared via glsl_uniforms; bind uTime to absTime.seconds via the exposed Speed control manually after import for animation (RecipeSchema parameters take constants only, no expressions). Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "description": "An analog video-synth Lissajous oscillator pattern: two sine oscillators trace an X/Y curve in a GLSL TOP, drawn as a glowing line via per-pixel distance falloff and tinted by a uColor uniform. Mirrors what `create_video_synth` builds in lissajous mode (oscillator/interference flavour — distinct from create_shader_lib's tunnel/raymarch). Uniforms `uTime`, `uScale`, `uFreqX`, `uFreqY` (vectors page) and `uColor` (colors page) are declared via glsl_uniforms. Manual-wire after import: set glsl_uniforms.uTime's value expression to `absTime.seconds` (or `absTime.seconds * <rate>`) to animate the pattern — RecipeSchema parameters take constants only, so the time binding can't be encoded here. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
   "tags": ["generative", "glsl", "video-synth", "oscillator", "lissajous", "vj"],
   "difficulty": "beginner",
   "td_version_min": "2022",
@@ -33,7 +33,7 @@
       "kind": "float",
       "value": 0,
       "label": "Time",
-      "description": "Animation phase. After import, set this uniform's value expression to `absTime.seconds * <speed>` to make the pattern move (manual-wire — schema takes constants only)."
+      "description": "Animation phase. After import, set this uniform's value expression directly to `absTime.seconds` (or `absTime.seconds * <rate>`) to make the pattern move (manual-wire — schema takes constants only)."
     },
     {
       "node": "glsl1",

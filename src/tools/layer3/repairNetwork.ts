@@ -266,7 +266,10 @@ def _apply_enable_op(_o):
 
 
 def _rollback_snapshot():
-    """Revert each captured mutation in reverse order. Best-effort, never raises."""
+    """Revert each captured mutation in reverse order. Returns True when every
+    entry restored cleanly; False if any single revert raised (so the caller can
+    avoid claiming a successful rollback / falsely marking steps as reverted)."""
+    _ok = True
     for _entry in reversed(_snapshot):
         try:
             _k = _entry.get("kind")
@@ -277,7 +280,9 @@ def _rollback_snapshot():
             elif _k == "op_display":
                 _entry["op"].display = _entry["display"]
         except Exception as _e:
+            _ok = False
             report["warnings"].append("rollback failed for " + str(_entry.get("kind")) + ": " + str(_e))
+    return _ok
 
 
 try:
@@ -325,11 +330,15 @@ try:
             and report["errors_after"] >= report["errors_before"]
             and _snapshot
         ):
-            _rollback_snapshot()
-            report["rolled_back"] = True
-            for _step in report["steps"]:
-                if _step.get("applied"):
-                    _step["reverted"] = True
+            _ok = _rollback_snapshot()
+            if _ok:
+                report["rolled_back"] = True
+                for _step in report["steps"]:
+                    if _step.get("applied"):
+                        _step["reverted"] = True
+            else:
+                # Partial rollback failure — do not claim a clean revert.
+                report["rolled_back"] = False
             # Re-read errors after rollback so the report reflects the restored state.
             _after = _collect_errors(_root)
             report["errors_after"] = len(_after)
@@ -385,7 +394,7 @@ export const registerRepairNetwork: ToolRegistrar = (server, ctx) => {
     {
       title: "Repair network (bounded)",
       description:
-        "Bounded, autonomous repair: scan cook errors under a subtree, classify each, and plan a safe fix, capped at max_steps so it can never run away. Defaults to dry_run (PLAN only, no changes). Set dry_run:false to apply the known-safe fixes — resetting a broken parameter expression to constant mode, and re-enabling a bypassed/display-off op — within the same bound; risky cases (DAT syntax errors, missing inputs, unclassified errors) are always PLAN-only. Re-checks errors after applying and stops at the bound or when errors clear. Returns {parent_path, dry_run, max_steps, errors_before, errors_after, steps[], remaining[], warnings}. Use it as the diagnostic 'try the obvious safe fixes' loop after a build; for raw triage use summarize_td_errors / get_td_node_errors instead.",
+        "Bounded, autonomous repair: scan cook errors under a subtree, classify each, and plan a safe fix, capped at max_steps so it can never run away. Defaults to dry_run (PLAN only, no changes). Set dry_run:false to apply the known-safe fixes — resetting a broken parameter expression to constant mode, and re-enabling a bypassed/display-off op — within the same bound; risky cases (DAT syntax errors, missing inputs, unclassified errors) are always PLAN-only. Re-checks errors after applying and stops at the bound or when errors clear. Returns {parent_path, dry_run, max_steps, errors_before, errors_after, steps[], remaining[], warnings, rolled_back}. Use it as the diagnostic 'try the obvious safe fixes' loop after a build; for raw triage use summarize_td_errors / get_td_node_errors instead.",
       inputSchema: repairNetworkSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },

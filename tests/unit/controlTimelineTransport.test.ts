@@ -253,6 +253,27 @@ describe("controlTimelineTransportImpl", () => {
       expect(sc.frame).toBe(120);
     });
 
+    it("does NOT fall back to /api/exec when /api/transport returns 400 (bad request)", async () => {
+      let execCalled = false;
+      server.use(
+        http.post(`${TD_BASE}/api/transport`, () =>
+          HttpResponse.json({ ok: false, error: "bad request" }, { status: 400 }),
+        ),
+        http.post(`${TD_BASE}/api/exec`, () => {
+          execCalled = true;
+          return HttpResponse.json({
+            ok: true,
+            data: { result: null, stdout: makeStdout("play") },
+          });
+        }),
+      );
+
+      const result = await controlTimelineTransportImpl(makeCtx(), { action: "play" });
+
+      expect(execCalled).toBe(false);
+      expect(result.isError).toBe(true);
+    });
+
     it("falls back to /api/exec when /api/transport returns 404 (older bridge)", async () => {
       // tdMock's default 404 for /api/transport is already in place; just mock exec.
       let execCalled = false;

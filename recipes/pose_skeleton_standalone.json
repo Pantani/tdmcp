@@ -1,15 +1,15 @@
 {
   "id": "pose_skeleton_standalone",
   "name": "Pose Skeleton (Standalone)",
-  "description": "UNVERIFIED — A self-contained placeholder skeleton renderer with instanced joints and bones, ready to be driven by any custom pose source. Unlike pose_skeleton_mediapipe, this recipe does NOT depend on the torinmb MediaPipe plugin: it ships a built-in Table DAT with 8 static landmark positions (head, shoulders, hips, hands, feet) feeding a Script SOP that draws a stick-figure. Drop your own CHOP/DAT/OSC source into 'landmarks' to animate it. Foundation for custom pose pipelines (Kinect, Azure, OSC, file playback).",
-  "tags": ["pose", "skeleton", "standalone", "instancing", "placeholder"],
+  "description": "UNVERIFIED — A self-contained 9-point placeholder stick-figure renderer (no instancing — bones are drawn as Script SOP polylines via a lineMAT), ready to be driven by any custom pose source. Unlike pose_skeleton_mediapipe, this recipe does NOT depend on the torinmb MediaPipe plugin: it ships a built-in Table DAT with 9 static landmark positions (head, shoulders, hips, hands, feet) feeding a Script SOP that draws a stick-figure. Drop your own CHOP/DAT/OSC source into 'landmarks' to animate it. Foundation for custom pose pipelines (Kinect, Azure, OSC, file playback).",
+  "tags": ["pose", "skeleton", "standalone", "stick-figure", "placeholder"],
   "difficulty": "intermediate",
   "td_version_min": "2022",
   "nodes": [
     {
       "name": "landmarks",
       "type": "tableDAT",
-      "comment": "Placeholder static landmarks (8 joints): name,x,y,z — replace contents to animate"
+      "comment": "Placeholder static landmarks (9 joints: head, l/r shoulder, l/r hip, l/r hand, l/r foot): name,x,y,z — replace contents to animate"
     },
     { "name": "geo", "type": "geometryCOMP" },
     {
@@ -64,5 +64,5 @@
       "bind_to": ["wire.widthnear"]
     }
   ],
-  "preview_description": "UNVERIFIED — An orange stick-figure standing in place against black, ready to be animated by swapping the landmarks DAT for a live pose source."
+  "preview_description": "UNVERIFIED — An orange 9-point stick-figure (drawn as bone polylines, no instancing) standing in place against black, ready to be animated by swapping the landmarks DAT for a live pose source."
 }

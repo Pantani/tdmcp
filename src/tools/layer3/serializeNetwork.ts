@@ -360,9 +360,32 @@ export async function serializeNetworkImpl(ctx: ToolContext, args: SerializeNetw
         return report;
       }
       try {
-        for (const node of report.nodes) {
-          const path = childPath(report.root, node.name);
-          const rest = await ctx.client.getCustomParams(path);
+        // Fan out custom_params reads in parallel — sequential awaits added one
+        // round-trip per node (up to 200). allSettled keeps per-node failures
+        // from sinking the whole serialize: rejections become warnings.
+        const settled = await Promise.allSettled(
+          report.nodes.map((node) => ctx.client.getCustomParams(childPath(report.root, node.name))),
+        );
+        // If the endpoint is missing on this bridge, every call rejects with a
+        // missing-endpoint signal — fall back to the legacy in-script readout
+        // so the output shape stays identical to the pre-promotion behaviour.
+        for (const r of settled) {
+          if (r.status === "rejected" && isMissingEndpoint(r.reason)) {
+            return runSerializeExec(ctx, args, false);
+          }
+        }
+        for (let i = 0; i < report.nodes.length; i++) {
+          const node = report.nodes[i];
+          if (!node) continue;
+          const result = settled[i];
+          if (!result) continue;
+          if (result.status === "rejected") {
+            const reason =
+              result.reason instanceof Error ? result.reason.message : String(result.reason);
+            report.warnings.push(`custom_params(${node.name}): ${reason}`);
+            continue;
+          }
+          const rest = result.value;
           if (rest.warnings.length > 0) {
             for (const w of rest.warnings) {
               report.warnings.push(`custom_params(${node.name}): ${w}`);

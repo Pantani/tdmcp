@@ -41,7 +41,12 @@ export const inspectGpuAndDisplaysOutputSchema = z.object({
       z.object({ error: z.string() }),
     ])
     .optional(),
-  performMode: z.union([z.boolean(), z.object({ error: z.string() })]).optional(),
+  performMode: z
+    .union([z.boolean(), z.null(), z.object({ error: z.string() })])
+    .optional()
+    .describe(
+      "Perform-mode flag, or null when `td.project` is unavailable on the bridge (e.g. headless startup).",
+    ),
 });
 
 type GpuAndDisplaysReport = {
@@ -62,7 +67,7 @@ type GpuAndDisplaysReport = {
         top?: number | null;
       }>
     | { error: string };
-  performMode?: boolean | { error: string };
+  performMode?: boolean | null | { error: string };
 };
 
 const INSPECT_SCRIPT = `

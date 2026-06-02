@@ -48,8 +48,14 @@ def _safe(getter, default=None):
 
 
 def _read_options(par):
-    """Best-effort menu-options readout. Returns list[str] or None."""
+    """Best-effort menu-options readout. Returns list[str] or None.
+
+    Prefers ``menuLabels`` (human-readable) over ``menuNames`` (internal tokens).
+    """
     try:
+        labels = getattr(par, "menuLabels", None)
+        if labels:
+            return [str(label) for label in labels]
         names = getattr(par, "menuNames", None)
         if names:
             return [str(n) for n in names]

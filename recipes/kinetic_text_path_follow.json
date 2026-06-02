@@ -68,26 +68,6 @@
       "max": 4.0,
       "label": "Path Speed Y (Hz)",
       "description": "Angular speed of lfoy. Match path_speed for a true circle; offset for a Lissajous figure."
-    },
-    {
-      "name": "path_radius_x",
-      "node": "transform1",
-      "param": "tx",
-      "value": 0.0,
-      "min": -1.0,
-      "max": 1.0,
-      "label": "Path Radius X",
-      "description": "Manual wiring required: set transform1.tx to expression `op('lfox')['chan1']*0.4` to follow the path in X."
-    },
-    {
-      "name": "path_radius_y",
-      "node": "transform1",
-      "param": "ty",
-      "value": 0.0,
-      "min": -1.0,
-      "max": 1.0,
-      "label": "Path Radius Y",
-      "description": "Manual wiring required: set transform1.ty to expression `op('lfoy')['chan1']*0.4` to follow the path in Y."
     }
   ],
   "preview_description": "The word 'TDMCP' gliding along a smooth invisible circular path. Placeholder until a native path-follow extension (Sample CHOP over Curve SOP) ships."

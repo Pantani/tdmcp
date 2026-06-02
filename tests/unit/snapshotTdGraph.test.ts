@@ -80,6 +80,18 @@ describe("snapshotTdGraphImpl", () => {
   });
 
   it("compact mode hoists type defaults and marks compact:true", async () => {
+    // Compact mode implies wantModes=true. The default exec mock returns an
+    // empty stdout which would fail JSON parsing and (post-fix) surface as a
+    // real error instead of being silently swallowed; provide a valid empty
+    // parameters payload so the modes read degrades cleanly.
+    server.use(
+      http.post(`${TD_BASE}/api/exec`, () =>
+        HttpResponse.json({
+          ok: true,
+          data: { result: null, stdout: JSON.stringify({ parameters: [] }) },
+        }),
+      ),
+    );
     const result = await snapshotTdGraphImpl(makeCtx(), {
       path: "/project1",
       include_params: false,

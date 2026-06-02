@@ -154,7 +154,7 @@ describe("LlmClient.complete", () => {
     );
     await expect(
       new LlmClient(cfg).complete([{ role: "user", content: "x" }], { timeoutMs: 20 }),
-    ).rejects.toThrow();
+    ).rejects.toThrow(/abort|timeout/i);
   });
 
   it("aborts immediately when a pre-aborted signal is passed", async () => {
@@ -166,7 +166,7 @@ describe("LlmClient.complete", () => {
         signal: ctrl.signal,
         timeoutMs: 1000,
       }),
-    ).rejects.toThrow();
+    ).rejects.toThrow(/abort/i);
   });
 });
 

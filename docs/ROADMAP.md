@@ -639,7 +639,7 @@ gates per-wave work but isn't yet a CI gate at the suite level.
 
 ### G3 — Recipe library depth · ⬜
 
-The repo ships **15 validated recipes** under `recipes/`, all gated by
+The repo ships **31 validated recipes** under `recipes/`, all gated by
 `RecipeSchema` and `npm run validate:recipes`.
 
 - ⬜ Add at least **10 net-new** first-party recipes covering the v0.7–v0.8
@@ -783,6 +783,8 @@ automatically unless disabled (`--no-py-compile` / `--no-reload-bridge` opt out)
 | `copilot_session_persistence` | Resume transcript + last model/tier | M | Med | High | P1 | ROADMAP | none |
 | `plan_visual`→LLM-grounded | Upgrade `describe_project` to an optional LLM planner | M | Med | High | P1 | EXTENSION | none (keyword stays default) |
 | `narrate_set` | Persisted narration during `auto_vj_director` | S | Low | Med | P2 | NEW | none |
+
+<a id="a5-touchdesigner-depth-bridge--operators"></a>
 
 #### A.5 · TouchDesigner depth (bridge + operators)
 

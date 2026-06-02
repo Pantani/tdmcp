@@ -1,7 +1,7 @@
 {
   "id": "scene_timeline_demo",
   "name": "Scene Timeline Demo",
-  "description": "Declarative show-clock demo mirroring what create_scene_timeline (Layer-1, v0.7.0) builds: a Timer CHOP playhead drives a 3-scene segments table (intro / drop / outro), with crossfaded visual sources picked by the playhead's normalized position. The final output blends Scene A↔B↔C as t_norm sweeps 0→1. Offline-validated against RecipeSchema; live cook-check UNVERIFIED pending TD run.",
+  "description": "Manual two-fader show-clock scaffold mirroring the shape of what create_scene_timeline (Layer-1, v0.7.0) builds: a Timer CHOP playhead and a segments table DAT (intro / drop / outro) are provided as helper scaffolding, plus a chained two-crossfader stack (fadeAB → fadeBC) over three scene sources. Important: the playhead and segments table are NOT auto-wired to fadeAB.cross / fadeBC.cross — RecipeSchema parameters take constants only, no expressions. After import, the artist drives the two Fade knobs manually (live or via exposed controls), or sets fadeAB.cross / fadeBC.cross expressions referencing op('playhead_null')['timer_fraction'] and the segments DAT. Offline-validated against RecipeSchema; live cook-check UNVERIFIED pending TD run.",
   "tags": ["timeline", "scenes", "show-clock", "crossfade", "performable", "automation"],
   "difficulty": "intermediate",
   "td_version_min": "2022",
@@ -105,5 +105,5 @@
       "bind_to": ["fadeBC.cross"]
     }
   ],
-  "preview_description": "A 30-second show clock blending three scenes: a slow mono noise field (intro) fading into a radial ramp (drop) then settling on a deep violet hold (outro), with playhead transport knobs exposed."
+  "preview_description": "A 30-second show-clock scaffold with three scene sources (slow mono noise, radial ramp, deep violet hold) feeding a manual two-crossfader stack — the artist drives the Fade A→B / Fade B→C knobs by hand (or wires them to the playhead) to blend through intro / drop / outro."
 }

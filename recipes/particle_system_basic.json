@@ -1,7 +1,7 @@
 {
   "id": "particle_system_basic",
   "name": "Particle System Basic",
-  "description": "UNVERIFIED — Foundational create_particle_system template: a grid-SOP emitter feeds a Particle SOP with a constant Force CHOP for gentle drift and a tunable lifetime, rendered through a Geometry COMP with a point-sprite material. Controls expose birth rate, lifetime, and force strength so the artist can dial it without reopening the network. Use as a starting point for any particle-driven look.",
+  "description": "UNVERIFIED — Foundational create_particle_system template: a grid-SOP emitter feeds a Particle SOP with a tunable lifetime and birth rate, rendered through a Geometry COMP with a point-sprite material. Controls expose birth rate and lifetime so the artist can dial it without reopening the network. Use as a starting point for any particle-driven look.",
   "tags": ["particle", "basic", "foundation", "generative"],
   "difficulty": "beginner",
   "td_version_min": "2022",
@@ -13,12 +13,6 @@
       "parent": "geo",
       "parameters": { "sizex": 2, "sizey": 2, "rows": 8, "cols": 8 },
       "comment": "Grid of emission points feeding the particle SOP"
-    },
-    {
-      "name": "force",
-      "type": "constantCHOP",
-      "parameters": { "value0": 0, "value1": 0.5, "value2": 0 },
-      "comment": "Constant upward force; drives the particle wind input"
     },
     {
       "name": "particle",
@@ -56,15 +50,7 @@
       "max": 20,
       "default": 3,
       "bind_to": ["particle.life"]
-    },
-    {
-      "name": "ForceY",
-      "type": "float",
-      "min": -5,
-      "max": 5,
-      "default": 0.5,
-      "bind_to": ["force.value1"]
     }
   ],
-  "preview_description": "UNVERIFIED — A gentle column of glowing point-sprites rising from a square 8x8 grid against black, with birth rate, lifetime, and vertical force live-tweakable."
+  "preview_description": "UNVERIFIED — A gentle field of glowing point-sprites emitted from a square 8x8 grid against black, with birth rate and lifetime live-tweakable."
 }

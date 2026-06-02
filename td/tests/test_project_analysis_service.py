@@ -258,6 +258,32 @@ class AnalyzeFileDepsTests(unittest.TestCase):
         r = pa.analyze("/p", True)
         self.assertEqual(r["broken_file_deps"], [])
 
+    def test_relative_path_resolved_against_project_folder(self):
+        # Relative path should resolve against td.project.folder before being flagged.
+        project_dir = os.path.dirname(os.path.abspath(__file__))
+        rel_name = os.path.basename(__file__)  # this very test file — exists.
+        par_existing = _Par("file", value=rel_name, is_file=True)
+        n_existing = _FakeOp("/p/has", ty="moviefileinTOP", pars=[par_existing], out_conns=1)
+
+        par_missing = _Par("file", value="definitely_not_here.mov", is_file=True)
+        n_missing = _FakeOp("/p/miss", ty="moviefileinTOP", pars=[par_missing], out_conns=1)
+
+        _install_root(_FakeRoot("/p", [n_existing, n_missing]))
+        # Inject td.project.folder
+        prev_project = getattr(_td_stub, "project", None)
+        _td_stub.project = types.SimpleNamespace(folder=project_dir)
+        try:
+            r = pa.analyze("/p", True)
+        finally:
+            if prev_project is None:
+                del _td_stub.project
+            else:
+                _td_stub.project = prev_project
+
+        broken_paths = [b["path"] for b in r["broken_file_deps"]]
+        self.assertNotIn("/p/has", broken_paths)
+        self.assertIn("/p/miss", broken_paths)
+
     def test_file_par_hint_used_when_isfile_absent(self):
         # name in _FILE_PAR_HINTS + no isFile attr → still treated as file.
         par = _Par("moviefile", value="/missing.mov")

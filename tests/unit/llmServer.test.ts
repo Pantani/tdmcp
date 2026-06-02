@@ -222,6 +222,7 @@ describe("startChatServer endpoints", () => {
     const data = JSON.parse(r.body);
     expect(typeof data.prompt).toBe("string");
     expect(data.prompt.length).toBeGreaterThan(0);
+    expect(data.prompt).toContain("build a feedback loop");
   });
 
   it("streams progress on /pull and ends the stream", async () => {

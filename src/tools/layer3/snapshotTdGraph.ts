@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { verifyNetwork } from "../../feedback/networkVerifier.js";
-import { tryEndpoint } from "../../td-client/types.js";
+import { isMissingEndpoint, tryEndpoint } from "../../td-client/types.js";
 import { ConnectionSchema } from "../../td-client/validators.js";
 import { parsePythonReport } from "../pythonReport.js";
 import { guardTd, structuredResult } from "../result.js";
@@ -281,7 +281,15 @@ export async function snapshotTdGraphImpl(ctx: ToolContext, args: SnapshotTdGrap
           }),
         );
         for (const detail of details) {
-          if (detail.status === "fulfilled") modes.set(detail.value.path, detail.value.parameters);
+          if (detail.status === "fulfilled") {
+            modes.set(detail.value.path, detail.value.parameters);
+          } else if (!isMissingEndpoint(detail.reason)) {
+            // Only the benign "older bridge lacks this endpoint" case may be
+            // silently degraded — every other failure (validation 400,
+            // connection error, timeout) must surface so the snapshot does not
+            // claim a clean partial read while real errors are hidden.
+            throw detail.reason;
+          }
         }
       }
       const nodes: SnapshotNode[] = refs.map((n) => {

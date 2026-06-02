@@ -42,8 +42,8 @@
     {
       "name": "out_color",
       "type": "constantTOP",
-      "parameters": { "colorr": 0.05, "colorg": 0.02, "colorb": 0.12, "alpha": 1.0 },
-      "comment": "Visual placeholder. Manual-wire: set colorr expression to op('level_null')['chan1'] to react to audio RMS."
+      "parameters": { "alpha": 1.0 },
+      "comment": "Visual placeholder. Manual-wire: set colorr/colorg/colorb expressions to op('level_null')['chan1'] (or combinations) to react to audio RMS. colorr/g/b intentionally omitted here so artist expressions aren't overwritten by constants."
     },
     {
       "name": "out1",
@@ -68,14 +68,6 @@
       "max": 4,
       "default": 1,
       "bind_to": ["sensitivity.brightness1"]
-    },
-    {
-      "name": "Base Red",
-      "type": "float",
-      "min": 0,
-      "max": 1,
-      "default": 0.05,
-      "bind_to": ["out_color.colorr"]
     }
   ],
   "preview_description": "A dim violet placeholder frame with the spectrum + RMS analysis chain in place behind it, ready for the artist to wire the level into the visual color or feed the spectrum texture into a custom shader."
