@@ -16,7 +16,7 @@ hero:
       text: Developer reference
       link: /reference/architecture
     - theme: alt
-      text: 🇧🇷 Ler em português
+      text: 🇧🇷 Read in Portuguese
       link: /pt/
 
 features:

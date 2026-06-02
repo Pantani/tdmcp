@@ -2,7 +2,7 @@
 name: tdmcp-docs-roadmap-update
 description: >
   Updates tdmcp docs and roadmap for newly shipped or newly merged capabilities.
-  Use when asked to atualizar docs, atualizar roadmap/rodamap, reconcile release
+  Use when asked to update docs, update the roadmap, reconcile release
   docs, document new features, sync docs with CHANGELOG/package release, refresh
   cookbook examples after a feature wave, re-run/continue/fix a docs-roadmap pass,
   or check whether docs/ROADMAP.md is current. Runs a sub-agent workflow:

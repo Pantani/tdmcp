@@ -57,6 +57,6 @@ things:
 3. Keep a [prompt cookbook](/guide/prompt-cookbook) and the
    [recipe gallery](/guide/recipes) handy for ideas.
 
-::: tip Português
-Esta documentação também está disponível em português — [comece por aqui](/pt/).
+::: tip Portuguese
+This documentation is also available in Portuguese — [start here](/pt/).
 :::

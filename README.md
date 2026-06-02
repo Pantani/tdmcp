@@ -43,7 +43,7 @@ Full guides and reference live on the **docs site → <https://pantani.github.io
 | [Recipe gallery](https://pantani.github.io/tdmcp/guide/recipes) | [Roadmap](docs/ROADMAP.md) |
 | [Troubleshooting](https://pantani.github.io/tdmcp/guide/troubleshooting) | [Deployment](docs/DEPLOYMENT.md) |
 
-🇧🇷 **Documentação em português:** <https://pantani.github.io/tdmcp/pt/>
+🇧🇷 **Portuguese documentation:** <https://pantani.github.io/tdmcp/pt/>
 
 ## How it works
 

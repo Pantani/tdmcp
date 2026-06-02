@@ -4,7 +4,7 @@ description: >
   Adds new visual examples to the tdmcp prompt cookbook documentation — both the
   English and Portuguese versions. Use when asked to: add more cookbook examples,
   create visual examples for the docs, show more surprising things you can do,
-  add entries to the prompt cookbook, expand the cookbook, "mais exemplos", or any
+  add entries to the prompt cookbook, expand the cookbook, or any
   request to extend the cookbook with new prompts and results. Runs a 3-phase
   pipeline: curate candidates → write EN → write PT.
 ---

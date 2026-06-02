@@ -226,7 +226,7 @@ directly.
 
 **Goal:** curate and write new visual examples for the prompt cookbook docs (EN + PT) — surprising things tdmcp can do that aren't shown yet.
 
-**Trigger:** when asked to add more cookbook examples, create visual examples for the documentation, show more surprising things you can do with tdmcp, expand the prompt cookbook, "mais exemplos visuais", or any request to add prompts + results to the cookbook — use the `tdmcp-cookbook-examples` skill (curator → EN writer ∥ PT writer → QA). Simple questions can be answered directly.
+**Trigger:** when asked to add more cookbook examples, create visual examples for the documentation, show more surprising things you can do with tdmcp, expand the prompt cookbook, or any request to add prompts + results to the cookbook — use the `tdmcp-cookbook-examples` skill (curator → EN writer ∥ PT writer → QA). Simple questions can be answered directly.
 
 **Change log:**
 | Date | Change | Target | Reason |
@@ -239,7 +239,7 @@ directly.
 prompt cookbook aligned with newly shipped or newly merged tdmcp capabilities,
 grounded in verified package/GitHub release state.
 
-**Trigger:** when asked to update docs, update the roadmap/rodamap, document new
+**Trigger:** when asked to update docs, update the roadmap, document new
 features, reconcile docs with a release, refresh cookbook examples after a
 feature wave, or check whether `docs/ROADMAP.md` is current — including
 follow-ups (re-run, continue, fix, update only cookbook/roadmap) — use the
