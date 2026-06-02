@@ -43,6 +43,15 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   carries a new `rolled_back: true` flag with a "rolled back" line in the
   summary text. Old reports without the flag remain compatible.
 
+### Changed
+
+- **`snapshot_td_graph` prefers REST endpoint for parameter modes.** When
+  `include_modes: true`, the tool now calls `client.readParameterModes` via
+  the `tryEndpoint` REST-first / exec-fallback pattern instead of going
+  through `executePythonScript` directly. The output shape is preserved
+  (normalized via `normalizeParameterModes`), so existing callers are
+  unaffected. Bridge promotion wave-1 (G4 / v1.0 Consolidation).
+
 ### Fixed
 
 - **`detect_pitch` notes/threshold consistency:** the user-facing `notes`
@@ -69,6 +78,18 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   and fixed-point under real filesystem `Vault.write` / `Vault.read`,
   preserves verbatim value-resolution parameters (e.g. `value: "noise1"`),
   and that `RecipeLibrary` reads back what we wrote.
+- **`tests/unit/setlistRunner.test.ts`** — coverage wave-3 added 22 new
+  tests (17 → 39) covering `resolveStart` warnings, `quantize=bar`
+  forwarding, scene-recipe/preset info paths, beat mode without
+  `beatSource`, prev/goto signals with valid + invalid targets, step
+  preemption across stop/next/prev/goto, generic `TdError` (non-connection)
+  and non-`Error` thrown values, manual mode `elapsed` path, empty setlist,
+  `parseSetlistInput` `.markdown` / no-filename / malformed YAML branches,
+  and `loadCanonicalSetlist` JSON failure.
+- **`tests/unit/snapshotTdGraph.test.ts`** — added two assertions for the
+  REST promotion: "prefers /api/nodes/:seg/params" (asserts exec was NOT
+  called) and "falls back to /api/exec when the REST endpoint is missing"
+  (asserts exec WAS called).
 
 ### Docs
 

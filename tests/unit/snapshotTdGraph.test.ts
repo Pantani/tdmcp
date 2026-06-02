@@ -212,6 +212,90 @@ describe("snapshotTdGraphImpl", () => {
     });
   });
 
+  // ---------------------------------------------------------------------
+  // REST-first parameter-modes path (G4 bridge promotion, wave-1)
+  // ---------------------------------------------------------------------
+  it("prefers /api/nodes/:seg/params (REST) over /api/exec for parameter modes", async () => {
+    let execCalled = false;
+    server.use(
+      http.get(`${TD_BASE}/api/nodes/:seg/params`, () =>
+        HttpResponse.json({
+          ok: true,
+          data: {
+            path: "/project1/noise1",
+            type: "noiseTOP",
+            name: "noise1",
+            parameters: [
+              { name: "period", mode: "EXPRESSION", expr: "absTime.seconds" },
+              { name: "amplitude", mode: "CONSTANT", value: 1 },
+            ],
+            warnings: [],
+          },
+        }),
+      ),
+      http.post(`${TD_BASE}/api/exec`, () => {
+        execCalled = true;
+        return HttpResponse.json({ ok: true, data: { result: null, stdout: "" } });
+      }),
+    );
+
+    const result = await snapshotTdGraphImpl(makeCtx(), {
+      path: "/project1",
+      include_params: false,
+      compact: false,
+      include_parameter_modes: true,
+    });
+
+    expect(result.isError).toBeFalsy();
+    expect(execCalled).toBe(false); // exec must NOT be hit on the REST-first path
+    const data = result.structuredContent as {
+      nodes: Array<{ parameter_modes?: Record<string, unknown> }>;
+    };
+    expect(data.nodes[0]?.parameter_modes).toEqual({
+      period: { name: "period", mode: "EXPRESSION", expr: "absTime.seconds" },
+      amplitude: { name: "amplitude", mode: "CONSTANT", value: 1 },
+    });
+  });
+
+  it("falls back to /api/exec when the REST endpoint is missing (older bridge)", async () => {
+    let execCalled = false;
+    server.use(
+      // Default 404 stays for /api/nodes/:seg/params, so tryEndpoint falls back.
+      http.post(`${TD_BASE}/api/exec`, () => {
+        execCalled = true;
+        return HttpResponse.json({
+          ok: true,
+          data: {
+            result: null,
+            stdout: JSON.stringify({
+              path: "/project1/noise1",
+              parameters: {
+                period: { name: "period", mode: "EXPRESSION", expression: "absTime.seconds" },
+              },
+              warnings: [],
+            }),
+          },
+        });
+      }),
+    );
+
+    const result = await snapshotTdGraphImpl(makeCtx(), {
+      path: "/project1",
+      include_params: false,
+      compact: false,
+      include_parameter_modes: true,
+    });
+
+    expect(result.isError).toBeFalsy();
+    expect(execCalled).toBe(true);
+    const data = result.structuredContent as {
+      nodes: Array<{ parameter_modes?: Record<string, unknown> }>;
+    };
+    expect(data.nodes[0]?.parameter_modes).toEqual({
+      period: { name: "period", mode: "EXPRESSION", expression: "absTime.seconds" },
+    });
+  });
+
   it("reports parameter-mode truncation separately from parameter-value truncation", async () => {
     server.use(
       http.get(`${TD_BASE}/api/network/:seg/topology`, () =>
