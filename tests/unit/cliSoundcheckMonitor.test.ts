@@ -231,7 +231,7 @@ describe("runSoundcheckMonitor — integration (msw)", () => {
 
     const ac = new AbortController();
     const ctx = makeCtx();
-    setTimeout(() => ac.abort(), 120);
+    setTimeout(() => ac.abort(), 350);
 
     const summary = await runSoundcheckMonitor(
       ctx,
@@ -245,6 +245,7 @@ describe("runSoundcheckMonitor — integration (msw)", () => {
       ac.signal,
     );
 
+    expect(call).toBeGreaterThanOrEqual(2);
     expect(summary.clipAlerts).toBeGreaterThanOrEqual(1);
 
     const allEvents = stdoutLines
