@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { verifyNetwork } from "../../feedback/networkVerifier.js";
+import { isMissingEndpoint, tryEndpoint } from "../../td-client/types.js";
 import { ConnectionSchema } from "../../td-client/validators.js";
 import { parsePythonReport } from "../pythonReport.js";
 import { guardTd, structuredResult } from "../result.js";
@@ -252,20 +253,43 @@ export async function snapshotTdGraphImpl(ctx: ToolContext, args: SnapshotTdGrap
         modesTruncated = refs.length > MAX_PARAM_NODES;
         const details = await Promise.allSettled(
           targets.map(async (n) => {
-            const exec = await ctx.client.executePythonScript(
-              buildReadParameterModesScript({
-                path: n.path,
-                non_default_only: args.compact,
-              }),
-              true,
+            // 1) Prefer first-class /api/nodes/<path>/params endpoint (survives
+            //    ALLOW_EXEC=0). Returns parameters as an array of
+            //    {name, mode, value, expr, bind_expr, export_op}, which
+            //    normalizeParameterModes already accepts.
+            // 2) Fall back to the exec path ONLY when the endpoint is absent on an
+            //    older bridge; validation 400s surface unchanged via tryEndpoint.
+            const parameters = await tryEndpoint<unknown>(
+              async () => {
+                const r = await ctx.client.readParameterModes(n.path, undefined, args.compact);
+                return r.parameters;
+              },
+              async () => {
+                const exec = await ctx.client.executePythonScript(
+                  buildReadParameterModesScript({
+                    path: n.path,
+                    non_default_only: args.compact,
+                  }),
+                  true,
+                );
+                const parsed = parsePythonReport<ParameterModesReport>(exec.stdout);
+                if (parsed.fatal) throw new Error(parsed.fatal);
+                return parsed.parameters;
+              },
             );
-            const parsed = parsePythonReport<ParameterModesReport>(exec.stdout);
-            if (parsed.fatal) throw new Error(parsed.fatal);
-            return { path: n.path, parameters: normalizeParameterModes(parsed.parameters) };
+            return { path: n.path, parameters: normalizeParameterModes(parameters) };
           }),
         );
         for (const detail of details) {
-          if (detail.status === "fulfilled") modes.set(detail.value.path, detail.value.parameters);
+          if (detail.status === "fulfilled") {
+            modes.set(detail.value.path, detail.value.parameters);
+          } else if (!isMissingEndpoint(detail.reason)) {
+            // Only the benign "older bridge lacks this endpoint" case may be
+            // silently degraded — every other failure (validation 400,
+            // connection error, timeout) must surface so the snapshot does not
+            // claim a clean partial read while real errors are hidden.
+            throw detail.reason;
+          }
         }
       }
       const nodes: SnapshotNode[] = refs.map((n) => {

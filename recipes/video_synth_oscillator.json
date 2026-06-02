@@ -1,0 +1,75 @@
+{
+  "id": "video_synth_oscillator",
+  "name": "Video Synth Oscillator",
+  "description": "An analog video-synth Lissajous oscillator pattern: two sine oscillators trace an X/Y curve in a GLSL TOP, drawn as a glowing line via per-pixel distance falloff and tinted by a uColor uniform. Mirrors what `create_video_synth` builds in lissajous mode (oscillator/interference flavour — distinct from create_shader_lib's tunnel/raymarch). Uniforms `uTime`, `uScale`, `uFreqX`, `uFreqY` (vectors page) and `uColor` (colors page) are declared via glsl_uniforms. Manual-wire after import: set glsl_uniforms.uTime's value expression to `absTime.seconds` (or `absTime.seconds * <rate>`) to animate the pattern — RecipeSchema parameters take constants only, so the time binding can't be encoded here. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "tags": ["generative", "glsl", "video-synth", "oscillator", "lissajous", "vj"],
+  "difficulty": "beginner",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "glsl1",
+      "type": "glslTOP",
+      "parameters": {
+        "outputresolution": "custom",
+        "resolutionw": 1280,
+        "resolutionh": 720
+      },
+      "comment": "Lissajous oscillator shader; uniforms are bound through the Vectors/Colors sequences"
+    },
+    {
+      "name": "out1",
+      "type": "nullTOP",
+      "comment": "Final output TOP"
+    }
+  ],
+  "connections": [{ "from": "glsl1", "to": "out1" }],
+  "glsl_code": {
+    "glsl1": "out vec4 fragColor;\nuniform float uTime;\nuniform float uScale;\nuniform float uFreqX;\nuniform float uFreqY;\nuniform vec3 uColor;\nvoid main(){\n  vec2 uv = (vUV.st - 0.5) * 2.0 * max(uScale, 0.0001);\n  float glow = 0.0;\n  for(int i = 0; i < 96; i++){\n    float phase = float(i) / 96.0 * 6.2831853;\n    vec2 point = vec2(sin(phase * uFreqX + uTime), sin(phase * uFreqY + uTime * 0.7)) * 0.8;\n    float dist = length(uv - point);\n    glow += 0.006 / (dist * dist + 0.0008);\n  }\n  vec3 col = uColor * glow;\n  col += uColor * 0.04;\n  fragColor = TDOutputSwizzle(vec4(col, 1.0));\n}\n"
+  },
+  "glsl_uniforms": [
+    {
+      "node": "glsl1",
+      "name": "uTime",
+      "kind": "float",
+      "value": 0,
+      "label": "Time",
+      "description": "Animation phase. After import, set this uniform's value expression directly to `absTime.seconds` (or `absTime.seconds * <rate>`) to make the pattern move (manual-wire — schema takes constants only)."
+    },
+    {
+      "node": "glsl1",
+      "name": "uScale",
+      "kind": "float",
+      "value": 1.0,
+      "min": 0.1,
+      "max": 4.0,
+      "label": "Scale"
+    },
+    {
+      "node": "glsl1",
+      "name": "uFreqX",
+      "kind": "float",
+      "value": 3.0,
+      "min": 0,
+      "max": 16,
+      "label": "Freq X"
+    },
+    {
+      "node": "glsl1",
+      "name": "uFreqY",
+      "kind": "float",
+      "value": 2.0,
+      "min": 0,
+      "max": 16,
+      "label": "Freq Y"
+    },
+    {
+      "node": "glsl1",
+      "name": "uColor",
+      "kind": "color",
+      "value": [0.2, 0.9, 1.0, 1.0],
+      "label": "Color",
+      "description": "Base tint of the glowing oscillator curve."
+    }
+  ],
+  "preview_description": "A glowing cyan Lissajous figure (two sine oscillators on X/Y) traced as a luminous curve over a near-black field — VJ analog-oscilloscope look."
+}

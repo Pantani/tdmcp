@@ -32,6 +32,8 @@ interface RepairStep {
   kind: string;
   /** True only when the fix was actually applied to TD (never true in dry_run). */
   applied: boolean;
+  /** True when this applied step was reverted by the rollback pass after a regression. */
+  reverted?: boolean;
 }
 
 interface RemainingError {
@@ -50,6 +52,12 @@ interface RepairNetworkReport {
   steps: RepairStep[];
   remaining: RemainingError[];
   warnings: string[];
+  /**
+   * True when the applied fixes were reverted because errors_after did not
+   * improve over errors_before. Always false in dry_run, and always false when
+   * errors_before was already 0 (no regression possible).
+   */
+  rolled_back: boolean;
   fatal?: string;
 }
 
@@ -96,6 +104,7 @@ report = {
     "steps": [],
     "remaining": [],
     "warnings": [],
+    "rolled_back": False,
 }
 
 
@@ -198,6 +207,9 @@ def _target_expression_pars(_o, _msg):
     return _targets
 
 
+_snapshot = []  # forward-declared for helpers; cleared inside the main try below
+
+
 def _apply_clear_expression(_o, _msg):
     """Reset only the expression/export-mode par named in this error."""
     _changed = False
@@ -215,6 +227,7 @@ def _apply_clear_expression(_o, _msg):
         for _par in _target_expression_pars(_o, _msg):
             try:
                 if _par.mode != _const:
+                    _snapshot.append({"kind": "par_mode", "par": _par, "mode": _par.mode})
                     _par.mode = _const
                     _changed = True
             except Exception:
@@ -228,8 +241,10 @@ def _apply_enable_op(_o):
     """Clear bypass / turn display on. Returns True if a flag was changed."""
     _changed = False
     try:
-        if getattr(_o, "bypass", False):
+        _prev_bypass = getattr(_o, "bypass", False)
+        if _prev_bypass:
             try:
+                _snapshot.append({"kind": "op_bypass", "op": _o, "bypass": _prev_bypass})
                 _o.bypass = False
                 _changed = True
             except Exception:
@@ -237,8 +252,10 @@ def _apply_enable_op(_o):
     except Exception:
         pass
     try:
-        if getattr(_o, "display", True) is False:
+        _prev_display = getattr(_o, "display", True)
+        if _prev_display is False:
             try:
+                _snapshot.append({"kind": "op_display", "op": _o, "display": _prev_display})
                 _o.display = True
                 _changed = True
             except Exception:
@@ -248,7 +265,30 @@ def _apply_enable_op(_o):
     return _changed
 
 
+def _rollback_snapshot():
+    """Revert each captured mutation in reverse order. Returns True when every
+    entry restored cleanly; False if any single revert raised (so the caller can
+    avoid claiming a successful rollback / falsely marking steps as reverted)."""
+    _ok = True
+    for _entry in reversed(_snapshot):
+        try:
+            _k = _entry.get("kind")
+            if _k == "par_mode":
+                _entry["par"].mode = _entry["mode"]
+            elif _k == "op_bypass":
+                _entry["op"].bypass = _entry["bypass"]
+            elif _k == "op_display":
+                _entry["op"].display = _entry["display"]
+        except Exception as _e:
+            _ok = False
+            report["warnings"].append("rollback failed for " + str(_entry.get("kind")) + ": " + str(_e))
+    return _ok
+
+
 try:
+    # Reset snapshot per invocation: the bridge may keep module globals across
+    # calls, so a stale list from a previous repair would corrupt rollback.
+    _snapshot = []
     _root = op(_p["parent_path"])
     if _root is None:
         report["fatal"] = "Not found: " + str(_p["parent_path"])
@@ -280,6 +320,28 @@ try:
         else:
             _after = _collect_errors(_root)
         report["errors_after"] = len(_after)
+        # Rollback: if we mutated TD and the regression check shows no
+        # improvement (errors_after >= errors_before with errors_before > 0),
+        # revert every mutation we made so the artist's graph returns to its
+        # pre-repair state. Dry-run never mutates so there is nothing to revert.
+        if (
+            (not report["dry_run"])
+            and report["errors_before"] > 0
+            and report["errors_after"] >= report["errors_before"]
+            and _snapshot
+        ):
+            _ok = _rollback_snapshot()
+            if _ok:
+                report["rolled_back"] = True
+                for _step in report["steps"]:
+                    if _step.get("applied"):
+                        _step["reverted"] = True
+            else:
+                # Partial rollback failure — do not claim a clean revert.
+                report["rolled_back"] = False
+            # Re-read errors after rollback so the report reflects the restored state.
+            _after = _collect_errors(_root)
+            report["errors_after"] = len(_after)
         for (_o, _msg) in _after:
             report["remaining"].append({"node": _o.path, "error": _msg})
 except Exception:
@@ -314,10 +376,13 @@ export async function repairNetworkImpl(ctx: ToolContext, args: RepairNetworkArg
       const mode = report.dry_run ? "dry-run (planned only)" : "applied";
       const cleared = report.errors_before - report.errors_after;
       const clearedPart = !report.dry_run && cleared > 0 ? `, cleared ${cleared} error(s)` : "";
+      const rollbackPart = report.rolled_back
+        ? " Rolled back: yes (no improvement, applied fixes reverted to snapshot)."
+        : "";
       const summary =
         report.errors_before === 0
           ? `No errors under ${report.parent_path} — nothing to repair.`
-          : `repair_network ${mode}: ${planned} step(s) (${appliedCount} applied) within max_steps=${report.max_steps}; ${report.errors_after}/${report.errors_before} error(s) remain${clearedPart}.`;
+          : `repair_network ${mode}: ${planned} step(s) (${appliedCount} applied) within max_steps=${report.max_steps}; ${report.errors_after}/${report.errors_before} error(s) remain${clearedPart}.${rollbackPart}`;
       return jsonResult(summary, report);
     },
   );
@@ -329,7 +394,7 @@ export const registerRepairNetwork: ToolRegistrar = (server, ctx) => {
     {
       title: "Repair network (bounded)",
       description:
-        "Bounded, autonomous repair: scan cook errors under a subtree, classify each, and plan a safe fix, capped at max_steps so it can never run away. Defaults to dry_run (PLAN only, no changes). Set dry_run:false to apply the known-safe fixes — resetting a broken parameter expression to constant mode, and re-enabling a bypassed/display-off op — within the same bound; risky cases (DAT syntax errors, missing inputs, unclassified errors) are always PLAN-only. Re-checks errors after applying and stops at the bound or when errors clear. Returns {parent_path, dry_run, max_steps, errors_before, errors_after, steps[], remaining[], warnings}. Use it as the diagnostic 'try the obvious safe fixes' loop after a build; for raw triage use summarize_td_errors / get_td_node_errors instead.",
+        "Bounded, autonomous repair: scan cook errors under a subtree, classify each, and plan a safe fix, capped at max_steps so it can never run away. Defaults to dry_run (PLAN only, no changes). Set dry_run:false to apply the known-safe fixes — resetting a broken parameter expression to constant mode, and re-enabling a bypassed/display-off op — within the same bound; risky cases (DAT syntax errors, missing inputs, unclassified errors) are always PLAN-only. Re-checks errors after applying and stops at the bound or when errors clear. Returns {parent_path, dry_run, max_steps, errors_before, errors_after, steps[], remaining[], warnings, rolled_back}. Use it as the diagnostic 'try the obvious safe fixes' loop after a build; for raw triage use summarize_td_errors / get_td_node_errors instead.",
       inputSchema: repairNetworkSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },

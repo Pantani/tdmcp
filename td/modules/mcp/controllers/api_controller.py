@@ -18,9 +18,13 @@ from mcp.services import (
     api_service,
     batch_service,
     connect_service,
+    custom_params_service,
     log_service,
     param_text_service,
     preview_service,
+    project_analysis_service,
+    system_service,
+    transport_service,
 )
 
 
@@ -261,6 +265,23 @@ def _route(method, path, query, body, webserver=None):
         return connect_service.disconnect(
             body["to_path"], body.get("from_path"), body.get("to_input")
         )
+    if rest == ["transport"] and method == "POST":
+        # First-class timeline transport — survives ALLOW_EXEC=0, mirrors
+        # control_timeline_transport's verb set. Validation errors raise ValueError
+        # and become the standard 400 envelope.
+        _require(body, "action")
+        return transport_service.control(
+            body["action"],
+            frame=body.get("frame"),
+            rate=body.get("rate"),
+            cue_name=body.get("cueName") or body.get("cue_name"),
+        )
+    if rest == ["system"] and method == "GET":
+        # Combined GPU/monitors/performMode snapshot — survives ALLOW_EXEC=0.
+        # `include` is an optional comma-list query param; omit for all sections.
+        include_raw = _qs(query, "include")
+        include = [s for s in include_raw.split(",") if s] if include_raw else None
+        return system_service.get_system_info(include)
     if rest == ["logs"] and method == "GET":
         # Resolve the Error DAT relative to the webserver's own container so a custom
         # install (parent_path/container) works; fall back to get_logs' default when
@@ -275,6 +296,19 @@ def _route(method, path, query, body, webserver=None):
             _qs(query, "scope") or None,
             **log_kwargs,
         )
+
+    if (
+        rest[0] == "projects"
+        and len(rest) >= 3
+        and rest[-1] == "analysis"
+        and method == "GET"
+    ):
+        # /api/projects/<path…>/analysis — diagnostic scan, survives ALLOW_EXEC=0.
+        # ``recursive`` is an optional query flag (default true) to match the
+        # legacy exec script's default.
+        recursive_raw = _qs(query, "recursive")
+        recursive = True if recursive_raw is None else (recursive_raw == "true")
+        return project_analysis_service.analyze(_node_path(rest[1:-1]), recursive=recursive)
 
     if rest[0] == "nodes" and len(rest) >= 2:
         if rest[-1] == "method" and method == "POST":
@@ -291,6 +325,10 @@ def _route(method, path, query, body, webserver=None):
             )
         if rest[-1] == "errors" and method == "GET":
             return api_service.get_node_errors(_node_path(rest[1:-1]), recursive=False)
+        if rest[-1] == "custom_params" and method == "GET":
+            # /api/nodes/<path…>/custom_params — structured custom-par readout,
+            # survives ALLOW_EXEC=0. Powers serialize_network + inspect_component.
+            return custom_params_service.get_custom_params(_node_path(rest[1:-1]))
         # Param-mode + DAT-text suffixes — MORE SPECIFIC than the generic node CRUD
         # below, so they MUST be matched first (else `…/text` GET is swallowed by
         # get_node). No exec gate — structured endpoints survive ALLOW_EXEC=0.

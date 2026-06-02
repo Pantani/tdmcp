@@ -1,0 +1,93 @@
+{
+  "id": "kinetic_text_standalone",
+  "name": "Kinetic Text (Standalone)",
+  "description": "Standalone text-only showcase of `create_kinetic_text` styles — no audio binding (use `kinetic_text_audio_reactive` for that). A Text TOP feeds a Transform TOP (scale pulse) → Level TOP (opacity fade) → Null TOP, with an LFO CHOP wired in as the animation driver. After import, set the Transform TOP's `sx`/`sy` to expression `1 + 0.2 * op('anim_lfo')['chan1']` and the Level TOP's `opacity` to `0.7 + 0.3 * op('anim_lfo')['chan1']` to enable the breathing pulse (manual-wire — RecipeSchema parameters take constants only, no expressions). Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "tags": ["text", "kinetic", "typography", "lfo", "standalone"],
+  "difficulty": "beginner",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "text1",
+      "type": "textTOP",
+      "parameters": {
+        "text": "TDMCP",
+        "fontsizex": 180,
+        "fontsizey": 180,
+        "fontcolorr": 1,
+        "fontcolorg": 1,
+        "fontcolorb": 1,
+        "alignx": "center",
+        "aligny": "center"
+      },
+      "comment": "The word itself, centered"
+    },
+    {
+      "name": "anim_lfo",
+      "type": "lfoCHOP",
+      "parameters": {
+        "wavetype": "sine",
+        "frequency": 2,
+        "amp": 1,
+        "offset": 0,
+        "channelname": "chan1"
+      },
+      "comment": "Free-running sine LFO driving the breathing pulse (referenced from manual sx/sy/opacity expressions)"
+    },
+    {
+      "name": "scale",
+      "type": "transformTOP",
+      "parameters": { "sx": 1, "sy": 1 },
+      "comment": "Breathing scale — wire sx/sy to (1 + 0.2 * op('anim_lfo')['chan1']) manually after import"
+    },
+    {
+      "name": "level",
+      "type": "levelTOP",
+      "parameters": { "opacity": 1 },
+      "comment": "Opacity fade — wire opacity to (0.7 + 0.3 * op('anim_lfo')['chan1']) manually after import"
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "Final output TOP" }
+  ],
+  "connections": [
+    { "from": "text1", "to": "scale" },
+    { "from": "scale", "to": "level" },
+    { "from": "level", "to": "out1" }
+  ],
+  "parameters": [
+    {
+      "name": "text",
+      "node": "text1",
+      "param": "text",
+      "value": "TDMCP",
+      "label": "Text"
+    },
+    {
+      "name": "font_size_x",
+      "node": "text1",
+      "param": "fontsizex",
+      "value": 180,
+      "min": 24,
+      "max": 500,
+      "label": "Font Size X"
+    },
+    {
+      "name": "font_size_y",
+      "node": "text1",
+      "param": "fontsizey",
+      "value": 180,
+      "min": 24,
+      "max": 500,
+      "label": "Font Size Y"
+    },
+    {
+      "name": "rate_hz",
+      "node": "anim_lfo",
+      "param": "frequency",
+      "value": 2,
+      "min": 0.1,
+      "max": 12,
+      "label": "Rate (Hz)",
+      "description": "LFO frequency — the breathing rate."
+    }
+  ],
+  "preview_description": "The word 'TDMCP', large, white and centered, breathing in and out with a soft scale-and-fade pulse on a transparent frame — text-only kinetic showcase."
+}

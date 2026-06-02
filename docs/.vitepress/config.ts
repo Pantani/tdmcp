@@ -72,6 +72,7 @@ const artistGuidePt = [
 const devReference = [
   { text: "Architecture", link: "/reference/architecture" },
   { text: "Tools reference", link: "/reference/tools" },
+  { text: "Tool API contract", link: "/reference/tool-contract" },
   { text: "Environment variables", link: "/reference/environment" },
   { text: "CLI (agent & local copilot)", link: "/reference/cli" },
   { text: "Package manager", link: "/reference/packages" },
@@ -345,6 +346,7 @@ export default defineConfig({
               { text: "Arquitetura", link: "/pt/reference/architecture" },
               { text: "Variáveis de ambiente", link: "/pt/reference/environment" },
               { text: "Tools (em inglês)", link: "/reference/tools" },
+              { text: "Tool API contract (em inglês)", link: "/reference/tool-contract" },
               { text: "CLI (em inglês)", link: "/reference/cli" },
               { text: "Bridge & REST API (em inglês)", link: "/reference/bridge-api" },
               { text: "Privacidade", link: "/pt/privacy" },

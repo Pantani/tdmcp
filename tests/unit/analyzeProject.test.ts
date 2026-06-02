@@ -134,4 +134,37 @@ describe("analyze_project", () => {
     expect(parsed.path).toBe("/project1");
     expect(parsed.recursive).toBe(true);
   });
+
+  it("prefers REST endpoint when present (no exec roundtrip)", async () => {
+    let execCalls = 0;
+    let analysisHits = 0;
+    server.use(
+      http.get(`${TD_BASE}/api/projects/:seg/analysis`, ({ request }) => {
+        analysisHits += 1;
+        const url = new URL(request.url);
+        expect(url.searchParams.get("recursive")).toBe("true");
+        return HttpResponse.json({ ok: true, data: CRAFTED_REPORT });
+      }),
+      http.post(`${TD_BASE}/api/exec`, () => {
+        execCalls += 1;
+        return HttpResponse.json({ ok: true, data: { result: null, stdout: "" } });
+      }),
+    );
+    const result = await analyzeProjectImpl(makeCtx(), { path: "/project1", recursive: true });
+    expect(result.isError).toBeFalsy();
+    expect(analysisHits).toBe(1);
+    expect(execCalls).toBe(0);
+    const data = (result as { structuredContent?: { unused: unknown[] } }).structuredContent;
+    expect(data?.unused).toHaveLength(1);
+  });
+
+  it("falls back to /api/exec when the REST endpoint is absent (404)", async () => {
+    // tdMock default already returns 404 for /api/projects/*/analysis. Confirm
+    // the tool still produces the same shape via the legacy exec path.
+    const { scripts } = captureWithReport(CRAFTED_REPORT);
+    const result = await analyzeProjectImpl(makeCtx(), { path: "/project1", recursive: true });
+    expect(result.isError).toBeFalsy();
+    expect(scripts).toHaveLength(1);
+    expect(scripts[0]).toContain("findChildren");
+  });
 });

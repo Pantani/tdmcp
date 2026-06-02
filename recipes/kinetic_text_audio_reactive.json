@@ -1,0 +1,100 @@
+{
+  "id": "kinetic_text_audio_reactive",
+  "name": "Kinetic Text Audio Reactive",
+  "description": "Kinetic text whose brightness pulses in sync with the low-frequency band of live audio. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check. After import, set level1.brightness1 to a literal multiplier expression such as `op('analyze1')['chan1'] * 2` (tune the multiplier to taste) to enable the audio binding.",
+  "tags": ["text", "kinetic", "audio-reactive", "bass", "typography"],
+  "difficulty": "intermediate",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "text1",
+      "type": "textTOP",
+      "parameters": {
+        "text": "TDMCP",
+        "fontsizex": 180,
+        "alignx": "center",
+        "aligny": "center"
+      },
+      "comment": "Texto base (kinetic_text)"
+    },
+    {
+      "name": "transform1",
+      "type": "transformTOP",
+      "parameters": { "sx": 1.0, "sy": 1.0, "rotate": 0 },
+      "comment": "Pulso de escala dirigido pelo audio reactive"
+    },
+    {
+      "name": "audioin",
+      "type": "audiodeviceinCHOP",
+      "comment": "Captura de audio ao vivo"
+    },
+    {
+      "name": "bass",
+      "type": "audiofilterCHOP",
+      "parameters": {
+        "filter": "bandpass",
+        "units": "frequency",
+        "cutofffrequency": 120
+      },
+      "comment": "Banda de graves (audio_reactive band) - bandpass centered ~120Hz"
+    },
+    {
+      "name": "analyze1",
+      "type": "analyzeCHOP",
+      "parameters": { "function": "rmspower" },
+      "comment": "RMS power da banda -> escalar reativo"
+    },
+    {
+      "name": "level1",
+      "type": "levelTOP",
+      "parameters": { "brightness1": 1.0, "gamma1": 1.0 },
+      "comment": "Brilho modulado pelo RMS via parametro exposto"
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "TOP de saida final" }
+  ],
+  "connections": [
+    { "from": "text1", "to": "transform1" },
+    { "from": "transform1", "to": "level1" },
+    { "from": "level1", "to": "out1" },
+    { "from": "audioin", "to": "bass" },
+    { "from": "bass", "to": "analyze1" }
+  ],
+  "parameters": [
+    {
+      "name": "text",
+      "node": "text1",
+      "param": "text",
+      "value": "TDMCP",
+      "label": "Text"
+    },
+    {
+      "name": "font_size",
+      "node": "text1",
+      "param": "fontsizex",
+      "value": 180,
+      "min": 24,
+      "max": 480,
+      "label": "Font Size"
+    },
+    {
+      "name": "bass_cutoff",
+      "node": "bass",
+      "param": "cutofffrequency",
+      "value": 120,
+      "min": 40,
+      "max": 500,
+      "label": "Bass Cutoff (Hz)"
+    },
+    {
+      "name": "pulse_gain",
+      "node": "level1",
+      "param": "brightness1",
+      "value": 1.0,
+      "min": 0,
+      "max": 4,
+      "label": "Pulse Gain",
+      "description": "Hook up a literal multiplier expression like `op('analyze1')['chan1'] * 2` to pulse brightness on bass (tune the multiplier to taste)."
+    }
+  ],
+  "preview_description": "The word 'TDMCP', large and centered, breathing/glowing in time with the music's bass."
+}

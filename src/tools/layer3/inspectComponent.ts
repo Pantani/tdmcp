@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isMissingEndpoint } from "../../td-client/types.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -217,7 +218,13 @@ try:
             report["extensions"] = _ext_list
 
         # --- custom parameters ---
-        if _p["include_custom_pars"]:
+        # When the TS layer is going to fill custom_pars via the REST endpoint
+        # GET /api/nodes/<path>/custom_params, it sets skip_custom_in_script=true
+        # so the script omits the readout. The TS side falls back to running the
+        # script with skip_custom_in_script=false when the endpoint is missing
+        # on an older bridge so the output stays identical pre/post promotion.
+        _skip_custom = bool(_p.get("skip_custom_in_script", False))
+        if _p["include_custom_pars"] and not _skip_custom:
             _par_list = []
             try:
                 # Probe for customPars (list of custom Par objects across all pages).
@@ -313,17 +320,71 @@ export function buildInspectScript(payload: object): string {
 // Impl
 // ---------------------------------------------------------------------------
 
+/** Run the exec script with a given `skip_custom_in_script` flag and parse it. */
+async function runInspectExec(
+  ctx: ToolContext,
+  args: InspectComponentArgs,
+  skipCustomInScript: boolean,
+): Promise<InspectComponentReport> {
+  const script = buildInspectScript({
+    path: args.path,
+    include_storage: args.include_storage,
+    include_extensions: args.include_extensions,
+    include_custom_pars: args.include_custom_pars,
+    skip_custom_in_script: skipCustomInScript,
+  });
+  const exec = await ctx.client.executePythonScript(script, true);
+  return parsePythonReport<InspectComponentReport>(exec.stdout);
+}
+
 export async function inspectComponentImpl(ctx: ToolContext, args: InspectComponentArgs) {
   return guardTd(
     async () => {
-      const script = buildInspectScript({
-        path: args.path,
-        include_storage: args.include_storage,
-        include_extensions: args.include_extensions,
-        include_custom_pars: args.include_custom_pars,
-      });
-      const exec = await ctx.client.executePythonScript(script, true);
-      return parsePythonReport<InspectComponentReport>(exec.stdout);
+      // PROMOTION (partial): for `custom_pars` ONLY we prefer the first-class
+      // REST endpoint GET /api/nodes/<path>/custom_params (wave-7). Storage,
+      // extensions, and the probe map still ride the exec script — no first-
+      // class endpoint covers them. So we:
+      //   1) run the exec script with `skip_custom_in_script=true` to get
+      //      storage + extensions + type + probe (no custom_pars), then
+      //   2) fetch custom_pars via the REST endpoint and map its
+      //      `name/page/style/default` onto the existing CustomParEntry shape
+      //      (label/value/min/max/options are dropped because the public
+      //      inspect contract is page/name/style/default only).
+      //   3) On missing endpoint (older bridge), fall back to a SECOND exec
+      //      with the legacy in-script readout so the output is identical to
+      //      the pre-promotion behaviour.
+      if (!args.include_custom_pars) {
+        return runInspectExec(ctx, args, false);
+      }
+      const report = await runInspectExec(ctx, args, true);
+      if (report.fatal) return report;
+      try {
+        const rest = await ctx.client.getCustomParams(args.path);
+        if (!report.probe) report.probe = {};
+        report.probe.custom_params_endpoint = "ok";
+        if (rest.warnings.length > 0) {
+          for (const w of rest.warnings) {
+            report.warnings.push(`custom_params: ${w}`);
+          }
+        }
+        if (rest.fatal) {
+          report.warnings.push(`custom_params: ${rest.fatal}`);
+        }
+        const mapped: CustomParEntry[] = rest.params.map((p) => {
+          const entry: CustomParEntry = {
+            page: p.page ?? "unknown",
+            name: p.name,
+            style: p.style ?? "unknown",
+          };
+          if (p.default !== undefined) entry.default = p.default;
+          return entry;
+        });
+        report.custom_pars = mapped;
+        return report;
+      } catch (err) {
+        if (!isMissingEndpoint(err)) throw err;
+        return runInspectExec(ctx, args, false);
+      }
     },
     (report) => {
       if (report.fatal) {

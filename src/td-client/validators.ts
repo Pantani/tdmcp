@@ -252,3 +252,117 @@ export const BridgeLogsSchema = z.object({
   warnings: z.array(z.string()).default([]),
 });
 export type TdBridgeLogs = z.infer<typeof BridgeLogsSchema>;
+
+// --- Timeline transport (POST /api/transport) ---
+// Matches transport_service.control()'s return shape: {action, play, frame, rate,
+// startFrame, endFrame, fps}. Kept identical to the legacy exec-script stdout so
+// the Node-side tool can collapse both branches into one result handler.
+export const TransportStateSchema = z.object({
+  action: z.string(),
+  play: z.boolean(),
+  frame: z.number().int(),
+  rate: z.number(),
+  startFrame: z.number().int(),
+  endFrame: z.number().int(),
+  fps: z.number(),
+});
+export type TdTransportState = z.infer<typeof TransportStateSchema>;
+
+// --- System info (GET /api/system) ---
+// Combined gpu/monitors/performMode snapshot for inspect_gpu_and_displays. Every
+// section is optional so a subset request (?include=gpu) or a forward-compat
+// older bridge that omits a field still parses cleanly. Section-level errors
+// surface as {error} dicts (mirrors the legacy exec-stdout shape).
+const SystemMonitorSchema = z.object({
+  index: z.number().int(),
+  width: z.number().nullable().optional(),
+  height: z.number().nullable().optional(),
+  refreshRate: z.number().nullable().optional(),
+  isPrimary: z.boolean().nullable().optional(),
+  left: z.number().nullable().optional(),
+  top: z.number().nullable().optional(),
+});
+export const SystemInfoSchema = z.object({
+  gpu: z
+    .object({
+      name: z.string().nullable().optional(),
+      driver: z.string().nullable().optional(),
+      memory: z.union([z.number(), z.string()]).nullable().optional(),
+      error: z.string().optional(),
+    })
+    .optional(),
+  monitors: z.union([z.array(SystemMonitorSchema), z.object({ error: z.string() })]).optional(),
+  performMode: z
+    .union([z.boolean(), z.object({ error: z.string() })])
+    .nullable()
+    .optional(),
+});
+export type TdSystemInfo = z.infer<typeof SystemInfoSchema>;
+
+// --- Project analysis (GET /api/projects/<path>/analysis) ---
+// Diagnostic walk for analyze_project. Survives ALLOW_EXEC=0. Mirrors the legacy
+// exec-stdout shape so the tool can keep its one result handler. Every list is
+// optional + defaultable for forward-compat with older/newer bridges.
+export const ProjectAnalysisSchema = z.object({
+  path: z.string().optional(),
+  recursive: z.boolean().optional(),
+  counts: z
+    .object({
+      nodes: z.number().int().optional(),
+      by_family: z.record(z.string(), z.number()).optional(),
+    })
+    .optional(),
+  unused: z
+    .array(
+      z.object({
+        path: z.string(),
+        type: z.string(),
+        reason: z.string(),
+      }),
+    )
+    .optional(),
+  broken_file_deps: z
+    .array(
+      z.object({
+        path: z.string(),
+        par: z.string(),
+        file: z.string(),
+      }),
+    )
+    .optional(),
+  orphan_comps: z
+    .array(
+      z.object({
+        path: z.string(),
+        reason: z.string(),
+      }),
+    )
+    .optional(),
+  dependency_map: z.record(z.string(), z.array(z.string())).optional(),
+  warnings: z.array(z.string()).optional(),
+  fatal: z.string().optional(),
+});
+export type TdProjectAnalysis = z.infer<typeof ProjectAnalysisSchema>;
+
+// --- Custom-parameter readout (GET /api/nodes/<path>/custom_params) ---
+// Structured endpoint for serialize_network + inspect_component. Every field
+// optional so older bridges (or per-par failures) round-trip cleanly. ``value``
+// and ``default`` are unknown because TD pars span Float/Int/Toggle/Menu/Str
+// and we preserve the bridge's native type without coercion.
+export const CustomParamSchema = z.object({
+  name: z.string(),
+  label: z.string().nullable().optional(),
+  page: z.string().nullable().optional(),
+  style: z.string().nullable().optional(),
+  default: z.unknown().optional(),
+  value: z.unknown().optional(),
+  min: z.number().nullable().optional(),
+  max: z.number().nullable().optional(),
+  options: z.array(z.string()).nullable().optional(),
+});
+export const CustomParamsSchema = z.object({
+  params: z.array(CustomParamSchema).default([]),
+  warnings: z.array(z.string()).default([]),
+  fatal: z.string().optional(),
+});
+export type TdCustomParams = z.infer<typeof CustomParamsSchema>;

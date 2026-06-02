@@ -6,6 +6,218 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.2] - 2026-06-02
+
+### Added
+
+- **First-party recipe `audio_reactive_basic`** (8 nodes, 6 connections, 2
+  exposed controls) — minimal audio-in → analyze pattern from
+  `create_audio_reactive`: `audiodeviceinCHOP` fans out to an
+  `audiospectrumCHOP` (outlength 256) and an `analyzeCHOP` RMS, with a
+  `nullCHOP` for stable downstream `bind_to_channel` and a `choptoTOP` +
+  `levelTOP` Sensitivity stage publishing the spectrum texture. A
+  `constantTOP` placeholder is wired to `nullTOP` out and ready for the
+  artist to bind its colorr expression to `op('level_null')['chan1']`.
+  Offline-validated against `RecipeSchema`; live cook-check pending
+  (UNVERIFIED).
+- **First-party recipe `keyframe_animation_basic`** (5 nodes, 3 connections,
+  2 exposed controls) — Animation COMP showcase paralleling
+  `create_keyframe_animation`: `animationCOMP` (artist authors 2 channels
+  `tx`/`ty` with 5 keys each in the Animation Editor) feeds a `speedCHOP`
+  for global playback rate, wrapped by a `nullCHOP` for stable channel refs,
+  with a `constantTOP` target ready for `op('anim_null')['tx']`-style
+  expressions. Foundation for declarative camera/object motion. Manual-wire
+  documented inline. Offline-validated against `RecipeSchema`; live
+  cook-check pending (UNVERIFIED). Total: 31/31 recipes valid.
+- **First-party recipe `pose_skeleton_standalone`** (8 nodes, 1 connection, 1
+  exposed control) — placeholder skeleton renderer for `create_pose_skeleton`
+  with a built-in Table DAT of 8 static landmarks (head/shoulders/hips/hands/
+  feet) feeding a Script SOP that draws joints + bones through a `lineMAT`,
+  rendered via `geometryCOMP` + `cameraCOMP` + `renderTOP`. Foundation for any
+  custom pose source (Kinect, OSC, file playback) without depending on the
+  torinmb MediaPipe plugin. Offline-validated against `RecipeSchema` via
+  `npm run validate:recipes`; live cook-check pending (UNVERIFIED).
+- **First-party recipe `particle_system_basic`** (8 nodes, 1 connection, 3
+  exposed controls) — foundational `create_particle_system` template: an 8×8
+  `gridSOP` emitter feeds a `particleSOP` with a constant force CHOP for
+  gentle vertical drift, rendered through `pointspriteMAT` + `cameraCOMP` +
+  `lightCOMP` + `renderTOP`. Live controls expose BirthRate, Lifetime, and
+  ForceY. Offline-validated against `RecipeSchema`; live cook-check pending
+  (UNVERIFIED). Total: 29/29 recipes valid.
+- **First-party recipe `feedback_network_basic`** (6 nodes, 6 connections, 2
+  exposed controls) — minimal recursive feedback pattern (noise seed →
+  `compositeTOP` operand=maximum + `feedbackTOP` → `blurTOP` → `levelTOP`
+  brightness1 decay → `nullTOP`), the standalone showcase of
+  `create_feedback_network`. Offline-validated against `RecipeSchema` via
+  `npm run validate:recipes`; live cook-check pending.
+- **First-party recipe `glsl_shader_basic`** (2 nodes, 1 connection, 4 GLSL
+  uniforms exposed as controls) — single `glslTOP` with inline plasma fragment
+  shader mixing layered sines across a two-color gradient (`uTime`, `uScale`,
+  `uColorA`, `uColorB`), the showcase of `create_glsl_shader`. `uTime` needs a
+  one-line manual binding to `absTime.seconds * speed` after import (schema
+  parameters take constants only). Offline-validated against `RecipeSchema`;
+  live cook-check pending.
+- **First-party recipe `kinetic_text_audio_reactive`** (7 nodes, 5
+  connections) wiring `text` → `transform` → `level` → `out` alongside an
+  audio band-split chain (`audioin` → `bass` → `analyze1`). Recipe delivers
+  the nodes + connections offline-valid; the final audio→brightness binding
+  is manual after import (set `level1.brightness1` to expression
+  `op('analyze1')['chan1']*pulse_gain`), since `RecipeSchema` parameters
+  only accept constant values. Offline-validated against `RecipeSchema` via
+  `npm run validate:recipes`; live cook-check pending.
+- **First-party recipe `decks_layer_mixer`** (6 nodes, 5 connections, 2
+  exposed controls) — two decks with per-deck gain summed through a composite
+  mixer, the schema pattern shared by `create_decks` + `create_layer_mixer`.
+  Offline-validated; live cook-check pending.
+- **First-party recipe `depth_displacement_post`** — synthetic depth map warps
+  a ramp source through a Displace TOP, then a post stack (blur + level grade)
+  finishes it; runs with zero hardware. Offline-validated; live cook-check
+  pending.
+- **First-party recipe `kinetic_text_path_follow`** — manual-wiring template
+  for kinetic text following a deterministic circular path driven by two sin/cos
+  LFO CHOPs (placeholder for a future native path-follow extension).
+  Offline-validated; live cook-check pending.
+- **First-party recipe `optical_flow_particles`** — live video drives an
+  optical-flow vector field that pushes a GPU particle system, producing
+  motion-reactive trails. Offline-validated; live cook-check pending.
+- **First-party recipe `mediapipe_face_overlay`** (11 nodes, 5 connections,
+  5 exposed controls) — manual-wire template that mirrors what
+  `setup_face_tracking` (v0.8.1) builds: a webcam background dimmed via
+  `levelTOP`, a `selectCHOP` pointed at the MediaPipe face-adapter CHOP
+  driving an instanced dot SOP through a `geometryCOMP` + `renderTOP`,
+  composited over the camera with a final tint. Offline-validated against
+  `RecipeSchema`; live cook-check pending.
+- **First-party recipe `scene_timeline_demo`** (9 nodes, 6 connections, 4
+  exposed controls) — declarative show-clock demo mirroring the
+  `create_scene_timeline` Layer-1 orchestrator: a `timerCHOP` playhead +
+  null + segments `tableDAT` driving three scenes (noise / radial ramp /
+  violet hold) blended through chained `crossTOP`s with play/rate/fade
+  knobs. Offline-validated; live cook-check pending. Recipe count: 15 → 22.
+- **First-party recipe `scene_3d_basic`** (6 nodes, 1 connection, 3 exposed
+  controls) — foundational `create_3d_scene` template: `geometryCOMP` holding
+  a `sphereSOP` (render+display flagged) + `cameraCOMP` (tz=5) + `lightCOMP`
+  + `renderTOP` → `nullTOP`. Starting-point for 3D visuals; bind RotateY to
+  a tempo ramp or audio feature manually after import (`RecipeSchema`
+  parameters take constants only). Offline-validated against `RecipeSchema`;
+  live cook-check pending.
+- **First-party recipe `video_synth_oscillator`** (2 nodes, 1 connection, 5
+  GLSL uniforms) — procedural Lissajous oscillator color synth mirroring
+  `create_video_synth` lissajous mode: a `glslTOP` (1280×720) drawing two
+  sine oscillators as a glowing curve with `uTime` / `uScale` / `uFreqX` /
+  `uFreqY` (vectors page) and `uColor` (colors page) uniforms exposed via
+  `glsl_uniforms`. Bind `uTime` to `absTime.seconds * Speed` manually after
+  import to animate. Offline-validated; live cook-check pending.
+- **First-party recipe `kinetic_text_standalone`** (5 nodes, 3 connections,
+  4 exposed controls) — text-only showcase of `create_kinetic_text` styles
+  without audio binding: `textTOP` → `transformTOP` (scale pulse) →
+  `levelTOP` (opacity fade) → `nullTOP`, with a sine `lfoCHOP` wired in as
+  the breathing driver. Bind `sx`/`sy` and `opacity` to LFO expressions
+  manually after import. Offline-validated; live cook-check pending. Recipe
+  count: 22 → 25.
+- **`repair_network` snapshot + rollback.** The repair loop now captures
+  `(par.path, par.mode)` and `(op.path, op.bypass, op.display)` before each
+  applied step. After the post-repair error recheck, if `errors_after >=
+  errors_before` and the run is not a dry-run, the snapshot is restored in
+  reverse order, applied steps are marked `reverted: true`, and the report
+  carries a new `rolled_back: true` flag with a "rolled back" line in the
+  summary text. Old reports without the flag remain compatible.
+- **New bridge endpoint `POST /api/transport`** for timeline control
+  (play / pause / seek / cue / rate). Lives in
+  `td/modules/mcp/services/transport_service.py` with controller wiring in
+  `td/modules/mcp/controllers/api_controller.py`. Not gated by
+  `TDMCP_BRIDGE_ALLOW_EXEC` — works on a hardened bridge. Client-side
+  envelope is `TransportStateSchema` in `src/td-client/validators.ts` and
+  `client.controlTimelineTransport(...)` in
+  `src/td-client/touchDesignerClient.ts`. Bridge Python tests: +13
+  (`test_transport_service.py` covers play/pause/seek-clamp/cue
+  known/cue absent/rate/error paths; `test_api_controller.py` adds
+  dispatch + missing-action tests).
+
+### Changed
+
+- **`control_timeline_transport` now prefers the REST endpoint.**
+  The tool now calls `client.controlTimelineTransport(...)` via
+  `tryEndpoint`, falling back to `executePythonScript` only on endpoint
+  miss. Output shape preserved; existing callers unaffected. Bridge
+  promotion wave-2 (G4 / v1.0 Consolidation).
+- **Coverage gate bumped: `functions: 77 → 80`** in `vitest.config.ts`.
+  Wave-3 measured Fn 83.60% globally (margin > 3pp); other thresholds
+  (statements 84 / branches 70 / lines 85) kept at current values
+  pending coverage wave-4 on the CLI surface (`src/cli/agent.ts`,
+  `src/cli/tui.ts`).
+- **`snapshot_td_graph` prefers REST endpoint for parameter modes.** When
+  `include_modes: true`, the tool now calls `client.readParameterModes` via
+  the `tryEndpoint` REST-first / exec-fallback pattern instead of going
+  through `executePythonScript` directly. The output shape is preserved
+  (normalized via `normalizeParameterModes`), so existing callers are
+  unaffected. Bridge promotion wave-1 (G4 / v1.0 Consolidation).
+
+### Fixed
+
+- **`detect_pitch` notes/threshold consistency:** the user-facing `notes`
+  string now advertises the actual hard-coded `DEFAULT_THRESHOLD = 0.0005`
+  instead of the stale `0.02`. The gate magnitude was already correct; this
+  fixes the "near-zero default threshold" symptom from the v1.0 honesty pass
+  by reconciling the docstring (not the constant).
+
+### Tests
+
+- **`tests/unit/detectPitch.test.ts`** — pinned that `gate.boundmin` and the
+  exposed `Threshold` knob default share the same magnitude (`0.0005`), and
+  pinned that the user-facing `notes` string matches that magnitude (the
+  earlier `it.fails` marker is now a regular green `it(...)`, removed once
+  the docstring was reconciled).
+- **`tests/unit/createEnvelopeFollower.test.ts`** — added a sidechain
+  routing topology assertion: in `mode: "duck"`, the generated Python script
+  wires source → select → lag → invert → clamp → null, binds the configured
+  target's parameter to the duck output via an `op(...)[...]` expression
+  (using a robust `rfind('.')` split so paths with dots work), and sets the
+  target parameter mode to `EXPRESSION`.
+- **`tests/unit/vaultRoundTrip.test.ts`** (new) — proves the vault-codec
+  round-trip (`recipeToMarkdown` ↔ `recipeFromMarkdown`) is deterministic
+  and fixed-point under real filesystem `Vault.write` / `Vault.read`,
+  preserves verbatim value-resolution parameters (e.g. `value: "noise1"`),
+  and that `RecipeLibrary` reads back what we wrote.
+- **`tests/unit/setlistRunner.test.ts`** — coverage wave-3 added 22 new
+  tests (17 → 39) covering `resolveStart` warnings, `quantize=bar`
+  forwarding, scene-recipe/preset info paths, beat mode without
+  `beatSource`, prev/goto signals with valid + invalid targets, step
+  preemption across stop/next/prev/goto, generic `TdError` (non-connection)
+  and non-`Error` thrown values, manual mode `elapsed` path, empty setlist,
+  `parseSetlistInput` `.markdown` / no-filename / malformed YAML branches,
+  and `loadCanonicalSetlist` JSON failure.
+- **`tests/unit/snapshotTdGraph.test.ts`** — added two assertions for the
+  REST promotion: "prefers /api/nodes/:seg/params" (asserts exec was NOT
+  called) and "falls back to /api/exec when the REST endpoint is missing"
+  (asserts exec WAS called).
+
+### Docs
+
+- Added the **Tool API contract** reference page
+  (`docs/reference/tool-contract.md`) documenting the invariants every MCP
+  tool follows (naming, input schema, error handling, offline behaviour,
+  result shape, deprecation) and that will be frozen at 1.0. Linked from the
+  EN reference sidebar.
+- **Roadmap honesty pass:**
+  - Rewrote the *Experimental & needs validation* section into four honest
+    buckets (live-music tuning, hardware round-trip pending, multimodal-LLM
+    dependent, rollback tuning), split the signal-detection bullet, and
+    declared `sync_external_clock` `mode='tap'` as stable.
+  - Removed `repair_network` from the multimodal-LLM-gated bullet in *Out of
+    scope* (its remaining hardening is offline rollback-regression testing).
+  - Reconciled the *Planning archive*: parágrafos A.3 e A.6 now reflect that
+    `packages_cli_help_and_completion_parity`, `no_color_flag_is_dead`,
+    MediaPipe face/hand/segmentation and `create_strange_attractor` shipped
+    in earlier releases; removed the duplicate Round-2 `param_changed_event`
+    row; moved Round-3 hardware/GPU/cloud/multi-machine/paid-license rows
+    (`create_machine_sync`, `create_depth_from_2d`, `create_sensor_input`,
+    `create_laser_output`, `create_multitouch_surface`, `drive_diffusion_tox`,
+    `create_lidar_reactive`, `create_volumetric_fire`, TouchEngine headless
+    path) into *Out of scope* under explicit Round-3 bullets.
+  - Expanded the *v1.0.0 — Consolidation* section with ready/blocked criteria
+    per frente (tool API contract, docs & guides, coverage, recipes, bridge
+    hardening).
+
 ## [0.8.1] - 2026-06-02
 
 ### Added

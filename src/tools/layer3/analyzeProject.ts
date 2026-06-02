@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { tryEndpoint } from "../../td-client/types.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -307,15 +308,48 @@ export function buildAnalyzeProjectScript(payload: object): string {
   return buildPayloadScript(ANALYZE_SCRIPT, payload);
 }
 
+function normalizeReport(raw: Partial<AnalyzeReport>, args: AnalyzeProjectArgs): AnalyzeReport {
+  // The REST envelope validator marks every section optional for forward-compat;
+  // the tool's output schema (and its consumers) require concrete defaults. Fill
+  // any missing field with its empty-shape so the structured output stays stable
+  // regardless of which path produced it.
+  return {
+    path: raw.path ?? args.path,
+    recursive: raw.recursive ?? args.recursive,
+    counts: {
+      nodes: raw.counts?.nodes ?? 0,
+      by_family: raw.counts?.by_family ?? {},
+    },
+    unused: raw.unused ?? [],
+    broken_file_deps: raw.broken_file_deps ?? [],
+    orphan_comps: raw.orphan_comps ?? [],
+    dependency_map: raw.dependency_map ?? {},
+    warnings: raw.warnings ?? [],
+    ...(raw.fatal ? { fatal: raw.fatal } : {}),
+  };
+}
+
 export async function analyzeProjectImpl(ctx: ToolContext, args: AnalyzeProjectArgs) {
   return guardTd(
     async () => {
-      const script = buildAnalyzeProjectScript({
-        path: args.path,
-        recursive: args.recursive,
-      });
-      const exec = await ctx.client.executePythonScript(script, true);
-      return parsePythonReport<AnalyzeReport>(exec.stdout);
+      // 1) First-class endpoint GET /api/projects/<path>/analysis — survives
+      //    ALLOW_EXEC=0 and returns the same diagnostic dict as the legacy
+      //    exec script. 2) Fall back to exec when the endpoint is absent on an
+      //    older bridge; validation 400s (e.g. fatal/network not found) come
+      //    back in-band on `fatal` and surface unchanged via tryEndpoint.
+      const raw = await tryEndpoint<Partial<AnalyzeReport>>(
+        async () =>
+          (await ctx.client.analyzeProject(args.path, args.recursive)) as Partial<AnalyzeReport>,
+        async () => {
+          const script = buildAnalyzeProjectScript({
+            path: args.path,
+            recursive: args.recursive,
+          });
+          const exec = await ctx.client.executePythonScript(script, true);
+          return parsePythonReport<AnalyzeReport>(exec.stdout);
+        },
+      );
+      return normalizeReport(raw, args);
     },
     (report) => {
       if (report.fatal) {

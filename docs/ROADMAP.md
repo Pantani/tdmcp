@@ -10,18 +10,23 @@ can build real visual systems from plain language — no node-wiring by hand. Th
 page is the honest, bird's-eye picture of **what already works, what's still
 rough, and what's coming next** on the way to a stable 1.0.
 
-**Where things stand today.** The current release line is **v0.8.1**, with
-**279 tools** across three layers plus library/packaging, AI session memory and
-Obsidian vault integrations. It builds on v0.7.1 (269 tools, 2026-06-01) by
-adding the SDF / strange-attractor / optical-flow / histogram-scope generators,
-the MediaPipe face + hand + segmentation adapters, the AI Show Director dry-run
-policy layer, the inline-preview / dashboard-v2 / N-channel-decks follow-through,
-the persistent session profile (`load_session_profile` +
-`tdmcp://session/profile`), and the new MCP resources
+**Where things stand today.** The current release line is **v0.8.2**, the
+stabilization patch on top of v0.8.1 — same 279 tools, but with four new bridge
+REST endpoints, seven REST-first tool promotions, the `bridge_watch_build` hot
+reload, a +16 recipe expansion (now 31 first-party recipes), the tool API
+contract reference page, and a coverage push that bumped `functions: 80 → 82`
+and seeded new test suites across `src/index.ts`, `src/cli/*`, and `src/llm/*`.
+v0.8.1 itself added the SDF / strange-attractor / optical-flow / histogram-scope
+generators, the MediaPipe face + hand + segmentation adapters, the AI Show
+Director dry-run policy layer, the inline-preview / dashboard-v2 /
+N-channel-decks follow-through, the persistent session profile
+(`load_session_profile` + `tdmcp://session/profile`), and the new MCP resources
 (`tdmcp://glsl-snippets`, `tdmcp://cheatsheets`,
-`tdmcp://learning/touchdesigner`). The CHANGELOG `[0.8.1]` and `[0.8.0]` blocks
-list every entry; the always-current tool list is the
-[Tools reference](/reference/tools).
+`tdmcp://learning/touchdesigner`). The CHANGELOG `[0.8.2]` / `[0.8.1]` /
+`[0.8.0]` blocks list every entry; the always-current tool list is the
+[Tools reference](/reference/tools). 1.0 is **not** the next minor — v0.8.x is
+the active stabilization line, and v1.0 will land only once the consolidation
+gates below are all green.
 
 The project has grown through five arcs:
 
@@ -59,6 +64,50 @@ The project has grown through five arcs:
 ---
 
 ## ✅ Current Release Line
+
+### v0.8.2 — Stabilization patch: REST bridge expansion, recipe library, coverage push
+
+v0.8.2 is the public tag for the 0.8 stabilization line. Same tool surface as
+v0.8.1 (279 tools) — this release **does not add new tools**, it stabilizes the
+existing surface ahead of v1.0:
+
+- **Four new bridge REST endpoints** that survive `TDMCP_BRIDGE_ALLOW_EXEC=0`:
+  `POST /api/transport` (timeline play/pause/seek/cue/rate),
+  `GET /api/system` (gpu + monitors + performMode),
+  `GET /api/projects/<path>/analysis` (project analysis port of the previously
+  embedded Python script), and
+  `GET /api/nodes/<path>/custom_params` (custom-par readout for COMPs).
+- **Seven tools promoted REST-first** with `tryEndpoint(REST, exec-fallback)`:
+  `snapshot_td_graph`, `control_timeline_transport`,
+  `inspect_gpu_and_displays`, `analyze_project`, plus the custom-params slice of
+  `serialize_network` and `inspect_component`, and a snapshot+rollback flow on
+  `repair_network` (steps revert if `errors_after >= errors_before`).
+- **`bridge_watch_build` shipped**: `tdmcp-agent watch-build` gates changed
+  bridge Python with `py_compile` and reloads the running bridge automatically
+  unless disabled.
+- **Recipe library expansion**: +16 first-party recipes (15 → 31) covering the
+  v0.7–v0.8 generators (kinetic text, decks, 3D scene, depth+displace,
+  optical-flow particles, MediaPipe face overlay, scene timeline, GLSL plasma,
+  pose skeleton standalone, particle system basic, feedback network basic,
+  audio reactive basic, keyframe animation basic, video synth oscillator).
+- **Tool API contract** reference page published at `/reference/tool-contract`
+  documenting the v1.0 invariants (naming, schema, error handling, offline
+  behaviour, result shape, deprecation).
+- **Coverage gates raised**: `functions: 80 → 82` in `vitest.config.ts`;
+  global Br now at 72%+. New test suites for `src/index.ts`, `src/cli/agent.ts`
+  (wave-5 + wave-9), `src/cli/tui.ts`, `src/cli/doctor.ts`, `src/llm/server.ts`,
+  `src/llm/client.ts`, `src/packages/cli.ts`, plus targeted regressions for
+  `detect_pitch`, `repair_network` rollback, `create_envelope_follower` ducking
+  topology, and a vault round-trip determinism suite. Three pre-existing flaky
+  fs-heavy tests (`provenanceStamp`, `styleMemory`, `vaultRepoSync`) hardened.
+- **Roadmap honesty pass**: Experimental / Out-of-scope / Planning archive
+  reconciled (no shipped item lingering as backlog; gated items split into
+  hardware / GPU / multimodal-LLM / paid-license buckets).
+- **Bug fixes**: `detect_pitch` `notes` string now advertises the actual
+  `DEFAULT_THRESHOLD = 0.0005` (was the stale `0.02`); `repair_network` no
+  longer leaks `_snapshot` between invocations; `kinetic_text_audio_reactive`
+  recipe now uses `audiofilterCHOP` (`audiobandeqCHOP` does not expose
+  `loband`/`hiband`).
 
 ### v0.8.1 — v0.8 feature line, session profile and resilience patch
 
@@ -429,28 +478,42 @@ These are usable in the latest public release, but they carry an honest caveat �
 they need live tuning, specific hardware, or a final on-hardware check before
 they're considered solid.
 
-- **v0.7.x experimental/gated tools** — `create_chroma_reactive`,
-  `create_transient_reactive` and `create_energy_structure` are shipped as
-  experimental; `create_two_way_surface` and `create_phone_gesture` remain
-  `unverified_pending_hardware`; `caption_top`, `copilot_vision` and
-  `repair_network` are offline-tested but still need live vision / rollback
-  tuning.
+- **Live-music tuning** (offline-built, defaults need real music to graduate):
+  `create_chroma_reactive`, `create_transient_reactive`,
+  `create_energy_structure`. Schemas, network topology and unit tests are
+  green; only the perceptual defaults remain experimental.
+- **Hardware round-trip pending** (builder is offline-tested, only the live
+  device exchange is unverified): `create_two_way_surface` (MIDI/OSC guards),
+  `create_phone_gesture` (smartphone sensors).
+- **Multimodal-LLM dependent**: `caption_top`, `copilot_vision`. Tool schema
+  and prompt assembly are unit-tested; output quality is gated on a stable
+  multimodal endpoint — see *Out of scope* below.
+- **Rollback tuning** (offline-improvable): `repair_network` ships with offline
+  unit tests; the snapshot/restore loop will get a dedicated regression test
+  before it leaves experimental.
 - **Obsidian vault tools** — fully unit-tested, but their live round-trip inside a
-  running TouchDesigner hasn't been exercised end-to-end yet.
-- **Signal-detection tools** — `detect_pitch` (reads near-zero with the default
-  threshold), `detect_tempo` (BPM lock needs live tuning) and
-  `create_envelope_follower` (sidechain gate/duck) all need a real source to dial
-  in.
-- **`learn_control`** — interactive MIDI/OSC "learn"; depends on live input state.
+  running TouchDesigner hasn't been exercised end-to-end yet. The pure
+  serialization↔deserialization round-trip is offline-improvable and queued.
+- **Signal-detection tools**:
+  - `detect_pitch` — known issue: default threshold can read near-zero on
+    quiet inputs. A regression test pinning the default behaviour is queued;
+    until then, pass an explicit `threshold` for reliable readings.
+  - `detect_tempo` — BPM lock validated against synthetic clicks; live music
+    tuning still required.
+  - `create_envelope_follower` — sidechain routing topology is unit-tested;
+    perceptual gate/duck timings need a real source.
+- **`learn_control`** — interactive MIDI/OSC "learn"; schema/modes are
+  offline-tested, the input-event stream depends on live hardware.
 - **`create_pop_field`** — a first generator for TouchDesigner's GPU **POP**
-  family, which is itself experimental in this build; the render path is held
-  pending live validation.
+  family, which is itself experimental upstream in this build; the render path
+  is held pending live validation.
 - **MIDI hardware tools** — `create_midi_note_reactive` and `create_midi_map`
   preview fine from a synthetic note source, but the real device paths need a
   controller to confirm.
-- **External-clock sync** — `sync_external_clock`'s tap-tempo is solid; its
-  Ableton Link and MIDI-clock modes need hardware to validate (with a manual-BPM
-  fallback when no source is present).
+- **External-clock sync** — `sync_external_clock` `mode='tap'` is stable
+  (offline-tested, default). Modes `ableton_link` and `midi_clock` are
+  hardware-gated; a manual-BPM fallback keeps the tool usable when no clock
+  source is present.
 - **v0.6.x bridge-routing regression check** — the seven v0.6.0 features were
   each validated live in TouchDesigner, but the full bridge reinstall plus live
   HTTP routing round-trip remains a recurring smoke check after bridge or
@@ -507,10 +570,12 @@ multimodal LLM endpoint, a specific GPU/OS, a paid license, or cut against
 tdmcp's local-first design — so they're parked until they can be validated
 properly:
 
-- **Multimodal-LLM-gated:** live-tuning `caption_top`, `copilot_vision` and
-  `repair_network` (vision-capable transcripts, smarter copilot handoff) is
-  parked until there's a stable multimodal LLM endpoint to validate the
-  prompts/output against.
+- **Multimodal-LLM-gated:** live-tuning `caption_top` and `copilot_vision`
+  (vision-capable transcripts, smarter copilot handoff) is parked until
+  there's a stable multimodal LLM endpoint to validate the prompts/output
+  against. (`repair_network` is **not** multimodal-gated — its remaining
+  hardening is offline rollback-regression testing, tracked in the
+  Experimental section above.)
 - **Live-music-gated reactivity validation:** graduating the chroma /
   percussive-vs-tonal / song-structure detectors out of experimental requires
   validating defaults against real music sources in a live setting.
@@ -529,6 +594,18 @@ properly:
 - **A hosted marketplace:** sharing stays **local-first** — TouchDesigner's
   Palette plus an Obsidian vault — matching tdmcp's no-server, runs-on-your-machine
   design.
+- **Round-3 hardware add-ons:** Arduino/serial sensor input
+  (`create_sensor_input`), TUIO/multitouch surfaces
+  (`create_multitouch_surface`), and 2D LiDAR (`create_lidar_reactive`) —
+  parked alongside the existing hardware-bound list until the hardware is on
+  hand to validate.
+- **Round-3 GPU/CUDA add-ons:** `create_depth_from_2d` (DepthAnything),
+  `create_volumetric_fire` (NVIDIA Flow), and `drive_diffusion_tox` (cloud or
+  drive-installed-tox only) — same gating as the existing GPU/CUDA bullet.
+- **Round-3 multi-machine:** `create_machine_sync` (Touch In/Out genlock across
+  machines) — same gating as the existing multi-machine bullet.
+- **Round-3 paid-license:** the TouchEngine headless path beyond the shipped
+  Engine COMP wrapper — same gating as the existing paid-license bullet.
 
 ## v1.0.0 — Consolidation {#v100-consolidation}
 
@@ -562,7 +639,7 @@ gates per-wave work but isn't yet a CI gate at the suite level.
 
 ### G3 — Recipe library depth · ⬜
 
-The repo ships **15 validated recipes** under `recipes/`, all gated by
+The repo ships **31 validated recipes** under `recipes/`, all gated by
 `RecipeSchema` and `npm run validate:recipes`.
 
 - ⬜ Add at least **10 net-new** first-party recipes covering the v0.7–v0.8
@@ -616,7 +693,10 @@ one-click path.
   — `tdmcp-submission` skill — drives prep and re-prep).
 - ⬜ Glama / awesome-touchdesigner listings cross-linked from `README.md`.
 
----
+> **Tool API contract reference.** The v1.0 invariants are documented in
+> [`docs/reference/tool-contract.md`](./reference/tool-contract.md) (naming,
+> input schema, error handling, offline behaviour, result shape, deprecation).
+> G1's `API_STABILITY.md` pin will fold this page into the formal contract.
 
 ---
 
@@ -686,18 +766,14 @@ The only remaining Round-1 A.1 row targeted by this PR,
 | `show_mode_oneliner` | `tdmcp show <profile>` — load+doctor+perform+pre-flight | M | Med | Med | P2 | NEW | abort semantics |
 | `error_exit_code_taxonomy` | Distinct exit codes (offline/TD-error/config) | S | Low | Med | P2 | NEW | error subclass survives |
 
-`doctor_fix_autoexec` is implemented on main after v0.7.1: `doctor --fix` now
-handles vault/profile/token repairs, runs `install-bridge --verify`, and attempts
-bounded macOS Textport automation before falling back to the manual command.
-`packages_cli_help_and_completion_parity` is implemented on main after v0.7.1
-and is no longer repeated as open backlog; it will move into the release section
-when the next patch is cut.
-`no_color_flag_is_dead` is also implemented on main for the script-facing agent
-surface; dashboard/TUI already honored `NO_COLOR`, and `tdmcp-agent run` now
-propagates `--no-color` into nested steps.
-`bridge_watch_build` is implemented on main after v0.7.1; the existing watcher
-now gates changed bridge Python with `py_compile` and reloads the running bridge
-automatically unless disabled.
+`doctor_fix_autoexec`, `packages_cli_help_and_completion_parity` and
+`no_color_flag_is_dead` shipped in v0.8.1 (vault/profile/token repairs +
+`install-bridge --verify` + bounded macOS Textport automation; top-level CLI
+completion / package parity; `tdmcp-agent run` `--no-color` propagation) and
+are no longer tracked as open backlog.
+`bridge_watch_build` **shipped in v0.8.2**: `tdmcp-agent watch-build` now gates
+changed bridge Python with `py_compile` and reloads the running bridge
+automatically unless disabled (`--no-py-compile` / `--no-reload-bridge` opt out).
 
 #### A.4 · AI & LLM integration
 
@@ -707,6 +783,8 @@ automatically unless disabled.
 | `copilot_session_persistence` | Resume transcript + last model/tier | M | Med | High | P1 | ROADMAP | none |
 | `plan_visual`→LLM-grounded | Upgrade `describe_project` to an optional LLM planner | M | Med | High | P1 | EXTENSION | none (keyword stays default) |
 | `narrate_set` | Persisted narration during `auto_vj_director` | S | Low | Med | P2 | NEW | none |
+
+<a id="a5-touchdesigner-depth-bridge--operators"></a>
 
 #### A.5 · TouchDesigner depth (bridge + operators)
 
@@ -718,13 +796,13 @@ automatically unless disabled.
 
 #### A.6 · Deferred (Round 1 — still gated / post-v0.7.x candidates)
 
-`create_gpu_fluid`, `create_optical_flow_particles` (GPU/macOS), `create_sdf_text`,
-`create_strange_attractor`, `create_vertex_displacement_mat`, hand/face MediaPipe
-modes, `create_pose_reactive`, `manage_td_process` / `switch_instance`,
-`control_diffusion` / `drive_streamdiffusion` / `connect_comfyui`, and the
-recipe/template marketplace (local-first). These are kept here because they are
-still blocked by hardware/GPU/license or product-scope gates after the v0.6.x and
-v0.7.x releases, not because v0.6.0 is a future target.
+Still open / partial after the v0.6.x–v0.8.x releases: `create_sdf_text`,
+`create_vertex_displacement_mat`, `create_pose_reactive`. The earlier
+deferrals (`create_gpu_fluid`, `create_optical_flow_particles`,
+`control_diffusion` / `drive_streamdiffusion` / `connect_comfyui`,
+`manage_td_process` / `switch_instance`, recipe/template marketplace) now live
+in [Out of scope](#out-of-scope-for-now); hand / face / segmentation MediaPipe
+modes shipped in v0.8.1; `create_strange_attractor` shipped earlier.
 
 ### Round 2 — "beyond the backlog" — 2026-05-30
 
@@ -749,8 +827,8 @@ lives under Milestone 3 above.
 
 #### B.3 · CLI & developer DX
 
-`bridge_watch_build` is implemented on main after v0.7.1 and is no longer
-tracked as open backlog.
+`bridge_watch_build` shipped in v0.8.2 and is no longer tracked as open
+backlog (see Round 1 A.3 above for the released wording).
 
 #### B.4 · AI & LLM integration
 
@@ -760,9 +838,9 @@ tracked as open backlog.
 
 #### B.5 · TouchDesigner depth (bridge + operators)
 
-| Feature | Delivers | Effort | Impact | Conf | Priority | Novelty | Probe-first |
-|---|---|---|---|---|---|---|---|
-| `param_changed_event` | `param.changed` via a Parameter Execute DAT (Round 1 tracked, still open) | M | Low | Med | P2 | tracked | onValueChange freq/scope |
+`param_changed_event` is tracked once in
+[Round 1 A.5](#a5-touchdesigner-depth-bridge--operators) as
+`param_change_event`; no separate Round-2 entry.
 
 #### B.6 · Cross-cutting (Round 2)
 
@@ -812,23 +890,21 @@ iconic looks**, and an **artist-publishing layer**. **Source codes:**
 | Feature | EX | Delivers | Eff | Impact | Conf | Pri | Status | Source(s) |
 |---|---|---|---|---|---|---|---|---|
 | `create_fixture_control` + 3D previz | EX-45 | Moving-head pan/tilt/dimmer/gobo via DMX + 3D rig preview | M | High | Med | P1 | NEW (builds planned DMX pipeline) | alltd, GeoPix, aw-cre |
-| `create_machine_sync` | EX-08 | Sync + Touch In/Out genlock + CHOP/DAT/TOP across machines | M | High | Med | P1 | NEW | alltd · probe ≥2 machines |
 | `create_detection_reactive` (YOLO) | EX-05 | Object/person presence/count → params (ONNX/WS, no CUDA) | M | Med | Med | P1 | NEW | aw-int (TDYolo, MIT) |
-| `create_depth_from_2d` (DepthAnything) | EX-06 | Monocular depth from any TOP → feeds depth/displace/point-cloud | M | High | Med | P1 | NEW·gated | aw-int, alltd · NVIDIA/CUDA |
-| `create_sensor_input` (Arduino/serial) | EX-10 | Serial parse + lag/filter/clamp/remap + calibration presets | M | Med | Med | P2 | EXTENSION | alltd · hardware |
-| `create_laser_output` (ILDA) | EX-09 | Laser CHOP → Lasercube/Etherdream/Helios | M | Med | Low | P2 | NEW | aw-int, aw-cre, alltd · hardware |
-| `create_multitouch_surface` / TUIO | EX-11 | Multi Touch In DAT + TUIO tangibles → CHOPs | M | Med | Med | P2 | NEW | alltd · touchscreen |
 | `create_geo_visualization` (OSM) | EX-12 | GeoJSON/OSM → project lat-long → instance a city | L | Med | Med | P2 | NEW | alltd · ODbL attribution |
-| `drive_diffusion_tox` / cloud-SD | EX-07 | Drive an installed ComfyUI/A1111/SD tox; cloud mode = no local GPU | M | Med | Med | P2 | NEW·gated | aw-int, alltd · NVIDIA or paid cloud |
 | Marketplace catalog index seed | EX-13 | Index public .tox catalogs (link-only) into `local_marketplace_index` | S | Low-Med | Med | P2 | EXTENSION | aw-int, aw-cre, alltd |
 | Synesthesia/Unreal-OSC presets | EX-14 | Named OSC-out presets for Synesthesia / Unreal | S | Low-Med | Med | P2 | EXTENSION | alltd |
+
+> Round-3 hardware / GPU / cloud / multi-machine-gated rows
+> (`create_machine_sync`, `create_depth_from_2d`, `create_sensor_input`,
+> `create_laser_output`, `create_multitouch_surface`, `drive_diffusion_tox`)
+> now live in [Out of scope](#out-of-scope-for-now).
 
 #### C.2 · Controls — effects, generators, reactivity, performance, mapping
 
 | Feature | EX | Delivers | Eff | Impact | Conf | Pri | Status | Source(s) |
 |---|---|---|---|---|---|---|---|---|
-| Color-finish suite remainder | EX-47/46 | Curves + histogram panel beyond the shipped `apply_lut`, scopes and colour wheels | M | High | High | P0 | PARTIAL | alltd, aw-cre |
-| MediaPipe face/hand/segmentation | EX-34 | Finger-gesture + face + selfie-segmentation on the in-tree engine | M | High | Med | P1 | ENH | aw-int (mediapipe-td, MIT) |
+| Color-finish suite remainder | EX-47/46 | Curves panel beyond the shipped `apply_lut`, scopes, colour wheels, and `create_histogram_scope` (v0.8.1) | M | High | High | P0 | PARTIAL | alltd, aw-cre |
 | `create_interaction_zones` + optical-flow trigger | EX-36 | Camera/pose enter/exit/dwell zones fire cues (no depth-cam) | M | Med-Hi | High | P1 | NEW | alltd |
 | `controlled_disorder_grid` | EX-27 | Grid of quads/lines with a tunable order↔chaos `disorder` knob | M | Med-Hi | High | P1 | NEW | anya, aw-cre · name generically |
 | `create_terrain` | EX-29 | Heightmap landscape + PBR splat + water + volumetric fog | L | Med | Med | P1 | NEW | aw-int, aw-cre (Terrain-Tools MIT) |
@@ -842,15 +918,18 @@ iconic looks**, and an **artist-publishing layer**. **Source codes:**
 | `create_step_repeat` | EX-23 | Brick/grid tiling with gap/jitter/rotation | S | Low | High | P2 | NEW | aw-cre (GPL idea-only) |
 | Lens/CA/vignette finishing pass | EX-24 | Barrel distortion + chromatic aberration + vignette | S | Low-Med | Med | P2 | ENH (check glitch overlap) | alltd, aw-cre |
 | Feedback/displace preset library | EX-25 | Pixel-drip, mirror/trail/decay, video-displaces-video presets | S | Low | Med | P2 | EXTENSION | alltd |
-| `create_lidar_reactive` | EX-35 | 2D LiDAR → blob-cluster → touch coords → bind (installs) | M | High | Med | P2 | NEW | anya · RPLidar hardware |
 | Kinetic-text path-follow / presets | EX-43 | Sentence-instancing path-follow + smoke-logo/ramp-text presets | M | Med | Med | P2 | EXTENSION | alltd, anya |
 | `scaffold_vj_deck` | EX-44 | Compose decks + control-surface + MIDI-map into a VJ deck UI | M | Med | Med | P2 | EXTENSION | alltd (PATCHDECK pattern) |
 | `create_pop_fluid` / `create_surface_flow` | EX-30 | POP-family GPU fluid + surface-flow (extends create_pop_field) | M–L | Med | Low | P2 | EXTENSION | alltd · probe POPs |
-| `create_volumetric_fire` (NVIDIA Flow) | EX-31 | Volumetric fire/smoke/water emitter | M | Med | Low | P2 | NEW·gated | alltd · NVIDIA/Windows |
 | `create_blob_trace` | EX-74/75 | Contour outline trace to complement the shipped `create_vector_lines` / SVG path | M | Med | Med | P2 | NEW | aw-cre, alltd |
 | Fractal SDF presets + particles-in-SDF | EX-33 | Mandelbulb/menger presets + instanced particles in a raymarched SDF | M | Low-Med | Med | P2 | EXTENSION | alltd · GPU |
 | `create_virtual_projection_set` / camera-match | EX-48 | Virtual room+projector cam previz; match cam to real projector | M | Med | Med | P2 | NEW | alltd |
 | VR180 stereo dome mode | EX-49 | 180° stereo equirect render on dome/cubemap output | S | Low | Med | P2 | EXTENSION | alltd |
+
+> Removed from this table since v0.8.x: `MediaPipe face/hand/segmentation`
+> (shipped v0.8.1 as `setup_face_tracking`, `setup_hand_tracking`,
+> `setup_segmentation`); `create_lidar_reactive` and `create_volumetric_fire`
+> moved to [Out of scope](#out-of-scope-for-now).
 
 #### C.3 · TouchDesigner depth — bridge, operators, editing
 
@@ -859,8 +938,10 @@ iconic looks**, and an **artist-publishing layer**. **Source codes:**
 | `create_raymarch_scene` → SDF expr-graph | EX-51 | Compose SDF primitives/booleans/domain-ops → one GLSL | L | Med-Hi | Med | P1 | ENH | aw-int, aw-cre (RayTK CC-BY) |
 | `complete_python_at` | EX-52 | Valid op paths/params/channels from the live graph for the LLM | S–M | Med | Med | P2 | NEW | aw-int, aw-cre |
 | `create_physics_constraints` (Bullet) | EX-32 | Hinges/springs/ragdoll/stacking rigid-body sims | L | Med | Low | P2 | NEW | aw-cre · probe-live |
-| TouchEngine headless path | EX-53 | Run a `.tox` headlessly (zero-copy) beyond the shipped Engine COMP wrapper | M | Med | Low | P2 | GATED | aw-int, alltd · paid TD license |
 | Cook-on-change optimizer mode | EX-54 | Cook only when input changes (null-cache gating) | S | Low | Med | P2 | EXTENSION | aw-cre (GPL idea-only) |
+
+> `TouchEngine headless path` (EX-53) moved to
+> [Out of scope (paid-license)](#out-of-scope-for-now).
 
 #### C.4 · Library, packaging & product
 

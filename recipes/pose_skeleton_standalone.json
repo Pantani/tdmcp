@@ -1,0 +1,68 @@
+{
+  "id": "pose_skeleton_standalone",
+  "name": "Pose Skeleton (Standalone)",
+  "description": "UNVERIFIED — A self-contained 9-point placeholder stick-figure renderer (no instancing — bones are drawn as Script SOP polylines via a lineMAT), ready to be driven by any custom pose source. Unlike pose_skeleton_mediapipe, this recipe does NOT depend on the torinmb MediaPipe plugin: it ships a built-in Table DAT with 9 static landmark positions (head, shoulders, hips, hands, feet) feeding a Script SOP that draws a stick-figure. Drop your own CHOP/DAT/OSC source into 'landmarks' to animate it. Foundation for custom pose pipelines (Kinect, Azure, OSC, file playback).",
+  "tags": ["pose", "skeleton", "standalone", "stick-figure", "placeholder"],
+  "difficulty": "intermediate",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "landmarks",
+      "type": "tableDAT",
+      "comment": "Placeholder static landmarks (9 joints: head, l/r shoulder, l/r hip, l/r hand, l/r foot): name,x,y,z — replace contents to animate"
+    },
+    { "name": "geo", "type": "geometryCOMP" },
+    {
+      "name": "skeleton",
+      "type": "scriptSOP",
+      "parent": "geo",
+      "render": true,
+      "comment": "onCook reads landmarks DAT and builds points + bone polylines"
+    },
+    { "name": "skel_cb", "type": "textDAT", "parent": "geo", "comment": "Script SOP callbacks" },
+    {
+      "name": "wire",
+      "type": "lineMAT",
+      "parameters": {
+        "linenearcolorr": 1.0,
+        "linenearcolorg": 0.6,
+        "linenearcolorb": 0.2,
+        "widthnear": 3
+      }
+    },
+    { "name": "cam", "type": "cameraCOMP", "parameters": { "tz": 5 } },
+    {
+      "name": "render",
+      "type": "renderTOP",
+      "parameters": {
+        "outputresolution": "custom",
+        "resolutionw": 1280,
+        "resolutionh": 720,
+        "antialias": "3"
+      }
+    },
+    { "name": "out1", "type": "nullTOP" }
+  ],
+  "connections": [{ "from": "render", "to": "out1" }],
+  "parameters": [
+    { "name": "callbacks", "node": "skeleton", "param": "callbacks", "value": "skel_cb" },
+    { "name": "material", "node": "geo", "param": "material", "value": "wire" },
+    { "name": "geometry", "node": "render", "param": "geometry", "value": "geo" },
+    { "name": "camera", "node": "render", "param": "camera", "value": "cam" }
+  ],
+  "python_code": {
+    "landmarks": "name\tx\ty\tz\nhead\t0\t1.6\t0\nlshoulder\t-0.4\t1.2\t0\nrshoulder\t0.4\t1.2\t0\nlhip\t-0.3\t0.4\t0\nrhip\t0.3\t0.4\t0\nlhand\t-0.8\t0.7\t0\nrhand\t0.8\t0.7\t0\nlfoot\t-0.3\t-0.8\t0\nrfoot\t0.3\t-0.8\t0\n",
+    "skel_cb": "BONES = [[0,1],[0,2],[1,2],[1,3],[2,4],[3,4],[1,5],[2,6],[3,7],[4,8]]\n\ndef onCook(scriptOp):\n    scriptOp.clear()\n    src = op('../landmarks')\n    if src is None or src.numRows < 2:\n        return\n    pts = []\n    for r in range(1, src.numRows):\n        try:\n            x = float(src[r, 1].val)\n            y = float(src[r, 2].val)\n            z = float(src[r, 3].val)\n        except Exception:\n            continue\n        p = scriptOp.appendPoint()\n        p.x = x; p.y = y; p.z = z\n        pts.append(p)\n    n = len(pts)\n    for a, b in BONES:\n        if a < n and b < n:\n            poly = scriptOp.appendPoly(2, closed=False, addPoints=False)\n            poly[0].point = pts[a]\n            poly[1].point = pts[b]\n    return\n"
+  },
+  "controls": [
+    {
+      "name": "LineWidth",
+      "type": "float",
+      "min": 0,
+      "max": 20,
+      "default": 3,
+      "bind_to": ["wire.widthnear"]
+    }
+  ],
+  "preview_description": "UNVERIFIED — An orange 9-point stick-figure (drawn as bone polylines, no instancing) standing in place against black, ready to be animated by swapping the landmarks DAT for a live pose source."
+}

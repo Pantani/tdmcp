@@ -1,0 +1,74 @@
+{
+  "id": "scene_3d_basic",
+  "name": "3D Scene Basic",
+  "description": "The foundational 3D scene template: a Geometry COMP with a sphere SOP (render+display flagged), a Camera COMP pulled back along +Z, a Light COMP, and a Render TOP outputting to a Null TOP. Mirrors what `create_3d_scene` builds at its simplest (single primitive, no instancing). Use as a starting point for 3D visuals — bind RotateY to a tempo ramp or audio feature to make it move, or swap the sphereSOP for boxSOP / gridSOP. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "tags": ["3d", "scene", "geometry", "render", "foundation"],
+  "difficulty": "intermediate",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "geo",
+      "type": "geometryCOMP",
+      "comment": "Container for the rendered geometry; default torus is cleared when shape becomes the render"
+    },
+    {
+      "name": "shape",
+      "type": "sphereSOP",
+      "parent": "geo",
+      "render": true,
+      "comment": "Sphere primitive — render+display flagged so geo renders this instead of the default torus"
+    },
+    {
+      "name": "cam",
+      "type": "cameraCOMP",
+      "parameters": { "tz": 5 },
+      "comment": "Camera pulled back along +Z so the sphere is in frame"
+    },
+    {
+      "name": "light",
+      "type": "lightCOMP",
+      "parameters": { "tx": 3, "ty": 3, "tz": 5 },
+      "comment": "Single key light"
+    },
+    {
+      "name": "render",
+      "type": "renderTOP",
+      "parameters": { "camera": "cam", "geometry": "geo", "lights": "light" },
+      "comment": "Render TOP reads its scene from parameters (camera/geometry/lights), not wires"
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "Final output TOP" }
+  ],
+  "connections": [{ "from": "render", "to": "out1" }],
+  "parameters": [
+    {
+      "name": "camera_z",
+      "node": "cam",
+      "param": "tz",
+      "value": 5,
+      "min": 1,
+      "max": 30,
+      "label": "Camera Z (Zoom)",
+      "description": "Distance of the camera from the origin — larger = scene appears smaller."
+    },
+    {
+      "name": "geo_ry",
+      "node": "geo",
+      "param": "ry",
+      "value": 0,
+      "min": 0,
+      "max": 360,
+      "label": "Rotate Y",
+      "description": "Whole-scene rotation around Y. Bind to a tempo ramp or audio feature for motion (manual-wire — RecipeSchema parameters take constants only)."
+    },
+    {
+      "name": "light_x",
+      "node": "light",
+      "param": "tx",
+      "value": 3,
+      "min": -10,
+      "max": 10,
+      "label": "Light X"
+    }
+  ],
+  "preview_description": "A single shaded sphere centred in the frame, lit from the upper-right by a key light — the bare-bones 3D scene every 3D recipe expands on."
+}

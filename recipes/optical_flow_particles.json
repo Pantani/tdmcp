@@ -1,0 +1,133 @@
+{
+  "id": "optical_flow_particles",
+  "name": "Optical Flow Particles",
+  "description": "CPU optical-flow surrogate (frame-difference + blur, non-CUDA) extracted from a video source, plus a parallel grid-emitter particle render. The flow TOP modulates a displaceTOP that warps a noise field, exposed at flow_out as a particle-driving texture; wiring flow_out into the particle simulation (e.g. as an extforcetop on the particleSOP, or via a chopToSOP to displace emitter points) is left to the user. The particle branch currently renders independently of the flow. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "tags": ["optical-flow", "particle", "video", "reactive", "motion"],
+  "difficulty": "advanced",
+  "td_version_min": "2023",
+  "nodes": [
+    {
+      "name": "source",
+      "type": "moviefileinTOP",
+      "parameters": { "play": 1, "loop": 1 },
+      "comment": "Video source (swap to videodeviceinTOP for live camera)"
+    },
+    {
+      "name": "pre_blur",
+      "type": "blurTOP",
+      "parameters": { "size": 2.0 },
+      "comment": "Spatial pre-blur to suppress high-frequency noise"
+    },
+    {
+      "name": "mono",
+      "type": "monochromeTOP",
+      "comment": "Luminance for differencing"
+    },
+    {
+      "name": "cache_prev",
+      "type": "cacheTOP",
+      "parameters": { "cachesize": 2, "replaceindex": -1, "outputindex": 0 },
+      "comment": "Previous frame for temporal diff (non-CUDA optical flow surrogate)"
+    },
+    {
+      "name": "flow",
+      "type": "compositeTOP",
+      "parameters": { "operand": "subtract" },
+      "comment": "Frame difference = motion energy; current minus previous luminance"
+    },
+    {
+      "name": "flow_blur",
+      "type": "blurTOP",
+      "parameters": { "size": 4.0 },
+      "comment": "Smooth the flow into a vector-ish displacement field"
+    },
+    {
+      "name": "noise_field",
+      "type": "noiseTOP",
+      "parameters": { "resolutionw": 512, "resolutionh": 512, "period": 4.0 },
+      "comment": "Base noise that gets warped by optical flow"
+    },
+    {
+      "name": "displace",
+      "type": "displaceTOP",
+      "comment": "Warps noise by flow vectors — motion pushes the field"
+    },
+    {
+      "name": "flow_out",
+      "type": "nullTOP",
+      "comment": "Particle-driving texture (flow-warped noise)"
+    },
+    {
+      "name": "geo",
+      "type": "geometryCOMP",
+      "comment": "Renders the particle SOP nested inside it"
+    },
+    {
+      "name": "emitter",
+      "type": "gridSOP",
+      "parent": "geo",
+      "parameters": { "rows": 20, "cols": 20 },
+      "comment": "Grid emitter — particles spawn from grid vertices"
+    },
+    {
+      "name": "particle",
+      "type": "particleSOP",
+      "parent": "geo",
+      "render": true,
+      "parameters": { "life": 3, "extforce": 0.5 },
+      "comment": "Particle simulation driven by the emitter"
+    },
+    { "name": "mat", "type": "pointspriteMAT", "comment": "Glowing sprite material" },
+    { "name": "cam", "type": "cameraCOMP", "parameters": { "tz": 4 } },
+    { "name": "light", "type": "lightCOMP", "parameters": { "tx": 2, "ty": 3, "tz": 4 } },
+    { "name": "render", "type": "renderTOP", "comment": "Final particle render" },
+    { "name": "out1", "type": "nullTOP" }
+  ],
+  "connections": [
+    { "from": "source", "to": "pre_blur" },
+    { "from": "pre_blur", "to": "mono" },
+    { "from": "mono", "to": "cache_prev" },
+    { "from": "mono", "to": "flow", "to_input": 0 },
+    { "from": "cache_prev", "to": "flow", "to_input": 1 },
+    { "from": "flow", "to": "flow_blur" },
+    { "from": "noise_field", "to": "displace", "to_input": 0 },
+    { "from": "flow_blur", "to": "displace", "to_input": 1 },
+    { "from": "displace", "to": "flow_out" },
+    { "from": "emitter", "to": "particle" },
+    { "from": "render", "to": "out1" }
+  ],
+  "parameters": [
+    { "name": "geometry", "node": "render", "param": "geometry", "value": "geo" },
+    { "name": "camera", "node": "render", "param": "camera", "value": "cam" },
+    { "name": "lights", "node": "render", "param": "lights", "value": "light" },
+    { "name": "material", "node": "geo", "param": "material", "value": "mat" },
+    {
+      "name": "flow_smoothing",
+      "node": "flow_blur",
+      "param": "size",
+      "value": 4.0,
+      "min": 0.0,
+      "max": 20.0,
+      "label": "Flow Smoothing"
+    },
+    {
+      "name": "particle_life",
+      "node": "particle",
+      "param": "life",
+      "value": 3,
+      "min": 0.5,
+      "max": 15,
+      "label": "Particle Lifetime"
+    },
+    {
+      "name": "ext_force",
+      "node": "particle",
+      "param": "extforce",
+      "value": 0.5,
+      "min": 0,
+      "max": 5,
+      "label": "External Force"
+    }
+  ],
+  "preview_description": "A particle grid renders alongside an optical-flow texture (flow_out). Once the user wires flow_out into the particle simulation, particles get pushed by motion in the source; out of the box, the particle branch is independent of the flow. metadata: offline-validated against RecipeSchema; live cook-check in TouchDesigner UNVERIFIED."
+}

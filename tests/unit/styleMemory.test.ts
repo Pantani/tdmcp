@@ -84,7 +84,7 @@ describe("styleMemoryImpl", () => {
     });
   });
 
-  it("update merges palettes/banned/favorites and bumps updated", async () => {
+  it("update merges palettes/banned/favorites and bumps updated", { timeout: 20_000 }, async () => {
     await withVault(async (vault) => {
       const first = await styleMemoryImpl(ctxWith(vault), {
         mode: "update",

@@ -8,6 +8,7 @@ import {
   ConnectResultSchema,
   type CreateNodeInput,
   CreateNodeInputSchema,
+  CustomParamsSchema,
   DatTextSchema,
   DatTextWriteSchema,
   DeleteResultSchema,
@@ -22,9 +23,15 @@ import {
   ParamModesSchema,
   PerformanceSchema,
   PreviewSchema,
+  ProjectAnalysisSchema,
   SetParamModeResultSchema,
+  SystemInfoSchema,
   type TdBatchOperation,
+  type TdCustomParams,
+  type TdProjectAnalysis,
+  type TdSystemInfo,
   TopologySchema,
+  TransportStateSchema,
 } from "./validators.js";
 
 export interface TouchDesignerClientOptions {
@@ -266,6 +273,12 @@ export class TouchDesignerClient {
     return this.request("GET", `/api/nodes/${segment(path)}/errors`, NodeErrorsSchema);
   }
 
+  // --- Custom-parameter readout (survives ALLOW_EXEC=0) ---
+  // Powers serialize_network + inspect_component without a defensive exec walk.
+  getCustomParams(path: string): Promise<TdCustomParams> {
+    return this.request("GET", `/api/nodes/${segment(path)}/custom_params`, CustomParamsSchema);
+  }
+
   getPreview(path: string, width = 640, height = 360) {
     return this.request("GET", `/api/preview/${segment(path)}`, PreviewSchema, undefined, {
       width,
@@ -343,6 +356,34 @@ export class TouchDesignerClient {
 
   putDatText(path: string, text: string) {
     return this.request("PUT", `/api/nodes/${segment(path)}/text`, DatTextWriteSchema, { text });
+  }
+
+  // --- Timeline transport (survives ALLOW_EXEC=0) ---
+  controlTimelineTransport(payload: {
+    action: "play" | "pause" | "seek" | "cue" | "rate";
+    frame?: number;
+    rate?: number;
+    cueName?: string;
+  }) {
+    return this.request("POST", "/api/transport", TransportStateSchema, payload);
+  }
+
+  // --- System info (GPU + monitors + perform mode) — survives ALLOW_EXEC=0 ---
+  getSystemInfo(include?: Array<"gpu" | "monitors" | "performMode">): Promise<TdSystemInfo> {
+    return this.request("GET", "/api/system", SystemInfoSchema, undefined, {
+      include: include?.length ? include.join(",") : undefined,
+    });
+  }
+
+  // --- Project diagnostic scan (survives ALLOW_EXEC=0) ---
+  analyzeProject(path: string, recursive = true): Promise<TdProjectAnalysis> {
+    return this.request(
+      "GET",
+      `/api/projects/${segment(path)}/analysis`,
+      ProjectAnalysisSchema,
+      undefined,
+      { recursive: recursive ? "true" : "false" },
+    );
   }
 
   // --- Structured bridge logs (Error DAT reader) ---

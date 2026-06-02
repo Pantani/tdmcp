@@ -1,0 +1,74 @@
+{
+  "id": "kinetic_text_path_follow",
+  "name": "Kinetic Text Path Follow",
+  "description": "Manual-wiring template: kinetic text whose position follows a deterministic circular path driven by two LFO CHOPs (sine X, sine Y at 0.25 phase = cosine). LFOs lfox/lfoy are created but NOT auto-bound to transform1.tx/ty because RecipeSchema parameters only accept constant `value`s, not expressions. After import: set transform1.tx to expression `op('lfox')['chan1']*<path_radius_x>` and transform1.ty to `op('lfoy')['chan1']*<path_radius_y>`. The exposed `path_speed` only retunes lfox.frequency; manually mirror it on lfoy.frequency (or expose path_speed_y) for synced speed. Placeholder for a future native path-follow extension (Sample CHOP over Curve SOP). Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check in TouchDesigner.",
+  "tags": ["text", "kinetic", "path-follow", "animation", "typography"],
+  "difficulty": "intermediate",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "text1",
+      "type": "textTOP",
+      "parameters": {
+        "text": "TDMCP",
+        "fontsizex": 140,
+        "alignx": "center",
+        "aligny": "center"
+      },
+      "comment": "Texto base (kinetic_text shippado)"
+    },
+    {
+      "name": "lfox",
+      "type": "lfoCHOP",
+      "parameters": { "frequency": 0.25, "shape": "sine" },
+      "comment": "Componente X do path circular (cos via fase)"
+    },
+    {
+      "name": "lfoy",
+      "type": "lfoCHOP",
+      "parameters": { "frequency": 0.25, "shape": "sine", "phase": 0.25 },
+      "comment": "Componente Y do path circular (sin)"
+    },
+    {
+      "name": "transform1",
+      "type": "transformTOP",
+      "parameters": { "tx": 0.0, "ty": 0.0, "sx": 1.0, "sy": 1.0 },
+      "comment": "Segue o path: tx/ty bindados aos LFOs via expressao"
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "TOP de saida final" }
+  ],
+  "connections": [{ "from": "text1", "to": "transform1" }, { "from": "transform1", "to": "out1" }],
+  "parameters": [
+    { "name": "text", "node": "text1", "param": "text", "value": "TDMCP", "label": "Text" },
+    {
+      "name": "font_size",
+      "node": "text1",
+      "param": "fontsizex",
+      "value": 140,
+      "min": 24,
+      "max": 480,
+      "label": "Font Size"
+    },
+    {
+      "name": "path_speed",
+      "node": "lfox",
+      "param": "frequency",
+      "value": 0.25,
+      "min": 0.0,
+      "max": 4.0,
+      "label": "Path Speed X (Hz)",
+      "description": "Angular speed of lfox only — mirror onto path_speed_y (or lfoy.frequency directly) for a synced circular path."
+    },
+    {
+      "name": "path_speed_y",
+      "node": "lfoy",
+      "param": "frequency",
+      "value": 0.25,
+      "min": 0.0,
+      "max": 4.0,
+      "label": "Path Speed Y (Hz)",
+      "description": "Angular speed of lfoy. Match path_speed for a true circle; offset for a Lissajous figure."
+    }
+  ],
+  "preview_description": "The word 'TDMCP' gliding along a smooth invisible circular path. Placeholder until a native path-follow extension (Sample CHOP over Curve SOP) ships."
+}

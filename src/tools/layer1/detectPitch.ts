@@ -252,7 +252,7 @@ export async function detectPitchImpl(ctx: ToolContext, args: DetectPitchArgs) {
           "Resolution is ~1 Hz per bin (coarser musically at low frequencies — a semitone near 80 Hz is <5 Hz).",
           "No octave/harmonic correction: a strong overtone can be picked instead of the fundamental, or the fundamental's octave reported.",
           "Monophonic only — a chord/polyphonic input yields whichever partial is loudest, not a meaningful single pitch.",
-          "Threshold default (0.02) and Sensitivity (1.0) are starting guesses; tune live against the real source.",
+          "Threshold default (0.0005) and Sensitivity (1.0) are starting guesses; tune live against the real source.",
         ],
       },
     });

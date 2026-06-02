@@ -1,0 +1,125 @@
+{
+  "id": "mediapipe_face_overlay",
+  "name": "MediaPipe Face Overlay",
+  "description": "Manual-wire template for the MediaPipe face-landmark look (face mesh dots drawn over a live video source). Mirrors the topology that setup_face_tracking (v0.8.1) builds at the tool level: a video background, an adapter Script CHOP fed by the MediaPipe engine's face JSON DAT, instanced dots from the 468 landmarks composited on top, then a final tint. Point 'facein' Select CHOP at the adapter CHOP from `tdmcp install mediapipe-touchdesigner` + setup_face_tracking. Offline-validated against RecipeSchema; live cook-check UNVERIFIED pending TD run.",
+  "tags": ["mediapipe", "face", "face-mesh", "overlay", "camera", "body-tracking"],
+  "difficulty": "intermediate",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "videoin",
+      "type": "videodeviceinTOP",
+      "comment": "Webcam background. macOS will prompt for camera permission on first cook."
+    },
+    {
+      "name": "bg_level",
+      "type": "levelTOP",
+      "parameters": { "brightness1": 0.6 },
+      "comment": "Dim the camera so the landmark dots read on top."
+    },
+    {
+      "name": "facein",
+      "type": "selectCHOP",
+      "comment": "Set 'chops' to /project1/mp_face_adapter/face (the adapter CHOP setup_face_tracking builds). 468 samples × tx/ty/tz/confidence."
+    },
+    { "name": "geo", "type": "geometryCOMP" },
+    {
+      "name": "dot",
+      "type": "circleSOP",
+      "parent": "geo",
+      "render": true,
+      "parameters": { "radx": 0.005, "rady": 0.005 },
+      "comment": "Single dot SOP — copied per landmark via instancing on the geometryCOMP."
+    },
+    {
+      "name": "dot_mat",
+      "type": "constantMAT",
+      "parameters": { "colorr": 0.2, "colorg": 1.0, "colorb": 0.9, "alpha": 0.9 }
+    },
+    { "name": "cam", "type": "cameraCOMP", "parameters": { "tz": 2.0 } },
+    {
+      "name": "render",
+      "type": "renderTOP",
+      "parameters": {
+        "outputresolution": "custom",
+        "resolutionw": 1280,
+        "resolutionh": 720,
+        "antialias": "3",
+        "alphabackground": 0
+      },
+      "comment": "Transparent background so the dot cloud composites over videoin."
+    },
+    {
+      "name": "overlay",
+      "type": "compositeTOP",
+      "parameters": { "operand": "over" },
+      "comment": "Face mesh dots composited over the dimmed webcam."
+    },
+    {
+      "name": "tint",
+      "type": "levelTOP",
+      "parameters": { "gamma1": 1.1 },
+      "comment": "Final tint/curve pass."
+    },
+    { "name": "out1", "type": "nullTOP" }
+  ],
+  "connections": [
+    { "from": "videoin", "to": "bg_level" },
+    { "from": "bg_level", "to": "overlay", "to_input": 1 },
+    { "from": "render", "to": "overlay", "to_input": 0 },
+    { "from": "overlay", "to": "tint" },
+    { "from": "tint", "to": "out1" }
+  ],
+  "parameters": [
+    { "name": "material", "node": "geo", "param": "material", "value": "dot_mat" },
+    { "name": "instancing", "node": "geo", "param": "instanceop", "value": "facein" },
+    { "name": "instance_tx", "node": "geo", "param": "instancetx", "value": "tx" },
+    { "name": "instance_ty", "node": "geo", "param": "instancety", "value": "ty" },
+    { "name": "instance_tz", "node": "geo", "param": "instancetz", "value": "tz" },
+    { "name": "geometry", "node": "render", "param": "geometry", "value": "geo" },
+    { "name": "camera", "node": "render", "param": "camera", "value": "cam" }
+  ],
+  "controls": [
+    {
+      "name": "Background",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 0.6,
+      "bind_to": ["bg_level.brightness1"]
+    },
+    {
+      "name": "Dot Color R",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 0.2,
+      "bind_to": ["dot_mat.colorr"]
+    },
+    {
+      "name": "Dot Color G",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 1.0,
+      "bind_to": ["dot_mat.colorg"]
+    },
+    {
+      "name": "Dot Color B",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 0.9,
+      "bind_to": ["dot_mat.colorb"]
+    },
+    {
+      "name": "Final Gamma",
+      "type": "float",
+      "min": 0.2,
+      "max": 3.0,
+      "default": 1.1,
+      "bind_to": ["tint.gamma1"]
+    }
+  ],
+  "preview_description": "A dimmed webcam frame of a face with a cyan-green dot cloud (one dot per MediaPipe face landmark) tracking the eyes, brows, nose and mouth contours in real time."
+}

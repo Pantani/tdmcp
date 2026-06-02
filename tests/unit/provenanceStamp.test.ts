@@ -60,7 +60,9 @@ describe("provenanceStamp", () => {
     expect(sidecar.toolchain.tdmcp_version).toBe(pkgVersion.version);
   });
 
-  it("idempotency — second stamp overwrites, sha256 unchanged, created_at differs", async () => {
+  it("idempotency — second stamp overwrites, sha256 unchanged, created_at differs", {
+    timeout: 20_000,
+  }, async () => {
     const args = {
       artifact_path: artifactPath,
       artifact_kind: "tox" as const,

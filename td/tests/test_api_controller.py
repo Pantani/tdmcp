@@ -379,17 +379,28 @@ class StructuredEndpointTests(unittest.TestCase):
             "log": ac.log_service,
             "param_text": ac.param_text_service,
             "api": ac.api_service,
+            "transport": ac.transport_service,
+            "system": ac.system_service,
+            "project_analysis": ac.project_analysis_service,
+            "custom_params": ac.custom_params_service,
         }
         ac.connect_service = mock.MagicMock(name="connect_service")
         ac.log_service = mock.MagicMock(name="log_service")
         ac.param_text_service = mock.MagicMock(name="param_text_service")
         ac.api_service = mock.MagicMock(name="api_service")
+        ac.transport_service = mock.MagicMock(name="transport_service")
+        ac.system_service = mock.MagicMock(name="system_service")
+        ac.custom_params_service = mock.MagicMock(name="custom_params_service")
 
     def tearDown(self):
         ac.connect_service = self._saved["connect"]
         ac.log_service = self._saved["log"]
         ac.param_text_service = self._saved["param_text"]
         ac.api_service = self._saved["api"]
+        ac.transport_service = self._saved["transport"]
+        ac.system_service = self._saved["system"]
+        ac.project_analysis_service = self._saved["project_analysis"]
+        ac.custom_params_service = self._saved["custom_params"]
         _clear_exec_env()
 
     def test_connect_dispatches_with_exec_disabled(self):
@@ -409,6 +420,61 @@ class StructuredEndpointTests(unittest.TestCase):
             {"to_path": "/p/b", "from_path": "/p/a", "to_input": 0},
         )
         ac.connect_service.disconnect.assert_called_once_with("/p/b", "/p/a", 0)
+
+    def test_transport_dispatches_with_exec_disabled(self):
+        ac._route(
+            "POST",
+            "/api/transport",
+            {},
+            {"action": "seek", "frame": 120},
+        )
+        ac.transport_service.control.assert_called_once_with(
+            "seek", frame=120, rate=None, cue_name=None
+        )
+
+    def test_transport_missing_action_raises_descriptive(self):
+        with self.assertRaises(ValueError) as cm:
+            ac._route("POST", "/api/transport", {}, {})
+        self.assertIn("action", str(cm.exception))
+
+    def test_project_analysis_dispatches_with_exec_disabled(self):
+        ac.project_analysis_service = mock.MagicMock(name="project_analysis_service")
+        ac._route("GET", "/api/projects/project1/sys/analysis", {}, {})
+        ac.project_analysis_service.analyze.assert_called_once_with(
+            "/project1/sys", recursive=True
+        )
+
+    def test_project_analysis_recursive_false_query(self):
+        ac.project_analysis_service = mock.MagicMock(name="project_analysis_service")
+        ac._route(
+            "GET", "/api/projects/project1/analysis", {"recursive": ["false"]}, {}
+        )
+        ac.project_analysis_service.analyze.assert_called_once_with(
+            "/project1", recursive=False
+        )
+
+    def test_system_dispatches_with_exec_disabled(self):
+        ac._route("GET", "/api/system", {}, {})
+        ac.system_service.get_system_info.assert_called_once_with(None)
+
+    def test_system_include_query_parsed_to_list(self):
+        ac._route("GET", "/api/system", {"include": ["gpu,monitors"]}, {})
+        ac.system_service.get_system_info.assert_called_once_with(["gpu", "monitors"])
+
+    def test_custom_params_dispatches_with_exec_disabled(self):
+        ac._route("GET", "/api/nodes/project1/comp1/custom_params", {}, {})
+        ac.custom_params_service.get_custom_params.assert_called_once_with("/project1/comp1")
+
+    def test_custom_params_encoded_path_round_trips(self):
+        ac._route(
+            "GET",
+            "/api/nodes/project1/sub/deep/comp/custom_params",
+            {},
+            {},
+        )
+        ac.custom_params_service.get_custom_params.assert_called_once_with(
+            "/project1/sub/deep/comp"
+        )
 
     def test_logs_dispatches_with_exec_disabled(self):
         ac._route("GET", "/api/logs", {"severity": ["error"], "max_lines": ["50"]}, {})
