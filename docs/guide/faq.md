@@ -57,6 +57,6 @@ It pairs a real operator knowledge base with a bridge that executes inside
 TouchDesigner in a create → verify → preview loop — so the AI uses real operators
 and fixes its own mistakes instead of guessing.
 
-::: tip Português
-Esta documentação também está em português — [comece por aqui](/pt/).
+::: tip Portuguese
+This documentation is also available in Portuguese — [start here](/pt/).
 :::
