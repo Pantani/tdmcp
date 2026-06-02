@@ -60,7 +60,9 @@ describe("atomicWriteFileSync", () => {
   it("does not leave the .tmp sibling visible after a successful write", () => {
     const target = join(dir, "clean.txt");
     atomicWriteFileSync(target, "ok");
-    const stragglers = readdirSync(dir).filter((f) => f.startsWith("clean.txt.") && f !== "clean.txt");
+    const stragglers = readdirSync(dir).filter(
+      (f) => f.startsWith("clean.txt.") && f !== "clean.txt",
+    );
     expect(stragglers).toEqual([]);
     expect(existsSync(target)).toBe(true);
   });
