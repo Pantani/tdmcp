@@ -18,6 +18,7 @@ from mcp.services import (
     api_service,
     batch_service,
     connect_service,
+    custom_params_service,
     log_service,
     param_text_service,
     preview_service,
@@ -324,6 +325,10 @@ def _route(method, path, query, body, webserver=None):
             )
         if rest[-1] == "errors" and method == "GET":
             return api_service.get_node_errors(_node_path(rest[1:-1]), recursive=False)
+        if rest[-1] == "custom_params" and method == "GET":
+            # /api/nodes/<path…>/custom_params — structured custom-par readout,
+            # survives ALLOW_EXEC=0. Powers serialize_network + inspect_component.
+            return custom_params_service.get_custom_params(_node_path(rest[1:-1]))
         # Param-mode + DAT-text suffixes — MORE SPECIFIC than the generic node CRUD
         # below, so they MUST be matched first (else `…/text` GET is swallowed by
         # get_node). No exec gate — structured endpoints survive ALLOW_EXEC=0.

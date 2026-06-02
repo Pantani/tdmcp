@@ -343,3 +343,26 @@ export const ProjectAnalysisSchema = z.object({
   fatal: z.string().optional(),
 });
 export type TdProjectAnalysis = z.infer<typeof ProjectAnalysisSchema>;
+
+// --- Custom-parameter readout (GET /api/nodes/<path>/custom_params) ---
+// Structured endpoint for serialize_network + inspect_component. Every field
+// optional so older bridges (or per-par failures) round-trip cleanly. ``value``
+// and ``default`` are unknown because TD pars span Float/Int/Toggle/Menu/Str
+// and we preserve the bridge's native type without coercion.
+export const CustomParamSchema = z.object({
+  name: z.string(),
+  label: z.string().nullable().optional(),
+  page: z.string().nullable().optional(),
+  style: z.string().nullable().optional(),
+  default: z.unknown().optional(),
+  value: z.unknown().optional(),
+  min: z.number().nullable().optional(),
+  max: z.number().nullable().optional(),
+  options: z.array(z.string()).nullable().optional(),
+});
+export const CustomParamsSchema = z.object({
+  params: z.array(CustomParamSchema).default([]),
+  warnings: z.array(z.string()).default([]),
+  fatal: z.string().optional(),
+});
+export type TdCustomParams = z.infer<typeof CustomParamsSchema>;

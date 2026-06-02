@@ -8,6 +8,7 @@ import {
   ConnectResultSchema,
   type CreateNodeInput,
   CreateNodeInputSchema,
+  CustomParamsSchema,
   DatTextSchema,
   DatTextWriteSchema,
   DeleteResultSchema,
@@ -26,6 +27,7 @@ import {
   SetParamModeResultSchema,
   SystemInfoSchema,
   type TdBatchOperation,
+  type TdCustomParams,
   type TdProjectAnalysis,
   type TdSystemInfo,
   TopologySchema,
@@ -269,6 +271,12 @@ export class TouchDesignerClient {
 
   getNodeErrors(path: string) {
     return this.request("GET", `/api/nodes/${segment(path)}/errors`, NodeErrorsSchema);
+  }
+
+  // --- Custom-parameter readout (survives ALLOW_EXEC=0) ---
+  // Powers serialize_network + inspect_component without a defensive exec walk.
+  getCustomParams(path: string): Promise<TdCustomParams> {
+    return this.request("GET", `/api/nodes/${segment(path)}/custom_params`, CustomParamsSchema);
   }
 
   getPreview(path: string, width = 640, height = 360) {

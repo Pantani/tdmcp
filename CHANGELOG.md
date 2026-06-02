@@ -8,6 +8,25 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **First-party recipe `audio_reactive_basic`** (8 nodes, 6 connections, 2
+  exposed controls) — minimal audio-in → analyze pattern from
+  `create_audio_reactive`: `audiodeviceinCHOP` fans out to an
+  `audiospectrumCHOP` (outlength 256) and an `analyzeCHOP` RMS, with a
+  `nullCHOP` for stable downstream `bind_to_channel` and a `choptoTOP` +
+  `levelTOP` Sensitivity stage publishing the spectrum texture. A
+  `constantTOP` placeholder is wired to `nullTOP` out and ready for the
+  artist to bind its colorr expression to `op('level_null')['chan1']`.
+  Offline-validated against `RecipeSchema`; live cook-check pending
+  (UNVERIFIED).
+- **First-party recipe `keyframe_animation_basic`** (5 nodes, 3 connections,
+  2 exposed controls) — Animation COMP showcase paralleling
+  `create_keyframe_animation`: `animationCOMP` (artist authors 2 channels
+  `tx`/`ty` with 5 keys each in the Animation Editor) feeds a `speedCHOP`
+  for global playback rate, wrapped by a `nullCHOP` for stable channel refs,
+  with a `constantTOP` target ready for `op('anim_null')['tx']`-style
+  expressions. Foundation for declarative camera/object motion. Manual-wire
+  documented inline. Offline-validated against `RecipeSchema`; live
+  cook-check pending (UNVERIFIED). Total: 31/31 recipes valid.
 - **First-party recipe `pose_skeleton_standalone`** (8 nodes, 1 connection, 1
   exposed control) — placeholder skeleton renderer for `create_pose_skeleton`
   with a built-in Table DAT of 8 static landmarks (head/shoulders/hips/hands/

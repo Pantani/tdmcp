@@ -41,6 +41,8 @@ language like any other visual.
 | **GLSL Shader Basic** | Single GLSL TOP with inline shader showcasing `create_glsl_shader` with exposed uniform controls. | Intermediate |
 | **Pose Skeleton (Standalone)** | Placeholder skeleton renderer with instanced joints/bones, foundation for any custom pose source (no MediaPipe). | Intermediate |
 | **Particle System Basic** | Foundational `create_particle_system` template with grid emitter + force CHOP + geometry render. | Beginner |
+| **Audio Reactive Basic** | Minimal audio-in → analyze pattern from `create_audio_reactive`, ready for the artist to wire into a visual chain. | Beginner |
+| **Keyframe Animation Basic** | Animation COMP showcase with 2 channels + 5 keyframes, foundation for declarative camera/object motion. | Intermediate |
 
 ::: tip Browse them live
 Ask *"list the available recipes"* and the AI will read them straight from the

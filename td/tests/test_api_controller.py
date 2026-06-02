@@ -382,6 +382,7 @@ class StructuredEndpointTests(unittest.TestCase):
             "transport": ac.transport_service,
             "system": ac.system_service,
             "project_analysis": ac.project_analysis_service,
+            "custom_params": ac.custom_params_service,
         }
         ac.connect_service = mock.MagicMock(name="connect_service")
         ac.log_service = mock.MagicMock(name="log_service")
@@ -389,6 +390,7 @@ class StructuredEndpointTests(unittest.TestCase):
         ac.api_service = mock.MagicMock(name="api_service")
         ac.transport_service = mock.MagicMock(name="transport_service")
         ac.system_service = mock.MagicMock(name="system_service")
+        ac.custom_params_service = mock.MagicMock(name="custom_params_service")
 
     def tearDown(self):
         ac.connect_service = self._saved["connect"]
@@ -398,6 +400,7 @@ class StructuredEndpointTests(unittest.TestCase):
         ac.transport_service = self._saved["transport"]
         ac.system_service = self._saved["system"]
         ac.project_analysis_service = self._saved["project_analysis"]
+        ac.custom_params_service = self._saved["custom_params"]
         _clear_exec_env()
 
     def test_connect_dispatches_with_exec_disabled(self):
@@ -457,6 +460,21 @@ class StructuredEndpointTests(unittest.TestCase):
     def test_system_include_query_parsed_to_list(self):
         ac._route("GET", "/api/system", {"include": ["gpu,monitors"]}, {})
         ac.system_service.get_system_info.assert_called_once_with(["gpu", "monitors"])
+
+    def test_custom_params_dispatches_with_exec_disabled(self):
+        ac._route("GET", "/api/nodes/project1/comp1/custom_params", {}, {})
+        ac.custom_params_service.get_custom_params.assert_called_once_with("/project1/comp1")
+
+    def test_custom_params_encoded_path_round_trips(self):
+        ac._route(
+            "GET",
+            "/api/nodes/project1/sub/deep/comp/custom_params",
+            {},
+            {},
+        )
+        ac.custom_params_service.get_custom_params.assert_called_once_with(
+            "/project1/sub/deep/comp"
+        )
 
     def test_logs_dispatches_with_exec_disabled(self):
         ac._route("GET", "/api/logs", {"severity": ["error"], "max_lines": ["50"]}, {})

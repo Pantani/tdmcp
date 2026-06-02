@@ -1,0 +1,62 @@
+{
+  "id": "keyframe_animation_basic",
+  "name": "Keyframe Animation Basic",
+  "description": "Foundation for declarative motion: an Animation COMP showcase with two channels (tx, ty) wrapped by a Null CHOP for stable downstream binding, plus a Constant TOP target whose color (r, g) can be driven by the channels via expressions. The Animation COMP is created empty here — the artist opens it and authors 5 keyframes per channel in the Animation Editor (0s/1s/2s/3s/4s, eased), then sets target expressions like op('anim_null')['tx'] on out_color.colorr. A Speed CHOP controls global playback rate. Mirrors the conceptual shape of create_keyframe_animation (Layer-1, v0.7.0) using declarative TD nodes instead of a runtime Execute DAT. Offline-validated against RecipeSchema; live cook-check UNVERIFIED pending TD run. Manual-wire: (1) author tx/ty channels inside anim's Animation Editor; (2) set out_color.colorr expr to op('anim_null')['tx'] and colorg to op('anim_null')['ty'].",
+  "tags": ["keyframes", "animation", "motion", "automation", "starter"],
+  "difficulty": "intermediate",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "anim",
+      "type": "animationCOMP",
+      "comment": "Animation COMP. Open it and add 'tx','ty' channels with 5 keys each (0,1,2,3,4s); use the Animation Editor for eased curves."
+    },
+    {
+      "name": "speed",
+      "type": "speedCHOP",
+      "parameters": { "speed": 1.0 },
+      "comment": "Global playback rate. speed=1 plays at real-time; 0 pauses; 0.5 = half speed."
+    },
+    {
+      "name": "anim_null",
+      "type": "nullCHOP",
+      "comment": "Stable ref for downstream bind/expressions ('tx', 'ty')."
+    },
+    {
+      "name": "out_color",
+      "type": "constantTOP",
+      "parameters": { "colorr": 0.0, "colorg": 0.0, "colorb": 0.1, "alpha": 1.0 },
+      "comment": "Target. Manual-wire: set colorr expr to op('anim_null')['tx']; colorg to op('anim_null')['ty']."
+    },
+    {
+      "name": "out1",
+      "type": "nullTOP",
+      "comment": "Final output."
+    }
+  ],
+  "connections": [
+    { "from": "anim", "to": "speed" },
+    { "from": "speed", "to": "anim_null" },
+    { "from": "out_color", "to": "out1" }
+  ],
+  "parameters": [],
+  "controls": [
+    {
+      "name": "Play Speed",
+      "type": "float",
+      "min": 0,
+      "max": 4,
+      "default": 1,
+      "bind_to": ["speed.speed"]
+    },
+    {
+      "name": "Base Blue",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 0.1,
+      "bind_to": ["out_color.colorb"]
+    }
+  ],
+  "preview_description": "An empty Animation COMP wired to a Null CHOP and a dark-blue target frame, ready for the artist to author tx/ty keyframes in the Animation Editor and link them as expressions on the target color."
+}
