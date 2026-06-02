@@ -10,18 +10,23 @@ can build real visual systems from plain language — no node-wiring by hand. Th
 page is the honest, bird's-eye picture of **what already works, what's still
 rough, and what's coming next** on the way to a stable 1.0.
 
-**Where things stand today.** The current release line is **v0.8.1**, with
-**279 tools** across three layers plus library/packaging, AI session memory and
-Obsidian vault integrations. It builds on v0.7.1 (269 tools, 2026-06-01) by
-adding the SDF / strange-attractor / optical-flow / histogram-scope generators,
-the MediaPipe face + hand + segmentation adapters, the AI Show Director dry-run
-policy layer, the inline-preview / dashboard-v2 / N-channel-decks follow-through,
-the persistent session profile (`load_session_profile` +
-`tdmcp://session/profile`), and the new MCP resources
+**Where things stand today.** The current release line is **v0.8.2**, the
+stabilization patch on top of v0.8.1 — same 279 tools, but with four new bridge
+REST endpoints, seven REST-first tool promotions, the `bridge_watch_build` hot
+reload, a +16 recipe expansion (now 31 first-party recipes), the tool API
+contract reference page, and a coverage push that bumped `functions: 80 → 82`
+and seeded new test suites across `src/index.ts`, `src/cli/*`, and `src/llm/*`.
+v0.8.1 itself added the SDF / strange-attractor / optical-flow / histogram-scope
+generators, the MediaPipe face + hand + segmentation adapters, the AI Show
+Director dry-run policy layer, the inline-preview / dashboard-v2 /
+N-channel-decks follow-through, the persistent session profile
+(`load_session_profile` + `tdmcp://session/profile`), and the new MCP resources
 (`tdmcp://glsl-snippets`, `tdmcp://cheatsheets`,
-`tdmcp://learning/touchdesigner`). The CHANGELOG `[0.8.1]` and `[0.8.0]` blocks
-list every entry; the always-current tool list is the
-[Tools reference](/reference/tools).
+`tdmcp://learning/touchdesigner`). The CHANGELOG `[0.8.2]` / `[0.8.1]` /
+`[0.8.0]` blocks list every entry; the always-current tool list is the
+[Tools reference](/reference/tools). 1.0 is **not** the next minor — v0.8.x is
+the active stabilization line, and v1.0 will land only once the consolidation
+gates below are all green.
 
 The project has grown through five arcs:
 
@@ -59,6 +64,50 @@ The project has grown through five arcs:
 ---
 
 ## ✅ Current Release Line
+
+### v0.8.2 — Stabilization patch: REST bridge expansion, recipe library, coverage push
+
+v0.8.2 is the public tag for the 0.8 stabilization line. Same tool surface as
+v0.8.1 (279 tools) — this release **does not add new tools**, it stabilizes the
+existing surface ahead of v1.0:
+
+- **Four new bridge REST endpoints** that survive `TDMCP_BRIDGE_ALLOW_EXEC=0`:
+  `POST /api/transport` (timeline play/pause/seek/cue/rate),
+  `GET /api/system` (gpu + monitors + performMode),
+  `GET /api/projects/<path>/analysis` (project analysis port of the previously
+  embedded Python script), and
+  `GET /api/nodes/<path>/custom_params` (custom-par readout for COMPs).
+- **Seven tools promoted REST-first** with `tryEndpoint(REST, exec-fallback)`:
+  `snapshot_td_graph`, `control_timeline_transport`,
+  `inspect_gpu_and_displays`, `analyze_project`, plus the custom-params slice of
+  `serialize_network` and `inspect_component`, and a snapshot+rollback flow on
+  `repair_network` (steps revert if `errors_after >= errors_before`).
+- **`bridge_watch_build` shipped**: `tdmcp-agent watch-build` gates changed
+  bridge Python with `py_compile` and reloads the running bridge automatically
+  unless disabled.
+- **Recipe library expansion**: +16 first-party recipes (15 → 31) covering the
+  v0.7–v0.8 generators (kinetic text, decks, 3D scene, depth+displace,
+  optical-flow particles, MediaPipe face overlay, scene timeline, GLSL plasma,
+  pose skeleton standalone, particle system basic, feedback network basic,
+  audio reactive basic, keyframe animation basic, video synth oscillator).
+- **Tool API contract** reference page published at `/reference/tool-contract`
+  documenting the v1.0 invariants (naming, schema, error handling, offline
+  behaviour, result shape, deprecation).
+- **Coverage gates raised**: `functions: 80 → 82` in `vitest.config.ts`;
+  global Br now at 72%+. New test suites for `src/index.ts`, `src/cli/agent.ts`
+  (wave-5 + wave-9), `src/cli/tui.ts`, `src/cli/doctor.ts`, `src/llm/server.ts`,
+  `src/llm/client.ts`, `src/packages/cli.ts`, plus targeted regressions for
+  `detect_pitch`, `repair_network` rollback, `create_envelope_follower` ducking
+  topology, and a vault round-trip determinism suite. Three pre-existing flaky
+  fs-heavy tests (`provenanceStamp`, `styleMemory`, `vaultRepoSync`) hardened.
+- **Roadmap honesty pass**: Experimental / Out-of-scope / Planning archive
+  reconciled (no shipped item lingering as backlog; gated items split into
+  hardware / GPU / multimodal-LLM / paid-license buckets).
+- **Bug fixes**: `detect_pitch` `notes` string now advertises the actual
+  `DEFAULT_THRESHOLD = 0.0005` (was the stale `0.02`); `repair_network` no
+  longer leaks `_snapshot` between invocations; `kinetic_text_audio_reactive`
+  recipe now uses `audiofilterCHOP` (`audiobandeqCHOP` does not expose
+  `loband`/`hiband`).
 
 ### v0.8.1 — v0.8 feature line, session profile and resilience patch
 
@@ -722,10 +771,9 @@ The only remaining Round-1 A.1 row targeted by this PR,
 `install-bridge --verify` + bounded macOS Textport automation; top-level CLI
 completion / package parity; `tdmcp-agent run` `--no-color` propagation) and
 are no longer tracked as open backlog.
-`bridge_watch_build` is implemented on main after v0.7.1; the existing watcher
-gates changed bridge Python with `py_compile` and reloads the running bridge
-automatically unless disabled. Not yet promoted to a release tag (last shipped
-tag is v0.8.1) — verify in next release tag for promotion.
+`bridge_watch_build` **shipped in v0.8.2**: `tdmcp-agent watch-build` now gates
+changed bridge Python with `py_compile` and reloads the running bridge
+automatically unless disabled (`--no-py-compile` / `--no-reload-bridge` opt out).
 
 #### A.4 · AI & LLM integration
 
@@ -777,9 +825,8 @@ lives under Milestone 3 above.
 
 #### B.3 · CLI & developer DX
 
-`bridge_watch_build` is implemented on main after v0.7.1 and is no longer
-tracked as open backlog (verify in next release tag for promotion; not yet
-included in v0.8.1).
+`bridge_watch_build` shipped in v0.8.2 and is no longer tracked as open
+backlog (see Round 1 A.3 above for the released wording).
 
 #### B.4 · AI & LLM integration
 

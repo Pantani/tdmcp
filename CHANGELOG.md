@@ -6,6 +6,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.2] - 2026-06-02
+
 ### Added
 
 - **First-party recipe `audio_reactive_basic`** (8 nodes, 6 connections, 2
