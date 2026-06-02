@@ -135,7 +135,8 @@ async function buildSource(
 function buildLumaShader(bins: number): string {
   return [
     "out vec4 fragColor;",
-    "uniform sampler2D sTD2DInputs[1];",
+    // sTD2DInputs is injected by TD's GLSL preamble — redeclaring it here
+    // would cause a sampler-redefinition error and the shader would not cook.
     "void main(){",
     "  int binIdx = int(gl_FragCoord.x);",
     `  int totalBins = ${bins};`,

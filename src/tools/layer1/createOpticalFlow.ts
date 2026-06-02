@@ -171,21 +171,40 @@ export async function createOpticalFlowImpl(
     // ── Temporal smoothing (feedbackTOP + levelTOP cross-fade) ────────────────
     // levelTOP cross-fades between the feedback output and the current gained
     // diff, controlled by the smoothing parameter.
-    const levelMix = await builder.add("levelTOP", "level_mix", {
-      opacity: args.smoothing,
+    // True two-input cross-fade: when smoothing=0 the output is the raw gained
+    // diff; when smoothing>0 it blends in the previous frame's mixed result
+    // via a feedbackTOP. Weights: current = (1-smoothing), prev = smoothing.
+    const smoothClamped = Math.max(0, Math.min(1, args.smoothing));
+    const curLevel = await builder.add("levelTOP", "cur_level", {
+      opacity: 1 - smoothClamped,
       resolutionw: resW,
       resolutionh: resH,
     });
-    await builder.connect(gainMath, levelMix, 0, 0);
+    await builder.connect(gainMath, curLevel, 0, 0);
 
     const smoothFb = await builder.add("feedbackTOP", "smooth_fb", {
       resolutionw: resW,
       resolutionh: resH,
     });
-    await builder.connect(levelMix, smoothFb, 0, 0);
+    const prevLevel = await builder.add("levelTOP", "prev_level", {
+      opacity: smoothClamped,
+      resolutionw: resW,
+      resolutionh: resH,
+    });
+    await builder.connect(smoothFb, prevLevel, 0, 0);
 
-    // Wire the feedbackTOP target reference back to level_mix via Python
-    // (OP-path parameters are set unevenly by the structured setter).
+    // Sum current + previous as the mixed output (current-vs-feedback blend).
+    const levelMix = await builder.add("compositeTOP", "level_mix", {
+      operand: "add",
+      resolutionw: resW,
+      resolutionh: resH,
+    });
+    await builder.connect(curLevel, levelMix, 0, 0);
+    await builder.connect(prevLevel, levelMix, 0, 1);
+
+    // Wire the feedbackTOP target reference back to the mixed output via Python
+    // (OP-path parameters are set unevenly by the structured setter), so the
+    // next frame's `prev_level` reads from this frame's blended result.
     await builder.python(
       `_fb = op(${JSON.stringify(smoothFb)})\ntry:\n    _fb.par.top = ${JSON.stringify(levelMix)}\nexcept Exception:\n    pass`,
     );

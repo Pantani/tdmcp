@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import {
   appendFileSync,
@@ -112,6 +113,35 @@ function defaultVaultProbe(absPath: string): { exists: boolean; isDir: boolean }
 
 function defaultVaultRepair(absPath: string): void {
   mkdirSync(absPath, { recursive: true });
+}
+
+/** Default install-bridge runner — spawns `tdmcp install-bridge --verify`. */
+function defaultRunInstallBridge(): Promise<{ ok: boolean; detail: string }> {
+  return new Promise((resolve) => {
+    const cmd = process.env.TDMCP_BIN ?? "tdmcp";
+    const child = spawn(cmd, ["install-bridge", "--verify"], {
+      stdio: ["ignore", "pipe", "pipe"],
+      env: process.env,
+    });
+    let stdout = "";
+    let stderr = "";
+    child.stdout?.on("data", (chunk) => {
+      stdout += chunk.toString();
+    });
+    child.stderr?.on("data", (chunk) => {
+      stderr += chunk.toString();
+    });
+    child.on("error", (err) => {
+      resolve({ ok: false, detail: `spawn failed: ${err.message}` });
+    });
+    child.on("close", (code) => {
+      const tail = (stdout + stderr).trim().split("\n").slice(-3).join(" | ").slice(0, 240);
+      resolve({
+        ok: code === 0,
+        detail: code === 0 ? tail || "exit 0" : `exit ${code ?? "?"}: ${tail || "(no output)"}`,
+      });
+    });
+  });
 }
 
 /** TD bridge reachability + version. Critical: a failure here fails the whole doctor. */
@@ -552,7 +582,7 @@ export async function runDoctor(opts: RunDoctorOptions = {}): Promise<DoctorResu
 
     const bridgeRepairs = await repairBridge(
       checks.find((c) => c.id === "bridge"),
-      opts.runInstallBridge,
+      opts.runInstallBridge ?? defaultRunInstallBridge,
     );
     allRepairs = allRepairs.concat(bridgeRepairs);
 

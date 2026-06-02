@@ -192,15 +192,26 @@ describe("doctor --fix: bridge repair", () => {
     expect(r.stdout).toContain("Failed fixes");
   });
 
-  it("--fix without runInstallBridge shows suggestion but does not run anything", async () => {
+  it("--fix without runInstallBridge falls back to the default spawn runner", async () => {
     server.use(offlineInfoHandler, llmModels("qwen2.5:3b"));
-    const r = await runDoctor({
-      config: makeConfig(),
-      makeCtx,
-      fix: true,
-    });
-    expect(r.report.repairs?.find((rep) => rep.id === "bridge")).toBeUndefined();
-    expect(r.report.fixes?.some((f) => f.id === "bridge")).toBe(true);
+    // Point TDMCP_BIN at a binary that always fails, so the default spawn
+    // exercises but reports a failed repair instead of trying real `tdmcp`.
+    const prev = process.env.TDMCP_BIN;
+    process.env.TDMCP_BIN = "false";
+    try {
+      const r = await runDoctor({
+        config: makeConfig(),
+        makeCtx,
+        fix: true,
+      });
+      // The default runner spawned and the bridge repair was attempted (not silently skipped).
+      expect(r.report.repairs).toContainEqual(
+        expect.objectContaining({ id: "bridge", status: "failed" }),
+      );
+    } finally {
+      if (prev === undefined) delete process.env.TDMCP_BIN;
+      else process.env.TDMCP_BIN = prev;
+    }
   });
 
   it("--fix handles a thrown error from runInstallBridge gracefully", async () => {
