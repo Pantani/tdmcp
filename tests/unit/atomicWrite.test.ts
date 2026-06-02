@@ -1,4 +1,13 @@
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  existsSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -66,4 +75,21 @@ describe("atomicWriteFileSync", () => {
     expect(stragglers).toEqual([]);
     expect(existsSync(target)).toBe(true);
   });
+
+  it.skipIf(process.platform === "win32")(
+    "preserves the existing file mode across atomic overwrites (POSIX)",
+    () => {
+      const target = join(dir, "secret.json");
+      writeFileSync(target, "old");
+      chmodSync(target, 0o600);
+      const before = statSync(target).mode & 0o777;
+      expect(before).toBe(0o600);
+
+      atomicWriteFileSync(target, "new");
+
+      expect(readFileSync(target, "utf8")).toBe("new");
+      const after = statSync(target).mode & 0o777;
+      expect(after).toBe(0o600);
+    },
+  );
 });

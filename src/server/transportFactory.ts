@@ -179,23 +179,32 @@ async function startHttp(
   // Wrap listen() in a Promise so EADDRINUSE (port already bound) surfaces as a
   // clean rejection at startup instead of an unhandled 'error' event that would
   // crash the whole server process the moment listen reports back.
-  await new Promise<void>((resolve, reject) => {
-    const onListenError = (err: Error): void => {
-      httpServer.removeListener("listening", onListening);
-      reject(err);
-    };
-    const onListening = (): void => {
-      httpServer.removeListener("error", onListenError);
-      logger.info("tdmcp listening over Streamable HTTP", {
-        port: config.httpPort,
-        path: MCP_PATH,
-      });
-      resolve();
-    };
-    httpServer.once("error", onListenError);
-    httpServer.once("listening", onListening);
-    httpServer.listen(config.httpPort, "127.0.0.1");
-  });
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const onListenError = (err: Error): void => {
+        httpServer.removeListener("listening", onListening);
+        reject(err);
+      };
+      const onListening = (): void => {
+        httpServer.removeListener("error", onListenError);
+        logger.info("tdmcp listening over Streamable HTTP", {
+          port: config.httpPort,
+          path: MCP_PATH,
+        });
+        resolve();
+      };
+      httpServer.once("error", onListenError);
+      httpServer.once("listening", onListening);
+      httpServer.listen(config.httpPort, "127.0.0.1");
+    });
+  } catch (err) {
+    // The event stream was started above (before we knew whether the HTTP port
+    // would be free); on a listen failure no TransportHandle is returned to
+    // the caller, so without an explicit close here a reconnecting WebSocket
+    // would keep the process alive after the CLI sets process.exitCode.
+    events?.close();
+    throw err;
+  }
 
   // Post-listen errors (a transient socket-level error) must not kill the process.
   httpServer.on("error", (err) => {
