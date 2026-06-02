@@ -1,6 +1,7 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, join, resolve, sep } from "node:path";
+import { join, resolve, sep } from "node:path";
+import { atomicWriteFileSync } from "../utils/atomicWrite.js";
 import { type Logger, silentLogger } from "../utils/logger.js";
 import { buildNote, type ParsedNote, parseNote } from "./frontmatter.js";
 
@@ -38,15 +39,11 @@ export class Vault {
   }
 
   write(relPath: string, content: string): void {
-    const full = this.resolve(relPath);
-    mkdirSync(dirname(full), { recursive: true });
-    writeFileSync(full, content, "utf8");
+    atomicWriteFileSync(this.resolve(relPath), content, "utf8");
   }
 
   writeBinary(relPath: string, data: Buffer): void {
-    const full = this.resolve(relPath);
-    mkdirSync(dirname(full), { recursive: true });
-    writeFileSync(full, data);
+    atomicWriteFileSync(this.resolve(relPath), data);
   }
 
   ensureDir(relPath: string): void {

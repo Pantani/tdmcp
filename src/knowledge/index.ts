@@ -185,20 +185,39 @@ export class KnowledgeBase {
     return this.operatorLookup().has(compactKey(typeOrName));
   }
 
+  private opHaystackCache?: Array<{
+    summary: OperatorSummary;
+    haystack: string;
+    nameLower: string;
+  }>;
+
+  private operatorHaystacks(): Array<{
+    summary: OperatorSummary;
+    haystack: string;
+    nameLower: string;
+  }> {
+    if (this.opHaystackCache) return this.opHaystackCache;
+    this.opHaystackCache = this.operatorIndex().map((summary) => ({
+      summary,
+      haystack:
+        `${summary.name} ${summary.displayName} ${summary.summary} ${summary.keywords.join(" ")}`.toLowerCase(),
+      nameLower: summary.name.toLowerCase(),
+    }));
+    return this.opHaystackCache;
+  }
+
   searchOperators(query: string, limit = 25): OperatorSummary[] {
     const q = query.trim().toLowerCase();
     if (!q) return [];
     const terms = q.split(/\s+/);
     const scored: Array<{ summary: OperatorSummary; score: number }> = [];
-    for (const summary of this.operatorIndex()) {
-      const haystack =
-        `${summary.name} ${summary.displayName} ${summary.summary} ${summary.keywords.join(" ")}`.toLowerCase();
+    for (const entry of this.operatorHaystacks()) {
       let score = 0;
       for (const term of terms) {
-        if (haystack.includes(term)) score += 1;
-        if (summary.name.toLowerCase().includes(term)) score += 1;
+        if (entry.haystack.includes(term)) score += 1;
+        if (entry.nameLower.includes(term)) score += 1;
       }
-      if (score > 0) scored.push({ summary, score });
+      if (score > 0) scored.push({ summary: entry.summary, score });
     }
     scored.sort((a, b) => b.score - a.score);
     return scored.slice(0, limit).map((s) => s.summary);

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isMissingEndpoint } from "../../td-client/types.js";
+import { tryEndpoint } from "../../td-client/types.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -82,46 +82,47 @@ export async function editDatContentImpl(ctx: ToolContext, args: EditDatContentA
       //    run the exhaustively-tested pure replace, write it back. A compute error
       //    (0 matches / >1 without replace_all / not-a-DAT) becomes report.fatal so
       //    the shared onOk turns it into an errorResult and NO write happens.
-      try {
-        const cur = await ctx.client.getDatText(args.dat_path);
-        const res = computeDatTextReplace(
-          cur.text,
-          args.old_string,
-          args.new_string,
-          args.replace_all,
-        );
-        if (res.error || res.text === undefined) {
+      // 2) Fall back to exec ONLY when an endpoint is absent on an older bridge;
+      //    validation 400s surface unchanged via tryEndpoint.
+      return tryEndpoint<EditDatReport>(
+        async () => {
+          const cur = await ctx.client.getDatText(args.dat_path);
+          const res = computeDatTextReplace(
+            cur.text,
+            args.old_string,
+            args.new_string,
+            args.replace_all,
+          );
+          if (res.error || res.text === undefined) {
+            return {
+              dat: args.dat_path,
+              occurrences: res.occurrences,
+              replacements: res.replacements,
+              replace_all: args.replace_all,
+              warnings: [],
+              fatal: res.error ?? "edit_dat_content: nothing to replace.",
+            };
+          }
+          await ctx.client.putDatText(args.dat_path, res.text);
           return {
             dat: args.dat_path,
             occurrences: res.occurrences,
             replacements: res.replacements,
             replace_all: args.replace_all,
             warnings: [],
-            fatal: res.error ?? "edit_dat_content: nothing to replace.",
-          } as EditDatReport;
-        }
-        await ctx.client.putDatText(args.dat_path, res.text);
-        return {
-          dat: args.dat_path,
-          occurrences: res.occurrences,
-          replacements: res.replacements,
-          replace_all: args.replace_all,
-          warnings: [],
-        } as EditDatReport;
-      } catch (err) {
-        // Fall back ONLY when the endpoint is absent (older bridge); a current
-        // bridge's validation 400 (invalid DAT path, etc.) must surface instead
-        // of silently running the exec path.
-        if (!isMissingEndpoint(err)) throw err;
-      }
-      const script = buildEditDatContentScript({
-        dat: args.dat_path,
-        old: args.old_string,
-        new: args.new_string,
-        replace_all: args.replace_all,
-      });
-      const exec = await ctx.client.executePythonScript(script, true);
-      return parsePythonReport<EditDatReport>(exec.stdout);
+          };
+        },
+        async () => {
+          const script = buildEditDatContentScript({
+            dat: args.dat_path,
+            old: args.old_string,
+            new: args.new_string,
+            replace_all: args.replace_all,
+          });
+          const exec = await ctx.client.executePythonScript(script, true);
+          return parsePythonReport<EditDatReport>(exec.stdout);
+        },
+      );
     },
     (report) => {
       if (report.fatal) {

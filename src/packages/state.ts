@@ -1,5 +1,5 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { atomicWriteFileSync } from "../utils/atomicWrite.js";
 import { type PackagePaths, type PackageState, PackageStateSchema } from "./types.js";
 
 export function emptyPackageState(): PackageState {
@@ -18,8 +18,7 @@ export function readPackageState(paths: PackagePaths): PackageState {
 
 export function writePackageState(paths: PackagePaths, state: PackageState): void {
   const parsed = PackageStateSchema.parse(state);
-  mkdirSync(dirname(paths.installedRegistry), { recursive: true });
-  writeFileSync(paths.installedRegistry, `${JSON.stringify(parsed, null, 2)}\n`);
+  atomicWriteFileSync(paths.installedRegistry, `${JSON.stringify(parsed, null, 2)}\n`);
 }
 
 export function upsertPackageState(

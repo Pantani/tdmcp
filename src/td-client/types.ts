@@ -63,6 +63,37 @@ export function isMissingEndpoint(err: unknown): boolean {
   return /^Unsupported (GET|POST|PUT|PATCH|DELETE) /.test(err.message);
 }
 
+/**
+ * Canonical "prefer first-class REST endpoint, fall back to the exec path only
+ * when the endpoint is absent" wrapper.
+ *
+ * Tries `endpoint()` first; if it throws and the error is a missing-endpoint
+ * signal (older bridge, route not yet shipped), the result of `fallback()` is
+ * returned instead. **Any other error** — a current bridge's validation 400, a
+ * connection failure, a timeout — is rethrown unchanged so callers (and
+ * `TDMCP_BRIDGE_ALLOW_EXEC=0` setups) see the real reason instead of silently
+ * re-running a second implementation.
+ *
+ * This replaces the explicit
+ * ```
+ * try { return await endpoint(); }
+ * catch (err) { if (!isMissingEndpoint(err)) throw err; }
+ * return fallback();
+ * ```
+ * pattern that recurs across layer-3 tools that promoted off exec.
+ */
+export async function tryEndpoint<T>(
+  endpoint: () => Promise<T>,
+  fallback: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await endpoint();
+  } catch (err) {
+    if (!isMissingEndpoint(err)) throw err;
+    return fallback();
+  }
+}
+
 export type {
   ApiEnvelope,
   CreateNodeInput,
