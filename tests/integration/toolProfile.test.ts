@@ -38,6 +38,7 @@ const SAFE_PROFILE_EXCLUDE = [
   "manage_packages",
   "make_portable_tox",
   "export_recipe_bundle",
+  "publish_recipe_bundle",
   "import_recipe_bundle",
   "scaffold_recipe_template",
   "attach_docs_as_assets",
@@ -107,6 +108,7 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
     expect(names).not.toContain("manage_packages");
     expect(names).not.toContain("make_portable_tox");
     expect(names).not.toContain("export_recipe_bundle");
+    expect(names).not.toContain("publish_recipe_bundle");
     expect(names).not.toContain("import_recipe_bundle");
     expect(names).not.toContain("scaffold_recipe_template");
     expect(names).not.toContain("attach_docs_as_assets");
@@ -134,7 +136,7 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
     const safe = await toolNames({ TDMCP_TOOL_PROFILE: "safe" });
     expect(safe.length).toBeLessThan(full.length);
     expect(full.length - safe.length).toBe(SAFE_PROFILE_EXCLUDE.length);
-    expect(SAFE_PROFILE_EXCLUDE.length).toBe(28);
+    expect(SAFE_PROFILE_EXCLUDE.length).toBe(29);
   });
 
   it("safe exclusion list matches destructive tool annotations", async () => {

@@ -15,8 +15,8 @@ published on 2026-06-01, exposing **269 tools**. It keeps the full v0.7.0 releas
 line intact (BEYOND Waves 1-5, Ingest & Extend Waves 1-3, and the
 `create_data_source_http_ws` hotfix) and adds the first operator DX, local
 copilot, MCP-resource and bridge-health follow-through. The package manifests,
-changelog, docs and generated Tools reference all use **v0.7.1** as the release
-boundary.
+changelog and public package line still use **v0.7.1** as the release boundary;
+the unreleased main candidate below has begun the next tool-count move.
 
 The project has grown through five arcs:
 
@@ -54,6 +54,50 @@ The project has grown through five arcs:
 ---
 
 ## ✅ Current Release Line
+
+### main — v0.7.2 candidate (unreleased)
+
+The repository now has unreleased CLI/operator-DX, MCP-resource, deck-mixing and
+library-publishing follow-through on top of v0.7.1. It does **not** change the
+public npm release yet; the generated Tools reference in this branch exposes
+**270 tools** because `publish_recipe_bundle` is new.
+
+- **Top-level package-manager discoverability.** `tdmcp --help` now expands the
+  package-manager tree (`search`, `list`, `info`, `install`, `uninstall`,
+  `doctor`, `packages path`) instead of hiding it behind one summary row, and
+  `tdmcp packages --help` / `tdmcp completion <bash|zsh|fish>` include those
+  package commands and common package flags.
+- **First safe `doctor --fix` repair.** `tdmcp-agent doctor --fix` now creates a
+  missing configured `TDMCP_VAULT_PATH` directory idempotently, reruns the vault
+  check, reports the applied repair, and still prints suggestions for checks that
+  need manual action. Broader config/bridge repairs remain planned.
+- **Script-compatible run files.** `tdmcp-agent run` now forwards global
+  `--no-color` into nested JSON/stdin steps, and individual run-file steps can
+  set `"no_color": true`.
+- **Bridge watch-build hot reload.** `tdmcp-agent watch-build` now treats saved
+  changes under `td/` as runtime bridge edits: after typecheck/build pass, it
+  runs `python -m py_compile` on changed `.py` files and calls `reload_bridge`.
+  `--no-py-compile` and `--no-reload-bridge` provide opt-outs for build-only
+  loops.
+- **Offline MCP resource follow-through.** `tdmcp://glsl-snippets` exposes the
+  vetted in-repo GLSL snippet catalog, `tdmcp://cheatsheets` adds compact
+  workflow reminders with resource refs, and `tdmcp://learning/touchdesigner`
+  pairs the existing `teach_touchdesigner` prompt with a curated KB-backed
+  learning path.
+- **N-channel `create_decks`.** `create_decks` now keeps the legacy A/B
+  crossfader path intact while adding an explicit `decks[]` mode for 2-8 decks:
+  per-deck source/gain chains, per-deck FX-send branches into an additive bus,
+  an additive FX return into the master, a running Cross TOP program mix, and a
+  hard-cut Switch TOP blended back into program with `cut_mix`.
+- **Portable component docs.** `make_portable_tox` now writes a package
+  `README.md` by default, documenting node inventory, custom parameters,
+  inputs/outputs and external file references beside the `.tox` and manifest.
+  `include_readme:false` keeps the old lean package shape.
+- **Versioned recipe-bundle publishing.** New `publish_recipe_bundle` writes a
+  local publish artifact folder: the recipe bundle JSON, a
+  `tdmcp-recipe-publish.json` manifest with release version/recipe IDs, and a
+  `tdmcp-checksums.json` SHA-256 manifest for repeatable handoff or later CI
+  upload.
 
 ### v0.7.1 — Operator DX, local copilot & bridge-health patch
 
@@ -396,8 +440,9 @@ install story.*
   deferred generators, plus MediaPipe face / hand / segmentation on the in-tree
   tracking engine.
 - **Developer & live-operator DX** — finish the **easy-install** story with a
-  `doctor --fix` that performs safe repairs; then round out completion parity,
-  inline preview and the next front-of-house dashboard pass.
+  `doctor --fix` that performs more safe repairs beyond the current
+  vault-folder creation; then round out inline preview and the next
+  front-of-house dashboard pass.
 
 ### Later / deferred
 
@@ -480,18 +525,16 @@ or partial work.
 
 #### A.1 · Artist controls & creative tools
 
-| Feature | Delivers | Effort | Impact | Conf | Priority | Novelty | Probe-first |
-|---|---|---|---|---|---|---|---|
-| `create_decks` N-channel | 3–4 decks + transition cut + per-deck FX send | M | Med | High | P1 | EXTENSION | none |
+The only remaining Round-1 A.1 row targeted by this PR,
+`create_decks` N-channel, is now carried in the unreleased v0.7.2 candidate
+above.
 
 #### A.2 · Library, packaging & distribution
 
 | Feature | Delivers | Effort | Impact | Conf | Priority | Novelty | Probe-first |
 |---|---|---|---|---|---|---|---|
 | `bundle_dependencies` | Make `make_portable_tox` actually self-contained | M | High | Med | P1 | EXTENSION | file-par enum + path-rewrite |
-| `publish_recipe_bundle` | Checksummed/versioned publish artifact | M | Med | High | P1 | NEW | none |
 | `export_externalized_tree` | `save_external` → git-diffable `.tox` tree | S | Med | High | P1 | EXTENSION | tree shape on first run |
-| `component_readme_in_package` | Auto-write a params/IO doc into the portable-tox package | S | Med | High | P2 | EXTENSION | none |
 | `expand_recipe_library` | First-party recipes for the new generators | M | Med | High | P2 | NEW (content) | live cook-check each |
 | `recipe_from_live_network` | Faithful round-trip recipe capture via `serialize_network` | M | Med | Med | P2 | EXTENSION | GLSL-uniform round-trip |
 
@@ -499,12 +542,20 @@ or partial work.
 
 | Feature | Delivers | Effort | Impact | Conf | Priority | Novelty | Probe-first |
 |---|---|---|---|---|---|---|---|
-| `doctor_fix_autoexec` | `doctor --fix` executes safe repairs | M | High | High | P1 | ROADMAP | none |
+| `doctor_fix_autoexec` | Extend `doctor --fix` beyond the shipped missing-vault-folder repair into config/bridge safe repairs | M | High | High | P1 | ROADMAP | none |
 | `preview_inline_and_watch` | `preview --inline` (iTerm/Kitty/sixel) + `--watch` | M | Med | Med | P1 | ROADMAP | terminal-protocol detect |
 | `show_mode_oneliner` | `tdmcp show <profile>` — load+doctor+perform+pre-flight | M | Med | Med | P2 | NEW | abort semantics |
 | `error_exit_code_taxonomy` | Distinct exit codes (offline/TD-error/config) | S | Low | Med | P2 | NEW | error subclass survives |
-| `no_color_flag_is_dead` | Honor parsed-but-dead `--no-color`/`NO_COLOR` | S | Low | High | P2 | NEW | none |
-| `packages_cli_help_and_completion_parity` | Fold `packages` tree into top-level help/completion | S | Low | High | P2 | EXTENSION | none |
+
+`packages_cli_help_and_completion_parity` is implemented on main after v0.7.1
+and is no longer repeated as open backlog; it will move into the release section
+when the next patch is cut.
+`no_color_flag_is_dead` is also implemented on main for the script-facing agent
+surface; dashboard/TUI already honored `NO_COLOR`, and `tdmcp-agent run` now
+propagates `--no-color` into nested steps.
+`bridge_watch_build` is implemented on main after v0.7.1; the existing watcher
+now gates changed bridge Python with `py_compile` and reloads the running bridge
+automatically unless disabled.
 
 #### A.4 · AI & LLM integration
 
@@ -556,9 +607,8 @@ lives under Milestone 3 above.
 
 #### B.3 · CLI & developer DX
 
-| Feature | Delivers | Effort | Impact | Conf | Priority | Novelty | Probe-first |
-|---|---|---|---|---|---|---|---|
-| `bridge_watch_build` | Watch `td/` → auto-`reload_bridge` on save (+`py_compile` gate) | S | Med | High | P1 | NEW | partially covered by `tdmcp-agent watch-build`; auto-reload still open |
+`bridge_watch_build` is implemented on main after v0.7.1 and is no longer
+tracked as open backlog.
 
 #### B.4 · AI & LLM integration
 
@@ -674,7 +724,6 @@ iconic looks**, and an **artist-publishing layer**. **Source codes:**
 
 | Feature | EX | Delivers | Eff | Impact | Conf | Pri | Status | Source(s) |
 |---|---|---|---|---|---|---|---|---|
-| `tdmcp://glsl-snippets` catalog | EX-58 | Vetted, license-clean noise/SDF/color/blend GLSL the AI assembles from | M | Med | High | P1 | NEW | aw-cre · author own, not Lygia |
 | License-tier + provenance/funnel metadata | EX-59 | Revenue-tiered license templates + price/tier fields in the index | S | Med | High | P1 | EXTENSION (planned provenance) | anya |
 | `vendor_python_lib` | EX-60 | Vendor pip libs into Text DATs → self-contained `.toe` | M | Med | Med | P2 | NEW | alltd |
 | Own starter recipe pack + cover art | EX-61 | First-party curated recipe pack (the "free pack" funnel) | M | Med | Med | P2 | EXTENSION (content) | alltd, anya · author own |
@@ -694,8 +743,10 @@ iconic looks**, and an **artist-publishing layer**. **Source codes:**
 | Feature | EX | Delivers | Eff | Impact | Conf | Pri | Status | Source(s) |
 |---|---|---|---|---|---|---|---|---|
 | "generative-classic" + "one-source-five-ways" prompts | EX-68 | Steer a build toward a generative-art lineage; emit N labeled variants | S | Med | Med | P2 | NEW | anya |
-| KB enrichment + `tdmcp://cheatsheets` | EX-69 | Common-ops/Python/SOP cheat sheets → KB + resource | M | Med | Med | P2 | NEW | aw-int |
-| `teach_touchdesigner` tutor + learning resource | EX-70 | KB-grounded concept tutor + curated learning-path resource | S | Med | Med | P2 | NEW | aw-int |
+
+`tdmcp://glsl-snippets`, `tdmcp://cheatsheets`, and the
+`teach_touchdesigner` learning resource are implemented on main after v0.7.1 and
+are no longer tracked as open backlog.
 
 #### C.7 · Docs / examples
 

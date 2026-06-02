@@ -71,8 +71,11 @@ workflow patterns, GLSL techniques and tutorials. These are exposed as MCP
 resources the AI can read on demand:
 
 `tdmcp://operators/{category|name}` · `tdmcp://python-api/{class}` ·
-`tdmcp://patterns/{name}` · `tdmcp://glsl/{name}` · `tdmcp://recipes/{name}` ·
-`tdmcp://tutorials/{name}`
+`tdmcp://patterns/{name}` · `tdmcp://glsl/{name}` ·
+`tdmcp://glsl-snippets` · `tdmcp://recipes/{name}` ·
+`tdmcp://recipes/search/{query}` · `tdmcp://tutorials/{name}` ·
+`tdmcp://commands` · `tdmcp://prompts` · `tdmcp://cheatsheets` ·
+`tdmcp://learning/touchdesigner`
 
 The knowledge base is committed to the repo, so a fresh clone needs only
 `npm install && npm run build`. `npm run import:bottobot` regenerates it from

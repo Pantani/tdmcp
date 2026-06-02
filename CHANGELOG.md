@@ -6,6 +6,46 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **Top-level CLI completion/package parity:** `tdmcp completion <bash|zsh|fish>` now
+  prints a static completion snippet for the primary binary, including the
+  package-manager shortcuts (`search`, `list`, `info`, `install`, `uninstall`,
+  `doctor`, and `packages path`) and their common flags. `tdmcp --help` now also
+  lists those package subcommands directly instead of hiding them behind one
+  summary row, and `tdmcp packages --help` prints package-manager usage instead
+  of failing parse.
+- **First safe `tdmcp-agent doctor --fix` repair:** when `TDMCP_VAULT_PATH`
+  points at a missing folder, `doctor --fix` now creates it idempotently, reruns
+  the vault check, and reports the applied repair while continuing to surface
+  suggestions for checks that still need manual action.
+- **Run-file flag propagation:** `tdmcp-agent run` now carries `--no-color`
+  through to nested JSON/stdin command steps, and run-file steps can also set
+  `"no_color": true`.
+- **Bridge watch-build hot reload:** `tdmcp-agent watch-build` now treats edits
+  under `td/` as bridge-runtime changes: after a passing typecheck/build it runs
+  `python -m py_compile` on changed `.py` files and then calls `reload_bridge`.
+  `--no-py-compile` and `--no-reload-bridge` keep the old build-only loop when
+  needed.
+- **MCP resource follow-through:** new offline resources expose
+  `tdmcp://glsl-snippets`, `tdmcp://cheatsheets`, and
+  `tdmcp://learning/touchdesigner` so agents can discover vetted shader
+  snippets, common workflow reminders, and the `teach_touchdesigner` learning
+  path without guessing IDs.
+- **N-channel `create_decks`:** the legacy A/B mixer remains compatible, and a
+  new `decks[]` mode builds 2-8 deck rigs with per-deck gain, per-deck FX-send
+  branches into an additive bus/return, a running Cross TOP program mix, and a
+  hard-cut Switch TOP blended back into program with `cut_mix`.
+- **Portable component README:** `make_portable_tox` now writes a package
+  `README.md` by default, documenting node inventory, custom parameters,
+  inputs/outputs and external file references beside the `.tox` and
+  `tdmcp-component.json`; pass `include_readme:false` for the old minimal
+  package.
+- **`publish_recipe_bundle`** *(library)* — writes a local, versioned recipe
+  publish artifact: the recipe-bundle JSON, a `tdmcp-recipe-publish.json`
+  manifest, and a `tdmcp-checksums.json` SHA-256 manifest. Tool registry:
+  269 → 270.
+
 ## [0.7.1] - 2026-06-01
 
 ### Added

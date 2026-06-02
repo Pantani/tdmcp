@@ -513,6 +513,15 @@ describe("package doctor and CLI", () => {
     }
   });
 
+  it("prints package manager usage for --help without treating it as an invalid flag", async () => {
+    const result = await runPackageCli(["packages", "--help"]);
+
+    expect(result.code).toBe(0);
+    expect(result.stdout).toContain("tdmcp packages");
+    expect(result.stdout).toContain("tdmcp install <lib>");
+    expect(result.stderr).toBe("");
+  });
+
   it("uninstalls package state without deleting unrelated package records", async () => {
     const root = tempRoot();
     try {
