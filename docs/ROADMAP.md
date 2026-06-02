@@ -10,13 +10,15 @@ can build real visual systems from plain language — no node-wiring by hand. Th
 page is the honest, bird's-eye picture of **what already works, what's still
 rough, and what's coming next** on the way to a stable 1.0.
 
-**Where things stand today.** The current **public** cut on npm and GitHub
-Releases is **v0.7.1** (tagged 2026-06-01, 269 tools). On `main`, a
-**v0.8.0 PR candidate** is in preparation: manifests, the CHANGELOG `[0.8.0]`
-block and the generated Tools reference are aligned to **278 tools**, but the
-tag, the GitHub release and the npm publish have **not** happened yet. Anything
-described as "v0.8.0" below ships when the PR merges and the release workflow
-runs — not before.
+**Where things stand today.** The current release line is **v0.8.0**, with
+**278 tools** across three layers plus library/packaging and Obsidian vault
+integrations. It builds on v0.7.1 (269 tools, 2026-06-01) by adding the SDF /
+strange-attractor / optical-flow / histogram-scope generators, the MediaPipe
+face + hand + segmentation adapters, the AI Show Director dry-run policy
+layer, the inline-preview / dashboard-v2 / N-channel-decks follow-through,
+and the new MCP resources (`tdmcp://glsl-snippets`, `tdmcp://cheatsheets`,
+`tdmcp://learning/touchdesigner`). The CHANGELOG `[0.8.0]` block lists every
+entry; the always-current tool list is the [Tools reference](/reference/tools).
 
 The project has grown through five arcs:
 
