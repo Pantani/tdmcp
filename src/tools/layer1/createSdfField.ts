@@ -54,7 +54,9 @@ const SCENE_NORMAL = `vec3 sceneNormal(vec3 pos){
 const MARCH_BODY = `void main(){
   vec2 uv = (vUV.st - 0.5) * 2.0;
   vec3 rayOrigin = vec3(0.0, 0.0, max(uCameraZ, 0.1));
-  vec3 forward = normalize(vec3(0.0) - rayOrigin);
+  // uCameraTarget is baked at build time from the schema's camera_target arg
+  // so the ray aims where the artist asked instead of always at the origin.
+  vec3 forward = normalize(uCameraTarget - rayOrigin);
   vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), forward));
   vec3 up = cross(forward, right);
   vec3 rayDir = normalize(forward + uv.x * right + uv.y * up);
@@ -288,7 +290,11 @@ function generateSceneDist(primitives: Primitive[], lightDir: [number, number, n
 }
 
 /** Builds the full fragment shader string. */
-function buildFragmentShader(primitives: Primitive[], lightDir: [number, number, number]): string {
+function buildFragmentShader(
+  primitives: Primitive[],
+  lightDir: [number, number, number],
+  cameraTarget: [number, number, number],
+): string {
   const uniforms = `uniform float uTime;
 uniform float uCameraZ;
 uniform float uSteps;
@@ -298,8 +304,11 @@ uniform vec3  uColorA;
 uniform vec3  uColorB;
 uniform vec3  uBackground;
 `;
+  // Bake camera_target as a const (not a uniform) — the schema doc explicitly
+  // calls it "not a live control"; this is the cheapest, most faithful wiring.
+  const cameraTargetConst = `const vec3 uCameraTarget = vec3(${cameraTarget[0].toFixed(4)}, ${cameraTarget[1].toFixed(4)}, ${cameraTarget[2].toFixed(4)});\n`;
   return `out vec4 fragColor;
-${uniforms}
+${uniforms}${cameraTargetConst}
 ${SDF_HELPERS}
 ${generateSceneDist(primitives, lightDir)}
 ${SCENE_NORMAL}${MARCH_BODY}`;
@@ -312,7 +321,7 @@ async function buildSdfNetwork(
   colorB: [number, number, number],
   bg: [number, number, number],
 ): Promise<{ builder: NetworkBuilder; outputPath: string }> {
-  const fragment = buildFragmentShader(args.primitives, args.light_direction);
+  const fragment = buildFragmentShader(args.primitives, args.light_direction, args.camera_target);
 
   const builder = await createSystemContainer(ctx, args.parent_path, "sdf_field");
   const glsl = await builder.add("glslTOP", "glsl1", {

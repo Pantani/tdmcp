@@ -208,7 +208,10 @@ function loadAndBuildScript(
   ].join("\n");
 }
 
-export async function setupHandTrackingImpl(ctx: ToolContext, args: SetupHandTrackingArgs) {
+export async function setupHandTrackingImpl(
+  ctx: ToolContext,
+  args: SetupHandTrackingArgs,
+): Promise<import("@modelcontextprotocol/sdk/types.js").CallToolResult> {
   const toxPath = args.tox_path ?? defaultEngineToxPath();
 
   let report: HandLoadReport;
@@ -244,6 +247,14 @@ export async function setupHandTrackingImpl(ctx: ToolContext, args: SetupHandTra
 
   const adapterHand = report.adapter_hand ?? `${args.parent_path}/${args.adapter_name}/hand`;
   const totalSamples = args.max_hands * 21;
+  const structured = {
+    engine_loaded: report.engine,
+    hand_dat: report.hand_dat,
+    adapter_hand_chop: adapterHand,
+    max_hands: args.max_hands,
+    coordinate_space: args.coordinate_space,
+    samples: totalSamples,
+  };
 
   return {
     content: [
@@ -252,21 +263,12 @@ export async function setupHandTrackingImpl(ctx: ToolContext, args: SetupHandTra
         text:
           `Hand tracking is set up. Loaded the MediaPipe engine → ${report.engine}, built adapter ${adapterHand} emitting ${totalSamples} samples (${args.max_hands} hand(s) × 21 landmarks) in ${args.coordinate_space} space with channels tx/ty/tz/confidence/handedness.\n\n` +
           "Keep the TD timeline PLAYING (the plugin captures via an embedded browser that only runs while playing); grant camera permission if macOS asks.\n\n" +
-          `Chain bind_to_channel or create_pose_skeleton against ${adapterHand} to make it reactive.\n\n` +
-          `\`\`\`json\n${JSON.stringify(
-            {
-              engine_loaded: report.engine,
-              hand_dat: report.hand_dat,
-              adapter_hand_chop: adapterHand,
-              max_hands: args.max_hands,
-              coordinate_space: args.coordinate_space,
-              samples: totalSamples,
-            },
-            null,
-            2,
-          )}\n\`\`\``,
+          `Chain bind_to_channel or create_pose_skeleton against ${adapterHand} to make it reactive.`,
       },
     ],
+    // Surface the machine-readable payload so downstream tools can consume it
+    // without re-parsing a fenced JSON block out of the text body.
+    structuredContent: structured,
   };
 }
 

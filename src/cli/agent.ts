@@ -475,6 +475,7 @@ import {
 import { findTdNodesImpl, findTdNodesSchema } from "../tools/layer3/findTdNodes.js";
 import { generateReadmeImpl, generateReadmeSchema } from "../tools/layer3/generateReadme.js";
 import { getBridgeLogsImpl, getBridgeLogsSchema } from "../tools/layer3/getBridgeLogs.js";
+import { getInlinePreviewImpl, getInlinePreviewSchema } from "../tools/layer3/getInlinePreview.js";
 import { getModuleHelpImpl, getModuleHelpSchema } from "../tools/layer3/getModuleHelp.js";
 import {
   getNodeStateRuntimeImpl,
@@ -1987,7 +1988,7 @@ const COMMANDS: Record<string, Command> = {
   "strange-attractor": r(
     createStrangeAttractorSchema,
     createStrangeAttractorImpl,
-    "Render a strange attractor (Lorenz/Rossler/Aizawa/etc.) as evolving point/line geometry.",
+    "Render a strange attractor (Lorenz / Aizawa / Halvorsen) as point/line geometry.",
     { mutates: true },
   ),
   "optical-flow": r(
@@ -2005,13 +2006,13 @@ const COMMANDS: Record<string, Command> = {
   "face-tracking": r(
     setupFaceTrackingSchema,
     setupFaceTrackingImpl,
-    "Set up MediaPipe face tracking (landmarks/blendshapes) from camera into CHOP channels.",
+    "Set up MediaPipe face tracking: 468-sample face-landmark CHOP (tx/ty/tz/confidence, centred on nose tip) from camera. No blendshapes yet.",
     { mutates: true },
   ),
   "hand-tracking": r(
     setupHandTrackingSchema,
     setupHandTrackingImpl,
-    "Set up MediaPipe hand tracking (per-finger landmarks + gestures) from camera into CHOP channels.",
+    "Set up MediaPipe hand tracking: per-finger landmark CHOP (max_hands×21 with tx/ty/tz/confidence/handedness) from camera. No gesture classification — wire detectors downstream.",
     { mutates: true },
   ),
   segmentation: r(
@@ -2019,6 +2020,12 @@ const COMMANDS: Record<string, Command> = {
     setupSegmentationImpl,
     "Set up MediaPipe selfie segmentation: publishes a clean alpha-mask Null TOP (and optionally a pre-keyed RGBA) from the camera.",
     { mutates: true },
+  ),
+  "get-inline-preview": r(
+    getInlinePreviewSchema,
+    getInlinePreviewImpl,
+    "Inline inspection snapshot for one operator: small base64 thumbnail + errors (self + parents) + top-N changed-from-default parameters + 1-line cook stats. Single-round-trip 'is this op alive/healthy?' read.",
+    { mutates: false },
   ),
 };
 

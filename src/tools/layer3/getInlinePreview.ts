@@ -399,7 +399,11 @@ function assemble(
     list.push(e);
     byPath[e.path] = list;
   }
-  const total = (report.errors ?? []).length;
+  const allEntries = report.errors ?? [];
+  const total = allEntries.length;
+  // Distinguish hard errors from warnings so a warning-only state stays "alive".
+  const errorCount = allEntries.filter((e) => e.type === "error").length;
+  const warningCount = total - errorCount;
 
   // Thumbnail: prefer the (possibly re-encoded) bytes from the python report
   const thumb = report.thumbnail;
@@ -418,7 +422,8 @@ function assemble(
 
   const cookCount = cook.cook_count;
   const cookOk = cookCount !== undefined && cookCount > 0;
-  const alive = total === 0 && cookOk && thumbBytes > 32;
+  // Warnings don't kill a node — only hard errors do.
+  const alive = errorCount === 0 && cookOk && thumbBytes > 32;
 
   const typ = report.type ?? "unknown";
   const resStr = resolution ? `${resolution[0]}×${resolution[1]}` : "?×?";
@@ -427,7 +432,7 @@ function assemble(
     cook.cook_time_ms !== undefined
       ? `${cook.cook_time_ms.toFixed(2)}ms × ${cookCount ?? 0} cooks`
       : `${cookCount ?? 0} cooks`;
-  const errStr = total === 0 ? "0 errors" : `${total} error(s)`;
+  const errStr = `${errorCount} error${errorCount === 1 ? "" : "s"}, ${warningCount} warning${warningCount === 1 ? "" : "s"}`;
   const summary = `${args.path} (${typ}) ${resStr}${pf}, ${cookStr}, ${errStr}${alive ? "" : " — DEAD"}.`;
 
   const out: AssembledOutput = {

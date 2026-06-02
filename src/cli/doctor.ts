@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import {
   appendFileSync,
+  chmodSync,
   existsSync,
   mkdirSync,
   readFileSync,
@@ -348,7 +349,12 @@ function defaultProfileDirPath(): string {
   return join(configDir, "tdmcp", "profiles");
 }
 
-/** Default env-file write: appends (or creates) the token line idempotently. */
+/**
+ * Default env-file write: appends (or creates) the token line idempotently.
+ * Forces owner-only permissions (0o600) on the .env to keep the bridge token
+ * out of group/world-readable scrollback. Best-effort on non-POSIX where
+ * chmod is a no-op.
+ */
 function defaultEnvFileWrite(filePath: string, token: string): void {
   const line = `TDMCP_BRIDGE_TOKEN=${token}`;
   if (existsSync(filePath)) {
@@ -357,7 +363,13 @@ function defaultEnvFileWrite(filePath: string, token: string): void {
     if (/^\s*TDMCP_BRIDGE_TOKEN=/m.test(content)) return; // already set, don't double-write
     appendFileSync(filePath, `\n${line}\n`);
   } else {
-    writeFileSync(filePath, `${line}\n`);
+    writeFileSync(filePath, `${line}\n`, { mode: 0o600 });
+  }
+  try {
+    chmodSync(filePath, 0o600);
+  } catch {
+    // chmod may be unsupported (Windows / unusual FS); the secret-in-.env design
+    // already assumes a single-user setup so we tolerate this.
   }
 }
 

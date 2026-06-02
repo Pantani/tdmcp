@@ -238,11 +238,15 @@ export async function createHistogramScopeImpl(ctx: ToolContext, args: CreateHis
     });
     await builder.connect(norm, ypos);
 
-    // Constant MAT for the line/bars
+    // Constant MAT for the line/bars — kept NEUTRAL (white) so the TraceColor
+    // panel control is the single source of trace tint, applied downstream by
+    // the `tint` constantTOP. If both the MAT and the tint were coloured,
+    // changing TraceColor would multiply against the baked-in MAT colour and
+    // produce a wrong final hue (e.g. cyan TraceColor over a red MAT → black).
     const mat = await builder.add("constantMAT", "mat", {
-      colorr: rgb.r,
-      colorg: rgb.g,
-      colorb: rgb.b,
+      colorr: 1,
+      colorg: 1,
+      colorb: 1,
       alpha: 1,
     });
 

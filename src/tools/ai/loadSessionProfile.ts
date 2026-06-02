@@ -128,25 +128,29 @@ function readProfile(profilePath: string): SessionProfile | undefined {
     // downstream (structuredContent must conform). Missing required fields
     // get safe defaults so the tool degrades instead of throwing.
     const raw_ = (parsed && typeof parsed === "object" ? parsed : {}) as Record<string, unknown>;
-    return {
+    const normalized = {
       profile_path: typeof raw_.profile_path === "string" ? raw_.profile_path : profilePath,
       created: typeof raw_.created === "boolean" ? raw_.created : false,
       reset: typeof raw_.reset === "boolean" ? raw_.reset : false,
       loaded_at: typeof raw_.loaded_at === "string" ? raw_.loaded_at : new Date().toISOString(),
       notes: Array.isArray(raw_.notes) ? (raw_.notes as string[]) : [],
       ...(raw_.style_memory && typeof raw_.style_memory === "object"
-        ? { style_memory: raw_.style_memory as SessionProfile["style_memory"] }
+        ? { style_memory: raw_.style_memory }
         : {}),
-      ...(Array.isArray(raw_.recent_work)
-        ? { recent_work: raw_.recent_work as SessionProfile["recent_work"] }
-        : {}),
+      ...(Array.isArray(raw_.recent_work) ? { recent_work: raw_.recent_work } : {}),
       ...(raw_.conventions && typeof raw_.conventions === "object"
-        ? { conventions: raw_.conventions as SessionProfile["conventions"] }
+        ? { conventions: raw_.conventions }
         : {}),
       ...(raw_.corpus_style && typeof raw_.corpus_style === "object"
-        ? { corpus_style: raw_.corpus_style as SessionProfile["corpus_style"] }
+        ? { corpus_style: raw_.corpus_style }
         : {}),
     };
+    // Re-validate the normalized object so the structuredContent we hand to
+    // the MCP SDK always conforms to outputSchema — defence-in-depth in case
+    // a nested legacy section is itself shape-incompatible.
+    const reparsed = loadSessionProfileOutputSchema.safeParse(normalized);
+    if (reparsed.success) return reparsed.data;
+    return undefined;
   } catch {
     return undefined;
   }
@@ -227,6 +231,17 @@ export async function loadSessionProfileImpl(
     reset: false,
   };
 
+  // Persist the refreshed loaded_at so readers of the file (e.g. the
+  // tdmcp://session/profile resource) see the same timestamp returned in
+  // structuredContent — otherwise the resource handler would keep serving
+  // the stale loaded_at from disk after each call here.
+  let persistWarning: string | null = null;
+  try {
+    writeProfile(profilePath, refreshed);
+  } catch (err) {
+    persistWarning = `Could not persist refreshed loaded_at (${err instanceof Error ? err.message : String(err)}).`;
+  }
+
   const sectionCount = [
     refreshed.style_memory,
     refreshed.recent_work,
@@ -234,12 +249,16 @@ export async function loadSessionProfileImpl(
     refreshed.corpus_style,
   ].filter(Boolean).length;
 
-  const summary =
+  const baseSummary =
     sectionCount === 0
       ? `Session profile loaded from ${profilePath} — no sections populated yet. Run the memory tools to fill it.`
       : `Session profile loaded from ${profilePath} — ${sectionCount} section(s) populated.`;
+  const summary = persistWarning ? `${baseSummary} ${persistWarning}` : baseSummary;
+  const profileForReturn: SessionProfile = persistWarning
+    ? { ...refreshed, notes: [...refreshed.notes, persistWarning] }
+    : refreshed;
 
-  return structuredResult(summary, refreshed as object);
+  return structuredResult(summary, profileForReturn as object);
 }
 
 // ---------------------------------------------------------------------------

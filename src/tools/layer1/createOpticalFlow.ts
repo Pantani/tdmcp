@@ -238,6 +238,24 @@ export async function createOpticalFlowImpl(
     await builder.connect(levelMix, out, 0, 0);
 
     // ── Controls ──────────────────────────────────────────────────────────────
+    // Bind the panel parameters straight into the network so the artist can
+    // tune them live without rebuilding. Sensitivity drives gain_math.gain;
+    // Blur drives pre_blur.size; Smoothing drives both level opacities as an
+    // inverse pair (cur = 1 - Smoothing, prev = Smoothing) via expressions on
+    // the two LevelTOPs — emitted after the structured set so they win.
+    const gainMathPath = builder.pathOf("gain_math") ?? `${builder.containerPath}/gain_math`;
+    const preBlurPath = builder.pathOf("pre_blur") ?? `${builder.containerPath}/pre_blur`;
+    const curLevelPath = builder.pathOf("cur_level") ?? `${builder.containerPath}/cur_level`;
+    const prevLevelPath = builder.pathOf("prev_level") ?? `${builder.containerPath}/prev_level`;
+    await builder.python(
+      [
+        `_p = parent()`,
+        `try: op(${JSON.stringify(curLevelPath)}).par.opacity.expr = '1 - parent().par.Smoothing'`,
+        `except Exception: pass`,
+        `try: op(${JSON.stringify(prevLevelPath)}).par.opacity.expr = 'parent().par.Smoothing'`,
+        `except Exception: pass`,
+      ].join("\n"),
+    );
     const controls: ControlSpec[] = [
       {
         name: "Sensitivity",
@@ -245,7 +263,7 @@ export async function createOpticalFlowImpl(
         min: 0,
         max: 10,
         default: args.sensitivity,
-        bind_to: [],
+        bind_to: [`${gainMathPath}.gain`],
       },
       {
         name: "Smoothing",
@@ -253,6 +271,9 @@ export async function createOpticalFlowImpl(
         min: 0,
         max: 1,
         default: args.smoothing,
+        // Bound via expressions above so both LevelTOPs follow Smoothing in
+        // sync (current weight = 1-S, previous weight = S). No direct bind_to
+        // here — opacity is driven by the expression, not a static binding.
         bind_to: [],
       },
       {
@@ -261,7 +282,7 @@ export async function createOpticalFlowImpl(
         min: 0,
         max: 10,
         default: args.blur,
-        bind_to: [],
+        bind_to: [`${preBlurPath}.size`],
       },
     ];
 

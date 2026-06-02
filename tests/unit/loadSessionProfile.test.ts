@@ -170,6 +170,14 @@ describe("loadSessionProfileImpl — existing populated file", () => {
     const sc = result.structuredContent as Record<string, unknown>;
     expect(sc?.loaded_at).not.toBe("2026-01-01T00:00:00.000Z");
     expect((sc?.style_memory as Record<string, unknown>)?.default_energy).toBe("low");
+
+    // The on-disk file backing tdmcp://session/profile must also reflect the
+    // refreshed loaded_at — otherwise the resource handler keeps serving the
+    // stale timestamp after this tool runs.
+    const onDisk = JSON.parse(readFileSync(profilePath, "utf8")) as Record<string, unknown>;
+    expect(onDisk.loaded_at).toBe(sc?.loaded_at);
+    expect(onDisk.loaded_at).not.toBe("2026-01-01T00:00:00.000Z");
+    expect((onDisk.style_memory as Record<string, unknown>)?.default_energy).toBe("low");
   });
 });
 

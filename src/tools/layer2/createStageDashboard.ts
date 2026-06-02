@@ -102,11 +102,19 @@ interface DashboardConfig {
 // panic → toggle Blackout/Freeze on the target COMP, and GET /state → live {beat, vu} JSON the
 // readout strip polls. GET / serves the single responsive page combining all four. Config
 // (cues/faders/audio path) is baked in as __DASH_CFG__ so no per-request exec is needed.
-const DASHBOARD_CALLBACKS = `import json
-from urllib.parse import urlparse, parse_qs
+const DASHBOARD_CALLBACKS = `import json, html as _html_mod
+from urllib.parse import urlparse, parse_qs, quote as _urlquote
 import td
 
 CFG = json.loads('''__DASH_CFG__''')
+
+def _h(s):
+    """HTML-escape a value (quote=True so it's safe inside attribute values)."""
+    return _html_mod.escape(str(s) if s is not None else "", quote=True)
+
+def _q(s):
+    """URL-encode a value for inclusion in a ?do=…&name=… query string."""
+    return _urlquote(str(s) if s is not None else "", safe="")
 
 def _panic_par(comp, which):
     name = "Blackout" if which == "blackout" else "Freeze"
@@ -176,16 +184,19 @@ def _state():
     return {"beat": beat, "vu": vu}
 
 def _button(label, do, extra=""):
-    return ('<button class="btn" onclick="hit(\\'?do=' + do + extra
-            + '\\')">' + label + '</button>')
+    # do/extra are emitted into a JS string literal inside onclick=, so escape
+    # the surrounding attribute and the visible label. Caller URL-encodes the
+    # value parts of extra via _q().
+    return ('<button class="btn" onclick="hit(\\'?do=' + _h(do) + _h(extra)
+            + '\\')">' + _h(label) + '</button>')
 
 def _build_html(comp):
-    cues = "".join(_button(c, "cue", "&name=" + c) for c in CFG.get("cues", []))
+    cues = "".join(_button(c, "cue", "&name=" + _q(c)) for c in CFG.get("cues", []))
     faders = ""
     for f in CFG.get("faders", []):
-        faders += ('<div class="r"><label>' + f["label"] + '</label>'
+        faders += ('<div class="r"><label>' + _h(f["label"]) + '</label>'
                    '<input type="range" min="0" max="1" step="any" value="0" '
-                   'oninput="hit(\\'?do=fader&path=' + f["par_path"]
+                   'oninput="hit(\\'?do=fader&path=' + _h(_q(f["par_path"]))
                    + '&value=\\'+this.value)"></div>')
     head = ('<!doctype html><html><head><meta name="viewport" '
             'content="width=device-width,initial-scale=1,maximum-scale=1">'
@@ -206,7 +217,7 @@ def _build_html(comp):
             '.panic{display:flex;gap:10px;margin-top:24px}'
             '.kill{flex:2;min-height:72px;border:0;border-radius:12px;background:#7a1020;color:#fff;font-size:16px;font-weight:700}'
             '.freeze{flex:1;min-height:72px;border:0;border-radius:12px;background:#1c1c24;color:#eee;font-size:15px}'
-            '</style></head><body><h1>' + CFG.get("title", comp.name) + ' — tdmcp stage</h1>')
+            '</style></head><body><h1>' + _h(CFG.get("title", comp.name)) + ' — tdmcp stage</h1>')
     readout = ('<div class="readout"><div id="beat"></div>'
                '<div id="vuwrap"><div id="vu"></div></div></div>')
     cue_sec = ('<h2>Cues</h2><div class="grid">' + cues + '</div>') if cues else ""
@@ -273,11 +284,19 @@ def onServerStop(webServerDAT): return
 
 // v2 callbacks — extends the v1 shared helpers with stereo VU, BPM, FPS overlay, cue timeline
 // strip, and a confirm-tap sticky PANIC bar. Sent only when layout == "v2".
-const DASHBOARD_CALLBACKS_V2 = `import json
-from urllib.parse import urlparse, parse_qs
+const DASHBOARD_CALLBACKS_V2 = `import json, html as _html_mod
+from urllib.parse import urlparse, parse_qs, quote as _urlquote
 import td
 
 CFG = json.loads('''__DASH_CFG__''')
+
+def _h(s):
+    """HTML-escape a value (quote=True so it's safe inside attribute values)."""
+    return _html_mod.escape(str(s) if s is not None else "", quote=True)
+
+def _q(s):
+    """URL-encode a value for inclusion in a ?do=…&name=… query string."""
+    return _urlquote(str(s) if s is not None else "", safe="")
 
 def _panic_par(comp, which):
     name = "Blackout" if which == "blackout" else "Freeze"
@@ -384,16 +403,19 @@ def _state():
     return out
 
 def _button(label, do, extra=""):
-    return ('<button class="btn" onclick="hit(\\'?do=' + do + extra
-            + '\\')">' + label + '</button>')
+    # do/extra are emitted into a JS string literal inside onclick=, so escape
+    # the surrounding attribute and the visible label. Caller URL-encodes the
+    # value parts of extra via _q().
+    return ('<button class="btn" onclick="hit(\\'?do=' + _h(do) + _h(extra)
+            + '\\')">' + _h(label) + '</button>')
 
 def _build_html(comp):
-    cues = "".join(_button(c, "cue", "&name=" + c) for c in CFG.get("cues", []))
+    cues = "".join(_button(c, "cue", "&name=" + _q(c)) for c in CFG.get("cues", []))
     faders = ""
     for f in CFG.get("faders", []):
-        faders += ('<div class="r"><label>' + f["label"] + '</label>'
+        faders += ('<div class="r"><label>' + _h(f["label"]) + '</label>'
                    '<input type="range" min="0" max="1" step="any" value="0" '
-                   'oninput="hit(\\'?do=fader&path=' + f["par_path"]
+                   'oninput="hit(\\'?do=fader&path=' + _h(_q(f["par_path"]))
                    + '&value=\\'+this.value)"></div>')
     cue_times = CFG.get("cue_times", [])
     total_s = max((ct["at_s"] for ct in cue_times), default=0) or 1
@@ -401,7 +423,7 @@ def _build_html(comp):
     if cue_times:
         ticks = "".join(
             '<div class="ctick" style="left:' + str(ct["at_s"] / total_s * 100)
-            + '%" data-at="' + str(ct["at_s"]) + '">' + ct["name"] + '</div>'
+            + '%" data-at="' + _h(str(ct["at_s"])) + '">' + _h(ct["name"]) + '</div>'
             for ct in cue_times
         )
         strip = ('<h2>Timeline</h2>'
@@ -436,7 +458,7 @@ def _build_html(comp):
             '.freeze{flex:1;min-height:64px;border:0;border-radius:12px;background:#1c1c24;color:#eee;font-size:15px}'
             '</style></head><body>'
             '<div id="perf">— fps · — ms</div>'
-            '<h1>' + CFG.get("title", comp.name) + ' — tdmcp stage</h1>')
+            '<h1>' + _h(CFG.get("title", comp.name)) + ' — tdmcp stage</h1>')
     readout = ('<div class="readout"><div id="beat"></div>'
                '<div class="vucol">'
                '<div class="vuwrap"><div id="vu_l" class="vubar"></div></div>'

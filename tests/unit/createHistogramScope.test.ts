@@ -217,8 +217,10 @@ describe("create_histogram_scope", () => {
     expect(JSON.stringify(norm?.parameters ?? {})).toContain("log");
   });
 
-  // 7. Trace color propagation
-  it("trace_color='#ff0000' propagates to constantMAT and constantTOP tint (r≈1,g≈0,b≈0)", async () => {
+  // 7. Trace color propagation — only the tint TOP carries the colour; the
+  // MAT stays NEUTRAL (white) so the live TraceColor control isn't multiplied
+  // against a baked-in MAT hue.
+  it("trace_color='#ff0000' drives constantTOP tint only; constantMAT stays neutral white", async () => {
     const bodies = captureCreateBodies();
     await createHistogramScopeImpl(makeCtx(), {
       ...defaultArgs(),
@@ -226,8 +228,8 @@ describe("create_histogram_scope", () => {
     });
     const mat = bodies.find((b) => b.type === "constantMAT" && b.name === "mat");
     expect(mat?.parameters?.colorr).toBeCloseTo(1, 2);
-    expect(mat?.parameters?.colorg).toBeCloseTo(0, 2);
-    expect(mat?.parameters?.colorb).toBeCloseTo(0, 2);
+    expect(mat?.parameters?.colorg).toBeCloseTo(1, 2);
+    expect(mat?.parameters?.colorb).toBeCloseTo(1, 2);
     const tint = bodies.find((b) => b.type === "constantTOP" && b.name === "tint");
     expect(tint?.parameters?.colorr).toBeCloseTo(1, 2);
     expect(tint?.parameters?.colorg).toBeCloseTo(0, 2);
