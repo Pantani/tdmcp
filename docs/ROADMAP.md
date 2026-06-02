@@ -724,8 +724,8 @@ completion / package parity; `tdmcp-agent run` `--no-color` propagation) and
 are no longer tracked as open backlog.
 `bridge_watch_build` is implemented on main after v0.7.1; the existing watcher
 gates changed bridge Python with `py_compile` and reloads the running bridge
-automatically unless disabled — will move to the release section when the next
-patch tags it.
+automatically unless disabled. Not yet promoted to a release tag (last shipped
+tag is v0.8.1) — verify in next release tag for promotion.
 
 #### A.4 · AI & LLM integration
 
@@ -778,7 +778,8 @@ lives under Milestone 3 above.
 #### B.3 · CLI & developer DX
 
 `bridge_watch_build` is implemented on main after v0.7.1 and is no longer
-tracked as open backlog.
+tracked as open backlog (verificar próxima release tag para promoção; ainda não
+incluído em v0.8.1).
 
 #### B.4 · AI & LLM integration
 

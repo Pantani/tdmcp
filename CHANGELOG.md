@@ -18,6 +18,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   mixer, the schema pattern shared by `create_decks` + `create_layer_mixer`.
   Offline-validated; live cook-check pending. Recipe count: 15 → 17.
 
+### Added
+
+- **`repair_network` snapshot + rollback.** The repair loop now captures
+  `(par.path, par.mode)` and `(op.path, op.bypass, op.display)` before each
+  applied step. After the post-repair error recheck, if `errors_after >=
+  errors_before` and the run is not a dry-run, the snapshot is restored in
+  reverse order, applied steps are marked `reverted: true`, and the report
+  carries a new `rolled_back: true` flag with a "rolled back" line in the
+  summary text. Old reports without the flag remain compatible.
+
 ### Fixed
 
 - **`detect_pitch` notes/threshold consistency:** the user-facing `notes`

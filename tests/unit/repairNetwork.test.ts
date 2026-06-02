@@ -281,6 +281,54 @@ describe("repair_network", () => {
     expect(text(res)).toContain("repair_network failed");
   });
 
+  it("rolls back applied fixes when errors_after did not improve", async () => {
+    // Bridge applied two safe fixes but the regression check still shows 3
+    // errors, so the bridge reverted both mutations and flagged the steps.
+    stubExec({
+      parent_path: "/project1",
+      dry_run: false,
+      max_steps: 3,
+      errors_before: 3,
+      errors_after: 3,
+      steps: [
+        {
+          node: "/project1/noise1",
+          error: "invalid expression",
+          planned_fix: "x",
+          kind: "clear_expression",
+          applied: true,
+          reverted: true,
+        },
+        {
+          node: "/project1/level1",
+          error: "bypassed",
+          planned_fix: "x",
+          kind: "enable_op",
+          applied: true,
+          reverted: true,
+        },
+      ],
+      remaining: [
+        { node: "/project1/noise1", error: "invalid expression" },
+        { node: "/project1/level1", error: "bypassed" },
+        { node: "/project1/text1", error: "syntax error" },
+      ],
+      warnings: [],
+      rolled_back: true,
+    });
+    const res = await repairNetworkImpl(makeCtx(), {
+      parent_path: "/project1",
+      max_steps: 3,
+      dry_run: false,
+    });
+    expect(res.isError).toBeFalsy();
+    const data = JSON.parse(structured(res));
+    expect(data.rolled_back).toBe(true);
+    expect(data.errors_after).toBe(data.errors_before);
+    expect(data.steps.every((s: { reverted?: boolean }) => s.reverted === true)).toBe(true);
+    expect(text(res).toLowerCase()).toContain("rolled back");
+  });
+
   it("TD offline -> friendly isError result, never throws", async () => {
     server.use(http.post(`${TD_BASE}/api/exec`, () => HttpResponse.error()));
     const res = await repairNetworkImpl(makeCtx(), {
