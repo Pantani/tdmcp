@@ -423,34 +423,25 @@ they're considered solid.
 ## ⬜ Planned — the road to 1.0 {#planned}
 
 With v0.7.1 published and the current main candidate closing the deferred SDF,
-strange-attractor, optical-flow, histogram-scope generators plus MediaPipe face
-and hand tracking and the first `doctor --fix` repair, the remaining Planned
-list is intentionally small: only items that still need a future code change
-(not a hardware/service blocker) belong here. Hardware-, live-music-,
-multimodal-LLM- and GPU/CUDA-gated items have been moved to
-**Out of scope (for now)** below. Version targets are a rough sequence, **not a
-promise**. The exhaustive, item-by-item backlog lives in the
-[planning archive](#full-backlog).
+strange-attractor, optical-flow, histogram-scope generators, MediaPipe face /
+hand / segmentation adapters, the persistent `load_session_profile`
+(+ `tdmcp://session/profile` resource), and three more `doctor --fix` repairs
+(bridge token, profile directory, `install-bridge --verify` with a
+SIGKILL-bounded timeout), the remaining Planned list is intentionally small:
+only items that still need a future code change (not a hardware/service
+blocker) belong here. Hardware-, live-music-, multimodal-LLM- and GPU/CUDA-gated
+items have been moved to **Out of scope (for now)** below. Version targets are
+a rough sequence, **not a promise**. The exhaustive, item-by-item backlog lives
+in the [planning archive](#full-backlog).
 
 ### Milestone 3 — Smarter assistance & library publishing · v0.8.x
 
-- **"Do it my way" persistent session profile** — turn `recall_similar_work`,
-  `style_memory`, `learn_conventions` and `learn_from_my_corpus` into a single
-  persistent profile (`~/.tdmcp/session-profile.json`) the agent reads before
-  every new build. The on-disk shape and the resource scaffolding are already
-  drafted in-tree; the remaining work is the writer/aggregator path and wiring
-  the resource into the server.
 - **Trust & publish polish** — build on the shipped library/version/provenance
   tools with license-tier metadata, stronger component docs and export flows
   that are easy for artists to package repeatedly.
 
 ### Milestone 4 — Deeper authoring & operator DX · v0.8.x / v0.9.x
 
-- **More `doctor --fix` safe repairs** — extend the current vault-folder repair
-  with additional non-destructive fixes (e.g. generating a `TDMCP_BRIDGE_TOKEN`
-  into a local `.env`, creating the venue-profile dir, re-running
-  `install-bridge --verify`). The pluggable repair scaffolding is in place; each
-  repair is a code change.
 - **Inline preview & front-of-house dashboard pass** — round out the inline
   preview surfaces and the next iteration of the live-operator dashboard.
 
