@@ -2209,6 +2209,8 @@ function formatCommandHelp(target: string): string | undefined {
   lines.push(`unsafe: ${entry.unsafe}`);
   if (cmd) {
     lines.push("", "Input schema:", JSON.stringify(z.toJSONSchema(cmd.schema), null, 2));
+  } else if (target === "show-director") {
+    lines.push("", "Input schema:", JSON.stringify(z.toJSONSchema(showDirectorCliSchema), null, 2));
   }
   return lines.join("\n");
 }
@@ -2560,34 +2562,10 @@ function editDistance(a: string, b: string): number {
 function nearestCommand(input: string): string | undefined {
   let best: string | undefined;
   let bestDist = Number.POSITIVE_INFINITY;
-  // Candidates: full command keys, their first token (so "noeds" → "nodes"), and the specials.
-  const firstTokens = new Set(Object.keys(COMMANDS).map((k) => k.split(" ")[0] ?? k));
-  const keys = [
-    ...Object.keys(COMMANDS),
-    ...firstTokens,
-    "schema",
-    "commands",
-    "help",
-    "config",
-    "run",
-    "completion",
-    "preview",
-    "watch",
-    "repl",
-    "doctor",
-    "panic",
-    "setlist",
-    "schedule",
-    "version",
-    "watch-build",
-    "soundcheck-monitor",
-    "log-tail",
-    "record-fixtures",
-    "fanout",
-    "controller-bridge",
-    "voice",
-    "llm-voice",
-  ];
+  // Candidates: full command names and their first token (so "noeds" → "nodes").
+  const commandNames = listAgentCommands().map((entry) => entry.command);
+  const firstTokens = commandNames.map((command) => command.split(" ")[0] ?? command);
+  const keys = [...new Set([...commandNames, ...firstTokens])];
   for (const key of keys) {
     const d = editDistance(input, key);
     if (d < bestDist) {
@@ -2687,31 +2665,7 @@ function parseStdout(stdout: string): unknown {
 }
 
 function completionWords(): string[] {
-  const commands = [
-    ...Object.keys(COMMANDS),
-    "schema",
-    "commands",
-    "help",
-    "config",
-    "run",
-    "completion",
-    "preview",
-    "watch",
-    "repl",
-    "doctor",
-    "panic",
-    "setlist",
-    "schedule",
-    "version",
-    "watch-build",
-    "soundcheck-monitor",
-    "log-tail",
-    "record-fixtures",
-    "fanout",
-    "controller-bridge",
-    "voice",
-    "llm-voice",
-  ];
+  const commands = listAgentCommands().map((entry) => entry.command);
   const flags = [
     "--params",
     "--json",

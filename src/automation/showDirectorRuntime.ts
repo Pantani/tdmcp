@@ -1,10 +1,13 @@
 import { z } from "zod";
 import {
+  DEFAULT_EFFECT_POLICY,
   type EffectPolicy,
+  EffectPolicySchema,
   evaluateShowIntent,
   type PolicyDecision,
   PolicyDecisionSchema,
   parseShowIntent,
+  type ShowEffect,
   ShowEffectSchema,
   type ShowIntent,
   ShowIntentSchema,
@@ -134,6 +137,69 @@ function auditEntry(
   };
 }
 
+function failedDecision(intentType: string, reason: string, effect?: ShowEffect): PolicyDecision {
+  return {
+    decision: "block",
+    reason,
+    intent_type: intentType,
+    effect,
+    limits_applied: [],
+    requires_operator: false,
+  };
+}
+
+function recordResolutionFailure(
+  state: ShowDirectorState,
+  intentType: string,
+  reason: string,
+  opts: { approval_id?: string; operator?: string; effect?: ShowEffect; invalid?: boolean } = {},
+): void {
+  state.audit_log.push(
+    auditEntry(
+      state,
+      opts.invalid ? "invalid" : "blocked",
+      failedDecision(intentType, reason, opts.effect),
+      {
+        approval_id: opts.approval_id,
+        operator: opts.operator,
+      },
+    ),
+  );
+}
+
+function activePolicy(policy?: EffectPolicy): EffectPolicy {
+  return EffectPolicySchema.parse(policy ?? DEFAULT_EFFECT_POLICY);
+}
+
+function cooldownDecision(
+  state: ShowDirectorState,
+  intent: ShowIntent,
+  policy?: EffectPolicy,
+): PolicyDecision | undefined {
+  if (intent.type !== "arm_effect") return undefined;
+  const policyEntry = activePolicy(policy).effects.find((item) => item.effect === intent.effect);
+  if (!policyEntry?.cooldown_seconds) return undefined;
+  const cooldownSeconds = policyEntry.cooldown_seconds;
+
+  const nowMs = Date.now();
+  const recent = [...state.audit_log].reverse().find((audit) => {
+    if (audit.effect !== intent.effect) return false;
+    if (audit.status !== "allowed" && audit.status !== "approved") return false;
+    const atMs = Date.parse(audit.at);
+    return Number.isFinite(atMs) && nowMs - atMs < cooldownSeconds * 1000;
+  });
+  if (!recent) return undefined;
+
+  return {
+    decision: "block",
+    reason: `${intent.effect} is within cooldown window`,
+    intent_type: intent.type,
+    effect: intent.effect,
+    limits_applied: [`cooldown_seconds>=${cooldownSeconds}`],
+    requires_operator: true,
+  };
+}
+
 function planForAllowedIntent(intent: ShowIntent, operator?: string): ShowActionPlan[] {
   switch (intent.type) {
     case "announce":
@@ -193,7 +259,7 @@ export function submitShowIntent(
   policy?: EffectPolicy,
 ): SubmitShowIntentResult {
   const next = cloneState(state);
-  const parsed = parseShowIntent(rawIntent, policy);
+  const parsed = parseShowIntent(rawIntent, activePolicy(policy));
   if (!parsed.ok) {
     next.audit_log.push(auditEntry(next, "invalid", parsed.decision));
     return { state: next, decision: parsed.decision, plan: [] };
@@ -206,12 +272,24 @@ export function submitShowIntent(
       parsed.intent.operator,
       policy,
     );
+    if (!approved.ok) {
+      return { ...approved, decision: failedDecision(parsed.intent.type, approved.reason) };
+    }
     return { ...approved, decision: controlIntentDecision(parsed.intent) };
   }
 
   if (parsed.intent.type === "cancel_effect") {
     const cancelled = cancelShowIntent(next, parsed.intent.approval_id, parsed.intent.operator);
+    if (!cancelled.ok) {
+      return { ...cancelled, decision: failedDecision(parsed.intent.type, cancelled.reason) };
+    }
     return { ...cancelled, decision: controlIntentDecision(parsed.intent) };
+  }
+
+  const cooldown = cooldownDecision(next, parsed.intent, policy);
+  if (cooldown) {
+    next.audit_log.push(auditEntry(next, "blocked", cooldown));
+    return { state: next, decision: cooldown, plan: [] };
   }
 
   if (parsed.decision.decision === "allow") {
@@ -248,34 +326,80 @@ export function approveShowIntent(
   policy?: EffectPolicy,
 ): ResolveApprovalResult {
   const next = cloneState(state);
+  const normalizedOperator = operator.trim();
+  if (!normalizedOperator) {
+    const reason = "operator is required";
+    recordResolutionFailure(next, "approve_effect", reason, {
+      approval_id: approvalId,
+      operator,
+      invalid: true,
+    });
+    return { ok: false, state: next, reason, plan: [] };
+  }
   const idx = next.approvals.findIndex((approval) => approval.id === approvalId);
   const approval = idx >= 0 ? next.approvals[idx] : undefined;
-  if (!approval)
-    return { ok: false, state: next, reason: `approval ${approvalId} not found`, plan: [] };
+  if (!approval) {
+    const reason = `approval ${approvalId} not found`;
+    recordResolutionFailure(next, "approve_effect", reason, {
+      approval_id: approvalId,
+      operator: normalizedOperator,
+      invalid: true,
+    });
+    return { ok: false, state: next, reason, plan: [] };
+  }
   if (approval.status !== "pending") {
+    const reason = `approval ${approvalId} is ${approval.status}`;
+    recordResolutionFailure(next, "approve_effect", reason, {
+      approval_id: approvalId,
+      operator: normalizedOperator,
+      effect: approval.effect,
+    });
     return {
       ok: false,
       state: next,
-      reason: `approval ${approvalId} is ${approval.status}`,
+      reason,
       plan: [],
     };
   }
 
   const intent = ShowIntentSchema.safeParse(approval.intent);
   if (!intent.success || intent.data.type !== "arm_effect") {
+    const reason = `approval ${approvalId} has invalid intent`;
+    recordResolutionFailure(next, "approve_effect", reason, {
+      approval_id: approvalId,
+      operator: normalizedOperator,
+      effect: approval.effect,
+      invalid: true,
+    });
     return {
       ok: false,
       state: next,
-      reason: `approval ${approvalId} has invalid intent`,
+      reason,
       plan: [],
     };
   }
-  const decision = evaluateShowIntent(intent.data, policy);
+  const cooldown = cooldownDecision(next, intent.data, policy);
+  if (cooldown) {
+    recordResolutionFailure(next, "approve_effect", cooldown.reason, {
+      approval_id: approvalId,
+      operator: normalizedOperator,
+      effect: intent.data.effect,
+    });
+    return { ok: false, state: next, reason: cooldown.reason, plan: [] };
+  }
+
+  const decision = evaluateShowIntent(intent.data, activePolicy(policy));
   if (decision.decision !== "require_approval") {
+    const reason = `approval ${approvalId} no longer requires approval`;
+    recordResolutionFailure(next, "approve_effect", reason, {
+      approval_id: approvalId,
+      operator: normalizedOperator,
+      effect: intent.data.effect,
+    });
     return {
       ok: false,
       state: next,
-      reason: `approval ${approvalId} no longer requires approval`,
+      reason,
       plan: [],
     };
   }
@@ -284,12 +408,15 @@ export function approveShowIntent(
     ...approval,
     status: "approved",
     resolved_at: nowIso(),
-    operator,
+    operator: normalizedOperator,
   };
   next.approvals[idx] = resolved;
-  const plan = planForAllowedIntent(intent.data, operator);
+  const plan = planForAllowedIntent(intent.data, normalizedOperator);
   next.audit_log.push(
-    auditEntry(next, "approved", decision, { approval_id: approvalId, operator }),
+    auditEntry(next, "approved", decision, {
+      approval_id: approvalId,
+      operator: normalizedOperator,
+    }),
   );
   return { ok: true, state: next, approval: resolved, plan };
 }
@@ -302,23 +429,43 @@ export function cancelShowIntent(
   const next = cloneState(state);
   const idx = next.approvals.findIndex((approval) => approval.id === approvalId);
   const approval = idx >= 0 ? next.approvals[idx] : undefined;
-  if (!approval)
-    return { ok: false, state: next, reason: `approval ${approvalId} not found`, plan: [] };
+  if (!approval) {
+    const reason = `approval ${approvalId} not found`;
+    recordResolutionFailure(next, "cancel_effect", reason, {
+      approval_id: approvalId,
+      operator,
+      invalid: true,
+    });
+    return { ok: false, state: next, reason, plan: [] };
+  }
   if (approval.status !== "pending") {
+    const reason = `approval ${approvalId} is ${approval.status}`;
+    recordResolutionFailure(next, "cancel_effect", reason, {
+      approval_id: approvalId,
+      operator,
+      effect: approval.effect,
+    });
     return {
       ok: false,
       state: next,
-      reason: `approval ${approvalId} is ${approval.status}`,
+      reason,
       plan: [],
     };
   }
 
   const decision = PolicyDecisionSchema.safeParse(approval.decision);
   if (!decision.success) {
+    const reason = `approval ${approvalId} has invalid decision`;
+    recordResolutionFailure(next, "cancel_effect", reason, {
+      approval_id: approvalId,
+      operator,
+      effect: approval.effect,
+      invalid: true,
+    });
     return {
       ok: false,
       state: next,
-      reason: `approval ${approvalId} has invalid decision`,
+      reason,
       plan: [],
     };
   }

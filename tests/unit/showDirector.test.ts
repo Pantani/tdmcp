@@ -68,6 +68,25 @@ describe("showDirectorSchema", () => {
     expect(decision.reason).toContain("intensity is required");
   });
 
+  it("blocks effects inside a supplied recent-effect cooldown context", () => {
+    const now = new Date("2026-06-01T20:00:00.000Z");
+    const intent = ShowIntentSchema.parse({
+      type: "arm_effect",
+      effect: "fog",
+      duration_seconds: 3,
+      intensity: 0.4,
+    });
+
+    const decision = evaluateShowIntent(intent, undefined, {
+      now,
+      recent_effects: [{ effect: "fog", at: new Date(now.getTime() - 30_000) }],
+    });
+
+    expect(decision.decision).toBe("block");
+    expect(decision.reason).toContain("cooldown");
+    expect(decision.limits_applied).toContain("cooldown_seconds>=60");
+  });
+
   it("requires approval for cue requests unless they are explicitly pre-approved", () => {
     const intent = ShowIntentSchema.parse({
       type: "request_cue",
@@ -167,6 +186,28 @@ describe("showDirectorRuntime", () => {
     expect(approved.state.audit_log.at(-1)?.status).toBe("approved");
   });
 
+  it("rejects empty effect approval operators and records the failed resolution", () => {
+    const queued = submitShowIntent(createShowDirectorState(), {
+      type: "arm_effect",
+      effect: "fog",
+      duration_seconds: 3,
+      intensity: 0.4,
+    });
+
+    const approved = approveShowIntent(queued.state, queued.approval?.id ?? "", "");
+
+    expect(approved.ok).toBe(false);
+    if (approved.ok) throw new Error("expected approval to fail");
+    expect(approved.reason).toContain("operator");
+    expect(approved.state.approvals[0]?.status).toBe("pending");
+    expect(approved.state.audit_log.at(-1)).toMatchObject({
+      status: "invalid",
+      intent_type: "approve_effect",
+      approval_id: "approval_0001",
+      operator: "",
+    });
+  });
+
   it("submits an approve_effect intent as an approval state transition", () => {
     const queued = submitShowIntent(createShowDirectorState(), {
       type: "arm_effect",
@@ -189,6 +230,19 @@ describe("showDirectorRuntime", () => {
       operator: "operator-a",
     });
     expect(approved.state.approvals[0]?.status).toBe("approved");
+  });
+
+  it("does not report allow for failed approve_effect submissions", () => {
+    const failed = submitShowIntent(createShowDirectorState(), {
+      type: "approve_effect",
+      approval_id: "missing",
+      operator: "operator-a",
+    });
+
+    expect(failed.ok).toBe(false);
+    expect(failed.decision.decision).toBe("block");
+    expect(failed.decision.reason).toContain("not found");
+    expect(failed.state.audit_log.at(-1)?.status).toBe("invalid");
   });
 
   it("turns a policy-allowed effect into a dry-run plan with a policy operator marker", () => {
@@ -241,6 +295,20 @@ describe("showDirectorRuntime", () => {
     expect(cancelled.state.audit_log.at(-1)?.status).toBe("cancelled");
   });
 
+  it("records failed direct cancellation attempts in the audit log", () => {
+    const cancelled = cancelShowIntent(createShowDirectorState(), "missing", "operator-a");
+
+    expect(cancelled.ok).toBe(false);
+    if (cancelled.ok) throw new Error("expected cancellation to fail");
+    expect(cancelled.reason).toContain("not found");
+    expect(cancelled.state.audit_log.at(-1)).toMatchObject({
+      status: "invalid",
+      intent_type: "cancel_effect",
+      approval_id: "missing",
+      operator: "operator-a",
+    });
+  });
+
   it("submits a cancel_effect intent as a cancellation state transition", () => {
     const queued = submitShowIntent(createShowDirectorState(), {
       type: "arm_effect",
@@ -259,6 +327,19 @@ describe("showDirectorRuntime", () => {
     expect(cancelled.plan).toEqual([]);
     expect(cancelled.state.approvals[0]?.status).toBe("cancelled");
     expect(cancelled.state.audit_log.at(-1)?.status).toBe("cancelled");
+  });
+
+  it("does not report allow for failed cancel_effect submissions", () => {
+    const failed = submitShowIntent(createShowDirectorState(), {
+      type: "cancel_effect",
+      approval_id: "missing",
+      operator: "operator-a",
+    });
+
+    expect(failed.ok).toBe(false);
+    expect(failed.decision.decision).toBe("block");
+    expect(failed.decision.reason).toContain("not found");
+    expect(failed.state.audit_log.at(-1)?.status).toBe("invalid");
   });
 
   it("returns a structured cancellation error for persisted approvals with invalid decisions", () => {
@@ -288,5 +369,36 @@ describe("showDirectorRuntime", () => {
     if (cancelled.ok) throw new Error("expected cancellation to fail");
     expect(cancelled.reason).toContain("invalid decision");
     expect(cancelled.state.approvals[0]?.status).toBe("pending");
+    expect(cancelled.state.audit_log.at(-1)).toMatchObject({
+      status: "invalid",
+      intent_type: "cancel_effect",
+      approval_id: "approval_0001",
+      operator: "operator-a",
+    });
+  });
+
+  it("blocks same-effect approvals inside the configured cooldown window", () => {
+    const first = submitShowIntent(createShowDirectorState(), {
+      type: "arm_effect",
+      effect: "fog",
+      duration_seconds: 3,
+      intensity: 0.4,
+    });
+    const approved = approveShowIntent(first.state, first.approval?.id ?? "", "operator-a");
+    expect(approved.ok).toBe(true);
+
+    const second = submitShowIntent(approved.state, {
+      type: "arm_effect",
+      effect: "fog",
+      duration_seconds: 3,
+      intensity: 0.4,
+    });
+
+    expect(second.decision.decision).toBe("block");
+    expect(second.decision.reason).toContain("cooldown");
+    expect(second.state.audit_log.at(-1)).toMatchObject({
+      status: "blocked",
+      effect: "fog",
+    });
   });
 });

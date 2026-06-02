@@ -102,13 +102,21 @@ tdmcp-agent show-director --params '{
 }'
 ```
 
-Aprovar um pedido retornando o `state` recebido no comando anterior:
+Aprovar um pedido retornando exatamente o `state` recebido no comando anterior:
 
 ```bash
-tdmcp-agent show-director approve approval_0001 --params '{
-  "operator": "front-of-house",
-  "state": { "...": "estado retornado pelo comando anterior" }
-}'
+tdmcp-agent show-director --params '{
+  "intent": {
+    "type": "arm_effect",
+    "effect": "fog",
+    "duration_seconds": 3,
+    "intensity": 0.4
+  }
+}' > queued.json
+
+node -e 'const fs=require("fs"); const queued=JSON.parse(fs.readFileSync("queued.json","utf8")); fs.writeFileSync("approve-state.json", JSON.stringify({ operator: "front-of-house", state: queued.state }, null, 2));'
+
+tdmcp-agent show-director approve approval_0001 --params-file approve-state.json
 ```
 
 O `plan` retornado ainda é abstrato e dry-run only. Adaptadores de hardware devem

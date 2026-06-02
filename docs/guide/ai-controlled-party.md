@@ -101,13 +101,21 @@ tdmcp-agent show-director --params '{
 }'
 ```
 
-Approve a queued request by passing the returned `state` back in:
+Approve a queued request by passing the exact returned `state` back in:
 
 ```bash
-tdmcp-agent show-director approve approval_0001 --params '{
-  "operator": "front-of-house",
-  "state": { "...": "state returned by the previous command" }
-}'
+tdmcp-agent show-director --params '{
+  "intent": {
+    "type": "arm_effect",
+    "effect": "fog",
+    "duration_seconds": 3,
+    "intensity": 0.4
+  }
+}' > queued.json
+
+node -e 'const fs=require("fs"); const queued=JSON.parse(fs.readFileSync("queued.json","utf8")); fs.writeFileSync("approve-state.json", JSON.stringify({ operator: "front-of-house", state: queued.state }, null, 2));'
+
+tdmcp-agent show-director approve approval_0001 --params-file approve-state.json
 ```
 
 The returned `plan` is still abstract and dry-run only. Hardware adapters must

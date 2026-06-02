@@ -96,6 +96,11 @@ export const PolicyDecisionSchema = z.object({
 
 export type PolicyDecision = z.infer<typeof PolicyDecisionSchema>;
 
+export interface ShowIntentEvaluationContext {
+  recent_effects?: Array<{ effect: ShowEffect; at: string | Date }>;
+  now?: Date;
+}
+
 export type ParsedShowIntent =
   | { ok: true; intent: ShowIntent; decision: PolicyDecision }
   | { ok: false; decision: PolicyDecision; issues: string[] };
@@ -198,6 +203,7 @@ function malformedDecision(issues: string[]): PolicyDecision {
 export function evaluateShowIntent(
   intent: ShowIntent,
   policy: EffectPolicy = DEFAULT_EFFECT_POLICY,
+  context: ShowIntentEvaluationContext = {},
 ): PolicyDecision {
   if (intent.type === "announce" || intent.type === "change_mood" || intent.type === "log_note") {
     const limits = intent.type === "change_mood" ? ["intensity<=1"] : [];
@@ -255,6 +261,26 @@ export function evaluateShowIntent(
   if (entry.max_intensity !== undefined) limits.push(`intensity<=${entry.max_intensity}`);
   if (entry.cooldown_seconds !== undefined)
     limits.push(`cooldown_seconds>=${entry.cooldown_seconds}`);
+
+  if (entry.cooldown_seconds !== undefined) {
+    const cooldownSeconds = entry.cooldown_seconds;
+    const nowMs = (context.now ?? new Date()).getTime();
+    const recent = context.recent_effects?.some((event) => {
+      if (event.effect !== intent.effect) return false;
+      const atMs = event.at instanceof Date ? event.at.getTime() : Date.parse(event.at);
+      return Number.isFinite(atMs) && nowMs - atMs < cooldownSeconds * 1000;
+    });
+    if (recent) {
+      return {
+        decision: "block",
+        reason: `${intent.effect} is within cooldown window`,
+        intent_type: intent.type,
+        effect: intent.effect,
+        limits_applied: limits,
+        requires_operator: entry.decision === "require_approval",
+      };
+    }
+  }
 
   if (entry.operator_only) {
     return {

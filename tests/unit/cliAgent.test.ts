@@ -82,6 +82,7 @@ describe("tdmcp-agent CLI", () => {
     expect(r.code).toBe(0);
     expect(r.stdout).toContain("complete -F _tdmcp_agent tdmcp-agent");
     expect(r.stdout).toContain("nodes find");
+    expect(r.stdout).toContain("show-director");
   });
 
   it("emits a machine-readable command catalog without contacting TD", async () => {
@@ -141,6 +142,15 @@ describe("tdmcp-agent CLI", () => {
     expect(serialized).toContain("change_mood");
     expect(serialized).toContain("arm_effect");
     expect(serialized).toContain("request_cue");
+  });
+
+  it("prints show-director command help with its structured input schema", async () => {
+    const r = await runCli(["help", "show-director"]);
+
+    expect(r.code).toBe(0);
+    expect(r.stdout).toContain("tdmcp-agent show-director");
+    expect(r.stdout).toContain("Input schema:");
+    expect(r.stdout).toContain("arm_effect");
   });
 
   it("blocks malformed show-director input before execution", async () => {
@@ -450,6 +460,13 @@ describe("tdmcp-agent CLI", () => {
     expect(r.code).toBe(2);
     expect(r.stderr).toContain("Did you mean");
     expect(r.stderr).toContain("nodes");
+  });
+
+  it("suggests show-director on a typo", async () => {
+    const r = await runCli(["show-directr"]);
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain("Did you mean");
+    expect(r.stderr).toContain("show-director");
   });
 
   it("rejects an unknown command with exit code 2", async () => {
