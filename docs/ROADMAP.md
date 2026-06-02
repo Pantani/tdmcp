@@ -61,7 +61,9 @@ The project has grown through five arcs:
 The repository now has unreleased CLI/operator-DX, MCP-resource, deck-mixing and
 library-publishing follow-through on top of v0.7.1. It does **not** change the
 public npm release yet; the generated Tools reference in this branch exposes
-**270 tools** because `publish_recipe_bundle` is new.
+**276 tools** because `publish_recipe_bundle` plus the new SDF / strange-attractor /
+optical-flow / histogram-scope generators and MediaPipe face + hand tracking
+adapters are new.
 
 - **Top-level package-manager discoverability.** `tdmcp --help` now expands the
   package-manager tree (`search`, `list`, `info`, `install`, `uninstall`,
@@ -99,6 +101,32 @@ public npm release yet; the generated Tools reference in this branch exposes
   `tdmcp-recipe-publish.json` manifest with release version/recipe IDs, and a
   `tdmcp-checksums.json` SHA-256 manifest for repeatable handoff or later CI
   upload.
+- **Deferred GPU-style generators (CPU/GLSL paths).** Four roadmap Milestone 2/4
+  generators now ship as stock-TD networks — no CUDA, no external models:
+  - `create_sdf_field` builds a programmable signed-distance-field raymarcher
+    (CSG tree of sphere/box/torus with union/intersect/subtract + smooth blend)
+    inside a single GLSL TOP, with live camera/step-count/intensity/colour
+    controls.
+  - `create_strange_attractor` runs a Script-CHOP-integrated ODE (Lorenz /
+    Aizawa / Halvorsen) into a Script-SOP polyline + optional tube + Geometry /
+    Camera / Light / Render pipeline for deterministic CPU geometry.
+  - `create_optical_flow` builds a CPU optical-flow vector field from a video
+    source out of stock TOPs (blur, monochrome, cache, composite subtract,
+    optional edge, math, feedback+level), producing an RG-packed flow TOP usable
+    as a drop-in modulator for displacement / particle chains.
+  - `create_histogram_scope` adds the Milestone-2 histogram panel as a focused
+    tool: GPU GLSL TOP bins → CHOP normalisation → `choptoSOP` → render TOP,
+    luminance + optional per-channel RGB.
+- **MediaPipe face + hand tracking (camera-only).** Two new one-shot adapters
+  on the in-tree tracking engine:
+  - `setup_face_tracking` loads the MediaPipe ENGINE and builds an adapter
+    Script CHOP that emits a 468-sample (478 with iris) face-landmark CHOP
+    (tx/ty/tz/confidence, centred on nose tip), ready for `bind_to_channel`
+    and `create_data_visualization`.
+  - `setup_hand_tracking` reuses the same engine and emits a canonical
+    `max_hands×21`-landmark CHOP (tx/ty/tz/confidence/handedness),
+    `coordinate_space='world'` recommended for gesture detection, ready for
+    `bind_to_channel` or `create_pose_skeleton`.
 
 ### v0.7.1 — Operator DX, local copilot & bridge-health patch
 
@@ -390,82 +418,68 @@ they're considered solid.
 
 ## ⬜ Planned — the road to 1.0 {#planned}
 
-With v0.7.1 published, the next public roadmap is no longer about proving tdmcp
-can run a whole show — that line is now installable.
-The highest-value open work is to finish the remaining deployment, publishing and
-AI-session ergonomics. Version targets are a rough sequence, **not a promise** —
-order can shift. The exhaustive, item-by-item backlog (with effort and impact)
-lives in the [planning archive](#full-backlog).
-
-### Milestone 2 — Ecosystem & colour polish · v0.8.x
-
-*The ecosystem importers, signature looks, Ableton/HTTP ingestion, recorder,
-colour scopes and colour wheels are now v0.7.0 features. The remaining lane is
-polish around the parts that still need extra live tuning or unfinished panels.*
-
-- **Colour-finish follow-through** — add the deferred histogram scope panel and
-  decide whether curves belong in `create_color_wheels`, `apply_lut`, or a new
-  focused grading tool.
-- **Deeper reactivity tuning** — validate the chroma / percussive-vs-tonal /
-  song-structure detectors against real music sources and graduate them from
-  experimental when their defaults feel reliable.
+With v0.7.1 published and the current main candidate closing the deferred SDF,
+strange-attractor, optical-flow, histogram-scope generators plus MediaPipe face
+and hand tracking and the first `doctor --fix` repair, the remaining Planned
+list is intentionally small: only items that still need a future code change
+(not a hardware/service blocker) belong here. Hardware-, live-music-,
+multimodal-LLM- and GPU/CUDA-gated items have been moved to
+**Out of scope (for now)** below. Version targets are a rough sequence, **not a
+promise**. The exhaustive, item-by-item backlog lives in the
+[planning archive](#full-backlog).
 
 ### Milestone 3 — Smarter assistance & library publishing · v0.8.x
 
-*The first AI/library publishing wave shipped in v0.7.0, and v0.7.1 shipped the
-prompt/recipe/cookbook resources plus local-copilot prompt awareness and tuning
-knobs. The remaining work is about making those primitives feel continuous
-across sessions and strong under a real multimodal setup.*
-
-- **AI deepening** — live-tune `caption_top`, `copilot_vision` and
-  `repair_network`; add transcript persistence and smarter handoff when the
-  local copilot reaches its limits.
-- **"Do it my way"** — turn `recall_similar_work`, `style_memory`,
-  `learn_conventions` and `learn_from_my_corpus` into a persistent session
-  profile the agent reads before every new build.
+- **"Do it my way" persistent session profile** — turn `recall_similar_work`,
+  `style_memory`, `learn_conventions` and `learn_from_my_corpus` into a single
+  persistent profile (`~/.tdmcp/session-profile.json`) the agent reads before
+  every new build. The on-disk shape and the resource scaffolding are already
+  drafted in-tree; the remaining work is the writer/aggregator path and wiring
+  the resource into the server.
 - **Trust & publish polish** — build on the shipped library/version/provenance
-  tools with license-tier metadata, stronger component docs and export flows that
-  are easy for artists to package repeatedly.
+  tools with license-tier metadata, stronger component docs and export flows
+  that are easy for artists to package repeatedly.
 
 ### Milestone 4 — Deeper authoring & operator DX · v0.8.x / v0.9.x
 
-*Unwrap the last big TouchDesigner authoring surfaces and finish the operator /
-install story.*
-
-- **v0.7.1 baseline.** Top-level help, grouped/per-command agent help,
-  command-catalog resources, config/profile inspection, `run -`,
-  `--continue-on-error`, client-config writing, bridge verification, loopback
-  HTTP serving, table/CSV output, REPL history/completion, watch hooks,
-  Info-CHOP telemetry, bridge health and `watch_node` are now shipped.
-- **Authoring** — tackle the GPU / optical-flow / SDF / strange-attractor
-  deferred generators, plus MediaPipe face / hand / segmentation on the in-tree
-  tracking engine.
-- **Developer & live-operator DX** — finish the **easy-install** story with a
-  `doctor --fix` that performs more safe repairs beyond the current
-  vault-folder creation; then round out inline preview and the next
-  front-of-house dashboard pass.
+- **More `doctor --fix` safe repairs** — extend the current vault-folder repair
+  with additional non-destructive fixes (e.g. generating a `TDMCP_BRIDGE_TOKEN`
+  into a local `.env`, creating the venue-profile dir, re-running
+  `install-bridge --verify`). The pluggable repair scaffolding is in place; each
+  repair is a code change.
+- **Inline preview & front-of-house dashboard pass** — round out the inline
+  preview surfaces and the next iteration of the live-operator dashboard.
 
 ### Later / deferred
 
-The P2 long tail (the full list is in the [planning archive](#full-backlog)) plus
-anything that needs hardware, a specific GPU/OS, a paid license, or a hosted
-server — see **Out of scope** just below.
+The P2 long tail (the full list is in the [planning archive](#full-backlog)) —
+plus everything moved to **Out of scope** just below.
 
 ---
 
 ## Out of scope (for now)
 
-Being honest about the edges. These need hardware, a specific GPU/OS, a paid
-license, or cut against tdmcp's local-first design — so they're parked until they
-can be validated properly:
+Being honest about the edges. These need hardware, a live music source, a
+multimodal LLM endpoint, a specific GPU/OS, a paid license, or cut against
+tdmcp's local-first design — so they're parked until they can be validated
+properly:
 
+- **Multimodal-LLM-gated:** live-tuning `caption_top`, `copilot_vision` and
+  `repair_network` (vision-capable transcripts, smarter copilot handoff) is
+  parked until there's a stable multimodal LLM endpoint to validate the
+  prompts/output against.
+- **Live-music-gated reactivity validation:** graduating the chroma /
+  percussive-vs-tonal / song-structure detectors out of experimental requires
+  validating defaults against real music sources in a live setting.
 - **GPU / CUDA-bound:** real-time AI generation (StreamDiffusion / ComfyUI /
   DepthAnything) is kept only as a way to *drive an already-installed* component
-  or as a cloud option — never bundled. GPU fluid and optical-flow particles can't
-  be validated on the current macOS dev machine.
+  or as a cloud option — never bundled. GPU fluid simulation and any
+  optical-flow particle path that depends on CUDA can't be validated on the
+  current macOS dev machine and remain parked (the new stock-TOP
+  `create_optical_flow` ships in main).
 - **Hardware-bound:** depth cameras (Kinect / Azure / RealSense), SMPTE/LTC
   timecode genlock, and laser (ILDA) output. Where possible we prefer the lighter,
-  camera-only paths (MediaPipe, optical flow).
+  camera-only paths (MediaPipe face/hand/body, stock-TOP optical flow).
 - **Multi-machine / multi-instance:** managing several TouchDesigner processes and
   cross-machine genlock — parked until there's hardware to test against.
 - **Paid TouchDesigner license:** the Engine COMP / TouchEngine headless path.

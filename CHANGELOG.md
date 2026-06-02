@@ -45,6 +45,45 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   publish artifact: the recipe-bundle JSON, a `tdmcp-recipe-publish.json`
   manifest, and a `tdmcp-checksums.json` SHA-256 manifest. Tool registry:
   269 → 270.
+- **`create_sdf_field`** *(Layer 1)* — programmable signed-distance-field
+  raymarcher in a single GLSL TOP. CSG tree of sphere/box/torus primitives with
+  union/intersect/subtract + smooth blend; exposes live
+  CameraZ/Speed/StepCount/Intensity/Rotate/ColorA/ColorB/Background controls and
+  previews the output. Closes a Roadmap Milestone-4 deferred generator.
+- **`create_strange_attractor`** *(Layer 1)* — deterministic strange-attractor
+  geometry pipeline. Script CHOP integrates a chosen ODE (Lorenz / Aizawa /
+  Halvorsen) into a rolling ring buffer; Script SOP renders an open polyline,
+  optional Tube SOP thickens it, then a Geometry COMP + Camera + Light + Render
+  TOP. Time-dependent (paused timeline pauses the integrator). Closes a Roadmap
+  Milestone-4 deferred generator.
+- **`create_optical_flow`** *(Layer 1)* — CPU optical-flow vector-field
+  generator built entirely from stock TOPs (blur, monochrome, cache,
+  composite-subtract, optional edge cross-multiply, math, feedback+level). Emits
+  an RG-packed flow TOP (R=dx, G=dy, centred at 0.5) usable as a drop-in
+  modulator for `create_displacement_warp`, `create_gpu_particle_field` or any
+  TOP-driven displacement chain. Defaults to TD's bundled Mosaic.mp4 clip so it
+  builds standalone (avoids the macOS camera permission modal). Closes a
+  Roadmap Milestone-4 deferred generator (no CUDA path required).
+- **`create_histogram_scope`** *(Layer 1)* — luminance + optional per-channel
+  RGB video histogram. GPU GLSL TOP bins → CHOP normalisation → `choptoSOP` →
+  render TOP, output is a Null TOP ready for previews or `bind_to_channel`.
+  Closes the Roadmap Milestone-2 histogram-scope panel as a focused tool.
+- **`setup_face_tracking`** *(Layer 2)* — one-shot MediaPipe face-landmark
+  tracking adapter on the in-tree tracking engine. Loads the MediaPipe ENGINE,
+  starts the timeline and builds an adapter Script CHOP that emits a 468-sample
+  (478 with iris) face-landmark CHOP (tx/ty/tz/confidence, centred on nose tip),
+  ready for `bind_to_channel` and `create_data_visualization`.
+- **`setup_hand_tracking`** *(Layer 2)* — one-shot MediaPipe hand-tracking
+  adapter sharing the same engine as `setup_body_tracking`. Locates the engine's
+  hand JSON DAT and converts it into a canonical `max_hands×21`-landmark CHOP
+  (tx/ty/tz/confidence/handedness). Recommends `coordinate_space='world'` for
+  gesture detection.
+- **Pluggable `doctor --fix` scaffolding** — `RunDoctorOptions` now exposes
+  override hooks (`envFilePath`, `envFileWrite`, `profileDirPath`,
+  `profileDirRepair`, `runInstallBridge`) and a `checkBridgeToken` check, paving
+  the way for additional safe repairs beyond the current vault-folder creation.
+
+Tool registry: 270 → 276 (six new tools above).
 
 ## [0.7.1] - 2026-06-01
 

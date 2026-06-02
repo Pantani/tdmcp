@@ -65,6 +65,8 @@ import { registerScaffoldExtension } from "./scaffoldExtension.js";
 import { registerScaffoldToolGenerator } from "./scaffoldToolGenerator.js";
 import { registerSetParametersBatch } from "./setParametersBatch.js";
 import { registerSetPerformMode } from "./setPerformMode.js";
+import { registerSetupFaceTracking } from "./setupFaceTracking.js";
+import { registerSetupHandTracking } from "./setupHandTracking.js";
 import { registerSyncTimecode } from "./syncTimecode.js";
 
 export const layer2Registrars: ToolRegistrar[] = [
@@ -151,4 +153,7 @@ export const layer2Registrars: ToolRegistrar[] = [
   registerPostPasses3d,
   registerCreateFlowAbstraction,
   registerCreateDataSourceHttpWs,
+  // New wave: MediaPipe face + hand tracking:
+  registerSetupFaceTracking,
+  registerSetupHandTracking,
 ];

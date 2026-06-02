@@ -2139,20 +2139,21 @@ function cliCompletionDoctorFrame(t) {
   for (let i = 0; i < 6; i++) {
     const y = 70 + i * 22;
     rect(buf, 54, y, 88 + (i % 2) * 24, 5, [255, 255, 255], cursor === i ? 0.48 : 0.22);
-    rect(buf, 158, y - 4, 34, 13, i % 2 ? [57, 232, 190] : [255, 214, 86], cursor === i ? 0.78 : 0.34);
+    rect(
+      buf,
+      158,
+      y - 4,
+      34,
+      13,
+      i % 2 ? [57, 232, 190] : [255, 214, 86],
+      cursor === i ? 0.78 : 0.34,
+    );
   }
   const repaired = Math.sin(t * 1.4) > -0.25;
   for (let i = 0; i < 4; i++) {
     const y = 76 + i * 30;
     rect(buf, 280, y, 74 + i * 14, 6, [255, 255, 255], 0.24);
-    circle(
-      buf,
-      404,
-      y + 2,
-      6,
-      i === 2 && !repaired ? [255, 86, 134] : [57, 232, 190],
-      0.86,
-    );
+    circle(buf, 404, y + 2, 6, i === 2 && !repaired ? [255, 86, 134] : [57, 232, 190], 0.86);
   }
   if (repaired) {
     rect(buf, 296, 184, 86, 10, [57, 232, 190], 0.72);
