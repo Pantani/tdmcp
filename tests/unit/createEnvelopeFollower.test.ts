@@ -402,7 +402,8 @@ describe("createEnvelopeFollowerImpl — sidechain routing topology", () => {
   it("wires the duck envelope from source_chop and binds the Null output to the target par", async () => {
     const sourceChop = "/project1/audio/features";
     const channel = "kick";
-    const targetPath = "/project1/looks/main";
+    // Node path intentionally contains a '.' to exercise rfind('.') (last-dot split).
+    const targetPath = "/project1/looks/main.layer";
     const targetPar = "opacity";
     const target = `${targetPath}.${targetPar}`;
 

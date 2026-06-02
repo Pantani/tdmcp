@@ -32,9 +32,6 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   optical-flow vector field that pushes a GPU particle system, producing
   motion-reactive trails. Offline-validated; live cook-check pending. Recipe
   count: 15 → 20.
-
-### Added
-
 - **`repair_network` snapshot + rollback.** The repair loop now captures
   `(par.path, par.mode)` and `(op.path, op.bypass, op.display)` before each
   applied step. After the post-repair error recheck, if `errors_after >=
@@ -42,9 +39,6 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   reverse order, applied steps are marked `reverted: true`, and the report
   carries a new `rolled_back: true` flag with a "rolled back" line in the
   summary text. Old reports without the flag remain compatible.
-
-### Added
-
 - **New bridge endpoint `POST /api/transport`** for timeline control
   (play / pause / seek / cue / rate). Lives in
   `td/modules/mcp/services/transport_service.py` with controller wiring in

@@ -1,7 +1,7 @@
 {
   "id": "kinetic_text_audio_reactive",
   "name": "Kinetic Text Audio Reactive",
-  "description": "Kinetic text whose brightness pulses in sync with the low-frequency band of live audio. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check. After import, set level1.brightness1 to expression `op('analyze1')['chan1']*pulse_gain` to enable the audio binding.",
+  "description": "Kinetic text whose brightness pulses in sync with the low-frequency band of live audio. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check. After import, set level1.brightness1 to a literal multiplier expression such as `op('analyze1')['chan1'] * 2` (tune the multiplier to taste) to enable the audio binding.",
   "tags": ["text", "kinetic", "audio-reactive", "bass", "typography"],
   "difficulty": "intermediate",
   "td_version_min": "2022",
@@ -30,15 +30,19 @@
     },
     {
       "name": "bass",
-      "type": "audiobandeqCHOP",
-      "parameters": { "loband": 60, "hiband": 200 },
-      "comment": "Banda de graves (audio_reactive band)"
+      "type": "audiofilterCHOP",
+      "parameters": {
+        "filter": "bandpass",
+        "units": "frequency",
+        "cutofffrequency": 120
+      },
+      "comment": "Banda de graves (audio_reactive band) - bandpass centered ~120Hz"
     },
     {
       "name": "analyze1",
       "type": "analyzeCHOP",
-      "parameters": { "function": "rms" },
-      "comment": "RMS da banda -> escalar reativo"
+      "parameters": { "function": "rmspower" },
+      "comment": "RMS power da banda -> escalar reativo"
     },
     {
       "name": "level1",
@@ -73,22 +77,13 @@
       "label": "Font Size"
     },
     {
-      "name": "bass_low",
+      "name": "bass_cutoff",
       "node": "bass",
-      "param": "loband",
-      "value": 60,
-      "min": 20,
+      "param": "cutofffrequency",
+      "value": 120,
+      "min": 40,
       "max": 500,
-      "label": "Bass Low (Hz)"
-    },
-    {
-      "name": "bass_high",
-      "node": "bass",
-      "param": "hiband",
-      "value": 200,
-      "min": 60,
-      "max": 1000,
-      "label": "Bass High (Hz)"
+      "label": "Bass Cutoff (Hz)"
     },
     {
       "name": "pulse_gain",
@@ -98,8 +93,8 @@
       "min": 0,
       "max": 4,
       "label": "Pulse Gain",
-      "description": "Hook up an expression like `op('analyze1')['chan1']*pulse_gain` to pulse brightness on bass."
+      "description": "Hook up a literal multiplier expression like `op('analyze1')['chan1'] * 2` to pulse brightness on bass (tune the multiplier to taste)."
     }
   ],
-  "preview_description": "A palavra 'TDMCP' grande e centralizada que respira/brilha no compasso dos graves da musica."
+  "preview_description": "The word 'TDMCP', large and centered, breathing/glowing in time with the music's bass."
 }

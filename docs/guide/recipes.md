@@ -30,6 +30,8 @@ language like any other visual.
 | **Kinect Silhouette** | Uses a Kinect Azure depth feed to isolate a body silhouette and drive a glowing outline. *(Needs Kinect Azure hardware.)* | Advanced |
 | **Depth Displacement + Post** | Synthetic depth map warps a ramp source through a Displace TOP, then a post stack (blur + level grade) finishes it — runs with zero hardware. | Intermediate |
 | **Kinetic Text Path Follow** | Kinetic text gliding smoothly along a deterministic circular path (sin/cos LFOs animating tx/ty on the Transform TOP) — placeholder until the native path-follow extension lands. | Intermediate |
+| **Kinetic Text Audio Reactive** | Manual-wiring template: kinetic text whose brightness pulses with the live audio bass band. Requires a one-line expression binding after import. | Intermediate |
+| **Optical Flow Particles** | CPU optical-flow (frame-diff + blur) drives a flow texture; the artist wires it into the particle render path after import. | Advanced |
 
 ::: tip Browse them live
 Ask *"list the available recipes"* and the AI will read them straight from the

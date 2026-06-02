@@ -296,6 +296,33 @@ describe("snapshotTdGraphImpl", () => {
     });
   });
 
+  // Non-404 errors on the REST endpoint must NOT silently fall back to /api/exec —
+  // tryEndpoint only treats endpoint-missing (404) as a fallback signal; anything
+  // else (400/500/etc.) is a real error and should surface as such.
+  it("does not fall back to /api/exec when /api/nodes/:seg/params returns 400", async () => {
+    let execCalled = false;
+    server.use(
+      http.get(`${TD_BASE}/api/nodes/:seg/params`, () =>
+        HttpResponse.json({ ok: false, error: "bad request" }, { status: 400 }),
+      ),
+      http.post(`${TD_BASE}/api/exec`, () => {
+        execCalled = true;
+        return HttpResponse.json({ ok: true, data: { result: null, stdout: "" } });
+      }),
+    );
+
+    await snapshotTdGraphImpl(makeCtx(), {
+      path: "/project1",
+      include_params: false,
+      compact: false,
+      include_parameter_modes: true,
+    });
+
+    // The non-404 must surface as an error (or at least not be papered over by
+    // the exec fallback). The critical invariant is exec was NOT called.
+    expect(execCalled).toBe(false);
+  });
+
   it("reports parameter-mode truncation separately from parameter-value truncation", async () => {
     server.use(
       http.get(`${TD_BASE}/api/network/:seg/topology`, () =>

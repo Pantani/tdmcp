@@ -16,7 +16,7 @@ import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js"
  *  - levelOf unknown severity / warning alias
  *  - parseCliArgs full option matrix + invalid-args path
  *  - DedupeRing eviction
- *  - runLogTailFiltered one-shot success + connection-error → exit 1
+ *  - runLogTailFiltered one-shot success + single connection-error → exit 0
  */
 
 const TD_BASE = "http://127.0.0.1:9980";
