@@ -61,9 +61,15 @@ interface LoadReport {
 
 /**
  * The Python onCook for the face adapter Script CHOP. It reads the engine's face JSON DAT
- * (`{"faceResults":{"landmarks":[[{x,y,z}, … 468/478]]}}`) and emits the canonical face
- * CHOP: N samples × tx/ty/tz/confidence, centred on nose landmark 1, y-flipped.
- * The `FACE_DAT = …` and `NUM_LMS = …` assignments are prepended at build time.
+ * and emits the canonical face CHOP: N samples × tx/ty/tz/confidence, centred on nose
+ * landmark 1, y-flipped. The `FACE_DAT = …` and `NUM_LMS = …` assignments are prepended
+ * at build time.
+ *
+ * UNVERIFIED-against-live: the torinmb/mediapipe-touchdesigner engine emits
+ * `{"faceLandmarkResults":{"faceLandmarks":[[{x,y,z}, … 468/478]]}}`. We try that key
+ * shape first and fall back to the legacy `{"faceResults":{"landmarks":[...]}}` so the
+ * adapter keeps working across engine versions instead of silently emitting zeros.
+ * Last cross-checked against the published engine on 2026-06-02.
  */
 function adapterCallbackBody(): string {
   return [
@@ -75,7 +81,12 @@ function adapterCallbackBody(): string {
     "    d = op(FACE_DAT)",
     "    if d is not None and d.text.strip():",
     "        try:",
-    "            faces = json.loads(d.text).get('faceResults', {}).get('landmarks', [])",
+    "            payload = json.loads(d.text)",
+    "            # Current engine key shape: faceLandmarkResults.faceLandmarks",
+    "            faces = payload.get('faceLandmarkResults', {}).get('faceLandmarks', [])",
+    "            # Legacy fallback for older engine builds",
+    "            if not faces:",
+    "                faces = payload.get('faceResults', {}).get('landmarks', [])",
     "            if faces: lms = faces[0]",
     "        except Exception:",
     "            lms = None",

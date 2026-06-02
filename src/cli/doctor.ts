@@ -115,7 +115,13 @@ function defaultVaultRepair(absPath: string): void {
   mkdirSync(absPath, { recursive: true });
 }
 
-/** Default install-bridge runner — spawns `tdmcp install-bridge --verify`. */
+/**
+ * Default install-bridge runner — spawns `tdmcp install-bridge --verify`.
+ *
+ * Bounded by a hard SIGKILL after `TDMCP_INSTALL_BRIDGE_TIMEOUT_MS` (default 60s)
+ * so `doctor --fix` can never hang indefinitely on a stuck child (e.g. waiting on
+ * TouchDesigner, a prompt, or a non-responsive bridge).
+ */
 function defaultRunInstallBridge(): Promise<{ ok: boolean; detail: string }> {
   return new Promise((resolve) => {
     const cmd = process.env.TDMCP_BIN ?? "tdmcp";
@@ -125,6 +131,28 @@ function defaultRunInstallBridge(): Promise<{ ok: boolean; detail: string }> {
     });
     let stdout = "";
     let stderr = "";
+    let settled = false;
+    const done = (r: { ok: boolean; detail: string }) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(r);
+    };
+    const timeoutMs = Number.parseInt(process.env.TDMCP_INSTALL_BRIDGE_TIMEOUT_MS ?? "60000", 10);
+    const timer = setTimeout(
+      () => {
+        try {
+          child.kill("SIGKILL");
+        } catch {
+          /* ignore */
+        }
+        done({
+          ok: false,
+          detail: `install-bridge --verify timed out after ${timeoutMs}ms`,
+        });
+      },
+      Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 60_000,
+    );
     child.stdout?.on("data", (chunk) => {
       stdout += chunk.toString();
     });
@@ -132,11 +160,11 @@ function defaultRunInstallBridge(): Promise<{ ok: boolean; detail: string }> {
       stderr += chunk.toString();
     });
     child.on("error", (err) => {
-      resolve({ ok: false, detail: `spawn failed: ${err.message}` });
+      done({ ok: false, detail: `spawn failed: ${err.message}` });
     });
     child.on("close", (code) => {
       const tail = (stdout + stderr).trim().split("\n").slice(-3).join(" | ").slice(0, 240);
-      resolve({
+      done({
         ok: code === 0,
         detail: code === 0 ? tail || "exit 0" : `exit ${code ?? "?"}: ${tail || "(no output)"}`,
       });
@@ -280,10 +308,24 @@ function checkBridgeToken(config: TdmcpConfig): DoctorCheck {
 function checkProfileDir(profileDirPath: string): DoctorCheck {
   const base = { id: "profile_dir", title: "Profile directory", critical: false } as const;
   if (existsSync(profileDirPath)) {
+    let isDir = false;
+    try {
+      isDir = statSync(profileDirPath).isDirectory();
+    } catch {
+      isDir = false;
+    }
+    if (isDir) {
+      return {
+        ...base,
+        status: "pass",
+        detail: `profile directory found at ${profileDirPath}.`,
+        data: { path: profileDirPath },
+      };
+    }
     return {
       ...base,
-      status: "pass",
-      detail: `profile directory found at ${profileDirPath}.`,
+      status: "warn",
+      detail: `path exists at ${profileDirPath} but is not a directory; remove or move it so the profile dir can be created.`,
       data: { path: profileDirPath },
     };
   }
@@ -311,7 +353,8 @@ function defaultEnvFileWrite(filePath: string, token: string): void {
   const line = `TDMCP_BRIDGE_TOKEN=${token}`;
   if (existsSync(filePath)) {
     const content = readFileSync(filePath, "utf8");
-    if (content.includes("TDMCP_BRIDGE_TOKEN=")) return; // already set, don't double-write
+    // Line-anchored so a commented `# TDMCP_BRIDGE_TOKEN=…` doesn't block the write.
+    if (/^\s*TDMCP_BRIDGE_TOKEN=/m.test(content)) return; // already set, don't double-write
     appendFileSync(filePath, `\n${line}\n`);
   } else {
     writeFileSync(filePath, `${line}\n`);
@@ -332,7 +375,7 @@ function repairBridgeToken(
       {
         id: "bridge_token",
         status: "applied",
-        detail: `generated bridge token written to ${envFilePath}. Restart tdmcp and set the same value in TouchDesigner's environment (TDMCP_BRIDGE_TOKEN=${token}).`,
+        detail: `generated bridge token written to ${envFilePath}. Restart tdmcp, then open that .env file to copy the TDMCP_BRIDGE_TOKEN value into TouchDesigner's environment (the raw token is intentionally NOT printed here to avoid leaking it into shell scrollback / CI logs).`,
       },
     ];
   } catch (err) {
@@ -585,6 +628,13 @@ export async function runDoctor(opts: RunDoctorOptions = {}): Promise<DoctorResu
       opts.runInstallBridge ?? defaultRunInstallBridge,
     );
     allRepairs = allRepairs.concat(bridgeRepairs);
+    // Re-probe the bridge after a successful repair so the report (and the
+    // exit code, since bridge is critical) reflect the post-fix state instead
+    // of contradicting the "Applied fixes" output with a stale fail row.
+    if (bridgeRepairs.some((r) => r.status === "applied")) {
+      const refreshedBridge = await checkBridge(ctx);
+      checks = checks.map((check) => (check.id === "bridge" ? refreshedBridge : check));
+    }
 
     const profileRepairs = repairProfileDir(
       checks.find((c) => c.id === "profile_dir"),

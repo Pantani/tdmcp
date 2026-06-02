@@ -231,7 +231,11 @@ export async function createOpticalFlowImpl(
       resolutionw: resW,
       resolutionh: resH,
     });
-    await builder.connect(smoothFb, out, 0, 0);
+    // Connect output to the blended mix, NOT the feedbackTOP. feedbackTOP is
+    // by definition one frame behind levelMix; reading directly from levelMix
+    // avoids that off-by-one and matches the documented "current cross-fade"
+    // semantics.
+    await builder.connect(levelMix, out, 0, 0);
 
     // ── Controls ──────────────────────────────────────────────────────────────
     const controls: ControlSpec[] = [

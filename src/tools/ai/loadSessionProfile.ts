@@ -96,6 +96,11 @@ const DEFAULT_PROFILE_PATH = join(homedir(), ".tdmcp", "session-profile.json");
 
 function resolveProfilePath(override?: string): string {
   if (override) return resolve(override);
+  // Honor TDMCP_SESSION_PROFILE_PATH so the tool and the tdmcp://session/profile
+  // MCP resource always read/write the same file. The resource module reads the
+  // same env var; if they diverged, agents would see stale data.
+  const fromEnv = process.env.TDMCP_SESSION_PROFILE_PATH;
+  if (fromEnv) return resolve(fromEnv);
   return DEFAULT_PROFILE_PATH;
 }
 
@@ -119,8 +124,29 @@ function readProfile(profilePath: string): SessionProfile | undefined {
     const parsed: unknown = JSON.parse(raw);
     const result = loadSessionProfileOutputSchema.safeParse(parsed);
     if (result.success) return result.data;
-    // Partial / legacy file — return raw best-effort
-    return parsed as SessionProfile;
+    // Partial / legacy file — normalize to satisfy outputSchema validation
+    // downstream (structuredContent must conform). Missing required fields
+    // get safe defaults so the tool degrades instead of throwing.
+    const raw_ = (parsed && typeof parsed === "object" ? parsed : {}) as Record<string, unknown>;
+    return {
+      profile_path: typeof raw_.profile_path === "string" ? raw_.profile_path : profilePath,
+      created: typeof raw_.created === "boolean" ? raw_.created : false,
+      reset: typeof raw_.reset === "boolean" ? raw_.reset : false,
+      loaded_at: typeof raw_.loaded_at === "string" ? raw_.loaded_at : new Date().toISOString(),
+      notes: Array.isArray(raw_.notes) ? (raw_.notes as string[]) : [],
+      ...(raw_.style_memory && typeof raw_.style_memory === "object"
+        ? { style_memory: raw_.style_memory as SessionProfile["style_memory"] }
+        : {}),
+      ...(Array.isArray(raw_.recent_work)
+        ? { recent_work: raw_.recent_work as SessionProfile["recent_work"] }
+        : {}),
+      ...(raw_.conventions && typeof raw_.conventions === "object"
+        ? { conventions: raw_.conventions as SessionProfile["conventions"] }
+        : {}),
+      ...(raw_.corpus_style && typeof raw_.corpus_style === "object"
+        ? { corpus_style: raw_.corpus_style as SessionProfile["corpus_style"] }
+        : {}),
+    };
   } catch {
     return undefined;
   }

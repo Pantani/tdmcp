@@ -236,7 +236,7 @@ describe("doctor --fix: profile_dir repair", () => {
     const r = await runDoctor({
       config: makeConfig(),
       makeCtx,
-      profileDirPath: `/tmp/tdmcp-nonexistent-profile-dir-${Date.now()}`,
+      profileDirPath: join(tmpdir(), `tdmcp-nonexistent-profile-dir-${Date.now()}`),
     });
     const check = r.report.checks.find((c) => c.id === "profile_dir");
     expect(check?.status).toBe("warn");
@@ -286,7 +286,7 @@ describe("doctor --fix: profile_dir repair", () => {
       config: makeConfig(),
       makeCtx,
       fix: true,
-      profileDirPath: `/tmp/tdmcp-prof-test-${Date.now()}`,
+      profileDirPath: join(tmpdir(), `tdmcp-prof-test-${Date.now()}`),
       profileDirRepair: () => {
         throw new Error("permission denied");
       },
@@ -300,7 +300,7 @@ describe("doctor --fix: profile_dir repair", () => {
   it("does not create profile directory without --fix", async () => {
     server.use(llmModels("qwen2.5:3b"));
     const created: string[] = [];
-    const profileDir = `/tmp/tdmcp-no-fix-profiles-${Date.now()}`;
+    const profileDir = join(tmpdir(), `tdmcp-no-fix-profiles-${Date.now()}`);
     const r = await runDoctor({
       config: makeConfig(),
       makeCtx,
