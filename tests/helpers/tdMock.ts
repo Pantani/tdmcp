@@ -66,6 +66,7 @@ export const tdHandlers = [
   http.post(`${TD_BASE}/api/disconnect`, notFound),
   http.get(`${TD_BASE}/api/logs`, notFound),
   http.post(`${TD_BASE}/api/transport`, notFound),
+  http.get(`${TD_BASE}/api/system`, notFound),
 
   http.post(`${TD_BASE}/api/nodes/:seg/method`, () => ok({ result: "ok" })),
 

@@ -267,3 +267,34 @@ export const TransportStateSchema = z.object({
   fps: z.number(),
 });
 export type TdTransportState = z.infer<typeof TransportStateSchema>;
+
+// --- System info (GET /api/system) ---
+// Combined gpu/monitors/performMode snapshot for inspect_gpu_and_displays. Every
+// section is optional so a subset request (?include=gpu) or a forward-compat
+// older bridge that omits a field still parses cleanly. Section-level errors
+// surface as {error} dicts (mirrors the legacy exec-stdout shape).
+const SystemMonitorSchema = z.object({
+  index: z.number().int(),
+  width: z.number().nullable().optional(),
+  height: z.number().nullable().optional(),
+  refreshRate: z.number().nullable().optional(),
+  isPrimary: z.boolean().nullable().optional(),
+  left: z.number().nullable().optional(),
+  top: z.number().nullable().optional(),
+});
+export const SystemInfoSchema = z.object({
+  gpu: z
+    .object({
+      name: z.string().nullable().optional(),
+      driver: z.string().nullable().optional(),
+      memory: z.union([z.number(), z.string()]).nullable().optional(),
+      error: z.string().optional(),
+    })
+    .optional(),
+  monitors: z.union([z.array(SystemMonitorSchema), z.object({ error: z.string() })]).optional(),
+  performMode: z
+    .union([z.boolean(), z.object({ error: z.string() })])
+    .nullable()
+    .optional(),
+});
+export type TdSystemInfo = z.infer<typeof SystemInfoSchema>;

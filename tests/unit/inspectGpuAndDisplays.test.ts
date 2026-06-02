@@ -1,6 +1,6 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { describe, expect, it, vi } from "vitest";
-import { TdConnectionError } from "../../src/td-client/types.js";
+import { TdApiError, TdConnectionError } from "../../src/td-client/types.js";
 import {
   buildInspectGpuScript,
   inspectGpuAndDisplaysImpl,
@@ -13,11 +13,24 @@ import { silentLogger } from "../../src/utils/logger.js";
 // Helpers
 // ---------------------------------------------------------------------------
 
-function fakeCtx(exec: ReturnType<typeof vi.fn>): ToolContext {
+/**
+ * Build a fake ToolContext. By default `getSystemInfo` rejects with a 404
+ * `TdApiError` so `tryEndpoint` falls through to the legacy exec path — that
+ * keeps the original exec-based test cases below unchanged. Tests asserting
+ * the REST-first path pass an explicit `getSystemInfo` mock.
+ */
+function fakeCtx(
+  exec: ReturnType<typeof vi.fn>,
+  getSystemInfo?: ReturnType<typeof vi.fn>,
+): ToolContext {
+  const systemInfo =
+    getSystemInfo ??
+    vi.fn().mockRejectedValue(new TdApiError("Unsupported GET /api/system", { status: 404 }));
   return {
     client: {
       endpoint: "http://127.0.0.1:9980",
       executePythonScript: exec,
+      getSystemInfo: systemInfo,
     },
     logger: silentLogger,
   } as unknown as ToolContext;
@@ -120,6 +133,55 @@ describe("inspectGpuAndDisplaysImpl", () => {
     const data = resultJson(result) as Record<string, unknown>;
     expect(data.connected).toBe(false);
     expect(typeof data.reason).toBe("string");
+  });
+
+  it("REST-first — getSystemInfo succeeds, exec NOT called", async () => {
+    const exec = vi.fn(); // must NOT be called
+    const getSystemInfo = vi.fn().mockResolvedValue({
+      gpu: { name: "RTX 4090", driver: "550.00", memory: 24576 },
+      monitors: [
+        {
+          index: 0,
+          width: 3840,
+          height: 2160,
+          refreshRate: 60,
+          isPrimary: true,
+          left: 0,
+          top: 0,
+        },
+      ],
+      performMode: true,
+    });
+    const ctx = fakeCtx(exec, getSystemInfo);
+    const result = await inspectGpuAndDisplaysImpl(ctx, {});
+    expect(result.isError).not.toBe(true);
+    expect(getSystemInfo).toHaveBeenCalledTimes(1);
+    expect(exec).not.toHaveBeenCalled();
+    const data = resultJson(result) as Record<string, unknown>;
+    expect(data.connected).toBe(true);
+    expect((data.gpu as Record<string, unknown>)?.name).toBe("RTX 4090");
+    expect(data.performMode).toBe(true);
+  });
+
+  it("REST 404 → falls back to exec path, returns same shape", async () => {
+    const exec = vi.fn().mockResolvedValue({
+      stdout: JSON.stringify({
+        gpu: { name: "M2 Max", driver: null, memory: null },
+        monitors: [],
+        performMode: false,
+      }),
+    });
+    const getSystemInfo = vi
+      .fn()
+      .mockRejectedValue(new TdApiError("Unsupported GET /api/system", { status: 404 }));
+    const ctx = fakeCtx(exec, getSystemInfo);
+    const result = await inspectGpuAndDisplaysImpl(ctx, {});
+    expect(result.isError).not.toBe(true);
+    expect(getSystemInfo).toHaveBeenCalledTimes(1);
+    expect(exec).toHaveBeenCalledTimes(1);
+    const data = resultJson(result) as Record<string, unknown>;
+    expect(data.connected).toBe(true);
+    expect((data.gpu as Record<string, unknown>)?.name).toBe("M2 Max");
   });
 
   it("partial-attribute degrade — nulls preserved, no error", async () => {

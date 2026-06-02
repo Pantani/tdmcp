@@ -23,7 +23,9 @@ import {
   PerformanceSchema,
   PreviewSchema,
   SetParamModeResultSchema,
+  SystemInfoSchema,
   type TdBatchOperation,
+  type TdSystemInfo,
   TopologySchema,
   TransportStateSchema,
 } from "./validators.js";
@@ -354,6 +356,13 @@ export class TouchDesignerClient {
     cueName?: string;
   }) {
     return this.request("POST", "/api/transport", TransportStateSchema, payload);
+  }
+
+  // --- System info (GPU + monitors + perform mode) — survives ALLOW_EXEC=0 ---
+  getSystemInfo(include?: Array<"gpu" | "monitors" | "performMode">): Promise<TdSystemInfo> {
+    return this.request("GET", "/api/system", SystemInfoSchema, undefined, {
+      include: include?.length ? include.join(",") : undefined,
+    });
   }
 
   // --- Structured bridge logs (Error DAT reader) ---

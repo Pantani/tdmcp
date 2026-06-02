@@ -380,12 +380,14 @@ class StructuredEndpointTests(unittest.TestCase):
             "param_text": ac.param_text_service,
             "api": ac.api_service,
             "transport": ac.transport_service,
+            "system": ac.system_service,
         }
         ac.connect_service = mock.MagicMock(name="connect_service")
         ac.log_service = mock.MagicMock(name="log_service")
         ac.param_text_service = mock.MagicMock(name="param_text_service")
         ac.api_service = mock.MagicMock(name="api_service")
         ac.transport_service = mock.MagicMock(name="transport_service")
+        ac.system_service = mock.MagicMock(name="system_service")
 
     def tearDown(self):
         ac.connect_service = self._saved["connect"]
@@ -393,6 +395,7 @@ class StructuredEndpointTests(unittest.TestCase):
         ac.param_text_service = self._saved["param_text"]
         ac.api_service = self._saved["api"]
         ac.transport_service = self._saved["transport"]
+        ac.system_service = self._saved["system"]
         _clear_exec_env()
 
     def test_connect_dispatches_with_exec_disabled(self):
@@ -428,6 +431,14 @@ class StructuredEndpointTests(unittest.TestCase):
         with self.assertRaises(ValueError) as cm:
             ac._route("POST", "/api/transport", {}, {})
         self.assertIn("action", str(cm.exception))
+
+    def test_system_dispatches_with_exec_disabled(self):
+        ac._route("GET", "/api/system", {}, {})
+        ac.system_service.get_system_info.assert_called_once_with(None)
+
+    def test_system_include_query_parsed_to_list(self):
+        ac._route("GET", "/api/system", {"include": ["gpu,monitors"]}, {})
+        ac.system_service.get_system_info.assert_called_once_with(["gpu", "monitors"])
 
     def test_logs_dispatches_with_exec_disabled(self):
         ac._route("GET", "/api/logs", {"severity": ["error"], "max_lines": ["50"]}, {})

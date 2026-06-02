@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { friendlyTdError } from "../../td-client/types.js";
+import { friendlyTdError, tryEndpoint } from "../../td-client/types.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -120,9 +120,17 @@ export function buildInspectGpuScript(args: InspectGpuAndDisplaysArgs): string {
 
 export async function inspectGpuAndDisplaysImpl(ctx: ToolContext, args: InspectGpuAndDisplaysArgs) {
   try {
-    const script = buildInspectGpuScript(args);
-    const exec = await ctx.client.executePythonScript(script, true);
-    const data = parsePythonReport<GpuAndDisplaysReport>(exec.stdout);
+    // 1) First-class endpoint GET /api/system — survives ALLOW_EXEC=0 and returns
+    //    the same {gpu, monitors, performMode} shape as the legacy exec script.
+    // 2) Fall back to exec ONLY when the endpoint is absent on an older bridge.
+    const data = await tryEndpoint<GpuAndDisplaysReport>(
+      async () => (await ctx.client.getSystemInfo(args.include)) as GpuAndDisplaysReport,
+      async () => {
+        const script = buildInspectGpuScript(args);
+        const exec = await ctx.client.executePythonScript(script, true);
+        return parsePythonReport<GpuAndDisplaysReport>(exec.stdout);
+      },
+    );
     return jsonResult("GPU and display info read.", { connected: true, ...data });
   } catch (err) {
     return jsonResult("TouchDesigner is not reachable.", {

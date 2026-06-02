@@ -44,6 +44,27 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   null + segments `tableDAT` driving three scenes (noise / radial ramp /
   violet hold) blended through chained `crossTOP`s with play/rate/fade
   knobs. Offline-validated; live cook-check pending. Recipe count: 15 → 22.
+- **First-party recipe `scene_3d_basic`** (6 nodes, 1 connection, 3 exposed
+  controls) — foundational `create_3d_scene` template: `geometryCOMP` holding
+  a `sphereSOP` (render+display flagged) + `cameraCOMP` (tz=5) + `lightCOMP`
+  + `renderTOP` → `nullTOP`. Starting-point for 3D visuals; bind RotateY to
+  a tempo ramp or audio feature manually after import (`RecipeSchema`
+  parameters take constants only). Offline-validated against `RecipeSchema`;
+  live cook-check pending.
+- **First-party recipe `video_synth_oscillator`** (2 nodes, 1 connection, 5
+  GLSL uniforms) — procedural Lissajous oscillator color synth mirroring
+  `create_video_synth` lissajous mode: a `glslTOP` (1280×720) drawing two
+  sine oscillators as a glowing curve with `uTime` / `uScale` / `uFreqX` /
+  `uFreqY` (vectors page) and `uColor` (colors page) uniforms exposed via
+  `glsl_uniforms`. Bind `uTime` to `absTime.seconds * Speed` manually after
+  import to animate. Offline-validated; live cook-check pending.
+- **First-party recipe `kinetic_text_standalone`** (5 nodes, 3 connections,
+  4 exposed controls) — text-only showcase of `create_kinetic_text` styles
+  without audio binding: `textTOP` → `transformTOP` (scale pulse) →
+  `levelTOP` (opacity fade) → `nullTOP`, with a sine `lfoCHOP` wired in as
+  the breathing driver. Bind `sx`/`sy` and `opacity` to LFO expressions
+  manually after import. Offline-validated; live cook-check pending. Recipe
+  count: 22 → 25.
 - **`repair_network` snapshot + rollback.** The repair loop now captures
   `(par.path, par.mode)` and `(op.path, op.bypass, op.display)` before each
   applied step. After the post-repair error recheck, if `errors_after >=

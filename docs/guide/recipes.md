@@ -34,6 +34,9 @@ language like any other visual.
 | **Optical Flow Particles** | CPU optical-flow (frame-diff + blur) drives a flow texture; the artist wires it into the particle render path after import. | Advanced |
 | **MediaPipe Face Overlay** | Manual-wire template: applies MediaPipe face landmarks (from `setup_face_tracking`) as a dot-cloud overlay over a live video source. | Intermediate |
 | **Scene Timeline Demo** | Declarative timeline with 3 scenes and crossfade, showcasing the `create_scene_timeline` Layer-1 orchestrator. | Intermediate |
+| **3D Scene Basic** | Foundational `create_3d_scene` template: geometry + camera + light + render pipeline — the starting point for 3D visuals. | Intermediate |
+| **Video Synth Oscillator** | Procedural Lissajous oscillator color synth from `create_video_synth` — analog video-synth look with live Speed / Freq / Color controls. | Beginner |
+| **Kinetic Text (Standalone)** | Text-only showcase of `create_kinetic_text` styles (Transform + Level + LFO) without any audio binding — pure typography pulse. | Beginner |
 
 ::: tip Browse them live
 Ask *"list the available recipes"* and the AI will read them straight from the

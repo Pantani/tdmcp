@@ -21,6 +21,7 @@ from mcp.services import (
     log_service,
     param_text_service,
     preview_service,
+    system_service,
     transport_service,
 )
 
@@ -273,6 +274,12 @@ def _route(method, path, query, body, webserver=None):
             rate=body.get("rate"),
             cue_name=body.get("cueName") or body.get("cue_name"),
         )
+    if rest == ["system"] and method == "GET":
+        # Combined GPU/monitors/performMode snapshot — survives ALLOW_EXEC=0.
+        # `include` is an optional comma-list query param; omit for all sections.
+        include_raw = _qs(query, "include")
+        include = [s for s in include_raw.split(",") if s] if include_raw else None
+        return system_service.get_system_info(include)
     if rest == ["logs"] and method == "GET":
         # Resolve the Error DAT relative to the webserver's own container so a custom
         # install (parent_path/container) works; fall back to get_logs' default when
