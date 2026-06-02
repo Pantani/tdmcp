@@ -35,6 +35,7 @@ import { registerCreateGlitch } from "./createGlitch.js";
 import { registerCreateGpuParticleField } from "./createGpuParticleField.js";
 import { registerCreateGrowthSystem } from "./createGrowthSystem.js";
 import { registerCreateHalftone } from "./createHalftone.js";
+import { registerCreateHistogramScope } from "./createHistogramScope.js";
 import { registerCreateImageToParticles } from "./createImageToParticles.js";
 import { registerCreateJfaVoronoi } from "./createJfaVoronoi.js";
 import { registerCreateKaleidoscope } from "./createKaleidoscope.js";
@@ -50,6 +51,7 @@ import { registerCreateMidiNoteReactive } from "./createMidiNoteReactive.js";
 import { registerCreateMotionReactive } from "./createMotionReactive.js";
 import { registerCreateMultiOutput } from "./createMultiOutput.js";
 import { registerMultipass3dDepth } from "./createMultipass3dDepth.js";
+import { registerCreateOpticalFlow } from "./createOpticalFlow.js";
 import { registerCreateParticleFlock } from "./createParticleFlock.js";
 import { registerCreateParticleSystem } from "./createParticleSystem.js";
 import { registerCreatePbrScene } from "./createPbrScene.js";
@@ -62,11 +64,13 @@ import { registerCreatePoseTracking } from "./createPoseTracking.js";
 import { registerCreateProbSequencer } from "./createProbSequencer.js";
 import { registerCreateProjectionMapping } from "./createProjectionMapping.js";
 import { registerCreateRaymarchScene } from "./createRaymarchScene.js";
+import { registerCreateSdfField } from "./createSdfField.js";
 import { registerCreateSetNavigator } from "./createSetNavigator.js";
 import { registerCreateShaderLib } from "./createShaderLib.js";
 import { registerCreateShaderPark } from "./createShaderPark.js";
 import { registerCreateSimulation } from "./createSimulation.js";
 import { registerCreateSpectrum } from "./createSpectrum.js";
+import { registerCreateStrangeAttractor } from "./createStrangeAttractor.js";
 import { registerCreateStrobe } from "./createStrobe.js";
 import { registerCreateSyncExternalClock } from "./createSyncExternalClock.js";
 import { registerCreateTempoSync } from "./createTempoSync.js";
@@ -217,4 +221,9 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerSetupTdableton,
   registerCreateChopRecorder,
   registerCreateVideoScopes,
+  // New wave: SDF/strange-attractor/optical-flow/histogram-scope:
+  registerCreateSdfField,
+  registerCreateStrangeAttractor,
+  registerCreateOpticalFlow,
+  registerCreateHistogramScope,
 ];

@@ -137,6 +137,10 @@ import {
 } from "../tools/layer1/createGrowthSystem.js";
 import { createHalftoneImpl, createHalftoneSchema } from "../tools/layer1/createHalftone.js";
 import {
+  createHistogramScopeImpl,
+  createHistogramScopeSchema,
+} from "../tools/layer1/createHistogramScope.js";
+import {
   createImageToParticlesImpl,
   createImageToParticlesSchema,
 } from "../tools/layer1/createImageToParticles.js";
@@ -176,6 +180,10 @@ import {
   multipass3dDepthSchema,
 } from "../tools/layer1/createMultipass3dDepth.js";
 import {
+  createOpticalFlowImpl,
+  createOpticalFlowSchema,
+} from "../tools/layer1/createOpticalFlow.js";
+import {
   createParticleFlockImpl,
   createParticleFlockSchema,
 } from "../tools/layer1/createParticleFlock.js";
@@ -214,6 +222,7 @@ import {
   createRaymarchSceneImpl,
   createRaymarchSceneSchema,
 } from "../tools/layer1/createRaymarchScene.js";
+import { createSdfFieldImpl, createSdfFieldSchema } from "../tools/layer1/createSdfField.js";
 import {
   createSetNavigatorImpl,
   createSetNavigatorSchema,
@@ -222,6 +231,10 @@ import { createShaderLibImpl, createShaderLibSchema } from "../tools/layer1/crea
 import { createShaderParkImpl, createShaderParkSchema } from "../tools/layer1/createShaderPark.js";
 import { createSimulationImpl, createSimulationSchema } from "../tools/layer1/createSimulation.js";
 import { createSpectrumImpl, createSpectrumSchema } from "../tools/layer1/createSpectrum.js";
+import {
+  createStrangeAttractorImpl,
+  createStrangeAttractorSchema,
+} from "../tools/layer1/createStrangeAttractor.js";
 import { createStrobeImpl, createStrobeSchema } from "../tools/layer1/createStrobe.js";
 import {
   createSyncExternalClockImpl,
@@ -419,6 +432,18 @@ import {
   setParametersBatchSchema,
 } from "../tools/layer2/setParametersBatch.js";
 import { setPerformModeImpl, setPerformModeSchema } from "../tools/layer2/setPerformMode.js";
+import {
+  setupFaceTrackingImpl,
+  setupFaceTrackingSchema,
+} from "../tools/layer2/setupFaceTracking.js";
+import {
+  setupHandTrackingImpl,
+  setupHandTrackingSchema,
+} from "../tools/layer2/setupHandTracking.js";
+import {
+  setupSegmentationImpl,
+  setupSegmentationSchema,
+} from "../tools/layer2/setupSegmentation.js";
 import { syncTimecodeImpl, syncTimecodeSchema } from "../tools/layer2/syncTimecode.js";
 import { analyzeProjectImpl, analyzeProjectSchema } from "../tools/layer3/analyzeProject.js";
 import { captionTopImpl, captionTopSchema } from "../tools/layer3/captionTop.js";
@@ -450,6 +475,7 @@ import {
 import { findTdNodesImpl, findTdNodesSchema } from "../tools/layer3/findTdNodes.js";
 import { generateReadmeImpl, generateReadmeSchema } from "../tools/layer3/generateReadme.js";
 import { getBridgeLogsImpl, getBridgeLogsSchema } from "../tools/layer3/getBridgeLogs.js";
+import { getInlinePreviewImpl, getInlinePreviewSchema } from "../tools/layer3/getInlinePreview.js";
 import { getModuleHelpImpl, getModuleHelpSchema } from "../tools/layer3/getModuleHelp.js";
 import {
   getNodeStateRuntimeImpl,
@@ -1951,6 +1977,55 @@ const COMMANDS: Record<string, Command> = {
     postPasses3dImpl,
     "Composited 3D post-passes (SSAO / SSR / DOF / motion blur) using depth/normal/velocity AOVs.",
     { mutates: true },
+  ),
+  // New wave: SDF / strange-attractor / optical-flow / histogram-scope / face+hand tracking:
+  "sdf-field": r(
+    createSdfFieldSchema,
+    createSdfFieldImpl,
+    "Build a signed-distance-field raymarched scene (volumetric SDF primitives + lighting).",
+    { mutates: true },
+  ),
+  "strange-attractor": r(
+    createStrangeAttractorSchema,
+    createStrangeAttractorImpl,
+    "Render a strange attractor (Lorenz / Aizawa / Halvorsen) as point/line geometry.",
+    { mutates: true },
+  ),
+  "optical-flow": r(
+    createOpticalFlowSchema,
+    createOpticalFlowImpl,
+    "Compute optical flow from a video/camera source and expose flow vectors for reactive use.",
+    { mutates: true },
+  ),
+  "histogram-scope": r(
+    createHistogramScopeSchema,
+    createHistogramScopeImpl,
+    "Build a video histogram scope (luma/RGB) for monitoring tone and color distribution.",
+    { mutates: true },
+  ),
+  "face-tracking": r(
+    setupFaceTrackingSchema,
+    setupFaceTrackingImpl,
+    "Set up MediaPipe face tracking: 468-sample face-landmark CHOP (tx/ty/tz/confidence, centred on nose tip) from camera. No blendshapes yet.",
+    { mutates: true },
+  ),
+  "hand-tracking": r(
+    setupHandTrackingSchema,
+    setupHandTrackingImpl,
+    "Set up MediaPipe hand tracking: per-finger landmark CHOP (max_hands×21 with tx/ty/tz/confidence/handedness) from camera. No gesture classification — wire detectors downstream.",
+    { mutates: true },
+  ),
+  segmentation: r(
+    setupSegmentationSchema,
+    setupSegmentationImpl,
+    "Set up MediaPipe selfie segmentation: publishes a clean alpha-mask Null TOP (and optionally a pre-keyed RGBA) from the camera.",
+    { mutates: true },
+  ),
+  "get-inline-preview": r(
+    getInlinePreviewSchema,
+    getInlinePreviewImpl,
+    "Inline inspection snapshot for one operator: small base64 thumbnail + errors (self + parents) + top-N changed-from-default parameters + 1-line cook stats. Single-round-trip 'is this op alive/healthy?' read.",
+    { mutates: false },
   ),
 };
 

@@ -44,11 +44,13 @@ function llmModels(...ids: string[]) {
 describe("tdmcp doctor", () => {
   it("passes everything when the bridge + LLM are healthy and the vault exists", async () => {
     const dir = mkdtempSync(join(tmpdir(), "tdmcp-vault-"));
+    const profileDir = mkdtempSync(join(tmpdir(), "tdmcp-profiles-"));
     try {
       server.use(llmModels("qwen2.5:3b"));
       const r = await runDoctor({
-        config: makeConfig({ vaultPath: dir, llmModel: "qwen2.5:3b" }),
+        config: makeConfig({ vaultPath: dir, llmModel: "qwen2.5:3b", bridgeToken: "test-token" }),
         makeCtx,
+        profileDirPath: profileDir,
       });
       expect(r.code).toBe(0);
       expect(r.report.ok).toBe(true);
@@ -61,6 +63,7 @@ describe("tdmcp doctor", () => {
       expect(r.stdout).toContain("All good");
     } finally {
       rmSync(dir, { recursive: true, force: true });
+      rmSync(profileDir, { recursive: true, force: true });
     }
   });
 
@@ -149,8 +152,8 @@ describe("tdmcp doctor", () => {
     server.use(llmModels("qwen2.5:3b"));
     const r = await runDoctor({ config: makeConfig(), makeCtx });
     expect(r.stdout).toContain("tdmcp doctor");
-    // one line per check (bridge, config, tools, llm, vault)
-    expect(r.report.checks).toHaveLength(5);
+    // one line per check (bridge, config, tools, llm, vault, bridge_token, profile_dir)
+    expect(r.report.checks).toHaveLength(7);
     for (const c of r.report.checks) expect(r.stdout).toContain(c.title);
   });
 
@@ -221,9 +224,11 @@ describe("tdmcp doctor", () => {
     const vaultPath = join(dir, "missing-vault");
     try {
       const r = await runDoctor({
-        config: makeConfig({ vaultPath, llmModel: "qwen2.5:3b" }),
+        config: makeConfig({ vaultPath, llmModel: "qwen2.5:3b", bridgeToken: "tok" }),
         makeCtx,
         fix: true,
+        profileDirPath: dir, // exists — no profile_dir repair
+        envFileWrite: () => {}, // no-op — suppress token repair
         vaultRepair: () => {
           throw new Error("permission denied");
         },

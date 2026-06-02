@@ -1,4 +1,14 @@
-import { existsSync, mkdirSync, statSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { randomBytes } from "node:crypto";
+import {
+  appendFileSync,
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve, sep } from "node:path";
 import { LlmClient } from "../llm/client.js";
@@ -72,6 +82,16 @@ export interface RunDoctorOptions {
   vaultProbe?: (absPath: string) => { exists: boolean; isDir: boolean };
   /** Overridable vault repair hook for tests; defaults to mkdir -p. */
   vaultRepair?: (absPath: string) => void;
+  /** Overridable env-file path for the bridge-token repair (tests); defaults to .env in cwd. */
+  envFilePath?: string;
+  /** Overridable env-file write hook for tests; defaults to fs.appendFileSync. */
+  envFileWrite?: (filePath: string, token: string) => void;
+  /** Overridable profile dir path for profile repair (tests); defaults to ~/.config/tdmcp/profiles. */
+  profileDirPath?: string;
+  /** Overridable profile dir create hook for tests; defaults to mkdir -p. */
+  profileDirRepair?: (dirPath: string) => void;
+  /** Overridable install-bridge runner for tests; defaults to spawning `tdmcp install-bridge --verify`. */
+  runInstallBridge?: () => Promise<{ ok: boolean; detail: string }>;
 }
 
 const ICON: Record<CheckStatus, string> = { pass: "✔", warn: "!", fail: "✖" };
@@ -94,6 +114,63 @@ function defaultVaultProbe(absPath: string): { exists: boolean; isDir: boolean }
 
 function defaultVaultRepair(absPath: string): void {
   mkdirSync(absPath, { recursive: true });
+}
+
+/**
+ * Default install-bridge runner — spawns `tdmcp install-bridge --verify`.
+ *
+ * Bounded by a hard SIGKILL after `TDMCP_INSTALL_BRIDGE_TIMEOUT_MS` (default 60s)
+ * so `doctor --fix` can never hang indefinitely on a stuck child (e.g. waiting on
+ * TouchDesigner, a prompt, or a non-responsive bridge).
+ */
+function defaultRunInstallBridge(): Promise<{ ok: boolean; detail: string }> {
+  return new Promise((resolve) => {
+    const cmd = process.env.TDMCP_BIN ?? "tdmcp";
+    const child = spawn(cmd, ["install-bridge", "--verify"], {
+      stdio: ["ignore", "pipe", "pipe"],
+      env: process.env,
+    });
+    let stdout = "";
+    let stderr = "";
+    let settled = false;
+    const done = (r: { ok: boolean; detail: string }) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(r);
+    };
+    const timeoutMs = Number.parseInt(process.env.TDMCP_INSTALL_BRIDGE_TIMEOUT_MS ?? "60000", 10);
+    const timer = setTimeout(
+      () => {
+        try {
+          child.kill("SIGKILL");
+        } catch {
+          /* ignore */
+        }
+        done({
+          ok: false,
+          detail: `install-bridge --verify timed out after ${timeoutMs}ms`,
+        });
+      },
+      Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 60_000,
+    );
+    child.stdout?.on("data", (chunk) => {
+      stdout += chunk.toString();
+    });
+    child.stderr?.on("data", (chunk) => {
+      stderr += chunk.toString();
+    });
+    child.on("error", (err) => {
+      done({ ok: false, detail: `spawn failed: ${err.message}` });
+    });
+    child.on("close", (code) => {
+      const tail = (stdout + stderr).trim().split("\n").slice(-3).join(" | ").slice(0, 240);
+      done({
+        ok: code === 0,
+        detail: code === 0 ? tail || "exit 0" : `exit ${code ?? "?"}: ${tail || "(no output)"}`,
+      });
+    });
+  });
 }
 
 /** TD bridge reachability + version. Critical: a failure here fails the whole doctor. */
@@ -213,12 +290,176 @@ function checkTools(config: TdmcpConfig): DoctorCheck {
   };
 }
 
+/** Check whether a TDMCP_BRIDGE_TOKEN is configured. Never critical. */
+function checkBridgeToken(config: TdmcpConfig): DoctorCheck {
+  const base = { id: "bridge_token", title: "Bridge auth token", critical: false } as const;
+  if (config.bridgeToken) {
+    return { ...base, status: "pass", detail: "TDMCP_BRIDGE_TOKEN is set.", data: { set: true } };
+  }
+  return {
+    ...base,
+    status: "warn",
+    detail:
+      "TDMCP_BRIDGE_TOKEN is not set — the bridge accepts unauthenticated requests. For a shared network, generate a token with `--fix`.",
+    data: { set: false },
+  };
+}
+
+/** Check whether the default profile directory exists. Never critical. */
+function checkProfileDir(profileDirPath: string): DoctorCheck {
+  const base = { id: "profile_dir", title: "Profile directory", critical: false } as const;
+  if (existsSync(profileDirPath)) {
+    let isDir = false;
+    try {
+      isDir = statSync(profileDirPath).isDirectory();
+    } catch {
+      isDir = false;
+    }
+    if (isDir) {
+      return {
+        ...base,
+        status: "pass",
+        detail: `profile directory found at ${profileDirPath}.`,
+        data: { path: profileDirPath },
+      };
+    }
+    return {
+      ...base,
+      status: "warn",
+      detail: `path exists at ${profileDirPath} but is not a directory; remove or move it so the profile dir can be created.`,
+      data: { path: profileDirPath },
+    };
+  }
+  return {
+    ...base,
+    status: "warn",
+    detail: `default profile directory does not exist at ${profileDirPath}.`,
+    data: { path: profileDirPath },
+  };
+}
+
+/** Default .env path (cwd/.env). */
+function defaultEnvFilePath(): string {
+  return join(process.cwd(), ".env");
+}
+
+/** Default profile dir path (~/.config/tdmcp/profiles). */
+function defaultProfileDirPath(): string {
+  const configDir = process.env.XDG_CONFIG_HOME?.trim() || join(homedir(), ".config");
+  return join(configDir, "tdmcp", "profiles");
+}
+
+/**
+ * Default env-file write: appends (or creates) the token line idempotently.
+ * Forces owner-only permissions (0o600) on the .env to keep the bridge token
+ * out of group/world-readable scrollback. Best-effort on non-POSIX where
+ * chmod is a no-op.
+ */
+function defaultEnvFileWrite(filePath: string, token: string): void {
+  const line = `TDMCP_BRIDGE_TOKEN=${token}`;
+  if (existsSync(filePath)) {
+    const content = readFileSync(filePath, "utf8");
+    // Line-anchored so a commented `# TDMCP_BRIDGE_TOKEN=…` doesn't block the write.
+    if (/^\s*TDMCP_BRIDGE_TOKEN=/m.test(content)) return; // already set, don't double-write
+    appendFileSync(filePath, `\n${line}\n`);
+  } else {
+    writeFileSync(filePath, `${line}\n`, { mode: 0o600 });
+  }
+  try {
+    chmodSync(filePath, 0o600);
+  } catch {
+    // chmod may be unsupported (Windows / unusual FS); the secret-in-.env design
+    // already assumes a single-user setup so we tolerate this.
+  }
+}
+
+/** Repair missing TDMCP_BRIDGE_TOKEN by generating and writing one to the .env file. */
+function repairBridgeToken(
+  check: DoctorCheck | undefined,
+  envFilePath: string,
+  write: (filePath: string, token: string) => void,
+): Array<{ id: string; status: "applied" | "failed"; detail: string }> {
+  if (!check || check.status === "pass") return [];
+  try {
+    const token = randomBytes(24).toString("hex");
+    write(envFilePath, token);
+    return [
+      {
+        id: "bridge_token",
+        status: "applied",
+        detail: `generated bridge token written to ${envFilePath}. Restart tdmcp, then open that .env file to copy the TDMCP_BRIDGE_TOKEN value into TouchDesigner's environment (the raw token is intentionally NOT printed here to avoid leaking it into shell scrollback / CI logs).`,
+      },
+    ];
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    return [
+      {
+        id: "bridge_token",
+        status: "failed",
+        detail: `could not write token to ${envFilePath}: ${reason}`,
+      },
+    ];
+  }
+}
+
+/** Repair missing bridge by optionally running install-bridge --verify. */
+async function repairBridge(
+  check: DoctorCheck | undefined,
+  runInstall: (() => Promise<{ ok: boolean; detail: string }>) | undefined,
+): Promise<Array<{ id: string; status: "applied" | "failed"; detail: string }>> {
+  if (!check || check.status === "pass" || !runInstall) return [];
+  try {
+    const result = await runInstall();
+    return [
+      {
+        id: "bridge",
+        status: result.ok ? "applied" : "failed",
+        detail: result.ok
+          ? `install-bridge --verify succeeded: ${result.detail}`
+          : `install-bridge --verify failed: ${result.detail}`,
+      },
+    ];
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    return [{ id: "bridge", status: "failed", detail: `install-bridge error: ${reason}` }];
+  }
+}
+
+/** Repair missing profile directory. */
+function repairProfileDir(
+  check: DoctorCheck | undefined,
+  repair: (dirPath: string) => void,
+): Array<{ id: string; status: "applied" | "failed"; detail: string }> {
+  if (!check || check.status === "pass") return [];
+  const dirPath = typeof check.data?.path === "string" ? check.data.path : "";
+  if (!dirPath) return [];
+  try {
+    repair(dirPath);
+    return [
+      { id: "profile_dir", status: "applied", detail: `created profile directory at ${dirPath}.` },
+    ];
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    return [
+      {
+        id: "profile_dir",
+        status: "failed",
+        detail: `could not create profile directory at ${dirPath}: ${reason}`,
+      },
+    ];
+  }
+}
+
 /** Maps a non-passing check id to a remediation command/hint for `doctor --fix`. */
 function suggestFix(check: DoctorCheck, config: TdmcpConfig): string | undefined {
   if (check.status === "pass") return undefined;
   switch (check.id) {
     case "bridge":
-      return "Start TouchDesigner, then run `tdmcp install-bridge` and paste the Textport one-liner it prints.";
+      return "Start TouchDesigner, then run `tdmcp install-bridge` and paste the Textport one-liner it prints. Or run `tdmcp doctor --fix` to attempt automatic repair.";
+    case "bridge_token":
+      return "Run `tdmcp doctor --fix` to generate a token and write it to your .env file, then set the same value in TouchDesigner's environment (TDMCP_BRIDGE_TOKEN).";
+    case "profile_dir":
+      return "Run `tdmcp doctor --fix` to scaffold the default profile directory, or create it manually.";
     case "llm":
       return `Start the local LLM and pull the model:  ollama serve  &&  ollama pull ${config.llmModel}`;
     case "vault":
@@ -356,6 +597,11 @@ export async function runDoctor(opts: RunDoctorOptions = {}): Promise<DoctorResu
   const makeLlmClient = opts.makeLlmClient ?? ((c: TdmcpConfig) => new LlmClient(c));
   const vaultProbe = opts.vaultProbe ?? defaultVaultProbe;
   const vaultRepair = opts.vaultRepair ?? defaultVaultRepair;
+  const envFilePath = opts.envFilePath ?? defaultEnvFilePath();
+  const envFileWrite = opts.envFileWrite ?? defaultEnvFileWrite;
+  const profileDirPath = opts.profileDirPath ?? defaultProfileDirPath();
+  const profileDirRepair =
+    opts.profileDirRepair ?? ((dir: string) => mkdirSync(dir, { recursive: true }));
 
   let checks: DoctorCheck[] = [
     await checkBridge(ctx),
@@ -363,19 +609,57 @@ export async function runDoctor(opts: RunDoctorOptions = {}): Promise<DoctorResu
     checkTools(config),
     await checkLlm(config, makeLlmClient),
     checkVault(config, vaultProbe),
+    checkBridgeToken(config),
+    checkProfileDir(profileDirPath),
   ];
 
-  const repairs = opts.fix
-    ? repairVault(
+  let allRepairs: NonNullable<DoctorReport["repairs"]> = [];
+
+  if (opts.fix) {
+    const vaultRepairs =
+      repairVault(
         config,
         checks.find((c) => c.id === "vault"),
         vaultRepair,
-      )
-    : undefined;
-  if (repairs?.some((repair) => repair.status === "applied")) {
-    const refreshedVault = checkVault(config, vaultProbe);
-    checks = checks.map((check) => (check.id === "vault" ? refreshedVault : check));
+      ) ?? [];
+    allRepairs = allRepairs.concat(vaultRepairs);
+    if (vaultRepairs.some((r) => r.status === "applied")) {
+      const refreshedVault = checkVault(config, vaultProbe);
+      checks = checks.map((check) => (check.id === "vault" ? refreshedVault : check));
+    }
+
+    const tokenRepairs = repairBridgeToken(
+      checks.find((c) => c.id === "bridge_token"),
+      envFilePath,
+      envFileWrite,
+    );
+    allRepairs = allRepairs.concat(tokenRepairs);
+
+    const bridgeRepairs = await repairBridge(
+      checks.find((c) => c.id === "bridge"),
+      opts.runInstallBridge ?? defaultRunInstallBridge,
+    );
+    allRepairs = allRepairs.concat(bridgeRepairs);
+    // Re-probe the bridge after a successful repair so the report (and the
+    // exit code, since bridge is critical) reflect the post-fix state instead
+    // of contradicting the "Applied fixes" output with a stale fail row.
+    if (bridgeRepairs.some((r) => r.status === "applied")) {
+      const refreshedBridge = await checkBridge(ctx);
+      checks = checks.map((check) => (check.id === "bridge" ? refreshedBridge : check));
+    }
+
+    const profileRepairs = repairProfileDir(
+      checks.find((c) => c.id === "profile_dir"),
+      profileDirRepair,
+    );
+    allRepairs = allRepairs.concat(profileRepairs);
+    if (profileRepairs.some((r) => r.status === "applied")) {
+      const refreshed = checkProfileDir(profileDirPath);
+      checks = checks.map((check) => (check.id === "profile_dir" ? refreshed : check));
+    }
   }
+
+  const repairs = allRepairs.length > 0 ? allRepairs : undefined;
 
   const ok = !checks.some((c) => c.critical && c.status === "fail");
   const fixes = opts.fix
