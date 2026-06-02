@@ -9,10 +9,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 
 - **First-party recipe `kinetic_text_audio_reactive`** (7 nodes, 5
-  connections) wiring `text` → `transform` → `level` → `out` with an audio
-  band split feeding RMS magnitude into a brightness pulse — offline-validated
-  against `RecipeSchema` via `npm run validate:recipes`; live cook-check
-  pending.
+  connections) wiring `text` → `transform` → `level` → `out` alongside an
+  audio band-split chain (`audioin` → `bass` → `analyze1`). Recipe delivers
+  the nodes + connections offline-valid; the final audio→brightness binding
+  is manual after import (set `level1.brightness1` to expression
+  `op('analyze1')['chan1']*pulse_gain`), since `RecipeSchema` parameters
+  only accept constant values. Offline-validated against `RecipeSchema` via
+  `npm run validate:recipes`; live cook-check pending.
 - **First-party recipe `decks_layer_mixer`** (6 nodes, 5 connections, 2
   exposed controls) — two decks with per-deck gain summed through a composite
   mixer, the schema pattern shared by `create_decks` + `create_layer_mixer`.
