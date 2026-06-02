@@ -10,14 +10,15 @@ can build real visual systems from plain language — no node-wiring by hand. Th
 page is the honest, bird's-eye picture of **what already works, what's still
 rough, and what's coming next** on the way to a stable 1.0.
 
-**Where things stand today.** The current public cut is **v0.7.1**, tagged and
-published on 2026-06-01, exposing **269 tools**. It keeps the full v0.7.0 release
-line intact (BEYOND Waves 1-5, Ingest & Extend Waves 1-3, and the
-`create_data_source_http_ws` hotfix) and adds the first operator DX, local
-copilot, MCP-resource and bridge-health follow-through. The package manifests,
-changelog, docs and public package line still use **v0.7.1** as the release
-boundary; the unreleased main candidate below has begun the next tool-count move
-without changing the public release line until the next cut.
+**Where things stand today.** The current release line is **v0.8.0**, with
+**278 tools** across three layers plus library/packaging and Obsidian vault
+integrations. It builds on v0.7.1 (269 tools, 2026-06-01) by adding the SDF /
+strange-attractor / optical-flow / histogram-scope generators, the MediaPipe
+face + hand + segmentation adapters, the AI Show Director dry-run policy
+layer, the inline-preview / dashboard-v2 / N-channel-decks follow-through,
+and the new MCP resources (`tdmcp://glsl-snippets`, `tdmcp://cheatsheets`,
+`tdmcp://learning/touchdesigner`). The CHANGELOG `[0.8.0]` block lists every
+entry; the always-current tool list is the [Tools reference](/reference/tools).
 
 The project has grown through five arcs:
 
@@ -56,15 +57,17 @@ The project has grown through five arcs:
 
 ## ✅ Current Release Line
 
-### main — v0.7.2 candidate (unreleased)
+### main — v0.8.0 candidate (PR, not yet released)
 
-The repository now has unreleased CLI/operator-DX, MCP-resource, deck-mixing and
-library-publishing follow-through on top of v0.7.1. It does **not** change the
-public npm release yet; the generated Tools reference in this branch exposes
-**278 tools** because `publish_recipe_bundle`, the new SDF / strange-attractor /
-optical-flow / histogram-scope generators, the MediaPipe face + hand +
-segmentation adapters, and the new `get_inline_preview` inspection tool are
-all new.
+The repository now has unreleased CLI/operator-DX, MCP-resource, deck-mixing,
+library-publishing, generator (SDF, strange-attractor, optical-flow, histogram),
+MediaPipe (face + hand + segmentation), inline-preview, dashboard-v2, AI Show
+Director (dry-run policy layer), and `doctor --fix` follow-through on top of
+v0.7.1. The generated Tools reference in this branch exposes **278 tools** (the
+eight new tools listed below, plus dashboard-v2, N-channel `create_decks`,
+portable-tox README, Mermaid `generate_readme`, the new MCP resources, and the
+AI Show Director). The public npm release line, tag, and GitHub release remain
+at **v0.7.1** until this PR merges and the release workflow runs.
 
 - **Top-level package-manager discoverability.** `tdmcp --help` now expands the
   package-manager tree (`search`, `list`, `info`, `install`, `uninstall`,
@@ -557,7 +560,7 @@ or partial work.
 #### A.1 · Artist controls & creative tools
 
 The only remaining Round-1 A.1 row targeted by this PR,
-`create_decks` N-channel, is now carried in the unreleased v0.7.2 candidate
+`create_decks` N-channel, is now carried in the unreleased v0.8.0 candidate
 above.
 
 #### A.2 · Library, packaging & distribution

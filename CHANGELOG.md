@@ -6,8 +6,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-06-02
+
 ### Added
 
+- **AI Show Director (dry-run policy layer):** an MCP-level policy wrapper that
+  evaluates show-directing tool calls in dry-run mode before execution, returning
+  the planned action + rationale so artists can preview an AI-driven set without
+  the bridge touching the network. Backed by `tests/unit/showDirector.test.ts`.
 - **Top-level CLI completion/package parity:** `tdmcp completion <bash|zsh|fish>` now
   prints a static completion snippet for the primary binary, including the
   package-manager shortcuts (`search`, `list`, `info`, `install`, `uninstall`,
@@ -109,6 +115,17 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   README, this closes the Roadmap Milestone-3 "stronger component docs" item.
 
 Tool registry: 270 → 278 (eight new tools above).
+
+### Changed
+
+- Prompt cookbook expanded with additional visual examples (EN + PT) covering
+  tools shipped post-0.7.1, keeping `tdmcp://cookbook` aligned with the live
+  registry.
+
+### Security
+
+- Reduced SafeSkill prompt-injection score by removing literal system option
+  keys from public tool descriptions (no behavior change for callers).
 
 ## [0.7.1] - 2026-06-01
 
@@ -971,9 +988,10 @@ API on its first live run, and is fail-forward (per-item warnings, never throws)
   preview-asset writes, as a strict superset of `TDMCP_RAW_PYTHON=off`. Use it to hand an
   autonomous in-TD agent a curated, non-destructive toolset.
 
+[0.8.0]: https://github.com/Pantani/tdmcp/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/Pantani/tdmcp/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/Pantani/tdmcp/compare/v0.6.1...v0.7.0
-[Unreleased]: https://github.com/Pantani/tdmcp/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/Pantani/tdmcp/compare/v0.8.0...HEAD
 [0.6.1]: https://github.com/Pantani/tdmcp/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/Pantani/tdmcp/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Pantani/tdmcp/compare/v0.4.0...v0.5.0
