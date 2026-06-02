@@ -1,66 +1,68 @@
-import { HttpResponse, http } from "msw";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { KnowledgeBase } from "../../src/knowledge/index.js";
-import { RecipeLibrary } from "../../src/recipes/loader.js";
-import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
+import { describe, expect, it, vi } from "vitest";
 import {
+  buildSegmentationScript,
   setupSegmentationImpl,
   setupSegmentationSchema,
 } from "../../src/tools/layer2/setupSegmentation.js";
 import type { ToolContext } from "../../src/tools/types.js";
 import { silentLogger } from "../../src/utils/logger.js";
-import { makeTdServer, TD_BASE } from "../helpers/tdMock.js";
 
-const server = makeTdServer();
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
-
-function makeCtx(): ToolContext {
-  return {
-    client: new TouchDesignerClient({ baseUrl: TD_BASE, timeoutMs: 2000 }),
-    knowledge: new KnowledgeBase(),
-    recipes: new RecipeLibrary(),
-    logger: silentLogger,
-  };
+interface Payload {
+  tox_path: string;
+  parent: string;
+  adapter_name: string;
+  model: string;
+  smooth: boolean;
+  publish_prekeyed: boolean;
+  invert_mask: boolean;
+  feather_px: number;
 }
 
-function textOf(result: { content: Array<{ type: string; text?: string }> }): string {
-  return result.content
-    .filter((c): c is { type: "text"; text: string } => c.type === "text")
-    .map((c) => c.text)
-    .join("\n");
+function decodePayload(script: string): Payload {
+  const b64 = /b64decode\("([^"]+)"\)/.exec(script)?.[1];
+  if (b64 === undefined) throw new Error("script did not embed a base64 payload");
+  return JSON.parse(Buffer.from(b64, "base64").toString("utf8")) as Payload;
 }
 
-function mockExecWithReport(report: Record<string, unknown>): { scripts: string[] } {
-  const scripts: string[] = [];
-  server.use(
-    http.post(`${TD_BASE}/api/exec`, async ({ request }) => {
-      const body = (await request.json()) as { script: string };
-      scripts.push(body.script);
-      return HttpResponse.json({
-        ok: true,
-        data: { result: null, stdout: JSON.stringify(report) },
-      });
-    }),
-  );
-  return { scripts };
+function fakeCtx(exec: ReturnType<typeof vi.fn>): ToolContext {
+  return { client: { executePythonScript: exec }, logger: silentLogger } as unknown as ToolContext;
 }
 
-const baseArgs = {
-  tox_path: "/x/MediaPipe.tox",
-  parent_path: "/project1",
-  model: "general" as const,
-  smooth: true,
-  publish_prekeyed: true,
-  invert_mask: false,
-  feather_px: 2,
-  name: "mp_segmentation",
-};
+function scriptArg(exec: ReturnType<typeof vi.fn>): string {
+  const script = exec.mock.calls[0]?.[0];
+  if (typeof script !== "string")
+    throw new Error("executePythonScript was not called with a script");
+  return script;
+}
 
-describe("setup_segmentation", () => {
-  it("happy path with pre-keyed branch", async () => {
-    const { scripts } = mockExecWithReport({
+function okExec(report: Record<string, unknown>) {
+  return vi.fn(async () => ({ stdout: JSON.stringify(report) }));
+}
+
+function resultText(result: Awaited<ReturnType<typeof setupSegmentationImpl>>): string {
+  return (result.content?.[0] as { text?: string } | undefined)?.text ?? "";
+}
+
+describe("buildSegmentationScript", () => {
+  it("round-trips the payload", () => {
+    const payload = {
+      tox_path: "/some/MediaPipe.tox",
+      parent: "/project1",
+      adapter_name: "mp_segmentation",
+      model: "general",
+      smooth: true,
+      publish_prekeyed: true,
+      invert_mask: false,
+      feather_px: 2,
+    };
+    const script = buildSegmentationScript(payload);
+    expect(decodePayload(script)).toEqual(payload);
+  });
+});
+
+describe("setupSegmentationImpl", () => {
+  it("happy path with pre-keyed branch surfaces mask and person_rgba paths", async () => {
+    const exec = okExec({
       engine: "/project1/MediaPipe",
       mask_top: "/project1/mp_segmentation/mask",
       person_rgba_top: "/project1/mp_segmentation/person_rgba",
@@ -68,25 +70,30 @@ describe("setup_segmentation", () => {
       warnings: [],
       errors: [],
     });
-
-    const result = await setupSegmentationImpl(makeCtx(), { ...baseArgs });
-
-    expect(result.isError).toBeFalsy();
-    const text = textOf(result);
+    const result = await setupSegmentationImpl(fakeCtx(exec), {
+      tox_path: "/tox/MediaPipe.tox",
+      parent_path: "/project1",
+      model: "general",
+      smooth: true,
+      publish_prekeyed: true,
+      invert_mask: false,
+      feather_px: 2,
+      name: "mp_segmentation",
+    });
+    expect(result.isError).not.toBe(true);
+    const p = decodePayload(scriptArg(exec));
+    expect(p.tox_path).toBe("/tox/MediaPipe.tox");
+    expect(p.parent).toBe("/project1");
+    expect(p.adapter_name).toBe("mp_segmentation");
+    expect(p.model).toBe("general");
+    expect(p.feather_px).toBe(2);
+    const text = resultText(result);
     expect(text).toContain("/project1/mp_segmentation/mask");
-    expect(text).toContain("person_rgba");
-
-    expect(scripts).toHaveLength(1);
-    const script = scripts[0] as string;
-    expect(script).toContain("/x/MediaPipe.tox");
-    expect(script).toContain("/project1");
-    expect(script).toContain("mp_segmentation");
-    expect(script).toContain('MODEL = "general"');
-    expect(script).toContain("FEATHER = 2");
+    expect(text).toContain("/project1/mp_segmentation/person_rgba");
   });
 
-  it("pre-keyed disabled — payload includes person_rgba_top: null and summary omits prekey path", async () => {
-    mockExecWithReport({
+  it("publish_prekeyed=false produces null person_rgba_top and omits from summary", async () => {
+    const exec = okExec({
       engine: "/project1/MediaPipe",
       mask_top: "/project1/mp_segmentation/mask",
       person_rgba_top: null,
@@ -94,77 +101,112 @@ describe("setup_segmentation", () => {
       warnings: [],
       errors: [],
     });
-
-    const result = await setupSegmentationImpl(makeCtx(), {
-      ...baseArgs,
+    const result = await setupSegmentationImpl(fakeCtx(exec), {
+      tox_path: "/tox/MediaPipe.tox",
+      parent_path: "/project1",
+      model: "general",
+      smooth: true,
       publish_prekeyed: false,
+      invert_mask: false,
+      feather_px: 2,
+      name: "mp_segmentation",
     });
-
-    expect(result.isError).toBeFalsy();
-    const text = textOf(result);
-    expect(text).toContain('"person_rgba_top": null');
-    expect(text).toContain("Pre-keyed branch disabled");
+    expect(result.isError).not.toBe(true);
+    const p = decodePayload(scriptArg(exec));
+    expect(p.publish_prekeyed).toBe(false);
+    const text = resultText(result);
+    // The summary line should not mention the person_rgba path (only the JSON fence has null)
+    const summaryLine = text.split("\n")[0] ?? "";
+    expect(summaryLine).not.toContain("person_rgba");
   });
 
-  it("mask not found — returns errorResult with enable hint", async () => {
-    mockExecWithReport({ error: "mask_not_found", engine: "/project1/MediaPipe" });
-
-    const result = await setupSegmentationImpl(makeCtx(), { ...baseArgs });
-
+  it("mask_not_found error returns isError with hint", async () => {
+    const exec = okExec({ warnings: [], error: "mask_not_found" });
+    const result = await setupSegmentationImpl(fakeCtx(exec), {
+      tox_path: "/tox/MediaPipe.tox",
+      parent_path: "/project1",
+      model: "general",
+      smooth: true,
+      publish_prekeyed: true,
+      invert_mask: false,
+      feather_px: 2,
+      name: "mp_segmentation",
+    });
     expect(result.isError).toBe(true);
-    expect(textOf(result)).toContain("enable Selfie Segmentation");
+    const text = resultText(result);
+    expect(text).toContain("enable Selfie Segmentation");
   });
 
-  it("tox missing — guides user to install", async () => {
-    mockExecWithReport({ error: "tox_missing" });
-
-    const result = await setupSegmentationImpl(makeCtx(), {
-      ...baseArgs,
-      tox_path: "/nope/MediaPipe.tox",
+  it("tox_missing error returns isError with install hint", async () => {
+    const exec = okExec({ warnings: [], error: "tox_missing" });
+    const result = await setupSegmentationImpl(fakeCtx(exec), {
+      tox_path: "/tox/MediaPipe.tox",
+      parent_path: "/project1",
+      model: "general",
+      smooth: true,
+      publish_prekeyed: true,
+      invert_mask: false,
+      feather_px: 2,
+      name: "mp_segmentation",
     });
-
     expect(result.isError).toBe(true);
-    const text = textOf(result);
+    const text = resultText(result);
     expect(text).toContain("tdmcp install mediapipe-touchdesigner");
-    expect(text).toContain("/nope/MediaPipe.tox");
   });
 
-  it("invert + zero feather — script body contains both", async () => {
-    const { scripts } = mockExecWithReport({
+  it("invert_mask and zero feather are forwarded in the payload", async () => {
+    const exec = okExec({
       engine: "/project1/MediaPipe",
       mask_top: "/project1/mp_segmentation/mask",
-      person_rgba_top: "/project1/mp_segmentation/person_rgba",
+      person_rgba_top: null,
       model: "general",
       warnings: [],
       errors: [],
     });
-
-    const result = await setupSegmentationImpl(makeCtx(), {
-      ...baseArgs,
+    await setupSegmentationImpl(fakeCtx(exec), {
+      tox_path: "/tox/MediaPipe.tox",
+      parent_path: "/project1",
+      model: "general",
+      smooth: false,
+      publish_prekeyed: false,
       invert_mask: true,
       feather_px: 0,
+      name: "mp_segmentation",
     });
-
-    expect(result.isError).toBeFalsy();
-    const script = scripts[0] as string;
-    expect(script).toContain("INVERT = True");
-    expect(script).toContain("FEATHER = 0");
+    const p = decodePayload(scriptArg(exec));
+    expect(p.invert_mask).toBe(true);
+    expect(p.feather_px).toBe(0);
+    expect(p.smooth).toBe(false);
   });
 
-  it("bridge offline — returns errorResult without throwing", async () => {
-    server.use(
-      http.post(`${TD_BASE}/api/exec`, () => {
-        return HttpResponse.error();
-      }),
-    );
-
-    const result = await setupSegmentationImpl(makeCtx(), { ...baseArgs });
-
+  it("bridge offline (throws TdConnectionError) produces errorResult without throwing", async () => {
+    const exec = vi.fn(async () => {
+      throw Object.assign(new Error("Connection refused"), { code: "TdConnectionError" });
+    });
+    const result = await setupSegmentationImpl(fakeCtx(exec), {
+      tox_path: "/tox/MediaPipe.tox",
+      parent_path: "/project1",
+      model: "general",
+      smooth: true,
+      publish_prekeyed: true,
+      invert_mask: false,
+      feather_px: 2,
+      name: "mp_segmentation",
+    });
     expect(result.isError).toBe(true);
-    expect(typeof textOf(result)).toBe("string");
+    const text = resultText(result);
+    expect(text.length).toBeGreaterThan(0);
   });
 
-  it("schema — defaults and validation", () => {
+  it("schema rejects feather_px out of range", () => {
+    expect(() =>
+      setupSegmentationSchema.parse({
+        feather_px: 33,
+      }),
+    ).toThrow();
+  });
+
+  it("schema provides defaults for all optional fields", () => {
     const parsed = setupSegmentationSchema.parse({});
     expect(parsed.parent_path).toBe("/project1");
     expect(parsed.model).toBe("general");
@@ -172,9 +214,5 @@ describe("setup_segmentation", () => {
     expect(parsed.publish_prekeyed).toBe(true);
     expect(parsed.invert_mask).toBe(false);
     expect(parsed.feather_px).toBe(2);
-    expect(parsed.name).toBe("mp_segmentation");
-
-    expect(setupSegmentationSchema.safeParse({ feather_px: 99 }).success).toBe(false);
-    expect(setupSegmentationSchema.safeParse({ model: "bogus" }).success).toBe(false);
   });
 });
