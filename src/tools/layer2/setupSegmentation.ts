@@ -42,7 +42,9 @@ export const setupSegmentationSchema = z.object({
   parent_path: z
     .string()
     .default("/project1")
-    .describe("COMP to load the engine into. Reuses the existing engine if MediaPipe already exists."),
+    .describe(
+      "COMP to load the engine into. Reuses the existing engine if MediaPipe already exists.",
+    ),
   model: z
     .enum(["general", "landscape"])
     .default("general")
@@ -62,7 +64,9 @@ export const setupSegmentationSchema = z.object({
   invert_mask: z
     .boolean()
     .default(false)
-    .describe("Output 1 − mask (useful for background-only effects). Applied via a Level TOP on the mask branch."),
+    .describe(
+      "Output 1 − mask (useful for background-only effects). Applied via a Level TOP on the mask branch.",
+    ),
   feather_px: z
     .number()
     .int()
