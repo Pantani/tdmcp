@@ -52,7 +52,7 @@ export const createHistogramScopeSchema = z.object({
     .enum(["bars", "line"])
     .default("bars")
     .describe(
-      "'bars' = filled vertical bar chart via CHOP-to-SOP. 'line' = polyline trace. Both use the same choptoSOP node; shape is controlled by the rename approach.",
+      "Reserved — informational only in v1. Both values currently emit the same `choptoSOP`-fed render (a thin vertical strip per bin); a true polyline 'line' mode is planned. Setting this changes the value recorded in `extra` but does not yet change the SOP topology.",
     ),
   resolution: z
     .tuple([z.number().int().positive(), z.number().int().positive()])

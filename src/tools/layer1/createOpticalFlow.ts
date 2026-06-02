@@ -29,7 +29,7 @@ export const createOpticalFlowSchema = z.object({
     .min(0)
     .default(4.0)
     .describe(
-      "Multiplier on the raw frame difference before packing into RG. Higher values pick up subtler motion (and more noise). Maps to mathTOP gain.",
+      "Multiplier on the raw frame difference (before the 0.5 recenter). Higher values pick up subtler motion (and more noise). Maps to mathTOP gain.",
     ),
   smoothing: z.coerce
     .number()
@@ -50,7 +50,7 @@ export const createOpticalFlowSchema = z.object({
     .enum(["diff", "edges"])
     .default("diff")
     .describe(
-      "'diff' (default, cheapest): RG = frame difference signed-packed (temporal magnitude). 'edges': cross frame-diff with Sobel edgeTOP so RG carries a coarse direction estimate — more flow-like but ~2× cost.",
+      "'diff' (default, cheapest): scalar frame-difference luminance (temporal motion energy). 'edges': cross frame-diff with Sobel edgeTOP for a coarse where-is-motion-relative-to-edges estimate — more flow-like but still a scalar, not a dx/dy vector, and ~2× cost.",
     ),
 });
 
@@ -288,9 +288,12 @@ export async function createOpticalFlowImpl(
 
     const sourceSummary = args.source ? args.source : "Mosaic.mp4 (built-in test clip)";
     const summary =
-      `Built CPU optical-flow vector field (direction_from=${args.direction_from}, sensitivity=${args.sensitivity}, smoothing=${args.smoothing}, blur=${args.blur}) ` +
+      `Built CPU motion field (direction_from=${args.direction_from}, sensitivity=${args.sensitivity}, smoothing=${args.smoothing}, blur=${args.blur}) ` +
       `over ${sourceSummary} → ${out}.${edgeNote} ` +
-      `Output is RG-packed: R=dx, G=dy, centered at 0.5. NOTE: flow reads 0 when TD timeline is paused and source is static — check time.play if motion is absent.`;
+      `Output is a scalar motion-energy TOP (current − previous luminance, gain + 0.5-recentered): bright pixels = motion, mid-grey = still. ` +
+      `In direction_from='edges' mode it is multiplied by a Sobel edge map to give a coarse where-is-motion-relative-to-edges estimate, not a true dx/dy gradient flow. ` +
+      `Suitable as a drop-in modulator for displacement / particle chains where any motion signal works; not a substitute for a real Horn–Schunck / Farnebäck flow solver. ` +
+      `NOTE: reads 0 when TD timeline is paused and source is static — check time.play if motion is absent.`;
 
     const extra: Record<string, unknown> = {
       direction_from: args.direction_from,
@@ -329,7 +332,7 @@ export const registerCreateOpticalFlow: ToolRegistrar = (server, ctx) => {
     {
       title: "Create optical flow",
       description:
-        "Build a CPU optical-flow vector-field generator from a video source. Produces an RG-packed flow TOP (R=horizontal dx, G=vertical dy, centered at 0.5) suitable as a drop-in modulator for create_displacement_warp, create_gpu_particle_field, or any TOP-driven displacement chain. No CUDA, no external models — built entirely from stock TD TOPs: blurTOP (pre-blur), monochromeTOP, cacheTOP (previous-frame delay), compositeTOP subtract (frame diff), optional edgeTOP cross-multiply for direction estimation, mathTOP (sensitivity gain + 0.5 recenter), feedbackTOP+levelTOP (temporal smoothing). Defaults to TD's bundled Mosaic.mp4 test clip so the chain builds and previews standalone without a live camera (avoids macOS permission modal). Output is a nullTOP. Flow reads 0 when TD timeline is paused and the source is static — that is correct behavior. Returns a summary plus JSON with node paths, controls, warnings, and an inline preview image.",
+        "Build a CPU motion-energy field from a video source (cheap drop-in for displacement / particle chains; NOT a real dense optical-flow solver). Output is a single-channel TOP: bright = motion, mid-grey = still, computed as `gain × (current − previous luminance) + 0.5`. In direction_from='edges' mode the result is multiplied by a Sobel edge map for a coarse where-is-motion-relative-to-edges estimate — still not a true dx/dy gradient flow. No CUDA, no external models — built entirely from stock TD TOPs: blurTOP (pre-blur), monochromeTOP, cacheTOP (previous-frame delay), compositeTOP subtract (frame diff), optional edgeTOP cross-multiply, mathTOP (sensitivity gain + 0.5 recenter), feedbackTOP+levelTOP (temporal smoothing). Defaults to TD's bundled Mosaic.mp4 test clip so the chain builds and previews standalone without a live camera (avoids macOS permission modal). Output is a nullTOP. Reads 0 when TD timeline is paused and the source is static — that is correct behavior. Returns a summary plus JSON with node paths, controls, warnings, and an inline preview image.",
       inputSchema: createOpticalFlowSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
