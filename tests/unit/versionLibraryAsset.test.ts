@@ -186,4 +186,77 @@ describe("versionLibraryAssetImpl", () => {
     expect(result.isError).toBe(true);
     expect(textOf(result)).toContain("not a valid SemVer");
   });
+
+  it("writes license + license_tier to sidecar AND frontmatter when bumping", async () => {
+    const vault = makeVault();
+    vault.writeNote("Recipes/lic.md", { id: "lic" }, "body\n");
+    const result = await versionLibraryAssetImpl(ctxWith(vault), {
+      asset_path: "Recipes/lic.md",
+      bump: "minor",
+      read_only: false,
+      license: "MIT",
+      license_tier: "permissive",
+    });
+    expect(result.isError).toBeFalsy();
+    const payload = jsonOf(result);
+    expect(payload.license).toBe("MIT");
+    expect(payload.license_tier).toBe("permissive");
+    // sidecar persisted
+    const sc = JSON.parse(vault.read("Recipes/lic.versions.json"));
+    expect(sc.license).toBe("MIT");
+    expect(sc.license_tier).toBe("permissive");
+    // frontmatter mirrored
+    const note = vault.readNote("Recipes/lic.md");
+    expect(note.data.license).toBe("MIT");
+    expect(note.data.license_tier).toBe("permissive");
+  });
+
+  it("read_only returns existing license metadata from sidecar", async () => {
+    const vault = makeVault();
+    vault.writeNote("Recipes/lic.md", { id: "lic" }, "body\n");
+    // First bump to seed the sidecar with license data
+    await versionLibraryAssetImpl(ctxWith(vault), {
+      asset_path: "Recipes/lic.md",
+      bump: "patch",
+      read_only: false,
+      license: "Apache-2.0",
+      license_tier: "permissive",
+    });
+    // read_only should surface it
+    const result = await versionLibraryAssetImpl(ctxWith(vault), {
+      asset_path: "Recipes/lic.md",
+      bump: "patch",
+      read_only: true,
+    });
+    expect(result.isError).toBeFalsy();
+    const payload = jsonOf(result);
+    expect(payload.license).toBe("Apache-2.0");
+    expect(payload.license_tier).toBe("permissive");
+  });
+
+  it("omitting license args preserves prior sidecar license through subsequent bumps", async () => {
+    const vault = makeVault();
+    vault.writeNote("Recipes/lic.md", { id: "lic" }, "body\n");
+    // First bump with license
+    await versionLibraryAssetImpl(ctxWith(vault), {
+      asset_path: "Recipes/lic.md",
+      bump: "patch",
+      read_only: false,
+      license: "MIT",
+      license_tier: "permissive",
+    });
+    // Second bump without license args — should carry them forward
+    const result = await versionLibraryAssetImpl(ctxWith(vault), {
+      asset_path: "Recipes/lic.md",
+      bump: "minor",
+      read_only: false,
+    });
+    expect(result.isError).toBeFalsy();
+    const payload = jsonOf(result);
+    expect(payload.license).toBe("MIT");
+    expect(payload.license_tier).toBe("permissive");
+    // Sidecar still has it
+    const sc = JSON.parse(vault.read("Recipes/lic.versions.json"));
+    expect(sc.license).toBe("MIT");
+  });
 });

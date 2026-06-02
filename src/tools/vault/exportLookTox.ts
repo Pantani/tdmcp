@@ -4,6 +4,7 @@ import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { requireVault } from "./shared.js";
+import { licenseTierSchema, spdxIdSchema } from "./versionLibraryAsset.js";
 
 /**
  * `export_look_tox` — package a COMP ("a look") as a portable `.tox` into the
@@ -22,6 +23,16 @@ export const exportLookToxSchema = z.object({
     .array(z.string())
     .default([])
     .describe("Vault-relative asset paths to record in the metadata sidecar."),
+  license: spdxIdSchema
+    .optional()
+    .describe(
+      "SPDX-id of the look's license, e.g. 'MIT' or 'CC-BY-NC-4.0'. Stored in the sidecar note frontmatter.",
+    ),
+  license_tier: licenseTierSchema
+    .optional()
+    .describe(
+      "License bucket so search/filter can group by trust level: public-domain | permissive | copyleft | proprietary | unknown.",
+    ),
 });
 export type ExportLookToxArgs = z.infer<typeof exportLookToxSchema>;
 
@@ -107,6 +118,8 @@ export async function exportLookToxImpl(ctx: ToolContext, args: ExportLookToxArg
       created: new Date().toISOString(),
     };
     if (args.description) frontmatter.description = args.description;
+    if (args.license) frontmatter.license = args.license;
+    if (args.license_tier) frontmatter.license_tier = args.license_tier;
     const body = `# ${lookName}\n\n${args.description ?? "Portable look exported from TouchDesigner."}\n`;
     try {
       vault.writeNote(noteRel, frontmatter, body);
@@ -123,6 +136,8 @@ export async function exportLookToxImpl(ctx: ToolContext, args: ExportLookToxArg
       size_bytes: report.size ?? null,
       tags: frontmatter.tags,
       assets: args.assets,
+      license: args.license ?? null,
+      license_tier: args.license_tier ?? null,
     });
   } catch (err) {
     return errorResult(friendlyTdError(err));

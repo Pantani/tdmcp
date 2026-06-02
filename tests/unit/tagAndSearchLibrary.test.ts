@@ -200,4 +200,82 @@ describe("tagAndSearchLibraryImpl", () => {
     expect(data.total).toBe(1);
     expect(data.matches[0]?.id).toBe("a");
   });
+
+  it("op='filter' requires license_tier", async () => {
+    const vault = makeVault();
+    const result = await tagAndSearchLibraryImpl(ctxWith(vault), {
+      ...DEFAULTS,
+      op: "filter",
+    });
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("license_tier is required");
+  });
+
+  it("op='filter' matches assets by license_tier", async () => {
+    const vault = makeVault();
+    vault.writeNote(
+      "Recipes/a.md",
+      { id: "a", license_tier: "permissive", license: "MIT", tags: [] },
+      "",
+    );
+    vault.writeNote(
+      "Recipes/b.md",
+      { id: "b", license_tier: "copyleft", license: "GPL-3.0", tags: [] },
+      "",
+    );
+    vault.writeNote("Recipes/c.md", { id: "c", tags: [] }, "");
+    const result = await tagAndSearchLibraryImpl(ctxWith(vault), {
+      ...DEFAULTS,
+      op: "filter",
+      license_tier: "permissive",
+      folders: ["Recipes"],
+    });
+    expect(result.isError).toBeFalsy();
+    const payload = jsonOf<{ total: number; matches: Array<{ path: string }> }>(result);
+    expect(payload.total).toBe(1);
+    expect(payload.matches[0]?.path).toBe("Recipes/a.md");
+  });
+
+  it("op='filter' refines with optional SPDX-id (case-insensitive)", async () => {
+    const vault = makeVault();
+    vault.writeNote(
+      "Recipes/a.md",
+      { id: "a", license_tier: "permissive", license: "MIT", tags: [] },
+      "",
+    );
+    vault.writeNote(
+      "Recipes/b.md",
+      { id: "b", license_tier: "permissive", license: "Apache-2.0", tags: [] },
+      "",
+    );
+    const result = await tagAndSearchLibraryImpl(ctxWith(vault), {
+      ...DEFAULTS,
+      op: "filter",
+      license_tier: "permissive",
+      license: "mit",
+      folders: ["Recipes"],
+    });
+    expect(result.isError).toBeFalsy();
+    const payload = jsonOf<{ total: number; matches: Array<{ path: string }> }>(result);
+    expect(payload.total).toBe(1);
+    expect(payload.matches[0]?.path).toBe("Recipes/a.md");
+  });
+
+  it("op='list' includes license/license_tier when present in frontmatter", async () => {
+    const vault = makeVault();
+    vault.writeNote(
+      "Recipes/a.md",
+      { id: "a", license_tier: "permissive", license: "MIT", tags: [] },
+      "",
+    );
+    const result = await tagAndSearchLibraryImpl(ctxWith(vault), {
+      ...DEFAULTS,
+      op: "list",
+      folders: ["Recipes"],
+    });
+    expect(result.isError).toBeFalsy();
+    const data = jsonOf<{ assets: Array<{ license?: string; license_tier?: string }> }>(result);
+    expect(data.assets[0]?.license).toBe("MIT");
+    expect(data.assets[0]?.license_tier).toBe("permissive");
+  });
 });

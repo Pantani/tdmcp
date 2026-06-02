@@ -116,4 +116,47 @@ describe("exportLookToxImpl", () => {
     });
     expect(result.isError).toBe(true);
   });
+
+  it("writes license + license_tier into the look's note frontmatter", async () => {
+    const vault = makeVault();
+    mockExecOnce({
+      saved: vault.resolve("Looks/mylook.tox"),
+      size: 500,
+      comp_name: "myLook",
+    });
+    const result = await exportLookToxImpl(makeCtx(vault), {
+      source_path: "/project1/myLook",
+      folder: "Looks",
+      tags: [],
+      assets: [],
+      license: "CC-BY-4.0",
+      license_tier: "permissive",
+    });
+    expect(result.isError).toBeFalsy();
+    const r = jsonOf(result);
+    expect(r.license).toBe("CC-BY-4.0");
+    expect(r.license_tier).toBe("permissive");
+    const note = vault.readNote("Looks/mylook.md");
+    expect(note.data.license).toBe("CC-BY-4.0");
+    expect(note.data.license_tier).toBe("permissive");
+  });
+
+  it("omits license fields entirely when not provided (back-compat)", async () => {
+    const vault = makeVault();
+    mockExecOnce({
+      saved: vault.resolve("Looks/mylook.tox"),
+      size: 400,
+      comp_name: "myLook",
+    });
+    const result = await exportLookToxImpl(makeCtx(vault), {
+      source_path: "/project1/myLook",
+      folder: "Looks",
+      tags: [],
+      assets: [],
+    });
+    expect(result.isError).toBeFalsy();
+    const note = vault.readNote("Looks/mylook.md");
+    expect(Object.prototype.hasOwnProperty.call(note.data, "license")).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(note.data, "license_tier")).toBe(false);
+  });
 });

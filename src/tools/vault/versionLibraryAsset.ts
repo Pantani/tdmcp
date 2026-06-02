@@ -3,6 +3,25 @@ import { errorResult, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { readNoteSafe, requireVault } from "./shared.js";
 
+// License tier enum — free-form bucket complementing the SPDX id.
+export const LICENSE_TIERS = [
+  "public-domain",
+  "permissive",
+  "copyleft",
+  "proprietary",
+  "unknown",
+] as const;
+export const licenseTierSchema = z.enum(LICENSE_TIERS);
+export type LicenseTier = (typeof LICENSE_TIERS)[number];
+
+// SPDX id: short token, conservative shape (letters/digits/dot/dash/plus).
+export const spdxIdSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(64)
+  .regex(/^[A-Za-z0-9.+\-]+$/, "spdx id may only contain letters, digits, '.', '+', '-'");
+
 /**
  * `version_library_asset` — semver bump + change history for a vault library
  * asset (a recipe or component note). State lives in a sidecar JSON next to the
@@ -42,6 +61,16 @@ export const versionLibraryAssetSchema = z.object({
     .describe(
       "When true, do not bump — just read and return the current version + history (`bump`/`note` ignored).",
     ),
+  license: spdxIdSchema
+    .optional()
+    .describe(
+      "SPDX-id (e.g. 'MIT', 'CC-BY-4.0', 'LicenseRef-Custom'). Written to note frontmatter AND mirrored into the sidecar. Omit to leave the existing value untouched.",
+    ),
+  license_tier: licenseTierSchema
+    .optional()
+    .describe(
+      "License bucket: public-domain | permissive | copyleft | proprietary | unknown. Mirrors into frontmatter + sidecar.",
+    ),
 });
 export type VersionLibraryAssetArgs = z.infer<typeof versionLibraryAssetSchema>;
 
@@ -55,6 +84,8 @@ interface VersionSidecar {
   asset_path: string;
   current: string;
   history: VersionHistoryEntry[];
+  license?: string;
+  license_tier?: LicenseTier;
 }
 
 const SIDECAR_SUFFIX = ".versions.json";
@@ -141,14 +172,19 @@ function loadSidecar(
   if (!Array.isArray(obj.history)) {
     return { kind: "malformed", reason: "missing or non-array `history` field" };
   }
-  return {
-    kind: "ok",
-    sidecar: {
-      asset_path: typeof obj.asset_path === "string" ? obj.asset_path : "",
-      current: obj.current,
-      history: obj.history as VersionHistoryEntry[],
-    },
+  const sidecar: VersionSidecar = {
+    asset_path: typeof obj.asset_path === "string" ? obj.asset_path : "",
+    current: obj.current,
+    history: obj.history as VersionHistoryEntry[],
   };
+  if (typeof obj.license === "string") sidecar.license = obj.license;
+  if (
+    typeof obj.license_tier === "string" &&
+    (LICENSE_TIERS as readonly string[]).includes(obj.license_tier)
+  ) {
+    sidecar.license_tier = obj.license_tier as LicenseTier;
+  }
+  return { kind: "ok", sidecar };
 }
 
 export async function versionLibraryAssetImpl(ctx: ToolContext, args: VersionLibraryAssetArgs) {
@@ -187,12 +223,22 @@ export async function versionLibraryAssetImpl(ctx: ToolContext, args: VersionLib
         ? note.data.version
         : "0.0.0";
     const current = existing?.current ?? frontmatterVersion;
+    const readLicense =
+      existing?.license ?? (typeof note.data.license === "string" ? note.data.license : null);
+    const readTier =
+      existing?.license_tier ??
+      (typeof note.data.license_tier === "string" &&
+      (LICENSE_TIERS as readonly string[]).includes(note.data.license_tier)
+        ? (note.data.license_tier as LicenseTier)
+        : null);
     return jsonResult(`Read current version ${current} for ${args.asset_path}.`, {
       asset_path: args.asset_path,
       sidecar_path: sidecarPath,
       current,
       history: existing?.history ?? [],
       has_sidecar: existing !== null,
+      license: readLicense,
+      license_tier: readTier,
     });
   }
 
@@ -224,10 +270,25 @@ export async function versionLibraryAssetImpl(ctx: ToolContext, args: VersionLib
   }
   const nextHistory = [historyEntry, ...baseHistory];
 
+  // Resolve effective license: explicit arg > existing sidecar > existing frontmatter > undefined
+  const effectiveLicense =
+    args.license ??
+    existing?.license ??
+    (typeof note.data.license === "string" ? note.data.license : undefined);
+  const effectiveTier =
+    args.license_tier ??
+    existing?.license_tier ??
+    (typeof note.data.license_tier === "string" &&
+    (LICENSE_TIERS as readonly string[]).includes(note.data.license_tier)
+      ? (note.data.license_tier as LicenseTier)
+      : undefined);
+
   const sidecar: VersionSidecar = {
     asset_path: args.asset_path,
     current: newVersion,
     history: nextHistory,
+    ...(effectiveLicense !== undefined ? { license: effectiveLicense } : {}),
+    ...(effectiveTier !== undefined ? { license_tier: effectiveTier } : {}),
   };
 
   // Persist sidecar.
@@ -238,8 +299,13 @@ export async function versionLibraryAssetImpl(ctx: ToolContext, args: VersionLib
     return errorResult(`Could not write version sidecar "${sidecarPath}": ${reason}`);
   }
 
-  // Update the note's frontmatter `version`.
-  const nextData = { ...note.data, version: newVersion };
+  // Update the note's frontmatter `version` (and license fields if present).
+  const nextData = {
+    ...note.data,
+    version: newVersion,
+    ...(effectiveLicense !== undefined ? { license: effectiveLicense } : {}),
+    ...(effectiveTier !== undefined ? { license_tier: effectiveTier } : {}),
+  };
   try {
     vault.writeNote(args.asset_path, nextData, note.body);
   } catch (err) {
@@ -256,5 +322,7 @@ export async function versionLibraryAssetImpl(ctx: ToolContext, args: VersionLib
     note: args.note ?? null,
     timestamp,
     history: nextHistory,
+    license: effectiveLicense ?? null,
+    license_tier: effectiveTier ?? null,
   });
 }

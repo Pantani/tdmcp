@@ -2,6 +2,12 @@ import { z } from "zod";
 import { errorResult, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { readNoteSafe, requireVault } from "./shared.js";
+import {
+  LICENSE_TIERS,
+  licenseTierSchema,
+  spdxIdSchema,
+  type LicenseTier,
+} from "./versionLibraryAsset.js";
 
 /**
  * `tag_and_search_library` — faceted browse + tag editing over a vault library
@@ -19,9 +25,11 @@ const SCAN_FOLDERS = ["Recipes", "Components"] as const;
 
 export const tagAndSearchLibrarySchema = z.object({
   op: z
-    .enum(["tag", "search", "list"])
+    .enum(["tag", "search", "list", "filter"])
     .default("search")
-    .describe("Operation: 'tag' edits one asset; 'search' / 'list' read across the library."),
+    .describe(
+      "Operation: 'tag' edits one asset; 'search'/'list' read across the library; 'filter' returns assets matching a license_tier (and optional license SPDX-id).",
+    ),
   asset_path: z
     .string()
     .optional()
@@ -61,6 +69,16 @@ export const tagAndSearchLibrarySchema = z.object({
     .max(500)
     .default(50)
     .describe("Maximum number of matches to return."),
+  license_tier: licenseTierSchema
+    .optional()
+    .describe(
+      "op='filter': return only assets whose frontmatter `license_tier` equals this bucket.",
+    ),
+  license: spdxIdSchema
+    .optional()
+    .describe(
+      "op='filter' (optional refinement): also require frontmatter `license` to equal this SPDX-id (case-insensitive).",
+    ),
 });
 export type TagAndSearchLibraryArgs = z.infer<typeof tagAndSearchLibrarySchema>;
 
@@ -71,6 +89,8 @@ interface AssetEntry {
   description?: string;
   tags: string[];
   difficulty?: string;
+  license?: string;
+  license_tier?: LicenseTier;
 }
 
 function normalizeTagList(raw: unknown): string[] {
@@ -97,8 +117,8 @@ export const registerTagAndSearchLibrary: ToolRegistrar = (server, ctx) => {
         "Faceted browse + tag editing over a vault library (Recipes/ + Components/ markdown notes). " +
         "op='list' enumerates every asset and its tags; op='search' filters by free-text query and/or " +
         "`tags_any`/`tags_all` set logic; op='tag' edits one asset's frontmatter tags (union or replace, " +
-        "always preserving '*'-pinned user tags). Pure vault I/O — no TouchDesigner bridge required. " +
-        "Requires TDMCP_VAULT_PATH.",
+        "always preserving '*'-pinned user tags); op='filter' returns assets matching a `license_tier` bucket " +
+        "(and optional SPDX `license` id). Pure vault I/O — no TouchDesigner bridge required. Requires TDMCP_VAULT_PATH.",
       inputSchema: tagAndSearchLibrarySchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
     },
@@ -201,6 +221,12 @@ export async function tagAndSearchLibraryImpl(ctx: ToolContext, args: TagAndSear
         description: typeof data.description === "string" ? data.description : undefined,
         tags: normalizeTagList(data.tags),
         difficulty: typeof data.difficulty === "string" ? data.difficulty : undefined,
+        license: typeof data.license === "string" ? data.license : undefined,
+        license_tier:
+          typeof data.license_tier === "string" &&
+          (LICENSE_TIERS as readonly string[]).includes(data.license_tier)
+            ? (data.license_tier as LicenseTier)
+            : undefined,
       });
     }
   }
@@ -211,6 +237,30 @@ export async function tagAndSearchLibraryImpl(ctx: ToolContext, args: TagAndSear
       total: allAssets.length,
       assets: truncated,
     });
+  }
+
+  if (args.op === "filter") {
+    if (!args.license_tier) {
+      return errorResult("license_tier is required for op='filter'.");
+    }
+    const wantTier = args.license_tier;
+    const wantSpdx = args.license ? lower(args.license) : null;
+    const matches = allAssets.filter((a) => {
+      if (a.license_tier !== wantTier) return false;
+      if (wantSpdx && (!a.license || lower(a.license) !== wantSpdx)) return false;
+      return true;
+    });
+    const truncated = matches.slice(0, args.limit);
+    return jsonResult(
+      `Filtered ${matches.length} asset(s) by license_tier='${wantTier}'${wantSpdx ? ` license='${args.license}'` : ""}; returning ${truncated.length}.`,
+      {
+        total: matches.length,
+        returned: truncated.length,
+        matches: truncated,
+        license_tier: wantTier,
+        license: args.license ?? null,
+      },
+    );
   }
 
   // op === "search"
