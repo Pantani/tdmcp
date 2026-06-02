@@ -8,6 +8,21 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **First-party recipe `pose_skeleton_standalone`** (8 nodes, 1 connection, 1
+  exposed control) — placeholder skeleton renderer for `create_pose_skeleton`
+  with a built-in Table DAT of 8 static landmarks (head/shoulders/hips/hands/
+  feet) feeding a Script SOP that draws joints + bones through a `lineMAT`,
+  rendered via `geometryCOMP` + `cameraCOMP` + `renderTOP`. Foundation for any
+  custom pose source (Kinect, OSC, file playback) without depending on the
+  torinmb MediaPipe plugin. Offline-validated against `RecipeSchema` via
+  `npm run validate:recipes`; live cook-check pending (UNVERIFIED).
+- **First-party recipe `particle_system_basic`** (8 nodes, 1 connection, 3
+  exposed controls) — foundational `create_particle_system` template: an 8×8
+  `gridSOP` emitter feeds a `particleSOP` with a constant force CHOP for
+  gentle vertical drift, rendered through `pointspriteMAT` + `cameraCOMP` +
+  `lightCOMP` + `renderTOP`. Live controls expose BirthRate, Lifetime, and
+  ForceY. Offline-validated against `RecipeSchema`; live cook-check pending
+  (UNVERIFIED). Total: 29/29 recipes valid.
 - **First-party recipe `feedback_network_basic`** (6 nodes, 6 connections, 2
   exposed controls) — minimal recursive feedback pattern (noise seed →
   `compositeTOP` operand=maximum + `feedbackTOP` → `blurTOP` → `levelTOP`

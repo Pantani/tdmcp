@@ -39,6 +39,8 @@ language like any other visual.
 | **Kinetic Text (Standalone)** | Text-only showcase of `create_kinetic_text` styles (Transform + Level + LFO) without any audio binding — pure typography pulse. | Beginner |
 | **Feedback Network Basic** | Minimal feedback TOP + level + composite pattern, the classic recursive look from `create_feedback_network`. | Beginner |
 | **GLSL Shader Basic** | Single GLSL TOP with inline shader showcasing `create_glsl_shader` with exposed uniform controls. | Intermediate |
+| **Pose Skeleton (Standalone)** | Placeholder skeleton renderer with instanced joints/bones, foundation for any custom pose source (no MediaPipe). | Intermediate |
+| **Particle System Basic** | Foundational `create_particle_system` template with grid emitter + force CHOP + geometry render. | Beginner |
 
 ::: tip Browse them live
 Ask *"list the available recipes"* and the AI will read them straight from the

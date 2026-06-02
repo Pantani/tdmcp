@@ -1,0 +1,70 @@
+{
+  "id": "particle_system_basic",
+  "name": "Particle System Basic",
+  "description": "UNVERIFIED — Foundational create_particle_system template: a grid-SOP emitter feeds a Particle SOP with a constant Force CHOP for gentle drift and a tunable lifetime, rendered through a Geometry COMP with a point-sprite material. Controls expose birth rate, lifetime, and force strength so the artist can dial it without reopening the network. Use as a starting point for any particle-driven look.",
+  "tags": ["particle", "basic", "foundation", "generative"],
+  "difficulty": "beginner",
+  "td_version_min": "2022",
+  "nodes": [
+    { "name": "geo", "type": "geometryCOMP" },
+    {
+      "name": "emitter",
+      "type": "gridSOP",
+      "parent": "geo",
+      "parameters": { "sizex": 2, "sizey": 2, "rows": 8, "cols": 8 },
+      "comment": "Grid of emission points feeding the particle SOP"
+    },
+    {
+      "name": "force",
+      "type": "constantCHOP",
+      "parameters": { "value0": 0, "value1": 0.5, "value2": 0 },
+      "comment": "Constant upward force; drives the particle wind input"
+    },
+    {
+      "name": "particle",
+      "type": "particleSOP",
+      "parent": "geo",
+      "render": true,
+      "parameters": { "life": 3, "birth": 60 },
+      "comment": "Particle simulation; this is the rendered geometry inside geo"
+    },
+    { "name": "mat", "type": "pointspriteMAT" },
+    { "name": "cam", "type": "cameraCOMP", "parameters": { "tz": 6 } },
+    { "name": "light", "type": "lightCOMP", "parameters": { "tx": 3, "ty": 4, "tz": 4 } },
+    { "name": "render", "type": "renderTOP" }
+  ],
+  "connections": [{ "from": "emitter", "to": "particle" }],
+  "parameters": [
+    { "name": "geometry", "node": "render", "param": "geometry", "value": "geo" },
+    { "name": "camera", "node": "render", "param": "camera", "value": "cam" },
+    { "name": "lights", "node": "render", "param": "lights", "value": "light" },
+    { "name": "material", "node": "geo", "param": "material", "value": "mat" }
+  ],
+  "controls": [
+    {
+      "name": "BirthRate",
+      "type": "float",
+      "min": 0,
+      "max": 500,
+      "default": 60,
+      "bind_to": ["particle.birth"]
+    },
+    {
+      "name": "Lifetime",
+      "type": "float",
+      "min": 0.1,
+      "max": 20,
+      "default": 3,
+      "bind_to": ["particle.life"]
+    },
+    {
+      "name": "ForceY",
+      "type": "float",
+      "min": -5,
+      "max": 5,
+      "default": 0.5,
+      "bind_to": ["force.value1"]
+    }
+  ],
+  "preview_description": "UNVERIFIED — A gentle column of glowing point-sprites rising from a square 8x8 grid against black, with birth rate, lifetime, and vertical force live-tweakable."
+}
