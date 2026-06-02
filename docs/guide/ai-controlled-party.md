@@ -24,7 +24,8 @@ microphone / OpenClaw / ChatGPT text
 
 ## Current status
 
-The first implementation slice is intentionally dry-run only:
+The first implementation slice is intentionally dry-run only, and the current
+validation result is split between visual rehearsal and policy proof:
 
 - `ShowIntentSchema` validates AI show-control requests.
 - `EffectPolicySchema` defines allow, approval and block rules.
@@ -32,6 +33,31 @@ The first implementation slice is intentionally dry-run only:
   to TouchDesigner or hardware.
 - Approval queue state and audit logs are returned as JSON so a future dashboard
   can persist or display them.
+- The first visual rehearsal used two example projections as the output baseline
+  for the concept: visuals can be split/mapped as a show surface, while the AI
+  policy layer stays separate from projector timing.
+- Offline regression tests cover the dry-run policy path: allowed visual cues,
+  approval-gated fog, blocked strobe/blackout/mixer-style requests, malformed
+  LLM output, approval/cancel state transitions and the CLI guarantee that
+  `show-director` does not build a TouchDesigner context.
+- The built-in recipe set still validates, including the projection mapping
+  recipe used as one of the rehearsal primitives.
+
+## Validation plan
+
+Use the concept as a harness, not a single demo file. Each pass should prove one
+boundary before the next one is trusted:
+
+| Stage | What to prove | Pass signal |
+| --- | --- | --- |
+| Projection baseline | Two or more outputs can show a mapped visual and a known test pattern. | Each projector/surface is framed, previewed and has a fallback black/freeze path. |
+| AI policy dry-run | Text requests become structured `ShowIntent`s before anything reaches TD. | Pre-approved cues are allowed, fog/strobe are approval-gated or blocked, hazardous effects never produce a hardware plan. |
+| Audio-reactive rehearsal | TD handles beat, energy, transient or chroma timing locally. | The AI changes phrase/section/cue intent only; beat-tight motion keeps running without LLM round trips. |
+| Operator control | The human can see the latest AI decision and override it. | Dashboard/logs show current cue, pending approvals, policy reasons and panic state. |
+| Venue hardware | Every fixture and effect has a safe state before live control. | DMX/fog/strobe/PA actions remain simulated until the venue-specific policy, cooldowns and kill path are rehearsed. |
+
+Repeat the first two stages in CI/offline rehearsal whenever the policy changes.
+Repeat all five stages for each venue.
 
 ## Rehearsal mode
 

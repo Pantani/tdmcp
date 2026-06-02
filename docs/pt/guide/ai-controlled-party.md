@@ -24,7 +24,8 @@ microfone / OpenClaw / texto do ChatGPT
 
 ## Estado atual
 
-A primeira fatia implementada é propositalmente apenas dry-run:
+A primeira fatia implementada é propositalmente apenas dry-run, e o resultado
+validado agora fica dividido entre rehearsal visual e prova de policy:
 
 - `ShowIntentSchema` valida pedidos de controle de show vindos da IA.
 - `EffectPolicySchema` define regras de permitir, exigir aprovação ou bloquear.
@@ -32,6 +33,31 @@ A primeira fatia implementada é propositalmente apenas dry-run:
   a hardware.
 - O estado da fila de aprovação e os logs de auditoria saem em JSON para um
   futuro dashboard persistir ou exibir.
+- O primeiro rehearsal visual usou duas projeções de exemplo como baseline de
+  output para o conceito: os visuais podem ser divididos/mapeados como superfície
+  de show, enquanto a policy da IA fica separada do timing dos projetores.
+- Testes de regressão offline cobrem o caminho dry-run de policy: cues visuais
+  permitidos, fog com aprovação, pedidos de strobe/blackout/mixer bloqueados,
+  saída malformada de LLM, transições de aprovação/cancelamento e a garantia da
+  CLI de que `show-director` não constrói contexto do TouchDesigner.
+- A biblioteca de receitas embutida continua validando, incluindo a receita de
+  projection mapping usada como um dos primitivos do rehearsal.
+
+## Plano de validação
+
+Use o conceito como um harness, não como um único arquivo de demo. Cada passagem
+deve provar uma fronteira antes de confiar na próxima:
+
+| Etapa | O que provar | Sinal de aprovação |
+| --- | --- | --- |
+| Baseline de projeção | Duas ou mais saídas conseguem mostrar um visual mapeado e um test pattern conhecido. | Cada projetor/superfície está enquadrado, com preview e fallback de black/freeze. |
+| Dry-run de policy da IA | Pedidos em texto viram `ShowIntent`s estruturados antes de qualquer coisa chegar ao TD. | Cues pré-aprovados são permitidos, fog/strobe exigem aprovação ou bloqueiam, efeitos perigosos nunca geram plano de hardware. |
+| Rehearsal áudio-reativo | TD cuida localmente de beat, energia, transientes ou chroma. | A IA muda apenas intenção de frase/seção/cue; movimento no beat continua sem round trip de LLM. |
+| Controle do operador | O humano consegue ver a última decisão da IA e sobrescrever. | Dashboard/logs mostram cue atual, aprovações pendentes, motivos de policy e estado de panic. |
+| Hardware do venue | Cada fixture e efeito tem estado seguro antes do controle ao vivo. | DMX/fog/strobe/PA continuam simulados até policy, cooldowns e kill path específicos do venue serem ensaiados. |
+
+Repita as duas primeiras etapas em CI/rehearsal offline sempre que a policy
+mudar. Repita as cinco etapas para cada venue.
 
 ## Modo rehearsal
 

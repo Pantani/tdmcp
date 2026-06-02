@@ -1,7 +1,8 @@
 # AI-Controlled Party - Harness Plan
 
 Date: 2026-06-01
-Status: product/architecture plan ready for implementation scoping
+Status: Phase 2/3 dry-run policy slice implemented and offline-validated;
+public guide updated; live hardware validation still venue-specific
 Harness: `tdmcp-feature-discovery` -> `tdmcp-pipeline`
 Working title: AI-Controlled Party
 
@@ -20,6 +21,27 @@ The public claim should be strong but honest:
 Do not position this as "the LLM directly controls every device with no operator." For a
 real venue, that is the wrong safety model. The professional version is an AI show
 director with guardrails, not an unrestricted autonomous stage operator.
+
+## 2026-06-02 Validation Result
+
+The concept now has a validated dry-run policy slice plus a first visual output baseline:
+
+- Visual rehearsal: two example projections were used as the baseline proof that the
+  party concept can fan visuals across show surfaces before adding physical effects.
+- Policy/runtime: `ShowIntentSchema`, `EffectPolicySchema`, `showDirectorRuntime`, and
+  `tdmcp-agent show-director` are implemented as a dry-run-only safety surface.
+- Focused tests: `tests/unit/showDirector.test.ts` and `tests/unit/cliAgent.test.ts`
+  passed together (121 tests), covering safe visual cues, approval-gated fog,
+  blocked hazardous effects, malformed LLM output, approval/cancel state, and CLI
+  non-connection to TouchDesigner.
+- Recipe validation: `npm run validate:recipes` passed for all 15 built-in recipes,
+  including `projection_mapping.json`.
+- Public docs: `docs/guide/ai-controlled-party.md` and
+  `docs/pt/guide/ai-controlled-party.md` now describe the validation matrix and
+  current limits in EN/PT parity.
+- Not live-validated yet: STT/OpenClaw wiring, dashboard approval UI, fixture
+  patches, DMX/fog/strobe/moving-head/laser/PA output, and venue latency/safe-state
+  checks.
 
 ## Current Repo Fit
 
