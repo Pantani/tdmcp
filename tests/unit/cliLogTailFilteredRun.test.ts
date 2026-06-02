@@ -5,10 +5,30 @@ import { runLogTailFiltered } from "../../src/cli/logTailFiltered.js";
 
 const TD_BASE = "http://127.0.0.1:9980";
 
+const savedEnv: Record<string, string | undefined> = {};
+const TD_ENV_KEYS = [
+  "TDMCP_TD_HOST",
+  "TDMCP_TD_PORT",
+  "TDMCP_TD_SCHEME",
+  "TDMCP_BRIDGE_TOKEN",
+] as const;
+
 const server = setupServer();
-beforeAll(() => server.listen({ onUnhandledRequest: "bypass" }));
+beforeAll(() => {
+  for (const k of TD_ENV_KEYS) {
+    savedEnv[k] = process.env[k];
+    delete process.env[k];
+  }
+  server.listen({ onUnhandledRequest: "error" });
+});
 afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
+afterAll(() => {
+  server.close();
+  for (const k of TD_ENV_KEYS) {
+    if (savedEnv[k] === undefined) delete process.env[k];
+    else process.env[k] = savedEnv[k];
+  }
+});
 
 let stderrSpy: ReturnType<typeof vi.spyOn>;
 let stderrChunks: string[] = [];
