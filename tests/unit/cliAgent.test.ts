@@ -1651,4 +1651,109 @@ describe("tdmcp-agent CLI — wave-5 branch coverage", () => {
     expect(started).toBe(true);
     expect(closed).toBe(true);
   });
+
+  // ───── wave-9: branch-coverage fills for runCli error paths ─────
+
+  it("returns code 2 with stderr when parseCliArgs throws (unknown flag)", async () => {
+    const r = await runCli(["--definitely-not-a-flag"]);
+    expect(r.code).toBe(2);
+    expect(r.stderr.length).toBeGreaterThan(0);
+    expect(r.stdout).toBe("");
+  });
+
+  it("help without target falls back to general usage", async () => {
+    const r = await runCli(["help"]);
+    expect(r.code).toBe(0);
+    expect(r.stdout).toContain("tdmcp-agent");
+  });
+
+  it("help with unknown command reports the unknown target", async () => {
+    const r = await runCli(["help", "totally", "fake", "cmd"]);
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain("Unknown command for help");
+  });
+
+  it("schema with unknown command reports the unknown target", async () => {
+    const r = await runCli(["schema", "no-such-cmd"]);
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain("Unknown command for schema");
+  });
+
+  it("completion with an unsupported shell exits 2 with guidance", async () => {
+    const r = await runCli(["completion", "tcsh"]);
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain("Unsupported shell");
+  });
+
+  it("completion zsh emits a zsh-shaped script", async () => {
+    const r = await runCli(["completion", "zsh"]);
+    expect(r.code).toBe(0);
+    expect(r.stdout).toContain("#compdef tdmcp-agent");
+  });
+
+  it("completion fish emits a fish-shaped script", async () => {
+    const r = await runCli(["completion", "fish"]);
+    expect(r.code).toBe(0);
+    expect(r.stdout).toContain("complete -c tdmcp-agent");
+  });
+
+  it("run without a file reports missing argument", async () => {
+    const r = await runCli(["run"]);
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain('Missing file for "run"');
+  });
+
+  it("run with an unreadable file reports invalid run file", async () => {
+    const r = await runCli(["run", "/definitely/not/a/real/path/steps.json"]);
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain("Invalid run file");
+  });
+
+  it("`version` positional behaves like --version", async () => {
+    const r = await runCli(["version"]);
+    expect(r.code).toBe(0);
+    expect(r.stdout).toMatch(/tdmcp-agent \d+\.\d+\.\d+/);
+  });
+
+  it("replHistoryPath honors TDMCP_AGENT_HISTORY", () => {
+    const p = replHistoryPath({
+      TDMCP_AGENT_HISTORY: "/tmp/my-tdmcp-history",
+    } as NodeJS.ProcessEnv);
+    expect(p).toBe("/tmp/my-tdmcp-history");
+  });
+
+  it("replHistoryPath honors XDG_STATE_HOME when no explicit override", () => {
+    const p = replHistoryPath({
+      XDG_STATE_HOME: "/tmp/xdgstate",
+    } as NodeJS.ProcessEnv);
+    expect(p).toBe("/tmp/xdgstate/tdmcp-agent/history");
+  });
+
+  it("loadReplHistory returns [] when the file does not exist", () => {
+    const lines = loadReplHistory("/tmp/__tdmcp_does_not_exist__/history");
+    expect(lines).toEqual([]);
+  });
+
+  it("saveReplHistory deduplicates and trims, and loadReplHistory reads it back", () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-hist-"));
+    try {
+      const path = join(dir, "history");
+      saveReplHistory(["a", "  a  ", "b", "", "a", "b"], path);
+      const round = loadReplHistory(path);
+      expect(round).toEqual(["a", "b"]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("completeReplLine returns a prefix-filtered list when there is a match", () => {
+    const [matches] = completeReplLine("nodes ");
+    expect(matches.length).toBeGreaterThan(0);
+  });
+
+  it("completeReplLine falls back to all words when prefix doesn't match", () => {
+    const [matches, prefix] = completeReplLine("zzz-no-such-prefix");
+    expect(prefix).toBe("zzz-no-such-prefix");
+    expect(matches.length).toBeGreaterThan(0);
+  });
 });

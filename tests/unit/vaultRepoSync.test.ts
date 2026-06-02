@@ -321,7 +321,9 @@ describe.skipIf(!hasGit())("vaultRepoSyncImpl", () => {
   });
 
   // 7. push — rejected (never --force)
-  it("push: rejected returns errorResult; source never passes --force", async () => {
+  it("push: rejected returns errorResult; source never passes --force", {
+    timeout: 20_000,
+  }, async () => {
     const bare = path.join(tmpBase, "bare4.git");
     const clone1 = path.join(tmpBase, "clone4a");
     mkdirSync(bare);

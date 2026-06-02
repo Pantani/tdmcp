@@ -268,3 +268,135 @@ describe("serializeNetworkImpl — bad input", () => {
     expect(() => serializeNetworkSchema.parse({})).toThrow();
   });
 });
+
+// ---------------------------------------------------------------------------
+// wave-9 — REST custom_params endpoint promotion (partial, custom_params only)
+// ---------------------------------------------------------------------------
+describe("serializeNetworkImpl — REST custom_params promotion", () => {
+  // Skeleton report the exec script returns when skip_custom_in_script=true.
+  const SKELETON = {
+    root: "/project1",
+    nodes: [
+      { name: "noise1", type: "noiseTOP", params: {}, inputs: [] },
+      { name: "blur1", type: "blurTOP", params: {}, inputs: [] },
+    ],
+    warnings: [],
+  };
+
+  it("REST-first: prefers /custom_params endpoint per node and skips the in-script readout", async () => {
+    let execHits = 0;
+    let capturedScript = "";
+    const restHits: string[] = [];
+    server.use(
+      http.get(`${TD_BASE}/api/nodes/:seg/custom_params`, ({ params }) => {
+        const seg = decodeURIComponent(params.seg as string);
+        restHits.push(seg);
+        return HttpResponse.json({
+          ok: true,
+          data: {
+            params: [{ name: "Speed", page: "Custom", style: "Float", default: 1.0, value: 1.0 }],
+            warnings: [],
+          },
+        });
+      }),
+      http.post(`${TD_BASE}/api/exec`, async ({ request }) => {
+        execHits += 1;
+        const body = (await request.json()) as { script: string };
+        capturedScript = body.script;
+        return HttpResponse.json({
+          ok: true,
+          data: { result: null, stdout: JSON.stringify(SKELETON) },
+        });
+      }),
+    );
+
+    const result = await serializeNetworkImpl(makeCtx(), {
+      path: "/project1",
+      max_nodes: 200,
+      include_custom_params: true,
+    });
+
+    expect(result.isError).toBeFalsy();
+    // Exec is called exactly once (skeleton), NOT a second time after REST succeeded.
+    expect(execHits).toBe(1);
+    // The exec script was instructed to skip the in-script custom_params readout.
+    const payload = JSON.parse(
+      Buffer.from(/b64decode\("([^"]+)"\)/.exec(capturedScript)?.[1] ?? "", "base64").toString(
+        "utf8",
+      ),
+    ) as { skip_custom_in_script?: boolean };
+    expect(payload.skip_custom_in_script).toBe(true);
+    // REST endpoint was called once per node, with the child path.
+    expect(restHits).toEqual(["/project1/noise1", "/project1/blur1"]);
+    // The endpoint params were mapped onto each node in the SerializedCustomPar shape.
+    const sc = result.structuredContent as {
+      nodes: Array<{ name: string; custom_params?: Array<Record<string, unknown>> }>;
+    };
+    expect(sc.nodes[0]?.custom_params).toEqual([
+      { name: "Speed", page: "Custom", style: "Float", default: 1.0 },
+    ]);
+    expect(sc.nodes[1]?.custom_params).toEqual([
+      { name: "Speed", page: "Custom", style: "Float", default: 1.0 },
+    ]);
+  });
+
+  it("falls back to in-script custom_params readout when the REST endpoint is absent (404)", async () => {
+    // tdMock default already returns 404 for /api/nodes/:seg/custom_params.
+    let execHits = 0;
+    const capturedScripts: string[] = [];
+    server.use(
+      http.post(`${TD_BASE}/api/exec`, async ({ request }) => {
+        execHits += 1;
+        const body = (await request.json()) as { script: string };
+        capturedScripts.push(body.script);
+        return HttpResponse.json({
+          ok: true,
+          data: {
+            result: null,
+            stdout: JSON.stringify({
+              ...SKELETON,
+              nodes: [
+                {
+                  ...SKELETON.nodes[0],
+                  custom_params: [{ name: "Speed", page: "Custom", style: "Float", default: 1.0 }],
+                },
+                { ...SKELETON.nodes[1] },
+              ],
+            }),
+          },
+        });
+      }),
+    );
+
+    const result = await serializeNetworkImpl(makeCtx(), {
+      path: "/project1",
+      max_nodes: 200,
+      include_custom_params: true,
+    });
+
+    expect(result.isError).toBeFalsy();
+    // First call: skeleton (skip=true). Second call (fallback after 404 on first node): skip=false.
+    expect(execHits).toBe(2);
+    const firstPayload = JSON.parse(
+      Buffer.from(
+        /b64decode\("([^"]+)"\)/.exec(capturedScripts[0] ?? "")?.[1] ?? "",
+        "base64",
+      ).toString("utf8"),
+    ) as { skip_custom_in_script?: boolean };
+    const secondPayload = JSON.parse(
+      Buffer.from(
+        /b64decode\("([^"]+)"\)/.exec(capturedScripts[1] ?? "")?.[1] ?? "",
+        "base64",
+      ).toString("utf8"),
+    ) as { skip_custom_in_script?: boolean };
+    expect(firstPayload.skip_custom_in_script).toBe(true);
+    expect(secondPayload.skip_custom_in_script).toBe(false);
+    // Output shape preserved: in-script custom_params come through unchanged.
+    const sc = result.structuredContent as {
+      nodes: Array<{ name: string; custom_params?: Array<Record<string, unknown>> }>;
+    };
+    expect(sc.nodes[0]?.custom_params).toEqual([
+      { name: "Speed", page: "Custom", style: "Float", default: 1.0 },
+    ]);
+  });
+});

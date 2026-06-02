@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isMissingEndpoint } from "../../td-client/types.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -130,7 +131,13 @@ try:
         report["fatal"] = "Root not found: " + str(_p["path"])
     else:
         _max = int(_p.get("max_nodes", 200))
-        _include_custom = bool(_p.get("include_custom_params", True))
+        # When the TS layer is going to fill custom_params via the REST endpoint
+        # GET /api/nodes/<path>/custom_params, it sets skip_custom_in_script=true
+        # so the script omits the custom_params readout entirely (and we fall back
+        # to running the script with skip_custom_in_script=false only when the
+        # endpoint is missing on an older bridge).
+        _skip_custom = bool(_p.get("skip_custom_in_script", False))
+        _include_custom = bool(_p.get("include_custom_params", True)) and not _skip_custom
         # depth=1 is the safe diffable unit: the root's immediate children only, so wires
         # resolve by name within the root and rebuild can reconstruct them.
         try:
@@ -302,16 +309,86 @@ export function buildSerializeNetworkScript(payload: object): string {
   return buildPayloadScript(SERIALIZE_NETWORK_SCRIPT, payload);
 }
 
+/** Run the exec script with a given `skip_custom_in_script` flag and parse it. */
+async function runSerializeExec(
+  ctx: ToolContext,
+  args: SerializeNetworkArgs,
+  skipCustomInScript: boolean,
+): Promise<SerializeNetworkReport> {
+  const script = buildSerializeNetworkScript({
+    path: args.path,
+    max_nodes: args.max_nodes,
+    include_custom_params: args.include_custom_params,
+    skip_custom_in_script: skipCustomInScript,
+  });
+  const exec = await ctx.client.executePythonScript(script, true);
+  return parsePythonReport<SerializeNetworkReport>(exec.stdout);
+}
+
+/**
+ * Build the per-node child path used by the REST custom_params endpoint.
+ * The exec script enumerates depth=1 children of `args.path`, so a child's
+ * absolute path is `root + "/" + name` (root may already be "/").
+ */
+function childPath(root: string, name: string): string {
+  const base = root.endsWith("/") ? root.slice(0, -1) : root;
+  return `${base}/${name}`;
+}
+
 export async function serializeNetworkImpl(ctx: ToolContext, args: SerializeNetworkArgs) {
   return guardTd(
     async () => {
-      const script = buildSerializeNetworkScript({
-        path: args.path,
-        max_nodes: args.max_nodes,
-        include_custom_params: args.include_custom_params,
-      });
-      const exec = await ctx.client.executePythonScript(script, true);
-      return parsePythonReport<SerializeNetworkReport>(exec.stdout);
+      // PROMOTION (partial): for `custom_params` ONLY we prefer the first-class
+      // REST endpoint GET /api/nodes/<path>/custom_params (wave-7). Everything
+      // else — node enumeration, params, wires, flags, position — still rides
+      // the exec script, because no first-class endpoint covers it yet. So we:
+      //   1) run the exec script with `skip_custom_in_script=true` to get the
+      //      node skeleton (no custom_params), then
+      //   2) for each node, fetch its custom_params via the REST endpoint and
+      //      attach them onto the node (mapping `name/page/style/default` into
+      //      the existing SerializedCustomPar shape — `label/value/min/max/
+      //      options` from the endpoint are intentionally dropped because the
+      //      diff-spec contract is name/page/style/default only).
+      //   3) On missing endpoint (older bridge → 404 / "Unsupported GET ..."),
+      //      fall back to a SECOND exec call with the legacy in-script readout
+      //      so the output shape is identical to the pre-promotion behaviour.
+      if (!args.include_custom_params) {
+        return runSerializeExec(ctx, args, false);
+      }
+      const report = await runSerializeExec(ctx, args, true);
+      if (report.fatal || report.nodes.length === 0) {
+        return report;
+      }
+      try {
+        for (const node of report.nodes) {
+          const path = childPath(report.root, node.name);
+          const rest = await ctx.client.getCustomParams(path);
+          if (rest.warnings.length > 0) {
+            for (const w of rest.warnings) {
+              report.warnings.push(`custom_params(${node.name}): ${w}`);
+            }
+          }
+          if (rest.fatal) {
+            report.warnings.push(`custom_params(${node.name}): ${rest.fatal}`);
+            continue;
+          }
+          if (rest.params.length === 0) continue;
+          const mapped: SerializedCustomPar[] = rest.params.map((p) => {
+            const entry: SerializedCustomPar = { name: p.name };
+            if (p.page) entry.page = p.page;
+            if (p.style) entry.style = p.style;
+            if (p.default !== undefined) entry.default = p.default;
+            return entry;
+          });
+          node.custom_params = mapped;
+        }
+        return report;
+      } catch (err) {
+        if (!isMissingEndpoint(err)) throw err;
+        // Older bridge — fall back to the legacy exec path with the in-script
+        // custom_params readout enabled so the output shape stays identical.
+        return runSerializeExec(ctx, args, false);
+      }
     },
     (report) => {
       if (report.fatal) {

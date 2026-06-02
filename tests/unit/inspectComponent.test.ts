@@ -1,5 +1,6 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { describe, expect, it, vi } from "vitest";
+import { TdApiError } from "../../src/td-client/types.js";
 import {
   buildInspectScript,
   inspectComponentImpl,
@@ -25,8 +26,22 @@ function decodePayload(script: string): Payload {
   return JSON.parse(Buffer.from(b64, "base64").toString("utf8")) as Payload;
 }
 
-function fakeCtx(exec: ReturnType<typeof vi.fn>): ToolContext {
-  return { client: { executePythonScript: exec }, logger: silentLogger } as unknown as ToolContext;
+function fakeCtx(
+  exec: ReturnType<typeof vi.fn>,
+  getCustomParams?: (...args: unknown[]) => Promise<unknown>,
+): ToolContext {
+  // Default getCustomParams to a missing-endpoint TdApiError (404) so legacy
+  // tests that pre-date the wave-9 REST promotion still exercise the in-script
+  // custom_pars readout via the exec fallback.
+  const gcp =
+    getCustomParams ??
+    (async () => {
+      throw new TdApiError("not found", { status: 404 });
+    });
+  return {
+    client: { executePythonScript: exec, getCustomParams: gcp },
+    logger: silentLogger,
+  } as unknown as ToolContext;
 }
 
 function scriptArg(exec: ReturnType<typeof vi.fn>): string {
@@ -319,5 +334,80 @@ describe("inspectComponentImpl (flag combinations)", () => {
     await inspectComponentImpl(fakeCtx(exec), args({ include_custom_pars: false }));
     const p = decodePayload(scriptArg(exec));
     expect(p.include_custom_pars).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// wave-9 — REST custom_params endpoint promotion (partial, custom_pars only)
+// ---------------------------------------------------------------------------
+
+describe("inspectComponentImpl — REST custom_params promotion", () => {
+  // Skeleton report the exec script returns when skip_custom_in_script=true.
+  const skeleton = (over: Record<string, unknown> = {}) => ({
+    path: "/project1/myComp",
+    type: "baseCOMP",
+    storage: { speed: 1.5 },
+    extensions: [],
+    probe: { storage_attr: "storage" },
+    warnings: [],
+    ...over,
+  });
+
+  it("REST-first: prefers /custom_params endpoint and skips the in-script readout", async () => {
+    const exec = vi.fn(async () => ({ stdout: JSON.stringify(skeleton()) }));
+    const getCustomParams = vi.fn(async () => ({
+      params: [
+        { name: "Speed", page: "Custom", style: "Float", default: 1.0, value: 1.0 },
+        { name: "Enabled", page: "Custom", style: "Toggle", default: true, value: true },
+      ],
+      warnings: [],
+    }));
+    const result = await inspectComponentImpl(fakeCtx(exec, getCustomParams), args());
+    expect(result.isError).toBeFalsy();
+    // Exec called exactly once (no fallback after REST success).
+    expect(exec).toHaveBeenCalledTimes(1);
+    // Exec payload instructed the script to SKIP the in-script custom_pars readout.
+    const payload = decodePayload(scriptArg(exec)) as Payload & {
+      skip_custom_in_script?: boolean;
+    };
+    expect(payload.skip_custom_in_script).toBe(true);
+    // REST called once with the inspected path.
+    expect(getCustomParams).toHaveBeenCalledTimes(1);
+    expect(getCustomParams).toHaveBeenCalledWith("/project1/myComp");
+    // The mapped CustomParEntry shape (page/name/style/default) lands intact.
+    const sc = result.structuredContent as {
+      custom_pars?: Array<{ page: string; name: string; style: string; default?: unknown }>;
+      probe?: Record<string, unknown>;
+    };
+    expect(sc.custom_pars).toEqual([
+      { page: "Custom", name: "Speed", style: "Float", default: 1.0 },
+      { page: "Custom", name: "Enabled", style: "Toggle", default: true },
+    ]);
+    expect(sc.probe?.custom_params_endpoint).toBe("ok");
+  });
+
+  it("falls back to in-script custom_pars readout when the REST endpoint is absent (404)", async () => {
+    // The default fakeCtx already throws TdApiError 404 on getCustomParams.
+    const exec = okReport();
+    const result = await inspectComponentImpl(fakeCtx(exec), args());
+    expect(result.isError).toBeFalsy();
+    // First exec: skeleton (skip=true). Second exec: legacy readout (skip=false).
+    expect(exec).toHaveBeenCalledTimes(2);
+    const first = decodePayload(exec.mock.calls[0]?.[0] as string) as Payload & {
+      skip_custom_in_script?: boolean;
+    };
+    const second = decodePayload(exec.mock.calls[1]?.[0] as string) as Payload & {
+      skip_custom_in_script?: boolean;
+    };
+    expect(first.skip_custom_in_script).toBe(true);
+    expect(second.skip_custom_in_script).toBe(false);
+    // Output shape preserved — in-script readout is what the user sees.
+    const sc = result.structuredContent as {
+      custom_pars?: Array<{ page: string; name: string; style: string }>;
+    };
+    expect(sc.custom_pars).toEqual([
+      { page: "Custom", name: "Speed", style: "Float", default: 1.0 },
+      { page: "Custom", name: "Enabled", style: "Toggle", default: true },
+    ]);
   });
 });
