@@ -61,8 +61,8 @@ The project has grown through five arcs:
 The repository now has unreleased CLI/operator-DX, MCP-resource, deck-mixing and
 library-publishing follow-through on top of v0.7.1. It does **not** change the
 public npm release yet; the generated Tools reference in this branch exposes
-**276 tools** because `publish_recipe_bundle` plus the new SDF / strange-attractor /
-optical-flow / histogram-scope generators and MediaPipe face + hand tracking
+**277 tools** because `publish_recipe_bundle` plus the new SDF / strange-attractor /
+optical-flow / histogram-scope generators and MediaPipe face + hand + segmentation
 adapters are new.
 
 - **Top-level package-manager discoverability.** `tdmcp --help` now expands the
@@ -117,8 +117,8 @@ adapters are new.
   - `create_histogram_scope` adds the Milestone-2 histogram panel as a focused
     tool: GPU GLSL TOP bins → CHOP normalisation → `choptoSOP` → render TOP,
     luminance + optional per-channel RGB.
-- **MediaPipe face + hand tracking (camera-only).** Two new one-shot adapters
-  on the in-tree tracking engine:
+- **MediaPipe face + hand + segmentation (camera-only).** Three new one-shot
+  adapters on the in-tree tracking engine:
   - `setup_face_tracking` loads the MediaPipe ENGINE and builds an adapter
     Script CHOP that emits a 468-sample (478 with iris) face-landmark CHOP
     (tx/ty/tz/confidence, centred on nose tip), ready for `bind_to_channel`
@@ -127,6 +127,10 @@ adapters are new.
     `max_hands×21`-landmark CHOP (tx/ty/tz/confidence/handedness),
     `coordinate_space='world'` recommended for gesture detection, ready for
     `bind_to_channel` or `create_pose_skeleton`.
+  - `setup_segmentation` reuses the same engine, enables selfie-segmentation
+    and publishes a clean alpha-mask Null TOP (+ optional pre-keyed
+    `person_rgba` Null TOP), ready for `create_keyer`, `create_depth_silhouette`
+    or any matte-consuming chain.
 
 ### v0.7.1 — Operator DX, local copilot & bridge-health patch
 

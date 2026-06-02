@@ -440,6 +440,10 @@ import {
   setupHandTrackingImpl,
   setupHandTrackingSchema,
 } from "../tools/layer2/setupHandTracking.js";
+import {
+  setupSegmentationImpl,
+  setupSegmentationSchema,
+} from "../tools/layer2/setupSegmentation.js";
 import { syncTimecodeImpl, syncTimecodeSchema } from "../tools/layer2/syncTimecode.js";
 import { analyzeProjectImpl, analyzeProjectSchema } from "../tools/layer3/analyzeProject.js";
 import { captionTopImpl, captionTopSchema } from "../tools/layer3/captionTop.js";
@@ -2008,6 +2012,12 @@ const COMMANDS: Record<string, Command> = {
     setupHandTrackingSchema,
     setupHandTrackingImpl,
     "Set up MediaPipe hand tracking (per-finger landmarks + gestures) from camera into CHOP channels.",
+    { mutates: true },
+  ),
+  segmentation: r(
+    setupSegmentationSchema,
+    setupSegmentationImpl,
+    "Set up MediaPipe selfie segmentation: publishes a clean alpha-mask Null TOP (and optionally a pre-keyed RGBA) from the camera.",
     { mutates: true },
   ),
 };

@@ -78,12 +78,18 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   hand JSON DAT and converts it into a canonical `max_hands×21`-landmark CHOP
   (tx/ty/tz/confidence/handedness). Recommends `coordinate_space='world'` for
   gesture detection.
+- **`setup_segmentation`** *(Layer 2)* — one-shot MediaPipe selfie-segmentation
+  adapter on the in-tree engine. Reuses the staged `MediaPipe.tox`, enables
+  selfie-segmentation, and publishes a clean alpha mask `Null TOP` (+ optional
+  pre-keyed RGBA `person_rgba` Null TOP = camera × mask) ready for `create_keyer`,
+  `create_depth_silhouette`, or any matte-consuming chain. Closes the
+  Milestone-4 MediaPipe segmentation slot alongside face/hand tracking.
 - **Pluggable `doctor --fix` scaffolding** — `RunDoctorOptions` now exposes
   override hooks (`envFilePath`, `envFileWrite`, `profileDirPath`,
   `profileDirRepair`, `runInstallBridge`) and a `checkBridgeToken` check, paving
   the way for additional safe repairs beyond the current vault-folder creation.
 
-Tool registry: 270 → 276 (six new tools above).
+Tool registry: 270 → 277 (seven new tools above).
 
 ## [0.7.1] - 2026-06-01
 

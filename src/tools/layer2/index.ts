@@ -67,6 +67,7 @@ import { registerSetParametersBatch } from "./setParametersBatch.js";
 import { registerSetPerformMode } from "./setPerformMode.js";
 import { registerSetupFaceTracking } from "./setupFaceTracking.js";
 import { registerSetupHandTracking } from "./setupHandTracking.js";
+import { registerSetupSegmentation } from "./setupSegmentation.js";
 import { registerSyncTimecode } from "./syncTimecode.js";
 
 export const layer2Registrars: ToolRegistrar[] = [
@@ -156,4 +157,5 @@ export const layer2Registrars: ToolRegistrar[] = [
   // New wave: MediaPipe face + hand tracking:
   registerSetupFaceTracking,
   registerSetupHandTracking,
+  registerSetupSegmentation,
 ];
