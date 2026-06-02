@@ -17,6 +17,7 @@ import { friendlyTdError } from "../td-client/types.js";
 import type { ToolContext } from "../tools/types.js";
 import { loadConfig, type TdmcpConfig, tdBaseUrl } from "../utils/config.js";
 import { silentLogger } from "../utils/logger.js";
+import { type InstallBridgeResult, runInstallBridge } from "./installBridge.js";
 
 /**
  * `tdmcp doctor` — a one-shot environment diagnostic for non-technical artists.
@@ -90,8 +91,10 @@ export interface RunDoctorOptions {
   profileDirPath?: string;
   /** Overridable profile dir create hook for tests; defaults to mkdir -p. */
   profileDirRepair?: (dirPath: string) => void;
-  /** Overridable install-bridge runner for tests; defaults to spawning `tdmcp install-bridge --verify`. */
-  runInstallBridge?: () => Promise<{ ok: boolean; detail: string }>;
+  /** Overridable install-bridge runner for tests; defaults to local install-bridge --verify. */
+  runInstallBridge?: (port: number) => Promise<InstallBridgeResult>;
+  /** Overridable Textport auto-install runner for tests; defaults to a bounded macOS AppleScript. */
+  runTextportInstall?: (command: string) => Promise<{ ok: boolean; detail: string }>;
 }
 
 const ICON: Record<CheckStatus, string> = { pass: "✔", warn: "!", fail: "✖" };
@@ -117,16 +120,49 @@ function defaultVaultRepair(absPath: string): void {
 }
 
 /**
- * Default install-bridge runner — spawns `tdmcp install-bridge --verify`.
+ * Default install-bridge runner — runs `install-bridge --verify` locally unless
+ * TDMCP_BIN is set, in which case it spawns that explicit binary for tests and
+ * wrapper integrations.
  *
- * Bounded by a hard SIGKILL after `TDMCP_INSTALL_BRIDGE_TIMEOUT_MS` (default 60s)
- * so `doctor --fix` can never hang indefinitely on a stuck child (e.g. waiting on
- * TouchDesigner, a prompt, or a non-responsive bridge).
+ * Spawned calls are bounded by a hard SIGKILL after
+ * `TDMCP_INSTALL_BRIDGE_TIMEOUT_MS` (default 60s) so `doctor --fix` can never
+ * hang indefinitely on a stuck child.
  */
-function defaultRunInstallBridge(): Promise<{ ok: boolean; detail: string }> {
+function defaultRunInstallBridge(port: number): Promise<InstallBridgeResult> {
+  if (!process.env.TDMCP_BIN?.trim()) {
+    return runLocalInstallBridge(port);
+  }
+
+  return spawnInstallBridge(process.env.TDMCP_BIN, port);
+}
+
+function runLocalInstallBridge(port: number): Promise<InstallBridgeResult> {
+  const prevExitCode = process.exitCode;
+  const prevLog = console.log;
+  const prevError = console.error;
+  let output = "";
+  console.log = (...args: unknown[]) => {
+    output += `${args.map(String).join(" ")}\n`;
+  };
+  console.error = (...args: unknown[]) => {
+    output += `${args.map(String).join(" ")}\n`;
+  };
+  return Promise.resolve()
+    .then(() => runInstallBridge(["--verify", "--port", String(port)]))
+    .then((result) => ({
+      ...result,
+      detail: result.detail || output.trim().split("\n").slice(-3).join(" | ") || "completed",
+    }))
+    .finally(() => {
+      console.log = prevLog;
+      console.error = prevError;
+      process.exitCode = prevExitCode;
+    });
+}
+
+function spawnInstallBridge(cmd: string, port: number): Promise<InstallBridgeResult> {
   return new Promise((resolve) => {
-    const cmd = process.env.TDMCP_BIN ?? "tdmcp";
-    const child = spawn(cmd, ["install-bridge", "--verify"], {
+    const child = spawn(cmd, ["install-bridge", "--verify", "--port", String(port)], {
       stdio: ["ignore", "pipe", "pipe"],
       env: process.env,
     });
@@ -171,6 +207,83 @@ function defaultRunInstallBridge(): Promise<{ ok: boolean; detail: string }> {
       });
     });
   });
+}
+
+function defaultRunTextportInstall(command: string): Promise<{ ok: boolean; detail: string }> {
+  if (process.platform !== "darwin") {
+    return Promise.resolve({
+      ok: false,
+      detail: "Textport auto-install is only supported on macOS; run the manual Textport command.",
+    });
+  }
+
+  return new Promise((resolve) => {
+    const script = `
+on run argv
+  set tdmcpCommand to item 1 of argv
+  set the clipboard to tdmcpCommand
+  tell application "System Events"
+    set tdProcesses to (every process whose name contains "TouchDesigner")
+    if (count of tdProcesses) is 0 then error "TouchDesigner process not found"
+    set frontmost of item 1 of tdProcesses to true
+    delay 0.3
+    keystroke "t" using option down
+    delay 0.3
+    keystroke "v" using command down
+    key code 36
+  end tell
+end run`;
+    const child = spawn("osascript", ["-e", script, command], {
+      stdio: ["ignore", "pipe", "pipe"],
+      env: process.env,
+    });
+    let stdout = "";
+    let stderr = "";
+    let settled = false;
+    const done = (r: { ok: boolean; detail: string }) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(r);
+    };
+    const timeoutMs = readPositiveIntEnv("TDMCP_TEXTPORT_INSTALL_TIMEOUT_MS", 10_000);
+    const timer = setTimeout(() => {
+      try {
+        child.kill("SIGKILL");
+      } catch {
+        /* ignore */
+      }
+      done({ ok: false, detail: `Textport auto-install timed out after ${timeoutMs}ms` });
+    }, timeoutMs);
+    child.stdout?.on("data", (chunk) => {
+      stdout += chunk.toString();
+    });
+    child.stderr?.on("data", (chunk) => {
+      stderr += chunk.toString();
+    });
+    child.on("error", (err) => {
+      done({ ok: false, detail: `osascript failed: ${err.message}` });
+    });
+    child.on("close", (code) => {
+      const tail = (stdout + stderr).trim().split("\n").slice(-3).join(" | ").slice(0, 240);
+      done({
+        ok: code === 0,
+        detail:
+          code === 0
+            ? tail || "Textport command sent"
+            : `osascript exit ${code ?? "?"}: ${tail || "(no output)"}`,
+      });
+    });
+  });
+}
+
+function readPositiveIntEnv(name: string, fallback: number): number {
+  const parsed = Number.parseInt(process.env[name] ?? "", 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /** TD bridge reachability + version. Critical: a failure here fails the whole doctor. */
@@ -402,14 +515,50 @@ function repairBridgeToken(
   }
 }
 
-/** Repair missing bridge by optionally running install-bridge --verify. */
+/** Repair missing bridge by running install-bridge --verify and, on macOS, Textport automation. */
 async function repairBridge(
   check: DoctorCheck | undefined,
-  runInstall: (() => Promise<{ ok: boolean; detail: string }>) | undefined,
+  runInstall: (() => Promise<InstallBridgeResult>) | undefined,
+  runTextportInstall: ((command: string) => Promise<{ ok: boolean; detail: string }>) | undefined,
+  verifyBridge: (() => Promise<DoctorCheck>) | undefined,
 ): Promise<Array<{ id: string; status: "applied" | "failed"; detail: string }>> {
   if (!check || check.status === "pass" || !runInstall) return [];
   try {
     const result = await runInstall();
+    if (!result.ok) {
+      const command = result.noPrefsTextportCommand ?? result.textportCommand;
+      if (command && runTextportInstall) {
+        const textportResult = await runTextportInstall(command);
+        if (textportResult.ok && verifyBridge) {
+          const timeoutMs = readPositiveIntEnv("TDMCP_TEXTPORT_VERIFY_TIMEOUT_MS", 10_000);
+          const intervalMs = readPositiveIntEnv("TDMCP_TEXTPORT_VERIFY_INTERVAL_MS", 250);
+          const verifiedBridge = await waitForBridgeVerification(
+            verifyBridge,
+            timeoutMs,
+            intervalMs,
+          );
+          return [
+            {
+              id: "bridge",
+              status: verifiedBridge.status === "pass" ? "applied" : "failed",
+              detail:
+                verifiedBridge.status === "pass"
+                  ? `install-bridge --verify needed Textport; ${textportResult.detail}; bridge verified: ${verifiedBridge.detail}`
+                  : `install-bridge --verify failed: ${result.detail}; ${textportResult.detail}. Bridge did not verify within ${timeoutMs}ms: ${verifiedBridge.detail}. Manual Textport command:\n${command}`,
+            },
+          ];
+        }
+        return [
+          {
+            id: "bridge",
+            status: textportResult.ok ? "applied" : "failed",
+            detail: textportResult.ok
+              ? `install-bridge --verify needed Textport; ${textportResult.detail}`
+              : `install-bridge --verify failed: ${result.detail}; Textport auto-install failed: ${textportResult.detail}. Manual Textport command:\n${command}`,
+          },
+        ];
+      }
+    }
     return [
       {
         id: "bridge",
@@ -423,6 +572,20 @@ async function repairBridge(
     const reason = err instanceof Error ? err.message : String(err);
     return [{ id: "bridge", status: "failed", detail: `install-bridge error: ${reason}` }];
   }
+}
+
+async function waitForBridgeVerification(
+  verifyBridge: () => Promise<DoctorCheck>,
+  timeoutMs: number,
+  intervalMs: number,
+): Promise<DoctorCheck> {
+  const deadline = Date.now() + timeoutMs;
+  let lastCheck = await verifyBridge();
+  while (lastCheck.status !== "pass" && Date.now() < deadline) {
+    await sleep(Math.min(intervalMs, Math.max(0, deadline - Date.now())));
+    lastCheck = await verifyBridge();
+  }
+  return lastCheck;
 }
 
 /** Repair missing profile directory. */
@@ -455,7 +618,7 @@ function suggestFix(check: DoctorCheck, config: TdmcpConfig): string | undefined
   if (check.status === "pass") return undefined;
   switch (check.id) {
     case "bridge":
-      return "Start TouchDesigner, then run `tdmcp install-bridge` and paste the Textport one-liner it prints. Or run `tdmcp doctor --fix` to attempt automatic repair.";
+      return "Start TouchDesigner, then run `tdmcp doctor --fix` to attempt a macOS Textport auto-install; if automation is unavailable, run `tdmcp install-bridge` and paste the Textport one-liner it prints.";
     case "bridge_token":
       return "Run `tdmcp doctor --fix` to generate a token and write it to your .env file, then set the same value in TouchDesigner's environment (TDMCP_BRIDGE_TOKEN).";
     case "profile_dir":
@@ -637,7 +800,9 @@ export async function runDoctor(opts: RunDoctorOptions = {}): Promise<DoctorResu
 
     const bridgeRepairs = await repairBridge(
       checks.find((c) => c.id === "bridge"),
-      opts.runInstallBridge ?? defaultRunInstallBridge,
+      () => (opts.runInstallBridge ?? defaultRunInstallBridge)(config.tdPort),
+      opts.runTextportInstall ?? defaultRunTextportInstall,
+      () => checkBridge(ctx),
     );
     allRepairs = allRepairs.concat(bridgeRepairs);
     // Re-probe the bridge after a successful repair so the report (and the

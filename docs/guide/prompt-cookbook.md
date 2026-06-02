@@ -960,15 +960,19 @@ health report rather than a TOP preview.
 flags and command schemas. Good for agents that need to choose shell-safe commands
 without scraping help text.*
 
-> *"Install shell completion for `tdmcp`, then run `tdmcp-agent doctor --fix` so a
-> missing vault folder is created before rehearsal."*
+> *"Install shell completion for `tdmcp`, then run `tdmcp-agent doctor --fix` so
+> it repairs local folders and tries to wake the TouchDesigner bridge before
+> rehearsal."*
 
 <video :src="withBase('/examples/cli-completion-doctor-fix.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *The primary binary now has `tdmcp completion <bash|zsh|fish>` alongside package
-manager shortcuts in `tdmcp --help`. On the agent side, `doctor --fix` can apply the
-first safe local repair: creating a missing configured vault directory, then rerunning
-the check and reporting what changed.*
+manager shortcuts in `tdmcp --help`. On the agent side, `doctor --fix` repairs
+safe local state (vault folder, profile directory, bridge token), runs
+`install-bridge --verify`, and on macOS attempts to paste the generated
+no-Preferences install command into TouchDesigner's Textport. If automation is
+blocked by permissions or the app is closed, it reports the manual Textport
+command instead.*
 
 > *"Run `tdmcp-agent watch-build` while I edit bridge Python: typecheck, build,
 > py-compile changed `td/` files, reload the live bridge, and keep old build-only

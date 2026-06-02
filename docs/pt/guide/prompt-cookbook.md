@@ -987,14 +987,17 @@ e schemas de comandos. Bom para agentes que precisam escolher comandos seguros
 sem raspar texto de help.*
 
 > *"Instale shell completion para `tdmcp`, então rode `tdmcp-agent doctor --fix`
-> para criar uma pasta de vault ausente antes do ensaio."*
+> para reparar pastas locais e tentar acordar a bridge do TouchDesigner antes do
+> ensaio."*
 
 <video :src="withBase('/examples/cli-completion-doctor-fix.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *O binário principal agora tem `tdmcp completion <bash|zsh|fish>` junto dos atalhos
-de package manager em `tdmcp --help`. No lado do agente, `doctor --fix` consegue
-aplicar o primeiro reparo local seguro: criar uma pasta de vault configurada que
-estava faltando, rodar o check de novo e relatar o que mudou.*
+de package manager em `tdmcp --help`. No lado do agente, `doctor --fix` repara
+estado local seguro (pasta de vault, diretório de perfis, token da bridge), roda
+`install-bridge --verify` e, no macOS, tenta colar no Textport do TouchDesigner o
+comando gerado que não depende de Preferences. Se a automação for bloqueada por
+permissões ou o app estiver fechado, ele mostra o comando manual para o Textport.*
 
 > *"Rode `tdmcp-agent watch-build` enquanto eu edito Python do bridge: typecheck,
 > build, py-compile nos arquivos alterados em `td/`, reload do bridge ao vivo, e

@@ -89,8 +89,9 @@ dashboard-v2, N-channel `create_decks`, portable-tox README, Mermaid
 - **Expanded `doctor --fix` repairs.** `tdmcp-agent doctor --fix` creates a
   missing configured `TDMCP_VAULT_PATH`, scaffolds the default profile directory,
   writes a missing bridge token to `.env` without printing the secret, can run
-  `install-bridge --verify` behind a bounded repair hook, and still prints
-  suggestions for checks that need manual action.
+  `install-bridge --verify` behind a bounded repair hook, attempts a macOS
+  Textport auto-install when the bridge still needs the manual `install.run()`
+  step, and still prints suggestions for checks that need manual action.
 - **Script-compatible run files.** `tdmcp-agent run` now forwards global
   `--no-color` into nested JSON/stdin steps, and individual run-file steps can
   set `"no_color": true`.
@@ -681,11 +682,13 @@ The only remaining Round-1 A.1 row targeted by this PR,
 
 | Feature | Delivers | Effort | Impact | Conf | Priority | Novelty | Probe-first |
 |---|---|---|---|---|---|---|---|
-| `doctor_fix_autoexec` | Extend `doctor --fix` beyond the shipped missing-vault-folder repair into config/bridge safe repairs | M | High | High | P1 | ROADMAP | none |
 | `preview_inline_and_watch` | `preview --inline` (iTerm/Kitty/sixel) + `--watch` | M | Med | Med | P1 | ROADMAP | terminal-protocol detect |
 | `show_mode_oneliner` | `tdmcp show <profile>` — load+doctor+perform+pre-flight | M | Med | Med | P2 | NEW | abort semantics |
 | `error_exit_code_taxonomy` | Distinct exit codes (offline/TD-error/config) | S | Low | Med | P2 | NEW | error subclass survives |
 
+`doctor_fix_autoexec` is implemented on main after v0.7.1: `doctor --fix` now
+handles vault/profile/token repairs, runs `install-bridge --verify`, and attempts
+bounded macOS Textport automation before falling back to the manual command.
 `packages_cli_help_and_completion_parity` is implemented on main after v0.7.1
 and is no longer repeated as open backlog; it will move into the release section
 when the next patch is cut.

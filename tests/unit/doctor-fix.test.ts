@@ -192,6 +192,105 @@ describe("doctor --fix: bridge repair", () => {
     expect(r.stdout).toContain("Failed fixes");
   });
 
+  it("--fix attempts Textport auto-install when install-bridge returns a manual command", async () => {
+    server.use(offlineInfoHandler, llmModels("qwen2.5:3b"));
+    const attempted: string[] = [];
+    const command =
+      'import sys; sys.path.insert(0, "/tmp/tdmcp-bridge/modules")\nfrom mcp import install; install.run(modules_dir="/tmp/tdmcp-bridge/modules")';
+
+    const r = await runDoctor({
+      config: makeConfig(),
+      makeCtx,
+      fix: true,
+      runInstallBridge: async () => ({
+        ok: false,
+        detail: "manual Textport step required",
+        noPrefsTextportCommand: command,
+      }),
+      runTextportInstall: async (textportCommand) => {
+        attempted.push(textportCommand);
+        server.use(
+          http.get(`${TD_BASE}/api/info`, () =>
+            HttpResponse.json({
+              ok: true,
+              data: {
+                td_version: "2023.12000",
+                python_version: "3.11.1",
+                bridge_version: "0.8.1",
+              },
+            }),
+          ),
+        );
+        return { ok: true, detail: "Textport command sent" };
+      },
+    });
+
+    expect(attempted).toEqual([command]);
+    expect(r.report.repairs).toContainEqual(
+      expect.objectContaining({ id: "bridge", status: "applied" }),
+    );
+    expect(r.stdout).toContain("Textport command sent");
+  });
+
+  it("--fix does not mark Textport auto-install applied until the bridge verifies", async () => {
+    server.use(offlineInfoHandler, llmModels("qwen2.5:3b"));
+    const prevTimeout = process.env.TDMCP_TEXTPORT_VERIFY_TIMEOUT_MS;
+    const prevInterval = process.env.TDMCP_TEXTPORT_VERIFY_INTERVAL_MS;
+    process.env.TDMCP_TEXTPORT_VERIFY_TIMEOUT_MS = "1";
+    process.env.TDMCP_TEXTPORT_VERIFY_INTERVAL_MS = "1";
+    try {
+      const r = await runDoctor({
+        config: makeConfig({ bridgeToken: "set" }),
+        makeCtx,
+        fix: true,
+        runInstallBridge: async () => ({
+          ok: false,
+          detail: "manual Textport step required",
+          noPrefsTextportCommand:
+            'import sys; sys.path.insert(0, "/tmp/tdmcp-bridge/modules")\nfrom mcp import install; install.run(modules_dir="/tmp/tdmcp-bridge/modules")',
+        }),
+        runTextportInstall: async () => ({ ok: true, detail: "Textport command sent" }),
+      });
+
+      expect(r.report.repairs).toContainEqual(
+        expect.objectContaining({ id: "bridge", status: "failed" }),
+      );
+      expect(r.stdout).toContain("Textport command sent");
+      expect(r.stdout).toContain("Bridge did not verify");
+    } finally {
+      if (prevTimeout === undefined) delete process.env.TDMCP_TEXTPORT_VERIFY_TIMEOUT_MS;
+      else process.env.TDMCP_TEXTPORT_VERIFY_TIMEOUT_MS = prevTimeout;
+      if (prevInterval === undefined) delete process.env.TDMCP_TEXTPORT_VERIFY_INTERVAL_MS;
+      else process.env.TDMCP_TEXTPORT_VERIFY_INTERVAL_MS = prevInterval;
+    }
+  });
+
+  it("--fix passes the configured TouchDesigner port to the bridge repair runner", async () => {
+    const customTdBase = "http://127.0.0.1:12001";
+    server.use(
+      http.get(`${customTdBase}/api/info`, () => HttpResponse.error()),
+      llmModels("qwen2.5:3b"),
+    );
+    const attemptedPorts: number[] = [];
+
+    await runDoctor({
+      config: makeConfig({ tdPort: 12001 }),
+      makeCtx: () => ({
+        client: new TouchDesignerClient({ baseUrl: customTdBase, timeoutMs: 2000 }),
+        knowledge: new KnowledgeBase(),
+        recipes: new RecipeLibrary(),
+        logger: silentLogger,
+      }),
+      fix: true,
+      runInstallBridge: async (port) => {
+        attemptedPorts.push(port);
+        return { ok: false, detail: "TD not running" };
+      },
+    });
+
+    expect(attemptedPorts).toEqual([12001]);
+  });
+
   it("--fix without runInstallBridge falls back to the default spawn runner", async () => {
     server.use(offlineInfoHandler, llmModels("qwen2.5:3b"));
     // Point TDMCP_BIN at a binary that always fails, so the default spawn
