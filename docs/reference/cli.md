@@ -62,6 +62,7 @@ tdmcp-agent watch-build           # watch src/ + td/, rebuild, py_compile + relo
 tdmcp-agent watch-build --no-reload-bridge  # build-only watcher
 tdmcp-agent watch --pretty --heartbeat-ms 5000
 tdmcp-agent watch --on beat --exec './cue-next.sh' --debounce-ms 250
+tdmcp-agent show-director --params '{"intent":{"type":"request_cue","cue":"band_intro","preapproved":true}}'
 ```
 
 Output format is `--output json` (default) / `ndjson` / `text` / `table` /
@@ -80,6 +81,12 @@ Global `--no-color` is forwarded into run-file steps, and an individual step can
 set `"no_color": true` when a generated plan needs script-compatible output.
 For agent clients, `tdmcp://commands` exposes the same command catalog as an MCP
 resource.
+
+`tdmcp-agent show-director` is a dry-run only AI Show Director policy surface. It
+validates a `ShowIntent`, returns `allow`, `require_approval` or `block`, and
+emits updated approval/audit state as JSON. It never connects to TouchDesigner or
+hardware; use it to gate future voice/OpenClaw/dashboard integrations before any
+cue or effect is mapped to real execution.
 
 ## Local copilot (`tdmcp chat`)
 

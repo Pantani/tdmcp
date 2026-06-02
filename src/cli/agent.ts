@@ -8,6 +8,18 @@ import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
+import {
+  approveShowIntent,
+  cancelShowIntent,
+  createShowDirectorState,
+  ShowDirectorStateSchema,
+  submitShowIntent,
+} from "../automation/showDirectorRuntime.js";
+import {
+  EffectPolicySchema,
+  parseShowIntent,
+  ShowIntentSchema,
+} from "../automation/showDirectorSchema.js";
 import { capturePreview } from "../feedback/previewCapture.js";
 import { buildToolContext } from "../server/context.js";
 import { type TdEventHandler, TdEventStream } from "../td-client/eventStream.js";
@@ -615,6 +627,17 @@ interface Command {
   mutates: boolean;
   unsafe: boolean;
 }
+
+const showDirectorCliSchema = z.object({
+  intent: ShowIntentSchema.optional().describe(
+    "Structured AI Show Director intent to validate and policy-check.",
+  ),
+  state: ShowDirectorStateSchema.optional().describe("Prior show-director queue/log state."),
+  policy: EffectPolicySchema.optional().describe(
+    "Optional effect policy override for dry-run tests.",
+  ),
+  operator: z.string().trim().min(1).optional().describe("Human operator resolving approval."),
+});
 
 export interface AgentCommandCatalogEntry {
   command: string;
@@ -2017,6 +2040,13 @@ const SPECIAL_COMMANDS: AgentCommandCatalogEntry[] = [
     source: "cli",
   },
   {
+    command: "show-director",
+    summary: "Dry-run AI Show Director intent policy decisions.",
+    mutates: false,
+    unsafe: false,
+    source: "cli",
+  },
+  {
     command: "schedule <file>",
     summary: "Run scene scheduler triggers.",
     mutates: true,
@@ -2179,6 +2209,8 @@ function formatCommandHelp(target: string): string | undefined {
   lines.push(`unsafe: ${entry.unsafe}`);
   if (cmd) {
     lines.push("", "Input schema:", JSON.stringify(z.toJSONSchema(cmd.schema), null, 2));
+  } else if (target === "show-director") {
+    lines.push("", "Input schema:", JSON.stringify(z.toJSONSchema(showDirectorCliSchema), null, 2));
   }
   return lines.join("\n");
 }
@@ -2530,34 +2562,10 @@ function editDistance(a: string, b: string): number {
 function nearestCommand(input: string): string | undefined {
   let best: string | undefined;
   let bestDist = Number.POSITIVE_INFINITY;
-  // Candidates: full command keys, their first token (so "noeds" → "nodes"), and the specials.
-  const firstTokens = new Set(Object.keys(COMMANDS).map((k) => k.split(" ")[0] ?? k));
-  const keys = [
-    ...Object.keys(COMMANDS),
-    ...firstTokens,
-    "schema",
-    "commands",
-    "help",
-    "config",
-    "run",
-    "completion",
-    "preview",
-    "watch",
-    "repl",
-    "doctor",
-    "panic",
-    "setlist",
-    "schedule",
-    "version",
-    "watch-build",
-    "soundcheck-monitor",
-    "log-tail",
-    "record-fixtures",
-    "fanout",
-    "controller-bridge",
-    "voice",
-    "llm-voice",
-  ];
+  // Candidates: full command names and their first token (so "noeds" → "nodes").
+  const commandNames = listAgentCommands().map((entry) => entry.command);
+  const firstTokens = commandNames.map((command) => command.split(" ")[0] ?? command);
+  const keys = [...new Set([...commandNames, ...firstTokens])];
   for (const key of keys) {
     const d = editDistance(input, key);
     if (d < bestDist) {
@@ -2657,31 +2665,7 @@ function parseStdout(stdout: string): unknown {
 }
 
 function completionWords(): string[] {
-  const commands = [
-    ...Object.keys(COMMANDS),
-    "schema",
-    "commands",
-    "help",
-    "config",
-    "run",
-    "completion",
-    "preview",
-    "watch",
-    "repl",
-    "doctor",
-    "panic",
-    "setlist",
-    "schedule",
-    "version",
-    "watch-build",
-    "soundcheck-monitor",
-    "log-tail",
-    "record-fixtures",
-    "fanout",
-    "controller-bridge",
-    "voice",
-    "llm-voice",
-  ];
+  const commands = listAgentCommands().map((entry) => entry.command);
   const flags = [
     "--params",
     "--json",
@@ -2822,6 +2806,16 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   // `schema <command>` — emit the input contract without touching TD.
   if (positionals[0] === "schema") {
     const target = positionals.slice(1).join(" ");
+    if (target === "show-director") {
+      const doc = {
+        command: target,
+        summary: "Dry-run AI Show Director intent policy decisions.",
+        mutates: false,
+        unsafe: false,
+        input: z.toJSONSchema(showDirectorCliSchema),
+      };
+      return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
+    }
     const cmd = COMMANDS[target];
     if (!cmd) return { stdout: "", stderr: `Unknown command for schema: "${target}".\n`, code: 2 };
     const doc = {
@@ -2830,6 +2824,94 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
       mutates: cmd.mutates,
       unsafe: cmd.unsafe,
       input: z.toJSONSchema(cmd.schema),
+    };
+    return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
+  }
+
+  // `show-director` is intentionally policy-only for now: it validates a raw
+  // LLM/show-control intent and explains the dry-run decision without building a
+  // TD context or touching hardware.
+  if (positionals[0] === "show-director") {
+    const assembled = assembleParams(values, opts);
+    if ("error" in assembled) {
+      return {
+        stdout: "",
+        stderr: `Invalid JSON in --params/--json: ${assembled.error}\n`,
+        code: 2,
+      };
+    }
+    const args = showDirectorCliSchema.safeParse(assembled.raw);
+    if (!args.success) {
+      const intentIssues = args.error.issues.filter((issue) => issue.path[0] === "intent");
+      if (intentIssues.length > 0) {
+        const issues = intentIssues.map((issue) => `${issue.path.join(".")}: ${issue.message}`);
+        return {
+          stdout: "",
+          stderr: `Malformed show intent: ${issues.join("; ")}\n`,
+          code: 2,
+        };
+      }
+      return {
+        stdout: "",
+        stderr: `Invalid arguments for "show-director": ${args.error.message}\n`,
+        code: 2,
+      };
+    }
+    const sub = positionals[1];
+    const state = args.data.state ?? createShowDirectorState();
+    if (sub === "approve" || sub === "cancel") {
+      const approvalId = positionals[2];
+      if (!approvalId) {
+        return {
+          stdout: "",
+          stderr: `Missing approval id for "show-director ${sub}".\n`,
+          code: 2,
+        };
+      }
+      const operator = args.data.operator;
+      if (sub === "approve" && !operator) {
+        return {
+          stdout: "",
+          stderr: 'Missing operator for "show-director approve".\n',
+          code: 2,
+        };
+      }
+      const resolved =
+        sub === "approve"
+          ? approveShowIntent(state, approvalId, operator ?? "", args.data.policy)
+          : cancelShowIntent(state, approvalId, operator);
+      if (!resolved.ok) return { stdout: "", stderr: `${resolved.reason}\n`, code: 2 };
+      const doc = {
+        dryRun: true,
+        approval: resolved.approval,
+        plan: resolved.plan,
+        state: resolved.state,
+      };
+      return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
+    }
+    if (sub !== undefined) {
+      return { stdout: "", stderr: `Unknown show-director verb "${sub}".\n`, code: 2 };
+    }
+
+    if (args.data.intent === undefined) {
+      return { stdout: "", stderr: 'Missing intent for "show-director".\n', code: 2 };
+    }
+    const parsedIntent = parseShowIntent(args.data.intent, args.data.policy);
+    if (!parsedIntent.ok) {
+      return {
+        stdout: "",
+        stderr: `${parsedIntent.decision.reason}\n`,
+        code: 2,
+      };
+    }
+    const submitted = submitShowIntent(state, parsedIntent.intent, args.data.policy);
+    const doc = {
+      dryRun: true,
+      intent: parsedIntent.intent,
+      decision: submitted.decision,
+      approval: submitted.approval,
+      plan: submitted.plan,
+      state: submitted.state,
     };
     return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
   }

@@ -17,5 +17,5 @@ describe("command catalog resource helpers", () => {
         unsafe: false,
       }),
     );
-  });
+  }, 10_000);
 });

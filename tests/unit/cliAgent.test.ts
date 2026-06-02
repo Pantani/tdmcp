@@ -82,6 +82,7 @@ describe("tdmcp-agent CLI", () => {
     expect(r.code).toBe(0);
     expect(r.stdout).toContain("complete -F _tdmcp_agent tdmcp-agent");
     expect(r.stdout).toContain("nodes find");
+    expect(r.stdout).toContain("show-director");
   });
 
   it("emits a machine-readable command catalog without contacting TD", async () => {
@@ -101,6 +102,103 @@ describe("tdmcp-agent CLI", () => {
         unsafe: false,
       }),
     );
+  });
+
+  it("dry-runs show-director policy decisions without contacting TD", async () => {
+    const r = await runCli(
+      [
+        "show-director",
+        "--params",
+        JSON.stringify({
+          intent: {
+            type: "arm_effect",
+            effect: "fog",
+            duration_seconds: 3,
+            intensity: 0.4,
+          },
+        }),
+      ],
+      {
+        makeCtx: () => {
+          throw new Error("show-director dry-run must not build a TD context");
+        },
+      },
+    );
+
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.dryRun).toBe(true);
+    expect(doc.intent.type).toBe("arm_effect");
+    expect(doc.decision.decision).toBe("require_approval");
+    expect(doc.decision.limits_applied).toContain("duration_seconds<=3");
+  });
+
+  it("emits the structured ShowIntent contract for show-director schema", async () => {
+    const r = await runCli(["schema", "show-director"]);
+
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    const serialized = JSON.stringify(doc.input);
+    expect(serialized).toContain("change_mood");
+    expect(serialized).toContain("arm_effect");
+    expect(serialized).toContain("request_cue");
+  });
+
+  it("prints show-director command help with its structured input schema", async () => {
+    const r = await runCli(["help", "show-director"]);
+
+    expect(r.code).toBe(0);
+    expect(r.stdout).toContain("tdmcp-agent show-director");
+    expect(r.stdout).toContain("Input schema:");
+    expect(r.stdout).toContain("arm_effect");
+  });
+
+  it("blocks malformed show-director input before execution", async () => {
+    const r = await runCli([
+      "show-director",
+      "--params",
+      JSON.stringify({
+        intent: {
+          type: "arm_effect",
+          effect: "mixer_gain",
+          duration_seconds: "loud",
+        },
+      }),
+    ]);
+
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain("Malformed show intent");
+  });
+
+  it("returns updated show-director approval state and resolves it by operator", async () => {
+    const queued = await runCli([
+      "show-director",
+      "--params",
+      JSON.stringify({
+        intent: {
+          type: "arm_effect",
+          effect: "fog",
+          duration_seconds: 3,
+          intensity: 0.4,
+        },
+      }),
+    ]);
+    expect(queued.code).toBe(0);
+    const queuedDoc = JSON.parse(queued.stdout);
+    expect(queuedDoc.approval.id).toBe("approval_0001");
+
+    const approved = await runCli([
+      "show-director",
+      "approve",
+      "approval_0001",
+      "--params",
+      JSON.stringify({ state: queuedDoc.state, operator: "operator-a" }),
+    ]);
+
+    expect(approved.code).toBe(0);
+    const approvedDoc = JSON.parse(approved.stdout);
+    expect(approvedDoc.plan[0]).toMatchObject({ kind: "effect", effect: "fog" });
+    expect(approvedDoc.state.approvals[0].status).toBe("approved");
   });
 
   it("lists stable command metadata for resources and docs", () => {
@@ -362,6 +460,13 @@ describe("tdmcp-agent CLI", () => {
     expect(r.code).toBe(2);
     expect(r.stderr).toContain("Did you mean");
     expect(r.stderr).toContain("nodes");
+  });
+
+  it("suggests show-director on a typo", async () => {
+    const r = await runCli(["show-directr"]);
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain("Did you mean");
+    expect(r.stderr).toContain("show-director");
   });
 
   it("rejects an unknown command with exit code 2", async () => {
