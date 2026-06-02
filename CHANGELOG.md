@@ -6,6 +6,44 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-06-02
+
+### Added
+
+- **Persistent AI session profile is now part of the public MCP surface:**
+  `load_session_profile` is registered with the rest of the tools, and
+  `tdmcp://session/profile` is registered with the resources. Agents can now
+  load the local taste/conventions/recent-work snapshot that the docs already
+  referenced. Tool registry: 278 → 279.
+
+### Fixed
+
+- **Artist-owned writes and package state are atomic.** Vault note writes,
+  vault binary writes and the package registry JSON now use a write-temp-then-
+  rename helper that preserves existing file permissions and cleans up failed
+  temp files. Package installs now extract into a sibling incoming directory and
+  only replace the staged install after a successful extract, so transient
+  download or extraction failures no longer destroy the previous working copy.
+- **HTTP transport startup fails cleanly.** `tdmcp serve --http` now rejects
+  `listen()` errors such as `EADDRINUSE` instead of surfacing them as unhandled
+  process-crashing events; it also closes the event stream on listen failure and
+  closes per-session MCP servers when an initialize request fails before session
+  registration completes.
+- **Bridge fallback policy is centralized.** New `tryEndpoint()` keeps the
+  endpoint-first / exec-fallback behavior for older TouchDesigner bridges, while
+  still surfacing validation errors, connection failures and unrelated throws
+  unchanged. `read_parameter_modes`, `set_dat_content`, `edit_dat_content` and
+  `disconnect_nodes` now share that tested helper.
+- **Transient GET retries cover bridge 5xx API errors.** Read-only bridge
+  requests now retry `TdApiError` responses with status >= 500, matching the
+  existing transient retry policy without retrying side-effecting POSTs.
+
+### Changed
+
+- `KnowledgeBase.searchOperators` caches per-operator search haystacks, the
+  cookbook resource caches successful EN/PT reads, and the server defers the
+  synchronous warmup log so transports can begin accepting connections sooner.
+
 ## [0.8.0] - 2026-06-02
 
 ### Added
@@ -21,10 +59,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   lists those package subcommands directly instead of hiding them behind one
   summary row, and `tdmcp packages --help` prints package-manager usage instead
   of failing parse.
-- **First safe `tdmcp-agent doctor --fix` repair:** when `TDMCP_VAULT_PATH`
-  points at a missing folder, `doctor --fix` now creates it idempotently, reruns
-  the vault check, and reports the applied repair while continuing to surface
-  suggestions for checks that still need manual action.
+- **Expanded `tdmcp-agent doctor --fix` repairs:** `doctor --fix` now creates a
+  missing configured `TDMCP_VAULT_PATH`, scaffolds the default profile
+  directory, writes a missing `TDMCP_BRIDGE_TOKEN` to `.env` with owner-only
+  permissions, and can run `install-bridge --verify` behind a bounded repair
+  hook while continuing to surface suggestions for checks that still need manual
+  action.
 - **Run-file flag propagation:** `tdmcp-agent run` now carries `--no-color`
   through to nested JSON/stdin command steps, and run-file steps can also set
   `"no_color": true`.
@@ -90,10 +130,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   pre-keyed RGBA `person_rgba` Null TOP = camera × mask) ready for `create_keyer`,
   `create_depth_silhouette`, or any matte-consuming chain. Closes the
   Milestone-4 MediaPipe segmentation slot alongside face/hand tracking.
-- **Pluggable `doctor --fix` scaffolding** — `RunDoctorOptions` now exposes
-  override hooks (`envFilePath`, `envFileWrite`, `profileDirPath`,
-  `profileDirRepair`, `runInstallBridge`) and a `checkBridgeToken` check, paving
-  the way for additional safe repairs beyond the current vault-folder creation.
+- **Pluggable `doctor --fix` test hooks** — `RunDoctorOptions` exposes override
+  hooks (`envFilePath`, `envFileWrite`, `profileDirPath`, `profileDirRepair`,
+  `runInstallBridge`) plus `checkBridgeToken`, so the safe repair paths above are
+  covered without touching the real user environment.
 - **`get_inline_preview`** *(Layer 3)* — one-shot inline inspection snapshot of
   any TOP: bounded thumbnail (default 256×256, capped at 1024) plus resolution /
   pixel-format / cook metadata and post-cook node errors, returned in a single
@@ -988,10 +1028,11 @@ API on its first live run, and is fail-forward (per-item warnings, never throws)
   preview-asset writes, as a strict superset of `TDMCP_RAW_PYTHON=off`. Use it to hand an
   autonomous in-TD agent a curated, non-destructive toolset.
 
-[0.8.0]: https://github.com/Pantani/tdmcp/compare/v0.7.1...v0.8.0
+[0.8.1]: https://github.com/Pantani/tdmcp/compare/fa7d33c2a8093d85cbad6226f62f28714a0af8fb...v0.8.1
+[0.8.0]: https://github.com/Pantani/tdmcp/compare/v0.7.1...fa7d33c2a8093d85cbad6226f62f28714a0af8fb
 [0.7.1]: https://github.com/Pantani/tdmcp/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/Pantani/tdmcp/compare/v0.6.1...v0.7.0
-[Unreleased]: https://github.com/Pantani/tdmcp/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/Pantani/tdmcp/compare/v0.8.1...HEAD
 [0.6.1]: https://github.com/Pantani/tdmcp/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/Pantani/tdmcp/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Pantani/tdmcp/compare/v0.4.0...v0.5.0

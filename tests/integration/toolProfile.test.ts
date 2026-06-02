@@ -64,6 +64,7 @@ const SAFE_PROFILE_KEEP = [
   "find_td_nodes",
   "get_td_info",
   "get_td_classes",
+  "load_session_profile",
   "search_operators",
 ];
 

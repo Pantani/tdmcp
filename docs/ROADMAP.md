@@ -10,15 +10,18 @@ can build real visual systems from plain language — no node-wiring by hand. Th
 page is the honest, bird's-eye picture of **what already works, what's still
 rough, and what's coming next** on the way to a stable 1.0.
 
-**Where things stand today.** The current release line is **v0.8.0**, with
-**278 tools** across three layers plus library/packaging and Obsidian vault
-integrations. It builds on v0.7.1 (269 tools, 2026-06-01) by adding the SDF /
-strange-attractor / optical-flow / histogram-scope generators, the MediaPipe
-face + hand + segmentation adapters, the AI Show Director dry-run policy
-layer, the inline-preview / dashboard-v2 / N-channel-decks follow-through,
-and the new MCP resources (`tdmcp://glsl-snippets`, `tdmcp://cheatsheets`,
-`tdmcp://learning/touchdesigner`). The CHANGELOG `[0.8.0]` block lists every
-entry; the always-current tool list is the [Tools reference](/reference/tools).
+**Where things stand today.** The current release line is **v0.8.1**, with
+**279 tools** across three layers plus library/packaging, AI session memory and
+Obsidian vault integrations. It builds on v0.7.1 (269 tools, 2026-06-01) by
+adding the SDF / strange-attractor / optical-flow / histogram-scope generators,
+the MediaPipe face + hand + segmentation adapters, the AI Show Director dry-run
+policy layer, the inline-preview / dashboard-v2 / N-channel-decks follow-through,
+the persistent session profile (`load_session_profile` +
+`tdmcp://session/profile`), and the new MCP resources
+(`tdmcp://glsl-snippets`, `tdmcp://cheatsheets`,
+`tdmcp://learning/touchdesigner`). The CHANGELOG `[0.8.1]` and `[0.8.0]` blocks
+list every entry; the always-current tool list is the
+[Tools reference](/reference/tools).
 
 The project has grown through five arcs:
 
@@ -32,12 +35,12 @@ The project has grown through five arcs:
 4. **Compose & automate** *(v0.7.0)* — run a whole
    arranged show over time, with timelines, setlists, schedulers, cue composition
    and live-safety controls.
-5. **Ingest & extend** *(v0.7.x, with follow-up work planned for v0.8.x)* — pull
+5. **Ingest & extend** *(v0.7.x through v0.8.x)* — pull
    in the wider TouchDesigner world (Shadertoy / ISF shaders, Ableton, the
    iconic VJ looks), then deepen AI/library publishing and operator DX. Waves
    1-3 are in v0.7.0; v0.7.1 ships the first CLI/copilot/resource/bridge
-   follow-through; the remaining work is the last deployment ergonomics plus
-   the next v0.8.x planning.
+   follow-through; v0.8.1 closes the current generator, MediaPipe, session
+   profile, dashboard, inline-preview and resilience queue.
 
 > **How to read this page**
 >
@@ -57,27 +60,37 @@ The project has grown through five arcs:
 
 ## ✅ Current Release Line
 
-### main — v0.8.0 candidate (PR, not yet released)
+### v0.8.1 — v0.8 feature line, session profile and resilience patch
 
-The repository now has unreleased CLI/operator-DX, MCP-resource, deck-mixing,
-library-publishing, generator (SDF, strange-attractor, optical-flow, histogram),
-MediaPipe (face + hand + segmentation), inline-preview, dashboard-v2, AI Show
-Director (dry-run policy layer), and `doctor --fix` follow-through on top of
-v0.7.1. The generated Tools reference in this branch exposes **278 tools** (the
-eight new tools listed below, plus dashboard-v2, N-channel `create_decks`,
-portable-tox README, Mermaid `generate_readme`, the new MCP resources, and the
-AI Show Director). The public npm release line, tag, and GitHub release remain
-at **v0.7.1** until this PR merges and the release workflow runs.
+v0.8.1 is the public tag for the 0.8 release line. It includes the v0.8.0
+npm-published feature expansion plus the post-merge resilience patch and the
+missing public registration for `load_session_profile` /
+`tdmcp://session/profile`. The generated Tools reference exposes **279 tools**:
+the new AI-session tool, the generator and MediaPipe tools listed below,
+dashboard-v2, N-channel `create_decks`, portable-tox README, Mermaid
+`generate_readme`, the new MCP resources, and the AI Show Director.
 
+- **Persistent AI session profile.** `load_session_profile` loads or initialises
+  a local session snapshot (style, similar prior work, learned conventions and
+  corpus notes), and `tdmcp://session/profile` exposes that snapshot as a JSON
+  resource so an agent can hydrate context without re-running heavier vault
+  tools every turn.
+- **Release-resilience patch.** Vault writes, package state writes and staged
+  package installs are atomic; HTTP transport listen failures reject cleanly and
+  close event streams; failed Streamable HTTP initialization closes the per-
+  session server; bridge GET retries now include transient 5xx API errors; and
+  the layer-3 endpoint-first / exec-fallback policy is centralized in
+  `tryEndpoint`.
 - **Top-level package-manager discoverability.** `tdmcp --help` now expands the
   package-manager tree (`search`, `list`, `info`, `install`, `uninstall`,
   `doctor`, `packages path`) instead of hiding it behind one summary row, and
   `tdmcp packages --help` / `tdmcp completion <bash|zsh|fish>` include those
   package commands and common package flags.
-- **First safe `doctor --fix` repair.** `tdmcp-agent doctor --fix` now creates a
-  missing configured `TDMCP_VAULT_PATH` directory idempotently, reruns the vault
-  check, reports the applied repair, and still prints suggestions for checks that
-  need manual action. Broader config/bridge repairs remain planned.
+- **Expanded `doctor --fix` repairs.** `tdmcp-agent doctor --fix` creates a
+  missing configured `TDMCP_VAULT_PATH`, scaffolds the default profile directory,
+  writes a missing bridge token to `.env` without printing the secret, can run
+  `install-bridge --verify` behind a bounded repair hook, and still prints
+  suggestions for checks that need manual action.
 - **Script-compatible run files.** `tdmcp-agent run` now forwards global
   `--no-color` into nested JSON/stdin steps, and individual run-file steps can
   set `"no_color": true`.
@@ -446,20 +459,18 @@ they're considered solid.
 
 ## ⬜ Planned — the road to 1.0 {#planned}
 
-With v0.7.1 published and the current main candidate closing the deferred SDF,
-strange-attractor, optical-flow, histogram-scope generators, MediaPipe face /
-hand / segmentation adapters, the persistent `load_session_profile`
-(+ `tdmcp://session/profile` resource), three more `doctor --fix` repairs
-(bridge token, profile directory, `install-bridge --verify` with a
-SIGKILL-bounded timeout), the new `get_inline_preview` inspection tool, the
-front-of-house dashboard v2 layout, and the stronger `generate_readme` /
-`make_portable_tox` component-doc pass, **the Planned road-to-1.0 list is
-currently empty — all queued items shipped to the main candidate.** Only items
-that still need a future code change (not a hardware/service blocker) belong
-here. Hardware-, live-music-, multimodal-LLM- and GPU/CUDA-gated items have
-been moved to **Out of scope (for now)** below. Version targets are a rough
-sequence, **not a promise**. The exhaustive, item-by-item backlog lives in the
-[planning archive](#full-backlog).
+With v0.8.1 published, the deferred SDF, strange-attractor, optical-flow and
+histogram-scope generators; MediaPipe face / hand / segmentation adapters; the
+persistent `load_session_profile` (+ `tdmcp://session/profile` resource);
+additional `doctor --fix` repairs; the new `get_inline_preview` inspection tool;
+the front-of-house dashboard v2 layout; and the stronger `generate_readme` /
+`make_portable_tox` component-doc pass are all in the current release line.
+**The Planned road-to-1.0 list is currently empty — all queued items shipped to
+v0.8.1.** Only items that still need a future code change (not a hardware/service
+blocker) belong here. Hardware-, live-music-, multimodal-LLM- and GPU/CUDA-gated
+items have been moved to **Out of scope (for now)** below. Version targets are a
+rough sequence, **not a promise**. The exhaustive, item-by-item backlog lives in
+the [planning archive](#full-backlog).
 
 ### Milestone 3 — Smarter assistance & library publishing · v0.8.x
 
@@ -560,8 +571,7 @@ or partial work.
 #### A.1 · Artist controls & creative tools
 
 The only remaining Round-1 A.1 row targeted by this PR,
-`create_decks` N-channel, is now carried in the unreleased v0.8.0 candidate
-above.
+`create_decks` N-channel, shipped in the v0.8.1 release line above.
 
 #### A.2 · Library, packaging & distribution
 

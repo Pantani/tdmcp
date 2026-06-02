@@ -136,13 +136,14 @@ the [prompt cookbook](https://pantani.github.io/tdmcp/guide/prompt-cookbook).
 
 ## What you can do
 
-**278 tools** across three layers, plus library/packaging and Obsidian vault integrations — from
-one-line artist generators (`create_feedback_network`, `create_audio_reactive`,
-`create_particle_system`, `create_generative_art`, …) to building blocks
-(`create_control_panel`, `animate_parameter`, `create_external_io` for
-OSC/MIDI/DMX/NDI, …) down to atomic node CRUD and inspection. Many systems arrive
-**already playable**, with a control panel you can tweak, preset, or map to a
-controller. See the full, always-current
+**279 tools** across three layers, plus library/packaging, AI session memory and
+Obsidian vault integrations — from one-line artist generators
+(`create_feedback_network`, `create_audio_reactive`, `create_particle_system`,
+`create_generative_art`, …) to building blocks (`create_control_panel`,
+`animate_parameter`, `create_external_io` for OSC/MIDI/DMX/NDI, …) down to
+atomic node CRUD and inspection. Many systems arrive **already playable**, with
+a control panel you can tweak, preset, or map to a controller. See the full,
+always-current
 [tools reference](https://pantani.github.io/tdmcp/reference/tools) and the
 [recipe gallery](https://pantani.github.io/tdmcp/guide/recipes).
 
