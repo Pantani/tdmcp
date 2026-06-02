@@ -41,11 +41,14 @@ color, not a flat lab simulation.*
 
 *A noise-displaced 3D terrain.*
 
-> *"Give me a strange-attractor visual with glowing particles on black."*
+> *"Give me a Lorenz strange-attractor visual with glowing particles on black,
+> thickened into a tube and evolving only while the timeline plays."*
 
 <video :src="withBase('/examples/strange-attractor.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
-*A real de Jong strange attractor — orbit points glowing on black, with a Speed knob to evolve it. Captured live.*
+*`create_strange_attractor` integrates Lorenz / Aizawa / Halvorsen ODEs into a
+rolling Script CHOP buffer, renders the trail as SOP geometry and can tube-thicken
+it for a real 3D orbit path.*
 
 > *"Give me a 1970s analog video-synth look — soft interference patterns and
 > rolling scanlines in electric teal and pink."*
@@ -63,6 +66,15 @@ no footage needed.*
 
 *A signed-distance-field scene rendered entirely in a GLSL TOP — an infinite tunnel
 you fly through, with camera-Speed and color controls. No geometry nodes, all math.*
+
+> *"Build a programmable SDF field from a sphere subtracting a box and a smooth
+> torus union, cyan-to-magenta, with live CameraZ / StepCount / Rotate controls."*
+
+<video :src="withBase('/examples/sdf-field-csg-raymarch.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_sdf_field` is the newer CSG raymarcher: compose sphere / box / torus
+primitives with union, intersect, subtract and smooth blend, then perform the field
+through exposed SDF controls instead of editing shader code mid-show.*
 
 > *"Sculpt a soft, morphing metaball blob in 3D that slowly breathes, iridescent
 > surface on a dark stage."*
@@ -195,6 +207,16 @@ plus a *Sensitivity* knob. Like the mic, the live camera triggers the
 [macOS permission popup](/guide/troubleshooting#macos-microphone-camera-permission)
 — or ask for a **synthetic test source** to experiment without a camera.
 
+> *"Analyze motion in this clip as optical flow, smooth it, and use the vector field
+> to drive a liquid displacement warp — use the bundled Mosaic clip if my camera is
+> not ready."*
+
+<video :src="withBase('/examples/optical-flow-vector-field.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_optical_flow` builds a stock-TOP motion field from current vs previous
+frames, with Sensitivity / Smoothing / Blur controls. It emits an RG-packed flow TOP
+that can modulate displacement, particles or any TOP-driven motion chain.*
+
 ### Body tracking (webcam, no extra hardware)
 
 Full-body **pose tracking** from a plain webcam, via the free
@@ -216,6 +238,35 @@ camera-reactive visual. Keep the TD timeline **playing** (the plugin captures th
 an embedded browser that only runs while playing) and grant camera permission if
 macOS asks. No webcam handy? Ask for a **synthetic** pose source to build and preview
 the look offline.
+
+### Face, hands & segmentation
+
+> *"Set up MediaPipe face tracking, center the landmarks on the nose tip, and drive
+> a glowing mask and eye highlights from the face CHOP."*
+
+<video :src="withBase('/examples/face-tracking-landmarks.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`setup_face_tracking` loads the staged MediaPipe engine and emits a 468-landmark
+CHOP (or 478 with iris), centered on the nose tip, ready for parameter binding or
+data visualization.*
+
+> *"Track both hands in world coordinates, detect open-palm / pinch gestures, and
+> bind the right-hand height to the feedback amount."*
+
+<video :src="withBase('/examples/hand-tracking-gestures.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`setup_hand_tracking` reuses the same MediaPipe engine and emits
+`max_hands × 21` samples with tx / ty / tz / confidence / handedness channels.
+Use `coordinate_space:'world'` when gesture depth matters.*
+
+> *"Segment the performer from the webcam, feather the mask by 4 px, publish a
+> clean alpha matte and a pre-keyed person RGBA TOP for compositing."*
+
+<video :src="withBase('/examples/segmentation-alpha-matte.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`setup_segmentation` enables the MediaPipe selfie-segmentation path and publishes
+a mask Null TOP plus optional `person_rgba` output, so body mattes can feed keyers,
+silhouettes, particles or background replacement.*
 
 ## Particles & 3D
 
@@ -322,6 +373,15 @@ simple crossfader; use `decks[]` when the rig starts feeling like a real VJ mixe
 *`create_video_scopes` builds a broadcast-style monitoring surface for a TOP source:
 waveform, parade and vectorscope panels that make color / exposure problems visible
 before they become projector problems.*
+
+> *"Add a luminance histogram scope to this camera feed with 128 bins, log scale and
+> a phosphor-green trace so I can see crushed blacks before the projector does."*
+
+<video :src="withBase('/examples/histogram-scope-rgb.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_histogram_scope` turns a TOP into a previewable histogram panel using a
+GLSL bin pass, TOP-to-CHOP normalisation and a rendered trace. It can run from a
+test pattern, file, existing TOP or live device.*
 
 ## Text & titles
 
@@ -466,6 +526,16 @@ scrubbable song-mode arranger.
 *A single live-performance cockpit served from TouchDesigner: cue launch, faders,
 readout and panic controls in one phone/laptop page. Keep it on a trusted network.*
 
+> *"Upgrade the stage dashboard to layout v2: stereo VU, BPM from
+> `/project1/tempo_null`, cue timeline markers from my setlist and a sticky
+> confirm-tap PANIC bar."*
+
+<video :src="withBase('/examples/stage-dashboard-v2.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_stage_dashboard` with `layout:"v2"` keeps the original dashboard path
+compatible while adding front-of-house readouts: stereo VU, BPM, FPS / cook overlay,
+cue timeline strip and a safer two-step panic surface.*
+
 > *"Dry-run the AI show director: allow a pre-approved band intro cue, queue a
 > three-second fog request for operator approval, and block a blackout request."*
 
@@ -543,6 +613,15 @@ useful output is usually a verified routing report rather than a pretty preview.
 > *"The output is black — look at it and tell me why."* (combines the preview,
 > topology and node errors to diagnose)
 
+> *"Take an inline preview of `/project1/out1`: give me a 256 px thumbnail, cook
+> metadata, changed parameters and any parent errors in one structured answer."*
+
+<video :src="withBase('/examples/inline-preview-snapshot.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`get_inline_preview` is the compact inspection pass for agents: one call returns
+a bounded thumbnail, resolution / pixel-format / cook stats, changed parameters
+and a parent error sweep without juggling separate preview and error tools.*
+
 > *"Explain what this network is doing, step by step."*
 
 > *"This is running slow — find the bottleneck and optimize it."*
@@ -616,6 +695,16 @@ Turn a working network into something you can reuse, share and hand to another a
 
 > *"Save this look as a reusable .tox component."* (`manage_component`)
 
+> *"Generate a README for `/project1/hero_look`, include a Mermaid data-flow graph,
+> cap the node inventory at 80 rows and include a preview thumbnail if the output
+> TOP cooks."*
+
+<video :src="withBase('/examples/readme-mermaid-docs.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`generate_readme` now has `include_mermaid:true` and `max_nodes`, so large
+components get readable project docs instead of a wall of children. Pair it with
+`make_portable_tox`, whose `.tox` packages now include a README by default.*
+
 **What you'll get:** declarative custom-parameter pages, scriptable extensions, a
 generated Markdown README (with a preview thumbnail), or a project-local agent guide —
 the *packaging* side of tdmcp that complements the generators above.
@@ -661,6 +750,15 @@ sha256 manifests, lineage graphs, curated packs, morph packs, variant packs, vau
 merge/sync helpers, tag/search, SemVer history, look `.tox` exports, tutorial packs
 and per-component changelogs. Good for touring rigs where "which version is on this
 laptop?" matters.
+
+> *"Publish my workshop recipe bundle as version 1.2.0: write the bundle JSON,
+> publish manifest and SHA-256 checksum manifest into the handoff folder."*
+
+<video :src="withBase('/examples/recipe-bundle-publish-manifest.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`publish_recipe_bundle` is the release-ready sibling of `export_recipe_bundle`:
+it writes a versioned recipe artifact, `tdmcp-recipe-publish.json` and
+`tdmcp-checksums.json` so a recipe pack can be uploaded, mirrored or checked by CI.*
 
 ## Shader & material authoring
 
@@ -872,6 +970,16 @@ manager shortcuts in `tdmcp --help`. On the agent side, `doctor --fix` can apply
 first safe local repair: creating a missing configured vault directory, then rerunning
 the check and reporting what changed.*
 
+> *"Run `tdmcp-agent watch-build` while I edit bridge Python: typecheck, build,
+> py-compile changed `td/` files, reload the live bridge, and keep old build-only
+> behavior behind flags."*
+
+<video :src="withBase('/examples/watch-build-hot-reload.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`watch-build` now treats `td/` edits as bridge-runtime changes. After a passing
+TypeScript build it can `py_compile` changed Python files and call `reload_bridge`,
+with `--no-py-compile` / `--no-reload-bridge` for slower or isolated loops.*
+
 > *"Read this show plan from stdin, keep going after the first failed step, and
 > return the first non-zero status only after collecting every result."*
 
@@ -889,6 +997,16 @@ script-friendly.*
 *Profiles let one config file hold rehearsal, club, studio and install settings.
 `tdmcp-agent config profiles` lists them; `config profile <name>` resolves one
 without leaking tokens.*
+
+> *"Load my session profile before building: read style memory, similar recent
+> work, learned conventions and corpus style, then use those defaults for the
+> next look."*
+
+<video :src="withBase('/examples/session-profile-memory.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`load_session_profile` gives agents a single structured snapshot of local taste
+memory: style notes, recall hits, learned conventions and corpus patterns. It also
+creates a default profile path on first use so future sessions share the same base.*
 
 > *"Install the Codex client config into this explicit TOML path, deep-merge it
 > instead of replacing the file, and verify the resulting command points at this

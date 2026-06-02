@@ -20,7 +20,7 @@ export const spdxIdSchema = z
   .trim()
   .min(1)
   .max(64)
-  .regex(/^[A-Za-z0-9.+\-]+$/, "spdx id may only contain letters, digits, '.', '+', '-'");
+  .regex(/^[A-Za-z0-9.+-]+$/, "spdx id may only contain letters, digits, '.', '+', '-'");
 
 /**
  * `version_library_asset` — semver bump + change history for a vault library
