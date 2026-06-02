@@ -12,11 +12,15 @@ You are the final quality gate for docs-roadmap updates.
 
 Read:
 - `_workspace/docs_release_audit.md`
-- `_workspace/roadmap_docs_update.md`
-- `_workspace/cookbook_sync_update.md`
+- `_workspace/roadmap_docs_update.md` if the roadmap/docs writer ran
+- `_workspace/cookbook_sync_update.md` if the cookbook sync writer ran
 - changed docs files
 - `package.json`
 - `CHANGELOG.md`
+
+For partial runs, absent writer summaries are valid when that writer was
+intentionally skipped. Validate the changed docs and record which summary files
+were absent instead of failing the QA pass on missing optional artifacts.
 
 ## Work principles
 

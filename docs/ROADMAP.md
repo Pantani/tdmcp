@@ -15,8 +15,9 @@ published on 2026-06-01, exposing **269 tools**. It keeps the full v0.7.0 releas
 line intact (BEYOND Waves 1-5, Ingest & Extend Waves 1-3, and the
 `create_data_source_http_ws` hotfix) and adds the first operator DX, local
 copilot, MCP-resource and bridge-health follow-through. The package manifests,
-changelog and public package line still use **v0.7.1** as the release boundary;
-the unreleased main candidate below has begun the next tool-count move.
+changelog, docs and public package line still use **v0.7.1** as the release
+boundary; the unreleased main candidate below has begun the next tool-count move
+without changing the public release line until the next cut.
 
 The project has grown through five arcs:
 
@@ -381,9 +382,9 @@ they're considered solid.
   Ableton Link and MIDI-clock modes need hardware to validate (with a manual-BPM
   fallback when no source is present).
 - **v0.6.x bridge-routing regression check** — the seven v0.6.0 features were
-  each validated live in TouchDesigner, and the bridge reinstall/reconnect path
-  has been rechecked. Keep this as a recurring smoke check after bridge or
-  installer changes rather than a release-blocking open item.
+  each validated live in TouchDesigner, but the full bridge reinstall plus live
+  HTTP routing round-trip remains a recurring smoke check after bridge or
+  installer changes.
 
 ---
 
