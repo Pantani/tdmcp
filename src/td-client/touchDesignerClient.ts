@@ -125,9 +125,13 @@ export class TouchDesignerClient {
         return await this.attemptRequest(method, url, path, schema, body);
       } catch (err) {
         lastError = err;
-        if (err instanceof TdConnectionError && attempt < maxAttempts) {
+        const retriableConnection = err instanceof TdConnectionError;
+        const retriable5xx =
+          err instanceof TdApiError && typeof err.status === "number" && err.status >= 500;
+        if ((retriableConnection || retriable5xx) && attempt < maxAttempts) {
           this.logger.debug(
-            `TD ${method} ${path} connection failed (attempt ${attempt}/${maxAttempts}); retrying`,
+            `TD ${method} ${path} ${retriable5xx ? `failed ${err.status}` : "connection failed"} ` +
+              `(attempt ${attempt}/${maxAttempts}); retrying`,
           );
           await sleep(this.retryDelayMs * attempt);
           continue;

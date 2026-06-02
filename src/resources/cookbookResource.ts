@@ -98,6 +98,20 @@ export function readCookbookResource(locale: CookbookLocale = "en"): CookbookPay
   return readCookbookResourceFromPath(locale, cookbookPath(locale));
 }
 
+// The cookbook markdown is static content shipped with the package; cache the
+// resolved payload per-locale so each MCP resource read doesn't re-walk the
+// package root and re-read a 50+KB file from disk.
+const cookbookPayloadCache = new Map<CookbookLocale, CookbookPayload>();
+
+function cachedCookbook(locale: CookbookLocale): CookbookPayload {
+  const hit = cookbookPayloadCache.get(locale);
+  if (hit) return hit;
+  const payload = readCookbookResource(locale);
+  // Only cache successful reads; if the file is missing in dev, keep retrying.
+  if (!payload.error) cookbookPayloadCache.set(locale, payload);
+  return payload;
+}
+
 export const registerCookbookResource: ResourceRegistrar = (server) => {
   server.registerResource(
     "td-cookbook",
@@ -108,7 +122,7 @@ export const registerCookbookResource: ResourceRegistrar = (server) => {
         "The English prompt cookbook as Markdown, exposed as a resource for agents that want worked examples before building.",
       mimeType: "application/json",
     },
-    async (uri) => jsonContents(uri, readCookbookResource("en")),
+    async (uri) => jsonContents(uri, cachedCookbook("en")),
   );
 
   const localized = new ResourceTemplate("tdmcp://cookbook/{locale}", {
@@ -139,7 +153,7 @@ export const registerCookbookResource: ResourceRegistrar = (server) => {
     async (uri, variables) => {
       const raw = firstVar(variables.locale).toLowerCase();
       const locale: CookbookLocale = raw === "pt" ? "pt" : "en";
-      return jsonContents(uri, readCookbookResource(locale));
+      return jsonContents(uri, cachedCookbook(locale));
     },
   );
 };

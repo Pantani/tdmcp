@@ -71,10 +71,15 @@ export function createTdmcpServer(
   registerAllResources(server, { knowledge, recipes, logger, client: ctx.client });
   registerAllPrompts(server, { knowledge, recipes, logger });
 
-  logger.info("tdmcp server initialized", {
-    version: getVersion(),
-    knowledge: knowledge.stats(),
-    recipes: recipes.list().length,
+  // Defer the stats log to after we return so the heavy knowledge-base warmup
+  // doesn't gate the transport from accepting connections. The version is cheap
+  // (cached) so we log it inline; the rest is fire-and-forget.
+  logger.info("tdmcp server initializing", { version: getVersion() });
+  setImmediate(() => {
+    logger.info("tdmcp server ready", {
+      knowledge: knowledge.stats(),
+      recipes: recipes.list().length,
+    });
   });
 
   return server;

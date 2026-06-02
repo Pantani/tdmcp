@@ -83,11 +83,11 @@ function startStdio(
  * keyed by the `mcp-session-id` header. Sessions are created on an `initialize`
  * POST and torn down on transport close or DELETE.
  */
-function startHttp(
+async function startHttp(
   createMcpServer: () => McpServer,
   config: TdmcpConfig,
   logger: Logger,
-): TransportHandle {
+): Promise<TransportHandle> {
   const transports = new Map<string, StreamableHTTPServerTransport>();
   const servers = new Map<string, McpServer>();
   const events = createEventStream(config, logger, (event) => {
@@ -144,8 +144,19 @@ function startHttp(
             servers.delete(created.sessionId);
           }
         };
-        await sessionServer.connect(created);
-        await created.handleRequest(req, res, body);
+        try {
+          await sessionServer.connect(created);
+          await created.handleRequest(req, res, body);
+        } catch (err) {
+          // If the session never reached `onsessioninitialized` it is not tracked
+          // in `transports`/`servers`, so the McpServer would leak. Close it.
+          if (!created.sessionId || !servers.has(created.sessionId)) {
+            await sessionServer.close().catch(() => {
+              // already-closed / partial state — surface only as debug
+            });
+          }
+          throw err;
+        }
         return;
       }
       await existing.handleRequest(req, res, body);
@@ -165,8 +176,30 @@ function startHttp(
   }
 
   // Bind to loopback by default so HTTP isn't unexpectedly exposed.
-  httpServer.listen(config.httpPort, "127.0.0.1", () => {
-    logger.info("tdmcp listening over Streamable HTTP", { port: config.httpPort, path: MCP_PATH });
+  // Wrap listen() in a Promise so EADDRINUSE (port already bound) surfaces as a
+  // clean rejection at startup instead of an unhandled 'error' event that would
+  // crash the whole server process the moment listen reports back.
+  await new Promise<void>((resolve, reject) => {
+    const onListenError = (err: Error): void => {
+      httpServer.removeListener("listening", onListening);
+      reject(err);
+    };
+    const onListening = (): void => {
+      httpServer.removeListener("error", onListenError);
+      logger.info("tdmcp listening over Streamable HTTP", {
+        port: config.httpPort,
+        path: MCP_PATH,
+      });
+      resolve();
+    };
+    httpServer.once("error", onListenError);
+    httpServer.once("listening", onListening);
+    httpServer.listen(config.httpPort, "127.0.0.1");
+  });
+
+  // Post-listen errors (a transient socket-level error) must not kill the process.
+  httpServer.on("error", (err) => {
+    logger.error("HTTP transport server error", { error: String(err) });
   });
 
   return {

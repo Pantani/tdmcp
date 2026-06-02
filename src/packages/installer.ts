@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, rmSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, renameSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { assertZipToolAvailable, extractZipSafe } from "./archive.js";
 import { scanPackageArtifacts } from "./artifacts.js";
@@ -188,20 +188,33 @@ export async function installPackage(
   const archiveDir = join(paths.cache, segment);
   const archivePath = join(archiveDir, download.archiveName);
   const stagedPath = join(paths.installRoot, segment);
+  // Stage the new install into a sibling temp dir; only swap into `stagedPath`
+  // once download + extract succeeded so a transient network/extract failure
+  // never destroys the previous working install.
+  const incomingPath = `${stagedPath}.incoming.${process.pid}.${Date.now()}`;
   if (download.kind === "zip" && !opts.extractor) assertZipToolAvailable();
   mkdirSync(archiveDir, { recursive: true });
   mkdirSync(paths.installRoot, { recursive: true });
-  rmSync(stagedPath, { recursive: true, force: true });
-  mkdirSync(stagedPath, { recursive: true });
+  rmSync(incomingPath, { recursive: true, force: true });
+  mkdirSync(incomingPath, { recursive: true });
 
   const downloader = opts.downloader ?? downloadToFile;
   const extractor = opts.extractor ?? extractZipSafe;
-  await downloader(download.url, archivePath);
-  if (download.kind === "file") {
-    copyFileSync(archivePath, join(stagedPath, download.archiveName));
-  } else {
-    await extractor(archivePath, stagedPath);
+  try {
+    await downloader(download.url, archivePath);
+    if (download.kind === "file") {
+      copyFileSync(archivePath, join(incomingPath, download.archiveName));
+    } else {
+      await extractor(archivePath, incomingPath);
+    }
+  } catch (err) {
+    rmSync(incomingPath, { recursive: true, force: true });
+    throw err;
   }
+
+  // Atomic promote: remove any previous install only AFTER the new one is on disk.
+  rmSync(stagedPath, { recursive: true, force: true });
+  renameSync(incomingPath, stagedPath);
 
   const artifacts = scanPackageArtifacts(stagedPath);
   if (artifacts.length === 0) warnings.push("No files were detected after extraction.");
