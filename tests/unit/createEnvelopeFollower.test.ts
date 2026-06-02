@@ -392,6 +392,93 @@ describe("createEnvelopeFollowerImpl — fatal (source not found)", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Sidechain routing topology — verifies the duck chain actually wires the
+// source CHOP into the envelope and binds the shaped output to the target par.
+// Today's tests cover schema + build but not the wire topology, so a future
+// refactor of the embedded Python could silently break sidechain routing.
+// ---------------------------------------------------------------------------
+
+describe("createEnvelopeFollowerImpl — sidechain routing topology", () => {
+  it("wires the duck envelope from source_chop and binds the Null output to the target par", async () => {
+    const sourceChop = "/project1/audio/features";
+    const channel = "kick";
+    const targetPath = "/project1/looks/main";
+    const targetPar = "opacity";
+    const target = `${targetPath}.${targetPar}`;
+
+    const exec = vi.fn(async () => ({
+      stdout: JSON.stringify({
+        container: "/project1/sidechain",
+        output_chop: "/project1/sidechain/out",
+        select_chop: "/project1/sidechain/sel",
+        lag_chop: "/project1/sidechain/lag",
+        threshold_chop: "/project1/sidechain/duck_clamp",
+        mode: "duck",
+        attack: 0.005,
+        release: 0.25,
+        threshold: 0.1,
+        channel,
+        bound: [target],
+        warnings: [],
+      }),
+    }));
+
+    const result = await createEnvelopeFollowerImpl(fakeCtx(exec), {
+      parent_path: "/project1",
+      name: "sidechain",
+      source_chop: sourceChop,
+      channel,
+      attack: 0.005,
+      release: 0.25,
+      threshold: 0.1,
+      mode: "duck",
+      targets: [target],
+    });
+    expect(result.isError).toBeFalsy();
+
+    const script = scriptArg(exec);
+    const payload = decodePayload(script);
+
+    // (a) Payload carries the real sidechain source/channel/target — these are
+    // the inputs the Python uses to build the Select CHOP and the bind expr.
+    expect(payload.source_chop).toBe(sourceChop);
+    expect(payload.channel).toBe(channel);
+    expect(payload.mode).toBe("duck");
+    expect(payload.targets).toEqual([target]);
+
+    // (b) Input wire topology — the Select CHOP reads the source by absolute
+    // path (no cross-container wire), the Lag follows the Select, and the
+    // duck invert follows the Lag. If any of these wires regress, sidechain
+    // routing breaks even when the schema still passes.
+    expect(script).toContain("_sel.par.chop = _src");
+    expect(script).toContain('_sel.par.channames = _p["channel"]');
+    expect(script).toContain("_lag.inputConnectors[0].connect(_sel)");
+    expect(script).toContain('_cont.create(mathCHOP, "duck_invert")');
+    expect(script).toContain("_inv.inputConnectors[0].connect(_lag)");
+    expect(script).toContain('_cont.create(mathCHOP, "duck_clamp")');
+    expect(script).toContain("_clamp.inputConnectors[0].connect(_inv)");
+    // Null output handle hangs off the duck chain tail (_thr_out), not the raw lag.
+    expect(script).toContain("_thr_out = _clamp");
+    expect(script).toContain("_null.inputConnectors[0].connect(_thr_out)");
+
+    // (c) Target binding — the duck output (Null) is bound to the target
+    // parameter by expression `op('<output>')['<channel>']`, with par.mode set
+    // to EXPRESSION. The script splits 'nodePath.parName' at the LAST dot, so
+    // a target path with dots stays parsed correctly.
+    expect(script).toContain('_dot = _t.rfind(".")');
+    expect(script).toContain("_par = getattr(_n.par, _pn, None)");
+    expect(script).toContain('_expr = "op(%s)[%s]" % (repr(_read_path), repr(_ch))');
+    expect(script).toContain("_par.expr = _expr");
+    expect(script).toContain("_par.mode = _PM.EXPRESSION");
+
+    // And the structured report surfaces the bound target back to the caller.
+    const text = textOf(result);
+    expect(text).toContain(target);
+    expect(text).toContain("/project1/sidechain/out");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // TD offline — guardTd swallows the connection error
 // ---------------------------------------------------------------------------
 

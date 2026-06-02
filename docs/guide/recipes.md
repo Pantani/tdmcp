@@ -18,6 +18,7 @@ language like any other visual.
 | --- | --- | --- |
 | **Feedback Tunnel** | A hypnotic tunnel that feeds a transformed, blurred frame back into itself over a noise seed. | Beginner |
 | **Performable Feedback Tunnel** | The same tunnel, but with live knobs for decay, zoom, spin and blur — ready to perform, animate with an LFO, or snapshot as presets. | Intermediate |
+| **Decks + Layer Mixer (VJ A/B)** | Two source decks (A/B) with per-deck gain knobs, crossfaded through a compositeTOP mixer — the VJ-deck pattern from `create_decks` + `create_layer_mixer`. | Beginner |
 | **Audio Spectrum Bars** | A classic spectrum analyzer: live audio drawn as colored frequency bars. | Beginner |
 | **Reaction Diffusion** | A Gray-Scott reaction-diffusion simulation running on the GPU — organic, growing patterns. | Advanced |
 | **Noise Landscape** | A 3D terrain displaced by noise, shaded and rendered with an orbiting camera. | Intermediate |

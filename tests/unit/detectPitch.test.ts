@@ -245,6 +245,61 @@ describe("detect_pitch", () => {
     expect(thresh?.bind_to?.[0]).toMatch(/gate\.boundmin$/);
   });
 
+  it("uses the same default Threshold magnitude for the gate boundmin and the exposed Threshold knob default", async () => {
+    // Regression: the ROADMAP flagged "near-zero default threshold" on detect_pitch. The
+    // contract this test pins is intra-build consistency — whatever the chosen default
+    // magnitude is, the Logic CHOP gate.boundmin and the Threshold control default MUST
+    // match (otherwise the live knob "snaps" the gate the instant the artist touches it,
+    // and the magnitude that ships in the build silently disagrees with what the UI shows).
+    const bodies = captureCreateBodies();
+    const scripts: string[] = [];
+    server.use(
+      http.post(`${TD_BASE}/api/exec`, async ({ request }) => {
+        scripts.push(((await request.json()) as { script: string }).script);
+        return HttpResponse.json({ ok: true, data: { result: null, stdout: "" } });
+      }),
+    );
+    await detectPitchImpl(makeCtx(), {
+      source: "oscillator",
+      min_hz: 80,
+      max_hz: 2000,
+      expose_controls: true,
+      parent_path: "/project1",
+    });
+    const gate = bodies.find((b) => b.name === "gate");
+    const gateBoundMin = gate?.parameters?.boundmin as number | undefined;
+    expect(typeof gateBoundMin).toBe("number");
+
+    const panel = scripts.find((s) => s.includes("appendCustomPage"));
+    expect(panel).toBeDefined();
+    const b64 = /b64decode\("([^"]+)"\)/.exec(panel ?? "")?.[1];
+    if (b64 === undefined) throw new Error("panel script did not embed a base64 payload");
+    const payload = JSON.parse(Buffer.from(b64, "base64").toString("utf8")) as {
+      controls: Array<{ name: string; default?: number }>;
+    };
+    const thresh = payload.controls.find((c) => c.name === "Threshold");
+    expect(thresh?.default).toBe(gateBoundMin);
+  });
+
+  it("matches its own documented Threshold default (notes string vs hard-coded DEFAULT_THRESHOLD)", async () => {
+    // Pins notes string to the hard-coded DEFAULT_THRESHOLD.
+    const result = await detectPitchImpl(makeCtx(), {
+      source: "oscillator",
+      min_hz: 80,
+      max_hz: 2000,
+      expose_controls: false,
+      parent_path: "/project1",
+    });
+    const text = textOf(result);
+    // The notes string currently advertises 0.02; the gate uses 0.0005. They MUST agree.
+    const match = /Threshold default \(([0-9.]+)\)/.exec(text);
+    expect(match).not.toBeNull();
+    const documented = Number(match?.[1]);
+    // hard-coded DEFAULT_THRESHOLD in src/tools/layer1/detectPitch.ts
+    const HARDCODED = 0.0005;
+    expect(documented).toBe(HARDCODED);
+  });
+
   it("orders the search range when min_hz >= max_hz instead of erroring", async () => {
     const bodies = captureCreateBodies();
     const res = await detectPitchImpl(makeCtx(), {

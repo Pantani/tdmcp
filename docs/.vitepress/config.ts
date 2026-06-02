@@ -72,6 +72,7 @@ const artistGuidePt = [
 const devReference = [
   { text: "Architecture", link: "/reference/architecture" },
   { text: "Tools reference", link: "/reference/tools" },
+  { text: "Tool API contract", link: "/reference/tool-contract" },
   { text: "Environment variables", link: "/reference/environment" },
   { text: "CLI (agent & local copilot)", link: "/reference/cli" },
   { text: "Package manager", link: "/reference/packages" },

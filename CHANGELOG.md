@@ -6,6 +6,72 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **First-party recipe `kinetic_text_audio_reactive`** (7 nodes, 5
+  connections) wiring `text` → `transform` → `level` → `out` with an audio
+  band split feeding RMS magnitude into a brightness pulse — offline-validated
+  against `RecipeSchema` via `npm run validate:recipes`; live cook-check
+  pending.
+- **First-party recipe `decks_layer_mixer`** (6 nodes, 5 connections, 2
+  exposed controls) — two decks with per-deck gain summed through a composite
+  mixer, the schema pattern shared by `create_decks` + `create_layer_mixer`.
+  Offline-validated; live cook-check pending. Recipe count: 15 → 17.
+
+### Fixed
+
+- **`detect_pitch` notes/threshold consistency:** the user-facing `notes`
+  string now advertises the actual hard-coded `DEFAULT_THRESHOLD = 0.0005`
+  instead of the stale `0.02`. The gate magnitude was already correct; this
+  fixes the "near-zero default threshold" symptom from the v1.0 honesty pass
+  by reconciling the docstring (not the constant).
+
+### Tests
+
+- **`tests/unit/detectPitch.test.ts`** — pinned that `gate.boundmin` and the
+  exposed `Threshold` knob default share the same magnitude (`0.0005`), and
+  pinned that the user-facing `notes` string matches that magnitude (the
+  earlier `it.fails` marker is now a regular green `it(...)`, removed once
+  the docstring was reconciled).
+- **`tests/unit/createEnvelopeFollower.test.ts`** — added a sidechain
+  routing topology assertion: in `mode: "duck"`, the generated Python script
+  wires source → select → lag → invert → clamp → null, binds the configured
+  target's parameter to the duck output via an `op(...)[...]` expression
+  (using a robust `rfind('.')` split so paths with dots work), and sets the
+  target parameter mode to `EXPRESSION`.
+- **`tests/unit/vaultRoundTrip.test.ts`** (new) — proves the vault-codec
+  round-trip (`recipeToMarkdown` ↔ `recipeFromMarkdown`) is deterministic
+  and fixed-point under real filesystem `Vault.write` / `Vault.read`,
+  preserves verbatim value-resolution parameters (e.g. `value: "noise1"`),
+  and that `RecipeLibrary` reads back what we wrote.
+
+### Docs
+
+- Added the **Tool API contract** reference page
+  (`docs/reference/tool-contract.md`) documenting the invariants every MCP
+  tool follows (naming, input schema, error handling, offline behaviour,
+  result shape, deprecation) and that will be frozen at 1.0. Linked from the
+  EN reference sidebar.
+- **Roadmap honesty pass:**
+  - Rewrote the *Experimental & needs validation* section into four honest
+    buckets (live-music tuning, hardware round-trip pending, multimodal-LLM
+    dependent, rollback tuning), split the signal-detection bullet, and
+    declared `sync_external_clock` `mode='tap'` as stable.
+  - Removed `repair_network` from the multimodal-LLM-gated bullet in *Out of
+    scope* (its remaining hardening is offline rollback-regression testing).
+  - Reconciled the *Planning archive*: parágrafos A.3 e A.6 now reflect that
+    `packages_cli_help_and_completion_parity`, `no_color_flag_is_dead`,
+    MediaPipe face/hand/segmentation and `create_strange_attractor` shipped
+    in earlier releases; removed the duplicate Round-2 `param_changed_event`
+    row; moved Round-3 hardware/GPU/cloud/multi-machine/paid-license rows
+    (`create_machine_sync`, `create_depth_from_2d`, `create_sensor_input`,
+    `create_laser_output`, `create_multitouch_surface`, `drive_diffusion_tox`,
+    `create_lidar_reactive`, `create_volumetric_fire`, TouchEngine headless
+    path) into *Out of scope* under explicit Round-3 bullets.
+  - Expanded the *v1.0.0 — Consolidation* section with ready/blocked criteria
+    per frente (tool API contract, docs & guides, coverage, recipes, bridge
+    hardening).
+
 ## [0.8.1] - 2026-06-02
 
 ### Added
