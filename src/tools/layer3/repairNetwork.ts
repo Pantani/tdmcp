@@ -207,7 +207,7 @@ def _target_expression_pars(_o, _msg):
     return _targets
 
 
-_snapshot = []
+_snapshot = []  # forward-declared for helpers; cleared inside the main try below
 
 
 def _apply_clear_expression(_o, _msg):
@@ -281,6 +281,9 @@ def _rollback_snapshot():
 
 
 try:
+    # Reset snapshot per invocation: the bridge may keep module globals across
+    # calls, so a stale list from a previous repair would corrupt rollback.
+    _snapshot = []
     _root = op(_p["parent_path"])
     if _root is None:
         report["fatal"] = "Not found: " + str(_p["parent_path"])

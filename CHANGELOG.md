@@ -16,7 +16,19 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **First-party recipe `decks_layer_mixer`** (6 nodes, 5 connections, 2
   exposed controls) — two decks with per-deck gain summed through a composite
   mixer, the schema pattern shared by `create_decks` + `create_layer_mixer`.
-  Offline-validated; live cook-check pending. Recipe count: 15 → 17.
+  Offline-validated; live cook-check pending.
+- **First-party recipe `depth_displacement_post`** — synthetic depth map warps
+  a ramp source through a Displace TOP, then a post stack (blur + level grade)
+  finishes it; runs with zero hardware. Offline-validated; live cook-check
+  pending.
+- **First-party recipe `kinetic_text_path_follow`** — manual-wiring template
+  for kinetic text following a deterministic circular path driven by two sin/cos
+  LFO CHOPs (placeholder for a future native path-follow extension).
+  Offline-validated; live cook-check pending.
+- **First-party recipe `optical_flow_particles`** — live video drives an
+  optical-flow vector field that pushes a GPU particle system, producing
+  motion-reactive trails. Offline-validated; live cook-check pending. Recipe
+  count: 15 → 20.
 
 ### Added
 

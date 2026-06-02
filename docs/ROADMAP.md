@@ -778,8 +778,8 @@ lives under Milestone 3 above.
 #### B.3 · CLI & developer DX
 
 `bridge_watch_build` is implemented on main after v0.7.1 and is no longer
-tracked as open backlog (verificar próxima release tag para promoção; ainda não
-incluído em v0.8.1).
+tracked as open backlog (verify in next release tag for promotion; not yet
+included in v0.8.1).
 
 #### B.4 · AI & LLM integration
 

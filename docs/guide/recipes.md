@@ -28,6 +28,8 @@ language like any other visual.
 | **Projection Mapping** | Corner-pin keystone correction and edge feathering, ready to send to a projector. | Advanced |
 | **LED Strip Mapper** | Samples a visual down to one pixel per LED and streams colors out to an addressable LED strip. | Advanced |
 | **Kinect Silhouette** | Uses a Kinect Azure depth feed to isolate a body silhouette and drive a glowing outline. *(Needs Kinect Azure hardware.)* | Advanced |
+| **Depth Displacement + Post** | Synthetic depth map warps a ramp source through a Displace TOP, then a post stack (blur + level grade) finishes it — runs with zero hardware. | Intermediate |
+| **Kinetic Text Path Follow** | Kinetic text gliding smoothly along a deterministic circular path (sin/cos LFOs animating tx/ty on the Transform TOP) — placeholder until the native path-follow extension lands. | Intermediate |
 
 ::: tip Browse them live
 Ask *"list the available recipes"* and the AI will read them straight from the

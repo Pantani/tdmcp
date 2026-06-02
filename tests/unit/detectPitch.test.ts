@@ -291,7 +291,7 @@ describe("detect_pitch", () => {
       parent_path: "/project1",
     });
     const text = textOf(result);
-    // The notes string currently advertises 0.02; the gate uses 0.0005. They MUST agree.
+    // The notes string now advertises 0.0005 to match the hard-coded gate. They MUST agree.
     const match = /Threshold default \(([0-9.]+)\)/.exec(text);
     expect(match).not.toBeNull();
     const documented = Number(match?.[1]);

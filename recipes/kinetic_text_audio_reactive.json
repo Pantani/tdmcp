@@ -1,7 +1,7 @@
 {
   "id": "kinetic_text_audio_reactive",
   "name": "Kinetic Text Audio Reactive",
-  "description": "Texto cinético cuja luminosidade/saturação pulsa em sincronia com a banda de graves do áudio ao vivo. Offline-validated contra RecipeSchema; UNVERIFIED pending live cook-check em TouchDesigner.",
+  "description": "Manual-wiring template: kinetic text whose brightness pulses with the live bass band. The audio chain (audioin -> bass -> analyze1) is built but NOT auto-bound to level1 because RecipeSchema parameters only accept constant `value`s, not expressions. After import, edit level1.brightness1 and set the expression to `op('analyze1')['chan1']*2` (use the exposed `pulse_gain` to tune the multiplier). Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check in TouchDesigner.",
   "tags": ["text", "kinetic", "audio-reactive", "bass", "typography"],
   "difficulty": "intermediate",
   "td_version_min": "2022",
@@ -98,7 +98,7 @@
       "min": 0,
       "max": 4,
       "label": "Pulse Gain",
-      "description": "Liga a um expression como op('analyze1')['chan1']*2 para pulsar com o grave."
+      "description": "Manual wiring required: set level1.brightness1 to expression `op('analyze1')['chan1']*<pulse_gain>` to make brightness pulse with the bass."
     }
   ],
   "preview_description": "A palavra 'TDMCP' grande e centralizada que respira/brilha no compasso dos graves da musica."
