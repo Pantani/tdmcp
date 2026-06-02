@@ -23,6 +23,21 @@ export const generateReadmeSchema = z.object({
     .boolean()
     .default(true)
     .describe("Capture and embed a preview thumbnail of the output TOP as a base64 inline image."),
+  include_mermaid: z
+    .boolean()
+    .default(false)
+    .describe(
+      "Embed a Mermaid flowchart block in the ## Data flow section. Off by default to keep output compact.",
+    ),
+  max_nodes: z
+    .number()
+    .int()
+    .positive()
+    .default(200)
+    .describe(
+      "Maximum child nodes to include in the Child inventory table. " +
+        "Nodes beyond this limit are omitted and a note is appended. Default 200.",
+    ),
 });
 type GenerateReadmeArgs = z.infer<typeof generateReadmeSchema>;
 
@@ -198,6 +213,8 @@ export function buildGenerateReadmeScript(payload: object): string {
 export interface BuildReadmeOpts {
   title?: string;
   includeMermaid?: boolean;
+  /** Cap on child nodes shown in the inventory table. Nodes beyond this are omitted with a note. */
+  maxNodes?: number;
 }
 
 export function buildReadme(report: ReadmeReport, opts: BuildReadmeOpts = {}): string {
@@ -279,11 +296,17 @@ export function buildReadme(report: ReadmeReport, opts: BuildReadmeOpts = {}): s
 
   // Child inventory
   if (report.nodes.length > 0) {
+    const cap = opts.maxNodes ?? 200;
+    const visibleNodes = report.nodes.slice(0, cap);
+    const truncated = report.nodes.length - visibleNodes.length;
     lines.push("## Child inventory", "");
     lines.push("| Name | Type |");
     lines.push("|------|------|");
-    for (const n of report.nodes) {
+    for (const n of visibleNodes) {
       lines.push(`| ${n.name} | ${n.type} |`);
+    }
+    if (truncated > 0) {
+      lines.push(`| … | _${truncated} more nodes not shown_ |`);
     }
     lines.push("");
   }
@@ -330,7 +353,11 @@ export async function generateReadmeImpl(ctx: ToolContext, args: GenerateReadmeA
     return errorResult(`generate_readme failed: ${report.fatal}`, report);
   }
 
-  let markdown = buildReadme(report, { title: args.title });
+  let markdown = buildReadme(report, {
+    title: args.title,
+    includeMermaid: args.include_mermaid,
+    maxNodes: args.max_nodes,
+  });
   let hasPreview = false;
 
   // Preview section — fail-forward: a broken preview should not fail the whole tool.
@@ -361,7 +388,7 @@ export const registerGenerateReadme: ToolRegistrar = (server, ctx) => {
     {
       title: "Generate project README",
       description:
-        "Produce a Markdown project document for any COMP or project: family/type counts, custom-parameter table, inputs/outputs, child inventory, external file dependencies, and an optional preview thumbnail of the output TOP. Returns the full Markdown on the structured channel under `markdown`.",
+        "Produce a Markdown project document for any COMP or project: family/type counts, custom-parameter table, inputs/outputs, child inventory, external file dependencies, and an optional preview thumbnail of the output TOP. Use `include_mermaid` to add a Mermaid flowchart and `max_nodes` to cap large inventories. Returns the full Markdown on the structured channel under `markdown`.",
       inputSchema: generateReadmeSchema.shape,
       outputSchema: generateReadmeOutputSchema.shape,
       annotations: { readOnlyHint: true, openWorldHint: true },

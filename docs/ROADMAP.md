@@ -61,9 +61,10 @@ The project has grown through five arcs:
 The repository now has unreleased CLI/operator-DX, MCP-resource, deck-mixing and
 library-publishing follow-through on top of v0.7.1. It does **not** change the
 public npm release yet; the generated Tools reference in this branch exposes
-**277 tools** because `publish_recipe_bundle` plus the new SDF / strange-attractor /
-optical-flow / histogram-scope generators and MediaPipe face + hand + segmentation
-adapters are new.
+**278 tools** because `publish_recipe_bundle`, the new SDF / strange-attractor /
+optical-flow / histogram-scope generators, the MediaPipe face + hand +
+segmentation adapters, and the new `get_inline_preview` inspection tool are
+all new.
 
 - **Top-level package-manager discoverability.** `tdmcp --help` now expands the
   package-manager tree (`search`, `list`, `info`, `install`, `uninstall`,
@@ -131,6 +132,26 @@ adapters are new.
     and publishes a clean alpha-mask Null TOP (+ optional pre-keyed
     `person_rgba` Null TOP), ready for `create_keyer`, `create_depth_silhouette`
     or any matte-consuming chain.
+- **Inline preview pass (`get_inline_preview`).** New Layer-3 inspection tool
+  returns a bounded TOP thumbnail (default 256×256, capped at 1024) together
+  with resolution, pixel format, cook metadata and post-cook node errors in a
+  single structured payload, so agents can verify a build without juggling
+  `get_preview` + `get_td_node_errors`. **Closes the Milestone-4 inline preview
+  pass.**
+- **Front-of-house dashboard v2 (`create_stage_dashboard layout:"v2"`).**
+  Opt-in dashboard layout adds a stereo VU pair, a BPM readout fed by an
+  optional `tempo_channel` (e.g. a `detect_tempo` Null CHOP), an FPS / cook-time
+  / frame overlay, a cue timeline strip driven by an optional `cue_times[]`
+  array (pairs from `compose_cue_list`), and a sticky confirm-tap PANIC bar.
+  `layout:"v1"` remains the default and is byte-for-byte unchanged.
+  **Closes the Milestone-4 front-of-house dashboard pass.**
+- **Stronger component READMEs (`generate_readme`).** New `include_mermaid:true`
+  embeds a Mermaid flowchart of the operator graph in the "Data flow" section,
+  and a `max_nodes` cap (default 200) truncates the Child inventory table with a
+  one-line "_N more nodes not shown_" footer so large components produce
+  scannable READMEs. Together with the existing `make_portable_tox` package
+  README (license/manifest metadata + inventory), this **closes the Milestone-3
+  trust & publish polish item**.
 
 ### v0.7.1 — Operator DX, local copilot & bridge-health patch
 
@@ -425,25 +446,25 @@ they're considered solid.
 With v0.7.1 published and the current main candidate closing the deferred SDF,
 strange-attractor, optical-flow, histogram-scope generators, MediaPipe face /
 hand / segmentation adapters, the persistent `load_session_profile`
-(+ `tdmcp://session/profile` resource), and three more `doctor --fix` repairs
+(+ `tdmcp://session/profile` resource), three more `doctor --fix` repairs
 (bridge token, profile directory, `install-bridge --verify` with a
-SIGKILL-bounded timeout), the remaining Planned list is intentionally small:
-only items that still need a future code change (not a hardware/service
-blocker) belong here. Hardware-, live-music-, multimodal-LLM- and GPU/CUDA-gated
-items have been moved to **Out of scope (for now)** below. Version targets are
-a rough sequence, **not a promise**. The exhaustive, item-by-item backlog lives
-in the [planning archive](#full-backlog).
+SIGKILL-bounded timeout), the new `get_inline_preview` inspection tool, the
+front-of-house dashboard v2 layout, and the stronger `generate_readme` /
+`make_portable_tox` component-doc pass, **the Planned road-to-1.0 list is
+currently empty — all queued items shipped to the main candidate.** Only items
+that still need a future code change (not a hardware/service blocker) belong
+here. Hardware-, live-music-, multimodal-LLM- and GPU/CUDA-gated items have
+been moved to **Out of scope (for now)** below. Version targets are a rough
+sequence, **not a promise**. The exhaustive, item-by-item backlog lives in the
+[planning archive](#full-backlog).
 
 ### Milestone 3 — Smarter assistance & library publishing · v0.8.x
 
-- **Trust & publish polish** — build on the shipped library/version/provenance
-  tools with license-tier metadata, stronger component docs and export flows
-  that are easy for artists to package repeatedly.
+All currently-planned items shipped.
 
 ### Milestone 4 — Deeper authoring & operator DX · v0.8.x / v0.9.x
 
-- **Inline preview & front-of-house dashboard pass** — round out the inline
-  preview surfaces and the next iteration of the live-operator dashboard.
+All currently-planned items shipped.
 
 ### Later / deferred
 

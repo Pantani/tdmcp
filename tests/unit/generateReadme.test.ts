@@ -180,6 +180,28 @@ describe("buildReadme (pure)", () => {
     expect(md).toContain("```mermaid");
     expect(md).toContain("flowchart LR");
   });
+
+  it("shows all nodes when maxNodes >= node count", () => {
+    const md = buildReadme(makeReport(), { maxNodes: 10 });
+    expect(md).toContain("| noise1 | noiseTOP |");
+    expect(md).toContain("| blur1 | blurTOP |");
+    expect(md).toContain("| lfo1 | lfoCHOP |");
+    expect(md).not.toContain("more nodes not shown");
+  });
+
+  it("truncates inventory and shows a note when maxNodes is exceeded", () => {
+    // makeReport has 3 nodes; cap at 1
+    const md = buildReadme(makeReport(), { maxNodes: 1 });
+    expect(md).toContain("| noise1 | noiseTOP |");
+    expect(md).not.toContain("| blur1 | blurTOP |");
+    expect(md).toContain("2 more nodes not shown");
+  });
+
+  it("defaults maxNodes to 200 (no truncation note for standard reports)", () => {
+    // buildReadme with no opts — default 200 should not truncate 3-node report
+    const md = buildReadme(makeReport());
+    expect(md).not.toContain("more nodes not shown");
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -230,6 +252,8 @@ describe("generateReadmeImpl", () => {
       path: "/project1/myComp",
       title: "My VJ Network",
       include_preview: false,
+      include_mermaid: false,
+      max_nodes: 200,
     });
 
     expect(result.isError).toBeFalsy();
@@ -248,6 +272,8 @@ describe("generateReadmeImpl", () => {
     const result = await generateReadmeImpl(makeCtx(), {
       path: "/project1/myComp",
       include_preview: true,
+      include_mermaid: false,
+      max_nodes: 200,
     });
 
     expect(result.isError).toBeFalsy();
@@ -264,6 +290,8 @@ describe("generateReadmeImpl", () => {
     const result = await generateReadmeImpl(makeCtx(), {
       path: "/project1/myComp",
       include_preview: true,
+      include_mermaid: false,
+      max_nodes: 200,
     });
 
     expect(result.isError).toBeFalsy();
@@ -289,6 +317,8 @@ describe("generateReadmeImpl", () => {
     const result = await generateReadmeImpl(makeCtx(), {
       path: "/project1/ghost",
       include_preview: false,
+      include_mermaid: false,
+      max_nodes: 200,
     });
 
     expect(result.isError).toBe(true);
@@ -301,6 +331,8 @@ describe("generateReadmeImpl", () => {
     const result = await generateReadmeImpl(makeCtx(), {
       path: "/project1",
       include_preview: false,
+      include_mermaid: false,
+      max_nodes: 200,
     });
 
     expect(result.isError).toBe(true);
@@ -312,6 +344,40 @@ describe("generateReadmeImpl", () => {
     const parsed = generateReadmeSchema.parse({});
     expect(parsed.path).toBe("/project1");
     expect(parsed.include_preview).toBe(true);
+    expect(parsed.include_mermaid).toBe(false);
+    expect(parsed.max_nodes).toBe(200);
+  });
+
+  it("includes Mermaid block in markdown when include_mermaid is true", async () => {
+    const report = makeReport();
+    overrideExec(makeExecStdout(report));
+
+    const result = await generateReadmeImpl(makeCtx(), {
+      path: "/project1/myComp",
+      include_preview: false,
+      include_mermaid: true,
+      max_nodes: 200,
+    });
+
+    expect(result.isError).toBeFalsy();
+    const sc = (result as { structuredContent?: { markdown: string } }).structuredContent;
+    expect(sc?.markdown).toContain("```mermaid");
+  });
+
+  it("truncates inventory in markdown when max_nodes is set below node count", async () => {
+    const report = makeReport(); // 3 nodes
+    overrideExec(makeExecStdout(report));
+
+    const result = await generateReadmeImpl(makeCtx(), {
+      path: "/project1/myComp",
+      include_preview: false,
+      include_mermaid: false,
+      max_nodes: 1,
+    });
+
+    expect(result.isError).toBeFalsy();
+    const sc = (result as { structuredContent?: { markdown: string } }).structuredContent;
+    expect(sc?.markdown).toContain("2 more nodes not shown");
   });
 
   it("exposes node_count and families on structuredContent", async () => {
@@ -321,6 +387,8 @@ describe("generateReadmeImpl", () => {
     const result = await generateReadmeImpl(makeCtx(), {
       path: "/project1/myComp",
       include_preview: false,
+      include_mermaid: false,
+      max_nodes: 200,
     });
 
     const sc = (

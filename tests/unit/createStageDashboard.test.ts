@@ -50,6 +50,9 @@ interface DashboardPayload {
     faders: Array<{ label: string; par_path: string }>;
     audio: string | null;
     title: string;
+    layout: "v1" | "v2";
+    tempo: string | null;
+    cue_times: Array<{ name: string; at_s: number }>;
   };
   callbacks: string;
 }
@@ -227,5 +230,181 @@ describe("create_stage_dashboard", () => {
       callbacks: "c",
     };
     expect(decodePayload(buildDashboardScript(payload))).toEqual(payload);
+  });
+});
+
+describe("create_stage_dashboard v2", () => {
+  it("layout defaults to 'v1' and the schema defaults cue_times to [] and tempo_channel to undefined", () => {
+    const parsed = createStageDashboardSchema.parse({});
+    expect(parsed.layout).toBe("v1");
+    expect(parsed.cue_times).toEqual([]);
+    expect(parsed.tempo_channel).toBeUndefined();
+  });
+
+  it("v1 callbacks string does not contain v2-specific keys", async () => {
+    const cap = captureExec({
+      comp: "/project1",
+      server: "/project1/stage_dashboard",
+      port: 9990,
+      url: "http://x:9990/",
+      cues: [],
+      faders: [],
+      audio_features: null,
+      warnings: [],
+    });
+
+    await run({});
+    const payload = decodePayload(cap.scripts[0] ?? "");
+    expect(payload.callbacks).not.toContain("_build_html_v2");
+    expect(payload.callbacks).not.toContain('"vu_l"');
+    expect(payload.callbacks).not.toContain('"bpm"');
+    expect(payload.callbacks).not.toContain('"fps"');
+  });
+
+  it("v2 bakes layout, tempo, and cue_times into the config", async () => {
+    const cap = captureExec({
+      comp: "/project1",
+      server: "/project1/stage_dashboard",
+      port: 9990,
+      url: "http://x:9990/",
+      cues: [],
+      faders: [],
+      audio_features: null,
+      warnings: [],
+    });
+
+    await run({
+      layout: "v2",
+      tempo_channel: "/project1/tempo_null",
+      cue_times: [
+        { name: "a", at_s: 0 },
+        { name: "b", at_s: 30 },
+      ],
+    });
+    const payload = decodePayload(cap.scripts[0] ?? "");
+    expect(payload.config.layout).toBe("v2");
+    expect(payload.config.tempo).toBe("/project1/tempo_null");
+    expect(payload.config.cue_times.length).toBe(2);
+  });
+
+  it("v2 callbacks emit stereo VU + BPM + perf keys and the stereo guard", async () => {
+    const cap = captureExec({
+      comp: "/project1",
+      server: "/project1/stage_dashboard",
+      port: 9990,
+      url: "http://x:9990/",
+      cues: [],
+      faders: [],
+      audio_features: null,
+      warnings: [],
+    });
+
+    await run({ layout: "v2" });
+    const payload = decodePayload(cap.scripts[0] ?? "");
+    const cb = payload.callbacks;
+    expect(cb).toContain('"vu_l"');
+    expect(cb).toContain('"vu_r"');
+    expect(cb).toContain('"bpm"');
+    expect(cb).toContain('"fps"');
+    expect(cb).toContain('"cook_ms"');
+    expect(cb).toContain('"show_s"');
+    expect(cb).toContain("len(chop.chans) >= 2");
+  });
+
+  it("v2 HTML contains stereo VU bars, BPM, cue strip, perf overlay, and sticky panic", async () => {
+    const cap = captureExec({
+      comp: "/project1",
+      server: "/project1/stage_dashboard",
+      port: 9990,
+      url: "http://x:9990/",
+      cues: [],
+      faders: [],
+      audio_features: null,
+      warnings: [],
+    });
+
+    await run({ layout: "v2", tempo_channel: "/project1/tempo_null" });
+    const payload = decodePayload(cap.scripts[0] ?? "");
+    const cb = payload.callbacks;
+    expect(cb).toContain('id="vu_l"');
+    expect(cb).toContain('id="vu_r"');
+    expect(cb).toContain('id="bpm"');
+    expect(cb).toContain('id="cuestrip"');
+    expect(cb).toContain('id="playhead"');
+    expect(cb).toContain('id="perf"');
+    expect(cb).toContain("position:fixed");
+  });
+
+  it("v1 HTML does not contain v2 ids", async () => {
+    const cap = captureExec({
+      comp: "/project1",
+      server: "/project1/stage_dashboard",
+      port: 9990,
+      url: "http://x:9990/",
+      cues: [],
+      faders: [],
+      audio_features: null,
+      warnings: [],
+    });
+
+    await run({});
+    const payload = decodePayload(cap.scripts[0] ?? "");
+    const cb = payload.callbacks;
+    expect(cb).not.toContain('id="vu_l"');
+    expect(cb).not.toContain('id="bpm"');
+    expect(cb).not.toContain('id="cuestrip"');
+    expect(cb).not.toContain('id="perf"');
+  });
+
+  it("v2 without tempo_channel still builds and tempo is null", async () => {
+    const cap = captureExec({
+      comp: "/project1",
+      server: "/project1/stage_dashboard",
+      port: 9990,
+      url: "http://x:9990/",
+      cues: ["a", "b"],
+      faders: [],
+      audio_features: null,
+      warnings: [],
+    });
+
+    const result = await run({ layout: "v2", cues: ["a", "b"] });
+    expect(result.isError).toBeUndefined();
+    const text = textOf(result);
+    expect(text).toContain("2 cue button(s)");
+    const payload = decodePayload(cap.scripts[0] ?? "");
+    expect(payload.config.tempo).toBeNull();
+  });
+
+  it("v2 without cue_times keeps cue grid and cue_times is empty", async () => {
+    const cap = captureExec({
+      comp: "/project1",
+      server: "/project1/stage_dashboard",
+      port: 9990,
+      url: "http://x:9990/",
+      cues: ["a", "b"],
+      faders: [],
+      audio_features: null,
+      warnings: [],
+    });
+
+    const result = await run({ layout: "v2", cues: ["a", "b"], cue_times: [] });
+    expect(result.isError).toBeUndefined();
+    const text = textOf(result);
+    expect(text).toContain("2 cue button(s)");
+    const payload = decodePayload(cap.scripts[0] ?? "");
+    expect(payload.config.cue_times.length).toBe(0);
+  });
+
+  it("v2 preserves the missing-COMP error path", async () => {
+    captureExec({
+      comp: "/nope",
+      warnings: [],
+      fatal: "COMP not found: /nope",
+    });
+
+    const result = await run({ layout: "v2", target: "/nope" });
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("Could not start stage dashboard");
   });
 });

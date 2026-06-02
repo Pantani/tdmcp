@@ -88,8 +88,27 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   override hooks (`envFilePath`, `envFileWrite`, `profileDirPath`,
   `profileDirRepair`, `runInstallBridge`) and a `checkBridgeToken` check, paving
   the way for additional safe repairs beyond the current vault-folder creation.
+- **`get_inline_preview`** *(Layer 3)* — one-shot inline inspection snapshot of
+  any TOP: bounded thumbnail (default 256×256, capped at 1024) plus resolution /
+  pixel-format / cook metadata and post-cook node errors, returned in a single
+  structured payload so agents can verify a build without juggling
+  `get_preview` + `get_td_node_errors`. Closes the Roadmap Milestone-4 inline
+  preview pass. Tool registry: 277 → 278.
+- **`create_stage_dashboard` v2 layout** — opt-in `layout:"v2"` adds a stereo
+  VU pair, a BPM readout fed by an optional `tempo_channel` (e.g. a
+  `detect_tempo` Null CHOP), an FPS / cook-time / frame overlay, a cue
+  timeline strip driven by an optional `cue_times[]` array (pairs from
+  `compose_cue_list`), and a sticky confirm-tap PANIC bar. The default
+  `layout:"v1"` keeps the original dashboard byte-for-byte. Closes the Roadmap
+  Milestone-4 front-of-house dashboard pass.
+- **`generate_readme` component-doc polish** — adds `include_mermaid:true` to
+  embed a Mermaid flowchart of the operator graph in the "Data flow" section,
+  and a `max_nodes` cap (default 200) that truncates the Child inventory table
+  with a one-line "_N more nodes not shown_" footer so large components produce
+  scannable READMEs. Together with the existing `make_portable_tox` package
+  README, this closes the Roadmap Milestone-3 "stronger component docs" item.
 
-Tool registry: 270 → 277 (seven new tools above).
+Tool registry: 270 → 278 (eight new tools above).
 
 ## [0.7.1] - 2026-06-01
 

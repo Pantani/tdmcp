@@ -21,6 +21,7 @@ import { registerExtractPalette } from "./extractPalette.js";
 import { registerFindTdNodes } from "./findTdNodes.js";
 import { registerGenerateReadme } from "./generateReadme.js";
 import { registerGetBridgeLogs } from "./getBridgeLogs.js";
+import { registerGetInlinePreview } from "./getInlinePreview.js";
 import { registerGetModuleHelp } from "./getModuleHelp.js";
 import { registerGetNodeStateRuntime } from "./getNodeStateRuntime.js";
 import { registerGetTdClassDetails } from "./getTdClassDetails.js";
@@ -125,4 +126,6 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerExportSopToSvg,
   registerSwapOperator,
   registerCopilotVision,
+  // Close-roadmap M4 (2026-06-01): inline preview pass — one-shot inspection snapshot.
+  registerGetInlinePreview,
 ];
