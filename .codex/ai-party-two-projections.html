@@ -221,10 +221,10 @@
   </main>
 
   <footer class="controls">
-    <button id="mic">Mic</button>
-    <button id="next" class="secondary">Next cue</button>
-    <button id="drop" class="secondary optional">Drop</button>
-    <button id="safety" class="secondary optional">Safety</button>
+    <button id="mic" type="button">Mic</button>
+    <button id="next" class="secondary" type="button">Next cue</button>
+    <button id="drop" class="secondary optional" type="button">Drop</button>
+    <button id="safety" class="secondary optional" type="button">Safety</button>
     <div id="status" class="status">Booting rehearsal surfaces.</div>
     <div class="meter" aria-hidden="true"><i id="meter"></i></div>
   </footer>
@@ -302,7 +302,6 @@
       let micOn = false;
       let audioEnergy = 0;
       let bass = 0;
-      let treble = 0;
       let lastAuto = performance.now();
       const startedAt = performance.now();
 
@@ -358,6 +357,19 @@
       document.getElementById("safety").addEventListener("click", window.partySafety);
       setCue(0);
 
+      function readAudioFrame(analyser, data) {
+        analyser.getByteFrequencyData(data);
+        let low = 0;
+        let all = 0;
+        for (let i = 0; i < data.length; i += 1) {
+          all += data[i];
+          if (i < 44) low += data[i];
+        }
+        audioEnergy = Math.min(1, all / (data.length * 158));
+        bass = Math.min(1, low / (44 * 170));
+        requestAnimationFrame(() => readAudioFrame(analyser, data));
+      }
+
       document.getElementById("mic").addEventListener("click", async () => {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -370,23 +382,7 @@
           micOn = true;
           document.getElementById("mic").textContent = "Mic on";
 
-          function readAudio() {
-            analyser.getByteFrequencyData(data);
-            let low = 0;
-            let high = 0;
-            let all = 0;
-            for (let i = 0; i < data.length; i += 1) {
-              all += data[i];
-              if (i < 44) low += data[i];
-              if (i > 180) high += data[i];
-            }
-            audioEnergy = Math.min(1, all / (data.length * 158));
-            bass = Math.min(1, low / (44 * 170));
-            treble = Math.min(1, high / ((data.length - 180) * 142));
-            requestAnimationFrame(readAudio);
-          }
-
-          readAudio();
+          readAudioFrame(analyser, data);
         } catch {
           status.textContent = "Mic not enabled; synthetic show energy remains active.";
         }
@@ -395,10 +391,9 @@
       function energy(now) {
         if (micOn) return Math.max(.08, audioEnergy);
         const t = (now - startedAt) / 1000;
-        const pulse = Math.pow(.5 + .5 * Math.sin(t * 3.2), 5);
+        const pulse = (.5 + .5 * Math.sin(t * 3.2)) ** 5;
         const wave = .5 + .5 * Math.sin(t * .74 + Math.sin(t * .19));
         bass = pulse;
-        treble = .5 + .5 * Math.sin(t * 6.1);
         return Math.min(1, .16 + pulse * .58 + wave * .24);
       }
 
