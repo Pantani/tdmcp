@@ -220,6 +220,32 @@ describe("doctor --fix: bridge repair", () => {
     expect(r.stdout).toContain("Textport command sent");
   });
 
+  it("--fix passes the configured TouchDesigner port to the bridge repair runner", async () => {
+    const customTdBase = "http://127.0.0.1:12001";
+    server.use(
+      http.get(`${customTdBase}/api/info`, () => HttpResponse.error()),
+      llmModels("qwen2.5:3b"),
+    );
+    const attemptedPorts: number[] = [];
+
+    await runDoctor({
+      config: makeConfig({ tdPort: 12001 }),
+      makeCtx: () => ({
+        client: new TouchDesignerClient({ baseUrl: customTdBase, timeoutMs: 2000 }),
+        knowledge: new KnowledgeBase(),
+        recipes: new RecipeLibrary(),
+        logger: silentLogger,
+      }),
+      fix: true,
+      runInstallBridge: async (port) => {
+        attemptedPorts.push(port);
+        return { ok: false, detail: "TD not running" };
+      },
+    });
+
+    expect(attemptedPorts).toEqual([12001]);
+  });
+
   it("--fix without runInstallBridge falls back to the default spawn runner", async () => {
     server.use(offlineInfoHandler, llmModels("qwen2.5:3b"));
     // Point TDMCP_BIN at a binary that always fails, so the default spawn

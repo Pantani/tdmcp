@@ -92,7 +92,7 @@ export interface RunDoctorOptions {
   /** Overridable profile dir create hook for tests; defaults to mkdir -p. */
   profileDirRepair?: (dirPath: string) => void;
   /** Overridable install-bridge runner for tests; defaults to local install-bridge --verify. */
-  runInstallBridge?: () => Promise<InstallBridgeResult>;
+  runInstallBridge?: (port: number) => Promise<InstallBridgeResult>;
   /** Overridable Textport auto-install runner for tests; defaults to a bounded macOS AppleScript. */
   runTextportInstall?: (command: string) => Promise<{ ok: boolean; detail: string }>;
 }
@@ -128,15 +128,15 @@ function defaultVaultRepair(absPath: string): void {
  * `TDMCP_INSTALL_BRIDGE_TIMEOUT_MS` (default 60s) so `doctor --fix` can never
  * hang indefinitely on a stuck child.
  */
-function defaultRunInstallBridge(): Promise<InstallBridgeResult> {
+function defaultRunInstallBridge(port: number): Promise<InstallBridgeResult> {
   if (!process.env.TDMCP_BIN?.trim()) {
-    return runLocalInstallBridge();
+    return runLocalInstallBridge(port);
   }
 
-  return spawnInstallBridge(process.env.TDMCP_BIN);
+  return spawnInstallBridge(process.env.TDMCP_BIN, port);
 }
 
-function runLocalInstallBridge(): Promise<InstallBridgeResult> {
+function runLocalInstallBridge(port: number): Promise<InstallBridgeResult> {
   const prevExitCode = process.exitCode;
   const prevLog = console.log;
   const prevError = console.error;
@@ -148,7 +148,7 @@ function runLocalInstallBridge(): Promise<InstallBridgeResult> {
     output += `${args.map(String).join(" ")}\n`;
   };
   return Promise.resolve()
-    .then(() => runInstallBridge(["--verify"]))
+    .then(() => runInstallBridge(["--verify", "--port", String(port)]))
     .then((result) => ({
       ...result,
       detail: result.detail || output.trim().split("\n").slice(-3).join(" | ") || "completed",
@@ -160,9 +160,9 @@ function runLocalInstallBridge(): Promise<InstallBridgeResult> {
     });
 }
 
-function spawnInstallBridge(cmd: string): Promise<InstallBridgeResult> {
+function spawnInstallBridge(cmd: string, port: number): Promise<InstallBridgeResult> {
   return new Promise((resolve) => {
-    const child = spawn(cmd, ["install-bridge", "--verify"], {
+    const child = spawn(cmd, ["install-bridge", "--verify", "--port", String(port)], {
       stdio: ["ignore", "pipe", "pipe"],
       env: process.env,
     });
@@ -762,7 +762,7 @@ export async function runDoctor(opts: RunDoctorOptions = {}): Promise<DoctorResu
 
     const bridgeRepairs = await repairBridge(
       checks.find((c) => c.id === "bridge"),
-      opts.runInstallBridge ?? defaultRunInstallBridge,
+      () => (opts.runInstallBridge ?? defaultRunInstallBridge)(config.tdPort),
       opts.runTextportInstall ?? defaultRunTextportInstall,
     );
     allRepairs = allRepairs.concat(bridgeRepairs);
