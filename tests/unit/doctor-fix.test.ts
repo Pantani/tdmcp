@@ -192,6 +192,34 @@ describe("doctor --fix: bridge repair", () => {
     expect(r.stdout).toContain("Failed fixes");
   });
 
+  it("--fix attempts Textport auto-install when install-bridge returns a manual command", async () => {
+    server.use(offlineInfoHandler, llmModels("qwen2.5:3b"));
+    const attempted: string[] = [];
+    const command =
+      'import sys; sys.path.insert(0, "/tmp/tdmcp-bridge/modules")\nfrom mcp import install; install.run(modules_dir="/tmp/tdmcp-bridge/modules")';
+
+    const r = await runDoctor({
+      config: makeConfig(),
+      makeCtx,
+      fix: true,
+      runInstallBridge: async () => ({
+        ok: false,
+        detail: "manual Textport step required",
+        noPrefsTextportCommand: command,
+      }),
+      runTextportInstall: async (textportCommand) => {
+        attempted.push(textportCommand);
+        return { ok: true, detail: "Textport command sent" };
+      },
+    });
+
+    expect(attempted).toEqual([command]);
+    expect(r.report.repairs).toContainEqual(
+      expect.objectContaining({ id: "bridge", status: "applied" }),
+    );
+    expect(r.stdout).toContain("Textport command sent");
+  });
+
   it("--fix without runInstallBridge falls back to the default spawn runner", async () => {
     server.use(offlineInfoHandler, llmModels("qwen2.5:3b"));
     // Point TDMCP_BIN at a binary that always fails, so the default spawn

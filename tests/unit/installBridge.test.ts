@@ -81,11 +81,20 @@ describe("install-bridge CLI", () => {
     const fetchImpl = vi.fn();
     vi.stubGlobal("fetch", fetchImpl);
 
-    await runInstallBridge(["--dir", "/tmp/tdmcp-bridge"]);
+    const result = await runInstallBridge(["--dir", "/tmp/tdmcp-bridge"]);
 
     expect(mocks.cpSync).toHaveBeenCalledWith("/pkg/td/modules", "/tmp/tdmcp-bridge/modules", {
       recursive: true,
     });
+    expect(result).toEqual(
+      expect.objectContaining({
+        ok: true,
+        modulesDir: "/tmp/tdmcp-bridge/modules",
+        textportCommand: "from mcp import install; install.run()",
+        noPrefsTextportCommand:
+          'import sys; sys.path.insert(0, "/tmp/tdmcp-bridge/modules")\nfrom mcp import install; install.run(modules_dir="/tmp/tdmcp-bridge/modules")',
+      }),
+    );
     expect(fetchImpl).not.toHaveBeenCalled();
     expect(process.exitCode).toBeUndefined();
   });

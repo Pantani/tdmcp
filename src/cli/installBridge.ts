@@ -15,9 +15,24 @@ interface InstallBridgeOptions {
   port: number;
 }
 
+export interface InstallBridgeResult {
+  ok: boolean;
+  detail: string;
+  port?: number;
+  modulesDir?: string;
+  textportCommand?: string;
+  noPrefsTextportCommand?: string;
+  verified?: boolean;
+}
+
 interface BridgeInfo {
   tdVersion?: string;
   bridgeVersion?: string;
+}
+
+interface TextportCommands {
+  textportCommand: string;
+  noPrefsTextportCommand: string;
 }
 
 /**
@@ -28,29 +43,34 @@ interface BridgeInfo {
  * bridge on inside TouchDesigner. This is what makes the `npx` flow work without
  * cloning the repo: the modules live in the npm cache otherwise.
  */
-export function runInstallBridge(args: string[]): Promise<void> | void {
+export function runInstallBridge(
+  args: string[],
+): Promise<InstallBridgeResult> | InstallBridgeResult {
   const options = parseInstallBridgeArgs(args);
-  if (!options) return;
+  if (!options) {
+    return { ok: false, detail: "invalid install-bridge arguments" };
+  }
 
   const dest = join(options.targetRoot, "modules");
 
   const src = bridgeModulesDir();
+  const commands = buildTextportCommands(options.port, dest);
   if (!existsSync(src)) {
     console.error(
       `[tdmcp] Could not find the bridge modules to copy (looked in ${src}).\n` +
         "If you're running from source, build first with `npm run build`.",
     );
     process.exitCode = 1;
-    return;
+    return {
+      ok: false,
+      detail: `bridge modules not found at ${src}`,
+      port: options.port,
+      modulesDir: dest,
+      ...commands,
+    };
   }
 
   cpSync(src, dest, { recursive: true });
-
-  const oneLiner = `from mcp import install; ${installRunCall(options.port)}`;
-  const noPrefs = `import sys; sys.path.insert(0, ${JSON.stringify(dest)})\n${installRunCall(
-    options.port,
-    dest,
-  )}`;
 
   console.log(
     [
@@ -67,7 +87,7 @@ export function runInstallBridge(args: string[]): Promise<void> | void {
       "",
       "  2. Open the Textport (Dialogs > Textport and DATs) and run:",
       "",
-      `       ${oneLiner}`,
+      `       ${commands.textportCommand}`,
       "",
       `  You should see: [tdmcp] bridge running on port ${options.port} (/project1/tdmcp_bridge)`,
       "",
@@ -77,14 +97,22 @@ export function runInstallBridge(args: string[]): Promise<void> | void {
       "",
       "  Prefer not to touch Preferences? Paste this in the Textport instead:",
       "",
-      ...noPrefs.split("\n").map((line) => `       ${line}`),
+      ...commands.noPrefsTextportCommand.split("\n").map((line) => `       ${line}`),
       "",
     ].join("\n"),
   );
 
+  const baseResult: InstallBridgeResult = {
+    ok: true,
+    detail: `bridge modules copied to ${dest}`,
+    port: options.port,
+    modulesDir: dest,
+    ...commands,
+  };
   if (options.verify || options.wait) {
-    return verifyInstalledBridge(options);
+    return verifyInstalledBridge(options, baseResult);
   }
+  return baseResult;
 }
 
 function parseInstallBridgeArgs(args: string[]): InstallBridgeOptions | undefined {
@@ -121,6 +149,15 @@ function parseInstallBridgeArgs(args: string[]): InstallBridgeOptions | undefine
   };
 }
 
+function buildTextportCommands(port: number, modulesDir: string): TextportCommands {
+  return {
+    textportCommand: `from mcp import install; ${installRunCall(port)}`,
+    noPrefsTextportCommand:
+      `import sys; sys.path.insert(0, ${JSON.stringify(modulesDir)})\n` +
+      `from mcp import install; ${installRunCall(port, modulesDir)}`,
+  };
+}
+
 function installRunCall(port: number, modulesDir?: string): string {
   const args: string[] = [];
   if (modulesDir) args.push(`modules_dir=${JSON.stringify(modulesDir)}`);
@@ -128,7 +165,10 @@ function installRunCall(port: number, modulesDir?: string): string {
   return `install.run(${args.join(", ")})`;
 }
 
-async function verifyInstalledBridge(options: InstallBridgeOptions): Promise<void> {
+async function verifyInstalledBridge(
+  options: InstallBridgeOptions,
+  baseResult: InstallBridgeResult,
+): Promise<InstallBridgeResult> {
   const url = bridgeInfoUrl(options.port);
   const deadline = Date.now() + WAIT_TIMEOUT_MS;
   let lastError: unknown;
@@ -143,7 +183,12 @@ async function verifyInstalledBridge(options: InstallBridgeOptions): Promise<voi
     try {
       const info = await fetchBridgeInfo(url);
       console.log(`  Bridge verified at ${url}${formatBridgeInfo(info)}.`);
-      return;
+      return {
+        ...baseResult,
+        ok: true,
+        detail: `bridge verified at ${url}${formatBridgeInfo(info)}`,
+        verified: true,
+      };
     } catch (err) {
       lastError = err;
       if (!options.wait) break;
@@ -163,6 +208,12 @@ async function verifyInstalledBridge(options: InstallBridgeOptions): Promise<voi
     ].join("\n"),
   );
   process.exitCode = 1;
+  return {
+    ...baseResult,
+    ok: false,
+    detail: `could not verify bridge at ${url}: ${errorMessage(lastError)}`,
+    verified: false,
+  };
 }
 
 function bridgeInfoUrl(port: number): string {
