@@ -466,8 +466,12 @@ additional `doctor --fix` repairs; the new `get_inline_preview` inspection tool;
 the front-of-house dashboard v2 layout; and the stronger `generate_readme` /
 `make_portable_tox` component-doc pass are all in the current release line.
 **The Planned road-to-1.0 list is currently empty — all queued items shipped to
-v0.8.1.** Only items that still need a future code change (not a hardware/service
-blocker) belong here. Hardware-, live-music-, multimodal-LLM- and GPU/CUDA-gated
+v0.8.1.** The remaining work on the way to a tagged 1.0 is **consolidation**
+(API stability, coverage, recipes, bridge hardening, docs, one-click install),
+tracked as measurable gates in
+[v1.0.0 — Consolidation](#v100-consolidation) below. Only items that still need a
+future code change (not a hardware/service blocker) belong in this Planned
+section. Hardware-, live-music-, multimodal-LLM- and GPU/CUDA-gated
 items have been moved to **Out of scope (for now)** below. Version targets are a
 rough sequence, **not a promise**. The exhaustive, item-by-item backlog lives in
 the [planning archive](#full-backlog).
@@ -479,6 +483,14 @@ All currently-planned items shipped.
 ### Milestone 4 — Deeper authoring & operator DX · v0.8.x / v0.9.x
 
 All currently-planned items shipped.
+
+### What's left for 1.0
+
+With both the round-2 BEYOND backlog and the round-3 ingest-and-extend pass fully
+landed in the v0.8 release line, **the remaining work to 1.0 is consolidation,
+not new tool surface**. The measurable gates live in
+[v1.0.0 — Consolidation](#v100-consolidation) below; every open item should map
+to one of those gates rather than to a new entry here.
 
 ### Later / deferred
 
@@ -517,10 +529,93 @@ properly:
   Palette plus an Obsidian vault — matching tdmcp's no-server, runs-on-your-machine
   design.
 
-## v1.0.0 — Consolidation
+## v1.0.0 — Consolidation {#v100-consolidation}
 
-Before 1.0: stabilize the tool API, round out the docs and per-feature guides,
-raise test coverage, expand the recipe library, and harden the bridge.
+With the feature surface settled on **v0.8.1 / 279 tools**, the road to 1.0 is
+a set of **measurable consolidation gates**, not a new feature wave. Each gate
+below states the current posture and what "done" looks like, using the same
+legend as the rest of the page (✅ shipped / 🧪 in progress / ⬜ planned).
+
+### G1 — Tool API stability · 🧪
+
+The contract for a "tdmcp tool" is the `ToolContext` shape
+(`src/tools/types.ts`) plus each tool's Zod `inputSchema`. Stability gate:
+
+- ⬜ One full minor release cycle (one tagged minor) with **no breaking change**
+  to `ToolContext` or to any existing tool's `inputSchema` (additive optional
+  fields are allowed; renames / removals / required-field additions are not).
+- ⬜ An `API_STABILITY.md` note pinning the v1.0 contract and the deprecation
+  policy (one-minor warn, next-minor remove).
+
+### G2 — Test coverage · 🧪
+
+Coverage is tracked by `npm run test:coverage` + the
+`npm run coverage:harness` ranking; the project's coverage harness already
+gates per-wave work but isn't yet a CI gate at the suite level.
+
+- ⬜ Promote the coverage harness to a CI gate: enforce **lines and branches
+  ≥ current baseline + 5 pp**, with no regression allowed on any file that
+  already exceeds the target.
+- ⬜ Bridge tests (`npm run test:bridge`) and recipe validation
+  (`npm run validate:recipes`) stay green alongside the four PR gates.
+
+### G3 — Recipe library depth · ⬜
+
+The repo ships **15 validated recipes** under `recipes/`, all gated by
+`RecipeSchema` and `npm run validate:recipes`.
+
+- ⬜ Add at least **10 net-new** first-party recipes covering the v0.7–v0.8
+  generator wave (SDF, strange-attractor, optical-flow, MediaPipe adapters,
+  decks, dashboard-v2 layouts), each live-validated end-to-end.
+- ⬜ One recipe per Layer-1 orchestrator so every "one-line build" tool has a
+  reproducible JSON twin.
+
+### G4 — Bridge hardening · 🧪
+
+The bridge already exposes first-class REST endpoints for the work that used
+to round-trip through `/api/exec`: nodes CRUD, connect / disconnect, param
+modes, DAT text, network errors / topology / performance, batch, preview, and
+structured logs (see `src/td-client/touchDesignerClient.ts`). What's left:
+
+- ⬜ Reduce remaining `executePythonScript` reliance: ~129 tool files still
+  call the exec path (often as a fallback). Each one that has a typed REST
+  equivalent should prefer the endpoint and only fall back when the bridge is
+  on an older protocol — tracked under the `tryEndpoint`/exec-fallback pattern
+  established in v0.8.1.
+- ⬜ Keep `/api/exec` working when `TDMCP_BRIDGE_ALLOW_EXEC=0` is the venue
+  policy: every Layer-1/Layer-2 tool must build with exec disabled (CI smoke).
+- ✅ Resilience patch — atomic writes, clean HTTP listen failure, event-stream
+  close — landed in v0.8.1.
+
+### G5 — Docs completeness · 🧪
+
+The Tools reference (`docs/reference/tools.md`) is auto-generated from the live
+registry on every docs build. Guide pages (`docs/guide/*.md`) currently cover
+install, first visual, body tracking, components, recipes, shader-park,
+local-copilot, LOPs integration, AI-controlled party, prompt cookbook, FAQ,
+troubleshooting and glossary.
+
+- ⬜ Add per-arc guides for the v0.7/v0.8 work that doesn't yet have one:
+  show timelines & setlists, dashboard-v2 / front-of-house, session profile
+  & corpus learning, MediaPipe adapters, MCP resources (glsl-snippets /
+  cheatsheets / learning).
+- ⬜ Every Layer-1 generator referenced in the cookbook has a one-paragraph
+  "what it builds + when to reach for it" entry in the relevant guide.
+- ✅ EN + PT parity for the prompt cookbook.
+
+### G6 — One-click install & Connectors Directory · 🧪
+
+The `.mcpb` (formerly `.dxt`) Claude Desktop bundle is built by
+`npm run build:mcpb` and ships on every GitHub release; install docs cover the
+one-click path.
+
+- ✅ `.mcpb` bundle produced on tag.
+- ✅ npm package publishes from CI when `NPM_TOKEN` is set.
+- ⬜ Anthropic Connectors Directory submission accepted (the submission harness
+  — `tdmcp-submission` skill — drives prep and re-prep).
+- ⬜ Glama / awesome-touchdesigner listings cross-linked from `README.md`.
+
+---
 
 ---
 
