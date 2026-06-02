@@ -282,6 +282,10 @@ function readPositiveIntEnv(name: string, fallback: number): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 /** TD bridge reachability + version. Critical: a failure here fails the whole doctor. */
 async function checkBridge(ctx: ToolContext): Promise<DoctorCheck> {
   const base = { id: "bridge", title: "TouchDesigner bridge", critical: true } as const;
@@ -516,6 +520,7 @@ async function repairBridge(
   check: DoctorCheck | undefined,
   runInstall: (() => Promise<InstallBridgeResult>) | undefined,
   runTextportInstall: ((command: string) => Promise<{ ok: boolean; detail: string }>) | undefined,
+  verifyBridge: (() => Promise<DoctorCheck>) | undefined,
 ): Promise<Array<{ id: string; status: "applied" | "failed"; detail: string }>> {
   if (!check || check.status === "pass" || !runInstall) return [];
   try {
@@ -524,6 +529,25 @@ async function repairBridge(
       const command = result.noPrefsTextportCommand ?? result.textportCommand;
       if (command && runTextportInstall) {
         const textportResult = await runTextportInstall(command);
+        if (textportResult.ok && verifyBridge) {
+          const timeoutMs = readPositiveIntEnv("TDMCP_TEXTPORT_VERIFY_TIMEOUT_MS", 10_000);
+          const intervalMs = readPositiveIntEnv("TDMCP_TEXTPORT_VERIFY_INTERVAL_MS", 250);
+          const verifiedBridge = await waitForBridgeVerification(
+            verifyBridge,
+            timeoutMs,
+            intervalMs,
+          );
+          return [
+            {
+              id: "bridge",
+              status: verifiedBridge.status === "pass" ? "applied" : "failed",
+              detail:
+                verifiedBridge.status === "pass"
+                  ? `install-bridge --verify needed Textport; ${textportResult.detail}; bridge verified: ${verifiedBridge.detail}`
+                  : `install-bridge --verify failed: ${result.detail}; ${textportResult.detail}. Bridge did not verify within ${timeoutMs}ms: ${verifiedBridge.detail}. Manual Textport command:\n${command}`,
+            },
+          ];
+        }
         return [
           {
             id: "bridge",
@@ -548,6 +572,20 @@ async function repairBridge(
     const reason = err instanceof Error ? err.message : String(err);
     return [{ id: "bridge", status: "failed", detail: `install-bridge error: ${reason}` }];
   }
+}
+
+async function waitForBridgeVerification(
+  verifyBridge: () => Promise<DoctorCheck>,
+  timeoutMs: number,
+  intervalMs: number,
+): Promise<DoctorCheck> {
+  const deadline = Date.now() + timeoutMs;
+  let lastCheck = await verifyBridge();
+  while (lastCheck.status !== "pass" && Date.now() < deadline) {
+    await sleep(Math.min(intervalMs, Math.max(0, deadline - Date.now())));
+    lastCheck = await verifyBridge();
+  }
+  return lastCheck;
 }
 
 /** Repair missing profile directory. */
@@ -764,6 +802,7 @@ export async function runDoctor(opts: RunDoctorOptions = {}): Promise<DoctorResu
       checks.find((c) => c.id === "bridge"),
       () => (opts.runInstallBridge ?? defaultRunInstallBridge)(config.tdPort),
       opts.runTextportInstall ?? defaultRunTextportInstall,
+      () => checkBridge(ctx),
     );
     allRepairs = allRepairs.concat(bridgeRepairs);
     // Re-probe the bridge after a successful repair so the report (and the
