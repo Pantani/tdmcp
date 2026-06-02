@@ -1,6 +1,6 @@
 import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import {
   type LogTailFilteredArgs,
   type PollState,
@@ -187,8 +187,18 @@ describe("log-tail CLI: pollOnce", () => {
     // We need to mock loadConfig and the client — instead, test via a short-circuit:
     // runLogTailFiltered should return 2 before any I/O when grep is invalid.
     const { runLogTailFiltered } = await import("../../src/cli/logTailFiltered.js");
-    const code = await runLogTailFiltered(["--grep", "("]);
-    expect(code).toBe(2);
+    const stderrChunks: string[] = [];
+    const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(((chunk: unknown) => {
+      stderrChunks.push(String(chunk));
+      return true;
+    }) as never);
+    try {
+      const code = await runLogTailFiltered(["--grep", "("]);
+      expect(code).toBe(2);
+      expect(stderrChunks.join("")).toContain("invalid regex");
+    } finally {
+      stderrSpy.mockRestore();
+    }
   });
 
   it("available=false warning emitted exactly once across two polls", async () => {

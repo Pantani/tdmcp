@@ -105,3 +105,6 @@ npm publish
   anything is published.
 - `publishConfig.access = "public"` lets the scoped package publish publicly
   without needing the `--access public` flag every time.
+- The GitHub tag-release workflow publishes the `.mcpb` GitHub Release asset
+  but leaves npm manual by default. It only auto-publishes npm when repository
+  variable `TDMCP_AUTO_NPM_PUBLISH=true` and `NPM_TOKEN` are both configured.

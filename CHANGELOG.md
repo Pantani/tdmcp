@@ -135,6 +135,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **Release workflow keeps npm manual by default.** Tag pushes still run the
+  release gates, build/upload `tdmcp.mcpb`, and create the GitHub Release. npm
+  publish now requires both `TDMCP_AUTO_NPM_PUBLISH=true` and `NPM_TOKEN`, so the
+  normal 0.8.2 handoff can keep npm / mcp-publisher as manual follow-up steps.
 - **`control_timeline_transport` now prefers the REST endpoint.**
   The tool now calls `client.controlTimelineTransport(...)` via
   `tryEndpoint`, falling back to `executePythonScript` only on endpoint
@@ -1240,11 +1244,12 @@ API on its first live run, and is fail-forward (per-item warnings, never throws)
   preview-asset writes, as a strict superset of `TDMCP_RAW_PYTHON=off`. Use it to hand an
   autonomous in-TD agent a curated, non-destructive toolset.
 
+[0.8.2]: https://github.com/Pantani/tdmcp/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/Pantani/tdmcp/compare/fa7d33c2a8093d85cbad6226f62f28714a0af8fb...v0.8.1
 [0.8.0]: https://github.com/Pantani/tdmcp/compare/v0.7.1...fa7d33c2a8093d85cbad6226f62f28714a0af8fb
 [0.7.1]: https://github.com/Pantani/tdmcp/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/Pantani/tdmcp/compare/v0.6.1...v0.7.0
-[Unreleased]: https://github.com/Pantani/tdmcp/compare/v0.8.1...HEAD
+[Unreleased]: https://github.com/Pantani/tdmcp/compare/v0.8.2...HEAD
 [0.6.1]: https://github.com/Pantani/tdmcp/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/Pantani/tdmcp/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Pantani/tdmcp/compare/v0.4.0...v0.5.0

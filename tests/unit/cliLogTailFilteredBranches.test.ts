@@ -1,6 +1,6 @@
 import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import {
   type LogTailFilteredArgs,
   type PollState,
@@ -56,6 +56,19 @@ const server = setupServer();
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
+
+async function withCapturedStderr<T>(fn: (stderr: string[]) => Promise<T>): Promise<T> {
+  const stderrChunks: string[] = [];
+  const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(((chunk: unknown) => {
+    stderrChunks.push(String(chunk));
+    return true;
+  }) as never);
+  try {
+    return await fn(stderrChunks);
+  } finally {
+    stderrSpy.mockRestore();
+  }
+}
 
 describe("logTailFiltered: format + level branches", () => {
   it("formats lines with frame fallback and no-frame fallback", async () => {
@@ -216,14 +229,20 @@ describe("logTailFiltered: runLogTailFiltered entrypoint", () => {
 
   it("one-shot mode survives a single connection error (exit 0, not 1)", async () => {
     server.use(http.get(`${TD_BASE}/api/logs`, () => HttpResponse.error()));
-    const code = await runLogTailFiltered([]);
-    // one-shot: a single connection error does NOT trip the >=3 consecutive gate
-    expect(code).toBe(0);
+    await withCapturedStderr(async (stderr) => {
+      const code = await runLogTailFiltered([]);
+      // one-shot: a single connection error does NOT trip the >=3 consecutive gate
+      expect(code).toBe(0);
+      expect(stderr.join("")).toContain("connection error");
+    });
   });
 
   it("returns 2 when zod parse rejects a bad option (interval-ms below min)", async () => {
-    const code = await runLogTailFiltered(["--interval-ms", "10"]);
-    expect(code).toBe(2);
+    await withCapturedStderr(async (stderr) => {
+      const code = await runLogTailFiltered(["--interval-ms", "10"]);
+      expect(code).toBe(2);
+      expect(stderr.join("")).toContain("invalid arguments");
+    });
   });
 
   it("accepts the full option matrix without throwing", async () => {

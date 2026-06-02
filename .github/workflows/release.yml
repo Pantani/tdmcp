@@ -6,8 +6,9 @@ name: Release
 #   git push --follow-tags     # pushes the commit AND the v* tag
 #
 # The tag push triggers this workflow, which re-runs the full check suite, builds
-# the Claude Desktop `.mcpb` bundle, publishes a GitHub Release with the bundle
-# attached + auto-generated notes, and (if NPM_TOKEN is set) publishes to npm.
+# the Claude Desktop `.mcpb` bundle, and publishes a GitHub Release with the
+# bundle attached + auto-generated notes. npm publishing stays manual by default;
+# set repository variable TDMCP_AUTO_NPM_PUBLISH=true and NPM_TOKEN to opt in.
 
 on:
   push:
@@ -27,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write # create the GitHub Release + upload the .mcpb asset
-      id-token: write # npm publish with provenance
+      id-token: write # npm publish provenance, used only when explicitly enabled
     steps:
       - uses: actions/checkout@v6
 
@@ -108,26 +109,29 @@ jobs:
               --verify-tag
           fi
 
-      - name: Check for npm token
-        id: npmtoken
+      - name: Check npm publish mode
+        id: npm_publish
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          AUTO_NPM_PUBLISH: ${{ vars.TDMCP_AUTO_NPM_PUBLISH }}
         run: |
-          if [ -n "$NPM_TOKEN" ]; then
-            echo "present=true" >> "$GITHUB_OUTPUT"
+          if [ "$AUTO_NPM_PUBLISH" = "true" ] && [ -n "$NPM_TOKEN" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
           else
-            echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::NPM_TOKEN secret is not set — skipping npm publish. Add it in Settings → Secrets and variables → Actions to enable 'npx -y @dpantani/tdmcp'."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
             {
-              echo "### ⚠️ npm publish SKIPPED"
+              echo "### npm publish not run"
               echo ""
-              echo "\`NPM_TOKEN\` is not set, so **${GITHUB_REF_NAME} shipped to GitHub only** (the \`.mcpb\` asset) and is **missing from npm**."
-              echo "Set the \`NPM_TOKEN\` Actions secret and re-run this release (or \`npm publish\` the tag manually) so \`npx @dpantani/tdmcp@${GITHUB_REF_NAME#v}\` resolves."
+              if [ "$AUTO_NPM_PUBLISH" != "true" ]; then
+                echo "Automatic npm publishing is disabled. Publish \`@dpantani/tdmcp@${GITHUB_REF_NAME#v}\` manually after reviewing the GitHub release."
+              else
+                echo "\`NPM_TOKEN\` is not set. Publish \`@dpantani/tdmcp@${GITHUB_REF_NAME#v}\` manually after reviewing the GitHub release."
+              fi
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Publish to npm
-        if: steps.npmtoken.outputs.present == 'true'
+        if: steps.npm_publish.outputs.enabled == 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |

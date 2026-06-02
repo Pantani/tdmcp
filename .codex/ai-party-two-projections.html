@@ -325,15 +325,15 @@
       function mix(a, b, p) {
         const ar = hexToRgb(a);
         const br = hexToRgb(b);
-        return "#" + ar.map((value, index) => {
+        return `#${ar.map((value, index) => {
           const next = Math.round(value + (br[index] - value) * p);
           return next.toString(16).padStart(2, "0");
-        }).join("");
+        }).join("")}`;
       }
 
       function rgba(hex, alpha) {
         const [r, g, b] = hexToRgb(hex);
-        return "rgba(" + r + "," + g + "," + b + "," + alpha + ")";
+        return `rgba(${r},${g},${b},${alpha})`;
       }
 
       function setCue(index) {
@@ -341,11 +341,11 @@
         const cue = cues[active];
         titleA.textContent = cue.cue;
         titleB.textContent = cue.text;
-        hudA.textContent = cue.mood + " / intensity " + cue.intensity.toFixed(2);
+        hudA.textContent = `${cue.mood} / intensity ${cue.intensity.toFixed(2)}`;
         hudB.textContent = cue.blocked ? "blocked request / safe simulation" : "atmosphere / voice";
         status.innerHTML = cue.blocked
-          ? "<b class=\"blocked\">BLOCKED:</b> " + cue.blocked + " - " + cue.note
-          : "<b>" + cue.cue + "</b> - " + cue.note;
+          ? `<b class="blocked">BLOCKED:</b> ${cue.blocked} - ${cue.note}`
+          : `<b>${cue.cue}</b> - ${cue.note}`;
         lastAuto = performance.now();
       }
 
@@ -485,7 +485,7 @@
 
         ctxB.globalCompositeOperation = "source-over";
         const words = cue.text.toUpperCase().split(/\s+/).slice(0, 6);
-        ctxB.font = "900 " + Math.floor(Math.min(w, h) * (.092 + e * .038)) + "px Inter, system-ui, sans-serif";
+        ctxB.font = `900 ${Math.floor(Math.min(w, h) * (.092 + e * .038))}px Inter, system-ui, sans-serif`;
         ctxB.textAlign = "center";
         ctxB.textBaseline = "middle";
         words.forEach((word, index) => {
@@ -506,7 +506,7 @@
         const cue = cues[active];
         if (now - lastAuto > 7600) setCue(active + 1);
         const e = energy(now) * (.55 + cue.intensity * .75);
-        meter.style.transform = "scaleX(" + Math.min(1, e).toFixed(3) + ")";
+        meter.style.transform = `scaleX(${Math.min(1, e).toFixed(3)})`;
         drawGeometry(now, e, cue);
         drawAtmosphere(now, e, cue);
         requestAnimationFrame(frame);

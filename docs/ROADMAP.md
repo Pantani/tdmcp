@@ -688,7 +688,8 @@ The `.mcpb` (formerly `.dxt`) Claude Desktop bundle is built by
 one-click path.
 
 - ✅ `.mcpb` bundle produced on tag.
-- ✅ npm package publishes from CI when `NPM_TOKEN` is set.
+- ✅ npm package publishing stays manual by default; CI auto-publish requires
+  both `TDMCP_AUTO_NPM_PUBLISH=true` and `NPM_TOKEN`.
 - ⬜ Anthropic Connectors Directory submission accepted (the submission harness
   — `tdmcp-submission` skill — drives prep and re-prep).
 - ⬜ Glama / awesome-touchdesigner listings cross-linked from `README.md`.
