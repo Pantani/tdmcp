@@ -205,6 +205,76 @@ describe("controlTimelineTransportImpl", () => {
     });
   });
 
+  describe("REST endpoint /api/transport — first-class, survives ALLOW_EXEC=0", () => {
+    it("prefers POST /api/transport and does NOT call /api/exec when available", async () => {
+      let execCalled = false;
+      let transportCalled = false;
+      let capturedBody: Record<string, unknown> | null = null;
+      server.use(
+        http.post(`${TD_BASE}/api/transport`, async ({ request }) => {
+          transportCalled = true;
+          capturedBody = (await request.json()) as Record<string, unknown>;
+          return HttpResponse.json({
+            ok: true,
+            data: {
+              action: "seek",
+              play: false,
+              frame: 120,
+              rate: 1.0,
+              startFrame: 0,
+              endFrame: 600,
+              fps: 60,
+            },
+          });
+        }),
+        http.post(`${TD_BASE}/api/exec`, () => {
+          execCalled = true;
+          return HttpResponse.json({
+            ok: true,
+            data: { result: null, stdout: makeStdout("seek") },
+          });
+        }),
+      );
+
+      const result = await controlTimelineTransportImpl(makeCtx(), {
+        action: "seek",
+        frame: 120,
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(transportCalled).toBe(true);
+      expect(execCalled).toBe(false);
+      expect(capturedBody).not.toBeNull();
+      const body = capturedBody as unknown as Record<string, unknown>;
+      expect(body.action).toBe("seek");
+      expect(body.frame).toBe(120);
+      const sc = result.structuredContent as Record<string, unknown>;
+      expect(sc.action).toBe("seek");
+      expect(sc.frame).toBe(120);
+    });
+
+    it("falls back to /api/exec when /api/transport returns 404 (older bridge)", async () => {
+      // tdMock's default 404 for /api/transport is already in place; just mock exec.
+      let execCalled = false;
+      server.use(
+        http.post(`${TD_BASE}/api/exec`, () => {
+          execCalled = true;
+          return HttpResponse.json({
+            ok: true,
+            data: { result: null, stdout: makeStdout("play") },
+          });
+        }),
+      );
+
+      const result = await controlTimelineTransportImpl(makeCtx(), { action: "play" });
+
+      expect(result.isError).toBeFalsy();
+      expect(execCalled).toBe(true);
+      const sc = result.structuredContent as Record<string, unknown>;
+      expect(sc.action).toBe("play");
+    });
+  });
+
   describe("bridge offline → friendly error", () => {
     it("returns isError when bridge is unreachable", async () => {
       server.use(http.post(`${TD_BASE}/api/exec`, () => HttpResponse.error()));

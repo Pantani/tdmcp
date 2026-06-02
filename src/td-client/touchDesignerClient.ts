@@ -25,6 +25,7 @@ import {
   SetParamModeResultSchema,
   type TdBatchOperation,
   TopologySchema,
+  TransportStateSchema,
 } from "./validators.js";
 
 export interface TouchDesignerClientOptions {
@@ -343,6 +344,16 @@ export class TouchDesignerClient {
 
   putDatText(path: string, text: string) {
     return this.request("PUT", `/api/nodes/${segment(path)}/text`, DatTextWriteSchema, { text });
+  }
+
+  // --- Timeline transport (survives ALLOW_EXEC=0) ---
+  controlTimelineTransport(payload: {
+    action: "play" | "pause" | "seek" | "cue" | "rate";
+    frame?: number;
+    rate?: number;
+    cueName?: string;
+  }) {
+    return this.request("POST", "/api/transport", TransportStateSchema, payload);
   }
 
   // --- Structured bridge logs (Error DAT reader) ---

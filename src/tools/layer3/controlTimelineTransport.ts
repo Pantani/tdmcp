@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { tryEndpoint } from "../../td-client/types.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -96,9 +97,27 @@ export async function controlTimelineTransportImpl(
 
   return guardTd(
     async () => {
-      const res = await ctx.client.executePythonScript(script, true);
-      const stdout = (res as { stdout?: string }).stdout;
-      return parsePythonReport<TimelineState>(stdout);
+      // 1) First-class endpoint POST /api/transport — survives ALLOW_EXEC=0 and
+      //    is the same response shape (TransportStateSchema) the exec path emits.
+      // 2) Fall back to exec ONLY when the endpoint is absent on an older bridge;
+      //    validation 400s (e.g. unknown cue) surface unchanged via tryEndpoint.
+      return tryEndpoint<TimelineState>(
+        async () => {
+          const endpointPayload: Parameters<typeof ctx.client.controlTimelineTransport>[0] = {
+            action: args.action,
+          };
+          if (args.frame !== undefined) endpointPayload.frame = args.frame;
+          if (args.rate !== undefined) endpointPayload.rate = args.rate;
+          if (args.cueName !== undefined) endpointPayload.cueName = args.cueName;
+          const state = await ctx.client.controlTimelineTransport(endpointPayload);
+          return state as TimelineState;
+        },
+        async () => {
+          const res = await ctx.client.executePythonScript(script, true);
+          const stdout = (res as { stdout?: string }).stdout;
+          return parsePythonReport<TimelineState>(stdout);
+        },
+      );
     },
     (state) => {
       const msg = `Timeline ${state.action} (frame ${state.frame}, rate ${state.rate.toFixed(2)}x, ${state.fps} fps)`;

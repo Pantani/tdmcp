@@ -43,8 +43,32 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   carries a new `rolled_back: true` flag with a "rolled back" line in the
   summary text. Old reports without the flag remain compatible.
 
+### Added
+
+- **New bridge endpoint `POST /api/transport`** for timeline control
+  (play / pause / seek / cue / rate). Lives in
+  `td/modules/mcp/services/transport_service.py` with controller wiring in
+  `td/modules/mcp/controllers/api_controller.py`. Not gated by
+  `TDMCP_BRIDGE_ALLOW_EXEC` — works on a hardened bridge. Client-side
+  envelope is `TransportStateSchema` in `src/td-client/validators.ts` and
+  `client.controlTimelineTransport(...)` in
+  `src/td-client/touchDesignerClient.ts`. Bridge Python tests: +13
+  (`test_transport_service.py` covers play/pause/seek-clamp/cue
+  known/cue absent/rate/error paths; `test_api_controller.py` adds
+  dispatch + missing-action tests).
+
 ### Changed
 
+- **`control_timeline_transport` now prefers the REST endpoint.**
+  The tool now calls `client.controlTimelineTransport(...)` via
+  `tryEndpoint`, falling back to `executePythonScript` only on endpoint
+  miss. Output shape preserved; existing callers unaffected. Bridge
+  promotion wave-2 (G4 / v1.0 Consolidation).
+- **Coverage gate bumped: `functions: 77 → 80`** in `vitest.config.ts`.
+  Wave-3 measured Fn 83.60% globally (margin > 3pp); other thresholds
+  (statements 84 / branches 70 / lines 85) kept at current values
+  pending coverage wave-4 on the CLI surface (`src/cli/agent.ts`,
+  `src/cli/tui.ts`).
 - **`snapshot_td_graph` prefers REST endpoint for parameter modes.** When
   `include_modes: true`, the tool now calls `client.readParameterModes` via
   the `tryEndpoint` REST-first / exec-fallback pattern instead of going

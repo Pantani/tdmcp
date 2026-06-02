@@ -252,3 +252,18 @@ export const BridgeLogsSchema = z.object({
   warnings: z.array(z.string()).default([]),
 });
 export type TdBridgeLogs = z.infer<typeof BridgeLogsSchema>;
+
+// --- Timeline transport (POST /api/transport) ---
+// Matches transport_service.control()'s return shape: {action, play, frame, rate,
+// startFrame, endFrame, fps}. Kept identical to the legacy exec-script stdout so
+// the Node-side tool can collapse both branches into one result handler.
+export const TransportStateSchema = z.object({
+  action: z.string(),
+  play: z.boolean(),
+  frame: z.number().int(),
+  rate: z.number(),
+  startFrame: z.number().int(),
+  endFrame: z.number().int(),
+  fps: z.number(),
+});
+export type TdTransportState = z.infer<typeof TransportStateSchema>;

@@ -21,6 +21,7 @@ from mcp.services import (
     log_service,
     param_text_service,
     preview_service,
+    transport_service,
 )
 
 
@@ -260,6 +261,17 @@ def _route(method, path, query, body, webserver=None):
         _require(body, "to_path")
         return connect_service.disconnect(
             body["to_path"], body.get("from_path"), body.get("to_input")
+        )
+    if rest == ["transport"] and method == "POST":
+        # First-class timeline transport — survives ALLOW_EXEC=0, mirrors
+        # control_timeline_transport's verb set. Validation errors raise ValueError
+        # and become the standard 400 envelope.
+        _require(body, "action")
+        return transport_service.control(
+            body["action"],
+            frame=body.get("frame"),
+            rate=body.get("rate"),
+            cue_name=body.get("cueName") or body.get("cue_name"),
         )
     if rest == ["logs"] and method == "GET":
         # Resolve the Error DAT relative to the webserver's own container so a custom
