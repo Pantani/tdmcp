@@ -84,7 +84,7 @@ describe("runLogTailFiltered one-shot", () => {
     expect(out).toContain("no frame");
   });
 
-  it("exits 1 on connection error after 3 consecutive failures (one-shot still returns 0 after a single error+retry? no — single poll then returns)", async () => {
+  it("returns 0 on a single connection error in one-shot mode (single poll attempt)", async () => {
     server.use(
       http.get(`${TD_BASE}/api/logs`, () =>
         HttpResponse.json({ ok: false, error: { message: "x" } }, { status: 500 }),
@@ -129,8 +129,11 @@ describe("runLogTailFiltered one-shot", () => {
     );
     const code = await runLogTailFiltered(["--json"]);
     expect(code).toBe(0);
-    const out = stderrChunks.join("").trim();
-    const parsed = JSON.parse(out.split("\n").pop() ?? "null");
+    const lines = stderrChunks.join("").split("\n").filter(Boolean);
+    expect(lines.length).toBeGreaterThan(0);
+    const lastLine = lines[lines.length - 1];
+    expect(lastLine).toBeDefined();
+    const parsed = JSON.parse(lastLine as string);
     expect(parsed).toMatchObject({ severity: "error", source: "/a", message: "hello", frame: 3 });
   });
 
@@ -154,6 +157,8 @@ describe("runLogTailFiltered one-shot", () => {
       "GLSL",
     ]);
     expect(code).toBe(0);
-    expect(receivedUrl).toContain("scope=");
+    expect(receivedUrl).toContain("scope=%2Fproject1");
+    expect(receivedUrl).toContain("max_lines=50");
+    // grep is a client-side filter; not reflected in the request URL.
   });
 });
