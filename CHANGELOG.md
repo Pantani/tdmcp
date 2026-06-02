@@ -30,8 +30,20 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Offline-validated; live cook-check pending.
 - **First-party recipe `optical_flow_particles`** — live video drives an
   optical-flow vector field that pushes a GPU particle system, producing
-  motion-reactive trails. Offline-validated; live cook-check pending. Recipe
-  count: 15 → 20.
+  motion-reactive trails. Offline-validated; live cook-check pending.
+- **First-party recipe `mediapipe_face_overlay`** (11 nodes, 5 connections,
+  5 exposed controls) — manual-wire template that mirrors what
+  `setup_face_tracking` (v0.8.1) builds: a webcam background dimmed via
+  `levelTOP`, a `selectCHOP` pointed at the MediaPipe face-adapter CHOP
+  driving an instanced dot SOP through a `geometryCOMP` + `renderTOP`,
+  composited over the camera with a final tint. Offline-validated against
+  `RecipeSchema`; live cook-check pending.
+- **First-party recipe `scene_timeline_demo`** (9 nodes, 6 connections, 4
+  exposed controls) — declarative show-clock demo mirroring the
+  `create_scene_timeline` Layer-1 orchestrator: a `timerCHOP` playhead +
+  null + segments `tableDAT` driving three scenes (noise / radial ramp /
+  violet hold) blended through chained `crossTOP`s with play/rate/fade
+  knobs. Offline-validated; live cook-check pending. Recipe count: 15 → 22.
 - **`repair_network` snapshot + rollback.** The repair loop now captures
   `(par.path, par.mode)` and `(op.path, op.bypass, op.display)` before each
   applied step. After the post-repair error recheck, if `errors_after >=

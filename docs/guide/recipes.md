@@ -32,6 +32,8 @@ language like any other visual.
 | **Kinetic Text Path Follow** | Kinetic text gliding smoothly along a deterministic circular path (sin/cos LFOs animating tx/ty on the Transform TOP) — placeholder until the native path-follow extension lands. | Intermediate |
 | **Kinetic Text Audio Reactive** | Manual-wiring template: kinetic text whose brightness pulses with the live audio bass band. Requires a one-line expression binding after import. | Intermediate |
 | **Optical Flow Particles** | CPU optical-flow (frame-diff + blur) drives a flow texture; the artist wires it into the particle render path after import. | Advanced |
+| **MediaPipe Face Overlay** | Manual-wire template: applies MediaPipe face landmarks (from `setup_face_tracking`) as a dot-cloud overlay over a live video source. | Intermediate |
+| **Scene Timeline Demo** | Declarative timeline with 3 scenes and crossfade, showcasing the `create_scene_timeline` Layer-1 orchestrator. | Intermediate |
 
 ::: tip Browse them live
 Ask *"list the available recipes"* and the AI will read them straight from the

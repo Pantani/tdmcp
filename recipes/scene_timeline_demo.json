@@ -1,0 +1,109 @@
+{
+  "id": "scene_timeline_demo",
+  "name": "Scene Timeline Demo",
+  "description": "Declarative show-clock demo mirroring what create_scene_timeline (Layer-1, v0.7.0) builds: a Timer CHOP playhead drives a 3-scene segments table (intro / drop / outro), with crossfaded visual sources picked by the playhead's normalized position. The final output blends Scene A↔B↔C as t_norm sweeps 0→1. Offline-validated against RecipeSchema; live cook-check UNVERIFIED pending TD run.",
+  "tags": ["timeline", "scenes", "show-clock", "crossfade", "performable", "automation"],
+  "difficulty": "intermediate",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "playhead",
+      "type": "timerCHOP",
+      "parameters": {
+        "length": 30,
+        "lengthunits": "seconds",
+        "cyclelimit": 0,
+        "cue": 1,
+        "play": 1
+      },
+      "comment": "Show-clock playhead. 30s total, looping. cycleLimit=0 → no auto-stop."
+    },
+    {
+      "name": "playhead_null",
+      "type": "nullCHOP",
+      "comment": "Stable channel ref for downstream bind_to_channel ('timer_seconds', 'timer_fraction')."
+    },
+    {
+      "name": "segments",
+      "type": "tableDAT",
+      "comment": "Declarative segments: idx,name,cue,start,end,morph_in,slot. Matches tdmcp_scenes shape from create_scene_timeline."
+    },
+    {
+      "name": "sceneA",
+      "type": "noiseTOP",
+      "parameters": { "period": 8, "mono": 1 },
+      "comment": "Scene A (intro): slow mono noise field."
+    },
+    {
+      "name": "sceneB",
+      "type": "rampTOP",
+      "parameters": { "type": "radial" },
+      "comment": "Scene B (drop): radial ramp."
+    },
+    {
+      "name": "sceneC",
+      "type": "constantTOP",
+      "parameters": { "colorr": 0.05, "colorg": 0.02, "colorb": 0.12, "alpha": 1.0 },
+      "comment": "Scene C (outro): deep violet hold."
+    },
+    {
+      "name": "fadeAB",
+      "type": "crossTOP",
+      "parameters": { "cross": 0 },
+      "comment": "Scene A→B crossfader. Driven manually from the playhead's t_norm via the Cross knob."
+    },
+    {
+      "name": "fadeBC",
+      "type": "crossTOP",
+      "parameters": { "cross": 0 },
+      "comment": "Scene B→C crossfader. Chained after fadeAB."
+    },
+    {
+      "name": "out1",
+      "type": "nullTOP",
+      "comment": "Final scene timeline output."
+    }
+  ],
+  "connections": [
+    { "from": "playhead", "to": "playhead_null" },
+    { "from": "sceneA", "to": "fadeAB", "to_input": 0 },
+    { "from": "sceneB", "to": "fadeAB", "to_input": 1 },
+    { "from": "fadeAB", "to": "fadeBC", "to_input": 0 },
+    { "from": "sceneC", "to": "fadeBC", "to_input": 1 },
+    { "from": "fadeBC", "to": "out1" }
+  ],
+  "parameters": [],
+  "controls": [
+    {
+      "name": "Play",
+      "type": "toggle",
+      "default": 1,
+      "bind_to": ["playhead.play"]
+    },
+    {
+      "name": "Rate",
+      "type": "float",
+      "min": 0.1,
+      "max": 4.0,
+      "default": 1.0,
+      "bind_to": ["playhead.speed"]
+    },
+    {
+      "name": "Fade A to B",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "bind_to": ["fadeAB.cross"]
+    },
+    {
+      "name": "Fade B to C",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "bind_to": ["fadeBC.cross"]
+    }
+  ],
+  "preview_description": "A 30-second show clock blending three scenes: a slow mono noise field (intro) fading into a radial ramp (drop) then settling on a deep violet hold (outro), with playhead transport knobs exposed."
+}
