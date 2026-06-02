@@ -1,7 +1,7 @@
 {
   "id": "optical_flow_particles",
   "name": "Optical Flow Particles",
-  "description": "CPU/GLSL optical flow (frame-difference + cross-edge, non-CUDA) extracted from a video source drives a particle field. The flow TOP modulates a displaceTOP that warps a noise field, which feeds the particle emitter so motion in the source pushes particles around.",
+  "description": "CPU optical-flow surrogate (frame-difference + blur, non-CUDA) extracted from a video source, plus a parallel grid-emitter particle render. The flow TOP modulates a displaceTOP that warps a noise field, exposed at flow_out as a particle-driving texture; wiring flow_out into the particle simulation (e.g. as an extforcetop on the particleSOP, or via a chopToSOP to displace emitter points) is left to the user. The particle branch currently renders independently of the flow. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
   "tags": ["optical-flow", "particle", "video", "reactive", "motion"],
   "difficulty": "advanced",
   "td_version_min": "2023",
@@ -129,5 +129,5 @@
       "label": "External Force"
     }
   ],
-  "preview_description": "Particles drift across the frame, swept by invisible currents wherever the source video has motion — still regions hold the particles in place, motion areas push them outward in soft optical-flow trails. metadata: offline-validated against RecipeSchema; live cook-check in TouchDesigner UNVERIFIED."
+  "preview_description": "A particle grid renders alongside an optical-flow texture (flow_out). Once the user wires flow_out into the particle simulation, particles get pushed by motion in the source; out of the box, the particle branch is independent of the flow. metadata: offline-validated against RecipeSchema; live cook-check in TouchDesigner UNVERIFIED."
 }
