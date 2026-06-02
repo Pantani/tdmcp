@@ -4,9 +4,9 @@ import type { ToolContext, ToolRegistrar } from "../types.js";
 import { readNoteSafe, requireVault } from "./shared.js";
 import {
   LICENSE_TIERS,
+  type LicenseTier,
   licenseTierSchema,
   spdxIdSchema,
-  type LicenseTier,
 } from "./versionLibraryAsset.js";
 
 /**
