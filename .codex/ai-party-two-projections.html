@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI-Controlled Party - Two Projection Rehearsal</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #05070b;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #05070b;
+      color: #f7fbff;
+    }
+
+    body {
+      display: grid;
+      grid-template-rows: 1fr auto;
+    }
+
+    .stage {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 1px;
+      background: #151a24;
+    }
+
+    .screen {
+      position: relative;
+      min-width: 0;
+      overflow: hidden;
+      background: #05070b;
+      isolation: isolate;
+    }
+
+    canvas {
+      position: absolute;
+      inset: 0;
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .hud {
+      position: absolute;
+      z-index: 4;
+      left: 18px;
+      right: 18px;
+      top: 16px;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      font-size: 11px;
+      line-height: 1.2;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: rgba(247, 251, 255, .68);
+      pointer-events: none;
+    }
+
+    .hud strong {
+      color: #fff;
+      font-weight: 800;
+      letter-spacing: .12em;
+    }
+
+    .title {
+      position: absolute;
+      z-index: 4;
+      left: 20px;
+      right: 20px;
+      bottom: 18px;
+      max-width: calc(100% - 40px);
+      font-size: clamp(22px, 4vw, 60px);
+      line-height: .9;
+      letter-spacing: 0;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: #fff;
+      text-shadow: 0 0 28px rgba(0, 0, 0, .85);
+      overflow-wrap: anywhere;
+    }
+
+    .title span {
+      display: block;
+      margin-bottom: 9px;
+      font-size: 11px;
+      line-height: 1.15;
+      letter-spacing: .16em;
+      font-weight: 800;
+      color: rgba(247, 251, 255, .62);
+    }
+
+    .scan {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+      background:
+        linear-gradient(to bottom, rgba(255, 255, 255, .06) 1px, transparent 1px) 0 0 / 100% 7px,
+        radial-gradient(circle at 50% 42%, rgba(255, 255, 255, .1), transparent 46%),
+        linear-gradient(to top, rgba(0, 0, 0, .7), transparent 34%, rgba(0, 0, 0, .34));
+      mix-blend-mode: screen;
+      opacity: .58;
+    }
+
+    .controls {
+      min-height: 58px;
+      display: grid;
+      grid-template-columns: auto auto auto auto 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: rgba(8, 11, 17, .96);
+      border-top: 1px solid rgba(255, 255, 255, .09);
+    }
+
+    button {
+      height: 38px;
+      border: 1px solid rgba(255, 255, 255, .16);
+      border-radius: 6px;
+      padding: 0 13px;
+      background: #f5f7fb;
+      color: #05070b;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: transparent;
+      color: #f7fbff;
+    }
+
+    .status {
+      min-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      font-size: 13px;
+      color: rgba(247, 251, 255, .76);
+    }
+
+    .status b {
+      color: #fff;
+    }
+
+    .status .blocked {
+      color: #ff7676;
+    }
+
+    .meter {
+      width: 172px;
+      height: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, .2);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .05);
+    }
+
+    .meter i {
+      display: block;
+      width: 100%;
+      height: 100%;
+      transform-origin: left center;
+      transform: scaleX(.2);
+      background: linear-gradient(90deg, #24f7ff, #ff2a8a, #f8f35a);
+    }
+
+    @media (max-width: 900px) {
+      .stage {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+      }
+
+      .controls {
+        grid-template-columns: auto auto 1fr;
+      }
+
+      .meter,
+      .optional {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="stage" aria-label="Two simulated projection outputs">
+    <section class="screen">
+      <canvas id="a"></canvas>
+      <div class="scan"></div>
+      <div class="hud">
+        <strong>PROJECAO 01</strong>
+        <span id="hudA">geometry / rhythm</span>
+      </div>
+      <div class="title"><span>cue seguro</span><div id="titleA">doors_idle</div></div>
+    </section>
+    <section class="screen">
+      <canvas id="b"></canvas>
+      <div class="scan"></div>
+      <div class="hud">
+        <strong>PROJECAO 02</strong>
+        <span id="hudB">atmosphere / voice</span>
+      </div>
+      <div class="title"><span>AI show director</span><div id="titleB">rehearsal</div></div>
+    </section>
+  </main>
+
+  <footer class="controls">
+    <button id="mic">Mic</button>
+    <button id="next" class="secondary">Next cue</button>
+    <button id="drop" class="secondary optional">Drop</button>
+    <button id="safety" class="secondary optional">Safety</button>
+    <div id="status" class="status">Booting rehearsal surfaces.</div>
+    <div class="meter" aria-hidden="true"><i id="meter"></i></div>
+  </footer>
+
+  <script>
+    (() => {
+      const cues = [
+        {
+          cue: "doors_idle",
+          mood: "listening warmup",
+          text: "AI-CONTROLLED PARTY",
+          note: "Two simulated projector outputs. TouchDesigner bridge is offline; browser rehearsal is active.",
+          intensity: .34,
+          palette: ["#05070b", "#24f7ff", "#ff2a8a", "#f8f35a"],
+          blocked: ""
+        },
+        {
+          cue: "band_intro",
+          mood: "gold name-card pulse",
+          text: "BAND INTRO",
+          note: "Pre-approved visual cue selected. Fog would be queued, not fired.",
+          intensity: .54,
+          palette: ["#090705", "#ffd36a", "#39d8ff", "#f7fbff"],
+          blocked: ""
+        },
+        {
+          cue: "music_reactive_main",
+          mood: "cyan magenta kinetic",
+          text: "MUSIC REACTIVE CORE",
+          note: "Audio energy drives density locally; AI stays at phrase level.",
+          intensity: .76,
+          palette: ["#020715", "#24f7ff", "#ff2a8a", "#f8f35a"],
+          blocked: ""
+        },
+        {
+          cue: "audience_request",
+          mood: "red chaotic but bounded",
+          text: "MAKE IT RED AND CHAOTIC",
+          note: "Voice request mapped to palette and intensity only.",
+          intensity: .86,
+          palette: ["#090102", "#ff2a2a", "#f8f35a", "#ffffff"],
+          blocked: ""
+        },
+        {
+          cue: "safety_proof",
+          mood: "operator-only request blocked",
+          text: "LASER REQUEST BLOCKED",
+          note: "Hazardous hardware remains simulated and blocked.",
+          intensity: .42,
+          palette: ["#020305", "#ff4545", "#ffffff", "#171b22"],
+          blocked: "laser is operator-only"
+        },
+        {
+          cue: "panic_recovery_test",
+          mood: "safe blackout simulation",
+          text: "PANIC PATH TEST",
+          note: "Visual-only panic path. No hardware touched.",
+          intensity: .16,
+          palette: ["#020305", "#171b22", "#ffffff", "#ff4545"],
+          blocked: ""
+        }
+      ];
+
+      const canvasA = document.getElementById("a");
+      const canvasB = document.getElementById("b");
+      const ctxA = canvasA.getContext("2d");
+      const ctxB = canvasB.getContext("2d");
+      const titleA = document.getElementById("titleA");
+      const titleB = document.getElementById("titleB");
+      const hudA = document.getElementById("hudA");
+      const hudB = document.getElementById("hudB");
+      const status = document.getElementById("status");
+      const meter = document.getElementById("meter");
+      let active = 0;
+      let micOn = false;
+      let audioEnergy = 0;
+      let bass = 0;
+      let treble = 0;
+      let lastAuto = performance.now();
+      const startedAt = performance.now();
+
+      function resize() {
+        [canvasA, canvasB].forEach((canvas) => {
+          const rect = canvas.getBoundingClientRect();
+          const ratio = Math.min(window.devicePixelRatio || 1, 2);
+          canvas.width = Math.max(1, Math.floor(rect.width * ratio));
+          canvas.height = Math.max(1, Math.floor(rect.height * ratio));
+        });
+      }
+
+      window.addEventListener("resize", resize);
+      resize();
+
+      function hexToRgb(color) {
+        const value = parseInt(color.slice(1), 16);
+        return [value >> 16 & 255, value >> 8 & 255, value & 255];
+      }
+
+      function mix(a, b, p) {
+        const ar = hexToRgb(a);
+        const br = hexToRgb(b);
+        return "#" + ar.map((value, index) => {
+          const next = Math.round(value + (br[index] - value) * p);
+          return next.toString(16).padStart(2, "0");
+        }).join("");
+      }
+
+      function rgba(hex, alpha) {
+        const [r, g, b] = hexToRgb(hex);
+        return "rgba(" + r + "," + g + "," + b + "," + alpha + ")";
+      }
+
+      function setCue(index) {
+        active = ((index % cues.length) + cues.length) % cues.length;
+        const cue = cues[active];
+        titleA.textContent = cue.cue;
+        titleB.textContent = cue.text;
+        hudA.textContent = cue.mood + " / intensity " + cue.intensity.toFixed(2);
+        hudB.textContent = cue.blocked ? "blocked request / safe simulation" : "atmosphere / voice";
+        status.innerHTML = cue.blocked
+          ? "<b class=\"blocked\">BLOCKED:</b> " + cue.blocked + " - " + cue.note
+          : "<b>" + cue.cue + "</b> - " + cue.note;
+        lastAuto = performance.now();
+      }
+
+      window.partyNext = () => setCue(active + 1);
+      window.partyDrop = () => setCue(3);
+      window.partySafety = () => setCue(4);
+      document.getElementById("next").addEventListener("click", window.partyNext);
+      document.getElementById("drop").addEventListener("click", window.partyDrop);
+      document.getElementById("safety").addEventListener("click", window.partySafety);
+      setCue(0);
+
+      document.getElementById("mic").addEventListener("click", async () => {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const audioContext = new AudioContext();
+          const source = audioContext.createMediaStreamSource(stream);
+          const analyser = audioContext.createAnalyser();
+          const data = new Uint8Array(analyser.frequencyBinCount);
+          analyser.fftSize = 1024;
+          source.connect(analyser);
+          micOn = true;
+          document.getElementById("mic").textContent = "Mic on";
+
+          function readAudio() {
+            analyser.getByteFrequencyData(data);
+            let low = 0;
+            let high = 0;
+            let all = 0;
+            for (let i = 0; i < data.length; i += 1) {
+              all += data[i];
+              if (i < 44) low += data[i];
+              if (i > 180) high += data[i];
+            }
+            audioEnergy = Math.min(1, all / (data.length * 158));
+            bass = Math.min(1, low / (44 * 170));
+            treble = Math.min(1, high / ((data.length - 180) * 142));
+            requestAnimationFrame(readAudio);
+          }
+
+          readAudio();
+        } catch {
+          status.textContent = "Mic not enabled; synthetic show energy remains active.";
+        }
+      });
+
+      function energy(now) {
+        if (micOn) return Math.max(.08, audioEnergy);
+        const t = (now - startedAt) / 1000;
+        const pulse = Math.pow(.5 + .5 * Math.sin(t * 3.2), 5);
+        const wave = .5 + .5 * Math.sin(t * .74 + Math.sin(t * .19));
+        bass = pulse;
+        treble = .5 + .5 * Math.sin(t * 6.1);
+        return Math.min(1, .16 + pulse * .58 + wave * .24);
+      }
+
+      function fade(ctx, canvas, color, alpha) {
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.globalAlpha = 1;
+      }
+
+      function drawGeometry(now, e, cue) {
+        const w = canvasA.width;
+        const h = canvasA.height;
+        const p = cue.palette;
+        fade(ctxA, canvasA, p[0], cue.cue === "panic_recovery_test" ? .45 : .17);
+        const cx = w / 2;
+        const cy = h / 2;
+        const base = Math.min(w, h) * (.15 + e * .29 + cue.intensity * .12);
+
+        ctxA.save();
+        ctxA.translate(cx, cy);
+        ctxA.rotate(now * .00026 + bass * .9);
+        for (let ring = 0; ring < 5; ring += 1) {
+          const sides = 6 + ring * 2;
+          const radius = base * (1 + ring * .42);
+          ctxA.beginPath();
+          for (let i = 0; i <= sides; i += 1) {
+            const angle = i / sides * Math.PI * 2;
+            const wobble = Math.sin(angle * 3 + now * .002 + ring) * e * 34;
+            const x = Math.cos(angle) * (radius + wobble);
+            const y = Math.sin(angle) * (radius + wobble);
+            if (i === 0) ctxA.moveTo(x, y);
+            else ctxA.lineTo(x, y);
+          }
+          ctxA.globalAlpha = .72 - ring * .1;
+          ctxA.lineWidth = Math.max(2, h * .004 * (1 + e));
+          ctxA.strokeStyle = mix(p[(ring + 1) % p.length], "#ffffff", Math.min(.45, e * .35));
+          ctxA.stroke();
+        }
+
+        for (let i = 0; i < 96; i += 1) {
+          const angle = i / 96 * Math.PI * 2 + now * .0007;
+          const radius = base * (.66 + (i % 9) * .11 + e * .5);
+          ctxA.beginPath();
+          ctxA.moveTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+          ctxA.lineTo(Math.cos(angle) * (radius + 28 + e * 128), Math.sin(angle) * (radius + 28 + e * 128));
+          ctxA.globalAlpha = .18 + e * .48;
+          ctxA.lineWidth = 1 + e * 5;
+          ctxA.strokeStyle = p[i % p.length];
+          ctxA.stroke();
+        }
+        ctxA.restore();
+
+        ctxA.globalCompositeOperation = "screen";
+        for (let y = 0; y < h; y += Math.max(12, h / 38)) {
+          const offset = Math.sin(y * .012 + now * .003) * e * 70;
+          ctxA.fillStyle = p[Math.floor(y / 37) % p.length];
+          ctxA.globalAlpha = .018 + e * .045;
+          ctxA.fillRect(offset, y, w, Math.max(2, h * .006));
+        }
+        ctxA.globalCompositeOperation = "source-over";
+        ctxA.globalAlpha = 1;
+      }
+
+      function drawAtmosphere(now, e, cue) {
+        const w = canvasB.width;
+        const h = canvasB.height;
+        const p = cue.palette;
+        const grad = ctxB.createLinearGradient(0, 0, w, h);
+        grad.addColorStop(0, p[0]);
+        grad.addColorStop(.55, mix(p[1], "#000000", .72));
+        grad.addColorStop(1, mix(p[2], "#000000", .62));
+        fade(ctxB, canvasB, grad, cue.cue === "panic_recovery_test" ? .42 : .12);
+
+        ctxB.globalCompositeOperation = "screen";
+        for (let i = 0; i < 34; i += 1) {
+          const x = (Math.sin(now * .00023 + i * 1.77) * .5 + .5) * w;
+          const y = (Math.cos(now * .00031 + i * .91) * .5 + .5) * h;
+          const radius = (Math.sin(now * .001 + i) * .5 + .5) * (90 + e * 220) + 24;
+          const orb = ctxB.createRadialGradient(x, y, 0, x, y, radius);
+          orb.addColorStop(0, rgba(p[(i + 1) % p.length], .74));
+          orb.addColorStop(1, "rgba(0,0,0,0)");
+          ctxB.globalAlpha = .11 + e * .09;
+          ctxB.fillStyle = orb;
+          ctxB.beginPath();
+          ctxB.arc(x, y, radius, 0, Math.PI * 2);
+          ctxB.fill();
+        }
+
+        ctxB.globalCompositeOperation = "source-over";
+        const words = cue.text.toUpperCase().split(/\s+/).slice(0, 6);
+        ctxB.font = "900 " + Math.floor(Math.min(w, h) * (.092 + e * .038)) + "px Inter, system-ui, sans-serif";
+        ctxB.textAlign = "center";
+        ctxB.textBaseline = "middle";
+        words.forEach((word, index) => {
+          const y = h * .34 + (index - (words.length - 1) / 2) * Math.min(78, h * .105);
+          const x = w / 2 + Math.sin(now * .001 + index) * e * w * .055;
+          ctxB.globalAlpha = .14 + e * .4;
+          ctxB.fillStyle = index % 2 ? p[3] : "#ffffff";
+          ctxB.fillText(word, x + Math.sin(now * .003 + index) * 18, y);
+          ctxB.globalAlpha = .34 + e * .4;
+          ctxB.lineWidth = 1 + e * 3;
+          ctxB.strokeStyle = p[(index + 2) % p.length];
+          ctxB.strokeText(word, x, y);
+        });
+        ctxB.globalAlpha = 1;
+      }
+
+      function frame(now) {
+        const cue = cues[active];
+        if (now - lastAuto > 7600) setCue(active + 1);
+        const e = energy(now) * (.55 + cue.intensity * .75);
+        meter.style.transform = "scaleX(" + Math.min(1, e).toFixed(3) + ")";
+        drawGeometry(now, e, cue);
+        drawAtmosphere(now, e, cue);
+        requestAnimationFrame(frame);
+      }
+
+      requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>
