@@ -2039,6 +2039,130 @@ function bridgeHealthWatchdogFrame(t) {
   return buf;
 }
 
+function showDirectorPolicyFrame(t) {
+  const buf = baseFrame();
+  rect(buf, 30, 28, 420, 212, [14, 21, 34], 0.96);
+  rect(buf, 50, 50, 112, 154, [20, 30, 46], 0.94);
+  rect(buf, 184, 50, 112, 154, [20, 30, 46], 0.94);
+  rect(buf, 318, 50, 112, 154, [20, 30, 46], 0.94);
+  const phase = Math.floor((t * 1.45) % 3);
+  const colors = [
+    [57, 232, 190],
+    [255, 214, 86],
+    [255, 86, 134],
+  ];
+  for (let i = 0; i < 3; i++) {
+    const x = 50 + i * 134;
+    const active = i === phase;
+    rect(buf, x + 18, 72, 66, 6, [255, 255, 255], active ? 0.42 : 0.22);
+    rect(buf, x + 18, 94, 78, 5, colors[i], active ? 0.82 : 0.36);
+    rect(buf, x + 18, 116, 52, 5, [255, 255, 255], active ? 0.3 : 0.14);
+    if (i === 0) circle(buf, x + 56, 156, 18, colors[i], 0.3 + (active ? 0.24 : 0));
+    if (i === 1) {
+      rect(buf, x + 32, 142, 44, 24, colors[i], active ? 0.68 : 0.28);
+      rect(buf, x + 40, 172, 28, 5, [255, 255, 255], 0.22);
+    }
+    if (i === 2) {
+      line(buf, x + 34, 144, x + 78, 176, colors[i], active ? 0.8 : 0.35);
+      line(buf, x + 78, 144, x + 34, 176, colors[i], active ? 0.8 : 0.35);
+    }
+    if (active) glow(buf, x + 56, 126, 58, colors[i], 0.28);
+  }
+  const p = smoothstep(0.08, 0.86, (t * 0.7) % 1);
+  line(buf, 162, 126, 184, 126, [255, 255, 255], 0.18);
+  line(buf, 296, 126, 318, 126, [255, 255, 255], 0.18);
+  circle(buf, 72 + p * 336, 220, 5, colors[phase], 0.92);
+  rect(buf, 76, 218, 328, 5, [255, 255, 255], 0.13);
+  rect(buf, 76, 218, 328 * p, 5, colors[phase], 0.72);
+  return buf;
+}
+
+function nChannelDecksFrame(t) {
+  const buf = baseFrame();
+  const cut = Math.floor((t * 1.8) % 4);
+  for (let i = 0; i < 4; i++) {
+    const x = 36 + i * 104;
+    const active = i === cut;
+    rect(buf, x, 38, 82, 128, [18, 26, 40], 0.95);
+    for (let y = 0; y < 64; y++) {
+      const yy = 58 + y;
+      const c = hsv((i * 0.18 + y * 0.004 + t * 0.05) % 1, 0.72, active ? 0.9 : 0.55);
+      rect(buf, x + 12, yy, 58, 1, c, 0.72);
+    }
+    rect(buf, x + 14, 184, 10, -46 - Math.sin(t * 3 + i) * 16, [57, 232, 190], 0.7);
+    rect(buf, x + 36, 184, 10, -28 - Math.cos(t * 2.4 + i) * 14, [255, 214, 86], 0.64);
+    rect(buf, x + 58, 184, 10, -18 - Math.sin(t * 4 + i) * 9, [255, 86, 134], 0.58);
+    if (active) {
+      rect(buf, x - 4, 34, 90, 136, [255, 255, 255], 0.08);
+      glow(buf, x + 41, 98, 58, [255, 214, 86], 0.26);
+    }
+  }
+  const cross = Math.sin(t * 1.7) * 0.5 + 0.5;
+  rect(buf, 72, 214, 336, 7, [255, 255, 255], 0.14);
+  rect(buf, 72, 214, 336 * cross, 7, [57, 232, 190], 0.76);
+  circle(buf, 72 + 336 * cross, 217, 9, [255, 255, 255], 0.78);
+  rect(buf, 184, 236, 112, 7, [255, 86, 134], 0.54 + 0.18 * Math.sin(t * 5));
+  return buf;
+}
+
+function learningResourcesFrame(t) {
+  const buf = baseFrame();
+  const cx = 240;
+  const cy = 134;
+  circle(buf, cx, cy, 32, [57, 232, 190], 0.28 + 0.14 * Math.sin(t * 4));
+  const items = [
+    [76, 54, [57, 232, 190]],
+    [286, 44, [255, 214, 86]],
+    [56, 174, [255, 86, 134]],
+    [308, 178, [118, 75, 255]],
+    [194, 34, [88, 230, 164]],
+  ];
+  for (let i = 0; i < items.length; i++) {
+    const [x, y, color] = items[i];
+    const pulse = smoothstep(0.02, 0.45, (t * 0.48 + i * 0.17) % 1);
+    rect(buf, x, y, 112, 44, [16, 24, 38], 0.95);
+    rect(buf, x + 14, y + 12, 58, 5, [255, 255, 255], 0.25);
+    rect(buf, x + 14, y + 26, 74, 5, color, 0.68);
+    line(buf, x + 56, y + 22, cx, cy, [255, 255, 255], 0.1 + pulse * 0.16);
+    circle(buf, mix(x + 56, cx, pulse), mix(y + 22, cy, pulse), 4, color, 0.86);
+  }
+  rect(buf, 198, 128, 84, 8, [255, 255, 255], 0.22);
+  rect(buf, 208, 146, 64, 6, [57, 232, 190], 0.72);
+  return buf;
+}
+
+function cliCompletionDoctorFrame(t) {
+  const buf = baseFrame();
+  terminalPanel(buf, 30, 34, 194, 188, [255, 214, 86]);
+  terminalPanel(buf, 256, 34, 194, 188, [57, 232, 190]);
+  const cursor = Math.floor((t * 6) % 6);
+  for (let i = 0; i < 6; i++) {
+    const y = 70 + i * 22;
+    rect(buf, 54, y, 88 + (i % 2) * 24, 5, [255, 255, 255], cursor === i ? 0.48 : 0.22);
+    rect(buf, 158, y - 4, 34, 13, i % 2 ? [57, 232, 190] : [255, 214, 86], cursor === i ? 0.78 : 0.34);
+  }
+  const repaired = Math.sin(t * 1.4) > -0.25;
+  for (let i = 0; i < 4; i++) {
+    const y = 76 + i * 30;
+    rect(buf, 280, y, 74 + i * 14, 6, [255, 255, 255], 0.24);
+    circle(
+      buf,
+      404,
+      y + 2,
+      6,
+      i === 2 && !repaired ? [255, 86, 134] : [57, 232, 190],
+      0.86,
+    );
+  }
+  if (repaired) {
+    rect(buf, 296, 184, 86, 10, [57, 232, 190], 0.72);
+    glow(buf, 404, 138, 42, [57, 232, 190], 0.24);
+  } else {
+    rect(buf, 296, 184, 66, 10, [255, 86, 134], 0.62);
+  }
+  return buf;
+}
+
 const clips = [
   ["feedback-tunnel.mp4", feedbackTunnelFrame],
   ["reaction-diffusion.mp4", reactionDiffusionFrame],
@@ -2103,6 +2227,10 @@ const clips = [
   ["mcp-resource-catalog.mp4", mcpResourceCatalogFrame],
   ["watch-node-telemetry.mp4", watchNodeTelemetryFrame],
   ["bridge-health-watchdog.mp4", bridgeHealthWatchdogFrame],
+  ["show-director-policy-queue.mp4", showDirectorPolicyFrame],
+  ["nchannel-decks-fx-send.mp4", nChannelDecksFrame],
+  ["td-learning-resources.mp4", learningResourcesFrame],
+  ["cli-completion-doctor-fix.mp4", cliCompletionDoctorFrame],
 ];
 
 function writePpm(file, buf) {

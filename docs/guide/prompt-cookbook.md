@@ -305,6 +305,15 @@ source rather than a live webcam).*
 pulls a source TOP or a built-in test source — the visual equivalent of a DJ mixer,
 the core of any VJ rig.*
 
+> *"Build a four-deck VJ mixer: camera, loops, generative layer and logo sting, each
+> with gain and FX-send, plus a hard-cut selector for live transitions."*
+
+<video :src="withBase('/examples/nchannel-decks-fx-send.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_decks` now has an N-channel mode: 2-8 decks, per-deck gain, per-deck FX
+send, a continuous program mix and a transition-cut bus. Use the old A/B prompt for a
+simple crossfader; use `decks[]` when the rig starts feeling like a real VJ mixer.*
+
 > *"Put waveform, RGB parade and vectorscope next to this camera feed so I can tune
 > the grade before the show opens."*
 
@@ -456,6 +465,16 @@ scrubbable song-mode arranger.
 
 *A single live-performance cockpit served from TouchDesigner: cue launch, faders,
 readout and panic controls in one phone/laptop page. Keep it on a trusted network.*
+
+> *"Dry-run the AI show director: allow a pre-approved band intro cue, queue a
+> three-second fog request for operator approval, and block a blackout request."*
+
+<video :src="withBase('/examples/show-director-policy-queue.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`tdmcp-agent show-director` is a policy surface, not an unsafe hardware trigger. It
+validates structured show intents, returns allow / approval / block decisions, keeps
+an approval queue and audit log, and marks every action plan as dry-run-only until a
+human/operator path resolves it.*
 
 > *"Lock the show to incoming OSC timecode, follow the timeline frame-for-frame, and
 > jump to named cues if the timecode label says chorus or blackout."*
@@ -843,6 +862,16 @@ health report rather than a TOP preview.
 flags and command schemas. Good for agents that need to choose shell-safe commands
 without scraping help text.*
 
+> *"Install shell completion for `tdmcp`, then run `tdmcp-agent doctor --fix` so a
+> missing vault folder is created before rehearsal."*
+
+<video :src="withBase('/examples/cli-completion-doctor-fix.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*The primary binary now has `tdmcp completion <bash|zsh|fish>` alongside package
+manager shortcuts in `tdmcp --help`. On the agent side, `doctor --fix` can apply the
+first safe local repair: creating a missing configured vault directory, then rerunning
+the check and reporting what changed.*
+
 > *"Read this show plan from stdin, keep going after the first failed step, and
 > return the first non-zero status only after collecting every result."*
 
@@ -917,6 +946,16 @@ scriptable one-shot answers. The default model/tier/step budget can also come fr
 *The prompt catalog, recipe search and localized cookbook are MCP resources now,
 so agents can ground their next move in the same docs a human reads instead of
 remembering stale prompt names.*
+
+> *"Teach me enough TouchDesigner to build this patch: read the learning path,
+> cheatsheets and vetted GLSL snippets before deciding which operators to use."*
+
+<video :src="withBase('/examples/td-learning-resources.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Three new resources make agent teaching/building less guessy: `tdmcp://cheatsheets`
+for compact workflow reminders, `tdmcp://learning/touchdesigner` for a curated
+operator/tutorial path, and `tdmcp://glsl-snippets` for embedded license-clean shader
+starting points.*
 
 > *"Sample `/project1/out1` for two seconds with `watch_node`, include readable
 > parameters and CHOP channels, then inspect the slow node with

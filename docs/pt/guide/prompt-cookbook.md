@@ -317,6 +317,16 @@ sintética em vez de uma webcam ao vivo).*
 deck puxa uma fonte TOP ou uma fonte de teste embutida — o equivalente visual de uma
 mesa de DJ.*
 
+> *"Monte um mixer VJ de quatro decks: câmera, loops, camada generativa e vinheta de
+> logo, cada um com ganho e FX-send, mais um seletor de hard-cut para transições ao vivo."*
+
+<video :src="withBase('/examples/nchannel-decks-fx-send.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_decks` agora tem modo N-channel: 2-8 decks, ganho por deck, FX send por
+deck, mix contínuo de programa e um barramento de transition-cut. Use o prompt A/B
+antigo para crossfader simples; use `decks[]` quando o rig já estiver parecendo um
+mixer VJ de verdade.*
+
 > *"Coloque waveform, RGB parade e vectorscope ao lado deste feed de câmera para eu
 > ajustar a grade antes da abertura do show."*
 
@@ -469,6 +479,17 @@ por cima quando quiser um arranjador de música scrubbable.
 *Um cockpit único de performance servido pelo TouchDesigner: disparo de cues,
 faders, leitura ao vivo e controles de panic numa página para celular/laptop. Use
 apenas numa rede confiável.*
+
+> *"Rode um dry-run do AI show director: permita um cue de intro de banda
+> pré-aprovado, coloque um pedido de fog de três segundos na fila de aprovação do
+> operador, e bloqueie um pedido de blackout."*
+
+<video :src="withBase('/examples/show-director-policy-queue.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`tdmcp-agent show-director` é uma superfície de política, não um gatilho perigoso
+de hardware. Ele valida intents estruturadas de show, retorna decisões allow /
+approval / block, mantém fila de aprovação e audit log, e marca todo plano de ação
+como dry-run-only até um caminho humano/de operador resolver aquilo.*
 
 > *"Trave o show em timecode OSC de entrada, siga a timeline quadro a quadro e pule
 > para cues nomeados se o rótulo de timecode disser chorus ou blackout."*
@@ -860,6 +881,16 @@ mudança de configuração ou relatório de saúde em vez de preview TOP.
 e schemas de comandos. Bom para agentes que precisam escolher comandos seguros
 sem raspar texto de help.*
 
+> *"Instale shell completion para `tdmcp`, então rode `tdmcp-agent doctor --fix`
+> para criar uma pasta de vault ausente antes do ensaio."*
+
+<video :src="withBase('/examples/cli-completion-doctor-fix.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*O binário principal agora tem `tdmcp completion <bash|zsh|fish>` junto dos atalhos
+de package manager em `tdmcp --help`. No lado do agente, `doctor --fix` consegue
+aplicar o primeiro reparo local seguro: criar uma pasta de vault configurada que
+estava faltando, rodar o check de novo e relatar o que mudou.*
+
 > *"Leia este plano de show pelo stdin, continue depois do primeiro passo que
 > falhar, e só devolva o primeiro status não-zero depois de coletar todos os
 > resultados."*
@@ -936,6 +967,17 @@ também pode vir de `TDMCP_LLM_*`.*
 *O catálogo de prompts, a busca de recipes e o cookbook localizado agora são
 recursos MCP, então agentes podem fundamentar o próximo passo nos mesmos docs que
 um humano lê, em vez de lembrar nomes de prompt desatualizados.*
+
+> *"Me ensine TouchDesigner o bastante para montar este patch: leia o learning path,
+> cheatsheets e snippets GLSL verificados antes de decidir quais operadores usar."*
+
+<video :src="withBase('/examples/td-learning-resources.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Três recursos novos deixam ensino e build por agente menos baseados em chute:
+`tdmcp://cheatsheets` para lembretes compactos de workflow,
+`tdmcp://learning/touchdesigner` para um caminho curado de operadores/tutoriais, e
+`tdmcp://glsl-snippets` para pontos de partida de shader embutidos e com licença
+limpa.*
 
 > *"Amostre `/project1/out1` por dois segundos com `watch_node`, incluindo
 > parâmetros legíveis e canais CHOP, depois inspecione o node lento com
