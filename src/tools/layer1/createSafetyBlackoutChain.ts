@@ -237,7 +237,9 @@ export async function createSafetyBlackoutChainImpl(
       ].join("\n"),
     );
 
-    // Curve LUT: 32 samples baked into a Table DAT and read by the Lookup CHOP.
+    // Curve LUT: 32 samples baked into a Table DAT, converted to a CHOP via
+    // DAT-to-CHOP, and wired into the Lookup CHOP's SECOND input (the LUT input).
+    // The Lookup CHOP has no `dat` parameter on TD 099 — input 2 is the curve.
     const curveTable = await builder.add("tableDAT", "curveTable");
     const samples = buildCurveSamples(args.fade_curve);
     const recoveryGate =
@@ -248,17 +250,22 @@ export async function createSafetyBlackoutChainImpl(
       [
         `_t = op(${q(curveTable)})`,
         `_t.clear()`,
-        `_t.appendRow(["index", "lookup"])`,
-        ...samples.map(
-          (y, i) => `_t.appendRow([${(i / (samples.length - 1)).toFixed(6)}, ${y.toFixed(6)}])`,
-        ),
+        // Single-column "lookup" so DAT-to-CHOP produces one channel of N samples.
+        `_t.appendRow(["lookup"])`,
+        ...samples.map((y) => `_t.appendRow([${y.toFixed(6)}])`),
       ].join("\n"),
     );
 
-    const lookup = await builder.add("lookupCHOP", "curve", {
+    // DAT-to-CHOP converts the table column into a 1-channel CHOP whose N samples
+    // ARE the curve. Wired into Lookup CHOP input 2 as the lookup table.
+    const curveChop = await builder.add("dattoCHOP", "curveChop", {
       dat: curveTable,
+      firstrow: "names",
     });
-    await builder.connect(speed, lookup);
+
+    const lookup = await builder.add("lookupCHOP", "curve");
+    await builder.connect(speed, lookup, 0, 0);
+    await builder.connect(curveChop, lookup, 0, 1);
 
     // dimNull holds the canonical 0..1 fade channel ("dim"); bind_to_channel uses this.
     const dimNull = await builder.add("nullCHOP", "dimNull");

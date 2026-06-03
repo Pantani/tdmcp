@@ -50,7 +50,7 @@ export const createShowFailoverSchema = z.object({
   watch_errors: z.coerce
     .boolean()
     .default(true)
-    .describe("Also trip on primary cook errors (`num_errors > 0`), not just on stall."),
+    .describe("Also trip on primary cook errors (`errors > 0`), not just on stall."),
   status_overlay: z.coerce
     .boolean()
     .default(true)
@@ -93,7 +93,7 @@ def onValueChange(channel, sampleIndex, val, prev):
     for ch in info.chans():
         if ch.name == 'total_cooks':
             cooks = float(ch[0])
-        elif ch.name == 'num_errors':
+        elif ch.name == 'errors':
             errs = float(ch[0])
     state = fo.fetch('tdmcp_failover_state', {
         'last_cooks': cooks,
@@ -200,13 +200,20 @@ export async function createShowFailoverImpl(ctx: ToolContext, args: CreateShowF
     });
     await builder.connect(targetIndex, fade, 0, 0);
     // Optional Logic CHOP — documented in the spec; here it acts as a fallback
-    // health-latch readable from `status`. The watchdog DAT actually does the
-    // stall accounting (Logic CHOP's frame-quantised offdelay is too coarse).
+    // health-latch readable from `status`. The watchdog DAT does the precise
+    // stall accounting; the downstream Trigger CHOP provides the debounce
+    // window (Logic CHOP has no offdelay/ondelay parameter on TD 099).
     const stallDetect = await builder.add("logicCHOP", "stall_detect", {
       convert: "off",
-      offdelay: args.stall_ms / 1000,
     });
     await builder.connect(info, stallDetect, 0, 0);
+    // Trigger CHOP debounce: `release` holds the trip signal high for
+    // stall_ms after the Logic CHOP falls back to 0, smoothing out one-frame
+    // hiccups so the failover doesn't flap.
+    const stallDebounce = await builder.add("triggerCHOP", "stall_debounce", {
+      release: args.stall_ms / 1000,
+    });
+    await builder.connect(stallDetect, stallDebounce, 0, 0);
 
     // Status Null CHOP exposes channels for bind_to_channel.
     const status = await builder.add("nullCHOP", "status", {});
@@ -299,6 +306,7 @@ export async function createShowFailoverImpl(ctx: ToolContext, args: CreateShowF
         fade,
         target_index: targetIndex,
         stall_detect: stallDetect,
+        stall_debounce: stallDebounce,
         status_text: statusText,
         overlay,
         synthetic_primary: usingSyntheticPrimary,

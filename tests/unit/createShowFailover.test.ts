@@ -130,8 +130,12 @@ describe("create_show_failover", () => {
     // Info CHOP reads primary_in.
     expect(String(byName("info")?.parameters?.op)).toMatch(/\/primary_in$/);
 
-    // Logic CHOP offdelay = stall_ms/1000, Filter CHOP width = fade_ms/1000.
-    expect(byName("stall_detect")?.parameters?.offdelay).toBeCloseTo(0.5);
+    // Logic CHOP carries no offdelay on TD 099 — debounce is a downstream
+    // Trigger CHOP with `release` = stall_ms/1000. Filter CHOP smooths the
+    // Switch index over fade_ms/1000.
+    expect(byName("stall_detect")?.parameters?.offdelay).toBeUndefined();
+    expect(byName("stall_debounce")?.type).toBe("triggerCHOP");
+    expect(byName("stall_debounce")?.parameters?.release).toBeCloseTo(0.5);
     expect(byName("fade")?.parameters?.width).toBeCloseTo(0.25);
 
     // Watchdog DAT text has substituted placeholders & references total_cooks + num_errors.
@@ -142,7 +146,8 @@ describe("create_show_failover", () => {
     expect(wdScript).not.toContain("__WATCH_ERRORS__");
     expect(wdScript).toContain("500");
     expect(wdScript).toContain("total_cooks");
-    expect(wdScript).toContain("num_errors");
+    expect(wdScript).toContain("'errors'");
+    expect(wdScript).not.toContain("num_errors");
     expect(wdScript).toContain("False"); // sticky=false substituted
   });
 

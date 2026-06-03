@@ -99,7 +99,11 @@ describe("create_safety_blackout_chain", () => {
     expect(byName("target")?.type).toBe("logicCHOP");
     expect(byName("fadeSpeed")?.type).toBe("speedCHOP");
     expect(byName("curve")?.type).toBe("lookupCHOP");
+    // Lookup CHOP has no `dat` par on TD 099 — curve is fed via DAT-to-CHOP into input 2.
+    expect(byName("curve")?.parameters?.dat).toBeUndefined();
     expect(byName("curveTable")?.type).toBe("tableDAT");
+    expect(byName("curveChop")?.type).toBe("dattoCHOP");
+    expect(byName("curveChop")?.parameters).toMatchObject({ dat: "/project1/safety/curveTable" });
     expect(byName("dimNull")?.type).toBe("nullCHOP");
     expect(byName("dim")?.type).toBe("levelTOP");
     expect(byName("emergencyGate")?.type).toBe("levelTOP");
