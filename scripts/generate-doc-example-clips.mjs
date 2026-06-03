@@ -2508,6 +2508,447 @@ function cliCompletionDoctorFrame(t) {
   return buf;
 }
 
+function miniNode(buf, x, y, color, active = false) {
+  rect(buf, x, y, 44, 24, [16, 24, 38], 0.96);
+  rect(buf, x + 8, y + 8, 20, 4, [255, 255, 255], active ? 0.42 : 0.2);
+  rect(buf, x + 8, y + 16, 28, 4, color, active ? 0.82 : 0.42);
+  if (active) glow(buf, x + 22, y + 12, 34, color, 0.22);
+}
+
+function drawRecipeShell(buf, t, accent) {
+  rect(buf, 22, 24, 436, 220, [12, 18, 30], 0.96);
+  rect(buf, 42, 42, 118, 176, [238, 242, 247], 0.92);
+  for (let i = 0; i < 8; i++) {
+    const y = 62 + i * 17;
+    rect(buf, 58, y, 62 + ((i * 19) % 38), 4, [16, 24, 38], 0.34);
+    if (i === 2 || i === 5) rect(buf, 58, y, 72, 4, accent, 0.62);
+  }
+  rect(buf, 56, 190, 70, 8, accent, 0.6 + 0.14 * Math.sin(t * 4));
+  const nodes = [
+    [190, 58],
+    [276, 58],
+    [190, 124],
+    [276, 124],
+    [234, 188],
+  ];
+  const active = Math.floor((t * 2.2) % nodes.length);
+  for (let i = 0; i < nodes.length - 1; i++)
+    line(
+      buf,
+      nodes[i][0] + 44,
+      nodes[i][1] + 12,
+      nodes[i + 1][0],
+      nodes[i + 1][1] + 12,
+      [255, 255, 255],
+      0.14,
+    );
+  for (let i = 0; i < nodes.length; i++)
+    miniNode(buf, nodes[i][0], nodes[i][1], accent, i === active);
+}
+
+function drawRecipePreview(buf, kind, t, accent) {
+  rect(buf, 334, 56, 94, 126, [4, 7, 14], 0.92);
+  if (kind === "audio") {
+    for (let i = 0; i < 18; i++) {
+      const h = 18 + Math.abs(Math.sin(t * 5 + i * 0.72)) * 72;
+      rect(buf, 342 + i * 4, 172 - h, 3, h, hsv(i / 18, 0.72, 0.95), 0.82);
+    }
+    glow(buf, 382, 112, 58, accent, 0.22);
+  } else if (kind === "keyframe") {
+    const pts = [
+      [348, 150],
+      [366, 86],
+      [396, 114],
+      [418, 74],
+    ];
+    for (let i = 0; i < pts.length - 1; i++)
+      line(buf, pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], accent, 0.75);
+    const p = (t * 0.5) % 1;
+    const seg = Math.min(pts.length - 2, Math.floor(p * (pts.length - 1)));
+    const local = p * (pts.length - 1) - seg;
+    circle(
+      buf,
+      mix(pts[seg][0], pts[seg + 1][0], local),
+      mix(pts[seg][1], pts[seg + 1][1], local),
+      7,
+      [255, 255, 255],
+      0.86,
+    );
+  } else if (kind === "pose") {
+    const cx = 382 + Math.sin(t * 2) * 7;
+    const cy = 104;
+    const joints = [
+      [cx, cy - 34],
+      [cx, cy - 8],
+      [cx - 22, cy + 10],
+      [cx + 22, cy + 10],
+      [cx - 18, cy + 52],
+      [cx + 18, cy + 52],
+    ];
+    [
+      [0, 1],
+      [1, 2],
+      [1, 3],
+      [2, 4],
+      [3, 5],
+    ].forEach(([a, b]) => {
+      line(buf, joints[a][0], joints[a][1], joints[b][0], joints[b][1], accent, 0.82);
+    });
+    joints.forEach(([x, y]) => {
+      circle(buf, x, y, 5, [255, 255, 255], 0.7);
+    });
+  } else if (kind === "particles") {
+    for (let i = 0; i < 70; i++) {
+      const a = i * 2.399 + t * 1.7;
+      const r = 8 + i * 0.76;
+      circle(
+        buf,
+        382 + Math.cos(a) * r,
+        118 + Math.sin(a) * r * 0.62,
+        2,
+        hsv(i / 70 + t * 0.04, 0.72, 0.94),
+        0.72,
+      );
+    }
+  } else if (kind === "feedback") {
+    for (let i = 0; i < 9; i++) {
+      const r = 62 - i * 6 + ((t * 18) % 6);
+      circle(buf, 382, 118, r, i % 2 ? accent : [255, 255, 255], 0.07 + i * 0.012);
+    }
+  } else if (kind === "glsl" || kind === "synth") {
+    for (let y = 62; y < 174; y++) {
+      for (let x = 342; x < 422; x += 2) {
+        const u = (x - 342) / 80;
+        const v = (y - 62) / 112;
+        const wave = Math.sin(u * 14 + t * 4) + Math.sin(v * 15 - t * 3);
+        set(buf, x, y, mixColor([10, 12, 22], accent, 0.45 + 0.35 * wave), 0.65);
+        set(
+          buf,
+          x + 1,
+          y,
+          mixColor([10, 12, 22], [255, 86, 134], 0.35 + 0.25 * Math.sin(wave)),
+          0.5,
+        );
+      }
+    }
+  } else if (kind === "text" || kind === "textPath") {
+    const p = Math.sin(t * 3) * 0.5 + 0.5;
+    rect(buf, 352, 88, 60, 18, accent, 0.52 + p * 0.28);
+    rect(buf, 344, 120, 76, 8, [255, 255, 255], 0.18);
+    circle(
+      buf,
+      382 + Math.cos(t * 2.2) * 30,
+      132 + Math.sin(t * 2.2) * 20,
+      5,
+      [255, 214, 86],
+      0.86,
+    );
+    circle(buf, 382, 132, 34, accent, 0.05);
+  } else if (kind === "decks") {
+    for (let i = 0; i < 3; i++) {
+      const x = 344 + i * 26;
+      rect(buf, x, 78, 20, 72, hsv(i * 0.18 + t * 0.06, 0.72, 0.86), 0.64);
+      rect(buf, x + 4, 158, 12, 5, [255, 255, 255], 0.26);
+    }
+    rect(buf, 348, 168, 68, 5, [255, 255, 255], 0.16);
+    circle(buf, 348 + 68 * (Math.sin(t * 2) * 0.5 + 0.5), 170, 7, accent, 0.86);
+  } else if (kind === "depth") {
+    for (let y = 64; y < 174; y += 3) {
+      const bend = Math.sin(y * 0.08 + t * 4) * 10;
+      line(buf, 346 + bend, y, 420 - bend, y + Math.sin(t + y) * 3, hsv(y / 180, 0.58, 0.82), 0.66);
+    }
+  } else if (kind === "optical") {
+    for (let i = 0; i < 38; i++) {
+      const x = 346 + (i % 7) * 12;
+      const y = 70 + Math.floor(i / 7) * 18;
+      const dx = Math.cos(i + t * 4) * 8;
+      const dy = Math.sin(i * 0.7 + t * 4) * 5;
+      line(buf, x, y, x + dx, y + dy, accent, 0.66);
+      circle(buf, x + dx, y + dy, 2, [255, 255, 255], 0.7);
+    }
+  } else if (kind === "face") {
+    circle(buf, 382, 116, 42, [255, 255, 255], 0.08);
+    for (let i = 0; i < 42; i++) {
+      const a = (i / 42) * Math.PI * 2;
+      const x = 382 + Math.cos(a) * (24 + 10 * Math.sin(i));
+      const y = 116 + Math.sin(a) * 38;
+      circle(buf, x, y, 2, accent, 0.76);
+    }
+    line(buf, 362, 111, 402, 111, accent, 0.45);
+    line(buf, 370, 140, 394, 140, [255, 86, 134], 0.5);
+  } else if (kind === "timeline") {
+    for (let i = 0; i < 3; i++)
+      rect(
+        buf,
+        348 + i * 23,
+        88,
+        19,
+        66,
+        i === Math.floor((t * 1.6) % 3) ? accent : [255, 255, 255],
+        i === Math.floor((t * 1.6) % 3) ? 0.72 : 0.16,
+      );
+    const p = (t * 0.5) % 1;
+    line(buf, 348 + p * 66, 74, 348 + p * 66, 168, [255, 214, 86], 0.86);
+  } else if (kind === "scene3d") {
+    const rot = t * 1.3;
+    const pts = [
+      [-1, -1, -1],
+      [1, -1, -1],
+      [1, 1, -1],
+      [-1, 1, -1],
+      [-1, -1, 1],
+      [1, -1, 1],
+      [1, 1, 1],
+      [-1, 1, 1],
+    ].map(([x, y, z]) => projectPoint(x, y, z, rot, 28));
+    pts.forEach(([x, y]) => {
+      circle(buf, x + 142, y - 16, 3, accent, 0.8);
+    });
+    [
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [3, 0],
+      [4, 5],
+      [5, 6],
+      [6, 7],
+      [7, 4],
+      [0, 4],
+      [1, 5],
+      [2, 6],
+      [3, 7],
+    ].forEach(([a, b]) => {
+      line(buf, pts[a][0] + 142, pts[a][1] - 16, pts[b][0] + 142, pts[b][1] - 16, accent, 0.58);
+    });
+  }
+}
+
+function recipeStarterFrame(kind, accent = [57, 232, 190]) {
+  return (t) => {
+    const buf = baseFrame();
+    drawRecipeShell(buf, t, accent);
+    drawRecipePreview(buf, kind, t, accent);
+    return buf;
+  };
+}
+
+function transportRestCueFrame(t) {
+  const buf = baseFrame();
+  terminalPanel(buf, 30, 42, 174, 168, [57, 232, 190]);
+  rect(buf, 246, 42, 188, 168, [16, 24, 38], 0.95);
+  const p = (t * 0.52) % 1;
+  rect(buf, 268, 76, 138, 14, [57, 232, 190], 0.38);
+  rect(buf, 268, 112, 138, 14, [255, 214, 86], 0.26);
+  rect(buf, 268, 148, 138, 14, [255, 86, 134], 0.22);
+  line(buf, 268 + p * 138, 60, 268 + p * 138, 178, [255, 255, 255], 0.9);
+  circle(buf, 268 + p * 138, 60, 7, [255, 214, 86], 0.86);
+  for (let i = 0; i < 5; i++)
+    rect(buf, 58, 74 + i * 22, 74 + (i % 2) * 28, 5, [255, 255, 255], 0.2 + (i === 2 ? 0.24 : 0));
+  rect(buf, 70, 184, 70, 8, [57, 232, 190], 0.68);
+  return buf;
+}
+
+function scheduleInstallFrame(t) {
+  const buf = baseFrame();
+  rect(buf, 34, 32, 178, 190, [238, 242, 247], 0.93);
+  for (let i = 0; i < 5; i++) rect(buf, 58, 66 + i * 28, 116, 5, [16, 24, 38], 0.3);
+  const row = Math.floor((t * 1.8) % 5);
+  rect(buf, 48, 56 + row * 28, 146, 20, [57, 232, 190], 0.22);
+  rect(buf, 252, 48, 166, 138, [16, 24, 38], 0.94);
+  circle(buf, 336, 112, 44, [255, 214, 86], 0.12);
+  const hand = t * Math.PI * 2;
+  line(buf, 336, 112, 336 + Math.cos(hand) * 32, 112 + Math.sin(hand) * 32, [255, 214, 86], 0.9);
+  line(
+    buf,
+    336,
+    112,
+    336 + Math.cos(hand * 0.15) * 22,
+    112 + Math.sin(hand * 0.15) * 22,
+    [255, 255, 255],
+    0.65,
+  );
+  rect(buf, 278, 202, 112, 8, [57, 232, 190], 0.58);
+  return buf;
+}
+
+function macroRecorderFrame(t) {
+  const buf = baseFrame();
+  terminalPanel(buf, 28, 38, 148, 184, [255, 86, 134]);
+  rect(buf, 220, 38, 232, 184, [16, 24, 38], 0.95);
+  const step = Math.floor((t * 3) % 6);
+  for (let i = 0; i < 6; i++) {
+    const y = 66 + i * 24;
+    rect(buf, 248, y, 104 + (i % 3) * 20, 5, [255, 255, 255], 0.18 + (i <= step ? 0.18 : 0));
+    circle(buf, 400, y + 2, 5, i <= step ? [57, 232, 190] : [74, 88, 112], 0.85);
+  }
+  const pulse = Math.sin(t * 9) * 0.5 + 0.5;
+  circle(buf, 102, 78, 14, [255, 86, 134], 0.45 + pulse * 0.24);
+  rect(buf, 74, 152, 58, 8, [255, 214, 86], 0.62);
+  return buf;
+}
+
+function twoProjectorFrame(t) {
+  const buf = baseFrame();
+  rect(buf, 34, 50, 176, 110, [16, 24, 38], 0.96);
+  rect(buf, 270, 50, 176, 110, [16, 24, 38], 0.96);
+  for (let i = 0; i < 28; i++) {
+    circle(
+      buf,
+      122 + Math.cos(i + t) * 58,
+      105 + Math.sin(i * 1.7 + t) * 38,
+      2,
+      hsv(i / 28 + t * 0.04, 0.7, 0.95),
+      0.72,
+    );
+    rect(
+      buf,
+      304 + (i % 7) * 17,
+      80 + Math.floor(i / 7) * 18,
+      12,
+      4,
+      [255, 255, 255],
+      0.18 + (i % 5 === 0 ? 0.28 : 0),
+    );
+  }
+  const p = (t * 0.45) % 1;
+  rect(buf, 86, 202, 308, 7, [255, 255, 255], 0.14);
+  rect(buf, 86, 202, 308 * p, 7, [57, 232, 190], 0.72);
+  line(buf, 210, 105, 270, 105, [255, 214, 86], 0.28 + 0.18 * Math.sin(t * 5));
+  return buf;
+}
+
+function repairRollbackFrame(t) {
+  const buf = baseFrame();
+  rect(buf, 42, 44, 178, 166, [16, 24, 38], 0.96);
+  rect(buf, 262, 44, 176, 166, [16, 24, 38], 0.96);
+  const bad = Math.sin(t * 2.2) > 0.1;
+  for (let i = 0; i < 5; i++) {
+    miniNode(
+      buf,
+      68 + (i % 2) * 76,
+      68 + Math.floor(i / 2) * 46,
+      i === 3 && bad ? [255, 86, 134] : [57, 232, 190],
+      i === 3,
+    );
+    miniNode(buf, 288 + (i % 2) * 76, 68 + Math.floor(i / 2) * 46, [57, 232, 190], i < 3);
+  }
+  if (bad) {
+    line(buf, 226, 128, 256, 128, [255, 86, 134], 0.82);
+    line(buf, 256, 128, 244, 118, [255, 86, 134], 0.82);
+    line(buf, 256, 128, 244, 138, [255, 86, 134], 0.82);
+  } else {
+    line(buf, 226, 128, 256, 128, [57, 232, 190], 0.82);
+  }
+  rect(buf, 174, 226, 132, 8, bad ? [255, 86, 134] : [57, 232, 190], 0.7);
+  return buf;
+}
+
+function portableToxReadmeFrame(t) {
+  const buf = baseFrame();
+  rect(buf, 46, 48, 142, 150, [16, 24, 38], 0.96);
+  rect(buf, 86, 88, 62, 50, [57, 232, 190], 0.34 + 0.12 * Math.sin(t * 4));
+  rect(buf, 242, 42, 164, 176, [238, 242, 247], 0.94);
+  for (let i = 0; i < 9; i++) rect(buf, 264, 66 + i * 16, 70 + (i % 4) * 16, 4, [16, 24, 38], 0.3);
+  rect(buf, 270, 190, 84, 8, [255, 214, 86], 0.58);
+  const p = (t * 0.6) % 1;
+  line(buf, 188, 122, 242, 122, [255, 255, 255], 0.2);
+  circle(buf, 188 + 54 * p, 122, 5, [255, 214, 86], 0.88);
+  return buf;
+}
+
+function layerStackFrame(t) {
+  const buf = baseFrame();
+  for (let i = 0; i < 5; i++) {
+    const x = 116 + i * 32;
+    const y = 72 + i * 20;
+    rect(buf, x, y, 172, 58, hsv(0.08 + i * 0.12 + t * 0.03, 0.7, 0.82), 0.22 + i * 0.08);
+    rect(buf, x + 14, y + 12, 78, 5, [255, 255, 255], 0.22);
+    circle(
+      buf,
+      x + 140,
+      y + 20,
+      8,
+      i === Math.floor((t * 1.7) % 5) ? [255, 214, 86] : [74, 88, 112],
+      0.8,
+    );
+  }
+  rect(buf, 78, 214, 324, 6, [255, 255, 255], 0.14);
+  circle(buf, 78 + 324 * (Math.sin(t * 2) * 0.5 + 0.5), 217, 8, [57, 232, 190], 0.85);
+  return buf;
+}
+
+function dataFeedFrame(t) {
+  const buf = baseFrame();
+  terminalPanel(buf, 30, 42, 172, 168, [57, 232, 190]);
+  rect(buf, 248, 48, 178, 140, [16, 24, 38], 0.94);
+  let lastX = 262;
+  let lastY = 140;
+  for (let i = 1; i < 48; i++) {
+    const x = 262 + i * 3;
+    const y = 118 + Math.sin(i * 0.35 + t * 5) * 34 + Math.sin(i * 0.91) * 12;
+    line(buf, lastX, lastY, x, y, [57, 232, 190], 0.7);
+    lastX = x;
+    lastY = y;
+  }
+  rect(buf, 280, 206, 84, 8, [255, 214, 86], 0.56 + 0.16 * Math.sin(t * 6));
+  return buf;
+}
+
+function tableBarsFrame(t) {
+  const buf = baseFrame();
+  rect(buf, 44, 44, 152, 166, [238, 242, 247], 0.92);
+  for (let i = 0; i < 6; i++) {
+    rect(buf, 62, 70 + i * 20, 42, 4, [16, 24, 38], 0.28);
+    rect(buf, 124, 70 + i * 20, 44, 4, [16, 24, 38], 0.22);
+  }
+  const baseY = 196;
+  for (let i = 0; i < 7; i++) {
+    const h = 28 + Math.abs(Math.sin(t * 2 + i)) * 88;
+    const x = 246 + i * 24;
+    rect(buf, x, baseY - h, 16, h, hsv(i / 7, 0.62, 0.9), 0.72);
+    rect(buf, x - 2, baseY + 4, 20, 4, [255, 255, 255], 0.18);
+  }
+  return buf;
+}
+
+function replicatorCardsFrame(t) {
+  const buf = baseFrame();
+  rect(buf, 42, 44, 112, 170, [238, 242, 247], 0.92);
+  for (let i = 0; i < 5; i++) rect(buf, 62, 70 + i * 24, 62 + (i % 2) * 16, 5, [16, 24, 38], 0.28);
+  for (let i = 0; i < 6; i++) {
+    const x = 214 + (i % 3) * 70;
+    const y = 62 + Math.floor(i / 3) * 76 + Math.sin(t * 2 + i) * 3;
+    rect(buf, x, y, 54, 52, [16, 24, 38], 0.94);
+    circle(buf, x + 27, y + 21, 11, hsv(i / 6 + t * 0.04, 0.62, 0.92), 0.72);
+    rect(buf, x + 12, y + 40, 30, 4, [255, 255, 255], 0.22);
+  }
+  return buf;
+}
+
+function inlinePreviewThumbnailFrame(t) {
+  const buf = baseFrame();
+  rect(buf, 34, 38, 198, 178, [16, 24, 38], 0.95);
+  for (let y = 60; y < 182; y++) {
+    for (let x = 56; x < 210; x += 2) {
+      const u = (x - 56) / 154;
+      const v = (y - 60) / 122;
+      const c = hsv(
+        0.55 + 0.16 * Math.sin(u * 8 + t * 3),
+        0.66,
+        0.25 + 0.65 * smoothstep(0.72, 0.08, Math.hypot(u - 0.5, v - 0.5)),
+      );
+      set(buf, x, y, c, 0.86);
+      set(buf, x + 1, y, c, 0.86);
+    }
+  }
+  rect(buf, 268, 50, 154, 154, [238, 242, 247], 0.92);
+  for (let i = 0; i < 7; i++) rect(buf, 292, 76 + i * 18, 70 + (i % 3) * 18, 5, [16, 24, 38], 0.3);
+  const scan = (t * 0.8) % 1;
+  line(buf, 56, 60 + scan * 122, 210, 60 + scan * 122, [255, 255, 255], 0.38);
+  rect(buf, 292, 182, 82, 8, [57, 232, 190], 0.66);
+  return buf;
+}
+
 const clips = [
   ["feedback-tunnel.mp4", feedbackTunnelFrame],
   ["reaction-diffusion.mp4", reactionDiffusionFrame],
@@ -2588,6 +3029,33 @@ const clips = [
   ["nchannel-decks-fx-send.mp4", nChannelDecksFrame],
   ["td-learning-resources.mp4", learningResourcesFrame],
   ["cli-completion-doctor-fix.mp4", cliCompletionDoctorFrame],
+  ["recipe-audio-reactive-basic.mp4", recipeStarterFrame("audio", [57, 232, 190])],
+  ["recipe-keyframe-animation-basic.mp4", recipeStarterFrame("keyframe", [255, 214, 86])],
+  ["recipe-pose-skeleton-standalone.mp4", recipeStarterFrame("pose", [118, 75, 255])],
+  ["recipe-particle-system-basic.mp4", recipeStarterFrame("particles", [255, 86, 134])],
+  ["recipe-feedback-network-basic.mp4", recipeStarterFrame("feedback", [57, 232, 190])],
+  ["recipe-glsl-shader-basic.mp4", recipeStarterFrame("glsl", [255, 86, 134])],
+  ["recipe-kinetic-text-audio-reactive.mp4", recipeStarterFrame("audio", [255, 214, 86])],
+  ["recipe-decks-layer-mixer.mp4", recipeStarterFrame("decks", [57, 232, 190])],
+  ["recipe-depth-displacement-post.mp4", recipeStarterFrame("depth", [118, 75, 255])],
+  ["recipe-kinetic-text-path-follow.mp4", recipeStarterFrame("textPath", [255, 214, 86])],
+  ["recipe-optical-flow-particles.mp4", recipeStarterFrame("optical", [57, 232, 190])],
+  ["recipe-mediapipe-face-overlay.mp4", recipeStarterFrame("face", [255, 86, 134])],
+  ["recipe-scene-timeline-demo.mp4", recipeStarterFrame("timeline", [255, 214, 86])],
+  ["recipe-scene-3d-basic.mp4", recipeStarterFrame("scene3d", [57, 232, 190])],
+  ["recipe-video-synth-oscillator.mp4", recipeStarterFrame("synth", [118, 75, 255])],
+  ["recipe-kinetic-text-standalone.mp4", recipeStarterFrame("text", [255, 86, 134])],
+  ["transport-rest-cue.mp4", transportRestCueFrame],
+  ["schedule-lobby-install.mp4", scheduleInstallFrame],
+  ["macro-recorder-soundcheck.mp4", macroRecorderFrame],
+  ["ai-party-two-projector-rehearsal.mp4", twoProjectorFrame],
+  ["repair-network-rollback.mp4", repairRollbackFrame],
+  ["portable-tox-readme-package.mp4", portableToxReadmeFrame],
+  ["layer-stack-mute-solo.mp4", layerStackFrame],
+  ["live-data-btc-feed.mp4", dataFeedFrame],
+  ["table-3d-bars.mp4", tableBarsFrame],
+  ["replicator-table-cards.mp4", replicatorCardsFrame],
+  ["inline-preview-thumbnail.mp4", inlinePreviewThumbnailFrame],
 ];
 
 function writePpm(file, buf) {

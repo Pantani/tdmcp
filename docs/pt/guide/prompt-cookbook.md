@@ -19,6 +19,144 @@ azul-profundo" funciona melhor do que nomear operadores. A IA escolhe os
 operadores.
 :::
 
+## Starters de receita (v0.8.2)
+
+Use estes quando quiser começar por uma receita first-party validada e só depois
+pedir uma passada criativa. São bons para workshop e ensaio porque partem de redes
+checadas por schema, não de topologia inventada do zero.
+
+> *"Aplique `audio_reactive_basic`, use um tom de teste se o mic não estiver
+> disponível, então ligue a cor de saída ao nível RMS e me mostre o caminho do Null
+> de áudio."*
+
+<video :src="withBase('/examples/recipe-audio-reactive-basic.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Uma cadeia compacta de audio-in / spectrum / RMS com Null CHOP estável e saída TOP
+pronta para `bind_to_channel` ou expressões manuais.*
+
+> *"Aplique `keyframe_animation_basic`, adicione cinco keyframes legíveis de câmera
+> ou objeto e exponha um controle Speed para eu ensaiar o movimento sem abrir o
+> grafo."*
+
+<video :src="withBase('/examples/recipe-keyframe-animation-basic.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*O starter com Animation COMP coloca movimento declarativo primeiro: você autoria os
+canais no Animation Editor do TD e usa o CHOP resultante para guiar o look.*
+
+> *"Aplique `pose_skeleton_standalone` com a tabela interna de landmarks, renderize
+> juntas como pontos brilhantes e ossos, e deixe notas para trocar por uma fonte de
+> pose ao vivo depois."*
+
+<video :src="withBase('/examples/recipe-pose-skeleton-standalone.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Um renderizador de pose sem câmera: landmarks estáticos alimentam um skeleton em
+Script SOP, útil para testar o look antes de existir fonte MediaPipe ou Kinect.*
+
+> *"Aplique `particle_system_basic`, faça o emissor subir como cinza e exponha
+> BirthRate, Lifetime e ForceY como os primeiros controles performáveis."*
+
+<video :src="withBase('/examples/recipe-particle-system-basic.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Um starter com Particle SOP, câmera, luz, material point-sprite e Null de saída.
+Simples para ensinar, completo o bastante para tocar ao vivo.*
+
+> *"Aplique `feedback_network_basic`, ajuste blur e decay para virar um túnel
+> recursivo de alto contraste e mantenha a rede mínima para eu aprender o loop."*
+
+<video :src="withBase('/examples/recipe-feedback-network-basic.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Seed de noise, composite feedback, blur, level decay e Null de saída: a menor rede
+de feedback performável que ainda se comporta como instrumento visual.*
+
+> *"Aplique `glsl_shader_basic`, deixe o plasma inline editável e exponha uTime,
+> uScale, uColorA e uColorB para eu combinar com a paleta do show."*
+
+<video :src="withBase('/examples/recipe-glsl-shader-basic.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Uma receita minúscula de GLSL TOP para trabalho shader-first. Ela cai como rede
+válida e mantém o source perto para ensino ou remix rápido.*
+
+> *"Aplique `kinetic_text_audio_reactive`, escreva uma palavra gigante de cue e
+> depois ligue a expressão de brightness ao canal de grave do analyze."*
+
+<video :src="withBase('/examples/recipe-kinetic-text-audio-reactive.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Text TOP com cadeia transform / level ao lado de um analisador de grave. A receita
+deixa a expressão de áudio manual explícita em vez de escondê-la em dados inválidos.*
+
+> *"Aplique `decks_layer_mixer`, deixe os decks A e B com cores claramente
+> diferentes, então adicione uma nota de Cross e gain por deck para o VJ."*
+
+<video :src="withBase('/examples/recipe-decks-layer-mixer.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*A receita de decks first-party é um esqueleto pequeno de mixer: duas fontes, dois
+gains, um bus composite e uma saída program estável.*
+
+> *"Aplique `depth_displacement_post`, use o depth map sintético para deformar um
+> ramp, então finalize com blur e level grade para parecer um post pass real."*
+
+<video :src="withBase('/examples/recipe-depth-displacement-post.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Uma pilha depth/displace/post sem hardware, boa para ensaiar looks de profundidade
+antes de existir câmera depth ou mapa gerado.*
+
+> *"Aplique `kinetic_text_path_follow`, coloque o título do show num caminho circular
+> e me diga exatamente quais expressões preciso ligar depois do import."*
+
+<video :src="withBase('/examples/recipe-kinetic-text-path-follow.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Um template de ligação manual para tipo seguindo caminho: CHOPs sin/cos
+determinísticos guiam o movimento enquanto a receita continua válida no schema.*
+
+> *"Aplique `optical_flow_particles`, roteie o movimento da câmera para o drift das
+> partículas e deixe a saída pronta para um feedback de trails."*
+
+<video :src="withBase('/examples/recipe-optical-flow-particles.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Vídeo ao vivo vira campo de optical-flow e empurra partículas. É a receita
+camera-reactive para usar quando o movimento do corpo deve deixar rastros visíveis.*
+
+> *"Aplique `mediapipe_face_overlay`, escureça a webcam por baixo, tinja os pontos de
+> landmark e deixe o overlay fácil de trocar do demo para o adaptador de face ao
+> vivo."*
+
+<video :src="withBase('/examples/recipe-mediapipe-face-overlay.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Uma receita de face overlay que espelha o setup novo de face tracking: webcam,
+CHOP de landmarks, dots instanciados, render e composite.*
+
+> *"Aplique `scene_timeline_demo`, monte três cenas óbvias e exponha play, rate e
+> fade para eu demonstrar timing de cue em um minuto."*
+
+<video :src="withBase('/examples/recipe-scene-timeline-demo.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Um demo de três cenas guiado por timer que ensina raciocínio de show-clock sem
+exigir um setlist runner completo.*
+
+> *"Aplique `scene_3d_basic`, coloque uma esfera sob câmera e luz, então ligue
+> RotateY a uma rampa de tempo depois do import."*
+
+<video :src="withBase('/examples/recipe-scene-3d-basic.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*A menor cena 3D renderizável: geometria, câmera, luz, Render TOP e Null. Boa base
+para exercícios de material, instancing e audio-reactive.*
+
+> *"Aplique `video_synth_oscillator`, faça um synth de cor com oscilador Lissajous e
+> mantenha uFreqX / uFreqY / uColor expostos para ajuste ao vivo."*
+
+<video :src="withBase('/examples/recipe-video-synth-oscillator.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Um starter de video synth procedural, sem filmagem: um GLSL TOP desenha uma curva
+de oscilador brilhante com controles seguros para show.*
+
+> *"Aplique `kinetic_text_standalone`, faça a palavra respirar com LFO e deixe os
+> bindings pós-import documentados para um iniciante terminar."*
+
+<video :src="withBase('/examples/recipe-kinetic-text-standalone.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Uma receita de kinetic type sem áudio para title cards, contagens regressivas e
+labels de cue quando audio-reactivity ainda não é necessária.*
+
 ## Generativo & abstrato
 
 > *"Crie um túnel de feedback a partir de ruído com blur e displace, adicione bloom
@@ -632,12 +770,16 @@ de play, pause, seek, rate e cue.*
 > *"Agende a instalação do lobby: iniciar a cena ocean todo dia útil às 09:00,
 > trocar para o set dusk às 18:00 e rodar um dry-run do agendamento primeiro."*
 
+<video :src="withBase('/examples/schedule-lobby-install.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
 *`tdmcp-agent schedule` é o companheiro cron-lite para instalações sem operador. Ele
 usa agendamento por relógio de parede com timezone, pode fazer dry-run e pode disparar
 comandos, cues ou setlists.*
 
 > *"Grave as próximas chamadas MCP como uma macro chamada soundcheck, então rode de
 > novo na segunda máquina depois que a rede do palco estiver online."*
+
+<video :src="withBase('/examples/macro-recorder-soundcheck.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *Use `macro_recorder` para capturar uma macro JSON portátil e `run_macro_script` para
 reproduzi-la depois. O lado CLI também consegue fazer fanout de um comando para
@@ -646,6 +788,7 @@ vários agentes remotos quando várias máquinas TD precisam do mesmo setup.*
 > *"Planeja um set de 20 minutos atravessando minhas três cenas em modo dry-run —
 > me mostra o que o diretor de IA vai fazer antes de tocar em qualquer coisa."*
 
+<video :src="withBase('/examples/show-director-policy-queue.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *A camada de política do AI Show Director avalia cada chamada de ferramenta de
 show em modo dry-run e devolve a ação planejada + justificativa (qual cena, qual
@@ -655,6 +798,7 @@ encostar na bridge. Aprove, edite ou rejeite antes do show rodar.*
 > *"Me dá um dashboard de FOH com VU estéreo, BPM ao vivo do meu detector de tempo,
 > overlay de FPS, faixa da próxima cue e uma barra PANIC fixa."*
 
+<video :src="withBase('/examples/stage-dashboard-v2.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`layout:"v2"` adiciona um par VU estéreo, leitura de BPM alimentada por um Null
 CHOP de `detect_tempo`, overlay de FPS / cook-time / frame, faixa de timeline de
@@ -664,6 +808,7 @@ confirmação — sem quebrar o dashboard v1 byte por byte.*
 > *"Pula minha timeline pra cue do refrão, coloca rate 1.25 e dá play — pelo
 > caminho REST rápido, não por exec de Python."*
 
+<video :src="withBase('/examples/transport-rest-cue.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *O novo endpoint `POST /api/transport` lida com play / pause / seek / cue / rate
 sem `executePythonScript`. A ferramenta prefere o endpoint via `tryEndpoint` e cai
@@ -719,6 +864,7 @@ waveform-monitor de verdade, atualizando ao vivo com o seu programa.*
 > *"Monta um ensaio com dois projetores pra AI-Controlled Party — uma parede pro
 > visual principal, outra pras letras — e sincroniza ambos na mesma cue list."*
 
+<video :src="withBase('/examples/ai-party-two-projector-rehearsal.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *Dois `outTOP`s conectados a dois displays físicos via `setup_output`,
 compartilhando um único clock de `compose_cue_list` pra que o overlay de letra vire
@@ -797,6 +943,8 @@ e devolve parâmetros descartados/falhas explicitamente.*
 
 > *"Tenta consertar essa cadeia de render quebrada — mas se a contagem de erros
 > aumentar, desfaça toda mudança que você fez."*
+
+<video :src="withBase('/examples/repair-network-rollback.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *O loop de repair agora tira snapshot de `(par.path, par.mode)` e `(op.path,
 op.bypass, op.display)` antes de cada passo. Se `errors_after >= errors_before` e
@@ -895,6 +1043,7 @@ CI.*
 > *"Exporta este SOP generativo como SVG plano de polilinhas pra eu plotar no meu
 > AxiDraw."*
 
+<video :src="withBase('/examples/sop-to-svg-plotter.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *Lê as primitivas SOP pela bridge e emite um SVG de elementos `<polyline>` com
 viewBox auto-fit e stroke / fill / scale / flip_y configuráveis. A ponte do mundo
@@ -903,6 +1052,7 @@ da tela para canetas plotter, lasers e impressão.*
 > *"Empacota este componente como um .tox portátil com um README de verdade
 > documentando custom params, entradas, saídas e arquivos externos."*
 
+<video :src="withBase('/examples/portable-tox-readme-package.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`make_portable_tox` agora escreve um `README.md` do pacote por padrão junto do
 `.tox` e do `tdmcp-component.json` — inventário de nós, parâmetros customizados,
@@ -912,6 +1062,7 @@ outra pessoa e dá pra ler antes de abrir.*
 > *"Gera um README pra este componente com um flowchart Mermaid embutido do grafo
 > de operadores e limita o inventário aos 50 nós mais importantes."*
 
+<video :src="withBase('/examples/readme-mermaid-docs.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`include_mermaid:true` embute um flowchart Mermaid do grafo de operadores na seção
 "Data flow", e `max_nodes` trunca o inventário de filhos com um rodapé de uma linha
@@ -1069,6 +1220,8 @@ wipe entre duas fontes no meio do show.*
 > *"Empilhe quatro camadas com modos de mistura e opacidade, cada uma com mute e
 > solo, para eu mixar um look na hora."*
 
+<video :src="withBase('/examples/layer-stack-mute-solo.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
 *Um compositor de N camadas com modo de mistura + opacidade + mute/solo por camada e
 uma faixa de controle gerada — uma pilha de camadas estilo Photoshop/After Effects
 que você pode tocar.*
@@ -1088,6 +1241,8 @@ antigo continua compatível.*
 > *"Puxe o preço do BTC ao vivo de uma API web e controle a cor e a velocidade do
 > visual pela rapidez com que ele se move."*
 
+<video :src="withBase('/examples/live-data-btc-feed.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
 *O create_data_source puxa um feed JSON/web ao vivo para canais CHOP; o
 create_data_reactive mapeia esses canais nos parâmetros de um visual com remapeamento
 de faixa por mapeamento — a contraparte de dados da reatividade ao áudio.*
@@ -1106,12 +1261,16 @@ de build.*
 > *"Transforme esta planilha de vendas mensais em barras 3D animadas que crescem, com
 > rótulos de valor."*
 
+<video :src="withBase('/examples/table-3d-bars.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
 *Uma rede de visualização orientada a dados (barras/gráfico a partir de uma tabela)
 com um botão de Escala e uma entrada animada — um infográfico em tempo real e
 tocável, não um gráfico estático.*
 
 > *"Clone este cartãozinho uma vez por linha da minha tabela, cada um com o nome
 > daquela linha."*
+
+<video :src="withBase('/examples/replicator-table-cards.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *Um Replicator COMP que clona um COMP de template por linha de um Table DAT,
 parametrizando cada clone a partir da sua linha — instanciamento orientado a dados de
@@ -1290,6 +1449,8 @@ ligado?".*
 > *"Observa este analyze CHOP por cinco segundos e me diz o min/max real pra eu
 > saber como escalar meu visual."*
 
+<video :src="withBase('/examples/watch-node-telemetry.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
 *Amostra read-only de janela curta de um único operador: estado de runtime, valores
 de parâmetros e samples de canal CHOP sobre uma janela — perfeito pra
 diagnosticar "o que esse troço está realmente emitindo agora?" sem congelar a
@@ -1299,6 +1460,7 @@ em cinco segundos de telemetria.*
 > *"Fica de olho no repo — se eu editar qualquer coisa em td/, recompila o Python
 > e recarrega a bridge dentro do TouchDesigner pra eu não precisar reiniciar."*
 
+<video :src="withBase('/examples/watch-build-hot-reload.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`tdmcp-agent watch-build` agora trata edições em `td/*.py` como mudanças de
 runtime da bridge: `py_compile` roda nos arquivos alterados, depois `reload_bridge`
@@ -1309,6 +1471,7 @@ a única coisa que exige reiniciar o TD pra atualizar.*
 > *"Roda um doctor --fix completo — cria a pasta do vault que falta, escreve um
 > bridge token no .env e auto-instala a bridge pelo Textport do TouchDesigner."*
 
+<video :src="withBase('/examples/cli-completion-doctor-fix.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`tdmcp-agent doctor --fix` agora cria um caminho de vault configurado que esteja
 faltando, faz scaffold do diretório de perfil padrão, escreve um
@@ -1319,6 +1482,7 @@ comando, setup funcional, com a bridge se instalando pelo console do próprio TD
 > *"Me dá Tab-completion pro tdmcp no zsh — todo subcomando e atalho de pacote
 > deve autocompletar."*
 
+<video :src="withBase('/examples/cli-completion-doctor-fix.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`tdmcp completion zsh` (ou bash / fish) imprime um snippet estático de completion
 cobrindo o binário primário mais `search` / `list` / `info` / `install` /
