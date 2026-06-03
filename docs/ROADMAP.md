@@ -10,13 +10,11 @@ can build real visual systems from plain language — no node-wiring by hand. Th
 page is the honest, bird's-eye picture of **what already works, what's still
 rough, and what's coming next** on the way to a stable 1.0.
 
-**Where things stand today.** The latest public release is **v0.8.2** (the
-stabilization patch on top of v0.8.1, 279 tools at tag time). The working branch
-since then has staged a **Wave 12** line under `[Unreleased]` in CHANGELOG — a
+**Where things stand today.** The latest public release is **v0.8.3** — a
 live-show resilience + LLM token budget + CLI-ergonomics wave that brings the
-tool surface to **286** and adds two new first-class bridge REST endpoints and
-two new CLIs (`tdmcp init`, `tdmcp ask`); see
-[Wave 12 — Unreleased](#wave-12-unreleased) below. v0.8.2 itself shipped four
+tool surface from 279 → **286** and adds two new first-class bridge REST
+endpoints and two new CLIs (`tdmcp init`, `tdmcp ask`); see
+[Wave 12 — v0.8.3](#wave-12-v0-8-3) below. v0.8.2 itself shipped four
 new bridge REST endpoints, seven REST-first tool promotions, the `bridge_watch_build` hot
 reload, a +16 recipe expansion (now 31 first-party recipes), the tool API
 contract reference page, and a coverage push that bumped `functions: 80 → 82`
@@ -70,12 +68,12 @@ The project has grown through five arcs:
 
 ## ✅ Current Release Line
 
-### Wave 12 — Unreleased (live-show resilience + LLM token budget + CLI ergonomics) {#wave-12-unreleased}
+### Wave 12 — v0.8.3 (live-show resilience + LLM token budget + CLI ergonomics) {#wave-12-v0-8-3}
 
-Staged under `[Unreleased]` in CHANGELOG, on top of v0.8.2. Tool surface grows
+Shipped as **v0.8.3** on top of v0.8.2. Tool surface grows
 from 279 → **286**. Live-validated on TD 099 build 2025.32820 unless flagged
-UNVERIFIED in CHANGELOG. **Not yet tagged or published to npm** — owner cuts the
-next tag (likely v0.9.0) when the wave promotes out of `[Unreleased]`.
+UNVERIFIED in CHANGELOG. Tagged `v0.8.3`; npm publish happens out-of-band via the
+release workflow when `NPM_TOKEN` is set.
 
 - **Live-show resilience (Layer 1).** `create_safety_blackout_chain` (panic
   blackout + fade-back recovery), `create_setlist_runner` (timed multi-track

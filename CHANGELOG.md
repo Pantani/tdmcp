@@ -6,6 +6,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.3] - 2026-06-03
+
 ### Fixed
 - **`create_histogram_scope`** — geometry now renders a proper distribution
   curve instead of a stray hairline at the far left. The `choptoSOP` was fed
@@ -1292,12 +1294,13 @@ API on its first live run, and is fail-forward (per-item warnings, never throws)
   preview-asset writes, as a strict superset of `TDMCP_RAW_PYTHON=off`. Use it to hand an
   autonomous in-TD agent a curated, non-destructive toolset.
 
+[0.8.3]: https://github.com/Pantani/tdmcp/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/Pantani/tdmcp/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/Pantani/tdmcp/compare/fa7d33c2a8093d85cbad6226f62f28714a0af8fb...v0.8.1
 [0.8.0]: https://github.com/Pantani/tdmcp/compare/v0.7.1...fa7d33c2a8093d85cbad6226f62f28714a0af8fb
 [0.7.1]: https://github.com/Pantani/tdmcp/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/Pantani/tdmcp/compare/v0.6.1...v0.7.0
-[Unreleased]: https://github.com/Pantani/tdmcp/compare/v0.8.2...HEAD
+[Unreleased]: https://github.com/Pantani/tdmcp/compare/v0.8.3...HEAD
 [0.6.1]: https://github.com/Pantani/tdmcp/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/Pantani/tdmcp/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Pantani/tdmcp/compare/v0.4.0...v0.5.0
