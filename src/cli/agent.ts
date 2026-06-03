@@ -451,6 +451,10 @@ import {
   collectProjectAssetsImpl,
   collectProjectAssetsSchema,
 } from "../tools/layer3/collectProjectAssets.js";
+import {
+  compactGraphDigestImpl,
+  compactGraphDigestSchema,
+} from "../tools/layer3/compactGraphDigest.js";
 import { compareTdNodesImpl, compareTdNodesSchema } from "../tools/layer3/compareTdNodes.js";
 import {
   controlTimelineTransportImpl,
@@ -703,6 +707,11 @@ const COMMANDS: Record<string, Command> = {
   ),
   "nodes compare": r(compareTdNodesSchema, compareTdNodesImpl, "Diff two nodes' parameters."),
   "nodes snapshot": r(snapshotTdGraphSchema, snapshotTdGraphImpl, "Capture a network snapshot."),
+  digest: r(
+    compactGraphDigestSchema,
+    compactGraphDigestImpl,
+    "Tiny token-bounded structural digest of a network.",
+  ),
   "nodes topology": r(getTdTopologySchema, getTdTopologyImpl, "Map nodes + connections."),
   "nodes performance": r(getTdPerformanceSchema, getTdPerformanceImpl, "Report cook times."),
   "nodes update": r(

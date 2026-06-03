@@ -69,6 +69,7 @@ export const tdHandlers = [
   http.get(`${TD_BASE}/api/system`, notFound),
   http.get(`${TD_BASE}/api/projects/:seg/analysis`, notFound),
   http.get(`${TD_BASE}/api/nodes/:seg/custom_params`, notFound),
+  http.post(`${TD_BASE}/api/param_modes/batch`, notFound),
 
   http.post(`${TD_BASE}/api/nodes/:seg/method`, () => ok({ result: "ok" })),
 

@@ -120,6 +120,50 @@ def read_param_modes(path, keys=None, non_default_only=False):
     return report
 
 
+def read_param_modes_batch(items, continue_on_error=True):
+    """Batched wrapper over read_param_modes — one round-trip for N nodes.
+
+    Promotes multi-node parameter-mode inspection from N HTTP calls to 1 by
+    looping the singular ``read_param_modes`` per item. Per-item failures
+    (missing node, eval explosion) are isolated as a structured ``error`` field
+    so one bad path never poisons the rest. Cap at 256 items to protect the
+    bridge from runaway payloads.
+
+    Args:
+        items: list of ``{path, keys?, non_default_only?}`` dicts.
+        continue_on_error: when False, the first item failure aborts the batch.
+
+    Returns ``{items: [<same shape as read_param_modes>, ...]}``.
+    """
+    if not isinstance(items, list):
+        raise ValueError("'items' must be a JSON array.")
+    if len(items) > 256:
+        raise ValueError("Too many items (max 256, got %d)." % len(items))
+    out = []
+    for raw in items:
+        if not isinstance(raw, dict):
+            raise ValueError("Each item must be a JSON object.")
+        path = raw.get("path")
+        keys = raw.get("keys")
+        ndo = bool(raw.get("non_default_only", False))
+        try:
+            out.append(read_param_modes(path, keys=keys, non_default_only=ndo))
+        except Exception as exc:  # noqa: BLE001
+            if not continue_on_error:
+                raise
+            out.append(
+                {
+                    "path": path or "",
+                    "type": "",
+                    "name": "",
+                    "parameters": [],
+                    "warnings": [],
+                    "error": str(exc),
+                }
+            )
+    return {"items": out}
+
+
 def set_param_mode(path, param, mode, expr=None, value=None):
     """Set one parameter's mode to expression / bind / constant.
 

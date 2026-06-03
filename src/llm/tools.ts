@@ -14,6 +14,10 @@ import {
 } from "../tools/layer1/createGenerativeArt.js";
 import { listRecipesImpl, listRecipesSchema } from "../tools/layer1/listRecipes.js";
 import { connectNodesImpl, connectNodesSchema } from "../tools/layer2/connectNodes.js";
+import {
+  compactGraphDigestImpl,
+  compactGraphDigestSchema,
+} from "../tools/layer3/compactGraphDigest.js";
 import { compareTdNodesImpl, compareTdNodesSchema } from "../tools/layer3/compareTdNodes.js";
 import { createTdNodeImpl, createTdNodeSchema } from "../tools/layer3/createTdNode.js";
 import { deleteTdNodeImpl, deleteTdNodeSchema } from "../tools/layer3/deleteTdNode.js";
@@ -121,6 +125,12 @@ export const LLM_TOOLS: LlmTool[] = [
     "Map the nodes and their connections in a network.",
     getTdTopologySchema,
     getTdTopologyImpl,
+  ),
+  t(
+    "compact_graph_digest",
+    "Tiny, token-bounded structural summary of a network (families + output chain + grouped errors) — pick this first for small LLM context.",
+    compactGraphDigestSchema,
+    compactGraphDigestImpl,
   ),
   t(
     "compare_td_nodes",

@@ -59,15 +59,19 @@ import { registerCreatePhoneGesture } from "./createPhoneGesture.js";
 import { registerCreatePointCloud } from "./createPointCloud.js";
 import { registerCreatePopField } from "./createPopField.js";
 import { registerCreatePopGeometry } from "./createPopGeometry.js";
+import { registerCreatePoseReactive } from "./createPoseReactive.js";
 import { registerCreatePoseSkeleton } from "./createPoseSkeleton.js";
 import { registerCreatePoseTracking } from "./createPoseTracking.js";
 import { registerCreateProbSequencer } from "./createProbSequencer.js";
 import { registerCreateProjectionMapping } from "./createProjectionMapping.js";
 import { registerCreateRaymarchScene } from "./createRaymarchScene.js";
+import { registerCreateSafetyBlackoutChain } from "./createSafetyBlackoutChain.js";
 import { registerCreateSdfField } from "./createSdfField.js";
+import { registerCreateSetlistRunner } from "./createSetlistRunner.js";
 import { registerCreateSetNavigator } from "./createSetNavigator.js";
 import { registerCreateShaderLib } from "./createShaderLib.js";
 import { registerCreateShaderPark } from "./createShaderPark.js";
+import { registerCreateShowFailover } from "./createShowFailover.js";
 import { registerCreateSimulation } from "./createSimulation.js";
 import { registerCreateSpectrum } from "./createSpectrum.js";
 import { registerCreateStrangeAttractor } from "./createStrangeAttractor.js";
@@ -226,4 +230,9 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateStrangeAttractor,
   registerCreateOpticalFlow,
   registerCreateHistogramScope,
+  // Wave 2026-06-02 — safety, setlist, failover, pose reactivity:
+  registerCreateSafetyBlackoutChain,
+  registerCreateSetlistRunner,
+  registerCreateShowFailover,
+  registerCreatePoseReactive,
 ];

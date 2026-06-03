@@ -453,6 +453,15 @@ class StructuredEndpointTests(unittest.TestCase):
             "/project1", recursive=False
         )
 
+    def test_perform_dispatches_with_exec_disabled(self):
+        ac._route("POST", "/api/perform", {}, {"enabled": True})
+        ac.system_service.set_perform_mode.assert_called_once_with(True)
+
+    def test_perform_missing_enabled_raises_descriptive(self):
+        with self.assertRaises(ValueError) as cm:
+            ac._route("POST", "/api/perform", {}, {})
+        self.assertIn("enabled", str(cm.exception))
+
     def test_system_dispatches_with_exec_disabled(self):
         ac._route("GET", "/api/system", {}, {})
         ac.system_service.get_system_info.assert_called_once_with(None)

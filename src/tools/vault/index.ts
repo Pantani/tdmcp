@@ -19,6 +19,7 @@ import { registerMorphPack } from "./morphPack.js";
 import { registerRecallSimilarWork } from "./recallSimilarWork.js";
 import { registerSaveComponentToVault } from "./saveComponentToVault.js";
 import { registerSaveRecipeToVault } from "./saveRecipeToVault.js";
+import { registerScaffoldRecipeFromNetwork } from "./scaffoldRecipeFromNetwork.js";
 import { registerScaffoldVault } from "./scaffoldVault.js";
 import { registerStyleMemory } from "./styleMemory.js";
 import { registerSyncPresetsVault } from "./syncPresetsVault.js";
@@ -70,4 +71,6 @@ export const vaultRegistrars: ToolRegistrar[] = [
   // Ingest-extend Wave 3 sub-batch B (campaign 2026-06-01 — v0.9.0):
   registerExportLookTox,
   registerTutorialCompanionPack,
+  // Wave 2026-06-02 — scaffold a recipe JSON from a live network:
+  registerScaffoldRecipeFromNetwork,
 ];

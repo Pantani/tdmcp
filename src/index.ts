@@ -29,6 +29,16 @@ async function main(): Promise<void> {
     await runInstallBridge(argv.slice(1));
     return;
   }
+  if (argv[0] === "init") {
+    const { runInit } = await import("./cli/init.js");
+    await runInit(argv.slice(1));
+    return;
+  }
+  if (argv[0] === "ask") {
+    const { runAsk } = await import("./cli/ask.js");
+    await runAsk(argv.slice(1));
+    return;
+  }
   if (isPackageCommand(argv[0])) {
     const result = await runPackageCli(argv);
     if (result.stdout) process.stdout.write(result.stdout);

@@ -50,6 +50,7 @@ const SAFE_PROFILE_EXCLUDE = new Set<string>([
   "swap_operator", // deletes the old node and creates a replacement (destructive even with rollback)
   "export_sop_to_svg", // writes/overwrites an SVG at a user-controlled filesystem path
   "generative_classics_pack", // writes/overwrites a bundle JSON at a user-controlled filesystem path
+  "create_safety_blackout_chain", // builds a panic/kill chain — declared destructive
 ]);
 
 /** Registers every tool (all layers) against the MCP server, honoring the profile. */

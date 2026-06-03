@@ -173,5 +173,109 @@ class SystemInfoTests(unittest.TestCase):
         self.assertEqual(out["performMode"], False)
 
 
+class _FakeRoot:
+    def __init__(self, initial=False):
+        self._store = {"tdmcp_perform_mode": initial} if initial is not None else {}
+
+    def fetch(self, key, default):
+        return self._store.get(key, default)
+
+    def store(self, key, value):
+        self._store[key] = value
+
+
+class _FakeUi:
+    def __init__(self):
+        self.performMode = False
+
+
+class _PerformModeTdPatch:
+    """Independent patcher for set_perform_mode tests (sets op/ui/project)."""
+
+    def __init__(self, op=None, ui=None, project=None, no_ui_attr=False):
+        self.op = op
+        self.ui = ui
+        self.project = project
+        self.no_ui_attr = no_ui_attr
+
+    def __enter__(self):
+        self._saved = {n: getattr(_TD, n, None) for n in ("op", "ui", "project")}
+        for n in ("op", "ui", "project"):
+            if hasattr(_TD, n):
+                delattr(_TD, n)
+        if self.op is not None:
+            _TD.op = self.op
+        if self.ui is not None:
+            _TD.ui = self.ui
+        if self.project is not None:
+            _TD.project = self.project
+        return self
+
+    def __exit__(self, *a):
+        for n in ("op", "ui", "project"):
+            if hasattr(_TD, n):
+                delattr(_TD, n)
+        for n, v in self._saved.items():
+            if v is not None:
+                setattr(_TD, n, v)
+
+
+class SetPerformModeTests(unittest.TestCase):
+    def test_stores_flag_and_sets_ui_and_project(self):
+        root = _FakeRoot(initial=False)
+        ui = _FakeUi()
+
+        class _Proj:
+            performMode = False
+
+        proj = _Proj()
+        with _PerformModeTdPatch(op=lambda _p: root, ui=ui, project=proj):
+            out = ss.set_perform_mode(True)
+        self.assertTrue(out["enabled"])
+        self.assertFalse(out["was"])
+        self.assertTrue(out["stored"])
+        self.assertTrue(out["ui_perform_mode_set"])
+        self.assertTrue(out["project_perform_mode_set"])
+        self.assertEqual(out["warnings"], [])
+        self.assertTrue(ui.performMode)
+        self.assertTrue(proj.performMode)
+
+    def test_idempotent_was_field(self):
+        root = _FakeRoot(initial=True)
+        ui = _FakeUi()
+        with _PerformModeTdPatch(op=lambda _p: root, ui=ui):
+            out = ss.set_perform_mode(True)
+        self.assertTrue(out["was"])
+        self.assertTrue(out["stored"])
+
+    def test_no_ui_performmode_warns(self):
+        root = _FakeRoot()
+
+        class _UiNoPerform:
+            pass  # no performMode attr
+
+        with _PerformModeTdPatch(op=lambda _p: root, ui=_UiNoPerform()):
+            out = ss.set_perform_mode(True)
+        self.assertFalse(out["ui_perform_mode_set"])
+        self.assertTrue(any("ui.performMode not found" in w for w in out["warnings"]))
+
+    def test_project_missing_no_exception(self):
+        root = _FakeRoot()
+        ui = _FakeUi()
+        with _PerformModeTdPatch(op=lambda _p: root, ui=ui):
+            out = ss.set_perform_mode(False)
+        self.assertFalse(out["project_perform_mode_set"])
+        # No project warning expected — silent degradation when attr is absent.
+
+    def test_no_td_op_warns_no_throw(self):
+        ui = _FakeUi()
+        with _PerformModeTdPatch(ui=ui):  # no op
+            out = ss.set_perform_mode(True)
+        self.assertFalse(out["stored"])
+        self.assertTrue(any("td.op unavailable" in w for w in out["warnings"]))
+        # ui still got set even with no op.
+        self.assertTrue(out["ui_perform_mode_set"])
+
+
 if __name__ == "__main__":
     unittest.main()

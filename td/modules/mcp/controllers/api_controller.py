@@ -276,6 +276,10 @@ def _route(method, path, query, body, webserver=None):
             rate=body.get("rate"),
             cue_name=body.get("cueName") or body.get("cue_name"),
         )
+    if rest == ["perform"] and method == "POST":
+        # Perform-mode write — survives ALLOW_EXEC=0; read side lives in /api/system.
+        _require(body, "enabled")
+        return system_service.set_perform_mode(bool(body["enabled"]))
     if rest == ["system"] and method == "GET":
         # Combined GPU/monitors/performMode snapshot — survives ALLOW_EXEC=0.
         # `include` is an optional comma-list query param; omit for all sections.
@@ -295,6 +299,15 @@ def _route(method, path, query, body, webserver=None):
             int(_qs(query, "max_lines", 200)),
             _qs(query, "scope") or None,
             **log_kwargs,
+        )
+
+    # Batched read_parameter_modes — must match before the nodes/<path…>/params
+    # branch (no <path> segments here so no real conflict, but be explicit).
+    if rest == ["param_modes", "batch"] and method == "POST":
+        _require(body, "items")
+        return param_text_service.read_param_modes_batch(
+            body["items"],
+            continue_on_error=bool(body.get("continue_on_error", True)),
         )
 
     if (

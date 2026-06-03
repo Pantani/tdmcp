@@ -120,8 +120,47 @@ export const createAudioReactiveSchema = z.object({
     .describe(
       "Parent network where the audio-reactive container is created (default '/project1').",
     ),
+  // --- 2026-06-02 extension: transient gate + sidechain duck ---
+  // Defaults are OFF so existing call sites produce a byte-identical container.
+  transient_gate: z
+    .boolean()
+    .default(false)
+    .describe(
+      "When true, add a transient/onset channel to a new modulation Null CHOP (`mod1`) for binding to parameters.",
+    ),
+  transient_threshold: z.coerce
+    .number()
+    .min(0)
+    .max(1)
+    .default(0.3)
+    .describe("Transient threshold (0–1); used only when transient_gate=true."),
+  transient_hold_ms: z.coerce
+    .number()
+    .min(1)
+    .max(2000)
+    .default(120)
+    .describe("Transient hold time in ms before decay; used only when transient_gate=true."),
+  sidechain_duck: z
+    .boolean()
+    .default(false)
+    .describe(
+      "When true, add an inverted duck-envelope channel to the modulation Null CHOP (`mod1`).",
+    ),
+  duck_depth: z.coerce
+    .number()
+    .min(0)
+    .max(1)
+    .default(0.7)
+    .describe("How deeply the duck pulls toward 0 at peak level (0–1)."),
+  duck_release_ms: z.coerce
+    .number()
+    .min(1)
+    .max(4000)
+    .default(350)
+    .describe("Release time of the duck envelope in ms."),
 });
 type CreateAudioReactiveArgs = z.infer<typeof createAudioReactiveSchema>;
+type CreateAudioReactiveInput = z.input<typeof createAudioReactiveSchema>;
 
 async function buildAudioSource(
   builder: NetworkBuilder,
@@ -139,7 +178,11 @@ async function buildAudioSource(
   return builder.add("audiodeviceinCHOP", "audioin");
 }
 
-export async function createAudioReactiveImpl(ctx: ToolContext, args: CreateAudioReactiveArgs) {
+export async function createAudioReactiveImpl(ctx: ToolContext, rawArgs: CreateAudioReactiveInput) {
+  // Re-parse so callers (including tests + downstream layer-1 generators) can omit any
+  // field that has a schema default — keeps the existing test-call style working after
+  // the 2026-06-02 transient/duck extension added more defaulted fields.
+  const args: CreateAudioReactiveArgs = createAudioReactiveSchema.parse(rawArgs);
   return runBuild(async () => {
     const builder = await createSystemContainer(ctx, args.parent_path, "audio_reactive");
 
@@ -206,6 +249,92 @@ export async function createAudioReactiveImpl(ctx: ToolContext, args: CreateAudi
           },
         ]
       : [];
+
+    // --- 2026-06-02 extension: transient + duck → mod1 CHOP Null ---
+    // Only emitted when at least one flag is on; keeps the historical container
+    // shape byte-identical for callers that don't opt in.
+    if (args.transient_gate || args.sidechain_duck) {
+      const mergeInputs: string[] = [analyze];
+      let transientNode: string | undefined;
+      let transientFilter: string | undefined;
+      let duckFilter: string | undefined;
+      let duckMath: string | undefined;
+      if (args.transient_gate) {
+        // analyzeCHOP function=8 is the transient/onset detector in TD's Analyze CHOP.
+        transientNode = await builder.add("analyzeCHOP", "transient", {
+          function: 8,
+          threshold: args.transient_threshold,
+        });
+        await builder.connect(audioSource, transientNode);
+        transientFilter = await builder.add("filterCHOP", "transient_hold", {
+          // ramp lengths in samples (TD's default units); the spec exposes ms in the UI but
+          // wires the same numeric value — the artist can dial it after building.
+          rampdownlength: args.transient_hold_ms,
+        });
+        await builder.connect(transientNode, transientFilter);
+        mergeInputs.push(transientFilter);
+      }
+      if (args.sidechain_duck) {
+        duckFilter = await builder.add("filterCHOP", "duck_env", {
+          rampdownlength: args.duck_release_ms,
+        });
+        await builder.connect(analyze, duckFilter);
+        duckMath = await builder.add("mathCHOP", "duck", {
+          // gain1 carries duck_depth; bias inversion produces (1 - depth*level) downstream.
+          gain1: args.duck_depth,
+        });
+        await builder.connect(duckFilter, duckMath);
+        mergeInputs.push(duckMath);
+      }
+      const merge = await builder.add("mergeCHOP", "mod_merge");
+      for (const src of mergeInputs) {
+        await builder.connect(src, merge);
+      }
+      const mod = await builder.add("nullCHOP", "mod1");
+      await builder.connect(merge, mod);
+      if (args.expose_controls) {
+        if (args.transient_gate && transientNode && transientFilter) {
+          controls.push(
+            {
+              name: "Transient Threshold",
+              type: "float",
+              min: 0,
+              max: 1,
+              default: args.transient_threshold,
+              bind_to: [`${transientNode}.threshold`],
+            },
+            {
+              name: "Transient Hold (ms)",
+              type: "float",
+              min: 1,
+              max: 2000,
+              default: args.transient_hold_ms,
+              bind_to: [`${transientFilter}.rampdownlength`],
+            },
+          );
+        }
+        if (args.sidechain_duck && duckMath && duckFilter) {
+          controls.push(
+            {
+              name: "Duck Depth",
+              type: "float",
+              min: 0,
+              max: 1,
+              default: args.duck_depth,
+              bind_to: [`${duckMath}.gain1`],
+            },
+            {
+              name: "Duck Release (ms)",
+              type: "float",
+              min: 1,
+              max: 4000,
+              default: args.duck_release_ms,
+              bind_to: [`${duckFilter}.rampdownlength`],
+            },
+          );
+        }
+      }
+    }
 
     return finalize(ctx, {
       summary: `Created an audio-reactive system (source: ${args.audio_source}, style: ${args.visual_style}, ${args.frequency_bands} bands).`,

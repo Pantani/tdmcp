@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { TouchDesignerClient } from "../td-client/touchDesignerClient.js";
 import { TdConnectionError } from "../td-client/types.js";
 import type { TdNodeError } from "../td-client/validators.js";
+import { familyOf } from "./familyOf.js";
 import { firstVar, jsonContents, type ResourceRegistrar } from "./shared.js";
 
 // ---------------------------------------------------------------------------
@@ -69,22 +70,6 @@ export type SceneErrors = z.infer<typeof SceneErrorsSchema>;
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
-
-/** Extract family suffix from a TD type string (e.g. "noiseTOP" → "TOP"). */
-function familyOf(type: string): string {
-  // Known 4-letter families: CHOP, COMP
-  // Known 3-letter families: TOP, SOP, DAT, MAT, POP
-  const known4 = ["CHOP", "COMP"];
-  const known3 = ["TOP", "SOP", "DAT", "MAT", "POP"];
-  const upper = type.toUpperCase();
-  for (const fam of known4) {
-    if (upper.endsWith(fam)) return fam;
-  }
-  for (const fam of known3) {
-    if (upper.endsWith(fam)) return fam;
-  }
-  return "OTHER";
-}
 
 export function groupErrors(
   errors: TdNodeError[],

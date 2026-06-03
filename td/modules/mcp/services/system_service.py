@@ -69,6 +69,62 @@ def _read_perform_mode(td):
         return None
 
 
+def set_perform_mode(enabled):
+    """Toggle perform-mode advisory flag + best-effort native ui/project knobs.
+
+    Promotes the legacy ``/api/exec`` payload of ``set_perform_mode`` to a
+    first-class REST handler so the tool survives ``TDMCP_BRIDGE_ALLOW_EXEC=0``.
+    Returns a report that is a SUPERSET of the legacy ``PerformModeReport``
+    (adds ``project_perform_mode_set``) so the Node tool produces an
+    identical artist-visible summary regardless of which path served it.
+    """
+    import td
+
+    flag = bool(enabled)
+    report = {
+        "enabled": flag,
+        "was": False,
+        "stored": False,
+        "ui_perform_mode_set": False,
+        "project_perform_mode_set": False,
+        "warnings": [],
+    }
+
+    op_fn = getattr(td, "op", None)
+    if op_fn is None:
+        report["warnings"].append("td.op unavailable; advisory flag not stored.")
+    else:
+        try:
+            root = op_fn("/")
+            report["was"] = bool(root.fetch("tdmcp_perform_mode", False))
+            root.store("tdmcp_perform_mode", flag)
+            report["stored"] = bool(root.fetch("tdmcp_perform_mode", False))
+        except Exception as exc:  # noqa: BLE001
+            report["warnings"].append("store failed: %s" % exc)
+
+    ui = getattr(td, "ui", None)
+    if ui is not None and hasattr(ui, "performMode"):
+        try:
+            ui.performMode = flag
+            report["ui_perform_mode_set"] = True
+        except Exception as exc:  # noqa: BLE001
+            report["warnings"].append("ui.performMode write failed: %s" % exc)
+    else:
+        report["warnings"].append(
+            "ui.performMode not found on this TD build — flag stored but no native knob adjusted."
+        )
+
+    project = getattr(td, "project", None)
+    if project is not None and hasattr(project, "performMode"):
+        try:
+            project.performMode = flag
+            report["project_perform_mode_set"] = True
+        except Exception as exc:  # noqa: BLE001
+            report["warnings"].append("project.performMode write failed: %s" % exc)
+
+    return report
+
+
 def get_system_info(include=None):
     """Combined system snapshot for the inspect_gpu_and_displays tool.
 

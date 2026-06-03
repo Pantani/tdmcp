@@ -31,10 +31,21 @@ function makeCtx(): ToolContext {
   };
 }
 
-/** Capture the script sent to /api/exec and shape the bridge response. */
+/** Capture the script sent to /api/exec and shape the bridge response.
+ *
+ * Also installs a 404 handler for `/api/perform` so existing exec-path tests
+ * keep working: the rewired tool now tries the endpoint first and falls back
+ * to exec on 404 / "Unsupported POST" (the missing-route signal).
+ */
 function captureExec(stdout: string): { captured: { script: string }[] } {
   const captured: { script: string }[] = [];
   server.use(
+    http.post(`${TD_BASE}/api/perform`, () =>
+      HttpResponse.json(
+        { ok: false, error: { message: "Unsupported POST /api/perform" } },
+        { status: 404 },
+      ),
+    ),
     http.post(`${TD_BASE}/api/exec`, async ({ request }) => {
       const body = (await request.json()) as ExecBody;
       captured.push({ script: body.script });
@@ -161,6 +172,92 @@ describe("setPerformModeImpl", () => {
     expect(result.isError).toBeFalsy();
     const text = result.content.find((c) => c.type === "text") as { text: string } | undefined;
     expect(text?.text).toContain("ON");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// setPerformModeImpl — REST endpoint path (POST /api/perform)
+// ---------------------------------------------------------------------------
+
+describe("setPerformModeImpl — REST endpoint", () => {
+  it("endpoint 200 → succeeds, _source=endpoint, no exec call", async () => {
+    let execCalls = 0;
+    let performCalls = 0;
+    server.use(
+      http.post(`${TD_BASE}/api/perform`, async ({ request }) => {
+        performCalls += 1;
+        const body = (await request.json()) as { enabled: boolean };
+        expect(body.enabled).toBe(true);
+        return HttpResponse.json({
+          ok: true,
+          data: {
+            enabled: true,
+            was: false,
+            stored: true,
+            ui_perform_mode_set: true,
+            project_perform_mode_set: true,
+            warnings: [],
+          },
+        });
+      }),
+      http.post(`${TD_BASE}/api/exec`, () => {
+        execCalls += 1;
+        return HttpResponse.json({ ok: true, data: { result: null, stdout: "" } });
+      }),
+    );
+
+    const result = await setPerformModeImpl(makeCtx(), { enabled: true });
+    expect(result.isError).toBeFalsy();
+    expect(performCalls).toBe(1);
+    expect(execCalls).toBe(0);
+    const text = result.content.find((c) => c.type === "text") as { text: string };
+    expect(text.text).toContain('"_source": "endpoint"');
+    expect(text.text).toContain('"project_perform_mode_set": true');
+  });
+
+  it("endpoint 404 → falls back to /api/exec, _source=exec", async () => {
+    const stdout = JSON.stringify({
+      enabled: true,
+      stored: true,
+      was: false,
+      ui_perform_mode_set: true,
+      warnings: [],
+    });
+    const { captured } = captureExec(stdout);
+    const result = await setPerformModeImpl(makeCtx(), { enabled: true });
+    expect(result.isError).toBeFalsy();
+    expect(captured).toHaveLength(1);
+    const text = result.content.find((c) => c.type === "text") as { text: string };
+    expect(text.text).toContain('"_source": "exec"');
+  });
+
+  it("endpoint 500 → friendly isError (no exec fallback)", async () => {
+    let execCalls = 0;
+    server.use(
+      http.post(`${TD_BASE}/api/perform`, () =>
+        HttpResponse.json({ ok: false, error: { message: "boom" } }, { status: 500 }),
+      ),
+      http.post(`${TD_BASE}/api/exec`, () => {
+        execCalls += 1;
+        return HttpResponse.json({ ok: true, data: { result: null, stdout: "" } });
+      }),
+    );
+    const result = await setPerformModeImpl(makeCtx(), { enabled: true });
+    expect(result.isError).toBe(true);
+    expect(execCalls).toBe(0);
+  });
+
+  it("endpoint bad shape → validator fails into friendly isError", async () => {
+    server.use(
+      http.post(`${TD_BASE}/api/perform`, () =>
+        HttpResponse.json({
+          ok: true,
+          data: { enabled: true, was: false, stored: true, warnings: [] },
+        }),
+      ),
+    );
+    const result = await setPerformModeImpl(makeCtx(), { enabled: true });
+    expect(result.isError).toBe(true);
   });
 });
 
