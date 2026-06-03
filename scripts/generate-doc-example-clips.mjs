@@ -1273,6 +1273,31 @@ function ditherFrame(t) {
   return buf;
 }
 
+function halftoneAmberPrintFrame(t) {
+  const buf = Buffer.alloc(width * height * 3);
+  backdrop(buf, [28, 18, 8], [9, 6, 4]);
+  for (let y = 0; y < height; y += 8) {
+    for (let x = 0; x < width; x += 8) {
+      const u = (x / width - 0.5) * 2;
+      const v = (y / height - 0.5) * 2;
+      const wave = Math.sin(u * 8 + t * 3.2) + Math.cos(v * 7 - t * 2.6) + Math.sin((u + v) * 5);
+      const poster = smoothstep(-0.65, 1.4, wave + 1.1 - Math.hypot(u * 0.9, v * 1.2));
+      const radius = 1.2 + poster * 4.8;
+      const color = mixColor([62, 32, 10], [255, 176, 54], poster);
+      circle(buf, x + 4, y + 4, radius, color, 0.84);
+    }
+  }
+  glow(buf, 244 + Math.sin(t * 1.3) * 28, 122, 120, [255, 126, 30], 0.12);
+  for (let i = 0; i < 5; i++) {
+    const y = 52 + i * 30;
+    rect(buf, 346, y, 58 + Math.sin(t * 2 + i) * 18, 5, [255, 214, 86], 0.42);
+    rect(buf, 346, y + 11, 36 + i * 10, 4, [255, 255, 255], 0.14);
+  }
+  rect(buf, 42, 218, 126, 8, [255, 176, 54], 0.72);
+  rect(buf, 188, 218, 74 + Math.sin(t * 2.1) * 24, 8, [255, 84, 36], 0.54);
+  return buf;
+}
+
 function jfaVoronoiFrame(t) {
   const buf = baseFrame();
   const seeds = [];
@@ -1299,6 +1324,70 @@ function jfaVoronoiFrame(t) {
       if (edge > 0.72) rect(buf, x, y, 2, 2, [255, 240, 210], 0.32);
     }
   }
+  return buf;
+}
+
+function pointCloudDriftFrame(t) {
+  const buf = Buffer.alloc(width * height * 3);
+  backdrop(buf, [5, 9, 16], [1, 3, 8]);
+  const cx = width / 2;
+  const cy = height / 2 + 8;
+  glow(buf, cx, cy, 160, [57, 232, 190], 0.08);
+  for (let i = 0; i < 1150; i++) {
+    const a = rand(i, 2, 3) * Math.PI * 2;
+    const z = rand(i, 7, 4) * 2 - 1;
+    const r = Math.sqrt(Math.max(0, 1 - z * z));
+    const spin = a + t * (0.45 + rand(i, 4, 8) * 0.45);
+    const noise = Math.sin(i * 0.17 + t * 3.1) * 9;
+    const x = cx + Math.cos(spin) * (r * 138 + noise) + z * 22;
+    const y = cy + Math.sin(spin) * (r * 58 + noise * 0.28) + z * 42;
+    const depth = (z + 1) / 2;
+    const color = mixColor([75, 115, 255], [57, 232, 190], depth);
+    if (i % 9 === 0) {
+      line(buf, x - Math.cos(spin) * 6, y - Math.sin(spin) * 3, x, y, color, 0.12 + depth * 0.08);
+    }
+    circle(buf, x, y, 0.8 + depth * 1.7, color, 0.28 + depth * 0.46);
+  }
+  rect(buf, 54, 222, 118, 7, [57, 232, 190], 0.62);
+  rect(buf, 198, 222, 108 + Math.sin(t * 1.8) * 22, 7, [75, 115, 255], 0.52);
+  rect(buf, 330, 222, 64, 7, [255, 214, 86], 0.44);
+  return buf;
+}
+
+function strangeAttractorFrame(t) {
+  const buf = Buffer.alloc(width * height * 3);
+  backdrop(buf, [2, 3, 8], [0, 0, 3]);
+  let x = 0.01;
+  let y = 0.01;
+  const a = 1.4 + Math.sin(t * 0.55) * 0.08;
+  const b = -2.3 + Math.cos(t * 0.44) * 0.08;
+  const c = 2.4 + Math.sin(t * 0.37) * 0.06;
+  const d = -2.1 + Math.cos(t * 0.49) * 0.08;
+  glow(buf, 240, 132, 174, [118, 75, 255], 0.18);
+  for (let i = 0; i < 62_000; i++) {
+    const nx = Math.sin(a * y) - Math.cos(b * x);
+    const ny = Math.sin(c * x) - Math.cos(d * y);
+    x = nx;
+    y = ny;
+    if (i < 80) continue;
+    const px = 240 + x * 66;
+    const py = 134 + y * 44;
+    const color = hsv((0.58 + i / 98_000 + t * 0.025) % 1, 0.82, 1);
+    set(buf, px, py, color, 0.045);
+    if (i % 37 === 0) circle(buf, px, py, 1.1, color, 0.13);
+  }
+  for (let i = 0; i < 18; i++) {
+    circle(
+      buf,
+      54 + i * 22,
+      232 + Math.sin(t * 2 + i) * 5,
+      2.5,
+      hsv(0.61 + i * 0.012, 0.86, 0.96),
+      0.68,
+    );
+  }
+  rect(buf, 72, 244, 116, 5, [118, 75, 255], 0.54);
+  rect(buf, 214, 244, 86 + Math.sin(t * 1.4) * 24, 5, [57, 232, 190], 0.52);
   return buf;
 }
 
@@ -3199,7 +3288,10 @@ const clips = [
   ["fluid-sim-ink.mp4", fluidSimFrame],
   ["image-particles-burst.mp4", imageParticlesFrame],
   ["dither-gameboy-poster.mp4", ditherFrame],
+  ["halftone-amber-print.mp4", halftoneAmberPrintFrame],
   ["jfa-voronoi-stained-glass.mp4", jfaVoronoiFrame],
+  ["point-cloud-drift.mp4", pointCloudDriftFrame],
+  ["strange-attractor.mp4", strangeAttractorFrame],
   ["video-scopes-monitor.mp4", videoScopesFrame],
   ["chop-recorder-replay.mp4", chopRecorderFrame],
   ["tdableton-bridge.mp4", tdabletonFrame],
