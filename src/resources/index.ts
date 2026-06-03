@@ -4,6 +4,7 @@ import { registerCommandCatalogResource } from "./commandCatalogResource.js";
 import { registerCookbookResource } from "./cookbookResource.js";
 import { registerGlslPatternResource } from "./glslPatternResource.js";
 import { registerGlslSnippetCatalogResource } from "./glslSnippetCatalogResource.js";
+import { registerGraphDigestResource } from "./graphDigest.js";
 import { registerOperatorResource } from "./operatorResource.js";
 import { registerPatternResource } from "./patternResource.js";
 import { registerPromptCatalogResource } from "./promptCatalogResource.js";
@@ -32,6 +33,8 @@ export function registerAllResources(server: McpServer, ctx: ResourceContext): v
   registerSessionProfileResource(server, ctx);
   // Campaign BEYOND Wave 3 (backlog 2026-05-30 — v0.7.0):
   registerSceneSummaryResource(server, ctx);
+  // Wave 2026-06-02 — compact, token-bounded graph digest:
+  registerGraphDigestResource(server, ctx);
 }
 
 export type { ResourceContext } from "./shared.js";

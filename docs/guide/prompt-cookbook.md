@@ -791,6 +791,50 @@ cues or setlists.*
 replay it later. The CLI side can also fan out a command to multiple remote agents
 when several TD machines need the same setup.*
 
+> *"Add a kill/dimmer safety chain to the master output with a 2-second fade and
+> a panic Emergency button I can hit from a phone."*
+
+*`create_safety_blackout_chain` wraps your program TOP with a Level/dim pass driven
+by a `safety_dim` Null CHOP (0 = lit, 1 = fully black), a Speed-controlled 2-second
+fade, and an exposed `Panic` toggle. Bind `safety_dim` to a phone fader with
+`bind_to_channel`, or wire a hardware "dead-man" button to flip Panic. Works fully
+offline and is safe to install on a `TDMCP_BRIDGE_ALLOW_EXEC=0` bridge.*
+
+> *"Build a timed setlist that cycles through three scenes — intro 30s, drop 60s,
+> outro 45s — with 2-second crossfades and a HUD showing now/next/remaining."*
+
+*`create_setlist_runner` lays down a Timer CHOP with one segment per scene plus a
+crossfader bus and a Text TOP HUD reading now/next/remaining seconds. The
+`param_engine` Parameter Execute DAT watches Play/Row/Skip/Prev so you can override
+the schedule live — pause on a scene, skip ahead, or rewind without rewriting the
+timer.*
+
+> *"Wrap my NDI input in a watchdog that auto-switches to a pre-rendered MP4 if
+> the camera drops, with a 250ms crossfade and a sticky-recover toggle."*
+
+*`create_show_failover` runs an Info CHOP on the live source and watches the
+`total_cooks` delta — when it stops climbing the watchdog routes a Switch TOP to
+the backup MoviefileIn over a 250ms crossfade. The `sticky_recover` toggle stops it
+ping-ponging back the instant NDI flickers, so the show doesn't strobe on a flaky
+camera.*
+
+> *"Bind my body pose to the visual: when I raise my right hand the kaleidoscope
+> rotates, and when I open my arms the bloom intensity doubles."*
+
+*Chain `setup_body_tracking` (MediaPipe pose source) into `create_pose_reactive` to
+get named CHOP channels per joint plus derived gestures (`right_hand_up`,
+`arms_open`, `lean_left`). Map those to your kaleidoscope rotation and bloom level
+parameters — the pose becomes a controller surface, no MIDI required.*
+
+> *"Build my reactive but use the new transient gate so claps fire a strobe, and
+> duck the bloom on every kick like a sidechain compressor."*
+
+*`create_audio_reactive` now takes `transient_gate:true` (+ `transient_threshold`,
+`transient_hold_ms`) and `sidechain_duck:true` (+ `duck_depth`, `duck_release_ms`)
+to add gate and duck modulation channels into the same network. Defaults stay off,
+so existing reactive containers are byte-identical — opt in only when you want the
+new buses.*
+
 ## Output & mapping
 
 > *"Output the final visual to a full-screen window on my second monitor."*
@@ -923,6 +967,14 @@ op.display)` before each step. If `errors_after >= errors_before` and it isn't a
 dry run, every applied step is reversed and the report carries a `rolled_back:
 true` flag — a self-undoing repair pass, the safety net every artist wanted from
 "AI, fix it".*
+
+> *"Run an auto-repair loop on `/project1` — three passes max, stop if errors
+> stop going down, and roll back any pass that makes things worse."*
+
+*`auto_repair_loop` is the "fix everything" verb: it drives `repair_network` in
+iterations, scores `errors_before`/`errors_after` per pass, halts on a no-progress
+plateau, and inherits the same rollback safety. One call instead of a manual
+repair/check/repeat loop.*
 
 > *"Pull the dominant colours out of my hero clip and use them to seed a matching
 > colour grade for the rest of the show."*
@@ -1370,6 +1422,24 @@ scriptable one-shot answers. The default model/tier/step budget can also come fr
 *The prompt catalog, recipe search and localized cookbook are MCP resources now,
 so agents can ground their next move in the same docs a human reads instead of
 remembering stale prompt names.*
+
+> *"First-run on a fresh machine: `tdmcp init` to scaffold the config, bridge
+> token and vault folder; then `tdmcp ask 'what tools do I have for audio?'` for
+> a one-shot answer I can pipe in a shell script."*
+
+*`tdmcp init` is the dead-simple onboarding command — it writes a default config,
+generates a bridge token, creates the vault folder, and supports `--dry-run`,
+`--yes` and `--json` for scripted setups. `tdmcp ask "<prompt>"` is the headless
+one-shot of the local copilot — prints the answer and exits, so you can pipe it
+into other CLI tools without opening an interactive chat.*
+
+> *"Before answering, read the compact graph digest of `/project1/hero` so you
+> see structure without exploding my token budget."*
+
+*`compact_graph_digest` (and the `tdmcp://digest/{path}` resource) is the
+token-budget-friendly summary the local copilot should consume before reasoning
+about a network: node counts by type, key wires and parameter highlights in one
+small payload. Point the basic-tier model at the digest, not the raw graph dump.*
 
 > *"Teach me enough TouchDesigner to build this patch: read the learning path,
 > cheatsheets and vetted GLSL snippets before deciding which operators to use."*

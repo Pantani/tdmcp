@@ -99,6 +99,15 @@ cd tdmcp
 npm run setup   # installs, builds, and prints the exact line to connect your client
 ```
 
+::: tip One command end-to-end — `tdmcp init`
+After the build, **`tdmcp init --yes`** runs the whole onboarding in one shot:
+it stages the TD bridge, deep-merges a client config for Claude / Cursor /
+Codex (auto-detected), seeds a default profile, and (optionally) generates a
+`TDMCP_BRIDGE_TOKEN`. Add `--dry-run` to see the plan first, or `--json` for a
+machine-readable envelope. The per-client manual steps below still work for
+advanced setups. See [CLI · Onboarding](/reference/cli#onboarding).
+:::
+
 `npm run setup` prints a ready-to-paste command with your real paths filled in.
 The manual equivalents (`<project-path>` is the cloned folder — run `pwd` inside it):
 

@@ -10,9 +10,12 @@ can build real visual systems from plain language — no node-wiring by hand. Th
 page is the honest, bird's-eye picture of **what already works, what's still
 rough, and what's coming next** on the way to a stable 1.0.
 
-**Where things stand today.** The current release line is **v0.8.2**, the
-stabilization patch on top of v0.8.1 — same 279 tools, but with four new bridge
-REST endpoints, seven REST-first tool promotions, the `bridge_watch_build` hot
+**Where things stand today.** The latest public release is **v0.8.3** — a
+live-show resilience + LLM token budget + CLI-ergonomics wave that brings the
+tool surface from 279 → **286** and adds two new first-class bridge REST
+endpoints and two new CLIs (`tdmcp init`, `tdmcp ask`); see
+[Wave 12 — v0.8.3](#wave-12-v0-8-3) below. v0.8.2 itself shipped four
+new bridge REST endpoints, seven REST-first tool promotions, the `bridge_watch_build` hot
 reload, a +16 recipe expansion (now 31 first-party recipes), the tool API
 contract reference page, and a coverage push that bumped `functions: 80 → 82`
 and seeded new test suites across `src/index.ts`, `src/cli/*`, and `src/llm/*`.
@@ -64,6 +67,46 @@ The project has grown through five arcs:
 ---
 
 ## ✅ Current Release Line
+
+### Wave 12 — v0.8.3 (live-show resilience + LLM token budget + CLI ergonomics) {#wave-12-v0-8-3}
+
+Shipped as **v0.8.3** on top of v0.8.2. Tool surface grows
+from 279 → **286**. Live-validated on TD 099 build 2025.32820 unless flagged
+UNVERIFIED in CHANGELOG. Tagged `v0.8.3`; npm publish happens out-of-band via the
+release workflow when `NPM_TOKEN` is set.
+
+- **Live-show resilience (Layer 1).** `create_safety_blackout_chain` (panic
+  blackout + fade-back recovery), `create_setlist_runner` (timed multi-track
+  set with stage overrides), `create_show_failover` (watchdog + auto-failover
+  between two render paths), and `create_pose_reactive` (MediaPipe pose →
+  reactive particle / displacement) — the last one **closes ROADMAP A.6**
+  (`create_pose_reactive` is no longer deferred).
+- **Auto-repair loop (Layer 2).** `auto_repair_loop` runs `repair_network`
+  on a cadence until errors clear or a budget hits.
+- **LLM token budget (Layer 3 + resource).** `compact_graph_digest` emits a
+  compact JSON digest of any subgraph; the matching MCP resource
+  `tdmcp://digest/{path}` is registered in the `LLM_TOOLS` basic tier so a
+  local copilot can hydrate context without re-running heavy inspection tools.
+- **Vault.** `scaffold_recipe_from_network` exports a working subgraph as a
+  draft recipe in the vault.
+- **Two new first-class bridge REST endpoints** that survive
+  `TDMCP_BRIDGE_ALLOW_EXEC=0`, continuing the G4 endpoint sweep:
+  `POST /api/perform` (promotes `set_perform_mode` off exec) and
+  `POST /api/param_modes/batch` (with new client `readParameterModesBatch`).
+  Both tools keep their exec fallback.
+- **CLI ergonomics.** `tdmcp init` — one-shot onboarding that stages the
+  bridge, writes a client config (Claude / Cursor / Codex), seeds a profile
+  and an optional bridge token, all with `--dry-run` + `--json`. `tdmcp ask`
+  — non-interactive copilot turn: pass a prompt, get one answer back (with
+  optional `--json` envelope, tool-call counts, `--read-only` / `--creative`
+  tier and `--timeout` cap). See [CLI reference](/reference/cli).
+- **`create_audio_reactive` extension.** Opt-in `transient_gate` +
+  `sidechain_duck` modulation bus (4 new flags); defaults preserve the
+  byte-identical container so existing prompts keep working.
+- **Fixes since 0.8.2.** `create_histogram_scope` distribution curve
+  (Pattern CHOP tx/tz synthesis); `create_control_panel` rgb 3-target
+  binding; resilient MediaPipe DAT/mask lookup across `setup_face_tracking`
+  / `setup_hand_tracking` / `setup_segmentation`.
 
 ### v0.8.2 — Stabilization patch: REST bridge expansion, recipe library, coverage push
 
@@ -609,7 +652,8 @@ properly:
 
 ## v1.0.0 — Consolidation {#v100-consolidation}
 
-With the feature surface settled on **v0.8.1 / 279 tools**, the road to 1.0 is
+With the feature surface settled on the v0.8 line (**286 tools** on HEAD after
+Wave 12; 279 at the v0.8.2 tag), the road to 1.0 is
 a set of **measurable consolidation gates**, not a new feature wave. Each gate
 below states the current posture and what "done" looks like, using the same
 legend as the rest of the page (✅ shipped / 🧪 in progress / ⬜ planned).
@@ -798,7 +842,8 @@ automatically unless disabled (`--no-py-compile` / `--no-reload-bridge` opt out)
 #### A.6 · Deferred (Round 1 — still gated / post-v0.7.x candidates)
 
 Still open / partial after the v0.6.x–v0.8.x releases: `create_sdf_text`,
-`create_vertex_displacement_mat`, `create_pose_reactive`. The earlier
+`create_vertex_displacement_mat`. ✅ `create_pose_reactive` **shipped in
+Wave 12** ([Unreleased]) — A.6 is closed once Wave 12 cuts a tag. The earlier
 deferrals (`create_gpu_fluid`, `create_optical_flow_particles`,
 `control_diffusion` / `drive_streamdiffusion` / `connect_comfyui`,
 `manage_td_process` / `switch_instance`, recipe/template marketplace) now live

@@ -1,5 +1,7 @@
 const TOP_LEVEL_COMPLETION_WORDS = [
   "serve",
+  "init",
+  "ask",
   "install-bridge",
   "install-client",
   "chat",
@@ -50,6 +52,8 @@ export function renderMainHelp(): string {
     "",
     "Commands:",
     "  serve                   Start the MCP server; --http --port <port> for loopback HTTP.",
+    "  init                    One-shot setup: install bridge, write client config, run doctor.",
+    "  ask <prompt>            One-shot local copilot turn; reads stdin if no prompt is given.",
     "  install-bridge          Copy the TouchDesigner bridge modules; --verify/--wait probes /api/info.",
     "  install-client          Print a Claude/Codex/Cursor MCP client config snippet.",
     "  chat                    Start the local browser copilot.",

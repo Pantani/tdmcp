@@ -6,6 +6,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.3] - 2026-06-03
+
 ### Fixed
 - **`create_histogram_scope`** — geometry now renders a proper distribution
   curve instead of a stray hairline at the far left. The `choptoSOP` was fed
@@ -25,6 +27,34 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `face_landmarks` → `face_landmark_results`); the tools now probe a
   priority-ordered candidate list and fall back to a regex scan so a future
   rename does not silently break setup.
+
+### 2026-06-02 — Wave 12 (live-show resilience + LLM token budget + CLI ergonomics)
+
+#### Added
+
+- **`create_safety_blackout_chain` (Layer 1)** — single-toggle kill / dimmer chain for live shows: master `mathCHOP` (mult), pre-output `levelTOP` (opacity), and panic CHOP exposed as one control. ALLOW_EXEC=0 safe — composes via existing structured tools, no raw Python. CLI: `tdmcp-agent layer1 safety_blackout_chain`.
+- **`create_setlist_runner` (Layer 1)** — declarative setlist sequencer wrapping `timerCHOP` + index switch + cue table for show-time scene advancement with hold/loop/jump controls. CLI: `tdmcp-agent layer1 setlist_runner`. (Live UNVERIFIED: Timer CHOP `cycle` writability.)
+- **`create_show_failover` (Layer 1)** — A/B render-path failover with `lookupCHOP` health routing and automatic switch on cook errors; survives a single-source failure mid-show. CLI: `tdmcp-agent layer1 show_failover`. (Live UNVERIFIED: Lookup CHOP table format.)
+- **`create_pose_reactive` (Layer 1)** — closes ROADMAP A.6: body-skeleton-driven reactive network (pose landmarks → analyze → modulation bus) usable with the MediaPipe TD plugin or any landmark CHOP source. CLI: `tdmcp-agent layer1 pose_reactive`.
+- **`auto_repair_loop` (Layer 2)** — driver that scans `get_td_node_errors`, applies safe known-good fixes (param resets, reconnects), and reports a structured repair log. CLI: `tdmcp-agent layer2 auto_repair_loop`. (Live UNVERIFIED: Lookup CHOP table format used for routing.)
+- **`compact_graph_digest` (Layer 3) + `tdmcp://digest/{path}` resource** — token-bounded structural digest of a TD subtree (families, fan-in/out, cook hotspots) usable by the basic-tier local-LLM copilot as a first-choice inspection tool. CLI: `tdmcp-agent digest <path>`. Now registered in `LLM_TOOLS` (basic tier). (Live UNVERIFIED: Info CHOP `total_cooks` channel name.)
+- **`scaffold_recipe_from_network` (vault tool)** — inverse of `apply_recipe`: serialize an existing TD subtree into a `RecipeSchema`-valid JSON template (nodes, connections, exposed controls) and write it into the vault. CLI: `tdmcp-agent vault scaffold_recipe_from_network`.
+- **`POST /api/param_modes/batch` bridge endpoint + `readParameterModesBatch` client** — typed batch read of parameter expression/bind/export modes for many nodes in one round-trip (Zod-validated envelope). Replaces N-way `exec`-loop pattern; falls back to exec on older bridges.
+- **`tdmcp init` CLI** — `tdmcp init [--dry-run] [--yes] [--json]` first-run scaffold for artists: writes a sensible `tdmcp.config.json`, suggests a profile, and prints next-step doctor hints.
+- **`tdmcp ask` CLI** — `tdmcp ask "<question>"` thin shell over the local-LLM copilot (basic-tier tool subset, including the new `compact_graph_digest`) for one-shot questions without launching a chat loop.
+
+#### Changed
+
+- **`create_audio_reactive` — opt-in transient gate + sidechain duck modulation bus.** New flags `transient_gate`, `transient_threshold`, `transient_hold_ms`, `sidechain_duck`, `duck_depth`, `duck_release_ms` add a `transient` `analyzeCHOP` (function=8), `transient_hold` / `duck_env` `filterCHOP`s, a `duck` `mathCHOP`, and merge into a `mod1` `nullCHOP` modulation bus that downstream tools can `bind_to_channel`. **Backward-compat:** all defaults preserve the prior byte-identical container; existing tests, recipes, and CLI callers omitting the new fields keep working (impl now re-parses `z.input<schema>` internally). When `expose_controls=true`, the four new knobs (Transient Threshold, Transient Hold (ms), Duck Depth, Duck Release (ms)) appear on the controls panel. (Live UNVERIFIED: transient detector operator type, Filter CHOP ramp-unit semantics.)
+- **`set_perform_mode` — promoted to typed `POST /api/perform` REST endpoint** with Zod-validated `performMode` snapshot in the response. Exec fallback preserved for older bridges. (Live UNVERIFIED: `project.performMode` writability via the new endpoint.)
+
+#### Internal
+
+- **`familyOf(type)` lifted to `src/resources/familyOf.ts`** — shared helper now imported by both `sceneSummary.ts` and the new `graphDigest.ts` resource; removes a hand-duplicated copy and keeps family-classification logic single-sourced.
+
+#### Notes
+
+QA report `_workspace/04_qa_wave12.md` — all four PR gates green (typecheck, build, biome, vitest 3690 tests), recipes 31/31 valid, bridge tests 182 pass, cross-boundary coherence PASS. Four live-only items remain UNVERIFIED-pending-bridge (Lookup CHOP table format; Timer CHOP `cycle` writability; Info CHOP `total_cooks` channel name; `project.performMode` writability) — to be probed in a live TD session before the next tagged release.
 
 ## [0.8.2] - 2026-06-02
 
@@ -1264,12 +1294,13 @@ API on its first live run, and is fail-forward (per-item warnings, never throws)
   preview-asset writes, as a strict superset of `TDMCP_RAW_PYTHON=off`. Use it to hand an
   autonomous in-TD agent a curated, non-destructive toolset.
 
+[0.8.3]: https://github.com/Pantani/tdmcp/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/Pantani/tdmcp/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/Pantani/tdmcp/compare/fa7d33c2a8093d85cbad6226f62f28714a0af8fb...v0.8.1
 [0.8.0]: https://github.com/Pantani/tdmcp/compare/v0.7.1...fa7d33c2a8093d85cbad6226f62f28714a0af8fb
 [0.7.1]: https://github.com/Pantani/tdmcp/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/Pantani/tdmcp/compare/v0.6.1...v0.7.0
-[Unreleased]: https://github.com/Pantani/tdmcp/compare/v0.8.2...HEAD
+[Unreleased]: https://github.com/Pantani/tdmcp/compare/v0.8.3...HEAD
 [0.6.1]: https://github.com/Pantani/tdmcp/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/Pantani/tdmcp/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Pantani/tdmcp/compare/v0.4.0...v0.5.0

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { tryEndpoint } from "../../td-client/types.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -23,14 +24,20 @@ interface PerformModeReport {
   was: boolean;
   /** True when this build exposed `ui.performMode` and it was set (success, not a warning). */
   ui_perform_mode_set: boolean;
+  /** True when this build exposed a writable `project.performMode`. Endpoint-only; the
+   *  exec-fallback path always reports `false`. */
+  project_perform_mode_set?: boolean;
   warnings: string[];
   fatal?: string;
+  /** Internal: which transport served the report. Lets the unit test prove fallback fired. */
+  _source?: "endpoint" | "exec";
 }
 
 // The flag is stored on the TD root op via op('/').store() so it persists for
 // the lifetime of the session and can be read cheaply from any context.
-// We do NOT add a REST bridge endpoint — this is a single Python pass via
-// executePythonScript, following the established escape-hatch pattern.
+// Transport: endpoint-first (ctx.client.setPerformMode), with an exec-fallback
+// via executePythonScript when the bridge has no perform-mode endpoint. The
+// stored flag on op('/') is the primary contract regardless of transport.
 //
 // Optionally we probe project.cookRate / ui.performMode / app.performMode for
 // a documented "realtime / perform" knob on this TD build. If none is found
@@ -69,11 +76,19 @@ export function buildSetPerformModeScript(payload: object): string {
 
 export async function setPerformModeImpl(ctx: ToolContext, args: SetPerformModeArgs) {
   return guardTd(
-    async () => {
-      const script = buildSetPerformModeScript({ enabled: args.enabled });
-      const exec = await ctx.client.executePythonScript(script, true);
-      return parsePythonReport<PerformModeReport>(exec.stdout);
-    },
+    async () =>
+      tryEndpoint<PerformModeReport>(
+        async () => {
+          const state = await ctx.client.setPerformMode(args.enabled);
+          return { ...state, _source: "endpoint" };
+        },
+        async () => {
+          const script = buildSetPerformModeScript({ enabled: args.enabled });
+          const exec = await ctx.client.executePythonScript(script, true);
+          const report = parsePythonReport<PerformModeReport>(exec.stdout);
+          return { ...report, _source: "exec" };
+        },
+      ),
     (report) => {
       if (report.fatal) {
         return errorResult(`set_perform_mode failed: ${report.fatal}`, report);

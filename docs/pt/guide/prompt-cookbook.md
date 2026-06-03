@@ -815,6 +815,52 @@ sem `executePythonScript`. A ferramenta prefere o endpoint via `tryEndpoint` e c
 para exec apenas em bridges antigas. Latência mais baixa, amigável a bridge
 hardenada.*
 
+> *"Adiciona uma corrente de segurança kill/dimmer na saída master com fade de
+> 2 segundos e um botão Emergency de pânico que eu posso apertar pelo celular."*
+
+*`create_safety_blackout_chain` envolve o TOP de programa com um Level/dim
+controlado por um Null CHOP `safety_dim` (0 = aceso, 1 = preto total), um fade de
+2 segundos controlado por Speed, e um toggle `Panic` exposto. Faça bind do
+`safety_dim` a um fader do celular com `bind_to_channel`, ou ligue um botão
+"dead-man" físico ao Panic. Funciona offline e é seguro instalar em uma bridge com
+`TDMCP_BRIDGE_ALLOW_EXEC=0`.*
+
+> *"Monta um setlist cronometrado que cicla por três cenas — intro 30s, drop 60s,
+> outro 45s — com crossfades de 2 segundos e um HUD mostrando agora/próximo/restante."*
+
+*`create_setlist_runner` instala um Timer CHOP com um segmento por cena, um bus de
+crossfade e um Text TOP HUD lendo agora/próximo/segundos restantes. O Parameter
+Execute DAT `param_engine` escuta Play/Row/Skip/Prev para você sobrescrever a
+programação ao vivo — pausar numa cena, pular adiante ou voltar sem reescrever o
+timer.*
+
+> *"Envolve minha entrada NDI num watchdog que troca automaticamente pra um MP4
+> pré-renderizado se a câmera cair, com crossfade de 250ms e um toggle de recuperação fixo."*
+
+*`create_show_failover` roda um Info CHOP na fonte ao vivo e observa o delta de
+`total_cooks` — quando ele para de subir, o watchdog roteia um Switch TOP pro
+MoviefileIn de backup num crossfade de 250ms. O toggle `sticky_recover` impede o
+ping-pong quando o NDI pisca, então o show não fica estroboscópico numa câmera
+instável.*
+
+> *"Liga minha pose corporal ao visual: quando eu levanto a mão direita o
+> caleidoscópio gira, quando eu abro os braços o bloom dobra de intensidade."*
+
+*Encadeie `setup_body_tracking` (fonte de pose MediaPipe) em `create_pose_reactive`
+para obter canais CHOP nomeados por articulação e gestos derivados
+(`right_hand_up`, `arms_open`, `lean_left`). Mapeie esses canais para a rotação do
+caleidoscópio e o nível do bloom — a pose vira uma superfície de controle, sem
+MIDI.*
+
+> *"Cria o meu reativo, mas usa o novo gate de transiente pra palmas dispararem
+> um strobe, e dá um duck no bloom em cada bumbo tipo sidechain compressor."*
+
+*`create_audio_reactive` agora aceita `transient_gate:true` (+ `transient_threshold`,
+`transient_hold_ms`) e `sidechain_duck:true` (+ `duck_depth`, `duck_release_ms`)
+para adicionar buses de gate e duck à mesma rede. Os defaults continuam desligados,
+então containers reativos existentes ficam byte-idênticos — opte por dentro só
+quando quiser os buses novos.*
+
 ## Saída & mapeamento
 
 > *"Mande o visual final para uma janela em tela cheia no meu segundo monitor."*
@@ -952,6 +998,14 @@ não for dry-run, todo passo aplicado é revertido e o relatório carrega uma fl
 `rolled_back: true` — o agente não consegue piorar a situação. Uma passada de
 reparo que se desfaz sozinha, a rede de segurança que todo artista queria do "AI,
 conserta aí".*
+
+> *"Roda um auto-repair em `/project1` — até três passadas, para se os erros
+> pararem de cair e desfaz qualquer passada que piore o estado."*
+
+*`auto_repair_loop` é o verbo "conserta tudo": ele dirige `repair_network` em
+iterações, marca `errors_before`/`errors_after` por passada, para no platô e
+herda o mesmo rollback de segurança. Uma chamada no lugar do ciclo manual
+reparar/checar/repetir.*
 
 ## Componentes reutilizáveis & documentação
 
@@ -1402,6 +1456,25 @@ também pode vir de `TDMCP_LLM_*`.*
 *O catálogo de prompts, a busca de recipes e o cookbook localizado agora são
 recursos MCP, então agentes podem fundamentar o próximo passo nos mesmos docs que
 um humano lê, em vez de lembrar nomes de prompt desatualizados.*
+
+> *"Primeiro uso em máquina nova: `tdmcp init` pra montar config, token da
+> bridge e pasta do vault; depois `tdmcp ask 'que ferramentas eu tenho pra
+> áudio?'` pra uma resposta one-shot que eu posso usar em pipe num script."*
+
+*`tdmcp init` é o comando de onboarding direto — escreve um config padrão, gera
+um token de bridge, cria a pasta do vault e suporta `--dry-run`, `--yes` e
+`--json` pra setups scriptados. `tdmcp ask "<prompt>"` é o one-shot headless do
+copiloto local — imprime a resposta e sai, então você manda pipe pra outras
+ferramentas CLI sem abrir um chat interativo.*
+
+> *"Antes de responder, lê o digest compacto do grafo de `/project1/hero` pra
+> ver estrutura sem estourar meu budget de tokens."*
+
+*`compact_graph_digest` (e o recurso `tdmcp://digest/{path}`) é o resumo
+amigável ao budget de tokens que o copiloto local deve consumir antes de
+raciocinar sobre uma rede: contagens de nós por tipo, fios principais e
+parâmetros chave num payload pequeno. Aponte o modelo do tier básico para o
+digest, não para o dump bruto do grafo.*
 
 > *"Me ensine TouchDesigner o bastante para montar este patch: leia o learning path,
 > cheatsheets e snippets GLSL verificados antes de decidir quais operadores usar."*

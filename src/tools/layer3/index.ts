@@ -3,6 +3,7 @@ import { registerAnalyzeProject } from "./analyzeProject.js";
 // Campaign Waves 4 & 6 (backlog 2026-05-29):
 import { registerCaptionTop } from "./captionTop.js";
 import { registerCollectProjectAssets } from "./collectProjectAssets.js";
+import { registerCompactGraphDigest } from "./compactGraphDigest.js";
 import { registerCompareTdNodes } from "./compareTdNodes.js";
 import { registerControlTimelineTransport } from "./controlTimelineTransport.js";
 import { registerCopilotVision } from "./copilotVision.js";
@@ -128,4 +129,6 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerCopilotVision,
   // Close-roadmap M4 (2026-06-01): inline preview pass — one-shot inspection snapshot.
   registerGetInlinePreview,
+  // Wave 2026-06-02 — compact-token graph digest for small LLM context:
+  registerCompactGraphDigest,
 ];

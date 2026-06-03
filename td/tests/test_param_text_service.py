@@ -246,5 +246,68 @@ class DatTextTests(unittest.TestCase):
                 pme.put_dat_text("/project1/noise1", "x")
 
 
+# --- read_param_modes_batch ----------------------------------------------------
+class ReadParamModesBatchTests(unittest.TestCase):
+    def _make_resolver(self, by_path):
+        return lambda path: by_path.get(path)
+
+    def test_happy_two_nodes(self):
+        a = FakeNode("/p/a", [FakePar("amp", val=0.5, mode=FakeParMode.CONSTANT)])
+        b = FakeNode("/p/b", [FakePar("freq", val=2.0, mode=FakeParMode.EXPRESSION)])
+        with mock.patch.object(pme, "op", self._make_resolver({"/p/a": a, "/p/b": b})):
+            res = pme.read_param_modes_batch(
+                [{"path": "/p/a"}, {"path": "/p/b"}]
+            )
+        self.assertEqual(len(res["items"]), 2)
+        self.assertEqual(res["items"][0]["path"], "/p/a")
+        self.assertEqual(res["items"][1]["path"], "/p/b")
+        self.assertNotIn("error", res["items"][0])
+        self.assertNotIn("error", res["items"][1])
+
+    def test_mixed_isolates_missing_with_continue(self):
+        a = FakeNode("/p/a", [FakePar("amp")])
+        with mock.patch.object(pme, "op", self._make_resolver({"/p/a": a})):
+            res = pme.read_param_modes_batch(
+                [{"path": "/p/a"}, {"path": "/p/missing"}],
+                continue_on_error=True,
+            )
+        self.assertEqual(len(res["items"]), 2)
+        self.assertNotIn("error", res["items"][0])
+        self.assertIn("error", res["items"][1])
+        self.assertIn("Node not found", res["items"][1]["error"])
+        self.assertEqual(res["items"][1]["parameters"], [])
+
+    def test_strict_missing_raises(self):
+        with mock.patch.object(pme, "op", self._make_resolver({})):
+            with self.assertRaises(LookupError):
+                pme.read_param_modes_batch(
+                    [{"path": "/p/missing"}], continue_on_error=False
+                )
+
+    def test_keys_and_non_default_only_propagate(self):
+        pars = [
+            FakePar("amp", mode=FakeParMode.CONSTANT),
+            FakePar("freq", mode=FakeParMode.EXPRESSION),
+        ]
+        node = FakeNode("/p/a", pars)
+        with mock.patch.object(pme, "op", self._make_resolver({"/p/a": node})):
+            res = pme.read_param_modes_batch(
+                [
+                    {"path": "/p/a", "keys": ["amp"]},
+                    {"path": "/p/a", "non_default_only": True},
+                ]
+            )
+        self.assertEqual([p["name"] for p in res["items"][0]["parameters"]], ["amp"])
+        self.assertEqual([p["name"] for p in res["items"][1]["parameters"]], ["freq"])
+
+    def test_cap_at_256(self):
+        with self.assertRaises(ValueError):
+            pme.read_param_modes_batch([{"path": "/x"}] * 257)
+
+    def test_non_list_raises(self):
+        with self.assertRaises(ValueError):
+            pme.read_param_modes_batch({"path": "/x"})
+
+
 if __name__ == "__main__":
     unittest.main()

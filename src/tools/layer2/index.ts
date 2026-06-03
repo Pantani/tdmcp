@@ -4,6 +4,7 @@ import { registerAnimateParameter } from "./animateParameter.js";
 import { registerApplyLut } from "./applyLut.js";
 import { registerArrangeNetwork } from "./arrangeNetwork.js";
 import { registerAuthorScriptOperator } from "./authorScriptOperator.js";
+import { registerAutoRepairLoop } from "./autoRepairLoop.js";
 import { registerBatchOperations } from "./batchOperations.js";
 import { registerBindAudioReactive } from "./bindAudioReactive.js";
 import { registerBindToChannel } from "./bindToChannel.js";
@@ -158,4 +159,6 @@ export const layer2Registrars: ToolRegistrar[] = [
   registerSetupFaceTracking,
   registerSetupHandTracking,
   registerSetupSegmentation,
+  // Wave 2026-06-02 — fail-forward auto-repair loop:
+  registerAutoRepairLoop,
 ];

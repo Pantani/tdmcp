@@ -13,6 +13,7 @@ interface InstallBridgeOptions {
   verify: boolean;
   wait: boolean;
   port: number;
+  token?: string;
 }
 
 export interface InstallBridgeResult {
@@ -23,6 +24,7 @@ export interface InstallBridgeResult {
   textportCommand?: string;
   noPrefsTextportCommand?: string;
   verified?: boolean;
+  token?: string;
 }
 
 interface BridgeInfo {
@@ -102,12 +104,25 @@ export function runInstallBridge(
     ].join("\n"),
   );
 
+  if (options.token) {
+    console.log(
+      [
+        "  Auth: a shared bridge token was provided. Set the SAME value in TouchDesigner's",
+        "  environment BEFORE running the Textport command so the bridge enforces auth:",
+        "",
+        `    os.environ['TDMCP_BRIDGE_TOKEN'] = ${JSON.stringify(options.token)}`,
+        "",
+      ].join("\n"),
+    );
+  }
+
   const baseResult: InstallBridgeResult = {
     ok: true,
     detail: `bridge modules copied to ${dest}`,
     port: options.port,
     modulesDir: dest,
     ...commands,
+    ...(options.token ? { token: options.token } : {}),
   };
   if (options.verify || options.wait) {
     return verifyInstalledBridge(options, baseResult);
@@ -120,6 +135,16 @@ function parseInstallBridgeArgs(args: string[]): InstallBridgeOptions | undefine
   const explicitDir = dirFlag !== -1 ? args[dirFlag + 1] : undefined;
   if (dirFlag !== -1 && (!explicitDir || explicitDir.startsWith("-"))) {
     console.error("[tdmcp] Missing install-bridge --dir value.");
+    process.exitCode = 2;
+    return undefined;
+  }
+
+  const tokenFlag = args.indexOf("--token");
+  const explicitToken = tokenFlag !== -1 ? args[tokenFlag + 1] : undefined;
+  // Tokens generated via randomBytes(...).toString("base64url") can legitimately begin
+  // with "-", so do NOT reject them as a missing-value flag. Only reject undefined / "".
+  if (tokenFlag !== -1 && (explicitToken === undefined || explicitToken === "")) {
+    console.error("[tdmcp] Missing install-bridge --token value.");
     process.exitCode = 2;
     return undefined;
   }
@@ -146,6 +171,7 @@ function parseInstallBridgeArgs(args: string[]): InstallBridgeOptions | undefine
     verify: args.includes("--verify"),
     wait: args.includes("--wait"),
     port,
+    token: explicitToken,
   };
 }
 
@@ -181,7 +207,7 @@ async function verifyInstalledBridge(
 
   do {
     try {
-      const info = await fetchBridgeInfo(url);
+      const info = await fetchBridgeInfo(url, options.token);
       console.log(`  Bridge verified at ${url}${formatBridgeInfo(info)}.`);
       return {
         ...baseResult,
@@ -220,11 +246,14 @@ function bridgeInfoUrl(port: number): string {
   return `http://127.0.0.1:${port}/api/info`;
 }
 
-async function fetchBridgeInfo(url: string): Promise<BridgeInfo> {
+async function fetchBridgeInfo(url: string, token?: string): Promise<BridgeInfo> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), VERIFY_ATTEMPT_TIMEOUT_MS);
   try {
-    const response = await fetch(url, { method: "GET", signal: controller.signal });
+    // Forward the bearer token when present so verify works once TD enforces
+    // TDMCP_BRIDGE_TOKEN; without it `/api/info` returns 401 and the verify step lies.
+    const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+    const response = await fetch(url, { method: "GET", signal: controller.signal, headers });
     if (!response.ok) {
       throw new Error(`HTTP ${response.status || "network error"}`);
     }

@@ -210,6 +210,23 @@ export const ParamModesSchema = z.object({
 });
 export type TdParamModes = z.infer<typeof ParamModesSchema>;
 
+// Batched read_parameter_modes — per-item envelope adds an optional `error`
+// field for the isolate-per-item-failure path (bridge keeps `continue_on_error`
+// true by default).
+export const ParamModesBatchItemSchema = z.object({
+  path: z.string(),
+  type: z.string().default(""),
+  name: z.string().default(""),
+  parameters: z.array(ParamModeEntrySchema).default([]),
+  warnings: z.array(z.string()).default([]),
+  error: z.string().optional(),
+});
+export const ParamModesBatchSchema = z.object({
+  items: z.array(ParamModesBatchItemSchema).default([]),
+});
+export type TdParamModesBatchItem = z.infer<typeof ParamModesBatchItemSchema>;
+export type TdParamModesBatch = z.infer<typeof ParamModesBatchSchema>;
+
 export const SetParamModeResultSchema = z.object({
   path: z.string(),
   param: z.string(),
@@ -298,6 +315,19 @@ export const SystemInfoSchema = z.object({
     .optional(),
 });
 export type TdSystemInfo = z.infer<typeof SystemInfoSchema>;
+
+// --- Perform-mode write (POST /api/perform) — survives ALLOW_EXEC=0 ---
+// Superset of the legacy PerformModeReport (adds project_perform_mode_set) so
+// the rewired tool produces the same artist-visible summary on either path.
+export const PerformModeStateSchema = z.object({
+  enabled: z.boolean(),
+  was: z.boolean(),
+  stored: z.boolean(),
+  ui_perform_mode_set: z.boolean(),
+  project_perform_mode_set: z.boolean(),
+  warnings: z.array(z.string()).default([]),
+});
+export type TdPerformModeState = z.infer<typeof PerformModeStateSchema>;
 
 // --- Project analysis (GET /api/projects/<path>/analysis) ---
 // Diagnostic walk for analyze_project. Survives ALLOW_EXEC=0. Mirrors the legacy

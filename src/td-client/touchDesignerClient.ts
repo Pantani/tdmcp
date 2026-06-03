@@ -20,14 +20,17 @@ import {
   NodeErrorsSchema,
   NodeListSchema,
   NodeRefSchema,
+  ParamModesBatchSchema,
   ParamModesSchema,
   PerformanceSchema,
+  PerformModeStateSchema,
   PreviewSchema,
   ProjectAnalysisSchema,
   SetParamModeResultSchema,
   SystemInfoSchema,
   type TdBatchOperation,
   type TdCustomParams,
+  type TdPerformModeState,
   type TdProjectAnalysis,
   type TdSystemInfo,
   TopologySchema,
@@ -341,6 +344,68 @@ export class TouchDesignerClient {
     });
   }
 
+  /** Batched read_parameter_modes (POST /api/param_modes/batch).
+   *
+   * Promotes N round-trips of `readParameterModes` to one. Older bridges that
+   * don't ship the batch route answer 404/Unsupported — the caller should wrap
+   * this in `tryEndpoint(...)` with a fallback that loops the singular method.
+   * `readParameterModesBatchWithFallback` does exactly that for convenience.
+   */
+  readParameterModesBatch(
+    items: Array<{ path: string; keys?: string[]; nonDefaultOnly?: boolean }>,
+    continueOnError = true,
+  ) {
+    return this.request("POST", "/api/param_modes/batch", ParamModesBatchSchema, {
+      items: items.map((i) => ({
+        path: i.path,
+        keys: i.keys ?? null,
+        non_default_only: i.nonDefaultOnly ?? false,
+      })),
+      continue_on_error: continueOnError,
+    });
+  }
+
+  /** Convenience: try the batch endpoint, fall back to N singular calls on 404
+   * (older bridge) — never throws inside the fallback when `continueOnError` is
+   * true; failures land as per-item `error` fields, mirroring the bridge shape.
+   */
+  async readParameterModesBatchWithFallback(
+    items: Array<{ path: string; keys?: string[]; nonDefaultOnly?: boolean }>,
+    continueOnError = true,
+  ) {
+    const { tryEndpoint } = await import("./types.js");
+    return tryEndpoint(
+      () => this.readParameterModesBatch(items, continueOnError),
+      async () => {
+        const out: Array<z.infer<typeof ParamModesBatchSchema>["items"][number]> = [];
+        for (const it of items) {
+          try {
+            const r = await this.readParameterModes(it.path, it.keys, it.nonDefaultOnly ?? false);
+            out.push({
+              path: r.path,
+              type: r.type,
+              name: r.name,
+              parameters: r.parameters,
+              warnings: r.warnings,
+            });
+          } catch (err) {
+            if (!continueOnError) throw err;
+            const message = err instanceof Error ? err.message : String(err);
+            out.push({
+              path: it.path,
+              type: "",
+              name: "",
+              parameters: [],
+              warnings: [],
+              error: message,
+            });
+          }
+        }
+        return { items: out };
+      },
+    );
+  }
+
   setParameterMode(path: string, param: string, mode: string, expr?: string, value?: unknown) {
     return this.request(
       "PATCH",
@@ -373,6 +438,11 @@ export class TouchDesignerClient {
     return this.request("GET", "/api/system", SystemInfoSchema, undefined, {
       include: include?.length ? include.join(",") : undefined,
     });
+  }
+
+  // --- Perform-mode write (survives ALLOW_EXEC=0) ---
+  setPerformMode(enabled: boolean): Promise<TdPerformModeState> {
+    return this.request("POST", "/api/perform", PerformModeStateSchema, { enabled });
   }
 
   // --- Project diagnostic scan (survives ALLOW_EXEC=0) ---
