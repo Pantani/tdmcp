@@ -9,7 +9,7 @@
 import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -93,6 +93,19 @@ function circle(buf, cx, cy, radius, color, alpha = 1) {
         const edge = smoothstep(1, 0.78, Math.sqrt(d2) / radius);
         set(buf, x, y, color, alpha * edge);
       }
+    }
+  }
+}
+
+function ellipseRing(buf, cx, cy, rx, ry, thickness, color, alpha = 1) {
+  const x0 = Math.floor(cx - rx - thickness * rx);
+  const y0 = Math.floor(cy - ry - thickness * ry);
+  const x1 = Math.ceil(cx + rx + thickness * rx);
+  const y1 = Math.ceil(cy + ry + thickness * ry);
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      const d = Math.abs(Math.hypot((x - cx) / rx, (y - cy) / ry) - 1);
+      if (d <= thickness) set(buf, x, y, color, alpha * smoothstep(thickness, 0, d));
     }
   }
 }
@@ -1260,6 +1273,31 @@ function ditherFrame(t) {
   return buf;
 }
 
+function halftoneAmberPrintFrame(t) {
+  const buf = Buffer.alloc(width * height * 3);
+  backdrop(buf, [28, 18, 8], [9, 6, 4]);
+  for (let y = 0; y < height; y += 8) {
+    for (let x = 0; x < width; x += 8) {
+      const u = (x / width - 0.5) * 2;
+      const v = (y / height - 0.5) * 2;
+      const wave = Math.sin(u * 8 + t * 3.2) + Math.cos(v * 7 - t * 2.6) + Math.sin((u + v) * 5);
+      const poster = smoothstep(-0.65, 1.4, wave + 1.1 - Math.hypot(u * 0.9, v * 1.2));
+      const radius = 1.2 + poster * 4.8;
+      const color = mixColor([62, 32, 10], [255, 176, 54], poster);
+      circle(buf, x + 4, y + 4, radius, color, 0.84);
+    }
+  }
+  glow(buf, 244 + Math.sin(t * 1.3) * 28, 122, 120, [255, 126, 30], 0.12);
+  for (let i = 0; i < 5; i++) {
+    const y = 52 + i * 30;
+    rect(buf, 346, y, 58 + Math.sin(t * 2 + i) * 18, 5, [255, 214, 86], 0.42);
+    rect(buf, 346, y + 11, 36 + i * 10, 4, [255, 255, 255], 0.14);
+  }
+  rect(buf, 42, 218, 126, 8, [255, 176, 54], 0.72);
+  rect(buf, 188, 218, 74 + Math.sin(t * 2.1) * 24, 8, [255, 84, 36], 0.54);
+  return buf;
+}
+
 function jfaVoronoiFrame(t) {
   const buf = baseFrame();
   const seeds = [];
@@ -1286,6 +1324,70 @@ function jfaVoronoiFrame(t) {
       if (edge > 0.72) rect(buf, x, y, 2, 2, [255, 240, 210], 0.32);
     }
   }
+  return buf;
+}
+
+function pointCloudDriftFrame(t) {
+  const buf = Buffer.alloc(width * height * 3);
+  backdrop(buf, [5, 9, 16], [1, 3, 8]);
+  const cx = width / 2;
+  const cy = height / 2 + 8;
+  glow(buf, cx, cy, 160, [57, 232, 190], 0.08);
+  for (let i = 0; i < 1150; i++) {
+    const a = rand(i, 2, 3) * Math.PI * 2;
+    const z = rand(i, 7, 4) * 2 - 1;
+    const r = Math.sqrt(Math.max(0, 1 - z * z));
+    const spin = a + t * (0.45 + rand(i, 4, 8) * 0.45);
+    const noise = Math.sin(i * 0.17 + t * 3.1) * 9;
+    const x = cx + Math.cos(spin) * (r * 138 + noise) + z * 22;
+    const y = cy + Math.sin(spin) * (r * 58 + noise * 0.28) + z * 42;
+    const depth = (z + 1) / 2;
+    const color = mixColor([75, 115, 255], [57, 232, 190], depth);
+    if (i % 9 === 0) {
+      line(buf, x - Math.cos(spin) * 6, y - Math.sin(spin) * 3, x, y, color, 0.12 + depth * 0.08);
+    }
+    circle(buf, x, y, 0.8 + depth * 1.7, color, 0.28 + depth * 0.46);
+  }
+  rect(buf, 54, 222, 118, 7, [57, 232, 190], 0.62);
+  rect(buf, 198, 222, 108 + Math.sin(t * 1.8) * 22, 7, [75, 115, 255], 0.52);
+  rect(buf, 330, 222, 64, 7, [255, 214, 86], 0.44);
+  return buf;
+}
+
+function strangeAttractorFrame(t) {
+  const buf = Buffer.alloc(width * height * 3);
+  backdrop(buf, [2, 3, 8], [0, 0, 3]);
+  let x = 0.01;
+  let y = 0.01;
+  const a = 1.4 + Math.sin(t * 0.55) * 0.08;
+  const b = -2.3 + Math.cos(t * 0.44) * 0.08;
+  const c = 2.4 + Math.sin(t * 0.37) * 0.06;
+  const d = -2.1 + Math.cos(t * 0.49) * 0.08;
+  glow(buf, 240, 132, 174, [118, 75, 255], 0.18);
+  for (let i = 0; i < 62_000; i++) {
+    const nx = Math.sin(a * y) - Math.cos(b * x);
+    const ny = Math.sin(c * x) - Math.cos(d * y);
+    x = nx;
+    y = ny;
+    if (i < 80) continue;
+    const px = 240 + x * 66;
+    const py = 134 + y * 44;
+    const color = hsv((0.58 + i / 98_000 + t * 0.025) % 1, 0.82, 1);
+    set(buf, px, py, color, 0.045);
+    if (i % 37 === 0) circle(buf, px, py, 1.1, color, 0.13);
+  }
+  for (let i = 0; i < 18; i++) {
+    circle(
+      buf,
+      54 + i * 22,
+      232 + Math.sin(t * 2 + i) * 5,
+      2.5,
+      hsv(0.61 + i * 0.012, 0.86, 0.96),
+      0.68,
+    );
+  }
+  rect(buf, 72, 244, 116, 5, [118, 75, 255], 0.54);
+  rect(buf, 214, 244, 86 + Math.sin(t * 1.4) * 24, 5, [57, 232, 190], 0.52);
   return buf;
 }
 
@@ -1546,6 +1648,56 @@ function extractPaletteFrame(t) {
   });
   const scanX = 26 + ((t * 82) % 258);
   rect(buf, scanX, 34, 2, 186, [255, 255, 255], 0.65);
+  return buf;
+}
+
+function paletteExtractAndGradeFrame(t) {
+  const buf = baseFrame();
+  const swatches = [
+    [24, 188, 126],
+    [68, 84, 232],
+    [255, 197, 72],
+    [235, 72, 128],
+    [18, 26, 42],
+  ];
+  for (let y = 30; y < 198; y++) {
+    for (let x = 28; x < 214; x++) {
+      const source = proceduralClip(x - 28, y - 30, t, 2);
+      const pulse = Math.sin((x + y) * 0.035 + t * 3.8) * 0.5 + 0.5;
+      const lit = mixColor(source, swatches[Math.floor(pulse * 4.99)], 0.18);
+      set(buf, x, y, lit, 0.95);
+    }
+  }
+  for (let y = 30; y < 198; y++) {
+    for (let x = 286; x < 452; x++) {
+      const source = proceduralClip(x - 286, y - 30, t + 0.18, 2);
+      const shadows = mixColor(
+        [source[0] * 0.58, source[1] * 0.68, source[2] * 0.95],
+        swatches[4],
+        0.34,
+      );
+      const mids = mixColor(shadows, swatches[0], 0.22);
+      const highlights = mixColor(
+        mids,
+        swatches[2],
+        smoothstep(0.52, 0.96, (source[0] + source[1]) / 510) * 0.38,
+      );
+      set(buf, x, y, highlights, 0.94);
+    }
+  }
+  rect(buf, 28, 30, 186, 168, [255, 255, 255], 0.06);
+  rect(buf, 286, 30, 166, 168, [255, 255, 255], 0.06);
+  const scanX = 28 + ((t * 92) % 186);
+  rect(buf, scanX, 30, 2, 168, [255, 255, 255], 0.72);
+  for (let i = 0; i < swatches.length; i++) {
+    const reveal = smoothstep(i * 0.12, i * 0.12 + 0.22, (t * 0.58) % 1);
+    rect(buf, 226, 54 + i * 27, 40 * reveal, 18, swatches[i], 0.92);
+    rect(buf, 226 + 48 * reveal, 60 + i * 27, 34 * reveal, 4, [255, 255, 255], 0.24);
+    line(buf, 226 + 40 * reveal, 63 + i * 27, 286, 64 + i * 20, swatches[i], 0.24 * reveal);
+  }
+  rect(buf, 314, 214, 104, 8, [24, 188, 126], 0.72);
+  rect(buf, 314, 230, 74, 6, [235, 72, 128], 0.58);
+  rect(buf, 314, 244, 128, 6, [255, 197, 72], 0.46);
   return buf;
 }
 
@@ -2102,6 +2254,114 @@ function opticalFlowFrame(t) {
   return buf;
 }
 
+function sdfCsgCathedralFrame(t) {
+  const buf = baseFrame();
+  const violet = [176, 70, 255];
+  const deep = [8, 2, 16];
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const u = (x / width - 0.5) * 2.2;
+      const v = (y / height - 0.48) * 2.2;
+      const z = 0.8 + Math.sin(t * 1.2) * 0.22;
+      const arch = Math.abs(Math.hypot(u * 1.6, v + 0.2) - (0.5 + z * 0.18)) - 0.035;
+      const dome = Math.hypot(u, v + 0.48) - 0.34;
+      const nave = Math.max(Math.abs(u) - 0.28, Math.abs(v - 0.08) - 0.7);
+      const sideA = Math.hypot(u - 0.42, v + 0.06) - 0.26;
+      const sideB = Math.hypot(u + 0.42, v + 0.06) - 0.26;
+      const ring = Math.abs(Math.hypot(u * 1.3, v - 0.04) - 0.68) - 0.026;
+      const field = Math.min(
+        Math.min(dome, Math.min(sideA, sideB)),
+        Math.min(Math.max(nave, -dome + 0.1), Math.min(arch, ring)),
+      );
+      const edge = 1 - smoothstep(0.0, 0.045, Math.abs(field));
+      const inside = 1 - smoothstep(-0.2, 0.02, field);
+      const lamp = smoothstep(1.35, 0.06, Math.hypot(u * 0.85, v + 0.02));
+      const ribs = (Math.sin((u * 14 + Math.sin(v * 4 + t)) * Math.PI) * 0.5 + 0.5) * edge;
+      const shade = Math.max(edge * 0.8, inside * 0.24) * lamp;
+      const color = mixColor(deep, mixColor(violet, [255, 160, 255], ribs * 0.42), shade);
+      set(buf, x, y, color, 0.96);
+      if (edge > 0.2) set(buf, x, y, [255, 230, 255], edge * 0.2);
+    }
+  }
+  glow(buf, 240, 126, 180, violet, 0.24);
+  for (let i = 0; i < 5; i++) {
+    const p = i / 4;
+    const y = 92 + i * 22 + Math.sin(t * 1.4 + i) * 2;
+    ellipseRing(
+      buf,
+      240,
+      y,
+      122 - p * 34,
+      28 - p * 4,
+      0.028,
+      i % 2 ? [255, 115, 220] : violet,
+      0.38,
+    );
+  }
+  rect(buf, 54, 222, 146, 7, [95, 45, 180], 0.64);
+  rect(buf, 54, 222, 66 + (Math.sin(t * 1.4) * 0.5 + 0.5) * 70, 7, [220, 122, 255], 0.86);
+  rect(buf, 272, 222, 112, 7, [36, 20, 72], 0.74);
+  rect(buf, 272, 222, 78 + Math.sin(t * 1.8) * 18, 7, [255, 214, 86], 0.72);
+  return buf;
+}
+
+function opticalFlowParticlesTrailFrame(t) {
+  const buf = baseFrame();
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const u = x / width;
+      const v = y / height;
+      const camera = Math.sin((u * 3.2 + v * 2.4 + t * 0.9) * Math.PI * 2) * 0.5 + 0.5;
+      set(buf, x, y, mixColor([6, 10, 18], [22, 34, 54], camera * 0.45), 0.94);
+    }
+  }
+  const bodyX = 238 + Math.sin(t * 1.6) * 54;
+  const bodyY = 120 + Math.cos(t * 1.2) * 14;
+  glow(buf, bodyX, bodyY, 82, [57, 232, 190], 0.18);
+  circle(buf, bodyX, bodyY - 38, 18, [255, 255, 255], 0.1);
+  polygon(
+    buf,
+    [
+      [bodyX - 48, bodyY - 10],
+      [bodyX + 46, bodyY - 8],
+      [bodyX + 34, bodyY + 64],
+      [bodyX - 34, bodyY + 64],
+    ],
+    [255, 255, 255],
+    0.07,
+  );
+  for (let i = 0; i < 760; i++) {
+    let x = rand(i, 4, 1) * width;
+    let y = rand(i, 9, 2) * height;
+    const trail = 8 + Math.floor(rand(i, 6, 3) * 8);
+    const color = i % 5 === 0 ? [255, 86, 134] : i % 3 === 0 ? [255, 214, 86] : [57, 232, 190];
+    for (let s = 0; s < trail; s++) {
+      const dx = bodyX - x;
+      const dy = bodyY - y;
+      const pull = Math.exp(-(dx * dx + dy * dy) / 26000);
+      const a = Math.sin(x * 0.018 + y * 0.024 + t * 3.4) * Math.PI + pull * Math.atan2(dy, dx);
+      const nx = x + Math.cos(a) * (2.8 + pull * 9);
+      const ny = y + Math.sin(a) * (2.2 + pull * 7);
+      line(buf, x, y, nx, ny, color, 0.08 + pull * 0.18);
+      x = nx;
+      y = ny;
+    }
+    if (i % 4 === 0) circle(buf, x, y, 1.5, color, 0.48);
+  }
+  for (let gy = 0; gy < 7; gy++) {
+    for (let gx = 0; gx < 11; gx++) {
+      const x = 54 + gx * 40;
+      const y = 44 + gy * 28;
+      const a = Math.sin(gx * 0.7 + t * 2.6) + Math.cos(gy * 0.8 - t * 1.8);
+      line(buf, x, y, x + Math.cos(a) * 10, y + Math.sin(a) * 7, [255, 255, 255], 0.16);
+    }
+  }
+  rect(buf, 48, 224, 112, 7, [57, 232, 190], 0.72);
+  rect(buf, 186, 224, 90 + Math.sin(t * 2) * 24, 7, [255, 86, 134], 0.56);
+  rect(buf, 318, 224, 96, 7, [255, 214, 86], 0.48);
+  return buf;
+}
+
 function histogramScopeFrame(t) {
   const buf = baseFrame();
   rect(buf, 28, 36, 170, 170, [15, 22, 34], 0.96);
@@ -2446,6 +2706,52 @@ function nChannelDecksFrame(t) {
   rect(buf, 72, 214, 336 * cross, 7, [57, 232, 190], 0.76);
   circle(buf, 72 + 336 * cross, 217, 9, [255, 255, 255], 0.78);
   rect(buf, 184, 236, 112, 7, [255, 86, 134], 0.54 + 0.18 * Math.sin(t * 5));
+  return buf;
+}
+
+function nChanDecksFxBusFrame(t) {
+  const buf = baseFrame();
+  const colors = [
+    [57, 232, 190],
+    [255, 214, 86],
+    [255, 86, 134],
+    [118, 75, 255],
+  ];
+  const cut = Math.floor((t * 1.55) % 4);
+  for (let i = 0; i < 4; i++) {
+    const x = 24 + i * 82;
+    const active = i === cut;
+    rect(buf, x, 28, 68, 134, [14, 21, 34], 0.97);
+    rect(buf, x + 8, 38, 52, 44, [24, 34, 52], 0.96);
+    for (let y = 0; y < 35; y++) {
+      const c = hsv((i * 0.18 + y * 0.006 + t * 0.05) % 1, 0.68, active ? 0.96 : 0.58);
+      rect(buf, x + 12, 42 + y, 44, 1, c, 0.78);
+    }
+    rect(buf, x + 12, 98, 8, -28 - Math.sin(t * 3 + i) * 12, colors[i], 0.72);
+    rect(buf, x + 30, 126, 8, -16 - Math.cos(t * 2.2 + i) * 10, [255, 255, 255], 0.28);
+    rect(buf, x + 48, 126, 8, -22 - Math.sin(t * 2.8 + i) * 11, colors[i], 0.54);
+    rect(buf, x + 12, 146, 44, 5, [255, 255, 255], 0.12);
+    rect(buf, x + 12, 146, (22 + Math.sin(t * 2 + i) * 12) * (0.8 + i * 0.08), 5, colors[i], 0.68);
+    line(buf, x + 56, 148, 372, 76 + i * 24, colors[i], 0.16 + (active ? 0.12 : 0));
+    if (active) {
+      rect(buf, x - 3, 25, 74, 140, [255, 255, 255], 0.08);
+      glow(buf, x + 34, 62, 44, colors[i], 0.28);
+    }
+  }
+  rect(buf, 352, 48, 92, 110, [16, 24, 38], 0.97);
+  for (let i = 0; i < 4; i++) {
+    const y = 68 + i * 20;
+    rect(buf, 372, y, 48 + Math.sin(t * 2.4 + i) * 16, 5, colors[i], 0.54);
+    circle(buf, 364, y + 2, 4, colors[i], 0.82);
+  }
+  glow(buf, 400, 112, 58, [255, 86, 134], 0.16);
+  rect(buf, 52, 204, 250, 8, [255, 255, 255], 0.12);
+  const cross = Math.sin(t * 1.2) * 0.5 + 0.5;
+  rect(buf, 52, 204, 250 * cross, 8, [57, 232, 190], 0.78);
+  circle(buf, 52 + 250 * cross, 208, 8, [255, 255, 255], 0.82);
+  rect(buf, 322, 198, 94, 22, colors[cut], 0.52 + 0.22 * Math.sin(t * 4));
+  rect(buf, 328, 224, 82, 6, [255, 255, 255], 0.18);
+  rect(buf, 328, 224, 82 * (0.3 + 0.7 * cross), 6, colors[cut], 0.72);
   return buf;
 }
 
@@ -2982,7 +3288,10 @@ const clips = [
   ["fluid-sim-ink.mp4", fluidSimFrame],
   ["image-particles-burst.mp4", imageParticlesFrame],
   ["dither-gameboy-poster.mp4", ditherFrame],
+  ["halftone-amber-print.mp4", halftoneAmberPrintFrame],
   ["jfa-voronoi-stained-glass.mp4", jfaVoronoiFrame],
+  ["point-cloud-drift.mp4", pointCloudDriftFrame],
+  ["strange-attractor.mp4", strangeAttractorFrame],
   ["video-scopes-monitor.mp4", videoScopesFrame],
   ["chop-recorder-replay.mp4", chopRecorderFrame],
   ["tdableton-bridge.mp4", tdabletonFrame],
@@ -2993,6 +3302,7 @@ const clips = [
   ["color-wheels-lift-gamma-gain.mp4", colorWheelsFrame],
   ["pop-geometry-noise-rig.mp4", popGeometryFrame],
   ["palette-extraction-swatches.mp4", extractPaletteFrame],
+  ["palette-extract-and-grade.mp4", paletteExtractAndGradeFrame],
   ["sop-to-svg-plotter.mp4", sopToSvgFrame],
   ["swap-operator-rewire.mp4", swapOperatorFrame],
   ["copilot-vision-critique.mp4", copilotVisionFrame],
@@ -3014,7 +3324,9 @@ const clips = [
   ["watch-node-telemetry.mp4", watchNodeTelemetryFrame],
   ["bridge-health-watchdog.mp4", bridgeHealthWatchdogFrame],
   ["sdf-field-csg-raymarch.mp4", sdfFieldFrame],
+  ["sdf-csg-cathedral.mp4", sdfCsgCathedralFrame],
   ["optical-flow-vector-field.mp4", opticalFlowFrame],
+  ["optical-flow-particles-trail.mp4", opticalFlowParticlesTrailFrame],
   ["histogram-scope-rgb.mp4", histogramScopeFrame],
   ["face-tracking-landmarks.mp4", faceTrackingFrame],
   ["hand-tracking-gestures.mp4", handTrackingFrame],
@@ -3027,6 +3339,7 @@ const clips = [
   ["watch-build-hot-reload.mp4", watchBuildHotReloadFrame],
   ["show-director-policy-queue.mp4", showDirectorPolicyFrame],
   ["nchannel-decks-fx-send.mp4", nChannelDecksFrame],
+  ["nchan-decks-fx-bus.mp4", nChanDecksFxBusFrame],
   ["td-learning-resources.mp4", learningResourcesFrame],
   ["cli-completion-doctor-fix.mp4", cliCompletionDoctorFrame],
   ["recipe-audio-reactive-basic.mp4", recipeStarterFrame("audio", [57, 232, 190])],
@@ -3098,6 +3411,16 @@ function encode(name, renderer) {
   console.log(`wrote ${out}`);
 }
 
-for (const [name, renderer] of clips) {
+const requestedClipNames = new Set(process.argv.slice(2).map((name) => basename(name)));
+const knownClipNames = new Set(clips.map(([name]) => name));
+const unknownClipNames = [...requestedClipNames].filter((name) => !knownClipNames.has(name));
+if (unknownClipNames.length > 0) {
+  throw new Error(`Unknown clip(s): ${unknownClipNames.join(", ")}`);
+}
+
+const selectedClips =
+  requestedClipNames.size === 0 ? clips : clips.filter(([name]) => requestedClipNames.has(name));
+
+for (const [name, renderer] of selectedClips) {
   encode(name, renderer);
 }
