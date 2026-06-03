@@ -282,6 +282,101 @@ box and torus primitives) with live CameraZ, StepCount, Speed, ColorA / ColorB a
 Background controls. A whole 3D architectural form built only out of math — no
 meshes, no UVs, just one shader sculpting space.*
 
+## Artist studies & installations
+
+These prompts are for visual artists first: gallery loops, stage images, camera
+studies, print-like transformations and installation pieces.
+
+> *"Make a murmuration of 4,000 tiny agents that breathe like a flock, with
+> Separation / Alignment / Cohesion knobs I can perform slowly."*
+
+<video :src="withBase('/examples/particle-flock-murmuration.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_particle_flock` is the boids surface: a behavioral GPU system where the
+image is not a particle effect pasted on top, but a moving crowd with its own social
+rules. Good for flocking birds, fish schools, crowd fields and ambient gallery motion.*
+
+> *"Build a curl-noise particle galaxy: hundreds of thousands of points orbiting in
+> soft arms, slowly reacting to the room's motion."*
+
+<video :src="withBase('/examples/gpu-particle-curl-galaxy.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_gpu_particle_field` is the high-count field for haze, stars, ash, plankton
+and dust. Ask for `reactivity:"motion"` when a camera should energize the drift
+without turning the piece into a literal webcam effect.*
+
+> *"Turn the performer into a black cutout with a cyan/magenta rim, then use that
+> mask to reveal a generative world behind them."*
+
+<video :src="withBase('/examples/depth-silhouette-neon-mask.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_depth_silhouette` gives installation artists a clean matte: synthetic
+source for rehearsal, camera/depth source on-site, blur/threshold/invert controls
+for tuning the edge, and an output mask ready for compositing.*
+
+> *"Track four bright blobs from the camera and let each one pull a different
+> color field, like visitors moving lanterns through the projection."*
+
+<video :src="withBase('/examples/blob-reactive-installation.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_blob_reactive` turns tracked light spots, hands or objects into channels
+such as `blob0_x`, `blob0_y` and `blob0_size`. Use it for participatory installs
+where bodies control the artwork without a controller in anyone's hand.*
+
+> *"Rotoscope this source into flowing vector lines: freeze a frame, trace the
+> contours, and keep a pulse button so I can capture a new drawing live."*
+
+<video :src="withBase('/examples/vector-lines-rotoscope.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_vector_lines` is a bridge between video and drawing: prepare a mask, freeze
+it, trace it through editable SOP geometry, then render or export it. Useful for
+plotter studies, live rotoscope, laser-outline tests and print workflows.*
+
+> *"Make a cellular-automata tapestry, blue and amber, with rules that feel like
+> woven pixels growing across a wall."*
+
+<video :src="withBase('/examples/cellular-automata-tapestry.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_generative_art` supports `cellular_automata` as a promptable study. It is
+especially good when the artist wants a living textile, not a camera effect or a
+music visual.*
+
+> *"Fill the floor projection with slime-mold trails: luminous paths search,
+> overlap, fade and leave a wet ink memory."*
+
+<video :src="withBase('/examples/slime-trails-ink.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_simulation` with `type:"slime"` gives you decaying trails and search-like
+motion. It sits between reaction-diffusion and fluid sim: less scientific diagram,
+more living trace.*
+
+> *"Generate a restrained harmony palette from one blue-green hue, build a gradient
+> strip, and use it as the color source for the next visual."*
+
+<video :src="withBase('/examples/palette-harmony-study.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_palette` is not only utility plumbing: it is an art-direction tool. Use
+harmony rules to define a visual world first, then feed those swatches into grade,
+particles, SDF color, typography or projection mapping.*
+
+> *"Create flowing ribbon strokes from a vector field, like long-exposure ink
+> calligraphy moving across black."*
+
+<video :src="withBase('/examples/flow-field-ribbons.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_generative_art` with `flow_field` is the promptable version of line motion:
+good for calligraphic traces, current maps, wind drawings and data-free motion
+studies.*
+
+> *"Make a sculptural relief from a source image: a side-lit surface that rises and
+> falls like a gallery wall piece, not a flat video filter."*
+
+<video :src="withBase('/examples/sculptural-relief-gallery.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_depth_displacement` turns brightness or depth into actual 2.5D form with
+lighting and orbitable camera controls. Reach for it when the image should become
+an object.*
+
 ## Audio-reactive
 
 > *"Build a radial spectrum that blooms on the bass and throws chromatic sparks on
@@ -622,6 +717,13 @@ OSC In bridge, so the same show patch can rehearse without a perfect studio setu
 
 > *"Going live now — turn on perform mode so nothing hitches mid-show."*
 
+<video :src="withBase('/examples/perform-mode-rest-toggle.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`set_perform_mode` now prefers the hardened `POST /api/perform` endpoint and
+returns a typed snapshot showing whether the root store, UI perform mode and project
+perform mode were actually set. It still falls back for older bridges, but the
+show-time path is a real REST call.*
+
 > *"Build me an Ableton-style grid of buttons so I can trigger my saved looks live
 > with one tap each."*
 
@@ -794,6 +896,8 @@ when several TD machines need the same setup.*
 > *"Add a kill/dimmer safety chain to the master output with a 2-second fade and
 > a panic Emergency button I can hit from a phone."*
 
+<video :src="withBase('/examples/safety-blackout-chain.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
 *`create_safety_blackout_chain` wraps your program TOP with a Level/dim pass driven
 by a `safety_dim` Null CHOP (0 = lit, 1 = fully black), a Speed-controlled 2-second
 fade, and an exposed `Panic` toggle. Bind `safety_dim` to a phone fader with
@@ -802,6 +906,8 @@ offline and is safe to install on a `TDMCP_BRIDGE_ALLOW_EXEC=0` bridge.*
 
 > *"Build a timed setlist that cycles through three scenes — intro 30s, drop 60s,
 > outro 45s — with 2-second crossfades and a HUD showing now/next/remaining."*
+
+<video :src="withBase('/examples/setlist-runner-hud.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`create_setlist_runner` lays down a Timer CHOP with one segment per scene plus a
 crossfader bus and a Text TOP HUD reading now/next/remaining seconds. The
@@ -812,6 +918,8 @@ timer.*
 > *"Wrap my NDI input in a watchdog that auto-switches to a pre-rendered MP4 if
 > the camera drops, with a 250ms crossfade and a sticky-recover toggle."*
 
+<video :src="withBase('/examples/show-failover-watchdog.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
 *`create_show_failover` runs an Info CHOP on the live source and watches the
 `total_cooks` delta — when it stops climbing the watchdog routes a Switch TOP to
 the backup MoviefileIn over a 250ms crossfade. The `sticky_recover` toggle stops it
@@ -821,6 +929,8 @@ camera.*
 > *"Bind my body pose to the visual: when I raise my right hand the kaleidoscope
 > rotates, and when I open my arms the bloom intensity doubles."*
 
+<video :src="withBase('/examples/pose-reactive-bindings.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
 *Chain `setup_body_tracking` (MediaPipe pose source) into `create_pose_reactive` to
 get named CHOP channels per joint plus derived gestures (`right_hand_up`,
 `arms_open`, `lean_left`). Map those to your kaleidoscope rotation and bloom level
@@ -828,6 +938,8 @@ parameters — the pose becomes a controller surface, no MIDI required.*
 
 > *"Build my reactive but use the new transient gate so claps fire a strobe, and
 > duck the bloom on every kick like a sidechain compressor."*
+
+<video :src="withBase('/examples/audio-reactive-gate-duck.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`create_audio_reactive` now takes `transient_gate:true` (+ `transient_threshold`,
 `transient_hold_ms`) and `sidechain_duck:true` (+ `duck_depth`, `duck_release_ms`)
@@ -900,6 +1012,16 @@ and a parent error sweep without juggling separate preview and error tools.*
 
 > *"Explain what this network is doing, step by step."*
 
+> *"Read parameter modes for every important node under `/project1/hero` in one
+> batch, then tell me which parameters are expressions, binds or exported channels."*
+
+<video :src="withBase('/examples/param-modes-batch-inspector.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*The `POST /api/param_modes/batch` bridge path lets agents inspect expression,
+bind, export and constant modes for many nodes in one round-trip. It replaces the
+old N-way exec loop when you need to understand why a rig is reacting, stuck or
+overridden.*
+
 > *"This is running slow — find the bottleneck and optimize it."*
 
 > *"Score this build on palette, motion, complexity, errors and performance, then
@@ -971,6 +1093,8 @@ true` flag — a self-undoing repair pass, the safety net every artist wanted fr
 > *"Run an auto-repair loop on `/project1` — three passes max, stop if errors
 > stop going down, and roll back any pass that makes things worse."*
 
+<video :src="withBase('/examples/auto-repair-loop-passes.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
 *`auto_repair_loop` is the "fix everything" verb: it drives `repair_network` in
 iterations, scores `errors_before`/`errors_after` per pass, halts on a no-progress
 plateau, and inherits the same rollback safety. One call instead of a manual
@@ -999,6 +1123,16 @@ Turn a working network into something you can reuse, share and hand to another a
 > *"Drop a project CLAUDE.md so the next session knows the conventions."*
 
 > *"Save this look as a reusable .tox component."* (`manage_component`)
+
+> *"Turn `/project1/hero_look` into a recipe: capture direct child nodes, preserve
+> wires, rewrite sibling references, validate the schema and write
+> `Recipes/hero_look.json` to the vault."*
+
+<video :src="withBase('/examples/scaffold-recipe-from-network.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`scaffold_recipe_from_network` is the inverse of `apply_recipe`: it serializes an
+existing TD subtree into RecipeSchema-shaped JSON, optionally writes it to the
+vault, and reports what still needs hand finishing such as uniforms or controls.*
 
 > *"Generate a README for `/project1/hero_look`, include a Mermaid data-flow graph,
 > cap the node inventory at 80 rows and include a preview thumbnail if the output
@@ -1427,6 +1561,8 @@ remembering stale prompt names.*
 > token and vault folder; then `tdmcp ask 'what tools do I have for audio?'` for
 > a one-shot answer I can pipe in a shell script."*
 
+<video :src="withBase('/examples/tdmcp-init-ask-onboarding.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
 *`tdmcp init` is the dead-simple onboarding command — it writes a default config,
 generates a bridge token, creates the vault folder, and supports `--dry-run`,
 `--yes` and `--json` for scripted setups. `tdmcp ask "<prompt>"` is the headless
@@ -1435,6 +1571,8 @@ into other CLI tools without opening an interactive chat.*
 
 > *"Before answering, read the compact graph digest of `/project1/hero` so you
 > see structure without exploding my token budget."*
+
+<video :src="withBase('/examples/compact-graph-digest-budget.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`compact_graph_digest` (and the `tdmcp://digest/{path}` resource) is the
 token-budget-friendly summary the local copilot should consume before reasoning

@@ -3255,6 +3255,492 @@ function inlinePreviewThumbnailFrame(t) {
   return buf;
 }
 
+function safetyBlackoutFrame(t) {
+  const buf = baseFrame();
+  for (let y = 42; y < 198; y++) {
+    for (let x = 40; x < 268; x++) {
+      const u = (x - 40) / 228;
+      const v = (y - 42) / 156;
+      const c = mixColor([30, 210, 255], [255, 76, 126], Math.sin(u * 8 + t * 3) * 0.5 + 0.5);
+      set(buf, x, y, c, 0.7 * smoothstep(0.8, 0.1, Math.abs(v - 0.5)));
+    }
+  }
+  const blackout = smoothstep(0.12, 0.45, Math.sin(t * 2.2) * 0.5 + 0.5);
+  rect(buf, 40, 42, 228, 156, [0, 0, 0], blackout * 0.86);
+  rect(buf, 300, 52, 118, 148, [16, 24, 38], 0.96);
+  const dim = blackout;
+  rect(buf, 332, 76, 54, 84, [255, 255, 255], 0.14);
+  rect(buf, 332, 76 + 84 * dim, 54, 84 * (1 - dim), [57, 232, 190], 0.78);
+  circle(buf, 360, 184, 15, dim > 0.65 ? [255, 86, 134] : [74, 88, 112], 0.86);
+  glow(buf, 360, 184, 30, dim > 0.65 ? [255, 86, 134] : [57, 232, 190], 0.25);
+  return buf;
+}
+
+function setlistRunnerFrame(t) {
+  const buf = baseFrame();
+  rect(buf, 38, 42, 404, 44, [16, 24, 38], 0.96);
+  rect(buf, 38, 112, 404, 78, [16, 24, 38], 0.92);
+  const durations = [0.28, 0.44, 0.28];
+  const colors = [
+    [57, 232, 190],
+    [255, 86, 134],
+    [255, 214, 86],
+  ];
+  let x = 54;
+  const p = (t * 0.34) % 1;
+  let acc = 0;
+  for (let i = 0; i < 3; i++) {
+    const w = durations[i] * 348;
+    const active = p >= acc && p < acc + durations[i];
+    rect(buf, x, 58, w - 8, 12, colors[i], active ? 0.88 : 0.34);
+    rect(buf, x, 122, w - 8, 50, colors[i], active ? 0.42 : 0.18);
+    x += w;
+    acc += durations[i];
+  }
+  const playX = 54 + p * 348;
+  line(buf, playX, 50, playX, 178, [255, 255, 255], 0.86);
+  circle(buf, playX, 50, 6, [255, 255, 255], 0.86);
+  rect(buf, 82, 212, 68, 7, [57, 232, 190], 0.72);
+  rect(buf, 206, 212, 58, 7, [255, 214, 86], 0.62);
+  rect(buf, 318, 212, 42, 7, [255, 86, 134], 0.62);
+  return buf;
+}
+
+function showFailoverFrame(t) {
+  const buf = baseFrame();
+  const trip = Math.sin(t * 2.4) > 0.08;
+  rect(buf, 34, 52, 150, 106, [16, 24, 38], 0.95);
+  rect(buf, 296, 52, 150, 106, [16, 24, 38], 0.95);
+  for (let i = 0; i < 30; i++) {
+    circle(
+      buf,
+      62 + (i % 6) * 18,
+      76 + Math.floor(i / 6) * 15,
+      2,
+      [57, 232, 190],
+      trip ? 0.15 : 0.76,
+    );
+    rect(
+      buf,
+      322 + (i % 5) * 20,
+      78 + Math.floor(i / 5) * 12,
+      12,
+      5,
+      [255, 214, 86],
+      trip ? 0.7 : 0.22,
+    );
+  }
+  rect(buf, 214, 84, 52, 42, [238, 242, 247], 0.9);
+  line(buf, 184, 105, 214, 105, trip ? [255, 86, 134] : [57, 232, 190], 0.82);
+  line(buf, 266, 105, 296, 105, trip ? [255, 214, 86] : [74, 88, 112], 0.82);
+  const idx = trip ? 1 : 0;
+  rect(buf, 226, 96 + idx * 16, 28, 7, trip ? [255, 214, 86] : [57, 232, 190], 0.9);
+  rect(buf, 88, 206, 304, 7, [255, 255, 255], 0.14);
+  rect(buf, 88, 206, 304 * (trip ? 0.84 : 0.22), 7, trip ? [255, 86, 134] : [57, 232, 190], 0.68);
+  return buf;
+}
+
+function poseReactiveBindingsFrame(t) {
+  const buf = baseFrame();
+  const cx = 128;
+  const cy = 128;
+  const handLift = Math.sin(t * 2.6) * 0.5 + 0.5;
+  const pts = {
+    head: [cx, cy - 58],
+    lShoulder: [cx - 36, cy - 24],
+    rShoulder: [cx + 36, cy - 24],
+    lHand: [cx - 72, cy - 12 - handLift * 38],
+    rHand: [cx + 72, cy - 12 - handLift * 68],
+    hip: [cx, cy + 34],
+    lFoot: [cx - 34, cy + 82],
+    rFoot: [cx + 34, cy + 82],
+  };
+  [
+    ["head", "lShoulder"],
+    ["head", "rShoulder"],
+    ["lShoulder", "lHand"],
+    ["rShoulder", "rHand"],
+    ["lShoulder", "hip"],
+    ["rShoulder", "hip"],
+    ["hip", "lFoot"],
+    ["hip", "rFoot"],
+  ].forEach(([a, b]) => {
+    line(buf, pts[a][0], pts[a][1], pts[b][0], pts[b][1], [57, 232, 190], 0.6);
+  });
+  Object.values(pts).forEach(([x, y]) => {
+    circle(buf, x, y, 6, [255, 255, 255], 0.75);
+  });
+  rect(buf, 270, 52, 150, 148, [16, 24, 38], 0.95);
+  for (let i = 0; i < 4; i++) {
+    const v = i === 0 ? handLift : Math.sin(t * 2 + i) * 0.5 + 0.5;
+    rect(buf, 296, 78 + i * 26, 90, 5, [255, 255, 255], 0.16);
+    rect(buf, 296, 78 + i * 26, 90 * v, 5, i === 0 ? [255, 214, 86] : [57, 232, 190], 0.76);
+  }
+  glow(buf, 350, 178, 38 + handLift * 16, [255, 86, 134], 0.25 + handLift * 0.24);
+  return buf;
+}
+
+function audioGateDuckFrame(t) {
+  const buf = baseFrame();
+  rect(buf, 38, 46, 190, 160, [16, 24, 38], 0.95);
+  let lastX = 56;
+  let lastY = 126;
+  for (let i = 1; i < 122; i++) {
+    const x = 56 + i * 1.28;
+    const kick = Math.max(0, Math.sin((t * 3 + i / 22) * Math.PI * 2));
+    const y = 126 + Math.sin(i * 0.35 + t * 9) * 22 - kick ** 10 * 54;
+    line(buf, lastX, lastY, x, y, [57, 232, 190], 0.68);
+    lastX = x;
+    lastY = y;
+  }
+  rect(buf, 270, 46, 158, 160, [16, 24, 38], 0.95);
+  const phase = (t * 3) % 1;
+  const transient = phase < 0.12 ? 1 - phase / 0.12 : 0;
+  const duck = smoothstep(0.8, 0.05, phase);
+  rect(buf, 300, 72, 20, 94, [255, 255, 255], 0.12);
+  rect(buf, 300, 166 - transient * 94, 20, transient * 94, [255, 214, 86], 0.85);
+  rect(buf, 354, 72, 20, 94, [255, 255, 255], 0.12);
+  rect(buf, 354, 72, 20, 94 * duck, [255, 86, 134], 0.72);
+  glow(buf, 146, 118, 58, [255, 214, 86], transient * 0.34);
+  return buf;
+}
+
+function autoRepairLoopFrame(t) {
+  const buf = baseFrame();
+  const pass = Math.floor((t * 1.6) % 4);
+  for (let col = 0; col < 3; col++) {
+    rect(buf, 48 + col * 132, 46, 94, 154, [16, 24, 38], 0.95);
+    for (let i = 0; i < 4; i++) {
+      const fixed = i < pass - col + 2;
+      miniNode(buf, 70 + col * 132, 70 + i * 29, fixed ? [57, 232, 190] : [255, 86, 134], !fixed);
+    }
+  }
+  for (let col = 0; col < 2; col++) {
+    line(buf, 142 + col * 132, 120, 180 + col * 132, 120, [255, 214, 86], 0.68);
+    circle(buf, 176 + col * 132, 120, 4, [255, 214, 86], 0.86);
+  }
+  rect(buf, 138, 224, 204, 8, pass > 2 ? [57, 232, 190] : [255, 214, 86], 0.72);
+  return buf;
+}
+
+function onboardingInitAskFrame(t) {
+  const buf = baseFrame();
+  terminalPanel(buf, 28, 40, 188, 174, [57, 232, 190]);
+  rect(buf, 258, 46, 168, 160, [238, 242, 247], 0.92);
+  const step = Math.floor((t * 2.1) % 5);
+  for (let i = 0; i < 5; i++) {
+    rect(
+      buf,
+      58,
+      72 + i * 23,
+      72 + (i % 2) * 36,
+      5,
+      [255, 255, 255],
+      0.16 + (i <= step ? 0.18 : 0),
+    );
+    circle(buf, 184, 74 + i * 23, 5, i <= step ? [57, 232, 190] : [74, 88, 112], 0.82);
+  }
+  for (let i = 0; i < 7; i++) rect(buf, 282, 70 + i * 18, 84 + (i % 3) * 16, 4, [16, 24, 38], 0.28);
+  rect(buf, 286, 184, 92, 8, [255, 214, 86], 0.62 + 0.12 * Math.sin(t * 5));
+  return buf;
+}
+
+function compactGraphDigestFrame(t) {
+  const buf = baseFrame();
+  const nodes = [
+    [86, 84],
+    [154, 64],
+    [154, 128],
+    [224, 98],
+    [294, 66],
+    [294, 140],
+  ];
+  const edges = [
+    [0, 1],
+    [0, 2],
+    [1, 3],
+    [2, 3],
+    [3, 4],
+    [3, 5],
+  ];
+  edges.forEach(([a, b]) => {
+    line(buf, nodes[a][0], nodes[a][1], nodes[b][0], nodes[b][1], [255, 255, 255], 0.18);
+  });
+  nodes.forEach(([x, y], i) => {
+    miniNode(buf, x - 22, y - 13, i === 3 ? [255, 214, 86] : [57, 232, 190], false);
+  });
+  rect(buf, 336, 44, 94, 162, [238, 242, 247], 0.92);
+  const limit = 7 - Math.floor((Math.sin(t * 2.4) * 0.5 + 0.5) * 3);
+  for (let i = 0; i < limit; i++)
+    rect(buf, 354, 68 + i * 18, 54 + (i % 3) * 12, 4, [16, 24, 38], 0.3);
+  rect(buf, 354, 184, 48, 7, [57, 232, 190], 0.66);
+  return buf;
+}
+
+function scaffoldRecipeFromNetworkFrame(t) {
+  const buf = baseFrame();
+  const left = [
+    [78, 82],
+    [142, 82],
+    [110, 134],
+    [174, 134],
+  ];
+  left.forEach(([x, y], i) => {
+    miniNode(buf, x, y, i === 2 ? [255, 214, 86] : [57, 232, 190], false);
+  });
+  line(buf, 124, 95, 142, 95, [255, 255, 255], 0.22);
+  line(buf, 110, 108, 110, 134, [255, 255, 255], 0.22);
+  line(buf, 156, 108, 174, 134, [255, 255, 255], 0.22);
+  const p = (t * 0.8) % 1;
+  line(buf, 226, 126, 272, 126, [255, 214, 86], 0.48);
+  circle(buf, 226 + 46 * p, 126, 5, [255, 214, 86], 0.9);
+  rect(buf, 286, 46, 134, 166, [238, 242, 247], 0.92);
+  for (let i = 0; i < 9; i++) rect(buf, 308, 70 + i * 15, 50 + (i % 4) * 12, 4, [16, 24, 38], 0.3);
+  rect(buf, 310, 184, 72, 8, [57, 232, 190], 0.62);
+  return buf;
+}
+
+function paramModesBatchFrame(t) {
+  const buf = baseFrame();
+  rect(buf, 42, 42, 396, 170, [238, 242, 247], 0.92);
+  const rows = 5;
+  const scan = Math.floor((t * 2.6) % rows);
+  for (let i = 0; i < rows; i++) {
+    const y = 68 + i * 25;
+    rect(buf, 66, y, 320, 1, [16, 24, 38], 0.12);
+    rect(buf, 72, y + 7, 74, 4, [16, 24, 38], 0.28);
+    rect(buf, 184, y + 7, 42, 4, i === scan ? [255, 214, 86] : [57, 232, 190], 0.62);
+    rect(buf, 264, y + 7, 46, 4, i % 2 ? [255, 86, 134] : [57, 232, 190], 0.48);
+    circle(buf, 392, y + 9, 5, i <= scan ? [57, 232, 190] : [74, 88, 112], 0.8);
+  }
+  rect(buf, 134, 226, 212, 8, [57, 232, 190], 0.7);
+  return buf;
+}
+
+function performRestToggleFrame(t) {
+  const buf = baseFrame();
+  terminalPanel(buf, 32, 48, 158, 156, [255, 214, 86]);
+  rect(buf, 246, 62, 178, 112, [16, 24, 38], 0.95);
+  const on = Math.sin(t * 2.1) > -0.1;
+  rect(buf, 288, 102, 92, 32, on ? [57, 232, 190] : [74, 88, 112], 0.5);
+  circle(buf, on ? 362 : 306, 118, 16, [255, 255, 255], 0.82);
+  glow(buf, on ? 362 : 306, 118, 38, on ? [57, 232, 190] : [255, 86, 134], 0.24);
+  for (let i = 0; i < 4; i++)
+    rect(buf, 62, 78 + i * 24, 76 + i * 12, 5, [255, 255, 255], 0.16 + (i < 3 ? 0.14 : 0));
+  rect(buf, 284, 194, 88, 8, on ? [57, 232, 190] : [255, 86, 134], 0.66);
+  return buf;
+}
+
+function particleFlockMurmurationFrame(t) {
+  const buf = baseFrame();
+  const centerX = width / 2;
+  const centerY = height / 2;
+  for (let i = 0; i < 180; i++) {
+    const a = i * 2.399 + t * (0.55 + (i % 7) * 0.018);
+    const r = 18 + (i % 41) * 2.65 + Math.sin(t * 2.2 + i) * 10;
+    const x = centerX + Math.cos(a) * r * 1.18;
+    const y = centerY + Math.sin(a * 1.7) * r * 0.46 + Math.sin(i * 0.11 + t * 3) * 12;
+    const head = a + Math.PI / 2;
+    line(
+      buf,
+      x - Math.cos(head) * 5,
+      y - Math.sin(head) * 5,
+      x + Math.cos(head) * 5,
+      y + Math.sin(head) * 5,
+      [57, 232, 190],
+      0.42,
+    );
+    circle(buf, x, y, 1.7, i % 9 === 0 ? [255, 214, 86] : [238, 242, 247], 0.55);
+  }
+  glow(buf, centerX, centerY, 120, [57, 232, 190], 0.18);
+  rect(buf, 132, 220, 216, 7, [255, 255, 255], 0.12);
+  rect(buf, 132, 220, 216 * (Math.sin(t * 1.7) * 0.5 + 0.5), 7, [255, 214, 86], 0.64);
+  return buf;
+}
+
+function gpuParticleCurlGalaxyFrame(t) {
+  const buf = baseFrame();
+  for (let i = 0; i < 260; i++) {
+    const seed = rand(i, 3);
+    const arm = i % 4;
+    const radius = 12 + seed * 170;
+    const angle = arm * Math.PI * 0.5 + radius * 0.035 + t * (0.8 + seed * 0.5);
+    const wobble = Math.sin(t * 2.3 + i * 0.37) * 9;
+    const x = width / 2 + Math.cos(angle) * (radius + wobble);
+    const y = height / 2 + Math.sin(angle) * (radius * 0.5 + wobble * 0.3);
+    const color = hsv(0.54 + seed * 0.18, 0.72, 0.62 + seed * 0.36);
+    circle(buf, x, y, 1.2 + seed * 1.8, color, 0.52);
+  }
+  glow(buf, width / 2, height / 2, 62, [255, 86, 134], 0.28);
+  ellipseRing(buf, width / 2, height / 2, 150, 70, 0.02, [255, 214, 86], 0.28);
+  return buf;
+}
+
+function depthSilhouetteMaskFrame(t) {
+  const buf = baseFrame();
+  for (let y = 40; y < 220; y++) {
+    for (let x = 42; x < 438; x += 2) {
+      const wave = Math.sin((x + y) * 0.03 + t * 4) * 0.5 + 0.5;
+      const c = mixColor([20, 34, 68], [146, 66, 255], wave);
+      set(buf, x, y, c, 0.58);
+      set(buf, x + 1, y, c, 0.58);
+    }
+  }
+  const sway = Math.sin(t * 2) * 9;
+  circle(buf, 240 + sway, 80, 26, [8, 10, 18], 0.96);
+  ellipseRing(buf, 240 + sway, 84, 32, 36, 0.11, [57, 232, 190], 0.58);
+  polygon(
+    buf,
+    [
+      [200 + sway, 110],
+      [280 + sway, 110],
+      [310 + sway, 210],
+      [170 + sway, 210],
+    ],
+    [5, 6, 10],
+    0.96,
+  );
+  ellipseRing(buf, 240 + sway, 158, 70, 66, 0.055, [255, 86, 134], 0.74);
+  rect(buf, 78, 226, 324, 7, [57, 232, 190], 0.58);
+  return buf;
+}
+
+function blobReactiveInstallationFrame(t) {
+  const buf = baseFrame();
+  rect(buf, 36, 42, 248, 166, [16, 24, 38], 0.94);
+  rect(buf, 318, 42, 112, 166, [238, 242, 247], 0.9);
+  for (let i = 0; i < 4; i++) {
+    const x = 86 + i * 48 + Math.sin(t * 2.1 + i) * 26;
+    const y = 104 + Math.cos(t * 1.6 + i * 1.3) * 42;
+    const r = 13 + Math.sin(t * 2.4 + i) * 5;
+    glow(buf, x, y, r * 2.4, hsv(0.48 + i * 0.12, 0.72, 0.9), 0.36);
+    circle(buf, x, y, r, hsv(0.48 + i * 0.12, 0.72, 0.95), 0.64);
+    ellipseRing(buf, x, y, r + 7, r + 7, 0.09, [255, 255, 255], 0.38);
+    rect(buf, 342, 72 + i * 28, 58 * ((x - 48) / 230), 5, hsv(0.48 + i * 0.12, 0.72, 0.72), 0.7);
+  }
+  rect(buf, 140, 226, 200, 7, [255, 214, 86], 0.56 + Math.sin(t * 5) * 0.12);
+  return buf;
+}
+
+function vectorLinesRotoscopeFrame(t) {
+  const buf = baseFrame();
+  rect(buf, 34, 42, 176, 168, [238, 242, 247], 0.86);
+  rect(buf, 270, 42, 176, 168, [16, 24, 38], 0.95);
+  for (let i = 0; i < 18; i++) {
+    const y = 68 + i * 7;
+    const wave = Math.sin(t * 2 + i * 0.5) * 12;
+    line(buf, 64, y, 180 + wave, y + Math.sin(i) * 12, [16, 24, 38], 0.22);
+    line(buf, 294, y, 414 + wave, y + Math.sin(i) * 12, [57, 232, 190], 0.58);
+  }
+  circle(buf, 118, 120, 34, [255, 214, 86], 0.18);
+  ellipseRing(buf, 358, 120, 45, 58, 0.05, [255, 214, 86], 0.72);
+  const p = (t * 0.7) % 1;
+  line(buf, 210, 126, 270, 126, [255, 255, 255], 0.22);
+  circle(buf, 210 + p * 60, 126, 5, [255, 86, 134], 0.85);
+  return buf;
+}
+
+function cellularAutomataTapestryFrame(t) {
+  const buf = baseFrame();
+  const cell = 10;
+  for (let y = 0; y < height / cell; y++) {
+    for (let x = 0; x < width / cell; x++) {
+      const v =
+        Math.sin(x * 0.8 + t * 2.1) +
+        Math.cos(y * 0.72 - t * 2.7) +
+        Math.sin((x + y) * 0.38 + t * 3.4);
+      const on = v > 0.62 || (v > 0.25 && (x + y + Math.floor(t * 3)) % 3 === 0);
+      const c = on ? hsv(0.58 + ((x + y) % 7) * 0.025, 0.65, 0.86) : [10, 14, 24];
+      rect(buf, x * cell + 1, y * cell + 1, cell - 2, cell - 2, c, on ? 0.74 : 0.72);
+    }
+  }
+  rect(buf, 72, 224, 336, 7, [255, 255, 255], 0.12);
+  rect(buf, 72, 224, 336 * ((Math.sin(t * 1.3) + 1) / 2), 7, [57, 232, 190], 0.66);
+  return buf;
+}
+
+function slimeTrailsInkFrame(t) {
+  const buf = baseFrame();
+  for (let i = 0; i < 14; i++) {
+    let x = 64 + i * 28;
+    let y = 130 + Math.sin(i) * 35;
+    for (let j = 0; j < 42; j++) {
+      const a = Math.sin(j * 0.25 + i + t * 1.8) + Math.cos(x * 0.02 + t);
+      const nx = x + Math.cos(a) * 6.5;
+      const ny = y + Math.sin(a * 1.2) * 5.4;
+      line(buf, x, y, nx, ny, i % 2 ? [57, 232, 190] : [255, 86, 134], 0.2 + j / 220);
+      if (j % 9 === 0) glow(buf, nx, ny, 18, [255, 214, 86], 0.08);
+      x = nx;
+      y = ny;
+    }
+  }
+  rect(buf, 102, 224, 276, 7, [57, 232, 190], 0.54);
+  return buf;
+}
+
+function paletteHarmonyStudyFrame(t) {
+  const buf = baseFrame();
+  const hues = [0.55, 0.62, 0.76, 0.08, 0.14];
+  for (let i = 0; i < hues.length; i++) {
+    const c = hsv(hues[i] + Math.sin(t * 0.8) * 0.02, 0.58 + i * 0.05, 0.9);
+    rect(buf, 46 + i * 78, 44, 58, 150, c, 0.78);
+    circle(
+      buf,
+      75 + i * 78,
+      132 + Math.sin(t * 2 + i) * 28,
+      20,
+      mixColor(c, [255, 255, 255], 0.26),
+      0.72,
+    );
+  }
+  for (let x = 62; x < 418; x++) {
+    const u = (x - 62) / 356;
+    const c = hsv(0.55 + u * 0.62 + t * 0.025, 0.62, 0.88);
+    rect(buf, x, 218, 1, 9, c, 0.86);
+  }
+  return buf;
+}
+
+function flowFieldRibbonsFrame(t) {
+  const buf = baseFrame();
+  for (let i = 0; i < 18; i++) {
+    let x = 36;
+    let y = 46 + i * 10;
+    const color = hsv(0.46 + i * 0.018, 0.72, 0.92);
+    for (let j = 0; j < 70; j++) {
+      const a = Math.sin(x * 0.026 + t * 1.7) + Math.cos(y * 0.034 - t * 1.1);
+      const nx = x + 6;
+      const ny = y + Math.sin(a + j * 0.08) * 5.8;
+      line(buf, x, y, nx, ny, color, 0.46);
+      x = nx;
+      y = ny;
+    }
+  }
+  glow(buf, 250, 130, 104, [57, 232, 190], 0.15);
+  return buf;
+}
+
+function sculpturalReliefGalleryFrame(t) {
+  const buf = baseFrame();
+  const originX = 92;
+  const originY = 176;
+  for (let row = 0; row < 16; row++) {
+    let prev;
+    for (let col = 0; col < 28; col++) {
+      const z = Math.sin(col * 0.42 + t * 2) * 16 + Math.cos(row * 0.55 - t * 1.3) * 13;
+      const x = originX + col * 10 + row * 5;
+      const y = originY - row * 7 - z;
+      const color = mixColor([42, 210, 230], [255, 214, 86], (z + 30) / 60);
+      circle(buf, x, y, 2.1, color, 0.68);
+      if (prev) line(buf, prev[0], prev[1], x, y, color, 0.26);
+      prev = [x, y];
+    }
+  }
+  rect(buf, 62, 214, 360, 8, [255, 255, 255], 0.1);
+  rect(buf, 62, 214, 360 * (Math.sin(t * 1.4) * 0.5 + 0.5), 8, [255, 86, 134], 0.58);
+  return buf;
+}
+
 const clips = [
   ["feedback-tunnel.mp4", feedbackTunnelFrame],
   ["reaction-diffusion.mp4", reactionDiffusionFrame],
@@ -3369,6 +3855,27 @@ const clips = [
   ["table-3d-bars.mp4", tableBarsFrame],
   ["replicator-table-cards.mp4", replicatorCardsFrame],
   ["inline-preview-thumbnail.mp4", inlinePreviewThumbnailFrame],
+  ["safety-blackout-chain.mp4", safetyBlackoutFrame],
+  ["setlist-runner-hud.mp4", setlistRunnerFrame],
+  ["show-failover-watchdog.mp4", showFailoverFrame],
+  ["pose-reactive-bindings.mp4", poseReactiveBindingsFrame],
+  ["audio-reactive-gate-duck.mp4", audioGateDuckFrame],
+  ["auto-repair-loop-passes.mp4", autoRepairLoopFrame],
+  ["tdmcp-init-ask-onboarding.mp4", onboardingInitAskFrame],
+  ["compact-graph-digest-budget.mp4", compactGraphDigestFrame],
+  ["scaffold-recipe-from-network.mp4", scaffoldRecipeFromNetworkFrame],
+  ["param-modes-batch-inspector.mp4", paramModesBatchFrame],
+  ["perform-mode-rest-toggle.mp4", performRestToggleFrame],
+  ["particle-flock-murmuration.mp4", particleFlockMurmurationFrame],
+  ["gpu-particle-curl-galaxy.mp4", gpuParticleCurlGalaxyFrame],
+  ["depth-silhouette-neon-mask.mp4", depthSilhouetteMaskFrame],
+  ["blob-reactive-installation.mp4", blobReactiveInstallationFrame],
+  ["vector-lines-rotoscope.mp4", vectorLinesRotoscopeFrame],
+  ["cellular-automata-tapestry.mp4", cellularAutomataTapestryFrame],
+  ["slime-trails-ink.mp4", slimeTrailsInkFrame],
+  ["palette-harmony-study.mp4", paletteHarmonyStudyFrame],
+  ["flow-field-ribbons.mp4", flowFieldRibbonsFrame],
+  ["sculptural-relief-gallery.mp4", sculpturalReliefGalleryFrame],
 ];
 
 function writePpm(file, buf) {
