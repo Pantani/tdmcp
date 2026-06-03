@@ -668,26 +668,96 @@ engineer's video scope a colorist keeps on a second monitor.*
 
 ## Text & titles
 
-> *"Flash the word 'DROP' big and centered, snapping to the beat and vanishing
-> between hits."*
+> *"Build an alpha-safe lyric hit: flash the word 'DROP' huge on the beat, then
+> make it vanish cleanly between hits over the running visual."*
 
 <video :src="withBase('/examples/kinetic-lyrics-flash.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
-*Animated lyric typography that flashes, pulses or slides; the flash modulates alpha
-so the text disappears over your visual instead of going to black, and it's
-beat-syncable. Exposes the word, size and flash rate.*
+*`create_kinetic_text` in `mode: "flash"` creates a Text TOP, LFO, alpha gate and
+optional composite over an input TOP. The important bit for show visuals: the text
+goes transparent between hits instead of flashing black.*
+
+> *"Make a pulsing lower third for the vocalist: artist name, stage label and a
+> small beat indicator, composited over the program feed."*
+
+<video :src="withBase('/examples/kinetic-lower-third-pulse.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Use `create_text_overlay` for the title-safe layer, then swap to
+`create_kinetic_text` in `mode: "pulse"` when the lower third should breathe with
+the track rather than sit flat.*
+
+> *"Create a setlist ticker along the bottom of the output: current section, next
+> cue, stage side and artist note, looping forever."*
+
+<video :src="withBase('/examples/text-crawl-setlist-ticker.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_text_crawl` with `mode: "crawl_horizontal"` is the ticker-tape layer for
+running copy, countdowns, stage manager notes and installation status messages.*
+
+> *"Roll the end credits upward over the final ambient scene, with a slow fade at
+> the top and bottom of the frame."*
+
+<video :src="withBase('/examples/text-roll-credits-stage.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*The same `create_text_crawl` tool in `mode: "roll_vertical"` handles multi-line
+credits, artist statements and gallery wall text. Use `\n` to keep each line
+editable.*
+
+> *"Reveal a short manifesto one character at a time before the installation opens:
+> 'NO PREVIEW / NO PANIC / BUILD THE LIGHT / THEN PERFORM IT'."*
+
+<video :src="withBase('/examples/typewriter-manifesto-reveal.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_text_crawl` also exposes `mode: "typewriter"` for character reveals. It is
+marked experimental in the tool docs, so use it for rehearsal or generated docs and
+verify the Text TOP expression on the target TouchDesigner build before a show.*
 
 > *"Make my festival name as chunky extruded 3D chrome letters, slowly rotating with
 > a spotlight."*
 
 <video :src="withBase('/examples/3d-extruded-title.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
-*Extruded 3D type (Text SOP → bevel/extrude → material + Render) with rotation and
-lighting — real volumetric letters you can light and spin, not a flat text overlay.*
+*`create_text_3d` builds Text SOP -> Extrude SOP -> material -> Camera/Light/Render
+as a self-contained title scene, with live Spin and Depth controls.*
 
-**What you'll get:** kinetic, performable text rather than a static caption: beat
-flashes, alpha-safe lyric hits, extruded title geometry, lights, materials and
-timeline-friendly controls.
+> *"Turn the word 'NOISE' into SOP geometry, add point noise, and render it like a
+> warped text sculpture instead of a flat card."*
+
+<video :src="withBase('/examples/pop-text-noise-sculpture.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_pop_geometry` with `primitive: "text"` and `text_string` makes text part of
+the geometry pipeline. Add `noise_amount` when the title should feel like a living
+object rather than a caption.*
+
+> *"Generate a projector alignment pattern labelled OUTPUT 02 / LEFT so the crew can
+> identify the physical surface from across the room."*
+
+<video :src="withBase('/examples/projector-label-test-pattern.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_test_pattern` can draw calibration grids, crosshairs, output numbers and
+labels. It belongs in Text & titles because these labels are the typography that
+keeps an installation understandable during setup.*
+
+> *"Map my MIDI pads to words: KICK, BASS, SNARE, VOX, CLAP and PAD should each
+> flash as their note channel fires."*
+
+<video :src="withBase('/examples/midi-note-type-hits.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Pair `create_midi_note_reactive` with `create_kinetic_text` when typography should
+respond to individual note events instead of a global audio level.*
+
+> *"Put the title 'DEEP FIELD' on a circular path and let the letters orbit around
+> the center before the main scene begins."*
+
+<video :src="withBase('/examples/path-title-orbit.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Apply the `kinetic_text_path_follow` recipe when the title needs to follow a path:
+orbit bugs, circular show logos, moving labels around sculptures and wayfinding
+loops.*
+
+**What you'll get:** a performable typography kit: alpha-safe lyric hits, pulsing
+lower thirds, ticker crawls, rolling credits, typewriter reveals, extruded 3D text,
+noisy text geometry, projector labels, MIDI-triggered words and path-follow titles.
 
 ## Live performance & control
 

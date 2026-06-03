@@ -131,6 +131,89 @@ function line(buf, x0, y0, x1, y1, color, alpha = 1) {
   }
 }
 
+const pixelFont = {
+  " ": ["000", "000", "000", "000", "000", "000", "000"],
+  "!": ["010", "010", "010", "010", "010", "000", "010"],
+  "'": ["010", "010", "000", "000", "000", "000", "000"],
+  "-": ["000", "000", "000", "111", "000", "000", "000"],
+  ".": ["000", "000", "000", "000", "000", "000", "010"],
+  "/": ["00001", "00010", "00100", "01000", "10000", "00000", "00000"],
+  0: ["01110", "10001", "10011", "10101", "11001", "10001", "01110"],
+  1: ["00100", "01100", "00100", "00100", "00100", "00100", "01110"],
+  2: ["01110", "10001", "00001", "00010", "00100", "01000", "11111"],
+  3: ["11110", "00001", "00001", "01110", "00001", "00001", "11110"],
+  4: ["00010", "00110", "01010", "10010", "11111", "00010", "00010"],
+  5: ["11111", "10000", "10000", "11110", "00001", "00001", "11110"],
+  6: ["01110", "10000", "10000", "11110", "10001", "10001", "01110"],
+  7: ["11111", "00001", "00010", "00100", "01000", "01000", "01000"],
+  8: ["01110", "10001", "10001", "01110", "10001", "10001", "01110"],
+  9: ["01110", "10001", "10001", "01111", "00001", "00001", "01110"],
+  ":": ["000", "010", "000", "000", "010", "000", "000"],
+  "?": ["01110", "10001", "00001", "00010", "00100", "00000", "00100"],
+  A: ["01110", "10001", "10001", "11111", "10001", "10001", "10001"],
+  B: ["11110", "10001", "10001", "11110", "10001", "10001", "11110"],
+  C: ["01111", "10000", "10000", "10000", "10000", "10000", "01111"],
+  D: ["11110", "10001", "10001", "10001", "10001", "10001", "11110"],
+  E: ["11111", "10000", "10000", "11110", "10000", "10000", "11111"],
+  F: ["11111", "10000", "10000", "11110", "10000", "10000", "10000"],
+  G: ["01111", "10000", "10000", "10011", "10001", "10001", "01111"],
+  H: ["10001", "10001", "10001", "11111", "10001", "10001", "10001"],
+  I: ["01110", "00100", "00100", "00100", "00100", "00100", "01110"],
+  J: ["00111", "00010", "00010", "00010", "10010", "10010", "01100"],
+  K: ["10001", "10010", "10100", "11000", "10100", "10010", "10001"],
+  L: ["10000", "10000", "10000", "10000", "10000", "10000", "11111"],
+  M: ["10001", "11011", "10101", "10101", "10001", "10001", "10001"],
+  N: ["10001", "11001", "10101", "10011", "10001", "10001", "10001"],
+  O: ["01110", "10001", "10001", "10001", "10001", "10001", "01110"],
+  P: ["11110", "10001", "10001", "11110", "10000", "10000", "10000"],
+  Q: ["01110", "10001", "10001", "10001", "10101", "10010", "01101"],
+  R: ["11110", "10001", "10001", "11110", "10100", "10010", "10001"],
+  S: ["01111", "10000", "10000", "01110", "00001", "00001", "11110"],
+  T: ["11111", "00100", "00100", "00100", "00100", "00100", "00100"],
+  U: ["10001", "10001", "10001", "10001", "10001", "10001", "01110"],
+  V: ["10001", "10001", "10001", "10001", "10001", "01010", "00100"],
+  W: ["10001", "10001", "10001", "10101", "10101", "10101", "01010"],
+  X: ["10001", "10001", "01010", "00100", "01010", "10001", "10001"],
+  Y: ["10001", "10001", "01010", "00100", "00100", "00100", "00100"],
+  Z: ["11111", "00001", "00010", "00100", "01000", "10000", "11111"],
+};
+
+function pixelTextWidth(text, scale = 4, tracking = 1) {
+  const chars = String(text).toUpperCase().split("");
+  return chars.reduce((sum, char, index) => {
+    const rows = pixelFont[char] ?? pixelFont["?"];
+    return sum + rows[0].length * scale + (index < chars.length - 1 ? scale + tracking : 0);
+  }, 0);
+}
+
+function drawPixelText(buf, text, x, y, options = {}) {
+  const {
+    scale = 4,
+    color = [255, 255, 255],
+    alpha = 1,
+    align = "left",
+    tracking = 1,
+    jitter = 0,
+    seed = 0,
+  } = options;
+  const chars = String(text).toUpperCase().split("");
+  let px = x;
+  if (align === "center") px -= pixelTextWidth(text, scale, tracking) / 2;
+  if (align === "right") px -= pixelTextWidth(text, scale, tracking);
+  for (const char of chars) {
+    const rows = pixelFont[char] ?? pixelFont["?"];
+    for (let row = 0; row < rows.length; row++) {
+      for (let col = 0; col < rows[row].length; col++) {
+        if (rows[row][col] !== "1") continue;
+        const dx = jitter ? (rand(col, row, seed + px * 0.01) - 0.5) * jitter : 0;
+        const dy = jitter ? (rand(row, col, seed + y * 0.01) - 0.5) * jitter : 0;
+        rect(buf, px + col * scale + dx, y + row * scale + dy, scale, scale, color, alpha);
+      }
+    }
+    px += rows[0].length * scale + scale + tracking;
+  }
+}
+
 function polygon(buf, points, color, alpha = 1) {
   const xs = points.map((p) => p[0]);
   const ys = points.map((p) => p[1]);
@@ -3741,6 +3824,326 @@ function sculpturalReliefGalleryFrame(t) {
   return buf;
 }
 
+function kineticLyricsFlashFrame(t) {
+  const buf = baseFrame();
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const u = (x - width / 2) / width;
+      const v = (y - height / 2) / height;
+      const wave = Math.sin(Math.hypot(u, v) * 36 - t * 8) + Math.sin(u * 42 + t * 5);
+      set(buf, x, y, mixColor([6, 8, 16], [40, 26, 78], wave * 0.22 + 0.5), 0.75);
+    }
+  }
+  const beat = (t * 2.8) % 1;
+  const flash = smoothstep(0.46, 0, beat);
+  glow(buf, 240, 126, 120 + flash * 52, [255, 86, 134], 0.28 + flash * 0.58);
+  for (let i = 0; i < 7; i++) {
+    const y = 50 + i * 26 + Math.sin(t * 4 + i) * 5;
+    line(buf, 30, y, 450, y + Math.sin(t + i) * 9, i % 2 ? [57, 232, 190] : [255, 214, 86], 0.08);
+  }
+  if (flash > 0.04) {
+    const shear = Math.sin(t * 24) * 8 * flash;
+    drawPixelText(buf, "DROP", 246 + shear, 91 + 9, {
+      scale: 13,
+      color: [0, 0, 0],
+      alpha: 0.72 * flash,
+      align: "center",
+    });
+    drawPixelText(buf, "DROP", 238 - flash * 5, 88, {
+      scale: 13,
+      color: [57, 232, 190],
+      alpha: 0.5 * flash,
+      align: "center",
+    });
+    drawPixelText(buf, "DROP", 244 + flash * 5, 88, {
+      scale: 13,
+      color: [255, 86, 134],
+      alpha: 0.5 * flash,
+      align: "center",
+    });
+    drawPixelText(buf, "DROP", 240, 88, {
+      scale: 13,
+      color: [255, 255, 255],
+      alpha: 0.95 * flash,
+      align: "center",
+    });
+  }
+  rect(buf, 84, 220, 312, 6, [255, 255, 255], 0.12);
+  rect(buf, 84, 220, 312 * beat, 6, [255, 214, 86], 0.72);
+  drawPixelText(buf, "ALPHA GATE", 240, 234, {
+    scale: 2,
+    color: [164, 176, 205],
+    alpha: 0.72,
+    align: "center",
+  });
+  return buf;
+}
+
+function kineticLowerThirdPulseFrame(t) {
+  const buf = baseFrame();
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      set(buf, x, y, proceduralClip(x, y, t * 0.8, 0), 0.74);
+    }
+  }
+  const pulse = Math.sin(t * 4.4) * 0.5 + 0.5;
+  rect(buf, 0, 184, width, 58, [2, 3, 8], 0.72);
+  rect(buf, 42, 194, 164 + pulse * 36, 4, [57, 232, 190], 0.72);
+  rect(buf, 42, 204, 278, 26, [8, 10, 18], 0.72);
+  drawPixelText(buf, "LUNA SOL", 52, 207, { scale: 4, color: [255, 255, 255], alpha: 0.92 });
+  drawPixelText(buf, "LIVE / HALL B", 52, 236, { scale: 2, color: [255, 214, 86], alpha: 0.82 });
+  circle(buf, 400, 214, 10 + pulse * 6, [255, 86, 134], 0.38 + pulse * 0.3);
+  drawPixelText(buf, "NEXT", 372, 235, { scale: 2, color: [164, 176, 205], alpha: 0.82 });
+  return buf;
+}
+
+function textCrawlTickerFrame(t) {
+  const buf = baseFrame();
+  for (let x = 0; x < width; x += 18) {
+    line(buf, x, 36, x + Math.sin(t * 2 + x) * 16, 176, [57, 232, 190], 0.08);
+  }
+  rect(buf, 26, 42, 428, 118, [12, 18, 30], 0.74);
+  for (let i = 0; i < 11; i++) {
+    const h = 18 + Math.sin(t * 4 + i * 0.8) * 18 + i * 4;
+    rect(buf, 54 + i * 34, 142 - h, 18, h, hsv(0.46 + i * 0.035, 0.72, 0.82), 0.46);
+  }
+  const message = "SET 01  DROP IN 08  /  ARTIST LUNA SOL  /  STAGE LEFT  /  ";
+  const cycle = pixelTextWidth(message, 3, 1);
+  let x = width - ((t * 92) % cycle);
+  rect(buf, 0, 202, width, 40, [0, 0, 0], 0.86);
+  rect(buf, 0, 202, width, 3, [255, 86, 134], 0.78);
+  while (x < width + cycle) {
+    drawPixelText(buf, message, x, 215, { scale: 3, color: [255, 255, 255], alpha: 0.9 });
+    x += cycle;
+  }
+  return buf;
+}
+
+function textRollCreditsStageFrame(t) {
+  const buf = baseFrame();
+  for (let i = 0; i < 6; i++) {
+    ellipseRing(
+      buf,
+      240,
+      136,
+      56 + i * 28 + ((t * 18) % 28),
+      26 + i * 13,
+      0.025,
+      [57, 232, 190],
+      0.12,
+    );
+  }
+  rect(buf, 116, 34, 248, 202, [4, 6, 12], 0.72);
+  drawPixelText(buf, "CREDITS", 240, 48, {
+    scale: 4,
+    color: [255, 214, 86],
+    alpha: 0.82,
+    align: "center",
+  });
+  const lines = ["VISUALS", "LUNA SOL", "LIGHT", "MAYA RIO", "SOUND", "NOITE", "THANK YOU"];
+  const startY = 244 - ((t * 72) % 172);
+  for (let i = 0; i < lines.length; i++) {
+    const y = startY + i * 30;
+    const fade = smoothstep(32, 70, y) * smoothstep(232, 186, y);
+    drawPixelText(buf, lines[i], 240, y, {
+      scale: i % 2 ? 3 : 2,
+      color: i % 2 ? [255, 255, 255] : [164, 176, 205],
+      alpha: 0.82 * fade,
+      align: "center",
+    });
+  }
+  return buf;
+}
+
+function typewriterManifestoFrame(t) {
+  const buf = baseFrame();
+  rect(buf, 34, 40, 412, 176, [236, 239, 232], 0.92);
+  rect(buf, 46, 52, 388, 152, [6, 8, 14], 0.92);
+  const lines = ["NO PREVIEW", "NO PANIC", "BUILD THE LIGHT", "THEN PERFORM IT"];
+  const full = lines.join("\n");
+  const reveal = Math.floor(Math.min(full.length, (t / (frames / fps)) * (full.length + 8)));
+  let count = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const visible = lines[i].slice(0, Math.max(0, reveal - count));
+    count += lines[i].length + 1;
+    drawPixelText(buf, visible, 64, 72 + i * 28, {
+      scale: 3,
+      color: i === 2 ? [255, 214, 86] : [255, 255, 255],
+      alpha: 0.9,
+    });
+  }
+  const cursorLine = Math.min(
+    lines.length - 1,
+    Math.floor((reveal / Math.max(1, full.length)) * lines.length),
+  );
+  const cursorText = lines[cursorLine].slice(
+    0,
+    Math.max(0, reveal - lines.slice(0, cursorLine).join("\n").length - cursorLine),
+  );
+  const cursorX = 64 + pixelTextWidth(cursorText, 3, 1) + 6;
+  rect(
+    buf,
+    cursorX,
+    72 + cursorLine * 28,
+    8,
+    20,
+    [57, 232, 190],
+    Math.sin(t * 12) > 0 ? 0.85 : 0.18,
+  );
+  rect(buf, 68, 228, 344 * (reveal / full.length), 5, [255, 86, 134], 0.72);
+  return buf;
+}
+
+function extrudedTitleFrame(t) {
+  const buf = baseFrame();
+  for (let y = 0; y < height; y++) {
+    const horizon = y / height;
+    for (let x = 0; x < width; x++) {
+      const c = mixColor([4, 6, 12], [24, 30, 46], horizon);
+      set(buf, x, y, c, 0.9);
+    }
+  }
+  for (let i = 0; i < 12; i++) {
+    const yy = 186 + i * 8;
+    line(buf, 44 + i * 10, yy, 436 - i * 10, yy, [57, 232, 190], 0.08);
+  }
+  glow(buf, 160 + Math.sin(t * 1.4) * 80, 78, 118, [255, 214, 86], 0.18);
+  const sway = Math.sin(t * 1.2) * 8;
+  for (let i = 11; i >= 0; i--) {
+    drawPixelText(buf, "LUNA", 244 + i * 2 + sway, 88 + i * 2, {
+      scale: 11,
+      color: mixColor([32, 36, 54], [57, 232, 190], i / 11),
+      alpha: 0.5,
+      align: "center",
+    });
+  }
+  drawPixelText(buf, "LUNA", 240 + sway, 84, {
+    scale: 11,
+    color: [246, 248, 255],
+    alpha: 0.92,
+    align: "center",
+  });
+  drawPixelText(buf, "TEXT SOP / EXTRUDE", 240, 224, {
+    scale: 2,
+    color: [164, 176, 205],
+    alpha: 0.72,
+    align: "center",
+  });
+  return buf;
+}
+
+function popTextNoiseSculptureFrame(t) {
+  const buf = baseFrame();
+  for (let i = 0; i < 28; i++) {
+    const y = 48 + i * 6;
+    line(buf, 42, y, 438, y + Math.sin(t * 2 + i * 0.4) * 18, [57, 232, 190], 0.1);
+  }
+  for (let i = 0; i < 8; i++) {
+    drawPixelText(buf, "NOISE", 240 + Math.sin(t * 2 + i) * 9, 86 + i * 5, {
+      scale: 9,
+      color: hsv(0.52 + i * 0.025, 0.58, 0.9),
+      alpha: 0.2 + i * 0.045,
+      align: "center",
+      jitter: 2 + i * 0.3,
+      seed: i + t,
+    });
+  }
+  drawPixelText(buf, "TEXT SOP + NOISE", 240, 226, {
+    scale: 2,
+    color: [255, 214, 86],
+    alpha: 0.78,
+    align: "center",
+  });
+  return buf;
+}
+
+function projectorLabelPatternFrame(t) {
+  const buf = baseFrame();
+  rect(buf, 22, 22, 436, 226, [2, 4, 8], 0.94);
+  for (let x = 42; x <= 438; x += 36) line(buf, x, 32, x, 238, [57, 232, 190], 0.16);
+  for (let y = 42; y <= 228; y += 28) line(buf, 32, y, 448, y, [57, 232, 190], 0.16);
+  line(buf, 240, 30, 240, 240, [255, 86, 134], 0.7);
+  line(buf, 30, 135, 450, 135, [255, 86, 134], 0.7);
+  for (let r = 24; r < 130; r += 24)
+    ellipseRing(buf, 240, 135, r, r * 0.56, 0.018, [255, 255, 255], 0.22);
+  drawPixelText(buf, "OUTPUT 02", 240, 76, {
+    scale: 6,
+    color: [255, 255, 255],
+    alpha: 0.92,
+    align: "center",
+  });
+  drawPixelText(buf, "LEFT", 240, 160, {
+    scale: 8,
+    color: [255, 214, 86],
+    alpha: 0.9,
+    align: "center",
+  });
+  circle(buf, 420, 54, 8 + Math.sin(t * 5) * 2, [57, 232, 190], 0.68);
+  return buf;
+}
+
+function midiNoteTypeHitsFrame(t) {
+  const buf = baseFrame();
+  const labels = ["KICK", "BASS", "SNARE", "VOX", "CLAP", "PAD"];
+  const active = Math.floor(t * 5) % labels.length;
+  for (let i = 0; i < labels.length; i++) {
+    const col = i % 3;
+    const row = Math.floor(i / 3);
+    const x = 58 + col * 124;
+    const y = 50 + row * 76;
+    const on = i === active;
+    rect(buf, x, y, 96, 48, on ? [255, 86, 134] : [16, 24, 38], on ? 0.7 : 0.82);
+    if (on) glow(buf, x + 48, y + 24, 54, [255, 86, 134], 0.38);
+    drawPixelText(buf, labels[i], x + 48, y + 16, {
+      scale: 3,
+      color: on ? [255, 255, 255] : [164, 176, 205],
+      alpha: 0.88,
+      align: "center",
+    });
+  }
+  rect(buf, 48, 210, 384, 7, [255, 255, 255], 0.12);
+  rect(buf, 48, 210, 384 * ((t * 5) % 1), 7, [255, 214, 86], 0.78);
+  drawPixelText(buf, labels[active], 240, 224, {
+    scale: 4,
+    color: [255, 255, 255],
+    alpha: 0.92,
+    align: "center",
+  });
+  return buf;
+}
+
+function pathTitleOrbitFrame(t) {
+  const buf = baseFrame();
+  glow(buf, 240, 132, 118, [57, 232, 190], 0.16);
+  ellipseRing(buf, 240, 132, 118, 72, 0.025, [57, 232, 190], 0.45);
+  ellipseRing(buf, 240, 132, 72, 42, 0.03, [255, 86, 134], 0.25);
+  const text = "DEEP FIELD ";
+  for (let i = 0; i < text.length; i++) {
+    const a = t * 1.5 + i * ((Math.PI * 2) / text.length);
+    const x = 240 + Math.cos(a) * 116;
+    const y = 132 + Math.sin(a) * 70;
+    drawPixelText(buf, text[i], x, y, {
+      scale: 3,
+      color: i % 2 ? [255, 214, 86] : [255, 255, 255],
+      alpha: 0.82,
+      align: "center",
+    });
+  }
+  drawPixelText(buf, "ORBIT", 240, 112, {
+    scale: 7,
+    color: [255, 255, 255],
+    alpha: 0.9,
+    align: "center",
+  });
+  drawPixelText(buf, "PATH FOLLOW", 240, 178, {
+    scale: 2,
+    color: [164, 176, 205],
+    alpha: 0.72,
+    align: "center",
+  });
+  return buf;
+}
+
 const clips = [
   ["feedback-tunnel.mp4", feedbackTunnelFrame],
   ["reaction-diffusion.mp4", reactionDiffusionFrame],
@@ -3789,6 +4192,16 @@ const clips = [
   ["pop-geometry-noise-rig.mp4", popGeometryFrame],
   ["palette-extraction-swatches.mp4", extractPaletteFrame],
   ["palette-extract-and-grade.mp4", paletteExtractAndGradeFrame],
+  ["kinetic-lyrics-flash.mp4", kineticLyricsFlashFrame],
+  ["kinetic-lower-third-pulse.mp4", kineticLowerThirdPulseFrame],
+  ["text-crawl-setlist-ticker.mp4", textCrawlTickerFrame],
+  ["text-roll-credits-stage.mp4", textRollCreditsStageFrame],
+  ["typewriter-manifesto-reveal.mp4", typewriterManifestoFrame],
+  ["3d-extruded-title.mp4", extrudedTitleFrame],
+  ["pop-text-noise-sculpture.mp4", popTextNoiseSculptureFrame],
+  ["projector-label-test-pattern.mp4", projectorLabelPatternFrame],
+  ["midi-note-type-hits.mp4", midiNoteTypeHitsFrame],
+  ["path-title-orbit.mp4", pathTitleOrbitFrame],
   ["sop-to-svg-plotter.mp4", sopToSvgFrame],
   ["swap-operator-rewire.mp4", swapOperatorFrame],
   ["copilot-vision-critique.mp4", copilotVisionFrame],

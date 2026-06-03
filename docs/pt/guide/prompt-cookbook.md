@@ -691,27 +691,98 @@ Esses swatches alimentam diretamente alvos de lift / gamma / gain em
 
 ## Texto & títulos
 
-> *"Pisque a palavra 'DROP' grande e centralizada, no ritmo da batida e sumindo
-> entre os golpes."*
+> *"Monte um hit de lyric com alpha seguro: pisque a palavra 'DROP' enorme no beat
+> e faça ela sumir limpa entre os golpes por cima do visual rodando."*
 
 <video :src="withBase('/examples/kinetic-lyrics-flash.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
-*Tipografia de letra animada que pisca/pulsa/desliza; o flash modula o **alpha**,
-então o texto desaparece (sobre seu visual) em vez de ir para o preto, sincronizável
-à batida. Expõe a palavra, o tamanho e a taxa do flash.*
+*`create_kinetic_text` em `mode: "flash"` cria Text TOP, LFO, gate de alpha e
+composite opcional por cima de um TOP de entrada. O detalhe importante para show: o
+texto fica transparente entre os hits em vez de piscar preto.*
+
+> *"Faça um lower third pulsando para a vocalista: nome da artista, label do palco e
+> um indicador pequeno de beat, composto por cima do program feed."*
+
+<video :src="withBase('/examples/kinetic-lower-third-pulse.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Use `create_text_overlay` para uma camada title-safe e troque para
+`create_kinetic_text` em `mode: "pulse"` quando o lower third deve respirar com a
+música em vez de ficar chapado.*
+
+> *"Crie um ticker de setlist no rodapé da saída: seção atual, próximo cue, lado do
+> palco e nota da artista, em loop infinito."*
+
+<video :src="withBase('/examples/text-crawl-setlist-ticker.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_text_crawl` com `mode: "crawl_horizontal"` é a camada de ticker para texto
+contínuo, contagens, notas de stage manager e mensagens de status de instalação.*
+
+> *"Role os créditos finais para cima sobre a cena ambiente final, com fade lento no
+> topo e na base do quadro."*
+
+<video :src="withBase('/examples/text-roll-credits-stage.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*A mesma ferramenta `create_text_crawl` em `mode: "roll_vertical"` resolve créditos
+multi-linha, statements de artista e texto de parede de galeria. Use `\n` para
+manter cada linha editável.*
+
+> *"Revele um manifesto curto caractere por caractere antes da instalação abrir:
+> 'NO PREVIEW / NO PANIC / BUILD THE LIGHT / THEN PERFORM IT'."*
+
+<video :src="withBase('/examples/typewriter-manifesto-reveal.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_text_crawl` também expõe `mode: "typewriter"` para reveals caractere a
+caractere. Ele está marcado como experimental na documentação da ferramenta, então
+use para ensaio ou docs gerados e valide a expressão do Text TOP no build de
+TouchDesigner alvo antes do show.*
 
 > *"Faça o nome do meu festival em letras 3D extrudadas grossas de cromo, girando
 > devagar com um holofote."*
 
 <video :src="withBase('/examples/3d-extruded-title.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
-*Tipo 3D extrudado (Text SOP → bevel/extrude → material + Render) com rotação e
-iluminação — letras volumétricas de verdade que você pode iluminar e girar, não uma
-sobreposição de texto chapada.*
+*`create_text_3d` monta Text SOP -> Extrude SOP -> material -> Camera/Light/Render
+como uma cena de título autocontida, com controles ao vivo de Spin e Depth.*
 
-**O que você recebe:** texto cinético e tocável em vez de uma legenda estática:
-flashes no beat, letras com alpha seguro, títulos 3D extrudados, luzes, materiais e
-controles amigáveis para timeline.
+> *"Transforme a palavra 'NOISE' em geometria SOP, adicione point noise e renderize
+> como uma escultura tipográfica deformada em vez de um card chapado."*
+
+<video :src="withBase('/examples/pop-text-noise-sculpture.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_pop_geometry` com `primitive: "text"` e `text_string` coloca o texto dentro
+do pipeline de geometria. Adicione `noise_amount` quando o título deve parecer um
+objeto vivo, não uma legenda.*
+
+> *"Gere um padrão de alinhamento de projetor com label OUTPUT 02 / LEFT para a
+> equipe identificar a superfície física de longe."*
+
+<video :src="withBase('/examples/projector-label-test-pattern.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_test_pattern` consegue desenhar grids de calibração, crosshairs, números
+de saída e labels. Ele entra em Texto & títulos porque esses labels são a tipografia
+que mantém a instalação compreensível durante a montagem.*
+
+> *"Mapeie meus pads MIDI para palavras: KICK, BASS, SNARE, VOX, CLAP e PAD devem
+> piscar quando o canal de nota correspondente disparar."*
+
+<video :src="withBase('/examples/midi-note-type-hits.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Combine `create_midi_note_reactive` com `create_kinetic_text` quando a tipografia
+deve responder a eventos de nota individuais em vez de um nível global de áudio.*
+
+> *"Coloque o título 'DEEP FIELD' num caminho circular e deixe as letras orbitarem
+> ao redor do centro antes da cena principal começar."*
+
+<video :src="withBase('/examples/path-title-orbit.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Aplique a receita `kinetic_text_path_follow` quando o título precisa seguir um
+caminho: bugs orbitais, logos circulares de show, labels se movendo em torno de
+esculturas e loops de wayfinding.*
+
+**O que você recebe:** um kit performável de tipografia: hits de lyric com alpha,
+lower thirds pulsando, ticker crawls, créditos rolando, reveals typewriter, texto 3D
+extrudado, geometria tipográfica com noise, labels de projetor, palavras disparadas
+por MIDI e títulos seguindo paths.
 
 ## Performance ao vivo & controle
 
