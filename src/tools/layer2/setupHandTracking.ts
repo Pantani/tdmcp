@@ -185,9 +185,11 @@ function loadAndBuildScript(
     "    import re as _re",
     "    _CANDIDATES = ['hand_landmark_results','hand_landmarks','hand_json','mp_hand_landmarks','hand']",
     "    hand_dat = None",
+    // eng.op(name) returns ANY operator type, so reject non-DAT hits to
+    // match the type=DAT filter on the regex fallback.
     "    for _n in _CANDIDATES:",
     "        _d = eng.op(_n)",
-    "        if _d is not None:",
+    "        if _d is not None and _d.family == 'DAT':",
     "            hand_dat = _d",
     "            break",
     "    if hand_dat is None:",

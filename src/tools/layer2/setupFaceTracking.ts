@@ -146,9 +146,11 @@ function loadAndBuildScript(toxPath: string, parentPath: string, numLandmarks: 4
     "    import re as _re",
     "    _CANDIDATES = ['face_landmark_results','face_landmarks','face_json','mp_face_landmarks','face']",
     "    face_dat = None",
+    // eng.op(name) returns ANY operator type, so reject non-DAT hits to
+    // match the type=DAT filter on the regex fallback.
     "    for _n in _CANDIDATES:",
     "        _d = eng.op(_n)",
-    "        if _d is not None:",
+    "        if _d is not None and _d.family == 'DAT':",
     "            face_dat = _d",
     "            break",
     "    if face_dat is None:",

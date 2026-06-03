@@ -158,10 +158,15 @@ try:
             "segmentation_results", "segmentation_mask", "selfieseg_mask",
             "seg_mask", "mask", "segmentation",
         )
+        # eng.op(name) returns ANY operator type with that name. The torinmb
+        # engine ships a DAT named e.g. segmentation_results alongside the
+        # real mask TOP, so we must reject non-TOP hits here or the
+        # downstream selectTOP.top gets pointed at a DAT and produces no
+        # image. Match the fallback's type=TOP filter.
         mask_src = None
         for _n in _MASK_CANDIDATES:
             _t = eng.op(_n)
-            if _t is not None:
+            if _t is not None and _t.family == "TOP":
                 mask_src = _t
                 break
         if mask_src is None:
