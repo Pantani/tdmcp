@@ -137,6 +137,16 @@ before you plug in a live source.*
 *`image_to_particles` samples the source pixels as rest positions and colors, then
 uses a GPU particle loop so the image can dissolve, scatter and re-form musically.*
 
+> *"Sculpt a cathedral of fused spheres and torus rings in pure signed-distance
+> field math, lit from inside with violet, and give me a Camera-Z knob to fly in."*
+
+<video :src="withBase('/examples/sdf-csg-cathedral.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*A single GLSL TOP raymarches a CSG tree (union / subtract / smooth-blend of sphere,
+box and torus primitives) with live CameraZ, StepCount, Speed, ColorA / ColorB and
+Background controls. A whole 3D architectural form built only out of math — no
+meshes, no UVs, just one shader sculpting space.*
+
 ## Audio-reactive
 
 > *"Build a radial spectrum that blooms on the bass and throws chromatic sparks on
@@ -217,6 +227,15 @@ plus a *Sensitivity* knob. Like the mic, the live camera triggers the
 frames, with Sensitivity / Smoothing / Blur controls. It emits an RG-packed flow TOP
 that can modulate displacement, particles or any TOP-driven motion chain.*
 
+> *"Watch the motion in my camera and push 20,000 glowing particles around with it —
+> paint trails wherever I move."*
+
+<video :src="withBase('/examples/optical-flow-particles-trail.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*The CPU optical-flow field (blur / mono / cache / composite-subtract / feedback) is
+wired straight into a GPU particle field as displacement. The result paints visible
+motion trails that follow body movement in real time — no CUDA, no extra hardware.*
+
 ### Body tracking (webcam, no extra hardware)
 
 Full-body **pose tracking** from a plain webcam, via the free
@@ -267,6 +286,35 @@ Use `coordinate_space:'world'` when gesture depth matters.*
 *`setup_segmentation` enables the MediaPipe selfie-segmentation path and publishes
 a mask Null TOP plus optional `person_rgba` output, so body mattes can feed keyers,
 silhouettes, particles or background replacement.*
+
+> *"Track my face landmarks and stitch a glowing wireframe mask over my features,
+> with a dim webcam underneath."*
+
+<video :src="withBase('/examples/mediapipe-face-mesh-overlay.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*The MediaPipe ENGINE adapter publishes a 468-landmark CHOP (or 478 with iris) and
+the recipe instances dots and lines on every landmark, composited over a
+`levelTOP`-dimmed camera feed with Tint and Dim controls. Real face-mesh overlay,
+zero plugin hunting.*
+
+> *"Use my hand in the camera as an XY pad — pinch to confirm — and map it to the
+> feedback Decay and Hue of the current visual."*
+
+<video :src="withBase('/examples/hand-pinch-xy-controller.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*The 21-landmark hand CHOP (world coords) feeds an XY pad whose X/Y come from the
+index-finger tip; thumb-to-index distance gates a confirm event that latches the
+current XY into target parameters. A hand-as-MIDI controller with pinch-to-commit.*
+
+> *"Cut me out of my room with selfie segmentation and put me inside a slow
+> raymarched nebula like I stepped through a portal."*
+
+<video :src="withBase('/examples/segmentation-portal-keyer.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*The selfie-segmentation alpha mask plus a pre-keyed `person_rgba` TOP are
+composited over a raymarch background, so the artist appears to stand inside the
+generated scene with soft real-time matte edges — greenscreen without a greenscreen,
+and the background is a procedural cosmos.*
 
 ## Particles & 3D
 
@@ -382,6 +430,15 @@ before they become projector problems.*
 *`create_histogram_scope` turns a TOP into a previewable histogram panel using a
 GLSL bin pass, TOP-to-CHOP normalisation and a rendered trace. It can run from a
 test pattern, file, existing TOP or live device.*
+
+> *"Put a broadcast-style RGB+luma histogram scope on the corner of my output so I
+> can see if I'm crushing blacks."*
+
+<video :src="withBase('/examples/histogram-scope-broadcast.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*A combined RGB + luma variant of `create_histogram_scope` — bars rendered through
+Script SOP + Render TOP into a Null you can overlay on program output. The proper
+engineer's video scope a colorist keeps on a second monitor.*
 
 ## Text & titles
 
@@ -546,6 +603,36 @@ validates structured show intents, returns allow / approval / block decisions, k
 an approval queue and audit log, and marks every action plan as dry-run-only until a
 human/operator path resolves it.*
 
+> *"Plan a 20-minute set across my three scenes in dry-run mode first — show me
+> what the AI director will do before it touches anything."*
+
+<video :src="withBase('/examples/show-director-dry-run-set.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_autopilot` runs each show-directing call through the policy layer in
+dry-run mode and returns the planned action + rationale (which scene, which
+transition, when) so the artist can preview an autonomous set before it touches
+the bridge. Approve, edit or reject before the show runs.*
+
+> *"Give me a front-of-house dashboard with stereo VU meters, live BPM from my
+> tempo detector, FPS overlay, the next-cue strip, and a sticky PANIC bar."*
+
+<video :src="withBase('/examples/stage-dashboard-v2-bpm-vu.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*The `layout:"v2"` build of `create_stage_dashboard` adds a stereo VU pair, a BPM
+readout fed by a `detect_tempo` Null CHOP, an FPS / cook-time / frame overlay, a
+cue-timeline strip from a `compose_cue_list` pair array, and a confirm-tap PANIC
+bar — without breaking the v1 dashboard byte-for-byte.*
+
+> *"Jump my timeline to the chorus cue, set playback rate to 1.25, and start
+> playing — through the fast REST path, not a Python exec."*
+
+<video :src="withBase('/examples/transport-rest-cue.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`control_timeline_transport` now prefers the new `POST /api/transport` endpoint
+for play / pause / seek / cue / rate and falls back to `executePythonScript` only
+on older bridges. Transport jumps become a real REST call — fast enough to land on
+a downbeat.*
+
 > *"Lock the show to incoming OSC timecode, follow the timeline frame-for-frame, and
 > jump to named cues if the timecode label says chorus or blackout."*
 
@@ -601,6 +688,16 @@ up with a wall, screen or object.*
 *`tdmcp config init` prints or writes the complete `.env` surface the server reads,
 with bridge/LLM secrets commented for manual entry. It is a small tool, but it makes
 touring-machine setup repeatable instead of tribal knowledge.*
+
+> *"Set up a two-projector rehearsal for the AI-Controlled Party — one wall for the
+> main visual, one for the lyrics — and synchronise them on the same cue list."*
+
+<video :src="withBase('/examples/ensaio-two-projection-rehearsal.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_multi_output` wires two `outTOP`s to two physical displays via
+`setup_output`, sharing a single `compose_cue_list` clock so the lyric overlay
+flips in lockstep with scene changes. Mirrors the two-wall ensaio rig the
+AI-Controlled Party uses for offline rehearsals.*
 
 **What you'll get:** stage-prep tools for displays, GPU capability, DMX / Art-Net,
 shared-memory IPC and multi-agent fanout. These are infrastructure surfaces, so the
@@ -681,6 +778,25 @@ returns dropped parameters/failures explicitly.*
 
 > *"Box up the audio chain with an annotation and label it, then list what's inside."*
 
+> *"Try to repair this broken render chain — but if the error count goes up, roll
+> back every change you made."*
+
+*`repair_network` now snapshots `(par.path, par.mode)` and `(op.path, op.bypass,
+op.display)` before each step. If `errors_after >= errors_before` and it isn't a
+dry run, every applied step is reversed and the report carries a `rolled_back:
+true` flag — a self-undoing repair pass, the safety net every artist wanted from
+"AI, fix it".*
+
+> *"Pull the dominant colours out of my hero clip and use them to seed a matching
+> colour grade for the rest of the show."*
+
+<video :src="withBase('/examples/palette-extract-and-grade.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`extract_palette` samples the TOP's preview via `get_preview` and runs
+deterministic k-means on the decoded RGB pixels, returning weighted hex swatches
+that feed directly into `create_color_grade` lift / gamma / gain targets. The AI
+brings the rest of the show into the same palette as your hero clip — no eyedropper.*
+
 ## Reusable components & documentation
 
 Turn a working network into something you can reuse, share and hand to another agent.
@@ -759,6 +875,37 @@ laptop?" matters.
 *`publish_recipe_bundle` is the release-ready sibling of `export_recipe_bundle`:
 it writes a versioned recipe artifact, `tdmcp-recipe-publish.json` and
 `tdmcp-checksums.json` so a recipe pack can be uploaded, mirrored or checked by CI.*
+
+> *"Pack this component as a portable .tox with a real README documenting its
+> custom params, inputs, outputs and external files."*
+
+<video :src="withBase('/examples/portable-tox-with-readme.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`make_portable_tox` now writes a package `README.md` by default alongside the
+`.tox` and `tdmcp-component.json` — node inventory, custom parameters,
+inputs/outputs, and external file refs. Drop the folder in someone else's project
+and they can read it before they open it.*
+
+> *"Generate a README for this component with an embedded Mermaid flowchart of the
+> operator graph and cap the inventory at the 50 most important nodes."*
+
+<video :src="withBase('/examples/generate-readme-mermaid-graph.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`include_mermaid:true` embeds a Mermaid flowchart of the operator graph in the
+"Data flow" section, and `max_nodes` truncates the child inventory with a one-line
+footer so big components produce a readable README, not a 600-row table. Your
+component now ships with a real wiring diagram rendered straight from the live
+network.*
+
+> *"Export this generative SOP as a flat SVG of polylines so I can plot it on my
+> AxiDraw."*
+
+<video :src="withBase('/examples/sop-to-svg-plot.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`export_sop_to_svg` reads SOP primitives via the bridge and emits an SVG of
+`<polyline>` elements with auto-fit viewBox and configurable stroke / fill / scale
+/ flip_y. Bridges the screen world to pen plotters, lasers and print — one prompt
+turns a live generative system into a plotter-ready vector file.*
 
 ## Shader & material authoring
 
@@ -909,6 +1056,16 @@ mid-show.*
 *An N-layer compositor with per-layer blend mode + opacity + mute/solo and a generated
 control strip — a Photoshop / After-Effects-style layer stack you can perform, a mixing
 desk for visuals.*
+
+> *"Build me a four-deck rig with per-deck FX sends into a shared return bus and a
+> hard-cut switch I can blend back in."*
+
+<video :src="withBase('/examples/nchan-decks-fx-bus.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_decks` in `decks[]` mode builds 2–8 deck rigs with per-deck gain,
+per-deck FX-send branches into an additive bus/return, a running Cross TOP program
+mix, and a Switch TOP hard-cut blended back into program through `cut_mix`. A
+proper four-deck VJ console with sends, returns and a hard-cut on a slider.*
 
 ## Data-driven visuals
 
@@ -1098,6 +1255,55 @@ per-op cook time, channels, resolution, errors and optional Info CHOP data.*
 preflight dashboards. Some performance fields depend on the TD build, so prompts
 should ask for explicit `null` handling instead of treating missing metrics as a
 fatal error.*
+
+> *"Take a single inline snapshot of my final out TOP — thumbnail, resolution,
+> pixel format, and any errors — so we can pin it in chat."*
+
+*`get_inline_preview` returns one structured payload: a bounded 256-px thumbnail,
+the TOP's resolution and pixel format, cook metadata, and post-cook errors — no
+juggling `get_preview` + `get_td_node_errors`. Build verification collapses into a
+single agent call that returns picture, specs and errors together.*
+
+> *"Watch this analyze CHOP for five seconds and tell me its real min/max so I
+> know how to scale my visual."*
+
+*`watch_node` takes a short-window read-only sample of one operator: runtime
+state, parameter values, and CHOP channel samples over a window — perfect for
+diagnosing "what is this thing actually outputting right now?" without freezing
+the network. Closes the loop between "agent built it" and "agent verified it
+lives" in five seconds of telemetry.*
+
+> *"Watch my repo — if I edit anything under td/, recompile the Python and reload
+> the bridge inside TouchDesigner so I don't have to restart."*
+
+<video :src="withBase('/examples/bridge-watch-build-hot-reload.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`tdmcp-agent watch-build` now treats `td/*.py` edits as bridge-runtime changes:
+`py_compile` runs on the changed files, then `reload_bridge` swaps the in-process
+modules. Iterating bridge code becomes save-and-see, not save-and-restart-TD —
+live-coding the TouchDesigner bridge itself.*
+
+> *"Run a full doctor --fix on my setup — create my missing vault folder, write me
+> a bridge token in .env, and auto-install the bridge from the TouchDesigner
+> Textport."*
+
+<video :src="withBase('/examples/doctor-fix-vault-token-textport.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`tdmcp-agent doctor --fix` now creates a missing configured vault path,
+scaffolds the default profile dir, writes a `TDMCP_BRIDGE_TOKEN` to `.env` with
+owner-only perms, and can fire `install-bridge --verify` (including the Textport
+auto-install path). "Make it work" as a single command, with the bridge installing
+itself from inside TD's own console.*
+
+> *"Give me Tab-completion for tdmcp in zsh — every subcommand and package
+> shortcut should autocomplete."*
+
+<video :src="withBase('/examples/cli-completion-everywhere.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`tdmcp completion zsh` (or bash / fish) prints a static completion snippet
+covering the primary binary plus `search` / `list` / `info` / `install` /
+`uninstall` / `doctor` / `packages path`. Source it once and the whole tool
+surface is one Tab away.*
 
 ## Working from your own notes (Obsidian vault)
 
