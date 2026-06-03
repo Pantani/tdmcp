@@ -843,7 +843,7 @@ automatically unless disabled (`--no-py-compile` / `--no-reload-bridge` opt out)
 
 Still open / partial after the v0.6.x–v0.8.x releases: `create_sdf_text`,
 `create_vertex_displacement_mat`. ✅ `create_pose_reactive` **shipped in
-Wave 12** ([Unreleased]) — A.6 is closed once Wave 12 cuts a tag. The earlier
+Wave 12 / v0.8.3**, closing A.6's pose-reactive item. The earlier
 deferrals (`create_gpu_fluid`, `create_optical_flow_particles`,
 `control_diffusion` / `drive_streamdiffusion` / `connect_comfyui`,
 `manage_td_process` / `switch_instance`, recipe/template marketplace) now live

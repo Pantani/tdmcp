@@ -30,8 +30,8 @@ features:
     details: Sistemas reativos a áudio, generativos e de partículas já chegam tocáveis — com painéis de controle, presets, cues, sync de tempo, entradas MIDI/OSC/DMX e controle pelo celular.
   - title: Funciona até offline
     details: Um copiloto LLM local (tdmcp chat) resolve tarefas simples sem API paga, e o servidor continua usável mesmo com o TouchDesigner fechado.
-  - title: 269 ferramentas, três camadas
-    details: Dos geradores de uma linha até o CRUD atômico de nós, pacotes de biblioteca, fluxos de vault e escapes em Python — veja a referência de ferramentas, sempre atualizada (em inglês).
+  - title: 286 ferramentas, três camadas
+    details: Dos geradores de uma linha até o CRUD atômico de nós, pacotes de biblioteca, memória de sessão da IA, fluxos de vault e escapes em Python — veja a referência de ferramentas, sempre atualizada (em inglês).
 ---
 
 ## Por onde começar
