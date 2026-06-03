@@ -163,8 +163,37 @@ else:
                             _pg[_i].default = _rgb[_i]; _pg[_i].val = _rgb[_i]
             report["created"].append({"control": _spec["name"], "name": _name, "type": _typ, "pars": [pp.name for pp in _pg], "value": _p0.eval()})
             _binds = _spec.get("bind_to") or []
-            if _binds and _typ in ("rgb", "pulse"):
-                report["warnings"].append("bind_to ignored for '%s' (a %s control cannot drive a single parameter)." % (_spec["name"], _typ))
+            if _binds and _typ == "pulse":
+                report["warnings"].append("bind_to ignored for '%s' (a pulse control cannot drive a single parameter)." % _spec["name"])
+                _binds = []
+            if _binds and _typ == "rgb":
+                # An rgb control has 3 underlying parameters (r/g/b). Allow
+                # binding when the caller supplied exactly 3 targets — each
+                # component drives one target. Anything else is dropped with
+                # a warning so callers learn the contract.
+                if len(_binds) == 3:
+                    for _i, _t in enumerate(_binds):
+                        try:
+                            _dot = _t.rfind(".")
+                            if _dot <= 0:
+                                report["warnings"].append("Invalid bind target '%s' (expected 'nodePath.parName')." % _t)
+                                continue
+                            _np = _t[:_dot]; _pn = _t[_dot + 1:]; _tn = op(_np)
+                            if _tn is None:
+                                report["warnings"].append("Bind target node not found: %s" % _np)
+                                continue
+                            _tp = getattr(_tn.par, _pn, None)
+                            if _tp is None:
+                                report["warnings"].append("Bind target parameter not found: %s.%s" % (_np, _pn))
+                                continue
+                            _PM = type(_tp.mode)
+                            _tp.expr = "op(%s).par.%s" % (repr(_payload["comp"]), _pg[_i].name)
+                            _tp.mode = _PM.EXPRESSION
+                            report["bound"].append({"control": _name + "[" + "rgb"[_i] + "]", "target": _np + "." + _pn})
+                        except Exception:
+                            report["warnings"].append("Failed to bind '%s' to '%s': %s" % (_name, _t, traceback.format_exc().splitlines()[-1]))
+                else:
+                    report["warnings"].append("bind_to for '%s' (rgb) must have exactly 3 targets, got %d." % (_spec["name"], len(_binds)))
                 _binds = []
             for _t in _binds:
                 try:

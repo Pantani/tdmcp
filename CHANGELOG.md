@@ -6,6 +6,26 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+- **`create_histogram_scope`** — geometry now renders a proper distribution
+  curve instead of a stray hairline at the far left. The `choptoSOP` was fed
+  only a `ty` channel, so TD warned `Channel "tx"/"tz" not found` and
+  collapsed every point to x=0. The build now synthesises `tx` (Pattern CHOP
+  ramp -1..+1 over `bins` samples) and `tz` (Pattern CHOP constant 0) and
+  merges them with the existing `ty` via a Merge CHOP. The shader also
+  normalises counts by the total tap count so heights stay inside the
+  orthographic camera's Y range.
+- **`create_control_panel`** — an `rgb` control with exactly 3 `bind_to`
+  targets now actually drives those parameters (each component → one target)
+  instead of dropping the binding with a warning. Restores live
+  `TraceColor` reactivity for `create_histogram_scope` and other scopes.
+- **`setup_face_tracking` / `setup_hand_tracking` / `setup_segmentation`** —
+  robust JSON DAT / mask TOP lookup. The torinmb mediapipe-touchdesigner
+  engine has renamed its outputs across versions (e.g. `face` →
+  `face_landmarks` → `face_landmark_results`); the tools now probe a
+  priority-ordered candidate list and fall back to a regex scan so a future
+  rename does not silently break setup.
+
 ## [0.8.2] - 2026-06-02
 
 ### Added

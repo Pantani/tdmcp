@@ -131,7 +131,12 @@ async function buildSource(
   return builder.add("moviefileinTOP", "videoin", { file: "Banana.tif" });
 }
 
-/** GLSL luma histogram fragment shader (bins × 1 output) */
+/** GLSL luma histogram fragment shader (bins × 1 output). Output is normalised
+ * to the total tap count so downstream Y positions stay within a sane visual
+ * range (otherwise raw pixel counts in the tens of thousands push the geometry
+ * way off the orthographic camera's ±1.1 Y range, rendering as a flat line at
+ * the baseline).
+ */
 function buildLumaShader(bins: number): string {
   return [
     "out vec4 fragColor;",
@@ -145,6 +150,7 @@ function buildLumaShader(bins: number): string {
     "  ivec2 sz = textureSize(sTD2DInputs[0], 0);",
     "  float cnt = 0.0;",
     "  int stride = max(1, sz.x / 256);",
+    "  float taps = 0.0;",
     "  for (int y=0; y<sz.y; y+=stride){",
     "    for (int x=0; x<sz.x; x+=stride){",
     "      vec3 c = texelFetch(sTD2DInputs[0], ivec2(x,y), 0).rgb;",
@@ -154,9 +160,11 @@ function buildLumaShader(bins: number): string {
     "      // aren't silently dropped (otherwise the last bucket is half-open).",
     "      if (binIdx == totalBins - 1 && l <= 1.0001 && l >= lo) inBin = true;",
     "      if (inBin) cnt += 1.0;",
+    "      taps += 1.0;",
     "    }",
     "  }",
-    "  fragColor = vec4(cnt, cnt, cnt, 1.0);",
+    "  float norm = taps > 0.0 ? cnt / taps : 0.0;",
+    "  fragColor = vec4(norm, norm, norm, 1.0);",
     "}",
   ].join("\n");
 }
@@ -218,25 +226,52 @@ export async function createHistogramScopeImpl(ctx: ToolContext, args: CreateHis
     const histoChop = await builder.add("toptoCHOP", "histo_chop");
     await builder.connect(histGlsl, histoChop);
 
-    // Math CHOP: normalise + optional log
+    // Math CHOP: scale shader-normalised counts (0..1, typically << 1 for an
+    // even distribution) up to the camera's Y range, with optional log compression.
     const normParams: Record<string, unknown> = {
-      chanop: "combine",
-      combine: "add",
-      gain: 1,
+      gain: args.log_scale ? 1 : 8,
     };
     if (args.log_scale) {
       normParams.chanop = "expression";
-      normParams.chopexpr = "log(1 + me.inputVal)";
+      normParams.chopexpr = "log(1 + me.inputVal * 8)";
     }
     const norm = await builder.add("mathCHOP", "norm", normParams);
     await builder.connect(histoChop, norm);
 
-    // Rename channel to 'ty' so choptoSOP deflects Y
+    // Rename channel to 'ty' so the merged CHOP carries the Y position channel
+    // alongside the synthesised tx/tz channels for choptoSOP.
     const ypos = await builder.add("renameCHOP", "ypos", {
       renamefrom: "*",
       renameto: "ty",
     });
     await builder.connect(norm, ypos);
+
+    // Synthesise the tx and tz channels choptoSOP requires. Without them, TD
+    // logs "Channel tx/tz not found" warnings and collapses every point to
+    // x=0, producing the hairline-at-left bug. tx is a ramp -1..+1 across the
+    // bins; tz is a flat 0 (2D scope on the camera's XY plane).
+    const txRamp = await builder.add("patternCHOP", "tx_ramp", {
+      wavetype: "ramp",
+      length: args.bins,
+      amp: 2,
+      offset: -1,
+      channelname: "tx",
+    });
+    const tzZero = await builder.add("patternCHOP", "tz_zero", {
+      wavetype: "constant",
+      length: args.bins,
+      amp: 0,
+      offset: 0,
+      channelname: "tz",
+    });
+
+    // Merge tx + ty + tz into a single 3-channel CHOP, sample-aligned from
+    // index 0 (default "auto" alignment would rotate the bins and scramble
+    // the histogram shape).
+    const xyz = await builder.add("mergeCHOP", "xyz", { align: "start" });
+    await builder.connect(txRamp, xyz, 0, 0);
+    await builder.connect(ypos, xyz, 0, 1);
+    await builder.connect(tzZero, xyz, 0, 2);
 
     // Constant MAT for the line/bars — kept NEUTRAL (white) so the TraceColor
     // panel control is the single source of trace tint, applied downstream by
@@ -253,7 +288,7 @@ export async function createHistogramScopeImpl(ctx: ToolContext, args: CreateHis
     // Geometry comp to hold the SOP
     const geo = await builder.add("geometryCOMP", "geo");
     const line = await builder.add("choptoSOP", "line", {}, geo);
-    await builder.connect(ypos, line);
+    await builder.connect(xyz, line);
 
     await builder.python(
       [

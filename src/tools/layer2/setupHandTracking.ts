@@ -179,10 +179,21 @@ function loadAndBuildScript(
     "        pass",
     "    root.time.play = True",
     // Locate hand JSON DAT — try direct child, then prefix match via findChildren
-    "    hand_dat = eng.op('hand')",
+    // Engine renamed across versions (hand → hand_landmarks → hand_landmark_results).
+    // Probe a priority list of candidate names, then fall back to a regex scan
+    // so a future rename doesn't silently break the adapter.
+    "    import re as _re",
+    "    _CANDIDATES = ['hand_landmark_results','hand_landmarks','hand_json','mp_hand_landmarks','hand']",
+    "    hand_dat = None",
+    "    for _n in _CANDIDATES:",
+    "        _d = eng.op(_n)",
+    "        if _d is not None:",
+    "            hand_dat = _d",
+    "            break",
     "    if hand_dat is None:",
+    "        _rx = _re.compile(r'hand.*(landmark|result|json)', _re.IGNORECASE)",
     "        for d in eng.findChildren(type=DAT, maxDepth=3):",
-    "            if d.name.lower().startswith('hand'):",
+    "            if _rx.search(d.name):",
     "                hand_dat = d",
     "                break",
     "    if hand_dat is None:",
