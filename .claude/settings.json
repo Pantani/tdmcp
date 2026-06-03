@@ -1,0 +1,46 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(node *)",
+      "Bash(pnpm *)",
+      "Bash(yarn *)",
+      "Bash(tsc *)",
+      "Bash(eslint *)",
+      "Bash(prettier *)",
+      "Bash(vitest *)",
+      "Bash(jest *)",
+      "Read(*)",
+      "Edit(src/*)",
+      "Edit(tests/*)",
+      "Write(src/*)",
+      "Write(tests/*)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(sudo *)",
+      "Bash(chmod 777 *)",
+      "Bash(curl * | bash)",
+      "Bash(wget * | bash)",
+      "Bash(ssh *)",
+      "Bash(> /dev/*)",
+      "Bash(dd *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hook": "# Warn on destructive commands\nif echo \"$TOOL_INPUT\" | grep -qE '(rm -rf|sudo|chmod 777|mkfs|dd if=)'; then\n  echo 'WARN: Potentially destructive command detected'\nfi"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hook": "# Check for accidentally written secrets\nif echo \"$TOOL_INPUT\" | grep -qE '(sk-ant-|sk-proj-|ghp_|AKIA)'; then\n  echo 'BLOCK: Possible secret detected in written file'\n  exit 1\nfi"
+      }
+    ]
+  }
+}
