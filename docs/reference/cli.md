@@ -16,6 +16,8 @@ The package installs two binaries: `tdmcp` (the MCP server + utilities) and
 | `tdmcp` | Start the MCP server (default `stdio` transport). Configured via [environment variables](/reference/environment). |
 | `tdmcp serve --http --port 3939` | Start the MCP server over loopback Streamable HTTP for clients that do not use stdio. Bare `tdmcp` still defaults to stdio. |
 | `tdmcp --help` | Print top-level usage without starting the MCP server. |
+| `tdmcp init` | One-shot onboarding: stage the bridge, write a client config (Claude / Cursor / Codex), seed a profile and optional bridge token. See [Onboarding](#onboarding) below. |
+| `tdmcp ask "<prompt>"` | Non-interactive copilot turn — one prompt in, one answer out (machine-readable with `--json`). See [Onboarding](#onboarding) below. |
 | `tdmcp chat` _(alias `tdmcp llm-run`)_ | Start the local LLM copilot UI (see below). |
 | `tdmcp install-bridge` | Stage the TouchDesigner bridge to `~/tdmcp-bridge` and print the one line to paste into TD's Textport. Add `--verify` to check `/api/info` once, `--wait` to poll until it is up, and `--port <port>` for non-default bridges. See [Bridge & REST API](/reference/bridge-api). |
 | `tdmcp install-client <claude\|codex\|cursor>` | Print a client-specific MCP config snippet for the current package. Add `--write --path <file>` to deep-merge and verify an explicit client config file (JSON for Claude/Cursor, TOML for Codex). |
@@ -35,6 +37,52 @@ tdmcp packages --help
 tdmcp packages path
 tdmcp completion bash
 ```
+
+## Onboarding & one-shot ask {#onboarding}
+
+### `tdmcp init`
+
+One-shot onboarding for first-time users. Stages the TouchDesigner bridge,
+writes (or merges) a per-client MCP config for Claude / Cursor / Codex, creates
+a default profile in `tdmcp.json`, and optionally seeds a `TDMCP_BRIDGE_TOKEN`.
+Safe to re-run — every step is idempotent and reports `ok` / `would` / `skip` /
+`fail`.
+
+```bash
+tdmcp init --yes
+```
+
+| Flag | Purpose |
+| --- | --- |
+| `-y, --yes` | Accept defaults, non-interactive. |
+| `--dry-run` | Plan only; do not touch files or launch TouchDesigner. |
+| `--json` | Emit a single JSON envelope (suppresses banners; pair with `--show-token` if you need the token unredacted). |
+| `--clients <list>` | `auto` (default), `none`, or csv of `claude,cursor,codex`. |
+| `--skip <steps>` | csv of `bridge,clients,config,token,open,doctor` to skip individual steps. |
+| `--token <v>` | Use this `TDMCP_BRIDGE_TOKEN` (use `--no-token` to opt out of token generation). |
+| `--profile <name>` | Profile name in `tdmcp.json` (default `local`). |
+
+### `tdmcp ask`
+
+Non-interactive copilot turn — pass a single prompt, get one answer back. Uses
+the same curated local-LLM tier as `tdmcp chat`, but skips the browser UI so it
+plugs into scripts and CI.
+
+```bash
+tdmcp ask "what TOPs are cooking the slowest right now?" --json
+```
+
+| Flag | Purpose |
+| --- | --- |
+| `--json` | Emit a single JSON line: `{answer, error?, durationMs, model, tier, toolCalls}`. |
+| `--tools=off` | Bypass tool calls and return a pure model answer. |
+| `--model <name>` | Override `llmModel` for this turn. |
+| `--profile <name>` | Use a named profile from `tdmcp.json` / `.tdmcprc`. |
+| `--config <path>` | Use a specific config file instead of the search order. |
+| `--read-only` | Force the safe (inspection-only) tier. |
+| `--creative` | Use the creative tier and a warmer sampling preset. |
+| `--no-ollama` | Don't auto-start local Ollama (remote endpoint or self-managed daemon). |
+| `--timeout <ms>` | Wall-clock cap on the turn (default 120000). Exits 124 on hit. |
 
 ## `tdmcp-agent` — command-line agent
 
