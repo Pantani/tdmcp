@@ -131,7 +131,7 @@ describe("create_safety_blackout_chain", () => {
     const scripts = captureExecScripts();
     await createSafetyBlackoutChainImpl(makeCtx(), { ...DEFAULTS });
 
-    const speed = scripts.find((s) => s.includes("par.factor") && s.includes("Fadeseconds"));
+    const speed = scripts.find((s) => s.includes("par.speed") && s.includes("Fadeseconds"));
     expect(speed).toBeDefined();
     expect(speed).toContain("1/max(0.001,");
     expect(speed).toContain("type(_p.mode).EXPRESSION");
@@ -243,8 +243,8 @@ describe("create_safety_blackout_chain", () => {
     });
     const speed = bodies.find((b) => b.name === "fadeSpeed");
     expect(speed?.type).toBe("speedCHOP");
-    // factor was set to 1/0.001 = 1000 on creation (expression overrides at cook time).
-    expect(speed?.parameters).toMatchObject({ factor: 1000 });
+    // speed was set to 1/0.001 = 1000 on creation (expression overrides at cook time).
+    expect(speed?.parameters).toMatchObject({ speed: 1000 });
   });
 
   it("show_safe_label='' skips the Text TOP + Composite TOP", async () => {

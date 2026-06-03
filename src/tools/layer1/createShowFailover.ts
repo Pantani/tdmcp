@@ -62,14 +62,17 @@ export const createShowFailoverSchema = z.object({
 });
 type CreateShowFailoverArgs = z.infer<typeof createShowFailoverSchema>;
 
-// Watchdog callback: runs in TD's normal op context. It samples the primary's
-// Info CHOP each frame, latches a stall when `total_cooks` stops incrementing
-// for stall_ms (and optionally when num_errors > 0), and drives the
-// `target_index` constant CHOP — the Filter CHOP smooths that integer step
-// into a 0→1 crossfade fed to the Switch TOP's index (blend=1).
+// Watchdog callback: runs in TD's normal op context as an Execute DAT firing on
+// every frame start. It samples the primary's Info CHOP each frame, latches a
+// stall when `total_cooks` stops incrementing for stall_ms (and optionally when
+// `errors` > 0), and drives the `target_index` constant CHOP — the Filter CHOP
+// smooths that integer step into a 0→1 crossfade fed to the Switch TOP's index
+// (blend=1). We use frameStart (not chopexecute valueChange) because an Info
+// CHOP's `total_cooks` value-change semantics don't tick reliably while the
+// source cooks normally; we need a guaranteed per-frame tick to compute
+// `delta = total_cooks_now - total_cooks_last_frame`.
 // Placeholders: __STALL_MS__ __RECOVER_MS__ __STICKY__ __WATCH_ERRORS__
-const WATCHDOG = `import td
-
+const WATCHDOG = `
 def _cfg(name, default):
     par = getattr(me.parent().par, name, None)
     if par is None:
@@ -79,36 +82,62 @@ def _cfg(name, default):
     except Exception:
         return default
 
-def onValueChange(channel, sampleIndex, val, prev):
-    fo = me.parent()
-    if not _cfg('Active', 1):
-        return
+def _read_info():
     info = op('info')
-    target = op('target_index')
-    status = op('status')
-    if info is None or target is None:
-        return
-    cooks = 0
-    errs = 0
-    for ch in info.chans():
-        if ch.name == 'total_cooks':
-            cooks = float(ch[0])
-        elif ch.name == 'errors':
-            errs = float(ch[0])
-    state = fo.fetch('tdmcp_failover_state', {
+    cooks = 0.0
+    errs = 0.0
+    if info is None:
+        return cooks, errs
+    try:
+        for ch in info.chans():
+            if ch.name == 'total_cooks':
+                cooks = float(ch[0])
+            elif ch.name == 'errors':
+                errs = float(ch[0])
+    except Exception:
+        pass
+    return cooks, errs
+
+def onStart():
+    fo = me.parent()
+    cooks, _ = _read_info()
+    fo.store('tdmcp_failover_state', {
         'last_cooks': cooks,
         'stall_frames': 0,
         'healthy_frames': 0,
         'on_fallback': False,
         'failovers_total': 0,
     })
+    return
+
+def onFrameStart(frame):
+    fo = me.parent()
+    if not _cfg('Active', 1):
+        return
+    info = op('info')
+    target = op('target_index')
+    if info is None or target is None:
+        return
+    cooks, errs = _read_info()
+    state = fo.fetch('tdmcp_failover_state', None)
+    if state is None:
+        state = {
+            'last_cooks': cooks,
+            'stall_frames': 0,
+            'healthy_frames': 0,
+            'on_fallback': False,
+            'failovers_total': 0,
+        }
+        fo.store('tdmcp_failover_state', state)
+        return
     fps = float(getattr(project, 'cookRate', 60.0) or 60.0)
     stall_frames_needed = max(1, int(round((__STALL_MS__ / 1000.0) * fps)))
     recover_frames_needed = max(1, int(round((__RECOVER_MS__ / 1000.0) * fps)))
     sticky = bool(_cfg('Stickyrecover', __STICKY__))
     watch_errors = bool(__WATCH_ERRORS__)
 
-    advanced = cooks > state['last_cooks']
+    delta = cooks - state['last_cooks']
+    advanced = delta > 0
     error_trip = watch_errors and errs > 0
     if advanced and not error_trip:
         state['stall_frames'] = 0
@@ -133,6 +162,10 @@ def onValueChange(channel, sampleIndex, val, prev):
             pass
 
     fo.store('tdmcp_failover_state', state)
+    return
+
+def onCreate():
+    onStart()
     return
 
 def onPulse(par):
@@ -219,10 +252,14 @@ export async function createShowFailoverImpl(ctx: ToolContext, args: CreateShowF
     const status = await builder.add("nullCHOP", "status", {});
     await builder.connect(targetIndex, status, 0, 0);
 
-    // Watchdog DAT: CHOP Execute reads the Info CHOP every frame.
-    const watchdog = await builder.add("chopexecuteDAT", "watchdog", {
-      chop: info,
-      valuechange: 1,
+    // Watchdog DAT: Execute DAT firing onFrameStart so we get a guaranteed
+    // per-frame tick (Info CHOP value-change semantics don't reliably fire
+    // while the source cooks normally — we need to compute a delta against
+    // last frame's `total_cooks` every frame).
+    const watchdog = await builder.add("executeDAT", "watchdog", {
+      framestart: 1,
+      start: 1,
+      create: 1,
       active: 1,
     });
     const watchdogText = WATCHDOG.replaceAll("__STALL_MS__", String(args.stall_ms))

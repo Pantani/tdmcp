@@ -225,13 +225,14 @@ export async function createSafetyBlackoutChainImpl(
 
     // ───── fade ramp (Speed → Lookup) ─────
     const speed = await builder.add("speedCHOP", "fadeSpeed", {
-      factor: 1 / fadeFloor,
+      speed: 1 / fadeFloor,
     });
     await builder.connect(target, speed);
-    // Live-driven factor so the artist can re-tune Fade seconds on the fly.
+    // Live-driven speed so the artist can re-tune Fade seconds on the fly.
+    // (Speed CHOP exposes `speed`, not `factor`, on TD 099.)
     await builder.python(
       [
-        `_p = op(${q(speed)}).par.factor`,
+        `_p = op(${q(speed)}).par.speed`,
         `_p.expr = ${q(`1/max(0.001, op(${q(container)}).par.Fadeseconds)`)}`,
         `_p.mode = type(_p.mode).EXPRESSION`,
       ].join("\n"),
@@ -250,17 +251,20 @@ export async function createSafetyBlackoutChainImpl(
       [
         `_t = op(${q(curveTable)})`,
         `_t.clear()`,
-        // Single-column "lookup" so DAT-to-CHOP produces one channel of N samples.
-        `_t.appendRow(["lookup"])`,
-        ...samples.map((y) => `_t.appendRow([${y.toFixed(6)}])`),
+        // Single ROW of N values so DAT-to-CHOP (chanperrow, firstrow/firstcolumn off)
+        // produces 1 channel × N samples — the curve LUT.
+        `_t.appendRow([${samples.map((y) => y.toFixed(6)).join(", ")}])`,
       ].join("\n"),
     );
 
-    // DAT-to-CHOP converts the table column into a 1-channel CHOP whose N samples
-    // ARE the curve. Wired into Lookup CHOP input 2 as the lookup table.
+    // DAT-to-CHOP converts the single row of N values into a 1-channel CHOP whose
+    // N samples ARE the curve. Wired into Lookup CHOP input 2 as the lookup table.
+    // firstrow/firstcolumn=values (TD 099 menu is ignored/names/values, NOT off) so
+    // the row+col are treated as data → output=chanperrow gives 1 channel × N samples.
     const curveChop = await builder.add("dattoCHOP", "curveChop", {
       dat: curveTable,
-      firstrow: "names",
+      firstrow: "values",
+      firstcolumn: "values",
     });
 
     const lookup = await builder.add("lookupCHOP", "curve");

@@ -120,7 +120,8 @@ describe("create_show_failover", () => {
     expect(byName("target_index")?.type).toBe("constantCHOP");
     expect(byName("fade")?.type).toBe("filterCHOP");
     expect(byName("status")?.type).toBe("nullCHOP");
-    expect(byName("watchdog")?.type).toBe("chopexecuteDAT");
+    expect(byName("watchdog")?.type).toBe("executeDAT");
+    expect(byName("watchdog")?.parameters).toMatchObject({ framestart: 1 });
     expect(byName("out")?.type).toBe("nullTOP");
 
     // status_overlay=true → textTOP + compTOP.
@@ -139,7 +140,7 @@ describe("create_show_failover", () => {
     expect(byName("fade")?.parameters?.width).toBeCloseTo(0.25);
 
     // Watchdog DAT text has substituted placeholders & references total_cooks + num_errors.
-    const wdScript = rec.scripts.find((s) => s.includes("def onValueChange"));
+    const wdScript = rec.scripts.find((s) => s.includes("def onFrameStart"));
     expect(wdScript).toBeDefined();
     expect(wdScript).not.toContain("__STALL_MS__");
     expect(wdScript).not.toContain("__STICKY__");
@@ -217,7 +218,7 @@ describe("create_show_failover", () => {
       status_overlay: true,
       parent_path: "/project1",
     });
-    const wdScript = rec.scripts.find((s) => s.includes("def onValueChange"));
+    const wdScript = rec.scripts.find((s) => s.includes("def onFrameStart"));
     expect(wdScript).toContain("True"); // sticky=True
     expect(wdScript).toContain("2000"); // recover_ms baked in
   });
