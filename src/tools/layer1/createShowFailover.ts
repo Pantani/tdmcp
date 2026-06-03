@@ -290,9 +290,41 @@ export async function createShowFailoverImpl(ctx: ToolContext, args: CreateShowF
     const out = await builder.add("nullTOP", "out", {});
     await builder.connect(outputSource, out, 0, 0);
 
-    // Drive the Filter CHOP width from the live Fade_Ms knob so the artist can
-    // retune the crossfade on stage without rebuilding.
-    await builder.setParams(fade, { width: `parent().par.Fade_Ms / 1000` });
+    // Drive the Filter CHOP width from the live FadeMs knob so the artist can
+    // retune the crossfade on stage without rebuilding. TD strips underscores
+    // from custom-par attribute names — `Fade_Ms` is exposed as `FadeMs`.
+    await builder.python(
+      [
+        `_p = op(${q(fade)}).par.width`,
+        `_p.expr = ${q(`parent().par.FadeMs / 1000`)}`,
+        `_p.mode = type(_p.mode).EXPRESSION`,
+      ].join("\n"),
+    );
+
+    // Bind the Switch TOP index to the smoothed fade rail so the crossfade
+    // actually drives output (watchdog writes target_index → fade smooths over
+    // FadeMs → switch reads here). Without this expression the smoothing chain
+    // is decorative.
+    await builder.python(
+      [
+        `_p = op(${q(switchTop)}).par.index`,
+        `_p.expr = ${q(`op('fade')[0]`)}`,
+        `_p.mode = type(_p.mode).EXPRESSION`,
+      ].join("\n"),
+    );
+
+    // Make the status badge reactive: shows LIVE when target_index<0.5,
+    // FALLBACK otherwise — no Python cook-time ticking, just an expression
+    // on the textTOP's `text` par.
+    if (args.status_overlay && statusText) {
+      await builder.python(
+        [
+          `_p = op(${q(statusText)}).par.text`,
+          `_p.expr = ${q(`'LIVE' if op('target_index')[0] < 0.5 else 'FALLBACK'`)}`,
+          `_p.mode = type(_p.mode).EXPRESSION`,
+        ].join("\n"),
+      );
+    }
 
     const controls: ControlSpec[] = [
       { name: "Active", type: "toggle", default: 1, bind_to: [] },

@@ -59,7 +59,7 @@ export const DEFAULT_DIGEST_OPTIONS: BuildDigestOptions = {
 // ---------------------------------------------------------------------------
 
 type DigestCacheEntry = { expires: number; payload: GraphDigest };
-const cache = new WeakMap<TouchDesignerClient, Map<string, DigestCacheEntry>>();
+let cache = new WeakMap<TouchDesignerClient, Map<string, DigestCacheEntry>>();
 const TTL_MS = 5_000;
 const OFFLINE_TTL_MS = 1_000;
 
@@ -81,8 +81,10 @@ function getCached(
 ): GraphDigest | undefined {
   const perClient = cache.get(client);
   if (!perClient) return undefined;
-  const entry = perClient.get(cacheKey(root, opts));
+  const key = cacheKey(root, opts);
+  const entry = perClient.get(key);
   if (entry && Date.now() < entry.expires) return entry.payload;
+  if (entry) perClient.delete(key);
   return undefined;
 }
 
@@ -435,6 +437,7 @@ export const registerGraphDigestResource: ResourceRegistrar = (server, ctx) => {
 export function _resetDigestCache(client?: TouchDesignerClient): void {
   if (client) {
     cache.delete(client);
+    return;
   }
-  // WeakMap has no clear(); without a client arg, entries naturally expire via GC/TTL.
+  cache = new WeakMap<TouchDesignerClient, Map<string, DigestCacheEntry>>();
 }

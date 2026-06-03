@@ -146,6 +146,8 @@ export async function createSafetyBlackoutChainImpl(
         `if getattr(_c.par, "Hold", None) is None:`,
         `    _hp = _pg.appendToggle("Hold", label="Hold")[0]`,
         `    _hp.default = ${initialHold ? "True" : "False"}; _hp.val = ${initialHold ? "True" : "False"}`,
+        `if getattr(_c.par, "Reset", None) is None:`,
+        `    _rp = _pg.appendPulse("Reset", label="Reset")[0]`,
         `if getattr(_c.par, "State", None) is None:`,
         `    _sp = _pg.appendFloat("State", label="State")[0]`,
         `    _sp.normMin = 0; _sp.normMax = 1`,
@@ -189,6 +191,22 @@ export async function createSafetyBlackoutChainImpl(
       );
     }
 
+    // Hold toggle — when on, asserts the dim signal regardless of Blackout or
+    // watchdog (so initial_state='held' actually holds black, and the artist
+    // can latch a hold across watchdog transitions). Wired in below as an OR
+    // input to the merge.
+    const holdToggle = await builder.add("constantCHOP", "holdToggle", {
+      name0: "hold",
+      value0: initialHold ? 1 : 0,
+    });
+    await builder.python(
+      [
+        `_p = op(${q(holdToggle)}).par.value0`,
+        `_p.expr = ${q(`(1 if op(${q(container)}).par.Hold else 0)`)}`,
+        `_p.mode = type(_p.mode).EXPRESSION`,
+      ].join("\n"),
+    );
+
     // Optional hotkey.
     let keyboard: string | undefined;
     if (hotkeyEnabled) {
@@ -215,6 +233,7 @@ export async function createSafetyBlackoutChainImpl(
     // Max-combine all triggers so any one of them forces target = 1.
     const merge = await builder.add("mathCHOP", "merge1", { chopop: "max" });
     await builder.connect(blackoutToggle, merge);
+    await builder.connect(holdToggle, merge);
     if (args.arm_emergency_snap) await builder.connect(emergencyPulse, merge);
     if (keyboard) await builder.connect(keyboard, merge);
     if (watchdog) await builder.connect(watchdog, merge);
@@ -310,13 +329,27 @@ export async function createSafetyBlackoutChainImpl(
       );
     }
 
-    // Show-safe label (Text TOP composited over the dimmed output).
+    // Show-safe label (Text TOP composited over the dimmed output). The label
+    // should only appear when the safety chain is dimming/black — gate its
+    // opacity through a Level TOP whose `opacity` mirrors the dim signal
+    // (1 = output fully black, label fully visible; 0 = passthrough, label
+    // hidden). The dim channel itself is "1 = pass, 0 = black" (see dim_path),
+    // so opacity = 1 - dimNull[0].
     let composite = emergencyGate;
     if (labelText) {
       const label = await builder.add("textTOP", "showSafeLabel", { text: labelText });
+      const labelGate = await builder.add("levelTOP", "showSafeLabelGate", { opacity: 0 });
+      await builder.connect(label, labelGate);
+      await builder.python(
+        [
+          `_p = op(${q(labelGate)}).par.opacity`,
+          `_p.expr = ${q(`1 - op(${q(dimNull)})[0]`)}`,
+          `_p.mode = type(_p.mode).EXPRESSION`,
+        ].join("\n"),
+      );
       const comp = await builder.add("compositeTOP", "composite1", { operand: "over" });
       await builder.connect(emergencyGate, comp, 0, 0);
-      await builder.connect(label, comp, 0, 1);
+      await builder.connect(labelGate, comp, 0, 1);
       composite = comp;
     }
 
@@ -339,6 +372,7 @@ export async function createSafetyBlackoutChainImpl(
             label: "Fade seconds",
           },
           { name: "Hold", type: "toggle", default: initialHold, label: "Hold (no auto-recovery)" },
+          { name: "Reset", type: "pulse", label: "Reset (clear Blackout + Hold)" },
         ]
       : [];
 

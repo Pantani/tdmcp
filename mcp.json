@@ -2,7 +2,7 @@
   "mcpServers": {
     "tdmcp": {
       "command": "npx",
-      "args": ["@dpantani/tdmcp"]
+      "args": ["-y", "@dpantani/tdmcp"]
     }
   }
 }

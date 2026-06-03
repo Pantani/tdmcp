@@ -273,8 +273,11 @@ export async function detectEnvironment(
         existingConfig = {
           exists: true,
           path: configPath,
-          token: typeof parsed.token === "string" ? parsed.token : undefined,
-          port: typeof parsed.bridgePort === "number" ? parsed.bridgePort : undefined,
+          // Match the runtime config contract (src/utils/config.ts): bridgeToken / tdPort.
+          // Reading parsed.token / parsed.bridgePort silently missed the existing values,
+          // which made init regenerate a token on every run.
+          token: typeof parsed.bridgeToken === "string" ? parsed.bridgeToken : undefined,
+          port: typeof parsed.tdPort === "number" ? parsed.tdPort : undefined,
           profile: typeof parsed.profile === "string" ? parsed.profile : undefined,
         };
       } else {
@@ -447,8 +450,12 @@ export async function runInit(argv: string[], depsIn: RunInitDeps = {}): Promise
     });
   } else {
     try {
-      const bridgeArgs = ["--dir", flags.bridgeDir, "--port", String(flags.bridgePort), "--verify"];
+      const bridgeArgs = ["--dir", flags.bridgeDir, "--port", String(flags.bridgePort)];
       if (token) bridgeArgs.push("--token", token);
+      // Only ask install-bridge to verify when the bridge is already reachable.
+      // On a fresh install the user has not yet pasted the Textport one-liner, so
+      // /api/info is unreachable and --verify would always fail spuriously.
+      if (detection.bridge.running) bridgeArgs.push("--verify");
       const result: InstallBridgeResult = await Promise.resolve(deps.runInstallBridge(bridgeArgs));
       textportCommand = result.textportCommand ?? result.noPrefsTextportCommand;
       if (result.ok) {

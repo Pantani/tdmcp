@@ -141,7 +141,9 @@ function parseInstallBridgeArgs(args: string[]): InstallBridgeOptions | undefine
 
   const tokenFlag = args.indexOf("--token");
   const explicitToken = tokenFlag !== -1 ? args[tokenFlag + 1] : undefined;
-  if (tokenFlag !== -1 && (!explicitToken || explicitToken.startsWith("-"))) {
+  // Tokens generated via randomBytes(...).toString("base64url") can legitimately begin
+  // with "-", so do NOT reject them as a missing-value flag. Only reject undefined / "".
+  if (tokenFlag !== -1 && (explicitToken === undefined || explicitToken === "")) {
     console.error("[tdmcp] Missing install-bridge --token value.");
     process.exitCode = 2;
     return undefined;
@@ -205,7 +207,7 @@ async function verifyInstalledBridge(
 
   do {
     try {
-      const info = await fetchBridgeInfo(url);
+      const info = await fetchBridgeInfo(url, options.token);
       console.log(`  Bridge verified at ${url}${formatBridgeInfo(info)}.`);
       return {
         ...baseResult,
@@ -244,11 +246,14 @@ function bridgeInfoUrl(port: number): string {
   return `http://127.0.0.1:${port}/api/info`;
 }
 
-async function fetchBridgeInfo(url: string): Promise<BridgeInfo> {
+async function fetchBridgeInfo(url: string, token?: string): Promise<BridgeInfo> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), VERIFY_ATTEMPT_TIMEOUT_MS);
   try {
-    const response = await fetch(url, { method: "GET", signal: controller.signal });
+    // Forward the bearer token when present so verify works once TD enforces
+    // TDMCP_BRIDGE_TOKEN; without it `/api/info` returns 401 and the verify step lies.
+    const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+    const response = await fetch(url, { method: "GET", signal: controller.signal, headers });
     if (!response.ok) {
       throw new Error(`HTTP ${response.status || "network error"}`);
     }

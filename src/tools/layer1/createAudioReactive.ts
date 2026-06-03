@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ControlSpec } from "../layer2/createControlPanel.js";
+import { errorResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { createSystemContainer, finalize, type NetworkBuilder, runBuild } from "./orchestration.js";
 
@@ -182,7 +183,13 @@ export async function createAudioReactiveImpl(ctx: ToolContext, rawArgs: CreateA
   // Re-parse so callers (including tests + downstream layer-1 generators) can omit any
   // field that has a schema default — keeps the existing test-call style working after
   // the 2026-06-02 transient/duck extension added more defaulted fields.
-  const args: CreateAudioReactiveArgs = createAudioReactiveSchema.parse(rawArgs);
+  // Use safeParse so an invalid input becomes a friendly isError result instead of
+  // throwing out of the MCP handler (CLAUDE.md: "never throw out of handlers").
+  const parsed = createAudioReactiveSchema.safeParse(rawArgs);
+  if (!parsed.success) {
+    return errorResult(`Invalid arguments: ${parsed.error.message}`);
+  }
+  const args: CreateAudioReactiveArgs = parsed.data;
   return runBuild(async () => {
     const builder = await createSystemContainer(ctx, args.parent_path, "audio_reactive");
 

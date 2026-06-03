@@ -132,7 +132,45 @@ describe("buildSetlistRunnerScript (pure payload)", () => {
     expect(script).toContain("compositeTOP");
     expect(script).toContain("selectTOP");
     expect(script).toContain("parameterexecuteDAT");
+    expect(script).toContain("cacheTOP");
+    expect(script).toContain("speedCHOP");
+    expect(script).toContain("mathCHOP");
     expect(script).toContain("print(json.dumps(report))");
+  });
+
+  it("drives cross.par.cross from the transition_clamp CHOP and exposes a transition trigger", () => {
+    const script = buildSetlistRunnerScript({
+      parent_path: "/project1",
+      name: "setlist",
+      rows: [],
+      loop: true,
+      autostart: true,
+      show_hud: true,
+      default_transition: 0.5,
+      engine_source: "",
+      param_engine_source: "",
+    });
+    expect(script).toContain("op('transition_clamp')");
+    expect(script).toContain("_cross.par.cross.expr");
+    expect(script).toContain("transition_speed");
+    expect(script).toContain("transition_speed_src");
+    expect(script).toContain("transition_clamp");
+  });
+
+  it("param_engine.par.op uses the container path (not name) so it watches the host COMP", () => {
+    const script = buildSetlistRunnerScript({
+      parent_path: "/project1",
+      name: "setlist",
+      rows: [],
+      loop: true,
+      autostart: true,
+      show_hud: true,
+      default_transition: 0.5,
+      engine_source: "",
+      param_engine_source: "",
+    });
+    expect(script).toContain("_param_engine.par.op = _cont.path");
+    expect(script).not.toContain("_param_engine.par.op = _cont.name");
   });
 
   it("embeds a param engine source that wires Play/Row/Skip/Prev to timer + switch", async () => {
@@ -150,6 +188,15 @@ describe("buildSetlistRunnerScript (pure payload)", () => {
     expect(payload.param_engine_source).toContain("tm.par.play");
     expect(payload.param_engine_source).toContain("tm.par.start.pulse()");
     expect(payload.param_engine_source).toContain("sw.par.index");
+    // Skip/Prev/Row override also drives the crossfade ramp via the host's
+    // Defaulttransition custom param.
+    expect(payload.param_engine_source).toContain("_trigger_transition_host");
+    expect(payload.param_engine_source).toContain("Defaulttransition");
+    expect(payload.param_engine_source).toContain("transition_speed");
+    // Wall-clock engine source also triggers the crossfade on boundary.
+    expect(payload.engine_source).toContain("_trigger_transition");
+    expect(payload.engine_source).toContain("transition_speed");
+    expect(payload.engine_source).toContain('rows[idx].get("transition_seconds"');
   });
 });
 

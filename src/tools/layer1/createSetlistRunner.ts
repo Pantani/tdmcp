@@ -97,6 +97,39 @@ interface SetlistRunnerReport {
 
 const ENGINE_CALLBACK = `
 # Setlist runner engine — advances Switch TOP through rows[] based on Timer CHOP "fraction".
+def _trigger_transition(host, secs):
+    # Snapshot outgoing frame in the Cache TOP, then kick off the 0->1 ramp
+    # on the transition Speed CHOP. secs<=0 means hard cut.
+    try:
+        snap = host.op("switch_prev")
+        if snap is not None:
+            try:
+                snap.par.cachepulse.pulse()
+            except Exception:
+                pass
+    except Exception:
+        pass
+    try:
+        secs = float(secs)
+    except Exception:
+        secs = 0.0
+    if secs <= 1e-6:
+        spd = 1.0e6  # effectively instant
+    else:
+        spd = 1.0 / secs
+    src = host.op("transition_speed_src")
+    if src is not None:
+        try:
+            src.par.value0 = spd
+        except Exception:
+            pass
+    sp = host.op("transition_speed")
+    if sp is not None:
+        try:
+            sp.par.resetpulse.pulse()
+        except Exception:
+            pass
+
 def onValueChange(channel, sampleIndex, val, prev):
     if channel.name != "fraction":
         return
@@ -115,6 +148,13 @@ def onValueChange(channel, sampleIndex, val, prev):
                 nxt = 0
             else:
                 return
+        # Per-row transition: outgoing row's transition_seconds governs the
+        # crossfade INTO the next row.
+        try:
+            _tx = float(rows[idx].get("transition_seconds", 0.0))
+        except Exception:
+            _tx = 0.0
+        _trigger_transition(me_par, _tx)
         me.store("tdmcp_setlist_index", nxt)
         sw = me_par.op("switch")
         if sw is not None:
@@ -188,6 +228,34 @@ def _set_index(i):
     if eng is not None:
         eng.store("tdmcp_setlist_index", int(i))
 
+def _trigger_transition_host(h, secs):
+    try:
+        snap = h.op("switch_prev")
+        if snap is not None:
+            try:
+                snap.par.cachepulse.pulse()
+            except Exception:
+                pass
+    except Exception:
+        pass
+    try:
+        secs = float(secs)
+    except Exception:
+        secs = 0.0
+    spd = 1.0e6 if secs <= 1e-6 else 1.0 / secs
+    src = h.op("transition_speed_src")
+    if src is not None:
+        try:
+            src.par.value0 = spd
+        except Exception:
+            pass
+    sp = h.op("transition_speed")
+    if sp is not None:
+        try:
+            sp.par.resetpulse.pulse()
+        except Exception:
+            pass
+
 def _goto(i):
     h = _host()
     if h is None:
@@ -197,6 +265,13 @@ def _goto(i):
         return
     n = len(rows)
     i = int(i) % n
+    # Live override: drive the same crossfade as the wall-clock advance, using
+    # the Defaulttransition custom param (falls back to 0 = hard cut).
+    try:
+        tx = float(h.par.Defaulttransition.eval()) if hasattr(h.par, "Defaulttransition") else 0.0
+    except Exception:
+        tx = 0.0
+    _trigger_transition_host(h, tx)
     _set_index(i)
     sw = h.op("switch")
     if sw is not None:
@@ -337,15 +412,27 @@ try:
                 except Exception as _e:
                     report["warnings"].append("switch.par.index failed: " + str(_e))
 
-            # --- Previous-frame snapshot via Select TOP for crossfade in0 ---
+            # --- Previous-frame snapshot via Cache TOP for crossfade in0.
+            # The Cache TOP holds the OUTGOING row while the Switch TOP advances
+            # to the new row; we pulse its cache on transition to freeze the
+            # last frame of the outgoing source.
             _prev_snap = None
             try:
-                _prev_snap = _cont.create(selectTOP, "switch_prev")
+                _prev_snap = _cont.create(cacheTOP, "switch_prev")
                 if _switch is not None:
                     try:
-                        _prev_snap.par.top = _switch.name
+                        _prev_snap.inputConnectors[0].connect(_switch)
                     except Exception as _e:
-                        report["warnings"].append("switch_prev.par.top failed: " + str(_e))
+                        report["warnings"].append("switch_prev.connect failed: " + str(_e))
+                for _pname, _pval in [
+                    ("cachesize", 1),
+                    ("active", True),
+                    ("outputindex", 0),
+                ]:
+                    try:
+                        setattr(_prev_snap.par, _pname, _pval)
+                    except Exception:
+                        pass
             except Exception as _e:
                 report["warnings"].append("switch_prev create failed: " + str(_e))
 
@@ -364,10 +451,69 @@ try:
                     _cross.inputConnectors[1].connect(_switch)
                 except Exception as _e:
                     report["warnings"].append("cross.in1 connect failed: " + str(_e))
+                # _cross.par.cross is driven by transition_clamp CHOP (see below)
+                # so the documented per-row transition_seconds actually animates.
                 try:
-                    _cross.par.cross = 1.0
+                    _cross.par.cross.expr = "op('transition_clamp')['chan1']"
                 except Exception as _e:
-                    report["warnings"].append("cross.par.cross failed: " + str(_e))
+                    report["warnings"].append("cross.par.cross.expr failed: " + str(_e))
+
+            # --- Transition ramp: Speed CHOP → Math CHOP clamp(0..1) drives cross.
+            # Speed CHOP integrates "speed" (1/transition_seconds) from 0; Math
+            # clamps at 1. Engine callback writes "speed" + pulses resetpulse on
+            # row change so the ramp restarts from 0 each boundary.
+            _trans_const = None
+            try:
+                _trans_const = _cont.create(constantCHOP, "transition_speed_src")
+                try:
+                    _trans_const.par.name0 = "speed"
+                    _trans_const.par.value0 = 1.0 / max(1e-6, float(_p["default_transition"]))
+                except Exception:
+                    pass
+            except Exception as _e:
+                report["warnings"].append(
+                    "transition_speed_src create failed: " + str(_e)
+                )
+            _trans_speed = None
+            try:
+                _trans_speed = _cont.create(speedCHOP, "transition_speed")
+                if _trans_const is not None:
+                    try:
+                        _trans_const.outputConnectors[0].connect(
+                            _trans_speed.inputConnectors[0]
+                        )
+                    except Exception as _e:
+                        report["warnings"].append(
+                            "transition_speed.connect failed: " + str(_e)
+                        )
+                try:
+                    _trans_speed.par.resetvalue = 0.0
+                except Exception:
+                    pass
+            except Exception as _e:
+                report["warnings"].append("transition_speed create failed: " + str(_e))
+            try:
+                _trans_clamp = _cont.create(mathCHOP, "transition_clamp")
+                if _trans_speed is not None:
+                    try:
+                        _trans_speed.outputConnectors[0].connect(
+                            _trans_clamp.inputConnectors[0]
+                        )
+                    except Exception as _e:
+                        report["warnings"].append(
+                            "transition_clamp.connect failed: " + str(_e)
+                        )
+                for _pname, _pval in [
+                    ("postop", "clamp"),
+                    ("clampmin", 0.0),
+                    ("clampmax", 1.0),
+                ]:
+                    try:
+                        setattr(_trans_clamp.par, _pname, _pval)
+                    except Exception:
+                        pass
+            except Exception as _e:
+                report["warnings"].append("transition_clamp create failed: " + str(_e))
 
             # --- Optional HUD Text TOP ---
             _hud = None
@@ -514,7 +660,7 @@ try:
             if _param_engine is not None:
                 report["param_engine"] = _param_engine.path
                 try:
-                    _param_engine.par.op = _cont.name
+                    _param_engine.par.op = _cont.path
                 except Exception as _e:
                     report["warnings"].append("param_engine.par.op failed: " + str(_e))
                 try:

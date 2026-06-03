@@ -261,12 +261,12 @@ describe("runInit", () => {
     expect(stdout.join("\n")).toContain('"ok": true');
   });
 
-  it("--yes runs every step in order with redacted token", async () => {
+  it("--yes runs every step in order with redacted token (bridge running -> --verify)", async () => {
     const fs = makeFs([
       "/Applications/TouchDesigner.app",
       "/home/artist/Library/Application Support/Claude/claude_desktop_config.json",
     ]);
-    const { deps } = makeDeps({ fs, platform: "darwin" });
+    const { deps } = makeDeps({ fs, platform: "darwin", bridgeRunning: true });
     const result = await runInit(
       ["--yes", "--json", "--bridge-dir", "/home/artist/tdmcp-bridge"],
       deps,
@@ -278,9 +278,9 @@ describe("runInit", () => {
       "/home/artist/tdmcp-bridge",
       "--port",
       "9980",
-      "--verify",
       "--token",
       "tok-deadbeef",
+      "--verify",
     ]);
     expect(deps.writeInstallClientConfig).toHaveBeenCalledWith(
       "claude",
@@ -291,6 +291,26 @@ describe("runInit", () => {
     expect(deps.runDoctor).toHaveBeenCalled();
     expect(result.flags.tokenSet).toBe(true);
     expect(result.flags.token).toBe("***");
+  });
+
+  it("--yes omits --verify when the bridge is not yet running", async () => {
+    const fs = makeFs([
+      "/Applications/TouchDesigner.app",
+      "/home/artist/Library/Application Support/Claude/claude_desktop_config.json",
+    ]);
+    const { deps } = makeDeps({ fs, platform: "darwin", bridgeRunning: false });
+    const result = await runInit(
+      ["--yes", "--json", "--bridge-dir", "/home/artist/tdmcp-bridge"],
+      deps,
+    );
+
+    expect(result.ok).toBe(true);
+    const args = (deps.runInstallBridge as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as
+      | string[]
+      | undefined;
+    expect(args).toBeDefined();
+    expect(args).not.toContain("--verify");
+    expect(args).toEqual(expect.arrayContaining(["--token", "tok-deadbeef"]));
   });
 
   it("--show-token reveals the token in --json", async () => {
@@ -313,13 +333,13 @@ describe("runInit", () => {
       "/cwd/tdmcp.json",
       "/home/artist/Library/Application Support/Claude/claude_desktop_config.json",
     ]);
-    fs.files.set("/cwd/tdmcp.json", JSON.stringify({ token: "kept-tok", profile: "local" }));
+    fs.files.set("/cwd/tdmcp.json", JSON.stringify({ bridgeToken: "kept-tok", profile: "local" }));
 
     // Make readFile read from fs.files for tdmcp.json
     const { deps } = makeDeps({
       fs,
       platform: "darwin",
-      configReadJson: { token: "kept-tok", profile: "local", bridgePort: 9980 },
+      configReadJson: { bridgeToken: "kept-tok", profile: "local", tdPort: 9980 },
       configInitCode: 1, // file exists -> kept
       configInitPath: "/home/artist/.tdmcp/config.env",
     });
@@ -327,7 +347,8 @@ describe("runInit", () => {
     // Patch readFile so tdmcp.json detection finds our config:
     const origRead = deps.readFile ?? (async () => "");
     deps.readFile = async (p: string) => {
-      if (p.endsWith("tdmcp.json")) return JSON.stringify({ token: "kept-tok", profile: "local" });
+      if (p.endsWith("tdmcp.json"))
+        return JSON.stringify({ bridgeToken: "kept-tok", profile: "local", tdPort: 9980 });
       return origRead(p);
     };
     // The default existsSync is the closure from makeDeps; ensure the cwd tdmcp.json is "existing".

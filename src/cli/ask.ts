@@ -235,25 +235,32 @@ export async function runAsk(argv: string[] = [], deps: AskRuntimeDeps = {}): Pr
   // of being held open by the still-running underlying request.
   const controller = new AbortController();
 
+  // Wrap so a thrown rejection (instead of an emitted "error" event) becomes an
+  // errorMessage assignment — otherwise Promise.race would reject, skip the
+  // clearTimeout/abort cleanup, and crash the CLI with an unhandled exception.
   const turnPromise = (async () => {
-    const messages = await turn(
-      ctx,
-      client,
-      [{ role: "user", content: prompt }],
-      (event) => {
-        if (event.type === "answer") answer = event.content;
-        else if (event.type === "error") errorMessage = event.message;
-        else if (event.type === "tool" && event.status === "done") {
-          toolCalls.push({ name: event.name, ok: event.ok });
-        }
-      },
-      { tools, maxSteps: config.llmMaxSteps, signal: controller.signal },
-    );
-    if (!answer) {
-      const fallback = [...messages]
-        .reverse()
-        .find((m) => m.role === "assistant" && typeof m.content === "string")?.content;
-      if (typeof fallback === "string") answer = fallback;
+    try {
+      const messages = await turn(
+        ctx,
+        client,
+        [{ role: "user", content: prompt }],
+        (event) => {
+          if (event.type === "answer") answer = event.content;
+          else if (event.type === "error") errorMessage = event.message;
+          else if (event.type === "tool" && event.status === "done") {
+            toolCalls.push({ name: event.name, ok: event.ok });
+          }
+        },
+        { tools, maxSteps: config.llmMaxSteps, signal: controller.signal },
+      );
+      if (!answer) {
+        const fallback = [...messages]
+          .reverse()
+          .find((m) => m.role === "assistant" && typeof m.content === "string")?.content;
+        if (typeof fallback === "string") answer = fallback;
+      }
+    } catch (err) {
+      errorMessage = err instanceof Error ? err.message : String(err);
     }
   })();
 
