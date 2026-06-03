@@ -273,6 +273,38 @@ describe("create_histogram_scope", () => {
     expect(text).toMatch(/\/out1/);
   });
 
+  // Regression: choptoSOP requires tx/ty/tz channels — without them TD logs
+  // "Channel tx/tz not found" warnings and the geometry collapses to a single
+  // vertical hairline at x=0. The build must synthesise tx (ramp) and tz
+  // (constant) alongside the existing ty channel via a Merge CHOP.
+  it("emits tx_ramp + tz_zero pattern CHOPs and merges them with ypos for choptoSOP", async () => {
+    const bodies = captureCreateBodies();
+    await createHistogramScopeImpl(makeCtx(), defaultArgs());
+
+    const tx = bodies.find((b) => b.type === "patternCHOP" && b.name === "tx_ramp");
+    expect(tx).toBeDefined();
+    expect(tx?.parameters?.channelname).toBe("tx");
+    expect(tx?.parameters?.wavetype).toBe("ramp");
+    expect(tx?.parameters?.length).toBe(64);
+
+    const tz = bodies.find((b) => b.type === "patternCHOP" && b.name === "tz_zero");
+    expect(tz).toBeDefined();
+    expect(tz?.parameters?.channelname).toBe("tz");
+    expect(tz?.parameters?.wavetype).toBe("constant");
+
+    const merge = bodies.find((b) => b.type === "mergeCHOP" && b.name === "xyz");
+    expect(merge).toBeDefined();
+  });
+
+  it("bins propagates to the tx_ramp / tz_zero pattern CHOPs", async () => {
+    const bodies = captureCreateBodies();
+    await createHistogramScopeImpl(makeCtx(), { ...defaultArgs(), bins: 128 });
+    const tx = bodies.find((b) => b.type === "patternCHOP" && b.name === "tx_ramp");
+    const tz = bodies.find((b) => b.type === "patternCHOP" && b.name === "tz_zero");
+    expect(tx?.parameters?.length).toBe(128);
+    expect(tz?.parameters?.length).toBe(128);
+  });
+
   // 10. Bridge fatal — no-throw guarantee
   it("bridge exec fatal returns isError without throwing", async () => {
     // Make /api/nodes fail at the container step to trigger a fatal path

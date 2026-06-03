@@ -141,6 +141,50 @@ describe("setup_face_tracking", () => {
     expect(textOf(result)).toContain("Face");
   });
 
+  // Regression: the torinmb mediapipe-touchdesigner engine renamed its face
+  // JSON DAT from `face` → `face_landmarks` → `face_landmark_results`. The
+  // tool must probe a list of candidate names and fall back to a regex scan
+  // so a future rename does not silently break setup.
+  it("script probes the new + legacy face DAT names and uses a regex fallback", async () => {
+    const { scripts } = captureExecScript({
+      engine: "/project1/MediaPipe",
+      face_dat: "/project1/MediaPipe/face_landmark_results",
+      adapter_face: "/project1/mp_face_adapter/face",
+    });
+
+    await run({ tox_path: "/x/MediaPipe.tox" });
+    const script = scripts[0] ?? "";
+    expect(script).toContain("face_landmark_results");
+    expect(script).toContain("face_landmarks");
+    expect(script).toContain("face_json");
+    expect(script).toContain("mp_face_landmarks");
+    // Regex fallback string for unknown future names
+    expect(script).toMatch(/face\.\*\(landmark\|result\|json\)/);
+  });
+
+  it("accepts the new face_landmark_results DAT name (engine rename)", async () => {
+    captureExecScript({
+      engine: "/project1/MediaPipe",
+      face_dat: "/project1/MediaPipe/face_landmark_results",
+      adapter_face: "/project1/mp_face_adapter/face",
+    });
+    const result = await run({ tox_path: "/x/MediaPipe.tox" });
+    expect(result.isError).toBeFalsy();
+    const text = textOf(result);
+    const summary = JSON.parse(text.match(/```json\n([\s\S]+?)\n```/)?.[1] ?? "{}");
+    expect(summary.face_json_dat).toBe("/project1/MediaPipe/face_landmark_results");
+  });
+
+  it("accepts the legacy face_landmarks DAT name", async () => {
+    captureExecScript({
+      engine: "/project1/MediaPipe",
+      face_dat: "/project1/MediaPipe/face_landmarks",
+      adapter_face: "/project1/mp_face_adapter/face",
+    });
+    const result = await run({ tox_path: "/x/MediaPipe.tox" });
+    expect(result.isError).toBeFalsy();
+  });
+
   it("bridge throws TdConnectionError: returns errorResult without throwing", async () => {
     server.use(
       http.post(`${TD_BASE}/api/exec`, () => {

@@ -139,10 +139,24 @@ function loadAndBuildScript(toxPath: string, parentPath: string, numLandmarks: 4
     "    except Exception:",
     "        pass",
     "    root.time.play = True",
-    "    face_dat = eng.op('face')",
+    // The torinmb mediapipe-touchdesigner engine has renamed its face JSON DAT
+    // across versions (face → face_landmarks → face_landmark_results). Probe a
+    // priority-ordered list of candidate names first, then fall back to a regex
+    // scan for any DAT name matching /face.*(landmark|result|json)/i.
+    "    import re as _re",
+    "    _CANDIDATES = ['face_landmark_results','face_landmarks','face_json','mp_face_landmarks','face']",
+    "    face_dat = None",
+    // eng.op(name) returns ANY operator type, so reject non-DAT hits to
+    // match the type=DAT filter on the regex fallback.
+    "    for _n in _CANDIDATES:",
+    "        _d = eng.op(_n)",
+    "        if _d is not None and _d.family == 'DAT':",
+    "            face_dat = _d",
+    "            break",
     "    if face_dat is None:",
+    "        _rx = _re.compile(r'face.*(landmark|result|json)', _re.IGNORECASE)",
     "        for d in eng.findChildren(type=DAT, maxDepth=3):",
-    "            if d.name == 'face':",
+    "            if _rx.search(d.name):",
     "                face_dat = d",
     "                break",
     "    face_dat_path = face_dat.path if face_dat is not None else ''",
