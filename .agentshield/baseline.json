@@ -1,0 +1,1721 @@
+{
+  "version": 1,
+  "timestamp": "2026-06-03T02:54:45.746Z",
+  "score": {
+    "grade": "F",
+    "numericScore": 34,
+    "breakdown": {
+      "secrets": 80,
+      "permissions": 0,
+      "hooks": 10,
+      "mcp": 80,
+      "agents": 0
+    }
+  },
+  "findings": [
+    {
+      "id": "hooks-priv-esc-73",
+      "severity": "critical",
+      "category": "hooks",
+      "title": "Hook uses privilege escalation: sudo",
+      "file": "settings.json",
+      "evidence": "sudo",
+      "fingerprint": "hooks-priv-esc-73::settings.json::sudo"
+    },
+    {
+      "id": "hooks-disk-wipe-88",
+      "severity": "critical",
+      "category": "hooks",
+      "title": "Hook uses disk wiping command: mkfs",
+      "file": "settings.json",
+      "evidence": "mkfs",
+      "fingerprint": "hooks-disk-wipe-88::settings.json::mkfs"
+    },
+    {
+      "id": "permissions-permissive-Bash(node *)",
+      "severity": "high",
+      "category": "permissions",
+      "title": "Overly permissive allow rule: Bash(node *)",
+      "file": "settings.json",
+      "evidence": "Bash(node *)",
+      "fingerprint": "permissions-permissive-Bash(node *)::settings.json::Bash(node *)"
+    },
+    {
+      "id": "permissions-all-mutable-tools",
+      "severity": "high",
+      "category": "permissions",
+      "title": "All mutable tool categories allowed simultaneously",
+      "file": "settings.json",
+      "fingerprint": "permissions-all-mutable-tools::settings.json::"
+    },
+    {
+      "id": "hooks-file-delete-66",
+      "severity": "high",
+      "category": "hooks",
+      "title": "Hook deletes files: rm -rf",
+      "file": "settings.json",
+      "evidence": "rm -rf",
+      "fingerprint": "hooks-file-delete-66::settings.json::rm -rf"
+    },
+    {
+      "id": "hooks-file-delete-66",
+      "severity": "high",
+      "category": "hooks",
+      "title": "Hook deletes files: rm -rf",
+      "file": "settings.json",
+      "evidence": "rm -rf",
+      "fingerprint": "hooks-file-delete-66::settings.json::rm -rf"
+    },
+    {
+      "id": "agents-no-tools-agents/bundle-engineer.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: agents/bundle-engineer.md",
+      "file": "agents/bundle-engineer.md",
+      "fingerprint": "agents-no-tools-agents/bundle-engineer.md::agents/bundle-engineer.md::"
+    },
+    {
+      "id": "agents-no-tools-agents/cookbook-curator.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: agents/cookbook-curator.md",
+      "file": "agents/cookbook-curator.md",
+      "fingerprint": "agents-no-tools-agents/cookbook-curator.md::agents/cookbook-curator.md::"
+    },
+    {
+      "id": "agents-no-tools-agents/cookbook-writer.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: agents/cookbook-writer.md",
+      "file": "agents/cookbook-writer.md",
+      "fingerprint": "agents-no-tools-agents/cookbook-writer.md::agents/cookbook-writer.md::"
+    },
+    {
+      "id": "agents-no-tools-agents/docs-author.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: agents/docs-author.md",
+      "file": "agents/docs-author.md",
+      "fingerprint": "agents-no-tools-agents/docs-author.md::agents/docs-author.md::"
+    },
+    {
+      "id": "agents-no-tools-agents/docs-cookbook-sync.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: agents/docs-cookbook-sync.md",
+      "file": "agents/docs-cookbook-sync.md",
+      "fingerprint": "agents-no-tools-agents/docs-cookbook-sync.md::agents/docs-cookbook-sync.md::"
+    },
+    {
+      "id": "agents-no-tools-agents/docs-release-auditor.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: agents/docs-release-auditor.md",
+      "file": "agents/docs-release-auditor.md",
+      "fingerprint": "agents-no-tools-agents/docs-release-auditor.md::agents/docs-release-auditor.md::"
+    },
+    {
+      "id": "agents-no-tools-agents/docs-roadmap-qa.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: agents/docs-roadmap-qa.md",
+      "file": "agents/docs-roadmap-qa.md",
+      "fingerprint": "agents-no-tools-agents/docs-roadmap-qa.md::agents/docs-roadmap-qa.md::"
+    },
+    {
+      "id": "agents-no-tools-agents/roadmap-docs-editor.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: agents/roadmap-docs-editor.md",
+      "file": "agents/roadmap-docs-editor.md",
+      "fingerprint": "agents-no-tools-agents/roadmap-docs-editor.md::agents/roadmap-docs-editor.md::"
+    },
+    {
+      "id": "agents-no-tools-agents/submission-architect.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: agents/submission-architect.md",
+      "file": "agents/submission-architect.md",
+      "fingerprint": "agents-no-tools-agents/submission-architect.md::agents/submission-architect.md::"
+    },
+    {
+      "id": "agents-no-tools-agents/submission-qa.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: agents/submission-qa.md",
+      "file": "agents/submission-qa.md",
+      "fingerprint": "agents-no-tools-agents/submission-qa.md::agents/submission-qa.md::"
+    },
+    {
+      "id": "agents-no-tools-agents/td-architect.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: agents/td-architect.md",
+      "file": "agents/td-architect.md",
+      "fingerprint": "agents-no-tools-agents/td-architect.md::agents/td-architect.md::"
+    },
+    {
+      "id": "agents-no-tools-agents/td-builder.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: agents/td-builder.md",
+      "file": "agents/td-builder.md",
+      "fingerprint": "agents-no-tools-agents/td-builder.md::agents/td-builder.md::"
+    },
+    {
+      "id": "agents-no-tools-agents/td-integrator.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: agents/td-integrator.md",
+      "file": "agents/td-integrator.md",
+      "fingerprint": "agents-no-tools-agents/td-integrator.md::agents/td-integrator.md::"
+    },
+    {
+      "id": "agents-no-tools-agents/td-qa.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: agents/td-qa.md",
+      "file": "agents/td-qa.md",
+      "fingerprint": "agents-no-tools-agents/td-qa.md::agents/td-qa.md::"
+    },
+    {
+      "id": "agents-no-tools-agents/td-releaser.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: agents/td-releaser.md",
+      "file": "agents/td-releaser.md",
+      "fingerprint": "agents-no-tools-agents/td-releaser.md::agents/td-releaser.md::"
+    },
+    {
+      "id": "agents-no-tools-agents/td-surveyor.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: agents/td-surveyor.md",
+      "file": "agents/td-surveyor.md",
+      "fingerprint": "agents-no-tools-agents/td-surveyor.md::agents/td-surveyor.md::"
+    },
+    {
+      "id": "agents-no-tools-agents/td-synthesizer.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: agents/td-synthesizer.md",
+      "file": "agents/td-synthesizer.md",
+      "fingerprint": "agents-no-tools-agents/td-synthesizer.md::agents/td-synthesizer.md::"
+    },
+    {
+      "id": "agents-no-tools-agents/tdmcp-backlog-planner.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: agents/tdmcp-backlog-planner.md",
+      "file": "agents/tdmcp-backlog-planner.md",
+      "fingerprint": "agents-no-tools-agents/tdmcp-backlog-planner.md::agents/tdmcp-backlog-planner.md::"
+    },
+    {
+      "id": "agents-no-tools-agents/tdmcp-bridge-engineer.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: agents/tdmcp-bridge-engineer.md",
+      "file": "agents/tdmcp-bridge-engineer.md",
+      "fingerprint": "agents-no-tools-agents/tdmcp-bridge-engineer.md::agents/tdmcp-bridge-engineer.md::"
+    },
+    {
+      "id": "agents-no-tools-agents/tdmcp-coverage-lead.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: agents/tdmcp-coverage-lead.md",
+      "file": "agents/tdmcp-coverage-lead.md",
+      "fingerprint": "agents-no-tools-agents/tdmcp-coverage-lead.md::agents/tdmcp-coverage-lead.md::"
+    },
+    {
+      "id": "agents-no-tools-agents/tdmcp-coverage-qa.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: agents/tdmcp-coverage-qa.md",
+      "file": "agents/tdmcp-coverage-qa.md",
+      "fingerprint": "agents-no-tools-agents/tdmcp-coverage-qa.md::agents/tdmcp-coverage-qa.md::"
+    },
+    {
+      "id": "agents-no-tools-agents/tdmcp-coverage-writer.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: agents/tdmcp-coverage-writer.md",
+      "file": "agents/tdmcp-coverage-writer.md",
+      "fingerprint": "agents-no-tools-agents/tdmcp-coverage-writer.md::agents/tdmcp-coverage-writer.md::"
+    },
+    {
+      "id": "agents-no-tools-agents/tdmcp-feature-lead.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: agents/tdmcp-feature-lead.md",
+      "file": "agents/tdmcp-feature-lead.md",
+      "fingerprint": "agents-no-tools-agents/tdmcp-feature-lead.md::agents/tdmcp-feature-lead.md::"
+    },
+    {
+      "id": "agents-no-tools-agents/tdmcp-tool-builder.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: agents/tdmcp-tool-builder.md",
+      "file": "agents/tdmcp-tool-builder.md",
+      "fingerprint": "agents-no-tools-agents/tdmcp-tool-builder.md::agents/tdmcp-tool-builder.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/bundle-engineer.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/friendly-grothendieck-2b663e/.claude/agents/bundle-engineer.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/bundle-engineer.md",
+      "fingerprint": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/bundle-engineer.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/bundle-engineer.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/cookbook-curator.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/friendly-grothendieck-2b663e/.claude/agents/cookbook-curator.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/cookbook-curator.md",
+      "fingerprint": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/cookbook-curator.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/cookbook-curator.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/cookbook-writer.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/friendly-grothendieck-2b663e/.claude/agents/cookbook-writer.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/cookbook-writer.md",
+      "fingerprint": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/cookbook-writer.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/cookbook-writer.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/docs-author.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/friendly-grothendieck-2b663e/.claude/agents/docs-author.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/docs-author.md",
+      "fingerprint": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/docs-author.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/docs-author.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/docs-cookbook-sync.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/friendly-grothendieck-2b663e/.claude/agents/docs-cookbook-sync.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/docs-cookbook-sync.md",
+      "fingerprint": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/docs-cookbook-sync.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/docs-cookbook-sync.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/docs-release-auditor.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/friendly-grothendieck-2b663e/.claude/agents/docs-release-auditor.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/docs-release-auditor.md",
+      "fingerprint": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/docs-release-auditor.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/docs-release-auditor.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/docs-roadmap-qa.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/friendly-grothendieck-2b663e/.claude/agents/docs-roadmap-qa.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/docs-roadmap-qa.md",
+      "fingerprint": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/docs-roadmap-qa.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/docs-roadmap-qa.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/roadmap-docs-editor.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/friendly-grothendieck-2b663e/.claude/agents/roadmap-docs-editor.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/roadmap-docs-editor.md",
+      "fingerprint": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/roadmap-docs-editor.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/roadmap-docs-editor.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/submission-architect.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/friendly-grothendieck-2b663e/.claude/agents/submission-architect.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/submission-architect.md",
+      "fingerprint": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/submission-architect.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/submission-architect.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/submission-qa.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/friendly-grothendieck-2b663e/.claude/agents/submission-qa.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/submission-qa.md",
+      "fingerprint": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/submission-qa.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/submission-qa.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-architect.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/friendly-grothendieck-2b663e/.claude/agents/td-architect.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/td-architect.md",
+      "fingerprint": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-architect.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/td-architect.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-builder.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/friendly-grothendieck-2b663e/.claude/agents/td-builder.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/td-builder.md",
+      "fingerprint": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-builder.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/td-builder.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-integrator.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/friendly-grothendieck-2b663e/.claude/agents/td-integrator.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/td-integrator.md",
+      "fingerprint": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-integrator.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/td-integrator.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-qa.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/friendly-grothendieck-2b663e/.claude/agents/td-qa.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/td-qa.md",
+      "fingerprint": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-qa.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/td-qa.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-releaser.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/friendly-grothendieck-2b663e/.claude/agents/td-releaser.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/td-releaser.md",
+      "fingerprint": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-releaser.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/td-releaser.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-surveyor.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/friendly-grothendieck-2b663e/.claude/agents/td-surveyor.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/td-surveyor.md",
+      "fingerprint": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-surveyor.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/td-surveyor.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-synthesizer.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/friendly-grothendieck-2b663e/.claude/agents/td-synthesizer.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/td-synthesizer.md",
+      "fingerprint": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-synthesizer.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/td-synthesizer.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-backlog-planner.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-backlog-planner.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-backlog-planner.md",
+      "fingerprint": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-backlog-planner.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-backlog-planner.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-bridge-engineer.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-bridge-engineer.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-bridge-engineer.md",
+      "fingerprint": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-bridge-engineer.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-bridge-engineer.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-coverage-lead.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-coverage-lead.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-coverage-lead.md",
+      "fingerprint": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-coverage-lead.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-coverage-lead.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-coverage-qa.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-coverage-qa.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-coverage-qa.md",
+      "fingerprint": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-coverage-qa.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-coverage-qa.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-coverage-writer.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-coverage-writer.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-coverage-writer.md",
+      "fingerprint": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-coverage-writer.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-coverage-writer.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-feature-lead.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-feature-lead.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-feature-lead.md",
+      "fingerprint": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-feature-lead.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-feature-lead.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-tool-builder.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-tool-builder.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-tool-builder.md",
+      "fingerprint": "agents-no-tools-worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-tool-builder.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-tool-builder.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/bundle-engineer.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/kind-chatelet-fdaa01/.claude/agents/bundle-engineer.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/bundle-engineer.md",
+      "fingerprint": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/bundle-engineer.md::worktrees/kind-chatelet-fdaa01/.claude/agents/bundle-engineer.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/cookbook-curator.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/kind-chatelet-fdaa01/.claude/agents/cookbook-curator.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/cookbook-curator.md",
+      "fingerprint": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/cookbook-curator.md::worktrees/kind-chatelet-fdaa01/.claude/agents/cookbook-curator.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/cookbook-writer.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/kind-chatelet-fdaa01/.claude/agents/cookbook-writer.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/cookbook-writer.md",
+      "fingerprint": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/cookbook-writer.md::worktrees/kind-chatelet-fdaa01/.claude/agents/cookbook-writer.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/docs-author.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/kind-chatelet-fdaa01/.claude/agents/docs-author.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/docs-author.md",
+      "fingerprint": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/docs-author.md::worktrees/kind-chatelet-fdaa01/.claude/agents/docs-author.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/docs-cookbook-sync.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/kind-chatelet-fdaa01/.claude/agents/docs-cookbook-sync.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/docs-cookbook-sync.md",
+      "fingerprint": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/docs-cookbook-sync.md::worktrees/kind-chatelet-fdaa01/.claude/agents/docs-cookbook-sync.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/docs-release-auditor.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/kind-chatelet-fdaa01/.claude/agents/docs-release-auditor.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/docs-release-auditor.md",
+      "fingerprint": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/docs-release-auditor.md::worktrees/kind-chatelet-fdaa01/.claude/agents/docs-release-auditor.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/docs-roadmap-qa.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/kind-chatelet-fdaa01/.claude/agents/docs-roadmap-qa.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/docs-roadmap-qa.md",
+      "fingerprint": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/docs-roadmap-qa.md::worktrees/kind-chatelet-fdaa01/.claude/agents/docs-roadmap-qa.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/roadmap-docs-editor.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/kind-chatelet-fdaa01/.claude/agents/roadmap-docs-editor.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/roadmap-docs-editor.md",
+      "fingerprint": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/roadmap-docs-editor.md::worktrees/kind-chatelet-fdaa01/.claude/agents/roadmap-docs-editor.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/submission-architect.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/kind-chatelet-fdaa01/.claude/agents/submission-architect.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/submission-architect.md",
+      "fingerprint": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/submission-architect.md::worktrees/kind-chatelet-fdaa01/.claude/agents/submission-architect.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/submission-qa.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/kind-chatelet-fdaa01/.claude/agents/submission-qa.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/submission-qa.md",
+      "fingerprint": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/submission-qa.md::worktrees/kind-chatelet-fdaa01/.claude/agents/submission-qa.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/td-architect.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/kind-chatelet-fdaa01/.claude/agents/td-architect.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/td-architect.md",
+      "fingerprint": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/td-architect.md::worktrees/kind-chatelet-fdaa01/.claude/agents/td-architect.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/td-builder.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/kind-chatelet-fdaa01/.claude/agents/td-builder.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/td-builder.md",
+      "fingerprint": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/td-builder.md::worktrees/kind-chatelet-fdaa01/.claude/agents/td-builder.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/td-integrator.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/kind-chatelet-fdaa01/.claude/agents/td-integrator.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/td-integrator.md",
+      "fingerprint": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/td-integrator.md::worktrees/kind-chatelet-fdaa01/.claude/agents/td-integrator.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/td-qa.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/kind-chatelet-fdaa01/.claude/agents/td-qa.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/td-qa.md",
+      "fingerprint": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/td-qa.md::worktrees/kind-chatelet-fdaa01/.claude/agents/td-qa.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/td-releaser.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/kind-chatelet-fdaa01/.claude/agents/td-releaser.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/td-releaser.md",
+      "fingerprint": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/td-releaser.md::worktrees/kind-chatelet-fdaa01/.claude/agents/td-releaser.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/td-surveyor.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/kind-chatelet-fdaa01/.claude/agents/td-surveyor.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/td-surveyor.md",
+      "fingerprint": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/td-surveyor.md::worktrees/kind-chatelet-fdaa01/.claude/agents/td-surveyor.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/td-synthesizer.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/kind-chatelet-fdaa01/.claude/agents/td-synthesizer.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/td-synthesizer.md",
+      "fingerprint": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/td-synthesizer.md::worktrees/kind-chatelet-fdaa01/.claude/agents/td-synthesizer.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-backlog-planner.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-backlog-planner.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-backlog-planner.md",
+      "fingerprint": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-backlog-planner.md::worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-backlog-planner.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-bridge-engineer.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-bridge-engineer.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-bridge-engineer.md",
+      "fingerprint": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-bridge-engineer.md::worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-bridge-engineer.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-coverage-lead.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-coverage-lead.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-coverage-lead.md",
+      "fingerprint": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-coverage-lead.md::worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-coverage-lead.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-coverage-qa.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-coverage-qa.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-coverage-qa.md",
+      "fingerprint": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-coverage-qa.md::worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-coverage-qa.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-coverage-writer.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-coverage-writer.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-coverage-writer.md",
+      "fingerprint": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-coverage-writer.md::worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-coverage-writer.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-feature-lead.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-feature-lead.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-feature-lead.md",
+      "fingerprint": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-feature-lead.md::worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-feature-lead.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-tool-builder.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-tool-builder.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-tool-builder.md",
+      "fingerprint": "agents-no-tools-worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-tool-builder.md::worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-tool-builder.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/modest-hypatia-d9a39f/.claude/agents/bundle-engineer.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/modest-hypatia-d9a39f/.claude/agents/bundle-engineer.md",
+      "file": "worktrees/modest-hypatia-d9a39f/.claude/agents/bundle-engineer.md",
+      "fingerprint": "agents-no-tools-worktrees/modest-hypatia-d9a39f/.claude/agents/bundle-engineer.md::worktrees/modest-hypatia-d9a39f/.claude/agents/bundle-engineer.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/modest-hypatia-d9a39f/.claude/agents/docs-author.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/modest-hypatia-d9a39f/.claude/agents/docs-author.md",
+      "file": "worktrees/modest-hypatia-d9a39f/.claude/agents/docs-author.md",
+      "fingerprint": "agents-no-tools-worktrees/modest-hypatia-d9a39f/.claude/agents/docs-author.md::worktrees/modest-hypatia-d9a39f/.claude/agents/docs-author.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/modest-hypatia-d9a39f/.claude/agents/submission-architect.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/modest-hypatia-d9a39f/.claude/agents/submission-architect.md",
+      "file": "worktrees/modest-hypatia-d9a39f/.claude/agents/submission-architect.md",
+      "fingerprint": "agents-no-tools-worktrees/modest-hypatia-d9a39f/.claude/agents/submission-architect.md::worktrees/modest-hypatia-d9a39f/.claude/agents/submission-architect.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/modest-hypatia-d9a39f/.claude/agents/submission-qa.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/modest-hypatia-d9a39f/.claude/agents/submission-qa.md",
+      "file": "worktrees/modest-hypatia-d9a39f/.claude/agents/submission-qa.md",
+      "fingerprint": "agents-no-tools-worktrees/modest-hypatia-d9a39f/.claude/agents/submission-qa.md::worktrees/modest-hypatia-d9a39f/.claude/agents/submission-qa.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/modest-hypatia-d9a39f/.claude/agents/td-architect.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/modest-hypatia-d9a39f/.claude/agents/td-architect.md",
+      "file": "worktrees/modest-hypatia-d9a39f/.claude/agents/td-architect.md",
+      "fingerprint": "agents-no-tools-worktrees/modest-hypatia-d9a39f/.claude/agents/td-architect.md::worktrees/modest-hypatia-d9a39f/.claude/agents/td-architect.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/modest-hypatia-d9a39f/.claude/agents/td-builder.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/modest-hypatia-d9a39f/.claude/agents/td-builder.md",
+      "file": "worktrees/modest-hypatia-d9a39f/.claude/agents/td-builder.md",
+      "fingerprint": "agents-no-tools-worktrees/modest-hypatia-d9a39f/.claude/agents/td-builder.md::worktrees/modest-hypatia-d9a39f/.claude/agents/td-builder.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/modest-hypatia-d9a39f/.claude/agents/td-integrator.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/modest-hypatia-d9a39f/.claude/agents/td-integrator.md",
+      "file": "worktrees/modest-hypatia-d9a39f/.claude/agents/td-integrator.md",
+      "fingerprint": "agents-no-tools-worktrees/modest-hypatia-d9a39f/.claude/agents/td-integrator.md::worktrees/modest-hypatia-d9a39f/.claude/agents/td-integrator.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/modest-hypatia-d9a39f/.claude/agents/td-qa.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/modest-hypatia-d9a39f/.claude/agents/td-qa.md",
+      "file": "worktrees/modest-hypatia-d9a39f/.claude/agents/td-qa.md",
+      "fingerprint": "agents-no-tools-worktrees/modest-hypatia-d9a39f/.claude/agents/td-qa.md::worktrees/modest-hypatia-d9a39f/.claude/agents/td-qa.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/modest-hypatia-d9a39f/.claude/agents/td-releaser.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/modest-hypatia-d9a39f/.claude/agents/td-releaser.md",
+      "file": "worktrees/modest-hypatia-d9a39f/.claude/agents/td-releaser.md",
+      "fingerprint": "agents-no-tools-worktrees/modest-hypatia-d9a39f/.claude/agents/td-releaser.md::worktrees/modest-hypatia-d9a39f/.claude/agents/td-releaser.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/modest-hypatia-d9a39f/.claude/agents/td-surveyor.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/modest-hypatia-d9a39f/.claude/agents/td-surveyor.md",
+      "file": "worktrees/modest-hypatia-d9a39f/.claude/agents/td-surveyor.md",
+      "fingerprint": "agents-no-tools-worktrees/modest-hypatia-d9a39f/.claude/agents/td-surveyor.md::worktrees/modest-hypatia-d9a39f/.claude/agents/td-surveyor.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/modest-hypatia-d9a39f/.claude/agents/td-synthesizer.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/modest-hypatia-d9a39f/.claude/agents/td-synthesizer.md",
+      "file": "worktrees/modest-hypatia-d9a39f/.claude/agents/td-synthesizer.md",
+      "fingerprint": "agents-no-tools-worktrees/modest-hypatia-d9a39f/.claude/agents/td-synthesizer.md::worktrees/modest-hypatia-d9a39f/.claude/agents/td-synthesizer.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/modest-hypatia-d9a39f/.claude/agents/tdmcp-feature-lead.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/modest-hypatia-d9a39f/.claude/agents/tdmcp-feature-lead.md",
+      "file": "worktrees/modest-hypatia-d9a39f/.claude/agents/tdmcp-feature-lead.md",
+      "fingerprint": "agents-no-tools-worktrees/modest-hypatia-d9a39f/.claude/agents/tdmcp-feature-lead.md::worktrees/modest-hypatia-d9a39f/.claude/agents/tdmcp-feature-lead.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/modest-hypatia-d9a39f/.claude/agents/tdmcp-tool-builder.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/modest-hypatia-d9a39f/.claude/agents/tdmcp-tool-builder.md",
+      "file": "worktrees/modest-hypatia-d9a39f/.claude/agents/tdmcp-tool-builder.md",
+      "fingerprint": "agents-no-tools-worktrees/modest-hypatia-d9a39f/.claude/agents/tdmcp-tool-builder.md::worktrees/modest-hypatia-d9a39f/.claude/agents/tdmcp-tool-builder.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/bundle-engineer.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/zen-cartwright-ea1284/.claude/agents/bundle-engineer.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/bundle-engineer.md",
+      "fingerprint": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/bundle-engineer.md::worktrees/zen-cartwright-ea1284/.claude/agents/bundle-engineer.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/cookbook-curator.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/zen-cartwright-ea1284/.claude/agents/cookbook-curator.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/cookbook-curator.md",
+      "fingerprint": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/cookbook-curator.md::worktrees/zen-cartwright-ea1284/.claude/agents/cookbook-curator.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/cookbook-writer.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/zen-cartwright-ea1284/.claude/agents/cookbook-writer.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/cookbook-writer.md",
+      "fingerprint": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/cookbook-writer.md::worktrees/zen-cartwright-ea1284/.claude/agents/cookbook-writer.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/docs-author.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/zen-cartwright-ea1284/.claude/agents/docs-author.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/docs-author.md",
+      "fingerprint": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/docs-author.md::worktrees/zen-cartwright-ea1284/.claude/agents/docs-author.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/docs-cookbook-sync.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/zen-cartwright-ea1284/.claude/agents/docs-cookbook-sync.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/docs-cookbook-sync.md",
+      "fingerprint": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/docs-cookbook-sync.md::worktrees/zen-cartwright-ea1284/.claude/agents/docs-cookbook-sync.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/docs-release-auditor.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/zen-cartwright-ea1284/.claude/agents/docs-release-auditor.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/docs-release-auditor.md",
+      "fingerprint": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/docs-release-auditor.md::worktrees/zen-cartwright-ea1284/.claude/agents/docs-release-auditor.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/docs-roadmap-qa.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/zen-cartwright-ea1284/.claude/agents/docs-roadmap-qa.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/docs-roadmap-qa.md",
+      "fingerprint": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/docs-roadmap-qa.md::worktrees/zen-cartwright-ea1284/.claude/agents/docs-roadmap-qa.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/roadmap-docs-editor.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/zen-cartwright-ea1284/.claude/agents/roadmap-docs-editor.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/roadmap-docs-editor.md",
+      "fingerprint": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/roadmap-docs-editor.md::worktrees/zen-cartwright-ea1284/.claude/agents/roadmap-docs-editor.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/submission-architect.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/zen-cartwright-ea1284/.claude/agents/submission-architect.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/submission-architect.md",
+      "fingerprint": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/submission-architect.md::worktrees/zen-cartwright-ea1284/.claude/agents/submission-architect.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/submission-qa.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/zen-cartwright-ea1284/.claude/agents/submission-qa.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/submission-qa.md",
+      "fingerprint": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/submission-qa.md::worktrees/zen-cartwright-ea1284/.claude/agents/submission-qa.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/td-architect.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/zen-cartwright-ea1284/.claude/agents/td-architect.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/td-architect.md",
+      "fingerprint": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/td-architect.md::worktrees/zen-cartwright-ea1284/.claude/agents/td-architect.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/td-builder.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/zen-cartwright-ea1284/.claude/agents/td-builder.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/td-builder.md",
+      "fingerprint": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/td-builder.md::worktrees/zen-cartwright-ea1284/.claude/agents/td-builder.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/td-integrator.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/zen-cartwright-ea1284/.claude/agents/td-integrator.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/td-integrator.md",
+      "fingerprint": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/td-integrator.md::worktrees/zen-cartwright-ea1284/.claude/agents/td-integrator.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/td-qa.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/zen-cartwright-ea1284/.claude/agents/td-qa.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/td-qa.md",
+      "fingerprint": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/td-qa.md::worktrees/zen-cartwright-ea1284/.claude/agents/td-qa.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/td-releaser.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/zen-cartwright-ea1284/.claude/agents/td-releaser.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/td-releaser.md",
+      "fingerprint": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/td-releaser.md::worktrees/zen-cartwright-ea1284/.claude/agents/td-releaser.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/td-surveyor.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/zen-cartwright-ea1284/.claude/agents/td-surveyor.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/td-surveyor.md",
+      "fingerprint": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/td-surveyor.md::worktrees/zen-cartwright-ea1284/.claude/agents/td-surveyor.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/td-synthesizer.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/zen-cartwright-ea1284/.claude/agents/td-synthesizer.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/td-synthesizer.md",
+      "fingerprint": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/td-synthesizer.md::worktrees/zen-cartwright-ea1284/.claude/agents/td-synthesizer.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-backlog-planner.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-backlog-planner.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-backlog-planner.md",
+      "fingerprint": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-backlog-planner.md::worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-backlog-planner.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-bridge-engineer.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-bridge-engineer.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-bridge-engineer.md",
+      "fingerprint": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-bridge-engineer.md::worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-bridge-engineer.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-coverage-lead.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-coverage-lead.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-coverage-lead.md",
+      "fingerprint": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-coverage-lead.md::worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-coverage-lead.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-coverage-qa.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-coverage-qa.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-coverage-qa.md",
+      "fingerprint": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-coverage-qa.md::worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-coverage-qa.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-coverage-writer.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-coverage-writer.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-coverage-writer.md",
+      "fingerprint": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-coverage-writer.md::worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-coverage-writer.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-feature-lead.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-feature-lead.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-feature-lead.md",
+      "fingerprint": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-feature-lead.md::worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-feature-lead.md::"
+    },
+    {
+      "id": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-tool-builder.md",
+      "severity": "high",
+      "category": "agents",
+      "title": "Agent has no tools restriction: worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-tool-builder.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-tool-builder.md",
+      "fingerprint": "agents-no-tools-worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-tool-builder.md::worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-tool-builder.md::"
+    },
+    {
+      "id": "hooks-chained-commands-0",
+      "severity": "medium",
+      "category": "hooks",
+      "title": "Hook has 7 chained commands",
+      "file": "settings.json",
+      "evidence": "# Warn on destructive commands\nif echo \"$TOOL_INPUT\" | grep -qE '(rm -rf|sudo|chmod 777|mkfs|dd if=)",
+      "fingerprint": "hooks-chained-commands-0::settings.json::# Warn on destructive commands\nif echo \"$TOOL_INPUT\" | grep -qE '(rm -rf|sudo|chmod 777|mkfs|dd if=)"
+    },
+    {
+      "id": "hooks-chained-commands-1",
+      "severity": "medium",
+      "category": "hooks",
+      "title": "Hook has 6 chained commands",
+      "file": "settings.json",
+      "evidence": "# Check for accidentally written secrets\nif echo \"$TOOL_INPUT\" | grep -qE '(sk-ant-|sk-proj-|ghp_|AK",
+      "fingerprint": "hooks-chained-commands-1::settings.json::# Check for accidentally written secrets\nif echo \"$TOOL_INPUT\" | grep -qE '(sk-ant-|sk-proj-|ghp_|AK"
+    },
+    {
+      "id": "agents-oversized-prompt-agents/td-surveyor.md",
+      "severity": "medium",
+      "category": "agents",
+      "title": "Agent definition effective size is 6914 characters (>5000 threshold)",
+      "file": "agents/td-surveyor.md",
+      "evidence": "6914 effective characters (6932 raw)",
+      "fingerprint": "agents-oversized-prompt-agents/td-surveyor.md::agents/td-surveyor.md::6914 effective characters (6932 raw)"
+    },
+    {
+      "id": "agents-oversized-prompt-agents/td-synthesizer.md",
+      "severity": "medium",
+      "category": "agents",
+      "title": "Agent definition effective size is 5341 characters (>5000 threshold)",
+      "file": "agents/td-synthesizer.md",
+      "evidence": "5341 effective characters (5357 raw)",
+      "fingerprint": "agents-oversized-prompt-agents/td-synthesizer.md::agents/td-synthesizer.md::5341 effective characters (5357 raw)"
+    },
+    {
+      "id": "agents-oversized-prompt-agents/tdmcp-backlog-planner.md",
+      "severity": "medium",
+      "category": "agents",
+      "title": "Agent definition effective size is 7265 characters (>5000 threshold)",
+      "file": "agents/tdmcp-backlog-planner.md",
+      "evidence": "7265 effective characters (7585 raw)",
+      "fingerprint": "agents-oversized-prompt-agents/tdmcp-backlog-planner.md::agents/tdmcp-backlog-planner.md::7265 effective characters (7585 raw)"
+    },
+    {
+      "id": "agents-oversized-prompt-agents/tdmcp-feature-lead.md",
+      "severity": "medium",
+      "category": "agents",
+      "title": "Agent definition effective size is 5447 characters (>5000 threshold)",
+      "file": "agents/tdmcp-feature-lead.md",
+      "evidence": "5447 effective characters (5783 raw)",
+      "fingerprint": "agents-oversized-prompt-agents/tdmcp-feature-lead.md::agents/tdmcp-feature-lead.md::5447 effective characters (5783 raw)"
+    },
+    {
+      "id": "secrets-base64-obfuscation-8543",
+      "severity": "medium",
+      "category": "secrets",
+      "title": "Potential base64-obfuscated payload (61 chars)",
+      "file": "worktrees/friendly-grothendieck-2b663e/CLAUDE.md",
+      "evidence": "features/tools/effec...pabilities",
+      "fingerprint": "secrets-base64-obfuscation-8543::worktrees/friendly-grothendieck-2b663e/CLAUDE.md::features/tools/effec...pabilities"
+    },
+    {
+      "id": "mcp-no-version-tdmcp",
+      "severity": "medium",
+      "category": "mcp",
+      "title": "MCP server \"tdmcp\" uses unversioned package: @dpantani/tdmcp",
+      "file": "worktrees/friendly-grothendieck-2b663e/mcp.json",
+      "evidence": "command: npx, package: @dpantani/tdmcp",
+      "fingerprint": "mcp-no-version-tdmcp::worktrees/friendly-grothendieck-2b663e/mcp.json::command: npx, package: @dpantani/tdmcp"
+    },
+    {
+      "id": "agents-oversized-prompt-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-surveyor.md",
+      "severity": "medium",
+      "category": "agents",
+      "title": "Agent definition effective size is 6914 characters (>5000 threshold)",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/td-surveyor.md",
+      "evidence": "6914 effective characters (6932 raw)",
+      "fingerprint": "agents-oversized-prompt-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-surveyor.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/td-surveyor.md::6914 effective characters (6932 raw)"
+    },
+    {
+      "id": "agents-oversized-prompt-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-synthesizer.md",
+      "severity": "medium",
+      "category": "agents",
+      "title": "Agent definition effective size is 5341 characters (>5000 threshold)",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/td-synthesizer.md",
+      "evidence": "5341 effective characters (5357 raw)",
+      "fingerprint": "agents-oversized-prompt-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-synthesizer.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/td-synthesizer.md::5341 effective characters (5357 raw)"
+    },
+    {
+      "id": "agents-oversized-prompt-worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-backlog-planner.md",
+      "severity": "medium",
+      "category": "agents",
+      "title": "Agent definition effective size is 7265 characters (>5000 threshold)",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-backlog-planner.md",
+      "evidence": "7265 effective characters (7585 raw)",
+      "fingerprint": "agents-oversized-prompt-worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-backlog-planner.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-backlog-planner.md::7265 effective characters (7585 raw)"
+    },
+    {
+      "id": "agents-oversized-prompt-worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-feature-lead.md",
+      "severity": "medium",
+      "category": "agents",
+      "title": "Agent definition effective size is 5447 characters (>5000 threshold)",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-feature-lead.md",
+      "evidence": "5447 effective characters (5783 raw)",
+      "fingerprint": "agents-oversized-prompt-worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-feature-lead.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-feature-lead.md::5447 effective characters (5783 raw)"
+    },
+    {
+      "id": "secrets-base64-obfuscation-8543",
+      "severity": "medium",
+      "category": "secrets",
+      "title": "Potential base64-obfuscated payload (61 chars)",
+      "file": "worktrees/kind-chatelet-fdaa01/CLAUDE.md",
+      "evidence": "features/tools/effec...pabilities",
+      "fingerprint": "secrets-base64-obfuscation-8543::worktrees/kind-chatelet-fdaa01/CLAUDE.md::features/tools/effec...pabilities"
+    },
+    {
+      "id": "mcp-no-version-tdmcp",
+      "severity": "medium",
+      "category": "mcp",
+      "title": "MCP server \"tdmcp\" uses unversioned package: @dpantani/tdmcp",
+      "file": "worktrees/kind-chatelet-fdaa01/mcp.json",
+      "evidence": "command: npx, package: @dpantani/tdmcp",
+      "fingerprint": "mcp-no-version-tdmcp::worktrees/kind-chatelet-fdaa01/mcp.json::command: npx, package: @dpantani/tdmcp"
+    },
+    {
+      "id": "agents-oversized-prompt-worktrees/kind-chatelet-fdaa01/.claude/agents/td-surveyor.md",
+      "severity": "medium",
+      "category": "agents",
+      "title": "Agent definition effective size is 6914 characters (>5000 threshold)",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/td-surveyor.md",
+      "evidence": "6914 effective characters (6932 raw)",
+      "fingerprint": "agents-oversized-prompt-worktrees/kind-chatelet-fdaa01/.claude/agents/td-surveyor.md::worktrees/kind-chatelet-fdaa01/.claude/agents/td-surveyor.md::6914 effective characters (6932 raw)"
+    },
+    {
+      "id": "agents-oversized-prompt-worktrees/kind-chatelet-fdaa01/.claude/agents/td-synthesizer.md",
+      "severity": "medium",
+      "category": "agents",
+      "title": "Agent definition effective size is 5341 characters (>5000 threshold)",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/td-synthesizer.md",
+      "evidence": "5341 effective characters (5357 raw)",
+      "fingerprint": "agents-oversized-prompt-worktrees/kind-chatelet-fdaa01/.claude/agents/td-synthesizer.md::worktrees/kind-chatelet-fdaa01/.claude/agents/td-synthesizer.md::5341 effective characters (5357 raw)"
+    },
+    {
+      "id": "agents-oversized-prompt-worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-backlog-planner.md",
+      "severity": "medium",
+      "category": "agents",
+      "title": "Agent definition effective size is 7265 characters (>5000 threshold)",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-backlog-planner.md",
+      "evidence": "7265 effective characters (7585 raw)",
+      "fingerprint": "agents-oversized-prompt-worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-backlog-planner.md::worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-backlog-planner.md::7265 effective characters (7585 raw)"
+    },
+    {
+      "id": "agents-oversized-prompt-worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-feature-lead.md",
+      "severity": "medium",
+      "category": "agents",
+      "title": "Agent definition effective size is 5447 characters (>5000 threshold)",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-feature-lead.md",
+      "evidence": "5447 effective characters (5783 raw)",
+      "fingerprint": "agents-oversized-prompt-worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-feature-lead.md::worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-feature-lead.md::5447 effective characters (5783 raw)"
+    },
+    {
+      "id": "secrets-base64-obfuscation-8329",
+      "severity": "medium",
+      "category": "secrets",
+      "title": "Potential base64-obfuscated payload (61 chars)",
+      "file": "worktrees/modest-hypatia-d9a39f/CLAUDE.md",
+      "evidence": "features/tools/effec...pabilities",
+      "fingerprint": "secrets-base64-obfuscation-8329::worktrees/modest-hypatia-d9a39f/CLAUDE.md::features/tools/effec...pabilities"
+    },
+    {
+      "id": "mcp-no-version-tdmcp",
+      "severity": "medium",
+      "category": "mcp",
+      "title": "MCP server \"tdmcp\" uses unversioned package: @dpantani/tdmcp",
+      "file": "worktrees/modest-hypatia-d9a39f/mcp.json",
+      "evidence": "command: npx, package: @dpantani/tdmcp",
+      "fingerprint": "mcp-no-version-tdmcp::worktrees/modest-hypatia-d9a39f/mcp.json::command: npx, package: @dpantani/tdmcp"
+    },
+    {
+      "id": "agents-oversized-prompt-worktrees/modest-hypatia-d9a39f/.claude/agents/td-surveyor.md",
+      "severity": "medium",
+      "category": "agents",
+      "title": "Agent definition effective size is 6914 characters (>5000 threshold)",
+      "file": "worktrees/modest-hypatia-d9a39f/.claude/agents/td-surveyor.md",
+      "evidence": "6914 effective characters (6932 raw)",
+      "fingerprint": "agents-oversized-prompt-worktrees/modest-hypatia-d9a39f/.claude/agents/td-surveyor.md::worktrees/modest-hypatia-d9a39f/.claude/agents/td-surveyor.md::6914 effective characters (6932 raw)"
+    },
+    {
+      "id": "agents-oversized-prompt-worktrees/modest-hypatia-d9a39f/.claude/agents/td-synthesizer.md",
+      "severity": "medium",
+      "category": "agents",
+      "title": "Agent definition effective size is 5341 characters (>5000 threshold)",
+      "file": "worktrees/modest-hypatia-d9a39f/.claude/agents/td-synthesizer.md",
+      "evidence": "5341 effective characters (5357 raw)",
+      "fingerprint": "agents-oversized-prompt-worktrees/modest-hypatia-d9a39f/.claude/agents/td-synthesizer.md::worktrees/modest-hypatia-d9a39f/.claude/agents/td-synthesizer.md::5341 effective characters (5357 raw)"
+    },
+    {
+      "id": "agents-oversized-prompt-worktrees/modest-hypatia-d9a39f/.claude/agents/tdmcp-feature-lead.md",
+      "severity": "medium",
+      "category": "agents",
+      "title": "Agent definition effective size is 5447 characters (>5000 threshold)",
+      "file": "worktrees/modest-hypatia-d9a39f/.claude/agents/tdmcp-feature-lead.md",
+      "evidence": "5447 effective characters (5783 raw)",
+      "fingerprint": "agents-oversized-prompt-worktrees/modest-hypatia-d9a39f/.claude/agents/tdmcp-feature-lead.md::worktrees/modest-hypatia-d9a39f/.claude/agents/tdmcp-feature-lead.md::5447 effective characters (5783 raw)"
+    },
+    {
+      "id": "secrets-base64-obfuscation-8543",
+      "severity": "medium",
+      "category": "secrets",
+      "title": "Potential base64-obfuscated payload (61 chars)",
+      "file": "worktrees/zen-cartwright-ea1284/CLAUDE.md",
+      "evidence": "features/tools/effec...pabilities",
+      "fingerprint": "secrets-base64-obfuscation-8543::worktrees/zen-cartwright-ea1284/CLAUDE.md::features/tools/effec...pabilities"
+    },
+    {
+      "id": "mcp-no-version-tdmcp",
+      "severity": "medium",
+      "category": "mcp",
+      "title": "MCP server \"tdmcp\" uses unversioned package: @dpantani/tdmcp",
+      "file": "worktrees/zen-cartwright-ea1284/mcp.json",
+      "evidence": "command: npx, package: @dpantani/tdmcp",
+      "fingerprint": "mcp-no-version-tdmcp::worktrees/zen-cartwright-ea1284/mcp.json::command: npx, package: @dpantani/tdmcp"
+    },
+    {
+      "id": "agents-oversized-prompt-worktrees/zen-cartwright-ea1284/.claude/agents/td-surveyor.md",
+      "severity": "medium",
+      "category": "agents",
+      "title": "Agent definition effective size is 6914 characters (>5000 threshold)",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/td-surveyor.md",
+      "evidence": "6914 effective characters (6932 raw)",
+      "fingerprint": "agents-oversized-prompt-worktrees/zen-cartwright-ea1284/.claude/agents/td-surveyor.md::worktrees/zen-cartwright-ea1284/.claude/agents/td-surveyor.md::6914 effective characters (6932 raw)"
+    },
+    {
+      "id": "agents-oversized-prompt-worktrees/zen-cartwright-ea1284/.claude/agents/td-synthesizer.md",
+      "severity": "medium",
+      "category": "agents",
+      "title": "Agent definition effective size is 5341 characters (>5000 threshold)",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/td-synthesizer.md",
+      "evidence": "5341 effective characters (5357 raw)",
+      "fingerprint": "agents-oversized-prompt-worktrees/zen-cartwright-ea1284/.claude/agents/td-synthesizer.md::worktrees/zen-cartwright-ea1284/.claude/agents/td-synthesizer.md::5341 effective characters (5357 raw)"
+    },
+    {
+      "id": "agents-oversized-prompt-worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-backlog-planner.md",
+      "severity": "medium",
+      "category": "agents",
+      "title": "Agent definition effective size is 7265 characters (>5000 threshold)",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-backlog-planner.md",
+      "evidence": "7265 effective characters (7585 raw)",
+      "fingerprint": "agents-oversized-prompt-worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-backlog-planner.md::worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-backlog-planner.md::7265 effective characters (7585 raw)"
+    },
+    {
+      "id": "agents-oversized-prompt-worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-feature-lead.md",
+      "severity": "medium",
+      "category": "agents",
+      "title": "Agent definition effective size is 5447 characters (>5000 threshold)",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-feature-lead.md",
+      "evidence": "5447 effective characters (5783 raw)",
+      "fingerprint": "agents-oversized-prompt-worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-feature-lead.md::worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-feature-lead.md::5447 effective characters (5783 raw)"
+    },
+    {
+      "id": "hooks-no-stop-hooks",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "No Stop hooks for session-end verification",
+      "file": "settings.json",
+      "fingerprint": "hooks-no-stop-hooks::settings.json::"
+    },
+    {
+      "id": "agents-no-model-agents/td-architect.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: agents/td-architect.md",
+      "file": "agents/td-architect.md",
+      "fingerprint": "agents-no-model-agents/td-architect.md::agents/td-architect.md::"
+    },
+    {
+      "id": "agents-no-model-agents/td-builder.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: agents/td-builder.md",
+      "file": "agents/td-builder.md",
+      "fingerprint": "agents-no-model-agents/td-builder.md::agents/td-builder.md::"
+    },
+    {
+      "id": "agents-no-model-agents/td-integrator.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: agents/td-integrator.md",
+      "file": "agents/td-integrator.md",
+      "fingerprint": "agents-no-model-agents/td-integrator.md::agents/td-integrator.md::"
+    },
+    {
+      "id": "agents-no-model-agents/td-qa.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: agents/td-qa.md",
+      "file": "agents/td-qa.md",
+      "fingerprint": "agents-no-model-agents/td-qa.md::agents/td-qa.md::"
+    },
+    {
+      "id": "agents-no-model-agents/td-releaser.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: agents/td-releaser.md",
+      "file": "agents/td-releaser.md",
+      "fingerprint": "agents-no-model-agents/td-releaser.md::agents/td-releaser.md::"
+    },
+    {
+      "id": "agents-no-model-agents/td-surveyor.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: agents/td-surveyor.md",
+      "file": "agents/td-surveyor.md",
+      "fingerprint": "agents-no-model-agents/td-surveyor.md::agents/td-surveyor.md::"
+    },
+    {
+      "id": "agents-no-model-agents/td-synthesizer.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: agents/td-synthesizer.md",
+      "file": "agents/td-synthesizer.md",
+      "fingerprint": "agents-no-model-agents/td-synthesizer.md::agents/td-synthesizer.md::"
+    },
+    {
+      "id": "agents-no-model-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-architect.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: worktrees/friendly-grothendieck-2b663e/.claude/agents/td-architect.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/td-architect.md",
+      "fingerprint": "agents-no-model-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-architect.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/td-architect.md::"
+    },
+    {
+      "id": "agents-no-model-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-builder.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: worktrees/friendly-grothendieck-2b663e/.claude/agents/td-builder.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/td-builder.md",
+      "fingerprint": "agents-no-model-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-builder.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/td-builder.md::"
+    },
+    {
+      "id": "agents-no-model-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-integrator.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: worktrees/friendly-grothendieck-2b663e/.claude/agents/td-integrator.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/td-integrator.md",
+      "fingerprint": "agents-no-model-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-integrator.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/td-integrator.md::"
+    },
+    {
+      "id": "agents-no-model-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-qa.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: worktrees/friendly-grothendieck-2b663e/.claude/agents/td-qa.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/td-qa.md",
+      "fingerprint": "agents-no-model-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-qa.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/td-qa.md::"
+    },
+    {
+      "id": "agents-no-model-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-releaser.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: worktrees/friendly-grothendieck-2b663e/.claude/agents/td-releaser.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/td-releaser.md",
+      "fingerprint": "agents-no-model-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-releaser.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/td-releaser.md::"
+    },
+    {
+      "id": "agents-no-model-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-surveyor.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: worktrees/friendly-grothendieck-2b663e/.claude/agents/td-surveyor.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/td-surveyor.md",
+      "fingerprint": "agents-no-model-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-surveyor.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/td-surveyor.md::"
+    },
+    {
+      "id": "agents-no-model-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-synthesizer.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: worktrees/friendly-grothendieck-2b663e/.claude/agents/td-synthesizer.md",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/td-synthesizer.md",
+      "fingerprint": "agents-no-model-worktrees/friendly-grothendieck-2b663e/.claude/agents/td-synthesizer.md::worktrees/friendly-grothendieck-2b663e/.claude/agents/td-synthesizer.md::"
+    },
+    {
+      "id": "agents-no-model-worktrees/kind-chatelet-fdaa01/.claude/agents/td-architect.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: worktrees/kind-chatelet-fdaa01/.claude/agents/td-architect.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/td-architect.md",
+      "fingerprint": "agents-no-model-worktrees/kind-chatelet-fdaa01/.claude/agents/td-architect.md::worktrees/kind-chatelet-fdaa01/.claude/agents/td-architect.md::"
+    },
+    {
+      "id": "agents-no-model-worktrees/kind-chatelet-fdaa01/.claude/agents/td-builder.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: worktrees/kind-chatelet-fdaa01/.claude/agents/td-builder.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/td-builder.md",
+      "fingerprint": "agents-no-model-worktrees/kind-chatelet-fdaa01/.claude/agents/td-builder.md::worktrees/kind-chatelet-fdaa01/.claude/agents/td-builder.md::"
+    },
+    {
+      "id": "agents-no-model-worktrees/kind-chatelet-fdaa01/.claude/agents/td-integrator.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: worktrees/kind-chatelet-fdaa01/.claude/agents/td-integrator.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/td-integrator.md",
+      "fingerprint": "agents-no-model-worktrees/kind-chatelet-fdaa01/.claude/agents/td-integrator.md::worktrees/kind-chatelet-fdaa01/.claude/agents/td-integrator.md::"
+    },
+    {
+      "id": "agents-no-model-worktrees/kind-chatelet-fdaa01/.claude/agents/td-qa.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: worktrees/kind-chatelet-fdaa01/.claude/agents/td-qa.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/td-qa.md",
+      "fingerprint": "agents-no-model-worktrees/kind-chatelet-fdaa01/.claude/agents/td-qa.md::worktrees/kind-chatelet-fdaa01/.claude/agents/td-qa.md::"
+    },
+    {
+      "id": "agents-no-model-worktrees/kind-chatelet-fdaa01/.claude/agents/td-releaser.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: worktrees/kind-chatelet-fdaa01/.claude/agents/td-releaser.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/td-releaser.md",
+      "fingerprint": "agents-no-model-worktrees/kind-chatelet-fdaa01/.claude/agents/td-releaser.md::worktrees/kind-chatelet-fdaa01/.claude/agents/td-releaser.md::"
+    },
+    {
+      "id": "agents-no-model-worktrees/kind-chatelet-fdaa01/.claude/agents/td-surveyor.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: worktrees/kind-chatelet-fdaa01/.claude/agents/td-surveyor.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/td-surveyor.md",
+      "fingerprint": "agents-no-model-worktrees/kind-chatelet-fdaa01/.claude/agents/td-surveyor.md::worktrees/kind-chatelet-fdaa01/.claude/agents/td-surveyor.md::"
+    },
+    {
+      "id": "agents-no-model-worktrees/kind-chatelet-fdaa01/.claude/agents/td-synthesizer.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: worktrees/kind-chatelet-fdaa01/.claude/agents/td-synthesizer.md",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/td-synthesizer.md",
+      "fingerprint": "agents-no-model-worktrees/kind-chatelet-fdaa01/.claude/agents/td-synthesizer.md::worktrees/kind-chatelet-fdaa01/.claude/agents/td-synthesizer.md::"
+    },
+    {
+      "id": "agents-no-model-worktrees/modest-hypatia-d9a39f/.claude/agents/td-architect.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: worktrees/modest-hypatia-d9a39f/.claude/agents/td-architect.md",
+      "file": "worktrees/modest-hypatia-d9a39f/.claude/agents/td-architect.md",
+      "fingerprint": "agents-no-model-worktrees/modest-hypatia-d9a39f/.claude/agents/td-architect.md::worktrees/modest-hypatia-d9a39f/.claude/agents/td-architect.md::"
+    },
+    {
+      "id": "agents-no-model-worktrees/modest-hypatia-d9a39f/.claude/agents/td-builder.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: worktrees/modest-hypatia-d9a39f/.claude/agents/td-builder.md",
+      "file": "worktrees/modest-hypatia-d9a39f/.claude/agents/td-builder.md",
+      "fingerprint": "agents-no-model-worktrees/modest-hypatia-d9a39f/.claude/agents/td-builder.md::worktrees/modest-hypatia-d9a39f/.claude/agents/td-builder.md::"
+    },
+    {
+      "id": "agents-no-model-worktrees/modest-hypatia-d9a39f/.claude/agents/td-integrator.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: worktrees/modest-hypatia-d9a39f/.claude/agents/td-integrator.md",
+      "file": "worktrees/modest-hypatia-d9a39f/.claude/agents/td-integrator.md",
+      "fingerprint": "agents-no-model-worktrees/modest-hypatia-d9a39f/.claude/agents/td-integrator.md::worktrees/modest-hypatia-d9a39f/.claude/agents/td-integrator.md::"
+    },
+    {
+      "id": "agents-no-model-worktrees/modest-hypatia-d9a39f/.claude/agents/td-qa.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: worktrees/modest-hypatia-d9a39f/.claude/agents/td-qa.md",
+      "file": "worktrees/modest-hypatia-d9a39f/.claude/agents/td-qa.md",
+      "fingerprint": "agents-no-model-worktrees/modest-hypatia-d9a39f/.claude/agents/td-qa.md::worktrees/modest-hypatia-d9a39f/.claude/agents/td-qa.md::"
+    },
+    {
+      "id": "agents-no-model-worktrees/modest-hypatia-d9a39f/.claude/agents/td-releaser.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: worktrees/modest-hypatia-d9a39f/.claude/agents/td-releaser.md",
+      "file": "worktrees/modest-hypatia-d9a39f/.claude/agents/td-releaser.md",
+      "fingerprint": "agents-no-model-worktrees/modest-hypatia-d9a39f/.claude/agents/td-releaser.md::worktrees/modest-hypatia-d9a39f/.claude/agents/td-releaser.md::"
+    },
+    {
+      "id": "agents-no-model-worktrees/modest-hypatia-d9a39f/.claude/agents/td-surveyor.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: worktrees/modest-hypatia-d9a39f/.claude/agents/td-surveyor.md",
+      "file": "worktrees/modest-hypatia-d9a39f/.claude/agents/td-surveyor.md",
+      "fingerprint": "agents-no-model-worktrees/modest-hypatia-d9a39f/.claude/agents/td-surveyor.md::worktrees/modest-hypatia-d9a39f/.claude/agents/td-surveyor.md::"
+    },
+    {
+      "id": "agents-no-model-worktrees/modest-hypatia-d9a39f/.claude/agents/td-synthesizer.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: worktrees/modest-hypatia-d9a39f/.claude/agents/td-synthesizer.md",
+      "file": "worktrees/modest-hypatia-d9a39f/.claude/agents/td-synthesizer.md",
+      "fingerprint": "agents-no-model-worktrees/modest-hypatia-d9a39f/.claude/agents/td-synthesizer.md::worktrees/modest-hypatia-d9a39f/.claude/agents/td-synthesizer.md::"
+    },
+    {
+      "id": "agents-no-model-worktrees/zen-cartwright-ea1284/.claude/agents/td-architect.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: worktrees/zen-cartwright-ea1284/.claude/agents/td-architect.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/td-architect.md",
+      "fingerprint": "agents-no-model-worktrees/zen-cartwright-ea1284/.claude/agents/td-architect.md::worktrees/zen-cartwright-ea1284/.claude/agents/td-architect.md::"
+    },
+    {
+      "id": "agents-no-model-worktrees/zen-cartwright-ea1284/.claude/agents/td-builder.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: worktrees/zen-cartwright-ea1284/.claude/agents/td-builder.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/td-builder.md",
+      "fingerprint": "agents-no-model-worktrees/zen-cartwright-ea1284/.claude/agents/td-builder.md::worktrees/zen-cartwright-ea1284/.claude/agents/td-builder.md::"
+    },
+    {
+      "id": "agents-no-model-worktrees/zen-cartwright-ea1284/.claude/agents/td-integrator.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: worktrees/zen-cartwright-ea1284/.claude/agents/td-integrator.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/td-integrator.md",
+      "fingerprint": "agents-no-model-worktrees/zen-cartwright-ea1284/.claude/agents/td-integrator.md::worktrees/zen-cartwright-ea1284/.claude/agents/td-integrator.md::"
+    },
+    {
+      "id": "agents-no-model-worktrees/zen-cartwright-ea1284/.claude/agents/td-qa.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: worktrees/zen-cartwright-ea1284/.claude/agents/td-qa.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/td-qa.md",
+      "fingerprint": "agents-no-model-worktrees/zen-cartwright-ea1284/.claude/agents/td-qa.md::worktrees/zen-cartwright-ea1284/.claude/agents/td-qa.md::"
+    },
+    {
+      "id": "agents-no-model-worktrees/zen-cartwright-ea1284/.claude/agents/td-releaser.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: worktrees/zen-cartwright-ea1284/.claude/agents/td-releaser.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/td-releaser.md",
+      "fingerprint": "agents-no-model-worktrees/zen-cartwright-ea1284/.claude/agents/td-releaser.md::worktrees/zen-cartwright-ea1284/.claude/agents/td-releaser.md::"
+    },
+    {
+      "id": "agents-no-model-worktrees/zen-cartwright-ea1284/.claude/agents/td-surveyor.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: worktrees/zen-cartwright-ea1284/.claude/agents/td-surveyor.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/td-surveyor.md",
+      "fingerprint": "agents-no-model-worktrees/zen-cartwright-ea1284/.claude/agents/td-surveyor.md::worktrees/zen-cartwright-ea1284/.claude/agents/td-surveyor.md::"
+    },
+    {
+      "id": "agents-no-model-worktrees/zen-cartwright-ea1284/.claude/agents/td-synthesizer.md",
+      "severity": "low",
+      "category": "misconfiguration",
+      "title": "Agent has no model specified: worktrees/zen-cartwright-ea1284/.claude/agents/td-synthesizer.md",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/td-synthesizer.md",
+      "fingerprint": "agents-no-model-worktrees/zen-cartwright-ea1284/.claude/agents/td-synthesizer.md::worktrees/zen-cartwright-ea1284/.claude/agents/td-synthesizer.md::"
+    },
+    {
+      "id": "permissions-negated-284",
+      "severity": "info",
+      "category": "permissions",
+      "title": "Prohibition of dangerously-skip-permissions (good practice)",
+      "file": "CLAUDE.md",
+      "evidence": "dangerously-skip-permissions",
+      "fingerprint": "permissions-negated-284::CLAUDE.md::dangerously-skip-permissions"
+    },
+    {
+      "id": "permissions-negated-318",
+      "severity": "info",
+      "category": "permissions",
+      "title": "Prohibition of --no-verify (good practice)",
+      "file": "CLAUDE.md",
+      "evidence": "--no-verify",
+      "fingerprint": "permissions-negated-318::CLAUDE.md::--no-verify"
+    },
+    {
+      "id": "permissions-negated-3350",
+      "severity": "info",
+      "category": "permissions",
+      "title": "Prohibition of --no-verify (good practice)",
+      "file": "agents/bundle-engineer.md",
+      "evidence": "--no-verify",
+      "fingerprint": "permissions-negated-3350::agents/bundle-engineer.md::--no-verify"
+    },
+    {
+      "id": "permissions-negated-2040",
+      "severity": "info",
+      "category": "permissions",
+      "title": "Prohibition of --no-verify (good practice)",
+      "file": "agents/td-releaser.md",
+      "evidence": "--no-verify",
+      "fingerprint": "permissions-negated-2040::agents/td-releaser.md::--no-verify"
+    },
+    {
+      "id": "permissions-negated-3858",
+      "severity": "info",
+      "category": "permissions",
+      "title": "Prohibition of --no-verify (good practice)",
+      "file": "agents/td-releaser.md",
+      "evidence": "--no-verify",
+      "fingerprint": "permissions-negated-3858::agents/td-releaser.md::--no-verify"
+    },
+    {
+      "id": "permissions-negated-3869",
+      "severity": "info",
+      "category": "permissions",
+      "title": "Prohibition of --no-verify (good practice)",
+      "file": "agents/tdmcp-feature-lead.md",
+      "evidence": "--no-verify",
+      "fingerprint": "permissions-negated-3869::agents/tdmcp-feature-lead.md::--no-verify"
+    },
+    {
+      "id": "mcp-no-desc-tdmcp",
+      "severity": "info",
+      "category": "misconfiguration",
+      "title": "MCP server \"tdmcp\" has no description",
+      "file": "worktrees/friendly-grothendieck-2b663e/mcp.json",
+      "fingerprint": "mcp-no-desc-tdmcp::worktrees/friendly-grothendieck-2b663e/mcp.json::"
+    },
+    {
+      "id": "permissions-negated-3350",
+      "severity": "info",
+      "category": "permissions",
+      "title": "Prohibition of --no-verify (good practice)",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/bundle-engineer.md",
+      "evidence": "--no-verify",
+      "fingerprint": "permissions-negated-3350::worktrees/friendly-grothendieck-2b663e/.claude/agents/bundle-engineer.md::--no-verify"
+    },
+    {
+      "id": "permissions-negated-2040",
+      "severity": "info",
+      "category": "permissions",
+      "title": "Prohibition of --no-verify (good practice)",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/td-releaser.md",
+      "evidence": "--no-verify",
+      "fingerprint": "permissions-negated-2040::worktrees/friendly-grothendieck-2b663e/.claude/agents/td-releaser.md::--no-verify"
+    },
+    {
+      "id": "permissions-negated-3858",
+      "severity": "info",
+      "category": "permissions",
+      "title": "Prohibition of --no-verify (good practice)",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/td-releaser.md",
+      "evidence": "--no-verify",
+      "fingerprint": "permissions-negated-3858::worktrees/friendly-grothendieck-2b663e/.claude/agents/td-releaser.md::--no-verify"
+    },
+    {
+      "id": "permissions-negated-3869",
+      "severity": "info",
+      "category": "permissions",
+      "title": "Prohibition of --no-verify (good practice)",
+      "file": "worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-feature-lead.md",
+      "evidence": "--no-verify",
+      "fingerprint": "permissions-negated-3869::worktrees/friendly-grothendieck-2b663e/.claude/agents/tdmcp-feature-lead.md::--no-verify"
+    },
+    {
+      "id": "mcp-no-desc-tdmcp",
+      "severity": "info",
+      "category": "misconfiguration",
+      "title": "MCP server \"tdmcp\" has no description",
+      "file": "worktrees/kind-chatelet-fdaa01/mcp.json",
+      "fingerprint": "mcp-no-desc-tdmcp::worktrees/kind-chatelet-fdaa01/mcp.json::"
+    },
+    {
+      "id": "permissions-negated-3350",
+      "severity": "info",
+      "category": "permissions",
+      "title": "Prohibition of --no-verify (good practice)",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/bundle-engineer.md",
+      "evidence": "--no-verify",
+      "fingerprint": "permissions-negated-3350::worktrees/kind-chatelet-fdaa01/.claude/agents/bundle-engineer.md::--no-verify"
+    },
+    {
+      "id": "permissions-negated-2040",
+      "severity": "info",
+      "category": "permissions",
+      "title": "Prohibition of --no-verify (good practice)",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/td-releaser.md",
+      "evidence": "--no-verify",
+      "fingerprint": "permissions-negated-2040::worktrees/kind-chatelet-fdaa01/.claude/agents/td-releaser.md::--no-verify"
+    },
+    {
+      "id": "permissions-negated-3858",
+      "severity": "info",
+      "category": "permissions",
+      "title": "Prohibition of --no-verify (good practice)",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/td-releaser.md",
+      "evidence": "--no-verify",
+      "fingerprint": "permissions-negated-3858::worktrees/kind-chatelet-fdaa01/.claude/agents/td-releaser.md::--no-verify"
+    },
+    {
+      "id": "permissions-negated-3869",
+      "severity": "info",
+      "category": "permissions",
+      "title": "Prohibition of --no-verify (good practice)",
+      "file": "worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-feature-lead.md",
+      "evidence": "--no-verify",
+      "fingerprint": "permissions-negated-3869::worktrees/kind-chatelet-fdaa01/.claude/agents/tdmcp-feature-lead.md::--no-verify"
+    },
+    {
+      "id": "mcp-no-desc-tdmcp",
+      "severity": "info",
+      "category": "misconfiguration",
+      "title": "MCP server \"tdmcp\" has no description",
+      "file": "worktrees/modest-hypatia-d9a39f/mcp.json",
+      "fingerprint": "mcp-no-desc-tdmcp::worktrees/modest-hypatia-d9a39f/mcp.json::"
+    },
+    {
+      "id": "permissions-negated-3350",
+      "severity": "info",
+      "category": "permissions",
+      "title": "Prohibition of --no-verify (good practice)",
+      "file": "worktrees/modest-hypatia-d9a39f/.claude/agents/bundle-engineer.md",
+      "evidence": "--no-verify",
+      "fingerprint": "permissions-negated-3350::worktrees/modest-hypatia-d9a39f/.claude/agents/bundle-engineer.md::--no-verify"
+    },
+    {
+      "id": "permissions-negated-2040",
+      "severity": "info",
+      "category": "permissions",
+      "title": "Prohibition of --no-verify (good practice)",
+      "file": "worktrees/modest-hypatia-d9a39f/.claude/agents/td-releaser.md",
+      "evidence": "--no-verify",
+      "fingerprint": "permissions-negated-2040::worktrees/modest-hypatia-d9a39f/.claude/agents/td-releaser.md::--no-verify"
+    },
+    {
+      "id": "permissions-negated-3858",
+      "severity": "info",
+      "category": "permissions",
+      "title": "Prohibition of --no-verify (good practice)",
+      "file": "worktrees/modest-hypatia-d9a39f/.claude/agents/td-releaser.md",
+      "evidence": "--no-verify",
+      "fingerprint": "permissions-negated-3858::worktrees/modest-hypatia-d9a39f/.claude/agents/td-releaser.md::--no-verify"
+    },
+    {
+      "id": "permissions-negated-3869",
+      "severity": "info",
+      "category": "permissions",
+      "title": "Prohibition of --no-verify (good practice)",
+      "file": "worktrees/modest-hypatia-d9a39f/.claude/agents/tdmcp-feature-lead.md",
+      "evidence": "--no-verify",
+      "fingerprint": "permissions-negated-3869::worktrees/modest-hypatia-d9a39f/.claude/agents/tdmcp-feature-lead.md::--no-verify"
+    },
+    {
+      "id": "mcp-no-desc-tdmcp",
+      "severity": "info",
+      "category": "misconfiguration",
+      "title": "MCP server \"tdmcp\" has no description",
+      "file": "worktrees/zen-cartwright-ea1284/mcp.json",
+      "fingerprint": "mcp-no-desc-tdmcp::worktrees/zen-cartwright-ea1284/mcp.json::"
+    },
+    {
+      "id": "permissions-negated-3350",
+      "severity": "info",
+      "category": "permissions",
+      "title": "Prohibition of --no-verify (good practice)",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/bundle-engineer.md",
+      "evidence": "--no-verify",
+      "fingerprint": "permissions-negated-3350::worktrees/zen-cartwright-ea1284/.claude/agents/bundle-engineer.md::--no-verify"
+    },
+    {
+      "id": "permissions-negated-2040",
+      "severity": "info",
+      "category": "permissions",
+      "title": "Prohibition of --no-verify (good practice)",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/td-releaser.md",
+      "evidence": "--no-verify",
+      "fingerprint": "permissions-negated-2040::worktrees/zen-cartwright-ea1284/.claude/agents/td-releaser.md::--no-verify"
+    },
+    {
+      "id": "permissions-negated-3858",
+      "severity": "info",
+      "category": "permissions",
+      "title": "Prohibition of --no-verify (good practice)",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/td-releaser.md",
+      "evidence": "--no-verify",
+      "fingerprint": "permissions-negated-3858::worktrees/zen-cartwright-ea1284/.claude/agents/td-releaser.md::--no-verify"
+    },
+    {
+      "id": "permissions-negated-3869",
+      "severity": "info",
+      "category": "permissions",
+      "title": "Prohibition of --no-verify (good practice)",
+      "file": "worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-feature-lead.md",
+      "evidence": "--no-verify",
+      "fingerprint": "permissions-negated-3869::worktrees/zen-cartwright-ea1284/.claude/agents/tdmcp-feature-lead.md::--no-verify"
+    }
+  ]
+}
