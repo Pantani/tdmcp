@@ -122,7 +122,7 @@ describe("createAudioReactiveImpl — sidechain + transient extension", () => {
     expect(bodies.some((b) => b.name === "mod1" && b.type === "nullCHOP")).toBe(true);
     const controls = panelControls(scripts);
     expect(controls.some((c) => c.name === "Transient Threshold")).toBe(true);
-    expect(controls.some((c) => c.name === "Transient Hold (ms)")).toBe(true);
+    expect(controls.some((c) => c.name === "Transient Hold (samples)")).toBe(true);
   });
 
   it("sidechain_duck=true: adds duck filter + math + mod1 Null with Duck controls", async () => {
@@ -137,7 +137,7 @@ describe("createAudioReactiveImpl — sidechain + transient extension", () => {
     expect(bodies.some((b) => b.name === "mod1" && b.type === "nullCHOP")).toBe(true);
     const controls = panelControls(scripts);
     expect(controls.some((c) => c.name === "Duck Depth")).toBe(true);
-    expect(controls.some((c) => c.name === "Duck Release (ms)")).toBe(true);
+    expect(controls.some((c) => c.name === "Duck Release (samples)")).toBe(true);
   });
 
   it("both flags on: mod1 is the final CHOP Null and out1 TOP path remains", async () => {

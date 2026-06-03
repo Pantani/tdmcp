@@ -98,7 +98,7 @@ def set_perform_mode(enabled):
             root = op_fn("/")
             report["was"] = bool(root.fetch("tdmcp_perform_mode", False))
             root.store("tdmcp_perform_mode", flag)
-            report["stored"] = bool(root.fetch("tdmcp_perform_mode", False))
+            report["stored"] = root.fetch("tdmcp_perform_mode", None) is flag
         except Exception as exc:  # noqa: BLE001
             report["warnings"].append("store failed: %s" % exc)
 

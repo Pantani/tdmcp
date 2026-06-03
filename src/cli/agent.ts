@@ -2225,7 +2225,7 @@ function commandGroup(entry: AgentCommandCatalogEntry): string {
   if (entry.unsafe) return "Unsafe escape hatches";
   if (entry.source === "cli") return "CLI workflow";
   if (
-    /^(info|reload|nodes|errors|document|diff|optimize|analyze|params-modes|node-state|logs|serialize|inspect-comp|score-build|gpu-displays)/.test(
+    /^(info|reload|nodes|errors|document|diff|digest|optimize|analyze|params-modes|node-state|logs|serialize|inspect-comp|score-build|gpu-displays)/.test(
       entry.command,
     )
   ) {

@@ -35,8 +35,9 @@ interface PerformModeReport {
 
 // The flag is stored on the TD root op via op('/').store() so it persists for
 // the lifetime of the session and can be read cheaply from any context.
-// We do NOT add a REST bridge endpoint — this is a single Python pass via
-// executePythonScript, following the established escape-hatch pattern.
+// Transport: endpoint-first (ctx.client.setPerformMode), with an exec-fallback
+// via executePythonScript when the bridge has no perform-mode endpoint. The
+// stored flag on op('/') is the primary contract regardless of transport.
 //
 // Optionally we probe project.cookRate / ui.performMode / app.performMode for
 // a documented "realtime / perform" knob on this TD build. If none is found

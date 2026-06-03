@@ -457,10 +457,25 @@ class StructuredEndpointTests(unittest.TestCase):
         ac._route("POST", "/api/perform", {}, {"enabled": True})
         ac.system_service.set_perform_mode.assert_called_once_with(True)
 
+    def test_perform_dispatches_with_enabled_false(self):
+        ac.system_service = mock.MagicMock(name="system_service")
+        ac._route("POST", "/api/perform", {}, {"enabled": False})
+        ac.system_service.set_perform_mode.assert_called_once_with(False)
+
     def test_perform_missing_enabled_raises_descriptive(self):
         with self.assertRaises(ValueError) as cm:
             ac._route("POST", "/api/perform", {}, {})
         self.assertIn("enabled", str(cm.exception))
+
+    def test_perform_rejects_non_bool_string(self):
+        # `_as_bool` accepts only canonical bool spellings; arbitrary strings
+        # (and non-bool/non-string values) raise ValueError → 400, instead of
+        # the old ``bool(value)`` path that silently treated any non-empty
+        # string as True.
+        with self.assertRaises(ValueError):
+            ac._route("POST", "/api/perform", {}, {"enabled": "maybe"})
+        with self.assertRaises(ValueError):
+            ac._route("POST", "/api/perform", {}, {"enabled": 1.5})
 
     def test_system_dispatches_with_exec_disabled(self):
         ac._route("GET", "/api/system", {}, {})

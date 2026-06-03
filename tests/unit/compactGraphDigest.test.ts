@@ -269,6 +269,21 @@ describe("buildDigest — max_tokens=100 floor", () => {
     expect(digest.warnings.length).toBeGreaterThan(0);
     expect(GraphDigestSchema.safeParse(digest).success).toBe(true);
   });
+
+  it("flags overBudget=true with a friendly warning when budget cannot be met", async () => {
+    const fx = bigFixture(200, 10);
+    mockTopology({ nodes: fx.nodes, connections: fx.connections });
+    mockErrors(fx.errors);
+    const digest = await buildDigest(makeClient(), ROOT, {
+      maxTokens: 1,
+      includeErrors: true,
+      includeOutputChain: true,
+      outputChainDepth: 6,
+      familyTopTypes: 3,
+    });
+    expect(digest.overBudget).toBe(true);
+    expect(digest.warnings.some((w) => w.includes("Could not fit within maxTokens"))).toBe(true);
+  });
 });
 
 // ---------------------------------------------------------------------------

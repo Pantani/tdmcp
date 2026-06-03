@@ -115,11 +115,12 @@ function categorize(sample: { path: string; message: string; type?: string }): C
   if (type.toLowerCase() === "glsl" || (SHADER_RE.test(msg) && isShaderNode(sample.path))) {
     return "shader_compile";
   }
-  if (SHADER_RE.test(msg) && type.toLowerCase() === "glsl") return "shader_compile";
+  // Wiring before reactivity: REACTIVITY_RE also matches "no input connected", which is
+  // structurally a wiring issue and should route to repair_network rather than fix_reactivity.
+  if (WIRING_RE.test(msg)) return "wiring_missing";
   if (REACTIVITY_RE.test(msg) && type.toLowerCase() !== "cook") return "reactivity_dead";
   if (EXPRESSION_RE.test(msg)) return "expression_bad";
   if (OP_DISABLED_RE.test(msg)) return "op_disabled";
-  if (WIRING_RE.test(msg)) return "wiring_missing";
   if (DAT_SYNTAX_RE.test(msg) && isDatNode(sample.path)) return "dat_syntax";
   return "unclassified";
 }
@@ -220,9 +221,12 @@ export async function autoRepairLoopImpl(ctx: ToolContext, args: AutoRepairLoopA
 
       const effectiveMax = dry_run ? 1 : max_iterations;
 
+      // Carry the previous iteration's `after` forward as next iteration's `before` to
+      // save one bridge round-trip per iteration after the first.
+      let carriedBefore: TdNodeError[] | null = null;
+
       for (let i = 1; i <= effectiveMax; i++) {
-        const before = await ctx.client.getNetworkErrors(path);
-        const errorsBefore = before.errors;
+        const errorsBefore = carriedBefore ?? (await ctx.client.getNetworkErrors(path)).errors;
         if (i === 1) firstBefore = errorsBefore.length;
 
         if (errorsBefore.length === 0) {
@@ -286,6 +290,7 @@ export async function autoRepairLoopImpl(ctx: ToolContext, args: AutoRepairLoopA
         const errorsAfter = after.errors;
         lastErrors = errorsAfter;
         lastAfter = errorsAfter.length;
+        carriedBefore = errorsAfter;
 
         iterations.push({
           index: i,

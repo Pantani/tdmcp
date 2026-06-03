@@ -30,6 +30,7 @@ export const GraphDigestSchema = z.object({
   warnings: z.array(z.string()),
   approxTokens: z.number(),
   cachedAt: z.string(),
+  overBudget: z.boolean().optional(),
 });
 export type GraphDigest = z.infer<typeof GraphDigestSchema>;
 
@@ -54,10 +55,11 @@ export const DEFAULT_DIGEST_OPTIONS: BuildDigestOptions = {
 };
 
 // ---------------------------------------------------------------------------
-// Cache (5 s hot / 1 s offline) keyed by all opts
+// Cache (5 s hot / 1 s offline) keyed by all opts, scoped per-client.
 // ---------------------------------------------------------------------------
 
-const cache = new Map<string, { expires: number; payload: GraphDigest }>();
+type DigestCacheEntry = { expires: number; payload: GraphDigest };
+const cache = new WeakMap<TouchDesignerClient, Map<string, DigestCacheEntry>>();
 const TTL_MS = 5_000;
 const OFFLINE_TTL_MS = 1_000;
 
@@ -72,19 +74,31 @@ function cacheKey(root: string, opts: BuildDigestOptions): string {
   ].join("|");
 }
 
-function getCached(root: string, opts: BuildDigestOptions): GraphDigest | undefined {
-  const entry = cache.get(cacheKey(root, opts));
+function getCached(
+  client: TouchDesignerClient,
+  root: string,
+  opts: BuildDigestOptions,
+): GraphDigest | undefined {
+  const perClient = cache.get(client);
+  if (!perClient) return undefined;
+  const entry = perClient.get(cacheKey(root, opts));
   if (entry && Date.now() < entry.expires) return entry.payload;
   return undefined;
 }
 
 function setCached(
+  client: TouchDesignerClient,
   root: string,
   opts: BuildDigestOptions,
   payload: GraphDigest,
   offline: boolean,
 ): void {
-  cache.set(cacheKey(root, opts), {
+  let perClient = cache.get(client);
+  if (!perClient) {
+    perClient = new Map<string, DigestCacheEntry>();
+    cache.set(client, perClient);
+  }
+  perClient.set(cacheKey(root, opts), {
     expires: Date.now() + (offline ? OFFLINE_TTL_MS : TTL_MS),
     payload,
   });
@@ -282,6 +296,12 @@ function applyBudget(payload: GraphDigest, maxTokens: number): GraphDigest {
   }
 
   payload.approxTokens = approxTokens(payload);
+  if (payload.approxTokens > maxTokens) {
+    payload.overBudget = true;
+    payload.warnings.push(
+      "Could not fit within maxTokens budget; returned best-effort digest (overBudget=true).",
+    );
+  }
   return payload;
 }
 
@@ -294,7 +314,7 @@ export async function buildDigest(
   root: string,
   opts: BuildDigestOptions = DEFAULT_DIGEST_OPTIONS,
 ): Promise<GraphDigest> {
-  const hit = getCached(root, opts);
+  const hit = getCached(client, root, opts);
   if (hit) return hit;
 
   const cachedAt = new Date().toISOString();
@@ -358,7 +378,7 @@ export async function buildDigest(
   payload.approxTokens = approxTokens(payload);
   const fitted = applyBudget(payload, opts.maxTokens);
 
-  setCached(root, opts, fitted, offline);
+  setCached(client, root, opts, fitted, offline);
   return fitted;
 }
 
@@ -391,7 +411,8 @@ export const registerGraphDigestResource: ResourceRegistrar = (server, ctx) => {
         "Token-cheap (<500 tok) structured digest of a TD subtree: one-line header, " +
         "family counts with top operator types, primary output TOP's upstream chain, " +
         "and top-3 grouped errors. approxTokens is a chars/4 heuristic (±20%). " +
-        "Cached 5 s (1 s offline).",
+        "If the digest cannot fit within maxTokens after all reductions, overBudget=true " +
+        "is set and a warning is appended (best-effort, never throws). Cached 5 s (1 s offline).",
       mimeType: "application/json",
     },
     async (uri, variables) => {
@@ -411,6 +432,9 @@ export const registerGraphDigestResource: ResourceRegistrar = (server, ctx) => {
 };
 
 // Test-only: reset the in-memory cache.
-export function _resetDigestCache(): void {
-  cache.clear();
+export function _resetDigestCache(client?: TouchDesignerClient): void {
+  if (client) {
+    cache.delete(client);
+  }
+  // WeakMap has no clear(); without a client arg, entries naturally expire via GC/TTL.
 }

@@ -205,6 +205,25 @@ def _require(body, *keys):
         raise ValueError("Missing required field(s): %s." % ", ".join(missing))
 
 
+def _as_bool(value, field_name):
+    """Strictly coerce a JSON-decoded value to bool.
+
+    Plain ``bool(value)`` mis-parses strings — ``bool("false")`` is True, so a
+    raw caller posting ``{"enabled": "false"}`` would silently flip the flag ON.
+    Accept real bools and a small set of canonical string spellings; reject
+    everything else with a ValueError, which the controller turns into a 400.
+    """
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        v = value.strip().lower()
+        if v in ("true", "1", "yes", "on"):
+            return True
+        if v in ("false", "0", "no", "off"):
+            return False
+    raise ValueError("Field '%s' must be a boolean." % field_name)
+
+
 def _bridge_error_log_path(webserver):
     """Resolve the installed Error DAT's path from the webserver that serves this
     request. The API is served by the webserver DAT INSIDE the bridge container, so
@@ -279,7 +298,7 @@ def _route(method, path, query, body, webserver=None):
     if rest == ["perform"] and method == "POST":
         # Perform-mode write — survives ALLOW_EXEC=0; read side lives in /api/system.
         _require(body, "enabled")
-        return system_service.set_perform_mode(bool(body["enabled"]))
+        return system_service.set_perform_mode(_as_bool(body["enabled"], "enabled"))
     if rest == ["system"] and method == "GET":
         # Combined GPU/monitors/performMode snapshot — survives ALLOW_EXEC=0.
         # `include` is an optional comma-list query param; omit for all sections.
@@ -307,7 +326,7 @@ def _route(method, path, query, body, webserver=None):
         _require(body, "items")
         return param_text_service.read_param_modes_batch(
             body["items"],
-            continue_on_error=bool(body.get("continue_on_error", True)),
+            continue_on_error=_as_bool(body.get("continue_on_error", True), "continue_on_error"),
         )
 
     if (

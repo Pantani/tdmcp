@@ -168,7 +168,6 @@ try:
         if _detect_xrefs:
             for _node in report["nodes"]:
                 _params = _node.get("parameters", {})
-                _owner = op(_root.path + "/" + _node["name"]) if False else None
                 # Find live op by name+parent for style introspection.
                 try:
                     if _node.get("parent"):

@@ -279,7 +279,8 @@ export async function createSafetyBlackoutChainImpl(
       [
         `# safety_dim channel canonicalization${recoveryGate}`,
         `_n = op(${q(dimNull)})`,
-        `_n.par.passthrough = 0 if hasattr(_n.par, "passthrough") else _n.par`,
+        `if hasattr(_n.par, "passthrough"):`,
+        `    _n.par.passthrough = 0`,
       ].join("\n"),
     );
 

@@ -327,7 +327,7 @@ try:
                 report["switch"] = _switch.path
                 for i, _sel in enumerate(_selects):
                     try:
-                        _switch.inputConnectors[i].connect(_sel)
+                        _sel.outputConnectors[0].connect(_switch.inputConnectors[i])
                     except Exception as _e:
                         report["warnings"].append(
                             "switch.connect(src_" + str(i) + ") failed: " + str(_e)

@@ -259,6 +259,22 @@ export async function createAudioReactiveImpl(ctx: ToolContext, rawArgs: CreateA
       let transientFilter: string | undefined;
       let duckFilter: string | undefined;
       let duckMath: string | undefined;
+      // Filter CHOP rampdownlength is in SAMPLES, not ms. Convert at TD's default 60 fps;
+      // the builder cannot read project.cookRate, so we precompute and warn so the artist
+      // can dial it down for non-60-fps projects.
+      const ASSUMED_FPS = 60;
+      builder.warnings.push(
+        `Filter CHOP rampdownlength is in samples; ms values converted assuming ${ASSUMED_FPS} fps. ` +
+          "Rescale Transient Hold / Duck Release manually for non-60-fps projects.",
+      );
+      const transientHoldSamples = Math.max(
+        1,
+        Math.round((args.transient_hold_ms * ASSUMED_FPS) / 1000),
+      );
+      const duckReleaseSamples = Math.max(
+        1,
+        Math.round((args.duck_release_ms * ASSUMED_FPS) / 1000),
+      );
       if (args.transient_gate) {
         // analyzeCHOP function=8 is the transient/onset detector in TD's Analyze CHOP.
         transientNode = await builder.add("analyzeCHOP", "transient", {
@@ -267,16 +283,16 @@ export async function createAudioReactiveImpl(ctx: ToolContext, rawArgs: CreateA
         });
         await builder.connect(audioSource, transientNode);
         transientFilter = await builder.add("filterCHOP", "transient_hold", {
-          // ramp lengths in samples (TD's default units); the spec exposes ms in the UI but
-          // wires the same numeric value — the artist can dial it after building.
-          rampdownlength: args.transient_hold_ms,
+          // ramp lengths in samples (TD's default unit). Converted from ms assuming 60 fps;
+          // for other project rates, the artist should rescale this control.
+          rampdownlength: transientHoldSamples,
         });
         await builder.connect(transientNode, transientFilter);
         mergeInputs.push(transientFilter);
       }
       if (args.sidechain_duck) {
         duckFilter = await builder.add("filterCHOP", "duck_env", {
-          rampdownlength: args.duck_release_ms,
+          rampdownlength: duckReleaseSamples,
         });
         await builder.connect(analyze, duckFilter);
         duckMath = await builder.add("mathCHOP", "duck", {
@@ -304,11 +320,11 @@ export async function createAudioReactiveImpl(ctx: ToolContext, rawArgs: CreateA
               bind_to: [`${transientNode}.threshold`],
             },
             {
-              name: "Transient Hold (ms)",
+              name: "Transient Hold (samples)",
               type: "float",
               min: 1,
-              max: 2000,
-              default: args.transient_hold_ms,
+              max: 240,
+              default: transientHoldSamples,
               bind_to: [`${transientFilter}.rampdownlength`],
             },
           );
@@ -324,11 +340,11 @@ export async function createAudioReactiveImpl(ctx: ToolContext, rawArgs: CreateA
               bind_to: [`${duckMath}.gain1`],
             },
             {
-              name: "Duck Release (ms)",
+              name: "Duck Release (samples)",
               type: "float",
               min: 1,
-              max: 4000,
-              default: args.duck_release_ms,
+              max: 480,
+              default: duckReleaseSamples,
               bind_to: [`${duckFilter}.rampdownlength`],
             },
           );

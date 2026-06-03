@@ -207,8 +207,8 @@ describe("auto_repair_loop", () => {
       message: "invalid expression in par 'tx'",
     }));
     const two: ErrEntry[] = five.slice(0, 2);
-    // iter1: before=5, after=2; iter2: before=2, after=0
-    stubErrorsQueue([five, two, two, []]);
+    // iter1: before=5, after=2; iter2: carries before=2 from iter1, after=0
+    stubErrorsQueue([five, two, []]);
     stubRepair((i) =>
       baseRepairReport({
         dry_run: false,
@@ -268,8 +268,8 @@ describe("auto_repair_loop", () => {
         path: `/project1/noise${k + 1}`,
         message: "invalid expression in par 'tx'",
       }));
-    // iter1 before=5,after=4; iter2 before=4,after=3
-    stubErrorsQueue([make(5), make(4), make(4), make(3)]);
+    // iter1 before=5,after=4; iter2 carries before=4, after=3
+    stubErrorsQueue([make(5), make(4), make(3)]);
     let n = 5;
     stubRepair(() => {
       const r = baseRepairReport({ dry_run: false, errors_before: n, errors_after: n - 1 });

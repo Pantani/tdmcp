@@ -265,6 +265,10 @@ class SetPerformModeTests(unittest.TestCase):
         with _PerformModeTdPatch(op=lambda _p: root, ui=ui):
             out = ss.set_perform_mode(False)
         self.assertFalse(out["project_perform_mode_set"])
+        # `stored` mirrors the write in both directions — writing False must
+        # still report stored=True (the old `bool(fetch)` path returned False
+        # here and misrepresented a successful disable as a failed write).
+        self.assertTrue(out["stored"])
         # No project warning expected — silent degradation when attr is absent.
 
     def test_no_td_op_warns_no_throw(self):
