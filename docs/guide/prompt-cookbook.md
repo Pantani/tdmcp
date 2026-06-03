@@ -290,7 +290,6 @@ silhouettes, particles or background replacement.*
 > *"Track my face landmarks and stitch a glowing wireframe mask over my features,
 > with a dim webcam underneath."*
 
-<video :src="withBase('/examples/mediapipe-face-mesh-overlay.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *The MediaPipe ENGINE adapter publishes a 468-landmark CHOP (or 478 with iris) and
 the recipe instances dots and lines on every landmark, composited over a
@@ -300,7 +299,6 @@ zero plugin hunting.*
 > *"Use my hand in the camera as an XY pad — pinch to confirm — and map it to the
 > feedback Decay and Hue of the current visual."*
 
-<video :src="withBase('/examples/hand-pinch-xy-controller.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *The 21-landmark hand CHOP (world coords) feeds an XY pad whose X/Y come from the
 index-finger tip; thumb-to-index distance gates a confirm event that latches the
@@ -309,7 +307,6 @@ current XY into target parameters. A hand-as-MIDI controller with pinch-to-commi
 > *"Cut me out of my room with selfie segmentation and put me inside a slow
 > raymarched nebula like I stepped through a portal."*
 
-<video :src="withBase('/examples/segmentation-portal-keyer.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *The selfie-segmentation alpha mask plus a pre-keyed `person_rgba` TOP are
 composited over a raymarch background, so the artist appears to stand inside the
@@ -434,7 +431,6 @@ test pattern, file, existing TOP or live device.*
 > *"Put a broadcast-style RGB+luma histogram scope on the corner of my output so I
 > can see if I'm crushing blacks."*
 
-<video :src="withBase('/examples/histogram-scope-broadcast.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *A combined RGB + luma variant of `create_histogram_scope` — bars rendered through
 Script SOP + Render TOP into a Null you can overlay on program output. The proper
@@ -606,7 +602,6 @@ human/operator path resolves it.*
 > *"Plan a 20-minute set across my three scenes in dry-run mode first — show me
 > what the AI director will do before it touches anything."*
 
-<video :src="withBase('/examples/show-director-dry-run-set.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`create_autopilot` runs each show-directing call through the policy layer in
 dry-run mode and returns the planned action + rationale (which scene, which
@@ -616,7 +611,6 @@ the bridge. Approve, edit or reject before the show runs.*
 > *"Give me a front-of-house dashboard with stereo VU meters, live BPM from my
 > tempo detector, FPS overlay, the next-cue strip, and a sticky PANIC bar."*
 
-<video :src="withBase('/examples/stage-dashboard-v2-bpm-vu.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *The `layout:"v2"` build of `create_stage_dashboard` adds a stereo VU pair, a BPM
 readout fed by a `detect_tempo` Null CHOP, an FPS / cook-time / frame overlay, a
@@ -626,7 +620,6 @@ bar — without breaking the v1 dashboard byte-for-byte.*
 > *"Jump my timeline to the chorus cue, set playback rate to 1.25, and start
 > playing — through the fast REST path, not a Python exec."*
 
-<video :src="withBase('/examples/transport-rest-cue.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`control_timeline_transport` now prefers the new `POST /api/transport` endpoint
 for play / pause / seek / cue / rate and falls back to `executePythonScript` only
@@ -692,7 +685,6 @@ touring-machine setup repeatable instead of tribal knowledge.*
 > *"Set up a two-projector rehearsal for the AI-Controlled Party — one wall for the
 > main visual, one for the lyrics — and synchronise them on the same cue list."*
 
-<video :src="withBase('/examples/ensaio-two-projection-rehearsal.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`create_multi_output` wires two `outTOP`s to two physical displays via
 `setup_output`, sharing a single `compose_cue_list` clock so the lyric overlay
@@ -879,7 +871,6 @@ it writes a versioned recipe artifact, `tdmcp-recipe-publish.json` and
 > *"Pack this component as a portable .tox with a real README documenting its
 > custom params, inputs, outputs and external files."*
 
-<video :src="withBase('/examples/portable-tox-with-readme.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`make_portable_tox` now writes a package `README.md` by default alongside the
 `.tox` and `tdmcp-component.json` — node inventory, custom parameters,
@@ -889,7 +880,6 @@ and they can read it before they open it.*
 > *"Generate a README for this component with an embedded Mermaid flowchart of the
 > operator graph and cap the inventory at the 50 most important nodes."*
 
-<video :src="withBase('/examples/generate-readme-mermaid-graph.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`include_mermaid:true` embeds a Mermaid flowchart of the operator graph in the
 "Data flow" section, and `max_nodes` truncates the child inventory with a one-line
@@ -900,7 +890,6 @@ network.*
 > *"Export this generative SOP as a flat SVG of polylines so I can plot it on my
 > AxiDraw."*
 
-<video :src="withBase('/examples/sop-to-svg-plot.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`export_sop_to_svg` reads SOP primitives via the bridge and emits an SVG of
 `<polyline>` elements with auto-fit viewBox and configurable stroke / fill / scale
@@ -1276,7 +1265,6 @@ lives" in five seconds of telemetry.*
 > *"Watch my repo — if I edit anything under td/, recompile the Python and reload
 > the bridge inside TouchDesigner so I don't have to restart."*
 
-<video :src="withBase('/examples/bridge-watch-build-hot-reload.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`tdmcp-agent watch-build` now treats `td/*.py` edits as bridge-runtime changes:
 `py_compile` runs on the changed files, then `reload_bridge` swaps the in-process
@@ -1287,7 +1275,6 @@ live-coding the TouchDesigner bridge itself.*
 > a bridge token in .env, and auto-install the bridge from the TouchDesigner
 > Textport."*
 
-<video :src="withBase('/examples/doctor-fix-vault-token-textport.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`tdmcp-agent doctor --fix` now creates a missing configured vault path,
 scaffolds the default profile dir, writes a `TDMCP_BRIDGE_TOKEN` to `.env` with
@@ -1298,7 +1285,6 @@ itself from inside TD's own console.*
 > *"Give me Tab-completion for tdmcp in zsh — every subcommand and package
 > shortcut should autocomplete."*
 
-<video :src="withBase('/examples/cli-completion-everywhere.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`tdmcp completion zsh` (or bash / fish) prints a static completion snippet
 covering the primary binary plus `search` / `list` / `info` / `install` /
