@@ -448,6 +448,7 @@ export async function runInit(argv: string[], depsIn: RunInitDeps = {}): Promise
   } else {
     try {
       const bridgeArgs = ["--dir", flags.bridgeDir, "--port", String(flags.bridgePort), "--verify"];
+      if (token) bridgeArgs.push("--token", token);
       const result: InstallBridgeResult = await Promise.resolve(deps.runInstallBridge(bridgeArgs));
       textportCommand = result.textportCommand ?? result.noPrefsTextportCommand;
       if (result.ok) {
@@ -485,7 +486,7 @@ export async function runInit(argv: string[], depsIn: RunInitDeps = {}): Promise
     });
   } else {
     try {
-      const r = deps.runConfigInit({ force: false });
+      const r = deps.runConfigInit({ force: false, bridgeToken: token });
       if (r.code === 0) {
         steps.push({ id: "config", status: "ok", detail: `wrote ${r.path}` });
       } else if (r.code === 1) {
@@ -521,7 +522,7 @@ export async function runInit(argv: string[], depsIn: RunInitDeps = {}): Promise
       for (const c of targets) {
         const cfgPath = defaultClientPath(c, detection.os, deps.homedir());
         try {
-          await deps.writeInstallClientConfig(c, cfgPath);
+          await deps.writeInstallClientConfig(c, cfgPath, token);
           okClients.push(c);
         } catch (err) {
           failedClients.push(`${c}:${(err as Error).message}`);

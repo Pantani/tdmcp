@@ -285,6 +285,28 @@ describe("runAsk", () => {
     expect(stderr).toContain("timeout");
   });
 
+  it("aborts the agent signal on timeout so the underlying turn can cancel", async () => {
+    let capturedSignal: AbortSignal | undefined;
+    const hangTurn = vi.fn((_ctx, _client, _messages, _onEvent, opts) => {
+      capturedSignal = opts?.signal;
+      return new Promise(() => {});
+    }) as unknown as typeof import("../../src/llm/agent.js").runAgentTurn;
+    await runAsk(["--timeout", "5", "stuck"], {
+      loadConfig: () => loadConfig({}),
+      createLogger: () => silentLogger,
+      buildToolContext: () => makeCtx(),
+      createClient: () => stubClient(),
+      ensureOllamaUp: async () => true,
+      runAgentTurn: hangTurn,
+      isStdinTTY: () => true,
+      writeStdout: () => {},
+      writeStderr: () => {},
+    });
+    expect(capturedSignal).toBeDefined();
+    expect(capturedSignal?.aborted).toBe(true);
+    expect(process.exitCode).toBe(124);
+  });
+
   it("text mode: only the answer hits stdout; progress hits stderr", async () => {
     let stdout = "";
     let stderr = "";

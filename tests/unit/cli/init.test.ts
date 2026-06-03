@@ -279,10 +279,13 @@ describe("runInit", () => {
       "--port",
       "9980",
       "--verify",
+      "--token",
+      "tok-deadbeef",
     ]);
     expect(deps.writeInstallClientConfig).toHaveBeenCalledWith(
       "claude",
       "/home/artist/Library/Application Support/Claude/claude_desktop_config.json",
+      "tok-deadbeef",
     );
     expect(deps.runConfigInit).toHaveBeenCalled();
     expect(deps.runDoctor).toHaveBeenCalled();
@@ -413,6 +416,34 @@ describe("runInit", () => {
     const r: InitResult = await runInit(["--yes", "--json"], deps);
     expect(r.steps.find((s) => s.id === "doctor")?.status).toBe("failed");
     expect(r.ok).toBe(false);
+  });
+
+  it("threads --token to bridge install, config init, and client writer", async () => {
+    const fs = makeFs([
+      "/Applications/TouchDesigner.app",
+      "/home/artist/Library/Application Support/Claude/claude_desktop_config.json",
+    ]);
+    const { deps } = makeDeps({ fs, platform: "darwin" });
+    const r = await runInit(["--yes", "--json", "--token", "shared-secret-xyz"], deps);
+    expect(r.ok).toBe(true);
+
+    // 1) Bridge installer received --token <value>
+    const bridgeCall = (deps.runInstallBridge as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as
+      | string[]
+      | undefined;
+    expect(bridgeCall).toBeDefined();
+    expect(bridgeCall).toEqual(expect.arrayContaining(["--token", "shared-secret-xyz"]));
+
+    // 2) Starter config writer received the token in its options
+    const configCall = (deps.runConfigInit as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as
+      | { bridgeToken?: string }
+      | undefined;
+    expect(configCall?.bridgeToken).toBe("shared-secret-xyz");
+
+    // 3) Client config writer received the token as its third argument
+    const clientCall = (deps.writeInstallClientConfig as ReturnType<typeof vi.fn>).mock
+      .calls[0] as unknown[];
+    expect(clientCall?.[2]).toBe("shared-secret-xyz");
   });
 
   it("--help prints help and exits cleanly", async () => {

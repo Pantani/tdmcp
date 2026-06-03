@@ -6,27 +6,29 @@ const SUPPORTED_CLIENTS = ["claude", "codex", "cursor"] as const;
 const CLIENTS = new Set<string>(SUPPORTED_CLIENTS);
 type Client = (typeof SUPPORTED_CLIENTS)[number];
 
-function tdmcpServerConfig(): object {
+function tdmcpServerConfig(token?: string): object {
+  const env: Record<string, string> = {
+    TDMCP_TD_HOST: "127.0.0.1",
+    TDMCP_TD_PORT: "9980",
+  };
+  if (token) env.TDMCP_BRIDGE_TOKEN = token;
   return {
     command: "tdmcp",
     args: [],
-    env: {
-      TDMCP_TD_HOST: "127.0.0.1",
-      TDMCP_TD_PORT: "9980",
-    },
+    env,
   };
 }
 
-function installClientConfig(client: string): Record<string, unknown> {
-  const server = tdmcpServerConfig();
+function installClientConfig(client: string, token?: string): Record<string, unknown> {
+  const server = tdmcpServerConfig(token);
   if (client === "codex") {
     return { mcp_servers: { tdmcp: server } };
   }
   return { mcpServers: { tdmcp: server } };
 }
 
-function codexTomlSnippet(): string {
-  return [
+function codexTomlSnippet(token?: string): string {
+  const lines = [
     "[mcp_servers.tdmcp]",
     'command = "tdmcp"',
     "args = []",
@@ -34,12 +36,14 @@ function codexTomlSnippet(): string {
     "[mcp_servers.tdmcp.env]",
     'TDMCP_TD_HOST = "127.0.0.1"',
     'TDMCP_TD_PORT = "9980"',
-  ].join("\n");
+  ];
+  if (token) lines.push(`TDMCP_BRIDGE_TOKEN = ${JSON.stringify(token)}`);
+  return lines.join("\n");
 }
 
-export function installClientSnippet(client: string): object | string {
-  if (client === "codex") return codexTomlSnippet();
-  return installClientConfig(client);
+export function installClientSnippet(client: string, token?: string): object | string {
+  if (client === "codex") return codexTomlSnippet(token);
+  return installClientConfig(client, token);
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -120,10 +124,10 @@ function withoutCodexTdmcpServer(raw: string): string {
   return kept.join("\n").trimEnd();
 }
 
-async function writeCodexConfig(configPath: string): Promise<string> {
+async function writeCodexConfig(configPath: string, token?: string): Promise<string> {
   const existing = await readExistingTextConfig(configPath);
   const preserved = withoutCodexTdmcpServer(existing);
-  const serialized = `${preserved ? `${preserved}\n\n` : ""}${codexTomlSnippet()}\n`;
+  const serialized = `${preserved ? `${preserved}\n\n` : ""}${codexTomlSnippet(token)}\n`;
 
   await mkdir(dirname(configPath), { recursive: true });
   await writeFile(configPath, serialized, "utf8");
@@ -141,11 +145,12 @@ async function writeCodexConfig(configPath: string): Promise<string> {
 export async function writeInstallClientConfig(
   client: Client,
   configPath: string,
+  token?: string,
 ): Promise<Record<string, unknown> | string> {
-  if (client === "codex") return writeCodexConfig(configPath);
+  if (client === "codex") return writeCodexConfig(configPath, token);
 
   const existing = await readExistingJsonConfig(configPath);
-  const merged = deepMergeConfig(existing, installClientConfig(client));
+  const merged = deepMergeConfig(existing, installClientConfig(client, token));
   const serialized = `${JSON.stringify(merged, null, 2)}\n`;
 
   await mkdir(dirname(configPath), { recursive: true });
@@ -166,7 +171,7 @@ With --write, it deep-merges Claude/Cursor JSON or Codex TOML into the explicit 
 
 type ParsedArgs =
   | { kind: "help" }
-  | { kind: "run"; client: string; write: boolean; configPath?: string }
+  | { kind: "run"; client: string; write: boolean; configPath?: string; token?: string }
   | { kind: "error"; message: string; exitCode: number };
 
 function parseArgs(argv: string[]): ParsedArgs {
@@ -177,6 +182,7 @@ function parseArgs(argv: string[]): ParsedArgs {
   let client = "";
   let write = false;
   let configPath: string | undefined;
+  let token: string | undefined;
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === "--write") {
@@ -189,6 +195,15 @@ function parseArgs(argv: string[]): ParsedArgs {
         return { kind: "error", message: "--path requires a file path.\n", exitCode: 2 };
       }
       configPath = value;
+      index += 1;
+      continue;
+    }
+    if (arg === "--token") {
+      const value = argv[index + 1];
+      if (!value) {
+        return { kind: "error", message: "--token requires a value.\n", exitCode: 2 };
+      }
+      token = value;
       index += 1;
       continue;
     }
@@ -206,7 +221,7 @@ function parseArgs(argv: string[]): ParsedArgs {
     return { kind: "error", message: `Unexpected argument "${arg}".\n`, exitCode: 2 };
   }
 
-  return { kind: "run", client, write, configPath };
+  return { kind: "run", client, write, configPath, token };
 }
 
 export async function runInstallClient(argv: string[] = []): Promise<void> {
@@ -231,7 +246,7 @@ export async function runInstallClient(argv: string[] = []): Promise<void> {
   }
 
   if (!parsed.write) {
-    const snippet = installClientSnippet(client);
+    const snippet = installClientSnippet(client, parsed.token);
     process.stdout.write(
       typeof snippet === "string" ? `${snippet}\n` : `${JSON.stringify(snippet, null, 2)}\n`,
     );
@@ -247,7 +262,7 @@ export async function runInstallClient(argv: string[] = []): Promise<void> {
   }
 
   try {
-    await writeInstallClientConfig(client as Client, parsed.configPath);
+    await writeInstallClientConfig(client as Client, parsed.configPath, parsed.token);
   } catch (error) {
     process.stderr.write(`${errorMessage(error)}\n`);
     process.exitCode = 1;

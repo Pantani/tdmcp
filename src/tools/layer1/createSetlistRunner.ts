@@ -77,6 +77,7 @@ interface SetlistRunnerReport {
   switch: string;
   timer: string;
   engine: string;
+  param_engine: string;
   out_top: string;
   hud?: string;
   rows: Array<{
@@ -153,6 +154,109 @@ def onOnToOff(channel, sampleIndex, val, prev):
     return
 `;
 
+// Parameter Execute DAT — reacts to live stage overrides on the host COMP.
+// Watches Play/Row/Skip/Prev and drives the Timer CHOP + Switch TOP accordingly.
+const PARAM_ENGINE_CALLBACK = `
+# Setlist runner param engine — bridges custom params Play/Row/Skip/Prev to
+# the Timer CHOP + Switch TOP. Reads row list from the engine DAT's storage.
+def _host():
+    return me.parent()
+
+def _rows():
+    eng = None
+    h = _host()
+    if h is not None:
+        eng = h.op("engine")
+    if eng is None:
+        return []
+    return eng.fetch("tdmcp_setlist_rows", [])
+
+def _index():
+    eng = None
+    h = _host()
+    if h is not None:
+        eng = h.op("engine")
+    if eng is None:
+        return 0
+    return int(eng.fetch("tdmcp_setlist_index", 0))
+
+def _set_index(i):
+    h = _host()
+    if h is None:
+        return
+    eng = h.op("engine")
+    if eng is not None:
+        eng.store("tdmcp_setlist_index", int(i))
+
+def _goto(i):
+    h = _host()
+    if h is None:
+        return
+    rows = _rows()
+    if not rows:
+        return
+    n = len(rows)
+    i = int(i) % n
+    _set_index(i)
+    sw = h.op("switch")
+    if sw is not None:
+        try:
+            sw.par.index = i
+        except Exception:
+            pass
+    tm = h.op("timer")
+    if tm is not None:
+        try:
+            tm.par.length = float(rows[i].get("duration_seconds", 30.0))
+            tm.par.start.pulse()
+        except Exception:
+            pass
+    # Reflect into the Row param (no recursion: same-value writes are no-ops)
+    try:
+        h.par.Row = i
+    except Exception:
+        pass
+
+def onValueChange(par, prev):
+    h = _host()
+    if h is None:
+        return
+    name = par.name
+    if name == "Play":
+        tm = h.op("timer")
+        if tm is not None:
+            try:
+                tm.par.play = bool(par.eval())
+            except Exception:
+                pass
+    elif name == "Row":
+        try:
+            target = int(par.eval())
+        except Exception:
+            return
+        if target != _index():
+            _goto(target)
+
+def onPulse(par):
+    name = par.name
+    if name == "Skip":
+        _goto(_index() + 1)
+    elif name == "Prev":
+        _goto(_index() - 1)
+
+def onExpressionChange(par, val, prev):
+    return
+
+def onExportChange(par, val, prev):
+    return
+
+def onEnableChange(par, val, prev):
+    return
+
+def onModeChange(par, val, prev):
+    return
+`;
+
 // ---------------------------------------------------------------------------
 // Python bridge script
 // ---------------------------------------------------------------------------
@@ -165,6 +269,7 @@ report = {
     "switch": "",
     "timer": "",
     "engine": "",
+    "param_engine": "",
     "out_top": "",
     "rows": _p["rows"],
     "controls": [],
@@ -399,6 +504,35 @@ try:
                 report["controls"].append("Defaulttransition")
             except Exception as _e:
                 report["warnings"].append("custom params failed: " + str(_e))
+
+            # --- Param engine: Parameter Execute DAT (live stage overrides) ---
+            _param_engine = None
+            try:
+                _param_engine = _cont.create(parameterexecuteDAT, "param_engine")
+            except Exception as _e:
+                report["warnings"].append("parameterexecuteDAT create failed: " + str(_e))
+            if _param_engine is not None:
+                report["param_engine"] = _param_engine.path
+                try:
+                    _param_engine.par.op = _cont.name
+                except Exception as _e:
+                    report["warnings"].append("param_engine.par.op failed: " + str(_e))
+                try:
+                    _param_engine.par.parameters = "Play Row Skip Prev"
+                except Exception as _e:
+                    report["warnings"].append("param_engine.par.parameters failed: " + str(_e))
+                try:
+                    _param_engine.par.valuechange = True
+                except Exception as _e:
+                    report["warnings"].append("param_engine.par.valuechange failed: " + str(_e))
+                try:
+                    _param_engine.par.onpulse = True
+                except Exception as _e:
+                    report["warnings"].append("param_engine.par.onpulse failed: " + str(_e))
+                try:
+                    _param_engine.text = _p["param_engine_source"]
+                except Exception as _e:
+                    report["warnings"].append("param_engine.text failed: " + str(_e))
 except Exception:
     report["fatal"] = traceback.format_exc().splitlines()[-1]
 print(json.dumps(report))
@@ -443,6 +577,10 @@ function buildEngineSource(args: CreateSetlistRunnerArgs): string {
   );
 }
 
+export function buildParamEngineSource(): string {
+  return PARAM_ENGINE_CALLBACK;
+}
+
 // ---------------------------------------------------------------------------
 // Impl
 // ---------------------------------------------------------------------------
@@ -453,6 +591,7 @@ export async function createSetlistRunnerImpl(
 ): Promise<import("@modelcontextprotocol/sdk/types.js").CallToolResult> {
   const rows = resolveRows(args);
   const engineSource = buildEngineSource(args);
+  const paramEngineSource = buildParamEngineSource();
   return guardTd(
     async () => {
       const script = buildSetlistRunnerScript({
@@ -464,6 +603,7 @@ export async function createSetlistRunnerImpl(
         show_hud: args.show_hud,
         default_transition: args.default_transition,
         engine_source: engineSource,
+        param_engine_source: paramEngineSource,
       });
       const exec = await ctx.client.executePythonScript(script, true);
       return parsePythonReport<SetlistRunnerReport>(exec.stdout);

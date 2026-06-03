@@ -22,6 +22,7 @@ interface Payload {
   show_hud: boolean;
   default_transition: number;
   engine_source: string;
+  param_engine_source: string;
 }
 
 function decodePayload(script: string): Payload {
@@ -71,6 +72,7 @@ function happyReport(overrides: Partial<{ warnings: string[]; out_top: string }>
     switch: "/project1/setlist/switch",
     timer: "/project1/setlist/timer",
     engine: "/project1/setlist/engine",
+    param_engine: "/project1/setlist/param_engine",
     out_top: overrides.out_top ?? "/project1/setlist/out",
     hud: "/project1/setlist/hud",
     rows: DEFAULT_ARGS.rows.map((r) => ({
@@ -98,6 +100,7 @@ describe("buildSetlistRunnerScript (pure payload)", () => {
       show_hud: true,
       default_transition: 0.5,
       engine_source: "# engine",
+      param_engine_source: "# param engine",
     });
     const payload = decodePayload(script);
     expect(payload.rows).toHaveLength(2);
@@ -118,6 +121,7 @@ describe("buildSetlistRunnerScript (pure payload)", () => {
       show_hud: true,
       default_transition: 0.5,
       engine_source: "",
+      param_engine_source: "",
     });
     expect(script).toContain("switchTOP");
     expect(script).toContain("crossTOP");
@@ -127,7 +131,25 @@ describe("buildSetlistRunnerScript (pure payload)", () => {
     expect(script).toContain("nullTOP");
     expect(script).toContain("compositeTOP");
     expect(script).toContain("selectTOP");
+    expect(script).toContain("parameterexecuteDAT");
     expect(script).toContain("print(json.dumps(report))");
+  });
+
+  it("embeds a param engine source that wires Play/Row/Skip/Prev to timer + switch", async () => {
+    const exec = vi.fn(async () => ({ stdout: happyReport() }));
+    await createSetlistRunnerImpl(fakeCtx(exec), DEFAULT_ARGS);
+    const payload = decodePayload(scriptArg(exec));
+    expect(payload.param_engine_source).toContain("def onValueChange");
+    expect(payload.param_engine_source).toContain("def onPulse");
+    // reacts to all four live params
+    expect(payload.param_engine_source).toContain('"Play"');
+    expect(payload.param_engine_source).toContain('"Row"');
+    expect(payload.param_engine_source).toContain('"Skip"');
+    expect(payload.param_engine_source).toContain('"Prev"');
+    // actually drives the timer + switch (not a no-op stub)
+    expect(payload.param_engine_source).toContain("tm.par.play");
+    expect(payload.param_engine_source).toContain("tm.par.start.pulse()");
+    expect(payload.param_engine_source).toContain("sw.par.index");
   });
 });
 

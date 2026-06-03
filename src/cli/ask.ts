@@ -230,6 +230,11 @@ export async function runAsk(argv: string[] = [], deps: AskRuntimeDeps = {}): Pr
   let answer: string | undefined;
   let errorMessage: string | undefined;
 
+  // AbortController lets the timeout branch actually cancel the in-flight turn
+  // (streaming fetch + tool loop) so the Node process can exit at 124 instead
+  // of being held open by the still-running underlying request.
+  const controller = new AbortController();
+
   const turnPromise = (async () => {
     const messages = await turn(
       ctx,
@@ -242,7 +247,7 @@ export async function runAsk(argv: string[] = [], deps: AskRuntimeDeps = {}): Pr
           toolCalls.push({ name: event.name, ok: event.ok });
         }
       },
-      { tools, maxSteps: config.llmMaxSteps },
+      { tools, maxSteps: config.llmMaxSteps, signal: controller.signal },
     );
     if (!answer) {
       const fallback = [...messages]
@@ -263,6 +268,7 @@ export async function runAsk(argv: string[] = [], deps: AskRuntimeDeps = {}): Pr
 
   await Promise.race([turnPromise, timeoutPromise]);
   if (timer) clearTimeout(timer);
+  if (timedOut) controller.abort();
 
   const durationMs = now() - start;
 
