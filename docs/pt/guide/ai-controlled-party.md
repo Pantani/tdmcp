@@ -16,10 +16,11 @@ heads, lasers ou PA. A arquitetura segura é:
 
 ```text
 microfone / OpenClaw / texto do ChatGPT
-  -> ShowIntent
+  -> ShowIntent / MixerSceneIntent
   -> decisão de política
   -> fila de aprovação ou plano dry-run
-  -> tdmcp / TouchDesigner só depois de mapeamento seguro pelo operador
+  -> aprovação do operador quando necessário
+  -> tdmcp / TouchDesigner / adaptador aprovado só depois de mapeamento seguro
 ```
 
 ## Estado atual
@@ -43,6 +44,31 @@ validado agora fica dividido entre rehearsal visual e prova de policy:
 - A biblioteca de receitas embutida continua validando, incluindo a receita de
   projection mapping usada como um dos primitivos do rehearsal.
 
+## Estudo de armamento de cena do mixer
+
+A próxima extensão desenhada é **armamento de cena da Soundcraft Ui24R com
+aprovação do operador**. Isto está em fase de estudo/spec, não é uma promessa de
+hardware live:
+
+- A intenção proposta é `arm_mixer_scene`, separada dos efeitos perigosos
+  `mixer_gain`, `pa_mute` e `audio_routing`.
+- A IA pode preparar um alvo específico de show, snapshot ou cue da Ui24R.
+- A policy do MVP sempre exige aprovação humana antes de qualquer adaptador
+  disparar a ação.
+- A primeira fatia de implementação deve ser apenas contrato + adaptador dry-run.
+- Bitfocus Companion é o primeiro backend live recomendado depois de validação
+  isolada em bancada; um bridge Node direto fica adiado até o protocolo da Ui24R
+  ser provado no firmware alvo.
+
+A spec durável está em
+[AI Party Ui24R Scene-Arming Design](../../superpowers/specs/2026-06-04-ai-party-ui24r-scene-arming-design.md).
+
+O achado de segurança mais importante: um show/snapshot/cue da Ui24R pode
+esconder mudanças amplas de estado do mixer. Uma cena do mixer só pode ser
+armada pela IA se um catálogo/manifesto confiável do venue provar que ela exclui
+mudanças de ganho, PA mute, roteamento, patching, channel strip, mute group e
+phantom power. Caso contrário, ela continua operator-only/manual.
+
 ## Plano de validação
 
 Use o conceito como um harness, não como um único arquivo de demo. Cada passagem
@@ -52,6 +78,8 @@ deve provar uma fronteira antes de confiar na próxima:
 | --- | --- | --- |
 | Baseline de projeção | Duas ou mais saídas conseguem mostrar um visual mapeado e um test pattern conhecido. | Cada projetor/superfície está enquadrado, com preview e fallback de black/freeze. |
 | Dry-run de policy da IA | Pedidos em texto viram `ShowIntent`s estruturados antes de qualquer coisa chegar ao TD. | Cues pré-aprovados são permitidos, fog/strobe exigem aprovação ou bloqueiam, efeitos perigosos nunca geram plano de hardware. |
+| Dry-run de cena do mixer | Pedidos de show/snapshot/cue da Ui24R viram intenções `arm_mixer_scene` estruturadas. | Alvos conhecidos do catálogo entram na fila de aprovação; alvos desconhecidos ou inseguros bloqueiam antes de qualquer plano de adaptador. |
+| Bancada do adaptador do mixer | Um backend dry-run ou Companion consegue receber um alvo aprovado sem controle amplo do mixer. | Uma aprovação gera no máximo um dispatch simulado/de bancada, com estados de auditoria separados como enviado, reconhecido e confirmado. |
 | Rehearsal áudio-reativo | TD cuida localmente de beat, energia, transientes ou chroma. | A IA muda apenas intenção de frase/seção/cue; movimento no beat continua sem round trip de LLM. |
 | Controle do operador | O humano consegue ver a última decisão da IA e sobrescrever. | Dashboard/logs mostram cue atual, aprovações pendentes, motivos de policy e estado de panic. |
 | Hardware do venue | Cada fixture e efeito tem estado seguro antes do controle ao vivo. | DMX/fog/strobe/PA continuam simulados até policy, cooldowns e kill path específicos do venue serem ensaiados. |
@@ -71,6 +99,14 @@ Use rehearsal mode enquanto constrói o show:
    vivo.
 4. Mantenha `create_panic` ou `tdmcp-agent panic` disponível antes de ensaiar
    qualquer output.
+5. Para trabalho com Ui24R, ensaie primeiro o fluxo de cena do mixer em dry-run:
+   pedido, decisão de policy, fila de aprovação, aprovação do operador e audit
+   log.
+6. Mantenha o catálogo de cenas do mixer no servidor. Não deixe a LLM inventar
+   nomes de cena, endpoints de adaptador, posições de botão ou comandos crus do
+   mixer.
+7. Teste qualquer adaptador live em uma Ui24R isolada em bancada antes de levar
+   isso para a rede de show do venue.
 
 ## Show mode
 
@@ -90,6 +126,8 @@ Exigem aprovação por padrão:
 - `fog`
 - `hazer`
 - `strobe`
+- `arm_mixer_scene` para alvos Soundcraft Ui24R de show/snapshot/cue
+  pré-declarados depois que o contrato for implementado
 
 Bloqueados/operator-only por padrão:
 
@@ -100,6 +138,8 @@ Bloqueados/operator-only por padrão:
 - `mixer_gain`
 - `pa_mute`
 - `audio_routing`
+- ganho de entrada, mute groups, patching, edições de channel strip e comandos
+  crus de adaptador
 
 ## CLI dry-run
 
@@ -148,6 +188,31 @@ tdmcp-agent show-director approve approval_0001 --params-file approve-state.json
 O `plan` retornado ainda é abstrato e dry-run only. Adaptadores de hardware devem
 ser adicionados separadamente e continuar aplicando a mesma policy.
 
+Contrato planejado de armamento de cena da Ui24R:
+
+```bash
+tdmcp-agent show-director --params '{
+  "intent": {
+    "type": "arm_mixer_scene",
+    "adapter_target": { "kind": "soundcraft_ui24r", "mixer_id": "foh-ui24r" },
+    "target": {
+      "kind": "snapshot",
+      "show_name": "AI Party Demo",
+      "snapshot_name": "Band A Intro"
+    },
+    "request": {
+      "source": "setlist",
+      "reason": "Band A intro scene reached"
+    }
+  }
+}'
+```
+
+Este contrato é planejado, não execução live atual. A primeira fatia deve
+retornar fila de aprovação dry-run e plano de cena do mixer com `dry_run_only`.
+Adaptadores live por Companion ou Ui24R direta devem ser follow-ups separados e
+gated.
+
 ## Checklist da demo
 
 - Bridge health verificado.
@@ -156,6 +221,10 @@ ser adicionados separadamente e continuar aplicando a mesma policy.
 - Setlist demo importado ou disponível.
 - Fonte de áudio testada primeiro com sintético/arquivo.
 - Output/mapping de projetores verificado.
+- Catálogo/manifesto de cenas do mixer conferido se o teste incluir armamento
+  da Ui24R.
+- Adaptador Ui24R desabilitado ou em dry-run, exceto se uma validação isolada em
+  bancada já tiver passado.
 - Efeitos perigosos desconectados ou simulados, exceto em ensaio controlado com
   aprovação do operador do venue.
 - Operador consegue ver última decisão da IA, aprovações pendentes e audit log.
@@ -163,14 +232,17 @@ ser adicionados separadamente e continuar aplicando a mesma policy.
 ## Demo em cinco momentos
 
 1. Abertura: visual idle generativo, dashboard/panic visível.
-2. Entrada de banda: IA seleciona cue pré-aprovado e enfileira qualquer fog.
+2. Entrada de banda: IA seleciona cue visual pré-aprovado, pode enfileirar um
+   armamento planejado de cena da Ui24R e enfileira qualquer fog.
 3. Núcleo áudio-reativo: TouchDesigner controla beat/energy/chroma localmente.
 4. Pedido por microfone: texto da voz vira `change_mood`, limitado pela policy.
-5. Prova de segurança: pedido excessivo de fog/strobe/mixer é bloqueado, e panic
+5. Prova de segurança: pedido excessivo de fog/strobe/mixer é bloqueado,
+   pedidos de ganho/mute/roteamento da Ui24R continuam operator-only, e panic
    funciona sem a LLM.
 
 ## Ainda não validado ao vivo
 
 STT real, integração OpenClaw, dashboard de aprovação, fixture patching, saída
-DMX, hardware de fog/hazer, strobe, moving heads, lasers e PA exigem validação
-por venue. Não trate o planner dry-run como controlador de hardware.
+DMX, hardware de fog/hazer, strobe, moving heads, lasers, PA e recall de cena da
+Soundcraft Ui24R exigem validação por venue. Não trate o planner dry-run nem o
+contrato planejado de cena do mixer como controlador de hardware.
