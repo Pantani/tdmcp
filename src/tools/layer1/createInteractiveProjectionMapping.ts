@@ -340,10 +340,14 @@ export async function createInteractiveProjectionMappingImpl(
       ...analysisParams,
       active: 1,
       cachesize: 2,
+      replaceindex: 0,
       outputindexunit: "indices",
       outputindex: -1,
     });
     await builder.connect(motionBlur, previousFrame);
+    await builder.python(
+      `_c = op(${q(previousFrame)})\nfor _a, _v in [('cachesize', 2), ('size', 2)]:\n    try:\n        setattr(_c.par, _a, _v)\n        break\n    except Exception:\n        pass\nfor _a, _v in [('replaceindex', 0), ('replaceat', 0)]:\n    try:\n        setattr(_c.par, _a, _v)\n        break\n    except Exception:\n        pass\nfor _a, _v in [('outputindex', -1), ('outputat', -1)]:\n    try:\n        setattr(_c.par, _a, _v)\n        break\n    except Exception:\n        pass`,
+    );
 
     const motionDelta = await builder.add("differenceTOP", "motion_delta", analysisParams);
     await builder.connect(motionBlur, motionDelta, 0, 0);
@@ -361,10 +365,41 @@ export async function createInteractiveProjectionMappingImpl(
     });
     await builder.connect(motionField, motionGain);
 
+    const presenceEdges = await builder.add("edgeTOP", "presence_edges", {
+      ...analysisParams,
+      strength: 1,
+    });
+    await builder.connect(analysisPlane, presenceEdges);
+
+    const presenceMask = await builder.add("thresholdTOP", "presence_mask", {
+      ...analysisParams,
+      threshold: 0.12,
+    });
+    await builder.connect(presenceEdges, presenceMask);
+
+    const presenceField = await builder.add("blurTOP", "presence_field", {
+      ...analysisParams,
+      size: Math.max(2, motionBlurSize(args.repel_radius)),
+    });
+    await builder.connect(presenceMask, presenceField);
+
+    const presenceGain = await builder.add("levelTOP", "presence_gain", {
+      ...analysisParams,
+      brightness1: 0.25,
+    });
+    await builder.connect(presenceField, presenceGain);
+
+    const interactionField = await builder.add("compositeTOP", "interaction_field", {
+      ...analysisParams,
+      operand: "maximum",
+    });
+    await builder.connect(motionGain, interactionField, 0, 0);
+    await builder.connect(presenceGain, interactionField, 0, 1);
+
     const motionHoldFeedback = await builder.add("feedbackTOP", "motion_hold_feedback", {
       ...analysisParams,
     });
-    await builder.connect(motionGain, motionHoldFeedback);
+    await builder.connect(interactionField, motionHoldFeedback);
 
     const motionHoldDecay = await builder.add("levelTOP", "motion_hold_decay", {
       ...analysisParams,
@@ -378,7 +413,7 @@ export async function createInteractiveProjectionMappingImpl(
       operand: "maximum",
     });
     await builder.connect(motionHoldDecay, motionHoldMix, 0, 0);
-    await builder.connect(motionGain, motionHoldMix, 0, 1);
+    await builder.connect(interactionField, motionHoldMix, 0, 1);
     await builder.python(
       `_fb = op(${q(motionHoldFeedback)})\ntry:\n    _fb.par.top = ${q(motionHoldMix)}\nexcept Exception:\n    pass`,
     );

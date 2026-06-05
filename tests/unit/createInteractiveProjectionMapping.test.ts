@@ -167,6 +167,25 @@ describe("create_interactive_projection_mapping", () => {
     expect(bodies.find((b) => b.name === "motion_field")?.parameters).toMatchObject({
       size: 3,
     });
+    expect(bodies.find((b) => b.name === "motion_prev")?.parameters).toMatchObject({
+      cachesize: 2,
+      replaceindex: 0,
+      outputindex: -1,
+    });
+    expect(scripts.some((s) => s.includes("motion_prev") && s.includes("replaceindex"))).toBe(true);
+    expect(bodies.find((b) => b.name === "presence_edges")?.type).toBe("edgeTOP");
+    expect(bodies.find((b) => b.name === "presence_mask")?.type).toBe("thresholdTOP");
+    expect(bodies.find((b) => b.name === "presence_mask")?.parameters).toMatchObject({
+      threshold: 0.12,
+    });
+    expect(bodies.find((b) => b.name === "presence_field")?.type).toBe("blurTOP");
+    expect(bodies.find((b) => b.name === "presence_gain")?.parameters).toMatchObject({
+      brightness1: 0.25,
+    });
+    expect(bodies.find((b) => b.name === "interaction_field")?.type).toBe("compositeTOP");
+    expect(bodies.find((b) => b.name === "interaction_field")?.parameters).toMatchObject({
+      operand: "maximum",
+    });
     expect(bodies.find((b) => b.name === "motion_hold_feedback")?.type).toBe("feedbackTOP");
     expect(bodies.find((b) => b.name === "motion_hold_decay")?.type).toBe("levelTOP");
     expect(bodies.find((b) => b.name === "motion_hold_decay")?.parameters).toMatchObject({
