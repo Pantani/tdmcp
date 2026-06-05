@@ -361,8 +361,30 @@ export async function createInteractiveProjectionMappingImpl(
     });
     await builder.connect(motionField, motionGain);
 
+    const motionHoldFeedback = await builder.add("feedbackTOP", "motion_hold_feedback", {
+      ...analysisParams,
+    });
+    await builder.connect(motionGain, motionHoldFeedback);
+
+    const motionHoldDecay = await builder.add("levelTOP", "motion_hold_decay", {
+      ...analysisParams,
+      brightness1: 0.92,
+      opacity: 0.92,
+    });
+    await builder.connect(motionHoldFeedback, motionHoldDecay);
+
+    const motionHoldMix = await builder.add("compositeTOP", "motion_hold_mix", {
+      ...analysisParams,
+      operand: "maximum",
+    });
+    await builder.connect(motionHoldDecay, motionHoldMix, 0, 0);
+    await builder.connect(motionGain, motionHoldMix, 0, 1);
+    await builder.python(
+      `_fb = op(${q(motionHoldFeedback)})\ntry:\n    _fb.par.top = ${q(motionHoldMix)}\nexcept Exception:\n    pass`,
+    );
+
     const motionDebug = await builder.add("nullTOP", "motion_debug", analysisParams);
-    await builder.connect(motionGain, motionDebug);
+    await builder.connect(motionHoldMix, motionDebug);
 
     const motionCooker = await builder.add("executeDAT", "motion_cooker");
     await builder.python(
