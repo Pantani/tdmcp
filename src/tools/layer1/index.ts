@@ -37,6 +37,7 @@ import { registerCreateGrowthSystem } from "./createGrowthSystem.js";
 import { registerCreateHalftone } from "./createHalftone.js";
 import { registerCreateHistogramScope } from "./createHistogramScope.js";
 import { registerCreateImageToParticles } from "./createImageToParticles.js";
+import { registerCreateInteractiveProjectionMapping } from "./createInteractiveProjectionMapping.js";
 import { registerCreateJfaVoronoi } from "./createJfaVoronoi.js";
 import { registerCreateKaleidoscope } from "./createKaleidoscope.js";
 import { registerCreateKeyer } from "./createKeyer.js";
@@ -121,6 +122,7 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateVisualSystem,
   registerExtractAudioFeatures,
   registerCreateMotionReactive,
+  registerCreateInteractiveProjectionMapping,
   registerCreateMultiOutput,
   registerCreateSyncExternalClock,
   registerCreateTempoSync,

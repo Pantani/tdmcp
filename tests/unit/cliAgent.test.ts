@@ -1162,6 +1162,36 @@ describe("tdmcp-agent CLI — phase 7 (stage I/O & sensor reactivity)", () => {
     expect(doc.args.source).toBe("synthetic");
   });
 
+  it("lists interactive-projection in --help", async () => {
+    const r = await runCli(["--help"]);
+    expect(r.code).toBe(0);
+    expect(r.stdout).toContain("interactive-projection");
+  });
+
+  it("schema interactive-projection exposes synthetic source and debug views", async () => {
+    const r = await runCli(["schema", "interactive-projection"]);
+    expect(r.code).toBe(0);
+    const input = JSON.stringify(JSON.parse(r.stdout).input);
+    expect(input).toContain("synthetic");
+    expect(input).toContain("existing_top");
+    expect(input).toContain("analysis_resolution");
+    expect(input).toContain("debug_view");
+  });
+
+  it("dry-runs interactive-projection with the safe synthetic source", async () => {
+    const r = await runCli([
+      "interactive-projection",
+      "--dry-run",
+      "--params",
+      '{"source":"synthetic"}',
+    ]);
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.dryRun).toBe(true);
+    expect(doc.command).toBe("interactive-projection");
+    expect(doc.args.source).toBe("synthetic");
+  });
+
   it("schema text exposes the text content and alignment", async () => {
     const r = await runCli(["schema", "text"]);
     expect(r.code).toBe(0);

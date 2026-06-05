@@ -144,6 +144,10 @@ import {
   createImageToParticlesImpl,
   createImageToParticlesSchema,
 } from "../tools/layer1/createImageToParticles.js";
+import {
+  createInteractiveProjectionMappingImpl,
+  createInteractiveProjectionMappingSchema,
+} from "../tools/layer1/createInteractiveProjectionMapping.js";
 import { createJfaVoronoiImpl, createJfaVoronoiSchema } from "../tools/layer1/createJfaVoronoi.js";
 import {
   createKaleidoscopeImpl,
@@ -816,6 +820,12 @@ const COMMANDS: Record<string, Command> = {
     createMotionReactiveSchema,
     createMotionReactiveImpl,
     "Extract camera reactive channels (brightness/motion) to bind to params.",
+    { mutates: true },
+  ),
+  "interactive-projection": r(
+    createInteractiveProjectionMappingSchema,
+    createInteractiveProjectionMappingImpl,
+    "Build a synthetic-safe camera/projector interactive projection mapping rig.",
     { mutates: true },
   ),
   "tempo-sync": r(

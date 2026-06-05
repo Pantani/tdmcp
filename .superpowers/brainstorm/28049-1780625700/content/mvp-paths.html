@@ -1,0 +1,53 @@
+<h2>Escolha o primeiro MVP</h2>
+<p class="subtitle">Todos chegam no mesmo destino: um patch interativo no TouchDesigner e depois uma feature simples no tdmcp.</p>
+
+<div class="cards">
+  <div class="card" data-choice="a-optical-flow" onclick="toggleSelect(this)">
+    <div class="card-image" style="height:220px;position:relative;overflow:hidden;background:radial-gradient(circle at 30% 30%,#17352f,#07100f 65%,#030504);">
+      <div style="position:absolute;left:18%;top:22%;width:18px;height:18px;border-radius:50%;background:#83e6ea;box-shadow:0 0 18px #83e6ea;"></div>
+      <div style="position:absolute;left:42%;top:32%;width:16px;height:16px;border-radius:50%;background:#83e6ea;box-shadow:0 0 16px #83e6ea;"></div>
+      <div style="position:absolute;left:58%;top:52%;width:17px;height:17px;border-radius:50%;background:#83e6ea;box-shadow:0 0 18px #83e6ea;"></div>
+      <div style="position:absolute;left:30%;top:58%;width:42px;height:28px;transform:rotate(17deg);background:#ff2f9a;box-shadow:0 0 16px rgba(255,47,154,.55);"></div>
+      <div style="position:absolute;left:66%;top:68%;width:38px;height:27px;transform:rotate(-23deg);background:#ff2f9a;box-shadow:0 0 16px rgba(255,47,154,.55);"></div>
+      <div style="position:absolute;right:-20px;bottom:-10px;width:140px;height:90px;border-radius:60px 0 0 0;background:rgba(110,210,190,.25);filter:blur(1px);"></div>
+    </div>
+    <div class="card-body">
+      <h3>A. Optical-flow particles</h3>
+      <p>Mais perto do vídeo: movimento da mão/câmera empurra bolinhas e retângulos. Bom para demo rápida sem depender de tracking perfeito.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b-blob-markers" onclick="toggleSelect(this)">
+    <div class="card-image" style="height:220px;position:relative;overflow:hidden;background:linear-gradient(145deg,#08110f,#0b1f20);">
+      <div style="position:absolute;left:16%;top:50%;width:58px;height:38px;transform:rotate(12deg);background:#ff2f9a;border:3px solid rgba(255,255,255,.16);"></div>
+      <div style="position:absolute;left:58%;top:28%;width:54px;height:36px;transform:rotate(-18deg);background:#ff2f9a;border:3px solid rgba(255,255,255,.16);"></div>
+      <div style="position:absolute;left:36%;top:72%;width:50px;height:34px;transform:rotate(-9deg);background:#ff2f9a;border:3px solid rgba(255,255,255,.16);"></div>
+      <div style="position:absolute;left:28%;top:24%;width:18px;height:18px;border-radius:50%;background:#8ff4f2;box-shadow:0 0 14px #8ff4f2;"></div>
+      <div style="position:absolute;left:48%;top:46%;width:18px;height:18px;border-radius:50%;background:#8ff4f2;box-shadow:0 0 14px #8ff4f2;"></div>
+      <div style="position:absolute;left:72%;top:66%;width:18px;height:18px;border-radius:50%;background:#8ff4f2;box-shadow:0 0 14px #8ff4f2;"></div>
+    </div>
+    <div class="card-body">
+      <h3>B. Blob/post-it tracking</h3>
+      <p>Mais robusto para instalação: detecta cores/marcadores físicos e gera canais. Excelente para virar uma feature fácil do tdmcp.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c-hand-tracking" onclick="toggleSelect(this)">
+    <div class="card-image" style="height:220px;position:relative;overflow:hidden;background:radial-gradient(circle at 70% 40%,#153235,#07100f 70%);">
+      <div style="position:absolute;left:60%;top:42%;width:118px;height:86px;border-radius:70% 45% 35% 55%;background:rgba(105,220,200,.28);box-shadow:0 0 30px rgba(105,220,200,.24);"></div>
+      <div style="position:absolute;left:20%;top:28%;width:18px;height:18px;border-radius:50%;background:#8ff4f2;box-shadow:0 0 15px #8ff4f2;"></div>
+      <div style="position:absolute;left:35%;top:46%;width:18px;height:18px;border-radius:50%;background:#8ff4f2;box-shadow:0 0 15px #8ff4f2;"></div>
+      <div style="position:absolute;left:50%;top:64%;width:18px;height:18px;border-radius:50%;background:#8ff4f2;box-shadow:0 0 15px #8ff4f2;"></div>
+      <div style="position:absolute;left:28%;top:68%;width:40px;height:28px;transform:rotate(21deg);background:#ff2f9a;box-shadow:0 0 16px rgba(255,47,154,.55);"></div>
+    </div>
+    <div class="card-body">
+      <h3>C. MediaPipe hand tracking</h3>
+      <p>Mais “mágico”: landmarks da mão viram forças e gestos. Melhor experiência, mas depende de plugin/câmera e mais calibração.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Minha recomendação</h3>
+  <p>Começar por <strong>A</strong> para ter visual vivo rapidamente, e estruturar o projeto para evoluir para <strong>B</strong> como a feature pública mais simples: <code>interactive_projection_mapping</code>.</p>
+</div>
