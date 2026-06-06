@@ -1,0 +1,251 @@
+{
+  "id": "atemporal_bodytrack_glitch_timeline",
+  "name": "Atemporal Body-Track Glitch Timeline",
+  "description": "Reusable style template for a bugged camera timeline: start with clean source footage, jump into short green motion-glitch events, return to normal between filtered moments, then switch into a red body-track look made from small points, edge lines and trails instead of large circles. The recipe builds the performable TOP network and documents the edit grammar in timeline_notes; the artist still arranges exact source-time jumps or render/export timing after import. For true MediaPipe landmarks, run setup_body_tracking and layer pose_skeleton_mediapipe or body_tracking_reactive over the red branch.",
+  "tags": ["video", "glitch", "body-tracking", "timeline", "motion", "tracking", "reference"],
+  "difficulty": "advanced",
+  "td_version_min": "2023",
+  "nodes": [
+    {
+      "name": "source",
+      "type": "moviefileinTOP",
+      "parameters": {
+        "play": 1,
+        "loop": 1,
+        "outputresolution": "custom",
+        "resolutionw": 720,
+        "resolutionh": 1280
+      },
+      "comment": "Drop the source video here. For live use, swap to videodeviceinTOP and keep the same downstream wiring."
+    },
+    {
+      "name": "clean_pass",
+      "type": "levelTOP",
+      "parameters": { "brightness1": 1.0 },
+      "comment": "Unfiltered source branch. Use this for the opening and recovery moments."
+    },
+    {
+      "name": "green_edges",
+      "type": "edgeTOP",
+      "comment": "Motion/contour extraction before the green glitch shader."
+    },
+    {
+      "name": "green_glitch",
+      "type": "glslTOP",
+      "parameters": {
+        "outputresolution": "custom",
+        "resolutionw": 720,
+        "resolutionh": 1280
+      },
+      "comment": "Green horizontal tear shader. Fast, synthetic, camera-bug energy."
+    },
+    {
+      "name": "green_feedback",
+      "type": "feedbackTOP",
+      "comment": "Previous green frame for trail accumulation."
+    },
+    {
+      "name": "green_mix",
+      "type": "compositeTOP",
+      "parameters": { "operand": "add" },
+      "comment": "Adds current green tracker over its decayed trail."
+    },
+    {
+      "name": "green_decay",
+      "type": "levelTOP",
+      "parameters": { "brightness1": 0.9 },
+      "comment": "Green trail decay. Higher values leave longer trails."
+    },
+    {
+      "name": "green_gain",
+      "type": "levelTOP",
+      "parameters": { "brightness1": 1.1 },
+      "comment": "Green branch intensity control."
+    },
+    {
+      "name": "red_edges",
+      "type": "edgeTOP",
+      "comment": "Contour extraction feeding the red tracker shader."
+    },
+    {
+      "name": "red_tracker",
+      "type": "glslTOP",
+      "parameters": {
+        "outputresolution": "custom",
+        "resolutionw": 720,
+        "resolutionh": 1280
+      },
+      "comment": "Red tracking style: small points, edge lines and traces. No large circles."
+    },
+    {
+      "name": "red_feedback",
+      "type": "feedbackTOP",
+      "comment": "Previous red tracker frame for red point/line trails."
+    },
+    {
+      "name": "red_mix",
+      "type": "compositeTOP",
+      "parameters": { "operand": "add" },
+      "comment": "Adds current red tracker over its decayed trail."
+    },
+    {
+      "name": "red_decay",
+      "type": "levelTOP",
+      "parameters": { "brightness1": 0.88 },
+      "comment": "Red trail decay. Keep this high enough that motion points leave a visible trace."
+    },
+    {
+      "name": "red_gain",
+      "type": "levelTOP",
+      "parameters": { "brightness1": 1.25 },
+      "comment": "Red branch intensity control."
+    },
+    {
+      "name": "mode_switch",
+      "type": "switchTOP",
+      "parameters": { "index": 0 },
+      "comment": "0 = clean, 1 = green glitch, 2 = red body-track. Keyframe this index for the final timeline."
+    },
+    {
+      "name": "out1",
+      "type": "nullTOP",
+      "comment": "Final program output."
+    },
+    {
+      "name": "timeline_clock",
+      "type": "timerCHOP",
+      "parameters": {
+        "length": 15,
+        "lengthunits": "seconds",
+        "cyclelimit": 1,
+        "cue": 1,
+        "play": 1
+      },
+      "comment": "15s edit clock matching the reference export length. Use it to keyframe mode_switch.index."
+    },
+    {
+      "name": "timeline_notes",
+      "type": "textDAT",
+      "comment": "Readable edit grammar for this look."
+    }
+  ],
+  "connections": [
+    { "from": "source", "to": "clean_pass" },
+    { "from": "source", "to": "green_edges" },
+    { "from": "green_edges", "to": "green_glitch" },
+    { "from": "green_glitch", "to": "green_feedback" },
+    { "from": "green_glitch", "to": "green_mix", "to_input": 0 },
+    { "from": "green_feedback", "to": "green_mix", "to_input": 1 },
+    { "from": "green_mix", "to": "green_decay" },
+    { "from": "green_decay", "to": "green_gain" },
+    { "from": "source", "to": "red_edges" },
+    { "from": "red_edges", "to": "red_tracker" },
+    { "from": "red_tracker", "to": "red_feedback" },
+    { "from": "red_tracker", "to": "red_mix", "to_input": 0 },
+    { "from": "red_feedback", "to": "red_mix", "to_input": 1 },
+    { "from": "red_mix", "to": "red_decay" },
+    { "from": "red_decay", "to": "red_gain" },
+    { "from": "clean_pass", "to": "mode_switch", "to_input": 0 },
+    { "from": "green_gain", "to": "mode_switch", "to_input": 1 },
+    { "from": "red_gain", "to": "mode_switch", "to_input": 2 },
+    { "from": "mode_switch", "to": "out1" }
+  ],
+  "parameters": [
+    {
+      "name": "green_feedback_target",
+      "node": "green_feedback",
+      "param": "top",
+      "value": "green_decay",
+      "description": "feedbackTOP samples the decayed green composite to build trails."
+    },
+    {
+      "name": "red_feedback_target",
+      "node": "red_feedback",
+      "param": "top",
+      "value": "red_decay",
+      "description": "feedbackTOP samples the decayed red composite to build point/line trails."
+    }
+  ],
+  "glsl_code": {
+    "green_glitch": "out vec4 fragColor;\nuniform float uTear;\nfloat hash(float x){ return fract(sin(x * 127.1) * 43758.5453); }\nvoid main(){\n  vec2 uv = vUV.st;\n  float band = floor(uv.y * 34.0);\n  float h = hash(band + floor(uv.x * 3.0));\n  float tear = (h - 0.5) * 0.10 * max(uTear, 0.0) * step(0.55, h);\n  vec4 src = texture(sTD2DInputs[0], uv + vec2(tear, 0.0));\n  float energy = max(max(src.r, src.g), src.b);\n  float scan = 0.75 + 0.25 * step(0.5, fract(uv.y * 96.0));\n  vec3 green = vec3(0.02, 1.0, 0.22) * energy * scan;\n  fragColor = TDOutputSwizzle(vec4(green, 1.0));\n}\n",
+    "red_tracker": "out vec4 fragColor;\nuniform float uThreshold;\nuniform float uPointScale;\nvoid main(){\n  vec2 uv = vUV.st;\n  vec4 src = texture(sTD2DInputs[0], uv);\n  float l = dot(src.rgb, vec3(0.299, 0.587, 0.114));\n  float lx = dot(texture(sTD2DInputs[0], uv + vec2(0.004, 0.0)).rgb, vec3(0.299, 0.587, 0.114));\n  float ly = dot(texture(sTD2DInputs[0], uv + vec2(0.0, 0.004)).rgb, vec3(0.299, 0.587, 0.114));\n  float edge = smoothstep(0.05, 0.22, abs(l - lx) + abs(l - ly));\n  vec2 grid = fract(uv * vec2(18.0, 32.0));\n  float dotMask = smoothstep(0.10 * max(uPointScale, 0.2), 0.0, length(grid - 0.5));\n  float pointGate = step(max(uThreshold, 0.01), l) * dotMask;\n  float tracker = clamp(edge * 0.85 + pointGate * 0.9, 0.0, 1.0);\n  vec3 red = vec3(1.0, 0.03, 0.02) * tracker;\n  fragColor = TDOutputSwizzle(vec4(red, tracker));\n}\n"
+  },
+  "glsl_uniforms": [
+    {
+      "node": "green_glitch",
+      "name": "uTear",
+      "kind": "float",
+      "value": 1.0,
+      "min": 0,
+      "max": 2,
+      "label": "Green Tear",
+      "description": "Horizontal band displacement amount for the green glitch branch."
+    },
+    {
+      "node": "red_tracker",
+      "name": "uThreshold",
+      "kind": "float",
+      "value": 0.35,
+      "min": 0,
+      "max": 1,
+      "label": "Red Threshold",
+      "description": "Brightness threshold for emitting small red tracking points."
+    },
+    {
+      "node": "red_tracker",
+      "name": "uPointScale",
+      "kind": "float",
+      "value": 1.0,
+      "min": 0.2,
+      "max": 2,
+      "label": "Red Point Scale",
+      "description": "Size of the small red tracking points. Keep modest to avoid the large-circle look."
+    }
+  ],
+  "python_code": {
+    "timeline_notes": "Atemporal body-track glitch edit grammar\\n\\n0.0-2.2s clean original footage, original audio\\n2.2-3.4s green glitch, atemporal source jump\\n3.4-4.2s clean recovery\\n4.2-5.5s red body-track branch, small red points/lines/trails, no large circles\\n5.5-7.2s clean original footage\\n7.2-8.5s green glitch, different source-time offset\\n8.5-10.5s clean recovery\\n10.5-11.8s red body-track branch, not directly after green\\n11.8-12.8s clean snapback\\n12.8-13.7s green glitch\\n13.7-14.9s green glitch again, final bug hold\\n\\nPerform by keyframing mode_switch.index: 0 clean, 1 green, 2 red. Keep filtered sections short, around 1-2 seconds. Add glitch/noise audio only while mode_switch is 1 or 2. Verify final exports at real 30 fps, not slow-motion preview frames."
+  },
+  "controls": [
+    {
+      "name": "SceneMode",
+      "type": "int",
+      "min": 0,
+      "max": 2,
+      "default": 0,
+      "bind_to": ["mode_switch.index"]
+    },
+    {
+      "name": "SourceSpeed",
+      "type": "float",
+      "min": 0.25,
+      "max": 2.0,
+      "default": 1.0,
+      "bind_to": ["source.speed"]
+    },
+    {
+      "name": "TrailLength",
+      "type": "float",
+      "min": 0.5,
+      "max": 0.99,
+      "default": 0.9,
+      "bind_to": ["green_decay.brightness1", "red_decay.brightness1"]
+    },
+    {
+      "name": "GreenGain",
+      "type": "float",
+      "min": 0,
+      "max": 3,
+      "default": 1.1,
+      "bind_to": ["green_gain.brightness1"]
+    },
+    {
+      "name": "RedGain",
+      "type": "float",
+      "min": 0,
+      "max": 3,
+      "default": 1.25,
+      "bind_to": ["red_gain.brightness1"]
+    }
+  ],
+  "preview_description": "A 9:16 source-video template with clean footage, fast green camera-glitch tears and a red body-track branch made from small points, edge lines and feedback trails. Keyframe SceneMode for the final bug timeline; the included notes preserve the exact timing grammar from the reference edit."
+}
