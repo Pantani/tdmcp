@@ -112,6 +112,18 @@ the motion while the recipe stays schema-valid.*
 *Live video becomes an optical-flow field, then pushes particles. It is the
 camera-reactive recipe to reach for when body motion should leave visible trails.*
 
+> *"Apply `atemporal_bodytrack_glitch_timeline` to this vertical clip: start clean,
+> let short green glitch moments interrupt like a camera bug, return to normal
+> between filters, then use the red tracker as small points, lines and trails only
+> -- no large circles."*
+
+<video :src="withBase('/examples/atemporal-bodytrack-glitch.mp4')" autoplay loop muted playsinline style="width:100%;max-width:360px;border-radius:8px;display:block"></video>
+
+*A reusable bug-timeline template: clean footage, atemporal green source jumps,
+normal recovery beats, then a red body-track branch that reads like object tracking
+instead of decorative circles. Keyframe `SceneMode` to perform the edit, then add
+glitch ticks/noise only while a filtered branch is active.*
+
 > *"Apply `mediapipe_face_overlay`, dim the webcam underneath, tint the landmark dots,
 > and make the overlay easy to swap from demo landmarks to the live face adapter."*
 

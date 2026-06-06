@@ -24,6 +24,7 @@ language like any other visual.
 | **Noise Landscape** | A 3D terrain displaced by noise, shaded and rendered with an orbiting camera. | Intermediate |
 | **Particle Galaxy** | A swirling galaxy of particles from a sphere emitter, pushed by turbulence and gravity, glowing sprites. | Advanced |
 | **Webcam Glitch** | Live webcam through edge detection, RGB split, a feedback loop and a glitch shader. | Intermediate |
+| **Atemporal Body-Track Glitch Timeline** | 9:16 source-video template with clean footage, short green bug cuts, red small-point/line tracking trails and a performable `SceneMode` switch. | Advanced |
 | **Data Sonification** | Reads a data table into CHOPs and maps the values to both audio and a color ramp. | Intermediate |
 | **Projection Mapping** | Corner-pin keystone correction and edge feathering, ready to send to a projector. | Advanced |
 | **LED Strip Mapper** | Samples a visual down to one pixel per LED and streams colors out to an addressable LED strip. | Advanced |
