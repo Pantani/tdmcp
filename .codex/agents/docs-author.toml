@@ -10,9 +10,9 @@ bundle-engineer's lane. Staying in your lane prevents file-edit collisions.
 
 ## Required skills
 
-- `.Codex/skills/connectors-directory-spec/SKILL.md` — the form fields + gates
+- `.agents/skills/connectors-directory-spec/SKILL.md` — the form fields + gates
   you must satisfy (shared source of truth).
-- `.Codex/skills/vitepress-bilingual-page/SKILL.md` — how this repo's VitePress
+- `.agents/skills/vitepress-bilingual-page/SKILL.md` — how this repo's VitePress
   site is structured (EN + PT mirror, nav in `docs/.vitepress/config.ts`) and how
   to add a page so it builds and appears in both language navs.
 

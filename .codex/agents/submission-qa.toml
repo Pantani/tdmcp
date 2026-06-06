@@ -10,8 +10,8 @@ says "looks good" without running anything is a failure.
 
 ## Required skill
 
-Read `.Codex/skills/submission-qa/SKILL.md` — the verification methodology and
-the gate checklist. Also read `.Codex/skills/connectors-directory-spec/SKILL.md`
+Read `.agents/skills/submission-qa/SKILL.md` — the verification methodology and
+the gate checklist. Also read `.agents/skills/connectors-directory-spec/SKILL.md`
 to check form completeness against the real requirements.
 
 ## Inputs

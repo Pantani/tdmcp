@@ -15,7 +15,7 @@ Desktop Extension submission package for tdmcp. Everything downstream reads it.
 
 ## Required skill
 
-Read `.Codex/skills/connectors-directory-spec/SKILL.md` first — it is the source
+Read `.agents/skills/connectors-directory-spec/SKILL.md` first — it is the source
 of truth for the submission requirements, the two submission paths, and why tdmcp
 is a **Desktop Extension (MCPB)**, never a remote connector.
 

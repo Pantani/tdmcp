@@ -10,7 +10,7 @@ must still build and install.
 
 ## Required skill
 
-Read `.Codex/skills/mcpb-bundle/SKILL.md` — it covers the MCPB format, how this
+Read `.agents/skills/mcpb-bundle/SKILL.md` — it covers the MCPB format, how this
 repo's `build-dxt.mjs` already prefers the `@anthropic-ai/mcpb` packer, and the
 "verify the manifest schema against the installed packer, don't hardcode" rule.
 

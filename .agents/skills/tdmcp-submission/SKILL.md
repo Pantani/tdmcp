@@ -14,10 +14,14 @@ Anthropic Connectors Directory via the **Desktop Extension (MCPB)** path. Define
 `TeamCreate`/`SendMessage` are **not available** here, so run agents as
 sub-agents with the `Agent` tool. For every agent:
 - `subagent_type: "general-purpose"`, `model: "opus"`.
-- Prompt MUST tell it to **read its definition file** `.Codex/agents/<name>.md`
-  and its required skill(s) first, then do the task. The definition file is the
-  source of truth (reusable next session); the prompt just points at it + passes
-  the task and the relevant `_workspace/` paths.
+- Prompt MUST tell it to **read its definition file** in `.codex/agents/*.toml`
+  and its required skill(s) first, then do the task. Use this exact mapping:
+  `architect` → `.codex/agents/submission-architect.toml`,
+  `docs-author` → `.codex/agents/docs-author.toml`,
+  `bundle-engineer` → `.codex/agents/bundle-engineer.toml`, and
+  `submission-qa` → `.codex/agents/submission-qa.toml`. The definition file is
+  the source of truth (reusable next session); the prompt just points at it +
+  passes the task and the relevant `_workspace/` paths.
 - Parallelize independent agents by sending multiple `Agent` calls in one message
   (or `run_in_background: true`).
 
