@@ -10,6 +10,7 @@ import { registerCreateAutomationLane } from "./createAutomationLane.js";
 import { registerCreateAutopilot } from "./createAutopilot.js";
 // Campaign Wave 3 — artist controls (backlog 2026-05-29):
 import { registerCreateBlobReactive } from "./createBlobReactive.js";
+import { registerCreateBodyBubbles } from "./createBodyBubbles.js";
 import { registerCreateBodyReactive } from "./createBodyReactive.js";
 import { registerCreateChopRecorder } from "./createChopRecorder.js";
 import { registerCreateChromaReactive } from "./createChromaReactive.js";
@@ -173,6 +174,7 @@ export const layer1Registrars: ToolRegistrar[] = [
   // Body / pose tracking (MediaPipe-driven, camera-reactive performance):
   registerCreatePoseTracking,
   registerCreatePoseSkeleton,
+  registerCreateBodyBubbles,
   registerCreateBodyReactive,
   registerSetupBodyTracking,
   // Phase 14 — live mixing & external content (v0.5.0):

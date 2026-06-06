@@ -89,6 +89,11 @@ describe("setup_hand_tracking", () => {
     expect(script).toContain("mp_hand_adapter");
     expect(script).toContain("hand_cb");
     expect(script).toContain("worldLandmarks");
+    expect(script).toContain("gestureResults");
+    expect(script).toContain("screen_x");
+    expect(script).toContain("screen_y");
+    expect(script).toContain("image_lists");
+    expect(script).toContain("SCREEN_HOLD_SECONDS");
   });
 
   it("tox_missing — guides user to install", async () => {

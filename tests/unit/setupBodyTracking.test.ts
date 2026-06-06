@@ -94,6 +94,10 @@ describe("setup_body_tracking", () => {
     expect(loadScript).toContain("time.play");
     // The adapter callback (built inside the same script) parses the engine's JSON pose.
     expect(loadScript).toContain("poseResults");
+    expect(loadScript).toContain("screen_x");
+    expect(loadScript).toContain("screen_y");
+    expect(loadScript).toContain("TRACKING_SMOOTHING");
+    expect(loadScript).toContain("SCREEN_HOLD_SECONDS");
 
     // A skeleton SOP was built from the adapter's pose CHOP.
     expect(bodies.some((b) => b.name === "skeleton" && b.type === "scriptSOP")).toBe(true);

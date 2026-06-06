@@ -61,6 +61,10 @@ import {
   createBlobReactiveSchema,
 } from "../tools/layer1/createBlobReactive.js";
 import {
+  createBodyBubblesImpl,
+  createBodyBubblesSchema,
+} from "../tools/layer1/createBodyBubbles.js";
+import {
   createBodyReactiveImpl,
   createBodyReactiveSchema,
 } from "../tools/layer1/createBodyReactive.js";
@@ -1325,6 +1329,12 @@ const COMMANDS: Record<string, Command> = {
     createPoseSkeletonSchema,
     createPoseSkeletonImpl,
     "Draw a live stick-figure skeleton from a pose CHOP.",
+    { mutates: true },
+  ),
+  "body-bubbles": r(
+    createBodyBubblesSchema,
+    createBodyBubblesImpl,
+    "Create open-palm bubble physics with body/hand collision.",
     { mutates: true },
   ),
   "body-reactive": r(
