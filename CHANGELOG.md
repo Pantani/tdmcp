@@ -6,6 +6,21 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- **`create_hand_ableton_mapper` (Layer 2)** — one-shot MediaPipe Hands →
+  TDAbleton performance mapper. Builds a clean TouchDesigner network with
+  `map1` left pinch, `map2` right pinch, `map3` left wrist roll, `map4` right
+  wrist roll, a `mapper_send` CHOP for TDAbleton, and a skeleton overlay with
+  star joints plus the thumb/index line. Uses TDAbleton directly; AbletonMCP is
+  not required.
+- **`diagnose_tdableton_mapper` (Layer 2)** — inspects a TDAbleton `TDA_Mapper`
+  against the expected `mapper_send` contract, flags stale mapper targets,
+  missing `map1..map4` channels, `Reorder` drift, bypassed slots, and non-`0..1`
+  ranges, with optional `repair:true` for TD-side mapper parameters.
+- **Docs/cookbook** — added EN/PT body-tracking, troubleshooting, and prompt
+  cookbook guidance for the MediaPipe hands → TDAbleton Auto Filter workflow,
+  including the manual Ableton slot-mapping boundary.
+
 ## [0.8.3] - 2026-06-03
 
 ### Fixed

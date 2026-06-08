@@ -378,6 +378,10 @@ import {
   createFlowAbstractionSchema,
 } from "../tools/layer2/createFlowAbstraction.js";
 import { createGlslShaderImpl, createGlslShaderSchema } from "../tools/layer2/createGlslShader.js";
+import {
+  createHandAbletonMapperImpl,
+  createHandAbletonMapperSchema,
+} from "../tools/layer2/createHandAbletonMapper.js";
 import { createLedMapperImpl, createLedMapperSchema } from "../tools/layer2/createLedMapper.js";
 import { createLookBankImpl, createLookBankSchema } from "../tools/layer2/createLookBank.js";
 import { createMacroImpl, createMacroSchema } from "../tools/layer2/createMacro.js";
@@ -410,6 +414,10 @@ import {
 } from "../tools/layer2/createStageDashboard.js";
 import { createTimeEchoImpl, createTimeEchoSchema } from "../tools/layer2/createTimeEcho.js";
 import { createXyPadImpl, createXyPadSchema } from "../tools/layer2/createXyPad.js";
+import {
+  diagnoseTdabletonMapperImpl,
+  diagnoseTdabletonMapperSchema,
+} from "../tools/layer2/diagnoseTdabletonMapper.js";
 import { duplicateNetworkImpl, duplicateNetworkSchema } from "../tools/layer2/duplicateNetwork.js";
 import {
   extendDataSourceFabricImpl,
@@ -1963,6 +1971,18 @@ const COMMANDS: Record<string, Command> = {
     setupTdabletonSchema,
     setupTdabletonImpl,
     "Bridge Ableton Live <-> TouchDesigner via TDAbleton (CHOPs for tempo, transport, params).",
+    { mutates: true },
+  ),
+  "hand-ableton-mapper": r(
+    createHandAbletonMapperSchema,
+    createHandAbletonMapperImpl,
+    "Build MediaPipe hand controls for TDAbleton TDA_Mapper (map1 left pinch, map2 right pinch, map3/map4 wrist roll).",
+    { mutates: true },
+  ),
+  "diagnose-tdableton-mapper": r(
+    diagnoseTdabletonMapperSchema,
+    diagnoseTdabletonMapperImpl,
+    "Inspect or repair TDAbleton TDA_Mapper routing for a hand Ableton mapper.",
     { mutates: true },
   ),
   "chop-recorder": r(

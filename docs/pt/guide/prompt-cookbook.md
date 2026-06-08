@@ -814,6 +814,20 @@ por MIDI e títulos seguindo paths.
 simples, então o mesmo patch de show consegue ensaiar mesmo sem setup perfeito de
 estúdio.*
 
+> *"Transforme minhas mãos na webcam em um controlador de Ableton Auto Filter com
+> quatro canais via TDAbleton, sem AbletonMCP. Use rastreamento de mãos do
+> MediaPipe, monte um overlay de esqueleto com estrelinhas nas juntas, publique
+> `mapper_send` para que `map1` seja a pinça esquerda, `map2` a pinça direita,
+> `map3` a rotação do punho esquerdo e `map4` a rotação do punho direito, então
+> diagnostique o roteamento do `TDA_Mapper` antes de eu mapear os quatro slots no
+> Ableton."*
+
+*`create_hand_ableton_mapper` monta o lado TouchDesigner do controlador performático
+e `diagnose_tdableton_mapper` confere caminho do mapper, CHOP de entrada, `Reorder`,
+bypasses e ranges. O caminho de runtime é TouchDesigner -> `TDA_Mapper` do
+TDAbleton -> parâmetros mapeados de Auto Filter ou macros de rack no Ableton;
+AbletonMCP não é necessário.*
+
 > *"Monte dois cues — 'intro' e 'drop' — entre os quais eu possa transicionar."*
 
 > *"Deixe eu controlar os botões principais pelo meu celular."*

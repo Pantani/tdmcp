@@ -75,6 +75,32 @@ está errado:
 
 A IA consegue medir os tempos de cook e otimizar as partes mais pesadas.
 
+## TDAbleton Mapper não mexe no Ableton
+
+No fluxo MediaPipe mãos para Auto Filter, AbletonMCP não faz parte do runtime. O
+caminho é TouchDesigner MediaPipe hands -> `TDA_Mapper` do TDAbleton -> parâmetro
+mapeado no Ableton.
+
+Verifique, nesta ordem:
+
+1. O TouchDesigner está tocando; a captura do MediaPipe não atualiza com a timeline
+   pausada.
+2. O CHOP adaptador de mãos tem `confidence` diferente de zero e `handedness`.
+3. `/project1/hand_ableton_mapper/mapper_send` tem canais `map1`, `map2`, `map3`
+   e `map4` se mexendo.
+4. A mão esquerda move `map1`/`map3`; a mão direita move `map2`/`map4`.
+5. O caminho ativo do `TDA_Mapper` é o alvo real da track/device, não um mapper
+   antigo de outra track.
+6. `Oscinputchop` aponta para `mapper_send`, `Reorder` está como
+   `map1 map2 map3 map4`, `Bypass1..4` estão desligados e `Min/Max1..4` estão em
+   `0..1`.
+7. Os quatro slots do mapper TDAbleton estão mapeados manualmente para Auto Filter
+   ou macros de rack dentro do Ableton.
+
+Rode `diagnose_tdableton_mapper` para inspecionar o estado do mapper a partir do
+TouchDesigner e use `repair:true` só quando quiser que o tdmcp restaure CHOP de
+entrada, reorder, bypass e ranges.
+
 ## Ainda travado?
 
 Abra uma issue em

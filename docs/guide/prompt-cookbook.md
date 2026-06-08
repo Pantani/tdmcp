@@ -789,6 +789,18 @@ noisy text geometry, projector labels, MIDI-triggered words and path-follow titl
 *`setup_tdableton` probes for the Palette component first, then falls back to a plain
 OSC In bridge, so the same show patch can rehearse without a perfect studio setup.*
 
+> *"Turn my webcam hands into a four-channel Ableton Auto Filter controller through
+> TDAbleton, without AbletonMCP. Use MediaPipe hand tracking, build a skeleton
+> overlay with star joints, publish `mapper_send` so `map1` is left pinch, `map2`
+> is right pinch, `map3` is left wrist roll and `map4` is right wrist roll, then
+> diagnose the `TDA_Mapper` routing before I map the four slots in Ableton."*
+
+*`create_hand_ableton_mapper` builds the TouchDesigner side of the performance
+controller and `diagnose_tdableton_mapper` checks the mapper path, input CHOP,
+`Reorder`, bypasses and ranges. The runtime path is TouchDesigner -> TDAbleton
+`TDA_Mapper` -> Ableton mapped Auto Filter or rack macro parameters; AbletonMCP is
+not required.*
+
 > *"Follow the MIDI clock coming from my DJ software."*
 
 > *"Set up two cues — 'intro' and 'drop' — that I can morph between."*

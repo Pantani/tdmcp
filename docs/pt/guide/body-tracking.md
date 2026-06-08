@@ -108,6 +108,35 @@ corpo:
 Ligue um parâmetro a `op('…/pose_tracking/keypoints')['r_wrist_y']` (ou
 `hand_span`, `hips_x`, `height`, …) e ele acompanha seu movimento ao vivo.
 
+## 6. Use as mãos como controles de filtro no Ableton
+
+As mãos também podem virar um controlador de Ableton em quatro canais quando você
+usa TDAbleton. A ferramenta `create_hand_ableton_mapper` monta o lado
+TouchDesigner: mãos do MediaPipe na entrada, overlay de esqueleto com estrelinhas
+nas juntas e um CHOP `mapper_send` para o TDAbleton. AbletonMCP não é necessário
+para esta receita.
+
+Mapeamento padrão:
+
+| Slot do mapper | Gesto |
+| --- | --- |
+| `map1` | Distância polegar/indicador da mão esquerda |
+| `map2` | Distância polegar/indicador da mão direita |
+| `map3` | Rotação do punho esquerdo |
+| `map4` | Rotação do punho direito |
+
+No `TDA_Mapper` do TDAbleton, aponte o CHOP de entrada para
+`/project1/hand_ableton_mapper/mapper_send`, defina `Reorder` como
+`map1 map2 map3 map4`, deixe `Bypass1..4` desligado e mapeie os quatro slots
+manualmente para frequência do Auto Filter, resonance, drive ou macros de rack
+dentro do Ableton.
+
+Se os valores se mexem no TouchDesigner mas o Ableton não muda, rode
+`diagnose_tdableton_mapper`. Ele confere o caminho real do mapper, CHOP de
+entrada, `Reorder`, bypasses, ranges `Min/Max` e canais `map1..map4` ausentes.
+Isso pega o problema comum de alvo antigo, quando o mapper parece saudável mas
+aponta para a track ou device errado.
+
 ## Receitas prontas
 
 Dois modelos navegáveis vêm na galeria de receitas — peça *"liste as receitas"* ou

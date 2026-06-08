@@ -68,6 +68,20 @@ The project has grown through five arcs:
 
 ## ✅ Current Release Line
 
+### Unreleased — MediaPipe hands -> TDAbleton mapper
+
+Source-tree work after v0.8.3 adds a focused live-control path for the Ableton
+session we validated manually:
+
+- **`create_hand_ableton_mapper` (Layer 2).** Builds the TouchDesigner side of a
+  MediaPipe-hands performance controller for TDAbleton: `map1` left pinch,
+  `map2` right pinch, `map3` left wrist roll, `map4` right wrist roll, plus a
+  `mapper_send` CHOP and skeleton overlay with star joints.
+- **`diagnose_tdableton_mapper` (Layer 2).** Checks the real `TDA_Mapper` target,
+  input CHOP, `Reorder`, bypass states, `Min/Max` ranges and missing `map1..map4`
+  channels, with optional TD-side repair. AbletonMCP is not required for this
+  runtime path.
+
 ### Wave 12 — v0.8.3 (live-show resilience + LLM token budget + CLI ergonomics) {#wave-12-v0-8-3}
 
 Shipped as **v0.8.3** on top of v0.8.2. Tool surface grows
