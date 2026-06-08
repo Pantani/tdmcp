@@ -3,6 +3,10 @@
     "tdmcp": {
       "command": "npx",
       "args": ["-y", "@dpantani/tdmcp"]
+    },
+    "AbletonMCP": {
+      "command": "uvx",
+      "args": ["ableton-mcp"]
     }
   }
 }
