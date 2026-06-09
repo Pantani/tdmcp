@@ -12,6 +12,7 @@ import { registerBuildChopChain } from "./buildChopChain.js";
 import { registerBuildPopChain } from "./buildPopChain.js";
 import { registerBuildSopGeometry } from "./buildSopGeometry.js";
 import { registerConnectNodes } from "./connectNodes.js";
+import { registerCreateAudioGlslUniforms } from "./createAudioGlslUniforms.js";
 // Campaign Wave 3 — artist controls (backlog 2026-05-29):
 import { registerCreateAutoMontage } from "./createAutoMontage.js";
 import { registerCreateBandRouter } from "./createBandRouter.js";
@@ -169,4 +170,6 @@ export const layer2Registrars: ToolRegistrar[] = [
   registerAutoRepairLoop,
   // Hype-scout Round 4 Wave 1 (2026-06-09) — typed POP chain builder:
   registerBuildPopChain,
+  // Hype-scout Round 4 Wave 2 (2026-06-09) — audio→GLSL uniform binder:
+  registerCreateAudioGlslUniforms,
 ];

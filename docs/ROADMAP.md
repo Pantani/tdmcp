@@ -621,14 +621,14 @@ force multipliers are in place when those wrappers land.
 
 **Top-5 ready-for-pipeline (D.1):**
 
-- ⬜ `create_pose_controlnet_driver` — OpenPose-color render TOP over the
-  existing pose stack; no external TOX (Hype × Ease = 9).
-- ⬜ `create_ascii_render` — character-grid TOP alongside `create_dither` /
-  `create_halftone` (Hype × Ease = 9).
-- ⬜ `create_phrase_locked_cue_engine` — extension to `createSyncExternalClock`
-  that quantizes cues to Ableton bars/phrases.
-- ⬜ `create_audio_glsl_uniforms` — Layer-2 helper that binds audio CHOPs as
-  uniforms on `glslTOP`.
+- ✅ `create_pose_controlnet_driver` — OpenPose-color render TOP over the
+  existing pose stack; no external TOX (Hype × Ease = 9). (shipped v0.9.1)
+- ✅ `create_ascii_render` — character-grid TOP alongside `create_dither` /
+  `create_halftone` (Hype × Ease = 9). (shipped v0.9.1)
+- ✅ `create_phrase_locked_cue_engine` — extension to `createSyncExternalClock`
+  that quantizes cues to Ableton bars/phrases. (shipped v0.9.1)
+- ✅ `create_audio_glsl_uniforms` — Layer-2 helper that binds audio CHOPs as
+  uniforms on `glslTOP`. (shipped v0.9.1)
 - ⬜ `create_external_io` outbound — itself FM-01 above.
 
 ### Milestone 4 — Generative-AI bridge wave (gated on FM-01 + FM-02) · v0.9.x
@@ -1164,12 +1164,12 @@ existing scaffolding — these are the cheapest accelerators in the backlog.
 
 #### D.1 · Ready for `tdmcp-pipeline` — the top-5 high-confidence picks
 
-| Rank | id | Tool | Layer | Hype | Eff | Coverage | Source(s) |
-|------|----|------|-------|------|-----|----------|-----------|
-| 1 | S007 | `create_pose_controlnet_driver` — OpenPose-color render TOP fed by the existing pose stack; one preset, no TOX dependency | 1 | H | S | NEW (composes existing) | ai, tut |
-| 2 | S025 | `create_ascii_render` — character-grid render TOP suite alongside `create_dither` / `create_halftone` | 1 | H | S | NEW | vfx, tut |
-| 3 | S020 | `create_phrase_locked_cue_engine` — cues quantized to Ableton bars/phrases over `createSyncExternalClock` | 1 | M | S | EXTENSION | hw, tut |
-| 4 | S013 | `create_audio_glsl_uniforms` — bind audio CHOPs as uniforms on a `glslTOP` (ingredients exist) | 2 | M | S | PARTIAL | tut |
+| Rank | id | Tool | Layer | Hype | Eff | Coverage | Status | Source(s) |
+|------|----|------|-------|------|-----|----------|--------|-----------|
+| 1 | S007 | `create_pose_controlnet_driver` — OpenPose-color render TOP fed by the existing pose stack; one preset, no TOX dependency | 1 | H | S | NEW (composes existing) | ✅ shipped v0.9.1 | ai, tut |
+| 2 | S025 | `create_ascii_render` — character-grid render TOP suite alongside `create_dither` / `create_halftone` | 1 | H | S | NEW | ✅ shipped v0.9.1 | vfx, tut |
+| 3 | S020 | `create_phrase_locked_cue_engine` — cues quantized to Ableton bars/phrases over `createSyncExternalClock` | 1 | M | S | EXTENSION | ✅ shipped v0.9.1 | hw, tut |
+| 4 | S013 | `create_audio_glsl_uniforms` — bind audio CHOPs as uniforms on a `glslTOP` (ingredients exist) | 2 | M | S | PARTIAL | ✅ shipped v0.9.1 | tut |
 | 5 | S015 | `create_external_io` outbound (FM-01 itself) | 2 | M | S | EXTENSION | ai, comm |
 
 All 5 score H×S=9 or M×S=6, sit on existing tdmcp scaffolding, and need no new

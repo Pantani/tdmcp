@@ -4,6 +4,52 @@ All notable changes to **tdmcp** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.1] - 2026-06-09
+
+### Added — Hype-scout Round 4 Wave 2 (top-5 quick wins)
+- **`create_pose_controlnet_driver`** — Layer-1 OpenPose-color skeleton
+  renderer over the existing `createPoseTracking` / `createPoseSkeleton`
+  pose stack. ControlNet-ready RGB TOP, configurable joint/limb radius
+  and confidence gate, optional `output_mode: "syphon_spout" | "ndi"` to
+  push the rendered skeleton out through the Wave-1 FM-01 outbound modes
+  for live StreamDiffusion / ComfyUI / TouchEngine pipelines.
+- **`create_ascii_render`** — Layer-1 character-grid TOP, sibling of
+  `create_dither` / `create_halftone`. Three color modes (`mono` /
+  `source-color` / `two-color`, default phosphor-green for the Severance
+  look). Configurable charset (default `" .:-=+*#%@"`) and cell size.
+- **`create_phrase_locked_cue_engine`** — Layer-1 extension over
+  `createSyncExternalClock`: quantizes cue triggers to the next musical
+  phrase boundary (1/2/4/8/16/32/64 bars). Two quantize modes
+  (`next` / `aligned`), FIFO queue, local Beat CHOP so it composes
+  without a tight upstream binding. Clip-launcher-style live-show locks.
+- **`create_audio_glsl_uniforms`** — Layer-2 helper that binds named
+  audio CHOP channels to a target `glslTOP`'s `seq.vec` uniform slots
+  via Python expressions. Reuses the `createGlslShader` seq.vec
+  precedent; removes per-shader copy-paste binding code.
+
+### Fixed
+- **`build_pop_chain`** `extra_inputs` wiring no longer raises
+  `IndexError` on `lookup_texture_pop` and `lookup_channel_pop`. These
+  fixed-arity POPs take their secondary source via a par reference
+  (`par.top` / `par.chop`), not an input connector. The chain builder
+  now special-cases the lookup family and guards every generic POP
+  against arity overflow with a warning rather than throwing.
+
+### Improved
+- **Bridge installer node layout** (`td/modules/mcp/install.py`) — the
+  installed bridge COMP's inner nodes (`callbacks`, `webserver`,
+  `webserver_callbacks`, `events_hook`, `error_log`,
+  `error_log_callbacks`) are now positioned in a fixed, legible
+  arrangement instead of stacking at the origin. Improves first-open
+  network readability.
+
+### Verified
+- All four Wave-2 features were live-cooked against TD 099 build
+  2025.32820 / bridge 0.6.1 at release time. The `build_pop_chain`
+  lookup-family fix was re-probed live (writes to `par.top` / `par.chop`
+  succeed; `merge_pop` regression-safe). Existing Wave-1 features
+  remain green.
+
 ## [0.9.0] - 2026-06-09
 
 ### Added — Hype-scout Round 4 Wave 1 (force multipliers)

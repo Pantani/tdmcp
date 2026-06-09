@@ -48,6 +48,10 @@ import {
 } from "../tools/layer1/create3dAudioReactive.js";
 import { create3dSceneImpl, create3dSceneSchema } from "../tools/layer1/create3dScene.js";
 import {
+  createAsciiRenderImpl,
+  createAsciiRenderSchema,
+} from "../tools/layer1/createAsciiRender.js";
+import {
   createAudioReactiveImpl,
   createAudioReactiveSchema,
 } from "../tools/layer1/createAudioReactive.js";
@@ -204,12 +208,20 @@ import {
   createPhoneGestureImpl,
   createPhoneGestureSchema,
 } from "../tools/layer1/createPhoneGesture.js";
+import {
+  createPhraseLockedCueEngineImpl,
+  createPhraseLockedCueEngineSchema,
+} from "../tools/layer1/createPhraseLockedCueEngine.js";
 import { createPointCloudImpl, createPointCloudSchema } from "../tools/layer1/createPointCloud.js";
 import { createPopFieldImpl, createPopFieldSchema } from "../tools/layer1/createPopField.js";
 import {
   createPopGeometryImpl,
   createPopGeometrySchema,
 } from "../tools/layer1/createPopGeometry.js";
+import {
+  createPoseControlnetDriverImpl,
+  createPoseControlnetDriverSchema,
+} from "../tools/layer1/createPoseControlnetDriver.js";
 import {
   createPoseSkeletonImpl,
   createPoseSkeletonSchema,
@@ -332,6 +344,10 @@ import { buildChopChainImpl, buildChopChainSchema } from "../tools/layer2/buildC
 import { buildPopChainImpl, buildPopChainSchema } from "../tools/layer2/buildPopChain.js";
 import { buildSopGeometryImpl, buildSopGeometrySchema } from "../tools/layer2/buildSopGeometry.js";
 import { connectNodesImpl, connectNodesSchema } from "../tools/layer2/connectNodes.js";
+import {
+  createAudioGlslUniformsImpl,
+  createAudioGlslUniformsSchema,
+} from "../tools/layer2/createAudioGlslUniforms.js";
 // Campaign Wave 3 — artist controls (backlog 2026-05-29):
 import { createBandRouterImpl, createBandRouterSchema } from "../tools/layer2/createBandRouter.js";
 import {
@@ -1001,6 +1017,12 @@ const COMMANDS: Record<string, Command> = {
   glsl: r(createGlslShaderSchema, createGlslShaderImpl, "Create a GLSL TOP shader.", {
     mutates: true,
   }),
+  "create-audio-glsl-uniforms": r(
+    createAudioGlslUniformsSchema,
+    createAudioGlslUniformsImpl,
+    "Bind audio CHOP channels to GLSL TOP uniform slots.",
+    { mutates: true },
+  ),
   chain: r(createNodeChainSchema, createNodeChainImpl, "Create a chain of connected nodes.", {
     mutates: true,
   }),
@@ -1334,6 +1356,12 @@ const COMMANDS: Record<string, Command> = {
     "Build a pose-tracking source (MediaPipe/OSC/synthetic) → a 33-landmark pose CHOP.",
     { mutates: true },
   ),
+  "create-pose-controlnet-driver": r(
+    createPoseControlnetDriverSchema,
+    createPoseControlnetDriverImpl,
+    "Render a pose CHOP into a ControlNet-ready skeleton TOP for AI image bridges.",
+    { mutates: true },
+  ),
   skeleton: r(
     createPoseSkeletonSchema,
     createPoseSkeletonImpl,
@@ -1423,6 +1451,12 @@ const COMMANDS: Record<string, Command> = {
     createHalftoneSchema,
     createHalftoneImpl,
     "Stylise a source as halftone dots / CMYK / dither / posterize (GLSL).",
+    { mutates: true },
+  ),
+  "create-ascii-render": r(
+    createAsciiRenderSchema,
+    createAsciiRenderImpl,
+    "Render a source as ASCII art (glyph atlas + GLSL sampler).",
     { mutates: true },
   ),
   "vector-lines": r(
@@ -1524,6 +1558,12 @@ const COMMANDS: Record<string, Command> = {
     composeCueListSchema,
     composeCueListImpl,
     "Author a cue list from rows: scaffolds cues + step sequencer wired to a navigator.",
+    { mutates: true },
+  ),
+  "create-phrase-locked-cue-engine": r(
+    createPhraseLockedCueEngineSchema,
+    createPhraseLockedCueEngineImpl,
+    "Lock cue advances to bar/phrase boundaries from a tempo CHOP.",
     { mutates: true },
   ),
   "prob-sequencer": r(

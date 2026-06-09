@@ -466,9 +466,32 @@ try:
                     report["warnings"].append("connect[%d->%d] failed: %s"
                         % (_i - 1, _i, traceback.format_exc().splitlines()[-1]))
 
+            _LOOKUP_PAR_REFS = {
+                "lookup_texture_pop": "top",
+                "lookup_channel_pop": "chop",
+            }
             for _j, _xpath in enumerate(_spec.get("extra_inputs") or []):
+                _xn = op(_xpath) if _xpath else None
+                if _xn is None:
+                    report["warnings"].append("extra[%d.%d] %s: node not found" % (_i, _j, _xpath))
+                    continue
+                if _kind in _LOOKUP_PAR_REFS:
+                    if _j == 0:
+                        _par_name = _LOOKUP_PAR_REFS[_kind]
+                        try:
+                            setattr(_node.par, _par_name, _xpath)
+                        except AttributeError as _e:
+                            report["warnings"].append("extra[%d.%d] par.%s failed: %s"
+                                % (_i, _j, _par_name, str(_e)))
+                    else:
+                        report["warnings"].append("extra[%d.%d] %s: only extra_inputs[0] consumed via par.%s; index %d ignored"
+                            % (_i, _j, _kind, _LOOKUP_PAR_REFS[_kind], _j))
+                    continue
+                if _j + 1 >= len(_node.inputConnectors):
+                    report["warnings"].append("extra[%d.%d] %s: no input slot %d (only %d connectors)"
+                        % (_i, _j, _kind, _j + 1, len(_node.inputConnectors)))
+                    continue
                 try:
-                    _xn = op(_xpath)
                     _node.inputConnectors[_j + 1].connect(_xn.outputConnectors[0])
                     report["connections"].append({"from": _xn.path, "to": _node.path,
                                                   "fromOut": 0, "toIn": _j + 1})

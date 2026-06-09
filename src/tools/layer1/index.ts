@@ -5,6 +5,7 @@ import { registerAudioFingerprintToVisual } from "./audioFingerprintToVisual.js"
 import { registerComposeCueList } from "./composeCueList.js";
 import { registerCreate3dAudioReactive } from "./create3dAudioReactive.js";
 import { registerCreate3dScene } from "./create3dScene.js";
+import { registerCreateAsciiRender } from "./createAsciiRender.js";
 import { registerCreateAudioReactive } from "./createAudioReactive.js";
 import { registerCreateAutomationLane } from "./createAutomationLane.js";
 import { registerCreateAutopilot } from "./createAutopilot.js";
@@ -58,9 +59,11 @@ import { registerCreateParticleFlock } from "./createParticleFlock.js";
 import { registerCreateParticleSystem } from "./createParticleSystem.js";
 import { registerCreatePbrScene } from "./createPbrScene.js";
 import { registerCreatePhoneGesture } from "./createPhoneGesture.js";
+import { registerCreatePhraseLockedCueEngine } from "./createPhraseLockedCueEngine.js";
 import { registerCreatePointCloud } from "./createPointCloud.js";
 import { registerCreatePopField } from "./createPopField.js";
 import { registerCreatePopGeometry } from "./createPopGeometry.js";
+import { registerCreatePoseControlnetDriver } from "./createPoseControlnetDriver.js";
 import { registerCreatePoseReactive } from "./createPoseReactive.js";
 import { registerCreatePoseSkeleton } from "./createPoseSkeleton.js";
 import { registerCreatePoseTracking } from "./createPoseTracking.js";
@@ -239,4 +242,8 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateSetlistRunner,
   registerCreateShowFailover,
   registerCreatePoseReactive,
+  // Hype-scout Round 4 Wave 2 (2026-06-09):
+  registerCreatePoseControlnetDriver,
+  registerCreateAsciiRender,
+  registerCreatePhraseLockedCueEngine,
 ];

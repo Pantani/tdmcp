@@ -109,6 +109,15 @@ DEFAULT_PACKAGE_PALETTE_FOLDER = "tdmcp"
 DEFAULT_PACKAGE_BOOTSTRAP_REPO_ZIP = "https://github.com/Pantani/tdmcp/archive/refs/heads/main.zip"
 DEFAULT_PACKAGE_BOOTSTRAP_DEST = "~/tdmcp-bridge"
 
+RUNTIME_BRIDGE_LAYOUT = {
+    "callbacks": (-320, 120),
+    "webserver": (0, 120),
+    "webserver_callbacks": (0, -260),
+    "events_hook": (0, -80),
+    "error_log": (320, 120),
+    "error_log_callbacks": (320, -80),
+}
+
 
 def _is_safe_package_segment(value):
     text = str(value)
@@ -478,6 +487,25 @@ def _configure_parameter_execute(dat, comp):
     _set_first_existing_par(dat, ("valuechange", "Valuechange"), False)
 
 
+def _set_node_position(node, x, y):
+    try:
+        node.nodeX = x
+        node.nodeY = y
+    except Exception:
+        pass
+
+
+def _layout_runtime_bridge(comp):
+    _set_node_position(comp, -300, 0)
+    for name, (x, y) in RUNTIME_BRIDGE_LAYOUT.items():
+        try:
+            child = comp.op(name)
+        except Exception:
+            child = None
+        if child is not None:
+            _set_node_position(child, x, y)
+
+
 def _add_package_controls(comp, port, parent_path, container, modules_dir, repo_zip, bootstrap_dest):
     try:
         page = comp.appendCustomPage("Bridge")
@@ -624,6 +652,8 @@ def run(
         err.par.fromop.val = scope
     except Exception:
         pass
+
+    _layout_runtime_bridge(comp)
 
     if export_tox:
         comp.save(export_tox)

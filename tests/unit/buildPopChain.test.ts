@@ -381,4 +381,124 @@ describe("buildPopChainImpl", () => {
     expect(result.isError).toBe(true);
     expect(textOf(result)).toContain("Parent not found");
   });
+
+  // ---------------------------------------------------------------------------
+  // FM-03 fix-forward: lookup family extra_inputs uses par-ref not input-connector
+  // ---------------------------------------------------------------------------
+
+  it("lookup_texture_pop with extra_inputs serializes the path in extra_inputs (par.top branch in Python)", async () => {
+    const exec = okExec({
+      container: "/project1",
+      created: [
+        {
+          name: "lut_0_pointgenerator",
+          path: "/project1/lut_0_pointgenerator",
+          type: "pointgeneratorPOP",
+        },
+        {
+          name: "lut_1_lookuptexture",
+          path: "/project1/lut_1_lookuptexture",
+          type: "lookuptexturePOP",
+        },
+      ],
+      connections: [
+        {
+          from: "/project1/lut_0_pointgenerator",
+          to: "/project1/lut_1_lookuptexture",
+          fromOut: 0,
+          toIn: 0,
+        },
+      ],
+      output_path: "/project1/lut_1_lookuptexture",
+      warnings: [],
+      unverified: "POPs are Experimental",
+    });
+    const args = buildPopChainSchema.parse({
+      name: "lut",
+      chain: [
+        { type: "point_generator_pop", name: "pts" },
+        { type: "lookup_texture_pop", name: "lut", extra_inputs: ["/project1/some_top"] },
+      ],
+    });
+    const result = await buildPopChainImpl(fakeCtx(exec), args);
+    expect(result.isError).not.toBe(true);
+    const payload = decodePayload(scriptArg(exec));
+    // Verify the entry is encoded intact — the par.top assignment happens in the Python branch at TD runtime.
+    expect(payload.chain[1]?.type).toBe("lookup_texture_pop");
+    expect(payload.chain[1]?.extra_inputs).toEqual(["/project1/some_top"]);
+  });
+
+  it("lookup_channel_pop with extra_inputs serializes the CHOP path in extra_inputs (par.chop branch in Python)", async () => {
+    const exec = okExec({
+      container: "/project1",
+      created: [
+        {
+          name: "lc_0_pointgenerator",
+          path: "/project1/lc_0_pointgenerator",
+          type: "pointgeneratorPOP",
+        },
+        {
+          name: "lc_1_lookupchannel",
+          path: "/project1/lc_1_lookupchannel",
+          type: "lookupchannelPOP",
+        },
+      ],
+      connections: [
+        {
+          from: "/project1/lc_0_pointgenerator",
+          to: "/project1/lc_1_lookupchannel",
+          fromOut: 0,
+          toIn: 0,
+        },
+      ],
+      output_path: "/project1/lc_1_lookupchannel",
+      warnings: [],
+      unverified: "POPs are Experimental",
+    });
+    const args = buildPopChainSchema.parse({
+      name: "lc",
+      chain: [
+        { type: "point_generator_pop", name: "pts" },
+        { type: "lookup_channel_pop", name: "lc", extra_inputs: ["/project1/noise1"] },
+      ],
+    });
+    const result = await buildPopChainImpl(fakeCtx(exec), args);
+    expect(result.isError).not.toBe(true);
+    const payload = decodePayload(scriptArg(exec));
+    expect(payload.chain[1]?.type).toBe("lookup_channel_pop");
+    expect(payload.chain[1]?.extra_inputs).toEqual(["/project1/noise1"]);
+  });
+
+  it("merge_pop with extra_inputs still serializes correctly (generic connector path unchanged)", async () => {
+    const exec = okExec({
+      container: "/project1",
+      created: [
+        {
+          name: "mg_0_pointgenerator",
+          path: "/project1/mg_0_pointgenerator",
+          type: "pointgeneratorPOP",
+        },
+        { name: "mg_1_merge", path: "/project1/mg_1_merge", type: "mergePOP" },
+      ],
+      connections: [
+        { from: "/project1/mg_0_pointgenerator", to: "/project1/mg_1_merge", fromOut: 0, toIn: 0 },
+        { from: "/project1/extra_pts", to: "/project1/mg_1_merge", fromOut: 0, toIn: 1 },
+      ],
+      output_path: "/project1/mg_1_merge",
+      warnings: [],
+      unverified: "POPs are Experimental",
+    });
+    const args = buildPopChainSchema.parse({
+      name: "mg",
+      chain: [
+        { type: "point_generator_pop" },
+        { type: "merge_pop", extra_inputs: ["/project1/extra_pts"] },
+      ],
+    });
+    const result = await buildPopChainImpl(fakeCtx(exec), args);
+    expect(result.isError).not.toBe(true);
+    const payload = decodePayload(scriptArg(exec));
+    expect(payload.chain[1]?.type).toBe("merge_pop");
+    expect(payload.chain[1]?.extra_inputs).toEqual(["/project1/extra_pts"]);
+  });
 });
