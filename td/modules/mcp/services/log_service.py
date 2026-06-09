@@ -55,6 +55,46 @@ def _header_map(dat):
     return mapping
 
 
+def _entry_from_row(dat, row, header):
+    entry = {}
+    for name, col in header.items():
+        if name not in _EXPECTED_COLUMNS:
+            continue
+        raw = _cell(dat, row, col)
+        if name in _INT_COLUMNS:
+            try:
+                entry[name] = int(raw)
+            except Exception:  # noqa: BLE001
+                pass  # leave it out rather than emit a bogus int
+        else:
+            entry[name] = raw
+    return entry
+
+
+def _matches_filters(entry, severity, scope_prefix):
+    if severity in ("error", "warning"):
+        if str(entry.get("severity", "")).strip().lower() != severity:
+            return False
+    if scope_prefix:
+        src = str(entry.get("source", ""))
+        if not (src == scope_prefix or src.startswith(scope_prefix + "/")):
+            return False
+    return True
+
+
+def _capped_lines(lines, max_lines):
+    try:
+        cap = int(max_lines)
+    except Exception:  # noqa: BLE001
+        cap = 200
+    if cap > 0 and len(lines) > cap:
+        return lines[-cap:], "Truncated to %d of %d matching rows (newest kept)." % (
+            cap,
+            len(lines),
+        )
+    return lines, None
+
+
 def get_logs(
     severity="all",
     max_lines=200,
@@ -97,39 +137,15 @@ def get_logs(
     lines = []
     # Skip row 0 (header); iterate data rows in append order (newest near bottom).
     for row in range(1, num_rows):
-        entry = {}
-        for name, col in header.items():
-            if name not in _EXPECTED_COLUMNS:
-                continue
-            raw = _cell(dat, row, col)
-            if name in _INT_COLUMNS:
-                try:
-                    entry[name] = int(raw)
-                except Exception:  # noqa: BLE001
-                    pass  # leave it out rather than emit a bogus int
-            else:
-                entry[name] = raw
-        # severity filter
-        if want_sev in ("error", "warning"):
-            if str(entry.get("severity", "")).strip().lower() != want_sev:
-                continue
-        # optional scope (source path prefix) filter
-        if scope_prefix:
-            src = str(entry.get("source", ""))
-            if not (src == scope_prefix or src.startswith(scope_prefix + "/")):
-                continue
+        entry = _entry_from_row(dat, row, header)
+        if not _matches_filters(entry, want_sev, scope_prefix):
+            continue
         lines.append(entry)
 
     # Keep the newest N (rows are append-order, newest last).
-    try:
-        cap = int(max_lines)
-    except Exception:  # noqa: BLE001
-        cap = 200
-    if cap > 0 and len(lines) > cap:
-        report["warnings"].append(
-            "Truncated to %d of %d matching rows (newest kept)." % (cap, len(lines))
-        )
-        lines = lines[-cap:]
+    lines, warning = _capped_lines(lines, max_lines)
+    if warning:
+        report["warnings"].append(warning)
 
     report["lines"] = lines
     report["count"] = len(lines)

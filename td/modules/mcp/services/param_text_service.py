@@ -65,6 +65,38 @@ def _normalize_mode(par):
     return str(_raw).split(".")[-1].upper()
 
 
+def _param_entry(par, non_default_only=False):
+    pname = par.name
+    mode = _normalize_mode(par)
+    if non_default_only and mode == "CONSTANT":
+        return None, None
+    entry = {"name": pname, "mode": mode}
+    warnings = []
+    try:
+        entry["value"] = _json_safe(par.eval())
+    except Exception as exc:  # noqa: BLE001
+        warnings.append("Could not eval %s: %s" % (pname, exc))
+    try:
+        expr = par.expr
+        if expr:
+            entry["expr"] = str(expr)
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        bind_expr = getattr(par, "bindExpr", "")
+        if bind_expr:
+            entry["bind_expr"] = str(bind_expr)
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        export_op = par.exportOP
+        if export_op is not None:
+            entry["export_op"] = export_op.path
+    except Exception:  # noqa: BLE001
+        pass
+    return entry, warnings
+
+
 def read_param_modes(path, keys=None, non_default_only=False):
     """Report each parameter's mode + value + expression strings.
 
@@ -88,32 +120,10 @@ def read_param_modes(path, keys=None, non_default_only=False):
             pname = par.name
             if _keys is not None and pname not in _keys:
                 continue
-            mode = _normalize_mode(par)
-            if non_default_only and mode == "CONSTANT":
+            entry, warnings = _param_entry(par, non_default_only)
+            report["warnings"].extend(warnings or [])
+            if entry is None:
                 continue
-            entry = {"name": pname, "mode": mode}
-            try:
-                entry["value"] = _json_safe(par.eval())
-            except Exception as exc:  # noqa: BLE001
-                report["warnings"].append("Could not eval %s: %s" % (pname, exc))
-            try:
-                _expr = par.expr
-                if _expr:
-                    entry["expr"] = str(_expr)
-            except Exception:  # noqa: BLE001
-                pass
-            try:
-                _be = getattr(par, "bindExpr", "")
-                if _be:
-                    entry["bind_expr"] = str(_be)
-            except Exception:  # noqa: BLE001
-                pass
-            try:
-                _eop = par.exportOP
-                if _eop is not None:
-                    entry["export_op"] = _eop.path
-            except Exception:  # noqa: BLE001
-                pass
             report["parameters"].append(entry)
         except Exception as exc:  # noqa: BLE001
             report["warnings"].append("Error reading parameter: %s" % exc)
@@ -164,6 +174,38 @@ def read_param_modes_batch(items, continue_on_error=True):
     return {"items": out}
 
 
+def _write_param_mode(par, param, norm, mode_cls, expr=None, value=None):
+    if norm == "expression":
+        if not expr:
+            raise ValueError("expr is required for mode 'expression' (param %s)" % param)
+        par.expr = expr
+        par.mode = mode_cls.EXPRESSION
+        return
+    if norm == "bind":
+        if not expr:
+            raise ValueError("expr is required for mode 'bind' (param %s)" % param)
+        par.bindExpr = expr
+        par.mode = mode_cls.BIND
+        return
+    if norm == "constant":
+        if value is None:
+            raise ValueError("value is required for mode 'constant' (param %s)" % param)
+        par.val = value
+        par.mode = mode_cls.CONSTANT
+        return
+    raise ValueError("Unknown mode %r (expected expression|bind|constant)" % norm)
+
+
+def _readback_expr(par, norm):
+    if norm not in ("bind", "expression"):
+        return ""
+    attr = "bindExpr" if norm == "bind" else "expr"
+    try:
+        return str(getattr(par, attr, "") or "")
+    except Exception:  # noqa: BLE001
+        return ""
+
+
 def set_param_mode(path, param, mode, expr=None, value=None):
     """Set one parameter's mode to expression / bind / constant.
 
@@ -183,41 +225,17 @@ def set_param_mode(path, param, mode, expr=None, value=None):
     mode_cls = type(par.mode)
 
     norm = str(mode or "expression").strip().lower()
-    if norm == "expression":
-        if not expr:
-            raise ValueError("expr is required for mode 'expression' (param %s)" % param)
-        par.expr = expr
-        par.mode = mode_cls.EXPRESSION
-    elif norm == "bind":
-        if not expr:
-            raise ValueError("expr is required for mode 'bind' (param %s)" % param)
-        par.bindExpr = expr
-        par.mode = mode_cls.BIND
-    elif norm == "constant":
-        if value is None:
-            raise ValueError("value is required for mode 'constant' (param %s)" % param)
-        par.val = value
-        par.mode = mode_cls.CONSTANT
-    else:
-        raise ValueError("Unknown mode %r (expected expression|bind|constant)" % mode)
+    _write_param_mode(par, param, norm, mode_cls, expr=expr, value=value)
 
     # Read back from the attribute that matches the mode just written: bind lives in
     # par.bindExpr, expression in par.expr; a constant has no expression (par.expr may
     # hold a stale one, so report empty rather than something misleading).
-    readback_expr = ""
-    try:
-        if norm == "bind":
-            readback_expr = str(getattr(par, "bindExpr", "") or "")
-        elif norm == "expression":
-            readback_expr = str(getattr(par, "expr", "") or "")
-    except Exception:  # noqa: BLE001
-        readback_expr = ""
     return {
         "path": path,
         "param": param,
         "mode": norm,
         "readback_mode": _normalize_mode(par),
-        "readback_expr": readback_expr,
+        "readback_expr": _readback_expr(par, norm),
     }
 
 

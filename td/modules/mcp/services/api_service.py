@@ -256,7 +256,7 @@ def _indexed_inputs(node):
     return wires
 
 
-def node_detail(node):
+def _node_parameters(node):
     pars = {}
     try:
         for par in node.pars():
@@ -266,21 +266,19 @@ def node_detail(node):
                 pars[par.name] = None
     except Exception:  # noqa: BLE001
         pars = {}
-    inputs = [c.path for c in getattr(node, "inputs", []) if c]
-    outputs = [c.path for c in getattr(node, "outputs", []) if c]
-    detail = node_ref(node)
-    detail.update({"parameters": pars, "inputs": inputs, "outputs": outputs})
-    # --- NEW (node_flags_in_detail): flags + index-aware wiring + position/comment/color/tags ---
-    detail["flags"] = _flags(node)
-    detail["wires_in"] = _indexed_inputs(node)
-    # op.errors() returns a STRING (not a list) — wrap it so a multi-line message is
-    # ONE entry, never iterated char-by-char. Lets get_td_node_flags' REST path flag
-    # "cook error" suspects (and honor only_problems) the same as the exec walk.
+    return pars
+
+
+def _node_errors(node):
     try:
-        _err = node.errors(recurse=False)
-        detail["errors"] = [str(_err)] if _err else []
+        err = node.errors(recurse=False)
+        return [str(err)] if err else []
     except Exception:  # noqa: BLE001
-        pass
+        return None
+
+
+def _node_optional_attrs(node):
+    detail = {}
     try:
         detail["nodeX"] = node.nodeX
         detail["nodeY"] = node.nodeY
@@ -300,6 +298,28 @@ def node_detail(node):
             detail["tags"] = sorted(str(t) for t in node.tags)  # set -> sorted list
     except Exception:  # noqa: BLE001
         pass
+    return detail
+
+
+def node_detail(node):
+    inputs = [c.path for c in getattr(node, "inputs", []) if c]
+    outputs = [c.path for c in getattr(node, "outputs", []) if c]
+    detail = node_ref(node)
+    detail.update(
+        {
+            "parameters": _node_parameters(node),
+            "inputs": inputs,
+            "outputs": outputs,
+            "flags": _flags(node),
+            "wires_in": _indexed_inputs(node),
+        }
+    )
+    # op.errors() returns a STRING (not a list) — wrap it so a multi-line message is
+    # ONE entry, never iterated char-by-char.
+    errors = _node_errors(node)
+    if errors is not None:
+        detail["errors"] = errors
+    detail.update(_node_optional_attrs(node))
     return detail
 
 
