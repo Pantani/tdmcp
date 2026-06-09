@@ -113,7 +113,7 @@ class GetLogsTests(unittest.TestCase):
         )
         with _patch_op(dat):
             rep = le.get_logs(scope="/project1/sceneA")
-        self.assertEqual([l["source"] for l in rep["lines"]], ["/project1/sceneA/x"])
+        self.assertEqual([ln["source"] for ln in rep["lines"]], ["/project1/sceneA/x"])
 
     def test_truncates_to_max_lines_keeping_newest(self):
         rows = [["/p/%d" % i, "m%d" % i, str(i), str(i), "error", "TOP"] for i in range(5)]
@@ -122,7 +122,7 @@ class GetLogsTests(unittest.TestCase):
             rep = le.get_logs(max_lines=2)
         self.assertEqual(rep["count"], 2)
         # newest (last appended) kept
-        self.assertEqual([l["message"] for l in rep["lines"]], ["m3", "m4"])
+        self.assertEqual([ln["message"] for ln in rep["lines"]], ["m3", "m4"])
         self.assertTrue(any("Truncated" in w for w in rep["warnings"]))
 
     def test_missing_dat_returns_unavailable(self):

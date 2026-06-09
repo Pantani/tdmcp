@@ -1,5 +1,7 @@
-[tool.ruff.lint]
-select = ["C901"]
-
+# Global Ruff config intentionally leaves `[tool.ruff.lint].select` implicit
+# so `lint:py` (`uvx ruff check td`) keeps Ruff's default rule set —
+# undefined names, unused imports, etc. The `complexity:py` script
+# (`uvx ruff check td --select C901`) opts in to the McCabe complexity check
+# explicitly on the CLI, and re-uses the `max-complexity` knob below.
 [tool.ruff.lint.mccabe]
 max-complexity = 10
