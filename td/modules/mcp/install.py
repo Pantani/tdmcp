@@ -106,6 +106,8 @@ def _event_hooks_source(modules_dir=None):
 DEFAULT_PACKAGE_NAME = "tdmcp_bridge_package"
 DEFAULT_PACKAGE_TOX_NAME = DEFAULT_PACKAGE_NAME + ".tox"
 DEFAULT_PACKAGE_PALETTE_FOLDER = "tdmcp"
+DEFAULT_PACKAGE_BOOTSTRAP_REPO_ZIP = "https://github.com/Pantani/tdmcp/archive/refs/heads/main.zip"
+DEFAULT_PACKAGE_BOOTSTRAP_DEST = "~/tdmcp-bridge"
 
 
 def _is_safe_package_segment(value):
@@ -163,7 +165,11 @@ def palette_package_path(tox_name=DEFAULT_PACKAGE_TOX_NAME, palette_dir=None, ho
     return _ensure_tox_path(os.path.join(os.path.expanduser(str(palette_dir)), expanded_name))
 
 
-def package_callbacks_source(modules_dir=None):
+def package_callbacks_source(
+    modules_dir=None,
+    repo_zip=DEFAULT_PACKAGE_BOOTSTRAP_REPO_ZIP,
+    bootstrap_dest=DEFAULT_PACKAGE_BOOTSTRAP_DEST,
+):
     """Python source embedded in the package COMP's Parameter Execute DAT."""
     header = ""
     if modules_dir:
@@ -172,8 +178,91 @@ def package_callbacks_source(modules_dir=None):
             "if %r not in sys.path:\n"
             "    sys.path.insert(0, %r)\n\n" % (modules_dir, modules_dir)
         )
-    return header + (
-        "import os\n\n"
+    bootstrap_config = (
+        "import io\n"
+        "import os\n"
+        "import sys\n"
+        "import zipfile\n"
+        "import urllib.request\n\n"
+        "_REPO_ZIP = %r\n"
+        "_BOOTSTRAP_DEST = %r\n"
+        "_MARKER = '/td/modules/'\n\n" % (repo_zip, bootstrap_dest)
+    )
+    return header + bootstrap_config + (
+        "def _add_module_path(modules_dir):\n"
+        "    if modules_dir and modules_dir not in sys.path:\n"
+        "        sys.path.insert(0, modules_dir)\n"
+        "    return modules_dir\n\n"
+        "def _is_symlink(info):\n"
+        "    return ((info.external_attr >> 16) & 0o170000) == 0o120000\n\n"
+        "def _safe_module_path(name, modules_dir):\n"
+        "    idx = name.find(_MARKER)\n"
+        "    if idx == -1:\n"
+        "        return None\n"
+        "    rel = name[idx + len(_MARKER):].replace('\\\\', '/')\n"
+        "    if not rel or rel.endswith('/'):\n"
+        "        return None\n"
+        "    parts = rel.split('/')\n"
+        "    if (\n"
+        "        rel.startswith('/')\n"
+        "        or rel.startswith('\\\\')\n"
+        "        or (len(parts[0]) >= 2 and parts[0][1] == ':')\n"
+        "        or any(part in ('', '.', '..') for part in parts)\n"
+        "    ):\n"
+        "        raise RuntimeError('[tdmcp package] Refusing unsafe archive entry: %s' % name)\n"
+        "    root = os.path.realpath(modules_dir)\n"
+        "    target = os.path.realpath(os.path.join(modules_dir, *parts))\n"
+        "    if target != root and not target.startswith(root + os.sep):\n"
+        "        raise RuntimeError('[tdmcp package] Refusing archive entry outside modules: %s' % name)\n"
+        "    return target\n\n"
+        "def fetch_modules(repo_zip=_REPO_ZIP, dest=_BOOTSTRAP_DEST):\n"
+        "    dest = os.path.expanduser(str(dest or _BOOTSTRAP_DEST))\n"
+        "    modules_dir = os.path.join(dest, 'modules')\n"
+        "    try:\n"
+        "        data = urllib.request.urlopen(repo_zip, timeout=30).read()\n"
+        "    except Exception as exc:\n"
+        "        raise RuntimeError(\n"
+        "            '[tdmcp package] Could not download bridge modules from %r (%s). '\n"
+        "            'Set Modules Dir to a local td/modules path or check the Repo Zip value.' % (repo_zip, exc)\n"
+        "        )\n"
+        "    zf = zipfile.ZipFile(io.BytesIO(data))\n"
+        "    os.makedirs(modules_dir, exist_ok=True)\n"
+        "    extracted = 0\n"
+        "    for info in zf.infolist():\n"
+        "        name = info.filename\n"
+        "        if name.endswith('/'):\n"
+        "            continue\n"
+        "        target = _safe_module_path(name, modules_dir)\n"
+        "        if target is None:\n"
+        "            continue\n"
+        "        if _is_symlink(info):\n"
+        "            raise RuntimeError('[tdmcp package] Refusing symlink archive entry: %s' % name)\n"
+        "        os.makedirs(os.path.dirname(target), exist_ok=True)\n"
+        "        with zf.open(name) as src, open(target, 'wb') as out:\n"
+        "            out.write(src.read())\n"
+        "        extracted += 1\n"
+        "    if extracted == 0:\n"
+        "        raise RuntimeError('[tdmcp package] Downloaded archive had no td/modules tree')\n"
+        "    print('[tdmcp package] bridge modules -> %s (%d files)' % (modules_dir, extracted))\n"
+        "    return modules_dir\n\n"
+        "def _ensure_modules(opts):\n"
+        "    modules_dir = opts.get('modules_dir')\n"
+        "    if modules_dir:\n"
+        "        return _add_module_path(modules_dir)\n"
+        "    modules_dir = fetch_modules(opts.get('repo_zip') or _REPO_ZIP, opts.get('bootstrap_dest') or _BOOTSTRAP_DEST)\n"
+        "    opts['modules_dir'] = modules_dir\n"
+        "    return _add_module_path(modules_dir)\n\n"
+        "def _load_install(opts):\n"
+        "    _ensure_modules(opts)\n"
+        "    from mcp import install\n"
+        "    return install\n\n"
+        "def _bridge_opts(opts):\n"
+        "    return {\n"
+        "        'port': opts['port'],\n"
+        "        'parent_path': opts['parent_path'],\n"
+        "        'container': opts['container'],\n"
+        "        'modules_dir': opts.get('modules_dir'),\n"
+        "    }\n\n"
         "def _owner(source=None):\n"
         "    try:\n"
         "        return source.owner\n"
@@ -210,11 +299,15 @@ def package_callbacks_source(modules_dir=None):
         "    return bool(value)\n\n"
         "def _settings(owner):\n"
         "    modules_dir = str(_read(owner, 'Modulesdir', '') or '').strip() or None\n"
+        "    repo_zip = str(_read(owner, 'Repozip', _REPO_ZIP) or _REPO_ZIP).strip() or _REPO_ZIP\n"
+        "    bootstrap_dest = str(_read(owner, 'Bootstrapdest', _BOOTSTRAP_DEST) or _BOOTSTRAP_DEST).strip() or _BOOTSTRAP_DEST\n"
         "    return {\n"
         "        'port': int(_read(owner, 'Bridgeport', 9980) or 9980),\n"
         "        'parent_path': str(_read(owner, 'Parentpath', '/project1') or '/project1'),\n"
         "        'container': str(_read(owner, 'Container', 'tdmcp_bridge') or 'tdmcp_bridge'),\n"
         "        'modules_dir': modules_dir,\n"
+        "        'repo_zip': repo_zip,\n"
+        "        'bootstrap_dest': bootstrap_dest,\n"
         "    }\n\n"
         "def _configure_security(owner):\n"
         "    token = str(_read(owner, 'Token', '') or '').strip()\n"
@@ -233,20 +326,20 @@ def package_callbacks_source(modules_dir=None):
         "    owner = _owner(source)\n"
         "    if owner is None:\n"
         "        raise RuntimeError('package owner not found')\n"
-        "    from mcp import install\n"
         "    opts = _settings(owner)\n"
         "    _configure_security(owner)\n"
+        "    install = _load_install(opts)\n"
         "    if reinstall:\n"
         "        install.uninstall(parent_path=opts['parent_path'], container=opts['container'])\n"
-        "    comp = install.run(**opts)\n"
+        "    comp = install.run(**_bridge_opts(opts))\n"
         "    _write_status(owner, 'running at %s on port %s' % (comp.path, opts['port']))\n"
         "    return comp\n\n"
         "def uninstall_bridge(source=None):\n"
         "    owner = _owner(source)\n"
         "    if owner is None:\n"
         "        raise RuntimeError('package owner not found')\n"
-        "    from mcp import install\n"
         "    opts = _settings(owner)\n"
+        "    install = _load_install(opts)\n"
         "    install.uninstall(parent_path=opts['parent_path'], container=opts['container'])\n"
         "    _write_status(owner, 'removed %s/%s' % (opts['parent_path'], opts['container']))\n\n"
         "def status_bridge(source=None):\n"
@@ -287,8 +380,15 @@ def package_callbacks_source(modules_dir=None):
     )
 
 
-def _package_readme_source(port, parent_path, container, modules_dir=None):
-    modules_line = modules_dir or "(blank: TD must already know the td/modules path)"
+def _package_readme_source(
+    port,
+    parent_path,
+    container,
+    modules_dir=None,
+    repo_zip=DEFAULT_PACKAGE_BOOTSTRAP_REPO_ZIP,
+    bootstrap_dest=DEFAULT_PACKAGE_BOOTSTRAP_DEST,
+):
+    modules_line = modules_dir or "(blank: download Repo Zip into Bootstrap Dest)"
     return (
         "tdmcp bridge Palette package\n"
         "============================\n\n"
@@ -302,11 +402,15 @@ def _package_readme_source(port, parent_path, container, modules_dir=None):
         "- parent_path: %s\n"
         "- container: %s\n"
         "- modules_dir: %s\n\n"
+        "Self-bootstrap fallback:\n"
+        "- repo_zip: %s\n"
+        "- bootstrap_dest: %s\n"
+        "- Leave Modules Dir blank to download td/modules from Repo Zip.\n\n"
         "Security guidance:\n"
         "- Set Token to populate TDMCP_BRIDGE_TOKEN for this TD process.\n"
         "- Turn Allow Exec off to set TDMCP_BRIDGE_ALLOW_EXEC=0.\n"
         "- Firewall the Web Server DAT port to localhost on untrusted networks.\n"
-    ) % (port, parent_path, container, modules_line)
+    ) % (port, parent_path, container, modules_line, repo_zip, bootstrap_dest)
 
 
 def _set_par_value(op_obj, name, value):
@@ -364,7 +468,7 @@ def _configure_parameter_execute(dat, comp):
     _set_first_existing_par(dat, ("valuechange", "Valuechange"), False)
 
 
-def _add_package_controls(comp, port, parent_path, container, modules_dir):
+def _add_package_controls(comp, port, parent_path, container, modules_dir, repo_zip, bootstrap_dest):
     try:
         page = comp.appendCustomPage("Bridge")
     except Exception:
@@ -378,6 +482,8 @@ def _add_package_controls(comp, port, parent_path, container, modules_dir):
     _append_custom_par(page, comp, "Str", "Parentpath", parent_path, label="Parent Path")
     _append_custom_par(page, comp, "Str", "Container", container, label="Container")
     _append_custom_par(page, comp, "Str", "Modulesdir", modules_dir or "", label="Modules Dir")
+    _append_custom_par(page, comp, "Str", "Repozip", repo_zip, label="Repo Zip")
+    _append_custom_par(page, comp, "Str", "Bootstrapdest", bootstrap_dest, label="Bootstrap Dest")
     _append_custom_par(page, comp, "Str", "Token", "", label="Token")
     _append_custom_par(page, comp, "Toggle", "Allowexec", True, label="Allow Exec")
     _append_custom_par(page, comp, "Str", "Laststatus", "not checked", label="Last Status")
@@ -386,6 +492,8 @@ def _add_package_controls(comp, port, parent_path, container, modules_dir):
     _set_par_value(comp, "Parentpath", parent_path)
     _set_par_value(comp, "Container", container)
     _set_par_value(comp, "Modulesdir", modules_dir or "")
+    _set_par_value(comp, "Repozip", repo_zip)
+    _set_par_value(comp, "Bootstrapdest", bootstrap_dest)
     _set_par_value(comp, "Allowexec", True)
     _set_par_value(comp, "Laststatus", "not checked")
 
@@ -395,6 +503,8 @@ def build_package(
     parent_path="/project1",
     container="tdmcp_bridge",
     modules_dir=None,
+    repo_zip=DEFAULT_PACKAGE_BOOTSTRAP_REPO_ZIP,
+    bootstrap_dest=DEFAULT_PACKAGE_BOOTSTRAP_DEST,
     package_parent_path="/project1",
     package_name=DEFAULT_PACKAGE_NAME,
 ):
@@ -412,13 +522,24 @@ def build_package(
 
     callbacks_type = getattr(td, "parameterexecuteDAT", td.textDAT)
     callbacks = comp.op("package_callbacks") or comp.create(callbacks_type, "package_callbacks")
-    callbacks.text = package_callbacks_source(modules_dir)
+    callbacks.text = package_callbacks_source(
+        modules_dir,
+        repo_zip=repo_zip,
+        bootstrap_dest=bootstrap_dest,
+    )
     _configure_parameter_execute(callbacks, comp)
 
     readme = comp.op("package_readme") or comp.create(td.textDAT, "package_readme")
-    readme.text = _package_readme_source(port, parent_path, container, modules_dir)
+    readme.text = _package_readme_source(
+        port,
+        parent_path,
+        container,
+        modules_dir,
+        repo_zip=repo_zip,
+        bootstrap_dest=bootstrap_dest,
+    )
 
-    _add_package_controls(comp, port, parent_path, container, modules_dir)
+    _add_package_controls(comp, port, parent_path, container, modules_dir, repo_zip, bootstrap_dest)
 
     try:
         comp.nodeX = -300
@@ -526,6 +647,8 @@ def export_package(
     parent_path="/project1",
     container="tdmcp_bridge",
     modules_dir=None,
+    repo_zip=DEFAULT_PACKAGE_BOOTSTRAP_REPO_ZIP,
+    bootstrap_dest=DEFAULT_PACKAGE_BOOTSTRAP_DEST,
     package_parent_path="/project1",
     package_name=DEFAULT_PACKAGE_NAME,
 ):
@@ -541,6 +664,8 @@ def export_package(
         parent_path=parent_path,
         container=container,
         modules_dir=modules_dir,
+        repo_zip=repo_zip,
+        bootstrap_dest=bootstrap_dest,
         package_parent_path=package_parent_path,
         package_name=package_name,
     )
@@ -557,6 +682,8 @@ def export_package_to_palette(
     parent_path="/project1",
     container="tdmcp_bridge",
     modules_dir=None,
+    repo_zip=DEFAULT_PACKAGE_BOOTSTRAP_REPO_ZIP,
+    bootstrap_dest=DEFAULT_PACKAGE_BOOTSTRAP_DEST,
     package_parent_path="/project1",
     package_name=DEFAULT_PACKAGE_NAME,
 ):
@@ -568,6 +695,8 @@ def export_package_to_palette(
         parent_path=parent_path,
         container=container,
         modules_dir=modules_dir,
+        repo_zip=repo_zip,
+        bootstrap_dest=bootstrap_dest,
         package_parent_path=package_parent_path,
         package_name=package_name,
     )
@@ -581,6 +710,8 @@ def export_palette_package(
     parent_path="/project1",
     container="tdmcp_bridge",
     package_parent_path="/project1",
+    repo_zip=DEFAULT_PACKAGE_BOOTSTRAP_REPO_ZIP,
+    bootstrap_dest=DEFAULT_PACKAGE_BOOTSTRAP_DEST,
 ):
     """Build and save the bridge package using the CLI-friendly argument order."""
     tox_name = _package_tox_name(package_name)
@@ -593,6 +724,8 @@ def export_palette_package(
         modules_dir=modules_dir,
         package_parent_path=package_parent_path,
         package_name=tox_name[:-4],
+        repo_zip=repo_zip,
+        bootstrap_dest=bootstrap_dest,
     )
 
 

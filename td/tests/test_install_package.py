@@ -4,10 +4,13 @@ The actual .tox save path is live-TD only. These tests cover the reusable
 Python/string/path behavior and a tiny fake operator graph for build_package().
 """
 
+import io
 import os
 import sys
+import tempfile
 import types
 import unittest
+import zipfile
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _MODULES = os.path.abspath(os.path.join(_HERE, "..", "modules"))
@@ -19,6 +22,14 @@ sys.modules.setdefault("td", _td_stub)
 _TD = sys.modules["td"]
 
 from mcp import install  # noqa: E402
+
+
+class _FakeResponse:
+    def __init__(self, data):
+        self._data = data
+
+    def read(self):
+        return self._data
 
 
 class _FakePar:
@@ -158,10 +169,58 @@ class InstallPackageHelperTests(unittest.TestCase):
         self.assertIn("sys.path.insert(0, '/opt/td/modules')", source)
         self.assertIn("install.run(", source)
         self.assertIn("install.uninstall(", source)
+        self.assertIn("fetch_modules", source)
+        self.assertIn("Repozip", source)
+        self.assertIn(install.DEFAULT_PACKAGE_BOOTSTRAP_REPO_ZIP, source)
         self.assertIn("TDMCP_BRIDGE_TOKEN", source)
         self.assertIn("TDMCP_BRIDGE_ALLOW_EXEC", source)
         for control in ("Install", "Reinstall", "Uninstall", "Status"):
             self.assertIn(control, source)
+
+    def test_package_callbacks_source_bootstraps_modules_when_modulesdir_is_blank(self):
+        archive = io.BytesIO()
+        with zipfile.ZipFile(archive, "w") as zf:
+            zf.writestr("tdmcp-v1/td/modules/mcp/__init__.py", "")
+            zf.writestr("tdmcp-v1/td/modules/utils/version.py", "BRIDGE_VERSION = 'test'\n")
+            zf.writestr("tdmcp-v1/README.md", "ignored")
+
+        with tempfile.TemporaryDirectory() as dest:
+            namespace = {}
+            exec(
+                install.package_callbacks_source(
+                    repo_zip="https://example.invalid/tdmcp.zip",
+                    bootstrap_dest=dest,
+                ),
+                namespace,
+            )
+            calls = []
+
+            def fake_urlopen(url, timeout=30):
+                calls.append((url, timeout))
+                return _FakeResponse(archive.getvalue())
+
+            previous_urlopen = namespace["urllib"].request.urlopen
+            previous_path = list(sys.path)
+            namespace["urllib"].request.urlopen = fake_urlopen
+            owner = _FakeOp("/package")
+            owner.par.add("Modulesdir", "")
+            owner.par.add("Repozip", "https://example.invalid/tdmcp.zip")
+            owner.par.add("Bootstrapdest", dest)
+
+            try:
+                opts = namespace["_settings"](owner)
+                modules_dir = namespace["_ensure_modules"](opts)
+
+                self.assertEqual(modules_dir, os.path.join(dest, "modules"))
+                self.assertEqual(opts["modules_dir"], modules_dir)
+                self.assertIn((owner.par.Repozip.val, 30), calls)
+                self.assertIn(modules_dir, sys.path)
+                self.assertTrue(os.path.exists(os.path.join(modules_dir, "mcp", "__init__.py")))
+                self.assertTrue(os.path.exists(os.path.join(modules_dir, "utils", "version.py")))
+                self.assertFalse(os.path.exists(os.path.join(dest, "modules", "README.md")))
+            finally:
+                namespace["urllib"].request.urlopen = previous_urlopen
+                sys.path[:] = previous_path
 
     def test_package_callbacks_source_clears_stale_token_when_token_is_blank(self):
         namespace = {}
@@ -210,10 +269,14 @@ class InstallPackageHelperTests(unittest.TestCase):
         self.assertIn(("Pulse", "Reinstall", "Reinstall"), appended)
         self.assertIn(("Pulse", "Uninstall", "Uninstall"), appended)
         self.assertIn(("Pulse", "Status", "Status"), appended)
+        self.assertIn(("Str", "Repozip", "Repo Zip"), appended)
+        self.assertIn(("Str", "Bootstrapdest", "Bootstrap Dest"), appended)
         self.assertEqual(comp.par.Bridgeport.val, 7700)
         self.assertEqual(comp.par.Parentpath.val, "/project1")
         self.assertEqual(comp.par.Container.val, "show_bridge")
         self.assertEqual(comp.par.Modulesdir.val, "/opt/td/modules")
+        self.assertEqual(comp.par.Repozip.val, install.DEFAULT_PACKAGE_BOOTSTRAP_REPO_ZIP)
+        self.assertEqual(comp.par.Bootstrapdest.val, install.DEFAULT_PACKAGE_BOOTSTRAP_DEST)
         self.assertEqual(comp.par.Allowexec.val, True)
 
     def test_export_package_rejects_non_tox_path_before_touchdesigner_save(self):
@@ -228,11 +291,15 @@ class InstallPackageHelperTests(unittest.TestCase):
                 package_name="show_bridge",
                 palette_dir="/tmp/Palette/tdmcp",
                 port=7700,
+                repo_zip="https://example.invalid/v1.zip",
+                bootstrap_dest="/tmp/tdmcp-bootstrap",
             )
 
         self.assertEqual(comp.path, "/project1/show_bridge")
         self.assertEqual(comp.saved_path, "/tmp/Palette/tdmcp/show_bridge.tox")
         self.assertEqual(comp.par.Bridgeport.val, 7700)
+        self.assertEqual(comp.par.Repozip.val, "https://example.invalid/v1.zip")
+        self.assertEqual(comp.par.Bootstrapdest.val, "/tmp/tdmcp-bootstrap")
 
     def test_export_palette_package_rejects_unsafe_package_name(self):
         with self.assertRaisesRegex(ValueError, "single filename segment"):
