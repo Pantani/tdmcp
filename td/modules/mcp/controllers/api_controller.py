@@ -240,75 +240,21 @@ def _bridge_error_log_path(webserver):
         return None
 
 
-def _route(method, path, query, body, webserver=None):
-    parts = [p for p in path.split("/") if p]
-    if not parts or parts[0] != "api":
-        raise ValueError("Not found: %s" % path)
-    rest = parts[1:]
-
-    if rest == ["info"] and method == "GET":
+def _route_get_root(rest, query, webserver=None):
+    if rest == ["info"]:
         return api_service.get_info()
-
-    if rest == ["health"] and method == "GET":
+    if rest == ["health"]:
         return api_service.get_health(webserver)
-
-    if rest == ["nodes"] and method == "POST":
-        _require(body, "parent_path", "type")
-        return api_service.create_node(
-            body["parent_path"], body["type"], body.get("name"), body.get("parameters")
-        )
-    if rest == ["nodes"] and method == "GET":
+    if rest == ["nodes"]:
         return api_service.get_nodes(_qs(query, "parent"))
-
-    if rest == ["exec"] and method == "POST":
-        if not _exec_allowed():
-            raise _Forbidden("Forbidden: arbitrary code execution is disabled (TDMCP_BRIDGE_ALLOW_EXEC=0).")
-        _require(body, "script")
-        return api_service.exec_script(body["script"], body.get("return_output", True))
-
-    if rest == ["batch"] and method == "POST":
-        return batch_service.run(body.get("operations", []))
-
-    # Structured wiring + logs endpoints — NO exec gate (they must survive
-    # TDMCP_BRIDGE_ALLOW_EXEC=0). Top-level paths, so no collision with nodes/network.
-    if rest == ["connect"] and method == "POST":
-        _require(body, "source_path", "target_path")
-        return connect_service.connect(
-            body["source_path"],
-            body["target_path"],
-            int(body.get("source_output", 0)),
-            int(body.get("target_input", 0)),
-        )
-    if rest == ["disconnect"] and method == "POST":
-        _require(body, "to_path")
-        return connect_service.disconnect(
-            body["to_path"], body.get("from_path"), body.get("to_input")
-        )
-    if rest == ["transport"] and method == "POST":
-        # First-class timeline transport — survives ALLOW_EXEC=0, mirrors
-        # control_timeline_transport's verb set. Validation errors raise ValueError
-        # and become the standard 400 envelope.
-        _require(body, "action")
-        return transport_service.control(
-            body["action"],
-            frame=body.get("frame"),
-            rate=body.get("rate"),
-            cue_name=body.get("cueName") or body.get("cue_name"),
-        )
-    if rest == ["perform"] and method == "POST":
-        # Perform-mode write — survives ALLOW_EXEC=0; read side lives in /api/system.
-        _require(body, "enabled")
-        return system_service.set_perform_mode(_as_bool(body["enabled"], "enabled"))
-    if rest == ["system"] and method == "GET":
+    if rest == ["system"]:
         # Combined GPU/monitors/performMode snapshot — survives ALLOW_EXEC=0.
-        # `include` is an optional comma-list query param; omit for all sections.
         include_raw = _qs(query, "include")
         include = [s for s in include_raw.split(",") if s] if include_raw else None
         return system_service.get_system_info(include)
-    if rest == ["logs"] and method == "GET":
+    if rest == ["logs"]:
         # Resolve the Error DAT relative to the webserver's own container so a custom
-        # install (parent_path/container) works; fall back to get_logs' default when
-        # the webserver isn't threaded (e.g. tests).
+        # install works; fall back to get_logs' default when tests have no webserver.
         log_kwargs = {}
         error_dat = _bridge_error_log_path(webserver)
         if error_dat:
@@ -319,92 +265,168 @@ def _route(method, path, query, body, webserver=None):
             _qs(query, "scope") or None,
             **log_kwargs,
         )
+    return None
+
+
+def _route_post_root(rest, body):
+    if rest == ["nodes"]:
+        _require(body, "parent_path", "type")
+        return api_service.create_node(
+            body["parent_path"], body["type"], body.get("name"), body.get("parameters")
+        )
+
+    if rest == ["exec"]:
+        if not _exec_allowed():
+            raise _Forbidden("Forbidden: arbitrary code execution is disabled (TDMCP_BRIDGE_ALLOW_EXEC=0).")
+        _require(body, "script")
+        return api_service.exec_script(body["script"], body.get("return_output", True))
+
+    if rest == ["batch"]:
+        return batch_service.run(body.get("operations", []))
+
+    # Structured wiring + logs endpoints — NO exec gate (they must survive
+    # TDMCP_BRIDGE_ALLOW_EXEC=0). Top-level paths, so no collision with nodes/network.
+    if rest == ["connect"]:
+        _require(body, "source_path", "target_path")
+        return connect_service.connect(
+            body["source_path"],
+            body["target_path"],
+            int(body.get("source_output", 0)),
+            int(body.get("target_input", 0)),
+        )
+    if rest == ["disconnect"]:
+        _require(body, "to_path")
+        return connect_service.disconnect(
+            body["to_path"], body.get("from_path"), body.get("to_input")
+        )
+    if rest == ["transport"]:
+        # First-class timeline transport — survives ALLOW_EXEC=0, mirrors
+        # control_timeline_transport's verb set. Validation errors raise ValueError
+        # and become the standard 400 envelope.
+        _require(body, "action")
+        return transport_service.control(
+            body["action"],
+            frame=body.get("frame"),
+            rate=body.get("rate"),
+            cue_name=body.get("cueName") or body.get("cue_name"),
+        )
+    if rest == ["perform"]:
+        # Perform-mode write — survives ALLOW_EXEC=0; read side lives in /api/system.
+        _require(body, "enabled")
+        return system_service.set_perform_mode(_as_bool(body["enabled"], "enabled"))
 
     # Batched read_parameter_modes — must match before the nodes/<path…>/params
     # branch (no <path> segments here so no real conflict, but be explicit).
-    if rest == ["param_modes", "batch"] and method == "POST":
+    if rest == ["param_modes", "batch"]:
         _require(body, "items")
         return param_text_service.read_param_modes_batch(
             body["items"],
             continue_on_error=_as_bool(body.get("continue_on_error", True), "continue_on_error"),
         )
 
-    if (
-        rest[0] == "projects"
-        and len(rest) >= 3
-        and rest[-1] == "analysis"
-        and method == "GET"
-    ):
+    return None
+
+
+def _route_root(method, rest, query, body, webserver=None):
+    if method == "GET":
+        return _route_get_root(rest, query, webserver)
+    if method == "POST":
+        return _route_post_root(rest, body)
+    return None
+
+
+def _route_projects(method, rest, query):
+    if method == "GET" and len(rest) >= 3 and rest[-1] == "analysis":
         # /api/projects/<path…>/analysis — diagnostic scan, survives ALLOW_EXEC=0.
-        # ``recursive`` is an optional query flag (default true) to match the
-        # legacy exec script's default.
         recursive_raw = _qs(query, "recursive")
         recursive = True if recursive_raw is None else (recursive_raw == "true")
         return project_analysis_service.analyze(_node_path(rest[1:-1]), recursive=recursive)
+    return None
 
-    if rest[0] == "nodes" and len(rest) >= 2:
-        if rest[-1] == "method" and method == "POST":
-            if not _exec_allowed():
-                raise _Forbidden(
-                    "Forbidden: arbitrary method calls are disabled (TDMCP_BRIDGE_ALLOW_EXEC=0)."
-                )
-            _require(body, "method")
-            return api_service.call_method(
-                _node_path(rest[1:-1]),
-                body["method"],
-                body.get("args", []),
-                body.get("kwargs", {}),
-            )
-        if rest[-1] == "errors" and method == "GET":
-            return api_service.get_node_errors(_node_path(rest[1:-1]), recursive=False)
-        if rest[-1] == "custom_params" and method == "GET":
-            # /api/nodes/<path…>/custom_params — structured custom-par readout,
-            # survives ALLOW_EXEC=0. Powers serialize_network + inspect_component.
-            return custom_params_service.get_custom_params(_node_path(rest[1:-1]))
-        # Param-mode + DAT-text suffixes — MORE SPECIFIC than the generic node CRUD
-        # below, so they MUST be matched first (else `…/text` GET is swallowed by
-        # get_node). No exec gate — structured endpoints survive ALLOW_EXEC=0.
-        if rest[-1] == "params" and method == "GET" and _qs(query, "modes") == "true":
-            return param_text_service.read_param_modes(
-                _node_path(rest[1:-1]),
-                (_qs(query, "keys").split(",") if _qs(query, "keys") else None),
-                _qs(query, "non_default_only") == "true",
-            )
-        if len(rest) >= 4 and rest[-1] == "mode" and rest[-3] == "params" and method == "PATCH":
-            # /api/nodes/<path…>/params/<param>/mode
-            return param_text_service.set_param_mode(
-                _node_path(rest[1:-3]),
-                unquote(rest[-2]),
-                body.get("mode", "expression"),
-                body.get("expr"),
-                body.get("value"),
-            )
-        if rest[-1] == "text" and method == "GET":
-            # Disambiguate a node literally named "text": the /text suffix only means
-            # "read this DAT's text" when the PARENT is actually a DAT. Otherwise the
-            # WebServer DAT decoded the path's slashes and "text" is the node's own
-            # name, so return that node's detail instead of the parent's DAT text.
-            _txt_parent = _node_path(rest[1:-1])
-            if param_text_service.is_dat(_txt_parent):
-                return param_text_service.get_dat_text(_txt_parent)
-            return api_service.get_node(_node_path(rest[1:]))
-        if rest[-1] == "text" and method == "PUT":
-            _require(body, "text")
-            return param_text_service.put_dat_text(_node_path(rest[1:-1]), body["text"])
-        node_path = _node_path(rest[1:])
-        if method == "GET":
-            return api_service.get_node(node_path)
-        if method == "PATCH":
-            return api_service.update_parameters(node_path, body.get("parameters", {}))
-        if method == "DELETE":
-            return api_service.delete_node(node_path)
 
-    if rest[0] == "preview" and method == "GET" and len(rest) >= 2:
+def _route_node_special(method, rest, query, body):
+    if rest[-1] == "method" and method == "POST":
+        if not _exec_allowed():
+            raise _Forbidden(
+                "Forbidden: arbitrary method calls are disabled (TDMCP_BRIDGE_ALLOW_EXEC=0)."
+            )
+        _require(body, "method")
+        return api_service.call_method(
+            _node_path(rest[1:-1]), body["method"], body.get("args", []), body.get("kwargs", {})
+        )
+    if rest[-1] == "errors" and method == "GET":
+        return api_service.get_node_errors(_node_path(rest[1:-1]), recursive=False)
+    if rest[-1] == "custom_params" and method == "GET":
+        return custom_params_service.get_custom_params(_node_path(rest[1:-1]))
+    if rest[-1] == "params" and method == "GET" and _qs(query, "modes") == "true":
+        return param_text_service.read_param_modes(
+            _node_path(rest[1:-1]),
+            (_qs(query, "keys").split(",") if _qs(query, "keys") else None),
+            _qs(query, "non_default_only") == "true",
+        )
+    return None
+
+
+def _route_node_param_mode(method, rest, body):
+    if method == "PATCH" and len(rest) >= 4 and rest[-1] == "mode" and rest[-3] == "params":
+        return param_text_service.set_param_mode(
+            _node_path(rest[1:-3]),
+            unquote(rest[-2]),
+            body.get("mode", "expression"),
+            body.get("expr"),
+            body.get("value"),
+        )
+    return None
+
+
+def _route_node_crud(method, rest, body):
+    node_path = _node_path(rest[1:])
+    if method == "GET":
+        return api_service.get_node(node_path)
+    if method == "PATCH":
+        return api_service.update_parameters(node_path, body.get("parameters", {}))
+    if method == "DELETE":
+        return api_service.delete_node(node_path)
+    return None
+
+
+def _route_nodes(method, rest, query, body):
+    if len(rest) < 2:
+        return None
+    routed = _route_node_special(method, rest, query, body)
+    if routed is not None:
+        return routed
+    routed = _route_node_param_mode(method, rest, body)
+    if routed is not None:
+        return routed
+    if method == "GET" and rest[-1] == "text":
+        return _route_dat_text_get(rest)
+    if method == "PUT" and rest[-1] == "text":
+        _require(body, "text")
+        return param_text_service.put_dat_text(_node_path(rest[1:-1]), body["text"])
+    return _route_node_crud(method, rest, body)
+
+
+def _route_dat_text_get(rest):
+    # Disambiguate a node literally named "text": the /text suffix only means
+    # "read this DAT's text" when the PARENT is actually a DAT. Otherwise the
+    # WebServer DAT decoded the path's slashes and "text" is the node's own name.
+    txt_parent = _node_path(rest[1:-1])
+    if param_text_service.is_dat(txt_parent):
+        return param_text_service.get_dat_text(txt_parent)
+    return api_service.get_node(_node_path(rest[1:]))
+
+
+def _route_preview(method, rest, query):
+    if method == "GET" and len(rest) >= 2:
         return preview_service.capture(
             _node_path(rest[1:]), int(_qs(query, "width", 640)), int(_qs(query, "height", 360))
         )
+    return None
 
-    if rest[0] == "network" and method == "GET" and len(rest) >= 3:
+
+def _route_network(method, rest, query):
+    if method == "GET" and len(rest) >= 3:
         kind = rest[-1]
         node_path = _node_path(rest[1:-1])
         if kind == "errors":
@@ -415,7 +437,27 @@ def _route(method, path, query, body, webserver=None):
             return analysis_service.performance(
                 node_path, recursive=_qs(query, "recursive") == "true"
             )
+    return None
 
+
+def _route(method, path, query, body, webserver=None):
+    parts = [p for p in path.split("/") if p]
+    if not parts or parts[0] != "api":
+        raise ValueError("Not found: %s" % path)
+    rest = parts[1:]
+    routed = _route_root(method, rest, query, body, webserver)
+    if routed is not None:
+        return routed
+    if rest and rest[0] == "projects":
+        routed = _route_projects(method, rest, query)
+    elif rest and rest[0] == "nodes":
+        routed = _route_nodes(method, rest, query, body)
+    elif rest and rest[0] == "preview":
+        routed = _route_preview(method, rest, query)
+    elif rest and rest[0] == "network":
+        routed = _route_network(method, rest, query)
+    if routed is not None:
+        return routed
     raise ValueError("Unsupported %s %s" % (method, path))
 
 
@@ -451,6 +493,18 @@ def _emit_node_errors(webserver, path):
         events.broadcast(webserver, "node.error", err)
 
 
+def _emit_batch_events(webserver, data):
+    for result in (data or {}).get("results", []):
+        if not result.get("ok"):
+            continue
+        if result.get("action") == "create":
+            node = result.get("data")
+            events.broadcast(webserver, "node.created", node)
+            _emit_node_errors(webserver, (node or {}).get("path"))
+        elif result.get("action") == "delete":
+            events.broadcast(webserver, "node.deleted", {"path": result.get("path")})
+
+
 def _emit_event(webserver, method, path, data):
     if webserver is None:
         return
@@ -465,15 +519,7 @@ def _emit_event(webserver, method, path, data):
         elif method == "DELETE" and len(rest) >= 2 and rest[0] == "nodes":
             events.broadcast(webserver, "node.deleted", data)
         elif method == "POST" and rest == ["batch"]:
-            for result in (data or {}).get("results", []):
-                if not result.get("ok"):
-                    continue
-                if result.get("action") == "create":
-                    node = result.get("data")
-                    events.broadcast(webserver, "node.created", node)
-                    _emit_node_errors(webserver, (node or {}).get("path"))
-                elif result.get("action") == "delete":
-                    events.broadcast(webserver, "node.deleted", {"path": result.get("path")})
+            _emit_batch_events(webserver, data)
     except Exception:  # noqa: BLE001
         pass
 
