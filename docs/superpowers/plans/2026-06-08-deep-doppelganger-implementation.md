@@ -123,7 +123,18 @@ Write `_workspace/deep_doppelganger/integrate_deep_doppelganger.py` with TD Pyth
 - Arranges nodes in non-overlapping zones.
 - Prints a JSON report with `out_video`, created nodes, warnings, and missing sources.
 
-- [ ] **Step 2: Execute the integration script**
+- [ ] **Step 2: Generate the exec payload**
+
+Create the JSON parameters file consumed by `exec python`:
+
+```bash
+rtk node -e 'const fs=require("fs"); const script=fs.readFileSync("_workspace/deep_doppelganger/integrate_deep_doppelganger.py","utf8"); fs.writeFileSync("_workspace/deep_doppelganger/integrate_payload.json", JSON.stringify({script, return_output:true}, null, 2));'
+```
+
+Expected: `_workspace/deep_doppelganger/integrate_payload.json` exists and
+contains a non-empty `script` field plus `return_output: true`.
+
+- [ ] **Step 3: Execute the integration script**
 
 Run:
 
