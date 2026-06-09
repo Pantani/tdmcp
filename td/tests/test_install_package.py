@@ -163,6 +163,34 @@ class InstallPackageHelperTests(unittest.TestCase):
         for control in ("Install", "Reinstall", "Uninstall", "Status"):
             self.assertIn(control, source)
 
+    def test_package_callbacks_source_clears_stale_token_when_token_is_blank(self):
+        namespace = {}
+        exec(install.package_callbacks_source(), namespace)
+        owner = _FakeOp("/package")
+        owner.par.add("Token", "s3cret")
+        owner.par.add("Allowexec", True)
+        previous_token = os.environ.get("TDMCP_BRIDGE_TOKEN")
+        previous_allow_exec = os.environ.get("TDMCP_BRIDGE_ALLOW_EXEC")
+
+        try:
+            os.environ.pop("TDMCP_BRIDGE_TOKEN", None)
+            namespace["_configure_security"](owner)
+            self.assertEqual(os.environ.get("TDMCP_BRIDGE_TOKEN"), "s3cret")
+
+            owner.par.Token.val = " "
+            namespace["_configure_security"](owner)
+            self.assertIsNone(os.environ.get("TDMCP_BRIDGE_TOKEN"))
+            self.assertEqual(os.environ.get("TDMCP_BRIDGE_ALLOW_EXEC"), "1")
+        finally:
+            if previous_token is None:
+                os.environ.pop("TDMCP_BRIDGE_TOKEN", None)
+            else:
+                os.environ["TDMCP_BRIDGE_TOKEN"] = previous_token
+            if previous_allow_exec is None:
+                os.environ.pop("TDMCP_BRIDGE_ALLOW_EXEC", None)
+            else:
+                os.environ["TDMCP_BRIDGE_ALLOW_EXEC"] = previous_allow_exec
+
     def test_build_package_creates_controls_and_callback_dat_without_installing_bridge(self):
         fake_td = _FakeTd()
         with _TdPatch(fake_td):
