@@ -97,7 +97,7 @@ projeto novo basta arrastar, clicar em **Install** e começar a trabalhar.
    `/project1`.
 5. Clique em **Install** no componente.
 
-Pacotes gerados sem **Modules Dir** conseguem se auto-inicializar: eles baixam
+Pacotes gerados sem **Modules Dir** conseguem se autoinicializar: eles baixam
 o zip em **Repo Zip**, extraem apenas `td/modules` para **Bootstrap Dest**
 (padrão `~/tdmcp-bridge`) e iniciam a partir desse cache local. Esse é o formato
 para pacotes `.tox` prontos para release.

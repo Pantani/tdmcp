@@ -532,6 +532,11 @@ def build_package(
 
     callbacks_type = getattr(td, "parameterexecuteDAT", td.textDAT)
     callbacks = comp.op("package_callbacks") or comp.create(callbacks_type, "package_callbacks")
+    try:
+        callbacks.nodeX = -180
+        callbacks.nodeY = 0
+    except Exception:
+        pass
     callbacks.text = package_callbacks_source(
         modules_dir,
         repo_zip=repo_zip,
@@ -540,6 +545,11 @@ def build_package(
     _configure_parameter_execute(callbacks, comp)
 
     readme = comp.op("package_readme") or comp.create(td.textDAT, "package_readme")
+    try:
+        readme.nodeX = 180
+        readme.nodeY = 0
+    except Exception:
+        pass
     readme.text = _package_readme_source(
         port,
         parent_path,

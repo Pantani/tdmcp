@@ -296,6 +296,10 @@ class InstallPackageHelperTests(unittest.TestCase):
         self.assertEqual(comp.path, "/project1/tdmcp_bridge_package")
         self.assertIn("package_callbacks", comp.children)
         self.assertIn("package_readme", comp.children)
+        self.assertEqual(comp.children["package_callbacks"].nodeX, -180)
+        self.assertEqual(comp.children["package_callbacks"].nodeY, 0)
+        self.assertEqual(comp.children["package_readme"].nodeX, 180)
+        self.assertEqual(comp.children["package_readme"].nodeY, 0)
         self.assertIn("Bridge", comp.custom_pages)
         appended = comp.custom_pages["Bridge"].appended
         self.assertIn(("Pulse", "Install", "Install"), appended)
