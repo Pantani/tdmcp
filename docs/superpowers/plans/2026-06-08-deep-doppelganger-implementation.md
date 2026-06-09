@@ -10,7 +10,7 @@
 
 ---
 
-### Task 1: Runtime Preflight
+## Task 1: Runtime Preflight
 
 **Files:**
 - Read: `docs/superpowers/specs/2026-06-08-deep-doppelganger-design.md`
@@ -36,7 +36,7 @@ rtk proxy sh -lc 'find "$HOME/.tdmcp/packages" "$HOME/tdmcp-packages" -maxdepth 
 
 Expected: at least `/Users/pantani/.tdmcp/packages/installed/mediapipe-touchdesigner/release/toxes/MediaPipe.tox`.
 
-### Task 2: Build Tracking Sources
+## Task 2: Build Tracking Sources
 
 **Files:**
 - Live TD: `/project1/MediaPipe`, `/project1/mp_hand_adapter`, body tracking outputs
@@ -61,7 +61,7 @@ rtk node dist/cli/agent.js hand-tracking --params '{"parent_path":"/project1","m
 
 Expected: hand landmark CHOP output exists and can be read by the integration pass.
 
-### Task 3: Build Visual Entities
+## Task 3: Build Visual Entities
 
 **Files:**
 - Live TD: `/project1/deep_doppelganger`
@@ -106,7 +106,7 @@ rtk node dist/cli/agent.js feedback-tunnel --params '{"name":"feedback_tunnel","
 
 Expected: a feedback tunnel container exists and returns an output TOP path.
 
-### Task 4: Integrate Final Composite And Controls
+## Task 4: Integrate Final Composite And Controls
 
 **Files:**
 - Create: `_workspace/deep_doppelganger/integrate_deep_doppelganger.py`
@@ -145,7 +145,7 @@ rtk node dist/cli/agent.js exec python --allow-unsafe --params-file _workspace/d
 Expected: `/project1/deep_doppelganger/out_video` exists at `1280x720` in this
 Non-Commercial TD session and the report says `ok: true`.
 
-### Task 5: Output And Validation
+## Task 5: Output And Validation
 
 **Files:**
 - Live TD: `/project1/deep_doppelganger/out_video`
@@ -194,7 +194,7 @@ Note: on a licensed TouchDesigner system, the same graph can be promoted to
 `1920x1080`; the validated local target is `1280x720` because TouchDesigner
 Non-Commercial caps TOP output resolution.
 
-### Self-Review
+## Self-Review
 
 - Spec coverage: bridge, tracking, visual entities, final output, fallback behavior, and layout validation are covered.
 - Red-flag scan: no vague implementation steps are used; every command is concrete.
