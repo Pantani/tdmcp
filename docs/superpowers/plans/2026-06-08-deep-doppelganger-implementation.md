@@ -101,7 +101,7 @@ Expected: a point-cloud container exists and returns an output TOP path.
 Run:
 
 ```bash
-rtk node dist/cli/agent.js feedback-tunnel --params '{"name":"feedback_tunnel","parent_path":"/project1/deep_doppelganger","source":"/project1/MediaPipe/video","zoom":1.035,"rotate":1.6,"hue_shift":0.012,"decay":0.93,"resolution":[1920,1080]}' --output json --no-color
+rtk node dist/cli/agent.js feedback-tunnel --params '{"name":"feedback_tunnel","parent_path":"/project1/deep_doppelganger","source":"/project1/MediaPipe/video","zoom":1.035,"rotate":1.6,"hue_shift":0.012,"decay":0.93,"resolution":[1280,720]}' --output json --no-color
 ```
 
 Expected: a feedback tunnel container exists and returns an output TOP path.
@@ -131,7 +131,8 @@ Run:
 rtk node dist/cli/agent.js exec python --allow-unsafe --params-file _workspace/deep_doppelganger/integrate_payload.json --output json --no-color
 ```
 
-Expected: `/project1/deep_doppelganger/out_video` exists and the report says `ok: true`.
+Expected: `/project1/deep_doppelganger/out_video` exists at `1280x720` in this
+Non-Commercial TD session and the report says `ok: true`.
 
 ### Task 5: Output And Validation
 
@@ -143,7 +144,7 @@ Expected: `/project1/deep_doppelganger/out_video` exists and the report says `ok
 Run:
 
 ```bash
-rtk node dist/cli/agent.js output --params '{"source_path":"/project1/deep_doppelganger/out_video","output_type":"window","resolution":"1080p","parent_path":"/project1/deep_doppelganger"}' --output json --no-color
+rtk node dist/cli/agent.js output --params '{"source_path":"/project1/deep_doppelganger/out_video","output_type":"window","resolution":"720p","parent_path":"/project1/deep_doppelganger"}' --output json --no-color
 ```
 
 Expected: a Window COMP/output wrapper exists.
@@ -177,6 +178,10 @@ rtk node dist/cli/agent.js preview /project1/deep_doppelganger/out_video --out _
 ```
 
 Expected: `_workspace/deep_doppelganger/out_video.png` is written and is not blank.
+
+Note: on a licensed TouchDesigner system, the same graph can be promoted to
+`1920x1080`; the validated local target is `1280x720` because TouchDesigner
+Non-Commercial caps TOP output resolution.
 
 ### Self-Review
 
