@@ -586,37 +586,83 @@ persistent `load_session_profile` (+ `tdmcp://session/profile` resource);
 additional `doctor --fix` repairs; the new `get_inline_preview` inspection tool;
 the front-of-house dashboard v2 layout; and the stronger `generate_readme` /
 `make_portable_tox` component-doc pass are all in the current release line.
-**The Planned road-to-1.0 list is currently empty — all queued items shipped to
-v0.8.1.** The remaining work on the way to a tagged 1.0 is **consolidation**
-(API stability, coverage, recipes, bridge hardening, docs, one-click install),
-tracked as measurable gates in
-[v1.0.0 — Consolidation](#v100-consolidation) below. Only items that still need a
-future code change (not a hardware/service blocker) belong in this Planned
-section. Hardware-, live-music-, multimodal-LLM- and GPU/CUDA-gated
-items have been moved to **Out of scope (for now)** below. Version targets are a
-rough sequence, **not a promise**. The exhaustive, item-by-item backlog lives in
+The pre-Round-4 Planned list was empty (all v0.8.x queued items shipped); the
+**2026-06-09 hype-scout** ([Round 4](#appendix-d-round4)) reopened it with a
+trend-driven set of buildable wins. The remaining work toward a tagged 1.0
+splits in two: **consolidation** (API stability, coverage, recipes, bridge
+hardening, docs, one-click install) tracked in
+[v1.0.0 — Consolidation](#v100-consolidation), **plus the small Round-4
+quick-win wave** (force multipliers + the top-5 hand-to-pipeline items) listed
+under Milestone 3 just below. Only items that still need a future code change
+(not a hardware/service blocker) belong in this Planned section.
+Hardware-, live-music-, multimodal-LLM- and GPU/CUDA-gated items have been
+moved to **Out of scope (for now)** below. Version targets are a rough
+sequence, **not a promise**. The exhaustive, item-by-item backlog lives in
 the [planning archive](#full-backlog).
 
-### Milestone 3 — Smarter assistance & library publishing · v0.8.x
+### Milestone 3 — Round-4 quick-win wave · v0.8.x / v0.9.x {#milestone-3}
 
-All currently-planned items shipped.
+Pulled forward from [Round 4](#appendix-d-round4) — every item is S-effort,
+sits on existing scaffolding, and ships before the AI-bridge wave so the
+force multipliers are in place when those wrappers land.
 
-### Milestone 4 — Deeper authoring & operator DX · v0.8.x / v0.9.x
+**Force multipliers (do these first — D.0):**
 
-All currently-planned items shipped.
+- ⬜ **FM-01 — `create_external_io` outbound modes** (`ndi_out`,
+  `syphon_spout_out`). Two KB-confirmed stock TOPs, additive to the existing
+  `_TYPEMAP` literal. Unlocks every TD↔AI bridge below.
+- ⬜ **FM-02 — `dropExternalTox` helper** for the canonical dotsimulate TOX-drop
+  pattern (discover paths → drop into `baseCOMP` → validate custom pars →
+  OSC-bind). Removes copy-paste between StreamDiffusion / ComfyUI /
+  DepthAnything / LOPs / TDGS / MediaPipe wrappers.
+- ⬜ **FM-03 — Layer-2 `build_pop_chain`** generic POP chain builder over
+  `NetworkBuilder` (M-effort, 1 day). Unblocks the 5 POP-combo Layer-1 tools.
+
+**Top-5 ready-for-pipeline (D.1):**
+
+- ⬜ `create_pose_controlnet_driver` — OpenPose-color render TOP over the
+  existing pose stack; no external TOX (Hype × Ease = 9).
+- ⬜ `create_ascii_render` — character-grid TOP alongside `create_dither` /
+  `create_halftone` (Hype × Ease = 9).
+- ⬜ `create_phrase_locked_cue_engine` — extension to `createSyncExternalClock`
+  that quantizes cues to Ableton bars/phrases.
+- ⬜ `create_audio_glsl_uniforms` — Layer-2 helper that binds audio CHOPs as
+  uniforms on `glslTOP`.
+- ⬜ `create_external_io` outbound — itself FM-01 above.
+
+### Milestone 4 — Generative-AI bridge wave (gated on FM-01 + FM-02) · v0.9.x
+
+The trend-dominant cluster from [Round 4 D.2](#appendix-d-round4) — wrappers
+around components users install themselves; never bundled. All entries
+*remain* GPU/CUDA-gated for the *bundled* path; this wave ships only the
+**drive-installed-tox** and **cloud** deltas.
+
+- ⬜ `setup_mediapipe_plugin` (torinmb canonical) — extension over the
+  shipped face/hand/segmentation setup.
+- ⬜ `drive_streamdiffusion` (dotsimulate TOX wrapper).
+- ⬜ `create_depth_from_2d` (TDDepthAnything v2 wrapper; reopens the
+  Round-3 EX placeholder).
+- ⬜ `connect_comfyui` (olegchomp/TDComfyUI or JiSenHua/ComfyUI-TD).
+- ⬜ `connect_daydream_cloud` (cloud path that skips the local GPU gate).
+- ⬜ `create_gaussian_splat_scene` (TDGS / POPs Gaussian-Splat v2026) —
+  the top trend in the scout, four-surface unanimous H.
+- ⬜ `create_llm_chain` (dotsimulate LOPs).
+- ⬜ `create_ai_mirror` combo recipe (depends on the bridge above + FM-01).
 
 ### What's left for 1.0
 
-With both the round-2 BEYOND backlog and the round-3 ingest-and-extend pass fully
-landed in the v0.8 release line, **the remaining work to 1.0 is consolidation,
-not new tool surface**. The measurable gates live in
-[v1.0.0 — Consolidation](#v100-consolidation) below; every open item should map
-to one of those gates rather than to a new entry here.
+With both the round-2 BEYOND backlog and the round-3 ingest-and-extend pass
+fully landed in the v0.8 release line, **and Milestones 3-4 above shipped on
+the v0.9 line**, the remaining work to 1.0 is **consolidation**. The measurable
+gates live in [v1.0.0 — Consolidation](#v100-consolidation) below; every open
+item should map to one of those gates rather than to a new entry here.
 
 ### Later / deferred
 
-The P2 long tail (the full list is in the [planning archive](#full-backlog)) —
-plus everything moved to **Out of scope** just below.
+The P2 long tail (the full list is in the [planning archive](#full-backlog),
+including the Round-4 D.5 aesthetic tools and the Round-4 D.4 hardware items
+that move to "Out of scope") — plus everything already moved to **Out of
+scope** just below.
 
 ---
 
@@ -663,6 +709,24 @@ properly:
   machines) — same gating as the existing multi-machine bullet.
 - **Round-3 paid-license:** the TouchEngine headless path beyond the shipped
   Engine COMP wrapper — same gating as the existing paid-license bullet.
+- **Round-4 hardware add-ons:** iPhone TrueDepth/LiDAR via Record3D
+  (`create_iphone_depth_source`, S012), Orbbec Femto Bolt
+  (`create_femto_depth_silhouette`, S018, the post-Azure-Kinect successor),
+  ZED 2i / OAK-D POE outdoor capture (`create_outdoor_depth_capture`, S038),
+  2D LiDAR floor tracker (`create_lidar_floor_tracker`, S021), Nuitrack
+  skeleton (`create_nuitrack_skeleton`, S023), ESP32 sensor bridge
+  (`create_esp32_sensor_bridge`, S019) and capacitive pad grid
+  (`create_capacitive_pad_grid`, S024) — same gating as the existing
+  hardware-bound bullet. We prefer the light camera-only paths (MediaPipe,
+  optical flow) until hardware is on hand to validate.
+- **Round-4 GPU/CUDA add-ons:** `drive_streamdiffusion` (S001),
+  `create_depth_from_2d` (S003), `connect_comfyui` (S004),
+  `create_ai_mirror` combo (S017), `create_rd_diffusion_hybrid` (S048) and
+  `create_sam_segmentation` (S046) — kept only as **drive-installed-tox** or
+  **cloud** wrappers, never bundled. `connect_daydream_cloud` (S043) is the
+  cloud delta and exits this gate.
+- **Round-4 paid-license:** `connect_unreal_engine` (S014) — same gating as
+  the existing TouchEngine bullet.
 
 ## v1.0.0 — Consolidation {#v100-consolidation}
 
@@ -777,7 +841,10 @@ one-click path.
 > open, partially delivered, experimental enough to need follow-through, or
 > `gated` by GPU / hardware / CUDA / license constraints.
 
-These four passes are labelled in the order they happened (Round 0 → Round 3).
+These passes are labelled in the order they happened (Round 0 → Round 4).
+Round 4 (2026-06-09) is the first **trend-driven** pass — produced by the
+`tdmcp-hype-scout` harness — and reopens the Planned list that Round 3 had
+fully drained into v0.7/v0.8.
 
 ### Round 0 — 2026-05-28 (harvested into v0.5.0)
 
@@ -1053,3 +1120,143 @@ Round-3 `create_data_source` HTTP/WS folds into the v0.7.0 data-source fabric;
 license-tier metadata hardens the v0.7.0 provenance work; and
 `extract_palette` and `generative_classics_pack` are part of v0.7.0, relating to
 the shipped `create_palette` / `generate_from_moodboard` lineage.
+
+### Round 4 — hype trend scouting — 2026-06-09 {#appendix-d-round4}
+
+**60 raw candidates → 38 deduped** from five external surfaces
+(`community-showcase`, `tutorials`, `generative-ai`, `hardware-interactive`,
+`vfx-aesthetics`) scouted in parallel by the `tdmcp-hype-scout` harness
+(`.claude/skills/tdmcp-hype-scout/`). Each entry was evidence-cited (≥2 URLs
+from 2025-2026) and feasibility-vetted against `src/tools/`, `src/knowledge/data/`,
+`recipes/`, `docs/ROADMAP.md`, and `src/td-client/`. Distribution after dedup:
+**~16 H · ~22 M · 0 L hype** (heavy cross-surface confirmation of the AI-bridge
+and POPs clusters). Profile used: default `Hype × Build-Ease` (max 9, min 1).
+**The full backlog with citations, vet notes and merge log lives in
+[`_workspace/hype-scout/HYPE_TOOL_BACKLOG.md`](https://github.com/cassiopantani/tdmcp/blob/main/_workspace/hype-scout/HYPE_TOOL_BACKLOG.md)**
+(not published as a docs page — it is a planning artifact). Source codes:
+`comm` = community-showcase · `tut` = tutorials · `ai` = generative-ai ·
+`hw` = hardware-interactive · `vfx` = vfx-aesthetics.
+
+The new field versus the inward Rounds 0–2 and Round 3's static community pull:
+**what TD artists are SHIPPING right now in 2025-2026** — finished work +
+front-running tutorials, with a build-ease vet that prioritizes "the parts
+already exist; we're missing the preset/binding" wins.
+
+> **Distinct from Round 3.** Round 3 was an *ecosystem ingestion* pass over
+> static catalogs (alltd, awesome-touchdesigner, anya). Round 4 is a *trend*
+> pass over what's happening *now* — recent Patreon drops, new Daydream / LOPs /
+> POPs releases, the StreamDiffusion v0.2.6 / DepthAnything v2 / SAM 2 / TDGS
+> waves. Many tools recur because they're genuinely hyped across both ecosystem
+> and trend angles; cross-referenced inline.
+
+#### D.0 · Force multipliers (build first)
+
+Foundational work that unlocks 3+ entries below. **All are S-effort** and sit on
+existing scaffolding — these are the cheapest accelerators in the backlog.
+
+| FM | Delivers | Eff | Unlocks | Status |
+|----|----------|-----|---------|--------|
+| **FM-01** | Outbound `ndi_out` / `syphon_spout_out` modes on `createExternalIo` — the universal "push a TOP out to StreamDiffusion / ComfyUI / MediaPipe-Spout-loopback / TouchEngine" plumbing. KB confirms both stock TOPs (`syphon_spout_out_top.json`, `ndi_out_top.json`). | S | S001, S004, S007, S014, S017 | NEW — extension |
+| **FM-02** | `dropExternalTox` helper for the canonical dotsimulate TOX-drop pattern (discover candidate paths → drop into `baseCOMP` → validate expected custom pars → OSC-bind). | S | S001, S003, S004, S005, S008, S016, S028 | NEW |
+| **FM-03** | Layer-2 `build_pop_chain` — generic ordered POP chain wired by `NetworkBuilder`, with safe-default params per POP type. Unblocks 5 POP-combo Layer-1 tools without copy-pasting topology code. | M | S002, S006, S009, S010, S035 | NEW |
+
+#### D.1 · Ready for `tdmcp-pipeline` — the top-5 high-confidence picks
+
+| Rank | id | Tool | Layer | Hype | Eff | Coverage | Source(s) |
+|------|----|------|-------|------|-----|----------|-----------|
+| 1 | S007 | `create_pose_controlnet_driver` — OpenPose-color render TOP fed by the existing pose stack; one preset, no TOX dependency | 1 | H | S | NEW (composes existing) | ai, tut |
+| 2 | S025 | `create_ascii_render` — character-grid render TOP suite alongside `create_dither` / `create_halftone` | 1 | H | S | NEW | vfx, tut |
+| 3 | S020 | `create_phrase_locked_cue_engine` — cues quantized to Ableton bars/phrases over `createSyncExternalClock` | 1 | M | S | EXTENSION | hw, tut |
+| 4 | S013 | `create_audio_glsl_uniforms` — bind audio CHOPs as uniforms on a `glslTOP` (ingredients exist) | 2 | M | S | PARTIAL | tut |
+| 5 | S015 | `create_external_io` outbound (FM-01 itself) | 2 | M | S | EXTENSION | ai, comm |
+
+All 5 score H×S=9 or M×S=6, sit on existing tdmcp scaffolding, and need no new
+bridge endpoint. The AI bridges (StreamDiffusion / ComfyUI / DepthAnything
+wrappers) outrank these on raw hype but are M-effort behind FM-01 + FM-02, so
+they belong below.
+
+#### D.2 · Generative-AI bridges — the highest-hype cluster (depends on FM-01 + FM-02)
+
+| Feature | id | Delivers | Eff | Imp | Conf | Pri | Status | Source(s) |
+|---|---|---|---|---|---|---|---|---|
+| `drive_streamdiffusion` | S001 | dotsimulate StreamDiffusionTD wrapper — discover the TOX, drop inside `baseCOMP`, expose t-index / prompt / strength as custom pars, OSC-bind | M | High | High | P1 | NEW — see Out of scope (GPU/CUDA) | ai, tut, comm, vfx |
+| `create_depth_from_2d` | S003 | TDDepthAnything v2 wrapper — RGB-in → depth-TOP-out preset for 2D-to-3D parallax / depth-keyed silhouette | M | High | High | P1 | NEW — Round-3 EX placeholder reopened | ai, comm |
+| `connect_comfyui` | S004 | ComfyUI bridge via olegchomp/TDComfyUI or JiSenHua/ComfyUI-TD — graph load + queue prompt + Spout pull-back | M | High | High | P1 | NEW — see Out of scope (GPU/CUDA) | ai, tut |
+| `create_gaussian_splat_scene` | S016 | TDGS wrapper (Anglerfish-graphics 6 Apr 2025; POPs Gaussian-Splat v2026) — load `.ply`, instance, camera-control. **Top trend** (4-surface unanimous H) | M | High | High | P1 | NEW | ai, comm, tut, vfx |
+| `setup_mediapipe_plugin` | S028 | torinmb/mediapipe-touchdesigner canonical setup — face/hand/body/segmentation all from one Spout-loopback path | S | High | High | P1 | EXTENSION over the shipped `setup_*_tracking` | ai, tut |
+| `create_llm_chain` | S008 | dotsimulate LOPs wrapper — chain OpenAI / Anthropic / Ollama nodes with prompt-templates and structured outputs | M | High | Med | P1 | NEW | ai, tut |
+| `create_voice_prompt_pipeline` | S005 | STT-Whisper LOP → prompt → SD/SDXL update — push-to-talk live prompt morph | M | Med | Med | P2 | NEW | ai, tut |
+| `create_ai_mirror` | S017 | Combo recipe: camera-in + StreamDiffusion + control-surface mapped — the showcase form everyone is shipping | L | High | Med | P2 | NEW — depends S001 + FM-01 | ai, comm, tut |
+| `connect_daydream_cloud` | S043 | dotsimulate × Daydream hosted StreamDiffusion — cloud path that skips the GPU gate | S | High | Med | P1 | NEW — see Out of scope (cloud) | ai |
+| `create_sam_segmentation` | S046 | SAM 2 / FastSAM masks via ONNX → matte/alpha channel | L | Med | Med | P2 | PARTIAL — depends ONNX | ai, tut |
+| `create_prompt_morph` | S044 | IP-Adapter slot bank — morph between N saved prompts on a control surface | S | Med | Med | P2 | PARTIAL — depends S001 | ai |
+| `create_rd_diffusion_hybrid` | S048 | Feed `create_reaction_diffusion` into StreamDiffusion image2image | M | Med | Med | P2 | PARTIAL — depends S001 + S033 | comm, ai |
+| `create_voice_character` | S047 | ElevenLabs TTS → lip-synced MediaPipe face | M | Med | Med | P2 | NEW | ai |
+
+> **Gating note.** The realtime AI bridges (S001 / S003 / S004 / S017 / S048)
+> continue to count against **GPU/CUDA-bound** in
+> [Out of scope](#out-of-scope-for-now) for the *bundled* path. The Round-4
+> entries here are the **drive-installed-tox** + **cloud** delta — wrappers
+> around components the user installs themselves; never bundled.
+
+#### D.3 · POPs combos — the new generative cluster (depends on FM-03)
+
+| Feature | id | Delivers | Eff | Imp | Conf | Pri | Status | Source(s) |
+|---|---|---|---|---|---|---|---|---|
+| `create_pop_particle_system` | S002 | Multi-POP combo: `particle_pop` + `feedback_pop` + `lookup_texture_pop` + `field_pop` — the dominant new particle look | M | High | High | P1 | PARTIAL — extends `create_pop_field` | comm, tut, vfx |
+| `create_pop_growth` | S006 | POP organic growth + RD-on-POPs — feedback-loop branching forms | M | High | Med | P1 | PARTIAL | comm, vfx |
+| `create_pop_lines_pointcloud` | S009 | Point cloud → POP lines with proximity threshold (constellation/plexus-style) | M | High | High | P1 | PARTIAL — overlaps Round-3 `create_plexus` | comm, vfx |
+| `create_depth_pop_field` | S010 | ZED/Orbbec/OAK-D depth → POP scatter/instance with depth as the force field | M | High | Med | P1 | PARTIAL — depends a depth source | comm, hw |
+| `create_stipple_pointcloud` | S035 | Stipple/dot rendering of a point cloud via POPs | M | Med | Med | P2 | PARTIAL | vfx |
+
+#### D.4 · Hardware & interaction (mostly Out-of-scope; tracked here for visibility)
+
+| Feature | id | Delivers | Eff | Imp | Conf | Pri | Status | Source(s) |
+|---|---|---|---|---|---|---|---|---|
+| `create_iphone_depth_source` | S012 | iPhone TrueDepth/LiDAR via Record3D WebSocket — phone-as-depth-camera path that sidesteps RealSense/Azure | M | High | Med | P1 | NEW — see Out of scope (hardware light path) | comm, hw |
+| `create_femto_depth_silhouette` | S018 | Orbbec Femto Bolt — Azure-Kinect successor since MS EOL'd Azure | S | High | Med | P1 | EXTENSION — see Out of scope (hardware) | hw |
+| `create_esp32_sensor_bridge` | S019 | ESP32 + canonical Arduino sketch → TD UDP/OSC ingest with a tdmcp subnet preset | M | High | Med | P1 | PARTIAL — see Out of scope (hardware) | hw |
+| `create_nuitrack_skeleton` | S023 | Nuitrack skeleton tracking presets (post-Kinect-SDK) | S | Med | Med | P2 | EXTENSION — see Out of scope (hardware) | hw |
+| `create_streamdeck_cue_surface` | S022 | Stream Deck cue button preset on the existing OSC/MIDI surface infra | M | Med | Med | P2 | EXTENSION | hw |
+| `create_capacitive_pad_grid` | S024 | ESP32 + conductive paint pads → TD with a known N×M layout helper | M | Med | Med | P2 | NEW — see Out of scope (hardware) | hw |
+| `create_outdoor_depth_capture` | S038 | ZED 2i / OAK-D POE outdoor-rated depth capture preset | M | Med | Med | P2 | NEW — see Out of scope (hardware) | hw |
+| `create_lidar_floor_tracker` | S021 | Hokuyo URG-04LX-UG01 2D-LiDAR floor zone tracker | L | Med | Med | P2 | PARTIAL — already in Out of scope (Round-3) | hw |
+| `create_touchosc_layout` | S039 | Generate a TouchOSC layout file from a TD COMP's custom pars | L | Med | Med | P2 | PARTIAL | hw |
+
+#### D.5 · Aesthetic / VFX tools (mostly buildable today; many overlap Round 3)
+
+| Feature | id | Delivers | Eff | Imp | Conf | Pri | Status | Source(s) |
+|---|---|---|---|---|---|---|---|---|
+| `create_ascii_render` | S025 | Character-grid TOP — top-5 (D.1) | S | Med | High | P1 | NEW | vfx, tut |
+| `create_slit_scan` | S026 | Time-slice slit-scan render next to the shipped `create_time_echo` | S | Med | Med | P2 | NEW | vfx |
+| `create_chrome_blobs` | S029 | Liquid-chrome / metaball preset stack | S | Med | Med | P2 | PARTIAL | vfx, comm |
+| `create_vintage_lens` | S030 | Lens/CA/vignette preset on `applyPostProcessing` (Round-3 EX-24) | S | Med | Med | P2 | EXTENSION — overlaps Round-3 | vfx |
+| `create_pixel_sort` | S031 | Threshold-pixel-sort (Round-3 EX-21) | M | Med | Med | P2 | NEW — overlaps Round-3 | vfx |
+| `create_volumetric_field` | S032 | Raymarch density field preset | M | Med | Med | P2 | PARTIAL | vfx |
+| `create_reaction_diffusion` | S033 | Gray-Scott RD (recipe exists; wrap as a tool) | S | Med | High | P2 | PARTIAL | vfx, tut |
+| `create_generative_architecture` | S034 | PBR + hand-canvas architectural sketch preset (Round-3 EX-27 family) | M | Med | Med | P2 | PARTIAL — overlaps Round-3 | vfx, comm |
+| `create_voxel_stack` | S036 | Isometric voxel stack render preset | M | Med | Med | P2 | NEW | vfx |
+| `create_fulldome_output` | S037 | B-Dome simulator + 180° equirect output (overlaps Round-3 EX-49) | M | Med | Med | P2 | PARTIAL — overlaps Round-3 | vfx, comm |
+| `create_facade_mapping` | S040 | Multi-projector blend + Kantan/CamSchnappr workflow | M | Med | Med | P2 | PARTIAL | comm |
+| `create_fixture_choreograph` / `create_data_choreograph` | S041 | Solar/Astrum-style data-driven fixture choreography (Round-3 EX-45 family) | L | Med | Med | P2 | PARTIAL — overlaps Round-3 | comm |
+
+#### D.6 · Reconciled cross-references
+
+- **Gating preserved.** Realtime AI generation (S001 / S003 / S004), Hokuyo /
+  ZED 2i / OAK-D / Orbbec / iPhone-LiDAR depth (S010 / S012 / S018 / S021 /
+  S038), ESP32 / capacitive sensors (S019 / S024), Nuitrack (S023), and the
+  Unreal/TouchEngine path (S014) continue to live under
+  [Out of scope](#out-of-scope-for-now). They appear in Round 4 because the
+  *drive-installed-tox*, *cloud*, or *light-camera-only* variants are now in
+  active community use — but they remain gated for bundling and live-validation.
+- **Round-3 overlaps.** S025 ↔ EX-71/72 (cookbook ASCII mention); S026 ↔
+  shipped `create_time_echo`; S029 ↔ EX-25 feedback presets; S030 ↔ EX-24;
+  S031 ↔ EX-21; S033 ↔ existing reaction-diffusion recipe; S037 ↔ EX-49;
+  S041 ↔ EX-45. Where Round 3 and Round 4 disagree on priority, the Round-4
+  vet (with citations from finished 2025-2026 work) wins for build sequencing.
+- **Out — already shipped.** MediaPipe face/hand/body/segmentation (S028 base
+  layer) shipped in v0.8.1 as `setup_face_tracking`, `setup_hand_tracking`,
+  `setup_segmentation` — the Round-4 entry is an EXTENSION (canonical-plugin
+  setup), not a duplicate.
+- **Out — duplicate.** `import_blender_clipboard` (S045) is the same scope as
+  `Blend2TD` (Round-3 reconciled-out, low priority); leave the Round-3 stance.

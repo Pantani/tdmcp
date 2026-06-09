@@ -293,3 +293,30 @@ tracking, or this feature's recipe/docs, use the
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
 | 2026-06-05 | Initial implementation team | 5 agents + 1 skill | execute the approved interactive projection mapping spec through prototype, Layer 1 tool, recipe/docs, and physical/synthetic QA |
+
+## Harness: hype trend scouting
+
+**Goal:** scout what is **hyped in the TouchDesigner community right now**
+(2025-2026 showcases, recent tutorials, generative-AI bridges, hardware
+interaction, dominant visual aesthetics) and turn the trends into a prioritized
+backlog of **tdmcp tools that are easy to build**. Complementary to
+`tdmcp-feature-discovery` (internal gap analysis): this one looks outward.
+
+**Trigger:** when asked to brainstorm new feature ideas based on what is
+trending in TouchDesigner, asks for "hype" / "trending" features, asks what
+people are doing in TD right now / what's hot, wants tools inspired by
+community trends, or says things like "ideias hype", "novas ideias", "o que
+está em alta", "criar ferramentas para o que está bombando", "tendências do
+TouchDesigner" — including follow-ups (refresh, rescout one surface, re-rank
+under a different profile, deepen a trend) — use the `tdmcp-hype-scout` skill
+(a fan-out of 5 `td-trend-scout`s → 1 `td-hype-synthesizer`, in
+`.claude/agents/` and `.claude/skills/`). This is the **external ideation**
+harness — it produces a HYPE_TOOL_BACKLOG.md ranked by Hype × Build-Ease; it
+does **not** build. Once a feature is chosen, hand it to `tdmcp-pipeline`.
+Simple questions can be answered directly.
+
+**Change log:**
+| Date | Change | Target | Reason |
+|------|--------|--------|--------|
+| 2026-06-09 | Initial harness | hype-scout (2 agents + 3 skills) | external trend ideation: scout TD community → prioritized HYPE_TOOL_BACKLOG ranked by Hype × Build-Ease; feeds tdmcp-pipeline. Complements internal `tdmcp-feature-discovery`. |
+| 2026-06-09 | First run + roadmap merge | `_workspace/hype-scout/HYPE_TOOL_BACKLOG.md` + `docs/ROADMAP.md` (Round 4 appendix + Milestone 3-4 + Out-of-scope Round-4 bullets) | 5 scouts (60 entries) → 1 synthesizer (38 deduped) → 3 force multipliers + top-5 quick-wins promoted to Planned/Milestone 3, AI-bridge wave to Milestone 4, hardware/GPU items mapped to Out of scope |
