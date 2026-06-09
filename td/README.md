@@ -4,16 +4,28 @@ This folder contains the TouchDesigner-side bridge: a small Python package that
 exposes a REST API (via a **Web Server DAT**) which the `tdmcp` MCP server
 talks to.
 
-> A binary `.tox` cannot be generated from source by an AI agent, so the bridge
-> ships as Python modules plus a callbacks template. Assembling the `.tox` is a
-> one-time, copy-paste install (below). You can then export your own
-> `mcp_webserver_base.tox` from TD for reuse.
+> A binary `.tox` cannot be generated from source outside TouchDesigner. The
+> bridge ships as Python modules plus builders that TouchDesigner can run live to
+> create/export the Palette package or a runtime bridge `.tox`.
 
 ## Easiest install
 
-You only need the bridge running inside TouchDesigner once. Pick whichever fits —
-all three create one tidy `tdmcp_bridge` COMP (Web Server DAT + callbacks), are
-idempotent, and can be undone with `from mcp import install; install.uninstall()`.
+You only need the bridge running inside TouchDesigner once per project. For repeat
+use, install the Palette package once and then drag it into new projects:
+
+```bash
+npx @dpantani/tdmcp install-bridge --palette
+```
+
+Paste the Palette package Textport command printed by the CLI. It exports
+`tdmcp/tdmcp_bridge_package.tox`; drag that package from the Palette into a
+project and click **Install**. The package creates one tidy `tdmcp_bridge` COMP
+(Web Server DAT + callbacks), and its **Uninstall** button removes only that
+runtime bridge.
+
+Prefer the old one-off runtime bridge? Pick whichever fits — all three options
+below create the same idempotent `tdmcp_bridge` COMP and can be undone with
+`from mcp import install; install.uninstall()`.
 
 **A. One paste — no clone, no Preferences.** In the Textport
 (`Dialogs → Textport and DATs`):
@@ -38,6 +50,28 @@ from mcp import install; install.run()
 `~/tdmcp-bridge` and prints exactly what to paste in the Textport.
 
 ### Make a reusable .tox (drag-and-drop)
+
+#### Palette package (recommended for repeat use)
+
+Run the CLI route above, or call the live TouchDesigner helper directly:
+
+```python
+from mcp import install
+install.export_palette_package(modules_dir="/abs/path/to/td/modules")
+```
+
+The package exposes these controls:
+
+| Control | Purpose |
+| --- | --- |
+| `Install` | Create or repair the runtime bridge. |
+| `Reinstall` | Remove the runtime bridge, then install it again. |
+| `Uninstall` | Remove only `/project1/tdmcp_bridge`; keep the package COMP. |
+| `Status` | Print/update the last status. |
+| `Bridgeport`, `Parentpath`, `Container`, `Modulesdir` | Runtime bridge settings. |
+| `Token`, `Allowexec`, `Laststatus` | Current-process security/readout fields. |
+
+#### Runtime bridge .tox (advanced)
 
 Run this once in your own TouchDesigner to bake a component you can drag into any
 project:

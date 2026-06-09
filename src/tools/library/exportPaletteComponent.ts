@@ -128,9 +128,15 @@ export async function exportPaletteComponentImpl(
     return errorResult(`Invalid arguments: ${parsed.error.message}`);
   }
   const safeArgs = parsed.data;
+  const name = safeArgs.name || basename(safeArgs.comp_path);
+  if (!isSafePaletteSegment(name)) {
+    return errorResult(
+      `Invalid palette component name derived from comp_path: ${name || "(empty)"}`,
+    );
+  }
   const payload = {
     comp_path: safeArgs.comp_path,
-    name: safeArgs.name || basename(safeArgs.comp_path),
+    name,
     category: safeArgs.category,
     palette_dir: safeArgs.palette_dir,
   };
