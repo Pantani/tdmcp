@@ -1131,9 +1131,10 @@ from 2025-2026) and feasibility-vetted against `src/tools/`, `src/knowledge/data
 `recipes/`, `docs/ROADMAP.md`, and `src/td-client/`. Distribution after dedup:
 **~16 H · ~22 M · 0 L hype** (heavy cross-surface confirmation of the AI-bridge
 and POPs clusters). Profile used: default `Hype × Build-Ease` (max 9, min 1).
-**The full backlog with citations, vet notes and merge log lives in
-[`_workspace/hype-scout/HYPE_TOOL_BACKLOG.md`](https://github.com/cassiopantani/tdmcp/blob/main/_workspace/hype-scout/HYPE_TOOL_BACKLOG.md)**
-(not published as a docs page — it is a planning artifact). Source codes:
+The curated per-surface tables (D.1–D.5 below) are the publishable summary;
+the raw scout outputs and the full per-candidate vet notes / merge log live
+under `_workspace/hype-scout/` locally (gitignored, like every prior round's
+raw output). Source codes:
 `comm` = community-showcase · `tut` = tutorials · `ai` = generative-ai ·
 `hw` = hardware-interactive · `vfx` = vfx-aesthetics.
 
