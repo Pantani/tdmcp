@@ -1205,11 +1205,11 @@ they belong below.
 
 | Feature | id | Delivers | Eff | Imp | Conf | Pri | Status | Source(s) |
 |---|---|---|---|---|---|---|---|---|
-| `create_pop_particle_system` | S002 | Multi-POP combo: `particle_pop` + `feedback_pop` + `lookup_texture_pop` + `field_pop` — the dominant new particle look | M | High | High | P1 | PARTIAL — extends `create_pop_field` | comm, tut, vfx |
-| `create_pop_growth` | S006 | POP organic growth + RD-on-POPs — feedback-loop branching forms | M | High | Med | P1 | PARTIAL | comm, vfx |
-| `create_pop_lines_pointcloud` | S009 | Point cloud → POP lines with proximity threshold (constellation/plexus-style) | M | High | High | P1 | PARTIAL — overlaps Round-3 `create_plexus` | comm, vfx |
-| `create_depth_pop_field` | S010 | ZED/Orbbec/OAK-D depth → POP scatter/instance with depth as the force field | M | High | Med | P1 | PARTIAL — depends a depth source | comm, hw |
-| `create_stipple_pointcloud` | S035 | Stipple/dot rendering of a point cloud via POPs | M | Med | Med | P2 | PARTIAL | vfx |
+| `create_pop_particle_system` | S002 | Multi-POP combo: `particle_pop` + `feedback_pop` + `lookup_texture_pop` + `field_pop` — the dominant new particle look | M | High | High | P1 | ✅ shipped v0.10.0 | comm, tut, vfx |
+| `create_pop_growth` | S006 | POP organic growth + RD-on-POPs — feedback-loop branching forms | M | High | Med | P1 | ✅ shipped v0.10.0 | comm, vfx |
+| `create_pop_lines_pointcloud` | S009 | Point cloud → POP lines with proximity threshold (constellation/plexus-style) | M | High | High | P1 | ✅ shipped v0.10.0 | comm, vfx |
+| `create_depth_pop_field` | S010 | ZED/Orbbec/OAK-D depth → POP scatter/instance with depth as the force field | M | High | Med | P1 | ✅ shipped v0.10.0 | comm, hw |
+| `create_stipple_pointcloud` | S035 | Stipple/dot rendering of a point cloud via POPs | M | Med | Med | P2 | ✅ shipped v0.10.0 | vfx |
 
 #### D.4 · Hardware & interaction (mostly Out-of-scope; tracked here for visibility)
 

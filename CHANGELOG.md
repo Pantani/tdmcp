@@ -4,6 +4,56 @@ All notable changes to **tdmcp** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-06-09
+
+### Added — Hype-scout Round 4 Wave 3 (POP combos · D.3)
+- **`create_pop_particle_system`** — Layer-1 multi-POP particle system
+  built on the shipped `build_pop_chain` substrate. Chains
+  `particle_pop` → `feedback_pop` → `lookup_texture_pop force` → `field_pop`
+  with sensible defaults; force texture defaults to an inline noise TOP
+  for one-call setup. Extends `create_pop_field`.
+- **`create_pop_growth`** — Layer-1 POP-native reaction-diffusion /
+  growth preset, three modes (`dendritic` / `coral` / `lichen`), each
+  with curated `growth_rate` / `decay` / `threshold` / `feedback_gain`
+  bundles. Stability warning when `feedback_gain × (1 − decay) ≥ 1`.
+  Delegates POP wiring to `buildPopChainImpl`.
+- **`create_pop_lines_pointcloud`** — Layer-1 plexus-style line web over
+  a POP point cloud. `neighbor_pop` produces per-point neighbor indices
+  and a downstream Script SOP emits line primitives with proximity
+  threshold + max-neighbor cap. Three color modes (`flat`,
+  `by_distance`, `by_neighbor_count`).
+- **`create_depth_pop_field`** — Layer-1 depth-driven POP scatter.
+  Accepts an explicit depth TOP path or auto-spins-up `setup_segmentation`
+  (MediaPipe selfie segmentation) for one-call live-camera depth. Three
+  scatter modes (`displace` / `emit` / `both`). v0.10.0 ships uniform
+  depth-scale displacement — per-point depth-driven transform
+  expressions weren't viable on the current `transformPOP` build (no
+  `me.inputPoint`/`me.curPoint` per-point context); the
+  `unverified.tz_expr_per_point` flag documents the gap for a future
+  upstream-attribute routing follow-up.
+- **`create_stipple_pointcloud`** — Layer-1 stipple aesthetic. Density-
+  weighted particle scatter from input TOP luminance via
+  `lookup_texture_pop`, rendered as discrete points. Three modes
+  (`bw_dots`, `colored_dots`, `random_jitter`).
+
+### Improved
+- **`build_pop_chain`** payload script now uses `.get()` defaults for
+  `defaults_map` and `unverified_note`, so direct low-level callers
+  don't crash with `KeyError` when omitting optional payload keys.
+  Defense-in-depth following Wave 3 QA findings.
+
+### Verified live
+All 5 Wave 3 features were live-cooked against TD 099 build
+2025.32820 / bridge 0.6.1 at release time. Four boundary bugs were
+caught and fix-forwarded before this release: feedback_pop par names
+(`gain` → `inputmul`), `create_pop_growth` switched from raw
+`buildPopChainScript` to `buildPopChainImpl`, `transformPOP` per-point
+expression replaced with uniform scale (documented gap),
+`lookuptexturePOP` optype casing fix.
+
+Offline gates: typecheck + build + biome + vitest (3837 pass) +
+validate:recipes (32) + test:bridge (196).
+
 ## [0.9.1] - 2026-06-09
 
 ### Added — Hype-scout Round 4 Wave 2 (top-5 quick wins)

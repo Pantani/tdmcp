@@ -21,6 +21,7 @@ import { registerCreateCubemapDome } from "./createCubemapDome.js";
 import { registerCreateDatamosh } from "./createDatamosh.js";
 import { registerCreateDataVisualization } from "./createDataVisualization.js";
 import { registerCreateDepthDisplacement } from "./createDepthDisplacement.js";
+import { registerCreateDepthPopField } from "./createDepthPopField.js";
 import { registerCreateDepthSilhouette } from "./createDepthSilhouette.js";
 import { registerCreateDisplacementWarp } from "./createDisplacementWarp.js";
 import { registerCreateDither } from "./createDither.js";
@@ -63,6 +64,9 @@ import { registerCreatePhraseLockedCueEngine } from "./createPhraseLockedCueEngi
 import { registerCreatePointCloud } from "./createPointCloud.js";
 import { registerCreatePopField } from "./createPopField.js";
 import { registerCreatePopGeometry } from "./createPopGeometry.js";
+import { registerCreatePopGrowth } from "./createPopGrowth.js";
+import { registerCreatePopLinesPointcloud } from "./createPopLinesPointcloud.js";
+import { registerCreatePopParticleSystem } from "./createPopParticleSystem.js";
 import { registerCreatePoseControlnetDriver } from "./createPoseControlnetDriver.js";
 import { registerCreatePoseReactive } from "./createPoseReactive.js";
 import { registerCreatePoseSkeleton } from "./createPoseSkeleton.js";
@@ -79,6 +83,7 @@ import { registerCreateShaderPark } from "./createShaderPark.js";
 import { registerCreateShowFailover } from "./createShowFailover.js";
 import { registerCreateSimulation } from "./createSimulation.js";
 import { registerCreateSpectrum } from "./createSpectrum.js";
+import { registerCreateStipplePointcloud } from "./createStipplePointcloud.js";
 import { registerCreateStrangeAttractor } from "./createStrangeAttractor.js";
 import { registerCreateStrobe } from "./createStrobe.js";
 import { registerCreateSyncExternalClock } from "./createSyncExternalClock.js";
@@ -246,4 +251,10 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreatePoseControlnetDriver,
   registerCreateAsciiRender,
   registerCreatePhraseLockedCueEngine,
+  // Hype-scout Round 4 Wave 3 (2026-06-09) — POP combos:
+  registerCreatePopParticleSystem,
+  registerCreatePopGrowth,
+  registerCreatePopLinesPointcloud,
+  registerCreateDepthPopField,
+  registerCreateStipplePointcloud,
 ];

@@ -406,7 +406,7 @@ import json, base64, traceback
 import td
 _p = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
 report = {"container": _p["parent"], "created": [], "connections": [],
-          "output_path": None, "warnings": [], "unverified": _p["unverified_note"]}
+          "output_path": None, "warnings": [], "unverified": _p.get("unverified_note", "")}
 
 _parent = op(_p["parent"])
 try:
@@ -416,7 +416,7 @@ try:
         report["container"] = _parent.path
         _created = []
         _name_to_path = {}
-        _defaults_map = _p["defaults_map"]
+        _defaults_map = _p.get("defaults_map", {})
 
         for _i, _spec in enumerate(_p["chain"]):
             _kind = _spec["type"]

@@ -99,6 +99,10 @@ import {
   createDepthDisplacementSchema,
 } from "../tools/layer1/createDepthDisplacement.js";
 import {
+  createDepthPopFieldImpl,
+  createDepthPopFieldSchema,
+} from "../tools/layer1/createDepthPopField.js";
+import {
   createDepthSilhouetteImpl,
   createDepthSilhouetteSchema,
 } from "../tools/layer1/createDepthSilhouette.js";
@@ -218,6 +222,15 @@ import {
   createPopGeometryImpl,
   createPopGeometrySchema,
 } from "../tools/layer1/createPopGeometry.js";
+import { createPopGrowthImpl, createPopGrowthSchema } from "../tools/layer1/createPopGrowth.js";
+import {
+  createPopLinesPointcloudImpl,
+  createPopLinesPointcloudSchema,
+} from "../tools/layer1/createPopLinesPointcloud.js";
+import {
+  createPopParticleSystemImpl,
+  createPopParticleSystemSchema,
+} from "../tools/layer1/createPopParticleSystem.js";
 import {
   createPoseControlnetDriverImpl,
   createPoseControlnetDriverSchema,
@@ -251,6 +264,10 @@ import { createShaderLibImpl, createShaderLibSchema } from "../tools/layer1/crea
 import { createShaderParkImpl, createShaderParkSchema } from "../tools/layer1/createShaderPark.js";
 import { createSimulationImpl, createSimulationSchema } from "../tools/layer1/createSimulation.js";
 import { createSpectrumImpl, createSpectrumSchema } from "../tools/layer1/createSpectrum.js";
+import {
+  createStipplePointcloudImpl,
+  createStipplePointcloudSchema,
+} from "../tools/layer1/createStipplePointcloud.js";
 import {
   createStrangeAttractorImpl,
   createStrangeAttractorSchema,
@@ -1504,6 +1521,37 @@ const COMMANDS: Record<string, Command> = {
     createPopFieldSchema,
     createPopFieldImpl,
     "Build a GPU POP point field (experimental — live-validation pending).",
+    { mutates: true },
+  ),
+  // Hype-scout Round 4 Wave 3 (2026-06-09) — POP combos:
+  "create-pop-particle-system": r(
+    createPopParticleSystemSchema,
+    createPopParticleSystemImpl,
+    "Build a POP particle system (emitter + forces + audio reactivity) into a previewed render.",
+    { mutates: true },
+  ),
+  "create-pop-growth": r(
+    createPopGrowthSchema,
+    createPopGrowthImpl,
+    "Grow a POP field over time (additive emission + lifetime + accumulation).",
+    { mutates: true },
+  ),
+  "create-pop-lines-pointcloud": r(
+    createPopLinesPointcloudSchema,
+    createPopLinesPointcloudImpl,
+    "Render POP points as connected lines / pointcloud (Line MAT or Point MAT pipeline).",
+    { mutates: true },
+  ),
+  "create-depth-pop-field": r(
+    createDepthPopFieldSchema,
+    createDepthPopFieldImpl,
+    "Drive a POP field from a depth source (sensor TOP → POP positions).",
+    { mutates: true },
+  ),
+  "create-stipple-pointcloud": r(
+    createStipplePointcloudSchema,
+    createStipplePointcloudImpl,
+    "Stipple a source TOP into a sampled POP pointcloud (intensity-weighted dots).",
     { mutates: true },
   ),
   "beat-grid": r(
