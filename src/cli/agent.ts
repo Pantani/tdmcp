@@ -329,6 +329,7 @@ import {
 } from "../tools/layer2/bindAudioReactive.js";
 import { bindToChannelImpl, bindToChannelSchema } from "../tools/layer2/bindToChannel.js";
 import { buildChopChainImpl, buildChopChainSchema } from "../tools/layer2/buildChopChain.js";
+import { buildPopChainImpl, buildPopChainSchema } from "../tools/layer2/buildPopChain.js";
 import { buildSopGeometryImpl, buildSopGeometrySchema } from "../tools/layer2/buildSopGeometry.js";
 import { connectNodesImpl, connectNodesSchema } from "../tools/layer2/connectNodes.js";
 // Campaign Wave 3 — artist controls (backlog 2026-05-29):
@@ -1886,6 +1887,13 @@ const COMMANDS: Record<string, Command> = {
     buildSopGeometrySchema,
     buildSopGeometryImpl,
     "Assemble a typed SOP geometry chain from a recipe of stages.",
+    { mutates: true },
+  ),
+  // Hype-scout Round 4 Wave 1 (2026-06-09) — typed POP chain builder:
+  "build-pop-chain": r(
+    buildPopChainSchema,
+    buildPopChainImpl,
+    "Assemble a typed POP (Point OPerator) chain from a recipe of stages.",
     { mutates: true },
   ),
   "sync-timecode": r(

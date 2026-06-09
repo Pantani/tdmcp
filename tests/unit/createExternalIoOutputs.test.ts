@@ -200,3 +200,86 @@ describe("createExternalIoImpl regression (existing kinds still build)", () => {
     expect(p.interface).toBe("sacn");
   });
 });
+
+// FM-01: ndi_out + syphon_spout_out outbound video kinds
+
+describe("buildIoScript (ndi_out + syphon_spout_out _TYPEMAP)", () => {
+  it("maps ndi_out and syphon_spout_out to confirmed TD OPTypes and emits correct par names", () => {
+    const script = buildIoScript({
+      kind: "ndi_out",
+      parent: "/project1",
+      name: null,
+      port: null,
+      normalize: "0to1",
+      bind_to: null,
+      source: "/project1/final",
+      interface: "artnet",
+      net: "artnet",
+      universe: 1,
+      net_address: null,
+      url: null,
+      fps: null,
+      active: false,
+      source_name: null,
+    });
+    // _TYPEMAP entries confirmed from KB ndi_out_top.json + syphon_spout_out_top.json.
+    expect(script).toContain('"ndi_out": ndioutTOP');
+    expect(script).toContain('"syphon_spout_out": syphonspoutoutTOP');
+    // Python branch par names confirmed from KB parameter lists.
+    expect(script).toContain('_setpar("name", _p.get("source_name") or _node.name)');
+    expect(script).toContain('_setpar("sendername", _p.get("source_name") or _node.name)');
+  });
+});
+
+describe("createExternalIoImpl ndi_out", () => {
+  it("forwards kind/source/source_name/active and leaves port null", async () => {
+    const exec = okExec("ndi_out", "ndiout");
+    await createExternalIoImpl(fakeCtx(exec), {
+      ...baseArgs,
+      kind: "ndi_out",
+      source_path: "/project1/final",
+      source_name: "studio-feed",
+      active: true,
+    });
+    const p = decodePayload(scriptArg(exec));
+    expect(p.kind).toBe("ndi_out");
+    expect(p.source).toBe("/project1/final");
+    expect(p.source_name).toBe("studio-feed");
+    expect(p.active).toBe(true);
+    // Output kinds never get an OSC port.
+    expect(p.port).toBeNull();
+  });
+});
+
+describe("createExternalIoImpl syphon_spout_out", () => {
+  it("defaults active to false and forwards null source_name when omitted", async () => {
+    const exec = okExec("syphon_spout_out", "syphonspoutout");
+    await createExternalIoImpl(fakeCtx(exec), {
+      ...baseArgs,
+      kind: "syphon_spout_out",
+      source_path: "/project1/final",
+    });
+    const p = decodePayload(scriptArg(exec));
+    expect(p.kind).toBe("syphon_spout_out");
+    // source_name is null in payload; Python falls back to _node.name.
+    expect(p.source_name).toBeNull();
+    // active defaults false per rtmp_out precedent.
+    expect(p.active).toBe(false);
+    expect(p.source).toBe("/project1/final");
+  });
+});
+
+describe("createExternalIoImpl regression (ndi_in active stays null)", () => {
+  it("input kinds are not treated as active-capable — active must be null", async () => {
+    const exec = okExec("ndi_in", "ndiin");
+    await createExternalIoImpl(fakeCtx(exec), {
+      ...baseArgs,
+      kind: "ndi_in",
+      source_name: "some-source",
+    });
+    const p = decodePayload(scriptArg(exec));
+    expect(p.kind).toBe("ndi_in");
+    // ndi_in is not in the active-capable set; active must remain null.
+    expect(p.active).toBeNull();
+  });
+});

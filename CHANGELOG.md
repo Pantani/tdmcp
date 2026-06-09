@@ -4,7 +4,28 @@ All notable changes to **tdmcp** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.9.0] - 2026-06-09
+
+### Added — Hype-scout Round 4 Wave 1 (force multipliers)
+- **`create_external_io`** — new outbound video bridge modes `ndi_out` and
+  `syphon_spout_out` (sender-name par for Syphon, NDI source name for NDI),
+  mirroring the existing `rtmp_out` plumbing. KB-confirmed stock TOPs
+  (`ndioutTOP`, `syphonspoutoutTOP`). Unlocks every TD↔AI bridge wrapper in
+  Milestone 4 — the "push a TOP out to StreamDiffusion / ComfyUI /
+  MediaPipe-Spout-loopback" plumbing the community workflow depends on.
+- **`dropExternalTox`** — internal helper (under `src/tools/util/`) that
+  standardizes the dotsimulate TOX-drop pattern: discover candidate paths
+  → drop the TOX into a `baseCOMP` → validate expected custom pars →
+  return a structured wiring report. Pure helper, no MCP surface; consumed
+  by Milestone 4 wrappers (StreamDiffusion / ComfyUI / DepthAnything /
+  TDGS / LOPs / MediaPipe-canonical).
+- **`build_pop_chain`** — new Layer-2 builder for ordered chains of POPs
+  (TouchDesigner's new point-operator family). Ships a curated enum of 77
+  chainable POP kinds with safe-default params sourced from the knowledge
+  base, fail-forward warnings on unknown pars, and `extra_inputs` for
+  multi-input POPs. Structural twin of the shipped `build_chop_chain` /
+  `build_sop_geometry`. CLI: `tdmcp-agent build-pop-chain`. Unblocks the
+  POP-combo Layer-1 tools in Milestone 3 (Wave 3).
 
 ### Added
 - **`create_hand_ableton_mapper` (Layer 2)** — one-shot MediaPipe Hands →
@@ -20,6 +41,19 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Docs/cookbook** — added EN/PT body-tracking, troubleshooting, and prompt
   cookbook guidance for the MediaPipe hands → TDAbleton Auto Filter workflow,
   including the manual Ableton slot-mapping boundary.
+
+### Roadmap
+- All three D.0 force multipliers from
+  [Round 4](docs/ROADMAP.md#appendix-d-round4) are shipped. Milestones 3
+  Top-5 (Wave 2 of the campaign) and 4 AI-bridge wave (Wave 4) can now
+  build on this substrate.
+
+### Notes
+- `build_pop_chain` + `create_external_io` outbound modes have
+  `unverified: true` / probe-pending in the QA report — the bridge was
+  offline at release time; the offline gates (typecheck / build / biome /
+  vitest 3759 / validate:recipes / test:bridge 195) all pass; live cook
+  verification deferred to the next session with TD reachable.
 
 ## [0.8.3] - 2026-06-03
 

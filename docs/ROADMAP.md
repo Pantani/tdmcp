@@ -608,15 +608,16 @@ force multipliers are in place when those wrappers land.
 
 **Force multipliers (do these first — D.0):**
 
-- ⬜ **FM-01 — `create_external_io` outbound modes** (`ndi_out`,
-  `syphon_spout_out`). Two KB-confirmed stock TOPs, additive to the existing
-  `_TYPEMAP` literal. Unlocks every TD↔AI bridge below.
-- ⬜ **FM-02 — `dropExternalTox` helper** for the canonical dotsimulate TOX-drop
-  pattern (discover paths → drop into `baseCOMP` → validate custom pars →
-  OSC-bind). Removes copy-paste between StreamDiffusion / ComfyUI /
-  DepthAnything / LOPs / TDGS / MediaPipe wrappers.
-- ⬜ **FM-03 — Layer-2 `build_pop_chain`** generic POP chain builder over
-  `NetworkBuilder` (M-effort, 1 day). Unblocks the 5 POP-combo Layer-1 tools.
+- ✅ **FM-01 — `create_external_io` outbound modes** (`ndi_out`,
+  `syphon_spout_out`) (shipped v0.9.0). Two KB-confirmed stock TOPs, additive
+  to the existing `_TYPEMAP` literal. Unlocks every TD↔AI bridge below.
+- ✅ **FM-02 — `dropExternalTox` helper** (shipped v0.9.0) for the canonical
+  dotsimulate TOX-drop pattern (discover paths → drop into `baseCOMP` →
+  validate custom pars → OSC-bind). Removes copy-paste between
+  StreamDiffusion / ComfyUI / DepthAnything / LOPs / TDGS / MediaPipe
+  wrappers.
+- ✅ **FM-03 — Layer-2 `build_pop_chain`** generic POP chain builder over
+  `NetworkBuilder` (shipped v0.9.0). Unblocks the 5 POP-combo Layer-1 tools.
 
 **Top-5 ready-for-pipeline (D.1):**
 
@@ -1157,9 +1158,9 @@ existing scaffolding — these are the cheapest accelerators in the backlog.
 
 | FM | Delivers | Eff | Unlocks | Status |
 |----|----------|-----|---------|--------|
-| **FM-01** | Outbound `ndi_out` / `syphon_spout_out` modes on `createExternalIo` — the universal "push a TOP out to StreamDiffusion / ComfyUI / MediaPipe-Spout-loopback / TouchEngine" plumbing. KB confirms both stock TOPs (`syphon_spout_out_top.json`, `ndi_out_top.json`). | S | S001, S004, S007, S014, S017 | NEW — extension |
-| **FM-02** | `dropExternalTox` helper for the canonical dotsimulate TOX-drop pattern (discover candidate paths → drop into `baseCOMP` → validate expected custom pars → OSC-bind). | S | S001, S003, S004, S005, S008, S016, S028 | NEW |
-| **FM-03** | Layer-2 `build_pop_chain` — generic ordered POP chain wired by `NetworkBuilder`, with safe-default params per POP type. Unblocks 5 POP-combo Layer-1 tools without copy-pasting topology code. | M | S002, S006, S009, S010, S035 | NEW |
+| **FM-01** | Outbound `ndi_out` / `syphon_spout_out` modes on `createExternalIo` — the universal "push a TOP out to StreamDiffusion / ComfyUI / MediaPipe-Spout-loopback / TouchEngine" plumbing. KB confirms both stock TOPs (`syphon_spout_out_top.json`, `ndi_out_top.json`). | S | S001, S004, S007, S014, S017 | ✅ shipped v0.9.0 |
+| **FM-02** | `dropExternalTox` helper for the canonical dotsimulate TOX-drop pattern (discover candidate paths → drop into `baseCOMP` → validate expected custom pars → OSC-bind). | S | S001, S003, S004, S005, S008, S016, S028 | ✅ shipped v0.9.0 |
+| **FM-03** | Layer-2 `build_pop_chain` — generic ordered POP chain wired by `NetworkBuilder`, with safe-default params per POP type. Unblocks 5 POP-combo Layer-1 tools without copy-pasting topology code. | M | S002, S006, S009, S010, S035 | ✅ shipped v0.9.0 |
 
 #### D.1 · Ready for `tdmcp-pipeline` — the top-5 high-confidence picks
 
