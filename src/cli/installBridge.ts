@@ -4,6 +4,8 @@ import { join } from "node:path";
 import { bridgeModulesDir } from "../utils/paths.js";
 
 const DEFAULT_BRIDGE_PORT = 9980;
+const DEFAULT_PALETTE_PACKAGE_NAME = "tdmcp_bridge_package";
+const PALETTE_PACKAGE_NAME_MESSAGE = "Expected a single filename segment.";
 const VERIFY_ATTEMPT_TIMEOUT_MS = 2000;
 const WAIT_TIMEOUT_MS = 10000;
 const WAIT_INTERVAL_MS = 200;
@@ -14,6 +16,9 @@ interface InstallBridgeOptions {
   wait: boolean;
   port: number;
   token?: string;
+  palette: boolean;
+  paletteDir?: string;
+  packageName: string;
 }
 
 export interface InstallBridgeResult {
@@ -25,6 +30,9 @@ export interface InstallBridgeResult {
   noPrefsTextportCommand?: string;
   verified?: boolean;
   token?: string;
+  paletteDir?: string;
+  palettePackageName?: string;
+  palettePackageTextportCommand?: string;
 }
 
 interface BridgeInfo {
@@ -38,7 +46,7 @@ interface TextportCommands {
 }
 
 /**
- * `tdmcp install-bridge [--dir <path>] [--verify] [--wait] [--port <port>]`
+ * `tdmcp install-bridge [--dir <path>] [--verify] [--wait] [--port <port>] [--palette]`
  *
  * Copies the packaged TouchDesigner bridge modules (`td/modules`) to a friendly,
  * stable folder on disk and prints the two things the artist needs to turn the
@@ -57,6 +65,9 @@ export function runInstallBridge(
 
   const src = bridgeModulesDir();
   const commands = buildTextportCommands(options.port, dest);
+  const palettePackageTextportCommand = options.palette
+    ? buildPalettePackageTextportCommand(options, dest)
+    : undefined;
   if (!existsSync(src)) {
     console.error(
       `[tdmcp] Could not find the bridge modules to copy (looked in ${src}).\n` +
@@ -69,6 +80,7 @@ export function runInstallBridge(
       port: options.port,
       modulesDir: dest,
       ...commands,
+      ...palettePackageResultFields(options, palettePackageTextportCommand),
     };
   }
 
@@ -101,6 +113,7 @@ export function runInstallBridge(
       "",
       ...commands.noPrefsTextportCommand.split("\n").map((line) => `       ${line}`),
       "",
+      ...palettePackageConsoleLines(options, palettePackageTextportCommand),
     ].join("\n"),
   );
 
@@ -123,6 +136,7 @@ export function runInstallBridge(
     modulesDir: dest,
     ...commands,
     ...(options.token ? { token: options.token } : {}),
+    ...palettePackageResultFields(options, palettePackageTextportCommand),
   };
   if (options.verify || options.wait) {
     return verifyInstalledBridge(options, baseResult);
@@ -166,13 +180,49 @@ function parseInstallBridgeArgs(args: string[]): InstallBridgeOptions | undefine
     return undefined;
   }
 
+  const paletteDirFlag = args.indexOf("--palette-dir");
+  const explicitPaletteDir = paletteDirFlag !== -1 ? args[paletteDirFlag + 1] : undefined;
+  if (paletteDirFlag !== -1 && (!explicitPaletteDir || explicitPaletteDir.startsWith("-"))) {
+    console.error("[tdmcp] Missing install-bridge --palette-dir value.");
+    process.exitCode = 2;
+    return undefined;
+  }
+
+  const packageNameFlag = args.indexOf("--package-name");
+  const explicitPackageName = packageNameFlag !== -1 ? args[packageNameFlag + 1] : undefined;
+  if (packageNameFlag !== -1 && (!explicitPackageName || explicitPackageName.startsWith("-"))) {
+    console.error("[tdmcp] Missing install-bridge --package-name value.");
+    process.exitCode = 2;
+    return undefined;
+  }
+  if (explicitPackageName !== undefined && !isSafePalettePackageName(explicitPackageName)) {
+    console.error(
+      `[tdmcp] Invalid install-bridge --package-name value. ${PALETTE_PACKAGE_NAME_MESSAGE}`,
+    );
+    process.exitCode = 2;
+    return undefined;
+  }
+
   return {
     targetRoot: explicitDir ?? join(homedir(), "tdmcp-bridge"),
     verify: args.includes("--verify"),
     wait: args.includes("--wait"),
     port,
     token: explicitToken,
+    palette: args.includes("--palette") || paletteDirFlag !== -1 || packageNameFlag !== -1,
+    paletteDir: explicitPaletteDir,
+    packageName: explicitPackageName ?? DEFAULT_PALETTE_PACKAGE_NAME,
   };
+}
+
+function isSafePalettePackageName(value: string): boolean {
+  return (
+    value.length > 0 &&
+    value.trim() === value &&
+    value !== "." &&
+    value !== ".." &&
+    !/[\\/]/.test(value)
+  );
 }
 
 function buildTextportCommands(port: number, modulesDir: string): TextportCommands {
@@ -189,6 +239,61 @@ function installRunCall(port: number, modulesDir?: string): string {
   if (modulesDir) args.push(`modules_dir=${JSON.stringify(modulesDir)}`);
   if (port !== DEFAULT_BRIDGE_PORT) args.push(`port=${port}`);
   return `install.run(${args.join(", ")})`;
+}
+
+function buildPalettePackageTextportCommand(
+  options: InstallBridgeOptions,
+  modulesDir: string,
+): string {
+  return [
+    `import sys; sys.path.insert(0, ${JSON.stringify(modulesDir)})`,
+    "from mcp import install",
+    exportPalettePackageCall(options, modulesDir),
+  ].join("\n");
+}
+
+function exportPalettePackageCall(options: InstallBridgeOptions, modulesDir: string): string {
+  const args = [
+    `modules_dir=${JSON.stringify(modulesDir)}`,
+    `package_name=${JSON.stringify(options.packageName)}`,
+  ];
+  if (options.paletteDir) args.push(`palette_dir=${JSON.stringify(options.paletteDir)}`);
+  args.push(`port=${options.port}`);
+  return `install.export_palette_package(${args.join(", ")})`;
+}
+
+function palettePackageConsoleLines(
+  options: InstallBridgeOptions,
+  textportCommand: string | undefined,
+): string[] {
+  if (!options.palette || !textportCommand) return [];
+  return [
+    "  Palette package export:",
+    "",
+    "  Exporting the .tox requires a running TouchDesigner session. Paste this",
+    "  in the Textport after the modules are staged:",
+    "",
+    ...textportCommand.split("\n").map((line) => `       ${line}`),
+    "",
+    "  The command calls mcp.install.export_palette_package(...) and writes the",
+    "  package into TouchDesigner's user Palette folder unless --palette-dir is set.",
+    "",
+  ];
+}
+
+function palettePackageResultFields(
+  options: InstallBridgeOptions,
+  textportCommand: string | undefined,
+): Pick<
+  InstallBridgeResult,
+  "paletteDir" | "palettePackageName" | "palettePackageTextportCommand"
+> {
+  if (!options.palette || !textportCommand) return {};
+  return {
+    ...(options.paletteDir ? { paletteDir: options.paletteDir } : {}),
+    palettePackageName: options.packageName,
+    palettePackageTextportCommand: textportCommand,
+  };
 }
 
 async function verifyInstalledBridge(

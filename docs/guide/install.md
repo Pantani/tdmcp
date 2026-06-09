@@ -17,7 +17,7 @@ it installs everything for you:
 ```text
 Install and connect tdmcp for me using the official install guide:
 https://pantani.github.io/tdmcp/guide/install
-Do every step yourself; only stop when you need me to paste one line into TouchDesigner.
+Do every step yourself; only stop when you need me to run the TouchDesigner Textport step.
 ```
 :::
 
@@ -46,7 +46,12 @@ A release may not be published yet. Ask whoever shared tdmcp with you for the
 
 ## 3. Turn on the bridge inside TouchDesigner {#turn-on-the-bridge}
 
-This is what lets Claude actually drive TouchDesigner. You only do it once.
+This is what lets Claude actually drive TouchDesigner. If you are using the
+no-terminal Claude Desktop path, use the quick one-paste runtime bridge. If you
+work from the CLI and open lots of projects, you can also install a draggable
+Palette package.
+
+### Quick runtime bridge
 
 1. **Open TouchDesigner.**
 2. Open the **Textport**: menu **Dialogs → Textport and DATs**.
@@ -62,9 +67,41 @@ You should see:
 [tdmcp] bridge running on port 9980 (/project1/tdmcp_bridge)
 ```
 
-That's it. ✅ It's safe and reversible — it adds one tidy `tdmcp_bridge`
-component. To remove it later, paste
+It is safe and reversible. To remove it later, paste
 `from mcp import install; install.uninstall()`.
+
+### Draggable Palette package
+
+This installs `tdmcp_bridge_package` into TouchDesigner's Palette so each new
+project is just drag, click **Install**, and start working.
+
+1. In a terminal, run:
+
+   ```bash
+   npx @dpantani/tdmcp install-bridge --palette
+   ```
+
+   Working from a clone? Use:
+
+   ```bash
+   node dist/index.js install-bridge --palette
+   ```
+
+2. Copy the Palette package Textport command it prints.
+3. In TouchDesigner, open **Dialogs → Textport and DATs**, paste the command,
+   and press **Enter**.
+4. Open the Palette browser, find **tdmcp → tdmcp_bridge_package**, and drag it
+   into `/project1`.
+5. Click **Install** on the component.
+
+Verify from a terminal:
+
+```bash
+curl http://127.0.0.1:9980/api/info
+```
+
+The Palette package stays in your project; its **Uninstall** button removes only
+`/project1/tdmcp_bridge`.
 
 ## You're connected
 
@@ -87,7 +124,7 @@ source build also powers the [local copilot](/guide/local-copilot).)
 
 ::: tip Easiest — let your AI do it
 Paste the one-liner from the top of this page into your client; it clones, builds
-and wires everything itself, stopping only for the bridge line in
+and wires everything itself, stopping only for the TouchDesigner step in
 [step 3](#turn-on-the-bridge).
 :::
 

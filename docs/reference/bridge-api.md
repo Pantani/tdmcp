@@ -19,6 +19,28 @@ All three options create one tidy `tdmcp_bridge` COMP (Web Server DAT +
 callbacks), are idempotent, and can be undone with
 `from mcp import install; install.uninstall()`.
 
+There are two reusable TouchDesigner objects in this flow:
+
+| Object | Path / artifact | Purpose |
+| --- | --- | --- |
+| Runtime bridge | `/project1/tdmcp_bridge` | The actual Web Server DAT bridge that exposes `/api/info` and the REST API. |
+| Palette package | `tdmcp/tdmcp_bridge_package.tox` | A draggable Palette component with **Install**, **Reinstall**, **Uninstall**, and **Status** controls for the runtime bridge. |
+
+For repeat use across projects, stage the modules and export the Palette package:
+
+```bash
+npx @dpantani/tdmcp install-bridge --palette
+# or, from a clone after build:
+node dist/index.js install-bridge --palette
+```
+
+The CLI prints the exact Textport command with your staged module path. Paste the
+Palette package command in TouchDesigner, then drag **tdmcp →
+tdmcp_bridge_package** from the Palette into a project and click **Install**.
+`/api/info` responds only after that package button has created the runtime
+bridge. Advanced exports can use `--palette-dir <path>` and
+`--package-name <name>`.
+
 **A. One paste — no clone, no Preferences.** In the Textport
 (`Dialogs → Textport and DATs`):
 
