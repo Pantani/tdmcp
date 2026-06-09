@@ -51,7 +51,9 @@ Inside it, use organized zones with no accidental overlap:
 - `feedback_tunnel`: feedback loop whose opening/decay responds to the hands.
 - `flow_glitch`: displacement/glitch layer driven by flow and tracking loss.
 - `layer_mixer`: final composite.
-- `output`: final `out_video` TOP at `1920x1080`.
+- `output`: final `out_video` TOP. Target `1920x1080` on licensed systems;
+  this verified Non-Commercial TD session renders at `1280x720` because of the
+  TouchDesigner output cap.
 - `control_panel`: artist-facing custom parameters.
 
 ## Data Flow
