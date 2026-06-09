@@ -87,6 +87,7 @@ class _FakeOp:
         self.par = _FakeParGroup()
         self.custom_pages = {}
         self.saved_path = None
+        self.destroyed = False
         self.nodeX = 0
         self.nodeY = 0
 
@@ -106,6 +107,9 @@ class _FakeOp:
 
     def save(self, path):
         self.saved_path = path
+
+    def destroy(self):
+        self.destroyed = True
 
 
 class _FakeTd:
@@ -221,6 +225,35 @@ class InstallPackageHelperTests(unittest.TestCase):
             finally:
                 namespace["urllib"].request.urlopen = previous_urlopen
                 sys.path[:] = previous_path
+
+    def test_package_callbacks_source_uninstalls_without_bootstrap_network(self):
+        namespace = {}
+        exec(install.package_callbacks_source(), namespace)
+        fake_td = _FakeTd()
+        bridge = fake_td.project1.create("baseCOMP", "tdmcp_bridge")
+        owner = _FakeOp("/package")
+        owner.par.add("Modulesdir", "")
+        owner.par.add("Repozip", "https://example.invalid/missing.zip")
+        owner.par.add("Bootstrapdest", "/tmp/tdmcp-bridge")
+        owner.par.add("Parentpath", "/project1")
+        owner.par.add("Container", "tdmcp_bridge")
+        calls = []
+
+        def fake_urlopen(url, timeout=30):
+            calls.append((url, timeout))
+            raise AssertionError("uninstall should not fetch modules")
+
+        previous_urlopen = namespace["urllib"].request.urlopen
+        namespace["urllib"].request.urlopen = fake_urlopen
+        try:
+            with _TdPatch(fake_td):
+                namespace["uninstall_bridge"](types.SimpleNamespace(owner=owner))
+
+            self.assertTrue(bridge.destroyed)
+            self.assertEqual(calls, [])
+            self.assertEqual(owner.par.Laststatus.val, "removed /project1/tdmcp_bridge")
+        finally:
+            namespace["urllib"].request.urlopen = previous_urlopen
 
     def test_package_callbacks_source_clears_stale_token_when_token_is_blank(self):
         namespace = {}
