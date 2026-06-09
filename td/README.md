@@ -60,6 +60,19 @@ from mcp import install
 install.export_palette_package(modules_dir="/abs/path/to/td/modules")
 ```
 
+If `Modulesdir` is blank, the package self-bootstraps: it downloads the repo zip
+stored in `Repozip`, extracts only `td/modules` into `Bootstrapdest` (default
+`~/tdmcp-bridge`), adds that modules folder to `sys.path`, and then starts the
+bridge. For a release asset, generate the package with a tag-pinned zip:
+
+```python
+from mcp import install
+install.export_palette_package(
+    modules_dir=None,
+    repo_zip="https://github.com/Pantani/tdmcp/archive/refs/tags/vX.Y.Z.zip",
+)
+```
+
 The package exposes these controls:
 
 | Control | Purpose |
@@ -69,6 +82,7 @@ The package exposes these controls:
 | `Uninstall` | Remove only `/project1/tdmcp_bridge`; keep the package COMP. |
 | `Status` | Print/update the last status. |
 | `Bridgeport`, `Parentpath`, `Container`, `Modulesdir` | Runtime bridge settings. |
+| `Repozip`, `Bootstrapdest` | Self-bootstrap source and local module cache destination. |
 | `Token`, `Allowexec`, `Laststatus` | Current-process security/readout fields. |
 
 #### Runtime bridge .tox (advanced)

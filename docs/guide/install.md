@@ -94,6 +94,11 @@ project is just drag, click **Install**, and start working.
    into `/project1`.
 5. Click **Install** on the component.
 
+Packages generated without a **Modules Dir** can self-bootstrap: they download
+the zip in **Repo Zip**, extract only `td/modules` into **Bootstrap Dest**
+(default `~/tdmcp-bridge`), and start from that local cache. This is the shape
+used for release-ready `.tox` packages.
+
 Verify from a terminal:
 
 ```bash
