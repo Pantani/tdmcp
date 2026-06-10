@@ -24,6 +24,7 @@ qualquer outro visual.
 | **Noise Landscape** | Um terreno 3D deslocado por ruído, sombreado e renderizado com câmera orbitando. | Intermediário |
 | **Particle Galaxy** | Uma galáxia rodopiante de partículas a partir de uma esfera, empurradas por turbulência e gravidade, sprites brilhantes. | Avançado |
 | **Webcam Glitch** | Webcam ao vivo por detecção de bordas, RGB split, loop de feedback e um shader de glitch. | Intermediário |
+| **Atemporal Body-Track Glitch Timeline** | Template 9:16 de vídeo-fonte com trecho limpo, bugs verdes curtos, tracking vermelho de pontos/linhas/rastros e switch `SceneMode` performável. | Avançado |
 | **Data Sonification** | Lê uma tabela de dados em CHOPs e mapeia os valores para áudio e um gradiente de cor. | Intermediário |
 | **Projection Mapping** | Correção de keystone por corner-pin e suavização de bordas, pronto para mandar a um projetor. | Avançado |
 | **LED Strip Mapper** | Amostra um visual em um pixel por LED e envia as cores para uma fita de LED endereçável. | Avançado |

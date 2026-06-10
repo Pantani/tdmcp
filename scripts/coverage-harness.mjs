@@ -22,6 +22,36 @@ function parseCoverageFloor(value) {
   return floor;
 }
 
+function isSummaryOnlyArg(arg) {
+  return arg === "--summary-only" || arg === "--skip-run";
+}
+
+function applyArgOption(options, arg) {
+  if (isSummaryOnlyArg(arg)) {
+    options.summaryOnly = true;
+    return;
+  }
+
+  const [name, value] = arg.split("=", 2);
+  const handlers = {
+    "--limit": () => {
+      if (value) options.limit = Number.parseInt(value, 10);
+    },
+    "--min-lines": () => {
+      options.minLines = parseCoverageFloor(value);
+    },
+    "--output": () => {
+      if (value) options.output = value;
+    },
+  };
+  handlers[name]?.();
+}
+
+function normalizeArgs(options) {
+  if (!Number.isFinite(options.limit) || options.limit < 1) options.limit = 20;
+  return options;
+}
+
 function parseArgs(argv) {
   const options = {
     limit: 20,
@@ -30,20 +60,8 @@ function parseArgs(argv) {
     summaryOnly: false,
   };
 
-  for (const arg of argv) {
-    if (arg === "--summary-only" || arg === "--skip-run") {
-      options.summaryOnly = true;
-      continue;
-    }
-
-    const [name, value] = arg.split("=", 2);
-    if (name === "--limit" && value) options.limit = Number.parseInt(value, 10);
-    if (name === "--min-lines") options.minLines = parseCoverageFloor(value);
-    if (name === "--output" && value) options.output = value;
-  }
-
-  if (!Number.isFinite(options.limit) || options.limit < 1) options.limit = 20;
-  return options;
+  for (const arg of argv) applyArgOption(options, arg);
+  return normalizeArgs(options);
 }
 
 function runCoverage() {

@@ -8,6 +8,7 @@ import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
+import { AiPartyPocRunSchema, runAiPartyPoc } from "../automation/aiPartyPoc.js";
 import {
   approveShowIntent,
   cancelShowIntent,
@@ -47,6 +48,11 @@ import {
   create3dAudioReactiveSchema,
 } from "../tools/layer1/create3dAudioReactive.js";
 import { create3dSceneImpl, create3dSceneSchema } from "../tools/layer1/create3dScene.js";
+import { createAiMirrorImpl, createAiMirrorSchema } from "../tools/layer1/createAiMirror.js";
+import {
+  createAsciiRenderImpl,
+  createAsciiRenderSchema,
+} from "../tools/layer1/createAsciiRender.js";
 import {
   createAudioReactiveImpl,
   createAudioReactiveSchema,
@@ -61,6 +67,10 @@ import {
   createBlobReactiveSchema,
 } from "../tools/layer1/createBlobReactive.js";
 import {
+  createBodyBubblesImpl,
+  createBodyBubblesSchema,
+} from "../tools/layer1/createBodyBubbles.js";
+import {
   createBodyReactiveImpl,
   createBodyReactiveSchema,
 } from "../tools/layer1/createBodyReactive.js";
@@ -72,6 +82,10 @@ import {
   createChromaReactiveImpl,
   createChromaReactiveSchema,
 } from "../tools/layer1/createChromaReactive.js";
+import {
+  createChromeBlobsImpl,
+  createChromeBlobsSchema,
+} from "../tools/layer1/createChromeBlobs.js";
 import { createColorGradeImpl, createColorGradeSchema } from "../tools/layer1/createColorGrade.js";
 import {
   createColorWheelsImpl,
@@ -90,6 +104,14 @@ import {
   createDepthDisplacementImpl,
   createDepthDisplacementSchema,
 } from "../tools/layer1/createDepthDisplacement.js";
+import {
+  createDepthFromTwoDImpl,
+  createDepthFromTwoDSchema,
+} from "../tools/layer1/createDepthFromTwoD.js";
+import {
+  createDepthPopFieldImpl,
+  createDepthPopFieldSchema,
+} from "../tools/layer1/createDepthPopField.js";
 import {
   createDepthSilhouetteImpl,
   createDepthSilhouetteSchema,
@@ -110,6 +132,10 @@ import {
 } from "../tools/layer1/createEnergyStructure.js";
 import { createEngineCompImpl, createEngineCompSchema } from "../tools/layer1/createEngineComp.js";
 import {
+  createFacadeMappingImpl,
+  createFacadeMappingSchema,
+} from "../tools/layer1/createFacadeMapping.js";
+import {
   createFeedbackNetworkImpl,
   createFeedbackNetworkSchema,
 } from "../tools/layer1/createFeedbackNetwork.js";
@@ -118,6 +144,10 @@ import {
   createFeedbackTunnelSchema,
 } from "../tools/layer1/createFeedbackTunnel.js";
 import { createFluidSimImpl, createFluidSimSchema } from "../tools/layer1/createFluidSim.js";
+import {
+  createGaussianSplatSceneImpl,
+  createGaussianSplatSceneSchema,
+} from "../tools/layer1/createGaussianSplatScene.js";
 import {
   createGenerativeArtImpl,
   createGenerativeArtSchema,
@@ -144,6 +174,10 @@ import {
   createImageToParticlesImpl,
   createImageToParticlesSchema,
 } from "../tools/layer1/createImageToParticles.js";
+import {
+  createInteractiveProjectionMappingImpl,
+  createInteractiveProjectionMappingSchema,
+} from "../tools/layer1/createInteractiveProjectionMapping.js";
 import { createJfaVoronoiImpl, createJfaVoronoiSchema } from "../tools/layer1/createJfaVoronoi.js";
 import {
   createKaleidoscopeImpl,
@@ -196,12 +230,30 @@ import {
   createPhoneGestureImpl,
   createPhoneGestureSchema,
 } from "../tools/layer1/createPhoneGesture.js";
+import {
+  createPhraseLockedCueEngineImpl,
+  createPhraseLockedCueEngineSchema,
+} from "../tools/layer1/createPhraseLockedCueEngine.js";
+import { createPixelSortImpl, createPixelSortSchema } from "../tools/layer1/createPixelSort.js";
 import { createPointCloudImpl, createPointCloudSchema } from "../tools/layer1/createPointCloud.js";
 import { createPopFieldImpl, createPopFieldSchema } from "../tools/layer1/createPopField.js";
 import {
   createPopGeometryImpl,
   createPopGeometrySchema,
 } from "../tools/layer1/createPopGeometry.js";
+import { createPopGrowthImpl, createPopGrowthSchema } from "../tools/layer1/createPopGrowth.js";
+import {
+  createPopLinesPointcloudImpl,
+  createPopLinesPointcloudSchema,
+} from "../tools/layer1/createPopLinesPointcloud.js";
+import {
+  createPopParticleSystemImpl,
+  createPopParticleSystemSchema,
+} from "../tools/layer1/createPopParticleSystem.js";
+import {
+  createPoseControlnetDriverImpl,
+  createPoseControlnetDriverSchema,
+} from "../tools/layer1/createPoseControlnetDriver.js";
 import {
   createPoseSkeletonImpl,
   createPoseSkeletonSchema,
@@ -222,6 +274,10 @@ import {
   createRaymarchSceneImpl,
   createRaymarchSceneSchema,
 } from "../tools/layer1/createRaymarchScene.js";
+import {
+  createReactionDiffusionImpl,
+  createReactionDiffusionSchema,
+} from "../tools/layer1/createReactionDiffusion.js";
 import { createSdfFieldImpl, createSdfFieldSchema } from "../tools/layer1/createSdfField.js";
 import {
   createSetNavigatorImpl,
@@ -230,7 +286,12 @@ import {
 import { createShaderLibImpl, createShaderLibSchema } from "../tools/layer1/createShaderLib.js";
 import { createShaderParkImpl, createShaderParkSchema } from "../tools/layer1/createShaderPark.js";
 import { createSimulationImpl, createSimulationSchema } from "../tools/layer1/createSimulation.js";
+import { createSlitScanImpl, createSlitScanSchema } from "../tools/layer1/createSlitScan.js";
 import { createSpectrumImpl, createSpectrumSchema } from "../tools/layer1/createSpectrum.js";
+import {
+  createStipplePointcloudImpl,
+  createStipplePointcloudSchema,
+} from "../tools/layer1/createStipplePointcloud.js";
 import {
   createStrangeAttractorImpl,
   createStrangeAttractorSchema,
@@ -274,14 +335,28 @@ import {
 } from "../tools/layer1/createVideoScopes.js";
 import { createVideoSynthImpl, createVideoSynthSchema } from "../tools/layer1/createVideoSynth.js";
 import {
+  createVintageLensImpl,
+  createVintageLensSchema,
+} from "../tools/layer1/createVintageLens.js";
+import {
   createVisualSystemImpl,
   createVisualSystemSchema,
 } from "../tools/layer1/createVisualSystem.js";
+import {
+  createVolumetricFieldImpl,
+  createVolumetricFieldSchema,
+} from "../tools/layer1/createVolumetricField.js";
+import { createVoxelStackImpl, createVoxelStackSchema } from "../tools/layer1/createVoxelStack.js";
 import { createWaveformImpl, createWaveformSchema } from "../tools/layer1/createWaveform.js";
 import { describeProjectImpl, describeProjectSchema } from "../tools/layer1/describeProject.js";
 import { detectOnsetsImpl, detectOnsetsSchema } from "../tools/layer1/detectOnsets.js";
 import { detectPitchImpl, detectPitchSchema } from "../tools/layer1/detectPitch.js";
 import { detectTempoImpl, detectTempoSchema } from "../tools/layer1/detectTempo.js";
+import {
+  driveStreamdiffusionImpl,
+  driveStreamdiffusionSchema,
+} from "../tools/layer1/driveStreamdiffusion.js";
+import { enhanceBuildImpl, enhanceBuildSchema } from "../tools/layer1/enhanceBuild.js";
 import {
   extractAudioFeaturesImpl,
   extractAudioFeaturesSchema,
@@ -301,6 +376,10 @@ import {
   setupBodyTrackingImpl,
   setupBodyTrackingSchema,
 } from "../tools/layer1/setupBodyTracking.js";
+import {
+  setupMediapipePluginImpl,
+  setupMediapipePluginSchema,
+} from "../tools/layer1/setupMediapipePlugin.js";
 import { setupOutputImpl, setupOutputSchema } from "../tools/layer1/setupOutput.js";
 import { setupTdabletonImpl, setupTdabletonSchema } from "../tools/layer1/setupTdableton.js";
 import {
@@ -321,8 +400,18 @@ import {
 } from "../tools/layer2/bindAudioReactive.js";
 import { bindToChannelImpl, bindToChannelSchema } from "../tools/layer2/bindToChannel.js";
 import { buildChopChainImpl, buildChopChainSchema } from "../tools/layer2/buildChopChain.js";
+import { buildPopChainImpl, buildPopChainSchema } from "../tools/layer2/buildPopChain.js";
 import { buildSopGeometryImpl, buildSopGeometrySchema } from "../tools/layer2/buildSopGeometry.js";
+import { connectComfyuiImpl, connectComfyuiSchema } from "../tools/layer2/connectComfyui.js";
+import {
+  connectDaydreamCloudImpl,
+  connectDaydreamCloudSchema,
+} from "../tools/layer2/connectDaydreamCloud.js";
 import { connectNodesImpl, connectNodesSchema } from "../tools/layer2/connectNodes.js";
+import {
+  createAudioGlslUniformsImpl,
+  createAudioGlslUniformsSchema,
+} from "../tools/layer2/createAudioGlslUniforms.js";
 // Campaign Wave 3 — artist controls (backlog 2026-05-29):
 import { createBandRouterImpl, createBandRouterSchema } from "../tools/layer2/createBandRouter.js";
 import {
@@ -370,7 +459,12 @@ import {
   createFlowAbstractionSchema,
 } from "../tools/layer2/createFlowAbstraction.js";
 import { createGlslShaderImpl, createGlslShaderSchema } from "../tools/layer2/createGlslShader.js";
+import {
+  createHandAbletonMapperImpl,
+  createHandAbletonMapperSchema,
+} from "../tools/layer2/createHandAbletonMapper.js";
 import { createLedMapperImpl, createLedMapperSchema } from "../tools/layer2/createLedMapper.js";
+import { createLlmChainImpl, createLlmChainSchema } from "../tools/layer2/createLlmChain.js";
 import { createLookBankImpl, createLookBankSchema } from "../tools/layer2/createLookBank.js";
 import { createMacroImpl, createMacroSchema } from "../tools/layer2/createMacro.js";
 import { createMidiMapImpl, createMidiMapSchema } from "../tools/layer2/createMidiMap.js";
@@ -402,6 +496,10 @@ import {
 } from "../tools/layer2/createStageDashboard.js";
 import { createTimeEchoImpl, createTimeEchoSchema } from "../tools/layer2/createTimeEcho.js";
 import { createXyPadImpl, createXyPadSchema } from "../tools/layer2/createXyPad.js";
+import {
+  diagnoseTdabletonMapperImpl,
+  diagnoseTdabletonMapperSchema,
+} from "../tools/layer2/diagnoseTdabletonMapper.js";
 import { duplicateNetworkImpl, duplicateNetworkSchema } from "../tools/layer2/duplicateNetwork.js";
 import {
   extendDataSourceFabricImpl,
@@ -470,7 +568,6 @@ import {
   elicitMissingArgsImpl,
   elicitMissingArgsSchema,
 } from "../tools/layer3/elicitMissingArgs.js";
-import { enhanceBuildImpl, enhanceBuildSchema } from "../tools/layer3/enhanceBuild.js";
 import { execNodeMethodImpl, execNodeMethodSchema } from "../tools/layer3/execNodeMethod.js";
 import {
   executePythonScriptImpl,
@@ -669,6 +766,10 @@ const showDirectorCliSchema = z.object({
   operator: z.string().trim().min(1).optional().describe("Human operator resolving approval."),
 });
 
+const aiPartyPocCliSchema = AiPartyPocRunSchema.describe(
+  "Offline producer POC rehearsal runner. Uses built-in demo events when `events` is omitted.",
+);
+
 export interface AgentCommandCatalogEntry {
   command: string;
   summary: string;
@@ -816,6 +917,12 @@ const COMMANDS: Record<string, Command> = {
     createMotionReactiveSchema,
     createMotionReactiveImpl,
     "Extract camera reactive channels (brightness/motion) to bind to params.",
+    { mutates: true },
+  ),
+  "interactive-projection": r(
+    createInteractiveProjectionMappingSchema,
+    createInteractiveProjectionMappingImpl,
+    "Build a synthetic-safe camera/projector interactive projection mapping rig.",
     { mutates: true },
   ),
   "tempo-sync": r(
@@ -978,6 +1085,12 @@ const COMMANDS: Record<string, Command> = {
   glsl: r(createGlslShaderSchema, createGlslShaderImpl, "Create a GLSL TOP shader.", {
     mutates: true,
   }),
+  "create-audio-glsl-uniforms": r(
+    createAudioGlslUniformsSchema,
+    createAudioGlslUniformsImpl,
+    "Bind audio CHOP channels to GLSL TOP uniform slots.",
+    { mutates: true },
+  ),
   chain: r(createNodeChainSchema, createNodeChainImpl, "Create a chain of connected nodes.", {
     mutates: true,
   }),
@@ -1311,10 +1424,22 @@ const COMMANDS: Record<string, Command> = {
     "Build a pose-tracking source (MediaPipe/OSC/synthetic) → a 33-landmark pose CHOP.",
     { mutates: true },
   ),
+  "create-pose-controlnet-driver": r(
+    createPoseControlnetDriverSchema,
+    createPoseControlnetDriverImpl,
+    "Render a pose CHOP into a ControlNet-ready skeleton TOP for AI image bridges.",
+    { mutates: true },
+  ),
   skeleton: r(
     createPoseSkeletonSchema,
     createPoseSkeletonImpl,
     "Draw a live stick-figure skeleton from a pose CHOP.",
+    { mutates: true },
+  ),
+  "body-bubbles": r(
+    createBodyBubblesSchema,
+    createBodyBubblesImpl,
+    "Create open-palm bubble physics with body/hand collision.",
     { mutates: true },
   ),
   "body-reactive": r(
@@ -1396,6 +1521,12 @@ const COMMANDS: Record<string, Command> = {
     "Stylise a source as halftone dots / CMYK / dither / posterize (GLSL).",
     { mutates: true },
   ),
+  "create-ascii-render": r(
+    createAsciiRenderSchema,
+    createAsciiRenderImpl,
+    "Render a source as ASCII art (glyph atlas + GLSL sampler).",
+    { mutates: true },
+  ),
   "vector-lines": r(
     createVectorLinesSchema,
     createVectorLinesImpl,
@@ -1441,6 +1572,135 @@ const COMMANDS: Record<string, Command> = {
     createPopFieldSchema,
     createPopFieldImpl,
     "Build a GPU POP point field (experimental — live-validation pending).",
+    { mutates: true },
+  ),
+  // Hype-scout Round 4 Wave 3 (2026-06-09) — POP combos:
+  "create-pop-particle-system": r(
+    createPopParticleSystemSchema,
+    createPopParticleSystemImpl,
+    "Build a POP particle system (emitter + forces + audio reactivity) into a previewed render.",
+    { mutates: true },
+  ),
+  "create-pop-growth": r(
+    createPopGrowthSchema,
+    createPopGrowthImpl,
+    "Grow a POP field over time (additive emission + lifetime + accumulation).",
+    { mutates: true },
+  ),
+  "create-pop-lines-pointcloud": r(
+    createPopLinesPointcloudSchema,
+    createPopLinesPointcloudImpl,
+    "Render POP points as connected lines / pointcloud (Line MAT or Point MAT pipeline).",
+    { mutates: true },
+  ),
+  "create-depth-pop-field": r(
+    createDepthPopFieldSchema,
+    createDepthPopFieldImpl,
+    "Drive a POP field from a depth source (sensor TOP → POP positions).",
+    { mutates: true },
+  ),
+  "create-stipple-pointcloud": r(
+    createStipplePointcloudSchema,
+    createStipplePointcloudImpl,
+    "Stipple a source TOP into a sampled POP pointcloud (intensity-weighted dots).",
+    { mutates: true },
+  ),
+  // Hype-scout Round 4 Wave 4 (2026-06-09) — AI bridges:
+  "drive-streamdiffusion": r(
+    driveStreamdiffusionSchema,
+    driveStreamdiffusionImpl,
+    "Drive StreamDiffusion realtime img2img bridge (TouchDiffusion / StreamDiffusion TD).",
+    { mutates: true },
+  ),
+  "setup-mediapipe-plugin": r(
+    setupMediapipePluginSchema,
+    setupMediapipePluginImpl,
+    "Install/configure the MediaPipe TD plugin (camera-driven body/hand/face inputs).",
+    { mutates: true },
+  ),
+  "create-depth-from-2d": r(
+    createDepthFromTwoDSchema,
+    createDepthFromTwoDImpl,
+    "Estimate per-pixel depth from a 2D image/video source via an AI depth model.",
+    { mutates: true },
+  ),
+  "create-gaussian-splat-scene": r(
+    createGaussianSplatSceneSchema,
+    createGaussianSplatSceneImpl,
+    "Render a 3D Gaussian Splat scene (point/splat dataset) into the network.",
+    { mutates: true },
+  ),
+  "create-ai-mirror": r(
+    createAiMirrorSchema,
+    createAiMirrorImpl,
+    "Live AI-mirror combo: camera → StreamDiffusion (+ optional pose/depth controls) → preview.",
+    { mutates: true },
+  ),
+  "connect-comfyui": r(
+    connectComfyuiSchema,
+    connectComfyuiImpl,
+    "Bridge to a ComfyUI workflow endpoint (submit prompts, fetch generated frames).",
+    { mutates: true },
+  ),
+  "connect-daydream-cloud": r(
+    connectDaydreamCloudSchema,
+    connectDaydreamCloudImpl,
+    "Bridge to a Daydream cloud realtime-diffusion endpoint.",
+    { mutates: true },
+  ),
+  "create-llm-chain": r(
+    createLlmChainSchema,
+    createLlmChainImpl,
+    "Compose an LLM prompt chain DAT graph driving TD parameters/text.",
+    { mutates: true },
+  ),
+  // Hype-scout Round 4 Wave 5 (2026-06-09) — VFX aesthetic tail:
+  "create-slit-scan": r(
+    createSlitScanSchema,
+    createSlitScanImpl,
+    "Build a slit-scan time-displacement effect over an input TOP.",
+    { mutates: true },
+  ),
+  "create-chrome-blobs": r(
+    createChromeBlobsSchema,
+    createChromeBlobsImpl,
+    "Build a chrome/metaball blob network with reflective shading.",
+    { mutates: true },
+  ),
+  "create-vintage-lens": r(
+    createVintageLensSchema,
+    createVintageLensImpl,
+    "Apply a vintage-lens stack (chromatic aberration, vignette, grain, distortion) to a TOP.",
+    { mutates: true },
+  ),
+  "create-reaction-diffusion": r(
+    createReactionDiffusionSchema,
+    createReactionDiffusionImpl,
+    "Build a Gray-Scott reaction-diffusion feedback network.",
+    { mutates: true },
+  ),
+  "create-pixel-sort": r(
+    createPixelSortSchema,
+    createPixelSortImpl,
+    "Build a pixel-sort glitch effect over an input TOP.",
+    { mutates: true },
+  ),
+  "create-volumetric-field": r(
+    createVolumetricFieldSchema,
+    createVolumetricFieldImpl,
+    "Build a volumetric/3D scalar-field render (raymarched volume).",
+    { mutates: true },
+  ),
+  "create-voxel-stack": r(
+    createVoxelStackSchema,
+    createVoxelStackImpl,
+    "Build a stacked-voxel render of a source TOP or geometry.",
+    { mutates: true },
+  ),
+  "create-facade-mapping": r(
+    createFacadeMappingSchema,
+    createFacadeMappingImpl,
+    "Build a building-facade projection-mapping network (per-window tiling + warp).",
     { mutates: true },
   ),
   "beat-grid": r(
@@ -1495,6 +1755,12 @@ const COMMANDS: Record<string, Command> = {
     composeCueListSchema,
     composeCueListImpl,
     "Author a cue list from rows: scaffolds cues + step sequencer wired to a navigator.",
+    { mutates: true },
+  ),
+  "create-phrase-locked-cue-engine": r(
+    createPhraseLockedCueEngineSchema,
+    createPhraseLockedCueEngineImpl,
+    "Lock cue advances to bar/phrase boundaries from a tempo CHOP.",
     { mutates: true },
   ),
   "prob-sequencer": r(
@@ -1860,6 +2126,13 @@ const COMMANDS: Record<string, Command> = {
     "Assemble a typed SOP geometry chain from a recipe of stages.",
     { mutates: true },
   ),
+  // Hype-scout Round 4 Wave 1 (2026-06-09) — typed POP chain builder:
+  "build-pop-chain": r(
+    buildPopChainSchema,
+    buildPopChainImpl,
+    "Assemble a typed POP (Point OPerator) chain from a recipe of stages.",
+    { mutates: true },
+  ),
   "sync-timecode": r(
     syncTimecodeSchema,
     syncTimecodeImpl,
@@ -1943,6 +2216,18 @@ const COMMANDS: Record<string, Command> = {
     setupTdabletonSchema,
     setupTdabletonImpl,
     "Bridge Ableton Live <-> TouchDesigner via TDAbleton (CHOPs for tempo, transport, params).",
+    { mutates: true },
+  ),
+  "hand-ableton-mapper": r(
+    createHandAbletonMapperSchema,
+    createHandAbletonMapperImpl,
+    "Build MediaPipe hand controls for TDAbleton TDA_Mapper (map1 left pinch, map2 right pinch, map3/map4 wrist roll).",
+    { mutates: true },
+  ),
+  "diagnose-tdableton-mapper": r(
+    diagnoseTdabletonMapperSchema,
+    diagnoseTdabletonMapperImpl,
+    "Inspect or repair TDAbleton TDA_Mapper routing for a hand Ableton mapper.",
     { mutates: true },
   ),
   "chop-recorder": r(
@@ -2131,6 +2416,13 @@ const SPECIAL_COMMANDS: AgentCommandCatalogEntry[] = [
     source: "cli",
   },
   {
+    command: "ai-party-poc",
+    summary: "Run the AI-Controlled Party producer POC in dry-run/simulated mode.",
+    mutates: false,
+    unsafe: false,
+    source: "cli",
+  },
+  {
     command: "schedule <file>",
     summary: "Run scene scheduler triggers.",
     mutates: true,
@@ -2295,6 +2587,8 @@ function formatCommandHelp(target: string): string | undefined {
     lines.push("", "Input schema:", JSON.stringify(z.toJSONSchema(cmd.schema), null, 2));
   } else if (target === "show-director") {
     lines.push("", "Input schema:", JSON.stringify(z.toJSONSchema(showDirectorCliSchema), null, 2));
+  } else if (target === "ai-party-poc") {
+    lines.push("", "Input schema:", JSON.stringify(z.toJSONSchema(aiPartyPocCliSchema), null, 2));
   }
   return lines.join("\n");
 }
@@ -2900,6 +3194,16 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
       };
       return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
     }
+    if (target === "ai-party-poc") {
+      const doc = {
+        command: target,
+        summary: "Run the AI-Controlled Party producer POC in dry-run/simulated mode.",
+        mutates: false,
+        unsafe: false,
+        input: z.toJSONSchema(aiPartyPocCliSchema),
+      };
+      return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
+    }
     const cmd = COMMANDS[target];
     if (!cmd) return { stdout: "", stderr: `Unknown command for schema: "${target}".\n`, code: 2 };
     const doc = {
@@ -2909,6 +3213,30 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
       unsafe: cmd.unsafe,
       input: z.toJSONSchema(cmd.schema),
     };
+    return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
+  }
+
+  // `ai-party-poc` is an offline producer-rehearsal runner. It proves fan-in,
+  // policy decisions, approval queue state, audit log, and simulated effects
+  // without constructing a TouchDesigner context or touching hardware.
+  if (positionals[0] === "ai-party-poc") {
+    const assembled = assembleParams(values, opts);
+    if ("error" in assembled) {
+      return {
+        stdout: "",
+        stderr: `Invalid JSON in --params/--json: ${assembled.error}\n`,
+        code: 2,
+      };
+    }
+    const args = aiPartyPocCliSchema.safeParse(assembled.raw);
+    if (!args.success) {
+      return {
+        stdout: "",
+        stderr: `Invalid arguments for "ai-party-poc": ${args.error.message}\n`,
+        code: 2,
+      };
+    }
+    const doc = runAiPartyPoc(args.data);
     return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
   }
 

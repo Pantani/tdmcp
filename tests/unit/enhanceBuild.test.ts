@@ -2,7 +2,7 @@ import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import type { LlmClientLike } from "../../src/llm/client.js";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
-import { enhanceBuildImpl, enhanceBuildSchema } from "../../src/tools/layer3/enhanceBuild.js";
+import { enhanceBuildImpl, enhanceBuildSchema } from "../../src/tools/layer1/enhanceBuild.js";
 import type { ToolContext } from "../../src/tools/types.js";
 import { silentLogger } from "../../src/utils/logger.js";
 import { makeTdServer, TD_BASE } from "../helpers/tdMock.js";

@@ -3,6 +3,10 @@
  * `setlist_runner`, `create_scene_timeline`, `compose_cue_list`,
  * `scene_scheduler`, `import_setlist`, and `export_setlist_to_vault`.
  */
+
+export * from "./aiPartyFanIn.js";
+export * from "./aiPartyPoc.js";
+export * from "./effectSimulator.js";
 export * from "./setlistSchema.js";
 export * from "./showDirectorRuntime.js";
 export * from "./showDirectorSchema.js";

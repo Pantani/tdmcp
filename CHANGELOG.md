@@ -4,7 +4,211 @@ All notable changes to **tdmcp** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.9.0] - 2026-06-10
+
+The **hype-scout Round 4 campaign** — the complete external trend-driven
+backlog (`_workspace/hype-scout/HYPE_TOOL_BACKLOG.md`) shipped as a single
+release. Five themed waves of work are consolidated here: force multipliers,
+top-5 quick wins, POP combos, the generative-AI bridge wave (including the
+`create_ai_mirror` capstone), and the optional VFX aesthetic tail.
+
+**28 new tools**, all live-verified against TD 099 build 2025.32820 /
+bridge 0.6.1.
+
+### Added — Force multipliers (D.0)
+- **`create_external_io` outbound modes** — new `ndi_out` and
+  `syphon_spout_out` modes (Layer 2). KB-confirmed stock TOPs
+  (`ndioutTOP`, `syphonspoutoutTOP`). The universal "push a TOP out to
+  StreamDiffusion / ComfyUI / MediaPipe-Spout-loopback" plumbing.
+- **`dropExternalTox` helper** (`src/tools/util/dropExternalTox.ts`) —
+  standardizes the dotsimulate TOX-drop pattern. Internal helper;
+  consumed by every Wave-4 wrapper.
+- **`build_pop_chain`** — Layer-2 builder for ordered POP chains over
+  the 77-kind curated subset of TouchDesigner's new point-operator
+  family. Safe-default params per POP type sourced from the knowledge
+  base; fail-forward warnings; `extra_inputs` with special-cased par
+  binding for the lookup family (`lookup_texture_pop` → `par.top`,
+  `lookup_channel_pop` → `par.chop`).
+
+### Added — Top-5 quick wins (D.1)
+- **`create_pose_controlnet_driver`** (Layer 1) — OpenPose-color
+  skeleton renderer over the existing `createPoseTracking` /
+  `createPoseSkeleton` pose stack. ControlNet-ready RGB TOP; optional
+  `output_mode: "syphon_spout" | "ndi"` routing through the FM-01
+  outbound modes.
+- **`create_ascii_render`** (Layer 1) — character-grid TOP, sibling of
+  `create_dither` / `create_halftone`. Three color modes
+  (`mono` / `source-color` / `two-color`), default phosphor-green;
+  configurable charset and cell size.
+- **`create_phrase_locked_cue_engine`** (Layer 1) — extension over
+  `createSyncExternalClock`: quantizes cue triggers to the next
+  musical phrase boundary (1/2/4/8/16/32/64 bars). Two quantize modes
+  (`next` / `aligned`), FIFO queue, local Beat CHOP so it composes
+  without a tight upstream binding.
+- **`create_audio_glsl_uniforms`** (Layer 2 helper) — binds named audio
+  CHOP channels to a target `glslTOP`'s `seq.vec` uniform slots via
+  Python expressions. Reuses the `createGlslShader` seq.vec precedent.
+
+### Added — POP combos (D.3)
+- **`create_pop_particle_system`** (Layer 1) — 4-stage POP particle
+  system (particle → feedback → lookup_texture force → field).
+- **`create_pop_growth`** (Layer 1) — POP-native reaction-diffusion /
+  growth presets, three modes (`dendritic` / `coral` / `lichen`).
+- **`create_pop_lines_pointcloud`** (Layer 1) — plexus-style line web
+  via `neighbor_pop` + downstream Script SOP line emission.
+- **`create_depth_pop_field`** (Layer 1) — depth-driven POP scatter
+  with explicit depth path or auto-spin `setup_segmentation` (MediaPipe).
+- **`create_stipple_pointcloud`** (Layer 1) — density-from-luminance
+  stipple via `lookup_texture_pop`; `bw_dots` / `colored_dots` /
+  `random_jitter` modes.
+
+### Added — Generative-AI bridge wave (D.2)
+- **`drive_streamdiffusion`** — dotsimulate StreamDiffusionTD .tox
+  wrapper via the `dropExternalTox` helper; FM-01 outbound binding;
+  synthetic noiseTOP source fallback.
+- **`setup_mediapipe_plugin`** — torinmb mediapipe-touchdesigner
+  canonical .tox EXTENSION over the stock `setup_*_tracking` family.
+- **`create_depth_from_2d`** — TDDepthAnything v2 wrapper; RGB-in →
+  depth-TOP-out.
+- **`create_gaussian_splat_scene`** — Anglerfish-graphics TDGS .tox
+  wrapper (top trend of Round 4, 4-surface unanimous H).
+- **`create_ai_mirror`** — **CAMPAIGN CAPSTONE** COMBO recipe: camera
+  input → `drive_streamdiffusion` → output binding → control panel.
+  Three source modes (synthetic/camera/existing_top), three output
+  paths (internal/syphon/ndi). Graceful degradation when SD's .tox
+  isn't installed: builds the full skeleton anyway and surfaces the
+  SD friendly message as a warning.
+- **`connect_comfyui`** — ComfyUI bridge (Layer 2). Two modes:
+  `tox_drop` (olegchomp/TDComfyUI or JiSenHua/ComfyUI-TD .tox) and
+  `webclient` (stock webclientDAT POST + workflow JSON).
+- **`connect_daydream_cloud`** — Daydream Cloud-hosted StreamDiffusion
+  (Layer 2). Skips the local GPU/CUDA gate. Env-only API key.
+- **`create_llm_chain`** — LLM connector (Layer 2). Two modes
+  (`tox_drop` dotsimulate LOPs or `webclient` OpenAI-compatible) and
+  four providers (`openai` / `anthropic` / `ollama` / `custom`).
+  All API keys are env-only — Node never touches the values.
+
+### Added — VFX aesthetic tail (D.5)
+- **`create_slit_scan`** (Layer 1) — time-slice slit-scan render via
+  cacheTOP, sibling of `create_time_echo`.
+- **`create_chrome_blobs`** (Layer 1) — liquid-chrome / metaball
+  preset stack (noise → blur → threshold → glslTOP chrome env →
+  composite).
+- **`create_vintage_lens`** (Layer 1, extension over
+  `applyPostProcessing`) — lens / CA / vignette preset.
+- **`create_reaction_diffusion`** (Layer 1) — Gray-Scott RD wrapper
+  over the shipped `recipes/reaction_diffusion.json`. Canonical
+  `seq.vec` uniform binding pattern; LUT palette chain wrapped in
+  fail-forward so the RD core ships even if rampTOP par naming varies.
+- **`create_pixel_sort`** (Layer 1) — threshold pixel-sort glslTOP.
+- **`create_volumetric_field`** (Layer 1) — 3D-texture feedback stack
+  (multiple 2D slices via cacheTOP + glslTOP stack walker with
+  Beer-Lambert alpha accumulation). Explicitly **not** a raymarcher.
+  Six baked palettes.
+- **`create_voxel_stack`** (Layer 1) — isometric voxel-stack render
+  rig with `mergeCHOP` instance-channel combiner.
+- **`create_facade_mapping`** (Layer 1) — multi-projector blend
+  skeleton; per-projector brightness exposed.
+
+### Improved — FM-02 hardening + bridge installer layout
+- **TS-side `toxCandidatePrecheck` helper**
+  (`src/tools/util/toxCandidatePrecheck.ts`) — when all candidate
+  `.tox` paths are absolute AND none exist on disk, every wrapper
+  short-circuits with a friendly error in milliseconds with **NO
+  bridge call**. Closes the entire class of "TD hangs when the user
+  doesn't have the .tox installed" bugs that surfaced during the
+  AI-bridge wave's live QA. Project-relative candidate defaults were
+  stripped from `drive_streamdiffusion`, `create_gaussian_splat_scene`,
+  `connect_comfyui`, and `create_llm_chain` so the precheck always
+  short-circuits when nothing is installed.
+- **`dropExternalTox` fail-fast** — incomplete bridge reports
+  (missing `found_path` / `container_path`) now return a friendly
+  error instead of being silently coerced to `{ok: ...}` with empty
+  paths.
+- **Bridge installer node layout** (`td/modules/mcp/install.py`) —
+  the installed bridge COMP's inner nodes (`callbacks`, `webserver`,
+  `webserver_callbacks`, `events_hook`, `error_log`,
+  `error_log_callbacks`) are now positioned in a fixed, legible
+  arrangement instead of stacking at the origin.
+
+### Fixed (rolled up across the campaign)
+- `build_pop_chain` `extra_inputs` wiring no longer raises
+  `IndexError` on `lookup_texture_pop` / `lookup_channel_pop`. These
+  fixed-arity POPs take their secondary source via a par reference
+  (`par.top` / `par.chop`), not an input connector.
+- `build_pop_chain` payload script uses `.get()` defaults for
+  `defaults_map` and `unverified_note` — direct low-level callers no
+  longer crash with `KeyError`.
+- `drive_streamdiffusion` synthetic source fallback: noiseTOP when
+  `source_top_path` is absent (was a bare moviefileinTOP that
+  prompted a macOS file-chooser modal → TD hang).
+- `create_ai_mirror` graceful-degradation path when SD `.tox` is
+  missing: build the full skeleton + control panel, surface the SD
+  friendly error as a warning. Slider COMPs are now initialized from
+  `args.strength` / `args.cfg` before `.expr` bindings are applied
+  (was drifting from caller-specified values). Precheck-missing
+  detector narrowed to `\bno_candidate_found\b` to avoid masking
+  unrelated errors.
+- `create_llm_chain` — Python escape: `"# prompt mirror\n"` /
+  `"# response mirror\n"` were emitting real LF characters and
+  unterminating the Python string literal; the escape is now
+  double-backslashed. TD optype `datExecuteDAT` (camelCase) → the
+  actual `datexecuteDAT`. webclientDAT par names corrected
+  (`requestmethod` → `reqmethod`; dropped non-existent
+  `asynchronous` / headers DAT par / request data DAT par writes —
+  webclientDAT is async by default via its callbacks and body content
+  goes through the body_builder textDAT).
+- `create_stipple_pointcloud` geometryCOMP par names corrected
+  against TD 099 (`pointcloudpop` → `instancepop`; `pointsize` →
+  `instancesx/y/z` scale as the dot-size proxy).
+- `create_pop_particle_system` — prepend a `point_generator_pop`
+  seed before `particle_pop` to satisfy its required emitter input
+  (clears the "Not enough sources" cook warning). Now also stops on
+  `chainResult.isError` instead of silently continuing.
+- `create_voxel_stack` optype casing: `topToCHOP` → `toptoCHOP`.
+  Multiple `connect(*, nullCHOP)` calls replaced with a `mergeCHOP`
+  combiner so all instance channels (tx / tz / ty / sy / colorTop)
+  reach the instancing path together.
+- `create_reaction_diffusion` — container_path is threaded through
+  the overlay payload from `buildFromRecipe`'s actual container
+  instead of being reconstructed from `args.name` (recipe-id-derived
+  names differ from caller-supplied names). GLSL uniform binding now
+  uses the canonical `seq.vec.numBlocks + setattr(g.par,
+  'vec<i>name', ...)` pattern (mirrors `createGlslShader.ts`
+  L115-117). rampTOP LUT key-par setting wrapped in fail-forward
+  try/except.
+- `create_slit_scan` — `_g.par.seq.vec.numBlocks` →
+  `_g.seq.vec.numBlocks` (the `seq` property is on the operator, not
+  via `par`).
+- `create_facade_mapping` — missing `await` on `builder.add` in the
+  `existing_top` source-mode branch.
+- `create_depth_from_2d` — `executePythonScript` second argument is
+  now `true` so the success-path bridge response carries stdout for
+  `parsePythonReport`.
+- `create_phrase_locked_cue_engine` — `parameterexecuteDAT
+  "flush_exec"` is now bound to the container via `op:
+  builder.containerPath` + `pars: "Flush"` so it actually receives
+  the Flush parameter pulses.
+- `create_pixel_sort` — Iterations control `type` corrected from
+  `"float"` to `"int"` to match the schema.
+- `drive_streamdiffusion` schema description corrected — the
+  `source_top_path` is a filesystem video/image file path (used to
+  set `moviefileinTOP.file`), not a TouchDesigner operator path.
+
+### Verified
+All 28 features were live-cooked against TD 099 build 2025.32820 /
+bridge 0.6.1 at release time. Offline gates: typecheck + build +
+biome + vitest (3946 pass) + validate:recipes (32) + test:bridge
+(196).
+
+### Added
+
+- **AI-Controlled Party producer POC runner** — `tdmcp-agent ai-party-poc`
+  runs the closed-rehearsal proof in dry-run/simulated mode: text/transcript
+  fan-in, `ShowIntent` policy decisions, approval queue state, audit log,
+  optional auto-approval into simulated effect events, and zero hardware plans.
+  Fixtures live under `tests/fixtures/show-director/` and are pinned by
+  `tests/unit/showDirectorFixtures.test.ts`.
 
 ## [0.8.3] - 2026-06-03
 

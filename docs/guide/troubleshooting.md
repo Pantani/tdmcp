@@ -90,6 +90,31 @@ parameter names and may need a nudge. Just say what's wrong:
 
 The AI can measure cook times and optimize the heaviest parts.
 
+## TDAbleton Mapper is not moving Ableton
+
+For the MediaPipe hands to Auto Filter flow, AbletonMCP is not part of the runtime
+path. The path is TouchDesigner MediaPipe hands -> TDAbleton `TDA_Mapper` ->
+Ableton mapped parameter.
+
+Check, in order:
+
+1. TouchDesigner is playing; MediaPipe capture does not update while the timeline
+   is paused.
+2. The hand adapter CHOP has non-zero `confidence` and `handedness`.
+3. `/project1/hand_ableton_mapper/mapper_send` has moving `map1`, `map2`, `map3`,
+   and `map4` channels.
+4. Left hand moves `map1`/`map3`; right hand moves `map2`/`map4`.
+5. The active `TDA_Mapper` path is the real track/device target, not a stale
+   mapper from another track.
+6. `Oscinputchop` points at `mapper_send`, `Reorder` is `map1 map2 map3 map4`,
+   `Bypass1..4` are off, and `Min/Max1..4` are `0..1`.
+7. The four TDAbleton mapper slots are manually mapped to Auto Filter or rack macro
+   parameters in Ableton.
+
+Run `diagnose_tdableton_mapper` to inspect the mapper state from TouchDesigner and
+use `repair:true` only when you want tdmcp to restore the input CHOP, reorder,
+bypass, and range parameters.
+
 ## Still stuck?
 
 Open an issue at [github.com/Pantani/tdmcp/issues](https://github.com/Pantani/tdmcp/issues).

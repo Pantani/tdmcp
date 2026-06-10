@@ -1,13 +1,13 @@
 import { z } from "zod";
 import type { ControlSpec } from "../layer2/createControlPanel.js";
-import type { ToolContext, ToolRegistrar } from "../types.js";
 import {
   buildFromRecipe,
   createSystemContainer,
   finalize,
   type NetworkBuilder,
   runBuild,
-} from "./orchestration.js";
+} from "../layer2/orchestration.js";
+import type { ToolContext, ToolRegistrar } from "../types.js";
 
 const q = (value: string): string => JSON.stringify(value);
 

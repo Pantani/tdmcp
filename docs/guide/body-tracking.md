@@ -105,6 +105,33 @@ so you can drive *any* parameter with a body part:
 Bind a parameter to `op('…/pose_tracking/keypoints')['r_wrist_y']` (or
 `hand_span`, `hips_x`, `height`, …) and it tracks your movement live.
 
+## 6. Use hands as Ableton filter controls
+
+Hands can also become a four-channel Ableton controller when you use TDAbleton.
+The `create_hand_ableton_mapper` tool builds the TouchDesigner side: MediaPipe
+hands in, a skeleton overlay with star joints, and a `mapper_send` CHOP for
+TDAbleton. AbletonMCP is not required for this recipe.
+
+Default mapping:
+
+| Mapper slot | Gesture |
+| --- | --- |
+| `map1` | Left-hand thumb/index distance |
+| `map2` | Right-hand thumb/index distance |
+| `map3` | Left wrist roll |
+| `map4` | Right wrist roll |
+
+On the TDAbleton `TDA_Mapper`, point the input CHOP to
+`/project1/hand_ableton_mapper/mapper_send`, set `Reorder` to
+`map1 map2 map3 map4`, keep `Bypass1..4` off, and map the four slots manually to
+Auto Filter frequency, resonance, drive, or rack macros inside Ableton.
+
+If TouchDesigner values move but Ableton does not, run
+`diagnose_tdableton_mapper`. It checks the real mapper path, input CHOP, `Reorder`,
+bypass states, `Min/Max` ranges, and missing `map1..map4` channels. This catches
+the common stale-target problem where a mapper looks healthy but points at the
+wrong track or device.
+
 ## Ready-made recipes
 
 Two browsable templates ship in the recipe gallery — ask *"list recipes"* or see

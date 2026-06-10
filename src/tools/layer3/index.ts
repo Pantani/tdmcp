@@ -14,7 +14,6 @@ import { registerDisconnectNodes } from "./disconnectNodes.js";
 import { registerDocumentNetwork } from "./documentNetwork.js";
 import { registerEditDatContent } from "./editDatContent.js";
 import { registerElicitMissingArgs } from "./elicitMissingArgs.js";
-import { registerEnhanceBuild } from "./enhanceBuild.js";
 import { registerExecNodeMethod } from "./execNodeMethod.js";
 import { registerExecutePythonScript } from "./executePythonScript.js";
 import { registerExportSopToSvg } from "./exportSopToSvg.js";
@@ -120,7 +119,6 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerInspectGpuAndDisplays,
   // Campaign BEYOND Wave 5 (backlog 2026-05-30 — v0.7.0):
   registerManageComponentStorage,
-  registerEnhanceBuild,
   registerElicitMissingArgs,
   // Ingest-extend Wave 3 sub-batch B (2026-06-01 — v0.9.0):
   registerExtractPalette,

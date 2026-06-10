@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { createSystemContainer, finalize, runBuild } from "../layer1/orchestration.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import type { ControlSpec } from "./createControlPanel.js";
+import { createSystemContainer, finalize, runBuild } from "./orchestration.js";
 
 const q = (value: string): string => JSON.stringify(value);
 

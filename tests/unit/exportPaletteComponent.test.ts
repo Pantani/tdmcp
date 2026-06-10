@@ -1,5 +1,5 @@
 import { HttpResponse, http } from "msw";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
 import { RecipeLibrary } from "../../src/recipes/loader.js";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
@@ -126,6 +126,17 @@ describe("export_palette_component", () => {
     const payload = decodePayload(lastScript);
     expect(payload.name).toBe("base1");
     expect(textOf(res)).toContain("1 warning(s)");
+  });
+
+  it("rejects an unsafe derived file stem before touching TD", async () => {
+    const exec = vi.fn();
+    const res = await exportPaletteComponentImpl(
+      { client: { executePythonScript: exec }, logger: silentLogger } as unknown as ToolContext,
+      { comp_path: "/", category: "tdmcp", palette_dir: "" },
+    );
+    expect(res.isError).toBe(true);
+    expect(textOf(res)).toContain("Invalid palette component name");
+    expect(exec).not.toHaveBeenCalled();
   });
 
   it("forwards an explicit palette_dir in the payload", async () => {

@@ -64,7 +64,7 @@ their context here, so all surfaces share one core.
 **Three tool layers** (`src/tools/layer{1,2,3}/`), so the AI can pick altitude:
 - **Layer 1** — artist tools that build a whole wired+arranged network
   (`createAudioReactive`, `createFeedbackNetwork`, …). These go through
-  `src/tools/layer1/orchestration.ts`.
+  `src/tools/layer2/orchestration.ts`.
 - **Layer 2** — building blocks (`connectNodes`, `createControlPanel`,
   `animateParameter`, `createExternalIo`, …).
 - **Layer 3** — atomic node CRUD + inspection + the raw-Python escape hatches
@@ -82,7 +82,7 @@ tool: create the file, export both, add to the layer index.
 failures become friendly `isError` results via `errorResult`
 (`src/tools/result.ts`), `runBuild`, and `friendlyTdError`.
 
-**Layer 1 orchestration (`orchestration.ts`).** `createSystemContainer` makes a
+**Shared Layer 2 orchestration (`orchestration.ts`).** `createSystemContainer` makes a
 fresh `baseCOMP`; `NetworkBuilder` adds/connects/sets-params **fail-forward**
 (connection and param failures are collected as `warnings`, not thrown, so a
 partial build still returns useful info); `buildFromRecipe` instantiates a recipe;
@@ -293,3 +293,48 @@ skill author the endpoint + client + validator + exec-fallback slice.
 |------|--------|--------|--------|
 | 2026-05-30 | Initial build | 1 agent (`tdmcp-backlog-planner`) + 1 skill (`tdmcp-backlog-campaign`) + ledger | drive the round-2 "BEYOND" backlog (66 buildable: 2 foundations + 64 features, 5 waves) to completion idempotently; reuses the whole per-wave pipeline. Policy: staged-by-priority, checkpoint after wave 1, commit+push **no-tag**, TD-required before build waves |
 | 2026-05-30 | Consolidated a parallel campaign (PR #29) | +9 artist-control tools (`create_test_pattern`, `create_text_crawl`, `create_band_router`, `create_sidechain_pump`, `create_xy_pad`, `create_time_echo`, `create_capture_loop`, `create_vector_lines`, `create_blob_reactive`) + `tdmcp-bridge-engineer` agent + `tdmcp-bridge-endpoint` skill | a concurrent session built these round-1 tools (live-validated TD 099: 8 qa_pass, `create_blob_reactive` unverified pending live camera) on a duplicate harness; merged into this line keeping its tools + bridge authoring, dropping the duplicate campaign agent/scripts in favour of `tdmcp-backlog-planner` |
+
+## Harness: interactive projection mapping
+
+**Goal:** implement `create_interactive_projection_mapping` and the
+`interactive_projection_mapping` recipe/docs as a physical USB webcam + projector
+installation starter, while keeping a synthetic-source path for automated tests.
+
+**Trigger:** when asked to build, implement, continue, fix, QA, document, or ship
+`create_interactive_projection_mapping`, `interactive_projection_mapping`, USB
+webcam/projector projection mapping, optical-flow hand interaction, blob/post-it
+tracking, or this feature's recipe/docs, use the
+`tdmcp-interactive-projection-mapping` skill before the generic
+`tdmcp-pipeline`. Simple conceptual questions can be answered directly.
+
+**Change log:**
+| Date | Change | Target | Reason |
+|------|--------|--------|--------|
+| 2026-06-05 | Initial implementation team | 5 agents + 1 skill | execute the approved interactive projection mapping spec through prototype, Layer 1 tool, recipe/docs, and physical/synthetic QA |
+
+## Harness: hype trend scouting
+
+**Goal:** scout what is **hyped in the TouchDesigner community right now**
+(2025-2026 showcases, recent tutorials, generative-AI bridges, hardware
+interaction, dominant visual aesthetics) and turn the trends into a prioritized
+backlog of **tdmcp tools that are easy to build**. Complementary to
+`tdmcp-feature-discovery` (internal gap analysis): this one looks outward.
+
+**Trigger:** when asked to brainstorm new feature ideas based on what is
+trending in TouchDesigner, asks for "hype" / "trending" features, asks what
+people are doing in TD right now / what's hot, wants tools inspired by
+community trends, or says things like "ideias hype", "novas ideias", "o que
+está em alta", "criar ferramentas para o que está bombando", "tendências do
+TouchDesigner" — including follow-ups (refresh, rescout one surface, re-rank
+under a different profile, deepen a trend) — use the `tdmcp-hype-scout` skill
+(a fan-out of 5 `td-trend-scout`s → 1 `td-hype-synthesizer`, in
+`.claude/agents/` and `.claude/skills/`). This is the **external ideation**
+harness — it produces a HYPE_TOOL_BACKLOG.md ranked by Hype × Build-Ease; it
+does **not** build. Once a feature is chosen, hand it to `tdmcp-pipeline`.
+Simple questions can be answered directly.
+
+**Change log:**
+| Date | Change | Target | Reason |
+|------|--------|--------|--------|
+| 2026-06-09 | Initial harness | hype-scout (2 agents + 3 skills) | external trend ideation: scout TD community → prioritized HYPE_TOOL_BACKLOG ranked by Hype × Build-Ease; feeds tdmcp-pipeline. Complements internal `tdmcp-feature-discovery`. |
+| 2026-06-09 | First run + roadmap merge | `_workspace/hype-scout/HYPE_TOOL_BACKLOG.md` + `docs/ROADMAP.md` (Round 4 appendix + Milestone 3-4 + Out-of-scope Round-4 bullets) | 5 scouts (60 entries) → 1 synthesizer (38 deduped) → 3 force multipliers + top-5 quick-wins promoted to Planned/Milestone 3, AI-bridge wave to Milestone 4, hardware/GPU items mapped to Out of scope |

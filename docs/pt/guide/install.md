@@ -18,7 +18,7 @@ instala tudo para você:
 ```text
 Install and connect tdmcp for me using the official install guide:
 https://pantani.github.io/tdmcp/pt/guide/install
-Do every step yourself; only stop when you need me to paste one line into TouchDesigner.
+Do every step yourself; only stop when you need me to run the TouchDesigner Textport step.
 ```
 :::
 
@@ -48,8 +48,12 @@ diretamente a quem te indicou o tdmcp e continue no passo 2.
 
 ## 3. Ligue a ponte dentro do TouchDesigner {#turn-on-the-bridge}
 
-É isso que permite o Claude realmente controlar o TouchDesigner. Você só faz uma
-vez.
+É isso que permite o Claude realmente controlar o TouchDesigner. Se você está no
+caminho sem terminal do Claude Desktop, use a linha única rápida. Se trabalha
+pela CLI e abre muitos projetos, você também pode instalar um pacote arrastável
+na Palette.
+
+### Runtime rápido da ponte
 
 1. **Abra o TouchDesigner.**
 2. Abra o **Textport**: menu **Dialogs → Textport and DATs**.
@@ -65,9 +69,47 @@ Você deve ver:
 [tdmcp] bridge running on port 9980 (/project1/tdmcp_bridge)
 ```
 
-Pronto. ✅ É seguro e reversível — adiciona um único componente organizado,
-`tdmcp_bridge`. Para remover depois, cole
+É seguro e reversível: adiciona um único componente organizado, `tdmcp_bridge`.
+Para remover depois, cole
 `from mcp import install; install.uninstall()`.
+
+### Pacote arrastável da Palette
+
+Isso instala `tdmcp_bridge_package` na Palette do TouchDesigner. Depois, em cada
+projeto novo basta arrastar, clicar em **Install** e começar a trabalhar.
+
+1. No terminal, rode:
+
+   ```bash
+   npx @dpantani/tdmcp install-bridge --palette
+   ```
+
+   Trabalhando a partir de um clone? Use:
+
+   ```bash
+   node dist/index.js install-bridge --palette
+   ```
+
+2. Copie o comando de Textport do pacote da Palette que ele imprimir.
+3. No TouchDesigner, abra **Dialogs → Textport and DATs**, cole o comando e
+   aperte **Enter**.
+4. Abra a Palette, encontre **tdmcp → tdmcp_bridge_package** e arraste para
+   `/project1`.
+5. Clique em **Install** no componente.
+
+Pacotes gerados sem **Modules Dir** conseguem se autoinicializar: eles baixam
+o zip em **Repo Zip**, extraem apenas `td/modules` para **Bootstrap Dest**
+(padrão `~/tdmcp-bridge`) e iniciam a partir desse cache local. Esse é o formato
+para pacotes `.tox` prontos para release.
+
+Verifique pelo terminal:
+
+```bash
+curl http://127.0.0.1:9980/api/info
+```
+
+O pacote da Palette continua no seu projeto; o botão **Uninstall** remove apenas
+`/project1/tdmcp_bridge`.
 
 ## Você está conectado
 
@@ -91,7 +133,8 @@ roda o [copiloto local](/pt/guide/local-copilot).)
 
 ::: tip Mais fácil — deixe a IA fazer
 Cole o comando do topo desta página na sua IA; ela clona, compila e conecta tudo
-sozinha, parando só na linha da ponte no [passo 3](#turn-on-the-bridge).
+sozinha, parando só no passo do TouchDesigner no
+[passo 3](#turn-on-the-bridge).
 :::
 
 Ou conecte na mão:

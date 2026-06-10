@@ -47,6 +47,60 @@ def _src_owner(connection):
     return getattr(connection, "op", None)
 
 
+def _target_disconnects(to, from_path=None, to_input=None):
+    targets = []
+    warnings = []
+    for connector in to.inputConnectors:
+        index = connector.index
+        if to_input is not None and index != to_input:
+            continue
+        try:
+            connections = list(connector.connections)
+        except Exception as exc:  # noqa: BLE001
+            warnings.append("inputConnectors[%d].connections error: %s" % (index, exc))
+            continue
+        for connection in connections:
+            src_op = _src_owner(connection)
+            if src_op is None:
+                warnings.append("Could not resolve upstream op for inputConnectors[%d]" % index)
+                continue
+            if from_path is None or src_op.path == from_path:
+                targets.append((index, connection, src_op.path))
+    return targets, warnings
+
+
+def _holding_connector(to, connection):
+    for connector in to.inputConnectors:
+        try:
+            if connection in connector.connections:
+                return connector
+        except Exception:  # noqa: BLE001
+            continue
+    return None
+
+
+def _disconnect_target(to, target):
+    index, connection, src_path = target
+    holder = _holding_connector(to, connection)
+    if holder is None:
+        # Already gone (removed alongside another wire's repack) — the net effect
+        # we wanted is achieved, so still count it.
+        return {"input": index, "from": src_path}, None
+    try:
+        holder.disconnect(connection)
+        return {"input": index, "from": src_path}, None
+    except Exception as exc1:  # noqa: BLE001
+        try:
+            holder.disconnect()
+            return {"input": index, "from": src_path}, None
+        except Exception as exc2:  # noqa: BLE001
+            return None, (
+                "disconnect failed for inputConnectors[%d] from %s: "
+                "connector.disconnect(conn) -> %s; connector.disconnect() -> %s"
+                % (index, src_path, exc1, exc2)
+            )
+
+
 def connect(source_path, target_path, source_output=0, target_input=0):
     """Wire ``source.outputConnectors[source_output]`` ->
     ``target.inputConnectors[target_input]``.
@@ -152,57 +206,20 @@ def disconnect(to_path, from_path=None, to_input=None):
     # iterating the live connectors while disconnecting can skip a wire that just
     # moved into a slot we already passed. The `connection` (upstream OUTPUT
     # connector) is stable across repacks, so pass 2 re-finds each wire by it.
-    targets = []  # list of (input_index, connection, src_path)
-    for connector in to.inputConnectors:
-        index = connector.index
-        if to_input is not None and index != to_input:
-            continue
-        try:
-            connections = list(connector.connections)
-        except Exception as exc:  # noqa: BLE001
-            warnings.append("inputConnectors[%d].connections error: %s" % (index, exc))
-            continue
-        for connection in connections:
-            src_op = _src_owner(connection)
-            if src_op is None:
-                warnings.append("Could not resolve upstream op for inputConnectors[%d]" % index)
-                continue
-            if from_path is not None and src_op.path != from_path:
-                continue
-            targets.append((index, connection, src_op.path))
+    targets, snapshot_warnings = _target_disconnects(to, from_path, to_input)
+    warnings.extend(snapshot_warnings)
 
     # PASS 2 — disconnect each snapshotted wire. Re-find the connector that currently
     # holds it (repacking may have moved it to a lower index) and scope the disconnect
     # to that one input<-output link; connection.disconnect() would tear down the
     # source output's wires to EVERY downstream target. Fall back to clearing the
     # holding input slot (still only affects to_path, never the source's outputs).
-    for index, connection, src_path in targets:
-        holder = None
-        for connector in to.inputConnectors:
-            try:
-                if connection in connector.connections:
-                    holder = connector
-                    break
-            except Exception:  # noqa: BLE001
-                continue
-        if holder is None:
-            # Already gone (removed alongside another wire's repack) — the net effect
-            # we wanted is achieved, so still count it.
-            removed.append({"input": index, "from": src_path})
-            continue
-        try:
-            holder.disconnect(connection)
-            removed.append({"input": index, "from": src_path})
-        except Exception as exc1:  # noqa: BLE001
-            try:
-                holder.disconnect()
-                removed.append({"input": index, "from": src_path})
-            except Exception as exc2:  # noqa: BLE001
-                warnings.append(
-                    "disconnect failed for inputConnectors[%d] from %s: "
-                    "connector.disconnect(conn) -> %s; connector.disconnect() -> %s"
-                    % (index, src_path, exc1, exc2)
-                )
+    for target in targets:
+        removed_item, warning = _disconnect_target(to, target)
+        if removed_item is not None:
+            removed.append(removed_item)
+        if warning is not None:
+            warnings.append(warning)
 
     return {
         "to_path": to.path,

@@ -13,8 +13,10 @@ import {
   resolveMacrosDir,
   summarizeResult,
 } from "../../automation/macroSchema.js";
+import { registerToolRegistrars, runtimeToolRegistrars } from "../registry.js";
 import { errorResult, structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { registerMacroRecorder } from "./macroRecorder.js";
 
 export const runMacroScriptSchema = z.object({
   macroPath: z.string().min(1),
@@ -33,7 +35,7 @@ const cachedHandlers = new WeakMap<ToolContext, HandlerMap>();
 const injectedHandlers = new WeakMap<ToolContext, HandlerMap>();
 const SENTINEL_CTX: ToolContext = {} as ToolContext;
 
-/** Test-only: inject a handler registry instead of building one from registerAllTools. */
+/** Test-only: inject a handler registry instead of building one from the tool registrars. */
 export function __setHandlersForTests(
   handlers: HandlerMap | undefined,
   ctx: ToolContext = SENTINEL_CTX,
@@ -59,11 +61,11 @@ async function getOrBuildToolHandlers(ctx: ToolContext): Promise<HandlerMap> {
       return undefined;
     },
   } as unknown as McpServer;
-  // Dynamic import to avoid a circular dep with src/tools/index.ts.
-  const mod = (await import("../index.js")) as {
-    registerAllTools: (s: McpServer, c: ToolContext) => void;
-  };
-  mod.registerAllTools(stub, ctx);
+  registerToolRegistrars(stub, ctx, [
+    ...runtimeToolRegistrars,
+    registerMacroRecorder,
+    registerRunMacroScript,
+  ]);
   cachedHandlers.set(ctx, map);
   return map;
 }

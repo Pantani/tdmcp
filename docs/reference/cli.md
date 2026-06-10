@@ -19,7 +19,7 @@ The package installs two binaries: `tdmcp` (the MCP server + utilities) and
 | `tdmcp init` | One-shot onboarding: stage the bridge, write a client config (Claude / Cursor / Codex), seed a profile and optional bridge token. See [Onboarding](#onboarding) below. |
 | `tdmcp ask "<prompt>"` | Non-interactive copilot turn — one prompt in, one answer out (machine-readable with `--json`). See [Onboarding](#onboarding) below. |
 | `tdmcp chat` _(alias `tdmcp llm-run`)_ | Start the local LLM copilot UI (see below). |
-| `tdmcp install-bridge` | Stage the TouchDesigner bridge to `~/tdmcp-bridge` and print the one line to paste into TD's Textport. Add `--verify` to check `/api/info` once, `--wait` to poll until it is up, and `--port <port>` for non-default bridges. See [Bridge & REST API](/reference/bridge-api). |
+| `tdmcp install-bridge` | Stage the TouchDesigner bridge to `~/tdmcp-bridge` and print the runtime Textport command for `/project1/tdmcp_bridge`. Add `--palette` to also print a Palette package export command for draggable `tdmcp_bridge_package.tox`; `--palette-dir <path>` and `--package-name <name>` imply `--palette`. Add `--verify` to check `/api/info` once, `--wait` to poll until it is up, and `--port <port>` for non-default bridges. For the Palette package, `/api/info` can only pass after the package's **Install** button creates the runtime bridge. See [Bridge & REST API](/reference/bridge-api). |
 | `tdmcp install-client <claude\|codex\|cursor>` | Print a client-specific MCP config snippet for the current package. Add `--write --path <file>` to deep-merge and verify an explicit client config file (JSON for Claude/Cursor, TOML for Codex). |
 | `tdmcp completion bash` | Print a shell completion snippet for the primary binary. Supports `bash`, `zsh`, and `fish`, including package-manager shortcuts and common flags. |
 | `tdmcp --version` | Print the package version. |
@@ -111,6 +111,8 @@ tdmcp-agent watch-build --no-reload-bridge  # build-only watcher
 tdmcp-agent watch --pretty --heartbeat-ms 5000
 tdmcp-agent watch --on beat --exec './cue-next.sh' --debounce-ms 250
 tdmcp-agent show-director --params '{"intent":{"type":"request_cue","cue":"band_intro","preapproved":true}}'
+tdmcp-agent ai-party-poc
+tdmcp-agent ai-party-poc --params '{"auto_approve_effects":true,"operator":"front-of-house"}'
 ```
 
 Output format is `--output json` (default) / `ndjson` / `text` / `table` /
@@ -135,6 +137,14 @@ validates a `ShowIntent`, returns `allow`, `require_approval` or `block`, and
 emits updated approval/audit state as JSON. It never connects to TouchDesigner or
 hardware; use it to gate future voice/OpenClaw/dashboard integrations before any
 cue or effect is mapped to real execution.
+
+`tdmcp-agent ai-party-poc` runs the producer rehearsal package for the
+[AI-Controlled Party](/guide/ai-controlled-party) concept. With no params it uses
+the built-in seven-moment demo; with custom `events` it accepts operator text,
+voice transcripts, audio-section markers, dashboard approval actions or scripted
+`ShowIntent`s. The output is a dry-run JSON envelope with policy decisions,
+approval queue state, an audit log summary and simulated effect events. It does
+not build a TouchDesigner context and never emits a live hardware plan.
 
 ## Local copilot (`tdmcp chat`)
 

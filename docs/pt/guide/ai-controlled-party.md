@@ -188,7 +188,39 @@ tdmcp-agent show-director approve approval_0001 --params-file approve-state.json
 O `plan` retornado ainda é abstrato e dry-run only. Adaptadores de hardware devem
 ser adicionados separadamente e continuar aplicando a mesma policy.
 
-Contrato planejado de armamento de cena da Ui24R:
+## Runner do POC para produtor
+
+Para um rehearsal fechado com produtor, use `ai-party-poc` para rodar o POC
+recomendado sem conectar ao TouchDesigner ou a hardware:
+
+```bash
+tdmcp-agent ai-party-poc
+```
+
+Ele roda uma demonstração dry-run em sete momentos: abertura/preflight,
+boas-vindas da IA, entrada de banda, aprovação de fog, mood áudio-reativo,
+mudança de clima por voz/texto, prova de segurança e audit final. O comando
+normaliza texto de operador ou transcrição de voz em `ShowIntent`, avalia a
+policy, devolve estado de aprovação/audit log e marca todo efeito como simulado.
+
+Para demonstrar o caminho completo de aprovação sem tocar em hardware:
+
+```bash
+tdmcp-agent ai-party-poc --params '{
+  "auto_approve_effects": true,
+  "operator": "front-of-house"
+}'
+```
+
+O resultado pode incluir eventos simulados como `fog_sim_short`, mas
+`hardware_plans` permanece `0`. Use os fixtures em
+`tests/fixtures/show-director/` como material de rehearsal ou entradas futuras
+de regressão.
+
+## Armamento planejado de cena da Ui24R
+
+O contrato planejado de armamento de cena da Ui24R continua sendo trabalho de
+design, não execução live atual:
 
 ```bash
 tdmcp-agent show-director --params '{
@@ -208,10 +240,9 @@ tdmcp-agent show-director --params '{
 }'
 ```
 
-Este contrato é planejado, não execução live atual. A primeira fatia deve
-retornar fila de aprovação dry-run e plano de cena do mixer com `dry_run_only`.
-Adaptadores live por Companion ou Ui24R direta devem ser follow-ups separados e
-gated.
+A primeira fatia deve retornar fila de aprovação dry-run e plano de cena do
+mixer com `dry_run_only`. Adaptadores live por Companion ou Ui24R direta devem
+ser follow-ups separados e gated.
 
 ## Checklist da demo
 

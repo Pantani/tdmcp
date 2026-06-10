@@ -8,7 +8,7 @@
   "nodes": [
     { "name": "source", "type": "nullTOP", "comment": "Wire your visual into this node" },
     { "name": "fit", "type": "fitTOP", "comment": "Resample to LED-strip resolution (e.g. 144x1)" },
-    { "name": "topto", "type": "topto", "comment": "TOP → CHOP: one sample per LED" },
+    { "name": "topto", "type": "toptoCHOP", "comment": "TOP → CHOP: one sample per LED" },
     { "name": "chopto_dat", "type": "choptoDAT", "comment": "Channels → table of color bytes" },
     { "name": "serial", "type": "serialDAT", "comment": "Sends bytes to the LED controller" }
   ],

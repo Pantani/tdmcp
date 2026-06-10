@@ -28,9 +28,11 @@ export const createExternalIoSchema = z.object({
       "video_device_out",
       "ndi_in",
       "syphon_spout_in",
+      "ndi_out",
+      "syphon_spout_out",
     ])
     .describe(
-      "What to bridge: OSC/MIDI/keyboard/gamepad/mouse input (a control surface — bind channels to parameters), OSC/MIDI output (send a CHOP's channels back out for bidirectional feedback — pass source_path), DMX/Art-Net output for lighting (dmx_out is the general DMX desk; artnet_out is a network-only Art-Net/sACN preset for pixel-mapping LED strips & stage fixtures — both send a CHOP's 0-255 channels and need source_path), RTMP output to live-stream a TOP to Twitch/YouTube/OBS-ingest (rtmp_out — pass source_path = the TOP to stream and url; needs an NVIDIA GPU on Windows), or NDI / Syphon-Spout video input. (Window/recording/NDI/Syphon *video outputs* live in setup_output.)",
+      "What to bridge: OSC/MIDI/keyboard/gamepad/mouse input (a control surface — bind channels to parameters), OSC/MIDI output (send a CHOP's channels back out for bidirectional feedback — pass source_path), DMX/Art-Net output for lighting (dmx_out is the general DMX desk; artnet_out is a network-only Art-Net/sACN preset for pixel-mapping LED strips & stage fixtures — both send a CHOP's 0-255 channels and need source_path), RTMP output to live-stream a TOP to Twitch/YouTube/OBS-ingest (rtmp_out — pass source_path = the TOP to stream and url; needs an NVIDIA GPU on Windows), NDI / Syphon-Spout video input, or NDI / Syphon-Spout video output (ndi_out / syphon_spout_out — pass source_path = the TOP to send and an optional source_name for the NDI source / Spout sender name; flip active to start immediately). On Windows, Spout needs an NVIDIA or AMD GPU (no Intel).",
     ),
   parent_path: z.string().default("/project1").describe("COMP to create the I/O operator in."),
   name: z.string().optional().describe("Name for the I/O operator; auto-generated when omitted."),
@@ -53,7 +55,7 @@ export const createExternalIoSchema = z.object({
     .string()
     .optional()
     .describe(
-      "(dmx_out/artnet_out/osc_out/midi_out) CHOP whose channel values are sent out, or (rtmp_out / video_device_out) the TOP to send. Should live in the same COMP as parent_path so the wire/source connects.",
+      "(dmx_out/artnet_out/osc_out/midi_out) CHOP whose channel values are sent out, or (rtmp_out / video_device_out / ndi_out / syphon_spout_out) the TOP to send. Should live in the same COMP as parent_path so the wire/source connects.",
     ),
   interface: z
     .enum(["artnet", "sacn", "enttecusbpro", "enttecusbpromk2", "serial", "kinet"])
@@ -91,13 +93,13 @@ export const createExternalIoSchema = z.object({
     .boolean()
     .optional()
     .describe(
-      "(rtmp_out) Start streaming immediately. Defaults off so the artist can confirm the URL before going live.",
+      "(rtmp_out/ndi_out/syphon_spout_out) Start sending immediately. Defaults off so the artist can confirm the destination/sender name first.",
     ),
   source_name: z
     .string()
     .optional()
     .describe(
-      "(ndi_in/syphon_spout_in) Name of the NDI source or Spout sender to receive, or (video_device_out) the SDI/capture-card output device name.",
+      "(ndi_in/syphon_spout_in/ndi_out/syphon_spout_out) Name of the NDI source or Spout sender to receive or send, or (video_device_out) the SDI/capture-card output device name. For outputs, defaults to the operator name when omitted.",
     ),
 });
 type CreateExternalIoArgs = z.infer<typeof createExternalIoSchema>;
@@ -121,7 +123,7 @@ const IO_SCRIPT = `
 import json, base64, traceback
 _p = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
 report = {"kind": _p["kind"], "warnings": []}
-_TYPEMAP = {"osc_in": oscinCHOP, "midi_in": midiinCHOP, "keyboard_in": keyboardinCHOP, "gamepad_in": joystickCHOP, "mouse_in": mouseinCHOP, "osc_out": oscoutCHOP, "midi_out": midioutCHOP, "dmx_out": dmxoutCHOP, "artnet_out": dmxoutCHOP, "rtmp_out": videostreamoutTOP, "video_device_out": videodeviceoutTOP, "ndi_in": ndiinTOP, "syphon_spout_in": syphonspoutinTOP}
+_TYPEMAP = {"osc_in": oscinCHOP, "midi_in": midiinCHOP, "keyboard_in": keyboardinCHOP, "gamepad_in": joystickCHOP, "mouse_in": mouseinCHOP, "osc_out": oscoutCHOP, "midi_out": midioutCHOP, "dmx_out": dmxoutCHOP, "artnet_out": dmxoutCHOP, "rtmp_out": videostreamoutTOP, "video_device_out": videodeviceoutTOP, "ndi_in": ndiinTOP, "syphon_spout_in": syphonspoutinTOP, "ndi_out": ndioutTOP, "syphon_spout_out": syphonspoutoutTOP}
 try:
     _kind = _p["kind"]; _parent = op(_p["parent"])
     if _parent is None:
@@ -142,7 +144,7 @@ try:
                 report["warnings"].append("Could not set parameter '%s'" % parname)
         def _connect_source():
             _src = _p.get("source")
-            _what = "the TOP to stream" if _kind == "rtmp_out" else "the CHOP whose channels to send"
+            _what = "the TOP to send" if _kind in ("rtmp_out", "ndi_out", "syphon_spout_out", "video_device_out") else "the CHOP whose channels to send"
             if not _src:
                 report["warnings"].append("This kind needs a source_path (%s)." % _what); return
             _s = op(_src)
@@ -190,6 +192,16 @@ try:
             _setpar("name", _p.get("source_name"))
         elif _kind == "syphon_spout_in":
             _setpar("sendername", _p.get("source_name"))
+        elif _kind == "ndi_out":
+            _connect_source()
+            # KB: NDI Out TOP par "name" (Source Name). Default = node name if not given.
+            _setpar("name", _p.get("source_name") or _node.name)
+            _setpar("active", _p.get("active"))
+        elif _kind == "syphon_spout_out":
+            _connect_source()
+            # KB: Syphon Spout Out TOP par "sendername" (Sender Name). Default = node name.
+            _setpar("sendername", _p.get("source_name") or _node.name)
+            _setpar("active", _p.get("active"))
         _bound = []
         if _kind in ("osc_in", "midi_in", "keyboard_in", "gamepad_in", "mouse_in"):
             for _b in (_p.get("bind_to") or []):
@@ -245,7 +257,10 @@ export async function createExternalIoImpl(ctx: ToolContext, args: CreateExterna
         net_address: args.net_address ?? null,
         url: rtmpUrl,
         fps: args.kind === "rtmp_out" ? (args.fps ?? 30) : null,
-        active: args.kind === "rtmp_out" ? (args.active ?? false) : null,
+        active:
+          args.kind === "rtmp_out" || args.kind === "ndi_out" || args.kind === "syphon_spout_out"
+            ? (args.active ?? false)
+            : null,
         source_name: args.source_name ?? null,
       });
       const exec = await ctx.client.executePythonScript(script, true);

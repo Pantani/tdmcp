@@ -116,6 +116,18 @@ determinísticos guiam o movimento enquanto a receita continua válida no schema
 *Vídeo ao vivo vira campo de optical-flow e empurra partículas. É a receita
 camera-reactive para usar quando o movimento do corpo deve deixar rastros visíveis.*
 
+> *"Aplique `atemporal_bodytrack_glitch_timeline` neste clipe vertical: comece limpo,
+> deixe glitches verdes curtos entrarem como bug de câmera, volte ao normal entre os
+> filtros e use o tracker vermelho só como pontos pequenos, linhas e rastros -- sem
+> círculos grandes."*
+
+<video :src="withBase('/examples/atemporal-bodytrack-glitch.mp4')" autoplay loop muted playsinline style="width:100%;max-width:360px;border-radius:8px;display:block"></video>
+
+*Um template reutilizável de bug-timeline: filmagem limpa, saltos atemporais verdes,
+respiros normais e um branch vermelho de body tracking que parece object tracking,
+não decoração circular. Anime `SceneMode` para performar o edit e adicione ticks /
+ruído de glitch apenas enquanto um branch filtrado estiver ativo.*
+
 > *"Aplique `mediapipe_face_overlay`, escureça a webcam por baixo, tinja os pontos de
 > landmark e deixe o overlay fácil de trocar do demo para o adaptador de face ao
 > vivo."*
@@ -801,6 +813,20 @@ por MIDI e títulos seguindo paths.
 *`setup_tdableton` procura primeiro o componente Palette e depois cai para um OSC In
 simples, então o mesmo patch de show consegue ensaiar mesmo sem setup perfeito de
 estúdio.*
+
+> *"Transforme minhas mãos na webcam em um controlador de Ableton Auto Filter com
+> quatro canais via TDAbleton, sem AbletonMCP. Use rastreamento de mãos do
+> MediaPipe, monte um overlay de esqueleto com estrelinhas nas juntas, publique
+> `mapper_send` para que `map1` seja a pinça esquerda, `map2` a pinça direita,
+> `map3` a rotação do punho esquerdo e `map4` a rotação do punho direito, então
+> diagnostique o roteamento do `TDA_Mapper` antes de eu mapear os quatro slots no
+> Ableton."*
+
+*`create_hand_ableton_mapper` monta o lado TouchDesigner do controlador performático
+e `diagnose_tdableton_mapper` confere caminho do mapper, CHOP de entrada, `Reorder`,
+bypasses e ranges. O caminho de runtime é TouchDesigner -> `TDA_Mapper` do
+TDAbleton -> parâmetros mapeados de Auto Filter ou macros de rack no Ableton;
+AbletonMCP não é necessário.*
 
 > *"Monte dois cues — 'intro' e 'drop' — entre os quais eu possa transicionar."*
 

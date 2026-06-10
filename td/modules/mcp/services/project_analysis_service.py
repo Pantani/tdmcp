@@ -83,6 +83,210 @@ def _expression_mode(kids):
     return None
 
 
+def _make_report(path, recursive):
+    return {
+        "path": path,
+        "recursive": bool(recursive),
+        "counts": {"nodes": 0, "by_family": {}},
+        "unused": [],
+        "broken_file_deps": [],
+        "orphan_comps": [],
+        "dependency_map": {},
+        "warnings": [],
+    }
+
+
+def _index_children(report, kids):
+    by_path = {}
+    for c in kids:
+        try:
+            fam = getattr(c, "family", "") or "other"
+            report["counts"]["by_family"][fam] = report["counts"]["by_family"].get(fam, 0) + 1
+            by_path[c.path] = c
+        except Exception:  # noqa: BLE001
+            report["warnings"].append("Could not index " + str(getattr(c, "path", "?")))
+    return by_path
+
+
+def _project_file_candidate(td_module, raw_value):
+    expanded = os.path.expandvars(os.path.expanduser(raw_value.strip()))
+    if os.path.isabs(expanded):
+        return expanded
+    try:
+        project_dir = getattr(getattr(td_module, "project", None), "folder", "") or ""
+    except Exception:  # noqa: BLE001
+        project_dir = ""
+    return os.path.normpath(os.path.join(project_dir, expanded)) if project_dir else expanded
+
+
+def _file_dependency(c, pr, td_module):
+    try:
+        is_file = getattr(pr, "isFile", None)
+        if is_file is None:
+            is_file = pr.name.lower() in _FILE_PAR_HINTS
+        if not is_file:
+            return None
+        val = pr.eval()
+        if not isinstance(val, str) or not val.strip():
+            return None
+        candidate = _project_file_candidate(td_module, val)
+        if os.path.exists(candidate):
+            return None
+        return {"path": c.path, "par": pr.name, "file": val.strip()}
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _expression_dependencies(c, pr, expr_enum, op_global):
+    deps = set()
+    try:
+        if expr_enum is not None and pr.mode == expr_enum:
+            for ref in _opref_names(getattr(pr, "expr", "") or ""):
+                tgt = _resolve(c, ref, op_global)
+                if tgt is not None and tgt.path != c.path:
+                    deps.add(tgt.path)
+    except Exception:  # noqa: BLE001
+        pass
+    return deps
+
+
+def _source_param_dependencies(c, pr, expr_enum, op_global):
+    deps = set()
+    try:
+        if pr.name.lower() in _SRC_PARS and pr.mode != expr_enum:
+            v = pr.eval()
+            if isinstance(v, str) and v.strip():
+                tgt = _resolve(c, v.strip(), op_global)
+                if tgt is not None and tgt.path != c.path:
+                    deps.add(tgt.path)
+    except Exception:  # noqa: BLE001
+        pass
+    return deps
+
+
+def _export_dependencies(c, pr):
+    deps = set()
+    try:
+        for ex in getattr(pr, "exports", []) or []:
+            xo = getattr(ex, "owner", None) or getattr(ex, "op", None)
+            if xo is not None and getattr(xo, "path", None) and xo.path != c.path:
+                deps.add(xo.path)
+    except Exception:  # noqa: BLE001
+        pass
+    return deps
+
+
+def _param_dependencies(c, pr, expr_enum, op_global):
+    deps = _expression_dependencies(c, pr, expr_enum, op_global)
+    deps.update(_source_param_dependencies(c, pr, expr_enum, op_global))
+    deps.update(_export_dependencies(c, pr))
+    return deps
+
+
+def _scan_node_dependencies(report, c, expr_enum, op_global, td_module):
+    deps = set()
+    try:
+        pars = c.pars()
+    except Exception:  # noqa: BLE001
+        pars = []
+    for pr in pars:
+        deps.update(_param_dependencies(c, pr, expr_enum, op_global))
+        broken = _file_dependency(c, pr, td_module)
+        if broken is not None:
+            report["broken_file_deps"].append(broken)
+    return deps
+
+
+def _scan_dependencies(report, kids, expr_enum, op_global, td_module):
+    referenced = set()
+    for c in kids:
+        try:
+            deps = _scan_node_dependencies(report, c, expr_enum, op_global, td_module)
+            if deps:
+                report["dependency_map"][c.path] = sorted(deps)
+                referenced.update(deps)
+        except Exception:  # noqa: BLE001
+            report["warnings"].append(
+                "Could not scan parameters of " + str(getattr(c, "path", "?"))
+            )
+    return referenced
+
+
+def _connector_count(node, attr):
+    count = 0
+    try:
+        for connector in getattr(node, attr, []):
+            count += len(getattr(connector, "connections", []) or [])
+    except Exception:  # noqa: BLE001
+        return 0
+    return count
+
+
+def _par_enabled(node, name):
+    try:
+        par = getattr(node.par, name, None)
+        return par is not None and bool(par.eval())
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def _is_shown(node):
+    if _par_enabled(node, "display") or _par_enabled(node, "render"):
+        return True
+    try:
+        return bool(getattr(node, "viewer", False))
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def _is_intentional_out(node, root, name):
+    try:
+        return node.parent() is root and (name.startswith("out") or name.startswith("null"))
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def _child_count(node):
+    try:
+        return len(list(node.children))
+    except Exception:  # noqa: BLE001
+        return -1
+
+
+def _classify_node(report, c, root, referenced):
+    ty = getattr(c, "OPType", None) or getattr(c, "type", "") or ""
+    name = getattr(c, "name", "") or ""
+    out_wired = _connector_count(c, "outputConnectors")
+    in_wired = _connector_count(c, "inputConnectors")
+    ref = c.path in referenced
+    shown = _is_shown(c)
+    intentional_out = _is_intentional_out(c, root, name)
+    if out_wired == 0 and not ref and not shown and not intentional_out:
+        report["unused"].append(
+            {
+                "path": c.path,
+                "type": ty,
+                "reason": "no output connections, not referenced by any op(), not displayed/rendered",
+            }
+        )
+    if bool(getattr(c, "isCOMP", False)) and _child_count(c) == 0:
+        if out_wired == 0 and in_wired == 0 and not ref:
+            report["orphan_comps"].append(
+                {
+                    "path": c.path,
+                    "reason": "empty COMP with no connections and not referenced by any op()",
+                }
+            )
+
+
+def _classify_nodes(report, kids, root, referenced):
+    for c in kids:
+        try:
+            _classify_node(report, c, root, referenced)
+        except Exception:  # noqa: BLE001
+            report["warnings"].append("Could not classify " + str(getattr(c, "path", "?")))
+
+
 def analyze(path, recursive=True):
     """Diagnostic scan of ``path``'s descendants. Read-only.
 
@@ -95,16 +299,7 @@ def analyze(path, recursive=True):
 
     op_global = td.op
 
-    report = {
-        "path": path,
-        "recursive": bool(recursive),
-        "counts": {"nodes": 0, "by_family": {}},
-        "unused": [],
-        "broken_file_deps": [],
-        "orphan_comps": [],
-        "dependency_map": {},
-        "warnings": [],
-    }
+    report = _make_report(path, recursive)
 
     root = op_global(path)
     if root is None or not hasattr(root, "findChildren"):
@@ -115,167 +310,8 @@ def analyze(path, recursive=True):
     report["counts"]["nodes"] = len(kids)
     expr_enum = _expression_mode(kids)
 
-    # by-family counts + path index
-    by_path = {}
-    referenced = set()
-    for c in kids:
-        try:
-            fam = getattr(c, "family", "") or "other"
-            report["counts"]["by_family"][fam] = report["counts"]["by_family"].get(fam, 0) + 1
-            by_path[c.path] = c
-        except Exception:  # noqa: BLE001
-            report["warnings"].append("Could not index " + str(getattr(c, "path", "?")))
-
-    # Pass 1: dependency edges + broken file deps + referenced set
-    for c in kids:
-        try:
-            deps = set()
-            try:
-                pars = c.pars()
-            except Exception:  # noqa: BLE001
-                pars = []
-            for pr in pars:
-                # (a) expression-mode pars referencing op('...')
-                try:
-                    if expr_enum is not None and pr.mode == expr_enum:
-                        for ref in _opref_names(getattr(pr, "expr", "") or ""):
-                            tgt = _resolve(c, ref, op_global)
-                            if tgt is not None and tgt.path != c.path:
-                                deps.add(tgt.path)
-                except Exception:  # noqa: BLE001
-                    pass
-                # (b) source-style pars naming another op (Select ops + *to* converters)
-                try:
-                    if pr.name.lower() in _SRC_PARS and pr.mode != expr_enum:
-                        v = pr.eval()
-                        if isinstance(v, str) and v.strip():
-                            tgt = _resolve(c, v.strip(), op_global)
-                            if tgt is not None and tgt.path != c.path:
-                                deps.add(tgt.path)
-                except Exception:  # noqa: BLE001
-                    pass
-                # broken external-file dependency
-                try:
-                    is_file = getattr(pr, "isFile", None)
-                    if is_file is None:
-                        is_file = pr.name.lower() in _FILE_PAR_HINTS
-                    if is_file:
-                        val = pr.eval()
-                        if isinstance(val, str) and val.strip():
-                            expanded = os.path.expandvars(os.path.expanduser(val.strip()))
-                            candidate = expanded
-                            if not os.path.isabs(candidate):
-                                project_dir = ""
-                                try:
-                                    project_dir = (
-                                        getattr(getattr(td, "project", None), "folder", "") or ""
-                                    )
-                                except Exception:  # noqa: BLE001
-                                    project_dir = ""
-                                if project_dir:
-                                    candidate = os.path.normpath(
-                                        os.path.join(project_dir, candidate)
-                                    )
-                            if not os.path.exists(candidate):
-                                report["broken_file_deps"].append(
-                                    {"path": c.path, "par": pr.name, "file": val.strip()}
-                                )
-                except Exception:  # noqa: BLE001
-                    pass
-                # (c) CHOP exports: this op drives the export target
-                try:
-                    for ex in getattr(pr, "exports", []) or []:
-                        xo = getattr(ex, "owner", None) or getattr(ex, "op", None)
-                        if xo is not None and getattr(xo, "path", None) and xo.path != c.path:
-                            deps.add(xo.path)
-                except Exception:  # noqa: BLE001
-                    pass
-            if deps:
-                report["dependency_map"][c.path] = sorted(deps)
-                for d in deps:
-                    referenced.add(d)
-        except Exception:  # noqa: BLE001
-            report["warnings"].append(
-                "Could not scan parameters of " + str(getattr(c, "path", "?"))
-            )
-
-    # Pass 2: wired-output / display / orphan-COMP classification (conservative).
-    for c in kids:
-        try:
-            ty = getattr(c, "OPType", None) or getattr(c, "type", "") or ""
-            nm = getattr(c, "name", "") or ""
-            is_comp = bool(getattr(c, "isCOMP", False))
-
-            out_wired = 0
-            try:
-                for oc in getattr(c, "outputConnectors", []):
-                    out_wired += len(getattr(oc, "connections", []) or [])
-            except Exception:  # noqa: BLE001
-                out_wired = 0
-            in_wired = 0
-            try:
-                for ic in getattr(c, "inputConnectors", []):
-                    in_wired += len(getattr(ic, "connections", []) or [])
-            except Exception:  # noqa: BLE001
-                in_wired = 0
-
-            ref = c.path in referenced
-
-            # displayed/rendered/viewer guards
-            shown = False
-            try:
-                dp = getattr(c.par, "display", None)
-                if dp is not None and bool(dp.eval()):
-                    shown = True
-            except Exception:  # noqa: BLE001
-                pass
-            try:
-                rp = getattr(c.par, "render", None)
-                if rp is not None and bool(rp.eval()):
-                    shown = True
-            except Exception:  # noqa: BLE001
-                pass
-            try:
-                if bool(getattr(c, "viewer", False)):
-                    shown = True
-            except Exception:  # noqa: BLE001
-                pass
-
-            # top-level out/null nodes are likely intentional outputs — don't flag.
-            intentional_out = False
-            try:
-                if c.parent() is root and (nm.startswith("out") or nm.startswith("null")):
-                    intentional_out = True
-            except Exception:  # noqa: BLE001
-                pass
-
-            if out_wired == 0 and not ref and not shown and not intentional_out:
-                report["unused"].append(
-                    {
-                        "path": c.path,
-                        "type": ty,
-                        "reason": (
-                            "no output connections, not referenced by any op(), "
-                            "not displayed/rendered"
-                        ),
-                    }
-                )
-
-            if is_comp:
-                try:
-                    nchild = len(list(c.children))
-                except Exception:  # noqa: BLE001
-                    nchild = -1
-                if nchild == 0 and out_wired == 0 and in_wired == 0 and not ref:
-                    report["orphan_comps"].append(
-                        {
-                            "path": c.path,
-                            "reason": (
-                                "empty COMP with no connections and not referenced by any op()"
-                            ),
-                        }
-                    )
-        except Exception:  # noqa: BLE001
-            report["warnings"].append("Could not classify " + str(getattr(c, "path", "?")))
+    _index_children(report, kids)
+    referenced = _scan_dependencies(report, kids, expr_enum, op_global, td)
+    _classify_nodes(report, kids, root, referenced)
 
     return report

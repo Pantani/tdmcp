@@ -153,6 +153,48 @@ describe("tdmcp-agent CLI", () => {
     expect(r.stdout).toContain("arm_effect");
   });
 
+  it("runs the AI party POC offline without contacting TD", async () => {
+    const r = await runCli(["ai-party-poc"], {
+      makeCtx: () => {
+        throw new Error("ai-party-poc must not build a TD context");
+      },
+    });
+
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.dryRun).toBe(true);
+    expect(doc.hardware).toBe("simulated_only");
+    expect(doc.summary.hardware_plans).toBe(0);
+    expect(doc.summary.queued).toBeGreaterThanOrEqual(1);
+    expect(doc.summary.blocked).toBeGreaterThanOrEqual(1);
+    expect(doc.dashboard.physical_effects_connected).toBe(false);
+  });
+
+  it("emits schema and help for the AI party POC command", async () => {
+    const schema = await runCli(["schema", "ai-party-poc"]);
+    expect(schema.code).toBe(0);
+    expect(schema.stdout).toContain("auto_approve_effects");
+
+    const help = await runCli(["help", "ai-party-poc"]);
+    expect(help.code).toBe(0);
+    expect(help.stdout).toContain("tdmcp-agent ai-party-poc");
+    expect(help.stdout).toContain("Input schema:");
+  });
+
+  it("can auto-approve AI party POC effects into simulated events", async () => {
+    const r = await runCli([
+      "ai-party-poc",
+      "--params",
+      JSON.stringify({ auto_approve_effects: true, operator: "front-of-house" }),
+    ]);
+
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.summary.approved).toBeGreaterThanOrEqual(1);
+    expect(doc.summary.simulated_effects).toBeGreaterThanOrEqual(1);
+    expect(doc.dashboard.pending_approvals).toBe(0);
+  });
+
   it("blocks malformed show-director input before execution", async () => {
     const r = await runCli([
       "show-director",
@@ -1159,6 +1201,36 @@ describe("tdmcp-agent CLI — phase 7 (stage I/O & sensor reactivity)", () => {
     const doc = JSON.parse(r.stdout);
     expect(doc.dryRun).toBe(true);
     expect(doc.command).toBe("motion-reactive");
+    expect(doc.args.source).toBe("synthetic");
+  });
+
+  it("lists interactive-projection in --help", async () => {
+    const r = await runCli(["--help"]);
+    expect(r.code).toBe(0);
+    expect(r.stdout).toContain("interactive-projection");
+  });
+
+  it("schema interactive-projection exposes synthetic source and debug views", async () => {
+    const r = await runCli(["schema", "interactive-projection"]);
+    expect(r.code).toBe(0);
+    const input = JSON.stringify(JSON.parse(r.stdout).input);
+    expect(input).toContain("synthetic");
+    expect(input).toContain("existing_top");
+    expect(input).toContain("analysis_resolution");
+    expect(input).toContain("debug_view");
+  });
+
+  it("dry-runs interactive-projection with the safe synthetic source", async () => {
+    const r = await runCli([
+      "interactive-projection",
+      "--dry-run",
+      "--params",
+      '{"source":"synthetic"}',
+    ]);
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.dryRun).toBe(true);
+    expect(doc.command).toBe("interactive-projection");
     expect(doc.args.source).toBe("synthetic");
   });
 

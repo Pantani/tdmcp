@@ -186,31 +186,51 @@ function pixelTextWidth(text, scale = 4, tracking = 1) {
   }, 0);
 }
 
+function alignedPixelTextX(text, x, scale, tracking, align) {
+  const width = pixelTextWidth(text, scale, tracking);
+  const offsets = { center: width / 2, right: width };
+  return x - (offsets[align] ?? 0);
+}
+
+function pixelJitterOffset(row, col, px, y, jitter, seed) {
+  if (!jitter) return [0, 0];
+  return [
+    (rand(col, row, seed + px * 0.01) - 0.5) * jitter,
+    (rand(row, col, seed + y * 0.01) - 0.5) * jitter,
+  ];
+}
+
+function drawPixelGlyph(buf, rows, px, y, options) {
+  const { scale, color, alpha, jitter, seed } = options;
+  for (let row = 0; row < rows.length; row++) {
+    for (let col = 0; col < rows[row].length; col++) {
+      if (rows[row][col] !== "1") continue;
+      const [dx, dy] = pixelJitterOffset(row, col, px, y, jitter, seed);
+      rect(buf, px + col * scale + dx, y + row * scale + dy, scale, scale, color, alpha);
+    }
+  }
+}
+
+function pixelTextOptions(options = {}) {
+  return {
+    align: options.align ?? "left",
+    alpha: options.alpha ?? 1,
+    color: options.color ?? [255, 255, 255],
+    jitter: options.jitter ?? 0,
+    scale: options.scale ?? 4,
+    seed: options.seed ?? 0,
+    tracking: options.tracking ?? 1,
+  };
+}
+
 function drawPixelText(buf, text, x, y, options = {}) {
-  const {
-    scale = 4,
-    color = [255, 255, 255],
-    alpha = 1,
-    align = "left",
-    tracking = 1,
-    jitter = 0,
-    seed = 0,
-  } = options;
+  const config = pixelTextOptions(options);
   const chars = String(text).toUpperCase().split("");
-  let px = x;
-  if (align === "center") px -= pixelTextWidth(text, scale, tracking) / 2;
-  if (align === "right") px -= pixelTextWidth(text, scale, tracking);
+  let px = alignedPixelTextX(text, x, config.scale, config.tracking, config.align);
   for (const char of chars) {
     const rows = pixelFont[char] ?? pixelFont["?"];
-    for (let row = 0; row < rows.length; row++) {
-      for (let col = 0; col < rows[row].length; col++) {
-        if (rows[row][col] !== "1") continue;
-        const dx = jitter ? (rand(col, row, seed + px * 0.01) - 0.5) * jitter : 0;
-        const dy = jitter ? (rand(row, col, seed + y * 0.01) - 0.5) * jitter : 0;
-        rect(buf, px + col * scale + dx, y + row * scale + dy, scale, scale, color, alpha);
-      }
-    }
-    px += rows[0].length * scale + scale + tracking;
+    drawPixelGlyph(buf, rows, px, y, config);
+    px += rows[0].length * config.scale + config.scale + config.tracking;
   }
 }
 
@@ -1094,26 +1114,38 @@ function transitionGlitchFrame(t) {
   return buf;
 }
 
+function videoGlitchTear(y, t) {
+  const randomTear = rand(Math.floor(y / 9), Math.floor(t * 8), 2) > 0.78 ? 34 : 0;
+  return Math.sin(y * 0.19 + t * 18) * 18 + randomTear;
+}
+
+function videoScanIntensity(y) {
+  return y % 4 < 2 ? 0.82 : 0.55;
+}
+
+function videoGlitchColor(x, y, t, tear) {
+  const src = proceduralClip(x + tear, y + Math.sin(t * 3) * 12, t, 0);
+  const scan = videoScanIntensity(y);
+  const noise = rand(Math.floor(x / 4), Math.floor(y / 4), Math.floor(t * 16));
+  return [
+    clamp(src[0] * scan + noise * 42),
+    clamp(src[1] * (scan * 0.92) + noise * 18),
+    clamp(src[2] * (scan * 1.08) + noise * 58),
+  ];
+}
+
+function drawVideoGlitchGhosts(buf, x, y, t) {
+  if (x + 3 < width && Math.sin(y * 0.08 + t * 12) > 0.9) set(buf, x + 3, y, [255, 50, 142], 0.22);
+  if (x - 3 >= 0 && Math.sin(y * 0.07 - t * 10) > 0.92) set(buf, x - 3, y, [42, 230, 255], 0.22);
+}
+
 function videoGlitchFrame(t) {
   const buf = baseFrame();
   for (let y = 0; y < height; y++) {
-    const tear =
-      Math.sin(y * 0.19 + t * 18) * 18 +
-      (rand(Math.floor(y / 9), Math.floor(t * 8), 2) > 0.78 ? 34 : 0);
+    const tear = videoGlitchTear(y, t);
     for (let x = 0; x < width; x++) {
-      const src = proceduralClip(x + tear, y + Math.sin(t * 3) * 12, t, 0);
-      const scan = y % 4 < 2 ? 0.82 : 0.55;
-      const noise = rand(Math.floor(x / 4), Math.floor(y / 4), Math.floor(t * 16));
-      const color = [
-        clamp(src[0] * scan + noise * 42),
-        clamp(src[1] * (scan * 0.92) + noise * 18),
-        clamp(src[2] * (scan * 1.08) + noise * 58),
-      ];
-      set(buf, x, y, color, 0.9);
-      if (x + 3 < width && Math.sin(y * 0.08 + t * 12) > 0.9)
-        set(buf, x + 3, y, [255, 50, 142], 0.22);
-      if (x - 3 >= 0 && Math.sin(y * 0.07 - t * 10) > 0.92)
-        set(buf, x - 3, y, [42, 230, 255], 0.22);
+      set(buf, x, y, videoGlitchColor(x, y, t, tear), 0.9);
+      drawVideoGlitchGhosts(buf, x, y, t);
     }
   }
   for (let i = 0; i < 8; i++) {
@@ -2025,26 +2057,27 @@ function terminalPanel(buf, x, y, w, h, accent = [57, 232, 190]) {
   circle(buf, x + 36, y + 9, 3, accent, 0.92);
 }
 
+function agentStatusColor(done, failed) {
+  if (failed) return [255, 86, 134];
+  return done ? [57, 232, 190] : [74, 88, 112];
+}
+
+function drawAgentRunRow(buf, index, scan) {
+  const y = 62 + index * 28;
+  const done = scan > index;
+  const failed = index === 2 && done;
+  rect(buf, 62, y, 220 - index * 18, 6, [255, 255, 255], done ? 0.3 : 0.18);
+  rect(buf, 314, y - 5, 42, 16, agentStatusColor(done, failed), done ? 0.82 : 0.46);
+  if (index === 2 && !done) rect(buf, 314, y - 5, 42, 16, [255, 214, 86], 0.42);
+  if (done) circle(buf, 382, y + 2, 5, agentStatusColor(done, failed), 0.92);
+}
+
 function agentRunContinueFrame(t) {
   const buf = baseFrame();
   terminalPanel(buf, 32, 30, 416, 198);
   const scan = Math.floor((t * 6) % 5);
   for (let i = 0; i < 5; i++) {
-    const y = 62 + i * 28;
-    const done = scan > i;
-    const failed = i === 2 && scan > i;
-    rect(buf, 62, y, 220 - i * 18, 6, [255, 255, 255], done ? 0.3 : 0.18);
-    rect(
-      buf,
-      314,
-      y - 5,
-      42,
-      16,
-      failed ? [255, 86, 134] : done ? [57, 232, 190] : [74, 88, 112],
-      done ? 0.82 : 0.46,
-    );
-    if (i === 2 && scan <= i) rect(buf, 314, y - 5, 42, 16, [255, 214, 86], 0.42);
-    if (done) circle(buf, 382, y + 2, 5, failed ? [255, 86, 134] : [57, 232, 190], 0.92);
+    drawAgentRunRow(buf, i, scan);
   }
   const p = smoothstep(0.08, 0.82, (t * 0.55) % 1);
   rect(buf, 62, 212, 260, 8, [255, 255, 255], 0.14);
@@ -2726,6 +2759,55 @@ function watchBuildHotReloadFrame(t) {
   return buf;
 }
 
+const showDirectorColors = [
+  [57, 232, 190],
+  [255, 214, 86],
+  [255, 86, 134],
+];
+
+function showDirectorCardX(index) {
+  return 50 + index * 134;
+}
+
+function drawShowDirectorGlyphCircle(buf, x, color, active) {
+  circle(buf, x + 56, 156, 18, color, 0.3 + (active ? 0.24 : 0));
+}
+
+function drawShowDirectorGlyphBlock(buf, x, color, active) {
+  rect(buf, x + 32, 142, 44, 24, color, active ? 0.68 : 0.28);
+  rect(buf, x + 40, 172, 28, 5, [255, 255, 255], 0.22);
+}
+
+function drawShowDirectorGlyphCross(buf, x, color, active) {
+  line(buf, x + 34, 144, x + 78, 176, color, active ? 0.8 : 0.35);
+  line(buf, x + 78, 144, x + 34, 176, color, active ? 0.8 : 0.35);
+}
+
+const showDirectorGlyphs = [
+  drawShowDirectorGlyphCircle,
+  drawShowDirectorGlyphBlock,
+  drawShowDirectorGlyphCross,
+];
+
+function drawShowDirectorCard(buf, index, phase) {
+  const x = showDirectorCardX(index);
+  const active = index === phase;
+  const color = showDirectorColors[index];
+  rect(buf, x + 18, 72, 66, 6, [255, 255, 255], active ? 0.42 : 0.22);
+  rect(buf, x + 18, 94, 78, 5, color, active ? 0.82 : 0.36);
+  rect(buf, x + 18, 116, 52, 5, [255, 255, 255], active ? 0.3 : 0.14);
+  showDirectorGlyphs[index](buf, x, color, active);
+  if (active) glow(buf, x + 56, 126, 58, color, 0.28);
+}
+
+function drawShowDirectorProgress(buf, p, color) {
+  line(buf, 162, 126, 184, 126, [255, 255, 255], 0.18);
+  line(buf, 296, 126, 318, 126, [255, 255, 255], 0.18);
+  circle(buf, 72 + p * 336, 220, 5, color, 0.92);
+  rect(buf, 76, 218, 328, 5, [255, 255, 255], 0.13);
+  rect(buf, 76, 218, 328 * p, 5, color, 0.72);
+}
+
 function showDirectorPolicyFrame(t) {
   const buf = baseFrame();
   rect(buf, 30, 28, 420, 212, [14, 21, 34], 0.96);
@@ -2733,34 +2815,11 @@ function showDirectorPolicyFrame(t) {
   rect(buf, 184, 50, 112, 154, [20, 30, 46], 0.94);
   rect(buf, 318, 50, 112, 154, [20, 30, 46], 0.94);
   const phase = Math.floor((t * 1.45) % 3);
-  const colors = [
-    [57, 232, 190],
-    [255, 214, 86],
-    [255, 86, 134],
-  ];
   for (let i = 0; i < 3; i++) {
-    const x = 50 + i * 134;
-    const active = i === phase;
-    rect(buf, x + 18, 72, 66, 6, [255, 255, 255], active ? 0.42 : 0.22);
-    rect(buf, x + 18, 94, 78, 5, colors[i], active ? 0.82 : 0.36);
-    rect(buf, x + 18, 116, 52, 5, [255, 255, 255], active ? 0.3 : 0.14);
-    if (i === 0) circle(buf, x + 56, 156, 18, colors[i], 0.3 + (active ? 0.24 : 0));
-    if (i === 1) {
-      rect(buf, x + 32, 142, 44, 24, colors[i], active ? 0.68 : 0.28);
-      rect(buf, x + 40, 172, 28, 5, [255, 255, 255], 0.22);
-    }
-    if (i === 2) {
-      line(buf, x + 34, 144, x + 78, 176, colors[i], active ? 0.8 : 0.35);
-      line(buf, x + 78, 144, x + 34, 176, colors[i], active ? 0.8 : 0.35);
-    }
-    if (active) glow(buf, x + 56, 126, 58, colors[i], 0.28);
+    drawShowDirectorCard(buf, i, phase);
   }
   const p = smoothstep(0.08, 0.86, (t * 0.7) % 1);
-  line(buf, 162, 126, 184, 126, [255, 255, 255], 0.18);
-  line(buf, 296, 126, 318, 126, [255, 255, 255], 0.18);
-  circle(buf, 72 + p * 336, 220, 5, colors[phase], 0.92);
-  rect(buf, 76, 218, 328, 5, [255, 255, 255], 0.13);
-  rect(buf, 76, 218, 328 * p, 5, colors[phase], 0.72);
+  drawShowDirectorProgress(buf, p, showDirectorColors[phase]);
   return buf;
 }
 
@@ -2935,181 +2994,214 @@ function drawRecipeShell(buf, t, accent) {
     miniNode(buf, nodes[i][0], nodes[i][1], accent, i === active);
 }
 
+function drawAudioRecipePreview(buf, t, accent) {
+  for (let i = 0; i < 18; i++) {
+    const h = 18 + Math.abs(Math.sin(t * 5 + i * 0.72)) * 72;
+    rect(buf, 342 + i * 4, 172 - h, 3, h, hsv(i / 18, 0.72, 0.95), 0.82);
+  }
+  glow(buf, 382, 112, 58, accent, 0.22);
+}
+
+function drawKeyframeRecipePreview(buf, t, accent) {
+  const pts = [
+    [348, 150],
+    [366, 86],
+    [396, 114],
+    [418, 74],
+  ];
+  for (let i = 0; i < pts.length - 1; i++)
+    line(buf, pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], accent, 0.75);
+  const p = (t * 0.5) % 1;
+  const seg = Math.min(pts.length - 2, Math.floor(p * (pts.length - 1)));
+  const local = p * (pts.length - 1) - seg;
+  circle(
+    buf,
+    mix(pts[seg][0], pts[seg + 1][0], local),
+    mix(pts[seg][1], pts[seg + 1][1], local),
+    7,
+    [255, 255, 255],
+    0.86,
+  );
+}
+
+function drawPoseRecipePreview(buf, t, accent) {
+  const cx = 382 + Math.sin(t * 2) * 7;
+  const cy = 104;
+  const joints = [
+    [cx, cy - 34],
+    [cx, cy - 8],
+    [cx - 22, cy + 10],
+    [cx + 22, cy + 10],
+    [cx - 18, cy + 52],
+    [cx + 18, cy + 52],
+  ];
+  [
+    [0, 1],
+    [1, 2],
+    [1, 3],
+    [2, 4],
+    [3, 5],
+  ].forEach(([a, b]) => {
+    line(buf, joints[a][0], joints[a][1], joints[b][0], joints[b][1], accent, 0.82);
+  });
+  joints.forEach(([x, y]) => {
+    circle(buf, x, y, 5, [255, 255, 255], 0.7);
+  });
+}
+
+function drawParticlesRecipePreview(buf, t) {
+  for (let i = 0; i < 70; i++) {
+    const a = i * 2.399 + t * 1.7;
+    const r = 8 + i * 0.76;
+    circle(
+      buf,
+      382 + Math.cos(a) * r,
+      118 + Math.sin(a) * r * 0.62,
+      2,
+      hsv(i / 70 + t * 0.04, 0.72, 0.94),
+      0.72,
+    );
+  }
+}
+
+function drawFeedbackRecipePreview(buf, t, accent) {
+  for (let i = 0; i < 9; i++) {
+    const r = 62 - i * 6 + ((t * 18) % 6);
+    circle(buf, 382, 118, r, i % 2 ? accent : [255, 255, 255], 0.07 + i * 0.012);
+  }
+}
+
+function drawShaderRecipePreview(buf, t, accent) {
+  for (let y = 62; y < 174; y++) {
+    for (let x = 342; x < 422; x += 2) {
+      const u = (x - 342) / 80;
+      const v = (y - 62) / 112;
+      const wave = Math.sin(u * 14 + t * 4) + Math.sin(v * 15 - t * 3);
+      set(buf, x, y, mixColor([10, 12, 22], accent, 0.45 + 0.35 * wave), 0.65);
+      set(buf, x + 1, y, mixColor([10, 12, 22], [255, 86, 134], 0.35 + 0.25 * Math.sin(wave)), 0.5);
+    }
+  }
+}
+
+function drawTextRecipePreview(buf, t, accent) {
+  const p = Math.sin(t * 3) * 0.5 + 0.5;
+  rect(buf, 352, 88, 60, 18, accent, 0.52 + p * 0.28);
+  rect(buf, 344, 120, 76, 8, [255, 255, 255], 0.18);
+  circle(buf, 382 + Math.cos(t * 2.2) * 30, 132 + Math.sin(t * 2.2) * 20, 5, [255, 214, 86], 0.86);
+  circle(buf, 382, 132, 34, accent, 0.05);
+}
+
+function drawDecksRecipePreview(buf, t, accent) {
+  for (let i = 0; i < 3; i++) {
+    const x = 344 + i * 26;
+    rect(buf, x, 78, 20, 72, hsv(i * 0.18 + t * 0.06, 0.72, 0.86), 0.64);
+    rect(buf, x + 4, 158, 12, 5, [255, 255, 255], 0.26);
+  }
+  rect(buf, 348, 168, 68, 5, [255, 255, 255], 0.16);
+  circle(buf, 348 + 68 * (Math.sin(t * 2) * 0.5 + 0.5), 170, 7, accent, 0.86);
+}
+
+function drawDepthRecipePreview(buf, t) {
+  for (let y = 64; y < 174; y += 3) {
+    const bend = Math.sin(y * 0.08 + t * 4) * 10;
+    line(buf, 346 + bend, y, 420 - bend, y + Math.sin(t + y) * 3, hsv(y / 180, 0.58, 0.82), 0.66);
+  }
+}
+
+function drawOpticalRecipePreview(buf, t, accent) {
+  for (let i = 0; i < 38; i++) {
+    const x = 346 + (i % 7) * 12;
+    const y = 70 + Math.floor(i / 7) * 18;
+    const dx = Math.cos(i + t * 4) * 8;
+    const dy = Math.sin(i * 0.7 + t * 4) * 5;
+    line(buf, x, y, x + dx, y + dy, accent, 0.66);
+    circle(buf, x + dx, y + dy, 2, [255, 255, 255], 0.7);
+  }
+}
+
+function drawFaceRecipePreview(buf, accent) {
+  circle(buf, 382, 116, 42, [255, 255, 255], 0.08);
+  for (let i = 0; i < 42; i++) {
+    const a = (i / 42) * Math.PI * 2;
+    const x = 382 + Math.cos(a) * (24 + 10 * Math.sin(i));
+    const y = 116 + Math.sin(a) * 38;
+    circle(buf, x, y, 2, accent, 0.76);
+  }
+  line(buf, 362, 111, 402, 111, accent, 0.45);
+  line(buf, 370, 140, 394, 140, [255, 86, 134], 0.5);
+}
+
+function drawTimelineRecipePreview(buf, t, accent) {
+  const active = Math.floor((t * 1.6) % 3);
+  for (let i = 0; i < 3; i++) {
+    rect(
+      buf,
+      348 + i * 23,
+      88,
+      19,
+      66,
+      i === active ? accent : [255, 255, 255],
+      i === active ? 0.72 : 0.16,
+    );
+  }
+  const p = (t * 0.5) % 1;
+  line(buf, 348 + p * 66, 74, 348 + p * 66, 168, [255, 214, 86], 0.86);
+}
+
+function drawScene3dRecipePreview(buf, t, accent) {
+  const rot = t * 1.3;
+  const pts = [
+    [-1, -1, -1],
+    [1, -1, -1],
+    [1, 1, -1],
+    [-1, 1, -1],
+    [-1, -1, 1],
+    [1, -1, 1],
+    [1, 1, 1],
+    [-1, 1, 1],
+  ].map(([x, y, z]) => projectPoint(x, y, z, rot, 28));
+  pts.forEach(([x, y]) => {
+    circle(buf, x + 142, y - 16, 3, accent, 0.8);
+  });
+  [
+    [0, 1],
+    [1, 2],
+    [2, 3],
+    [3, 0],
+    [4, 5],
+    [5, 6],
+    [6, 7],
+    [7, 4],
+    [0, 4],
+    [1, 5],
+    [2, 6],
+    [3, 7],
+  ].forEach(([a, b]) => {
+    line(buf, pts[a][0] + 142, pts[a][1] - 16, pts[b][0] + 142, pts[b][1] - 16, accent, 0.58);
+  });
+}
+
+const recipePreviewRenderers = {
+  audio: drawAudioRecipePreview,
+  decks: drawDecksRecipePreview,
+  depth: drawDepthRecipePreview,
+  face: drawFaceRecipePreview,
+  feedback: drawFeedbackRecipePreview,
+  glsl: drawShaderRecipePreview,
+  keyframe: drawKeyframeRecipePreview,
+  optical: drawOpticalRecipePreview,
+  particles: drawParticlesRecipePreview,
+  pose: drawPoseRecipePreview,
+  scene3d: drawScene3dRecipePreview,
+  synth: drawShaderRecipePreview,
+  text: drawTextRecipePreview,
+  textPath: drawTextRecipePreview,
+  timeline: drawTimelineRecipePreview,
+};
+
 function drawRecipePreview(buf, kind, t, accent) {
   rect(buf, 334, 56, 94, 126, [4, 7, 14], 0.92);
-  if (kind === "audio") {
-    for (let i = 0; i < 18; i++) {
-      const h = 18 + Math.abs(Math.sin(t * 5 + i * 0.72)) * 72;
-      rect(buf, 342 + i * 4, 172 - h, 3, h, hsv(i / 18, 0.72, 0.95), 0.82);
-    }
-    glow(buf, 382, 112, 58, accent, 0.22);
-  } else if (kind === "keyframe") {
-    const pts = [
-      [348, 150],
-      [366, 86],
-      [396, 114],
-      [418, 74],
-    ];
-    for (let i = 0; i < pts.length - 1; i++)
-      line(buf, pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], accent, 0.75);
-    const p = (t * 0.5) % 1;
-    const seg = Math.min(pts.length - 2, Math.floor(p * (pts.length - 1)));
-    const local = p * (pts.length - 1) - seg;
-    circle(
-      buf,
-      mix(pts[seg][0], pts[seg + 1][0], local),
-      mix(pts[seg][1], pts[seg + 1][1], local),
-      7,
-      [255, 255, 255],
-      0.86,
-    );
-  } else if (kind === "pose") {
-    const cx = 382 + Math.sin(t * 2) * 7;
-    const cy = 104;
-    const joints = [
-      [cx, cy - 34],
-      [cx, cy - 8],
-      [cx - 22, cy + 10],
-      [cx + 22, cy + 10],
-      [cx - 18, cy + 52],
-      [cx + 18, cy + 52],
-    ];
-    [
-      [0, 1],
-      [1, 2],
-      [1, 3],
-      [2, 4],
-      [3, 5],
-    ].forEach(([a, b]) => {
-      line(buf, joints[a][0], joints[a][1], joints[b][0], joints[b][1], accent, 0.82);
-    });
-    joints.forEach(([x, y]) => {
-      circle(buf, x, y, 5, [255, 255, 255], 0.7);
-    });
-  } else if (kind === "particles") {
-    for (let i = 0; i < 70; i++) {
-      const a = i * 2.399 + t * 1.7;
-      const r = 8 + i * 0.76;
-      circle(
-        buf,
-        382 + Math.cos(a) * r,
-        118 + Math.sin(a) * r * 0.62,
-        2,
-        hsv(i / 70 + t * 0.04, 0.72, 0.94),
-        0.72,
-      );
-    }
-  } else if (kind === "feedback") {
-    for (let i = 0; i < 9; i++) {
-      const r = 62 - i * 6 + ((t * 18) % 6);
-      circle(buf, 382, 118, r, i % 2 ? accent : [255, 255, 255], 0.07 + i * 0.012);
-    }
-  } else if (kind === "glsl" || kind === "synth") {
-    for (let y = 62; y < 174; y++) {
-      for (let x = 342; x < 422; x += 2) {
-        const u = (x - 342) / 80;
-        const v = (y - 62) / 112;
-        const wave = Math.sin(u * 14 + t * 4) + Math.sin(v * 15 - t * 3);
-        set(buf, x, y, mixColor([10, 12, 22], accent, 0.45 + 0.35 * wave), 0.65);
-        set(
-          buf,
-          x + 1,
-          y,
-          mixColor([10, 12, 22], [255, 86, 134], 0.35 + 0.25 * Math.sin(wave)),
-          0.5,
-        );
-      }
-    }
-  } else if (kind === "text" || kind === "textPath") {
-    const p = Math.sin(t * 3) * 0.5 + 0.5;
-    rect(buf, 352, 88, 60, 18, accent, 0.52 + p * 0.28);
-    rect(buf, 344, 120, 76, 8, [255, 255, 255], 0.18);
-    circle(
-      buf,
-      382 + Math.cos(t * 2.2) * 30,
-      132 + Math.sin(t * 2.2) * 20,
-      5,
-      [255, 214, 86],
-      0.86,
-    );
-    circle(buf, 382, 132, 34, accent, 0.05);
-  } else if (kind === "decks") {
-    for (let i = 0; i < 3; i++) {
-      const x = 344 + i * 26;
-      rect(buf, x, 78, 20, 72, hsv(i * 0.18 + t * 0.06, 0.72, 0.86), 0.64);
-      rect(buf, x + 4, 158, 12, 5, [255, 255, 255], 0.26);
-    }
-    rect(buf, 348, 168, 68, 5, [255, 255, 255], 0.16);
-    circle(buf, 348 + 68 * (Math.sin(t * 2) * 0.5 + 0.5), 170, 7, accent, 0.86);
-  } else if (kind === "depth") {
-    for (let y = 64; y < 174; y += 3) {
-      const bend = Math.sin(y * 0.08 + t * 4) * 10;
-      line(buf, 346 + bend, y, 420 - bend, y + Math.sin(t + y) * 3, hsv(y / 180, 0.58, 0.82), 0.66);
-    }
-  } else if (kind === "optical") {
-    for (let i = 0; i < 38; i++) {
-      const x = 346 + (i % 7) * 12;
-      const y = 70 + Math.floor(i / 7) * 18;
-      const dx = Math.cos(i + t * 4) * 8;
-      const dy = Math.sin(i * 0.7 + t * 4) * 5;
-      line(buf, x, y, x + dx, y + dy, accent, 0.66);
-      circle(buf, x + dx, y + dy, 2, [255, 255, 255], 0.7);
-    }
-  } else if (kind === "face") {
-    circle(buf, 382, 116, 42, [255, 255, 255], 0.08);
-    for (let i = 0; i < 42; i++) {
-      const a = (i / 42) * Math.PI * 2;
-      const x = 382 + Math.cos(a) * (24 + 10 * Math.sin(i));
-      const y = 116 + Math.sin(a) * 38;
-      circle(buf, x, y, 2, accent, 0.76);
-    }
-    line(buf, 362, 111, 402, 111, accent, 0.45);
-    line(buf, 370, 140, 394, 140, [255, 86, 134], 0.5);
-  } else if (kind === "timeline") {
-    for (let i = 0; i < 3; i++)
-      rect(
-        buf,
-        348 + i * 23,
-        88,
-        19,
-        66,
-        i === Math.floor((t * 1.6) % 3) ? accent : [255, 255, 255],
-        i === Math.floor((t * 1.6) % 3) ? 0.72 : 0.16,
-      );
-    const p = (t * 0.5) % 1;
-    line(buf, 348 + p * 66, 74, 348 + p * 66, 168, [255, 214, 86], 0.86);
-  } else if (kind === "scene3d") {
-    const rot = t * 1.3;
-    const pts = [
-      [-1, -1, -1],
-      [1, -1, -1],
-      [1, 1, -1],
-      [-1, 1, -1],
-      [-1, -1, 1],
-      [1, -1, 1],
-      [1, 1, 1],
-      [-1, 1, 1],
-    ].map(([x, y, z]) => projectPoint(x, y, z, rot, 28));
-    pts.forEach(([x, y]) => {
-      circle(buf, x + 142, y - 16, 3, accent, 0.8);
-    });
-    [
-      [0, 1],
-      [1, 2],
-      [2, 3],
-      [3, 0],
-      [4, 5],
-      [5, 6],
-      [6, 7],
-      [7, 4],
-      [0, 4],
-      [1, 5],
-      [2, 6],
-      [3, 7],
-    ].forEach(([a, b]) => {
-      line(buf, pts[a][0] + 142, pts[a][1] - 16, pts[b][0] + 142, pts[b][1] - 16, accent, 0.58);
-    });
-  }
+  recipePreviewRenderers[kind]?.(buf, t, accent);
 }
 
 function recipeStarterFrame(kind, accent = [57, 232, 190]) {

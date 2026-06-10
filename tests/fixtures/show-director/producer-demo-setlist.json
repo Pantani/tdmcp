@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "title": "AI-Controlled Party Producer POC",
+  "bpm": 124,
+  "scenes": [
+    {
+      "id": "doors_preflight",
+      "title": "Doors / preflight",
+      "cue": "doors_idle",
+      "hold_seconds": 90,
+      "morph_seconds": 0,
+      "notes": "Two outputs visible, bridge/dashboard/panic status checked, no physical effects."
+    },
+    {
+      "id": "ai_welcome",
+      "title": "AI welcome",
+      "cue": "ai_intro_text",
+      "hold_seconds": 60,
+      "morph_seconds": 1.5,
+      "notes": "Host-style announcement explains AI co-pilot and simulated effects."
+    },
+    {
+      "id": "band_a_intro",
+      "title": "Band intro + approval",
+      "cue": "band_intro",
+      "hold_seconds": 120,
+      "morph_seconds": 2,
+      "notes": "Pre-approved visual cue; short fog request queues for operator approval only."
+    },
+    {
+      "id": "audio_reactive_core",
+      "title": "Audio-reactive core",
+      "cue": "music_reactive_main",
+      "hold_beats": 128,
+      "morph_seconds": 4,
+      "notes": "TD handles beat/energy/chroma locally; AI stays at phrase/cue/mood level."
+    },
+    {
+      "id": "voice_text_mood_shift",
+      "title": "Voice/text mood shift",
+      "cue": "mood_shift_safe_red_chaos",
+      "hold_beats": 64,
+      "morph_seconds": 3,
+      "notes": "Text/transcript request maps to bounded red chaotic mood."
+    },
+    {
+      "id": "safety_proof",
+      "title": "Safety proof",
+      "steps": [
+        {
+          "cue": "policy_block_demo",
+          "hold_seconds": 45,
+          "morph_seconds": 1
+        },
+        {
+          "cue": "panic_recovery_test",
+          "hold_seconds": 45,
+          "morph_seconds": 0
+        }
+      ],
+      "notes": "Excess fog, strobe, mixer and laser requests block; panic/freeze is local."
+    },
+    {
+      "id": "closing_audit",
+      "title": "Closing / audit",
+      "cue": "credits_log",
+      "hold_seconds": 60,
+      "morph_seconds": 2,
+      "notes": "Summarize allowed, queued, approved, blocked and cancelled decisions."
+    }
+  ]
+}

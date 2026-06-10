@@ -132,6 +132,64 @@ describe("install-bridge CLI", () => {
     expect(process.exitCode).toBeUndefined();
   });
 
+  it("stages modules and prints Palette package export instructions with --palette", async () => {
+    const fetchImpl = vi.fn();
+    vi.stubGlobal("fetch", fetchImpl);
+
+    const result = await runInstallBridge(["--dir", "/tmp/tdmcp-bridge", "--palette"]);
+
+    const paletteCommand = [
+      'import sys; sys.path.insert(0, "/tmp/tdmcp-bridge/modules")',
+      "from mcp import install",
+      'install.export_palette_package(modules_dir="/tmp/tdmcp-bridge/modules", package_name="tdmcp_bridge_package", port=9980)',
+    ].join("\n");
+    expect(result).toEqual(
+      expect.objectContaining({
+        ok: true,
+        modulesDir: "/tmp/tdmcp-bridge/modules",
+        palettePackageName: "tdmcp_bridge_package",
+        palettePackageTextportCommand: paletteCommand,
+      }),
+    );
+    expect(loggedText()).toContain("Palette package export");
+    expect(loggedText()).toContain("install.export_palette_package");
+    expect(loggedText()).toContain('package_name="tdmcp_bridge_package"');
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(process.exitCode).toBeUndefined();
+  });
+
+  it("threads Palette package options into the generated export command", async () => {
+    const fetchImpl = vi.fn();
+    vi.stubGlobal("fetch", fetchImpl);
+
+    const result = await runInstallBridge([
+      "--palette",
+      "--palette-dir",
+      "/Users/artist/Palette",
+      "--package-name",
+      "tdmcp_bridge_package_dev",
+      "--port",
+      "12001",
+    ]);
+
+    const paletteCommand = [
+      'import sys; sys.path.insert(0, "/home/artist/tdmcp-bridge/modules")',
+      "from mcp import install",
+      'install.export_palette_package(modules_dir="/home/artist/tdmcp-bridge/modules", package_name="tdmcp_bridge_package_dev", palette_dir="/Users/artist/Palette", port=12001)',
+    ].join("\n");
+    expect(result).toEqual(
+      expect.objectContaining({
+        ok: true,
+        paletteDir: "/Users/artist/Palette",
+        palettePackageName: "tdmcp_bridge_package_dev",
+        palettePackageTextportCommand: paletteCommand,
+      }),
+    );
+    expect(loggedText()).toContain('palette_dir="/Users/artist/Palette"');
+    expect(loggedText()).toContain("port=12001");
+    expect(process.exitCode).toBeUndefined();
+  });
+
   it("rejects --dir without a path", async () => {
     const fetchImpl = vi.fn();
     vi.stubGlobal("fetch", fetchImpl);
@@ -153,6 +211,42 @@ describe("install-bridge CLI", () => {
     expect(mocks.cpSync).not.toHaveBeenCalled();
     expect(fetchImpl).not.toHaveBeenCalled();
     expect(erroredText()).toContain("Missing install-bridge --port value");
+    expect(process.exitCode).toBe(2);
+  });
+
+  it("rejects --palette-dir without a path", async () => {
+    const fetchImpl = vi.fn();
+    vi.stubGlobal("fetch", fetchImpl);
+
+    await runInstallBridge(["--palette", "--palette-dir", "--package-name", "tdmcp_bridge"]);
+
+    expect(mocks.cpSync).not.toHaveBeenCalled();
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(erroredText()).toContain("Missing install-bridge --palette-dir value");
+    expect(process.exitCode).toBe(2);
+  });
+
+  it("rejects --package-name without a value", async () => {
+    const fetchImpl = vi.fn();
+    vi.stubGlobal("fetch", fetchImpl);
+
+    await runInstallBridge(["--palette", "--package-name", "--verify"]);
+
+    expect(mocks.cpSync).not.toHaveBeenCalled();
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(erroredText()).toContain("Missing install-bridge --package-name value");
+    expect(process.exitCode).toBe(2);
+  });
+
+  it("rejects unsafe Palette package names before copying modules", async () => {
+    const fetchImpl = vi.fn();
+    vi.stubGlobal("fetch", fetchImpl);
+
+    await runInstallBridge(["--palette", "--package-name", "../tdmcp_bridge"]);
+
+    expect(mocks.cpSync).not.toHaveBeenCalled();
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(erroredText()).toContain("Invalid install-bridge --package-name value");
     expect(process.exitCode).toBe(2);
   });
 
