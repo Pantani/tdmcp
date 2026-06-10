@@ -597,8 +597,11 @@ under Milestone 3 just below. Only items that still need a future code change
 (not a hardware/service blocker) belong in this Planned section.
 Hardware-, live-music-, multimodal-LLM- and GPU/CUDA-gated items have been
 moved to **Out of scope (for now)** below. Version targets are a rough
-sequence, **not a promise**. The exhaustive, item-by-item backlog lives in
-the [planning archive](#full-backlog).
+sequence, **not a promise**. One additional design-stage slice is tracked here:
+a Soundcraft Ui24R / mixer-aware expansion of AI-Controlled Party. It belongs in
+Planned because it needs future code changes, but it is **not shipped** and
+**not a live hardware claim**. The exhaustive, item-by-item backlog lives in the
+[planning archive](#full-backlog).
 
 ### Milestone 3 — Round-4 quick-win wave · v0.8.x / v0.9.x {#milestone-3}
 
@@ -650,13 +653,30 @@ around components users install themselves; never bundled. All entries
 - ⬜ `create_llm_chain` (dotsimulate LOPs).
 - ⬜ `create_ai_mirror` combo recipe (depends on the bridge above + FM-01).
 
+### Milestone 5 — AI Show Director mixer scene arming · v0.8.x / v0.9.x
+
+Design status: `_workspace/ai-party-mixer/05_synthesis_design.md` and
+`docs/superpowers/specs/2026-06-04-ai-party-ui24r-scene-arming-design.md`
+define the first safe slice.
+
+| Item | Delivers | Status | Gate |
+| --- | --- | --- | --- |
+| `arm_mixer_scene` contract | A new Show Director intent for operator-approved Soundcraft Ui24R show/snapshot/cue arming, separate from blocked `mixer_gain`, `pa_mute` and `audio_routing` effects. | ⬜ Planned | Must remain dry-run and approval-gated; valid targets come only from a trusted scene catalog. |
+| Mixer scene catalog / manifest | Venue-side allowlist with stable scene IDs, Ui24R show/snapshot/cue refs, policy hash/checksum, allowed setlist sections, rollback target and safety notes. | ⬜ Planned | Any scene that may hide gain, PA mute, routing, patching, channel-strip, mute-group or phantom-power changes stays operator-only/manual. |
+| Dry-run mixer adapter | Adapter interface and dry-run backend that consumes approved mixer-scene plans and returns `hardware_changed:false`. | ⬜ Planned | No Soundcraft, Companion, Node or TouchDesigner hardware client may be constructed in this slice. |
+| Companion live backend spike | Bitfocus Companion backend for one bench-validated Ui24R scene mapped to one preconfigured button. | ⬜ Planned | Isolated bench validation required; `sent`/`acknowledged`/`confirmed` must be separate audit states. |
+| Direct Node bridge research | Protocol proof for show/snapshot/cue recall against the target Ui24R firmware. | ⬜ Planned | No raw commands; no gain/mute/routing/channel operations; fixture tests before any live backend. |
+
 ### What's left for 1.0
 
 With both the round-2 BEYOND backlog and the round-3 ingest-and-extend pass
 fully landed in the v0.8 release line, **and Milestones 3-4 above shipped on
 the v0.9 line**, the remaining work to 1.0 is **consolidation**. The measurable
 gates live in [v1.0.0 — Consolidation](#v100-consolidation) below; every open
-item should map to one of those gates rather than to a new entry here.
+item should map to one of those gates rather than to a new entry here. The Ui24R
+mixer-scene work remains a bounded AI Show Director extension and must ship
+behind dry-run, manifest and bench-validation gates before any live adapter is
+considered.
 
 ### Later / deferred
 
@@ -692,6 +712,11 @@ properly:
 - **Hardware-bound:** depth cameras (Kinect / Azure / RealSense), SMPTE/LTC
   timecode genlock, and laser (ILDA) output. Where possible we prefer the lighter,
   camera-only paths (MediaPipe face/hand/body, stock-TOP optical flow).
+- **Mixer/PA live control beyond scene arming:** autonomous PA control, mixer
+  gain, PA mute, routing, patching, phantom power, mute groups and channel-strip
+  edits remain out of scope for the AI path. The planned Ui24R work is limited
+  to operator-approved show/snapshot/cue arming with a manifest and dry-run
+  first.
 - **Multi-machine / multi-instance:** managing several TouchDesigner processes and
   cross-machine genlock — parked until there's hardware to test against.
 - **Paid TouchDesigner license:** the Engine COMP / TouchEngine headless path.
