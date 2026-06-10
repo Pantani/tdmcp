@@ -4,6 +4,102 @@ All notable changes to **tdmcp** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2026-06-09
+
+### Added — Hype-scout Round 4 Wave 4 (AI bridge wave · D.2)
+The biggest wave of the campaign — wrappers around the dotsimulate /
+community external TOXes everyone is shipping with in 2025-2026, plus
+cloud + LLM connectors, plus the showcase AI-mirror COMBO.
+
+All eight features live-verified against TD 099 build 2025.32820 /
+bridge 0.6.1.
+
+- **`drive_streamdiffusion`** — Layer-1 drop of the user-installed
+  dotsimulate StreamDiffusionTD .tox via the FM-02 `dropExternalTox`
+  helper. Wires a camera (or any TOP) into the SD input, exposes
+  prompt / strength / cfg / seed / controlnet_weight as custom pars,
+  and binds the SD output to a Syphon/Spout or NDI sender via FM-01
+  outbound modes. Friendly error path when the .tox is absent.
+- **`setup_mediapipe_plugin`** — Layer-1 EXTENSION over the stock
+  `setup_*_tracking` family. Drops torinmb's canonical
+  `mediapipe-touchdesigner` .tox so face / hand / body / segmentation
+  all come from one Spout-loopback path instead of four single-
+  modality stock chains fighting for the webcam.
+- **`create_depth_from_2d`** — Layer-1 wrapper for TDDepthAnything v2.
+  RGB-in → depth-TOP-out; the depth_top_path is consumable by
+  `create_depth_displacement`, `create_depth_pop_field`, and
+  `create_depth_silhouette`.
+- **`create_gaussian_splat_scene`** — Layer-1 wrapper for Anglerfish-
+  graphics' TDGS .tox. Load a `.ply` / `.splat` scan, bind a
+  cameraCOMP, output a renderTOP at 720p–2160p. The unanimous-H top
+  trend of the Round 4 scout (4-surface confirmed).
+- **`create_ai_mirror`** — Layer-1 **COMBO recipe** and the campaign
+  capstone: camera input → `drive_streamdiffusion` →
+  syphon_spout_out / ndi_out → minimal control panel (prompt textDAT
+  + strength sliderCOMP + cfg sliderCOMP). Three modes (synthetic /
+  camera / existing_top) and three output paths (internal / syphon /
+  ndi). Degrades gracefully when SD's .tox isn't installed: builds
+  the full topology skeleton anyway and surfaces the SD friendly
+  message as a warning.
+- **`connect_comfyui`** — Layer-2 ComfyUI bridge. Two modes:
+  `tox_drop` (olegchomp/TDComfyUI or JiSenHua/ComfyUI-TD .tox) and
+  `webclient` (stock `webclientDAT` POST to a ComfyUI server URL +
+  workflow JSON). Both routes output through FM-01 receivers.
+- **`connect_daydream_cloud`** — Layer-2 cloud bridge for Daydream's
+  hosted StreamDiffusion. Skips the local GPU/CUDA gate. The
+  `DAYDREAM_API_KEY` is read from the user's environment inside the
+  bridge Python and never touches Node — no key literal anywhere in
+  code, never logged.
+- **`create_llm_chain`** — Layer-2 LLM connector. Two modes
+  (`tox_drop` dotsimulate LOPs or `webclient` OpenAI-compatible) and
+  four providers (`openai` / `anthropic` / `ollama` / `custom`).
+  Default `provider: "ollama"` so the tool works fully offline.
+  All API keys are env-only — Node never touches the values.
+
+### Improved — FM-02 hardening
+- **TS-side `toxCandidatePrecheck` helper** (new
+  `src/tools/util/toxCandidatePrecheck.ts`). When all candidate `.tox`
+  paths are absolute AND none exist on disk, the wrappers
+  short-circuit with a friendly error in milliseconds — no bridge
+  call to TouchDesigner. Closes the entire class of "TD hangs when
+  the user doesn't have the .tox installed" bugs.
+- Project-relative candidate defaults stripped from
+  `drive_streamdiffusion`, `create_gaussian_splat_scene`,
+  `connect_comfyui`, `create_llm_chain`. Explicit `tox_path` override
+  still accepts any path; only the default candidate lists changed
+  to absolute-only so the precheck always short-circuits when nothing
+  is installed.
+
+### Fixed
+- `drive_streamdiffusion` — when `source_top_path` is omitted, falls
+  back to a synthetic `noiseTOP` instead of a bare `moviefileinTOP`
+  (which prompted a macOS file-chooser modal and froze TD).
+- `create_ai_mirror` — graceful-degradation path when SD `.tox` is
+  missing: build the full skeleton + control panel, surface the SD
+  friendly error as a warning, leave `validated_pars: []` so the
+  panel-binding code emits its existing "no SD pars to bind" warning.
+- `create_llm_chain` — Python script escape: `"# prompt mirror\n"` /
+  `"# response mirror\n"` were emitting real LF characters and
+  unterminating the Python string literal; the escape is now
+  double-backslashed.
+- `create_llm_chain` — TD optype `datExecuteDAT` (camelCase) → the
+  actual `datexecuteDAT` (all-lowercase before DAT). Same family of
+  fix as Wave-3's `lookupTexturePOP` → `lookuptexturePOP`.
+
+### Verified live
+All eight Wave 4 features were live-cooked against TD 099 build
+2025.32820 / bridge 0.6.1 at release time. The five `.tox`-drop
+wrappers verified their friendly-error path (no `.tox` installed on
+this machine) via the precheck short-circuit; `setup_mediapipe_plugin`
+and `connect_comfyui` (webclient mode) and `create_llm_chain` (both
+ollama and openai modes) cooked clean live; `create_ai_mirror` was
+verified in all three modes (synthetic+internal, panel-off,
+syphon_spout). `connect_daydream_cloud` is verified offline only
+(cloud + creds required for live).
+
+Offline gates: typecheck + build + biome + vitest (3894 pass) +
+validate:recipes (32) + test:bridge (196).
+
 ## [0.10.0] - 2026-06-09
 
 ### Added — Hype-scout Round 4 Wave 3 (POP combos · D.3)

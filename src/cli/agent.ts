@@ -47,6 +47,7 @@ import {
   create3dAudioReactiveSchema,
 } from "../tools/layer1/create3dAudioReactive.js";
 import { create3dSceneImpl, create3dSceneSchema } from "../tools/layer1/create3dScene.js";
+import { createAiMirrorImpl, createAiMirrorSchema } from "../tools/layer1/createAiMirror.js";
 import {
   createAsciiRenderImpl,
   createAsciiRenderSchema,
@@ -99,6 +100,10 @@ import {
   createDepthDisplacementSchema,
 } from "../tools/layer1/createDepthDisplacement.js";
 import {
+  createDepthFromTwoDImpl,
+  createDepthFromTwoDSchema,
+} from "../tools/layer1/createDepthFromTwoD.js";
+import {
   createDepthPopFieldImpl,
   createDepthPopFieldSchema,
 } from "../tools/layer1/createDepthPopField.js";
@@ -130,6 +135,10 @@ import {
   createFeedbackTunnelSchema,
 } from "../tools/layer1/createFeedbackTunnel.js";
 import { createFluidSimImpl, createFluidSimSchema } from "../tools/layer1/createFluidSim.js";
+import {
+  createGaussianSplatSceneImpl,
+  createGaussianSplatSceneSchema,
+} from "../tools/layer1/createGaussianSplatScene.js";
 import {
   createGenerativeArtImpl,
   createGenerativeArtSchema,
@@ -320,6 +329,10 @@ import { detectOnsetsImpl, detectOnsetsSchema } from "../tools/layer1/detectOnse
 import { detectPitchImpl, detectPitchSchema } from "../tools/layer1/detectPitch.js";
 import { detectTempoImpl, detectTempoSchema } from "../tools/layer1/detectTempo.js";
 import {
+  driveStreamdiffusionImpl,
+  driveStreamdiffusionSchema,
+} from "../tools/layer1/driveStreamdiffusion.js";
+import {
   extractAudioFeaturesImpl,
   extractAudioFeaturesSchema,
 } from "../tools/layer1/extractAudioFeatures.js";
@@ -338,6 +351,10 @@ import {
   setupBodyTrackingImpl,
   setupBodyTrackingSchema,
 } from "../tools/layer1/setupBodyTracking.js";
+import {
+  setupMediapipePluginImpl,
+  setupMediapipePluginSchema,
+} from "../tools/layer1/setupMediapipePlugin.js";
 import { setupOutputImpl, setupOutputSchema } from "../tools/layer1/setupOutput.js";
 import { setupTdabletonImpl, setupTdabletonSchema } from "../tools/layer1/setupTdableton.js";
 import {
@@ -360,6 +377,11 @@ import { bindToChannelImpl, bindToChannelSchema } from "../tools/layer2/bindToCh
 import { buildChopChainImpl, buildChopChainSchema } from "../tools/layer2/buildChopChain.js";
 import { buildPopChainImpl, buildPopChainSchema } from "../tools/layer2/buildPopChain.js";
 import { buildSopGeometryImpl, buildSopGeometrySchema } from "../tools/layer2/buildSopGeometry.js";
+import { connectComfyuiImpl, connectComfyuiSchema } from "../tools/layer2/connectComfyui.js";
+import {
+  connectDaydreamCloudImpl,
+  connectDaydreamCloudSchema,
+} from "../tools/layer2/connectDaydreamCloud.js";
 import { connectNodesImpl, connectNodesSchema } from "../tools/layer2/connectNodes.js";
 import {
   createAudioGlslUniformsImpl,
@@ -417,6 +439,7 @@ import {
   createHandAbletonMapperSchema,
 } from "../tools/layer2/createHandAbletonMapper.js";
 import { createLedMapperImpl, createLedMapperSchema } from "../tools/layer2/createLedMapper.js";
+import { createLlmChainImpl, createLlmChainSchema } from "../tools/layer2/createLlmChain.js";
 import { createLookBankImpl, createLookBankSchema } from "../tools/layer2/createLookBank.js";
 import { createMacroImpl, createMacroSchema } from "../tools/layer2/createMacro.js";
 import { createMidiMapImpl, createMidiMapSchema } from "../tools/layer2/createMidiMap.js";
@@ -1552,6 +1575,55 @@ const COMMANDS: Record<string, Command> = {
     createStipplePointcloudSchema,
     createStipplePointcloudImpl,
     "Stipple a source TOP into a sampled POP pointcloud (intensity-weighted dots).",
+    { mutates: true },
+  ),
+  // Hype-scout Round 4 Wave 4 (2026-06-09) — AI bridges:
+  "drive-streamdiffusion": r(
+    driveStreamdiffusionSchema,
+    driveStreamdiffusionImpl,
+    "Drive StreamDiffusion realtime img2img bridge (TouchDiffusion / StreamDiffusion TD).",
+    { mutates: true },
+  ),
+  "setup-mediapipe-plugin": r(
+    setupMediapipePluginSchema,
+    setupMediapipePluginImpl,
+    "Install/configure the MediaPipe TD plugin (camera-driven body/hand/face inputs).",
+    { mutates: true },
+  ),
+  "create-depth-from-2d": r(
+    createDepthFromTwoDSchema,
+    createDepthFromTwoDImpl,
+    "Estimate per-pixel depth from a 2D image/video source via an AI depth model.",
+    { mutates: true },
+  ),
+  "create-gaussian-splat-scene": r(
+    createGaussianSplatSceneSchema,
+    createGaussianSplatSceneImpl,
+    "Render a 3D Gaussian Splat scene (point/splat dataset) into the network.",
+    { mutates: true },
+  ),
+  "create-ai-mirror": r(
+    createAiMirrorSchema,
+    createAiMirrorImpl,
+    "Live AI-mirror combo: camera → StreamDiffusion (+ optional pose/depth controls) → preview.",
+    { mutates: true },
+  ),
+  "connect-comfyui": r(
+    connectComfyuiSchema,
+    connectComfyuiImpl,
+    "Bridge to a ComfyUI workflow endpoint (submit prompts, fetch generated frames).",
+    { mutates: true },
+  ),
+  "connect-daydream-cloud": r(
+    connectDaydreamCloudSchema,
+    connectDaydreamCloudImpl,
+    "Bridge to a Daydream cloud realtime-diffusion endpoint.",
+    { mutates: true },
+  ),
+  "create-llm-chain": r(
+    createLlmChainSchema,
+    createLlmChainImpl,
+    "Compose an LLM prompt chain DAT graph driving TD parameters/text.",
     { mutates: true },
   ),
   "beat-grid": r(

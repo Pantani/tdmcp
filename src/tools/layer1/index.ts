@@ -5,6 +5,7 @@ import { registerAudioFingerprintToVisual } from "./audioFingerprintToVisual.js"
 import { registerComposeCueList } from "./composeCueList.js";
 import { registerCreate3dAudioReactive } from "./create3dAudioReactive.js";
 import { registerCreate3dScene } from "./create3dScene.js";
+import { registerCreateAiMirror } from "./createAiMirror.js";
 import { registerCreateAsciiRender } from "./createAsciiRender.js";
 import { registerCreateAudioReactive } from "./createAudioReactive.js";
 import { registerCreateAutomationLane } from "./createAutomationLane.js";
@@ -21,6 +22,7 @@ import { registerCreateCubemapDome } from "./createCubemapDome.js";
 import { registerCreateDatamosh } from "./createDatamosh.js";
 import { registerCreateDataVisualization } from "./createDataVisualization.js";
 import { registerCreateDepthDisplacement } from "./createDepthDisplacement.js";
+import { registerCreateDepthFromTwoD } from "./createDepthFromTwoD.js";
 import { registerCreateDepthPopField } from "./createDepthPopField.js";
 import { registerCreateDepthSilhouette } from "./createDepthSilhouette.js";
 import { registerCreateDisplacementWarp } from "./createDisplacementWarp.js";
@@ -32,6 +34,7 @@ import { registerCreateEngineComp } from "./createEngineComp.js";
 import { registerCreateFeedbackNetwork } from "./createFeedbackNetwork.js";
 import { registerCreateFeedbackTunnel } from "./createFeedbackTunnel.js";
 import { registerCreateFluidSim } from "./createFluidSim.js";
+import { registerCreateGaussianSplatScene } from "./createGaussianSplatScene.js";
 import { registerCreateGenerativeArt } from "./createGenerativeArt.js";
 import { registerCreateGenerativeAudio } from "./createGenerativeAudio.js";
 import { registerCreateGlitch } from "./createGlitch.js";
@@ -105,6 +108,7 @@ import { registerDescribeProject } from "./describeProject.js";
 import { registerDetectOnsets } from "./detectOnsets.js";
 import { registerDetectPitch } from "./detectPitch.js";
 import { registerDetectTempo } from "./detectTempo.js";
+import { registerDriveStreamdiffusion } from "./driveStreamdiffusion.js";
 import { registerExtractAudioFeatures } from "./extractAudioFeatures.js";
 import { registerGetPreview } from "./getPreview.js";
 import { registerImportIsfShader } from "./importIsfShader.js";
@@ -115,6 +119,7 @@ import { registerMoodboardToSystem } from "./moodboardToSystem.js";
 import { registerScaffoldGenre } from "./scaffoldGenre.js";
 import { registerScaffoldShow } from "./scaffoldShow.js";
 import { registerSetupBodyTracking } from "./setupBodyTracking.js";
+import { registerSetupMediapipePlugin } from "./setupMediapipePlugin.js";
 import { registerSetupOutput } from "./setupOutput.js";
 import { registerSetupTdableton } from "./setupTdableton.js";
 
@@ -257,4 +262,10 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreatePopLinesPointcloud,
   registerCreateDepthPopField,
   registerCreateStipplePointcloud,
+  // Hype-scout Round 4 Wave 4 (2026-06-09) — AI bridges:
+  registerDriveStreamdiffusion,
+  registerSetupMediapipePlugin,
+  registerCreateDepthFromTwoD,
+  registerCreateGaussianSplatScene,
+  registerCreateAiMirror,
 ];

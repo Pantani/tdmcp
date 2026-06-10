@@ -11,6 +11,8 @@ import { registerBindToChannel } from "./bindToChannel.js";
 import { registerBuildChopChain } from "./buildChopChain.js";
 import { registerBuildPopChain } from "./buildPopChain.js";
 import { registerBuildSopGeometry } from "./buildSopGeometry.js";
+import { registerConnectComfyui } from "./connectComfyui.js";
+import { registerConnectDaydreamCloud } from "./connectDaydreamCloud.js";
 import { registerConnectNodes } from "./connectNodes.js";
 import { registerCreateAudioGlslUniforms } from "./createAudioGlslUniforms.js";
 // Campaign Wave 3 — artist controls (backlog 2026-05-29):
@@ -35,6 +37,7 @@ import { registerCreateGlslMaterial } from "./createGlslMaterial.js";
 import { registerCreateGlslShader } from "./createGlslShader.js";
 import { registerCreateHandAbletonMapper } from "./createHandAbletonMapper.js";
 import { registerCreateLedMapper } from "./createLedMapper.js";
+import { registerCreateLlmChain } from "./createLlmChain.js";
 import { registerCreateLookBank } from "./createLookBank.js";
 import { registerCreateMacro } from "./createMacro.js";
 import { registerCreateMidiMap } from "./createMidiMap.js";
@@ -172,4 +175,8 @@ export const layer2Registrars: ToolRegistrar[] = [
   registerBuildPopChain,
   // Hype-scout Round 4 Wave 2 (2026-06-09) — audio→GLSL uniform binder:
   registerCreateAudioGlslUniforms,
+  // Hype-scout Round 4 Wave 4 (2026-06-09) — AI bridges:
+  registerConnectComfyui,
+  registerConnectDaydreamCloud,
+  registerCreateLlmChain,
 ];

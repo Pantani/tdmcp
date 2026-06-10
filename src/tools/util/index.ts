@@ -6,6 +6,8 @@ export type {
   DropExternalToxResult,
 } from "./dropExternalTox.js";
 export { dropExternalTox } from "./dropExternalTox.js";
+export type { ToxCandidatePrecheckResult } from "./toxCandidatePrecheck.js";
+export { precheckToxCandidates } from "./toxCandidatePrecheck.js";
 
 /**
  * Utility helpers for cross-cutting substrate concerns (external-asset loading,

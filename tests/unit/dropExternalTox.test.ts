@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
@@ -12,6 +15,15 @@ const server = makeTdServer();
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
+
+// Round-2 Wave-4 fix: dropExternalTox now pre-checks absolute candidate paths
+// on the Node side and short-circuits BEFORE the bridge call when none exist.
+// Tests that need the bridge to be reached must point candidate_paths at a
+// real on-disk fixture.
+const TMP_DIR = mkdtempSync(join(tmpdir(), "tdmcp-drop-test-"));
+const FIXTURE_TOX = join(TMP_DIR, "MediaPipe.tox");
+writeFileSync(FIXTURE_TOX, "stub");
+afterAll(() => rmSync(TMP_DIR, { recursive: true, force: true }));
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -79,7 +91,7 @@ describe("dropExternalTox", () => {
     const { ctx, warnSpy } = makeCtx();
     const result = await dropExternalTox(ctx, {
       parent_path: "/project1",
-      candidate_paths: ["/abs/MediaPipe.tox", "/fallback/MediaPipe.tox"],
+      candidate_paths: [FIXTURE_TOX, "/fallback/MediaPipe.tox"],
       expected_custom_pars: ["Active", "Maxhands"],
     });
 
@@ -94,13 +106,15 @@ describe("dropExternalTox", () => {
     expect(warnSpy).not.toHaveBeenCalled();
   });
 
-  it("case 2: no candidate found — all paths fail → error", async () => {
+  it("case 2: no candidate found — when at least one relative path is present, bridge is consulted and returns the error", async () => {
     mockExec({
       error: "no_candidate_found",
       candidates_checked: ["/abs/a.tox", "rel/b.tox"],
     });
 
     const { ctx } = makeCtx();
+    // Mixing a relative candidate forces the bridge call (precheck cannot
+    // evaluate project-relative paths on Node side).
     const result = await dropExternalTox(ctx, {
       parent_path: "/project1",
       candidate_paths: ["/abs/a.tox", "rel/b.tox"],
@@ -116,6 +130,33 @@ describe("dropExternalTox", () => {
     expect(text).toContain("Install the package");
   });
 
+  it("case 2b: TS-side pre-check — all-absolute and missing short-circuits WITHOUT calling the bridge", async () => {
+    let execCalled = false;
+    server.use(
+      http.post(`${TD_BASE}/api/exec`, async () => {
+        execCalled = true;
+        return HttpResponse.json({ ok: true, data: { result: null, stdout: "" } });
+      }),
+    );
+
+    const { ctx } = makeCtx();
+    const missingAbs = join(TMP_DIR, "no-such-dir", "Nope.tox");
+    const result = await dropExternalTox(ctx, {
+      parent_path: "/project1",
+      candidate_paths: [missingAbs, "/also/nope.tox"],
+      expected_custom_pars: [],
+    });
+
+    expect(execCalled).toBe(false);
+    expect("error" in result).toBe(true);
+    if (!("error" in result)) return;
+    expect(result.error.isError).toBe(true);
+    const text = textOf(result.error);
+    expect(text).toContain(missingAbs);
+    expect(text).toContain("/also/nope.tox");
+    expect(text).toContain("Install the package");
+  });
+
   it("case 3: par missing, on_missing: 'warn' (default) — ok:true with warning", async () => {
     mockExec({
       found_path: "/abs/MediaPipe.tox",
@@ -128,7 +169,7 @@ describe("dropExternalTox", () => {
     const { ctx, warnSpy } = makeCtx();
     const result = await dropExternalTox(ctx, {
       parent_path: "/project1",
-      candidate_paths: ["/abs/MediaPipe.tox"],
+      candidate_paths: [FIXTURE_TOX],
       expected_custom_pars: ["Active", "Maxhands"],
       // on_missing defaults to "warn"
     });
@@ -157,7 +198,7 @@ describe("dropExternalTox", () => {
     const { ctx } = makeCtx();
     const result = await dropExternalTox(ctx, {
       parent_path: "/project1",
-      candidate_paths: ["/abs/MediaPipe.tox"],
+      candidate_paths: [FIXTURE_TOX],
       expected_custom_pars: ["Active", "Maxhands"],
       on_missing: "error",
     });
@@ -180,7 +221,7 @@ describe("dropExternalTox", () => {
     const { ctx } = makeCtx();
     const result = await dropExternalTox(ctx, {
       parent_path: "/project99",
-      candidate_paths: ["/abs/MediaPipe.tox"],
+      candidate_paths: [FIXTURE_TOX],
       expected_custom_pars: [],
     });
 
@@ -203,7 +244,7 @@ describe("dropExternalTox", () => {
     // Must not throw — catch block should turn TdConnectionError into { error }
     const result = await dropExternalTox(ctx, {
       parent_path: "/project1",
-      candidate_paths: ["/abs/MediaPipe.tox"],
+      candidate_paths: [FIXTURE_TOX],
       expected_custom_pars: [],
     });
 

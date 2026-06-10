@@ -3,6 +3,7 @@ import { friendlyTdError } from "../../td-client/types.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult } from "../result.js";
 import type { ToolContext } from "../types.js";
+import { precheckToxCandidates } from "./toxCandidatePrecheck.js";
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -166,6 +167,24 @@ export async function dropExternalTox(
   ctx.logger.debug("dropExternalTox: resolving candidates", {
     count: candidate_paths.length,
   });
+
+  // Round-2 Wave-4 fix: if every candidate is absolute AND none exist on disk,
+  // short-circuit BEFORE calling the bridge. TD has been observed to hang the
+  // app when an executePythonScript is issued under unrelated load (e.g. a
+  // .tox import elsewhere in the session), so the safest behaviour when we
+  // can prove the result locally is to skip the round-trip entirely.
+  const precheck = precheckToxCandidates(candidate_paths);
+  if (precheck.allAbsoluteAndMissing) {
+    ctx.logger.debug("dropExternalTox: no absolute candidate exists; skipping bridge call", {
+      checked: precheck.absoluteChecked,
+    });
+    return {
+      error: errorResult(
+        `No .tox found on disk in any candidate path. Tried: ${precheck.absoluteChecked.join(", ")}. ` +
+          "Install the package or pass an explicit path.",
+      ),
+    };
+  }
 
   const script = buildPayloadScript(SCRIPT_TEMPLATE, {
     parent_path,

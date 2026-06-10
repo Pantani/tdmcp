@@ -1181,15 +1181,15 @@ they belong below.
 
 | Feature | id | Delivers | Eff | Imp | Conf | Pri | Status | Source(s) |
 |---|---|---|---|---|---|---|---|---|
-| `drive_streamdiffusion` | S001 | dotsimulate StreamDiffusionTD wrapper — discover the TOX, drop inside `baseCOMP`, expose t-index / prompt / strength as custom pars, OSC-bind | M | High | High | P1 | NEW — see Out of scope (GPU/CUDA) | ai, tut, comm, vfx |
-| `create_depth_from_2d` | S003 | TDDepthAnything v2 wrapper — RGB-in → depth-TOP-out preset for 2D-to-3D parallax / depth-keyed silhouette | M | High | High | P1 | NEW — Round-3 EX placeholder reopened | ai, comm |
-| `connect_comfyui` | S004 | ComfyUI bridge via olegchomp/TDComfyUI or JiSenHua/ComfyUI-TD — graph load + queue prompt + Spout pull-back | M | High | High | P1 | NEW — see Out of scope (GPU/CUDA) | ai, tut |
-| `create_gaussian_splat_scene` | S016 | TDGS wrapper (Anglerfish-graphics 6 Apr 2025; POPs Gaussian-Splat v2026) — load `.ply`, instance, camera-control. **Top trend** (4-surface unanimous H) | M | High | High | P1 | NEW | ai, comm, tut, vfx |
-| `setup_mediapipe_plugin` | S028 | torinmb/mediapipe-touchdesigner canonical setup — face/hand/body/segmentation all from one Spout-loopback path | S | High | High | P1 | EXTENSION over the shipped `setup_*_tracking` | ai, tut |
-| `create_llm_chain` | S008 | dotsimulate LOPs wrapper — chain OpenAI / Anthropic / Ollama nodes with prompt-templates and structured outputs | M | High | Med | P1 | NEW | ai, tut |
+| `drive_streamdiffusion` | S001 | dotsimulate StreamDiffusionTD wrapper — discover the TOX, drop inside `baseCOMP`, expose t-index / prompt / strength as custom pars, OSC-bind | M | High | High | P1 | ✅ shipped v0.11.0 | ai, tut, comm, vfx |
+| `create_depth_from_2d` | S003 | TDDepthAnything v2 wrapper — RGB-in → depth-TOP-out preset for 2D-to-3D parallax / depth-keyed silhouette | M | High | High | P1 | ✅ shipped v0.11.0 | ai, comm |
+| `connect_comfyui` | S004 | ComfyUI bridge via olegchomp/TDComfyUI or JiSenHua/ComfyUI-TD — graph load + queue prompt + Spout pull-back | M | High | High | P1 | ✅ shipped v0.11.0 | ai, tut |
+| `create_gaussian_splat_scene` | S016 | TDGS wrapper (Anglerfish-graphics 6 Apr 2025; POPs Gaussian-Splat v2026) — load `.ply`, instance, camera-control. **Top trend** (4-surface unanimous H) | M | High | High | P1 | ✅ shipped v0.11.0 | ai, comm, tut, vfx |
+| `setup_mediapipe_plugin` | S028 | torinmb/mediapipe-touchdesigner canonical setup — face/hand/body/segmentation all from one Spout-loopback path | S | High | High | P1 | ✅ shipped v0.11.0 | ai, tut |
+| `create_llm_chain` | S008 | dotsimulate LOPs wrapper — chain OpenAI / Anthropic / Ollama nodes with prompt-templates and structured outputs | M | High | Med | P1 | ✅ shipped v0.11.0 | ai, tut |
 | `create_voice_prompt_pipeline` | S005 | STT-Whisper LOP → prompt → SD/SDXL update — push-to-talk live prompt morph | M | Med | Med | P2 | NEW | ai, tut |
-| `create_ai_mirror` | S017 | Combo recipe: camera-in + StreamDiffusion + control-surface mapped — the showcase form everyone is shipping | L | High | Med | P2 | NEW — depends S001 + FM-01 | ai, comm, tut |
-| `connect_daydream_cloud` | S043 | dotsimulate × Daydream hosted StreamDiffusion — cloud path that skips the GPU gate | S | High | Med | P1 | NEW — see Out of scope (cloud) | ai |
+| `create_ai_mirror` | S017 | Combo recipe: camera-in + StreamDiffusion + control-surface mapped — the showcase form everyone is shipping | L | High | Med | P2 | ✅ shipped v0.11.0 | ai, comm, tut |
+| `connect_daydream_cloud` | S043 | dotsimulate × Daydream hosted StreamDiffusion — cloud path that skips the GPU gate | S | High | Med | P1 | ✅ shipped v0.11.0 | ai |
 | `create_sam_segmentation` | S046 | SAM 2 / FastSAM masks via ONNX → matte/alpha channel | L | Med | Med | P2 | PARTIAL — depends ONNX | ai, tut |
 | `create_prompt_morph` | S044 | IP-Adapter slot bank — morph between N saved prompts on a control surface | S | Med | Med | P2 | PARTIAL — depends S001 | ai |
 | `create_rd_diffusion_hybrid` | S048 | Feed `create_reaction_diffusion` into StreamDiffusion image2image | M | Med | Med | P2 | PARTIAL — depends S001 + S033 | comm, ai |
