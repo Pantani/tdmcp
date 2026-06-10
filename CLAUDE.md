@@ -178,6 +178,40 @@ questions can be answered directly.
 | 2026-05-28 | Initial harness | feature discovery (2 agents + 3 skills) | ideation: survey 4 surfaces → prioritized FEATURE_BACKLOG; feeds tdmcp-pipeline |
 | 2026-05-28 | Tuned (Phase 7) | discovery (all 5 files) | run robustness (incremental writes + auto-retry); weighting profiles (live-show default); 5th surface `library`; breadth→depth + Confidence field |
 
+## Harness: AI party mixer design
+
+**Goal:** design the Soundcraft Ui24R / mixer-aware expansion of AI-Controlled
+Party as an operator-approved scene-arming flow, preserving the current
+show-director policy boundaries.
+
+**Trigger:** when asked to design, update, refine, or re-run the Soundcraft
+Ui24R scene-arming expansion, mixer-aware AI party, operator-approved mixer
+cues/snapshots/shows, Companion bridge, direct Soundcraft adapter, or related
+AI-Controlled Party mixer follow-ups, use the `tdmcp-ai-party-mixer-design`
+skill. It produces a spec/handoff for `tdmcp-pipeline`; it does not implement
+runtime code directly. Simple questions can be answered directly.
+
+## Harness: AI party POC
+
+**Goal:** design Hermes/Telegram AI-controlled-party POCs around tdmcp's
+show-director policy layer: four projections, Telegram triggers, Hermes intent
+planning, PA announcements, fog/hazer, lights/DMX, operator approvals, audit logs,
+and venue validation.
+
+**Trigger:** when asked to design, update, validate, implement, or refine an AI
+party / AI show director / Hermes / Telegram live-event control POC, use the
+`ai-party-poc` skill. It coordinates `ai-party-poc-lead`,
+`ai-party-systems-architect`, `ai-party-show-designer`,
+`ai-party-chatops-integrator`, and `ai-party-venue-safety-qa`. Simple questions
+can be answered directly. Runtime implementation should be handed to
+`tdmcp-pipeline` after the POC boundary is accepted.
+
+**Change log:**
+| Date | Change | Target | Reason |
+|------|--------|--------|--------|
+| 2026-06-04 | Initial design harness | 5 agents + 5 skills | design the Ui24R operator-approved scene-arming expansion before runtime work |
+| 2026-06-10 | Initial harness | `ai-party-poc` + 5 agents | design Hermes/Telegram AI-controlled-party POCs before code or hardware control |
+
 ## Harness: feature build
 
 **Goal:** implement batches of new tdmcp tools (e.g. Phase 13 / v0.5.0) as parallel

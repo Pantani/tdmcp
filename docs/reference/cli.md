@@ -114,6 +114,7 @@ tdmcp-agent watch --on beat --exec './cue-next.sh' --debounce-ms 250
 tdmcp-agent show-director --params '{"intent":{"type":"request_cue","cue":"band_intro","preapproved":true}}'
 tdmcp-agent ai-party-poc
 tdmcp-agent ai-party-poc --params '{"auto_approve_effects":true,"operator":"front-of-house"}'
+tdmcp-agent ai-party --params '{"message":{"text":"/fog 3s light","chat_role":"operator","user_role":"foh"}}'
 ```
 
 Output format is `--output json` (default) / `ndjson` / `text` / `table` /
@@ -146,6 +147,14 @@ voice transcripts, audio-section markers, dashboard approval actions or scripted
 `ShowIntent`s. The output is a dry-run JSON envelope with policy decisions,
 approval queue state, an audit log summary and simulated effect events. It does
 not build a TouchDesigner context and never emits a live hardware plan.
+
+`tdmcp-agent ai-party` is the Hermes/Telegram POC wrapper around that policy
+surface. It accepts a Telegram-style message, validates an optional raw Hermes
+candidate or uses a deterministic fallback parser, then returns the dry-run
+decision, plan, approval state and Telegram reply text. `tdmcp-agent ai-party
+telegram-once` runs one Telegram Bot API long-poll batch and sends replies with
+`sendMessage`; it is still policy-only and does not create a TouchDesigner
+context.
 
 ## Local copilot (`tdmcp chat`)
 

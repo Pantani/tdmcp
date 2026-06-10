@@ -29,6 +29,20 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "ai-party",
+    summary: "Dry-run one Hermes/Telegram AI party message through policy.",
+    mutates: false,
+    unsafe: false,
+    source: "cli",
+  },
+  {
+    command: "ai-party telegram-once",
+    summary: "Process one Telegram long-poll batch through the AI party gateway.",
+    mutates: false,
+    unsafe: false,
+    source: "cli",
+  },
+  {
     command: "ai-party-poc",
     summary: "Run the AI-Controlled Party producer POC in dry-run/simulated mode.",
     mutates: false,
