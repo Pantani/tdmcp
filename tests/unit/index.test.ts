@@ -18,6 +18,7 @@ let stderrChunks: string[];
 const runInstallBridgeMock = vi.fn(async (_args: string[]) => {});
 const runInstallClientMock = vi.fn(async (_args: string[]) => {});
 const runChatMock = vi.fn(async (_args: string[]) => {});
+const runTelegramMock = vi.fn(async (_args: string[]) => {});
 const runDashboardMock = vi.fn(async (_args: string[]) => 0);
 const runPackageCliMock = vi.fn(async (_argv: string[]) => ({
   stdout: "pkg-out",
@@ -56,6 +57,9 @@ vi.mock("../../src/cli/installClient.js", () => ({
 }));
 vi.mock("../../src/cli/chat.js", () => ({
   runChat: runChatMock,
+}));
+vi.mock("../../src/cli/telegram.js", () => ({
+  runTelegram: runTelegramMock,
 }));
 vi.mock("../../src/cli/tui.js", () => ({
   runDashboard: runDashboardMock,
@@ -209,6 +213,12 @@ describe("src/index.ts dispatcher", () => {
     setArgv(["llm-run", "hello"]);
     await importEntry();
     expect(runChatMock).toHaveBeenCalledWith(["hello"]);
+  });
+
+  it("delegates telegram subcommand", async () => {
+    setArgv(["telegram", "--once"]);
+    await importEntry();
+    expect(runTelegramMock).toHaveBeenCalledWith(["--once"]);
   });
 
   it("dashboard subcommand calls process.exit with runDashboard's exit code", async () => {

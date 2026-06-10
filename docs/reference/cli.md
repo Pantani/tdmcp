@@ -19,6 +19,7 @@ The package installs two binaries: `tdmcp` (the MCP server + utilities) and
 | `tdmcp init` | One-shot onboarding: stage the bridge, write a client config (Claude / Cursor / Codex), seed a profile and optional bridge token. See [Onboarding](#onboarding) below. |
 | `tdmcp ask "<prompt>"` | Non-interactive copilot turn — one prompt in, one answer out (machine-readable with `--json`). See [Onboarding](#onboarding) below. |
 | `tdmcp chat` _(alias `tdmcp llm-run`)_ | Start the local LLM copilot UI (see below). |
+| `tdmcp telegram` | Start an allowlisted Telegram Bot API long-poll bridge into the local Ollama copilot. See [Telegram copilot](#telegram-copilot) below. |
 | `tdmcp install-bridge` | Stage the TouchDesigner bridge to `~/tdmcp-bridge` and print the runtime Textport command for `/project1/tdmcp_bridge`. Add `--palette` to also print a Palette package export command for draggable `tdmcp_bridge_package.tox`; `--palette-dir <path>` and `--package-name <name>` imply `--palette`. Add `--verify` to check `/api/info` once, `--wait` to poll until it is up, and `--port <port>` for non-default bridges. For the Palette package, `/api/info` can only pass after the package's **Install** button creates the runtime bridge. See [Bridge & REST API](/reference/bridge-api). |
 | `tdmcp install-client <claude\|codex\|cursor>` | Print a client-specific MCP config snippet for the current package. Add `--write --path <file>` to deep-merge and verify an explicit client config file (JSON for Claude/Cursor, TOML for Codex). |
 | `tdmcp completion bash` | Print a shell completion snippet for the primary binary. Supports `bash`, `zsh`, and `fish`, including package-manager shortcuts and common flags. |
@@ -198,6 +199,43 @@ endpoint works via `TDMCP_LLM_BASE_URL` — local Ollama/LM Studio, or a cloud A
 Tune the default tool tier, loop budget and sampling with `TDMCP_LLM_TIER`,
 `TDMCP_LLM_MAX_STEPS` and `TDMCP_LLM_TEMPERATURE`.
 :::
+
+## Telegram copilot (`tdmcp telegram`) {#telegram-copilot}
+
+`tdmcp telegram` runs a local long-polling Telegram Bot API loop and forwards
+allowlisted text messages to the same local Ollama copilot used by `tdmcp chat`.
+It is a transport adapter: Telegram never talks directly to the TouchDesigner
+bridge.
+
+Required setup:
+
+```bash
+printf '%s\n' '123456:ABC...' | tdmcp telegram setup --token-stdin --chat-id 123456
+ollama pull qwen2.5:3b
+tdmcp telegram
+```
+
+`tdmcp telegram setup` validates the BotFather token with Telegram `getMe`, then
+writes `telegramBotToken`, `telegramAllowedChats` and `telegramDefaultTier` to
+the selected config file. By default it uses `TDMCP_CONFIG_FILE`, an existing
+`tdmcp.json` / `.tdmcprc` in the current directory, or
+`~/.config/tdmcp/config.json`. Use `--config <path>` or `--profile <name>` to
+choose the destination explicitly. If you omit `--chat-id`, setup can wait for
+the next message sent to the bot and save that chat after confirmation.
+
+The Telegram surface defaults to `safe` mode, so read-only inspection prompts run
+immediately. `/standard` and `/creative` stage the next prompt and require
+`/approve` before any non-safe tool tier runs. `/cancel` clears pending/running
+work, `/status` shows tier/pending state, and `/panic` intentionally does not
+execute remotely in this MVP; use a trusted local shell for `tdmcp-agent panic`.
+
+Runtime flags: `--once` (poll once and exit), `--read-only`, `--creative`,
+`--tier <safe|standard|creative>`, `--poll-timeout <sec>`,
+`--drop-pending-updates`, `--profile <name>`, `--config <path>`, and `--help`.
+
+Setup flags: `--token-stdin`, `--chat-id <id>`, `--user-id <id>`,
+`--setup-timeout <sec>`, `--yes`, `--profile <name>`, `--config <path>`, and
+`--help`.
 
 ## npm scripts
 

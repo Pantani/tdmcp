@@ -40,6 +40,26 @@ These configure the [local LLM copilot](/reference/cli#local-copilot-tdmcp-chat)
 | `TDMCP_LLM_TEMPERATURE` | `0.4` | Sampling temperature sent to the OpenAI-compatible chat endpoint. Values are clamped to `0..2`. |
 | `TDMCP_CHAT_PORT` | `4141` | Loopback port the `tdmcp chat` web UI binds to. |
 
+## Telegram copilot (`tdmcp telegram`)
+
+These configure the [Telegram copilot](/reference/cli#telegram-copilot). It uses
+Telegram Bot API long polling, so no public webhook or inbound port is required.
+Messages are accepted only from configured allowlists.
+
+For local setup, prefer `tdmcp telegram setup`: it validates the BotFather token
+and writes the matching config keys to `~/.config/tdmcp/config.json` or the file
+selected with `--config`. The environment variables below remain useful for
+temporary shells, process managers and CI-style runs.
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `TDMCP_TELEGRAM_BOT_TOKEN` | _(unset)_ | Telegram bot token from BotFather. Required for `tdmcp telegram`; redacted in config output. |
+| `TDMCP_TELEGRAM_ALLOWED_CHATS` | _(empty)_ | Comma-separated Telegram chat ids allowed to reach the local copilot. At least this or `TDMCP_TELEGRAM_ALLOWED_USERS` must be set. |
+| `TDMCP_TELEGRAM_ALLOWED_USERS` | _(empty)_ | Optional comma-separated Telegram user ids. When set, the user id must match in addition to any configured chat allowlist. |
+| `TDMCP_TELEGRAM_DEFAULT_TIER` | `safe` | Default Telegram tool tier: `safe`, `standard`, or `creative`. Non-safe prompts still require `/approve`. |
+| `TDMCP_TELEGRAM_POLL_TIMEOUT_SEC` | `30` | Telegram `getUpdates` long-poll timeout, validated to `1..60` seconds by the config schema. |
+| `TDMCP_TELEGRAM_CONFIRM_TIMEOUT_MS` | `60000` | Expiry for a staged non-safe prompt awaiting `/approve`. |
+
 ## TouchDesigner side
 
 Set these in **TouchDesigner's** environment (not the server's) for defense in

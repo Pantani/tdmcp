@@ -2817,9 +2817,21 @@ const ENV_NAMES: Record<keyof TdmcpConfig, string> = {
   llmMaxSteps: "TDMCP_LLM_MAX_STEPS",
   llmTemperature: "TDMCP_LLM_TEMPERATURE",
   chatPort: "TDMCP_CHAT_PORT",
+  telegramBotToken: "TDMCP_TELEGRAM_BOT_TOKEN",
+  telegramAllowedChats: "TDMCP_TELEGRAM_ALLOWED_CHATS",
+  telegramAllowedUsers: "TDMCP_TELEGRAM_ALLOWED_USERS",
+  telegramDefaultTier: "TDMCP_TELEGRAM_DEFAULT_TIER",
+  telegramPollTimeoutSec: "TDMCP_TELEGRAM_POLL_TIMEOUT_SEC",
+  telegramConfirmTimeoutMs: "TDMCP_TELEGRAM_CONFIRM_TIMEOUT_MS",
   vaultPath: "TDMCP_VAULT_PATH",
 };
-const SECRET_ENV: ReadonlySet<keyof TdmcpConfig> = new Set(["bridgeToken", "llmApiKey"]);
+const SECRET_ENV: ReadonlySet<keyof TdmcpConfig> = new Set([
+  "bridgeToken",
+  "llmApiKey",
+  "telegramBotToken",
+  "telegramAllowedChats",
+  "telegramAllowedUsers",
+]);
 
 /** A paste-ready `export TDMCP_*=...` block; secrets are emitted commented-out (set manually). */
 function envExportLines(config: TdmcpConfig): string[] {

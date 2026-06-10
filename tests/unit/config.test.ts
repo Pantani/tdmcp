@@ -58,6 +58,33 @@ describe("loadConfig", () => {
     expect(config.llmTemperature).toBe(0.75);
   });
 
+  it("reads Telegram copilot knobs and keeps Telegram safe by default", () => {
+    const defaults = loadConfig({});
+    expect(defaults.telegramDefaultTier).toBe("safe");
+    expect(defaults.telegramAllowedChats).toEqual([]);
+    expect(defaults.telegramAllowedUsers).toEqual([]);
+
+    const config = loadConfig({
+      TDMCP_TELEGRAM_BOT_TOKEN: "telegram-secret",
+      TDMCP_TELEGRAM_ALLOWED_CHATS: "111, 222",
+      TDMCP_TELEGRAM_ALLOWED_USERS: "5,6",
+      TDMCP_TELEGRAM_DEFAULT_TIER: "standard",
+      TDMCP_TELEGRAM_POLL_TIMEOUT_SEC: "12",
+      TDMCP_TELEGRAM_CONFIRM_TIMEOUT_MS: "45000",
+    });
+
+    expect(config.telegramBotToken).toBe("telegram-secret");
+    expect(config.telegramAllowedChats).toEqual(["111", "222"]);
+    expect(config.telegramAllowedUsers).toEqual(["5", "6"]);
+    expect(config.telegramDefaultTier).toBe("standard");
+    expect(config.telegramPollTimeoutSec).toBe(12);
+    expect(config.telegramConfirmTimeoutMs).toBe(45000);
+  });
+
+  it("keeps Telegram on the safe tier when its configured tier is invalid", () => {
+    expect(loadConfig({ TDMCP_TELEGRAM_DEFAULT_TIER: "unsafe" }).telegramDefaultTier).toBe("safe");
+  });
+
   it("sanitizes local LLM copilot knobs instead of leaking unsafe values", () => {
     expect(loadConfig({ TDMCP_LLM_TIER: "unsafe" }).llmTier).toBe("standard");
     expect(loadConfig({ TDMCP_LLM_MAX_STEPS: "0" }).llmMaxSteps).toBe(1);
@@ -205,10 +232,15 @@ describe("loadConfig — config files & profiles", () => {
 
 describe("describeConfig", () => {
   it("redacts secret keys", () => {
-    const cfg = loadConfig({ TDMCP_BRIDGE_TOKEN: "s3cret", TDMCP_LLM_API_KEY: "k3y" });
+    const cfg = loadConfig({
+      TDMCP_BRIDGE_TOKEN: "s3cret",
+      TDMCP_LLM_API_KEY: "k3y",
+      TDMCP_TELEGRAM_BOT_TOKEN: "telegram-secret",
+    });
     const safe = describeConfig(cfg);
     expect(safe.bridgeToken).toBe("***redacted***");
     expect(safe.llmApiKey).toBe("***redacted***");
+    expect(safe.telegramBotToken).toBe("***redacted***");
     expect(safe.tdHost).toBe("127.0.0.1");
   });
 

@@ -429,17 +429,34 @@ describe("tdmcp-agent CLI", () => {
     }
   });
 
-  it("includes local copilot knobs in config --write-env", async () => {
-    const r = await runCli(["config", "--write-env"], {
-      makeCtx: () => {
-        throw new Error("config --write-env must not build a TD context");
-      },
-    });
+  it("includes local copilot knobs and redacts Telegram identifiers in config --write-env", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-agent-cfg-"));
+    try {
+      const config = join(dir, "tdmcp.json");
+      writeFileSync(
+        config,
+        JSON.stringify({
+          telegramAllowedChats: ["111", "222"],
+          telegramAllowedUsers: ["5", "6"],
+        }),
+      );
+      const r = await runCli(["config", "--write-env", "--config", config], {
+        makeCtx: () => {
+          throw new Error("config --write-env must not build a TD context");
+        },
+      });
 
-    expect(r.code).toBe(0);
-    expect(r.stdout).toContain("TDMCP_LLM_TIER");
-    expect(r.stdout).toContain("TDMCP_LLM_MAX_STEPS");
-    expect(r.stdout).toContain("TDMCP_LLM_TEMPERATURE");
+      expect(r.code).toBe(0);
+      expect(r.stdout).toContain("TDMCP_LLM_TIER");
+      expect(r.stdout).toContain("TDMCP_LLM_MAX_STEPS");
+      expect(r.stdout).toContain("TDMCP_LLM_TEMPERATURE");
+      expect(r.stdout).toContain("# export TDMCP_TELEGRAM_ALLOWED_CHATS=<set manually>");
+      expect(r.stdout).toContain("# export TDMCP_TELEGRAM_ALLOWED_USERS=<set manually>");
+      expect(r.stdout).not.toContain("111,222");
+      expect(r.stdout).not.toContain("5,6");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("propagates top-level --dry-run into JSON run-file steps", async () => {
