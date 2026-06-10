@@ -117,6 +117,7 @@ import { registerDetectOnsets } from "./detectOnsets.js";
 import { registerDetectPitch } from "./detectPitch.js";
 import { registerDetectTempo } from "./detectTempo.js";
 import { registerDriveStreamdiffusion } from "./driveStreamdiffusion.js";
+import { registerEnhanceBuild } from "./enhanceBuild.js";
 import { registerExtractAudioFeatures } from "./extractAudioFeatures.js";
 import { registerGetPreview } from "./getPreview.js";
 import { registerImportIsfShader } from "./importIsfShader.js";
@@ -224,6 +225,7 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateBlobReactive,
   // Campaign Wave 2 — composition/scheduling/reactivity/interaction (v0.8.0):
   registerComposeCueList,
+  registerEnhanceBuild,
   registerCreateProbSequencer,
   registerCreateTwoWaySurface,
   registerCreateAutomationLane,

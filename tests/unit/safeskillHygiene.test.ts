@@ -32,7 +32,7 @@ const directRemoteContentUrlPattern = /https?:\/\/[^\s/]+\/[^\s]*\.(?:txt|md|pro
 const llmSystemOptionKeyPattern = /(?<![\w])(?:"system"|'system'|system)\s*:/g;
 const scannedLlmPromptSourceFiles = [
   join(root, "src", "tools", "layer3", "copilotVision.ts"),
-  join(root, "src", "tools", "layer3", "enhanceBuild.ts"),
+  join(root, "src", "tools", "layer1", "enhanceBuild.ts"),
   join(root, "src", "tools", "layer3", "scoreBuild.ts"),
 ];
 const urlFixture = (...parts: string[]) => parts.join("");

@@ -1,8 +1,13 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
+import {
+  createSystemContainer,
+  finalize,
+  type NetworkBuilder,
+  runBuild,
+} from "../layer2/orchestration.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { driveStreamdiffusionImpl } from "./driveStreamdiffusion.js";
-import { createSystemContainer, finalize, type NetworkBuilder, runBuild } from "./orchestration.js";
 
 // ---------------------------------------------------------------------------
 // Schema

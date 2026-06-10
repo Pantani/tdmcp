@@ -2,7 +2,7 @@ import { z } from "zod";
 import { normalize, parseSetlist } from "../../automation/setlistSchema.js";
 import { friendlyTdError } from "../../td-client/types.js";
 import type { Vault } from "../../vault/index.js";
-import { buildFromRecipe, finalize } from "../layer1/orchestration.js";
+import { buildFromRecipe, finalize } from "../layer2/orchestration.js";
 import { errorResult, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { readNoteSafe, requireVault } from "./shared.js";

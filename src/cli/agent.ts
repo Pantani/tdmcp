@@ -355,6 +355,7 @@ import {
   driveStreamdiffusionImpl,
   driveStreamdiffusionSchema,
 } from "../tools/layer1/driveStreamdiffusion.js";
+import { enhanceBuildImpl, enhanceBuildSchema } from "../tools/layer1/enhanceBuild.js";
 import {
   extractAudioFeaturesImpl,
   extractAudioFeaturesSchema,
@@ -566,7 +567,6 @@ import {
   elicitMissingArgsImpl,
   elicitMissingArgsSchema,
 } from "../tools/layer3/elicitMissingArgs.js";
-import { enhanceBuildImpl, enhanceBuildSchema } from "../tools/layer3/enhanceBuild.js";
 import { execNodeMethodImpl, execNodeMethodSchema } from "../tools/layer3/execNodeMethod.js";
 import {
   executePythonScriptImpl,

@@ -2,24 +2,15 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import type { ZodTypeAny } from "zod";
 import { z } from "zod";
 import { LLM_SYSTEM_OPTION } from "../../llm/client.js";
-import {
-  applyPostProcessingImpl,
-  applyPostProcessingSchema,
-} from "../layer1/applyPostProcessing.js";
-import { createColorGradeImpl, createColorGradeSchema } from "../layer1/createColorGrade.js";
-import {
-  createFeedbackNetworkImpl,
-  createFeedbackNetworkSchema,
-} from "../layer1/createFeedbackNetwork.js";
-import {
-  createFeedbackTunnelImpl,
-  createFeedbackTunnelSchema,
-} from "../layer1/createFeedbackTunnel.js";
 import { arrangeNetworkImpl, arrangeNetworkSchema } from "../layer2/arrangeNetwork.js";
 import { bindToChannelImpl, bindToChannelSchema } from "../layer2/bindToChannel.js";
+import { type ScoreBuildOutput, scoreBuildImpl, scoreBuildSchema } from "../layer3/scoreBuild.js";
 import { structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
-import { type ScoreBuildOutput, scoreBuildImpl, scoreBuildSchema } from "./scoreBuild.js";
+import { applyPostProcessingImpl, applyPostProcessingSchema } from "./applyPostProcessing.js";
+import { createColorGradeImpl, createColorGradeSchema } from "./createColorGrade.js";
+import { createFeedbackNetworkImpl, createFeedbackNetworkSchema } from "./createFeedbackNetwork.js";
+import { createFeedbackTunnelImpl, createFeedbackTunnelSchema } from "./createFeedbackTunnel.js";
 
 /** Returns true if `p` is `scope` itself or a descendant of `scope` (posix-ish TD paths). */
 function isUnderScope(p: string, scope: string): boolean {

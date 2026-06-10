@@ -64,7 +64,7 @@ their context here, so all surfaces share one core.
 **Three tool layers** (`src/tools/layer{1,2,3}/`), so the AI can pick altitude:
 - **Layer 1** — artist tools that build a whole wired+arranged network
   (`createAudioReactive`, `createFeedbackNetwork`, …). These go through
-  `src/tools/layer1/orchestration.ts`.
+  `src/tools/layer2/orchestration.ts`.
 - **Layer 2** — building blocks (`connectNodes`, `createControlPanel`,
   `animateParameter`, `createExternalIo`, …).
 - **Layer 3** — atomic node CRUD + inspection + the raw-Python escape hatches
@@ -82,7 +82,7 @@ tool: create the file, export both, add to the layer index.
 failures become friendly `isError` results via `errorResult`
 (`src/tools/result.ts`), `runBuild`, and `friendlyTdError`.
 
-**Layer 1 orchestration (`orchestration.ts`).** `createSystemContainer` makes a
+**Shared Layer 2 orchestration (`orchestration.ts`).** `createSystemContainer` makes a
 fresh `baseCOMP`; `NetworkBuilder` adds/connects/sets-params **fail-forward**
 (connection and param failures are collected as `warnings`, not thrown, so a
 partial build still returns useful info); `buildFromRecipe` instantiates a recipe;

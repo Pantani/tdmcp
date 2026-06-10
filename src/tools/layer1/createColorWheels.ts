@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { ControlSpec } from "../layer2/createControlPanel.js";
+import { createSystemContainer, finalize, runBuild } from "../layer2/orchestration.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
-import { createSystemContainer, finalize, runBuild } from "./orchestration.js";
 
 // NOTE: we deliberately expose lift/gamma/gain as three separate float controls
 // per channel (LiftR/LiftG/LiftB, …) instead of a single `rgb` swatch. The shared

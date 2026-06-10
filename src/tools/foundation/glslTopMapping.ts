@@ -1,11 +1,11 @@
 import { z } from "zod";
+import { type ControlSpec, toTdCustomParameterName } from "../layer2/createControlPanel.js";
 import {
   createSystemContainer,
   finalize,
   type NetworkBuilder,
   runBuild,
-} from "../layer1/orchestration.js";
-import { type ControlSpec, toTdCustomParameterName } from "../layer2/createControlPanel.js";
+} from "../layer2/orchestration.js";
 import { errorResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 

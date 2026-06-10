@@ -25,9 +25,9 @@
 import { z } from "zod";
 import { buildPopChainImpl } from "../layer2/buildPopChain.js";
 import type { ControlSpec } from "../layer2/createControlPanel.js";
+import { createSystemContainer, finalize, runBuild } from "../layer2/orchestration.js";
 import { errorResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
-import { createSystemContainer, finalize, runBuild } from "./orchestration.js";
 
 const q = (value: string): string => JSON.stringify(value);
 
