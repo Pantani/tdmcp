@@ -198,7 +198,7 @@ def _build_html(comp):
                    '<input type="range" min="0" max="1" step="any" value="0" '
                    'oninput="hit(\\'?do=fader&path=' + _h(_q(f["par_path"]))
                    + '&value=\\'+this.value)"></div>')
-    head = ('<!doctype html><html><head><meta name="viewport" '
+    head = ('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" '
             'content="width=device-width,initial-scale=1,maximum-scale=1">'
             '<title>tdmcp stage</title><style>'
             'body{background:#0b0b0e;color:#eee;font-family:-apple-system,system-ui,sans-serif;margin:0;padding:16px}'
@@ -268,7 +268,7 @@ def onHTTPRequest(webServerDAT, request, response):
         response["data"] = "ok"
         return response
     response["statusCode"] = 200
-    response["content-type"] = "text/html"
+    response["content-type"] = "text/html; charset=utf-8"
     response["data"] = _build_html(comp)
     return response
 
@@ -432,7 +432,7 @@ def _build_html(comp):
                  + '<div id="playhead" style="position:absolute;top:0;bottom:0;width:2px;background:#2a6cf6;left:0"></div>'
                  + '</div>')
     tempo_html = '' if not CFG.get("tempo") else '<span id="bpm" style="font-size:28px;font-weight:700;min-width:72px;display:inline-block">—</span> BPM'
-    head = ('<!doctype html><html><head><meta name="viewport" '
+    head = ('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" '
             'content="width=device-width,initial-scale=1,maximum-scale=1">'
             '<title>tdmcp stage v2</title><style>'
             'body{background:#0b0b0e;color:#eee;font-family:-apple-system,system-ui,sans-serif;margin:0;padding:16px;padding-bottom:96px}'
@@ -528,7 +528,7 @@ def onHTTPRequest(webServerDAT, request, response):
         response["data"] = "ok"
         return response
     response["statusCode"] = 200
-    response["content-type"] = "text/html"
+    response["content-type"] = "text/html; charset=utf-8"
     response["data"] = _build_html(comp)
     return response
 

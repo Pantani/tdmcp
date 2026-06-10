@@ -8,6 +8,7 @@ import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
+import { AiPartyGatewaySchema, runAiPartyGateway } from "../automation/aiPartyGateway.js";
 import { AiPartyPocRunSchema, runAiPartyPoc } from "../automation/aiPartyPoc.js";
 import {
   approveShowIntent,
@@ -21,6 +22,10 @@ import {
   parseShowIntent,
   ShowIntentSchema,
 } from "../automation/showDirectorSchema.js";
+import {
+  pollTelegramShowOnce,
+  TelegramShowPollOnceSchema,
+} from "../automation/telegramShowGateway.js";
 import { capturePreview } from "../feedback/previewCapture.js";
 import { buildToolContext } from "../server/context.js";
 import { type TdEventHandler, TdEventStream } from "../td-client/eventStream.js";
@@ -2423,6 +2428,20 @@ const SPECIAL_COMMANDS: AgentCommandCatalogEntry[] = [
     source: "cli",
   },
   {
+    command: "ai-party",
+    summary: "Dry-run one Hermes/Telegram AI party message through policy.",
+    mutates: false,
+    unsafe: false,
+    source: "cli",
+  },
+  {
+    command: "ai-party telegram-once",
+    summary: "Process one Telegram long-poll batch through the AI party gateway.",
+    mutates: false,
+    unsafe: false,
+    source: "cli",
+  },
+  {
     command: "schedule <file>",
     summary: "Run scene scheduler triggers.",
     mutates: true,
@@ -2589,6 +2608,14 @@ function formatCommandHelp(target: string): string | undefined {
     lines.push("", "Input schema:", JSON.stringify(z.toJSONSchema(showDirectorCliSchema), null, 2));
   } else if (target === "ai-party-poc") {
     lines.push("", "Input schema:", JSON.stringify(z.toJSONSchema(aiPartyPocCliSchema), null, 2));
+  } else if (target === "ai-party") {
+    lines.push("", "Input schema:", JSON.stringify(z.toJSONSchema(AiPartyGatewaySchema), null, 2));
+  } else if (target === "ai-party telegram-once") {
+    lines.push(
+      "",
+      "Input schema:",
+      JSON.stringify(z.toJSONSchema(TelegramShowPollOnceSchema), null, 2),
+    );
   }
   return lines.join("\n");
 }
@@ -3204,6 +3231,26 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
       };
       return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
     }
+    if (target === "ai-party") {
+      const doc = {
+        command: target,
+        summary: "Dry-run one Hermes/Telegram AI party message through policy.",
+        mutates: false,
+        unsafe: false,
+        input: z.toJSONSchema(AiPartyGatewaySchema),
+      };
+      return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
+    }
+    if (target === "ai-party telegram-once") {
+      const doc = {
+        command: target,
+        summary: "Process one Telegram long-poll batch through the AI party gateway.",
+        mutates: false,
+        unsafe: false,
+        input: z.toJSONSchema(TelegramShowPollOnceSchema),
+      };
+      return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
+    }
     const cmd = COMMANDS[target];
     if (!cmd) return { stdout: "", stderr: `Unknown command for schema: "${target}".\n`, code: 2 };
     const doc = {
@@ -3238,6 +3285,53 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
     }
     const doc = runAiPartyPoc(args.data);
     return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
+  }
+
+  // `ai-party` is the Hermes/Telegram POC entry point. The default mode runs a
+  // single message through the dry-run policy path. `telegram-once` performs one
+  // Bot API long-poll batch and sends textual replies, but still does not create
+  // a TouchDesigner context or drive hardware.
+  if (positionals[0] === "ai-party") {
+    const assembled = assembleParams(values, opts);
+    if ("error" in assembled) {
+      return {
+        stdout: "",
+        stderr: `Invalid JSON in --params/--json: ${assembled.error}\n`,
+        code: 2,
+      };
+    }
+
+    if (positionals[1] === "telegram-once") {
+      const args = TelegramShowPollOnceSchema.safeParse(assembled.raw);
+      if (!args.success) {
+        return {
+          stdout: "",
+          stderr: `Invalid arguments for "ai-party telegram-once": ${args.error.message}\n`,
+          code: 2,
+        };
+      }
+      try {
+        const result = await pollTelegramShowOnce(args.data);
+        return { stdout: `${JSON.stringify(result, null, 2)}\n`, stderr: "", code: 0 };
+      } catch (err) {
+        return { stdout: "", stderr: `${(err as Error).message}\n`, code: 2 };
+      }
+    }
+
+    if (positionals[1] !== undefined) {
+      return { stdout: "", stderr: `Unknown ai-party verb "${positionals[1]}".\n`, code: 2 };
+    }
+
+    const args = AiPartyGatewaySchema.safeParse(assembled.raw);
+    if (!args.success) {
+      return {
+        stdout: "",
+        stderr: `Invalid arguments for "ai-party": ${args.error.message}\n`,
+        code: 2,
+      };
+    }
+    const result = runAiPartyGateway(args.data);
+    return { stdout: `${JSON.stringify(result, null, 2)}\n`, stderr: "", code: 0 };
   }
 
   // `show-director` is intentionally policy-only for now: it validates a raw

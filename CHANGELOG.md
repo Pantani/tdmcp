@@ -15,6 +15,19 @@ top-5 quick wins, POP combos, the generative-AI bridge wave (including the
 **28 new tools**, all live-verified against TD 099 build 2025.32820 /
 bridge 0.6.1.
 
+### Added — Hermes AI party POC
+- **`tdmcp-agent ai-party`** — dry-runs a Telegram/Hermes-style show-control
+  message through the existing AI Show Director policy runtime without creating
+  a TouchDesigner context or touching hardware.
+- **`tdmcp-agent ai-party telegram-once`** — processes one Telegram Bot API
+  long-poll batch (`getUpdates` with message/callback updates), maps messages to
+  bounded `ShowIntent`s, and replies with `sendMessage` status plus inline
+  approve/deny buttons for queued effects.
+- **`aiPartyGateway` / `telegramShowGateway` automation modules** — deterministic
+  Hermes fallback parsing, raw Hermes candidate validation, audience/operator
+  ACLs, malformed-output blocking, approval queue handoff, and Telegram reply
+  formatting for the AI-controlled-party POC.
+
 ### Added — Force multipliers (D.0)
 - **`create_external_io` outbound modes** — new `ndi_out` and
   `syphon_spout_out` modes (Layer 2). KB-confirmed stock TOPs

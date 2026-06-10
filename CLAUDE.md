@@ -190,10 +190,26 @@ AI-Controlled Party mixer follow-ups, use the `tdmcp-ai-party-mixer-design`
 skill. It produces a spec/handoff for `tdmcp-pipeline`; it does not implement
 runtime code directly. Simple questions can be answered directly.
 
+## Harness: AI party POC
+
+**Goal:** design Hermes/Telegram AI-controlled-party POCs around tdmcp's
+show-director policy layer: four projections, Telegram triggers, Hermes intent
+planning, PA announcements, fog/hazer, lights/DMX, operator approvals, audit logs,
+and venue validation.
+
+**Trigger:** when asked to design, update, validate, implement, or refine an AI
+party / AI show director / Hermes / Telegram live-event control POC, use the
+`ai-party-poc` skill. It coordinates `ai-party-poc-lead`,
+`ai-party-systems-architect`, `ai-party-show-designer`,
+`ai-party-chatops-integrator`, and `ai-party-venue-safety-qa`. Simple questions
+can be answered directly. Runtime implementation should be handed to
+`tdmcp-pipeline` after the POC boundary is accepted.
+
 **Change log:**
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
 | 2026-06-04 | Initial design harness | 5 agents + 5 skills | design the Ui24R operator-approved scene-arming expansion before runtime work |
+| 2026-06-10 | Initial harness | `ai-party-poc` + 5 agents | design Hermes/Telegram AI-controlled-party POCs before code or hardware control |
 
 ## Harness: feature build
 

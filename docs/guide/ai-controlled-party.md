@@ -68,6 +68,45 @@ and manifest prove the target scene excludes gain, PA mute, routing, patching,
 channel-strip, mute-group and phantom-power changes. Otherwise it remains
 operator-only/manual.
 
+## Hermes + Telegram POC shape
+
+A larger POC can put Hermes behind a Telegram bot as the active show director:
+Telegram messages trigger Hermes, Hermes proposes a structured `ShowIntent`, the
+policy runtime allows, queues or blocks it, and only approved plans reach tdmcp
+and TouchDesigner.
+
+For a local rehearsal, use Telegram long polling and an allowlisted operator
+chat. Use webhooks only for a deployed environment with TLS, routing and secret
+handling. Keep the four public outputs distinct: main identity/announcements,
+audio-reactive world, camera or AI-vision surface, and audience interaction
+wall. PA announcements, fog/hazer, lighting and any mixer-affecting action still
+need approval and venue validation before live use.
+
+The local POC entry point is `tdmcp-agent ai-party`. It dry-runs one
+Telegram/Hermes-style message through the same policy runtime as
+`show-director`:
+
+```bash
+tdmcp-agent ai-party --params '{
+  "message": {
+    "text": "/band start Terno Rei",
+    "chat_role": "operator",
+    "user_role": "foh"
+  }
+}'
+```
+
+For a Telegram bench test, run one long-poll batch with a bot token in the
+environment. This sends status replies back to Telegram but still does not touch
+TouchDesigner or hardware:
+
+```bash
+TDMCP_TELEGRAM_BOT_TOKEN=... tdmcp-agent ai-party telegram-once --params '{
+  "allowed_chat_ids": [123456789],
+  "operator_user_ids": [987654321]
+}'
+```
+
 ## Validation plan
 
 Use the concept as a harness, not a single demo file. Each pass should prove one
