@@ -134,6 +134,8 @@ try:
         # the RD GLSL chain still ships and the LUT step becomes a warning.
         try:
             _lut_ramp = op(_base).create("rampTOP", "lut_ramp")
+            _lut_ramp.nodeX = glsl1.nodeX + 180 if glsl1 is not None else 200
+            _lut_ramp.nodeY = glsl1.nodeY + 140 if glsl1 is not None else 0
             _lut_ramp.par.resolutionw = 256
             _lut_ramp.par.resolutionh = 1
             _lut_ramp.par.outputresolution = "custom"
@@ -152,6 +154,8 @@ try:
                     report["warnings"].append("ramp key %d par-set failed: %s" % (_ki, str(_e)))
 
             _lut_apply = op(_base).create("lookupTOP", "lut_apply")
+            _lut_apply.nodeX = _lut_ramp.nodeX + 180
+            _lut_apply.nodeY = _lut_ramp.nodeY
             _lut_apply.inputConnectors[0].connect(glsl1)
             _lut_apply.inputConnectors[1].connect(_lut_ramp)
             if out1 is not None:
@@ -265,7 +269,7 @@ export async function createReactionDiffusionImpl(
 
   return runBuild(async () => {
     // 1. Delegate to buildFromRecipe — creates the base network
-    const built = await buildFromRecipe(ctx, recipe, args.parent_path);
+    const built = await buildFromRecipe(ctx, recipe, args.parent_path, args.name);
 
     // 2. Post-recipe overlay: resolution + uniforms + shader patch + optional LUT
     const paletteKeys = args.palette !== "none" ? (PALETTES[args.palette] ?? []) : [];

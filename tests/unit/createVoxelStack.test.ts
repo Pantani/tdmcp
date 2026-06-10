@@ -202,15 +202,16 @@ describe("create_voxel_stack", () => {
     // OR it returns a partial build with warnings (NetworkBuilder fail-forward).
     // Either way the result must be defined and the call must not throw.
     expect(result).toBeDefined();
+    expect(execCallCount).toBeGreaterThanOrEqual(2);
 
     // If it is a full error, check the message is friendly (no raw stack).
     if (result.isError) {
       const content = JSON.stringify(result.content);
       expect(content.toLowerCase()).toMatch(/fail|error|instanc/i);
     } else {
-      // Partial build: warnings should mention the failure
+      // Partial build: warnings/details should still mention instancing failure
       const content = JSON.stringify(result.content);
-      expect(content).toBeDefined();
+      expect(content.toLowerCase()).toMatch(/fail|error|instanc/i);
     }
   });
 });

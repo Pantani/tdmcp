@@ -228,6 +228,12 @@ describe("create_stipple_pointcloud", () => {
     }
   });
 
+  it("expose_controls description does not promise a Density control", () => {
+    expect(createStipplePointcloudSchema.shape.expose_controls.description).not.toContain(
+      "Density",
+    );
+  });
+
   // Case 6: color_mode=palette with custom palette_color — constantMAT coloured accordingly.
   it("color_mode=palette with custom palette_color — constantMAT gets palette RGB", async () => {
     const { bodies } = captureAll();

@@ -145,6 +145,11 @@ try:
     _container = _parent.op(_name)
     if _container is None:
         _container = _parent.create(baseCOMP, _name)
+    def _place(node, col, row):
+        if node is not None:
+            node.nodeX = col * 220
+            node.nodeY = -(row * 140)
+    _place(_container, 0, 0)
     report["container_path"] = _container.path
     _mode = _p["mode_resolved"]
 
@@ -152,6 +157,7 @@ try:
         _out = _container.op(_p.get("output_top_name", "out"))
         if _out is None:
             _out = _container.create(nullTOP, _p.get("output_top_name", "out"))
+        _place(_out, 3, 0)
         if receiver_op is not None:
             try:
                 _out.inputConnectors[0].connect(receiver_op)
@@ -207,6 +213,7 @@ try:
         _wf_dat = _container.op("workflow")
         if _wf_dat is None:
             _wf_dat = _container.create(textDAT, "workflow")
+        _place(_wf_dat, 0, 0)
         try:
             _wf_dat.par.file.val = _wf
             _wf_dat.par.syncfile.val = True
@@ -216,6 +223,7 @@ try:
         _submit = _container.op("submit")
         if _submit is None:
             _submit = _container.create(webclientDAT, "submit")
+        _place(_submit, 1, 0)
         _srv = _p.get("server_url", "http://127.0.0.1:8188")
         try:
             _submit.par.url.val = _srv.rstrip("/") + "/prompt"
@@ -225,6 +233,7 @@ try:
         _poll = _container.op("poll")
         if _poll is None:
             _poll = _container.create(timerCHOP, "poll")
+        _place(_poll, 1, 1)
         try:
             _poll.par.period.val = float(_p.get("poll_interval_seconds", 0.5))
             _poll.par.active.val = bool(_p.get("active", False))
@@ -234,6 +243,7 @@ try:
         _hist = _container.op("history")
         if _hist is None:
             _hist = _container.create(webclientDAT, "history")
+        _place(_hist, 2, 1)
         try:
             _hist.par.url.val = _srv.rstrip("/") + "/history"
         except Exception as _e:
@@ -245,6 +255,7 @@ try:
             _src_in = _container.op("src_in")
             if _src_in is None:
                 _src_in = _container.create(nullTOP, "src_in")
+            _place(_src_in, 0, 2)
             if _src_op is not None:
                 try:
                     _src_in.inputConnectors[0].connect(_src_op)
@@ -255,6 +266,7 @@ try:
             _tx_in = _container.op("tx_in")
             if _tx_in is None:
                 _tx_in = _container.create(syphonspoutoutTOP, "tx_in")
+            _place(_tx_in, 1, 2)
             try:
                 _tx_in.inputConnectors[0].connect(_src_in)
             except Exception as _e:
@@ -267,6 +279,7 @@ try:
             _receiver = _container.op("receiver")
             if _receiver is None:
                 _receiver = _container.create(movieFileInTOP, "receiver")
+            _place(_receiver, 2, 0)
             _wfolder = _p.get("watch_folder")
             if _wfolder:
                 try:
@@ -279,6 +292,7 @@ try:
             _receiver = _container.op("receiver")
             if _receiver is None:
                 _receiver = _container.create(ndiinTOP, "receiver")
+            _place(_receiver, 2, 0)
             try:
                 _receiver.par.name.val = _oname
             except Exception as _e:
@@ -288,6 +302,7 @@ try:
             _receiver = _container.op("receiver")
             if _receiver is None:
                 _receiver = _container.create(syphonspoutinTOP, "receiver")
+            _place(_receiver, 2, 0)
             try:
                 _receiver.par.sendername.val = _oname
             except Exception as _e:

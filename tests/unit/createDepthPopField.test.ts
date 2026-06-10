@@ -269,6 +269,28 @@ describe("create_depth_pop_field", () => {
     expect(bodies.some((b) => b.name === "color_lookup")).toBe(false);
   });
 
+  it("binds DepthScale and Spin controls to the generated network", async () => {
+    captureCreateBodies();
+    const scripts = captureExecScripts();
+
+    await createDepthPopFieldImpl(makeCtx(), {
+      ...BASE_ARGS,
+      depth_top_path: "/project1/fake_depth",
+      scatter_mode: "both",
+    });
+
+    const panelScript = scripts.find((s) => s.includes("appendCustomPage"));
+    const b64 = /b64decode\("([^"]+)"\)/.exec(panelScript ?? "")?.[1];
+    expect(b64).toBeDefined();
+    const payload = JSON.parse(Buffer.from(b64 ?? "", "base64").toString("utf8")) as {
+      controls: Array<{ name: string; bind_to?: string[] }>;
+    };
+    const depthScale = payload.controls.find((c) => c.name === "DepthScale");
+    const spin = payload.controls.find((c) => c.name === "Spin");
+    expect(depthScale?.bind_to).toContain("/project1/depth_pop_field/displace.sz");
+    expect(spin?.bind_to).toContain("/project1/depth_pop_field/displace.ry");
+  });
+
   /**
    * Case 6: particle_density Zod bounds — rejects 99 and 500_001, accepts 100 and 500_000.
    */

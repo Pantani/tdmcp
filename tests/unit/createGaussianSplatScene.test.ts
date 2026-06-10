@@ -220,4 +220,23 @@ describe("create_gaussian_splat_scene", () => {
     expect(scaleTOP).toBeDefined();
     expect(scaleTOP?.parameters).toMatchObject({ resolutionw: 3840, resolutionh: 2160 });
   });
+
+  it("6 — expose_controls creates SplatAssetPath before assigning it", async () => {
+    const calls = mockExecHappyPath("/Users/user/Documents/Derivative/COMP/TDGS.tox", {
+      asset_par_name: "Plyfile",
+      inner_out_path: "/project1/gaussian_splat_scene/TDGS/out1",
+      warnings: [],
+    });
+
+    const result = await run({ expose_controls: true });
+
+    expect(result.isError).toBeFalsy();
+    const controlScript = calls.find((c) =>
+      c.script.includes('appendCustomPage("Controls")'),
+    )?.script;
+    expect(controlScript).toContain('appendStr("SplatAssetPath"');
+    expect(controlScript?.indexOf('appendStr("SplatAssetPath"')).toBeLessThan(
+      controlScript?.indexOf("_c.par.SplatAssetPath") ?? -1,
+    );
+  });
 });

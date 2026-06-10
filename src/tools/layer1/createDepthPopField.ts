@@ -71,9 +71,9 @@ export const createDepthPopFieldSchema = z.object({
     .enum(["displace", "emit", "both"])
     .default("displace")
     .describe(
-      "'displace' = depth offsets P.z of the point cloud; " +
-        "'emit' = depth biases density concentration; " +
-        "'both' = displace + density bias.",
+      "'displace' = uniform depth-scale proxy on the point cloud; " +
+        "'emit' = emission-like scatter jitter around the sampled depth field; " +
+        "'both' = depth-scale proxy + scatter jitter. True depth-weighted birth is unverified.",
     ),
   depth_scale: z
     .number()
@@ -81,7 +81,7 @@ export const createDepthPopFieldSchema = z.object({
     .max(5)
     .default(1.0)
     .describe(
-      "Multiplier on the depth-driven displacement amount along +Z. Exposed as DepthScale knob.",
+      "Multiplier on the depth-driven displacement amount along +Z for displace/both scatter modes. Exposed as DepthScale knob when that displacement proxy is active.",
     ),
   color_by_depth: z
     .boolean()
@@ -115,7 +115,7 @@ export const createDepthPopFieldSchema = z.object({
   expose_controls: z
     .boolean()
     .default(true)
-    .describe("Build the live DepthScale / PointSize / Spin knobs panel."),
+    .describe("Build the live artist knobs panel for the active depth field controls."),
 });
 
 type CreateDepthPopFieldArgs = z.infer<typeof createDepthPopFieldSchema>;
@@ -290,14 +290,18 @@ export async function createDepthPopFieldImpl(ctx: ToolContext, args: CreateDept
     // -----------------------------------------------------------------------
     const controls: ControlSpec[] = args.expose_controls
       ? [
-          {
-            name: "DepthScale",
-            type: "float",
-            min: 0,
-            max: 5,
-            default: args.depth_scale,
-            bind_to: [],
-          },
+          ...(args.scatter_mode === "displace" || args.scatter_mode === "both"
+            ? [
+                {
+                  name: "DepthScale",
+                  type: "float",
+                  min: 0,
+                  max: 5,
+                  default: args.depth_scale,
+                  bind_to: [`${displace}.sz`],
+                } satisfies ControlSpec,
+              ]
+            : []),
           {
             name: "PointSize",
             type: "float",
@@ -312,7 +316,7 @@ export async function createDepthPopFieldImpl(ctx: ToolContext, args: CreateDept
             min: -360,
             max: 360,
             default: args.spin,
-            bind_to: [],
+            bind_to: [`${displace}.ry`],
           },
         ]
       : [];
@@ -339,6 +343,8 @@ export async function createDepthPopFieldImpl(ctx: ToolContext, args: CreateDept
           "Used P.x/P.y as lookupattr0/1; lookup_texture_pop docs say 0-1 range — probe whether unnormalised P works or if remap is required.",
         tz_expr_per_point:
           "transformPOP has no me.inputPoint/curPoint/inputAttr — per-point tz expression is unsupported. Using uniform sz=depth_scale as a coarse proxy; for true per-point depth displacement, route depth into P.z via attributePOP/mathPOP upstream of the transformPOP.",
+        emit_mode:
+          "emit/both modes currently use depth lookup plus higher jitter as an emission-like scatter proxy; true depth-weighted particle birth remains unverified.",
         future_hook:
           "depth_top_path will accept create_depth_from_2d (Depth Anything) output in W4.",
       },
@@ -367,10 +373,10 @@ export const registerCreateDepthPopField: ToolRegistrar = (server, ctx) => {
       title: "Create depth-driven POP field",
       description:
         "Build a depth-driven GPU POP scatter field: consumes a depth/mask TOP and uses " +
-        "lookup_texture_pop to weight per-point displacement (and optionally color) by sampled depth. " +
+        "lookup_texture_pop to sample depth for displacement/scatter proxies (and optionally color). " +
         "When depth_top_path is omitted, auto-spins-up a setup_segmentation MediaPipe chain inside " +
         "the container and uses its mask Null TOP as the depth source. " +
-        "Scatter modes: 'displace' offsets P.z, 'emit' biases density, 'both' does both. " +
+        "Scatter modes: 'displace' applies a uniform depth-scale proxy, 'emit' adds an emission-like jitter scatter proxy, 'both' does both. " +
         "Forward-compatible: pass create_depth_from_2d (Depth Anything, W4) output as depth_top_path. " +
         "NOTE: POPs are Experimental — op types and par names are fail-forward, probe on a live TD. " +
         "Returns a JSON block with container path, depth source info, controls, warnings, and unverified probe record.",

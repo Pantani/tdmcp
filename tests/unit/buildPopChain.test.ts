@@ -134,6 +134,20 @@ describe("buildPopChainScript", () => {
     expect(script).toContain("outputConnectors[0]");
   });
 
+  it("assigns deterministic node positions immediately after POP creation", () => {
+    const script = buildPopChainScript({
+      parent: "/project1",
+      name: "x",
+      chain: [],
+      defaults_map: {},
+      unverified_note: "test",
+    });
+    expect(script).toContain("_node.nodeX");
+    expect(script).toContain("_node.nodeY");
+    expect(script).toContain("_POP_LAYOUT_X");
+    expect(script).toContain("_POP_LAYOUT_Y");
+  });
+
   it("emits the kind-defaults overlay before the user params loop", () => {
     const script = buildPopChainScript({
       parent: "/project1",

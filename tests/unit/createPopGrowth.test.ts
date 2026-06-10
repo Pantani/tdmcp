@@ -163,9 +163,13 @@ describe("create_pop_growth", () => {
 
     const chain = payloads[0]?.chain as Array<{ name: string; params: Record<string, number> }>;
     const emit = chain.find((c) => c.name === "emit");
+    const noise = chain.find((c) => c.name === "noise");
     const force = chain.find((c) => c.name === "force");
+    const fb = chain.find((c) => c.name === "growth_fb");
     expect(emit?.params.birth).toBe(8);
+    expect(noise?.params.threshold).toBe(0.7);
     expect(force?.params.scale).toBe(0.5);
+    expect(fb?.params.decay).toBe(0.08);
 
     // threshold carried through to the extra block
     const data = jsonBlockOf(result);

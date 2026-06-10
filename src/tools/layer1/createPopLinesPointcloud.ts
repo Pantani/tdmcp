@@ -4,6 +4,7 @@ import type { ToolContext, ToolRegistrar } from "../types.js";
 import { createSystemContainer, finalize, runBuild } from "./orchestration.js";
 
 const q = (value: string): string => JSON.stringify(value);
+const py = (value: string): string => `'${value.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
 
 // POP op type strings — derived from the <basename>POP convention, unverified against live TD.
 const POP_TYPES = {
@@ -28,9 +29,8 @@ function setParsDefensively(path: string, pairs: Array<[string, unknown]>): stri
 // Script SOP callback body, parameterised at build time.
 function scriptSopBody(
   toSopPath: string,
+  neighborPath: string,
   maxLines: number,
-  maxDistance: number,
-  maxNeighbors: number,
   colorMode: "flat" | "by_distance" | "by_neighbor_count",
   color: readonly [number, number, number],
 ): string {
@@ -48,8 +48,16 @@ function scriptSopBody(
     `    pts = src.points\n` +
     `    nbr_attr = src.attr('Nebr')\n` +
     `    dist_attr = src.attr('Dist') if ${byDist ? "True" : "False"} else None\n` +
+    `    nbr = op(${py(neighborPath)})\n` +
     `    max_lines = ${maxLines}\n` +
-    `    max_dist = ${maxDistance}\n` +
+    `    try:\n` +
+    `        max_dist = float(nbr.par.maxdistance.eval()) if nbr is not None else 1.0\n` +
+    `    except Exception:\n` +
+    `        max_dist = 1.0\n` +
+    `    try:\n` +
+    `        max_neighbors = int(nbr.par.maxneighbors.eval()) if nbr is not None else 1\n` +
+    `    except Exception:\n` +
+    `        max_neighbors = 1\n` +
     `    by_dist = ${byDist ? "True" : "False"}\n` +
     `    by_isol = ${byIsol ? "True" : "False"}\n` +
     `    color = (${cr}, ${cg}, ${cb})\n` +
@@ -82,7 +90,7 @@ function scriptSopBody(
     `        for i, p in enumerate(scriptOp.points):\n` +
     `            try:\n` +
     `                n = len(nbr_attr[i]) if nbr_attr[i] is not None else 0\n` +
-    `                t = min(1.0, n / max(${maxNeighbors}, 1))\n` +
+    `                t = min(1.0, n / max(max_neighbors, 1))\n` +
     `                p.Cd = (color[0]*t, color[1]*t, color[2]*t, 1)\n` +
     `            except Exception: pass\n`
   );
@@ -278,14 +286,7 @@ export async function createPopLinesPointcloudImpl(
 
     // Script SOP DAT (Text DAT holds the callback Python).
     const scriptDat = await builder.add("textDAT", "lines_script", {}, geo);
-    const sopBody = scriptSopBody(
-      toSop,
-      args.max_lines,
-      args.max_distance,
-      args.max_neighbors,
-      args.color_mode,
-      args.color,
-    );
+    const sopBody = scriptSopBody(toSop, nbrPop, args.max_lines, args.color_mode, args.color);
     await builder.python(`op(${q(scriptDat)}).text = ${q(sopBody)}`);
 
     // Script SOP itself.

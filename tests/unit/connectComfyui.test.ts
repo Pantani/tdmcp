@@ -211,6 +211,41 @@ describe("webclient explicit success", () => {
     expect(text).toContain("/project1/comfyui");
     expect(text).toContain("/project1/comfyui/out");
   });
+
+  it("webclient script assigns deterministic layout coordinates", async () => {
+    let capturedScript = "";
+    server.use(
+      http.post(`${TD_BASE}/api/exec`, async ({ request }) => {
+        capturedScript = ((await request.json()) as { script: string }).script;
+        return execOk({
+          mode_used: "webclient",
+          container_path: "/project1/comfyui",
+          out_path: "/project1/comfyui/out",
+          server_url: "http://127.0.0.1:8188",
+          workflow_json_path: "/tmp/stable_diffusion.json",
+          warnings: [],
+          errors: [],
+        } satisfies ConnectComfyuiReport);
+      }),
+    );
+
+    const result = await connectComfyuiImpl(makeCtx(), {
+      mode: "webclient",
+      parent_path: "/project1",
+      workflow_json_path: "/tmp/stable_diffusion.json",
+      server_url: "http://127.0.0.1:8188",
+      output_top_name: "out",
+      output_mode: "syphon",
+      output_source_name: "ComfyUI",
+      poll_interval_seconds: 0.5,
+      active: false,
+    });
+
+    expect(result.isError).toBeFalsy();
+    expect(capturedScript).toContain("nodeX");
+    expect(capturedScript).toContain("nodeY");
+    expect(capturedScript).toContain("_place(");
+  });
 });
 
 // ---------------------------------------------------------------------------

@@ -135,6 +135,33 @@ describe("createReactionDiffusionImpl", () => {
     expect(text).toContain("coral");
   });
 
+  it("uses args.name for the recipe container", async () => {
+    const bodies = captureCreateBodies();
+    captureExecScripts();
+
+    const result = await createReactionDiffusionImpl(
+      makeCtx(),
+      defaults({ name: "rd_custom_name" }),
+    );
+
+    expect(result.isError).toBeFalsy();
+    expect(bodies.find((b) => b.type === "baseCOMP")?.name).toBe("rd_custom_name");
+  });
+
+  it("positions LUT nodes created by the overlay script", async () => {
+    captureCreateBodies();
+    const scripts = captureExecScripts();
+
+    const result = await createReactionDiffusionImpl(makeCtx(), defaults({ palette: "spots" }));
+
+    expect(result.isError).toBeFalsy();
+    const overlayScript = scripts.find((s) => s.includes("lut_ramp") && s.includes("lut_apply"));
+    expect(overlayScript).toContain("_lut_ramp.nodeX");
+    expect(overlayScript).toContain("_lut_ramp.nodeY");
+    expect(overlayScript).toContain("_lut_apply.nodeX");
+    expect(overlayScript).toContain("_lut_apply.nodeY");
+  });
+
   // -------------------------------------------------------------------------
   // Test 2: Spots palette — ramp keys match spots preset
   // -------------------------------------------------------------------------

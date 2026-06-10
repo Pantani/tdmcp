@@ -200,6 +200,24 @@ describe("create_pop_lines_pointcloud", () => {
     expect(datScript).toContain("by_isol = False");
   });
 
+  it("Script SOP reads neighbor limits from the live neighbor POP", async () => {
+    captureCreateBodies();
+    const scripts = captureExecScripts();
+    await createPopLinesPointcloudImpl(makeCtx(), {
+      ...BASE_ARGS,
+      color_mode: "by_distance",
+      max_distance: 1.2,
+      max_neighbors: 6,
+    });
+
+    const datScript = scripts.find((s) => s.includes("max_dist") && s.includes("by_dist"));
+    expect(datScript).toContain("op('/project1/pop_lines/nbr')");
+    expect(datScript).toContain("par.maxdistance");
+    expect(datScript).toContain("par.maxneighbors");
+    expect(datScript).not.toContain("max_dist = 1.2");
+    expect(datScript).not.toContain("n / max(6, 1)");
+  });
+
   it("flat mode: Script SOP DAT contains by_dist = False and by_isol = False", async () => {
     captureCreateBodies();
     const scripts = captureExecScripts();

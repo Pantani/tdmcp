@@ -118,6 +118,7 @@ describe("createVolumetricFieldImpl", () => {
     expect(controls.some((c) => c.name === "Density")).toBe(true);
     expect(controls.some((c) => c.name === "Turbulence")).toBe(true);
     expect(controls.some((c) => c.name === "ColorMap")).toBe(true);
+    expect(controls.some((c) => c.name === "SliceMix")).toBe(false);
 
     // Summary mentions smoke and 16
     const text = textOf(result);

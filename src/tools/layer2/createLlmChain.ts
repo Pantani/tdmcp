@@ -200,6 +200,11 @@ def _connect(src, dst, idx=0):
         report["warnings"].append("Could not connect %s -> %s: %s" % (src.name, dst.name, _e))
         return False
 
+def _place(node, col, row):
+    if node is not None:
+        node.nodeX = col * 220
+        node.nodeY = -(row * 140)
+
 try:
     _parent = op(_p["parent_path"])
     if _parent is None:
@@ -207,6 +212,7 @@ try:
     else:
         _cname = _p.get("container_name") or ("llm_" + _p["provider"])
         _c = _parent.create(baseCOMP, _cname)
+        _place(_c, 0, 0)
         report["container_path"] = _c.path
 
         # --- API key resolution (Python-only; never surfaces to TS) ---
@@ -220,20 +226,24 @@ try:
         if _p["mode"] == "webclient":
             # sys textDAT
             _sys = _c.create(textDAT, "sys")
+            _place(_sys, 0, 0)
             _sys.text = _p["system_prompt"]
 
             # prompt textDAT
             _prompt = _c.create(textDAT, "prompt")
+            _place(_prompt, 0, 1)
             if _p.get("initial_prompt"):
                 _prompt.text = _p["initial_prompt"]
             report["prompt_dat_path"] = _prompt.path
 
             # response textDAT
             _resp = _c.create(textDAT, "response")
+            _place(_resp, 3, 1)
             report["response_dat_path"] = _resp.path
 
             # headers tableDAT
             _headers = _c.create(tableDAT, "headers")
+            _place(_headers, 0, 2)
             _headers.clear()
             _headers.appendRow(["Content-Type", "application/json"])
             _auth_header = _p.get("auth_header_name")
@@ -284,10 +294,12 @@ try:
                     "    })\\n"
                 )
             _bb = _c.create(textDAT, "body_builder")
+            _place(_bb, 1, 2)
             _bb.text = _body_code
 
             # webclientDAT
             _client = _c.create(webclientDAT, "client")
+            _place(_client, 2, 1)
             # Real webclientDAT pars in TD 099: reqmethod / url / includeheader.
             # The webclientDAT does NOT expose separate "headers DAT" / "request
             # data DAT" pars — body content is composed via the body_builder
@@ -324,6 +336,7 @@ try:
                 "        except Exception: pass\\n"
             )
             _cb = _c.create(datexecuteDAT, "callbacks")
+            _place(_cb, 2, 2)
             _cb.text = _callbacks_code
             for _cbpar in ("callbacks", "callbackdat"):
                 _cpr = getattr(_client.par, _cbpar, None)
@@ -336,9 +349,11 @@ try:
 
             # status constantCHOP
             _status = _c.create(constantCHOP, "status")
+            _place(_status, 3, 0)
             _setpar(_status, "name0", "busy", "status channel name")
             _setpar(_status, "value0", 0, "initial busy value")
             _status_out = _c.create(nullCHOP, "status_out")
+            _place(_status_out, 4, 0)
             _connect(_status, _status_out)
             report["status_chan"] = _status_out.path + ":busy"
 
@@ -351,6 +366,7 @@ try:
                     "    op('client').request()\\n"
                 )
                 _ae = _c.create(datExecuteDAT, "send_trigger")
+                _place(_ae, 1, 1)
                 _ae.text = _ae_code
                 _setpar(_ae, "dat", "prompt", "trigger dat")
 
@@ -381,12 +397,15 @@ try:
             else:
                 try:
                     _llm = _c.copy(op(_tox_path), name="llm")
+                    _place(_llm, 1, 0)
                     if _llm is None:
                         # try dropFile
                         _llm = _c.create(baseCOMP, "llm")
+                        _place(_llm, 1, 0)
                         report["warnings"].append("Could not copy TOX operator; created empty container instead.")
                 except Exception as _te:
                     _llm = _c.create(baseCOMP, "llm")
+                    _place(_llm, 1, 0)
                     report["warnings"].append("TOX drop failed (%s); created empty container." % str(_te))
 
                 _expected_pars = _p.get("expected_custom_pars") or ["Prompt", "Response", "Model", "Apikey"]
@@ -402,16 +421,20 @@ try:
 
                 # mirror DATs — evaluateDAT that references TOX pars
                 _prompt_mirror = _c.create(textDAT, "prompt")
+                _place(_prompt_mirror, 0, 1)
                 _prompt_mirror.text = "# prompt mirror\\n"
                 _resp_mirror = _c.create(textDAT, "response")
+                _place(_resp_mirror, 3, 1)
                 _resp_mirror.text = "# response mirror\\n"
                 report["prompt_dat_path"] = _prompt_mirror.path
                 report["response_dat_path"] = _resp_mirror.path
 
                 # status_out Null CHOP placeholder
                 _status = _c.create(constantCHOP, "status")
+                _place(_status, 2, 0)
                 _setpar(_status, "name0", "busy", "status channel name")
                 _status_out = _c.create(nullCHOP, "status_out")
+                _place(_status_out, 3, 0)
                 _connect(_status, _status_out)
                 report["status_chan"] = _status_out.path + ":busy"
 

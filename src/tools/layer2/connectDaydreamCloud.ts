@@ -73,6 +73,11 @@ try:
                 report["warnings"].append("Source TOP not found: " + str(_p["source_top_path"]))
             _base = _p.get("name") or "daydream_cloud1"
             _comp = _parent.create(baseCOMP, _base)
+            def _place(node, col, row):
+                if node is not None:
+                    node.nodeX = col * 220
+                    node.nodeY = -(row * 140)
+            _place(_comp, 0, 0)
 
             def _setpar(node, parname, val):
                 if val is None:
@@ -100,6 +105,7 @@ try:
 
             # build_request textDAT: encodes source frame + config as JSON body
             _build_req = _comp.create(textDAT, "build_request")
+            _place(_build_req, 0, 0)
             _fps_clamped = max(1.0, min(30.0, float(_p.get("fps", 8))))
             _build_req_code = (
                 "import json, base64\\n"
@@ -133,6 +139,7 @@ try:
 
             # webclientDAT
             _web = _comp.create(webclientDAT, "src")
+            _place(_web, 1, 0)
             _setpar(_web, "url", _p["server_url"])
             _setpar(_web, "reqmethod", 1)  # POST
             _setpar(_web, "active", 1 if _p.get("active") else 0)
@@ -156,6 +163,7 @@ try:
 
             # response_log DAT
             _resp_log = _comp.create(textDAT, "response_log")
+            _place(_resp_log, 2, 1)
             _resp_code = (
                 "def onResponse(webClientDAT, statusCode, headerDict, data):\\n"
                 "    webClientDAT.parent().op('response_log').text = "
@@ -166,12 +174,14 @@ try:
 
             # timerCHOP drives cadence
             _clock = _comp.create(timerCHOP, "clock")
+            _place(_clock, 0, 1)
             _setpar(_clock, "length", 1.0 / _fps_clamped)
             _setpar(_clock, "cycle", 1)
             _setpar(_clock, "play", 1 if _p.get("active") else 0)
 
             # chopexecuteDAT fires on cycle → pulses src.par.request
             _cb = _comp.create(chopexecuteDAT, "clock_cb")
+            _place(_cb, 1, 1)
             _cb_code = (
                 "def onOffToOn(channel, sampleIndex, val, prev):\\n"
                 "    src = parent().op('src')\\n"
@@ -188,14 +198,17 @@ try:
             _src_name = _p.get("output_source_name", "daydream_out")
             if _mode == "ndi":
                 _recv = _comp.create(ndiinTOP, "receiver")
+                _place(_recv, 2, 0)
                 _setpar(_recv, "sourcename", _src_name)
             else:
                 # syphon or spout both use syphonspoutinTOP
                 _recv = _comp.create(syphonspoutinTOP, "receiver")
+                _place(_recv, 2, 0)
                 _setpar(_recv, "sendername", _src_name)
 
             # nullTOP exposes output
             _null = _comp.create(nullTOP, "out")
+            _place(_null, 3, 0)
             _connect(_recv, _null)
 
             # custom controls page

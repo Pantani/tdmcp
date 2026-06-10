@@ -66,6 +66,35 @@ function happyReport(overrides: Partial<Record<string, unknown>> = {}): string {
   });
 }
 
+describe("buildLlmChainScript", () => {
+  it("assigns deterministic layout coordinates in Python-created nodes", () => {
+    const script = buildLlmChainScript({
+      mode: "webclient",
+      parent_path: "/project1",
+      container_name: "llm_ollama",
+      provider: "ollama",
+      endpoint_url: "http://127.0.0.1:11434/v1/chat/completions",
+      model: "llama3.2",
+      system_prompt: "system",
+      initial_prompt: null,
+      max_tokens: 512,
+      temperature: 0.7,
+      json_mode: false,
+      auto_request: true,
+      expose_controls: true,
+      env_var_name: "OLLAMA_HOST",
+      auth_header_name: null,
+      auth_header_prefix: null,
+      anthropic_version_header: null,
+      candidate_paths: [null],
+      expected_custom_pars: ["Prompt", "Response", "Model", "Apikey"],
+    });
+    expect(script).toContain("nodeX");
+    expect(script).toContain("nodeY");
+    expect(script).toContain("_place(");
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Case 1: webclient + openai — correct auth payload fields
 // ---------------------------------------------------------------------------

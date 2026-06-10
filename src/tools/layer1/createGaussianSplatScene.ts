@@ -318,6 +318,7 @@ export async function createGaussianSplatSceneImpl(
 _c = op(${JSON.stringify(builder.containerPath)})
 try:
     pg = _c.appendCustomPage("Controls")
+    pg.appendStr("SplatAssetPath", label="Splat Asset Path")
     _c.par.SplatAssetPath = ${JSON.stringify(args.splat_asset_path)}
 except Exception:
     pass

@@ -95,6 +95,27 @@ function blendGamma(curve: string): number {
   return 1.0; // linear
 }
 
+function previewGridSize(args: CreateFacadeMappingArgs): { width: number; height: number } {
+  if (args.blend_layout === "vertical") {
+    return {
+      width: args.output_width,
+      height: args.output_height * args.projector_count,
+    };
+  }
+  if (args.blend_layout === "grid") {
+    const cols = Math.ceil(Math.sqrt(args.projector_count));
+    const rows = Math.ceil(args.projector_count / cols);
+    return {
+      width: args.output_width * cols,
+      height: args.output_height * rows,
+    };
+  }
+  return {
+    width: args.output_width * args.projector_count,
+    height: args.output_height,
+  };
+}
+
 async function buildSource(
   builder: NetworkBuilder,
   args: CreateFacadeMappingArgs,
@@ -313,10 +334,11 @@ export async function createFacadeMappingImpl(ctx: ToolContext, args: CreateFaca
       branches.push(branch);
     }
 
-    // Preview composite: tiles all out_proj Nulls side-by-side.
+    // Preview composite: tiles all out_proj Nulls according to blend_layout.
+    const previewSize = previewGridSize(args);
     const previewGrid = await builder.add("compositeTOP", "facade_preview_grid", {
-      resolutionw: args.output_width * args.projector_count,
-      resolutionh: args.output_height,
+      resolutionw: previewSize.width,
+      resolutionh: previewSize.height,
       operand: "add",
     });
 
@@ -334,8 +356,8 @@ export async function createFacadeMappingImpl(ctx: ToolContext, args: CreateFaca
     }
 
     const outFacade = await builder.add("nullTOP", "out_facade", {
-      resolutionw: args.output_width * args.projector_count,
-      resolutionh: args.output_height,
+      resolutionw: previewSize.width,
+      resolutionh: previewSize.height,
     });
     await builder.connect(previewGrid, outFacade);
 

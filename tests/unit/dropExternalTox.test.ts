@@ -80,7 +80,7 @@ function textOf(result: { content: Array<{ type: string; text?: string }> }): st
 describe("dropExternalTox", () => {
   it("case 1: happy path — first candidate hit, all pars validated", async () => {
     mockExec({
-      found_path: "/abs/MediaPipe.tox",
+      found_path: FIXTURE_TOX,
       container_name: "MediaPipe",
       container_path: "/project1/MediaPipe",
       validated_pars: ["Active", "Maxhands"],
@@ -97,7 +97,7 @@ describe("dropExternalTox", () => {
 
     expect("ok" in result).toBe(true);
     if (!("ok" in result)) return;
-    expect(result.ok.found_path).toBe("/abs/MediaPipe.tox");
+    expect(result.ok.found_path).toBe(FIXTURE_TOX);
     expect(result.ok.container_path).toBe("/project1/MediaPipe");
     expect(result.ok.validated_pars).toEqual(["Active", "Maxhands"]);
     expect(result.ok.missing_pars).toHaveLength(0);

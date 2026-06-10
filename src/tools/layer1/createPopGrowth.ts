@@ -261,6 +261,7 @@ export async function createPopGrowthImpl(ctx: ToolContext, args: CreatePopGrowt
             amp: 1.0,
             period: 1 / p.noise_freq,
             seed: p.seed,
+            threshold: p.threshold,
           },
         },
         {
@@ -273,6 +274,7 @@ export async function createPopGrowthImpl(ctx: ToolContext, args: CreatePopGrowt
           name: "growth_fb",
           params: {
             inputmul: p.feedback_gain,
+            decay: p.decay,
           },
           extra_inputs: [`${containerPath}/emit`],
         },
@@ -350,7 +352,7 @@ export async function createPopGrowthImpl(ctx: ToolContext, args: CreatePopGrowt
             min: 0,
             max: 1,
             default: p.decay,
-            bind_to: [],
+            bind_to: [`${containerPath}/growth_fb.decay`],
           },
           {
             name: "Threshold",
@@ -358,7 +360,7 @@ export async function createPopGrowthImpl(ctx: ToolContext, args: CreatePopGrowt
             min: 0,
             max: 1,
             default: p.threshold,
-            bind_to: [],
+            bind_to: [`${containerPath}/noise.threshold`],
           },
           {
             name: "FeedbackGain",

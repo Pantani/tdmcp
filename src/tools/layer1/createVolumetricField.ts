@@ -112,7 +112,7 @@ export const createVolumetricFieldSchema = z.object({
   expose_controls: z
     .boolean()
     .default(true)
-    .describe("Expose Density, Turbulence, SliceMix and ColorMap knobs on the container."),
+    .describe("Expose Density, Turbulence and ColorMap knobs on the container."),
 });
 
 export async function createVolumetricFieldImpl(ctx: ToolContext, args: unknown) {
@@ -214,14 +214,6 @@ export async function createVolumetricFieldImpl(ctx: ToolContext, args: unknown)
             max: 1,
             default: a.turbulence,
             bind_to: [`${viewer}.vec1valuex`],
-          },
-          {
-            name: "SliceMix",
-            type: "float",
-            min: 0,
-            max: 1,
-            default: 1.0,
-            bind_to: [],
           },
           {
             name: "ColorMap",

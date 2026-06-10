@@ -56,7 +56,7 @@ export const createPopParticleSystemSchema = z.object({
         "'composite' = compositeTOP (add) of both.",
     ),
   resolution: z
-    .tuple([z.number(), z.number()])
+    .tuple([z.number().int().min(1), z.number().int().min(1)])
     .default([1280, 720])
     .describe("Render TOP resolution [width, height]."),
 });

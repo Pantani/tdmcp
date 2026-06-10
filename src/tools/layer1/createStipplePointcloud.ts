@@ -71,7 +71,7 @@ export const createStipplePointcloudSchema = z.object({
     .boolean()
     .default(true)
     .describe(
-      "When true, expose live DotSize, Density (read-only), JitterAmount (random_jitter only), CameraRotate.",
+      "When true, expose live DotSize, JitterAmount (random_jitter only), and CameraRotate controls.",
     ),
 });
 

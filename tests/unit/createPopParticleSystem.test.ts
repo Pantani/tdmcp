@@ -254,6 +254,15 @@ describe("create_pop_particle_system", () => {
     expect(r.success).toBe(false);
   });
 
+  it("rejects non-positive and fractional output resolution", () => {
+    expect(createPopParticleSystemSchema.safeParse({ resolution: [0, 720] }).success).toBe(false);
+    expect(createPopParticleSystemSchema.safeParse({ resolution: [1280, -1] }).success).toBe(false);
+    expect(createPopParticleSystemSchema.safeParse({ resolution: [1280.5, 720] }).success).toBe(
+      false,
+    );
+    expect(createPopParticleSystemSchema.safeParse({ resolution: [1280, 720] }).success).toBe(true);
+  });
+
   /**
    * Case 6: Fail-forward when buildPopChain warns (feedback_pop create warning).
    * null_pop output is still wired, output_top_path is non-null, warnings[] has the warning.

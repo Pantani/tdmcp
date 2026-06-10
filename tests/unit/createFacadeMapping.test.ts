@@ -187,6 +187,45 @@ describe("create_facade_mapping", () => {
     expect(controls.find((c) => c.name === "BlendCurve")).toBeTruthy();
   });
 
+  it("sizes preview outputs according to vertical and grid layouts", async () => {
+    const verticalBodies = captureCreateBodies();
+    await createFacadeMappingImpl(makeCtx(), {
+      ...defaultArgs(),
+      projector_count: 3,
+      blend_layout: "vertical",
+      output_width: 100,
+      output_height: 50,
+      expose_controls: false,
+    });
+    expect(verticalBodies.find((b) => b.name === "facade_preview_grid")?.parameters).toMatchObject({
+      resolutionw: 100,
+      resolutionh: 150,
+    });
+    expect(verticalBodies.find((b) => b.name === "out_facade")?.parameters).toMatchObject({
+      resolutionw: 100,
+      resolutionh: 150,
+    });
+
+    server.resetHandlers();
+    const gridBodies = captureCreateBodies();
+    await createFacadeMappingImpl(makeCtx(), {
+      ...defaultArgs(),
+      projector_count: 5,
+      blend_layout: "grid",
+      output_width: 100,
+      output_height: 50,
+      expose_controls: false,
+    });
+    expect(gridBodies.find((b) => b.name === "facade_preview_grid")?.parameters).toMatchObject({
+      resolutionw: 300,
+      resolutionh: 100,
+    });
+    expect(gridBodies.find((b) => b.name === "out_facade")?.parameters).toMatchObject({
+      resolutionw: 300,
+      resolutionh: 100,
+    });
+  });
+
   // Case 3: source_mode='existing_top' without source_top_path — Zod rejects
   it("rejects existing_top source_mode without source_top_path", () => {
     expect(() => createFacadeMappingSchema.parse({ source_mode: "existing_top" })).toThrow();

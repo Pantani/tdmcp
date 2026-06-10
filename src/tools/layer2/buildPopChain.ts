@@ -417,6 +417,9 @@ try:
         _created = []
         _name_to_path = {}
         _defaults_map = _p.get("defaults_map", {})
+        _POP_LAYOUT_X = 220
+        _POP_LAYOUT_Y = 0
+        _POP_LAYOUT_Y_STEP = 140
 
         for _i, _spec in enumerate(_p["chain"]):
             _kind = _spec["type"]
@@ -428,6 +431,8 @@ try:
             try:
                 _cls = getattr(td, _typ)
                 _node = _parent.create(_cls, _nm)
+                _node.nodeX = _i * _POP_LAYOUT_X
+                _node.nodeY = _POP_LAYOUT_Y - ((_i % 2) * _POP_LAYOUT_Y_STEP)
             except Exception:
                 report["warnings"].append("create[%d] %s failed: %s"
                     % (_i, _typ, traceback.format_exc().splitlines()[-1]))

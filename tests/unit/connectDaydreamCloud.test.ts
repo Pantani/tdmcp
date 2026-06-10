@@ -133,6 +133,9 @@ describe("connectDaydreamCloudImpl", () => {
 
     expect(payload.server_url).toBe("https://api.daydream.live/v1/stream");
     assertNoHardcodedKey(script);
+    expect(script).toContain("nodeX");
+    expect(script).toContain("nodeY");
+    expect(script).toContain("_place(");
 
     // override
     const customUrl = "https://staging.daydream.live/v1/stream";
