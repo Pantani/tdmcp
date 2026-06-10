@@ -7,6 +7,7 @@ import { layer2Registrars } from "./layer2/index.js";
 import { layer3Registrars } from "./layer3/index.js";
 import { libraryRegistrars } from "./library/index.js";
 import type { ToolContext } from "./types.js";
+import { utilRegistrars } from "./util/index.js";
 import { vaultRegistrars } from "./vault/index.js";
 
 /**
@@ -61,6 +62,7 @@ export function registerAllTools(server: McpServer, ctx: ToolContext): void {
     ...layer1Registrars,
     ...foundationRegistrars,
     ...libraryRegistrars,
+    ...utilRegistrars,
     ...vaultRegistrars,
     ...aiRegistrars,
     ...cliRegistrars,

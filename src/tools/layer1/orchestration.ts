@@ -213,8 +213,9 @@ export async function buildFromRecipe(
   ctx: ToolContext,
   recipe: Recipe,
   parentPath: string,
+  containerName = recipe.id,
 ): Promise<RecipeBuildResult> {
-  const builder = await createSystemContainer(ctx, parentPath, recipe.id);
+  const builder = await createSystemContainer(ctx, parentPath, containerName);
 
   for (const node of recipe.nodes) {
     let parentPath: string | undefined;

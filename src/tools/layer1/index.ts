@@ -5,6 +5,8 @@ import { registerAudioFingerprintToVisual } from "./audioFingerprintToVisual.js"
 import { registerComposeCueList } from "./composeCueList.js";
 import { registerCreate3dAudioReactive } from "./create3dAudioReactive.js";
 import { registerCreate3dScene } from "./create3dScene.js";
+import { registerCreateAiMirror } from "./createAiMirror.js";
+import { registerCreateAsciiRender } from "./createAsciiRender.js";
 import { registerCreateAudioReactive } from "./createAudioReactive.js";
 import { registerCreateAutomationLane } from "./createAutomationLane.js";
 import { registerCreateAutopilot } from "./createAutopilot.js";
@@ -14,12 +16,15 @@ import { registerCreateBodyBubbles } from "./createBodyBubbles.js";
 import { registerCreateBodyReactive } from "./createBodyReactive.js";
 import { registerCreateChopRecorder } from "./createChopRecorder.js";
 import { registerCreateChromaReactive } from "./createChromaReactive.js";
+import { registerCreateChromeBlobs } from "./createChromeBlobs.js";
 import { registerCreateColorGrade } from "./createColorGrade.js";
 import { registerCreateColorWheels } from "./createColorWheels.js";
 import { registerCreateCubemapDome } from "./createCubemapDome.js";
 import { registerCreateDatamosh } from "./createDatamosh.js";
 import { registerCreateDataVisualization } from "./createDataVisualization.js";
 import { registerCreateDepthDisplacement } from "./createDepthDisplacement.js";
+import { registerCreateDepthFromTwoD } from "./createDepthFromTwoD.js";
+import { registerCreateDepthPopField } from "./createDepthPopField.js";
 import { registerCreateDepthSilhouette } from "./createDepthSilhouette.js";
 import { registerCreateDisplacementWarp } from "./createDisplacementWarp.js";
 import { registerCreateDither } from "./createDither.js";
@@ -27,9 +32,11 @@ import { registerCreateDmxFixturePipeline } from "./createDmxFixturePipeline.js"
 import { registerCreateDomeOutput } from "./createDomeOutput.js";
 import { registerCreateEnergyStructure } from "./createEnergyStructure.js";
 import { registerCreateEngineComp } from "./createEngineComp.js";
+import { registerCreateFacadeMapping } from "./createFacadeMapping.js";
 import { registerCreateFeedbackNetwork } from "./createFeedbackNetwork.js";
 import { registerCreateFeedbackTunnel } from "./createFeedbackTunnel.js";
 import { registerCreateFluidSim } from "./createFluidSim.js";
+import { registerCreateGaussianSplatScene } from "./createGaussianSplatScene.js";
 import { registerCreateGenerativeArt } from "./createGenerativeArt.js";
 import { registerCreateGenerativeAudio } from "./createGenerativeAudio.js";
 import { registerCreateGlitch } from "./createGlitch.js";
@@ -58,15 +65,22 @@ import { registerCreateParticleFlock } from "./createParticleFlock.js";
 import { registerCreateParticleSystem } from "./createParticleSystem.js";
 import { registerCreatePbrScene } from "./createPbrScene.js";
 import { registerCreatePhoneGesture } from "./createPhoneGesture.js";
+import { registerCreatePhraseLockedCueEngine } from "./createPhraseLockedCueEngine.js";
+import { registerCreatePixelSort } from "./createPixelSort.js";
 import { registerCreatePointCloud } from "./createPointCloud.js";
 import { registerCreatePopField } from "./createPopField.js";
 import { registerCreatePopGeometry } from "./createPopGeometry.js";
+import { registerCreatePopGrowth } from "./createPopGrowth.js";
+import { registerCreatePopLinesPointcloud } from "./createPopLinesPointcloud.js";
+import { registerCreatePopParticleSystem } from "./createPopParticleSystem.js";
+import { registerCreatePoseControlnetDriver } from "./createPoseControlnetDriver.js";
 import { registerCreatePoseReactive } from "./createPoseReactive.js";
 import { registerCreatePoseSkeleton } from "./createPoseSkeleton.js";
 import { registerCreatePoseTracking } from "./createPoseTracking.js";
 import { registerCreateProbSequencer } from "./createProbSequencer.js";
 import { registerCreateProjectionMapping } from "./createProjectionMapping.js";
 import { registerCreateRaymarchScene } from "./createRaymarchScene.js";
+import { registerCreateReactionDiffusion } from "./createReactionDiffusion.js";
 import { registerCreateSafetyBlackoutChain } from "./createSafetyBlackoutChain.js";
 import { registerCreateSdfField } from "./createSdfField.js";
 import { registerCreateSetlistRunner } from "./createSetlistRunner.js";
@@ -75,7 +89,9 @@ import { registerCreateShaderLib } from "./createShaderLib.js";
 import { registerCreateShaderPark } from "./createShaderPark.js";
 import { registerCreateShowFailover } from "./createShowFailover.js";
 import { registerCreateSimulation } from "./createSimulation.js";
+import { registerCreateSlitScan } from "./createSlitScan.js";
 import { registerCreateSpectrum } from "./createSpectrum.js";
+import { registerCreateStipplePointcloud } from "./createStipplePointcloud.js";
 import { registerCreateStrangeAttractor } from "./createStrangeAttractor.js";
 import { registerCreateStrobe } from "./createStrobe.js";
 import { registerCreateSyncExternalClock } from "./createSyncExternalClock.js";
@@ -91,12 +107,16 @@ import { registerCreateVectorLines } from "./createVectorLines.js";
 import { registerCreateVideoPlayer } from "./createVideoPlayer.js";
 import { registerCreateVideoScopes } from "./createVideoScopes.js";
 import { registerCreateVideoSynth } from "./createVideoSynth.js";
+import { registerCreateVintageLens } from "./createVintageLens.js";
 import { registerCreateVisualSystem } from "./createVisualSystem.js";
+import { registerCreateVolumetricField } from "./createVolumetricField.js";
+import { registerCreateVoxelStack } from "./createVoxelStack.js";
 import { registerCreateWaveform } from "./createWaveform.js";
 import { registerDescribeProject } from "./describeProject.js";
 import { registerDetectOnsets } from "./detectOnsets.js";
 import { registerDetectPitch } from "./detectPitch.js";
 import { registerDetectTempo } from "./detectTempo.js";
+import { registerDriveStreamdiffusion } from "./driveStreamdiffusion.js";
 import { registerExtractAudioFeatures } from "./extractAudioFeatures.js";
 import { registerGetPreview } from "./getPreview.js";
 import { registerImportIsfShader } from "./importIsfShader.js";
@@ -107,6 +127,7 @@ import { registerMoodboardToSystem } from "./moodboardToSystem.js";
 import { registerScaffoldGenre } from "./scaffoldGenre.js";
 import { registerScaffoldShow } from "./scaffoldShow.js";
 import { registerSetupBodyTracking } from "./setupBodyTracking.js";
+import { registerSetupMediapipePlugin } from "./setupMediapipePlugin.js";
 import { registerSetupOutput } from "./setupOutput.js";
 import { registerSetupTdableton } from "./setupTdableton.js";
 
@@ -239,4 +260,29 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateSetlistRunner,
   registerCreateShowFailover,
   registerCreatePoseReactive,
+  // Hype-scout Round 4 Wave 2 (2026-06-09):
+  registerCreatePoseControlnetDriver,
+  registerCreateAsciiRender,
+  registerCreatePhraseLockedCueEngine,
+  // Hype-scout Round 4 Wave 3 (2026-06-09) — POP combos:
+  registerCreatePopParticleSystem,
+  registerCreatePopGrowth,
+  registerCreatePopLinesPointcloud,
+  registerCreateDepthPopField,
+  registerCreateStipplePointcloud,
+  // Hype-scout Round 4 Wave 4 (2026-06-09) — AI bridges:
+  registerDriveStreamdiffusion,
+  registerSetupMediapipePlugin,
+  registerCreateDepthFromTwoD,
+  registerCreateGaussianSplatScene,
+  registerCreateAiMirror,
+  // Hype-scout Round 4 Wave 5 (2026-06-09) — VFX aesthetic tail:
+  registerCreateSlitScan,
+  registerCreateChromeBlobs,
+  registerCreateVintageLens,
+  registerCreateReactionDiffusion,
+  registerCreatePixelSort,
+  registerCreateVolumetricField,
+  registerCreateVoxelStack,
+  registerCreateFacadeMapping,
 ];

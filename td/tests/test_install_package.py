@@ -116,6 +116,9 @@ class _FakeTd:
     baseCOMP = "baseCOMP"
     textDAT = "textDAT"
     parameterexecuteDAT = "parameterexecuteDAT"
+    webserverDAT = "webserverDAT"
+    executeDAT = "executeDAT"
+    errorDAT = "errorDAT"
 
     def __init__(self):
         self.root = _FakeOp("/", "root")
@@ -136,13 +139,29 @@ class _TdPatch:
 
     def __enter__(self):
         self._saved = {}
-        for name in ("op", "baseCOMP", "textDAT", "parameterexecuteDAT"):
+        for name in (
+            "op",
+            "baseCOMP",
+            "textDAT",
+            "parameterexecuteDAT",
+            "webserverDAT",
+            "executeDAT",
+            "errorDAT",
+        ):
             self._saved[name] = getattr(_TD, name, None)
             setattr(_TD, name, getattr(self.fake_td, name))
         return self.fake_td
 
     def __exit__(self, *exc):
-        for name in ("op", "baseCOMP", "textDAT", "parameterexecuteDAT"):
+        for name in (
+            "op",
+            "baseCOMP",
+            "textDAT",
+            "parameterexecuteDAT",
+            "webserverDAT",
+            "executeDAT",
+            "errorDAT",
+        ):
             if self._saved[name] is None and hasattr(_TD, name):
                 delattr(_TD, name)
             elif self._saved[name] is not None:
@@ -315,6 +334,32 @@ class InstallPackageHelperTests(unittest.TestCase):
         self.assertEqual(comp.par.Repozip.val, install.DEFAULT_PACKAGE_BOOTSTRAP_REPO_ZIP)
         self.assertEqual(comp.par.Bootstrapdest.val, install.DEFAULT_PACKAGE_BOOTSTRAP_DEST)
         self.assertEqual(comp.par.Allowexec.val, True)
+
+    def test_run_lays_out_runtime_bridge_nodes_without_overlap(self):
+        fake_td = _FakeTd()
+        with _TdPatch(fake_td):
+            comp = install.run(
+                port=7700,
+                parent_path="/project1",
+                container="show_bridge",
+                modules_dir="/opt/td/modules",
+            )
+
+        expected = {
+            "callbacks": (-320, 120),
+            "webserver": (0, 120),
+            "events_hook": (0, -80),
+            "error_log": (320, 120),
+        }
+        self.assertEqual(comp.nodeX, -300)
+        self.assertEqual(comp.nodeY, 0)
+        self.assertEqual(set(expected), set(comp.children))
+        coords = []
+        for name, coord in expected.items():
+            child = comp.children[name]
+            self.assertEqual((child.nodeX, child.nodeY), coord)
+            coords.append(coord)
+        self.assertEqual(len(coords), len(set(coords)))
 
     def test_export_package_rejects_non_tox_path_before_touchdesigner_save(self):
         with self.assertRaisesRegex(ValueError, r"\.tox"):
