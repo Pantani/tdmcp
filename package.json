@@ -30,6 +30,7 @@
     "scripts/fetch-shader-park-td.mjs",
     "scripts/tdmcp-lops.mjs",
     "safeskill.manifest.json",
+    "training/showintent/Modelfile",
     "recipes",
     "docs/guide/prompt-cookbook.md",
     "docs/pt/guide/prompt-cookbook.md",

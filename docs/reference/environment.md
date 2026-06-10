@@ -70,6 +70,7 @@ pipeline under `training/showintent/`.
 | `LLM_MODE` | `ollama` | Runtime mode label for the AI Party POC. The current eval harness targets Ollama. |
 | `OLLAMA_BASE_URL` | `http://127.0.0.1:11434` | Ollama base URL used by `npm run ai-party:llm-eval` and `npm run ai-party:llm-baseline`. |
 | `OLLAMA_MODEL` | `qwen2.5:3b` | Ollama model id to evaluate. Use the packaged improved model only after it beats the baseline without weakening safety metrics. |
+| `TDMCP_AI_PARTY_LLM_MODEL` | `showintent-party:local` | Model id used by `tdmcp-agent ai-party --llm` when `--llm-model` / `OLLAMA_MODEL` are not set. This keeps the ShowIntent-only model separate from the general `tdmcp chat` model. |
 | `LLM_EVAL_STRICT` | `false` | Set to `true` to make eval fail when demo-ready hard targets are not met. |
 | `LLM_SCHEMA_VERSION` | `showintent.v1` | Schema/version label to record alongside reports and POC configuration. |
 

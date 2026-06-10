@@ -161,6 +161,8 @@ The ShowIntent local-model improvement harness lives under
 operator/Telegram cases before any optional fine-tuning:
 
 ```bash
+tdmcp-agent ai-party llm-setup
+tdmcp-agent ai-party --llm --params '{"message":{"text":"deixa mais premium","chat_role":"operator","user_role":"foh"}}'
 OLLAMA_MODEL=qwen2.5:3b npm run ai-party:llm-baseline
 npm run ai-party:llm-generate-data
 npm run ai-party:llm-import-curated
@@ -169,6 +171,12 @@ npm run ai-party:llm-import-curated
 The harness trains the model only to emit valid `ShowIntent` JSON. It does not
 replace `ShowIntentSchema`, `EffectPolicySchema` or `showDirectorRuntime`, and it
 does not teach raw DMX, raw Python or direct hardware control.
+
+`tdmcp-agent ai-party --llm` calls local Ollama through `/api/chat`, validates
+the returned ShowIntent JSON, then sends it through the same dry-run policy
+gateway. If the model returns malformed output, the request is blocked. The
+general `tdmcp chat` copilot still uses the normal chat model; the AI Party model
+is ShowIntent-only and should not become the default copilot model.
 
 ## Local copilot (`tdmcp chat`)
 

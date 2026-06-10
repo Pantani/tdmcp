@@ -99,6 +99,9 @@ English, Telegram-style, and rehearsal-log operator language into valid
 
 - Baseline eval: `npm run ai-party:llm-baseline`.
 - Eval without timestamped baseline alias: `npm run ai-party:llm-eval`.
+- Integrated setup/status: `tdmcp-agent ai-party llm-setup`.
+- Integrated dry-run with local ShowIntent model:
+  `tdmcp-agent ai-party --llm --params '{"message":{"text":"deixa mais premium","chat_role":"operator","user_role":"foh"}}'`.
 - Generate deterministic synthetic data: `npm run ai-party:llm-generate-data`.
 - Import approved curated CSV rows: `npm run ai-party:llm-import-curated`.
 - Optional LoRA training: create a Python environment from

@@ -36,6 +36,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "cli",
   },
   {
+    command: "ai-party llm-setup",
+    summary: "Check/start local Ollama and print AI Party ShowIntent model setup commands.",
+    mutates: false,
+    unsafe: false,
+    source: "cli",
+  },
+  {
     command: "ai-party telegram-once",
     summary: "Process one Telegram long-poll batch through the AI party gateway.",
     mutates: false,
