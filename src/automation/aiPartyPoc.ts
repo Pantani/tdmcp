@@ -158,7 +158,6 @@ export function runAiPartyPoc(raw: AiPartyPocRunInput = {}): AiPartyPocRunResult
   const events = args.events ?? DEFAULT_EVENTS;
   let state = args.state ?? createShowDirectorState();
   const steps: AiPartyPocStep[] = [];
-  let approved = 0;
 
   for (const [index, event] of events.entries()) {
     const label = eventLabel(event, index);
@@ -181,14 +180,13 @@ export function runAiPartyPoc(raw: AiPartyPocRunInput = {}): AiPartyPocRunResult
     const simulated: SimulatedEffectEvent[] = [];
     let autoApproved = false;
 
-    if (args.auto_approve_effects && submitted.approval) {
+    if (args.auto_approve_effects && submitted.approval?.status === "pending") {
       const resolved = approveShowIntent(state, submitted.approval.id, args.operator, args.policy);
       if (resolved.ok) {
         state = resolved.state;
         plan = resolved.plan;
         simulated.push(...simulateShowActionPlan(plan, { idPrefix: `${label}_sim` }));
         autoApproved = true;
-        approved += 1;
       }
     } else {
       simulated.push(...simulateShowActionPlan(plan, { idPrefix: `${label}_sim` }));
@@ -221,7 +219,7 @@ export function runAiPartyPoc(raw: AiPartyPocRunInput = {}): AiPartyPocRunResult
       queued: statuses.filter((status) => status === "queued").length,
       blocked: statuses.filter((status) => status === "blocked").length,
       invalid: statuses.filter((status) => status === "invalid").length,
-      approved,
+      approved: statuses.filter((status) => status === "approved").length,
       simulated_effects: simulatedCount,
       hardware_plans: 0,
     },

@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { runAiPartyPoc } from "../../src/automation/aiPartyPoc.js";
 import { simulateShowActionPlan } from "../../src/automation/effectSimulator.js";
+import {
+  createShowDirectorState,
+  submitShowIntent,
+} from "../../src/automation/showDirectorRuntime.js";
 
 describe("effectSimulator", () => {
   it("turns approved dry-run effects into simulated-only visual events", () => {
@@ -47,6 +51,40 @@ describe("aiPartyPoc", () => {
     expect(result.summary.approved).toBeGreaterThanOrEqual(1);
     expect(result.summary.simulated_effects).toBeGreaterThanOrEqual(1);
     expect(result.steps.some((step) => step.simulated_effects[0]?.effect === "fog")).toBe(true);
+    expect(result.dashboard.pending_approvals).toBe(0);
+  });
+
+  it("simulates effects approved through dashboard actions", () => {
+    const queued = submitShowIntent(createShowDirectorState(), {
+      type: "arm_effect",
+      effect: "fog",
+      duration_seconds: 3,
+      intensity: 0.35,
+    });
+    if (!queued.approval) throw new Error("expected pending approval");
+
+    const result = runAiPartyPoc({
+      auto_approve_effects: true,
+      state: queued.state,
+      events: [
+        {
+          type: "dashboard_action",
+          action: "approve",
+          approval_id: queued.approval.id,
+          operator: "front-of-house",
+        },
+      ],
+    });
+
+    expect(result.summary.approved).toBe(1);
+    expect(result.summary.simulated_effects).toBe(1);
+    expect(result.steps[0]?.simulated_effects[0]).toEqual(
+      expect.objectContaining({
+        effect: "fog",
+        operator: "front-of-house",
+        hardware_connected: false,
+      }),
+    );
     expect(result.dashboard.pending_approvals).toBe(0);
   });
 
