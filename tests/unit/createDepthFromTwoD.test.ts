@@ -171,10 +171,13 @@ describe("create_depth_from_2d", () => {
 
     expect(result.isError).toBeFalsy();
 
-    // Script body must include the resolution and variant values
+    // Script body must include the resolution and variant values.
+    // After the refactor, payload travels base64-encoded — decode it before asserting.
     const script = scripts.find((s) => s.includes("OUTPUT_RESOLUTION")) ?? "";
-    expect(script).toContain("1024");
-    expect(script).toContain("large");
+    const b64Match = /"([A-Za-z0-9+/=]{20,})"/.exec(script);
+    const decoded = b64Match ? Buffer.from(b64Match[1] ?? "", "base64").toString("utf8") : "";
+    expect(decoded).toContain("1024");
+    expect(decoded).toContain("large");
 
     // Result envelope echoes the values
     const text = textOf(result);

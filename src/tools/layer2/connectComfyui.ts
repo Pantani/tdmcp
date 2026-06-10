@@ -4,7 +4,7 @@ import { z } from "zod";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
-import { precheckToxCandidates } from "../util/toxCandidatePrecheck.js";
+import { dropExternalTox } from "../util/dropExternalTox.js";
 
 // ---------------------------------------------------------------------------
 // connect_comfyui — bridge TD to a running ComfyUI server.
@@ -320,68 +320,19 @@ print(json.dumps(report))
 `;
 
 // ---------------------------------------------------------------------------
-// dropExternalTox — thin HTTP helper (replicates the pattern from the spec;
-// the real helper lives in util/ when integrated; here we call /api/exec directly
-// so the tool is self-contained until wiring).
+// Expected custom pars probed on the loaded TDComfyUI / ComfyUI-TD container.
+// All are optional — missing pars are surfaced as warnings rather than errors.
 // ---------------------------------------------------------------------------
-interface DropToxResult {
-  ok: boolean;
-  container_path?: string;
-  error?: string;
-  tried?: string[];
-}
-
-async function dropExternalTox(ctx: ToolContext, candidates: string[]): Promise<DropToxResult> {
-  // Round-2 Wave-4 fix: skip bridge round-trip when every candidate is
-  // absolute and missing on disk (avoids TD-hang on executePythonScript).
-  const precheck = precheckToxCandidates(candidates);
-  if (precheck.allAbsoluteAndMissing) {
-    return {
-      ok: false,
-      error: "no_candidate_found",
-      tried: precheck.absoluteChecked,
-    };
-  }
-
-  const DROP_SCRIPT = `
-import json, base64
-_p = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
-import traceback, os
-result = {"ok": False, "tried": _p["candidates"]}
-for _cpath in _p["candidates"]:
-    _resolved = os.path.expandvars(_cpath)
-    if not os.path.isabs(_resolved):
-        _resolved = os.path.join(app.samplesFolder, _resolved)
-    if not os.path.exists(_resolved):
-        continue
-    try:
-        _parent = op(_p["parent"])
-        if _parent is None:
-            result["error"] = "parent not found: " + str(_p["parent"]); break
-        _loaded = _parent.loadTox(_resolved)
-        if _loaded is None:
-            result["error"] = "loadTox returned None for: " + _resolved; continue
-        result["ok"] = True
-        result["container_path"] = _loaded.path
-        result["tox_path"] = _resolved
-        break
-    except Exception:
-        result["error"] = traceback.format_exc().splitlines()[-1]
-if not result["ok"] and "error" not in result:
-    result["error"] = "no_candidate_found"
-print(json.dumps(result))
-`;
-  const script = buildPayloadScript(DROP_SCRIPT, {
-    candidates,
-    parent: "/project1",
-  });
-  try {
-    const exec = await ctx.client.executePythonScript(script, true);
-    return parsePythonReport<DropToxResult>(exec.stdout);
-  } catch (e) {
-    return { ok: false, error: String(e) };
-  }
-}
+const TOX_EXPECTED_PARS = [
+  "Serverurl",
+  "Server",
+  "Workflowpath",
+  "Workflow",
+  "Sourcetop",
+  "Input",
+  "Active",
+  "Run",
+] as const;
 
 // ---------------------------------------------------------------------------
 // Impl
@@ -402,14 +353,18 @@ export async function connectComfyuiImpl(ctx: ToolContext, args: ConnectComfyuiA
 
   if (args.mode === "auto" || args.mode === "tox_drop") {
     const candidates = toxCandidates(args.tox_path);
-    const drop = await dropExternalTox(ctx, candidates);
-    if (drop.ok && drop.container_path) {
+    const drop = await dropExternalTox(ctx, {
+      parent_path: args.parent_path,
+      candidate_paths: candidates,
+      expected_custom_pars: Array.from(TOX_EXPECTED_PARS),
+      on_missing: "warn",
+    });
+    if ("ok" in drop) {
       modeResolved = "tox_drop";
-      loadedContainerPath = drop.container_path;
+      loadedContainerPath = drop.ok.container_path;
     } else if (args.mode === "tox_drop") {
-      // Forced tox_drop and it failed — surface it, no fallback.
-      const tried = (drop.tried ?? candidates).join(", ");
-      return errorResult(`tox_drop mode failed: ${drop.error ?? "unknown error"}. Tried: ${tried}`);
+      // Forced tox_drop and it failed — surface the helper's error directly.
+      return drop.error;
     }
     // auto + drop failed → continue to webclient
   }

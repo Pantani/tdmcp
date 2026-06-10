@@ -3,7 +3,7 @@ import { friendlyTdError } from "../../td-client/types.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
-import { precheckToxCandidates } from "../util/toxCandidatePrecheck.js";
+import { dropExternalTox } from "../util/dropExternalTox.js";
 import {
   defaultEngineToxPath,
   engineToxCandidatePaths,
@@ -62,13 +62,19 @@ export const setupMediapipePluginSchema = z
 type SetupMediapipePluginArgs = z.infer<typeof setupMediapipePluginSchema>;
 
 // ---------------------------------------------------------------------------
-// Report type
+// Expected modality pars on the engine (validated by dropExternalTox).
+// Camera/Source/Videofile/File are NOT in this list — the video-source par
+// is probed in priority order in the configure pass below.
 // ---------------------------------------------------------------------------
 
-interface MediapipePluginReport {
-  error?: "tox_missing" | "parent_missing";
-  container_path?: string;
-  dropped_tox_path?: string;
+const EXPECTED_PARS = ["Face", "Hand", "Body", "Segmentation"] as const;
+
+// ---------------------------------------------------------------------------
+// Configure-pass report (runs AFTER dropExternalTox)
+// ---------------------------------------------------------------------------
+
+interface ConfigureReport {
+  error?: "engine_missing";
   exports?: {
     face_chop: string | null;
     hand_chop: string | null;
@@ -85,134 +91,108 @@ interface MediapipePluginReport {
     par: string;
     value: string;
   };
-  warnings?: string[];
+  warnings: string[];
 }
 
 // ---------------------------------------------------------------------------
-// Bridge script
+// Configure pass — runs AFTER the helper has loaded the engine baseCOMP.
+// Toggles modality flags, sets optional video source par, locates exports.
 // ---------------------------------------------------------------------------
 
-const BRIDGE_TEMPLATE = `
+const CONFIGURE_TEMPLATE = `
 import json, os, base64
 _b64 = "__PAYLOAD_B64__"
 _p = json.loads(base64.b64decode(_b64).decode())
 
-TOX = _p["tox_path"]
-PARENT = _p["parent_path"]
-CONTAINER = _p["container_name"]
+CONTAINER_PATH = _p["container_path"]
 ENABLE_FACE = bool(_p["enable_face"])
 ENABLE_HAND = bool(_p["enable_hand"])
 ENABLE_BODY = bool(_p["enable_body"])
-ENABLE_SEG = bool(_p["enable_segmentation"])
-SRC_VIDEO = _p.get("source_video_path") or None
-CANDIDATES = _p["candidate_paths"]
+ENABLE_SEG  = bool(_p["enable_segmentation"])
+SRC_VIDEO   = _p.get("source_video_path") or None
 
 report = {"warnings": []}
 
-# Resolve tox
-if not os.path.exists(TOX):
-    found = None
-    for c in CANDIDATES:
-        if os.path.exists(c):
-            found = c
-            break
-    if found is None:
-        report["error"] = "tox_missing"
-        print(json.dumps(report))
-        result = report
-    else:
-        TOX = found
+eng = op(CONTAINER_PATH)
+if eng is None:
+    report["error"] = "engine_missing"
+    print(json.dumps(report)); raise SystemExit
 
-if "error" not in report:
-    root = op(PARENT)
-    if root is None:
-        report["error"] = "parent_missing"
-        print(json.dumps(report))
-        result = report
+# Toggle modality pars (defensive — warn on miss)
+for par_name, flag in [("Face", ENABLE_FACE), ("Hand", ENABLE_HAND), ("Body", ENABLE_BODY), ("Segmentation", ENABLE_SEG)]:
+    p = getattr(eng.par, par_name, None)
+    if p is not None:
+        try:
+            p.val = bool(flag)
+        except Exception as e:
+            report["warnings"].append(f"{par_name} par set failed: {e}")
     else:
-        eng = root.op(CONTAINER)
-        if eng is None:
-            eng = root.loadTox(TOX)
+        report["warnings"].append(f"{par_name} par missing on engine")
+
+# Optional video source par — probe order matches torinmb release history
+vs_par = None
+vs_label = "live webcam"
+if SRC_VIDEO is not None:
+    for pn in ["Camera", "Source", "Videofile", "File"]:
+        p = getattr(eng.par, pn, None)
+        if p is not None:
             try:
-                eng.name = CONTAINER
+                p.val = SRC_VIDEO
+                vs_par = pn
+                vs_label = SRC_VIDEO
+                break
             except Exception:
                 pass
+    if vs_par is None:
+        report["warnings"].append("source_video_path: no matching par found (Camera/Source/Videofile/File all missing)")
+else:
+    for pn in ["Camera", "Source", "Videofile", "File"]:
+        p = getattr(eng.par, pn, None)
+        if p is not None:
+            vs_par = pn
+            break
 
-        # Toggle modality pars (defensive — warn on miss)
-        for par_name, flag in [("Face", ENABLE_FACE), ("Hand", ENABLE_HAND), ("Body", ENABLE_BODY), ("Segmentation", ENABLE_SEG)]:
-            p = eng.par[par_name] if hasattr(eng, "par") else None
-            if p is not None:
-                try:
-                    p.val = bool(flag)
-                except Exception as e:
-                    report["warnings"].append(f"{par_name} par set failed: {e}")
-            else:
-                report["warnings"].append(f"{par_name} par missing on engine")
+report["video_source"] = {"par": vs_par or "unknown", "value": vs_label}
 
-        # Optional video source par — probe order matches torinmb release history
-        vs_par = None
-        vs_label = "live webcam"
-        if SRC_VIDEO is not None:
-            for pn in ["Camera", "Source", "Videofile", "File"]:
-                p = eng.par[pn] if hasattr(eng, "par") else None
-                if p is not None:
-                    try:
-                        p.val = SRC_VIDEO
-                        vs_par = pn
-                        vs_label = SRC_VIDEO
-                        break
-                    except Exception:
-                        pass
-            if vs_par is None:
-                report["warnings"].append("source_video_path: no matching par found (Camera/Source/Videofile/File all missing)")
-        else:
-            # Report which par exists even if no override
-            for pn in ["Camera", "Source", "Videofile", "File"]:
-                p = eng.par[pn] if hasattr(eng, "par") else None
-                if p is not None:
-                    vs_par = pn
-                    break
+# Keep the timeline playing (engine's embedded browser only runs while playing)
+try:
+    project.time.play = True
+except Exception:
+    try:
+        op("/").time.play = True
+    except Exception:
+        pass
 
-        report["video_source"] = {"par": vs_par or "unknown", "value": vs_label}
+# Discover output operators (search engine's immediate children + 1 level down)
+def find_op(name):
+    d = eng.op(name)
+    if d is not None:
+        return d.path
+    for child in eng.children:
+        sub = child.op(name) if hasattr(child, "op") else None
+        if sub is not None:
+            return sub.path
+    return None
 
-        # Keep the timeline playing (engine's embedded browser only runs while playing)
-        try:
-            root.time.play = True
-        except Exception:
-            pass
+face_path = find_op("face") if ENABLE_FACE else None
+hand_path = find_op("hand") if ENABLE_HAND else None
+body_path = find_op("pose") if ENABLE_BODY else None
+seg_path  = find_op("segmentation") if ENABLE_SEG else None
 
-        # Discover output operators (search engine's immediate children + 1 level down)
-        def find_op(name):
-            d = eng.op(name)
-            if d is not None:
-                return d.path
-            for child in eng.children:
-                sub = child.op(name) if hasattr(child, "op") else None
-                if sub is not None:
-                    return sub.path
-            return None
-
-        face_path = find_op("face") if ENABLE_FACE else None
-        hand_path = find_op("hand") if ENABLE_HAND else None
-        body_path = find_op("pose") if ENABLE_BODY else None
-        seg_path = find_op("segmentation") if ENABLE_SEG else None
-
-        report["container_path"] = eng.path
-        report["dropped_tox_path"] = TOX
-        report["exports"] = {
-            "face_chop": face_path,
-            "hand_chop": hand_path,
-            "body_chop": body_path,
-            "segmentation_top": seg_path,
-        }
-        report["enabled"] = {
-            "face": ENABLE_FACE,
-            "hand": ENABLE_HAND,
-            "body": ENABLE_BODY,
-            "segmentation": ENABLE_SEG,
-        }
-        print(json.dumps(report))
-        result = report
+report["exports"] = {
+    "face_chop": face_path,
+    "hand_chop": hand_path,
+    "body_chop": body_path,
+    "segmentation_top": seg_path,
+}
+report["enabled"] = {
+    "face": ENABLE_FACE,
+    "hand": ENABLE_HAND,
+    "body": ENABLE_BODY,
+    "segmentation": ENABLE_SEG,
+}
+result = json.dumps(report)
+print(result)
 `.trimStart();
 
 // ---------------------------------------------------------------------------
@@ -224,51 +204,63 @@ export async function setupMediapipePluginImpl(
   args: SetupMediapipePluginArgs,
 ): Promise<ReturnType<typeof errorResult>> {
   const toxPath = args.tox_path ?? defaultEngineToxPath();
+  const candidates = [toxPath, ...engineToxCandidatePaths()];
 
-  // Round-2 Wave-4 fix: short-circuit BEFORE the bridge call when every
-  // candidate is absolute and none exist on disk. Avoids TD-hang under load.
-  const allCandidates = [toxPath, ...engineToxCandidatePaths()];
-  const precheck = precheckToxCandidates(allCandidates);
-  if (precheck.allAbsoluteAndMissing) {
+  // Phase 1 — drop the engine TOX into the parent COMP. dropExternalTox
+  // runs its own precheck and short-circuits when every candidate is
+  // absolute-and-missing on disk, so we don't repeat that here.
+  const dropResult = await dropExternalTox(ctx, {
+    parent_path: args.parent_path,
+    container_name: args.container_name,
+    candidate_paths: candidates,
+    expected_custom_pars: Array.from(EXPECTED_PARS),
+    on_missing: "warn",
+  });
+
+  if ("error" in dropResult) {
+    // Enrich the error with the standard install hint.
+    const original = dropResult.error.content
+      .filter((c): c is { type: "text"; text: string } => c.type === "text")
+      .map((c) => c.text)
+      .join(" ");
     return errorResult(
-      `MediaPipe engine not found at ${toxPath} (also checked: ${engineToxCandidatePaths().join(", ")}). ` +
-        "Install it first: `tdmcp install mediapipe-touchdesigner` (free, MIT-licensed GPU MediaPipe tracker by torinmb), " +
-        `or pass tox_path pointing to an existing MediaPipe.tox. Legacy installs are also checked at ${legacyEngineToxPath()}.`,
+      `${original} Install it first: \`tdmcp install mediapipe-touchdesigner\` ` +
+        "(free, MIT-licensed GPU MediaPipe tracker by torinmb), or pass tox_path pointing to an existing MediaPipe.tox. " +
+        `Legacy installs are also checked at ${legacyEngineToxPath()}.`,
     );
   }
 
-  const script = buildPayloadScript(BRIDGE_TEMPLATE, {
-    tox_path: toxPath,
-    parent_path: args.parent_path,
-    container_name: args.container_name,
+  const {
+    container_path: containerPath,
+    found_path: droppedToxPath,
+    warnings: dropWarn,
+  } = dropResult.ok;
+
+  // Phase 2 — configure the loaded engine.
+  const script = buildPayloadScript(CONFIGURE_TEMPLATE, {
+    container_path: containerPath,
     enable_face: args.enable_face,
     enable_hand: args.enable_hand,
     enable_body: args.enable_body,
     enable_segmentation: args.enable_segmentation,
     source_video_path: args.source_video_path ?? null,
-    candidate_paths: engineToxCandidatePaths(),
   });
 
-  let report: MediapipePluginReport;
+  let report: ConfigureReport;
   try {
     const exec = await ctx.client.executePythonScript(script, true);
-    report = parsePythonReport<MediapipePluginReport>(exec.stdout);
+    report = parsePythonReport<ConfigureReport>(exec.stdout);
   } catch (err) {
     return errorResult(friendlyTdError(err));
   }
 
-  if (report.error === "tox_missing") {
+  if (report.error === "engine_missing") {
     return errorResult(
-      `MediaPipe engine not found at ${toxPath} (also checked: ${engineToxCandidatePaths().join(", ")}). ` +
-        `Install it first: \`tdmcp install mediapipe-touchdesigner\` (free, MIT-licensed GPU MediaPipe tracker by torinmb), ` +
-        `or pass tox_path pointing to an existing MediaPipe.tox. Legacy installs are also checked at ${legacyEngineToxPath()}.`,
+      `MediaPipe engine container disappeared at ${containerPath} between load and configure (unexpected — re-run).`,
     );
   }
-  if (report.error === "parent_missing") {
-    return errorResult(`Parent COMP not found: ${args.parent_path}.`);
-  }
 
-  const warnings = report.warnings ?? [];
+  const warnings = [...dropWarn, ...(report.warnings ?? [])];
   const exports = report.exports ?? {
     face_chop: null,
     hand_chop: null,
@@ -290,15 +282,15 @@ export async function setupMediapipePluginImpl(
     "Wire them through a Script CHOP adapter to get numeric landmark data.";
 
   const summary =
-    `MediaPipe engine loaded at ${report.container_path ?? `${args.parent_path}/${args.container_name}`}. ` +
+    `MediaPipe engine loaded at ${containerPath}. ` +
     `Enabled pipelines: ${modalities}. ` +
     `Keep the TD timeline PLAYING — the plugin captures via an embedded browser that only runs while playing. ` +
     (warnings.length > 0 ? `Warnings: ${warnings.join("; ")}. ` : "") +
     NOTE;
 
   return jsonResult(summary, {
-    container_path: report.container_path,
-    dropped_tox_path: report.dropped_tox_path,
+    container_path: containerPath,
+    dropped_tox_path: droppedToxPath,
     exports,
     enabled: report.enabled,
     video_source: report.video_source,

@@ -101,10 +101,9 @@ describe("setup_mediapipe_plugin", () => {
     expect(text).toContain("hand");
     expect(text).toContain("body");
 
-    // Assert the script contains the timeline-play instruction
+    // Assert the timeline-play instruction is dispatched in one of the bridge scripts
     expect(scripts.length).toBeGreaterThan(0);
-    const script = scripts[0] ?? "";
-    expect(script).toContain("time.play");
+    expect(scripts.some((s) => s.includes("time.play"))).toBe(true);
   });
 
   // Case 2: all four modalities enabled
@@ -143,12 +142,12 @@ describe("setup_mediapipe_plugin", () => {
     expect(text).toContain("body");
     expect(text).toContain("segmentation");
 
-    // Assert payload carries all four flags
-    const script = scripts[0] ?? "";
-    expect(script).toContain("enable_face");
-    expect(script).toContain("enable_hand");
-    expect(script).toContain("enable_body");
-    expect(script).toContain("enable_segmentation");
+    // Assert payload carries all four flags (in the configure-pass script)
+    const combined = scripts.join("\n");
+    expect(combined).toContain("enable_face");
+    expect(combined).toContain("enable_hand");
+    expect(combined).toContain("enable_body");
+    expect(combined).toContain("enable_segmentation");
   });
 
   // Case 3: no-flag refinement — Zod error before any bridge call
@@ -163,9 +162,14 @@ describe("setup_mediapipe_plugin", () => {
     ).toThrow(ZodError);
   });
 
-  // Case 4: missing tox — engine not found
+  // Case 4: missing tox — engine not found via the shared dropExternalTox helper.
+  // The helper recognises `no_candidate_found`; the wrapper enriches with the install hint.
   it("missing tox: surfaces install hint in error message", async () => {
-    mockExec({ error: "tox_missing", warnings: [] });
+    mockExec({
+      error: "no_candidate_found",
+      candidates_checked: ["/nonexistent/MediaPipe.tox"],
+      warnings: [],
+    });
 
     const result = await run({
       tox_path: "/nonexistent/MediaPipe.tox",
