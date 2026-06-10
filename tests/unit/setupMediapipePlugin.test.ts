@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { ZodError } from "zod";
@@ -16,6 +19,15 @@ const server = makeTdServer();
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
+
+// Wave-4 fix: setupMediapipePluginImpl pre-checks candidate .tox paths on the Node
+// side and short-circuits BEFORE the bridge call when none exist on disk. Tests
+// that need the bridge to be reached must point tox_path at a real on-disk fixture
+// so the precheck passes and the msw mock fires.
+const TMP_DIR = mkdtempSync(join(tmpdir(), "tdmcp-mediapipe-test-"));
+const FIXTURE_TOX = join(TMP_DIR, "MediaPipe.tox");
+writeFileSync(FIXTURE_TOX, "stub");
+afterAll(() => rmSync(TMP_DIR, { recursive: true, force: true }));
 
 function makeCtx(): ToolContext {
   return {
@@ -77,7 +89,11 @@ describe("setup_mediapipe_plugin", () => {
       scripts,
     );
 
-    const result = await run({ enable_hand: true, enable_body: true });
+    const result = await run({
+      tox_path: FIXTURE_TOX,
+      enable_hand: true,
+      enable_body: true,
+    });
 
     expect(result.isError).toBeFalsy();
     const text = textOf(result);
@@ -113,6 +129,7 @@ describe("setup_mediapipe_plugin", () => {
     );
 
     const result = await run({
+      tox_path: FIXTURE_TOX,
       enable_face: true,
       enable_hand: true,
       enable_body: true,
@@ -178,6 +195,7 @@ describe("setup_mediapipe_plugin", () => {
     });
 
     const result = await run({
+      tox_path: FIXTURE_TOX,
       enable_hand: true,
       enable_body: true,
       source_video_path: "/Users/user/clips/test.mov",

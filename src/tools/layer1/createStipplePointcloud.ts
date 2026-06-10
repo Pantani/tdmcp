@@ -162,12 +162,19 @@ export async function createStipplePointcloudImpl(
     const outPop = await builder.add("nullPOP", "out_pop");
     await builder.connect(tail, outPop);
 
-    // 7) Geometry COMP in point-cloud render mode.
+    // 7) Geometry COMP — instance the POP for point-cloud rendering.
+    // The geometryCOMP exposes `instancepop` (not `pointcloudpop`); render type
+    // and point size live on the MAT (constantMAT below). instancesx/y/z scale
+    // each instance — used here as the dot-size proxy. Defensive setattr keeps
+    // the build going even if a TD version drops one of these pars.
     const geo = await builder.add("geometryCOMP", "geo");
     await builder.python(
-      `op(${q(geo)}).par.pointcloudpop = ${q(outPop)}\n` +
-        `op(${q(geo)}).par.rendertype = "points"\n` +
-        `op(${q(geo)}).par.pointsize = ${args.dot_size}`,
+      `_g = op(${q(geo)})\n` +
+        `try: _g.par.instancepop = ${q(outPop)}\n` +
+        "except Exception: pass\n" +
+        `for _ax in ('x','y','z'):\n` +
+        `    try: setattr(_g.par, 'instances'+_ax, ${args.dot_size * 0.02})\n` +
+        `    except Exception: pass`,
     );
 
     // 8) constantMAT — colour from resolved fg/bg colours (colored_dots ignores fg but keeps MAT).
@@ -211,7 +218,7 @@ export async function createStipplePointcloudImpl(
             min: 0.5,
             max: 8,
             default: args.dot_size,
-            bind_to: [`${geo}.pointsize`],
+            bind_to: [`${geo}.instancesx`, `${geo}.instancesy`, `${geo}.instancesz`],
           },
           // JitterAmount only when jitter node exists.
           ...(args.mode === "random_jitter" && jitterPath !== undefined

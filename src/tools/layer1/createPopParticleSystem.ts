@@ -105,6 +105,14 @@ export async function createPopParticleSystemImpl(
       name: args.name,
       chain: [
         {
+          // Emitter seed — particle_pop needs an input that defines birth
+          // positions. point_generator_pop produces a points cloud the
+          // particles spawn from, eliminating the "Not enough sources" cook
+          // error seen on a bare particle_pop.
+          type: "point_generator_pop",
+          name: "seed",
+        },
+        {
           type: "particle_pop",
           name: "particles",
           params: { birthrate: args.emission_rate, life: args.lifetime },
@@ -248,7 +256,14 @@ export async function createPopParticleSystemImpl(
       output_top_path: out,
       warnings: chainWarnings,
       unverified: {
-        pop_op_types: ["particlePOP", "feedbackPOP", "lookuptexturePOP", "fieldPOP", "nullPOP"],
+        pop_op_types: [
+          "pointgeneratorPOP",
+          "particlePOP",
+          "feedbackPOP",
+          "lookuptexturePOP",
+          "fieldPOP",
+          "nullPOP",
+        ],
         note: "POPs are Experimental — live-validate.",
       },
     };

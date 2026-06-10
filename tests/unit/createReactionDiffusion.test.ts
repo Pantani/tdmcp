@@ -80,21 +80,6 @@ function captureExecScripts(): string[] {
   return scripts;
 }
 
-function decodePayload(scripts: string[]): Record<string, unknown> | null {
-  const overlayScript = scripts.find(
-    (s) => s.includes("__PAYLOAD_B64__") === false && s.includes("uFeed"),
-  );
-  if (!overlayScript) {
-    // look for the b64 payload inside any exec script
-    const withPayload = scripts.find((s) => s.includes("b64decode"));
-    if (!withPayload) return null;
-    const b64 = /b64decode\("([^"]+)"\)/.exec(withPayload)?.[1];
-    if (!b64) return null;
-    return JSON.parse(Buffer.from(b64, "base64").toString("utf8")) as Record<string, unknown>;
-  }
-  return null;
-}
-
 function getPayload(scripts: string[]): Record<string, unknown> | null {
   for (const s of scripts) {
     const m = /b64decode\("([^"]+)"\)/.exec(s);
@@ -137,11 +122,11 @@ describe("createReactionDiffusionImpl", () => {
     // Payload should contain default F/K and coral palette keys
     const payload = getPayload(scripts);
     expect(payload).not.toBeNull();
-    expect(payload?.["F"]).toBeCloseTo(0.055);
-    expect(payload?.["K"]).toBeCloseTo(0.062);
-    expect(payload?.["palette"]).toBe("coral");
+    expect(payload?.F).toBeCloseTo(0.055);
+    expect(payload?.K).toBeCloseTo(0.062);
+    expect(payload?.palette).toBe("coral");
 
-    const keys = payload?.["palette_keys"] as Array<{ pos: number }>;
+    const keys = payload?.palette_keys as Array<{ pos: number }>;
     expect(Array.isArray(keys)).toBe(true);
     expect(keys.length).toBeGreaterThan(0);
 
@@ -163,9 +148,9 @@ describe("createReactionDiffusionImpl", () => {
 
     const payload = getPayload(scripts);
     expect(payload).not.toBeNull();
-    expect(payload?.["palette"]).toBe("spots");
+    expect(payload?.palette).toBe("spots");
 
-    const keys = payload?.["palette_keys"] as Array<{
+    const keys = payload?.palette_keys as Array<{
       pos: number;
       r: number;
       g: number;
@@ -197,9 +182,9 @@ describe("createReactionDiffusionImpl", () => {
 
     const payload = getPayload(scripts);
     expect(payload).not.toBeNull();
-    expect(payload?.["palette"]).toBe("none");
+    expect(payload?.palette).toBe("none");
 
-    const keys = payload?.["palette_keys"] as unknown[];
+    const keys = payload?.palette_keys as unknown[];
     expect(Array.isArray(keys)).toBe(true);
     expect(keys.length).toBe(0);
   });
@@ -220,10 +205,10 @@ describe("createReactionDiffusionImpl", () => {
 
     const payload = getPayload(scripts);
     expect(payload).not.toBeNull();
-    expect(payload?.["F"]).toBeCloseTo(0.03);
-    expect(payload?.["K"]).toBeCloseTo(0.058);
-    expect(payload?.["Da"]).toBeCloseTo(1.2);
-    expect(payload?.["Db"]).toBeCloseTo(0.4);
+    expect(payload?.F).toBeCloseTo(0.03);
+    expect(payload?.K).toBeCloseTo(0.058);
+    expect(payload?.Da).toBeCloseTo(1.2);
+    expect(payload?.Db).toBeCloseTo(0.4);
 
     // Overlay script must reference uDa/uDb patching (keyword present in script source)
     const overlayScript = scripts.find((s) => s.includes("uDa"));
@@ -246,8 +231,8 @@ describe("createReactionDiffusionImpl", () => {
 
     const payload = getPayload(scripts);
     expect(payload).not.toBeNull();
-    expect(payload?.["resolution"]).toBe(512);
-    expect(payload?.["iterations"]).toBe(8);
+    expect(payload?.resolution).toBe(512);
+    expect(payload?.iterations).toBe(8);
 
     // The overlay script should contain the iterations>1 warning logic
     const overlayScript = scripts.find((s) => s.includes("iterations"));

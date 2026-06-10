@@ -288,31 +288,15 @@ try:
 
             # webclientDAT
             _client = _c.create(webclientDAT, "client")
-            _setpar(_client, "requestmethod", "post", "request method")
+            # Real webclientDAT pars in TD 099: reqmethod / url / includeheader.
+            # The webclientDAT does NOT expose separate "headers DAT" / "request
+            # data DAT" pars — body content is composed via the body_builder
+            # textDAT (above) and read inside the datexecuteDAT callbacks
+            # below. No 'asynchronous' par exists; webclientDAT is async by
+            # default via its callbacks.
+            _setpar(_client, "reqmethod", "post", "request method")
             _setpar(_client, "url", _p["endpoint_url"], "url")
-            # Headers DAT par: probe both known names
-            for _hpar in ("headersdat", "requestheadersdat", "Headers"):
-                _hpr = getattr(_client.par, _hpar, None)
-                if _hpr is not None:
-                    try:
-                        _hpr.val = "headers"
-                        break
-                    except Exception:
-                        pass
-            else:
-                report["warnings"].append("Could not set headers DAT par on webclientDAT (UNVERIFIED par name)")
-            # Request data DAT par
-            for _dpar in ("requestdatadat", "requestdat", "Data"):
-                _dpr = getattr(_client.par, _dpar, None)
-                if _dpr is not None:
-                    try:
-                        _dpr.val = "body_builder"
-                        break
-                    except Exception:
-                        pass
-            else:
-                report["warnings"].append("Could not set request data DAT par on webclientDAT (UNVERIFIED par name)")
-            _setpar(_client, "asynchronous", 1, "async")
+            _setpar(_client, "includeheader", 1, "include header")
 
             # callbacks datExecuteDAT
             _callbacks_code = (
@@ -553,8 +537,8 @@ export const registerCreateLlmChain: ToolRegistrar = (server, ctx) => {
         "(os.environ) and written into a headers tableDAT — the MCP server never sees them. " +
         "Returns container_path, prompt_dat_path, response_dat_path, status_chan (:busy), " +
         "provider, model, endpoint_url, and missing_env when a key is needed but unset. " +
-        "PROBE-FIRST risks: webclientDAT par names (headersdat/requestdatadat) vary by TD build — " +
-        "resolved defensively; Anthropic uses x-api-key header + anthropic-version, not Authorization; " +
+        "Notes: webclientDAT uses `reqmethod`/`url`/`includeheader` (verified live TD 099); body content goes via body_builder textDAT + callbacks. " +
+        "Anthropic uses x-api-key header + anthropic-version, not Authorization; " +
         "Ollama requires ollama serve running on 127.0.0.1:11434; dotsimulate TOX par names are UNVERIFIED.",
       inputSchema: createLlmChainSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },

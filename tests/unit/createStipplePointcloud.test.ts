@@ -94,8 +94,8 @@ describe("create_stipple_pointcloud", () => {
     expect(bodies.find((b) => b.name === "light")?.type).toBe("lightCOMP");
     expect(bodies.find((b) => b.name === "render")?.type).toBe("renderTOP");
     expect(bodies.find((b) => b.name === "out1")?.type).toBe("nullTOP");
-    // geometryCOMP pointcloudpop wired via python.
-    expect(scripts.some((s) => s.includes("pointcloudpop"))).toBe(true);
+    // geometryCOMP instancepop wired via python (real TD 099 par name).
+    expect(scripts.some((s) => s.includes("instancepop"))).toBe(true);
     // expose_controls=false → no control panel script.
     expect(scripts.some((s) => s.includes("appendCustomPage"))).toBe(false);
   });
