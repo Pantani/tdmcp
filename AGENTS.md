@@ -21,3 +21,12 @@
 - Use stable spacing constants, grid helpers, or existing auto-layout helpers when creating multiple nodes. If a tool creates a variable number of nodes, compute positions from indexes and roles so the layout remains organized at every count.
 - Treat duplicate or near-duplicate node coordinates, clipped node labels, or visually crowded generated networks as defects. Fix the layout before reporting the work complete.
 - When changing any node-creation code, verify the resulting TouchDesigner network layout by inspecting coordinates, running the relevant layout helper/test, or checking a live/preview network when available.
+
+## Live Nervous System / AI Party POC
+
+- Reuse `src/automation/showDirectorSchema.ts`, `showDirectorRuntime.ts`, `aiPartyPoc.ts`, `aiPartyGateway.ts`, and `telegramShowGateway.ts` before adding new policy, approval, or Telegram architecture.
+- The LLM only interprets intent into structured `ShowIntent` JSON. It never dispatches raw DMX, raw Python, arbitrary endpoints, fixture channels, PA/mixer controls, laser, moving-head, blackout, freeze, or unbounded fog/strobe.
+- The policy engine is authoritative. Hazardous or physical effects must become `approval_required` or `block`, and approval must be rechecked against current state before dispatch.
+- Dry-run and simulation are default. Real hardware dispatch requires `HARDWARE_ENABLED=true`, `DMX_LIVE_ENABLED=true`, a policy-allowed plan, and explicit operator approval.
+- Run focused POC tests with `npm run ai-party:test`; run the local dashboard with `npm run ai-party:dev`; build the TouchDesigner demo network with `npm run ai-party:td-build`.
+- Done means the dashboard, policy decisions, approval queue, JSONL audit log, Telegram path, TD-offline behavior, and simulated dispatch are all verified; live hardware may remain explicitly simulated unless venue validation has happened.

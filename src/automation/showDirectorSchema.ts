@@ -8,6 +8,7 @@ export const ShowEffectSchema = z.enum([
   "fog",
   "hazer",
   "strobe",
+  "confetti_sim",
   "blackout",
   "freeze",
   "moving_head",
@@ -25,6 +26,7 @@ export const ShowIntentSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("announce"),
     text: NonEmptyString,
+    tone: z.enum(["neutral", "premium", "hype", "calm"]).optional(),
     voice: z.string().trim().optional(),
   }),
   z.object({
@@ -32,18 +34,26 @@ export const ShowIntentSchema = z.discriminatedUnion("type", [
     mood: NonEmptyString,
     palette: z.array(NonEmptyString).max(8).optional(),
     intensity: z.number().min(0).max(1).default(0.5),
+    duration_seconds: z.number().positive().optional(),
+    reason: z.string().trim().optional(),
   }),
   z.object({
     type: z.literal("request_cue"),
     cue: NonEmptyString,
+    cue_kind: z.enum(["visual", "lighting", "combined", "safe_state"]).optional(),
+    intensity: z.number().min(0).max(1).optional(),
+    timing: z.enum(["now", "next_drop", "next_phrase", "manual"]).optional(),
+    reason: z.string().trim().optional(),
     scene_id: z.string().trim().optional(),
-    preapproved: z.boolean().default(false),
+    preapproved: z.boolean().optional(),
   }),
   z.object({
     type: z.literal("arm_effect"),
     effect: ShowEffectSchema,
     duration_seconds: z.number().positive().optional(),
     intensity: z.number().min(0).max(1).optional(),
+    timing: z.enum(["now", "next_drop", "next_phrase", "manual"]).optional(),
+    reason: z.string().trim().optional(),
   }),
   z.object({
     type: z.literal("approve_effect"),
@@ -57,11 +67,19 @@ export const ShowIntentSchema = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("panic_status"),
+    request: z
+      .enum(["status", "enter_panic_safe", "clear_panic_after_operator_confirmation"])
+      .optional(),
   }),
   z.object({
     type: z.literal("log_note"),
     note: NonEmptyString,
     tags: z.array(NonEmptyString).max(16).default([]),
+  }),
+  z.object({
+    type: z.literal("blocked_request"),
+    reason: NonEmptyString,
+    operator_message: NonEmptyString,
   }),
 ]);
 
@@ -132,6 +150,15 @@ const DEFAULT_EFFECT_POLICIES: EffectPolicyEntry[] = [
     cooldown_seconds: 120,
     operator_only: false,
     reason: "strobe requires operator approval and strict limits",
+  },
+  {
+    effect: "confetti_sim",
+    decision: "require_approval",
+    max_duration_seconds: 3,
+    max_intensity: 1,
+    cooldown_seconds: 60,
+    operator_only: false,
+    reason: "confetti simulation requires operator approval in the producer POC",
   },
   {
     effect: "blackout",
@@ -205,6 +232,16 @@ export function evaluateShowIntent(
   policy: EffectPolicy = DEFAULT_EFFECT_POLICY,
   context: ShowIntentEvaluationContext = {},
 ): PolicyDecision {
+  if (intent.type === "blocked_request") {
+    return {
+      decision: "block",
+      reason: intent.reason,
+      intent_type: intent.type,
+      limits_applied: ["blocked_request_from_parser"],
+      requires_operator: true,
+    };
+  }
+
   if (intent.type === "announce" || intent.type === "change_mood" || intent.type === "log_note") {
     const limits = intent.type === "change_mood" ? ["intensity<=1"] : [];
     return {

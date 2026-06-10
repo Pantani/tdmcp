@@ -1,10 +1,17 @@
-import { describe, expect, it } from "vitest";
+import { HttpResponse, http } from "msw";
+import { setupServer } from "msw/node";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { fallbackHermesCandidate, runAiPartyGateway } from "../../src/automation/aiPartyGateway.js";
 import {
   pollTelegramShowOnce,
   type TelegramFetch,
 } from "../../src/automation/telegramShowGateway.js";
 import { runCli } from "../../src/cli/agent.js";
+
+const server = setupServer();
+beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
 
 function jsonResponse(body: unknown) {
   return {
@@ -203,5 +210,90 @@ describe("tdmcp-agent ai-party CLI", () => {
     expect(doc.dryRun).toBe(true);
     expect(doc.decision.decision).toBe("allow");
     expect(doc.plan[0]).toMatchObject({ kind: "cue", cue: "band_intro" });
+  });
+
+  it("uses Ollama ShowIntent planning when --llm is set and still runs policy dry-run", async () => {
+    server.use(
+      http.post("http://127.0.0.1:11434/api/chat", async ({ request }) => {
+        const body = (await request.json()) as { model?: string; stream?: boolean };
+        expect(body.model).toBe("showintent-party:local");
+        expect(body.stream).toBe(false);
+        return HttpResponse.json({
+          model: "showintent-party:local",
+          message: {
+            role: "assistant",
+            content: JSON.stringify({
+              type: "arm_effect",
+              effect: "fog",
+              duration_seconds: 3,
+              intensity: 0.35,
+            }),
+          },
+        });
+      }),
+    );
+
+    const result = await runCli(
+      [
+        "ai-party",
+        "--llm",
+        "--llm-model",
+        "showintent-party:local",
+        "--llm-base-url",
+        "http://127.0.0.1:11434",
+        "--params",
+        JSON.stringify({
+          message: {
+            text: "fumaca curtinha no proximo drop",
+            chat_role: "operator",
+            user_role: "foh",
+          },
+        }),
+      ],
+      {
+        makeCtx: () => {
+          throw new Error("ai-party --llm must not build a TD context");
+        },
+      },
+    );
+
+    expect(result.code).toBe(0);
+    const doc = JSON.parse(result.stdout);
+    expect(doc.source).toBe("hermes");
+    expect(doc.hermes.rationale).toContain("Ollama");
+    expect(doc.decision.decision).toBe("require_approval");
+    expect(doc.plan).toEqual([]);
+  });
+
+  it("reports AI party Ollama setup without contacting TouchDesigner", async () => {
+    server.use(
+      http.get("http://127.0.0.1:11434/api/tags", () =>
+        HttpResponse.json({ models: [{ name: "qwen2.5:3b" }] }),
+      ),
+    );
+
+    const result = await runCli(
+      [
+        "ai-party",
+        "llm-setup",
+        "--llm-model",
+        "showintent-party:local",
+        "--llm-base-url",
+        "http://127.0.0.1:11434",
+        "--no-ollama",
+      ],
+      {
+        makeCtx: () => {
+          throw new Error("ai-party llm-setup must not build a TD context");
+        },
+      },
+    );
+
+    expect(result.code).toBe(0);
+    const doc = JSON.parse(result.stdout);
+    expect(doc.ollama_reachable).toBe(true);
+    expect(doc.model_ready).toBe(false);
+    expect(doc.commands.pull_base).toBe("ollama pull qwen2.5:3b");
+    expect(doc.commands.baseline).toContain("npm run ai-party:llm-baseline");
   });
 });
