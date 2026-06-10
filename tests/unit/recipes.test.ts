@@ -4,7 +4,7 @@ import { KnowledgeBase } from "../../src/knowledge/index.js";
 import { RecipeLibrary } from "../../src/recipes/loader.js";
 import { RecipeSchema } from "../../src/recipes/schema.js";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
-import { buildFromRecipe } from "../../src/tools/layer1/orchestration.js";
+import { buildFromRecipe } from "../../src/tools/layer2/orchestration.js";
 import type { ToolContext } from "../../src/tools/types.js";
 import { silentLogger } from "../../src/utils/logger.js";
 import { makeTdServer, TD_BASE } from "../helpers/tdMock.js";

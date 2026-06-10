@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createSystemContainer, finalize, runBuild } from "./orchestration.js";
+import { createSystemContainer, finalize, runBuild } from "../layer2/orchestration.js";
 
 export const scaffoldShowSchema = z.object({
   name: z.string().default("show").describe("Name of the show container to create."),

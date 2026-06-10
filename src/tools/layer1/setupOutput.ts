@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { friendlyTdError } from "../../td-client/types.js";
 import { connectNodesViaBridge } from "../layer2/connectHelper.js";
+import { runBuild } from "../layer2/orchestration.js";
 import { jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
-import { runBuild } from "./orchestration.js";
 
 const q = (value: string): string => JSON.stringify(value);
 

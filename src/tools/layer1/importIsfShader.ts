@@ -6,9 +6,9 @@ import {
   buildIsfMapping,
   type IsfInput,
 } from "../foundation/glslTopMapping.js";
+import { createSystemContainer, finalize, runBuild } from "../layer2/orchestration.js";
 import { errorResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
-import { createSystemContainer, finalize, runBuild } from "./orchestration.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Schema

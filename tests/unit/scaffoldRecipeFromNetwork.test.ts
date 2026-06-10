@@ -7,7 +7,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
 import { RecipeSchema } from "../../src/recipes/schema.js";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
-import { buildFromRecipe } from "../../src/tools/layer1/orchestration.js";
+import { buildFromRecipe } from "../../src/tools/layer2/orchestration.js";
 import type { ToolContext } from "../../src/tools/types.js";
 import { scaffoldRecipeFromNetworkImpl } from "../../src/tools/vault/scaffoldRecipeFromNetwork.js";
 import { silentLogger } from "../../src/utils/logger.js";

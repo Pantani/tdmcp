@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { ControlSpec } from "../layer2/createControlPanel.js";
+import { createSystemContainer, finalize, runBuild } from "../layer2/orchestration.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
-import { createSystemContainer, finalize, runBuild } from "./orchestration.js";
 
 // Converts a '#rrggbb' or '#rgb' hex string to 0–1 RGB components.
 // Falls back to green (#00ff00) if the string is malformed so a bad colour

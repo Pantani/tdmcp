@@ -1,12 +1,12 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
+import { buildFromRecipe, finalize, runBuild } from "../layer2/orchestration.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { createAudioReactiveImpl } from "./createAudioReactive.js";
 import { createFeedbackNetworkImpl } from "./createFeedbackNetwork.js";
 import { createGenerativeArtImpl } from "./createGenerativeArt.js";
 import { createParticleSystemImpl } from "./createParticleSystem.js";
 import { significantTerms } from "./intent.js";
-import { buildFromRecipe, finalize, runBuild } from "./orchestration.js";
 
 export const createVisualSystemSchema = z.object({
   description: z.string().min(1).describe("Natural-language description of the visual system."),

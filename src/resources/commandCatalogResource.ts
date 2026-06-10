@@ -1,4 +1,4 @@
-import type { AgentCommandCatalogEntry } from "../cli/agent.js";
+import { type AgentCommandCatalogEntry, listAgentCommandCatalog } from "../agentCommandCatalog.js";
 import { jsonContents, type ResourceRegistrar } from "./shared.js";
 
 export interface CommandCatalogResource {
@@ -7,8 +7,7 @@ export interface CommandCatalogResource {
 }
 
 export async function readCommandCatalogResource(): Promise<CommandCatalogResource> {
-  const { listAgentCommands } = await import("../cli/agent.js");
-  const commands = listAgentCommands();
+  const commands = listAgentCommandCatalog();
   return { count: commands.length, commands };
 }
 

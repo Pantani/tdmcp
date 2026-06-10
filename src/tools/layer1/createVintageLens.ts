@@ -1,7 +1,7 @@
 import { z } from "zod";
+import { createSystemContainer, finalize, type NetworkBuilder } from "../layer2/orchestration.js";
 import { errorResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
-import { createSystemContainer, finalize, type NetworkBuilder } from "./orchestration.js";
 
 const q = (value: string): string => JSON.stringify(value);
 

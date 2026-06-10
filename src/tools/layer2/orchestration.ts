@@ -3,8 +3,6 @@ import { checkErrors } from "../../feedback/errorChecker.js";
 import { capturePreview } from "../../feedback/previewCapture.js";
 import type { Recipe, RecipeGlslUniform } from "../../recipes/schema.js";
 import { friendlyTdError } from "../../td-client/types.js";
-import { connectNodesViaBridge } from "../layer2/connectHelper.js";
-import { buildPanelScript, type ControlSpec } from "../layer2/createControlPanel.js";
 import {
   computeLayoutByParent,
   type LayoutEdge,
@@ -14,6 +12,8 @@ import {
 import { parsePythonReport } from "../pythonReport.js";
 import { errorResult } from "../result.js";
 import type { ToolContext } from "../types.js";
+import { connectNodesViaBridge } from "./connectHelper.js";
+import { buildPanelScript, type ControlSpec } from "./createControlPanel.js";
 
 const q = (value: string): string => JSON.stringify(value);
 

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { NetworkBuilder } from "./orchestration.js";
+import type { NetworkBuilder } from "../layer2/orchestration.js";
 
 const q = (value: string): string => JSON.stringify(value);
 

@@ -1,8 +1,8 @@
 import { z } from "zod";
 import type { ControlSpec } from "../layer2/createControlPanel.js";
+import { createSystemContainer, finalize, runBuild } from "../layer2/orchestration.js";
 import { errorResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
-import { createSystemContainer, finalize, runBuild } from "./orchestration.js";
 import { buildPoseSource, installFrameCooker } from "./poseSource.js";
 
 const q = (value: string): string => JSON.stringify(value);

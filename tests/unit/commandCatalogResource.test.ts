@@ -8,6 +8,7 @@ describe("command catalog resource helpers", () => {
     const result = await readCommandCatalogResource();
 
     expect(result.count).toBe(actualCommands.length);
+    expect(result.commands).toEqual(actualCommands);
     expect(result.count).toBeGreaterThan(100);
     expect(result.commands).toContainEqual(
       expect.objectContaining({

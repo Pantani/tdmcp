@@ -1,12 +1,12 @@
 import os from "node:os";
 import path from "node:path";
 import { z } from "zod";
+import { createSystemContainer, finalize, runBuild } from "../layer2/orchestration.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { dropExternalTox } from "../util/dropExternalTox.js";
 import { precheckToxCandidates } from "../util/toxCandidatePrecheck.js";
-import { createSystemContainer, finalize, runBuild } from "./orchestration.js";
 
 // ---------------------------------------------------------------------------
 // Resolution map

@@ -4,8 +4,8 @@ import {
   type ShaderParkUniform,
 } from "../../integrations/shaderPark.js";
 import { type ControlSpec, toTdCustomParameterName } from "../layer2/createControlPanel.js";
+import { createSystemContainer, finalize, runBuild } from "../layer2/orchestration.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
-import { createSystemContainer, finalize, runBuild } from "./orchestration.js";
 
 const q = (value: string): string => JSON.stringify(value);
 
