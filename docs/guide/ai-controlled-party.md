@@ -147,6 +147,35 @@ tdmcp-agent show-director approve approval_0001 --params-file approve-state.json
 The returned `plan` is still abstract and dry-run only. Hardware adapters must
 be added separately and must continue to enforce the same policy.
 
+## Producer POC runner
+
+For a closed producer rehearsal, use `ai-party-poc` to run the recommended
+proof without connecting to TouchDesigner or hardware:
+
+```bash
+tdmcp-agent ai-party-poc
+```
+
+It runs a seven-moment dry-run rehearsal: doors/preflight, AI welcome, band
+intro, fog approval, audio-reactive mood, voice/text mood shift, safety proof
+and closing audit. The command normalizes operator text or voice transcripts
+into `ShowIntent`s, evaluates the policy, returns approval/audit state, and
+marks every effect as simulated only.
+
+To demonstrate the approval path end-to-end without touching hardware:
+
+```bash
+tdmcp-agent ai-party-poc --params '{
+  "auto_approve_effects": true,
+  "operator": "front-of-house"
+}'
+```
+
+The result may include simulated effect events such as `fog_sim_short`, but
+`hardware_plans` remains `0`. Use the companion fixtures under
+`tests/fixtures/show-director/` as rehearsal material or future regression
+inputs.
+
 ## Demo checklist
 
 - Bridge health checked.

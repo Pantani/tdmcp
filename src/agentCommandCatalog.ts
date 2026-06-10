@@ -29,6 +29,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "ai-party-poc",
+    summary: "Run the AI-Controlled Party producer POC in dry-run/simulated mode.",
+    mutates: false,
+    unsafe: false,
+    source: "cli",
+  },
+  {
     command: "analyze",
     summary: "Find dead ops, broken file deps, orphan COMPs + a dependency map.",
     mutates: false,

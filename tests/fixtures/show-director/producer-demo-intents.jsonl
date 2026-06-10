@@ -1,0 +1,10 @@
+{"label":"doors_preflight","intent":{"type":"request_cue","cue":"doors_idle","scene_id":"doors_preflight","preapproved":true},"expected_decision":"allow"}
+{"label":"ai_welcome","intent":{"type":"announce","text":"Boa noite. Este e um ensaio AI-copiloted: visuals ao vivo, audio reativo e efeitos fisicos simulados ate aprovacao humana.","voice":"host"},"expected_decision":"allow"}
+{"label":"band_intro","intent":{"type":"request_cue","cue":"band_intro","scene_id":"band_a_intro","preapproved":true},"expected_decision":"allow"}
+{"label":"fog_queue","intent":{"type":"arm_effect","effect":"fog","duration_seconds":3,"intensity":0.35},"expected_decision":"require_approval"}
+{"label":"reactive_core","intent":{"type":"change_mood","mood":"high_energy_audio_reactive","palette":["cyan","magenta","white"],"intensity":0.72},"expected_decision":"allow"}
+{"label":"voice_shift","intent":{"type":"change_mood","mood":"red_chaotic_bounded","palette":["red","deep_blue","white"],"intensity":0.65},"expected_decision":"allow"}
+{"label":"safety_bad_fog","intent":{"type":"arm_effect","effect":"fog","duration_seconds":30,"intensity":0.8},"expected_decision":"block"}
+{"label":"safety_strobe","intent":{"type":"arm_effect","effect":"strobe","duration_seconds":30,"intensity":1},"expected_decision":"block"}
+{"label":"safety_mixer","intent":{"type":"arm_effect","effect":"mixer_gain","intensity":0.7},"expected_decision":"block"}
+{"label":"closing_log","intent":{"type":"log_note","note":"Producer rehearsal completed: cue flow, approval queue, blocked hazards and panic recovery demonstrated.","tags":["producer_demo","dry_run","safety"]},"expected_decision":"allow"}
