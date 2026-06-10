@@ -1124,6 +1124,8 @@ the shipped `create_palette` / `generate_from_moodboard` lineage.
 
 ### Round 4 — hype trend scouting — 2026-06-09 {#appendix-d-round4}
 
+> **Round 4 campaign complete: 5 waves, 28 features, v0.9.0 → v0.12.0.**
+
 **60 raw candidates → 38 deduped** from five external surfaces
 (`community-showcase`, `tutorials`, `generative-ai`, `hardware-interactive`,
 `vfx-aesthetics`) scouted in parallel by the `tdmcp-hype-scout` harness
@@ -1230,16 +1232,16 @@ they belong below.
 | Feature | id | Delivers | Eff | Imp | Conf | Pri | Status | Source(s) |
 |---|---|---|---|---|---|---|---|---|
 | `create_ascii_render` | S025 | Character-grid TOP — top-5 (D.1) | S | Med | High | P1 | NEW | vfx, tut |
-| `create_slit_scan` | S026 | Time-slice slit-scan render next to the shipped `create_time_echo` | S | Med | Med | P2 | NEW | vfx |
-| `create_chrome_blobs` | S029 | Liquid-chrome / metaball preset stack | S | Med | Med | P2 | PARTIAL | vfx, comm |
-| `create_vintage_lens` | S030 | Lens/CA/vignette preset on `applyPostProcessing` (Round-3 EX-24) | S | Med | Med | P2 | EXTENSION — overlaps Round-3 | vfx |
-| `create_pixel_sort` | S031 | Threshold-pixel-sort (Round-3 EX-21) | M | Med | Med | P2 | NEW — overlaps Round-3 | vfx |
-| `create_volumetric_field` | S032 | Raymarch density field preset | M | Med | Med | P2 | PARTIAL | vfx |
-| `create_reaction_diffusion` | S033 | Gray-Scott RD (recipe exists; wrap as a tool) | S | Med | High | P2 | PARTIAL | vfx, tut |
+| `create_slit_scan` | S026 | Time-slice slit-scan render next to the shipped `create_time_echo` | S | Med | Med | P2 | ✅ shipped v0.12.0 | vfx |
+| `create_chrome_blobs` | S029 | Liquid-chrome / metaball preset stack | S | Med | Med | P2 | ✅ shipped v0.12.0 | vfx, comm |
+| `create_vintage_lens` | S030 | Lens/CA/vignette preset on `applyPostProcessing` (Round-3 EX-24) | S | Med | Med | P2 | ✅ shipped v0.12.0 | vfx |
+| `create_pixel_sort` | S031 | Threshold-pixel-sort (Round-3 EX-21) | M | Med | Med | P2 | ✅ shipped v0.12.0 | vfx |
+| `create_volumetric_field` | S032 | Raymarch density field preset | M | Med | Med | P2 | ✅ shipped v0.12.0 | vfx |
+| `create_reaction_diffusion` | S033 | Gray-Scott RD (recipe exists; wrap as a tool) | S | Med | High | P2 | ✅ shipped v0.12.0 | vfx, tut |
 | `create_generative_architecture` | S034 | PBR + hand-canvas architectural sketch preset (Round-3 EX-27 family) | M | Med | Med | P2 | PARTIAL — overlaps Round-3 | vfx, comm |
-| `create_voxel_stack` | S036 | Isometric voxel stack render preset | M | Med | Med | P2 | NEW | vfx |
+| `create_voxel_stack` | S036 | Isometric voxel stack render preset | M | Med | Med | P2 | ✅ shipped v0.12.0 | vfx |
 | `create_fulldome_output` | S037 | B-Dome simulator + 180° equirect output (overlaps Round-3 EX-49) | M | Med | Med | P2 | PARTIAL — overlaps Round-3 | vfx, comm |
-| `create_facade_mapping` | S040 | Multi-projector blend + Kantan/CamSchnappr workflow | M | Med | Med | P2 | PARTIAL | comm |
+| `create_facade_mapping` | S040 | Multi-projector blend + Kantan/CamSchnappr workflow | M | Med | Med | P2 | ✅ shipped v0.12.0 (PARTIAL — calibration deferred) | comm |
 | `create_fixture_choreograph` / `create_data_choreograph` | S041 | Solar/Astrum-style data-driven fixture choreography (Round-3 EX-45 family) | L | Med | Med | P2 | PARTIAL — overlaps Round-3 | comm |
 
 #### D.6 · Reconciled cross-references

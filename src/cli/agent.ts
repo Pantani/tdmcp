@@ -81,6 +81,10 @@ import {
   createChromaReactiveImpl,
   createChromaReactiveSchema,
 } from "../tools/layer1/createChromaReactive.js";
+import {
+  createChromeBlobsImpl,
+  createChromeBlobsSchema,
+} from "../tools/layer1/createChromeBlobs.js";
 import { createColorGradeImpl, createColorGradeSchema } from "../tools/layer1/createColorGrade.js";
 import {
   createColorWheelsImpl,
@@ -126,6 +130,10 @@ import {
   createEnergyStructureSchema,
 } from "../tools/layer1/createEnergyStructure.js";
 import { createEngineCompImpl, createEngineCompSchema } from "../tools/layer1/createEngineComp.js";
+import {
+  createFacadeMappingImpl,
+  createFacadeMappingSchema,
+} from "../tools/layer1/createFacadeMapping.js";
 import {
   createFeedbackNetworkImpl,
   createFeedbackNetworkSchema,
@@ -225,6 +233,7 @@ import {
   createPhraseLockedCueEngineImpl,
   createPhraseLockedCueEngineSchema,
 } from "../tools/layer1/createPhraseLockedCueEngine.js";
+import { createPixelSortImpl, createPixelSortSchema } from "../tools/layer1/createPixelSort.js";
 import { createPointCloudImpl, createPointCloudSchema } from "../tools/layer1/createPointCloud.js";
 import { createPopFieldImpl, createPopFieldSchema } from "../tools/layer1/createPopField.js";
 import {
@@ -264,6 +273,10 @@ import {
   createRaymarchSceneImpl,
   createRaymarchSceneSchema,
 } from "../tools/layer1/createRaymarchScene.js";
+import {
+  createReactionDiffusionImpl,
+  createReactionDiffusionSchema,
+} from "../tools/layer1/createReactionDiffusion.js";
 import { createSdfFieldImpl, createSdfFieldSchema } from "../tools/layer1/createSdfField.js";
 import {
   createSetNavigatorImpl,
@@ -272,6 +285,7 @@ import {
 import { createShaderLibImpl, createShaderLibSchema } from "../tools/layer1/createShaderLib.js";
 import { createShaderParkImpl, createShaderParkSchema } from "../tools/layer1/createShaderPark.js";
 import { createSimulationImpl, createSimulationSchema } from "../tools/layer1/createSimulation.js";
+import { createSlitScanImpl, createSlitScanSchema } from "../tools/layer1/createSlitScan.js";
 import { createSpectrumImpl, createSpectrumSchema } from "../tools/layer1/createSpectrum.js";
 import {
   createStipplePointcloudImpl,
@@ -320,9 +334,18 @@ import {
 } from "../tools/layer1/createVideoScopes.js";
 import { createVideoSynthImpl, createVideoSynthSchema } from "../tools/layer1/createVideoSynth.js";
 import {
+  createVintageLensImpl,
+  createVintageLensSchema,
+} from "../tools/layer1/createVintageLens.js";
+import {
   createVisualSystemImpl,
   createVisualSystemSchema,
 } from "../tools/layer1/createVisualSystem.js";
+import {
+  createVolumetricFieldImpl,
+  createVolumetricFieldSchema,
+} from "../tools/layer1/createVolumetricField.js";
+import { createVoxelStackImpl, createVoxelStackSchema } from "../tools/layer1/createVoxelStack.js";
 import { createWaveformImpl, createWaveformSchema } from "../tools/layer1/createWaveform.js";
 import { describeProjectImpl, describeProjectSchema } from "../tools/layer1/describeProject.js";
 import { detectOnsetsImpl, detectOnsetsSchema } from "../tools/layer1/detectOnsets.js";
@@ -1624,6 +1647,55 @@ const COMMANDS: Record<string, Command> = {
     createLlmChainSchema,
     createLlmChainImpl,
     "Compose an LLM prompt chain DAT graph driving TD parameters/text.",
+    { mutates: true },
+  ),
+  // Hype-scout Round 4 Wave 5 (2026-06-09) — VFX aesthetic tail:
+  "create-slit-scan": r(
+    createSlitScanSchema,
+    createSlitScanImpl,
+    "Build a slit-scan time-displacement effect over an input TOP.",
+    { mutates: true },
+  ),
+  "create-chrome-blobs": r(
+    createChromeBlobsSchema,
+    createChromeBlobsImpl,
+    "Build a chrome/metaball blob network with reflective shading.",
+    { mutates: true },
+  ),
+  "create-vintage-lens": r(
+    createVintageLensSchema,
+    createVintageLensImpl,
+    "Apply a vintage-lens stack (chromatic aberration, vignette, grain, distortion) to a TOP.",
+    { mutates: true },
+  ),
+  "create-reaction-diffusion": r(
+    createReactionDiffusionSchema,
+    createReactionDiffusionImpl,
+    "Build a Gray-Scott reaction-diffusion feedback network.",
+    { mutates: true },
+  ),
+  "create-pixel-sort": r(
+    createPixelSortSchema,
+    createPixelSortImpl,
+    "Build a pixel-sort glitch effect over an input TOP.",
+    { mutates: true },
+  ),
+  "create-volumetric-field": r(
+    createVolumetricFieldSchema,
+    createVolumetricFieldImpl,
+    "Build a volumetric/3D scalar-field render (raymarched volume).",
+    { mutates: true },
+  ),
+  "create-voxel-stack": r(
+    createVoxelStackSchema,
+    createVoxelStackImpl,
+    "Build a stacked-voxel render of a source TOP or geometry.",
+    { mutates: true },
+  ),
+  "create-facade-mapping": r(
+    createFacadeMappingSchema,
+    createFacadeMappingImpl,
+    "Build a building-facade projection-mapping network (per-window tiling + warp).",
     { mutates: true },
   ),
   "beat-grid": r(

@@ -4,6 +4,84 @@ All notable changes to **tdmcp** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - 2026-06-10
+
+### Added — Hype-scout Round 4 Wave 5 (VFX aesthetic tail · D.5)
+The optional P2 closing wave — aesthetic tools that don't strategically
+shape the project but close the Round-4 backlog completely and reopen
+two Round-3 EX placeholders. All eight features live-verified against
+TD 099 build 2025.32820 / bridge 0.6.1.
+
+- **`create_slit_scan`** — Layer-1 time-slice slit-scan render via
+  cacheTOP, sibling of the shipped `create_time_echo`. Configurable
+  slice count + scroll speed + axis.
+- **`create_chrome_blobs`** — Layer-1 liquid-chrome / metaball preset
+  stack: noise → blur → threshold → glslTOP chrome env-map → composite.
+  Three color modes + configurable metal/background palette.
+- **`create_vintage_lens`** — Layer-1 EXTENSION over applyPostProcessing.
+  Lens / chromatic aberration / vignette preset. Closes Round-3 EX-24.
+- **`create_reaction_diffusion`** — Layer-1 Gray-Scott RD wrapper over
+  the shipped `recipes/reaction_diffusion.json`. Closes the Round-3
+  recipe-but-no-tool gap. Four uniforms (`uFeed` / `uKill` / `uDa` /
+  `uDb`) bound to custom pars via the canonical `seq.vec` pattern; LUT
+  palette chain uses fail-forward defensive par-sets so the GLSL RD
+  core ships even if the rampTOP key-par API varies across TD builds.
+- **`create_pixel_sort`** — Layer-1 threshold pixel-sort glslTOP.
+  Closes Round-3 EX-21.
+- **`create_volumetric_field`** — Layer-1 PARTIAL — 3D-texture
+  feedback stack (multiple 2D slices via cacheTOP + glslTOP stack
+  walker with Beer-Lambert alpha accumulation). **Explicitly NOT** a
+  full raymarcher — that's L-effort and reserved for a future
+  `create_volumetric_raymarch`. Six baked palettes + per-slice
+  turbulence + density.
+- **`create_voxel_stack`** — Layer-1 NEW isometric voxel stack render
+  via instancing + geometryCOMP rig.
+- **`create_facade_mapping`** — Layer-1 PARTIAL — multi-projector
+  blend skeleton (synthetic N=2 / 4 / grid layouts; per-projector
+  brightness exposed). Calibration explicitly deferred to live install
+  (documented in spec).
+
+### Fixed (Wave 5 fix-forwards rolled into this release)
+- `create_reaction_diffusion`: container_path is now threaded through
+  the overlay payload from `buildFromRecipe`'s actual container instead
+  of being reconstructed from `args.name` (recipe-id-derived names
+  differ from caller-supplied names → previously `'NoneType' object
+  has no attribute 'create'`).
+- `create_reaction_diffusion`: GLSL uniform binding now uses the
+  canonical `seq.vec.numBlocks + setattr(g.par, 'vec<i>name', ...)`
+  pattern (mirrors `createGlslShader.ts` L115-117) — previously tried
+  `seq[i].vec<i>name` on `SequenceBlock` / `ParCollection` which don't
+  expose those attributes.
+- `create_reaction_diffusion`: rampTOP LUT key-par setting wrapped in
+  fail-forward try/except — the RD GLSL core + container always ship;
+  LUT step degrades to a warning if the build's rampTOP par naming
+  differs.
+- `create_voxel_stack`: TD optype `topToCHOP` (camelCase) → the actual
+  `toptoCHOP` (all-lowercase before CHOP). Same family of fix as Wave-3
+  `lookupTexturePOP` and Wave-4 `chopToTOP`/`datExecuteDAT`.
+
+### Verified live
+All eight Wave 5 features were live-cooked against TD 099 build
+2025.32820 / bridge 0.6.1 at release time. `create_facade_mapping`
+ships PARTIAL-LIVE — skeleton + topology verified, calibration deferred
+per spec. The other seven verified-live with no documented limitations.
+
+Offline gates: typecheck + build + biome + vitest (3946 pass) +
+validate:recipes (32) + test:bridge (196).
+
+### CAMPAIGN CLOSE — hype-scout Round 4 (5 waves, 28 features)
+
+This release closes the hype-scout Round 4 campaign:
+- **Wave 1** (v0.9.0) — 3 force multipliers
+- **Wave 2** (v0.9.1) — 4 top-5 quick wins + FM-03 fix-forward
+- **Wave 3** (v0.10.0) — 5 POP combos + Wave-2 fixes + bridge layout
+- **Wave 4** (v0.11.0) — 8 AI bridges + FM-02 hardening + 5 fixes
+- **Wave 5** (v0.12.0) — 8 VFX aesthetic tail + 3 fixes
+
+28 features shipped, all live-verified or live-PARTIAL with documented
+gaps. Branch `campaign/hype-scout-round4` is at v0.12.0 and ready for
+review / merge into main.
+
 ## [0.11.0] - 2026-06-09
 
 ### Added — Hype-scout Round 4 Wave 4 (AI bridge wave · D.2)

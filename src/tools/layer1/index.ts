@@ -16,6 +16,7 @@ import { registerCreateBodyBubbles } from "./createBodyBubbles.js";
 import { registerCreateBodyReactive } from "./createBodyReactive.js";
 import { registerCreateChopRecorder } from "./createChopRecorder.js";
 import { registerCreateChromaReactive } from "./createChromaReactive.js";
+import { registerCreateChromeBlobs } from "./createChromeBlobs.js";
 import { registerCreateColorGrade } from "./createColorGrade.js";
 import { registerCreateColorWheels } from "./createColorWheels.js";
 import { registerCreateCubemapDome } from "./createCubemapDome.js";
@@ -31,6 +32,7 @@ import { registerCreateDmxFixturePipeline } from "./createDmxFixturePipeline.js"
 import { registerCreateDomeOutput } from "./createDomeOutput.js";
 import { registerCreateEnergyStructure } from "./createEnergyStructure.js";
 import { registerCreateEngineComp } from "./createEngineComp.js";
+import { registerCreateFacadeMapping } from "./createFacadeMapping.js";
 import { registerCreateFeedbackNetwork } from "./createFeedbackNetwork.js";
 import { registerCreateFeedbackTunnel } from "./createFeedbackTunnel.js";
 import { registerCreateFluidSim } from "./createFluidSim.js";
@@ -64,6 +66,7 @@ import { registerCreateParticleSystem } from "./createParticleSystem.js";
 import { registerCreatePbrScene } from "./createPbrScene.js";
 import { registerCreatePhoneGesture } from "./createPhoneGesture.js";
 import { registerCreatePhraseLockedCueEngine } from "./createPhraseLockedCueEngine.js";
+import { registerCreatePixelSort } from "./createPixelSort.js";
 import { registerCreatePointCloud } from "./createPointCloud.js";
 import { registerCreatePopField } from "./createPopField.js";
 import { registerCreatePopGeometry } from "./createPopGeometry.js";
@@ -77,6 +80,7 @@ import { registerCreatePoseTracking } from "./createPoseTracking.js";
 import { registerCreateProbSequencer } from "./createProbSequencer.js";
 import { registerCreateProjectionMapping } from "./createProjectionMapping.js";
 import { registerCreateRaymarchScene } from "./createRaymarchScene.js";
+import { registerCreateReactionDiffusion } from "./createReactionDiffusion.js";
 import { registerCreateSafetyBlackoutChain } from "./createSafetyBlackoutChain.js";
 import { registerCreateSdfField } from "./createSdfField.js";
 import { registerCreateSetlistRunner } from "./createSetlistRunner.js";
@@ -85,6 +89,7 @@ import { registerCreateShaderLib } from "./createShaderLib.js";
 import { registerCreateShaderPark } from "./createShaderPark.js";
 import { registerCreateShowFailover } from "./createShowFailover.js";
 import { registerCreateSimulation } from "./createSimulation.js";
+import { registerCreateSlitScan } from "./createSlitScan.js";
 import { registerCreateSpectrum } from "./createSpectrum.js";
 import { registerCreateStipplePointcloud } from "./createStipplePointcloud.js";
 import { registerCreateStrangeAttractor } from "./createStrangeAttractor.js";
@@ -102,7 +107,10 @@ import { registerCreateVectorLines } from "./createVectorLines.js";
 import { registerCreateVideoPlayer } from "./createVideoPlayer.js";
 import { registerCreateVideoScopes } from "./createVideoScopes.js";
 import { registerCreateVideoSynth } from "./createVideoSynth.js";
+import { registerCreateVintageLens } from "./createVintageLens.js";
 import { registerCreateVisualSystem } from "./createVisualSystem.js";
+import { registerCreateVolumetricField } from "./createVolumetricField.js";
+import { registerCreateVoxelStack } from "./createVoxelStack.js";
 import { registerCreateWaveform } from "./createWaveform.js";
 import { registerDescribeProject } from "./describeProject.js";
 import { registerDetectOnsets } from "./detectOnsets.js";
@@ -268,4 +276,13 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateDepthFromTwoD,
   registerCreateGaussianSplatScene,
   registerCreateAiMirror,
+  // Hype-scout Round 4 Wave 5 (2026-06-09) — VFX aesthetic tail:
+  registerCreateSlitScan,
+  registerCreateChromeBlobs,
+  registerCreateVintageLens,
+  registerCreateReactionDiffusion,
+  registerCreatePixelSort,
+  registerCreateVolumetricField,
+  registerCreateVoxelStack,
+  registerCreateFacadeMapping,
 ];
