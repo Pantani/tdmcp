@@ -8,6 +8,7 @@ import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
+import { AiPartyPocRunSchema, runAiPartyPoc } from "../automation/aiPartyPoc.js";
 import {
   approveShowIntent,
   cancelShowIntent,
@@ -764,6 +765,10 @@ const showDirectorCliSchema = z.object({
   ),
   operator: z.string().trim().min(1).optional().describe("Human operator resolving approval."),
 });
+
+const aiPartyPocCliSchema = AiPartyPocRunSchema.describe(
+  "Offline producer POC rehearsal runner. Uses built-in demo events when `events` is omitted.",
+);
 
 export interface AgentCommandCatalogEntry {
   command: string;
@@ -2411,6 +2416,13 @@ const SPECIAL_COMMANDS: AgentCommandCatalogEntry[] = [
     source: "cli",
   },
   {
+    command: "ai-party-poc",
+    summary: "Run the AI-Controlled Party producer POC in dry-run/simulated mode.",
+    mutates: false,
+    unsafe: false,
+    source: "cli",
+  },
+  {
     command: "schedule <file>",
     summary: "Run scene scheduler triggers.",
     mutates: true,
@@ -2575,6 +2587,8 @@ function formatCommandHelp(target: string): string | undefined {
     lines.push("", "Input schema:", JSON.stringify(z.toJSONSchema(cmd.schema), null, 2));
   } else if (target === "show-director") {
     lines.push("", "Input schema:", JSON.stringify(z.toJSONSchema(showDirectorCliSchema), null, 2));
+  } else if (target === "ai-party-poc") {
+    lines.push("", "Input schema:", JSON.stringify(z.toJSONSchema(aiPartyPocCliSchema), null, 2));
   }
   return lines.join("\n");
 }
@@ -3180,6 +3194,16 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
       };
       return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
     }
+    if (target === "ai-party-poc") {
+      const doc = {
+        command: target,
+        summary: "Run the AI-Controlled Party producer POC in dry-run/simulated mode.",
+        mutates: false,
+        unsafe: false,
+        input: z.toJSONSchema(aiPartyPocCliSchema),
+      };
+      return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
+    }
     const cmd = COMMANDS[target];
     if (!cmd) return { stdout: "", stderr: `Unknown command for schema: "${target}".\n`, code: 2 };
     const doc = {
@@ -3189,6 +3213,30 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
       unsafe: cmd.unsafe,
       input: z.toJSONSchema(cmd.schema),
     };
+    return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
+  }
+
+  // `ai-party-poc` is an offline producer-rehearsal runner. It proves fan-in,
+  // policy decisions, approval queue state, audit log, and simulated effects
+  // without constructing a TouchDesigner context or touching hardware.
+  if (positionals[0] === "ai-party-poc") {
+    const assembled = assembleParams(values, opts);
+    if ("error" in assembled) {
+      return {
+        stdout: "",
+        stderr: `Invalid JSON in --params/--json: ${assembled.error}\n`,
+        code: 2,
+      };
+    }
+    const args = aiPartyPocCliSchema.safeParse(assembled.raw);
+    if (!args.success) {
+      return {
+        stdout: "",
+        stderr: `Invalid arguments for "ai-party-poc": ${args.error.message}\n`,
+        code: 2,
+      };
+    }
+    const doc = runAiPartyPoc(args.data);
     return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
   }
 

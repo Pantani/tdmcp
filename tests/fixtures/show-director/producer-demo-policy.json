@@ -1,0 +1,73 @@
+{
+  "effects": [
+    {
+      "effect": "fog",
+      "decision": "require_approval",
+      "max_duration_seconds": 3,
+      "max_intensity": 0.5,
+      "cooldown_seconds": 60,
+      "operator_only": false,
+      "reason": "Fog is simulated in the producer POC and requires operator approval."
+    },
+    {
+      "effect": "hazer",
+      "decision": "require_approval",
+      "max_duration_seconds": 3,
+      "max_intensity": 0.5,
+      "cooldown_seconds": 60,
+      "operator_only": false,
+      "reason": "Hazer is simulated in the producer POC and requires operator approval."
+    },
+    {
+      "effect": "strobe",
+      "decision": "require_approval",
+      "max_duration_seconds": 5,
+      "max_intensity": 0.4,
+      "cooldown_seconds": 120,
+      "operator_only": false,
+      "reason": "Strobe hardware is not connected; any dry-run strobe intent is approval-gated."
+    },
+    {
+      "effect": "blackout",
+      "decision": "block",
+      "operator_only": true,
+      "reason": "Blackout is local/operator-only and never LLM-triggered."
+    },
+    {
+      "effect": "freeze",
+      "decision": "block",
+      "operator_only": true,
+      "reason": "Freeze is local/operator-only and never LLM-triggered."
+    },
+    {
+      "effect": "moving_head",
+      "decision": "block",
+      "operator_only": true,
+      "reason": "Moving heads require venue fixture validation and are out of scope."
+    },
+    {
+      "effect": "laser",
+      "decision": "block",
+      "operator_only": true,
+      "reason": "Laser output is not part of the producer POC."
+    },
+    {
+      "effect": "mixer_gain",
+      "decision": "block",
+      "operator_only": true,
+      "reason": "The AI may observe audio but never changes mixer gain."
+    },
+    {
+      "effect": "pa_mute",
+      "decision": "block",
+      "operator_only": true,
+      "reason": "PA mute is operator-only and out of scope."
+    },
+    {
+      "effect": "audio_routing",
+      "decision": "block",
+      "operator_only": true,
+      "reason": "Audio routing is operator-only and out of scope."
+    }
+  ]
+}

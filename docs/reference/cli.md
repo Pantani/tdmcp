@@ -111,6 +111,8 @@ tdmcp-agent watch-build --no-reload-bridge  # build-only watcher
 tdmcp-agent watch --pretty --heartbeat-ms 5000
 tdmcp-agent watch --on beat --exec './cue-next.sh' --debounce-ms 250
 tdmcp-agent show-director --params '{"intent":{"type":"request_cue","cue":"band_intro","preapproved":true}}'
+tdmcp-agent ai-party-poc
+tdmcp-agent ai-party-poc --params '{"auto_approve_effects":true,"operator":"front-of-house"}'
 ```
 
 Output format is `--output json` (default) / `ndjson` / `text` / `table` /
@@ -135,6 +137,14 @@ validates a `ShowIntent`, returns `allow`, `require_approval` or `block`, and
 emits updated approval/audit state as JSON. It never connects to TouchDesigner or
 hardware; use it to gate future voice/OpenClaw/dashboard integrations before any
 cue or effect is mapped to real execution.
+
+`tdmcp-agent ai-party-poc` runs the producer rehearsal package for the
+[AI-Controlled Party](/guide/ai-controlled-party) concept. With no params it uses
+the built-in seven-moment demo; with custom `events` it accepts operator text,
+voice transcripts, audio-section markers, dashboard approval actions or scripted
+`ShowIntent`s. The output is a dry-run JSON envelope with policy decisions,
+approval queue state, an audit log summary and simulated effect events. It does
+not build a TouchDesigner context and never emits a live hardware plan.
 
 ## Local copilot (`tdmcp chat`)
 

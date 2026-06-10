@@ -201,6 +201,15 @@ bridge 0.6.1 at release time. Offline gates: typecheck + build +
 biome + vitest (3946 pass) + validate:recipes (32) + test:bridge
 (196).
 
+### Added
+
+- **AI-Controlled Party producer POC runner** — `tdmcp-agent ai-party-poc`
+  runs the closed-rehearsal proof in dry-run/simulated mode: text/transcript
+  fan-in, `ShowIntent` policy decisions, approval queue state, audit log,
+  optional auto-approval into simulated effect events, and zero hardware plans.
+  Fixtures live under `tests/fixtures/show-director/` and are pinned by
+  `tests/unit/showDirectorFixtures.test.ts`.
+
 ## [0.8.3] - 2026-06-03
 
 ### Fixed
