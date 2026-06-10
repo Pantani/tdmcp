@@ -2829,6 +2829,8 @@ const SECRET_ENV: ReadonlySet<keyof TdmcpConfig> = new Set([
   "bridgeToken",
   "llmApiKey",
   "telegramBotToken",
+  "telegramAllowedChats",
+  "telegramAllowedUsers",
 ]);
 
 /** A paste-ready `export TDMCP_*=...` block; secrets are emitted commented-out (set manually). */
