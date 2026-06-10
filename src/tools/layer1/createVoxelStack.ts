@@ -188,13 +188,17 @@ export async function createVoxelStackImpl(ctx: ToolContext, args: CreateVoxelSt
       });
     }
 
+    // mergeCHOP — merge channels first; nullCHOP would replace inputs.
+    const instMerge = await builder.add("mergeCHOP", "inst_merge");
+    await builder.connect(txChop, instMerge);
+    await builder.connect(tzChop, instMerge);
+    await builder.connect(tyChop, instMerge);
+    await builder.connect(syChop, instMerge);
+    await builder.connect(colorTop, instMerge);
+
     // nullCHOP — combine tx, ty, tz, sy, r, g, b as instancing source.
     const instNull = await builder.add("nullCHOP", "inst_null");
-    await builder.connect(txChop, instNull);
-    await builder.connect(tzChop, instNull);
-    await builder.connect(tyChop, instNull);
-    await builder.connect(syChop, instNull);
-    await builder.connect(colorTop, instNull);
+    await builder.connect(instMerge, instNull);
 
     // 3) Geometry COMP with boxSOP + constantMAT inside.
     const geo = await builder.add("geometryCOMP", "voxel_geo");

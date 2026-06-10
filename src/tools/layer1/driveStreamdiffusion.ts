@@ -24,7 +24,7 @@ export const driveStreamdiffusionSchema = z.object({
     .string()
     .optional()
     .describe(
-      "TOP path to feed into the StreamDiffusionTD container's first input. When omitted, a moviefilein TOP is created with TD's default sample movie.",
+      "File system path to a video/image file to feed into the StreamDiffusionTD container (creates a moviefileinTOP). When omitted, a synthetic noise TOP is created for device-free preview.",
     ),
   prompt: z
     .string()

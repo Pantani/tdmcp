@@ -47,13 +47,15 @@ function textOf(result: Awaited<ReturnType<typeof setupMediapipePluginImpl>>): s
 
 /** Mock the /api/exec endpoint to return the given report JSON as stdout. */
 function mockExec(report: Record<string, unknown>, capturedScripts?: string[]): void {
+  // dropExternalTox requires found_path + container_path in its bridge report.
+  const enriched = { found_path: FIXTURE_TOX, ...report };
   server.use(
     http.post(`${TD_BASE}/api/exec`, async ({ request }) => {
       const body = (await request.json()) as { script: string };
       capturedScripts?.push(body.script);
       return HttpResponse.json({
         ok: true,
-        data: { result: null, stdout: JSON.stringify(report) },
+        data: { result: null, stdout: JSON.stringify(enriched) },
       });
     }),
   );

@@ -102,7 +102,7 @@ async function buildSource(
   if (args.source_mode === "existing_top") {
     const path = args.source_top_path;
     if (!path) throw new Error("source_top_path is required when source_mode='existing_top'.");
-    return builder.add("selectTOP", "source_in", {
+    return await builder.add("selectTOP", "source_in", {
       top: path,
       resolutionw: args.output_width,
       resolutionh: args.output_height,

@@ -139,6 +139,8 @@ export async function createPopParticleSystemImpl(
       ],
     });
 
+    if (chainResult.isError) return chainResult;
+
     // Parse the chain result text to extract warnings and output path.
     const chainText = chainResult.content
       .filter((c): c is { type: "text"; text: string } => c.type === "text")

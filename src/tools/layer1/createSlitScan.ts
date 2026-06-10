@@ -126,7 +126,7 @@ export async function createSlitScanImpl(ctx: ToolContext, args: CreateSlitScanA
     await builder.python(
       [
         `_g = op(${q(glsl)})`,
-        `_g.par.seq.vec.numBlocks = max(_g.par.seq.vec.numBlocks, 3)`,
+        `_g.seq.vec.numBlocks = max(_g.seq.vec.numBlocks, 3)`,
         `_g.par.vec0name = 'uDepth'`,
         `_g.par.vec0valuex = ${args.cache_depth}`,
         `_g.par.vec1name = 'uAxis'`,

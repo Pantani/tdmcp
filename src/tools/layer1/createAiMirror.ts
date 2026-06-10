@@ -175,6 +175,12 @@ async function buildPanel(
   await builder.python(`op(${q(negPromptText)}).text = ${q(args.negative_prompt)}`);
   const strengthSlider = await builder.add("sliderCOMP", "strength_slider", undefined, panel);
   const cfgSlider = await builder.add("sliderCOMP", "cfg_slider", undefined, panel);
+  // Initialize sliders to caller-supplied values (panel.u is 0..1; cfg rescales 0..12).
+  const cfgU = Math.max(0, Math.min(1, args.cfg / 12));
+  const strengthU = Math.max(0, Math.min(1, args.strength));
+  await builder.python(
+    `op(${q(strengthSlider)}).panel.u.val = ${strengthU}\nop(${q(cfgSlider)}).panel.u.val = ${cfgU}`,
+  );
   let previewCam: string | undefined;
   if (args.show_camera_preview) {
     previewCam = await builder.add(
@@ -283,7 +289,7 @@ export async function createAiMirrorImpl(
         .filter((c): c is { type: "text"; text: string } => c.type === "text")
         .map((c) => c.text)
         .join("\n");
-      return /not found|Install|no_candidate_found/i.test(text);
+      return /\bno_candidate_found\b/i.test(text);
     };
 
     let sdContainerPath: string | undefined;

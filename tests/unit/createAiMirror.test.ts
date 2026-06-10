@@ -215,7 +215,7 @@ describe("create_ai_mirror", () => {
       content: [
         {
           type: "text",
-          text: "StreamDiffusionTD.tox not found. Install from https://github.com/cumulo-autumn/StreamDiffusion",
+          text: "StreamDiffusionTD.tox not found (no_candidate_found). Install from https://github.com/cumulo-autumn/StreamDiffusion",
         },
       ],
     };

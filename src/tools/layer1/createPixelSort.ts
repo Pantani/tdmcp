@@ -279,7 +279,7 @@ export async function createPixelSortImpl(ctx: ToolContext, args: CreatePixelSor
       },
       {
         name: "Iterations",
-        type: "float",
+        type: "int",
         min: 1,
         max: 256,
         default: args.iterations,

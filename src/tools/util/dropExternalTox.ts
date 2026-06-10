@@ -241,6 +241,15 @@ export async function dropExternalTox(
   const containerPath = report.container_path ?? "";
   const warnings = [...(report.warnings ?? [])];
 
+  if (!foundPath || !containerPath) {
+    return {
+      error: errorResult(
+        "dropExternalTox returned an incomplete bridge report (missing found_path or container_path).",
+        report,
+      ),
+    };
+  }
+
   if (missing.length > 0) {
     ctx.logger.warn("dropExternalTox: missing custom pars", {
       found_path: foundPath,

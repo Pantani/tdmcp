@@ -239,6 +239,9 @@ export async function createPhraseLockedCueEngineImpl(
     // Parameter Execute DAT for Flush pulse.
     const flushDat = await builder.add("parameterexecuteDAT", "flush_exec", {
       active: 1,
+      op: builder.containerPath,
+      pars: "Flush",
+      onpulse: 1,
     });
 
     // Deploy callback texts — substitute build-time literals.

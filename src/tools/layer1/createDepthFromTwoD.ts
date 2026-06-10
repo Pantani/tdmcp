@@ -223,7 +223,7 @@ export async function createDepthFromTwoDImpl(
 
   let report: ConfigureReport;
   try {
-    const exec = await ctx.client.executePythonScript(script, false);
+    const exec = await ctx.client.executePythonScript(script, true);
     report = parsePythonReport<ConfigureReport>(exec.stdout);
   } catch (err) {
     return errorResult(friendlyTdError(err));

@@ -84,6 +84,8 @@ describe("tox_drop success", () => {
           return execOk({
             ok: true,
             container_path: "/project1/comfyui/TDComfyUI",
+            found_path:
+              "/Library/Application Support/Derivative/TouchDesigner099/Components/TDComfyUI/TDComfyUI.tox",
             tox_path:
               "/Library/Application Support/Derivative/TouchDesigner099/Components/TDComfyUI/TDComfyUI.tox",
             tried: [
