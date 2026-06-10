@@ -89,6 +89,32 @@ describe("redaction", () => {
     expect(out.path).toBe("…/Sub/file.md");
   });
 
+  it("redacts nested credential-like tool args by key, including short passwords", () => {
+    const out = redactArgs("extend_data_source_fabric", {
+      mqtt: {
+        password: "pw",
+        api_key: "key-123",
+        apiKey: "key-456",
+        stream_key: "live:abc123",
+        headers: [{ Authorization: "Bearer 123:ABC" }],
+      },
+      token: "123:ABC",
+      label: "keep",
+    });
+
+    expect(out).toMatchObject({
+      mqtt: {
+        password: "[redacted]",
+        api_key: "[redacted]",
+        apiKey: "[redacted]",
+        stream_key: "[redacted]",
+        headers: [{ Authorization: "[redacted]" }],
+      },
+      token: "[redacted]",
+      label: "keep",
+    });
+  });
+
   it("preserves script when redactSensitive=false on the recorder", async () => {
     await call({ action: "start", name: "raw", redactSensitive: false });
     const recorder = getMacroRecorder();

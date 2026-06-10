@@ -38,6 +38,12 @@ describe("renderStarterConfig", () => {
       "TDMCP_LLM_MAX_STEPS",
       "TDMCP_LLM_TEMPERATURE",
       "TDMCP_CHAT_PORT",
+      "TDMCP_TELEGRAM_BOT_TOKEN",
+      "TDMCP_TELEGRAM_ALLOWED_CHATS",
+      "TDMCP_TELEGRAM_ALLOWED_USERS",
+      "TDMCP_TELEGRAM_DEFAULT_TIER",
+      "TDMCP_TELEGRAM_POLL_TIMEOUT_SEC",
+      "TDMCP_TELEGRAM_CONFIRM_TIMEOUT_MS",
       "TDMCP_VAULT_PATH",
       // Config-resolution vars consumed by loadConfig (src/utils/config.ts):
       "TDMCP_CONFIG_FILE",
@@ -52,6 +58,9 @@ describe("renderStarterConfig", () => {
     const body = renderStarterConfig();
     expect(body).toMatch(/^# TDMCP_BRIDGE_TOKEN=/m);
     expect(body).toMatch(/^# TDMCP_LLM_API_KEY=/m);
+    expect(body).toMatch(/^# TDMCP_TELEGRAM_BOT_TOKEN=/m);
+    expect(body).toMatch(/^# TDMCP_TELEGRAM_ALLOWED_CHATS=/m);
+    expect(body).toMatch(/^# TDMCP_TELEGRAM_ALLOWED_USERS=/m);
   });
 });
 

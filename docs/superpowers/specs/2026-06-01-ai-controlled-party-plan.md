@@ -311,7 +311,7 @@ turn them into approved/blocked show actions.
 Candidate command:
 
 ```bash
-tdmcp-agent show-director --setlist demo.yaml --policy policy.yaml --request "make it red and chaotic" --dry-run
+tdmcp-agent show-director --params '{"intent":{"type":"change_mood","mood":"red chaotic","intensity":0.7},"policy":{"effects":[]}}'
 ```
 
 Deliverables:

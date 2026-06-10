@@ -141,7 +141,7 @@ the machine TD runs on:
 - The MCP server binds to loopback (`127.0.0.1`) for both transports and enables
   DNS-rebinding protection on HTTP.
 - **The bridge refuses browser cross-origin requests.** Any request carrying an
-  `Origin` header that isn't loopback is rejected (HTTP `401`), so a malicious web
+  `Origin` header that isn't loopback is rejected (HTTP `403`), so a malicious web
   page can't quietly POST to the bridge (CSRF / DNS-rebinding → drive-by code
   execution). The MCP server sends no `Origin`, so normal use is unaffected.
 - **The local copilot chat UI (`tdmcp chat`) applies the same guard.** It binds to

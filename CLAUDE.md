@@ -25,7 +25,7 @@ npm install
 npm run import:bottobot      # populates src/knowledge/data from @bottobot/td-mcp
 npm run build                # tsc + tsup + copy-assets -> dist/
 
-# The four PR gates (CI runs these + validate:recipes + test:bridge)
+# Core PR gates (CI also runs import:bottobot, validate:recipes, build:mcpb, and test:bridge)
 npm run typecheck            # tsc --noEmit
 npm run build
 npm run lint                 # biome check .  (npm run format to auto-fix)
@@ -258,6 +258,28 @@ directly.
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
 | 2026-05-28 | Initial build | coverage harness + 3 agents + 2 skills | make coverage work repeatable, code-scoped, and gate-backed |
+
+## Harness: repo quality audit
+
+**Goal:** run complete repository-quality campaigns across command health,
+security, usability/flow, refactor debt, missing tests, coverage hardening, and
+final QA without weakening existing gates.
+
+**Trigger:** when asked for a complete audit, to test all commands, improve repo
+or code quality, find security/usability/flow failures, identify refactors, add
+missing tests, continue a previous audit, or verify whether the repo is ready,
+use the `tdmcp-quality-audit` skill. It coordinates
+`tdmcp-quality-audit-lead`, `tdmcp-command-auditor`,
+`tdmcp-security-auditor`, `tdmcp-ux-flow-auditor`,
+`tdmcp-refactor-test-auditor`, and `tdmcp-quality-qa`. Simple questions can be
+answered directly. Note: this environment runs the team as coordinated
+sub-agents (no `TeamCreate`).
+
+**Change log:**
+
+| Date | Change | Target | Reason |
+|------|--------|--------|--------|
+| 2026-06-10 | Initial quality-audit team | 6 agents + 1 skill | broad repo/code quality harness for command sweeps, security, UX flow, refactor/test gaps, and QA-backed fix waves |
 
 ## Harness: cookbook examples
 

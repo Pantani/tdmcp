@@ -31,8 +31,13 @@ export type MacroEntry = z.infer<typeof MacroEntrySchema>;
 export type MacroRecord = z.infer<typeof MacroRecordSchema>;
 
 const NAME_RE = /^[A-Za-z0-9_-]+$/;
-const TOKEN_RE = /^[A-Za-z0-9_-]{32,}$/;
-const TOKEN_KEYS = new Set(["token", "auth", "authorization", "bearer"]);
+const SECRET_VALUE = "[redacted]";
+const SECRET_KEY_RE =
+  /^(api|stream)?key$|^(api|stream)?token$|^auth(orization)?$|^bearer$|^password$|^secret$|^credential(s)?$/;
+
+function normalizeSecretKey(key: string): string {
+  return key.toLowerCase().replace(/[-_\s]/g, "");
+}
 
 /** Resolve the on-disk macros directory, expanding `~` and `TDMCP_MACROS_DIR`. */
 export function resolveMacrosDir(): string {
@@ -69,8 +74,8 @@ function looksLikeVaultPath(value: string): boolean {
 
 function redactValue(key: string | undefined, value: unknown): unknown {
   if (typeof value === "string") {
-    if (key && TOKEN_KEYS.has(key.toLowerCase()) && TOKEN_RE.test(value)) {
-      return "[redacted]";
+    if (key && value.length > 0 && SECRET_KEY_RE.test(normalizeSecretKey(key))) {
+      return SECRET_VALUE;
     }
     if (looksLikeVaultPath(value)) {
       return lastTwoSegments(value);

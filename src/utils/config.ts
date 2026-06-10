@@ -334,6 +334,8 @@ const SECRET_KEYS: ReadonlyArray<keyof LoadedTdmcpConfig> = [
   "bridgeToken",
   "llmApiKey",
   "telegramBotToken",
+  "telegramAllowedChats",
+  "telegramAllowedUsers",
 ];
 
 /** A copy of the config safe to print/share — secrets are masked. */

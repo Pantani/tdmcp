@@ -236,11 +236,15 @@ describe("describeConfig", () => {
       TDMCP_BRIDGE_TOKEN: "s3cret",
       TDMCP_LLM_API_KEY: "k3y",
       TDMCP_TELEGRAM_BOT_TOKEN: "telegram-secret",
+      TDMCP_TELEGRAM_ALLOWED_CHATS: "111,222",
+      TDMCP_TELEGRAM_ALLOWED_USERS: "5,6",
     });
     const safe = describeConfig(cfg);
     expect(safe.bridgeToken).toBe("***redacted***");
     expect(safe.llmApiKey).toBe("***redacted***");
     expect(safe.telegramBotToken).toBe("***redacted***");
+    expect(safe.telegramAllowedChats).toBe("***redacted***");
+    expect(safe.telegramAllowedUsers).toBe("***redacted***");
     expect(safe.tdHost).toBe("127.0.0.1");
   });
 

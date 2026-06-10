@@ -557,8 +557,12 @@ try:
         _cfg = json.dumps(_p["config"])
         _callbacks = _p["callbacks"].replace("__DASH_CFG__", _cfg)
         _cb = _c.op(_p["name"] + "_callbacks") or _c.create(td.textDAT, _p["name"] + "_callbacks")
+        _cb.nodeX = -220
+        _cb.nodeY = -120
         _cb.text = _callbacks
         _server = _c.op(_p["name"]) or _c.create(td.webserverDAT, _p["name"])
+        _server.nodeX = 0
+        _server.nodeY = -120
         _server.par.port = _p["port"]
         _server.par.callbacks = _cb
         _server.par.active = True

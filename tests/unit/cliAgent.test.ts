@@ -413,7 +413,12 @@ describe("tdmcp-agent CLI", () => {
         JSON.stringify({
           tdPort: 9980,
           profiles: {
-            club: { tdHost: "club-host", bridgeToken: "secret" },
+            club: {
+              tdHost: "club-host",
+              bridgeToken: "secret",
+              telegramAllowedChats: ["111", "222"],
+              telegramAllowedUsers: ["5", "6"],
+            },
           },
         }),
       );
@@ -424,6 +429,10 @@ describe("tdmcp-agent CLI", () => {
       expect(doc.profile).toBe("club");
       expect(doc.tdBaseUrl).toBe("http://club-host:9980");
       expect(doc.bridgeToken).toBe("***redacted***");
+      expect(doc.telegramAllowedChats).toBe("***redacted***");
+      expect(doc.telegramAllowedUsers).toBe("***redacted***");
+      expect(r.stdout).not.toContain("111");
+      expect(r.stdout).not.toContain("222");
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

@@ -128,6 +128,10 @@ describe("create_stage_dashboard", () => {
     expect(script).toContain("_server.par.callbacks = _cb");
     expect(script).toContain("_server.par.active = True");
     expect(script).toContain('_server.par.port = _p["port"]');
+    expect(script).toContain("_cb.nodeX = -220");
+    expect(script).toContain("_cb.nodeY = -120");
+    expect(script).toContain("_server.nodeX = 0");
+    expect(script).toContain("_server.nodeY = -120");
   });
 
   it("routes all four widgets (cue, fader, panic, /state) from one callback", async () => {

@@ -1070,7 +1070,7 @@ up with a wall, screen or object.*
 
 <video :src="withBase('/examples/config-init-env-scan.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
-*`tdmcp config init` prints or writes the complete `.env` surface the server reads,
+*`tdmcp-agent config init` prints or writes the complete `.env` surface the server reads,
 with bridge/LLM secrets commented for manual entry. It is a small tool, but it makes
 touring-machine setup repeatable instead of tribal knowledge.*
 

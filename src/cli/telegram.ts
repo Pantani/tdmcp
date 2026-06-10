@@ -56,7 +56,9 @@ Usage:
   tdmcp telegram setup [flags]
 
 Receives allowlisted Telegram messages through Bot API long polling, then routes
-them to the existing local LLM copilot and TouchDesigner bridge.
+them into the existing local LLM copilot. Telegram never talks directly to the
+TouchDesigner bridge; the copilot uses tdmcp tools under the configured tier and
+approval policy.
 
 Required environment:
   TDMCP_TELEGRAM_BOT_TOKEN          Bot token from BotFather.
