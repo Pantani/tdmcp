@@ -156,6 +156,20 @@ telegram-once` runs one Telegram Bot API long-poll batch and sends replies with
 `sendMessage`; it is still policy-only and does not create a TouchDesigner
 context.
 
+The ShowIntent local-model improvement harness lives under
+`training/showintent/`. It evaluates an Ollama model against locked
+operator/Telegram cases before any optional fine-tuning:
+
+```bash
+OLLAMA_MODEL=qwen2.5:3b npm run ai-party:llm-baseline
+npm run ai-party:llm-generate-data
+npm run ai-party:llm-import-curated
+```
+
+The harness trains the model only to emit valid `ShowIntent` JSON. It does not
+replace `ShowIntentSchema`, `EffectPolicySchema` or `showDirectorRuntime`, and it
+does not teach raw DMX, raw Python or direct hardware control.
+
 ## Local copilot (`tdmcp chat`)
 
 > For an artist-friendly walkthrough, see [Local copilot (no API)](/guide/local-copilot).
@@ -248,6 +262,10 @@ Setup flags: `--token-stdin`, `--chat-id <id>`, `--user-id <id>`,
 | `npm run typecheck` / `npm run lint` | TypeScript / Biome. |
 | `npm run smoke:live` | End-to-end test against a running TD. |
 | `npm run validate:recipes` | Validate every recipe JSON. |
+| `npm run ai-party:llm-eval` | Run the ShowIntent eval cases against `OLLAMA_BASE_URL` / `OLLAMA_MODEL`. |
+| `npm run ai-party:llm-baseline` | Save a timestamped ShowIntent local-LLM baseline report and failure JSONL. |
+| `npm run ai-party:llm-generate-data` | Generate deterministic ShowIntent training JSONL and train/validation splits. |
+| `npm run ai-party:llm-import-curated` | Convert approved curation CSV rows into validated training JSONL. |
 | `npm run import:bottobot` | (Re)build the embedded knowledge base — only needed to refresh it. |
 | `npm run build:mcpb` | Package a Claude Desktop `.mcpb` extension (formerly `.dxt`; see [Deployment](/deployment)). |
 | `npm run docs:dev` / `docs:build` | Run / build this documentation site (regenerates the [Tools reference](/reference/tools) first). |
