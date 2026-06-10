@@ -5,6 +5,8 @@ coverage/
 *.log
 .env
 .env.*
+!.env.example
+data/*.jsonl
 .DS_Store
 *.tsbuildinfo
 __pycache__/
