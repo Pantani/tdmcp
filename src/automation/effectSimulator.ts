@@ -21,6 +21,7 @@ const VISUAL_CUES: Record<z.infer<typeof ShowEffectSchema>, string> = {
   fog: "fog_sim_short",
   hazer: "hazer_sim_short",
   strobe: "strobe_sim_warning",
+  confetti_sim: "confetti_sim_burst",
   blackout: "operator_only_blackout",
   freeze: "operator_only_freeze",
   moving_head: "moving_head_blocked",
