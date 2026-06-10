@@ -1,4 +1,9 @@
-import type { ShowEffect, ShowIntent } from "../showDirectorSchema.js";
+import {
+  DEFAULT_EFFECT_POLICY,
+  evaluateShowIntent,
+  type ShowEffect,
+  type ShowIntent,
+} from "../showDirectorSchema.js";
 import { type AiPartyCue, DEFAULT_AI_PARTY_CUE_CATALOG, findAiPartyCue } from "./cueCatalog.js";
 import type { AiPartyDispatchAction, AiPartyPolicyDecision, AiPartyShowState } from "./schemas.js";
 
@@ -104,6 +109,7 @@ function effectPlan(
 
 function evaluateEffect(
   intent: Extract<ShowIntent, { type: "arm_effect" }>,
+  state: AiPartyShowState,
 ): AiPartyPolicyDecision {
   if (BLOCKED_EFFECTS.has(intent.effect)) {
     return block(
@@ -143,6 +149,16 @@ function evaluateEffect(
       `${intent.effect} requires a bounded duration and intensity.`,
       `Blocked: ${intent.effect} needs explicit bounded duration and intensity.`,
     );
+  }
+
+  const runtimeDecision = evaluateShowIntent(intent, DEFAULT_EFFECT_POLICY, {
+    recent_effects: state.recent_effects,
+  });
+  if (
+    runtimeDecision.decision === "block" &&
+    runtimeDecision.limits_applied.some((limit) => limit.startsWith("cooldown_seconds>="))
+  ) {
+    return block(runtimeDecision.reason, `Blocked: ${intent.effect} is within cooldown window.`);
   }
 
   return approvalRequired(
@@ -189,7 +205,7 @@ export function evaluateAiPartyPolicy(
       return cueDecision(cue, intent.intensity);
     }
     case "arm_effect":
-      return evaluateEffect(intent);
+      return evaluateEffect(intent, state);
     case "log_note":
       return allow("Log note records context only.", [
         { kind: "log_note", note: intent.note, tags: intent.tags },

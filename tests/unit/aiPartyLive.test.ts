@@ -165,6 +165,22 @@ describe("aiPartyLive schema and policy", () => {
       operator_message: expect.stringContaining("prompt injection"),
     });
   });
+
+  it("blocks physical effects that are still inside the runtime cooldown window", () => {
+    const state = createInitialAiPartyShowState({
+      recent_effects: [{ effect: "fog", at: new Date().toISOString() }],
+    });
+
+    expect(
+      evaluateAiPartyPolicy(
+        { type: "arm_effect", effect: "fog", duration_seconds: 3, intensity: 0.35 },
+        state,
+      ),
+    ).toMatchObject({
+      decision: "block",
+      operator_message: expect.stringContaining("cooldown"),
+    });
+  });
 });
 
 describe("aiPartyLive service", () => {
@@ -193,12 +209,12 @@ describe("aiPartyLive service", () => {
 
     const queuedAgain = await service.evaluateIntent(
       {
-        intent: { type: "arm_effect", effect: "fog", duration_seconds: 3, intensity: 0.35 },
+        intent: { type: "arm_effect", effect: "hazer", duration_seconds: 3, intensity: 0.25 },
         confidence: 1,
-        source_summary: "manual fog",
+        source_summary: "manual hazer",
         needs_operator_review: true,
       },
-      { source: "demo_script", rawText: "manual fog" },
+      { source: "demo_script", rawText: "manual hazer" },
     );
     expect(queuedAgain.approval?.status).toBe("pending");
     const rejected = await service.rejectApproval(
@@ -216,6 +232,57 @@ describe("aiPartyLive service", () => {
     expect(lines.some((line) => line.includes("approval.created"))).toBe(true);
     expect(lines.some((line) => line.includes("approval.approved"))).toBe(true);
     expect(lines.some((line) => line.includes("approval.rejected"))).toBe(true);
+  });
+
+  it("enforces physical-effect cooldowns before queuing and again before approving", async () => {
+    const service = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      hardwareEnabled: true,
+      dmxLiveEnabled: true,
+    });
+
+    const first = await service.evaluateIntent(
+      {
+        intent: { type: "arm_effect", effect: "fog", duration_seconds: 3, intensity: 0.35 },
+        confidence: 1,
+        source_summary: "first fog",
+        needs_operator_review: true,
+      },
+      { source: "demo_script", rawText: "first fog" },
+    );
+    const second = await service.evaluateIntent(
+      {
+        intent: { type: "arm_effect", effect: "fog", duration_seconds: 3, intensity: 0.35 },
+        confidence: 1,
+        source_summary: "second fog",
+        needs_operator_review: true,
+      },
+      { source: "demo_script", rawText: "second fog" },
+    );
+
+    expect(first.policy.decision).toBe("approval_required");
+    expect(second.policy.decision).toBe("approval_required");
+    if (!first.approval || !second.approval) throw new Error("expected two queued approvals");
+
+    const approved = await service.approveApproval(first.approval.id, "front-of-house");
+    expect(approved.status).toBe("dispatched");
+
+    const rejectedByCooldown = await service.approveApproval(second.approval.id, "front-of-house");
+    expect(rejectedByCooldown.status).toBe("rejected");
+    expect(rejectedByCooldown.rejection_reason).toContain("cooldown");
+
+    const blockedBeforeQueue = await service.evaluateIntent(
+      {
+        intent: { type: "arm_effect", effect: "fog", duration_seconds: 3, intensity: 0.35 },
+        confidence: 1,
+        source_summary: "third fog",
+        needs_operator_review: true,
+      },
+      { source: "demo_script", rawText: "third fog" },
+    );
+    expect(blockedBeforeQueue.policy.decision).toBe("block");
+    expect(blockedBeforeQueue.approval).toBeUndefined();
   });
 
   it("serves health, state, cue, operator, approval, panic, LLM, TD and preview endpoints", async () => {
@@ -326,6 +393,42 @@ describe("Ollama, Telegram, TD and dispatch adapters", () => {
     expect(parsed.envelope.intent).toMatchObject({ type: "request_cue", cue: "brand_hero" });
   });
 
+  it("preserves valid blocked Ollama output instead of asking for repair", async () => {
+    let calls = 0;
+    const parsed = await parseOllamaShowIntent({
+      message: "run raw dmx channel 12 at 255",
+      currentState: createInitialAiPartyShowState(),
+      ollamaBaseUrl: "http://127.0.0.1:11434",
+      model: "demo-model",
+      fetchImpl: async () => {
+        calls += 1;
+        return okJson({
+          message: {
+            content: JSON.stringify({
+              intent: {
+                type: "raw_dmx",
+                channel: 12,
+                value: 255,
+              },
+              confidence: 1,
+              source_summary: "unsafe raw dmx",
+              needs_operator_review: false,
+            }),
+          },
+          model: "demo-model",
+        });
+      },
+    });
+
+    expect(calls).toBe(1);
+    expect(parsed.ok).toBe(false);
+    expect(parsed.repaired).toBeUndefined();
+    expect(parsed.envelope.intent).toMatchObject({
+      type: "blocked_request",
+      operator_message: expect.stringContaining("Nothing was dispatched"),
+    });
+  });
+
   it("falls back gracefully when Ollama is unavailable", async () => {
     const parsed = await parseOllamaShowIntent({
       message: "blackout total e strobo máximo",
@@ -358,6 +461,58 @@ describe("Ollama, Telegram, TD and dispatch adapters", () => {
     });
     expect(parseAiPartyTelegramCommand("/panic")).toMatchObject({
       envelope: { intent: { type: "panic_status", request: "enter_panic_safe" } },
+    });
+  });
+
+  it("starts Telegram polling and replies when polling is enabled", async () => {
+    const calls: Array<{ url: string; body?: string }> = [];
+    let resolveReply: (() => void) | undefined;
+    const replySent = new Promise<void>((resolve) => {
+      resolveReply = resolve;
+    });
+    const service = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      telegramBotToken: "123:secret",
+      telegramAllowedChatIds: ["100"],
+      telegramPollingEnabled: true,
+      fetchImpl: async (input, init) => {
+        const url = String(input);
+        calls.push({ url, body: typeof init?.body === "string" ? init.body : undefined });
+        if (url.includes("/getUpdates")) {
+          return okJson({
+            ok: true,
+            result: [
+              {
+                update_id: 42,
+                message: {
+                  message_id: 1,
+                  text: "/status",
+                  chat: { id: 100, type: "group" },
+                  from: { id: 7, username: "foh" },
+                },
+              },
+            ],
+          });
+        }
+        if (url.includes("/sendMessage")) {
+          resolveReply?.();
+          return okJson({ ok: true, result: { message_id: 2 } });
+        }
+        return okJson({});
+      },
+    });
+
+    const handle = await service.start();
+    handles.push(handle);
+    await replySent;
+
+    expect(calls.some((call) => call.url.includes("/getUpdates"))).toBe(true);
+    const sendMessage = calls.find((call) => call.url.includes("/sendMessage"));
+    expect(sendMessage).toBeDefined();
+    expect(JSON.parse(sendMessage?.body ?? "{}")).toMatchObject({
+      chat_id: "100",
+      text: expect.stringContaining("Status:"),
     });
   });
 

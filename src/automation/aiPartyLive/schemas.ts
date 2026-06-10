@@ -80,6 +80,9 @@ export const AiPartyShowStateSchema = z.object({
   telegram_status: z.enum(["disabled", "ok", "error"]),
   hardware_enabled: z.boolean(),
   dmx_live_enabled: z.boolean(),
+  recent_effects: z
+    .array(z.object({ effect: ShowEffectSchema, at: z.string().regex(ISO_TIME) }))
+    .default([]),
   pending_approvals_count: z.number().int().nonnegative(),
   last_intent: z.unknown().optional(),
   last_policy: AiPartyPolicyDecisionSchema.optional(),
@@ -159,6 +162,7 @@ export function createInitialAiPartyShowState(
     telegram_status: "disabled",
     hardware_enabled: false,
     dmx_live_enabled: false,
+    recent_effects: [],
     pending_approvals_count: 0,
     ...overrides,
   });

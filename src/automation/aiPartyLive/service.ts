@@ -19,7 +19,14 @@ import {
   type ShowIntentEnvelope,
 } from "./schemas.js";
 import { buildAiPartyTdDemo, sendAiPartyActionsToTd } from "./tdAdapter.js";
-import { parseAiPartyTelegramCommand } from "./telegram.js";
+import {
+  fetchAiPartyTelegramUpdates,
+  parseAiPartyTelegramCommand,
+  sendAiPartyTelegramMessage,
+  telegramUpdateChatId,
+  telegramUpdateOperator,
+  telegramUpdateText,
+} from "./telegram.js";
 
 export interface AiPartyLiveConfig {
   ollamaBaseUrl?: string;
@@ -50,6 +57,14 @@ export interface AiPartyLiveSnapshot {
 export interface AiPartyLiveHandle {
   url: string;
   close: () => Promise<void>;
+}
+
+export interface AiPartyTelegramPollResult {
+  ok: boolean;
+  next_offset?: number;
+  processed: number;
+  ignored: Array<{ update_id: number; reason: string }>;
+  warning?: string;
 }
 
 interface EvaluationContext {
@@ -178,6 +193,9 @@ export class AiPartyLiveService {
   private eventCount = 0;
   private approvalCount = 0;
   private tdClient: TouchDesignerClient;
+  private telegramOffset: number | undefined;
+  private telegramPollTimer: ReturnType<typeof setTimeout> | undefined;
+  private telegramPollingStopped = true;
 
   constructor(config: AiPartyLiveConfig = {}) {
     this.cfg = {
@@ -337,6 +355,112 @@ export class AiPartyLiveService {
       dispatch,
     );
     return dispatch;
+  }
+
+  private telegramPollingBlocker(): string | undefined {
+    if (!this.cfg.telegramPollingEnabled) return "Telegram polling is disabled.";
+    if (!this.cfg.telegramBotToken) return "TELEGRAM_BOT_TOKEN is not configured.";
+    if (this.cfg.telegramAllowedChatIds.length === 0)
+      return "TELEGRAM_ALLOWED_CHAT_IDS is required before polling starts.";
+    return undefined;
+  }
+
+  private telegramChatAllowed(chatId: string | number | undefined): boolean {
+    return (
+      chatId !== undefined && this.cfg.telegramAllowedChatIds.map(String).includes(String(chatId))
+    );
+  }
+
+  async pollTelegramOnce(timeoutSeconds = 25): Promise<AiPartyTelegramPollResult> {
+    const blocker = this.telegramPollingBlocker();
+    if (blocker) {
+      this.showState.telegram_status =
+        this.cfg.telegramPollingEnabled && blocker !== "Telegram polling is disabled."
+          ? "error"
+          : "disabled";
+      this.showState.last_error = blocker;
+      this.emit("health.changed", { telegram_status: this.showState.telegram_status, blocker });
+      return { ok: false, processed: 0, ignored: [], warning: blocker };
+    }
+
+    try {
+      const updates = await fetchAiPartyTelegramUpdates({
+        token: this.cfg.telegramBotToken ?? "",
+        offset: this.telegramOffset,
+        timeout: timeoutSeconds,
+        fetchImpl: this.cfg.fetchImpl,
+      });
+      let processed = 0;
+      const ignored: AiPartyTelegramPollResult["ignored"] = [];
+      for (const update of updates) {
+        const chatId = telegramUpdateChatId(update);
+        const rawText = telegramUpdateText(update);
+        if (!rawText?.trim()) {
+          ignored.push({ update_id: update.update_id, reason: "update has no text" });
+          continue;
+        }
+        if (!this.telegramChatAllowed(chatId)) {
+          ignored.push({ update_id: update.update_id, reason: "chat is not allowlisted" });
+          this.emit("telegram.message.received", { chatId, ignored: "chat is not allowlisted" });
+          continue;
+        }
+        const reply = await this.handleTelegramText(
+          rawText,
+          String(chatId),
+          telegramUpdateOperator(update),
+        );
+        await sendAiPartyTelegramMessage({
+          token: this.cfg.telegramBotToken ?? "",
+          chatId: String(chatId),
+          text: reply,
+          fetchImpl: this.cfg.fetchImpl,
+        });
+        processed += 1;
+      }
+      const lastUpdate = updates.at(-1)?.update_id;
+      if (lastUpdate !== undefined) this.telegramOffset = lastUpdate + 1;
+      this.showState.telegram_status = "ok";
+      this.emit("health.changed", {
+        telegram_status: "ok",
+        processed,
+        ignored,
+        next_offset: this.telegramOffset,
+      });
+      return { ok: true, next_offset: this.telegramOffset, processed, ignored };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.showState.telegram_status = "error";
+      this.showState.last_error = message;
+      this.emit("health.changed", { telegram_status: "error", message });
+      return { ok: false, processed: 0, ignored: [], warning: message };
+    }
+  }
+
+  private startTelegramPolling(): void {
+    if (!this.cfg.telegramPollingEnabled) return;
+    const blocker = this.telegramPollingBlocker();
+    if (blocker) {
+      this.showState.telegram_status = "error";
+      this.showState.last_error = blocker;
+      this.emit("health.changed", { telegram_status: "error", blocker });
+      return;
+    }
+
+    this.telegramPollingStopped = false;
+    const loop = async () => {
+      if (this.telegramPollingStopped) return;
+      await this.pollTelegramOnce();
+      if (!this.telegramPollingStopped) {
+        this.telegramPollTimer = setTimeout(loop, 1000);
+      }
+    };
+    void loop();
+  }
+
+  private stopTelegramPolling(): void {
+    this.telegramPollingStopped = true;
+    if (this.telegramPollTimer) clearTimeout(this.telegramPollTimer);
+    this.telegramPollTimer = undefined;
   }
 
   async approveApproval(id: string, operator: string): Promise<AiPartyApproval> {
@@ -583,10 +707,12 @@ export class AiPartyLiveService {
       server.listen(this.cfg.dashboardPort, this.cfg.dashboardHost, () => {
         const address = server.address();
         const port = typeof address === "object" && address ? address.port : this.cfg.dashboardPort;
+        this.startTelegramPolling();
         resolve({
           url: `http://${this.cfg.dashboardHost}:${port}/`,
           close: () =>
             new Promise<void>((done) => {
+              this.stopTelegramPolling();
               for (const socket of this.sockets) socket.destroy();
               server.close(() => done());
             }),

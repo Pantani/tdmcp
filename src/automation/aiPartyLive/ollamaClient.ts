@@ -294,17 +294,21 @@ export async function parseOllamaShowIntent(
 
   try {
     const raw = await callOllama(input);
-    let envelope: ShowIntentEnvelope;
     try {
-      envelope = parseShowIntentEnvelope(parseJsonText(extractContent(raw)));
-      if (envelope.intent.type !== "blocked_request") {
-        return { ok: true, envelope, model: input.model, latency_ms: Date.now() - started };
+      const envelope = parseShowIntentEnvelope(parseJsonText(extractContent(raw)));
+      if (envelope.intent.type === "blocked_request") {
+        return {
+          ok: false,
+          envelope,
+          model: input.model,
+          latency_ms: Date.now() - started,
+          error: envelope.intent.operator_message,
+        };
       }
+      return { ok: true, envelope, model: input.model, latency_ms: Date.now() - started };
     } catch {
-      envelope = blockedEnvelope(
-        "The local LLM returned invalid JSON.",
-        "The local LLM returned invalid JSON; attempting one repair pass.",
-      );
+      // Only malformed JSON gets a repair pass. A valid JSON response that
+      // sanitizes to blocked_request must remain blocked.
     }
     const repaired = await callOllama(input, JSON.stringify(raw).slice(0, 4000));
     const repairedEnvelope = parseShowIntentEnvelope(parseJsonText(extractContent(repaired)));

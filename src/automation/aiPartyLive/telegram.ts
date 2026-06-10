@@ -1,4 +1,66 @@
+import { z } from "zod";
 import { type ShowIntentEnvelope, ShowIntentEnvelopeSchema } from "./schemas.js";
+
+const TelegramChatIdSchema = z.union([z.string().trim().min(1), z.number().int()]);
+
+export const AiPartyTelegramUpdateSchema = z.object({
+  update_id: z.number().int(),
+  message: z
+    .object({
+      message_id: z.number().int(),
+      text: z.string().optional(),
+      chat: z.object({ id: TelegramChatIdSchema, type: z.string().optional() }),
+      from: z
+        .object({
+          id: TelegramChatIdSchema.optional(),
+          username: z.string().optional(),
+          first_name: z.string().optional(),
+        })
+        .optional(),
+    })
+    .optional(),
+  callback_query: z
+    .object({
+      id: z.string().trim().min(1),
+      data: z.string().optional(),
+      from: z
+        .object({
+          id: TelegramChatIdSchema.optional(),
+          username: z.string().optional(),
+          first_name: z.string().optional(),
+        })
+        .optional(),
+      message: z
+        .object({
+          message_id: z.number().int(),
+          chat: z.object({ id: TelegramChatIdSchema, type: z.string().optional() }),
+        })
+        .optional(),
+    })
+    .optional(),
+});
+export type AiPartyTelegramUpdate = z.infer<typeof AiPartyTelegramUpdateSchema>;
+
+const TelegramApiResponseSchema = z.object({
+  ok: z.boolean(),
+  result: z.unknown().optional(),
+  description: z.string().optional(),
+});
+
+export interface AiPartyTelegramFetchUpdatesArgs {
+  token: string;
+  offset?: number;
+  limit?: number;
+  timeout?: number;
+  fetchImpl?: typeof fetch;
+}
+
+export interface AiPartyTelegramSendMessageArgs {
+  token: string;
+  chatId: string | number;
+  text: string;
+  fetchImpl?: typeof fetch;
+}
 
 export interface ParsedAiPartyTelegramCommand {
   rawText: string;
@@ -21,6 +83,63 @@ function envelope(intent: ShowIntentEnvelope["intent"], summary: string, review 
     source_summary: summary,
     needs_operator_review: review,
   });
+}
+
+function telegramApiUrl(token: string, method: string, params?: URLSearchParams): string {
+  const url = new URL(`https://api.telegram.org/bot${token}/${method}`);
+  if (params) url.search = params.toString();
+  return url.toString();
+}
+
+export function telegramUpdateText(update: AiPartyTelegramUpdate): string | undefined {
+  return update.message?.text ?? update.callback_query?.data;
+}
+
+export function telegramUpdateChatId(update: AiPartyTelegramUpdate): string | number | undefined {
+  return update.message?.chat.id ?? update.callback_query?.message?.chat.id;
+}
+
+export function telegramUpdateOperator(update: AiPartyTelegramUpdate): string {
+  return (
+    update.message?.from?.username ??
+    update.callback_query?.from?.username ??
+    String(update.message?.from?.id ?? update.callback_query?.from?.id ?? "telegram")
+  );
+}
+
+export async function fetchAiPartyTelegramUpdates(
+  args: AiPartyTelegramFetchUpdatesArgs,
+): Promise<AiPartyTelegramUpdate[]> {
+  const fetcher = args.fetchImpl ?? fetch;
+  const params = new URLSearchParams({
+    limit: String(args.limit ?? 10),
+    timeout: String(args.timeout ?? 25),
+    allowed_updates: JSON.stringify(["message", "callback_query"]),
+  });
+  if (args.offset !== undefined) params.set("offset", String(args.offset));
+  const response = await fetcher(telegramApiUrl(args.token, "getUpdates", params));
+  if (!response.ok) throw new Error(`Telegram getUpdates failed with HTTP ${response.status}`);
+  const parsed = TelegramApiResponseSchema.parse(await response.json());
+  if (!parsed.ok) throw new Error(parsed.description ?? "Telegram getUpdates returned ok=false");
+  return z.array(AiPartyTelegramUpdateSchema).parse(parsed.result ?? []);
+}
+
+export async function sendAiPartyTelegramMessage(
+  args: AiPartyTelegramSendMessageArgs,
+): Promise<void> {
+  const fetcher = args.fetchImpl ?? fetch;
+  const response = await fetcher(telegramApiUrl(args.token, "sendMessage"), {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      chat_id: args.chatId,
+      text: args.text,
+      disable_notification: true,
+    }),
+  });
+  if (!response.ok) throw new Error(`Telegram sendMessage failed with HTTP ${response.status}`);
+  const parsed = TelegramApiResponseSchema.parse(await response.json());
+  if (!parsed.ok) throw new Error(parsed.description ?? "Telegram sendMessage returned ok=false");
 }
 
 export function parseAiPartyTelegramCommand(rawText: string): ParsedAiPartyTelegramCommand {

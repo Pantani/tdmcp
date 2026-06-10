@@ -79,6 +79,11 @@ export function applyDispatchToState(
       next.current_cue = "panic_safe";
       next.current_mood = "panic_safe";
       next.current_intensity = 0.2;
+    } else if (action.kind === "physical_effect") {
+      next.recent_effects = [
+        { effect: action.effect, at: result.at },
+        ...next.recent_effects,
+      ].slice(0, 50);
     }
   }
   return next;
