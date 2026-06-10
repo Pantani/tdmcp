@@ -229,18 +229,30 @@ describe("create_ascii_render", () => {
 
     it("selectTOP top param set to source path", async () => {
       captureCreateBodies();
-      const scripts = captureExecScripts();
+      const patches: Array<{ path: string; parameters: Record<string, unknown> }> = [];
+      server.use(
+        http.patch(`${TD_BASE}/api/nodes/:seg`, async ({ params, request }) => {
+          const body = (await request.json()) as { parameters: Record<string, unknown> };
+          const raw = params.seg;
+          const path = decodeURIComponent(Array.isArray(raw) ? (raw[0] ?? "") : String(raw ?? ""));
+          patches.push({ path, parameters: body.parameters });
+          return HttpResponse.json({
+            ok: true,
+            data: { path, type: "selectTOP", name: "source", parameters: body.parameters },
+          });
+        }),
+      );
 
       await createAsciiRenderImpl(makeCtx(), {
         ...DEFAULT_ARGS,
         source: "/project1/movie1",
       });
 
-      // setParams on selectTOP is sent via PATCH /api/nodes/:path
-      // The top param assignment happens in the setParams call, not exec script,
-      // so we check no noiseTOP was created and selectTOP was.
-      const noNoise = !scripts.some((s) => s.includes("noiseTOP"));
-      expect(noNoise).toBe(true);
+      expect(
+        patches.some(
+          (p) => p.path === "/project1/ascii/source" && p.parameters.top === "/project1/movie1",
+        ),
+      ).toBe(true);
     });
   });
 
