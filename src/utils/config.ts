@@ -8,6 +8,7 @@ const LLM_TIER_VALUES = ["standard", "safe", "creative"] as const;
 export type LlmTier = (typeof LLM_TIER_VALUES)[number];
 
 export const DEFAULT_LLM_TIER: LlmTier = "standard";
+export const DEFAULT_TELEGRAM_LLM_TIER: LlmTier = "safe";
 export const DEFAULT_LLM_MAX_STEPS = 8;
 export const DEFAULT_LLM_TEMPERATURE = 0.4;
 export const MAX_LLM_MAX_STEPS = 32;
@@ -51,6 +52,29 @@ const LlmTemperatureSchema = z.preprocess(
   (value) => sanitizeBoundedNumber(value, DEFAULT_LLM_TEMPERATURE, 0, MAX_LLM_TEMPERATURE, false),
   z.number().min(0).max(MAX_LLM_TEMPERATURE).default(DEFAULT_LLM_TEMPERATURE),
 );
+
+function csvList(value: unknown): string[] | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (Array.isArray(value))
+    return value
+      .map(String)
+      .map((v) => v.trim())
+      .filter(Boolean);
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  return trimmed
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+const CsvListSchema = z.preprocess(csvList, z.array(z.string()).default([]));
+
+const TelegramTierSchema = z.preprocess((value) => {
+  const tier = sanitizeLlmTier(value);
+  return tier ?? DEFAULT_TELEGRAM_LLM_TIER;
+}, z.enum(LLM_TIER_VALUES).default(DEFAULT_TELEGRAM_LLM_TIER));
 
 export const ConfigSchema = z.object({
   /** TouchDesigner bridge host. */
@@ -115,6 +139,21 @@ export const ConfigSchema = z.object({
   llmTemperature: LlmTemperatureSchema,
   /** Loopback port the `tdmcp chat` web UI binds to. */
   chatPort: z.coerce.number().int().positive().max(65535).default(4141),
+  /** Telegram Bot API token for `tdmcp telegram`. Keep in env/config, never CLI args. */
+  telegramBotToken: z.string().min(1).optional(),
+  /** Comma-separated Telegram chat ids allowed to reach the local copilot. */
+  telegramAllowedChats: CsvListSchema,
+  /** Optional comma-separated Telegram user ids allowed to reach the local copilot. */
+  telegramAllowedUsers: CsvListSchema,
+  /**
+   * Default Telegram copilot tier. Unlike browser chat, Telegram defaults to `safe`
+   * because messages arrive through an external network service.
+   */
+  telegramDefaultTier: TelegramTierSchema,
+  /** Long-poll timeout for Telegram getUpdates, in seconds. */
+  telegramPollTimeoutSec: z.coerce.number().int().min(1).max(60).default(30),
+  /** Expiry for a pending non-safe Telegram prompt awaiting /approve. */
+  telegramConfirmTimeoutMs: z.coerce.number().int().min(1000).default(60000),
   /**
    * Absolute path to an Obsidian vault (a folder of markdown notes) that backs
    * the vault integration tools. A leading `~/` is expanded to the home dir.
@@ -181,6 +220,12 @@ function envValues(env: NodeJS.ProcessEnv): Record<string, unknown> {
     llmMaxSteps: env.TDMCP_LLM_MAX_STEPS || undefined,
     llmTemperature: env.TDMCP_LLM_TEMPERATURE || undefined,
     chatPort: env.TDMCP_CHAT_PORT,
+    telegramBotToken: env.TDMCP_TELEGRAM_BOT_TOKEN || undefined,
+    telegramAllowedChats: env.TDMCP_TELEGRAM_ALLOWED_CHATS || undefined,
+    telegramAllowedUsers: env.TDMCP_TELEGRAM_ALLOWED_USERS || undefined,
+    telegramDefaultTier: env.TDMCP_TELEGRAM_DEFAULT_TIER || undefined,
+    telegramPollTimeoutSec: env.TDMCP_TELEGRAM_POLL_TIMEOUT_SEC || undefined,
+    telegramConfirmTimeoutMs: env.TDMCP_TELEGRAM_CONFIRM_TIMEOUT_MS || undefined,
     vaultPath: env.TDMCP_VAULT_PATH || undefined,
   };
 }
@@ -279,7 +324,11 @@ export function loadConfig(
 }
 
 /** Sensitive keys redacted by {@link describeConfig} for safe printing/sharing. */
-const SECRET_KEYS: ReadonlyArray<keyof LoadedTdmcpConfig> = ["bridgeToken", "llmApiKey"];
+const SECRET_KEYS: ReadonlyArray<keyof LoadedTdmcpConfig> = [
+  "bridgeToken",
+  "llmApiKey",
+  "telegramBotToken",
+];
 
 /** A copy of the config safe to print/share — secrets are masked. */
 export function describeConfig(config: TdmcpConfig | LoadedTdmcpConfig): Record<string, unknown> {

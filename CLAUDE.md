@@ -294,6 +294,26 @@ tracking, or this feature's recipe/docs, use the
 |------|--------|--------|--------|
 | 2026-06-05 | Initial implementation team | 5 agents + 1 skill | execute the approved interactive projection mapping spec through prototype, Layer 1 tool, recipe/docs, and physical/synthetic QA |
 
+## Harness: Telegram + Ollama local copilot
+
+**Goal:** implement and maintain a secure Telegram Bot API entry point for the
+local Ollama-powered tdmcp copilot, so allowlisted Telegram messages can inspect
+or control TouchDesigner through the existing `runAgentTurn`/tool-tier/bridge
+path instead of talking directly to TD.
+
+**Trigger:** when asked to build, implement, execute, continue, fix, QA,
+document, or ship Telegram/Telegram Bot API control of TouchDesigner through
+local Ollama, `tdmcp ask`/`tdmcp chat`, local LLM tool calls, chat allowlists,
+confirmation gates, or Telegram ChatOps for tdmcp, use the
+`tdmcp-telegram-ollama-copilot` skill. Simple conceptual questions can be
+answered directly. Note: this environment runs the team as coordinated
+sub-agents (no `TeamCreate`).
+
+**Change log:**
+| Date | Change | Target | Reason |
+|------|--------|--------|--------|
+| 2026-06-10 | Initial implementation team | 4 agents + 3 skills | execute the Telegram + Ollama local-copilot feature with dedicated Bot API, LLM/tool-call, security QA, and orchestration roles; reuses existing bridge/integrator specialists |
+
 ## Harness: hype trend scouting
 
 **Goal:** scout what is **hyped in the TouchDesigner community right now**

@@ -56,6 +56,11 @@ async function main(): Promise<void> {
     await runChat(argv.slice(1));
     return;
   }
+  if (argv[0] === "telegram") {
+    const { runTelegram } = await import("./cli/telegram.js");
+    await runTelegram(argv.slice(1));
+    return;
+  }
   if (argv[0] === "dashboard") {
     const { runDashboard } = await import("./cli/tui.js");
     process.exit(await runDashboard(argv.slice(1)));
