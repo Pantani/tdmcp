@@ -201,11 +201,18 @@ bridge.
 Required setup:
 
 ```bash
-export TDMCP_TELEGRAM_BOT_TOKEN="..."          # from BotFather
-export TDMCP_TELEGRAM_ALLOWED_CHATS="123456"   # comma-separated chat ids
+printf '%s\n' '123456:ABC...' | tdmcp telegram setup --token-stdin --chat-id 123456
 ollama pull qwen2.5:3b
 tdmcp telegram
 ```
+
+`tdmcp telegram setup` validates the BotFather token with Telegram `getMe`, then
+writes `telegramBotToken`, `telegramAllowedChats` and `telegramDefaultTier` to
+the selected config file. By default it uses `TDMCP_CONFIG_FILE`, an existing
+`tdmcp.json` / `.tdmcprc` in the current directory, or
+`~/.config/tdmcp/config.json`. Use `--config <path>` or `--profile <name>` to
+choose the destination explicitly. If you omit `--chat-id`, setup can wait for
+the next message sent to the bot and save that chat after confirmation.
 
 The Telegram surface defaults to `safe` mode, so read-only inspection prompts run
 immediately. `/standard` and `/creative` stage the next prompt and require
@@ -213,9 +220,13 @@ immediately. `/standard` and `/creative` stage the next prompt and require
 work, `/status` shows tier/pending state, and `/panic` intentionally does not
 execute remotely in this MVP; use a trusted local shell for `tdmcp-agent panic`.
 
-Flags: `--once` (poll once and exit), `--read-only`, `--creative`,
+Runtime flags: `--once` (poll once and exit), `--read-only`, `--creative`,
 `--tier <safe|standard|creative>`, `--poll-timeout <sec>`,
 `--drop-pending-updates`, `--profile <name>`, `--config <path>`, and `--help`.
+
+Setup flags: `--token-stdin`, `--chat-id <id>`, `--user-id <id>`,
+`--setup-timeout <sec>`, `--yes`, `--profile <name>`, `--config <path>`, and
+`--help`.
 
 ## npm scripts
 

@@ -81,6 +81,10 @@ describe("loadConfig", () => {
     expect(config.telegramConfirmTimeoutMs).toBe(45000);
   });
 
+  it("keeps Telegram on the safe tier when its configured tier is invalid", () => {
+    expect(loadConfig({ TDMCP_TELEGRAM_DEFAULT_TIER: "unsafe" }).telegramDefaultTier).toBe("safe");
+  });
+
   it("sanitizes local LLM copilot knobs instead of leaking unsafe values", () => {
     expect(loadConfig({ TDMCP_LLM_TIER: "unsafe" }).llmTier).toBe("standard");
     expect(loadConfig({ TDMCP_LLM_MAX_STEPS: "0" }).llmMaxSteps).toBe(1);

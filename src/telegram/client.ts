@@ -1,5 +1,7 @@
 export interface TelegramUser {
   id: number;
+  is_bot?: boolean;
+  first_name?: string;
   username?: string;
 }
 
@@ -52,13 +54,27 @@ export class TelegramBotClient {
     this.fetchImpl = options.fetchImpl ?? fetch;
   }
 
+  async getMe(): Promise<TelegramUser> {
+    return this.request<TelegramUser>("getMe", undefined, undefined, "GET");
+  }
+
   async getUpdates(options: GetUpdatesOptions = {}): Promise<TelegramUpdate[]> {
     const body: Record<string, unknown> = {
       allowed_updates: ["message"],
     };
     if (options.offset !== undefined) body.offset = options.offset;
     if (options.timeout !== undefined) body.timeout = options.timeout;
-    return this.request<TelegramUpdate[]>("getUpdates", body, options.signal);
+    const requestTimeoutMs =
+      options.timeout !== undefined
+        ? Math.max(this.timeoutMs, options.timeout * 1000 + 5000)
+        : this.timeoutMs;
+    return this.request<TelegramUpdate[]>(
+      "getUpdates",
+      body,
+      options.signal,
+      "POST",
+      requestTimeoutMs,
+    );
   }
 
   async sendMessage(chatId: number | string, text: string): Promise<void> {
@@ -77,11 +93,13 @@ export class TelegramBotClient {
 
   private async request<T>(
     method: string,
-    body: Record<string, unknown>,
+    body?: Record<string, unknown>,
     signal?: AbortSignal,
+    httpMethod = "POST",
+    timeoutMs = this.timeoutMs,
   ): Promise<T> {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     if (signal) {
       if (signal.aborted) controller.abort();
       else signal.addEventListener("abort", () => controller.abort(), { once: true });
@@ -89,12 +107,15 @@ export class TelegramBotClient {
 
     let response: Response;
     try {
-      response = await this.fetchImpl(`${this.baseUrl}/bot${this.token}/${method}`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(body),
+      const init: RequestInit = {
+        method: httpMethod,
         signal: controller.signal,
-      });
+      };
+      if (body !== undefined) {
+        init.headers = { "content-type": "application/json" };
+        init.body = JSON.stringify(body);
+      }
+      response = await this.fetchImpl(`${this.baseUrl}/bot${this.token}/${method}`, init);
     } catch (err) {
       throw new Error(
         `Telegram Bot API ${method} request failed: ${err instanceof Error ? err.message : String(err)}`,

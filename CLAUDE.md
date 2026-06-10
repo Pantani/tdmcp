@@ -170,6 +170,7 @@ This is the **ideation** harness — it produces a list to choose from; it does
 questions can be answered directly.
 
 **Change log:**
+
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
 | 2026-05-27 | Initial harness | all (5 agents + 6 skills) | design→develop→QA→deploy pipeline for the open post-0.3.0 feature backlog |
@@ -196,6 +197,7 @@ orchestrator spawns builders with the `Agent` tool. Builder model is chosen per
 spawn (sonnet for prescriptive tools, opus for the ones needing design judgment).
 
 **Change log:**
+
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
 | 2026-05-28 | Initial build | full harness | implement Phase 13 (v0.5.0) tool backlog as parallel waves |
@@ -218,6 +220,7 @@ coordinates `tdmcp-coverage-lead` / `tdmcp-coverage-writer` /
 directly.
 
 **Change log:**
+
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
 | 2026-05-28 | Initial build | coverage harness + 3 agents + 2 skills | make coverage work repeatable, code-scoped, and gate-backed |
@@ -310,6 +313,7 @@ answered directly. Note: this environment runs the team as coordinated
 sub-agents (no `TeamCreate`).
 
 **Change log:**
+
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
 | 2026-06-10 | Initial implementation team | 4 agents + 3 skills | execute the Telegram + Ollama local-copilot feature with dedicated Bot API, LLM/tool-call, security QA, and orchestration roles; reuses existing bridge/integrator specialists |

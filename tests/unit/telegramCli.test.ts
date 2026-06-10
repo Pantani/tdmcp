@@ -1,4 +1,7 @@
-import { describe, expect, it, vi } from "vitest";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { parseTelegramArgs, runTelegram } from "../../src/cli/telegram.js";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
 import type { AgentEvent } from "../../src/llm/agent.js";
@@ -11,6 +14,13 @@ import { TelegramCopilotService, type TelegramSender } from "../../src/telegram/
 import type { ToolContext } from "../../src/tools/types.js";
 import { loadConfig } from "../../src/utils/config.js";
 import { silentLogger } from "../../src/utils/logger.js";
+
+const originalExitCode = process.exitCode;
+
+afterEach(() => {
+  process.exitCode = originalExitCode;
+  vi.restoreAllMocks();
+});
 
 const makeCtx = (): ToolContext => ({
   client: new TouchDesignerClient({ baseUrl: "http://127.0.0.1:9", timeoutMs: 500 }),
@@ -36,6 +46,28 @@ class RecordingSender implements TelegramSender {
 }
 
 describe("parseTelegramArgs", () => {
+  it("parses setup flags without accepting the bot token as an argv value", () => {
+    const opts = parseTelegramArgs([
+      "setup",
+      "--config",
+      "/tmp/tdmcp.json",
+      "--profile",
+      "studio",
+      "--chat-id",
+      "111",
+      "--user-id",
+      "5",
+      "--token-stdin",
+    ]);
+
+    expect(opts.command).toBe("setup");
+    expect(opts.configPath).toBe("/tmp/tdmcp.json");
+    expect(opts.profile).toBe("studio");
+    expect(opts.chatId).toBe("111");
+    expect(opts.userId).toBe("5");
+    expect(opts.tokenStdin).toBe(true);
+  });
+
   it("parses local polling and config selection flags", () => {
     const opts = parseTelegramArgs([
       "--once",
@@ -64,6 +96,25 @@ describe("parseTelegramArgs", () => {
 });
 
 describe("TelegramBotClient", () => {
+  it("validates a token with getMe using the official token-test endpoint", async () => {
+    const calls: Array<{ url: string; method?: string }> = [];
+    const fetchImpl = vi.fn(async (url: string | URL, init?: RequestInit) => {
+      calls.push({ url: String(url), method: init?.method });
+      return new Response(
+        JSON.stringify({ ok: true, result: { id: 99, is_bot: true, username: "tdmcp_bot" } }),
+        { status: 200 },
+      );
+    }) as unknown as typeof fetch;
+    const client = new TelegramBotClient({ token: "secret-token", fetchImpl });
+
+    const me = await client.getMe();
+
+    expect(calls).toEqual([
+      { url: "https://api.telegram.org/botsecret-token/getMe", method: "GET" },
+    ]);
+    expect(me.username).toBe("tdmcp_bot");
+  });
+
   it("uses getUpdates offset/timeout and sends messages without exposing the token", async () => {
     const calls: Array<{ url: string; body: unknown }> = [];
     const fetchImpl = vi.fn(async (url: string | URL, init?: RequestInit) => {
@@ -86,6 +137,20 @@ describe("TelegramBotClient", () => {
     });
     expect(calls[1]?.url).toContain("/botsecret-token/sendMessage");
     expect(calls[1]?.body).toMatchObject({ chat_id: 123, text: "hello" });
+  });
+
+  it("keeps the HTTP timeout above the requested long-poll timeout", async () => {
+    const setTimeoutSpy = vi.spyOn(globalThis, "setTimeout");
+    const fetchImpl = vi.fn(async () => {
+      return new Response(JSON.stringify({ ok: true, result: [] }), { status: 200 });
+    }) as unknown as typeof fetch;
+    const client = new TelegramBotClient({ token: "secret-token", fetchImpl });
+
+    await client.getUpdates({ timeout: 60 });
+
+    expect(
+      setTimeoutSpy.mock.calls.some(([, delay]) => typeof delay === "number" && delay >= 65_000),
+    ).toBe(true);
   });
 });
 
@@ -132,8 +197,9 @@ describe("TelegramCopilotService", () => {
     });
 
     expect(seen.prompts).toEqual(["inspect /project1"]);
-    expect(seen.tools[0]).toContain("get_td_nodes");
-    expect(seen.tools[0]).not.toContain("create_td_node");
+    expect(seen.tools).toHaveLength(1);
+    expect(seen.tools.at(0)).toContain("get_td_nodes");
+    expect(seen.tools.at(0)).not.toContain("create_td_node");
     expect(sender.messages.at(-1)?.text).toContain("Project looks clean.");
   });
 
@@ -167,12 +233,61 @@ describe("TelegramCopilotService", () => {
     });
 
     expect(seen.prompts).toEqual(["create a noise TOP"]);
-    expect(seen.tools[0]).toContain("create_td_node");
+    expect(seen.tools).toHaveLength(1);
+    expect(seen.tools.at(0)).toContain("create_td_node");
     expect(sender.messages.at(-1)?.text).toContain("Created it.");
   });
 });
 
 describe("runTelegram", () => {
+  it("runs setup from stdin, validates the token, and writes the selected config file", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-telegram-setup-"));
+    const configPath = join(dir, "config.json");
+    let stdout = "";
+    let stderr = "";
+    const fetchImpl = vi.fn(async (url: string | URL, init?: RequestInit) => {
+      if (String(url).endsWith("/getMe") && init?.method === "GET") {
+        return new Response(
+          JSON.stringify({ ok: true, result: { id: 99, is_bot: true, username: "tdmcp_bot" } }),
+          { status: 200 },
+        );
+      }
+      throw new Error(`unexpected request: ${String(url)}`);
+    }) as unknown as typeof fetch;
+
+    try {
+      await runTelegram(
+        ["setup", "--config", configPath, "--chat-id", "111", "--user-id", "5", "--token-stdin"],
+        {
+          createBotClient: (cfg) =>
+            new TelegramBotClient({ token: cfg.telegramBotToken ?? "", fetchImpl }),
+          readStdin: async () => "secret-token\n",
+          writeStdout: (chunk) => {
+            stdout += chunk;
+          },
+          writeStderr: (chunk) => {
+            stderr += chunk;
+          },
+        },
+      );
+
+      const saved = JSON.parse(readFileSync(configPath, "utf8"));
+      expect(saved).toMatchObject({
+        telegramBotToken: "secret-token",
+        telegramAllowedChats: ["111"],
+        telegramAllowedUsers: ["5"],
+        telegramDefaultTier: "safe",
+      });
+      expect(stdout).toContain("@tdmcp_bot");
+      expect(stdout).toContain("Saved Telegram config");
+      expect(stdout).not.toContain("secret-token");
+      expect(stderr).toBe("");
+      expect(process.exitCode).toBeUndefined();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("refuses to start without a bot token or any allowlist", async () => {
     let stderr = "";
     await runTelegram(["--once"], {

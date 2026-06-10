@@ -71,10 +71,16 @@ function csvList(value: unknown): string[] | undefined {
 
 const CsvListSchema = z.preprocess(csvList, z.array(z.string()).default([]));
 
-const TelegramTierSchema = z.preprocess((value) => {
-  const tier = sanitizeLlmTier(value);
-  return tier ?? DEFAULT_TELEGRAM_LLM_TIER;
-}, z.enum(LLM_TIER_VALUES).default(DEFAULT_TELEGRAM_LLM_TIER));
+function sanitizeTelegramTier(value: unknown): LlmTier | undefined {
+  if (typeof value !== "string") return undefined;
+  const normalized = value.trim().toLowerCase();
+  return LLM_TIER_VALUES.includes(normalized as LlmTier) ? (normalized as LlmTier) : undefined;
+}
+
+const TelegramTierSchema = z.preprocess(
+  sanitizeTelegramTier,
+  z.enum(LLM_TIER_VALUES).default(DEFAULT_TELEGRAM_LLM_TIER),
+);
 
 export const ConfigSchema = z.object({
   /** TouchDesigner bridge host. */
