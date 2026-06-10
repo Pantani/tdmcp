@@ -1,0 +1,8 @@
+transformers
+datasets
+peft
+trl
+accelerate
+safetensors
+sentencepiece
+bitsandbytes; platform_system == "Linux"

@@ -8,7 +8,12 @@ import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import { AiPartyGatewaySchema, runAiPartyGateway } from "../automation/aiPartyGateway.js";
+import {
+  type AiPartyGatewayResult,
+  AiPartyGatewaySchema,
+  formatAiPartyTelegramReply,
+  runAiPartyGateway,
+} from "../automation/aiPartyGateway.js";
 import { AiPartyPocRunSchema, runAiPartyPoc } from "../automation/aiPartyPoc.js";
 import {
   approveShowIntent,
@@ -19,9 +24,11 @@ import {
 } from "../automation/showDirectorRuntime.js";
 import {
   EffectPolicySchema,
+  type PolicyDecision,
   parseShowIntent,
   ShowIntentSchema,
 } from "../automation/showDirectorSchema.js";
+import { inspectAiPartyOllamaSetup, runShowIntentOllama } from "../automation/showIntentOllama.js";
 import {
   pollTelegramShowOnce,
   TelegramShowPollOnceSchema,
@@ -2435,6 +2442,13 @@ const SPECIAL_COMMANDS: AgentCommandCatalogEntry[] = [
     source: "cli",
   },
   {
+    command: "ai-party llm-setup",
+    summary: "Check/start local Ollama and print AI Party ShowIntent model setup commands.",
+    mutates: false,
+    unsafe: false,
+    source: "cli",
+  },
+  {
     command: "ai-party telegram-once",
     summary: "Process one Telegram long-poll batch through the AI party gateway.",
     mutates: false,
@@ -2894,6 +2908,11 @@ function parseCliArgs(argv: string[]) {
       // `schedule` subcommand:
       once: { type: "boolean", default: false },
       "tz-info": { type: "boolean", default: false },
+      // `ai-party` local ShowIntent model integration:
+      llm: { type: "boolean", default: false },
+      "llm-model": { type: "string" },
+      "llm-base-url": { type: "string" },
+      "no-ollama": { type: "boolean", default: false },
     },
   });
 }
@@ -2935,6 +2954,8 @@ const CLI_VALUE_OPTIONS = new Set([
   "--comp-path",
   "--beats-per-bar",
   "--quantize",
+  "--llm-model",
+  "--llm-base-url",
 ]);
 
 function firstPositionalArg(argv: string[]): string | undefined {
@@ -3027,6 +3048,39 @@ function assembleParams(
     return { error: (err as Error).message };
   }
   return { raw };
+}
+
+function blockedAiPartyLlmResult(
+  args: z.infer<typeof AiPartyGatewaySchema>,
+  reason: string,
+): AiPartyGatewayResult {
+  const decision: PolicyDecision = {
+    decision: "block",
+    reason,
+    intent_type: "llm_showintent",
+    limits_applied: [],
+    requires_operator: false,
+  };
+  const state = args.state ?? createShowDirectorState();
+  const next = ShowDirectorStateSchema.parse(state);
+  next.audit_log.push({
+    id: `audit_${String(next.audit_log.length + 1).padStart(4, "0")}`,
+    at: new Date().toISOString(),
+    status: "blocked",
+    intent_type: decision.intent_type,
+    decision: decision.decision,
+    reason: decision.reason,
+  });
+  const result: AiPartyGatewayResult = {
+    dryRun: true,
+    source: "blocked",
+    message: args.message,
+    decision,
+    plan: [],
+    state: next,
+    telegram_reply: "",
+  };
+  return { ...result, telegram_reply: formatAiPartyTelegramReply(result) };
 }
 
 const runStepSchema = z
@@ -3313,6 +3367,15 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
       };
     }
 
+    if (positionals[1] === "llm-setup") {
+      const report = await inspectAiPartyOllamaSetup({
+        model: typeof values["llm-model"] === "string" ? values["llm-model"] : undefined,
+        baseUrl: typeof values["llm-base-url"] === "string" ? values["llm-base-url"] : undefined,
+        autoStart: values["no-ollama"] !== true,
+      });
+      return { stdout: `${JSON.stringify(report, null, 2)}\n`, stderr: "", code: 0 };
+    }
+
     if (positionals[1] === "telegram-once") {
       const args = TelegramShowPollOnceSchema.safeParse(assembled.raw);
       if (!args.success) {
@@ -3341,6 +3404,21 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
         stderr: `Invalid arguments for "ai-party": ${args.error.message}\n`,
         code: 2,
       };
+    }
+    if (values.llm === true) {
+      const llm = await runShowIntentOllama(args.data, {
+        model: typeof values["llm-model"] === "string" ? values["llm-model"] : undefined,
+        baseUrl: typeof values["llm-base-url"] === "string" ? values["llm-base-url"] : undefined,
+      });
+      if (!llm.ok) {
+        const blocked = blockedAiPartyLlmResult(
+          args.data,
+          `Ollama ShowIntent planning failed: ${llm.reason}`,
+        );
+        return { stdout: `${JSON.stringify(blocked, null, 2)}\n`, stderr: "", code: 0 };
+      }
+      const result = runAiPartyGateway({ ...args.data, hermes: llm.candidate });
+      return { stdout: `${JSON.stringify(result, null, 2)}\n`, stderr: "", code: 0 };
     }
     const result = runAiPartyGateway(args.data);
     return { stdout: `${JSON.stringify(result, null, 2)}\n`, stderr: "", code: 0 };
