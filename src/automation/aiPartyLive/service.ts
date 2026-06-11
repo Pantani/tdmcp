@@ -7,15 +7,18 @@ import { TouchDesignerClient } from "../../td-client/touchDesignerClient.js";
 import { DEFAULT_EFFECT_POLICY } from "../showDirectorSchema.js";
 import {
   type AiPartyCue,
+  type AiPartyCueSection,
   createAiPartyGeneratedCue,
   DEFAULT_AI_PARTY_CUE_CATALOG,
+  findAiPartyCue,
   isAiPartyGeneratedCuePromptUnsafe,
+  recommendedAiPartyCuesForSection,
   shouldAutoGenerateAiPartyCue,
 } from "./cueCatalog.js";
 import { AI_PARTY_DASHBOARD_HTML } from "./dashboardHtml.js";
 import { applyDispatchToState, dispatchAiPartyPlan } from "./dispatch.js";
 import { loadGeneratedCueStore, saveGeneratedCueStore } from "./generatedCueStore.js";
-import { parseOllamaShowIntent } from "./ollamaClient.js";
+import { generateOllamaCueIdea, parseOllamaShowIntent } from "./ollamaClient.js";
 import { evaluateAiPartyPolicy } from "./policy.js";
 import {
   type AiPartyApproval,
@@ -28,9 +31,16 @@ import {
 } from "./schemas.js";
 import {
   AI_PARTY_TD_PREVIEW_OUTPUTS,
+  aiPartyVisualFingerprint,
   buildAiPartyTdDemo,
+  extractAiPartyVisualTarget,
+  formatAiPartyCrowdText,
   refreshAiPartyTdPreviewState,
+  runAiPartyVisualTransition,
   sendAiPartyActionsToTd,
+  sendAiPartyCameraFxToTd,
+  sendAiPartyCrowdTextToTd,
+  sendAiPartyFingerprintToTd,
 } from "./tdAdapter.js";
 import {
   fetchAiPartyTelegramUpdates,
@@ -61,6 +71,43 @@ export interface AiPartyLiveConfig {
   generatedCuePath?: string;
   generatedCueLimit?: number;
   cueStorePath?: string;
+  transitionSeconds?: number;
+  transitionTickMs?: number;
+  autoAdvanceEnabled?: boolean;
+}
+
+export interface AiPartyTransitionInfo {
+  from: string;
+  to: string;
+  seconds: number;
+  kind: "cue" | "morph";
+  started_at: string;
+}
+
+export interface AiPartyEnergyPoint {
+  at: string;
+  value: number;
+}
+
+export interface AiPartyNightStyle {
+  palette_history: string[];
+  dominant_moods: Array<{ mood: string; count: number }>;
+  top_prompt_tags: string[];
+}
+
+export interface AiPartyDirectorNote {
+  id: string;
+  at: string;
+  severity: "info" | "suggestion" | "warning";
+  text: string;
+  suggested_cues?: string[];
+}
+
+export interface AiPartySessionInfo {
+  started_at: string;
+  uptime_seconds: number;
+  scene_started_at: string;
+  auto_advance: boolean;
 }
 
 export interface AiPartyLiveSnapshot {
@@ -75,6 +122,11 @@ export interface AiPartyLiveSnapshot {
   audience_suggestions: AiPartyAudienceSuggestion[];
   llm: AiPartyLlmSummary;
   recap: AiPartyRecap;
+  transition?: AiPartyTransitionInfo;
+  energy_series: AiPartyEnergyPoint[];
+  night_style: AiPartyNightStyle;
+  director_notes: AiPartyDirectorNote[];
+  session: AiPartySessionInfo;
 }
 
 export interface AiPartyLiveHandle {
@@ -105,6 +157,8 @@ export interface AiPartyTimelineSceneDetail {
   section: NonNullable<AiPartyShowState["music_section"]>;
   cue: string;
   prompt: string;
+  planned_minutes: number;
+  recommended_cues: string[];
 }
 
 export interface AiPartyTimelineSnapshot {
@@ -206,6 +260,17 @@ export interface AiPartyGenerateCueResult {
   generated: AiPartyCue[];
   generated_cues: AiPartyCue[];
   cues: AiPartyCue[];
+  llm?: {
+    ok: boolean;
+    model?: string;
+    phrase?: string;
+    error?: string;
+    latency_ms?: number;
+  };
+}
+
+function sceneRecommendations(section: AiPartyCueSection): string[] {
+  return recommendedAiPartyCuesForSection(section).map((cue) => cue.name);
 }
 
 const DEFAULT_AI_PARTY_TIMELINE: AiPartyTimelineSceneDetail[] = [
@@ -215,6 +280,8 @@ const DEFAULT_AI_PARTY_TIMELINE: AiPartyTimelineSceneDetail[] = [
     section: "doors",
     cue: "doors_idle",
     prompt: "calm generative welcome visual",
+    planned_minutes: 30,
+    recommended_cues: sceneRecommendations("doors"),
   },
   {
     id: "warmup",
@@ -222,6 +289,8 @@ const DEFAULT_AI_PARTY_TIMELINE: AiPartyTimelineSceneDetail[] = [
     section: "warmup",
     cue: "premium_tropical",
     prompt: "premium tropical warmup groove",
+    planned_minutes: 45,
+    recommended_cues: sceneRecommendations("warmup"),
   },
   {
     id: "build",
@@ -229,6 +298,8 @@ const DEFAULT_AI_PARTY_TIMELINE: AiPartyTimelineSceneDetail[] = [
     section: "build",
     cue: "neon_pulse",
     prompt: "dark disco elegant build",
+    planned_minutes: 40,
+    recommended_cues: sceneRecommendations("build"),
   },
   {
     id: "drop",
@@ -236,6 +307,8 @@ const DEFAULT_AI_PARTY_TIMELINE: AiPartyTimelineSceneDetail[] = [
     section: "drop",
     cue: "audio_reactive_main",
     prompt: "audio reactive main wall energy",
+    planned_minutes: 30,
+    recommended_cues: sceneRecommendations("drop"),
   },
   {
     id: "breakdown",
@@ -243,6 +316,8 @@ const DEFAULT_AI_PARTY_TIMELINE: AiPartyTimelineSceneDetail[] = [
     section: "breakdown",
     cue: "brand_hero",
     prompt: "photogenic brand hero moment",
+    planned_minutes: 20,
+    recommended_cues: sceneRecommendations("breakdown"),
   },
   {
     id: "closing",
@@ -250,6 +325,8 @@ const DEFAULT_AI_PARTY_TIMELINE: AiPartyTimelineSceneDetail[] = [
     section: "closing",
     cue: "doors_idle",
     prompt: "soft closing ambient reset",
+    planned_minutes: 25,
+    recommended_cues: sceneRecommendations("closing"),
   },
 ];
 
@@ -299,6 +376,9 @@ export function configFromEnv(env: NodeJS.ProcessEnv = process.env): AiPartyLive
       env.POC_GENERATED_CUES_PATH ??
       env.POC_CUE_STORE_PATH ??
       "./data/ai-party-generated-cues.json",
+    transitionSeconds: Number(env.POC_TRANSITION_SECONDS ?? 2),
+    transitionTickMs: Number(env.POC_TRANSITION_TICK_MS ?? 120),
+    autoAdvanceEnabled: boolEnv(env.POC_AUTO_ADVANCE, false),
   };
 }
 
@@ -424,6 +504,9 @@ export class AiPartyLiveService {
       | "deterministicFallback"
       | "generatedCueLimit"
       | "cueStorePath"
+      | "transitionSeconds"
+      | "transitionTickMs"
+      | "autoAdvanceEnabled"
     >
   > &
     Omit<AiPartyLiveConfig, "telegramAllowedChatIds">;
@@ -447,6 +530,17 @@ export class AiPartyLiveService {
   private telegramOffset: number | undefined;
   private telegramPollTimer: ReturnType<typeof setTimeout> | undefined;
   private telegramPollingStopped = true;
+  private lastVisual: { key: string; intensity: number } | undefined;
+  private transitionToken = 0;
+  private currentTransition: AiPartyTransitionInfo | undefined;
+  private pendingTransition: Promise<void> = Promise.resolve();
+  private pendingCrowdUpdate: Promise<void> = Promise.resolve();
+  private morphSecondsOverride: number | undefined;
+  private readonly energySeries: AiPartyEnergyPoint[] = [];
+  private readonly sessionStartedAt = nowIso();
+  private sceneStartedAt = nowIso();
+  private autoAdvance: boolean;
+  private autoAdvanceTimer: ReturnType<typeof setInterval> | undefined;
 
   constructor(config: AiPartyLiveConfig = {}) {
     const eventLogPath = config.eventLogPath ?? "./data/ai-party-poc-events.jsonl";
@@ -468,8 +562,12 @@ export class AiPartyLiveService {
         config.generatedCuePath ??
         config.cueStorePath ??
         join(dirname(eventLogPath), "ai-party-generated-cues.json"),
+      transitionSeconds: config.transitionSeconds ?? 2,
+      transitionTickMs: config.transitionTickMs ?? 120,
+      autoAdvanceEnabled: config.autoAdvanceEnabled ?? false,
       ...config,
     };
+    this.autoAdvance = this.cfg.autoAdvanceEnabled;
     this.showState = createInitialAiPartyShowState({
       mode: this.cfg.showMode,
       hardware_enabled: this.cfg.hardwareEnabled,
@@ -689,7 +787,139 @@ export class AiPartyLiveService {
       audience_suggestions: suggestions,
       llm: { configured_model: this.cfg.ollamaModel || undefined, ...this.lastLlm },
       recap: this.recap(),
+      transition: this.currentTransition ? { ...this.currentTransition } : undefined,
+      energy_series: this.energySeries.map((point) => ({ ...point })),
+      night_style: this.nightStyle(),
+      director_notes: this.directorNotes(),
+      session: this.sessionInfo(),
     };
+  }
+
+  private sessionInfo(now: Date = new Date()): AiPartySessionInfo {
+    return {
+      started_at: this.sessionStartedAt,
+      uptime_seconds: Math.max(
+        0,
+        Math.floor((now.getTime() - Date.parse(this.sessionStartedAt)) / 1000),
+      ),
+      scene_started_at: this.sceneStartedAt,
+      auto_advance: this.autoAdvance,
+    };
+  }
+
+  private computeEnergyScore(now: Date = new Date()): number {
+    const tenMinutesAgo = now.getTime() - 600_000;
+    const recentDispatches = this.cueHistory.filter(
+      (item) => Date.parse(item.at) >= tenMinutesAgo,
+    ).length;
+    const recentPromotions = this.audienceSuggestions.filter(
+      (item) => item.status === "promoted" && Date.parse(item.at) >= tenMinutesAgo,
+    ).length;
+    const value =
+      0.6 * this.showState.current_intensity +
+      0.25 * Math.min(1, recentDispatches / 6) +
+      0.15 * Math.min(1, recentPromotions / 3);
+    return Number(Math.max(0, Math.min(1, value)).toFixed(3));
+  }
+
+  private recordEnergy(at: string): void {
+    const value = this.computeEnergyScore(new Date(at));
+    this.energySeries.push({ at, value });
+    if (this.energySeries.length > 240) this.energySeries.shift();
+    this.showState.crowd_energy = value;
+  }
+
+  nightStyle(): AiPartyNightStyle {
+    const moodCounts = new Map<string, number>();
+    for (const item of this.cueHistory) {
+      if (!item.mood) continue;
+      moodCounts.set(item.mood, (moodCounts.get(item.mood) ?? 0) + 1);
+    }
+    const tagCounts = new Map<string, number>();
+    for (const cue of this.generatedCues) {
+      for (const word of (cue.source_prompt ?? "").toLowerCase().split(/[^a-z0-9à-ü]+/i)) {
+        if (word.length < 4) continue;
+        tagCounts.set(word, (tagCounts.get(word) ?? 0) + 1);
+      }
+    }
+    const top = <T>(entries: Map<T, number>, limit: number): T[] =>
+      [...entries.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, limit)
+        .map(([key]) => key);
+    return {
+      palette_history: this.cueHistory
+        .slice(0, 12)
+        .map((item) => item.cue ?? item.mood ?? "unknown"),
+      dominant_moods: top(moodCounts, 3).map((mood) => ({
+        mood,
+        count: moodCounts.get(mood) ?? 0,
+      })),
+      top_prompt_tags: top(tagCounts, 5),
+    };
+  }
+
+  directorNotes(now: Date = new Date()): AiPartyDirectorNote[] {
+    const notes: AiPartyDirectorNote[] = [];
+    const at = nowIso(now);
+    const note = (
+      id: string,
+      severity: AiPartyDirectorNote["severity"],
+      text: string,
+      suggested?: string[],
+    ) => notes.push({ id, at, severity, text, suggested_cues: suggested });
+
+    if (this.showState.panic) {
+      note("panic-active", "warning", "Panic safe is active. Clear panic before new cues.");
+    }
+    if (this.showState.td_status === "error") {
+      note("td-offline", "warning", "TouchDesigner bridge is unreachable; dispatches simulate.");
+    }
+    const oldestPending = this.pendingApprovals()[0];
+    if (oldestPending && now.getTime() - Date.parse(oldestPending.created_at) > 60_000) {
+      note(
+        "approval-aging",
+        "warning",
+        `Approval ${oldestPending.id} has been waiting over a minute.`,
+      );
+    }
+    const queuedSuggestions = this.audienceSuggestions.filter(
+      (item) => item.status === "queued",
+    ).length;
+    if (queuedSuggestions > 0) {
+      note(
+        "audience-waiting",
+        "info",
+        `${queuedSuggestions} audience suggestion(s) awaiting review.`,
+      );
+    }
+    this.appendSceneNotes(notes, now);
+    return notes;
+  }
+
+  private appendSceneNotes(notes: AiPartyDirectorNote[], now: Date): void {
+    const at = nowIso(now);
+    const timeline = this.currentTimeline();
+    const sceneElapsedMin = (now.getTime() - Date.parse(this.sceneStartedAt)) / 60_000;
+    if (sceneElapsedMin > timeline.current.planned_minutes && timeline.next) {
+      notes.push({
+        id: "scene-overdue",
+        at,
+        severity: "suggestion",
+        text: `Scene ${timeline.current.id} passed its planned ${timeline.current.planned_minutes} min; consider ${timeline.next.id}.`,
+        suggested_cues: timeline.next.recommended_cues,
+      });
+    }
+    const lastDispatchAt = this.cueHistory[0]?.at;
+    if (lastDispatchAt && now.getTime() - Date.parse(lastDispatchAt) > 900_000) {
+      notes.push({
+        id: "cue-stale",
+        at,
+        severity: "suggestion",
+        text: "Same look for over 15 minutes; consider a variation for the current scene.",
+        suggested_cues: timeline.current.recommended_cues,
+      });
+    }
   }
 
   private pendingApprovals(): AiPartyApproval[] {
@@ -715,12 +945,16 @@ export class AiPartyLiveService {
       this.showState.last_error = `Could not write event log at ${this.cfg.eventLogPath}`;
     }
     for (const socket of this.sockets) {
-      if (!sendWs(socket, { type: "snapshot", snapshot: this.snapshot() })) {
+      if (!sendWs(socket, { type: "dirty", at: event.at, event_type: type, event_id: event.id })) {
         this.sockets.delete(socket);
         socket.destroy();
       }
     }
     return event;
+  }
+
+  private pushSnapshot(socket: Socket): boolean {
+    return sendWs(socket, { type: "snapshot", snapshot: this.snapshot() });
   }
 
   async processOperatorText(
@@ -837,15 +1071,116 @@ export class AiPartyLiveService {
     return { envelope, policy, state: this.showState, dispatch };
   }
 
+  private queueBackground(task: () => Promise<void>): void {
+    this.pendingTransition = this.pendingTransition.then(task).catch(() => undefined);
+  }
+
+  async flushBackground(): Promise<void> {
+    await this.pendingTransition;
+    await this.pendingCrowdUpdate;
+  }
+
+  private planVisualTransition(
+    plan: ReturnType<typeof evaluateAiPartyPolicy>["plan"],
+  ):
+    | { from: { key: string; intensity: number }; to: { key: string; intensity: number } }
+    | undefined {
+    const target = extractAiPartyVisualTarget(plan);
+    if (!target) return undefined;
+    const to = { key: target.key, intensity: target.intensity ?? 0.55 };
+    const previous = this.lastVisual;
+    this.lastVisual = to;
+    if (plan.some((action) => action.kind === "panic_safe")) {
+      this.transitionToken += 1;
+      this.currentTransition = undefined;
+      return undefined;
+    }
+    const seconds = this.morphSecondsOverride ?? this.cfg.transitionSeconds;
+    if (!previous || previous.key === to.key || seconds <= 0) return undefined;
+    return { from: previous, to };
+  }
+
+  private startVisualTransition(transition: {
+    from: { key: string; intensity: number };
+    to: { key: string; intensity: number };
+  }): void {
+    const kind: AiPartyTransitionInfo["kind"] =
+      this.morphSecondsOverride !== undefined ? "morph" : "cue";
+    const seconds = Math.max(0.5, this.morphSecondsOverride ?? this.cfg.transitionSeconds);
+    const tickMs = Math.max(0, this.cfg.transitionTickMs);
+    const steps = tickMs > 0 ? Math.max(2, Math.min(24, Math.round((seconds * 1000) / tickMs))) : 6;
+    this.transitionToken += 1;
+    const token = this.transitionToken;
+    const info: AiPartyTransitionInfo = {
+      from: transition.from.key,
+      to: transition.to.key,
+      seconds,
+      kind,
+      started_at: nowIso(),
+    };
+    this.currentTransition = info;
+    this.emit("cue.transition", { phase: "started", ...info, steps });
+    this.queueBackground(async () => {
+      const result = await runAiPartyVisualTransition(this.tdClient, {
+        from: transition.from,
+        to: transition.to,
+        steps,
+        tickMs,
+        shouldCancel: () => token !== this.transitionToken || this.showState.panic,
+      });
+      if (result.completed) {
+        try {
+          await sendAiPartyFingerprintToTd(
+            this.tdClient,
+            aiPartyVisualFingerprint(transition.to.key, transition.to.intensity),
+          );
+        } catch {
+          // The control panel snap already carries the final state; losing the
+          // last fingerprint write must not fail the transition.
+        }
+      }
+      if (token === this.transitionToken) this.currentTransition = undefined;
+      this.emit("cue.transition", {
+        phase: result.completed ? "completed" : result.cancelled ? "cancelled" : "failed",
+        ...info,
+        frames: result.frames,
+        error: result.error,
+      });
+    });
+  }
+
+  private dispatchCameraFx(
+    plan: ReturnType<typeof evaluateAiPartyPolicy>["plan"],
+    mode: AiPartyDispatchResult["mode"],
+  ): void {
+    if (mode !== "touchdesigner") return;
+    const cueAction = plan.find((action) => action.kind === "cue");
+    if (!cueAction || cueAction.kind !== "cue") return;
+    const cue = findAiPartyCue(cueAction.cue, this.cues);
+    if (!cue?.camera_fx) return;
+    const fx = cue.camera_fx;
+    this.queueBackground(async () => {
+      await sendAiPartyCameraFxToTd(this.tdClient, fx);
+    });
+  }
+
   private async dispatchPolicyPlan(
     plan: ReturnType<typeof evaluateAiPartyPolicy>["plan"],
     operatorApproved: boolean,
   ) {
+    const transition = this.planVisualTransition(plan);
     const dispatch = await dispatchAiPartyPlan(plan, this.showState, {
       operatorApproved,
-      sendToTouchDesigner: (actions) => sendAiPartyActionsToTd(this.tdClient, actions),
+      sendToTouchDesigner: (actions) =>
+        sendAiPartyActionsToTd(this.tdClient, actions, {
+          skipFingerprint: Boolean(transition),
+        }),
     });
     this.showState = applyDispatchToState(this.showState, plan, dispatch);
+    if (transition && dispatch.mode === "touchdesigner") {
+      this.startVisualTransition(transition);
+    }
+    this.dispatchCameraFx(plan, dispatch.mode);
     for (const action of plan) {
       if (action.kind === "cue" || action.kind === "mood" || action.kind === "panic_safe") {
         this.cueHistory.unshift({
@@ -874,6 +1209,7 @@ export class AiPartyLiveService {
       }
     }
     if (this.cueHistory.length > 80) this.cueHistory.length = 80;
+    this.recordEnergy(dispatch.at);
     this.emit(
       dispatch.mode === "touchdesigner" ? "dispatch.sent_to_touchdesigner" : "dispatch.simulated",
       dispatch,
@@ -1065,15 +1401,55 @@ export class AiPartyLiveService {
   }
 
   generateCue(prompt: string, options: { count?: number } = {}): AiPartyGenerateCueResult {
-    const count = clampGeneratedCueCount(options.count);
+    return this.buildGeneratedCues(prompt, prompt, options.count, undefined);
+  }
+
+  async generateCueWithLlm(
+    prompt: string,
+    options: { count?: number } = {},
+  ): Promise<AiPartyGenerateCueResult> {
+    const original = prompt.trim();
+    if (!this.cfg.ollamaModel.trim()) return this.generateCue(prompt, options);
+    const idea = await generateOllamaCueIdea({
+      prompt: original,
+      ollamaBaseUrl: this.cfg.ollamaBaseUrl,
+      model: this.cfg.ollamaModel,
+      fetchImpl: this.cfg.fetchImpl,
+    });
+    if (!idea.ok || !idea.phrase) {
+      return {
+        ...this.generateCue(prompt, options),
+        llm: { ok: false, model: idea.model, error: idea.error, latency_ms: idea.latency_ms },
+      };
+    }
+    return {
+      ...this.buildGeneratedCues(idea.phrase, original, options.count, idea.intensity),
+      llm: {
+        ok: true,
+        model: idea.model,
+        phrase: idea.phrase,
+        latency_ms: idea.latency_ms,
+      },
+    };
+  }
+
+  private buildGeneratedCues(
+    phrase: string,
+    sourcePrompt: string,
+    countRaw: number | undefined,
+    intensityHint: number | undefined,
+  ): AiPartyGenerateCueResult {
+    const count = clampGeneratedCueCount(countRaw);
     const generated: AiPartyCue[] = [];
     for (let i = 0; i < count; i += 1) {
       this.generatedCueCount += 1;
-      const cue = createAiPartyGeneratedCue(prompt, {
+      const cue = createAiPartyGeneratedCue(phrase, {
         index: this.generatedCueCount,
-        currentIntensity: this.showState.current_intensity,
+        currentIntensity: intensityHint ?? this.showState.current_intensity,
       });
-      generated.push(withVariationMetadata(cue, i, count));
+      generated.push(
+        withVariationMetadata({ ...cue, source_prompt: sourcePrompt.slice(0, 140) }, i, count),
+      );
     }
     const primaryCue = generated[0];
     if (!primaryCue) throw new Error("Cue prompt did not produce a generated cue.");
@@ -1131,6 +1507,7 @@ export class AiPartyLiveService {
     }
     this.timelineIndex = nextIndex;
     this.syncTimelineState();
+    this.sceneStartedAt = nowIso();
     this.showState.last_source = operator;
     const scene = this.currentTimeline().current;
     const timeline = this.currentTimeline();
@@ -1154,6 +1531,89 @@ export class AiPartyLiveService {
   async previousTimelineScene() {
     const nextIndex = Math.max(this.timelineIndex - 1, 0);
     return this.setTimelineScene(nextIndex);
+  }
+
+  setAutoAdvance(enabled: boolean) {
+    this.autoAdvance = enabled;
+    this.emit("director.note", {
+      id: "auto-advance",
+      severity: "info",
+      text: enabled
+        ? "Auto-advance armed: scenes move on after their planned minutes unless vetoed."
+        : "Auto-advance disarmed: scene changes are manual only.",
+    });
+    return { ok: true, auto_advance: enabled };
+  }
+
+  async tickAutoAdvance(now: Date = new Date()) {
+    if (!this.autoAdvance || this.showState.panic) return { advanced: false as const };
+    const timeline = this.currentTimeline();
+    if (!timeline.next) return { advanced: false as const };
+    const elapsedMinutes = (now.getTime() - Date.parse(this.sceneStartedAt)) / 60_000;
+    if (elapsedMinutes < timeline.current.planned_minutes) return { advanced: false as const };
+    const result = await this.setTimelineScene(timeline.next.id, "auto-advance");
+    return { advanced: true as const, scene: result.scene };
+  }
+
+  async morphToCue(target: string, seconds = 30) {
+    const cue = findAiPartyCue(target, this.cues);
+    if (!cue) throw new Error(`cue ${target} not found`);
+    const bounded = Math.max(5, Math.min(120, Number(seconds) || 30));
+    this.morphSecondsOverride = bounded;
+    try {
+      const result = await this.triggerCue(target);
+      return { ok: result.policy.decision === "allow", morph_seconds: bounded, ...result };
+    } finally {
+      this.morphSecondsOverride = undefined;
+    }
+  }
+
+  recapMarkdown(now: Date = new Date()): string {
+    const recap = this.postShowRecap();
+    const style = this.nightStyle();
+    const history = this.cueHistory.slice(0, 10);
+    const lines = [
+      "# AI Party Live — Night Recap",
+      "",
+      `Generated at ${nowIso(now)}.`,
+      "",
+      "## Summary",
+      "",
+      recap.summary,
+      "",
+      "## Counts",
+      "",
+      ...Object.entries(recap.counts).map(
+        ([key, value]) => `- ${key.replace(/_/g, " ")}: ${value}`,
+      ),
+      "",
+      "## Night style",
+      "",
+      `- Dominant moods: ${
+        style.dominant_moods.map((item) => `${item.mood} (${item.count}x)`).join(", ") || "none yet"
+      }`,
+      `- Prompt tags: ${style.top_prompt_tags.join(", ") || "none yet"}`,
+      `- Palette history: ${style.palette_history.join(" → ") || "none yet"}`,
+      "",
+      "## Last cues",
+      "",
+      ...(history.length > 0
+        ? history.map(
+            (item) =>
+              `- ${item.at.slice(11, 19)} ${item.cue ?? item.mood ?? "unknown"}${
+                item.intensity !== undefined ? ` @ ${item.intensity}` : ""
+              }${item.source ? ` (${item.source})` : ""}`,
+          )
+        : ["- no cues dispatched yet"]),
+      "",
+      "## Highlights",
+      "",
+      ...(recap.recent_highlights.length > 0
+        ? recap.recent_highlights.map((highlight) => `- ${highlight}`)
+        : ["- none"]),
+      "",
+    ];
+    return lines.join("\n");
   }
 
   submitAudienceSuggestion(
@@ -1181,7 +1641,7 @@ export class AiPartyLiveService {
     const policy = envelope
       ? evaluateAiPartyPolicy(envelope.intent, this.showState, parsed.rawText, this.cues)
       : undefined;
-    const safeSuggestion =
+    const safePlan =
       policy?.decision === "allow" &&
       policy.plan.length > 0 &&
       policy.plan.every(
@@ -1191,6 +1651,11 @@ export class AiPartyLiveService {
           item.kind === "announcement" ||
           item.kind === "log_note",
       );
+    // Plain free-form vibes ("more neon please") carry no command envelope; they
+    // are crowd-wall text only, so queue them unless the unsafe scanner trips.
+    const freeformText = !envelope && !parsed.replyOnly && !parsed.approvalAction && !parsed.demo;
+    const safeSuggestion =
+      (safePlan || freeformText) && !isAiPartyGeneratedCuePromptUnsafe(parsed.rawText);
     this.audienceSuggestionCount += 1;
     const suggestion: AiPartyAudienceSuggestion = {
       id: `suggestion_${String(this.audienceSuggestionCount).padStart(4, "0")}`,
@@ -1202,13 +1667,13 @@ export class AiPartyLiveService {
       chat_id: chatId,
       operator,
       status: safeSuggestion ? "queued" : "blocked",
-      policy_decision: policy?.decision ?? "block",
+      policy_decision: policy?.decision ?? (safeSuggestion ? "allow" : "block"),
       policy_result: policy,
       reason: safeSuggestion
         ? undefined
         : "Audience wall accepts only safe suggestions; it cannot queue hardware, approval-gated, panic, or raw-control requests.",
     };
-    if (!safeSuggestion || isAiPartyGeneratedCuePromptUnsafe(parsed.rawText)) {
+    if (!safeSuggestion) {
       this.emit("audience.suggestion.received", { suggestion });
       return {
         ok: false,
@@ -1229,7 +1694,24 @@ export class AiPartyLiveService {
     if (suggestion.status === "blocked") throw new Error(`audience suggestion ${id} is blocked`);
     suggestion.status = status;
     this.emit("audience.suggestion.updated", { suggestion });
+    if (status === "promoted") this.queueCrowdWallUpdate();
     return { ok: true, suggestion, suggestions: this.audienceSuggestions };
+  }
+
+  private queueCrowdWallUpdate(): void {
+    const promoted = this.audienceSuggestions
+      .filter((item) => item.status === "promoted")
+      .slice(0, 3)
+      .map((item) => ({ text: item.raw_text, operator: item.operator }));
+    const crowdText = formatAiPartyCrowdText(promoted);
+    this.pendingCrowdUpdate = this.pendingCrowdUpdate
+      .then(() => sendAiPartyCrowdTextToTd(this.tdClient, crowdText))
+      .then((sent) => {
+        if (sent) {
+          this.emit("audience.suggestion.updated", { crowd_wall_text: crowdText, sent: true });
+        }
+      })
+      .catch(() => undefined);
   }
 
   replayEvents(limit = 80) {
@@ -1402,9 +1884,15 @@ export class AiPartyLiveService {
 
   async tdPreview() {
     const previews: AiPartyTdPreviewPayload[] = [];
+    const capturedAt = nowIso();
     let lastError = "Bridge preview unavailable";
     try {
-      await refreshAiPartyTdPreviewState(this.tdClient, this.showState);
+      await refreshAiPartyTdPreviewState(this.tdClient, this.showState, new Date(), {
+        scene: this.showState.timeline.current_scene,
+        transition: this.currentTransition
+          ? `${this.currentTransition.from} → ${this.currentTransition.to}`
+          : undefined,
+      });
     } catch (err) {
       lastError = err instanceof Error ? err.message : String(err);
     }
@@ -1424,6 +1912,7 @@ export class AiPartyLiveService {
     if (firstAvailable) {
       this.showState.td_status = "ok";
       this.emit("td.preview.updated", {
+        captured_at: capturedAt,
         previews: previews
           .filter((item) => item.preview)
           .map((item) => ({
@@ -1432,11 +1921,11 @@ export class AiPartyLiveService {
             height: item.preview?.height,
           })),
       });
-      return { ok: true, preview: firstAvailable, previews };
+      return { ok: true, preview: firstAvailable, previews, captured_at: capturedAt };
     }
 
     this.showState.td_status = "error";
-    return { ok: false, message: lastError, previews };
+    return { ok: false, message: lastError, previews, captured_at: capturedAt };
   }
 
   async tdBuild() {
@@ -1549,7 +2038,7 @@ export class AiPartyLiveService {
       this.sockets.add(wsSocket);
       wsSocket.on("close", () => this.sockets.delete(wsSocket));
       wsSocket.on("error", () => this.sockets.delete(wsSocket));
-      if (!sendWs(wsSocket, { type: "snapshot", snapshot: this.snapshot() })) {
+      if (!this.pushSnapshot(wsSocket)) {
         this.sockets.delete(wsSocket);
         wsSocket.destroy();
       }
@@ -1560,10 +2049,18 @@ export class AiPartyLiveService {
         const address = server.address();
         const port = typeof address === "object" && address ? address.port : this.cfg.dashboardPort;
         this.startTelegramPolling();
+        this.autoAdvanceTimer = setInterval(() => {
+          this.tickAutoAdvance().catch(() => undefined);
+        }, 15_000);
+        this.emit("show.session", { phase: "started", started_at: this.sessionStartedAt });
         resolve({
           url: `http://${this.cfg.dashboardHost}:${port}/`,
           close: () =>
             new Promise<void>((done) => {
+              this.emit("show.session", { phase: "stopped" });
+              this.transitionToken += 1;
+              if (this.autoAdvanceTimer) clearInterval(this.autoAdvanceTimer);
+              this.autoAdvanceTimer = undefined;
               this.stopTelegramPolling();
               for (const socket of this.sockets) socket.destroy();
               server.close(() => done());
@@ -1599,9 +2096,37 @@ export class AiPartyLiveService {
       json(res, 200, this.postShowRecap());
       return;
     }
+    if (method === "GET" && path === "/api/recap/markdown") {
+      text(res, 200, this.recapMarkdown(), "text/markdown");
+      return;
+    }
     if (method === "GET" && path === "/api/replay") {
       const limit = Number(url.searchParams.get("limit") ?? 500);
       json(res, 200, this.exportReplaySummary(limit));
+      return;
+    }
+    if (method === "GET" && path === "/api/director/suggestions") {
+      const timeline = this.currentTimeline();
+      json(res, 200, {
+        ok: true,
+        notes: this.directorNotes(),
+        scene: timeline.current.id,
+        recommended_cues: timeline.current.recommended_cues,
+      });
+      return;
+    }
+    if (method === "POST" && path === "/api/timeline/auto") {
+      const body = (await readJson(req)) as { enabled?: boolean };
+      json(res, 200, this.setAutoAdvance(Boolean(body.enabled)));
+      return;
+    }
+    if (method === "POST" && path === "/api/cues/morph") {
+      const body = (await readJson(req)) as { to?: string; cue?: string; seconds?: number };
+      try {
+        json(res, 200, await this.morphToCue(body.to ?? body.cue ?? "", body.seconds ?? 30));
+      } catch (err) {
+        json(res, 404, { ok: false, message: err instanceof Error ? err.message : String(err) });
+      }
       return;
     }
     if (method === "POST" && path === "/api/rehearsal/executive") {
@@ -1613,9 +2138,22 @@ export class AiPartyLiveService {
       return;
     }
     if (method === "POST" && path === "/api/cues/generate") {
-      const body = (await readJson(req)) as { prompt?: string; text?: string; count?: number };
+      const body = (await readJson(req)) as {
+        prompt?: string;
+        text?: string;
+        count?: number;
+        use_llm?: boolean;
+      };
+      const prompt = body.prompt ?? body.text ?? "";
+      const useLlm = body.use_llm !== false && Boolean(this.cfg.ollamaModel.trim());
       try {
-        json(res, 200, this.generateCue(body.prompt ?? body.text ?? "", { count: body.count }));
+        json(
+          res,
+          200,
+          useLlm
+            ? await this.generateCueWithLlm(prompt, { count: body.count })
+            : this.generateCue(prompt, { count: body.count }),
+        );
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         json(res, 400, { ok: false, message, cues: this.cues });

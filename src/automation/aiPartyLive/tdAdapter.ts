@@ -1,6 +1,7 @@
 import type { TouchDesignerClient } from "../../td-client/touchDesignerClient.js";
 import { friendlyTdError } from "../../td-client/types.js";
 import { buildPayloadScript, parsePythonReport } from "../../tools/pythonReport.js";
+import type { AiPartyCameraFx } from "./cueCatalog.js";
 import type { AiPartyDispatchAction, AiPartyShowState } from "./schemas.js";
 
 export const AI_PARTY_TD_LAYOUT = [
@@ -16,6 +17,8 @@ export const AI_PARTY_TD_LAYOUT = [
   { name: "status_wall_out", nodeX: 820, nodeY: -110 },
   { name: "camera_fallback_bg", nodeX: -620, nodeY: -640 },
   { name: "camera_device_in", nodeX: -620, nodeY: -520 },
+  { name: "camera_grade_hsv", nodeX: -140, nodeY: -520 },
+  { name: "camera_grade", nodeX: 100, nodeY: -520 },
   { name: "camera_ai_vision_text", nodeX: -380, nodeY: -520 },
   { name: "camera_ai_composite", nodeX: 340, nodeY: -520 },
   { name: "camera_ai_vision_out", nodeX: 820, nodeY: -520 },
@@ -216,10 +219,20 @@ try:
                 report["warnings"].append("Could not set webcam output resolution: " + str(_err))
             _camera_source = _camera_device_in
 
+        _camera_grade_hsv = _root.create(hsvadjustTOP, "camera_grade_hsv")
+        _camera_grade_hsv.nodeX = -140
+        _camera_grade_hsv.nodeY = -520
+        _camera_grade_hsv.inputConnectors[0].connect(_camera_source)
+
+        _camera_grade = _root.create(levelTOP, "camera_grade")
+        _camera_grade.nodeX = 100
+        _camera_grade.nodeY = -520
+        _camera_grade.inputConnectors[0].connect(_camera_grade_hsv)
+
         _camera_ai_vision_text = _root.create(textTOP, "camera_ai_vision_text")
         _camera_ai_vision_text.nodeX = -380
         _camera_ai_vision_text.nodeY = -520
-        _camera_ai_vision_text.par.text = "Camera / AI Vision\\\\nLive webcam feed\\\\nLocal preview only"
+        _camera_ai_vision_text.par.text = "Camera / Stylized view\\\\nLocal webcam feed\\\\nGrade: none"
         _camera_ai_vision_text.par.outputresolution = "custom"
         _camera_ai_vision_text.par.resolutionw = 1280
         _camera_ai_vision_text.par.resolutionh = 720
@@ -239,7 +252,7 @@ try:
         _camera_ai_composite = _root.create(compositeTOP, "camera_ai_composite")
         _camera_ai_composite.nodeX = 340
         _camera_ai_composite.nodeY = -520
-        _camera_ai_composite.inputConnectors[0].connect(_camera_source)
+        _camera_ai_composite.inputConnectors[0].connect(_camera_grade)
         _camera_ai_composite.inputConnectors[1].connect(_camera_ai_vision_text)
         _camera_ai_composite.par.operand = "over"
         _camera_ai_composite.par.size = "input1"
@@ -298,7 +311,7 @@ try:
         _dmx_out_disabled.nodeY = -320
         _dmx_out_disabled.viewer = False
 
-        for _node in [_control_panel, _noise_base, _level_mood, _displace_energy, _feedback_loop, _blur_bloom_sim, _text_status, _composite_status, _preview_out, _status_wall_out, _camera_fallback_bg, _camera_device_in, _camera_ai_vision_text, _camera_ai_composite, _camera_ai_vision_out, _crowd_interaction_text, _crowd_interaction_out, _sim_dmx_table, _dmx_out_disabled]:
+        for _node in [_control_panel, _noise_base, _level_mood, _displace_energy, _feedback_loop, _blur_bloom_sim, _text_status, _composite_status, _preview_out, _status_wall_out, _camera_fallback_bg, _camera_device_in, _camera_grade_hsv, _camera_grade, _camera_ai_vision_text, _camera_ai_composite, _camera_ai_vision_out, _crowd_interaction_text, _crowd_interaction_out, _sim_dmx_table, _dmx_out_disabled]:
             if _node is None:
                 continue
             report["nodes"].append({"name": _node.name, "path": _node.path, "nodeX": _node.nodeX, "nodeY": _node.nodeY})
@@ -348,7 +361,22 @@ function channel(hash: number, shift: number, min = 0.12, max = 0.95): number {
   return Number((min + (value / 255) * (max - min)).toFixed(3));
 }
 
-function visualFingerprint(key: string, intensity = 0.55) {
+export interface AiPartyVisualFingerprint {
+  noise: { seed: number; amp: number; harmon: number; period: number };
+  level: {
+    lowr: number;
+    lowg: number;
+    lowb: number;
+    highr: number;
+    highg: number;
+    highb: number;
+    contrast: number;
+    brightness1: number;
+  };
+  blur: { size: number };
+}
+
+export function aiPartyVisualFingerprint(key: string, intensity = 0.55): AiPartyVisualFingerprint {
   const hash = hashVisualKey(key);
   const boundedIntensity = Math.max(0.2, Math.min(0.85, intensity));
   return {
@@ -374,9 +402,204 @@ function visualFingerprint(key: string, intensity = 0.55) {
   };
 }
 
+const visualFingerprint = aiPartyVisualFingerprint;
+
+function lerp(from: number, to: number, t: number): number {
+  return Number((from + (to - from) * t).toFixed(3));
+}
+
+export function interpolateAiPartyFingerprints(
+  from: AiPartyVisualFingerprint,
+  to: AiPartyVisualFingerprint,
+  t: number,
+): AiPartyVisualFingerprint {
+  const bounded = Math.max(0, Math.min(1, t));
+  const discrete = bounded < 0.5 ? from : to;
+  return {
+    noise: {
+      seed: discrete.noise.seed,
+      harmon: discrete.noise.harmon,
+      amp: lerp(from.noise.amp, to.noise.amp, bounded),
+      period: lerp(from.noise.period, to.noise.period, bounded),
+    },
+    level: {
+      lowr: lerp(from.level.lowr, to.level.lowr, bounded),
+      lowg: lerp(from.level.lowg, to.level.lowg, bounded),
+      lowb: lerp(from.level.lowb, to.level.lowb, bounded),
+      highr: lerp(from.level.highr, to.level.highr, bounded),
+      highg: lerp(from.level.highg, to.level.highg, bounded),
+      highb: lerp(from.level.highb, to.level.highb, bounded),
+      contrast: lerp(from.level.contrast, to.level.contrast, bounded),
+      brightness1: lerp(from.level.brightness1, to.level.brightness1, bounded),
+    },
+    blur: { size: Math.round(lerp(from.blur.size, to.blur.size, bounded)) },
+  };
+}
+
+export async function sendAiPartyFingerprintToTd(
+  client: TouchDesignerClient,
+  fingerprint: AiPartyVisualFingerprint,
+): Promise<void> {
+  await client.updateNodeParameters("/project1/ai_party_poc/noise_base", fingerprint.noise);
+  await client.updateNodeParameters("/project1/ai_party_poc/level_mood", fingerprint.level);
+  await client.updateNodeParameters("/project1/ai_party_poc/blur_bloom_sim", fingerprint.blur);
+}
+
+export interface AiPartyVisualTransitionOptions {
+  from: { key: string; intensity: number };
+  to: { key: string; intensity: number };
+  steps?: number;
+  tickMs?: number;
+  sleepImpl?: (ms: number) => Promise<void>;
+  shouldCancel?: () => boolean;
+}
+
+export interface AiPartyVisualTransitionResult {
+  completed: boolean;
+  frames: number;
+  cancelled?: boolean;
+  error?: string;
+}
+
+function defaultSleep(ms: number): Promise<void> {
+  if (ms <= 0) return Promise.resolve();
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export async function runAiPartyVisualTransition(
+  client: TouchDesignerClient,
+  options: AiPartyVisualTransitionOptions,
+): Promise<AiPartyVisualTransitionResult> {
+  const steps = Math.max(1, Math.min(24, options.steps ?? 6));
+  const tickMs = Math.max(0, options.tickMs ?? 120);
+  const sleep = options.sleepImpl ?? defaultSleep;
+  const from = aiPartyVisualFingerprint(options.from.key, options.from.intensity);
+  const to = aiPartyVisualFingerprint(options.to.key, options.to.intensity);
+  let frames = 0;
+  try {
+    for (let i = 1; i <= steps; i += 1) {
+      if (options.shouldCancel?.()) return { completed: false, cancelled: true, frames };
+      const frame = interpolateAiPartyFingerprints(from, to, i / (steps + 1));
+      await sendAiPartyFingerprintToTd(client, frame);
+      frames += 1;
+      if (i < steps) await sleep(tickMs);
+    }
+    return { completed: true, frames };
+  } catch (err) {
+    return { completed: false, frames, error: friendlyTdError(err) };
+  }
+}
+
+export const AI_PARTY_CAMERA_FX_GRADES: Record<
+  AiPartyCameraFx,
+  { hsv: Record<string, number>; level: Record<string, number> }
+> = {
+  none: {
+    hsv: { saturationmult: 1, valuemult: 1 },
+    level: { lowr: 0, lowg: 0, lowb: 0, highr: 1, highg: 1, highb: 1, contrast: 1 },
+  },
+  warm: {
+    hsv: { saturationmult: 0.85, valuemult: 1 },
+    level: { lowr: 0.04, lowg: 0.02, lowb: 0, highr: 1, highg: 0.84, highb: 0.62, contrast: 1.05 },
+  },
+  cool: {
+    hsv: { saturationmult: 0.85, valuemult: 1 },
+    level: { lowr: 0, lowg: 0.02, lowb: 0.05, highr: 0.62, highg: 0.86, highb: 1, contrast: 1.05 },
+  },
+  mono: {
+    hsv: { saturationmult: 0, valuemult: 1 },
+    level: { lowr: 0.02, lowg: 0.02, lowb: 0.02, highr: 1, highg: 1, highb: 1, contrast: 1.15 },
+  },
+  duotone: {
+    hsv: { saturationmult: 0, valuemult: 1 },
+    level: {
+      lowr: 0.05,
+      lowg: 0.02,
+      lowb: 0.12,
+      highr: 0.95,
+      highg: 0.4,
+      highb: 0.85,
+      contrast: 1.1,
+    },
+  },
+  heat: {
+    hsv: { saturationmult: 0, valuemult: 1 },
+    level: { lowr: 0.15, lowg: 0, lowb: 0.2, highr: 1, highg: 0.85, highb: 0.1, contrast: 1.2 },
+  },
+};
+
+export async function sendAiPartyCameraFxToTd(
+  client: TouchDesignerClient,
+  fx: AiPartyCameraFx,
+): Promise<boolean> {
+  const grade = AI_PARTY_CAMERA_FX_GRADES[fx];
+  try {
+    await client.updateNodeParameters("/project1/ai_party_poc/camera_grade_hsv", grade.hsv);
+    await client.updateNodeParameters("/project1/ai_party_poc/camera_grade", grade.level);
+    await client.updateNodeParameters("/project1/ai_party_poc/camera_ai_vision_text", {
+      text: `Camera / Stylized view\nLocal webcam feed\nGrade: ${fx}`,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function formatAiPartyCrowdText(
+  promoted: ReadonlyArray<{ text: string; operator?: string }>,
+  fallback = "Crowd / Interaction\nSend a vibe via Telegram or the dashboard",
+): string {
+  const safeLine = (value: string) => value.replace(/[<>&]/g, " ").replace(/\s+/g, " ").trim();
+  const lines = promoted
+    .slice(0, 3)
+    .map((item) => safeLine(item.text).slice(0, 80))
+    .filter(Boolean);
+  if (lines.length === 0) return fallback;
+  return ["Crowd / Interaction", ...lines.map((line) => `> ${line}`)].join("\n");
+}
+
+export async function sendAiPartyCrowdTextToTd(
+  client: TouchDesignerClient,
+  textValue: string,
+): Promise<boolean> {
+  try {
+    await client.updateNodeParameters("/project1/ai_party_poc/crowd_interaction_text", {
+      text: textValue,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function extractAiPartyVisualTarget(
+  actions: AiPartyDispatchAction[],
+): { key: string; intensity: number | undefined } | undefined {
+  const keys: string[] = [];
+  let intensity: number | undefined;
+  for (const action of actions) {
+    if (action.kind === "cue") {
+      keys.push(action.cue);
+      if (action.intensity !== undefined) intensity = action.intensity;
+    } else if (action.kind === "mood") {
+      keys.push(action.mood);
+      intensity = action.intensity;
+    } else if (action.kind === "panic_safe") {
+      keys.push("panic_safe");
+    }
+  }
+  if (keys.length === 0) return undefined;
+  return { key: keys.join("|"), intensity };
+}
+
+export interface SendAiPartyActionsOptions {
+  skipFingerprint?: boolean;
+}
+
 export async function sendAiPartyActionsToTd(
   client: TouchDesignerClient,
   actions: AiPartyDispatchAction[],
+  options: SendAiPartyActionsOptions = {},
 ): Promise<boolean> {
   try {
     await client.getInfo();
@@ -415,11 +638,11 @@ export async function sendAiPartyActionsToTd(
       statusIntensity = params.Intensity;
     }
     await client.updateNodeParameters("/project1/ai_party_poc/control_panel", params);
-    if (visualKeys.length > 0) {
-      const fingerprint = visualFingerprint(visualKeys.join("|"), statusIntensity);
-      await client.updateNodeParameters("/project1/ai_party_poc/noise_base", fingerprint.noise);
-      await client.updateNodeParameters("/project1/ai_party_poc/level_mood", fingerprint.level);
-      await client.updateNodeParameters("/project1/ai_party_poc/blur_bloom_sim", fingerprint.blur);
+    if (visualKeys.length > 0 && !options.skipFingerprint) {
+      await sendAiPartyFingerprintToTd(
+        client,
+        visualFingerprint(visualKeys.join("|"), statusIntensity),
+      );
     }
     statusLines.push(`Cue: ${statusCue}`);
     statusLines.push(`Mood: ${statusMood}`);
@@ -445,6 +668,7 @@ export function formatAiPartyTdStatusText(
     | "panic"
   >,
   now: Date = new Date(),
+  extras: { scene?: string; transition?: string } = {},
 ): string {
   const policy = state.last_policy?.decision ?? "none";
   return [
@@ -452,6 +676,8 @@ export function formatAiPartyTdStatusText(
     `Cue: ${state.current_cue}`,
     `Mood: ${state.current_mood}`,
     `Intensity: ${state.current_intensity.toFixed(2)}`,
+    ...(extras.scene ? [`Scene: ${extras.scene}`] : []),
+    ...(extras.transition ? [`Transition: ${extras.transition}`] : []),
     `Policy: ${policy}`,
     `Pending: ${state.pending_approvals_count}`,
     `Source: ${state.last_source || "none"}`,
@@ -464,11 +690,12 @@ export async function refreshAiPartyTdPreviewState(
   client: TouchDesignerClient,
   state: Parameters<typeof formatAiPartyTdStatusText>[0],
   now: Date = new Date(),
+  extras: { scene?: string; transition?: string } = {},
 ): Promise<boolean> {
   let refreshed = false;
   try {
     await client.updateNodeParameters("/project1/ai_party_poc/text_status", {
-      text: formatAiPartyTdStatusText(state, now),
+      text: formatAiPartyTdStatusText(state, now, extras),
     });
     refreshed = true;
   } catch {
