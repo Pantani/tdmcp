@@ -8,15 +8,18 @@ import {
   AI_PARTY_DASHBOARD_HTML,
   AI_PARTY_TD_LAYOUT,
   AI_PARTY_TD_PREVIEW_OUTPUTS,
+  AiPartyCueSchema,
   buildAiPartyTdDemoScript,
   createAiPartyGeneratedCue,
   createAiPartyLiveService,
   createInitialAiPartyShowState,
+  DEFAULT_AI_PARTY_CUE_CATALOG,
   dispatchAiPartyPlan,
   evaluateAiPartyPolicy,
   parseAiPartyTelegramCommand,
   parseOllamaShowIntent,
   parseShowIntentEnvelope,
+  recommendedAiPartyCuesForSection,
   ShowIntentEnvelopeSchema,
   sendAiPartyActionsToTd,
 } from "../../src/automation/aiPartyLive/index.js";
@@ -283,6 +286,86 @@ describe("aiPartyLive schema and policy", () => {
       decision: "block",
       operator_message: expect.stringContaining("prompt injection"),
     });
+  });
+
+  it("keeps the full cue catalog schema-valid with unique names and bounded intensities", () => {
+    const names = DEFAULT_AI_PARTY_CUE_CATALOG.map((cue) => cue.name);
+    expect(new Set(names).size).toBe(names.length);
+    expect(DEFAULT_AI_PARTY_CUE_CATALOG.length).toBeGreaterThanOrEqual(28);
+    for (const cue of DEFAULT_AI_PARTY_CUE_CATALOG) {
+      expect(() => AiPartyCueSchema.parse(cue)).not.toThrow();
+      if (cue.default_intensity !== undefined) {
+        expect(cue.default_intensity).toBeGreaterThanOrEqual(0.2);
+        expect(cue.default_intensity).toBeLessThanOrEqual(0.85);
+      }
+      if (cue.flicker_risk) {
+        expect(cue.risk).toBe("approval");
+        expect(cue.preapproved).toBe(false);
+      }
+    }
+  });
+
+  it("approval-gates flicker-adjacent cues even when flagged preapproved", () => {
+    const state = createInitialAiPartyShowState();
+
+    expect(
+      evaluateAiPartyPolicy(
+        { type: "request_cue", cue: "photoflash_wall", cue_kind: "visual" },
+        state,
+      ),
+    ).toMatchObject({
+      decision: "approval_required",
+      operator_message: expect.stringContaining("flicker risk"),
+    });
+
+    const sneakyCue = AiPartyCueSchema.parse({
+      name: "sneaky_flash",
+      label: "Sneaky flash",
+      kind: "visual",
+      risk: "safe",
+      preapproved: true,
+      description: "claims safe but flickers",
+      flicker_risk: true,
+    });
+    expect(
+      evaluateAiPartyPolicy(
+        { type: "request_cue", cue: "sneaky_flash", cue_kind: "visual" },
+        state,
+        undefined,
+        [sneakyCue],
+      ),
+    ).toMatchObject({ decision: "approval_required" });
+  });
+
+  it("falls back to the catalog default intensity when the intent has none", () => {
+    const policy = evaluateAiPartyPolicy(
+      { type: "request_cue", cue: "supernova_bloom", cue_kind: "combined" },
+      createInitialAiPartyShowState(),
+    );
+    expect(policy).toMatchObject({
+      decision: "allow",
+      plan: [{ kind: "cue", cue: "supernova_bloom", intensity: 0.85 }],
+    });
+
+    const explicit = evaluateAiPartyPolicy(
+      { type: "request_cue", cue: "supernova_bloom", cue_kind: "combined", intensity: 0.5 },
+      createInitialAiPartyShowState(),
+    );
+    expect(explicit.plan).toEqual([{ kind: "cue", cue: "supernova_bloom", intensity: 0.5 }]);
+  });
+
+  it("recommends only safe preapproved non-flicker cues per timeline section", () => {
+    const build = recommendedAiPartyCuesForSection("build");
+    expect(build.length).toBeGreaterThan(0);
+    expect(build.every((cue) => cue.risk === "safe" && cue.preapproved && !cue.flicker_risk)).toBe(
+      true,
+    );
+    expect(build.every((cue) => cue.section === "build" || cue.section === "any")).toBe(true);
+    expect(build.map((cue) => cue.name)).not.toContain("lightning_veins");
+
+    const drop = recommendedAiPartyCuesForSection("drop");
+    expect(drop.map((cue) => cue.name)).toContain("supernova_bloom");
+    expect(drop.map((cue) => cue.name)).not.toContain("photoflash_wall");
   });
 
   it("blocks physical effects that are still inside the runtime cooldown window", () => {

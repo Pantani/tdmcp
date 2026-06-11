@@ -93,7 +93,14 @@ function cueDecision(cue: AiPartyCue, intensity?: number): AiPartyPolicyDecision
       ]
     : cue.kind === "safe_state"
       ? [{ kind: "panic_safe" }]
-      : [{ kind: "cue", cue: cue.name, intensity }];
+      : [{ kind: "cue", cue: cue.name, intensity: intensity ?? cue.default_intensity }];
+  if (cue.flicker_risk) {
+    return approvalRequired(
+      `Cue ${cue.name} has flicker-adjacent visuals and is approval-gated for photosensitivity safety.`,
+      plan,
+      `Approval required (flicker risk): ${cue.label}.`,
+    );
+  }
   if (cue.preapproved && cue.risk === "safe" && cue.kind !== "physical_effect") {
     return allow(`Cue ${cue.name} is preapproved and safe.`, plan, `Allowed cue: ${cue.label}.`);
   }
