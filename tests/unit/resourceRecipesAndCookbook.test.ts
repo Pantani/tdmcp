@@ -118,7 +118,7 @@ describe("cookbook resource helpers", () => {
     mkdirSync(join(parent, "docs", "guide"), { recursive: true });
     mkdirSync(join(packageRoot, "docs", "guide"), { recursive: true });
     mkdirSync(moduleDir, { recursive: true });
-    writeFileSync(join(packageRoot, "package.json"), JSON.stringify({ name: "@dpantani/tdmcp" }));
+    writeFileSync(join(packageRoot, "package.json"), JSON.stringify({ name: "tdmcp" }));
     writeFileSync(parentCookbook, "# Wrong Cookbook");
     writeFileSync(packageCookbook, "# Prompt Cookbook");
 

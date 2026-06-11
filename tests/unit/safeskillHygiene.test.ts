@@ -135,7 +135,7 @@ describe("SafeSkill hygiene", () => {
 
     expect(pkg.repository).toEqual({
       type: "git",
-      url: "https://github.com/Pantani/tdmcp.git",
+      url: "git+https://github.com/Pantani/tdmcp.git",
     });
     expect(pkg.files).toContain("safeskill.manifest.json");
     expect(manifest.version).toBe(pkg.version);

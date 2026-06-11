@@ -79,8 +79,8 @@ are running inside (you know which client you are). If you genuinely can't tell,
 
 ## Step 2 — Get the tdmcp server source
 
-> tdmcp is published to npm as `@dpantani/tdmcp`, so the whole "clone and build"
-> step below collapses to `npx -y @dpantani/tdmcp`. The clone route stays here for
+> tdmcp is published to npm as `tdmcp`, so the whole "clone and build"
+> step below collapses to `npx -y tdmcp`. The clone route stays here for
 > contributors and for running from a local checkout.
 
 Pick a stable location and clone there (skip the clone if it already exists):

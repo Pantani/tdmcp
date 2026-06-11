@@ -44,7 +44,7 @@ Add tdmcp to `~/.codex/config.toml` (merge into any existing `[mcp_servers.*]`):
 ```toml
 [mcp_servers.tdmcp]
 command = "npx"
-args = ["-y", "@dpantani/tdmcp"]
+args = ["-y", "tdmcp"]
 ```
 
 ### Option B — from a local build

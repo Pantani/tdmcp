@@ -16,8 +16,8 @@ export function getVersion(): string {
     try {
       const raw = readFileSync(resolve(dir, "package.json"), "utf8");
       const pkg = JSON.parse(raw) as { name?: string; version?: string };
-      // The published name is scoped (`@dpantani/tdmcp`); accept the legacy
-      // unscoped name too so a rename can't silently drop us to the fallback.
+      // Accept the current npm package name plus the legacy scoped name so a
+      // migrated install cannot silently drop us to the fallback.
       if (pkg.version && (pkg.name === "@dpantani/tdmcp" || pkg.name === "tdmcp")) {
         cached = pkg.version;
         return cached;

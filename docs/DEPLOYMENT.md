@@ -92,19 +92,26 @@ The manifest lives at `dxt/manifest.json`. It declares a `node` server with
 
 ## 3. Publish to npm
 
-The package is public and scoped as `@dpantani/tdmcp`.
+The package is public and published as the unscoped npm package `tdmcp`.
 
 ```bash
 npm run build
 npm publish
 ```
 
+After the first successful `tdmcp` publish, mark the old scoped package as
+migrated so existing users see the move during install:
+
+```bash
+npm deprecate @dpantani/tdmcp@"*" "tdmcp has moved to the unscoped npm package: npm install tdmcp"
+```
+
 ### Existing `package.json` release guards
 
 - `prepublishOnly` guarantees a fresh build and a passing test suite run before
   anything is published.
-- `publishConfig.access = "public"` lets the scoped package publish publicly
-  without needing the `--access public` flag every time.
+- npm packages without a scope are public by default, so no `--access public`
+  flag is needed.
 - The GitHub tag-release workflow publishes the `.mcpb` GitHub Release asset
   but leaves npm manual by default. It only auto-publishes npm when repository
   variable `TDMCP_AUTO_NPM_PUBLISH=true` and `NPM_TOKEN` are both configured.
