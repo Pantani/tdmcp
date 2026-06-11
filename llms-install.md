@@ -33,8 +33,8 @@ test -f "$TDMCP_DIR/dist/index.js" && echo "BUILD OK" || echo "BUILD FAILED"
 Record the **absolute** path printed by `pwd` (call it `<ABS>`); you need it next.
 Don't continue until you see `BUILD OK`.
 
-> **No-clone alternative:** tdmcp is published to npm as `@dpantani/tdmcp`, so you
-> can skip the clone/build and run it with `npx -y @dpantani/tdmcp` (use the npx
+> **No-clone alternative:** tdmcp is published to npm as `tdmcp`, so you
+> can skip the clone/build and run it with `npx -y tdmcp` (use the npx
 > command form in Step 2 instead of the node path).
 
 ## Step 2 — Register tdmcp in Cline's MCP settings
@@ -54,7 +54,7 @@ into any existing `mcpServers` (don't clobber other servers):
 }
 ```
 
-For the npx route, use `"command": "npx"`, `"args": ["-y", "@dpantani/tdmcp"]`
+For the npx route, use `"command": "npx"`, `"args": ["-y", "tdmcp"]`
 instead. No environment variables are needed for the default local setup.
 
 Cline's settings file is typically at:

@@ -2,7 +2,7 @@
 #
 # tdmcp is an inherently LOCAL stdio server: it drives a bridge running *inside*
 # TouchDesigner on the same machine (default 127.0.0.1:9980), so it is installed
-# and run locally rather than hosted remotely. Published to npm as @dpantani/tdmcp
+# and run locally rather than hosted remotely. Published to npm as tdmcp
 # (npx resolves the latest). The TD bridge must be switched on separately — see
 # https://pantani.github.io/tdmcp/guide/install
 startCommand:
@@ -43,7 +43,7 @@ startCommand:
     |-
     (config) => ({
       command: "npx",
-      args: ["-y", "@dpantani/tdmcp"],
+      args: ["-y", "tdmcp"],
       env: {
         ...(config.tdHost && { TDMCP_TD_HOST: config.tdHost }),
         ...(config.tdPort && { TDMCP_TD_PORT: String(config.tdPort) }),

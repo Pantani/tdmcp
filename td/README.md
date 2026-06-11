@@ -14,7 +14,7 @@ You only need the bridge running inside TouchDesigner once per project. For repe
 use, install the Palette package once and then drag it into new projects:
 
 ```bash
-npx @dpantani/tdmcp install-bridge --palette
+npx tdmcp install-bridge --palette
 ```
 
 Paste the Palette package Textport command printed by the CLI. It exports
@@ -45,7 +45,7 @@ Textport:
 from mcp import install; install.run()
 ```
 
-**C. From the terminal.** `npx @dpantani/tdmcp install-bridge` (or
+**C. From the terminal.** `npx tdmcp install-bridge` (or
 `node dist/index.js install-bridge` from a clone) copies the bridge to
 `~/tdmcp-bridge` and prints exactly what to paste in the Textport.
 
