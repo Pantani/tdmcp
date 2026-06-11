@@ -572,9 +572,34 @@ export async function sendAiPartyCrowdTextToTd(
   }
 }
 
+export function extractAiPartyVisualTarget(
+  actions: AiPartyDispatchAction[],
+): { key: string; intensity: number | undefined } | undefined {
+  const keys: string[] = [];
+  let intensity: number | undefined;
+  for (const action of actions) {
+    if (action.kind === "cue") {
+      keys.push(action.cue);
+      if (action.intensity !== undefined) intensity = action.intensity;
+    } else if (action.kind === "mood") {
+      keys.push(action.mood);
+      intensity = action.intensity;
+    } else if (action.kind === "panic_safe") {
+      keys.push("panic_safe");
+    }
+  }
+  if (keys.length === 0) return undefined;
+  return { key: keys.join("|"), intensity };
+}
+
+export interface SendAiPartyActionsOptions {
+  skipFingerprint?: boolean;
+}
+
 export async function sendAiPartyActionsToTd(
   client: TouchDesignerClient,
   actions: AiPartyDispatchAction[],
+  options: SendAiPartyActionsOptions = {},
 ): Promise<boolean> {
   try {
     await client.getInfo();
@@ -613,11 +638,11 @@ export async function sendAiPartyActionsToTd(
       statusIntensity = params.Intensity;
     }
     await client.updateNodeParameters("/project1/ai_party_poc/control_panel", params);
-    if (visualKeys.length > 0) {
-      const fingerprint = visualFingerprint(visualKeys.join("|"), statusIntensity);
-      await client.updateNodeParameters("/project1/ai_party_poc/noise_base", fingerprint.noise);
-      await client.updateNodeParameters("/project1/ai_party_poc/level_mood", fingerprint.level);
-      await client.updateNodeParameters("/project1/ai_party_poc/blur_bloom_sim", fingerprint.blur);
+    if (visualKeys.length > 0 && !options.skipFingerprint) {
+      await sendAiPartyFingerprintToTd(
+        client,
+        visualFingerprint(visualKeys.join("|"), statusIntensity),
+      );
     }
     statusLines.push(`Cue: ${statusCue}`);
     statusLines.push(`Mood: ${statusMood}`);
@@ -665,11 +690,12 @@ export async function refreshAiPartyTdPreviewState(
   client: TouchDesignerClient,
   state: Parameters<typeof formatAiPartyTdStatusText>[0],
   now: Date = new Date(),
+  extras: { scene?: string; transition?: string } = {},
 ): Promise<boolean> {
   let refreshed = false;
   try {
     await client.updateNodeParameters("/project1/ai_party_poc/text_status", {
-      text: formatAiPartyTdStatusText(state, now),
+      text: formatAiPartyTdStatusText(state, now, extras),
     });
     refreshed = true;
   } catch {

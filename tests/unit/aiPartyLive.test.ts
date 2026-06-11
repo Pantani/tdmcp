@@ -470,7 +470,7 @@ describe("aiPartyLive service", () => {
     expect(sockets.has(brokenSocket)).toBe(false);
   });
 
-  it("keeps websocket clients connected when snapshot frames exceed 64 KiB", () => {
+  it("sends slim dirty pings on events and survives >64 KiB snapshot pushes", () => {
     const service = createAiPartyLiveService({
       dashboardPort: 0,
       eventLogPath: tempLogPath(),
@@ -488,12 +488,22 @@ describe("aiPartyLive service", () => {
     const internals = service as unknown as {
       sockets: Set<Socket>;
       emit: (type: "health.changed", payload: unknown) => unknown;
+      pushSnapshot: (socket: Socket) => boolean;
     };
 
     internals.sockets.add(largeSocket);
     internals.emit("health.changed", { blob: "x".repeat(70_000) });
 
     expect(internals.sockets.has(largeSocket)).toBe(true);
+    const ping = writes.at(-1);
+    expect(ping?.[0]).toBe(0x81);
+    expect(Number(ping?.[1])).toBeLessThan(126);
+    expect(JSON.parse(ping?.subarray(2).toString("utf8") ?? "{}")).toMatchObject({
+      type: "dirty",
+      event_type: "health.changed",
+    });
+
+    expect(internals.pushSnapshot(largeSocket)).toBe(true);
     const frame = writes.at(-1);
     expect(frame?.[0]).toBe(0x81);
     expect(frame?.[1]).toBe(127);
@@ -881,6 +891,234 @@ describe("aiPartyLive service", () => {
     expect(snapshot.audience_suggestions).toHaveLength(1);
   });
 
+  it("runs a background crossfade between cues and snaps instantly on panic", async () => {
+    const patches: Array<{ path: string; parameters: Record<string, unknown> }> = [];
+    const service = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      transitionSeconds: 1,
+      transitionTickMs: 0,
+      fetchImpl: async (input, init) => {
+        const url = new URL(String(input));
+        if (url.pathname === "/api/info") {
+          return okJson({ ok: true, data: { bridge_version: "test", project: "unit" } });
+        }
+        if (init?.method === "PATCH") {
+          patches.push({
+            path: decodeURIComponent(url.pathname.replace("/api/nodes/", "")),
+            parameters: JSON.parse(String(init.body)).parameters,
+          });
+          return okJson({
+            ok: true,
+            data: { path: "x", type: "baseCOMP", name: "node", parameters: {} },
+          });
+        }
+        return okJson({});
+      },
+    });
+
+    await service.triggerCue("doors_idle");
+    const beforeTransition = patches.filter((p) => p.path.endsWith("noise_base")).length;
+    await service.triggerCue("neon_pulse");
+    await service.flushBackground();
+
+    const noiseWrites = patches.filter((p) => p.path.endsWith("noise_base")).length;
+    expect(noiseWrites).toBeGreaterThan(beforeTransition + 2);
+    const transitionEvents = service
+      .snapshot()
+      .events.filter((event) => event.type === "cue.transition");
+    expect(transitionEvents.length).toBeGreaterThanOrEqual(2);
+    expect(transitionEvents.at(-1)?.payload).toMatchObject({
+      phase: "completed",
+      from: "doors_idle",
+      to: "neon_pulse",
+    });
+    expect(service.snapshot().transition).toBeUndefined();
+
+    await service.enterPanic();
+    expect(service.snapshot().showState.panic).toBe(true);
+    expect(service.snapshot().transition).toBeUndefined();
+  });
+
+  it("pushes promoted audience suggestions to the crowd interaction wall", async () => {
+    const patches: Array<{ path: string; parameters: Record<string, unknown> }> = [];
+    const service = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      fetchImpl: async (input, init) => {
+        const url = new URL(String(input));
+        if (init?.method === "PATCH") {
+          patches.push({
+            path: decodeURIComponent(url.pathname.replace("/api/nodes/", "")),
+            parameters: JSON.parse(String(init.body)).parameters,
+          });
+          return okJson({
+            ok: true,
+            data: { path: "x", type: "textTOP", name: "node", parameters: {} },
+          });
+        }
+        return okJson({ ok: true, data: { bridge_version: "test", project: "unit" } });
+      },
+    });
+
+    const queued = service.queueAudienceSuggestion("/suggest /cue premium_tropical", "100", "fan");
+    expect(queued.ok).toBe(true);
+    service.updateAudienceSuggestion(queued.suggestion.id, "promoted");
+    await service.flushBackground();
+
+    const crowdPatch = patches.find((p) => p.path.endsWith("crowd_interaction_text"));
+    expect(crowdPatch).toBeDefined();
+    expect(String(crowdPatch?.parameters.text)).toContain("/cue premium_tropical");
+  });
+
+  it("tracks energy series, night style, and director notes in the snapshot", async () => {
+    const service = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      ollamaModel: "",
+      deterministicFallback: true,
+    });
+
+    await service.triggerCue("premium_tropical");
+    await service.processOperatorText("dark disco elegante no build");
+    const fog = await service.evaluateIntent(
+      {
+        intent: { type: "arm_effect", effect: "fog", duration_seconds: 3, intensity: 0.35 },
+        confidence: 1,
+        source_summary: "fog",
+        needs_operator_review: true,
+      },
+      { source: "demo_script", rawText: "fog request" },
+    );
+    expect(fog.approval).toBeDefined();
+    service.queueAudienceSuggestion("/suggest /cue neon_pulse", "100", "fan");
+
+    const snapshot = service.snapshot();
+    expect(snapshot.energy_series.length).toBeGreaterThanOrEqual(2);
+    expect(snapshot.showState.crowd_energy).toBeGreaterThan(0);
+    expect(snapshot.night_style.palette_history.length).toBeGreaterThan(0);
+    expect(snapshot.night_style.top_prompt_tags).toContain("disco");
+    expect(snapshot.session.started_at).toBeDefined();
+    expect(snapshot.director_notes.map((note) => note.id)).toContain("audience-waiting");
+
+    const agedNotes = service.directorNotes(new Date(Date.now() + 90_000));
+    expect(agedNotes.map((note) => note.id)).toContain("approval-aging");
+  });
+
+  it("auto-advances the timeline only when armed, due, and not in panic", async () => {
+    const service = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+    });
+
+    expect((await service.tickAutoAdvance()).advanced).toBe(false);
+    service.setAutoAdvance(true);
+    expect((await service.tickAutoAdvance()).advanced).toBe(false);
+
+    const due = new Date(Date.now() + 31 * 60_000);
+    const advanced = await service.tickAutoAdvance(due);
+    expect(advanced).toMatchObject({ advanced: true, scene: { id: "warmup" } });
+    expect(service.snapshot().showState.timeline.current_scene).toBe("warmup");
+
+    await service.enterPanic();
+    expect((await service.tickAutoAdvance(new Date(Date.now() + 120 * 60_000))).advanced).toBe(
+      false,
+    );
+  });
+
+  it("morphs between cues with bounded seconds and respects approval gates", async () => {
+    const service = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      transitionTickMs: 0,
+      fetchImpl: async (_input, init) => {
+        if (init?.method === "PATCH") {
+          return okJson({
+            ok: true,
+            data: { path: "x", type: "baseCOMP", name: "node", parameters: {} },
+          });
+        }
+        return okJson({ ok: true, data: { bridge_version: "test", project: "unit" } });
+      },
+    });
+
+    await service.triggerCue("doors_idle");
+    const morph = await service.morphToCue("supernova_bloom", 400);
+    await service.flushBackground();
+    expect(morph.ok).toBe(true);
+    expect(morph.morph_seconds).toBe(120);
+    const morphEvent = service
+      .snapshot()
+      .events.findLast((event) => event.type === "cue.transition");
+    expect(morphEvent?.payload).toMatchObject({ kind: "morph", to: "supernova_bloom" });
+
+    const gated = await service.morphToCue("photoflash_wall", 30);
+    expect(gated.ok).toBe(false);
+    expect(gated.policy.decision).toBe("approval_required");
+
+    await expect(service.morphToCue("missing_cue")).rejects.toThrow(/not found/);
+  });
+
+  it("generates cues through the local LLM with safety fallback", async () => {
+    const calls: string[] = [];
+    const service = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      generatedCuePath: tempGeneratedCuePath(),
+      ollamaModel: "demo-model",
+      fetchImpl: async (input, init) => {
+        const url = String(input);
+        calls.push(url);
+        if (url.includes("/api/chat")) {
+          const body = JSON.parse(String(init?.body));
+          const userContent = String(body.messages?.[1]?.content ?? "");
+          return okJson({
+            message: {
+              content: JSON.stringify(
+                userContent.includes("unsafe")
+                  ? { phrase: "strobe blackout madness", intensity: 0.8 }
+                  : { phrase: "molten chrome cathedral glow", intensity: 0.66 },
+              ),
+            },
+            model: "demo-model",
+          });
+        }
+        return okJson({});
+      },
+    });
+
+    const generated = await service.generateCueWithLlm("uma catedral derretida de cromo");
+    expect(generated.llm).toMatchObject({ ok: true, phrase: "molten chrome cathedral glow" });
+    expect(generated.cue.name).toContain("molten_chrome_cathedral_glow");
+    expect(generated.cue.source_prompt).toBe("uma catedral derretida de cromo");
+    expect(generated.cue.risk).toBe("safe");
+    expect(generated.cue.generated_intensity).toBeLessThanOrEqual(0.85);
+
+    const fallback = await service.generateCueWithLlm("unsafe vibe request");
+    expect(fallback.llm).toMatchObject({ ok: false });
+    expect(fallback.cue.name).toContain("unsafe_vibe_request");
+    expect(fallback.cue.risk).toBe("safe");
+    expect(calls.filter((url) => url.includes("/api/chat")).length).toBe(2);
+  });
+
+  it("exports a narrative markdown recap of the night", async () => {
+    const service = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      ollamaModel: "",
+      deterministicFallback: true,
+    });
+    await service.triggerCue("premium_tropical");
+    await service.processOperatorText("dark disco elegante no build");
+
+    const markdown = service.recapMarkdown(new Date("2026-06-11T23:59:00.000Z"));
+    expect(markdown).toContain("# AI Party Live — Night Recap");
+    expect(markdown).toContain("## Summary");
+    expect(markdown).toContain("## Night style");
+    expect(markdown).toContain("## Last cues");
+    expect(markdown).toContain("premium_tropical");
+  });
+
   it("tracks a simple setlist timeline with current and next scene", async () => {
     const service = createAiPartyLiveService({
       dashboardPort: 0,
@@ -1096,6 +1334,31 @@ describe("aiPartyLive service", () => {
     const replay = await fetch(`${handle.url}api/replay`).then(readJson<ReplayJson>);
     expect(replay.ok).toBe(true);
     expect(replay.summary.total_events).toBeGreaterThan(0);
+
+    const director = await fetch(`${handle.url}api/director/suggestions`).then(
+      readJson<{ ok: boolean; scene: string; recommended_cues: string[] }>,
+    );
+    expect(director.ok).toBe(true);
+    expect(director.recommended_cues.length).toBeGreaterThan(0);
+
+    const autoOn = await fetch(`${handle.url}api/timeline/auto`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ enabled: true }),
+    }).then(readJson<{ ok: boolean; auto_advance: boolean }>);
+    expect(autoOn).toMatchObject({ ok: true, auto_advance: true });
+
+    const morph = await fetch(`${handle.url}api/cues/morph`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ to: "neon_pulse", seconds: 12 }),
+    }).then(readJson<{ ok: boolean; morph_seconds: number }>);
+    expect(morph).toMatchObject({ ok: true, morph_seconds: 12 });
+
+    const markdownRes = await fetch(`${handle.url}api/recap/markdown`);
+    expect(markdownRes.headers.get("content-type")).toContain("text/markdown");
+    const markdown = await markdownRes.text();
+    expect(markdown).toContain("# AI Party Live — Night Recap");
   });
 });
 
