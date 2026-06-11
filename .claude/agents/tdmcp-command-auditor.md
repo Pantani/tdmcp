@@ -16,7 +16,9 @@ You audit the executable command surface for tdmcp.
   commands, and CLI entrypoints in `src/index.ts` / `src/cli/`.
 - Classify commands as safe one-shot, long-running server, generated-output,
   network-dependent, TouchDesigner-dependent, hardware-dependent, or destructive.
-- Run safe commands when appropriate. Use `rtk` as required by `AGENTS.md`.
+- Run safe commands when appropriate. Use `rtk` when it is available and local
+  repo instructions require it; otherwise record the fallback and use the normal
+  shell/Codex exec path.
 
 ## Output contract
 

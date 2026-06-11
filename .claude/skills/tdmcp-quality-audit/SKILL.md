@@ -52,7 +52,13 @@ Create `_workspace/quality-audit/00_scope.md` with:
 
 Command policy:
 
-- Always use `rtk` for shell commands.
+- Select the command runner before executing gates:
+  - if `command -v rtk >/dev/null 2>&1` succeeds, use `rtk` for shell commands
+    and follow local repo instructions such as `rtk proxy zsh -lc` for pipelines
+    or shell control flow;
+  - if `rtk` is unavailable, record that fallback in `00_scope.md` and run the
+    same commands through the normal shell/Codex exec path without failing the
+    audit solely because the wrapper is missing.
 - Safe baseline: `npm run typecheck`, `npm run build`, `./node_modules/.bin/biome
   check .`, `npm test`, `npm run validate:recipes`, `npm run test:bridge`,
   `npm run docs:build`, `make complexity`, `npm run deps:check`,
