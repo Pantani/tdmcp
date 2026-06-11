@@ -131,6 +131,7 @@ export const AiPartyEventTypeSchema = z.enum([
   "dispatch.simulated",
   "dispatch.sent_to_touchdesigner",
   "dispatch.blocked",
+  "cue.generated",
   "telegram.message.received",
   "telegram.reply.sent",
   "td.preview.updated",

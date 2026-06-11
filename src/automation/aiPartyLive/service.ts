@@ -4,7 +4,12 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import type { Socket } from "node:net";
 import { dirname } from "node:path";
 import { TouchDesignerClient } from "../../td-client/touchDesignerClient.js";
-import { type AiPartyCue, DEFAULT_AI_PARTY_CUE_CATALOG } from "./cueCatalog.js";
+import {
+  type AiPartyCue,
+  createAiPartyGeneratedCue,
+  DEFAULT_AI_PARTY_CUE_CATALOG,
+  shouldAutoGenerateAiPartyCue,
+} from "./cueCatalog.js";
 import { AI_PARTY_DASHBOARD_HTML } from "./dashboardHtml.js";
 import { applyDispatchToState, dispatchAiPartyPlan } from "./dispatch.js";
 import { parseOllamaShowIntent } from "./ollamaClient.js";
@@ -18,7 +23,12 @@ import {
   createInitialAiPartyShowState,
   type ShowIntentEnvelope,
 } from "./schemas.js";
-import { buildAiPartyTdDemo, sendAiPartyActionsToTd } from "./tdAdapter.js";
+import {
+  AI_PARTY_TD_PREVIEW_OUTPUTS,
+  buildAiPartyTdDemo,
+  refreshAiPartyTdPreviewState,
+  sendAiPartyActionsToTd,
+} from "./tdAdapter.js";
 import {
   fetchAiPartyTelegramUpdates,
   parseAiPartyTelegramCommand,
@@ -66,6 +76,15 @@ export interface AiPartyTelegramPollResult {
   ignored: Array<{ update_id: number; reason: string }>;
   warning?: string;
 }
+
+type AiPartyTdPreviewOutput = (typeof AI_PARTY_TD_PREVIEW_OUTPUTS)[number];
+type AiPartyTdPreviewPayload = {
+  id: AiPartyTdPreviewOutput["id"];
+  label: AiPartyTdPreviewOutput["label"];
+  path: AiPartyTdPreviewOutput["path"];
+  preview?: Awaited<ReturnType<TouchDesignerClient["getPreview"]>>;
+  error?: string;
+};
 
 interface EvaluationContext {
   source: AiPartyApproval["source"];
@@ -153,7 +172,8 @@ function wsAccept(key: string): string {
   return createHash("sha1").update(`${key}258EAFA5-E914-47DA-95CA-C5AB0DC85B11`).digest("base64");
 }
 
-function sendWs(socket: Socket, payload: unknown): void {
+function sendWs(socket: Socket, payload: unknown): boolean {
+  if (socket.destroyed || !socket.writable) return false;
   const data = Buffer.from(JSON.stringify(payload));
   const header =
     data.length < 126
@@ -161,8 +181,13 @@ function sendWs(socket: Socket, payload: unknown): void {
       : data.length < 65536
         ? Buffer.from([0x81, 126, data.length >> 8, data.length & 0xff])
         : undefined;
-  if (!header) return;
-  socket.write(Buffer.concat([header, data]));
+  if (!header) return false;
+  try {
+    socket.write(Buffer.concat([header, data]));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export class AiPartyLiveService {
@@ -188,10 +213,12 @@ export class AiPartyLiveService {
   private showState: AiPartyShowState;
   private readonly approvals: AiPartyApproval[] = [];
   private readonly events: AiPartyEvent[] = [];
-  private readonly cues = DEFAULT_AI_PARTY_CUE_CATALOG;
+  private readonly baseCues = DEFAULT_AI_PARTY_CUE_CATALOG;
+  private readonly generatedCues: AiPartyCue[] = [];
   private readonly sockets = new Set<Socket>();
   private eventCount = 0;
   private approvalCount = 0;
+  private generatedCueCount = 0;
   private tdClient: TouchDesignerClient;
   private telegramOffset: number | undefined;
   private telegramPollTimer: ReturnType<typeof setTimeout> | undefined;
@@ -228,6 +255,10 @@ export class AiPartyLiveService {
     });
   }
 
+  private get cues(): AiPartyCue[] {
+    return [...this.baseCues, ...this.generatedCues];
+  }
+
   snapshot(): AiPartyLiveSnapshot {
     return {
       showState: { ...this.showState, pending_approvals_count: this.pendingApprovals().length },
@@ -259,8 +290,12 @@ export class AiPartyLiveService {
       // Event-log failures should be visible in state but must not crash the show surface.
       this.showState.last_error = `Could not write event log at ${this.cfg.eventLogPath}`;
     }
-    for (const socket of this.sockets)
-      sendWs(socket, { type: "snapshot", snapshot: this.snapshot() });
+    for (const socket of this.sockets) {
+      if (!sendWs(socket, { type: "snapshot", snapshot: this.snapshot() })) {
+        this.sockets.delete(socket);
+        socket.destroy();
+      }
+    }
     return event;
   }
 
@@ -276,6 +311,25 @@ export class AiPartyLiveService {
   }> {
     const textInput = textValue.trim();
     this.emit("operator.command.received", { source, text: textInput });
+    if (source === "dashboard" && shouldAutoGenerateAiPartyCue(textInput, this.cues)) {
+      const generated = this.generateCue(textInput);
+      return this.evaluateIntent(
+        {
+          intent: {
+            type: "request_cue",
+            cue: generated.cue.name,
+            cue_kind: "combined",
+            intensity: generated.cue.generated_intensity,
+            timing: "now",
+            reason: "dashboard freeform visual prompt generated a temporary safe cue",
+          },
+          confidence: 0.82,
+          source_summary: `generated cue ${generated.cue.name}`,
+          needs_operator_review: false,
+        },
+        { source, rawText: textInput },
+      );
+    }
     const parsed = await parseOllamaShowIntent({
       message: textInput,
       currentState: this.showState,
@@ -540,6 +594,18 @@ export class AiPartyLiveService {
     );
   }
 
+  generateCue(prompt: string) {
+    this.generatedCueCount += 1;
+    const cue = createAiPartyGeneratedCue(prompt, {
+      index: this.generatedCueCount,
+      currentIntensity: this.showState.current_intensity,
+    });
+    this.generatedCues.unshift(cue);
+    if (this.generatedCues.length > 12) this.generatedCues.pop();
+    this.emit("cue.generated", { cue });
+    return { ok: true, cue, cues: this.cues };
+  }
+
   async enterPanic() {
     const result = await this.evaluateIntent(
       {
@@ -582,22 +648,38 @@ export class AiPartyLiveService {
   }
 
   async tdPreview() {
-    try {
-      const preview = await this.tdClient.getPreview(
-        "/project1/ai_party_poc/preview_out",
-        640,
-        360,
-      );
+    await refreshAiPartyTdPreviewState(this.tdClient, this.showState);
+
+    const previews: AiPartyTdPreviewPayload[] = [];
+    let lastError = "Bridge preview unavailable";
+    for (const output of AI_PARTY_TD_PREVIEW_OUTPUTS) {
+      try {
+        const preview = await this.tdClient.getPreview(output.path, 640, 360);
+        previews.push({ ...output, preview });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        lastError = message;
+        previews.push({ ...output, error: message });
+      }
+    }
+
+    const firstAvailable = previews.find((item) => item.preview)?.preview;
+    if (firstAvailable) {
       this.showState.td_status = "ok";
       this.emit("td.preview.updated", {
-        preview: { width: preview.width, height: preview.height },
+        previews: previews
+          .filter((item) => item.preview)
+          .map((item) => ({
+            id: item.id,
+            width: item.preview?.width,
+            height: item.preview?.height,
+          })),
       });
-      return { ok: true, preview };
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      this.showState.td_status = "error";
-      return { ok: false, message };
+      return { ok: true, preview: firstAvailable, previews };
     }
+
+    this.showState.td_status = "error";
+    return { ok: false, message: lastError, previews };
   }
 
   async tdBuild() {
@@ -700,7 +782,11 @@ export class AiPartyLiveService {
       const wsSocket = socket as Socket;
       this.sockets.add(wsSocket);
       wsSocket.on("close", () => this.sockets.delete(wsSocket));
-      sendWs(wsSocket, { type: "snapshot", snapshot: this.snapshot() });
+      wsSocket.on("error", () => this.sockets.delete(wsSocket));
+      if (!sendWs(wsSocket, { type: "snapshot", snapshot: this.snapshot() })) {
+        this.sockets.delete(wsSocket);
+        wsSocket.destroy();
+      }
     });
 
     return new Promise((resolve) => {
@@ -745,6 +831,16 @@ export class AiPartyLiveService {
     }
     if (method === "GET" && path === "/api/cues") {
       json(res, 200, { cues: this.cues });
+      return;
+    }
+    if (method === "POST" && path === "/api/cues/generate") {
+      const body = (await readJson(req)) as { prompt?: string; text?: string };
+      try {
+        json(res, 200, this.generateCue(body.prompt ?? body.text ?? ""));
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        json(res, 400, { ok: false, message, cues: this.cues });
+      }
       return;
     }
     if (method === "GET" && path === "/api/approvals") {

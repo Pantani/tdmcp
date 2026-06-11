@@ -22,7 +22,7 @@ export const AI_PARTY_DASHBOARD_HTML = `<!doctype html>
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
     * { box-sizing: border-box; }
-    body { margin: 0; background: radial-gradient(circle at 20% 0%, #17243a 0, #080a0f 34rem); color: var(--text); }
+    body { margin: 0; overflow-x: hidden; background: radial-gradient(circle at 20% 0%, #17243a 0, #080a0f 34rem); color: var(--text); }
     button, textarea, input, select { font: inherit; }
     button { cursor: pointer; border: 1px solid var(--line); color: var(--text); background: #172235; border-radius: 8px; padding: .68rem .85rem; }
     button:hover { border-color: var(--cyan); }
@@ -34,7 +34,7 @@ export const AI_PARTY_DASHBOARD_HTML = `<!doctype html>
     .brand { font-weight: 800; letter-spacing: 0; font-size: 1.05rem; }
     .pill { min-height: 2.2rem; display: flex; align-items: center; justify-content: space-between; gap: .45rem; padding: .42rem .62rem; border: 1px solid var(--line); border-radius: 8px; background: #0d1320; color: var(--muted); white-space: nowrap; }
     .pill strong { color: var(--text); font-size: .82rem; }
-    main { display: grid; grid-template-columns: minmax(22rem, 1.1fr) minmax(20rem, .9fr) minmax(22rem, 1fr); gap: 1rem; padding: 1rem; align-items: start; }
+    main { display: grid; grid-template-columns: minmax(18rem, 1fr) minmax(17rem, .82fr) minmax(20rem, 1.1fr); gap: 1rem; padding: 1rem; align-items: start; max-width: 100vw; }
     section { background: rgba(17,23,34,.92); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); min-width: 0; }
     section h2 { margin: 0; padding: .9rem 1rem .7rem; font-size: .92rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); }
     .body { padding: 1rem; }
@@ -53,8 +53,13 @@ export const AI_PARTY_DASHBOARD_HTML = `<!doctype html>
     .metric { background: #0d1320; border: 1px solid var(--line); border-radius: 8px; padding: .7rem; min-height: 4rem; }
     .metric small { display: block; color: var(--muted); margin-bottom: .25rem; }
     .metric strong { font-size: 1.05rem; overflow-wrap: anywhere; }
-    .preview { aspect-ratio: 16/9; border: 1px solid var(--line); border-radius: 8px; background: #06080d; display: grid; place-items: center; color: var(--muted); overflow: hidden; }
-    .preview img { width: 100%; height: 100%; object-fit: contain; }
+    .preview-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: .8rem; }
+    .preview-output { min-width: 0; }
+    .preview-label { display: flex; justify-content: space-between; gap: .8rem; align-items: baseline; margin-bottom: .45rem; color: var(--muted); }
+    .preview-label strong { color: var(--text); font-size: .88rem; }
+    .preview-label small { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .74rem; }
+    .preview-frame { width: 100%; aspect-ratio: 16/9; max-height: min(30rem, 52vh); border: 1px solid var(--line); border-radius: 8px; background: #06080d; display: grid; place-items: center; color: var(--muted); overflow: hidden; }
+    .preview-frame img { display: block; width: 100%; height: 100%; object-fit: contain; }
     .events { display: grid; gap: .55rem; max-height: 30rem; overflow: auto; padding-right: .2rem; }
     .event { border-left: 3px solid var(--blue); background: #0d1320; border-radius: 6px; padding: .55rem .65rem; }
     .event.safety, .event.blocked { border-color: var(--red); }
@@ -63,9 +68,16 @@ export const AI_PARTY_DASHBOARD_HTML = `<!doctype html>
     .event small { color: var(--muted); }
     .safety-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .45rem; }
     .safety-list div { background: #0d1320; border: 1px solid var(--line); border-radius: 8px; padding: .55rem; color: #d8e5f7; }
+    @media (max-width: 1360px) {
+      main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+      main > div:last-child { grid-column: 1 / -1; }
+    }
     @media (max-width: 1180px) {
       .bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 860px) {
       main { grid-template-columns: 1fr; }
+      main > div:last-child { grid-column: auto; }
     }
     @media (max-width: 620px) {
       .bar { grid-template-columns: 1fr; }
@@ -83,7 +95,7 @@ export const AI_PARTY_DASHBOARD_HTML = `<!doctype html>
         <div class="body">
           <textarea id="command" placeholder="Tell the room what to become..."></textarea>
           <div class="chips" id="examples"></div>
-          <div class="row"><button class="primary" id="send">Send</button><button id="llmTest">Test LLM</button><button id="tdBuild">Build TD Demo</button></div>
+          <div class="row"><button class="primary" id="send">Send</button><button id="generateCue">Generate cue</button><button id="llmTest">Test LLM</button><button id="tdBuild">Build TD Demo</button></div>
           <div style="height:.8rem"></div>
           <div class="grid"><pre id="intent">{}</pre><pre id="policy">{}</pre></div>
         </div>
@@ -117,10 +129,10 @@ export const AI_PARTY_DASHBOARD_HTML = `<!doctype html>
     </div>
     <div>
       <section>
-        <h2>TouchDesigner Preview</h2>
+        <h2>TouchDesigner preview outputs</h2>
         <div class="body">
-          <div class="preview" id="preview">Bridge preview unavailable</div>
-          <div style="height:.8rem"></div><div class="row"><button id="refreshPreview">Refresh</button><label><input id="autoPreview" type="checkbox"> Auto</label></div>
+          <div class="preview-grid" id="preview">Bridge preview unavailable</div>
+          <div style="height:.8rem"></div><div class="row"><button id="refreshPreview">Refresh</button><label><input id="autoPreview" type="checkbox" checked> Auto</label></div>
         </div>
       </section>
       <section style="margin-top:1rem">
@@ -149,6 +161,9 @@ export const AI_PARTY_DASHBOARD_HTML = `<!doctype html>
       if (type.includes("td.")) return "event touchdesigner";
       return "event";
     }
+    function esc(value) {
+      return String(value ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+    }
     function render() {
       const s = snapshot.showState || {};
       $("statusBar").innerHTML = [
@@ -176,11 +191,32 @@ export const AI_PARTY_DASHBOARD_HTML = `<!doctype html>
     async function load() { snapshot = await fetch("/api/state").then(r => r.json()); render(); }
     async function preview() {
       const data = await fetch("/api/td/preview").then(r => r.json());
-      $("preview").innerHTML = data.ok && data.preview?.base64 ? '<img alt="TouchDesigner preview" src="data:image/'+(data.preview.format || "png")+';base64,'+data.preview.base64+'">' : (data.message || "Bridge preview unavailable");
+      const outputs = Array.isArray(data.previews) ? data.previews : (data.preview ? [{ id: "preview", label: "TouchDesigner", path: data.preview.path, preview: data.preview }] : []);
+      if (outputs.length === 0) {
+        $("preview").innerHTML = '<div class="preview-frame">'+esc(data.message || "Bridge preview unavailable")+'</div>';
+        return;
+      }
+      $("preview").innerHTML = outputs.map(output => {
+        const p = output.preview;
+        const body = p?.base64
+          ? '<img alt="'+esc(output.label || output.id || "TouchDesigner preview")+'" src="data:image/'+esc(p.format || "png")+';base64,'+p.base64+'">'
+          : '<span>'+esc(output.error || data.message || "Preview unavailable")+'</span>';
+        return '<div class="preview-output"><div class="preview-label"><strong>'+esc(output.label || output.id || "Output")+'</strong><small>'+esc(output.path || p?.path || "")+'</small></div><div class="preview-frame">'+body+'</div></div>';
+      }).join("");
     }
     $("examples").innerHTML = examples.map(x => '<button class="chip">'+x+'</button>').join("");
     for (const btn of document.querySelectorAll(".chip")) btn.onclick = () => { $("command").value = btn.textContent; };
-    $("send").onclick = () => post("/api/operator/text", { text: $("command").value }).then(load);
+    $("send").onclick = async () => {
+      const text = $("command").value;
+      $("command").value = "";
+      await post("/api/operator/text", { text });
+      await load();
+    };
+    $("generateCue").onclick = async () => {
+      const data = await post("/api/cues/generate", { prompt: $("command").value });
+      if (!data.ok) alert(data.message || "Could not generate cue");
+      await load();
+    };
     $("panic").onclick = () => post("/api/panic").then(load);
     $("llmTest").onclick = () => post("/api/llm/test").then(data => alert(JSON.stringify(data, null, 2)));
     $("tdBuild").onclick = () => post("/api/td/build").then(data => alert(JSON.stringify(data, null, 2)));
@@ -190,7 +226,7 @@ export const AI_PARTY_DASHBOARD_HTML = `<!doctype html>
     window.addEventListener("keydown", e => { if (e.key.toLowerCase() === "p") $("panic").click(); if (/^[1-9]$/.test(e.key)) document.querySelectorAll("[data-cue]")[Number(e.key)-1]?.click(); });
     const ws = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/ws");
     ws.onmessage = () => load();
-    setInterval(() => { if ($("autoPreview").checked) preview(); }, 2500);
+    setInterval(() => { if ($("autoPreview").checked) preview(); }, 1000);
     load().then(preview);
   </script>
 </body>

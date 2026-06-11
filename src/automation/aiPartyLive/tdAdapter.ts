@@ -1,7 +1,7 @@
 import type { TouchDesignerClient } from "../../td-client/touchDesignerClient.js";
 import { friendlyTdError } from "../../td-client/types.js";
 import { buildPayloadScript, parsePythonReport } from "../../tools/pythonReport.js";
-import type { AiPartyDispatchAction } from "./schemas.js";
+import type { AiPartyDispatchAction, AiPartyShowState } from "./schemas.js";
 
 export const AI_PARTY_TD_LAYOUT = [
   { name: "control_panel", nodeX: -660, nodeY: 260 },
@@ -12,15 +12,30 @@ export const AI_PARTY_TD_LAYOUT = [
   { name: "blur_bloom_sim", nodeX: 340, nodeY: 20 },
   { name: "text_status", nodeX: -380, nodeY: -210 },
   { name: "composite_status", nodeX: 580, nodeY: 20 },
-  { name: "preview_out", nodeX: 820, nodeY: 20 },
+  { name: "preview_out", nodeX: 820, nodeY: 110 },
+  { name: "status_wall_out", nodeX: 820, nodeY: -110 },
   { name: "sim_dmx_table", nodeX: -140, nodeY: -320 },
   { name: "dmx_out_disabled", nodeX: 120, nodeY: -320 },
+] as const;
+
+export const AI_PARTY_TD_PREVIEW_OUTPUTS = [
+  {
+    id: "main_wall",
+    label: "Main wall",
+    path: "/project1/ai_party_poc/preview_out",
+  },
+  {
+    id: "status_wall",
+    label: "Lyric/status wall",
+    path: "/project1/ai_party_poc/status_wall_out",
+  },
 ] as const;
 
 export interface TdBuildReport {
   ok?: boolean;
   targetPath?: string;
   previewPath?: string;
+  previewPaths?: Array<{ id: string; label: string; path: string }>;
   warnings?: string[];
   fatal?: string;
   nodes?: Array<{ name: string; path: string; nodeX: number; nodeY: number }>;
@@ -64,8 +79,14 @@ try:
         _noise_base = _root.create(noiseTOP, "noise_base")
         _noise_base.nodeX = -620
         _noise_base.nodeY = 20
+        _noise_base.par.outputresolution = "custom"
         _noise_base.par.resolutionw = 1280
         _noise_base.par.resolutionh = 720
+        _noise_base.par.outputaspect = "resolution"
+        try:
+            _noise_base.par.t4d.expr = "absTime.seconds * 0.21"
+        except Exception as _err:
+            report["warnings"].append("Could not attach live noise expression: " + str(_err))
 
         _level_mood = _root.create(levelTOP, "level_mood")
         _level_mood.nodeX = -380
@@ -85,24 +106,58 @@ try:
         _blur_bloom_sim = _root.create(blurTOP, "blur_bloom_sim")
         _blur_bloom_sim.nodeX = 340
         _blur_bloom_sim.nodeY = 20
-        _blur_bloom_sim.inputConnectors[0].connect(_feedback_loop)
+        _blur_bloom_sim.inputConnectors[0].connect(_displace_energy)
 
         _text_status = _root.create(textTOP, "text_status")
         _text_status.nodeX = -380
         _text_status.nodeY = -210
-        _text_status.par.text = "Live Nervous System\\\\nCue: doors_idle\\\\nPolicy: safe"
+        _text_status.par.text = "Live Nervous System\\\\nCue: doors_idle\\\\nMood: ambient_arrival\\\\nPolicy: safe"
+        _text_status.par.outputresolution = "custom"
+        _text_status.par.resolutionw = 1280
+        _text_status.par.resolutionh = 720
+        _text_status.par.wordwrap = True
+        _text_status.par.fontsizex = 34
+        _text_status.par.fontsizey = 34
+        _text_status.par.alignx = "left"
+        _text_status.par.aligny = "center"
+        _text_status.par.borderspace1 = 48
+        _text_status.par.borderspace2 = 40
+        _text_status.par.fontcolorr = 0.88
+        _text_status.par.fontcolorg = 0.96
+        _text_status.par.fontcolorb = 1.0
+        _text_status.par.bgcolorr = 0.02
+        _text_status.par.bgcolorg = 0.03
+        _text_status.par.bgcolorb = 0.05
+        _text_status.par.bgalpha = 0.26
 
         _composite_status = _root.create(compositeTOP, "composite_status")
         _composite_status.nodeX = 580
         _composite_status.nodeY = 20
         _composite_status.inputConnectors[0].connect(_blur_bloom_sim)
         _composite_status.inputConnectors[1].connect(_text_status)
+        _composite_status.par.operand = "add"
+        _composite_status.par.size = "input1"
+        _composite_status.par.outputresolution = "custom"
+        _composite_status.par.resolutionw = 1280
+        _composite_status.par.resolutionh = 720
 
         _preview_out = _root.create(nullTOP, "preview_out")
         _preview_out.nodeX = 820
-        _preview_out.nodeY = 20
-        _preview_out.inputConnectors[0].connect(_composite_status)
+        _preview_out.nodeY = 110
+        _preview_out.inputConnectors[0].connect(_blur_bloom_sim)
+        _preview_out.par.outputresolution = "custom"
+        _preview_out.par.resolutionw = 1280
+        _preview_out.par.resolutionh = 720
         _preview_out.viewer = True
+
+        _status_wall_out = _root.create(nullTOP, "status_wall_out")
+        _status_wall_out.nodeX = 820
+        _status_wall_out.nodeY = -110
+        _status_wall_out.inputConnectors[0].connect(_composite_status)
+        _status_wall_out.par.outputresolution = "custom"
+        _status_wall_out.par.resolutionw = 1280
+        _status_wall_out.par.resolutionh = 720
+        _status_wall_out.viewer = True
 
         _sim_dmx_table = _root.create(tableDAT, "sim_dmx_table")
         _sim_dmx_table.nodeX = -140
@@ -117,11 +172,15 @@ try:
         _dmx_out_disabled.nodeY = -320
         _dmx_out_disabled.viewer = False
 
-        for _node in [_control_panel, _noise_base, _level_mood, _displace_energy, _feedback_loop, _blur_bloom_sim, _text_status, _composite_status, _preview_out, _sim_dmx_table, _dmx_out_disabled]:
+        for _node in [_control_panel, _noise_base, _level_mood, _displace_energy, _feedback_loop, _blur_bloom_sim, _text_status, _composite_status, _preview_out, _status_wall_out, _sim_dmx_table, _dmx_out_disabled]:
             report["nodes"].append({"name": _node.name, "path": _node.path, "nodeX": _node.nodeX, "nodeY": _node.nodeY})
         report["ok"] = True
         report["targetPath"] = _root.path
         report["previewPath"] = _preview_out.path
+        report["previewPaths"] = [
+            {"id": "main_wall", "label": "Main wall", "path": _preview_out.path},
+            {"id": "status_wall", "label": "Lyric/status wall", "path": _status_wall_out.path},
+        ]
 except Exception:
     report["fatal"] = traceback.format_exc()
 print(json.dumps(report))
@@ -145,6 +204,46 @@ export async function buildAiPartyTdDemo(client: TouchDesignerClient): Promise<T
   }
 }
 
+function hashVisualKey(value: string): number {
+  let hash = 2166136261;
+  for (const char of value) {
+    hash ^= char.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function channel(hash: number, shift: number, min = 0.12, max = 0.95): number {
+  const value = (hash >>> shift) & 0xff;
+  return Number((min + (value / 255) * (max - min)).toFixed(3));
+}
+
+function visualFingerprint(key: string, intensity = 0.55) {
+  const hash = hashVisualKey(key);
+  const boundedIntensity = Math.max(0.2, Math.min(0.85, intensity));
+  return {
+    noise: {
+      seed: (hash % 997) + 1,
+      amp: Number((0.3 + boundedIntensity * 0.45).toFixed(3)),
+      harmon: Math.max(2, Math.min(8, Math.round(2 + boundedIntensity * 6))),
+      period: Number(Math.max(0.42, 1.35 - boundedIntensity * 0.55).toFixed(3)),
+    },
+    level: {
+      lowr: channel(hash, 0, 0.0, 0.24),
+      lowg: channel(hash, 8, 0.0, 0.24),
+      lowb: channel(hash, 16, 0.0, 0.24),
+      highr: channel(hash, 0),
+      highg: channel(hash, 8),
+      highb: channel(hash, 16),
+      contrast: Number((1 + boundedIntensity * 0.65).toFixed(3)),
+      brightness1: Number((0.82 + boundedIntensity * 0.26).toFixed(3)),
+    },
+    blur: {
+      size: Math.max(2, Math.round(3 + boundedIntensity * 10 + (hash % 4))),
+    },
+  };
+}
+
 export async function sendAiPartyActionsToTd(
   client: TouchDesignerClient,
   actions: AiPartyDispatchAction[],
@@ -152,23 +251,102 @@ export async function sendAiPartyActionsToTd(
   try {
     await client.getInfo();
     const params: Record<string, unknown> = {};
+    let statusCue = "unchanged";
+    let statusMood = "unchanged";
+    let statusIntensity: number | undefined;
+    const visualKeys: string[] = [];
+    const statusLines = ["Live Nervous System"];
     for (const action of actions) {
       if (action.kind === "cue") {
         params.Cue = action.cue;
+        statusCue = action.cue;
         if (action.intensity !== undefined) params.Intensity = action.intensity;
+        statusIntensity = action.intensity;
+        visualKeys.push(action.cue);
       } else if (action.kind === "mood") {
         params.Mood = action.mood;
         params.Intensity = action.intensity;
+        statusMood = action.mood;
+        statusIntensity = action.intensity;
+        visualKeys.push(action.mood);
       } else if (action.kind === "panic_safe") {
         params.Cue = "panic_safe";
         params.Panic = true;
         params.Fogsim = false;
+        statusCue = "panic_safe";
+        visualKeys.push("panic_safe");
+        statusLines.push("Policy: panic safe");
       }
     }
     if (Object.keys(params).length === 0) return false;
     await client.updateNodeParameters("/project1/ai_party_poc/control_panel", params);
+    if (visualKeys.length > 0) {
+      const fingerprint = visualFingerprint(visualKeys.join("|"), statusIntensity);
+      await client.updateNodeParameters("/project1/ai_party_poc/noise_base", fingerprint.noise);
+      await client.updateNodeParameters("/project1/ai_party_poc/level_mood", fingerprint.level);
+      await client.updateNodeParameters("/project1/ai_party_poc/blur_bloom_sim", fingerprint.blur);
+    }
+    statusLines.push(`Cue: ${statusCue}`);
+    statusLines.push(`Mood: ${statusMood}`);
+    if (statusIntensity !== undefined) statusLines.push(`Intensity: ${statusIntensity.toFixed(2)}`);
+    await client.updateNodeParameters("/project1/ai_party_poc/text_status", {
+      text: statusLines.join("\n"),
+    });
     return true;
   } catch {
     return false;
   }
+}
+
+export function formatAiPartyTdStatusText(
+  state: Pick<
+    AiPartyShowState,
+    | "current_cue"
+    | "current_mood"
+    | "current_intensity"
+    | "last_source"
+    | "last_policy"
+    | "pending_approvals_count"
+    | "panic"
+  >,
+  now: Date = new Date(),
+): string {
+  const policy = state.last_policy?.decision ?? "none";
+  return [
+    "Live Nervous System",
+    `Cue: ${state.current_cue}`,
+    `Mood: ${state.current_mood}`,
+    `Intensity: ${state.current_intensity.toFixed(2)}`,
+    `Policy: ${policy}`,
+    `Pending: ${state.pending_approvals_count}`,
+    `Source: ${state.last_source || "none"}`,
+    `Clock: ${now.toISOString().slice(11, 19)}`,
+    state.panic ? "PANIC SAFE ACTIVE" : "Panic: normal",
+  ].join("\n");
+}
+
+export async function refreshAiPartyTdPreviewState(
+  client: TouchDesignerClient,
+  state: Parameters<typeof formatAiPartyTdStatusText>[0],
+  now: Date = new Date(),
+): Promise<boolean> {
+  let refreshed = false;
+  try {
+    await client.updateNodeParameters("/project1/ai_party_poc/text_status", {
+      text: formatAiPartyTdStatusText(state, now),
+    });
+    refreshed = true;
+  } catch {
+    // The preview can still refresh older TD networks that do not have text_status.
+  }
+  try {
+    await client.updateNodeParameters("/project1/ai_party_poc/noise_base", {
+      t4d: Number(((now.getTime() / 1000) % 1000).toFixed(3)),
+      tx: Number((((now.getTime() / 1000) * 0.031) % 1).toFixed(3)),
+    });
+    refreshed = true;
+  } catch {
+    // Keep preview capture best-effort even if the visual generator is absent.
+  }
+  return refreshed;
 }
