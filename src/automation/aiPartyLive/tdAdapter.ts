@@ -14,7 +14,10 @@ export const AI_PARTY_TD_LAYOUT = [
   { name: "composite_status", nodeX: 580, nodeY: 20 },
   { name: "preview_out", nodeX: 820, nodeY: 110 },
   { name: "status_wall_out", nodeX: 820, nodeY: -110 },
+  { name: "camera_fallback_bg", nodeX: -620, nodeY: -640 },
+  { name: "camera_device_in", nodeX: -620, nodeY: -520 },
   { name: "camera_ai_vision_text", nodeX: -380, nodeY: -520 },
+  { name: "camera_ai_composite", nodeX: 340, nodeY: -520 },
   { name: "camera_ai_vision_out", nodeX: 820, nodeY: -520 },
   { name: "crowd_interaction_text", nodeX: -380, nodeY: -760 },
   { name: "crowd_interaction_out", nodeX: 820, nodeY: -760 },
@@ -173,10 +176,50 @@ try:
         _status_wall_out.par.resolutionh = 720
         _status_wall_out.viewer = True
 
+        _camera_fallback_bg = _root.create(constantTOP, "camera_fallback_bg")
+        _camera_fallback_bg.nodeX = -620
+        _camera_fallback_bg.nodeY = -640
+        _camera_fallback_bg.par.outputresolution = "custom"
+        _camera_fallback_bg.par.resolutionw = 1280
+        _camera_fallback_bg.par.resolutionh = 720
+        _camera_fallback_bg.par.colorr = 0.02
+        _camera_fallback_bg.par.colorg = 0.04
+        _camera_fallback_bg.par.colorb = 0.06
+        _camera_fallback_bg.par.alpha = 1.0
+
+        _camera_source = _camera_fallback_bg
+        _camera_device_in = None
+        try:
+            _camera_device_in = _root.create(videodeviceinTOP, "camera_device_in")
+        except Exception as _err:
+            try:
+                _camera_device_in = _root.create(videoDeviceInTOP, "camera_device_in")
+            except Exception as _err2:
+                report["warnings"].append("Could not create Video Device In TOP; using camera fallback: " + str(_err2 or _err))
+        if _camera_device_in is not None:
+            _camera_device_in.nodeX = -620
+            _camera_device_in.nodeY = -520
+            _camera_device_in.viewer = False
+            try:
+                _camera_device_in.par.active = True
+            except Exception as _err:
+                report["warnings"].append("Could not activate webcam input: " + str(_err))
+            try:
+                _camera_device_in.par.driver = "avfoundation"
+            except Exception as _err:
+                report["warnings"].append("Could not select AVFoundation webcam driver: " + str(_err))
+            try:
+                _camera_device_in.par.outputresolution = "custom"
+                _camera_device_in.par.resolutionw = 1280
+                _camera_device_in.par.resolutionh = 720
+            except Exception as _err:
+                report["warnings"].append("Could not set webcam output resolution: " + str(_err))
+            _camera_source = _camera_device_in
+
         _camera_ai_vision_text = _root.create(textTOP, "camera_ai_vision_text")
         _camera_ai_vision_text.nodeX = -380
         _camera_ai_vision_text.nodeY = -520
-        _camera_ai_vision_text.par.text = "Camera / AI Vision\\\\nSynthetic fallback\\\\nNo camera hardware armed"
+        _camera_ai_vision_text.par.text = "Camera / AI Vision\\\\nLive webcam feed\\\\nLocal preview only"
         _camera_ai_vision_text.par.outputresolution = "custom"
         _camera_ai_vision_text.par.resolutionw = 1280
         _camera_ai_vision_text.par.resolutionh = 720
@@ -191,12 +234,23 @@ try:
         _camera_ai_vision_text.par.bgcolorr = 0.03
         _camera_ai_vision_text.par.bgcolorg = 0.06
         _camera_ai_vision_text.par.bgcolorb = 0.08
-        _camera_ai_vision_text.par.bgalpha = 1.0
+        _camera_ai_vision_text.par.bgalpha = 0.18
+
+        _camera_ai_composite = _root.create(compositeTOP, "camera_ai_composite")
+        _camera_ai_composite.nodeX = 340
+        _camera_ai_composite.nodeY = -520
+        _camera_ai_composite.inputConnectors[0].connect(_camera_source)
+        _camera_ai_composite.inputConnectors[1].connect(_camera_ai_vision_text)
+        _camera_ai_composite.par.operand = "over"
+        _camera_ai_composite.par.size = "input1"
+        _camera_ai_composite.par.outputresolution = "custom"
+        _camera_ai_composite.par.resolutionw = 1280
+        _camera_ai_composite.par.resolutionh = 720
 
         _camera_ai_vision_out = _root.create(nullTOP, "camera_ai_vision_out")
         _camera_ai_vision_out.nodeX = 820
         _camera_ai_vision_out.nodeY = -520
-        _camera_ai_vision_out.inputConnectors[0].connect(_camera_ai_vision_text)
+        _camera_ai_vision_out.inputConnectors[0].connect(_camera_ai_composite)
         _camera_ai_vision_out.par.outputresolution = "custom"
         _camera_ai_vision_out.par.resolutionw = 1280
         _camera_ai_vision_out.par.resolutionh = 720
@@ -244,7 +298,9 @@ try:
         _dmx_out_disabled.nodeY = -320
         _dmx_out_disabled.viewer = False
 
-        for _node in [_control_panel, _noise_base, _level_mood, _displace_energy, _feedback_loop, _blur_bloom_sim, _text_status, _composite_status, _preview_out, _status_wall_out, _camera_ai_vision_text, _camera_ai_vision_out, _crowd_interaction_text, _crowd_interaction_out, _sim_dmx_table, _dmx_out_disabled]:
+        for _node in [_control_panel, _noise_base, _level_mood, _displace_energy, _feedback_loop, _blur_bloom_sim, _text_status, _composite_status, _preview_out, _status_wall_out, _camera_fallback_bg, _camera_device_in, _camera_ai_vision_text, _camera_ai_composite, _camera_ai_vision_out, _crowd_interaction_text, _crowd_interaction_out, _sim_dmx_table, _dmx_out_disabled]:
+            if _node is None:
+                continue
             report["nodes"].append({"name": _node.name, "path": _node.path, "nodeX": _node.nodeX, "nodeY": _node.nodeY})
         report["ok"] = True
         report["targetPath"] = _root.path

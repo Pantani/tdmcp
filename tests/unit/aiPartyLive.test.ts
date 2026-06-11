@@ -1185,6 +1185,14 @@ describe("Ollama, Telegram, TD and dispatch adapters", () => {
     expect(script).toContain("/project1/ai_party_poc");
     expect(script).toContain("dmx_out_disabled");
     expect(script).toContain("status_wall_out");
+    expect(script).toContain("camera_device_in");
+    expect(script).toContain("videodeviceinTOP");
+    expect(script).toContain('par.driver = "avfoundation"');
+    expect(script).toContain("_camera_ai_composite");
+    expect(script).toContain("_camera_ai_composite.inputConnectors[0].connect(_camera_source)");
+    expect(script).toContain(
+      "_camera_ai_composite.inputConnectors[1].connect(_camera_ai_vision_text)",
+    );
     expect(script).toContain("camera_ai_vision_out");
     expect(script).toContain("crowd_interaction_out");
     expect(script).toContain("_camera_ai_vision_text");
