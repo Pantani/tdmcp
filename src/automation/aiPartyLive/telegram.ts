@@ -65,6 +65,7 @@ export interface AiPartyTelegramSendMessageArgs {
 export interface ParsedAiPartyTelegramCommand {
   rawText: string;
   replyOnly?: boolean;
+  audienceSuggestion?: boolean;
   demo?: boolean;
   approvalAction?: "approve" | "reject";
   approvalId?: string;
@@ -153,6 +154,14 @@ export function parseAiPartyTelegramCommand(rawText: string): ParsedAiPartyTeleg
   }
   if (command === "/start" || command === "/help" || command === "/status" || command === "/cues") {
     return { rawText: text, replyOnly: true };
+  }
+  if (
+    command === "/suggest" ||
+    command === "/vibe" ||
+    command === "/vote" ||
+    command === "/request"
+  ) {
+    return { rawText: rest.join(" "), audienceSuggestion: true };
   }
   if (command === "/demo") return { rawText: text, demo: true };
   if (command === "/approve") {

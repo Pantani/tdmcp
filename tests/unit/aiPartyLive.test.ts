@@ -1,10 +1,15 @@
-import { existsSync, mkdtempSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { Socket } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { loadGeneratedCueStore } from "../../src/automation/aiPartyLive/generatedCueStore.js";
 import {
+  AI_PARTY_DASHBOARD_HTML,
   AI_PARTY_TD_LAYOUT,
+  AI_PARTY_TD_PREVIEW_OUTPUTS,
   buildAiPartyTdDemoScript,
+  createAiPartyGeneratedCue,
   createAiPartyLiveService,
   createInitialAiPartyShowState,
   dispatchAiPartyPlan,
@@ -13,6 +18,7 @@ import {
   parseOllamaShowIntent,
   parseShowIntentEnvelope,
   ShowIntentEnvelopeSchema,
+  sendAiPartyActionsToTd,
 } from "../../src/automation/aiPartyLive/index.js";
 
 const handles: Array<{ close: () => Promise<void> }> = [];
@@ -28,6 +34,10 @@ function tempLogPath(): string {
   return join(mkdtempSync(join(tmpdir(), "tdmcp-ai-party-live-")), "events.jsonl");
 }
 
+function tempGeneratedCuePath(): string {
+  return join(mkdtempSync(join(tmpdir(), "tdmcp-ai-party-cues-")), "generated-cues.json");
+}
+
 function okJson(body: unknown): Response {
   return new Response(JSON.stringify(body), {
     status: 200,
@@ -40,7 +50,24 @@ async function readJson<T = unknown>(res: Response): Promise<T> {
 }
 
 type HealthJson = { ok: boolean; state: { hardware_enabled: boolean } };
-type CuesJson = { cues: Array<{ name: string }> };
+type CuesJson = { cues: Array<{ name: string; label?: string; favorite?: boolean }> };
+type StateJson = {
+  foh: {
+    bridge: { status: string; url: string };
+    llm: {
+      active_model: string;
+      status: string;
+      latency_ms?: number;
+      last_confidence?: number;
+      last_source_summary?: string;
+      repaired?: boolean;
+      fallback?: boolean;
+    };
+    policy?: { decision: string; reason: string; operator_message: string };
+    cooldowns: Array<{ effect: string; remaining_seconds: number }>;
+  };
+  audience_suggestions: Array<{ raw_text: string; status: string; policy_decision: string }>;
+};
 type OperatorJson = {
   policy: { decision: string };
   state: { current_cue: string };
@@ -50,6 +77,44 @@ type ApprovalJson = { approval: { status: string } };
 type PanicJson = { state: { panic: boolean; current_cue: string } };
 type LlmJson = { ok: boolean; warning: string };
 type TdJson = { ok: boolean; status?: string };
+type AudienceSuggestionJson = {
+  ok: boolean;
+  suggestion?: { id: string; raw_text: string; status: string; policy_decision: string };
+  reason?: string;
+};
+type RecapJson = {
+  ok: boolean;
+  summary: string;
+  counts: { events: number; audience_suggestions: number };
+  recent_highlights: string[];
+};
+type GeneratedCueJson = {
+  ok: boolean;
+  cue: { name: string; generated_mood?: string; generated_intensity?: number };
+  generated_cues?: Array<{ name: string; generated_intensity?: number }>;
+  cues: Array<{ name: string }>;
+};
+type TimelineJson = {
+  ok: boolean;
+  state: {
+    music_section?: string;
+    timeline: { current_scene: string; next_scene?: string };
+  };
+};
+type RehearsalJson = {
+  ok: boolean;
+  summary: { hardware_sent: boolean; simulated_dispatches: number; blocked_requests: number };
+  steps: Array<{ label: string; status: string }>;
+};
+type ReplayJson = {
+  ok: boolean;
+  summary: { total_events: number; type_counts: Record<string, number> };
+};
+type CueMutationJson = {
+  ok: boolean;
+  cue?: { name: string; label: string; favorite?: boolean };
+  cues: Array<{ name: string; label: string; favorite?: boolean }>;
+};
 
 describe("aiPartyLive schema and policy", () => {
   it("accepts the requested ShowIntent envelope shape", () => {
@@ -113,6 +178,60 @@ describe("aiPartyLive schema and policy", () => {
       risk_level: "blocked",
       operator_message: expect.stringContaining("Unknown cue"),
     });
+  });
+
+  it("turns generated visual cues into bounded mood plans", () => {
+    const generatedCue = createAiPartyGeneratedCue("dark disco elegante no build", {
+      index: 1,
+      now: new Date("2026-06-11T07:00:00.000Z"),
+      currentIntensity: 0.5,
+    });
+
+    const policy = evaluateAiPartyPolicy(
+      { type: "request_cue", cue: generatedCue.name, cue_kind: "combined" },
+      createInitialAiPartyShowState(),
+      "cue:generated",
+      [generatedCue],
+    );
+
+    expect(generatedCue).toMatchObject({
+      name: "gen_dark_disco_elegante_no_01",
+      kind: "combined",
+      risk: "safe",
+      preapproved: true,
+      generated_mood: "dark_disco_elegante_no",
+      source_prompt: "dark disco elegante no build",
+    });
+    expect(policy).toMatchObject({
+      decision: "allow",
+      requires_hardware_gate: false,
+      plan: [
+        { kind: "cue", cue: generatedCue.name, intensity: generatedCue.generated_intensity },
+        {
+          kind: "mood",
+          mood: generatedCue.generated_mood,
+          intensity: generatedCue.generated_intensity,
+        },
+      ],
+    });
+  });
+
+  it("keeps generated cue display fields free of raw HTML from prompts", () => {
+    const generatedCue = createAiPartyGeneratedCue(
+      "neon vibe <img src=x onerror=alert(1)> & chrome",
+      {
+        index: 1,
+        now: new Date("2026-06-11T07:00:00.000Z"),
+      },
+    );
+
+    expect(generatedCue.source_prompt).toBe("neon vibe <img src=x onerror=alert(1)> & chrome");
+    expect(generatedCue.label).toBe("Generated: Neon vibe img src=x onerror=alert(1) chrome");
+    expect(generatedCue.description).toBe(
+      "Temporary safe visual mood from: neon vibe img src=x onerror=alert(1) chrome",
+    );
+    expect(generatedCue.label).not.toMatch(/[<>&]/);
+    expect(generatedCue.description).not.toMatch(/[<>&]/);
   });
 
   it("approval-gates bounded fog and blocks over-limit fog, strobe, blackout, and prompt injection", () => {
@@ -234,6 +353,325 @@ describe("aiPartyLive service", () => {
     expect(lines.some((line) => line.includes("approval.rejected"))).toBe(true);
   });
 
+  it("drops broken dashboard websocket clients instead of crashing preview refresh", async () => {
+    const service = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      fetchImpl: async () =>
+        okJson({
+          ok: true,
+          data: {
+            path: "/project1/ai_party_poc/preview_out",
+            width: 1,
+            height: 1,
+            format: "png",
+            base64: "x",
+          },
+        }),
+    });
+    const brokenSocket = new Socket();
+    const sockets = (service as unknown as { sockets: Set<Socket> }).sockets;
+    sockets.add(brokenSocket);
+    brokenSocket.write = (() => {
+      throw Object.assign(new Error("write EPIPE"), { code: "EPIPE" });
+    }) as Socket["write"];
+
+    await expect(service.tdPreview()).resolves.toMatchObject({ ok: true });
+    expect(sockets.has(brokenSocket)).toBe(false);
+  });
+
+  it("keeps websocket clients connected when snapshot frames exceed 64 KiB", () => {
+    const service = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+    });
+    const writes: Buffer[] = [];
+    const largeSocket = {
+      destroyed: false,
+      writable: true,
+      write: (chunk: Buffer) => {
+        writes.push(Buffer.from(chunk));
+        return true;
+      },
+      destroy: () => largeSocket,
+    } as unknown as Socket;
+    const internals = service as unknown as {
+      sockets: Set<Socket>;
+      emit: (type: "health.changed", payload: unknown) => unknown;
+    };
+
+    internals.sockets.add(largeSocket);
+    internals.emit("health.changed", { blob: "x".repeat(70_000) });
+
+    expect(internals.sockets.has(largeSocket)).toBe(true);
+    const frame = writes.at(-1);
+    expect(frame?.[0]).toBe(0x81);
+    expect(frame?.[1]).toBe(127);
+    expect(Number(frame?.readBigUInt64BE(2))).toBeGreaterThan(65_535);
+  });
+
+  it("returns every configured TouchDesigner preview output with labels", async () => {
+    const patches: Array<{ path: string; parameters: Record<string, unknown> }> = [];
+    const service = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      fetchImpl: async (input, init) => {
+        const url = new URL(String(input));
+        if (init?.method === "PATCH") {
+          patches.push({
+            path: decodeURIComponent(url.pathname.replace("/api/nodes/", "")),
+            parameters: JSON.parse(String(init.body)).parameters,
+          });
+          return okJson({
+            ok: true,
+            data: {
+              path: decodeURIComponent(url.pathname.replace("/api/nodes/", "")),
+              type: "textTOP",
+              name: "text_status",
+              parameters: {},
+            },
+          });
+        }
+        const path = decodeURIComponent(url.pathname.replace("/api/preview/", ""));
+        return okJson({
+          ok: true,
+          data: {
+            path,
+            width: 640,
+            height: 360,
+            format: "png",
+            base64: "x",
+          },
+        });
+      },
+    });
+
+    await expect(service.tdPreview()).resolves.toMatchObject({
+      ok: true,
+      preview: { path: AI_PARTY_TD_PREVIEW_OUTPUTS[0].path },
+      previews: AI_PARTY_TD_PREVIEW_OUTPUTS.map((output) => ({
+        id: output.id,
+        label: output.label,
+        path: output.path,
+        preview: { path: output.path },
+      })),
+    });
+    expect(patches).toEqual(
+      expect.arrayContaining([
+        {
+          path: "/project1/ai_party_poc/text_status",
+          parameters: { text: expect.stringContaining("Clock:") },
+        },
+        {
+          path: "/project1/ai_party_poc/noise_base",
+          parameters: { t4d: expect.any(Number), tx: expect.any(Number) },
+        },
+      ]),
+    );
+  });
+
+  it("generates safe temporary cues and dispatches them as mood changes", async () => {
+    const service = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      fetchImpl: async (input, init) => {
+        const url = new URL(String(input));
+        if (url.pathname === "/api/info") {
+          return okJson({
+            ok: true,
+            data: { bridge_version: "test", project: "unit" },
+          });
+        }
+        if (init?.method === "PATCH") {
+          return okJson({
+            ok: true,
+            data: {
+              path: decodeURIComponent(url.pathname.replace("/api/nodes/", "")),
+              type: "baseCOMP",
+              name: "node",
+              parameters: {},
+            },
+          });
+        }
+        return okJson({});
+      },
+    });
+
+    const generated = service.generateCue("dark disco elegante no build");
+    expect(generated.ok).toBe(true);
+    expect(service.snapshot().cues.some((cue) => cue.name === generated.cue.name)).toBe(true);
+
+    const result = await service.triggerCue(generated.cue.name);
+    expect(result.policy).toMatchObject({
+      decision: "allow",
+      plan: [
+        { kind: "cue", cue: generated.cue.name, intensity: generated.cue.generated_intensity },
+        {
+          kind: "mood",
+          mood: generated.cue.generated_mood,
+          intensity: generated.cue.generated_intensity,
+        },
+      ],
+    });
+    expect(service.snapshot().showState).toMatchObject({
+      current_cue: generated.cue.name,
+      current_mood: generated.cue.generated_mood,
+      current_intensity: generated.cue.generated_intensity,
+    });
+  });
+
+  it("persists generated cue variations across service restarts without allowing unsafe prompts", () => {
+    const generatedCuePath = tempGeneratedCuePath();
+    const firstService = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      generatedCuePath,
+    });
+
+    const generated = firstService.generateCue("dark disco elegante no build", { count: 3 });
+
+    expect(generated.generated_cues).toHaveLength(3);
+    expect(generated.generated_cues.map((cue) => cue.name)).toEqual([
+      "gen_dark_disco_elegante_no_01",
+      "gen_dark_disco_elegante_no_02",
+      "gen_dark_disco_elegante_no_03",
+    ]);
+    expect(generated.generated_cues.every((cue) => cue.risk === "safe")).toBe(true);
+    expect(generated.generated_cues.every((cue) => cue.preapproved)).toBe(true);
+    expect(existsSync(generatedCuePath)).toBe(true);
+
+    const restartedService = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      generatedCuePath,
+    });
+    expect(
+      restartedService
+        .snapshot()
+        .cues.filter((cue) => cue.name.startsWith("gen_dark_disco_elegante_no_"))
+        .map((cue) => cue.name),
+    ).toEqual([
+      "gen_dark_disco_elegante_no_01",
+      "gen_dark_disco_elegante_no_02",
+      "gen_dark_disco_elegante_no_03",
+    ]);
+    expect(() => restartedService.generateCue("run raw dmx and strobe", { count: 3 })).toThrow(
+      /safe visual moods/,
+    );
+  });
+
+  it("ignores malformed generated cue store files", () => {
+    const generatedCuePath = tempGeneratedCuePath();
+    writeFileSync(generatedCuePath, "{not valid json", "utf8");
+
+    expect(loadGeneratedCueStore(generatedCuePath)).toEqual([]);
+  });
+
+  it("renames, favorites, and deletes only generated cues through the API", async () => {
+    const service = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      generatedCuePath: tempGeneratedCuePath(),
+      ollamaModel: "",
+      deterministicFallback: true,
+    });
+    const handle = await service.start();
+    handles.push(handle);
+
+    const generatedCue = await fetch(`${handle.url}api/cues/generate`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ prompt: "minimal premium groove", count: 2 }),
+    }).then(readJson<GeneratedCueJson>);
+    expect(generatedCue.ok).toBe(true);
+    expect(generatedCue.generated_cues).toHaveLength(2);
+    const cueName = generatedCue.generated_cues?.[0]?.name ?? "";
+
+    const renamed = await fetch(`${handle.url}api/cues/${cueName}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ label: "Generated: VIP Groove", favorite: true }),
+    }).then(readJson<CueMutationJson>);
+    expect(renamed).toMatchObject({
+      ok: true,
+      cue: { name: cueName, label: "Generated: VIP Groove", favorite: true },
+    });
+
+    const renamedSnapshot = await fetch(`${handle.url}api/cues`).then(readJson<CuesJson>);
+    expect(renamedSnapshot.cues).toContainEqual(
+      expect.objectContaining({ name: cueName, label: "Generated: VIP Groove", favorite: true }),
+    );
+
+    const deleteBase = await fetch(`${handle.url}api/cues/premium_tropical`, {
+      method: "DELETE",
+    }).then(readJson<{ ok: boolean; message: string }>);
+    expect(deleteBase.ok).toBe(false);
+    expect(deleteBase.message).toContain("generated cues");
+
+    const deleted = await fetch(`${handle.url}api/cues/${cueName}`, { method: "DELETE" }).then(
+      readJson<CueMutationJson>,
+    );
+    expect(deleted.ok).toBe(true);
+    expect(deleted.cues.some((cue) => cue.name === cueName)).toBe(false);
+  });
+
+  it("auto-generates a temporary visual cue for freeform vibe prompts sent from the dashboard", async () => {
+    const service = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      ollamaModel: "",
+      deterministicFallback: true,
+      fetchImpl: async (input, init) => {
+        const url = new URL(String(input));
+        if (url.pathname === "/api/info") {
+          return okJson({ ok: true, data: { bridge_version: "test", project: "unit" } });
+        }
+        if (init?.method === "PATCH") {
+          return okJson({
+            ok: true,
+            data: {
+              path: decodeURIComponent(url.pathname.replace("/api/nodes/", "")),
+              type: "baseCOMP",
+              name: "node",
+              parameters: {},
+            },
+          });
+        }
+        return okJson({});
+      },
+    });
+
+    const result = await service.processOperatorText("dark disco elegante no build");
+    const generatedCue = service.snapshot().cues.find((cue) => cue.name.startsWith("gen_"));
+
+    expect(generatedCue).toMatchObject({
+      name: "gen_dark_disco_elegante_no_01",
+      generated_mood: "dark_disco_elegante_no",
+      generated_intensity: 0.68,
+    });
+    expect(result.policy).toMatchObject({
+      decision: "allow",
+      plan: [
+        { kind: "cue", cue: "gen_dark_disco_elegante_no_01", intensity: 0.68 },
+        { kind: "mood", mood: "dark_disco_elegante_no", intensity: 0.68 },
+      ],
+    });
+    expect(service.snapshot().showState).toMatchObject({
+      current_cue: "gen_dark_disco_elegante_no_01",
+      current_mood: "dark_disco_elegante_no",
+      current_intensity: 0.68,
+    });
+
+    const secondResult = await service.processOperatorText("velvet chrome lounge wave");
+    expect(secondResult.policy).toMatchObject({
+      decision: "allow",
+      plan: [
+        { kind: "cue", cue: "gen_velvet_chrome_lounge_wave_02" },
+        { kind: "mood", mood: "velvet_chrome_lounge_wave" },
+      ],
+    });
+  });
+
   it("enforces physical-effect cooldowns before queuing and again before approving", async () => {
     const service = createAiPartyLiveService({
       dashboardPort: 0,
@@ -285,7 +723,163 @@ describe("aiPartyLive service", () => {
     expect(blockedBeforeQueue.approval).toBeUndefined();
   });
 
-  it("serves health, state, cue, operator, approval, panic, LLM, TD and preview endpoints", async () => {
+  it("exposes FOH telemetry, LLM quality, cooldowns, and safe audience suggestions", async () => {
+    const service = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      ollamaModel: "",
+      deterministicFallback: true,
+    });
+
+    await service.processOperatorText("deixa a sala mais premium tropical", "dashboard");
+    const fog = await service.evaluateIntent(
+      {
+        intent: { type: "arm_effect", effect: "fog", duration_seconds: 3, intensity: 0.35 },
+        confidence: 1,
+        source_summary: "first fog",
+        needs_operator_review: true,
+      },
+      { source: "demo_script", rawText: "first fog" },
+    );
+    if (!fog.approval) throw new Error("expected fog approval");
+    await service.approveApproval(fog.approval.id, "front-of-house");
+
+    const safeSuggestion = await service.queueAudienceSuggestion(
+      "/suggest /cue premium_tropical",
+      "100",
+      "audience-a",
+    );
+    const unsafeSuggestion = await service.queueAudienceSuggestion(
+      "/suggest /fog 3 0.35",
+      "100",
+      "audience-b",
+    );
+    const snapshot = service.snapshot();
+
+    expect(safeSuggestion).toMatchObject({
+      ok: true,
+      suggestion: {
+        raw_text: "/cue premium_tropical",
+        status: "queued",
+        policy_decision: "allow",
+      },
+    });
+    expect(unsafeSuggestion).toMatchObject({
+      ok: false,
+      reason: expect.stringContaining("safe suggestions"),
+    });
+    expect(snapshot.foh).toMatchObject({
+      bridge: { status: "unknown" },
+      llm: {
+        active_model: "deterministic fallback",
+        status: "error",
+        last_confidence: 0.78,
+        last_source_summary: "premium tropical deterministic fallback",
+        fallback: true,
+      },
+      policy: {
+        decision: expect.any(String),
+        reason: expect.any(String),
+        operator_message: expect.any(String),
+      },
+    });
+    expect(snapshot.foh.cooldowns).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ effect: "fog", remaining_seconds: expect.any(Number) }),
+      ]),
+    );
+    expect(snapshot.audience_suggestions).toHaveLength(1);
+  });
+
+  it("tracks a simple setlist timeline with current and next scene", async () => {
+    const service = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+    });
+
+    expect(service.snapshot().showState.timeline).toMatchObject({
+      current_scene: "doors",
+      next_scene: "warmup",
+      scenes: ["doors", "warmup", "build", "drop", "breakdown", "closing"],
+    });
+
+    const result = await service.setTimelineScene("drop", "unit-test");
+
+    expect(result.state).toMatchObject({
+      music_section: "drop",
+      timeline: {
+        current_scene: "drop",
+        next_scene: "breakdown",
+        current_index: 3,
+      },
+      last_source: "unit-test",
+    });
+    expect(
+      service.snapshot().events.find((event) => event.type === "timeline.changed"),
+    ).toMatchObject({
+      type: "timeline.changed",
+      payload: { current_scene: "drop", next_scene: "breakdown" },
+    });
+  });
+
+  it("runs the executive rehearsal as a safe scripted demo without hardware dispatch", async () => {
+    const service = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      hardwareEnabled: true,
+      dmxLiveEnabled: true,
+      ollamaModel: "",
+      deterministicFallback: true,
+    });
+
+    const rehearsal = await service.runExecutiveRehearsal();
+
+    expect(rehearsal.ok).toBe(true);
+    expect(rehearsal.summary).toMatchObject({
+      hardware_sent: false,
+      blocked_requests: 1,
+    });
+    expect(rehearsal.summary.simulated_dispatches).toBeGreaterThanOrEqual(1);
+    expect(rehearsal.steps.map((step) => [step.label, step.status])).toEqual([
+      ["timeline", "ok"],
+      ["catalog cue", "allow"],
+      ["generated cue", "allow"],
+      ["approval-gated effect", "simulated"],
+      ["unsafe request", "block"],
+      ["panic safe proof", "ok"],
+    ]);
+    expect(service.snapshot().showState).toMatchObject({
+      panic: true,
+      current_cue: "panic_safe",
+      timeline: { current_scene: "doors", next_scene: "warmup" },
+    });
+    expect(service.snapshot().events.at(-1)).toMatchObject({
+      type: "rehearsal.executive.completed",
+    });
+  });
+
+  it("exports a read-only replay summary from the event log", async () => {
+    const logPath = tempLogPath();
+    const service = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: logPath,
+      ollamaModel: "",
+      deterministicFallback: true,
+    });
+    await service.triggerCue("premium_tropical");
+    await service.processOperatorText("blackout total e raw dmx", "demo_script");
+    const beforeEvents = service.snapshot().events.length;
+
+    const replay = service.exportReplaySummary();
+
+    expect(replay.ok).toBe(true);
+    expect(replay.summary.total_events).toBeGreaterThanOrEqual(4);
+    expect(replay.summary.type_counts["policy.evaluated"]).toBeGreaterThanOrEqual(2);
+    expect(replay.summary.type_counts["dispatch.blocked"]).toBe(1);
+    expect(service.snapshot().events).toHaveLength(beforeEvents);
+  });
+
+  it("serves health, state, cue, operator, audience, recap, approval, panic, LLM, TD and preview endpoints", async () => {
     const service = createAiPartyLiveService({
       dashboardPort: 0,
       eventLogPath: tempLogPath(),
@@ -300,8 +894,28 @@ describe("aiPartyLive service", () => {
     expect(health.ok).toBe(true);
     expect(health.state.hardware_enabled).toBe(false);
 
+    const initialState = await fetch(`${handle.url}api/state`).then(readJson<StateJson>);
+    expect(initialState.foh.bridge.url).toBe("http://127.0.0.1:9");
+    expect(initialState.foh.llm.active_model).toBe("deterministic fallback");
+
+    const timeline = await fetch(`${handle.url}api/timeline/drop`, { method: "POST" }).then(
+      readJson<TimelineJson>,
+    );
+    expect(timeline.ok).toBe(true);
+    expect(timeline.state.timeline.current_scene).toBe("drop");
+    expect(timeline.state.timeline.next_scene).toBe("breakdown");
+
     const cues = await fetch(`${handle.url}api/cues`).then(readJson<CuesJson>);
     expect(cues.cues.some((cue: { name: string }) => cue.name === "premium_tropical")).toBe(true);
+
+    const generatedCue = await fetch(`${handle.url}api/cues/generate`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ prompt: "dark disco elegante no build" }),
+    }).then(readJson<GeneratedCueJson>);
+    expect(generatedCue.ok).toBe(true);
+    expect(generatedCue.cue.name).toBe("gen_dark_disco_elegante_no_01");
+    expect(generatedCue.cues.some((cue) => cue.name === generatedCue.cue.name)).toBe(true);
 
     const premium = await fetch(`${handle.url}api/operator/text`, {
       method: "POST",
@@ -341,6 +955,35 @@ describe("aiPartyLive service", () => {
     expect(panic.state.panic).toBe(true);
     expect(panic.state.current_cue).toBe("panic_safe");
 
+    const cleared = await fetch(`${handle.url}api/panic/clear`, { method: "POST" }).then((res) =>
+      readJson<PanicJson>(res),
+    );
+    expect(cleared.state.panic).toBe(false);
+
+    const suggestion = await fetch(`${handle.url}api/audience/suggestions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ text: "/cue premium_tropical", chatId: "100", operator: "guest" }),
+    }).then(readJson<AudienceSuggestionJson>);
+    expect(suggestion).toMatchObject({
+      ok: true,
+      suggestion: { status: "queued", policy_decision: "allow" },
+    });
+
+    const unsafeSuggestion = await fetch(`${handle.url}api/audience/suggestions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ text: "/fog 3 0.35", chatId: "100", operator: "guest" }),
+    }).then(readJson<AudienceSuggestionJson>);
+    expect(unsafeSuggestion).toMatchObject({ ok: false });
+
+    const recap = await fetch(`${handle.url}api/recap`).then(readJson<RecapJson>);
+    expect(recap.ok).toBe(true);
+    expect(recap.summary).toContain("AI Party Live recap");
+    expect(recap.counts.events).toBeGreaterThan(0);
+    expect(recap.counts.audience_suggestions).toBe(1);
+    expect(recap.recent_highlights.length).toBeGreaterThan(0);
+
     const llm = await fetch(`${handle.url}api/llm/test`, { method: "POST" }).then((res) =>
       readJson<LlmJson>(res),
     );
@@ -353,6 +996,16 @@ describe("aiPartyLive service", () => {
 
     const preview = await fetch(`${handle.url}api/td/preview`).then(readJson<TdJson>);
     expect(preview.ok).toBe(false);
+
+    const rehearsal = await fetch(`${handle.url}api/rehearsal/executive`, {
+      method: "POST",
+    }).then(readJson<RehearsalJson>);
+    expect(rehearsal.ok).toBe(true);
+    expect(rehearsal.summary.hardware_sent).toBe(false);
+
+    const replay = await fetch(`${handle.url}api/replay`).then(readJson<ReplayJson>);
+    expect(replay.ok).toBe(true);
+    expect(replay.summary.total_events).toBeGreaterThan(0);
   });
 });
 
@@ -462,6 +1115,10 @@ describe("Ollama, Telegram, TD and dispatch adapters", () => {
     expect(parseAiPartyTelegramCommand("/panic")).toMatchObject({
       envelope: { intent: { type: "panic_status", request: "enter_panic_safe" } },
     });
+    expect(parseAiPartyTelegramCommand("/suggest /cue premium_tropical")).toMatchObject({
+      audienceSuggestion: true,
+      rawText: "/cue premium_tropical",
+    });
   });
 
   it("starts Telegram polling and replies when polling is enabled", async () => {
@@ -553,5 +1210,162 @@ describe("Ollama, Telegram, TD and dispatch adapters", () => {
     }
     expect(script).toContain("/project1/ai_party_poc");
     expect(script).toContain("dmx_out_disabled");
+    expect(script).toContain("status_wall_out");
+    expect(script).toContain("camera_device_in");
+    expect(script).toContain("videodeviceinTOP");
+    expect(script).toContain('par.driver = "avfoundation"');
+    expect(script).toContain("_camera_ai_composite");
+    expect(script).toContain("_camera_ai_composite.inputConnectors[0].connect(_camera_source)");
+    expect(script).toContain(
+      "_camera_ai_composite.inputConnectors[1].connect(_camera_ai_vision_text)",
+    );
+    expect(script).toContain("camera_ai_vision_out");
+    expect(script).toContain("crowd_interaction_out");
+    expect(script).toContain("_camera_ai_vision_text");
+    expect(script).toContain("_crowd_interaction_text");
+    expect(script).toContain('_text_status.par.outputresolution = "custom"');
+    expect(script).toContain('_composite_status.par.operand = "add"');
+    expect(script).toContain('_composite_status.par.size = "input1"');
+    expect(script).toContain("_noise_base.par.t4d.expr");
+    expect(script).toContain("_blur_bloom_sim.inputConnectors[0].connect(_displace_energy)");
+    expect(AI_PARTY_TD_PREVIEW_OUTPUTS.map((output) => output.id)).toEqual([
+      "main_identity",
+      "reactive_world",
+      "camera_ai_vision",
+      "crowd_interaction",
+    ]);
+    expect(AI_PARTY_TD_PREVIEW_OUTPUTS.map((output) => output.path)).toEqual([
+      "/project1/ai_party_poc/preview_out",
+      "/project1/ai_party_poc/status_wall_out",
+      "/project1/ai_party_poc/camera_ai_vision_out",
+      "/project1/ai_party_poc/crowd_interaction_out",
+    ]);
+  });
+
+  it("renders TouchDesigner previews as a responsive multi-output grid", () => {
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("preview-grid");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("data.previews");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("TouchDesigner preview outputs");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("FOH Dashboard v2");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("LLM Quality");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("Audience Wall");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("Post-show Recap");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("/api/audience/suggestions");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("/api/recap");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("/api/panic/clear");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("esc(item.raw_text)");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("textContent = recap.summary");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain('id="generateCue"');
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("/api/cues/generate");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("esc(cue.label)");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("esc(cue.description)");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("esc(JSON.stringify(e.payload");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("let previewInFlight = false");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("if (previewInFlight) return");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain('$("command").value = ""');
+    expect(AI_PARTY_DASHBOARD_HTML).toContain('$("command").value = text');
+    expect(AI_PARTY_DASHBOARD_HTML).toContain('$("audienceText").value = ""');
+    expect(AI_PARTY_DASHBOARD_HTML).toContain('$("audienceText").value = text');
+    expect(AI_PARTY_DASHBOARD_HTML).toContain('alert("Could not queue suggestion")');
+  });
+
+  it("updates the TD status text when dispatching cue actions", async () => {
+    const updates: Array<{ path: string; parameters: Record<string, unknown> }> = [];
+    const client = {
+      getInfo: async () => ({ ok: true }),
+      updateNodeParameters: async (path: string, parameters: Record<string, unknown>) => {
+        updates.push({ path, parameters });
+      },
+    };
+
+    await expect(
+      sendAiPartyActionsToTd(client as never, [{ kind: "cue", cue: "brand_hero", intensity: 0.8 }]),
+    ).resolves.toBe(true);
+
+    expect(updates).toContainEqual({
+      path: "/project1/ai_party_poc/control_panel",
+      parameters: { Cue: "brand_hero", Intensity: 0.8 },
+    });
+    expect(updates).toContainEqual({
+      path: "/project1/ai_party_poc/text_status",
+      parameters: { text: expect.stringContaining("Cue: brand_hero") },
+    });
+  });
+
+  it("applies a visual fingerprint to TD for each cue and mood", async () => {
+    const updates: Array<{ path: string; parameters: Record<string, unknown> }> = [];
+    const client = {
+      getInfo: async () => ({ ok: true }),
+      updateNodeParameters: async (path: string, parameters: Record<string, unknown>) => {
+        updates.push({ path, parameters });
+      },
+    };
+
+    await expect(
+      sendAiPartyActionsToTd(client as never, [
+        { kind: "cue", cue: "gen_dark_disco_elegante_no_01", intensity: 0.68 },
+        { kind: "mood", mood: "dark_disco_elegante_no", intensity: 0.68 },
+      ]),
+    ).resolves.toBe(true);
+
+    expect(updates).toEqual(
+      expect.arrayContaining([
+        {
+          path: "/project1/ai_party_poc/noise_base",
+          parameters: expect.objectContaining({
+            seed: expect.any(Number),
+            amp: expect.any(Number),
+            harmon: expect.any(Number),
+            period: expect.any(Number),
+          }),
+        },
+        {
+          path: "/project1/ai_party_poc/level_mood",
+          parameters: expect.objectContaining({
+            lowr: expect.any(Number),
+            lowg: expect.any(Number),
+            lowb: expect.any(Number),
+            highr: expect.any(Number),
+            highg: expect.any(Number),
+            highb: expect.any(Number),
+            contrast: expect.any(Number),
+          }),
+        },
+        {
+          path: "/project1/ai_party_poc/blur_bloom_sim",
+          parameters: expect.objectContaining({ size: expect.any(Number) }),
+        },
+      ]),
+    );
+  });
+
+  it("preserves mood intensity when a later cue action has no intensity", async () => {
+    const updates: Array<{ path: string; parameters: Record<string, unknown> }> = [];
+    const client = {
+      getInfo: async () => ({ ok: true }),
+      updateNodeParameters: async (path: string, parameters: Record<string, unknown>) => {
+        updates.push({ path, parameters });
+      },
+    };
+
+    await expect(
+      sendAiPartyActionsToTd(client as never, [
+        { kind: "mood", mood: "dark_disco", intensity: 0.8 },
+        { kind: "cue", cue: "brand_hero" },
+      ]),
+    ).resolves.toBe(true);
+
+    expect(updates).toContainEqual({
+      path: "/project1/ai_party_poc/control_panel",
+      parameters: { Mood: "dark_disco", Intensity: 0.8, Cue: "brand_hero" },
+    });
+    expect(updates).toContainEqual({
+      path: "/project1/ai_party_poc/noise_base",
+      parameters: expect.objectContaining({ amp: 0.66 }),
+    });
+    expect(updates).toContainEqual({
+      path: "/project1/ai_party_poc/text_status",
+      parameters: { text: expect.stringContaining("Intensity: 0.80") },
+    });
   });
 });

@@ -85,8 +85,13 @@ function scanSafetyText(intent: ShowIntent, rawText?: string): AiPartyPolicyDeci
 }
 
 function cueDecision(cue: AiPartyCue, intensity?: number): AiPartyPolicyDecision {
-  const plan: AiPartyDispatchAction[] =
-    cue.kind === "safe_state"
+  const generatedIntensity = Math.min(cue.generated_intensity ?? intensity ?? 0.55, 0.85);
+  const plan: AiPartyDispatchAction[] = cue.generated_mood
+    ? [
+        { kind: "cue", cue: cue.name, intensity: generatedIntensity },
+        { kind: "mood", mood: cue.generated_mood, intensity: generatedIntensity },
+      ]
+    : cue.kind === "safe_state"
       ? [{ kind: "panic_safe" }]
       : [{ kind: "cue", cue: cue.name, intensity }];
   if (cue.preapproved && cue.risk === "safe" && cue.kind !== "physical_effect") {

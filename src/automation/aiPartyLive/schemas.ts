@@ -5,6 +5,26 @@ import { ShowEffectSchema, ShowIntentSchema } from "../showDirectorSchema.js";
 const NonEmptyString = z.string().trim().min(1);
 const ISO_TIME = /^\d{4}-\d{2}-\d{2}T/;
 
+export const AI_PARTY_TIMELINE_SCENES = [
+  "doors",
+  "warmup",
+  "build",
+  "drop",
+  "breakdown",
+  "closing",
+] as const;
+
+export const AiPartyTimelineSceneSchema = z.enum(AI_PARTY_TIMELINE_SCENES);
+export type AiPartyTimelineScene = z.infer<typeof AiPartyTimelineSceneSchema>;
+
+export const AiPartyTimelineStateSchema = z.object({
+  scenes: z.array(AiPartyTimelineSceneSchema).min(1),
+  current_scene: AiPartyTimelineSceneSchema,
+  next_scene: AiPartyTimelineSceneSchema.optional(),
+  current_index: z.number().int().nonnegative(),
+});
+export type AiPartyTimelineState = z.infer<typeof AiPartyTimelineStateSchema>;
+
 export const ShowIntentEnvelopeSchema = z.object({
   intent: ShowIntentSchema,
   confidence: z.number().min(0).max(1),
@@ -74,7 +94,12 @@ export const AiPartyShowStateSchema = z.object({
   current_cue: NonEmptyString,
   current_intensity: z.number().min(0).max(1),
   crowd_energy: z.number().min(0).max(1).optional(),
-  music_section: z.enum(["idle", "warmup", "build", "drop", "breakdown", "unknown"]).optional(),
+  music_section: z
+    .enum(["idle", "doors", "warmup", "build", "drop", "breakdown", "closing", "unknown"])
+    .optional(),
+  timeline: AiPartyTimelineStateSchema,
+  timeline_scene_id: z.string().optional(),
+  next_scene_id: z.string().optional(),
   llm_status: z.enum(["unknown", "ok", "error"]),
   td_status: z.enum(["unknown", "ok", "error"]),
   telegram_status: z.enum(["disabled", "ok", "error"]),
@@ -131,6 +156,14 @@ export const AiPartyEventTypeSchema = z.enum([
   "dispatch.simulated",
   "dispatch.sent_to_touchdesigner",
   "dispatch.blocked",
+  "cue.generated",
+  "cue.updated",
+  "cue.deleted",
+  "timeline.changed",
+  "audience.suggestion.received",
+  "audience.suggestion.updated",
+  "rehearsal.executive.started",
+  "rehearsal.executive.completed",
   "telegram.message.received",
   "telegram.reply.sent",
   "td.preview.updated",
@@ -150,13 +183,23 @@ export type AiPartyEvent = z.infer<typeof AiPartyEventSchema>;
 export function createInitialAiPartyShowState(
   overrides: Partial<AiPartyShowState> = {},
 ): AiPartyShowState {
+  const currentScene = overrides.timeline?.current_scene ?? "doors";
+  const currentIndex = Math.max(AI_PARTY_TIMELINE_SCENES.indexOf(currentScene), 0);
   return AiPartyShowStateSchema.parse({
     mode: "rehearsal",
     panic: false,
     current_mood: "ambient_arrival",
     current_cue: "doors_idle",
     current_intensity: 0.35,
-    music_section: "idle",
+    music_section: "doors",
+    timeline: {
+      scenes: [...AI_PARTY_TIMELINE_SCENES],
+      current_scene: currentScene,
+      next_scene: AI_PARTY_TIMELINE_SCENES[currentIndex + 1],
+      current_index: currentIndex,
+    },
+    timeline_scene_id: currentScene,
+    next_scene_id: AI_PARTY_TIMELINE_SCENES[currentIndex + 1],
     llm_status: "unknown",
     td_status: "unknown",
     telegram_status: "disabled",

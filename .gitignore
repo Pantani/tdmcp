@@ -7,6 +7,7 @@ coverage/
 .env.*
 !.env.example
 data/*.jsonl
+data/ai-party-generated-cues.json
 .DS_Store
 *.tsbuildinfo
 __pycache__/
