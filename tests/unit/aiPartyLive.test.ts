@@ -5,10 +5,12 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { loadGeneratedCueStore } from "../../src/automation/aiPartyLive/generatedCueStore.js";
 import {
+  AI_PARTY_CAMERA_FX_GRADES,
   AI_PARTY_DASHBOARD_HTML,
   AI_PARTY_TD_LAYOUT,
   AI_PARTY_TD_PREVIEW_OUTPUTS,
   AiPartyCueSchema,
+  aiPartyVisualFingerprint,
   buildAiPartyTdDemoScript,
   createAiPartyGeneratedCue,
   createAiPartyLiveService,
@@ -16,12 +18,17 @@ import {
   DEFAULT_AI_PARTY_CUE_CATALOG,
   dispatchAiPartyPlan,
   evaluateAiPartyPolicy,
+  formatAiPartyCrowdText,
+  interpolateAiPartyFingerprints,
   parseAiPartyTelegramCommand,
   parseOllamaShowIntent,
   parseShowIntentEnvelope,
   recommendedAiPartyCuesForSection,
+  runAiPartyVisualTransition,
   ShowIntentEnvelopeSchema,
   sendAiPartyActionsToTd,
+  sendAiPartyCameraFxToTd,
+  sendAiPartyCrowdTextToTd,
 } from "../../src/automation/aiPartyLive/index.js";
 
 const handles: Array<{ close: () => Promise<void> }> = [];
@@ -1298,7 +1305,9 @@ describe("Ollama, Telegram, TD and dispatch adapters", () => {
     expect(script).toContain("videodeviceinTOP");
     expect(script).toContain('par.driver = "avfoundation"');
     expect(script).toContain("_camera_ai_composite");
-    expect(script).toContain("_camera_ai_composite.inputConnectors[0].connect(_camera_source)");
+    expect(script).toContain("_camera_grade_hsv.inputConnectors[0].connect(_camera_source)");
+    expect(script).toContain("_camera_grade.inputConnectors[0].connect(_camera_grade_hsv)");
+    expect(script).toContain("_camera_ai_composite.inputConnectors[0].connect(_camera_grade)");
     expect(script).toContain(
       "_camera_ai_composite.inputConnectors[1].connect(_camera_ai_vision_text)",
     );
@@ -1350,6 +1359,128 @@ describe("Ollama, Telegram, TD and dispatch adapters", () => {
     expect(AI_PARTY_DASHBOARD_HTML).toContain('$("audienceText").value = ""');
     expect(AI_PARTY_DASHBOARD_HTML).toContain('$("audienceText").value = text');
     expect(AI_PARTY_DASHBOARD_HTML).toContain('alert("Could not queue suggestion")');
+  });
+
+  it("interpolates visual fingerprints with bounded numeric lerp and stepped seeds", () => {
+    const from = aiPartyVisualFingerprint("doors_idle", 0.3);
+    const to = aiPartyVisualFingerprint("supernova_bloom", 0.85);
+
+    const start = interpolateAiPartyFingerprints(from, to, 0);
+    const mid = interpolateAiPartyFingerprints(from, to, 0.5);
+    const end = interpolateAiPartyFingerprints(from, to, 1);
+
+    expect(start.noise.seed).toBe(from.noise.seed);
+    expect(end.noise.seed).toBe(to.noise.seed);
+    expect(mid.noise.seed).toBe(to.noise.seed);
+    expect(start.level.highr).toBeCloseTo(from.level.highr, 3);
+    expect(end.level.highr).toBeCloseTo(to.level.highr, 3);
+    expect(mid.level.contrast).toBeGreaterThan(Math.min(from.level.contrast, to.level.contrast));
+    expect(mid.level.contrast).toBeLessThan(Math.max(from.level.contrast, to.level.contrast));
+    expect(interpolateAiPartyFingerprints(from, to, 9).blur.size).toBe(to.blur.size);
+  });
+
+  it("runs a cancellable visual transition that writes interpolated frames to TD", async () => {
+    const updates: Array<{ path: string }> = [];
+    const client = {
+      updateNodeParameters: async (path: string) => {
+        updates.push({ path });
+      },
+    };
+
+    const result = await runAiPartyVisualTransition(client as never, {
+      from: { key: "doors_idle", intensity: 0.3 },
+      to: { key: "neon_pulse", intensity: 0.7 },
+      steps: 4,
+      tickMs: 0,
+    });
+    expect(result).toMatchObject({ completed: true, frames: 4 });
+    expect(updates.filter((u) => u.path.endsWith("noise_base"))).toHaveLength(4);
+    expect(updates.filter((u) => u.path.endsWith("level_mood"))).toHaveLength(4);
+    expect(updates.filter((u) => u.path.endsWith("blur_bloom_sim"))).toHaveLength(4);
+
+    let sent = 0;
+    const cancelled = await runAiPartyVisualTransition(
+      {
+        updateNodeParameters: async () => {
+          sent += 1;
+        },
+      } as never,
+      {
+        from: { key: "doors_idle", intensity: 0.3 },
+        to: { key: "neon_pulse", intensity: 0.7 },
+        steps: 6,
+        tickMs: 0,
+        shouldCancel: () => sent >= 6,
+      },
+    );
+    expect(cancelled).toMatchObject({ completed: false, cancelled: true, frames: 2 });
+
+    const failed = await runAiPartyVisualTransition(
+      {
+        updateNodeParameters: async () => {
+          throw new Error("bridge down");
+        },
+      } as never,
+      {
+        from: { key: "doors_idle", intensity: 0.3 },
+        to: { key: "neon_pulse", intensity: 0.7 },
+        steps: 2,
+        tickMs: 0,
+      },
+    );
+    expect(failed.completed).toBe(false);
+    expect(failed.error).toBeDefined();
+  });
+
+  it("applies camera FX grades and crowd wall text to the TD network", async () => {
+    const updates: Array<{ path: string; parameters: Record<string, unknown> }> = [];
+    const client = {
+      updateNodeParameters: async (path: string, parameters: Record<string, unknown>) => {
+        updates.push({ path, parameters });
+      },
+    };
+
+    await expect(sendAiPartyCameraFxToTd(client as never, "heat")).resolves.toBe(true);
+    expect(updates).toContainEqual({
+      path: "/project1/ai_party_poc/camera_grade_hsv",
+      parameters: AI_PARTY_CAMERA_FX_GRADES.heat.hsv,
+    });
+    expect(updates).toContainEqual({
+      path: "/project1/ai_party_poc/camera_grade",
+      parameters: AI_PARTY_CAMERA_FX_GRADES.heat.level,
+    });
+    expect(updates).toContainEqual({
+      path: "/project1/ai_party_poc/camera_ai_vision_text",
+      parameters: { text: expect.stringContaining("Grade: heat") },
+    });
+
+    const crowdText = formatAiPartyCrowdText([
+      { text: "mais neon <script>alert(1)</script> na pista" },
+      { text: "vibe tropical" },
+      { text: "luz dourada" },
+      { text: "quarta sugestão não entra" },
+    ]);
+    expect(crowdText).toContain("> mais neon");
+    expect(crowdText).not.toContain("<script");
+    expect(crowdText.split("\n")).toHaveLength(4);
+    expect(formatAiPartyCrowdText([])).toContain("Send a vibe");
+
+    await expect(sendAiPartyCrowdTextToTd(client as never, crowdText)).resolves.toBe(true);
+    expect(updates).toContainEqual({
+      path: "/project1/ai_party_poc/crowd_interaction_text",
+      parameters: { text: crowdText },
+    });
+
+    await expect(
+      sendAiPartyCrowdTextToTd(
+        {
+          updateNodeParameters: async () => {
+            throw new Error("offline");
+          },
+        } as never,
+        "x",
+      ),
+    ).resolves.toBe(false);
   });
 
   it("updates the TD status text when dispatching cue actions", async () => {
