@@ -29,7 +29,7 @@ There are two reusable TouchDesigner objects in this flow:
 For repeat use across projects, stage the modules and export the Palette package:
 
 ```bash
-npx @dpantani/tdmcp install-bridge --palette
+npx tdmcp install-bridge --palette
 # or, from a clone after build:
 node dist/index.js install-bridge --palette
 ```
@@ -58,7 +58,7 @@ Downloads the bridge to `~/tdmcp-bridge/modules` and starts it on port 9980.
 from mcp import install; install.run()
 ```
 
-**C. From the terminal.** `npx @dpantani/tdmcp install-bridge` (or
+**C. From the terminal.** `npx tdmcp install-bridge` (or
 `node dist/index.js install-bridge` from a clone) copies the bridge to
 `~/tdmcp-bridge` and prints exactly what to paste.
 

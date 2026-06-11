@@ -11,8 +11,8 @@ describe("getVersion", () => {
       version: string;
     };
     const version = getVersion();
-    // Regression guard: the lookup matched on the unscoped name "tdmcp" while the
-    // package ships as "@dpantani/tdmcp", so this used to fall through to "0.0.0".
+    // Regression guard: package-name checks must keep resolving the real
+    // release version instead of falling through to "0.0.0".
     expect(version).toBe(pkg.version);
     expect(version).not.toBe("0.0.0");
     expect(version).toMatch(/^\d+\.\d+\.\d+/);

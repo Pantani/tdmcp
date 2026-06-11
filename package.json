@@ -1,5 +1,5 @@
 {
-  "name": "@dpantani/tdmcp",
+  "name": "tdmcp",
   "mcpName": "io.github.Pantani/tdmcp",
   "version": "0.9.0",
   "description": "tdmcp — the TouchDesigner MCP server. Build real TouchDesigner visual systems from plain language with Claude, Cursor, or Codex (Model Context Protocol).",
@@ -8,7 +8,7 @@
   "homepage": "https://pantani.github.io/tdmcp/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Pantani/tdmcp.git"
+    "url": "git+https://github.com/Pantani/tdmcp.git"
   },
   "engines": {
     "node": ">=20"
@@ -86,9 +86,6 @@
     "version": "node scripts/sync-manifest-version.mjs && git add dxt/manifest.json safeskill.manifest.json server.json",
     "prepack": "node scripts/clean-pycache.mjs",
     "prepublishOnly": "npm run build && npm test"
-  },
-  "publishConfig": {
-    "access": "public"
   },
   "keywords": [
     "touchdesigner",

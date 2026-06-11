@@ -40,7 +40,7 @@ Para rastrear uma pessoa real você precisa do plugin gratuito do MediaPipe
 (acelerado por GPU, roda no Mac e no PC). O tdmcp baixa pra você — num terminal:
 
 ```bash
-npx @dpantani/tdmcp install mediapipe-touchdesigner
+npx tdmcp install mediapipe-touchdesigner
 ```
 
 O `tdmcp install <lib>` prepara bibliotecas da comunidade a partir de manifestos seguros; aqui
