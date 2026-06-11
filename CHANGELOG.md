@@ -29,11 +29,10 @@ bridge 0.6.1.
   formatting for the AI-controlled-party POC.
 
 ### Changed — Package distribution
-- **npm package name** — `tdmcp` is now the public npm package identity for
-  `npx tdmcp`, Codex MCP config, Palette-package installation, release workflow
-  publishing, `server.json`, and `safeskill.manifest.json`. Runtime version
-  detection still accepts the legacy scoped `@dpantani/tdmcp` name so existing
-  installs do not fall back to `0.0.0`.
+- **npm package publishing** — `@dpantani/tdmcp` remains the public npm package
+  identity for `0.9.0`, with explicit public scoped publishing. Runtime version
+  detection also accepts the unscoped `tdmcp` name so local/dev metadata cannot
+  fall back to `0.0.0`.
 
 ### Added — Force multipliers (D.0)
 - **`create_external_io` outbound modes** — new `ndi_out` and

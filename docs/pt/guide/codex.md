@@ -46,7 +46,7 @@ existente):
 ```toml
 [mcp_servers.tdmcp]
 command = "npx"
-args = ["-y", "tdmcp"]
+args = ["--yes", "--package=@dpantani/tdmcp", "tdmcp"]
 ```
 
 ### Opção B — a partir de um build local

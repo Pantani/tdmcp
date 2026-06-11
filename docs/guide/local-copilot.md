@@ -51,7 +51,7 @@ The quickest path needs no clone — just Node and Ollama installed:
 # one-time: install Ollama from https://ollama.com, then optionally pre-pull a model
 ollama pull qwen2.5:3b      # optional — the UI also has a one-click pull
 
-npx -y tdmcp chat # opens http://127.0.0.1:4141 in your browser
+npx --yes --package=@dpantani/tdmcp tdmcp chat # opens http://127.0.0.1:4141 in your browser
 ```
 
 If you already cloned and built tdmcp (the [from-source path](/guide/install#other-clients)),

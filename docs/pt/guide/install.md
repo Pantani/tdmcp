@@ -81,7 +81,7 @@ projeto novo basta arrastar, clicar em **Install** e começar a trabalhar.
 1. No terminal, rode:
 
    ```bash
-   npx tdmcp install-bridge --palette
+   npx --yes --package=@dpantani/tdmcp tdmcp install-bridge --palette
    ```
 
    Trabalhando a partir de um clone? Use:

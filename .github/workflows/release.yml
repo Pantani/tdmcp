@@ -126,9 +126,9 @@ jobs:
               echo "### npm publish not run"
               echo ""
               if [ "$AUTO_NPM_PUBLISH" != "true" ]; then
-                echo "Automatic npm publishing is disabled. Publish \`tdmcp@${GITHUB_REF_NAME#v}\` manually after reviewing the GitHub release."
+                echo "Automatic npm publishing is disabled. Publish \`@dpantani/tdmcp@${GITHUB_REF_NAME#v}\` manually after reviewing the GitHub release."
               else
-                echo "\`NPM_TOKEN\` is not set. Publish \`tdmcp@${GITHUB_REF_NAME#v}\` manually after reviewing the GitHub release."
+                echo "\`NPM_TOKEN\` is not set. Publish \`@dpantani/tdmcp@${GITHUB_REF_NAME#v}\` manually after reviewing the GitHub release."
               fi
             } >> "$GITHUB_STEP_SUMMARY"
           fi
@@ -138,9 +138,9 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          npm publish --provenance
+          npm publish --access public --provenance
           {
             echo "### ✅ Published to npm"
             echo ""
-            echo "\`tdmcp@${GITHUB_REF_NAME#v}\` is live on npm."
+            echo "\`@dpantani/tdmcp@${GITHUB_REF_NAME#v}\` is live on npm."
           } >> "$GITHUB_STEP_SUMMARY"

@@ -78,7 +78,7 @@ project is just drag, click **Install**, and start working.
 1. In a terminal, run:
 
    ```bash
-   npx tdmcp install-bridge --palette
+   npx --yes --package=@dpantani/tdmcp tdmcp install-bridge --palette
    ```
 
    Working from a clone? Use:

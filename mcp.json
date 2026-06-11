@@ -2,7 +2,7 @@
   "mcpServers": {
     "tdmcp": {
       "command": "npx",
-      "args": ["-y", "tdmcp"]
+      "args": ["--yes", "--package=@dpantani/tdmcp", "tdmcp"]
     },
     "AbletonMCP": {
       "command": "uvx",

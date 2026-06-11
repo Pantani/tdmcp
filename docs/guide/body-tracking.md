@@ -38,7 +38,7 @@ To track a real person you need the free, GPU-accelerated MediaPipe plugin
 (Mac + PC). tdmcp can fetch it for you — in a terminal:
 
 ```bash
-npx tdmcp install mediapipe-touchdesigner
+npx --yes --package=@dpantani/tdmcp tdmcp install mediapipe-touchdesigner
 ```
 
 `tdmcp install <lib>` stages manifest-listed community libraries safely; here it grabs
