@@ -1621,7 +1621,45 @@ describe("Ollama, Telegram, TD and dispatch adapters", () => {
     expect(AI_PARTY_DASHBOARD_HTML).toContain('$("command").value = text');
     expect(AI_PARTY_DASHBOARD_HTML).toContain('$("audienceText").value = ""');
     expect(AI_PARTY_DASHBOARD_HTML).toContain('$("audienceText").value = text');
-    expect(AI_PARTY_DASHBOARD_HTML).toContain('alert("Could not queue suggestion")');
+    expect(AI_PARTY_DASHBOARD_HTML).toContain('toast("Could not queue suggestion", "error")');
+    expect(AI_PARTY_DASHBOARD_HTML).not.toContain("alert(");
+  });
+
+  it("ships a dashboard script that compiles and only references existing element ids", () => {
+    const scriptMatch = AI_PARTY_DASHBOARD_HTML.match(/<script>([\s\S]*)<\/script>/);
+    expect(scriptMatch?.[1]).toBeDefined();
+    const script = scriptMatch?.[1] ?? "";
+    expect(() => new Function(script)).not.toThrow();
+
+    const htmlWithoutScript = AI_PARTY_DASHBOARD_HTML.replace(/<script>[\s\S]*<\/script>/, "");
+    const declaredIds = new Set(
+      [...htmlWithoutScript.matchAll(/id="([^"]+)"/g)].map((match) => match[1]),
+    );
+    const referencedIds = [...script.matchAll(/\$\("([^"]+)"\)/g)].map((match) => match[1]);
+    expect(referencedIds.length).toBeGreaterThan(10);
+    for (const id of referencedIds) {
+      expect(declaredIds, `script references missing element #${id}`).toContain(id);
+    }
+  });
+
+  it("hardens the dashboard for live operation with reconnect, guards, and new controls", () => {
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("isTypingTarget(e.target)");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("function connectWs()");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("wsReconnects");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("dirtyTimer");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain('data.type === "snapshot"');
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("/api/cues/morph");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("/api/recap/markdown");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("/api/timeline/auto");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("/api/replay?limit=300");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("Replay Player");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("Show mode");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain('id="energySpark"');
+    expect(AI_PARTY_DASHBOARD_HTML).toContain('id="directorNotes"');
+    expect(AI_PARTY_DASHBOARD_HTML).toContain('id="pipeline"');
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("refreshStaleness");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain("cueThumb");
+    expect(AI_PARTY_DASHBOARD_HTML).toContain('id="toasts"');
   });
 
   it("interpolates visual fingerprints with bounded numeric lerp and stepped seeds", () => {

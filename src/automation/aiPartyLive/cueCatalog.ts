@@ -655,6 +655,7 @@ export function recommendedAiPartyCuesForSection(
 ): AiPartyCue[] {
   return catalog
     .filter((cue) => cue.risk === "safe" && cue.preapproved && !cue.flicker_risk)
+    .filter((cue) => cue.kind !== "safe_state" && cue.kind !== "physical_effect")
     .filter((cue) => cue.section === section || cue.section === "any")
     .slice(0, Math.max(1, limit));
 }
