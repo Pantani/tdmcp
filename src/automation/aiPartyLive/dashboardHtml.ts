@@ -68,6 +68,16 @@ export const AI_PARTY_DASHBOARD_HTML = `<!doctype html>
     .event small { color: var(--muted); }
     .safety-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .45rem; }
     .safety-list div { background: #0d1320; border: 1px solid var(--line); border-radius: 8px; padding: .55rem; color: #d8e5f7; }
+    .cue-card { display: grid; gap: .4rem; min-width: 0; }
+    .cue-card .cue { width: 100%; }
+    .cue-actions button { padding: .42rem .55rem; font-size: .78rem; min-height: 2rem; }
+    .scene-list, .compact-list { display: grid; gap: .45rem; }
+    .scene { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .5rem; align-items: center; background: #0d1320; border: 1px solid var(--line); border-radius: 8px; padding: .55rem; }
+    .scene.active { border-color: var(--cyan); background: #102033; }
+    .scene small, .compact-list small { color: var(--muted); }
+    .panel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: .6rem; }
+    .note { color: var(--muted); font-size: .82rem; line-height: 1.35; }
+    input.inline { flex: 1 1 14rem; min-width: 0; border-radius: 8px; border: 1px solid var(--line); background: #080c14; color: var(--text); padding: .68rem .75rem; }
     @media (max-width: 1360px) {
       main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
       main > div:last-child { grid-column: 1 / -1; }
@@ -79,11 +89,12 @@ export const AI_PARTY_DASHBOARD_HTML = `<!doctype html>
       main { grid-template-columns: 1fr; }
       main > div:last-child { grid-column: auto; }
     }
-    @media (max-width: 620px) {
-      .bar { grid-template-columns: 1fr; }
-      main { padding: .7rem; }
-      .state, .safety-list { grid-template-columns: 1fr; }
-    }
+	    @media (max-width: 620px) {
+	      header { position: static; }
+	      .bar { grid-template-columns: 1fr; }
+	      main { padding: .7rem; }
+	      .state, .safety-list { grid-template-columns: 1fr; }
+	    }
   </style>
 </head>
 <body>
@@ -95,7 +106,7 @@ export const AI_PARTY_DASHBOARD_HTML = `<!doctype html>
         <div class="body">
           <textarea id="command" placeholder="Tell the room what to become..."></textarea>
           <div class="chips" id="examples"></div>
-          <div class="row"><button class="primary" id="send">Send</button><button id="generateCue">Generate cue</button><button id="llmTest">Test LLM</button><button id="tdBuild">Build TD Demo</button></div>
+          <div class="row"><button class="primary" id="send">Send</button><button id="generateCue">Generate cue</button><button id="generateVariations">3 variations</button><button id="llmTest">Test LLM</button><button id="tdBuild">Build TD Demo</button></div>
           <div style="height:.8rem"></div>
           <div class="grid"><pre id="intent">{}</pre><pre id="policy">{}</pre></div>
         </div>
@@ -103,6 +114,13 @@ export const AI_PARTY_DASHBOARD_HTML = `<!doctype html>
       <section style="margin-top:1rem">
         <h2>Cue Deck</h2>
         <div class="body"><div class="grid" id="cues"></div></div>
+      </section>
+      <section style="margin-top:1rem">
+        <h2>Timeline / Rehearsal</h2>
+        <div class="body">
+          <div class="row"><button id="prevScene">Prev</button><button class="primary" id="nextScene">Next</button><button id="runRehearsal">Executive rehearsal</button></div>
+          <div style="height:.8rem"></div><div class="scene-list" id="timeline"></div>
+        </div>
       </section>
     </div>
     <div>
@@ -115,6 +133,10 @@ export const AI_PARTY_DASHBOARD_HTML = `<!doctype html>
         <div class="body"><div class="state" id="state"></div></div>
       </section>
       <section style="margin-top:1rem">
+        <h2>FOH Dashboard v2</h2>
+        <div class="body"><div class="note">LLM Quality</div><div style="height:.55rem"></div><div class="panel-grid" id="foh"></div></div>
+      </section>
+      <section style="margin-top:1rem">
         <h2>Safety Panel</h2>
         <div class="body">
           <div class="safety-list">
@@ -123,7 +145,7 @@ export const AI_PARTY_DASHBOARD_HTML = `<!doctype html>
             <div>Raw Python blocked</div><div>Blackout blocked</div>
             <div>Laser/moving head blocked</div><div>PA/mixer actions blocked</div>
           </div>
-          <div style="height:.8rem"></div><button class="danger" id="panic">Panic Safe</button>
+          <div style="height:.8rem"></div><div class="row"><button class="danger" id="panic">Panic Safe</button><button id="clearPanic">Clear Panic</button></div>
         </div>
       </section>
     </div>
@@ -142,6 +164,17 @@ export const AI_PARTY_DASHBOARD_HTML = `<!doctype html>
           <div style="height:.8rem"></div><div class="events" id="events"></div>
         </div>
       </section>
+      <section style="margin-top:1rem">
+        <h2>Audience Wall</h2>
+        <div class="body">
+          <div class="row"><input class="inline" id="audienceText" placeholder="Audience vibe suggestion"><button id="audienceSend">Queue</button></div>
+          <div style="height:.8rem"></div><div class="compact-list" id="audience"></div>
+        </div>
+      </section>
+      <section style="margin-top:1rem">
+        <h2>Post-show Recap</h2>
+        <div class="body"><p class="note" id="recapSummary"></p><div class="compact-list" id="recap"></div></div>
+      </section>
     </div>
   </main>
   <script>
@@ -154,7 +187,8 @@ export const AI_PARTY_DASHBOARD_HTML = `<!doctype html>
       "Mete blackout e strobo máximo agora"
     ];
     let snapshot = { showState: {}, approvals: [], events: [], cues: [] };
-    const post = (url, body = {}) => fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
+    const request = (url, method = "POST", body = {}) => fetch(url, { method, headers: { "content-type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
+    const post = (url, body = {}) => request(url, "POST", body);
     function cls(type) {
       if (type.includes("blocked") || type.includes("panic")) return "event safety";
       if (type.includes("approval")) return "event approvals";
@@ -166,58 +200,136 @@ export const AI_PARTY_DASHBOARD_HTML = `<!doctype html>
     }
     function render() {
       const s = snapshot.showState || {};
+      const timeline = snapshot.timeline || { scenes: [], current: {}, next: undefined };
+      const currentScene = s.timeline?.current_scene || s.timeline_scene_id || timeline.current?.id || "n/a";
+      const nextScene = s.timeline?.next_scene || s.next_scene_id || timeline.next?.id || "n/a";
       $("statusBar").innerHTML = [
         ["Live Nervous System", "AI Party Control POC"],
         ["Mode", s.mode], ["LLM", s.llm_status], ["TD", s.td_status], ["Telegram", s.telegram_status],
         ["Hardware", s.hardware_enabled ? "ON" : "OFF"], ["Panic", s.panic ? "PANIC" : "normal"],
-        ["Cue", s.current_cue], ["Mood", s.current_mood]
-      ].map(([a,b],i) => i===0 ? '<div class="brand">'+a+'<br><small>'+b+'</small></div>' : '<div class="pill"><span>'+a+'</span><strong>'+b+'</strong></div>').join("");
+        ["Scene", currentScene], ["Next", nextScene], ["Cue", s.current_cue], ["Mood", s.current_mood]
+      ].map(([a,b],i) => i===0 ? '<div class="brand">'+esc(a)+'<br><small>'+esc(b)+'</small></div>' : '<div class="pill"><span>'+esc(a)+'</span><strong>'+esc(b)+'</strong></div>').join("");
       $("state").innerHTML = [
         ["Current mood", s.current_mood], ["Current cue", s.current_cue], ["Intensity", s.current_intensity],
+        ["Scene", currentScene], ["Next scene", nextScene],
         ["Last source", s.last_source || "none"], ["LLM latency", s.llm_latency_ms ? s.llm_latency_ms + "ms" : "n/a"],
         ["Policy", s.last_policy?.decision || "none"], ["Dispatch", s.last_dispatch?.mode || "none"], ["Pending", s.pending_approvals_count]
-      ].map(([a,b]) => '<div class="metric"><small>'+a+'</small><strong>'+b+'</strong></div>').join("");
+      ].map(([a,b]) => '<div class="metric"><small>'+esc(a)+'</small><strong>'+esc(b)+'</strong></div>').join("");
       $("intent").textContent = JSON.stringify(s.last_intent || {}, null, 2);
       $("policy").textContent = JSON.stringify(s.last_policy || {}, null, 2);
-      $("cues").innerHTML = (snapshot.cues || []).map((cue, i) => '<button class="cue '+(cue.risk==="safe"?"safe":"")+'" data-cue="'+cue.name+'"><strong>'+(i+1)+'. '+cue.label+'</strong><span>'+cue.description+'</span></button>').join("");
-      for (const btn of document.querySelectorAll("[data-cue]")) btn.onclick = () => post("/api/cues/"+btn.dataset.cue+"/trigger").then(load);
+      $("cues").innerHTML = (snapshot.cues || []).map((cue, i) => {
+        const generated = cue.name?.startsWith("gen_");
+        const actions = generated ? '<div class="row cue-actions"><button data-fav="'+esc(cue.name)+'">'+(cue.favorite ? "Unstar" : "Star")+'</button><button data-rename="'+esc(cue.name)+'" data-label="'+esc(cue.label)+'">Rename</button><button data-delete="'+esc(cue.name)+'">Delete</button></div>' : "";
+        return '<div class="cue-card"><button class="cue '+(cue.risk==="safe"?"safe":"")+'" data-cue="'+esc(cue.name)+'"><strong>'+esc(i+1)+'. '+esc(cue.favorite ? "Fav " : "")+esc(cue.label)+'</strong><span>'+esc(cue.description)+'</span></button>'+actions+'</div>';
+      }).join("");
+      for (const btn of document.querySelectorAll("[data-cue]")) btn.onclick = () => post("/api/cues/"+encodeURIComponent(btn.dataset.cue || "")+"/trigger").then(load);
+      for (const btn of document.querySelectorAll("[data-fav]")) btn.onclick = () => {
+        const cue = (snapshot.cues || []).find(item => item.name === btn.dataset.fav);
+        request("/api/cues/"+encodeURIComponent(btn.dataset.fav || ""), "PATCH", { favorite: !cue?.favorite }).then(load);
+      };
+      for (const btn of document.querySelectorAll("[data-rename]")) btn.onclick = () => {
+        const label = window.prompt("Cue label", btn.dataset.label || "");
+        if (label) request("/api/cues/"+encodeURIComponent(btn.dataset.rename || ""), "PATCH", { label }).then(load);
+      };
+      for (const btn of document.querySelectorAll("[data-delete]")) btn.onclick = () => {
+        if (window.confirm("Delete generated cue?")) request("/api/cues/"+encodeURIComponent(btn.dataset.delete || ""), "DELETE").then(load);
+      };
+      $("timeline").innerHTML = (timeline.scenes || []).map((scene) => '<div class="scene '+(scene.id === timeline.current?.id ? "active" : "")+'"><div><strong>'+esc(scene.label)+'</strong><br><small>'+esc(scene.section)+' / '+esc(scene.cue)+'</small></div><button data-scene="'+esc(scene.id)+'">Go</button></div>').join("");
+      for (const btn of document.querySelectorAll("[data-scene]")) btn.onclick = () => post("/api/timeline/jump", { scene_id: btn.dataset.scene }).then(load);
       const pending = (snapshot.approvals || []).filter(a => a.status === "pending");
-      $("approvals").innerHTML = pending.length ? pending.map(a => '<div class="approval"><strong>'+a.id+'</strong><span>'+a.raw_text+'</span><small>'+a.policy_result.operator_message+'</small><div class="row"><button class="primary" data-approve="'+a.id+'">Approve</button><button class="danger" data-reject="'+a.id+'">Reject</button></div></div>').join("") : '<div class="approval empty">No pending approvals.</div>';
+      $("approvals").innerHTML = pending.length ? pending.map(a => '<div class="approval"><strong>'+esc(a.id)+'</strong><span>'+esc(a.raw_text)+'</span><small>'+esc(a.policy_result.operator_message)+'</small><div class="row"><button class="primary" data-approve="'+esc(a.id)+'">Approve</button><button class="danger" data-reject="'+esc(a.id)+'">Reject</button></div></div>').join("") : '<div class="approval empty">No pending approvals.</div>';
       for (const btn of document.querySelectorAll("[data-approve]")) btn.onclick = () => post("/api/approvals/"+btn.dataset.approve+"/approve", { operator: "dashboard" }).then(load);
       for (const btn of document.querySelectorAll("[data-reject]")) btn.onclick = () => post("/api/approvals/"+btn.dataset.reject+"/reject", { operator: "dashboard", reason: "dashboard reject" }).then(load);
       const filter = $("filter").value;
-      $("events").innerHTML = (snapshot.events || []).slice(-100).reverse().filter(e => filter === "all" || e.type.includes(filter.slice(0, -1)) || e.type.includes(filter)).map(e => '<div class="'+cls(e.type)+'"><strong>'+e.type+'</strong><br><small>'+e.at+'</small><pre>'+JSON.stringify(e.payload, null, 2)+'</pre></div>').join("");
+      $("events").innerHTML = (snapshot.events || []).slice(-100).reverse().filter(e => filter === "all" || e.type.includes(filter.slice(0, -1)) || e.type.includes(filter)).map(e => '<div class="'+cls(e.type)+'"><strong>'+esc(e.type)+'</strong><br><small>'+esc(e.at)+'</small><pre>'+esc(JSON.stringify(e.payload, null, 2))+'</pre></div>').join("");
+      const foh = snapshot.foh || {};
+      const llm = foh.llm || {};
+      const bridge = foh.bridge || {};
+      const fohPolicy = foh.policy || {};
+      const cooldowns = foh.cooldowns || [];
+      const recap = snapshot.recap || {};
+      $("foh").innerHTML = [
+        ["Bridge", bridge.status || s.td_status], ["Bridge URL", bridge.url || "n/a"],
+        ["Model", llm.active_model || "deterministic fallback"], ["LLM status", llm.status || s.llm_status],
+        ["LLM latency", llm.latency_ms ? llm.latency_ms + "ms" : "n/a"], ["LLM confidence", llm.last_confidence ?? "n/a"],
+        ["LLM source", llm.last_source_summary || "n/a"], ["Repaired", llm.repaired ? "yes" : "no"],
+        ["Fallback", llm.fallback ? "yes" : "no"], ["Policy", fohPolicy.decision || "none"],
+        ["Policy rationale", fohPolicy.reason || "none"], ["Cooldowns", cooldowns.length ? cooldowns.map(c => c.effect + " " + c.remaining_seconds + "s").join(", ") : "clear"]
+      ].map(([a,b]) => '<div class="metric"><small>'+esc(a)+'</small><strong>'+esc(b)+'</strong></div>').join("");
+      $("audience").innerHTML = (snapshot.audience_suggestions || snapshot.audienceSuggestions || []).slice(0, 8).map((item) => '<div class="event"><strong>'+esc(item.status)+' · '+esc(item.id)+'</strong><br><small>'+esc(item.source)+' · '+esc(item.at)+'</small><div>'+esc(item.raw_text)+'</div><div class="row cue-actions"><button data-promote="'+esc(item.id)+'">Promote</button><button data-dismiss="'+esc(item.id)+'">Dismiss</button></div></div>').join("") || '<div class="note">No audience suggestions queued.</div>';
+      for (const btn of document.querySelectorAll("[data-promote]")) btn.onclick = () => post("/api/audience/"+encodeURIComponent(btn.dataset.promote || "")+"/promote").then(load);
+      for (const btn of document.querySelectorAll("[data-dismiss]")) btn.onclick = () => post("/api/audience/"+encodeURIComponent(btn.dataset.dismiss || "")+"/dismiss").then(load);
+      $("recapSummary").textContent = recap.summary || "";
+      $("recap").innerHTML = [
+        ["Events", recap.total_events ?? 0], ["Generated cues", recap.generated_cues ?? 0],
+        ["Blocked", recap.blocked ?? 0], ["Pending approvals", recap.approvals?.pending ?? 0],
+        ["TD dispatches", recap.touchdesigner_dispatches ?? 0], ["Audience", recap.audience_suggestions ?? 0]
+      ].map(([a,b]) => '<div class="metric"><small>'+esc(a)+'</small><strong>'+esc(b)+'</strong></div>').join("") + '<pre>'+esc((recap.highlights || []).join("\\n") || "No highlights yet.")+'</pre>';
     }
-    async function load() { snapshot = await fetch("/api/state").then(r => r.json()); render(); }
+    async function loadRecap() {
+      const recap = await fetch("/api/recap").then(r => r.json());
+      $("recapSummary").textContent = recap.summary || "";
+    }
+    async function load() { snapshot = await fetch("/api/state").then(r => r.json()); render(); loadRecap(); }
+    let previewInFlight = false;
     async function preview() {
-      const data = await fetch("/api/td/preview").then(r => r.json());
-      const outputs = Array.isArray(data.previews) ? data.previews : (data.preview ? [{ id: "preview", label: "TouchDesigner", path: data.preview.path, preview: data.preview }] : []);
-      if (outputs.length === 0) {
-        $("preview").innerHTML = '<div class="preview-frame">'+esc(data.message || "Bridge preview unavailable")+'</div>';
-        return;
+      if (previewInFlight) return;
+      previewInFlight = true;
+      try {
+        const data = await fetch("/api/td/preview").then(r => r.json());
+        const outputs = Array.isArray(data.previews) ? data.previews : (data.preview ? [{ id: "preview", label: "TouchDesigner", path: data.preview.path, preview: data.preview }] : []);
+        if (outputs.length === 0) {
+          $("preview").innerHTML = '<div class="preview-frame">'+esc(data.message || "Bridge preview unavailable")+'</div>';
+          return;
+        }
+        $("preview").innerHTML = outputs.map(output => {
+          const p = output.preview;
+          const body = p?.base64
+            ? '<img alt="'+esc(output.label || output.id || "TouchDesigner preview")+'" src="data:image/'+esc(p.format || "png")+';base64,'+p.base64+'">'
+            : '<span>'+esc(output.error || data.message || "Preview unavailable")+'</span>';
+          return '<div class="preview-output"><div class="preview-label"><strong>'+esc(output.label || output.id || "Output")+'</strong><small>'+esc(output.path || p?.path || "")+'</small></div><div class="preview-frame">'+body+'</div></div>';
+        }).join("");
+      } catch (err) {
+        $("preview").innerHTML = '<div class="preview-frame">'+esc(err instanceof Error ? err.message : "Preview unavailable")+'</div>';
+      } finally {
+        previewInFlight = false;
       }
-      $("preview").innerHTML = outputs.map(output => {
-        const p = output.preview;
-        const body = p?.base64
-          ? '<img alt="'+esc(output.label || output.id || "TouchDesigner preview")+'" src="data:image/'+esc(p.format || "png")+';base64,'+p.base64+'">'
-          : '<span>'+esc(output.error || data.message || "Preview unavailable")+'</span>';
-        return '<div class="preview-output"><div class="preview-label"><strong>'+esc(output.label || output.id || "Output")+'</strong><small>'+esc(output.path || p?.path || "")+'</small></div><div class="preview-frame">'+body+'</div></div>';
-      }).join("");
     }
     $("examples").innerHTML = examples.map(x => '<button class="chip">'+x+'</button>').join("");
     for (const btn of document.querySelectorAll(".chip")) btn.onclick = () => { $("command").value = btn.textContent; };
     $("send").onclick = async () => {
       const text = $("command").value;
       $("command").value = "";
-      await post("/api/operator/text", { text });
-      await load();
+      try {
+        await post("/api/operator/text", { text });
+        await load();
+      } catch (err) {
+        $("command").value = text;
+        alert("Could not send command");
+      }
     };
     $("generateCue").onclick = async () => {
       const data = await post("/api/cues/generate", { prompt: $("command").value });
       if (!data.ok) alert(data.message || "Could not generate cue");
       await load();
     };
+    $("generateVariations").onclick = async () => {
+      const data = await post("/api/cues/generate", { prompt: $("command").value, count: 3 });
+      if (!data.ok) alert(data.message || "Could not generate cue variations");
+      await load();
+    };
     $("panic").onclick = () => post("/api/panic").then(load);
+    $("clearPanic").onclick = () => post("/api/panic/clear").then(load);
+    $("prevScene").onclick = () => post("/api/timeline/previous").then(load);
+    $("nextScene").onclick = () => post("/api/timeline/next").then(load);
+    $("runRehearsal").onclick = () => post("/api/rehearsal/executive").then(load);
+    $("audienceSend").onclick = async () => {
+      const text = $("audienceText").value;
+      $("audienceText").value = "";
+      const data = await post("/api/audience/suggestions", { text });
+      if (!data.ok) alert(data.message || data.suggestion?.reason || "Could not queue suggestion");
+      await load();
+    };
     $("llmTest").onclick = () => post("/api/llm/test").then(data => alert(JSON.stringify(data, null, 2)));
     $("tdBuild").onclick = () => post("/api/td/build").then(data => alert(JSON.stringify(data, null, 2)));
     $("refreshPreview").onclick = preview;

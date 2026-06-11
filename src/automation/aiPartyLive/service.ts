@@ -1,17 +1,20 @@
 import { createHash } from "node:crypto";
-import { appendFileSync, existsSync, mkdirSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { Socket } from "node:net";
-import { dirname } from "node:path";
+import { dirname, join } from "node:path";
 import { TouchDesignerClient } from "../../td-client/touchDesignerClient.js";
+import { DEFAULT_EFFECT_POLICY } from "../showDirectorSchema.js";
 import {
   type AiPartyCue,
   createAiPartyGeneratedCue,
   DEFAULT_AI_PARTY_CUE_CATALOG,
+  isAiPartyGeneratedCuePromptUnsafe,
   shouldAutoGenerateAiPartyCue,
 } from "./cueCatalog.js";
 import { AI_PARTY_DASHBOARD_HTML } from "./dashboardHtml.js";
 import { applyDispatchToState, dispatchAiPartyPlan } from "./dispatch.js";
+import { loadGeneratedCueStore, saveGeneratedCueStore } from "./generatedCueStore.js";
 import { parseOllamaShowIntent } from "./ollamaClient.js";
 import { evaluateAiPartyPolicy } from "./policy.js";
 import {
@@ -55,6 +58,9 @@ export interface AiPartyLiveConfig {
   eventLogPath?: string;
   deterministicFallback?: boolean;
   fetchImpl?: typeof fetch;
+  generatedCuePath?: string;
+  generatedCueLimit?: number;
+  cueStorePath?: string;
 }
 
 export interface AiPartyLiveSnapshot {
@@ -62,6 +68,13 @@ export interface AiPartyLiveSnapshot {
   approvals: AiPartyApproval[];
   events: AiPartyEvent[];
   cues: AiPartyCue[];
+  foh: AiPartyFohSnapshot;
+  timeline: AiPartyTimelineSnapshot;
+  cueHistory: AiPartyCueHistoryItem[];
+  audienceSuggestions: AiPartyAudienceSuggestion[];
+  audience_suggestions: AiPartyAudienceSuggestion[];
+  llm: AiPartyLlmSummary;
+  recap: AiPartyRecap;
 }
 
 export interface AiPartyLiveHandle {
@@ -85,6 +98,160 @@ type AiPartyTdPreviewPayload = {
   preview?: Awaited<ReturnType<TouchDesignerClient["getPreview"]>>;
   error?: string;
 };
+
+export interface AiPartyTimelineSceneDetail {
+  id: string;
+  label: string;
+  section: NonNullable<AiPartyShowState["music_section"]>;
+  cue: string;
+  prompt: string;
+}
+
+export interface AiPartyTimelineSnapshot {
+  scenes: AiPartyTimelineSceneDetail[];
+  current: AiPartyTimelineSceneDetail;
+  next?: AiPartyTimelineSceneDetail;
+  index: number;
+}
+
+export interface AiPartyCueHistoryItem {
+  at: string;
+  cue?: string;
+  mood?: string;
+  intensity?: number;
+  source?: string;
+  dispatch_id?: string;
+}
+
+export interface AiPartyAudienceSuggestion {
+  id: string;
+  at: string;
+  created_at?: string;
+  text: string;
+  raw_text: string;
+  source: "dashboard" | "telegram";
+  chat_id?: string;
+  operator?: string;
+  status: "queued" | "new" | "promoted" | "dismissed" | "blocked";
+  policy_decision?: string;
+  policy_result?: ReturnType<typeof evaluateAiPartyPolicy>;
+  reason?: string;
+}
+
+export interface AiPartyLlmSummary {
+  configured_model?: string;
+  model?: string;
+  ok?: boolean;
+  confidence?: number;
+  source_summary?: string;
+  repaired?: boolean;
+  fallback?: boolean;
+  latency_ms?: number;
+  error?: string;
+}
+
+export interface AiPartyFohSnapshot {
+  bridge: {
+    status: AiPartyShowState["td_status"];
+    url: string;
+    last_error?: string;
+    hardware_enabled: boolean;
+    dmx_live_enabled: boolean;
+  };
+  llm: {
+    active_model: string;
+    status: AiPartyShowState["llm_status"];
+    latency_ms?: number;
+    last_confidence?: number;
+    last_source_summary?: string;
+    repaired?: boolean;
+    fallback?: boolean;
+    last_error?: string;
+  };
+  policy?: {
+    decision: string;
+    reason: string;
+    operator_message: string;
+    risk_level: string;
+  };
+  cooldowns: Array<{
+    effect: string;
+    cooldown_seconds: number;
+    remaining_seconds: number;
+    last_triggered_at: string;
+  }>;
+  panic: {
+    active: boolean;
+    clear_endpoint: string;
+  };
+}
+
+export interface AiPartyRecap {
+  total_events: number;
+  generated_cues: number;
+  favorite_cues: number;
+  approvals: { pending: number; approved: number; rejected: number; expired: number };
+  blocked: number;
+  touchdesigner_dispatches: number;
+  simulated_dispatches: number;
+  audience_suggestions: number;
+  current_cue: string;
+  current_mood: string;
+  highlights: string[];
+}
+
+export interface AiPartyGenerateCueResult {
+  ok: true;
+  cue: AiPartyCue;
+  generated: AiPartyCue[];
+  generated_cues: AiPartyCue[];
+  cues: AiPartyCue[];
+}
+
+const DEFAULT_AI_PARTY_TIMELINE: AiPartyTimelineSceneDetail[] = [
+  {
+    id: "doors",
+    label: "Doors / arrival",
+    section: "doors",
+    cue: "doors_idle",
+    prompt: "calm generative welcome visual",
+  },
+  {
+    id: "warmup",
+    label: "Warmup",
+    section: "warmup",
+    cue: "premium_tropical",
+    prompt: "premium tropical warmup groove",
+  },
+  {
+    id: "build",
+    label: "Build",
+    section: "build",
+    cue: "neon_pulse",
+    prompt: "dark disco elegant build",
+  },
+  {
+    id: "drop",
+    label: "Drop",
+    section: "drop",
+    cue: "audio_reactive_main",
+    prompt: "audio reactive main wall energy",
+  },
+  {
+    id: "breakdown",
+    label: "Breakdown",
+    section: "breakdown",
+    cue: "brand_hero",
+    prompt: "photogenic brand hero moment",
+  },
+  {
+    id: "closing",
+    label: "Closing",
+    section: "closing",
+    cue: "doors_idle",
+    prompt: "soft closing ambient reset",
+  },
+];
 
 interface EvaluationContext {
   source: AiPartyApproval["source"];
@@ -126,6 +293,12 @@ export function configFromEnv(env: NodeJS.ProcessEnv = process.env): AiPartyLive
     showMode: env.SHOW_MODE === "show" ? "show" : "rehearsal",
     eventLogPath: env.POC_EVENT_LOG_PATH ?? "./data/ai-party-poc-events.jsonl",
     deterministicFallback: true,
+    generatedCuePath: env.POC_GENERATED_CUES_PATH,
+    generatedCueLimit: Number(env.POC_GENERATED_CUE_LIMIT ?? 24),
+    cueStorePath:
+      env.POC_GENERATED_CUES_PATH ??
+      env.POC_CUE_STORE_PATH ??
+      "./data/ai-party-generated-cues.json",
   };
 }
 
@@ -173,21 +346,64 @@ function wsAccept(key: string): string {
 }
 
 function sendWs(socket: Socket, payload: unknown): boolean {
-  if (socket.destroyed || !socket.writable) return false;
+  if (socket.destroyed || !socket.writable || socket.writableEnded) return false;
+  if (typeof socket.listenerCount === "function" && socket.listenerCount("error") === 0) {
+    socket.on("error", () => {
+      socket.destroy();
+    });
+  }
   const data = Buffer.from(JSON.stringify(payload));
   const header =
     data.length < 126
       ? Buffer.from([0x81, data.length])
       : data.length < 65536
         ? Buffer.from([0x81, 126, data.length >> 8, data.length & 0xff])
-        : undefined;
-  if (!header) return false;
+        : (() => {
+            const largeHeader = Buffer.alloc(10);
+            largeHeader[0] = 0x81;
+            largeHeader[1] = 127;
+            largeHeader.writeBigUInt64BE(BigInt(data.length), 2);
+            return largeHeader;
+          })();
   try {
     socket.write(Buffer.concat([header, data]));
     return true;
   } catch {
     return false;
   }
+}
+
+function clampGeneratedCueCount(value: unknown): number {
+  const count = typeof value === "number" ? value : Number(value ?? 1);
+  if (!Number.isFinite(count)) return 1;
+  return Math.max(1, Math.min(4, Math.floor(count)));
+}
+
+function extractGeneratedCueIndex(cue: AiPartyCue): number {
+  const match = cue.name.match(/_(\d+)$/);
+  return match ? Number(match[1]) : 0;
+}
+
+function generatedCueIntensity(
+  baseIntensity: number | undefined,
+  index: number,
+  count: number,
+): number {
+  const base = baseIntensity ?? 0.55;
+  if (count <= 1) return base;
+  const spread = [-0.08, 0, 0.08, 0.13];
+  return Number(Math.max(0.2, Math.min(0.85, base + (spread[index] ?? 0))).toFixed(2));
+}
+
+function withVariationMetadata(cue: AiPartyCue, index: number, count: number): AiPartyCue {
+  if (count <= 1) return cue;
+  const variation = index + 1;
+  return {
+    ...cue,
+    label: `${cue.label} ${variation}`,
+    description: `Safe variation ${variation}/${count} from: ${cue.source_prompt}`,
+    generated_intensity: generatedCueIntensity(cue.generated_intensity, index, count),
+  };
 }
 
 export class AiPartyLiveService {
@@ -206,6 +422,8 @@ export class AiPartyLiveService {
       | "showMode"
       | "eventLogPath"
       | "deterministicFallback"
+      | "generatedCueLimit"
+      | "cueStorePath"
     >
   > &
     Omit<AiPartyLiveConfig, "telegramAllowedChatIds">;
@@ -215,16 +433,23 @@ export class AiPartyLiveService {
   private readonly events: AiPartyEvent[] = [];
   private readonly baseCues = DEFAULT_AI_PARTY_CUE_CATALOG;
   private readonly generatedCues: AiPartyCue[] = [];
+  private readonly cueHistory: AiPartyCueHistoryItem[] = [];
+  private readonly audienceSuggestions: AiPartyAudienceSuggestion[] = [];
+  private readonly timeline = DEFAULT_AI_PARTY_TIMELINE;
+  private timelineIndex = 0;
+  private lastLlm: AiPartyLlmSummary = {};
   private readonly sockets = new Set<Socket>();
   private eventCount = 0;
   private approvalCount = 0;
   private generatedCueCount = 0;
+  private audienceSuggestionCount = 0;
   private tdClient: TouchDesignerClient;
   private telegramOffset: number | undefined;
   private telegramPollTimer: ReturnType<typeof setTimeout> | undefined;
   private telegramPollingStopped = true;
 
   constructor(config: AiPartyLiveConfig = {}) {
+    const eventLogPath = config.eventLogPath ?? "./data/ai-party-poc-events.jsonl";
     this.cfg = {
       ollamaBaseUrl: config.ollamaBaseUrl ?? "http://127.0.0.1:11434",
       ollamaModel: config.ollamaModel ?? "",
@@ -236,8 +461,13 @@ export class AiPartyLiveService {
       hardwareEnabled: config.hardwareEnabled ?? false,
       dmxLiveEnabled: config.dmxLiveEnabled ?? false,
       showMode: config.showMode ?? "rehearsal",
-      eventLogPath: config.eventLogPath ?? "./data/ai-party-poc-events.jsonl",
+      eventLogPath,
       deterministicFallback: config.deterministicFallback ?? true,
+      generatedCueLimit: config.generatedCueLimit ?? 24,
+      cueStorePath:
+        config.generatedCuePath ??
+        config.cueStorePath ??
+        join(dirname(eventLogPath), "ai-party-generated-cues.json"),
       ...config,
     };
     this.showState = createInitialAiPartyShowState({
@@ -245,7 +475,10 @@ export class AiPartyLiveService {
       hardware_enabled: this.cfg.hardwareEnabled,
       dmx_live_enabled: this.cfg.dmxLiveEnabled,
       telegram_status: this.cfg.telegramPollingEnabled ? "ok" : "disabled",
+      timeline_scene_id: this.timeline[0]?.id,
+      next_scene_id: this.timeline[1]?.id,
     });
+    this.loadGeneratedCues();
     this.tdClient = new TouchDesignerClient({
       baseUrl: this.cfg.tdBridgeUrl,
       token: this.cfg.tdBridgeToken,
@@ -255,16 +488,207 @@ export class AiPartyLiveService {
     });
   }
 
+  private currentTimeline(): AiPartyTimelineSnapshot {
+    const index = Math.max(0, Math.min(this.timelineIndex, this.timeline.length - 1));
+    const current = this.timeline[index] ?? this.timeline[0];
+    if (!current) throw new Error("AI Party timeline is empty");
+    const next = this.timeline[index + 1];
+    return {
+      scenes: this.timeline.map((scene) => ({ ...scene })),
+      current: { ...current },
+      next: next ? { ...next } : undefined,
+      index,
+    };
+  }
+
+  private syncTimelineState(): void {
+    const timeline = this.currentTimeline();
+    this.showState = {
+      ...this.showState,
+      music_section: timeline.current.section,
+      timeline: {
+        scenes: timeline.scenes.map((scene) => scene.id) as AiPartyShowState["timeline"]["scenes"],
+        current_scene: timeline.current.id as AiPartyShowState["timeline"]["current_scene"],
+        next_scene: timeline.next?.id as AiPartyShowState["timeline"]["next_scene"],
+        current_index: timeline.index,
+      },
+      timeline_scene_id: timeline.current.id,
+      next_scene_id: timeline.next?.id,
+    };
+  }
+
+  private loadGeneratedCues(): void {
+    try {
+      const loaded = loadGeneratedCueStore(this.cfg.cueStorePath);
+      this.generatedCues.splice(
+        0,
+        this.generatedCues.length,
+        ...loaded.slice(0, this.cfg.generatedCueLimit),
+      );
+      this.generatedCueCount = Math.max(0, ...this.generatedCues.map(extractGeneratedCueIndex));
+    } catch (err) {
+      this.showState.last_error = `Could not read cue store: ${
+        err instanceof Error ? err.message : String(err)
+      }`;
+    }
+  }
+
+  private persistGeneratedCues(): void {
+    try {
+      saveGeneratedCueStore(this.cfg.cueStorePath, this.generatedCues);
+    } catch (err) {
+      this.showState.last_error = `Could not write cue store: ${
+        err instanceof Error ? err.message : String(err)
+      }`;
+    }
+  }
+
   private get cues(): AiPartyCue[] {
     return [...this.baseCues, ...this.generatedCues];
   }
 
+  private cooldowns(): AiPartyFohSnapshot["cooldowns"] {
+    const nowMs = Date.now();
+    const cooldowns: AiPartyFohSnapshot["cooldowns"] = [];
+    for (const recent of this.showState.recent_effects) {
+      const policy = DEFAULT_EFFECT_POLICY.effects.find((entry) => entry.effect === recent.effect);
+      const cooldownSeconds = policy?.cooldown_seconds ?? 0;
+      if (cooldownSeconds <= 0) continue;
+      const elapsedSeconds = Math.floor((nowMs - Date.parse(recent.at)) / 1000);
+      const remainingSeconds = Math.max(0, cooldownSeconds - elapsedSeconds);
+      if (remainingSeconds <= 0) continue;
+      cooldowns.push({
+        effect: recent.effect,
+        cooldown_seconds: cooldownSeconds,
+        remaining_seconds: remainingSeconds,
+        last_triggered_at: recent.at,
+      });
+    }
+    return cooldowns;
+  }
+
+  private fohSnapshot(): AiPartyFohSnapshot {
+    const policy = this.showState.last_policy
+      ? {
+          decision: this.showState.last_policy.decision,
+          reason: this.showState.last_policy.reason,
+          operator_message: this.showState.last_policy.operator_message,
+          risk_level: this.showState.last_policy.risk_level,
+        }
+      : undefined;
+    return {
+      bridge: {
+        status: this.showState.td_status,
+        url: this.cfg.tdBridgeUrl,
+        last_error: this.showState.td_status === "error" ? this.showState.last_error : undefined,
+        hardware_enabled: this.showState.hardware_enabled,
+        dmx_live_enabled: this.showState.dmx_live_enabled,
+      },
+      llm: {
+        active_model:
+          this.lastLlm.model ?? (this.cfg.ollamaModel.trim() || "deterministic fallback"),
+        status: this.showState.llm_status,
+        latency_ms: this.showState.llm_latency_ms,
+        last_confidence: this.lastLlm.confidence,
+        last_source_summary: this.lastLlm.source_summary,
+        repaired: this.lastLlm.repaired,
+        fallback: this.lastLlm.fallback,
+        last_error: this.lastLlm.error,
+      },
+      policy,
+      cooldowns: this.cooldowns(),
+      panic: {
+        active: this.showState.panic,
+        clear_endpoint: "/api/panic/clear",
+      },
+    };
+  }
+
+  recap(): AiPartyRecap {
+    const eventTypeCount = (type: AiPartyEventType) =>
+      this.events.filter((event) => event.type === type).length;
+    const approvalsByStatus = (status: AiPartyApproval["status"]) =>
+      this.approvals.filter((approval) => approval.status === status).length;
+    const highlights = [
+      ...this.cueHistory
+        .slice(0, 5)
+        .map((item) => `Cue ${item.cue ?? "unchanged"} / mood ${item.mood ?? "unchanged"}`),
+      ...this.events
+        .filter((event) => event.type === "dispatch.blocked")
+        .slice(-3)
+        .map((event) => `Blocked: ${JSON.stringify(event.payload)}`),
+    ].slice(0, 8);
+    return {
+      total_events: this.events.length,
+      generated_cues: this.generatedCues.length,
+      favorite_cues: this.generatedCues.filter((cue) => cue.favorite).length,
+      approvals: {
+        pending: approvalsByStatus("pending"),
+        approved: approvalsByStatus("approved") + approvalsByStatus("dispatched"),
+        rejected: approvalsByStatus("rejected"),
+        expired: approvalsByStatus("expired"),
+      },
+      blocked: eventTypeCount("dispatch.blocked"),
+      touchdesigner_dispatches: eventTypeCount("dispatch.sent_to_touchdesigner"),
+      simulated_dispatches: eventTypeCount("dispatch.simulated"),
+      audience_suggestions: this.audienceSuggestions.filter((item) => item.status === "queued")
+        .length,
+      current_cue: this.showState.current_cue,
+      current_mood: this.showState.current_mood,
+      highlights,
+    };
+  }
+
+  postShowRecap() {
+    const recap = this.recap();
+    const approvalTotal =
+      recap.approvals.pending +
+      recap.approvals.approved +
+      recap.approvals.rejected +
+      recap.approvals.expired;
+    const recentHighlights =
+      recap.highlights.length > 0
+        ? recap.highlights
+        : this.events
+            .slice(-5)
+            .map((event) => `${event.type} at ${event.at}`)
+            .reverse();
+    return {
+      ok: true,
+      generated_at: nowIso(),
+      summary:
+        `AI Party Live recap: ${recap.total_events} audit events, ` +
+        `${approvalTotal} approval decisions, ${recap.blocked} blocked requests, ` +
+        `${recap.audience_suggestions} queued audience suggestions. ` +
+        `Final cue ${recap.current_cue}, mood ${recap.current_mood}.`,
+      counts: {
+        events: recap.total_events,
+        approvals: approvalTotal,
+        blocked: recap.blocked,
+        touchdesigner_dispatches: recap.touchdesigner_dispatches,
+        simulated_dispatches: recap.simulated_dispatches,
+        generated_cues: recap.generated_cues,
+        audience_suggestions: recap.audience_suggestions,
+      },
+      recent_highlights: recentHighlights,
+      recap,
+    };
+  }
+
   snapshot(): AiPartyLiveSnapshot {
+    const suggestions = this.audienceSuggestions.map((item) => ({ ...item }));
     return {
       showState: { ...this.showState, pending_approvals_count: this.pendingApprovals().length },
       approvals: this.approvals.map((approval) => ({ ...approval })),
       events: this.events.map((event) => ({ ...event })),
       cues: this.cues.map((cue) => ({ ...cue })),
+      foh: this.fohSnapshot(),
+      timeline: this.currentTimeline(),
+      cueHistory: this.cueHistory.map((item) => ({ ...item })),
+      audienceSuggestions: suggestions,
+      audience_suggestions: suggestions,
+      llm: { configured_model: this.cfg.ollamaModel || undefined, ...this.lastLlm },
+      recap: this.recap(),
     };
   }
 
@@ -311,8 +735,15 @@ export class AiPartyLiveService {
   }> {
     const textInput = textValue.trim();
     this.emit("operator.command.received", { source, text: textInput });
-    if (source === "dashboard" && shouldAutoGenerateAiPartyCue(textInput, this.cues)) {
+    if (source === "dashboard" && shouldAutoGenerateAiPartyCue(textInput, this.baseCues)) {
       const generated = this.generateCue(textInput);
+      this.lastLlm = {
+        configured_model: this.cfg.ollamaModel || undefined,
+        ok: true,
+        confidence: 0.82,
+        source_summary: `generated cue ${generated.cue.name}`,
+        fallback: true,
+      };
       return this.evaluateIntent(
         {
           intent: {
@@ -341,6 +772,17 @@ export class AiPartyLiveService {
     this.showState.llm_status = parsed.ok ? "ok" : "error";
     this.showState.llm_latency_ms = parsed.latency_ms;
     if (parsed.error) this.showState.last_error = parsed.error;
+    this.lastLlm = {
+      configured_model: this.cfg.ollamaModel || undefined,
+      model: parsed.model,
+      ok: parsed.ok,
+      confidence: parsed.envelope.confidence,
+      source_summary: parsed.envelope.source_summary,
+      repaired: parsed.repaired,
+      fallback: !parsed.ok && this.cfg.deterministicFallback,
+      latency_ms: parsed.latency_ms,
+      error: parsed.error,
+    };
     this.emit("llm.intent.parsed", {
       ok: parsed.ok,
       repaired: parsed.repaired,
@@ -404,6 +846,34 @@ export class AiPartyLiveService {
       sendToTouchDesigner: (actions) => sendAiPartyActionsToTd(this.tdClient, actions),
     });
     this.showState = applyDispatchToState(this.showState, plan, dispatch);
+    for (const action of plan) {
+      if (action.kind === "cue" || action.kind === "mood" || action.kind === "panic_safe") {
+        this.cueHistory.unshift({
+          at: dispatch.at,
+          cue:
+            action.kind === "cue"
+              ? action.cue
+              : action.kind === "panic_safe"
+                ? "panic_safe"
+                : undefined,
+          mood:
+            action.kind === "mood"
+              ? action.mood
+              : action.kind === "panic_safe"
+                ? "panic_safe"
+                : undefined,
+          intensity:
+            action.kind === "cue"
+              ? action.intensity
+              : action.kind === "mood"
+                ? action.intensity
+                : 0.2,
+          source: this.showState.last_source,
+          dispatch_id: dispatch.id,
+        });
+      }
+    }
+    if (this.cueHistory.length > 80) this.cueHistory.length = 80;
     this.emit(
       dispatch.mode === "touchdesigner" ? "dispatch.sent_to_touchdesigner" : "dispatch.simulated",
       dispatch,
@@ -594,16 +1064,299 @@ export class AiPartyLiveService {
     );
   }
 
-  generateCue(prompt: string) {
-    this.generatedCueCount += 1;
-    const cue = createAiPartyGeneratedCue(prompt, {
-      index: this.generatedCueCount,
-      currentIntensity: this.showState.current_intensity,
-    });
-    this.generatedCues.unshift(cue);
-    if (this.generatedCues.length > 12) this.generatedCues.pop();
-    this.emit("cue.generated", { cue });
+  generateCue(prompt: string, options: { count?: number } = {}): AiPartyGenerateCueResult {
+    const count = clampGeneratedCueCount(options.count);
+    const generated: AiPartyCue[] = [];
+    for (let i = 0; i < count; i += 1) {
+      this.generatedCueCount += 1;
+      const cue = createAiPartyGeneratedCue(prompt, {
+        index: this.generatedCueCount,
+        currentIntensity: this.showState.current_intensity,
+      });
+      generated.push(withVariationMetadata(cue, i, count));
+    }
+    const primaryCue = generated[0];
+    if (!primaryCue) throw new Error("Cue prompt did not produce a generated cue.");
+    this.generatedCues.unshift(...generated);
+    if (this.generatedCues.length > this.cfg.generatedCueLimit) {
+      this.generatedCues.splice(this.cfg.generatedCueLimit);
+    }
+    this.persistGeneratedCues();
+    this.emit("cue.generated", { cue: primaryCue, generated_cues: generated });
+    return {
+      ok: true,
+      cue: primaryCue,
+      generated,
+      generated_cues: generated,
+      cues: this.cues,
+    };
+  }
+
+  updateGeneratedCue(
+    cueName: string,
+    updates: { label?: string; description?: string; favorite?: boolean },
+  ) {
+    const cue = this.generatedCues.find((item) => item.name === cueName);
+    if (!cue) throw new Error("Only generated cues can be changed.");
+    if (updates.label !== undefined) {
+      const label = updates.label.trim().replace(/\s+/g, " ").slice(0, 80);
+      if (label.length < 1) throw new Error("Cue label must have at least 1 character.");
+      cue.label = label;
+    }
+    if (updates.description?.trim()) {
+      cue.description = updates.description.trim().slice(0, 180);
+    }
+    if (updates.favorite !== undefined) cue.favorite = updates.favorite;
+    this.persistGeneratedCues();
+    this.emit("cue.updated", { cue });
     return { ok: true, cue, cues: this.cues };
+  }
+
+  deleteGeneratedCue(cueName: string) {
+    const index = this.generatedCues.findIndex((item) => item.name === cueName);
+    if (index < 0) throw new Error("Only generated cues can be deleted.");
+    const [cue] = this.generatedCues.splice(index, 1);
+    this.persistGeneratedCues();
+    this.emit("cue.deleted", { cue });
+    return { ok: true, cue, cues: this.cues };
+  }
+
+  async setTimelineScene(sceneIdOrIndex: string | number, operator = "dashboard") {
+    const nextIndex =
+      typeof sceneIdOrIndex === "number"
+        ? sceneIdOrIndex
+        : this.timeline.findIndex((scene) => scene.id === sceneIdOrIndex);
+    if (nextIndex < 0 || nextIndex >= this.timeline.length) {
+      throw new Error(`timeline scene ${sceneIdOrIndex} not found`);
+    }
+    this.timelineIndex = nextIndex;
+    this.syncTimelineState();
+    this.showState.last_source = operator;
+    const scene = this.currentTimeline().current;
+    const timeline = this.currentTimeline();
+    this.emit("timeline.changed", {
+      current_scene: scene.id,
+      next_scene: timeline.next?.id,
+      scene,
+      timeline,
+      operator,
+    });
+    const result = await this.triggerCue(scene.cue);
+    this.showState.last_source = operator;
+    return { ok: true, scene, timeline: this.currentTimeline(), state: this.showState, result };
+  }
+
+  async nextTimelineScene() {
+    const nextIndex = Math.min(this.timelineIndex + 1, this.timeline.length - 1);
+    return this.setTimelineScene(nextIndex);
+  }
+
+  async previousTimelineScene() {
+    const nextIndex = Math.max(this.timelineIndex - 1, 0);
+    return this.setTimelineScene(nextIndex);
+  }
+
+  submitAudienceSuggestion(
+    textValue: string,
+    source: AiPartyAudienceSuggestion["source"] = "dashboard",
+    operator?: string,
+  ) {
+    return this.queueAudienceSuggestion(textValue, undefined, operator, source);
+  }
+
+  queueAudienceSuggestion(
+    textValue: string,
+    chatId?: string,
+    operator?: string,
+    source: AiPartyAudienceSuggestion["source"] = "telegram",
+  ) {
+    const textInput = textValue.trim().replace(/\s+/g, " ").slice(0, 180);
+    if (textInput.length < 3)
+      throw new Error("Audience suggestion must have at least 3 characters.");
+    const parsedInitial = parseAiPartyTelegramCommand(textInput);
+    const parsed = parsedInitial.audienceSuggestion
+      ? parseAiPartyTelegramCommand(parsedInitial.rawText)
+      : parsedInitial;
+    const envelope = parsed.envelope;
+    const policy = envelope
+      ? evaluateAiPartyPolicy(envelope.intent, this.showState, parsed.rawText, this.cues)
+      : undefined;
+    const safeSuggestion =
+      policy?.decision === "allow" &&
+      policy.plan.length > 0 &&
+      policy.plan.every(
+        (item) =>
+          item.kind === "cue" ||
+          item.kind === "mood" ||
+          item.kind === "announcement" ||
+          item.kind === "log_note",
+      );
+    this.audienceSuggestionCount += 1;
+    const suggestion: AiPartyAudienceSuggestion = {
+      id: `suggestion_${String(this.audienceSuggestionCount).padStart(4, "0")}`,
+      at: nowIso(),
+      created_at: nowIso(),
+      text: parsed.rawText,
+      raw_text: parsed.rawText,
+      source,
+      chat_id: chatId,
+      operator,
+      status: safeSuggestion ? "queued" : "blocked",
+      policy_decision: policy?.decision ?? "block",
+      policy_result: policy,
+      reason: safeSuggestion
+        ? undefined
+        : "Audience wall accepts only safe suggestions; it cannot queue hardware, approval-gated, panic, or raw-control requests.",
+    };
+    if (!safeSuggestion || isAiPartyGeneratedCuePromptUnsafe(parsed.rawText)) {
+      this.emit("audience.suggestion.received", { suggestion });
+      return {
+        ok: false,
+        suggestion,
+        reason: suggestion.reason,
+        suggestions: this.audienceSuggestions,
+      };
+    }
+    this.audienceSuggestions.unshift(suggestion);
+    if (this.audienceSuggestions.length > 80) this.audienceSuggestions.length = 80;
+    this.emit("audience.suggestion.received", { suggestion });
+    return { ok: true, suggestion, suggestions: this.audienceSuggestions };
+  }
+
+  updateAudienceSuggestion(id: string, status: "promoted" | "dismissed") {
+    const suggestion = this.audienceSuggestions.find((item) => item.id === id);
+    if (!suggestion) throw new Error(`audience suggestion ${id} not found`);
+    if (suggestion.status === "blocked") throw new Error(`audience suggestion ${id} is blocked`);
+    suggestion.status = status;
+    this.emit("audience.suggestion.updated", { suggestion });
+    return { ok: true, suggestion, suggestions: this.audienceSuggestions };
+  }
+
+  replayEvents(limit = 80) {
+    if (!existsSync(this.cfg.eventLogPath)) return { ok: true, events: [] };
+    const events = readFileSync(this.cfg.eventLogPath, "utf8")
+      .split("\n")
+      .filter(Boolean)
+      .slice(-Math.max(1, Math.min(500, limit)))
+      .map((line) => {
+        try {
+          return JSON.parse(line) as AiPartyEvent;
+        } catch {
+          return undefined;
+        }
+      })
+      .filter((event): event is AiPartyEvent => Boolean(event));
+    return { ok: true, events };
+  }
+
+  exportReplaySummary(limit = 500) {
+    const replay = this.replayEvents(limit);
+    const typeCounts: Record<string, number> = {};
+    for (const event of replay.events) {
+      typeCounts[event.type] = (typeCounts[event.type] ?? 0) + 1;
+    }
+    return {
+      ok: true,
+      event_log_path: this.cfg.eventLogPath,
+      summary: {
+        total_events: replay.events.length,
+        first_at: replay.events[0]?.at,
+        last_at: replay.events.at(-1)?.at,
+        type_counts: typeCounts,
+        blocked_requests: typeCounts["dispatch.blocked"] ?? 0,
+        simulated_dispatches: typeCounts["dispatch.simulated"] ?? 0,
+        touchdesigner_dispatches: typeCounts["dispatch.sent_to_touchdesigner"] ?? 0,
+        approvals_created: typeCounts["approval.created"] ?? 0,
+      },
+      events: replay.events.slice(-Math.max(1, Math.min(100, limit))),
+    };
+  }
+
+  async runExecutiveRehearsal() {
+    const startedAt = this.events.length;
+    this.emit("rehearsal.executive.started", { timeline: this.currentTimeline() });
+    const steps: Array<{ label: string; status: string; detail?: unknown }> = [];
+
+    const timeline = await this.setTimelineScene("doors", "executive-rehearsal");
+    steps.push({ label: "timeline", status: timeline.ok ? "ok" : "error", detail: timeline.scene });
+
+    const catalogCue = await this.triggerCue("premium_tropical");
+    steps.push({
+      label: "catalog cue",
+      status: catalogCue.policy.decision,
+      detail: catalogCue.policy.operator_message,
+    });
+
+    const generatedCue = this.generateCue("dark disco elegante no build").cue;
+    const generatedCueResult = await this.triggerCue(generatedCue.name);
+    steps.push({
+      label: "generated cue",
+      status: generatedCueResult.policy.decision,
+      detail: generatedCue.name,
+    });
+
+    const effect = await this.evaluateIntent(
+      {
+        intent: { type: "arm_effect", effect: "fog", duration_seconds: 3, intensity: 0.35 },
+        confidence: 1,
+        source_summary: "executive rehearsal bounded fog simulation",
+        needs_operator_review: true,
+      },
+      { source: "demo_script", rawText: "executive rehearsal bounded fog simulation" },
+    );
+    let effectStatus: string = effect.policy.decision;
+    if (effect.approval?.id) {
+      const hardwareEnabled = this.showState.hardware_enabled;
+      const dmxLiveEnabled = this.showState.dmx_live_enabled;
+      this.showState.hardware_enabled = false;
+      this.showState.dmx_live_enabled = false;
+      const approval = await this.approveApproval(effect.approval.id, "executive-rehearsal");
+      this.showState.hardware_enabled = hardwareEnabled;
+      this.showState.dmx_live_enabled = dmxLiveEnabled;
+      effectStatus = approval.status;
+    }
+    steps.push({
+      label: "approval-gated effect",
+      status: effectStatus,
+      detail: effect.policy.operator_message,
+    });
+
+    const unsafe = await this.processOperatorText(
+      "blackout total e strobo máximo e raw dmx agora",
+      "demo_script",
+    );
+    steps.push({
+      label: "unsafe request",
+      status: unsafe.policy.decision,
+      detail: unsafe.policy.operator_message,
+    });
+
+    await this.enterPanic();
+    steps.push({
+      label: "panic safe proof",
+      status: this.showState.panic && this.showState.current_cue === "panic_safe" ? "ok" : "error",
+      detail: this.showState.current_cue,
+    });
+
+    const rehearsalEvents = this.events.slice(startedAt);
+    const summary = {
+      hardware_sent: rehearsalEvents.some(
+        (event) =>
+          typeof event.payload === "object" &&
+          event.payload !== null &&
+          "hardware_sent" in event.payload &&
+          event.payload.hardware_sent === true,
+      ),
+      simulated_dispatches: rehearsalEvents.filter((event) => event.type === "dispatch.simulated")
+        .length,
+      blocked_requests: rehearsalEvents.filter((event) => event.type === "dispatch.blocked").length,
+      pending_approvals: this.pendingApprovals().length,
+      current_cue: this.showState.current_cue,
+      current_scene: this.showState.timeline.current_scene,
+    };
+    const payload = { ok: true, steps, summary, recap: this.recap(), snapshot: this.snapshot() };
+    this.emit("rehearsal.executive.completed", payload);
+    return payload;
   }
 
   async enterPanic() {
@@ -648,10 +1401,14 @@ export class AiPartyLiveService {
   }
 
   async tdPreview() {
-    await refreshAiPartyTdPreviewState(this.tdClient, this.showState);
-
     const previews: AiPartyTdPreviewPayload[] = [];
     let lastError = "Bridge preview unavailable";
+    try {
+      await refreshAiPartyTdPreviewState(this.tdClient, this.showState);
+    } catch (err) {
+      lastError = err instanceof Error ? err.message : String(err);
+    }
+
     for (const output of AI_PARTY_TD_PREVIEW_OUTPUTS) {
       try {
         const preview = await this.tdClient.getPreview(output.path, 640, 360);
@@ -729,6 +1486,15 @@ export class AiPartyLiveService {
     }
     const parsed = parseAiPartyTelegramCommand(rawText);
     this.emit("telegram.message.received", { chatId, rawText });
+    const audienceMatch = rawText.trim().match(/^\/(?:suggest|vibe|vote|request)\s+(.+)/i);
+    if (audienceMatch?.[1]) {
+      const result = this.submitAudienceSuggestion(audienceMatch[1], "telegram", operator);
+      const reply = result.ok
+        ? `Suggestion ${result.suggestion.id} queued for operator review.`
+        : `Suggestion blocked: ${result.suggestion.reason}`;
+      this.emit("telegram.reply.sent", { chatId, reply });
+      return reply;
+    }
     if (parsed.replyOnly) {
       if (rawText.startsWith("/cues")) {
         return this.cues.map((cue) => `${cue.name}: ${cue.label}`).join("\n");
@@ -829,17 +1595,135 @@ export class AiPartyLiveService {
       json(res, 200, { events: this.events.slice(-limit) });
       return;
     }
+    if (method === "GET" && path === "/api/recap") {
+      json(res, 200, this.postShowRecap());
+      return;
+    }
+    if (method === "GET" && path === "/api/replay") {
+      const limit = Number(url.searchParams.get("limit") ?? 500);
+      json(res, 200, this.exportReplaySummary(limit));
+      return;
+    }
+    if (method === "POST" && path === "/api/rehearsal/executive") {
+      json(res, 200, await this.runExecutiveRehearsal());
+      return;
+    }
     if (method === "GET" && path === "/api/cues") {
       json(res, 200, { cues: this.cues });
       return;
     }
     if (method === "POST" && path === "/api/cues/generate") {
-      const body = (await readJson(req)) as { prompt?: string; text?: string };
+      const body = (await readJson(req)) as { prompt?: string; text?: string; count?: number };
       try {
-        json(res, 200, this.generateCue(body.prompt ?? body.text ?? ""));
+        json(res, 200, this.generateCue(body.prompt ?? body.text ?? "", { count: body.count }));
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         json(res, 400, { ok: false, message, cues: this.cues });
+      }
+      return;
+    }
+    const cueMeta = path.match(/^\/api\/cues\/([^/]+)$/);
+    if (method === "PATCH" && cueMeta?.[1]) {
+      const body = (await readJson(req)) as {
+        label?: string;
+        description?: string;
+        favorite?: boolean;
+      };
+      try {
+        json(res, 200, this.updateGeneratedCue(decodeURIComponent(cueMeta[1]), body));
+      } catch (err) {
+        json(res, 404, { ok: false, message: err instanceof Error ? err.message : String(err) });
+      }
+      return;
+    }
+    if (method === "DELETE" && cueMeta?.[1]) {
+      try {
+        json(res, 200, this.deleteGeneratedCue(decodeURIComponent(cueMeta[1])));
+      } catch (err) {
+        json(res, 404, { ok: false, message: err instanceof Error ? err.message : String(err) });
+      }
+      return;
+    }
+    if (method === "GET" && path === "/api/timeline") {
+      json(res, 200, { ok: true, timeline: this.currentTimeline() });
+      return;
+    }
+    if (method === "POST" && path === "/api/timeline/next") {
+      json(res, 200, await this.nextTimelineScene());
+      return;
+    }
+    if (method === "POST" && path === "/api/timeline/previous") {
+      json(res, 200, await this.previousTimelineScene());
+      return;
+    }
+    if (method === "POST" && path === "/api/timeline/jump") {
+      const body = (await readJson(req)) as { scene_id?: string; index?: number };
+      json(res, 200, await this.setTimelineScene(body.scene_id ?? body.index ?? 0));
+      return;
+    }
+    const timelineScene = path.match(/^\/api\/timeline\/([^/]+)$/);
+    if (method === "POST" && timelineScene?.[1]) {
+      json(
+        res,
+        200,
+        await this.setTimelineScene(decodeURIComponent(timelineScene[1]), "dashboard"),
+      );
+      return;
+    }
+    if (method === "GET" && path === "/api/audience") {
+      json(res, 200, { suggestions: this.audienceSuggestions });
+      return;
+    }
+    if (method === "GET" && path === "/api/audience/suggestions") {
+      json(res, 200, { suggestions: this.snapshot().audience_suggestions });
+      return;
+    }
+    if (method === "POST" && path === "/api/audience/suggestions") {
+      const body = (await readJson(req)) as {
+        text?: string;
+        chatId?: string;
+        chat_id?: string;
+        operator?: string;
+        source?: "dashboard" | "telegram";
+      };
+      try {
+        json(
+          res,
+          200,
+          this.queueAudienceSuggestion(
+            body.text ?? "",
+            body.chatId ?? body.chat_id,
+            body.operator,
+            body.source ?? "telegram",
+          ),
+        );
+      } catch (err) {
+        json(res, 400, { ok: false, message: err instanceof Error ? err.message : String(err) });
+      }
+      return;
+    }
+    if (method === "POST" && path === "/api/audience/suggest") {
+      const body = (await readJson(req)) as { text?: string; source?: "dashboard" | "telegram" };
+      try {
+        json(res, 200, this.submitAudienceSuggestion(body.text ?? "", body.source ?? "dashboard"));
+      } catch (err) {
+        json(res, 400, { ok: false, message: err instanceof Error ? err.message : String(err) });
+      }
+      return;
+    }
+    const audienceAction = path.match(/^\/api\/audience\/([^/]+)\/(promote|dismiss)$/);
+    if (method === "POST" && audienceAction?.[1] && audienceAction?.[2]) {
+      try {
+        json(
+          res,
+          200,
+          this.updateAudienceSuggestion(
+            decodeURIComponent(audienceAction[1]),
+            audienceAction[2] === "promote" ? "promoted" : "dismissed",
+          ),
+        );
+      } catch (err) {
+        json(res, 404, { ok: false, message: err instanceof Error ? err.message : String(err) });
       }
       return;
     }

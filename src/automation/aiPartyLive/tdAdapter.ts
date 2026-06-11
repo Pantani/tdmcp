@@ -14,20 +14,34 @@ export const AI_PARTY_TD_LAYOUT = [
   { name: "composite_status", nodeX: 580, nodeY: 20 },
   { name: "preview_out", nodeX: 820, nodeY: 110 },
   { name: "status_wall_out", nodeX: 820, nodeY: -110 },
+  { name: "camera_ai_vision_text", nodeX: -380, nodeY: -520 },
+  { name: "camera_ai_vision_out", nodeX: 820, nodeY: -520 },
+  { name: "crowd_interaction_text", nodeX: -380, nodeY: -760 },
+  { name: "crowd_interaction_out", nodeX: 820, nodeY: -760 },
   { name: "sim_dmx_table", nodeX: -140, nodeY: -320 },
   { name: "dmx_out_disabled", nodeX: 120, nodeY: -320 },
 ] as const;
 
 export const AI_PARTY_TD_PREVIEW_OUTPUTS = [
   {
-    id: "main_wall",
+    id: "main_identity",
     label: "Main wall",
     path: "/project1/ai_party_poc/preview_out",
   },
   {
-    id: "status_wall",
+    id: "reactive_world",
     label: "Lyric/status wall",
     path: "/project1/ai_party_poc/status_wall_out",
+  },
+  {
+    id: "camera_ai_vision",
+    label: "Camera / AI vision",
+    path: "/project1/ai_party_poc/camera_ai_vision_out",
+  },
+  {
+    id: "crowd_interaction",
+    label: "Crowd interaction",
+    path: "/project1/ai_party_poc/crowd_interaction_out",
   },
 ] as const;
 
@@ -159,6 +173,64 @@ try:
         _status_wall_out.par.resolutionh = 720
         _status_wall_out.viewer = True
 
+        _camera_ai_vision_text = _root.create(textTOP, "camera_ai_vision_text")
+        _camera_ai_vision_text.nodeX = -380
+        _camera_ai_vision_text.nodeY = -520
+        _camera_ai_vision_text.par.text = "Camera / AI Vision\\\\nSynthetic fallback\\\\nNo camera hardware armed"
+        _camera_ai_vision_text.par.outputresolution = "custom"
+        _camera_ai_vision_text.par.resolutionw = 1280
+        _camera_ai_vision_text.par.resolutionh = 720
+        _camera_ai_vision_text.par.wordwrap = True
+        _camera_ai_vision_text.par.fontsizex = 38
+        _camera_ai_vision_text.par.fontsizey = 38
+        _camera_ai_vision_text.par.alignx = "center"
+        _camera_ai_vision_text.par.aligny = "center"
+        _camera_ai_vision_text.par.fontcolorr = 0.75
+        _camera_ai_vision_text.par.fontcolorg = 0.92
+        _camera_ai_vision_text.par.fontcolorb = 1.0
+        _camera_ai_vision_text.par.bgcolorr = 0.03
+        _camera_ai_vision_text.par.bgcolorg = 0.06
+        _camera_ai_vision_text.par.bgcolorb = 0.08
+        _camera_ai_vision_text.par.bgalpha = 1.0
+
+        _camera_ai_vision_out = _root.create(nullTOP, "camera_ai_vision_out")
+        _camera_ai_vision_out.nodeX = 820
+        _camera_ai_vision_out.nodeY = -520
+        _camera_ai_vision_out.inputConnectors[0].connect(_camera_ai_vision_text)
+        _camera_ai_vision_out.par.outputresolution = "custom"
+        _camera_ai_vision_out.par.resolutionw = 1280
+        _camera_ai_vision_out.par.resolutionh = 720
+        _camera_ai_vision_out.viewer = True
+
+        _crowd_interaction_text = _root.create(textTOP, "crowd_interaction_text")
+        _crowd_interaction_text.nodeX = -380
+        _crowd_interaction_text.nodeY = -760
+        _crowd_interaction_text.par.text = "Crowd / Interaction\\\\nTelegram prompts and status fallback\\\\nAwaiting audience input"
+        _crowd_interaction_text.par.outputresolution = "custom"
+        _crowd_interaction_text.par.resolutionw = 1280
+        _crowd_interaction_text.par.resolutionh = 720
+        _crowd_interaction_text.par.wordwrap = True
+        _crowd_interaction_text.par.fontsizex = 38
+        _crowd_interaction_text.par.fontsizey = 38
+        _crowd_interaction_text.par.alignx = "center"
+        _crowd_interaction_text.par.aligny = "center"
+        _crowd_interaction_text.par.fontcolorr = 0.9
+        _crowd_interaction_text.par.fontcolorg = 1.0
+        _crowd_interaction_text.par.fontcolorb = 0.78
+        _crowd_interaction_text.par.bgcolorr = 0.04
+        _crowd_interaction_text.par.bgcolorg = 0.06
+        _crowd_interaction_text.par.bgcolorb = 0.03
+        _crowd_interaction_text.par.bgalpha = 1.0
+
+        _crowd_interaction_out = _root.create(nullTOP, "crowd_interaction_out")
+        _crowd_interaction_out.nodeX = 820
+        _crowd_interaction_out.nodeY = -760
+        _crowd_interaction_out.inputConnectors[0].connect(_crowd_interaction_text)
+        _crowd_interaction_out.par.outputresolution = "custom"
+        _crowd_interaction_out.par.resolutionw = 1280
+        _crowd_interaction_out.par.resolutionh = 720
+        _crowd_interaction_out.viewer = True
+
         _sim_dmx_table = _root.create(tableDAT, "sim_dmx_table")
         _sim_dmx_table.nodeX = -140
         _sim_dmx_table.nodeY = -320
@@ -172,14 +244,16 @@ try:
         _dmx_out_disabled.nodeY = -320
         _dmx_out_disabled.viewer = False
 
-        for _node in [_control_panel, _noise_base, _level_mood, _displace_energy, _feedback_loop, _blur_bloom_sim, _text_status, _composite_status, _preview_out, _status_wall_out, _sim_dmx_table, _dmx_out_disabled]:
+        for _node in [_control_panel, _noise_base, _level_mood, _displace_energy, _feedback_loop, _blur_bloom_sim, _text_status, _composite_status, _preview_out, _status_wall_out, _camera_ai_vision_text, _camera_ai_vision_out, _crowd_interaction_text, _crowd_interaction_out, _sim_dmx_table, _dmx_out_disabled]:
             report["nodes"].append({"name": _node.name, "path": _node.path, "nodeX": _node.nodeX, "nodeY": _node.nodeY})
         report["ok"] = True
         report["targetPath"] = _root.path
         report["previewPath"] = _preview_out.path
         report["previewPaths"] = [
-            {"id": "main_wall", "label": "Main wall", "path": _preview_out.path},
-            {"id": "status_wall", "label": "Lyric/status wall", "path": _status_wall_out.path},
+            {"id": "main_identity", "label": "Main wall", "path": _preview_out.path},
+            {"id": "reactive_world", "label": "Lyric/status wall", "path": _status_wall_out.path},
+            {"id": "camera_ai_vision", "label": "Camera / AI vision", "path": _camera_ai_vision_out.path},
+            {"id": "crowd_interaction", "label": "Crowd interaction", "path": _crowd_interaction_out.path},
         ]
 except Exception:
     report["fatal"] = traceback.format_exc()
@@ -260,8 +334,10 @@ export async function sendAiPartyActionsToTd(
       if (action.kind === "cue") {
         params.Cue = action.cue;
         statusCue = action.cue;
-        if (action.intensity !== undefined) params.Intensity = action.intensity;
-        statusIntensity = action.intensity;
+        if (action.intensity !== undefined) {
+          params.Intensity = action.intensity;
+          statusIntensity = action.intensity;
+        }
         visualKeys.push(action.cue);
       } else if (action.kind === "mood") {
         params.Mood = action.mood;
@@ -279,6 +355,9 @@ export async function sendAiPartyActionsToTd(
       }
     }
     if (Object.keys(params).length === 0) return false;
+    if (statusIntensity === undefined && typeof params.Intensity === "number") {
+      statusIntensity = params.Intensity;
+    }
     await client.updateNodeParameters("/project1/ai_party_poc/control_panel", params);
     if (visualKeys.length > 0) {
       const fingerprint = visualFingerprint(visualKeys.join("|"), statusIntensity);

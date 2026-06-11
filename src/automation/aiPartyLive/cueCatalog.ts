@@ -23,6 +23,7 @@ export const AiPartyCueSchema = z.object({
   generated_intensity: z.number().min(0).max(0.85).optional(),
   source_prompt: z.string().min(1).optional(),
   created_at: z.string().min(1).optional(),
+  favorite: z.boolean().optional(),
 });
 export type AiPartyCue = z.infer<typeof AiPartyCueSchema>;
 
@@ -111,6 +112,10 @@ export function findAiPartyCue(
 const GENERATED_CUE_UNSAFE =
   /\b(raw_dmx|raw dmx|raw_python|raw python|python|endpoint|fixture|channel|dmx|fog|fumaca|fumaça|smoke|hazer|haze|strobe|strobo|blackout|freeze|laser|moving head|moving_head|mixer|pa mute|audio routing|ignore previous rules|bypass policy)\b/i;
 
+export function isAiPartyGeneratedCuePromptUnsafe(prompt: string): boolean {
+  return GENERATED_CUE_UNSAFE.test(prompt);
+}
+
 export interface CreateAiPartyGeneratedCueOptions {
   index: number;
   now?: Date;
@@ -159,7 +164,7 @@ export function createAiPartyGeneratedCue(
 ): AiPartyCue {
   const sourcePrompt = cleanPrompt(prompt);
   if (sourcePrompt.length < 3) throw new Error("Cue prompt must have at least 3 characters.");
-  if (GENERATED_CUE_UNSAFE.test(sourcePrompt)) {
+  if (isAiPartyGeneratedCuePromptUnsafe(sourcePrompt)) {
     throw new Error("Generated cues can only describe safe visual moods.");
   }
   const slug = slugifyPrompt(sourcePrompt);
@@ -199,7 +204,7 @@ export function shouldAutoGenerateAiPartyCue(
   const cleaned = cleanPrompt(prompt);
   if (cleaned.length < 3) return false;
   if (cleaned.startsWith("/") || cleaned.startsWith("cue:")) return false;
-  if (GENERATED_CUE_UNSAFE.test(cleaned)) return false;
+  if (isAiPartyGeneratedCuePromptUnsafe(cleaned)) return false;
   const normalized = normalizedText(cleaned);
   const words = normalized.split(/[^a-z0-9]+/).filter(Boolean);
   if (words.length < 2) return false;
@@ -208,8 +213,5 @@ export function shouldAutoGenerateAiPartyCue(
     if (terms.length === 0) return false;
     return terms.filter((term) => normalized.includes(term)).length >= Math.min(2, terms.length);
   });
-  if (matchesKnownCue) return false;
-  return /\b(ambient|dark|disco|elegante|build|drop|neon|minimal|groove|visual|vibe|clima|energia|chaos|caos|calm|calma|tropical|premium)\b/.test(
-    normalized,
-  );
+  return !matchesKnownCue;
 }
