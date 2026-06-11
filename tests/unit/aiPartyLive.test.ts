@@ -1,8 +1,9 @@
-import { existsSync, mkdtempSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { Socket } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { loadGeneratedCueStore } from "../../src/automation/aiPartyLive/generatedCueStore.js";
 import {
   AI_PARTY_DASHBOARD_HTML,
   AI_PARTY_TD_LAYOUT,
@@ -213,6 +214,24 @@ describe("aiPartyLive schema and policy", () => {
         },
       ],
     });
+  });
+
+  it("keeps generated cue display fields free of raw HTML from prompts", () => {
+    const generatedCue = createAiPartyGeneratedCue(
+      "neon vibe <img src=x onerror=alert(1)> & chrome",
+      {
+        index: 1,
+        now: new Date("2026-06-11T07:00:00.000Z"),
+      },
+    );
+
+    expect(generatedCue.source_prompt).toBe("neon vibe <img src=x onerror=alert(1)> & chrome");
+    expect(generatedCue.label).toBe("Generated: Neon vibe img src=x onerror=alert(1) chrome");
+    expect(generatedCue.description).toBe(
+      "Temporary safe visual mood from: neon vibe img src=x onerror=alert(1) chrome",
+    );
+    expect(generatedCue.label).not.toMatch(/[<>&]/);
+    expect(generatedCue.description).not.toMatch(/[<>&]/);
   });
 
   it("approval-gates bounded fog and blocks over-limit fog, strobe, blackout, and prompt injection", () => {
@@ -539,6 +558,13 @@ describe("aiPartyLive service", () => {
     expect(() => restartedService.generateCue("run raw dmx and strobe", { count: 3 })).toThrow(
       /safe visual moods/,
     );
+  });
+
+  it("ignores malformed generated cue store files", () => {
+    const generatedCuePath = tempGeneratedCuePath();
+    writeFileSync(generatedCuePath, "{not valid json", "utf8");
+
+    expect(loadGeneratedCueStore(generatedCuePath)).toEqual([]);
   });
 
   it("renames, favorites, and deletes only generated cues through the API", async () => {
@@ -1238,6 +1264,9 @@ describe("Ollama, Telegram, TD and dispatch adapters", () => {
     expect(AI_PARTY_DASHBOARD_HTML).toContain("if (previewInFlight) return");
     expect(AI_PARTY_DASHBOARD_HTML).toContain('$("command").value = ""');
     expect(AI_PARTY_DASHBOARD_HTML).toContain('$("command").value = text');
+    expect(AI_PARTY_DASHBOARD_HTML).toContain('$("audienceText").value = ""');
+    expect(AI_PARTY_DASHBOARD_HTML).toContain('$("audienceText").value = text');
+    expect(AI_PARTY_DASHBOARD_HTML).toContain('alert("Could not queue suggestion")');
   });
 
   it("updates the TD status text when dispatching cue actions", async () => {

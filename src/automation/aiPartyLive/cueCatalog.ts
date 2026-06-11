@@ -126,6 +126,10 @@ function cleanPrompt(prompt: string): string {
   return prompt.trim().replace(/\s+/g, " ").slice(0, 140);
 }
 
+function displayPrompt(prompt: string): string {
+  return cleanPrompt(prompt).replace(/[<>&]/g, " ").replace(/\s+/g, " ").trim();
+}
+
 function slugifyPrompt(prompt: string): string {
   const slug = prompt
     .normalize("NFD")
@@ -168,15 +172,16 @@ export function createAiPartyGeneratedCue(
     throw new Error("Generated cues can only describe safe visual moods.");
   }
   const slug = slugifyPrompt(sourcePrompt);
+  const safePrompt = displayPrompt(sourcePrompt);
   const index = Math.max(1, Math.floor(options.index));
   const generatedIntensity = intensityFromPrompt(sourcePrompt, options.currentIntensity);
   return AiPartyCueSchema.parse({
     name: `gen_${slug}_${String(index).padStart(2, "0")}`,
-    label: `Generated: ${labelFromPrompt(sourcePrompt)}`,
+    label: `Generated: ${labelFromPrompt(safePrompt)}`,
     kind: "combined",
     risk: "safe",
     preapproved: true,
-    description: `Temporary safe visual mood from: ${sourcePrompt}`,
+    description: `Temporary safe visual mood from: ${safePrompt}`,
     generated_mood: slug,
     generated_intensity: generatedIntensity,
     source_prompt: sourcePrompt,

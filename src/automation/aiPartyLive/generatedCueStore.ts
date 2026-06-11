@@ -21,7 +21,13 @@ function isPersistableGeneratedCue(cue: AiPartyCue): boolean {
 
 export function loadGeneratedCueStore(path: string): AiPartyCue[] {
   if (!existsSync(path)) return [];
-  const parsed = GeneratedCueStoreSchema.safeParse(JSON.parse(readFileSync(path, "utf8")));
+  let raw: unknown;
+  try {
+    raw = JSON.parse(readFileSync(path, "utf8"));
+  } catch {
+    return [];
+  }
+  const parsed = GeneratedCueStoreSchema.safeParse(raw);
   if (!parsed.success) return [];
   const seen = new Set<string>();
   const cues: AiPartyCue[] = [];

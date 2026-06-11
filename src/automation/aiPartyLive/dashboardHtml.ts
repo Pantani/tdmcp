@@ -326,9 +326,17 @@ export const AI_PARTY_DASHBOARD_HTML = `<!doctype html>
     $("audienceSend").onclick = async () => {
       const text = $("audienceText").value;
       $("audienceText").value = "";
-      const data = await post("/api/audience/suggestions", { text });
-      if (!data.ok) alert(data.message || data.suggestion?.reason || "Could not queue suggestion");
-      await load();
+      try {
+        const data = await post("/api/audience/suggestions", { text });
+        if (!data.ok) {
+          $("audienceText").value = text;
+          alert(data.message || data.suggestion?.reason || "Could not queue suggestion");
+        }
+        await load();
+      } catch (err) {
+        $("audienceText").value = text;
+        alert("Could not queue suggestion");
+      }
     };
     $("llmTest").onclick = () => post("/api/llm/test").then(data => alert(JSON.stringify(data, null, 2)));
     $("tdBuild").onclick = () => post("/api/td/build").then(data => alert(JSON.stringify(data, null, 2)));
