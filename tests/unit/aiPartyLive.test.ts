@@ -940,6 +940,37 @@ describe("aiPartyLive service", () => {
     expect(service.snapshot().transition).toBeUndefined();
   });
 
+  it("queues sanitized free-form audience vibes and still blocks unsafe ones", async () => {
+    const service = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+    });
+
+    const plain = service.queueAudienceSuggestion("more neon please", "100", "fan");
+    expect(plain).toMatchObject({
+      ok: true,
+      suggestion: { status: "queued", policy_decision: "allow", raw_text: "more neon please" },
+    });
+
+    const viaSuggest = service.queueAudienceSuggestion(
+      "/suggest mais luz dourada na pista",
+      "100",
+      "fan",
+    );
+    expect(viaSuggest).toMatchObject({
+      ok: true,
+      suggestion: { status: "queued", raw_text: "mais luz dourada na pista" },
+    });
+
+    const unsafeFreeform = service.queueAudienceSuggestion("strobe blackout agora", "100", "fan");
+    expect(unsafeFreeform).toMatchObject({ ok: false, suggestion: { status: "blocked" } });
+
+    const statusCommand = service.queueAudienceSuggestion("/status", "100", "fan");
+    expect(statusCommand).toMatchObject({ ok: false, suggestion: { status: "blocked" } });
+
+    expect(service.snapshot().audience_suggestions).toHaveLength(2);
+  });
+
   it("pushes promoted audience suggestions to the crowd interaction wall", async () => {
     const patches: Array<{ path: string; parameters: Record<string, unknown> }> = [];
     const service = createAiPartyLiveService({

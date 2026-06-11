@@ -1641,7 +1641,7 @@ export class AiPartyLiveService {
     const policy = envelope
       ? evaluateAiPartyPolicy(envelope.intent, this.showState, parsed.rawText, this.cues)
       : undefined;
-    const safeSuggestion =
+    const safePlan =
       policy?.decision === "allow" &&
       policy.plan.length > 0 &&
       policy.plan.every(
@@ -1651,6 +1651,11 @@ export class AiPartyLiveService {
           item.kind === "announcement" ||
           item.kind === "log_note",
       );
+    // Plain free-form vibes ("more neon please") carry no command envelope; they
+    // are crowd-wall text only, so queue them unless the unsafe scanner trips.
+    const freeformText = !envelope && !parsed.replyOnly && !parsed.approvalAction && !parsed.demo;
+    const safeSuggestion =
+      (safePlan || freeformText) && !isAiPartyGeneratedCuePromptUnsafe(parsed.rawText);
     this.audienceSuggestionCount += 1;
     const suggestion: AiPartyAudienceSuggestion = {
       id: `suggestion_${String(this.audienceSuggestionCount).padStart(4, "0")}`,
@@ -1662,13 +1667,13 @@ export class AiPartyLiveService {
       chat_id: chatId,
       operator,
       status: safeSuggestion ? "queued" : "blocked",
-      policy_decision: policy?.decision ?? "block",
+      policy_decision: policy?.decision ?? (safeSuggestion ? "allow" : "block"),
       policy_result: policy,
       reason: safeSuggestion
         ? undefined
         : "Audience wall accepts only safe suggestions; it cannot queue hardware, approval-gated, panic, or raw-control requests.",
     };
-    if (!safeSuggestion || isAiPartyGeneratedCuePromptUnsafe(parsed.rawText)) {
+    if (!safeSuggestion) {
       this.emit("audience.suggestion.received", { suggestion });
       return {
         ok: false,
