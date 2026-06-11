@@ -87,6 +87,11 @@
     "prepack": "node scripts/clean-pycache.mjs",
     "prepublishOnly": "npm run build && npm test"
   },
+  "allowScripts": {
+    "esbuild": true,
+    "fsevents": true,
+    "msw": true
+  },
   "keywords": [
     "touchdesigner",
     "touchdesigner-mcp",
