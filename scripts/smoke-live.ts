@@ -10,6 +10,23 @@ import { TouchDesignerClient } from "../src/td-client/touchDesignerClient.js";
 import { loadConfig, tdBaseUrl } from "../src/utils/config.js";
 import { createLogger } from "../src/utils/logger.js";
 
+async function placeNode(
+  client: TouchDesignerClient,
+  path: string,
+  nodeX: number,
+  nodeY: number,
+): Promise<void> {
+  const quotedPath = JSON.stringify(path);
+  const script = [
+    `_node = op(${quotedPath})`,
+    "if _node is None:",
+    `    raise Exception("Node not found: " + ${quotedPath})`,
+    `_node.nodeX = ${nodeX}`,
+    `_node.nodeY = ${nodeY}`,
+  ].join("\n");
+  await client.executePythonScript(script, false);
+}
+
 async function main(): Promise<void> {
   const config = loadConfig();
   const client = new TouchDesignerClient({
@@ -28,6 +45,7 @@ async function main(): Promise<void> {
     type: "noiseTOP",
     name: "tdmcp_smoke_noise",
   });
+  await placeNode(client, noise.path, -220, 0);
   console.log(`[smoke] created ${noise.path}`);
 
   const nullTop = await client.createNode({
@@ -35,6 +53,7 @@ async function main(): Promise<void> {
     type: "nullTOP",
     name: "tdmcp_smoke_null",
   });
+  await placeNode(client, nullTop.path, 0, 0);
   console.log(`[smoke] created ${nullTop.path}`);
 
   const batch = await client.batch([

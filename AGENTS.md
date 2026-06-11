@@ -1,5 +1,11 @@
 @/Users/pantani/.codex/RTK.md
 
+## Harness: repo quality audit
+
+- When asked for a complete audit, to test all commands, improve repo/code quality, find security/usability/flow failures, identify refactors, add missing tests, continue a previous audit, or verify whether the repo is ready, use the `tdmcp-quality-audit` skill.
+- The quality team is defined in `.claude/agents/` and mirrored for Codex in `.codex/agents/`; the skill is mirrored in `.claude/skills/tdmcp-quality-audit/` and `.agents/skills/tdmcp-quality-audit/`.
+- Keep findings evidence-backed with PASS / FAIL / UNVERIFIED buckets, and do not report TouchDesigner or hardware-dependent checks as passing unless they were actually run.
+
 ## Visual layout integrity
 
 - Never allow accidental overlap between UI elements, generated project components, nodes, cards, controls, text, canvases, media, or visual assets.

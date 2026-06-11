@@ -11,11 +11,23 @@ npm run build
 npm test
 ```
 
-Before opening a PR, make sure all four gates pass:
+Before opening a PR, run the same core checks as CI:
 
 ```bash
-npm run typecheck && npm run build && npm run lint && npm test
+npm run import:bottobot
+npm run typecheck
+npm run lint
+npm run validate:recipes
+npm run build
+npm test
+npm run build:mcpb
+npm run test:bridge
 ```
+
+`npm run docs:build`, `make complexity`, `npm run deps:check`, and
+`npm run coverage:harness` are not required by the main CI workflow, but they are
+the expected local checks for docs, architecture/complexity, and broad test
+hardening work.
 
 - **TypeScript** is ESM + strict; relative imports use `.js` extensions.
 - **Biome** handles formatting and linting (`npm run format` to auto-fix).

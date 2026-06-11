@@ -396,7 +396,7 @@ Sub-batch C — colour finish + authoring/DX:
 - ✅ **`create_pop_geometry`** — POP-family-style procedural geometry rig:
   primitive → transform → subdivide → noise → material SOP chain, rendered
   through a Geometry COMP + Render TOP.
-- ✅ **`tdmcp config init`** — safe starter `.env` config writer for every
+- ✅ **`tdmcp-agent config init`** — safe starter `.env` config writer for every
   `TDMCP_*` variable, with `--force` and `--dry-run`.
 - ✅ **`elicit_missing_args`** — verified shipped in v0.7.0 after the Wave-3C
   audit; schema-driven elicitation has offline / no-server fallbacks.

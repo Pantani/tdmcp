@@ -1102,7 +1102,7 @@ alinhar com uma parede, tela ou objeto.*
 
 <video :src="withBase('/examples/config-init-env-scan.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
-*`tdmcp config init` imprime ou escreve toda a superfície `.env` que o servidor lê,
+*`tdmcp-agent config init` imprime ou escreve toda a superfície `.env` que o servidor lê,
 com segredos de bridge/LLM comentados para preenchimento manual. É pequeno, mas torna
 o setup de máquinas de turnê repetível em vez de depender de memória oral.*
 

@@ -93,6 +93,9 @@ jobs:
       - name: Build .mcpb bundle
         run: npm run build:mcpb
 
+      - name: Test bridge (Python)
+        run: npm run test:bridge
+
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
