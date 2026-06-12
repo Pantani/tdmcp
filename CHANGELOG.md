@@ -29,6 +29,7 @@ bridge 0.6.1.
   formatting for the AI-controlled-party POC.
 
 ### Added — Live Nervous System AI Party rehearsal POC
+
 - **`src/automation/aiPartyLive/`** — local dashboard/backend for the AI Party
   rehearsal loop: operator text, optional Ollama parsing, deterministic fallback
   parsing, policy decisions, approval queue, JSONL audit log, WebSocket
