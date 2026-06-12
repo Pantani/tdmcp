@@ -1,158 +1,136 @@
 ---
 title: Festa Controlada por IA
-description: "Opere uma festa co-pilotada por IA com tdmcp e TouchDesigner: intenções, aprovações, cues, logs, panic e limites de hardware."
+description: "Opere um ensaio seguro de festa assistida por IA com tdmcp e TouchDesigner: dashboard local, policy ShowIntent, aprovações, efeitos simulados, Telegram, Ollama e limites de TD."
 ---
 
 # Festa Controlada por IA
 
 AI-Controlled Party é um padrão de show mode para usar tdmcp e TouchDesigner
 como co-piloto de visuais ao vivo. A IA pode sugerir e selecionar cues
-aprovados, mudar clima visual, rascunhar anúncios e reagir ao contexto do show.
-O TouchDesigner continua sendo o runtime determinístico de palco, e o operador
-humano mantém autoridade final sobre efeitos perigosos.
+aprovados, mudar clima visual, rascunhar anúncios e reagir a texto do operador
+ou do Telegram. O TouchDesigner continua sendo o runtime determinístico de
+palco, e o operador humano mantém autoridade final sobre efeitos perigosos.
 
-Este não é um modo em que uma LLM controla diretamente fumaça, strobe, moving
-heads, lasers ou PA. A arquitetura segura é:
+A implementação atual é uma **POC local de rehearsal**, não controle autônomo de
+show. Ela prova o loop de decisão, dashboard, trilha de auditoria, caminho
+opcional com LLM local, caminho opcional por Telegram e superfície visual
+opcional no TouchDesigner. Ela não prova hardware de venue.
 
 ```text
-microfone / OpenClaw / texto do ChatGPT
-  -> ShowIntent / MixerSceneIntent
-  -> decisão de política
-  -> fila de aprovação ou plano dry-run
-  -> aprovação do operador quando necessário
-  -> tdmcp / TouchDesigner / adaptador aprovado só depois de mapeamento seguro
+dashboard / Telegram / texto do operador
+  -> parser opcional com Ollama ou fallback determinístico
+  -> envelope ShowIntent
+  -> decisão de policy
+  -> permitir, enfileirar aprovação ou bloquear
+  -> simulação ou update no painel de controle do TouchDesigner
+  -> hardware real só depois de adaptador de venue e gates de aprovação separados
 ```
 
-## Estado atual
+## O que existe agora
 
-A primeira fatia implementada é propositalmente apenas dry-run, e o resultado
-validado agora fica dividido entre rehearsal visual e prova de policy:
-
-- `ShowIntentSchema` valida pedidos de controle de show vindos da IA.
-- `EffectPolicySchema` define regras de permitir, exigir aprovação ou bloquear.
-- `tdmcp-agent show-director` explica a decisão sem conectar ao TouchDesigner ou
-  a hardware.
-- O estado da fila de aprovação e os logs de auditoria saem em JSON para um
-  futuro dashboard persistir ou exibir.
-- O primeiro rehearsal visual usou duas projeções de exemplo como baseline de
-  output para o conceito: os visuais podem ser divididos/mapeados como superfície
-  de show, enquanto a policy da IA fica separada do timing dos projetores.
-- Testes de regressão offline cobrem o caminho dry-run de policy: cues visuais
-  permitidos, fog com aprovação, pedidos de strobe/blackout/mixer bloqueados,
-  saída malformada de LLM, transições de aprovação/cancelamento e a garantia da
-  CLI de que `show-director` não constrói contexto do TouchDesigner.
-- A biblioteca de receitas embutida continua validando, incluindo a receita de
-  projection mapping usada como um dos primitivos do rehearsal.
-
-## Estudo de armamento de cena do mixer
-
-A próxima extensão desenhada é **armamento de cena da Soundcraft Ui24R com
-aprovação do operador**. Isto está em fase de estudo/spec, não é uma promessa de
-hardware live:
-
-- A intenção proposta é `arm_mixer_scene`, separada dos efeitos perigosos
-  `mixer_gain`, `pa_mute` e `audio_routing`.
-- A IA pode preparar um alvo específico de show, snapshot ou cue da Ui24R.
-- A policy do MVP sempre exige aprovação humana antes de qualquer adaptador
-  disparar a ação.
-- A primeira fatia de implementação deve ser apenas contrato + adaptador dry-run.
-- Bitfocus Companion é o primeiro backend live recomendado depois de validação
-  isolada em bancada; um bridge Node direto fica adiado até o protocolo da Ui24R
-  ser provado no firmware alvo.
-
-A spec durável está em
-[AI Party Ui24R Scene-Arming Design](../../superpowers/specs/2026-06-04-ai-party-ui24r-scene-arming-design.md).
-
-O achado de segurança mais importante: um show/snapshot/cue da Ui24R pode
-esconder mudanças amplas de estado do mixer. Uma cena do mixer só pode ser
-armada pela IA se um catálogo/manifesto confiável do venue provar que ela exclui
-mudanças de ganho, PA mute, roteamento, patching, channel strip, mute group e
-phantom power. Caso contrário, ela continua operator-only/manual.
-
-## POC com Hermes + Telegram
-
-Uma POC maior pode colocar o Hermes atrás de um bot de Telegram como show
-director ativo: mensagens do Telegram disparam o Hermes, o Hermes propõe um
-`ShowIntent` estruturado, a policy permite, enfileira ou bloqueia o pedido, e
-somente planos aprovados chegam ao tdmcp e ao TouchDesigner.
-
-Para um rehearsal local, use long polling do Telegram e um chat de operadores
-em allowlist. Use webhooks apenas em ambiente implantado com TLS, roteamento e
-tratamento seguro de segredos. Mantenha as quatro saídas públicas com funções
-distintas: identidade/anúncios, mundo áudio-reativo, câmera ou superfície de
-visão da IA, e parede de interação com o público. Anúncios no PA, fumaça/hazer,
-luzes e qualquer ação que afete mixer continuam exigindo aprovação e validação
-do venue antes de uso ao vivo.
-
-A entrada local da POC é `tdmcp-agent ai-party`. Ela passa uma mensagem no
-formato Telegram/Hermes pelo mesmo runtime de policy do `show-director`:
-
-```bash
-tdmcp-agent ai-party --params '{
-  "message": {
-    "text": "/band start Terno Rei",
-    "chat_role": "operator",
-    "user_role": "foh"
-  }
-}'
-```
-
-Para um teste de bancada com Telegram, rode um único lote de long polling com o
-token do bot no ambiente. Isso responde no Telegram, mas ainda não toca no
-TouchDesigner nem em hardware:
-
-```bash
-TDMCP_TELEGRAM_BOT_TOKEN=... tdmcp-agent ai-party telegram-once --params '{
-  "allowed_chat_ids": [123456789],
-  "operator_user_ids": [987654321]
-}'
-```
-
-## Plano de validação
-
-Use o conceito como um harness, não como um único arquivo de demo. Cada passagem
-deve provar uma fronteira antes de confiar na próxima:
-
-| Etapa | O que provar | Sinal de aprovação |
+| Superfície | Status | O que prova |
 | --- | --- | --- |
-| Baseline de projeção | Duas ou mais saídas conseguem mostrar um visual mapeado e um test pattern conhecido. | Cada projetor/superfície está enquadrado, com preview e fallback de black/freeze. |
-| Dry-run de policy da IA | Pedidos em texto viram `ShowIntent`s estruturados antes de qualquer coisa chegar ao TD. | Cues pré-aprovados são permitidos, fog/strobe exigem aprovação ou bloqueiam, efeitos perigosos nunca geram plano de hardware. |
-| Dry-run de cena do mixer | Pedidos de show/snapshot/cue da Ui24R viram intenções `arm_mixer_scene` estruturadas. | Alvos conhecidos do catálogo entram na fila de aprovação; alvos desconhecidos ou inseguros bloqueiam antes de qualquer plano de adaptador. |
-| Bancada do adaptador do mixer | Um backend dry-run ou Companion consegue receber um alvo aprovado sem controle amplo do mixer. | Uma aprovação gera no máximo um dispatch simulado/de bancada, com estados de auditoria separados como enviado, reconhecido e confirmado. |
-| Rehearsal áudio-reativo | TD cuida localmente de beat, energia, transientes ou chroma. | A IA muda apenas intenção de frase/seção/cue; movimento no beat continua sem round trip de LLM. |
-| Controle do operador | O humano consegue ver a última decisão da IA e sobrescrever. | Dashboard/logs mostram cue atual, aprovações pendentes, motivos de policy e estado de panic. |
-| Hardware do venue | Cada fixture e efeito tem estado seguro antes do controle ao vivo. | DMX/fog/strobe/PA continuam simulados até policy, cooldowns e kill path específicos do venue serem ensaiados. |
+| `tdmcp-agent show-director` | CLI de policy já entregue | Valida um `ShowIntent`, retorna `allow`, `require_approval` ou `block`, e atualiza JSON de aprovação/auditoria sem conectar ao TD ou a hardware. |
+| `tdmcp-agent ai-party-poc` | Runner offline para produtor | Roda o rehearsal de sete momentos com fan-in, decisões de policy, estado de aprovação, resumo de audit e efeitos apenas simulados. |
+| `npm run ai-party:dev` | POC local de rehearsal live | Sobe o backend Live Nervous System e o dashboard, normalmente em `http://127.0.0.1:8787/`. |
+| `npm run ai-party:dry` | Prova rápida | Roda a sequência determinística doors -> mood -> brand -> aprovação de fog -> aprovação -> áudio-reativo -> prova de segurança, sem serviço externo. |
+| `npm run ai-party:td-build` | Superfície visual opcional no TD | Cria `/project1/ai_party_poc` com painel de controle, cadeia visual TOP, tabela DMX simulada, placeholder DMX desabilitado e `preview_out`. |
+| `npm run ai-party:telegram` | Caminho local opcional por Telegram | Usa long polling da Bot API com chats em allowlist; responde no Telegram, mas todo pedido passa pela mesma policy. |
+| `tdmcp-agent ai-party` | Gateway Hermes/Telegram anterior | Faz dry-run de uma mensagem no formato Telegram/Hermes pela policy do Show Director. Continua policy-only e não cria contexto de TD. |
 
-Repita as duas primeiras etapas em CI/rehearsal offline sempre que a policy
-mudar. Repita as cinco etapas para cada venue.
+O dashboard inclui entrada de comando, chips de exemplo, cue deck, fila de
+aprovação, estado live, status de preview do TouchDesigner, filtros do log de
+eventos e painel de segurança. O serviço local escreve eventos JSONL em
+`POC_EVENT_LOG_PATH` (`./data/ai-party-poc-events.jsonl` por padrão).
 
-## Modo rehearsal
+## Rehearsal local recomendado
 
-Use rehearsal mode enquanto constrói o show:
+Comece pela prova offline:
 
-1. Crie visuais, setlists, cues, mapping e dashboards com as ferramentas normais
-   do tdmcp.
-2. Salve cues com nomes claros como `doors_idle`, `band_intro`,
-   `music_reactive_main` e `panic_recovery_test`.
-3. Teste análise de áudio com fonte sintética ou arquivo antes de usar mixer ao
-   vivo.
-4. Mantenha `create_panic` ou `tdmcp-agent panic` disponível antes de ensaiar
-   qualquer output.
-5. Para trabalho com Ui24R, ensaie primeiro o fluxo de cena do mixer em dry-run:
-   pedido, decisão de policy, fila de aprovação, aprovação do operador e audit
-   log.
-6. Mantenha o catálogo de cenas do mixer no servidor. Não deixe a LLM inventar
-   nomes de cena, endpoints de adaptador, posições de botão ou comandos crus do
-   mixer.
-7. Teste qualquer adaptador live em uma Ui24R isolada em bancada antes de levar
-   isso para a rede de show do venue.
+```bash
+npm run ai-party:dry
+npm run ai-party:test
+```
 
-## Show mode
+Depois rode o dashboard:
 
-Show mode deve usar uma superfície de comando menor. A IA deve operar em frases,
-seções e cues, não em timing beat-by-beat.
+```bash
+npm run ai-party:dev
+```
 
-Intenções dry-run permitidas:
+Abra a URL impressa. Prompts úteis de teste:
+
+- `deixa a sala mais premium tropical`
+- `prepara fumaça curta no próximo drop`
+- `blackout total e strobo máximo e raw dmx`
+
+Comportamento esperado:
+
+- O primeiro prompt seleciona um cue ou mood visual seguro.
+- O pedido de fog cria um item de aprovação; aprová-lo ainda simula o efeito
+  físico, exceto se gates live e um adaptador real forem adicionados
+  deliberadamente.
+- O pedido de blackout / strobe máximo / raw DMX é bloqueado e registrado.
+
+## Ollama opcional
+
+Configure um modelo local só se quiser colocar o parser LLM no loop:
+
+```bash
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+OLLAMA_MODEL=qwen2.5:3b
+npm run ai-party:dev
+```
+
+Nenhum modelo específico é obrigatório para a POC. Se o Ollama estiver
+indisponível ou `OLLAMA_MODEL` não estiver configurado, o dashboard mostra esse
+estado e usa parser determinístico de fallback para os comandos de demo.
+
+## Preview opcional no TouchDesigner
+
+Inicie o bridge do tdmcp e então construa a rede demo:
+
+```bash
+npm run ai-party:td-build
+```
+
+O builder cria ou substitui `/project1/ai_party_poc`. Todo operador criado
+recebe coordenadas explícitas `nodeX` / `nodeY`, então a rede fica legível em
+vez de empilhada. O endpoint de preview do dashboard mira:
+
+```text
+/project1/ai_party_poc/preview_out
+```
+
+Ações de cue e mood podem atualizar o painel de controle do TD quando o bridge
+estiver acessível. Efeitos físicos continuam representados por uma tabela DMX
+simulada e um placeholder de output desabilitado.
+
+## Bancada opcional com Telegram
+
+Use long polling do Telegram para rehearsal local:
+
+```bash
+TELEGRAM_BOT_TOKEN=... \
+TELEGRAM_ALLOWED_CHAT_IDS=123456789 \
+TELEGRAM_POLLING_ENABLED=true \
+npm run ai-party:telegram
+```
+
+Comandos suportados incluem `/status`, `/cues`, `/cue <cue_name>`,
+`/mood <text>`, `/fog <seconds> <intensity>`, `/approve <approval_id>`,
+`/reject <approval_id>`, `/panic` e `/demo`.
+
+Mantenha o Telegram em allowlist. Webhook é trabalho de deploy, não o caminho da
+POC local.
+
+## Modelo de segurança
+
+A LLM só interpreta texto em JSON `ShowIntent` estruturado. Ela nunca despacha
+DMX cru, Python cru, endpoints arbitrários, canais de fixture, comandos de
+mixer, ações de PA ou controle de laser / moving head.
+
+Intenções de baixo risco permitidas:
 
 - `announce`
 - `change_mood`
@@ -164,11 +142,9 @@ Exigem aprovação por padrão:
 
 - `fog`
 - `hazer`
-- `strobe`
-- `arm_mixer_scene` para alvos Soundcraft Ui24R de show/snapshot/cue
-  pré-declarados depois que o contrato for implementado
+- `strobe` limitado
 
-Bloqueados/operator-only por padrão:
+Bloqueados ou operator-only por padrão:
 
 - `blackout`
 - `freeze`
@@ -180,139 +156,63 @@ Bloqueados/operator-only por padrão:
 - ganho de entrada, mute groups, patching, edições de channel strip e comandos
   crus de adaptador
 
-## CLI dry-run
+A aprovação é checada duas vezes: quando o pedido entra na fila e de novo quando
+o operador aprova. O estado de cooldown em runtime faz parte da segunda checagem,
+então dois pedidos de fog enfileirados não conseguem disparar juntos se a
+primeira aprovação colocar o efeito dentro da janela de cooldown.
 
-Verificar um cue visual:
+`HARDWARE_ENABLED` e `DMX_LIVE_ENABLED` são gates de integração para adaptadores
+futuros. Não trate isso como driver DMX pronto para venue. A POC atual no TD usa
+`sim_dmx_table` e `dmx_out_disabled`, e fixtures reais ainda exigem adaptador
+separado, mapa de patch, caminho de emergency stop, validação de bancada e
+rehearsal no venue.
 
-```bash
-tdmcp-agent show-director --params '{
-  "intent": {
-    "type": "request_cue",
-    "cue": "band_intro",
-    "preapproved": true
-  }
-}'
-```
+## Estudo de armamento de cena do mixer
 
-Colocar um pedido de fumaça na fila de aprovação:
+A extensão desenhada para Soundcraft Ui24R continua **planejada**, não execução
+live:
 
-```bash
-tdmcp-agent show-director --params '{
-  "intent": {
-    "type": "arm_effect",
-    "effect": "fog",
-    "duration_seconds": 3,
-    "intensity": 0.4
-  }
-}'
-```
+- A intenção proposta é `arm_mixer_scene`, separada dos efeitos perigosos
+  `mixer_gain`, `pa_mute` e `audio_routing`.
+- A IA pode preparar um alvo específico de show, snapshot ou cue da Ui24R.
+- A policy do MVP sempre deve exigir aprovação humana antes de qualquer
+  adaptador disparar a ação.
+- A primeira fatia de implementação deve ser apenas contrato + adaptador
+  dry-run.
+- Bitfocus Companion continua sendo o primeiro backend live recomendado depois
+  de validação isolada em bancada; um bridge Node direto fica adiado até o
+  protocolo da Ui24R ser provado no firmware alvo.
 
-Aprovar um pedido retornando exatamente o `state` recebido no comando anterior:
+A spec durável está em
+[AI Party Ui24R Scene-Arming Design](../../superpowers/specs/2026-06-04-ai-party-ui24r-scene-arming-design.md).
 
-```bash
-tdmcp-agent show-director --params '{
-  "intent": {
-    "type": "arm_effect",
-    "effect": "fog",
-    "duration_seconds": 3,
-    "intensity": 0.4
-  }
-}' > queued.json
+O achado de segurança mais importante: um show/snapshot/cue da Ui24R pode
+esconder mudanças amplas de estado do mixer. Uma cena do mixer só pode ser
+armada pela IA se um catálogo/manifesto confiável do venue provar que ela exclui
+mudanças de ganho, PA mute, roteamento, patching, channel strip, mute group e
+phantom power. Caso contrário, ela continua operator-only/manual.
 
-node -e 'const fs=require("fs"); const queued=JSON.parse(fs.readFileSync("queued.json","utf8")); fs.writeFileSync("approve-state.json", JSON.stringify({ operator: "front-of-house", state: queued.state }, null, 2));'
+## Plano de validação
 
-tdmcp-agent show-director approve approval_0001 --params-file approve-state.json
-```
+Use a POC como harness. Cada passagem deve provar uma fronteira antes de confiar
+na próxima:
 
-O `plan` retornado ainda é abstrato e dry-run only. Adaptadores de hardware devem
-ser adicionados separadamente e continuar aplicando a mesma policy.
+| Etapa | O que provar | Sinal de aprovação |
+| --- | --- | --- |
+| Policy offline | Texto e eventos roteirizados viram `ShowIntent`s válidos. | `npm run ai-party:dry` e `npm run ai-party:test` passam; caminhos permitido, enfileirado e bloqueado aparecem. |
+| Rehearsal no dashboard | O operador consegue ver cue atual, aprovações pendentes, motivos de policy, estado de panic e audit events. | `npm run ai-party:dev` serve o dashboard, aprovações podem ser aprovadas/rejeitadas, e pedidos bloqueados continuam bloqueados. |
+| Preview no TouchDesigner | TD consegue hospedar a POC visual sem depender de hardware de dispositivo. | `npm run ai-party:td-build` cria `/project1/ai_party_poc`; `/api/td/preview` consegue ler `preview_out` quando o bridge está disponível. |
+| Bancada com Telegram | Um bot consegue receber mensagens de operador permitidas e enviar respostas de status. | Long polling processa apenas chats em allowlist e mapeia `/cue`, `/mood`, `/fog`, `/approve`, `/reject` e `/panic` pela policy. |
+| Hardware de venue | Cada fixture, output e efeito tem estado seguro antes de controle ao vivo. | Ainda pendente: fixture patching, adaptadores reais de DMX/fog/strobe/hazer/PA, emergency stop, cooldowns e rehearsal de operador precisam ser específicos por venue. |
 
-## Runner do POC para produtor
-
-Para um rehearsal fechado com produtor, use `ai-party-poc` para rodar o POC
-recomendado sem conectar ao TouchDesigner ou a hardware:
-
-```bash
-tdmcp-agent ai-party-poc
-```
-
-Ele roda uma demonstração dry-run em sete momentos: abertura/preflight,
-boas-vindas da IA, entrada de banda, aprovação de fog, mood áudio-reativo,
-mudança de clima por voz/texto, prova de segurança e audit final. O comando
-normaliza texto de operador ou transcrição de voz em `ShowIntent`, avalia a
-policy, devolve estado de aprovação/audit log e marca todo efeito como simulado.
-
-Para demonstrar o caminho completo de aprovação sem tocar em hardware:
-
-```bash
-tdmcp-agent ai-party-poc --params '{
-  "auto_approve_effects": true,
-  "operator": "front-of-house"
-}'
-```
-
-O resultado pode incluir eventos simulados como `fog_sim_short`, mas
-`hardware_plans` permanece `0`. Use os fixtures em
-`tests/fixtures/show-director/` como material de rehearsal ou entradas futuras
-de regressão.
-
-## Armamento planejado de cena da Ui24R
-
-O contrato planejado de armamento de cena da Ui24R continua sendo trabalho de
-design, não execução live atual:
-
-```bash
-tdmcp-agent show-director --params '{
-  "intent": {
-    "type": "arm_mixer_scene",
-    "adapter_target": { "kind": "soundcraft_ui24r", "mixer_id": "foh-ui24r" },
-    "target": {
-      "kind": "snapshot",
-      "show_name": "AI Party Demo",
-      "snapshot_name": "Band A Intro"
-    },
-    "request": {
-      "source": "setlist",
-      "reason": "Band A intro scene reached"
-    }
-  }
-}'
-```
-
-A primeira fatia deve retornar fila de aprovação dry-run e plano de cena do
-mixer com `dry_run_only`. Adaptadores live por Companion ou Ui24R direta devem
-ser follow-ups separados e gated.
-
-## Checklist da demo
-
-- Bridge health verificado.
-- Panic/blackout/freeze testado localmente.
-- Cue visual fallback preparado.
-- Setlist demo importado ou disponível.
-- Fonte de áudio testada primeiro com sintético/arquivo.
-- Output/mapping de projetores verificado.
-- Catálogo/manifesto de cenas do mixer conferido se o teste incluir armamento
-  da Ui24R.
-- Adaptador Ui24R desabilitado ou em dry-run, exceto se uma validação isolada em
-  bancada já tiver passado.
-- Efeitos perigosos desconectados ou simulados, exceto em ensaio controlado com
-  aprovação do operador do venue.
-- Operador consegue ver última decisão da IA, aprovações pendentes e audit log.
-
-## Demo em cinco momentos
-
-1. Abertura: visual idle generativo, dashboard/panic visível.
-2. Entrada de banda: IA seleciona cue visual pré-aprovado, pode enfileirar um
-   armamento planejado de cena da Ui24R e enfileira qualquer fog.
-3. Núcleo áudio-reativo: TouchDesigner controla beat/energy/chroma localmente.
-4. Pedido por microfone: texto da voz vira `change_mood`, limitado pela policy.
-5. Prova de segurança: pedido excessivo de fog/strobe/mixer é bloqueado,
-   pedidos de ganho/mute/roteamento da Ui24R continuam operator-only, e panic
-   funciona sem a LLM.
+Repita as etapas de policy offline e dashboard sempre que a policy mudar. Repita
+as etapas de hardware para cada venue.
 
 ## Ainda não validado ao vivo
 
-STT real, integração OpenClaw, dashboard de aprovação, fixture patching, saída
-DMX, hardware de fog/hazer, strobe, moving heads, lasers, PA e recall de cena da
-Soundcraft Ui24R exigem validação por venue. Não trate o planner dry-run nem o
-contrato planejado de cena do mixer como controlador de hardware.
+STT real, integração OpenClaw, webhooks de Telegram em deploy, fixture patching,
+saída DMX, hardware de fog/hazer, strobe, moving heads, lasers, PA, recall de
+cena da Soundcraft Ui24R, emergency stop de venue e rehearsal de operador sob
+pressão de show exigem validação específica por venue. Não trate a POC local, o
+planner dry-run ou o contrato planejado de cena do mixer como controlador de
+hardware.
