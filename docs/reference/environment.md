@@ -60,19 +60,31 @@ temporary shells, process managers and CI-style runs.
 | `TDMCP_TELEGRAM_POLL_TIMEOUT_SEC` | `30` | Telegram `getUpdates` long-poll timeout, validated to `1..60` seconds by the config schema. |
 | `TDMCP_TELEGRAM_CONFIRM_TIMEOUT_MS` | `60000` | Expiry for a staged non-safe prompt awaiting `/approve`. |
 
-## AI Party ShowIntent eval
+## AI Party ShowIntent eval and rehearsal POC
 
 These variables configure the local-model evaluation and optional improvement
-pipeline under `training/showintent/`.
+pipeline under `training/showintent/`, plus the local Live Nervous System
+rehearsal POC used by `npm run ai-party:*`.
 
 | Variable | Default | Description |
 | --- | --- | --- |
 | `LLM_MODE` | `ollama` | Runtime mode label for the AI Party POC. The current eval harness targets Ollama. |
-| `OLLAMA_BASE_URL` | `http://127.0.0.1:11434` | Ollama base URL used by `npm run ai-party:llm-eval` and `npm run ai-party:llm-baseline`. |
-| `OLLAMA_MODEL` | `qwen2.5:3b` | Ollama model id to evaluate. Use the packaged improved model only after it beats the baseline without weakening safety metrics. |
+| `OLLAMA_BASE_URL` | `http://127.0.0.1:11434` | Ollama base URL used by `npm run ai-party:llm-eval`, `npm run ai-party:llm-baseline` and the optional Live Nervous System parser. |
+| `OLLAMA_MODEL` | `qwen2.5:3b` for eval, unset for the live POC | Ollama model id. The live dashboard uses deterministic fallback parsing when this is unset or unavailable. Use an improved model only after it beats the baseline without weakening safety metrics. |
 | `TDMCP_AI_PARTY_LLM_MODEL` | `showintent-party:local` | Model id used by `tdmcp-agent ai-party --llm` when `--llm-model` / `OLLAMA_MODEL` are not set. This keeps the ShowIntent-only model separate from the general `tdmcp chat` model. |
 | `LLM_EVAL_STRICT` | `false` | Set to `true` to make eval fail when demo-ready hard targets are not met. |
 | `LLM_SCHEMA_VERSION` | `showintent.v1` | Schema/version label to record alongside reports and POC configuration. |
+| `TD_BRIDGE_URL` | `http://127.0.0.1:9980` | TouchDesigner bridge URL used by `npm run ai-party:td-build` and dashboard TD preview checks. |
+| `TD_BRIDGE_TOKEN` | _(unset)_ | Optional bridge bearer token for the Live Nervous System TD client. |
+| `POC_DASHBOARD_HOST` | `127.0.0.1` | Host for the local AI Party dashboard/backend. |
+| `POC_DASHBOARD_PORT` | `8787` | Port for the local AI Party dashboard/backend. |
+| `POC_EVENT_LOG_PATH` | `./data/ai-party-poc-events.jsonl` | JSONL event log for operator commands, policy decisions, approvals, dispatch results and health changes. |
+| `TELEGRAM_BOT_TOKEN` | _(unset)_ | Telegram bot token for `npm run ai-party:telegram`. This is separate from the general `tdmcp telegram` copilot variables. |
+| `TELEGRAM_ALLOWED_CHAT_IDS` | _(empty)_ | Comma-separated chat allowlist required before the AI Party Telegram polling loop processes messages. |
+| `TELEGRAM_POLLING_ENABLED` | `false` | Enables AI Party Telegram long polling; `npm run ai-party:telegram` turns polling on for that process. |
+| `TELEGRAM_WEBHOOK_URL` | _(unset)_ | Reserved for deployed webhook work; local rehearsal uses long polling. |
+| `HARDWARE_ENABLED` | `false` | Future-adapter gate for physical-effect dispatch. Leave false for local rehearsal. |
+| `DMX_LIVE_ENABLED` | `false` | Future-adapter gate for DMX/live physical dispatch. Leave false unless a venue-safe adapter and kill path have been validated. |
 
 ## TouchDesigner side
 

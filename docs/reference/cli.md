@@ -270,6 +270,11 @@ Setup flags: `--token-stdin`, `--chat-id <id>`, `--user-id <id>`,
 | `npm run typecheck` / `npm run lint` | TypeScript / Biome. |
 | `npm run smoke:live` | End-to-end test against a running TD. |
 | `npm run validate:recipes` | Validate every recipe JSON. |
+| `npm run ai-party:dev` | Start the Live Nervous System AI Party dashboard/backend, normally on `http://127.0.0.1:8787/`. |
+| `npm run ai-party:dry` | Run the deterministic AI Party rehearsal smoke without external services. |
+| `npm run ai-party:td-build` | Build the optional `/project1/ai_party_poc` TouchDesigner preview network through the bridge. |
+| `npm run ai-party:test` | Run the focused AI Party live POC, Show Director, gateway and producer-runner tests. |
+| `npm run ai-party:telegram` | Start the local AI Party dashboard/backend with Telegram long polling enabled. |
 | `npm run ai-party:llm-eval` | Run the ShowIntent eval cases against `OLLAMA_BASE_URL` / `OLLAMA_MODEL`. |
 | `npm run ai-party:llm-baseline` | Save a timestamped ShowIntent local-LLM baseline report and failure JSONL. |
 | `npm run ai-party:llm-generate-data` | Generate deterministic ShowIntent training JSONL and train/validation splits. |

@@ -10,26 +10,19 @@ can build real visual systems from plain language — no node-wiring by hand. Th
 page is the honest, bird's-eye picture of **what already works, what's still
 rough, and what's coming next** on the way to a stable 1.0.
 
-**Where things stand today.** The latest public release is **v0.8.3** — a
-live-show resilience + LLM token budget + CLI-ergonomics wave that brings the
-tool surface from 279 → **286** and adds two new first-class bridge REST
-endpoints and two new CLIs (`tdmcp init`, `tdmcp ask`); see
-[Wave 12 — v0.8.3](#wave-12-v0-8-3) below. v0.8.2 itself shipped four
-new bridge REST endpoints, seven REST-first tool promotions, the `bridge_watch_build` hot
-reload, a +16 recipe expansion (now 31 first-party recipes), the tool API
-contract reference page, and a coverage push that bumped `functions: 80 → 82`
-and seeded new test suites across `src/index.ts`, `src/cli/*`, and `src/llm/*`.
-v0.8.1 itself added the SDF / strange-attractor / optical-flow / histogram-scope
-generators, the MediaPipe face + hand + segmentation adapters, the AI Show
-Director dry-run policy layer, the inline-preview / dashboard-v2 /
-N-channel-decks follow-through, the persistent session profile
-(`load_session_profile` + `tdmcp://session/profile`), and the new MCP resources
-(`tdmcp://glsl-snippets`, `tdmcp://cheatsheets`,
-`tdmcp://learning/touchdesigner`). The CHANGELOG `[0.8.2]` / `[0.8.1]` /
-`[0.8.0]` blocks list every entry; the always-current tool list is the
-[Tools reference](/reference/tools). 1.0 is **not** the next minor — v0.8.x is
-the active stabilization line, and v1.0 will land only once the consolidation
-gates below are all green.
+**Where things stand today.** The npm `latest` package is **v0.9.0**; the latest
+GitHub Release/tag is still **v0.8.3** as of June 12, 2026. v0.9.0 is the
+hype-scout Round 4 campaign release: force multipliers, POP combos, the
+generative-AI bridge wave and the VFX aesthetic tail. It also includes the
+Hermes/Telegram AI Party policy wrapper and the local Live Nervous System
+rehearsal POC. The v0.8.3 GitHub release remains the last tagged release object:
+a live-show resilience + LLM token budget + CLI-ergonomics wave that brought the
+tool surface from 279 → **286** and added two bridge REST endpoints plus
+`tdmcp init` / `tdmcp ask`; see [Wave 12 — v0.8.3](#wave-12-v0-8-3) below.
+The CHANGELOG blocks list every entry; the always-current tool list is the
+[Tools reference](/reference/tools). 1.0 is **not** the next minor — the v0.9.x
+line is the active feature/consolidation line, and v1.0 will land only once the
+consolidation gates below are all green.
 
 The project has grown through five arcs:
 
@@ -68,7 +61,7 @@ The project has grown through five arcs:
 
 ## ✅ Current Release Line
 
-### Unreleased — MediaPipe hands -> TDAbleton mapper
+### Unreleased — MediaPipe hands -> TDAbleton mapper + AI Party rehearsal POC
 
 Source-tree work after v0.8.3 adds a focused live-control path for the Ableton
 session we validated manually:
@@ -81,6 +74,12 @@ session we validated manually:
   input CHOP, `Reorder`, bypass states, `Min/Max` ranges and missing `map1..map4`
   channels, with optional TD-side repair. AbletonMCP is not required for this
   runtime path.
+- **Live Nervous System / AI Party local rehearsal POC.** The repo now includes
+  `src/automation/aiPartyLive/` and `npm run ai-party:{dev,dry,td-build,test,telegram}`:
+  a local dashboard/backend, approval queue, JSONL audit log, optional Ollama
+  parser, optional Telegram long polling and optional TouchDesigner preview
+  network. It remains simulation-first; real venue hardware still needs a
+  separate adapter, fixture map, emergency-stop path and venue validation.
 
 ### Wave 12 — v0.8.3 (live-show resilience + LLM token budget + CLI ergonomics) {#wave-12-v0-8-3}
 

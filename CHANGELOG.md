@@ -28,6 +28,19 @@ bridge 0.6.1.
   ACLs, malformed-output blocking, approval queue handoff, and Telegram reply
   formatting for the AI-controlled-party POC.
 
+### Added — Live Nervous System AI Party rehearsal POC
+- **`src/automation/aiPartyLive/`** — local dashboard/backend for the AI Party
+  rehearsal loop: operator text, optional Ollama parsing, deterministic fallback
+  parsing, policy decisions, approval queue, JSONL audit log, WebSocket
+  dashboard snapshots, panic-safe handling and TouchDesigner health/preview
+  endpoints.
+- **`npm run ai-party:dev` / `dry` / `td-build` / `test` / `telegram`** — run the
+  local dashboard, deterministic rehearsal smoke, optional TD demo-network
+  builder, focused POC test suite and allowlisted Telegram long-poll path.
+- **Simulation-first hardware boundary** — physical effects stay simulated by
+  default; the TD builder creates `sim_dmx_table` and `dmx_out_disabled`, not a
+  venue-ready DMX output.
+
 ### Changed — Package distribution
 - **npm package publishing** — `@dpantani/tdmcp` remains the public npm package
   identity for `0.9.0`, with explicit public scoped publishing. Runtime version
