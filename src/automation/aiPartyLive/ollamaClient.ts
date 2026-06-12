@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DEFAULT_AI_PARTY_CUE_CATALOG } from "./cueCatalog.js";
+import { DEFAULT_AI_PARTY_CUE_CATALOG, isAiPartyGeneratedCuePromptUnsafe } from "./cueCatalog.js";
 import type { AiPartyShowState, ShowIntentEnvelope } from "./schemas.js";
 import { blockedEnvelope, parseShowIntentEnvelope, ShowIntentEnvelopeSchema } from "./schemas.js";
 
@@ -338,3 +338,84 @@ export async function parseOllamaShowIntent(
 }
 
 export { deterministicEnvelope as deterministicShowIntentEnvelope };
+
+const CueIdeaSchema = z.object({
+  phrase: z.string().trim().min(3).max(80),
+  intensity: z.number().min(0.2).max(0.85).optional(),
+});
+
+const CUE_IDEA_SYSTEM_PROMPT = [
+  "You name safe visual moods for a live show.",
+  'Given a party vibe request, answer with JSON only: {"phrase": string, "intensity": number}.',
+  "The phrase is 3 to 6 evocative English or Portuguese words describing a projection visual.",
+  "Never mention fog, smoke, hazer, strobe, blackout, laser, DMX, Python, mixer, or hardware.",
+  "Intensity is 0.2 (calm) to 0.85 (peak).",
+].join(" ");
+
+export interface OllamaCueIdeaInput {
+  prompt: string;
+  ollamaBaseUrl: string;
+  model: string;
+  fetchImpl?: typeof fetch;
+}
+
+export interface OllamaCueIdeaResult {
+  ok: boolean;
+  phrase?: string;
+  intensity?: number;
+  model?: string;
+  latency_ms?: number;
+  error?: string;
+}
+
+export async function generateOllamaCueIdea(
+  input: OllamaCueIdeaInput,
+): Promise<OllamaCueIdeaResult> {
+  const started = Date.now();
+  if (!input.model.trim()) {
+    return { ok: false, error: "OLLAMA_MODEL is not configured", latency_ms: 0 };
+  }
+  try {
+    const fetcher = input.fetchImpl ?? fetch;
+    const res = await fetcher(`${input.ollamaBaseUrl.replace(/\/+$/, "")}/api/chat`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        model: input.model,
+        messages: [
+          { role: "system", content: CUE_IDEA_SYSTEM_PROMPT },
+          { role: "user", content: JSON.stringify({ vibe_request: input.prompt }) },
+        ],
+        stream: false,
+        format: z.toJSONSchema(CueIdeaSchema),
+        options: { temperature: 0.6 },
+      }),
+    });
+    if (!res.ok) {
+      throw new Error(`Ollama returned HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
+    }
+    const idea = CueIdeaSchema.parse(parseJsonText(extractContent(await res.json())));
+    if (isAiPartyGeneratedCuePromptUnsafe(idea.phrase)) {
+      return {
+        ok: false,
+        model: input.model,
+        latency_ms: Date.now() - started,
+        error: "Model suggested an unsafe phrase; falling back to deterministic generation.",
+      };
+    }
+    return {
+      ok: true,
+      phrase: idea.phrase,
+      intensity: idea.intensity,
+      model: input.model,
+      latency_ms: Date.now() - started,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      model: input.model,
+      latency_ms: Date.now() - started,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
