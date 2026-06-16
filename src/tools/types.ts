@@ -1,4 +1,5 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { CreativeRagService } from "../creativeRag/index.js";
 import type { KnowledgeBase } from "../knowledge/index.js";
 import type { LlmClientLike } from "../llm/client.js";
 import type { RecipeLibrary } from "../recipes/loader.js";
@@ -37,6 +38,12 @@ export interface ToolContext {
    * live tool registry.
    */
   server?: McpServer;
+  /**
+   * Optional local Creative RAG repertoire service (set when
+   * `TDMCP_RAG_ENABLED=1`); undefined when the feature is off. Backs the
+   * read-only `tdmcp://creative/*` resources only — no actionable tool.
+   */
+  creativeRag?: CreativeRagService;
 }
 
 /** A function that registers one tool against the MCP server. */

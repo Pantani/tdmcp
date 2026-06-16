@@ -80,6 +80,17 @@ session we validated manually:
   parser, optional Telegram long polling and optional TouchDesigner preview
   network. It remains simulation-first; real venue hardware still needs a
   separate adapter, fixture map, emergency-stop path and venue validation.
+- 🧪 **Creative RAG MVP (opt-in, experimental).** A local-only creative
+  repertoire of open-licensed artworks/artists/techniques: `tdmcp creative-rag
+  {sync|index|search}` plus read-only `tdmcp://creative/cards/{id}` and
+  `tdmcp://creative/search` MCP resources. Off by default (`TDMCP_RAG_ENABLED=0`);
+  four confirmed museum sources (Art Institute of Chicago, The Met,
+  Rijksmuseum, Cleveland Museum of Art), in-memory cosine over a local JSONL
+  index, embeddings via local Ollama. **Repertório, não policy** — no bridge,
+  DMX, or Python exec. Follow-ups: a `TDMCP_RAG_BACKEND=lancedb` vector store
+  and the 9 documented stub sources (Europeana, Wikimedia/Wikidata, Smithsonian,
+  Harvard, Cooper Hewitt, Internet Archive, WikiArt, portfolios, Shadertoy). See
+  [Creative RAG](./CREATIVE_RAG).
 
 ### Wave 12 — v0.8.3 (live-show resilience + LLM token budget + CLI ergonomics) {#wave-12-v0-8-3}
 

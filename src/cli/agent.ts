@@ -2838,6 +2838,11 @@ const ENV_NAMES: Record<keyof TdmcpConfig, string> = {
   telegramPollTimeoutSec: "TDMCP_TELEGRAM_POLL_TIMEOUT_SEC",
   telegramConfirmTimeoutMs: "TDMCP_TELEGRAM_CONFIRM_TIMEOUT_MS",
   vaultPath: "TDMCP_VAULT_PATH",
+  ragEnabled: "TDMCP_RAG_ENABLED",
+  ragDataDir: "TDMCP_RAG_DATA_DIR",
+  ragOllamaUrl: "TDMCP_RAG_OLLAMA_URL",
+  ragEmbedModel: "TDMCP_RAG_EMBED_MODEL",
+  ragLicenseAllowlist: "TDMCP_RAG_LICENSE_ALLOWLIST",
 };
 const SECRET_ENV: ReadonlySet<keyof TdmcpConfig> = new Set([
   "bridgeToken",

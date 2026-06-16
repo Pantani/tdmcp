@@ -9,6 +9,11 @@ coverage/
 data/*.jsonl
 data/ai-party-generated-cues.json
 .DS_Store
+
+# Creative RAG local store (opt-in via TDMCP_RAG_ENABLED): downloaded cards,
+# binaries, and the JSONL embedding index. Default dir is .tdmcp/creative-rag;
+# never commit fetched third-party content.
+.tdmcp/
 *.tsbuildinfo
 __pycache__/
 *.pyc
