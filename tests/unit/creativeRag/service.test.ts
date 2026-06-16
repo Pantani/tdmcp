@@ -42,15 +42,17 @@ const UNKNOWN_ITEM: RawSourceItem = {
 // exercised) and maps it to the two raw items. Mirrors the 3-museum mock surface
 // without depending on Builder D's not-yet-present sources/ module.
 function makeFakeSource(name: string, manifestUrl: string, items: RawSourceItem[]): Source {
+  // Deliberately distinct from `name` so the tombstone tests prove scoping keys on
+  // displayName/sourceName (not the CLI `name`). A source labels its own items,
+  // mirroring the real adapters where item.sourceName === source.displayName.
+  const displayName = `${name} Museum`;
   return {
     name,
-    displayName: name,
+    displayName,
     async fetchItems(limit, fetchImpl): Promise<RawSourceItem[]> {
       const f = fetchImpl ?? fetch;
       await f(manifestUrl); // exercises the mocked museum endpoint
-      // A source labels its own items, mirroring the real adapters where
-      // item.sourceName === source.displayName (the join used for tombstone scoping).
-      return items.slice(0, limit).map((item) => ({ ...item, sourceName: name }));
+      return items.slice(0, limit).map((item) => ({ ...item, sourceName: displayName }));
     },
   };
 }

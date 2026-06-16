@@ -44,7 +44,11 @@ function parseYear(dateDisplay?: string): number | undefined {
   return Number.isFinite(year) ? year : undefined;
 }
 
-function buildItem(raw: ArticArtwork, iiifUrl: string | undefined): RawSourceItem {
+function buildItem(
+  raw: ArticArtwork,
+  iiifUrl: string | undefined,
+  allowlist: CreativeRagLicense[],
+): RawSourceItem {
   const id = raw.id;
   const title = raw.title;
   if (typeof id !== "number" || typeof title !== "string" || title.length === 0) {
@@ -67,7 +71,7 @@ function buildItem(raw: ArticArtwork, iiifUrl: string | undefined): RawSourceIte
   if (year !== undefined) item.year = year;
   if (raw.medium_display) item.medium = raw.medium_display;
 
-  if (raw.image_id && iiifUrl && shouldStoreBinary(license, BINARY_ALLOWLIST)) {
+  if (raw.image_id && iiifUrl && shouldStoreBinary(license, allowlist)) {
     item.imageUrl = `${iiifUrl}/${raw.image_id}/full/843,/0/default.jpg`;
   }
   return item;
@@ -76,7 +80,11 @@ function buildItem(raw: ArticArtwork, iiifUrl: string | undefined): RawSourceIte
 export const articSource: Source = {
   name: NAME,
   displayName: DISPLAY_NAME,
-  async fetchItems(limit: number, fetchImpl: typeof fetch = fetch): Promise<RawSourceItem[]> {
+  async fetchItems(
+    limit: number,
+    fetchImpl: typeof fetch = fetch,
+    licenseAllowlist: CreativeRagLicense[] = BINARY_ALLOWLIST,
+  ): Promise<RawSourceItem[]> {
     const url = `${API_BASE}/artworks?limit=${limit}&fields=${FIELDS}`;
     const response = await fetchWithTimeout(url, fetchImpl, "AIC list request");
     if (!response.ok) {
@@ -89,7 +97,7 @@ export const articSource: Source = {
     const items: RawSourceItem[] = [];
     for (const raw of data.slice(0, limit)) {
       try {
-        items.push(buildItem(raw, iiifUrl));
+        items.push(buildItem(raw, iiifUrl, licenseAllowlist));
       } catch {
         // Skip a single bad item — never abort the whole fetch.
       }

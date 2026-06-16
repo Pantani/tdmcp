@@ -46,7 +46,7 @@ function parseYear(objectDate?: string): number | undefined {
   return Number.isFinite(year) ? year : undefined;
 }
 
-function buildItem(raw: MetObject): RawSourceItem {
+function buildItem(raw: MetObject, allowlist: CreativeRagLicense[]): RawSourceItem {
   const title = raw.title;
   const objectUrl = raw.objectURL;
   if (typeof title !== "string" || title.length === 0 || !objectUrl) {
@@ -69,7 +69,7 @@ function buildItem(raw: MetObject): RawSourceItem {
   if (year !== undefined) item.year = year;
   if (raw.medium) item.medium = raw.medium;
 
-  if (raw.primaryImage && shouldStoreBinary(license, BINARY_ALLOWLIST)) {
+  if (raw.primaryImage && shouldStoreBinary(license, allowlist)) {
     item.imageUrl = raw.primaryImage;
   }
   return item;
@@ -78,7 +78,11 @@ function buildItem(raw: MetObject): RawSourceItem {
 export const metSource: Source = {
   name: NAME,
   displayName: DISPLAY_NAME,
-  async fetchItems(limit: number, fetchImpl: typeof fetch = fetch): Promise<RawSourceItem[]> {
+  async fetchItems(
+    limit: number,
+    fetchImpl: typeof fetch = fetch,
+    licenseAllowlist: CreativeRagLicense[] = BINARY_ALLOWLIST,
+  ): Promise<RawSourceItem[]> {
     const searchUrl = `${API_BASE}/search?hasImages=true&q=${encodeURIComponent(SEARCH_QUERY)}`;
     const searchResponse = await fetchWithTimeout(searchUrl, fetchImpl, "Met search request");
     if (!searchResponse.ok) {
@@ -97,7 +101,7 @@ export const metSource: Source = {
         );
         if (!objResponse.ok) continue;
         const obj = (await objResponse.json()) as MetObject;
-        items.push(buildItem(obj));
+        items.push(buildItem(obj, licenseAllowlist));
       } catch {
         // Skip a single bad object — never abort the whole fetch.
       }

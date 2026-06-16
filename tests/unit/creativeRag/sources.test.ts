@@ -263,6 +263,19 @@ describe("rijksmuseumSource", () => {
     expect(unknown?.rightsNotes).toBeUndefined();
     expect(unknown?.imageUrl).toBeUndefined();
   });
+
+  it("honors the runtime license allowlist when gating image resolution", async () => {
+    // CC0 is the item's license; an empty allowlist must suppress image resolution
+    // (no wasted VisualItem/DigitalObject fetches), leaving imageUrl unset.
+    const none = await rijksmuseumSource.fetchItems(5, fetch, []);
+    expect(none.find((i) => i.title === "The Night Watch")?.imageUrl).toBeUndefined();
+
+    // With CC0 allowlisted, the chain resolves the image as before.
+    const allowed = await rijksmuseumSource.fetchItems(5, fetch, ["CC0"]);
+    expect(allowed.find((i) => i.title === "The Night Watch")?.imageUrl).toBe(
+      "https://iiif.micr.io/nightwatch/full/max/0/default.jpg",
+    );
+  });
 });
 
 describe("clevelandSource", () => {
@@ -299,6 +312,10 @@ describe("resolveSources", () => {
 
   it("ignores unknown source keys", () => {
     expect(resolveSources(["nope"])).toHaveLength(0);
+  });
+
+  it("collapses duplicate requested source keys (first-seen order)", () => {
+    expect(resolveSources(["artic", "artic", "met"]).map((s) => s.name)).toEqual(["artic", "met"]);
   });
 });
 

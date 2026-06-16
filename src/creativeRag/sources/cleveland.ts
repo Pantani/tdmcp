@@ -54,7 +54,7 @@ function extractArtist(creators?: ClevelandCreator[]): string | undefined {
   return cleaned.length > 0 ? cleaned : undefined;
 }
 
-function buildItem(raw: ClevelandArtwork): RawSourceItem {
+function buildItem(raw: ClevelandArtwork, allowlist: CreativeRagLicense[]): RawSourceItem {
   const sourceUrl = raw.url;
   const title = raw.title;
   if (!sourceUrl || !title) {
@@ -77,7 +77,7 @@ function buildItem(raw: ClevelandArtwork): RawSourceItem {
   if (raw.technique) item.medium = raw.technique;
 
   const imageUrl = raw.images?.web?.url;
-  if (imageUrl && shouldStoreBinary(license, BINARY_ALLOWLIST)) {
+  if (imageUrl && shouldStoreBinary(license, allowlist)) {
     item.imageUrl = imageUrl;
   }
   return item;
@@ -86,7 +86,11 @@ function buildItem(raw: ClevelandArtwork): RawSourceItem {
 export const clevelandSource: Source = {
   name: NAME,
   displayName: DISPLAY_NAME,
-  async fetchItems(limit: number, fetchImpl: typeof fetch = fetch): Promise<RawSourceItem[]> {
+  async fetchItems(
+    limit: number,
+    fetchImpl: typeof fetch = fetch,
+    licenseAllowlist: CreativeRagLicense[] = BINARY_ALLOWLIST,
+  ): Promise<RawSourceItem[]> {
     const url = `${API_BASE}?limit=${limit}&has_image=1`;
     const response = await fetchWithTimeout(url, fetchImpl, "Cleveland list request");
     if (!response.ok) {
@@ -98,7 +102,7 @@ export const clevelandSource: Source = {
     const items: RawSourceItem[] = [];
     for (const raw of data.slice(0, limit)) {
       try {
-        items.push(buildItem(raw));
+        items.push(buildItem(raw, licenseAllowlist));
       } catch {
         // Skip a single bad item — never abort the whole fetch.
       }

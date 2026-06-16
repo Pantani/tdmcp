@@ -194,7 +194,11 @@ async function resolveImageUrl(
 export const rijksmuseumSource: Source = {
   name: NAME,
   displayName: DISPLAY_NAME,
-  async fetchItems(limit: number, fetchImpl: typeof fetch = fetch): Promise<RawSourceItem[]> {
+  async fetchItems(
+    limit: number,
+    fetchImpl: typeof fetch = fetch,
+    licenseAllowlist: CreativeRagLicense[] = BINARY_ALLOWLIST,
+  ): Promise<RawSourceItem[]> {
     const searchResponse = await fetchWithTimeout(
       SEARCH_URL,
       fetchImpl,
@@ -218,7 +222,7 @@ export const rijksmuseumSource: Source = {
         const item = buildItem(obj);
         // Resolve + attach an image only when the license allows storing a binary —
         // no point spending two extra fetches on items whose binary we'd never keep.
-        if (shouldStoreBinary(item.license, BINARY_ALLOWLIST)) {
+        if (shouldStoreBinary(item.license, licenseAllowlist)) {
           const imageUrl = await resolveImageUrl(obj, fetchImpl);
           if (imageUrl !== undefined) item.imageUrl = imageUrl;
         }

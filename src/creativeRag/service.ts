@@ -97,7 +97,7 @@ export function createCreativeRagService(deps: CreativeRagServiceDeps): Creative
     for (const source of selected) {
       let items: RawSourceItem[];
       try {
-        items = await source.fetchItems(limit, fetchImpl);
+        items = await source.fetchItems(limit, fetchImpl, config.licenseAllowlist);
       } catch (err) {
         logger.warn(`Creative RAG: source "${source.name}" failed to fetch`, {
           error: err instanceof Error ? err.message : String(err),

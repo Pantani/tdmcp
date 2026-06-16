@@ -132,8 +132,18 @@ export interface Source {
   readonly name: string;
   /** e.g. "Art Institute of Chicago". */
   readonly displayName: string;
-  /** Fetch up to `limit` items using the injected fetch. Never throws on a single bad item — skips it. */
-  fetchItems(limit: number, fetchImpl?: typeof fetch): Promise<RawSourceItem[]>;
+  /**
+   * Fetch up to `limit` items using the injected fetch. `licenseAllowlist` is the
+   * runtime binary-storage allowlist (defaults to `["CC0","PublicDomain"]`): an
+   * adapter sets `imageUrl` only for licenses in it, so expanding the allowlist at
+   * runtime lets more sources surface (and the service store) their binaries.
+   * Never throws on a single bad item — skips it.
+   */
+  fetchItems(
+    limit: number,
+    fetchImpl?: typeof fetch,
+    licenseAllowlist?: CreativeRagLicense[],
+  ): Promise<RawSourceItem[]>;
 }
 
 export interface PlannedSourceStub {
