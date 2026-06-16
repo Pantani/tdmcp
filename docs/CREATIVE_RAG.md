@@ -44,7 +44,8 @@ There is **no MCP tool** that triggers any physical or in-TD action from a
 search result. The only outbound network calls are:
 
 1. the three museum HTTP APIs, during an explicit `creative-rag sync`; and
-2. the local Ollama embeddings endpoint, during `creative-rag index`.
+2. the local Ollama embeddings endpoint, during `creative-rag index` **and**
+   `creative-rag search` (the query is embedded before ranking).
 
 Both are local/opt-in and isolated: an Ollama or network failure surfaces as a
 typed error and **never** brings down other tools or the server.
@@ -78,7 +79,7 @@ team and users know *why* each is deferred. None are wired into `sync`.
 | Harvard Art Museums | Requires an API key (auth). |
 | Cooper Hewitt | Requires an API key (auth). |
 | Internet Archive | Mixed/unclear licensing per item (ambiguous license); needs scraping of rights metadata. |
-| WikiArt | No official open API; would require scraping (scraping) and licenses are restricted. |
+| WikiArt | No official open API; would require scraping and licenses are restricted. |
 | Behance / Vimeo / artist portfolios | No open license; copyrighted (restricted) — reference-only, never ingest binaries. |
 | Shadertoy | Per-shader licensing varies and often unspecified (ambiguous license); covered better by tdmcp's existing ISF/Shadertoy import tools. |
 

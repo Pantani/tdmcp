@@ -96,6 +96,18 @@ export class OllamaEmbeddingsClient implements OllamaEmbeddingsClientContract {
       );
     }
 
-    return "embeddings" in parsed.data ? parsed.data.embeddings : [parsed.data.embedding];
+    const vectors = "embeddings" in parsed.data ? parsed.data.embeddings : [parsed.data.embedding];
+
+    // Enforce the embed() contract: one vector per input, in order. A short response
+    // would otherwise cause silent partial indexing downstream (undefined vectors get
+    // skipped), so fail fast instead.
+    if (vectors.length !== inputs.length) {
+      throw new OllamaApiError(
+        `Ollama returned ${vectors.length} embeddings for ${inputs.length} inputs.`,
+        { status: response.status },
+      );
+    }
+
+    return vectors;
   }
 }

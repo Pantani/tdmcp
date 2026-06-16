@@ -211,6 +211,10 @@ function parseCreativeRagArgs(argv: string[]): {
 }
 
 function parsePositiveInt(raw: string, flag: string): number {
+  // Strict: digits only — `Number.parseInt` would silently accept "5oops" as 5.
+  if (!/^\d+$/.test(raw.trim())) {
+    throw new Error(`${flag} must be a positive integer, got "${raw}"`);
+  }
   const parsed = Number.parseInt(raw, 10);
   if (!Number.isFinite(parsed) || parsed <= 0) {
     throw new Error(`${flag} must be a positive integer, got "${raw}"`);

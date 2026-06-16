@@ -9,6 +9,7 @@
 
 import { classifyMetLicense, shouldStoreBinary } from "../licensePolicy.js";
 import type { CreativeRagLicense, RawSourceItem, Source } from "../types.js";
+import { fetchWithTimeout } from "./http.js";
 
 const NAME = "met";
 const DISPLAY_NAME = "The Met";
@@ -79,7 +80,7 @@ export const metSource: Source = {
   displayName: DISPLAY_NAME,
   async fetchItems(limit: number, fetchImpl: typeof fetch = fetch): Promise<RawSourceItem[]> {
     const searchUrl = `${API_BASE}/search?hasImages=true&q=${encodeURIComponent(SEARCH_QUERY)}`;
-    const searchResponse = await fetchImpl(searchUrl);
+    const searchResponse = await fetchWithTimeout(searchUrl, fetchImpl, "Met search request");
     if (!searchResponse.ok) {
       throw new Error(`Met search request failed: HTTP ${searchResponse.status}`);
     }
@@ -89,7 +90,11 @@ export const metSource: Source = {
     const items: RawSourceItem[] = [];
     for (const id of ids.slice(0, limit)) {
       try {
-        const objResponse = await fetchImpl(`${API_BASE}/objects/${id}`);
+        const objResponse = await fetchWithTimeout(
+          `${API_BASE}/objects/${id}`,
+          fetchImpl,
+          `Met object ${id}`,
+        );
         if (!objResponse.ok) continue;
         const obj = (await objResponse.json()) as MetObject;
         items.push(buildItem(obj));

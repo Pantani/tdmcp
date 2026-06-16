@@ -14,14 +14,18 @@ export const LIVE_SOURCES: Source[] = [articSource, rijksmuseumSource, metSource
 
 /**
  * Resolve the live sources to use for a run. With no names, all live sources are
- * returned; otherwise only those whose `name` matches a requested key (order of
- * `names`, unknown keys ignored).
+ * returned; otherwise only those whose `name` matches a requested key (first-seen
+ * order, duplicates collapsed, unknown keys ignored) — so a repeated `--source`
+ * never fetches the same source twice.
  */
 export function resolveSources(names?: string[]): Source[] {
   if (!names || names.length === 0) return [...LIVE_SOURCES];
   const byName = new Map(LIVE_SOURCES.map((source) => [source.name, source]));
   const resolved: Source[] = [];
+  const seen = new Set<string>();
   for (const name of names) {
+    if (seen.has(name)) continue;
+    seen.add(name);
     const source = byName.get(name);
     if (source) resolved.push(source);
   }

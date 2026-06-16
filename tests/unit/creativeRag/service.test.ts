@@ -172,6 +172,30 @@ describe("creativeRag service.sync", () => {
     expect(parseCard(readFileSync(metPath, "utf8")).tombstone).not.toBe(true);
     expect(await makeService(sources).getCard(hashUrl(UNKNOWN_ITEM.sourceUrl))).toBeDefined();
   });
+
+  it("does not tombstone cards from a source whose fetch failed this run", async () => {
+    await makeService([
+      makeFakeSource("artic", "https://api.artic.edu/manifest", [PUBLIC_ITEM]),
+      makeFakeSource("met", "https://collectionapi.metmuseum.org/manifest", [UNKNOWN_ITEM]),
+    ]).sync({});
+
+    // Met now throws; artic still returns its item. Met's card must survive the run.
+    const failingMet: Source = {
+      name: "met",
+      displayName: "met",
+      async fetchItems() {
+        throw new Error("met upstream is down");
+      },
+    };
+    const report = await makeService([
+      makeFakeSource("artic", "https://api.artic.edu/manifest", [PUBLIC_ITEM]),
+      failingMet,
+    ]).sync({});
+    expect(report.tombstoned).toBe(0);
+
+    const metPath = join(dataDir, "cards", `${hashUrl(UNKNOWN_ITEM.sourceUrl)}.md`);
+    expect(parseCard(readFileSync(metPath, "utf8")).tombstone).not.toBe(true);
+  });
 });
 
 describe("creativeRag service.index", () => {

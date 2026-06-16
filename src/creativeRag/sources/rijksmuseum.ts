@@ -17,6 +17,12 @@
 
 import { classifyRijksLicense } from "../licensePolicy.js";
 import type { RawSourceItem, Source } from "../types.js";
+import { fetchWithTimeout } from "./http.js";
+
+/** A license URI we recognise — Creative Commons or a public-domain mark/statement. */
+function isLicenseUri(id: string): boolean {
+  return /creativecommons\.org|\/publicdomain\/|rightsstatements\.org/i.test(id);
+}
 
 const NAME = "rijksmuseum";
 const DISPLAY_NAME = "Rijksmuseum";
@@ -100,9 +106,12 @@ function extractRightsUri(obj: RijksObject): string | undefined {
   }
   for (const right of obj.subject_to ?? []) rights.push(right);
 
+  // Only a recognised license URI (CC / public-domain) is returned — a non-license
+  // taxonomy URI must never masquerade as the rights statement, so if none match we
+  // return undefined (license stays Unknown, no misleading rightsNotes).
   for (const right of rights) {
     for (const cls of right.classified_as ?? []) {
-      if (typeof cls.id === "string" && cls.id.length > 0) return cls.id;
+      if (typeof cls.id === "string" && isLicenseUri(cls.id)) return cls.id;
     }
   }
   return undefined;
@@ -141,7 +150,11 @@ export const rijksmuseumSource: Source = {
   name: NAME,
   displayName: DISPLAY_NAME,
   async fetchItems(limit: number, fetchImpl: typeof fetch = fetch): Promise<RawSourceItem[]> {
-    const searchResponse = await fetchImpl(SEARCH_URL);
+    const searchResponse = await fetchWithTimeout(
+      SEARCH_URL,
+      fetchImpl,
+      "Rijksmuseum search request",
+    );
     if (!searchResponse.ok) {
       throw new Error(`Rijksmuseum search request failed: HTTP ${searchResponse.status}`);
     }
@@ -154,7 +167,7 @@ export const rijksmuseumSource: Source = {
     const items: RawSourceItem[] = [];
     for (const id of ids.slice(0, limit)) {
       try {
-        const objResponse = await fetchImpl(id);
+        const objResponse = await fetchWithTimeout(id, fetchImpl, `Rijksmuseum object ${id}`);
         if (!objResponse.ok) continue;
         const obj = (await objResponse.json()) as RijksObject;
         items.push(buildItem(obj));

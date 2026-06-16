@@ -49,6 +49,7 @@ export interface CreativeRagServiceDeps {
 
 const DEFAULT_SYNC_LIMIT = 10;
 const DEFAULT_SEARCH_K = 10;
+const BINARY_DOWNLOAD_TIMEOUT_MS = 15000;
 
 /**
  * Builds a {@link CreativeRagService} from a config plus optional injected
@@ -223,6 +224,12 @@ export function createCreativeRagService(deps: CreativeRagServiceDeps): Creative
   }
 
   async function getCard(id: string): Promise<CreativeRagCard | undefined> {
+    // Card ids are sha256(sourceUrl) hex. Reject anything else before touching the
+    // filesystem so an untrusted resource/CLI segment (e.g. "../secret") can never
+    // escape the cards dir or probe arbitrary `.md` files.
+    if (!/^[0-9a-f]{64}$/.test(id)) {
+      return undefined;
+    }
     let raw: string;
     try {
       raw = readFileSync(join(cardsDir, `${id}.md`), "utf8");
@@ -239,8 +246,10 @@ export function createCreativeRagService(deps: CreativeRagServiceDeps): Creative
   }
 
   async function downloadBinary(imageUrl: string, id: string): Promise<boolean> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), BINARY_DOWNLOAD_TIMEOUT_MS);
     try {
-      const response = await fetchImpl(imageUrl);
+      const response = await fetchImpl(imageUrl, { signal: controller.signal });
       if (!response.ok) {
         logger.warn(`Creative RAG: binary download returned HTTP ${response.status}`, { id });
         return false;
@@ -250,11 +259,15 @@ export function createCreativeRagService(deps: CreativeRagServiceDeps): Creative
       atomicWriteFileSync(join(binariesDir, `${id}.jpg`), bytes);
       return true;
     } catch (err) {
-      logger.warn("Creative RAG: binary download failed", {
-        id,
-        error: err instanceof Error ? err.message : String(err),
-      });
+      const reason = controller.signal.aborted
+        ? `timed out after ${BINARY_DOWNLOAD_TIMEOUT_MS}ms`
+        : err instanceof Error
+          ? err.message
+          : String(err);
+      logger.warn("Creative RAG: binary download failed", { id, error: reason });
       return false;
+    } finally {
+      clearTimeout(timer);
     }
   }
 

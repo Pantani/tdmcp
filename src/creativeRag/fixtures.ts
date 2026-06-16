@@ -134,21 +134,37 @@ export const RIJKS_SEARCH_RESPONSE = {
   next: { id: "https://data.rijksmuseum.nl/search/collection?pageToken=abc" },
 } as const;
 
-/** Rijksmuseum — Linked-Art object response (resolved from an `orderedItems[].id`). */
+/**
+ * Rijksmuseum — Linked-Art object response (resolved from an `orderedItems[].id`),
+ * mirroring the LIVE `id.rijksmuseum.nl` shape the adapter actually parses:
+ *  - artist from `produced_by.referred_to_by[].content`;
+ *  - license from `subject_of[].subject_to[].Right.classified_as[].id` (a CC URI);
+ *  - image referenced via `shows[]` (VisualItem), not a `representation` field.
+ */
 export const RIJKS_OBJECT_RESPONSE = {
   id: "https://id.rijksmuseum.nl/200100988",
   type: "HumanMadeObject",
   _label: "The Night Watch",
   identified_by: [{ type: "Name", content: "The Night Watch" }],
-  produced_by: { carried_out_by: [{ _label: "Rembrandt van Rijn" }] },
-  referred_to_by: [
+  produced_by: {
+    referred_to_by: [
+      { type: "LinguisticObject", content: "painter: Rembrandt van Rijn (signed by artist)" },
+    ],
+  },
+  subject_of: [
     {
       type: "LinguisticObject",
-      classified_as: [{ _label: "rights" }],
-      content: "Public Domain",
+      subject_to: [
+        {
+          type: "Right",
+          classified_as: [
+            { id: "https://creativecommons.org/publicdomain/zero/1.0/", type: "Type" },
+          ],
+        },
+      ],
     },
   ],
-  representation: [{ id: "https://iiif.micr.io/abcd/image", type: "VisualItem" }],
+  shows: [{ id: "https://id.rijksmuseum.nl/200100988-visual", type: "VisualItem" }],
 } as const;
 
 /** Ollama — `/api/embed` response (current array-of-vectors shape). */

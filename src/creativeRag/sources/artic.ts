@@ -8,6 +8,7 @@
 
 import { classifyArticLicense, shouldStoreBinary } from "../licensePolicy.js";
 import type { CreativeRagLicense, RawSourceItem, Source } from "../types.js";
+import { fetchWithTimeout } from "./http.js";
 
 const NAME = "artic";
 const DISPLAY_NAME = "Art Institute of Chicago";
@@ -77,7 +78,7 @@ export const articSource: Source = {
   displayName: DISPLAY_NAME,
   async fetchItems(limit: number, fetchImpl: typeof fetch = fetch): Promise<RawSourceItem[]> {
     const url = `${API_BASE}/artworks?limit=${limit}&fields=${FIELDS}`;
-    const response = await fetchImpl(url);
+    const response = await fetchWithTimeout(url, fetchImpl, "AIC list request");
     if (!response.ok) {
       throw new Error(`AIC list request failed: HTTP ${response.status}`);
     }

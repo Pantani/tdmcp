@@ -7,6 +7,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+
 - **Creative RAG local (opt-in, experimental)** — a local-only creative
   repertoire of open-licensed artworks, artists and techniques. New
   `tdmcp creative-rag {sync|index|search}` CLI subcommand and read-only

@@ -212,11 +212,16 @@ describe("rijksmuseumSource", () => {
     expect(cc0?.artist).toBe("Nicolaas Wijnberg");
     expect(cc0?.sourceUrl).toBe(RIJKS_OBJECT_CC0);
     expect(cc0?.license).toBe("CC0");
+    expect(cc0?.rightsNotes).toContain("creativecommons.org");
     // Image binary resolution is a documented follow-up — imageUrl stays unset.
     expect(cc0?.imageUrl).toBeUndefined();
 
+    // A non-license taxonomy URI must NOT be promoted to the rights statement: the
+    // object's only classification id is non-CC, so license stays Unknown and no
+    // misleading rightsNotes is set.
     const unknown = items.find((i) => i.title === "Modern Loan");
     expect(unknown?.license).toBe("Unknown");
+    expect(unknown?.rightsNotes).toBeUndefined();
     expect(unknown?.imageUrl).toBeUndefined();
   });
 });

@@ -128,6 +128,18 @@ describe("runCreativeRagCli — search", () => {
     expect(code).toBe(2);
     expect(rec.calls).not.toContain("search");
   });
+
+  it("rejects a malformed numeric flag (2) instead of silently coercing", async () => {
+    const rec: Recorder = { out: [], err: [], calls: [] };
+    const code = await runCreativeRagCli(["search", "q", "--k", "5oops"], {
+      config: enabledConfig(),
+      service: makeFakeService(rec, SAMPLE_RESULTS),
+      stdout: (s) => rec.out.push(s),
+      stderr: (s) => rec.err.push(s),
+    });
+    expect(code).toBe(2);
+    expect(rec.calls).not.toContain("search");
+  });
 });
 
 describe("toCreativeRagConfig", () => {

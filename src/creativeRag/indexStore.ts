@@ -100,9 +100,14 @@ export class JsonlIndexStore implements IndexStore {
   private readRaw(): string | undefined {
     try {
       return readFileSync(this.filePath, "utf8");
-    } catch {
-      // Missing file (or unreadable) ⇒ empty index.
-      return undefined;
+    } catch (err) {
+      // Only a missing file is an empty index. Permission/I/O errors must propagate —
+      // swallowing them here would let a later upsert overwrite a real index with a
+      // partial set and silently lose persisted cards.
+      if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+        return undefined;
+      }
+      throw err;
     }
   }
 }
@@ -130,7 +135,15 @@ function isEmbeddedCard(value: unknown): value is EmbeddedCard {
     typeof card.contentHash === "string" &&
     typeof card.embeddingModel === "string" &&
     Array.isArray(card.embedding) &&
-    typeof card.title === "string"
+    card.embedding.length > 0 &&
+    card.embedding.every((n) => typeof n === "number" && Number.isFinite(n)) &&
+    typeof card.title === "string" &&
+    typeof card.type === "string" &&
+    typeof card.license === "string" &&
+    typeof card.sourceUrl === "string" &&
+    typeof card.sourceName === "string" &&
+    Array.isArray(card.tags) &&
+    card.tags.every((tag) => typeof tag === "string")
   );
 }
 
