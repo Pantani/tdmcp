@@ -88,6 +88,10 @@ export function createCreativeRagService(deps: CreativeRagServiceDeps): Creative
     const existing = readAllCards(cardsDir);
     const existingById = new Map(existing.map((card) => [card.id, card] as const));
     const seenIds = new Set<string>();
+    // Only sources that were selected AND fetched without throwing are eligible for
+    // tombstoning — a partial `--source` run or a failed source must never tombstone
+    // cards it did not compare against. Keyed by `sourceName` (the card's source label).
+    const syncedSourceNames = new Set<string>();
 
     for (const source of selected) {
       let items: RawSourceItem[];
@@ -100,6 +104,7 @@ export function createCreativeRagService(deps: CreativeRagServiceDeps): Creative
         continue;
       }
       report.perSource[source.name] = items.length;
+      syncedSourceNames.add(source.displayName);
 
       for (const item of items) {
         const card = buildCardFromItem(item);
@@ -127,10 +132,16 @@ export function createCreativeRagService(deps: CreativeRagServiceDeps): Creative
       }
     }
 
-    // Diff: any previously-known card that no source returned this run is tombstoned
-    // (kept on disk so its id stays resolvable, just flagged out of search/get).
+    // Diff: a previously-known card is tombstoned only when its OWN source was synced
+    // successfully this run yet did not return it (kept on disk so its id stays
+    // resolvable, just flagged out of search/get). Cards from sources not synced this
+    // run — a partial `--source` selection or a source that failed — are left intact.
     for (const card of existing) {
-      if (!seenIds.has(card.id) && card.tombstone !== true) {
+      if (
+        syncedSourceNames.has(card.sourceName) &&
+        !seenIds.has(card.id) &&
+        card.tombstone !== true
+      ) {
         writeCard(cardsDir, { ...card, tombstone: true });
         report.tombstoned += 1;
       }
@@ -140,7 +151,17 @@ export function createCreativeRagService(deps: CreativeRagServiceDeps): Creative
   }
 
   async function index(): Promise<IndexReport> {
-    const cards = readAllCards(cardsDir).filter((card) => card.tombstone !== true);
+    const all = readAllCards(cardsDir);
+    // Purge tombstoned cards from the index: marking the Markdown card as tombstoned
+    // does not remove a row already written by a prior `index`, so search would keep
+    // returning it. Drop those ids from the store before (re-)indexing the rest.
+    await store.remove(all.filter((card) => card.tombstone === true).map((card) => card.id));
+    // Recompute the content hash from the parsed card so a user edit to a card's
+    // Markdown (without manually bumping the frontmatter `contentHash`) is not treated
+    // as a cache hit — the edited card gets re-embedded and stays searchable.
+    const cards = all
+      .filter((card) => card.tombstone !== true)
+      .map((card) => ({ ...card, contentHash: computeContentHash(card) }));
     const report: IndexReport = { embedded: 0, cachedSkipped: 0, total: cards.length };
     if (cards.length === 0) {
       return report;

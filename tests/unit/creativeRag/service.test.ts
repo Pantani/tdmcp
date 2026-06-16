@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { HttpResponse, http } from "msw";
@@ -48,7 +48,9 @@ function makeFakeSource(name: string, manifestUrl: string, items: RawSourceItem[
     async fetchItems(limit, fetchImpl): Promise<RawSourceItem[]> {
       const f = fetchImpl ?? fetch;
       await f(manifestUrl); // exercises the mocked museum endpoint
-      return items.slice(0, limit);
+      // A source labels its own items, mirroring the real adapters where
+      // item.sourceName === source.displayName (the join used for tombstone scoping).
+      return items.slice(0, limit).map((item) => ({ ...item, sourceName: name }));
     },
   };
 }
@@ -154,6 +156,22 @@ describe("creativeRag service.sync", () => {
     expect(report.perSource).toEqual({ artic: 1 });
     expect(report.added).toBe(1);
   });
+
+  it("does not tombstone cards from sources not synced this run", async () => {
+    const sources = [
+      makeFakeSource("artic", "https://api.artic.edu/manifest", [PUBLIC_ITEM]),
+      makeFakeSource("met", "https://collectionapi.metmuseum.org/manifest", [UNKNOWN_ITEM]),
+    ];
+    await makeService(sources).sync({});
+
+    // A targeted refresh of only "artic" must leave "met"'s card untouched.
+    const report = await makeService(sources).sync({ sources: ["artic"] });
+    expect(report.tombstoned).toBe(0);
+
+    const metPath = join(dataDir, "cards", `${hashUrl(UNKNOWN_ITEM.sourceUrl)}.md`);
+    expect(parseCard(readFileSync(metPath, "utf8")).tombstone).not.toBe(true);
+    expect(await makeService(sources).getCard(hashUrl(UNKNOWN_ITEM.sourceUrl))).toBeDefined();
+  });
 });
 
 describe("creativeRag service.index", () => {
@@ -172,6 +190,43 @@ describe("creativeRag service.index", () => {
     const second = await svc.index();
     expect(second.embedded).toBe(0);
     expect(second.cachedSkipped).toBe(2);
+  });
+
+  it("purges tombstoned cards from the search index", async () => {
+    const both = [
+      makeFakeSource("artic", "https://api.artic.edu/manifest", [PUBLIC_ITEM, UNKNOWN_ITEM]),
+    ];
+    await makeService(both).sync({});
+    await makeService(both).index();
+
+    // Drop the Unknown item, re-sync (tombstones it) then re-index (must purge its row).
+    const fewer = [makeFakeSource("artic", "https://api.artic.edu/manifest", [PUBLIC_ITEM])];
+    await makeService(fewer).sync({});
+    await makeService(fewer).index();
+
+    const results = await makeService(fewer).search("anything", 10);
+    const droppedId = hashUrl(UNKNOWN_ITEM.sourceUrl);
+    expect(results.some((r) => r.id === droppedId)).toBe(false);
+    expect(results.some((r) => r.id === hashUrl(PUBLIC_ITEM.sourceUrl))).toBe(true);
+  });
+
+  it("re-embeds a card whose Markdown was edited without bumping its frontmatter hash", async () => {
+    const sources = [makeFakeSource("artic", "https://api.artic.edu/manifest", [PUBLIC_ITEM])];
+    await makeService(sources).sync({});
+    expect((await makeService(sources).index()).embedded).toBe(1);
+
+    // Simulate a hand-edit: change the title in the frontmatter but leave the stale
+    // `contentHash` untouched — the index must recompute the hash and re-embed.
+    const cardPath = join(dataDir, "cards", `${hashUrl(PUBLIC_ITEM.sourceUrl)}.md`);
+    const edited = readFileSync(cardPath, "utf8").replace(
+      "title: Composition",
+      "title: Composition (revised)",
+    );
+    writeFileSync(cardPath, edited, "utf8");
+
+    const report = await makeService(sources).index();
+    expect(report.embedded).toBe(1);
+    expect(report.cachedSkipped).toBe(0);
   });
 });
 

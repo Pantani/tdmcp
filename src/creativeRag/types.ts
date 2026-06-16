@@ -96,6 +96,8 @@ export interface IndexStore {
   loadAll(): Promise<EmbeddedCard[]>;
   /** Cosine top-k over the in-memory set with filters applied. */
   search(queryEmbedding: number[], k: number, filters?: SearchFilters): Promise<SearchResult[]>;
+  /** Drop these ids from the index (e.g. tombstoned cards). Missing ids are ignored. */
+  remove(ids: string[]): Promise<void>;
   /** Which (id, contentHash, embeddingModel) tuples already exist — powers the embed cache. Key = `${id}:${contentHash}:${embeddingModel}`. */
   existingFingerprints(): Promise<Set<string>>;
 }

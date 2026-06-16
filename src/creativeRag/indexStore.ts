@@ -42,6 +42,17 @@ export class JsonlIndexStore implements IndexStore {
     atomicWriteFileSync(this.filePath, body, "utf8");
   }
 
+  async remove(ids: string[]): Promise<void> {
+    if (ids.length === 0) {
+      return;
+    }
+    const drop = new Set(ids);
+    const kept = (await this.loadAll()).filter((card) => !drop.has(card.id));
+    const body =
+      kept.length === 0 ? "" : `${kept.map((card) => JSON.stringify(card)).join("\n")}\n`;
+    atomicWriteFileSync(this.filePath, body, "utf8");
+  }
+
   async loadAll(): Promise<EmbeddedCard[]> {
     const raw = this.readRaw();
     if (raw === undefined) {

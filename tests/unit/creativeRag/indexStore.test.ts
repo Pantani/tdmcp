@@ -164,4 +164,27 @@ describe("JsonlIndexStore", () => {
       expect(fps.size).toBe(2);
     });
   });
+
+  describe("remove", () => {
+    it("drops the given ids and keeps the rest", async () => {
+      await store.upsert([makeCard({ id: "a" }), makeCard({ id: "b" }), makeCard({ id: "c" })]);
+      await store.remove(["b"]);
+      const ids = (await store.loadAll()).map((card) => card.id).sort();
+      expect(ids).toEqual(["a", "c"]);
+    });
+
+    it("is a no-op for an empty id list or a missing file", async () => {
+      await expect(store.remove([])).resolves.toBeUndefined();
+      await expect(store.remove(["nope"])).resolves.toBeUndefined();
+      await store.upsert([makeCard({ id: "a" })]);
+      await store.remove([]);
+      expect((await store.loadAll()).map((card) => card.id)).toEqual(["a"]);
+    });
+
+    it("empties the index when all ids are removed", async () => {
+      await store.upsert([makeCard({ id: "a" }), makeCard({ id: "b" })]);
+      await store.remove(["a", "b"]);
+      await expect(store.loadAll()).resolves.toEqual([]);
+    });
+  });
 });
