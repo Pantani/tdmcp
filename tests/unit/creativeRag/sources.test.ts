@@ -89,8 +89,16 @@ const RIJKS_SEARCH_RESPONSE = {
 // REAL data.rijksmuseum.nl Linked-Art shape (captured live):
 //  - license is a CC URI under subject_of[].subject_to[].Right.classified_as[].id
 //  - artist is a role-prefixed, parenthetical string in produced_by.referred_to_by[].content
-//  - image is referenced via shows[] (VisualItem) — resolution is a follow-up, so imageUrl stays unset
+//  - image is resolved via shows[] (VisualItem) → digitally_shown_by[] (DigitalObject) → access_point[]
 const RIJKS_OBJECT_RESPONSES: Record<string, unknown> = {
+  "https://id.rijksmuseum.nl/visualitem-nightwatch": {
+    type: "VisualItem",
+    digitally_shown_by: [{ id: "https://id.rijksmuseum.nl/digitalobject-nightwatch" }],
+  },
+  "https://id.rijksmuseum.nl/digitalobject-nightwatch": {
+    type: "DigitalObject",
+    access_point: [{ id: "https://iiif.micr.io/nightwatch/full/max/0/default.jpg" }],
+  },
   [RIJKS_OBJECT_CC0]: {
     id: RIJKS_OBJECT_CC0,
     type: "HumanMadeObject",
@@ -213,12 +221,13 @@ describe("rijksmuseumSource", () => {
     expect(cc0?.sourceUrl).toBe(RIJKS_OBJECT_CC0);
     expect(cc0?.license).toBe("CC0");
     expect(cc0?.rightsNotes).toContain("creativecommons.org");
-    // Image binary resolution is a documented follow-up — imageUrl stays unset.
-    expect(cc0?.imageUrl).toBeUndefined();
+    // Image resolves via shows → VisualItem → DigitalObject → access_point.
+    expect(cc0?.imageUrl).toBe("https://iiif.micr.io/nightwatch/full/max/0/default.jpg");
 
     // A non-license taxonomy URI must NOT be promoted to the rights statement: the
     // object's only classification id is non-CC, so license stays Unknown and no
-    // misleading rightsNotes is set.
+    // misleading rightsNotes is set. Image is not resolved for a non-allowlisted
+    // license (no extra fetches), so imageUrl stays unset.
     const unknown = items.find((i) => i.title === "Modern Loan");
     expect(unknown?.license).toBe("Unknown");
     expect(unknown?.rightsNotes).toBeUndefined();

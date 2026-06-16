@@ -15,9 +15,12 @@
  *    `shows[].id` (VisualItem) and needs two more fetches to resolve a URL.
  */
 
-import { classifyRijksLicense } from "../licensePolicy.js";
-import type { RawSourceItem, Source } from "../types.js";
+import { classifyRijksLicense, shouldStoreBinary } from "../licensePolicy.js";
+import type { CreativeRagLicense, RawSourceItem, Source } from "../types.js";
 import { fetchWithTimeout } from "./http.js";
+
+/** Binaries are only retained for these licenses (mirrors the default allowlist). */
+const BINARY_ALLOWLIST: CreativeRagLicense[] = ["CC0", "PublicDomain"];
 
 /** A license URI we recognise — Creative Commons or a public-domain mark/statement. */
 function isLicenseUri(id: string): boolean {
@@ -63,6 +66,17 @@ interface RijksObject {
   produced_by?: { referred_to_by?: RijksProducedRef[] };
   subject_of?: RijksSubjectOf[];
   subject_to?: RijksRight[];
+  shows?: Array<{ id?: string }>;
+}
+
+/** A `VisualItem` (object.shows[]) pointing to one or more digital surrogates. */
+interface RijksVisualItem {
+  digitally_shown_by?: Array<{ id?: string }>;
+}
+
+/** A `DigitalObject` whose `access_point[].id` is the actual (IIIF) image URL. */
+interface RijksDigitalObject {
+  access_point?: Array<{ id?: string }>;
 }
 
 function extractTitle(obj: RijksObject): string | undefined {
@@ -138,12 +152,43 @@ function buildItem(obj: RijksObject): RawSourceItem {
   if (artist) item.artist = artist;
   if (rightsUri) item.rightsNotes = rightsUri;
 
-  // Image binaries are a documented follow-up for Rijksmuseum: the object has no
-  // `representation` field — the image is referenced via `shows[].id` (VisualItem)
-  // and resolving a real URL needs two more fetches (VisualItem → DigitalObject →
-  // access_point), out of scope for the MVP. Leave imageUrl unset so no binary is
-  // attempted.
+  // imageUrl is resolved separately in fetchItems (only for allowlisted licenses):
+  // the object has no `representation` field — the image is reached via the
+  // shows → VisualItem → DigitalObject → access_point chain (two extra fetches).
   return item;
+}
+
+/**
+ * Resolve a Rijksmuseum image URL by walking the Linked-Art chain:
+ * `object.shows[].id` (VisualItem) → `digitally_shown_by[].id` (DigitalObject) →
+ * `access_point[].id` (the IIIF image). Two extra fetches; any failure (or a
+ * non-OK response / missing link) resolves to undefined so the item is still kept.
+ */
+async function resolveImageUrl(
+  obj: RijksObject,
+  fetchImpl: typeof fetch,
+): Promise<string | undefined> {
+  const visualId = obj.shows?.find((s) => typeof s.id === "string" && s.id.length > 0)?.id;
+  if (visualId === undefined) return undefined;
+  try {
+    const visualRes = await fetchWithTimeout(visualId, fetchImpl, `Rijksmuseum visual ${visualId}`);
+    if (!visualRes.ok) return undefined;
+    const visual = (await visualRes.json()) as RijksVisualItem;
+    const digitalId = visual.digitally_shown_by?.find(
+      (d) => typeof d.id === "string" && d.id.length > 0,
+    )?.id;
+    if (digitalId === undefined) return undefined;
+    const digitalRes = await fetchWithTimeout(
+      digitalId,
+      fetchImpl,
+      `Rijksmuseum digital ${digitalId}`,
+    );
+    if (!digitalRes.ok) return undefined;
+    const digital = (await digitalRes.json()) as RijksDigitalObject;
+    return digital.access_point?.find((a) => typeof a.id === "string" && a.id.length > 0)?.id;
+  } catch {
+    return undefined;
+  }
 }
 
 export const rijksmuseumSource: Source = {
@@ -170,7 +215,14 @@ export const rijksmuseumSource: Source = {
         const objResponse = await fetchWithTimeout(id, fetchImpl, `Rijksmuseum object ${id}`);
         if (!objResponse.ok) continue;
         const obj = (await objResponse.json()) as RijksObject;
-        items.push(buildItem(obj));
+        const item = buildItem(obj);
+        // Resolve + attach an image only when the license allows storing a binary —
+        // no point spending two extra fetches on items whose binary we'd never keep.
+        if (shouldStoreBinary(item.license, BINARY_ALLOWLIST)) {
+          const imageUrl = await resolveImageUrl(obj, fetchImpl);
+          if (imageUrl !== undefined) item.imageUrl = imageUrl;
+        }
+        items.push(item);
       } catch {
         // Skip a single bad object — never abort the whole fetch.
       }
