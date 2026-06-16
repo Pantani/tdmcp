@@ -32,13 +32,27 @@ export function classifyMetLicense(isPublicDomain: boolean): CreativeRagLicense 
 }
 
 /**
- * Rijksmuseum: map a Linked-Art rights statement string to a license.
- * CC0 text ⇒ CC0; public-domain text ⇒ PublicDomain; unknown/empty ⇒ Unknown.
+ * Rijksmuseum: map a Linked-Art rights signal to a license.
+ *
+ * The real `data.rijksmuseum.nl` shape carries the license as a Creative Commons
+ * URI (`Right.classified_as[].id`), e.g.
+ * `https://creativecommons.org/publicdomain/zero/1.0/`. This classifier maps those
+ * URIs first, then falls back to plain-text statements (kept for robustness):
+ * CC0 ⇒ CC0; public-domain ⇒ PublicDomain; by-sa ⇒ CC-BY-SA; by ⇒ CC-BY;
+ * unknown/empty ⇒ Unknown.
  */
-export function classifyRijksLicense(rightsStatement?: string): CreativeRagLicense {
-  if (!rightsStatement) return "Unknown";
-  const text = rightsStatement.trim().toLowerCase();
+export function classifyRijksLicense(rights?: string): CreativeRagLicense {
+  if (!rights) return "Unknown";
+  const text = rights.trim().toLowerCase();
   if (text.length === 0) return "Unknown";
+
+  // Creative Commons URI mapping (the real Rijksmuseum shape).
+  if (text.includes("creativecommons.org/publicdomain/zero")) return "CC0";
+  if (text.includes("creativecommons.org/publicdomain/mark")) return "PublicDomain";
+  if (text.includes("creativecommons.org/licenses/by-sa")) return "CC-BY-SA";
+  if (text.includes("creativecommons.org/licenses/by")) return "CC-BY";
+
+  // Plain-text fallback (docs-assumed shape, kept for robustness).
   if (text.includes("cc0") || text.includes("creative commons zero")) return "CC0";
   if (text.includes("public domain") || text.includes("publicdomain")) return "PublicDomain";
   return "Unknown";

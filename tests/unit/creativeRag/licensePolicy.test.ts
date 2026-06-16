@@ -45,12 +45,24 @@ describe("classifyMetLicense", () => {
 });
 
 describe("classifyRijksLicense", () => {
-  it("maps CC0 text to CC0", () => {
+  it("maps Creative Commons URIs (the real Rijksmuseum shape)", () => {
+    expect(classifyRijksLicense("https://creativecommons.org/publicdomain/zero/1.0/")).toBe("CC0");
+    expect(classifyRijksLicense("https://creativecommons.org/publicdomain/mark/1.0/")).toBe(
+      "PublicDomain",
+    );
+    expect(classifyRijksLicense("https://creativecommons.org/licenses/by-sa/4.0/")).toBe(
+      "CC-BY-SA",
+    );
+    expect(classifyRijksLicense("https://creativecommons.org/licenses/by/4.0/")).toBe("CC-BY");
+    expect(classifyRijksLicense("https://example.org/all-rights")).toBe("Unknown");
+  });
+
+  it("maps CC0 text to CC0 (text fallback)", () => {
     expect(classifyRijksLicense("CC0 1.0 Universal")).toBe("CC0");
     expect(classifyRijksLicense("Creative Commons Zero")).toBe("CC0");
   });
 
-  it("maps public-domain text to PublicDomain", () => {
+  it("maps public-domain text to PublicDomain (text fallback)", () => {
     expect(classifyRijksLicense("Public Domain")).toBe("PublicDomain");
     expect(classifyRijksLicense("publicdomain/mark")).toBe("PublicDomain");
   });

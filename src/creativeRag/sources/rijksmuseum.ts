@@ -3,23 +3,25 @@
  *
  * Two-step Linked-Art (JSON-LD): a `search/collection` page yields object ids,
  * then each id resolves to a Linked-Art object. The JSON-LD shape is the riskiest
- * to parse (nested `identified_by` / `produced_by` / `referred_to_by` /
- * `representation`), so every field map is defensive: optional-chaining with
- * per-field fallbacks, and a single bad object is skipped, never fatal.
+ * to parse, so every field map is defensive: optional-chaining with per-field
+ * fallbacks, and a single bad object is skipped, never fatal.
  *
- * UNVERIFIED — probe live: the field map below is from docs, not a live capture.
+ * Field maps below were corrected against a LIVE capture of `id.rijksmuseum.nl/2001`:
+ *  - License (CC0) lives under `subject_of[].subject_to[].Right.classified_as[].id`
+ *    as a Creative Commons URI — NOT top-level `referred_to_by`.
+ *  - Artist is in `produced_by.referred_to_by[].content` (a role-prefixed,
+ *    parenthetical string) — NOT `produced_by.carried_out_by`.
+ *  - There is no `representation` field; the image is referenced via
+ *    `shows[].id` (VisualItem) and needs two more fetches to resolve a URL.
  */
 
-import { classifyRijksLicense, shouldStoreBinary } from "../licensePolicy.js";
-import type { CreativeRagLicense, RawSourceItem, Source } from "../types.js";
+import { classifyRijksLicense } from "../licensePolicy.js";
+import type { RawSourceItem, Source } from "../types.js";
 
 const NAME = "rijksmuseum";
 const DISPLAY_NAME = "Rijksmuseum";
 const SOURCE_NAME = DISPLAY_NAME;
 const SEARCH_URL = "https://data.rijksmuseum.nl/search/collection?imageAvailable=true";
-
-/** Binaries are only retained for these licenses (mirrors the default allowlist). */
-const BINARY_ALLOWLIST: CreativeRagLicense[] = ["CC0", "PublicDomain"];
 
 interface RijksSearchPage {
   orderedItems?: Array<{ id?: string }> | null;
@@ -30,28 +32,31 @@ interface RijksName {
   content?: string;
 }
 
-interface RijksAgent {
-  _label?: string;
+/** A Linked-Art `Right` node carrying the license as a CC URI in `classified_as[].id`. */
+interface RijksRight {
+  type?: string;
+  classified_as?: Array<{ id?: string; type?: string }>;
 }
 
-interface RijksLinguistic {
+/** A `LinguisticObject` (or similar) that may carry `subject_to[]` Right nodes. */
+interface RijksSubjectOf {
   type?: string;
-  classified_as?: Array<{ _label?: string }>;
+  subject_to?: RijksRight[];
+}
+
+/** `produced_by.referred_to_by[]` entries carry the artist name in `content`. */
+interface RijksProducedRef {
+  type?: string;
   content?: string;
-}
-
-interface RijksRepresentation {
-  id?: string;
-  type?: string;
 }
 
 interface RijksObject {
   id?: string;
   _label?: string;
   identified_by?: RijksName[];
-  produced_by?: { carried_out_by?: RijksAgent[] };
-  referred_to_by?: RijksLinguistic[];
-  representation?: RijksRepresentation[];
+  produced_by?: { referred_to_by?: RijksProducedRef[] };
+  subject_of?: RijksSubjectOf[];
+  subject_to?: RijksRight[];
 }
 
 function extractTitle(obj: RijksObject): string | undefined {
@@ -63,23 +68,44 @@ function extractTitle(obj: RijksObject): string | undefined {
   return undefined;
 }
 
+/**
+ * Artist from `produced_by.referred_to_by[].content`, e.g.
+ * `"printmaker: Nicolaas Wijnberg (signed by artist)"`. Strip a leading role
+ * prefix and a trailing parenthetical, prefer the shortest clean entry.
+ */
 function extractArtist(obj: RijksObject): string | undefined {
-  const agent = obj.produced_by?.carried_out_by?.find(
-    (a) => typeof a._label === "string" && a._label.length > 0,
-  );
-  return agent?._label;
+  const refs = obj.produced_by?.referred_to_by ?? [];
+  let best: string | undefined;
+  for (const ref of refs) {
+    if (typeof ref.content !== "string") continue;
+    const cleaned = ref.content
+      .replace(/^[^:]+:\s*/, "")
+      .replace(/\s*\(.*\)\s*$/, "")
+      .trim();
+    if (cleaned.length === 0) continue;
+    if (best === undefined || cleaned.length < best.length) best = cleaned;
+  }
+  return best;
 }
 
-function extractRights(obj: RijksObject): string | undefined {
-  const rights = obj.referred_to_by?.find((r) =>
-    r.classified_as?.some((c) => typeof c._label === "string" && /rights/i.test(c._label)),
-  );
-  return rights?.content;
-}
+/**
+ * License (CC0 etc.) from the real shape: `subject_of[].subject_to[].Right`'s
+ * `classified_as[].id` Creative Commons URI. Also accepts a top-level
+ * `subject_to[]` for extra robustness. Returns the first CC URI found.
+ */
+function extractRightsUri(obj: RijksObject): string | undefined {
+  const rights: RijksRight[] = [];
+  for (const subjectOf of obj.subject_of ?? []) {
+    for (const right of subjectOf.subject_to ?? []) rights.push(right);
+  }
+  for (const right of obj.subject_to ?? []) rights.push(right);
 
-function extractImageUrl(obj: RijksObject): string | undefined {
-  const rep = obj.representation?.find((r) => typeof r.id === "string" && r.id.length > 0);
-  return rep?.id;
+  for (const right of rights) {
+    for (const cls of right.classified_as ?? []) {
+      if (typeof cls.id === "string" && cls.id.length > 0) return cls.id;
+    }
+  }
+  return undefined;
 }
 
 function buildItem(obj: RijksObject): RawSourceItem {
@@ -88,8 +114,8 @@ function buildItem(obj: RijksObject): RawSourceItem {
   if (!sourceUrl || !title) {
     throw new Error("Rijksmuseum object missing id/title");
   }
-  const rightsStatement = extractRights(obj);
-  const license = classifyRijksLicense(rightsStatement);
+  const rightsUri = extractRightsUri(obj);
+  const license = classifyRijksLicense(rightsUri);
 
   const item: RawSourceItem = {
     sourceUrl,
@@ -101,12 +127,13 @@ function buildItem(obj: RijksObject): RawSourceItem {
   };
   const artist = extractArtist(obj);
   if (artist) item.artist = artist;
-  if (rightsStatement) item.rightsNotes = rightsStatement;
+  if (rightsUri) item.rightsNotes = rightsUri;
 
-  const imageUrl = extractImageUrl(obj);
-  if (imageUrl && shouldStoreBinary(license, BINARY_ALLOWLIST)) {
-    item.imageUrl = imageUrl;
-  }
+  // Image binaries are a documented follow-up for Rijksmuseum: the object has no
+  // `representation` field — the image is referenced via `shows[].id` (VisualItem)
+  // and resolving a real URL needs two more fetches (VisualItem → DigitalObject →
+  // access_point), out of scope for the MVP. Leave imageUrl unset so no binary is
+  // attempted.
   return item;
 }
 

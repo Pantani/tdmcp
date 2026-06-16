@@ -71,7 +71,7 @@ const MET_OBJECT_RESPONSES: Record<number, unknown> = {
   11417: { objectID: 11417, isPublicDomain: true },
 };
 
-const RIJKS_OBJECT_PD = "https://id.rijksmuseum.nl/200100988";
+const RIJKS_OBJECT_CC0 = "https://id.rijksmuseum.nl/200100988";
 const RIJKS_OBJECT_UNKNOWN = "https://id.rijksmuseum.nl/200100999";
 const RIJKS_OBJECT_BAD = "https://id.rijksmuseum.nl/000000000";
 
@@ -79,42 +79,62 @@ const RIJKS_SEARCH_RESPONSE = {
   type: "OrderedCollectionPage",
   partOf: { type: "OrderedCollection", totalItems: 1234 },
   orderedItems: [
-    { id: RIJKS_OBJECT_PD, type: "HumanMadeObject" },
+    { id: RIJKS_OBJECT_CC0, type: "HumanMadeObject" },
     { id: RIJKS_OBJECT_UNKNOWN, type: "HumanMadeObject" },
     { id: RIJKS_OBJECT_BAD, type: "HumanMadeObject" },
   ],
   next: { id: "https://data.rijksmuseum.nl/search/collection?pageToken=next" },
 };
 
+// REAL data.rijksmuseum.nl Linked-Art shape (captured live):
+//  - license is a CC URI under subject_of[].subject_to[].Right.classified_as[].id
+//  - artist is a role-prefixed, parenthetical string in produced_by.referred_to_by[].content
+//  - image is referenced via shows[] (VisualItem) — resolution is a follow-up, so imageUrl stays unset
 const RIJKS_OBJECT_RESPONSES: Record<string, unknown> = {
-  [RIJKS_OBJECT_PD]: {
-    id: RIJKS_OBJECT_PD,
+  [RIJKS_OBJECT_CC0]: {
+    id: RIJKS_OBJECT_CC0,
     type: "HumanMadeObject",
     _label: "The Night Watch",
     identified_by: [{ type: "Name", content: "The Night Watch" }],
-    produced_by: { carried_out_by: [{ _label: "Rembrandt van Rijn" }] },
-    referred_to_by: [
+    produced_by: {
+      referred_to_by: [
+        { type: "LinguisticObject", content: "printmaker: Nicolaas Wijnberg (signed by artist)" },
+      ],
+    },
+    subject_of: [
       {
         type: "LinguisticObject",
-        classified_as: [{ _label: "rights" }],
-        content: "Public Domain",
+        subject_to: [
+          {
+            type: "Right",
+            classified_as: [
+              { id: "https://creativecommons.org/publicdomain/zero/1.0/", type: "Type" },
+            ],
+          },
+        ],
       },
     ],
-    representation: [{ id: "https://iiif.rijksmuseum.nl/nightwatch/image", type: "VisualItem" }],
+    shows: [{ id: "https://id.rijksmuseum.nl/visualitem-nightwatch", type: "VisualItem" }],
   },
   [RIJKS_OBJECT_UNKNOWN]: {
     id: RIJKS_OBJECT_UNKNOWN,
     type: "HumanMadeObject",
     identified_by: [{ type: "Name", content: "Modern Loan" }],
-    produced_by: { carried_out_by: [{ _label: "Anon" }] },
-    referred_to_by: [
+    produced_by: {
+      referred_to_by: [{ type: "LinguisticObject", content: "artist: Anon (attributed)" }],
+    },
+    subject_of: [
       {
         type: "LinguisticObject",
-        classified_as: [{ _label: "rights" }],
-        content: "All rights reserved",
+        subject_to: [
+          {
+            type: "Right",
+            classified_as: [{ id: "https://example.org/all-rights", type: "Type" }],
+          },
+        ],
       },
     ],
-    representation: [{ id: "https://iiif.rijksmuseum.nl/loan/image", type: "VisualItem" }],
+    shows: [{ id: "https://id.rijksmuseum.nl/visualitem-loan", type: "VisualItem" }],
   },
   // Malformed — no id/label, must be skipped.
   [RIJKS_OBJECT_BAD]: { type: "HumanMadeObject" },
@@ -188,12 +208,12 @@ describe("rijksmuseumSource", () => {
     const items = await rijksmuseumSource.fetchItems(5, fetch);
     expect(items).toHaveLength(2); // malformed object skipped
 
-    const pd = items.find((i) => i.title === "The Night Watch");
-    expect(pd?.artist).toBe("Rembrandt van Rijn");
-    expect(pd?.sourceUrl).toBe(RIJKS_OBJECT_PD);
-    expect(pd?.license).toBe("PublicDomain");
-    expect(pd?.rightsNotes).toBe("Public Domain");
-    expect(pd?.imageUrl).toBe("https://iiif.rijksmuseum.nl/nightwatch/image");
+    const cc0 = items.find((i) => i.title === "The Night Watch");
+    expect(cc0?.artist).toBe("Nicolaas Wijnberg");
+    expect(cc0?.sourceUrl).toBe(RIJKS_OBJECT_CC0);
+    expect(cc0?.license).toBe("CC0");
+    // Image binary resolution is a documented follow-up — imageUrl stays unset.
+    expect(cc0?.imageUrl).toBeUndefined();
 
     const unknown = items.find((i) => i.title === "Modern Loan");
     expect(unknown?.license).toBe("Unknown");
