@@ -7,10 +7,11 @@
 
 import type { Source } from "../types.js";
 import { articSource } from "./artic.js";
+import { clevelandSource } from "./cleveland.js";
 import { metSource } from "./met.js";
 import { rijksmuseumSource } from "./rijksmuseum.js";
 
-export const LIVE_SOURCES: Source[] = [articSource, rijksmuseumSource, metSource];
+export const LIVE_SOURCES: Source[] = [articSource, rijksmuseumSource, metSource, clevelandSource];
 
 /**
  * Resolve the live sources to use for a run. With no names, all live sources are
@@ -33,4 +34,4 @@ export function resolveSources(names?: string[]): Source[] {
 }
 
 export { PLANNED_SOURCE_STUBS } from "./plannedStubs.js";
-export { articSource, metSource, rijksmuseumSource };
+export { articSource, clevelandSource, metSource, rijksmuseumSource };

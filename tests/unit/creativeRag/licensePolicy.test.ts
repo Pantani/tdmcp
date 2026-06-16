@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   classifyArticLicense,
+  classifyClevelandLicense,
   classifyMetLicense,
   classifyRijksLicense,
   shouldStoreBinary,
@@ -41,6 +42,23 @@ describe("classifyMetLicense", () => {
   it("maps true to PublicDomain and false to Unknown", () => {
     expect(classifyMetLicense(true)).toBe("PublicDomain");
     expect(classifyMetLicense(false)).toBe("Unknown");
+  });
+});
+
+describe("classifyClevelandLicense", () => {
+  it("maps CC0 status to CC0 (case-insensitive)", () => {
+    expect(classifyClevelandLicense("CC0")).toBe("CC0");
+    expect(classifyClevelandLicense("cc0")).toBe("CC0");
+  });
+
+  it("maps a public-domain status to PublicDomain", () => {
+    expect(classifyClevelandLicense("Public Domain")).toBe("PublicDomain");
+  });
+
+  it("maps copyrighted/missing to Unknown", () => {
+    expect(classifyClevelandLicense("Copyrighted")).toBe("Unknown");
+    expect(classifyClevelandLicense(undefined)).toBe("Unknown");
+    expect(classifyClevelandLicense("")).toBe("Unknown");
   });
 });
 

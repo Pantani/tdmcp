@@ -1,7 +1,7 @@
 /**
  * Creative RAG — planned source stubs.
  *
- * Ten further sources are scoped but NOT implemented in the MVP. They ship as
+ * Nine further sources are scoped but NOT implemented in the MVP. They ship as
  * documented stubs (`status: "planned"` + an explicit reason) so the build team
  * and users know why each is deferred. None are wired into `sync`. The list
  * mirrors the "Planned sources (stubs)" table in `docs/CREATIVE_RAG.md`.
@@ -30,13 +30,6 @@ export const PLANNED_SOURCE_STUBS: PlannedSourceStub[] = [
     reason: "Requires an API key (auth).",
   },
   {
-    name: "cleveland",
-    displayName: "Cleveland Museum of Art",
-    status: "planned",
-    reason:
-      "Open API, but rights field needs verification per item; deferred to keep MVP to three confirmed shapes.",
-  },
-  {
     name: "harvard",
     displayName: "Harvard Art Museums",
     status: "planned",
@@ -59,7 +52,7 @@ export const PLANNED_SOURCE_STUBS: PlannedSourceStub[] = [
     name: "wikiart",
     displayName: "WikiArt",
     status: "planned",
-    reason: "No official open API; would require scraping (scraping) and licenses are restricted.",
+    reason: "No official open API; would require scraping and licenses are restricted.",
   },
   {
     name: "portfolios",

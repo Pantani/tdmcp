@@ -32,6 +32,19 @@ export function classifyMetLicense(isPublicDomain: boolean): CreativeRagLicense 
 }
 
 /**
+ * Cleveland Museum of Art: `share_license_status` string ⇒ license.
+ * "CC0" ⇒ CC0; a public-domain marker ⇒ PublicDomain; anything else
+ * (e.g. "Copyrighted") or missing ⇒ Unknown.
+ */
+export function classifyClevelandLicense(status?: string): CreativeRagLicense {
+  if (!status) return "Unknown";
+  const text = status.trim().toLowerCase();
+  if (text === "cc0") return "CC0";
+  if (text.includes("public domain") || text.includes("publicdomain")) return "PublicDomain";
+  return "Unknown";
+}
+
+/**
  * Rijksmuseum: map a Linked-Art rights signal to a license.
  *
  * The real `data.rijksmuseum.nl` shape carries the license as a Creative Commons

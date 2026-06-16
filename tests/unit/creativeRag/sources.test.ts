@@ -2,6 +2,7 @@ import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { articSource } from "../../../src/creativeRag/sources/artic.js";
+import { clevelandSource } from "../../../src/creativeRag/sources/cleveland.js";
 import { LIVE_SOURCES, resolveSources } from "../../../src/creativeRag/sources/index.js";
 import { metSource } from "../../../src/creativeRag/sources/met.js";
 import { PLANNED_SOURCE_STUBS } from "../../../src/creativeRag/sources/plannedStubs.js";
@@ -11,6 +12,34 @@ const ARTIC_LIST = "https://api.artic.edu/api/v1/artworks";
 const MET_SEARCH = "https://collectionapi.metmuseum.org/public/collection/v1/search";
 const MET_OBJECTS = "https://collectionapi.metmuseum.org/public/collection/v1/objects/:id";
 const RIJKS_SEARCH = "https://data.rijksmuseum.nl/search/collection";
+const CLEVELAND_LIST = "https://openaccess-api.clevelandart.org/api/artworks";
+
+const CLEVELAND_LIST_RESPONSE = {
+  data: [
+    {
+      id: 94979,
+      title: "Nathaniel Hurd",
+      share_license_status: "CC0",
+      creation_date: "c. 1765",
+      technique: "oil on canvas",
+      url: "https://clevelandart.org/art/1915.534",
+      creators: [{ description: "John Singleton Copley (American, 1738–1815)" }],
+      images: { web: { url: "https://openaccess-cdn.clevelandart.org/1915.534/1915.534_web.jpg" } },
+    },
+    {
+      id: 12345,
+      title: "Copyrighted Piece",
+      share_license_status: "Copyrighted",
+      creation_date: "1998",
+      technique: "mixed media",
+      url: "https://clevelandart.org/art/1998.1",
+      creators: [{ description: "Living Artist (American, b. 1950)" }],
+      images: { web: { url: "https://openaccess-cdn.clevelandart.org/1998.1/1998.1_web.jpg" } },
+    },
+    // Malformed — no url/title, must be skipped.
+    { id: 0, share_license_status: "CC0" },
+  ],
+};
 
 const ARTIC_LIST_RESPONSE = {
   pagination: { total: 126, limit: 2, offset: 0, total_pages: 63, current_page: 1 },
@@ -157,6 +186,7 @@ const server = setupServer(
     return obj ? HttpResponse.json(obj) : new HttpResponse(null, { status: 404 });
   }),
   http.get(RIJKS_SEARCH, () => HttpResponse.json(RIJKS_SEARCH_RESPONSE)),
+  http.get(CLEVELAND_LIST, () => HttpResponse.json(CLEVELAND_LIST_RESPONSE)),
   http.get("https://id.rijksmuseum.nl/:id", ({ request }) => {
     const obj = RIJKS_OBJECT_RESPONSES[request.url];
     return obj ? HttpResponse.json(obj) : new HttpResponse(null, { status: 404 });
@@ -235,6 +265,26 @@ describe("rijksmuseumSource", () => {
   });
 });
 
+describe("clevelandSource", () => {
+  it("maps CC0 items (with image) and classifies copyrighted ones as Unknown", async () => {
+    const items = await clevelandSource.fetchItems(5, fetch);
+    expect(items).toHaveLength(2); // malformed item skipped
+
+    const cc0 = items.find((i) => i.title === "Nathaniel Hurd");
+    expect(cc0?.license).toBe("CC0");
+    expect(cc0?.artist).toBe("John Singleton Copley");
+    expect(cc0?.year).toBe(1765);
+    expect(cc0?.medium).toBe("oil on canvas");
+    expect(cc0?.sourceUrl).toBe("https://clevelandart.org/art/1915.534");
+    expect(cc0?.imageUrl).toBe("https://openaccess-cdn.clevelandart.org/1915.534/1915.534_web.jpg");
+
+    // Copyrighted ⇒ Unknown and no imageUrl, even though an image exists.
+    const copyrighted = items.find((i) => i.title === "Copyrighted Piece");
+    expect(copyrighted?.license).toBe("Unknown");
+    expect(copyrighted?.imageUrl).toBeUndefined();
+  });
+});
+
 describe("resolveSources", () => {
   it("returns all live sources with no names", () => {
     expect(resolveSources()).toEqual(LIVE_SOURCES);
@@ -253,8 +303,8 @@ describe("resolveSources", () => {
 });
 
 describe("PLANNED_SOURCE_STUBS", () => {
-  it("has 10 entries each with a non-empty reason and planned status", () => {
-    expect(PLANNED_SOURCE_STUBS).toHaveLength(10);
+  it("has 9 entries each with a non-empty reason and planned status", () => {
+    expect(PLANNED_SOURCE_STUBS).toHaveLength(9);
     for (const stub of PLANNED_SOURCE_STUBS) {
       expect(stub.status).toBe("planned");
       expect(stub.name.length).toBeGreaterThan(0);

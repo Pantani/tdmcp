@@ -43,7 +43,7 @@ or executes Python.** It is a CLI subcommand plus a **read-only** MCP resource.
 There is **no MCP tool** that triggers any physical or in-TD action from a
 search result. The only outbound network calls are:
 
-1. the three museum HTTP APIs, during an explicit `creative-rag sync`; and
+1. the four museum HTTP APIs, during an explicit `creative-rag sync`; and
 2. the local Ollama embeddings endpoint, during `creative-rag index` **and**
    `creative-rag search` (the query is embedded before ranking).
 
@@ -52,13 +52,14 @@ typed error and **never** brings down other tools or the server.
 
 ## Included sources (MVP)
 
-Three open-data museum APIs, all keyless and license-aware per item:
+Four open-data museum APIs, all keyless and license-aware per item:
 
 | Source | API base | License signal | Notes |
 |--------|----------|----------------|-------|
 | Art Institute of Chicago | `https://api.artic.edu/api/v1` | `is_public_domain` (boolean) ⇒ `PublicDomain`, else `Unknown` | IIIF image URL built from `config.iiif_url` + `image_id`. |
 | The Met | `https://collectionapi.metmuseum.org/public/collection/v1` | `isPublicDomain` (boolean) ⇒ `PublicDomain` / CC0, else `Unknown` | Two-step: `search` → `objects/{id}`. |
-| Rijksmuseum | `https://data.rijksmuseum.nl` | Linked-Art rights statement ⇒ `CC0` / `PublicDomain` / `Unknown` | Two-step: `search/collection` (OrderedCollectionPage) → resolve each `id` as Linked-Art JSON. Keyless. |
+| Rijksmuseum | `https://data.rijksmuseum.nl` | Linked-Art rights statement ⇒ `CC0` / `PublicDomain` / `Unknown` | Two-step: `search/collection` (OrderedCollectionPage) → resolve each `id` as Linked-Art JSON; image via `shows` → VisualItem → DigitalObject → `access_point`. Keyless. |
+| Cleveland Museum of Art | `https://openaccess-api.clevelandart.org/api/artworks` | `share_license_status` (`"CC0"` ⇒ `CC0`), else `Unknown` | Single-call list; image from `images.web.url`. Keyless. |
 
 > Sync pulls a **bounded** number of items per source (default 10, configurable
 > per run via `--limit`) to keep the MVP fast and polite to the upstream APIs.
@@ -66,7 +67,7 @@ Three open-data museum APIs, all keyless and license-aware per item:
 
 ## Planned sources (stubs)
 
-Ten further sources are scoped but **not** implemented in the MVP. They ship as
+Nine further sources are scoped but **not** implemented in the MVP. They ship as
 documented stubs with `status: "planned"` and an explicit reason, so the build
 team and users know *why* each is deferred. None are wired into `sync`.
 
@@ -75,7 +76,6 @@ team and users know *why* each is deferred. None are wired into `sync`.
 | Europeana | Requires an API key (auth) and per-provider rights vary widely (ambiguous license). |
 | Wikimedia Commons / Wikidata | Licenses are per-file and mixed (CC-BY-SA, CC0, fair-use); needs robust per-asset rights parsing before binaries can be trusted. |
 | Smithsonian Open Access | Requires an API key (auth). |
-| Cleveland Museum of Art | Open API, but rights field needs verification per item; deferred to keep MVP to three confirmed shapes. |
 | Harvard Art Museums | Requires an API key (auth). |
 | Cooper Hewitt | Requires an API key (auth). |
 | Internet Archive | Mixed/unclear licensing per item (ambiguous license); needs scraping of rights metadata. |
@@ -118,7 +118,7 @@ A future `TDMCP_RAG_BACKEND=lancedb` is **out of MVP scope** (see Limits).
 ## CLI usage
 
 ```bash
-# 1. Pull cards from the three sources into TDMCP_RAG_DATA_DIR/cards/ as Markdown
+# 1. Pull cards from the four sources into TDMCP_RAG_DATA_DIR/cards/ as Markdown
 #    + YAML frontmatter. Honors the license policy (binaries only for allowlisted
 #    licenses; missing license => Unknown, no binary; 404 => tombstone).
 tdmcp creative-rag sync [--source artic --source rijksmuseum --source met] [--limit 10]
@@ -218,7 +218,7 @@ unaffected.
 - **No LanceDB / no native deps.** In-memory cosine over JSONL only. A
   `TDMCP_RAG_BACKEND=lancedb` vector store is a documented follow-up, **out of
   scope** here, to keep the default install free of heavy native dependencies.
-- **Three sources only.** The other ten are planned stubs (above).
+- **Four sources only.** The other nine are planned stubs (above).
 - **Bounded sync.** Not a full mirror; a per-run item cap.
 - **English-leaning embeddings.** `nomic-embed-text` is the default; multilingual
   models are a config swap, not redesigned here.

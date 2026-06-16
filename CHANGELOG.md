@@ -12,8 +12,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   repertoire of open-licensed artworks, artists and techniques. New
   `tdmcp creative-rag {sync|index|search}` CLI subcommand and read-only
   `tdmcp://creative/cards/{id}` + `tdmcp://creative/search?q=...` MCP
-  resources. Ingests three live museum sources (Art Institute of Chicago,
-  The Met, Rijksmuseum) plus ten planned-source stubs, embeds locally via
+  resources. Ingests four live museum sources (Art Institute of Chicago,
+  The Met, Rijksmuseum, Cleveland Museum of Art) plus nine planned-source
+  stubs, embeds locally via
   Ollama (`nomic-embed-text`), and persists a local JSONL index. Every
   result carries source URL, license and rights notes through a coded
   license policy. Off by default; enable with `TDMCP_RAG_ENABLED=1`
