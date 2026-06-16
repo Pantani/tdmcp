@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerCheatsheetResource } from "./cheatsheetResource.js";
 import { registerCommandCatalogResource } from "./commandCatalogResource.js";
 import { registerCookbookResource } from "./cookbookResource.js";
+import { registerCreativeRagResource } from "./creativeRagResource.js";
 import { registerGlslPatternResource } from "./glslPatternResource.js";
 import { registerGlslSnippetCatalogResource } from "./glslSnippetCatalogResource.js";
 import { registerGraphDigestResource } from "./graphDigest.js";
@@ -35,6 +36,8 @@ export function registerAllResources(server: McpServer, ctx: ResourceContext): v
   registerSceneSummaryResource(server, ctx);
   // Wave 2026-06-02 — compact, token-bounded graph digest:
   registerGraphDigestResource(server, ctx);
+  // Creative RAG (opt-in) — read-only repertoire resources; no-op unless ctx.creativeRag is set:
+  registerCreativeRagResource(server, ctx);
 }
 
 export type { ResourceContext } from "./shared.js";

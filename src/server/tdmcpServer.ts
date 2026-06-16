@@ -68,7 +68,13 @@ export function createTdmcpServer(
     // biome-ignore lint/suspicious/noExplicitAny: restore the original method post-registration.
     (server as any).registerTool = realRegisterTool;
   }
-  registerAllResources(server, { knowledge, recipes, logger, client: ctx.client });
+  registerAllResources(server, {
+    knowledge,
+    recipes,
+    logger,
+    client: ctx.client,
+    creativeRag: ctx.creativeRag,
+  });
   registerAllPrompts(server, { knowledge, recipes, logger });
 
   // Defer the stats log to after we return so the heavy knowledge-base warmup

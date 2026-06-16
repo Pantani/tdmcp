@@ -71,6 +71,18 @@ function csvList(value: unknown): string[] | undefined {
 
 const CsvListSchema = z.preprocess(csvList, z.array(z.string()).default([]));
 
+/** Coerces an env/file boolean-ish value: "1"/"true" (any case) → true, else → false. */
+function ragEnabledFlag(value: unknown): boolean | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value === "boolean") return value;
+  if (typeof value !== "string") return undefined;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "") return false;
+  return normalized === "1" || normalized === "true";
+}
+
+const RagEnabledSchema = z.preprocess(ragEnabledFlag, z.boolean().default(false));
+
 function sanitizeTelegramTier(value: unknown): LlmTier | undefined {
   if (typeof value !== "string") return undefined;
   const normalized = value.trim().toLowerCase();
@@ -166,6 +178,20 @@ export const ConfigSchema = z.object({
    * Leave unset (default) to disable those tools.
    */
   vaultPath: z.string().min(1).optional(),
+  /**
+   * Opt-in switch for the local Creative RAG repertoire feature
+   * (`tdmcp creative-rag` + `tdmcp://creative/*` resources). Off by default;
+   * accepts "1"/"true" (case-insensitive) as true, "0"/"false"/"" as false.
+   */
+  ragEnabled: RagEnabledSchema,
+  /** Local data dir for Creative RAG cards, binaries and the JSONL index. */
+  ragDataDir: z.string().min(1).default(".tdmcp/creative-rag"),
+  /** Ollama base URL used for Creative RAG embeddings. */
+  ragOllamaUrl: z.string().min(1).default("http://127.0.0.1:11434"),
+  /** Embedding model id pulled in Ollama (e.g. `ollama pull nomic-embed-text`). */
+  ragEmbedModel: z.string().min(1).default("nomic-embed-text"),
+  /** Licenses whose binaries Creative RAG may download/store locally. */
+  ragLicenseAllowlist: CsvListSchema.default(["CC0", "PublicDomain"]),
 });
 
 type ParsedConfig = z.infer<typeof ConfigSchema>;
@@ -233,6 +259,11 @@ function envValues(env: NodeJS.ProcessEnv): Record<string, unknown> {
     telegramPollTimeoutSec: env.TDMCP_TELEGRAM_POLL_TIMEOUT_SEC || undefined,
     telegramConfirmTimeoutMs: env.TDMCP_TELEGRAM_CONFIRM_TIMEOUT_MS || undefined,
     vaultPath: env.TDMCP_VAULT_PATH || undefined,
+    ragEnabled: env.TDMCP_RAG_ENABLED,
+    ragDataDir: env.TDMCP_RAG_DATA_DIR || undefined,
+    ragOllamaUrl: env.TDMCP_RAG_OLLAMA_URL || undefined,
+    ragEmbedModel: env.TDMCP_RAG_EMBED_MODEL || undefined,
+    ragLicenseAllowlist: env.TDMCP_RAG_LICENSE_ALLOWLIST || undefined,
   };
 }
 

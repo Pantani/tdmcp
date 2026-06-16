@@ -4,6 +4,25 @@ All notable changes to **tdmcp** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [0.10.0] - 2026-06-16
+
+### Added
+- **Creative RAG local (opt-in, experimental)** — a local-only creative
+  repertoire of open-licensed artworks, artists and techniques. New
+  `tdmcp creative-rag {sync|index|search}` CLI subcommand and read-only
+  `tdmcp://creative/cards/{id}` + `tdmcp://creative/search?q=...` MCP
+  resources. Ingests three live museum sources (Art Institute of Chicago,
+  The Met, Rijksmuseum) plus ten planned-source stubs, embeds locally via
+  Ollama (`nomic-embed-text`), and persists a local JSONL index. Every
+  result carries source URL, license and rights notes through a coded
+  license policy. Off by default; enable with `TDMCP_RAG_ENABLED=1`
+  (`TDMCP_RAG_DATA_DIR`, `TDMCP_RAG_OLLAMA_URL`, `TDMCP_RAG_EMBED_MODEL`,
+  `TDMCP_RAG_LICENSE_ALLOWLIST`). Repertoire context only — no bridge, DMX,
+  or Python exec. See [Creative RAG](docs/CREATIVE_RAG.md).
+- New runtime dependency `yaml` (license-policy / source-config parsing).
+
 ## [0.9.0] - 2026-06-10
 
 The **hype-scout Round 4 campaign** — the complete external trend-driven
@@ -1537,7 +1556,9 @@ API on its first live run, and is fail-forward (per-item warnings, never throws)
 [0.8.0]: https://github.com/Pantani/tdmcp/compare/v0.7.1...fa7d33c2a8093d85cbad6226f62f28714a0af8fb
 [0.7.1]: https://github.com/Pantani/tdmcp/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/Pantani/tdmcp/compare/v0.6.1...v0.7.0
-[Unreleased]: https://github.com/Pantani/tdmcp/compare/v0.8.3...HEAD
+[Unreleased]: https://github.com/Pantani/tdmcp/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/Pantani/tdmcp/compare/v0.9.0...v0.10.0
+[0.9.0]: https://github.com/Pantani/tdmcp/compare/v0.8.3...v0.9.0
 [0.6.1]: https://github.com/Pantani/tdmcp/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/Pantani/tdmcp/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Pantani/tdmcp/compare/v0.4.0...v0.5.0

@@ -1,5 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ReadResourceResult } from "@modelcontextprotocol/sdk/types.js";
+import type { CreativeRagService } from "../creativeRag/index.js";
 import type { KnowledgeBase } from "../knowledge/index.js";
 import type { RecipeLibrary } from "../recipes/loader.js";
 import type { TouchDesignerClient } from "../td-client/touchDesignerClient.js";
@@ -11,6 +12,8 @@ export interface ResourceContext {
   logger: Logger;
   /** Optional TD client — present for live-scene resources (Campaign BEYOND Wave 3). */
   client?: TouchDesignerClient;
+  /** Optional local Creative RAG service — present only when `TDMCP_RAG_ENABLED=1`. */
+  creativeRag?: CreativeRagService;
 }
 
 export type ResourceRegistrar = (server: McpServer, ctx: ResourceContext) => void;
