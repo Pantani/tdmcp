@@ -2843,6 +2843,10 @@ const ENV_NAMES: Record<keyof TdmcpConfig, string> = {
   ragOllamaUrl: "TDMCP_RAG_OLLAMA_URL",
   ragEmbedModel: "TDMCP_RAG_EMBED_MODEL",
   ragLicenseAllowlist: "TDMCP_RAG_LICENSE_ALLOWLIST",
+  ragEmbedBatch: "TDMCP_RAG_EMBED_BATCH",
+  ragBackend: "TDMCP_RAG_BACKEND",
+  ragSmithsonianKey: "TDMCP_RAG_SMITHSONIAN_KEY",
+  ragEuropeanaKey: "TDMCP_RAG_EUROPEANA_KEY",
 };
 const SECRET_ENV: ReadonlySet<keyof TdmcpConfig> = new Set([
   "bridgeToken",
@@ -2850,6 +2854,8 @@ const SECRET_ENV: ReadonlySet<keyof TdmcpConfig> = new Set([
   "telegramBotToken",
   "telegramAllowedChats",
   "telegramAllowedUsers",
+  "ragSmithsonianKey",
+  "ragEuropeanaKey",
 ]);
 
 /** A paste-ready `export TDMCP_*=...` block; secrets are emitted commented-out (set manually). */

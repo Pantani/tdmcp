@@ -192,6 +192,14 @@ export const ConfigSchema = z.object({
   ragEmbedModel: z.string().min(1).default("nomic-embed-text"),
   /** Licenses whose binaries Creative RAG may download/store locally. */
   ragLicenseAllowlist: CsvListSchema.default(["CC0", "PublicDomain"]),
+  /** Inputs per Ollama embed POST (batched). */
+  ragEmbedBatch: z.coerce.number().int().min(1).max(512).default(64),
+  /** Index backend: in-memory JSONL (default) or LanceDB (optional dep). */
+  ragBackend: z.enum(["jsonl", "lancedb"]).default("jsonl"),
+  /** Smithsonian Open Access API key (read in-source by the adapter; never threaded through CreativeRagConfig). */
+  ragSmithsonianKey: z.string().optional(),
+  /** Europeana Search API key (read in-source by the adapter; never threaded through CreativeRagConfig). */
+  ragEuropeanaKey: z.string().optional(),
 });
 
 type ParsedConfig = z.infer<typeof ConfigSchema>;
@@ -264,6 +272,10 @@ function envValues(env: NodeJS.ProcessEnv): Record<string, unknown> {
     ragOllamaUrl: env.TDMCP_RAG_OLLAMA_URL || undefined,
     ragEmbedModel: env.TDMCP_RAG_EMBED_MODEL || undefined,
     ragLicenseAllowlist: env.TDMCP_RAG_LICENSE_ALLOWLIST || undefined,
+    ragEmbedBatch: env.TDMCP_RAG_EMBED_BATCH || undefined,
+    ragBackend: env.TDMCP_RAG_BACKEND || undefined,
+    ragSmithsonianKey: env.TDMCP_RAG_SMITHSONIAN_KEY || undefined,
+    ragEuropeanaKey: env.TDMCP_RAG_EUROPEANA_KEY || undefined,
   };
 }
 
@@ -367,6 +379,8 @@ const SECRET_KEYS: ReadonlyArray<keyof LoadedTdmcpConfig> = [
   "telegramBotToken",
   "telegramAllowedChats",
   "telegramAllowedUsers",
+  "ragSmithsonianKey",
+  "ragEuropeanaKey",
 ];
 
 /** A copy of the config safe to print/share — secrets are masked. */
