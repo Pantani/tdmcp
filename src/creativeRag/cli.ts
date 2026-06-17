@@ -9,6 +9,7 @@
  */
 
 import { parseArgs } from "node:util";
+import { createLogger } from "../utils/logger.js";
 import { friendlyOllamaError } from "./ollamaErrors.js";
 import { createCreativeRagService } from "./service.js";
 import type {
@@ -141,7 +142,10 @@ export async function runCreativeRagCli(
     return 0;
   }
 
-  const service = deps.service ?? createCreativeRagService({ config });
+  // A real run gets a stderr logger so a skipped key-gated source, a failed fetch,
+  // or a dropped binary is visible (warn level) without polluting stdout/JSON.
+  const service =
+    deps.service ?? createCreativeRagService({ config, logger: createLogger("warn") });
 
   try {
     switch (parsed.command) {

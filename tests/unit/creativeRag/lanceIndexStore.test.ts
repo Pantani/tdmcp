@@ -246,6 +246,22 @@ describe("LanceIndexStore", () => {
       expect(results.map((r) => r.id)).toEqual(["both"]);
     });
 
+    it("finds a filtered match that sits deeper than the initial ANN window", async () => {
+      // Regression: with a fixed window the nearest 64 candidates can be all
+      // non-matching while the one match sits deeper — search must expand until it
+      // finds k matches (parity with JsonlIndexStore's full scan).
+      const store = newStore();
+      const cards = [makeCard({ id: "deep", license: "CC0", embedding: [1, 0, 0] })];
+      for (let i = 0; i < 80; i++) {
+        // Inserted AFTER "deep", so "deep" is the deepest row in the fake's reversed
+        // ANN order — beyond the MIN_CANDIDATES (64) initial window.
+        cards.push(makeCard({ id: `f${i}`, license: "PublicDomain", embedding: [1, 0, 0] }));
+      }
+      await store.upsert(cards);
+      const results = await store.search([1, 0, 0], 1, { license: ["CC0"] });
+      expect(results.map((r) => r.id)).toEqual(["deep"]);
+    });
+
     it("carries / omits rightsNotes in results", async () => {
       const store = newStore();
       await store.upsert([
@@ -287,6 +303,21 @@ describe("LanceIndexStore", () => {
       expect(fps.has("b:h2:m2")).toBe(true);
       expect(fps.has("a:h2:m1")).toBe(false);
       expect(fps.size).toBe(2);
+    });
+  });
+
+  describe("fresh store (no upsert yet)", () => {
+    it("reads return empty WITHOUT creating a table (Lance cannot create from [])", async () => {
+      const { module, tables } = createFakeModule();
+      const store = new LanceIndexStore({
+        dir: "/tmp/lance-fresh",
+        moduleLoader: async () => module,
+      });
+      expect((await store.existingFingerprints()).size).toBe(0);
+      expect(await store.loadAll()).toEqual([]);
+      expect(await store.search([1, 0, 0], 5)).toEqual([]);
+      // No table was created on any read path — it is born only on the first upsert.
+      expect(tables.size).toBe(0);
     });
   });
 

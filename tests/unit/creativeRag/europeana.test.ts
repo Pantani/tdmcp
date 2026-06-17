@@ -1,6 +1,7 @@
 import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { SourceSkippedError } from "../../../src/creativeRag/sources/errors.js";
 import { europeanaSource } from "../../../src/creativeRag/sources/europeana.js";
 
 const EUROPEANA_SEARCH = "https://api.europeana.eu/record/v2/search.json";
@@ -68,10 +69,10 @@ describe("europeanaSource", () => {
     expect(items.find((i) => i.title === "X")?.imageUrl).toBeUndefined();
   });
 
-  it("returns [] and does not fetch when the API key is absent", async () => {
+  it("throws SourceSkippedError (not an empty sync) and does not fetch when the API key is absent", async () => {
     vi.stubEnv("TDMCP_RAG_EUROPEANA_KEY", "");
-    const items = await europeanaSource.fetchItems(5, fetch);
-    expect(items).toEqual([]);
+    // Skipped source, not an empty result — see SourceSkippedError / service.sync.
+    await expect(europeanaSource.fetchItems(5, fetch)).rejects.toBeInstanceOf(SourceSkippedError);
     expect(fetchCalls).toBe(0);
   });
 });

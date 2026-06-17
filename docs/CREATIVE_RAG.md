@@ -130,8 +130,8 @@ vars follow the existing `TDMCP_*` convention.
 
 `TDMCP_RAG_BACKEND=lancedb` selects a LanceDB-backed index store instead of the
 default JSONL. It requires the **optional** dependency `@lancedb/lancedb`, which
-is declared under `optionalDependencies` and is therefore **not** pulled by a
-default `npm install`. To use it, install it explicitly:
+is declared as an optional `peerDependency` and is therefore **not** installed by
+a default `npm install`. To use it, install it explicitly:
 
 ```bash
 npm install @lancedb/lancedb

@@ -6,10 +6,10 @@
  * narrows the candidate set before scoring. The public contract ({@link IndexStore})
  * is identical, so the integrator's backend factory can swap stores transparently.
  *
- * The `@lancedb/lancedb` package is an *optional* dependency — it is NOT in
- * `dependencies`, so a default install never pulls it. {@link loadLanceModule}
- * dynamically imports it and turns a missing-module failure into a friendly,
- * typed error pointing at the jsonl fallback.
+ * The `@lancedb/lancedb` package is an *optional peer* dependency — it is NOT in
+ * `dependencies` and is not auto-installed, so a default install never pulls it.
+ * {@link loadLanceModule} dynamically imports it and turns a missing-module
+ * failure into a friendly, typed error pointing at the jsonl fallback.
  *
  * SCORE CONTRACT: {@link IndexStore.search} must return `score` as cosine 0..1.
  * LanceDB's `vectorSearch` ranks by L2 `_distance`, not cosine — so we use the
@@ -88,19 +88,21 @@ interface LanceModule {
 }
 
 /**
- * Lazy-load `@lancedb/lancedb`. A missing optional dep (`ERR_MODULE_NOT_FOUND` /
- * `MODULE_NOT_FOUND`) becomes a clear, actionable error rather than a raw import
- * failure. Exported so tests can stub it.
+ * Lazy-load `@lancedb/lancedb`. The dep is an optional peer that the default
+ * install never pulls, so the import normally fails when the backend is selected
+ * without it installed. Any module-resolution failure — Node's
+ * `ERR_MODULE_NOT_FOUND`/`MODULE_NOT_FOUND` or a bundler's "Could not resolve …
+ * Is it installed?" — is turned into one clear, actionable error so the factory
+ * can fall back to JSONL. Exported so tests can stub it.
  */
 export async function loadLanceModule(): Promise<unknown> {
   try {
     // @ts-expect-error optional peer dependency — intentionally absent from the
-    // default install tree (declared only in optionalDependencies), so there are
-    // no type declarations to resolve. Resolved at runtime when installed.
+    // default install tree (declared only as an optional peerDependency), so there
+    // are no type declarations to resolve. Resolved at runtime when installed.
     return await import("@lancedb/lancedb");
   } catch (err) {
-    const code = (err as NodeJS.ErrnoException).code;
-    if (code === "ERR_MODULE_NOT_FOUND" || code === "MODULE_NOT_FOUND") {
+    if (isModuleNotFound(err)) {
       throw new Error(
         "LanceDB backend requires the optional dependency '@lancedb/lancedb'. " +
           "Install it or use TDMCP_RAG_BACKEND=jsonl.",
@@ -110,13 +112,28 @@ export async function loadLanceModule(): Promise<unknown> {
   }
 }
 
+/** True when an import error means the optional dep is simply not installed. */
+function isModuleNotFound(err: unknown): boolean {
+  const code = (err as NodeJS.ErrnoException).code;
+  if (code === "ERR_MODULE_NOT_FOUND" || code === "MODULE_NOT_FOUND") {
+    return true;
+  }
+  // Bundlers (Vite/esbuild, used under Vitest) throw a plain Error with no `code`.
+  const message = err instanceof Error ? err.message : String(err);
+  return (
+    message.includes("@lancedb/lancedb") &&
+    (/cannot find|could not resolve|is it installed/i.test(message) ||
+      message.includes("Failed to load"))
+  );
+}
+
 const DEFAULT_TABLE_NAME = "creative_rag";
 
 export class LanceIndexStore implements IndexStore {
   private readonly dir: string;
   private readonly tableName: string;
   private readonly moduleLoader: () => Promise<unknown>;
-  private tablePromise: Promise<LanceTable> | undefined;
+  private connectionPromise: Promise<LanceConnection> | undefined;
 
   constructor(options: LanceIndexStoreOptions) {
     this.dir = options.dir;
@@ -134,25 +151,42 @@ export class LanceIndexStore implements IndexStore {
     for (const card of cards) {
       byId.set(card.id, card);
     }
-    const table = await this.table();
+    const rows = Array.from(byId.values()).map(cardToRow);
+    const db = await this.connection();
+    const names = await db.tableNames();
+    if (!names.includes(this.tableName)) {
+      // First write creates the table FROM real rows so Lance can infer the schema
+      // (incl. the vector dimension). Creating with `[]` cannot infer columns and
+      // makes a fresh lancedb data dir unusable — so the table is born here, on the
+      // first upsert, never on a read.
+      await db.createTable(this.tableName, rows);
+      return;
+    }
+    const table = await db.openTable(this.tableName);
     for (const id of byId.keys()) {
       await table.delete(idPredicate(id));
     }
-    await table.add(Array.from(byId.values()).map(cardToRow));
+    await table.add(rows);
   }
 
   async remove(ids: string[]): Promise<void> {
     if (ids.length === 0) {
       return;
     }
-    const table = await this.table();
+    const table = await this.openExisting();
+    if (table === undefined) {
+      return;
+    }
     for (const id of ids) {
       await table.delete(idPredicate(id));
     }
   }
 
   async loadAll(): Promise<EmbeddedCard[]> {
-    const table = await this.table();
+    const table = await this.openExisting();
+    if (table === undefined) {
+      return [];
+    }
     const rows = await table.query().toArray();
     return rows.map(rowToCard).filter((card): card is EmbeddedCard => card !== undefined);
   }
@@ -166,13 +200,29 @@ export class LanceIndexStore implements IndexStore {
     if (limit === 0) {
       return [];
     }
-    const table = await this.table();
-    const candidateCount = Math.max(MIN_CANDIDATES, limit * CANDIDATE_OVERFETCH);
-    const rows = await table.vectorSearch(queryEmbedding).limit(candidateCount).toArray();
-    const cards = rows
-      .map(rowToCard)
-      .filter((card): card is EmbeddedCard => card !== undefined)
-      .filter((card) => matchesFilters(card, filters));
+    const table = await this.openExisting();
+    if (table === undefined) {
+      return [];
+    }
+    // Grow the ANN window until we hold >= k rows that PASS the filters, or the
+    // table is exhausted. With filters that few candidates match, the nearest
+    // `candidateCount` rows can be all non-matching while matches sit deeper —
+    // expanding (instead of a single fixed window) keeps parity with JsonlIndexStore,
+    // which scans every card. No filters ⇒ the first window already satisfies it.
+    let windowSize = Math.max(MIN_CANDIDATES, limit * CANDIDATE_OVERFETCH);
+    let cards: EmbeddedCard[] = [];
+    for (;;) {
+      const rows = await table.vectorSearch(queryEmbedding).limit(windowSize).toArray();
+      cards = rows
+        .map(rowToCard)
+        .filter((card): card is EmbeddedCard => card !== undefined)
+        .filter((card) => matchesFilters(card, filters));
+      // Enough matches, or the ANN returned fewer rows than asked ⇒ table exhausted.
+      if (cards.length >= limit || rows.length < windowSize) {
+        break;
+      }
+      windowSize *= CANDIDATE_OVERFETCH;
+    }
     // Re-score with cosine (ANN ranks by L2 distance) for parity with JsonlIndexStore.
     const scored = cards.map((card) => ({
       card,
@@ -191,22 +241,29 @@ export class LanceIndexStore implements IndexStore {
     return set;
   }
 
-  /** Open the table (creating an empty one on first use); cached for the store's lifetime. */
-  private table(): Promise<LanceTable> {
-    if (this.tablePromise === undefined) {
-      this.tablePromise = this.openOrCreate();
+  /** Cached LanceDB connection (lazily loads the optional module on first use). */
+  private connection(): Promise<LanceConnection> {
+    if (this.connectionPromise === undefined) {
+      this.connectionPromise = this.connect();
     }
-    return this.tablePromise;
+    return this.connectionPromise;
   }
 
-  private async openOrCreate(): Promise<LanceTable> {
+  private async connect(): Promise<LanceConnection> {
     const mod = (await this.moduleLoader()) as LanceModule;
-    const db = await mod.connect(this.dir);
+    return mod.connect(this.dir);
+  }
+
+  /**
+   * Open the table, or `undefined` if it does not exist yet. Reads NEVER create a
+   * table (an empty `createTable` cannot infer the schema) — the table is created
+   * lazily by the first {@link upsert}. Still loads the module, so a missing
+   * optional dep surfaces here for the factory to catch and fall back to JSONL.
+   */
+  private async openExisting(): Promise<LanceTable | undefined> {
+    const db = await this.connection();
     const names = await db.tableNames();
-    if (names.includes(this.tableName)) {
-      return db.openTable(this.tableName);
-    }
-    return db.createTable(this.tableName, []);
+    return names.includes(this.tableName) ? db.openTable(this.tableName) : undefined;
   }
 }
 

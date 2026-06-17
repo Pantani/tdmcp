@@ -1,6 +1,7 @@
 import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { SourceSkippedError } from "../../../src/creativeRag/sources/errors.js";
 import { smithsonianSource } from "../../../src/creativeRag/sources/smithsonian.js";
 
 const SMITHSONIAN_SEARCH = "https://api.si.edu/openaccess/api/v1.0/search";
@@ -87,12 +88,15 @@ describe("smithsonianSource", () => {
     expect(restricted?.imageUrl).toBeUndefined();
   });
 
-  it("returns [] and does NOT call fetch when the env key is absent", async () => {
+  it("throws SourceSkippedError (not an empty sync) and does NOT call fetch when the env key is absent", async () => {
     vi.stubEnv("TDMCP_RAG_SMITHSONIAN_KEY", "");
     const fetchSpy = vi.fn();
 
-    const items = await smithsonianSource.fetchItems(5, fetchSpy as unknown as typeof fetch);
-    expect(items).toEqual([]);
+    // A missing key must NOT resolve to [] — that would let service.sync tombstone
+    // every existing Smithsonian card. It is a skipped source, surfaced as a throw.
+    await expect(
+      smithsonianSource.fetchItems(5, fetchSpy as unknown as typeof fetch),
+    ).rejects.toBeInstanceOf(SourceSkippedError);
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 

@@ -23,6 +23,7 @@ import { computeContentHash, computeId, parseCard, serializeCard } from "./cardP
 import { shouldStoreBinary } from "./licensePolicy.js";
 import { OllamaEmbeddingsClient } from "./ollamaClient.js";
 import { friendlyOllamaError } from "./ollamaErrors.js";
+import { SourceSkippedError } from "./sources/errors.js";
 import { resolveSources } from "./sources/index.js";
 import { createIndexStore } from "./storeFactory.js";
 import type {
@@ -113,9 +114,16 @@ export function createCreativeRagService(deps: CreativeRagServiceDeps): Creative
       try {
         items = await source.fetchItems(limit, fetchImpl, config.licenseAllowlist);
       } catch (err) {
-        logger.warn(`Creative RAG: source "${source.name}" failed to fetch`, {
-          error: err instanceof Error ? err.message : String(err),
-        });
+        // A skipped (key-gated, no credential) source and a failed source are both
+        // left out of `syncedSourceNames` below, so neither tombstones its existing
+        // cards — a missing key is a no-op, never a silent purge.
+        if (err instanceof SourceSkippedError) {
+          logger.warn(`Creative RAG: source "${source.name}" skipped — ${err.message}`);
+        } else {
+          logger.warn(`Creative RAG: source "${source.name}" failed to fetch`, {
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
         continue;
       }
       report.perSource[source.name] = items.length;

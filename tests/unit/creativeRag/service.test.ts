@@ -8,6 +8,7 @@ import { computeId, parseCard } from "../../../src/creativeRag/cardParser.js";
 import { JsonlIndexStore } from "../../../src/creativeRag/indexStore.js";
 import { OllamaEmbeddingsClient } from "../../../src/creativeRag/ollamaClient.js";
 import { createCreativeRagService } from "../../../src/creativeRag/service.js";
+import { SourceSkippedError } from "../../../src/creativeRag/sources/errors.js";
 import type { CreativeRagConfig, RawSourceItem, Source } from "../../../src/creativeRag/types.js";
 
 const OLLAMA_BASE = "http://127.0.0.1:11434";
@@ -194,6 +195,32 @@ describe("creativeRag service.sync", () => {
     const report = await makeService([
       makeFakeSource("artic", "https://api.artic.edu/manifest", [PUBLIC_ITEM]),
       failingMet,
+    ]).sync({});
+    expect(report.tombstoned).toBe(0);
+
+    const metPath = join(dataDir, "cards", `${hashUrl(UNKNOWN_ITEM.sourceUrl)}.md`);
+    expect(parseCard(readFileSync(metPath, "utf8")).tombstone).not.toBe(true);
+  });
+
+  it("does not tombstone cards when a key-gated source is skipped (missing key)", async () => {
+    // Regression (Codex P1): a key-gated source with no credential must be a no-op,
+    // NOT a successful empty sync — otherwise every previously-synced card from it
+    // is silently tombstoned out of search. The adapter signals this via throw.
+    await makeService([
+      makeFakeSource("artic", "https://api.artic.edu/manifest", [PUBLIC_ITEM]),
+      makeFakeSource("met", "https://collectionapi.metmuseum.org/manifest", [UNKNOWN_ITEM]),
+    ]).sync({});
+
+    const skippedMet: Source = {
+      name: "met",
+      displayName: "The Met",
+      async fetchItems() {
+        throw new SourceSkippedError("The Met", "TDMCP_RAG_MET_KEY");
+      },
+    };
+    const report = await makeService([
+      makeFakeSource("artic", "https://api.artic.edu/manifest", [PUBLIC_ITEM]),
+      skippedMet,
     ]).sync({});
     expect(report.tombstoned).toBe(0);
 

@@ -11,6 +11,7 @@
 
 import { classifySmithsonianLicense, shouldStoreBinary } from "../licensePolicy.js";
 import type { CreativeRagLicense, RawSourceItem, Source } from "../types.js";
+import { SourceSkippedError } from "./errors.js";
 import { fetchWithTimeout } from "./http.js";
 
 const NAME = "smithsonian";
@@ -104,8 +105,10 @@ export const smithsonianSource: Source = {
   ): Promise<RawSourceItem[]> {
     const key = process.env[ENV_KEY];
     if (!key) {
-      console.warn(`Smithsonian source skipped: set ${ENV_KEY}`);
-      return [];
+      // Throw (not return []): a missing key is a SKIPPED source, not a successful
+      // empty sync. Returning [] would let service.sync tombstone every existing
+      // Smithsonian card. The sync loop catches this and leaves them intact.
+      throw new SourceSkippedError("Smithsonian", ENV_KEY);
     }
     const url = `${API_BASE}?q=${encodeURIComponent(QUERY)}&rows=${limit}&api_key=${encodeURIComponent(key)}`;
     const response = await fetchWithTimeout(url, fetchImpl, "Smithsonian search request");

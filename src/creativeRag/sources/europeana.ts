@@ -19,6 +19,7 @@
 
 import { classifyRijksLicense, shouldStoreBinary } from "../licensePolicy.js";
 import type { CreativeRagLicense, RawSourceItem, Source } from "../types.js";
+import { SourceSkippedError } from "./errors.js";
 import { fetchWithTimeout } from "./http.js";
 
 const NAME = "europeana";
@@ -96,8 +97,10 @@ export const europeanaSource: Source = {
   ): Promise<RawSourceItem[]> {
     const key = process.env[KEY_ENV];
     if (!key) {
-      console.warn(`Europeana source skipped: set ${KEY_ENV}`);
-      return [];
+      // Throw (not return []): a missing key is a SKIPPED source, not a successful
+      // empty sync — see SourceSkippedError. Returning [] would let service.sync
+      // tombstone every existing Europeana card.
+      throw new SourceSkippedError("Europeana", KEY_ENV);
     }
 
     const url =
