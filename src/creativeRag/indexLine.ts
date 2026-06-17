@@ -64,6 +64,7 @@ export function isEmbeddedCard(value: unknown): value is EmbeddedCard {
     typeof card.sourceUrl === "string" &&
     typeof card.sourceName === "string" &&
     Array.isArray(card.tags) &&
-    card.tags.every((tag) => typeof tag === "string")
+    card.tags.every((tag) => typeof tag === "string") &&
+    (card.rightsNotes === undefined || typeof card.rightsNotes === "string")
   );
 }

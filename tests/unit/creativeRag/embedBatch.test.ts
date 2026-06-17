@@ -11,6 +11,11 @@ describe("chunk", () => {
     expect(chunk([1, 2, 3], -4)).toEqual([[1, 2, 3]]);
   });
 
+  it("returns a single chunk for NaN or fractional size (never drops items)", () => {
+    expect(chunk([1, 2, 3], Number.NaN)).toEqual([[1, 2, 3]]);
+    expect(chunk([1, 2, 3], 1.5)).toEqual([[1, 2, 3]]);
+  });
+
   it("returns [] for an empty input", () => {
     expect(chunk([], 2)).toEqual([]);
     expect(chunk([], 0)).toEqual([]);

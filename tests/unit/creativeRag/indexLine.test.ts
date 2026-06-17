@@ -78,5 +78,10 @@ describe("indexLine", () => {
       expect(isEmbeddedCard(makeCard({ id: "a" }))).toBe(true);
       expect(isEmbeddedCard({ id: "partial" })).toBe(false);
     });
+
+    it("rejects a card whose optional rightsNotes is the wrong type", () => {
+      expect(isEmbeddedCard({ ...makeCard({ id: "a" }), rightsNotes: 42 })).toBe(false);
+      expect(isEmbeddedCard({ ...makeCard({ id: "a" }), rightsNotes: "CC0" })).toBe(true);
+    });
   });
 });

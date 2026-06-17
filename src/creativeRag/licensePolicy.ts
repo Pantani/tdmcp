@@ -71,9 +71,9 @@ export function classifyRijksLicense(rights?: string): CreativeRagLicense {
   return "Unknown";
 }
 
-/** Smithsonian: media `usage.access` "CC0" ⇒ CC0, else Unknown. */
+/** Smithsonian: media `usage.access` "CC0" ⇒ CC0, else Unknown (case/space-insensitive). */
 export function classifySmithsonianLicense(access?: string): CreativeRagLicense {
-  return access === "CC0" ? "CC0" : "Unknown";
+  return access?.trim().toLowerCase() === "cc0" ? "CC0" : "Unknown";
 }
 
 /**

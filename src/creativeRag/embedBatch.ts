@@ -1,9 +1,11 @@
-/** Split into fixed-size chunks preserving order. size<=0 ⇒ one chunk. */
+/** Split into fixed-size chunks preserving order. A non-positive / non-integer / NaN size ⇒ one chunk. */
 export function chunk<T>(items: T[], size: number): T[][] {
   if (items.length === 0) {
     return [];
   }
-  if (size <= 0) {
+  // Only a positive integer is a valid step. NaN or a fraction would otherwise
+  // produce empty slices and silently drop items, so fall back to a single chunk.
+  if (!Number.isInteger(size) || size <= 0) {
     return [items.slice()];
   }
   const chunks: T[][] = [];

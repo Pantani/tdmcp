@@ -5,8 +5,9 @@
  *
  * Single-call search endpoint. The API key is read from
  * `process.env.TDMCP_RAG_EUROPEANA_KEY` INSIDE `fetchItems`: if it is absent or
- * empty the adapter logs one clear line and returns `[]` (no-op, the sync over
- * other sources still succeeds). The key value is NEVER logged.
+ * empty the adapter throws `SourceSkippedError` so the sync treats this source as
+ * skipped (NOT an empty success) and never tombstones its existing cards. The
+ * key value is NEVER logged.
  *
  * License signal is the per-item `rights[0]` CC/RS URI (e.g.
  * `http://creativecommons.org/publicdomain/zero/1.0/`), classified by the

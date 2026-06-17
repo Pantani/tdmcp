@@ -43,7 +43,8 @@ or executes Python.** It is a CLI subcommand plus a **read-only** MCP resource.
 There is **no MCP tool** that triggers any physical or in-TD action from a
 search result. The only outbound network calls are:
 
-1. the four museum HTTP APIs, during an explicit `creative-rag sync`; and
+1. the upstream source HTTP APIs (the live museum/archive sources), during an
+   explicit `creative-rag sync`; and
 2. the local Ollama embeddings endpoint, during `creative-rag index` **and**
    `creative-rag search` (the query is embedded before ranking).
 
@@ -111,8 +112,11 @@ there is no runtime prompt or override:
 
 ## Configuration
 
-All keys are opt-in and parsed/validated in `src/utils/config.ts` (Zod). Env
-vars follow the existing `TDMCP_*` convention.
+Config-backed env vars are opt-in and parsed/validated in `src/utils/config.ts`
+(Zod). The Smithsonian and Europeana API keys are the exception: they are read
+directly from the environment by their source adapters (never threaded through
+`CreativeRagConfig`), so they are validated/redacted at the config layer for
+logging but consumed in-source. Env vars follow the existing `TDMCP_*` convention.
 
 | Env var | Config key | Default | Notes |
 |---------|-----------|---------|-------|

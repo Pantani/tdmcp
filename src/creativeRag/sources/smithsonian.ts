@@ -2,9 +2,10 @@
  * Smithsonian Open Access source adapter (key-gated).
  *
  * Single-call search endpoint. Requires `TDMCP_RAG_SMITHSONIAN_KEY` in the
- * environment, read inside `fetchItems`; absent/empty ⇒ one clear log line and a
- * no-op `[]` (so a `sync` over all sources still succeeds). The key is never
- * logged. License via `online_media.media[0].usage.access` ("CC0" ⇒ CC0); the
+ * environment, read inside `fetchItems`; absent/empty ⇒ throws `SourceSkippedError`
+ * so the sync treats this source as skipped (NOT an empty success) and never
+ * tombstones its existing cards. The key is never logged. License via
+ * `online_media.media[0].usage.access` ("CC0" ⇒ CC0); the
  * `imageUrl` is only set when the policy would allow storing it. A single
  * malformed item is skipped, never fatal.
  */

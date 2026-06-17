@@ -4,6 +4,7 @@ import {
   classifyClevelandLicense,
   classifyMetLicense,
   classifyRijksLicense,
+  classifySmithsonianLicense,
   shouldStoreBinary,
 } from "../../../src/creativeRag/licensePolicy.js";
 
@@ -90,5 +91,19 @@ describe("classifyRijksLicense", () => {
     expect(classifyRijksLicense("")).toBe("Unknown");
     expect(classifyRijksLicense("   ")).toBe("Unknown");
     expect(classifyRijksLicense("All rights reserved")).toBe("Unknown");
+  });
+});
+
+describe("classifySmithsonianLicense", () => {
+  it("maps CC0 to CC0, case- and whitespace-insensitively", () => {
+    expect(classifySmithsonianLicense("CC0")).toBe("CC0");
+    expect(classifySmithsonianLicense("cc0")).toBe("CC0");
+    expect(classifySmithsonianLicense("  CC0 ")).toBe("CC0");
+  });
+
+  it("maps anything else (or undefined) to Unknown", () => {
+    expect(classifySmithsonianLicense(undefined)).toBe("Unknown");
+    expect(classifySmithsonianLicense("")).toBe("Unknown");
+    expect(classifySmithsonianLicense("CC-BY")).toBe("Unknown");
   });
 });

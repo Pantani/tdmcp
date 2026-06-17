@@ -163,10 +163,25 @@ export class LanceIndexStore implements IndexStore {
       return;
     }
     const table = await db.openTable(this.tableName);
-    for (const id of byId.keys()) {
-      await table.delete(idPredicate(id));
+    // Lance has no native upsert/transaction, so a re-embed is delete-then-add.
+    // If `add` throws after the deletes land, the replaced ids are momentarily
+    // missing. We fail loudly with recovery guidance rather than swallow it: the
+    // on-disk cards are the source of truth and a re-run of `index` re-adds them
+    // (the embed cache means only the missing rows are recomputed). Brand-new ids
+    // are unaffected (their delete is a no-op).
+    try {
+      for (const id of byId.keys()) {
+        await table.delete(idPredicate(id));
+      }
+      await table.add(rows);
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      throw new Error(
+        `LanceDB upsert failed after removing ${byId.size} row(s); the index may be ` +
+          `partially updated. Re-run 'creative-rag index' to restore it (it re-adds ` +
+          `only the missing rows). Cause: ${reason}`,
+      );
     }
-    await table.add(rows);
   }
 
   async remove(ids: string[]): Promise<void> {
