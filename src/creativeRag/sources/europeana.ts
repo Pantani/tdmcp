@@ -1,5 +1,3 @@
-// UNVERIFIED: field map from docs only — clear with 1 real keyed sync (see QA step 5).
-
 /**
  * Europeana Search API source adapter (key-gated).
  *
@@ -14,8 +12,10 @@
  * existing `classifyRijksLicense` (it already maps CC/RS URIs). `imageUrl`
  * (`edmPreview[0]`) is only set when the policy would allow storing it.
  *
- * The field map below is from Europeana docs only and has NOT been verified
- * against a live keyed response — QA step 5 (one real keyed sync) clears it.
+ * The `guid` Europeana returns has the wskey appended as `?utm_campaign=<key>`;
+ * {@link canonicalizeGuid} strips the query string so the persisted `sourceUrl`
+ * (and the `id = sha256(sourceUrl)`) never embed the API key and stay stable
+ * across different keys. Field map verified against a live keyed sync.
  */
 
 import { classifyRijksLicense, shouldStoreBinary } from "../licensePolicy.js";
@@ -58,12 +58,29 @@ function parseYear(values?: string[]): number | undefined {
   return Number.isNaN(year) ? undefined : year;
 }
 
+/**
+ * Strip the query string from a Europeana `guid`. Europeana appends the caller's
+ * wskey as `?utm_source=api&utm_medium=api&utm_campaign=<key>`, so the raw guid
+ * leaks the API key into the persisted `sourceUrl`/`id`. Keeping only origin+path
+ * yields the stable canonical item URL, key-free and identical across keys.
+ */
+function canonicalizeGuid(guid: string): string {
+  try {
+    const url = new URL(guid);
+    return `${url.origin}${url.pathname}`;
+  } catch {
+    const queryStart = guid.indexOf("?");
+    return queryStart === -1 ? guid : guid.slice(0, queryStart);
+  }
+}
+
 function buildItem(raw: EuropeanaItem, allowlist: CreativeRagLicense[]): RawSourceItem {
-  const sourceUrl = raw.guid;
   const title = firstString(raw.title);
-  if (!sourceUrl || !title) {
+  if (!raw.guid || !title) {
     throw new Error("Europeana item missing guid/title");
   }
+  // Drop the query string so the persisted sourceUrl/id never carries the wskey.
+  const sourceUrl = canonicalizeGuid(raw.guid);
   const rightsUri = firstString(raw.rights);
   const license = classifyRijksLicense(rightsUri);
 

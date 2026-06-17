@@ -76,7 +76,7 @@ over all sources still succeeds), and the key value is **never** logged.
 |--------|----------|---------|-----------------|-------|
 | Smithsonian Open Access | `https://api.si.edu/openaccess/api/v1.0/search` | `TDMCP_RAG_SMITHSONIAN_KEY` | `media.usage.access == "CC0"` ⇒ `CC0`, else `Unknown` | Single-call search (`q="online_media_type:\"Images\" AND media_usage:CC0"`). Verified live. |
 | Wikimedia Commons | `https://commons.wikimedia.org/w/api.php` | _(keyless)_ | `extmetadata.License` code: `cc0`⇒`CC0`; `pd`/`public`⇒`PublicDomain`; `cc-by-sa*`⇒`CC-BY-SA`; `cc-by*`⇒`CC-BY`; else `Unknown` | Single call via `generator=categorymembers` over `Category:CC-Zero` + `imageinfo`. Verified live. |
-| Europeana | `https://api.europeana.eu/record/v2/search.json` | `TDMCP_RAG_EUROPEANA_KEY` | per-item `rights[0]` CC/RS URI, classified by the shared Rijksmuseum CC/RS classifier | **UNVERIFIED** — field map is from docs only; clears once QA runs one real keyed `sync --source europeana`. |
+| Europeana | `https://api.europeana.eu/record/v2/search.json` | `TDMCP_RAG_EUROPEANA_KEY` | per-item `rights[0]` CC/RS URI, classified by the shared Rijksmuseum CC/RS classifier | Verified against a live keyed sync. The `guid` carries the wskey in its query string — it is stripped so the persisted `sourceUrl`/`id` never embed the key. |
 
 ## Planned sources (stubs)
 
@@ -253,8 +253,8 @@ unaffected.
   default install; falls back to JSONL when absent) — see the LanceDB backend
   section above.
 - **Seven live sources.** Four keyless museum APIs plus Smithsonian, Wikimedia
-  Commons, and Europeana (the latter UNVERIFIED until a real keyed sync). Six
-  more remain planned stubs (above).
+  Commons, and Europeana (all verified against a real sync). Six more remain
+  planned stubs (above).
 - **Bounded sync.** Not a full mirror; a per-run item cap.
 - **English-leaning embeddings.** `nomic-embed-text` is the default; multilingual
   models are a config swap, not redesigned here.

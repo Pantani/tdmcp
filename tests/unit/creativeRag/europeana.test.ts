@@ -11,7 +11,8 @@ const EUROPEANA_RESPONSE = {
     {
       title: ["X"],
       dcCreator: ["Artist"],
-      guid: "https://www.europeana.eu/item/0/abc",
+      // Europeana appends the caller's wskey to the guid — the adapter must strip it.
+      guid: "https://www.europeana.eu/item/0/abc?utm_source=api&utm_medium=api&utm_campaign=test-key",
       rights: ["http://creativecommons.org/publicdomain/zero/1.0/"],
       edmPreview: ["https://example.org/thumb.jpg"],
       year: ["1888"],
@@ -54,7 +55,9 @@ describe("europeanaSource", () => {
     expect(open?.license).toBe("CC0");
     expect(open?.artist).toBe("Artist");
     expect(open?.year).toBe(1888);
+    // guid query string (carrying the wskey) is stripped → canonical, key-free sourceUrl.
     expect(open?.sourceUrl).toBe("https://www.europeana.eu/item/0/abc");
+    expect(open?.sourceUrl).not.toContain("test-key");
     expect(open?.imageUrl).toBe("https://example.org/thumb.jpg");
     expect(open?.rightsNotes).toBe("http://creativecommons.org/publicdomain/zero/1.0/");
 

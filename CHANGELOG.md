@@ -25,9 +25,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Creative RAG — three new live sources.** Smithsonian Open Access
   (key-gated via `TDMCP_RAG_SMITHSONIAN_KEY`; `media.usage.access:"CC0"` ⇒ CC0),
   Wikimedia Commons (keyless; machine-readable `extmetadata.License` mapping),
-  and Europeana (key-gated via `TDMCP_RAG_EUROPEANA_KEY`, **UNVERIFIED** field
-  map pending one real keyed sync). Key-gated sources read their key in-source
-  from the environment, never log it, and no-op cleanly when the key is unset.
+  and Europeana (key-gated via `TDMCP_RAG_EUROPEANA_KEY`; per-item `rights` CC/RS
+  URI → license; the wskey appended to each `guid` is stripped so it never lands
+  in the persisted `sourceUrl`/`id`). All three verified against a real sync.
+  Key-gated sources read their key in-source from the environment, never log it,
+  and skip cleanly (no tombstoning) when the key is unset.
 - **Creative RAG — embedding batching.** `TDMCP_RAG_EMBED_BATCH` (default 64,
   range 1–512) splits the embed set into batches per Ollama `POST /api/embed`;
   the one-vector-per-input cardinality guard fires per batch.
