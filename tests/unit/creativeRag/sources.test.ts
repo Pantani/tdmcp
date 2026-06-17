@@ -320,8 +320,8 @@ describe("resolveSources", () => {
 });
 
 describe("PLANNED_SOURCE_STUBS", () => {
-  it("has 9 entries each with a non-empty reason and planned status", () => {
-    expect(PLANNED_SOURCE_STUBS).toHaveLength(9);
+  it("has 6 entries each with a non-empty reason and planned status", () => {
+    expect(PLANNED_SOURCE_STUBS).toHaveLength(6);
     for (const stub of PLANNED_SOURCE_STUBS) {
       expect(stub.status).toBe("planned");
       expect(stub.name.length).toBeGreaterThan(0);

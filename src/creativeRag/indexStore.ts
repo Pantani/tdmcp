@@ -14,6 +14,7 @@
 import { readFileSync } from "node:fs";
 import { atomicWriteFileSync } from "../utils/atomicWrite.js";
 import { cosineSimilarity } from "./cosine.js";
+import { parseIndexLine, serializeIndexLine } from "./indexLine.js";
 import type { EmbeddedCard, IndexStore, SearchFilters, SearchResult } from "./types.js";
 
 export interface JsonlIndexStoreOptions {
@@ -37,7 +38,7 @@ export class JsonlIndexStore implements IndexStore {
       byId.set(card.id, card);
     }
     const body = `${Array.from(byId.values())
-      .map((card) => JSON.stringify(card))
+      .map((card) => serializeIndexLine(card))
       .join("\n")}\n`;
     atomicWriteFileSync(this.filePath, body, "utf8");
   }
@@ -49,7 +50,7 @@ export class JsonlIndexStore implements IndexStore {
     const drop = new Set(ids);
     const kept = (await this.loadAll()).filter((card) => !drop.has(card.id));
     const body =
-      kept.length === 0 ? "" : `${kept.map((card) => JSON.stringify(card)).join("\n")}\n`;
+      kept.length === 0 ? "" : `${kept.map((card) => serializeIndexLine(card)).join("\n")}\n`;
     atomicWriteFileSync(this.filePath, body, "utf8");
   }
 
@@ -64,7 +65,7 @@ export class JsonlIndexStore implements IndexStore {
       if (trimmed.length === 0) {
         continue;
       }
-      const card = parseLine(trimmed);
+      const card = parseIndexLine(trimmed);
       if (card !== undefined) {
         cards.push(card);
       }
@@ -110,41 +111,6 @@ export class JsonlIndexStore implements IndexStore {
       throw err;
     }
   }
-}
-
-function parseLine(line: string): EmbeddedCard | undefined {
-  try {
-    const parsed = JSON.parse(line) as unknown;
-    if (!isEmbeddedCard(parsed)) {
-      return undefined;
-    }
-    return parsed;
-  } catch {
-    // Malformed JSON line — skip defensively.
-    return undefined;
-  }
-}
-
-function isEmbeddedCard(value: unknown): value is EmbeddedCard {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-  const card = value as Record<string, unknown>;
-  return (
-    typeof card.id === "string" &&
-    typeof card.contentHash === "string" &&
-    typeof card.embeddingModel === "string" &&
-    Array.isArray(card.embedding) &&
-    card.embedding.length > 0 &&
-    card.embedding.every((n) => typeof n === "number" && Number.isFinite(n)) &&
-    typeof card.title === "string" &&
-    typeof card.type === "string" &&
-    typeof card.license === "string" &&
-    typeof card.sourceUrl === "string" &&
-    typeof card.sourceName === "string" &&
-    Array.isArray(card.tags) &&
-    card.tags.every((tag) => typeof tag === "string")
-  );
 }
 
 function matchesFilters(card: EmbeddedCard, filters?: SearchFilters): boolean {

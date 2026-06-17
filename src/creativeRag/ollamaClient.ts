@@ -9,6 +9,7 @@
  */
 
 import { z } from "zod";
+import { embedInBatches } from "./embedBatch.js";
 import { OllamaApiError, OllamaConnectionError, OllamaTimeoutError } from "./ollamaErrors.js";
 import type { OllamaEmbeddingsClient as OllamaEmbeddingsClientContract } from "./types.js";
 
@@ -17,9 +18,12 @@ export interface OllamaClientOptions {
   /** Embeddings can be slower than TD calls; default 30000ms. */
   timeoutMs?: number;
   fetchImpl?: typeof fetch;
+  /** Inputs sent per POST /api/embed; larger inputs are split into batches. Default 64. */
+  batchSize?: number;
 }
 
 const DEFAULT_TIMEOUT_MS = 30_000;
+const DEFAULT_BATCH_SIZE = 64;
 
 /** Current `/api/embed` shape: a batch of vectors. */
 const EmbedBatchSchema = z.object({
@@ -37,15 +41,26 @@ export class OllamaEmbeddingsClient implements OllamaEmbeddingsClientContract {
   private readonly baseUrl: string;
   private readonly timeoutMs: number;
   private readonly fetchImpl: typeof fetch;
+  private readonly batchSize: number;
 
   constructor(options: OllamaClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/+$/, "");
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     this.fetchImpl = options.fetchImpl ?? fetch;
+    this.batchSize = options.batchSize ?? DEFAULT_BATCH_SIZE;
   }
 
-  /** POST /api/embed. Returns one vector per input, in order. */
+  /**
+   * POST /api/embed, batched. Returns one vector per input, in order. Splits
+   * `inputs` into `batchSize` chunks; the per-input cardinality guard fires per
+   * chunk. Empty input ⇒ `[]` with zero requests.
+   */
   async embed(inputs: string[], model: string): Promise<number[][]> {
+    return embedInBatches(inputs, this.batchSize, (part) => this.embedChunk(part, model));
+  }
+
+  /** Single POST /api/embed for one chunk; enforces one vector per input. */
+  private async embedChunk(inputs: string[], model: string): Promise<number[][]> {
     const url = `${this.baseUrl}/api/embed`;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);

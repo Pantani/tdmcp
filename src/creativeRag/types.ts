@@ -183,4 +183,8 @@ export interface CreativeRagConfig {
   ollamaUrl: string;
   embedModel: string;
   licenseAllowlist: CreativeRagLicense[];
+  /** Inputs per Ollama embed POST (batched). Default 64. */
+  embedBatch: number;
+  /** Index backend: in-memory JSONL (default) or LanceDB (optional dep). */
+  backend: "jsonl" | "lancedb";
 }

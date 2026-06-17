@@ -1,7 +1,7 @@
 /**
  * Creative RAG — planned source stubs.
  *
- * Nine further sources are scoped but NOT implemented in the MVP. They ship as
+ * Six further sources are scoped but NOT implemented. They ship as
  * documented stubs (`status: "planned"` + an explicit reason) so the build team
  * and users know why each is deferred. None are wired into `sync`. The list
  * mirrors the "Planned sources (stubs)" table in `docs/CREATIVE_RAG.md`.
@@ -10,25 +10,6 @@
 import type { PlannedSourceStub } from "../types.js";
 
 export const PLANNED_SOURCE_STUBS: PlannedSourceStub[] = [
-  {
-    name: "europeana",
-    displayName: "Europeana",
-    status: "planned",
-    reason: "Requires an API key (auth) and per-provider rights vary widely (ambiguous license).",
-  },
-  {
-    name: "wikimedia",
-    displayName: "Wikimedia Commons / Wikidata",
-    status: "planned",
-    reason:
-      "Licenses are per-file and mixed (CC-BY-SA, CC0, fair-use); needs robust per-asset rights parsing before binaries can be trusted.",
-  },
-  {
-    name: "smithsonian",
-    displayName: "Smithsonian Open Access",
-    status: "planned",
-    reason: "Requires an API key (auth).",
-  },
   {
     name: "harvard",
     displayName: "Harvard Art Museums",

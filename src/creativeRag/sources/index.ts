@@ -8,10 +8,21 @@
 import type { Source } from "../types.js";
 import { articSource } from "./artic.js";
 import { clevelandSource } from "./cleveland.js";
+import { europeanaSource } from "./europeana.js";
 import { metSource } from "./met.js";
 import { rijksmuseumSource } from "./rijksmuseum.js";
+import { smithsonianSource } from "./smithsonian.js";
+import { wikimediaSource } from "./wikimedia.js";
 
-export const LIVE_SOURCES: Source[] = [articSource, rijksmuseumSource, metSource, clevelandSource];
+export const LIVE_SOURCES: Source[] = [
+  articSource,
+  rijksmuseumSource,
+  metSource,
+  clevelandSource,
+  smithsonianSource,
+  wikimediaSource,
+  europeanaSource,
+];
 
 /**
  * Resolve the live sources to use for a run. With no names, all live sources are
@@ -34,4 +45,12 @@ export function resolveSources(names?: string[]): Source[] {
 }
 
 export { PLANNED_SOURCE_STUBS } from "./plannedStubs.js";
-export { articSource, clevelandSource, metSource, rijksmuseumSource };
+export {
+  articSource,
+  clevelandSource,
+  europeanaSource,
+  metSource,
+  rijksmuseumSource,
+  smithsonianSource,
+  wikimediaSource,
+};

@@ -80,17 +80,21 @@ session we validated manually:
   parser, optional Telegram long polling and optional TouchDesigner preview
   network. It remains simulation-first; real venue hardware still needs a
   separate adapter, fixture map, emergency-stop path and venue validation.
-- 🧪 **Creative RAG MVP (opt-in, experimental — shipped on `main`, PR #75 /
-  commit `0956eea`).** A local-only creative repertoire of open-licensed
-  artworks/artists/techniques: `tdmcp creative-rag {sync|index|search}` plus
-  read-only `tdmcp://creative/cards/{id}` and `tdmcp://creative/search` MCP
-  resources. Off by default (`TDMCP_RAG_ENABLED=0`); four live museum sources
-  (Art Institute of Chicago, The Met, Rijksmuseum, Cleveland Museum of Art),
-  in-memory cosine over a local JSONL index, embeddings via local Ollama
-  (`nomic-embed-text` default). **Repertoire, not policy** — no bridge, DMX,
-  or Python exec. Nine further sources ship only as documented stubs and are
-  not wired into `sync`. Follow-ups tracked under
-  [Planned — Creative RAG follow-ups](#planned-creative-rag) below. Guide:
+- 🧪 **Creative RAG (opt-in, experimental).** A local-only creative
+  repertoire of open-licensed artworks/artists/techniques: `tdmcp creative-rag
+  {sync|index|search}` plus read-only `tdmcp://creative/cards/{id}` and
+  `tdmcp://creative/search` MCP resources. Off by default (`TDMCP_RAG_ENABLED=0`);
+  **seven live sources** — four keyless museum APIs (Art Institute of Chicago,
+  The Met, Rijksmuseum, Cleveland Museum of Art) plus ✅ **Smithsonian Open
+  Access** (key-gated), ✅ **Wikimedia Commons** (keyless), and 🧪 **Europeana**
+  (key-gated, field map UNVERIFIED until a real keyed sync) — in-memory cosine
+  over a local JSONL index, embeddings via local Ollama. **Repertório, não
+  policy** — no bridge, DMX, or Python exec. Shipped follow-ups: ✅ embedding
+  batching (`TDMCP_RAG_EMBED_BATCH`), ✅ content-type-aware binary extensions,
+  ✅ versioned/migration-tolerant index lines, and 🧪 an experimental
+  `TDMCP_RAG_BACKEND=lancedb` vector store (optional `@lancedb/lancedb` dep,
+  falls back to JSONL when absent). Remaining stub sources: Harvard, Cooper
+  Hewitt, Internet Archive, WikiArt, portfolios, Shadertoy. See
   [Creative RAG](./CREATIVE_RAG).
 
 ### Wave 12 — v0.8.3 (live-show resilience + LLM token budget + CLI ergonomics) {#wave-12-v0-8-3}
@@ -614,6 +618,33 @@ Planned because it needs future code changes, but it is **not shipped** and
 **not a live hardware claim**. The exhaustive, item-by-item backlog lives in the
 [planning archive](#full-backlog).
 
+### Creative RAG follow-ups (post-#76) {#planned-creative-rag}
+
+The Creative RAG MVP (#75) and the post-MVP robustness wave (#76 — embedding
+batching, `indexVersion` migration, Content-Type binary extension, Smithsonian
++ Wikimedia Commons + Europeana sources, optional `TDMCP_RAG_BACKEND=lancedb`)
+are **Shipped** above. The remaining follow-ups are tracked here:
+
+- **[P2 product]** `SourceSkippedError` — distinguish "no key" from "empty
+  source" so a misconfigured key-gated source never tombstones real cards.
+- **[P2 product]** Configurable multilingual embedding model (e.g. `bge-m3`)
+  with a CI smoke that swaps the model.
+- **[P2 product]** `canonicalizeGuid` regression test pinning the rule that
+  source URLs / ids never embed an API key (the lesson from the Europeana
+  `wskey` strip).
+- **[P3 integration]** Optional RAG context injection in `tdmcp ask` (flag-
+  gated; must not change tool tiers or confirmation gates).
+- **[P3 integration]** MCP prompt `creative-inspiration` returning a curated
+  mood-board payload (search + a handful of `tdmcp://creative/cards/*` URIs).
+- **[P3 integration]** Opt-in MCP tool `apply_creative_card` that routes a
+  card's `tdmcpAffordances` to the right Layer 1/2 tool — closes the
+  inspiration → execution loop without expanding the default tool surface.
+- **[P3 ops]** `tdmcp doctor` coverage for RAG: Ollama reachable, embedding
+  model pulled, `TDMCP_RAG_DATA_DIR` writable; surfaced in `--json` output.
+- **[P3 ops]** Mandatory probe-live step for every new source PR (lesson from
+  the Europeana key-leak and Rijksmuseum shape drift — mock-only tests missed
+  both).
+
 ### Milestone 3 — Round-4 quick-win wave · v0.8.x / v0.9.x {#milestone-3}
 
 Pulled forward from [Round 4](#appendix-d-round4) — every item is S-effort,
@@ -677,37 +708,6 @@ define the first safe slice.
 | Dry-run mixer adapter | Adapter interface and dry-run backend that consumes approved mixer-scene plans and returns `hardware_changed:false`. | ⬜ Planned | No Soundcraft, Companion, Node or TouchDesigner hardware client may be constructed in this slice. |
 | Companion live backend spike | Bitfocus Companion backend for one bench-validated Ui24R scene mapped to one preconfigured button. | ⬜ Planned | Isolated bench validation required; `sent`/`acknowledged`/`confirmed` must be separate audit states. |
 | Direct Node bridge research | Protocol proof for show/snapshot/cue recall against the target Ui24R firmware. | ⬜ Planned | No raw commands; no gain/mute/routing/channel operations; fixture tests before any live backend. |
-
-### Creative RAG follow-ups {#planned-creative-rag}
-
-Planned extensions to the shipped Creative RAG MVP (see
-[Current Release Line](#current-release-line) and the
-[Creative RAG guide](./CREATIVE_RAG)). All are deliberately scoped — the MVP
-boundary (local-only, no bridge / DMX / Python exec, read-only resources)
-holds across every item below.
-
-- ⬜ **[P1 product]** Embedding batching (`TDMCP_RAG_EMBED_BATCH`, default 64).
-- ⬜ **[P1 product]** `indexVersion` in JSONL wrapper with migration (don't
-  discard).
-- ⬜ **[P1 product]** Binary extension by Content-Type (don't hardcode
-  `.jpg`).
-- ⬜ **[P1 product]** New keyless sources: Wikimedia Commons.
-- ⬜ **[P2 product]** Key-gated sources with `process.env` redaction:
-  Smithsonian, Europeana (regression test for `canonicalizeGuid` key-leak).
-- ⬜ **[P2 product]** `SourceSkippedError` — distinguish "no key" vs "empty
-  source" so real cards aren't tombstoned.
-- ⬜ **[P2 product]** LanceDB backend opt-in (`TDMCP_RAG_BACKEND=lancedb`),
-  optional peerDependency, JSONL fallback.
-- ⬜ **[P2 product]** Configurable multilingual embedding model (bge-m3).
-- ⬜ **[P3 integration]** Optional RAG context injection in `tdmcp ask`.
-- ⬜ **[P3 integration]** MCP prompt `creative-inspiration` returning mood
-  board.
-- ⬜ **[P3 integration]** Opt-in tool `apply_creative_card` routing to card's
-  `tdmcpAffordances`.
-- ⬜ **[P3 ops]** `tdmcp doctor` covering RAG (Ollama up, model pulled, dir
-  writable).
-- ⬜ **[P3 ops]** Mandatory probe-live for each new source (Rijksmuseum +
-  Europeana lesson).
 
 ### What's left for 1.0
 

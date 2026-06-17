@@ -16,6 +16,8 @@ function enabledConfig(overrides: Partial<CreativeRagConfig> = {}): CreativeRagC
     ollamaUrl: "http://127.0.0.1:11434",
     embedModel: "nomic-embed-text",
     licenseAllowlist: ["CC0", "PublicDomain"],
+    embedBatch: 64,
+    backend: "jsonl",
     ...overrides,
   };
 }
@@ -150,6 +152,8 @@ describe("toCreativeRagConfig", () => {
       ragOllamaUrl: "http://127.0.0.1:11434",
       ragEmbedModel: "nomic-embed-text",
       ragLicenseAllowlist: ["CC0", "PublicDomain", "Bogus"],
+      ragEmbedBatch: 64,
+      ragBackend: "jsonl",
     });
     expect(mapped).toEqual({
       enabled: true,
@@ -157,6 +161,8 @@ describe("toCreativeRagConfig", () => {
       ollamaUrl: "http://127.0.0.1:11434",
       embedModel: "nomic-embed-text",
       licenseAllowlist: ["CC0", "PublicDomain"],
+      embedBatch: 64,
+      backend: "jsonl",
     });
   });
 });
