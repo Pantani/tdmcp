@@ -120,6 +120,9 @@
     "yaml": "^2.9.0",
     "zod": "^4.4.3"
   },
+  "optionalDependencies": {
+    "@lancedb/lancedb": "^0.30.0"
+  },
   "devDependencies": {
     "@biomejs/biome": "^2.4.15",
     "@bottobot/td-mcp": "^2.8.0",

@@ -47,14 +47,23 @@ Commands:
   search <query>   Cosine search the local index.
 
 Flags:
-  --source <name>  Limit sync to one source (repeatable).
+  --source <name>  Limit sync to one source (repeatable). Live: artic, rijksmuseum,
+                   met, cleveland, smithsonian, wikimedia, europeana.
   --limit <n>      Max items per source on sync (default 10).
   --k <n>          Number of search results (default 10).
   --license <csv>  Filter search by license(s), e.g. CC0,PublicDomain.
   --type <csv>     Filter search by card type(s).
   --tags <csv>     Filter search to cards having ALL listed tags.
   --json           Emit machine-readable JSON.
-  -h, --help       Show this help.`;
+  -h, --help       Show this help.
+
+Environment:
+  TDMCP_RAG_SMITHSONIAN_KEY   API key for the Smithsonian source (else skipped).
+  TDMCP_RAG_EUROPEANA_KEY     API key for the Europeana source (else skipped).
+  TDMCP_RAG_EMBED_BATCH       Inputs per Ollama embed POST (default 64).
+  TDMCP_RAG_BACKEND           Index backend: jsonl (default) or lancedb
+                              (needs the optional '@lancedb/lancedb' dep;
+                              falls back to jsonl if absent).`;
 
 export interface RunCreativeRagCliDeps {
   service?: CreativeRagService;
@@ -69,6 +78,8 @@ interface StructurallyConfigLike {
   ragOllamaUrl: string;
   ragEmbedModel: string;
   ragLicenseAllowlist: string[];
+  ragEmbedBatch: number;
+  ragBackend: "jsonl" | "lancedb";
 }
 
 /**
@@ -85,6 +96,8 @@ export function toCreativeRagConfig(config: StructurallyConfigLike): CreativeRag
     licenseAllowlist: config.ragLicenseAllowlist.filter((value): value is CreativeRagLicense =>
       (VALID_LICENSES as string[]).includes(value),
     ),
+    embedBatch: config.ragEmbedBatch,
+    backend: config.ragBackend,
   };
 }
 

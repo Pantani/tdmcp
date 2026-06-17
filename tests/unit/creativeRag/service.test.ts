@@ -88,6 +88,8 @@ function makeConfig(): CreativeRagConfig {
     ollamaUrl: OLLAMA_BASE,
     embedModel: "nomic-embed-text",
     licenseAllowlist: ["CC0", "PublicDomain"],
+    embedBatch: 64,
+    backend: "jsonl",
   };
 }
 

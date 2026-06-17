@@ -80,16 +80,21 @@ session we validated manually:
   parser, optional Telegram long polling and optional TouchDesigner preview
   network. It remains simulation-first; real venue hardware still needs a
   separate adapter, fixture map, emergency-stop path and venue validation.
-- 🧪 **Creative RAG MVP (opt-in, experimental).** A local-only creative
+- 🧪 **Creative RAG (opt-in, experimental).** A local-only creative
   repertoire of open-licensed artworks/artists/techniques: `tdmcp creative-rag
   {sync|index|search}` plus read-only `tdmcp://creative/cards/{id}` and
   `tdmcp://creative/search` MCP resources. Off by default (`TDMCP_RAG_ENABLED=0`);
-  four confirmed museum sources (Art Institute of Chicago, The Met,
-  Rijksmuseum, Cleveland Museum of Art), in-memory cosine over a local JSONL
-  index, embeddings via local Ollama. **Repertório, não policy** — no bridge,
-  DMX, or Python exec. Follow-ups: a `TDMCP_RAG_BACKEND=lancedb` vector store
-  and the 9 documented stub sources (Europeana, Wikimedia/Wikidata, Smithsonian,
-  Harvard, Cooper Hewitt, Internet Archive, WikiArt, portfolios, Shadertoy). See
+  **seven live sources** — four keyless museum APIs (Art Institute of Chicago,
+  The Met, Rijksmuseum, Cleveland Museum of Art) plus ✅ **Smithsonian Open
+  Access** (key-gated), ✅ **Wikimedia Commons** (keyless), and 🧪 **Europeana**
+  (key-gated, field map UNVERIFIED until a real keyed sync) — in-memory cosine
+  over a local JSONL index, embeddings via local Ollama. **Repertório, não
+  policy** — no bridge, DMX, or Python exec. Shipped follow-ups: ✅ embedding
+  batching (`TDMCP_RAG_EMBED_BATCH`), ✅ content-type-aware binary extensions,
+  ✅ versioned/migration-tolerant index lines, and 🧪 an experimental
+  `TDMCP_RAG_BACKEND=lancedb` vector store (optional `@lancedb/lancedb` dep,
+  falls back to JSONL when absent). Remaining stub sources: Harvard, Cooper
+  Hewitt, Internet Archive, WikiArt, portfolios, Shadertoy. See
   [Creative RAG](./CREATIVE_RAG).
 
 ### Wave 12 — v0.8.3 (live-show resilience + LLM token budget + CLI ergonomics) {#wave-12-v0-8-3}

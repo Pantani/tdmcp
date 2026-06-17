@@ -65,17 +65,26 @@ Four open-data museum APIs, all keyless and license-aware per item:
 > per run via `--limit`) to keep the MVP fast and polite to the upstream APIs.
 > It is not a full mirror.
 
+### Live sources (post-MVP additions)
+
+Three further sources are now wired into `sync`. Two are key-gated: with **no**
+key set the adapter logs one clear skip line and returns nothing (so a `sync`
+over all sources still succeeds), and the key value is **never** logged.
+
+| Source | API base | Env key | License mapping | Notes |
+|--------|----------|---------|-----------------|-------|
+| Smithsonian Open Access | `https://api.si.edu/openaccess/api/v1.0/search` | `TDMCP_RAG_SMITHSONIAN_KEY` | `media.usage.access == "CC0"` ⇒ `CC0`, else `Unknown` | Single-call search (`q="online_media_type:\"Images\" AND media_usage:CC0"`). Verified live. |
+| Wikimedia Commons | `https://commons.wikimedia.org/w/api.php` | _(keyless)_ | `extmetadata.License` code: `cc0`⇒`CC0`; `pd`/`public`⇒`PublicDomain`; `cc-by-sa*`⇒`CC-BY-SA`; `cc-by*`⇒`CC-BY`; else `Unknown` | Single call via `generator=categorymembers` over `Category:CC-Zero` + `imageinfo`. Verified live. |
+| Europeana | `https://api.europeana.eu/record/v2/search.json` | `TDMCP_RAG_EUROPEANA_KEY` | per-item `rights[0]` CC/RS URI, classified by the shared Rijksmuseum CC/RS classifier | **UNVERIFIED** — field map is from docs only; clears once QA runs one real keyed `sync --source europeana`. |
+
 ## Planned sources (stubs)
 
-Nine further sources are scoped but **not** implemented in the MVP. They ship as
+Six further sources are scoped but **not** implemented. They ship as
 documented stubs with `status: "planned"` and an explicit reason, so the build
 team and users know *why* each is deferred. None are wired into `sync`.
 
 | Source | Reason deferred |
 |--------|-----------------|
-| Europeana | Requires an API key (auth) and per-provider rights vary widely (ambiguous license). |
-| Wikimedia Commons / Wikidata | Licenses are per-file and mixed (CC-BY-SA, CC0, fair-use); needs robust per-asset rights parsing before binaries can be trusted. |
-| Smithsonian Open Access | Requires an API key (auth). |
 | Harvard Art Museums | Requires an API key (auth). |
 | Cooper Hewitt | Requires an API key (auth). |
 | Internet Archive | Mixed/unclear licensing per item (ambiguous license); needs scraping of rights metadata. |
@@ -112,13 +121,32 @@ vars follow the existing `TDMCP_*` convention.
 | `TDMCP_RAG_OLLAMA_URL` | `ragOllamaUrl` | `http://127.0.0.1:11434` | Local embeddings endpoint. |
 | `TDMCP_RAG_EMBED_MODEL` | `ragEmbedModel` | `nomic-embed-text` | Must be pulled (`ollama pull nomic-embed-text`). |
 | `TDMCP_RAG_LICENSE_ALLOWLIST` | `ragLicenseAllowlist` | `CC0,PublicDomain` | CSV; licenses for which binaries may be stored. |
+| `TDMCP_RAG_EMBED_BATCH` | `ragEmbedBatch` | `64` | Inputs per Ollama embed POST. `index` splits the card set into batches of this size; the one-vector-per-input guard fires per batch. Range 1–512. |
+| `TDMCP_RAG_BACKEND` | `ragBackend` | `jsonl` | Index backend. `jsonl` is the in-memory full-load store. `lancedb` is an **experimental** scale path using the optional `@lancedb/lancedb` dependency. |
+| `TDMCP_RAG_SMITHSONIAN_KEY` | _(read in-source)_ | _(unset)_ | API key for the Smithsonian source. Read directly from the env by the adapter (never threaded through config or logged); unset ⇒ that source is skipped. |
+| `TDMCP_RAG_EUROPEANA_KEY` | _(read in-source)_ | _(unset)_ | API key for the Europeana source. Read directly from the env by the adapter (never threaded through config or logged); unset ⇒ that source is skipped. |
 
-A future `TDMCP_RAG_BACKEND=lancedb` is **out of MVP scope** (see Limits).
+### LanceDB backend (experimental, optional dependency)
+
+`TDMCP_RAG_BACKEND=lancedb` selects a LanceDB-backed index store instead of the
+default JSONL. It requires the **optional** dependency `@lancedb/lancedb`, which
+is declared under `optionalDependencies` and is therefore **not** pulled by a
+default `npm install`. To use it, install it explicitly:
+
+```bash
+npm install @lancedb/lancedb
+```
+
+If the optional dependency is **absent** (or its first table access fails), the
+store factory logs a clear warning and **falls back to the JSONL backend** — so
+a `lancedb` misconfiguration never breaks `sync`/`index`. Search scores are
+re-computed with cosine over the ANN candidate window so they are byte-for-byte
+comparable with the JSONL backend.
 
 ## CLI usage
 
 ```bash
-# 1. Pull cards from the four sources into TDMCP_RAG_DATA_DIR/cards/ as Markdown
+# 1. Pull cards from the live sources into TDMCP_RAG_DATA_DIR/cards/ as Markdown
 #    + YAML frontmatter. Honors the license policy (binaries only for allowlisted
 #    licenses; missing license => Unknown, no binary; 404 => tombstone).
 tdmcp creative-rag sync [--source artic --source rijksmuseum --source met] [--limit 10]
@@ -213,12 +241,16 @@ shape is also accepted). Failures raise typed
 `src/td-client/types.ts`); the CLI reports them cleanly and the server is
 unaffected.
 
-## Limits (MVP)
+## Limits
 
-- **No LanceDB / no native deps.** In-memory cosine over JSONL only. A
-  `TDMCP_RAG_BACKEND=lancedb` vector store is a documented follow-up, **out of
-  scope** here, to keep the default install free of heavy native dependencies.
-- **Four sources only.** The other nine are planned stubs (above).
+- **LanceDB is experimental and opt-in.** The default backend is in-memory
+  cosine over JSONL, with no native deps. `TDMCP_RAG_BACKEND=lancedb` enables the
+  LanceDB store via the **optional** `@lancedb/lancedb` dependency (not in the
+  default install; falls back to JSONL when absent) — see the LanceDB backend
+  section above.
+- **Seven live sources.** Four keyless museum APIs plus Smithsonian, Wikimedia
+  Commons, and Europeana (the latter UNVERIFIED until a real keyed sync). Six
+  more remain planned stubs (above).
 - **Bounded sync.** Not a full mirror; a per-run item cap.
 - **English-leaning embeddings.** `nomic-embed-text` is the default; multilingual
   models are a config swap, not redesigned here.

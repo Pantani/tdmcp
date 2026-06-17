@@ -1,0 +1,123 @@
+// UNVERIFIED: field map from docs only — clear with 1 real keyed sync (see QA step 5).
+
+/**
+ * Europeana Search API source adapter (key-gated).
+ *
+ * Single-call search endpoint. The API key is read from
+ * `process.env.TDMCP_RAG_EUROPEANA_KEY` INSIDE `fetchItems`: if it is absent or
+ * empty the adapter logs one clear line and returns `[]` (no-op, the sync over
+ * other sources still succeeds). The key value is NEVER logged.
+ *
+ * License signal is the per-item `rights[0]` CC/RS URI (e.g.
+ * `http://creativecommons.org/publicdomain/zero/1.0/`), classified by the
+ * existing `classifyRijksLicense` (it already maps CC/RS URIs). `imageUrl`
+ * (`edmPreview[0]`) is only set when the policy would allow storing it.
+ *
+ * The field map below is from Europeana docs only and has NOT been verified
+ * against a live keyed response — QA step 5 (one real keyed sync) clears it.
+ */
+
+import { classifyRijksLicense, shouldStoreBinary } from "../licensePolicy.js";
+import type { CreativeRagLicense, RawSourceItem, Source } from "../types.js";
+import { fetchWithTimeout } from "./http.js";
+
+const NAME = "europeana";
+const DISPLAY_NAME = "Europeana";
+const SOURCE_NAME = DISPLAY_NAME;
+const SEARCH_URL = "https://api.europeana.eu/record/v2/search.json";
+const QUERY = "*";
+const KEY_ENV = "TDMCP_RAG_EUROPEANA_KEY";
+
+/** Binaries are only retained for these licenses (mirrors the default allowlist). */
+const BINARY_ALLOWLIST: CreativeRagLicense[] = ["CC0", "PublicDomain"];
+
+interface EuropeanaItem {
+  title?: string[];
+  dcCreator?: string[];
+  guid?: string;
+  rights?: string[];
+  edmPreview?: string[];
+  year?: string[];
+}
+
+interface EuropeanaSearchResponse {
+  items?: EuropeanaItem[];
+}
+
+function firstString(values?: string[]): string | undefined {
+  const value = values?.[0];
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function parseYear(values?: string[]): number | undefined {
+  const raw = firstString(values);
+  if (raw === undefined) return undefined;
+  const year = Number.parseInt(raw, 10);
+  return Number.isNaN(year) ? undefined : year;
+}
+
+function buildItem(raw: EuropeanaItem, allowlist: CreativeRagLicense[]): RawSourceItem {
+  const sourceUrl = raw.guid;
+  const title = firstString(raw.title);
+  if (!sourceUrl || !title) {
+    throw new Error("Europeana item missing guid/title");
+  }
+  const rightsUri = firstString(raw.rights);
+  const license = classifyRijksLicense(rightsUri);
+
+  const item: RawSourceItem = {
+    sourceUrl,
+    sourceName: SOURCE_NAME,
+    title,
+    type: "artwork",
+    tags: [],
+    license,
+  };
+  const artist = firstString(raw.dcCreator);
+  if (artist) item.artist = artist;
+  const year = parseYear(raw.year);
+  if (year !== undefined) item.year = year;
+  if (rightsUri) item.rightsNotes = rightsUri;
+
+  const imageUrl = firstString(raw.edmPreview);
+  if (imageUrl && shouldStoreBinary(license, allowlist)) {
+    item.imageUrl = imageUrl;
+  }
+  return item;
+}
+
+export const europeanaSource: Source = {
+  name: NAME,
+  displayName: DISPLAY_NAME,
+  async fetchItems(
+    limit: number,
+    fetchImpl: typeof fetch = fetch,
+    licenseAllowlist: CreativeRagLicense[] = BINARY_ALLOWLIST,
+  ): Promise<RawSourceItem[]> {
+    const key = process.env[KEY_ENV];
+    if (!key) {
+      console.warn(`Europeana source skipped: set ${KEY_ENV}`);
+      return [];
+    }
+
+    const url =
+      `${SEARCH_URL}?wskey=${encodeURIComponent(key)}` +
+      `&query=${encodeURIComponent(QUERY)}&rows=${limit}&media=true&reusability=open`;
+    const response = await fetchWithTimeout(url, fetchImpl, "Europeana search request");
+    if (!response.ok) {
+      throw new Error(`Europeana search request failed: HTTP ${response.status}`);
+    }
+    const body = (await response.json()) as EuropeanaSearchResponse;
+    const data = Array.isArray(body.items) ? body.items : [];
+
+    const items: RawSourceItem[] = [];
+    for (const raw of data.slice(0, limit)) {
+      try {
+        items.push(buildItem(raw, licenseAllowlist));
+      } catch {
+        // Skip a single bad item — never abort the whole fetch.
+      }
+    }
+    return items;
+  },
+};

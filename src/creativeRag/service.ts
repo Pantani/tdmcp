@@ -4,7 +4,8 @@
  * Wires the source adapters (Builder D), the embeddings client (Builder B) and
  * the JSONL index store (Builder C) behind one {@link CreativeRagService}. It is
  * the only place that touches the local data dir: card Markdown files live under
- * `dataDir/cards/<id>.md`, allowlisted binaries under `dataDir/binaries/<id>.jpg`,
+ * `dataDir/cards/<id>.md`, allowlisted binaries under `dataDir/binaries/<id><ext>`
+ * (the extension comes from the download's Content-Type),
  * and the embedding index in `dataDir/index.jsonl`.
  *
  * Creative RAG is repertoire context only — this module never imports the TD
@@ -17,12 +18,13 @@ import { mkdirSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { atomicWriteFileSync } from "../utils/atomicWrite.js";
 import { type Logger, silentLogger } from "../utils/logger.js";
+import { extensionForContentType } from "./binaryExt.js";
 import { computeContentHash, computeId, parseCard, serializeCard } from "./cardParser.js";
-import { JsonlIndexStore } from "./indexStore.js";
 import { shouldStoreBinary } from "./licensePolicy.js";
 import { OllamaEmbeddingsClient } from "./ollamaClient.js";
 import { friendlyOllamaError } from "./ollamaErrors.js";
 import { resolveSources } from "./sources/index.js";
+import { createIndexStore } from "./storeFactory.js";
 import type {
   CreativeRagCard,
   CreativeRagConfig,
@@ -65,10 +67,22 @@ export function createCreativeRagService(deps: CreativeRagServiceDeps): Creative
     deps.embeddings ??
     new OllamaEmbeddingsClient({
       baseUrl: config.ollamaUrl,
+      batchSize: config.embedBatch,
       ...(deps.fetchImpl !== undefined ? { fetchImpl: deps.fetchImpl } : {}),
     });
-  const store =
-    deps.store ?? new JsonlIndexStore({ filePath: join(config.dataDir, "index.jsonl") });
+  // The store is resolved lazily (and at most once): the LanceDB backend's lazy
+  // import + table open is async and may fall back to JSONL. An injected store
+  // (tests) short-circuits the factory.
+  let storePromise: Promise<IndexStore> | undefined;
+  function getStore(): Promise<IndexStore> {
+    if (deps.store !== undefined) {
+      return Promise.resolve(deps.store);
+    }
+    if (storePromise === undefined) {
+      storePromise = createIndexStore(config, logger);
+    }
+    return storePromise;
+  }
   const fetchImpl = deps.fetchImpl ?? fetch;
 
   const cardsDir = join(config.dataDir, "cards");
@@ -152,6 +166,7 @@ export function createCreativeRagService(deps: CreativeRagServiceDeps): Creative
   }
 
   async function index(): Promise<IndexReport> {
+    const store = await getStore();
     const all = readAllCards(cardsDir);
     // Purge tombstoned cards from the index: marking the Markdown card as tombstoned
     // does not remove a row already written by a prior `index`, so search would keep
@@ -220,6 +235,7 @@ export function createCreativeRagService(deps: CreativeRagServiceDeps): Creative
     if (vector === undefined) {
       return [];
     }
+    const store = await getStore();
     return store.search(vector, topK, filters);
   }
 
@@ -255,8 +271,9 @@ export function createCreativeRagService(deps: CreativeRagServiceDeps): Creative
         return false;
       }
       const bytes = new Uint8Array(await response.arrayBuffer());
+      const ext = extensionForContentType(response.headers.get("content-type"));
       mkdirSync(binariesDir, { recursive: true });
-      atomicWriteFileSync(join(binariesDir, `${id}.jpg`), bytes);
+      atomicWriteFileSync(join(binariesDir, `${id}${ext}`), bytes);
       return true;
     } catch (err) {
       const reason = controller.signal.aborted

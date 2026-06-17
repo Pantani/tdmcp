@@ -70,3 +70,24 @@ export function classifyRijksLicense(rights?: string): CreativeRagLicense {
   if (text.includes("public domain") || text.includes("publicdomain")) return "PublicDomain";
   return "Unknown";
 }
+
+/** Smithsonian: media `usage.access` "CC0" ⇒ CC0, else Unknown. */
+export function classifySmithsonianLicense(access?: string): CreativeRagLicense {
+  return access === "CC0" ? "CC0" : "Unknown";
+}
+
+/**
+ * Wikimedia: machine-readable `extmetadata.License.value` code → license.
+ * cc0 ⇒ CC0; pd/public ⇒ PublicDomain; cc-by-sa* ⇒ CC-BY-SA; cc-by* ⇒ CC-BY;
+ * unknown/empty ⇒ Unknown.
+ */
+export function classifyWikimediaLicense(code?: string): CreativeRagLicense {
+  if (!code) return "Unknown";
+  const text = code.trim().toLowerCase();
+  if (text.length === 0) return "Unknown";
+  if (text === "cc0") return "CC0";
+  if (text.startsWith("pd") || text.includes("public")) return "PublicDomain";
+  if (text.startsWith("cc-by-sa")) return "CC-BY-SA";
+  if (text.startsWith("cc-by")) return "CC-BY";
+  return "Unknown";
+}

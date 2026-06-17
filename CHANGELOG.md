@@ -22,6 +22,27 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `TDMCP_RAG_LICENSE_ALLOWLIST`). Repertoire context only — no bridge, DMX,
   or Python exec. See [Creative RAG](docs/CREATIVE_RAG.md).
 - New runtime dependency `yaml` (license-policy / source-config parsing).
+- **Creative RAG — three new live sources.** Smithsonian Open Access
+  (key-gated via `TDMCP_RAG_SMITHSONIAN_KEY`; `media.usage.access:"CC0"` ⇒ CC0),
+  Wikimedia Commons (keyless; machine-readable `extmetadata.License` mapping),
+  and Europeana (key-gated via `TDMCP_RAG_EUROPEANA_KEY`, **UNVERIFIED** field
+  map pending one real keyed sync). Key-gated sources read their key in-source
+  from the environment, never log it, and no-op cleanly when the key is unset.
+- **Creative RAG — embedding batching.** `TDMCP_RAG_EMBED_BATCH` (default 64,
+  range 1–512) splits the embed set into batches per Ollama `POST /api/embed`;
+  the one-vector-per-input cardinality guard fires per batch.
+- **Creative RAG — experimental LanceDB backend.** `TDMCP_RAG_BACKEND=lancedb`
+  selects a LanceDB-backed index store via the **optional** `@lancedb/lancedb`
+  dependency (not in the default install). The store factory falls back to the
+  JSONL backend with a logged warning when the dependency is absent, so a
+  misconfiguration never breaks `sync`/`index`.
+- **Creative RAG — content-type-aware binary extensions.** Downloaded binaries
+  are saved with the extension implied by the response `Content-Type`
+  (`.png`/`.webp`/`.gif`/`.tif`/`.svg`/`.jpg`) instead of a hardcoded `.jpg`.
+- **Creative RAG — versioned, migration-tolerant index lines.** JSONL index
+  lines are tagged with an `indexVersion`; legacy (untagged) lines are migrated
+  forward on read instead of being dropped, and future-versioned lines are
+  skipped rather than crashing an older reader.
 
 ## [0.9.0] - 2026-06-10
 
