@@ -1756,6 +1756,86 @@ covering the primary binary plus `search` / `list` / `info` / `install` /
 `uninstall` / `doctor` / `packages path`. Source it once and the whole tool
 surface is one Tab away.*
 
+## Creative library (Creative RAG)
+
+The creative repertoire is an opt-in local index of open-licensed reference
+artworks. The CLI is `tdmcp creative-rag <sync|index|search>`; both
+`tdmcp://creative/cards/{id}` and `tdmcp://creative/search{?q,k,license,type,tags}`
+are read-only MCP resources. The default license allowlist already filters to
+`CC0,PublicDomain`, so any returned card is safe to riff on.
+
+> *"Search the creative library for kinetic monochrome references — high motion,
+> black and white, geometric."*
+
+```bash
+$ tdmcp creative-rag search "kinetic monochrome geometric" --k 5
+```
+
+```text
+score  id        title                                                    source       license       type
+0.78   a1b2c3d4  Composition with Black Lines                             artic        PublicDomain  painting
+0.74   e5f6a7b8  Rhythm of a Russian Dance                                rijksmuseum  CC0           painting
+0.70   12c3d4e5  Op Art Study, Black on White                             met          PublicDomain  drawing
+0.66   90fa1b2c  Vibration (Plate VI)                                     rijksmuseum  CC0           print
+0.61   77ab88cd  Untitled (Concentric Squares)                            artic        PublicDomain  drawing
+```
+
+*`creative-rag search` returns a ranked list of cards. Each row is
+`{ id, title, sourceUrl, license, type, tags, score }` where `score` is cosine
+similarity (0–1). Use `--json` if you want the structured payload instead of the
+human table.*
+
+> *"Show me only CC0-licensed photographs of architecture from the creative
+> library."*
+
+```bash
+$ tdmcp creative-rag search "architecture photograph" \
+    --license CC0 --type photograph --k 5
+```
+
+```text
+score  id        title                                              source       license  type
+0.81   3f4d5e6a  Façade Study, Rietveld Schröder House              rijksmuseum  CC0      photograph
+0.77   c7d8e9f0  Steel Frame, Construction Series                   cleveland    CC0      photograph
+0.72   55667788  Brutalist Stairwell                                rijksmuseum  CC0      photograph
+0.68   99aabbcc  Concrete Volumes at Dusk                           cleveland    CC0      photograph
+0.63   ddeeff01  Window Grid                                        rijksmuseum  CC0      photograph
+```
+
+*The default allowlist is already `CC0,PublicDomain`; passing `--license CC0`
+narrows it further (drops PublicDomain) so the result is strictly CC0. `--type`
+and `--tags` accept comma-separated values and stack with the license filter.*
+
+> *"Open card `3f4d5e6a…` from the creative library and summarize the artist's
+> intent so I can build a TD scene from it."*
+
+The MCP client fetches `tdmcp://creative/cards/3f4d5e6a…` (where `id =
+sha256(sourceUrl)`) and gets back the full card as JSON:
+
+```json
+{
+  "id": "3f4d5e6a...",
+  "title": "Façade Study, Rietveld Schröder House",
+  "description": "Frontal photograph of the De Stijl façade...",
+  "sourceUrl": "https://www.rijksmuseum.nl/...",
+  "license": "CC0",
+  "type": "photograph",
+  "tags": ["architecture", "de-stijl", "geometric", "primary-colors"],
+  "tdmcpAffordances": {
+    "palette": ["#E63946", "#F1FAEE", "#1D3557", "#FFD166"],
+    "composition": "rigid orthogonal grid, flat planes",
+    "suggestedTools": ["create_glsl_shader", "create_grid_layout"]
+  },
+  "schemaVersion": 1
+}
+```
+
+*Read the card, distill the artist's intent in prose, then hand the
+`tdmcpAffordances` (palette, composition, suggested tools) to a Layer 1 tool —
+for example, "use this palette and grid composition to build a kinetic monochrome
+GLSL scene". The cookbook stops here; the actual build is whichever Layer 1 tool
+fits the affordances.*
+
 ## Working from your own notes (Obsidian vault)
 
 If you keep an [Obsidian vault](/reference/tools#obsidian-vault) wired up:

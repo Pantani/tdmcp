@@ -147,6 +147,14 @@ always-current
 [tools reference](https://pantani.github.io/tdmcp/reference/tools) and the
 [recipe gallery](https://pantani.github.io/tdmcp/guide/recipes).
 
+## Optional: Creative RAG
+
+A local, opt-in creative repertoire of open-licensed artworks/artists/techniques
+the AI can search for inspiration. Off by default. Repertoire, not policy — no
+bridge, DMX or Python exec. Enable with `TDMCP_RAG_ENABLED=1` plus a local
+[Ollama](https://ollama.com) install, then `tdmcp creative-rag {sync|index|search}`.
+Full guide: [docs/CREATIVE_RAG.md](docs/CREATIVE_RAG.md).
+
 ## Security
 
 The bridge runs **arbitrary Python inside your TD process** and listens on port

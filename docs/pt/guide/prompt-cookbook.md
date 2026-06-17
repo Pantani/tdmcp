@@ -1802,6 +1802,88 @@ cobrindo o binário primário mais `search` / `list` / `info` / `install` /
 `uninstall` / `doctor` / `packages path`. Source uma vez e nunca mais digite um
 subcomando pela metade.*
 
+## Biblioteca criativa (Creative RAG)
+
+O repertório criativo é um índice local opt-in de referências artísticas com
+licença aberta. O CLI é `tdmcp creative-rag <sync|index|search>`; tanto
+`tdmcp://creative/cards/{id}` quanto
+`tdmcp://creative/search{?q,k,license,type,tags}` são recursos MCP somente
+leitura. A allowlist padrão de licença já filtra para `CC0,PublicDomain`, então
+qualquer card retornado é seguro para usar como ponto de partida.
+
+> *"Busque na biblioteca criativa referências kinéticas em monocromático — muito
+> movimento, preto e branco, geométrico."*
+
+```bash
+$ tdmcp creative-rag search "kinetic monochrome geometric" --k 5
+```
+
+```text
+score  id        title                                                    source       license       type
+0.78   a1b2c3d4  Composition with Black Lines                             artic        PublicDomain  painting
+0.74   e5f6a7b8  Rhythm of a Russian Dance                                rijksmuseum  CC0           painting
+0.70   12c3d4e5  Op Art Study, Black on White                             met          PublicDomain  drawing
+0.66   90fa1b2c  Vibration (Plate VI)                                     rijksmuseum  CC0           print
+0.61   77ab88cd  Untitled (Concentric Squares)                            artic        PublicDomain  drawing
+```
+
+*`creative-rag search` devolve uma lista ranqueada de cards. Cada linha é
+`{ id, title, sourceUrl, license, type, tags, score }`, com `score` sendo
+similaridade de cosseno (0–1). Use `--json` se quiser o payload estruturado em
+vez da tabela legível.*
+
+> *"Me mostre só fotografias de arquitetura com licença CC0 da biblioteca
+> criativa."*
+
+```bash
+$ tdmcp creative-rag search "architecture photograph" \
+    --license CC0 --type photograph --k 5
+```
+
+```text
+score  id        title                                              source       license  type
+0.81   3f4d5e6a  Façade Study, Rietveld Schröder House              rijksmuseum  CC0      photograph
+0.77   c7d8e9f0  Steel Frame, Construction Series                   cleveland    CC0      photograph
+0.72   55667788  Brutalist Stairwell                                rijksmuseum  CC0      photograph
+0.68   99aabbcc  Concrete Volumes at Dusk                           cleveland    CC0      photograph
+0.63   ddeeff01  Window Grid                                        rijksmuseum  CC0      photograph
+```
+
+*A allowlist padrão já é `CC0,PublicDomain`; passar `--license CC0` estreita
+mais ainda (descarta PublicDomain), de modo que o resultado é estritamente CC0.
+`--type` e `--tags` aceitam valores separados por vírgula e empilham com o
+filtro de licença.*
+
+> *"Abra o card `3f4d5e6a…` da biblioteca criativa e resuma a intenção do artista
+> para eu construir uma cena no TD a partir dela."*
+
+O cliente MCP busca `tdmcp://creative/cards/3f4d5e6a…` (onde `id =
+sha256(sourceUrl)`) e recebe o card completo em JSON:
+
+```json
+{
+  "id": "3f4d5e6a...",
+  "title": "Façade Study, Rietveld Schröder House",
+  "description": "Frontal photograph of the De Stijl façade...",
+  "sourceUrl": "https://www.rijksmuseum.nl/...",
+  "license": "CC0",
+  "type": "photograph",
+  "tags": ["architecture", "de-stijl", "geometric", "primary-colors"],
+  "tdmcpAffordances": {
+    "palette": ["#E63946", "#F1FAEE", "#1D3557", "#FFD166"],
+    "composition": "rigid orthogonal grid, flat planes",
+    "suggestedTools": ["create_glsl_shader", "create_grid_layout"]
+  },
+  "schemaVersion": 1
+}
+```
+
+*Leia o card, destile a intenção do artista em prosa e então repasse os
+`tdmcpAffordances` (paleta, composição, ferramentas sugeridas) para uma
+ferramenta de Layer 1 — por exemplo, "usa essa paleta e composição em grade pra
+montar uma cena GLSL monocromática kinética". O cookbook para aqui; o build real
+fica para a ferramenta de Layer 1 que casar com os affordances.*
+
 ## Trabalhando a partir das suas notas (vault Obsidian)
 
 Se você mantém um [vault Obsidian](/reference/tools#obsidian-vault) conectado:
