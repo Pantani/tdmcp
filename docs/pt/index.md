@@ -32,6 +32,10 @@ features:
     details: Um copiloto LLM local (tdmcp chat) resolve tarefas simples sem API paga, e o servidor continua usável mesmo com o TouchDesigner fechado.
   - title: 286 ferramentas, três camadas
     details: Dos geradores de uma linha até o CRUD atômico de nós, pacotes de biblioteca, memória de sessão da IA, fluxos de vault e escapes em Python — veja a referência de ferramentas, sempre atualizada (em inglês).
+  - title: Creative RAG (experimental)
+    details: "Repertório criativo local e opt-in — obras, artistas e técnicas de licença aberta para você pesquisar como inspiração. Desligado por padrão. Repertório, não policy; sem bridge, DMX ou exec de Python."
+    link: /pt/CREATIVE_RAG
+    linkText: Leia o guia do Creative RAG
 ---
 
 ## Por onde começar

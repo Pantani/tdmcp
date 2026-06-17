@@ -81,6 +81,18 @@ The knowledge base is committed to the repo, so a fresh clone needs only
 `npm install && npm run build`. `npm run import:bottobot` regenerates it from
 `@bottobot/td-mcp` and is only needed to refresh it.
 
+## Creative RAG (optional, opt-in)
+
+[Creative RAG](/CREATIVE_RAG) is a separate, opt-in subsystem that lives
+**outside** the TouchDesigner bridge. It is **not** a tool layer, it does **not**
+touch TD, DMX, fixtures or any Python exec path. It is a CLI subcommand
+(`tdmcp creative-rag {sync|index|search}`) plus two **read-only** MCP resources
+(`tdmcp://creative/cards/{id}` and `tdmcp://creative/search`), both registered
+only when `TDMCP_RAG_ENABLED=1`. Its only outbound calls are HTTPS to four
+open-data museum APIs (during explicit `sync`) and `POST /api/embed` to a
+**local Ollama process** (during `index` and `search`). Repertoire, not policy
+— search results never trigger an in-TD action.
+
 ## Recipes
 
 Recipes are validated network templates (JSON) the AI can instantiate with

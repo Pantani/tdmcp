@@ -32,6 +32,10 @@ features:
     details: A local LLM copilot (tdmcp chat) handles simple tasks without a paid API, and the server stays usable even when TouchDesigner is closed.
   - title: 286 tools, three layers
     details: From one-line artist generators down to atomic node CRUD, library packaging, AI session memory, vault workflows and Python escape hatches — see the full, always-current Tools reference.
+  - title: Creative RAG (experimental)
+    details: "Opt-in local creative repertoire — open-licensed artworks, artists and techniques you can search for inspiration. Off by default. Repertoire, not policy; no bridge, DMX or Python exec."
+    link: /CREATIVE_RAG
+    linkText: Read the Creative RAG guide
 ---
 
 ## Two ways in

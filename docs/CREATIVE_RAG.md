@@ -11,6 +11,33 @@ description: "An opt-in, local-only creative repertoire — open-licensed artwor
 > constructed, no `tdmcp://creative/*` resources are registered, and the
 > `creative-rag` subcommand prints a disabled message and exits 0.
 
+## In 60 seconds
+
+Prereqs: a local [Ollama](https://ollama.com) install.
+
+```bash
+# 1. Start the local embeddings server and pull the default model.
+ollama serve &
+ollama pull nomic-embed-text
+
+# 2. Opt in.
+export TDMCP_RAG_ENABLED=1
+
+# 3. Pull cards from the live sources into .tdmcp/creative-rag/cards/
+tdmcp creative-rag sync
+
+# 4. Embed every card via Ollama into .tdmcp/creative-rag/index.jsonl
+tdmcp creative-rag index
+
+# 5. Search.
+tdmcp creative-rag search "neon city"
+```
+
+Re-run `sync` to refresh upstream cards; re-run `index` afterwards to re-embed
+only the cards that actually changed.
+
+---
+
 ## What it is
 
 Creative RAG is a **local creative repertoire**: a small, versioned library of
@@ -244,6 +271,30 @@ shape is also accepted). Failures raise typed
 `OllamaConnectionError` / `OllamaTimeoutError` / `OllamaApiError` (mirroring
 `src/td-client/types.ts`); the CLI reports them cleanly and the server is
 unaffected.
+
+## Troubleshooting
+
+- **Ollama offline / `ECONNREFUSED 127.0.0.1:11434`.** Start the daemon:
+  `ollama serve &`. Override the URL with `TDMCP_RAG_OLLAMA_URL` if you run it
+  on another host/port.
+- **Model not pulled.** Ollama returns a "model not found" error on the first
+  `index`/`search`. Run `ollama pull $TDMCP_RAG_EMBED_MODEL` (default
+  `nomic-embed-text`).
+- **Empty source allowlist / nothing synced.** `sync` accepts `--source` and
+  `--limit`. With no `--source`, all live sources run with the default per-run
+  cap. Key-gated sources (Smithsonian, Europeana) are silently skipped when
+  their `TDMCP_RAG_*_KEY` env is unset — the log line says so, but `sync`
+  returns success.
+- **Non-writable data dir.** `TDMCP_RAG_DATA_DIR` (default `.tdmcp/creative-rag`)
+  must be writable. Permission errors surface as typed errors from `sync`/`index`.
+- **Unexpected tombstone.** A card is tombstoned only when **its own source
+  successfully synced this run and did not re-emit the id**. If you see one
+  unexpectedly, the upstream removed (or relicensed-away) the item. Re-running
+  `sync` will pick up the latest state; the tombstone is auditable history,
+  not data loss.
+- **LanceDB warned, fell back to JSONL.** `TDMCP_RAG_BACKEND=lancedb` requires
+  the optional `@lancedb/lancedb` dependency. Install it explicitly
+  (`npm install @lancedb/lancedb`) or accept the default JSONL backend.
 
 ## Limits
 

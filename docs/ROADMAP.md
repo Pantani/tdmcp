@@ -618,6 +618,33 @@ Planned because it needs future code changes, but it is **not shipped** and
 **not a live hardware claim**. The exhaustive, item-by-item backlog lives in the
 [planning archive](#full-backlog).
 
+### Creative RAG follow-ups (post-#76) {#planned-creative-rag}
+
+The Creative RAG MVP (#75) and the post-MVP robustness wave (#76 — embedding
+batching, `indexVersion` migration, Content-Type binary extension, Smithsonian
++ Wikimedia Commons + Europeana sources, optional `TDMCP_RAG_BACKEND=lancedb`)
+are **Shipped** above. The remaining follow-ups are tracked here:
+
+- **[P2 product]** `SourceSkippedError` — distinguish "no key" from "empty
+  source" so a misconfigured key-gated source never tombstones real cards.
+- **[P2 product]** Configurable multilingual embedding model (e.g. `bge-m3`)
+  with a CI smoke that swaps the model.
+- **[P2 product]** `canonicalizeGuid` regression test pinning the rule that
+  source URLs / ids never embed an API key (the lesson from the Europeana
+  `wskey` strip).
+- **[P3 integration]** Optional RAG context injection in `tdmcp ask` (flag-
+  gated; must not change tool tiers or confirmation gates).
+- **[P3 integration]** MCP prompt `creative-inspiration` returning a curated
+  mood-board payload (search + a handful of `tdmcp://creative/cards/*` URIs).
+- **[P3 integration]** Opt-in MCP tool `apply_creative_card` that routes a
+  card's `tdmcpAffordances` to the right Layer 1/2 tool — closes the
+  inspiration → execution loop without expanding the default tool surface.
+- **[P3 ops]** `tdmcp doctor` coverage for RAG: Ollama reachable, embedding
+  model pulled, `TDMCP_RAG_DATA_DIR` writable; surfaced in `--json` output.
+- **[P3 ops]** Mandatory probe-live step for every new source PR (lesson from
+  the Europeana key-leak and Rijksmuseum shape drift — mock-only tests missed
+  both).
+
 ### Milestone 3 — Round-4 quick-win wave · v0.8.x / v0.9.x {#milestone-3}
 
 Pulled forward from [Round 4](#appendix-d-round4) — every item is S-effort,
