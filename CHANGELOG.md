@@ -8,6 +8,23 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Project RAG — MVP first source (opt-in, experimental, F1)** — the
+  `github-repo` adapter is now live. Default seed is
+  [`torinmb/mediapipe-touchdesigner`](https://github.com/torinmb/mediapipe-touchdesigner)
+  (MIT); override or extend via `TDMCP_PROJECT_RAG_GITHUB_REPOS=owner/repo[@ref],…`.
+  Fetched entirely through the GitHub REST API (no local `git clone`): metadata
+  + SPDX license detection + README body + top-level `.tox`/`.toe` listing,
+  with the binary downloaded only when the configured license allowlist
+  permits. `tdmcp project-rag {sync,index,search,info,sources}` now runs the
+  full pipeline against the seed; `search` reuses the Creative RAG
+  `OllamaEmbeddingsClient` (`nomic-embed-text`) for embeddings. New basic
+  composite scoring (`technical · 0.45 + license · 0.25 + freshness · 0.15 +
+  reliability · 0.15`, weights tunable via `TDMCP_PROJECT_RAG_SCORE_WEIGHTS`).
+  Optional `TDMCP_PROJECT_RAG_GH_TOKEN` raises the GitHub rate-limit from 60
+  req/h to 5000; the adapter raises a typed `SourceSkippedError` (never a
+  silent zero-items result) when the anonymous quota is exhausted, so prior
+  cards from the source are never tombstoned by accident. Provenance + license
+  remain mandatory on every persisted card.
 - **Project RAG foundations (opt-in, experimental, F0)** — local TouchDesigner
   *project/component/snippet/tutorial* repertoire, sibling to Creative RAG with
   mandatory `provenance` + `license` on every card. New

@@ -1,0 +1,1019 @@
+{
+  "campaign": "project_rag_20260618",
+  "source_backlog": "_workspace/01_plan_project_rag_implementation.md",
+  "design_doc": "_workspace/01_design_project_rag.md",
+  "weighting": "depth-first",
+  "created": "2026-06-18",
+  "policy": {
+    "scope": "staged-by-priority",
+    "checkpoint_after_wave": 1,
+    "release": "commit-and-push-NO-tag",
+    "branch": "feature/project-rag",
+    "td_required_before_build_waves": false,
+    "builder_retry": 1,
+    "on_repeat_fail": "quarantine-and-continue"
+  },
+  "current_wave": 2,
+  "waves": {
+    "1": {
+      "version": "0.7.0-prag.f0",
+      "theme": "Project RAG foundations (shared core)",
+      "checkpoint": true
+    },
+    "2": {
+      "version": "0.7.0-prag.f1",
+      "theme": "Project RAG MVP — first P0 source",
+      "checkpoint": true
+    },
+    "3": {
+      "version": "0.7.0-prag.f2",
+      "theme": "Multi-source + scoring",
+      "checkpoint": true
+    },
+    "4": {
+      "version": "0.7.0-prag.f3",
+      "theme": "TD-bridge quarantine analysis",
+      "checkpoint": true
+    },
+    "5": {
+      "version": "0.7.0-prag.f4",
+      "theme": "MCP resources + agent prompts",
+      "checkpoint": true
+    }
+  },
+  "counts": {
+    "buildable": 31,
+    "by_priority": {
+      "P0": 17,
+      "P1": 13,
+      "P2": 1
+    },
+    "by_surface": {
+      "shared": 15,
+      "controls": 7,
+      "cli": 4,
+      "td-depth": 1,
+      "ai": 3,
+      "library": 1
+    },
+    "by_wave": {
+      "1": 9,
+      "2": 8,
+      "3": 5,
+      "4": 4,
+      "5": 5
+    },
+    "probe_live": 4,
+    "needs_td": 4,
+    "merged": 0,
+    "tracked_elsewhere": 0
+  },
+  "features": [
+    {
+      "id": "prag_types_schema",
+      "surface": "shared",
+      "priority": "P0",
+      "effort": "S",
+      "impact": "High",
+      "conf": "High",
+      "novelty": "FOUNDATION",
+      "probe_live": false,
+      "needs_td": false,
+      "wave": 1,
+      "depends_on": [],
+      "shared_schema": "project_card_schema",
+      "summary": "ProjectRagCard v2 TypeScript types + Zod schema in src/projectRag/{types,schema}.ts; License enum extended (SPDX + Derivative-EULA + Proprietary-*); provenance & license REQUIRED.",
+      "version_target": "0.7.0-prag.f0",
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4247)",
+        "recipes": "pass(32)",
+        "bridge": "pass(196)"
+      },
+      "files": [],
+      "notes": "",
+      "history": [
+        {
+          "at": "2026-06-18T04:37:55.605Z",
+          "event": "shipped",
+          "wave": 1
+        }
+      ]
+    },
+    {
+      "id": "prag_card_parser",
+      "surface": "shared",
+      "priority": "P0",
+      "effort": "S",
+      "impact": "High",
+      "conf": "High",
+      "novelty": "FOUNDATION",
+      "probe_live": false,
+      "needs_td": false,
+      "wave": 1,
+      "depends_on": [
+        "prag_types_schema"
+      ],
+      "shared_schema": "project_card_schema",
+      "summary": "src/projectRag/cardParser.ts — v2 parser/serializer (round-trip; rejects card missing provenance or license). Reuses creativeRag/cardParser's split/yaml helpers via composition.",
+      "version_target": "0.7.0-prag.f0",
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4247)",
+        "recipes": "pass(32)",
+        "bridge": "pass(196)"
+      },
+      "files": [],
+      "notes": "",
+      "history": [
+        {
+          "at": "2026-06-18T04:37:55.605Z",
+          "event": "shipped",
+          "wave": 1
+        }
+      ]
+    },
+    {
+      "id": "prag_store_factory",
+      "surface": "shared",
+      "priority": "P0",
+      "effort": "S",
+      "impact": "High",
+      "conf": "High",
+      "novelty": "FOUNDATION",
+      "probe_live": false,
+      "needs_td": false,
+      "wave": 1,
+      "depends_on": [
+        "prag_types_schema"
+      ],
+      "shared_schema": null,
+      "summary": "src/projectRag/storeFactory.ts — createProjectIndexStore(config, logger). Reuses creativeRag JsonlIndexStore / LanceIndexStore; dataDir = <ragDataDir>/project; table 'project_rag'.",
+      "version_target": "0.7.0-prag.f0",
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4247)",
+        "recipes": "pass(32)",
+        "bridge": "pass(196)"
+      },
+      "files": [],
+      "notes": "",
+      "history": [
+        {
+          "at": "2026-06-18T04:37:55.605Z",
+          "event": "shipped",
+          "wave": 1
+        }
+      ]
+    },
+    {
+      "id": "prag_service_shell",
+      "surface": "shared",
+      "priority": "P0",
+      "effort": "S",
+      "impact": "Med",
+      "conf": "High",
+      "novelty": "FOUNDATION",
+      "probe_live": false,
+      "needs_td": false,
+      "wave": 1,
+      "depends_on": [
+        "prag_card_parser",
+        "prag_store_factory"
+      ],
+      "shared_schema": null,
+      "summary": "src/projectRag/service.ts skeleton — sync({sources:[]})→empty SyncReport, index()→0/0/0, search()→[], getCard(), listSources().",
+      "version_target": "0.7.0-prag.f0",
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4247)",
+        "recipes": "pass(32)",
+        "bridge": "pass(196)"
+      },
+      "files": [],
+      "notes": "",
+      "history": [
+        {
+          "at": "2026-06-18T04:37:55.605Z",
+          "event": "shipped",
+          "wave": 1
+        }
+      ]
+    },
+    {
+      "id": "prag_cli_shell",
+      "surface": "shared",
+      "priority": "P0",
+      "effort": "S",
+      "impact": "Med",
+      "conf": "High",
+      "novelty": "FOUNDATION",
+      "probe_live": false,
+      "needs_td": false,
+      "wave": 1,
+      "depends_on": [
+        "prag_service_shell"
+      ],
+      "shared_schema": null,
+      "summary": "src/projectRag/cli.ts — subcommand sync|index|search|info|sources with parseArgs, --json, exit codes (0/1/2). Disabled gating prints 'Project RAG is disabled' and exit 0.",
+      "version_target": "0.7.0-prag.f0",
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4247)",
+        "recipes": "pass(32)",
+        "bridge": "pass(196)"
+      },
+      "files": [],
+      "notes": "",
+      "history": [
+        {
+          "at": "2026-06-18T04:37:55.605Z",
+          "event": "shipped",
+          "wave": 1
+        }
+      ]
+    },
+    {
+      "id": "prag_config_fields",
+      "surface": "shared",
+      "priority": "P0",
+      "effort": "S",
+      "impact": "Med",
+      "conf": "High",
+      "novelty": "FOUNDATION",
+      "probe_live": false,
+      "needs_td": false,
+      "wave": 1,
+      "depends_on": [],
+      "shared_schema": null,
+      "summary": "src/utils/config.ts — add projectRagEnabled, projectRagBridgeAnalysis, projectRagBridgePort=9981, projectRagGhToken (redacted), projectRagAnalyzeTimeoutMs, projectRagLicenseAllowlist, projectRagScoreWeights. Env: TDMCP_PROJECT_RAG_*.",
+      "version_target": "0.7.0-prag.f0",
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4247)",
+        "recipes": "pass(32)",
+        "bridge": "pass(196)"
+      },
+      "files": [],
+      "notes": "",
+      "history": [
+        {
+          "at": "2026-06-18T04:37:55.605Z",
+          "event": "shipped",
+          "wave": 1
+        }
+      ]
+    },
+    {
+      "id": "prag_resource_shell",
+      "surface": "shared",
+      "priority": "P0",
+      "effort": "S",
+      "impact": "Med",
+      "conf": "High",
+      "novelty": "FOUNDATION",
+      "probe_live": false,
+      "needs_td": false,
+      "wave": 1,
+      "depends_on": [
+        "prag_service_shell",
+        "prag_config_fields"
+      ],
+      "shared_schema": null,
+      "summary": "src/resources/projectRagResource.ts — registers tdmcp://project/cards/{id} and tdmcp://project/search only when ctx.projectRag is defined.",
+      "version_target": "0.7.0-prag.f0",
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4247)",
+        "recipes": "pass(32)",
+        "bridge": "pass(196)"
+      },
+      "files": [],
+      "notes": "",
+      "history": [
+        {
+          "at": "2026-06-18T04:37:55.605Z",
+          "event": "shipped",
+          "wave": 1
+        }
+      ]
+    },
+    {
+      "id": "prag_context_wire",
+      "surface": "shared",
+      "priority": "P0",
+      "effort": "S",
+      "impact": "Med",
+      "conf": "High",
+      "novelty": "FOUNDATION",
+      "probe_live": false,
+      "needs_td": false,
+      "wave": 1,
+      "depends_on": [
+        "prag_config_fields",
+        "prag_service_shell",
+        "prag_resource_shell"
+      ],
+      "shared_schema": null,
+      "summary": "src/server/context.ts + src/index.ts + src/resources/index.ts — build ctx.projectRag when enabled; dispatch 'project-rag' subcommand.",
+      "version_target": "0.7.0-prag.f0",
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4247)",
+        "recipes": "pass(32)",
+        "bridge": "pass(196)"
+      },
+      "files": [],
+      "notes": "",
+      "history": [
+        {
+          "at": "2026-06-18T04:37:55.605Z",
+          "event": "shipped",
+          "wave": 1
+        }
+      ]
+    },
+    {
+      "id": "prag_docs_stub",
+      "surface": "shared",
+      "priority": "P0",
+      "effort": "S",
+      "impact": "Med",
+      "conf": "High",
+      "novelty": "FOUNDATION",
+      "probe_live": false,
+      "needs_td": false,
+      "wave": 1,
+      "depends_on": [],
+      "shared_schema": null,
+      "summary": "docs/PROJECT_RAG.md + docs/pt/PROJECT_RAG.md — visão geral, status 'experimental, foundations only', cross-link com CREATIVE_RAG. ROADMAP.md WIP note.",
+      "version_target": "0.7.0-prag.f0",
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4247)",
+        "recipes": "pass(32)",
+        "bridge": "pass(196)"
+      },
+      "files": [],
+      "notes": "",
+      "history": [
+        {
+          "at": "2026-06-18T04:37:55.605Z",
+          "event": "shipped",
+          "wave": 1
+        }
+      ]
+    },
+    {
+      "id": "prag_toe_expand_extractor",
+      "surface": "controls",
+      "priority": "P0",
+      "effort": "M",
+      "impact": "High",
+      "conf": "High",
+      "novelty": "NEW",
+      "probe_live": true,
+      "needs_td": false,
+      "wave": 2,
+      "depends_on": [
+        "prag_service_shell"
+      ],
+      "shared_schema": null,
+      "summary": "src/projectRag/extractors/toeExpand.ts — subprocess wrapper isolated (spawn, reduced env, 30s timeout, group-kill, quarantine UUID cwd).",
+      "version_target": "0.7.0-prag.f1",
+      "status": "deferred",
+      "attempts": 0,
+      "qa": null,
+      "files": [],
+      "notes": "Deferred from Wave 2 per user scope (Wave 2 = github-repo only). Reschedule to a later wave when needed.",
+      "history": [
+        {
+          "at": "2026-06-18T04:58:49.013Z",
+          "event": "deferred",
+          "wave": 2,
+          "reason": "out-of-scope for this wave"
+        }
+      ]
+    },
+    {
+      "id": "prag_github_license_extractor",
+      "surface": "controls",
+      "priority": "P0",
+      "effort": "M",
+      "impact": "High",
+      "conf": "High",
+      "novelty": "NEW",
+      "probe_live": false,
+      "needs_td": false,
+      "wave": 2,
+      "depends_on": [
+        "prag_service_shell"
+      ],
+      "shared_schema": null,
+      "summary": "src/projectRag/extractors/githubLicense.ts — gh GraphQL repository.licenseInfo.spdxId; fallback regex over LICENSE.",
+      "version_target": "0.7.0-prag.f1",
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4271)",
+        "recipes": "pass(32)",
+        "bridge": "pass(196)"
+      },
+      "files": [],
+      "notes": "",
+      "history": [
+        {
+          "at": "2026-06-18T04:58:49.013Z",
+          "event": "shipped",
+          "wave": 2
+        }
+      ]
+    },
+    {
+      "id": "prag_source_derivative_local",
+      "surface": "controls",
+      "priority": "P0",
+      "effort": "M",
+      "impact": "High",
+      "conf": "High",
+      "novelty": "NEW",
+      "probe_live": false,
+      "needs_td": false,
+      "wave": 2,
+      "depends_on": [
+        "prag_toe_expand_extractor"
+      ],
+      "shared_schema": null,
+      "summary": "src/projectRag/sources/derivativeLocal.ts — discovers TD install (env override + OS defaults); SourceSkippedError when absent.",
+      "version_target": "0.7.0-prag.f1",
+      "status": "deferred",
+      "attempts": 0,
+      "qa": null,
+      "files": [],
+      "notes": "Deferred from Wave 2 per user scope (Wave 2 = github-repo only). Reschedule to a later wave when needed.",
+      "history": [
+        {
+          "at": "2026-06-18T04:58:49.013Z",
+          "event": "deferred",
+          "wave": 2,
+          "reason": "out-of-scope for this wave"
+        }
+      ]
+    },
+    {
+      "id": "prag_source_github_repo",
+      "surface": "controls",
+      "priority": "P0",
+      "effort": "M",
+      "impact": "High",
+      "conf": "High",
+      "novelty": "NEW",
+      "probe_live": false,
+      "needs_td": false,
+      "wave": 2,
+      "depends_on": [
+        "prag_github_license_extractor"
+      ],
+      "shared_schema": null,
+      "summary": "src/projectRag/sources/githubRepo.ts — parameterized by CSV TDMCP_PROJECT_RAG_GITHUB_REPOS; shallow clone; reads LICENSE; one RawProjectItem per .tox/.toe found.",
+      "version_target": "0.7.0-prag.f1",
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4271)",
+        "recipes": "pass(32)",
+        "bridge": "pass(196)"
+      },
+      "files": [],
+      "notes": "",
+      "history": [
+        {
+          "at": "2026-06-18T04:58:49.013Z",
+          "event": "shipped",
+          "wave": 2
+        }
+      ]
+    },
+    {
+      "id": "prag_service_sync_full",
+      "surface": "shared",
+      "priority": "P0",
+      "effort": "M",
+      "impact": "High",
+      "conf": "High",
+      "novelty": "FOUNDATION",
+      "probe_live": false,
+      "needs_td": false,
+      "wave": 2,
+      "depends_on": [
+        "prag_source_derivative_local",
+        "prag_source_github_repo"
+      ],
+      "shared_schema": null,
+      "summary": "Service.sync() complete with tombstone (only successfully-synced sources), license gate, binary download.",
+      "version_target": "0.7.0-prag.f1",
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4271)",
+        "recipes": "pass(32)",
+        "bridge": "pass(196)"
+      },
+      "files": [],
+      "notes": "",
+      "history": [
+        {
+          "at": "2026-06-18T04:58:49.013Z",
+          "event": "shipped",
+          "wave": 2
+        }
+      ]
+    },
+    {
+      "id": "prag_service_index_full",
+      "surface": "shared",
+      "priority": "P0",
+      "effort": "M",
+      "impact": "High",
+      "conf": "High",
+      "novelty": "FOUNDATION",
+      "probe_live": false,
+      "needs_td": false,
+      "wave": 2,
+      "depends_on": [
+        "prag_service_sync_full"
+      ],
+      "shared_schema": null,
+      "summary": "Service.index() — reuses OllamaEmbeddingsClient; embed text = title+tags+body+operators+license.",
+      "version_target": "0.7.0-prag.f1",
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4271)",
+        "recipes": "pass(32)",
+        "bridge": "pass(196)"
+      },
+      "files": [],
+      "notes": "",
+      "history": [
+        {
+          "at": "2026-06-18T04:58:49.013Z",
+          "event": "shipped",
+          "wave": 2
+        }
+      ]
+    },
+    {
+      "id": "prag_service_search_full",
+      "surface": "shared",
+      "priority": "P0",
+      "effort": "M",
+      "impact": "High",
+      "conf": "High",
+      "novelty": "FOUNDATION",
+      "probe_live": false,
+      "needs_td": false,
+      "wave": 2,
+      "depends_on": [
+        "prag_service_index_full"
+      ],
+      "shared_schema": null,
+      "summary": "Service.search() — cosine + filters (license/type/operator/tags).",
+      "version_target": "0.7.0-prag.f1",
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4271)",
+        "recipes": "pass(32)",
+        "bridge": "pass(196)"
+      },
+      "files": [],
+      "notes": "",
+      "history": [
+        {
+          "at": "2026-06-18T04:58:49.013Z",
+          "event": "shipped",
+          "wave": 2
+        }
+      ]
+    },
+    {
+      "id": "prag_scoring_basic",
+      "surface": "shared",
+      "priority": "P0",
+      "effort": "S",
+      "impact": "Med",
+      "conf": "High",
+      "novelty": "NEW",
+      "probe_live": false,
+      "needs_td": false,
+      "wave": 2,
+      "depends_on": [
+        "prag_service_index_full"
+      ],
+      "shared_schema": null,
+      "summary": "src/projectRag/scoring.ts — composite formula; recomputed at index; finalRank = cosineSim * composite.",
+      "version_target": "0.7.0-prag.f1",
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4271)",
+        "recipes": "pass(32)",
+        "bridge": "pass(196)"
+      },
+      "files": [],
+      "notes": "",
+      "history": [
+        {
+          "at": "2026-06-18T04:58:49.013Z",
+          "event": "shipped",
+          "wave": 2
+        }
+      ]
+    },
+    {
+      "id": "prag_source_github_topic",
+      "surface": "controls",
+      "priority": "P1",
+      "effort": "M",
+      "impact": "Med",
+      "conf": "High",
+      "novelty": "NEW",
+      "probe_live": false,
+      "needs_td": false,
+      "wave": 3,
+      "depends_on": [
+        "prag_source_github_repo"
+      ],
+      "shared_schema": null,
+      "summary": "src/projectRag/sources/githubTopic.ts — gh GraphQL topic search with SPDX allowlist filter; cap per sync.",
+      "version_target": "0.7.0-prag.f2",
+      "status": "pending",
+      "attempts": 0,
+      "qa": null,
+      "files": [],
+      "notes": "",
+      "history": []
+    },
+    {
+      "id": "prag_source_awesome_list",
+      "surface": "controls",
+      "priority": "P1",
+      "effort": "S",
+      "impact": "Med",
+      "conf": "High",
+      "novelty": "NEW",
+      "probe_live": false,
+      "needs_td": false,
+      "wave": 3,
+      "depends_on": [],
+      "shared_schema": null,
+      "summary": "src/projectRag/sources/awesomeList.ts — parse monkeymonk/awesome-touchdesigner README; feeds discovery queue (suggest-only, never auto-ingest).",
+      "version_target": "0.7.0-prag.f2",
+      "status": "pending",
+      "attempts": 0,
+      "qa": null,
+      "files": [],
+      "notes": "",
+      "history": []
+    },
+    {
+      "id": "prag_source_iihq",
+      "surface": "controls",
+      "priority": "P1",
+      "effort": "S",
+      "impact": "Med",
+      "conf": "Med",
+      "novelty": "NEW",
+      "probe_live": false,
+      "needs_td": false,
+      "wave": 3,
+      "depends_on": [],
+      "shared_schema": null,
+      "summary": "src/projectRag/sources/interactiveImmersive.ts — markdown-only ingest from book repo (CC-BY-NC-SA → meta + body, no binaries). Tag 'tutorial'.",
+      "version_target": "0.7.0-prag.f2",
+      "status": "pending",
+      "attempts": 0,
+      "qa": null,
+      "files": [],
+      "notes": "",
+      "history": []
+    },
+    {
+      "id": "prag_scoring_tuned",
+      "surface": "shared",
+      "priority": "P1",
+      "effort": "M",
+      "impact": "Med",
+      "conf": "High",
+      "novelty": "EXTENSION",
+      "probe_live": false,
+      "needs_td": false,
+      "wave": 3,
+      "depends_on": [
+        "prag_scoring_basic"
+      ],
+      "shared_schema": null,
+      "summary": "Tune default scoring weights against a 10-query ground-truth set; docs/PROJECT_RAG.md#scoring.",
+      "version_target": "0.7.0-prag.f2",
+      "status": "pending",
+      "attempts": 0,
+      "qa": null,
+      "files": [],
+      "notes": "",
+      "history": []
+    },
+    {
+      "id": "prag_reindex_rescore_cmd",
+      "surface": "cli",
+      "priority": "P1",
+      "effort": "S",
+      "impact": "Med",
+      "conf": "High",
+      "novelty": "NEW",
+      "probe_live": false,
+      "needs_td": false,
+      "wave": 3,
+      "depends_on": [
+        "prag_scoring_tuned"
+      ],
+      "shared_schema": null,
+      "summary": "tdmcp project-rag reindex --rescore — rewrites score.* without re-embedding.",
+      "version_target": "0.7.0-prag.f2",
+      "status": "pending",
+      "attempts": 0,
+      "qa": null,
+      "files": [],
+      "notes": "",
+      "history": []
+    },
+    {
+      "id": "prag_bridge_analyze_extractor",
+      "surface": "td-depth",
+      "priority": "P1",
+      "effort": "L",
+      "impact": "High",
+      "conf": "Med",
+      "novelty": "NEW",
+      "probe_live": true,
+      "needs_td": true,
+      "wave": 4,
+      "depends_on": [
+        "prag_service_sync_full"
+      ],
+      "shared_schema": null,
+      "summary": "src/projectRag/extractors/bridgeAnalyze.ts — NEW TouchDesignerClient on projectRagBridgePort (NEVER default). Copy→analyze→getTdNodeErrors→preview→cleanup.",
+      "version_target": "0.7.0-prag.f3",
+      "status": "pending",
+      "attempts": 0,
+      "qa": null,
+      "files": [],
+      "notes": "",
+      "history": []
+    },
+    {
+      "id": "prag_bridge_install_cmd",
+      "surface": "cli",
+      "priority": "P1",
+      "effort": "M",
+      "impact": "Med",
+      "conf": "High",
+      "novelty": "NEW",
+      "probe_live": false,
+      "needs_td": true,
+      "wave": 4,
+      "depends_on": [
+        "prag_bridge_analyze_extractor"
+      ],
+      "shared_schema": null,
+      "summary": "tdmcp project-rag bridge install — docs how user wires a dedicated TD on port 9981 with tdmcp_bridge_qa.toe template.",
+      "version_target": "0.7.0-prag.f3",
+      "status": "pending",
+      "attempts": 0,
+      "qa": null,
+      "files": [],
+      "notes": "",
+      "history": []
+    },
+    {
+      "id": "prag_analyze_cmd",
+      "surface": "cli",
+      "priority": "P1",
+      "effort": "S",
+      "impact": "Med",
+      "conf": "High",
+      "novelty": "NEW",
+      "probe_live": true,
+      "needs_td": true,
+      "wave": 4,
+      "depends_on": [
+        "prag_bridge_analyze_extractor"
+      ],
+      "shared_schema": null,
+      "summary": "tdmcp project-rag analyze <path> — uses dedicated bridge; graceful fail when offline → analysisStatus=failed.",
+      "version_target": "0.7.0-prag.f3",
+      "status": "pending",
+      "attempts": 0,
+      "qa": null,
+      "files": [],
+      "notes": "",
+      "history": []
+    },
+    {
+      "id": "prag_sync_bridge_flag",
+      "surface": "shared",
+      "priority": "P1",
+      "effort": "S",
+      "impact": "Med",
+      "conf": "High",
+      "novelty": "EXTENSION",
+      "probe_live": true,
+      "needs_td": true,
+      "wave": 4,
+      "depends_on": [
+        "prag_bridge_analyze_extractor"
+      ],
+      "shared_schema": null,
+      "summary": "tdmcp project-rag sync --bridge — after static analyze, runs bridge extractor on downloadable cards.",
+      "version_target": "0.7.0-prag.f3",
+      "status": "pending",
+      "attempts": 0,
+      "qa": null,
+      "files": [],
+      "notes": "",
+      "history": []
+    },
+    {
+      "id": "prag_prompt_context",
+      "surface": "ai",
+      "priority": "P1",
+      "effort": "M",
+      "impact": "High",
+      "conf": "High",
+      "novelty": "NEW",
+      "probe_live": false,
+      "needs_td": false,
+      "wave": 5,
+      "depends_on": [
+        "prag_service_search_full"
+      ],
+      "shared_schema": null,
+      "summary": "src/prompts/projectRagContext — injects top-k Project RAG cards when user asks for a known effect (audio-reactive, hand-tracking, feedback).",
+      "version_target": "0.7.0-prag.f4",
+      "status": "pending",
+      "attempts": 0,
+      "qa": null,
+      "files": [],
+      "notes": "",
+      "history": []
+    },
+    {
+      "id": "prag_resource_sources",
+      "surface": "ai",
+      "priority": "P1",
+      "effort": "S",
+      "impact": "Med",
+      "conf": "High",
+      "novelty": "NEW",
+      "probe_live": false,
+      "needs_td": false,
+      "wave": 5,
+      "depends_on": [
+        "prag_resource_shell"
+      ],
+      "shared_schema": null,
+      "summary": "tdmcp://project/sources — lists configured sources + status so agent knows what is NOT indexed.",
+      "version_target": "0.7.0-prag.f4",
+      "status": "pending",
+      "attempts": 0,
+      "qa": null,
+      "files": [],
+      "notes": "",
+      "history": []
+    },
+    {
+      "id": "prag_copilot_tool",
+      "surface": "ai",
+      "priority": "P1",
+      "effort": "M",
+      "impact": "High",
+      "conf": "High",
+      "novelty": "NEW",
+      "probe_live": false,
+      "needs_td": false,
+      "wave": 5,
+      "depends_on": [
+        "prag_service_search_full"
+      ],
+      "shared_schema": null,
+      "summary": "tdmcp ask/chat tool-tier project_rag_search — read-only zero-side-effect; gated by TDMCP_PROJECT_RAG_ENABLED=1.",
+      "version_target": "0.7.0-prag.f4",
+      "status": "pending",
+      "attempts": 0,
+      "qa": null,
+      "files": [],
+      "notes": "",
+      "history": []
+    },
+    {
+      "id": "prag_cli_cross_link",
+      "surface": "cli",
+      "priority": "P2",
+      "effort": "S",
+      "impact": "Med",
+      "conf": "Med",
+      "novelty": "NEW",
+      "probe_live": false,
+      "needs_td": false,
+      "wave": 5,
+      "depends_on": [],
+      "shared_schema": null,
+      "summary": "When a creative search returns few results, suggest 'tdmcp project-rag search ...' (cross-link).",
+      "version_target": "0.7.0-prag.f4",
+      "status": "pending",
+      "attempts": 0,
+      "qa": null,
+      "files": [],
+      "notes": "",
+      "history": []
+    },
+    {
+      "id": "prag_cookbook_entries",
+      "surface": "library",
+      "priority": "P1",
+      "effort": "S",
+      "impact": "Med",
+      "conf": "High",
+      "novelty": "NEW",
+      "probe_live": false,
+      "needs_td": false,
+      "wave": 5,
+      "depends_on": [
+        "prag_prompt_context"
+      ],
+      "shared_schema": null,
+      "summary": "Cookbook EN+PT parity: 'Quando usar Project RAG vs Creative RAG', 'Buscando exemplos reais antes de codar um efeito'.",
+      "version_target": "0.7.0-prag.f4",
+      "status": "pending",
+      "attempts": 0,
+      "qa": null,
+      "files": [],
+      "notes": "",
+      "history": []
+    }
+  ]
+}
