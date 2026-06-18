@@ -4264,71 +4264,112 @@ function pathTitleOrbitFrame(t) {
 
 function creativeRagKandinskyRemixFrame(t) {
   const buf = baseFrame();
-  const sourcePalette = [
-    [214, 40, 40],
-    [0, 48, 73],
-    [252, 191, 73],
-    [248, 249, 250],
-  ];
-  rect(buf, 26, 34, 142, 176, [10, 14, 23], 0.96);
-  drawPixelText(buf, "RAG CARD", 48, 48, { scale: 2, color: [164, 176, 205], alpha: 0.72 });
-  drawPixelText(buf, "COMPOSITION", 48, 72, {
-    scale: 2,
-    color: [255, 255, 255],
-    alpha: 0.86,
-  });
-  circle(buf, 84, 130, 31 + Math.sin(t * 2.2) * 3, sourcePalette[0], 0.82);
-  circle(buf, 124, 120, 24, sourcePalette[2], 0.72);
+  const red = [224, 32, 32];
+  const blue = [0, 56, 184];
+  const yellow = [255, 204, 24];
+  const white = [244, 246, 240];
+  const black = [2, 4, 9];
+  const gradedShadow = [7, 11, 20];
+  const gradedMid = [16, 23, 36];
+
+  rect(buf, 0, 0, width, height, black, 0.96);
+
+  const rot = 0.16 * Math.sin(t * 0.7);
+  const cr = Math.cos(rot);
+  const sr = Math.sin(rot);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const sx = x - width / 2;
+      const sy = y - height / 2;
+      const u = (sx * cr - sy * sr) / 52;
+      const v = (sx * sr + sy * cr) / 52;
+      const angle = Math.atan2(sy, sx);
+      const radius = Math.hypot(sx / 230, sy / 126);
+      const gridX = Math.abs(u - Math.round(u));
+      const gridY = Math.abs(v - Math.round(v));
+      const grid = gridX < 0.02 || gridY < 0.024;
+      const checker = (Math.floor(u + t * 0.32) + Math.floor(v - t * 0.18)) % 2;
+      const wedge = Math.floor((angle + Math.PI + t * 0.45) / (Math.PI / 5));
+      const band = Math.floor((u * 1.1 - v * 0.72 + t * 0.85) * 2.2);
+      const index = Math.abs(wedge + band + checker) % 6;
+      const palette = [gradedShadow, blue, red, gradedMid, yellow, black];
+      const vignette = smoothstep(1.3, 0.35, radius);
+      const color = grid ? white : mixColor(palette[index], black, 0.1 + 0.34 * radius);
+      set(buf, x, y, color, grid ? 0.2 : 0.38 + vignette * 0.42);
+    }
+  }
+
+  const sweep = (t * 0.42) % 1;
+  const planeShift = Math.sin(t * 1.4) * 16;
   polygon(
     buf,
     [
-      [54, 176],
-      [146, 156 + Math.sin(t * 1.7) * 8],
-      [112, 196],
+      [18, 44 + planeShift * 0.35],
+      [176 + planeShift, 18],
+      [226 + planeShift * 0.4, 122],
+      [72, 154],
     ],
-    sourcePalette[1],
+    red,
+    0.88,
+  );
+  polygon(
+    buf,
+    [
+      [320 - planeShift * 0.4, 18],
+      [462, 56],
+      [432, 190 + planeShift * 0.25],
+      [256 - planeShift, 154],
+    ],
+    blue,
+    0.84,
+  );
+  polygon(
+    buf,
+    [
+      [176, 174 - planeShift * 0.2],
+      [292, 126 + planeShift * 0.3],
+      [388, 246],
+      [116, 248],
+    ],
+    yellow,
     0.82,
   );
-  line(buf, 50, 104, 152, 188, sourcePalette[3], 0.52);
-  line(buf, 54, 192, 148, 94, sourcePalette[2], 0.42);
 
-  for (let i = 0; i < 4; i++) {
-    rect(buf, 58 + i * 22, 218, 14, 14, sourcePalette[i], 0.9);
+  const centerX = 236 + Math.sin(t * 1.2) * 22;
+  const centerY = 130 + Math.cos(t * 1.1) * 10;
+  for (let i = 0; i < 5; i++) {
+    const r = 24 + i * 17 + Math.sin(t * 2.1 + i) * 2.5;
+    ellipseRing(buf, centerX, centerY, r * 1.05, r * 0.72, 0.025, i % 2 ? white : black, 0.74);
   }
-  const pulse = smoothstep(0.08, 0.8, (t * 0.42) % 1);
-  line(buf, 176, 135, 224, 135, [255, 255, 255], 0.18 + pulse * 0.54);
-  circle(buf, 176 + 48 * pulse, 135, 5, [255, 214, 86], 0.9);
+  circle(buf, centerX - 56, centerY - 24, 22 + Math.sin(t * 2.4) * 4, yellow, 0.86);
+  circle(buf, centerX + 78, centerY + 34, 18 + Math.cos(t * 2.0) * 3, red, 0.78);
+  circle(buf, centerX + 16, centerY - 48, 10, white, 0.88);
 
-  rect(buf, 224, 28, 228, 204, [4, 7, 14], 0.98);
-  for (let y = 34; y < 226; y++) {
-    for (let x = 230; x < 446; x++) {
-      const u = (x - 338) / 108;
-      const v = (y - 130) / 96;
-      const angle = Math.atan2(v, u);
-      const radius = Math.hypot(u, v);
-      const wedge = Math.sin(angle * 5 + t * 1.7) * Math.cos(radius * 14 - t * 3.1);
-      const grid = Math.min(
-        Math.abs(Math.sin((u + t * 0.08) * 17)),
-        Math.abs(Math.sin((v - t * 0.07) * 13)),
-      );
-      const colorA = mixColor(sourcePalette[1], sourcePalette[0], wedge * 0.5 + 0.5);
-      const colorB = mixColor(sourcePalette[2], sourcePalette[3], radius);
-      set(buf, x, y, mixColor(colorA, colorB, smoothstep(0.04, 0.42, grid)), 0.86);
-    }
-  }
   for (let i = 0; i < 10; i++) {
-    const a = t * 1.4 + i * 0.63;
-    const cx = 338 + Math.cos(a) * (30 + (i % 3) * 22);
-    const cy = 130 + Math.sin(a * 1.3) * (24 + (i % 4) * 9);
-    glow(buf, cx, cy, 26, sourcePalette[i % sourcePalette.length], 0.18);
-    circle(buf, cx, cy, 5 + (i % 3) * 2, sourcePalette[i % sourcePalette.length], 0.76);
+    const x = 42 + i * 44 + Math.sin(t * 1.5 + i) * 5;
+    const y = 38 + ((i * 37) % 186);
+    const color = i % 3 === 0 ? red : i % 3 === 1 ? yellow : blue;
+    line(buf, x - 28, y + 42, x + 46, y - 34, black, 0.82);
+    line(buf, x - 26, y + 40, x + 48, y - 36, color, 0.5);
   }
-  drawPixelText(buf, "NEW TD SYSTEM", 338, 240, {
-    scale: 2,
-    color: [255, 255, 255],
-    alpha: 0.72,
-    align: "center",
-  });
+
+  for (let i = 0; i < 7; i++) {
+    const y = 34 + i * 32 + Math.sin(t * 1.3 + i) * 2;
+    line(buf, 24, y, 456, y + Math.sin(i + t) * 8, white, i % 2 ? 0.14 : 0.08);
+  }
+  for (let i = 0; i < 5; i++) {
+    const x = 44 + i * 88 + Math.sin(t * 1.1 + i) * 4;
+    line(buf, x, 22, x + Math.sin(t + i) * 14, 246, white, 0.1);
+  }
+
+  const lfoX = 26 + 428 * sweep;
+  rect(buf, lfoX, 18, 4, 234, white, 0.16);
+  glow(buf, lfoX, 134, 38, white, 0.08);
+  rect(buf, 18, 18, 444, 234, [0, 0, 0], 0.08);
+  line(buf, 18, 18, 462, 18, white, 0.28);
+  line(buf, 18, 252, 462, 252, white, 0.22);
+  line(buf, 18, 18, 18, 252, white, 0.18);
+  line(buf, 462, 18, 462, 252, white, 0.18);
   return buf;
 }
 
