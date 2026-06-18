@@ -225,6 +225,59 @@ Registrados SOMENTE quando as duas flags estão on:
 - `tdmcp://project/cards/{id}` — um card (id = sha256 de `provenance.canonical`).
 - `tdmcp://project/search{?q,k,license,type,tags,operator}` — busca cosine;
   todo resultado carrega provenance + license + rightsNotes.
+- `tdmcp://project/sources` *(F4)* — fontes configuradas + status
+  (`ready` / `skipped` / `planned` / `failed`), pra o agente saber quais
+  fontes estão indexadas antes de buscar.
+
+## F4 — superfície AI (prompts, tool de copiloto, cross-link no CLI)
+
+F4 é a **camada AI** em cima de F0–F3. Tudo offline, opt-in, gated por
+`TDMCP_RAG_ENABLED=1 && TDMCP_PROJECT_RAG_ENABLED=1`.
+
+### Prompt MCP — `project_rag_context`
+
+Roda `service.search(query, k, { license })` no índice Project RAG
+configurado e devolve uma mensagem de prompt listando os top-k cards como
+*referência autoritativa* — título, licença, notas de direitos (se houver)
+e `tdmcp://project/cards/{id}`. Args: `query` (texto livre), `k` (1–10,
+default 5), `license` (CSV tipo `CC0,MIT,Apache-2.0`).
+
+Se a Project RAG não estiver habilitada ou o service der throw, o prompt
+**degrada silenciosamente** para um prompt padrão que menciona o problema e
+segue com o conhecimento próprio do modelo — ele nunca bloqueia o turn. O
+mesmo fallback vale para um resultado vazio (com a dica
+`tdmcp project-rag sync`).
+
+### Resource MCP — `tdmcp://project/sources`
+
+Lista JSON read-only de `{ name, displayName, status, reason? }` para que
+um agente saiba, antes de buscar, quais fontes estão indexadas localmente
+vs. configuradas mas skipped/planned/failed.
+
+### Tool de copiloto — `project_rag_search`
+
+Tool LLM read-only (`mutates: false`) exposta para `tdmcp ask`,
+`tdmcp chat`, o chat server loopback e o copiloto Telegram. Args espelham
+o CLI: `query`, `k` (default 5, máx 20), e arrays opcionais de filtro
+`license`, `type`, `operator`, `tags`. A tool é incluída no catálogo por
+`resolveTools(tier, { projectRag: ctx.projectRag !== undefined })` — então
+quando a Project RAG está desabilitada, **a tool fica AUSENTE do catálogo,
+não recusada na call**. Um modelo pequeno nunca vê uma tool que não pode
+usar.
+
+### Dica de cross-link no CLI (Creative RAG → Project RAG)
+
+Quando `tdmcp creative-rag search` retorna poucos resultados (default
+threshold ≤ 2) **e** a Project RAG está enabled **e** o usuário está em
+modo texto (não `--json`), o CLI imprime uma única linha no stderr:
+
+```text
+tip: also try `tdmcp project-rag search "<query>"` — more sources may match in the local project repertoire.
+```
+
+A sugestão é puramente informativa — não altera o comportamento da busca,
+saída para máquina (`--json`) nem exit code. Existe pra que um artista que
+tentou a RAG errada primeiro consiga pivotar sem reler os docs.
 
 ## F3 — análise via bridge-quarentena (opt-in)
 

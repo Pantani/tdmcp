@@ -229,6 +229,57 @@ Registered ONLY when both gating flags are set:
 - `tdmcp://project/cards/{id}` — one card (id = sha256 of `provenance.canonical`).
 - `tdmcp://project/search{?q,k,license,type,tags,operator}` — cosine search;
   every result carries provenance + license + rightsNotes.
+- `tdmcp://project/sources` *(F4)* — configured sources + their status
+  (`ready` / `skipped` / `planned` / `failed`), so the agent knows which
+  sources are indexed before searching.
+
+## F4 — AI surface (prompts, copilot tool, CLI cross-link)
+
+F4 is the **AI-facing layer** on top of F0–F3. Everything is offline, opt-in,
+and gated by `TDMCP_RAG_ENABLED=1 && TDMCP_PROJECT_RAG_ENABLED=1`.
+
+### MCP prompt — `project_rag_context`
+
+Runs `service.search(query, k, { license })` over the configured Project RAG
+index and returns a prompt message that lists the top-k cards as
+*authoritative reference* — title, license, optional rights notes, and
+`tdmcp://project/cards/{id}`. Args: `query` (free text), `k` (1–10, default 5),
+`license` (CSV like `CC0,MIT,Apache-2.0`).
+
+When Project RAG is not enabled or the service throws, the prompt **silently
+degrades** to a stock prompt that mentions the issue and continues with the
+model's own knowledge — it never blocks the turn. Same fallback for an empty
+search result (with the `tdmcp project-rag sync` hint).
+
+### MCP resource — `tdmcp://project/sources`
+
+Read-only JSON list of `{ name, displayName, status, reason? }` so an agent
+can tell ahead of search which sources are indexed locally vs. configured
+but skipped/planned/failed.
+
+### Copilot tool — `project_rag_search`
+
+A read-only (`mutates: false`) LLM tool advertised to `tdmcp ask`, `tdmcp chat`,
+the loopback chat server, and the Telegram copilot. Args mirror the CLI:
+`query`, `k` (default 5, max 20), and optional filter arrays `license`,
+`type`, `operator`, `tags`. The tool is added to the catalog by
+`resolveTools(tier, { projectRag: ctx.projectRag !== undefined })` — so when
+Project RAG is disabled, **the tool is absent from the catalog, not refused
+at call time**. A small model never sees a tool it cannot use.
+
+### CLI cross-link tip (Creative RAG → Project RAG)
+
+When `tdmcp creative-rag search` returns few results (default threshold ≤ 2)
+**and** Project RAG is enabled **and** the user is in text mode (not
+`--json`), the CLI prints a single stderr line:
+
+```text
+tip: also try `tdmcp project-rag search "<query>"` — more sources may match in the local project repertoire.
+```
+
+The suggestion is informational only — it does not alter search behavior,
+machine output (`--json`), or exit codes. It exists so an artist who tried
+the wrong RAG first can pivot without re-reading the docs.
 
 ## F3 — bridge-quarantine analysis (opt-in)
 

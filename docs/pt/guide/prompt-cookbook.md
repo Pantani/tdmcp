@@ -1704,6 +1704,95 @@ exemplo, "usa essa paleta e o `visualLanguage` em grade pra montar uma cena GLSL
 monocromática kinética". O cookbook para aqui; o build real fica para a tool de
 Layer 1 que os affordances indicam.*
 
+## Biblioteca de projetos (Project RAG)
+
+O **repertório de projetos** é o primo dev da Creative RAG: um índice local
+opt-in de *projetos, componentes e snippets* de TouchDesigner sob licença
+aberta — arquivos `.toe`/`.tox` e trechos de shader puxados de fontes
+curadas no GitHub — para que o agente possa basear um efeito em **código
+TD real** antes de escrever qualquer node novo. O CLI é
+`tdmcp project-rag <sync|index|search>`; `tdmcp://project/cards/{id}`,
+`tdmcp://project/search{?q,k,license,type,operator,tags}` e o novo
+`tdmcp://project/sources` são resources MCP read-only. O prompt MCP
+`project_rag_context` e a tool de copiloto `project_rag_search` expõem o
+mesmo índice para clientes LLM — ambos gated por
+`TDMCP_RAG_ENABLED=1 && TDMCP_PROJECT_RAG_ENABLED=1`.
+
+### Quando usar Project RAG vs Creative RAG
+
+Duas RAGs, duas perguntas. A Creative RAG responde *"como isso deveria
+parecer?"* — ela traz obras, paletas e linguagem visual. A Project RAG
+responde *"como isso é de fato construído no TD?"* — ela traz networks
+`.toe`/`.tox` funcionais e o wiring de operators que você pode ler ou
+adaptar. Misturar as duas é a ideia.
+
+> *"Quero montar uma peça de feedback com hand tracking. Primeiro rode o
+> prompt `project_rag_context` com `query: 'hand tracking mediapipe feedback'`
+> para eu ver como projetos TD reais fazem o wiring; depois escolha o de
+> licença mais permissiva e adapte a cadeia de operators para uma network
+> nova."*
+
+```text
+tdmcp://project/search?q=hand+tracking+mediapipe+feedback&k=5
+→
+0.823  MediaPipe Hand Pose Demo [project] — MIT — tdmcp://project/cards/abc123…
+0.781  Real-time Hand Tracker [project] — CC-BY-4.0 — tdmcp://project/cards/def456…
+0.704  Feedback Optical Flow Hands [snippet] — Apache-2.0 — tdmcp://project/cards/789abc…
+```
+
+*O prompt retorna títulos, licenças e URIs `tdmcp://project/cards/{id}` —
+não embeddings opacos. Inspecione cada card via `read_resource` para ver a
+lista completa de operators e o caminho do binário que dá para abrir no TD.
+Use a Creative RAG para **paleta/clima**; use a Project RAG para **o wiring
+TD que faz a coisa se mover**.*
+
+### Buscando exemplos reais antes de codar um efeito
+
+Quando o modelo vai *gerar* um efeito novo, o primeiro passo mais seguro é
+**buscar antes de sintetizar** — descobrir o que já existe, em código, sob
+uma licença que dá para reaproveitar.
+
+> *"Vou montar uma network de trails audio-reactive. Antes de criar qualquer
+> op, rode `tdmcp project-rag search 'audio reactive trails feedback'
+> --license CC0,MIT,Apache-2.0 --k 5` e cite os três cards do topo
+> (título + licença + URI). Abra o de licença mais permissiva via
+> `tdmcp://project/cards/{id}` e me diga quais operators ele usa. Aí a
+> gente decide se copia, adapta ou constrói do zero."*
+
+```bash
+tdmcp project-rag search "audio reactive trails feedback" \
+  --license CC0,MIT,Apache-2.0 --k 5
+```
+
+*O CLI espelha `tdmcp creative-rag search` — mesmo layout de flags, mesma
+história de reuso gated por licença. A diferença é que os cards aqui apontam
+para networks TD executáveis em vez de obras estáticas, e
+`--operator AudioSpectrumCHOP` filtra ainda mais para cards que de fato wirem
+um op específico. Quando a busca do lado creative volta com poucos
+resultados, o CLI também imprime no stderr uma dica sugerindo
+`tdmcp project-rag search "<q>"` como cross-link, então o agente pivota
+entre as duas bibliotecas sem perder a query.*
+
+> *"Hoje à noite preciso de um look rápido de organismo de neblina. Liste
+> primeiro as fontes Project RAG configuradas via `tdmcp://project/sources`
+> — quero saber quais estão ready vs planned antes de buscar, para não
+> caçar cards que ainda não foram indexados."*
+
+```json
+[
+  { "name": "github-repo", "displayName": "GitHub seed repos", "status": "ready" },
+  { "name": "github-topic", "displayName": "GitHub topic scanner", "status": "ready" },
+  { "name": "matthewragan", "displayName": "Matthew Ragan", "status": "planned" }
+]
+```
+
+*`tdmcp://project/sources` é o mapa honesto do que está indexado localmente.
+Uma fonte com `status: "planned"` significa que o adapter existe mas não está
+wired no seu sync atual — contexto útil quando os resultados de busca vêm
+mais finos do que você esperava. Combine com o prompt `project_rag_context`
+para deixar o agente raciocinar sobre cobertura antes de comprometer com
+um caminho de build.*
+
 ## Trabalhando a partir das suas notas (vault Obsidian)
 
 Se você mantém um [vault Obsidian](/reference/tools#obsidian-vault) conectado:
