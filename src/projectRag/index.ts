@@ -34,7 +34,7 @@ export {
   ProjectRagTypeSchema,
   ProjectScoreSchema,
 } from "./schema.js";
-export { computeProjectScore } from "./scoring.js";
+export { computeProjectScore, isCuratedSource } from "./scoring.js";
 export type { ProjectRagEmbeddings, ProjectRagServiceDeps } from "./service.js";
 export { createProjectRagService } from "./service.js";
 export type {

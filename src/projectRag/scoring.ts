@@ -9,10 +9,32 @@
  * ground-truth set.
  */
 
-import { licenseScore } from "./licensePolicy.js";
+import { isCopyleftLicense, licenseScore } from "./licensePolicy.js";
 import type { ProjectRagCard, ProjectRagConfig, ProjectScore } from "./types.js";
 
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+/**
+ * Light tie-breaker penalty applied to copyleft cards AFTER the weighted sum.
+ * Does NOT block GPL results — only nudges them below an equally-relevant
+ * permissive card. Tuned against the F2 ground-truth set.
+ */
+const COPYLEFT_PENALTY = 0.05;
+/**
+ * Curated source boost (multiplier added to reliability). Cards whose
+ * `provenance.sourceName` matches a curated source (e.g. tdmcp's default
+ * seed list) get a small bump so well-known authoritative repos surface first.
+ */
+const CURATED_BOOST = 0.1;
+
+/**
+ * Source names treated as curated. Kept aligned with
+ * {@link DEFAULT_GITHUB_REPOS} so the default seed wins ties against
+ * topic-discovered repos of the same relevance.
+ */
+const CURATED_SOURCE_NAMES: ReadonlySet<string> = new Set([
+  "github:torinmb/mediapipe-touchdesigner",
+  "github:DBraun/TouchDesigner_Shared",
+]);
 
 export function computeProjectScore(
   card: ProjectRagCard,
@@ -22,13 +44,22 @@ export function computeProjectScore(
   const license = licenseScore(card.license);
   const freshness = computeFreshness(card);
   const reliability = computeReliability(card);
-  const composite = clamp01(
+  const baseComposite =
     weights.technical * technical +
-      weights.license * license +
-      weights.freshness * freshness +
-      weights.reliability * reliability,
-  );
+    weights.license * license +
+    weights.freshness * freshness +
+    weights.reliability * reliability;
+  const copyleftPenalty = isCopyleftLicense(card.license) ? COPYLEFT_PENALTY : 0;
+  const composite = clamp01(baseComposite - copyleftPenalty);
   return { technical, license, freshness, reliability, composite };
+}
+
+/**
+ * True when this card's provenance matches a curated/official source list.
+ * Exposed for tests and for the reliability bump.
+ */
+export function isCuratedSource(sourceName: string): boolean {
+  return CURATED_SOURCE_NAMES.has(sourceName);
 }
 
 function computeTechnical(card: ProjectRagCard): number {
@@ -62,11 +93,18 @@ function pickTimestamp(card: ProjectRagCard): Date | undefined {
 }
 
 function computeReliability(card: ProjectRagCard): number {
+  let base: number;
   if (card.licenseConfidence === "declared" || card.licenseConfidence === "spdx-detected") {
-    return 0.85;
+    base = 0.85;
+  } else if (card.licenseConfidence === "heuristic") {
+    base = 0.6;
+  } else {
+    base = 0.4;
   }
-  if (card.licenseConfidence === "heuristic") return 0.6;
-  return 0.4;
+  if (isCuratedSource(card.provenance.sourceName)) {
+    base = clamp01(base + CURATED_BOOST);
+  }
+  return base;
 }
 
 function clamp01(n: number): number {
