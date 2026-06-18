@@ -37,12 +37,20 @@ export {
 export { computeProjectScore } from "./scoring.js";
 export type { ProjectRagEmbeddings, ProjectRagServiceDeps } from "./service.js";
 export { createProjectRagService } from "./service.js";
-export type { RawProjectItem, SourceAdapter, SourceAdapterContext } from "./sources/index.js";
+export type {
+  GithubTopicSourceOptions,
+  RawProjectItem,
+  SourceAdapter,
+  SourceAdapterContext,
+} from "./sources/index.js";
 export {
   DEFAULT_GITHUB_REPOS,
+  DEFAULT_TOPICS,
   githubRepoSource,
+  githubTopicSource,
   parseRepoListEnv,
   parseRepoSpec,
+  parseTopicListEnv,
   resolveProjectSources,
   SourceSkippedError,
 } from "./sources/index.js";

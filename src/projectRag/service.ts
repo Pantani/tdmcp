@@ -60,6 +60,13 @@ export interface ProjectRagServiceDeps {
    * inject `() => undefined` (or a literal CSV) to keep determinism.
    */
   githubReposCsv?: string | undefined;
+  /**
+   * Reads `TDMCP_PROJECT_RAG_GITHUB_TOPICS`. Pass the literal `off` to disable
+   * the topic scanner; pass a CSV of topics to override the defaults.
+   */
+  githubTopicsCsv?: string | undefined;
+  /** Topic scanner per-sync cap (default 25); used when topics are enabled. */
+  topicCap?: number | undefined;
 }
 
 const DEFAULT_SYNC_LIMIT = 10;
@@ -81,9 +88,15 @@ export function createProjectRagService(deps: ProjectRagServiceDeps): ProjectRag
   const fetchImpl = deps.fetchImpl ?? fetch;
 
   const csv = deps.githubReposCsv ?? config.githubReposCsv;
+  const topicsCsv = deps.githubTopicsCsv ?? config.githubTopicsCsv;
+  const topicCap = deps.topicCap ?? config.topicCap;
   const sources =
     deps.sources ??
-    resolveProjectSources({ ...(csv !== undefined ? { githubReposCsv: csv } : {}) });
+    resolveProjectSources({
+      ...(csv !== undefined ? { githubReposCsv: csv } : {}),
+      ...(topicsCsv !== undefined ? { githubTopicsCsv: topicsCsv } : {}),
+      ...(topicCap !== undefined ? { topicCap } : {}),
+    });
 
   const embeddings =
     deps.embeddings ??
@@ -283,12 +296,24 @@ export function createProjectRagService(deps: ProjectRagServiceDeps): ProjectRag
       status: "planned",
       reason: "F2",
     });
-    statuses.push({
-      name: "github-topic",
-      displayName: "GitHub topic:touchdesigner-components",
-      status: "planned",
-      reason: "F2",
-    });
+    if (liveNames.has("github-topic")) {
+      statuses.push({
+        name: "github-topic",
+        displayName: "GitHub topic scanner (touchdesigner-components et al.)",
+        status: "ready",
+        reason:
+          config.ghToken === undefined
+            ? "unauthenticated (limit 60 req/h — set TDMCP_PROJECT_RAG_GH_TOKEN)"
+            : "authenticated",
+      });
+    } else {
+      statuses.push({
+        name: "github-topic",
+        displayName: "GitHub topic scanner (touchdesigner-components et al.)",
+        status: "skipped",
+        reason: "disabled (TDMCP_PROJECT_RAG_GITHUB_TOPICS=off)",
+      });
+    }
     statuses.push({
       name: "awesome-touchdesigner",
       displayName: "monkeymonk/awesome-touchdesigner (discovery)",

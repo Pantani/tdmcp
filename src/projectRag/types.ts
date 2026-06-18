@@ -209,6 +209,14 @@ export interface ProjectRagConfig {
    * unset, the source defaults to the F1 seed (torinmb/mediapipe-touchdesigner).
    */
   githubReposCsv?: string;
+  /**
+   * Optional CSV of GitHub topics for the `github-topic` scanner. Pass the
+   * literal `off` to disable the scanner entirely. When unset the scanner runs
+   * with the default TouchDesigner topic list.
+   */
+  githubTopicsCsv?: string;
+  /** Per-sync hard cap for the topic scanner (default 25). */
+  topicCap?: number;
   /** Static-analyzer subprocess timeout. */
   analyzeTimeoutMs: number;
   scoreWeights: { technical: number; license: number; freshness: number; reliability: number };

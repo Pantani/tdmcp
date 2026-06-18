@@ -249,6 +249,14 @@ export const ConfigSchema = z.object({
    * `parseRepoListEnv` in `src/projectRag/sources/githubRepo.ts`.
    */
   projectRagGithubRepos: z.string().optional(),
+  /**
+   * CSV of GitHub topics for the `github-topic` scanner. Pass the literal `off`
+   * to disable the scanner entirely. When unset the scanner runs with the
+   * default TouchDesigner topic list.
+   */
+  projectRagGithubTopics: z.string().optional(),
+  /** Per-sync hard cap for the topic scanner (default 25). */
+  projectRagTopicCap: z.coerce.number().int().positive().max(500).default(25),
   /** Static `.toe`/`.tox` analyzer subprocess timeout (ms). */
   projectRagAnalyzeTimeoutMs: z.coerce.number().int().positive().default(30000),
   /**
@@ -354,6 +362,8 @@ function envValues(env: NodeJS.ProcessEnv): Record<string, unknown> {
     projectRagBridgePort: env.TDMCP_PROJECT_RAG_BRIDGE_PORT || undefined,
     projectRagGhToken: env.TDMCP_PROJECT_RAG_GH_TOKEN || undefined,
     projectRagGithubRepos: env.TDMCP_PROJECT_RAG_GITHUB_REPOS || undefined,
+    projectRagGithubTopics: env.TDMCP_PROJECT_RAG_GITHUB_TOPICS || undefined,
+    projectRagTopicCap: env.TDMCP_PROJECT_RAG_TOPIC_CAP || undefined,
     projectRagAnalyzeTimeoutMs: env.TDMCP_PROJECT_RAG_ANALYZE_TIMEOUT_MS || undefined,
     projectRagLicenseAllowlist: env.TDMCP_PROJECT_RAG_LICENSE_ALLOWLIST || undefined,
     projectRagScoreWeights: env.TDMCP_PROJECT_RAG_SCORE_WEIGHTS || undefined,

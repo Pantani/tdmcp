@@ -77,7 +77,7 @@ describe("projectRag service (skeleton-level behaviour)", () => {
     expect(await svc.search("anything", 5)).toEqual([]);
   });
 
-  it("listSources() reports github-repo ready (F1) and others planned", async () => {
+  it("listSources() reports github-repo + github-topic ready (F2) and others planned", async () => {
     const svc = createProjectRagService({
       config: makeConfig(DIR),
       embeddings: NOOP_EMBEDDINGS,
@@ -85,8 +85,8 @@ describe("projectRag service (skeleton-level behaviour)", () => {
     const list = await svc.listSources();
     const byName = new Map(list.map((s) => [s.name, s] as const));
     expect(byName.get("github-repo")?.status).toBe("ready");
+    expect(byName.get("github-topic")?.status).toBe("ready");
     expect(byName.get("derivative-local")?.status).toBe("planned");
-    expect(byName.get("github-topic")?.status).toBe("planned");
     expect(byName.get("awesome-touchdesigner")?.status).toBe("planned");
   });
 
