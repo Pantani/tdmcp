@@ -20,6 +20,7 @@ import { registerLyricShow } from "./lyricShow.js";
 import { registerMatchReferenceLoop } from "./matchReferenceLoop.js";
 import { registerMotionCritique } from "./motionCritique.js";
 import { registerOptimizePerformance } from "./optimizePerformance.js";
+import { registerProjectRagContext } from "./projectRagContext.js";
 import { registerRecoverShow } from "./recoverShow.js";
 import { registerRemixVisual } from "./remixVisual.js";
 import { registerSetlistPlanner } from "./setlistPlanner.js";
@@ -70,6 +71,8 @@ export function registerAllPrompts(server: McpServer, ctx: PromptContext): void 
   registerMatchReferenceLoop(server, ctx);
   // v0.6.0 — Creative RAG mood-board prompt:
   registerCreativeInspiration(server, ctx);
+  // Project RAG F4 — local-repertoire context injection (no-op unless ctx.projectRag set):
+  registerProjectRagContext(server, ctx);
 }
 
 export type { PromptContext } from "./types.js";

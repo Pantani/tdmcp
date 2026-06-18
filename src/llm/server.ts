@@ -132,7 +132,7 @@ async function handleChat(
     config.llmTier ?? DEFAULT_LLM_TIER,
     config.llmLockedTier,
   );
-  const tools = resolveTools(tier);
+  const tools = resolveTools(tier, { projectRag: ctx.projectRag !== undefined });
 
   const controller = new AbortController();
   req.on("close", () => controller.abort());

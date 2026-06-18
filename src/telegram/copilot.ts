@@ -229,7 +229,7 @@ export class TelegramCopilotService {
           );
         },
         {
-          tools: resolveTools(tier),
+          tools: resolveTools(tier, { projectRag: this.opts.ctx.projectRag !== undefined }),
           signal: controller.signal,
         },
       );

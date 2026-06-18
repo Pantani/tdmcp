@@ -64,7 +64,10 @@ async function main(): Promise<void> {
   if (argv[0] === "creative-rag") {
     const { runCreativeRagCli, toCreativeRagConfig } = await import("./creativeRag/index.js");
     const cfg = loadConfig(process.env, { useFiles: true });
-    process.exitCode = await runCreativeRagCli(argv.slice(1), { config: toCreativeRagConfig(cfg) });
+    process.exitCode = await runCreativeRagCli(argv.slice(1), {
+      config: toCreativeRagConfig(cfg),
+      projectRagEnabled: cfg.ragEnabled === true && cfg.projectRagEnabled === true,
+    });
     return;
   }
   if (argv[0] === "project-rag") {
