@@ -2,9 +2,11 @@
 /**
  * Generate small MP4 clips used by the prompt cookbook.
  *
- * These are lightweight documentation clips for features whose real output is a
- * timed system, UI surface, or shader/material workflow. Visual-generator demos
- * captured from a live TouchDesigner network should still use capture-example.mjs.
+ * These are lightweight documentation clips for the prompt cookbook. Cookbook
+ * media should read as the visual result an artist would get from the prompt,
+ * not as an explanatory diagram of the command that produced it. Visual-generator
+ * demos captured from a live TouchDesigner network should still use
+ * capture-example.mjs.
  */
 import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -1817,35 +1819,45 @@ function paletteExtractAndGradeFrame(t) {
 }
 
 function sopToSvgFrame(t) {
-  const buf = baseFrame();
-  const path = [];
-  for (let i = 0; i < 80; i++) {
-    const x = 38 + i * 3.6;
-    const y = 136 + Math.sin(i * 0.28 + t * 2.5) * 48 + Math.sin(i * 0.71) * 12;
-    path.push([x, y]);
+  const buf = Buffer.alloc(width * height * 3);
+  rect(buf, 0, 0, width, height, [238, 234, 220], 1);
+  for (let x = 36; x <= 444; x += 24) line(buf, x, 24, x, 246, [200, 194, 178], 0.25);
+  for (let y = 30; y <= 246; y += 24) line(buf, 30, y, 450, y, [200, 194, 178], 0.25);
+  rect(buf, 30, 24, 420, 222, [255, 255, 255], 0.22);
+
+  const paths = [];
+  for (let band = 0; band < 7; band++) {
+    const pts = [];
+    for (let i = 0; i < 120; i++) {
+      const u = i / 119;
+      const x = 46 + u * 388;
+      const y =
+        136 +
+        Math.sin(u * Math.PI * (2.5 + band * 0.28) + band * 0.74 + t * 1.4) * (22 + band * 3) +
+        Math.sin(u * Math.PI * 8 - t * 1.1) * 7 +
+        (band - 3) * 12;
+      pts.push([x, y]);
+    }
+    paths.push(pts);
   }
-  for (let i = 0; i < path.length - 1; i++)
-    line(buf, path[i][0], path[i][1], path[i + 1][0], path[i + 1][1], [68, 220, 255], 0.66);
-  rect(buf, 316, 34, 128, 190, [244, 239, 224], 0.96);
-  rect(buf, 328, 48, 104, 162, [255, 255, 255], 0.86);
-  const p = Math.floor(((t * 0.5) % 1) * (path.length - 1));
-  for (let i = 0; i < p; i++) {
-    const x0 = 336 + (path[i][0] - 38) * 0.34;
-    const y0 = 130 + (path[i][1] - 136) * 0.52;
-    const x1 = 336 + (path[i + 1][0] - 38) * 0.34;
-    const y1 = 130 + (path[i + 1][1] - 136) * 0.52;
-    line(buf, x0, y0, x1, y1, [18, 24, 32], 0.92);
-  }
-  circle(
-    buf,
-    336 + (path[p][0] - 38) * 0.34,
-    130 + (path[p][1] - 136) * 0.52,
-    4,
-    [255, 82, 126],
-    0.95,
-  );
-  rect(buf, 92, 230, 120, 8, [57, 232, 190], 0.8);
-  rect(buf, 332, 230, 88, 8, [255, 214, 86], 0.8);
+
+  const reveal = (t * 0.45) % 1;
+  paths.forEach((pts, pathIndex) => {
+    const color = mixColor([18, 24, 32], [38, 94, 126], pathIndex / Math.max(1, paths.length - 1));
+    const limit = Math.max(
+      2,
+      Math.floor(pts.length * smoothstep(0, 1, reveal + pathIndex * 0.055)),
+    );
+    for (let i = 0; i < limit - 1; i++)
+      line(buf, pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], color, 0.82);
+  });
+
+  const activePath = paths[Math.floor((t * 2) % paths.length)];
+  const penIndex = Math.min(activePath.length - 1, Math.floor(reveal * activePath.length));
+  const [penX, penY] = activePath[penIndex];
+  circle(buf, penX, penY, 5, [255, 82, 126], 0.92);
+  line(buf, penX + 4, penY - 10, penX + 18, penY - 34, [28, 32, 40], 0.75);
+  circle(buf, penX + 18, penY - 34, 6, [28, 32, 40], 0.88);
   return buf;
 }
 
@@ -2963,7 +2975,7 @@ function miniNode(buf, x, y, color, active = false) {
   if (active) glow(buf, x + 22, y + 12, 34, color, 0.22);
 }
 
-function drawRecipeShell(buf, t, accent) {
+function _drawRecipeShell(buf, t, accent) {
   rect(buf, 22, 24, 436, 220, [12, 18, 30], 0.96);
   rect(buf, 42, 42, 118, 176, [238, 242, 247], 0.92);
   for (let i = 0; i < 8; i++) {
@@ -3199,18 +3211,32 @@ const recipePreviewRenderers = {
   timeline: drawTimelineRecipePreview,
 };
 
-function drawRecipePreview(buf, kind, t, accent) {
+function _drawRecipePreview(buf, kind, t, accent) {
   rect(buf, 334, 56, 94, 126, [4, 7, 14], 0.92);
   recipePreviewRenderers[kind]?.(buf, t, accent);
 }
 
-function recipeStarterFrame(kind, accent = [57, 232, 190]) {
-  return (t) => {
-    const buf = baseFrame();
-    drawRecipeShell(buf, t, accent);
-    drawRecipePreview(buf, kind, t, accent);
-    return buf;
+function recipeStarterFrame(kind, _accent = [57, 232, 190]) {
+  const outputRenderers = {
+    audio: chromaTransientEnergyFrame,
+    decks: nChannelDecksFrame,
+    depth: multipassDepthFrame,
+    face: faceTrackingFrame,
+    feedback: feedbackTunnelFrame,
+    glsl: isfImportFrame,
+    keyframe: pbrProductFrame,
+    optical: opticalFlowParticlesTrailFrame,
+    particles: particleFlockMurmurationFrame,
+    pose: poseTrailsFrame,
+    scene3d: scene3dFrame,
+    synth: feedbackTunnelInfiniteFrame,
+    text: typewriterManifestoFrame,
+    textPath: pathTitleOrbitFrame,
+    timeline: sceneTimelineFrame,
   };
+  const renderer = outputRenderers[kind];
+  if (!renderer) throw new Error(`Unknown recipe starter preview kind: ${kind}`);
+  return renderer;
 }
 
 function transportRestCueFrame(t) {

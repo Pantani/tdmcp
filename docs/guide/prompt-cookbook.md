@@ -17,6 +17,10 @@ Describe the **result and the feeling**, not the nodes. "A slow, hypnotic, deep-
 tunnel" works better than naming operators. The AI picks the operators.
 :::
 
+Media on this page is reserved for the visual result or performable surface a
+prompt creates. If a prompt produces a report, config, README or health check, it
+stays text-only instead of showing a decorative command illustration.
+
 ## Recipe starters (v0.8.2)
 
 Use these when you want a validated first-party recipe first, then a creative pass.
@@ -784,7 +788,6 @@ noisy text geometry, projector labels, MIDI-triggered words and path-follow titl
 > *"Bridge Ableton Live into TouchDesigner: clips, tracks, transport and device
 > macros as named CHOP channels, with an OSC fallback if TDAbleton is not installed."*
 
-<video :src="withBase('/examples/tdableton-bridge.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`setup_tdableton` probes for the Palette component first, then falls back to a plain
 OSC In bridge, so the same show patch can rehearse without a perfect studio setup.*
@@ -811,7 +814,6 @@ not required.*
 
 > *"Going live now — turn on perform mode so nothing hitches mid-show."*
 
-<video :src="withBase('/examples/perform-mode-rest-toggle.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`set_perform_mode` now prefers the hardened `POST /api/perform` endpoint and
 returns a typed snapshot showing whether the root store, UI perform mode and project
@@ -923,7 +925,6 @@ cue timeline strip and a safer two-step panic surface.*
 > *"Dry-run the AI show director: allow a pre-approved band intro cue, queue a
 > three-second fog request for operator approval, and block a blackout request."*
 
-<video :src="withBase('/examples/show-director-policy-queue.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`tdmcp-agent show-director` is a policy surface, not an unsafe hardware trigger. It
 validates structured show intents, returns allow / approval / block decisions, keeps
@@ -933,7 +934,6 @@ human/operator path resolves it.*
 > *"Plan a 20-minute set across my three scenes in dry-run mode first — show me
 > what the AI director will do before it touches anything."*
 
-<video :src="withBase('/examples/show-director-policy-queue.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`create_autopilot` runs each show-directing call through the policy layer in
 dry-run mode and returns the planned action + rationale (which scene, which
@@ -953,7 +953,6 @@ bar — without breaking the v1 dashboard byte-for-byte.*
 > *"Jump my timeline to the chorus cue, set playback rate to 1.25, and start
 > playing — through the fast REST path, not a Python exec."*
 
-<video :src="withBase('/examples/transport-rest-cue.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`control_timeline_transport` now prefers the new `POST /api/transport` endpoint
 for play / pause / seek / cue / rate and falls back to `executePythonScript` only
@@ -963,7 +962,6 @@ a downbeat.*
 > *"Lock the show to incoming OSC timecode, follow the timeline frame-for-frame, and
 > jump to named cues if the timecode label says chorus or blackout."*
 
-<video :src="withBase('/examples/timecode-sync-lock.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`sync_timecode` wires MTC / LTC / OSC timecode into a normalized CHOP and can drive
 the TD timeline. Pair it with `control_timeline_transport` for explicit play, pause,
@@ -972,7 +970,6 @@ seek, rate and cue commands.*
 > *"Schedule the lobby installation: start the ocean scene every weekday at 09:00,
 > switch to the dusk set at 18:00, and dry-run the schedule first."*
 
-<video :src="withBase('/examples/schedule-lobby-install.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`tdmcp-agent schedule` is the cron-lite companion for unattended installs. It uses
 wall-clock scheduling with timezone handling, can dry-run, and can fire commands,
@@ -981,7 +978,6 @@ cues or setlists.*
 > *"Record the next few MCP tool calls as a macro called soundcheck, then replay it
 > on the second machine after the stage network comes online."*
 
-<video :src="withBase('/examples/macro-recorder-soundcheck.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *Use `macro_recorder` to capture a portable JSON macro and `run_macro_script` to
 replay it later. The CLI side can also fan out a command to multiple remote agents
@@ -1012,7 +1008,6 @@ timer.*
 > *"Wrap my NDI input in a watchdog that auto-switches to a pre-rendered MP4 if
 > the camera drops, with a 250ms crossfade and a sticky-recover toggle."*
 
-<video :src="withBase('/examples/show-failover-watchdog.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`create_show_failover` runs an Info CHOP on the live source and watches the
 `total_cooks` delta — when it stops climbing the watchdog routes a Switch TOP to
@@ -1068,7 +1063,6 @@ up with a wall, screen or object.*
 > *"Create a starter `TDMCP_*` config file for this show laptop, but leave secrets
 > commented out and refuse to overwrite the existing file unless I pass force."*
 
-<video :src="withBase('/examples/config-init-env-scan.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`tdmcp-agent config init` prints or writes the complete `.env` surface the server reads,
 with bridge/LLM secrets commented for manual entry. It is a small tool, but it makes
@@ -1109,7 +1103,6 @@ and a parent error sweep without juggling separate preview and error tools.*
 > *"Read parameter modes for every important node under `/project1/hero` in one
 > batch, then tell me which parameters are expressions, binds or exported channels."*
 
-<video :src="withBase('/examples/param-modes-batch-inspector.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *The `POST /api/param_modes/batch` bridge path lets agents inspect expression,
 bind, export and constant modes for many nodes in one round-trip. It replaces the
@@ -1121,7 +1114,6 @@ overridden.*
 > *"Score this build on palette, motion, complexity, errors and performance, then
 > suggest the smallest changes that would improve it."*
 
-<video :src="withBase('/examples/score-enhance-loop.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`score_build` is read-only and returns a 0–100 rubric with deterministic
 suggestions. `enhance_build` can preview or apply a small allowlisted improvement
@@ -1139,7 +1131,6 @@ and "make the next look match this one" prompts.*
 > *"Ask the vision copilot what dominates this TOP, whether the subject is readable
 > from the back of the room, and which one change would improve it."*
 
-<video :src="withBase('/examples/copilot-vision-critique.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`copilot_vision` sends a rendered TOP plus your question to the configured
 multimodal LLM. It complements deterministic tools like `caption_top` and
@@ -1148,7 +1139,6 @@ multimodal LLM. It complements deterministic tools like `caption_top` and
 > *"I know I want `create_audio_reactive`, but I only said 'microphone neon bars' —
 > infer the missing required arguments from the schema and show me the proposed call."*
 
-<video :src="withBase('/examples/missing-args-elicit.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`elicit_missing_args` uses the registered tool schema plus chat context to propose
 only the missing fields. It is read-only and useful for agents that should ask fewer
@@ -1165,7 +1155,6 @@ manual follow-up questions without inventing unsupported parameters.*
 > *"Swap this `noiseTOP` into a `rampTOP`, keep the name and wires, preserve any
 > matching parameters, and report what could not be carried across."*
 
-<video :src="withBase('/examples/swap-operator-rewire.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`swap_operator` is the careful version of "replace this node": it snapshots wires
 and parameters, recreates the operator type in place, reconnects what it can and
@@ -1176,7 +1165,6 @@ returns dropped parameters/failures explicitly.*
 > *"Try to repair this broken render chain — but if the error count goes up, roll
 > back every change you made."*
 
-<video :src="withBase('/examples/repair-network-rollback.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`repair_network` now snapshots `(par.path, par.mode)` and `(op.path, op.bypass,
 op.display)` before each step. If `errors_after >= errors_before` and it isn't a
@@ -1187,7 +1175,6 @@ true` flag — a self-undoing repair pass, the safety net every artist wanted fr
 > *"Run an auto-repair loop on `/project1` — three passes max, stop if errors
 > stop going down, and roll back any pass that makes things worse."*
 
-<video :src="withBase('/examples/auto-repair-loop-passes.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`auto_repair_loop` is the "fix everything" verb: it drives `repair_network` in
 iterations, scores `errors_before`/`errors_after` per pass, halts on a no-progress
@@ -1213,7 +1200,6 @@ it to another room or turn it into a physical output.
 > add clear labels, save it as a portable `.tox`, and include a preview image so I
 > can recognize it before I open TouchDesigner."*
 
-<video :src="withBase('/examples/portable-tox-readme-package.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *The packaging tools are useful when they serve the artist: a portable `.tox`,
 visible controls, simple notes and a thumbnail of the actual output. The result is a
@@ -1223,7 +1209,6 @@ visual instrument you can drop into a show, not a developer handoff exercise.*
 > capture the controls I should explain, and make it easy to apply in a blank
 > project next week."*
 
-<video :src="withBase('/examples/scaffold-recipe-from-network.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`scaffold_recipe_from_network` can turn a finished TD subtree into an apply-able
 recipe. Framed for artists, the point is repeatable teaching and rehearsal: rebuild
@@ -1233,7 +1218,6 @@ the look from a clean project, then adjust the exposed controls in front of peop
 > I should touch live, and a simple left-to-right diagram of how signal becomes
 > image."*
 
-<video :src="withBase('/examples/readme-mermaid-docs.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *Generated patch notes are only useful here when they read like a studio map: what
 the look is, which controls matter, what feeds the output and what the current
@@ -1243,7 +1227,6 @@ preview looks like.*
 > blackout-safe — then tag the favorite so I can find it fast during the next
 > rehearsal."*
 
-<video :src="withBase('/examples/library-tag-version-loop.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *Vault tagging, variants and version notes help artists keep a live library sane:
 the question becomes "which look do I trust for this cue?", not "which file did I
@@ -1478,7 +1461,6 @@ can I perform it, does it react, and is it safe to keep rehearsing?
 > *"Before rehearsal, open my main output, take a quick preview snapshot, and tell
 > me if it is black, low-res, frozen or showing errors."*
 
-<video :src="withBase('/examples/inline-preview-thumbnail.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`get_inline_preview` turns "is it alive?" into one check: thumbnail, resolution,
 pixel format, cook metadata and recent errors. The answer should be visual and
@@ -1487,7 +1469,6 @@ plain-language first.*
 > *"Watch the bass analyze CHOP for five seconds and tell me the real min/max so I
 > can set the visual range before the DJ arrives."*
 
-<video :src="withBase('/examples/watch-node-telemetry.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`watch_node` is useful when it reads a signal the way a performer needs it: actual
 range, spikes, quiet moments and whether the channel is stable enough to bind to a
@@ -1497,7 +1478,6 @@ look.*
 > reachable, is the bridge on the expected port, and what should I fix before
 > doors?"*
 
-<video :src="withBase('/examples/config-profiles-redacted.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *Venue/profile checks belong in the cookbook only when they answer a show question:
 which room am I set up for, is the live bridge reachable, and what concrete action
@@ -1506,7 +1486,6 @@ keeps rehearsal moving?*
 > *"Read the compact map of `/project1/hero` and explain the visible controls in
 > plain language: what changes color, motion, intensity and reset?"*
 
-<video :src="withBase('/examples/compact-graph-digest-budget.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`compact_graph_digest` summarizes a network without drowning the artist in nodes:
 counts, wires and key parameters become a short map of what the look can do.*
@@ -1515,7 +1494,6 @@ counts, wires and key parameters become a short map of what the look can do.*
 > whether the cue stream is steady enough to drive cuts; do not trigger anything on
 > stage."*
 
-<video :src="withBase('/examples/agent-watch-hooks.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *Bridge event watching can stay read-only: use it to prove that tempo, beat or
 gesture events are arriving before you map them to visible changes.*
@@ -1523,7 +1501,6 @@ gesture events are arriving before you map them to visible changes.*
 > *"Teach me enough TouchDesigner to safely tweak this patch: show the operator path
 > I should open, the one parameter to try first, and a fallback if it breaks."*
 
-<video :src="withBase('/examples/td-learning-resources.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *Learning resources and cheatsheets are artist-facing when they reduce fear in the
 patch: one operator, one safe parameter, one way back.*
@@ -1531,7 +1508,6 @@ patch: one operator, one safe parameter, one way back.*
 > *"Look at the current output and critique it like a motion designer: palette,
 > contrast, rhythm, legibility and one concrete next tweak."*
 
-<video :src="withBase('/examples/copilot-vision-critique.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *The local copilot should close the loop from generated network to visible result:
 describe what is on screen, name the weakest artistic choice, then propose a small

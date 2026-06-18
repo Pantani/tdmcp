@@ -19,6 +19,11 @@ azul-profundo" funciona melhor do que nomear operadores. A IA escolhe os
 operadores.
 :::
 
+A mídia desta página fica reservada para o resultado visual ou a superfície
+performável que o prompt cria. Se o prompt gera relatório, config, README ou
+health check, ele fica só em texto em vez de mostrar uma ilustração decorativa do
+comando.
+
 ## Starters de receita (v0.8.2)
 
 Use estes quando quiser começar por uma receita first-party validada e só depois
@@ -808,7 +813,6 @@ por MIDI e títulos seguindo paths.
 > macros de device como canais CHOP nomeados, com fallback OSC se o TDAbleton não
 > estiver instalado."*
 
-<video :src="withBase('/examples/tdableton-bridge.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`setup_tdableton` procura primeiro o componente Palette e depois cai para um OSC In
 simples, então o mesmo patch de show consegue ensaiar mesmo sem setup perfeito de
@@ -837,7 +841,6 @@ AbletonMCP não é necessário.*
 
 > *"Indo ao vivo agora — ligue o perform mode para nada engasgar no meio do show."*
 
-<video :src="withBase('/examples/perform-mode-rest-toggle.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`set_perform_mode` agora prefere o endpoint hardened `POST /api/perform` e devolve
 um snapshot tipado dizendo se o store da raiz, o perform mode da UI e o perform
@@ -953,7 +956,6 @@ cook, faixa de timeline de cues e uma superfície de panic em duas etapas.*
 > pré-aprovado, coloque um pedido de fog de três segundos na fila de aprovação do
 > operador, e bloqueie um pedido de blackout."*
 
-<video :src="withBase('/examples/show-director-policy-queue.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`tdmcp-agent show-director` é uma superfície de política, não um gatilho perigoso
 de hardware. Ele valida intents estruturadas de show, retorna decisões allow /
@@ -963,7 +965,6 @@ como dry-run-only até um caminho humano/de operador resolver aquilo.*
 > *"Trave o show em timecode OSC de entrada, siga a timeline quadro a quadro e pule
 > para cues nomeados se o rótulo de timecode disser chorus ou blackout."*
 
-<video :src="withBase('/examples/timecode-sync-lock.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`sync_timecode` conecta MTC / LTC / OSC timecode a um CHOP normalizado e pode guiar
 a timeline do TD. Combine com `control_timeline_transport` para comandos explícitos
@@ -972,7 +973,6 @@ de play, pause, seek, rate e cue.*
 > *"Agende a instalação do lobby: iniciar a cena ocean todo dia útil às 09:00,
 > trocar para o set dusk às 18:00 e rodar um dry-run do agendamento primeiro."*
 
-<video :src="withBase('/examples/schedule-lobby-install.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`tdmcp-agent schedule` é o companheiro cron-lite para instalações sem operador. Ele
 usa agendamento por relógio de parede com timezone, pode fazer dry-run e pode disparar
@@ -981,7 +981,6 @@ comandos, cues ou setlists.*
 > *"Grave as próximas chamadas MCP como uma macro chamada soundcheck, então rode de
 > novo na segunda máquina depois que a rede do palco estiver online."*
 
-<video :src="withBase('/examples/macro-recorder-soundcheck.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *Use `macro_recorder` para capturar uma macro JSON portátil e `run_macro_script` para
 reproduzi-la depois. O lado CLI também consegue fazer fanout de um comando para
@@ -990,7 +989,6 @@ vários agentes remotos quando várias máquinas TD precisam do mesmo setup.*
 > *"Planeja um set de 20 minutos atravessando minhas três cenas em modo dry-run —
 > me mostra o que o diretor de IA vai fazer antes de tocar em qualquer coisa."*
 
-<video :src="withBase('/examples/show-director-policy-queue.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *A camada de política do AI Show Director avalia cada chamada de ferramenta de
 show em modo dry-run e devolve a ação planejada + justificativa (qual cena, qual
@@ -1010,7 +1008,6 @@ confirmação — sem quebrar o dashboard v1 byte por byte.*
 > *"Pula minha timeline pra cue do refrão, coloca rate 1.25 e dá play — pelo
 > caminho REST rápido, não por exec de Python."*
 
-<video :src="withBase('/examples/transport-rest-cue.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *O novo endpoint `POST /api/transport` lida com play / pause / seek / cue / rate
 sem `executePythonScript`. A ferramenta prefere o endpoint via `tryEndpoint` e cai
@@ -1043,7 +1040,6 @@ timer.*
 > *"Envolve minha entrada NDI num watchdog que troca automaticamente pra um MP4
 > pré-renderizado se a câmera cair, com crossfade de 250ms e um toggle de recuperação fixo."*
 
-<video :src="withBase('/examples/show-failover-watchdog.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`create_show_failover` roda um Info CHOP na fonte ao vivo e observa o delta de
 `total_cooks` — quando ele para de subir, o watchdog roteia um Switch TOP pro
@@ -1100,7 +1096,6 @@ alinhar com uma parede, tela ou objeto.*
 > *"Crie um arquivo inicial de config `TDMCP_*` para este notebook de show, mas deixe
 > segredos comentados e recuse sobrescrever o arquivo existente sem `force`."*
 
-<video :src="withBase('/examples/config-init-env-scan.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`tdmcp-agent config init` imprime ou escreve toda a superfície `.env` que o servidor lê,
 com segredos de bridge/LLM comentados para preenchimento manual. É pequeno, mas torna
@@ -1150,7 +1145,6 @@ ferramentas de preview e erro.*
 > numa chamada batch, então me diga quais parâmetros são expressão, bind ou canal
 > exportado."*
 
-<video :src="withBase('/examples/param-modes-batch-inspector.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *O caminho `POST /api/param_modes/batch` da bridge deixa agentes inspecionarem
 modos expression, bind, export e constant de muitos nós em uma rodada só. Ele
@@ -1162,7 +1156,6 @@ está reagindo, travado ou sobrescrito.*
 > *"Pontue este build em paleta, movimento, complexidade, erros e performance, então
 > sugira as menores mudanças que melhorariam o resultado."*
 
-<video :src="withBase('/examples/score-enhance-loop.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`score_build` é read-only e devolve uma rubrica de 0 a 100 com sugestões
 determinísticas. `enhance_build` pode pré-visualizar ou aplicar um pequeno ciclo de
@@ -1180,7 +1173,6 @@ tipo "faça o próximo look combinar com este".*
 > *"Pergunte ao vision copilot o que domina este TOP, se o assunto é legível do fundo
 > da sala e qual única mudança mais melhoraria o resultado."*
 
-<video :src="withBase('/examples/copilot-vision-critique.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`copilot_vision` envia um TOP renderizado mais a sua pergunta ao LLM multimodal
 configurado. Ele complementa ferramentas determinísticas como `caption_top` e
@@ -1190,7 +1182,6 @@ configurado. Ele complementa ferramentas determinísticas como `caption_top` e
 > — infira os argumentos obrigatórios ausentes pelo schema e mostre a chamada
 > proposta."*
 
-<video :src="withBase('/examples/missing-args-elicit.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`elicit_missing_args` usa o schema registrado da ferramenta mais o contexto da
 conversa para propor apenas os campos ausentes. É read-only e ajuda agentes a fazerem
@@ -1204,7 +1195,6 @@ menos perguntas manuais sem inventar parâmetros inexistentes.*
 > *"Troque este `noiseTOP` por um `rampTOP`, mantenha o nome e os fios, preserve os
 > parâmetros compatíveis e relate o que não pôde ser carregado."*
 
-<video :src="withBase('/examples/swap-operator-rewire.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`swap_operator` é a versão cuidadosa de "substitua este nó": ele tira snapshot dos
 fios e parâmetros, recria o tipo de operador no mesmo lugar, reconecta o que consegue
@@ -1213,7 +1203,6 @@ e devolve parâmetros descartados/falhas explicitamente.*
 > *"Tenta consertar essa cadeia de render quebrada — mas se a contagem de erros
 > aumentar, desfaça toda mudança que você fez."*
 
-<video :src="withBase('/examples/repair-network-rollback.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *O loop de repair agora tira snapshot de `(par.path, par.mode)` e `(op.path,
 op.bypass, op.display)` antes de cada passo. Se `errors_after >= errors_before` e
@@ -1225,7 +1214,6 @@ conserta aí".*
 > *"Roda um auto-repair em `/project1` — até três passadas, para se os erros
 > pararem de cair e desfaz qualquer passada que piore o estado."*
 
-<video :src="withBase('/examples/auto-repair-loop-passes.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`auto_repair_loop` é o verbo "conserta tudo": ele dirige `repair_network` em
 iterações, marca `errors_before`/`errors_after` por passada, para no platô e
@@ -1241,7 +1229,6 @@ outra sala ou transformar em saída física.
 > Reset, coloque labels claros, salve como `.tox` portátil e inclua uma imagem de
 > preview para eu reconhecer antes de abrir o TouchDesigner."*
 
-<video :src="withBase('/examples/portable-tox-readme-package.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *As ferramentas de pacote ajudam quando servem ao artista: `.tox` portátil,
 controles visíveis, notas simples e thumbnail da saída real. O resultado é um
@@ -1251,7 +1238,6 @@ instrumento visual para colocar no show, não um exercício de handoff técnico.
 > capture os controles que eu devo explicar e deixe fácil aplicar em um projeto
 > vazio na semana que vem."*
 
-<video :src="withBase('/examples/scaffold-recipe-from-network.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`scaffold_recipe_from_network` pode transformar uma subárvore TD pronta numa
 receita reaplicável. Para artista, a utilidade é ensino e ensaio repetíveis:
@@ -1261,7 +1247,6 @@ reconstruir o look do zero e ajustar os controles expostos na frente das pessoas
 > controles que devo tocar ao vivo e um diagrama simples da esquerda para a direita
 > mostrando como o sinal vira imagem."*
 
-<video :src="withBase('/examples/readme-mermaid-docs.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *Notas geradas só entram aqui quando parecem mapa de estúdio: o que é o look, quais
 controles importam, o que alimenta a saída e como está o preview atual.*
@@ -1269,7 +1254,6 @@ controles importam, o que alimenta a saída e como está o preview atual.*
 > *"Salve este look com três variantes — ambient lenta, refrão de alta energia e
 > blackout-safe — e marque a favorita para eu encontrar rápido no próximo ensaio."*
 
-<video :src="withBase('/examples/library-tag-version-loop.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *Tags, variantes e notas de versão no vault ajudam artistas a manter uma biblioteca
 ao vivo organizada: a pergunta vira "qual look eu confio para este cue?", não
@@ -1509,7 +1493,6 @@ consigo ver, consigo tocar, reage direito e é seguro continuar ensaiando?
 > *"Antes do ensaio, abra meu output principal, tire um snapshot rápido do preview e
 > me diga se está preto, em baixa resolução, congelado ou com erro."*
 
-<video :src="withBase('/examples/inline-preview-thumbnail.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`get_inline_preview` transforma "isso está vivo?" em uma checagem: thumbnail,
 resolução, formato de pixel, metadados de cook e erros recentes. A resposta deve
@@ -1518,7 +1501,6 @@ vir primeiro como imagem e linguagem simples.*
 > *"Observe o analyze CHOP do grave por cinco segundos e me diga o min/max real para
 > eu ajustar a faixa do visual antes do DJ chegar."*
 
-<video :src="withBase('/examples/watch-node-telemetry.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`watch_node` é útil quando lê um sinal do jeito que performer precisa: faixa real,
 picos, momentos quietos e se o canal está estável o bastante para ligar num look.*
@@ -1527,7 +1509,6 @@ picos, momentos quietos e se o canal está estável o bastante para ligar num lo
 > alcançável, a bridge está na porta esperada e o que eu preciso corrigir antes da
 > abertura da casa?"*
 
-<video :src="withBase('/examples/config-profiles-redacted.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *Checagem de venue/perfil só pertence ao cookbook quando responde uma pergunta de
 show: para qual sala estou configurado, a bridge ao vivo responde e qual ação
@@ -1536,7 +1517,6 @@ concreta mantém o ensaio andando?*
 > *"Leia o mapa compacto de `/project1/hero` e explique os controles visíveis em
 > linguagem simples: o que muda cor, movimento, intensidade e reset?"*
 
-<video :src="withBase('/examples/compact-graph-digest-budget.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`compact_graph_digest` resume uma rede sem afogar o artista em nós: contagens, fios
 e parâmetros-chave viram um mapa curto do que o look sabe fazer.*
@@ -1545,7 +1525,6 @@ e parâmetros-chave viram um mapa curto do que o look sabe fazer.*
 > se o fluxo de cues está estável o bastante para guiar cortes; não dispare nada no
 > palco."*
 
-<video :src="withBase('/examples/agent-watch-hooks.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *Observar eventos da bridge pode continuar read-only: use para provar que tempo,
 batida ou gesto estão chegando antes de mapear isso para mudanças visíveis.*
@@ -1554,7 +1533,6 @@ batida ou gesto estão chegando antes de mapear isso para mudanças visíveis.*
 > mostre o caminho do operador que devo abrir, um parâmetro para testar primeiro e
 > um fallback se quebrar."*
 
-<video :src="withBase('/examples/td-learning-resources.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *Recursos de aprendizado e cheatsheets ficam artist-facing quando reduzem medo no
 patch: um operador, um parâmetro seguro, um caminho de volta.*
@@ -1562,7 +1540,6 @@ patch: um operador, um parâmetro seguro, um caminho de volta.*
 > *"Olhe para a saída atual e critique como motion designer: paleta, contraste,
 > ritmo, legibilidade e um próximo ajuste concreto."*
 
-<video :src="withBase('/examples/copilot-vision-critique.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *O copiloto local deve fechar o ciclo entre rede gerada e resultado visível:
 descrever o que está na tela, nomear a escolha artística mais fraca e propor uma
