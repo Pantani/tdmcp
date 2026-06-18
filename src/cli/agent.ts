@@ -2851,6 +2851,7 @@ const ENV_NAMES: Record<keyof TdmcpConfig, string> = {
   projectRagBridgeAnalysis: "TDMCP_PROJECT_RAG_BRIDGE_ANALYSIS",
   projectRagBridgePort: "TDMCP_PROJECT_RAG_BRIDGE_PORT",
   projectRagGhToken: "TDMCP_PROJECT_RAG_GH_TOKEN",
+  projectRagGithubRepos: "TDMCP_PROJECT_RAG_GITHUB_REPOS",
   projectRagAnalyzeTimeoutMs: "TDMCP_PROJECT_RAG_ANALYZE_TIMEOUT_MS",
   projectRagLicenseAllowlist: "TDMCP_PROJECT_RAG_LICENSE_ALLOWLIST",
   projectRagScoreWeights: "TDMCP_PROJECT_RAG_SCORE_WEIGHTS",

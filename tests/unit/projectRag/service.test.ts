@@ -37,9 +37,17 @@ afterEach(() => {
   rmSync(DIR, { recursive: true, force: true });
 });
 
-describe("projectRag service (F0 skeleton)", () => {
-  it("sync({}) returns an empty report — no sources wired in F0", async () => {
-    const svc = createProjectRagService({ config: makeConfig(DIR) });
+// F1: pass empty `sources` + a no-op embeddings stub so these unit tests stay
+// offline regardless of the default seed (`torinmb/mediapipe-touchdesigner`).
+const NOOP_EMBEDDINGS = { embed: async () => [] as number[][] };
+
+describe("projectRag service (skeleton-level behaviour)", () => {
+  it("sync({}) with no sources returns an empty report", async () => {
+    const svc = createProjectRagService({
+      config: makeConfig(DIR),
+      sources: [],
+      embeddings: NOOP_EMBEDDINGS,
+    });
     const report = await svc.sync({});
     expect(report).toEqual({
       added: 0,
@@ -52,22 +60,34 @@ describe("projectRag service (F0 skeleton)", () => {
   });
 
   it("index() reports total=0 when no cards exist", async () => {
-    const svc = createProjectRagService({ config: makeConfig(DIR) });
+    const svc = createProjectRagService({
+      config: makeConfig(DIR),
+      sources: [],
+      embeddings: NOOP_EMBEDDINGS,
+    });
     expect(await svc.index()).toEqual({ embedded: 0, cachedSkipped: 0, total: 0 });
   });
 
-  it("search() returns [] (no embedder wired in F0)", async () => {
-    const svc = createProjectRagService({ config: makeConfig(DIR) });
+  it("search() with empty embedder returns []", async () => {
+    const svc = createProjectRagService({
+      config: makeConfig(DIR),
+      sources: [],
+      embeddings: NOOP_EMBEDDINGS,
+    });
     expect(await svc.search("anything", 5)).toEqual([]);
   });
 
-  it("listSources() surfaces the planned source slots", async () => {
-    const svc = createProjectRagService({ config: makeConfig(DIR) });
+  it("listSources() reports github-repo ready (F1) and others planned", async () => {
+    const svc = createProjectRagService({
+      config: makeConfig(DIR),
+      embeddings: NOOP_EMBEDDINGS,
+    });
     const list = await svc.listSources();
-    const names = list.map((s) => s.name).sort();
-    expect(names).toContain("derivative-local");
-    expect(names).toContain("github-repo");
-    expect(list.every((s) => s.status === "planned")).toBe(true);
+    const byName = new Map(list.map((s) => [s.name, s] as const));
+    expect(byName.get("github-repo")?.status).toBe("ready");
+    expect(byName.get("derivative-local")?.status).toBe("planned");
+    expect(byName.get("github-topic")?.status).toBe("planned");
+    expect(byName.get("awesome-touchdesigner")?.status).toBe("planned");
   });
 
   it("getCard() loads a hand-placed card by id", async () => {
@@ -95,14 +115,22 @@ describe("projectRag service (F0 skeleton)", () => {
     mkdirSync(cardsDir, { recursive: true });
     writeFileSync(join(cardsDir, `${id}.md`), serializeProjectCard(final), "utf8");
 
-    const svc = createProjectRagService({ config: makeConfig(DIR) });
+    const svc = createProjectRagService({
+      config: makeConfig(DIR),
+      sources: [],
+      embeddings: NOOP_EMBEDDINGS,
+    });
     const loaded = await svc.getCard(id);
     expect(loaded?.title).toBe("X");
     expect(loaded?.license).toBe("MIT");
   });
 
   it("getCard() rejects path-traversal-style ids", async () => {
-    const svc = createProjectRagService({ config: makeConfig(DIR) });
+    const svc = createProjectRagService({
+      config: makeConfig(DIR),
+      sources: [],
+      embeddings: NOOP_EMBEDDINGS,
+    });
     expect(await svc.getCard("../etc/passwd")).toBeUndefined();
     expect(await svc.getCard("not-a-sha")).toBeUndefined();
   });
@@ -133,7 +161,11 @@ describe("projectRag service (F0 skeleton)", () => {
     mkdirSync(cardsDir, { recursive: true });
     writeFileSync(join(cardsDir, `${id}.md`), serializeProjectCard(final), "utf8");
 
-    const svc = createProjectRagService({ config: makeConfig(DIR) });
+    const svc = createProjectRagService({
+      config: makeConfig(DIR),
+      sources: [],
+      embeddings: NOOP_EMBEDDINGS,
+    });
     expect(await svc.getCard(id)).toBeUndefined();
   });
 });

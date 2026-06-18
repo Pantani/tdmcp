@@ -14,6 +14,8 @@ export {
 } from "./cardParser.js";
 export type { RunProjectRagCliDeps } from "./cli.js";
 export { runProjectRagCli, toProjectRagConfig } from "./cli.js";
+export type { GithubLicenseResult } from "./extractors/githubLicense.js";
+export { fetchGithubLicense } from "./extractors/githubLicense.js";
 export type { ProjectJsonlIndexStoreOptions } from "./indexStore.js";
 export { ProjectJsonlIndexStore } from "./indexStore.js";
 export {
@@ -32,7 +34,17 @@ export {
   ProjectRagTypeSchema,
   ProjectScoreSchema,
 } from "./schema.js";
-export type { ProjectRagServiceDeps } from "./service.js";
+export { computeProjectScore } from "./scoring.js";
+export type { ProjectRagEmbeddings, ProjectRagServiceDeps } from "./service.js";
 export { createProjectRagService } from "./service.js";
+export type { RawProjectItem, SourceAdapter, SourceAdapterContext } from "./sources/index.js";
+export {
+  DEFAULT_GITHUB_REPOS,
+  githubRepoSource,
+  parseRepoListEnv,
+  parseRepoSpec,
+  resolveProjectSources,
+  SourceSkippedError,
+} from "./sources/index.js";
 export { createProjectIndexStore } from "./storeFactory.js";
 export * from "./types.js";

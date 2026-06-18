@@ -101,6 +101,7 @@ interface StructurallyConfigLike {
   projectRagBridgeAnalysis: boolean;
   projectRagBridgePort: number;
   projectRagGhToken?: string;
+  projectRagGithubRepos?: string;
   projectRagAnalyzeTimeoutMs: number;
   projectRagLicenseAllowlist: string[];
   projectRagScoreWeights: {
@@ -134,6 +135,8 @@ export function toProjectRagConfig(config: StructurallyConfigLike): ProjectRagCo
     scoreWeights: config.projectRagScoreWeights,
   };
   if (config.projectRagGhToken !== undefined) result.ghToken = config.projectRagGhToken;
+  if (config.projectRagGithubRepos !== undefined)
+    result.githubReposCsv = config.projectRagGithubRepos;
   return result;
 }
 

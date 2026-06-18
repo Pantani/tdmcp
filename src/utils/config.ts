@@ -242,6 +242,13 @@ export const ConfigSchema = z.object({
   projectRagBridgePort: z.coerce.number().int().positive().max(65535).default(9981),
   /** Optional GitHub API token for higher rate limits on `github-repo`/`github-topic` sources. */
   projectRagGhToken: z.string().min(1).optional(),
+  /**
+   * Comma-separated list of GitHub repos for the `github-repo` source, each as
+   * `owner/repo[@ref]`. When unset, defaults to the F1 seed
+   * `torinmb/mediapipe-touchdesigner` (MIT). Free-form string — parsed by
+   * `parseRepoListEnv` in `src/projectRag/sources/githubRepo.ts`.
+   */
+  projectRagGithubRepos: z.string().optional(),
   /** Static `.toe`/`.tox` analyzer subprocess timeout (ms). */
   projectRagAnalyzeTimeoutMs: z.coerce.number().int().positive().default(30000),
   /**
@@ -346,6 +353,7 @@ function envValues(env: NodeJS.ProcessEnv): Record<string, unknown> {
     projectRagBridgeAnalysis: env.TDMCP_PROJECT_RAG_BRIDGE_ANALYSIS,
     projectRagBridgePort: env.TDMCP_PROJECT_RAG_BRIDGE_PORT || undefined,
     projectRagGhToken: env.TDMCP_PROJECT_RAG_GH_TOKEN || undefined,
+    projectRagGithubRepos: env.TDMCP_PROJECT_RAG_GITHUB_REPOS || undefined,
     projectRagAnalyzeTimeoutMs: env.TDMCP_PROJECT_RAG_ANALYZE_TIMEOUT_MS || undefined,
     projectRagLicenseAllowlist: env.TDMCP_PROJECT_RAG_LICENSE_ALLOWLIST || undefined,
     projectRagScoreWeights: env.TDMCP_PROJECT_RAG_SCORE_WEIGHTS || undefined,
