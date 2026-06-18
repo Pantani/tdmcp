@@ -329,6 +329,66 @@ describe("projectRag service — F3 bridge analyze pass", () => {
     expect(report.reason).toBe("offline");
   });
 
+  it("sync({}) preserves analysisStatus/analysisReason when contentHash is unchanged", async () => {
+    // Write the pre-existing card DIRECTLY (bypassing writePersistedCard's
+    // hard-coded canonical) so the rebuilt card matches it bit-for-bit on the
+    // fields that feed `computeProjectContentHash`. The carry-forward branch
+    // only fires when `prior.contentHash === fresh.contentHash`.
+    const canonical = "github:foo/bar#stable";
+    const id = computeProjectId(canonical);
+    const cardsDir = join(DIR, "cards");
+    mkdirSync(cardsDir, { recursive: true });
+    const stable: ProjectRagCard = {
+      schemaVersion: 2,
+      id,
+      kind: "project",
+      type: "component",
+      title: "card-stable",
+      tags: [],
+      contentHash: "",
+      provenance: {
+        sourceName: "github:foo/bar",
+        sourceUrl: "https://github.com/foo/bar",
+        canonical,
+        fetchedAt: "2026-06-18T00:00:00Z",
+      },
+      license: "MIT",
+      licenseConfidence: "spdx-detected",
+      binaryPath: "binaries/stable.tox",
+      binaryHash: "deadbeef",
+      analysisStatus: "ok",
+      analysisReason: "loaded stable.tox",
+    };
+    const stableFinal = { ...stable, contentHash: computeProjectContentHash(stable) };
+    writeFileSync(join(cardsDir, `${id}.md`), serializeProjectCard(stableFinal), "utf8");
+
+    const fakeSource = {
+      name: "github:foo/bar",
+      displayName: "foo/bar",
+      fetchItems: async () => [
+        {
+          sourceName: "github:foo/bar",
+          sourceUrl: "https://github.com/foo/bar",
+          canonical,
+          title: "card-stable",
+          type: "component" as const,
+          tags: [],
+          license: "MIT" as const,
+          licenseConfidence: "spdx-detected" as const,
+        },
+      ],
+    };
+    const svc = createProjectRagService({
+      config: makeConfig(DIR),
+      sources: [fakeSource],
+      embeddings: NOOP_EMBEDDINGS,
+    });
+    await svc.sync({});
+    const stored = await svc.getCard(id);
+    expect(stored?.analysisStatus).toBe("ok");
+    expect(stored?.analysisReason).toBe("loaded stable.tox");
+  });
+
   it("analyze(path) returns failed when the analyzer throws", async () => {
     const svc = createProjectRagService({
       config: makeConfig(DIR),
