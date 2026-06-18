@@ -13,7 +13,9 @@
     "builder_retry": 1,
     "on_repeat_fail": "quarantine-and-continue"
   },
-  "current_wave": 4,
+  "current_wave": null,
+  "campaign_milestone": "mvp_complete_F0_through_F4",
+  "campaign_milestone_at": "2026-06-18T09:35:00.000Z",
   "waves": {
     "1": {
       "version": "0.7.0-prag.f0",
@@ -33,12 +35,29 @@
     "4": {
       "version": "0.7.0-prag.f3",
       "theme": "TD-bridge quarantine analysis",
-      "checkpoint": true
+      "checkpoint": true,
+      "released": {
+        "branch": "feature/project-rag-f3",
+        "head": "1e90b2e",
+        "foundations_commit": "8b96fdc",
+        "version_bump": null,
+        "tag": null,
+        "pushed_at": "2026-06-18T07:30:00.000Z"
+      }
     },
     "5": {
       "version": "0.7.0-prag.f4",
       "theme": "MCP resources + agent prompts",
-      "checkpoint": true
+      "checkpoint": true,
+      "released": {
+        "branch": "feature/project-rag-f3",
+        "head": "f5afa97",
+        "round_1_commit": "e60f34a",
+        "round_2_commit": "f5afa97",
+        "version_bump": null,
+        "tag": null,
+        "pushed_at": "2026-06-18T09:35:00.000Z"
+      }
     }
   },
   "counts": {
@@ -417,11 +436,21 @@
       "shared_schema": null,
       "summary": "src/projectRag/extractors/toeExpand.ts — subprocess wrapper isolated (spawn, reduced env, 30s timeout, group-kill, quarantine UUID cwd).",
       "version_target": "0.7.0-prag.f3",
-      "status": "pending",
-      "attempts": 0,
-      "qa": null,
-      "files": [],
-      "notes": "Reactivated for Wave 4 (F3) per user scope — pairs with the bridge analyzer as the static-analysis half of the F3 quarantine pipeline.",
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4387)",
+        "recipes": "pass(32)",
+        "bridge": "pass(196)",
+        "live": "deferred-no-9981-bridge"
+      },
+      "files": [
+        "src/projectRag/extractors/toeExpand.ts",
+        "tests/unit/projectRag/toeExpand.test.ts"
+      ],
       "history": [
         {
           "at": "2026-06-18T04:58:49.013Z",
@@ -432,8 +461,16 @@
         {
           "at": "2026-06-18T06:30:00.000Z",
           "event": "wave_reactivated",
+          "from_wave": 2,
+          "from_status": "deferred",
           "wave": 4,
-          "reason": "user scoped toeExpand into F3 alongside bridge analyzer"
+          "reason": "user scoped toeExpand into F3 alongside bridgeAnalyze"
+        },
+        {
+          "at": "2026-06-18T07:30:00.000Z",
+          "event": "shipped",
+          "wave": 4,
+          "commit": "8b96fdc"
         }
       ]
     },
@@ -868,14 +905,26 @@
       "shared_schema": null,
       "summary": "src/projectRag/extractors/bridgeAnalyze.ts — NEW TouchDesignerClient on projectRagBridgePort (NEVER default). Copy→analyze→getTdNodeErrors→preview→cleanup.",
       "version_target": "0.7.0-prag.f3",
-      "status": "pending",
-      "attempts": 0,
-      "qa": null,
-      "files": [],
-      "notes": "",
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4387)",
+        "recipes": "pass(32)",
+        "bridge": "pass(196)",
+        "live": "deferred-no-9981-bridge"
+      },
+      "files": [
+        "src/projectRag/extractors/bridgeAnalyze.ts",
+        "tests/unit/projectRag/bridgeAnalyze.test.ts"
+      ],
+      "notes": "Uses getNetworkErrors + getPreview off the existing client surface (no new TouchDesignerClient methods). Defaults to port 9981; refuses 9980. Live-validation UNVERIFIED-pending-9981-bridge.",
       "wave_manifest": "_workspace/campaign_project_rag/wave_4_manifest.json",
       "history": [
-        { "at": "2026-06-18T06:00:00.000Z", "event": "wave_manifest_assigned", "wave": 4, "manifest": "_workspace/campaign_project_rag/wave_4_manifest.json", "planner_report": "_workspace/campaign_project_rag/wave_4_planner_report.md" }
+        { "at": "2026-06-18T06:00:00.000Z", "event": "wave_manifest_assigned", "wave": 4, "manifest": "_workspace/campaign_project_rag/wave_4_manifest.json", "planner_report": "_workspace/campaign_project_rag/wave_4_planner_report.md" },
+        { "at": "2026-06-18T07:30:00.000Z", "event": "shipped", "wave": 4, "commit": "8b96fdc" }
       ]
     },
     {
@@ -895,14 +944,28 @@
       "shared_schema": null,
       "summary": "tdmcp project-rag bridge install — docs how user wires a dedicated TD on port 9981 with tdmcp_bridge_qa.toe template.",
       "version_target": "0.7.0-prag.f3",
-      "status": "pending",
-      "attempts": 0,
-      "qa": null,
-      "files": [],
-      "notes": "",
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4387)",
+        "recipes": "pass(32)",
+        "bridge": "pass(196)",
+        "live": "n/a"
+      },
+      "files": [
+        "src/projectRag/cli.ts",
+        "tests/unit/projectRag/cli.test.ts",
+        "docs/PROJECT_RAG.md",
+        "docs/pt/PROJECT_RAG.md"
+      ],
+      "notes": "Docs-only stub (no tdmcp_bridge_qa.toe template — walkthrough drives the user to author it). Prints help + reachability probe.",
       "wave_manifest": "_workspace/campaign_project_rag/wave_4_manifest.json",
       "history": [
-        { "at": "2026-06-18T06:00:00.000Z", "event": "wave_manifest_assigned", "wave": 4, "manifest": "_workspace/campaign_project_rag/wave_4_manifest.json", "planner_report": "_workspace/campaign_project_rag/wave_4_planner_report.md" }
+        { "at": "2026-06-18T06:00:00.000Z", "event": "wave_manifest_assigned", "wave": 4, "manifest": "_workspace/campaign_project_rag/wave_4_manifest.json", "planner_report": "_workspace/campaign_project_rag/wave_4_planner_report.md" },
+        { "at": "2026-06-18T07:30:00.000Z", "event": "shipped", "wave": 4, "commit": "1e90b2e" }
       ]
     },
     {
@@ -922,14 +985,28 @@
       "shared_schema": null,
       "summary": "tdmcp project-rag analyze <path> — uses dedicated bridge; graceful fail when offline → analysisStatus=failed.",
       "version_target": "0.7.0-prag.f3",
-      "status": "pending",
-      "attempts": 0,
-      "qa": null,
-      "files": [],
-      "notes": "",
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4387)",
+        "recipes": "pass(32)",
+        "bridge": "pass(196)",
+        "live": "deferred-no-9981-bridge"
+      },
+      "files": [
+        "src/projectRag/cli.ts",
+        "src/projectRag/service.ts",
+        "src/projectRag/types.ts",
+        "tests/unit/projectRag/cli.test.ts"
+      ],
+      "notes": "Offline = skipped (exit 0); real error = failed (exit 1). Implementation note: the original spec said 'offline→analysisStatus=failed' but the F3 design + threat-model says offline must degrade to skipped — chose the safer behaviour.",
       "wave_manifest": "_workspace/campaign_project_rag/wave_4_manifest.json",
       "history": [
-        { "at": "2026-06-18T06:00:00.000Z", "event": "wave_manifest_assigned", "wave": 4, "manifest": "_workspace/campaign_project_rag/wave_4_manifest.json", "planner_report": "_workspace/campaign_project_rag/wave_4_planner_report.md" }
+        { "at": "2026-06-18T06:00:00.000Z", "event": "wave_manifest_assigned", "wave": 4, "manifest": "_workspace/campaign_project_rag/wave_4_manifest.json", "planner_report": "_workspace/campaign_project_rag/wave_4_planner_report.md" },
+        { "at": "2026-06-18T07:30:00.000Z", "event": "shipped", "wave": 4, "commit": "1e90b2e" }
       ]
     },
     {
@@ -949,14 +1026,31 @@
       "shared_schema": null,
       "summary": "tdmcp project-rag sync --bridge — after static analyze, runs bridge extractor on downloadable cards.",
       "version_target": "0.7.0-prag.f3",
-      "status": "pending",
-      "attempts": 0,
-      "qa": null,
-      "files": [],
-      "notes": "",
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4387)",
+        "recipes": "pass(32)",
+        "bridge": "pass(196)",
+        "live": "deferred-no-9981-bridge"
+      },
+      "files": [
+        "src/projectRag/service.ts",
+        "src/projectRag/cli.ts",
+        "src/projectRag/types.ts",
+        "src/projectRag/schema.ts",
+        "src/projectRag/cardParser.ts",
+        "tests/unit/projectRag/service.test.ts",
+        "tests/unit/projectRag/cli.test.ts"
+      ],
+      "notes": "Idempotent: already-ok cards are skipped. analysisStatus + analysisReason added to ProjectRagCard schema; analysisStatus excluded from contentHash (treated as persistence metadata).",
       "wave_manifest": "_workspace/campaign_project_rag/wave_4_manifest.json",
       "history": [
-        { "at": "2026-06-18T06:00:00.000Z", "event": "wave_manifest_assigned", "wave": 4, "manifest": "_workspace/campaign_project_rag/wave_4_manifest.json", "planner_report": "_workspace/campaign_project_rag/wave_4_planner_report.md" }
+        { "at": "2026-06-18T06:00:00.000Z", "event": "wave_manifest_assigned", "wave": 4, "manifest": "_workspace/campaign_project_rag/wave_4_manifest.json", "planner_report": "_workspace/campaign_project_rag/wave_4_planner_report.md" },
+        { "at": "2026-06-18T07:30:00.000Z", "event": "shipped", "wave": 4, "commit": "1e90b2e" }
       ]
     },
     {
@@ -976,12 +1070,29 @@
       "shared_schema": null,
       "summary": "src/prompts/projectRagContext — injects top-k Project RAG cards when user asks for a known effect (audio-reactive, hand-tracking, feedback).",
       "version_target": "0.7.0-prag.f4",
-      "status": "pending",
-      "attempts": 0,
-      "qa": null,
-      "files": [],
-      "notes": "",
-      "history": []
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4412)",
+        "recipes": "pass(32)",
+        "bridge": "pass(196)"
+      },
+      "files": [
+        "src/prompts/projectRagContext.ts",
+        "tests/unit/prompts/projectRagContext.test.ts",
+        "src/prompts/types.ts",
+        "src/prompts/index.ts",
+        "src/server/tdmcpServer.ts"
+      ],
+      "notes": "Disabled-context fallback verified; happy path + license CSV + k clamp + empty-results + search-failure all tested.",
+      "wave_manifest": "_workspace/campaign_project_rag/wave_5_manifest.json",
+      "history": [
+        { "at": "2026-06-18T08:00:00.000Z", "event": "wave_manifest_assigned", "wave": 5, "manifest": "_workspace/campaign_project_rag/wave_5_manifest.json", "planner_report": "_workspace/campaign_project_rag/wave_5_planner_report.md", "round": 1 },
+        { "at": "2026-06-18T09:20:00.000Z", "event": "shipped", "wave": 5, "commit": "e60f34a", "round": 1 }
+      ]
     },
     {
       "id": "prag_resource_sources",
@@ -1000,12 +1111,27 @@
       "shared_schema": null,
       "summary": "tdmcp://project/sources — lists configured sources + status so agent knows what is NOT indexed.",
       "version_target": "0.7.0-prag.f4",
-      "status": "pending",
-      "attempts": 0,
-      "qa": null,
-      "files": [],
-      "notes": "",
-      "history": []
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4412)",
+        "recipes": "pass(32)",
+        "bridge": "pass(196)"
+      },
+      "files": [
+        "src/resources/projectRagSourcesResource.ts",
+        "tests/unit/projectRag/resourceSources.test.ts",
+        "src/resources/index.ts"
+      ],
+      "notes": "Disabled-context skip verified (registerResource not called). listSources envelope shape + empty-list path covered.",
+      "wave_manifest": "_workspace/campaign_project_rag/wave_5_manifest.json",
+      "history": [
+        { "at": "2026-06-18T08:00:00.000Z", "event": "wave_manifest_assigned", "wave": 5, "manifest": "_workspace/campaign_project_rag/wave_5_manifest.json", "planner_report": "_workspace/campaign_project_rag/wave_5_planner_report.md", "round": 1 },
+        { "at": "2026-06-18T09:20:00.000Z", "event": "shipped", "wave": 5, "commit": "e60f34a", "round": 1 }
+      ]
     },
     {
       "id": "prag_copilot_tool",
@@ -1024,12 +1150,31 @@
       "shared_schema": null,
       "summary": "tdmcp ask/chat tool-tier project_rag_search — read-only zero-side-effect; gated by TDMCP_PROJECT_RAG_ENABLED=1.",
       "version_target": "0.7.0-prag.f4",
-      "status": "pending",
-      "attempts": 0,
-      "qa": null,
-      "files": [],
-      "notes": "",
-      "history": []
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4412)",
+        "recipes": "pass(32)",
+        "bridge": "pass(196)"
+      },
+      "files": [
+        "src/llm/projectRagSearchTool.ts",
+        "tests/unit/llm/projectRagSearchTool.test.ts",
+        "src/llm/tools.ts",
+        "src/cli/ask.ts",
+        "src/cli/chat.ts",
+        "src/llm/server.ts",
+        "src/telegram/copilot.ts"
+      ],
+      "notes": "resolveTools(tier, { projectRag }) is additive — tool absent from catalog when ctx.projectRag undefined; verified across all 4 call sites (ask/chat/loopback server/telegram).",
+      "wave_manifest": "_workspace/campaign_project_rag/wave_5_manifest.json",
+      "history": [
+        { "at": "2026-06-18T08:00:00.000Z", "event": "wave_manifest_assigned", "wave": 5, "manifest": "_workspace/campaign_project_rag/wave_5_manifest.json", "planner_report": "_workspace/campaign_project_rag/wave_5_planner_report.md", "round": 1 },
+        { "at": "2026-06-18T09:20:00.000Z", "event": "shipped", "wave": 5, "commit": "e60f34a", "round": 1 }
+      ]
     },
     {
       "id": "prag_cli_cross_link",
@@ -1046,12 +1191,28 @@
       "shared_schema": null,
       "summary": "When a creative search returns few results, suggest 'tdmcp project-rag search ...' (cross-link).",
       "version_target": "0.7.0-prag.f4",
-      "status": "pending",
-      "attempts": 0,
-      "qa": null,
-      "files": [],
-      "notes": "",
-      "history": []
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4412)",
+        "recipes": "pass(32)",
+        "bridge": "pass(196)"
+      },
+      "files": [
+        "src/creativeRag/crossLink.ts",
+        "tests/unit/creativeRag/crossLink.test.ts",
+        "src/creativeRag/cli.ts",
+        "src/index.ts"
+      ],
+      "notes": "Stderr-only tip; --json suppression + disabled-flag suppression + threshold boundary + custom threshold + quote-escape all covered.",
+      "wave_manifest": "_workspace/campaign_project_rag/wave_5_manifest.json",
+      "history": [
+        { "at": "2026-06-18T08:00:00.000Z", "event": "wave_manifest_assigned", "wave": 5, "manifest": "_workspace/campaign_project_rag/wave_5_manifest.json", "planner_report": "_workspace/campaign_project_rag/wave_5_planner_report.md", "round": 1 },
+        { "at": "2026-06-18T09:20:00.000Z", "event": "shipped", "wave": 5, "commit": "e60f34a", "round": 1 }
+      ]
     },
     {
       "id": "prag_cookbook_entries",
@@ -1070,12 +1231,30 @@
       "shared_schema": null,
       "summary": "Cookbook EN+PT parity: 'Quando usar Project RAG vs Creative RAG', 'Buscando exemplos reais antes de codar um efeito'.",
       "version_target": "0.7.0-prag.f4",
-      "status": "pending",
-      "attempts": 0,
-      "qa": null,
-      "files": [],
-      "notes": "",
-      "history": []
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4412)",
+        "recipes": "pass(32)",
+        "bridge": "pass(196)",
+        "docs_build": "pass"
+      },
+      "files": [
+        "docs/guide/prompt-cookbook.md",
+        "docs/pt/guide/prompt-cookbook.md",
+        "docs/PROJECT_RAG.md",
+        "docs/pt/PROJECT_RAG.md",
+        "CHANGELOG.md"
+      ],
+      "notes": "Two entries per locale citing project_rag_context prompt + tdmcp://project/cards/{id} + tdmcp://project/sources URIs. PROJECT_RAG.md F4 section + CHANGELOG Unreleased entry. No version bump (per release policy).",
+      "wave_manifest": "_workspace/campaign_project_rag/wave_5_manifest.json",
+      "history": [
+        { "at": "2026-06-18T08:00:00.000Z", "event": "wave_manifest_assigned", "wave": 5, "manifest": "_workspace/campaign_project_rag/wave_5_manifest.json", "planner_report": "_workspace/campaign_project_rag/wave_5_planner_report.md", "round": 2 },
+        { "at": "2026-06-18T09:30:00.000Z", "event": "shipped", "wave": 5, "commit": "f5afa97", "round": 2 }
+      ]
     },
     {
       "id": "prag_source_dbraun_seed",
