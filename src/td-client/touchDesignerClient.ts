@@ -26,12 +26,14 @@ import {
   PerformModeStateSchema,
   PreviewSchema,
   ProjectAnalysisSchema,
+  ProjectLoadSchema,
   SetParamModeResultSchema,
   SystemInfoSchema,
   type TdBatchOperation,
   type TdCustomParams,
   type TdPerformModeState,
   type TdProjectAnalysis,
+  type TdProjectLoad,
   type TdSystemInfo,
   TopologySchema,
   TransportStateSchema,
@@ -81,6 +83,71 @@ function extractErrorMessage(json: unknown): string | undefined {
 function segment(path: string): string {
   return encodeURIComponent(path);
 }
+
+/** Recover the JSON report object printed by an `/api/exec` pass (last `{…}` line,
+ * then widest `{…}` span). Kept local so the client never imports from `src/tools`. */
+function parseStdoutJson(stdout: string | undefined): unknown {
+  if (!stdout) throw new TdApiError("The TouchDesigner script returned no output.");
+  const lines = stdout.split("\n");
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const line = lines[i]?.trim();
+    if (!line) continue;
+    if (line.startsWith("{") && line.endsWith("}")) {
+      try {
+        return JSON.parse(line);
+      } catch {
+        // fall through to span heuristic
+      }
+    }
+    break;
+  }
+  const start = stdout.indexOf("{");
+  const end = stdout.lastIndexOf("}");
+  if (start >= 0 && end > start) {
+    try {
+      return JSON.parse(stdout.slice(start, end + 1));
+    } catch {
+      // fall through
+    }
+  }
+  throw new TdApiError(`Could not parse the TouchDesigner script result: ${stdout.slice(0, 200)}`);
+}
+
+/** Exec fallback for `loadProject` on older bridges (no `/api/project/load`).
+ * Mirrors `project_load_service.load`: validates, `project.load`s, walks the
+ * loaded tree, and prints the report as the final JSON line. */
+const LOAD_PROJECT_EXEC_SCRIPT = `
+import base64, json, os
+_p = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
+_path = (_p.get("path") or "").strip()
+if not _path or not os.path.isabs(_path) or os.path.splitext(_path)[1].lower() not in (".toe", ".tox") or not os.path.exists(_path):
+    raise ValueError("Field 'path' must be an existing absolute .toe/.tox file: %r" % _path)
+project.load(_path)
+def _root():
+    try:
+        kids = [c for c in op("/").children if bool(getattr(c, "isCOMP", False))]
+        if kids:
+            return kids[0].path
+    except Exception:
+        pass
+    return "/project1"
+_rp = _root()
+_root_op = op(_rp)
+_nodes = list(_root_op.findChildren(maxDepth=9999)) if _root_op is not None else []
+_errors = []
+for _n in _nodes:
+    try:
+        _e = _n.errors(recurse=False)
+    except Exception:
+        continue
+    if not _e:
+        continue
+    for _line in (_e.splitlines() if isinstance(_e, str) else [_e]):
+        _t = (_line or "").strip() if isinstance(_line, str) else str(_line)
+        if _t:
+            _errors.append({"path": _n.path, "message": _t, "level": "error"})
+print(json.dumps({"root_path": _rp, "node_count": len(_nodes), "errors": _errors}))
+`;
 
 /**
  * HTTP client for the TouchDesigner REST bridge. Every method maps to one of the
@@ -454,6 +521,43 @@ export class TouchDesignerClient {
       undefined,
       { recursive: recursive ? "true" : "false" },
     );
+  }
+
+  /** Load a `.toe`/`.tox` artifact in a QUARANTINE TD and report its tree.
+   *
+   * SAFETY: only ever point this at a separate quarantine bridge (default 9981);
+   * `bridgeAnalyze.ts` is the sole caller and hard-rejects the main port 9980.
+   *
+   * Prefers the first-class `POST /api/project/load` route; on a 404 (older
+   * bridge that predates the route) falls back to a single `/api/exec` pass that
+   * runs `project.load` and prints the same report. The exec fallback fails when
+   * the bridge has `TDMCP_BRIDGE_ALLOW_EXEC=0`, in which case the caller surfaces
+   * a friendly error — exactly as before this route existed.
+   */
+  async loadProject(path: string, timeoutMs?: number): Promise<TdProjectLoad> {
+    const { tryEndpoint } = await import("./types.js");
+    return tryEndpoint(
+      () =>
+        this.request("POST", "/api/project/load", ProjectLoadSchema, {
+          path,
+          timeout_ms: timeoutMs ?? null,
+        }),
+      () => this.loadProjectViaExec(path),
+    );
+  }
+
+  /** Exec-path fallback for {@link loadProject} — runs `project.load` + tree walk
+   * inside TD and recovers the same report from stdout. */
+  private async loadProjectViaExec(path: string): Promise<TdProjectLoad> {
+    const b64 = Buffer.from(JSON.stringify({ path }), "utf8").toString("base64");
+    const script = LOAD_PROJECT_EXEC_SCRIPT.replace("__PAYLOAD_B64__", b64);
+    const exec = await this.executePythonScript(script, true);
+    const report = parseStdoutJson(exec.stdout);
+    const parsed = ProjectLoadSchema.safeParse(report);
+    if (!parsed.success) {
+      throw new TdApiError(`Unexpected loadProject report shape: ${parsed.error.message}`);
+    }
+    return parsed.data;
   }
 
   // --- Structured bridge logs (Error DAT reader) ---

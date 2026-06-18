@@ -23,6 +23,7 @@ from mcp.services import (
     param_text_service,
     preview_service,
     project_analysis_service,
+    project_load_service,
     system_service,
     transport_service,
 )
@@ -314,6 +315,14 @@ def _route_post_root(rest, body):
         # Perform-mode write — survives ALLOW_EXEC=0; read side lives in /api/system.
         _require(body, "enabled")
         return system_service.set_perform_mode(_as_bool(body["enabled"], "enabled"))
+
+    if rest == ["project", "load"]:
+        # Load a .toe/.tox for the Project RAG quarantine analyzer. NOT exec-gated:
+        # project.load goes through TD's own loader, not arbitrary Python, so a
+        # hardened quarantine bridge (ALLOW_EXEC=0) must still open its artifact.
+        # The Node side hard-rejects the main TD port before ever calling here.
+        _require(body, "path")
+        return project_load_service.load(body["path"], body.get("timeout_ms"))
 
     # Batched read_parameter_modes — must match before the nodes/<path…>/params
     # branch (no <path> segments here so no real conflict, but be explicit).

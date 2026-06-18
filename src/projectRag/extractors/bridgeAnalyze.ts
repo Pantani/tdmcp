@@ -50,7 +50,9 @@ export interface BridgeAnalysisResult {
 /** Just the subset of TouchDesignerClient methods this extractor calls. */
 export interface MinimalBridgeClient {
   getInfo(): Promise<unknown>;
-  loadProject?(path: string): Promise<unknown>;
+  loadProject?(
+    path: string,
+  ): Promise<{ node_count?: number; errors?: unknown[]; preview_b64?: string } | unknown>;
   getTdNodeErrors?(opType?: string): Promise<{ errors?: Array<{ message?: string }> } | unknown>;
   getPreview?(opPath: string): Promise<{ base64?: string; pngBase64?: string } | unknown>;
   disconnect?(): Promise<unknown> | undefined;
@@ -116,6 +118,11 @@ function buildClient(opts: BridgeAnalyzeOptions, inputs: ValidatedInputs): Minim
   });
   return {
     getInfo: () => real.getInfo(),
+    // Prefer the first-class POST /api/project/load route; the client falls back
+    // to an /api/exec pass on an older bridge (404). Returns the loaded project's
+    // report (root_path / node_count / errors / preview_b64).
+    loadProject: (artifactPath: string) =>
+      real.loadProject(artifactPath, Math.min(inputs.timeoutMs, 10_000)),
     getTdNodeErrors: () => real.getNetworkErrors("/"),
     getPreview: (opPath: string) => real.getPreview(opPath),
   };
@@ -140,10 +147,29 @@ async function probeReachability(
   }
 }
 
+interface LoadReport {
+  errorCount?: number;
+  previewPng?: string;
+}
+
 type LoadOutcome =
-  | { kind: "loaded"; summary: string }
+  | { kind: "loaded"; summary: string; report: LoadReport }
   | { kind: "unsupported" }
   | { kind: "failed"; error: string };
+
+/** Pull the structured fields the new `/api/project/load` route reports off the
+ * actually-loaded project. Older bridges (exec fallback) omit them, so each is
+ * optional and the caller falls back to the separate errors/preview steps. */
+function readLoadReport(out: unknown): LoadReport {
+  const report: LoadReport = {};
+  if (out === null || typeof out !== "object") return report;
+  const rec = out as { node_count?: unknown; errors?: unknown; preview_b64?: unknown };
+  if (Array.isArray(rec.errors)) report.errorCount = rec.errors.length;
+  if (typeof rec.preview_b64 === "string" && rec.preview_b64.length > 0) {
+    report.previewPng = rec.preview_b64;
+  }
+  return report;
+}
 
 async function tryLoadProject(
   client: MinimalBridgeClient,
@@ -151,8 +177,12 @@ async function tryLoadProject(
 ): Promise<LoadOutcome> {
   if (typeof client.loadProject !== "function") return { kind: "unsupported" };
   try {
-    await client.loadProject(artifactPath);
-    return { kind: "loaded", summary: `loaded ${path.basename(artifactPath)}` };
+    const out = await client.loadProject(artifactPath);
+    return {
+      kind: "loaded",
+      summary: `loaded ${path.basename(artifactPath)}`,
+      report: readLoadReport(out),
+    };
   } catch (err) {
     return { kind: "failed", error: err instanceof Error ? err.message : String(err) };
   }
@@ -202,8 +232,11 @@ async function runAnalysis(
   if (load.kind === "failed") {
     return { status: "failed", error: `load failed: ${load.error}` };
   }
-  const errorCount = await tryGetErrors(client);
-  const previewPng = await tryGetPreview(client);
+  // Prefer the load report's own errors/preview (measured on the actually-loaded
+  // project by the /api/project/load route). Fall back to the separate steps for
+  // older bridges whose exec fallback doesn't report them.
+  const errorCount = load.report.errorCount ?? (await tryGetErrors(client));
+  const previewPng = load.report.previewPng ?? (await tryGetPreview(client));
   const result: BridgeAnalysisResult = { status: "ok" };
   if (errorCount !== undefined) result.errorCount = errorCount;
   if (previewPng !== undefined) result.previewPng = previewPng;
