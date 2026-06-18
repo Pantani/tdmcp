@@ -309,6 +309,14 @@ export const ConfigSchema = z.object({
   projectRagGithubTopics: z.string().optional(),
   /** Per-sync hard cap for the topic scanner (default 25). */
   projectRagTopicCap: z.coerce.number().int().positive().max(500).default(25),
+  /**
+   * Explicit override for the `derivative-local` source's TouchDesigner install
+   * root (the directory containing the Palette / OP Snippets samples). When
+   * unset, the source probes OS-default install locations; when nothing is found
+   * the source is skipped (never errors the sync). Local-only enumeration —
+   * Derivative-EULA bytes are never downloaded or redistributed.
+   */
+  projectRagDerivativeRoot: z.string().min(1).optional(),
   /** Static `.toe`/`.tox` analyzer subprocess timeout (ms). */
   projectRagAnalyzeTimeoutMs: z.coerce.number().int().positive().default(30000),
   /**
@@ -421,6 +429,7 @@ function envValues(env: NodeJS.ProcessEnv): Record<string, unknown> {
     projectRagGithubRepos: env.TDMCP_PROJECT_RAG_GITHUB_REPOS || undefined,
     projectRagGithubTopics: env.TDMCP_PROJECT_RAG_GITHUB_TOPICS || undefined,
     projectRagTopicCap: env.TDMCP_PROJECT_RAG_TOPIC_CAP || undefined,
+    projectRagDerivativeRoot: env.TDMCP_PROJECT_RAG_DERIVATIVE_ROOT || undefined,
     projectRagAnalyzeTimeoutMs: env.TDMCP_PROJECT_RAG_ANALYZE_TIMEOUT_MS || undefined,
     projectRagLicenseAllowlist: env.TDMCP_PROJECT_RAG_LICENSE_ALLOWLIST || undefined,
     projectRagScoreWeights: env.TDMCP_PROJECT_RAG_SCORE_WEIGHTS || undefined,

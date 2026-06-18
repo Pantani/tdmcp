@@ -2870,6 +2870,7 @@ const ENV_NAMES: Record<keyof TdmcpConfig, string> = {
   projectRagGithubRepos: "TDMCP_PROJECT_RAG_GITHUB_REPOS",
   projectRagGithubTopics: "TDMCP_PROJECT_RAG_GITHUB_TOPICS",
   projectRagTopicCap: "TDMCP_PROJECT_RAG_TOPIC_CAP",
+  projectRagDerivativeRoot: "TDMCP_PROJECT_RAG_DERIVATIVE_ROOT",
   projectRagAnalyzeTimeoutMs: "TDMCP_PROJECT_RAG_ANALYZE_TIMEOUT_MS",
   projectRagLicenseAllowlist: "TDMCP_PROJECT_RAG_LICENSE_ALLOWLIST",
   projectRagScoreWeights: "TDMCP_PROJECT_RAG_SCORE_WEIGHTS",

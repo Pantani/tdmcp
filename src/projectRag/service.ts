@@ -117,6 +117,7 @@ export function createProjectRagService(deps: ProjectRagServiceDeps): ProjectRag
       ...(csv !== undefined ? { githubReposCsv: csv } : {}),
       ...(topicsCsv !== undefined ? { githubTopicsCsv: topicsCsv } : {}),
       ...(topicCap !== undefined ? { topicCap } : {}),
+      ...(config.derivativeRoot !== undefined ? { derivativeRoot: config.derivativeRoot } : {}),
     });
 
   const embeddings =
@@ -173,6 +174,9 @@ export function createProjectRagService(deps: ProjectRagServiceDeps): ProjectRag
               : topicCap !== undefined
                 ? { topicCap }
                 : {}),
+            ...(config.derivativeRoot !== undefined
+              ? { derivativeRoot: config.derivativeRoot }
+              : {}),
           })
         : sources;
     if (effectiveSources.length === 0) {
@@ -439,12 +443,24 @@ export function createProjectRagService(deps: ProjectRagServiceDeps): ProjectRag
         reason: config.ghToken === undefined ? "unauthenticated (limit 60 req/h)" : "authenticated",
       });
     }
-    statuses.push({
-      name: "derivative-local",
-      displayName: "TouchDesigner OP Snippets + Palette (local install)",
-      status: "planned",
-      reason: "F2",
-    });
+    if (liveNames.has("derivative-local")) {
+      statuses.push({
+        name: "derivative-local",
+        displayName: "Derivative local install (TouchDesigner Palette + OP Snippets)",
+        status: "ready",
+        reason:
+          config.derivativeRoot !== undefined
+            ? `install root pinned (${config.derivativeRoot})`
+            : "probes OS-default TD install; skipped when none found (local-only, Derivative-EULA)",
+      });
+    } else {
+      statuses.push({
+        name: "derivative-local",
+        displayName: "Derivative local install (TouchDesigner Palette + OP Snippets)",
+        status: "planned",
+        reason: "not registered",
+      });
+    }
     if (liveNames.has("github-topic")) {
       statuses.push({
         name: "github-topic",
