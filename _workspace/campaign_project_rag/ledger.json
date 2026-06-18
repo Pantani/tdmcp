@@ -13,7 +13,7 @@
     "builder_retry": 1,
     "on_repeat_fail": "quarantine-and-continue"
   },
-  "current_wave": 3,
+  "current_wave": 4,
   "waves": {
     "1": {
       "version": "0.7.0-prag.f0",
@@ -410,24 +410,30 @@
       "novelty": "NEW",
       "probe_live": true,
       "needs_td": false,
-      "wave": 2,
+      "wave": 4,
       "depends_on": [
         "prag_service_shell"
       ],
       "shared_schema": null,
       "summary": "src/projectRag/extractors/toeExpand.ts — subprocess wrapper isolated (spawn, reduced env, 30s timeout, group-kill, quarantine UUID cwd).",
-      "version_target": "0.7.0-prag.f1",
-      "status": "deferred",
+      "version_target": "0.7.0-prag.f3",
+      "status": "pending",
       "attempts": 0,
       "qa": null,
       "files": [],
-      "notes": "Deferred from Wave 2 per user scope (Wave 2 = github-repo only). Reschedule to a later wave when needed.",
+      "notes": "Reactivated for Wave 4 (F3) per user scope — pairs with the bridge analyzer as the static-analysis half of the F3 quarantine pipeline.",
       "history": [
         {
           "at": "2026-06-18T04:58:49.013Z",
           "event": "deferred",
           "wave": 2,
           "reason": "out-of-scope for this wave"
+        },
+        {
+          "at": "2026-06-18T06:30:00.000Z",
+          "event": "wave_reactivated",
+          "wave": 4,
+          "reason": "user scoped toeExpand into F3 alongside bridge analyzer"
         }
       ]
     },
@@ -867,7 +873,10 @@
       "qa": null,
       "files": [],
       "notes": "",
-      "history": []
+      "wave_manifest": "_workspace/campaign_project_rag/wave_4_manifest.json",
+      "history": [
+        { "at": "2026-06-18T06:00:00.000Z", "event": "wave_manifest_assigned", "wave": 4, "manifest": "_workspace/campaign_project_rag/wave_4_manifest.json", "planner_report": "_workspace/campaign_project_rag/wave_4_planner_report.md" }
+      ]
     },
     {
       "id": "prag_bridge_install_cmd",
@@ -891,7 +900,10 @@
       "qa": null,
       "files": [],
       "notes": "",
-      "history": []
+      "wave_manifest": "_workspace/campaign_project_rag/wave_4_manifest.json",
+      "history": [
+        { "at": "2026-06-18T06:00:00.000Z", "event": "wave_manifest_assigned", "wave": 4, "manifest": "_workspace/campaign_project_rag/wave_4_manifest.json", "planner_report": "_workspace/campaign_project_rag/wave_4_planner_report.md" }
+      ]
     },
     {
       "id": "prag_analyze_cmd",
@@ -915,7 +927,10 @@
       "qa": null,
       "files": [],
       "notes": "",
-      "history": []
+      "wave_manifest": "_workspace/campaign_project_rag/wave_4_manifest.json",
+      "history": [
+        { "at": "2026-06-18T06:00:00.000Z", "event": "wave_manifest_assigned", "wave": 4, "manifest": "_workspace/campaign_project_rag/wave_4_manifest.json", "planner_report": "_workspace/campaign_project_rag/wave_4_planner_report.md" }
+      ]
     },
     {
       "id": "prag_sync_bridge_flag",
@@ -939,7 +954,10 @@
       "qa": null,
       "files": [],
       "notes": "",
-      "history": []
+      "wave_manifest": "_workspace/campaign_project_rag/wave_4_manifest.json",
+      "history": [
+        { "at": "2026-06-18T06:00:00.000Z", "event": "wave_manifest_assigned", "wave": 4, "manifest": "_workspace/campaign_project_rag/wave_4_manifest.json", "planner_report": "_workspace/campaign_project_rag/wave_4_planner_report.md" }
+      ]
     },
     {
       "id": "prag_prompt_context",
