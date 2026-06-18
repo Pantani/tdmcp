@@ -1,0 +1,116 @@
+{
+  "_doc": "F2 scoring ground truth — 10 deterministic queries x expected top-1 card id. The harness in tests/unit/projectRag/scoringGroundTruth.test.ts injects a fixed token-vector embedder, builds these cards, computes finalRank = cosineSim * score.composite, and asserts >=7/10 hit-rate.",
+  "version": 1,
+  "weights": { "technical": 0.45, "license": 0.25, "freshness": 0.15, "reliability": 0.15 },
+  "tokens": [
+    "mediapipe",
+    "hand",
+    "audio",
+    "fft",
+    "feedback",
+    "noise",
+    "particle",
+    "touchdesigner",
+    "tox",
+    "shader",
+    "depth",
+    "kinect",
+    "midi",
+    "osc",
+    "interactive"
+  ],
+  "cards": [
+    {
+      "id": "card_mediapipe_mit",
+      "title": "torinmb/mediapipe-touchdesigner",
+      "sourceName": "github:torinmb/mediapipe-touchdesigner",
+      "license": "MIT",
+      "tags": ["mediapipe", "hand", "touchdesigner", "tox"],
+      "body": "MediaPipe wrappers for TouchDesigner — hand, face, pose."
+    },
+    {
+      "id": "card_dbraun_gpl",
+      "title": "DBraun/TouchDesigner_Shared",
+      "sourceName": "github:DBraun/TouchDesigner_Shared",
+      "license": "GPL-3.0",
+      "tags": ["touchdesigner", "tox"],
+      "body": "Shared TouchDesigner components and patches."
+    },
+    {
+      "id": "card_audio_fft_mit",
+      "title": "audio-reactive-fft-feedback",
+      "sourceName": "github:user-a/audio-fft",
+      "license": "MIT",
+      "tags": ["audio", "fft", "feedback", "touchdesigner"],
+      "body": "Audio reactive FFT feedback chains in TouchDesigner."
+    },
+    {
+      "id": "card_audio_visual_unknown",
+      "title": "random-audio-thing",
+      "sourceName": "github:user-z/random-audio",
+      "license": "Unknown",
+      "tags": ["audio"],
+      "body": "Untagged audio experiment."
+    },
+    {
+      "id": "card_noise_particles_mit",
+      "title": "noise-particles-tox",
+      "sourceName": "github:user-b/noise-particles",
+      "license": "MIT",
+      "tags": ["noise", "particle", "touchdesigner", "tox"],
+      "body": "Noise-driven particle systems for TouchDesigner."
+    },
+    {
+      "id": "card_shader_depth_apache",
+      "title": "shader-depth-effects",
+      "sourceName": "github:user-c/shader-depth",
+      "license": "Apache-2.0",
+      "tags": ["shader", "depth", "touchdesigner"],
+      "body": "GLSL shader depth effects for TouchDesigner pipelines."
+    },
+    {
+      "id": "card_kinect_bsd",
+      "title": "kinect-depth-bridge",
+      "sourceName": "github:user-d/kinect-bridge",
+      "license": "BSD-3-Clause",
+      "tags": ["kinect", "depth", "touchdesigner"],
+      "body": "Kinect depth bridge for interactive TouchDesigner projects."
+    },
+    {
+      "id": "card_midi_osc_isc",
+      "title": "midi-osc-router",
+      "sourceName": "github:user-e/midi-osc",
+      "license": "ISC",
+      "tags": ["midi", "osc", "touchdesigner"],
+      "body": "MIDI and OSC routing in TouchDesigner."
+    },
+    {
+      "id": "card_interactive_mit",
+      "title": "interactive-installation-template",
+      "sourceName": "github:user-f/interactive",
+      "license": "MIT",
+      "tags": ["interactive", "touchdesigner"],
+      "body": "Interactive installation template — touchdesigner."
+    },
+    {
+      "id": "card_mediapipe_gpl",
+      "title": "mediapipe-gpl-fork",
+      "sourceName": "github:user-g/mediapipe-fork",
+      "license": "GPL-3.0",
+      "tags": ["mediapipe", "hand", "touchdesigner"],
+      "body": "GPL fork of mediapipe TD wrappers."
+    }
+  ],
+  "queries": [
+    { "q": "mediapipe hand tracking touchdesigner", "expectTop1": "card_mediapipe_mit" },
+    { "q": "audio reactive fft feedback", "expectTop1": "card_audio_fft_mit" },
+    { "q": "noise particle touchdesigner tox", "expectTop1": "card_noise_particles_mit" },
+    { "q": "shader depth touchdesigner", "expectTop1": "card_shader_depth_apache" },
+    { "q": "kinect depth", "expectTop1": "card_kinect_bsd" },
+    { "q": "midi osc routing", "expectTop1": "card_midi_osc_isc" },
+    { "q": "interactive installation touchdesigner", "expectTop1": "card_interactive_mit" },
+    { "q": "touchdesigner shared components", "expectTop1": "card_dbraun_gpl" },
+    { "q": "mediapipe hand", "expectTop1": "card_mediapipe_mit" },
+    { "q": "fft feedback audio", "expectTop1": "card_audio_fft_mit" }
+  ]
+}
