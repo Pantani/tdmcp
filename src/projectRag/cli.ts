@@ -14,6 +14,7 @@
 
 import { parseArgs } from "node:util";
 import { createLogger } from "../utils/logger.js";
+import { isCopyleftLicense } from "./licensePolicy.js";
 import { createProjectRagService } from "./service.js";
 import type {
   ProjectRagConfig,
@@ -365,8 +366,9 @@ async function runSearch(
     return 0;
   }
   for (const r of results) {
+    const licenseBadge = isCopyleftLicense(r.license) ? `${r.license} · copyleft` : r.license;
     out(
-      `${r.score.toFixed(3)}  ${r.title} [${r.type}] — ${r.license}\n` +
+      `${r.score.toFixed(3)}  ${r.title} [${r.type}] — ${licenseBadge}\n` +
         `        ${r.sourceUrl}` +
         (r.rightsNotes !== undefined ? `\n        rights: ${r.rightsNotes}` : ""),
     );

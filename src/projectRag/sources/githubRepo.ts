@@ -33,8 +33,15 @@ const README_BODY_BYTES_CAP = 32_768;
 /** Only top-level `.tox`/`.toe` files are inspected; deeper paths are a F2+ concern. */
 const TD_BINARY_EXTENSIONS = [".tox", ".toe"];
 
-/** Default seed (MIT) when no override CSV is configured. */
-export const DEFAULT_GITHUB_REPOS = ["torinmb/mediapipe-touchdesigner"] as const;
+/**
+ * Default seed when no override CSV is configured.
+ * - `torinmb/mediapipe-touchdesigner` — MIT (permissive)
+ * - `DBraun/TouchDesigner_Shared` — GPL-3.0 (copyleft; flagged in search output)
+ */
+export const DEFAULT_GITHUB_REPOS = [
+  "torinmb/mediapipe-touchdesigner",
+  "DBraun/TouchDesigner_Shared",
+] as const;
 
 export interface GithubRepoSpec {
   owner: string;

@@ -93,9 +93,9 @@ describe("githubRepoSource.fetchItems", () => {
     );
   }
 
-  it("builds a RawProjectItem for the default seed with full metadata", async () => {
+  it("builds a RawProjectItem for the torinmb seed with full metadata", async () => {
     mountHappyPath();
-    const source = githubRepoSource(parseRepoListEnv(undefined));
+    const source = githubRepoSource([{ owner: "torinmb", repo: "mediapipe-touchdesigner" }]);
     const items = await source.fetchItems(10, { fetchImpl: fetch });
     expect(items).toHaveLength(1);
     const item = items[0];
@@ -199,5 +199,44 @@ describe("githubRepoSource.fetchItems", () => {
     expect(item.licenseConfidence).toBe("unknown");
     expect(item.binaryUrl).toBeUndefined();
     expect(item.type).toBe("framework");
+  });
+
+  it("DBraun GPL-3.0 seed: license is GPL-3.0 (copyleft propagates via licensePolicy)", async () => {
+    const DBRAUN_REPO = "DBraun/TouchDesigner_Shared";
+    const DBRAUN_META = `https://api.github.com/repos/${DBRAUN_REPO}`;
+    server.use(
+      http.get(DBRAUN_META, () =>
+        HttpResponse.json({
+          full_name: DBRAUN_REPO,
+          html_url: `https://github.com/${DBRAUN_REPO}`,
+          default_branch: "main",
+          owner: { login: "DBraun" },
+          topics: ["touchdesigner"],
+        }),
+      ),
+      http.get(`${DBRAUN_META}/license`, () =>
+        HttpResponse.json({ path: "LICENSE", license: { spdx_id: "GPL-3.0" } }),
+      ),
+      http.get(`${DBRAUN_META}/readme`, () =>
+        HttpResponse.text("# TouchDesigner_Shared\n\nShared."),
+      ),
+      http.get(`${DBRAUN_META}/contents/`, () =>
+        HttpResponse.json([
+          {
+            name: "Example.tox",
+            path: "Example.tox",
+            type: "file",
+            download_url: `https://raw.githubusercontent.com/${DBRAUN_REPO}/main/Example.tox`,
+          },
+        ]),
+      ),
+    );
+    const source = githubRepoSource([{ owner: "DBraun", repo: "TouchDesigner_Shared" }]);
+    const items = await source.fetchItems(10, { fetchImpl: fetch });
+    const item = items[0];
+    if (item === undefined) throw new Error("expected DBraun item");
+    expect(item.license).toBe("GPL-3.0");
+    expect(item.licenseConfidence).toBe("spdx-detected");
+    expect(item.binaryUrl).toBeDefined();
   });
 });

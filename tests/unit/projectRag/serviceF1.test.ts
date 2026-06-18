@@ -5,7 +5,7 @@ import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createProjectRagService } from "../../../src/projectRag/service.js";
-import { githubRepoSource, parseRepoListEnv } from "../../../src/projectRag/sources/githubRepo.js";
+import { githubRepoSource } from "../../../src/projectRag/sources/githubRepo.js";
 import type { ProjectRagConfig } from "../../../src/projectRag/types.js";
 
 const REPO = "torinmb/mediapipe-touchdesigner";
@@ -105,7 +105,7 @@ describe("projectRag service — F1 sync→index→search end-to-end", () => {
     const config = makeConfig(DIR, ["CC0", "PublicDomain", "MIT", "Apache-2.0"]);
     const svc = createProjectRagService({
       config,
-      sources: [githubRepoSource(parseRepoListEnv(undefined))],
+      sources: [githubRepoSource([{ owner: "torinmb", repo: "mediapipe-touchdesigner" }])],
       embeddings: MOCK_EMBEDDINGS,
     });
 
@@ -146,7 +146,7 @@ describe("projectRag service — F1 sync→index→search end-to-end", () => {
     const config = makeConfig(DIR, ["CC0", "PublicDomain"]); // MIT not allowed
     const svc = createProjectRagService({
       config,
-      sources: [githubRepoSource(parseRepoListEnv(undefined))],
+      sources: [githubRepoSource([{ owner: "torinmb", repo: "mediapipe-touchdesigner" }])],
       embeddings: MOCK_EMBEDDINGS,
     });
     const report = await svc.sync({});
@@ -162,7 +162,7 @@ describe("projectRag service — F1 sync→index→search end-to-end", () => {
     const config = makeConfig(DIR, ["MIT"]);
     const svc = createProjectRagService({
       config,
-      sources: [githubRepoSource(parseRepoListEnv(undefined))],
+      sources: [githubRepoSource([{ owner: "torinmb", repo: "mediapipe-touchdesigner" }])],
       embeddings: MOCK_EMBEDDINGS,
     });
     const first = await svc.sync({});
@@ -176,7 +176,7 @@ describe("projectRag service — F1 sync→index→search end-to-end", () => {
     const config = makeConfig(DIR, ["MIT"]);
     const svc = createProjectRagService({
       config,
-      sources: [githubRepoSource(parseRepoListEnv(undefined))],
+      sources: [githubRepoSource([{ owner: "torinmb", repo: "mediapipe-touchdesigner" }])],
       embeddings: MOCK_EMBEDDINGS,
     });
     await svc.sync({});
