@@ -119,6 +119,7 @@ interface StructurallyConfigLike {
   projectRagGithubRepos?: string;
   projectRagGithubTopics?: string;
   projectRagTopicCap: number;
+  projectRagDerivativeRoot?: string;
   projectRagAnalyzeTimeoutMs: number;
   projectRagLicenseAllowlist: string[];
   projectRagScoreWeights: {
@@ -157,6 +158,8 @@ export function toProjectRagConfig(config: StructurallyConfigLike): ProjectRagCo
   if (config.projectRagGithubTopics !== undefined)
     result.githubTopicsCsv = config.projectRagGithubTopics;
   result.topicCap = config.projectRagTopicCap;
+  if (config.projectRagDerivativeRoot !== undefined)
+    result.derivativeRoot = config.projectRagDerivativeRoot;
   return result;
 }
 

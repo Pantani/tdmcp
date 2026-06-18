@@ -226,6 +226,12 @@ export interface ProjectRagConfig {
   githubTopicsCsv?: string;
   /** Per-sync hard cap for the topic scanner (default 25). */
   topicCap?: number;
+  /**
+   * Optional explicit TouchDesigner install root for the `derivative-local`
+   * source. When unset the source probes OS-default locations; when no install
+   * is found the source is skipped. Local-only enumeration (Derivative-EULA).
+   */
+  derivativeRoot?: string;
   /** Static-analyzer subprocess timeout. */
   analyzeTimeoutMs: number;
   scoreWeights: { technical: number; license: number; freshness: number; reliability: number };
