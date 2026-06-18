@@ -74,6 +74,7 @@ export function createTdmcpServer(
     logger,
     client: ctx.client,
     creativeRag: ctx.creativeRag,
+    projectRag: ctx.projectRag,
   });
   registerAllPrompts(server, { knowledge, recipes, logger, creativeRag: ctx.creativeRag });
 

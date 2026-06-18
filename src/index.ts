@@ -67,6 +67,12 @@ async function main(): Promise<void> {
     process.exitCode = await runCreativeRagCli(argv.slice(1), { config: toCreativeRagConfig(cfg) });
     return;
   }
+  if (argv[0] === "project-rag") {
+    const { runProjectRagCli, toProjectRagConfig } = await import("./projectRag/index.js");
+    const cfg = loadConfig(process.env, { useFiles: true });
+    process.exitCode = await runProjectRagCli(argv.slice(1), { config: toProjectRagConfig(cfg) });
+    return;
+  }
   if (argv[0] === "dashboard") {
     const { runDashboard } = await import("./cli/tui.js");
     process.exit(await runDashboard(argv.slice(1)));

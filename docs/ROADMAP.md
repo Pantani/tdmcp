@@ -96,6 +96,18 @@ session we validated manually:
   falls back to JSONL when absent). Remaining stub sources: Harvard, Cooper
   Hewitt, Internet Archive, WikiArt, portfolios, Shadertoy. See
   [Creative RAG](./CREATIVE_RAG).
+- 🧪 **Project RAG foundations (opt-in, experimental, F0 — WIP on
+  `feature/project-rag`).** Sibling RAG to Creative RAG, indexing
+  TouchDesigner *projects/components/snippets/tutorials* with mandatory
+  `provenance` + `license` per card. F0 ships gating, schema v2 (with `kind`
+  discriminator + extended SPDX/Derivative-EULA/Proprietary-* license enum),
+  JSONL store, service skeleton, CLI subcommand `tdmcp project-rag
+  {sources|sync|index|search|info}`, and read-only resources
+  `tdmcp://project/cards/{id}` + `tdmcp://project/search`. Inert unless both
+  `TDMCP_RAG_ENABLED=1` AND `TDMCP_PROJECT_RAG_ENABLED=1`. Data dir isolated
+  at `<TDMCP_RAG_DATA_DIR>/project/`. F1 wires real sources; F3 opt-in
+  bridge-quarantine analysis uses a *separate* TD on dedicated port 9981 —
+  never the active 9980. See [Project RAG](./PROJECT_RAG).
 
 ### Wave 12 — v0.8.3 (live-show resilience + LLM token budget + CLI ergonomics) {#wave-12-v0-8-3}
 

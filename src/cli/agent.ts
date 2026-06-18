@@ -2863,6 +2863,16 @@ const ENV_NAMES: Record<keyof TdmcpConfig, string> = {
   ragInjectK: "TDMCP_RAG_INJECT_K",
   ragInjectTimeoutMs: "TDMCP_RAG_INJECT_TIMEOUT_MS",
   ragProbeTimeoutMs: "TDMCP_RAG_PROBE_TIMEOUT_MS",
+  projectRagEnabled: "TDMCP_PROJECT_RAG_ENABLED",
+  projectRagBridgeAnalysis: "TDMCP_PROJECT_RAG_BRIDGE_ANALYSIS",
+  projectRagBridgePort: "TDMCP_PROJECT_RAG_BRIDGE_PORT",
+  projectRagGhToken: "TDMCP_PROJECT_RAG_GH_TOKEN",
+  projectRagGithubRepos: "TDMCP_PROJECT_RAG_GITHUB_REPOS",
+  projectRagGithubTopics: "TDMCP_PROJECT_RAG_GITHUB_TOPICS",
+  projectRagTopicCap: "TDMCP_PROJECT_RAG_TOPIC_CAP",
+  projectRagAnalyzeTimeoutMs: "TDMCP_PROJECT_RAG_ANALYZE_TIMEOUT_MS",
+  projectRagLicenseAllowlist: "TDMCP_PROJECT_RAG_LICENSE_ALLOWLIST",
+  projectRagScoreWeights: "TDMCP_PROJECT_RAG_SCORE_WEIGHTS",
 };
 const SECRET_ENV: ReadonlySet<keyof TdmcpConfig> = new Set([
   "bridgeToken",
@@ -2872,6 +2882,7 @@ const SECRET_ENV: ReadonlySet<keyof TdmcpConfig> = new Set([
   "telegramAllowedUsers",
   "ragSmithsonianKey",
   "ragEuropeanaKey",
+  "projectRagGhToken",
 ]);
 
 /** A paste-ready `export TDMCP_*=...` block; secrets are emitted commented-out (set manually). */

@@ -4,6 +4,11 @@ import {
   toCreativeRagConfig,
 } from "../creativeRag/index.js";
 import { KnowledgeBase } from "../knowledge/index.js";
+import {
+  createProjectRagService,
+  type ProjectRagService,
+  toProjectRagConfig,
+} from "../projectRag/index.js";
 import { RecipeLibrary } from "../recipes/loader.js";
 import type { ToolContext } from "../tools/types.js";
 import type { TdmcpConfig } from "../utils/config.js";
@@ -19,6 +24,8 @@ export interface ToolContextOverrides {
   vault?: Vault;
   /** Override the Creative RAG service (tests inject a fake; undefined keeps the config-driven wiring). */
   creativeRag?: CreativeRagService;
+  /** Override the Project RAG service (tests inject a fake; undefined keeps the config-driven wiring). */
+  projectRag?: ProjectRagService;
   /** Override fetch (used by the fixture-recorder CLI to wrap bridge calls). */
   fetchImpl?: typeof fetch;
 }
@@ -44,6 +51,12 @@ export function buildToolContext(
     (config.ragEnabled
       ? createCreativeRagService({ config: toCreativeRagConfig(config), logger })
       : undefined);
+  const projectRagConfig = toProjectRagConfig(config);
+  const projectRag =
+    overrides.projectRag ??
+    (projectRagConfig.enabled
+      ? createProjectRagService({ config: projectRagConfig, logger })
+      : undefined);
   return {
     client: connection.client,
     knowledge,
@@ -53,5 +66,6 @@ export function buildToolContext(
     allowRawPython: config.rawPython !== "off",
     toolProfile: config.toolProfile,
     creativeRag,
+    projectRag,
   };
 }
