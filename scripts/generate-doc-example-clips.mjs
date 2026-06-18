@@ -2,9 +2,11 @@
 /**
  * Generate small MP4 clips used by the prompt cookbook.
  *
- * These are lightweight documentation clips for features whose real output is a
- * timed system, UI surface, or shader/material workflow. Visual-generator demos
- * captured from a live TouchDesigner network should still use capture-example.mjs.
+ * These are lightweight documentation clips for the prompt cookbook. Cookbook
+ * media should read as the visual result an artist would get from the prompt,
+ * not as an explanatory diagram of the command that produced it. Visual-generator
+ * demos captured from a live TouchDesigner network should still use
+ * capture-example.mjs.
  */
 import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -1817,35 +1819,45 @@ function paletteExtractAndGradeFrame(t) {
 }
 
 function sopToSvgFrame(t) {
-  const buf = baseFrame();
-  const path = [];
-  for (let i = 0; i < 80; i++) {
-    const x = 38 + i * 3.6;
-    const y = 136 + Math.sin(i * 0.28 + t * 2.5) * 48 + Math.sin(i * 0.71) * 12;
-    path.push([x, y]);
+  const buf = Buffer.alloc(width * height * 3);
+  rect(buf, 0, 0, width, height, [238, 234, 220], 1);
+  for (let x = 36; x <= 444; x += 24) line(buf, x, 24, x, 246, [200, 194, 178], 0.25);
+  for (let y = 30; y <= 246; y += 24) line(buf, 30, y, 450, y, [200, 194, 178], 0.25);
+  rect(buf, 30, 24, 420, 222, [255, 255, 255], 0.22);
+
+  const paths = [];
+  for (let band = 0; band < 7; band++) {
+    const pts = [];
+    for (let i = 0; i < 120; i++) {
+      const u = i / 119;
+      const x = 46 + u * 388;
+      const y =
+        136 +
+        Math.sin(u * Math.PI * (2.5 + band * 0.28) + band * 0.74 + t * 1.4) * (22 + band * 3) +
+        Math.sin(u * Math.PI * 8 - t * 1.1) * 7 +
+        (band - 3) * 12;
+      pts.push([x, y]);
+    }
+    paths.push(pts);
   }
-  for (let i = 0; i < path.length - 1; i++)
-    line(buf, path[i][0], path[i][1], path[i + 1][0], path[i + 1][1], [68, 220, 255], 0.66);
-  rect(buf, 316, 34, 128, 190, [244, 239, 224], 0.96);
-  rect(buf, 328, 48, 104, 162, [255, 255, 255], 0.86);
-  const p = Math.floor(((t * 0.5) % 1) * (path.length - 1));
-  for (let i = 0; i < p; i++) {
-    const x0 = 336 + (path[i][0] - 38) * 0.34;
-    const y0 = 130 + (path[i][1] - 136) * 0.52;
-    const x1 = 336 + (path[i + 1][0] - 38) * 0.34;
-    const y1 = 130 + (path[i + 1][1] - 136) * 0.52;
-    line(buf, x0, y0, x1, y1, [18, 24, 32], 0.92);
-  }
-  circle(
-    buf,
-    336 + (path[p][0] - 38) * 0.34,
-    130 + (path[p][1] - 136) * 0.52,
-    4,
-    [255, 82, 126],
-    0.95,
-  );
-  rect(buf, 92, 230, 120, 8, [57, 232, 190], 0.8);
-  rect(buf, 332, 230, 88, 8, [255, 214, 86], 0.8);
+
+  const reveal = (t * 0.45) % 1;
+  paths.forEach((pts, pathIndex) => {
+    const color = mixColor([18, 24, 32], [38, 94, 126], pathIndex / Math.max(1, paths.length - 1));
+    const limit = Math.max(
+      2,
+      Math.floor(pts.length * smoothstep(0, 1, reveal + pathIndex * 0.055)),
+    );
+    for (let i = 0; i < limit - 1; i++)
+      line(buf, pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], color, 0.82);
+  });
+
+  const activePath = paths[Math.floor((t * 2) % paths.length)];
+  const penIndex = Math.min(activePath.length - 1, Math.floor(reveal * activePath.length));
+  const [penX, penY] = activePath[penIndex];
+  circle(buf, penX, penY, 5, [255, 82, 126], 0.92);
+  line(buf, penX + 4, penY - 10, penX + 18, penY - 34, [28, 32, 40], 0.75);
+  circle(buf, penX + 18, penY - 34, 6, [28, 32, 40], 0.88);
   return buf;
 }
 
@@ -2963,7 +2975,7 @@ function miniNode(buf, x, y, color, active = false) {
   if (active) glow(buf, x + 22, y + 12, 34, color, 0.22);
 }
 
-function drawRecipeShell(buf, t, accent) {
+function _drawRecipeShell(buf, t, accent) {
   rect(buf, 22, 24, 436, 220, [12, 18, 30], 0.96);
   rect(buf, 42, 42, 118, 176, [238, 242, 247], 0.92);
   for (let i = 0; i < 8; i++) {
@@ -3199,18 +3211,32 @@ const recipePreviewRenderers = {
   timeline: drawTimelineRecipePreview,
 };
 
-function drawRecipePreview(buf, kind, t, accent) {
+function _drawRecipePreview(buf, kind, t, accent) {
   rect(buf, 334, 56, 94, 126, [4, 7, 14], 0.92);
   recipePreviewRenderers[kind]?.(buf, t, accent);
 }
 
-function recipeStarterFrame(kind, accent = [57, 232, 190]) {
-  return (t) => {
-    const buf = baseFrame();
-    drawRecipeShell(buf, t, accent);
-    drawRecipePreview(buf, kind, t, accent);
-    return buf;
+function recipeStarterFrame(kind, _accent = [57, 232, 190]) {
+  const outputRenderers = {
+    audio: chromaTransientEnergyFrame,
+    decks: nChannelDecksFrame,
+    depth: multipassDepthFrame,
+    face: faceTrackingFrame,
+    feedback: feedbackTunnelFrame,
+    glsl: isfImportFrame,
+    keyframe: pbrProductFrame,
+    optical: opticalFlowParticlesTrailFrame,
+    particles: particleFlockMurmurationFrame,
+    pose: poseTrailsFrame,
+    scene3d: scene3dFrame,
+    synth: feedbackTunnelInfiniteFrame,
+    text: typewriterManifestoFrame,
+    textPath: pathTitleOrbitFrame,
+    timeline: sceneTimelineFrame,
   };
+  const renderer = outputRenderers[kind];
+  if (!renderer) throw new Error(`Unknown recipe starter preview kind: ${kind}`);
+  return renderer;
 }
 
 function transportRestCueFrame(t) {
@@ -4236,6 +4262,117 @@ function pathTitleOrbitFrame(t) {
   return buf;
 }
 
+function creativeRagKandinskyRemixFrame(t) {
+  const buf = baseFrame();
+  const red = [224, 32, 32];
+  const blue = [0, 56, 184];
+  const yellow = [255, 204, 24];
+  const white = [244, 246, 240];
+  const black = [2, 4, 9];
+  const gradedShadow = [7, 11, 20];
+  const gradedMid = [16, 23, 36];
+
+  rect(buf, 0, 0, width, height, black, 0.96);
+
+  const rot = 0.16 * Math.sin(t * 0.7);
+  const cr = Math.cos(rot);
+  const sr = Math.sin(rot);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const sx = x - width / 2;
+      const sy = y - height / 2;
+      const u = (sx * cr - sy * sr) / 52;
+      const v = (sx * sr + sy * cr) / 52;
+      const angle = Math.atan2(sy, sx);
+      const radius = Math.hypot(sx / 230, sy / 126);
+      const gridX = Math.abs(u - Math.round(u));
+      const gridY = Math.abs(v - Math.round(v));
+      const grid = gridX < 0.02 || gridY < 0.024;
+      const checker = (Math.floor(u + t * 0.32) + Math.floor(v - t * 0.18)) % 2;
+      const wedge = Math.floor((angle + Math.PI + t * 0.45) / (Math.PI / 5));
+      const band = Math.floor((u * 1.1 - v * 0.72 + t * 0.85) * 2.2);
+      const index = Math.abs(wedge + band + checker) % 6;
+      const palette = [gradedShadow, blue, red, gradedMid, yellow, black];
+      const vignette = smoothstep(1.3, 0.35, radius);
+      const color = grid ? white : mixColor(palette[index], black, 0.1 + 0.34 * radius);
+      set(buf, x, y, color, grid ? 0.2 : 0.38 + vignette * 0.42);
+    }
+  }
+
+  const sweep = (t * 0.42) % 1;
+  const planeShift = Math.sin(t * 1.4) * 16;
+  polygon(
+    buf,
+    [
+      [18, 44 + planeShift * 0.35],
+      [176 + planeShift, 18],
+      [226 + planeShift * 0.4, 122],
+      [72, 154],
+    ],
+    red,
+    0.88,
+  );
+  polygon(
+    buf,
+    [
+      [320 - planeShift * 0.4, 18],
+      [462, 56],
+      [432, 190 + planeShift * 0.25],
+      [256 - planeShift, 154],
+    ],
+    blue,
+    0.84,
+  );
+  polygon(
+    buf,
+    [
+      [176, 174 - planeShift * 0.2],
+      [292, 126 + planeShift * 0.3],
+      [388, 246],
+      [116, 248],
+    ],
+    yellow,
+    0.82,
+  );
+
+  const centerX = 236 + Math.sin(t * 1.2) * 22;
+  const centerY = 130 + Math.cos(t * 1.1) * 10;
+  for (let i = 0; i < 5; i++) {
+    const r = 24 + i * 17 + Math.sin(t * 2.1 + i) * 2.5;
+    ellipseRing(buf, centerX, centerY, r * 1.05, r * 0.72, 0.025, i % 2 ? white : black, 0.74);
+  }
+  circle(buf, centerX - 56, centerY - 24, 22 + Math.sin(t * 2.4) * 4, yellow, 0.86);
+  circle(buf, centerX + 78, centerY + 34, 18 + Math.cos(t * 2.0) * 3, red, 0.78);
+  circle(buf, centerX + 16, centerY - 48, 10, white, 0.88);
+
+  for (let i = 0; i < 10; i++) {
+    const x = 42 + i * 44 + Math.sin(t * 1.5 + i) * 5;
+    const y = 38 + ((i * 37) % 186);
+    const color = i % 3 === 0 ? red : i % 3 === 1 ? yellow : blue;
+    line(buf, x - 28, y + 42, x + 46, y - 34, black, 0.82);
+    line(buf, x - 26, y + 40, x + 48, y - 36, color, 0.5);
+  }
+
+  for (let i = 0; i < 7; i++) {
+    const y = 34 + i * 32 + Math.sin(t * 1.3 + i) * 2;
+    line(buf, 24, y, 456, y + Math.sin(i + t) * 8, white, i % 2 ? 0.14 : 0.08);
+  }
+  for (let i = 0; i < 5; i++) {
+    const x = 44 + i * 88 + Math.sin(t * 1.1 + i) * 4;
+    line(buf, x, 22, x + Math.sin(t + i) * 14, 246, white, 0.1);
+  }
+
+  const lfoX = 26 + 428 * sweep;
+  rect(buf, lfoX, 18, 4, 234, white, 0.16);
+  glow(buf, lfoX, 134, 38, white, 0.08);
+  rect(buf, 18, 18, 444, 234, [0, 0, 0], 0.08);
+  line(buf, 18, 18, 462, 18, white, 0.28);
+  line(buf, 18, 252, 462, 252, white, 0.22);
+  line(buf, 18, 18, 18, 252, white, 0.18);
+  line(buf, 462, 18, 462, 252, white, 0.18);
+  return buf;
+}
+
 const clips = [
   ["feedback-tunnel.mp4", feedbackTunnelFrame],
   ["reaction-diffusion.mp4", reactionDiffusionFrame],
@@ -4381,6 +4518,7 @@ const clips = [
   ["palette-harmony-study.mp4", paletteHarmonyStudyFrame],
   ["flow-field-ribbons.mp4", flowFieldRibbonsFrame],
   ["sculptural-relief-gallery.mp4", sculpturalReliefGalleryFrame],
+  ["creative-rag-kandinsky-remix.mp4", creativeRagKandinskyRemixFrame],
 ];
 
 function writePpm(file, buf) {
