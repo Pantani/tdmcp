@@ -2,6 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { CreativeRagCardSchema } from "../../src/creativeRag/schema.js";
 import { RecipeLibrary } from "../../src/recipes/loader.js";
 import {
   cookbookPathFromModuleDir,
@@ -27,6 +28,12 @@ function quotedCookbookPrompts(markdown: string): string {
     .split("\n")
     .filter((line) => line.startsWith(">"))
     .join("\n");
+}
+
+function jsonCodeBlocks(markdown: string): unknown[] {
+  return [...markdown.matchAll(/```json\n([\s\S]*?)\n```/g)]
+    .map((match) => JSON.parse(match[1] ?? "null"))
+    .filter(Boolean);
 }
 
 describe("recipe search resource helpers", () => {
@@ -138,6 +145,32 @@ describe("cookbook resource helpers", () => {
       "Gere um README",
     ]) {
       expect(quotedPrompts).not.toContain(developerWorkflowPrompt);
+    }
+  });
+
+  it("keeps Creative RAG examples aligned with CLI output and card schema", () => {
+    const en = readCookbookResource("en").text;
+    const pt = readCookbookResource("pt").text;
+
+    for (const text of [en, pt]) {
+      expect(text).toContain("--license CC0,PublicDomain --k 5 --json");
+      expect(text).toContain("--license CC0 --type artwork --tags architecture --k 5 --json");
+      expect(text).not.toContain("score  id");
+      expect(text).not.toContain('"description":');
+      expect(text).not.toContain('"type": "photograph"');
+    }
+
+    for (const text of [en, pt]) {
+      const card = jsonCodeBlocks(text).find(
+        (block) =>
+          typeof block === "object" &&
+          block !== null &&
+          "id" in block &&
+          block.id === "3f4d5e6a...",
+      );
+
+      expect(card).toBeTruthy();
+      expect(CreativeRagCardSchema.safeParse(card).success).toBe(true);
     }
   });
 

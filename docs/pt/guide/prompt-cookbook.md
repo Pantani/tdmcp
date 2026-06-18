@@ -1628,43 +1628,70 @@ quando precisar de garantia firme sobre o que vai reusar.
 
 ```bash
 tdmcp creative-rag search "kinetic monochrome geometric" \
-  --license CC0,PublicDomain --k 5
+  --license CC0,PublicDomain --k 5 --json
 ```
 
-```text
-score  id        title                                                    source       license       type
-0.78   a1b2c3d4  Composition with Black Lines                             artic        PublicDomain  painting
-0.74   e5f6a7b8  Rhythm of a Russian Dance                                rijksmuseum  CC0           painting
-0.70   12c3d4e5  Op Art Study, Black on White                             met          PublicDomain  drawing
-0.66   90fa1b2c  Vibration (Plate VI)                                     rijksmuseum  CC0           print
-0.61   77ab88cd  Untitled (Concentric Squares)                            artic        PublicDomain  drawing
+```json
+[
+  {
+    "id": "a1b2c3d4...",
+    "score": 0.78,
+    "title": "Composition with Black Lines",
+    "sourceUrl": "https://www.artic.edu/...",
+    "license": "PublicDomain",
+    "type": "artwork",
+    "tags": ["geometric", "monochrome", "motion-study"]
+  },
+  {
+    "id": "e5f6a7b8...",
+    "score": 0.74,
+    "title": "Rhythm of a Russian Dance",
+    "sourceUrl": "https://www.rijksmuseum.nl/...",
+    "license": "CC0",
+    "type": "artwork",
+    "tags": ["kinetic", "dance", "geometry"]
+  }
+]
 ```
 
-*`creative-rag search` devolve uma lista ranqueada de cards. Cada linha é
-`{ id, title, sourceUrl, license, type, tags, score }`, com `score` sendo
-similaridade de cosseno (0–1). Use `--json` se quiser o payload estruturado em
-vez da tabela legível.*
+*Use `--json` quando precisar dos ids para o próximo passo. A tabela humana é mais
+curta de propósito e imprime score, título, tipo/licença e source URL; o payload
+estruturado adiciona `id`, `tags` e outros campos do card para agentes ou scripts.*
 
 > *"Me mostre só obras de arquitetura com licença CC0 da biblioteca criativa."*
 
 ```bash
 tdmcp creative-rag search "architecture facade" \
-  --license CC0 --type artwork --tags architecture --k 5
+  --license CC0 --type artwork --tags architecture --k 5 --json
 ```
 
-```text
-score  id        title                                              source       license  type
-0.81   3f4d5e6a  Façade Study, Rietveld Schröder House              rijksmuseum  CC0      artwork
-0.77   c7d8e9f0  Steel Frame, Construction Series                   cleveland    CC0      artwork
-0.72   55667788  Brutalist Stairwell                                rijksmuseum  CC0      artwork
-0.68   99aabbcc  Concrete Volumes at Dusk                           cleveland    CC0      artwork
-0.63   ddeeff01  Window Grid                                        rijksmuseum  CC0      artwork
+```json
+[
+  {
+    "id": "3f4d5e6a...",
+    "score": 0.81,
+    "title": "Facade Study, Rietveld Schroder House",
+    "sourceUrl": "https://www.rijksmuseum.nl/...",
+    "license": "CC0",
+    "type": "artwork",
+    "tags": ["architecture", "de-stijl", "geometric"]
+  },
+  {
+    "id": "c7d8e9f0...",
+    "score": 0.77,
+    "title": "Steel Frame, Construction Series",
+    "sourceUrl": "https://www.clevelandart.org/...",
+    "license": "CC0",
+    "type": "artwork",
+    "tags": ["architecture", "structure", "grid"]
+  }
+]
 ```
 
 *`--license CC0` estreita mais que o padrão (descarta PublicDomain), então o
 resultado é estritamente CC0. `--type` aceita o enum da CLI
 (`project|artist|artwork|technique|cue_reference`); use `--tags` (CSV) para
-filtros mais finos como `architecture`, `photograph`, `sculpture`. Todos os
+filtros mais finos como `architecture`, `geometric`, `sculpture`. Todos os
 filtros empilham.*
 
 > *"Abra o card `3f4d5e6a…` da biblioteca criativa e resuma a intenção do artista
@@ -1676,26 +1703,29 @@ sha256(sourceUrl)`) e recebe o card completo em JSON:
 ```json
 {
   "id": "3f4d5e6a...",
-  "title": "Façade Study, Rietveld Schröder House",
-  "description": "Frontal photograph of the De Stijl façade...",
+  "schemaVersion": 1,
+  "type": "artwork",
+  "title": "Facade Study, Rietveld Schroder House",
   "sourceUrl": "https://www.rijksmuseum.nl/...",
+  "sourceName": "rijksmuseum",
   "license": "CC0",
-  "type": "photograph",
+  "body": "Frontal study of a De Stijl facade with rigid planes and window-grid rhythm.",
   "tags": ["architecture", "de-stijl", "geometric", "primary-colors"],
   "palette": ["#E63946", "#F1FAEE", "#1D3557", "#FFD166"],
   "visualLanguage": "rigid orthogonal grid, flat planes",
   "tdmcpAffordances": ["create_glsl_shader", "create_grid_layout"],
-  "schemaVersion": 1
+  "contentHash": "sha256:..."
 }
 ```
 
-*A shape real do card é plana: `palette` e `visualLanguage` são campos
-opcionais de primeiro nível, e `tdmcpAffordances` é `string[]` com nomes de
-tools sugeridas (veja `src/creativeRag/schema.ts`). Leia o card, destile a
-intenção em prosa e então repasse os affordances + paleta para a tool de
-Layer 1 que se encaixar — por exemplo, "usa essa paleta e o `visualLanguage`
-em grade pra montar uma cena GLSL monocromática kinética". O cookbook para
-aqui; o build real fica para a tool de Layer 1 que os affordances indicam.*
+*A shape real do card é plana: `body`, `palette` e `visualLanguage` são campos
+opcionais de primeiro nível, `type` precisa ser um dos valores do enum da Creative
+RAG, e `tdmcpAffordances` é `string[]` com nomes de tools sugeridas (veja
+`src/creativeRag/schema.ts`). Leia o card, destile a intenção em prosa e então
+repasse os affordances + paleta para a tool de Layer 1 que se encaixar — por
+exemplo, "usa essa paleta e o `visualLanguage` em grade pra montar uma cena GLSL
+monocromática kinética". O cookbook para aqui; o build real fica para a tool de
+Layer 1 que os affordances indicam.*
 
 ## Trabalhando a partir das suas notas (vault Obsidian)
 
