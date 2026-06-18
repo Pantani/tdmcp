@@ -1,6 +1,7 @@
 import type { ToolRegistrar } from "../types.js";
 import { registerAddCustomParameters } from "./addCustomParameters.js";
 import { registerAnimateParameter } from "./animateParameter.js";
+import { registerApplyCreativeCard } from "./applyCreativeCard.js";
 import { registerApplyLut } from "./applyLut.js";
 import { registerArrangeNetwork } from "./arrangeNetwork.js";
 import { registerAuthorScriptOperator } from "./authorScriptOperator.js";
@@ -180,3 +181,8 @@ export const layer2Registrars: ToolRegistrar[] = [
   registerConnectDaydreamCloud,
   registerCreateLlmChain,
 ];
+
+// v0.6.0 — Creative RAG inspiration → execution loop (gated behind env flag).
+if (process.env.TDMCP_RAG_APPLY_CARD === "1") {
+  layer2Registrars.push(registerApplyCreativeCard);
+}

@@ -78,6 +78,14 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "apply-creative-card",
+    summary:
+      "Read a Creative RAG card and route to one of its whitelisted Layer 1 tdmcpAffordances with optional overrides (use `dry_run: true` to preview).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "apply-glsl-mapping",
     summary:
       "Build a GLSL TOP from a pre-translated mapping (fragment + uniforms + channels + controls).",

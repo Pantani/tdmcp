@@ -157,7 +157,7 @@ config nem aparecem em log. Env vars seguem a convenção `TDMCP_*`.
 | `TDMCP_RAG_ENABLED` | `ragEnabled` | `0` (false) | Chave mestra. Quando 0, sem resource, sem injeção de contexto, subcomando vira no-op com mensagem. |
 | `TDMCP_RAG_DATA_DIR` | `ragDataDir` | `.tdmcp/creative-rag` | Cards, binários e índice vivem aqui. Gitignored. |
 | `TDMCP_RAG_OLLAMA_URL` | `ragOllamaUrl` | `http://127.0.0.1:11434` | Endpoint local de embeddings. |
-| `TDMCP_RAG_EMBED_MODEL` | `ragEmbedModel` | `nomic-embed-text` | Precisa estar baixado (`ollama pull nomic-embed-text`). |
+| `TDMCP_RAG_EMBED_MODEL` | `ragEmbedModel` | `nomic-embed-text` | Precisa estar baixado (`ollama pull nomic-embed-text`). **Bibliotecas multilíngues.** O padrão `nomic-embed-text` é voltado ao inglês. Para repertórios em português, espanhol, francês ou mistos, defina `TDMCP_RAG_EMBED_MODEL=bge-m3` e rode `ollama pull bge-m3`, depois `tdmcp creative-rag index --rebuild` (linhas JSONL existentes carregam o `embeddingModel` antigo e são ignoradas no rebuild). Alternativa: `mxbai-embed-large`. |
 | `TDMCP_RAG_LICENSE_ALLOWLIST` | `ragLicenseAllowlist` | `CC0,PublicDomain` | CSV; licenças para as quais binários podem ser armazenados. |
 | `TDMCP_RAG_EMBED_BATCH` | `ragEmbedBatch` | `64` | Inputs por POST de embed do Ollama. O `index` parte o conjunto de cards em batches desse tamanho; a guarda de "um vetor por input" dispara por batch. Faixa 1–512. |
 | `TDMCP_RAG_BACKEND` | `ragBackend` | `jsonl` | Backend de índice. `jsonl` é o store in-memory full-load. `lancedb` é um caminho de escala **experimental** que usa a dependência opcional `@lancedb/lancedb`. |
@@ -330,8 +330,14 @@ servidor não é afetado.
   Wikimedia Commons e Europeana (todas verificadas em sync real). Seis
   outras continuam como stubs planejados (acima).
 - **Sync limitado.** Não é mirror completo; teto por execução.
-- **Embeddings "english-leaning".** `nomic-embed-text` é o default;
-  modelos multilingues são troca de config, não redesenho.
+- **Troca para multilíngue.** `nomic-embed-text` (padrão) é voltado ao inglês.
+  Para indexar repertórios em português, espanhol, francês ou mistos, defina
+  `TDMCP_RAG_EMBED_MODEL=bge-m3` (ou o maior `mxbai-embed-large`) e rode
+  `ollama pull bge-m3`. Depois reconstrua o índice: `tdmcp creative-rag index
+  --rebuild`. Trocar de modelo **invalida linhas de índice existentes** (o campo
+  `embeddingModel` armazenado não corresponde mais ao modelo em uso); `--rebuild`
+  re-embeda tudo com o novo modelo. Veja a tabela de env acima para referência
+  completa de configuração.
 - **Sem tools de escrita.** Resource read-only + CLI apenas.
 
 Veja o [roadmap](/roadmap) para próximos passos.

@@ -150,7 +150,7 @@ logging but consumed in-source. Env vars follow the existing `TDMCP_*` conventio
 | `TDMCP_RAG_ENABLED` | `ragEnabled` | `0` (false) | Master switch. When 0, no resource, no context injection, subcommand is a no-op-with-message. |
 | `TDMCP_RAG_DATA_DIR` | `ragDataDir` | `.tdmcp/creative-rag` | Cards, binaries, index live here. Gitignored. |
 | `TDMCP_RAG_OLLAMA_URL` | `ragOllamaUrl` | `http://127.0.0.1:11434` | Local embeddings endpoint. |
-| `TDMCP_RAG_EMBED_MODEL` | `ragEmbedModel` | `nomic-embed-text` | Must be pulled (`ollama pull nomic-embed-text`). |
+| `TDMCP_RAG_EMBED_MODEL` | `ragEmbedModel` | `nomic-embed-text` | Must be pulled (`ollama pull nomic-embed-text`). **Multilingual libraries.** The default `nomic-embed-text` is English-leaning. For Portuguese, Spanish, French (or mixed) repertoires set `TDMCP_RAG_EMBED_MODEL=bge-m3` and run `ollama pull bge-m3`, then `tdmcp creative-rag index --rebuild` (existing JSONL lines carry the old model id and are skipped on rebuild). Alternate: `mxbai-embed-large`. |
 | `TDMCP_RAG_LICENSE_ALLOWLIST` | `ragLicenseAllowlist` | `CC0,PublicDomain` | CSV; licenses for which binaries may be stored. |
 | `TDMCP_RAG_EMBED_BATCH` | `ragEmbedBatch` | `64` | Inputs per Ollama embed POST. `index` splits the card set into batches of this size; the one-vector-per-input guard fires per batch. Range 1–512. |
 | `TDMCP_RAG_BACKEND` | `ragBackend` | `jsonl` | Index backend. `jsonl` is the in-memory full-load store. `lancedb` is an **experimental** scale path using the optional `@lancedb/lancedb` dependency. |
@@ -307,6 +307,12 @@ unaffected.
   Commons, and Europeana (all verified against a real sync). Six more remain
   planned stubs (above).
 - **Bounded sync.** Not a full mirror; a per-run item cap.
-- **English-leaning embeddings.** `nomic-embed-text` is the default; multilingual
-  models are a config swap, not redesigned here.
+- **Multilingual swap.** `nomic-embed-text` (default) is English-leaning. To
+  index a Portuguese, Spanish, French, or mixed repertoire, set
+  `TDMCP_RAG_EMBED_MODEL=bge-m3` (or the larger `mxbai-embed-large`) and run
+  `ollama pull bge-m3`. Then rebuild the index: `tdmcp creative-rag index
+  --rebuild`. Switching models **invalidates existing index lines** (their stored
+  `embeddingModel` no longer matches the runtime model); `--rebuild` re-embeds
+  everything with the new model. See the env table above for the full config
+  reference.
 - **No write tools.** Read-only resource + CLI only.

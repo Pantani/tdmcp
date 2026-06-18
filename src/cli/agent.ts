@@ -399,6 +399,10 @@ import {
   addCustomParametersSchema,
 } from "../tools/layer2/addCustomParameters.js";
 import { animateParameterImpl, animateParameterSchema } from "../tools/layer2/animateParameter.js";
+import {
+  applyCreativeCardImpl,
+  applyCreativeCardSchema,
+} from "../tools/layer2/applyCreativeCard.js";
 import { applyLutImpl, applyLutSchema } from "../tools/layer2/applyLut.js";
 import { arrangeNetworkImpl, arrangeNetworkSchema } from "../tools/layer2/arrangeNetwork.js";
 import {
@@ -2332,6 +2336,13 @@ const COMMANDS: Record<string, Command> = {
     getInlinePreviewImpl,
     "Inline inspection snapshot for one operator: small base64 thumbnail + errors (self + parents) + top-N changed-from-default parameters + 1-line cook stats. Single-round-trip 'is this op alive/healthy?' read.",
     { mutates: false },
+  ),
+  // v0.6.0 — Creative RAG inspiration → execution loop:
+  "apply-creative-card": r(
+    applyCreativeCardSchema,
+    applyCreativeCardImpl,
+    "Read a Creative RAG card and route to one of its whitelisted Layer 1 tdmcpAffordances with optional overrides (use `dry_run: true` to preview).",
+    { mutates: true },
   ),
 };
 
