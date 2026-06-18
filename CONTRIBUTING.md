@@ -106,7 +106,7 @@ Two conditions must **both** be satisfied:
 
 The PR description **must** contain a line:
 
-```
+```text
 Probe-live skip reason: <explanation>
 ```
 

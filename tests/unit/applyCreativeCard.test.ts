@@ -108,6 +108,28 @@ describe("applyCreativeCardImpl", () => {
     });
   });
 
+  it("regression — target isError:true propagates to the outer envelope", async () => {
+    feedbackImplSpy.mockReset();
+    feedbackImplSpy.mockResolvedValueOnce({
+      isError: true,
+      content: [{ type: "text", text: "target blew up" }],
+    });
+    const ctx = makeCtx({ card: makeCard() });
+    const r = await applyCreativeCardImpl(ctx, {
+      card_id: "abc123",
+      affordance_index: 0,
+      dry_run: false,
+    });
+    // The outer envelope MUST carry isError so MCP clients (which gate on
+    // isError, not text content) don't read a target failure as success.
+    expect(r.isError).toBe(true);
+    expect(feedbackImplSpy).toHaveBeenCalledTimes(1);
+    expect(r.structuredContent).toMatchObject({
+      tool: "create_feedback_network",
+      executed: true,
+    });
+  });
+
   it("rejects non-whitelisted affordance", async () => {
     feedbackImplSpy.mockReset();
     const ctx = makeCtx({

@@ -145,14 +145,24 @@ export async function applyCreativeCardImpl(
     return errorResult("Target tool failed", { tool: name, error: String(err) });
   }
 
-  return structuredResult(result.isError ? `Target ${name} reported an error` : `Invoked ${name}`, {
-    card_id: args.card_id,
-    tool: name,
-    args: targetArgs,
-    executed: true,
-    result,
-    warnings,
-  });
+  const envelope = structuredResult(
+    result.isError ? `Target ${name} reported an error` : `Invoked ${name}`,
+    {
+      card_id: args.card_id,
+      tool: name,
+      args: targetArgs,
+      executed: true,
+      result,
+      warnings,
+    },
+  );
+  // Propagate the target's failure — otherwise an isError target reads as a
+  // successful invocation upstream (MCP clients gate on `isError`, not on the
+  // text content).
+  if (result.isError === true) {
+    envelope.isError = true;
+  }
+  return envelope;
 }
 
 export const registerApplyCreativeCard: ToolRegistrar = (server, ctx) => {

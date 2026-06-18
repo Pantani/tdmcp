@@ -239,22 +239,19 @@ export async function runAsk(argv: string[] = [], deps: AskRuntimeDeps = {}): Pr
   let answer: string | undefined;
   let errorMessage: string | undefined;
 
-  // Creative RAG injection — passive context prepended as a system message.
-  // Flag wins over env; RAG disabled → warn + skip (not an error).
-  const inject = opts.withCreative || process.env.TDMCP_RAG_INJECT_ASK === "1";
+  // Creative RAG injection — passive context prepended as a user message.
+  // Flag wins over the env-derived config flag; RAG disabled → warn + skip
+  // (not an error). All knobs come from the parsed config (single source of
+  // truth) so file-based config and profiles work the same as env vars.
+  const inject = opts.withCreative || config.ragInjectAsk === true;
   let creativeMsg: ChatMessage | undefined;
   if (inject) {
     if (!ctx.creativeRag) {
       stderrLine("tdmcp ask: creative context requested but TDMCP_RAG_ENABLED is off — skipping");
     } else {
-      const injectK = clampK(process.env.TDMCP_RAG_INJECT_K);
-      const injectTimeoutMs = Number.parseInt(
-        process.env.TDMCP_RAG_INJECT_TIMEOUT_MS ?? "3000",
-        10,
-      );
       creativeMsg = await buildCreativeContextMessage(ctx.creativeRag, prompt, {
-        k: injectK,
-        timeoutMs: Number.isFinite(injectTimeoutMs) ? injectTimeoutMs : 3_000,
+        k: clampK(config.ragInjectK),
+        timeoutMs: config.ragInjectTimeoutMs,
         logger,
       });
     }

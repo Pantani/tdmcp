@@ -2858,6 +2858,11 @@ const ENV_NAMES: Record<keyof TdmcpConfig, string> = {
   ragBackend: "TDMCP_RAG_BACKEND",
   ragSmithsonianKey: "TDMCP_RAG_SMITHSONIAN_KEY",
   ragEuropeanaKey: "TDMCP_RAG_EUROPEANA_KEY",
+  ragApplyCard: "TDMCP_RAG_APPLY_CARD",
+  ragInjectAsk: "TDMCP_RAG_INJECT_ASK",
+  ragInjectK: "TDMCP_RAG_INJECT_K",
+  ragInjectTimeoutMs: "TDMCP_RAG_INJECT_TIMEOUT_MS",
+  ragProbeTimeoutMs: "TDMCP_RAG_PROBE_TIMEOUT_MS",
 };
 const SECRET_ENV: ReadonlySet<keyof TdmcpConfig> = new Set([
   "bridgeToken",

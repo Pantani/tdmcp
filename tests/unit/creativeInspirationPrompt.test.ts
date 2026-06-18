@@ -157,6 +157,20 @@ describe("creativeInspirationImpl", () => {
     expect(text).not.toContain("## Mood board");
   });
 
+  it("all card lookups miss — falls back to empty-search message, no empty mood board", async () => {
+    const search = vi
+      .fn()
+      .mockResolvedValue([makeResult("id1", "Card A"), makeResult("id2", "Card B")]);
+    const getCard = vi.fn().mockResolvedValue(undefined);
+    const ctx = makeCtx({ search, getCard });
+
+    const result = await creativeInspirationImpl(ctx, { theme: "ghost town" });
+    const text = result.messages[0]?.content.text ?? "";
+    expect(text).not.toContain("## Mood board");
+    expect(text).toContain("tdmcp creative sync");
+    expect(text).toContain("ghost town");
+  });
+
   it("card lookup miss — skips missing card, lists found ones", async () => {
     const search = vi
       .fn()

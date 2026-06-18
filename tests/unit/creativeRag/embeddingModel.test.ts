@@ -173,12 +173,15 @@ describe("embedding model — env override (bge-m3)", () => {
     await makeService(nomiccfg, sources).sync({});
     await makeService(nomiccfg, sources).index();
 
-    // Re-run index with bge-m3 against same dataDir — fingerprint includes model
-    // so the cached line (nomic-embed-text) is a miss; the card must be re-embedded.
+    // Re-run index with bge-m3 against the SAME store file so the fingerprint
+    // guard is actually exercised — the cached line is stamped
+    // `embeddingModel: nomic-embed-text`, the runtime asks for bge-m3, and the
+    // fingerprint cache key (`<id>:<contentHash>:<model>`) must miss for the
+    // card to be re-embedded. A separate store file would short-circuit the
+    // guard because the load would simply return zero lines.
     const bgecfg = makeConfig("bge-m3");
-    // Use a different store file to simulate switching configs (keeps nomic lines
-    // intact so we can verify the guard sees them).
-    const bgeStore = new JsonlIndexStore({ filePath: join(dataDir, "index-bge.jsonl") });
+    const sharedStorePath = join(dataDir, "index.jsonl");
+    const bgeStore = new JsonlIndexStore({ filePath: sharedStorePath });
     const bgeSvc = createCreativeRagService({
       config: bgecfg,
       sources,
@@ -189,7 +192,8 @@ describe("embedding model — env override (bge-m3)", () => {
     capturedModels.length = 0;
     const report = await bgeSvc.index();
 
-    // The bge-m3 store starts empty so all cards must be embedded.
+    // The fingerprint guard must classify the pre-existing nomic line as a
+    // cache miss — the card is re-embedded with bge-m3.
     expect(report.embedded).toBeGreaterThan(0);
     expect(report.cachedSkipped).toBe(0);
 

@@ -96,6 +96,17 @@ export async function creativeInspirationImpl(
     lines.push(entry);
   }
 
+  // Every getCard returned null → same fallback as empty search instead of
+  // emitting an empty `## Mood board` block (which would be a misleading
+  // success — the model would think no cards were available).
+  if (lines.length === 0) {
+    return userPrompt(
+      `No Creative RAG cards matched the theme "${theme}". ` +
+        `Try running \`tdmcp creative sync\` to add more sources, then \`tdmcp creative index\` to re-embed. ` +
+        `Meanwhile, proceed with the requested theme using the model's own visual knowledge: ${theme}.`,
+    );
+  }
+
   const header = tools_hint
     ? `Create a TouchDesigner visual for the theme: ${theme}.\nPrefer these Layer 1 tools: ${tools_hint}.`
     : `Create a TouchDesigner visual for the theme: ${theme}.`;

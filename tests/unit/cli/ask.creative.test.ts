@@ -20,6 +20,11 @@ function makeResult(id: string) {
 }
 
 function makeConfig(): LoadedTdmcpConfig {
+  // Mirror loadConfig's behavior for the env vars this test exercises so the
+  // env-overrides-flag case (TDMCP_RAG_INJECT_ASK=1) actually flips ragInjectAsk
+  // in the parsed config — the production CLI reads from config, not env.
+  const envInjectAsk = process.env.TDMCP_RAG_INJECT_ASK;
+  const ragInjectAsk = envInjectAsk === "1" || envInjectAsk === "true";
   return {
     tdHost: "127.0.0.1",
     tdPort: 9980,
@@ -39,6 +44,11 @@ function makeConfig(): LoadedTdmcpConfig {
     ragEmbeddingModel: undefined,
     ragSyncOnStartup: false,
     ragLanceDir: undefined,
+    ragApplyCard: false,
+    ragInjectAsk,
+    ragInjectK: 3,
+    ragInjectTimeoutMs: 3000,
+    ragProbeTimeoutMs: 3000,
   } as unknown as LoadedTdmcpConfig;
 }
 
@@ -164,7 +174,10 @@ describe("runAsk creative context injection", () => {
 
     const msgs = captured[0] ?? [];
     expect(msgs).toHaveLength(2);
-    expect(msgs[0]?.role).toBe("system");
+    // role MUST be "user" — `runAgentTurn.ensureSystem` filters every incoming
+    // `role: "system"` message before injecting its own authoritative system
+    // prompt, so a system-role context block would never reach the LLM.
+    expect(msgs[0]?.role).toBe("user");
     expect(msgs[0]?.content).toContain("tdmcp://creative/cards/card-abc");
     expect(msgs[1]?.role).toBe("user");
     expect(msgs[1]?.content).toBe("my question");
@@ -187,7 +200,10 @@ describe("runAsk creative context injection", () => {
 
     const msgs = captured[0] ?? [];
     expect(msgs).toHaveLength(2);
-    expect(msgs[0]?.role).toBe("system");
+    // role MUST be "user" — `runAgentTurn.ensureSystem` filters every incoming
+    // `role: "system"` message before injecting its own authoritative system
+    // prompt, so a system-role context block would never reach the LLM.
+    expect(msgs[0]?.role).toBe("user");
     expect(msgs[0]?.content).toContain("tdmcp://creative/cards/env-card");
   });
 
@@ -206,8 +222,39 @@ describe("runAsk creative context injection", () => {
     await runAsk(["--tools=off", "--with-creative", "combo test"], deps);
 
     const msgs = captured[0] ?? [];
-    expect(msgs[0]?.role).toBe("system");
+    // role MUST be "user" — `runAgentTurn.ensureSystem` filters every incoming
+    // `role: "system"` message before injecting its own authoritative system
+    // prompt, so a system-role context block would never reach the LLM.
+    expect(msgs[0]?.role).toBe("user");
     expect(msgs[0]?.content).toContain("tdmcp://creative/cards/off-card");
     expect(msgs[1]?.role).toBe("user");
+  });
+
+  // Regression for the original bug: `runAgentTurn` strips every incoming
+  // `role: "system"` message before injecting its own authoritative system
+  // prompt. The previous implementation returned a `system`-role message, so
+  // the cards were silently dropped before reaching the LLM. We mimic the real
+  // ensureSystem filter here and assert the cards survive.
+  it("regression — creative cards survive runAgentTurn.ensureSystem's role:system filter", async () => {
+    const captured: ChatMessage[][] = [];
+    const searchSpy = vi.fn().mockResolvedValue([makeResult("survivor")]);
+
+    const { deps } = buildRunAskDeps({
+      ragEnabled: true,
+      capturedMessages: captured,
+      searchSpy,
+      stdout: [],
+      stderr: [],
+    });
+
+    await runAsk(["--with-creative", "what survives"], deps);
+
+    const msgs = captured[0] ?? [];
+    // Apply the EXACT filter that src/llm/agent.ts → ensureSystem applies.
+    const survivors = msgs.filter((m) => m.role !== "system");
+    const cardsReachLlm = survivors.some(
+      (m) => typeof m.content === "string" && m.content.includes("tdmcp://creative/cards/survivor"),
+    );
+    expect(cardsReachLlm).toBe(true);
   });
 });

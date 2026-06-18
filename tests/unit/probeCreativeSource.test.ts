@@ -201,7 +201,7 @@ describe("redaction assertion", () => {
 const SCRIPT_PATH = resolve(
   fileURLToPath(import.meta.url),
   "../../..",
-  "scripts/probe-creative-source.mjs",
+  "scripts/probe-creative-source.ts",
 );
 
 async function runScript(
@@ -209,9 +209,9 @@ async function runScript(
   env?: Record<string, string>,
 ): Promise<{ exitCode: number; stdout: string; stderr: string }> {
   try {
-    const { stdout, stderr } = await execFileAsync("node", [SCRIPT_PATH, ...args], {
+    const { stdout, stderr } = await execFileAsync("npx", ["tsx", SCRIPT_PATH, ...args], {
       env: { ...process.env, ...env },
-      timeout: 10_000,
+      timeout: 30_000,
     });
     return { exitCode: 0, stdout, stderr };
   } catch (err: unknown) {
@@ -250,17 +250,19 @@ describe("unknown source id (logic test)", () => {
 // Redaction: integration-style check that secret not printed to stderr
 // ---------------------------------------------------------------------------
 
-describe("redaction in full script run (known-bad fixture via env)", () => {
-  it("does not echo EUROPEANA_API_KEY value to any output even on failure", async () => {
-    // We can't easily inject a leaky fetch without mocking the import, but we
-    // CAN confirm the script does not blindly print env var values by running
-    // it with a fake key against a real source that will fail (network or skip).
-    // What matters: the secret does NOT appear in stdout or stderr.
+describe("redaction in full script run", () => {
+  // Use an unknown source id so the script exits at the registry-resolve step
+  // (exit 2) without touching the real Europeana upstream — the prior test
+  // exercised a live network dependency just to assert "secret is not echoed".
+  it("does not echo a secret-shaped env var value to any output", async () => {
     const secret = "fake_probe_unit_test_key_abc123";
-    const { stdout, stderr } = await runScript(["europeana"], {
+    const { stdout, stderr } = await runScript(["nonexistent-source-xyz"], {
+      // Use BOTH naming conventions so we cover the adapter env (TDMCP_RAG_*_KEY)
+      // and the legacy alias (*_API_KEY) — the script's secret collector now
+      // matches both, and neither must ever appear in output.
+      TDMCP_RAG_EUROPEANA_KEY: secret,
       EUROPEANA_API_KEY: secret,
     });
-    // Whether the probe passes, fails, or skips — the raw key must not be printed
     expect(stdout).not.toContain(secret);
     expect(stderr).not.toContain(secret);
   });

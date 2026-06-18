@@ -60,7 +60,10 @@ describe("buildCreativeContextMessage", () => {
     const msg = await buildCreativeContextMessage(service, "abstract expressionism", { k: 3 });
 
     expect(msg).toBeDefined();
-    expect(msg?.role).toBe("system");
+    // role MUST be "user" — `runAgentTurn.ensureSystem` strips every incoming
+    // `role: "system"` before injecting its own; a system-role context block
+    // would never reach the LLM. See src/llm/creativeContext.ts.
+    expect(msg?.role).toBe("user");
     expect(msg?.content).toContain("```creative-cards");
     expect(msg?.content).toContain("tdmcp://creative/cards/id1");
     expect(msg?.content).toContain("tdmcp://creative/cards/id2");

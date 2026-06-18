@@ -1,3 +1,4 @@
+import { mkdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve, sep } from "node:path";
 import type { TdmcpConfig } from "../utils/config.js";
@@ -25,11 +26,6 @@ function expandHome(p: string): string {
   return p;
 }
 
-function readPositiveIntEnv(name: string, fallback: number): number {
-  const parsed = Number.parseInt(process.env[name] ?? "", 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-}
-
 const DISABLED_DETAIL = "not enabled (TDMCP_RAG_ENABLED unset) — skipped.";
 
 /**
@@ -51,7 +47,10 @@ export async function checkRagOllama(
   }
 
   const url = config.ragOllamaUrl;
-  const timeoutMs = readPositiveIntEnv("TDMCP_RAG_PROBE_TIMEOUT_MS", 3000);
+  // Centralized in src/utils/config.ts → ragProbeTimeoutMs. The schema
+  // preprocesses non-positive / non-numeric values back to the 3000 default,
+  // so we can read it straight off the parsed config.
+  const timeoutMs = config.ragProbeTimeoutMs;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -80,13 +79,21 @@ export async function checkRagOllama(
     }
 
     const body = await res.json();
-    const models: Array<{ name: string }> =
+    // Defensively filter — don't cast through `as` because a non-conforming
+    // Ollama response (or a fake server in tests) could otherwise inject
+    // entries with a non-string or missing `name` and surface as a downstream
+    // crash when we compare against `config.ragEmbedModel`.
+    const rawModels: unknown[] =
       body !== null &&
       typeof body === "object" &&
       "models" in (body as object) &&
       Array.isArray((body as { models: unknown }).models)
-        ? ((body as { models: Array<{ name: string }> }).models ?? [])
+        ? ((body as { models: unknown[] }).models ?? [])
         : [];
+    const models: Array<{ name: string }> = rawModels.filter(
+      (m): m is { name: string } =>
+        m !== null && typeof m === "object" && typeof (m as { name?: unknown }).name === "string",
+    );
 
     return [
       {
@@ -178,24 +185,12 @@ export function checkRagDataDir(config: TdmcpConfig, fsHooks?: CreativeRagFsHook
   const rand = Math.random().toString(36).slice(2);
   const sentinel = join(absPath, `.tdmcp-doctor-${rand}`);
 
-  const mkdir =
-    fsHooks?.mkdir ??
-    ((p: string) => {
-      const { mkdirSync } = require("node:fs") as typeof import("node:fs");
-      mkdirSync(p, { recursive: true });
-    });
-  const write =
-    fsHooks?.write ??
-    ((p: string) => {
-      const { writeFileSync } = require("node:fs") as typeof import("node:fs");
-      writeFileSync(p, "");
-    });
-  const unlink =
-    fsHooks?.unlink ??
-    ((p: string) => {
-      const { unlinkSync } = require("node:fs") as typeof import("node:fs");
-      unlinkSync(p);
-    });
+  // ESM module — `require` is not defined at runtime. Use the top-level
+  // node:fs imports for the default fallback hooks. Tests still get to inject
+  // their own hooks via `fsHooks`.
+  const mkdir = fsHooks?.mkdir ?? ((p: string) => mkdirSync(p, { recursive: true }));
+  const write = fsHooks?.write ?? ((p: string) => writeFileSync(p, ""));
+  const unlink = fsHooks?.unlink ?? ((p: string) => unlinkSync(p));
 
   try {
     mkdir(absPath);
