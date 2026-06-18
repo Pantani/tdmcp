@@ -140,8 +140,14 @@ synced: 14 added, 0 updated, 0 tombstoned, 12 binaries stored, 2 skipped (licens
 $ tdmcp project-rag sources
 ready    github-repo   (GitHub repo allowlist (TDMCP_PROJECT_RAG_GITHUB_REPOS)) — authenticated
 ready    github-topic  (GitHub topic scanner (touchdesigner-components et al.)) — authenticated
-planned  derivative-local      (TouchDesigner OP Snippets + Palette (local install)) — F2
-planned  awesome-touchdesigner (monkeymonk/awesome-touchdesigner (discovery)) — F2
+ready    derivative-local      (TouchDesigner Palette + OP Snippets (local install)) — local-only
+planned  awesome-touchdesigner (monkeymonk/awesome-touchdesigner (discovery)) — see sources --discovery
+
+# 2b. Browse the suggest-only discovery queue (never auto-ingested)
+$ tdmcp project-rag sources --discovery
+discovery queue (suggest-only, 60 candidates) — review before ingest:
+  [Components] Mediapipe TD
+        https://github.com/torinmb/mediapipe-touchdesigner — hand/face tracking
 
 # 3. Embed new/changed cards (cache hits skip re-embedding)
 $ tdmcp project-rag index
@@ -186,6 +192,7 @@ permit them — the license matrix is enforced before any download.
 
 ```bash
 tdmcp project-rag sources                           # list source slots + status
+tdmcp project-rag sources --discovery               # suggest-only awesome-list queue (no auto-ingest)
 tdmcp project-rag sync                              # pull cards from all sources
 tdmcp project-rag sync --source github-repo --limit 5
 tdmcp project-rag sync --topic touchdesigner-components --cap 10
@@ -334,6 +341,14 @@ tdmcp project-rag bridge install — quarantine bridge setup
 …
 Probe: http://127.0.0.1:9981 — OFFLINE
 ```
+
+> **Quarantine opt-in (required to load artifacts).** The bridge route that
+> opens a `.toe`/`.tox` (`POST /api/project/load`) is **default-DENY**: loading an
+> artifact replaces or imports into the running project, so it is refused (HTTP
+> 403) unless that instance is explicitly marked as a throwaway quarantine via
+> `export TDMCP_PROJECT_RAG_QUARANTINE=1` in its environment. This is a
+> bridge-side guard independent of `TDMCP_BRIDGE_ALLOW_EXEC` — installing the
+> bridge on your main TD can never let a stray caller load over your open project.
 
 The analyzer:
 

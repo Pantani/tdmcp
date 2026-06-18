@@ -32,8 +32,12 @@ import {
 } from "./extractors/bridgeAnalyze.js";
 import { isCopyleftLicense, shouldStoreProjectBinary } from "./licensePolicy.js";
 import { computeProjectScore } from "./scoring.js";
-import type { RawProjectItem, SourceAdapter } from "./sources/index.js";
-import { resolveProjectSources, SourceSkippedError } from "./sources/index.js";
+import type { DiscoveryItem, RawProjectItem, SourceAdapter } from "./sources/index.js";
+import {
+  fetchAwesomeListDiscovery,
+  resolveProjectSources,
+  SourceSkippedError,
+} from "./sources/index.js";
 import { createProjectIndexStore } from "./storeFactory.js";
 import type {
   ProjectAnalyzeReport,
@@ -117,6 +121,9 @@ export function createProjectRagService(deps: ProjectRagServiceDeps): ProjectRag
       ...(csv !== undefined ? { githubReposCsv: csv } : {}),
       ...(topicsCsv !== undefined ? { githubTopicsCsv: topicsCsv } : {}),
       ...(topicCap !== undefined ? { topicCap } : {}),
+      ...(config.derivativeRoot !== undefined ? { derivativeRoot: config.derivativeRoot } : {}),
+      ...(config.iihq === true ? { iihq: true } : {}),
+      ...(config.iihqRef !== undefined ? { iihqRef: config.iihqRef } : {}),
     });
 
   const embeddings =
@@ -173,6 +180,11 @@ export function createProjectRagService(deps: ProjectRagServiceDeps): ProjectRag
               : topicCap !== undefined
                 ? { topicCap }
                 : {}),
+            ...(config.derivativeRoot !== undefined
+              ? { derivativeRoot: config.derivativeRoot }
+              : {}),
+            ...(config.iihq === true ? { iihq: true } : {}),
+            ...(config.iihqRef !== undefined ? { iihqRef: config.iihqRef } : {}),
           })
         : sources;
     if (effectiveSources.length === 0) {
@@ -439,12 +451,24 @@ export function createProjectRagService(deps: ProjectRagServiceDeps): ProjectRag
         reason: config.ghToken === undefined ? "unauthenticated (limit 60 req/h)" : "authenticated",
       });
     }
-    statuses.push({
-      name: "derivative-local",
-      displayName: "TouchDesigner OP Snippets + Palette (local install)",
-      status: "planned",
-      reason: "F2",
-    });
+    if (liveNames.has("derivative-local")) {
+      statuses.push({
+        name: "derivative-local",
+        displayName: "Derivative local install (TouchDesigner Palette + OP Snippets)",
+        status: "ready",
+        reason:
+          config.derivativeRoot !== undefined
+            ? `install root pinned (${config.derivativeRoot})`
+            : "probes OS-default TD install; skipped when none found (local-only, Derivative-EULA)",
+      });
+    } else {
+      statuses.push({
+        name: "derivative-local",
+        displayName: "Derivative local install (TouchDesigner Palette + OP Snippets)",
+        status: "planned",
+        reason: "not registered",
+      });
+    }
     if (liveNames.has("github-topic")) {
       statuses.push({
         name: "github-topic",
@@ -470,6 +494,16 @@ export function createProjectRagService(deps: ProjectRagServiceDeps): ProjectRag
       reason: "F2",
     });
     return statuses;
+  }
+
+  /**
+   * Suggest-only discovery queue — reads the awesome-list README and returns
+   * candidate links. NEVER ingests, clones, or downloads binaries; the result
+   * does not touch the cards dir or the index. Propagates
+   * {@link SourceSkippedError} so the CLI can report the skip honestly.
+   */
+  async function listDiscovery(): Promise<DiscoveryItem[]> {
+    return fetchAwesomeListDiscovery({ fetchImpl });
   }
 
   async function rescore(): Promise<ProjectRescoreReport> {
@@ -500,7 +534,17 @@ export function createProjectRagService(deps: ProjectRagServiceDeps): ProjectRag
     return { rescored, total: live.length };
   }
 
-  return { sync, index, rescore, search, getCard, listSources, analyze, probeBridge };
+  return {
+    sync,
+    index,
+    rescore,
+    search,
+    getCard,
+    listSources,
+    listDiscovery,
+    analyze,
+    probeBridge,
+  };
 
   async function downloadBinary(
     binaryUrl: string,

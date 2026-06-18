@@ -11,6 +11,8 @@
  * `bridgeAnalyze` extractor (F3) uses a SEPARATE TD instance on a dedicated port.
  */
 
+import type { DiscoveryItem } from "./sources/awesomeList.js";
+
 export const PROJECT_CARD_SCHEMA_VERSION = 2 as const;
 
 /**
@@ -23,6 +25,7 @@ export type ProjectRagLicense =
   | "PublicDomain"
   | "CC-BY"
   | "CC-BY-SA"
+  | "CC-BY-NC-SA"
   // SPDX permissivos
   | "MIT"
   | "Apache-2.0"
@@ -226,6 +229,21 @@ export interface ProjectRagConfig {
   githubTopicsCsv?: string;
   /** Per-sync hard cap for the topic scanner (default 25). */
   topicCap?: number;
+  /**
+   * Optional explicit TouchDesigner install root for the `derivative-local`
+   * source. When unset the source probes OS-default locations; when no install
+   * is found the source is skipped. Local-only enumeration (Derivative-EULA).
+   */
+  derivativeRoot?: string;
+  /**
+   * Enable the Interactive & Immersive HQ markdown source (`iihq`). OFF by
+   * default — the IIHQ manual is CC-BY-NC-SA (non-commercial), so it is opt-in
+   * via `TDMCP_PROJECT_RAG_IIHQ=1`. Ingests markdown TEXT only, tagged
+   * `tutorial`, with a mandatory license banner on every result.
+   */
+  iihq?: boolean;
+  /** Branch/tag/SHA override for the `iihq` source (`TDMCP_PROJECT_RAG_IIHQ_REF`). */
+  iihqRef?: string;
   /** Static-analyzer subprocess timeout. */
   analyzeTimeoutMs: number;
   scoreWeights: { technical: number; license: number; freshness: number; reliability: number };
@@ -311,6 +329,14 @@ export interface ProjectRagService {
   search(query: string, k: number, filters?: ProjectSearchFilters): Promise<ProjectSearchResult[]>;
   getCard(id: string): Promise<ProjectRagCard | undefined>;
   listSources(): Promise<ProjectSourceStatus[]>;
+  /**
+   * Suggest-only discovery queue from `monkeymonk/awesome-touchdesigner`. Read
+   * only: it surfaces candidate links for an operator to review and NEVER
+   * auto-ingests, clones, or downloads binaries — distinct from the live sync
+   * sources in {@link listSources}. Throws {@link SourceSkippedError} when the
+   * README can't be fetched/parsed.
+   */
+  listDiscovery(): Promise<DiscoveryItem[]>;
   /**
    * F3 ad-hoc analyze of one artifact path through the quarantine bridge.
    * Never touches the user's main TD. Skipped when bridge is offline.

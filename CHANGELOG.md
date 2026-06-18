@@ -8,6 +8,69 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Project RAG — awesome-list discovery source (suggest-only, opt-in, experimental)** —
+  a read-only discovery queue parsed from the `monkeymonk/awesome-touchdesigner`
+  README (`src/projectRag/sources/awesomeList.ts`). New `tdmcp project-rag
+  sources --discovery` lists candidate TD repos/links for an operator to review;
+  it is deliberately **not** a live sync `SourceAdapter` — it never enters
+  `resolveProjectSources`, never clones repos, never downloads binaries, and never
+  emits index-eligible cards. Every item is hard-stamped `license: "Unknown"` /
+  `licenseConfidence: "unknown"` / `suggestOnly: true` and carries mandatory
+  provenance (`sourceName`/`sourceUrl`/`discoveredAt`), so the license-gate stays
+  intact. Only `https://` links survive; binary URLs (`.tox`/`.toe`/`.zip`/`.7z`
+  and `/releases/download/`) are dropped. When the README can't be fetched/parsed
+  the queue degrades to a clean skip (`SourceSkippedError` → exit 0, never a
+  tombstone). New service method `ProjectRagService.listDiscovery()`; `--json`
+  supported. No new env var.
+- **Project RAG — Interactive & Immersive HQ tutorial source (CC-BY-NC-SA, opt-in, experimental)** —
+  a markdown-text `SourceAdapter` (`src/projectRag/sources/interactiveImmersive.ts`)
+  that ingests the chapter markdown of the
+  [Interactive & Immersive HQ "Introduction to TouchDesigner" manual](https://github.com/interactiveimmersivehq/Introduction-to-touchdesigner)
+  as `tutorial` cards. The manual is **CC-BY-NC-SA-4.0** (non-commercial +
+  share-alike + attribution, declared in the repo README), so the source is
+  **opt-in / default OFF**, enabled with `TDMCP_PROJECT_RAG_IIHQ=1`
+  (`TDMCP_PROJECT_RAG_IIHQ_REF` overrides the branch). It ingests **markdown TEXT
+  only** (meta + body, capped) and **never downloads binaries** — `img/`,
+  `TouchDesigner Example Files/`, and all non-`.md` paths are excluded, and
+  `CC-BY-NC-SA` binaries are hard-denied in the license policy regardless of the
+  allowlist. Every emitted item carries mandatory provenance + `authors: ["The
+  Interactive & Immersive HQ"]` + `license: "CC-BY-NC-SA"` /
+  `licenseConfidence: "declared"`, and a concise **license banner**
+  (`CC-BY-NC-SA · non-commercial, share-alike, attribute The Interactive &
+  Immersive HQ`) now renders on every result in both CLI search
+  (`tdmcp project-rag search`) and the MCP `project_rag_context` prompt. Fetch
+  failures (trees non-2xx / network / timeout / empty) degrade to a clean
+  `SourceSkippedError` (never a tombstone). Adds `CC-BY-NC-SA` to the Project RAG
+  license enum/schema/CLI/resource surfaces and the SPDX classifier.
+- **Project RAG — derivative-local source (opt-in, experimental)** — a local-disk
+  `SourceAdapter` (`src/projectRag/sources/derivativeLocal.ts`) that discovers an
+  installed TouchDesigner and indexes its shipped Palette / OP Snippets
+  `.tox`/`.toe` examples. Install root resolves from
+  `TDMCP_PROJECT_RAG_DERIVATIVE_ROOT` first, then per-OS defaults (macOS/Windows/
+  Linux); when no install is found it degrades to a clean skip
+  (`SourceSkippedError`, never a tombstone). Enumerates + reads metadata only —
+  it **never executes** a `.toe`/`.tox` — and stamps every card with the local
+  Derivative EULA license (local-only, no redistribution / no `binaryUrl`) plus
+  mandatory provenance, so the license-gate stays intact. `listSources()` now
+  reports `derivative-local` as `ready`.
+- **Project RAG — bridge `POST /api/project/load` endpoint (F3 analyzer upgrade)** —
+  a first-class quarantine-bridge endpoint
+  (`td/modules/mcp/services/project_load_service.py`) that loads a `.toe`/`.tox`
+  at an absolute path inside the on-:9981 quarantine TD and returns a typed
+  envelope `{ root_path, node_count, errors[], preview_b64? }`. New typed client
+  method `TouchDesignerClient.loadProject()` with a Zod envelope in
+  `validators.ts`; the F3 `bridgeAnalyze` extractor now prefers this endpoint and
+  falls back to the exec-style `project.load` path only on a missing route (404),
+  rethrowing real validation/timeout/connection errors unchanged. The endpoint
+  validates the path (absolute, `.toe`/`.tox`, exists) and is not arbitrary
+  Python, so a hardened `ALLOW_EXEC=0` bridge can still open its own artifact.
+  `.toe` artifacts load via `project.load`; `.tox` artifacts import into a fresh
+  COMP via `COMP.loadTox` (so the analysis targets the component, not the host
+  project). The route is **default-DENY** bridge-side and only honored when the
+  instance is explicitly marked as a throwaway quarantine
+  (`TDMCP_PROJECT_RAG_QUARANTINE=1`) — installing the bridge on a normal TD can
+  never let a direct caller load over the open project, independent of
+  `TDMCP_BRIDGE_ALLOW_EXEC`.
 - **Project RAG — MCP prompts, resources, copilot tool & CLI cross-link (opt-in, experimental, F4)** —
   the AI surface for the local Project RAG repertoire lands. New MCP prompt
   `project_rag_context` (`src/prompts/projectRagContext.ts`): runs

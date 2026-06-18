@@ -34,6 +34,7 @@ function makeService(sources: ProjectSourceStatus[]): ProjectRagService {
     search: async () => [],
     getCard: async () => undefined,
     listSources: async () => sources,
+    listDiscovery: async () => [],
     analyze: async () => ({
       status: "skipped",
       reason: "no bridge",
