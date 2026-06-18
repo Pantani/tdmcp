@@ -1204,125 +1204,68 @@ deterministic k-means on the decoded RGB pixels, returning weighted hex swatches
 that feed directly into `create_color_grade` lift / gamma / gain targets. The AI
 brings the rest of the show into the same palette as your hero clip — no eyedropper.*
 
-## Reusable components & documentation
+## Reusable looks & show handoff
 
-Turn a working network into something you can reuse, share and hand to another agent.
+Use these when a look is working and you want to perform it again, teach it, take
+it to another room or turn it into a physical output.
 
-> *"Add Speed, Color and a Glow toggle as custom parameters on this component."*
-
-> *"Give this COMP a Python extension class with `play` and `reset` methods."*
-
-> *"Write a README for this project — what it does, its controls and inputs."*
-
-> *"Drop a project CLAUDE.md so the next session knows the conventions."*
-
-> *"Save this look as a reusable .tox component."* (`manage_component`)
-
-> *"Turn `/project1/hero_look` into a recipe: capture direct child nodes, preserve
-> wires, rewrite sibling references, validate the schema and write
-> `Recipes/hero_look.json` to the vault."*
-
-<video :src="withBase('/examples/scaffold-recipe-from-network.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
-
-*`scaffold_recipe_from_network` is the inverse of `apply_recipe`: it serializes an
-existing TD subtree into RecipeSchema-shaped JSON, optionally writes it to the
-vault, and reports what still needs hand finishing such as uniforms or controls.*
-
-> *"Generate a README for `/project1/hero_look`, include a Mermaid data-flow graph,
-> cap the node inventory at 80 rows and include a preview thumbnail if the output
-> TOP cooks."*
-
-<video :src="withBase('/examples/readme-mermaid-docs.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
-
-*`generate_readme` now has `include_mermaid:true` and `max_nodes`, so large
-components get readable project docs instead of a wall of children. Pair it with
-`make_portable_tox`, whose `.tox` packages now include a README by default.*
-
-**What you'll get:** declarative custom-parameter pages, scriptable extensions, a
-generated Markdown README (with a preview thumbnail), or a project-local agent guide —
-the *packaging* side of tdmcp that complements the generators above.
-
-> *"Build a CHOP chain that smooths the bass, detects peaks, scales it to 0-1 and
-> ends in a Null ready for bind_to_channel."*
-
-> *"Build a SOP chain for a swept ribbon: line, noise deform, resample, sweep and
-> null it so I can instance particles along it."*
-
-> *"Author a Script CHOP called gate_logic with custom Threshold and Hold parameters
-> and a ready-to-edit onCook stub."*
-
-> *"Export this SOP outline to an SVG for the laser cutter, fit it to the viewBox,
-> flip Y for print orientation and write the file beside the show assets."*
-
-<video :src="withBase('/examples/sop-to-svg-plotter.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
-
-**What you'll get:** structured Layer-2 authoring without raw Python ceremony:
-`build_chop_chain`, `build_sop_geometry` and `author_script_operator` assemble typed
-chains and stubs while keeping warnings localized to the failing stage.
-`export_sop_to_svg` turns SOP primitives into a real print/plotter deliverable when
-the output is a file, not a TOP.
-
-> *"Stamp provenance on this .tox, checksum the pack, and generate a lineage graph
-> for everything that remixes it."*
-
-> *"Pack these four preset-morph slots into a vault JSON, make three variants, and
-> write a component changelog trail before I sync the vault to git."*
-
-> *"Save `/project1/hero_look` as a portable look `.tox`, tag it cinematic and
-> export a tutorial companion with topology JSON and preview PNGs for teaching it."*
-
-<video :src="withBase('/examples/look-tox-tutorial-pack.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
-
-> *"Search my vault for components tagged `audio` and `tour-ready`, add `*favorite`
-> to the keeper, then bump its minor version with a note about the new OSC controls."*
-
-<video :src="withBase('/examples/library-tag-version-loop.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
-
-**What you'll get:** library-trust tools around real files: provenance sidecars,
-sha256 manifests, lineage graphs, curated packs, morph packs, variant packs, vault
-merge/sync helpers, tag/search, SemVer history, look `.tox` exports, tutorial packs
-and per-component changelogs. Good for touring rigs where "which version is on this
-laptop?" matters.
-
-> *"Publish my workshop recipe bundle as version 1.2.0: write the bundle JSON,
-> publish manifest and SHA-256 checksum manifest into the handoff folder."*
-
-<video :src="withBase('/examples/recipe-bundle-publish-manifest.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
-
-*`publish_recipe_bundle` is the release-ready sibling of `export_recipe_bundle`:
-it writes a versioned recipe artifact, `tdmcp-recipe-publish.json` and
-`tdmcp-checksums.json` so a recipe pack can be uploaded, mirrored or checked by CI.*
-
-> *"Pack this component as a portable .tox with a real README documenting its
-> custom params, inputs, outputs and external files."*
+> *"Make this hero look tour-ready: expose Speed, Palette, Glow and Reset controls,
+> add clear labels, save it as a portable `.tox`, and include a preview image so I
+> can recognize it before I open TouchDesigner."*
 
 <video :src="withBase('/examples/portable-tox-readme-package.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
-*`make_portable_tox` now writes a package `README.md` by default alongside the
-`.tox` and `tdmcp-component.json` — node inventory, custom parameters,
-inputs/outputs, and external file refs. Drop the folder in someone else's project
-and they can read it before they open it.*
+*The packaging tools are useful when they serve the artist: a portable `.tox`,
+visible controls, simple notes and a thumbnail of the actual output. The result is a
+visual instrument you can drop into a show, not a developer handoff exercise.*
 
-> *"Generate a README for this component with an embedded Mermaid flowchart of the
-> operator graph and cap the inventory at the 50 most important nodes."*
+> *"Turn `/project1/hero_look` into a workshop starter: keep the visual network,
+> capture the controls I should explain, and make it easy to apply in a blank
+> project next week."*
+
+<video :src="withBase('/examples/scaffold-recipe-from-network.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`scaffold_recipe_from_network` can turn a finished TD subtree into an apply-able
+recipe. Framed for artists, the point is repeatable teaching and rehearsal: rebuild
+the look from a clean project, then adjust the exposed controls in front of people.*
+
+> *"Make me a one-page map of this patch: final-output thumbnail, the three controls
+> I should touch live, and a simple left-to-right diagram of how signal becomes
+> image."*
 
 <video :src="withBase('/examples/readme-mermaid-docs.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
-*`include_mermaid:true` embeds a Mermaid flowchart of the operator graph in the
-"Data flow" section, and `max_nodes` truncates the child inventory with a one-line
-footer so big components produce a readable README, not a 600-row table. Your
-component now ships with a real wiring diagram rendered straight from the live
-network.*
+*Generated patch notes are only useful here when they read like a studio map: what
+the look is, which controls matter, what feeds the output and what the current
+preview looks like.*
 
-> *"Export this generative SOP as a flat SVG of polylines so I can plot it on my
-> AxiDraw."*
+> *"Save this look with three variants — slow ambient, high-energy chorus and
+> blackout-safe — then tag the favorite so I can find it fast during the next
+> rehearsal."*
+
+<video :src="withBase('/examples/library-tag-version-loop.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Vault tagging, variants and version notes help artists keep a live library sane:
+the question becomes "which look do I trust for this cue?", not "which file did I
+export last month?"*
+
+> *"Build a bass smoothing control chain named `bass_energy`, `bass_peak` and
+> `bass_gate`, then show me where to bind brightness, blur and pulse on the
+> current visual."*
+
+<video :src="withBase('/examples/audio-reactive-gate-duck.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Layer-2 chain builders are artist-facing when they produce clean modulation
+sources with readable names. You get stable channels to perform with, while the
+underlying CHOP details stay editable when you want to learn them.*
+
+> *"Export this generative line sculpture as SVG polylines for my AxiDraw, matching
+> the preview scale and orientation so the plot feels like the screen version."*
 
 <video :src="withBase('/examples/sop-to-svg-plotter.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
-*`export_sop_to_svg` reads SOP primitives via the bridge and emits an SVG of
-`<polyline>` elements with auto-fit viewBox and configurable stroke / fill / scale
-/ flip_y. Bridges the screen world to pen plotters, lasers and print — one prompt
-turns a live generative system into a plotter-ready vector file.*
+*`export_sop_to_svg` reads SOP primitives and writes plotter-ready vectors. It is
+the bridge from live generative motion to pen plotters, lasers and print.*
 
 ## Shader & material authoring
 
@@ -1527,319 +1470,114 @@ animated entrance — a real-time, performable infographic rather than a static 
 clone from its row — data-driven instancing of whole sub-networks, not just geometry,
 the way motion designers fake "100 of these."*
 
-## Agent workflows, resources & health
+## Rehearsal checks & artist feedback
 
-Use these when the output is an operator loop, resource readout, config change or
-health report rather than a TOP preview.
+Use these when you want tdmcp to test the work like an artist would: can I see it,
+can I perform it, does it react, and is it safe to keep rehearsing?
 
-> *"Before the show, discover the `tdmcp-agent` commands as JSON, flag anything
-> mutating or unsafe, then show focused help for `nodes find` and `run`."*
-
-<video :src="withBase('/examples/command-catalog-discovery.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
-
-*`tdmcp-agent commands --json`, `tdmcp-agent help <command>` and the
-`tdmcp://commands` resource expose the same catalog, including mutating/unsafe
-flags and command schemas. Good for agents that need to choose shell-safe commands
-without scraping help text.*
-
-> *"Install shell completion for `tdmcp`, then run `tdmcp-agent doctor --fix` so
-> it repairs local folders and tries to wake the TouchDesigner bridge before
-> rehearsal."*
-
-<video :src="withBase('/examples/cli-completion-doctor-fix.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
-
-*The primary binary now has `tdmcp completion <bash|zsh|fish>` alongside package
-manager shortcuts in `tdmcp --help`. On the agent side, `doctor --fix` repairs
-safe local state (vault folder, profile directory, bridge token), runs
-`install-bridge --verify`, and on macOS attempts to paste the generated
-no-Preferences install command into TouchDesigner's Textport. If automation is
-blocked by permissions or the app is closed, it reports the manual Textport
-command instead.*
-
-> *"Run `tdmcp-agent watch-build` while I edit bridge Python: typecheck, build,
-> py-compile changed `td/` files, reload the live bridge, and keep old build-only
-> behavior behind flags."*
-
-<video :src="withBase('/examples/watch-build-hot-reload.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
-
-*`watch-build` now treats `td/` edits as bridge-runtime changes. After a passing
-TypeScript build it can `py_compile` changed Python files and call `reload_bridge`,
-with `--no-py-compile` / `--no-reload-bridge` for slower or isolated loops.*
-
-> *"Read this show plan from stdin, keep going after the first failed step, and
-> return the first non-zero status only after collecting every result."*
-
-<video :src="withBase('/examples/agent-run-continue.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
-
-*`tdmcp-agent run - --continue-on-error` is for rehearsal automation: one broken
-step is recorded, later setup steps still run, and the final exit code remains
-script-friendly.*
-
-> *"List my saved venue profiles, inspect the `club` profile with secrets redacted,
-> then run a health check against that profile."*
-
-<video :src="withBase('/examples/config-profiles-redacted.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
-
-*Profiles let one config file hold rehearsal, club, studio and install settings.
-`tdmcp-agent config profiles` lists them; `config profile <name>` resolves one
-without leaking tokens.*
-
-> *"Load my session profile before building: read style memory, similar recent
-> work, learned conventions and corpus style, then use those defaults for the
-> next look."*
-
-<video :src="withBase('/examples/session-profile-memory.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
-
-*`load_session_profile` gives agents a single structured snapshot of local taste
-memory: style notes, recall hits, learned conventions and corpus patterns. It also
-creates a default profile path on first use so future sessions share the same base.*
-
-> *"Install the Codex client config into this explicit TOML path, deep-merge it
-> instead of replacing the file, and verify the resulting command points at this
-> package."*
-
-<video :src="withBase('/examples/client-config-merge.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
-
-*`tdmcp install-client --write --path <file>` writes Claude/Cursor JSON or Codex
-TOML by merging the target file and then verifying the tdmcp command entry. This
-is the safer setup path for machines that already have MCP clients configured.*
-
-> *"Install the TouchDesigner bridge, wait for `/api/info` on port 9980, and report
-> the bridge status before I launch the show."*
-
-<video :src="withBase('/examples/bridge-install-verify.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
-
-*`tdmcp install-bridge --verify --wait --port 9980` turns bridge staging into a
-preflight: copy the modules, print the Textport one-liner, then poll the live TD
-bridge until it answers.*
-
-> *"Serve tdmcp over loopback Streamable HTTP on port 3939 for this client that
-> cannot spawn stdio, while keeping bare `tdmcp` on stdio."*
-
-<video :src="withBase('/examples/streamable-http-loopback.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
-
-*`tdmcp serve --http --port 3939` adds a loopback HTTP transport without changing
-the default package behavior. Useful for clients that speak HTTP MCP but cannot
-launch a stdio child process.*
-
-> *"Watch bridge events with pretty output, print a heartbeat every five seconds,
-> and run `./cue-next.sh` when a beat event lands, debounced to 250 ms."*
-
-<video :src="withBase('/examples/agent-watch-hooks.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
-
-*`tdmcp-agent watch --pretty --heartbeat-ms ... --on ... --exec ...` turns bridge
-events into a lightweight local automation bus. Keep hooks small and idempotent so
-the monitor stays reliable during a set.*
-
-> *"Open the local copilot in read-only mode to inspect errors, then rerun with
-> `--creative` for a quick local idea sketch; use `--prompt` for the headless
-> one-shot answer."*
-
-<video :src="withBase('/examples/copilot-tier-switch.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
-
-*`tdmcp chat --read-only`, `--creative`, `--prompt`, `--profile` and `--config`
-let the local copilot switch between safe inspection, warmer creative sketches and
-scriptable one-shot answers. The default model/tier/step budget can also come from
-`TDMCP_LLM_*`.*
-
-> *"Expose `tdmcp://prompts`, search `tdmcp://recipes/search/audio`, and read
-> `tdmcp://cookbook/pt` before choosing which full-system prompt to run."*
-
-<video :src="withBase('/examples/mcp-resource-catalog.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
-
-*The prompt catalog, recipe search and localized cookbook are MCP resources now,
-so agents can ground their next move in the same docs a human reads instead of
-remembering stale prompt names.*
-
-> *"First-run on a fresh machine: `tdmcp init` to scaffold the config, bridge
-> token and vault folder; then `tdmcp ask 'what tools do I have for audio?'` for
-> a one-shot answer I can pipe in a shell script."*
-
-<video :src="withBase('/examples/tdmcp-init-ask-onboarding.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
-
-*`tdmcp init` is the dead-simple onboarding command — it writes a default config,
-generates a bridge token, creates the vault folder, and supports `--dry-run`,
-`--yes` and `--json` for scripted setups. `tdmcp ask "<prompt>"` is the headless
-one-shot of the local copilot — prints the answer and exits, so you can pipe it
-into other CLI tools without opening an interactive chat.*
-
-> *"Before answering, read the compact graph digest of `/project1/hero` so you
-> see structure without exploding my token budget."*
-
-<video :src="withBase('/examples/compact-graph-digest-budget.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
-
-*`compact_graph_digest` (and the `tdmcp://digest/{path}` resource) is the
-token-budget-friendly summary the local copilot should consume before reasoning
-about a network: node counts by type, key wires and parameter highlights in one
-small payload. Point the basic-tier model at the digest, not the raw graph dump.*
-
-> *"Teach me enough TouchDesigner to build this patch: read the learning path,
-> cheatsheets and vetted GLSL snippets before deciding which operators to use."*
-
-<video :src="withBase('/examples/td-learning-resources.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
-
-*Three new resources make agent teaching/building less guessy: `tdmcp://cheatsheets`
-for compact workflow reminders, `tdmcp://learning/touchdesigner` for a curated
-operator/tutorial path, and `tdmcp://glsl-snippets` for embedded license-clean shader
-starting points.*
-
-> *"Sample `/project1/out1` for two seconds with `watch_node`, include readable
-> parameters and CHOP channels, then inspect the slow node with
-> `get_node_state_runtime` and `include_info_chop:true`."*
-
-<video :src="withBase('/examples/watch-node-telemetry.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
-
-*`watch_node` captures short-window snapshots of one operator. Pair it with
-`get_node_state_runtime` when a build is black, slow or unstable and you need
-per-op cook time, channels, resolution, errors and optional Info CHOP data.*
-
-> *"Poll `/api/health`, summarize uptime, heartbeat, TouchDesigner info and any
-> available cook/frame/drop/GPU metrics; fail forward if this build returns nulls."*
-
-<video :src="withBase('/examples/bridge-health-watchdog.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
-
-*The bridge health watchdog is a read-only status surface for local scripts and
-preflight dashboards. Some performance fields depend on the TD build, so prompts
-should ask for explicit `null` handling instead of treating missing metrics as a
-fatal error.*
-
-> *"Take a single inline snapshot of my final out TOP — thumbnail, resolution,
-> pixel format, and any errors — so we can pin it in chat."*
+> *"Before rehearsal, open my main output, take a quick preview snapshot, and tell
+> me if it is black, low-res, frozen or showing errors."*
 
 <video :src="withBase('/examples/inline-preview-thumbnail.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
-*`get_inline_preview` returns one structured payload: a bounded 256-px thumbnail,
-the TOP's resolution and pixel format, cook metadata, and post-cook errors — no
-juggling `get_preview` + `get_td_node_errors`. Build verification collapses into a
-single agent call that returns picture, specs and errors together.*
+*`get_inline_preview` turns "is it alive?" into one check: thumbnail, resolution,
+pixel format, cook metadata and recent errors. The answer should be visual and
+plain-language first.*
 
-> *"Watch this analyze CHOP for five seconds and tell me its real min/max so I
-> know how to scale my visual."*
+> *"Watch the bass analyze CHOP for five seconds and tell me the real min/max so I
+> can set the visual range before the DJ arrives."*
 
 <video :src="withBase('/examples/watch-node-telemetry.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
-*`watch_node` takes a short-window read-only sample of one operator: runtime
-state, parameter values, and CHOP channel samples over a window — perfect for
-diagnosing "what is this thing actually outputting right now?" without freezing
-the network. Closes the loop between "agent built it" and "agent verified it
-lives" in five seconds of telemetry.*
+*`watch_node` is useful when it reads a signal the way a performer needs it: actual
+range, spikes, quiet moments and whether the channel is stable enough to bind to a
+look.*
 
-> *"Watch my repo — if I edit anything under td/, recompile the Python and reload
-> the bridge inside TouchDesigner so I don't have to restart."*
+> *"Check the `club` venue profile without showing secrets: is TouchDesigner
+> reachable, is the bridge on the expected port, and what should I fix before
+> doors?"*
 
-<video :src="withBase('/examples/watch-build-hot-reload.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+<video :src="withBase('/examples/config-profiles-redacted.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
-*`tdmcp-agent watch-build` now treats `td/*.py` edits as bridge-runtime changes:
-`py_compile` runs on the changed files, then `reload_bridge` swaps the in-process
-modules. Iterating bridge code becomes save-and-see, not save-and-restart-TD —
-live-coding the TouchDesigner bridge itself.*
+*Venue/profile checks belong in the cookbook only when they answer a show question:
+which room am I set up for, is the live bridge reachable, and what concrete action
+keeps rehearsal moving?*
 
-> *"Run a full doctor --fix on my setup — create my missing vault folder, write me
-> a bridge token in .env, and auto-install the bridge from the TouchDesigner
-> Textport."*
+> *"Read the compact map of `/project1/hero` and explain the visible controls in
+> plain language: what changes color, motion, intensity and reset?"*
 
-<video :src="withBase('/examples/cli-completion-doctor-fix.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+<video :src="withBase('/examples/compact-graph-digest-budget.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
-*`tdmcp-agent doctor --fix` now creates a missing configured vault path,
-scaffolds the default profile dir, writes a `TDMCP_BRIDGE_TOKEN` to `.env` with
-owner-only perms, and can fire `install-bridge --verify` (including the Textport
-auto-install path). "Make it work" as a single command, with the bridge installing
-itself from inside TD's own console.*
+*`compact_graph_digest` summarizes a network without drowning the artist in nodes:
+counts, wires and key parameters become a short map of what the look can do.*
 
-> *"Give me Tab-completion for tdmcp in zsh — every subcommand and package
-> shortcut should autocomplete."*
+> *"During soundcheck, listen for beat and onset events for ten seconds and tell me
+> whether the cue stream is steady enough to drive cuts; do not trigger anything on
+> stage."*
 
-<video :src="withBase('/examples/cli-completion-doctor-fix.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+<video :src="withBase('/examples/agent-watch-hooks.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
-*`tdmcp completion zsh` (or bash / fish) prints a static completion snippet
-covering the primary binary plus `search` / `list` / `info` / `install` /
-`uninstall` / `doctor` / `packages path`. Source it once and the whole tool
-surface is one Tab away.*
+*Bridge event watching can stay read-only: use it to prove that tempo, beat or
+gesture events are arriving before you map them to visible changes.*
+
+> *"Teach me enough TouchDesigner to safely tweak this patch: show the operator path
+> I should open, the one parameter to try first, and a fallback if it breaks."*
+
+<video :src="withBase('/examples/td-learning-resources.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Learning resources and cheatsheets are artist-facing when they reduce fear in the
+patch: one operator, one safe parameter, one way back.*
+
+> *"Look at the current output and critique it like a motion designer: palette,
+> contrast, rhythm, legibility and one concrete next tweak."*
+
+<video :src="withBase('/examples/copilot-vision-critique.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*The local copilot should close the loop from generated network to visible result:
+describe what is on screen, name the weakest artistic choice, then propose a small
+change the artist can approve.*
 
 ## Creative library (Creative RAG)
 
 The creative repertoire is an opt-in local index of open-licensed reference
 artworks. The CLI is `tdmcp creative-rag <sync|index|search>`; both
 `tdmcp://creative/cards/{id}` and `tdmcp://creative/search{?q,k,license,type,tags}`
-are read-only MCP resources. The default license allowlist (`TDMCP_RAG_LICENSE_ALLOWLIST`,
-default `CC0,PublicDomain`) only gates **binary downloads** at `sync` time —
-`search` still surfaces every card in the index, so pass `--license` explicitly
-when you need a hard guarantee on what you reuse.
+are read-only MCP resources. RAG supplies source artworks, palettes, motion
+language and tool affordances; the actual TouchDesigner build still happens through
+normal tdmcp tools.
 
-> *"Search the creative library for kinetic monochrome references — high motion,
-> black and white, geometric. Restrict to CC0 + public domain so I can reuse
-> anything that comes back."*
+> *"Use Creative RAG to find the CC0 Cleveland card `The Biglin Brothers Turning
+> the Stake`. Use the painting itself as source material: stretch the waterline
+> into horizontal motion trails, edge-detect the oars and bodies, and turn it into
+> a rowing-motion visual with a cool stage grade."*
 
-```bash
-tdmcp creative-rag search "kinetic monochrome geometric" \
-  --license CC0,PublicDomain --k 5
-```
+<video :src="withBase('/examples/creative-rag-rowing-motion-remix.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
-```text
-score  id        title                                                    source       license       type
-0.78   a1b2c3d4  Composition with Black Lines                             artic        PublicDomain  painting
-0.74   e5f6a7b8  Rhythm of a Russian Dance                                rijksmuseum  CC0           painting
-0.70   12c3d4e5  Op Art Study, Black on White                             met          PublicDomain  drawing
-0.66   90fa1b2c  Vibration (Plate VI)                                     rijksmuseum  CC0           print
-0.61   77ab88cd  Untitled (Concentric Squares)                            artic        PublicDomain  drawing
-```
+*A RAG artwork becomes input material, not a result row: the card's CC0 image is
+remixed into a new kinetic trails piece using the painting's water, oar rhythm and
+silhouette structure as the visual score.*
 
-*`creative-rag search` returns a ranked list of cards. Each row is
-`{ id, title, sourceUrl, license, type, tags, score }` where `score` is cosine
-similarity (0–1). Use `--json` if you want the structured payload instead of the
-human table.*
+> *"Search Creative RAG for the CC0 portrait card `Nathaniel Hurd`. Build a new
+> live mask look from it: pull a warm palette from the portrait, pixelize the face
+> into block cells, add edge outlines, and make a subtle double-exposure drift for
+> a performance backdrop."*
 
-> *"Show me only CC0-licensed architectural artworks from the creative
-> library."*
+<video :src="withBase('/examples/creative-rag-portrait-mask-remix.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
-```bash
-tdmcp creative-rag search "architecture facade" \
-  --license CC0 --type artwork --tags architecture --k 5
-```
+*The retrieved portrait drives the look: color, lighting and face structure become
+a new mask/mosaic system that could be recreated with `create_palette`,
+`create_pixel_sort` and post-processing passes.*
 
-```text
-score  id        title                                              source       license  type
-0.81   3f4d5e6a  Façade Study, Rietveld Schröder House              rijksmuseum  CC0      artwork
-0.77   c7d8e9f0  Steel Frame, Construction Series                   cleveland    CC0      artwork
-0.72   55667788  Brutalist Stairwell                                rijksmuseum  CC0      artwork
-0.68   99aabbcc  Concrete Volumes at Dusk                           cleveland    CC0      artwork
-0.63   ddeeff01  Window Grid                                        rijksmuseum  CC0      artwork
-```
+> *"Open the Creative RAG `Composition` card for Wassily Kandinsky. Use its
+> hard-edged geometry, primary triad palette and `create_generative_art` /
+> `create_color_grade` affordances to build a fresh geometric TD system, not a
+> copy of the painting."*
 
-*`--license CC0` narrows beyond the default allowlist (drops PublicDomain) so
-the result is strictly CC0. `--type` accepts the CLI enum
-(`project|artist|artwork|technique|cue_reference`); use `--tags` (CSV) for finer
-filters like `architecture`, `photograph`, `sculpture`. All filters stack.*
+<video :src="withBase('/examples/creative-rag-kandinsky-remix.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
-> *"Open card `3f4d5e6a…` from the creative library and summarize the artist's
-> intent so I can build a TD scene from it."*
-
-The MCP client fetches `tdmcp://creative/cards/3f4d5e6a…` (where `id =
-sha256(sourceUrl)`) and gets back the full card as JSON:
-
-```json
-{
-  "id": "3f4d5e6a...",
-  "title": "Façade Study, Rietveld Schröder House",
-  "description": "Frontal photograph of the De Stijl façade...",
-  "sourceUrl": "https://www.rijksmuseum.nl/...",
-  "license": "CC0",
-  "type": "photograph",
-  "tags": ["architecture", "de-stijl", "geometric", "primary-colors"],
-  "palette": ["#E63946", "#F1FAEE", "#1D3557", "#FFD166"],
-  "visualLanguage": "rigid orthogonal grid, flat planes",
-  "tdmcpAffordances": ["create_glsl_shader", "create_grid_layout"],
-  "schemaVersion": 1
-}
-```
-
-*The real card shape is flat: `palette` and `visualLanguage` are top-level
-optional fields, and `tdmcpAffordances` is a `string[]` of suggested tool
-names (see `src/creativeRag/schema.ts`). Read the card, distill the artist's
-intent in prose, then hand the affordances + palette to whichever Layer 1 tool
-fits — for example, "use this palette and grid `visualLanguage` to build a
-kinetic monochrome GLSL scene". The cookbook stops here; the actual build is
-whichever Layer 1 tool the affordances point at.*
+*The card hands over palette and visual language; the result is a new procedural
+composition with animated grid, circles and color planes, keeping the original as
+repertoire context rather than something the RAG executes directly.*
 
 ## Working from your own notes (Obsidian vault)
 

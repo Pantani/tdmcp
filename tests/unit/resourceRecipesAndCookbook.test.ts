@@ -22,6 +22,13 @@ afterEach(() => {
   for (const dir of dirs) rmSync(dir, { force: true, recursive: true });
 });
 
+function quotedCookbookPrompts(markdown: string): string {
+  return markdown
+    .split("\n")
+    .filter((line) => line.startsWith(">"))
+    .join("\n");
+}
+
 describe("recipe search resource helpers", () => {
   it("searches recipes by keyword across id, name, description and tags", () => {
     const recipes = new RecipeLibrary();
@@ -94,6 +101,44 @@ describe("cookbook resource helpers", () => {
     expect(result.locale).toBe("pt");
     expect(result.title.toLowerCase()).toContain("prompt");
     expect(result.text).toContain("tdmcp");
+  });
+
+  it("keeps cookbook prompts framed as artist use, not developer workflows", () => {
+    const en = readCookbookResource("en").text;
+    const pt = readCookbookResource("pt").text;
+    const quotedPrompts = `${quotedCookbookPrompts(en)}\n${quotedCookbookPrompts(pt)}`;
+
+    expect(en).toContain("## Reusable looks & show handoff");
+    expect(en).toContain("Make this hero look tour-ready");
+    expect(en).toContain("## Rehearsal checks & artist feedback");
+    expect(en).toContain("Before rehearsal, open my main output");
+    expect(en).toContain("critique it like a motion designer");
+
+    expect(pt).toContain("## Looks reutilizáveis & handoff de show");
+    expect(pt).toContain("Deixe este hero look pronto para turnê");
+    expect(pt).toContain("## Checagens de ensaio & feedback artístico");
+    expect(pt).toContain("Antes do ensaio, abra meu output principal");
+    expect(pt).toContain("critique como motion designer");
+
+    for (const developerWorkflowPrompt of [
+      "commands as JSON",
+      "comandos do `tdmcp-agent` em JSON",
+      "shell completion",
+      "Tab-completion",
+      "doctor --fix",
+      "watch-build",
+      "Codex client config",
+      "Streamable HTTP",
+      "Python extension class",
+      "classe de extensão Python",
+      "CLAUDE.md",
+      "Write a README",
+      "Generate a README",
+      "Escreva um README",
+      "Gere um README",
+    ]) {
+      expect(quotedPrompts).not.toContain(developerWorkflowPrompt);
+    }
   });
 
   it("returns an explanatory payload instead of throwing when the cookbook file is missing", () => {

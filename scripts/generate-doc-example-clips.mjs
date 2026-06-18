@@ -4236,6 +4236,76 @@ function pathTitleOrbitFrame(t) {
   return buf;
 }
 
+function creativeRagKandinskyRemixFrame(t) {
+  const buf = baseFrame();
+  const sourcePalette = [
+    [214, 40, 40],
+    [0, 48, 73],
+    [252, 191, 73],
+    [248, 249, 250],
+  ];
+  rect(buf, 26, 34, 142, 176, [10, 14, 23], 0.96);
+  drawPixelText(buf, "RAG CARD", 48, 48, { scale: 2, color: [164, 176, 205], alpha: 0.72 });
+  drawPixelText(buf, "COMPOSITION", 48, 72, {
+    scale: 2,
+    color: [255, 255, 255],
+    alpha: 0.86,
+  });
+  circle(buf, 84, 130, 31 + Math.sin(t * 2.2) * 3, sourcePalette[0], 0.82);
+  circle(buf, 124, 120, 24, sourcePalette[2], 0.72);
+  polygon(
+    buf,
+    [
+      [54, 176],
+      [146, 156 + Math.sin(t * 1.7) * 8],
+      [112, 196],
+    ],
+    sourcePalette[1],
+    0.82,
+  );
+  line(buf, 50, 104, 152, 188, sourcePalette[3], 0.52);
+  line(buf, 54, 192, 148, 94, sourcePalette[2], 0.42);
+
+  for (let i = 0; i < 4; i++) {
+    rect(buf, 58 + i * 22, 218, 14, 14, sourcePalette[i], 0.9);
+  }
+  const pulse = smoothstep(0.08, 0.8, (t * 0.42) % 1);
+  line(buf, 176, 135, 224, 135, [255, 255, 255], 0.18 + pulse * 0.54);
+  circle(buf, 176 + 48 * pulse, 135, 5, [255, 214, 86], 0.9);
+
+  rect(buf, 224, 28, 228, 204, [4, 7, 14], 0.98);
+  for (let y = 34; y < 226; y++) {
+    for (let x = 230; x < 446; x++) {
+      const u = (x - 338) / 108;
+      const v = (y - 130) / 96;
+      const angle = Math.atan2(v, u);
+      const radius = Math.hypot(u, v);
+      const wedge = Math.sin(angle * 5 + t * 1.7) * Math.cos(radius * 14 - t * 3.1);
+      const grid = Math.min(
+        Math.abs(Math.sin((u + t * 0.08) * 17)),
+        Math.abs(Math.sin((v - t * 0.07) * 13)),
+      );
+      const colorA = mixColor(sourcePalette[1], sourcePalette[0], wedge * 0.5 + 0.5);
+      const colorB = mixColor(sourcePalette[2], sourcePalette[3], radius);
+      set(buf, x, y, mixColor(colorA, colorB, smoothstep(0.04, 0.42, grid)), 0.86);
+    }
+  }
+  for (let i = 0; i < 10; i++) {
+    const a = t * 1.4 + i * 0.63;
+    const cx = 338 + Math.cos(a) * (30 + (i % 3) * 22);
+    const cy = 130 + Math.sin(a * 1.3) * (24 + (i % 4) * 9);
+    glow(buf, cx, cy, 26, sourcePalette[i % sourcePalette.length], 0.18);
+    circle(buf, cx, cy, 5 + (i % 3) * 2, sourcePalette[i % sourcePalette.length], 0.76);
+  }
+  drawPixelText(buf, "NEW TD SYSTEM", 338, 240, {
+    scale: 2,
+    color: [255, 255, 255],
+    alpha: 0.72,
+    align: "center",
+  });
+  return buf;
+}
+
 const clips = [
   ["feedback-tunnel.mp4", feedbackTunnelFrame],
   ["reaction-diffusion.mp4", reactionDiffusionFrame],
@@ -4381,6 +4451,7 @@ const clips = [
   ["palette-harmony-study.mp4", paletteHarmonyStudyFrame],
   ["flow-field-ribbons.mp4", flowFieldRibbonsFrame],
   ["sculptural-relief-gallery.mp4", sculpturalReliefGalleryFrame],
+  ["creative-rag-kandinsky-remix.mp4", creativeRagKandinskyRemixFrame],
 ];
 
 function writePpm(file, buf) {
