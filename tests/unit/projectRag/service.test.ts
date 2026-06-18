@@ -206,3 +206,140 @@ describe("projectRag service (skeleton-level behaviour)", () => {
     expect(await svc.getCard(id)).toBeUndefined();
   });
 });
+
+describe("projectRag service — F3 bridge analyze pass", () => {
+  function writePersistedCard(
+    dataDir: string,
+    overrides: Partial<ProjectRagCard> & { id: string; license: ProjectRagCard["license"] },
+  ): void {
+    const cardsDir = join(dataDir, "cards");
+    mkdirSync(cardsDir, { recursive: true });
+    const canonical = `github:foo/bar#${overrides.id}`;
+    const defaults: ProjectRagCard = {
+      schemaVersion: 2,
+      id: overrides.id,
+      kind: "project",
+      type: "component",
+      title: `card-${overrides.id.slice(0, 6)}`,
+      tags: [],
+      contentHash: "",
+      provenance: {
+        sourceName: "github:foo/bar",
+        sourceUrl: "https://github.com/foo/bar",
+        canonical,
+        fetchedAt: "2026-06-18T00:00:00Z",
+      },
+      license: overrides.license,
+      licenseConfidence: "spdx-detected",
+    };
+    const base: ProjectRagCard = { ...defaults, ...overrides };
+    const final = { ...base, contentHash: computeProjectContentHash(base) };
+    writeFileSync(join(cardsDir, `${overrides.id}.md`), serializeProjectCard(final), "utf8");
+  }
+
+  it("sync({bridge:true}) skips when nothing has a binaryPath", async () => {
+    const calls: string[] = [];
+    const svc = createProjectRagService({
+      config: makeConfig(DIR),
+      sources: [],
+      embeddings: NOOP_EMBEDDINGS,
+      bridgeAnalyzeImpl: async (p) => {
+        calls.push(p);
+        return { status: "ok", errorCount: 0 };
+      },
+    });
+    const report = await svc.sync({ bridge: true });
+    expect(report.bridgeAnalysis).toEqual({ attempted: 0, ok: 0, failed: 0, skipped: 0 });
+    expect(calls).toEqual([]);
+  });
+
+  it("sync({bridge:true}) calls the analyzer on a permissive-license card with a binary", async () => {
+    const id = computeProjectId("github:foo/bar#1").slice(0, 64).padEnd(64, "0").slice(0, 64);
+    writePersistedCard(DIR, { id, license: "MIT", binaryPath: "binaries/cool.tox" });
+    const calls: string[] = [];
+    const svc = createProjectRagService({
+      config: makeConfig(DIR),
+      sources: [],
+      embeddings: NOOP_EMBEDDINGS,
+      bridgeAnalyzeImpl: async (p) => {
+        calls.push(p);
+        return { status: "ok", errorCount: 2 };
+      },
+    });
+    const report = await svc.sync({ bridge: true });
+    expect(report.bridgeAnalysis).toEqual({ attempted: 1, ok: 1, failed: 0, skipped: 0 });
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toContain("binaries/cool.tox");
+    const stored = await svc.getCard(id);
+    expect(stored?.analysisStatus).toBe("ok");
+  });
+
+  it("sync({bridge:true}) is idempotent — already-ok cards are not re-analyzed", async () => {
+    const id = computeProjectId("github:foo/bar#idempotent")
+      .slice(0, 64)
+      .padEnd(64, "0")
+      .slice(0, 64);
+    writePersistedCard(DIR, {
+      id,
+      license: "MIT",
+      binaryPath: "binaries/x.tox",
+      analysisStatus: "ok",
+    });
+    const calls: string[] = [];
+    const svc = createProjectRagService({
+      config: makeConfig(DIR),
+      sources: [],
+      embeddings: NOOP_EMBEDDINGS,
+      bridgeAnalyzeImpl: async (p) => {
+        calls.push(p);
+        return { status: "ok" };
+      },
+    });
+    const report = await svc.sync({ bridge: true });
+    expect(report.bridgeAnalysis).toEqual({ attempted: 0, ok: 0, failed: 0, skipped: 0 });
+    expect(calls).toEqual([]);
+  });
+
+  it("sync({bridge:true}) records skipped when the analyzer skips (offline bridge)", async () => {
+    const id = computeProjectId("github:foo/bar#skip").slice(0, 64).padEnd(64, "0").slice(0, 64);
+    writePersistedCard(DIR, { id, license: "MIT", binaryPath: "binaries/y.tox" });
+    const svc = createProjectRagService({
+      config: makeConfig(DIR),
+      sources: [],
+      embeddings: NOOP_EMBEDDINGS,
+      bridgeAnalyzeImpl: async () => ({ status: "skipped", reason: "bridge offline" }),
+    });
+    const report = await svc.sync({ bridge: true });
+    expect(report.bridgeAnalysis).toEqual({ attempted: 1, ok: 0, failed: 0, skipped: 1 });
+    const stored = await svc.getCard(id);
+    expect(stored?.analysisStatus).toBe("skipped");
+    expect(stored?.analysisReason).toBe("bridge offline");
+  });
+
+  it("analyze(path) returns a skipped envelope when the bridge is offline", async () => {
+    const svc = createProjectRagService({
+      config: makeConfig(DIR),
+      sources: [],
+      embeddings: NOOP_EMBEDDINGS,
+      bridgeAnalyzeImpl: async () => ({ status: "skipped", reason: "offline" }),
+    });
+    const report = await svc.analyze("/tmp/whatever.toe");
+    expect(report.status).toBe("skipped");
+    expect(report.bridgeUrl).toBe("http://127.0.0.1:9981");
+    expect(report.reason).toBe("offline");
+  });
+
+  it("analyze(path) returns failed when the analyzer throws", async () => {
+    const svc = createProjectRagService({
+      config: makeConfig(DIR),
+      sources: [],
+      embeddings: NOOP_EMBEDDINGS,
+      bridgeAnalyzeImpl: async () => {
+        throw new Error("kaboom");
+      },
+    });
+    const report = await svc.analyze("/tmp/whatever.toe");
+    expect(report.status).toBe("failed");
+    expect(report.error).toBe("kaboom");
+  });
+});

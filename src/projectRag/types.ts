@@ -131,6 +131,15 @@ export interface ProjectRagCard {
   score?: ProjectScore;
   /** Names of EXISTING tdmcp tools the agent could use to reconstruct this card. */
   tdmcpAffordances?: string[];
+  /**
+   * F3 bridge-analyze outcome for the persisted binary, if it ran. `ok` =
+   * loaded cleanly in the quarantine TD; `failed` = real error; `skipped` =
+   * binary present but no quarantine bridge reachable (or feature disabled).
+   * Unset = analyze never attempted on this card.
+   */
+  analysisStatus?: "ok" | "failed" | "skipped";
+  /** Optional short reason string complementing `analysisStatus` (telemetry only). */
+  analysisReason?: string;
 }
 
 /** One JSONL index line. */
@@ -236,6 +245,26 @@ export interface ProjectSyncReport {
   skippedNoLicense: number;
   binariesStored: number;
   perSource: Record<string, number>;
+  /** Set only when `sync({bridge:true})` runs. */
+  bridgeAnalysis?: ProjectBridgeAnalysisReport;
+}
+
+/** Aggregate of running the F3 bridge analyzer across every downloadable card. */
+export interface ProjectBridgeAnalysisReport {
+  attempted: number;
+  ok: number;
+  failed: number;
+  skipped: number;
+}
+
+/** Result of `service.analyze(path)` — runs the F3 bridge extractor on one artifact. */
+export interface ProjectAnalyzeReport {
+  status: "ok" | "failed" | "skipped";
+  reason?: string;
+  error?: string;
+  errorCount?: number;
+  hasPreview?: boolean;
+  bridgeUrl: string;
 }
 
 export interface ProjectIndexReport {
@@ -258,6 +287,12 @@ export interface ProjectRagService {
     topicsCsv?: string;
     /** Per-call topic cap override. */
     topicCap?: number;
+    /**
+     * F3 opt-in. When true, after the normal sync runs the bridge-analyze
+     * extractor on every card with a persisted binary and a permissive
+     * license, persisting `analysisStatus` on each card.
+     */
+    bridge?: boolean;
   }): Promise<ProjectSyncReport>;
   index(): Promise<ProjectIndexReport>;
   /**
@@ -268,4 +303,9 @@ export interface ProjectRagService {
   search(query: string, k: number, filters?: ProjectSearchFilters): Promise<ProjectSearchResult[]>;
   getCard(id: string): Promise<ProjectRagCard | undefined>;
   listSources(): Promise<ProjectSourceStatus[]>;
+  /**
+   * F3 ad-hoc analyze of one artifact path through the quarantine bridge.
+   * Never touches the user's main TD. Skipped when bridge is offline.
+   */
+  analyze(artifactPath: string): Promise<ProjectAnalyzeReport>;
 }

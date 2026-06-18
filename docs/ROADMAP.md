@@ -96,18 +96,19 @@ session we validated manually:
   falls back to JSONL when absent). Remaining stub sources: Harvard, Cooper
   Hewitt, Internet Archive, WikiArt, portfolios, Shadertoy. See
   [Creative RAG](./CREATIVE_RAG).
-- 🧪 **Project RAG foundations (opt-in, experimental, F0 — WIP on
-  `feature/project-rag`).** Sibling RAG to Creative RAG, indexing
+- 🧪 **Project RAG (opt-in, experimental, F0+F1+F2+F3 shipped — on
+  `feature/project-rag-f3`).** Sibling RAG to Creative RAG, indexing
   TouchDesigner *projects/components/snippets/tutorials* with mandatory
-  `provenance` + `license` per card. F0 ships gating, schema v2 (with `kind`
-  discriminator + extended SPDX/Derivative-EULA/Proprietary-* license enum),
-  JSONL store, service skeleton, CLI subcommand `tdmcp project-rag
-  {sources|sync|index|search|info}`, and read-only resources
-  `tdmcp://project/cards/{id}` + `tdmcp://project/search`. Inert unless both
-  `TDMCP_RAG_ENABLED=1` AND `TDMCP_PROJECT_RAG_ENABLED=1`. Data dir isolated
-  at `<TDMCP_RAG_DATA_DIR>/project/`. F1 wires real sources; F3 opt-in
-  bridge-quarantine analysis uses a *separate* TD on dedicated port 9981 —
-  never the active 9980. See [Project RAG](./PROJECT_RAG).
+  `provenance` + `license` per card. F0+F1+F2 brought the multi-source +
+  tuned scoring MVP; **F3 adds opt-in bridge-quarantine analysis** —
+  `toeexpand` subprocess wrapper (reduced env, 30 s timeout, group-kill,
+  UUID temp cwd) and a dynamic analyzer that talks to a *separate*
+  TouchDesigner on dedicated port `9981` (refuses `9980`). New CLI:
+  `tdmcp project-rag analyze <path>`, `bridge install` (walkthrough +
+  probe), and `sync --bridge` (idempotent post-sync analyze pass).
+  Card schema gains `analysisStatus`/`analysisReason`. F4 (prompts,
+  resources, copilot tool, cookbook entries) is the next wave. See
+  [Project RAG](./PROJECT_RAG).
 
 ### Wave 12 — v0.8.3 (live-show resilience + LLM token budget + CLI ergonomics) {#wave-12-v0-8-3}
 

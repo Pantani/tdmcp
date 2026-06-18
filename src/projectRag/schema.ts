@@ -121,4 +121,6 @@ export const ProjectRagCardSchema: z.ZodType<ProjectRagCard> = z.object({
   previewPath: z.string().optional(),
   score: ProjectScoreSchema.optional(),
   tdmcpAffordances: z.array(z.string()).optional(),
+  analysisStatus: z.enum(["ok", "failed", "skipped"]).optional(),
+  analysisReason: z.string().optional(),
 });

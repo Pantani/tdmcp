@@ -61,7 +61,7 @@ const DISABLED_MESSAGE =
 
 const HELP = `tdmcp project-rag — local TouchDesigner project repertoire (opt-in, offline)
 
-Usage: tdmcp project-rag <sources|sync|index|reindex|search|info> [flags]
+Usage: tdmcp project-rag <sources|sync|index|reindex|search|info|analyze|bridge> [flags]
 
 Commands:
   sources              List configured project sources and their status.
@@ -70,6 +70,10 @@ Commands:
   reindex --rescore    Recompute card.score in place without re-embedding.
   search <query>       Cosine search the local project index.
   info <id>            Show one card (provenance + license + score) by id.
+  analyze <path>       (F3) Open one .toe/.tox in the QUARANTINE bridge
+                       (port 9981 — never your main TD) and report errors.
+  bridge install       (F3) Print the dedicated quarantine-bridge setup steps
+                       and probe whether the bridge is reachable.
 
 Flags:
   --source <name>      Limit sync to one source (repeatable).
@@ -77,6 +81,9 @@ Flags:
   --topic <csv>        Override topic list for the github-topic source. Use
                        "off" to disable that source for this run.
   --cap <n>            Per-run cap for the github-topic source (default 25).
+  --bridge             (F3) After sync, run the QUARANTINE bridge analyzer on
+                       every downloadable card with a permissive license.
+                       Skipped cleanly when the bridge is offline.
   --rescore            With "reindex": recompute scores in place.
   --k <n>              Number of search results (default 10).
   --license <csv>      Filter search by license(s), e.g. MIT,Apache-2.0,CC0.
@@ -86,7 +93,10 @@ Flags:
   --json               Emit machine-readable JSON.
   -h, --help           Show this help.
 
-Hard rule: NEVER opens a downloaded .toe/.tox in the user's active TD project.`;
+Hard rule: NEVER opens a downloaded .toe/.tox in the user's active TD project.
+The F3 quarantine bridge runs on a SEPARATE TouchDesigner instance bound to
+port 9981 (never 9980); when it is offline analyze/--bridge degrade to
+"skipped" — not "failed".`;
 
 export interface RunProjectRagCliDeps {
   service?: ProjectRagService;
@@ -201,6 +211,10 @@ export async function runProjectRagCli(
         return await runSearch(service, parsed.positionals, parsed.values, stdoutLine, stderrLine);
       case "info":
         return await runInfo(service, parsed.positionals, parsed.values, stdoutLine, stderrLine);
+      case "analyze":
+        return await runAnalyze(service, parsed.positionals, parsed.values, stdoutLine, stderrLine);
+      case "bridge":
+        return await runBridge(service, parsed.positionals, parsed.values, config, stdoutLine);
       default:
         stderrLine(`tdmcp project-rag: unknown command "${parsed.command}".`);
         stderrLine(HELP);
@@ -216,6 +230,7 @@ interface ParsedFlags {
   help: boolean;
   json: boolean;
   rescore: boolean;
+  bridge: boolean;
   source: string[];
   limit?: number;
   topic?: string;
@@ -239,6 +254,7 @@ function parseProjectRagArgs(argv: string[]): {
       help: { type: "boolean", short: "h", default: false },
       json: { type: "boolean", default: false },
       rescore: { type: "boolean", default: false },
+      bridge: { type: "boolean", default: false },
       source: { type: "string", multiple: true },
       limit: { type: "string" },
       topic: { type: "string" },
@@ -258,6 +274,7 @@ function parseProjectRagArgs(argv: string[]): {
     help: values.help === true,
     json: values.json === true,
     rescore: values.rescore === true,
+    bridge: values.bridge === true,
     source: Array.isArray(values.source) ? values.source : [],
   };
   if (typeof values.limit === "string") flags.limit = parsePositiveInt(values.limit, "--limit");
@@ -333,6 +350,7 @@ async function runSync(
     ...(flags.limit !== undefined ? { limit: flags.limit } : {}),
     ...(flags.topic !== undefined ? { topicsCsv: flags.topic } : {}),
     ...(flags.cap !== undefined ? { topicCap: flags.cap } : {}),
+    ...(flags.bridge ? { bridge: true } : {}),
   });
   if (flags.json) {
     out(JSON.stringify(report));
@@ -343,6 +361,10 @@ async function runSync(
       `synced: ${report.added} added, ${report.updated} updated, ${report.tombstoned} tombstoned, ` +
         `${report.binariesStored} binaries stored, ${report.skippedNoLicense} skipped (license)`,
     );
+    if (report.bridgeAnalysis !== undefined) {
+      const b = report.bridgeAnalysis;
+      out(`bridge: ${b.attempted} attempted, ${b.ok} ok, ${b.failed} failed, ${b.skipped} skipped`);
+    }
   }
   return 0;
 }
@@ -450,6 +472,92 @@ async function runInfo(
   if (card.score !== undefined) out(`  score: composite=${card.score.composite.toFixed(3)}`);
   return 0;
 }
+
+async function runAnalyze(
+  service: ProjectRagService,
+  positionals: string[],
+  flags: ParsedFlags,
+  out: (s: string) => void,
+  err: (s: string) => void,
+): Promise<number> {
+  const artifactPath = positionals[0]?.trim() ?? "";
+  if (artifactPath.length === 0) {
+    err("tdmcp project-rag: analyze needs an absolute .toe/.tox path.");
+    return 2;
+  }
+  const report = await service.analyze(artifactPath);
+  if (flags.json) {
+    out(JSON.stringify(report));
+  } else {
+    out(`analyze ${report.status} (bridge: ${report.bridgeUrl})`);
+    if (report.errorCount !== undefined) out(`  td errors: ${report.errorCount}`);
+    if (report.hasPreview === true) out("  preview: captured");
+    if (report.reason !== undefined) out(`  reason: ${report.reason}`);
+    if (report.error !== undefined) out(`  error: ${report.error}`);
+  }
+  // Skipped (offline bridge) is success — exit 1 only on real failure.
+  return report.status === "failed" ? 1 : 0;
+}
+
+async function runBridge(
+  service: ProjectRagService,
+  positionals: string[],
+  flags: ParsedFlags,
+  config: ProjectRagConfig,
+  out: (s: string) => void,
+): Promise<number> {
+  const sub = positionals[0]?.trim() ?? "";
+  if (sub !== "install") {
+    out(BRIDGE_INSTALL_HELP);
+    return sub.length === 0 ? 0 : 2;
+  }
+  const bridgeUrl = `http://127.0.0.1:${config.bridgePort}`;
+  // Probe the bridge by calling analyze with a sentinel non-existent path —
+  // we only care about the status (skipped = unreachable, failed = reachable
+  // but artifact missing). This avoids touching any real file.
+  const probe = await service.analyze("/__tdmcp_project_rag_bridge_probe__.toe");
+  const reachable = probe.status !== "skipped";
+  if (flags.json) {
+    out(JSON.stringify({ bridgeUrl, reachable, probeStatus: probe.status }));
+    return 0;
+  }
+  out(BRIDGE_INSTALL_HELP);
+  out("");
+  out(`Probe: ${bridgeUrl} — ${reachable ? "REACHABLE" : "OFFLINE"}`);
+  if (!reachable) {
+    out("  Follow the steps above, then re-run: tdmcp project-rag bridge install");
+  } else {
+    out("  Ready. Try: tdmcp project-rag analyze /absolute/path/to/file.toe");
+  }
+  return 0;
+}
+
+const BRIDGE_INSTALL_HELP = `tdmcp project-rag bridge install — quarantine bridge setup
+
+The Project RAG F3 bridge analyzer runs your .toe/.tox files inside a
+DEDICATED TouchDesigner instance, bound to a SEPARATE port (default 9981).
+It NEVER touches your main TD on port 9980.
+
+Steps:
+
+  1. Open a fresh TouchDesigner instance (do NOT reuse the one tdmcp drives
+     for live work).
+  2. Inside that instance, install the tdmcp bridge as usual:
+        tdmcp install-bridge
+     The bridge installs a Web Server DAT.
+  3. Edit that Web Server DAT's "port" parameter from 9980 → 9981.
+  4. Save that instance as a fresh project file (suggested name:
+     "tdmcp_bridge_qa.toe") so you can reopen the quarantine bridge fast.
+  5. Enable the F3 feature:
+        export TDMCP_PROJECT_RAG_BRIDGE_ANALYSIS=1
+        export TDMCP_PROJECT_RAG_ENABLED=1
+        export TDMCP_RAG_ENABLED=1
+  6. Confirm it works:
+        tdmcp project-rag bridge install   # probes the bridge
+        tdmcp project-rag analyze ~/Downloads/some.tox
+
+If the probe says OFFLINE, the analyzer will return "skipped" — it never
+falls back to your main TD. That is the safe default.`;
 
 function buildFilters(flags: ParsedFlags): ProjectSearchFilters | undefined {
   const filters: ProjectSearchFilters = {};
