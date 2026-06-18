@@ -22,6 +22,28 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the queue degrades to a clean skip (`SourceSkippedError` → exit 0, never a
   tombstone). New service method `ProjectRagService.listDiscovery()`; `--json`
   supported. No new env var.
+- **Project RAG — derivative-local source (opt-in, experimental)** — a local-disk
+  `SourceAdapter` (`src/projectRag/sources/derivativeLocal.ts`) that discovers an
+  installed TouchDesigner and indexes its shipped Palette / OP Snippets
+  `.tox`/`.toe` examples. Install root resolves from
+  `TDMCP_PROJECT_RAG_DERIVATIVE_ROOT` first, then per-OS defaults (macOS/Windows/
+  Linux); when no install is found it degrades to a clean skip
+  (`SourceSkippedError`, never a tombstone). Enumerates + reads metadata only —
+  it **never executes** a `.toe`/`.tox` — and stamps every card with the local
+  Derivative EULA license (local-only, no redistribution / no `binaryUrl`) plus
+  mandatory provenance, so the license-gate stays intact. `listSources()` now
+  reports `derivative-local` as `ready`.
+- **Project RAG — bridge `POST /api/project/load` endpoint (F3 analyzer upgrade)** —
+  a first-class quarantine-bridge endpoint
+  (`td/modules/mcp/services/project_load_service.py`) that loads a `.toe`/`.tox`
+  at an absolute path inside the on-:9981 quarantine TD and returns a typed
+  envelope `{ root_path, node_count, errors[], preview_b64? }`. New typed client
+  method `TouchDesignerClient.loadProject()` with a Zod envelope in
+  `validators.ts`; the F3 `bridgeAnalyze` extractor now prefers this endpoint and
+  falls back to the exec-style `project.load` path only on a missing route (404),
+  rethrowing real validation/timeout/connection errors unchanged. The endpoint
+  validates the path (absolute, `.toe`/`.tox`, exists) and is not arbitrary
+  Python, so a hardened `ALLOW_EXEC=0` bridge can still open its own artifact.
 - **Project RAG — MCP prompts, resources, copilot tool & CLI cross-link (opt-in, experimental, F4)** —
   the AI surface for the local Project RAG repertoire lands. New MCP prompt
   `project_rag_context` (`src/prompts/projectRagContext.ts`): runs
