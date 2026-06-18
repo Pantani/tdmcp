@@ -263,7 +263,9 @@ const PROBE_TIMEOUT_MS = 5_000;
  * artifact path — only checks that the bridge answers `getInfo`. The main TD
  * port `9980` is hard-rejected. Never throws.
  */
-export async function probeBridgeReachability(opts: BridgeProbeOptions): Promise<BridgeProbeResult> {
+export async function probeBridgeReachability(
+  opts: BridgeProbeOptions,
+): Promise<BridgeProbeResult> {
   const port = opts.bridgePort ?? DEFAULT_PORT;
   const host = opts.bridgeHost ?? DEFAULT_HOST;
   const baseUrl = `http://${host}:${port}`;

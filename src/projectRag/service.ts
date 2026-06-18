@@ -147,8 +147,7 @@ export function createProjectRagService(deps: ProjectRagServiceDeps): ProjectRag
       }));
 
   const bridgeProbeImpl =
-    deps.bridgeProbeImpl ??
-    (() => probeBridgeReachability({ bridgePort: config.bridgePort }));
+    deps.bridgeProbeImpl ?? (() => probeBridgeReachability({ bridgePort: config.bridgePort }));
 
   async function sync(opts: {
     sources?: string[];

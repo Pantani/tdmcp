@@ -214,7 +214,7 @@ export async function runProjectRagCli(
       case "analyze":
         return await runAnalyze(service, parsed.positionals, parsed.values, stdoutLine, stderrLine);
       case "bridge":
-        return await runBridge(service, parsed.positionals, parsed.values, config, stdoutLine);
+        return await runBridge(service, parsed.positionals, parsed.values, stdoutLine);
       default:
         stderrLine(`tdmcp project-rag: unknown command "${parsed.command}".`);
         stderrLine(HELP);
@@ -503,7 +503,6 @@ async function runBridge(
   service: ProjectRagService,
   positionals: string[],
   flags: ParsedFlags,
-  config: ProjectRagConfig,
   out: (s: string) => void,
 ): Promise<number> {
   const sub = positionals[0]?.trim() ?? "";
