@@ -317,6 +317,16 @@ export const ConfigSchema = z.object({
    * Derivative-EULA bytes are never downloaded or redistributed.
    */
   projectRagDerivativeRoot: z.string().min(1).optional(),
+  /**
+   * Opt-in switch for the Interactive & Immersive HQ markdown source (`iihq`).
+   * OFF by default: the IIHQ "Introduction to TouchDesigner" manual is
+   * CC-BY-NC-SA (non-commercial), so it is enabled explicitly via
+   * `TDMCP_PROJECT_RAG_IIHQ=1`. When ON it ingests markdown TEXT only — never
+   * binaries — tagged `tutorial`, and every result carries a license banner.
+   */
+  projectRagIihq: z.preprocess(ragEnabledFlag, z.boolean().default(false)),
+  /** Branch/tag/SHA override for the `iihq` source (default `master`). */
+  projectRagIihqRef: z.string().min(1).optional(),
   /** Static `.toe`/`.tox` analyzer subprocess timeout (ms). */
   projectRagAnalyzeTimeoutMs: z.coerce.number().int().positive().default(30000),
   /**
@@ -430,6 +440,8 @@ function envValues(env: NodeJS.ProcessEnv): Record<string, unknown> {
     projectRagGithubTopics: env.TDMCP_PROJECT_RAG_GITHUB_TOPICS || undefined,
     projectRagTopicCap: env.TDMCP_PROJECT_RAG_TOPIC_CAP || undefined,
     projectRagDerivativeRoot: env.TDMCP_PROJECT_RAG_DERIVATIVE_ROOT || undefined,
+    projectRagIihq: env.TDMCP_PROJECT_RAG_IIHQ,
+    projectRagIihqRef: env.TDMCP_PROJECT_RAG_IIHQ_REF || undefined,
     projectRagAnalyzeTimeoutMs: env.TDMCP_PROJECT_RAG_ANALYZE_TIMEOUT_MS || undefined,
     projectRagLicenseAllowlist: env.TDMCP_PROJECT_RAG_LICENSE_ALLOWLIST || undefined,
     projectRagScoreWeights: env.TDMCP_PROJECT_RAG_SCORE_WEIGHTS || undefined,

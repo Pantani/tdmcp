@@ -25,6 +25,7 @@ export type ProjectRagLicense =
   | "PublicDomain"
   | "CC-BY"
   | "CC-BY-SA"
+  | "CC-BY-NC-SA"
   // SPDX permissivos
   | "MIT"
   | "Apache-2.0"
@@ -234,6 +235,15 @@ export interface ProjectRagConfig {
    * is found the source is skipped. Local-only enumeration (Derivative-EULA).
    */
   derivativeRoot?: string;
+  /**
+   * Enable the Interactive & Immersive HQ markdown source (`iihq`). OFF by
+   * default — the IIHQ manual is CC-BY-NC-SA (non-commercial), so it is opt-in
+   * via `TDMCP_PROJECT_RAG_IIHQ=1`. Ingests markdown TEXT only, tagged
+   * `tutorial`, with a mandatory license banner on every result.
+   */
+  iihq?: boolean;
+  /** Branch/tag/SHA override for the `iihq` source (`TDMCP_PROJECT_RAG_IIHQ_REF`). */
+  iihqRef?: string;
   /** Static-analyzer subprocess timeout. */
   analyzeTimeoutMs: number;
   scoreWeights: { technical: number; license: number; freshness: number; reliability: number };

@@ -122,6 +122,8 @@ export function createProjectRagService(deps: ProjectRagServiceDeps): ProjectRag
       ...(topicsCsv !== undefined ? { githubTopicsCsv: topicsCsv } : {}),
       ...(topicCap !== undefined ? { topicCap } : {}),
       ...(config.derivativeRoot !== undefined ? { derivativeRoot: config.derivativeRoot } : {}),
+      ...(config.iihq === true ? { iihq: true } : {}),
+      ...(config.iihqRef !== undefined ? { iihqRef: config.iihqRef } : {}),
     });
 
   const embeddings =
@@ -181,6 +183,8 @@ export function createProjectRagService(deps: ProjectRagServiceDeps): ProjectRag
             ...(config.derivativeRoot !== undefined
               ? { derivativeRoot: config.derivativeRoot }
               : {}),
+            ...(config.iihq === true ? { iihq: true } : {}),
+            ...(config.iihqRef !== undefined ? { iihqRef: config.iihqRef } : {}),
           })
         : sources;
     if (effectiveSources.length === 0) {

@@ -22,6 +22,26 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the queue degrades to a clean skip (`SourceSkippedError` → exit 0, never a
   tombstone). New service method `ProjectRagService.listDiscovery()`; `--json`
   supported. No new env var.
+- **Project RAG — Interactive & Immersive HQ tutorial source (CC-BY-NC-SA, opt-in, experimental)** —
+  a markdown-text `SourceAdapter` (`src/projectRag/sources/interactiveImmersive.ts`)
+  that ingests the chapter markdown of the
+  [Interactive & Immersive HQ "Introduction to TouchDesigner" manual](https://github.com/interactiveimmersivehq/Introduction-to-touchdesigner)
+  as `tutorial` cards. The manual is **CC-BY-NC-SA-4.0** (non-commercial +
+  share-alike + attribution, declared in the repo README), so the source is
+  **opt-in / default OFF**, enabled with `TDMCP_PROJECT_RAG_IIHQ=1`
+  (`TDMCP_PROJECT_RAG_IIHQ_REF` overrides the branch). It ingests **markdown TEXT
+  only** (meta + body, capped) and **never downloads binaries** — `img/`,
+  `TouchDesigner Example Files/`, and all non-`.md` paths are excluded, and
+  `CC-BY-NC-SA` binaries are hard-denied in the license policy regardless of the
+  allowlist. Every emitted item carries mandatory provenance + `authors: ["The
+  Interactive & Immersive HQ"]` + `license: "CC-BY-NC-SA"` /
+  `licenseConfidence: "declared"`, and a concise **license banner**
+  (`CC-BY-NC-SA · non-commercial, share-alike, attribute The Interactive &
+  Immersive HQ`) now renders on every result in both CLI search
+  (`tdmcp project-rag search`) and the MCP `project_rag_context` prompt. Fetch
+  failures (trees non-2xx / network / timeout / empty) degrade to a clean
+  `SourceSkippedError` (never a tombstone). Adds `CC-BY-NC-SA` to the Project RAG
+  license enum/schema/CLI/resource surfaces and the SPDX classifier.
 - **Project RAG — derivative-local source (opt-in, experimental)** — a local-disk
   `SourceAdapter` (`src/projectRag/sources/derivativeLocal.ts`) that discovers an
   installed TouchDesigner and indexes its shipped Palette / OP Snippets

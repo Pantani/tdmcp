@@ -10,6 +10,7 @@
 import { derivativeLocalSource } from "./derivativeLocal.js";
 import { githubRepoSource, parseRepoListEnv } from "./githubRepo.js";
 import { githubTopicSource, parseTopicListEnv } from "./githubTopic.js";
+import { interactiveImmersiveSource } from "./interactiveImmersive.js";
 import type { SourceAdapter } from "./types.js";
 
 export interface ResolveSourcesOptions {
@@ -29,6 +30,15 @@ export interface ResolveSourcesOptions {
    * OS-default install locations and skips itself when none is found.
    */
   derivativeRoot?: string;
+  /**
+   * Enable the Interactive & Immersive HQ markdown source (`iihq`). OFF by
+   * default: the IIHQ manual is CC-BY-NC-SA (non-commercial), so it is opt-in
+   * via `TDMCP_PROJECT_RAG_IIHQ=1`. When true the source ingests markdown TEXT
+   * only — never binaries — tagged `tutorial`.
+   */
+  iihq?: boolean;
+  /** Branch/tag/SHA override for the `iihq` source (`TDMCP_PROJECT_RAG_IIHQ_REF`). */
+  iihqRef?: string;
   /** Restrict to specific source names (CLI `--source`). */
   names?: string[];
 }
@@ -46,6 +56,9 @@ export function resolveProjectSources(opts: ResolveSourcesOptions = {}): SourceA
       opts.derivativeRoot !== undefined ? { installRoot: opts.derivativeRoot } : {},
     ),
   );
+  if (opts.iihq === true) {
+    all.push(interactiveImmersiveSource(opts.iihqRef !== undefined ? { ref: opts.iihqRef } : {}));
+  }
   if (opts.names === undefined || opts.names.length === 0) return all;
   const wanted = new Set(opts.names);
   return all.filter((s) => wanted.has(s.name));
@@ -72,4 +85,10 @@ export {
   githubTopicSource,
   parseTopicListEnv,
 } from "./githubTopic.js";
+export type { InteractiveImmersiveOptions } from "./interactiveImmersive.js";
+export {
+  IIHQ_REPO,
+  IIHQ_SOURCE_NAME,
+  interactiveImmersiveSource,
+} from "./interactiveImmersive.js";
 export type { RawProjectItem, SourceAdapter, SourceAdapterContext } from "./types.js";

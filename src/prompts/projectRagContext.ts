@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { licenseBanner } from "../projectRag/licensePolicy.js";
 import type { ProjectRagLicense, ProjectSearchResult } from "../projectRag/types.js";
 import { type PromptContext, type PromptRegistrar, userPrompt } from "./types.js";
 
@@ -94,16 +95,20 @@ export async function projectRagContextImpl(
   const lines: string[] = [];
   for (const result of results) {
     const tl = tagline(result);
+    const banner = licenseBanner(result.license);
+    const licenseTag = banner !== undefined ? `${result.license} — ${banner}` : result.license;
     const entry = tl
-      ? `- ${result.title} [${result.license}] — ${tl} — tdmcp://project/cards/${result.id}`
-      : `- ${result.title} [${result.license}] — tdmcp://project/cards/${result.id}`;
+      ? `- ${result.title} [${licenseTag}] — ${tl} — tdmcp://project/cards/${result.id}`
+      : `- ${result.title} [${licenseTag}] — tdmcp://project/cards/${result.id}`;
     lines.push(entry);
   }
 
   const header = `Use these local project cards as authoritative reference for: ${query}`;
   const footer =
     "Inspect each card via `read_resource` for the full provenance + binary path. " +
-    "Respect each card's license: copyleft sources require derivative work to preserve the license.";
+    "Respect each card's license: copyleft sources require derivative work to preserve the " +
+    "license; non-commercial (CC-BY-NC-SA, e.g. The Interactive & Immersive HQ) sources are " +
+    "reference-only — attribute them and do not use them in commercial deliverables.";
 
   const text = [header, "", "## Project cards", ...lines, "", footer].join("\n");
   return userPrompt(text);

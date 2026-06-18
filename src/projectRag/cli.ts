@@ -14,7 +14,7 @@
 
 import { parseArgs } from "node:util";
 import { createLogger } from "../utils/logger.js";
-import { isCopyleftLicense } from "./licensePolicy.js";
+import { licenseBanner } from "./licensePolicy.js";
 import { createProjectRagService } from "./service.js";
 import { SourceSkippedError } from "./sources/index.js";
 import type {
@@ -30,6 +30,7 @@ const VALID_LICENSES: ProjectRagLicense[] = [
   "PublicDomain",
   "CC-BY",
   "CC-BY-SA",
+  "CC-BY-NC-SA",
   "MIT",
   "Apache-2.0",
   "BSD-2-Clause",
@@ -125,6 +126,8 @@ interface StructurallyConfigLike {
   projectRagGithubTopics?: string;
   projectRagTopicCap: number;
   projectRagDerivativeRoot?: string;
+  projectRagIihq: boolean;
+  projectRagIihqRef?: string;
   projectRagAnalyzeTimeoutMs: number;
   projectRagLicenseAllowlist: string[];
   projectRagScoreWeights: {
@@ -165,6 +168,8 @@ export function toProjectRagConfig(config: StructurallyConfigLike): ProjectRagCo
   result.topicCap = config.projectRagTopicCap;
   if (config.projectRagDerivativeRoot !== undefined)
     result.derivativeRoot = config.projectRagDerivativeRoot;
+  if (config.projectRagIihq) result.iihq = true;
+  if (config.projectRagIihqRef !== undefined) result.iihqRef = config.projectRagIihqRef;
   return result;
 }
 
@@ -484,10 +489,11 @@ async function runSearch(
     return 0;
   }
   for (const r of results) {
-    const licenseBadge = isCopyleftLicense(r.license) ? `${r.license} · copyleft` : r.license;
+    const banner = licenseBanner(r.license);
     out(
-      `${r.score.toFixed(3)}  ${r.title} [${r.type}] — ${licenseBadge}\n` +
+      `${r.score.toFixed(3)}  ${r.title} [${r.type}] — ${r.license}\n` +
         `        ${r.sourceUrl}` +
+        (banner !== undefined ? `\n        license: ${banner}` : "") +
         (r.rightsNotes !== undefined ? `\n        rights: ${r.rightsNotes}` : ""),
     );
   }

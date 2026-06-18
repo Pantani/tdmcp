@@ -10,6 +10,7 @@
  * | MIT/Apache/BSD/ISC/MPL |  ✅  |   ✅   |   ✅    |       ✅       |
  * | GPL/LGPL/AGPL          |  ✅  |   ✅†  |   ✅    |       ✅       | († copyleft flag)
  * | CC-BY / CC-BY-SA       |  ✅  |   ✅†  |   ✅    |       ✅       | († attribution required)
+ * | CC-BY-NC-SA            |  ✅  |   ❌‡  |   ✅    |       ✅       | (‡ non-commercial — text-only, never store binary)
  * | Derivative-EULA        |  ✅  |   ❌   |   ✅    |       ✅       |
  * | Proprietary-Free       |  ✅  |   ❌   |   ❌    |       ❌       |
  * | Proprietary-Paid       |  ❌  |   ❌   |   ❌    |       ❌       |
@@ -26,6 +27,7 @@ export function shouldStoreProjectBinary(
 ): boolean {
   if (license === "Proprietary-Paid" || license === "Restricted") return false;
   if (license === "Derivative-EULA") return false; // never redistribute — local-only
+  if (license === "CC-BY-NC-SA") return false; // non-commercial — text-only, never store binary
   if (license === "Proprietary-Free") return false;
   if (license === "Unknown") return false;
   return allowlist.includes(license);
@@ -45,6 +47,22 @@ export function isCopyleftLicense(license: ProjectRagLicense): boolean {
     license === "LGPL-3.0" ||
     license === "AGPL-3.0"
   );
+}
+
+/**
+ * Concise, non-intrusive obligation banner shown next to a search result for
+ * licenses that carry usage obligations. Returns `undefined` for permissive
+ * licenses (no banner needed). CC-BY-NC-SA is mandatory per the IIHQ source
+ * spec: non-commercial + share-alike + attribution must appear on every result.
+ */
+export function licenseBanner(license: ProjectRagLicense): string | undefined {
+  if (license === "CC-BY-NC-SA") {
+    return "CC-BY-NC-SA · non-commercial, share-alike, attribute The Interactive & Immersive HQ";
+  }
+  if (license === "CC-BY-SA") return "CC-BY-SA · share-alike + attribution required";
+  if (license === "CC-BY") return "CC-BY · attribution required";
+  if (isCopyleftLicense(license)) return `${license} · copyleft — derivatives keep this license`;
+  return undefined;
 }
 
 /** True when bridge-analyze (F3, opt-in) is allowed for this license. */
@@ -70,6 +88,8 @@ export function licenseScore(license: ProjectRagLicense): number {
     case "CC-BY":
     case "CC-BY-SA":
       return 0.8;
+    case "CC-BY-NC-SA":
+      return 0.65;
     case "Derivative-EULA":
       return 0.85;
     case "GPL-2.0":
@@ -117,6 +137,8 @@ export function classifyFromSpdx(spdxId: string | undefined | null): ProjectRagL
     "CC-BY-3.0": "CC-BY",
     "CC-BY-SA-4.0": "CC-BY-SA",
     "CC-BY-SA-3.0": "CC-BY-SA",
+    "CC-BY-NC-SA-4.0": "CC-BY-NC-SA",
+    "CC-BY-NC-SA-3.0": "CC-BY-NC-SA",
   };
   return knownSpdx[normalized] ?? "Unknown";
 }
