@@ -198,6 +198,49 @@ describe("runBridgeAnalyze", () => {
     expect(result.status).toBe("failed");
     expect(result.error).toMatch(/load failed/);
   });
+
+  it("prefers the /api/project/load report's errors + preview over separate calls", async () => {
+    // New endpoint reports errors[] + preview_b64 off the actually-loaded project.
+    const client = makeMockClient({
+      loadProject: vi.fn().mockResolvedValue({
+        root_path: "/project1",
+        node_count: 9,
+        errors: [{ message: "a" }, { message: "b" }, { message: "c" }],
+        preview_b64: "FROM_LOAD_REPORT",
+      }),
+      // These would give different values — they must NOT be consulted.
+      getTdNodeErrors: vi.fn().mockResolvedValue({ errors: [{ message: "x" }] }),
+      getPreview: vi.fn().mockResolvedValue({ base64: "FROM_SEPARATE_STEP" }),
+    });
+    const result = await runBridgeAnalyze({
+      artifactPath,
+      clientFactory: () => client,
+    });
+    expect(result.status).toBe("ok");
+    expect(result.errorCount).toBe(3);
+    expect(result.previewPng).toBe("FROM_LOAD_REPORT");
+    expect(client.getTdNodeErrors).not.toHaveBeenCalled();
+    expect(client.getPreview).not.toHaveBeenCalled();
+  });
+
+  it("falls back to separate errors/preview steps when load report omits them (older bridge)", async () => {
+    // The exec-fallback path returns root_path/node_count but no errors/preview;
+    // the analyzer must then consult getTdNodeErrors + getPreview as before.
+    const client = makeMockClient({
+      loadProject: vi.fn().mockResolvedValue({ root_path: "/project1", node_count: 2 }),
+      getTdNodeErrors: vi.fn().mockResolvedValue({ errors: [{ message: "e1" }] }),
+      getPreview: vi.fn().mockResolvedValue({ base64: "SEPARATE_PNG" }),
+    });
+    const result = await runBridgeAnalyze({
+      artifactPath,
+      clientFactory: () => client,
+    });
+    expect(result.status).toBe("ok");
+    expect(result.errorCount).toBe(1);
+    expect(result.previewPng).toBe("SEPARATE_PNG");
+    expect(client.getTdNodeErrors).toHaveBeenCalled();
+    expect(client.getPreview).toHaveBeenCalled();
+  });
 });
 
 describe("probeBridgeReachability", () => {

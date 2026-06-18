@@ -20,6 +20,7 @@ export const ProjectRagLicenseSchema = z.enum([
   "PublicDomain",
   "CC-BY",
   "CC-BY-SA",
+  "CC-BY-NC-SA",
   "MIT",
   "Apache-2.0",
   "BSD-2-Clause",

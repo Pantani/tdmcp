@@ -374,6 +374,26 @@ export const ProjectAnalysisSchema = z.object({
 });
 export type TdProjectAnalysis = z.infer<typeof ProjectAnalysisSchema>;
 
+// --- Quarantine project load (POST /api/project/load) ---
+// First-class loader for the Project RAG quarantine analyzer. `errors` /
+// `preview_b64` are reported off the actually-loaded project, so the analyzer
+// can use them directly instead of separate errors/preview round-trips.
+export const ProjectLoadSchema = z.object({
+  root_path: z.string(),
+  node_count: z.number().int().default(0),
+  errors: z
+    .array(
+      z.object({
+        path: z.string().optional(),
+        message: z.string(),
+        level: z.string().optional(),
+      }),
+    )
+    .default([]),
+  preview_b64: z.string().optional(),
+});
+export type TdProjectLoad = z.infer<typeof ProjectLoadSchema>;
+
 // --- Custom-parameter readout (GET /api/nodes/<path>/custom_params) ---
 // Structured endpoint for serialize_network + inspect_component. Every field
 // optional so older bridges (or per-par failures) round-trip cleanly. ``value``

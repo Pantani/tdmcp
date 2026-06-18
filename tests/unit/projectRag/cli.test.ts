@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ProjectRagConfig, ProjectRagService } from "../../../src/projectRag/index.js";
 import { runProjectRagCli } from "../../../src/projectRag/index.js";
+import { SourceSkippedError } from "../../../src/projectRag/sources/index.js";
 
 function makeConfig(overrides: Partial<ProjectRagConfig> = {}): ProjectRagConfig {
   return {
@@ -46,6 +47,7 @@ const noopSvc: ProjectRagService = {
   listSources: async () => [
     { name: "derivative-local", displayName: "Local TD", status: "planned", reason: "F1" },
   ],
+  listDiscovery: async () => [],
   analyze: async () => ({
     status: "skipped",
     reason: "no bridge",
@@ -57,6 +59,94 @@ const noopSvc: ProjectRagService = {
     reason: "bridge offline at http://127.0.0.1:9981",
   }),
 };
+
+describe("projectRag sources --discovery", () => {
+  const discoveryItem = {
+    title: "Clean repo",
+    url: "https://github.com/foo/clean",
+    section: "Components",
+    description: "keep me",
+    provenance: {
+      sourceName: "awesome-touchdesigner" as const,
+      sourceUrl:
+        "https://raw.githubusercontent.com/monkeymonk/awesome-touchdesigner/master/README.md",
+      discoveredAt: "2026-06-18T00:00:00.000Z",
+    },
+    license: "Unknown" as const,
+    licenseConfidence: "unknown" as const,
+    suggestOnly: true as const,
+  };
+
+  it("lists the suggest-only queue and exits 0", async () => {
+    const svc: ProjectRagService = { ...noopSvc, listDiscovery: async () => [discoveryItem] };
+    const io = captureIO();
+    const code = await runProjectRagCli(["sources", "--discovery"], {
+      config: makeConfig(),
+      service: svc,
+      stdout: io.stdout,
+      stderr: io.stderr,
+    });
+    expect(code).toBe(0);
+    const text = io.out.join("");
+    expect(text).toContain("suggest-only");
+    expect(text).toContain("Clean repo");
+    expect(text).toContain("https://github.com/foo/clean");
+  });
+
+  it("--discovery --json emits the raw items", async () => {
+    const svc: ProjectRagService = { ...noopSvc, listDiscovery: async () => [discoveryItem] };
+    const io = captureIO();
+    const code = await runProjectRagCli(["sources", "--discovery", "--json"], {
+      config: makeConfig(),
+      service: svc,
+      stdout: io.stdout,
+      stderr: io.stderr,
+    });
+    expect(code).toBe(0);
+    const parsed = JSON.parse(io.out.join("")) as Array<{ suggestOnly: boolean; license: string }>;
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0]?.suggestOnly).toBe(true);
+    expect(parsed[0]?.license).toBe("Unknown");
+  });
+
+  it("reports SourceSkippedError as a clean skip (exit 0, stderr)", async () => {
+    const svc: ProjectRagService = {
+      ...noopSvc,
+      listDiscovery: async () => {
+        throw new SourceSkippedError("awesome-touchdesigner", "README request failed: HTTP 500");
+      },
+    };
+    const io = captureIO();
+    const code = await runProjectRagCli(["sources", "--discovery"], {
+      config: makeConfig(),
+      service: svc,
+      stdout: io.stdout,
+      stderr: io.stderr,
+    });
+    expect(code).toBe(0);
+    expect(io.err.join("")).toContain("discovery skipped: README request failed: HTTP 500");
+  });
+
+  it("reports a skip as JSON when --json is set", async () => {
+    const svc: ProjectRagService = {
+      ...noopSvc,
+      listDiscovery: async () => {
+        throw new SourceSkippedError("awesome-touchdesigner", "offline");
+      },
+    };
+    const io = captureIO();
+    const code = await runProjectRagCli(["sources", "--discovery", "--json"], {
+      config: makeConfig(),
+      service: svc,
+      stdout: io.stdout,
+      stderr: io.stderr,
+    });
+    expect(code).toBe(0);
+    const parsed = JSON.parse(io.out.join("")) as { skipped: boolean; reason: string };
+    expect(parsed.skipped).toBe(true);
+    expect(parsed.reason).toBe("offline");
+  });
+});
 
 describe("projectRag CLI gating + help", () => {
   it("--help prints help and exits 0", async () => {

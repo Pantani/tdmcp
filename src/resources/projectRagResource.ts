@@ -26,6 +26,7 @@ const VALID_LICENSES: readonly ProjectRagLicense[] = [
   "PublicDomain",
   "CC-BY",
   "CC-BY-SA",
+  "CC-BY-NC-SA",
   "MIT",
   "Apache-2.0",
   "BSD-2-Clause",

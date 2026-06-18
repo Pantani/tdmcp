@@ -99,6 +99,51 @@ class ExecGateTests(unittest.TestCase):
             ac._route("POST", "/api/nodes/project1/geo1/method", {}, {"method": "cook"})
 
 
+def _clear_quarantine_env():
+    os.environ.pop("TDMCP_PROJECT_RAG_QUARANTINE", None)
+
+
+class QuarantineLoadGateTests(unittest.TestCase):
+    """`POST /api/project/load` is default-DENY: opening a .toe/.tox replaces the
+    running project, so only a bridge explicitly marked as a throwaway quarantine
+    instance (TDMCP_PROJECT_RAG_QUARANTINE) may honor it — regardless of
+    TDMCP_BRIDGE_ALLOW_EXEC."""
+
+    def setUp(self):
+        _clear_quarantine_env()
+
+    def tearDown(self):
+        _clear_quarantine_env()
+
+    def test_disabled_by_default(self):
+        self.assertFalse(ac._quarantine_load_enabled())
+
+    def test_enabled_values(self):
+        for value in ("1", "true", "YES", "on", " On "):
+            os.environ["TDMCP_PROJECT_RAG_QUARANTINE"] = value
+            self.assertTrue(ac._quarantine_load_enabled(), value)
+
+    def test_disabled_values(self):
+        for value in ("0", "false", "no", "off", "", "maybe"):
+            os.environ["TDMCP_PROJECT_RAG_QUARANTINE"] = value
+            self.assertFalse(ac._quarantine_load_enabled(), value)
+
+    def test_route_blocks_load_when_not_quarantine(self):
+        # Even with exec enabled, a non-quarantine bridge refuses the load route.
+        with self.assertRaises(PermissionError):
+            ac._route("POST", "/api/project/load", {}, {"path": "/x.toe"})
+
+    def test_route_dispatches_load_when_quarantine(self):
+        os.environ["TDMCP_PROJECT_RAG_QUARANTINE"] = "1"
+        saved = ac.project_load_service
+        ac.project_load_service = mock.MagicMock(name="project_load_service")
+        try:
+            ac._route("POST", "/api/project/load", {}, {"path": "/x.toe", "timeout_ms": 5000})
+            ac.project_load_service.load.assert_called_once_with("/x.toe", 5000)
+        finally:
+            ac.project_load_service = saved
+
+
 class RoutingTests(unittest.TestCase):
     """Dispatch logic, with the service layer swapped for recorders."""
 
