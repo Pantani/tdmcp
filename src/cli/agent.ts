@@ -399,6 +399,10 @@ import {
   addCustomParametersSchema,
 } from "../tools/layer2/addCustomParameters.js";
 import { animateParameterImpl, animateParameterSchema } from "../tools/layer2/animateParameter.js";
+import {
+  applyCreativeCardImpl,
+  applyCreativeCardSchema,
+} from "../tools/layer2/applyCreativeCard.js";
 import { applyLutImpl, applyLutSchema } from "../tools/layer2/applyLut.js";
 import { arrangeNetworkImpl, arrangeNetworkSchema } from "../tools/layer2/arrangeNetwork.js";
 import {
@@ -2333,6 +2337,13 @@ const COMMANDS: Record<string, Command> = {
     "Inline inspection snapshot for one operator: small base64 thumbnail + errors (self + parents) + top-N changed-from-default parameters + 1-line cook stats. Single-round-trip 'is this op alive/healthy?' read.",
     { mutates: false },
   ),
+  // v0.6.0 — Creative RAG inspiration → execution loop:
+  "apply-creative-card": r(
+    applyCreativeCardSchema,
+    applyCreativeCardImpl,
+    "Read a Creative RAG card and route to one of its whitelisted Layer 1 tdmcpAffordances with optional overrides (use `dry_run: true` to preview).",
+    { mutates: true },
+  ),
 };
 
 const SPECIAL_COMMANDS: AgentCommandCatalogEntry[] = [
@@ -2847,6 +2858,11 @@ const ENV_NAMES: Record<keyof TdmcpConfig, string> = {
   ragBackend: "TDMCP_RAG_BACKEND",
   ragSmithsonianKey: "TDMCP_RAG_SMITHSONIAN_KEY",
   ragEuropeanaKey: "TDMCP_RAG_EUROPEANA_KEY",
+  ragApplyCard: "TDMCP_RAG_APPLY_CARD",
+  ragInjectAsk: "TDMCP_RAG_INJECT_ASK",
+  ragInjectK: "TDMCP_RAG_INJECT_K",
+  ragInjectTimeoutMs: "TDMCP_RAG_INJECT_TIMEOUT_MS",
+  ragProbeTimeoutMs: "TDMCP_RAG_PROBE_TIMEOUT_MS",
 };
 const SECRET_ENV: ReadonlySet<keyof TdmcpConfig> = new Set([
   "bridgeToken",

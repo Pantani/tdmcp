@@ -152,8 +152,9 @@ describe("tdmcp doctor", () => {
     server.use(llmModels("qwen2.5:3b"));
     const r = await runDoctor({ config: makeConfig(), makeCtx });
     expect(r.stdout).toContain("tdmcp doctor");
-    // one line per check (bridge, config, tools, llm, vault, bridge_token, profile_dir)
-    expect(r.report.checks).toHaveLength(7);
+    // one line per check (bridge, config, tools, llm, vault, bridge_token, profile_dir,
+    // plus Creative RAG: rag_ollama, rag_embedding_model, rag_data_dir)
+    expect(r.report.checks).toHaveLength(10);
     for (const c of r.report.checks) expect(r.stdout).toContain(c.title);
   });
 

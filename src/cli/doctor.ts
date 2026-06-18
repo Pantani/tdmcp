@@ -17,6 +17,11 @@ import { friendlyTdError } from "../td-client/types.js";
 import type { ToolContext } from "../tools/types.js";
 import { loadConfig, type TdmcpConfig, tdBaseUrl } from "../utils/config.js";
 import { silentLogger } from "../utils/logger.js";
+import {
+  type CreativeRagProbes,
+  runCreativeRagChecks,
+  suggestFixCreativeRag,
+} from "./doctorCreativeRag.js";
 import { type InstallBridgeResult, runInstallBridge } from "./installBridge.js";
 
 /**
@@ -91,6 +96,8 @@ export interface RunDoctorOptions {
   profileDirPath?: string;
   /** Overridable profile dir create hook for tests; defaults to mkdir -p. */
   profileDirRepair?: (dirPath: string) => void;
+  /** Inject Creative RAG probe overrides (fetch + fs) for tests; defaults to real network and fs. */
+  creativeRagProbes?: CreativeRagProbes;
   /** Overridable install-bridge runner for tests; defaults to local install-bridge --verify. */
   runInstallBridge?: (port: number) => Promise<InstallBridgeResult>;
   /** Overridable Textport auto-install runner for tests; defaults to a bounded macOS AppleScript. */
@@ -631,6 +638,10 @@ function suggestFix(check: DoctorCheck, config: TdmcpConfig): string | undefined
         : undefined;
     case "config":
       return "Fix the invalid setting shown above (check your env vars / config file), then re-run `tdmcp doctor`.";
+    case "rag_ollama":
+    case "rag_embed_model":
+    case "rag_data_dir":
+      return suggestFixCreativeRag(check, config);
     default:
       return undefined;
   }
@@ -766,6 +777,8 @@ export async function runDoctor(opts: RunDoctorOptions = {}): Promise<DoctorResu
   const profileDirRepair =
     opts.profileDirRepair ?? ((dir: string) => mkdirSync(dir, { recursive: true }));
 
+  const ragChecks = await runCreativeRagChecks(config, opts.creativeRagProbes);
+
   let checks: DoctorCheck[] = [
     await checkBridge(ctx),
     checkConfig(config),
@@ -774,6 +787,7 @@ export async function runDoctor(opts: RunDoctorOptions = {}): Promise<DoctorResu
     checkVault(config, vaultProbe),
     checkBridgeToken(config),
     checkProfileDir(profileDirPath),
+    ...ragChecks,
   ];
 
   let allRepairs: NonNullable<DoctorReport["repairs"]> = [];

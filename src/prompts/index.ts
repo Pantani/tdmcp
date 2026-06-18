@@ -5,6 +5,7 @@ import { registerAutoFix } from "./autoFix.js";
 import { registerAutoVjDirector } from "./autoVjDirector.js";
 import { registerBeatReactiveDesigner } from "./beatReactiveDesigner.js";
 import { registerColorStory } from "./colorStory.js";
+import { registerCreativeInspiration } from "./creativeInspiration.js";
 import { registerCritiqueVisual } from "./critiqueVisual.js";
 import { registerDebugNetwork } from "./debugNetwork.js";
 // Campaign Wave 6 — AI & LLM (backlog 2026-05-29):
@@ -67,6 +68,8 @@ export function registerAllPrompts(server: McpServer, ctx: PromptContext): void 
   registerDesignBrief(server, ctx);
   registerMotionCritique(server, ctx);
   registerMatchReferenceLoop(server, ctx);
+  // v0.6.0 — Creative RAG mood-board prompt:
+  registerCreativeInspiration(server, ctx);
 }
 
 export type { PromptContext } from "./types.js";
