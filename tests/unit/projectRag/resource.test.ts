@@ -44,6 +44,16 @@ describe("projectRag resource gating", () => {
         search: async () => [],
         getCard: async () => undefined,
         listSources: async () => [],
+        analyze: async () => ({
+          status: "skipped",
+          reason: "no bridge",
+          bridgeUrl: "http://127.0.0.1:9981",
+        }),
+        probeBridge: async () => ({
+          reachable: false,
+          bridgeUrl: "http://127.0.0.1:9981",
+          reason: "offline",
+        }),
       },
     };
     // biome-ignore lint/suspicious/noExplicitAny: minimal McpServer stub.

@@ -76,7 +76,13 @@ export function createTdmcpServer(
     creativeRag: ctx.creativeRag,
     projectRag: ctx.projectRag,
   });
-  registerAllPrompts(server, { knowledge, recipes, logger, creativeRag: ctx.creativeRag });
+  registerAllPrompts(server, {
+    knowledge,
+    recipes,
+    logger,
+    creativeRag: ctx.creativeRag,
+    projectRag: ctx.projectRag,
+  });
 
   // Defer the stats log to after we return so the heavy knowledge-base warmup
   // doesn't gate the transport from accepting connections. The version is cheap

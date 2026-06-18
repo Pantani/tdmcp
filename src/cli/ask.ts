@@ -234,7 +234,9 @@ export async function runAsk(argv: string[] = [], deps: AskRuntimeDeps = {}): Pr
     // No autostart in the harness — just continue; the turn itself will fail loudly.
   }
 
-  const tools = opts.toolsOff ? [] : resolveTools(config.llmTier);
+  const tools = opts.toolsOff
+    ? []
+    : resolveTools(config.llmTier, { projectRag: ctx.projectRag !== undefined });
   const toolCalls: { name: string; ok: boolean }[] = [];
   let answer: string | undefined;
   let errorMessage: string | undefined;

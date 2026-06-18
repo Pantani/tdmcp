@@ -8,6 +8,50 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Project RAG — MCP prompts, resources, copilot tool & CLI cross-link (opt-in, experimental, F4)** —
+  the AI surface for the local Project RAG repertoire lands. New MCP prompt
+  `project_rag_context` (`src/prompts/projectRagContext.ts`): runs
+  `ctx.projectRag.search()` over the user query and returns a top-k card
+  listing (title + license + `tdmcp://project/cards/{id}`) as authoritative
+  reference; silently degrades to a stock prompt when Project RAG is off, with
+  `query`/`k`/`license` args. New MCP resource `tdmcp://project/sources`
+  (`src/resources/projectRagSourcesResource.ts`): lists configured sources +
+  status (`ready`/`skipped`/`planned`/`failed`) so the agent knows what is
+  not indexed before searching. New read-only LLM copilot tool
+  `project_rag_search` (`src/llm/projectRagSearchTool.ts`, `mutates: false`):
+  exposed in every tier of `resolveTools(...)` only when `ctx.projectRag` is
+  defined — when disabled, the tool is absent from the agent catalog, not
+  refused at call time. New `tdmcp creative-rag search` cross-link tip
+  (`src/creativeRag/crossLink.ts`): when results are sparse (≤ 2) and
+  `TDMCP_PROJECT_RAG_ENABLED=1`, prints a one-line stderr suggestion to
+  try `tdmcp project-rag search "<q>"`; suppressed in `--json` mode so
+  machine output is unchanged. All offline, additive — gated by
+  `TDMCP_RAG_ENABLED=1 && TDMCP_PROJECT_RAG_ENABLED=1`.
+- **Project RAG — bridge-quarantine analysis (opt-in, experimental, F3)** —
+  two artifact analyzers for downloaded `.toe`/`.tox` files, both fully
+  isolated from the user's main TouchDesigner. (1) Static analyzer
+  `runToeExpand` (`src/projectRag/extractors/toeExpand.ts`): wraps an
+  external `toeexpand`-style CLI in a quarantine subprocess (`spawn()` only,
+  reduced env of `PATH`/`HOME`/`LANG=C.UTF-8`, 30 s hard timeout, group-kill
+  via `detached:true` + `kill(-pgid)`, UUID temp cwd with `try/finally`
+  cleanup); returns `ok`/`failed`/`skipped` (the latter when the binary is
+  not on `PATH`). Configurable via `TDMCP_PROJECT_RAG_TOEEXPAND_BIN` and
+  `TDMCP_PROJECT_RAG_ANALYZE_TIMEOUT_MS`. (2) Dynamic analyzer
+  `runBridgeAnalyze` (`src/projectRag/extractors/bridgeAnalyze.ts`):
+  instantiates a NEW `TouchDesignerClient` bound to
+  `TDMCP_PROJECT_RAG_BRIDGE_PORT` (default **9981**, refuses `9980`),
+  reachability-probes via `getInfo`, then calls `getNetworkErrors("/")` and
+  `getPreview("/project1/out1")`. Offline bridge degrades to `skipped` (not
+  `failed`) — `exit 0` is preserved as the safe default. New CLI surface:
+  `tdmcp project-rag analyze <path>` (one-shot ad-hoc), `tdmcp project-rag
+  bridge install` (docs-driven walkthrough + reachability probe), and
+  `tdmcp project-rag sync --bridge` (post-sync analyze pass over every
+  permissive-licence card with a persisted binary; idempotent — already
+  `analysisStatus: ok` cards are skipped). Card schema v2 gains
+  `analysisStatus` + `analysisReason` (excluded from `contentHash` so
+  unchanged source content remains a cache-hit even after analysis). All
+  18+ new vitest cases are offline (no msw, no TD required) — live
+  validation on a real 9981 bridge is unverified until a user provides one.
 - **Project RAG — multi-source + tuned scoring (opt-in, experimental, F2)** —
   `DBraun/TouchDesigner_Shared` (GPL-3.0) added to the default seed list with
   the copyleft flag rendered in CLI/MCP search output as `GPL-3.0 · copyleft`.

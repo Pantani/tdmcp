@@ -47,6 +47,7 @@ import {
 } from "../tools/layer3/updateTdNodeParameters.js";
 import type { ToolContext } from "../tools/types.js";
 import type { OpenAITool } from "./client.js";
+import { createProjectRagSearchTool } from "./projectRagSearchTool.js";
 
 // biome-ignore lint/suspicious/noExplicitAny: args are validated by each tool's zod schema before use.
 type Runner = (ctx: ToolContext, args: any) => CallToolResult | Promise<CallToolResult>;
@@ -233,13 +234,38 @@ export const CREATIVE_TOOLS: LlmTool[] = [
 export type ToolTier = "standard" | "safe" | "creative";
 
 /**
+ * Optional knobs for {@link resolveTools}. Used to opt-in features that should
+ * be advertised in the LLM tool catalog only when their underlying service is
+ * enabled (e.g. Project RAG search is only exposed when
+ * `TDMCP_PROJECT_RAG_ENABLED=1` and the service is wired into `ctx.projectRag`).
+ */
+export interface ResolveToolsOptions {
+  /**
+   * When true, append the read-only `project_rag_search` LLM tool to every
+   * tier. Gated at catalog assembly so a disabled server never advertises the
+   * tool. Should be `true` only when `ctx.projectRag !== undefined`.
+   */
+  projectRag?: boolean;
+}
+
+/**
  * Resolve the tool set for a tier. `safe` drops every mutating tool (read-only copilot);
  * `creative` adds the curated Layer-1 generators on top of `standard`.
  */
-export function resolveTools(tier: ToolTier = "standard"): LlmTool[] {
-  if (tier === "safe") return LLM_TOOLS.filter((tool) => !tool.mutates);
-  if (tier === "creative") return [...LLM_TOOLS, ...CREATIVE_TOOLS];
-  return LLM_TOOLS;
+export function resolveTools(
+  tier: ToolTier = "standard",
+  opts: ResolveToolsOptions = {},
+): LlmTool[] {
+  const base =
+    tier === "safe"
+      ? LLM_TOOLS.filter((tool) => !tool.mutates)
+      : tier === "creative"
+        ? [...LLM_TOOLS, ...CREATIVE_TOOLS]
+        : LLM_TOOLS;
+  if (opts.projectRag === true) {
+    return [...base, createProjectRagSearchTool()];
+  }
+  return base;
 }
 
 /** Flatten a CallToolResult's text blocks into a single string. */

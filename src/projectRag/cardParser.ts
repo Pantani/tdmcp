@@ -89,9 +89,10 @@ function canonicalForHash(card: ProjectRagCard): Record<string, unknown> {
     exposedParams: card.exposedParams,
     scriptsDat: card.scriptsDat,
     dependencies: card.dependencies,
-    // binaryPath / binaryHash / previewPath are persistence metadata. Excluding
-    // them keeps a re-sync that re-downloads the same binary a cache hit instead
-    // of triggering a spurious re-embed.
+    // binaryPath / binaryHash / previewPath / analysisStatus are persistence
+    // metadata. Excluding them keeps a re-sync that re-downloads the same
+    // binary or re-runs the bridge analyzer a cache hit instead of triggering
+    // a spurious re-embed.
     tdmcpAffordances: card.tdmcpAffordances,
     tombstone: card.tombstone,
     body: card.body,

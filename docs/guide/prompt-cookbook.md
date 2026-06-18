@@ -1670,6 +1670,90 @@ then hand the affordances + palette to whichever Layer 1 tool fits — for examp
 scene". The cookbook stops here; the actual build is whichever Layer 1 tool the
 affordances point at.*
 
+## Project library (Project RAG)
+
+The **project repertoire** is the developer-side cousin of Creative RAG: an
+opt-in local index of open-licensed TouchDesigner *projects, components and
+snippets* — `.toe`/`.tox` files and shader excerpts pulled from curated GitHub
+sources — so the agent can ground an effect in **real working code** before
+writing any new node. The CLI is `tdmcp project-rag <sync|index|search>`;
+`tdmcp://project/cards/{id}`, `tdmcp://project/search{?q,k,license,type,operator,tags}`
+and the new `tdmcp://project/sources` are read-only MCP resources. The
+`project_rag_context` MCP prompt and the `project_rag_search` copilot tool
+expose the same index to LLM clients — both are gated by
+`TDMCP_RAG_ENABLED=1 && TDMCP_PROJECT_RAG_ENABLED=1`.
+
+### When to use Project RAG vs Creative RAG
+
+Two RAGs, two questions. Creative RAG answers *"what should this look like?"*
+— it surfaces artworks, palettes and visual language. Project RAG answers
+*"how is this actually built in TD?"* — it surfaces working `.toe`/`.tox`
+networks and operator wiring you can read or adapt. Mixing them is the point.
+
+> *"I want to build a hand-tracking feedback piece. First run the
+> `project_rag_context` prompt with `query: 'hand tracking mediapipe feedback'`
+> so I can see how real TD projects wire it; then pick the most permissive
+> one and adapt the operator chain into a new network."*
+
+```text
+tdmcp://project/search?q=hand+tracking+mediapipe+feedback&k=5
+→
+0.823  MediaPipe Hand Pose Demo [project] — MIT — tdmcp://project/cards/abc123…
+0.781  Real-time Hand Tracker [project] — CC-BY-4.0 — tdmcp://project/cards/def456…
+0.704  Feedback Optical Flow Hands [snippet] — Apache-2.0 — tdmcp://project/cards/789abc…
+```
+
+*The prompt returns titles, licenses and `tdmcp://project/cards/{id}` URIs —
+not opaque embeddings. Inspect each card via `read_resource` to see the full
+operator list and the path to the binary you can open in TD. Use Creative
+RAG for **palette/mood**; use Project RAG for **the TD wiring that makes it
+move**.*
+
+### Finding real examples before coding an effect
+
+When the model wants to *generate* a new effect, the safest first step is
+**search before synthesis** — find what already exists, in code, under a
+license you can reuse.
+
+> *"I'm about to build an audio-reactive trails network. Before you create any
+> ops, run `tdmcp project-rag search 'audio reactive trails feedback'
+> --license CC0,MIT,Apache-2.0 --k 5` and quote the top three cards
+> (title + license + URI). Open the most permissive one via
+> `tdmcp://project/cards/{id}` and tell me which operators it uses. Then we
+> decide whether to copy, adapt, or build fresh."*
+
+```bash
+tdmcp project-rag search "audio reactive trails feedback" \
+  --license CC0,MIT,Apache-2.0 --k 5
+```
+
+*The CLI mirrors `tdmcp creative-rag search` — same flag layout, same
+license-gated reuse story. The difference is that the cards here point to
+runnable TD networks instead of static artworks, and `--operator AudioSpectrumCHOP`
+narrows further to cards that actually wire a given op. When sparse results
+come back on the creative side, the CLI also prints a stderr tip suggesting
+`tdmcp project-rag search "<q>"` as a cross-link, so the agent can pivot
+between the two libraries without losing the query.*
+
+> *"Tonight I need a quick fog-organism look. List configured Project RAG
+> sources first via `tdmcp://project/sources` — I want to know which are
+> ready vs planned before searching, so I don't chase cards that aren't
+> indexed yet."*
+
+```json
+[
+  { "name": "github-repo", "displayName": "GitHub seed repos", "status": "ready" },
+  { "name": "github-topic", "displayName": "GitHub topic scanner", "status": "ready" },
+  { "name": "matthewragan", "displayName": "Matthew Ragan", "status": "planned" }
+]
+```
+
+*`tdmcp://project/sources` is the honest map of what's indexed locally. A
+`status: "planned"` source means the adapter exists but isn't wired into your
+current sync — useful context when search results look thinner than you
+expected. Pair it with the `project_rag_context` prompt to let the agent
+reason about coverage before it commits to a build path.*
+
 ## Working from your own notes (Obsidian vault)
 
 If you keep an [Obsidian vault](/reference/tools#obsidian-vault) wired up:

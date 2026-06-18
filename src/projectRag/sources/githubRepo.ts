@@ -312,7 +312,7 @@ function buildTags(meta: GithubRepoMetadata, fileNames: string[]): string[] {
   return [...tags].sort();
 }
 
-function inferType(meta: GithubRepoMetadata, fileNames: string[]): ProjectRagType {
+function inferType(_meta: GithubRepoMetadata, fileNames: string[]): ProjectRagType {
   const hasToe = fileNames.some((n) => n.toLowerCase().endsWith(".toe"));
   const hasTox = fileNames.some((n) => n.toLowerCase().endsWith(".tox"));
   if (hasToe && !hasTox) return "project";

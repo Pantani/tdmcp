@@ -10,6 +10,7 @@
 
 import { parseArgs } from "node:util";
 import { createLogger } from "../utils/logger.js";
+import { buildProjectRagCrossLinkTip } from "./crossLink.js";
 import { friendlyOllamaError } from "./ollamaErrors.js";
 import { createCreativeRagService } from "./service.js";
 import type {
@@ -71,6 +72,12 @@ export interface RunCreativeRagCliDeps {
   config?: CreativeRagConfig;
   stdout?: (s: string) => void;
   stderr?: (s: string) => void;
+  /**
+   * When true AND the search returns few results in text mode, the CLI prints
+   * a one-line stderr suggestion to try `tdmcp project-rag search`. Reflects
+   * `TDMCP_RAG_ENABLED=1 && TDMCP_PROJECT_RAG_ENABLED=1`. Default false.
+   */
+  projectRagEnabled?: boolean;
 }
 
 interface StructurallyConfigLike {
@@ -154,7 +161,14 @@ export async function runCreativeRagCli(
       case "index":
         return await runIndex(service, parsed.values, stdoutLine);
       case "search":
-        return await runSearch(service, parsed.positionals, parsed.values, stdoutLine, stderrLine);
+        return await runSearch(
+          service,
+          parsed.positionals,
+          parsed.values,
+          stdoutLine,
+          stderrLine,
+          deps.projectRagEnabled === true,
+        );
       default:
         stderrLine(`tdmcp creative-rag: unknown command "${parsed.command}".`);
         stderrLine(HELP);
@@ -295,6 +309,7 @@ async function runSearch(
   flags: ParsedFlags,
   out: (s: string) => void,
   err: (s: string) => void,
+  projectRagEnabled: boolean,
 ): Promise<number> {
   const query = positionals.join(" ").trim();
   if (query.length === 0) {
@@ -312,16 +327,25 @@ async function runSearch(
 
   if (results.length === 0) {
     out("No results.");
-    return 0;
+  } else {
+    for (const result of results) {
+      out(
+        `${result.score.toFixed(3)}  ${result.title} [${result.type}] — ${result.license}\n` +
+          `        ${result.sourceUrl}` +
+          (result.rightsNotes !== undefined ? `\n        rights: ${result.rightsNotes}` : ""),
+      );
+    }
   }
 
-  for (const result of results) {
-    out(
-      `${result.score.toFixed(3)}  ${result.title} [${result.type}] — ${result.license}\n` +
-        `        ${result.sourceUrl}` +
-        (result.rightsNotes !== undefined ? `\n        rights: ${result.rightsNotes}` : ""),
-    );
-  }
+  // Project RAG F4 — informational cross-link tip when results are sparse and
+  // the local Project RAG is enabled. Stderr-only; does not affect search.
+  const tip = buildProjectRagCrossLinkTip({
+    query,
+    resultCount: results.length,
+    projectRagEnabled,
+    json: flags.json,
+  });
+  if (tip !== undefined) err(tip);
   return 0;
 }
 

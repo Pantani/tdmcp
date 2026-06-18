@@ -1,7 +1,7 @@
 # Project RAG
 
-> Status: **experimental — F2 (multi-source + scoring tunado)**.
-> Análise via bridge-quarentena fica para F3.
+> Status: **experimental — F3 (análise via bridge-quarentena, opt-in)**.
+> F0+F1+F2+F3 publicados. F4 (prompts/resources/tool de copilot) pendente.
 
 Project RAG é o irmão **técnico/de projeto** do
 [Creative RAG](./CREATIVE_RAG.md). Indexa **projetos, componentes, snippets
@@ -225,12 +225,167 @@ Registrados SOMENTE quando as duas flags estão on:
 - `tdmcp://project/cards/{id}` — um card (id = sha256 de `provenance.canonical`).
 - `tdmcp://project/search{?q,k,license,type,tags,operator}` — busca cosine;
   todo resultado carrega provenance + license + rightsNotes.
+- `tdmcp://project/sources` *(F4)* — fontes configuradas + status
+  (`ready` / `skipped` / `planned` / `failed`), pra o agente saber quais
+  fontes estão indexadas antes de buscar.
+
+## F4 — superfície AI (prompts, tool de copiloto, cross-link no CLI)
+
+F4 é a **camada AI** em cima de F0–F3. Tudo offline, opt-in, gated por
+`TDMCP_RAG_ENABLED=1 && TDMCP_PROJECT_RAG_ENABLED=1`.
+
+### Prompt MCP — `project_rag_context`
+
+Roda `service.search(query, k, { license })` no índice Project RAG
+configurado e devolve uma mensagem de prompt listando os top-k cards como
+*referência autoritativa* — título, licença, notas de direitos (se houver)
+e `tdmcp://project/cards/{id}`. Args: `query` (texto livre), `k` (1–10,
+default 5), `license` (CSV tipo `CC0,MIT,Apache-2.0`).
+
+Se a Project RAG não estiver habilitada ou o service der throw, o prompt
+**degrada silenciosamente** para um prompt padrão que menciona o problema e
+segue com o conhecimento próprio do modelo — ele nunca bloqueia o turn. O
+mesmo fallback vale para um resultado vazio (com a dica
+`tdmcp project-rag sync`).
+
+### Resource MCP — `tdmcp://project/sources`
+
+Lista JSON read-only de `{ name, displayName, status, reason? }` para que
+um agente saiba, antes de buscar, quais fontes estão indexadas localmente
+vs. configuradas mas skipped/planned/failed.
+
+### Tool de copiloto — `project_rag_search`
+
+Tool LLM read-only (`mutates: false`) exposta para `tdmcp ask`,
+`tdmcp chat`, o chat server loopback e o copiloto Telegram. Args espelham
+o CLI: `query`, `k` (default 5, máx 20), e arrays opcionais de filtro
+`license`, `type`, `operator`, `tags`. A tool é incluída no catálogo por
+`resolveTools(tier, { projectRag: ctx.projectRag !== undefined })` — então
+quando a Project RAG está desabilitada, **a tool fica AUSENTE do catálogo,
+não recusada na call**. Um modelo pequeno nunca vê uma tool que não pode
+usar.
+
+### Dica de cross-link no CLI (Creative RAG → Project RAG)
+
+Quando `tdmcp creative-rag search` retorna poucos resultados (default
+threshold ≤ 2) **e** a Project RAG está enabled **e** o usuário está em
+modo texto (não `--json`), o CLI imprime uma única linha no stderr:
+
+```text
+tip: also try `tdmcp project-rag search "<query>"` — more sources may match in the local project repertoire.
+```
+
+A sugestão é puramente informativa — não altera o comportamento da busca,
+saída para máquina (`--json`) nem exit code. Existe pra que um artista que
+tentou a RAG errada primeiro consiga pivotar sem reler os docs.
+
+## F3 — análise via bridge-quarentena (opt-in)
+
+F3 entrega **dois analisadores de artefato** para `.toe`/`.tox` baixados.
+Ambos rodam completamente fora do TouchDesigner principal do usuário —
+nenhum deles consegue atrapalhar um show ao vivo.
+
+### Analisador estático (`toeExpand`)
+
+Wrapper para um CLI externo tipo `toeexpand` (o binário que você colocar
+no `PATH`), executado em subprocesso de quarentena:
+
+- Apenas `spawn()` — sem interpolação de shell.
+- Ambiente reduzido: somente `PATH`, `HOME`, `LANG=C.UTF-8`. Nenhum `TDMCP_*` vaza.
+- Timeout duro de 30s (configurável via `TDMCP_PROJECT_RAG_ANALYZE_TIMEOUT_MS`).
+- Group-kill no timeout (`detached:true` + `kill(-pgid)`).
+- `cwd` UUID por chamada em `os.tmpdir()/tdmcp-prag-toe/` — limpeza
+  `try/finally` em todo caminho de saída.
+- O `.toe`/`.tox` é copiado para dentro do cwd quarentena; o Node nunca o abre.
+- Quando o binário não está no `PATH`, retorna `skipped` (NÃO `failed`), para
+  que um sync normal sem `toeexpand` instalado apenas registre que a análise
+  estática foi pulada e prossiga.
+
+Defina o caminho explicitamente quando necessário:
+
+```bash
+export TDMCP_PROJECT_RAG_TOEEXPAND_BIN=/usr/local/bin/toeexpand
+```
+
+### Analisador dinâmico (bridge de quarentena)
+
+Quando você quer realmente *cozinhar* o artefato, F3 dirige uma **instância
+dedicada do TouchDesigner**, em uma **porta separada** (default `9981`, nunca
+`9980`). O TD principal do usuário não é tocado.
+
+A instalação é orientada por docs e idempotente — `tdmcp project-rag bridge
+install` imprime o walkthrough e prova se a bridge está acessível:
+
+```text
+$ tdmcp project-rag bridge install
+tdmcp project-rag bridge install — quarantine bridge setup
+…
+  1. Abra uma instância nova de TouchDesigner (NÃO reuse a que tdmcp dirige
+     para trabalho ao vivo).
+  2. Dentro dela, instale a bridge tdmcp: tdmcp install-bridge
+  3. Edite o parâmetro "port" do Web Server DAT de 9980 → 9981.
+  4. Salve como tdmcp_bridge_qa.toe.
+  5. Habilite F3:
+       export TDMCP_PROJECT_RAG_BRIDGE_ANALYSIS=1
+       export TDMCP_PROJECT_RAG_ENABLED=1
+       export TDMCP_RAG_ENABLED=1
+…
+Probe: http://127.0.0.1:9981 — OFFLINE
+```
+
+O analisador:
+
+- Instancia um **novo** `TouchDesignerClient` na
+  `TDMCP_PROJECT_RAG_BRIDGE_PORT` (default `9981`). **Recusa** usar a porta
+  `9980` — chamar `analyze` com a porta apontando para `9980` devolve
+  `failed: "refusing to use main TD port 9980"`.
+- Sonda a bridge com `GET /api/info`. Se a sonda lança erro de conexão →
+  devolve `skipped` (NÃO `failed`), pois o caminho offline é o padrão seguro.
+- Em uma bridge acessível: coleta erros de rede via `getNetworkErrors("/")`
+  e tenta capturar um preview de `/project1/out1`. Tolerante a sucessos
+  parciais: preview ausente ainda produz `ok` com `errorCount`.
+
+### Comandos
+
+```bash
+# Analisa um arquivo diretamente pela bridge de quarentena.
+# Exit 0 para ok/skipped; exit 1 só em falha real.
+tdmcp project-rag analyze /caminho/absoluto/para/component.tox
+tdmcp project-rag analyze ./algum.toe --json
+
+# Faz sync e roda o analisador de bridge em todo card com binário baixável.
+# Persiste analysisStatus em cada card; reruns pulam cards já ok.
+tdmcp project-rag sync --bridge
+tdmcp project-rag sync --bridge --json
+```
+
+`analysisStatus` é gravado no frontmatter YAML do card:
+
+```yaml
+analysisStatus: ok           # cozinhou limpo na quarentena
+analysisReason: "bridge offline at http://127.0.0.1:9981"  # set em skipped/failed
+```
+
+Esse campo é **excluído do contentHash** do card (tratado como metadado de
+persistência, como `binaryPath`) — re-sincronizar conteúdo inalterado
+continua sendo cache-hit mesmo após o analisador rodar.
+
+### Threat model — recap
+
+| Risco | Mitigação |
+|---|---|
+| Usuário roda `sync --bridge` e um `.tox` malicioso corrompe o show file | A bridge de quarentena roda em uma **instância de TD separada** em **porta separada** — o TD principal em 9980 nunca é alcançado |
+| Cook longo trava o agente | Timeout duro de 30s (configurável); para o analisador estático, group-kill no subprocesso; para a bridge, `Promise.race` com cap |
+| Subprocesso enxerga `TDMCP_BRIDGE_TOKEN` e vaza | Ambiente reduzido (`PATH`, `HOME`, `LANG` apenas) — nenhum `TDMCP_*` é encaminhado |
+| Bridge offline gera relatório "failed" ruidoso | Offline sempre degrada para `skipped`; `exit 0` em skip; o relatório registra quais cards não foram analisados |
+| Path traversal via nome de artefato manipulado | O analisador estático copia o arquivo com basename fixo (`input<ext>`) dentro de um cwd UUID — o path original nunca chega ao argv do subprocesso |
 
 ## Regras de segurança
 
 - O caminho de busca nunca spawna Python nem fala com a bridge TD ativa.
-- O analyzer F3 (quando publicar) usará um *novo* `TouchDesignerClient` na
-  `TDMCP_PROJECT_RAG_BRIDGE_PORT` (default 9981). Nunca spawna TD sozinho.
+- O analyzer F3 usa um *novo* `TouchDesignerClient` na
+  `TDMCP_PROJECT_RAG_BRIDGE_PORT` (default 9981) e recusa fallback para o
+  client padrão 9980. tdmcp nunca spawna TD sozinho.
 - `.toe`/`.tox` baixados **NUNCA** são abertos no projeto ativo do usuário.
 - Matriz de licenças é enforçada antes de qualquer persistência de binário.
 

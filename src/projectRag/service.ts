@@ -24,12 +24,21 @@ import {
   parseProjectCard,
   serializeProjectCard,
 } from "./cardParser.js";
+import {
+  type BridgeAnalysisResult,
+  type BridgeProbeResult,
+  probeBridgeReachability,
+  runBridgeAnalyze,
+} from "./extractors/bridgeAnalyze.js";
 import { isCopyleftLicense, shouldStoreProjectBinary } from "./licensePolicy.js";
 import { computeProjectScore } from "./scoring.js";
 import type { RawProjectItem, SourceAdapter } from "./sources/index.js";
 import { resolveProjectSources, SourceSkippedError } from "./sources/index.js";
 import { createProjectIndexStore } from "./storeFactory.js";
 import type {
+  ProjectAnalyzeReport,
+  ProjectBridgeAnalysisReport,
+  ProjectBridgeProbeReport,
   ProjectEmbeddedCard,
   ProjectIndexReport,
   ProjectIndexStore,
@@ -68,6 +77,17 @@ export interface ProjectRagServiceDeps {
   githubTopicsCsv?: string | undefined;
   /** Topic scanner per-sync cap (default 25); used when topics are enabled. */
   topicCap?: number | undefined;
+  /**
+   * F3 — override the bridge-analyze runner (tests only). When omitted, the
+   * service calls `runBridgeAnalyze` directly with the configured port.
+   */
+  bridgeAnalyzeImpl?: (artifactPath: string) => Promise<BridgeAnalysisResult>;
+  /**
+   * F3 — override the bridge reachability probe (tests only). When omitted,
+   * the service calls `probeBridgeReachability` directly with the configured
+   * port.
+   */
+  bridgeProbeImpl?: () => Promise<BridgeProbeResult>;
 }
 
 const DEFAULT_SYNC_LIMIT = 10;
@@ -117,11 +137,24 @@ export function createProjectRagService(deps: ProjectRagServiceDeps): ProjectRag
   const cardsDir = join(config.dataDir, "cards");
   const binariesDir = join(config.dataDir, "binaries");
 
+  const bridgeAnalyzeImpl =
+    deps.bridgeAnalyzeImpl ??
+    ((artifactPath: string) =>
+      runBridgeAnalyze({
+        artifactPath,
+        bridgePort: config.bridgePort,
+        timeoutMs: config.analyzeTimeoutMs,
+      }));
+
+  const bridgeProbeImpl =
+    deps.bridgeProbeImpl ?? (() => probeBridgeReachability({ bridgePort: config.bridgePort }));
+
   async function sync(opts: {
     sources?: string[];
     limit?: number;
     topicsCsv?: string;
     topicCap?: number;
+    bridge?: boolean;
   }): Promise<ProjectSyncReport> {
     const limit = opts.limit ?? DEFAULT_SYNC_LIMIT;
     // Per-call topic overrides rebuild the source list so users can run
@@ -142,9 +175,17 @@ export function createProjectRagService(deps: ProjectRagServiceDeps): ProjectRag
                 : {}),
           })
         : sources;
-    if (effectiveSources.length === 0) return { ...EMPTY_SYNC, perSource: {} };
+    if (effectiveSources.length === 0) {
+      const r: ProjectSyncReport = { ...EMPTY_SYNC, perSource: {} };
+      if (opts.bridge === true) r.bridgeAnalysis = await runBridgePass();
+      return r;
+    }
     const selected = filterSources(effectiveSources, opts.sources);
-    if (selected.length === 0) return { ...EMPTY_SYNC, perSource: {} };
+    if (selected.length === 0) {
+      const r: ProjectSyncReport = { ...EMPTY_SYNC, perSource: {} };
+      if (opts.bridge === true) r.bridgeAnalysis = await runBridgePass();
+      return r;
+    }
 
     const report: ProjectSyncReport = {
       added: 0,
@@ -180,11 +221,27 @@ export function createProjectRagService(deps: ProjectRagServiceDeps): ProjectRag
       report.perSource[source.name] = items.length;
 
       for (const item of items) {
-        const card = buildCardFromItem(item, config);
+        const fresh = buildCardFromItem(item, config);
+        // Carry forward analysis metadata when the embeddable content is
+        // unchanged — a plain sync must NEVER erase a prior bridge-analysis
+        // result, and `sync --bridge` relies on `analysisStatus === "ok"` to
+        // stay idempotent across reruns.
+        const prior = existingById.get(fresh.id);
+        const card: ProjectRagCard =
+          prior !== undefined && prior.contentHash === fresh.contentHash
+            ? {
+                ...fresh,
+                ...(prior.analysisStatus !== undefined
+                  ? { analysisStatus: prior.analysisStatus }
+                  : {}),
+                ...(prior.analysisReason !== undefined
+                  ? { analysisReason: prior.analysisReason }
+                  : {}),
+              }
+            : fresh;
         seenIds.add(card.id);
         syncedSourceNames.add(card.provenance.sourceName);
 
-        const prior = existingById.get(card.id);
         if (prior === undefined) report.added += 1;
         else if (prior.contentHash !== card.contentHash) report.updated += 1;
 
@@ -202,11 +259,18 @@ export function createProjectRagService(deps: ProjectRagServiceDeps): ProjectRag
             if (stored !== undefined) {
               // Preserve the base `contentHash` so a re-sync stays a cache hit —
               // binary path/hash are persistence metadata, not embeddable content.
-              writeCard(cardsDir, {
+              // Only reset analysis metadata when the binary hash actually changed.
+              const binaryChanged = prior?.binaryHash !== stored.hash;
+              const persisted: ProjectRagCard = {
                 ...card,
                 binaryPath: stored.relPath,
                 binaryHash: stored.hash,
-              });
+              };
+              if (binaryChanged) {
+                delete persisted.analysisStatus;
+                delete persisted.analysisReason;
+              }
+              writeCard(cardsDir, persisted);
               report.binariesStored += 1;
             }
           } else {
@@ -227,6 +291,67 @@ export function createProjectRagService(deps: ProjectRagServiceDeps): ProjectRag
         report.tombstoned += 1;
       }
     }
+
+    if (opts.bridge === true) {
+      report.bridgeAnalysis = await runBridgePass();
+    }
+    return report;
+  }
+
+  /**
+   * F3 — runs the bridge analyzer over every persisted-binary card that has a
+   * permissive license. Idempotent: cards already `analysisStatus === "ok"`
+   * are not re-analyzed. Each card's status is persisted.
+   */
+  async function runBridgePass(): Promise<ProjectBridgeAnalysisReport> {
+    const summary: ProjectBridgeAnalysisReport = { attempted: 0, ok: 0, failed: 0, skipped: 0 };
+    const all = readAllCards(cardsDir);
+    for (const card of all) {
+      if (card.tombstone === true) continue;
+      if (card.binaryPath === undefined) continue;
+      if (card.analysisStatus === "ok") continue;
+      if (!shouldStoreProjectBinary(card.license, config.licenseAllowlist)) continue;
+
+      const absolutePath = join(config.dataDir, card.binaryPath);
+      summary.attempted += 1;
+      let result: BridgeAnalysisResult;
+      try {
+        result = await bridgeAnalyzeImpl(absolutePath);
+      } catch (err) {
+        result = { status: "failed", error: err instanceof Error ? err.message : String(err) };
+      }
+      summary[result.status] += 1;
+      const updated: ProjectRagCard = { ...card, analysisStatus: result.status };
+      if (result.reason !== undefined) updated.analysisReason = result.reason;
+      else if (result.error !== undefined) updated.analysisReason = result.error;
+      writeCard(cardsDir, updated);
+    }
+    return summary;
+  }
+
+  async function probeBridge(): Promise<ProjectBridgeProbeReport> {
+    const probe = await bridgeProbeImpl();
+    const report: ProjectBridgeProbeReport = {
+      reachable: probe.reachable,
+      bridgeUrl: probe.baseUrl,
+    };
+    if (probe.reason !== undefined) report.reason = probe.reason;
+    return report;
+  }
+
+  async function analyze(artifactPath: string): Promise<ProjectAnalyzeReport> {
+    const bridgeUrl = `http://127.0.0.1:${config.bridgePort}`;
+    let result: BridgeAnalysisResult;
+    try {
+      result = await bridgeAnalyzeImpl(artifactPath);
+    } catch (err) {
+      result = { status: "failed", error: err instanceof Error ? err.message : String(err) };
+    }
+    const report: ProjectAnalyzeReport = { status: result.status, bridgeUrl };
+    if (result.reason !== undefined) report.reason = result.reason;
+    if (result.error !== undefined) report.error = result.error;
+    if (result.errorCount !== undefined) report.errorCount = result.errorCount;
+    if (result.previewPng !== undefined) report.hasPreview = result.previewPng.length > 0;
     return report;
   }
 
@@ -375,7 +500,7 @@ export function createProjectRagService(deps: ProjectRagServiceDeps): ProjectRag
     return { rescored, total: live.length };
   }
 
-  return { sync, index, rescore, search, getCard, listSources };
+  return { sync, index, rescore, search, getCard, listSources, analyze, probeBridge };
 
   async function downloadBinary(
     binaryUrl: string,

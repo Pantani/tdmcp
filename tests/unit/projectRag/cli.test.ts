@@ -46,6 +46,16 @@ const noopSvc: ProjectRagService = {
   listSources: async () => [
     { name: "derivative-local", displayName: "Local TD", status: "planned", reason: "F1" },
   ],
+  analyze: async () => ({
+    status: "skipped",
+    reason: "no bridge",
+    bridgeUrl: "http://127.0.0.1:9981",
+  }),
+  probeBridge: async () => ({
+    reachable: false,
+    bridgeUrl: "http://127.0.0.1:9981",
+    reason: "bridge offline at http://127.0.0.1:9981",
+  }),
 };
 
 describe("projectRag CLI gating + help", () => {
@@ -251,6 +261,172 @@ describe("projectRag CLI commands", () => {
     });
     expect(code).toBe(2);
     expect(io.err.join("")).toContain("--rescore");
+  });
+
+  it("analyze without a path returns exit 2", async () => {
+    const io = captureIO();
+    const code = await runProjectRagCli(["analyze"], {
+      config: makeConfig(),
+      service: noopSvc,
+      stdout: io.stdout,
+      stderr: io.stderr,
+    });
+    expect(code).toBe(2);
+    expect(io.err.join("")).toMatch(/analyze needs an absolute/);
+  });
+
+  it("analyze on offline bridge returns exit 0 with skipped status", async () => {
+    const svc: ProjectRagService = {
+      ...noopSvc,
+      analyze: async () => ({
+        status: "skipped",
+        reason: "bridge offline at http://127.0.0.1:9981",
+        bridgeUrl: "http://127.0.0.1:9981",
+      }),
+    };
+    const io = captureIO();
+    const code = await runProjectRagCli(["analyze", "/tmp/example.toe"], {
+      config: makeConfig(),
+      service: svc,
+      stdout: io.stdout,
+      stderr: io.stderr,
+    });
+    expect(code).toBe(0);
+    expect(io.out.join("")).toContain("analyze skipped");
+    expect(io.out.join("")).toContain("9981");
+  });
+
+  it("analyze with --json emits the report and exits 0 on skip", async () => {
+    const svc: ProjectRagService = {
+      ...noopSvc,
+      analyze: async () => ({
+        status: "skipped",
+        reason: "offline",
+        bridgeUrl: "http://127.0.0.1:9981",
+      }),
+    };
+    const io = captureIO();
+    const code = await runProjectRagCli(["analyze", "/tmp/x.tox", "--json"], {
+      config: makeConfig(),
+      service: svc,
+      stdout: io.stdout,
+      stderr: io.stderr,
+    });
+    expect(code).toBe(0);
+    const parsed = JSON.parse(io.out.join(""));
+    expect(parsed.status).toBe("skipped");
+    expect(parsed.bridgeUrl).toBe("http://127.0.0.1:9981");
+  });
+
+  it("analyze on real failure returns exit 1", async () => {
+    const svc: ProjectRagService = {
+      ...noopSvc,
+      analyze: async () => ({
+        status: "failed",
+        error: "missing artifact",
+        bridgeUrl: "http://127.0.0.1:9981",
+      }),
+    };
+    const io = captureIO();
+    const code = await runProjectRagCli(["analyze", "/tmp/missing.toe"], {
+      config: makeConfig(),
+      service: svc,
+      stdout: io.stdout,
+      stderr: io.stderr,
+    });
+    expect(code).toBe(1);
+  });
+
+  it("bridge install prints walkthrough and probes the bridge (offline)", async () => {
+    const svc: ProjectRagService = {
+      ...noopSvc,
+      probeBridge: async () => ({
+        reachable: false,
+        bridgeUrl: "http://127.0.0.1:9981",
+        reason: "bridge offline at http://127.0.0.1:9981",
+      }),
+    };
+    const io = captureIO();
+    const code = await runProjectRagCli(["bridge", "install"], {
+      config: makeConfig(),
+      service: svc,
+      stdout: io.stdout,
+      stderr: io.stderr,
+    });
+    expect(code).toBe(0);
+    expect(io.out.join("")).toContain("quarantine bridge setup");
+    expect(io.out.join("")).toContain("OFFLINE");
+    expect(io.out.join("")).toContain("reason: bridge offline");
+    // Critical: never recommends port 9980.
+    expect(io.out.join("")).toMatch(/9981/);
+  });
+
+  it("bridge install --json emits machine-readable probe result", async () => {
+    const svc: ProjectRagService = {
+      ...noopSvc,
+      probeBridge: async () => ({
+        reachable: false,
+        bridgeUrl: "http://127.0.0.1:9981",
+        reason: "bridge offline at http://127.0.0.1:9981",
+      }),
+    };
+    const io = captureIO();
+    const code = await runProjectRagCli(["bridge", "install", "--json"], {
+      config: makeConfig(),
+      service: svc,
+      stdout: io.stdout,
+      stderr: io.stderr,
+    });
+    expect(code).toBe(0);
+    const parsed = JSON.parse(io.out.join(""));
+    expect(parsed.bridgeUrl).toBe("http://127.0.0.1:9981");
+    expect(parsed.reachable).toBe(false);
+    expect(parsed.reason).toMatch(/offline/);
+  });
+
+  it("bridge install reports REACHABLE when probe.reachable is true", async () => {
+    const svc: ProjectRagService = {
+      ...noopSvc,
+      probeBridge: async () => ({ reachable: true, bridgeUrl: "http://127.0.0.1:9981" }),
+    };
+    const io = captureIO();
+    const code = await runProjectRagCli(["bridge", "install"], {
+      config: makeConfig(),
+      service: svc,
+      stdout: io.stdout,
+      stderr: io.stderr,
+    });
+    expect(code).toBe(0);
+    expect(io.out.join("")).toContain("REACHABLE");
+  });
+
+  it("sync --bridge forwards bridge:true to service.sync and prints sub-report", async () => {
+    let seenOpts: Parameters<ProjectRagService["sync"]>[0] | undefined;
+    const svc: ProjectRagService = {
+      ...noopSvc,
+      sync: async (opts) => {
+        seenOpts = opts;
+        return {
+          added: 1,
+          updated: 0,
+          tombstoned: 0,
+          skippedNoLicense: 0,
+          binariesStored: 1,
+          perSource: { "github-repo": 1 },
+          bridgeAnalysis: { attempted: 1, ok: 1, failed: 0, skipped: 0 },
+        };
+      },
+    };
+    const io = captureIO();
+    const code = await runProjectRagCli(["sync", "--bridge"], {
+      config: makeConfig(),
+      service: svc,
+      stdout: io.stdout,
+      stderr: io.stderr,
+    });
+    expect(code).toBe(0);
+    expect(seenOpts?.bridge).toBe(true);
+    expect(io.out.join("")).toContain("bridge: 1 attempted, 1 ok");
   });
 
   it("search output renders copyleft badge for GPL-3.0 results", async () => {

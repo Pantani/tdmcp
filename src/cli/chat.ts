@@ -188,7 +188,10 @@ export async function runHeadlessPrompt(
       if (event.type === "answer") answer = event.content;
       if (event.type === "error") error = event.message;
     },
-    { tools: resolveTools(config.llmTier), maxSteps: config.llmMaxSteps },
+    {
+      tools: resolveTools(config.llmTier, { projectRag: ctx.projectRag !== undefined }),
+      maxSteps: config.llmMaxSteps,
+    },
   );
 
   const fallback = [...messages]

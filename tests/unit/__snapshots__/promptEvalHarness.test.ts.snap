@@ -22,6 +22,7 @@ exports[`prompt name list snapshot 1`] = `
   "match_reference_loop",
   "motion_critique",
   "optimize_performance",
+  "project_rag_context",
   "recover_show",
   "remix_visual",
   "setlist_planner",
