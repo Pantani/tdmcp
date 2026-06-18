@@ -1611,6 +1611,92 @@ sistema de máscara/mosaico que pode ser recriado com `create_palette`,
 nova com grid animado, círculos e planos de cor, mantendo a obra original como
 contexto de repertório em vez de algo que a RAG executa diretamente.*
 
+## Biblioteca criativa (Creative RAG)
+
+O repertório criativo é um índice local opt-in de referências artísticas com
+licença aberta. O CLI é `tdmcp creative-rag <sync|index|search>`; tanto
+`tdmcp://creative/cards/{id}` quanto
+`tdmcp://creative/search{?q,k,license,type,tags}` são recursos MCP somente
+leitura. A allowlist padrão (`TDMCP_RAG_LICENSE_ALLOWLIST`, default
+`CC0,PublicDomain`) só barra **download de binários** no `sync` — o `search`
+continua devolvendo qualquer card do índice. Passe `--license` explicitamente
+quando precisar de garantia firme sobre o que vai reusar.
+
+> *"Busque na biblioteca criativa referências kinéticas em monocromático —
+> muito movimento, preto e branco, geométrico. Limite a CC0 + domínio público
+> para eu poder reusar tudo que vier."*
+
+```bash
+tdmcp creative-rag search "kinetic monochrome geometric" \
+  --license CC0,PublicDomain --k 5
+```
+
+```text
+score  id        title                                                    source       license       type
+0.78   a1b2c3d4  Composition with Black Lines                             artic        PublicDomain  painting
+0.74   e5f6a7b8  Rhythm of a Russian Dance                                rijksmuseum  CC0           painting
+0.70   12c3d4e5  Op Art Study, Black on White                             met          PublicDomain  drawing
+0.66   90fa1b2c  Vibration (Plate VI)                                     rijksmuseum  CC0           print
+0.61   77ab88cd  Untitled (Concentric Squares)                            artic        PublicDomain  drawing
+```
+
+*`creative-rag search` devolve uma lista ranqueada de cards. Cada linha é
+`{ id, title, sourceUrl, license, type, tags, score }`, com `score` sendo
+similaridade de cosseno (0–1). Use `--json` se quiser o payload estruturado em
+vez da tabela legível.*
+
+> *"Me mostre só obras de arquitetura com licença CC0 da biblioteca criativa."*
+
+```bash
+tdmcp creative-rag search "architecture facade" \
+  --license CC0 --type artwork --tags architecture --k 5
+```
+
+```text
+score  id        title                                              source       license  type
+0.81   3f4d5e6a  Façade Study, Rietveld Schröder House              rijksmuseum  CC0      artwork
+0.77   c7d8e9f0  Steel Frame, Construction Series                   cleveland    CC0      artwork
+0.72   55667788  Brutalist Stairwell                                rijksmuseum  CC0      artwork
+0.68   99aabbcc  Concrete Volumes at Dusk                           cleveland    CC0      artwork
+0.63   ddeeff01  Window Grid                                        rijksmuseum  CC0      artwork
+```
+
+*`--license CC0` estreita mais que o padrão (descarta PublicDomain), então o
+resultado é estritamente CC0. `--type` aceita o enum da CLI
+(`project|artist|artwork|technique|cue_reference`); use `--tags` (CSV) para
+filtros mais finos como `architecture`, `photograph`, `sculpture`. Todos os
+filtros empilham.*
+
+> *"Abra o card `3f4d5e6a…` da biblioteca criativa e resuma a intenção do artista
+> para eu construir uma cena no TD a partir dela."*
+
+O cliente MCP busca `tdmcp://creative/cards/3f4d5e6a…` (onde `id =
+sha256(sourceUrl)`) e recebe o card completo em JSON:
+
+```json
+{
+  "id": "3f4d5e6a...",
+  "title": "Façade Study, Rietveld Schröder House",
+  "description": "Frontal photograph of the De Stijl façade...",
+  "sourceUrl": "https://www.rijksmuseum.nl/...",
+  "license": "CC0",
+  "type": "photograph",
+  "tags": ["architecture", "de-stijl", "geometric", "primary-colors"],
+  "palette": ["#E63946", "#F1FAEE", "#1D3557", "#FFD166"],
+  "visualLanguage": "rigid orthogonal grid, flat planes",
+  "tdmcpAffordances": ["create_glsl_shader", "create_grid_layout"],
+  "schemaVersion": 1
+}
+```
+
+*A shape real do card é plana: `palette` e `visualLanguage` são campos
+opcionais de primeiro nível, e `tdmcpAffordances` é `string[]` com nomes de
+tools sugeridas (veja `src/creativeRag/schema.ts`). Leia o card, destile a
+intenção em prosa e então repasse os affordances + paleta para a tool de
+Layer 1 que se encaixar — por exemplo, "usa essa paleta e o `visualLanguage`
+em grade pra montar uma cena GLSL monocromática kinética". O cookbook para
+aqui; o build real fica para a tool de Layer 1 que os affordances indicam.*
+
 ## Trabalhando a partir das suas notas (vault Obsidian)
 
 Se você mantém um [vault Obsidian](/reference/tools#obsidian-vault) conectado:
