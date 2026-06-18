@@ -36,6 +36,7 @@ import type {
   ProjectRagCard,
   ProjectRagConfig,
   ProjectRagService,
+  ProjectRescoreReport,
   ProjectSearchFilters,
   ProjectSearchResult,
   ProjectSourceStatus,
@@ -116,10 +117,33 @@ export function createProjectRagService(deps: ProjectRagServiceDeps): ProjectRag
   const cardsDir = join(config.dataDir, "cards");
   const binariesDir = join(config.dataDir, "binaries");
 
-  async function sync(opts: { sources?: string[]; limit?: number }): Promise<ProjectSyncReport> {
-    if (sources.length === 0) return { ...EMPTY_SYNC, perSource: {} };
+  async function sync(opts: {
+    sources?: string[];
+    limit?: number;
+    topicsCsv?: string;
+    topicCap?: number;
+  }): Promise<ProjectSyncReport> {
     const limit = opts.limit ?? DEFAULT_SYNC_LIMIT;
-    const selected = filterSources(sources, opts.sources);
+    // Per-call topic overrides rebuild the source list so users can run
+    // `tdmcp project-rag sync --topic <t> --cap N` without exporting env vars.
+    const effectiveSources =
+      opts.topicsCsv !== undefined || opts.topicCap !== undefined
+        ? resolveProjectSources({
+            ...(csv !== undefined ? { githubReposCsv: csv } : {}),
+            ...(opts.topicsCsv !== undefined
+              ? { githubTopicsCsv: opts.topicsCsv }
+              : topicsCsv !== undefined
+                ? { githubTopicsCsv: topicsCsv }
+                : {}),
+            ...(opts.topicCap !== undefined
+              ? { topicCap: opts.topicCap }
+              : topicCap !== undefined
+                ? { topicCap }
+                : {}),
+          })
+        : sources;
+    if (effectiveSources.length === 0) return { ...EMPTY_SYNC, perSource: {} };
+    const selected = filterSources(effectiveSources, opts.sources);
     if (selected.length === 0) return { ...EMPTY_SYNC, perSource: {} };
 
     const report: ProjectSyncReport = {
@@ -323,7 +347,35 @@ export function createProjectRagService(deps: ProjectRagServiceDeps): ProjectRag
     return statuses;
   }
 
-  return { sync, index, search, getCard, listSources };
+  async function rescore(): Promise<ProjectRescoreReport> {
+    const all = readAllCards(cardsDir);
+    const live = all.filter((c) => c.tombstone !== true);
+    let rescored = 0;
+    for (const card of live) {
+      const score = computeProjectScore(card, config.scoreWeights);
+      const updated: ProjectRagCard = { ...card, score };
+      updated.contentHash = computeProjectContentHash(updated);
+      writeCard(cardsDir, updated);
+      rescored += 1;
+    }
+    // Rewrite the JSONL index too so search uses the new composites without
+    // calling Ollama. Reuse the existing embeddings — they don't change.
+    const store = await getStore();
+    const existing = await store.loadAll();
+    if (existing.length > 0) {
+      const byId = new Map(live.map((c) => [c.id, c] as const));
+      const updatedEmbedded: ProjectEmbeddedCard[] = [];
+      for (const row of existing) {
+        const card = byId.get(row.id);
+        if (card?.score === undefined) continue;
+        updatedEmbedded.push({ ...row, score: card.score });
+      }
+      if (updatedEmbedded.length > 0) await store.upsert(updatedEmbedded);
+    }
+    return { rescored, total: live.length };
+  }
+
+  return { sync, index, rescore, search, getCard, listSources };
 
   async function downloadBinary(
     binaryUrl: string,

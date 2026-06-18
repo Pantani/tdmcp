@@ -40,6 +40,7 @@ const noopSvc: ProjectRagService = {
     perSource: {},
   }),
   index: async () => ({ embedded: 0, cachedSkipped: 0, total: 0 }),
+  rescore: async () => ({ rescored: 0, total: 0 }),
   search: async () => [],
   getCard: async () => undefined,
   listSources: async () => [
@@ -191,5 +192,93 @@ describe("projectRag CLI commands", () => {
     });
     expect(code).toBe(2);
     expect(io.err.join("")).toContain("--license");
+  });
+
+  it("sync --topic + --cap forwards to service.sync", async () => {
+    let seen: Parameters<ProjectRagService["sync"]>[0] | undefined;
+    const svc: ProjectRagService = {
+      ...noopSvc,
+      sync: async (opts) => {
+        seen = opts;
+        return {
+          added: 0,
+          updated: 0,
+          tombstoned: 0,
+          skippedNoLicense: 0,
+          binariesStored: 0,
+          perSource: {},
+        };
+      },
+    };
+    const io = captureIO();
+    const code = await runProjectRagCli(
+      ["sync", "--topic", "touchdesigner-components", "--cap", "10"],
+      { config: makeConfig(), service: svc, stdout: io.stdout, stderr: io.stderr },
+    );
+    expect(code).toBe(0);
+    expect(seen?.topicsCsv).toBe("touchdesigner-components");
+    expect(seen?.topicCap).toBe(10);
+  });
+
+  it("reindex --rescore calls service.rescore and prints summary", async () => {
+    let called = false;
+    const svc: ProjectRagService = {
+      ...noopSvc,
+      rescore: async () => {
+        called = true;
+        return { rescored: 3, total: 5 };
+      },
+    };
+    const io = captureIO();
+    const code = await runProjectRagCli(["reindex", "--rescore"], {
+      config: makeConfig(),
+      service: svc,
+      stdout: io.stdout,
+      stderr: io.stderr,
+    });
+    expect(code).toBe(0);
+    expect(called).toBe(true);
+    expect(io.out.join("")).toContain("rescored: 3 of 5");
+  });
+
+  it("reindex without --rescore returns exit 2 with hint", async () => {
+    const io = captureIO();
+    const code = await runProjectRagCli(["reindex"], {
+      config: makeConfig(),
+      service: noopSvc,
+      stdout: io.stdout,
+      stderr: io.stderr,
+    });
+    expect(code).toBe(2);
+    expect(io.err.join("")).toContain("--rescore");
+  });
+
+  it("search output renders copyleft badge for GPL-3.0 results", async () => {
+    const svc: ProjectRagService = {
+      ...noopSvc,
+      search: async () => [
+        {
+          id: "x".repeat(64),
+          score: 0.5,
+          cosineScore: 0.5,
+          title: "DBraun/TouchDesigner_Shared",
+          type: "component",
+          license: "GPL-3.0",
+          licenseConfidence: "spdx-detected",
+          sourceUrl: "https://github.com/DBraun/TouchDesigner_Shared",
+          sourceName: "github:DBraun/TouchDesigner_Shared",
+          tags: ["tox"],
+        },
+      ],
+    };
+    const io = captureIO();
+    const code = await runProjectRagCli(["search", "shared"], {
+      config: makeConfig(),
+      service: svc,
+      stdout: io.stdout,
+      stderr: io.stderr,
+    });
+    expect(code).toBe(0);
+    expect(io.out.join("")).toContain("GPL-3.0 · copyleft");
   });
 });

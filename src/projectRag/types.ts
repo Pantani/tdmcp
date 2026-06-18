@@ -244,10 +244,27 @@ export interface ProjectIndexReport {
   total: number;
 }
 
+export interface ProjectRescoreReport {
+  rescored: number;
+  total: number;
+}
+
 /** Facade the CLI + resource call. */
 export interface ProjectRagService {
-  sync(opts: { sources?: string[]; limit?: number }): Promise<ProjectSyncReport>;
+  sync(opts: {
+    sources?: string[];
+    limit?: number;
+    /** Per-call topic override (CSV). Falls back to config.githubTopicsCsv. */
+    topicsCsv?: string;
+    /** Per-call topic cap override. */
+    topicCap?: number;
+  }): Promise<ProjectSyncReport>;
   index(): Promise<ProjectIndexReport>;
+  /**
+   * Recompute card.score and rewrite the JSONL index without calling Ollama.
+   * Useful after weight tuning. Returns how many cards were updated.
+   */
+  rescore(): Promise<ProjectRescoreReport>;
   search(query: string, k: number, filters?: ProjectSearchFilters): Promise<ProjectSearchResult[]>;
   getCard(id: string): Promise<ProjectRagCard | undefined>;
   listSources(): Promise<ProjectSourceStatus[]>;

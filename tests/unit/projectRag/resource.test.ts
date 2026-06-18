@@ -40,6 +40,7 @@ describe("projectRag resource gating", () => {
           perSource: {},
         }),
         index: async () => ({ embedded: 0, cachedSkipped: 0, total: 0 }),
+        rescore: async () => ({ rescored: 0, total: 0 }),
         search: async () => [],
         getCard: async () => undefined,
         listSources: async () => [],

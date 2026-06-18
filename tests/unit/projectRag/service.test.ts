@@ -135,6 +135,43 @@ describe("projectRag service (skeleton-level behaviour)", () => {
     expect(await svc.getCard("not-a-sha")).toBeUndefined();
   });
 
+  it("rescore() recomputes score on every live card and ignores tombstones", async () => {
+    const canonical = "github:foo/bar/z.tox";
+    const id = computeProjectId(canonical);
+    const card: ProjectRagCard = {
+      schemaVersion: 2,
+      id,
+      kind: "project",
+      type: "component",
+      title: "Z",
+      tags: [],
+      contentHash: "",
+      provenance: {
+        sourceName: "github:foo/bar",
+        sourceUrl: "https://github.com/foo/bar",
+        canonical,
+        fetchedAt: "2026-06-18T00:00:00Z",
+      },
+      license: "MIT",
+      licenseConfidence: "spdx-detected",
+    };
+    const final = { ...card, contentHash: computeProjectContentHash(card) };
+    const cardsDir = join(DIR, "cards");
+    mkdirSync(cardsDir, { recursive: true });
+    writeFileSync(join(cardsDir, `${id}.md`), serializeProjectCard(final), "utf8");
+
+    const svc = createProjectRagService({
+      config: makeConfig(DIR),
+      sources: [],
+      embeddings: NOOP_EMBEDDINGS,
+    });
+    const report = await svc.rescore();
+    expect(report.total).toBe(1);
+    expect(report.rescored).toBe(1);
+    const updated = await svc.getCard(id);
+    expect(updated?.score?.composite).toBeGreaterThan(0);
+  });
+
   it("getCard() returns undefined for tombstoned card", async () => {
     const canonical = "github:foo/bar/y.tox";
     const id = computeProjectId(canonical);

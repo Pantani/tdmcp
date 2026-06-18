@@ -61,28 +61,32 @@ const DISABLED_MESSAGE =
 
 const HELP = `tdmcp project-rag — local TouchDesigner project repertoire (opt-in, offline)
 
-Usage: tdmcp project-rag <sync|index|search|info|sources> [flags]
+Usage: tdmcp project-rag <sources|sync|index|reindex|search|info> [flags]
 
 Commands:
-  sources           List configured project sources and their status.
-  sync              Pull cards from selected sources (F1+; F0 is a no-op).
-  index             Embed new/changed cards (F1+).
-  search <query>    Cosine search the local project index (F1+).
-  info <id>         Show one card (provenance + license + score) by id.
+  sources              List configured project sources and their status.
+  sync                 Pull cards from selected sources.
+  index                Embed new/changed cards (uses Ollama).
+  reindex --rescore    Recompute card.score in place without re-embedding.
+  search <query>       Cosine search the local project index.
+  info <id>            Show one card (provenance + license + score) by id.
 
 Flags:
-  --source <name>   Limit sync to one source (repeatable).
-  --limit <n>       Max items per source on sync (default 10).
-  --k <n>           Number of search results (default 10).
-  --license <csv>   Filter search by license(s), e.g. MIT,Apache-2.0,CC0.
-  --type <csv>      Filter search by card type(s).
-  --tags <csv>      Filter search to cards having ALL listed tags.
-  --operator <csv>  Filter search to cards using ALL listed operator names.
-  --json            Emit machine-readable JSON.
-  -h, --help        Show this help.
+  --source <name>      Limit sync to one source (repeatable).
+  --limit <n>          Max items per source on sync (default 10).
+  --topic <csv>        Override topic list for the github-topic source. Use
+                       "off" to disable that source for this run.
+  --cap <n>            Per-run cap for the github-topic source (default 25).
+  --rescore            With "reindex": recompute scores in place.
+  --k <n>              Number of search results (default 10).
+  --license <csv>      Filter search by license(s), e.g. MIT,Apache-2.0,CC0.
+  --type <csv>         Filter search by card type(s).
+  --tags <csv>         Filter search to cards having ALL listed tags.
+  --operator <csv>     Filter search to cards using ALL listed operator names.
+  --json               Emit machine-readable JSON.
+  -h, --help           Show this help.
 
-Status: F0 (foundations) — sources/extractors land in F1. Hard rule:
-NEVER opens a downloaded .toe/.tox in the user's active TD project.`;
+Hard rule: NEVER opens a downloaded .toe/.tox in the user's active TD project.`;
 
 export interface RunProjectRagCliDeps {
   service?: ProjectRagService;
@@ -191,6 +195,8 @@ export async function runProjectRagCli(
         return await runSync(service, parsed.values, stdoutLine);
       case "index":
         return await runIndex(service, parsed.values, stdoutLine);
+      case "reindex":
+        return await runReindex(service, parsed.values, stdoutLine, stderrLine);
       case "search":
         return await runSearch(service, parsed.positionals, parsed.values, stdoutLine, stderrLine);
       case "info":
@@ -209,8 +215,11 @@ export async function runProjectRagCli(
 interface ParsedFlags {
   help: boolean;
   json: boolean;
+  rescore: boolean;
   source: string[];
   limit?: number;
+  topic?: string;
+  cap?: number;
   k?: number;
   license?: string[];
   type?: string[];
@@ -229,8 +238,11 @@ function parseProjectRagArgs(argv: string[]): {
     options: {
       help: { type: "boolean", short: "h", default: false },
       json: { type: "boolean", default: false },
+      rescore: { type: "boolean", default: false },
       source: { type: "string", multiple: true },
       limit: { type: "string" },
+      topic: { type: "string" },
+      cap: { type: "string" },
       k: { type: "string" },
       license: { type: "string" },
       type: { type: "string" },
@@ -245,9 +257,12 @@ function parseProjectRagArgs(argv: string[]): {
   const flags: ParsedFlags = {
     help: values.help === true,
     json: values.json === true,
+    rescore: values.rescore === true,
     source: Array.isArray(values.source) ? values.source : [],
   };
   if (typeof values.limit === "string") flags.limit = parsePositiveInt(values.limit, "--limit");
+  if (typeof values.topic === "string") flags.topic = values.topic;
+  if (typeof values.cap === "string") flags.cap = parsePositiveInt(values.cap, "--cap");
   if (typeof values.k === "string") flags.k = parsePositiveInt(values.k, "--k");
   if (typeof values.license === "string")
     flags.license = parseCsvEnum(values.license, VALID_LICENSES, "--license");
@@ -316,6 +331,8 @@ async function runSync(
   const report = await service.sync({
     ...(flags.source.length > 0 ? { sources: flags.source } : {}),
     ...(flags.limit !== undefined ? { limit: flags.limit } : {}),
+    ...(flags.topic !== undefined ? { topicsCsv: flags.topic } : {}),
+    ...(flags.cap !== undefined ? { topicCap: flags.cap } : {}),
   });
   if (flags.json) {
     out(JSON.stringify(report));
@@ -343,6 +360,27 @@ async function runIndex(
       `indexed: ${report.embedded} embedded, ${report.cachedSkipped} cached/skipped, ` +
         `${report.total} total cards`,
     );
+  }
+  return 0;
+}
+
+async function runReindex(
+  service: ProjectRagService,
+  flags: ParsedFlags,
+  out: (s: string) => void,
+  err: (s: string) => void,
+): Promise<number> {
+  if (!flags.rescore) {
+    err(
+      "tdmcp project-rag reindex: only --rescore is supported (recomputes score without re-embedding).",
+    );
+    return 2;
+  }
+  const report = await service.rescore();
+  if (flags.json) {
+    out(JSON.stringify(report));
+  } else {
+    out(`rescored: ${report.rescored} of ${report.total} cards (no re-embed)`);
   }
   return 0;
 }
