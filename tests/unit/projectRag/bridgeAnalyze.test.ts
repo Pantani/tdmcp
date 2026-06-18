@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   type BridgeAnalyzeOptions,
   type MinimalBridgeClient,
+  probeBridgeReachability,
   runBridgeAnalyze,
 } from "../../../src/projectRag/extractors/bridgeAnalyze.js";
 import { TdConnectionError } from "../../../src/td-client/types.js";
@@ -165,5 +166,71 @@ describe("runBridgeAnalyze", () => {
     const spy = factory as unknown as ReturnType<typeof vi.fn>;
     const call = spy.mock.calls[0] ?? [];
     expect(call[1]).toBe("secret-token");
+  });
+
+  it("returns skipped when client lacks loadProject (cannot prove artifact opened)", async () => {
+    const base = makeMockClient();
+    // Strip loadProject — the production wrapper (no /api/project/load yet)
+    // also lacks it. We must NEVER report ok against whatever happens to be
+    // open in the quarantine TD.
+    const noLoad: MinimalBridgeClient = {
+      getInfo: base.getInfo,
+      getTdNodeErrors: base.getTdNodeErrors,
+      getPreview: base.getPreview,
+      disconnect: base.disconnect,
+    };
+    const result = await runBridgeAnalyze({
+      artifactPath,
+      clientFactory: () => noLoad,
+    });
+    expect(result.status).toBe("skipped");
+    expect(result.reason).toMatch(/loadProject/);
+  });
+
+  it("returns failed when loadProject throws", async () => {
+    const client = makeMockClient({
+      loadProject: vi.fn().mockRejectedValue(new Error("project corrupt")),
+    });
+    const result = await runBridgeAnalyze({
+      artifactPath,
+      clientFactory: () => client,
+    });
+    expect(result.status).toBe("failed");
+    expect(result.error).toMatch(/load failed/);
+  });
+});
+
+describe("probeBridgeReachability", () => {
+  it("returns reachable when getInfo resolves", async () => {
+    const client = { getInfo: vi.fn().mockResolvedValue({ td_version: "x" }) };
+    const result = await probeBridgeReachability({ clientFactory: () => client });
+    expect(result.reachable).toBe(true);
+    expect(result.baseUrl).toMatch(/:9981/);
+    expect(result.reason).toBeUndefined();
+  });
+
+  it("returns not-reachable + reason when getInfo throws connection error", async () => {
+    const client = { getInfo: vi.fn().mockRejectedValue(new TdConnectionError("nope")) };
+    const result = await probeBridgeReachability({ clientFactory: () => client });
+    expect(result.reachable).toBe(false);
+    expect(result.reason).toMatch(/offline/);
+  });
+
+  it("rejects port 9980 (main TD) without any I/O", async () => {
+    const factory = vi.fn();
+    const result = await probeBridgeReachability({
+      bridgePort: 9980,
+      clientFactory: factory as never,
+    });
+    expect(result.reachable).toBe(false);
+    expect(result.reason).toMatch(/9980/);
+    expect(factory).not.toHaveBeenCalled();
+  });
+
+  it("classifies generic fetch failure as offline", async () => {
+    const client = { getInfo: vi.fn().mockRejectedValue(new Error("fetch failed")) };
+    const result = await probeBridgeReachability({ clientFactory: () => client });
+    expect(result.reachable).toBe(false);
+    expect(result.reason).toMatch(/offline/);
   });
 });

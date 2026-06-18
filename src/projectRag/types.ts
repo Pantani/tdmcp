@@ -267,6 +267,14 @@ export interface ProjectAnalyzeReport {
   bridgeUrl: string;
 }
 
+/** Result of `service.probeBridge()` — pure reachability check, no artifact. */
+export interface ProjectBridgeProbeReport {
+  reachable: boolean;
+  bridgeUrl: string;
+  /** Populated when `reachable === false` (offline, refused port, or probe error). */
+  reason?: string;
+}
+
 export interface ProjectIndexReport {
   embedded: number;
   cachedSkipped: number;
@@ -308,4 +316,10 @@ export interface ProjectRagService {
    * Never touches the user's main TD. Skipped when bridge is offline.
    */
   analyze(artifactPath: string): Promise<ProjectAnalyzeReport>;
+  /**
+   * F3 pure reachability probe for the quarantine bridge — does NOT require an
+   * artifact path. Backs `tdmcp project-rag bridge install` honestly. Refuses
+   * port 9980.
+   */
+  probeBridge(): Promise<ProjectBridgeProbeReport>;
 }

@@ -140,16 +140,21 @@ async function probeReachability(
   }
 }
 
+type LoadOutcome =
+  | { kind: "loaded"; summary: string }
+  | { kind: "unsupported" }
+  | { kind: "failed"; error: string };
+
 async function tryLoadProject(
   client: MinimalBridgeClient,
   artifactPath: string,
-): Promise<string | undefined> {
-  if (typeof client.loadProject !== "function") return undefined;
+): Promise<LoadOutcome> {
+  if (typeof client.loadProject !== "function") return { kind: "unsupported" };
   try {
     await client.loadProject(artifactPath);
-    return `loaded ${path.basename(artifactPath)}`;
+    return { kind: "loaded", summary: `loaded ${path.basename(artifactPath)}` };
   } catch (err) {
-    return `load failed: ${err instanceof Error ? err.message : String(err)}`;
+    return { kind: "failed", error: err instanceof Error ? err.message : String(err) };
   }
 }
 
@@ -183,13 +188,26 @@ async function runAnalysis(
   client: MinimalBridgeClient,
   artifactPath: string,
 ): Promise<BridgeAnalysisResult> {
-  const loadSummary = await tryLoadProject(client, artifactPath);
+  const load = await tryLoadProject(client, artifactPath);
+  // Hard rule: if we cannot load the artifact, do NOT mark `ok` — that would
+  // report on whatever project happens to be open in the quarantine TD, not on
+  // the downloaded artifact. The bridge `/api/project/load` endpoint is a
+  // separate slice; until it lands this returns `skipped` cleanly.
+  if (load.kind === "unsupported") {
+    return {
+      status: "skipped",
+      reason: "bridge does not expose loadProject — cannot analyze artifact",
+    };
+  }
+  if (load.kind === "failed") {
+    return { status: "failed", error: `load failed: ${load.error}` };
+  }
   const errorCount = await tryGetErrors(client);
   const previewPng = await tryGetPreview(client);
   const result: BridgeAnalysisResult = { status: "ok" };
   if (errorCount !== undefined) result.errorCount = errorCount;
   if (previewPng !== undefined) result.previewPng = previewPng;
-  if (loadSummary !== undefined) result.opTreeSummary = loadSummary;
+  result.opTreeSummary = load.summary;
   return result;
 }
 
@@ -216,6 +234,62 @@ async function cleanup(client: MinimalBridgeClient): Promise<void> {
   } catch {
     // best-effort
   }
+}
+
+export interface BridgeProbeOptions {
+  /** TD bridge port — MUST be != 9980. Default 9981. */
+  bridgePort?: number;
+  /** TD bridge host — default 127.0.0.1. */
+  bridgeHost?: string;
+  /** Hard timeout for the probe in ms. Default 5_000. */
+  timeoutMs?: number;
+  /** Bearer token to send to the bridge. Optional. */
+  bridgeToken?: string;
+  /** Optional override for tests. */
+  clientFactory?: (baseUrl: string, token?: string, timeoutMs?: number) => MinimalBridgeClient;
+}
+
+export interface BridgeProbeResult {
+  reachable: boolean;
+  baseUrl: string;
+  /** Populated when `reachable === false` (offline, refused port, or probe error). */
+  reason?: string;
+}
+
+const PROBE_TIMEOUT_MS = 5_000;
+
+/**
+ * Reachability probe for the quarantine TD bridge. Does NOT require an
+ * artifact path — only checks that the bridge answers `getInfo`. The main TD
+ * port `9980` is hard-rejected. Never throws.
+ */
+export async function probeBridgeReachability(opts: BridgeProbeOptions): Promise<BridgeProbeResult> {
+  const port = opts.bridgePort ?? DEFAULT_PORT;
+  const host = opts.bridgeHost ?? DEFAULT_HOST;
+  const baseUrl = `http://${host}:${port}`;
+  if (port === MAIN_TD_PORT) {
+    return { reachable: false, baseUrl, reason: "refusing to use main TD port 9980" };
+  }
+  const timeoutMs = opts.timeoutMs ?? PROBE_TIMEOUT_MS;
+  const client = opts.clientFactory
+    ? opts.clientFactory(baseUrl, opts.bridgeToken, timeoutMs)
+    : (() => {
+        const real = new TouchDesignerClient({
+          baseUrl,
+          token: opts.bridgeToken,
+          timeoutMs: Math.min(timeoutMs, 10_000),
+        });
+        return {
+          getInfo: () => real.getInfo(),
+        } satisfies MinimalBridgeClient;
+      })();
+  const probe = await probeReachability(client, baseUrl);
+  await cleanup(client);
+  if (probe === null) return { reachable: true, baseUrl };
+  const result: BridgeProbeResult = { reachable: false, baseUrl };
+  if (probe.status === "skipped" && probe.reason !== undefined) result.reason = probe.reason;
+  else if (probe.status === "failed" && probe.error !== undefined) result.reason = probe.error;
+  return result;
 }
 
 /**

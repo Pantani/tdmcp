@@ -51,6 +51,11 @@ const noopSvc: ProjectRagService = {
     reason: "no bridge",
     bridgeUrl: "http://127.0.0.1:9981",
   }),
+  probeBridge: async () => ({
+    reachable: false,
+    bridgeUrl: "http://127.0.0.1:9981",
+    reason: "bridge offline at http://127.0.0.1:9981",
+  }),
 };
 
 describe("projectRag CLI gating + help", () => {
@@ -335,10 +340,10 @@ describe("projectRag CLI commands", () => {
   it("bridge install prints walkthrough and probes the bridge (offline)", async () => {
     const svc: ProjectRagService = {
       ...noopSvc,
-      analyze: async () => ({
-        status: "skipped",
-        reason: "offline",
+      probeBridge: async () => ({
+        reachable: false,
         bridgeUrl: "http://127.0.0.1:9981",
+        reason: "bridge offline at http://127.0.0.1:9981",
       }),
     };
     const io = captureIO();
@@ -351,6 +356,7 @@ describe("projectRag CLI commands", () => {
     expect(code).toBe(0);
     expect(io.out.join("")).toContain("quarantine bridge setup");
     expect(io.out.join("")).toContain("OFFLINE");
+    expect(io.out.join("")).toContain("reason: bridge offline");
     // Critical: never recommends port 9980.
     expect(io.out.join("")).toMatch(/9981/);
   });
@@ -358,9 +364,10 @@ describe("projectRag CLI commands", () => {
   it("bridge install --json emits machine-readable probe result", async () => {
     const svc: ProjectRagService = {
       ...noopSvc,
-      analyze: async () => ({
-        status: "skipped",
+      probeBridge: async () => ({
+        reachable: false,
         bridgeUrl: "http://127.0.0.1:9981",
+        reason: "bridge offline at http://127.0.0.1:9981",
       }),
     };
     const io = captureIO();
@@ -374,17 +381,13 @@ describe("projectRag CLI commands", () => {
     const parsed = JSON.parse(io.out.join(""));
     expect(parsed.bridgeUrl).toBe("http://127.0.0.1:9981");
     expect(parsed.reachable).toBe(false);
-    expect(parsed.probeStatus).toBe("skipped");
+    expect(parsed.reason).toMatch(/offline/);
   });
 
-  it("bridge install reports REACHABLE when probe returns non-skipped", async () => {
+  it("bridge install reports REACHABLE when probe.reachable is true", async () => {
     const svc: ProjectRagService = {
       ...noopSvc,
-      analyze: async () => ({
-        status: "failed",
-        error: "artifact does not exist",
-        bridgeUrl: "http://127.0.0.1:9981",
-      }),
+      probeBridge: async () => ({ reachable: true, bridgeUrl: "http://127.0.0.1:9981" }),
     };
     const io = captureIO();
     const code = await runProjectRagCli(["bridge", "install"], {

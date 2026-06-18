@@ -511,20 +511,22 @@ async function runBridge(
     out(BRIDGE_INSTALL_HELP);
     return sub.length === 0 ? 0 : 2;
   }
-  const bridgeUrl = `http://127.0.0.1:${config.bridgePort}`;
-  // Probe the bridge by calling analyze with a sentinel non-existent path —
-  // we only care about the status (skipped = unreachable, failed = reachable
-  // but artifact missing). This avoids touching any real file.
-  const probe = await service.analyze("/__tdmcp_project_rag_bridge_probe__.toe");
-  const reachable = probe.status !== "skipped";
+  // Pure reachability probe — never touches any artifact. `service.probeBridge`
+  // calls only `getInfo` on the quarantine bridge; offline → `reachable: false`.
+  const probe = await service.probeBridge();
+  const bridgeUrl = probe.bridgeUrl;
+  const reachable = probe.reachable;
   if (flags.json) {
-    out(JSON.stringify({ bridgeUrl, reachable, probeStatus: probe.status }));
+    const payload: Record<string, unknown> = { bridgeUrl, reachable };
+    if (probe.reason !== undefined) payload.reason = probe.reason;
+    out(JSON.stringify(payload));
     return 0;
   }
   out(BRIDGE_INSTALL_HELP);
   out("");
   out(`Probe: ${bridgeUrl} — ${reachable ? "REACHABLE" : "OFFLINE"}`);
   if (!reachable) {
+    if (probe.reason !== undefined) out(`  reason: ${probe.reason}`);
     out("  Follow the steps above, then re-run: tdmcp project-rag bridge install");
   } else {
     out("  Ready. Try: tdmcp project-rag analyze /absolute/path/to/file.toe");
