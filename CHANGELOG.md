@@ -8,6 +8,20 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Project RAG — awesome-list discovery source (suggest-only, opt-in, experimental)** —
+  a read-only discovery queue parsed from the `monkeymonk/awesome-touchdesigner`
+  README (`src/projectRag/sources/awesomeList.ts`). New `tdmcp project-rag
+  sources --discovery` lists candidate TD repos/links for an operator to review;
+  it is deliberately **not** a live sync `SourceAdapter` — it never enters
+  `resolveProjectSources`, never clones repos, never downloads binaries, and never
+  emits index-eligible cards. Every item is hard-stamped `license: "Unknown"` /
+  `licenseConfidence: "unknown"` / `suggestOnly: true` and carries mandatory
+  provenance (`sourceName`/`sourceUrl`/`discoveredAt`), so the license-gate stays
+  intact. Only `https://` links survive; binary URLs (`.tox`/`.toe`/`.zip`/`.7z`
+  and `/releases/download/`) are dropped. When the README can't be fetched/parsed
+  the queue degrades to a clean skip (`SourceSkippedError` → exit 0, never a
+  tombstone). New service method `ProjectRagService.listDiscovery()`; `--json`
+  supported. No new env var.
 - **Project RAG — MCP prompts, resources, copilot tool & CLI cross-link (opt-in, experimental, F4)** —
   the AI surface for the local Project RAG repertoire lands. New MCP prompt
   `project_rag_context` (`src/prompts/projectRagContext.ts`): runs

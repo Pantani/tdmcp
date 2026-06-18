@@ -16,6 +16,7 @@ import { parseArgs } from "node:util";
 import { createLogger } from "../utils/logger.js";
 import { isCopyleftLicense } from "./licensePolicy.js";
 import { createProjectRagService } from "./service.js";
+import { SourceSkippedError } from "./sources/index.js";
 import type {
   ProjectRagConfig,
   ProjectRagLicense,
@@ -65,6 +66,8 @@ Usage: tdmcp project-rag <sources|sync|index|reindex|search|info|analyze|bridge>
 
 Commands:
   sources              List configured project sources and their status.
+  sources --discovery  List the suggest-only awesome-list discovery queue
+                       (candidate links for review; never auto-ingested).
   sync                 Pull cards from selected sources.
   index                Embed new/changed cards (uses Ollama).
   reindex --rescore    Recompute card.score in place without re-embedding.
@@ -76,6 +79,8 @@ Commands:
                        and probe whether the bridge is reachable.
 
 Flags:
+  --discovery          With "sources": list the awesome-list discovery queue
+                       (suggest-only) instead of the live sync sources.
   --source <name>      Limit sync to one source (repeatable).
   --limit <n>          Max items per source on sync (default 10).
   --topic <csv>        Override topic list for the github-topic source. Use
@@ -203,7 +208,7 @@ export async function runProjectRagCli(
   try {
     switch (parsed.command) {
       case "sources":
-        return await runSources(service, parsed.values, stdoutLine);
+        return await runSources(service, parsed.values, stdoutLine, stderrLine);
       case "sync":
         return await runSync(service, parsed.values, stdoutLine);
       case "index":
@@ -234,6 +239,7 @@ interface ParsedFlags {
   json: boolean;
   rescore: boolean;
   bridge: boolean;
+  discovery: boolean;
   source: string[];
   limit?: number;
   topic?: string;
@@ -258,6 +264,7 @@ function parseProjectRagArgs(argv: string[]): {
       json: { type: "boolean", default: false },
       rescore: { type: "boolean", default: false },
       bridge: { type: "boolean", default: false },
+      discovery: { type: "boolean", default: false },
       source: { type: "string", multiple: true },
       limit: { type: "string" },
       topic: { type: "string" },
@@ -278,6 +285,7 @@ function parseProjectRagArgs(argv: string[]): {
     json: values.json === true,
     rescore: values.rescore === true,
     bridge: values.bridge === true,
+    discovery: values.discovery === true,
     source: Array.isArray(values.source) ? values.source : [],
   };
   if (typeof values.limit === "string") flags.limit = parsePositiveInt(values.limit, "--limit");
@@ -326,7 +334,11 @@ async function runSources(
   service: ProjectRagService,
   flags: ParsedFlags,
   out: (s: string) => void,
+  err: (s: string) => void,
 ): Promise<number> {
+  if (flags.discovery) {
+    return runDiscovery(service, flags, out, err);
+  }
   const list = await service.listSources();
   if (flags.json) {
     out(JSON.stringify(list));
@@ -339,6 +351,44 @@ async function runSources(
   for (const s of list) {
     const reason = s.reason !== undefined ? ` — ${s.reason}` : "";
     out(`${s.status.padEnd(8)} ${s.name}  (${s.displayName})${reason}`);
+  }
+  return 0;
+}
+
+/**
+ * Suggest-only discovery queue. NEVER auto-ingests — it only lists candidate
+ * links. A {@link SourceSkippedError} (README unreachable) is reported as a
+ * clean skip with exit 0, not a failure.
+ */
+async function runDiscovery(
+  service: ProjectRagService,
+  flags: ParsedFlags,
+  out: (s: string) => void,
+  err: (s: string) => void,
+): Promise<number> {
+  let items: Awaited<ReturnType<ProjectRagService["listDiscovery"]>>;
+  try {
+    items = await service.listDiscovery();
+  } catch (e) {
+    if (e instanceof SourceSkippedError) {
+      if (flags.json) out(JSON.stringify({ skipped: true, reason: e.hint }));
+      else err(`discovery skipped: ${e.hint}`);
+      return 0;
+    }
+    throw e;
+  }
+  if (flags.json) {
+    out(JSON.stringify(items));
+    return 0;
+  }
+  if (items.length === 0) {
+    out("No discovery candidates.");
+    return 0;
+  }
+  out(`discovery queue (suggest-only, ${items.length} candidates) — review before ingest:`);
+  for (const i of items) {
+    const desc = i.description !== undefined ? ` — ${i.description}` : "";
+    out(`  [${i.section}] ${i.title}\n        ${i.url}${desc}`);
   }
   return 0;
 }

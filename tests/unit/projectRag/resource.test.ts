@@ -44,6 +44,7 @@ describe("projectRag resource gating", () => {
         search: async () => [],
         getCard: async () => undefined,
         listSources: async () => [],
+        listDiscovery: async () => [],
         analyze: async () => ({
           status: "skipped",
           reason: "no bridge",

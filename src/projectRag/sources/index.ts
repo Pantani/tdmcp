@@ -51,6 +51,12 @@ export function resolveProjectSources(opts: ResolveSourcesOptions = {}): SourceA
   return all.filter((s) => wanted.has(s.name));
 }
 
+export type { DiscoveryItem } from "./awesomeList.js";
+export {
+  AWESOME_README_URL,
+  AWESOME_SOURCE_NAME,
+  fetchAwesomeListDiscovery,
+} from "./awesomeList.js";
 export type { DerivativeLocalOptions } from "./derivativeLocal.js";
 export { derivativeLocalSource } from "./derivativeLocal.js";
 export { SourceSkippedError } from "./errors.js";

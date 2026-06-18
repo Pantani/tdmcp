@@ -11,6 +11,8 @@
  * `bridgeAnalyze` extractor (F3) uses a SEPARATE TD instance on a dedicated port.
  */
 
+import type { DiscoveryItem } from "./sources/awesomeList.js";
+
 export const PROJECT_CARD_SCHEMA_VERSION = 2 as const;
 
 /**
@@ -317,6 +319,14 @@ export interface ProjectRagService {
   search(query: string, k: number, filters?: ProjectSearchFilters): Promise<ProjectSearchResult[]>;
   getCard(id: string): Promise<ProjectRagCard | undefined>;
   listSources(): Promise<ProjectSourceStatus[]>;
+  /**
+   * Suggest-only discovery queue from `monkeymonk/awesome-touchdesigner`. Read
+   * only: it surfaces candidate links for an operator to review and NEVER
+   * auto-ingests, clones, or downloads binaries — distinct from the live sync
+   * sources in {@link listSources}. Throws {@link SourceSkippedError} when the
+   * README can't be fetched/parsed.
+   */
+  listDiscovery(): Promise<DiscoveryItem[]>;
   /**
    * F3 ad-hoc analyze of one artifact path through the quarantine bridge.
    * Never touches the user's main TD. Skipped when bridge is offline.
