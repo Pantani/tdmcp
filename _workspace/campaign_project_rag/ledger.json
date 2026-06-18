@@ -13,7 +13,7 @@
     "builder_retry": 1,
     "on_repeat_fail": "quarantine-and-continue"
   },
-  "current_wave": 2,
+  "current_wave": 3,
   "waves": {
     "1": {
       "version": "0.7.0-prag.f0",
@@ -702,12 +702,24 @@
       "shared_schema": null,
       "summary": "src/projectRag/sources/githubTopic.ts — gh GraphQL topic search with SPDX allowlist filter; cap per sync.",
       "version_target": "0.7.0-prag.f2",
-      "status": "pending",
-      "attempts": 0,
-      "qa": null,
-      "files": [],
-      "notes": "",
-      "history": []
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4287)",
+        "recipes": "n/a-this-wave",
+        "bridge": "n/a-this-wave"
+      },
+      "files": [
+        "src/projectRag/sources/githubTopic.ts",
+        "tests/unit/projectRag/githubTopic.test.ts"
+      ],
+      "notes": "Uses GitHub REST Search API (not GraphQL) — same allowlist semantics, no extra dep.",
+      "history": [
+        { "at": "2026-06-18T05:30:00.000Z", "event": "shipped", "wave": 3 }
+      ]
     },
     {
       "id": "prag_source_awesome_list",
@@ -724,12 +736,14 @@
       "shared_schema": null,
       "summary": "src/projectRag/sources/awesomeList.ts — parse monkeymonk/awesome-touchdesigner README; feeds discovery queue (suggest-only, never auto-ingest).",
       "version_target": "0.7.0-prag.f2",
-      "status": "pending",
+      "status": "deferred",
       "attempts": 0,
       "qa": null,
       "files": [],
-      "notes": "",
-      "history": []
+      "notes": "Out of scope for Wave 3 per user direction (F2 scope = DBraun GPL seed + github-topic + scoring tuning + CLI extensions). Reschedule when needed.",
+      "history": [
+        { "at": "2026-06-18T05:30:00.000Z", "event": "deferred", "wave": 3, "reason": "out-of-scope for this wave" }
+      ]
     },
     {
       "id": "prag_source_iihq",
@@ -746,12 +760,14 @@
       "shared_schema": null,
       "summary": "src/projectRag/sources/interactiveImmersive.ts — markdown-only ingest from book repo (CC-BY-NC-SA → meta + body, no binaries). Tag 'tutorial'.",
       "version_target": "0.7.0-prag.f2",
-      "status": "pending",
+      "status": "deferred",
       "attempts": 0,
       "qa": null,
       "files": [],
-      "notes": "",
-      "history": []
+      "notes": "Out of scope for Wave 3 per user direction.",
+      "history": [
+        { "at": "2026-06-18T05:30:00.000Z", "event": "deferred", "wave": 3, "reason": "out-of-scope for this wave" }
+      ]
     },
     {
       "id": "prag_scoring_tuned",
@@ -770,12 +786,25 @@
       "shared_schema": null,
       "summary": "Tune default scoring weights against a 10-query ground-truth set; docs/PROJECT_RAG.md#scoring.",
       "version_target": "0.7.0-prag.f2",
-      "status": "pending",
-      "attempts": 0,
-      "qa": null,
-      "files": [],
-      "notes": "",
-      "history": []
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4287)",
+        "recipes": "n/a-this-wave",
+        "bridge": "n/a-this-wave"
+      },
+      "files": [
+        "src/projectRag/scoring.ts",
+        "_workspace/campaign_project_rag/scoring_ground_truth.json",
+        "tests/unit/projectRag/scoringGroundTruth.test.ts"
+      ],
+      "notes": "Copyleft tie-breaker (-0.05) + curated-source boost (+0.10). 9/10 ground-truth hit-rate (>=7/10 target).",
+      "history": [
+        { "at": "2026-06-18T05:30:00.000Z", "event": "shipped", "wave": 3 }
+      ]
     },
     {
       "id": "prag_reindex_rescore_cmd",
@@ -794,12 +823,27 @@
       "shared_schema": null,
       "summary": "tdmcp project-rag reindex --rescore — rewrites score.* without re-embedding.",
       "version_target": "0.7.0-prag.f2",
-      "status": "pending",
-      "attempts": 0,
-      "qa": null,
-      "files": [],
-      "notes": "",
-      "history": []
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4287)",
+        "recipes": "n/a-this-wave",
+        "bridge": "n/a-this-wave"
+      },
+      "files": [
+        "src/projectRag/service.ts",
+        "src/projectRag/types.ts",
+        "src/projectRag/cli.ts",
+        "tests/unit/projectRag/cli.test.ts",
+        "tests/unit/projectRag/service.test.ts"
+      ],
+      "notes": "Also added sync --topic <csv> + --cap N, github-topic source registered as 'ready' in listSources.",
+      "history": [
+        { "at": "2026-06-18T05:30:00.000Z", "event": "shipped", "wave": 3 }
+      ]
     },
     {
       "id": "prag_bridge_analyze_extractor",
@@ -1014,6 +1058,41 @@
       "files": [],
       "notes": "",
       "history": []
+    },
+    {
+      "id": "prag_source_dbraun_seed",
+      "surface": "controls",
+      "priority": "P1",
+      "effort": "S",
+      "impact": "Med",
+      "conf": "High",
+      "novelty": "EXTENSION",
+      "probe_live": false,
+      "needs_td": false,
+      "wave": 3,
+      "depends_on": ["prag_source_github_repo"],
+      "shared_schema": null,
+      "summary": "Add DBraun/TouchDesigner_Shared (GPL-3.0) to DEFAULT_GITHUB_REPOS and propagate copyleft badge to CLI/MCP search output.",
+      "version_target": "0.7.0-prag.f2",
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4287)",
+        "recipes": "n/a-this-wave",
+        "bridge": "n/a-this-wave"
+      },
+      "files": [
+        "src/projectRag/sources/githubRepo.ts",
+        "src/projectRag/cli.ts",
+        "tests/unit/projectRag/githubRepo.test.ts"
+      ],
+      "notes": "Copyleft flag already in licensePolicy.isCopyleftLicense (F0); F2 just wires the badge into CLI output.",
+      "history": [
+        { "at": "2026-06-18T05:30:00.000Z", "event": "shipped", "wave": 3 }
+      ]
     }
   ]
 }
