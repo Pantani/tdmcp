@@ -214,25 +214,18 @@ async function main(): Promise<void> {
     process.exit(4);
   }
 
-  // 3. Validate shape
-  const shapeFails: string[] = [];
-  for (let i = 0; i < (items ?? []).length; i++) {
-    const item = (items ?? [])[i];
-    const result = RAW_SOURCE_ITEM_SCHEMA.safeParse(item);
-    if (!result.success) {
-      for (const issue of result.error.issues) {
-        shapeFails.push(`items[${i}].${issue.path.join(".")}: ${issue.message}`);
-      }
-    }
-  }
-
-  if (shapeFails.length > 0) {
+  // 3. Validate shape — container + items in one pass so a missing/non-array
+  //    payload is caught instead of silently treated as zero items.
+  const parsed = z.array(RAW_SOURCE_ITEM_SCHEMA).safeParse(items);
+  if (!parsed.success) {
     console.error(`Shape drift detected for source "${sourceId}":`);
-    for (const fail of shapeFails) {
-      console.error(`  ${fail}`);
+    for (const issue of parsed.error.issues) {
+      const path = issue.path.length > 0 ? issue.path.join(".") : "(root)";
+      console.error(`  items.${path}: ${issue.message}`);
     }
     process.exit(2);
   }
+  items = parsed.data;
 
   // 4. Redaction assert
   const serialized = JSON.stringify(items);

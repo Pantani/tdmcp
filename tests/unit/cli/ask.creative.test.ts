@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { runAsk } from "../../../src/cli/ask.js";
 import type { CreativeRagService } from "../../../src/creativeRag/index.js";
 import type { ChatMessage } from "../../../src/llm/client.js";
-import type { LoadedTdmcpConfig } from "../../../src/utils/config.js";
+import { isRagFeatureFlagEnabled, type LoadedTdmcpConfig } from "../../../src/utils/config.js";
 
 type OnEvent = (event: unknown) => void;
 
@@ -23,8 +23,7 @@ function makeConfig(): LoadedTdmcpConfig {
   // Mirror loadConfig's behavior for the env vars this test exercises so the
   // env-overrides-flag case (TDMCP_RAG_INJECT_ASK=1) actually flips ragInjectAsk
   // in the parsed config — the production CLI reads from config, not env.
-  const envInjectAsk = process.env.TDMCP_RAG_INJECT_ASK;
-  const ragInjectAsk = envInjectAsk === "1" || envInjectAsk === "true";
+  const ragInjectAsk = isRagFeatureFlagEnabled(process.env.TDMCP_RAG_INJECT_ASK);
   return {
     tdHost: "127.0.0.1",
     tdPort: 9980,

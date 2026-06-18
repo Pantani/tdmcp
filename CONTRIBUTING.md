@@ -69,14 +69,14 @@ both.
 ### Running locally
 
 ```bash
-node scripts/probe-creative-source.mjs <source-id>
+npx tsx scripts/probe-creative-source.ts <source-id>
 # source-id: artic | cleveland | europeana | met | rijksmuseum | smithsonian | wikimedia
 
 # With JSON output (good for CI log capture):
-node scripts/probe-creative-source.mjs europeana --json
+npx tsx scripts/probe-creative-source.ts europeana --json
 
 # Limit items (default 3):
-node scripts/probe-creative-source.mjs rijksmuseum --limit=1
+npx tsx scripts/probe-creative-source.ts rijksmuseum --limit=1
 ```
 
 Set the required credential env vars first (e.g. `EUROPEANA_API_KEY`). A
@@ -122,7 +122,7 @@ title should be `probe-live follow-up: re-run for <source-id> after outage`.
 ### Rate limits
 
 Rijksmuseum and Smithsonian have daily API caps. If your PR triggers many CI
-re-runs in one day, run `probe-creative-source.mjs` locally and ask a
+re-runs in one day, run `probe-creative-source.ts` locally and ask a
 maintainer to trigger the final CI run before merge.
 
 ### Branch-protection note
