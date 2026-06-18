@@ -1,0 +1,148 @@
+name: probe-live
+
+on:
+  pull_request:
+    paths:
+      - "src/creativeRag/sources/**"
+      - "scripts/probe-creative-source.ts"
+      - ".github/workflows/probe-live.yml"
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Check escape hatch
+        id: escape
+        env:
+          TDMCP_PROBE_LIVE_SKIP: ${{ vars.TDMCP_PROBE_LIVE_SKIP }}
+          PR_LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          ACTOR: ${{ github.actor }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          HAS_SKIP_VAR=""
+          if [ "${TDMCP_PROBE_LIVE_SKIP}" = "1" ]; then
+            HAS_SKIP_VAR="1"
+          fi
+
+          HAS_LABEL=$(echo "$PR_LABELS" | grep -c '"skip-probe-live"' || true)
+
+          if [ -n "$HAS_SKIP_VAR" ] && [ "$HAS_LABEL" -gt "0" ]; then
+            # Both conditions met — check for required reason line
+            REASON=$(echo "$PR_BODY" | grep -oP '(?<=Probe-live skip reason: ).*' || true)
+            if [ -z "$REASON" ]; then
+              echo "::error::Escape hatch requested but PR description is missing required 'Probe-live skip reason: ...' line."
+              exit 1
+            fi
+            # PR-body-derived value: write via heredoc so a newline-bearing or
+            # quote-bearing REASON can't corrupt $GITHUB_OUTPUT.
+            {
+              echo "skip=true"
+              echo "reason<<__TDMCP_EOF__"
+              echo "$REASON"
+              echo "__TDMCP_EOF__"
+              echo "actor=$ACTOR"
+            } >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Post skip notice
+        if: steps.escape.outputs.skip == 'true'
+        uses: actions/github-script@v7
+        # Pass PR-body-derived values via env and read with process.env to avoid
+        # script-injection through ${{ ... }} interpolation into JS source.
+        env:
+          REASON: ${{ steps.escape.outputs.reason }}
+          ACTOR: ${{ steps.escape.outputs.actor }}
+        with:
+          script: |
+            const reason = process.env.REASON ?? "";
+            const actor = process.env.ACTOR ?? "";
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `> **probe-live skipped** by @${actor}\n>\n> Reason: ${reason}\n>\n> Follow-up obligation: open a tracking issue and re-run probe-live within 7 days of merge.`,
+            });
+
+      - name: Detect changed sources
+        id: changed
+        if: steps.escape.outputs.skip != 'true'
+        run: |
+          KNOWN_IDS="artic cleveland europeana met rijksmuseum smithsonian wikimedia"
+
+          # If the shared http.ts helper changed, probe ALL sources (safer default)
+          SHARED_CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- \
+            src/creativeRag/sources/http.ts src/creativeRag/sources/errors.ts src/creativeRag/sources/types.ts \
+            | wc -l | tr -d ' ')
+
+          if [ "$SHARED_CHANGED" -gt "0" ]; then
+            echo "Shared helper changed — probing all live sources."
+            echo "ids=$KNOWN_IDS" >> "$GITHUB_OUTPUT"
+          else
+            CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- src/creativeRag/sources/)
+            IDS=""
+            for ID in $KNOWN_IDS; do
+              if echo "$CHANGED_FILES" | grep -q "${ID}.ts"; then
+                IDS="$IDS $ID"
+              fi
+            done
+            IDS=$(echo "$IDS" | xargs)
+            echo "ids=$IDS" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Probe each changed source
+        if: steps.escape.outputs.skip != 'true' && steps.changed.outputs.ids != ''
+        env:
+          # The adapters read TDMCP_RAG_*_KEY (see
+          # src/creativeRag/sources/europeana.ts, smithsonian.ts). Export both
+          # the canonical names AND the legacy *_API_KEY aliases so a repo that
+          # still stores secrets under either convention keeps working.
+          TDMCP_RAG_EUROPEANA_KEY: ${{ secrets.EUROPEANA_API_KEY }}
+          TDMCP_RAG_SMITHSONIAN_KEY: ${{ secrets.SMITHSONIAN_API_KEY }}
+          TDMCP_RAG_RIJKSMUSEUM_KEY: ${{ secrets.RIJKSMUSEUM_API_KEY }}
+          EUROPEANA_API_KEY: ${{ secrets.EUROPEANA_API_KEY }}
+          SMITHSONIAN_API_KEY: ${{ secrets.SMITHSONIAN_API_KEY }}
+          RIJKSMUSEUM_API_KEY: ${{ secrets.RIJKSMUSEUM_API_KEY }}
+        run: |
+          FAILED=""
+          for id in ${{ steps.changed.outputs.ids }}; do
+            echo "--- Probing source: $id ---"
+            EXIT_CODE=0
+            npx tsx scripts/probe-creative-source.ts "$id" --json || EXIT_CODE=$?
+            if [ "$EXIT_CODE" -eq "3" ]; then
+              echo "::error::Source '$id' has missing credentials in CI (exit 3). Configure the repo secret before this adapter can land."
+              FAILED="$FAILED $id(missing-credential)"
+            elif [ "$EXIT_CODE" -eq "4" ]; then
+              echo "::error::Upstream for '$id' is unreachable (exit 4). Use the escape hatch if the upstream has been down > 24h."
+              FAILED="$FAILED $id(unreachable)"
+            elif [ "$EXIT_CODE" -ne "0" ]; then
+              echo "::error::Probe FAILED for source '$id' (exit $EXIT_CODE)."
+              FAILED="$FAILED $id(failed)"
+            else
+              echo "Probe PASSED for source '$id'."
+            fi
+          done
+
+          if [ -n "$FAILED" ]; then
+            echo "::error::probe-live FAILED for:$FAILED"
+            exit 2
+          fi
+
+      - name: No sources changed
+        if: steps.escape.outputs.skip != 'true' && steps.changed.outputs.ids == ''
+        run: echo "No live source adapters changed — probe-live not required for this PR."

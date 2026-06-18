@@ -84,6 +84,41 @@ function ragEnabledFlag(value: unknown): boolean | undefined {
 const RagEnabledSchema = z.preprocess(ragEnabledFlag, z.boolean().default(false));
 
 /**
+ * Centralized "boolean-ish env" parser for Creative RAG feature flags. Both
+ * config.ts (parsed config) and call sites that read env BEFORE config is built
+ * (tool registration, Layer 2 index) must agree on what counts as enabled —
+ * accept "1" or "true" (case-insensitive), trim whitespace. Anything else →
+ * disabled. Keep this in sync with `ragEnabledFlag` above.
+ */
+export function isRagFeatureFlagEnabled(value: string | undefined): boolean {
+  if (value === undefined || value === null) return false;
+  const normalized = String(value).trim().toLowerCase();
+  return normalized === "1" || normalized === "true";
+}
+
+const RAG_INJECT_K_DEFAULT = 3;
+const RAG_INJECT_K_MAX = 5;
+const RAG_INJECT_TIMEOUT_MS_DEFAULT = 3000;
+const RAG_PROBE_TIMEOUT_MS_DEFAULT = 3000;
+
+const RagApplyCardSchema = z.preprocess(ragEnabledFlag, z.boolean().default(false));
+const RagInjectAskSchema = z.preprocess(ragEnabledFlag, z.boolean().default(false));
+const RagInjectKSchema = z.preprocess(
+  (value) => sanitizeBoundedNumber(value, RAG_INJECT_K_DEFAULT, 1, RAG_INJECT_K_MAX, true),
+  z.number().int().min(1).max(RAG_INJECT_K_MAX).default(RAG_INJECT_K_DEFAULT),
+);
+const RagInjectTimeoutMsSchema = z.preprocess(
+  (value) =>
+    sanitizeBoundedNumber(value, RAG_INJECT_TIMEOUT_MS_DEFAULT, 1, Number.MAX_SAFE_INTEGER, true),
+  z.number().int().min(1).default(RAG_INJECT_TIMEOUT_MS_DEFAULT),
+);
+const RagProbeTimeoutMsSchema = z.preprocess(
+  (value) =>
+    sanitizeBoundedNumber(value, RAG_PROBE_TIMEOUT_MS_DEFAULT, 1, Number.MAX_SAFE_INTEGER, true),
+  z.number().int().min(1).default(RAG_PROBE_TIMEOUT_MS_DEFAULT),
+);
+
+/**
  * Project RAG composite-score weights schema (technical:license:freshness:reliability).
  * Accepts either a 4-number object or a "0.45:0.25:0.15:0.15" colon CSV from env.
  */
@@ -226,6 +261,23 @@ export const ConfigSchema = z.object({
   /** Europeana Search API key (read in-source by the adapter; never threaded through CreativeRagConfig). */
   ragEuropeanaKey: z.string().optional(),
   /**
+   * Gate the `apply_creative_card` Layer 2 tool / CLI verb. Off by default so the
+   * inspiration→execution loop only registers when explicitly enabled. Note:
+   * tool registration runs BEFORE the parsed config is available, so the Layer 2
+   * index and CLI registry still read `process.env.TDMCP_RAG_APPLY_CARD` via the
+   * shared `isRagFeatureFlagEnabled` helper. This field is the source of truth
+   * everywhere else.
+   */
+  ragApplyCard: RagApplyCardSchema,
+  /** Auto-inject creative cards into `tdmcp ask` prompts (mirrors --with-creative). */
+  ragInjectAsk: RagInjectAskSchema,
+  /** How many cards to inject into `tdmcp ask` context (1–5). */
+  ragInjectK: RagInjectKSchema,
+  /** Wall-clock timeout (ms) for the creative-context search during `tdmcp ask`. */
+  ragInjectTimeoutMs: RagInjectTimeoutMsSchema,
+  /** Wall-clock timeout (ms) for the doctor's Ollama probe. */
+  ragProbeTimeoutMs: RagProbeTimeoutMsSchema,
+  /**
    * Opt-in switch for the Project RAG repertoire feature
    * (`tdmcp project-rag` + `tdmcp://project/*` resources). Default ON when
    * `ragEnabled` is on; the AND of both gates controls activation. Accepts
@@ -357,6 +409,11 @@ function envValues(env: NodeJS.ProcessEnv): Record<string, unknown> {
     ragBackend: env.TDMCP_RAG_BACKEND || undefined,
     ragSmithsonianKey: env.TDMCP_RAG_SMITHSONIAN_KEY || undefined,
     ragEuropeanaKey: env.TDMCP_RAG_EUROPEANA_KEY || undefined,
+    ragApplyCard: env.TDMCP_RAG_APPLY_CARD,
+    ragInjectAsk: env.TDMCP_RAG_INJECT_ASK,
+    ragInjectK: env.TDMCP_RAG_INJECT_K || undefined,
+    ragInjectTimeoutMs: env.TDMCP_RAG_INJECT_TIMEOUT_MS || undefined,
+    ragProbeTimeoutMs: env.TDMCP_RAG_PROBE_TIMEOUT_MS || undefined,
     projectRagEnabled: env.TDMCP_PROJECT_RAG_ENABLED,
     projectRagBridgeAnalysis: env.TDMCP_PROJECT_RAG_BRIDGE_ANALYSIS,
     projectRagBridgePort: env.TDMCP_PROJECT_RAG_BRIDGE_PORT || undefined,

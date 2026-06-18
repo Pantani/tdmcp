@@ -1,6 +1,8 @@
 import { parseArgs } from "node:util";
 import { runAgentTurn } from "../llm/agent.js";
+import type { ChatMessage } from "../llm/client.js";
 import { LlmClient } from "../llm/client.js";
+import { buildCreativeContextMessage, clampK } from "../llm/creativeContext.js";
 import { resolveTools } from "../llm/tools.js";
 import { buildToolContext } from "../server/context.js";
 import {
@@ -19,6 +21,7 @@ export interface AskCliOptions {
   autoStartOllama: boolean;
   readOnly: boolean;
   creative: boolean;
+  withCreative: boolean;
   timeoutMs: number;
   prompt?: string;
   model?: string;
@@ -59,6 +62,10 @@ Flags:
   --config <path>   Use a specific config file instead of the search order.
   --read-only       Force the safe tier (inspection only).
   --creative        Use the creative tier and a warmer sampling preset.
+  --with-creative   Inject top creative RAG cards as passive system context
+                    (requires TDMCP_RAG_ENABLED=1). Also enabled via
+                    TDMCP_RAG_INJECT_ASK=1. Card count: TDMCP_RAG_INJECT_K
+                    (default 3, max 5).
   --no-ollama       Don't auto-start local Ollama.
   --timeout <ms>    Wall-clock cap on the turn (default 120000). Exits 124 on hit.
   -h, --help        Show this help.
@@ -80,6 +87,7 @@ export function parseAskArgs(argv: string[] = []): AskCliOptions {
       config: { type: "string" },
       "read-only": { type: "boolean", default: false },
       creative: { type: "boolean", default: false },
+      "with-creative": { type: "boolean", default: false },
       "no-ollama": { type: "boolean", default: false },
       timeout: { type: "string" },
     },
@@ -106,6 +114,7 @@ export function parseAskArgs(argv: string[] = []): AskCliOptions {
     autoStartOllama: values["no-ollama"] !== true,
     readOnly: values["read-only"] === true,
     creative: values.creative === true,
+    withCreative: values["with-creative"] === true,
     timeoutMs,
     ...(prompt.length > 0 ? { prompt } : {}),
     ...(typeof values.model === "string" ? { model: values.model } : {}),
@@ -230,6 +239,27 @@ export async function runAsk(argv: string[] = [], deps: AskRuntimeDeps = {}): Pr
   let answer: string | undefined;
   let errorMessage: string | undefined;
 
+  // Creative RAG injection — passive context prepended as a user message.
+  // Flag wins over the env-derived config flag; RAG disabled → warn + skip
+  // (not an error). All knobs come from the parsed config (single source of
+  // truth) so file-based config and profiles work the same as env vars.
+  const inject = opts.withCreative || config.ragInjectAsk === true;
+  let creativeMsg: ChatMessage | undefined;
+  if (inject) {
+    if (!ctx.creativeRag) {
+      stderrLine("tdmcp ask: creative context requested but TDMCP_RAG_ENABLED is off — skipping");
+    } else {
+      creativeMsg = await buildCreativeContextMessage(ctx.creativeRag, prompt, {
+        k: clampK(config.ragInjectK),
+        timeoutMs: config.ragInjectTimeoutMs,
+        logger,
+      });
+    }
+  }
+  const messages: ChatMessage[] = creativeMsg
+    ? [creativeMsg, { role: "user", content: prompt }]
+    : [{ role: "user", content: prompt }];
+
   // AbortController lets the timeout branch actually cancel the in-flight turn
   // (streaming fetch + tool loop) so the Node process can exit at 124 instead
   // of being held open by the still-running underlying request.
@@ -240,10 +270,10 @@ export async function runAsk(argv: string[] = [], deps: AskRuntimeDeps = {}): Pr
   // clearTimeout/abort cleanup, and crash the CLI with an unhandled exception.
   const turnPromise = (async () => {
     try {
-      const messages = await turn(
+      const turnResult = await turn(
         ctx,
         client,
-        [{ role: "user", content: prompt }],
+        messages,
         (event) => {
           if (event.type === "answer") answer = event.content;
           else if (event.type === "error") errorMessage = event.message;
@@ -254,7 +284,7 @@ export async function runAsk(argv: string[] = [], deps: AskRuntimeDeps = {}): Pr
         { tools, maxSteps: config.llmMaxSteps, signal: controller.signal },
       );
       if (!answer) {
-        const fallback = [...messages]
+        const fallback = [...turnResult]
           .reverse()
           .find((m) => m.role === "assistant" && typeof m.content === "string")?.content;
         if (typeof fallback === "string") answer = fallback;
