@@ -2,13 +2,18 @@
 quarantine analyzer (``POST /api/project/load``).
 
 SAFETY: this is meant to run ONLY inside a SEPARATE quarantine TouchDesigner
-process (default port 9981), never the artist's main instance. The endpoint
-itself just calls ``project.load(path)``; the Node side (``bridgeAnalyze.ts``)
-hard-rejects the main port 9980 before ever calling here. ``project.load`` opens
-the file via TD's own loader — it does NOT execute arbitrary Python the way
-``/api/exec`` does — so this route is intentionally NOT behind
+process (default port 9981), never the artist's main instance — opening an
+artifact replaces/imports into the running project, so a normal TD must never
+honor this route. Two guards enforce that: (1) the Node side
+(``bridgeAnalyze.ts``) hard-rejects the main port 9980 before ever calling here,
+and (2) the bridge route is gated bridge-side behind an explicit quarantine
+opt-in env (``TDMCP_PROJECT_RAG_QUARANTINE``) — default-DENY — so a direct
+``POST /api/project/load`` to a bridge installed on the artist's TD is refused
+(403) regardless of ``TDMCP_BRIDGE_ALLOW_EXEC``. The loaders themselves
+(``project.load`` for ``.toe``; ``COMP.loadTox`` for ``.tox``) go through TD's
+own file loaders, not arbitrary Python, so the route is intentionally NOT behind
 ``TDMCP_BRIDGE_ALLOW_EXEC`` (a hardened quarantine bridge with exec disabled must
-still be able to open the artifact it was spun up to inspect).
+still open the artifact it was spun up to inspect, once the operator opted in).
 
 Mirrors ``transport_service`` / ``project_analysis_service``: pure functions that
 reach TD globals via ``import td`` INSIDE the function so the module imports
@@ -107,12 +112,27 @@ def _preview_b64(root_path):
     return None
 
 
+def _load_tox(td, path):
+    """Import a ``.tox`` component into a fresh COMP under the root and return its
+    path. ``project.load`` is the project-file (``.toe``) path and would either
+    fail or report on the wrong project for a component, so ``.tox`` artifacts go
+    through TD's component loader (``COMP.loadTox``) instead."""
+    root = td.op("/")
+    holder = root.create(td.baseCOMP, "prag_tox_load")
+    holder.loadTox(path)
+    return holder.path
+
+
 def load(path, timeout_ms=None):
     """Load ``path`` (an absolute ``.toe``/``.tox``) and report the loaded tree.
 
+    ``.toe`` artifacts go through ``project.load`` (replaces the open project);
+    ``.tox`` artifacts are imported into a fresh COMP via ``COMP.loadTox`` so the
+    analysis targets the component, not the host project.
+
     Raises ``ValueError`` for a missing / non-absolute / non-existent path or an
     unsupported extension — the router maps that to HTTP 400. ``timeout_ms`` is
-    accepted for parity with the Node client contract; TD's ``project.load`` is
+    accepted for parity with the Node client contract; TD's loaders are
     synchronous, so it is currently advisory (the Node side enforces its own hard
     timeout around the whole call).
     """
@@ -129,9 +149,11 @@ def load(path, timeout_ms=None):
     if not os.path.exists(path):
         raise ValueError("File not found: %s." % path)
 
-    td.project.load(path)
-
-    root_path = _root_path(td)
+    if ext == ".tox":
+        root_path = _load_tox(td, path)
+    else:
+        td.project.load(path)
+        root_path = _root_path(td)
     report = {
         "root_path": root_path,
         "node_count": _node_count(td, root_path),

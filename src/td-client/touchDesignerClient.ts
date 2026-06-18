@@ -120,9 +120,9 @@ const LOAD_PROJECT_EXEC_SCRIPT = `
 import base64, json, os
 _p = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
 _path = (_p.get("path") or "").strip()
-if not _path or not os.path.isabs(_path) or os.path.splitext(_path)[1].lower() not in (".toe", ".tox") or not os.path.exists(_path):
+_ext = os.path.splitext(_path)[1].lower()
+if not _path or not os.path.isabs(_path) or _ext not in (".toe", ".tox") or not os.path.exists(_path):
     raise ValueError("Field 'path' must be an existing absolute .toe/.tox file: %r" % _path)
-project.load(_path)
 def _root():
     try:
         kids = [c for c in op("/").children if bool(getattr(c, "isCOMP", False))]
@@ -131,7 +131,15 @@ def _root():
     except Exception:
         pass
     return "/project1"
-_rp = _root()
+# .tox is a component, not a project — import it into a fresh COMP via loadTox
+# instead of project.load (which is the .toe project-file path).
+if _ext == ".tox":
+    _holder = op("/").create(baseCOMP, "prag_tox_load")
+    _holder.loadTox(_path)
+    _rp = _holder.path
+else:
+    project.load(_path)
+    _rp = _root()
 _root_op = op(_rp)
 _nodes = list(_root_op.findChildren(maxDepth=9999)) if _root_op is not None else []
 _errors = []

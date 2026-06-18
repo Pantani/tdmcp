@@ -37,8 +37,10 @@ esac
 
 [ "$PORT" != "9980" ] || fail "refusing to use port 9980 (the live bridge). Use 9981."
 
-echo "== 0. Probe quarantine bridge http://${HOST}:${PORT} =="
-curl -fsS "http://${HOST}:${PORT}/" >/dev/null \
+echo "== 0. Probe quarantine bridge http://${HOST}:${PORT}/api/info =="
+# The bridge router only serves paths under /api — a bare "/" returns an error,
+# so probe /api/info for reachability.
+curl -fsS "http://${HOST}:${PORT}/api/info" >/dev/null \
   || fail "quarantine bridge is OFFLINE at http://${HOST}:${PORT} — start the :9981 TD first"
 echo "   bridge UP"
 

@@ -342,6 +342,14 @@ tdmcp project-rag bridge install — quarantine bridge setup
 Probe: http://127.0.0.1:9981 — OFFLINE
 ```
 
+> **Quarantine opt-in (required to load artifacts).** The bridge route that
+> opens a `.toe`/`.tox` (`POST /api/project/load`) is **default-DENY**: loading an
+> artifact replaces or imports into the running project, so it is refused (HTTP
+> 403) unless that instance is explicitly marked as a throwaway quarantine via
+> `export TDMCP_PROJECT_RAG_QUARANTINE=1` in its environment. This is a
+> bridge-side guard independent of `TDMCP_BRIDGE_ALLOW_EXEC` — installing the
+> bridge on your main TD can never let a stray caller load over your open project.
+
 The analyzer:
 
 - Instantiates a **new** `TouchDesignerClient` bound to

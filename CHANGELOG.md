@@ -64,6 +64,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   rethrowing real validation/timeout/connection errors unchanged. The endpoint
   validates the path (absolute, `.toe`/`.tox`, exists) and is not arbitrary
   Python, so a hardened `ALLOW_EXEC=0` bridge can still open its own artifact.
+  `.toe` artifacts load via `project.load`; `.tox` artifacts import into a fresh
+  COMP via `COMP.loadTox` (so the analysis targets the component, not the host
+  project). The route is **default-DENY** bridge-side and only honored when the
+  instance is explicitly marked as a throwaway quarantine
+  (`TDMCP_PROJECT_RAG_QUARANTINE=1`) — installing the bridge on a normal TD can
+  never let a direct caller load over the open project, independent of
+  `TDMCP_BRIDGE_ALLOW_EXEC`.
 - **Project RAG — MCP prompts, resources, copilot tool & CLI cross-link (opt-in, experimental, F4)** —
   the AI surface for the local Project RAG repertoire lands. New MCP prompt
   `project_rag_context` (`src/prompts/projectRagContext.ts`): runs

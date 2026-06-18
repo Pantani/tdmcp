@@ -70,8 +70,9 @@ describe("TouchDesignerClient.loadProject", () => {
 
     const result = await makeClient().loadProject(ARTIFACT);
     expect(execCalls).toBe(1);
-    // The exec fallback runs project.load + a findChildren walk.
+    // The exec fallback runs project.load (.toe) / loadTox (.tox) + a findChildren walk.
     expect(scripts[0]).toContain("project.load");
+    expect(scripts[0]).toContain("loadTox");
     expect(scripts[0]).toContain("findChildren");
     expect(result.root_path).toBe("/project1");
     expect(result.node_count).toBe(3);

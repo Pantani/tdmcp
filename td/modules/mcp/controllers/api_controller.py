@@ -66,6 +66,23 @@ def _exec_allowed():
     return raw.strip().lower() not in ("0", "false", "no", "off")
 
 
+def _quarantine_load_enabled():
+    """Whether `POST /api/project/load` may open an artifact in THIS instance.
+
+    Default-DENY. Opening a `.toe`/`.tox` replaces or imports into the running
+    project, so it is destructive on the artist's main TD. A bridge must be
+    explicitly marked as a throwaway quarantine instance — set
+    `TDMCP_PROJECT_RAG_QUARANTINE` to 1/true/yes/on in that TD's environment — to
+    honor the route. Without it the route is refused (403), so installing the
+    bridge on a normal TD can never let a direct caller load over the open
+    project, regardless of `TDMCP_BRIDGE_ALLOW_EXEC`.
+    """
+    raw = os.environ.get("TDMCP_PROJECT_RAG_QUARANTINE")
+    if raw is None:
+        return False
+    return raw.strip().lower() in ("1", "true", "yes", "on")
+
+
 def _find_header(request, name):
     """Case-insensitively find an HTTP header in TouchDesigner's request dict.
 
@@ -317,10 +334,18 @@ def _route_post_root(rest, body):
         return system_service.set_perform_mode(_as_bool(body["enabled"], "enabled"))
 
     if rest == ["project", "load"]:
-        # Load a .toe/.tox for the Project RAG quarantine analyzer. NOT exec-gated:
-        # project.load goes through TD's own loader, not arbitrary Python, so a
-        # hardened quarantine bridge (ALLOW_EXEC=0) must still open its artifact.
-        # The Node side hard-rejects the main TD port before ever calling here.
+        # Load a .toe/.tox for the Project RAG quarantine analyzer. NOT exec-gated
+        # (TD's own loaders, not arbitrary Python), but gated behind an explicit
+        # quarantine opt-in: opening an artifact is destructive to the running
+        # project, so a bridge on the artist's main TD (no opt-in) refuses it (403)
+        # even though the Node side already rejects the main port 9980.
+        if not _quarantine_load_enabled():
+            raise _Forbidden(
+                "Forbidden: project load is disabled on this bridge. Loading a "
+                ".toe/.tox replaces the running project, so it is only allowed on a "
+                "throwaway quarantine instance — set TDMCP_PROJECT_RAG_QUARANTINE=1 "
+                "in that TouchDesigner's environment to enable it."
+            )
         _require(body, "path")
         return project_load_service.load(body["path"], body.get("timeout_ms"))
 

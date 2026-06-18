@@ -14,8 +14,26 @@
     "on_repeat_fail": "quarantine-and-continue"
   },
   "current_wave": null,
-  "campaign_milestone": "mvp_complete_F0_through_F4",
-  "campaign_milestone_at": "2026-06-18T09:35:00.000Z",
+  "campaign_milestone": "post_mvp_slices_A_B_D_iihq_shipped_C_live_validation_blocked",
+  "campaign_milestone_at": "2026-06-18T11:30:00.000Z",
+  "campaign_notes": [
+    {
+      "id": "slice_c_live_validation",
+      "kind": "blocked-task",
+      "status": "blocked",
+      "branch": "feature/project-rag-post-mvp",
+      "summary": "Slice C live-validation: runbook + smoke script prepared (scripts/prag-bridge-smoke.sh, commit 3b6fc2a). BLOCKED on manual user provisioning of a quarantine TouchDesigner on :9981.",
+      "commit": "3b6fc2a",
+      "blocks_live_qa_for": [
+        "prag_toe_expand_extractor",
+        "prag_bridge_analyze_extractor",
+        "prag_analyze_cmd",
+        "prag_sync_bridge_flag",
+        "prag_bridge_load_endpoint"
+      ],
+      "at": "2026-06-18T11:00:00.000Z"
+    }
+  ],
   "waves": {
     "1": {
       "version": "0.7.0-prag.f0",
@@ -61,17 +79,17 @@
     }
   },
   "counts": {
-    "buildable": 31,
+    "buildable": 32,
     "by_priority": {
       "P0": 17,
-      "P1": 13,
+      "P1": 14,
       "P2": 1
     },
     "by_surface": {
       "shared": 15,
       "controls": 7,
       "cli": 4,
-      "td-depth": 1,
+      "td-depth": 2,
       "ai": 3,
       "library": 1
     },
@@ -528,17 +546,39 @@
       "shared_schema": null,
       "summary": "src/projectRag/sources/derivativeLocal.ts — discovers TD install (env override + OS defaults); SourceSkippedError when absent.",
       "version_target": "0.7.0-prag.f1",
-      "status": "deferred",
-      "attempts": 0,
-      "qa": null,
-      "files": [],
-      "notes": "Deferred from Wave 2 per user scope (Wave 2 = github-repo only). Reschedule to a later wave when needed.",
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4442)",
+        "recipes": "pass(32)",
+        "bridge": "pass(204)",
+        "live": "unverified-no-td-install"
+      },
+      "files": [
+        "src/projectRag/sources/derivativeLocal.ts",
+        "src/projectRag/sources/index.ts",
+        "src/projectRag/service.ts",
+        "src/projectRag/cli.ts",
+        "src/projectRag/types.ts",
+        "src/utils/config.ts",
+        "tests/unit/projectRag/sources/derivativeLocal.test.ts",
+        "tests/unit/projectRag/service.test.ts"
+      ],
+      "notes": "Shipped in post-MVP Slice A (branch feature/project-rag-post-mvp). Local-only TD Palette/Snippets discovery; live UNVERIFIED — no TD install on this machine.",
       "history": [
         {
           "at": "2026-06-18T04:58:49.013Z",
           "event": "deferred",
           "wave": 2,
           "reason": "out-of-scope for this wave"
+        },
+        {
+          "at": "2026-06-18T11:00:00.000Z",
+          "event": "shipped",
+          "commit": "03163a1"
         }
       ]
     },
@@ -761,7 +801,11 @@
       ],
       "notes": "Uses GitHub REST Search API (not GraphQL) — same allowlist semantics, no extra dep.",
       "history": [
-        { "at": "2026-06-18T05:30:00.000Z", "event": "shipped", "wave": 3 }
+        {
+          "at": "2026-06-18T05:30:00.000Z",
+          "event": "shipped",
+          "wave": 3
+        }
       ]
     },
     {
@@ -779,13 +823,42 @@
       "shared_schema": null,
       "summary": "src/projectRag/sources/awesomeList.ts — parse monkeymonk/awesome-touchdesigner README; feeds discovery queue (suggest-only, never auto-ingest).",
       "version_target": "0.7.0-prag.f2",
-      "status": "deferred",
-      "attempts": 0,
-      "qa": null,
-      "files": [],
-      "notes": "Out of scope for Wave 3 per user direction (F2 scope = DBraun GPL seed + github-topic + scoring tuning + CLI extensions). Reschedule when needed.",
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4442)",
+        "recipes": "pass(32)",
+        "bridge": "pass(204)",
+        "live": "smoke-passed-suggest-only-60-items-0-violations"
+      },
+      "files": [
+        "src/projectRag/sources/awesomeList.ts",
+        "src/projectRag/sources/index.ts",
+        "src/projectRag/service.ts",
+        "src/projectRag/cli.ts",
+        "src/projectRag/types.ts",
+        "docs/PROJECT_RAG.md",
+        "tests/unit/projectRag/sources/awesomeList.test.ts",
+        "tests/unit/projectRag/cli.test.ts",
+        "tests/unit/projectRag/resource.test.ts",
+        "tests/unit/projectRag/resourceSources.test.ts"
+      ],
+      "notes": "Shipped in post-MVP Slice D (branch feature/project-rag-post-mvp). needs_td: false; live-network smoke passed (suggest-only, 60 items, 0 license violations — never auto-ingests).",
       "history": [
-        { "at": "2026-06-18T05:30:00.000Z", "event": "deferred", "wave": 3, "reason": "out-of-scope for this wave" }
+        {
+          "at": "2026-06-18T05:30:00.000Z",
+          "event": "deferred",
+          "wave": 3,
+          "reason": "out-of-scope for this wave"
+        },
+        {
+          "at": "2026-06-18T11:00:00.000Z",
+          "event": "shipped",
+          "commit": "865de5b"
+        }
       ]
     },
     {
@@ -803,13 +876,53 @@
       "shared_schema": null,
       "summary": "src/projectRag/sources/interactiveImmersive.ts — markdown-only ingest from book repo (CC-BY-NC-SA → meta + body, no binaries). Tag 'tutorial'.",
       "version_target": "0.7.0-prag.f2",
-      "status": "deferred",
-      "attempts": 0,
-      "qa": null,
-      "files": [],
-      "notes": "Out of scope for Wave 3 per user direction.",
+      "status": "shipped",
+      "attempts": 1,
+      "qa": {
+        "branch": "feature/project-rag-post-mvp",
+        "commit": "4b0da24",
+        "needs_td": false,
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4447)",
+        "recipes": "pass(32)",
+        "bridge": "pass(204)",
+        "td_qa": "PASS (7 boundary contracts)",
+        "live": "n/a-http-source",
+        "license": "CC-BY-NC-SA-4.0",
+        "licenseConfidence": "declared",
+        "optIn": "default-off",
+        "attribution": "mandatory attribution + license banner in CLI + MCP search"
+      },
+      "files": [
+        "src/projectRag/sources/interactiveImmersive.ts",
+        "src/projectRag/sources/interactiveImmersive.test.ts",
+        "src/projectRag/types.ts",
+        "src/projectRag/schema.ts",
+        "src/projectRag/licensePolicy.ts",
+        "src/projectRag/cli.ts",
+        "src/projectRag/service.ts",
+        "src/projectRag/sources/index.ts",
+        "src/prompts/projectRagContext.ts",
+        "src/resources/projectRagResource.ts",
+        "src/utils/config.ts",
+        "src/cli/agent.ts",
+        "CHANGELOG.md"
+      ],
+      "notes": "Shipped on feature/project-rag-post-mvp (commit 4b0da24). Pure HTTP fetch adapter (no TD surface); live GitHub API ingest unexercised — msw-mocked only. License CC-BY-NC-SA-4.0 (declared via README prose, no LICENSE file); opt-in default OFF, mandatory attribution + license banner in CLI + MCP search.",
       "history": [
-        { "at": "2026-06-18T05:30:00.000Z", "event": "deferred", "wave": 3, "reason": "out-of-scope for this wave" }
+        {
+          "at": "2026-06-18T05:30:00.000Z",
+          "event": "deferred",
+          "wave": 3,
+          "reason": "out-of-scope for this wave"
+        },
+        {
+          "at": "2026-06-18T11:30:00.000Z",
+          "event": "shipped",
+          "commit": "4b0da24"
+        }
       ]
     },
     {
@@ -846,7 +959,11 @@
       ],
       "notes": "Copyleft tie-breaker (-0.05) + curated-source boost (+0.10). 9/10 ground-truth hit-rate (>=7/10 target).",
       "history": [
-        { "at": "2026-06-18T05:30:00.000Z", "event": "shipped", "wave": 3 }
+        {
+          "at": "2026-06-18T05:30:00.000Z",
+          "event": "shipped",
+          "wave": 3
+        }
       ]
     },
     {
@@ -885,7 +1002,11 @@
       ],
       "notes": "Also added sync --topic <csv> + --cap N, github-topic source registered as 'ready' in listSources.",
       "history": [
-        { "at": "2026-06-18T05:30:00.000Z", "event": "shipped", "wave": 3 }
+        {
+          "at": "2026-06-18T05:30:00.000Z",
+          "event": "shipped",
+          "wave": 3
+        }
       ]
     },
     {
@@ -923,8 +1044,19 @@
       "notes": "Uses getNetworkErrors + getPreview off the existing client surface (no new TouchDesignerClient methods). Defaults to port 9981; refuses 9980. Live-validation UNVERIFIED-pending-9981-bridge.",
       "wave_manifest": "_workspace/campaign_project_rag/wave_4_manifest.json",
       "history": [
-        { "at": "2026-06-18T06:00:00.000Z", "event": "wave_manifest_assigned", "wave": 4, "manifest": "_workspace/campaign_project_rag/wave_4_manifest.json", "planner_report": "_workspace/campaign_project_rag/wave_4_planner_report.md" },
-        { "at": "2026-06-18T07:30:00.000Z", "event": "shipped", "wave": 4, "commit": "8b96fdc" }
+        {
+          "at": "2026-06-18T06:00:00.000Z",
+          "event": "wave_manifest_assigned",
+          "wave": 4,
+          "manifest": "_workspace/campaign_project_rag/wave_4_manifest.json",
+          "planner_report": "_workspace/campaign_project_rag/wave_4_planner_report.md"
+        },
+        {
+          "at": "2026-06-18T07:30:00.000Z",
+          "event": "shipped",
+          "wave": 4,
+          "commit": "8b96fdc"
+        }
       ]
     },
     {
@@ -964,8 +1096,19 @@
       "notes": "Docs-only stub (no tdmcp_bridge_qa.toe template — walkthrough drives the user to author it). Prints help + reachability probe.",
       "wave_manifest": "_workspace/campaign_project_rag/wave_4_manifest.json",
       "history": [
-        { "at": "2026-06-18T06:00:00.000Z", "event": "wave_manifest_assigned", "wave": 4, "manifest": "_workspace/campaign_project_rag/wave_4_manifest.json", "planner_report": "_workspace/campaign_project_rag/wave_4_planner_report.md" },
-        { "at": "2026-06-18T07:30:00.000Z", "event": "shipped", "wave": 4, "commit": "1e90b2e" }
+        {
+          "at": "2026-06-18T06:00:00.000Z",
+          "event": "wave_manifest_assigned",
+          "wave": 4,
+          "manifest": "_workspace/campaign_project_rag/wave_4_manifest.json",
+          "planner_report": "_workspace/campaign_project_rag/wave_4_planner_report.md"
+        },
+        {
+          "at": "2026-06-18T07:30:00.000Z",
+          "event": "shipped",
+          "wave": 4,
+          "commit": "1e90b2e"
+        }
       ]
     },
     {
@@ -1005,8 +1148,19 @@
       "notes": "Offline = skipped (exit 0); real error = failed (exit 1). Implementation note: the original spec said 'offline→analysisStatus=failed' but the F3 design + threat-model says offline must degrade to skipped — chose the safer behaviour.",
       "wave_manifest": "_workspace/campaign_project_rag/wave_4_manifest.json",
       "history": [
-        { "at": "2026-06-18T06:00:00.000Z", "event": "wave_manifest_assigned", "wave": 4, "manifest": "_workspace/campaign_project_rag/wave_4_manifest.json", "planner_report": "_workspace/campaign_project_rag/wave_4_planner_report.md" },
-        { "at": "2026-06-18T07:30:00.000Z", "event": "shipped", "wave": 4, "commit": "1e90b2e" }
+        {
+          "at": "2026-06-18T06:00:00.000Z",
+          "event": "wave_manifest_assigned",
+          "wave": 4,
+          "manifest": "_workspace/campaign_project_rag/wave_4_manifest.json",
+          "planner_report": "_workspace/campaign_project_rag/wave_4_planner_report.md"
+        },
+        {
+          "at": "2026-06-18T07:30:00.000Z",
+          "event": "shipped",
+          "wave": 4,
+          "commit": "1e90b2e"
+        }
       ]
     },
     {
@@ -1049,8 +1203,19 @@
       "notes": "Idempotent: already-ok cards are skipped. analysisStatus + analysisReason added to ProjectRagCard schema; analysisStatus excluded from contentHash (treated as persistence metadata).",
       "wave_manifest": "_workspace/campaign_project_rag/wave_4_manifest.json",
       "history": [
-        { "at": "2026-06-18T06:00:00.000Z", "event": "wave_manifest_assigned", "wave": 4, "manifest": "_workspace/campaign_project_rag/wave_4_manifest.json", "planner_report": "_workspace/campaign_project_rag/wave_4_planner_report.md" },
-        { "at": "2026-06-18T07:30:00.000Z", "event": "shipped", "wave": 4, "commit": "1e90b2e" }
+        {
+          "at": "2026-06-18T06:00:00.000Z",
+          "event": "wave_manifest_assigned",
+          "wave": 4,
+          "manifest": "_workspace/campaign_project_rag/wave_4_manifest.json",
+          "planner_report": "_workspace/campaign_project_rag/wave_4_planner_report.md"
+        },
+        {
+          "at": "2026-06-18T07:30:00.000Z",
+          "event": "shipped",
+          "wave": 4,
+          "commit": "1e90b2e"
+        }
       ]
     },
     {
@@ -1090,8 +1255,21 @@
       "notes": "Disabled-context fallback verified; happy path + license CSV + k clamp + empty-results + search-failure all tested.",
       "wave_manifest": "_workspace/campaign_project_rag/wave_5_manifest.json",
       "history": [
-        { "at": "2026-06-18T08:00:00.000Z", "event": "wave_manifest_assigned", "wave": 5, "manifest": "_workspace/campaign_project_rag/wave_5_manifest.json", "planner_report": "_workspace/campaign_project_rag/wave_5_planner_report.md", "round": 1 },
-        { "at": "2026-06-18T09:20:00.000Z", "event": "shipped", "wave": 5, "commit": "e60f34a", "round": 1 }
+        {
+          "at": "2026-06-18T08:00:00.000Z",
+          "event": "wave_manifest_assigned",
+          "wave": 5,
+          "manifest": "_workspace/campaign_project_rag/wave_5_manifest.json",
+          "planner_report": "_workspace/campaign_project_rag/wave_5_planner_report.md",
+          "round": 1
+        },
+        {
+          "at": "2026-06-18T09:20:00.000Z",
+          "event": "shipped",
+          "wave": 5,
+          "commit": "e60f34a",
+          "round": 1
+        }
       ]
     },
     {
@@ -1129,8 +1307,21 @@
       "notes": "Disabled-context skip verified (registerResource not called). listSources envelope shape + empty-list path covered.",
       "wave_manifest": "_workspace/campaign_project_rag/wave_5_manifest.json",
       "history": [
-        { "at": "2026-06-18T08:00:00.000Z", "event": "wave_manifest_assigned", "wave": 5, "manifest": "_workspace/campaign_project_rag/wave_5_manifest.json", "planner_report": "_workspace/campaign_project_rag/wave_5_planner_report.md", "round": 1 },
-        { "at": "2026-06-18T09:20:00.000Z", "event": "shipped", "wave": 5, "commit": "e60f34a", "round": 1 }
+        {
+          "at": "2026-06-18T08:00:00.000Z",
+          "event": "wave_manifest_assigned",
+          "wave": 5,
+          "manifest": "_workspace/campaign_project_rag/wave_5_manifest.json",
+          "planner_report": "_workspace/campaign_project_rag/wave_5_planner_report.md",
+          "round": 1
+        },
+        {
+          "at": "2026-06-18T09:20:00.000Z",
+          "event": "shipped",
+          "wave": 5,
+          "commit": "e60f34a",
+          "round": 1
+        }
       ]
     },
     {
@@ -1172,8 +1363,21 @@
       "notes": "resolveTools(tier, { projectRag }) is additive — tool absent from catalog when ctx.projectRag undefined; verified across all 4 call sites (ask/chat/loopback server/telegram).",
       "wave_manifest": "_workspace/campaign_project_rag/wave_5_manifest.json",
       "history": [
-        { "at": "2026-06-18T08:00:00.000Z", "event": "wave_manifest_assigned", "wave": 5, "manifest": "_workspace/campaign_project_rag/wave_5_manifest.json", "planner_report": "_workspace/campaign_project_rag/wave_5_planner_report.md", "round": 1 },
-        { "at": "2026-06-18T09:20:00.000Z", "event": "shipped", "wave": 5, "commit": "e60f34a", "round": 1 }
+        {
+          "at": "2026-06-18T08:00:00.000Z",
+          "event": "wave_manifest_assigned",
+          "wave": 5,
+          "manifest": "_workspace/campaign_project_rag/wave_5_manifest.json",
+          "planner_report": "_workspace/campaign_project_rag/wave_5_planner_report.md",
+          "round": 1
+        },
+        {
+          "at": "2026-06-18T09:20:00.000Z",
+          "event": "shipped",
+          "wave": 5,
+          "commit": "e60f34a",
+          "round": 1
+        }
       ]
     },
     {
@@ -1210,8 +1414,21 @@
       "notes": "Stderr-only tip; --json suppression + disabled-flag suppression + threshold boundary + custom threshold + quote-escape all covered.",
       "wave_manifest": "_workspace/campaign_project_rag/wave_5_manifest.json",
       "history": [
-        { "at": "2026-06-18T08:00:00.000Z", "event": "wave_manifest_assigned", "wave": 5, "manifest": "_workspace/campaign_project_rag/wave_5_manifest.json", "planner_report": "_workspace/campaign_project_rag/wave_5_planner_report.md", "round": 1 },
-        { "at": "2026-06-18T09:20:00.000Z", "event": "shipped", "wave": 5, "commit": "e60f34a", "round": 1 }
+        {
+          "at": "2026-06-18T08:00:00.000Z",
+          "event": "wave_manifest_assigned",
+          "wave": 5,
+          "manifest": "_workspace/campaign_project_rag/wave_5_manifest.json",
+          "planner_report": "_workspace/campaign_project_rag/wave_5_planner_report.md",
+          "round": 1
+        },
+        {
+          "at": "2026-06-18T09:20:00.000Z",
+          "event": "shipped",
+          "wave": 5,
+          "commit": "e60f34a",
+          "round": 1
+        }
       ]
     },
     {
@@ -1252,8 +1469,21 @@
       "notes": "Two entries per locale citing project_rag_context prompt + tdmcp://project/cards/{id} + tdmcp://project/sources URIs. PROJECT_RAG.md F4 section + CHANGELOG Unreleased entry. No version bump (per release policy).",
       "wave_manifest": "_workspace/campaign_project_rag/wave_5_manifest.json",
       "history": [
-        { "at": "2026-06-18T08:00:00.000Z", "event": "wave_manifest_assigned", "wave": 5, "manifest": "_workspace/campaign_project_rag/wave_5_manifest.json", "planner_report": "_workspace/campaign_project_rag/wave_5_planner_report.md", "round": 2 },
-        { "at": "2026-06-18T09:30:00.000Z", "event": "shipped", "wave": 5, "commit": "f5afa97", "round": 2 }
+        {
+          "at": "2026-06-18T08:00:00.000Z",
+          "event": "wave_manifest_assigned",
+          "wave": 5,
+          "manifest": "_workspace/campaign_project_rag/wave_5_manifest.json",
+          "planner_report": "_workspace/campaign_project_rag/wave_5_planner_report.md",
+          "round": 2
+        },
+        {
+          "at": "2026-06-18T09:30:00.000Z",
+          "event": "shipped",
+          "wave": 5,
+          "commit": "f5afa97",
+          "round": 2
+        }
       ]
     },
     {
@@ -1267,7 +1497,9 @@
       "probe_live": false,
       "needs_td": false,
       "wave": 3,
-      "depends_on": ["prag_source_github_repo"],
+      "depends_on": [
+        "prag_source_github_repo"
+      ],
       "shared_schema": null,
       "summary": "Add DBraun/TouchDesigner_Shared (GPL-3.0) to DEFAULT_GITHUB_REPOS and propagate copyleft badge to CLI/MCP search output.",
       "version_target": "0.7.0-prag.f2",
@@ -1288,7 +1520,60 @@
       ],
       "notes": "Copyleft flag already in licensePolicy.isCopyleftLicense (F0); F2 just wires the badge into CLI output.",
       "history": [
-        { "at": "2026-06-18T05:30:00.000Z", "event": "shipped", "wave": 3 }
+        {
+          "at": "2026-06-18T05:30:00.000Z",
+          "event": "shipped",
+          "wave": 3
+        }
+      ]
+    },
+    {
+      "id": "prag_bridge_load_endpoint",
+      "surface": "td-depth",
+      "priority": "P1",
+      "effort": "M",
+      "impact": "High",
+      "conf": "Med",
+      "novelty": "NEW",
+      "probe_live": true,
+      "needs_td": true,
+      "wave": null,
+      "depends_on": [
+        "prag_bridge_analyze_extractor"
+      ],
+      "shared_schema": null,
+      "summary": "bridge POST /api/project/load — typed first-class load endpoint for the analyzer (replaces exec-based loading); typed client method + Zod envelope + bridgeAnalyze rewiring. Flagged in post_mvp_outlook §2.",
+      "version_target": "0.7.0-prag.post-mvp",
+      "status": "shipped-pending-live",
+      "attempts": 1,
+      "qa": {
+        "py_compile": "pass",
+        "unittest": "pass(204)",
+        "typecheck": "pass",
+        "build": "pass",
+        "biome": "pass",
+        "vitest": "pass(4442)",
+        "recipes": "pass(32)",
+        "live": "unverified-no-9981-bridge"
+      },
+      "files": [
+        "src/projectRag/extractors/bridgeAnalyze.ts",
+        "src/td-client/touchDesignerClient.ts",
+        "src/td-client/validators.ts",
+        "td/modules/mcp/controllers/api_controller.py",
+        "td/modules/mcp/services/project_load_service.py",
+        "td/tests/test_project_load.py",
+        "tests/helpers/tdMock.ts",
+        "tests/unit/loadProject.test.ts",
+        "tests/unit/projectRag/bridgeAnalyze.test.ts"
+      ],
+      "notes": "New row — flagged in post_mvp_outlook §2, not in the original backlog. Shipped post-MVP Slice B (branch feature/project-rag-post-mvp). Live-validation UNVERIFIED pending the :9981 quarantine bridge (see campaign_notes.slice_c_live_validation).",
+      "history": [
+        {
+          "at": "2026-06-18T11:00:00.000Z",
+          "event": "shipped-pending-live",
+          "commit": "b5d6fb1"
+        }
       ]
     }
   ]

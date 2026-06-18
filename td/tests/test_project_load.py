@@ -161,5 +161,65 @@ class LoadReportTests(unittest.TestCase):
         self.assertEqual(report["errors"], [])
 
 
+class _FakeToxHolder(_FakeNode):
+    """Stand-in for the fresh COMP created to import a ``.tox`` via ``loadTox``."""
+
+    def __init__(self, path, children=None):
+        super().__init__(path, is_comp=True, children=children or [])
+        self.loaded_tox = []
+
+    def loadTox(self, path, password=None, unwired=False):  # noqa: N802, ARG002
+        self.loaded_tox.append(path)
+
+
+class _FakeRootWithCreate:
+    """``op('/')`` that hands back a pre-built holder from ``create``."""
+
+    children = []
+
+    def __init__(self, holder):
+        self._holder = holder
+
+    def create(self, comp_type, name):  # noqa: ARG002
+        return self._holder
+
+
+def _tox_file():
+    fd, path = tempfile.mkstemp(suffix=".tox")
+    os.close(fd)
+    return path
+
+
+class LoadToxTests(unittest.TestCase):
+    def setUp(self):
+        self.tox = _tox_file()
+
+    def tearDown(self):
+        os.unlink(self.tox)
+
+    def test_tox_uses_component_loader_not_project_load(self):
+        kid = _FakeNode("/prag_tox_load/a")
+        holder = _FakeToxHolder("/prag_tox_load", children=[kid])
+        project = _FakeProject()
+        _td_stub.project = project
+        _td_stub.baseCOMP = object()
+
+        def fake_op(p):
+            if p == "/":
+                return _FakeRootWithCreate(holder)
+            return {"/prag_tox_load": holder}.get(p)
+
+        _td_stub.op = fake_op
+
+        report = pl.load(self.tox)
+
+        # .tox goes through COMP.loadTox into a fresh COMP — NOT project.load.
+        self.assertEqual(holder.loaded_tox, [self.tox])
+        self.assertEqual(project.loaded, [])
+        self.assertEqual(report["root_path"], "/prag_tox_load")
+        self.assertEqual(report["node_count"], 1)
+        self.assertEqual(report["errors"], [])
+
+
 if __name__ == "__main__":
     unittest.main()
