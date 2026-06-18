@@ -1,7 +1,7 @@
 # Project RAG
 
-> Status: **experimental — F1 MVP (first source wired)**. Multi-source +
-> scoring tuning land in F2; bridge-quarantine analysis in F3.
+> Status: **experimental — F2 (multi-source + tuned scoring)**.
+> Bridge-quarantine analysis lands in F3.
 
 Project RAG is the **technical/project repertoire** sibling to
 [Creative RAG](./CREATIVE_RAG.md). It indexes **TouchDesigner projects,
@@ -40,20 +40,80 @@ export TDMCP_PROJECT_RAG_ENABLED=1    # project-rag switch (default ON when RAG 
 When either flag is off, `tdmcp project-rag …` prints a friendly disabled
 message and exits 0; the MCP resources are not registered.
 
-## First source: `torinmb/mediapipe-touchdesigner`
+## Seeded sources (F2)
 
-F1 ships **one P0 source**: the `github-repo` adapter, seeded by default with
-[`torinmb/mediapipe-touchdesigner`](https://github.com/torinmb/mediapipe-touchdesigner)
-(MIT). It is fetched entirely via the GitHub REST API (no local `git clone`,
-robust for CI), with per-card provenance + SPDX-detected license.
+F2 ships **two P0 repos** out of the box plus a topic scanner:
+
+- [`torinmb/mediapipe-touchdesigner`](https://github.com/torinmb/mediapipe-touchdesigner) — **MIT** (permissive)
+- [`DBraun/TouchDesigner_Shared`](https://github.com/DBraun/TouchDesigner_Shared) — **GPL-3.0** (copyleft; flagged in search output)
+
+Both are fetched via the GitHub REST API (no local `git clone`, CI-robust),
+with per-card provenance + SPDX-detected license.
 
 You can override the seed (or add more repos) by setting a CSV:
 
 ```bash
-export TDMCP_PROJECT_RAG_GITHUB_REPOS="torinmb/mediapipe-touchdesigner,DBraun/TouchDesigner_Shared"
+export TDMCP_PROJECT_RAG_GITHUB_REPOS="torinmb/mediapipe-touchdesigner,DBraun/TouchDesigner_Shared,foo/bar@v1"
 ```
 
 `owner/repo[@ref]` syntax pins a branch/tag/SHA.
+
+### Adding GPL sources (copyleft handling)
+
+Project RAG accepts copyleft licenses (`GPL-2.0`, `GPL-3.0`, `LGPL-*`,
+`AGPL-3.0`) but treats them as a *yellow flag*, never a block:
+
+- Cards are indexed and binaries are downloaded as usual.
+- Search output renders the license as `GPL-3.0 · copyleft` so the obligation
+  is visible at a glance.
+- The scoring composite applies a small **copyleft tie-breaker penalty**
+  (`−0.05`) so an equally relevant permissive (MIT/Apache/BSD/ISC/MPL) card
+  ranks above a copyleft one. The penalty is a nudge, not a block — a strong
+  semantic match still beats the penalty.
+- The matrix is enforced by `licensePolicy` in
+  [`src/projectRag/licensePolicy.ts`](https://github.com/Pantani/tdmcp/blob/main/src/projectRag/licensePolicy.ts);
+  `Derivative-EULA`, `Proprietary-*`, `Unknown`, and `Restricted` cards never
+  get their binaries persisted regardless of the allowlist.
+
+If you want to **exclude** GPL results from a search entirely, pass
+`--license MIT,Apache-2.0,BSD-2-Clause,BSD-3-Clause,ISC,MPL-2.0,CC0,PublicDomain`.
+
+### Scanning GitHub topics
+
+The `github-topic` source scans the GitHub Search API for repos tagged with
+TouchDesigner-relevant topics and surfaces the highest-signal matches:
+
+```bash
+# Default topics (in priority order):
+#   touchdesigner-components, touchdesigner-tool,
+#   touchdesigner-tools, touchdesigner
+$ tdmcp project-rag sync --source github-topic
+
+# Override topics per-run (CSV) and cap the result count:
+$ tdmcp project-rag sync --topic touchdesigner-components --cap 10
+
+# Disable the topic scanner entirely for this run:
+$ tdmcp project-rag sync --topic off
+
+# Or via env (persistent):
+$ export TDMCP_PROJECT_RAG_GITHUB_TOPICS=touchdesigner-components,touchdesigner
+$ export TDMCP_PROJECT_RAG_TOPIC_CAP=15
+```
+
+Hard filters applied **before** any extraction:
+
+| Filter | Default | Configurable via |
+|---|---|---|
+| SPDX allowlist | MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, Unlicense, CC0-1.0 (clean); GPL/LGPL/AGPL accepted as copyleft; everything else rejected | hardcoded for safety |
+| Min stars | 5 | (constructor option) |
+| Min `pushed_at` recency | `>=2024-01-01` | (constructor option) |
+| Per-sync cap | 25 repos total across topics | `--cap N` / `TDMCP_PROJECT_RAG_TOPIC_CAP` |
+| Forks | rejected | hardcoded |
+| GitHub token | optional but recommended | `TDMCP_PROJECT_RAG_GH_TOKEN` |
+
+A rate-limit response (HTTP 403 with "rate limit" body) becomes a typed
+`SourceSkippedError` — prior cards are never tombstoned because the source
+quietly returned zero items.
 
 ### GitHub rate limits & token
 
@@ -72,27 +132,34 @@ incorrectly tombstone every prior card from that source).
 ### Example session
 
 ```bash
-# 1. Pull cards from the configured repos (~4 HTTP requests / repo)
+# 1. Pull cards from the configured repos + topic scanner
 $ tdmcp project-rag sync
-synced: 1 added, 0 updated, 0 tombstoned, 1 binaries stored, 0 skipped (license)
+synced: 14 added, 0 updated, 0 tombstoned, 12 binaries stored, 2 skipped (license)
 
 # 2. List the available sources and their status
 $ tdmcp project-rag sources
-ready    github-repo  (GitHub repo allowlist (TDMCP_PROJECT_RAG_GITHUB_REPOS)) — unauthenticated (limit 60 req/h)
-planned  derivative-local  (TouchDesigner OP Snippets + Palette (local install)) — F2
-planned  github-topic  (GitHub topic:touchdesigner-components) — F2
-planned  awesome-touchdesigner  (monkeymonk/awesome-touchdesigner (discovery)) — F2
+ready    github-repo   (GitHub repo allowlist (TDMCP_PROJECT_RAG_GITHUB_REPOS)) — authenticated
+ready    github-topic  (GitHub topic scanner (touchdesigner-components et al.)) — authenticated
+planned  derivative-local      (TouchDesigner OP Snippets + Palette (local install)) — F2
+planned  awesome-touchdesigner (monkeymonk/awesome-touchdesigner (discovery)) — F2
 
 # 3. Embed new/changed cards (cache hits skip re-embedding)
 $ tdmcp project-rag index
-indexed: 1 embedded, 0 cached/skipped, 1 total cards
+indexed: 14 embedded, 0 cached/skipped, 14 total cards
 
-# 4. Semantic search across the local index
+# 4. Semantic search — copyleft badge appears for GPL/LGPL/AGPL results
 $ tdmcp project-rag search "mediapipe hand tracking"
 0.812  torinmb/mediapipe-touchdesigner [component] — MIT
         https://github.com/torinmb/mediapipe-touchdesigner
+0.341  DBraun/TouchDesigner_Shared [component] — GPL-3.0 · copyleft
+        https://github.com/DBraun/TouchDesigner_Shared
+        rights: Copyleft (GPL-3.0): derived work must preserve license.
 
-# 5. Read one card fully (provenance + license + score)
+# 5. Re-rank without re-embedding (e.g. after tuning weights)
+$ tdmcp project-rag reindex --rescore
+rescored: 14 of 14 cards (no re-embed)
+
+# 6. Read one card fully (provenance + license + score)
 $ tdmcp project-rag info <id> --json | jq .
 ```
 
@@ -118,16 +185,42 @@ permit them — the license matrix is enforced before any download.
 ## CLI surface
 
 ```bash
-tdmcp project-rag sources           # list configured source slots + status
-tdmcp project-rag sync              # pull cards from selected sources
+tdmcp project-rag sources                           # list source slots + status
+tdmcp project-rag sync                              # pull cards from all sources
 tdmcp project-rag sync --source github-repo --limit 5
-tdmcp project-rag index             # embed new/changed cards (uses Ollama)
-tdmcp project-rag search <query>    # cosine search the local project index
+tdmcp project-rag sync --topic touchdesigner-components --cap 10
+tdmcp project-rag sync --topic off                  # disable topic scanner for this run
+tdmcp project-rag index                             # embed new/changed cards (Ollama)
+tdmcp project-rag reindex --rescore                 # recompute score WITHOUT re-embedding
+tdmcp project-rag search <query>                    # cosine search the local index
 tdmcp project-rag search <query> --license MIT,Apache-2.0 --type component --tags tox
-tdmcp project-rag info <id>         # show one card (provenance + license + score)
+tdmcp project-rag info <id>                         # show one card
 ```
 
 All commands support `--json` for machine-readable output.
+
+## Scoring (F2 tuning)
+
+`finalRank = cosineSim * score.composite`. The composite is a weighted sum
+of four 0..1 axes plus a copyleft tie-breaker:
+
+| Field | What it captures | Default weight |
+|---|---|---|
+| `technical` | `log10(operatorMixTotal+1)/3 · 0.5` plus bonuses for top-level files, exposed params, scripts, preview image, body length | `0.45` |
+| `license` | `licenseScore(license)` — CC0/PublicDomain = 1.0, MIT/Apache/BSD/ISC/MPL = 0.95, CC-BY* = 0.8, Derivative-EULA = 0.85, GPL/LGPL/AGPL = 0.7, Proprietary-Free = 0.4, Unknown = 0.2 | `0.25` |
+| `freshness` | `exp(-age_in_days / 365)` from `provenance.fetchedAt` | `0.15` |
+| `reliability` | `spdx-detected/declared` → 0.85, `heuristic` → 0.6, `unknown` → 0.4; **curated sources** (default tdmcp seed list) get `+0.10` | `0.15` |
+| `copyleftPenalty` | `−0.05` applied after the weighted sum when license is GPL/LGPL/AGPL — tie-breaker only, never a block | `−` |
+
+Override weights via `TDMCP_PROJECT_RAG_SCORE_WEIGHTS=technical:license:freshness:reliability`
+(e.g. `0.55:0.20:0.15:0.10` to bias the ranker toward purely technical fit),
+then run `tdmcp project-rag reindex --rescore` to apply them without spending
+embedder cycles.
+
+The default weights were tuned against
+`_workspace/campaign_project_rag/scoring_ground_truth.json` (10 query →
+expected-top-1 cards) and achieve **9/10 hit-rate** in
+`tests/unit/projectRag/scoringGroundTruth.test.ts`.
 
 ## MCP resources
 

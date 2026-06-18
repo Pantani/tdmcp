@@ -8,6 +8,21 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Project RAG — multi-source + tuned scoring (opt-in, experimental, F2)** —
+  `DBraun/TouchDesigner_Shared` (GPL-3.0) added to the default seed list with
+  the copyleft flag rendered in CLI/MCP search output as `GPL-3.0 · copyleft`.
+  New `github-topic` source scanner (default topics:
+  `touchdesigner-components`, `touchdesigner-tool`, `touchdesigner-tools`,
+  `touchdesigner`) with hard filters (SPDX allowlist, min stars, recency,
+  per-sync cap 25) — opt-in `TDMCP_PROJECT_RAG_GH_TOKEN` lifts the 60 req/h
+  unauthenticated rate-limit. Scoring composite tuned: copyleft tie-breaker
+  penalty (−0.05, never blocks) + curated-source reliability boost (+0.10)
+  for the default tdmcp seed list; ground-truth set
+  (`_workspace/campaign_project_rag/scoring_ground_truth.json`) yields 9/10
+  top-1 hit-rate. New CLI: `sync --topic <csv> --cap N`, `sync --topic off`,
+  `reindex --rescore` (recomputes `score.composite` without re-embedding).
+  Configurable via `TDMCP_PROJECT_RAG_GITHUB_TOPICS` and
+  `TDMCP_PROJECT_RAG_TOPIC_CAP`.
 - **Project RAG — MVP first source (opt-in, experimental, F1)** — the
   `github-repo` adapter is now live. Default seed is
   [`torinmb/mediapipe-touchdesigner`](https://github.com/torinmb/mediapipe-touchdesigner)
