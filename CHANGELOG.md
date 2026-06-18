@@ -8,6 +8,26 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Project RAG foundations (opt-in, experimental, F0)** — local TouchDesigner
+  *project/component/snippet/tutorial* repertoire, sibling to Creative RAG with
+  mandatory `provenance` + `license` on every card. New
+  `tdmcp project-rag {sources|sync|index|search|info}` CLI subcommand (F0 ships
+  the foundations only: gating, schema v2, JSONL store, service skeleton —
+  source adapters land in F1). New read-only MCP resources
+  `tdmcp://project/cards/{id}` and
+  `tdmcp://project/search{?q,k,license,type,tags,operator}`, registered only
+  when both `TDMCP_RAG_ENABLED=1` and `TDMCP_PROJECT_RAG_ENABLED=1` are set
+  (project flag defaults ON when RAG is on). Data dir is isolated at
+  `<TDMCP_RAG_DATA_DIR>/project/` — never mixed with Creative RAG cards.
+  Extended `ProjectRagLicense` enum covers SPDX permissive + copyleft +
+  Derivative-EULA + Proprietary-* alongside the existing CC0/CC-BY/Unknown
+  set, with `licensePolicy` matrix that refuses binary storage for
+  Derivative-EULA/Proprietary-*/Unknown/Restricted even when allowlisted.
+  Bridge-quarantine analysis (F3) remains OFF by default; when enabled it
+  will use a separate `TouchDesignerClient` on dedicated port
+  `TDMCP_PROJECT_RAG_BRIDGE_PORT=9981`, never the user's active 9980 bridge.
+  Inert when off; zero impact on existing flows.
+
 - **Creative RAG local (opt-in, experimental)** — a local-only creative
   repertoire of open-licensed artworks, artists and techniques. New
   `tdmcp creative-rag {sync|index|search}` CLI subcommand and read-only

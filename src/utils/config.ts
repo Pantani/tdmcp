@@ -83,6 +83,31 @@ function ragEnabledFlag(value: unknown): boolean | undefined {
 
 const RagEnabledSchema = z.preprocess(ragEnabledFlag, z.boolean().default(false));
 
+/**
+ * Project RAG composite-score weights schema (technical:license:freshness:reliability).
+ * Accepts either a 4-number object or a "0.45:0.25:0.15:0.15" colon CSV from env.
+ */
+const ScoreWeightsSchema = z.object({
+  technical: z.number().min(0).max(1),
+  license: z.number().min(0).max(1),
+  freshness: z.number().min(0).max(1),
+  reliability: z.number().min(0).max(1),
+});
+
+function parseScoreWeights(value: unknown): unknown {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value === "object") return value;
+  if (typeof value !== "string") return undefined;
+  const parts = value
+    .split(":")
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map(Number);
+  if (parts.length !== 4 || parts.some((n) => !Number.isFinite(n))) return undefined;
+  const [technical, license, freshness, reliability] = parts as [number, number, number, number];
+  return { technical, license, freshness, reliability };
+}
+
 function sanitizeTelegramTier(value: unknown): LlmTier | undefined {
   if (typeof value !== "string") return undefined;
   const normalized = value.trim().toLowerCase();
@@ -200,6 +225,47 @@ export const ConfigSchema = z.object({
   ragSmithsonianKey: z.string().optional(),
   /** Europeana Search API key (read in-source by the adapter; never threaded through CreativeRagConfig). */
   ragEuropeanaKey: z.string().optional(),
+  /**
+   * Opt-in switch for the Project RAG repertoire feature
+   * (`tdmcp project-rag` + `tdmcp://project/*` resources). Default ON when
+   * `ragEnabled` is on; the AND of both gates controls activation. Accepts
+   * "1"/"true" (case-insensitive) as true, "0"/"false"/"" as false.
+   */
+  projectRagEnabled: z.preprocess(ragEnabledFlag, z.boolean().default(true)),
+  /**
+   * Opt-in bridge-quarantine analysis (F3) for `.toe`/`.tox` cards. OFF by
+   * default; when ON, Project RAG uses a SEPARATE TouchDesignerClient on
+   * {@link ConfigSchema.shape.projectRagBridgePort} — never the default 9980.
+   */
+  projectRagBridgeAnalysis: z.preprocess(ragEnabledFlag, z.boolean().default(false)),
+  /** Dedicated TD bridge port for the F3 quarantine analyzer (must differ from `tdPort`). */
+  projectRagBridgePort: z.coerce.number().int().positive().max(65535).default(9981),
+  /** Optional GitHub API token for higher rate limits on `github-repo`/`github-topic` sources. */
+  projectRagGhToken: z.string().min(1).optional(),
+  /** Static `.toe`/`.tox` analyzer subprocess timeout (ms). */
+  projectRagAnalyzeTimeoutMs: z.coerce.number().int().positive().default(30000),
+  /**
+   * Licenses whose `.tox`/`.toe` binaries Project RAG may store locally. Default
+   * is the SPDX-permissive set; users opt into GPL/CC-BY/EULA explicitly.
+   */
+  projectRagLicenseAllowlist: CsvListSchema.default([
+    "CC0",
+    "PublicDomain",
+    "MIT",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "MPL-2.0",
+  ]),
+  /**
+   * Composite scoring weights (technical:license:freshness:reliability).
+   * Sum is not required to be 1.0; the composite formula uses them as-is.
+   * Pre-parsed from a CSV env so it stays one-line in profiles.
+   */
+  projectRagScoreWeights: z
+    .preprocess(parseScoreWeights, ScoreWeightsSchema)
+    .default({ technical: 0.45, license: 0.25, freshness: 0.15, reliability: 0.15 }),
 });
 
 type ParsedConfig = z.infer<typeof ConfigSchema>;
@@ -276,6 +342,13 @@ function envValues(env: NodeJS.ProcessEnv): Record<string, unknown> {
     ragBackend: env.TDMCP_RAG_BACKEND || undefined,
     ragSmithsonianKey: env.TDMCP_RAG_SMITHSONIAN_KEY || undefined,
     ragEuropeanaKey: env.TDMCP_RAG_EUROPEANA_KEY || undefined,
+    projectRagEnabled: env.TDMCP_PROJECT_RAG_ENABLED,
+    projectRagBridgeAnalysis: env.TDMCP_PROJECT_RAG_BRIDGE_ANALYSIS,
+    projectRagBridgePort: env.TDMCP_PROJECT_RAG_BRIDGE_PORT || undefined,
+    projectRagGhToken: env.TDMCP_PROJECT_RAG_GH_TOKEN || undefined,
+    projectRagAnalyzeTimeoutMs: env.TDMCP_PROJECT_RAG_ANALYZE_TIMEOUT_MS || undefined,
+    projectRagLicenseAllowlist: env.TDMCP_PROJECT_RAG_LICENSE_ALLOWLIST || undefined,
+    projectRagScoreWeights: env.TDMCP_PROJECT_RAG_SCORE_WEIGHTS || undefined,
   };
 }
 

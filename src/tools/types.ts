@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CreativeRagService } from "../creativeRag/index.js";
 import type { KnowledgeBase } from "../knowledge/index.js";
 import type { LlmClientLike } from "../llm/client.js";
+import type { ProjectRagService } from "../projectRag/index.js";
 import type { RecipeLibrary } from "../recipes/loader.js";
 import type { TouchDesignerClient } from "../td-client/touchDesignerClient.js";
 import type { Logger } from "../utils/logger.js";
@@ -44,6 +45,14 @@ export interface ToolContext {
    * read-only `tdmcp://creative/*` resources only — no actionable tool.
    */
   creativeRag?: CreativeRagService;
+  /**
+   * Optional local Project RAG repertoire service (set when
+   * `TDMCP_RAG_ENABLED=1 && TDMCP_PROJECT_RAG_ENABLED=1`); undefined when off.
+   * Backs the read-only `tdmcp://project/*` resources only — no actionable
+   * tool. NEVER touches the TD bridge; F3 bridge-analyze uses a SEPARATE
+   * client on a dedicated port.
+   */
+  projectRag?: ProjectRagService;
 }
 
 /** A function that registers one tool against the MCP server. */

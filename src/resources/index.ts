@@ -8,6 +8,7 @@ import { registerGlslSnippetCatalogResource } from "./glslSnippetCatalogResource
 import { registerGraphDigestResource } from "./graphDigest.js";
 import { registerOperatorResource } from "./operatorResource.js";
 import { registerPatternResource } from "./patternResource.js";
+import { registerProjectRagResource } from "./projectRagResource.js";
 import { registerPromptCatalogResource } from "./promptCatalogResource.js";
 import { registerPythonApiResource } from "./pythonApiResource.js";
 import { registerRecipeResource } from "./recipeResource.js";
@@ -38,6 +39,8 @@ export function registerAllResources(server: McpServer, ctx: ResourceContext): v
   registerGraphDigestResource(server, ctx);
   // Creative RAG (opt-in) — read-only repertoire resources; no-op unless ctx.creativeRag is set:
   registerCreativeRagResource(server, ctx);
+  // Project RAG (opt-in, F0 foundations) — no-op unless ctx.projectRag is set:
+  registerProjectRagResource(server, ctx);
 }
 
 export type { ResourceContext } from "./shared.js";
