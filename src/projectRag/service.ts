@@ -13,7 +13,7 @@
 
 import { createHash } from "node:crypto";
 import { mkdirSync, readdirSync, readFileSync } from "node:fs";
-import { extname, join } from "node:path";
+import { extname, join, resolve } from "node:path";
 import { OllamaEmbeddingsClient } from "../creativeRag/ollamaClient.js";
 import { friendlyOllamaError } from "../creativeRag/ollamaErrors.js";
 import { atomicWriteFileSync } from "../utils/atomicWrite.js";
@@ -324,7 +324,10 @@ export function createProjectRagService(deps: ProjectRagServiceDeps): ProjectRag
       if (card.analysisStatus === "ok") continue;
       if (!shouldStoreProjectBinary(card.license, config.licenseAllowlist)) continue;
 
-      const absolutePath = join(config.dataDir, card.binaryPath);
+      // `resolve` (not `join`) so a relative `config.dataDir` (the default is
+      // `.tdmcp/creative-rag`) still yields an ABSOLUTE path — the quarantine
+      // bridge analyzer rejects relative artifact paths (bridgeAnalyze.ts).
+      const absolutePath = resolve(config.dataDir, card.binaryPath);
       summary.attempted += 1;
       let result: BridgeAnalysisResult;
       try {
