@@ -1,6 +1,6 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { isAbsolute, join, relative } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ProjectRagCard, ProjectRagConfig } from "../../../src/projectRag/index.js";
 import {
@@ -272,6 +272,33 @@ describe("projectRag service — F3 bridge analyze pass", () => {
     expect(calls[0]).toContain("binaries/cool.tox");
     const stored = await svc.getCard(id);
     expect(stored?.analysisStatus).toBe("ok");
+  });
+
+  it("sync({bridge:true}) passes an ABSOLUTE artifact path even when dataDir is relative (regression)", async () => {
+    // Slice C live-validation found `sync --bridge` failing with
+    // "artifactPath must be absolute" because the default dataDir
+    // (`.tdmcp/creative-rag`) is relative and runBridgePass used `join`, not
+    // `resolve`. The quarantine analyzer rejects relative paths.
+    // A relative dataDir is the bug trigger; we derive it from cwd (no chdir,
+    // which would leak into other test files sharing the worker process).
+    const relDir = relative(process.cwd(), DIR);
+    expect(isAbsolute(relDir)).toBe(false);
+    const id = computeProjectId("github:foo/rel#1").slice(0, 64).padEnd(64, "0").slice(0, 64);
+    writePersistedCard(relDir, { id, license: "MIT", binaryPath: "binaries/cool.tox" });
+    const calls: string[] = [];
+    const svc = createProjectRagService({
+      config: makeConfig(relDir), // RELATIVE dataDir — the bug trigger
+      sources: [],
+      embeddings: NOOP_EMBEDDINGS,
+      bridgeAnalyzeImpl: async (p) => {
+        calls.push(p);
+        return { status: "ok", errorCount: 0 };
+      },
+    });
+    const report = await svc.sync({ bridge: true });
+    expect(report.bridgeAnalysis).toEqual({ attempted: 1, ok: 1, failed: 0, skipped: 0 });
+    expect(calls).toHaveLength(1);
+    expect(isAbsolute(calls[0] as string)).toBe(true);
   });
 
   it("sync({bridge:true}) is idempotent — already-ok cards are not re-analyzed", async () => {
