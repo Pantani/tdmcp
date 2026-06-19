@@ -11,6 +11,7 @@ import { loadConfig, type TdmcpConfig } from "../../src/utils/config.js";
 function makeConfig(overrides: Partial<TdmcpConfig> = {}): TdmcpConfig {
   return {
     ...loadConfig({}),
+    ragEnabled: true,
     projectRagEnabled: false,
     ragDataDir: ".tdmcp/creative-rag",
     ...overrides,
@@ -26,12 +27,23 @@ describe("projectRagIndexPath", () => {
 });
 
 describe("enabled", () => {
-  it("passes without touching fs when projectRagEnabled is true", () => {
+  it("passes without touching fs when both gating flags are on", () => {
     const indexSize = vi.fn();
-    const check = checkProjectRag(makeConfig({ projectRagEnabled: true }), { indexSize });
+    const check = checkProjectRag(makeConfig({ ragEnabled: true, projectRagEnabled: true }), {
+      indexSize,
+    });
     expect(check.status).toBe("pass");
     expect(check.data?.enabled).toBe(true);
     expect(indexSize).not.toHaveBeenCalled();
+  });
+
+  it("treats master RAG gate off as disabled even if projectRagEnabled defaults true", () => {
+    const check = checkProjectRag(makeConfig({ ragEnabled: false, projectRagEnabled: true }), {
+      indexSize: () => 4096,
+    });
+    expect(check.status).toBe("warn");
+    expect(check.data?.offFlag).toBe("TDMCP_RAG_ENABLED");
+    expect(check.detail).toContain("TDMCP_RAG_ENABLED is off");
   });
 });
 

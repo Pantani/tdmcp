@@ -61,14 +61,21 @@ export function checkProjectRag(config: TdmcpConfig, probes?: ProjectRagProbes):
     critical: false,
   };
 
-  if (config.projectRagEnabled) {
+  // Project RAG is the AND of both gating flags (see toProjectRagConfig in
+  // src/projectRag/cli.ts): the master Creative-RAG switch must also be on.
+  // With TDMCP_RAG_ENABLED unset, an existing index is dormant even though
+  // projectRagEnabled defaults to true — that is exactly the case to nudge.
+  if (config.ragEnabled && config.projectRagEnabled) {
     return {
       ...base,
       status: "pass",
-      detail: "enabled (TDMCP_PROJECT_RAG_ENABLED on).",
+      detail: "enabled (TDMCP_RAG_ENABLED + TDMCP_PROJECT_RAG_ENABLED on).",
       data: { enabled: true },
     };
   }
+
+  // Name the flag(s) actually holding it off so the nudge is actionable.
+  const offFlag = !config.ragEnabled ? "TDMCP_RAG_ENABLED" : "TDMCP_PROJECT_RAG_ENABLED";
 
   const indexPath = projectRagIndexPath(config);
   const indexSize = (probes?.indexSize ?? defaultIndexSize)(indexPath);
@@ -78,16 +85,16 @@ export function checkProjectRag(config: TdmcpConfig, probes?: ProjectRagProbes):
     return {
       ...base,
       status: "pass",
-      detail: "not enabled (TDMCP_PROJECT_RAG_ENABLED off), no on-disk index — skipped.",
-      data: { enabled: false, indexFound: false },
+      detail: `not enabled (${offFlag} off), no on-disk index — skipped.`,
+      data: { enabled: false, indexFound: false, offFlag },
     };
   }
 
   return {
     ...base,
     status: "warn",
-    detail: `on-disk index found at ${indexPath} but TDMCP_PROJECT_RAG_ENABLED is off — the indexed project knowledge is being ignored.`,
-    data: { enabled: false, indexFound: true, indexPath, indexBytes: indexSize },
+    detail: `on-disk index found at ${indexPath} but ${offFlag} is off — the indexed project knowledge is being ignored.`,
+    data: { enabled: false, indexFound: true, indexPath, indexBytes: indexSize, offFlag },
   };
 }
 
@@ -100,7 +107,9 @@ export function runProjectRagChecks(config: TdmcpConfig, probes?: ProjectRagProb
 export function suggestFixProjectRag(check: DoctorCheck, _config: TdmcpConfig): string | undefined {
   if (check.status === "pass") return undefined;
   if (check.id === "project_rag") {
-    return "Set TDMCP_PROJECT_RAG_ENABLED=1 to use the existing index, or delete it if you no longer need it.";
+    const offFlag =
+      typeof check.data?.offFlag === "string" ? check.data.offFlag : "TDMCP_PROJECT_RAG_ENABLED";
+    return `Set ${offFlag}=1 (Project RAG needs both TDMCP_RAG_ENABLED and TDMCP_PROJECT_RAG_ENABLED) to use the existing index, or delete it if you no longer need it.`;
   }
   return undefined;
 }
