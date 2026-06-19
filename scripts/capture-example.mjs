@@ -23,7 +23,7 @@ const node = arg("node");
 const out = arg("out");
 if (!node || !out) {
   console.error(
-    "Usage: --node <TOP path> --out <gif path> [--frames 40] [--step 2] [--size 480 | --width W --height H] [--fps 16] [--host 127.0.0.1:9980]",
+    "Usage: --node <TOP path> --out <gif/mp4 path> [--frames 40] [--step 2] [--size 480 | --width W --height H] [--fps 16] [--delay-ms 0] [--host 127.0.0.1:9980]",
   );
   process.exit(1);
 }
@@ -33,6 +33,7 @@ const width = Number(arg("width", arg("size", "480")));
 const height = Number(arg("height", arg("size", String(width))));
 const fps = Number(arg("fps", "16"));
 const host = arg("host", "127.0.0.1:9980");
+const delayMs = Number(arg("delay-ms", "0"));
 const base = `http://${host}`;
 
 async function exec(script) {
@@ -43,12 +44,18 @@ async function exec(script) {
   });
 }
 
+async function sleep(ms) {
+  if (ms <= 0) return;
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function main() {
   const dir = mkdtempSync(join(tmpdir(), "tdmcp-frames-"));
   const enc = encodeURIComponent(node);
   let captured = 0;
   for (let i = 1; i <= frames; i++) {
     await exec(`tl=op("/").time; tl.frame = tl.frame + ${step}`);
+    await sleep(delayMs);
     const r = await fetch(`${base}/api/preview/${enc}?width=${width}&height=${height}`);
     const j = await r.json();
     if (!j.ok) throw new Error(`preview failed for ${node}: ${JSON.stringify(j.error ?? j)}`);

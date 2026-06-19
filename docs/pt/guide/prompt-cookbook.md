@@ -514,6 +514,16 @@ plugin captura por um browser embutido que só roda com a timeline ativa) e perm
 câmera se o macOS pedir. Sem webcam agora? Peça uma fonte de pose **sintética** para
 montar e pré-visualizar o look offline.
 
+> *"Renderize meu body tracking como um feed ControlNet limpo estilo OpenPose:
+> fundo preto, membros coloridos, confidence gate e um sender NDI chamado
+> controlnet_pose."*
+
+
+*`create_pose_controlnet_driver` transforma o mesmo CHOP de 33 landmarks numa saída
+TOP OpenPose-COCO com controles de JointRadius, LimbThickness, ConfidenceGate e
+Mirror. Deixe interno para ComfyUI / StreamDiffusion local, ou publique por NDI /
+Syphon-Spout quando outra máquina precisar do feed de pose.*
+
 ### Face, mãos & segmentação
 
 > *"Configure MediaPipe face tracking, centralize os landmarks na ponta do nariz e
@@ -646,6 +656,84 @@ ela em vez de fingir que esses passes funcionam num TOP chapado.*
 → noise → material SOP num rig completo de render. Use quando você quer um objeto
 3D editável, não apenas um shader fingindo ser geometria.*
 
+> *"Monte uma tempestade de partículas POP onde 40.000 pontos nascem de uma
+> nuvem-semente, atravessam um campo de força por textura e deixam um rastro
+> brilhante de feedback."*
+
+
+*`create_pop_particle_system` monta o instrumento POP renderizado: point-generator
+de semente, Particle POP, Feedback POP, força por lookup-texture, visualização de
+campo opcional e Render TOP de saída. EmissionRate, Lifetime e FeedbackGain ficam
+expostos para tocar a tempestade em vez de congelar o resultado.*
+
+> *"Faça crescer um organismo POP tipo coral: acreção densa para fora, movimento
+> guiado por ruído, decaimento lento e controles de growth rate, threshold e
+> feedback."*
+
+
+*`create_pop_growth` é o preset orgânico em POP: modos dendritic, coral e lichen
+com controles de GrowthRate, Decay, Threshold e FeedbackGain. Use quando o look
+deve parecer acreção, fungo, coral ou fibra ramificada em vez de partículas comuns.*
+
+> *"Faça uma nuvem de pontos plexus girando devagar: 1.000 pontos, conecte só
+> vizinhos próximos, degrade linhas pela distância e deixe pontinhos por cima."*
+
+
+*`create_pop_lines_pointcloud` roda um Neighbor POP sobre uma nuvem de pontos
+gerada ou externa, emite linhas deduplicadas via Script SOP e renderiza a teia com
+controles de MaxDistance, MaxNeighbors, MaxLines, Spin e PointSize. É o look plexus
+sem escrever o loop de vizinhança à mão.*
+
+> *"Use minha máscara de segmentação como campo de profundidade e espalhe 25.000
+> pontos ao redor do meu corpo, coloridos por profundidade perto/longe e girando
+> devagar em 3D."*
+
+<video :src="withBase('/examples/depth-pop-field-performer.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_depth_pop_field` aceita um TOP de profundidade/máscara existente ou sobe
+uma cadeia de segmentação, então usa lookup-texture POPs, jitter e proxy de
+displacement para transformar a máscara num campo espacial de pontos renderizado.
+DepthScale, PointSize e Spin fazem a câmera plana se comportar como volume de palco.*
+
+> *"Carregue este scan .splat como cena Gaussian Splat, conecte na minha câmera de
+> órbita, gere 1080p e exponha o caminho do asset e a referência da câmera no
+> wrapper."*
+
+
+*`create_gaussian_splat_scene` envolve o TDGS.tox quando ele está instalado,
+valida assets `.ply` / `.splat`, conecta uma câmera opcional e promove controles
+de SplatAssetPath, CameraRef e OutputRes. Se o TDGS estiver ausente, falha rápido
+com instrução de instalação em vez de travar o TouchDesigner.*
+
+> *"Estime profundidade a partir deste feed 2D de câmera, mantenha o depth map
+> cozinhando e use isso como fonte para um visual de relevo/displacement."*
+
+
+*`create_depth_from_2d` carrega o TDDepthAnything quando disponível, conecta um TOP
+de origem, configura modelo/resolução e devolve um Null TOP `depth_out` vivo com
+frame cooker. A saída pode alimentar `create_depth_pop_field`, displacement,
+silhuetas ou qualquer cadeia depth-aware sem câmera de profundidade.*
+
+> *"Crie um volume de nebulosa lento: 24 fatias empilhadas, paleta roxo-magenta,
+> alta densidade, pouca turbulência e controles ao vivo de densidade e color map."*
+
+<video :src="withBase('/examples/volumetric-field-nebula.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_volumetric_field` simula volume com noise 3D animado, displacement
+opcional, pilha de fatias em Cache TOP e acumulação GLSL Beer-Lambert. Density,
+Turbulence e ColorMap transformam isso em fumaça, nebulosa, brasa, gelo, tóxico ou
+mono.*
+
+> *"Transforme este feed de câmera numa cidade voxel isométrica: brilho controla a
+> altura das torres, a cor da fonte pinta cada bloco e eu ganho controles de
+> HeightScale e RotateY."*
+
+
+*`create_voxel_stack` amostra um TOP em canais de instância, mescla barramentos de
+posição, altura, escala e cor, e instancia box geometry por uma câmera isométrica
+ou de perspectiva. É footage plano virando campo performável de cubos, não um
+filtro 2D pixelado.*
+
 ## Vídeo & câmera
 
 > *"Passe minha webcam por detecção de bordas, um RGB split e um loop de feedback
@@ -705,6 +793,17 @@ rodar a partir de padrão de teste, arquivo, TOP existente ou device ao vivo.*
 determinístico nos pixels RGB decodificados, devolvendo swatches hex ponderados.
 Esses swatches alimentam diretamente alvos de lift / gamma / gain em
 `create_color_grade`.*
+
+> *"Transforme a câmera num espelho de IA com prompt de água etérea, mostre a
+> câmera crua no painel de controle e envie a saída gerada por Syphon/Spout quando
+> estiver pronta."*
+
+
+*`create_ai_mirror` envolve entrada de câmera, sintética ou TOP existente pelo
+StreamDiffusionTD com controles de Prompt, Negative Prompt, Strength e CFG, mais
+preview opcional da câmera. A saída pode ficar interna ou ir para Syphon-Spout /
+NDI, e a falta do TOX de StreamDiffusion vira aviso amigável com o esqueleto ainda
+montado.*
 
 ## Texto & títulos
 
@@ -1069,6 +1168,15 @@ para adicionar buses de gate e duck à mesma rede. Os defaults continuam desliga
 então containers reativos existentes ficam byte-idênticos — opte por dentro só
 quando quiser os buses novos.*
 
+> *"Enfileire meus cues de strobe e logo quando eu apertar o botão, mas só dispare
+> no próximo limite de frase de 16 compassos para o drop cair musicalmente."*
+
+
+*`create_phrase_locked_cue_engine` observa um CHOP de cue pendente, coloca pulsos
+numa fila e trava o disparo contra um Beat CHOP local de frase. O Null CHOP de
+saída emite o trigger quantizado musicalmente, enquanto PhraseLength, Active, Flush
+e QueueDepth dão controle ao operador sobre a fila.*
+
 ## Saída & mapeamento
 
 > *"Mande o visual final para uma janela em tela cheia no meu segundo monitor."*
@@ -1123,6 +1231,37 @@ waveform-monitor de verdade, atualizando ao vivo com o seu programa.*
 compartilhando um único clock de `compose_cue_list` pra que o overlay de letra vire
 em sincronia com as mudanças de cena. Espelha o harness de ensaio que a
 AI-Controlled Party usa para ensaios offline.*
+
+> *"Monte um rig de projection mapping interativo para webcam e projetor:
+> movimento acorda partículas ciano, cards magenta flutuam pela parede, e eu
+> consigo alternar entre final, câmera, movimento, blobs e calibração."*
+
+<video :src="withBase('/examples/interactive-projection-motion-dots.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_interactive_projection_mapping` monta o rig de ensaio com fonte de câmera,
+sintética ou TOP existente, campo de movimento por diferença de frames, branch de
+blob-mask, saída de projection mapping com corner pin e switch de debug. Sensitivity,
+TrailDecay, BlobThreshold e ProjectionBrightness ficam expostos para calibração na sala.*
+
+> *"Envie meu TOP final como NDI chamado stage_program, mantenha inativo até eu
+> aprovar e também crie um sender Syphon/Spout para a máquina local de captura."*
+
+<video :src="withBase('/examples/external-io-ndi-syphon-return.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_external_io` agora inclui `ndi_out` e `syphon_spout_out` junto de OSC,
+MIDI, DMX, Art-Net e modos de streaming. Ele conecta o TOP de origem, define os
+nomes de sender/source e deixa Active desligado a menos que o prompt peça para
+começar a transmitir.*
+
+> *"Monte um esqueleto de facade mapping para três projetores com edge blend
+> horizontal, brilho por projetor, canvas de preview e curvas smoothstep."*
+
+<video :src="withBase('/examples/facade-mapping-edge-blend.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_facade_mapping` distribui um TOP de origem em 1-8 branches de projetor,
+recorta cada fatia com overlap, aplica ramps de blend / branches de corner pin, cria
+Nulls de saída por projetor e expõe brilho mais controles de largura/curva de blend.
+É o esqueleto de setup antes do alinhamento físico dos projetores.*
 
 ## Consertar & entender
 
@@ -1424,6 +1563,49 @@ está sem dependências extras.*
 (dissolve / luma_wipe / slide / zoom / glitch_cut) — arraste o fader para fazer um
 wipe entre duas fontes no meio do show.*
 
+> *"Renderize minha câmera como ASCII verde-fósforo brilhante, com cor da fonte nas
+> áreas claras e um botão Mix para voltar ao original."*
+
+<video :src="withBase('/examples/ascii-phosphor-camera.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_ascii_render` reduz a fonte para células, cria um atlas de glifos em Text
+TOP e renderiza uma grade de caracteres em GLSL. Os modos mono, source-color e
+two-color cobrem terminal fósforo, câmera posterizada e palco duotone.*
+
+> *"Faça um slit-scan vertical da dançarina: cada linha deve ser um momento
+> diferente no tempo, 120 frames de profundidade, subindo como fitas de tempo."*
+
+
+*`create_slit_scan` grava a fonte num ring buffer de Cache TOP e amostra isso em
+GLSL para que cada linha ou coluna venha de um frame passado diferente. O controle
+Depth define quanto tempo é esticado pela saída.*
+
+> *"Gere blobs de cromo líquido num fundo preto de estúdio, metal azulado,
+> movimento lento e controle de Speed para aquele momento de logo Y2K."*
+
+<video :src="withBase('/examples/chrome-blobs-y2k.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_chrome_blobs` transforma noise animado em metaballs borrados/thresholded e
+sombreia tudo com um passe GLSL de chrome por environment-map falso. Tints de metal
+e presets de fundo tornam isso útil como vinheta de logo, não só teste de textura.*
+
+> *"Crie um look Gray-Scott de reaction-diffusion com cores coral, manchas tipo
+> labirinto e controles ao vivo de Feed/Kill/Diffusion para morph biológico lento."*
+
+<video :src="withBase('/examples/reaction-diffusion-coral-maze.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_reaction_diffusion` parte da receita Gray-Scott incluída, corrige os
+uniforms GLSL de Feed/Kill/Diffusion A/B, aplica opcionalmente um ramp de LUT e
+expõe os parâmetros químicos como controles performáveis.*
+
+> *"Pixel-sort este feed ao vivo em rastros verticais de chuva: ordene por
+> luminância acima do threshold, descendente, 96 iterações, com Mix em 0.8."*
+
+
+*`create_pixel_sort` usa um loop GLSL de odd-even sort com Feedback TOP, Switch TOP
+e máscara de threshold. Axis, SortBy, Direction, Threshold, Iterations e Mix ficam
+ao vivo para ajustar o smear estilo Asendorf em vez de colar um shader uma vez.*
+
 ## Mixagem e camadas
 
 > *"Empilhe quatro camadas com modos de mistura e opacidade, cada uma com mute e
@@ -1484,6 +1666,17 @@ tocável, não um gráfico estático.*
 *Um Replicator COMP que clona um COMP de template por linha de um Table DAT,
 parametrizando cada clone a partir da sua linha — instanciamento orientado a dados de
 sub-redes inteiras, não só de geometria.*
+
+> *"Monte uma cadeia LLM offline com Ollama dentro do TouchDesigner: prompt DAT
+> entrando, response DAT saindo, botão Send exposto e JSON mode pronto para notas
+> de cue."*
+
+<video :src="withBase('/examples/llm-chain-stage-notes.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_llm_chain` cria um wrapper LLM baseado em webclientDAT para Ollama, OpenAI,
+Anthropic ou endpoint custom compatível com OpenAI. Prompt e Response DATs, canal de
+status e controles de provider/model/temperature/max-token ficam dentro do TD,
+enquanto as chaves de API são lidas por variáveis de ambiente e nunca aparecem via Node.*
 
 ## Checagens de ensaio & feedback artístico
 
