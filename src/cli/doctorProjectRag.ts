@@ -78,7 +78,20 @@ export function checkProjectRag(config: TdmcpConfig, probes?: ProjectRagProbes):
   const offFlag = !config.ragEnabled ? "TDMCP_RAG_ENABLED" : "TDMCP_PROJECT_RAG_ENABLED";
 
   const indexPath = projectRagIndexPath(config);
-  const indexSize = (probes?.indexSize ?? defaultIndexSize)(indexPath);
+  let indexSize: number | null;
+  try {
+    indexSize = (probes?.indexSize ?? defaultIndexSize)(indexPath);
+  } catch (err) {
+    // This check is non-critical — a permission/I/O error inspecting the index
+    // (EACCES, EPERM, …) must degrade to a visible warn, never abort `doctor`.
+    const code = (err as NodeJS.ErrnoException)?.code ?? "I/O error";
+    return {
+      ...base,
+      status: "warn",
+      detail: `could not inspect ${indexPath} (${code}) while ${offFlag} is off.`,
+      data: { enabled: false, indexFound: false, indexPath, offFlag, errorCode: code },
+    };
+  }
 
   // A zero-byte file is an empty index — nothing dormant to nudge about.
   if (indexSize === null || indexSize === 0) {

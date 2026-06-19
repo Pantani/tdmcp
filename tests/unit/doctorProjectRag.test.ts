@@ -74,6 +74,22 @@ describe("disabled, dormant index", () => {
   });
 });
 
+describe("probe I/O error", () => {
+  it("warns (never throws) when the index probe raises a non-ENOENT error", () => {
+    const check = checkProjectRag(makeConfig(), {
+      indexSize: () => {
+        const err = new Error("permission denied") as NodeJS.ErrnoException;
+        err.code = "EACCES";
+        throw err;
+      },
+    });
+    expect(check.status).toBe("warn");
+    expect(check.data?.errorCode).toBe("EACCES");
+    expect(check.data?.indexFound).toBe(false);
+    expect(check.detail).toContain("EACCES");
+  });
+});
+
 describe("runProjectRagChecks", () => {
   it("returns exactly one check, never critical", () => {
     const checks = runProjectRagChecks(makeConfig(), { indexSize: () => 1 });
