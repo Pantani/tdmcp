@@ -3,6 +3,7 @@ import { runAgentTurn } from "../llm/agent.js";
 import type { ChatMessage } from "../llm/client.js";
 import { LlmClient } from "../llm/client.js";
 import { buildCreativeContextMessage, clampK } from "../llm/creativeContext.js";
+import { buildFusedContextMessage, fusedRagSearch } from "../llm/crossRagFusion.js";
 import { resolveTools } from "../llm/tools.js";
 import { buildToolContext } from "../server/context.js";
 import {
@@ -251,11 +252,28 @@ export async function runAsk(argv: string[] = [], deps: AskRuntimeDeps = {}): Pr
     if (!ctx.creativeRag) {
       stderrLine("tdmcp ask: creative context requested but TDMCP_RAG_ENABLED is off — skipping");
     } else {
-      creativeMsg = await buildCreativeContextMessage(ctx.creativeRag, prompt, {
-        k: clampK(config.ragInjectK),
-        timeoutMs: config.ragInjectTimeoutMs,
-        logger,
-      });
+      // Cross-RAG fusion (opt-in): when ragEnabled && projectRagEnabled &&
+      // ragFusion and both corpora yield results, fuse them via RRF. Otherwise
+      // fall back to the existing single-corpus creative context — behaviour is
+      // byte-for-byte identical to before when the flag is off.
+      const fusionEnabled = config.ragEnabled && config.projectRagEnabled && config.ragFusion;
+      const fused = fusionEnabled
+        ? await fusedRagSearch(prompt, {
+            creative: ctx.creativeRag,
+            project: ctx.projectRag,
+            fusionEnabled,
+            k: config.ragFusionK,
+            perCorpusK: clampK(config.ragInjectK),
+            logger,
+          })
+        : undefined;
+      creativeMsg = fused
+        ? buildFusedContextMessage(fused)
+        : await buildCreativeContextMessage(ctx.creativeRag, prompt, {
+            k: clampK(config.ragInjectK),
+            timeoutMs: config.ragInjectTimeoutMs,
+            logger,
+          });
     }
   }
   const messages: ChatMessage[] = creativeMsg

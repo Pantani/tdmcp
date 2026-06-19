@@ -325,6 +325,28 @@ The suggestion is informational only — it does not alter search behavior,
 machine output (`--json`), or exit codes. It exists so an artist who tried
 the wrong RAG first can pivot without re-reading the docs.
 
+### Cross-RAG ranking — fuse both corpora (opt-in)
+
+When both RAG corpora are enabled, `tdmcp ask` can fuse Creative RAG and
+Project RAG results into **one** ranked reference block using
+[Reciprocal Rank Fusion (RRF)](https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf):
+`rrf(d) = Σ 1/(k + rank)`. RRF is **rank-based**, so it sidesteps the fact that
+the two corpora score on incomparable scales (Creative is cosine `0..1`;
+Project is `cosineSim * composite`). Enable it with:
+
+```text
+export TDMCP_RAG_ENABLED=1          # parent switch
+export TDMCP_PROJECT_RAG_ENABLED=1  # project-rag switch (default ON when parent is on)
+export TDMCP_RAG_FUSION=1           # cross-RAG fusion (default OFF)
+export TDMCP_RAG_FUSION_K=60        # RRF k constant (positive int 1..1000, default 60)
+```
+
+Fusion activates **only** when `TDMCP_RAG_ENABLED && TDMCP_PROJECT_RAG_ENABLED
+&& TDMCP_RAG_FUSION` and **both** corpora return at least one result. If either
+corpus is empty, missing, or errors, `tdmcp ask` falls back to its existing
+single-corpus creative-context block — behaviour is identical to leaving the
+flag off. Lower `k` sharpens the weight of top ranks; higher `k` flattens it.
+
 ## F3 — bridge-quarantine analysis (opt-in)
 
 F3 ships **two artifact analyzers** for downloaded `.toe`/`.tox` files. Both

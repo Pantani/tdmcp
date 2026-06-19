@@ -2863,6 +2863,8 @@ const ENV_NAMES: Record<keyof TdmcpConfig, string> = {
   ragInjectK: "TDMCP_RAG_INJECT_K",
   ragInjectTimeoutMs: "TDMCP_RAG_INJECT_TIMEOUT_MS",
   ragProbeTimeoutMs: "TDMCP_RAG_PROBE_TIMEOUT_MS",
+  ragFusion: "TDMCP_RAG_FUSION",
+  ragFusionK: "TDMCP_RAG_FUSION_K",
   projectRagEnabled: "TDMCP_PROJECT_RAG_ENABLED",
   projectRagBridgeAnalysis: "TDMCP_PROJECT_RAG_BRIDGE_ANALYSIS",
   projectRagBridgePort: "TDMCP_PROJECT_RAG_BRIDGE_PORT",
