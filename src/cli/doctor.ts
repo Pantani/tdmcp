@@ -22,6 +22,11 @@ import {
   runCreativeRagChecks,
   suggestFixCreativeRag,
 } from "./doctorCreativeRag.js";
+import {
+  type ProjectRagProbes,
+  runProjectRagChecks,
+  suggestFixProjectRag,
+} from "./doctorProjectRag.js";
 import { type InstallBridgeResult, runInstallBridge } from "./installBridge.js";
 
 /**
@@ -98,6 +103,8 @@ export interface RunDoctorOptions {
   profileDirRepair?: (dirPath: string) => void;
   /** Inject Creative RAG probe overrides (fetch + fs) for tests; defaults to real network and fs. */
   creativeRagProbes?: CreativeRagProbes;
+  /** Inject Project RAG probe overrides (index fs) for tests; defaults to real fs. */
+  projectRagProbes?: ProjectRagProbes;
   /** Overridable install-bridge runner for tests; defaults to local install-bridge --verify. */
   runInstallBridge?: (port: number) => Promise<InstallBridgeResult>;
   /** Overridable Textport auto-install runner for tests; defaults to a bounded macOS AppleScript. */
@@ -642,6 +649,8 @@ function suggestFix(check: DoctorCheck, config: TdmcpConfig): string | undefined
     case "rag_embed_model":
     case "rag_data_dir":
       return suggestFixCreativeRag(check, config);
+    case "project_rag":
+      return suggestFixProjectRag(check, config);
     default:
       return undefined;
   }
@@ -778,6 +787,7 @@ export async function runDoctor(opts: RunDoctorOptions = {}): Promise<DoctorResu
     opts.profileDirRepair ?? ((dir: string) => mkdirSync(dir, { recursive: true }));
 
   const ragChecks = await runCreativeRagChecks(config, opts.creativeRagProbes);
+  const projectRagChecks = runProjectRagChecks(config, opts.projectRagProbes);
 
   let checks: DoctorCheck[] = [
     await checkBridge(ctx),
@@ -788,6 +798,7 @@ export async function runDoctor(opts: RunDoctorOptions = {}): Promise<DoctorResu
     checkBridgeToken(config),
     checkProfileDir(profileDirPath),
     ...ragChecks,
+    ...projectRagChecks,
   ];
 
   let allRepairs: NonNullable<DoctorReport["repairs"]> = [];
