@@ -153,8 +153,9 @@ describe("tdmcp doctor", () => {
     const r = await runDoctor({ config: makeConfig(), makeCtx });
     expect(r.stdout).toContain("tdmcp doctor");
     // one line per check (bridge, config, tools, llm, vault, bridge_token, profile_dir,
-    // plus Creative RAG: rag_ollama, rag_embedding_model, rag_data_dir)
-    expect(r.report.checks).toHaveLength(10);
+    // plus Creative RAG: rag_ollama, rag_embedding_model, rag_data_dir,
+    // plus Project RAG: project_rag)
+    expect(r.report.checks).toHaveLength(11);
     for (const c of r.report.checks) expect(r.stdout).toContain(c.title);
   });
 
