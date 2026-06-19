@@ -37,6 +37,22 @@ describe("loadConfig", () => {
     expect(() => loadConfig({ TDMCP_TRANSPORT: "carrier-pigeon" })).toThrow();
   });
 
+  it("defaults cross-RAG fusion knobs and reads overrides", () => {
+    const def = loadConfig({});
+    expect(def.ragFusion).toBe(false);
+    expect(def.ragFusionK).toBe(60);
+
+    const on = loadConfig({ TDMCP_RAG_FUSION: "1", TDMCP_RAG_FUSION_K: "20" });
+    expect(on.ragFusion).toBe(true);
+    expect(on.ragFusionK).toBe(20);
+  });
+
+  it("clamps ragFusionK to its bounds and falls back on non-numeric input", () => {
+    expect(loadConfig({ TDMCP_RAG_FUSION_K: "0" }).ragFusionK).toBe(1);
+    expect(loadConfig({ TDMCP_RAG_FUSION_K: "5000" }).ragFusionK).toBe(1000);
+    expect(loadConfig({ TDMCP_RAG_FUSION_K: "nope" }).ragFusionK).toBe(60);
+  });
+
   it("leaves bridgeToken unset by default and treats empty string as unset", () => {
     expect(loadConfig({}).bridgeToken).toBeUndefined();
     expect(loadConfig({ TDMCP_BRIDGE_TOKEN: "" }).bridgeToken).toBeUndefined();

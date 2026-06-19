@@ -8,6 +8,18 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Cross-RAG ranking — fuse Creative RAG + Project RAG via Reciprocal Rank Fusion (opt-in)** —
+  a pure helper (`src/llm/crossRagFusion.ts`) that merges the two opt-in local RAG
+  corpora into one ranked list using **Reciprocal Rank Fusion** (`rrf(d) = Σ 1/(k +
+  rank)`). RRF is rank-based and therefore scale-free, which is required because the
+  two `score` fields are incomparable (Creative = cosine `0..1`; Project =
+  `cosineSim * composite`). Fusion is gated by `ragEnabled && projectRagEnabled &&
+  ragFusion` and only activates when **both** corpora return results — otherwise it
+  is a no-op passthrough, so behaviour is byte-for-byte identical to before when the
+  flag is off. Wired into `tdmcp ask`'s context-injection path (the fused reference
+  block replaces the single-corpus creative block when active). Two new env vars:
+  `TDMCP_RAG_FUSION` (boolean-ish, default off) and `TDMCP_RAG_FUSION_K` (RRF k,
+  positive int 1..1000, default 60). No new MCP tool, no bridge, no dependencies.
 - **Project RAG — awesome-list discovery source (suggest-only, opt-in, experimental)** —
   a read-only discovery queue parsed from the `monkeymonk/awesome-touchdesigner`
   README (`src/projectRag/sources/awesomeList.ts`). New `tdmcp project-rag

@@ -100,6 +100,8 @@ const RAG_INJECT_K_DEFAULT = 3;
 const RAG_INJECT_K_MAX = 5;
 const RAG_INJECT_TIMEOUT_MS_DEFAULT = 3000;
 const RAG_PROBE_TIMEOUT_MS_DEFAULT = 3000;
+const RAG_FUSION_K_DEFAULT = 60;
+const RAG_FUSION_K_MAX = 1000;
 
 const RagApplyCardSchema = z.preprocess(ragEnabledFlag, z.boolean().default(false));
 const RagInjectAskSchema = z.preprocess(ragEnabledFlag, z.boolean().default(false));
@@ -116,6 +118,11 @@ const RagProbeTimeoutMsSchema = z.preprocess(
   (value) =>
     sanitizeBoundedNumber(value, RAG_PROBE_TIMEOUT_MS_DEFAULT, 1, Number.MAX_SAFE_INTEGER, true),
   z.number().int().min(1).default(RAG_PROBE_TIMEOUT_MS_DEFAULT),
+);
+const RagFusionSchema = z.preprocess(ragEnabledFlag, z.boolean().default(false));
+const RagFusionKSchema = z.preprocess(
+  (value) => sanitizeBoundedNumber(value, RAG_FUSION_K_DEFAULT, 1, RAG_FUSION_K_MAX, true),
+  z.number().int().min(1).max(RAG_FUSION_K_MAX).default(RAG_FUSION_K_DEFAULT),
 );
 
 /**
@@ -278,6 +285,14 @@ export const ConfigSchema = z.object({
   /** Wall-clock timeout (ms) for the doctor's Ollama probe. */
   ragProbeTimeoutMs: RagProbeTimeoutMsSchema,
   /**
+   * Cross-RAG ranking: fuse Creative RAG + Project RAG results into one ranked
+   * list via Reciprocal Rank Fusion. Off by default; active only when
+   * `ragEnabled && projectRagEnabled && ragFusion` and both services exist.
+   */
+  ragFusion: RagFusionSchema,
+  /** RRF k constant for cross-RAG fusion (positive int 1..1000, default 60). */
+  ragFusionK: RagFusionKSchema,
+  /**
    * Opt-in switch for the Project RAG repertoire feature
    * (`tdmcp project-rag` + `tdmcp://project/*` resources). Default ON when
    * `ragEnabled` is on; the AND of both gates controls activation. Accepts
@@ -432,6 +447,8 @@ function envValues(env: NodeJS.ProcessEnv): Record<string, unknown> {
     ragInjectK: env.TDMCP_RAG_INJECT_K || undefined,
     ragInjectTimeoutMs: env.TDMCP_RAG_INJECT_TIMEOUT_MS || undefined,
     ragProbeTimeoutMs: env.TDMCP_RAG_PROBE_TIMEOUT_MS || undefined,
+    ragFusion: env.TDMCP_RAG_FUSION,
+    ragFusionK: env.TDMCP_RAG_FUSION_K || undefined,
     projectRagEnabled: env.TDMCP_PROJECT_RAG_ENABLED,
     projectRagBridgeAnalysis: env.TDMCP_PROJECT_RAG_BRIDGE_ANALYSIS,
     projectRagBridgePort: env.TDMCP_PROJECT_RAG_BRIDGE_PORT || undefined,
