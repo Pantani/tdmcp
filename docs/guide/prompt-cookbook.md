@@ -1754,6 +1754,30 @@ current sync — useful context when search results look thinner than you
 expected. Pair it with the `project_rag_context` prompt to let the agent
 reason about coverage before it commits to a build path.*
 
+### Opting into the Interactive & Immersive HQ manual (non-commercial)
+
+A whole TouchDesigner manual is available as searchable `tutorial` cards — but
+it ships **off by default** because its license is **CC-BY-NC-SA-4.0**
+(non-commercial, share-alike, attribution required). Turn it on only for
+personal/learning use:
+
+```bash
+export TDMCP_PROJECT_RAG_IIHQ=1
+tdmcp project-rag sync --source iihq
+tdmcp project-rag search "optimize a slow CHOP network" --type tutorial --k 3
+```
+
+> *"Enable the IIHQ tutorial source and find chapters that explain GLSL TOPs.
+> Quote each card's license and remind me of the reuse terms before I copy
+> anything into a commercial show."*
+
+*Every IIHQ card is hard-stamped `CC-BY-NC-SA · non-commercial` and carries
+rights notes telling you to attribute **The Interactive & Immersive HQ**, keep
+it non-commercial, and share alike. Only the manual's **text** is indexed — no
+`.tox`/`.toe`/example binaries are ever downloaded (the license policy denies
+CC-BY-NC-SA binaries outright). If you're building for a paid gig, treat these
+cards as background reading, not as assets to ship.*
+
 ## Working from your own notes (Obsidian vault)
 
 If you keep an [Obsidian vault](/reference/tools#obsidian-vault) wired up:

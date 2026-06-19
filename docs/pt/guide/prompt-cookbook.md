@@ -1793,6 +1793,31 @@ mais finos do que você esperava. Combine com o prompt `project_rag_context`
 para deixar o agente raciocinar sobre cobertura antes de comprometer com
 um caminho de build.*
 
+### Habilitando o manual do Interactive & Immersive HQ (não comercial)
+
+Um manual inteiro de TouchDesigner está disponível como cards `tutorial`
+pesquisáveis — mas vem **desligado por padrão** porque sua licença é
+**CC-BY-NC-SA-4.0** (não comercial, share-alike, atribuição obrigatória).
+Ative-o apenas para uso pessoal/aprendizado:
+
+```bash
+export TDMCP_PROJECT_RAG_IIHQ=1
+tdmcp project-rag sync --source iihq
+tdmcp project-rag search "otimizar uma rede de CHOP lenta" --type tutorial --k 3
+```
+
+> *"Habilite a fonte de tutoriais IIHQ e encontre capítulos que expliquem GLSL
+> TOPs. Cite a licença de cada card e me lembre dos termos de reuso antes de eu
+> copiar qualquer coisa para um show comercial."*
+
+*Todo card IIHQ é carimbado de forma rígida como `CC-BY-NC-SA · não comercial` e
+carrega notas de direitos dizendo para atribuir **The Interactive & Immersive
+HQ**, manter o uso não comercial e compartilhar sob a mesma licença. Apenas o
+**texto** do manual é indexado — nenhum binário `.tox`/`.toe`/exemplo é baixado
+(a política de licença nega binários CC-BY-NC-SA por completo). Se você está
+construindo para um trabalho pago, trate esses cards como leitura de referência,
+não como assets para distribuir.*
+
 ## Trabalhando a partir das suas notas (vault Obsidian)
 
 Se você mantém um [vault Obsidian](/reference/tools#obsidian-vault) conectado:

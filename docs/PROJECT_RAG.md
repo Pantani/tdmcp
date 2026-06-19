@@ -115,6 +115,43 @@ A rate-limit response (HTTP 403 with "rate limit" body) becomes a typed
 `SourceSkippedError` — prior cards are never tombstoned because the source
 quietly returned zero items.
 
+### Interactive & Immersive HQ tutorials (CC-BY-NC-SA, opt-in, default OFF)
+
+The `iihq` source ingests the **text** of the
+[Interactive & Immersive HQ "Introduction to TouchDesigner" manual](https://github.com/interactiveimmersivehq/Introduction-to-touchdesigner)
+as `tutorial` cards (one per chapter `.md` file). It is **off by default** and
+must be opted into explicitly:
+
+```bash
+export TDMCP_PROJECT_RAG_IIHQ=1          # enable the source (default OFF)
+export TDMCP_PROJECT_RAG_IIHQ_REF=master # branch/tag/SHA override (default: master)
+$ tdmcp project-rag sync --source iihq
+```
+
+**License posture — non-commercial.** The manual is licensed
+**CC-BY-NC-SA-4.0**, declared in the repo's README prose (the GitHub License API
+reports `license: null`). The adapter therefore hard-stamps every card with
+`license: "CC-BY-NC-SA"` / `licenseConfidence: "declared"` — it never runs SPDX
+detection — and search output renders the obligations inline. Using these cards
+means you must:
+
+- **Attribute** *The Interactive & Immersive HQ*.
+- Use the material **non-commercially** only.
+- Re-share any derivative **under the same license** (share-alike).
+
+**Text only, never binaries.** The adapter fetches markdown body text (capped at
+8,000 chars/file) and never sets a `binaryUrl`. `CC-BY-NC-SA` binaries are
+hard-denied by `licensePolicy`
+([`src/projectRag/licensePolicy.ts`](https://github.com/Pantani/tdmcp/blob/main/src/projectRag/licensePolicy.ts))
+regardless of any allowlist, so no `.tox`/`.toe`/example files are ever stored.
+Only the `Basics`, `CHOPs`, `COMPs`, `DATs`, `GLSL`, `MATs`, `Optimization`,
+`Python`, `SOPs`, `TOPs`, and `User_Interface` chapter directories are ingested;
+`img/` and `TouchDesigner Example Files/` are excluded.
+
+A GitHub rate-limit (HTTP 403) or unreachable source becomes a typed
+`SourceSkippedError` — prior cards are never tombstoned. Set
+`TDMCP_PROJECT_RAG_GH_TOKEN` to raise the API quota.
+
 ### GitHub rate limits & token
 
 The adapter uses the public GitHub API. Without authentication you get **60
