@@ -8,6 +8,17 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Docs completeness (G5) + API stability pin (G1) — roadmap-to-1.0 campaign, Wave 1** —
+  new per-arc guides for the v0.7/v0.8 work that lacked one: `docs/guide/show-timelines.md`
+  (timelines & setlists), `dashboard-foh.md` (front-of-house), `session-profile.md`
+  (session profile & corpus learning), `mediapipe-adapters.md` (face/hand/segmentation/pose)
+  and `mcp-resources.md` (the `tdmcp://…` resource families), plus `generators.md` — a
+  "what it builds + when to reach for it" paragraph per cookbook-referenced Layer-1
+  generator. All EN + PT, wired into the VitePress nav. New `docs/reference/API_STABILITY.md`
+  pins the v1.0 API contract (the `ToolContext` shape + each tool's Zod `inputSchema`) and the
+  one-minor-warn / next-minor-remove deprecation policy, cross-linked from the Tool API
+  contract page. `README.md` now cross-links the awesome-touchdesigner list and the tdmcp
+  Glama listing. Docs-only: `docs:build`, `docs:gen` (318 tools), `typecheck` and Biome pass.
 - **Hand hologram controls (Layer 1 + Layer 2, offline-tested)** — new
   `create_hand_gesture_bus` builds a stable, reusable MediaPipe-hands CHOP bus
   with palm openness, float anchor, active-hand lock, dropped-frame hold,

@@ -164,6 +164,12 @@ on a trusted network, and for untrusted networks turn on bridge auth
 (`TDMCP_BRIDGE_ALLOW_EXEC=0`). Details:
 [Security](https://pantani.github.io/tdmcp/reference/architecture#security).
 
+## Links & community
+
+- **Glama MCP directory** — tdmcp's listing: <https://glama.ai/mcp/servers/Pantani/tdmcp>
+- **awesome-touchdesigner** — the community-curated TouchDesigner list: <https://github.com/monkeymonk/awesome-touchdesigner>
+- **Docs site** — <https://pantani.github.io/tdmcp/> · **Roadmap** — [docs/ROADMAP.md](docs/ROADMAP.md)
+
 ## Contributing & development
 
 Build with `npm install && npm run build`; run `npm test`, `npm run typecheck`,

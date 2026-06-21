@@ -400,3 +400,30 @@ Simple questions can be answered directly.
 |------|--------|--------|--------|
 | 2026-06-09 | Initial harness | hype-scout (2 agents + 3 skills) | external trend ideation: scout TD community → prioritized HYPE_TOOL_BACKLOG ranked by Hype × Build-Ease; feeds tdmcp-pipeline. Complements internal `tdmcp-feature-discovery`. |
 | 2026-06-09 | First run + roadmap merge | `_workspace/hype-scout/HYPE_TOOL_BACKLOG.md` + `docs/ROADMAP.md` (Round 4 appendix + Milestone 3-4 + Out-of-scope Round-4 bullets) | 5 scouts (60 entries) → 1 synthesizer (38 deduped) → 3 force multipliers + top-5 quick-wins promoted to Planned/Milestone 3, AI-bridge wave to Milestone 4, hardware/GPU items mapped to Out of scope |
+
+## Harness: roadmap-to-1.0 campaign
+
+**Goal:** drive the **entire open roadmap to a tagged 1.0** to completion as a
+resumable, wave-by-wave campaign — Milestone 4 (generative-AI bridge wave),
+Milestone 5 (mixer scene arming), and consolidation gates G1–G6 — by routing
+each class of work to the right existing sub-harness, gated by a merge-safe
+`ledger.json`.
+
+**Trigger:** when asked to "implement everything / all the milestones / the whole
+roadmap / finish the road to 1.0", close the consolidation gates, run the next
+milestone, or run a long autonomous campaign across M4/M5/G1–G6 — **and every
+follow-up** (continue/resume the roadmap campaign, run/re-run the next wave, fold
+in QA, check campaign status, re-prioritize, scope to one milestone/gate) — use
+the `tdmcp-roadmap-campaign` skill. It is the **campaign layer above**
+`tdmcp-pipeline`/`tdmcp-feature-lead`/`tdmcp-backlog-campaign`, sequencing across
+**multiple** sub-harnesses (tools, mixer, coverage, docs, bridge, recipes,
+submission) which the tool-shaped backlog-campaign does not. For a **single**
+feature use `tdmcp-pipeline`; for one tool-shaped backlog file use
+`tdmcp-backlog-campaign`. Simple questions can be answered directly. No new
+agents — it reuses `tdmcp-backlog-planner` + every existing specialist. Note:
+this environment runs the team as sub-agents (no `TeamCreate`).
+
+**Change log:**
+| Date | Change | Target | Reason |
+|------|--------|--------|--------|
+| 2026-06-21 | Initial harness | `tdmcp-roadmap-campaign` skill + `_workspace/campaign_roadmap_v1/{ROADMAP_1.0_BACKLOG.md,ledger.json}` (no new agents — reuses backlog-planner + all specialists) | drive M4 + M5 + gates G1–G6 to completion. Policy (user-confirmed): commit+push **no-tag** ([Unreleased] only), blocked GPU/TD/external items **build-offline + quarantine**, **checkpoint after Wave 1** then autonomous. 21 executable items (19 offline, 2 needs-TD) across 6 waves + 5 quarantined (Ui24R bench, directory acceptance, tagged-minor, live validations) |
