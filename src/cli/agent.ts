@@ -179,6 +179,10 @@ import {
 } from "../tools/layer1/createGrowthSystem.js";
 import { createHalftoneImpl, createHalftoneSchema } from "../tools/layer1/createHalftone.js";
 import {
+  createHandHologramImpl,
+  createHandHologramSchema,
+} from "../tools/layer1/createHandHologram.js";
+import {
   createHistogramScopeImpl,
   createHistogramScopeSchema,
 } from "../tools/layer1/createHistogramScope.js";
@@ -479,6 +483,10 @@ import {
   createHandAbletonMapperImpl,
   createHandAbletonMapperSchema,
 } from "../tools/layer2/createHandAbletonMapper.js";
+import {
+  createHandGestureBusImpl,
+  createHandGestureBusSchema,
+} from "../tools/layer2/createHandGestureBus.js";
 import { createLedMapperImpl, createLedMapperSchema } from "../tools/layer2/createLedMapper.js";
 import { createLlmChainImpl, createLlmChainSchema } from "../tools/layer2/createLlmChain.js";
 import { createLookBankImpl, createLookBankSchema } from "../tools/layer2/createLookBank.js";
@@ -1464,6 +1472,12 @@ const COMMANDS: Record<string, Command> = {
     "Drive a visual from tracked body motion (camera-reactive performance).",
     { mutates: true },
   ),
+  "hand-hologram": r(
+    createHandHologramSchema,
+    createHandHologramImpl,
+    "Build a palm-anchored hologram visual; open palm shows it, opposite-hand pinch scales/glows it.",
+    { mutates: true },
+  ),
   // Phase 14 — live mixing, content & parameter fidelity (v0.5.0):
   transition: r(
     createTransitionSchema,
@@ -2238,6 +2252,12 @@ const COMMANDS: Record<string, Command> = {
     createHandAbletonMapperSchema,
     createHandAbletonMapperImpl,
     "Build MediaPipe hand controls for TDAbleton TDA_Mapper (map1 left pinch, map2 right pinch, map3/map4 wrist roll).",
+    { mutates: true },
+  ),
+  "hand-gesture-bus": r(
+    createHandGestureBusSchema,
+    createHandGestureBusImpl,
+    "Create a stable hand gesture CHOP bus for palm, float anchor, pinch, scale, light, and audio controls.",
     { mutates: true },
   ),
   "diagnose-tdableton-mapper": r(

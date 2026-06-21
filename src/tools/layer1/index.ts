@@ -43,6 +43,7 @@ import { registerCreateGlitch } from "./createGlitch.js";
 import { registerCreateGpuParticleField } from "./createGpuParticleField.js";
 import { registerCreateGrowthSystem } from "./createGrowthSystem.js";
 import { registerCreateHalftone } from "./createHalftone.js";
+import { registerCreateHandHologram } from "./createHandHologram.js";
 import { registerCreateHistogramScope } from "./createHistogramScope.js";
 import { registerCreateImageToParticles } from "./createImageToParticles.js";
 import { registerCreateInteractiveProjectionMapping } from "./createInteractiveProjectionMapping.js";
@@ -198,6 +199,7 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreatePoseSkeleton,
   registerCreateBodyBubbles,
   registerCreateBodyReactive,
+  registerCreateHandHologram,
   registerSetupBodyTracking,
   // Phase 14 — live mixing & external content (v0.5.0):
   registerCreateTransition,

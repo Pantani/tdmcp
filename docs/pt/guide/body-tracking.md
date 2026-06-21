@@ -108,7 +108,32 @@ corpo:
 Ligue um parâmetro a `op('…/pose_tracking/keypoints')['r_wrist_y']` (ou
 `hand_span`, `hips_x`, `height`, …) e ele acompanha seu movimento ao vivo.
 
-## 6. Use as mãos como controles de filtro no Ableton
+## 6. Coloque um holograma na sua mão
+
+As mãos não servem só como dados de controle. `create_hand_hologram` monta um
+sistema visual completo em que a palma aberta revela um cubo translúcido
+flutuando logo acima da mão. O visual começa com uma fonte sintética de duas
+mãos, então dá para pré-visualizar o look antes de usar a webcam:
+
+> *"Monte um cubo holográfico futurista flutuando acima da minha palma aberta.
+> Comece com preview sintético, deixe transparente em ciano com acento violeta e
+> faça uma pinça da outra mão aumentar o cubo."*
+
+Por baixo, `create_hand_hologram` cria um `create_hand_gesture_bus` aninhado. Esse
+bus publica canais estáveis como `float_x`, `float_y`, `palm_size`,
+`pinch_power`, `light_gain` e `audio_level`. O shader do holograma lê esses
+canais em vez dos landmarks crus do MediaPipe, então o mesmo bus pode depois
+guiar lasers, partículas, cues de projeção ou controles de áudio.
+
+Quando estiver pronto para usar a mão real, troque a fonte:
+
+> *"Recrie o holograma de mão com MediaPipe hands da minha webcam, mantenha ele
+> mais alto acima da palma e mande o áudio futurista para meu device de áudio."*
+
+`audio_mode` começa em `none`; use `synth` para um sinal interno ou `device_out`
+quando quiser explicitamente um Audio Device Out CHOP.
+
+## 7. Use as mãos como controles de filtro no Ableton
 
 As mãos também podem virar um controlador de Ableton em quatro canais quando você
 usa TDAbleton. A ferramenta `create_hand_ableton_mapper` monta o lado

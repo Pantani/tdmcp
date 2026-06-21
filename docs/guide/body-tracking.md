@@ -105,7 +105,32 @@ so you can drive *any* parameter with a body part:
 Bind a parameter to `op('…/pose_tracking/keypoints')['r_wrist_y']` (or
 `hand_span`, `hips_x`, `height`, …) and it tracks your movement live.
 
-## 6. Use hands as Ableton filter controls
+## 6. Put a hologram in your hand
+
+Hands are not only controller data. `create_hand_hologram` builds a complete
+visual system where an open palm reveals a translucent cube floating just above
+the hand. The visual defaults to a synthetic two-hand source, so you can preview
+the look before touching the webcam:
+
+> *"Build a futuristic holographic cube floating above my open palm. Start with a
+> synthetic preview, make it transparent cyan with a violet accent, and let a
+> pinch from my other hand grow the cube."*
+
+Under the hood, `create_hand_hologram` creates a nested `create_hand_gesture_bus`.
+That bus publishes stable channels like `float_x`, `float_y`, `palm_size`,
+`pinch_power`, `light_gain` and `audio_level`. The hologram shader reads those
+channels instead of raw MediaPipe landmarks, so the same bus can later drive
+lasers, particles, projection cues or audio controls.
+
+When you are ready for the real hand, switch the source:
+
+> *"Rebuild the hand hologram with MediaPipe hands from my webcam, keep it higher
+> above the palm, and send the futuristic audio to my audio device."*
+
+`audio_mode` defaults to `none`; use `synth` for an internal signal or
+`device_out` when you explicitly want an Audio Device Out CHOP.
+
+## 7. Use hands as Ableton filter controls
 
 Hands can also become a four-channel Ableton controller when you use TDAbleton.
 The `create_hand_ableton_mapper` tool builds the TouchDesigner side: MediaPipe

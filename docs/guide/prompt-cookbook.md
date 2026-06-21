@@ -888,6 +888,16 @@ noisy text geometry, projector labels, MIDI-triggered words and path-follow titl
 *`setup_tdableton` probes for the Palette component first, then falls back to a plain
 OSC In bridge, so the same show patch can rehearse without a perfect studio setup.*
 
+> *"Build a futuristic hand hologram: a transparent cyan cube with violet scanlines
+> floating above my open palm. Start with the synthetic two-hand preview, expose
+> Size, FloatHeight, Glow and PinchScale controls, and make an opposite-hand pinch
+> grow the cube and brighten its glow."*
+
+*`create_hand_hologram` builds the full visual and nests `create_hand_gesture_bus`
+inside it. The bus stabilizes the palm anchor, keeps the active palm locked when
+the control hand enters the frame, and publishes `pinch_power`, `light_gain` and
+`audio_level` so the same tracking can later drive lasers, particles or audio.*
+
 > *"Turn my webcam hands into a four-channel Ableton Auto Filter controller through
 > TDAbleton, without AbletonMCP. Use MediaPipe hand tracking, build a skeleton
 > overlay with star joints, publish `mapper_send` so `map1` is left pinch, `map2`

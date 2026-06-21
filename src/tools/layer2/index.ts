@@ -38,6 +38,7 @@ import { registerCreateFlowAbstraction } from "./createFlowAbstraction.js";
 import { registerCreateGlslMaterial } from "./createGlslMaterial.js";
 import { registerCreateGlslShader } from "./createGlslShader.js";
 import { registerCreateHandAbletonMapper } from "./createHandAbletonMapper.js";
+import { registerCreateHandGestureBus } from "./createHandGestureBus.js";
 import { registerCreateLedMapper } from "./createLedMapper.js";
 import { registerCreateLlmChain } from "./createLlmChain.js";
 import { registerCreateLookBank } from "./createLookBank.js";
@@ -169,6 +170,7 @@ export const layer2Registrars: ToolRegistrar[] = [
   registerSetupHandTracking,
   registerSetupSegmentation,
   // Live Ableton/TDAbleton performance control from MediaPipe hands:
+  registerCreateHandGestureBus,
   registerCreateHandAbletonMapper,
   registerDiagnoseTdabletonMapper,
   // Wave 2026-06-02 — fail-forward auto-repair loop:

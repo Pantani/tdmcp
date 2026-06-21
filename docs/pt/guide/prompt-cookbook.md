@@ -917,6 +917,16 @@ por MIDI e títulos seguindo paths.
 simples, então o mesmo patch de show consegue ensaiar mesmo sem setup perfeito de
 estúdio.*
 
+> *"Monte um holograma futurista de mão: um cubo ciano transparente com scanlines
+> violetas flutuando acima da minha palma aberta. Comece com o preview sintético de
+> duas mãos, exponha controles de Size, FloatHeight, Glow e PinchScale, e faça uma
+> pinça da outra mão aumentar o cubo e intensificar o brilho."*
+
+*`create_hand_hologram` monta o visual completo e aninha `create_hand_gesture_bus`
+dentro dele. O bus estabiliza a âncora da palma, mantém a palma ativa travada
+quando a mão de controle entra no frame, e publica `pinch_power`, `light_gain` e
+`audio_level` para o mesmo tracking depois guiar lasers, partículas ou áudio.*
+
 > *"Transforme minhas mãos na webcam em um controlador de Ableton Auto Filter com
 > quatro canais via TDAbleton, sem AbletonMCP. Use rastreamento de mãos do
 > MediaPipe, monte um overlay de esqueleto com estrelinhas nas juntas, publique
