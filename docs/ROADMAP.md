@@ -61,7 +61,7 @@ The project has grown through five arcs:
 
 ## ✅ Current Release Line
 
-### Unreleased — MediaPipe hands -> TDAbleton mapper + AI Party rehearsal POC
+### Unreleased — MediaPipe hands -> palm holograms, TDAbleton mapper + AI Party rehearsal POC
 
 Source-tree work after v0.8.3 adds a focused live-control path for the Ableton
 session we validated manually:
@@ -70,6 +70,13 @@ session we validated manually:
   MediaPipe-hands performance controller for TDAbleton: `map1` left pinch,
   `map2` right pinch, `map3` left wrist roll, `map4` right wrist roll, plus a
   `mapper_send` CHOP and skeleton overlay with star joints.
+- **`create_hand_gesture_bus` (Layer 2) + `create_hand_hologram` (Layer 1).**
+  Turns the palm-hologram prototype into reusable tools: a stable hands CHOP bus
+  with palm openness, float anchor, active-hand lock and debounced opposite-hand
+  pinch, plus a synthetic-safe GLSL hologram cube that floats above the palm,
+  rotates, glows, exposes artist controls and can drive optional futuristic audio.
+  Offline gates are green; live TD cook validation remains pending a reachable
+  bridge.
 - **`diagnose_tdableton_mapper` (Layer 2).** Checks the real `TDA_Mapper` target,
   input CHOP, `Reorder`, bypass states, `Min/Max` ranges and missing `map1..map4`
   channels, with optional TD-side repair. AbletonMCP is not required for this

@@ -961,6 +961,22 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "hand-gesture-bus",
+    summary:
+      "Create a stable hand gesture CHOP bus for palm, float anchor, pinch, scale, light, and audio controls.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "hand-hologram",
+    summary:
+      "Build a palm-anchored hologram visual; open palm shows it, opposite-hand pinch scales/glows it.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "hand-tracking",
     summary:
       "Set up MediaPipe hand tracking: per-finger landmark CHOP (max_hands×21 with tx/ty/tz/confidence/handedness) from camera. No gesture classification — wire detectors downstream.",

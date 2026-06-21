@@ -8,6 +8,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Hand hologram controls (Layer 1 + Layer 2, offline-tested)** — new
+  `create_hand_gesture_bus` builds a stable, reusable MediaPipe-hands CHOP bus
+  with palm openness, float anchor, active-hand lock, dropped-frame hold,
+  debounced opposite-hand pinch, scale, light and audio channels. New
+  `create_hand_hologram` consumes that bus to build a synthetic-safe palm
+  hologram: a translucent GLSL cube floating above an open palm, with glow,
+  rotation, optional synth/device audio and pinch-driven scale/brightness. The
+  CLI aliases are `hand-gesture-bus` and `hand-hologram`. Offline tests, docs
+  generation, build, recipes and bridge unit tests pass; live TD cook validation
+  is pending a reachable bridge.
 - **Cross-RAG ranking — fuse Creative RAG + Project RAG via Reciprocal Rank Fusion (opt-in)** —
   a pure helper (`src/llm/crossRagFusion.ts`) that merges the two opt-in local RAG
   corpora into one ranked list using **Reciprocal Rank Fusion** (`rrf(d) = Σ 1/(k +
