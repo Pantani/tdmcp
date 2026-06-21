@@ -207,9 +207,13 @@ def _sample(chop, chan_name, idx, default=0.0):
     try:
         chan = chop[chan_name]
         if chan is None:
+            if default is None:
+                return None
             return float(default)
         return float(chan[idx])
     except Exception:
+        if default is None:
+            return None
         return float(default)
 
 def _norm_from_screen(sx, sy):
@@ -505,6 +509,31 @@ def _set_pos(node, x, y):
     except Exception:
         pass
 
+def _place_comp_in_grid(parent, comp):
+    try:
+        cell_w, cell_h, rows = 260, 200, 6
+        def _cell(child):
+            return (
+                round((child.nodeX + child.nodeWidth / 2.0) / cell_w),
+                round(-(child.nodeY + child.nodeHeight / 2.0) / cell_h),
+            )
+        occupied = set()
+        for child in parent.children:
+            if child is not comp:
+                occupied.add(_cell(child))
+        k = 0
+        while (k // rows, k % rows) in occupied:
+            k += 1
+        comp.nodeX = (k // rows) * cell_w
+        comp.nodeY = -((k % rows) * cell_h)
+    except Exception:
+        try:
+            siblings = [child for child in parent.children if child is not comp]
+            comp.nodeX = len(siblings) * 260
+            comp.nodeY = -450
+        except Exception:
+            _set_pos(comp, 0, -450)
+
 def _safe_destroy_inputs(node):
     try:
         for conn in node.inputConnectors:
@@ -585,7 +614,7 @@ try:
     else:
         comp = parent.op(_p["comp_name"]) or parent.create(baseCOMP, _p["comp_name"])
         report["container_path"] = comp.path
-        _set_pos(comp, 0, -450)
+        _place_comp_in_grid(parent, comp)
 
         if _p.get("expose_controls", True):
             page = None
@@ -804,5 +833,5 @@ export const registerCreateHandGestureBus: ToolRegistrar = (server, ctx) =>
       inputSchema: createHandGestureBusInputSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
-    (args) => createHandGestureBusImpl(ctx, args),
+    (args) => createHandGestureBusImpl(ctx, createHandGestureBusSchema.parse(args)),
   );

@@ -125,6 +125,11 @@ describe("create_hand_hologram", () => {
     });
   });
 
+  it("rejects malformed hex colors in the schema", () => {
+    expect(createHandHologramSchema.safeParse({ color: "cyan" }).success).toBe(false);
+    expect(createHandHologramSchema.safeParse({ accent_color: "#b56cff" }).success).toBe(true);
+  });
+
   it("builds a hologram TOP chain driven by the hand gesture bus", async () => {
     const bodies = captureCreateBodies();
     const scripts = captureExecScripts();

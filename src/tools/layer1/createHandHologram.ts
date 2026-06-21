@@ -12,6 +12,7 @@ const q = (value: string): string => JSON.stringify(value);
 const HOLOGRAM_PRESETS = ["holo_cube", "energy_orb", "wireframe_hud", "particle_core"] as const;
 const AUDIO_MODES = ["none", "synth", "device_out"] as const;
 const HEX_COLOR = /^#?([0-9a-fA-F]{6})$/;
+const HEX_COLOR_SCHEMA = z.string().regex(HEX_COLOR, "Invalid hex color");
 
 const HOLO_CUBE_SHADER = `out vec4 fragColor;
 uniform vec2 uCenter;
@@ -61,6 +62,7 @@ void main(){
 
 type HologramPreset = (typeof HOLOGRAM_PRESETS)[number];
 
+// TODO: Add distinct shader implementations for non-cube presets.
 const PRESET_SHADER: Record<HologramPreset, string> = {
   holo_cube: HOLO_CUBE_SHADER,
   energy_orb: HOLO_CUBE_SHADER,
@@ -75,8 +77,8 @@ export const createHandHologramSchema = z.object({
   hand_chop_path: z.string().optional(),
   tox_path: z.string().optional(),
   preset: z.enum(HOLOGRAM_PRESETS).default("holo_cube"),
-  color: z.string().default("#54f4ff"),
-  accent_color: z.string().default("#b56cff"),
+  color: HEX_COLOR_SCHEMA.default("#54f4ff"),
+  accent_color: HEX_COLOR_SCHEMA.default("#b56cff"),
   size: z.coerce.number().positive().default(1.0),
   float_height: z.coerce.number().min(0).max(3).default(1.15),
   transparency: z.coerce.number().min(0).max(1).default(0.46),

@@ -8,6 +8,7 @@ import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js"
 import {
   createHandGestureBusImpl,
   createHandGestureBusSchema,
+  registerCreateHandGestureBus,
 } from "../../src/tools/layer2/createHandGestureBus.js";
 import type { ToolContext } from "../../src/tools/types.js";
 import { silentLogger } from "../../src/utils/logger.js";
@@ -154,6 +155,9 @@ describe("create_hand_gesture_bus", () => {
     expect(scripts[0]).toContain("active_hand");
     expect(scripts[0]).toContain("if pars is not None and len(pars) > 0:");
     expect(scripts[0]).not.toContain("if pars:");
+    expect(scripts[0]).toContain("if default is None:");
+    expect(scripts[0]).toContain("_place_comp_in_grid(parent, comp)");
+    expect(scripts[0]).toContain("comp.nodeY = -((k % rows) * cell_h)");
     expect(scripts[0]).toContain('_safe_destroy_child(comp, "synthetic_hands_callbacks")');
     expect(scripts[0]).toContain('_safe_destroy_child(comp, "gesture_callbacks")');
   });
@@ -180,6 +184,8 @@ describe("create_hand_gesture_bus", () => {
     expect(payload.hand_chop).toBe("/project1/custom_hand/out1");
     expect(payload.max_hands).toBe(1);
     expect(payload.expose_controls).toBe(false);
+    expect(scripts[0]).toContain('sx = _sample(chop, "screen_x", idx, None)');
+    expect(scripts[0]).toContain("if default is None:");
   });
 
   it("requires hand_chop_path for existing_chop mode", async () => {
@@ -241,6 +247,24 @@ describe("create_hand_gesture_bus", () => {
     expect(result.isError).toBe(true);
     expect(textOf(result)).toContain("Parent COMP not found");
     expect(textOf(result)).toContain('"fatal"');
+  });
+
+  it("registered handler enforces refined pinch distance validation", () => {
+    let handler: ((args: Record<string, unknown>) => unknown) | undefined;
+    const fakeServer = {
+      registerTool: (_name: string, _config: unknown, captured: typeof handler) => {
+        handler = captured;
+      },
+    };
+
+    registerCreateHandGestureBus(fakeServer as never, makeCtx());
+
+    expect(() =>
+      handler?.({
+        pinch_close_dist: 0.2,
+        pinch_open_dist: 0.1,
+      }),
+    ).toThrow(/pinch_open_dist must be greater than pinch_close_dist/);
   });
 
   it("bridge connection errors return an error result without throwing", async () => {
