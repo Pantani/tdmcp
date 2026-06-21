@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { runCreativeRagCli, toCreativeRagConfig } from "../../../src/creativeRag/cli.js";
 import type {
   CreativeRagConfig,
+  CreativeRagIndexOptions,
   CreativeRagService,
   IndexReport,
   SearchFilters,
@@ -41,8 +42,8 @@ function makeFakeService(rec: Recorder, results: SearchResult[]): CreativeRagSer
         perSource: { artic: 1 },
       };
     },
-    async index(): Promise<IndexReport> {
-      rec.calls.push("index");
+    async index(opts?: CreativeRagIndexOptions): Promise<IndexReport> {
+      rec.calls.push(opts?.rebuild === true ? "index:rebuild" : "index");
       return { embedded: 1, cachedSkipped: 0, total: 1 };
     },
     async search(_query: string, _k: number, _filters?: SearchFilters): Promise<SearchResult[]> {
@@ -71,6 +72,21 @@ const SAMPLE_RESULTS: SearchResult[] = [
 ];
 
 describe("runCreativeRagCli — disabled gate", () => {
+  it("--help prints core setup env vars", async () => {
+    const rec: Recorder = { out: [], err: [], calls: [] };
+    const code = await runCreativeRagCli(["--help"], {
+      config: enabledConfig(),
+      service: makeFakeService(rec, SAMPLE_RESULTS),
+      stdout: (s) => rec.out.push(s),
+      stderr: (s) => rec.err.push(s),
+    });
+    expect(code).toBe(0);
+    const text = rec.out.join("");
+    expect(text).toContain("TDMCP_RAG_ENABLED");
+    expect(text).toContain("TDMCP_RAG_OLLAMA_URL");
+    expect(text).toContain("TDMCP_RAG_EMBED_MODEL");
+  });
+
   it("prints the disabled line, returns 0, and calls no service", async () => {
     const rec: Recorder = { out: [], err: [], calls: [] };
     const service = makeFakeService(rec, SAMPLE_RESULTS);
@@ -99,6 +115,8 @@ describe("runCreativeRagCli — search", () => {
     expect(rec.calls).toContain("search");
     const printed = rec.out.join("");
     expect(printed).toContain("Composition");
+    expect(printed).toContain("id: abc");
+    expect(printed).toContain("tdmcp://creative/cards/abc");
     expect(printed).toContain("PublicDomain");
     expect(printed).toContain("https://www.artic.edu/artworks/129884");
     expect(printed).toContain("rights: Public domain");
@@ -117,6 +135,21 @@ describe("runCreativeRagCli — search", () => {
     expect(parsed).toHaveLength(1);
     expect(parsed[0]?.sourceUrl).toBe("https://www.artic.edu/artworks/129884");
     expect(parsed[0]?.license).toBe("PublicDomain");
+  });
+
+  it("empty text search includes setup next steps", async () => {
+    const rec: Recorder = { out: [], err: [], calls: [] };
+    const code = await runCreativeRagCli(["search", "rare query"], {
+      config: enabledConfig(),
+      service: makeFakeService(rec, []),
+      stdout: (s) => rec.out.push(s),
+      stderr: (s) => rec.err.push(s),
+    });
+    expect(code).toBe(0);
+    const printed = rec.out.join("");
+    expect(printed).toContain("No results.");
+    expect(printed).toContain("tdmcp creative-rag sync");
+    expect(printed).toContain("tdmcp creative-rag index");
   });
 
   it("returns usage error (2) when search has no query", async () => {
@@ -141,6 +174,21 @@ describe("runCreativeRagCli — search", () => {
     });
     expect(code).toBe(2);
     expect(rec.calls).not.toContain("search");
+  });
+});
+
+describe("runCreativeRagCli — index", () => {
+  it("passes --rebuild through to the service", async () => {
+    const rec: Recorder = { out: [], err: [], calls: [] };
+    const code = await runCreativeRagCli(["index", "--rebuild"], {
+      config: enabledConfig(),
+      service: makeFakeService(rec, SAMPLE_RESULTS),
+      stdout: (s) => rec.out.push(s),
+      stderr: (s) => rec.err.push(s),
+    });
+    expect(code).toBe(0);
+    expect(rec.calls).toEqual(["index:rebuild"]);
+    expect(rec.out.join("")).toContain("indexed:");
   });
 });
 

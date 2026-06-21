@@ -29,6 +29,7 @@ import { createIndexStore } from "./storeFactory.js";
 import type {
   CreativeRagCard,
   CreativeRagConfig,
+  CreativeRagIndexOptions,
   CreativeRagService,
   EmbeddedCard,
   IndexReport,
@@ -53,6 +54,56 @@ export interface CreativeRagServiceDeps {
 const DEFAULT_SYNC_LIMIT = 10;
 const DEFAULT_SEARCH_K = 10;
 const BINARY_DOWNLOAD_TIMEOUT_MS = 15000;
+const DEFAULT_TDMCP_AFFORDANCES = ["create_generative_art", "create_color_grade"];
+
+const AFFORDANCE_RULES: Array<{ affordance: string; terms: string[] }> = [
+  {
+    affordance: "create_kaleidoscope",
+    terms: ["geometric", "geometry", "pattern", "symmetry", "symmetric", "mandala", "ornament"],
+  },
+  {
+    affordance: "create_growth_system",
+    terms: [
+      "botanical",
+      "plant",
+      "floral",
+      "flower",
+      "tree",
+      "vine",
+      "organic",
+      "growth",
+      "nature",
+    ],
+  },
+  {
+    affordance: "create_feedback_network",
+    terms: ["abstract", "motion", "kinetic", "feedback", "loop", "psychedelic", "op art"],
+  },
+  {
+    affordance: "create_glitch",
+    terms: ["digital", "video", "screen", "scan", "glitch", "artifact"],
+  },
+  {
+    affordance: "create_halftone",
+    terms: ["print", "poster", "comic", "halftone", "screenprint", "lithograph"],
+  },
+  {
+    affordance: "create_ascii_render",
+    terms: ["text", "typography", "type", "letter", "glyph", "ascii"],
+  },
+  {
+    affordance: "create_dither",
+    terms: ["dither", "pixel", "pixelated", "bitmap", "low-res", "low res"],
+  },
+  {
+    affordance: "create_fluid_sim",
+    terms: ["fluid", "water", "smoke", "liquid", "flow", "marble", "ink"],
+  },
+  {
+    affordance: "create_energy_structure",
+    terms: ["music", "sound", "audio", "rhythm", "beat", "performance"],
+  },
+];
 
 /**
  * Builds a {@link CreativeRagService} from a config plus optional injected
@@ -173,7 +224,7 @@ export function createCreativeRagService(deps: CreativeRagServiceDeps): Creative
     return report;
   }
 
-  async function index(): Promise<IndexReport> {
+  async function index(opts: CreativeRagIndexOptions = {}): Promise<IndexReport> {
     const store = await getStore();
     const all = readAllCards(cardsDir);
     // Purge tombstoned cards from the index: marking the Markdown card as tombstoned
@@ -189,6 +240,10 @@ export function createCreativeRagService(deps: CreativeRagServiceDeps): Creative
     const report: IndexReport = { embedded: 0, cachedSkipped: 0, total: cards.length };
     if (cards.length === 0) {
       return report;
+    }
+
+    if (opts.rebuild === true) {
+      await store.remove(cards.map((card) => card.id));
     }
 
     const fingerprints = await store.existingFingerprints();
@@ -321,7 +376,7 @@ function buildCardFromItem(item: RawSourceItem): CreativeRagCard {
     license: item.license,
     tools: [],
     tags: item.tags,
-    tdmcpAffordances: [],
+    tdmcpAffordances: inferTdmcpAffordances(item),
     contentHash: "",
     ...(item.artist !== undefined ? { artist: item.artist } : {}),
     ...(item.year !== undefined ? { year: item.year } : {}),
@@ -331,6 +386,32 @@ function buildCardFromItem(item: RawSourceItem): CreativeRagCard {
     ...(item.visualLanguage !== undefined ? { visualLanguage: item.visualLanguage } : {}),
   };
   return { ...base, contentHash: computeContentHash(base) };
+}
+
+function inferTdmcpAffordances(item: RawSourceItem): string[] {
+  const haystack = [
+    item.title,
+    item.artist,
+    item.medium,
+    item.type,
+    item.sourceName,
+    item.visualLanguage,
+    ...item.tags,
+  ]
+    .filter((part): part is string => typeof part === "string" && part.length > 0)
+    .join(" ")
+    .toLowerCase();
+
+  const affordances: string[] = [];
+  for (const rule of AFFORDANCE_RULES) {
+    if (rule.terms.some((term) => haystack.includes(term))) {
+      affordances.push(rule.affordance);
+    }
+  }
+  for (const fallback of DEFAULT_TDMCP_AFFORDANCES) {
+    affordances.push(fallback);
+  }
+  return Array.from(new Set(affordances)).slice(0, 3);
 }
 
 /** Reads + parses every `*.md` card in `dir`; skips unreadable/invalid files. */

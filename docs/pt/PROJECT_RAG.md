@@ -1,7 +1,8 @@
 # Project RAG
 
-> Status: **experimental — F3 (análise via bridge-quarentena, opt-in)**.
-> F0+F1+F2+F3 publicados. F4 (prompts/resources/tool de copilot) pendente.
+> Status: **experimental — F0-F4 publicados atrás de flags opt-in**.
+> A validação live da quarentena TouchDesigner ainda exige uma bridge separada
+> na porta `9981` e só é verificada quando essa bridge está realmente rodando.
 
 Project RAG é o irmão **técnico/de projeto** do
 [Creative RAG](./CREATIVE_RAG.md). Indexa **projetos, componentes, snippets
@@ -10,9 +11,8 @@ todo card, para que o agente responda "me mostre um `.tox` real que faz hand
 tracking com MediaPipe" — e sempre exiba a origem e os termos de uso.
 
 É **opt-in**, **offline-first**, e o caminho de busca **nunca** toca a bridge
-TouchDesigner, DMX ou Python exec. O analyzer opt-in de quarentena (F3, ainda
-não publicado) usará uma instância TD *separada* em porta dedicada
-(`9981`), nunca a 9980 ativa do usuário.
+TouchDesigner, DMX ou Python exec. O analyzer opt-in de quarentena (F3) usa uma
+instância TD *separada* em porta dedicada (`9981`), nunca a 9980 ativa do usuário.
 
 ## Quando usar
 
@@ -279,6 +279,29 @@ A sugestão é puramente informativa — não altera o comportamento da busca,
 saída para máquina (`--json`) nem exit code. Existe pra que um artista que
 tentou a RAG errada primeiro consiga pivotar sem reler os docs.
 
+### Ranking cross-RAG — fundir os dois corpora (opt-in)
+
+Quando os dois corpora RAG estão habilitados, `tdmcp ask` pode fundir Creative RAG
+e Project RAG em **um** bloco de referências ranqueado usando
+[Reciprocal Rank Fusion (RRF)](https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf):
+`rrf(d) = Σ 1/(k + rank)`. RRF é **baseado em ranking**, então evita comparar
+escalas incompatíveis diretamente (Creative usa cosine `0..1`; Project usa
+`cosineSim * composite`). Habilite com:
+
+```text
+export TDMCP_RAG_ENABLED=1          # chave-mae do RAG
+export TDMCP_PROJECT_RAG_ENABLED=1  # chave do project-rag (default ON quando a chave-mae esta on)
+export TDMCP_RAG_FUSION=1           # fusao cross-RAG (default OFF)
+export TDMCP_RAG_FUSION_K=60        # constante k do RRF (inteiro positivo 1..1000, default 60)
+```
+
+A fusão ativa **somente** quando `TDMCP_RAG_ENABLED &&
+TDMCP_PROJECT_RAG_ENABLED && TDMCP_RAG_FUSION` e **ambos** os corpora retornam
+pelo menos um resultado. Se qualquer corpus estiver vazio, ausente ou com erro,
+`tdmcp ask` volta para o bloco de contexto criativo existente — comportamento
+idêntico a deixar a flag off. `k` menor concentra mais peso nos primeiros ranks;
+`k` maior achata a diferença.
+
 ## F3 — análise via bridge-quarentena (opt-in)
 
 F3 entrega **dois analisadores de artefato** para `.toe`/`.tox` baixados.
@@ -329,6 +352,8 @@ tdmcp project-rag bridge install — quarantine bridge setup
        export TDMCP_PROJECT_RAG_BRIDGE_ANALYSIS=1
        export TDMCP_PROJECT_RAG_ENABLED=1
        export TDMCP_RAG_ENABLED=1
+       # Opcional, mas recomendado quando a bridge de quarentena exige auth:
+       export TDMCP_BRIDGE_TOKEN=<mesmo-token-usado-por-essa-bridge>
 …
 Probe: http://127.0.0.1:9981 — OFFLINE
 ```
@@ -339,6 +364,8 @@ O analisador:
   `TDMCP_PROJECT_RAG_BRIDGE_PORT` (default `9981`). **Recusa** usar a porta
   `9980` — chamar `analyze` com a porta apontando para `9980` devolve
   `failed: "refusing to use main TD port 9980"`.
+- Reusa `TDMCP_BRIDGE_TOKEN` como bearer token da bridge de quarentena quando
+  ele está setado, então uma bridge QA protegida pode continuar autenticada.
 - Sonda a bridge com `GET /api/info`. Se a sonda lança erro de conexão →
   devolve `skipped` (NÃO `failed`), pois o caminho offline é o padrão seguro.
 - Em uma bridge acessível: coleta erros de rede via `getNetworkErrors("/")`

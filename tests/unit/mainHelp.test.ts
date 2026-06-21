@@ -18,6 +18,8 @@ describe("tdmcp top-level help", () => {
     expect(help).toContain("install-client");
     expect(help).toContain("chat");
     expect(help).toContain("telegram");
+    expect(help).toContain("creative-rag");
+    expect(help).toContain("project-rag");
     expect(help).toContain("dashboard");
     expect(help).toContain("packages");
     expect(help).toContain("search [query]");
@@ -33,6 +35,8 @@ describe("tdmcp top-level help", () => {
     expect(completion).toContain("install-bridge");
     expect(completion).toContain("install-client");
     expect(completion).toContain("telegram");
+    expect(completion).toContain("creative-rag");
+    expect(completion).toContain("project-rag");
     expect(completion).toContain("search");
     expect(completion).toContain("install");
     expect(completion).toContain("packages");

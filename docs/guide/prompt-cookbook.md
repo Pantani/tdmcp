@@ -1754,7 +1754,7 @@ a new mask/mosaic system that could be recreated with `create_palette`,
 composition with animated grid, circles and color planes, keeping the original as
 repertoire context rather than something the RAG executes directly.*
 
-## Creative library (Creative RAG)
+### Search and license filters
 
 The creative repertoire is an opt-in local index of open-licensed reference
 artworks. The CLI is `tdmcp creative-rag <sync|index|search>`; both

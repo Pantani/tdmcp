@@ -160,6 +160,8 @@ describe("projectRag CLI gating + help", () => {
     expect(code).toBe(0);
     expect(io.out.join("")).toContain("tdmcp project-rag");
     expect(io.out.join("")).toContain("sources");
+    expect(io.out.join("")).toContain("TDMCP_RAG_OLLAMA_URL");
+    expect(io.out.join("")).toContain("TDMCP_BRIDGE_TOKEN");
   });
 
   it("disabled config prints friendly message and exits 0", async () => {
@@ -248,7 +250,7 @@ describe("projectRag CLI commands", () => {
     expect(io.err.join("")).toMatch(/search needs a query/);
   });
 
-  it("search returns 'No results.' in F0", async () => {
+  it("search returns setup next steps when no results are found", async () => {
     const io = captureIO();
     const code = await runProjectRagCli(["search", "hand", "tracking"], {
       config: makeConfig(),
@@ -257,7 +259,10 @@ describe("projectRag CLI commands", () => {
       stderr: io.stderr,
     });
     expect(code).toBe(0);
-    expect(io.out.join("")).toContain("No results.");
+    const text = io.out.join("");
+    expect(text).toContain("No results.");
+    expect(text).toContain("tdmcp project-rag sync");
+    expect(text).toContain("tdmcp project-rag index");
   });
 
   it("info needs an id (exit 2)", async () => {
@@ -545,6 +550,9 @@ describe("projectRag CLI commands", () => {
       stderr: io.stderr,
     });
     expect(code).toBe(0);
-    expect(io.out.join("")).toContain("GPL-3.0 · copyleft");
+    const text = io.out.join("");
+    expect(text).toContain(`id: ${"x".repeat(64)}`);
+    expect(text).toContain(`tdmcp://project/cards/${"x".repeat(64)}`);
+    expect(text).toContain("GPL-3.0 · copyleft");
   });
 });

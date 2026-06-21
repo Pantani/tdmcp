@@ -55,7 +55,8 @@ describe("creativeInspirationImpl", () => {
     const ctx = makeCtx(undefined);
     const result = await creativeInspirationImpl(ctx, { theme: "neon city" });
     const text = result.messages[0]?.content.text ?? "";
-    expect(text).toContain("TDMCP_CREATIVE_RAG_ENABLED");
+    expect(text).toContain("TDMCP_RAG_ENABLED");
+    expect(text).toContain("tdmcp creative-rag sync");
     expect(text).toContain("neon city");
     expect(result.messages).toHaveLength(1);
     expect(result.messages[0]?.role).toBe("user");
@@ -134,14 +135,14 @@ describe("creativeInspirationImpl", () => {
     expect(text).toContain("create_feedback_network");
   });
 
-  it("empty results — suggests tdmcp creative sync, references theme", async () => {
+  it("empty results — suggests tdmcp creative-rag sync, references theme", async () => {
     const search = vi.fn().mockResolvedValue([]);
     const getCard = vi.fn();
     const ctx = makeCtx({ search, getCard });
 
     const result = await creativeInspirationImpl(ctx, { theme: "void space" });
     const text = result.messages[0]?.content.text ?? "";
-    expect(text).toContain("tdmcp creative sync");
+    expect(text).toContain("tdmcp creative-rag sync");
     expect(text).toContain("void space");
     expect(getCard).not.toHaveBeenCalled();
   });
@@ -167,7 +168,7 @@ describe("creativeInspirationImpl", () => {
     const result = await creativeInspirationImpl(ctx, { theme: "ghost town" });
     const text = result.messages[0]?.content.text ?? "";
     expect(text).not.toContain("## Mood board");
-    expect(text).toContain("tdmcp creative sync");
+    expect(text).toContain("tdmcp creative-rag sync");
     expect(text).toContain("ghost town");
   });
 

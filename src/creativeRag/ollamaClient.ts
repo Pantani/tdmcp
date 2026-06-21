@@ -80,7 +80,7 @@ export class OllamaEmbeddingsClient implements OllamaEmbeddingsClientContract {
         );
       }
       throw new OllamaConnectionError(
-        `Cannot reach Ollama at ${this.baseUrl}. Make sure Ollama is running and the model "${model}" is pulled.`,
+        `Ollama is not reachable at ${this.baseUrl}. Start it with: ollama serve. Then pull the embedding model with: ollama pull ${model}.`,
         { cause: err },
       );
     } finally {
@@ -98,9 +98,13 @@ export class OllamaEmbeddingsClient implements OllamaEmbeddingsClientContract {
     }
 
     if (!response.ok) {
-      throw new OllamaApiError(`Ollama returned HTTP ${response.status} for POST /api/embed.`, {
-        status: response.status,
-      });
+      const body = typeof text === "string" && text.trim().length > 0 ? text.trim() : undefined;
+      const suffix = body !== undefined ? ` Response: ${body.slice(0, 240)}` : "";
+      const message =
+        response.status === 404
+          ? `Embedding model "${model}" is not available from Ollama. Pull it with: ollama pull ${model}.${suffix}`
+          : `Ollama returned HTTP ${response.status} for POST /api/embed using model "${model}".${suffix}`;
+      throw new OllamaApiError(message, { status: response.status });
     }
 
     const parsed = EmbedResponseSchema.safeParse(json);
