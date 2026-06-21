@@ -93,6 +93,28 @@ Ela tem:
 - **Escalate ⇪** — copia um prompt de transição para o Claude ou o Codex quando
   uma tarefa é grande demais para o modelo local.
 
+## Fluxo de RAG e geração
+
+Creative RAG e Project RAG são fontes de contexto primeiro, não builders
+automáticos. `tdmcp ask --with-creative` pode adicionar referências da Creative
+RAG ao prompt, e `project_rag_search` pode encontrar projetos, componentes e
+snippets reais de TouchDesigner, mas ambos são somente leitura até você escolher
+explicitamente uma tool que modifica o projeto.
+
+Para transformar um card da Creative RAG em uma rede TouchDesigner, habilite o
+caminho protegido de apply e rode um dry-run antes de mutar o projeto:
+
+```bash
+export TDMCP_RAG_ENABLED=1
+export TDMCP_RAG_APPLY_CARD=1
+tdmcp-agent apply-creative-card --params '{"card_id":"<card-id>","dry_run":true}'
+```
+
+Revise a tool de destino e os argumentos planejados, depois rode novamente com
+`"dry_run":false` só quando quiser que o tdmcp crie operadores. Trate resultados
+da Project RAG como referências técnicas e provenance, não como instruções de
+projeto executáveis.
+
 ## Aponte para outro modelo
 
 Por padrão o copiloto fala com o Ollama local, mas ele usa a API padrão compatível

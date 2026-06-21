@@ -52,6 +52,7 @@ Flags:
   --source <name>  Limit sync to one source (repeatable). Live: artic, rijksmuseum,
                    met, cleveland, smithsonian, wikimedia, europeana.
   --limit <n>      Max items per source on sync (default 10).
+  --rebuild        On index, drop existing rows for all live cards before embedding.
   --k <n>          Number of search results (default 10).
   --license <csv>  Filter search by license(s), e.g. CC0,PublicDomain.
   --type <csv>     Filter search by card type(s).
@@ -60,6 +61,10 @@ Flags:
   -h, --help       Show this help.
 
 Environment:
+  TDMCP_RAG_ENABLED           Enable Creative RAG (set to 1).
+  TDMCP_RAG_DATA_DIR          Cards, binaries and index directory.
+  TDMCP_RAG_OLLAMA_URL        Ollama embeddings endpoint (default 127.0.0.1:11434).
+  TDMCP_RAG_EMBED_MODEL       Embedding model (default nomic-embed-text).
   TDMCP_RAG_SMITHSONIAN_KEY   API key for the Smithsonian source (else skipped).
   TDMCP_RAG_EUROPEANA_KEY     API key for the Europeana source (else skipped).
   TDMCP_RAG_EMBED_BATCH       Inputs per Ollama embed POST (default 64).
@@ -183,6 +188,7 @@ export async function runCreativeRagCli(
 interface ParsedFlags {
   help: boolean;
   json: boolean;
+  rebuild: boolean;
   source: string[];
   limit?: number;
   k?: number;
@@ -202,6 +208,7 @@ function parseCreativeRagArgs(argv: string[]): {
     options: {
       help: { type: "boolean", short: "h", default: false },
       json: { type: "boolean", default: false },
+      rebuild: { type: "boolean", default: false },
       source: { type: "string", multiple: true },
       limit: { type: "string" },
       k: { type: "string" },
@@ -217,6 +224,7 @@ function parseCreativeRagArgs(argv: string[]): {
   const flags: ParsedFlags = {
     help: values.help === true,
     json: values.json === true,
+    rebuild: values.rebuild === true,
     source: Array.isArray(values.source) ? values.source : [],
   };
   if (typeof values.limit === "string") {
@@ -291,7 +299,7 @@ async function runIndex(
   flags: ParsedFlags,
   out: (s: string) => void,
 ): Promise<number> {
-  const report = await service.index();
+  const report = await service.index(flags.rebuild ? { rebuild: true } : undefined);
   if (flags.json) {
     out(JSON.stringify(report));
   } else {
@@ -326,11 +334,17 @@ async function runSearch(
   }
 
   if (results.length === 0) {
-    out("No results.");
+    out(
+      "No results.\n" +
+        "Next: run `tdmcp creative-rag sync` and `tdmcp creative-rag index`; " +
+        "if the index is already populated, try a broader query or fewer filters.",
+    );
   } else {
     for (const result of results) {
       out(
         `${result.score.toFixed(3)}  ${result.title} [${result.type}] — ${result.license}\n` +
+          `        id: ${result.id}\n` +
+          `        uri: tdmcp://creative/cards/${result.id}\n` +
           `        ${result.sourceUrl}` +
           (result.rightsNotes !== undefined ? `\n        rights: ${result.rightsNotes}` : ""),
       );

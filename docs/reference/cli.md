@@ -20,6 +20,8 @@ The package installs two binaries: `tdmcp` (the MCP server + utilities) and
 | `tdmcp ask "<prompt>"` | Non-interactive copilot turn — one prompt in, one answer out (machine-readable with `--json`). See [Onboarding](#onboarding) below. |
 | `tdmcp chat` _(alias `tdmcp llm-run`)_ | Start the local LLM copilot UI (see below). |
 | `tdmcp telegram` | Start an allowlisted Telegram Bot API long-poll bridge into the local Ollama copilot. See [Telegram copilot](#telegram-copilot) below. |
+| `tdmcp creative-rag sync\|index\|search` | Manage the opt-in Creative RAG reference store. See [Creative RAG](/creative-rag). |
+| `tdmcp project-rag sources\|sync\|index\|search\|info\|analyze\|bridge` | Manage the opt-in TouchDesigner project RAG store and quarantine analyzer. See [Project RAG](/project-rag). |
 | `tdmcp install-bridge` | Stage the TouchDesigner bridge to `~/tdmcp-bridge` and print the runtime Textport command for `/project1/tdmcp_bridge`. Add `--palette` to also print a Palette package export command for draggable `tdmcp_bridge_package.tox`; `--palette-dir <path>` and `--package-name <name>` imply `--palette`. Add `--verify` to check `/api/info` once, `--wait` to poll until it is up, and `--port <port>` for non-default bridges. For the Palette package, `/api/info` can only pass after the package's **Install** button creates the runtime bridge. See [Bridge & REST API](/reference/bridge-api). |
 | `tdmcp install-client <claude\|codex\|cursor>` | Print a client-specific MCP config snippet for the current package. Add `--write --path <file>` to deep-merge and verify an explicit client config file (JSON for Claude/Cursor, TOML for Codex). |
 | `tdmcp completion bash` | Print a shell completion snippet for the primary binary. Supports `bash`, `zsh`, and `fish`, including package-manager shortcuts and common flags. |
@@ -82,6 +84,7 @@ tdmcp ask "what TOPs are cooking the slowest right now?" --json
 | `--config <path>` | Use a specific config file instead of the search order. |
 | `--read-only` | Force the safe (inspection-only) tier. |
 | `--creative` | Use the creative tier and a warmer sampling preset. |
+| `--with-creative` | Inject Creative RAG cards into the prompt context when Creative RAG is enabled. |
 | `--no-ollama` | Don't auto-start local Ollama (remote endpoint or self-managed daemon). |
 | `--timeout <ms>` | Wall-clock cap on the turn (default 120000). Exits 124 on hit. |
 

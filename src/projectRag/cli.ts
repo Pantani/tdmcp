@@ -99,6 +99,14 @@ Flags:
   --json               Emit machine-readable JSON.
   -h, --help           Show this help.
 
+Environment:
+  TDMCP_RAG_ENABLED                  Enable the parent RAG switch (set to 1).
+  TDMCP_PROJECT_RAG_ENABLED          Enable Project RAG (default on when RAG is on).
+  TDMCP_RAG_OLLAMA_URL               Ollama embeddings endpoint.
+  TDMCP_RAG_EMBED_MODEL              Embedding model (default nomic-embed-text).
+  TDMCP_PROJECT_RAG_BRIDGE_PORT      Quarantine bridge port (default 9981).
+  TDMCP_BRIDGE_TOKEN                 Bearer token for a protected quarantine bridge.
+
 Hard rule: NEVER opens a downloaded .toe/.tox in the user's active TD project.
 The F3 quarantine bridge runs on a SEPARATE TouchDesigner instance bound to
 port 9981 (never 9980); when it is offline analyze/--bridge degrade to
@@ -121,6 +129,7 @@ interface StructurallyConfigLike {
   projectRagEnabled: boolean;
   projectRagBridgeAnalysis: boolean;
   projectRagBridgePort: number;
+  bridgeToken?: string;
   projectRagGhToken?: string;
   projectRagGithubRepos?: string;
   projectRagGithubTopics?: string;
@@ -160,6 +169,7 @@ export function toProjectRagConfig(config: StructurallyConfigLike): ProjectRagCo
     analyzeTimeoutMs: config.projectRagAnalyzeTimeoutMs,
     scoreWeights: config.projectRagScoreWeights,
   };
+  if (config.bridgeToken !== undefined) result.bridgeToken = config.bridgeToken;
   if (config.projectRagGhToken !== undefined) result.ghToken = config.projectRagGhToken;
   if (config.projectRagGithubRepos !== undefined)
     result.githubReposCsv = config.projectRagGithubRepos;
@@ -485,13 +495,19 @@ async function runSearch(
     return 0;
   }
   if (results.length === 0) {
-    out("No results.");
+    out(
+      "No results.\n" +
+        "Next: run `tdmcp project-rag sync` and `tdmcp project-rag index`; " +
+        "if the index is already populated, try a broader query or fewer filters.",
+    );
     return 0;
   }
   for (const r of results) {
     const banner = licenseBanner(r.license);
     out(
       `${r.score.toFixed(3)}  ${r.title} [${r.type}] — ${r.license}\n` +
+        `        id: ${r.id}\n` +
+        `        uri: tdmcp://project/cards/${r.id}\n` +
         `        ${r.sourceUrl}` +
         (banner !== undefined ? `\n        license: ${banner}` : "") +
         (r.rightsNotes !== undefined ? `\n        rights: ${r.rightsNotes}` : ""),

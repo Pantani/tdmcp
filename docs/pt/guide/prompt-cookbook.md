@@ -1781,7 +1781,7 @@ sistema de máscara/mosaico que pode ser recriado com `create_palette`,
 nova com grid animado, círculos e planos de cor, mantendo a obra original como
 contexto de repertório em vez de algo que a RAG executa diretamente.*
 
-## Biblioteca criativa (Creative RAG)
+### Busca e filtros de licença
 
 O repertório criativo é um índice local opt-in de referências artísticas com
 licença aberta. O CLI é `tdmcp creative-rag <sync|index|search>`; tanto

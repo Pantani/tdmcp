@@ -567,6 +567,7 @@ const SECRET_KEYS: ReadonlyArray<keyof LoadedTdmcpConfig> = [
   "telegramAllowedUsers",
   "ragSmithsonianKey",
   "ragEuropeanaKey",
+  "projectRagGhToken",
 ];
 
 /** A copy of the config safe to print/share — secrets are masked. */

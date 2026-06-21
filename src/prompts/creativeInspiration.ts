@@ -46,8 +46,8 @@ export async function creativeInspirationImpl(
   ) {
     return userPrompt(
       `Creative RAG is not enabled on this tdmcp server, so no mood board cards are available. ` +
-        `Enable it by setting \`TDMCP_CREATIVE_RAG_ENABLED=1\` and running ` +
-        `\`tdmcp creative sync && tdmcp creative index\`. ` +
+        `Enable it by setting \`TDMCP_RAG_ENABLED=1\` and running ` +
+        `\`tdmcp creative-rag sync && tdmcp creative-rag index\`. ` +
         `Then re-run this prompt with the same theme. ` +
         `Meanwhile, proceed with the requested theme using the model's own visual knowledge: ${theme}.`,
     );
@@ -79,7 +79,7 @@ export async function creativeInspirationImpl(
   if (results.length === 0) {
     return userPrompt(
       `No Creative RAG cards matched the theme "${theme}". ` +
-        `Try running \`tdmcp creative sync\` to add more sources, then \`tdmcp creative index\` to re-embed. ` +
+        `Try running \`tdmcp creative-rag sync\` to add more sources, then \`tdmcp creative-rag index\` to re-embed. ` +
         `Meanwhile, proceed with the requested theme using the model's own visual knowledge: ${theme}.`,
     );
   }
@@ -102,7 +102,7 @@ export async function creativeInspirationImpl(
   if (lines.length === 0) {
     return userPrompt(
       `No Creative RAG cards matched the theme "${theme}". ` +
-        `Try running \`tdmcp creative sync\` to add more sources, then \`tdmcp creative index\` to re-embed. ` +
+        `Try running \`tdmcp creative-rag sync\` to add more sources, then \`tdmcp creative-rag index\` to re-embed. ` +
         `Meanwhile, proceed with the requested theme using the model's own visual knowledge: ${theme}.`,
     );
   }
@@ -140,8 +140,8 @@ export const registerCreativeInspiration: PromptRegistrar = (server, ctx) => {
       if (!ctx.creativeRag) {
         return userPrompt(
           `Creative RAG is not enabled on this tdmcp server, so no mood board cards are available. ` +
-            `Enable it by setting \`TDMCP_CREATIVE_RAG_ENABLED=1\` and running ` +
-            `\`tdmcp creative sync && tdmcp creative index\`. ` +
+            `Enable it by setting \`TDMCP_RAG_ENABLED=1\` and running ` +
+            `\`tdmcp creative-rag sync && tdmcp creative-rag index\`. ` +
             `Then re-run this prompt with the same theme. ` +
             `Meanwhile, proceed with the requested theme using the model's own visual knowledge: ${args.theme}.`,
         );

@@ -30,7 +30,11 @@ import {
   probeBridgeReachability,
   runBridgeAnalyze,
 } from "./extractors/bridgeAnalyze.js";
-import { isCopyleftLicense, shouldStoreProjectBinary } from "./licensePolicy.js";
+import {
+  isCopyleftLicense,
+  shouldIngestProjectCard,
+  shouldStoreProjectBinary,
+} from "./licensePolicy.js";
 import { computeProjectScore } from "./scoring.js";
 import type { DiscoveryItem, RawProjectItem, SourceAdapter } from "./sources/index.js";
 import {
@@ -60,6 +64,12 @@ export interface ProjectRagEmbeddings {
   embed(inputs: string[], model: string): Promise<number[][]>;
 }
 
+export interface ProjectBridgeRuntimeOptions {
+  bridgePort: number;
+  timeoutMs: number;
+  bridgeToken?: string;
+}
+
 export interface ProjectRagServiceDeps {
   config: ProjectRagConfig;
   store?: ProjectIndexStore;
@@ -85,13 +95,16 @@ export interface ProjectRagServiceDeps {
    * F3 — override the bridge-analyze runner (tests only). When omitted, the
    * service calls `runBridgeAnalyze` directly with the configured port.
    */
-  bridgeAnalyzeImpl?: (artifactPath: string) => Promise<BridgeAnalysisResult>;
+  bridgeAnalyzeImpl?: (
+    artifactPath: string,
+    opts: ProjectBridgeRuntimeOptions,
+  ) => Promise<BridgeAnalysisResult>;
   /**
    * F3 — override the bridge reachability probe (tests only). When omitted,
    * the service calls `probeBridgeReachability` directly with the configured
    * port.
    */
-  bridgeProbeImpl?: () => Promise<BridgeProbeResult>;
+  bridgeProbeImpl?: (opts: ProjectBridgeRuntimeOptions) => Promise<BridgeProbeResult>;
 }
 
 const DEFAULT_SYNC_LIMIT = 10;
@@ -144,17 +157,30 @@ export function createProjectRagService(deps: ProjectRagServiceDeps): ProjectRag
   const cardsDir = join(config.dataDir, "cards");
   const binariesDir = join(config.dataDir, "binaries");
 
+  const bridgeRuntimeOptions: ProjectBridgeRuntimeOptions = {
+    bridgePort: config.bridgePort,
+    timeoutMs: config.analyzeTimeoutMs,
+    ...(config.bridgeToken !== undefined ? { bridgeToken: config.bridgeToken } : {}),
+  };
+
   const bridgeAnalyzeImpl =
     deps.bridgeAnalyzeImpl ??
-    ((artifactPath: string) =>
+    ((artifactPath: string, opts: ProjectBridgeRuntimeOptions) =>
       runBridgeAnalyze({
         artifactPath,
-        bridgePort: config.bridgePort,
-        timeoutMs: config.analyzeTimeoutMs,
+        bridgePort: opts.bridgePort,
+        timeoutMs: opts.timeoutMs,
+        ...(opts.bridgeToken !== undefined ? { bridgeToken: opts.bridgeToken } : {}),
       }));
 
   const bridgeProbeImpl =
-    deps.bridgeProbeImpl ?? (() => probeBridgeReachability({ bridgePort: config.bridgePort }));
+    deps.bridgeProbeImpl ??
+    ((opts: ProjectBridgeRuntimeOptions) =>
+      probeBridgeReachability({
+        bridgePort: opts.bridgePort,
+        timeoutMs: opts.timeoutMs,
+        ...(opts.bridgeToken !== undefined ? { bridgeToken: opts.bridgeToken } : {}),
+      }));
 
   async function sync(opts: {
     sources?: string[];
@@ -233,6 +259,11 @@ export function createProjectRagService(deps: ProjectRagServiceDeps): ProjectRag
       report.perSource[source.name] = items.length;
 
       for (const item of items) {
+        syncedSourceNames.add(item.sourceName);
+        if (!shouldIngestProjectCard(item.license)) {
+          report.skippedNoLicense += 1;
+          continue;
+        }
         const fresh = buildCardFromItem(item, config);
         // Carry forward analysis metadata when the embeddable content is
         // unchanged — a plain sync must NEVER erase a prior bridge-analysis
@@ -252,7 +283,6 @@ export function createProjectRagService(deps: ProjectRagServiceDeps): ProjectRag
               }
             : fresh;
         seenIds.add(card.id);
-        syncedSourceNames.add(card.provenance.sourceName);
 
         if (prior === undefined) report.added += 1;
         else if (prior.contentHash !== card.contentHash) report.updated += 1;
@@ -331,7 +361,7 @@ export function createProjectRagService(deps: ProjectRagServiceDeps): ProjectRag
       summary.attempted += 1;
       let result: BridgeAnalysisResult;
       try {
-        result = await bridgeAnalyzeImpl(absolutePath);
+        result = await bridgeAnalyzeImpl(absolutePath, bridgeRuntimeOptions);
       } catch (err) {
         result = { status: "failed", error: err instanceof Error ? err.message : String(err) };
       }
@@ -345,7 +375,7 @@ export function createProjectRagService(deps: ProjectRagServiceDeps): ProjectRag
   }
 
   async function probeBridge(): Promise<ProjectBridgeProbeReport> {
-    const probe = await bridgeProbeImpl();
+    const probe = await bridgeProbeImpl(bridgeRuntimeOptions);
     const report: ProjectBridgeProbeReport = {
       reachable: probe.reachable,
       bridgeUrl: probe.baseUrl,
@@ -358,7 +388,7 @@ export function createProjectRagService(deps: ProjectRagServiceDeps): ProjectRag
     const bridgeUrl = `http://127.0.0.1:${config.bridgePort}`;
     let result: BridgeAnalysisResult;
     try {
-      result = await bridgeAnalyzeImpl(artifactPath);
+      result = await bridgeAnalyzeImpl(artifactPath, bridgeRuntimeOptions);
     } catch (err) {
       result = { status: "failed", error: err instanceof Error ? err.message : String(err) };
     }

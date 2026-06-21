@@ -14,13 +14,22 @@ const { feedbackImplSpy } = vi.hoisted(() => ({
   feedbackImplSpy: vi.fn(),
 }));
 
-vi.mock("../../src/tools/layer1/createFeedbackNetwork.js", () => ({
-  createFeedbackNetworkImpl: feedbackImplSpy,
-}));
+vi.mock("../../src/tools/layer1/createFeedbackNetwork.js", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/tools/layer1/createFeedbackNetwork.js")>();
+  return {
+    ...actual,
+    createFeedbackNetworkImpl: feedbackImplSpy,
+  };
+});
 
 // Import the SUT after the mocks so it picks them up.
-const { applyCreativeCardImpl, APPLY_CREATIVE_CARD_DISPATCH, APPLY_CREATIVE_CARD_WHITELIST } =
-  await import("../../src/tools/layer2/applyCreativeCard.js");
+const {
+  applyCreativeCardImpl,
+  APPLY_CREATIVE_CARD_DISPATCH,
+  APPLY_CREATIVE_CARD_TARGETS,
+  APPLY_CREATIVE_CARD_WHITELIST,
+} = await import("../../src/tools/layer2/applyCreativeCard.js");
 
 function makeCard(overrides: Partial<CreativeRagCard> = {}): CreativeRagCard {
   return {
@@ -82,11 +91,17 @@ describe("applyCreativeCardImpl", () => {
     expect(r.structuredContent).toMatchObject({
       tool: "create_feedback_network",
       executed: false,
-      args: {},
+      args: {
+        seed_type: "noise",
+        transformations: ["blur", "displace", "level"],
+        feedback_gain: 0.95,
+        expose_controls: true,
+        parent_path: "/project1",
+      },
     });
   });
 
-  it("executes whitelisted affordance with overrides merged", async () => {
+  it("executes whitelisted affordance with parsed defaults and overrides", async () => {
     feedbackImplSpy.mockReset();
     feedbackImplSpy.mockResolvedValueOnce({
       content: [{ type: "text", text: "ok" }],
@@ -95,17 +110,43 @@ describe("applyCreativeCardImpl", () => {
     const r = await applyCreativeCardImpl(ctx, {
       card_id: "abc123",
       affordance_index: 0,
-      overrides: { decay: 0.92 },
+      overrides: { feedback_gain: 0.92 },
       dry_run: false,
     });
     expect(r.isError).toBeFalsy();
     expect(feedbackImplSpy).toHaveBeenCalledTimes(1);
-    expect(feedbackImplSpy).toHaveBeenCalledWith(ctx, { decay: 0.92 });
+    expect(feedbackImplSpy).toHaveBeenCalledWith(
+      ctx,
+      expect.objectContaining({
+        feedback_gain: 0.92,
+        seed_type: "noise",
+        transformations: ["blur", "displace", "level"],
+        expose_controls: true,
+        parent_path: "/project1",
+      }),
+    );
     expect(r.structuredContent).toMatchObject({
       tool: "create_feedback_network",
       executed: true,
-      args: { decay: 0.92 },
+      args: { feedback_gain: 0.92 },
     });
+  });
+
+  it("rejects unknown target override keys instead of silently dropping them", async () => {
+    feedbackImplSpy.mockReset();
+    const ctx = makeCtx({ card: makeCard() });
+    const r = await applyCreativeCardImpl(ctx, {
+      card_id: "abc123",
+      affordance_index: 0,
+      overrides: { decay: 0.92 },
+      dry_run: false,
+    });
+    expect(r.isError).toBe(true);
+    const text = textOf(r);
+    expect(text).toContain("Target args invalid");
+    expect(text).toContain('"unknown_keys"');
+    expect(text).toContain('"decay"');
+    expect(feedbackImplSpy).not.toHaveBeenCalled();
   });
 
   it("regression — target isError:true propagates to the outer envelope", async () => {
@@ -186,6 +227,13 @@ describe("applyCreativeCardImpl", () => {
     // And conversely no extra dispatch entries snuck in without whitelisting.
     for (const name of Object.keys(APPLY_CREATIVE_CARD_DISPATCH)) {
       expect(APPLY_CREATIVE_CARD_WHITELIST.has(name)).toBe(true);
+    }
+  });
+
+  it("target defaults parse for every whitelisted affordance", () => {
+    for (const [name, target] of Object.entries(APPLY_CREATIVE_CARD_TARGETS)) {
+      const parsed = target.schema.safeParse(target.defaults ?? {});
+      expect(parsed.success, name).toBe(true);
     }
   });
 });

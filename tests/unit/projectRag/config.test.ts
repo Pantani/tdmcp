@@ -48,4 +48,9 @@ describe("projectRag config — defaults + env overrides", () => {
     const cfg = loadConfig({ TDMCP_PROJECT_RAG_BRIDGE_PORT: "9990" });
     expect(cfg.projectRagBridgePort).toBe(9990);
   });
+
+  it("passes TDMCP_BRIDGE_TOKEN through to the Project RAG quarantine config", () => {
+    const pcfg = toProjectRagConfig(loadConfig({ TDMCP_BRIDGE_TOKEN: "bridge-secret" }));
+    expect(pcfg.bridgeToken).toBe("bridge-secret");
+  });
 });

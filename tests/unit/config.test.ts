@@ -254,6 +254,7 @@ describe("describeConfig", () => {
       TDMCP_TELEGRAM_BOT_TOKEN: "telegram-secret",
       TDMCP_TELEGRAM_ALLOWED_CHATS: "111,222",
       TDMCP_TELEGRAM_ALLOWED_USERS: "5,6",
+      TDMCP_PROJECT_RAG_GH_TOKEN: "ghp_project_rag_secret",
     });
     const safe = describeConfig(cfg);
     expect(safe.bridgeToken).toBe("***redacted***");
@@ -261,6 +262,7 @@ describe("describeConfig", () => {
     expect(safe.telegramBotToken).toBe("***redacted***");
     expect(safe.telegramAllowedChats).toBe("***redacted***");
     expect(safe.telegramAllowedUsers).toBe("***redacted***");
+    expect(safe.projectRagGhToken).toBe("***redacted***");
     expect(safe.tdHost).toBe("127.0.0.1");
   });
 

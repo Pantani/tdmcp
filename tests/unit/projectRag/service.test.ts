@@ -1,8 +1,13 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, relative } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { ProjectRagCard, ProjectRagConfig } from "../../../src/projectRag/index.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type {
+  ProjectRagCard,
+  ProjectRagConfig,
+  RawProjectItem,
+  SourceAdapter,
+} from "../../../src/projectRag/index.js";
 import {
   computeProjectContentHash,
   computeProjectId,
@@ -10,7 +15,7 @@ import {
   serializeProjectCard,
 } from "../../../src/projectRag/index.js";
 
-function makeConfig(dataDir: string): ProjectRagConfig {
+function makeConfig(dataDir: string, overrides: Partial<ProjectRagConfig> = {}): ProjectRagConfig {
   return {
     enabled: true,
     dataDir,
@@ -23,6 +28,7 @@ function makeConfig(dataDir: string): ProjectRagConfig {
     bridgePort: 9981,
     analyzeTimeoutMs: 30000,
     scoreWeights: { technical: 0.45, license: 0.25, freshness: 0.15, reliability: 0.15 },
+    ...overrides,
   };
 }
 
@@ -133,6 +139,72 @@ describe("projectRag service (skeleton-level behaviour)", () => {
     });
     expect(await svc.getCard("../etc/passwd")).toBeUndefined();
     expect(await svc.getCard("not-a-sha")).toBeUndefined();
+  });
+
+  it("sync() skips restricted/proprietary-paid cards before writing or indexing", async () => {
+    const restricted: RawProjectItem = {
+      sourceName: "test-source",
+      sourceUrl: "https://example.test/restricted.tox",
+      canonical: "test-source:restricted.tox",
+      title: "Restricted package",
+      type: "component",
+      tags: ["tox"],
+      license: "Restricted",
+      licenseConfidence: "declared",
+      binaryUrl: "https://example.test/restricted.tox",
+    };
+    const proprietaryPaid: RawProjectItem = {
+      ...restricted,
+      sourceUrl: "https://example.test/paid.tox",
+      canonical: "test-source:paid.tox",
+      title: "Paid package",
+      license: "Proprietary-Paid",
+      binaryUrl: "https://example.test/paid.tox",
+    };
+    const source: SourceAdapter = {
+      name: "test-source",
+      displayName: "Test Source",
+      fetchItems: async () => [restricted, proprietaryPaid],
+    };
+    const svc = createProjectRagService({
+      config: makeConfig(DIR),
+      sources: [source],
+      embeddings: NOOP_EMBEDDINGS,
+    });
+
+    const report = await svc.sync({});
+    expect(report.added).toBe(0);
+    expect(report.binariesStored).toBe(0);
+    expect(report.skippedNoLicense).toBe(2);
+    expect(await svc.getCard(computeProjectId(restricted.canonical))).toBeUndefined();
+    expect(await svc.getCard(computeProjectId(proprietaryPaid.canonical))).toBeUndefined();
+    expect(await svc.index()).toEqual({ embedded: 0, cachedSkipped: 0, total: 0 });
+  });
+
+  it("passes bridgeToken to quarantine probe and direct analyze", async () => {
+    const probe = vi.fn().mockResolvedValue({
+      reachable: true,
+      baseUrl: "http://127.0.0.1:9981",
+    });
+    const analyze = vi.fn().mockResolvedValue({ status: "skipped", reason: "fixture" });
+    const svc = createProjectRagService({
+      config: makeConfig(DIR, { bridgeToken: "bridge-secret" }),
+      sources: [],
+      embeddings: NOOP_EMBEDDINGS,
+      bridgeProbeImpl: probe,
+      bridgeAnalyzeImpl: analyze,
+    });
+
+    await svc.probeBridge();
+    await svc.analyze("/tmp/example.tox");
+
+    expect(probe).toHaveBeenCalledWith(
+      expect.objectContaining({ bridgePort: 9981, bridgeToken: "bridge-secret" }),
+    );
+    expect(analyze).toHaveBeenCalledWith(
+      "/tmp/example.tox",
+      expect.objectContaining({ bridgePort: 9981, bridgeToken: "bridge-secret" }),
+    );
   });
 
   it("rescore() recomputes score on every live card and ignores tombstones", async () => {

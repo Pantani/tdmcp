@@ -1,7 +1,8 @@
 # Project RAG
 
-> Status: **experimental — F3 (TD-bridge quarantine analysis, opt-in)**.
-> F0+F1+F2+F3 shipped. F4 (prompts/resources/copilot tool) pending.
+> Status: **experimental — F0–F4 shipped behind opt-in flags**.
+> Live TouchDesigner quarantine analysis still requires a separate bridge on
+> port `9981` and is only verified when that bridge is actually running.
 
 Project RAG is the **technical/project repertoire** sibling to
 [Creative RAG](./CREATIVE_RAG.md). It indexes **TouchDesigner projects,
@@ -12,8 +13,8 @@ and how you may use it.
 
 It is **opt-in**, **offline-first**, and the search path **never touches the
 TouchDesigner bridge, DMX, or Python exec**. The opt-in bridge-quarantine
-analyzer (F3, not yet shipped) will use a *separate* TD instance on a dedicated
-port (default `9981`), never the user's active 9980 bridge.
+analyzer (F3) uses a *separate* TD instance on a dedicated port (default
+`9981`), never the user's active 9980 bridge.
 
 ## When to use it
 
@@ -397,6 +398,8 @@ tdmcp project-rag bridge install — quarantine bridge setup
        export TDMCP_PROJECT_RAG_BRIDGE_ANALYSIS=1
        export TDMCP_PROJECT_RAG_ENABLED=1
        export TDMCP_RAG_ENABLED=1
+       # Optional, but recommended when the quarantine bridge also enforces auth:
+       export TDMCP_BRIDGE_TOKEN=<same-token-used-by-that-bridge>
 …
 Probe: http://127.0.0.1:9981 — OFFLINE
 ```
@@ -415,6 +418,8 @@ The analyzer:
   `TDMCP_PROJECT_RAG_BRIDGE_PORT` (default `9981`). It **refuses** to use port
   `9980` — calling `analyze` with the port wired to `9980` returns
   `failed: "refusing to use main TD port 9980"`.
+- Reuses `TDMCP_BRIDGE_TOKEN` as the bearer token for the quarantine bridge when
+  it is set, so a protected QA bridge can stay authenticated.
 - Probes the bridge with `GET /api/info`. If the probe throws a connection
   error → returns `skipped` (NOT `failed`) so the offline path is the safe
   default.

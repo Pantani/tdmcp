@@ -216,6 +216,8 @@ export interface ProjectRagConfig {
   bridgePort: number;
   /** GitHub API token (optional, never logged). */
   ghToken?: string;
+  /** Bearer token for the quarantine TouchDesigner bridge, sourced from TDMCP_BRIDGE_TOKEN. */
+  bridgeToken?: string;
   /**
    * Optional CSV of `owner/repo[@ref]` for the `github-repo` source. When
    * unset, the source defaults to the F1 seed (torinmb/mediapipe-touchdesigner).
