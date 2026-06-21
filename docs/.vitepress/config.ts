@@ -17,6 +17,7 @@ function pageUrl(relativePath: string): string {
   if (p === "DEPLOYMENT") p = "deployment";
   else if (p === "ROADMAP") p = "roadmap";
   else if (p === "CREATIVE_RAG") p = "creative-rag";
+  else if (p === "PROJECT_RAG") p = "project-rag";
   p = p.replace(/(^|\/)index$/, "$1");
   return HOSTNAME + p;
 }
@@ -84,6 +85,7 @@ const operations = [
   { text: "Deployment", link: "/deployment" },
   { text: "Roadmap", link: "/roadmap" },
   { text: "Creative RAG (experimental)", link: "/creative-rag" },
+  { text: "Project RAG (experimental)", link: "/project-rag" },
   { text: "Privacy", link: "/privacy" },
   { text: "Contributing", link: `${GITHUB}/blob/main/CONTRIBUTING.md` },
   { text: "Changelog", link: `${GITHUB}/blob/main/CHANGELOG.md` },
@@ -124,6 +126,7 @@ export default defineConfig({
     "DEPLOYMENT.md": "deployment.md",
     "ROADMAP.md": "roadmap.md",
     "CREATIVE_RAG.md": "creative-rag.md",
+    "PROJECT_RAG.md": "project-rag.md",
   },
   lastUpdated: true,
   // Generated/standalone pages reference localhost endpoints in prose, not as links;

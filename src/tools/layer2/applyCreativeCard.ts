@@ -1,18 +1,33 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import { createAsciiRenderImpl } from "../layer1/createAsciiRender.js";
-import { createAudioReactiveImpl } from "../layer1/createAudioReactive.js";
-import { createColorGradeImpl } from "../layer1/createColorGrade.js";
-import { createDitherImpl } from "../layer1/createDither.js";
-import { createEnergyStructureImpl } from "../layer1/createEnergyStructure.js";
-import { createFeedbackNetworkImpl } from "../layer1/createFeedbackNetwork.js";
-import { createFeedbackTunnelImpl } from "../layer1/createFeedbackTunnel.js";
-import { createFluidSimImpl } from "../layer1/createFluidSim.js";
-import { createGenerativeArtImpl } from "../layer1/createGenerativeArt.js";
-import { createGlitchImpl } from "../layer1/createGlitch.js";
-import { createGrowthSystemImpl } from "../layer1/createGrowthSystem.js";
-import { createHalftoneImpl } from "../layer1/createHalftone.js";
-import { createKaleidoscopeImpl } from "../layer1/createKaleidoscope.js";
+import { createAsciiRenderImpl, createAsciiRenderSchema } from "../layer1/createAsciiRender.js";
+import {
+  createAudioReactiveImpl,
+  createAudioReactiveSchema,
+} from "../layer1/createAudioReactive.js";
+import { createColorGradeImpl, createColorGradeSchema } from "../layer1/createColorGrade.js";
+import { createDitherImpl, createDitherSchema } from "../layer1/createDither.js";
+import {
+  createEnergyStructureImpl,
+  createEnergyStructureSchema,
+} from "../layer1/createEnergyStructure.js";
+import {
+  createFeedbackNetworkImpl,
+  createFeedbackNetworkSchema,
+} from "../layer1/createFeedbackNetwork.js";
+import {
+  createFeedbackTunnelImpl,
+  createFeedbackTunnelSchema,
+} from "../layer1/createFeedbackTunnel.js";
+import { createFluidSimImpl, createFluidSimSchema } from "../layer1/createFluidSim.js";
+import {
+  createGenerativeArtImpl,
+  createGenerativeArtSchema,
+} from "../layer1/createGenerativeArt.js";
+import { createGlitchImpl, createGlitchSchema } from "../layer1/createGlitch.js";
+import { createGrowthSystemImpl, createGrowthSystemSchema } from "../layer1/createGrowthSystem.js";
+import { createHalftoneImpl, createHalftoneSchema } from "../layer1/createHalftone.js";
+import { createKaleidoscopeImpl, createKaleidoscopeSchema } from "../layer1/createKaleidoscope.js";
 import { errorResult, structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
@@ -51,26 +66,89 @@ export type ApplyCreativeCardArgs = z.infer<typeof applyCreativeCardSchema>;
 // `src/tools/layer1/` and that the RAG vocabulary plausibly emits. No raw
 // Python, no layer3 atomics, no disk writers.
 type TargetImpl = (ctx: ToolContext, args: unknown) => Promise<CallToolResult>;
-
-export const APPLY_CREATIVE_CARD_DISPATCH: Record<string, TargetImpl> = {
-  create_feedback_network: createFeedbackNetworkImpl as TargetImpl,
-  create_audio_reactive: createAudioReactiveImpl as TargetImpl,
-  create_generative_art: createGenerativeArtImpl as TargetImpl,
-  create_kaleidoscope: createKaleidoscopeImpl as TargetImpl,
-  create_color_grade: createColorGradeImpl as TargetImpl,
-  create_glitch: createGlitchImpl as TargetImpl,
-  create_halftone: createHalftoneImpl as TargetImpl,
-  create_ascii_render: createAsciiRenderImpl as TargetImpl,
-  create_dither: createDitherImpl as TargetImpl,
-  create_feedback_tunnel: createFeedbackTunnelImpl as TargetImpl,
-  create_fluid_sim: createFluidSimImpl as TargetImpl,
-  create_growth_system: createGrowthSystemImpl as TargetImpl,
-  create_energy_structure: createEnergyStructureImpl as TargetImpl,
+type TargetConfig = {
+  impl: TargetImpl;
+  schema: z.ZodTypeAny;
+  defaults?: Record<string, unknown>;
 };
 
-export const APPLY_CREATIVE_CARD_WHITELIST: ReadonlySet<string> = new Set(
-  Object.keys(APPLY_CREATIVE_CARD_DISPATCH),
+export const APPLY_CREATIVE_CARD_TARGETS: Record<string, TargetConfig> = {
+  create_feedback_network: {
+    impl: createFeedbackNetworkImpl as TargetImpl,
+    schema: createFeedbackNetworkSchema,
+  },
+  create_audio_reactive: {
+    impl: createAudioReactiveImpl as TargetImpl,
+    schema: createAudioReactiveSchema,
+    defaults: { visual_style: "geometric" },
+  },
+  create_generative_art: {
+    impl: createGenerativeArtImpl as TargetImpl,
+    schema: createGenerativeArtSchema,
+    defaults: { technique: "noise_landscape" },
+  },
+  create_kaleidoscope: {
+    impl: createKaleidoscopeImpl as TargetImpl,
+    schema: createKaleidoscopeSchema,
+  },
+  create_color_grade: {
+    impl: createColorGradeImpl as TargetImpl,
+    schema: createColorGradeSchema,
+  },
+  create_glitch: {
+    impl: createGlitchImpl as TargetImpl,
+    schema: createGlitchSchema,
+  },
+  create_halftone: {
+    impl: createHalftoneImpl as TargetImpl,
+    schema: createHalftoneSchema,
+  },
+  create_ascii_render: {
+    impl: createAsciiRenderImpl as TargetImpl,
+    schema: createAsciiRenderSchema,
+  },
+  create_dither: {
+    impl: createDitherImpl as TargetImpl,
+    schema: createDitherSchema,
+  },
+  create_feedback_tunnel: {
+    impl: createFeedbackTunnelImpl as TargetImpl,
+    schema: createFeedbackTunnelSchema,
+  },
+  create_fluid_sim: {
+    impl: createFluidSimImpl as TargetImpl,
+    schema: createFluidSimSchema,
+  },
+  create_growth_system: {
+    impl: createGrowthSystemImpl as TargetImpl,
+    schema: createGrowthSystemSchema,
+  },
+  create_energy_structure: {
+    impl: createEnergyStructureImpl as TargetImpl,
+    schema: createEnergyStructureSchema,
+    defaults: { name: "energy_structure" },
+  },
+};
+
+export const APPLY_CREATIVE_CARD_DISPATCH: Record<string, TargetImpl> = Object.fromEntries(
+  Object.entries(APPLY_CREATIVE_CARD_TARGETS).map(([name, target]) => [name, target.impl]),
 );
+
+export const APPLY_CREATIVE_CARD_WHITELIST: ReadonlySet<string> = new Set(
+  Object.keys(APPLY_CREATIVE_CARD_TARGETS),
+);
+
+function schemaKeys(schema: z.ZodTypeAny): Set<string> | undefined {
+  const shape = (schema as z.ZodTypeAny & { shape?: Record<string, unknown> }).shape;
+  return shape !== undefined ? new Set(Object.keys(shape)) : undefined;
+}
+
+function zodIssues(error: z.ZodError): Array<{ path: string; message: string }> {
+  return error.issues.map((issue) => ({
+    path: issue.path.join("."),
+    message: issue.message,
+  }));
+}
 
 export async function applyCreativeCardImpl(
   ctx: ToolContext,
@@ -120,13 +198,35 @@ export async function applyCreativeCardImpl(
     });
   }
 
-  const targetImpl = APPLY_CREATIVE_CARD_DISPATCH[name];
-  if (!targetImpl) {
+  const target = APPLY_CREATIVE_CARD_TARGETS[name];
+  if (!target) {
     // Defensive — set/dispatch table drift would land here.
     return errorResult("Affordance whitelisted but no dispatch entry", { name });
   }
 
-  const targetArgs = args.overrides ?? {};
+  const overrides = args.overrides ?? {};
+  const allowedKeys = schemaKeys(target.schema);
+  const unknownKeys =
+    allowedKeys !== undefined ? Object.keys(overrides).filter((key) => !allowedKeys.has(key)) : [];
+  if (unknownKeys.length > 0) {
+    return errorResult("Target args invalid", {
+      tool: name,
+      unknown_keys: unknownKeys,
+      allowed_keys: allowedKeys !== undefined ? Array.from(allowedKeys).sort() : undefined,
+    });
+  }
+
+  const parsedTargetArgs = target.schema.safeParse({
+    ...(target.defaults ?? {}),
+    ...overrides,
+  });
+  if (!parsedTargetArgs.success) {
+    return errorResult("Target args invalid", {
+      tool: name,
+      issues: zodIssues(parsedTargetArgs.error),
+    });
+  }
+  const targetArgs = parsedTargetArgs.data;
 
   if (args.dry_run) {
     return structuredResult(`Dry run: would invoke ${name}`, {
@@ -140,7 +240,7 @@ export async function applyCreativeCardImpl(
 
   let result: CallToolResult;
   try {
-    result = await targetImpl(ctx, targetArgs);
+    result = await target.impl(ctx, targetArgs);
   } catch (err) {
     return errorResult("Target tool failed", { tool: name, error: String(err) });
   }

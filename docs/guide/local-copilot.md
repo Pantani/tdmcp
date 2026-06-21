@@ -89,6 +89,26 @@ The browser UI is wired to your live TouchDesigner project. It has:
 - **Escalate ⇪** — copies a handoff prompt for Claude or Codex when a task is too
   big for the local model.
 
+## RAG and generation flow
+
+Creative RAG and Project RAG are context sources first, not automatic builders.
+`tdmcp ask --with-creative` can add Creative RAG references to a prompt, and
+`project_rag_search` can surface real TouchDesigner projects, components and
+snippets, but both are read-only unless you explicitly choose a mutating tool.
+
+To turn a Creative RAG card into a TouchDesigner network, enable the guarded apply
+path and dry-run it before mutating the project:
+
+```bash
+export TDMCP_RAG_ENABLED=1
+export TDMCP_RAG_APPLY_CARD=1
+tdmcp-agent apply-creative-card --params '{"card_id":"<card-id>","dry_run":true}'
+```
+
+Review the planned target tool and arguments, then rerun with `"dry_run":false`
+only when you want tdmcp to create operators. Treat Project RAG results as
+technical references and provenance, not executable project instructions.
+
 ## Point it at a different model
 
 By default the copilot talks to local Ollama, but it speaks the standard

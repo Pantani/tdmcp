@@ -59,7 +59,7 @@ describe("OllamaEmbeddingsClient.embed", () => {
   });
 
   it("throws OllamaApiError with status on 404", async () => {
-    server.use(http.post(EMBED_URL, () => new HttpResponse(null, { status: 404 })));
+    server.use(http.post(EMBED_URL, () => HttpResponse.text("model not found", { status: 404 })));
 
     const err = await makeClient()
       .embed(["x"], "nomic-embed-text")
@@ -68,6 +68,8 @@ describe("OllamaEmbeddingsClient.embed", () => {
     expect(err).toBeInstanceOf(OllamaApiError);
     expect((err as OllamaApiError).status).toBe(404);
     expect((err as OllamaApiError).code).toBe("OLLAMA_API");
+    expect((err as Error).message).toContain("ollama pull nomic-embed-text");
+    expect((err as Error).message).toContain("model not found");
   });
 
   it("throws OllamaApiError with status on 500", async () => {
@@ -90,6 +92,8 @@ describe("OllamaEmbeddingsClient.embed", () => {
 
     expect(err).toBeInstanceOf(OllamaConnectionError);
     expect((err as OllamaConnectionError).code).toBe("OLLAMA_CONNECTION");
+    expect((err as Error).message).toContain("ollama serve");
+    expect((err as Error).message).toContain("ollama pull nomic-embed-text");
   });
 
   it("throws OllamaApiError on a malformed body", async () => {

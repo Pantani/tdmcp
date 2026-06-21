@@ -70,11 +70,13 @@ referência.
 
 ### Limite duro — sem hardware, sem DMX, sem exec
 
-**Nenhum caminho de código do Creative RAG toca a bridge do TouchDesigner,
-DMX, fixtures, nem executa Python.** É um subcomando de CLI mais um recurso
-MCP **read-only**. **Não existe MCP tool** que dispare qualquer ação física
-ou dentro do TD a partir de um resultado de busca. As únicas chamadas de
-rede para fora são:
+**Os caminhos de sync/search/resource não tocam a bridge do TouchDesigner,
+DMX, fixtures, nem executam Python.** O Creative RAG em si é um subcomando de
+CLI mais recursos MCP **read-only**. O handoff opcional para execução é uma
+tool Layer 2 separada e explicitamente gated, `apply_creative_card`, habilitada
+somente com `TDMCP_RAG_APPLY_CARD=1`; ela roteia para uma allowlist hardcoded
+de builders Layer 1, valida os argumentos do alvo e suporta `dry_run` antes de
+invocar o TouchDesigner. As únicas chamadas de rede em sync/search são:
 
 1. as APIs HTTP das fontes upstream (as fontes vivas de museus/arquivos),
    durante um `creative-rag sync` explícito; e
@@ -157,7 +159,7 @@ config nem aparecem em log. Env vars seguem a convenção `TDMCP_*`.
 | `TDMCP_RAG_ENABLED` | `ragEnabled` | `0` (false) | Chave mestra. Quando 0, sem resource, sem injeção de contexto, subcomando vira no-op com mensagem. |
 | `TDMCP_RAG_DATA_DIR` | `ragDataDir` | `.tdmcp/creative-rag` | Cards, binários e índice vivem aqui. Gitignored. |
 | `TDMCP_RAG_OLLAMA_URL` | `ragOllamaUrl` | `http://127.0.0.1:11434` | Endpoint local de embeddings. |
-| `TDMCP_RAG_EMBED_MODEL` | `ragEmbedModel` | `nomic-embed-text` | Precisa estar baixado (`ollama pull nomic-embed-text`). **Bibliotecas multilíngues.** O padrão `nomic-embed-text` é voltado ao inglês. Para repertórios em português, espanhol, francês ou mistos, defina `TDMCP_RAG_EMBED_MODEL=bge-m3` e rode `ollama pull bge-m3`, depois `tdmcp creative-rag index --rebuild` (linhas JSONL existentes carregam o `embeddingModel` antigo e são ignoradas no rebuild). Alternativa: `mxbai-embed-large`. |
+| `TDMCP_RAG_EMBED_MODEL` | `ragEmbedModel` | `nomic-embed-text` | Precisa estar baixado (`ollama pull nomic-embed-text`). **Bibliotecas multilíngues.** O padrão `nomic-embed-text` é voltado ao inglês. Para repertórios em português, espanhol, francês ou mistos, defina `TDMCP_RAG_EMBED_MODEL=bge-m3` e rode `ollama pull bge-m3`, depois `tdmcp creative-rag index --rebuild` para forçar todos os cards vivos pelo novo modelo. Alternativa: `mxbai-embed-large`. |
 | `TDMCP_RAG_LICENSE_ALLOWLIST` | `ragLicenseAllowlist` | `CC0,PublicDomain` | CSV; licenças para as quais binários podem ser armazenados. |
 | `TDMCP_RAG_EMBED_BATCH` | `ragEmbedBatch` | `64` | Inputs por POST de embed do Ollama. O `index` parte o conjunto de cards em batches desse tamanho; a guarda de "um vetor por input" dispara por batch. Faixa 1–512. |
 | `TDMCP_RAG_BACKEND` | `ragBackend` | `jsonl` | Backend de índice. `jsonl` é o store in-memory full-load. `lancedb` é um caminho de escala **experimental** que usa a dependência opcional `@lancedb/lancedb`. |
@@ -219,6 +221,31 @@ Registrados **somente** quando `TDMCP_RAG_ENABLED=1`:
 Ambos são **read-only**: ler um resource nunca muta estado, nunca chama a
 bridge, nunca roda Python.
 
+## De um card para uma rede TouchDesigner
+
+A busca entrega referências; ela não executa nada. Para transformar um card em
+uma rede TD, habilite o gate explícito de apply e faça preview do plano antes:
+
+```bash
+export TDMCP_RAG_ENABLED=1
+export TDMCP_RAG_APPLY_CARD=1
+```
+
+Depois chame a tool MCP `apply_creative_card` com o id do card:
+
+```json
+{
+  "card_id": "<sha256 card id>",
+  "affordance_index": 0,
+  "dry_run": true
+}
+```
+
+O dry run devolve `{tool, args}` depois de aplicar os defaults Zod da tool alvo.
+Só então rode com `dry_run: false`. Se você passar um override que não é um
+argumento real da tool alvo, a chamada falha antes de qualquer builder Layer 1
+rodar.
+
 ## Formato do card
 
 Cards são arquivos Markdown com frontmatter YAML em
@@ -255,10 +282,10 @@ tombstone: false
 Corpo livre: uma nota curta sobre por que essa referência é útil.
 ```
 
-`tdmcpAffordances` só lista nomes de tools Layer-1 que **existem de verdade**
-(verificadas contra o registry vivo — e.g. `create_generative_art`,
-`create_particle_system`, `create_kaleidoscope`, `create_growth_system`,
-`create_kinetic_text`, `create_point_cloud`). São dicas, não ações — ler um
+`tdmcpAffordances` lista dicas de execução para tools Layer 1 existentes. Cards
+sincronizados de fontes vivas inferem uma lista curta e allowlisted, como
+`create_generative_art`, `create_kaleidoscope`, `create_feedback_network`,
+`create_growth_system` e `create_color_grade`. São dicas, não ações — ler um
 card nunca invoca nada.
 
 ## Formato do índice JSONL

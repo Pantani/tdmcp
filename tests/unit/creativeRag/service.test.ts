@@ -122,6 +122,13 @@ describe("creativeRag service.sync", () => {
       readFileSync(join(cardsDir, `${hashUrl(PUBLIC_ITEM.sourceUrl)}.md`), "utf8"),
     ).id;
     expect(publicId).toBe(hashUrl(PUBLIC_ITEM.sourceUrl));
+    const publicCard = parseCard(
+      readFileSync(join(cardsDir, `${hashUrl(PUBLIC_ITEM.sourceUrl)}.md`), "utf8"),
+    );
+    expect(publicCard.tdmcpAffordances.length).toBeGreaterThan(0);
+    expect(publicCard.tdmcpAffordances).toEqual(
+      expect.arrayContaining(["create_kaleidoscope", "create_feedback_network"]),
+    );
 
     // Binary stored for the PublicDomain card; absent for the Unknown one.
     expect(existsSync(join(dataDir, "binaries", `${hashUrl(PUBLIC_ITEM.sourceUrl)}.jpg`))).toBe(
@@ -281,6 +288,21 @@ describe("creativeRag service.index", () => {
 
     const report = await makeService(sources).index();
     expect(report.embedded).toBe(1);
+    expect(report.cachedSkipped).toBe(0);
+  });
+
+  it("rebuild=true re-embeds all live cards even when the cache is current", async () => {
+    const sources = [
+      makeFakeSource("artic", "https://api.artic.edu/manifest", [PUBLIC_ITEM, UNKNOWN_ITEM]),
+    ];
+    await makeService(sources).sync({});
+
+    const svc = makeService(sources);
+    expect((await svc.index()).embedded).toBe(2);
+
+    const report = await svc.index({ rebuild: true });
+    expect(report.total).toBe(2);
+    expect(report.embedded).toBe(2);
     expect(report.cachedSkipped).toBe(0);
   });
 });

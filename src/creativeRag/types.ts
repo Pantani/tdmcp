@@ -156,10 +156,15 @@ export interface PlannedSourceStub {
 /** Builder E — the facade the CLI + (future) resource call. */
 export interface CreativeRagService {
   sync(opts: { sources?: string[]; limit?: number }): Promise<SyncReport>;
-  index(): Promise<IndexReport>;
+  index(opts?: CreativeRagIndexOptions): Promise<IndexReport>;
   search(query: string, k: number, filters?: SearchFilters): Promise<SearchResult[]>;
   /** Read one card by id (for the resource). undefined if missing/tombstoned. */
   getCard(id: string): Promise<CreativeRagCard | undefined>;
+}
+
+export interface CreativeRagIndexOptions {
+  /** Drop all non-tombstoned card ids from the index before embedding. */
+  rebuild?: boolean;
 }
 
 export interface SyncReport {
