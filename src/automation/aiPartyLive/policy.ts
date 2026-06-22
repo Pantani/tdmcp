@@ -218,6 +218,11 @@ export function evaluateAiPartyPolicy(
     }
     case "arm_effect":
       return evaluateEffect(intent, state);
+    case "arm_mixer_scene":
+      return block(
+        "Mixer scene arming is handled by the operator-approved show-director path, not the live AI party dispatcher.",
+        "Blocked: mixer scene arming requires the operator-approved show-director flow.",
+      );
     case "log_note":
       return allow("Log note records context only.", [
         { kind: "log_note", note: intent.note, tags: intent.tags },

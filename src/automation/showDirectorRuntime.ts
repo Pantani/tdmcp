@@ -1,9 +1,11 @@
 import { z } from "zod";
+import type { MixerSceneManifest } from "./mixerSceneCatalog.js";
 import {
   DEFAULT_EFFECT_POLICY,
   type EffectPolicy,
   EffectPolicySchema,
   evaluateShowIntent,
+  type MixerSceneIntent,
   type PolicyDecision,
   PolicyDecisionSchema,
   parseShowIntent,
@@ -11,6 +13,7 @@ import {
   ShowEffectSchema,
   type ShowIntent,
   ShowIntentSchema,
+  ShowMixerAdapterTargetSchema,
 } from "./showDirectorSchema.js";
 
 const ISO_TIME = /^\d{4}-\d{2}-\d{2}T/;
@@ -49,16 +52,53 @@ export const ShowActionPlanSchema = z.discriminatedUnion("kind", [
     tags: z.array(z.string()).default([]),
     dry_run_only: z.literal(true),
   }),
+  z.object({
+    kind: z.literal("mixer_scene"),
+    action: z.literal("arm"),
+    adapter_target: ShowMixerAdapterTargetSchema,
+    mixer_scene: z.object({
+      kind: z.enum(["show", "snapshot", "cue"]),
+      scene_id: z.string().min(1),
+      show_name: z.string().min(1),
+      snapshot_name: z.string().min(1).optional(),
+      cue_name: z.string().min(1).optional(),
+      label: z.string().min(1),
+    }),
+    catalog_hash: z.string().min(1),
+    approval_id: z.string().min(1),
+    operator: z.string().min(1),
+    dry_run_only: z.literal(true),
+  }),
 ]);
 
 export type ShowActionPlan = z.infer<typeof ShowActionPlanSchema>;
 
 export const ApprovalStatusSchema = z.enum(["pending", "approved", "cancelled"]);
 
+/**
+ * Generic approval target. Old effect approvals stay valid (they always carried
+ * a top-level `effect`); mixer-scene approvals carry a `mixer_scene` target with
+ * the exact adapter + catalog scene + catalog hash shown to the operator.
+ */
+export const ShowApprovalTargetSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("effect"), effect: ShowEffectSchema }),
+  z.object({
+    kind: z.literal("mixer_scene"),
+    adapter_target: ShowMixerAdapterTargetSchema,
+    scene_id: z.string().min(1),
+    catalog_hash: z.string().min(1),
+  }),
+]);
+
+export type ShowApprovalTarget = z.infer<typeof ShowApprovalTargetSchema>;
+
 export const ShowApprovalSchema = z.object({
   id: z.string().min(1),
   status: ApprovalStatusSchema,
-  effect: ShowEffectSchema,
+  /** Legacy/optional: present for effect approvals; absent for mixer scenes. */
+  effect: ShowEffectSchema.optional(),
+  /** Generic target. Defaults are not applied; old states omit it. */
+  target: ShowApprovalTargetSchema.optional(),
   intent: z.unknown(),
   decision: z.unknown(),
   requested_at: z.string().regex(ISO_TIME),
@@ -100,6 +140,16 @@ export interface SubmitShowIntentResult {
   approval?: ShowApproval;
   ok?: boolean;
   reason?: string;
+}
+
+/**
+ * Runtime options threaded through submit/approve. The mixer-scene manifest is
+ * required for any `arm_mixer_scene` decision; when absent, mixer-scene policy
+ * blocks (it never auto-allows and never fuzzy-matches live).
+ */
+export interface ShowDirectorOptions {
+  policy?: EffectPolicy;
+  mixerSceneManifest?: MixerSceneManifest;
 }
 
 function cloneState(state: ShowDirectorState): ShowDirectorState {
@@ -243,6 +293,40 @@ function planForAllowedIntent(intent: ShowIntent, operator?: string): ShowAction
   }
 }
 
+/**
+ * Build the approved dry-run mixer-scene plan from the catalog (source of
+ * truth). Returns `undefined` if the scene id no longer resolves or the catalog
+ * hash drifted — the caller treats that as a failed resolution.
+ */
+function planForMixerScene(
+  intent: MixerSceneIntent,
+  manifest: MixerSceneManifest,
+  approvalId: string,
+  operator: string,
+): Extract<ShowActionPlan, { kind: "mixer_scene" }> | undefined {
+  const sceneId = intent.target.scene_id;
+  if (!sceneId) return undefined;
+  const scene = manifest.scenes.find((entry) => entry.scene_id === sceneId);
+  if (!scene) return undefined;
+  return {
+    kind: "mixer_scene",
+    action: "arm",
+    adapter_target: scene.adapter_target,
+    mixer_scene: {
+      kind: intent.target.kind,
+      scene_id: scene.scene_id,
+      show_name: scene.show_name,
+      snapshot_name: scene.snapshot_name,
+      cue_name: scene.cue_name,
+      label: scene.label,
+    },
+    catalog_hash: manifest.policy_hash,
+    approval_id: approvalId,
+    operator,
+    dry_run_only: true,
+  };
+}
+
 function controlIntentDecision(intent: ShowIntent): PolicyDecision {
   return {
     decision: "allow",
@@ -257,21 +341,22 @@ export function submitShowIntent(
   state: ShowDirectorState,
   rawIntent: unknown,
   policy?: EffectPolicy,
+  opts: Pick<ShowDirectorOptions, "mixerSceneManifest"> = {},
 ): SubmitShowIntentResult {
   const next = cloneState(state);
-  const parsed = parseShowIntent(rawIntent, activePolicy(policy));
+  const parsed = parseShowIntent(rawIntent, activePolicy(policy), {
+    mixer_scene_manifest: opts.mixerSceneManifest,
+  });
   if (!parsed.ok) {
     next.audit_log.push(auditEntry(next, "invalid", parsed.decision));
     return { state: next, decision: parsed.decision, plan: [] };
   }
 
   if (parsed.intent.type === "approve_effect") {
-    const approved = approveShowIntent(
-      next,
-      parsed.intent.approval_id,
-      parsed.intent.operator,
+    const approved = approveShowIntent(next, parsed.intent.approval_id, parsed.intent.operator, {
       policy,
-    );
+      mixerSceneManifest: opts.mixerSceneManifest,
+    });
     if (!approved.ok) {
       return { ...approved, decision: failedDecision(parsed.intent.type, approved.reason) };
     }
@@ -301,11 +386,39 @@ export function submitShowIntent(
     return { state: next, decision: parsed.decision, plan };
   }
 
+  // Mixer scenes never auto-allow; a valid request queues a generic approval.
+  if (parsed.decision.decision === "require_approval" && parsed.intent.type === "arm_mixer_scene") {
+    const sceneId = parsed.decision.scene_id;
+    const catalogHash = parsed.decision.catalog_hash;
+    // Decision invariants are guaranteed by the policy, but stay fail-forward.
+    if (!sceneId || !catalogHash) {
+      next.audit_log.push(auditEntry(next, "blocked", parsed.decision));
+      return { state: next, decision: parsed.decision, plan: [] };
+    }
+    const approval: ShowApproval = {
+      id: idFor("approval", next.approvals.length),
+      status: "pending",
+      target: {
+        kind: "mixer_scene",
+        adapter_target: parsed.intent.adapter_target,
+        scene_id: sceneId,
+        catalog_hash: catalogHash,
+      },
+      intent: parsed.intent,
+      decision: parsed.decision,
+      requested_at: nowIso(),
+    };
+    next.approvals.push(approval);
+    next.audit_log.push(auditEntry(next, "queued", parsed.decision, { approval_id: approval.id }));
+    return { state: next, decision: parsed.decision, plan: [], approval };
+  }
+
   if (parsed.decision.decision === "require_approval" && parsed.intent.type === "arm_effect") {
     const approval: ShowApproval = {
       id: idFor("approval", next.approvals.length),
       status: "pending",
       effect: parsed.intent.effect,
+      target: { kind: "effect", effect: parsed.intent.effect },
       intent: parsed.intent,
       decision: parsed.decision,
       requested_at: nowIso(),
@@ -319,12 +432,64 @@ export function submitShowIntent(
   return { state: next, decision: parsed.decision, plan: [] };
 }
 
+/**
+ * Resolve a queued mixer-scene approval. Re-runs MixerScenePolicy with the
+ * manifest immediately before producing the plan (catalog hash + scene safety
+ * are re-validated), so a drifted catalog or removed scene fails the approval
+ * instead of dispatching. Never claims hardware changed — emits a dry-run plan.
+ */
+function resolveMixerSceneApproval(
+  next: ShowDirectorState,
+  idx: number,
+  approval: ShowApproval,
+  intent: MixerSceneIntent,
+  operator: string,
+  opts: ShowDirectorOptions,
+): ResolveApprovalResult {
+  const manifest = opts.mixerSceneManifest;
+  const decision = evaluateShowIntent(intent, activePolicy(opts.policy), {
+    mixer_scene_manifest: manifest,
+  });
+  if (decision.decision !== "require_approval") {
+    const reason = `approval ${approval.id} no longer approvable: ${decision.reason}`;
+    recordResolutionFailure(next, "approve_effect", reason, {
+      approval_id: approval.id,
+      operator,
+    });
+    return { ok: false, state: next, reason, plan: [] };
+  }
+
+  // manifest is guaranteed by the require_approval decision, but stay defensive.
+  const plan = manifest ? planForMixerScene(intent, manifest, approval.id, operator) : undefined;
+  if (!plan) {
+    const reason = `approval ${approval.id} mixer scene could not be resolved from the catalog`;
+    recordResolutionFailure(next, "approve_effect", reason, {
+      approval_id: approval.id,
+      operator,
+    });
+    return { ok: false, state: next, reason, plan: [] };
+  }
+
+  const resolved: ShowApproval = {
+    ...approval,
+    status: "approved",
+    resolved_at: nowIso(),
+    operator,
+  };
+  next.approvals[idx] = resolved;
+  next.audit_log.push(
+    auditEntry(next, "approved", decision, { approval_id: approval.id, operator }),
+  );
+  return { ok: true, state: next, approval: resolved, plan: [plan] };
+}
+
 export function approveShowIntent(
   state: ShowDirectorState,
   approvalId: string,
   operator: string,
-  policy?: EffectPolicy,
+  opts: ShowDirectorOptions = {},
 ): ResolveApprovalResult {
+  const policy = opts.policy;
   const next = cloneState(state);
   const normalizedOperator = operator.trim();
   if (!normalizedOperator) {
@@ -363,6 +528,9 @@ export function approveShowIntent(
   }
 
   const intent = ShowIntentSchema.safeParse(approval.intent);
+  if (intent.success && intent.data.type === "arm_mixer_scene") {
+    return resolveMixerSceneApproval(next, idx, approval, intent.data, normalizedOperator, opts);
+  }
   if (!intent.success || intent.data.type !== "arm_effect") {
     const reason = `approval ${approvalId} has invalid intent`;
     recordResolutionFailure(next, "approve_effect", reason, {

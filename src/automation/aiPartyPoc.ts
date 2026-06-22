@@ -181,7 +181,9 @@ export function runAiPartyPoc(raw: AiPartyPocRunInput = {}): AiPartyPocRunResult
     let autoApproved = false;
 
     if (args.auto_approve_effects && submitted.approval?.status === "pending") {
-      const resolved = approveShowIntent(state, submitted.approval.id, args.operator, args.policy);
+      const resolved = approveShowIntent(state, submitted.approval.id, args.operator, {
+        policy: args.policy,
+      });
       if (resolved.ok) {
         state = resolved.state;
         plan = resolved.plan;

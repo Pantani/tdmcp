@@ -8,6 +8,18 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Milestone 5 — AI Show Director mixer scene arming (dry-run MVP, offline) — roadmap-to-1.0 campaign, Wave 3** —
+  new `arm_mixer_scene` ShowIntent variant for operator-approved Soundcraft Ui24R show/snapshot/cue arming,
+  separate from `arm_effect`. The MixerScenePolicy returns `require_approval` for catalog-backed requests and
+  **never `allow`** in the MVP; it `block`s on missing manifest, unknown / LLM-invented `scene_id`, unknown
+  `mixer_id`, unresolved `setlist_ref`, unsupported target, changed catalog hash, or an unsafe scene diff —
+  and `mixer_gain`/`pa_mute`/`audio_routing` stay blocked. New `src/automation/mixerSceneCatalog.ts` (trusted
+  venue scene catalog / safety manifest + content hash) and `src/automation/mixerSceneAdapter.ts` (adapter
+  interface + dry-run backend returning `hardware_changed:false`; Companion / direct-node return
+  not-configured — no hardware client is constructed). Approval re-runs policy and emits the dry-run plan
+  (`dry_run_only:true`) built from the catalog; old effect approvals stay backwards-compatible. Companion
+  live backend + direct Node bridge remain quarantined pending bench/hardware validation. Safety-QA verified
+  all six boundary contracts; 215 mixer/show-director tests pass.
 - **Coverage CI gate (G2) + exec-off smoke (G4) + Connectors Directory prep (G6) — roadmap-to-1.0 campaign, Wave 2** —
   the coverage harness is now a CI gate: `vitest.config.ts` thresholds ratcheted to the measured
   no-regression floor (functions 82→83, lines 85→86; statements 84 / branches 70 unchanged) and the
