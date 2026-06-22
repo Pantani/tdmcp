@@ -1,0 +1,77 @@
+{
+  "id": "spectrum_bands_chop",
+  "name": "Spectrum Bands (CHOP)",
+  "description": "Reproducible twin of create_spectrum: turns audio into N named per-band energy channels (band0..band15) on a Null CHOP you can bind any parameter to. An audiooscillatorCHOP (white noise) stands in so it previews offline; swap for Audio Device In / Audio File In for a live set. The chain is FFT -> resample to exactly N bins -> shuffle samples-to-channels -> rename -> sensitivity gain -> null. This is the CHOP-data companion to the visual audio_spectrum_bars recipe. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "tags": ["audio-reactive", "spectrum", "chop", "analysis", "controls"],
+  "difficulty": "intermediate",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "audioin",
+      "type": "audiooscillatorCHOP",
+      "parameters": { "wavetype": "whitenoise", "amp": 0.5 },
+      "comment": "Synthetic full-spectrum source — swap for audiodeviceinCHOP / audiofileinCHOP live."
+    },
+    {
+      "name": "spectrum_fft",
+      "type": "audiospectrumCHOP",
+      "parameters": { "outputmenu": "setmanually", "outlength": 256 },
+      "comment": "FFT spectrum at a fixed length (resampled down to the band count next)."
+    },
+    {
+      "name": "rebin",
+      "type": "resampleCHOP",
+      "parameters": {
+        "relative": "abs",
+        "start": 0,
+        "end": 15,
+        "startunit": "samples",
+        "endunit": "samples",
+        "interp": "linear"
+      },
+      "comment": "Reduce the FFT to exactly 16 bins (0..15) with linear averaging."
+    },
+    {
+      "name": "split",
+      "type": "shuffleCHOP",
+      "parameters": { "method": "seqtochan" },
+      "comment": "Transpose: 1 channel x 16 samples -> 16 channels x 1 sample."
+    },
+    {
+      "name": "bands",
+      "type": "renameCHOP",
+      "parameters": { "renamefrom": "*", "renameto": "band[0-15]" },
+      "comment": "Name the 16 channels band0..band15."
+    },
+    {
+      "name": "sensitivity",
+      "type": "mathCHOP",
+      "parameters": { "gain": 1 },
+      "comment": "Sensitivity gain over every band."
+    },
+    {
+      "name": "spectrum",
+      "type": "nullCHOP",
+      "comment": "Stable bind point — bind parameters to op('spectrum')['band3'] etc."
+    }
+  ],
+  "connections": [
+    { "from": "audioin", "to": "spectrum_fft" },
+    { "from": "spectrum_fft", "to": "rebin" },
+    { "from": "rebin", "to": "split" },
+    { "from": "split", "to": "bands" },
+    { "from": "bands", "to": "sensitivity" },
+    { "from": "sensitivity", "to": "spectrum" }
+  ],
+  "controls": [
+    {
+      "name": "Sensitivity",
+      "type": "float",
+      "min": 0,
+      "max": 8,
+      "default": 1,
+      "bind_to": ["sensitivity.gain"]
+    }
+  ],
+  "preview_description": "A CHOP utility, not an image: 16 live frequency-band channels (band0..band15) ready to drive any parameter, with a global sensitivity knob."
+}

@@ -1,0 +1,33 @@
+{
+  "id": "tempo_sync_clock",
+  "name": "Tempo Sync Clock",
+  "description": "Reproducible twin of create_tempo_sync (core, without the optional beat-event emitter DAT): a Beat CHOP runs a tempo clock and a Null CHOP exposes its ramp/pulse/count/beat/bar/bpm channels as a stable bind point for the whole project. Set the project tempo via the timeline/Beat CHOP; bind any parameter to op('tempo')['ramp'] (0..1 bar phase), ['pulse'] (per-beat trigger) or ['bpm']. The live event-broadcast emitter the tool can add is omitted here because it depends on the MCP webserver runtime (not reproducible in a static recipe). Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "tags": ["tempo", "sync", "clock", "chop", "timing", "controls"],
+  "difficulty": "beginner",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "beat",
+      "type": "beatCHOP",
+      "parameters": { "period": 4 },
+      "comment": "Tempo clock — period sets beats per bar. Outputs ramp/pulse/count/beat/bar/bpm channels."
+    },
+    {
+      "name": "tempo",
+      "type": "nullCHOP",
+      "comment": "Stable handle — bind project parameters to op('tempo')['ramp'] / ['pulse'] / ['bpm']."
+    }
+  ],
+  "connections": [{ "from": "beat", "to": "tempo" }],
+  "controls": [
+    {
+      "name": "Period",
+      "type": "int",
+      "min": 1,
+      "max": 16,
+      "default": 4,
+      "bind_to": ["beat.period"]
+    }
+  ],
+  "preview_description": "A CHOP utility, not an image: a project-wide tempo clock exposing a 0..1 bar ramp, per-beat pulse and BPM that any visual can lock to."
+}

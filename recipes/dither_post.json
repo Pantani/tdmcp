@@ -1,0 +1,105 @@
+{
+  "id": "dither_post",
+  "name": "Ordered Dither Post",
+  "description": "A single GLSL TOP applies ordered/error-diffusion dithering and low-bit quantization to any TOP, mirroring create_dither. Pattern (Bayer 2/4/8, checker, noise, error-diffusion), bit depth, palette mode (mono / duotone / rgb), threshold, cell scale, and a wet/dry mix are all GLSL uniforms. Uses a synthetic animated noiseTOP source so it previews offline. Fills the ascii/dither/halftone post gap. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "tags": ["post-processing", "dither", "glsl", "stylize", "retro", "1-bit"],
+  "difficulty": "advanced",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "source",
+      "type": "noiseTOP",
+      "parameters": { "monochrome": 0, "period": 3 },
+      "comment": "Synthetic source — swap for any TOP to dither real footage."
+    },
+    {
+      "name": "dither_glsl",
+      "type": "glslTOP",
+      "parameters": { "outputresolution": "custom", "resolutionw": 1280, "resolutionh": 720 },
+      "comment": "Quantizes each pixel against an ordered-dither threshold; uniforms via Vectors/Colors sequences."
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "Final dithered output." }
+  ],
+  "connections": [
+    { "from": "source", "to": "dither_glsl" },
+    { "from": "dither_glsl", "to": "out1" }
+  ],
+  "glsl_code": {
+    "dither_glsl": "out vec4 fragColor;\n\nuniform float uPattern;      // 0=bayer2 1=bayer4 2=bayer8 3=checker 4=noise 5=error_diffusion\nuniform float uBits;         // 1 | 2 | 4  -> levels = 2^bits\nuniform float uPaletteMode;  // 0=mono 1=duotone 2=rgb\nuniform float uThreshold;\nuniform float uScale;\nuniform float uMix;\nuniform vec3  uLow;\nuniform vec3  uHigh;\n\nfloat bayer2(vec2 p) {\n    int m[4];\n    m[0]=0; m[1]=2; m[2]=3; m[3]=1;\n    ivec2 ip = ivec2(mod(p, 2.0));\n    return (float(m[ip.y*2 + ip.x]) + 0.5) / 4.0;\n}\n\nfloat bayer4(vec2 p) {\n    int b[16];\n    b[0]=0;  b[1]=8;  b[2]=2;  b[3]=10;\n    b[4]=12; b[5]=4;  b[6]=14; b[7]=6;\n    b[8]=3;  b[9]=11; b[10]=1; b[11]=9;\n    b[12]=15;b[13]=7; b[14]=13;b[15]=5;\n    ivec2 ip = ivec2(mod(p, 4.0));\n    int idx = ip.y*4 + ip.x;\n    return (float(b[idx]) + 0.5) / 16.0;\n}\n\nfloat bayer8(vec2 p) {\n    int b[64];\n    b[0]=0;  b[1]=32; b[2]=8;  b[3]=40; b[4]=2;  b[5]=34; b[6]=10; b[7]=42;\n    b[8]=48; b[9]=16; b[10]=56;b[11]=24;b[12]=50;b[13]=18;b[14]=58;b[15]=26;\n    b[16]=12;b[17]=44;b[18]=4; b[19]=36;b[20]=14;b[21]=46;b[22]=6; b[23]=38;\n    b[24]=60;b[25]=28;b[26]=52;b[27]=20;b[28]=62;b[29]=30;b[30]=54;b[31]=22;\n    b[32]=3; b[33]=35;b[34]=11;b[35]=43;b[36]=1; b[37]=33;b[38]=9; b[39]=41;\n    b[40]=51;b[41]=19;b[42]=59;b[43]=27;b[44]=49;b[45]=17;b[46]=57;b[47]=25;\n    b[48]=15;b[49]=47;b[50]=7; b[51]=39;b[52]=13;b[53]=45;b[54]=5; b[55]=37;\n    b[56]=63;b[57]=31;b[58]=55;b[59]=23;b[60]=61;b[61]=29;b[62]=53;b[63]=21;\n    ivec2 ip = ivec2(mod(p, 8.0));\n    int idx = ip.y*8 + ip.x;\n    return (float(b[idx]) + 0.5) / 64.0;\n}\n\nfloat hash(vec2 p) {\n    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);\n}\n\nfloat errorDiff(vec2 uv, vec2 px, float v) {\n    float n  = texture(sTD2DInputs[0], uv - vec2(px.x, 0.0)).r;\n    float nw = texture(sTD2DInputs[0], uv - px).r;\n    float nu = texture(sTD2DInputs[0], uv - vec2(0.0, px.y)).r;\n    return 0.5 + 0.5 * (v - (n*0.4375 + nw*0.1875 + nu*0.3125));\n}\n\nfloat pickThreshold(vec2 screenPx, vec2 uv, float v) {\n    int p = int(uPattern);\n    vec2 sp = floor(screenPx / max(uScale, 1.0));\n    if (p == 0) return bayer2(sp);\n    if (p == 1) return bayer4(sp);\n    if (p == 2) return bayer8(sp);\n    if (p == 3) return mod(sp.x + sp.y, 2.0) < 0.5 ? 0.25 : 0.75;\n    if (p == 4) return hash(sp);\n    return errorDiff(uv, uTDOutputInfo.res.xy, v);\n}\n\nvoid main() {\n    vec2 uv = vUV.st;\n    vec4 orig = texture(sTD2DInputs[0], uv);\n    vec2 screenPx = uv / uTDOutputInfo.res.xy;\n    float levels = pow(2.0, uBits);\n\n    vec3 outCol;\n    int mode = int(uPaletteMode);\n\n    if (mode == 2) {\n        vec3 thr = vec3(\n            pickThreshold(screenPx, uv, orig.r),\n            pickThreshold(screenPx, uv, orig.g),\n            pickThreshold(screenPx, uv, orig.b)\n        );\n        vec3 biased = orig.rgb + (thr - 0.5) * (1.0 / levels) + (uThreshold - 0.5) * (1.0 / levels);\n        outCol = floor(biased * levels) / max(levels - 1.0, 1.0);\n    } else {\n        float lum = dot(orig.rgb, vec3(0.299, 0.587, 0.114));\n        float t = pickThreshold(screenPx, uv, lum);\n        float biased = lum + (t - 0.5) * (1.0 / levels) + (uThreshold - 0.5) * (1.0 / levels);\n        float q = floor(biased * levels) / max(levels - 1.0, 1.0);\n        outCol = mix(uLow, uHigh, clamp(q, 0.0, 1.0));\n        if (mode == 1) outCol = mix(outCol, outCol * (0.5 + 0.5 * orig.rgb), 0.35);\n    }\n\n    fragColor = TDOutputSwizzle(mix(orig, vec4(outCol, orig.a), uMix));\n}\n"
+  },
+  "glsl_uniforms": [
+    {
+      "node": "dither_glsl",
+      "name": "uPattern",
+      "kind": "float",
+      "value": 1,
+      "min": 0,
+      "max": 5,
+      "label": "Pattern",
+      "description": "0=bayer2 1=bayer4 2=bayer8 3=checker 4=noise 5=error-diffusion."
+    },
+    {
+      "node": "dither_glsl",
+      "name": "uBits",
+      "kind": "float",
+      "value": 1,
+      "min": 1,
+      "max": 4,
+      "label": "Bit Depth",
+      "description": "Bits per channel; levels = 2^bits. 1 = harsh 1-bit dither."
+    },
+    {
+      "node": "dither_glsl",
+      "name": "uPaletteMode",
+      "kind": "float",
+      "value": 1,
+      "min": 0,
+      "max": 2,
+      "label": "Palette Mode",
+      "description": "0=mono (low/high gradient), 1=duotone, 2=per-channel rgb."
+    },
+    {
+      "node": "dither_glsl",
+      "name": "uThreshold",
+      "kind": "float",
+      "value": 0.5,
+      "min": 0,
+      "max": 1,
+      "label": "Threshold"
+    },
+    {
+      "node": "dither_glsl",
+      "name": "uScale",
+      "kind": "float",
+      "value": 1,
+      "min": 1,
+      "max": 32,
+      "label": "Scale",
+      "description": "Enlarges the dither cell so the pattern reads as chunky pixels."
+    },
+    {
+      "node": "dither_glsl",
+      "name": "uMix",
+      "kind": "float",
+      "value": 1.0,
+      "min": 0,
+      "max": 1,
+      "label": "Mix"
+    },
+    {
+      "node": "dither_glsl",
+      "name": "uLow",
+      "kind": "color",
+      "value": [0.05, 0.05, 0.1, 1.0],
+      "label": "Low Color"
+    },
+    {
+      "node": "dither_glsl",
+      "name": "uHigh",
+      "kind": "color",
+      "value": [0.85, 0.95, 1.0, 1.0],
+      "label": "High Color"
+    }
+  ],
+  "preview_description": "A noise field crushed to a crisp blue-and-white 1-bit Bayer dither — the soft gradients become a grid of ordered dots reminiscent of an old Mac display."
+}

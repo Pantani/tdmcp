@@ -1,0 +1,77 @@
+{
+  "id": "raymarch_infinite_tunnel",
+  "name": "Raymarch Infinite Tunnel",
+  "description": "A GLSL TOP raymarches the inside of an endless twisting tunnel — the camera flies down a wobbling cylindrical SDF whose cross-section warps along its length. Mirrors the tunnel style of create_raymarch_scene. Animation/quality knobs are GLSL uniforms (uTime, uCameraZ, uSteps, uIntensity) plus two depth-gradient colors; after import bind uTime's value to absTime.seconds * <speed> for forward flight (manual-wire — RecipeSchema parameters take constants only). Complements the feedback-based feedback_tunnel by being a true 3D raymarched tunnel. Fills the SDF/raymarch gap. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "tags": ["raymarch", "sdf", "tunnel", "glsl", "3d", "generative"],
+  "difficulty": "advanced",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "tunnel",
+      "type": "glslTOP",
+      "parameters": {
+        "outputresolution": "custom",
+        "resolutionw": 1280,
+        "resolutionh": 720
+      },
+      "comment": "Raymarches the inside of a twisting cylinder SDF; uniforms via Vectors/Colors sequences."
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "Final output TOP." }
+  ],
+  "connections": [{ "from": "tunnel", "to": "out1" }],
+  "glsl_code": {
+    "tunnel": "out vec4 fragColor;\nuniform float uTime;\nuniform float uCameraZ;\nuniform float uSteps;\nuniform float uIntensity;\nuniform vec3  uColorA;\nuniform vec3  uColorB;\nfloat sceneDist(vec3 pos){\n  pos.z += uTime * 1.5;\n  float twist = pos.z * 0.35;\n  float ca = cos(twist);\n  float sa = sin(twist);\n  pos.xy = mat2(ca, -sa, sa, ca) * pos.xy;\n  float wobble = 0.3 * sin(pos.z * 0.7) + 0.2 * cos(pos.x * 2.0);\n  float radius = length(pos.xy) - (1.6 + wobble);\n  return -radius;\n}\nvec3 sceneNormal(vec3 pos){\n  vec2 eps = vec2(0.001, 0.0);\n  return normalize(vec3(\n    sceneDist(pos + eps.xyy) - sceneDist(pos - eps.xyy),\n    sceneDist(pos + eps.yxy) - sceneDist(pos - eps.yxy),\n    sceneDist(pos + eps.yyx) - sceneDist(pos - eps.yyx)));\n}\nvoid main(){\n  vec2 uv = (vUV.st - 0.5) * 2.0;\n  vec3 rayOrigin = vec3(0.0, 0.0, max(uCameraZ, 0.1));\n  vec3 forward = normalize(vec3(0.0) - rayOrigin);\n  vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), forward));\n  vec3 up = cross(forward, right);\n  vec3 rayDir = normalize(forward + uv.x * right + uv.y * up);\n  float traveled = 0.0;\n  float hit = 0.0;\n  int maxSteps = int(max(uSteps, 1.0));\n  for(int i = 0; i < 256; i++){\n    if(i >= maxSteps){ break; }\n    vec3 pos = rayOrigin + rayDir * traveled;\n    float dist = sceneDist(pos);\n    if(dist < 0.001){ hit = 1.0; break; }\n    traveled += dist;\n    if(traveled > 40.0){ break; }\n  }\n  vec3 col = mix(uColorA, uColorB, 0.0) * 0.04;\n  if(hit > 0.5){\n    vec3 pos = rayOrigin + rayDir * traveled;\n    vec3 normal = sceneNormal(pos);\n    vec3 lightDir = normalize(vec3(0.6, 0.8, 0.4));\n    float diffuse = max(dot(normal, lightDir), 0.0);\n    float depth = clamp(traveled / 12.0, 0.0, 1.0);\n    vec3 base = mix(uColorA, uColorB, depth);\n    col = base * (0.18 + diffuse);\n  }\n  col *= max(uIntensity, 0.0);\n  fragColor = TDOutputSwizzle(vec4(col, 1.0));\n}\n"
+  },
+  "glsl_uniforms": [
+    {
+      "node": "tunnel",
+      "name": "uTime",
+      "kind": "float",
+      "value": 0,
+      "label": "Time",
+      "description": "Forward-flight phase. After import set to absTime.seconds * <speed> (manual-wire — RecipeSchema parameters take constants only)."
+    },
+    {
+      "node": "tunnel",
+      "name": "uCameraZ",
+      "kind": "float",
+      "value": 3.0,
+      "min": 1.0,
+      "max": 12.0,
+      "label": "Camera Z"
+    },
+    {
+      "node": "tunnel",
+      "name": "uSteps",
+      "kind": "float",
+      "value": 96,
+      "min": 8,
+      "max": 256,
+      "label": "Step Count"
+    },
+    {
+      "node": "tunnel",
+      "name": "uIntensity",
+      "kind": "float",
+      "value": 1.0,
+      "min": 0.0,
+      "max": 3.0,
+      "label": "Intensity"
+    },
+    {
+      "node": "tunnel",
+      "name": "uColorA",
+      "kind": "color",
+      "value": [0.6, 0.05, 0.35, 1.0],
+      "label": "Near Color"
+    },
+    {
+      "node": "tunnel",
+      "name": "uColorB",
+      "kind": "color",
+      "value": [0.1, 0.7, 0.9, 1.0],
+      "label": "Far Color"
+    }
+  ],
+  "preview_description": "A first-person flight down an endless cylindrical tunnel that twists and wobbles as it recedes, walls shading from warm near the camera to cool in the distance."
+}

@@ -8,6 +8,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Recipe library depth (G3) — roadmap-to-1.0 campaign, Wave 6** — 18 new first-party recipes
+  (32 → 50; `npm run validate:recipes` 50/50). Ten net-new fill v0.7–v0.8 generator gaps:
+  `raymarch_sphere_field` + `raymarch_infinite_tunnel` (SDF), `strange_attractor_lorenz`,
+  `histogram_scope`, `ascii_render_post`, `dither_post`, `halftone_post`, `audio_glsl_uniforms`,
+  `front_of_house_dashboard` (dashboard-v2), `sidechain_pump`. Eight new Layer-1 orchestrator twins:
+  glitch, kaleidoscope, slime simulation, spectrum, waveform, tempo-sync, layer-mixer crossfade,
+  slit-scan. All grounded in real optypes and offline-validated against `RecipeSchema`; live
+  end-to-end cook validation is UNVERIFIED-pending-td. Orchestrators whose behavior is
+  callback/pulse/hardware-driven (not faithfully reproducible as static JSON) are deferred to
+  post-live twin authoring.
 - **Milestone 5 — AI Show Director mixer scene arming (dry-run MVP, offline) — roadmap-to-1.0 campaign, Wave 3** —
   new `arm_mixer_scene` ShowIntent variant for operator-approved Soundcraft Ui24R show/snapshot/cue arming,
   separate from `arm_effect`. The MixerScenePolicy returns `require_approval` for catalog-backed requests and

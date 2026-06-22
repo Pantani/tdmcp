@@ -1,0 +1,81 @@
+{
+  "id": "front_of_house_dashboard",
+  "name": "Front-of-House Dashboard",
+  "description": "A front-of-house monitor that composites four tiles into a 2x2 grid via a layoutTOP: the live program feed, a blurred 'glow preview', an edge/structure view, and a luma-key 'hot spots' view. A synthetic animated noiseTOP stands in for the program output so it previews offline; swap the source selectTOP target for your real program TOP. Mirrors a dashboard-v2 / front-of-house layout built from layoutTOP tiling, which the generator wave had no recipe twin for. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "tags": ["dashboard", "front-of-house", "monitor", "layout", "utility", "controls"],
+  "difficulty": "intermediate",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "program",
+      "type": "noiseTOP",
+      "parameters": { "monochrome": 0, "period": 4 },
+      "comment": "Synthetic program feed — swap for a selectTOP pointing at your real program output TOP."
+    },
+    {
+      "name": "tile_program",
+      "type": "nullTOP",
+      "comment": "Tile 1: the program feed, passed straight through."
+    },
+    {
+      "name": "tile_glow",
+      "type": "blurTOP",
+      "parameters": { "size": 12 },
+      "comment": "Tile 2: a heavy blur as a quick 'bloom/glow' preview."
+    },
+    {
+      "name": "tile_edges",
+      "type": "edgeTOP",
+      "comment": "Tile 3: edge detection to read structure/sharpness at a glance."
+    },
+    {
+      "name": "tile_hot",
+      "type": "thresholdTOP",
+      "parameters": { "threshold": 0.75 },
+      "comment": "Tile 4: luma threshold to flag blown-out 'hot spots'."
+    },
+    {
+      "name": "grid",
+      "type": "layoutTOP",
+      "parameters": {
+        "align": "grid",
+        "columns": 2,
+        "outputresolution": "custom",
+        "resolutionw": 1280,
+        "resolutionh": 720
+      },
+      "comment": "Composites the four tiles into a 2x2 monitor grid."
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "Final dashboard output." }
+  ],
+  "connections": [
+    { "from": "program", "to": "tile_program" },
+    { "from": "program", "to": "tile_glow" },
+    { "from": "program", "to": "tile_edges" },
+    { "from": "program", "to": "tile_hot" },
+    { "from": "tile_program", "to": "grid", "to_input": 0 },
+    { "from": "tile_glow", "to": "grid", "to_input": 1 },
+    { "from": "tile_edges", "to": "grid", "to_input": 2 },
+    { "from": "tile_hot", "to": "grid", "to_input": 3 },
+    { "from": "grid", "to": "out1" }
+  ],
+  "controls": [
+    {
+      "name": "GlowSize",
+      "type": "float",
+      "min": 0,
+      "max": 40,
+      "default": 12,
+      "bind_to": ["tile_glow.size"]
+    },
+    {
+      "name": "HotThreshold",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 0.75,
+      "bind_to": ["tile_hot.threshold"]
+    }
+  ],
+  "preview_description": "A four-up engineering monitor: the live feed top-left, a soft glow preview top-right, an edge/structure view bottom-left, and a high-contrast hot-spot view bottom-right, with live glow-size and hot-threshold knobs."
+}

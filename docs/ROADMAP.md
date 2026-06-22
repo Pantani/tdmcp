@@ -853,16 +853,25 @@ gates per-wave work but isn't yet a CI gate at the suite level.
 - ⬜ Bridge tests (`npm run test:bridge`) and recipe validation
   (`npm run validate:recipes`) stay green alongside the four PR gates.
 
-### G3 — Recipe library depth · ⬜
+### G3 — Recipe library depth · 🧪
 
-The repo ships **31 validated recipes** under `recipes/`, all gated by
+The repo ships **50 validated recipes** under `recipes/`, all gated by
 `RecipeSchema` and `npm run validate:recipes`.
 
-- ⬜ Add at least **10 net-new** first-party recipes covering the v0.7–v0.8
-  generator wave (SDF, strange-attractor, optical-flow, MediaPipe adapters,
-  decks, dashboard-v2 layouts), each live-validated end-to-end.
-- ⬜ One recipe per Layer-1 orchestrator so every "one-line build" tool has a
-  reproducible JSON twin.
+- 🧪 **10 net-new recipes shipped** covering the v0.7–v0.8 generator wave —
+  `raymarch_sphere_field` + `raymarch_infinite_tunnel` (SDF), `strange_attractor_lorenz`,
+  `histogram_scope`, `ascii_render_post`, `dither_post`, `halftone_post`,
+  `audio_glsl_uniforms`, `front_of_house_dashboard` (dashboard-v2), `sidechain_pump`.
+  All offline-validated against `RecipeSchema` with real optypes; **live end-to-end
+  cook validation is UNVERIFIED-pending-td**.
+- 🧪 **Orchestrator JSON twins — partial.** Eight new twins (glitch, kaleidoscope,
+  slime simulation, spectrum, waveform, tempo-sync, layer-mixer crossfade, slit-scan)
+  on top of the orchestrators already covered by the prior set. Orchestrators whose
+  behavior is callback/pulse/hardware/3D-asset-driven (e.g. `create_vector_lines`,
+  `create_automation_lane`, `create_text_crawl`, `create_growth_system`,
+  `create_pbr_scene`, `create_point_cloud`, `create_gaussian_splat_scene`,
+  `create_fluid_sim`, the `import_*` and MediaPipe/Kinect/DMX tools) are not faithfully
+  reproducible as static JSON offline and are deferred to post-live twin authoring.
 
 ### G4 — Bridge hardening · 🧪
 

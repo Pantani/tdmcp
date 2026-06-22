@@ -1,0 +1,121 @@
+{
+  "id": "strange_attractor_lorenz",
+  "name": "Strange Attractor (Lorenz)",
+  "description": "A Lorenz strange attractor integrated on the CPU each frame: a Script CHOP advances the ODE and emits a tx/ty/tz trail, a Script SOP turns that trail into a polyline, and a Geometry/Camera/Light/Render chain draws the glowing orbit. Mirrors create_strange_attractor (lorenz). The integrator and trail-builder Python live in two callback Text DATs wired via the Script ops' `callbacks` parameters and supplied through python_code; a JSON config DAT holds attractor/params/seed. Fills the strange-attractor (CHOP/SOP feedback) gap. NOTE: depends on TD executing the Script CHOP/SOP callbacks at cook time — author-side it validates against RecipeSchema, but the live orbit is UNVERIFIED pending a TD cook (prioritize for live validation).",
+  "tags": ["strange-attractor", "lorenz", "chop", "sop", "script", "generative", "3d"],
+  "difficulty": "advanced",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "config",
+      "type": "tableDAT",
+      "comment": "Holds the JSON config (attractor name, params, seed, trail_length, steps_per_frame, dt) read by the integrator callback. Stored as DAT text via python_code."
+    },
+    {
+      "name": "integrate",
+      "type": "scriptCHOP",
+      "comment": "Advances the Lorenz ODE each cook and outputs tx/ty/tz channels of length trail_length. Its callbacks DAT is integrate_cb."
+    },
+    {
+      "name": "integrate_cb",
+      "type": "textDAT",
+      "comment": "Python callback for the integrate Script CHOP (cook(scriptOp))."
+    },
+    {
+      "name": "trail",
+      "type": "scriptSOP",
+      "comment": "Reads the integrate CHOP tx/ty/tz and builds an open polyline. Its callbacks DAT is trail_cb."
+    },
+    {
+      "name": "trail_cb",
+      "type": "textDAT",
+      "comment": "Python callback for the trail Script SOP (cook(scriptOp))."
+    },
+    {
+      "name": "geo",
+      "type": "geometryCOMP",
+      "comment": "Container for the rendered orbit polyline."
+    },
+    {
+      "name": "orbit",
+      "type": "selectSOP",
+      "parent": "geo",
+      "render": true,
+      "parameters": { "sop": "trail" },
+      "comment": "Pulls the trail polyline into geo and is render+display flagged so geo draws the orbit."
+    },
+    {
+      "name": "mat",
+      "type": "constantMAT",
+      "parameters": { "colorr": 0.4, "colorg": 0.85, "colorb": 1.0, "alpha": 1 },
+      "comment": "Flat emissive material for the orbit line."
+    },
+    {
+      "name": "cam",
+      "type": "cameraCOMP",
+      "parameters": { "tz": 80 },
+      "comment": "Camera pulled back to frame the Lorenz butterfly."
+    },
+    {
+      "name": "light",
+      "type": "lightCOMP",
+      "parameters": { "tx": 3, "ty": 4, "tz": 4 },
+      "comment": "Key light (unused by the constant material but required by the Render TOP)."
+    },
+    {
+      "name": "render",
+      "type": "renderTOP",
+      "parameters": {
+        "camera": "cam",
+        "geometry": "geo",
+        "lights": "light",
+        "bgcolorr": 0.01,
+        "bgcolorg": 0.01,
+        "bgcolorb": 0.03,
+        "bgcolora": 1
+      },
+      "comment": "Renders the orbit; scene read from camera/geometry/lights params."
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "Final output TOP." }
+  ],
+  "connections": [{ "from": "integrate", "to": "trail" }, { "from": "render", "to": "out1" }],
+  "parameters": [
+    {
+      "name": "integrate_callbacks",
+      "node": "integrate",
+      "param": "callbacks",
+      "value": "integrate_cb",
+      "description": "Point the integrate Script CHOP at its callback DAT (resolves to integrate_cb's path)."
+    },
+    {
+      "name": "trail_callbacks",
+      "node": "trail",
+      "param": "callbacks",
+      "value": "trail_cb",
+      "description": "Point the trail Script SOP at its callback DAT (resolves to trail_cb's path)."
+    },
+    {
+      "name": "geo_material",
+      "node": "geo",
+      "param": "material",
+      "value": "mat",
+      "description": "Assign the constant material to the orbit geometry."
+    },
+    {
+      "name": "camera_z",
+      "node": "cam",
+      "param": "tz",
+      "value": 80,
+      "min": 20,
+      "max": 200,
+      "label": "Camera Z (Zoom)",
+      "description": "Distance of the camera — larger pulls back to fit the whole attractor."
+    }
+  ],
+  "python_code": {
+    "config": "{\"attractor\": \"lorenz\", \"trail_length\": 4000, \"steps_per_frame\": 6, \"dt\": 0.005, \"params\": {\"sigma\": 10, \"rho\": 28, \"beta\": 2.6666666666666665}, \"seed\": [0.1, 0.0, 0.0]}",
+    "integrate_cb": "# Lorenz integrator for a Script CHOP. Reads JSON config from op('config').\nimport json\n\ndef cook(scriptOp):\n    try:\n        cfg = json.loads(op('config').text)\n    except Exception:\n        return\n    trail_length = int(cfg.get('trail_length', 4000))\n    steps_per_frame = int(cfg.get('steps_per_frame', 6))\n    dt = float(cfg.get('dt', 0.005))\n    p = cfg.get('params', {})\n    seed_xyz = cfg.get('seed', [0.1, 0.0, 0.0])\n\n    storage = scriptOp.storage\n    if 'state' not in storage or storage.get('trail_length') != trail_length:\n        storage['state'] = list(seed_xyz)\n        storage['buf'] = [[seed_xyz[0]], [seed_xyz[1]], [seed_xyz[2]]]\n        storage['idx'] = 0\n        storage['trail_length'] = trail_length\n\n    state = storage['state']\n    buf = storage['buf']\n    idx = int(storage['idx'])\n\n    sigma = float(p.get('sigma', 10))\n    rho = float(p.get('rho', 28))\n    beta = float(p.get('beta', 2.6666666666666665))\n\n    x, y, z = float(state[0]), float(state[1]), float(state[2])\n    for _ in range(steps_per_frame):\n        dx = sigma * (y - x)\n        dy = x * (rho - z) - y\n        dz = x * y - beta * z\n        x, y, z = x + dx * dt, y + dy * dt, z + dz * dt\n        while len(buf[0]) < trail_length:\n            buf[0].append(0.0); buf[1].append(0.0); buf[2].append(0.0)\n        buf[0][idx] = x; buf[1][idx] = y; buf[2][idx] = z\n        idx = (idx + 1) % trail_length\n\n    storage['state'] = [x, y, z]\n    storage['idx'] = idx\n    storage['buf'] = buf\n\n    scriptOp.clear()\n    scriptOp.numSamples = trail_length\n    cx = scriptOp.appendChan('tx')\n    cy = scriptOp.appendChan('ty')\n    cz = scriptOp.appendChan('tz')\n    for i in range(trail_length):\n        ri = (idx + i) % trail_length\n        cx[i] = buf[0][ri]; cy[i] = buf[1][ri]; cz[i] = buf[2][ri]\n",
+    "trail_cb": "# Polyline builder for a Script SOP. Reads tx/ty/tz from op('integrate').\ndef cook(scriptOp):\n    integrate = op('integrate')\n    if integrate is None:\n        return\n    trail_length = integrate.numSamples\n    scriptOp.clear()\n    if trail_length < 2:\n        return\n    p = scriptOp.appendPoly(trail_length, closed=False, addPoints=True)\n    tx = integrate['tx']; ty = integrate['ty']; tz = integrate['tz']\n    for i in range(trail_length):\n        p[i].point.x = tx[i]\n        p[i].point.y = ty[i]\n        p[i].point.z = tz[i]\n"
+  },
+  "preview_description": "The classic Lorenz butterfly: a glowing cyan ribbon spiraling between two lobes against near-black, redrawn every frame as the ODE advances."
+}

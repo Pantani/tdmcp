@@ -1,0 +1,113 @@
+{
+  "id": "ascii_render_post",
+  "name": "ASCII Render Post",
+  "description": "Renders any TOP as a grid of ASCII glyphs, mirroring create_ascii_render: the source is downsampled to one texel per character cell, a textTOP bakes a glyph atlas of the charset, and a GLSL TOP looks up each cell's luminance to pick a glyph from the atlas. Uses a synthetic animated noiseTOP source so it previews offline. Uniforms expose the color mode, charset length, foreground/background colors and a wet/dry mix. Fills the ascii/dither/halftone post gap. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check (glyph-atlas UV math benefits from a live look).",
+  "tags": ["post-processing", "ascii", "glsl", "stylize", "retro"],
+  "difficulty": "advanced",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "source",
+      "type": "noiseTOP",
+      "parameters": { "monochrome": 0, "period": 3 },
+      "comment": "Synthetic source — swap for any TOP (selectTOP to an existing one, moviefileinTOP, etc)."
+    },
+    {
+      "name": "cells",
+      "type": "resolutionTOP",
+      "parameters": {
+        "outputresolution": "custom",
+        "resolutionw": 160,
+        "resolutionh": 90,
+        "filter": "box"
+      },
+      "comment": "Downsample to one texel per character cell (here 160x90 cells for a 1280x720 / cell_size 8 grid)."
+    },
+    {
+      "name": "atlas",
+      "type": "textTOP",
+      "parameters": {
+        "text": " .:-=+*#%@",
+        "outputresolution": "custom",
+        "resolutionw": 80,
+        "resolutionh": 8,
+        "alignx": "left",
+        "aligny": "middle",
+        "fontcolorr": 1,
+        "fontcolorg": 1,
+        "fontcolorb": 1,
+        "bgcolora": 0
+      },
+      "comment": "Glyph atlas: the charset laid out left-to-right, white glyphs on transparent (10 chars x cell_size 8 = 80 wide)."
+    },
+    {
+      "name": "ascii_glsl",
+      "type": "glslTOP",
+      "parameters": { "outputresolution": "custom", "resolutionw": 1280, "resolutionh": 720 },
+      "comment": "Per-fragment: read the cell luma, map to a glyph index, sample the atlas at that slot."
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "Final ASCII output." }
+  ],
+  "connections": [
+    { "from": "source", "to": "cells" },
+    { "from": "cells", "to": "ascii_glsl", "to_input": 0 },
+    { "from": "atlas", "to": "ascii_glsl", "to_input": 1 },
+    { "from": "ascii_glsl", "to": "out1" }
+  ],
+  "glsl_code": {
+    "ascii_glsl": "out vec4 fragColor;\nuniform float uColorMode;\nuniform float uCharsetLen;\nuniform float uMix;\nuniform vec3  uFg;\nuniform vec3  uBg;\nuniform float uCellSize;\n\nvoid main() {\n    vec2 uv = vUV.st;\n\n    // sTD2DInputs[0] = downsampled cell grid (1 texel per cell).\n    vec4 cell = texture(sTD2DInputs[0], uv);\n    float lum = dot(cell.rgb, vec3(0.299, 0.587, 0.114));\n\n    // Map luminance -> charset index (clamped, integer).\n    float idx = floor(clamp(lum, 0.0, 0.999) * uCharsetLen);\n\n    // Local UV inside the current cell.\n    vec2 cellsXY = uTDOutputInfo.res.zw / max(uCellSize, 1.0);\n    vec2 localUV = fract(uv * cellsXY);\n\n    // Atlas UV: glyph idx occupies horizontal slot [idx/N, (idx+1)/N].\n    vec2 atlasUV = vec2((idx + localUV.x) / uCharsetLen, localUV.y);\n    float glyph = texture(sTD2DInputs[1], atlasUV).r;\n\n    // Colour mix.\n    vec3 fg, bg;\n    int mode = int(uColorMode);\n    if (mode == 0) {\n        fg = uFg; bg = uBg;\n    } else if (mode == 1) {\n        fg = cell.rgb; bg = uBg;\n    } else {\n        fg = mix(uBg, uFg, lum); bg = uBg;\n    }\n    vec3 styled = mix(bg, fg, glyph);\n\n    fragColor = TDOutputSwizzle(mix(texture(sTD2DInputs[0], uv), vec4(styled, 1.0), uMix));\n}\n"
+  },
+  "glsl_uniforms": [
+    {
+      "node": "ascii_glsl",
+      "name": "uColorMode",
+      "kind": "float",
+      "value": 0,
+      "min": 0,
+      "max": 2,
+      "label": "Color Mode",
+      "description": "0 = fixed fg/bg, 1 = source color on bg, 2 = luma-shaded fg on bg."
+    },
+    {
+      "node": "ascii_glsl",
+      "name": "uCharsetLen",
+      "kind": "float",
+      "value": 10,
+      "label": "Charset Length",
+      "description": "Number of glyphs in the atlas (matches the atlas text length)."
+    },
+    {
+      "node": "ascii_glsl",
+      "name": "uMix",
+      "kind": "float",
+      "value": 1.0,
+      "min": 0,
+      "max": 1,
+      "label": "Mix",
+      "description": "Wet/dry between the original cell grid and the ASCII result."
+    },
+    {
+      "node": "ascii_glsl",
+      "name": "uFg",
+      "kind": "color",
+      "value": [0.6, 1.0, 0.7, 1.0],
+      "label": "Foreground"
+    },
+    {
+      "node": "ascii_glsl",
+      "name": "uBg",
+      "kind": "color",
+      "value": [0.02, 0.03, 0.02, 1.0],
+      "label": "Background"
+    },
+    {
+      "node": "ascii_glsl",
+      "name": "uCellSize",
+      "kind": "float",
+      "value": 8,
+      "label": "Cell Size",
+      "description": "Pixels per character cell; must match the downsample/atlas geometry."
+    }
+  ],
+  "preview_description": "A flowing noise field rendered as green terminal ASCII art on near-black — denser glyphs (#, @) where the image is bright, sparse dots where it is dark."
+}
