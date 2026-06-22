@@ -1,7 +1,7 @@
 {
   "id": "sidechain_pump",
   "name": "Sidechain Pump",
-  "description": "A reusable sidechain 'pump' envelope CHOP, mirroring create_sidechain_pump: a kick-style driver is shaped by a Lag CHOP (attack/release) and clamped to [0,1] by a Limit CHOP, ending in a Null CHOP you bind targets to. Here an lfoCHOP ramp stands in for a kick so it previews offline; for a real set, swap the driver for a selectCHOP isolating a beat/onset channel. After import, bind a target parameter's value to an expression like rest * (1 - depth * op('pump')['chan1']) so it ducks on every beat (manual-wire — RecipeSchema parameters take constants only). Fills the sidechain-pump gap. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "description": "A reusable sidechain 'pump' envelope CHOP, mirroring create_sidechain_pump: a kick-style driver is shaped by a Lag CHOP (attack/release) and clamped to [0,1] by a Limit CHOP, ending in a Null CHOP you bind targets to. Here an lfoCHOP ramp stands in for a kick so it previews offline; for a real set, swap the driver for a selectCHOP isolating a beat/onset channel. After import, bind a target parameter's value to an expression like rest * (1 - depth * op('pump')['kick']) so it ducks on every beat (manual-wire — RecipeSchema parameters take constants only). Fills the sidechain-pump gap. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
   "tags": ["audio-reactive", "sidechain", "pump", "chop", "modulation", "controls"],
   "difficulty": "intermediate",
   "td_version_min": "2022",

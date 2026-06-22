@@ -290,7 +290,7 @@ describe("tdmcp-agent CLI", () => {
     const approved = await runCli([
       "show-director",
       "approve",
-      "approval_0001",
+      queuedDoc.approval.id,
       "--params",
       JSON.stringify({ state: queuedDoc.state, operator: "front-of-house" }),
     ]);

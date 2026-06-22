@@ -35,15 +35,9 @@ export const ForbiddenMixerDeltaSchema = z.enum([
 ]);
 export type ForbiddenMixerDelta = z.infer<typeof ForbiddenMixerDeltaSchema>;
 
-const ALL_FORBIDDEN_DELTAS: ForbiddenMixerDelta[] = [
-  "gain",
-  "pa_mute",
-  "routing",
-  "patch",
-  "channel_strip",
-  "mute_group",
-  "phantom_power",
-];
+// Derived from the schema so a new forbidden delta added to the enum is always
+// verified by sceneExcludesAllForbiddenDeltas — no silent drift between the two.
+const ALL_FORBIDDEN_DELTAS: readonly ForbiddenMixerDelta[] = ForbiddenMixerDeltaSchema.options;
 
 /** Adapter target the catalog entry is bench-bound to. */
 export const MixerAdapterTargetSchema = z.object({

@@ -597,6 +597,31 @@ describe("mixer scene runtime (arm_mixer_scene)", () => {
     expect(approved.state.approvals[0]?.status).toBe("pending");
   });
 
+  it("refuses approval when the catalog was edited and re-hashed after the operator reviewed it", () => {
+    const queued = submitShowIntent(createShowDirectorState(), snapshotIntent(), undefined, opts);
+    // The operator reviewed DEMO. Now the catalog body is edited AND re-hashed
+    // consistently, so the manifest is self-consistent and the policy still
+    // returns require_approval — but the hash differs from what was reviewed.
+    const editedScenes = DEMO_MIXER_SCENE_MANIFEST.scenes.map((scene) =>
+      scene.scene_id === "band_a_intro" ? { ...scene, label: `${scene.label} (edited)` } : scene,
+    );
+    const rehashed: MixerSceneManifest = {
+      ...DEMO_MIXER_SCENE_MANIFEST,
+      scenes: editedScenes,
+      policy_hash: computeMixerCatalogHash(editedScenes),
+    };
+    expect(rehashed.policy_hash).not.toBe(DEMO_MIXER_SCENE_MANIFEST.policy_hash);
+
+    const approved = approveShowIntent(queued.state, queued.approval?.id ?? "", "front-of-house", {
+      mixerSceneManifest: rehashed,
+    });
+
+    expect(approved.ok).toBe(false);
+    if (approved.ok) throw new Error("expected approval to fail on re-hash drift");
+    expect(approved.reason).toContain("catalog drifted since review");
+    expect(approved.state.approvals[0]?.status).toBe("pending");
+  });
+
   it("submits an approve_effect transition that resolves a queued mixer scene", () => {
     const queued = submitShowIntent(createShowDirectorState(), snapshotIntent(), undefined, opts);
     const approved = submitShowIntent(

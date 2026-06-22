@@ -74,8 +74,8 @@ cues salvos do COMP de volta como uma nota de setlist.
 
 Quando a ordem deve seguir a música em vez do relógio:
 
-- **`create_cue_sequencer`** (Layer 2) toca passos ordenados (cada um um cue mais
-  uma contagem de compassos/beats) quantizados ao tempo global, com controles ao
+- **`create_cue_sequencer`** (Layer 2) toca passos ordenados (cada um sendo um cue
+  mais uma contagem de compassos/beats) quantizados ao tempo global, com controles ao
   vivo de Step / Active / Rate / Loop.
 - **`create_phrase_locked_cue_engine`** (Layer 1) enfileira pulsos de cue em FIFO e
   os dispara na próxima fronteira de frase (1/2/4/8/…/64 compassos), para que um hit
@@ -100,8 +100,8 @@ Um show precisa de um botão de pânico que sempre funciona:
 
 - **`create_safety_blackout_chain`** (Layer 1) protege a saída master com um
   fade-to-black determinístico (curva e tempo configuráveis), um corte seco de
-  emergência opcional, um atalho de teclado e gatilho de watchdog externo opcionais,
-  e uma recuperação por fade-in simétrico. É totalmente dirigido por parâmetros — sem
+  emergência opcional, um atalho de teclado e um gatilho de watchdog externo
+  opcionais, e uma recuperação por fade-in simétrico. É totalmente dirigido por parâmetros — sem
   Python no cook — então permanece seguro mesmo com `TDMCP_BRIDGE_ALLOW_EXEC=0`.
 - **`create_panic`** (Layer 2) adiciona um kill + freeze por fonte: um toggle de
   Blackout que leva o brilho a zero e um toggle de Freeze que segura o último frame.

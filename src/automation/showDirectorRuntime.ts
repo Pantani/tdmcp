@@ -459,6 +459,23 @@ function resolveMixerSceneApproval(
     return { ok: false, state: next, reason, plan: [] };
   }
 
+  // The operator approved a specific catalog snapshot. Re-running the policy is
+  // not enough: if the catalog body was edited and re-hashed after the request
+  // was queued, the current manifest is self-consistent and still returns
+  // require_approval — so compare the reviewed hash against the current one and
+  // reject on drift, otherwise a changed-but-valid catalog could be armed under
+  // an old approval.
+  const reviewedHash =
+    approval.target?.kind === "mixer_scene" ? approval.target.catalog_hash : undefined;
+  if (reviewedHash && decision.catalog_hash && reviewedHash !== decision.catalog_hash) {
+    const reason = `approval ${approval.id} catalog drifted since review (reviewed ${reviewedHash}, current ${decision.catalog_hash})`;
+    recordResolutionFailure(next, "approve_effect", reason, {
+      approval_id: approval.id,
+      operator,
+    });
+    return { ok: false, state: next, reason, plan: [] };
+  }
+
   // manifest is guaranteed by the require_approval decision, but stay defensive.
   const plan = manifest ? planForMixerScene(intent, manifest, approval.id, operator) : undefined;
   if (!plan) {
