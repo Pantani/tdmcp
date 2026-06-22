@@ -622,6 +622,21 @@ describe("mixer scene runtime (arm_mixer_scene)", () => {
     expect(approved.state.approvals[0]?.status).toBe("pending");
   });
 
+  it("fails closed when a restored mixer-scene approval lost its reviewed catalog target", () => {
+    const queued = submitShowIntent(createShowDirectorState(), snapshotIntent(), undefined, opts);
+    const tampered = structuredClone(queued.state);
+    const restored = tampered.approvals[0];
+    if (!restored) throw new Error("expected a queued approval");
+    // Simulate a restored/malformed approval whose reviewed mixer_scene target is gone.
+    (restored as { target?: unknown }).target = undefined;
+    const approved = approveShowIntent(tampered, queued.approval?.id ?? "", "front-of-house", opts);
+
+    expect(approved.ok).toBe(false);
+    if (approved.ok) throw new Error("expected fail-closed approval");
+    expect(approved.reason).toContain("missing reviewed mixer scene catalog metadata");
+    expect(approved.state.approvals[0]?.status).toBe("pending");
+  });
+
   it("submits an approve_effect transition that resolves a queued mixer scene", () => {
     const queued = submitShowIntent(createShowDirectorState(), snapshotIntent(), undefined, opts);
     const approved = submitShowIntent(

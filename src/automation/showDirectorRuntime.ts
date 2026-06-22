@@ -462,13 +462,21 @@ function resolveMixerSceneApproval(
   // The operator approved a specific catalog snapshot. Re-running the policy is
   // not enough: if the catalog body was edited and re-hashed after the request
   // was queued, the current manifest is self-consistent and still returns
-  // require_approval — so compare the reviewed hash against the current one and
-  // reject on drift, otherwise a changed-but-valid catalog could be armed under
-  // an old approval.
-  const reviewedHash =
-    approval.target?.kind === "mixer_scene" ? approval.target.catalog_hash : undefined;
-  if (reviewedHash && decision.catalog_hash && reviewedHash !== decision.catalog_hash) {
-    const reason = `approval ${approval.id} catalog drifted since review (reviewed ${reviewedHash}, current ${decision.catalog_hash})`;
+  // require_approval. Fail CLOSED — a mixer-scene approval must carry the reviewed
+  // catalog hash (a restored/malformed approval that lost it must not arm), and
+  // that hash must still match, otherwise a changed-but-valid catalog could be
+  // armed under an old approval.
+  const reviewedTarget = approval.target?.kind === "mixer_scene" ? approval.target : undefined;
+  if (!reviewedTarget || !decision.catalog_hash) {
+    const reason = `approval ${approval.id} is missing reviewed mixer scene catalog metadata`;
+    recordResolutionFailure(next, "approve_effect", reason, {
+      approval_id: approval.id,
+      operator,
+    });
+    return { ok: false, state: next, reason, plan: [] };
+  }
+  if (reviewedTarget.catalog_hash !== decision.catalog_hash) {
+    const reason = `approval ${approval.id} catalog drifted since review (reviewed ${reviewedTarget.catalog_hash}, current ${decision.catalog_hash})`;
     recordResolutionFailure(next, "approve_effect", reason, {
       approval_id: approval.id,
       operator,

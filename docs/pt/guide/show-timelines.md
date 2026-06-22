@@ -100,8 +100,8 @@ Um show precisa de um botão de pânico que sempre funciona:
 
 - **`create_safety_blackout_chain`** (Layer 1) protege a saída master com um
   fade-to-black determinístico (curva e tempo configuráveis), um corte seco de
-  emergência opcional, um atalho de teclado e um gatilho de watchdog externo
-  opcionais, e uma recuperação por fade-in simétrico. É totalmente dirigido por parâmetros — sem
+  emergência opcional, um atalho de teclado e um gatilho de watchdog externo,
+  ambos opcionais, e uma recuperação por fade-in simétrico. É totalmente dirigido por parâmetros — sem
   Python no cook — então permanece seguro mesmo com `TDMCP_BRIDGE_ALLOW_EXEC=0`.
 - **`create_panic`** (Layer 2) adiciona um kill + freeze por fonte: um toggle de
   Blackout que leva o brilho a zero e um toggle de Freeze que segura o último frame.
