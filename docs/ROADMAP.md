@@ -871,11 +871,18 @@ to round-trip through `/api/exec`: nodes CRUD, connect / disconnect, param
 modes, DAT text, network errors / topology / performance, batch, preview, and
 structured logs (see `src/td-client/touchDesignerClient.ts`). What's left:
 
-- ⬜ Reduce remaining `executePythonScript` reliance: ~129 tool files still
-  call the exec path (often as a fallback). Each one that has a typed REST
-  equivalent should prefer the endpoint and only fall back when the bridge is
-  on an older protocol — tracked under the `tryEndpoint`/exec-fallback pattern
-  established in v0.8.1.
+- 🧪 Reduce remaining `executePythonScript` reliance. The **1:1-against-an-
+  existing-endpoint sweep is complete**: every tool whose operation maps directly
+  to a typed REST method already prefers it (15 tools — 9 via the canonical
+  `tryEndpoint` helper + 6 with intentionally-manual conditional fallbacks),
+  promoted across v0.8.1/0.8.2. Of the 183 exec callers, the remaining 168 are
+  legitimate custom-Python / composite builds (create→wire→set→verify in one
+  atomic pass) with **no typed REST equivalent**, or map only to the exec-gated
+  `/method` route (no hardening value) — they correctly stay on exec, the
+  intended escape hatch. **What's left is new-endpoint authoring**, not a rewire:
+  add first-class routes (e.g. `POST /api/nodes/{path}/save`, `/api/duplicate`,
+  batch create+write) to un-gate ops like `render_output` / `duplicate_network`.
+  That is a `tdmcp-bridge-endpoint` slice and needs live TD to validate.
 - ⬜ Keep `/api/exec` working when `TDMCP_BRIDGE_ALLOW_EXEC=0` is the venue
   policy: every Layer-1/Layer-2 tool must build with exec disabled (CI smoke).
 - ✅ Resilience patch — atomic writes, clean HTTP listen failure, event-stream
