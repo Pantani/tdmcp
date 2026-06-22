@@ -698,24 +698,28 @@ force multipliers are in place when those wrappers land.
   uniforms on `glslTOP`. (shipped v0.9.1)
 - ⬜ `create_external_io` outbound — itself FM-01 above.
 
-### Milestone 4 — Generative-AI bridge wave (gated on FM-01 + FM-02) · v0.9.x
+### Milestone 4 — Generative-AI bridge wave (gated on FM-01 + FM-02) · ✅ v0.9.0
 
 The trend-dominant cluster from [Round 4 D.2](#appendix-d-round4) — wrappers
 around components users install themselves; never bundled. All entries
 *remain* GPU/CUDA-gated for the *bundled* path; this wave ships only the
-**drive-installed-tox** and **cloud** deltas.
+**drive-installed-tox** and **cloud** deltas. **Shipped in v0.9.0** (hype-scout
+Round 4, #63): all eight register, are unit-tested offline, and survive
+`TDMCP_BRIDGE_ALLOW_EXEC=0`. Live GPU/component validation stays UNVERIFIED until
+each is run against its installed component — the cloud `connect_daydream_cloud`
+path is the one validatable without a local GPU.
 
-- ⬜ `setup_mediapipe_plugin` (torinmb canonical) — extension over the
+- ✅ `setup_mediapipe_plugin` (torinmb canonical) — extension over the
   shipped face/hand/segmentation setup.
-- ⬜ `drive_streamdiffusion` (dotsimulate TOX wrapper).
-- ⬜ `create_depth_from_2d` (TDDepthAnything v2 wrapper; reopens the
+- ✅ `drive_streamdiffusion` (dotsimulate TOX wrapper).
+- ✅ `create_depth_from_2d` (TDDepthAnything v2 wrapper; reopens the
   Round-3 EX placeholder).
-- ⬜ `connect_comfyui` (olegchomp/TDComfyUI or JiSenHua/ComfyUI-TD).
-- ⬜ `connect_daydream_cloud` (cloud path that skips the local GPU gate).
-- ⬜ `create_gaussian_splat_scene` (TDGS / POPs Gaussian-Splat v2026) —
+- ✅ `connect_comfyui` (olegchomp/TDComfyUI or JiSenHua/ComfyUI-TD).
+- ✅ `connect_daydream_cloud` (cloud path that skips the local GPU gate).
+- ✅ `create_gaussian_splat_scene` (TDGS / POPs Gaussian-Splat v2026) —
   the top trend in the scout, four-surface unanimous H.
-- ⬜ `create_llm_chain` (dotsimulate LOPs).
-- ⬜ `create_ai_mirror` combo recipe (depends on the bridge above + FM-01).
+- ✅ `create_llm_chain` (dotsimulate LOPs).
+- ✅ `create_ai_mirror` combo recipe (depends on the bridge above + FM-01).
 
 ### Milestone 5 — AI Show Director mixer scene arming · v0.8.x / v0.9.x
 
