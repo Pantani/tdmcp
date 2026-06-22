@@ -1,0 +1,130 @@
+{
+  "id": "waveform_scope",
+  "name": "Audio Waveform Scope",
+  "description": "Reproducible twin of create_waveform: a scrolling oscilloscope of an audio signal. The signal is scaled, buffered by a Trail CHOP over a time window, resampled to 1024 points, and its value channel renamed to 'ty' so a choptoSOP draws it as a vertically-deflected line under an orthographic camera; a colored Constant TOP is multiplied over the render to tint the trace. A sine audiooscillatorCHOP stands in so it previews offline; swap for Audio Device In / Audio File In live. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "tags": ["audio-reactive", "waveform", "oscilloscope", "scope", "controls"],
+  "difficulty": "advanced",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "audioin",
+      "type": "audiooscillatorCHOP",
+      "parameters": { "wavetype": "sine", "amp": 0.5 },
+      "comment": "Synthetic source — swap for audiodeviceinCHOP / audiofileinCHOP live."
+    },
+    {
+      "name": "scale",
+      "type": "mathCHOP",
+      "parameters": { "gain": 1.0 },
+      "comment": "Vertical zoom of the trace."
+    },
+    {
+      "name": "trail",
+      "type": "trailCHOP",
+      "parameters": { "wlength": 2.0, "wlengthunit": "seconds" },
+      "comment": "Scrolling buffer — the horizontal time span of the scope."
+    },
+    {
+      "name": "rebin",
+      "type": "resampleCHOP",
+      "parameters": { "rate": 1024 },
+      "comment": "Resample the trail to 1024 evenly spaced points across the width."
+    },
+    {
+      "name": "ypos",
+      "type": "renameCHOP",
+      "parameters": { "renamefrom": "*", "renameto": "ty" },
+      "comment": "Rename the value channel to 'ty' so choptoSOP deflects each point vertically."
+    },
+    {
+      "name": "geo",
+      "type": "geometryCOMP",
+      "comment": "Container for the trace line."
+    },
+    {
+      "name": "line",
+      "type": "choptoSOP",
+      "parent": "geo",
+      "render": true,
+      "parameters": { "chop": "ypos" },
+      "comment": "Turns the ypos CHOP into a polyline (X by sample index, Y by 'ty'); render+display flagged."
+    },
+    {
+      "name": "mat",
+      "type": "constantMAT",
+      "parameters": { "colorr": 1, "colorg": 1, "colorb": 1, "alpha": 1 },
+      "comment": "White line; the actual color comes from the tint composite."
+    },
+    {
+      "name": "cam",
+      "type": "cameraCOMP",
+      "parameters": { "projection": "ortho", "orthowidth": 2.2, "tz": 5 },
+      "comment": "Orthographic so the trace keeps its true shape (a scope must not bow)."
+    },
+    {
+      "name": "light",
+      "type": "lightCOMP",
+      "parameters": { "tx": 0, "ty": 0, "tz": 5 },
+      "comment": "Required by the Render TOP (constant material ignores it)."
+    },
+    {
+      "name": "render",
+      "type": "renderTOP",
+      "parameters": {
+        "camera": "cam",
+        "geometry": "geo",
+        "lights": "light",
+        "bgcolorr": 0.01,
+        "bgcolorg": 0.02,
+        "bgcolorb": 0.02,
+        "bgcolora": 1,
+        "outputresolution": "custom",
+        "resolutionw": 1024,
+        "resolutionh": 256
+      },
+      "comment": "Renders the trace on a near-black background in a wide scope aspect."
+    },
+    {
+      "name": "tint",
+      "type": "constantTOP",
+      "parameters": { "colorr": 0.1, "colorg": 0.9, "colorb": 1.0, "alpha": 1 },
+      "comment": "Trace color (live Color control binds here)."
+    },
+    {
+      "name": "tinted",
+      "type": "compositeTOP",
+      "parameters": { "operand": "multiply" },
+      "comment": "Multiply the tint over the white trace to colorize it without lifting the background."
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "Final scope output." }
+  ],
+  "connections": [
+    { "from": "audioin", "to": "scale" },
+    { "from": "scale", "to": "trail" },
+    { "from": "trail", "to": "rebin" },
+    { "from": "rebin", "to": "ypos" },
+    { "from": "render", "to": "tinted", "to_input": 0 },
+    { "from": "tint", "to": "tinted", "to_input": 1 },
+    { "from": "tinted", "to": "out1" }
+  ],
+  "parameters": [{ "name": "geo_material", "node": "geo", "param": "material", "value": "mat" }],
+  "controls": [
+    {
+      "name": "Scale",
+      "type": "float",
+      "min": 0,
+      "max": 8,
+      "default": 1.0,
+      "bind_to": ["scale.gain"]
+    },
+    {
+      "name": "TimeWindow",
+      "type": "float",
+      "min": 0.05,
+      "max": 10,
+      "default": 2.0,
+      "bind_to": ["trail.wlength"]
+    }
+  ],
+  "preview_description": "A glowing cyan sine wave scrolling left-to-right across a dark wide scope, with live amplitude (scale) and time-window knobs."
+}

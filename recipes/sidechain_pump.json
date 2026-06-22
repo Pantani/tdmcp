@@ -1,0 +1,63 @@
+{
+  "id": "sidechain_pump",
+  "name": "Sidechain Pump",
+  "description": "A reusable sidechain 'pump' envelope CHOP, mirroring create_sidechain_pump: a kick-style driver is shaped by a Lag CHOP (attack/release) and clamped to [0,1] by a Limit CHOP, ending in a Null CHOP you bind targets to. Here an lfoCHOP ramp stands in for a kick so it previews offline; for a real set, swap the driver for a selectCHOP isolating a beat/onset channel. After import, bind a target parameter's value to an expression like rest * (1 - depth * op('pump')['kick']) so it ducks on every beat (manual-wire — RecipeSchema parameters take constants only). Fills the sidechain-pump gap. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "tags": ["audio-reactive", "sidechain", "pump", "chop", "modulation", "controls"],
+  "difficulty": "intermediate",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "driver",
+      "type": "lfoCHOP",
+      "parameters": {
+        "type": "ramp",
+        "frequency": 2,
+        "amp": 1,
+        "offset": 0,
+        "channelname": "kick"
+      },
+      "comment": "Stand-in kick driver (2 Hz sawtooth). Swap for a selectCHOP isolating a beat/onset channel for a live set."
+    },
+    {
+      "name": "lag",
+      "type": "lagCHOP",
+      "parameters": { "lagunit": "seconds", "lag1": 0.002, "lag2": 0.18 },
+      "comment": "Envelope shaping: fast attack (lag1), slow release (lag2) — the classic pump release tail."
+    },
+    {
+      "name": "clamp",
+      "type": "limitCHOP",
+      "parameters": { "type": "clamp", "min": 0, "max": 1 },
+      "comment": "Constrain the envelope to [0,1] so it is safe to multiply into any parameter."
+    },
+    {
+      "name": "pump",
+      "type": "nullCHOP",
+      "comment": "Stable output handle — bind targets to op('pump')['kick']."
+    }
+  ],
+  "connections": [
+    { "from": "driver", "to": "lag" },
+    { "from": "lag", "to": "clamp" },
+    { "from": "clamp", "to": "pump" }
+  ],
+  "controls": [
+    {
+      "name": "Attack",
+      "type": "float",
+      "min": 0,
+      "max": 0.5,
+      "default": 0.002,
+      "bind_to": ["lag.lag1"]
+    },
+    {
+      "name": "Release",
+      "type": "float",
+      "min": 0,
+      "max": 1.0,
+      "default": 0.18,
+      "bind_to": ["lag.lag2"]
+    }
+  ],
+  "preview_description": "A CHOP utility, not an image: a 0..1 envelope that snaps up on each beat and decays with an adjustable release tail — bind it into any parameter to make the whole look breathe with the kick."
+}

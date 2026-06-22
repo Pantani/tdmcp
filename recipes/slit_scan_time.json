@@ -1,0 +1,67 @@
+{
+  "id": "slit_scan_time",
+  "name": "Slit-Scan (Time Smear)",
+  "description": "Reproducible twin of create_slit_scan: a Cache TOP records the last N frames into a 2D texture array, and a GLSL TOP reads a different cached frame per scanline (sTD2DArrayInputs[0]) so the vertical axis becomes time — the classic slit-scan smear. A synthetic animated noiseTOP stands in as the source so it previews offline; swap for a selectTOP / videodeviceinTOP for a real time-smear. Uniforms select the time axis and direction. Offline-validated against RecipeSchema; the array-cache read is best confirmed live (prioritize for cook-check).",
+  "tags": ["post-processing", "slit-scan", "time", "cache", "glsl"],
+  "difficulty": "advanced",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "source",
+      "type": "noiseTOP",
+      "parameters": { "monochrome": 0, "period": 4 },
+      "comment": "Synthetic source — swap for a selectTOP / videodeviceinTOP for a real slit-scan."
+    },
+    {
+      "name": "cache",
+      "type": "cacheTOP",
+      "parameters": { "cachesize": 128, "active": 1 },
+      "comment": "Records the last 128 frames into a texture array (cache_depth)."
+    },
+    {
+      "name": "slit_glsl",
+      "type": "glslTOP",
+      "comment": "Reads a different cached frame per scanline so the slow axis becomes time."
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "Final slit-scan output." }
+  ],
+  "connections": [
+    { "from": "source", "to": "cache" },
+    { "from": "cache", "to": "slit_glsl" },
+    { "from": "slit_glsl", "to": "out1" }
+  ],
+  "glsl_code": {
+    "slit_glsl": "uniform float uDepth;\nuniform float uAxis;\nuniform float uDir;\nout vec4 fragColor;\nvoid main(){\n    vec2 uv = vUV.st;\n    float t = (uAxis > 0.5 ? uv.y : uv.x);\n    if (uDir < 0.0) t = 1.0 - t;\n    int idx = int(clamp(t * (uDepth - 1.0), 0.0, uDepth - 1.0));\n    fragColor = TDOutputSwizzle(texelFetch(sTD2DArrayInputs[0], ivec3(ivec2(gl_FragCoord.xy), idx), 0));\n}\n"
+  },
+  "glsl_uniforms": [
+    {
+      "node": "slit_glsl",
+      "name": "uDepth",
+      "kind": "float",
+      "value": 128,
+      "label": "Cache Depth",
+      "description": "Number of cached frames (must match the Cache TOP cachesize)."
+    },
+    {
+      "node": "slit_glsl",
+      "name": "uAxis",
+      "kind": "float",
+      "value": 1,
+      "min": 0,
+      "max": 1,
+      "label": "Time Axis",
+      "description": "0 = time along X, 1 = time along Y."
+    },
+    {
+      "node": "slit_glsl",
+      "name": "uDir",
+      "kind": "float",
+      "value": 1,
+      "min": -1,
+      "max": 1,
+      "label": "Direction",
+      "description": "Direction of the time smear along the chosen axis."
+    }
+  ],
+  "preview_description": "A moving noise field smeared in time: each horizontal line shows the image from a slightly older frame, so motion becomes a flowing vertical streak."
+}

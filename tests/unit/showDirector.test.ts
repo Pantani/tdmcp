@@ -1,12 +1,19 @@
 import { describe, expect, it } from "vitest";
 import {
+  computeMixerCatalogHash,
+  DEMO_MIXER_SCENE_MANIFEST,
+  type MixerSceneManifest,
+} from "../../src/automation/mixerSceneCatalog.js";
+import {
   approveShowIntent,
   cancelShowIntent,
   createShowDirectorState,
   submitShowIntent,
 } from "../../src/automation/showDirectorRuntime.js";
 import {
+  evaluateMixerSceneIntent,
   evaluateShowIntent,
+  type MixerSceneIntent,
   parseShowIntent,
   ShowIntentSchema,
 } from "../../src/automation/showDirectorSchema.js";
@@ -400,5 +407,268 @@ describe("showDirectorRuntime", () => {
       status: "blocked",
       effect: "fog",
     });
+  });
+});
+
+const ADAPTER_TARGET = { kind: "soundcraft_ui24r", mixer_id: "foh-ui24r" } as const;
+
+function snapshotIntent(overrides: Partial<MixerSceneIntent> = {}): MixerSceneIntent {
+  return {
+    type: "arm_mixer_scene",
+    adapter_target: ADAPTER_TARGET,
+    target: { kind: "snapshot", scene_id: "band_a_intro" },
+    ...overrides,
+  };
+}
+
+describe("mixer scene policy (arm_mixer_scene)", () => {
+  it("requires approval for a catalog-backed snapshot scene and never auto-allows", () => {
+    const decision = evaluateMixerSceneIntent(snapshotIntent(), DEMO_MIXER_SCENE_MANIFEST);
+    expect(decision.decision).toBe("require_approval");
+    expect(decision.intent_type).toBe("arm_mixer_scene");
+    expect(decision.scene_id).toBe("band_a_intro");
+    expect(decision.catalog_hash).toBe(DEMO_MIXER_SCENE_MANIFEST.policy_hash);
+    expect(decision.limits_applied).toContain("never_auto_allow");
+    expect(decision.limits_applied).toContain("dry_run_only");
+  });
+
+  it("requires approval for a catalog-backed show recall", () => {
+    const decision = evaluateMixerSceneIntent(
+      {
+        type: "arm_mixer_scene",
+        adapter_target: ADAPTER_TARGET,
+        target: { kind: "show", scene_id: "house_default" },
+      },
+      DEMO_MIXER_SCENE_MANIFEST,
+    );
+    expect(decision.decision).toBe("require_approval");
+    expect(decision.scene_id).toBe("house_default");
+  });
+
+  it("blocks when no mixer scene manifest is configured", () => {
+    const decision = evaluateMixerSceneIntent(snapshotIntent(), undefined);
+    expect(decision.decision).toBe("block");
+    expect(decision.reason).toContain("not configured");
+  });
+
+  it("blocks an unknown scene id", () => {
+    const decision = evaluateMixerSceneIntent(
+      snapshotIntent({ target: { kind: "snapshot", scene_id: "ghost" } }),
+      DEMO_MIXER_SCENE_MANIFEST,
+    );
+    expect(decision.decision).toBe("block");
+    expect(decision.reason).toContain("unknown mixer scene_id");
+  });
+
+  it("blocks a request with no predeclared scene id", () => {
+    const decision = evaluateMixerSceneIntent(
+      snapshotIntent({ target: { kind: "snapshot", show_name: "AI Party Demo" } }),
+      DEMO_MIXER_SCENE_MANIFEST,
+    );
+    expect(decision.decision).toBe("block");
+    expect(decision.reason).toContain("no predeclared scene_id");
+  });
+
+  it("blocks an unresolved setlist_ref", () => {
+    const decision = evaluateMixerSceneIntent(
+      snapshotIntent({
+        target: { kind: "snapshot", scene_id: "band_a_intro", setlist_ref: "not_a_section" },
+      }),
+      DEMO_MIXER_SCENE_MANIFEST,
+    );
+    expect(decision.decision).toBe("block");
+    expect(decision.reason).toContain("unresolved setlist_ref");
+  });
+
+  it("blocks an unsupported target kind (cue against a snapshot scene)", () => {
+    const decision = evaluateMixerSceneIntent(
+      snapshotIntent({ target: { kind: "cue", scene_id: "band_a_intro" } }),
+      DEMO_MIXER_SCENE_MANIFEST,
+    );
+    expect(decision.decision).toBe("block");
+    expect(decision.reason).toContain("unsupported target");
+  });
+
+  it("blocks an unknown mixer id for a known scene", () => {
+    const decision = evaluateMixerSceneIntent(
+      snapshotIntent({ adapter_target: { kind: "soundcraft_ui24r", mixer_id: "monitor-desk" } }),
+      DEMO_MIXER_SCENE_MANIFEST,
+    );
+    expect(decision.decision).toBe("block");
+    expect(decision.reason).toContain("unknown mixer_id");
+  });
+
+  it("blocks when the catalog hash has drifted from the attested policy_hash", () => {
+    const tampered: MixerSceneManifest = {
+      ...DEMO_MIXER_SCENE_MANIFEST,
+      policy_hash: "stale-attested-hash",
+    };
+    const decision = evaluateMixerSceneIntent(snapshotIntent(), tampered);
+    expect(decision.decision).toBe("block");
+    expect(decision.reason).toContain("catalog hash changed");
+  });
+
+  it("blocks an unsafe scene that does not exclude all forbidden deltas", () => {
+    const unsafeScenes = [
+      {
+        ...DEMO_MIXER_SCENE_MANIFEST.scenes[0],
+        forbidden_delta_check: { excludes_all_forbidden: true, verified: ["gain"] },
+      },
+    ];
+    const unsafeManifest: MixerSceneManifest = {
+      ...DEMO_MIXER_SCENE_MANIFEST,
+      scenes: unsafeScenes as never,
+      policy_hash: computeMixerCatalogHash(unsafeScenes as never),
+    };
+    const decision = evaluateMixerSceneIntent(snapshotIntent(), unsafeManifest);
+    expect(decision.decision).toBe("block");
+    expect(decision.reason).toContain("unsafe scene diff");
+  });
+
+  it("keeps mixer_gain, pa_mute and audio_routing blocked as arm_effect operations", () => {
+    for (const effect of ["mixer_gain", "pa_mute", "audio_routing"] as const) {
+      const decision = evaluateShowIntent({ type: "arm_effect", effect, duration_seconds: 1 });
+      expect(decision.decision).toBe("block");
+      expect(decision.reason).toContain("operator-only");
+    }
+  });
+});
+
+describe("mixer scene runtime (arm_mixer_scene)", () => {
+  const opts = { mixerSceneManifest: DEMO_MIXER_SCENE_MANIFEST };
+
+  it("queues a generic mixer_scene approval without a hardware plan", () => {
+    const result = submitShowIntent(createShowDirectorState(), snapshotIntent(), undefined, opts);
+    expect(result.decision.decision).toBe("require_approval");
+    expect(result.plan).toEqual([]);
+    expect(result.approval?.target).toMatchObject({
+      kind: "mixer_scene",
+      scene_id: "band_a_intro",
+      catalog_hash: DEMO_MIXER_SCENE_MANIFEST.policy_hash,
+    });
+    expect(result.approval?.effect).toBeUndefined();
+    expect(result.state.audit_log.at(-1)?.status).toBe("queued");
+  });
+
+  it("blocks an unconfigured mixer scene submission with no approval queued", () => {
+    const result = submitShowIntent(createShowDirectorState(), snapshotIntent());
+    expect(result.decision.decision).toBe("block");
+    expect(result.approval).toBeUndefined();
+    expect(result.state.approvals).toHaveLength(0);
+    expect(result.state.audit_log.at(-1)?.status).toBe("blocked");
+  });
+
+  it("approves a queued mixer scene into a dry-run-only plan with hardware_changed never asserted", () => {
+    const queued = submitShowIntent(createShowDirectorState(), snapshotIntent(), undefined, opts);
+    const approved = approveShowIntent(
+      queued.state,
+      queued.approval?.id ?? "",
+      "front-of-house",
+      opts,
+    );
+
+    expect(approved.ok).toBe(true);
+    if (!approved.ok) throw new Error("expected approval to succeed");
+    expect(approved.plan[0]).toMatchObject({
+      kind: "mixer_scene",
+      action: "arm",
+      adapter_target: ADAPTER_TARGET,
+      mixer_scene: { scene_id: "band_a_intro", show_name: "AI Party Demo", label: "Band A Intro" },
+      operator: "front-of-house",
+      dry_run_only: true,
+    });
+    expect(approved.state.approvals[0]?.status).toBe("approved");
+    expect(approved.state.audit_log.at(-1)?.status).toBe("approved");
+  });
+
+  it("re-runs policy on approval and refuses when the catalog drifted after queuing", () => {
+    const queued = submitShowIntent(createShowDirectorState(), snapshotIntent(), undefined, opts);
+    const drifted: MixerSceneManifest = {
+      ...DEMO_MIXER_SCENE_MANIFEST,
+      policy_hash: "drifted-after-queue",
+    };
+    const approved = approveShowIntent(queued.state, queued.approval?.id ?? "", "front-of-house", {
+      mixerSceneManifest: drifted,
+    });
+
+    expect(approved.ok).toBe(false);
+    if (approved.ok) throw new Error("expected approval to fail on drift");
+    expect(approved.reason).toContain("no longer approvable");
+    expect(approved.state.approvals[0]?.status).toBe("pending");
+  });
+
+  it("refuses approval when the catalog was edited and re-hashed after the operator reviewed it", () => {
+    const queued = submitShowIntent(createShowDirectorState(), snapshotIntent(), undefined, opts);
+    // The operator reviewed DEMO. Now the catalog body is edited AND re-hashed
+    // consistently, so the manifest is self-consistent and the policy still
+    // returns require_approval — but the hash differs from what was reviewed.
+    const editedScenes = DEMO_MIXER_SCENE_MANIFEST.scenes.map((scene) =>
+      scene.scene_id === "band_a_intro" ? { ...scene, label: `${scene.label} (edited)` } : scene,
+    );
+    const rehashed: MixerSceneManifest = {
+      ...DEMO_MIXER_SCENE_MANIFEST,
+      scenes: editedScenes,
+      policy_hash: computeMixerCatalogHash(editedScenes),
+    };
+    expect(rehashed.policy_hash).not.toBe(DEMO_MIXER_SCENE_MANIFEST.policy_hash);
+
+    const approved = approveShowIntent(queued.state, queued.approval?.id ?? "", "front-of-house", {
+      mixerSceneManifest: rehashed,
+    });
+
+    expect(approved.ok).toBe(false);
+    if (approved.ok) throw new Error("expected approval to fail on re-hash drift");
+    expect(approved.reason).toContain("catalog drifted since review");
+    expect(approved.state.approvals[0]?.status).toBe("pending");
+  });
+
+  it("fails closed when a restored mixer-scene approval lost its reviewed catalog target", () => {
+    const queued = submitShowIntent(createShowDirectorState(), snapshotIntent(), undefined, opts);
+    const tampered = structuredClone(queued.state);
+    const restored = tampered.approvals[0];
+    if (!restored) throw new Error("expected a queued approval");
+    // Simulate a restored/malformed approval whose reviewed mixer_scene target is gone.
+    (restored as { target?: unknown }).target = undefined;
+    const approved = approveShowIntent(tampered, queued.approval?.id ?? "", "front-of-house", opts);
+
+    expect(approved.ok).toBe(false);
+    if (approved.ok) throw new Error("expected fail-closed approval");
+    expect(approved.reason).toContain("missing reviewed mixer scene catalog metadata");
+    expect(approved.state.approvals[0]?.status).toBe("pending");
+  });
+
+  it("submits an approve_effect transition that resolves a queued mixer scene", () => {
+    const queued = submitShowIntent(createShowDirectorState(), snapshotIntent(), undefined, opts);
+    const approved = submitShowIntent(
+      queued.state,
+      { type: "approve_effect", approval_id: queued.approval?.id, operator: "front-of-house" },
+      undefined,
+      opts,
+    );
+
+    expect(approved.decision.decision).toBe("allow");
+    expect(approved.plan[0]).toMatchObject({
+      kind: "mixer_scene",
+      action: "arm",
+      mixer_scene: { scene_id: "band_a_intro" },
+      dry_run_only: true,
+    });
+    expect(approved.state.approvals[0]?.status).toBe("approved");
+  });
+
+  it("preserves backwards-compatible effect approvals alongside mixer scene approvals", () => {
+    const effectQueued = submitShowIntent(createShowDirectorState(), {
+      type: "arm_effect",
+      effect: "fog",
+      duration_seconds: 3,
+      intensity: 0.4,
+    });
+    expect(effectQueued.approval?.target).toMatchObject({ kind: "effect", effect: "fog" });
+    expect(effectQueued.approval?.effect).toBe("fog");
+
+    const mixerQueued = submitShowIntent(effectQueued.state, snapshotIntent(), undefined, opts);
+    expect(mixerQueued.state.approvals).toHaveLength(2);
+    expect(mixerQueued.state.approvals[0]?.effect).toBe("fog");
+    expect(mixerQueued.state.approvals[1]?.target?.kind).toBe("mixer_scene");
   });
 });

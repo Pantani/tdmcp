@@ -391,6 +391,8 @@ function describePlan(plan: ShowActionPlan[]): string {
       if (item.kind === "mood") return `mood ${item.mood} intensity ${item.intensity}`;
       if (item.kind === "announcement") return `announcement "${item.text}"`;
       if (item.kind === "effect") return `${item.effect} effect for operator ${item.operator}`;
+      if (item.kind === "mixer_scene")
+        return `mixer scene ${item.mixer_scene.scene_id} for operator ${item.operator}`;
       return `log note "${item.note}"`;
     })
     .join("; ");

@@ -1,0 +1,82 @@
+{
+  "id": "raymarch_sphere_field",
+  "name": "Raymarch Sphere Field",
+  "description": "A single GLSL TOP raymarches an infinitely-repeating field of spheres drifting toward the camera, lit by a fixed key light and depth-shaded across a two-color gradient. Mirrors what create_raymarch_scene builds with its sphere_field style. All animation/camera/quality knobs are GLSL uniforms (uTime, uCameraZ, uSteps, uIntensity) plus two color uniforms — after import, bind uTime's value to absTime.seconds * <speed> so the field flows (manual-wire — RecipeSchema parameters take constants only). Fills the SDF/raymarch gap left by the v0.7-v0.8 generator wave. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "tags": ["raymarch", "sdf", "glsl", "3d", "generative", "showcase"],
+  "difficulty": "advanced",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "raymarch",
+      "type": "glslTOP",
+      "parameters": {
+        "outputresolution": "custom",
+        "resolutionw": 1280,
+        "resolutionh": 720
+      },
+      "comment": "Raymarcher: marches a repeating sphere SDF per fragment; uniforms wired via the Vectors/Colors sequences."
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "Final output TOP." }
+  ],
+  "connections": [{ "from": "raymarch", "to": "out1" }],
+  "glsl_code": {
+    "raymarch": "out vec4 fragColor;\nuniform float uTime;\nuniform float uCameraZ;\nuniform float uSteps;\nuniform float uIntensity;\nuniform vec3  uColorA;\nuniform vec3  uColorB;\nfloat sceneDist(vec3 pos){\n  vec3 drift = vec3(0.0, 0.0, uTime * 0.6);\n  vec3 cell = mod(pos + drift + 2.0, 4.0) - 2.0;\n  return length(cell) - 0.85;\n}\nvec3 sceneNormal(vec3 pos){\n  vec2 eps = vec2(0.001, 0.0);\n  return normalize(vec3(\n    sceneDist(pos + eps.xyy) - sceneDist(pos - eps.xyy),\n    sceneDist(pos + eps.yxy) - sceneDist(pos - eps.yxy),\n    sceneDist(pos + eps.yyx) - sceneDist(pos - eps.yyx)));\n}\nvoid main(){\n  vec2 uv = (vUV.st - 0.5) * 2.0;\n  vec3 rayOrigin = vec3(0.0, 0.0, max(uCameraZ, 0.1));\n  vec3 forward = normalize(vec3(0.0) - rayOrigin);\n  vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), forward));\n  vec3 up = cross(forward, right);\n  vec3 rayDir = normalize(forward + uv.x * right + uv.y * up);\n  float traveled = 0.0;\n  float hit = 0.0;\n  int maxSteps = int(max(uSteps, 1.0));\n  for(int i = 0; i < 256; i++){\n    if(i >= maxSteps){ break; }\n    vec3 pos = rayOrigin + rayDir * traveled;\n    float dist = sceneDist(pos);\n    if(dist < 0.001){ hit = 1.0; break; }\n    traveled += dist;\n    if(traveled > 40.0){ break; }\n  }\n  vec3 col = mix(uColorA, uColorB, 0.0) * 0.04;\n  if(hit > 0.5){\n    vec3 pos = rayOrigin + rayDir * traveled;\n    vec3 normal = sceneNormal(pos);\n    vec3 lightDir = normalize(vec3(0.6, 0.8, 0.4));\n    float diffuse = max(dot(normal, lightDir), 0.0);\n    float depth = clamp(traveled / 12.0, 0.0, 1.0);\n    vec3 base = mix(uColorA, uColorB, depth);\n    col = base * (0.18 + diffuse);\n  }\n  col *= max(uIntensity, 0.0);\n  fragColor = TDOutputSwizzle(vec4(col, 1.0));\n}\n"
+  },
+  "glsl_uniforms": [
+    {
+      "node": "raymarch",
+      "name": "uTime",
+      "kind": "float",
+      "value": 0,
+      "label": "Time",
+      "description": "Animation phase. After import, set this uniform's value expression to absTime.seconds * <speed> so the sphere field drifts (manual-wire — RecipeSchema parameters take constants only)."
+    },
+    {
+      "node": "raymarch",
+      "name": "uCameraZ",
+      "kind": "float",
+      "value": 5.0,
+      "min": 1.0,
+      "max": 12.0,
+      "label": "Camera Z",
+      "description": "Distance of the ray origin from the field along +Z."
+    },
+    {
+      "node": "raymarch",
+      "name": "uSteps",
+      "kind": "float",
+      "value": 96,
+      "min": 8,
+      "max": 256,
+      "label": "Step Count",
+      "description": "Maximum raymarch steps per fragment — higher resolves distant geometry at the cost of GPU time."
+    },
+    {
+      "node": "raymarch",
+      "name": "uIntensity",
+      "kind": "float",
+      "value": 1.0,
+      "min": 0.0,
+      "max": 3.0,
+      "label": "Intensity",
+      "description": "Output brightness multiplier."
+    },
+    {
+      "node": "raymarch",
+      "name": "uColorA",
+      "kind": "color",
+      "value": [0.05, 0.15, 0.45, 1.0],
+      "label": "Near Color",
+      "description": "Color of close hits (low depth)."
+    },
+    {
+      "node": "raymarch",
+      "name": "uColorB",
+      "kind": "color",
+      "value": [1.0, 0.35, 0.6, 1.0],
+      "label": "Far Color",
+      "description": "Color of distant hits (high depth)."
+    }
+  ],
+  "preview_description": "A glossy lattice of spheres receding into darkness and drifting toward the viewer, depth-shaded from deep blue up close to hot pink in the distance."
+}

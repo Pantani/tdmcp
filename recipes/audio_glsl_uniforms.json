@@ -1,0 +1,85 @@
+{
+  "id": "audio_glsl_uniforms",
+  "name": "Audio GLSL Uniforms",
+  "description": "Shows how to drive a GLSL shader from audio in two complementary ways: (1) the full spectrum is passed in as a texture input (choptoTOP -> GLSL input 0) so the shader can read per-frequency magnitude, and (2) a scalar 'energy' float uniform (uLevel) plus tunable color/scale uniforms are exposed for manual binding to an audio feature. A synthetic audiooscillatorCHOP drives it so it previews without a mic. After import, set uLevel's value expression to op('level')['chan1'] (or any analyzed feature) so the shader pumps with the music — manual-wire, because RecipeSchema parameters take constants only. Fills the audio-glsl-uniforms binding gap. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "tags": ["audio-reactive", "glsl", "uniforms", "spectrum", "showcase"],
+  "difficulty": "advanced",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "osc",
+      "type": "audiooscillatorCHOP",
+      "parameters": { "freq": 110, "amp": 0.8 },
+      "comment": "Synthetic audio driver; swap for Audio Device In / Audio File In for a live set."
+    },
+    {
+      "name": "spectrum",
+      "type": "audiospectrumCHOP",
+      "comment": "FFT spectrum of the audio signal."
+    },
+    {
+      "name": "audio_tex",
+      "type": "choptoTOP",
+      "comment": "Spectrum as a 1-row texture fed into GLSL input 0 so the shader can sample per-band magnitude."
+    },
+    {
+      "name": "level",
+      "type": "analyzeCHOP",
+      "parameters": { "function": 6 },
+      "comment": "RMS / energy of the signal. After import, bind uLevel's value to op('level')['chan1']."
+    },
+    {
+      "name": "visual",
+      "type": "glslTOP",
+      "parameters": { "outputresolution": "custom", "resolutionw": 1280, "resolutionh": 720 },
+      "comment": "Reads the spectrum texture (input 0) and the uLevel/uScale/uColor uniforms."
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "Final output TOP." }
+  ],
+  "connections": [
+    { "from": "osc", "to": "spectrum" },
+    { "from": "osc", "to": "level" },
+    { "from": "spectrum", "to": "audio_tex" },
+    { "from": "audio_tex", "to": "visual" }
+  ],
+  "glsl_code": {
+    "visual": "out vec4 fragColor;\nuniform float uLevel;\nuniform float uScale;\nuniform vec3  uColorLo;\nuniform vec3  uColorHi;\nvoid main(){\n    vec2 uv = vUV.st;\n    // Spectrum texture in input 0: x = frequency band, .r = magnitude.\n    float band = clamp(uv.x, 0.0, 1.0);\n    float mag = texture(sTD2DInputs[0], vec2(band, 0.5)).r * 20.0;\n    // Radial bloom whose size pumps with the overall energy uniform.\n    vec2 p = (uv - 0.5) * vec2(1.777, 1.0) * 2.0 / max(uScale, 0.0001);\n    float r = length(p);\n    float ring = smoothstep(0.02, 0.0, abs(r - (0.2 + uLevel * 0.6)));\n    float bars = step(uv.y, clamp(mag, 0.0, 1.0));\n    vec3 col = mix(uColorLo, uColorHi, clamp(mag, 0.0, 1.0)) * bars;\n    col += uColorHi * ring * (0.3 + uLevel);\n    fragColor = TDOutputSwizzle(vec4(col, 1.0));\n}\n"
+  },
+  "glsl_uniforms": [
+    {
+      "node": "visual",
+      "name": "uLevel",
+      "kind": "float",
+      "value": 0.0,
+      "min": 0,
+      "max": 1,
+      "label": "Energy",
+      "description": "Overall audio energy. After import, set this uniform's value expression to op('level')['chan1'] so the central ring pumps with the track (manual-wire — RecipeSchema parameters take constants only)."
+    },
+    {
+      "node": "visual",
+      "name": "uScale",
+      "kind": "float",
+      "value": 1.0,
+      "min": 0.2,
+      "max": 4.0,
+      "label": "Scale",
+      "description": "Spatial zoom of the radial element."
+    },
+    {
+      "node": "visual",
+      "name": "uColorLo",
+      "kind": "color",
+      "value": [0.02, 0.04, 0.12, 1.0],
+      "label": "Low Color"
+    },
+    {
+      "node": "visual",
+      "name": "uColorHi",
+      "kind": "color",
+      "value": [0.2, 0.95, 1.0, 1.0],
+      "label": "High Color"
+    }
+  ],
+  "preview_description": "A row of cyan spectrum bars with a central ring that expands and brightens with the music's energy — a template for wiring audio features straight into shader uniforms."
+}
