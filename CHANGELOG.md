@@ -8,6 +8,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Coverage CI gate (G2) + exec-off smoke (G4) + Connectors Directory prep (G6) — roadmap-to-1.0 campaign, Wave 2** —
+  the coverage harness is now a CI gate: `vitest.config.ts` thresholds ratcheted to the measured
+  no-regression floor (functions 82→83, lines 85→86; statements 84 / branches 70 unchanged) and the
+  CI `Test` step now runs `npm run test:coverage`. New `docs/reference/coverage-harness.md` documents
+  the gate and the tracked +5pp target (lines ≥ 91, branches ≥ 75). New `tests/smoke/execOff.test.ts`
+  proves every Layer-1 + Layer-2 tool registers with raw Python exec disabled (`TDMCP_RAW_PYTHON=off`):
+  132 L1 + 78 L2 register cleanly, only `create_python_script` is hidden by its gate; a dedicated CI
+  smoke runs it exec-off. The Connectors Directory submission package was re-verified (privacy EN+PT
+  current, `build:mcpb` produces a schema-valid 18.2 MB `.mcpb`, no stale `.dxt` refs) with a full
+  form-answer draft prepared; directory acceptance remains an external step.
 - **Docs completeness (G5) + API stability pin (G1) — roadmap-to-1.0 campaign, Wave 1** —
   new per-arc guides for the v0.7/v0.8 work that lacked one: `docs/guide/show-timelines.md`
   (timelines & setlists), `dashboard-foh.md` (front-of-house), `session-profile.md`

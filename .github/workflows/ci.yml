@@ -47,8 +47,13 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Test
-        run: npm test
+      - name: Test + coverage gate (no-regression floor)
+        run: npm run test:coverage
+
+      - name: Smoke — Layer-1/2 register with raw exec OFF (G4)
+        env:
+          TDMCP_RAW_PYTHON: "off"
+        run: npx vitest run tests/smoke/execOff.test.ts
 
       - name: Build .mcpb bundle
         run: npm run build:mcpb
