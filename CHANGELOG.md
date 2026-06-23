@@ -270,6 +270,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   forward on read instead of being dropped, and future-versioned lines are
   skipped rather than crashing an older reader.
 
+### Changed
+
+- Hardened the PR validation pipeline with separated quality workflows, scoped
+  PR-run cancellation, semantic-title and changelog policy checks, and a Node
+  engine floor aligned with the locked ESLint toolchain.
+
 ## [0.9.0] - 2026-06-10
 
 The **hype-scout Round 4 campaign** — the complete external trend-driven
