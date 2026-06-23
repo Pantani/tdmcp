@@ -13,8 +13,9 @@ function makeTempRoot(): string {
 }
 
 function runValidateRecipes(args: string[]) {
+  const tsxBin = process.platform === "win32" ? "tsx.cmd" : "tsx";
   return spawnSync(
-    join(process.cwd(), "node_modules", ".bin", "tsx"),
+    join(process.cwd(), "node_modules", ".bin", tsxBin),
     ["scripts/validate-recipes.ts", ...args],
     {
       cwd: process.cwd(),
@@ -53,5 +54,14 @@ describe("validate-recipes script", () => {
     expect(result.stdout).toContain("external_recipe.json");
     expect(result.stdout).toContain("1/1 recipes valid.");
     expect(result.stdout).not.toContain("audio_reactive_basic.json");
+  });
+
+  it("fails when an explicit recipe directory contains no recipes", () => {
+    const dir = makeTempRoot();
+
+    const result = runValidateRecipes([dir]);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("No recipe files found.");
   });
 });

@@ -66,11 +66,11 @@ for (const filePath of bootstrapPinPaths) {
   const before = readFileSync(filePath, "utf8");
   const after = before
     .replace(
-      /github\.com\/Pantani\/tdmcp\/raw\/v\d+\.\d+\.\d+\/td\/bootstrap\.py/g,
+      /github\.com\/Pantani\/tdmcp\/raw\/(?:main|v\d+\.\d+\.\d+)\/td\/bootstrap\.py/g,
       `github.com/Pantani/tdmcp/raw/v${version}/td/bootstrap.py`,
     )
     .replace(
-      /github\.com\/Pantani\/tdmcp\/archive\/refs\/tags\/v\d+\.\d+\.\d+\.zip/g,
+      /github\.com\/Pantani\/tdmcp\/archive\/refs\/(?:heads\/main|tags\/v\d+\.\d+\.\d+)\.zip/g,
       `github.com/Pantani/tdmcp/archive/refs/tags/v${version}.zip`,
     );
 

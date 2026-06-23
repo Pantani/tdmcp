@@ -49,3 +49,4 @@ export function makeMarkdown(
   rows: CoverageRow[],
   options: Pick<CoverageHarnessOptions, "limit">,
 ): string;
+export function main(argv?: string[]): number;

@@ -26,6 +26,7 @@ function main(): void {
 
   if (files.length === 0) {
     console.warn("No recipe files found.");
+    process.exitCode = 1;
     return;
   }
 

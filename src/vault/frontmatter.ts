@@ -11,13 +11,13 @@ export interface ParsedNote {
 export function parseNote(raw: string): ParsedNote {
   const normalized = raw.replace(/^\uFEFF/, "");
   if (!normalized.startsWith("---\n") && !normalized.startsWith("---\r\n")) {
-    return { data: {}, body: raw };
+    return { data: {}, body: normalized };
   }
 
   const lines = normalized.split(/\r?\n/);
   const closingIndex = lines.findIndex((line, index) => index > 0 && isFrontmatterFence(line));
   if (closingIndex < 0) {
-    return { data: {}, body: raw };
+    return { data: {}, body: normalized };
   }
 
   const yaml = lines.slice(1, closingIndex).join("\n");
@@ -37,8 +37,7 @@ export function parseYamlDocument(raw: string): unknown {
 }
 
 function isFrontmatterFence(line: string): boolean {
-  const trimmed = line.trim();
-  return trimmed === "---" || trimmed === "...";
+  return /^(---|\.{3})[ \t]*$/.test(line);
 }
 
 function recordFromYaml(raw: string): Record<string, unknown> {

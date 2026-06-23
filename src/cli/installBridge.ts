@@ -9,6 +9,13 @@ const PALETTE_PACKAGE_NAME_MESSAGE = "Expected a single filename segment.";
 const VERIFY_ATTEMPT_TIMEOUT_MS = 2000;
 const WAIT_TIMEOUT_MS = 10000;
 const WAIT_INTERVAL_MS = 200;
+const INSTALL_BRIDGE_FLAGS_WITH_VALUE = new Set([
+  "--dir",
+  "--port",
+  "--token",
+  "--palette-dir",
+  "--package-name",
+]);
 
 interface InstallBridgeOptions {
   targetRoot: string;
@@ -56,7 +63,7 @@ interface TextportCommands {
 export function runInstallBridge(
   args: string[],
 ): Promise<InstallBridgeResult> | InstallBridgeResult {
-  if (args.includes("--help") || args.includes("-h")) {
+  if (hasStandaloneHelpFlag(args)) {
     console.log(installBridgeHelp());
     return { ok: true, detail: "install-bridge help" };
   }
@@ -148,6 +155,16 @@ export function runInstallBridge(
     return verifyInstalledBridge(options, baseResult);
   }
   return baseResult;
+}
+
+function hasStandaloneHelpFlag(args: string[]): boolean {
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === undefined) continue;
+    if (arg === "--help" || arg === "-h") return true;
+    if (INSTALL_BRIDGE_FLAGS_WITH_VALUE.has(arg)) i++;
+  }
+  return false;
 }
 
 function installBridgeHelp(): string {

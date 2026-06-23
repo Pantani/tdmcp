@@ -292,8 +292,10 @@ class InstallPackageHelperTests(unittest.TestCase):
 
         try:
             os.environ.pop("TDMCP_BRIDGE_TOKEN", None)
+            os.environ["TDMCP_BRIDGE_ALLOW_EXEC"] = "0"
             namespace["_configure_security"](owner)
             self.assertEqual(os.environ.get("TDMCP_BRIDGE_TOKEN"), "s3cret")
+            self.assertIsNone(os.environ.get("TDMCP_BRIDGE_ALLOW_EXEC"))
 
             owner.par.Token.val = " "
             namespace["_configure_security"](owner)

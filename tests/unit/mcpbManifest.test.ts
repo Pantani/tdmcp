@@ -1,8 +1,9 @@
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-const root = process.cwd();
+const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 function userConfigEnv(name: string): string {
   return `\${user_config.${name}}`;

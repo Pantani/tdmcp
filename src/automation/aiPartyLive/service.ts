@@ -454,6 +454,12 @@ function isLoopbackDashboardHost(value: string | undefined): boolean {
   return value !== undefined && LOOPBACK_DASHBOARD_HOSTS.has(value.toLowerCase());
 }
 
+function isLoopbackRemoteAddress(value: string | undefined): boolean {
+  if (!value) return false;
+  const normalized = value.toLowerCase().replace(/^::ffff:/, "");
+  return normalized === "127.0.0.1" || normalized === "::1";
+}
+
 function isMutatingDashboardMethod(method: string): boolean {
   return method === "POST" || method === "PATCH" || method === "DELETE";
 }
@@ -2391,7 +2397,10 @@ export class AiPartyLiveService {
   }
 
   private dashboardRequestGuard(req: IncomingMessage, mutating: boolean): string | undefined {
-    if (!mutating || isLoopbackDashboardHost(this.cfg.dashboardHost)) return undefined;
+    if (!mutating) return undefined;
+    if (!isLoopbackRemoteAddress(req.socket.remoteAddress)) {
+      return `Forbidden: non-loopback client ${JSON.stringify(req.socket.remoteAddress ?? "")} rejected.`;
+    }
     const hostHeader = headerValue(req.headers.host);
     const host = hostnameFromHostHeader(hostHeader);
     if (!isLoopbackDashboardHost(host)) {

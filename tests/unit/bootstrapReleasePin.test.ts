@@ -50,5 +50,7 @@ describe("bootstrap release pinning", () => {
     expect(syncScript).toContain("td/bootstrap.py");
     expect(syncScript).toContain("raw/v");
     expect(syncScript).toContain("archive/refs/tags/v");
+    expect(syncScript).toContain("raw\\/(?:main|v");
+    expect(syncScript).toContain("archive\\/refs\\/(?:heads\\/main|tags\\/v");
   });
 });

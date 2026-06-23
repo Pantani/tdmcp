@@ -60,6 +60,41 @@ async function readJson<T = unknown>(res: Response): Promise<T> {
   return (await res.json()) as T;
 }
 
+async function postOperatorText(
+  port: string,
+  headers: Record<string, string> = {},
+): Promise<{ status: number; body: { ok?: boolean; error?: string } }> {
+  return new Promise((resolve, reject) => {
+    const req = request(
+      {
+        hostname: "127.0.0.1",
+        port,
+        path: "/api/operator/text",
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          ...headers,
+        },
+      },
+      (res) => {
+        const chunks: Buffer[] = [];
+        res.on("data", (chunk: Buffer) => chunks.push(chunk));
+        res.on("end", () => {
+          resolve({
+            status: res.statusCode ?? 0,
+            body: JSON.parse(Buffer.concat(chunks).toString("utf8")) as {
+              ok?: boolean;
+              error?: string;
+            },
+          });
+        });
+      },
+    );
+    req.on("error", reject);
+    req.end(JSON.stringify({ text: "deixa a sala mais premium tropical" }));
+  });
+}
+
 type HealthJson = { ok: boolean; state: { hardware_enabled: boolean } };
 type CuesJson = { cues: Array<{ name: string; label?: string; favorite?: boolean }> };
 type StateJson = {
@@ -1393,6 +1428,27 @@ describe("aiPartyLive service", () => {
     expect(markdown).toContain("# AI Party Live — Night Recap");
   });
 
+  it("blocks mutating dashboard requests with non-loopback Origin on loopback binds", async () => {
+    const service = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      ollamaModel: "",
+      deterministicFallback: true,
+    });
+    const handle = await service.start();
+    handles.push(handle);
+    const port = new URL(handle.url).port;
+
+    const response = await postOperatorText(port, {
+      host: `127.0.0.1:${port}`,
+      origin: "https://evil.test",
+    });
+
+    expect(response.status).toBe(403);
+    expect(response.body).toMatchObject({ ok: false, error: expect.stringContaining("Origin") });
+    expect(service.snapshot().showState.current_cue).toBe("doors_idle");
+  });
+
   it("blocks mutating dashboard requests with non-loopback Host when bound to all interfaces", async () => {
     const service = createAiPartyLiveService({
       dashboardHost: "0.0.0.0",
@@ -1405,41 +1461,32 @@ describe("aiPartyLive service", () => {
     handles.push(handle);
     const port = new URL(handle.url).port;
 
-    const response = await new Promise<{ status: number; body: { ok?: boolean; error?: string } }>(
-      (resolve, reject) => {
-        const req = request(
-          {
-            hostname: "127.0.0.1",
-            port,
-            path: "/api/operator/text",
-            method: "POST",
-            headers: {
-              "content-type": "application/json",
-              host: "evil.test",
-            },
-          },
-          (res) => {
-            const chunks: Buffer[] = [];
-            res.on("data", (chunk: Buffer) => chunks.push(chunk));
-            res.on("end", () => {
-              resolve({
-                status: res.statusCode ?? 0,
-                body: JSON.parse(Buffer.concat(chunks).toString("utf8")) as {
-                  ok?: boolean;
-                  error?: string;
-                },
-              });
-            });
-          },
-        );
-        req.on("error", reject);
-        req.end(JSON.stringify({ text: "deixa a sala mais premium tropical" }));
-      },
-    );
+    const response = await postOperatorText(port, { host: "evil.test" });
 
     expect(response.status).toBe(403);
     expect(response.body).toMatchObject({ ok: false, error: expect.stringContaining("Host") });
     expect(service.snapshot().showState.current_cue).toBe("doors_idle");
+  });
+
+  it("rejects spoofed loopback dashboard headers from non-loopback clients", () => {
+    const service = createAiPartyLiveService({
+      dashboardHost: "0.0.0.0",
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      ollamaModel: "",
+      deterministicFallback: true,
+    });
+    const req = {
+      headers: { host: "127.0.0.1:8787" },
+      socket: { remoteAddress: "203.0.113.10" },
+    };
+    const guard = (
+      service as unknown as {
+        dashboardRequestGuard: (request: typeof req, mutating: boolean) => string | undefined;
+      }
+    ).dashboardRequestGuard.bind(service);
+
+    expect(guard(req, true)).toContain("non-loopback client");
   });
 });
 
