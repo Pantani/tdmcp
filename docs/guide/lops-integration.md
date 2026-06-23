@@ -101,9 +101,9 @@ surface:
   (node deletion, DAT rewrites, checkpoint/component/package writes, preview-asset
   writes, panic controls) — a strict superset of `RAW_PYTHON=off`. The launcher sets this for you. See
   [Environment variables](/reference/environment).
-- To **truly** close code execution, set **`TDMCP_BRIDGE_ALLOW_EXEC=0`** in
-  *TouchDesigner's* own environment — that is the authoritative, bridge-side gate,
-  and it holds even against a direct network caller.
+- Bridge-side arbitrary exec is now closed by default unless
+  **`TDMCP_BRIDGE_TOKEN`** is configured or **`TDMCP_BRIDGE_ALLOW_EXEC=1`** is set
+  in *TouchDesigner's* own environment. Keep it closed for autonomous LOPs use.
 
 ## How it works
 

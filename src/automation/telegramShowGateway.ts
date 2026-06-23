@@ -99,7 +99,7 @@ function idInList(list: Array<string | number>, id: string | number | undefined)
 }
 
 function idAllowed(list: Array<string | number>, id: string | number | undefined): boolean {
-  return list.length === 0 || idInList(list, id);
+  return idInList(list, id);
 }
 
 function chatRole(args: TelegramShowPollOnceArgs, chatId: string | number | undefined) {

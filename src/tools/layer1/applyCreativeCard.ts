@@ -1,35 +1,20 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import { createAsciiRenderImpl, createAsciiRenderSchema } from "../layer1/createAsciiRender.js";
-import {
-  createAudioReactiveImpl,
-  createAudioReactiveSchema,
-} from "../layer1/createAudioReactive.js";
-import { createColorGradeImpl, createColorGradeSchema } from "../layer1/createColorGrade.js";
-import { createDitherImpl, createDitherSchema } from "../layer1/createDither.js";
-import {
-  createEnergyStructureImpl,
-  createEnergyStructureSchema,
-} from "../layer1/createEnergyStructure.js";
-import {
-  createFeedbackNetworkImpl,
-  createFeedbackNetworkSchema,
-} from "../layer1/createFeedbackNetwork.js";
-import {
-  createFeedbackTunnelImpl,
-  createFeedbackTunnelSchema,
-} from "../layer1/createFeedbackTunnel.js";
-import { createFluidSimImpl, createFluidSimSchema } from "../layer1/createFluidSim.js";
-import {
-  createGenerativeArtImpl,
-  createGenerativeArtSchema,
-} from "../layer1/createGenerativeArt.js";
-import { createGlitchImpl, createGlitchSchema } from "../layer1/createGlitch.js";
-import { createGrowthSystemImpl, createGrowthSystemSchema } from "../layer1/createGrowthSystem.js";
-import { createHalftoneImpl, createHalftoneSchema } from "../layer1/createHalftone.js";
-import { createKaleidoscopeImpl, createKaleidoscopeSchema } from "../layer1/createKaleidoscope.js";
 import { errorResult, structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { createAsciiRenderImpl, createAsciiRenderSchema } from "./createAsciiRender.js";
+import { createAudioReactiveImpl, createAudioReactiveSchema } from "./createAudioReactive.js";
+import { createColorGradeImpl, createColorGradeSchema } from "./createColorGrade.js";
+import { createDitherImpl, createDitherSchema } from "./createDither.js";
+import { createEnergyStructureImpl, createEnergyStructureSchema } from "./createEnergyStructure.js";
+import { createFeedbackNetworkImpl, createFeedbackNetworkSchema } from "./createFeedbackNetwork.js";
+import { createFeedbackTunnelImpl, createFeedbackTunnelSchema } from "./createFeedbackTunnel.js";
+import { createFluidSimImpl, createFluidSimSchema } from "./createFluidSim.js";
+import { createGenerativeArtImpl, createGenerativeArtSchema } from "./createGenerativeArt.js";
+import { createGlitchImpl, createGlitchSchema } from "./createGlitch.js";
+import { createGrowthSystemImpl, createGrowthSystemSchema } from "./createGrowthSystem.js";
+import { createHalftoneImpl, createHalftoneSchema } from "./createHalftone.js";
+import { createKaleidoscopeImpl, createKaleidoscopeSchema } from "./createKaleidoscope.js";
 
 /**
  * `apply_creative_card` — Closes the inspiration → execution loop. Reads a

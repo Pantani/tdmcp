@@ -931,7 +931,7 @@ describe("setlistRunner", () => {
   });
 
   it("parseSetlistInput returns error on malformed YAML", () => {
-    // gray-matter throws on bad YAML in delimited frontmatter
+    // The local YAML parser throws on bad YAML.
     const bad = ":\n  - [unbalanced";
     const parsed = parseSetlistInput(bad, "x.yaml");
     expect(parsed.ok).toBe(false);

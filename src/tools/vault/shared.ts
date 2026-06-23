@@ -25,7 +25,7 @@ export function requireVault(ctx: ToolContext): { vault: Vault } | { error: Call
 
 /**
  * Reads a vault note without letting it throw out of the handler. A malformed
- * YAML frontmatter (gray-matter's `matter()` throws) or an I/O error after the
+ * YAML frontmatter (the local parser throws) or an I/O error after the
  * `exists()` check (read race, permissions, non-UTF8) becomes a friendly error
  * result instead of crashing the tool with a JSON-RPC protocol error. Usage
  * mirrors {@link requireVault}:

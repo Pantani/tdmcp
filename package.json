@@ -115,7 +115,6 @@
   ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "gray-matter": "^4.0.3",
     "shader-park-core": "^0.2.8",
     "yaml": "^2.9.0",
     "zod": "^4.4.3"

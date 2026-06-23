@@ -74,17 +74,23 @@ class ExecGateTests(unittest.TestCase):
         _clear_exec_env()
         _clear_token_env()
 
-    def test_allowed_by_default(self):
+    def test_disabled_by_default_without_token_or_explicit_opt_in(self):
         _clear_exec_env()
+        _clear_token_env()
+        self.assertFalse(ac._exec_allowed())
+
+    def test_token_enables_exec_by_default_for_authenticated_bridge(self):
+        _clear_exec_env()
+        os.environ["TDMCP_BRIDGE_TOKEN"] = "s3cret"
         self.assertTrue(ac._exec_allowed())
 
     def test_disabled_values(self):
-        for value in ("0", "false", "FALSE", "no", "off", " Off "):
+        for value in ("0", "false", "FALSE", "no", "off", " Off ", "", "anything"):
             os.environ["TDMCP_BRIDGE_ALLOW_EXEC"] = value
             self.assertFalse(ac._exec_allowed(), value)
 
     def test_enabled_values(self):
-        for value in ("1", "true", "yes", "on", "", "anything"):
+        for value in ("1", "true", "yes", "on", " On "):
             os.environ["TDMCP_BRIDGE_ALLOW_EXEC"] = value
             self.assertTrue(ac._exec_allowed(), value)
 
@@ -186,6 +192,7 @@ class RoutingTests(unittest.TestCase):
         ac.api_service.get_nodes.assert_called_once_with("/project1")
 
     def test_exec_dispatch_when_allowed(self):
+        os.environ["TDMCP_BRIDGE_ALLOW_EXEC"] = "1"
         ac._route("POST", "/api/exec", {}, {"script": "x=1", "return_output": False})
         ac.api_service.exec_script.assert_called_once_with("x=1", False)
 
@@ -205,6 +212,7 @@ class RoutingTests(unittest.TestCase):
         ac.api_service.delete_node.assert_called_once_with("/project1/noise1")
 
     def test_node_method_dispatch(self):
+        os.environ["TDMCP_BRIDGE_ALLOW_EXEC"] = "1"
         ac._route(
             "POST",
             "/api/nodes/project1/geo1/method",
@@ -236,6 +244,7 @@ class RoutingTests(unittest.TestCase):
         self.assertIn("type", str(cm.exception))
 
     def test_exec_missing_script_raises_descriptive(self):
+        os.environ["TDMCP_BRIDGE_ALLOW_EXEC"] = "1"
         with self.assertRaises(ValueError) as cm:
             ac._route("POST", "/api/exec", {}, {})
         self.assertIn("script", str(cm.exception))

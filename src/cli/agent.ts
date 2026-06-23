@@ -51,6 +51,10 @@ import {
   applyGlslTopMappingSchema,
 } from "../tools/foundation/glslTopMapping.js";
 import {
+  applyCreativeCardImpl,
+  applyCreativeCardSchema,
+} from "../tools/layer1/applyCreativeCard.js";
+import {
   applyPostProcessingImpl,
   applyPostProcessingSchema,
 } from "../tools/layer1/applyPostProcessing.js";
@@ -408,10 +412,6 @@ import {
   addCustomParametersSchema,
 } from "../tools/layer2/addCustomParameters.js";
 import { animateParameterImpl, animateParameterSchema } from "../tools/layer2/animateParameter.js";
-import {
-  applyCreativeCardImpl,
-  applyCreativeCardSchema,
-} from "../tools/layer2/applyCreativeCard.js";
 import { applyLutImpl, applyLutSchema } from "../tools/layer2/applyLut.js";
 import { arrangeNetworkImpl, arrangeNetworkSchema } from "../tools/layer2/arrangeNetwork.js";
 import {
@@ -3316,6 +3316,14 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
       stderr: "",
       code: 0,
     };
+  }
+  if (values.help && positionals.length > 0) {
+    const target = positionals.join(" ");
+    const help = formatCommandHelp(target);
+    if (!help) {
+      return { stdout: "", stderr: `Unknown command for help: "${target}".\n`, code: 2 };
+    }
+    return { stdout: `${help}\n`, stderr: "", code: 0 };
   }
   if (values.help || positionals.length === 0) {
     return { stdout: `${usage()}\n`, stderr: "", code: 0 };

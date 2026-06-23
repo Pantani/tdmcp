@@ -55,15 +55,16 @@ def _required_token():
 def _exec_allowed():
     """Whether the arbitrary-code endpoints (`/api/exec`, node `method`) are enabled.
 
-    On by default. Set `TDMCP_BRIDGE_ALLOW_EXEC` to 0/false/no/off in TouchDesigner's
-    environment to reject them at the bridge — defense in depth that holds even against
-    a direct network caller, independent of the Node server's own `TDMCP_RAW_PYTHON`
-    gate (which only hides the tools client-side). Structured endpoints stay available.
+    Default-deny unless the bridge is authenticated with TDMCP_BRIDGE_TOKEN or the
+    operator explicitly opts in with `TDMCP_BRIDGE_ALLOW_EXEC=1` (also accepts
+    true/yes/on). This holds even against a direct network caller, independent of
+    the Node server's own `TDMCP_RAW_PYTHON` gate (which only hides the tools
+    client-side). Structured endpoints stay available.
     """
     raw = os.environ.get("TDMCP_BRIDGE_ALLOW_EXEC")
     if raw is None:
-        return True
-    return raw.strip().lower() not in ("0", "false", "no", "off")
+        return _required_token() is not None
+    return raw.strip().lower() in ("1", "true", "yes", "on")
 
 
 def _quarantine_load_enabled():
@@ -286,7 +287,7 @@ def _route_get_root(rest, query, webserver=None):
     return None
 
 
-def _route_post_root(rest, body):
+def _route_post_root_core(rest, body):
     if rest == ["nodes"]:
         _require(body, "parent_path", "type")
         return api_service.create_node(
@@ -302,6 +303,10 @@ def _route_post_root(rest, body):
     if rest == ["batch"]:
         return batch_service.run(body.get("operations", []))
 
+    return None
+
+
+def _route_post_root_controls(rest, body):
     # Structured wiring + logs endpoints — NO exec gate (they must survive
     # TDMCP_BRIDGE_ALLOW_EXEC=0). Top-level paths, so no collision with nodes/network.
     if rest == ["connect"]:
@@ -333,6 +338,10 @@ def _route_post_root(rest, body):
         _require(body, "enabled")
         return system_service.set_perform_mode(_as_bool(body["enabled"], "enabled"))
 
+    return None
+
+
+def _route_post_root_project(rest, body):
     if rest == ["project", "load"]:
         # Load a .toe/.tox for the Project RAG quarantine analyzer. NOT exec-gated
         # (TD's own loaders, not arbitrary Python), but gated behind an explicit
@@ -358,6 +367,14 @@ def _route_post_root(rest, body):
             continue_on_error=_as_bool(body.get("continue_on_error", True), "continue_on_error"),
         )
 
+    return None
+
+
+def _route_post_root(rest, body):
+    for router in (_route_post_root_core, _route_post_root_controls, _route_post_root_project):
+        routed = router(rest, body)
+        if routed is not None:
+            return routed
     return None
 
 

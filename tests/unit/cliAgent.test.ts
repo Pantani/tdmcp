@@ -62,6 +62,19 @@ describe("tdmcp-agent CLI", () => {
     expect(r.stdout).toContain("Input schema:");
   });
 
+  it("treats command --help as command-specific help", async () => {
+    const r = await runCli(["doctor", "--help"], {
+      makeCtx: () => {
+        throw new Error("command help must not build a TD context");
+      },
+    });
+
+    expect(r.code).toBe(0);
+    expect(r.stdout).toContain("tdmcp-agent doctor");
+    expect(r.stdout).toContain("Diagnose TD bridge");
+    expect(r.stdout).not.toContain("Inspection & diagnostics:");
+  });
+
   it("emits a JSON Schema for the vector-lines shorthand", async () => {
     const r = await runCli(["schema", "vector-lines"]);
     expect(r.code).toBe(0);

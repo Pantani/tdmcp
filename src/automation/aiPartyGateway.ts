@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { normalizeAiPartyEvent } from "./aiPartyFanIn.js";
 import {
   createShowDirectorState,
   type ShowActionPlan,
@@ -288,6 +289,21 @@ function fallbackForCommand(
 export function fallbackHermesCandidate(args: AiPartyGatewayArgs): ParsedFallback | undefined {
   const parsed = commandToken(args.message.text);
   if (!parsed) {
+    const normalized = normalizeAiPartyEvent({
+      type: "operator_text",
+      text: args.message.text,
+      confidence: args.message.chat_role === "audience" ? 0.7 : 0.85,
+    });
+    if (normalized.ok && normalized.intent.type !== "log_note") {
+      return {
+        command: "message",
+        candidate: {
+          intent: normalized.intent,
+          confidence: normalized.confidence,
+          rationale: normalized.rationale,
+        },
+      };
+    }
     return {
       command: "message",
       candidate: {

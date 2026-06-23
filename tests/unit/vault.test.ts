@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { extractFencedBlock } from "../../src/vault/frontmatter.js";
+import { extractFencedBlock, parseNote } from "../../src/vault/frontmatter.js";
 import { Vault } from "../../src/vault/index.js";
 
 describe("Vault", () => {
@@ -53,6 +53,25 @@ describe("Vault", () => {
 
   it("expands a leading ~ to the home directory", () => {
     expect(new Vault("~/some-tdmcp-vault").root).toBe(join(homedir(), "some-tdmcp-vault"));
+  });
+});
+
+describe("parseNote", () => {
+  it("strips a BOM from body-only fallback notes", () => {
+    expect(parseNote("\uFEFFplain body").body).toBe("plain body");
+  });
+
+  it("strips a BOM when frontmatter is unterminated", () => {
+    const note = parseNote("\uFEFF---\ntitle: broken\nbody");
+    expect(note).toEqual({ data: {}, body: "---\ntitle: broken\nbody" });
+  });
+
+  it("does not treat indented fence-like YAML content as the closing fence", () => {
+    const note = parseNote("---\ndescription: |\n  ---\n  keep this line\ntitle: Demo\n---\nbody");
+
+    expect(note.data.title).toBe("Demo");
+    expect(String(note.data.description)).toContain("---");
+    expect(note.body).toBe("body");
   });
 });
 

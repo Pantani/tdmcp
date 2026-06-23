@@ -1,4 +1,5 @@
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { request } from "node:http";
 import { Socket } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -57,6 +58,41 @@ function okJson(body: unknown): Response {
 
 async function readJson<T = unknown>(res: Response): Promise<T> {
   return (await res.json()) as T;
+}
+
+async function postOperatorText(
+  port: string,
+  headers: Record<string, string> = {},
+): Promise<{ status: number; body: { ok?: boolean; error?: string } }> {
+  return new Promise((resolve, reject) => {
+    const req = request(
+      {
+        hostname: "127.0.0.1",
+        port,
+        path: "/api/operator/text",
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          ...headers,
+        },
+      },
+      (res) => {
+        const chunks: Buffer[] = [];
+        res.on("data", (chunk: Buffer) => chunks.push(chunk));
+        res.on("end", () => {
+          resolve({
+            status: res.statusCode ?? 0,
+            body: JSON.parse(Buffer.concat(chunks).toString("utf8")) as {
+              ok?: boolean;
+              error?: string;
+            },
+          });
+        });
+      },
+    );
+    req.on("error", reject);
+    req.end(JSON.stringify({ text: "deixa a sala mais premium tropical" }));
+  });
 }
 
 type HealthJson = { ok: boolean; state: { hardware_enabled: boolean } };
@@ -1391,6 +1427,67 @@ describe("aiPartyLive service", () => {
     const markdown = await markdownRes.text();
     expect(markdown).toContain("# AI Party Live — Night Recap");
   });
+
+  it("blocks mutating dashboard requests with non-loopback Origin on loopback binds", async () => {
+    const service = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      ollamaModel: "",
+      deterministicFallback: true,
+    });
+    const handle = await service.start();
+    handles.push(handle);
+    const port = new URL(handle.url).port;
+
+    const response = await postOperatorText(port, {
+      host: `127.0.0.1:${port}`,
+      origin: "https://evil.test",
+    });
+
+    expect(response.status).toBe(403);
+    expect(response.body).toMatchObject({ ok: false, error: expect.stringContaining("Origin") });
+    expect(service.snapshot().showState.current_cue).toBe("doors_idle");
+  });
+
+  it("blocks mutating dashboard requests with non-loopback Host when bound to all interfaces", async () => {
+    const service = createAiPartyLiveService({
+      dashboardHost: "0.0.0.0",
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      ollamaModel: "",
+      deterministicFallback: true,
+    });
+    const handle = await service.start();
+    handles.push(handle);
+    const port = new URL(handle.url).port;
+
+    const response = await postOperatorText(port, { host: "evil.test" });
+
+    expect(response.status).toBe(403);
+    expect(response.body).toMatchObject({ ok: false, error: expect.stringContaining("Host") });
+    expect(service.snapshot().showState.current_cue).toBe("doors_idle");
+  });
+
+  it("rejects spoofed loopback dashboard headers from non-loopback clients", () => {
+    const service = createAiPartyLiveService({
+      dashboardHost: "0.0.0.0",
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      ollamaModel: "",
+      deterministicFallback: true,
+    });
+    const req = {
+      headers: { host: "127.0.0.1:8787" },
+      socket: { remoteAddress: "203.0.113.10" },
+    };
+    const guard = (
+      service as unknown as {
+        dashboardRequestGuard: (request: typeof req, mutating: boolean) => string | undefined;
+      }
+    ).dashboardRequestGuard.bind(service);
+
+    expect(guard(req, true)).toContain("non-loopback client");
+  });
 });
 
 describe("Ollama, Telegram, TD and dispatch adapters", () => {
@@ -1613,6 +1710,7 @@ describe("Ollama, Telegram, TD and dispatch adapters", () => {
     expect(script).toContain('_composite_status.par.operand = "add"');
     expect(script).toContain('_composite_status.par.size = "input1"');
     expect(script).toContain("_noise_base.par.t4d.expr");
+    expect(script).toContain("_displace_energy.inputConnectors[1].connect(_noise_base)");
     expect(script).toContain("_blur_bloom_sim.inputConnectors[0].connect(_displace_energy)");
     expect(AI_PARTY_TD_PREVIEW_OUTPUTS.map((output) => output.id)).toEqual([
       "main_identity",
@@ -1654,6 +1752,29 @@ describe("Ollama, Telegram, TD and dispatch adapters", () => {
     expect(AI_PARTY_DASHBOARD_HTML).toContain('$("audienceText").value = text');
     expect(AI_PARTY_DASHBOARD_HTML).toContain('toast("Could not queue suggestion", "error")');
     expect(AI_PARTY_DASHBOARD_HTML).not.toContain("alert(");
+  });
+
+  it("escapes dynamic dashboard HTML fields before assigning innerHTML", () => {
+    const script = AI_PARTY_DASHBOARD_HTML.match(/<script>([\s\S]*)<\/script>/)?.[1] ?? "";
+    const escSource = script.match(/function esc\(value\) \{[\s\S]*?\n {4}\}/)?.[0];
+    expect(escSource).toBeDefined();
+    const esc = new Function(`${escSource}; return esc;`)() as (value: unknown) => string;
+
+    expect(esc(`'<img src=x onerror="boom()">&`)).toBe(
+      "&#39;&lt;img src=x onerror=&quot;boom()&quot;&gt;&amp;",
+    );
+    expect(script).toContain("data-label=\"' + esc(cue.label)");
+    expect(script).toContain("data-elapsed=\"' + esc(elapsed)");
+    expect(script).toContain("data-cue=\"' + esc(cue.name)");
+    expect(script).toContain("esc(scene.label)");
+    expect(script).toContain("data-scene=\"' + esc(scene.id)");
+    expect(script).toContain("esc(a.policy_result.operator_message)");
+    expect(script).toContain("esc(JSON.stringify(e.payload");
+    expect(script).toContain("esc((recap.highlights || []).join");
+    expect(script).toContain("alt=\"'+esc(output.label");
+    expect(script).toContain("esc(output.path || p?.path");
+    expect(script).toContain("el.textContent = message");
+    expect(script).toContain("textContent = recap.summary");
   });
 
   it("ships a dashboard script that compiles and only references existing element ids", () => {

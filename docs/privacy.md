@@ -59,10 +59,11 @@ policies; tdmcp itself does not send your data to them or anyone else at runtime
 The TouchDesigner bridge executes Python inside your own TouchDesigner process and
 listens on `127.0.0.1:9980`. You stay in control of access:
 
-- require a bearer token by setting `TDMCP_BRIDGE_TOKEN` (on both the server and
-  TouchDesigner), and/or
-- disable the code-execution endpoints by setting `TDMCP_BRIDGE_ALLOW_EXEC=0` in
-  TouchDesigner's environment.
+- keep arbitrary code-execution endpoints closed by default unless you configure
+  `TDMCP_BRIDGE_TOKEN` or explicitly set `TDMCP_BRIDGE_ALLOW_EXEC=1` inside
+  TouchDesigner, and
+- require a bearer token by setting `TDMCP_BRIDGE_TOKEN` on both the server and
+  TouchDesigner when the bridge is reachable beyond a trusted local machine.
 
 See the [architecture reference](/reference/architecture) and
 [environment variables](/reference/environment) for the full security model.

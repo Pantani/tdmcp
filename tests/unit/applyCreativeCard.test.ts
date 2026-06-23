@@ -29,7 +29,7 @@ const {
   APPLY_CREATIVE_CARD_DISPATCH,
   APPLY_CREATIVE_CARD_TARGETS,
   APPLY_CREATIVE_CARD_WHITELIST,
-} = await import("../../src/tools/layer2/applyCreativeCard.js");
+} = await import("../../src/tools/layer1/applyCreativeCard.js");
 
 function makeCard(overrides: Partial<CreativeRagCard> = {}): CreativeRagCard {
   return {

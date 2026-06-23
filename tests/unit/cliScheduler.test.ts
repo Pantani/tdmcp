@@ -134,9 +134,9 @@ describe("parseScheduleInput", () => {
   });
 
   it("returns ok:false on unparseable content", () => {
-    // gray-matter may throw on severely malformed input; parseScheduleInput returns ok:false
+    // The local YAML parser may throw on severely malformed input; parseScheduleInput returns ok:false
     const r = parseScheduleInput("{ bad: json: : : }");
-    // We accept either ok:true (gray-matter parsed as YAML) or ok:false (threw)
+    // We accept either ok:true (parsed as YAML) or ok:false (threw)
     // The important thing is it does not throw
     expect(typeof r.ok).toBe("boolean");
   });

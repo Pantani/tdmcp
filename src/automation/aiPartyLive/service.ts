@@ -425,6 +425,45 @@ function wsAccept(key: string): string {
   return createHash("sha1").update(`${key}258EAFA5-E914-47DA-95CA-C5AB0DC85B11`).digest("base64");
 }
 
+const LOOPBACK_DASHBOARD_HOSTS = new Set(["127.0.0.1", "localhost", "::1"]);
+
+function headerValue(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function hostnameFromHostHeader(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  if (/[\\/@?#\s]/.test(value)) return undefined;
+  try {
+    return new URL(`http://${value}`).hostname;
+  } catch {
+    return undefined;
+  }
+}
+
+function hostnameFromOrigin(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  try {
+    return new URL(value).hostname;
+  } catch {
+    return undefined;
+  }
+}
+
+function isLoopbackDashboardHost(value: string | undefined): boolean {
+  return value !== undefined && LOOPBACK_DASHBOARD_HOSTS.has(value.toLowerCase());
+}
+
+function isLoopbackRemoteAddress(value: string | undefined): boolean {
+  if (!value) return false;
+  const normalized = value.toLowerCase().replace(/^::ffff:/, "");
+  return normalized === "127.0.0.1" || normalized === "::1";
+}
+
+function isMutatingDashboardMethod(method: string): boolean {
+  return method === "POST" || method === "PATCH" || method === "DELETE";
+}
+
 function sendWs(socket: Socket, payload: unknown): boolean {
   if (socket.destroyed || !socket.writable || socket.writableEnded) return false;
   if (typeof socket.listenerCount === "function" && socket.listenerCount("error") === 0) {
@@ -2015,6 +2054,20 @@ export class AiPartyLiveService {
       });
     });
     server.on("upgrade", (req, socket) => {
+      const accessError = this.dashboardRequestGuard(req, true);
+      if (accessError) {
+        socket.write(
+          [
+            "HTTP/1.1 403 Forbidden",
+            "Connection: close",
+            "Content-Type: text/plain; charset=utf-8",
+            "",
+            accessError,
+          ].join("\r\n"),
+        );
+        socket.destroy();
+        return;
+      }
       if ((req.url ?? "").split("?")[0] !== "/ws") {
         socket.destroy();
         return;
@@ -2074,6 +2127,11 @@ export class AiPartyLiveService {
     const method = req.method ?? "GET";
     const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "127.0.0.1"}`);
     const path = url.pathname;
+    const accessError = this.dashboardRequestGuard(req, isMutatingDashboardMethod(method));
+    if (accessError) {
+      json(res, 403, { ok: false, error: accessError });
+      return;
+    }
 
     if (method === "GET" && path === "/") {
       text(res, 200, AI_PARTY_DASHBOARD_HTML, "text/html");
@@ -2336,6 +2394,24 @@ export class AiPartyLiveService {
       return;
     }
     json(res, 404, { ok: false, error: "not found" });
+  }
+
+  private dashboardRequestGuard(req: IncomingMessage, mutating: boolean): string | undefined {
+    if (!mutating) return undefined;
+    if (!isLoopbackRemoteAddress(req.socket.remoteAddress)) {
+      return `Forbidden: non-loopback client ${JSON.stringify(req.socket.remoteAddress ?? "")} rejected.`;
+    }
+    const hostHeader = headerValue(req.headers.host);
+    const host = hostnameFromHostHeader(hostHeader);
+    if (!isLoopbackDashboardHost(host)) {
+      return `Forbidden: non-loopback Host ${JSON.stringify(hostHeader ?? "")} rejected. Bind the dashboard to 127.0.0.1 or use a loopback Host header.`;
+    }
+    const originHeader = headerValue(req.headers.origin);
+    const origin = hostnameFromOrigin(originHeader);
+    if (origin !== undefined && !isLoopbackDashboardHost(origin)) {
+      return `Forbidden: non-loopback Origin ${JSON.stringify(originHeader ?? "")} rejected.`;
+    }
+    return undefined;
   }
 }
 

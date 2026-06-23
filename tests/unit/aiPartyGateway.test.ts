@@ -81,6 +81,22 @@ describe("aiPartyGateway", () => {
     expect(result.approval).toBeUndefined();
   });
 
+  it("blocks hazardous plain text before it can become a log note", () => {
+    const result = runAiPartyGateway({
+      message: {
+        text: "blackout total, strobo maximo e raw dmx agora",
+        chat_role: "operator",
+        user_role: "foh",
+      },
+    });
+
+    expect(result.source).toBe("fallback");
+    expect(result.hermes?.intent.type).toBe("arm_effect");
+    expect(result.decision.decision).toBe("block");
+    expect(result.decision.reason).toContain("blackout");
+    expect(result.plan).toEqual([]);
+  });
+
   it("blocks malformed Hermes output instead of turning it into an intent", () => {
     const result = runAiPartyGateway({
       message: {
@@ -181,6 +197,37 @@ describe("telegramShowGateway", () => {
     expect(firstReply.reply_markup.inline_keyboard[0][0].callback_data).toBe(
       "/approve approval_0001",
     );
+  });
+
+  it("denies Telegram updates by default when no chat allowlist is configured", async () => {
+    const calls: Array<{ input: string | URL; body?: string }> = [];
+    const fetcher: TelegramFetch = async (input, init) => {
+      calls.push({ input, body: init?.body });
+      const url = String(input);
+      if (url.includes("/getUpdates")) {
+        return jsonResponse({
+          ok: true,
+          result: [
+            {
+              update_id: 42,
+              message: {
+                message_id: 7,
+                text: "/fog 3s light",
+                chat: { id: 999, type: "group" },
+                from: { id: 1, username: "foh" },
+              },
+            },
+          ],
+        });
+      }
+      return jsonResponse({ ok: true, result: { message_id: 99 } });
+    };
+
+    const result = await pollTelegramShowOnce({ token: "123:secret" }, { fetch: fetcher });
+
+    expect(result.processed).toEqual([]);
+    expect(result.ignored).toEqual([{ update_id: 42, reason: "chat is not allowlisted" }]);
+    expect(calls).toHaveLength(1);
   });
 });
 

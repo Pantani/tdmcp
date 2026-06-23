@@ -145,11 +145,10 @@ the machine TD runs on:
 - `TDMCP_RAW_PYTHON=off` hides only the two **raw-Python MCP tools**
   (`execute_python_script`, `exec_node_method`) where the *client* authors the
   code. It is **not** a code-execution kill-switch: many higher-level tools still
-  send their own templated Python to `/api/exec`, and a direct network caller
-  could hit `/api/exec` and node-`method` regardless. To actually close code
-  execution, set `TDMCP_BRIDGE_ALLOW_EXEC=0` in TouchDesigner's environment — the
-  authoritative gate (defense in depth that holds even without a token); the
-  structured endpoints keep working.
+  send their own templated Python to the bridge. The bridge-side arbitrary-code
+  endpoints (`/api/exec`, node-`method`) are default-closed unless
+  `TDMCP_BRIDGE_TOKEN` is configured or `TDMCP_BRIDGE_ALLOW_EXEC=1` is explicitly
+  set in TouchDesigner's environment; structured endpoints keep working.
 - The MCP server binds to loopback (`127.0.0.1`) for both transports and enables
   DNS-rebinding protection on HTTP.
 - **The bridge refuses browser cross-origin requests.** Any request carrying an

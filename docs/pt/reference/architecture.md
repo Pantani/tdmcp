@@ -134,12 +134,11 @@ uma porta aberta para a máquina onde o TD roda:
 - `TDMCP_RAW_PYTHON=off` esconde apenas as duas **tools de Python cru**
   (`execute_python_script`, `exec_node_method`), onde o *cliente* escreve o código.
   **Não** é um botão de desligar a execução de código: muitas tools de mais alto
-  nível ainda enviam o próprio Python templado para `/api/exec`, e um chamador
-  direto na rede poderia atingir `/api/exec` e o `method` de um nó de qualquer
-  forma. Para realmente fechar a execução de código, defina
-  `TDMCP_BRIDGE_ALLOW_EXEC=0` no ambiente do TouchDesigner — o controle definitivo
-  (defesa em profundidade que vale até sem token); os endpoints estruturados
-  continuam funcionando.
+  nível ainda enviam o próprio Python templado para a ponte. Os endpoints de
+  código arbitrário do lado da ponte (`/api/exec`, `method` de nó) ficam fechados
+  por padrão, exceto quando `TDMCP_BRIDGE_TOKEN` estiver configurado ou
+  `TDMCP_BRIDGE_ALLOW_EXEC=1` for definido explicitamente no ambiente do
+  TouchDesigner; os endpoints estruturados continuam funcionando.
 - O servidor MCP escuta só no loopback (`127.0.0.1`) nos dois transportes e ativa a
   proteção contra DNS-rebinding no HTTP.
 - **A ponte recusa requisições cross-origin de navegador.** Qualquer requisição que

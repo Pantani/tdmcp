@@ -77,6 +77,35 @@ afterEach(() => {
 });
 
 describe("install-bridge CLI", () => {
+  it("prints help without copying bridge modules", async () => {
+    const fetchImpl = vi.fn();
+    vi.stubGlobal("fetch", fetchImpl);
+
+    const result = await runInstallBridge(["--help"]);
+
+    expect(result).toEqual(expect.objectContaining({ ok: true, detail: "install-bridge help" }));
+    expect(loggedText()).toContain("tdmcp install-bridge");
+    expect(loggedText()).toContain("--dir <path>");
+    expect(mocks.cpSync).not.toHaveBeenCalled();
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(process.exitCode).toBeUndefined();
+  });
+
+  it("does not treat help tokens used as option values as help", async () => {
+    const fetchImpl = vi.fn();
+    vi.stubGlobal("fetch", fetchImpl);
+
+    const result = await runInstallBridge(["--dir", "/tmp/tdmcp-bridge", "--token", "--help"]);
+
+    expect(result).toEqual(expect.objectContaining({ ok: true, token: "--help" }));
+    expect(mocks.cpSync).toHaveBeenCalledWith("/pkg/td/modules", "/tmp/tdmcp-bridge/modules", {
+      recursive: true,
+    });
+    expect(loggedText()).not.toContain("Usage:");
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(process.exitCode).toBeUndefined();
+  });
+
   it("installs bridge modules without probing TouchDesigner by default", async () => {
     const fetchImpl = vi.fn();
     vi.stubGlobal("fetch", fetchImpl);

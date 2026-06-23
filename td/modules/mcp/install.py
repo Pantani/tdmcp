@@ -106,7 +106,7 @@ def _event_hooks_source(modules_dir=None):
 DEFAULT_PACKAGE_NAME = "tdmcp_bridge_package"
 DEFAULT_PACKAGE_TOX_NAME = DEFAULT_PACKAGE_NAME + ".tox"
 DEFAULT_PACKAGE_PALETTE_FOLDER = "tdmcp"
-DEFAULT_PACKAGE_BOOTSTRAP_REPO_ZIP = "https://github.com/Pantani/tdmcp/archive/refs/heads/main.zip"
+DEFAULT_PACKAGE_BOOTSTRAP_REPO_ZIP = "https://github.com/Pantani/tdmcp/archive/refs/tags/v0.9.0.zip"
 DEFAULT_PACKAGE_BOOTSTRAP_DEST = "~/tdmcp-bridge"
 
 RUNTIME_BRIDGE_LAYOUT = {
@@ -312,7 +312,7 @@ def package_callbacks_source(
         "    print('[tdmcp package] ' + message)\n\n"
         "def _as_bool(value):\n"
         "    if isinstance(value, str):\n"
-        "        return value.strip().lower() not in ('0', 'false', 'off', 'no')\n"
+        "        return value.strip().lower() in ('1', 'true', 'on', 'yes')\n"
         "    return bool(value)\n\n"
         "def _settings(owner):\n"
         "    modules_dir = str(_read(owner, 'Modulesdir', '') or '').strip() or None\n"
@@ -328,15 +328,21 @@ def package_callbacks_source(
         "    }\n\n"
         "def _configure_security(owner):\n"
         "    token = str(_read(owner, 'Token', '') or '').strip()\n"
-        "    allow_exec = _as_bool(_read(owner, 'Allowexec', True))\n"
+        "    allow_exec = _as_bool(_read(owner, 'Allowexec', False))\n"
         "    if token:\n"
         "        os.environ['TDMCP_BRIDGE_TOKEN'] = token\n"
         "        print('[tdmcp package] TDMCP_BRIDGE_TOKEN set for this TD process')\n"
         "    else:\n"
         "        os.environ.pop('TDMCP_BRIDGE_TOKEN', None)\n"
         "        print('[tdmcp package] No Token set; cleared TDMCP_BRIDGE_TOKEN for this TD process')\n"
-        "    os.environ['TDMCP_BRIDGE_ALLOW_EXEC'] = '1' if allow_exec else '0'\n"
-        "    if not allow_exec:\n"
+        "    if allow_exec:\n"
+        "        os.environ['TDMCP_BRIDGE_ALLOW_EXEC'] = '1'\n"
+        "        print('[tdmcp package] TDMCP_BRIDGE_ALLOW_EXEC=1; arbitrary exec endpoints enabled')\n"
+        "    elif token:\n"
+        "        os.environ.pop('TDMCP_BRIDGE_ALLOW_EXEC', None)\n"
+        "        print('[tdmcp package] TDMCP_BRIDGE_ALLOW_EXEC unset; token-authenticated exec endpoints enabled')\n"
+        "    else:\n"
+        "        os.environ['TDMCP_BRIDGE_ALLOW_EXEC'] = '0'\n"
         "        print('[tdmcp package] TDMCP_BRIDGE_ALLOW_EXEC=0; arbitrary exec endpoints disabled')\n"
         "    return token, allow_exec\n\n"
         "def install_bridge(source=None, reinstall=False):\n"
@@ -427,7 +433,7 @@ def _package_readme_source(
         "- Leave Modules Dir blank to download td/modules from Repo Zip.\n\n"
         "Security guidance:\n"
         "- Set Token to populate TDMCP_BRIDGE_TOKEN for this TD process.\n"
-        "- Turn Allow Exec off to set TDMCP_BRIDGE_ALLOW_EXEC=0.\n"
+        "- Turn Allow Exec on only when you need /api/exec or node-method calls.\n"
         "- Firewall the Web Server DAT port to localhost on untrusted networks.\n"
     ) % (port, parent_path, container, modules_line, repo_zip, bootstrap_dest)
 
@@ -523,7 +529,7 @@ def _add_package_controls(comp, port, parent_path, container, modules_dir, repo_
     _append_custom_par(page, comp, "Str", "Repozip", repo_zip, label="Repo Zip")
     _append_custom_par(page, comp, "Str", "Bootstrapdest", bootstrap_dest, label="Bootstrap Dest")
     _append_custom_par(page, comp, "Str", "Token", "", label="Token")
-    _append_custom_par(page, comp, "Toggle", "Allowexec", True, label="Allow Exec")
+    _append_custom_par(page, comp, "Toggle", "Allowexec", False, label="Allow Exec")
     _append_custom_par(page, comp, "Str", "Laststatus", "not checked", label="Last Status")
 
     _set_par_value(comp, "Bridgeport", port)
@@ -532,7 +538,7 @@ def _add_package_controls(comp, port, parent_path, container, modules_dir, repo_
     _set_par_value(comp, "Modulesdir", modules_dir or "")
     _set_par_value(comp, "Repozip", repo_zip)
     _set_par_value(comp, "Bootstrapdest", bootstrap_dest)
-    _set_par_value(comp, "Allowexec", True)
+    _set_par_value(comp, "Allowexec", False)
     _set_par_value(comp, "Laststatus", "not checked")
 
 
@@ -661,10 +667,9 @@ def run(
     print("[tdmcp] bridge running on port %d (%s)" % (port, comp.path))
     print(
         "[tdmcp] SECURITY: the Web Server DAT listens on ALL network interfaces and, by "
-        "default, executes arbitrary Python (the /api/exec and node-method endpoints) with "
-        "no authentication. On a shared/untrusted network, harden it: (1) set the "
-        "TDMCP_BRIDGE_TOKEN env var (same value on the Node server) to require a bearer "
-        "token; (2) set TDMCP_BRIDGE_ALLOW_EXEC=0 to refuse the arbitrary-code endpoints; "
+        "default, refuses arbitrary Python endpoints (/api/exec and node-method) unless "
+        "TDMCP_BRIDGE_TOKEN or TDMCP_BRIDGE_ALLOW_EXEC=1 is set. On a shared/untrusted "
+        "network, keep exec disabled, set TDMCP_BRIDGE_TOKEN for authenticated use, "
         "and/or firewall port %d to localhost." % port
     )
     return comp

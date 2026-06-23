@@ -1,4 +1,3 @@
-import matter from "gray-matter";
 import { z } from "zod";
 import {
   type CanonicalScene,
@@ -7,6 +6,7 @@ import {
   normalize,
 } from "../automation/setlistSchema.js";
 import { TdConnectionError, TdError } from "../td-client/types.js";
+import { parseNote, parseYamlDocument } from "../vault/frontmatter.js";
 
 /**
  * setlist_runner — walk a CanonicalSetlist scene-by-scene and fire each
@@ -507,9 +507,9 @@ export async function runSetlist(opts: RunnerOptions): Promise<RunnerSummary> {
 
 /**
  * Parse a setlist file's raw text into a JS object suitable for
- * {@link loadCanonicalSetlist}, dispatching on extension (`.md` → YAML
- * frontmatter via gray-matter; `.yaml`/`.yml` → pure YAML; anything else →
- * leave as raw string for the JSON path). Exported so the CLI wrapper can
+ * {@link loadCanonicalSetlist}, dispatching on extension (`.md` -> YAML
+ * frontmatter; `.yaml`/`.yml` -> pure YAML; anything else -> leave as raw string
+ * for the JSON path). Exported so the CLI wrapper can
  * stay thin and tests can cover the round-trip without spawning the CLI.
  */
 export function parseSetlistInput(
@@ -521,14 +521,11 @@ export function parseSetlistInput(
     if (ext === "md" || ext === "markdown") {
       // Markdown note with YAML frontmatter — `data` is the parsed
       // frontmatter object, which holds the `tracks`/`scenes` list.
-      const file = matter(raw);
+      const file = parseNote(raw);
       return { ok: true, input: file.data };
     }
     if (ext === "yaml" || ext === "yml") {
-      // Pure YAML — wrap with frontmatter delimiters so gray-matter parses it
-      // without pulling js-yaml as a direct dep.
-      const file = matter(`---\n${raw}\n---\n`);
-      return { ok: true, input: file.data };
+      return { ok: true, input: parseYamlDocument(raw) };
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
