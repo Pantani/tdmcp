@@ -110,13 +110,27 @@ describe("TouchDesignerClient.loadProject", () => {
   });
 
   it("raises TdTimeoutError when the endpoint hangs past the deadline", async () => {
-    server.use(
-      http.post(
-        `${TD_BASE}/api/project/load`,
-        () => new Promise(() => {}), // never resolves
-      ),
-    );
-    await expect(makeClient(40).loadProject(ARTIFACT)).rejects.toBeInstanceOf(TdTimeoutError);
+    const hangingFetch: typeof fetch = (_input, init) =>
+      new Promise((_resolve, reject) => {
+        const signal = init?.signal;
+        const abort = () => {
+          const err = new Error("aborted");
+          err.name = "AbortError";
+          reject(err);
+        };
+        if (signal?.aborted) {
+          abort();
+          return;
+        }
+        signal?.addEventListener("abort", abort, { once: true });
+      });
+    const client = new TouchDesignerClient({
+      baseUrl: TD_BASE,
+      timeoutMs: 40,
+      fetchImpl: hangingFetch,
+    });
+
+    await expect(client.loadProject(ARTIFACT)).rejects.toBeInstanceOf(TdTimeoutError);
   });
 
   it("raises TdConnectionError when the bridge is unreachable", async () => {

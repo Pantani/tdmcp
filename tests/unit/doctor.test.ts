@@ -18,6 +18,7 @@ afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
 const LLM_BASE = "http://127.0.0.1:11434/v1";
+const noProjectRagIndex = { indexSize: () => null };
 
 /** Build a config from defaults, overriding only what a test cares about. */
 function makeConfig(overrides: Partial<TdmcpConfig> = {}): TdmcpConfig {
@@ -51,6 +52,7 @@ describe("tdmcp doctor", () => {
         config: makeConfig({ vaultPath: dir, llmModel: "qwen2.5:3b", bridgeToken: "test-token" }),
         makeCtx,
         profileDirPath: profileDir,
+        projectRagProbes: noProjectRagIndex,
       });
       expect(r.code).toBe(0);
       expect(r.report.ok).toBe(true);

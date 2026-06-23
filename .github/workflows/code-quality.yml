@@ -1,0 +1,240 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NPM_CONFIG_AUDIT: "false"
+  NPM_CONFIG_FUND: "false"
+
+jobs:
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - name: Use Node.js 22.x
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - name: Use Node.js 22.x
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: "0.11.23"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint TypeScript and Markdown-adjacent files
+        run: npm run lint
+
+      - name: Lint Python bridge
+        run: npm run lint:py
+
+      - name: Lint recipes
+        run: npm run lint:recipes
+
+  recipes:
+    name: Recipe Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - name: Use Node.js 22.x
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate recipes
+        run: npm run validate:recipes
+
+  dependency-boundaries:
+    name: Dependency Boundaries
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - name: Use Node.js 22.x
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check dependency boundaries
+        run: npm run deps:check
+
+  complexity:
+    name: Complexity Gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - name: Use Node.js 22.x
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: "0.11.23"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check complexity gates
+        run: make complexity
+
+  generated-artifacts:
+    name: Generated Artifacts
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - name: Use Node.js 22.x
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Import knowledge base
+        run: npm run import:bottobot
+
+      - name: Verify knowledge base is committed
+        run: git diff --exit-code -- src/knowledge/data
+
+      - name: Generate agent command catalog
+        run: npm run agent:catalog:gen
+
+      - name: Verify generated command catalog is committed
+        run: git diff --exit-code -- src/agentCommandCatalog.ts
+
+      - name: Build docs
+        run: npm run docs:build
+
+      - name: Verify generated docs are committed
+        run: git diff --exit-code -- docs/reference/tools.md
+
+  workflow-lint:
+    name: Workflow Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - name: Install actionlint
+        env:
+          GOBIN: ${{ runner.temp }}/actionlint-bin
+        run: |
+          go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+          echo "${GOBIN}" >> "$GITHUB_PATH"
+
+      - name: Lint GitHub Actions workflows
+        run: actionlint .github/workflows/*.yml
+
+  code-quality-success:
+    name: Code Quality Success
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: ${{ always() }}
+    needs:
+      - typecheck
+      - lint
+      - recipes
+      - dependency-boundaries
+      - complexity
+      - generated-artifacts
+      - workflow-lint
+    env:
+      TYPECHECK: ${{ needs.typecheck.result }}
+      LINT: ${{ needs.lint.result }}
+      RECIPES: ${{ needs.recipes.result }}
+      DEPENDENCY_BOUNDARIES: ${{ needs.dependency-boundaries.result }}
+      COMPLEXITY: ${{ needs.complexity.result }}
+      GENERATED_ARTIFACTS: ${{ needs.generated-artifacts.result }}
+      WORKFLOW_LINT: ${{ needs.workflow-lint.result }}
+    steps:
+      - name: Check required quality jobs
+        run: |
+          set -euo pipefail
+          failed=0
+          for item in \
+            "typecheck=${TYPECHECK}" \
+            "lint=${LINT}" \
+            "recipes=${RECIPES}" \
+            "dependency-boundaries=${DEPENDENCY_BOUNDARIES}" \
+            "complexity=${COMPLEXITY}" \
+            "generated-artifacts=${GENERATED_ARTIFACTS}" \
+            "workflow-lint=${WORKFLOW_LINT}"
+          do
+            name="${item%%=*}"
+            result="${item#*=}"
+            echo "$name: $result"
+            if [ "$result" != "success" ]; then
+              failed=1
+            fi
+          done
+          exit "$failed"
