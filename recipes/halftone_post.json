@@ -1,0 +1,72 @@
+{
+  "id": "halftone_post",
+  "name": "Halftone Post",
+  "description": "A single GLSL TOP applies a print-style halftone to any TOP, mirroring create_halftone. Style (mono dots, CMYK separation, Bayer dither, or posterize+outline), dot size, screen angle, and a wet/dry mix are GLSL uniforms. Uses a synthetic animated noiseTOP source so it previews offline. Fills the ascii/dither/halftone post gap. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "tags": ["post-processing", "halftone", "cmyk", "glsl", "stylize", "print"],
+  "difficulty": "advanced",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "source",
+      "type": "noiseTOP",
+      "parameters": { "monochrome": 0, "period": 3 },
+      "comment": "Synthetic source — swap for any TOP to halftone real footage."
+    },
+    {
+      "name": "halftone_glsl",
+      "type": "glslTOP",
+      "parameters": { "outputresolution": "custom", "resolutionw": 1280, "resolutionh": 720 },
+      "comment": "Screens each channel into rotated dot grids; uniforms via the Vectors sequence."
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "Final halftone output." }
+  ],
+  "connections": [
+    { "from": "source", "to": "halftone_glsl" },
+    { "from": "halftone_glsl", "to": "out1" }
+  ],
+  "glsl_code": {
+    "halftone_glsl": "out vec4 fragColor;\n\nuniform float uStyle;\nuniform float uDotSize;\nuniform float uAngle;\nuniform float uMix;\n\n// Rotate a UV coord by angle radians around 0.5\nvec2 rotateUV(vec2 uv, float angle) {\n    vec2 c = uv - 0.5;\n    float co = cos(angle);\n    float si = sin(angle);\n    return vec2(co * c.x - si * c.y, si * c.x + co * c.y) + 0.5;\n}\n\n// Dot-grid halftone: returns 0 (dot) or 1 (paper) for a single channel value\nfloat dotCell(vec2 uv, float val, float cellPx, float angle) {\n    vec2 px = uTDOutputInfo.res.xy;\n    vec2 uvr = rotateUV(uv, angle);\n    vec2 cell = fract(uvr / (cellPx * px)) - 0.5;\n    float dist = length(cell);\n    float radius = sqrt(1.0 - clamp(val, 0.0, 1.0)) * 0.5;\n    return step(radius, dist);\n}\n\nfloat bayer4(vec2 pos) {\n    int bayer[16];\n    bayer[0]  =  0; bayer[1]  =  8; bayer[2]  =  2; bayer[3]  = 10;\n    bayer[4]  = 12; bayer[5]  =  4; bayer[6]  = 14; bayer[7]  =  6;\n    bayer[8]  =  3; bayer[9]  = 11; bayer[10] =  1; bayer[11] =  9;\n    bayer[12] = 15; bayer[13] =  7; bayer[14] = 13; bayer[15] =  5;\n    ivec2 ip = ivec2(mod(pos, 4.0));\n    int idx = ip.y * 4 + ip.x;\n    return float(bayer[idx]) / 16.0;\n}\n\nvoid main() {\n    vec2 uv = vUV.st;\n    vec4 orig = texture(sTD2DInputs[0], uv);\n    int style = int(uStyle);\n\n    vec4 styled;\n\n    if (style == 0) {\n        float lum = dot(orig.rgb, vec3(0.299, 0.587, 0.114));\n        float angleRad = uAngle * 3.14159265 / 180.0;\n        float paper = dotCell(uv, lum, uDotSize, angleRad);\n        styled = vec4(vec3(paper), orig.a);\n\n    } else if (style == 1) {\n        float k = 1.0 - max(max(orig.r, orig.g), orig.b);\n        float ck = (1.0 - orig.r - k) / max(1.0 - k, 0.001);\n        float mk = (1.0 - orig.g - k) / max(1.0 - k, 0.001);\n        float yk = (1.0 - orig.b - k) / max(1.0 - k, 0.001);\n        float ar = uAngle * 3.14159265 / 180.0;\n        float cDot = dotCell(uv, ck, uDotSize, ar);\n        float mDot = dotCell(uv, mk, uDotSize, ar + 0.2618);\n        float yDot = dotCell(uv, yk, uDotSize, ar + 0.5236);\n        float kDot = dotCell(uv, k,  uDotSize, ar + 0.7854);\n        vec3 col = vec3(1.0);\n        col -= (1.0 - cDot) * vec3(0.0, 1.0, 1.0);\n        col -= (1.0 - mDot) * vec3(1.0, 0.0, 1.0);\n        col -= (1.0 - yDot) * vec3(1.0, 1.0, 0.0);\n        col -= (1.0 - kDot) * vec3(1.0, 1.0, 1.0);\n        styled = vec4(clamp(col, 0.0, 1.0), orig.a);\n\n    } else if (style == 2) {\n        vec2 px = uTDOutputInfo.res.xy;\n        vec2 screenPos = uv / px;\n        float thresh = bayer4(screenPos);\n        float levels = 4.0;\n        vec3 quant = floor(orig.rgb * levels) / levels;\n        vec3 next  = quant + 1.0 / levels;\n        vec3 frac  = orig.rgb * levels - floor(orig.rgb * levels);\n        vec3 dith  = mix(quant, next, step(thresh, frac));\n        styled = vec4(clamp(dith, 0.0, 1.0), orig.a);\n\n    } else {\n        float levels = 6.0;\n        vec3 post = floor(orig.rgb * levels) / levels;\n        vec2 px = uTDOutputInfo.res.xy;\n        float lc = dot(orig.rgb, vec3(0.299, 0.587, 0.114));\n        float lr = dot(texture(sTD2DInputs[0], uv + vec2(px.x, 0.0)).rgb, vec3(0.299, 0.587, 0.114));\n        float lu = dot(texture(sTD2DInputs[0], uv + vec2(0.0, px.y)).rgb, vec3(0.299, 0.587, 0.114));\n        float edge = clamp(abs(lc - lr) + abs(lc - lu), 0.0, 1.0) * 12.0;\n        vec3 col = post * (1.0 - clamp(edge, 0.0, 1.0));\n        styled = vec4(clamp(col, 0.0, 1.0), orig.a);\n    }\n\n    fragColor = TDOutputSwizzle(mix(orig, styled, uMix));\n}\n"
+  },
+  "glsl_uniforms": [
+    {
+      "node": "halftone_glsl",
+      "name": "uStyle",
+      "kind": "float",
+      "value": 1,
+      "min": 0,
+      "max": 3,
+      "label": "Style",
+      "description": "0=mono dots, 1=CMYK separation, 2=Bayer dither, 3=posterize+outline."
+    },
+    {
+      "node": "halftone_glsl",
+      "name": "uDotSize",
+      "kind": "float",
+      "value": 8,
+      "min": 1,
+      "max": 32,
+      "label": "Dot Size",
+      "description": "Cell size in pixels for the halftone screen."
+    },
+    {
+      "node": "halftone_glsl",
+      "name": "uAngle",
+      "kind": "float",
+      "value": 15,
+      "min": 0,
+      "max": 360,
+      "label": "Screen Angle",
+      "description": "Base rotation of the dot grid (degrees); CMYK channels offset from this."
+    },
+    {
+      "node": "halftone_glsl",
+      "name": "uMix",
+      "kind": "float",
+      "value": 1.0,
+      "min": 0,
+      "max": 1,
+      "label": "Mix"
+    }
+  ],
+  "preview_description": "A noise field reprinted as overlapping CMYK halftone rosettes — the smooth colors break into rotated dot screens like a magazine page seen through a loupe."
+}

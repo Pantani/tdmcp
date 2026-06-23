@@ -1,0 +1,72 @@
+{
+  "id": "kaleidoscope_mirror",
+  "name": "Kaleidoscope Mirror",
+  "description": "Reproducible twin of create_kaleidoscope: a single GLSL TOP folds a source into N mirrored radial wedges that meet edge-to-edge for a true kaleidoscope (not a plain repeat). A synthetic animated noiseTOP stands in as the source so it previews offline; swap for a selectTOP to kaleidoscope real footage. Segments, rotation, zoom, and center are GLSL uniforms; after import bind uRotation to absTime.seconds * <speed> to spin it (manual-wire — RecipeSchema parameters take constants only). Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "tags": ["post-processing", "kaleidoscope", "mirror", "glsl", "symmetry", "showcase"],
+  "difficulty": "intermediate",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "source",
+      "type": "noiseTOP",
+      "parameters": { "monochrome": 0, "period": 4 },
+      "comment": "Synthetic source — swap for a selectTOP / moviefileinTOP for a real kaleidoscope feed."
+    },
+    {
+      "name": "kaleido",
+      "type": "glslTOP",
+      "parameters": {
+        "outputresolution": "custom",
+        "resolutionw": 1280,
+        "resolutionh": 720,
+        "format": "rgba8fixed"
+      },
+      "comment": "Folds the source into mirrored wedges; uniforms via the Vectors sequence."
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "Final kaleidoscope output." }
+  ],
+  "connections": [{ "from": "source", "to": "kaleido" }, { "from": "kaleido", "to": "out1" }],
+  "glsl_code": {
+    "kaleido": "out vec4 fragColor;\nuniform float uSegments;\nuniform float uRotation;\nuniform float uZoom;\nuniform vec2  uCenter;\n\nconst float kPi  = 3.14159265359;\nconst float kTau = 6.28318530718;\n\nvoid main(){\n    // Centre the coordinates on the kaleidoscope origin and apply zoom.\n    vec2 pos = (vUV.st - uCenter) / max(uZoom, 0.0001);\n\n    // To polar.\n    float radius = length(pos);\n    float angle  = atan(pos.y, pos.x) + uRotation;\n\n    // Fold the angle into a single wedge, then mirror every other wedge.\n    float segments = max(uSegments, 2.0);\n    float wedge = kTau / segments;\n    angle = mod(angle, wedge);\n    angle = abs(angle - 0.5 * wedge);\n\n    // Back to cartesian, re-centred to re-sample the original source.\n    vec2 uv = uCenter + radius * vec2(cos(angle), sin(angle));\n\n    // Mirror-wrap outside [0,1] so the look stays filled and seamless.\n    uv = abs(fract(uv * 0.5) * 2.0 - 1.0);\n\n    fragColor = TDOutputSwizzle(texture(sTD2DInputs[0], uv));\n}\n"
+  },
+  "glsl_uniforms": [
+    {
+      "node": "kaleido",
+      "name": "uSegments",
+      "kind": "float",
+      "value": 6,
+      "min": 2,
+      "max": 32,
+      "label": "Segments",
+      "description": "Number of mirrored wedges around the circle."
+    },
+    {
+      "node": "kaleido",
+      "name": "uRotation",
+      "kind": "float",
+      "value": 0,
+      "min": 0,
+      "max": 6.2832,
+      "label": "Rotation",
+      "description": "Wedge rotation in radians. After import bind to absTime.seconds * <speed> to spin (manual-wire — RecipeSchema parameters take constants only)."
+    },
+    {
+      "node": "kaleido",
+      "name": "uZoom",
+      "kind": "float",
+      "value": 1.0,
+      "min": 0.1,
+      "max": 4.0,
+      "label": "Zoom"
+    },
+    {
+      "node": "kaleido",
+      "name": "uCenter",
+      "kind": "vec",
+      "value": [0.5, 0.5],
+      "label": "Center",
+      "description": "Kaleidoscope origin in UV space."
+    }
+  ],
+  "preview_description": "A noise field folded into six mirror-symmetric wedges radiating from the center, like looking down a kaleidoscope tube — spin it by animating the rotation uniform."
+}

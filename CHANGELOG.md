@@ -8,6 +8,49 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Recipe library depth (G3) — roadmap-to-1.0 campaign, Wave 6** — 18 new first-party recipes
+  (32 → 50; `npm run validate:recipes` 50/50). Ten net-new fill v0.7–v0.8 generator gaps:
+  `raymarch_sphere_field` + `raymarch_infinite_tunnel` (SDF), `strange_attractor_lorenz`,
+  `histogram_scope`, `ascii_render_post`, `dither_post`, `halftone_post`, `audio_glsl_uniforms`,
+  `front_of_house_dashboard` (dashboard-v2), `sidechain_pump`. Eight new Layer-1 orchestrator twins:
+  glitch, kaleidoscope, slime simulation, spectrum, waveform, tempo-sync, layer-mixer crossfade,
+  slit-scan. All grounded in real optypes and offline-validated against `RecipeSchema`; live
+  end-to-end cook validation is UNVERIFIED-pending-td. Orchestrators whose behavior is
+  callback/pulse/hardware-driven (not faithfully reproducible as static JSON) are deferred to
+  post-live twin authoring.
+- **Milestone 5 — AI Show Director mixer scene arming (dry-run MVP, offline) — roadmap-to-1.0 campaign, Wave 3** —
+  new `arm_mixer_scene` ShowIntent variant for operator-approved Soundcraft Ui24R show/snapshot/cue arming,
+  separate from `arm_effect`. The MixerScenePolicy returns `require_approval` for catalog-backed requests and
+  **never `allow`** in the MVP; it `block`s on missing manifest, unknown / LLM-invented `scene_id`, unknown
+  `mixer_id`, unresolved `setlist_ref`, unsupported target, changed catalog hash, or an unsafe scene diff —
+  and `mixer_gain`/`pa_mute`/`audio_routing` stay blocked. New `src/automation/mixerSceneCatalog.ts` (trusted
+  venue scene catalog / safety manifest + content hash) and `src/automation/mixerSceneAdapter.ts` (adapter
+  interface + dry-run backend returning `hardware_changed:false`; Companion / direct-node return
+  not-configured — no hardware client is constructed). Approval re-runs policy and emits the dry-run plan
+  (`dry_run_only:true`) built from the catalog; old effect approvals stay backwards-compatible. Companion
+  live backend + direct Node bridge remain quarantined pending bench/hardware validation. Safety-QA verified
+  all six boundary contracts; 215 mixer/show-director tests pass.
+- **Coverage CI gate (G2) + exec-off smoke (G4) + Connectors Directory prep (G6) — roadmap-to-1.0 campaign, Wave 2** —
+  the coverage harness is now a CI gate: `vitest.config.ts` thresholds ratcheted to the measured
+  no-regression floor (functions 82→83, lines 85→86; statements 84 / branches 70 unchanged) and the
+  CI `Test` step now runs `npm run test:coverage`. New `docs/reference/coverage-harness.md` documents
+  the gate and the tracked +5pp target (lines ≥ 91, branches ≥ 75). New `tests/smoke/execOff.test.ts`
+  proves every Layer-1 + Layer-2 tool registers with raw Python exec disabled (`TDMCP_RAW_PYTHON=off`):
+  132 L1 + 78 L2 register cleanly, only `create_python_script` is hidden by its gate; a dedicated CI
+  smoke runs it exec-off. The Connectors Directory submission package was re-verified (privacy EN+PT
+  current, `build:mcpb` produces a schema-valid 18.2 MB `.mcpb`, no stale `.dxt` refs) with a full
+  form-answer draft prepared; directory acceptance remains an external step.
+- **Docs completeness (G5) + API stability pin (G1) — roadmap-to-1.0 campaign, Wave 1** —
+  new per-arc guides for the v0.7/v0.8 work that lacked one: `docs/guide/show-timelines.md`
+  (timelines & setlists), `dashboard-foh.md` (front-of-house), `session-profile.md`
+  (session profile & corpus learning), `mediapipe-adapters.md` (face/hand/segmentation/pose)
+  and `mcp-resources.md` (the `tdmcp://…` resource families), plus `generators.md` — a
+  "what it builds + when to reach for it" paragraph per cookbook-referenced Layer-1
+  generator. All EN + PT, wired into the VitePress nav. New `docs/reference/API_STABILITY.md`
+  pins the v1.0 API contract (the `ToolContext` shape + each tool's Zod `inputSchema`) and the
+  one-minor-warn / next-minor-remove deprecation policy, cross-linked from the Tool API
+  contract page. `README.md` now cross-links the awesome-touchdesigner list and the tdmcp
+  Glama listing. Docs-only: `docs:build`, `docs:gen` (318 tools), `typecheck` and Biome pass.
 - **Hand hologram controls (Layer 1 + Layer 2, offline-tested)** — new
   `create_hand_gesture_bus` builds a stable, reusable MediaPipe-hands CHOP bus
   with palm openness, float anchor, active-hand lock, dropped-frame hold,

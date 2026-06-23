@@ -698,24 +698,28 @@ force multipliers are in place when those wrappers land.
   uniforms on `glslTOP`. (shipped v0.9.1)
 - ⬜ `create_external_io` outbound — itself FM-01 above.
 
-### Milestone 4 — Generative-AI bridge wave (gated on FM-01 + FM-02) · v0.9.x
+### Milestone 4 — Generative-AI bridge wave (gated on FM-01 + FM-02) · ✅ v0.9.0
 
 The trend-dominant cluster from [Round 4 D.2](#appendix-d-round4) — wrappers
 around components users install themselves; never bundled. All entries
 *remain* GPU/CUDA-gated for the *bundled* path; this wave ships only the
-**drive-installed-tox** and **cloud** deltas.
+**drive-installed-tox** and **cloud** deltas. **Shipped in v0.9.0** (hype-scout
+Round 4, #63): all eight register, are unit-tested offline, and survive
+`TDMCP_BRIDGE_ALLOW_EXEC=0`. Live GPU/component validation stays UNVERIFIED until
+each is run against its installed component — the cloud `connect_daydream_cloud`
+path is the one validatable without a local GPU.
 
-- ⬜ `setup_mediapipe_plugin` (torinmb canonical) — extension over the
+- ✅ `setup_mediapipe_plugin` (torinmb canonical) — extension over the
   shipped face/hand/segmentation setup.
-- ⬜ `drive_streamdiffusion` (dotsimulate TOX wrapper).
-- ⬜ `create_depth_from_2d` (TDDepthAnything v2 wrapper; reopens the
+- ✅ `drive_streamdiffusion` (dotsimulate TOX wrapper).
+- ✅ `create_depth_from_2d` (TDDepthAnything v2 wrapper; reopens the
   Round-3 EX placeholder).
-- ⬜ `connect_comfyui` (olegchomp/TDComfyUI or JiSenHua/ComfyUI-TD).
-- ⬜ `connect_daydream_cloud` (cloud path that skips the local GPU gate).
-- ⬜ `create_gaussian_splat_scene` (TDGS / POPs Gaussian-Splat v2026) —
+- ✅ `connect_comfyui` (olegchomp/TDComfyUI or JiSenHua/ComfyUI-TD).
+- ✅ `connect_daydream_cloud` (cloud path that skips the local GPU gate).
+- ✅ `create_gaussian_splat_scene` (TDGS / POPs Gaussian-Splat v2026) —
   the top trend in the scout, four-surface unanimous H.
-- ⬜ `create_llm_chain` (dotsimulate LOPs).
-- ⬜ `create_ai_mirror` combo recipe (depends on the bridge above + FM-01).
+- ✅ `create_llm_chain` (dotsimulate LOPs).
+- ✅ `create_ai_mirror` combo recipe (depends on the bridge above + FM-01).
 
 ### Milestone 5 — AI Show Director mixer scene arming · v0.8.x / v0.9.x
 
@@ -849,16 +853,25 @@ gates per-wave work but isn't yet a CI gate at the suite level.
 - ⬜ Bridge tests (`npm run test:bridge`) and recipe validation
   (`npm run validate:recipes`) stay green alongside the four PR gates.
 
-### G3 — Recipe library depth · ⬜
+### G3 — Recipe library depth · 🧪
 
-The repo ships **31 validated recipes** under `recipes/`, all gated by
+The repo ships **50 validated recipes** under `recipes/`, all gated by
 `RecipeSchema` and `npm run validate:recipes`.
 
-- ⬜ Add at least **10 net-new** first-party recipes covering the v0.7–v0.8
-  generator wave (SDF, strange-attractor, optical-flow, MediaPipe adapters,
-  decks, dashboard-v2 layouts), each live-validated end-to-end.
-- ⬜ One recipe per Layer-1 orchestrator so every "one-line build" tool has a
-  reproducible JSON twin.
+- 🧪 **10 net-new recipes shipped** covering the v0.7–v0.8 generator wave —
+  `raymarch_sphere_field` + `raymarch_infinite_tunnel` (SDF), `strange_attractor_lorenz`,
+  `histogram_scope`, `ascii_render_post`, `dither_post`, `halftone_post`,
+  `audio_glsl_uniforms`, `front_of_house_dashboard` (dashboard-v2), `sidechain_pump`.
+  All offline-validated against `RecipeSchema` with real optypes; **live end-to-end
+  cook validation is UNVERIFIED-pending-td**.
+- 🧪 **Orchestrator JSON twins — partial.** Eight new twins (glitch, kaleidoscope,
+  slime simulation, spectrum, waveform, tempo-sync, layer-mixer crossfade, slit-scan)
+  on top of the orchestrators already covered by the prior set. Orchestrators whose
+  behavior is callback/pulse/hardware/3D-asset-driven (e.g. `create_vector_lines`,
+  `create_automation_lane`, `create_text_crawl`, `create_growth_system`,
+  `create_pbr_scene`, `create_point_cloud`, `create_gaussian_splat_scene`,
+  `create_fluid_sim`, the `import_*` and MediaPipe/Kinect/DMX tools) are not faithfully
+  reproducible as static JSON offline and are deferred to post-live twin authoring.
 
 ### G4 — Bridge hardening · 🧪
 
@@ -867,11 +880,18 @@ to round-trip through `/api/exec`: nodes CRUD, connect / disconnect, param
 modes, DAT text, network errors / topology / performance, batch, preview, and
 structured logs (see `src/td-client/touchDesignerClient.ts`). What's left:
 
-- ⬜ Reduce remaining `executePythonScript` reliance: ~129 tool files still
-  call the exec path (often as a fallback). Each one that has a typed REST
-  equivalent should prefer the endpoint and only fall back when the bridge is
-  on an older protocol — tracked under the `tryEndpoint`/exec-fallback pattern
-  established in v0.8.1.
+- 🧪 Reduce remaining `executePythonScript` reliance. The **1:1-against-an-
+  existing-endpoint sweep is complete**: every tool whose operation maps directly
+  to a typed REST method already prefers it (15 tools — 9 via the canonical
+  `tryEndpoint` helper + 6 with intentionally-manual conditional fallbacks),
+  promoted across v0.8.1/0.8.2. Of the 183 exec callers, the remaining 168 are
+  legitimate custom-Python / composite builds (create→wire→set→verify in one
+  atomic pass) with **no typed REST equivalent**, or map only to the exec-gated
+  `/method` route (no hardening value) — they correctly stay on exec, the
+  intended escape hatch. **What's left is new-endpoint authoring**, not a rewire:
+  add first-class routes (e.g. `POST /api/nodes/{path}/save`, `/api/duplicate`,
+  batch create+write) to un-gate ops like `render_output` / `duplicate_network`.
+  That is a `tdmcp-bridge-endpoint` slice and needs live TD to validate.
 - ⬜ Keep `/api/exec` working when `TDMCP_BRIDGE_ALLOW_EXEC=0` is the venue
   policy: every Layer-1/Layer-2 tool must build with exec disabled (CI smoke).
 - ✅ Resilience patch — atomic writes, clean HTTP listen failure, event-stream

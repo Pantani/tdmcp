@@ -1,0 +1,90 @@
+{
+  "id": "glitch_post",
+  "name": "Glitch Post",
+  "description": "Reproducible twin of create_glitch: a noise driver displaces the source via a Displace TOP, then a GLSL TOP adds chromatic RGB split and horizontal band tearing. A synthetic animated noiseTOP stands in as the source so it previews offline; swap the source for a selectTOP to glitch real footage. After import, bind the driver's tz to absTime.seconds * <speed> for moving glitches (manual-wire — RecipeSchema parameters take constants only). Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "tags": ["post-processing", "glitch", "datamosh", "rgb-shift", "glsl", "showcase"],
+  "difficulty": "intermediate",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "source",
+      "type": "noiseTOP",
+      "parameters": { "monochrome": 0, "period": 4 },
+      "comment": "Synthetic source — swap for a selectTOP / moviefileinTOP to glitch real content."
+    },
+    {
+      "name": "driver",
+      "type": "noiseTOP",
+      "parameters": {
+        "monochrome": 1,
+        "period": 16,
+        "outputresolution": "custom",
+        "resolutionw": 64,
+        "resolutionh": 64
+      },
+      "comment": "Low-res displacement driver; block_size controls the tear chunkiness."
+    },
+    {
+      "name": "displace",
+      "type": "displaceTOP",
+      "parameters": { "uvweightx": 0.06, "uvweighty": 0.0 },
+      "comment": "Displaces the source horizontally by the driver — the structural glitch."
+    },
+    {
+      "name": "rgbshift",
+      "type": "glslTOP",
+      "comment": "Chromatic RGB split + per-band horizontal tearing."
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "Final glitched output." }
+  ],
+  "connections": [
+    { "from": "source", "to": "displace", "to_input": 0 },
+    { "from": "driver", "to": "displace", "to_input": 1 },
+    { "from": "displace", "to": "rgbshift" },
+    { "from": "rgbshift", "to": "out1" }
+  ],
+  "glsl_code": {
+    "rgbshift": "out vec4 fragColor;\nuniform float uShift;\nuniform float uAmount;\nuniform float uTime;\nfloat hash11(float x){ return fract(sin(x * 127.1) * 43758.5453); }\nvoid main(){\n    vec2 uv = vUV.st;\n    // Horizontal band tearing: quantise Y into bands, jump a subset of them sideways.\n    float band = floor(uv.y * 24.0);\n    float bandOn = step(0.72, hash11(band * 1.7 + floor(uTime * 8.0)));\n    float tear = (hash11(band + floor(uTime * 8.0)) - 0.5) * 0.18 * bandOn;\n    vec2 tuv = uv + vec2(tear * uAmount, 0.0);\n    // Chromatic RGB split: sample R/G/B at increasing horizontal offsets.\n    float o = uShift * uAmount;\n    float r = texture(sTD2DInputs[0], tuv + vec2(o, 0.0)).r;\n    float g = texture(sTD2DInputs[0], tuv).g;\n    float b = texture(sTD2DInputs[0], tuv - vec2(o, 0.0)).b;\n    float a = texture(sTD2DInputs[0], tuv).a;\n    fragColor = TDOutputSwizzle(vec4(r, g, b, a));\n}\n"
+  },
+  "glsl_uniforms": [
+    {
+      "node": "rgbshift",
+      "name": "uShift",
+      "kind": "float",
+      "value": 0.01,
+      "min": 0,
+      "max": 0.05,
+      "label": "RGB Shift",
+      "description": "Horizontal separation of the R/B channels."
+    },
+    {
+      "node": "rgbshift",
+      "name": "uAmount",
+      "kind": "float",
+      "value": 1.0,
+      "min": 0,
+      "max": 1,
+      "label": "Amount",
+      "description": "Overall glitch intensity (scales both tearing and RGB split)."
+    },
+    {
+      "node": "rgbshift",
+      "name": "uTime",
+      "kind": "float",
+      "value": 0,
+      "label": "Time",
+      "description": "Tearing animation phase. After import set to absTime.seconds for moving glitches (manual-wire — RecipeSchema parameters take constants only)."
+    }
+  ],
+  "controls": [
+    {
+      "name": "Amount",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 0.5,
+      "bind_to": ["displace.uvweightx"]
+    }
+  ],
+  "preview_description": "A colorful noise field shredded with sideways band-tears and a cyan/red chromatic fringe — a clean datamosh-style glitch look."
+}

@@ -1,4 +1,9 @@
 import { z } from "zod";
+import {
+  computeMixerCatalogHash,
+  type MixerSceneManifest,
+  sceneExcludesAllForbiddenDeltas,
+} from "./mixerSceneCatalog.js";
 
 export const ShowDecisionSchema = z.enum(["allow", "require_approval", "block"]);
 
@@ -21,6 +26,64 @@ export const ShowEffectSchema = z.enum([
 export type ShowEffect = z.infer<typeof ShowEffectSchema>;
 
 const NonEmptyString = z.string().trim().min(1);
+
+/**
+ * Soundcraft Ui24R mixer adapter target. The LLM/voice layer may suggest these
+ * fields, but they are untrusted for live authority — the catalog is the
+ * source of truth, matched by `scene_id`.
+ */
+export const ShowMixerAdapterTargetSchema = z.object({
+  kind: z.literal("soundcraft_ui24r"),
+  mixer_id: NonEmptyString,
+});
+
+/**
+ * `arm_mixer_scene` — a new ShowIntent variant, kept separate from `arm_effect`.
+ * It prepares a predeclared Ui24R show/snapshot/cue recall for operator approval.
+ *
+ * The catalog (matched by `scene_id`) is the source of truth; the optional
+ * show/snapshot/cue name fields and `setlist_ref` are advisory only and never
+ * resolved by fuzzy live matching. A request with no resolvable `scene_id`
+ * (or an unresolved `setlist_ref`) is blocked by policy, never armed.
+ */
+export const MixerSceneIntentSchema = z.object({
+  type: z.literal("arm_mixer_scene"),
+  adapter_target: ShowMixerAdapterTargetSchema,
+  target: z.discriminatedUnion("kind", [
+    z.object({
+      kind: z.literal("show"),
+      scene_id: NonEmptyString.optional(),
+      show_name: NonEmptyString.optional(),
+      setlist_ref: NonEmptyString.optional(),
+    }),
+    z.object({
+      kind: z.literal("snapshot"),
+      scene_id: NonEmptyString.optional(),
+      show_name: NonEmptyString.optional(),
+      snapshot_name: NonEmptyString.optional(),
+      setlist_ref: NonEmptyString.optional(),
+    }),
+    z.object({
+      kind: z.literal("cue"),
+      scene_id: NonEmptyString.optional(),
+      show_name: NonEmptyString.optional(),
+      cue_name: NonEmptyString.optional(),
+      setlist_ref: NonEmptyString.optional(),
+    }),
+  ]),
+  request: z
+    .object({
+      source: z
+        .enum(["voice", "chatgpt", "setlist", "td_audio_analysis", "operator", "scheduler"])
+        .optional(),
+      raw_text: z.string().trim().optional(),
+      reason: z.string().trim().optional(),
+      requested_for: z.string().trim().optional(),
+    })
+    .optional(),
+});
+
+export type MixerSceneIntent = z.infer<typeof MixerSceneIntentSchema>;
 
 export const ShowIntentSchema = z.discriminatedUnion("type", [
   z.object({
@@ -55,6 +118,7 @@ export const ShowIntentSchema = z.discriminatedUnion("type", [
     timing: z.enum(["now", "next_drop", "next_phrase", "manual"]).optional(),
     reason: z.string().trim().optional(),
   }),
+  MixerSceneIntentSchema,
   z.object({
     type: z.literal("approve_effect"),
     approval_id: NonEmptyString,
@@ -108,6 +172,10 @@ export const PolicyDecisionSchema = z.object({
   reason: z.string(),
   intent_type: z.string(),
   effect: ShowEffectSchema.optional(),
+  /** Resolved catalog scene ID when the intent is `arm_mixer_scene`. */
+  scene_id: z.string().optional(),
+  /** Catalog hash bound into a mixer-scene decision (operator-attested). */
+  catalog_hash: z.string().optional(),
   limits_applied: z.array(z.string()).default([]),
   requires_operator: z.boolean().default(false),
 });
@@ -117,6 +185,11 @@ export type PolicyDecision = z.infer<typeof PolicyDecisionSchema>;
 export interface ShowIntentEvaluationContext {
   recent_effects?: Array<{ effect: ShowEffect; at: string | Date }>;
   now?: Date;
+  /**
+   * Trusted venue mixer-scene manifest. Required to ever return
+   * `require_approval` for an `arm_mixer_scene` intent; absent → `block`.
+   */
+  mixer_scene_manifest?: MixerSceneManifest;
 }
 
 export type ParsedShowIntent =
@@ -227,6 +300,103 @@ function malformedDecision(issues: string[]): PolicyDecision {
   };
 }
 
+const MIXER_SCENE_OPERATION_BY_TARGET = {
+  show: "recall_show",
+  snapshot: "recall_snapshot",
+  cue: "recall_cue",
+} as const;
+
+function blockMixerScene(reason: string): PolicyDecision {
+  return {
+    decision: "block",
+    reason,
+    intent_type: "arm_mixer_scene",
+    limits_applied: ["catalog_backed_scene_ids_only"],
+    requires_operator: true,
+  };
+}
+
+/**
+ * MixerScenePolicy. A catalog-backed mixer scene request returns
+ * `require_approval`; it NEVER returns `allow` in the dry-run MVP. Every other
+ * outcome — missing config, unknown target, unresolved `setlist_ref`,
+ * unsupported target, changed catalog hash, unsafe scene diff — returns
+ * `block`. Hard denies cannot be softened by caller-supplied input.
+ */
+export function evaluateMixerSceneIntent(
+  intent: MixerSceneIntent,
+  manifest?: MixerSceneManifest,
+): PolicyDecision {
+  if (!manifest) {
+    return blockMixerScene("mixer scene manifest is not configured");
+  }
+
+  // Re-derive the canonical catalog hash and reject any drift from the
+  // operator-attested `policy_hash`. A changed catalog hard-blocks.
+  const computedHash = computeMixerCatalogHash(manifest.scenes);
+  if (computedHash !== manifest.policy_hash) {
+    return blockMixerScene(
+      `mixer scene catalog hash changed (declared ${manifest.policy_hash}, computed ${computedHash})`,
+    );
+  }
+
+  const sceneId = intent.target.scene_id;
+  if (!sceneId) {
+    if (intent.target.setlist_ref) {
+      return blockMixerScene(
+        `unresolved setlist_ref "${intent.target.setlist_ref}": no predeclared scene_id`,
+      );
+    }
+    return blockMixerScene("mixer scene request has no predeclared scene_id");
+  }
+
+  const scene = manifest.scenes.find((entry) => entry.scene_id === sceneId);
+  if (!scene) {
+    return blockMixerScene(`unknown mixer scene_id "${sceneId}"`);
+  }
+
+  if (scene.adapter_target.kind !== intent.adapter_target.kind) {
+    return blockMixerScene(`unsupported adapter kind "${intent.adapter_target.kind}"`);
+  }
+  if (scene.adapter_target.mixer_id !== intent.adapter_target.mixer_id) {
+    return blockMixerScene(
+      `unknown mixer_id "${intent.adapter_target.mixer_id}" for scene "${sceneId}"`,
+    );
+  }
+
+  // The requested target kind must match the catalog operation (no live retype).
+  if (MIXER_SCENE_OPERATION_BY_TARGET[intent.target.kind] !== scene.operation) {
+    return blockMixerScene(
+      `unsupported target: scene "${sceneId}" is ${scene.operation}, not ${intent.target.kind}`,
+    );
+  }
+
+  // Hard safety gate: scene must PROVE it excludes all forbidden mixer deltas.
+  if (!sceneExcludesAllForbiddenDeltas(scene)) {
+    return blockMixerScene(`unsafe scene diff: "${sceneId}" does not exclude all forbidden deltas`);
+  }
+
+  // If a setlist_ref is present it must be in the scene's allowed sections.
+  if (
+    intent.target.setlist_ref &&
+    !scene.allowed_setlist_sections.includes(intent.target.setlist_ref)
+  ) {
+    return blockMixerScene(
+      `unresolved setlist_ref "${intent.target.setlist_ref}" for scene "${sceneId}"`,
+    );
+  }
+
+  return {
+    decision: "require_approval",
+    reason: `mixer scene "${sceneId}" (${scene.label}) requires operator approval before any dispatch`,
+    intent_type: "arm_mixer_scene",
+    scene_id: sceneId,
+    catalog_hash: manifest.policy_hash,
+    limits_applied: ["catalog_backed_scene_ids_only", "never_auto_allow", "dry_run_only"],
+    requires_operator: true,
+  };
+}
+
 export function evaluateShowIntent(
   intent: ShowIntent,
   policy: EffectPolicy = DEFAULT_EFFECT_POLICY,
@@ -277,6 +447,10 @@ export function evaluateShowIntent(
       limits_applied: [],
       requires_operator: false,
     };
+  }
+
+  if (intent.type === "arm_mixer_scene") {
+    return evaluateMixerSceneIntent(intent, context.mixer_scene_manifest);
   }
 
   const entry = policyMap(policy).get(intent.effect);
@@ -371,7 +545,11 @@ export function evaluateShowIntent(
   };
 }
 
-export function parseShowIntent(raw: unknown, policy?: EffectPolicy): ParsedShowIntent {
+export function parseShowIntent(
+  raw: unknown,
+  policy?: EffectPolicy,
+  context: ShowIntentEvaluationContext = {},
+): ParsedShowIntent {
   const parsed = ShowIntentSchema.safeParse(raw);
   if (!parsed.success) {
     const issues = parsed.error.issues.map(formatIssue);
@@ -382,6 +560,6 @@ export function parseShowIntent(raw: unknown, policy?: EffectPolicy): ParsedShow
     };
   }
 
-  const decision = evaluateShowIntent(parsed.data, policy);
+  const decision = evaluateShowIntent(parsed.data, policy, context);
   return { ok: true, intent: parsed.data, decision };
 }

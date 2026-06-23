@@ -16,6 +16,11 @@ import {
 } from "../automation/aiPartyGateway.js";
 import { AiPartyPocRunSchema, runAiPartyPoc } from "../automation/aiPartyPoc.js";
 import {
+  DEMO_MIXER_SCENE_MANIFEST,
+  loadMixerSceneManifest,
+  MixerSceneManifestSchema,
+} from "../automation/mixerSceneCatalog.js";
+import {
   approveShowIntent,
   cancelShowIntent,
   createShowDirectorState,
@@ -786,6 +791,9 @@ const showDirectorCliSchema = z.object({
   state: ShowDirectorStateSchema.optional().describe("Prior show-director queue/log state."),
   policy: EffectPolicySchema.optional().describe(
     "Optional effect policy override for dry-run tests.",
+  ),
+  mixer_scene_catalog: MixerSceneManifestSchema.optional().describe(
+    "Trusted venue Soundcraft Ui24R scene catalog/manifest. Defaults to the built-in demo manifest when omitted; required for arm_mixer_scene approvals.",
   ),
   operator: z.string().trim().min(1).optional().describe("Human operator resolving approval."),
 });
@@ -3526,6 +3534,21 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
     }
     const sub = positionals[1];
     const state = args.data.state ?? createShowDirectorState();
+    // Resolve the trusted mixer-scene catalog. A caller-supplied manifest is
+    // re-validated (catalog hash must match) before use; otherwise fall back to
+    // the built-in demo manifest. A drifted/invalid catalog is a hard error.
+    let mixerManifest = DEMO_MIXER_SCENE_MANIFEST;
+    if (args.data.mixer_scene_catalog) {
+      const loaded = loadMixerSceneManifest(args.data.mixer_scene_catalog);
+      if (!loaded.ok) {
+        return {
+          stdout: "",
+          stderr: `Invalid mixer scene catalog: ${loaded.issues.join("; ")}\n`,
+          code: 2,
+        };
+      }
+      mixerManifest = loaded.manifest;
+    }
     if (sub === "approve" || sub === "cancel") {
       const approvalId = positionals[2];
       if (!approvalId) {
@@ -3545,7 +3568,10 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
       }
       const resolved =
         sub === "approve"
-          ? approveShowIntent(state, approvalId, operator ?? "", args.data.policy)
+          ? approveShowIntent(state, approvalId, operator ?? "", {
+              policy: args.data.policy,
+              mixerSceneManifest: mixerManifest,
+            })
           : cancelShowIntent(state, approvalId, operator);
       if (!resolved.ok) return { stdout: "", stderr: `${resolved.reason}\n`, code: 2 };
       const doc = {
@@ -3563,7 +3589,9 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
     if (args.data.intent === undefined) {
       return { stdout: "", stderr: 'Missing intent for "show-director".\n', code: 2 };
     }
-    const parsedIntent = parseShowIntent(args.data.intent, args.data.policy);
+    const parsedIntent = parseShowIntent(args.data.intent, args.data.policy, {
+      mixer_scene_manifest: mixerManifest,
+    });
     if (!parsedIntent.ok) {
       return {
         stdout: "",
@@ -3571,7 +3599,9 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
         code: 2,
       };
     }
-    const submitted = submitShowIntent(state, parsedIntent.intent, args.data.policy);
+    const submitted = submitShowIntent(state, parsedIntent.intent, args.data.policy, {
+      mixerSceneManifest: mixerManifest,
+    });
     const doc = {
       dryRun: true,
       intent: parsedIntent.intent,

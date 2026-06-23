@@ -1,0 +1,163 @@
+{
+  "id": "histogram_scope",
+  "name": "Luma Histogram Scope",
+  "description": "A luminance histogram scope drawn as a line trace, exactly the way create_histogram_scope builds it: a source TOP is downsampled, a GLSL TOP counts per-bin luma into a 1-row texture, that texture becomes a CHOP, and a choptoSOP draws it as a polyline under an orthographic camera with a colored tint composited over the render. Uses a synthetic animated noiseTOP source so it previews without media. Bins=256. Fills the histogram/scope gap. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "tags": ["scope", "histogram", "analysis", "broadcast", "glsl", "controls"],
+  "difficulty": "advanced",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "videoin",
+      "type": "noiseTOP",
+      "parameters": { "monochrome": 0, "period": 3 },
+      "comment": "Synthetic source — swap for moviefileinTOP / videodeviceinTOP to scope real footage."
+    },
+    {
+      "name": "pre",
+      "type": "levelTOP",
+      "parameters": { "brightness1": 1.0 },
+      "comment": "Pre-gain before analysis (live Gain control binds here)."
+    },
+    {
+      "name": "downsample",
+      "type": "resolutionTOP",
+      "parameters": { "outputresolution": "custom", "resolutionw": 256, "resolutionh": 256 },
+      "comment": "Downsample so the histogram pass is cheap."
+    },
+    {
+      "name": "histogram_glsl",
+      "type": "glslTOP",
+      "parameters": { "outputresolution": "custom", "resolutionw": 256, "resolutionh": 1 },
+      "comment": "Counts luma per bin into a 1x256 row; bin x = histogram bucket, value = normalized count."
+    },
+    { "name": "histo_chop", "type": "toptoCHOP", "comment": "Histogram row -> CHOP samples." },
+    {
+      "name": "norm",
+      "type": "mathCHOP",
+      "parameters": { "gain": 1.0 },
+      "comment": "Vertical scale of the trace."
+    },
+    {
+      "name": "ypos",
+      "type": "renameCHOP",
+      "parameters": { "renamefrom": "*", "renameto": "ty" },
+      "comment": "Rename the count channel to ty so choptoSOP deflects the line vertically."
+    },
+    {
+      "name": "tx_ramp",
+      "type": "patternCHOP",
+      "parameters": { "type": "ramp", "amp": 2, "offset": -1, "channelname": "tx" },
+      "comment": "X positions spanning -1..1 across the bins."
+    },
+    {
+      "name": "tz_zero",
+      "type": "patternCHOP",
+      "parameters": { "type": "constant", "amp": 0, "offset": 0, "channelname": "tz" },
+      "comment": "Flat Z so the trace sits on a plane."
+    },
+    {
+      "name": "xyz",
+      "type": "mergeCHOP",
+      "parameters": { "align": "start" },
+      "comment": "Merge tx/ty/tz into one CHOP for the line SOP."
+    },
+    {
+      "name": "geo",
+      "type": "geometryCOMP",
+      "comment": "Container for the trace line."
+    },
+    {
+      "name": "line",
+      "type": "choptoSOP",
+      "parent": "geo",
+      "render": true,
+      "parameters": { "chop": "xyz" },
+      "comment": "Turns the xyz CHOP into a polyline; render+display flagged."
+    },
+    {
+      "name": "mat",
+      "type": "constantMAT",
+      "parameters": { "colorr": 1, "colorg": 1, "colorb": 1, "alpha": 1 },
+      "comment": "White line; the actual color comes from the tint composite."
+    },
+    {
+      "name": "cam",
+      "type": "cameraCOMP",
+      "parameters": { "projection": "ortho", "orthowidth": 2.2, "tz": 5 },
+      "comment": "Orthographic so the trace reads as a flat graph."
+    },
+    {
+      "name": "light",
+      "type": "lightCOMP",
+      "parameters": { "tx": 0, "ty": 0, "tz": 5 },
+      "comment": "Required by the Render TOP (constant material ignores it)."
+    },
+    {
+      "name": "render",
+      "type": "renderTOP",
+      "parameters": {
+        "camera": "cam",
+        "geometry": "geo",
+        "lights": "light",
+        "bgcolorr": 0.01,
+        "bgcolorg": 0.02,
+        "bgcolorb": 0.02,
+        "bgcolora": 1,
+        "outputresolution": "custom",
+        "resolutionw": 1024,
+        "resolutionh": 256
+      },
+      "comment": "Renders the trace on a dark background."
+    },
+    {
+      "name": "tint",
+      "type": "constantTOP",
+      "parameters": { "colorr": 0.1, "colorg": 0.95, "colorb": 0.6, "alpha": 1 },
+      "comment": "Trace color (live TraceColor control binds here)."
+    },
+    {
+      "name": "tinted",
+      "type": "compositeTOP",
+      "parameters": { "operand": "multiply" },
+      "comment": "Multiply the tint over the white trace to colorize it without lifting the background."
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "Final scope output." }
+  ],
+  "connections": [
+    { "from": "videoin", "to": "pre" },
+    { "from": "pre", "to": "downsample" },
+    { "from": "downsample", "to": "histogram_glsl" },
+    { "from": "histogram_glsl", "to": "histo_chop" },
+    { "from": "histo_chop", "to": "norm" },
+    { "from": "norm", "to": "ypos" },
+    { "from": "tx_ramp", "to": "xyz", "to_input": 0 },
+    { "from": "ypos", "to": "xyz", "to_input": 1 },
+    { "from": "tz_zero", "to": "xyz", "to_input": 2 },
+    { "from": "render", "to": "tinted", "to_input": 0 },
+    { "from": "tint", "to": "tinted", "to_input": 1 },
+    { "from": "tinted", "to": "out1" }
+  ],
+  "parameters": [{ "name": "geo_material", "node": "geo", "param": "material", "value": "mat" }],
+  "glsl_code": {
+    "histogram_glsl": "out vec4 fragColor;\nvoid main(){\n    int binIdx = int(gl_FragCoord.x);\n    int totalBins = 256;\n    float lo = float(binIdx) / float(totalBins);\n    float hi = float(binIdx + 1) / float(totalBins);\n    ivec2 sz = textureSize(sTD2DInputs[0], 0);\n    float cnt = 0.0;\n    int stride = max(1, sz.x / 256);\n    float taps = 0.0;\n    for (int y = 0; y < sz.y; y += stride){\n        for (int x = 0; x < sz.x; x += stride){\n            vec3 c = texelFetch(sTD2DInputs[0], ivec2(x, y), 0).rgb;\n            float l = dot(c, vec3(0.2126, 0.7152, 0.0722));\n            bool inBin = (l >= lo) && (l < hi);\n            if (binIdx == totalBins - 1 && l <= 1.0001 && l >= lo) inBin = true;\n            if (inBin) cnt += 1.0;\n            taps += 1.0;\n        }\n    }\n    float norm = taps > 0.0 ? cnt / taps : 0.0;\n    fragColor = vec4(norm, norm, norm, 1.0);\n}\n"
+  },
+  "controls": [
+    {
+      "name": "Gain",
+      "type": "float",
+      "min": 0,
+      "max": 4,
+      "default": 1.0,
+      "bind_to": ["pre.brightness1"]
+    },
+    {
+      "name": "VScale",
+      "type": "float",
+      "min": 0.1,
+      "max": 8,
+      "default": 1.0,
+      "bind_to": ["norm.gain"]
+    }
+  ],
+  "preview_description": "A green luminance histogram drawn as a glowing line graph over a dark grid, peaking in the midtones where the noise source clusters, with live gain and vertical-scale knobs."
+}

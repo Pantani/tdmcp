@@ -256,6 +256,99 @@ describe("tdmcp-agent CLI", () => {
     expect(approvedDoc.state.approvals[0].status).toBe("approved");
   });
 
+  it("queues a catalog-backed mixer scene for approval without contacting TD", async () => {
+    const r = await runCli(
+      [
+        "show-director",
+        "--params",
+        JSON.stringify({
+          intent: {
+            type: "arm_mixer_scene",
+            adapter_target: { kind: "soundcraft_ui24r", mixer_id: "foh-ui24r" },
+            target: { kind: "snapshot", scene_id: "band_a_intro" },
+          },
+        }),
+      ],
+      {
+        makeCtx: () => {
+          throw new Error("show-director mixer scene must not build a TD context");
+        },
+      },
+    );
+
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.dryRun).toBe(true);
+    expect(doc.decision.decision).toBe("require_approval");
+    expect(doc.decision.scene_id).toBe("band_a_intro");
+    expect(doc.approval.target.kind).toBe("mixer_scene");
+    expect(doc.plan).toEqual([]);
+  });
+
+  it("emits a dry-run-only mixer scene plan on operator approval", async () => {
+    const queued = await runCli([
+      "show-director",
+      "--params",
+      JSON.stringify({
+        intent: {
+          type: "arm_mixer_scene",
+          adapter_target: { kind: "soundcraft_ui24r", mixer_id: "foh-ui24r" },
+          target: { kind: "snapshot", scene_id: "band_a_intro" },
+        },
+      }),
+    ]);
+    expect(queued.code).toBe(0);
+    const queuedDoc = JSON.parse(queued.stdout);
+
+    const approved = await runCli([
+      "show-director",
+      "approve",
+      queuedDoc.approval.id,
+      "--params",
+      JSON.stringify({ state: queuedDoc.state, operator: "front-of-house" }),
+    ]);
+
+    expect(approved.code).toBe(0);
+    const approvedDoc = JSON.parse(approved.stdout);
+    expect(approvedDoc.plan[0]).toMatchObject({
+      kind: "mixer_scene",
+      action: "arm",
+      dry_run_only: true,
+      operator: "front-of-house",
+    });
+    expect(approvedDoc.plan[0].mixer_scene.scene_id).toBe("band_a_intro");
+    expect(approvedDoc.state.approvals[0].status).toBe("approved");
+  });
+
+  it("blocks an unknown mixer scene id at the CLI", async () => {
+    const r = await runCli([
+      "show-director",
+      "--params",
+      JSON.stringify({
+        intent: {
+          type: "arm_mixer_scene",
+          adapter_target: { kind: "soundcraft_ui24r", mixer_id: "foh-ui24r" },
+          target: { kind: "snapshot", scene_id: "not_in_catalog" },
+        },
+      }),
+    ]);
+
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.decision.decision).toBe("block");
+    expect(doc.decision.reason).toContain("unknown mixer scene_id");
+    expect(doc.approval).toBeUndefined();
+  });
+
+  it("includes arm_mixer_scene in the show-director schema", async () => {
+    const r = await runCli(["schema", "show-director"]);
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    const serialized = JSON.stringify(doc.input);
+    expect(serialized).toContain("arm_mixer_scene");
+    expect(serialized).toContain("mixer_scene_catalog");
+  });
+
   it("lists stable command metadata for resources and docs", () => {
     const commands = listAgentCommands();
 

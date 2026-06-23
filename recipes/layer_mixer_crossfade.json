@@ -1,0 +1,45 @@
+{
+  "id": "layer_mixer_crossfade",
+  "name": "Layer Mixer (Crossfade)",
+  "description": "Reproducible twin of create_layer_mixer in crossfade mode: two sources blended by a single Cross TOP with a 0..1 crossfade knob (0 = source A, 1 = source B). Self-contained sources (a noiseTOP and a rampTOP) so it previews offline; swap them for selectTOPs pointing at your real layers. Unlike decks_layer_mixer (additive two-gain blend), this is a true A/B crossfade on one control. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "tags": ["vj", "mixer", "crossfade", "layer", "performable", "controls"],
+  "difficulty": "beginner",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "srcA",
+      "type": "noiseTOP",
+      "parameters": { "period": 4, "monochrome": 0 },
+      "comment": "Source A (placeholder noise) — swap for a selectTOP to your real layer A."
+    },
+    {
+      "name": "srcB",
+      "type": "rampTOP",
+      "parameters": { "type": "radial" },
+      "comment": "Source B (placeholder radial ramp) — swap for a selectTOP to your real layer B."
+    },
+    {
+      "name": "mix",
+      "type": "crossTOP",
+      "parameters": { "cross": 0.5 },
+      "comment": "True A/B crossfade: cross=0 shows A, cross=1 shows B."
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "Final mixed output." }
+  ],
+  "connections": [
+    { "from": "srcA", "to": "mix", "to_input": 0 },
+    { "from": "srcB", "to": "mix", "to_input": 1 },
+    { "from": "mix", "to": "out1" }
+  ],
+  "controls": [
+    {
+      "name": "Crossfade",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 0.5,
+      "bind_to": ["mix.cross"]
+    }
+  ],
+  "preview_description": "Two sources (a noise field and a radial ramp) blended by one crossfader — slide from A to B with a single knob."
+}

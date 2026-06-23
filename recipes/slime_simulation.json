@@ -1,0 +1,89 @@
+{
+  "id": "slime_simulation",
+  "name": "Slime Mold Simulation",
+  "description": "Reproducible twin of create_simulation (slime / fluid type): a noise seed is composited (maximum) with the fed-back previous frame, displaced by an animated flow-field noise, blurred, decayed by a Level TOP, and looped back through a Feedback TOP — producing organic, agent-like slime trails. After import, bind the flow noise's tz to absTime.seconds * <speed> so the flow evolves (manual-wire — RecipeSchema parameters take constants only). Distinct from reaction_diffusion (Gray-Scott) — this is a displacement-feedback trail system. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "tags": ["simulation", "slime", "feedback", "organic", "generative", "controls"],
+  "difficulty": "advanced",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "seed",
+      "type": "noiseTOP",
+      "parameters": { "monochrome": 1, "period": 2 },
+      "comment": "Sparse seed that keeps re-injecting structure into the loop."
+    },
+    {
+      "name": "flow",
+      "type": "noiseTOP",
+      "parameters": { "monochrome": 1, "period": 4 },
+      "comment": "Flow field that displaces the trails. Bind tz to absTime.seconds * <speed> after import."
+    },
+    {
+      "name": "feedback1",
+      "type": "feedbackTOP",
+      "comment": "Holds the previous frame of the simulation."
+    },
+    {
+      "name": "comp1",
+      "type": "compositeTOP",
+      "parameters": { "operand": "maximum" },
+      "comment": "Combine seed with the fed-back frame, keeping the brightest (trail accumulation)."
+    },
+    {
+      "name": "displace",
+      "type": "displaceTOP",
+      "parameters": { "uvweightx": 0.04, "uvweighty": 0.04 },
+      "comment": "Push the trails along the flow field each frame — the 'movement' of the slime."
+    },
+    {
+      "name": "blur",
+      "type": "blurTOP",
+      "parameters": { "size": 1 },
+      "comment": "Diffuse the trails slightly so they merge organically."
+    },
+    {
+      "name": "gain",
+      "type": "levelTOP",
+      "parameters": { "brightness1": 0.97 },
+      "comment": "Decay / trail persistence — lower fades trails faster."
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "Final simulation output." }
+  ],
+  "connections": [
+    { "from": "seed", "to": "comp1", "to_input": 0 },
+    { "from": "feedback1", "to": "comp1", "to_input": 1 },
+    { "from": "comp1", "to": "displace", "to_input": 0 },
+    { "from": "flow", "to": "displace", "to_input": 1 },
+    { "from": "displace", "to": "blur" },
+    { "from": "blur", "to": "gain" },
+    { "from": "gain", "to": "out1" }
+  ],
+  "parameters": [
+    {
+      "name": "feedback_target",
+      "node": "feedback1",
+      "param": "top",
+      "value": "gain",
+      "description": "feedbackTOP samples the loop output (gain). Value resolves to the created node path."
+    }
+  ],
+  "controls": [
+    {
+      "name": "Decay",
+      "type": "float",
+      "min": 0.8,
+      "max": 1.0,
+      "default": 0.97,
+      "bind_to": ["gain.brightness1"]
+    },
+    {
+      "name": "FlowStrength",
+      "type": "float",
+      "min": 0,
+      "max": 0.2,
+      "default": 0.04,
+      "bind_to": ["displace.uvweightx", "displace.uvweighty"]
+    }
+  ],
+  "preview_description": "Branching, network-like slime trails that crawl and merge across the frame, leaving fading paths behind them — a feedback-displacement organism."
+}

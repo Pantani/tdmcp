@@ -8,6 +8,8 @@ export * from "./aiPartyFanIn.js";
 export * from "./aiPartyGateway.js";
 export * from "./aiPartyPoc.js";
 export * from "./effectSimulator.js";
+export * from "./mixerSceneAdapter.js";
+export * from "./mixerSceneCatalog.js";
 export * from "./setlistSchema.js";
 export * from "./showDirectorRuntime.js";
 export * from "./showDirectorSchema.js";
