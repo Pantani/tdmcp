@@ -1,0 +1,53 @@
+name: Cancel CI on PR close
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  actions: write
+  pull-requests: read
+
+concurrency:
+  group: cancel-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  cancel:
+    name: Cancel queued and in-progress PR runs
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    steps:
+      - name: Cancel queued and in-progress runs for the PR branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          MERGED: ${{ github.event.pull_request.merged }}
+          SELF_RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          if [ "$MERGED" = "true" ]; then
+            echo "PR #$PR_NUMBER merged — cancelling residual runs for branch $HEAD_REF"
+          else
+            echo "PR #$PR_NUMBER closed without merge — cancelling residual runs for branch $HEAD_REF"
+          fi
+
+          ids=$(gh run list \
+            --repo "$GITHUB_REPOSITORY" \
+            --branch "$HEAD_REF" \
+            --limit 200 \
+            --json databaseId,status \
+            --jq ".[] | select(.status==\"queued\" or .status==\"in_progress\") | select(.databaseId != $SELF_RUN_ID) | .databaseId")
+
+          if [ -z "$ids" ]; then
+            echo "Nothing to cancel."
+            exit 0
+          fi
+
+          echo "$ids" | while read -r id; do
+            [ -n "$id" ] || continue
+            echo "Cancelling run $id"
+            gh run cancel "$id" --repo "$GITHUB_REPOSITORY" || true
+          done
