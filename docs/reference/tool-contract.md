@@ -5,7 +5,7 @@ description: The stable contract every tdmcp MCP tool follows — invariants eve
 
 # Tool API contract
 
-This page documents the invariants every tdmcp MCP tool follows from v0.8.x
+This page documents the invariants every tdmcp MCP tool follows from v0.9.0
 onward and that will be **frozen at 1.0**. The full per-tool reference is the
 generated [Tools reference](./tools); this page covers the rules behind it so
 clients (Claude / Cursor / Codex / custom MCP clients) can rely on a stable

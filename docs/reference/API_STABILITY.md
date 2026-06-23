@@ -29,7 +29,7 @@ Anything not in these two — internal helpers, the bridge REST wire format, the
 Python bridge modules in `td/`, the knowledge-base layout, CLI internals — is
 **not** part of the pinned public surface and may change in a minor release.
 
-### `ToolContext` fields (as of the v0.8 line)
+### `ToolContext` fields (as of the v0.9 line)
 
 `ToolContext` (`src/tools/types.ts`) is the injected dependency bundle. Required
 fields are always present; optional fields may be `undefined` when the
