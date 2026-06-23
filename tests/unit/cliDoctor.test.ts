@@ -73,6 +73,7 @@ const makeFakeLlm = (health: LlmHealth) => (_cfg: TdmcpConfig) => ({
 });
 
 let tmpRoot: string;
+const noProjectRagIndex = { indexSize: () => null };
 
 beforeEach(() => {
   tmpRoot = mkdtempSync(join(tmpdir(), "tdmcp-doctor-"));
@@ -90,6 +91,7 @@ describe("runDoctor", () => {
       makeLlmClient: makeFakeLlm({ ok: true, modelReady: true, detail: "model ready" }),
       vaultProbe: () => ({ exists: false, isDir: false }),
       profileDirPath: tmpRoot,
+      projectRagProbes: noProjectRagIndex,
     });
     expect(r.code).toBe(0);
     expect(r.report.ok).toBe(true);
