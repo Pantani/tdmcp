@@ -26,6 +26,8 @@ jobs:
     steps:
       - name: Enforce changelog update
         uses: dangoslen/changelog-enforcer@8b5e9dc3121363bb7c0115f8533404d92af382de # v3.7.0
+        env:
+          NODE_OPTIONS: --no-deprecation
         with:
           changeLogPath: CHANGELOG.md
           skipLabels: "skip changelog"
