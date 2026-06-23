@@ -10,17 +10,15 @@ can build real visual systems from plain language — no node-wiring by hand. Th
 page is the honest, bird's-eye picture of **what already works, what's still
 rough, and what's coming next** on the way to a stable 1.0.
 
-**Where things stand today.** The npm `latest` package is **v0.9.0**; the latest
-published GitHub Release/tag is still **v0.8.3** as of June 23, 2026. v0.9.0 is
-the hype-scout Round 4 campaign release: force multipliers, POP combos, the
-generative-AI bridge wave and the VFX aesthetic tail. It also includes the
-Hermes/Telegram AI Party policy wrapper and the local Live Nervous System
-rehearsal POC. The v0.8.3 GitHub release remains the last tagged release object:
-a live-show resilience + LLM token budget + CLI-ergonomics wave that brought the
-tool surface from 279 → **286** and added two bridge REST endpoints plus
-`tdmcp init` / `tdmcp ask`; see [Wave 12 — v0.8.3](#wave-12-v0-8-3) below.
-The CHANGELOG blocks list every entry; the always-current tool list is the
-[Tools reference](/reference/tools). 1.0 is **not** the next minor — the v0.9.x
+**Where things stand today.** The npm `latest` package and latest published
+GitHub Release/tag are **v0.9.0** as of June 23, 2026. v0.9.0 is the hype-scout
+Round 4 campaign release: force multipliers, POP combos, the generative-AI
+bridge wave and the VFX aesthetic tail. It also includes the Hermes/Telegram AI
+Party policy wrapper and the local Live Nervous System rehearsal POC. The current
+source tree is preparing **v0.10.0** with the post-0.9.0 MediaPipe hands,
+Creative RAG, Project RAG and consolidation-gate follow-ups listed below. The
+CHANGELOG blocks list every entry; the always-current tool list is the
+[Tools reference](/reference/tools). 1.0 is **not** the next minor — the v0.10.x
 line is the active feature/consolidation line, and v1.0 will land only once the
 consolidation gates below are all green.
 
@@ -61,7 +59,7 @@ The project has grown through five arcs:
 
 ## ✅ Current Release Line
 
-### Unreleased — post-0.9.0 MediaPipe hands, TDAbleton mapper + RAG follow-ups
+### v0.10.0 preparation — post-0.9.0 MediaPipe hands, TDAbleton mapper + RAG follow-ups
 
 Source-tree work after the npm v0.9.0 publication adds a focused live-control
 path for the Ableton session we validated manually:
