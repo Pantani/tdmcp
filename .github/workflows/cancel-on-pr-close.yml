@@ -34,12 +34,13 @@ jobs:
             echo "PR #$PR_NUMBER closed without merge — cancelling residual runs for branch $HEAD_REF"
           fi
 
-          ids=$(gh run list \
-            --repo "$GITHUB_REPOSITORY" \
-            --branch "$HEAD_REF" \
-            --limit 200 \
-            --json databaseId,status \
-            --jq ".[] | select(.status==\"queued\" or .status==\"in_progress\") | select(.databaseId != $SELF_RUN_ID) | .databaseId")
+          ids=$(gh api --paginate \
+            "repos/$GITHUB_REPOSITORY/actions/runs?branch=$HEAD_REF&per_page=100" \
+            --jq ".workflow_runs[]
+              | select(.status==\"queued\" or .status==\"in_progress\")
+              | select(.id != $SELF_RUN_ID)
+              | select(any(.pull_requests[]?; .number == $PR_NUMBER))
+              | .id")
 
           if [ -z "$ids" ]; then
             echo "Nothing to cancel."
