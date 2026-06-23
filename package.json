@@ -135,7 +135,7 @@
     "chokidar": "^4.0.3",
     "dependency-cruiser": "^17.4.3",
     "eslint": "^9.39.4",
-    "msw": "^2.14.6",
+    "msw": "^2.12.14",
     "tsup": "^8.5.1",
     "tsx": "^4.22.3",
     "typescript": "^6.0.3",
