@@ -78,7 +78,7 @@ O tdmcp precisa de uma pequena ponte rodando *dentro* do TouchDesigner. Abra o
 Enter:
 
 ```python
-import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.9.0/td/bootstrap.py").read().decode())
+import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.10.0/td/bootstrap.py").read().decode())
 ```
 
 Você deve ver `[tdmcp] bridge running on port 9980`. Este é o único passo que tem

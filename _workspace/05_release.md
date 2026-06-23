@@ -15,7 +15,7 @@ Status: prepared, not tagged or published
 - Promoted the existing post-0.9.0 `CHANGELOG.md` entries into `## [0.10.0] - 2026-06-23`.
 - Updated `CHANGELOG.md` compare links for `Unreleased`, `0.10.0`, and `0.9.0`.
 - Updated `docs/ROADMAP.md` so it no longer says the latest GitHub Release is `v0.8.3`.
-- Kept bootstrap/install docs pinned to `raw/v0.9.0` until the `v0.10.0` tag exists.
+- Updated bootstrap/install pins to `v0.10.0` with `scripts/sync-manifest-version.mjs` so the `0.10.0` package installs matching bridge modules.
 
 ## Shipping Scope
 
@@ -29,7 +29,7 @@ Status: prepared, not tagged or published
 
 ## Held Back
 
-- `v0.10.0` npm publish, GitHub tag and GitHub Release are not performed in this preparation step.
+- `v0.10.0` npm publish, GitHub tag and GitHub Release are not performed in this preparation step; the bootstrap URLs intentionally point to the future `v0.10.0` release tag that will exist before publication.
 - Live TouchDesigner cook validation remains pending where the changelog marks it `UNVERIFIED-pending-td`.
 - Connectors Directory acceptance remains an external process.
 - Project RAG live bridge validation on a real quarantine `9981` TouchDesigner remains unverified until a reachable bridge is available.
@@ -45,3 +45,4 @@ Status: prepared, not tagged or published
 - `npm run docs:build` passed and regenerated 318 tool docs without a tracked diff.
 - `npm run test` passed: 440 test files, 4563 tests.
 - `npm run lint` passed: Biome checked 1081 files.
+- `node scripts/sync-manifest-version.mjs` updated bootstrap/install pins to `v0.10.0`.
