@@ -307,6 +307,13 @@ export default defineConfig({
     return tags;
   },
 
+  vite: {
+    build: {
+      // The generated tools reference intentionally ships a large local-search index.
+      chunkSizeWarningLimit: 1500,
+    },
+  },
+
   themeConfig: {
     search: { provider: "local" },
     socialLinks: [{ icon: "github", link: GITHUB }],
