@@ -134,7 +134,7 @@
     "@vitest/coverage-v8": "^4.1.7",
     "chokidar": "^4.0.3",
     "dependency-cruiser": "^17.4.3",
-    "eslint": "^10.5.0",
+    "eslint": "^9.39.4",
     "msw": "^2.14.6",
     "tsup": "^8.5.1",
     "tsx": "^4.22.3",
