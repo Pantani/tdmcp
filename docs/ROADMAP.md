@@ -11,8 +11,8 @@ page is the honest, bird's-eye picture of **what already works, what's still
 rough, and what's coming next** on the way to a stable 1.0.
 
 **Where things stand today.** The npm `latest` package is **v0.9.0**; the latest
-GitHub Release/tag is still **v0.8.3** as of June 12, 2026. v0.9.0 is the
-hype-scout Round 4 campaign release: force multipliers, POP combos, the
+published GitHub Release/tag is still **v0.8.3** as of June 23, 2026. v0.9.0 is
+the hype-scout Round 4 campaign release: force multipliers, POP combos, the
 generative-AI bridge wave and the VFX aesthetic tail. It also includes the
 Hermes/Telegram AI Party policy wrapper and the local Live Nervous System
 rehearsal POC. The v0.8.3 GitHub release remains the last tagged release object:
@@ -61,10 +61,10 @@ The project has grown through five arcs:
 
 ## ✅ Current Release Line
 
-### Unreleased — MediaPipe hands -> palm holograms, TDAbleton mapper + AI Party rehearsal POC
+### Unreleased — post-0.9.0 MediaPipe hands, TDAbleton mapper + RAG follow-ups
 
-Source-tree work after v0.8.3 adds a focused live-control path for the Ableton
-session we validated manually:
+Source-tree work after the npm v0.9.0 publication adds a focused live-control
+path for the Ableton session we validated manually:
 
 - **`create_hand_ableton_mapper` (Layer 2).** Builds the TouchDesigner side of a
   MediaPipe-hands performance controller for TDAbleton: `map1` left pinch,
@@ -81,12 +81,6 @@ session we validated manually:
   input CHOP, `Reorder`, bypass states, `Min/Max` ranges and missing `map1..map4`
   channels, with optional TD-side repair. AbletonMCP is not required for this
   runtime path.
-- **Live Nervous System / AI Party local rehearsal POC.** The repo now includes
-  `src/automation/aiPartyLive/` and `npm run ai-party:{dev,dry,td-build,test,telegram}`:
-  a local dashboard/backend, approval queue, JSONL audit log, optional Ollama
-  parser, optional Telegram long polling and optional TouchDesigner preview
-  network. It remains simulation-first; real venue hardware still needs a
-  separate adapter, fixture map, emergency-stop path and venue validation.
 - 🧪 **Creative RAG (opt-in, experimental).** A local-only creative
   repertoire of open-licensed artworks/artists/techniques: `tdmcp creative-rag
   {sync|index|search}` plus read-only `tdmcp://creative/cards/{id}` and
@@ -689,13 +683,13 @@ force multipliers are in place when those wrappers land.
 **Top-5 ready-for-pipeline (D.1):**
 
 - ✅ `create_pose_controlnet_driver` — OpenPose-color render TOP over the
-  existing pose stack; no external TOX (Hype × Ease = 9). (shipped v0.9.1)
+  existing pose stack; no external TOX (Hype × Ease = 9). (shipped v0.9.0)
 - ✅ `create_ascii_render` — character-grid TOP alongside `create_dither` /
-  `create_halftone` (Hype × Ease = 9). (shipped v0.9.1)
+  `create_halftone` (Hype × Ease = 9). (shipped v0.9.0)
 - ✅ `create_phrase_locked_cue_engine` — extension to `createSyncExternalClock`
-  that quantizes cues to Ableton bars/phrases. (shipped v0.9.1)
+  that quantizes cues to Ableton bars/phrases. (shipped v0.9.0)
 - ✅ `create_audio_glsl_uniforms` — Layer-2 helper that binds audio CHOPs as
-  uniforms on `glslTOP`. (shipped v0.9.1)
+  uniforms on `glslTOP`. (shipped v0.9.0)
 - ⬜ `create_external_io` outbound — itself FM-01 above.
 
 ### Milestone 4 — Generative-AI bridge wave (gated on FM-01 + FM-02) · ✅ v0.9.0
@@ -1233,7 +1227,7 @@ the shipped `create_palette` / `generate_from_moodboard` lineage.
 
 ### Round 4 — hype trend scouting — 2026-06-09 {#appendix-d-round4}
 
-> **Round 4 campaign complete: 5 waves, 28 features, v0.9.0 → v0.12.0.**
+> **Round 4 campaign complete: 5 waves, 28 features, shipped together in v0.9.0.**
 
 **60 raw candidates → 38 deduped** from five external surfaces
 (`community-showcase`, `tutorials`, `generative-ai`, `hardware-interactive`,
@@ -1277,10 +1271,10 @@ existing scaffolding — these are the cheapest accelerators in the backlog.
 
 | Rank | id | Tool | Layer | Hype | Eff | Coverage | Status | Source(s) |
 |------|----|------|-------|------|-----|----------|--------|-----------|
-| 1 | S007 | `create_pose_controlnet_driver` — OpenPose-color render TOP fed by the existing pose stack; one preset, no TOX dependency | 1 | H | S | NEW (composes existing) | ✅ shipped v0.9.1 | ai, tut |
-| 2 | S025 | `create_ascii_render` — character-grid render TOP suite alongside `create_dither` / `create_halftone` | 1 | H | S | NEW | ✅ shipped v0.9.1 | vfx, tut |
-| 3 | S020 | `create_phrase_locked_cue_engine` — cues quantized to Ableton bars/phrases over `createSyncExternalClock` | 1 | M | S | EXTENSION | ✅ shipped v0.9.1 | hw, tut |
-| 4 | S013 | `create_audio_glsl_uniforms` — bind audio CHOPs as uniforms on a `glslTOP` (ingredients exist) | 2 | M | S | PARTIAL | ✅ shipped v0.9.1 | tut |
+| 1 | S007 | `create_pose_controlnet_driver` — OpenPose-color render TOP fed by the existing pose stack; one preset, no TOX dependency | 1 | H | S | NEW (composes existing) | ✅ shipped v0.9.0 | ai, tut |
+| 2 | S025 | `create_ascii_render` — character-grid render TOP suite alongside `create_dither` / `create_halftone` | 1 | H | S | NEW | ✅ shipped v0.9.0 | vfx, tut |
+| 3 | S020 | `create_phrase_locked_cue_engine` — cues quantized to Ableton bars/phrases over `createSyncExternalClock` | 1 | M | S | EXTENSION | ✅ shipped v0.9.0 | hw, tut |
+| 4 | S013 | `create_audio_glsl_uniforms` — bind audio CHOPs as uniforms on a `glslTOP` (ingredients exist) | 2 | M | S | PARTIAL | ✅ shipped v0.9.0 | tut |
 | 5 | S015 | `create_external_io` outbound (FM-01 itself) | 2 | M | S | EXTENSION | ai, comm |
 
 All 5 score H×S=9 or M×S=6, sit on existing tdmcp scaffolding, and need no new
@@ -1292,15 +1286,15 @@ they belong below.
 
 | Feature | id | Delivers | Eff | Imp | Conf | Pri | Status | Source(s) |
 |---|---|---|---|---|---|---|---|---|
-| `drive_streamdiffusion` | S001 | dotsimulate StreamDiffusionTD wrapper — discover the TOX, drop inside `baseCOMP`, expose t-index / prompt / strength as custom pars, OSC-bind | M | High | High | P1 | ✅ shipped v0.11.0 | ai, tut, comm, vfx |
-| `create_depth_from_2d` | S003 | TDDepthAnything v2 wrapper — RGB-in → depth-TOP-out preset for 2D-to-3D parallax / depth-keyed silhouette | M | High | High | P1 | ✅ shipped v0.11.0 | ai, comm |
-| `connect_comfyui` | S004 | ComfyUI bridge via olegchomp/TDComfyUI or JiSenHua/ComfyUI-TD — graph load + queue prompt + Spout pull-back | M | High | High | P1 | ✅ shipped v0.11.0 | ai, tut |
-| `create_gaussian_splat_scene` | S016 | TDGS wrapper (Anglerfish-graphics 6 Apr 2025; POPs Gaussian-Splat v2026) — load `.ply`, instance, camera-control. **Top trend** (4-surface unanimous H) | M | High | High | P1 | ✅ shipped v0.11.0 | ai, comm, tut, vfx |
-| `setup_mediapipe_plugin` | S028 | torinmb/mediapipe-touchdesigner canonical setup — face/hand/body/segmentation all from one Spout-loopback path | S | High | High | P1 | ✅ shipped v0.11.0 | ai, tut |
-| `create_llm_chain` | S008 | dotsimulate LOPs wrapper — chain OpenAI / Anthropic / Ollama nodes with prompt-templates and structured outputs | M | High | Med | P1 | ✅ shipped v0.11.0 | ai, tut |
+| `drive_streamdiffusion` | S001 | dotsimulate StreamDiffusionTD wrapper — discover the TOX, drop inside `baseCOMP`, expose t-index / prompt / strength as custom pars, OSC-bind | M | High | High | P1 | ✅ shipped v0.9.0 | ai, tut, comm, vfx |
+| `create_depth_from_2d` | S003 | TDDepthAnything v2 wrapper — RGB-in → depth-TOP-out preset for 2D-to-3D parallax / depth-keyed silhouette | M | High | High | P1 | ✅ shipped v0.9.0 | ai, comm |
+| `connect_comfyui` | S004 | ComfyUI bridge via olegchomp/TDComfyUI or JiSenHua/ComfyUI-TD — graph load + queue prompt + Spout pull-back | M | High | High | P1 | ✅ shipped v0.9.0 | ai, tut |
+| `create_gaussian_splat_scene` | S016 | TDGS wrapper (Anglerfish-graphics 6 Apr 2025; POPs Gaussian-Splat v2026) — load `.ply`, instance, camera-control. **Top trend** (4-surface unanimous H) | M | High | High | P1 | ✅ shipped v0.9.0 | ai, comm, tut, vfx |
+| `setup_mediapipe_plugin` | S028 | torinmb/mediapipe-touchdesigner canonical setup — face/hand/body/segmentation all from one Spout-loopback path | S | High | High | P1 | ✅ shipped v0.9.0 | ai, tut |
+| `create_llm_chain` | S008 | dotsimulate LOPs wrapper — chain OpenAI / Anthropic / Ollama nodes with prompt-templates and structured outputs | M | High | Med | P1 | ✅ shipped v0.9.0 | ai, tut |
 | `create_voice_prompt_pipeline` | S005 | STT-Whisper LOP → prompt → SD/SDXL update — push-to-talk live prompt morph | M | Med | Med | P2 | NEW | ai, tut |
-| `create_ai_mirror` | S017 | Combo recipe: camera-in + StreamDiffusion + control-surface mapped — the showcase form everyone is shipping | L | High | Med | P2 | ✅ shipped v0.11.0 | ai, comm, tut |
-| `connect_daydream_cloud` | S043 | dotsimulate × Daydream hosted StreamDiffusion — cloud path that skips the GPU gate | S | High | Med | P1 | ✅ shipped v0.11.0 | ai |
+| `create_ai_mirror` | S017 | Combo recipe: camera-in + StreamDiffusion + control-surface mapped — the showcase form everyone is shipping | L | High | Med | P2 | ✅ shipped v0.9.0 | ai, comm, tut |
+| `connect_daydream_cloud` | S043 | dotsimulate × Daydream hosted StreamDiffusion — cloud path that skips the GPU gate | S | High | Med | P1 | ✅ shipped v0.9.0 | ai |
 | `create_sam_segmentation` | S046 | SAM 2 / FastSAM masks via ONNX → matte/alpha channel | L | Med | Med | P2 | PARTIAL — depends ONNX | ai, tut |
 | `create_prompt_morph` | S044 | IP-Adapter slot bank — morph between N saved prompts on a control surface | S | Med | Med | P2 | PARTIAL — depends S001 | ai |
 | `create_rd_diffusion_hybrid` | S048 | Feed `create_reaction_diffusion` into StreamDiffusion image2image | M | Med | Med | P2 | PARTIAL — depends S001 + S033 | comm, ai |
@@ -1316,11 +1310,11 @@ they belong below.
 
 | Feature | id | Delivers | Eff | Imp | Conf | Pri | Status | Source(s) |
 |---|---|---|---|---|---|---|---|---|
-| `create_pop_particle_system` | S002 | Multi-POP combo: `particle_pop` + `feedback_pop` + `lookup_texture_pop` + `field_pop` — the dominant new particle look | M | High | High | P1 | ✅ shipped v0.10.0 | comm, tut, vfx |
-| `create_pop_growth` | S006 | POP organic growth + RD-on-POPs — feedback-loop branching forms | M | High | Med | P1 | ✅ shipped v0.10.0 | comm, vfx |
-| `create_pop_lines_pointcloud` | S009 | Point cloud → POP lines with proximity threshold (constellation/plexus-style) | M | High | High | P1 | ✅ shipped v0.10.0 | comm, vfx |
-| `create_depth_pop_field` | S010 | ZED/Orbbec/OAK-D depth → POP scatter/instance with depth as the force field | M | High | Med | P1 | ✅ shipped v0.10.0 | comm, hw |
-| `create_stipple_pointcloud` | S035 | Stipple/dot rendering of a point cloud via POPs | M | Med | Med | P2 | ✅ shipped v0.10.0 | vfx |
+| `create_pop_particle_system` | S002 | Multi-POP combo: `particle_pop` + `feedback_pop` + `lookup_texture_pop` + `field_pop` — the dominant new particle look | M | High | High | P1 | ✅ shipped v0.9.0 | comm, tut, vfx |
+| `create_pop_growth` | S006 | POP organic growth + RD-on-POPs — feedback-loop branching forms | M | High | Med | P1 | ✅ shipped v0.9.0 | comm, vfx |
+| `create_pop_lines_pointcloud` | S009 | Point cloud → POP lines with proximity threshold (constellation/plexus-style) | M | High | High | P1 | ✅ shipped v0.9.0 | comm, vfx |
+| `create_depth_pop_field` | S010 | ZED/Orbbec/OAK-D depth → POP scatter/instance with depth as the force field | M | High | Med | P1 | ✅ shipped v0.9.0 | comm, hw |
+| `create_stipple_pointcloud` | S035 | Stipple/dot rendering of a point cloud via POPs | M | Med | Med | P2 | ✅ shipped v0.9.0 | vfx |
 
 #### D.4 · Hardware & interaction (mostly Out-of-scope; tracked here for visibility)
 
@@ -1340,17 +1334,17 @@ they belong below.
 
 | Feature | id | Delivers | Eff | Imp | Conf | Pri | Status | Source(s) |
 |---|---|---|---|---|---|---|---|---|
-| `create_ascii_render` | S025 | Character-grid TOP — top-5 (D.1) | S | Med | High | P1 | NEW | vfx, tut |
-| `create_slit_scan` | S026 | Time-slice slit-scan render next to the shipped `create_time_echo` | S | Med | Med | P2 | ✅ shipped v0.12.0 | vfx |
-| `create_chrome_blobs` | S029 | Liquid-chrome / metaball preset stack | S | Med | Med | P2 | ✅ shipped v0.12.0 | vfx, comm |
-| `create_vintage_lens` | S030 | Lens/CA/vignette preset on `applyPostProcessing` (Round-3 EX-24) | S | Med | Med | P2 | ✅ shipped v0.12.0 | vfx |
-| `create_pixel_sort` | S031 | Threshold-pixel-sort (Round-3 EX-21) | M | Med | Med | P2 | ✅ shipped v0.12.0 | vfx |
-| `create_volumetric_field` | S032 | Raymarch density field preset | M | Med | Med | P2 | ✅ shipped v0.12.0 | vfx |
-| `create_reaction_diffusion` | S033 | Gray-Scott RD (recipe exists; wrap as a tool) | S | Med | High | P2 | ✅ shipped v0.12.0 | vfx, tut |
+| `create_ascii_render` | S025 | Character-grid TOP — top-5 (D.1) | S | Med | High | P1 | ✅ shipped v0.9.0 | vfx, tut |
+| `create_slit_scan` | S026 | Time-slice slit-scan render next to the shipped `create_time_echo` | S | Med | Med | P2 | ✅ shipped v0.9.0 | vfx |
+| `create_chrome_blobs` | S029 | Liquid-chrome / metaball preset stack | S | Med | Med | P2 | ✅ shipped v0.9.0 | vfx, comm |
+| `create_vintage_lens` | S030 | Lens/CA/vignette preset on `applyPostProcessing` (Round-3 EX-24) | S | Med | Med | P2 | ✅ shipped v0.9.0 | vfx |
+| `create_pixel_sort` | S031 | Threshold-pixel-sort (Round-3 EX-21) | M | Med | Med | P2 | ✅ shipped v0.9.0 | vfx |
+| `create_volumetric_field` | S032 | Raymarch density field preset | M | Med | Med | P2 | ✅ shipped v0.9.0 | vfx |
+| `create_reaction_diffusion` | S033 | Gray-Scott RD (recipe exists; wrap as a tool) | S | Med | High | P2 | ✅ shipped v0.9.0 | vfx, tut |
 | `create_generative_architecture` | S034 | PBR + hand-canvas architectural sketch preset (Round-3 EX-27 family) | M | Med | Med | P2 | PARTIAL — overlaps Round-3 | vfx, comm |
-| `create_voxel_stack` | S036 | Isometric voxel stack render preset | M | Med | Med | P2 | ✅ shipped v0.12.0 | vfx |
+| `create_voxel_stack` | S036 | Isometric voxel stack render preset | M | Med | Med | P2 | ✅ shipped v0.9.0 | vfx |
 | `create_fulldome_output` | S037 | B-Dome simulator + 180° equirect output (overlaps Round-3 EX-49) | M | Med | Med | P2 | PARTIAL — overlaps Round-3 | vfx, comm |
-| `create_facade_mapping` | S040 | Multi-projector blend + Kantan/CamSchnappr workflow | M | Med | Med | P2 | ✅ shipped v0.12.0 (PARTIAL — calibration deferred) | comm |
+| `create_facade_mapping` | S040 | Multi-projector blend + Kantan/CamSchnappr workflow | M | Med | Med | P2 | ✅ shipped v0.9.0 (PARTIAL — calibration deferred) | comm |
 | `create_fixture_choreograph` / `create_data_choreograph` | S041 | Solar/Astrum-style data-driven fixture choreography (Round-3 EX-45 family) | L | Med | Med | P2 | PARTIAL — overlaps Round-3 | comm |
 
 #### D.6 · Reconciled cross-references
