@@ -56,6 +56,11 @@ interface TextportCommands {
 export function runInstallBridge(
   args: string[],
 ): Promise<InstallBridgeResult> | InstallBridgeResult {
+  if (args.includes("--help") || args.includes("-h")) {
+    console.log(installBridgeHelp());
+    return { ok: true, detail: "install-bridge help" };
+  }
+
   const options = parseInstallBridgeArgs(args);
   if (!options) {
     return { ok: false, detail: "invalid install-bridge arguments" };
@@ -105,9 +110,10 @@ export function runInstallBridge(
       "",
       `  You should see: [tdmcp] bridge running on port ${options.port} (/project1/tdmcp_bridge)`,
       "",
-      "  ⚠ Security: the bridge runs arbitrary Python inside TouchDesigner and the",
-      "    Web Server DAT listens on all network interfaces with no auth. Only run it",
-      `    on a trusted network, or firewall port ${options.port} to localhost.`,
+      "  Security: the Web Server DAT listens on all network interfaces. By default,",
+      "  arbitrary Python endpoints stay disabled unless you set TDMCP_BRIDGE_TOKEN",
+      "  or TDMCP_BRIDGE_ALLOW_EXEC=1 inside TouchDesigner.",
+      `  On untrusted networks, keep exec disabled and firewall port ${options.port} to localhost.`,
       "",
       "  Prefer not to touch Preferences? Paste this in the Textport instead:",
       "",
@@ -142,6 +148,27 @@ export function runInstallBridge(
     return verifyInstalledBridge(options, baseResult);
   }
   return baseResult;
+}
+
+function installBridgeHelp(): string {
+  return [
+    "tdmcp install-bridge",
+    "",
+    "Usage:",
+    "  tdmcp install-bridge [--dir <path>] [--verify] [--wait] [--port <port>] [--token <token>]",
+    "  tdmcp install-bridge --palette [--palette-dir <path>] [--package-name <name>]",
+    "",
+    "Options:",
+    "  --dir <path>           Copy bridge modules under this root. Defaults to ~/tdmcp-bridge.",
+    "  --verify               Probe /api/info once after copying.",
+    "  --wait                 Poll /api/info until the bridge responds or times out.",
+    "  --port <port>          TouchDesigner bridge port. Defaults to 9980.",
+    "  --token <token>        Print the matching TDMCP_BRIDGE_TOKEN setup snippet.",
+    "  --palette              Also print a Palette package export command.",
+    "  --palette-dir <path>   Palette export directory. Implies --palette.",
+    "  --package-name <name>  Palette package component name. Implies --palette.",
+    "  -h, --help             Show this help without copying files.",
+  ].join("\n");
 }
 
 function parseInstallBridgeArgs(args: string[]): InstallBridgeOptions | undefined {

@@ -7,7 +7,7 @@
 //
 // The official packer was renamed from `@anthropic-ai/dxt` (CLI `dxt`, format
 // `.dxt`) to `@anthropic-ai/mcpb` (CLI `mcpb`, format `.mcpb`); both expose
-// `pack <dir> <output>`. We try the current `mcpb` package first, then the
+// `pack <dir> <output>`. We try a pinned `mcpb` package first, then the
 // legacy `dxt` package, then zip. NOTE: the legacy `dxt` CLI predates spec 0.3
 // and rejects the modern `manifest_version` key (it still requires
 // `dxt_version`), so on machines that only have the legacy package the
@@ -80,12 +80,11 @@ function preflight() {
   }
 }
 
-// Official packer package names, in preference order. `mcpb` is the current
-// name; `dxt` is the deprecated predecessor. Both expose `<cli> pack <dir> <out>`.
-const OFFICIAL_PACKERS = [
-  { pkg: "@anthropic-ai/mcpb", cli: "mcpb" },
-  { pkg: "@anthropic-ai/dxt", cli: "dxt" },
-];
+// Official packer package names, in preference order. These are version-pinned
+// so release builds do not resolve mutable npm latest at pack time. `mcpb` is
+// the current name; `dxt` is the deprecated predecessor. Both expose
+// `<cli> pack <dir> <out>`.
+const OFFICIAL_PACKERS = [{ pkg: "@anthropic-ai/mcpb@2.1.2" }, { pkg: "@anthropic-ai/dxt@0.2.6" }];
 
 /** Stage the verified file list into `stageDir` (archive root holds manifest.json). */
 function stageFiles(stageDir) {
@@ -112,10 +111,10 @@ function productionInstallManifest() {
 /**
  * Stage a PRODUCTION-only node_modules into the bundle so the .mcpb stays small —
  * no dev tooling (TypeScript, Biome, Vitest) and no build-only data
- * (`@bottobot/td-mcp`; the knowledge base is already baked into `dist/`). Installs
- * from the lockfile into the staging dir; if that fails (e.g. offline with a cold
- * cache) it falls back to copying the repo's node_modules so the build still
- * produces a working — if larger — bundle.
+ * (`@bottobot/td-mcp`; the knowledge base is already baked into `dist/`).
+ * Installs from the lockfile into the staging dir. If that fails, fail closed:
+ * copying the repo workspace node_modules would mix dev/build tooling into a
+ * release artifact and bypass the production-only dependency contract.
  */
 function stageNodeModules(stageDir) {
   const stagedPackageJson = join(stageDir, "package.json");
@@ -133,8 +132,13 @@ function stageNodeModules(stageDir) {
   );
   writeFileSync(stagedPackageJson, fullPackageJson);
   if (res.status === 0 && existsSync(join(stageDir, "node_modules"))) return;
-  log("prod-only install failed — copying the repo node_modules as a fallback (larger bundle).");
-  cpSync(join(root, "node_modules"), join(stageDir, "node_modules"), { recursive: true });
+  const reason =
+    res.signal != null ? `signal ${res.signal}` : `exit status ${String(res.status ?? "unknown")}`;
+  fail(
+    "prod-only install failed while staging bundle dependencies " +
+      `(${reason}); refusing to copy the workspace node_modules. ` +
+      "Restore npm registry/cache access, then rerun `npm run build:mcpb`.",
+  );
 }
 
 /** Try the official packer(s). Returns true if one ran and succeeded. */

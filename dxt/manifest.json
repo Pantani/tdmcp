@@ -16,7 +16,10 @@
       "args": ["${__dirname}/dist/index.js"],
       "env": {
         "TDMCP_TD_HOST": "${user_config.TDMCP_TD_HOST}",
-        "TDMCP_TD_PORT": "${user_config.TDMCP_TD_PORT}"
+        "TDMCP_TD_PORT": "${user_config.TDMCP_TD_PORT}",
+        "TDMCP_BRIDGE_TOKEN": "${user_config.TDMCP_BRIDGE_TOKEN}",
+        "TDMCP_RAW_PYTHON": "${user_config.TDMCP_RAW_PYTHON}",
+        "TDMCP_TOOL_PROFILE": "${user_config.TDMCP_TOOL_PROFILE}"
       }
     }
   },
@@ -36,6 +39,27 @@
       "default": 9980,
       "min": 1,
       "max": 65535
+    },
+    "TDMCP_BRIDGE_TOKEN": {
+      "type": "string",
+      "title": "TouchDesigner bridge token",
+      "description": "Optional bearer token shared with the TouchDesigner bridge. Leave blank only on trusted local networks.",
+      "required": false,
+      "default": ""
+    },
+    "TDMCP_RAW_PYTHON": {
+      "type": "string",
+      "title": "Raw Python tools",
+      "description": "Set to off to hide the two client-authored raw-Python escape-hatch tools.",
+      "required": false,
+      "default": "on"
+    },
+    "TDMCP_TOOL_PROFILE": {
+      "type": "string",
+      "title": "Tool profile",
+      "description": "Use full for all tools or safe to hide destructive/raw-code tools for autonomous sessions.",
+      "required": false,
+      "default": "full"
     }
   }
 }

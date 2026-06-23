@@ -1,4 +1,6 @@
+import { isRagFeatureFlagEnabled } from "../../utils/config.js";
 import type { ToolRegistrar } from "../types.js";
+import { registerApplyCreativeCard } from "./applyCreativeCard.js";
 import { registerApplyPostProcessing } from "./applyPostProcessing.js";
 import { registerApplyRecipe } from "./applyRecipe.js";
 import { registerAudioFingerprintToVisual } from "./audioFingerprintToVisual.js";
@@ -290,3 +292,13 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateVoxelStack,
   registerCreateFacadeMapping,
 ];
+
+// v0.6.0 — Creative RAG inspiration -> execution loop (gated behind env flag).
+//
+// Exception to the "all env vars parsed in src/utils/config.ts" rule: tool
+// registration runs before the parsed config object is built, so the layer index
+// has no `ctx` to pull from. Keep the env check here but route the "enabled"
+// decision through the shared config helper to avoid drift.
+if (isRagFeatureFlagEnabled(process.env.TDMCP_RAG_APPLY_CARD)) {
+  layer1Registrars.push(registerApplyCreativeCard);
+}

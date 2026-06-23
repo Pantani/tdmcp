@@ -248,7 +248,7 @@ describe("generateLibraryIndexImpl", () => {
   // ── unreadable note ───────────────────────────────────────────────────────────
   it("pushes a warning and continues when a note has malformed frontmatter", async () => {
     await withVault(async (vault) => {
-      // Malformed YAML frontmatter — gray-matter throws, readNoteSafe degrades to an error.
+      // Malformed YAML frontmatter — readNoteSafe degrades to an error.
       vault.write("Recipes/bad.md", "---\n: : not: valid: yaml\n  - [\n---\nbody");
       vault.writeNote("Recipes/good.md", { id: "good", tags: [] }, "ok");
 

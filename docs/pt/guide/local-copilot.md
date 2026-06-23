@@ -139,7 +139,7 @@ TouchDesigner. Abra o **Textport** (**Dialogs → Textport and DATs**), cole est
 única linha e aperte Enter:
 
 ```python
-import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/main/td/bootstrap.py").read().decode())
+import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.9.0/td/bootstrap.py").read().decode())
 ```
 
 Você deve ver `[tdmcp] bridge running on port 9980`. Veja

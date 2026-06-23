@@ -4,7 +4,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const rootDir = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const defaultOutput = "_workspace/coverage/latest.md";
@@ -52,7 +52,7 @@ function normalizeArgs(options) {
   return options;
 }
 
-function parseArgs(argv) {
+export function parseArgs(argv) {
   const options = {
     limit: 20,
     minLines: undefined,
@@ -112,7 +112,7 @@ function metricRow(label, metric) {
   return `| ${label} | ${metric.covered} / ${metric.total} | ${pct(metric.pct)} |`;
 }
 
-function fileRows(summary) {
+export function fileRows(summary) {
   return Object.entries(summary)
     .filter(([filename]) => filename !== "total")
     .map(([filename, data]) => ({
@@ -151,7 +151,7 @@ function surfaceFor(file) {
   return "other";
 }
 
-function summarizeSurfaces(rows) {
+export function summarizeSurfaces(rows) {
   const surfaces = new Map();
   for (const row of rows) {
     const surface = surfaceFor(row.file);
@@ -180,7 +180,7 @@ function summarizeSurfaces(rows) {
     .sort((a, b) => b.missing - a.missing);
 }
 
-function makeMarkdown(summary, rows, options) {
+export function makeMarkdown(summary, rows, options) {
   const gaps = [...rows].sort((a, b) => gapScore(b) - gapScore(a)).slice(0, options.limit);
   const surfaces = summarizeSurfaces(rows).slice(0, 6);
   const generatedAt = new Date().toISOString();
@@ -246,35 +246,43 @@ function writeReport(markdown, output) {
   return outputPath;
 }
 
-const options = parseArgs(process.argv.slice(2));
-let exitStatus = 0;
+export function main(argv = process.argv.slice(2)) {
+  const options = parseArgs(argv);
+  let exitStatus = 0;
 
-if (!options.summaryOnly) {
-  removeStaleSummary();
-  exitStatus = runCoverage();
+  if (!options.summaryOnly) {
+    removeStaleSummary();
+    exitStatus = runCoverage();
+  }
+
+  const summary = readSummary();
+  if (!summary) {
+    console.error("coverage/coverage-summary.json was not found; no coverage report was written.");
+    return exitStatus || 1;
+  }
+
+  const rows = fileRows(summary);
+  const markdown = makeMarkdown(summary, rows, options);
+  const reportPath = writeReport(markdown, options.output);
+
+  console.log(`Coverage report written to ${path.relative(rootDir, reportPath)}`);
+
+  if (exitStatus !== 0) {
+    console.error(
+      `Coverage command failed with exit code ${exitStatus}; report was still written.`,
+    );
+  }
+
+  if (options.minLines !== undefined && summary.total.lines.pct < options.minLines) {
+    console.error(
+      `Line coverage ${pct(summary.total.lines.pct)} is below required ${pct(options.minLines)}.`,
+    );
+    exitStatus = 1;
+  }
+
+  return exitStatus;
 }
 
-const summary = readSummary();
-if (!summary) {
-  console.error("coverage/coverage-summary.json was not found; no coverage report was written.");
-  process.exit(exitStatus || 1);
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  process.exit(main());
 }
-
-const rows = fileRows(summary);
-const markdown = makeMarkdown(summary, rows, options);
-const reportPath = writeReport(markdown, options.output);
-
-console.log(`Coverage report written to ${path.relative(rootDir, reportPath)}`);
-
-if (exitStatus !== 0) {
-  console.error(`Coverage command failed with exit code ${exitStatus}; report was still written.`);
-}
-
-if (options.minLines !== undefined && summary.total.lines.pct < options.minLines) {
-  console.error(
-    `Line coverage ${pct(summary.total.lines.pct)} is below required ${pct(options.minLines)}.`,
-  );
-  exitStatus = 1;
-}
-
-process.exit(exitStatus);

@@ -14,9 +14,9 @@
 
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
-import matter from "gray-matter";
 import { z } from "zod";
 import type { CanonicalSetlist } from "../automation/setlistSchema.js";
+import { parseNote, parseYamlDocument } from "../vault/frontmatter.js";
 
 // ---------- CLI args schema ----------
 
@@ -185,18 +185,13 @@ export function parseScheduleInput(
     if (raw.trimStart().startsWith("{") || raw.trimStart().startsWith("[")) {
       return { ok: true, input: JSON.parse(raw) };
     }
-    // Markdown front-matter
-    const parsed = matter(raw);
-    if (parsed.data && Object.keys(parsed.data).length > 0) {
+    // Markdown frontmatter
+    const parsed = parseNote(raw);
+    if (Object.keys(parsed.data).length > 0) {
       return { ok: true, input: parsed.data };
     }
-    // Plain YAML (no front-matter) — parse the raw body via gray-matter's
-    // bundled YAML engine. Returning `parsed.data` here would always be `{}`,
-    // which would later fail with an empty `entries` list.
-    const yamlEngine = (
-      matter as unknown as { engines: { yaml: { parse: (s: string) => unknown } } }
-    ).engines.yaml;
-    const yamlInput = yamlEngine.parse(raw);
+    // Plain YAML (no frontmatter).
+    const yamlInput = parseYamlDocument(raw);
     return { ok: true, input: yamlInput ?? {} };
   } catch (e: unknown) {
     return {

@@ -18,7 +18,7 @@ import type { ToolContext } from "../../src/tools/types.js";
 const ctx = {} as ToolContext;
 
 async function call(args: Partial<MacroRecorderArgs> & { action: MacroRecorderArgs["action"] }) {
-  const full: MacroRecorderArgs = { redactSensitive: true, ...args };
+  const full: MacroRecorderArgs = { redactSensitive: true, allowUnsafeRecording: false, ...args };
   return macroRecorderImpl(ctx, full);
 }
 
@@ -115,14 +115,32 @@ describe("redaction", () => {
     });
   });
 
-  it("preserves script when redactSensitive=false on the recorder", async () => {
-    await call({ action: "start", name: "raw", redactSensitive: false });
+  it("rejects unredacted recordings without explicit unsafe acknowledgement", async () => {
+    const result = await call({ action: "start", name: "raw", redactSensitive: false });
+
+    expect(result.isError).toBe(true);
+    const text = result.content?.[0];
+    expect(text && "text" in text ? text.text : "").toContain("allowUnsafeRecording");
+  });
+
+  it("preserves script only with explicit unsafe recording acknowledgement", async () => {
+    await call({
+      action: "start",
+      name: "raw",
+      redactSensitive: false,
+      allowUnsafeRecording: true,
+    });
     const recorder = getMacroRecorder();
     const h = recorder.wrapHandler("execute_python_script", async () => ({
       content: [{ type: "text", text: "ok" }],
     }));
     await h({ script: "import td\nprint(1)", target: "/project1" });
-    await call({ action: "stop", name: "raw", redactSensitive: false });
+    await call({
+      action: "stop",
+      name: "raw",
+      redactSensitive: false,
+      allowUnsafeRecording: true,
+    });
     const record = await readMacro(join(tmp, "raw.json"));
     expect(record.entries[0]?.args.script).toBe("import td\nprint(1)");
   });

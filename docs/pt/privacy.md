@@ -62,10 +62,12 @@ durante a execução.
 A ponte do TouchDesigner executa Python dentro do seu próprio processo do
 TouchDesigner e escuta em `127.0.0.1:9980`. Você continua no controle do acesso:
 
-- exija um token de portador definindo `TDMCP_BRIDGE_TOKEN` (no servidor e no
-  TouchDesigner), e/ou
-- desative os endpoints de execução de código definindo `TDMCP_BRIDGE_ALLOW_EXEC=0`
-  no ambiente do TouchDesigner.
+- mantenha os endpoints de execução de código arbitrário fechados por padrão,
+  exceto quando você configurar `TDMCP_BRIDGE_TOKEN` ou definir explicitamente
+  `TDMCP_BRIDGE_ALLOW_EXEC=1` dentro do TouchDesigner, e
+- exija um token de portador definindo `TDMCP_BRIDGE_TOKEN` no servidor e no
+  TouchDesigner quando a ponte puder ser acessada além de uma máquina local
+  confiável.
 
 Veja a [referência de arquitetura](/pt/reference/architecture) e as
 [variáveis de ambiente](/pt/reference/environment) para o modelo de segurança

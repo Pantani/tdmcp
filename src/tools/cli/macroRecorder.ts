@@ -22,6 +22,10 @@ export const macroRecorderSchema = z.object({
   name: z.string().min(1).max(80).optional(),
   file: z.string().optional(),
   redactSensitive: z.boolean().default(true),
+  allowUnsafeRecording: z
+    .boolean()
+    .default(false)
+    .describe("Required when redactSensitive=false because raw scripts/secrets may be persisted."),
 });
 
 export type MacroRecorderArgs = z.infer<typeof macroRecorderSchema>;
@@ -29,6 +33,12 @@ export type MacroRecorderArgs = z.infer<typeof macroRecorderSchema>;
 export async function macroRecorderImpl(_ctx: ToolContext, args: MacroRecorderArgs) {
   const dir = resolveMacrosDir();
   const recorder = getMacroRecorder();
+
+  if (args.redactSensitive === false && args.allowUnsafeRecording !== true) {
+    return errorResult(
+      "`allowUnsafeRecording=true` is required when `redactSensitive=false`; otherwise raw scripts or secrets may be written to disk.",
+    );
+  }
 
   if (args.action === "start") {
     if (!args.name) return errorResult("`name` is required for action=start");

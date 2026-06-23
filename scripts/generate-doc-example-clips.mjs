@@ -4262,6 +4262,57 @@ function pathTitleOrbitFrame(t) {
   return buf;
 }
 
+function kandinskyCellIsGrid(u, v) {
+  const gridX = Math.abs(u - Math.round(u));
+  const gridY = Math.abs(v - Math.round(v));
+  return gridX < 0.02 || gridY < 0.024;
+}
+
+function kandinskyFieldColor(grid, palette, index, black, radius, white) {
+  if (grid) {
+    return white;
+  }
+  return mixColor(palette[index], black, 0.1 + 0.34 * radius);
+}
+
+function kandinskyFieldAlpha(grid, vignette) {
+  return grid ? 0.2 : 0.38 + vignette * 0.42;
+}
+
+function drawKandinskyRemixField(buf, t, colors) {
+  const { black, blue, gradedMid, gradedShadow, red, white, yellow } = colors;
+  const palette = [gradedShadow, blue, red, gradedMid, yellow, black];
+  const rot = 0.16 * Math.sin(t * 0.7);
+  const cr = Math.cos(rot);
+  const sr = Math.sin(rot);
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const sx = x - width / 2;
+      const sy = y - height / 2;
+      const u = (sx * cr - sy * sr) / 52;
+      const v = (sx * sr + sy * cr) / 52;
+      const angle = Math.atan2(sy, sx);
+      const radius = Math.hypot(sx / 230, sy / 126);
+      const grid = kandinskyCellIsGrid(u, v);
+      const checker = (Math.floor(u + t * 0.32) + Math.floor(v - t * 0.18)) % 2;
+      const wedge = Math.floor((angle + Math.PI + t * 0.45) / (Math.PI / 5));
+      const band = Math.floor((u * 1.1 - v * 0.72 + t * 0.85) * 2.2);
+      const index = Math.abs(wedge + band + checker) % 6;
+      const vignette = smoothstep(1.3, 0.35, radius);
+      const color = kandinskyFieldColor(grid, palette, index, black, radius, white);
+      set(buf, x, y, color, kandinskyFieldAlpha(grid, vignette));
+    }
+  }
+}
+
+function kandinskyAccentColor(i, red, yellow, blue) {
+  if (i % 3 === 0) {
+    return red;
+  }
+  return i % 3 === 1 ? yellow : blue;
+}
+
 function creativeRagKandinskyRemixFrame(t) {
   const buf = baseFrame();
   const red = [224, 32, 32];
@@ -4273,31 +4324,7 @@ function creativeRagKandinskyRemixFrame(t) {
   const gradedMid = [16, 23, 36];
 
   rect(buf, 0, 0, width, height, black, 0.96);
-
-  const rot = 0.16 * Math.sin(t * 0.7);
-  const cr = Math.cos(rot);
-  const sr = Math.sin(rot);
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const sx = x - width / 2;
-      const sy = y - height / 2;
-      const u = (sx * cr - sy * sr) / 52;
-      const v = (sx * sr + sy * cr) / 52;
-      const angle = Math.atan2(sy, sx);
-      const radius = Math.hypot(sx / 230, sy / 126);
-      const gridX = Math.abs(u - Math.round(u));
-      const gridY = Math.abs(v - Math.round(v));
-      const grid = gridX < 0.02 || gridY < 0.024;
-      const checker = (Math.floor(u + t * 0.32) + Math.floor(v - t * 0.18)) % 2;
-      const wedge = Math.floor((angle + Math.PI + t * 0.45) / (Math.PI / 5));
-      const band = Math.floor((u * 1.1 - v * 0.72 + t * 0.85) * 2.2);
-      const index = Math.abs(wedge + band + checker) % 6;
-      const palette = [gradedShadow, blue, red, gradedMid, yellow, black];
-      const vignette = smoothstep(1.3, 0.35, radius);
-      const color = grid ? white : mixColor(palette[index], black, 0.1 + 0.34 * radius);
-      set(buf, x, y, color, grid ? 0.2 : 0.38 + vignette * 0.42);
-    }
-  }
+  drawKandinskyRemixField(buf, t, { black, blue, gradedMid, gradedShadow, red, white, yellow });
 
   const sweep = (t * 0.42) % 1;
   const planeShift = Math.sin(t * 1.4) * 16;
@@ -4348,7 +4375,7 @@ function creativeRagKandinskyRemixFrame(t) {
   for (let i = 0; i < 10; i++) {
     const x = 42 + i * 44 + Math.sin(t * 1.5 + i) * 5;
     const y = 38 + ((i * 37) % 186);
-    const color = i % 3 === 0 ? red : i % 3 === 1 ? yellow : blue;
+    const color = kandinskyAccentColor(i, red, yellow, blue);
     line(buf, x - 28, y + 42, x + 46, y - 34, black, 0.82);
     line(buf, x - 26, y + 40, x + 48, y - 36, color, 0.5);
   }

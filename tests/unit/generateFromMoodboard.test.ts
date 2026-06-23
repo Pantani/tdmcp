@@ -76,7 +76,7 @@ describe("generateFromMoodboardImpl", () => {
 
   it("returns a friendly error (never throws) when the note has malformed YAML frontmatter", async () => {
     await withVault(async (vault) => {
-      // Unclosed flow sequence — gray-matter's matter() throws on this. The tool
+      // Unclosed flow sequence — the local YAML parser throws on this. The tool
       // must catch it and return an isError result, not crash the handler.
       vault.write("Moodboards/broken.md", "---\ntechnique: [a, b\n---\n\nBody.\n");
       const result = await generateFromMoodboardImpl(ctxWith(vault), {

@@ -17,7 +17,7 @@ do cliente MCP continuam simples. Toda variável é opcional e tem um padrão se
 | `TDMCP_TRANSPORT` | `stdio` | Transporte MCP: `stdio` (padrão) ou `http` (Streamable HTTP). |
 | `TDMCP_HTTP_PORT` | `3939` | Porta do transporte HTTP (quando `TDMCP_TRANSPORT=http`). |
 | `TDMCP_EVENTS` | `on` | Assina os eventos por WebSocket do TD e os encaminha como notificações de log do MCP (`on`/`off`). |
-| `TDMCP_RAW_PYTHON` | `on` | Se expõe as duas tools de escape em Python cru (`execute_python_script`, `exec_node_method`). Defina como `off` para trancá-las em configurações restritas. Isso remove só essas duas tools de código escrito pelo cliente — muitas tools de mais alto nível ainda enviam o próprio Python *templado* à ponte, então `off` **não** significa "nenhum código roda no TD". Para realmente desativar a execução de código, defina `TDMCP_BRIDGE_ALLOW_EXEC=0` no ambiente do TouchDesigner (abaixo). |
+| `TDMCP_RAW_PYTHON` | `on` | Se expõe as duas tools de escape em Python cru (`execute_python_script`, `exec_node_method`) no servidor MCP. Defina como `off` para trancá-las em configurações restritas. Isso remove só essas duas tools de código escrito pelo cliente — muitas tools de mais alto nível ainda enviam o próprio Python *templado* à ponte, então `off` **não** significa "nenhum código roda no TD". A própria ponte agora mantém endpoints de código arbitrário desligados, exceto quando `TDMCP_BRIDGE_TOKEN` ou o opt-in explícito `TDMCP_BRIDGE_ALLOW_EXEC=1` estiver definido no ambiente do TouchDesigner. |
 | `TDMCP_TOOL_PROFILE` | `full` | Perfil de exposição de tools. `full` registra todas as tools; `safe` esconde tools destrutivas/de código cru, incluindo Python cru, deleção de nós, reescrita de DATs, writes de checkpoint/componente/pacote e writes de previews — um superconjunto estrito de `TDMCP_RAW_PYTHON=off`. Use `safe` para um agente autônomo dentro do TD (ex.: o "MCP Client" do LOPs da dotsimulate). O padrão `full` mantém os clientes existentes inalterados. |
 | `TDMCP_BRIDGE_TOKEN` | _(não definido)_ | Token bearer compartilhado opcional. Quando definido, o servidor o envia e a ponte o exige — defina o **mesmo** valor no ambiente do TouchDesigner para ligar a autenticação. |
 | `TDMCP_LOG_LEVEL` | `info` | `debug` / `info` / `warn` / `error` / `silent` (registrado no stderr). |
@@ -49,7 +49,7 @@ rede. Veja [Segurança](/pt/reference/architecture#security).
 
 | Variável | Padrão | Descrição |
 | --- | --- | --- |
-| `TDMCP_BRIDGE_ALLOW_EXEC` | `1` | Defina como `0`/`false`/`off` para a ponte recusar os endpoints de código arbitrário (`/api/exec`, `method` de nó). Os endpoints estruturados continuam funcionando. |
+| `TDMCP_BRIDGE_ALLOW_EXEC` | _(não definido)_ | Opt-in opcional do lado da ponte. Defina como `1`/`true`/`on` no ambiente do TouchDesigner para permitir os endpoints de código arbitrário (`/api/exec`, `method` de nó) quando não houver token da ponte configurado. Deixe sem definir para o padrão mais seguro; os endpoints estruturados continuam funcionando. |
 | `TDMCP_BRIDGE_TOKEN` | _(não definido)_ | Token bearer compartilhado; precisa bater com o valor do servidor para autorizar as requisições. |
 
 ## Exemplo: config do cliente MCP

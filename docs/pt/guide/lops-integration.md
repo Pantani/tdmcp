@@ -107,10 +107,10 @@ reforce a superfície:
   writes de previews e controles de panic) — um superconjunto estrito de
   `RAW_PYTHON=off`. O launcher define isto por você. Veja
   [Variáveis de ambiente](/reference/environment) (em inglês).
-- Para **realmente** fechar a execução de código, defina
-  **`TDMCP_BRIDGE_ALLOW_EXEC=0`** no ambiente do *próprio TouchDesigner* — essa é
-  a trava autoritativa, do lado da ponte, e ela vale até contra um chamador
-  direto na rede.
+- A execução arbitrária do lado da ponte agora fica fechada por padrão, exceto
+  quando **`TDMCP_BRIDGE_TOKEN`** estiver configurado ou
+  **`TDMCP_BRIDGE_ALLOW_EXEC=1`** for definido no ambiente do *próprio
+  TouchDesigner*. Mantenha fechado para uso autônomo com LOPs.
 
 ## Como funciona
 

@@ -1,8 +1,6 @@
-import { isRagFeatureFlagEnabled } from "../../utils/config.js";
 import type { ToolRegistrar } from "../types.js";
 import { registerAddCustomParameters } from "./addCustomParameters.js";
 import { registerAnimateParameter } from "./animateParameter.js";
-import { registerApplyCreativeCard } from "./applyCreativeCard.js";
 import { registerApplyLut } from "./applyLut.js";
 import { registerArrangeNetwork } from "./arrangeNetwork.js";
 import { registerAuthorScriptOperator } from "./authorScriptOperator.js";
@@ -184,16 +182,3 @@ export const layer2Registrars: ToolRegistrar[] = [
   registerConnectDaydreamCloud,
   registerCreateLlmChain,
 ];
-
-// v0.6.0 — Creative RAG inspiration → execution loop (gated behind env flag).
-//
-// Exception to the "all env vars parsed in src/utils/config.ts" rule: tool
-// registration runs BEFORE the parsed config object is built (registrars are
-// referenced at module load time), so the layer2 index has no `ctx` to pull
-// from. We keep the env check here but route the "what counts as enabled"
-// decision through the shared `isRagFeatureFlagEnabled` helper in config.ts,
-// which is also the schema's preprocess for `ragApplyCard` — single source of
-// truth, no drift.
-if (isRagFeatureFlagEnabled(process.env.TDMCP_RAG_APPLY_CARD)) {
-  layer2Registrars.push(registerApplyCreativeCard);
-}

@@ -17,7 +17,7 @@ config stay simple. Every variable is optional and has a sensible default.
 | `TDMCP_TRANSPORT` | `stdio` | MCP transport: `stdio` (default) or `http` (Streamable HTTP). |
 | `TDMCP_HTTP_PORT` | `3939` | Port for the HTTP transport (when `TDMCP_TRANSPORT=http`). |
 | `TDMCP_EVENTS` | `on` | Subscribe to TD WebSocket events and forward them as MCP logging notifications (`on`/`off`). |
-| `TDMCP_RAW_PYTHON` | `on` | Whether to expose the two raw-Python escape-hatch tools (`execute_python_script`, `exec_node_method`). Set to `off` to lock them out for restricted setups. This removes only those two client-authored-code tools — many higher-level tools still send their own *templated* Python to the bridge, so `off` is **not** "no code runs in TD". To actually disable code execution, set `TDMCP_BRIDGE_ALLOW_EXEC=0` in TouchDesigner's environment (below). |
+| `TDMCP_RAW_PYTHON` | `on` | Whether to expose the two raw-Python escape-hatch tools (`execute_python_script`, `exec_node_method`) in the MCP server. Set to `off` to lock them out for restricted setups. This removes only those two client-authored-code tools — many higher-level tools still send their own *templated* Python to the bridge, so `off` is **not** "no code runs in TD". The bridge itself now keeps arbitrary-code endpoints disabled unless `TDMCP_BRIDGE_TOKEN` or explicit `TDMCP_BRIDGE_ALLOW_EXEC=1` is set in TouchDesigner's environment. |
 | `TDMCP_TOOL_PROFILE` | `full` | Tool exposure profile. `full` registers every tool; `safe` hides destructive/raw-code tools, including raw Python, node deletion, DAT rewrites, checkpoint/component/package writes and preview-asset writes — a strict superset of `TDMCP_RAW_PYTHON=off`. Use `safe` for an autonomous in-TD agent (e.g. dotsimulate's LOPs MCP Client). Default `full` keeps existing clients unchanged. |
 | `TDMCP_BRIDGE_TOKEN` | _(unset)_ | Optional shared bearer token. When set, the server sends it and the bridge requires it — set the **same** value in TouchDesigner's environment to turn auth on. |
 | `TDMCP_LOG_LEVEL` | `info` | `debug` / `info` / `warn` / `error` / `silent` (logged to stderr). |
@@ -94,7 +94,7 @@ depth — they are enforced bridge-side, even for direct network callers. See
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `TDMCP_BRIDGE_ALLOW_EXEC` | `1` | Set to `0`/`false`/`off` to make the bridge refuse the arbitrary-code endpoints (`/api/exec`, node `method`). The structured endpoints keep working. |
+| `TDMCP_BRIDGE_ALLOW_EXEC` | _(unset)_ | Optional bridge-side opt-in. Set to `1`/`true`/`on` in TouchDesigner's environment to allow arbitrary-code endpoints (`/api/exec`, node `method`) when no bridge token is configured. Leave unset for the safer default; structured endpoints keep working. |
 | `TDMCP_BRIDGE_TOKEN` | _(unset)_ | Shared bearer token; must match the server's value to authorize requests. |
 
 ## Example: MCP client config

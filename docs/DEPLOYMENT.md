@@ -85,7 +85,8 @@ instructions.
    (`127.0.0.1` : `9980`), then enable the extension.
 
 The manifest lives at `dxt/manifest.json`. It declares a `node` server with
-`entry_point: dist/index.js` and surfaces `TDMCP_TD_HOST` / `TDMCP_TD_PORT` via
+`entry_point: dist/index.js` and surfaces `TDMCP_TD_HOST`, `TDMCP_TD_PORT`,
+`TDMCP_BRIDGE_TOKEN`, `TDMCP_RAW_PYTHON`, and `TDMCP_TOOL_PROFILE` via
 `user_config`, injected into the server env as `${user_config.*}`.
 
 ---

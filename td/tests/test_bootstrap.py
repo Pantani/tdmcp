@@ -53,6 +53,14 @@ class BootstrapExtractionTests(unittest.TestCase):
         finally:
             self.bootstrap.urllib.request.urlopen = original
 
+    def test_default_repo_zip_is_release_tag_pinned(self):
+        self.assertRegex(
+            self.bootstrap.REPO_ZIP,
+            r"^https://github\.com/Pantani/tdmcp/archive/refs/tags/v\d+\.\d+\.\d+\.zip$",
+        )
+        self.assertNotIn("/refs/heads/", self.bootstrap.REPO_ZIP)
+        self.assertNotIn("/raw/main/", self.bootstrap.__doc__ or "")
+
     def test_extracts_only_safe_module_entries(self):
         data = _zip_bytes(
             [

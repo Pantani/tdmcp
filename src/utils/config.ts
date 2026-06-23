@@ -268,9 +268,9 @@ export const ConfigSchema = z.object({
   /** Europeana Search API key (read in-source by the adapter; never threaded through CreativeRagConfig). */
   ragEuropeanaKey: z.string().optional(),
   /**
-   * Gate the `apply_creative_card` Layer 2 tool / CLI verb. Off by default so the
+   * Gate the `apply_creative_card` MCP tool / CLI verb. Off by default so the
    * inspiration→execution loop only registers when explicitly enabled. Note:
-   * tool registration runs BEFORE the parsed config is available, so the Layer 2
+   * tool registration runs BEFORE the parsed config is available, so the tool
    * index and CLI registry still read `process.env.TDMCP_RAG_APPLY_CARD` via the
    * shared `isRagFeatureFlagEnabled` helper. This field is the source of truth
    * everywhere else.

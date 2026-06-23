@@ -117,6 +117,7 @@ try:
         _displace_energy.nodeX = -140
         _displace_energy.nodeY = 20
         _displace_energy.inputConnectors[0].connect(_level_mood)
+        _displace_energy.inputConnectors[1].connect(_noise_base)
 
         _feedback_loop = _root.create(feedbackTOP, "feedback_loop")
         _feedback_loop.nodeX = 100

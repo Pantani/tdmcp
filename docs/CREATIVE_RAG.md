@@ -68,7 +68,7 @@ It is deliberately narrow:
 **The sync/search/resource paths do not touch the TouchDesigner bridge, DMX, a
 fixture, or Python exec.** Creative RAG itself is a CLI subcommand plus
 **read-only** MCP resources. The optional execution handoff is a separate,
-explicitly gated Layer 2 tool, `apply_creative_card`, enabled only with
+explicitly gated MCP tool, `apply_creative_card`, enabled only with
 `TDMCP_RAG_APPLY_CARD=1`; it routes to a hardcoded allowlist of Layer 1 builders,
 validates the target args, and supports `dry_run` before invoking TouchDesigner.
 The only outbound network calls in sync/search are:

@@ -200,6 +200,13 @@ class InstallPackageHelperTests(unittest.TestCase):
         for control in ("Install", "Reinstall", "Uninstall", "Status"):
             self.assertIn(control, source)
 
+    def test_default_package_bootstrap_zip_is_release_tag_pinned(self):
+        self.assertRegex(
+            install.DEFAULT_PACKAGE_BOOTSTRAP_REPO_ZIP,
+            r"^https://github\.com/Pantani/tdmcp/archive/refs/tags/v\d+\.\d+\.\d+\.zip$",
+        )
+        self.assertNotIn("/refs/heads/", install.DEFAULT_PACKAGE_BOOTSTRAP_REPO_ZIP)
+
     def test_package_callbacks_source_bootstraps_modules_when_modulesdir_is_blank(self):
         archive = io.BytesIO()
         with zipfile.ZipFile(archive, "w") as zf:
@@ -279,7 +286,7 @@ class InstallPackageHelperTests(unittest.TestCase):
         exec(install.package_callbacks_source(), namespace)
         owner = _FakeOp("/package")
         owner.par.add("Token", "s3cret")
-        owner.par.add("Allowexec", True)
+        owner.par.add("Allowexec", False)
         previous_token = os.environ.get("TDMCP_BRIDGE_TOKEN")
         previous_allow_exec = os.environ.get("TDMCP_BRIDGE_ALLOW_EXEC")
 
@@ -291,7 +298,7 @@ class InstallPackageHelperTests(unittest.TestCase):
             owner.par.Token.val = " "
             namespace["_configure_security"](owner)
             self.assertIsNone(os.environ.get("TDMCP_BRIDGE_TOKEN"))
-            self.assertEqual(os.environ.get("TDMCP_BRIDGE_ALLOW_EXEC"), "1")
+            self.assertEqual(os.environ.get("TDMCP_BRIDGE_ALLOW_EXEC"), "0")
         finally:
             if previous_token is None:
                 os.environ.pop("TDMCP_BRIDGE_TOKEN", None)
@@ -333,7 +340,7 @@ class InstallPackageHelperTests(unittest.TestCase):
         self.assertEqual(comp.par.Modulesdir.val, "/opt/td/modules")
         self.assertEqual(comp.par.Repozip.val, install.DEFAULT_PACKAGE_BOOTSTRAP_REPO_ZIP)
         self.assertEqual(comp.par.Bootstrapdest.val, install.DEFAULT_PACKAGE_BOOTSTRAP_DEST)
-        self.assertEqual(comp.par.Allowexec.val, True)
+        self.assertEqual(comp.par.Allowexec.val, False)
 
     def test_run_lays_out_runtime_bridge_nodes_without_overlap(self):
         fake_td = _FakeTd()
