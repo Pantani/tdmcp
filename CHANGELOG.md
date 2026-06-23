@@ -6,6 +6,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- Clear the npm audit report by updating vulnerable Vitest, Vite, VitePress and esbuild
+  transitive dependency resolutions.
+
 ## [0.10.0] - 2026-06-23
 
 ### Added
