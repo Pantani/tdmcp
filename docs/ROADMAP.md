@@ -61,7 +61,7 @@ The project has grown through five arcs:
 
 ## ✅ Current Release Line
 
-### Unreleased — post-0.9.0 MediaPipe hands -> palm holograms, TDAbleton mapper + AI Party rehearsal POC
+### Unreleased — post-0.9.0 MediaPipe hands, TDAbleton mapper + RAG follow-ups
 
 Source-tree work after the npm v0.9.0 publication adds a focused live-control
 path for the Ableton session we validated manually:
@@ -81,12 +81,6 @@ path for the Ableton session we validated manually:
   input CHOP, `Reorder`, bypass states, `Min/Max` ranges and missing `map1..map4`
   channels, with optional TD-side repair. AbletonMCP is not required for this
   runtime path.
-- **Live Nervous System / AI Party local rehearsal POC.** The repo now includes
-  `src/automation/aiPartyLive/` and `npm run ai-party:{dev,dry,td-build,test,telegram}`:
-  a local dashboard/backend, approval queue, JSONL audit log, optional Ollama
-  parser, optional Telegram long polling and optional TouchDesigner preview
-  network. It remains simulation-first; real venue hardware still needs a
-  separate adapter, fixture map, emergency-stop path and venue validation.
 - 🧪 **Creative RAG (opt-in, experimental).** A local-only creative
   repertoire of open-licensed artworks/artists/techniques: `tdmcp creative-rag
   {sync|index|search}` plus read-only `tdmcp://creative/cards/{id}` and
