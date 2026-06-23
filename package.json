@@ -131,7 +131,7 @@
     "@biomejs/biome": "^2.4.15",
     "@bottobot/td-mcp": "^2.8.0",
     "@types/node": "^25.9.1",
-    "@vitest/coverage-v8": "^4.1.7",
+    "@vitest/coverage-v8": "^4.1.9",
     "chokidar": "^4.0.3",
     "dependency-cruiser": "^17.4.3",
     "eslint": "^9.39.4",
@@ -140,23 +140,26 @@
     "tsx": "^4.22.3",
     "typescript": "^6.0.3",
     "vitepress": "^1.6.4",
-    "vitest": "^4.1.7"
+    "vitest": "^4.1.9"
   },
   "overrides": {
     "@bottobot/td-mcp": {
       "cheerio": "1.0.0-rc.12"
     },
     "vitepress": {
-      "vite": "5.4.21"
+      "vite": "6.4.3"
     },
     "vitest": {
-      "vite": "6.4.2"
+      "vite": "6.4.3"
     },
     "@vitest/mocker": {
-      "vite": "6.4.2"
+      "vite": "6.4.3"
     },
     "vite-node": {
-      "vite": "6.4.2"
+      "vite": "6.4.3"
+    },
+    "tsup": {
+      "esbuild": "0.27.2"
     }
   }
 }
