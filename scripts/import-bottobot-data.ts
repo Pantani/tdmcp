@@ -68,6 +68,44 @@ function freshDir(dir: string): void {
   mkdirSync(dir, { recursive: true });
 }
 
+function countRecord(value: unknown): number {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? Object.keys(value).length
+    : 0;
+}
+
+function writeEmptyVersions(dir: string): void {
+  mkdirSync(dir, { recursive: true });
+  writeJson(join(dir, "version-manifest.json"), {
+    schemaVersion: "1.0",
+    versions: [],
+    versionOrder: [],
+    currentStable: null,
+    pythonVersionMap: {},
+  });
+  writeJson(join(dir, "release-highlights.json"), {
+    schemaVersion: "1.0",
+    releases: {},
+  });
+  writeJson(join(dir, "operator-compatibility.json"), {
+    schemaVersion: "1.0",
+    operators: {},
+  });
+  writeJson(join(dir, "python-api-compatibility.json"), {
+    schemaVersion: "1.0",
+    classes: {},
+  });
+  writeJson(join(dir, "experimental-builds.json"), {
+    schemaVersion: "1.0",
+    currentExperimentalSeries: null,
+    buildSeries: [],
+  });
+}
+
+function writeEmptyDir(dir: string): void {
+  mkdirSync(dir, { recursive: true });
+}
+
 function writeEmpty(): void {
   freshDir(outDir);
   mkdirSync(join(outDir, "operators"), { recursive: true });
@@ -78,6 +116,9 @@ function writeEmpty(): void {
   writeJson(join(outDir, "tutorials", "index.json"), []);
   writeJson(join(outDir, "patterns.json"), []);
   writeJson(join(outDir, "glsl.json"), []);
+  writeEmptyVersions(join(outDir, "versions"));
+  writeEmptyDir(join(outDir, "techniques"));
+  writeEmptyDir(join(outDir, "td-classes"));
   writeJson(join(outDir, "meta.json"), {
     source: "empty",
     importedAt: new Date().toISOString(),
@@ -99,6 +140,9 @@ function main(): void {
   const processedDir = join(bb, "wiki/data/processed");
   const pythonDir = join(bb, "wiki/data/python-api");
   const tutorialsDir = join(bb, "wiki/data/tutorials");
+  const versionsDir = join(bb, "wiki/data/versions");
+  const experimentalDir = join(bb, "wiki/data/experimental");
+  const classesDir = join(bb, "wiki/data/classes");
 
   freshDir(outDir);
 
@@ -140,6 +184,47 @@ function main(): void {
   const glsl = normalizeGlsl(readJson(join(bb, "wiki/data/experimental/glsl.json")));
   writeJson(join(outDir, "glsl.json"), glsl);
 
+  // Technique packs + TD class reference pages. Keep source JSON intact.
+  const techniquesOut = join(outDir, "techniques");
+  if (existsSync(experimentalDir)) {
+    cpSync(experimentalDir, techniquesOut, { recursive: true });
+  } else {
+    writeEmptyDir(techniquesOut);
+  }
+  const classesOut = join(outDir, "td-classes");
+  if (existsSync(classesDir)) {
+    cpSync(classesDir, classesOut, { recursive: true });
+  } else {
+    writeEmptyDir(classesOut);
+  }
+
+  // TD release / compatibility data. Keep the source JSON shape intact so future
+  // upstream fields remain available without importer churn.
+  const versionsOut = join(outDir, "versions");
+  if (existsSync(versionsDir)) {
+    cpSync(versionsDir, versionsOut, { recursive: true });
+  } else {
+    writeEmptyVersions(versionsOut);
+  }
+  const versionManifest = readJson(join(versionsOut, "version-manifest.json")) as {
+    versions?: unknown[];
+  };
+  const releaseHighlights = readJson(join(versionsOut, "release-highlights.json")) as {
+    releases?: unknown;
+  };
+  const operatorCompatibility = readJson(join(versionsOut, "operator-compatibility.json")) as {
+    operators?: unknown;
+  };
+  const pythonApiCompatibility = readJson(join(versionsOut, "python-api-compatibility.json")) as {
+    classes?: unknown;
+  };
+  const experimentalBuilds = readJson(join(versionsOut, "experimental-builds.json")) as {
+    buildSeries?: unknown[];
+  };
+  const techniquePacks = listJson(techniquesOut)
+    .map((file) => readJson(join(techniquesOut, file)) as { techniques?: unknown[] })
+    .filter((pack) => Array.isArray(pack.techniques));
+
   let bottobotVersion = "unknown";
   try {
     const pkg = readJson(join(bb, "package.json")) as { version?: string };
@@ -154,6 +239,16 @@ function main(): void {
     tutorials: tutIndex.length,
     patterns: patterns.length,
     glsl: glsl.length,
+    tdVersions: Array.isArray(versionManifest.versions) ? versionManifest.versions.length : 0,
+    releaseHighlights: countRecord(releaseHighlights.releases),
+    operatorCompatibility: countRecord(operatorCompatibility.operators),
+    pythonApiCompatibility: countRecord(pythonApiCompatibility.classes),
+    experimentalBuildSeries: Array.isArray(experimentalBuilds.buildSeries)
+      ? experimentalBuilds.buildSeries.length
+      : 0,
+    techniquePacks: techniquePacks.length,
+    techniques: techniquePacks.reduce((total, pack) => total + (pack.techniques?.length ?? 0), 0),
+    tdClasses: listJson(classesOut).length,
   };
   const unchangedMeta =
     existingMeta.source === "bottobot" &&

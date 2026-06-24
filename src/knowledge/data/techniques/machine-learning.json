@@ -1,0 +1,132 @@
+{
+  "category": "machine-learning",
+  "displayName": "Machine Learning",
+  "description": "Machine learning integration in TouchDesigner including TouchEngine for model execution, ONNX Runtime, Stable Diffusion real-time generation, MediaPipe pose estimation, and custom ML pipelines.",
+  "versionRequirement": "TD 2022+ required for TouchEngine CHOP/TOP and most ML integrations. ONNX Runtime requires TD 2022.28120+.",
+  "techniques": [
+    {
+      "id": "touchengine_chop_top",
+      "name": "TouchEngine CHOP and TOP",
+      "subcategory": "touchengine",
+      "description": "TouchEngine allows running a separate .tox component from within TouchDesigner or an external host application. The TouchEngine CHOP and TOP operators expose the inputs/outputs of the tox as CHOP channels or TOP textures.",
+      "difficulty": "intermediate",
+      "operators": ["TouchEngine CHOP", "TouchEngine TOP", "Engine COMP"],
+      "tags": ["TouchEngine", "tox", "component", "real-time", "AI", "ML"],
+      "requiresVersion": "2022+",
+      "notes": "The Engine COMP runs a .tox in a separate cook thread. TouchEngine CHOP/TOP expose channel/texture I/O of that tox. Ideal for heavy ML models that would otherwise stall the main cook thread.",
+      "code": {
+        "language": "python",
+        "filename": "touchengine_setup.py",
+        "snippet": "# TouchEngine CHOP/TOP Setup\n# The Engine COMP cooks a .tox in a background thread\n\ndef setup_engine_comp(engineComp, toxPath):\n    \"\"\"\n    Configure Engine COMP to load a .tox with ML model.\n    The tox should expose its ML outputs as OUT CHOP/TOP operators.\n    \"\"\"\n    engineComp.par.externaltox = toxPath\n    engineComp.par.reinitialize.pulse()  # reload the tox\n    print(f'Engine COMP loading: {toxPath}')\n\ndef send_data_to_engine(engineComp, inputTexture):\n    \"\"\"\n    Send a texture to the Engine COMP's exposed IN TOP.\n    Access the Engine COMP's operators as if navigating inside it.\n    \"\"\"\n    # Access operators inside the Engine COMP\n    inTop = engineComp.op('in1')  # IN TOP inside the tox\n    if inTop:\n        # TouchEngine handles the GPU resource sharing\n        # Just reference the texture in the tox network\n        pass\n\n# Reading output from Engine COMP\ndef get_engine_output(engineComp):\n    \"\"\"\n    Read CHOP channel data from the Engine COMP output.\n    \"\"\"\n    outChop = engineComp.op('out1')  # OUT CHOP inside the tox\n    if outChop and outChop.numChans > 0:\n        results = {}\n        for chan in outChop.chans():\n            results[chan.name] = chan[0]\n        return results\n    return {}"
+      },
+      "workflow": {
+        "description": "Typical Engine COMP workflow for ML inference",
+        "steps": [
+          "Create a .tox file containing your ML model network (Script TOP, GLSL TOP, etc.)",
+          "Add IN TOP/CHOP operators for inputs and OUT TOP/CHOP for outputs in the tox",
+          "In main network: place Engine COMP, set .tox path",
+          "Connect live video to Engine COMP's IN TOP (via TouchEngine input mapping)",
+          "Read Engine COMP OUT TOP for processed result"
+        ]
+      }
+    },
+    {
+      "id": "onnx_runtime",
+      "name": "ONNX Runtime Model Inference",
+      "subcategory": "onnx",
+      "description": "Running ONNX format neural networks inside TouchDesigner using the onnxruntime Python package. Supports image classification, object detection, semantic segmentation, and style transfer.",
+      "difficulty": "advanced",
+      "operators": ["Script CHOP", "Script TOP"],
+      "tags": ["ONNX", "neural-network", "inference", "classification", "detection"],
+      "requiresVersion": "2022+",
+      "notes": "Install onnxruntime into TD's Python: use pip via TD's Python executable. For GPU acceleration use onnxruntime-gpu. Models from HuggingFace, PyTorch export, or ONNX Model Zoo.",
+      "setup": {
+        "install_command": "# In TD's Textport or external terminal pointing to TD's Python:\n# [TD_INSTALL_DIR]/bin/python.exe -m pip install onnxruntime\n# For GPU: pip install onnxruntime-gpu"
+      },
+      "code": {
+        "language": "python",
+        "filename": "onnx_inference.py",
+        "snippet": "# ONNX Runtime Inference in Script TOP\n# Place this in a Script TOP's cook() function\n# Requires: pip install onnxruntime (into TD's Python)\n\nimport numpy as np\n\n# --- Module-level: load model once at startup ---\n_session = None\n\ndef onSetupParameters(scriptOp):\n    \"\"\"Called when Script TOP is created/reloaded. Load model here.\"\"\"\n    global _session\n    try:\n        import onnxruntime as ort\n        model_path = project.folder + '/models/model.onnx'\n        _session = ort.InferenceSession(\n            model_path,\n            providers=['CUDAExecutionProvider', 'CPUExecutionProvider']\n        )\n        print(f'[ONNX] Model loaded. Inputs: {[i.name for i in _session.get_inputs()]}')\n    except Exception as e:\n        print(f'[ONNX] Failed to load model: {e}')\n\ndef cook(scriptOp):\n    global _session\n    if _session is None:\n        return\n    \n    # Get input frame from connected TOP\n    if not scriptOp.inputs:\n        return\n    \n    frame = scriptOp.inputs[0].numpyArray(delayed=False)\n    if frame is None:\n        return\n    \n    # Preprocess: resize, normalize, add batch dimension\n    # Adjust to match your model's expected input shape\n    h, w = 224, 224  # typical ImageNet size\n    import cv2\n    img = cv2.resize(frame[:,:,:3], (w, h))  # RGBA -> RGB\n    img = img.astype(np.float32)\n    img = (img - np.array([0.485, 0.456, 0.406])) / np.array([0.229, 0.224, 0.225])  # ImageNet norm\n    img = np.transpose(img, (2, 0, 1))  # HWC -> CHW\n    img = np.expand_dims(img, 0)        # add batch\n    \n    # Run inference\n    input_name = _session.get_inputs()[0].name\n    outputs = _session.run(None, {input_name: img})\n    \n    # outputs[0] shape: (1, num_classes) for classification\n    probs = outputs[0][0]\n    top_class = int(np.argmax(probs))\n    confidence = float(probs[top_class])\n    \n    # Store result for retrieval\n    scriptOp.store('top_class', top_class)\n    scriptOp.store('confidence', confidence)\n    \n    # Pass through input for monitoring\n    scriptOp.copyNumpyArray(frame)"
+      }
+    },
+    {
+      "id": "stable_diffusion_realtime",
+      "name": "Stable Diffusion Real-Time Integration",
+      "subcategory": "generative-ai",
+      "description": "Integrating Stable Diffusion into a TouchDesigner workflow for real-time or near-real-time image generation driven by audio, OSC, or performer input. Uses img2img, ControlNet, or streaming APIs.",
+      "difficulty": "expert",
+      "operators": ["Web Client DAT", "Script TOP", "WebSocket DAT"],
+      "tags": ["stable-diffusion", "generative-AI", "img2img", "ControlNet", "WebSocket"],
+      "requiresVersion": "2022+",
+      "notes": "Full SD inference in-process requires 8GB+ VRAM and is not real-time. Production workflows use: (1) AUTOMATIC1111 or ComfyUI API over HTTP/WebSocket, (2) img2img at high denoising for live-input style transfer, (3) streamlined SDXL-Turbo or LCM for 4-8 step inference.",
+      "code": {
+        "language": "python",
+        "filename": "stable_diffusion_api.py",
+        "snippet": "# Stable Diffusion via AUTOMATIC1111 API\n# Uses Web Client DAT to POST to the SD API and receive image\n\nimport base64, json\nimport numpy as np\n\n# Configure Web Client DAT:\n#   URL: http://127.0.0.1:7860\n#   Method: POST\n\ndef generate_image(webClientDat, prompt, negative_prompt='', \n                   steps=20, cfg=7.0, width=512, height=512,\n                   init_image_top=None, denoising=0.75):\n    \"\"\"\n    Request image generation from AUTOMATIC1111 API.\n    If init_image_top is provided, uses img2img endpoint.\n    \"\"\"\n    payload = {\n        'prompt': prompt,\n        'negative_prompt': negative_prompt,\n        'steps': steps,\n        'cfg_scale': cfg,\n        'width': width,\n        'height': height,\n        'sampler_name': 'DPM++ 2M Karras'\n    }\n    \n    if init_image_top:\n        # Encode current frame as base64 for img2img\n        frame = init_image_top.numpyArray(delayed=False)\n        import cv2\n        rgb = (frame[:,:,:3] * 255).astype(np.uint8)\n        _, buf = cv2.imencode('.png', cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR))\n        payload['init_images'] = [base64.b64encode(buf).decode('utf-8')]\n        payload['denoising_strength'] = denoising\n        endpoint = '/sdapi/v1/img2img'\n    else:\n        endpoint = '/sdapi/v1/txt2img'\n    \n    webClientDat.par.url = 'http://127.0.0.1:7860' + endpoint\n    webClientDat.par.requestdata = json.dumps(payload)\n    webClientDat.par.submit.pulse()\n\ndef onResponse(webClientDat, statusCode, headerDict, data, id):\n    \"\"\"Called by Web Client DAT when response arrives.\"\"\"\n    if statusCode == 200:\n        result = json.loads(data)\n        img_b64 = result['images'][0]\n        img_bytes = base64.b64decode(img_b64)\n        # Convert to numpy and feed to a Script TOP\n        import cv2\n        arr = np.frombuffer(img_bytes, dtype=np.uint8)\n        img = cv2.imdecode(arr, cv2.IMREAD_COLOR)\n        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)\n        # Store for next Script TOP cook\n        parent().store('sd_result', img)"
+      }
+    },
+    {
+      "id": "mediapipe_pose",
+      "name": "MediaPipe Pose Estimation",
+      "subcategory": "pose-estimation",
+      "description": "Real-time body pose estimation using Google MediaPipe inside TouchDesigner. Outputs 33 body landmarks as CHOP channels for driving character animation, interactive installations, and gesture recognition.",
+      "difficulty": "intermediate",
+      "operators": ["Script CHOP", "Script TOP", "Body Track CHOP"],
+      "tags": ["MediaPipe", "pose", "skeleton", "body-tracking", "landmark", "gesture"],
+      "requiresVersion": "2022+ (for Body Track CHOP native); MediaPipe Python works in TD 2021+",
+      "notes": "Native alternative: use the Body Track CHOP (TD 2022+) which uses NVIDIA TensorRT for pose — no extra packages needed. For MediaPipe: install mediapipe into TD's Python via pip.",
+      "code": {
+        "language": "python",
+        "filename": "mediapipe_pose.py",
+        "snippet": "# MediaPipe Pose in Script CHOP\n# Install: [TD_PYTHON_EXE] -m pip install mediapipe\n# This runs in onSetupParameters to init, cook() to process each frame\n\nimport numpy as np\n\n_pose = None\nLANDMARK_NAMES = [\n    'nose', 'left_eye_inner', 'left_eye', 'left_eye_outer',\n    'right_eye_inner', 'right_eye', 'right_eye_outer',\n    'left_ear', 'right_ear', 'mouth_left', 'mouth_right',\n    'left_shoulder', 'right_shoulder', 'left_elbow', 'right_elbow',\n    'left_wrist', 'right_wrist', 'left_pinky', 'right_pinky',\n    'left_index', 'right_index', 'left_thumb', 'right_thumb',\n    'left_hip', 'right_hip', 'left_knee', 'right_knee',\n    'left_ankle', 'right_ankle', 'left_heel', 'right_heel',\n    'left_foot_index', 'right_foot_index'\n]\n\ndef onSetupParameters(scriptOp):\n    global _pose\n    try:\n        import mediapipe as mp\n        _pose = mp.solutions.pose.Pose(\n            static_image_mode=False,\n            model_complexity=1,        # 0=lite, 1=full, 2=heavy\n            smooth_landmarks=True,\n            min_detection_confidence=0.5,\n            min_tracking_confidence=0.5\n        )\n        print('[MediaPipe] Pose model initialized')\n    except ImportError:\n        print('[MediaPipe] Not installed. Run: pip install mediapipe')\n\ndef cook(scriptOp):\n    global _pose\n    \n    # Grab input video frame from connected TOP\n    videoTop = op('video_in')  # adjust path\n    if not videoTop or _pose is None:\n        return\n    \n    frame = videoTop.numpyArray(delayed=False)\n    if frame is None:\n        return\n    \n    # Convert to uint8 RGB for MediaPipe\n    rgb = (frame[:,:,:3] * 255).astype(np.uint8)\n    results = _pose.process(rgb)\n    \n    if results.pose_landmarks:\n        lm = results.pose_landmarks.landmark\n        for i, name in enumerate(LANDMARK_NAMES):\n            scriptOp[f'{name}_x'][0] = lm[i].x\n            scriptOp[f'{name}_y'][0] = 1.0 - lm[i].y  # flip Y\n            scriptOp[f'{name}_z'][0] = lm[i].z\n            scriptOp[f'{name}_vis'][0] = lm[i].visibility\n    else:\n        # Zero all channels when no person detected\n        for name in LANDMARK_NAMES:\n            for axis in ['x', 'y', 'z', 'vis']:\n                scriptOp[f'{name}_{axis}'][0] = 0.0\n\n# Channel setup — called to define output channels\ndef onSetupParameters(scriptOp):\n    # Add all landmark channels\n    for name in LANDMARK_NAMES:\n        for axis in ['x', 'y', 'z', 'vis']:\n            scriptOp.appendChan(f'{name}_{axis}')"
+      }
+    },
+    {
+      "id": "body_track_native",
+      "name": "Native Body Track CHOP (TD 2022+)",
+      "subcategory": "pose-estimation",
+      "description": "Using TouchDesigner's built-in Body Track CHOP for GPU-accelerated pose estimation via NVIDIA TensorRT. No Python packages needed. Supports multiple people, skeleton visualization via Face Track SOP.",
+      "difficulty": "beginner",
+      "operators": ["Body Track CHOP", "Face Track CHOP", "Face Track SOP"],
+      "tags": ["Body Track", "pose", "skeleton", "NVIDIA", "TensorRT", "built-in"],
+      "requiresVersion": "2022+",
+      "notes": "Requires NVIDIA GPU with CUDA support. Input is a Camera TOP or Movie File In TOP (color image). Outputs landmark positions as CHOP channels prefixed by person index.",
+      "setup": {
+        "operators_needed": [
+          { "op": "Camera TOP or Movie File In TOP", "purpose": "Live or recorded video input" },
+          { "op": "Body Track CHOP", "settings": { "Input": "path/to/video_top", "Max People": 4, "Model": "Body" }, "purpose": "Detect and track up to 4 people" },
+          { "op": "Select CHOP", "purpose": "Extract specific person's landmarks" },
+          { "op": "Math CHOP", "purpose": "Map landmark coords to 3D space" }
+        ]
+      },
+      "code": {
+        "language": "python",
+        "filename": "body_track_read.py",
+        "snippet": "# Reading Body Track CHOP output\n# Channels follow pattern: person0:joint_name:axis\n\ndef get_skeleton_joints(bodyTrackChop, person_index=0):\n    \"\"\"\n    Extract all joint positions for a specific person.\n    Returns dict of {joint_name: (x, y, z)}\n    \"\"\"\n    joints = {}\n    prefix = f'person{person_index}:'\n    \n    for chan in bodyTrackChop.chans():\n        if chan.name.startswith(prefix):\n            parts = chan.name[len(prefix):].split(':')\n            if len(parts) == 2:\n                joint, axis = parts\n                if joint not in joints:\n                    joints[joint] = [0, 0, 0]\n                axis_idx = {'x': 0, 'y': 1, 'z': 2}.get(axis, 0)\n                joints[joint][axis_idx] = chan[0]\n    \n    return {k: tuple(v) for k, v in joints.items()}\n\n# Example: check if person is raising both hands\ndef detect_hands_raised(bodyTrackChop, person_index=0):\n    joints = get_skeleton_joints(bodyTrackChop, person_index)\n    if 'left_wrist' in joints and 'left_shoulder' in joints:\n        left_raised = joints['left_wrist'][1] > joints['left_shoulder'][1]\n        right_raised = joints['right_wrist'][1] > joints['right_shoulder'][1]\n        return left_raised and right_raised\n    return False"
+      }
+    },
+    {
+      "id": "style_transfer_realtime",
+      "name": "Real-Time Neural Style Transfer",
+      "subcategory": "style-transfer",
+      "description": "Running fast neural style transfer (Johnson et al. / AdaIN) at real-time frame rates in TouchDesigner using ONNX or PyTorch. Applies artistic style to live video.",
+      "difficulty": "expert",
+      "operators": ["Script TOP", "ONNX model (external)"],
+      "tags": ["style-transfer", "neural-network", "artistic", "real-time", "AdaIN"],
+      "requiresVersion": "2022+",
+      "notes": "Fast style transfer (single-model per style) runs at 30fps at 512x512 on RTX 3080. AdaIN (arbitrary style) is slower but allows style image input. Export PyTorch model to ONNX for best TD compatibility.",
+      "code": {
+        "language": "python",
+        "filename": "style_transfer.py",
+        "snippet": "# Fast Neural Style Transfer via ONNX in Script TOP\n# Model: export Johnson fast style transfer to ONNX\n# Input shape: (1, 3, H, W) float32, values 0..255\n\nimport numpy as np\n_session = None\n\ndef onSetupParameters(scriptOp):\n    global _session\n    try:\n        import onnxruntime as ort\n        model_path = project.folder + '/models/starry_night.onnx'\n        _session = ort.InferenceSession(\n            model_path,\n            providers=['CUDAExecutionProvider', 'CPUExecutionProvider']\n        )\n        print('[StyleTransfer] Model loaded')\n    except Exception as e:\n        print(f'[StyleTransfer] Error: {e}')\n\ndef cook(scriptOp):\n    global _session\n    if _session is None or not scriptOp.inputs:\n        return\n    \n    frame = scriptOp.inputs[0].numpyArray(delayed=False)\n    if frame is None:\n        return\n    \n    # Preprocess: HWC RGBA float -> NCHW RGB uint8-range float\n    rgb = frame[:,:,:3] * 255.0\n    inp = np.transpose(rgb, (2, 0, 1))[np.newaxis].astype(np.float32)\n    \n    # Inference\n    input_name = _session.get_inputs()[0].name\n    output = _session.run(None, {input_name: inp})[0]\n    \n    # Postprocess: (1, 3, H, W) -> (H, W, 4) float 0..1\n    out = np.transpose(output[0], (1, 2, 0))  # CHW -> HWC\n    out = np.clip(out / 255.0, 0.0, 1.0)\n    rgba = np.dstack([out, np.ones(out.shape[:2], dtype=np.float32)])\n    \n    scriptOp.copyNumpyArray(rgba)"
+      }
+    }
+  ],
+  "resources": [
+    { "title": "TouchDesigner Body Track CHOP", "url": "https://docs.derivative.ca/Body_Track_CHOP" },
+    { "title": "TouchEngine Documentation", "url": "https://docs.derivative.ca/Engine_COMP" },
+    { "title": "ONNX Runtime Python API", "url": "https://onnxruntime.ai/docs/api/python/" },
+    { "title": "MediaPipe Pose Documentation", "url": "https://developers.google.com/mediapipe/solutions/vision/pose_landmarker" },
+    { "title": "AUTOMATIC1111 API Docs", "url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/API" }
+  ]
+}

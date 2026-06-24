@@ -1,0 +1,96 @@
+{
+  "category": "gpu-compute",
+  "displayName": "GPU Compute",
+  "description": "Advanced GPU compute techniques in TouchDesigner including Script TOP buffer operations, CUDA integration, shared memory access, and GPU instancing for massive geometry.",
+  "techniques": [
+    {
+      "id": "script_top_buffer_ops",
+      "name": "Script TOP Buffer Operations",
+      "subcategory": "script-top",
+      "description": "Reading and writing raw GPU texture buffers in a Script TOP using Python. Enables pixel-perfect data manipulation, lookup table generation, and custom blending without GLSL.",
+      "difficulty": "intermediate",
+      "operators": ["Script TOP"],
+      "tags": ["Script TOP", "buffer", "pixel", "numpy", "GPU"],
+      "notes": "The Script TOP cook() function receives a scriptOp argument. Use scriptOp.inputs[N] to access input textures and scriptOp.store to pass data between frames.",
+      "code": {
+        "language": "python",
+        "filename": "script_top_buffer.py",
+        "snippet": "# Script TOP — cook() function\n# Reads input texture, applies per-pixel processing, writes output\nimport numpy as np\n\ndef cook(scriptOp):\n    # Get input texture as numpy array (RGBA float32)\n    # Shape: (height, width, 4)\n    if scriptOp.inputs:\n        frame = scriptOp.inputs[0].numpyArray(delayed=False)\n    else:\n        w = scriptOp.par.outputresolutionw.eval()\n        h = scriptOp.par.outputresolutionh.eval()\n        frame = np.zeros((h, w, 4), dtype=np.float32)\n    \n    # --- Per-pixel operation: luminance threshold ---\n    luma = 0.2126 * frame[:,:,0] + 0.7152 * frame[:,:,1] + 0.0722 * frame[:,:,2]\n    mask = (luma > 0.5).astype(np.float32)\n    \n    # Apply mask to RGB channels\n    out = frame.copy()\n    out[:,:,0] *= mask\n    out[:,:,1] *= mask\n    out[:,:,2] *= mask\n    \n    # Write output\n    scriptOp.copyNumpyArray(out)\n    return\n\n\n# --- Advanced: LUT generation in Script TOP ---\ndef generate_lut(scriptOp):\n    \"\"\"Generate a 1D LUT texture (256x1 RGBA) for color grading.\"\"\"\n    w = 256\n    lut = np.zeros((1, w, 4), dtype=np.float32)\n    x = np.linspace(0.0, 1.0, w)\n    \n    # S-curve contrast enhancement\n    def scurve(v): return v * v * (3.0 - 2.0 * v)\n    \n    lut[0,:,0] = scurve(x)       # R\n    lut[0,:,1] = scurve(x)       # G\n    lut[0,:,2] = np.power(x, 0.8) # B (slight blue lift)\n    lut[0,:,3] = 1.0\n    \n    scriptOp.copyNumpyArray(lut)"
+      }
+    },
+    {
+      "id": "cuda_dll_integration",
+      "name": "CUDA DLL Integration via C++ TOP",
+      "subcategory": "cuda",
+      "description": "Integrating CUDA kernels into TouchDesigner through the C++ TOP plugin SDK. Enables custom GPU compute passes alongside TD's render pipeline.",
+      "difficulty": "expert",
+      "operators": ["C++ TOP (CPlusPlus TOP)"],
+      "tags": ["CUDA", "C++", "plugin", "GPU", "compute", "kernel"],
+      "notes": "Requires TouchDesigner C++ Plugin SDK and CUDA toolkit. Build as a .dll (Windows) or .so (Linux). Plugin must inherit from TOP_CPlusPlusBase. See TD C++ Tutorial series.",
+      "code": {
+        "language": "cpp",
+        "filename": "cuda_top_plugin.cpp",
+        "snippet": "// Minimal CUDA TOP Plugin skeleton\n// Inherits from TOP_CPlusPlusBase (Derivative SDK)\n#include \"TOP_CPlusPlusBase.h\"\n#include <cuda_runtime.h>\n\n// CUDA kernel: invert image\n__global__ void invertKernel(float4* dst, const float4* src, int width, int height) {\n    int x = blockIdx.x * blockDim.x + threadIdx.x;\n    int y = blockIdx.y * blockDim.y + threadIdx.y;\n    if (x >= width || y >= height) return;\n    int idx = y * width + x;\n    dst[idx] = make_float4(1.0f - src[idx].x,\n                           1.0f - src[idx].y,\n                           1.0f - src[idx].z,\n                           src[idx].w);\n}\n\nclass MyCUDATOP : public TOP_CPlusPlusBase {\npublic:\n    void execute(TOP_Output* output, const OP_Inputs* inputs, void* reserved) override {\n        const OP_TOPInput* topIn = inputs->getInputTOP(0);\n        if (!topIn) return;\n        \n        int w = topIn->width, h = topIn->height;\n        \n        // Map TD texture to CUDA resource\n        // (requires cudaGraphicsGLRegisterImage in setupParameters)\n        // Launch kernel\n        dim3 block(16, 16);\n        dim3 grid((w + 15) / 16, (h + 15) / 16);\n        invertKernel<<<grid, block>>>(\n            (float4*)d_dst, (float4*)d_src, w, h);\n        cudaDeviceSynchronize();\n        // Copy result back to TD output texture\n    }\n};"
+      }
+    },
+    {
+      "id": "shared_memory_top",
+      "name": "Shared Memory TOP for Inter-Process Data",
+      "subcategory": "shared-memory",
+      "description": "Using Shared Memory In/Out TOP operators to pass texture data between separate TouchDesigner instances or between TD and other applications.",
+      "difficulty": "intermediate",
+      "operators": ["Shared Mem In TOP", "Shared Mem Out TOP", "Shared Mem In CHOP", "Shared Mem Out CHOP"],
+      "tags": ["shared-memory", "IPC", "inter-process", "multi-instance"],
+      "notes": "Shared memory name must match between sender and receiver. Both instances must be on the same machine. Data is GPU texture or CHOP channel arrays.",
+      "code": {
+        "language": "python",
+        "filename": "shared_memory_setup.py",
+        "snippet": "# Setup Shared Memory OUT from Python\n# In the sending TD instance:\n\n# Configure Shared Mem Out TOP\ndef setup_shared_memory_out(sharedMemOutTop, name='td_shared_tex'):\n    sharedMemOutTop.par.memoryname = name\n    sharedMemOutTop.par.active = True\n    print(f'Shared Memory OUT active on: {name}')\n\n# Configure Shared Mem In TOP (receiving instance)\ndef setup_shared_memory_in(sharedMemInTop, name='td_shared_tex'):\n    sharedMemInTop.par.memoryname = name\n    sharedMemInTop.par.active = True\n    print(f'Shared Memory IN connected to: {name}')\n\n# Example: check if data is available\ndef check_shared_mem_connection(sharedMemInTop):\n    info = sharedMemInTop.infoDAT\n    if info:\n        print('Width:', sharedMemInTop.width)\n        print('Height:', sharedMemInTop.height)\n        print('Connected:', sharedMemInTop.par.active.eval())"
+      }
+    },
+    {
+      "id": "gpu_instancing",
+      "name": "GPU Instancing for Massive Geometry",
+      "subcategory": "instancing",
+      "description": "Rendering hundreds of thousands of instances using COMP instancing with Transform attributes from CHOP channels. Enables massive particle systems, crowd simulation, and data visualization at 60fps.",
+      "difficulty": "intermediate",
+      "operators": ["Geometry COMP", "CHOP to SOP", "Noise CHOP", "Count CHOP", "Replicator COMP"],
+      "tags": ["instancing", "GPU", "particles", "performance", "geometry", "instanced"],
+      "notes": "Set Geometry COMP Render > Instance parameter to the CHOP driving positions. Each CHOP sample drives one instance. Channels tx/ty/tz = translation, rx/ry/rz = rotation, sx/sy/sz = scale. A single Geometry COMP can render 100k+ instances.",
+      "setup": {
+        "description": "Basic instancing setup: Noise CHOP generates positions, Geometry COMP renders N instances",
+        "operators_needed": [
+          { "op": "Noise CHOP", "settings": { "Channels": "tx ty tz", "Samples": 10000 }, "purpose": "Generate N random positions" },
+          { "op": "Geometry COMP", "settings": { "Instance CHOP": "path/to/noise_chop", "Instancing": true }, "purpose": "Render 10000 instances" },
+          { "op": "Sphere SOP", "settings": { "Radius": 0.05 }, "purpose": "Source geometry for each instance" }
+        ]
+      },
+      "code": {
+        "language": "python",
+        "filename": "gpu_instancing_setup.py",
+        "snippet": "# GPU Instancing Setup via Python\n# Configure a Geometry COMP for massive instancing\n\ndef setup_instancing(geoCOMP, instanceCHOP, count=10000):\n    \"\"\"\n    Configure a Geometry COMP for GPU instancing.\n    instanceCHOP must have channels: tx, ty, tz (and optionally rx,ry,rz,sx,sy,sz)\n    \"\"\"\n    geoCOMP.par.instancesource = 'chop'\n    geoCOMP.par.instancechop = instanceCHOP.path\n    print(f'Instancing {count} instances from {instanceCHOP.path}')\n\n# Dynamic instancing via Script CHOP\n# Use this in a Script CHOP to generate procedural instance data\ndef cook(scriptOp):\n    import numpy as np\n    n = 5000\n    t = absTime.seconds\n    \n    # Spread points on a sphere\n    phi = np.golden_ratio if hasattr(np, 'golden_ratio') else 1.6180339887\n    i = np.arange(n)\n    theta = 2 * np.pi * i / phi\n    z = 1 - (2 * i + 1) / n\n    r = np.sqrt(1 - z * z)\n    \n    scriptOp['tx'].vals = (r * np.cos(theta + t * 0.2)).tolist()\n    scriptOp['ty'].vals = z.tolist()\n    scriptOp['tz'].vals = (r * np.sin(theta + t * 0.2)).tolist()\n    scriptOp['scale'].vals = (0.02 + 0.01 * np.sin(i * 0.1 + t)).tolist()"
+      }
+    },
+    {
+      "id": "compute_shader_glsl",
+      "name": "Compute-Style Shader via GLSL TOP Ping-Pong",
+      "subcategory": "compute",
+      "description": "Simulating compute shaders in TouchDesigner using ping-pong Feedback TOP with GLSL TOP for particle simulation, fluid, and physics on the GPU.",
+      "difficulty": "advanced",
+      "operators": ["GLSL TOP", "Feedback TOP"],
+      "tags": ["compute", "simulation", "physics", "particle", "GPU", "ping-pong"],
+      "notes": "Each pixel encodes a particle's state (position in RG, velocity in BA). Feedback creates the iteration loop. 512x512 texture = 262,144 particles.",
+      "code": {
+        "language": "glsl",
+        "filename": "particle_compute.glsl",
+        "snippet": "// Particle Simulation via Ping-Pong\n// Input 0: Feedback TOP — current particle state (pos=RG, vel=BA in -1..1 normalized)\nuniform float uDt;      // timestep\nuniform vec2  uGravity; // e.g. (0.0, -0.001)\nuniform float uDamping; // e.g. 0.999\nuniform sampler2D sForceField; // optional force texture\n\nvoid main() {\n    vec2 uv = vUV.st;\n    vec4 state = texture(sTD2DInputs[0], uv);\n    \n    // Decode: position and velocity are stored as 0..1, remap to -1..1\n    vec2 pos = state.rg * 2.0 - 1.0; // position in NDC\n    vec2 vel = state.ba * 2.0 - 1.0; // velocity\n    \n    // Apply gravity\n    vel += uGravity;\n    vel *= uDamping;\n    \n    // Optional: sample force field\n    vec2 sampleUV = pos * 0.5 + 0.5;\n    vec4 force = texture(sForceField, clamp(sampleUV, 0.0, 1.0));\n    vel += (force.rg * 2.0 - 1.0) * 0.002;\n    \n    // Integrate position\n    pos += vel * uDt;\n    \n    // Boundary: bounce\n    if (abs(pos.x) > 1.0) { vel.x *= -0.5; pos.x = sign(pos.x); }\n    if (abs(pos.y) > 1.0) { vel.y *= -0.5; pos.y = sign(pos.y); }\n    \n    // Re-encode to 0..1\n    fragColor = TDOutputSwizzle(vec4(pos * 0.5 + 0.5, vel * 0.5 + 0.5));\n}"
+      }
+    }
+  ],
+  "resources": [
+    { "title": "TouchDesigner C++ TOP SDK", "url": "https://docs.derivative.ca/Write_a_CPlusPlus_TOP" },
+    { "title": "TouchDesigner Shared Memory", "url": "https://docs.derivative.ca/Shared_Mem_In_TOP" },
+    { "title": "NVIDIA CUDA Programming Guide", "url": "https://docs.nvidia.com/cuda/cuda-c-programming-guide/" },
+    { "title": "TD Instancing Documentation", "url": "https://docs.derivative.ca/Instancing" }
+  ]
+}

@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "1.0",
+  "description": "TouchDesigner version manifest with Python version mapping and release metadata",
+  "versions": [
+    {
+      "id": "099",
+      "label": "TouchDesigner 099",
+      "majorVersion": 99,
+      "buildRange": { "min": 2017, "max": 2018 },
+      "releaseYear": 2017,
+      "pythonVersion": "3.5.1",
+      "pythonMajorMinor": "3.5",
+      "supportStatus": "legacy",
+      "notes": "Legacy non-commercial and commercial release. Python 3.5 introduced. First modern Python integration."
+    },
+    {
+      "id": "2019",
+      "label": "TouchDesigner 2019",
+      "majorVersion": 2019,
+      "buildRange": { "min": 25200, "max": 28000 },
+      "releaseYear": 2019,
+      "pythonVersion": "3.7.4",
+      "pythonMajorMinor": "3.7",
+      "supportStatus": "legacy",
+      "notes": "Python upgraded to 3.7. Added asyncio support, dataclasses, f-strings. NDI support improved."
+    },
+    {
+      "id": "2020",
+      "label": "TouchDesigner 2020",
+      "majorVersion": 2020,
+      "buildRange": { "min": 28000, "max": 60000 },
+      "releaseYear": 2020,
+      "pythonVersion": "3.7.7",
+      "pythonMajorMinor": "3.7",
+      "supportStatus": "legacy",
+      "notes": "Python 3.7.7. Instanced geometry improvements. Vulkan renderer preview. CUDA integration expanded."
+    },
+    {
+      "id": "2021",
+      "label": "TouchDesigner 2021",
+      "majorVersion": 2021,
+      "buildRange": { "min": 60000, "max": 65000 },
+      "releaseYear": 2021,
+      "pythonVersion": "3.9.5",
+      "pythonMajorMinor": "3.9",
+      "supportStatus": "maintenance",
+      "notes": "Python upgraded to 3.9. Added GLSL advanced pipeline, improved SOP/POP systems. Bullet physics updates."
+    },
+    {
+      "id": "2022",
+      "label": "TouchDesigner 2022",
+      "majorVersion": 2022,
+      "buildRange": { "min": 28040, "max": 32660 },
+      "releaseYear": 2022,
+      "pythonVersion": "3.9.9",
+      "pythonMajorMinor": "3.9",
+      "supportStatus": "maintenance",
+      "notes": "Python 3.9.9. Point Operators (POP) system introduced. USD integration. Web Render TOP improvements."
+    },
+    {
+      "id": "2023",
+      "label": "TouchDesigner 2023",
+      "majorVersion": 2023,
+      "buildRange": { "min": 11600, "max": 19000 },
+      "releaseYear": 2023,
+      "pythonVersion": "3.11.1",
+      "pythonMajorMinor": "3.11",
+      "supportStatus": "active",
+      "notes": "Python upgraded to 3.11. Significant performance improvements. NVIDIA AI tools (background removal, upscaler, denoise). Engine COMP improvements."
+    },
+    {
+      "id": "2024",
+      "label": "TouchDesigner 2024",
+      "majorVersion": 2024,
+      "buildRange": { "min": 28070, "max": null },
+      "releaseYear": 2024,
+      "pythonVersion": "3.11.7",
+      "pythonMajorMinor": "3.11",
+      "supportStatus": "current",
+      "notes": "Python 3.11.7. Current stable release. RenderStream improvements, Widget COMP enhancements, enhanced POP system, improved USD pipeline."
+    }
+  ],
+  "versionOrder": ["099", "2019", "2020", "2021", "2022", "2023", "2024"],
+  "currentStable": "2024",
+  "pythonVersionMap": {
+    "099": "3.5",
+    "2019": "3.7",
+    "2020": "3.7",
+    "2021": "3.9",
+    "2022": "3.9",
+    "2023": "3.11",
+    "2024": "3.11"
+  }
+}

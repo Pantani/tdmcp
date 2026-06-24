@@ -29,10 +29,17 @@ A base de conhecimento de operadores commitada, exposta como recursos legíveis:
 | Família | URI | O que expõe |
 | --- | --- | --- |
 | Operadores | `tdmcp://operators/{name}` | Catálogo de operadores — leia uma categoria (TOP, CHOP, SOP, DAT, COMP, MAT, POP) para listar, ou um nome de operador para a doc completa. |
+| Conexões de operadores | `tdmcp://operator-connections/{operator}` | Operadores prováveis antes/depois, padrões de workflow relacionados e sugestões de próximo operador aterradas nas docs e patterns importados. |
+| Exemplos de operadores | `tdmcp://operator-examples/{operator}` | Snippets Python salvos, expressões, padrões de uso gerados e dicas para um operador específico. |
 | API Python | `tdmcp://python-api/{class_name}` | Referência das classes Python do TouchDesigner — membros e métodos. |
+| Versões TD | `tdmcp://td-versions/{version}` | Metadados de releases estáveis do TouchDesigner, notas de versão Python, destaques e mudanças de compatibilidade. |
+| Builds experimentais | `tdmcp://td-experimental/{series_or_category}` | Dados de séries experimentais do TouchDesigner, feature flags, novos operadores e notas de breaking changes. |
+| Compatibilidade | `tdmcp://compat/operators/{operator}`, `tdmcp://compat/python/{class_or_member}` | Consultas diretas de compatibilidade de operadores e API Python, com notas de versão adicionada/alterada/removida. |
 | Patterns | `tdmcp://patterns/{pattern_name}` | Padrões de workflow de cadeias de operadores (a fiação recomendada). |
 | GLSL patterns | `tdmcp://glsl/{pattern_name}` | Técnicas de shader nomeadas com snippets de fragment shader prontos. |
 | GLSL snippets | `tdmcp://glsl-snippets` | Um catálogo vetado e com licença limpa de snippets GLSL embutidos que o agente monta sem adivinhar IDs. |
+| Packs de técnicas | `tdmcp://techniques/{category}` | Packs de técnicas do Bottobot, como audio-visual, GPU compute, machine learning, networking e Python avançado. |
+| Classes TD | `tdmcp://td-classes/{family}` | Referências de classes por família de operadores do TouchDesigner, como TOP Class, CHOP Class e COMP Class. |
 | Receitas | `tdmcp://recipes/{recipe_name}`, `tdmcp://recipes/search/{query}` | Templates de rede compostos pré-validados, mais busca por palavra-chave em receitas built-in e do vault. |
 | Tutoriais | `tdmcp://tutorials/{tutorial_name}` | Fundamentos e workflows do TD em formato longo. |
 
