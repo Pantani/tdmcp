@@ -44,6 +44,7 @@ describe("Claude Code plugin marketplace", () => {
       command: "npx",
       args: ["--yes", `--package=@dpantani/tdmcp@${packageJson.version}`, "tdmcp"],
       env: {
+        TDMCP_TRANSPORT: "stdio",
         TDMCP_RAW_PYTHON: "off",
         TDMCP_TOOL_PROFILE: "safe",
       },
