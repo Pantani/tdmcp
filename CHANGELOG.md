@@ -8,6 +8,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Add a Claude Code plugin marketplace entry for tdmcp with a stdio-pinned MCP server
+  launch configuration.
 - Import TouchDesigner knowledge from Bottobot into MCP resources for version
   history, compatibility notes, operator workflow guidance, technique packs, TD
   class families, and experimental build data; add read-only agent tools for
