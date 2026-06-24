@@ -27,6 +27,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   tools so agents can preflight operator chains against offline docs/version
   compatibility and turn validated chains into `RecipeSchema` drafts without
   mutating TouchDesigner.
+- Add `get_technique_detail`, `draft_recipe_from_technique`, and `get_tutorial`
+  read-only knowledge tools so agents can inspect Bottobot-derived technique and
+  tutorial material and turn GLSL techniques into `RecipeSchema` drafts offline.
 
 ### Fixed
 

@@ -14,6 +14,7 @@ import { registerDiffSnapshots } from "./diffSnapshots.js";
 import { registerDisconnectNodes } from "./disconnectNodes.js";
 import { registerDocumentNetwork } from "./documentNetwork.js";
 import { registerDraftRecipeFromOperatorChain } from "./draftRecipeFromOperatorChain.js";
+import { registerDraftRecipeFromTechnique } from "./draftRecipeFromTechnique.js";
 import { registerEditDatContent } from "./editDatContent.js";
 import { registerElicitMissingArgs } from "./elicitMissingArgs.js";
 import { registerExecNodeMethod } from "./execNodeMethod.js";
@@ -36,6 +37,8 @@ import { registerGetTdNodeParameters } from "./getTdNodeParameters.js";
 import { registerGetTdNodes } from "./getTdNodes.js";
 import { registerGetTdPerformance } from "./getTdPerformance.js";
 import { registerGetTdTopology } from "./getTdTopology.js";
+import { registerGetTechniqueDetail } from "./getTechniqueDetail.js";
+import { registerGetTutorial } from "./getTutorial.js";
 import { registerInspectComponent } from "./inspectComponent.js";
 import { registerInspectGpuAndDisplays } from "./inspectGpuAndDisplays.js";
 import { registerLintRecipeLibrary } from "./lintRecipeLibrary.js";
@@ -93,6 +96,9 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerSuggestOperatorChain,
   registerValidateOperatorChain,
   registerDraftRecipeFromOperatorChain,
+  registerGetTechniqueDetail,
+  registerDraftRecipeFromTechnique,
+  registerGetTutorial,
   registerSearchPythonApi,
   registerPlanTdVersionMigration,
   registerSearchTouchDesignerKnowledge,

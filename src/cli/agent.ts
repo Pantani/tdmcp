@@ -600,6 +600,10 @@ import {
   draftRecipeFromOperatorChainImpl,
   draftRecipeFromOperatorChainSchema,
 } from "../tools/layer3/draftRecipeFromOperatorChain.js";
+import {
+  draftRecipeFromTechniqueImpl,
+  draftRecipeFromTechniqueSchema,
+} from "../tools/layer3/draftRecipeFromTechnique.js";
 import { editDatContentImpl, editDatContentSchema } from "../tools/layer3/editDatContent.js";
 import {
   elicitMissingArgsImpl,
@@ -638,6 +642,11 @@ import {
 import { getTdNodesImpl, getTdNodesSchema } from "../tools/layer3/getTdNodes.js";
 import { getTdPerformanceImpl, getTdPerformanceSchema } from "../tools/layer3/getTdPerformance.js";
 import { getTdTopologyImpl, getTdTopologySchema } from "../tools/layer3/getTdTopology.js";
+import {
+  getTechniqueDetailImpl,
+  getTechniqueDetailSchema,
+} from "../tools/layer3/getTechniqueDetail.js";
+import { getTutorialImpl, getTutorialSchema } from "../tools/layer3/getTutorial.js";
 import { inspectComponentImpl, inspectComponentSchema } from "../tools/layer3/inspectComponent.js";
 import {
   inspectGpuAndDisplaysImpl,
@@ -924,6 +933,21 @@ const COMMANDS: Record<string, Command> = {
     validateOperatorChainSchema,
     validateOperatorChainImpl,
     "Validate an ordered operator chain before creating nodes (offline).",
+  ),
+  "techniques get": r(
+    getTechniqueDetailSchema,
+    getTechniqueDetailImpl,
+    "Inspect TouchDesigner technique packs and individual techniques (offline).",
+  ),
+  "techniques draft-recipe": r(
+    draftRecipeFromTechniqueSchema,
+    draftRecipeFromTechniqueImpl,
+    "Draft a RecipeSchema JSON from a TouchDesigner technique (offline).",
+  ),
+  "tutorials get": r(
+    getTutorialSchema,
+    getTutorialImpl,
+    "List, search, or retrieve TouchDesigner tutorials (offline).",
   ),
   "knowledge search": r(
     searchTouchDesignerKnowledgeSchema,

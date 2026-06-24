@@ -2072,6 +2072,20 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "techniques draft-recipe",
+    summary: "Draft a RecipeSchema JSON from a TouchDesigner technique (offline).",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "techniques get",
+    summary: "Inspect TouchDesigner technique packs and individual techniques (offline).",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "tempo-sync",
     summary: "Create a beat clock (ramp/pulse/beat/bar/bpm) + optional beat events.",
     mutates: true,
@@ -2133,6 +2147,13 @@ export const AGENT_COMMAND_CATALOG = [
     summary:
       "Build an A→B transition (dissolve/luma_wipe/slide/zoom/glitch_cut) over a Progress knob.",
     mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "tutorials get",
+    summary: "List, search, or retrieve TouchDesigner tutorials (offline).",
+    mutates: false,
     unsafe: false,
     source: "tool",
   },

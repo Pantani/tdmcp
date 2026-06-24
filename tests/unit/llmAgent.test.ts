@@ -87,6 +87,9 @@ describe("local copilot — curated tool registry", () => {
     expect(names).toContain("suggest_operator_chain");
     expect(names).toContain("validate_operator_chain");
     expect(names).toContain("draft_recipe_from_operator_chain");
+    expect(names).toContain("get_technique_detail");
+    expect(names).toContain("draft_recipe_from_technique");
+    expect(names).toContain("get_tutorial");
     expect(names).toContain("plan_td_version_migration");
     const byName = Object.fromEntries(LLM_TOOLS.map((t) => [t.name, t.mutates]));
     expect(byName.search_operators).toBe(false);
@@ -94,6 +97,9 @@ describe("local copilot — curated tool registry", () => {
     expect(byName.suggest_operator_chain).toBe(false);
     expect(byName.validate_operator_chain).toBe(false);
     expect(byName.draft_recipe_from_operator_chain).toBe(false);
+    expect(byName.get_technique_detail).toBe(false);
+    expect(byName.draft_recipe_from_technique).toBe(false);
+    expect(byName.get_tutorial).toBe(false);
     expect(byName.plan_td_version_migration).toBe(false);
   });
 
