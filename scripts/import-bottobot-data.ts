@@ -106,6 +106,161 @@ function writeEmptyDir(dir: string): void {
   mkdirSync(dir, { recursive: true });
 }
 
+function patchTechniqueTextFile(
+  techniquesOut: string,
+  file: string,
+  patch: (text: string) => string,
+): void {
+  const path = join(techniquesOut, file);
+  if (!existsSync(path)) return;
+  const text = readFileSync(path, "utf8");
+  const patched = patch(text);
+  if (patched !== text) writeFileSync(path, patched);
+}
+
+function jsonStringContent(text: string): string {
+  return JSON.stringify(text).slice(1, -1);
+}
+
+function jsonSnippetLines(lines: string[]): string {
+  return jsonStringContent(lines.join("\n"));
+}
+
+function patchGpuComputePack(techniquesOut: string): void {
+  patchTechniqueTextFile(techniquesOut, "gpu-compute.json", (text) => {
+    if (text.toLowerCase().includes("pseudocode")) return text;
+    return text.replace(
+      "// Minimal CUDA TOP Plugin skeleton\\n// Inherits from TOP_CPlusPlusBase (Derivative SDK)",
+      "// Minimal CUDA TOP Plugin skeleton\\n// Pseudocode: d_dst and d_src represent CUDA-mapped TD input/output buffers.\\n// Inherits from TOP_CPlusPlusBase (Derivative SDK)",
+    );
+  });
+}
+
+function patchMediaPipePoseText(text: string): string {
+  const channelSetupBlock = [
+    "",
+    "",
+    "# Channel setup \u2014 called to define output channels",
+    "def onSetupParameters(scriptOp):",
+    "    # Add all landmark channels",
+    "    for name in LANDMARK_NAMES:",
+    "        for axis in ['x', 'y', 'z', 'vis']:",
+    "            scriptOp.appendChan(f'{name}_{axis}')",
+  ].join("\\n");
+  const patched = text.replace(channelSetupBlock, "");
+  if (patched.includes("Add all landmark channels once")) return patched;
+  return patched.replace(
+    "def onSetupParameters(scriptOp):\\n    global _pose\\n",
+    "def onSetupParameters(scriptOp):\\n    global _pose\\n    # Add all landmark channels once while the Script CHOP initializes.\\n    for name in LANDMARK_NAMES:\\n        for axis in ['x', 'y', 'z', 'vis']:\\n            scriptOp.appendChan(f'{name}_{axis}')\\n",
+  );
+}
+
+function patchBodyTrackText(text: string): string {
+  const oldBlock = [
+    "def detect_hands_raised(bodyTrackChop, person_index=0):",
+    "    joints = get_skeleton_joints(bodyTrackChop, person_index)",
+    "    if 'left_wrist' in joints and 'left_shoulder' in joints:",
+    "        left_raised = joints['left_wrist'][1] > joints['left_shoulder'][1]",
+    "        right_raised = joints['right_wrist'][1] > joints['right_shoulder'][1]",
+    "        return left_raised and right_raised",
+    "    return False",
+  ].join("\\n");
+  const newBlock = [
+    "def detect_hands_raised(bodyTrackChop, person_index=0):",
+    "    joints = get_skeleton_joints(bodyTrackChop, person_index)",
+    "    required = {'left_wrist', 'left_shoulder', 'right_wrist', 'right_shoulder'}",
+    "    if not required.issubset(joints):",
+    "        return False",
+    "    left_raised = joints['left_wrist'][1] > joints['left_shoulder'][1]",
+    "    right_raised = joints['right_wrist'][1] > joints['right_shoulder'][1]",
+    "    return left_raised and right_raised",
+  ].join("\\n");
+  return text.replace(oldBlock, newBlock);
+}
+
+function patchMachineLearningPack(techniquesOut: string): void {
+  patchTechniqueTextFile(techniquesOut, "machine-learning.json", (text) => {
+    return patchBodyTrackText(patchMediaPipePoseText(text));
+  });
+}
+
+function patchAsyncioText(text: string): string {
+  let patched = text.replace(
+    jsonStringContent("_bg_loop = None\n_bg_thread = None\n_results = {}"),
+    jsonStringContent(
+      "_bg_loop = None\n_bg_thread = None\n_bg_loop_ready = threading.Event()\n_results = {}",
+    ),
+  );
+  const oldStart = jsonSnippetLines([
+    "def start_background_loop():",
+    '    """Start a background asyncio event loop in a daemon thread."""',
+    "    global _bg_loop, _bg_thread",
+    "    ",
+    "    def run_loop():",
+    "        global _bg_loop",
+    "        _bg_loop = asyncio.new_event_loop()",
+    "        asyncio.set_event_loop(_bg_loop)",
+    "        _bg_loop.run_forever()",
+    "    ",
+    "    _bg_thread = threading.Thread(target=run_loop, daemon=True)",
+    "    _bg_thread.start()",
+    "    print('[Async] Background event loop started')",
+  ]);
+  const newStart = jsonSnippetLines([
+    "def start_background_loop():",
+    '    """Start a background asyncio event loop in a daemon thread."""',
+    "    global _bg_loop, _bg_thread",
+    "    if _bg_thread and _bg_thread.is_alive():",
+    "        return",
+    "    _bg_loop_ready.clear()",
+    "    ",
+    "    def run_loop():",
+    "        global _bg_loop",
+    "        _bg_loop = asyncio.new_event_loop()",
+    "        asyncio.set_event_loop(_bg_loop)",
+    "        _bg_loop_ready.set()",
+    "        _bg_loop.run_forever()",
+    "    ",
+    "    _bg_thread = threading.Thread(target=run_loop, daemon=True)",
+    "    _bg_thread.start()",
+    "    if not _bg_loop_ready.wait(timeout=2.0):",
+    "        raise RuntimeError('Background event loop did not start')",
+    "    print('[Async] Background event loop started')",
+  ]);
+  patched = patched.replace(oldStart, newStart);
+  const oldFetch = jsonSnippetLines([
+    "def fetch_url(url, key='last'):",
+    '    """Schedule an async fetch from TD code (non-blocking)."""',
+    "    if _bg_loop is None:",
+    "        start_background_loop()",
+    "    asyncio.run_coroutine_threadsafe(fetch_url_async(url, key), _bg_loop)",
+  ]);
+  const newFetch = jsonSnippetLines([
+    "def fetch_url(url, key='last'):",
+    '    """Schedule an async fetch from TD code (non-blocking)."""',
+    "    if _bg_loop is None:",
+    "        start_background_loop()",
+    "    elif not _bg_loop_ready.wait(timeout=2.0):",
+    "        raise RuntimeError('Background event loop is not ready')",
+    "    if _bg_loop is None:",
+    "        raise RuntimeError('Background event loop is unavailable')",
+    "    asyncio.run_coroutine_threadsafe(fetch_url_async(url, key), _bg_loop)",
+  ]);
+  return patched.replace(oldFetch, newFetch);
+}
+
+function patchPythonAdvancedPack(techniquesOut: string): void {
+  patchTechniqueTextFile(techniquesOut, "python-advanced.json", (text) => {
+    return patchAsyncioText(text);
+  });
+}
+
+function patchImportedTechniqueKnowledge(techniquesOut: string): void {
+  patchGpuComputePack(techniquesOut);
+  patchMachineLearningPack(techniquesOut);
+  patchPythonAdvancedPack(techniquesOut);
+}
+
 function writeEmpty(): void {
   freshDir(outDir);
   mkdirSync(join(outDir, "operators"), { recursive: true });
@@ -188,6 +343,7 @@ function main(): void {
   const techniquesOut = join(outDir, "techniques");
   if (existsSync(experimentalDir)) {
     cpSync(experimentalDir, techniquesOut, { recursive: true });
+    patchImportedTechniqueKnowledge(techniquesOut);
   } else {
     writeEmptyDir(techniquesOut);
   }
