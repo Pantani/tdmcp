@@ -30,6 +30,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Add `get_technique_detail`, `draft_recipe_from_technique`, and `get_tutorial`
   read-only knowledge tools so agents can inspect Bottobot-derived technique and
   tutorial material and turn GLSL techniques into `RecipeSchema` drafts offline.
+- Add the Kinect wall harp command/tool with FreenectTD-oriented wall-touch tracking,
+  external Kinect bridge support, calibration diagnostics, laser-line visuals, and clean
+  sine-based audio output.
 - Add `draft_recipe_from_tutorial` as a read-only Layer 3/CLI/local-copilot tool
   that extracts conservative operator chains from embedded tutorials and drafts
   `RecipeSchema` JSON offline; harden tutorial content handling so structured

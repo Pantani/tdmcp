@@ -214,6 +214,10 @@ import {
   createKeyframeAnimationSchema,
 } from "../tools/layer1/createKeyframeAnimation.js";
 import {
+  createKinectWallHarpImpl,
+  createKinectWallHarpSchema,
+} from "../tools/layer1/createKinectWallHarp.js";
+import {
   createKineticTextImpl,
   createKineticTextSchema,
 } from "../tools/layer1/createKineticText.js";
@@ -1057,6 +1061,12 @@ const COMMANDS: Record<string, Command> = {
     createInteractiveProjectionMappingSchema,
     createInteractiveProjectionMappingImpl,
     "Build a synthetic-safe camera/projector interactive projection mapping rig.",
+    { mutates: true },
+  ),
+  "kinect-wall-harp": r(
+    createKinectWallHarpSchema,
+    createKinectWallHarpImpl,
+    "Build a Kinect v2/FreenectTD projected wall harp with two-hand zone triggers and internal pluck synth.",
     { mutates: true },
   ),
   "tempo-sync": r(

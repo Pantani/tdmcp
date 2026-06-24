@@ -207,6 +207,7 @@ can be answered directly. Runtime implementation should be handed to
 `tdmcp-pipeline` after the POC boundary is accepted.
 
 **Change log:**
+
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
 | 2026-06-04 | Initial design harness | 5 agents + 5 skills | design the Ui24R operator-approved scene-arming expansion before runtime work |
@@ -288,6 +289,7 @@ sub-agents (no `TeamCreate`).
 **Trigger:** when asked to add more cookbook examples, create visual examples for the documentation, show more surprising things you can do with tdmcp, expand the prompt cookbook, or any request to add prompts + results to the cookbook — use the `tdmcp-cookbook-examples` skill (curator → EN writer ∥ PT writer → QA). Simple questions can be answered directly.
 
 **Change log:**
+
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
 | 2026-05-29 | Initial build | 2 agents + 1 skill | extend prompt cookbook with surprising examples for all tools not yet shown |
@@ -352,6 +354,25 @@ tracking, or this feature's recipe/docs, use the
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
 | 2026-06-05 | Initial implementation team | 5 agents + 1 skill | execute the approved interactive projection mapping spec through prototype, Layer 1 tool, recipe/docs, and physical/synthetic QA |
+
+## Harness: Kinect wall harp
+
+**Goal:** implement the approved Kinect v2 + FreenectTD projected wall harp as a
+live TouchDesigner prototype and reusable tdmcp Layer 1 tool: two independent
+wall-depth hand blobs, eight projected strings, internal pluck synth, calibration
+controls, and live/synthetic QA.
+
+**Trigger:** when asked to build, implement, continue, fix, QA, document, or ship
+the Kinect wall harp, Kinect v2 wall-depth harp, FreenectTD depth-blob hand
+tracking, projected wall strings, pluck synth harp, or this feature's Layer 1
+tool/recipe/docs, use the `tdmcp-kinect-wall-harp` skill before the generic
+`tdmcp-pipeline`. Simple conceptual questions can be answered directly.
+
+**Change log:**
+
+| Date | Change | Target | Reason |
+|------|--------|--------|--------|
+| 2026-06-23 | Initial implementation harness | 5 agents + 1 skill + Codex mirrors | execute the approved Kinect wall harp spec through live prototype, Layer 1 tool build, integration, and live/synthetic QA |
 
 ## Harness: Telegram + Ollama local copilot
 

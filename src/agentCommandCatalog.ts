@@ -1097,6 +1097,14 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "kinect-wall-harp",
+    summary:
+      "Build a Kinect v2/FreenectTD projected wall harp with two-hand zone triggers and internal pluck synth.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "kinetictext",
     summary: "Animated/beat-flashed kinetic typography (lyric flashes).",
     mutates: true,
