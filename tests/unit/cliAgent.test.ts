@@ -115,6 +115,14 @@ describe("tdmcp-agent CLI", () => {
         unsafe: false,
       }),
     );
+    expect(doc.commands).toContainEqual(
+      expect.objectContaining({
+        command: "tutorials draft-recipe",
+        summary: expect.stringContaining("RecipeSchema"),
+        mutates: false,
+        unsafe: false,
+      }),
+    );
   });
 
   it("dry-runs show-director policy decisions without contacting TD", async () => {

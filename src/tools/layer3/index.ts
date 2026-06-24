@@ -15,6 +15,7 @@ import { registerDisconnectNodes } from "./disconnectNodes.js";
 import { registerDocumentNetwork } from "./documentNetwork.js";
 import { registerDraftRecipeFromOperatorChain } from "./draftRecipeFromOperatorChain.js";
 import { registerDraftRecipeFromTechnique } from "./draftRecipeFromTechnique.js";
+import { registerDraftRecipeFromTutorial } from "./draftRecipeFromTutorial.js";
 import { registerEditDatContent } from "./editDatContent.js";
 import { registerElicitMissingArgs } from "./elicitMissingArgs.js";
 import { registerExecNodeMethod } from "./execNodeMethod.js";
@@ -98,6 +99,7 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerDraftRecipeFromOperatorChain,
   registerGetTechniqueDetail,
   registerDraftRecipeFromTechnique,
+  registerDraftRecipeFromTutorial,
   registerGetTutorial,
   registerSearchPythonApi,
   registerPlanTdVersionMigration,

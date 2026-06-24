@@ -2151,6 +2151,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "tutorials draft-recipe",
+    summary: "Draft a RecipeSchema JSON from a TouchDesigner tutorial (offline).",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "tutorials get",
     summary: "List, search, or retrieve TouchDesigner tutorials (offline).",
     mutates: false,

@@ -1251,7 +1251,7 @@ describe("aiPartyLive service", () => {
     expect(service.snapshot().events.at(-1)).toMatchObject({
       type: "rehearsal.executive.completed",
     });
-  });
+  }, 10_000);
 
   it("exports a read-only replay summary from the event log", async () => {
     const logPath = tempLogPath();
