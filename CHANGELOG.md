@@ -35,6 +35,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `RecipeSchema` JSON offline; harden tutorial content handling so structured
   Bottobot tutorial sections and code blocks flatten consistently for retrieval
   and search.
+- Add English and Portuguese cookbook examples for offline TouchDesigner
+  knowledge workflows, including tutorial-to-recipe drafting and operator-chain
+  compare/validate/draft loops with live checks marked `UNVERIFIED-pending-td`.
 
 ### Fixed
 

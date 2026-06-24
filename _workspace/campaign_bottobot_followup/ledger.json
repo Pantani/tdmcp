@@ -81,15 +81,26 @@
       "id": "bottobot_knowledge_cookbook_examples",
       "wave": 2,
       "priority": "P1",
-      "status": "pending",
+      "status": "qa-focused-pass",
       "surface": "docs",
       "value": "Add real EN/PT cookbook examples that demonstrate the shipped knowledge tools and the tutorial-to-recipe path without duplicating generated references.",
       "dependsOn": [
         "tutorial_to_recipe"
       ],
-      "files": [],
-      "qa": [],
-      "history": []
+      "files": [
+        "docs/guide/prompt-cookbook.md",
+        "docs/pt/guide/prompt-cookbook.md",
+        "tests/unit/resourceRecipesAndCookbook.test.ts",
+        "CHANGELOG.md"
+      ],
+      "qa": [
+        "RED: npx vitest run tests/unit/resourceRecipesAndCookbook.test.ts -t offline tutorial-to-recipe failed before docs were added",
+        "PASS: npx vitest run tests/unit/resourceRecipesAndCookbook.test.ts"
+      ],
+      "history": [
+        "Added EN/PT text-only cookbook examples for tutorial-to-recipe, operator compare/validate/draft, and useful non-draftable tutorial failure modes.",
+        "Kept live TouchDesigner build/cook claims marked UNVERIFIED-pending-td."
+      ]
     },
     {
       "id": "network_template_gap_review",
@@ -122,5 +133,5 @@
     "techniques_cli_aliases",
     "tutorials_cli_aliases"
   ],
-  "updatedAt": "2026-06-24T08:29:00.000Z"
+  "updatedAt": "2026-06-24T08:43:00.000Z"
 }

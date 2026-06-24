@@ -174,6 +174,21 @@ describe("cookbook resource helpers", () => {
     }
   });
 
+  it("documents the offline tutorial-to-recipe knowledge workflow in both cookbooks", () => {
+    const en = readCookbookResource("en").text;
+    const pt = readCookbookResource("pt").text;
+
+    expect(en).toContain("## Offline TD knowledge & recipe drafting");
+    expect(en).toContain("draft_recipe_from_tutorial");
+    expect(en).toContain("tdmcp-agent tutorials draft-recipe");
+    expect(en).toContain("UNVERIFIED-pending-td");
+
+    expect(pt).toContain("## Conhecimento TD offline & rascunhos de receita");
+    expect(pt).toContain("draft_recipe_from_tutorial");
+    expect(pt).toContain("tdmcp-agent tutorials draft-recipe");
+    expect(pt).toContain("UNVERIFIED-pending-td");
+  });
+
   it("returns an explanatory payload instead of throwing when the cookbook file is missing", () => {
     const result = readCookbookResourceFromPath("pt", "/tmp/tdmcp-missing-cookbook.md");
 

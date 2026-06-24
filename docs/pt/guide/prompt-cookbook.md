@@ -1748,6 +1748,64 @@ patch: um operador, um parâmetro seguro, um caminho de volta.*
 descrever o que está na tela, nomear a escolha artística mais fraca e propor uma
 mudança pequena para o artista aprovar.*
 
+## Conhecimento TD offline & rascunhos de receita
+
+Use estes prompts quando quiser que o agente leia conhecimento TouchDesigner
+embutido antes de criar nós. As tools desta seção são read-only e funcionam sem
+bridge TD ao vivo; qualquer cook ou checagem de projetor continua
+**UNVERIFIED-pending-td** até você rodar o rascunho contra uma instância
+TouchDesigner conectada.
+
+> *"Encontre o tutorial embutido para escrever um GLSL TOP, gere um rascunho
+> RecipeSchema a partir dele, valide a cadeia de operadores e me mostre o JSON
+> antes de aplicar qualquer coisa."*
+
+```bash
+tdmcp-agent tutorials get \
+  --params '{"name":"Write a GLSL TOP","include_content":true}'
+tdmcp-agent tutorials draft-recipe \
+  --params '{"name":"Write a GLSL TOP","id":"tutorial_glsl_top_draft"}'
+```
+
+*`get_tutorial` recupera o texto estruturado do tutorial e os blocos de código; a
+tool `draft_recipe_from_tutorial` extrai uma cadeia conservadora GLSL TOP -> Null
+TOP e valida o resultado como JSON `RecipeSchema`. Inspecione primeiro; use
+`apply_recipe` só quando estiver pronto para construir e verificar no TD.*
+
+> *"Antes de criar uma cadeia de post com feedback, compare os docs de operator de
+> Blur TOP e Level TOP, valide `Noise TOP -> Blur TOP -> Level TOP -> Null TOP`,
+> então gere uma receita dessa cadeia sem tocar no projeto."*
+
+```bash
+tdmcp-agent operators compare-docs \
+  --params '{"operator_a":"Blur TOP","operator_b":"Level TOP"}'
+tdmcp-agent operators validate-chain \
+  --params '{"chain":["Noise TOP","Blur TOP","Level TOP","Null TOP"],"family":"TOP"}'
+tdmcp-agent recipes draft-chain \
+  --params '{"chain":["Noise TOP","Blur TOP","Level TOP","Null TOP"],"id":"feedback_post_draft","tags":["draft","feedback"]}'
+```
+
+*Este é o loop seguro de "ler, comparar, validar e rascunhar": o agente explica os
+tradeoffs dos operadores e entrega um rascunho de receita válido no schema enquanto
+o grafo TouchDesigner real permanece inalterado.*
+
+> *"Busque tutoriais embutidos sobre otimização de CHOP, tente
+> `draft_recipe_from_tutorial` em modo non-strict e, se não der para gerar uma
+> receita, explique o motivo. Use os operadores extraídos como entrada para
+> `validate_operator_chain` e só gere uma receita quando a cadeia corrigida não
+> tiver erros. Trate `apply_recipe` como handoff posterior, não como parte desta
+> execução."*
+
+```bash
+tdmcp-agent tutorials get \
+  --params '{"query":"CHOP optimization","include_content":true,"limit":3}'
+tdmcp-agent tutorials draft-recipe \
+  --params '{"name":"CHOP optimization","strict":false,"max_steps":5}'
+```
+
+*Esse é o modo de falha útil: um tutorial ainda pode ensinar o que o agente deve
+inspecionar ou validar, mesmo quando não vira uma receita segura automaticamente.*
+
 ## Biblioteca criativa (Creative RAG)
 
 O repertório criativo é um índice local opt-in de referências artísticas com
