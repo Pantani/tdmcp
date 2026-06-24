@@ -4,6 +4,7 @@ import { registerAnalyzeProject } from "./analyzeProject.js";
 import { registerCaptionTop } from "./captionTop.js";
 import { registerCollectProjectAssets } from "./collectProjectAssets.js";
 import { registerCompactGraphDigest } from "./compactGraphDigest.js";
+import { registerCompareOperatorDocs } from "./compareOperatorDocs.js";
 import { registerCompareTdNodes } from "./compareTdNodes.js";
 import { registerControlTimelineTransport } from "./controlTimelineTransport.js";
 import { registerCopilotVision } from "./copilotVision.js";
@@ -12,6 +13,8 @@ import { registerDeleteTdNode } from "./deleteTdNode.js";
 import { registerDiffSnapshots } from "./diffSnapshots.js";
 import { registerDisconnectNodes } from "./disconnectNodes.js";
 import { registerDocumentNetwork } from "./documentNetwork.js";
+import { registerDraftRecipeFromOperatorChain } from "./draftRecipeFromOperatorChain.js";
+import { registerDraftRecipeFromTechnique } from "./draftRecipeFromTechnique.js";
 import { registerEditDatContent } from "./editDatContent.js";
 import { registerElicitMissingArgs } from "./elicitMissingArgs.js";
 import { registerExecNodeMethod } from "./execNodeMethod.js";
@@ -24,6 +27,7 @@ import { registerGetBridgeLogs } from "./getBridgeLogs.js";
 import { registerGetInlinePreview } from "./getInlinePreview.js";
 import { registerGetModuleHelp } from "./getModuleHelp.js";
 import { registerGetNodeStateRuntime } from "./getNodeStateRuntime.js";
+import { registerGetOperatorWorkflowGuide } from "./getOperatorWorkflowGuide.js";
 import { registerGetTdClassDetails } from "./getTdClassDetails.js";
 import { registerGetTdClasses } from "./getTdClasses.js";
 import { registerGetTdInfo } from "./getTdInfo.js";
@@ -33,12 +37,15 @@ import { registerGetTdNodeParameters } from "./getTdNodeParameters.js";
 import { registerGetTdNodes } from "./getTdNodes.js";
 import { registerGetTdPerformance } from "./getTdPerformance.js";
 import { registerGetTdTopology } from "./getTdTopology.js";
+import { registerGetTechniqueDetail } from "./getTechniqueDetail.js";
+import { registerGetTutorial } from "./getTutorial.js";
 import { registerInspectComponent } from "./inspectComponent.js";
 import { registerInspectGpuAndDisplays } from "./inspectGpuAndDisplays.js";
 import { registerLintRecipeLibrary } from "./lintRecipeLibrary.js";
 import { registerManageComponentStorage } from "./manageComponentStorage.js";
 import { registerManagePackages } from "./managePackages.js";
 import { registerOptimizePerformance } from "./optimizePerformance.js";
+import { registerPlanTdVersionMigration } from "./planTdVersionMigration.js";
 import { registerProfileCookCost } from "./profileCookCost.js";
 import { registerProjectDocumentationSite } from "./projectDocumentationSite.js";
 import { registerReadParameterModes } from "./readParameterModes.js";
@@ -48,13 +55,17 @@ import { registerRenderOutput } from "./renderOutput.js";
 import { registerRepairNetwork } from "./repairNetwork.js";
 import { registerScoreBuild } from "./scoreBuild.js";
 import { registerSearchOperators } from "./searchOperators.js";
+import { registerSearchPythonApi } from "./searchPythonApi.js";
+import { registerSearchTouchDesignerKnowledge } from "./searchTouchDesignerKnowledge.js";
 import { registerSerializeNetwork } from "./serializeNetwork.js";
 import { registerSetDatContent } from "./setDatContent.js";
 import { registerSetParameterExpression } from "./setParameterExpression.js";
 import { registerSnapshotTdGraph } from "./snapshotTdGraph.js";
+import { registerSuggestOperatorChain } from "./suggestOperatorChain.js";
 import { registerSummarizeTdErrors } from "./summarizeTdErrors.js";
 import { registerSwapOperator } from "./swapOperator.js";
 import { registerUpdateTdNodeParameters } from "./updateTdNodeParameters.js";
+import { registerValidateOperatorChain } from "./validateOperatorChain.js";
 import { registerWatchNode } from "./watchNode.js";
 import { registerWriteAgentGuide } from "./writeAgentGuide.js";
 
@@ -80,6 +91,17 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerSnapshotTdGraph,
   registerReloadBridge,
   registerSearchOperators,
+  registerCompareOperatorDocs,
+  registerGetOperatorWorkflowGuide,
+  registerSuggestOperatorChain,
+  registerValidateOperatorChain,
+  registerDraftRecipeFromOperatorChain,
+  registerGetTechniqueDetail,
+  registerDraftRecipeFromTechnique,
+  registerGetTutorial,
+  registerSearchPythonApi,
+  registerPlanTdVersionMigration,
+  registerSearchTouchDesignerKnowledge,
   registerManagePackages,
   registerDocumentNetwork,
   registerDiffSnapshots,

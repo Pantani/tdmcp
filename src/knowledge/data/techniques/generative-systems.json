@@ -1,0 +1,133 @@
+{
+  "category": "generative-systems",
+  "displayName": "Generative Systems",
+  "description": "Generative and emergent systems in TouchDesigner including L-systems for botanical growth, cellular automata, strange attractors, and Replicator COMP for dynamic component instancing.",
+  "techniques": [
+    {
+      "id": "lsystem_botanical",
+      "name": "L-System Botanical Growth",
+      "subcategory": "l-systems",
+      "description": "Lindenmayer systems for generating procedural plant, tree, coral, and fractal geometry in TouchDesigner. Uses the native L-System SOP for rapid prototyping and Python-driven expansion for custom grammars.",
+      "difficulty": "beginner",
+      "operators": ["L-System SOP", "Script SOP", "Merge SOP"],
+      "tags": ["L-system", "procedural", "botanical", "growth", "fractal", "generative"],
+      "notes": "TD's L-System SOP has built-in turtle interpretation. Use the Premise and Rules parameters. Animate 'Generation' parameter via LFO CHOP for growth animation. Combine multiple L-System SOPs for complex scenes.",
+      "code": {
+        "language": "python",
+        "filename": "lsystem_custom.py",
+        "snippet": "# Custom L-System Expander in Python\n# Produces a string of turtle commands from grammar rules\n# Feed result to an L-System SOP or use Script SOP for custom rendering\n\ndef expand_lsystem(axiom, rules, generations):\n    \"\"\"\n    Expand an L-System grammar.\n    axiom: starting string, e.g. 'F'\n    rules: dict, e.g. {'F': 'F[+F]F[-F]F'}\n    generations: number of expansion steps\n    Returns the expanded string.\n    \"\"\"\n    current = axiom\n    for _ in range(generations):\n        next_str = ''\n        for char in current:\n            next_str += rules.get(char, char)\n        current = next_str\n    return current\n\n# Stochastic L-System with probability-weighted rules\nimport random\n\ndef expand_stochastic(axiom, rules, generations, seed=42):\n    \"\"\"\n    Stochastic L-System.\n    rules: dict mapping symbol -> list of (probability, replacement) tuples\n    e.g. {'F': [(0.33, 'F[+F]F'), (0.33, 'F[-F]F'), (0.34, 'FF')]}\n    \"\"\"\n    rng = random.Random(seed)\n    current = axiom\n    for _ in range(generations):\n        next_str = ''\n        for char in current:\n            if char in rules:\n                choices = rules[char]\n                rand = rng.random()\n                cumulative = 0.0\n                replacement = char\n                for prob, rep in choices:\n                    cumulative += prob\n                    if rand <= cumulative:\n                        replacement = rep\n                        break\n                next_str += replacement\n            else:\n                next_str += char\n        current = next_str\n    return current\n\n# Example usage (run in Textport or Execute DAT)\n# Classic plant\nresult = expand_lsystem('X', {\n    'X': 'F[+X]F[-X]+X',\n    'F': 'FF'\n}, generations=5)\nprint(f'L-System length after 5 gen: {len(result)}')\n\n# Apply to L-System SOP\ndef apply_to_lsystem_sop(sop, axiom, rules, gen):\n    string = expand_lsystem(axiom, rules, gen)\n    sop.par.premise = axiom\n    # TD L-System SOP uses its own internal expander\n    # Set rules as 'Successor' parameters on the SOP\n    sop.par.generations = gen\n    # For each rule:\n    for i, (symbol, replacement) in enumerate(rules.items()):\n        sop.par[f'rulepredecessor{i+1}'] = symbol\n        sop.par[f'rulesuccessor{i+1}'] = replacement"
+      },
+      "presets": {
+        "description": "Common L-System presets for the L-System SOP",
+        "examples": [
+          {
+            "name": "Symmetric Plant",
+            "axiom": "F",
+            "rules": { "F": "F[+F]F[-F]F" },
+            "angle": 25.7,
+            "generations": 5
+          },
+          {
+            "name": "Dragon Curve",
+            "axiom": "FX",
+            "rules": { "X": "X+YF+", "Y": "-FX-Y" },
+            "angle": 90,
+            "generations": 12
+          },
+          {
+            "name": "Sierpinski Triangle",
+            "axiom": "F-G-G",
+            "rules": { "F": "F-G+F+G-F", "G": "GG" },
+            "angle": 120,
+            "generations": 6
+          },
+          {
+            "name": "3D Bush",
+            "axiom": "A",
+            "rules": { "A": "[&FL!A]/////'[&FL!A]///////'[&FL!A]", "F": "S/////F", "S": "FL", "L": "['''^^{-f+f+f-|-f+f+f}]" },
+            "angle": 22.5,
+            "generations": 4,
+            "note": "3D interpretation — use in L-System SOP with 3D mode"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cellular_automata_gol",
+      "name": "Cellular Automata — Game of Life and Beyond",
+      "subcategory": "cellular-automata",
+      "description": "GPU-accelerated cellular automata including Conway's Game of Life, Brian's Brain, and custom rule sets running as GLSL shaders with Feedback TOP ping-pong.",
+      "difficulty": "intermediate",
+      "operators": ["GLSL TOP", "Feedback TOP", "Constant CHOP"],
+      "tags": ["cellular-automata", "Game-of-Life", "Conway", "emergence", "GPU", "simulation"],
+      "notes": "Initialize with Noise TOP or draw-in with CHOPexec. Rules encoded in GLSL as neighbor-count lookup. Experiment with neighborhood type (Moore/Von Neumann) and rule strings.",
+      "code": {
+        "language": "glsl",
+        "filename": "game_of_life.glsl",
+        "snippet": "// Conway's Game of Life — GLSL TOP with Feedback\n// Input 0: Feedback TOP (previous generation, R channel = alive/dead)\n// Output: next generation\n\nuniform float uThreshold; // e.g. 0.5\n\nint getCell(vec2 uv, vec2 offset) {\n    vec2 texel = 1.0 / uTD2DInfos[0].res.zw;\n    vec4 s = texture(sTD2DInputs[0], uv + offset * texel);\n    return (s.r > uThreshold) ? 1 : 0;\n}\n\nvoid main() {\n    vec2 uv = vUV.st;\n    int self = getCell(uv, vec2(0,0));\n    \n    // Count Moore neighborhood (8 neighbors)\n    int neighbors = \n        getCell(uv, vec2(-1,-1)) + getCell(uv, vec2(0,-1)) + getCell(uv, vec2(1,-1)) +\n        getCell(uv, vec2(-1, 0)) +                           getCell(uv, vec2(1, 0)) +\n        getCell(uv, vec2(-1, 1)) + getCell(uv, vec2(0, 1)) + getCell(uv, vec2(1, 1));\n    \n    // Conway's rules: B3/S23\n    int next = 0;\n    if (self == 1 && (neighbors == 2 || neighbors == 3)) next = 1; // Survive\n    if (self == 0 && neighbors == 3) next = 1;                     // Birth\n    \n    float v = float(next);\n    fragColor = TDOutputSwizzle(vec4(v, v, v, 1.0));\n}"
+      },
+      "variants": [
+        {
+          "name": "Brian's Brain",
+          "description": "3-state CA: dead, alive, dying. Creates oscillating structures.",
+          "snippet": "// Brian's Brain: states 0=dead, 0.5=dying, 1=alive\nint state = (self > 0.75) ? 2 : (self > 0.25) ? 1 : 0; // 2=alive,1=dying,0=dead\nint aliveNeighbors = 0; // count neighbors with state==2\n// ... count as above but check > 0.75\nint next = 0;\nif (state == 2) next = 1; // alive -> dying\nif (state == 1) next = 0; // dying -> dead\nif (state == 0 && aliveNeighbors == 2) next = 2; // dead -> alive if exactly 2 alive neighbors"
+        },
+        {
+          "name": "Continuous CA (Lenia)",
+          "description": "Continuous Game of Life variant creating organic blob-like lifeforms.",
+          "snippet": "// Lenia: smooth kernel, continuous state\n// Uses Gaussian kernel for neighborhood computation\n// State is float 0..1, updated via growth function G(n) = exp(-((n-mu)^2)/(2*sigma^2))\nfloat kernel_sample = 0.0;\n// Sum weighted neighborhood with Gaussian kernel...\nfloat growth = exp(-pow(kernel_sample - 0.15, 2.0) / (2.0 * 0.015 * 0.015));\nfloat newState = clamp(self + 0.1 * (2.0 * growth - 1.0), 0.0, 1.0);\nfragColor = TDOutputSwizzle(vec4(newState, newState, newState, 1.0));"
+        }
+      ]
+    },
+    {
+      "id": "strange_attractors",
+      "name": "Strange Attractors",
+      "subcategory": "strange-attractors",
+      "description": "Visualizing chaotic strange attractors (Lorenz, Rossler, De Jong, Clifford) as point clouds in TouchDesigner. Points are iterated in Python or CHOP and rendered via Instancing or Script SOP.",
+      "difficulty": "intermediate",
+      "operators": ["Script CHOP", "Script SOP", "Geometry COMP", "Point Cloud MAT"],
+      "tags": ["attractor", "chaos", "Lorenz", "Clifford", "De-Jong", "point-cloud", "fractal"],
+      "code": {
+        "language": "python",
+        "filename": "strange_attractors.py",
+        "snippet": "# Strange Attractors — Script SOP\n# Generates point positions by iterating attractor equations\nimport numpy as np\n\ndef cook(scriptOp):\n    n = 200000  # number of points\n    attractor = scriptOp.par.attractor.eval()  # custom string par: 'lorenz', 'clifford', 'dejong'\n    \n    if attractor == 'lorenz':\n        pts = lorenz_attractor(n)\n    elif attractor == 'clifford':\n        pts = clifford_attractor(n)\n    elif attractor == 'rossler':\n        pts = rossler_attractor(n)\n    else:\n        pts = dejong_attractor(n)\n    \n    # Write to SOP\n    scriptOp.clear()\n    for i in range(len(pts)):\n        pt = scriptOp.appendPoint()\n        pt.P = (pts[i, 0], pts[i, 1], pts[i, 2])\n\ndef lorenz_attractor(n, dt=0.005):\n    \"\"\"Lorenz system: dx/dt = sigma(y-x), dy/dt = x(rho-z)-y, dz/dt = xy-beta*z\"\"\"\n    sigma, rho, beta = 10.0, 28.0, 8.0/3.0\n    pts = np.zeros((n, 3))\n    x, y, z = 0.1, 0.0, 0.0\n    for i in range(n):\n        dx = sigma * (y - x)\n        dy = x * (rho - z) - y\n        dz = x * y - beta * z\n        x += dx * dt; y += dy * dt; z += dz * dt\n        pts[i] = [x * 0.03, y * 0.03, z * 0.03 - 0.8]\n    return pts\n\ndef clifford_attractor(n, a=-1.7, b=1.8, c=-1.9, d=-0.4):\n    \"\"\"Clifford: x1 = sin(a*y) + c*cos(a*x), y1 = sin(b*x) + d*cos(b*y)\"\"\"\n    pts = np.zeros((n, 3))\n    x, y = 0.0, 0.0\n    for i in range(n):\n        x1 = np.sin(a * y) + c * np.cos(a * x)\n        y1 = np.sin(b * x) + d * np.cos(b * y)\n        x, y = x1, y1\n        pts[i] = [x * 0.4, y * 0.4, 0.0]\n    return pts\n\ndef rossler_attractor(n, dt=0.005, a=0.2, b=0.2, c=5.7):\n    \"\"\"Rossler: dx/dt = -y-z, dy/dt = x+ay, dz/dt = b+z(x-c)\"\"\"\n    pts = np.zeros((n, 3))\n    x, y, z = 1.0, 1.0, 1.0\n    for i in range(n):\n        dx = -y - z\n        dy = x + a * y\n        dz = b + z * (x - c)\n        x += dx * dt; y += dy * dt; z += dz * dt\n        pts[i] = [x * 0.04, y * 0.04, z * 0.04]\n    return pts\n\ndef dejong_attractor(n, a=1.4, b=-2.3, c=2.4, d=-2.1):\n    \"\"\"Peter De Jong: x1 = sin(a*y) - cos(b*x), y1 = sin(c*x) - cos(d*y)\"\"\"\n    pts = np.zeros((n, 3))\n    x, y = 0.0, 0.0\n    for i in range(n):\n        x1 = np.sin(a * y) - np.cos(b * x)\n        y1 = np.sin(c * x) - np.cos(d * y)\n        x, y = x1, y1\n        pts[i] = [x * 0.45, y * 0.45, 0.0]\n    return pts"
+      }
+    },
+    {
+      "id": "replicator_comp",
+      "name": "Replicator COMP Dynamic Instancing",
+      "subcategory": "replicator",
+      "description": "Using Replicator COMP to dynamically create, destroy, and modify instances of Base COMPs based on CHOP or DAT data. Essential for data-driven visualizations, particle-like UI, and generative installations.",
+      "difficulty": "intermediate",
+      "operators": ["Replicator COMP", "Base COMP", "CHOP", "DAT"],
+      "tags": ["Replicator", "dynamic", "instance", "data-driven", "generative", "COMP"],
+      "notes": "Replicator COMP calls onReplicatorPulse callback when it creates/destroys instances. Each replicated component receives a 'replicaIndex' member. Use 'Master Component' parameter to define the template Base COMP.",
+      "code": {
+        "language": "python",
+        "filename": "replicator_setup.py",
+        "snippet": "# Replicator COMP callback script\n# Place in the 'Callbacks DAT' of the Replicator COMP\n\ndef onReplicatorPulse(replicatorCOMP, event, replica):\n    \"\"\"\n    Called when Replicator creates or destroys a replica.\n    event: 'onInit', 'onDestroy'\n    replica: the Base COMP being created/destroyed\n    \"\"\"\n    if event == 'onInit':\n        idx = replica.digits  # index number of this replica\n        # Get source data — e.g. from a Table DAT\n        table = op('data_table')  # DAT with columns: x, y, color_r, color_g, color_b\n        if table and idx < table.numRows - 1:  # -1 for header row\n            row = idx + 1  # skip header\n            # Set position\n            x = float(table[row, 'x'])\n            y = float(table[row, 'y'])\n            replica.par.tx = x\n            replica.par.ty = y\n            # Set a color parameter inside the replica\n            colorNode = replica.op('null_color')  # a Null CHOP inside master comp\n            if colorNode:\n                colorNode.par.value0 = float(table[row, 'color_r'])\n                colorNode.par.value1 = float(table[row, 'color_g'])\n                colorNode.par.value2 = float(table[row, 'color_b'])\n    \n    elif event == 'onDestroy':\n        # Cleanup if needed\n        pass\n\n# Trigger replication from data\ndef update_replicator(replicatorCOMP, data_table):\n    \"\"\"\n    Update Replicator count to match data rows.\n    Each row in data_table becomes one replica.\n    \"\"\"\n    count = max(0, data_table.numRows - 1)  # subtract header\n    replicatorCOMP.par.numreplicants = count\n    replicatorCOMP.par.recreateall.pulse()\n\n# Dynamic data-driven example: replicate based on CHOP samples\ndef replicate_from_chop(replicatorCOMP, chop):\n    \"\"\"\n    Set replica count to match CHOP sample count.\n    Each sample will become one replica, which can read chop[N] in its onInit.\n    \"\"\"\n    replicatorCOMP.par.numreplicants = chop.numSamples\n    replicatorCOMP.par.recreateall.pulse()\n    print(f'Created {chop.numSamples} replicas')"
+      }
+    },
+    {
+      "id": "agent_flocking",
+      "name": "Agent-Based Flocking (Boids)",
+      "subcategory": "agent-systems",
+      "description": "GPU-accelerated boids flocking simulation using GLSL ping-pong compute. Encodes agent position and velocity as texture pixels. Implements separation, alignment, and cohesion rules.",
+      "difficulty": "advanced",
+      "operators": ["GLSL TOP", "Feedback TOP", "GLSL Multi TOP"],
+      "tags": ["boids", "flocking", "agent", "simulation", "GPU", "emergent"],
+      "code": {
+        "language": "glsl",
+        "filename": "boids_update.glsl",
+        "snippet": "// Boids Update Shader — GLSL TOP ping-pong\n// Texture layout: each pixel = one agent\n// R=posx, G=posy, B=velx, A=vely (all normalized 0..1, remap to world space)\nuniform float uDt;\nuniform float uSepRadius;   // separation distance\nuniform float uAliRadius;   // alignment radius\nuniform float uCohRadius;   // cohesion radius\nuniform float uSepWeight;\nuniform float uAliWeight;\nuniform float uCohWeight;\nuniform float uMaxSpeed;    // e.g. 0.003\n\n// World space from 0..1 texture\nvec2 decode_pos(vec4 s) { return s.rg; }\nvec2 decode_vel(vec4 s) { return s.ba * 2.0 - 1.0; } // -1..1\n\nvoid main() {\n    vec2 texel = 1.0 / uTD2DInfos[0].res.zw;\n    vec2 uv = vUV.st;\n    \n    vec4 self = texture(sTD2DInputs[0], uv);\n    vec2 pos = decode_pos(self);\n    vec2 vel = decode_vel(self);\n    \n    vec2 sep = vec2(0.0), ali = vec2(0.0), coh = vec2(0.0);\n    float sepN = 0.0, aliN = 0.0, cohN = 0.0;\n    \n    // Sample a subset of agents (cost: O(agents_sampled))\n    // For full O(N^2): iterate all texels (expensive for large N)\n    int W = int(uTD2DInfos[0].res.z);\n    int H = int(uTD2DInfos[0].res.w);\n    for (int i = 0; i < W; i += 4) { // stride=4 for performance\n        for (int j = 0; j < H; j += 4) {\n            vec2 nUV = (vec2(i, j) + 0.5) * texel;\n            vec4 nb = texture(sTD2DInputs[0], nUV);\n            vec2 npos = decode_pos(nb);\n            vec2 nvel = decode_vel(nb);\n            vec2 diff = pos - npos;\n            float dist = length(diff);\n            if (dist < 0.001) continue;\n            if (dist < uSepRadius) { sep += normalize(diff) / dist; sepN++; }\n            if (dist < uAliRadius) { ali += nvel; aliN++; }\n            if (dist < uCohRadius) { coh += npos; cohN++; }\n        }\n    }\n    \n    vec2 steering = vec2(0.0);\n    if (sepN > 0.0) steering += (sep / sepN) * uSepWeight;\n    if (aliN > 0.0) steering += (ali / aliN - vel) * uAliWeight;\n    if (cohN > 0.0) steering += ((coh / cohN) - pos) * uCohWeight;\n    \n    vel = vel + steering * uDt;\n    float spd = length(vel);\n    if (spd > uMaxSpeed) vel = vel / spd * uMaxSpeed;\n    \n    pos = fract(pos + vel); // wrap around\n    \n    fragColor = TDOutputSwizzle(vec4(pos, vel * 0.5 + 0.5));\n}"
+      }
+    }
+  ],
+  "resources": [
+    { "title": "TouchDesigner L-System SOP", "url": "https://docs.derivative.ca/L-System_SOP" },
+    { "title": "TouchDesigner Replicator COMP", "url": "https://docs.derivative.ca/Replicator_COMP" },
+    { "title": "Lenia: Biology of Artificial Life", "url": "https://arxiv.org/abs/1812.05433" },
+    { "title": "Clifford Attractors", "url": "http://paulbourke.net/fractals/clifford/" },
+    { "title": "Boids — Craig Reynolds", "url": "https://www.red3d.com/cwr/boids/" }
+  ]
+}

@@ -1,0 +1,488 @@
+{
+  "schemaVersion": "1.0",
+  "description": "Method-level version tracking for the TouchDesigner Python API. Documents when methods/members were added or changed across TD releases.",
+  "classes": {
+    "td": {
+      "description": "Top-level TouchDesigner module, always available",
+      "addedIn": "099",
+      "methods": {
+        "run": {
+          "signature": "run(script, *args, endFrame=False, fromOP=None, group=None, delayFrames=0, delayMilliSeconds=0, delayRef=me)",
+          "addedIn": "099",
+          "changedIn": [
+            { "version": "2019", "change": "Added delayMilliSeconds parameter" },
+            { "version": "2021", "change": "Added group parameter for organized execution" }
+          ],
+          "description": "Execute a Python script, optionally with a delay"
+        },
+        "op": {
+          "signature": "op(path)",
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Return an operator by path"
+        },
+        "ops": {
+          "signature": "ops(*paths)",
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Return multiple operators by path or pattern"
+        },
+        "passive": {
+          "signature": "passive(op)",
+          "addedIn": "2020",
+          "changedIn": [],
+          "description": "Return a passive reference that does not cook the operator"
+        },
+        "fetchAll": {
+          "signature": "fetchAll(name, default=None, search=True, storeDefault=False)",
+          "addedIn": "2021",
+          "changedIn": [],
+          "description": "Fetch a stored value from the local operator or any parent"
+        }
+      },
+      "members": {
+        "time": {
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Global Time object"
+        },
+        "project": {
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Current project settings"
+        },
+        "ui": {
+          "addedIn": "099",
+          "changedIn": [
+            { "version": "2022", "change": "Added ui.rolloverDAT and ui.rolloverPar" }
+          ],
+          "description": "User interface control object"
+        },
+        "app": {
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Application-level information and control"
+        },
+        "absTime": {
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Absolute frame and seconds since application start"
+        },
+        "me": {
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Reference to the current operator running this script"
+        },
+        "ext": {
+          "addedIn": "2019",
+          "changedIn": [],
+          "description": "Access to operator extensions"
+        },
+        "iop": {
+          "addedIn": "2020",
+          "changedIn": [],
+          "description": "Access to inherited operator extensions"
+        },
+        "mod": {
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Import a module from a DAT operator"
+        }
+      }
+    },
+    "OP": {
+      "description": "Base class for all TouchDesigner operators",
+      "addedIn": "099",
+      "methods": {
+        "cook": {
+          "signature": "cook(force=False, recurse=False, includeUtility=False)",
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Force the operator to cook"
+        },
+        "copy": {
+          "signature": "copy(op, name=None, includeDocked=True)",
+          "addedIn": "099",
+          "changedIn": [
+            { "version": "2021", "change": "Added includeDocked parameter" }
+          ],
+          "description": "Copy this operator to another location"
+        },
+        "destroy": {
+          "signature": "destroy()",
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Destroy the operator and remove it from the network"
+        },
+        "op": {
+          "signature": "op(path)",
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Find an operator relative to this one"
+        },
+        "parent": {
+          "signature": "parent(n=1)",
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Return the parent component, n levels up"
+        },
+        "store": {
+          "signature": "store(name, value)",
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Store a value on the operator"
+        },
+        "fetch": {
+          "signature": "fetch(name, default=None, search=True, storeDefault=False)",
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Retrieve a stored value"
+        },
+        "unstore": {
+          "signature": "unstore(*names)",
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Remove stored values by name"
+        },
+        "addScript": {
+          "signature": "addScript(type, callback)",
+          "addedIn": "2020",
+          "changedIn": [],
+          "description": "Attach a Python callback script to the operator"
+        },
+        "evalExpression": {
+          "signature": "evalExpression(expr)",
+          "addedIn": "2021",
+          "changedIn": [],
+          "description": "Evaluate a TD expression string in this operator's context"
+        }
+      },
+      "members": {
+        "name": { "addedIn": "099", "changedIn": [], "description": "Operator name" },
+        "path": { "addedIn": "099", "changedIn": [], "description": "Full path of the operator" },
+        "id": { "addedIn": "099", "changedIn": [], "description": "Unique integer ID" },
+        "valid": { "addedIn": "099", "changedIn": [], "description": "True if operator exists and is valid" },
+        "parent": { "addedIn": "099", "changedIn": [], "description": "Parent component" },
+        "par": { "addedIn": "099", "changedIn": [], "description": "Parameter collection" },
+        "inputs": { "addedIn": "099", "changedIn": [], "description": "List of input connections" },
+        "outputs": { "addedIn": "099", "changedIn": [], "description": "List of output connections" },
+        "tags": { "addedIn": "099", "changedIn": [], "description": "Set of string tags" },
+        "type": { "addedIn": "099", "changedIn": [], "description": "Operator type string" },
+        "family": { "addedIn": "099", "changedIn": [], "description": "Operator family (CHOP, TOP, etc.)" },
+        "isCHOP": { "addedIn": "099", "changedIn": [], "description": "True if operator is a CHOP" },
+        "isTOP": { "addedIn": "099", "changedIn": [], "description": "True if operator is a TOP" },
+        "isDAT": { "addedIn": "099", "changedIn": [], "description": "True if operator is a DAT" },
+        "isSOP": { "addedIn": "099", "changedIn": [], "description": "True if operator is a SOP" },
+        "isCOMP": { "addedIn": "099", "changedIn": [], "description": "True if operator is a COMP" },
+        "isMATERIAL": { "addedIn": "099", "changedIn": [], "description": "True if operator is a MAT" },
+        "storage": { "addedIn": "099", "changedIn": [], "description": "Dictionary of stored values" },
+        "extensions": { "addedIn": "2019", "changedIn": [], "description": "List of operator extensions" },
+        "errors": { "addedIn": "099", "changedIn": [], "description": "List of current error strings" },
+        "warnings": { "addedIn": "099", "changedIn": [], "description": "List of current warning strings" },
+        "color": { "addedIn": "099", "changedIn": [], "description": "Operator node color (RGB tuple)" },
+        "comment": { "addedIn": "099", "changedIn": [], "description": "Operator comment string" },
+        "bypass": { "addedIn": "099", "changedIn": [], "description": "True if operator is bypassed" },
+        "lock": { "addedIn": "099", "changedIn": [], "description": "True if operator is locked" },
+        "viewer": {
+          "addedIn": "099",
+          "changedIn": [
+            { "version": "2020", "change": "Added viewer.active property" }
+          ],
+          "description": "Viewer settings for this operator"
+        }
+      }
+    },
+    "CHOP": {
+      "description": "Channel Operator base class",
+      "addedIn": "099",
+      "methods": {
+        "chan": {
+          "signature": "chan(*args)",
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Return a Channel object by index or name"
+        },
+        "chans": {
+          "signature": "chans(*args)",
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Return a list of Channel objects matching patterns"
+        },
+        "numpySamples": {
+          "signature": "numpySamples()",
+          "addedIn": "2020",
+          "changedIn": [],
+          "description": "Return channel data as a NumPy array"
+        },
+        "numpyArray": {
+          "signature": "numpyArray()",
+          "addedIn": "2020",
+          "changedIn": [],
+          "description": "Return a 2D NumPy array [channels x samples]"
+        }
+      },
+      "members": {
+        "numChans": { "addedIn": "099", "changedIn": [], "description": "Number of channels" },
+        "numSamples": { "addedIn": "099", "changedIn": [], "description": "Number of samples" },
+        "rate": { "addedIn": "099", "changedIn": [], "description": "Sample rate in Hz" },
+        "start": { "addedIn": "099", "changedIn": [], "description": "Start sample index" },
+        "end": { "addedIn": "099", "changedIn": [], "description": "End sample index" },
+        "export": { "addedIn": "099", "changedIn": [], "description": "True if CHOP is being exported" },
+        "isTimeSlice": { "addedIn": "099", "changedIn": [], "description": "True if CHOP is time-sliced" }
+      }
+    },
+    "TOP": {
+      "description": "Texture Operator base class",
+      "addedIn": "099",
+      "methods": {
+        "numpyArray": {
+          "signature": "numpyArray(delayed=False, writable=False)",
+          "addedIn": "2020",
+          "changedIn": [
+            { "version": "2022", "change": "Added writable parameter for in-place modification" }
+          ],
+          "description": "Return pixel data as a NumPy array"
+        },
+        "cudaMemory": {
+          "signature": "cudaMemory()",
+          "addedIn": "2021",
+          "changedIn": [],
+          "description": "Return GPU memory handle for CUDA interop"
+        },
+        "copyTo": {
+          "signature": "copyTo(op)",
+          "addedIn": "2020",
+          "changedIn": [],
+          "description": "Copy texture content to another TOP"
+        },
+        "saveByteArray": {
+          "signature": "saveByteArray(asynchronous=False)",
+          "addedIn": "2021",
+          "changedIn": [],
+          "description": "Return pixel data as a bytes object"
+        }
+      },
+      "members": {
+        "width": { "addedIn": "099", "changedIn": [], "description": "Texture width in pixels" },
+        "height": { "addedIn": "099", "changedIn": [], "description": "Texture height in pixels" },
+        "depth": { "addedIn": "099", "changedIn": [], "description": "Texture depth (3D textures)" },
+        "format": { "addedIn": "099", "changedIn": [], "description": "Pixel format string" },
+        "gpuMemory": {
+          "addedIn": "2020",
+          "changedIn": [],
+          "description": "GPU memory usage in bytes"
+        }
+      }
+    },
+    "DAT": {
+      "description": "Data Operator base class",
+      "addedIn": "099",
+      "methods": {
+        "cell": {
+          "signature": "cell(row, col)",
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Return a Cell object at the given row and column"
+        },
+        "cells": {
+          "signature": "cells(row, col)",
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Return a list of matching Cell objects"
+        },
+        "row": {
+          "signature": "row(*args)",
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Return a row as a list of Cells"
+        },
+        "rows": {
+          "signature": "rows(*args)",
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Return matching rows as a list"
+        },
+        "col": {
+          "signature": "col(*args)",
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Return a column as a list of Cells"
+        },
+        "cols": {
+          "signature": "cols(*args)",
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Return matching columns as a list"
+        },
+        "appendRow": {
+          "signature": "appendRow(vals, nameOrIndex=None, sort=None)",
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Append a new row to the DAT"
+        },
+        "appendCol": {
+          "signature": "appendCol(vals, nameOrIndex=None, sort=None)",
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Append a new column to the DAT"
+        },
+        "clear": {
+          "signature": "clear(keepSize=False, keepFirstRow=False, keepFirstCol=False)",
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Clear all data from the table"
+        },
+        "insertRow": {
+          "signature": "insertRow(vals, nameOrIndex=None, sort=None)",
+          "addedIn": "2020",
+          "changedIn": [],
+          "description": "Insert a row at a specific position"
+        },
+        "deleteRow": {
+          "signature": "deleteRow(nameOrIndex)",
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Delete a row by name or index"
+        },
+        "deleteCol": {
+          "signature": "deleteCol(nameOrIndex)",
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Delete a column by name or index"
+        }
+      },
+      "members": {
+        "numRows": { "addedIn": "099", "changedIn": [], "description": "Number of rows" },
+        "numCols": { "addedIn": "099", "changedIn": [], "description": "Number of columns" },
+        "text": { "addedIn": "099", "changedIn": [], "description": "Full text content of the DAT" }
+      }
+    },
+    "SOP": {
+      "description": "Surface Operator base class",
+      "addedIn": "099",
+      "methods": {
+        "pointList": {
+          "signature": "pointList",
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Return a list of all Point objects"
+        },
+        "primList": {
+          "signature": "primList",
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Return a list of all Primitive objects"
+        },
+        "numpyArray": {
+          "signature": "numpyArray()",
+          "addedIn": "2021",
+          "changedIn": [],
+          "description": "Return point positions as a NumPy array"
+        }
+      },
+      "members": {
+        "numPoints": { "addedIn": "099", "changedIn": [], "description": "Total number of points" },
+        "numPrims": { "addedIn": "099", "changedIn": [], "description": "Total number of primitives" },
+        "numVertices": { "addedIn": "099", "changedIn": [], "description": "Total number of vertices" }
+      }
+    },
+    "COMP": {
+      "description": "Component Operator base class",
+      "addedIn": "099",
+      "methods": {
+        "create": {
+          "signature": "create(type, name=None)",
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Create a new child operator of the given type"
+        },
+        "findChildren": {
+          "signature": "findChildren(tags=[], maxDepth=1, type=None, name=None, comment=None, path=None, allChildrenFlag=False, parmsMatchingPattern=None, text=None, exact=False)",
+          "addedIn": "099",
+          "changedIn": [
+            { "version": "2020", "change": "Added parmsMatchingPattern and text search" },
+            { "version": "2022", "change": "Added exact parameter for strict name matching" }
+          ],
+          "description": "Search child operators with flexible filters"
+        },
+        "loadTox": {
+          "signature": "loadTox(path, asynchronous=False)",
+          "addedIn": "099",
+          "changedIn": [
+            { "version": "2021", "change": "Added asynchronous loading support" }
+          ],
+          "description": "Load a .tox component file"
+        },
+        "saveTox": {
+          "signature": "saveTox(path)",
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Save this component as a .tox file"
+        },
+        "initializeExtensions": {
+          "signature": "initializeExtensions(index=None)",
+          "addedIn": "2019",
+          "changedIn": [],
+          "description": "Re-initialize Python extension objects"
+        }
+      },
+      "members": {
+        "children": { "addedIn": "099", "changedIn": [], "description": "List of all child operators" },
+        "numChildren": { "addedIn": "099", "changedIn": [], "description": "Number of child operators" },
+        "currentChild": { "addedIn": "099", "changedIn": [], "description": "Currently selected child operator" },
+        "selectedChildren": { "addedIn": "099", "changedIn": [], "description": "List of selected child operators" },
+        "extensions": { "addedIn": "2019", "changedIn": [], "description": "List of extension class instances" }
+      }
+    },
+    "App": {
+      "description": "Application-level information and control",
+      "addedIn": "099",
+      "methods": {
+        "addNonCommercialLimit": {
+          "signature": "addNonCommercialLimit(limit)",
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Add a custom non-commercial resolution limit"
+        }
+      },
+      "members": {
+        "version": { "addedIn": "099", "changedIn": [], "description": "TouchDesigner version string" },
+        "build": { "addedIn": "099", "changedIn": [], "description": "Build number as integer" },
+        "pythonVersion": { "addedIn": "2019", "changedIn": [], "description": "Python version string bundled with this TD build" },
+        "binFolder": { "addedIn": "099", "changedIn": [], "description": "Path to TD binary folder" },
+        "samplesFolder": { "addedIn": "099", "changedIn": [], "description": "Path to TD samples folder" },
+        "userPaletteFolder": { "addedIn": "2019", "changedIn": [], "description": "Path to user palette folder" },
+        "desktopFolder": { "addedIn": "099", "changedIn": [], "description": "Path to user desktop" },
+        "product": { "addedIn": "099", "changedIn": [], "description": "Product name string" },
+        "launchTime": { "addedIn": "2020", "changedIn": [], "description": "Application launch time as datetime" },
+        "osVersion": { "addedIn": "2021", "changedIn": [], "description": "Operating system version string" },
+        "gpuMemoryUsed": { "addedIn": "2021", "changedIn": [], "description": "Current GPU memory usage in bytes" }
+      }
+    },
+    "Project": {
+      "description": "Current project settings and metadata",
+      "addedIn": "099",
+      "methods": {
+        "save": {
+          "signature": "save(path=None)",
+          "addedIn": "099",
+          "changedIn": [],
+          "description": "Save the current project"
+        },
+        "load": {
+          "signature": "load(path)",
+          "addedIn": "2020",
+          "changedIn": [],
+          "description": "Load a project file"
+        }
+      },
+      "members": {
+        "name": { "addedIn": "099", "changedIn": [], "description": "Project file name" },
+        "folder": { "addedIn": "099", "changedIn": [], "description": "Project folder path" },
+        "saveVersion": { "addedIn": "099", "changedIn": [], "description": "TD version when project was last saved" },
+        "cookRate": { "addedIn": "099", "changedIn": [], "description": "Target cook rate in FPS" },
+        "realTime": { "addedIn": "099", "changedIn": [], "description": "True if running in real-time mode" }
+      }
+    }
+  }
+}

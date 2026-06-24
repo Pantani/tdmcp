@@ -1,0 +1,548 @@
+{
+  "schemaVersion": "1.0",
+  "description": "TouchDesigner experimental/beta build series tracking. Experimental builds precede stable releases and contain unreleased features, new operators, and Python API additions that may change before stable release.",
+  "trackInfo": {
+    "stable": "Annual numbered releases (2019, 2020, 2021, 2022, 2023, 2024) — production ready",
+    "experimental": "Build-numbered pre-releases with new features under active development. Not recommended for production use. Experimental builds use build numbers beyond the current stable maximum.",
+    "buildNumbering": "TD build numbers are 5-digit integers (e.g. 68000). Experimental builds exceed the current stable maximum. Stable 2024 tops out near build 68000; experimental builds continue upward.",
+    "releaseURL": "https://derivative.ca/download",
+    "changelogURL": "https://docs.derivative.ca/Release_Notes"
+  },
+  "currentExperimentalSeries": "2025.10000",
+  "buildSeries": [
+    {
+      "seriesId": "2025.10000",
+      "label": "TouchDesigner 2025 Experimental — Vulkan Renderer GA",
+      "buildRange": { "min": 90000, "max": null },
+      "basedOnStable": "2024",
+      "releaseYear": 2025,
+      "stabilityStatus": "experimental",
+      "stabilityNotes": "Active experimental series. Vulkan renderer promoted from preview to default code path. Crashes possible with older GPU drivers. Recommended driver: NVIDIA 555+ / AMD Adrenalin 24.5+.",
+      "featureFlags": {
+        "vulkan_renderer_default": true,
+        "vulkan_raytracing": true,
+        "python_312": true,
+        "tdAssets_streaming": true,
+        "pop_gpu_solver": true,
+        "web_gpu_top": false,
+        "neural_render_mat": false
+      },
+      "newFeatures": [
+        "Vulkan renderer is now the default renderer — OpenGL remains available via project preference",
+        "Vulkan ray-tracing support via new Render TOP 'Ray Tracing' parameter (RTX cards required)",
+        "Python upgraded from 3.11 to 3.12 — full match support, improved error messages, type parameter syntax",
+        "TD Assets streaming: stream operator networks directly from a remote TD Assets server",
+        "POP GPU Solver — new Point Operator that executes a GLSL compute shader per-particle on the GPU",
+        "Render Pass TOP now supports Vulkan subpass input attachments for deferred shading",
+        "Material SOP: new 'Displacement Map' parameter for geometry displacement in Vulkan",
+        "Improved HDRI environment lighting through Environment Light COMP Vulkan path",
+        "WebSocket DAT: binary frame support and improved reconnect backoff"
+      ],
+      "experimentalOperators": [
+        {
+          "name": "POP GPU Solver",
+          "family": "POP",
+          "status": "new_experimental",
+          "description": "Executes a GLSL compute shader per particle on the GPU. Inputs: particle state TOP, force field TOP. Output: updated particle state TOP.",
+          "notes": "API surface subject to change before stable release. Parameters: Shader (GLSL DAT ref), Thread Group Size, Boundary Mode."
+        },
+        {
+          "name": "Ray Trace TOP",
+          "family": "TOP",
+          "status": "new_experimental",
+          "description": "Hardware ray-tracing output for scene graphs. Requires Vulkan renderer and RTX-class GPU.",
+          "notes": "Not yet available in stable. Will replace the legacy Render TOP Ray Tracing mode."
+        }
+      ],
+      "breakingChangesVsStable": [
+        "Vulkan is now default — operators that rely on OpenGL-specific behavior (glsl_multi_top with OpenGL extensions) may need updating",
+        "Python 3.12: removed distutils module (use setuptools), type alias syntax changes",
+        "Several deprecated OpenGL TOP parameters removed: 'Legacy OpenGL' checkbox no longer present",
+        "Script CHOP / Script TOP: cook() callback signature unchanged, but Python 3.12 walrus operator now fully supported",
+        "Engine COMP: new minimum Python version requirement is 3.12 when using 2025 experimental"
+      ],
+      "pythonApiAdditions": [
+        {
+          "class": "RenderTOP",
+          "member": "rayTracing",
+          "type": "member",
+          "addedInBuild": 90100,
+          "description": "Boolean. Enable hardware ray tracing on this Render TOP (Vulkan + RTX required)."
+        },
+        {
+          "class": "OP",
+          "method": "asyncCook",
+          "type": "method",
+          "addedInBuild": 90200,
+          "description": "asyncCook(waitFrames=0) -> None. Triggers an async cook on the operator, optionally waiting N frames before executing."
+        },
+        {
+          "class": "POPGPU",
+          "member": "particleCount",
+          "type": "member",
+          "addedInBuild": 90000,
+          "description": "int. Current live particle count managed by the POP GPU Solver."
+        },
+        {
+          "class": "Project",
+          "member": "rendererType",
+          "type": "member",
+          "addedInBuild": 90000,
+          "description": "str. Returns 'vulkan' or 'opengl' indicating the active renderer backend."
+        }
+      ],
+      "featureAreas": ["rendering", "Python API", "operators", "networking"]
+    },
+    {
+      "seriesId": "2024.50000",
+      "label": "TouchDesigner 2024 Experimental — Python 3.11 & Engine COMP Enhancements",
+      "buildRange": { "min": 70000, "max": 89999 },
+      "basedOnStable": "2023",
+      "releaseYear": 2024,
+      "stabilityStatus": "graduated",
+      "stabilityNotes": "This experimental series graduated to TouchDesigner 2024 stable. Build 68000 was the first stable 2024 release. Features documented here are now available in TD 2024 stable.",
+      "featureFlags": {
+        "python_311": true,
+        "engine_comp_async": true,
+        "touchengine_v2": true,
+        "vulkan_renderer_preview": true,
+        "pop_operators_stable": true,
+        "glsl_multi_compute": true,
+        "web_gpu_top": false
+      },
+      "newFeatures": [
+        "Python 3.11 bundled — significant performance improvements (10-60% faster than 3.10)",
+        "Engine COMP async cook mode — run sub-networks on a background thread",
+        "TouchEngine v2 API: improved stability, new touchengine_chop / touchengine_top parameter parity",
+        "Vulkan renderer preview (opt-in) — early access to hardware-accelerated Vulkan path",
+        "POP (Point Operators) promoted from experimental to stable — all 90+ POP operators now fully documented",
+        "GLSL Multi TOP compute shader pass — new 'Compute' output type alongside pixel shader passes",
+        "NDI 5 SDK update — NDI In/Out TOP support for NDI HX3 compressed streams",
+        "WebRTC DAT: improved offer/answer SDP negotiation, WHIP/WHEP server support"
+      ],
+      "experimentalOperators": [
+        {
+          "name": "TouchEngine CHOP",
+          "family": "CHOP",
+          "status": "promoted_to_stable",
+          "description": "Run a .tox file as an isolated Engine COMP subprocess and read its CHOP outputs.",
+          "notes": "Graduated to stable in TD 2024 build 68000."
+        },
+        {
+          "name": "TouchEngine TOP",
+          "family": "TOP",
+          "status": "promoted_to_stable",
+          "description": "Run a .tox file as an isolated Engine COMP subprocess and read its TOP outputs.",
+          "notes": "Graduated to stable in TD 2024 build 68000."
+        }
+      ],
+      "breakingChangesVsStable": [
+        "Python 3.11: match statement now fully enforced — ensure existing scripts do not use 'match' as a variable name",
+        "Engine COMP async mode changes default cook ordering — scripts relying on synchronous sub-network execution may produce frame-delayed results",
+        "touchengine_chop parameter 'Legacy Mode' removed in build 74000",
+        "GLSL Multi TOP compute outputs require explicit 'layout(local_size_x = N)' qualifier — implicit size no longer accepted"
+      ],
+      "pythonApiAdditions": [
+        {
+          "class": "EngineCOMP",
+          "method": "asyncCookStart",
+          "type": "method",
+          "addedInBuild": 70500,
+          "description": "asyncCookStart() -> None. Initiates an asynchronous cook cycle on the Engine COMP's sub-network."
+        },
+        {
+          "class": "EngineCOMP",
+          "method": "asyncCookWait",
+          "type": "method",
+          "addedInBuild": 70500,
+          "description": "asyncCookWait(timeout=1.0) -> bool. Blocks until async cook completes or timeout (seconds) expires. Returns True if cook finished."
+        },
+        {
+          "class": "App",
+          "member": "pythonVersion",
+          "type": "member",
+          "addedInBuild": 70000,
+          "description": "str. Full Python version string bundled with this TD build, e.g. '3.11.4'."
+        },
+        {
+          "class": "WebRTCDAT",
+          "method": "sendOffer",
+          "type": "method",
+          "addedInBuild": 72000,
+          "description": "sendOffer(sdp: str) -> None. Send a WebRTC SDP offer to the connected peer."
+        }
+      ],
+      "featureAreas": ["Python API", "operators", "networking", "rendering"]
+    },
+    {
+      "seriesId": "2023.11000",
+      "label": "TouchDesigner 2023 Experimental — POP System Preview & GLSL Upgrades",
+      "buildRange": { "min": 55000, "max": 69999 },
+      "basedOnStable": "2022",
+      "releaseYear": 2023,
+      "stabilityStatus": "graduated",
+      "stabilityNotes": "Graduated to TouchDesigner 2023 stable. POP operators were initially experimental in this series and graduated with stability improvements.",
+      "featureFlags": {
+        "pop_operators_preview": true,
+        "glsl_450": true,
+        "python_310": true,
+        "nvidia_dlss_top": true,
+        "nvlink_shared_memory": false,
+        "vulkan_renderer_preview": false
+      },
+      "newFeatures": [
+        "Point Operators (POP) system introduced as experimental — 90+ new operators for GPU-accelerated particle and geometry processing",
+        "GLSL 4.50 support in GLSL TOP, GLSL Multi TOP, and GLSL MAT — enables compute shaders, ARB_bindless_texture, multi-draw indirect",
+        "Python 3.10 bundled — structural pattern matching (match/case), parenthesised context managers",
+        "NVIDIA DLSS TOP preview — AI-powered upscaling for real-time renders (RTX GPU required)",
+        "Shared Memory In/Out COMP: new multi-process shared texture format with zero-copy transfer",
+        "CHOP to POP operator: bridge CHOP channel data into POP attribute streams",
+        "SOP to POP operator: convert SOP geometry point clouds into POP particle systems",
+        "Geometry COMP: new 'Instance Transform' parameter for GPU-instancing via POP attribute streams"
+      ],
+      "experimentalOperators": [
+        {
+          "name": "Point Generator POP",
+          "family": "POP",
+          "status": "promoted_to_stable",
+          "description": "Generate a field of points with position, normal, color, and custom attributes.",
+          "notes": "Was 'Scatter POP' in early builds. Renamed before stable release."
+        },
+        {
+          "name": "NVIDIA DLSS TOP",
+          "family": "TOP",
+          "status": "promoted_to_stable",
+          "description": "AI-upscaling using NVIDIA DLSS SDK. Input: render at lower resolution. Output: upscaled frame.",
+          "notes": "Requires DLSS-capable RTX GPU. Graduated in TD 2023 build 60010."
+        }
+      ],
+      "breakingChangesVsStable": [
+        "POP attribute naming convention changed mid-series: 'pos' renamed to 'P', 'col' renamed to 'Cd' (Houdini-style) in build 58000 — scripts written against early POP builds need updating",
+        "GLSL 4.50 strict mode: implicit type promotions (int to float) no longer silently accepted in shader compilation",
+        "Python 3.10: several deprecated aliases removed from collections module (use collections.abc instead of collections.Mapping)",
+        "CHOP to POP: 'Channel Index' parameter renamed to 'Attribute Index' in build 57000"
+      ],
+      "pythonApiAdditions": [
+        {
+          "class": "POPCOMP",
+          "method": "getAttributeNames",
+          "type": "method",
+          "addedInBuild": 55200,
+          "description": "getAttributeNames() -> list[str]. Returns the list of per-point attribute names managed by this POP network."
+        },
+        {
+          "class": "POPCOMP",
+          "method": "getParticleCount",
+          "type": "method",
+          "addedInBuild": 55200,
+          "description": "getParticleCount() -> int. Returns the current live particle count."
+        },
+        {
+          "class": "TOP",
+          "method": "saveTIF",
+          "type": "method",
+          "addedInBuild": 56000,
+          "description": "saveTIF(path: str, depth: int = 16) -> None. Save this TOP's current frame as a TIFF file at the given bit depth."
+        },
+        {
+          "class": "GLSLTOP",
+          "member": "glslVersion",
+          "type": "member",
+          "addedInBuild": 55000,
+          "description": "str. The GLSL version string used when compiling shaders for this operator, e.g. '450'."
+        }
+      ],
+      "featureAreas": ["operators", "rendering", "Python API", "UI"]
+    },
+    {
+      "seriesId": "2022.32000",
+      "label": "TouchDesigner 2022 Experimental — Engine COMP, USD & NDI 5",
+      "buildRange": { "min": 40000, "max": 54999 },
+      "basedOnStable": "2021",
+      "releaseYear": 2022,
+      "stabilityStatus": "graduated",
+      "stabilityNotes": "Graduated to TouchDesigner 2022 stable. Engine COMP and USD COMP were the headline features of this experimental series.",
+      "featureFlags": {
+        "engine_comp": true,
+        "usd_comp": true,
+        "ndi_5": true,
+        "python_39": true,
+        "replicator_comp_v2": true,
+        "touchengine_v1": true
+      },
+      "newFeatures": [
+        "Engine COMP introduced — run isolated sub-networks on background threads or separate processes",
+        "USD COMP preview — Universal Scene Description (Pixar USD) scene import and traversal",
+        "NDI 5 SDK — improved NDI In/Out TOP with multi-group support and lower latency",
+        "Python 3.9 bundled — dictionary union operators (|), type hint improvements, zoneinfo module",
+        "Replicator COMP v2: improved clone management, new 'Master is Template' parameter, Python callback API overhaul",
+        "TouchEngine v1 preview — load .tox files as isolated processes (precursor to TouchEngine CHOP/TOP)",
+        "WebRTC DAT: initial implementation for real-time peer-to-peer video streaming",
+        "SSAO TOP: screen-space ambient occlusion for Render TOP post-processing"
+      ],
+      "experimentalOperators": [
+        {
+          "name": "Engine COMP",
+          "family": "COMP",
+          "status": "promoted_to_stable",
+          "description": "Runs a child network in an isolated thread or process. Enables multi-threaded TD networks.",
+          "notes": "Graduated to stable in TD 2022 build 40000. First available in experimental build 35000."
+        },
+        {
+          "name": "USD COMP",
+          "family": "COMP",
+          "status": "promoted_to_stable",
+          "description": "Import and traverse Pixar USD scene hierarchies within TouchDesigner.",
+          "notes": "Graduated to stable in TD 2022 build 42000."
+        },
+        {
+          "name": "WebRTC DAT",
+          "family": "DAT",
+          "status": "promoted_to_stable",
+          "description": "Peer-to-peer data and video streaming over WebRTC.",
+          "notes": "Graduated to stable in TD 2022 build 41000."
+        }
+      ],
+      "breakingChangesVsStable": [
+        "Engine COMP cook order: sub-network cooks after parent — scripts that relied on implicit synchronous ordering may need explicit dependencies",
+        "Replicator COMP v2: onCloneStart / onCloneEnd callbacks replaced with onCreate / onDestroy — existing callbacks silently ignored (update required)",
+        "USD COMP: initial USD path separator was '/' in early builds, changed to OS-native separator in build 42500",
+        "Python 3.9: removed some deprecated functions from the 'cgi' module; use 'html.parser' instead"
+      ],
+      "pythonApiAdditions": [
+        {
+          "class": "EngineCOMP",
+          "member": "isRunning",
+          "type": "member",
+          "addedInBuild": 40000,
+          "description": "bool. True if the Engine COMP's isolated sub-network is currently executing a cook cycle."
+        },
+        {
+          "class": "EngineCOMP",
+          "method": "restart",
+          "type": "method",
+          "addedInBuild": 40000,
+          "description": "restart() -> None. Terminates and restarts the Engine COMP's isolated execution context."
+        },
+        {
+          "class": "ReplicatorCOMP",
+          "method": "getClones",
+          "type": "method",
+          "addedInBuild": 41000,
+          "description": "getClones() -> list[OP]. Returns a list of all currently active clone operator instances."
+        },
+        {
+          "class": "USDCOMP",
+          "method": "getPrimPath",
+          "type": "method",
+          "addedInBuild": 42000,
+          "description": "getPrimPath(index: int) -> str. Returns the USD prim path at the given index in the scene hierarchy."
+        }
+      ],
+      "featureAreas": ["operators", "networking", "Python API", "rendering"]
+    },
+    {
+      "seriesId": "2021.15000",
+      "label": "TouchDesigner 2021 Experimental — Vulkan Preview, Body Track & ONNX",
+      "buildRange": { "min": 28500, "max": 39999 },
+      "basedOnStable": "2020",
+      "releaseYear": 2021,
+      "stabilityStatus": "graduated",
+      "stabilityNotes": "Graduated to TouchDesigner 2021 stable. Body Track CHOP and ONNX machine-learning pipeline were the major experimental additions.",
+      "featureFlags": {
+        "body_track_chop": true,
+        "onnx_runtime": true,
+        "vulkan_preview_v1": true,
+        "python_38": true,
+        "nvidia_flex_solver": true,
+        "ndi_4": true,
+        "kinect_azure": true
+      },
+      "newFeatures": [
+        "Body Track CHOP — real-time full-body skeleton tracking using NVIDIA RTX Pose Estimation (33 joints)",
+        "ONNX Runtime integration: Script TOP can run ONNX model inference with GPU acceleration",
+        "Vulkan renderer very early preview (experimental flag, disabled by default) — testing GPU command buffer recording",
+        "Python 3.8 bundled — walrus operator (:=), f-string = specifier for debugging, positional-only parameters",
+        "NVIDIA Flex Solver COMP: position-based dynamics simulation with cloth, fluid, and rigid body support",
+        "NDI 4 SDK update — NDI In/Out TOP with multi-resolution streams and alpha channel support",
+        "Kinect Azure CHOP / TOP: Microsoft Azure Kinect DK depth sensor integration",
+        "ZED 2 CHOP/TOP: Stereolabs ZED 2 stereo camera support with depth estimation"
+      ],
+      "experimentalOperators": [
+        {
+          "name": "Body Track CHOP",
+          "family": "CHOP",
+          "status": "promoted_to_stable",
+          "description": "Real-time body skeleton tracking returning 33 joint positions and rotations per person (up to 4 people).",
+          "notes": "Requires NVIDIA RTX GPU with CUDA 11+. Graduated to stable in TD 2021 build 29000."
+        },
+        {
+          "name": "Kinect Azure CHOP",
+          "family": "CHOP",
+          "status": "promoted_to_stable",
+          "description": "Microsoft Azure Kinect DK — depth, skeleton, and IMU data.",
+          "notes": "Graduated in TD 2021 build 28800."
+        },
+        {
+          "name": "NVIDIA Flex Solver COMP",
+          "family": "COMP",
+          "status": "promoted_to_stable",
+          "description": "GPU-accelerated position-based dynamics simulation.",
+          "notes": "Graduated in TD 2021 build 30000."
+        }
+      ],
+      "breakingChangesVsStable": [
+        "Body Track CHOP: channel naming changed from 'joint_N_*' to 'person_N/joint_name_*' format in build 29500 — existing scripts using the old format will break",
+        "Python 3.8: finalized deprecation of implicit namespace package fallback — packages without __init__.py may fail to import in some configurations",
+        "NVIDIA Flex: 'particle_count' parameter renamed to 'Max Particles' and moved from COMP to solver page",
+        "Kinect Azure CHOP: body tracking mode previously default-on; now requires explicit 'Enable Body Track' parameter"
+      ],
+      "pythonApiAdditions": [
+        {
+          "class": "CHOP",
+          "method": "getBodyTrackSkeleton",
+          "type": "method",
+          "addedInBuild": 28500,
+          "description": "getBodyTrackSkeleton(personIndex: int = 0) -> dict. Returns a dict mapping joint names to (tx, ty, tz, rx, ry, rz) tuples for the specified tracked person."
+        },
+        {
+          "class": "KinectAzureCHOP",
+          "method": "getDepthFrame",
+          "type": "method",
+          "addedInBuild": 28800,
+          "description": "getDepthFrame() -> numpy.ndarray. Returns the current depth frame as a 2D float32 numpy array (millimetres)."
+        },
+        {
+          "class": "TOP",
+          "method": "saveEXR",
+          "type": "method",
+          "addedInBuild": 29000,
+          "description": "saveEXR(path: str, multilayer: bool = False) -> None. Save this TOP's current frame as an OpenEXR file."
+        },
+        {
+          "class": "App",
+          "member": "cudaVersion",
+          "type": "member",
+          "addedInBuild": 28500,
+          "description": "str. The CUDA runtime version available to TouchDesigner, e.g. '11.4'."
+        }
+      ],
+      "featureAreas": ["operators", "Python API", "rendering", "UI"]
+    },
+    {
+      "seriesId": "2020.20000",
+      "label": "TouchDesigner 2020 Experimental — Bullet Physics & Instancing",
+      "buildRange": { "min": 20000, "max": 28499 },
+      "basedOnStable": "2019",
+      "releaseYear": 2020,
+      "stabilityStatus": "graduated",
+      "stabilityNotes": "Graduated to TouchDesigner 2020 stable. GPU instancing via Geometry COMP and the Bullet physics solver were the main experimental features.",
+      "featureFlags": {
+        "bullet_physics": true,
+        "gpu_instancing_v2": true,
+        "python_37_update": true,
+        "glsl_440": true,
+        "substance_top": true,
+        "notch_top": true
+      },
+      "newFeatures": [
+        "Bullet Solver COMP and Bullet Solver CHOP: rigid body and soft body physics simulation integrated into geometry networks",
+        "GPU instancing v2: Geometry COMP 'Instance' parameter now accepts CHOP or SOP inputs directly for per-instance transforms, colors, and custom attributes",
+        "GLSL 4.40 support — bindless textures (ARB_bindless_texture) available in GLSL TOP and GLSL MAT",
+        "Substance TOP: Adobe Substance (.sbsar) material graph evaluation directly in TouchDesigner",
+        "Notch TOP: integration with Notch real-time motion graphics renderer",
+        "Python 3.7.7 patch — security and performance update within the 3.7 series",
+        "Movie File In TOP: hardware-accelerated HEVC/H.265 decode on supported GPUs",
+        "Video Device In TOP: NDI virtual device input support without NDI license"
+      ],
+      "experimentalOperators": [
+        {
+          "name": "Bullet Solver COMP",
+          "family": "COMP",
+          "status": "promoted_to_stable",
+          "description": "Bullet physics world manager. Connects to Bullet Solver CHOP outputs for per-object transform data.",
+          "notes": "Graduated in TD 2020 build 22000."
+        },
+        {
+          "name": "Substance TOP",
+          "family": "TOP",
+          "status": "promoted_to_stable",
+          "description": "Evaluate an Adobe Substance .sbsar graph with parameter overrides, outputting PBR material maps.",
+          "notes": "Graduated in TD 2020 build 24000. Requires separate Substance Engine license for commercial use."
+        }
+      ],
+      "breakingChangesVsStable": [
+        "GPU instancing: 'Instance SOP' parameter replaced by 'Instance OP' accepting CHOP, SOP, or DAT — scripts constructing instanceSOPPath will silently do nothing",
+        "Bullet Solver: simulation world units changed from metres to centimetres in build 22500 — scale all forces and masses by 0.01 if upgrading from early builds",
+        "GLSL 4.40: strict precision qualifiers now enforced — shaders using 'varying' keyword will fail to compile",
+        "Substance TOP: output slot order standardised (BaseColor=0, Normal=1, Roughness=2, Metallic=3) — may differ from early experimental builds"
+      ],
+      "pythonApiAdditions": [
+        {
+          "class": "BulletSolverCHOP",
+          "method": "addObject",
+          "type": "method",
+          "addedInBuild": 20500,
+          "description": "addObject(sop: SOP, mass: float = 1.0, restitution: float = 0.5) -> int. Adds a SOP geometry as a rigid body to the Bullet world. Returns the new object ID."
+        },
+        {
+          "class": "BulletSolverCHOP",
+          "method": "setGravity",
+          "type": "method",
+          "addedInBuild": 20500,
+          "description": "setGravity(x: float, y: float, z: float) -> None. Set the world gravity vector for this Bullet solver."
+        },
+        {
+          "class": "GeometryCOMP",
+          "member": "instanceCHOP",
+          "type": "member",
+          "addedInBuild": 20000,
+          "description": "CHOP. The CHOP currently supplying per-instance transform data to this Geometry COMP."
+        },
+        {
+          "class": "TOP",
+          "method": "saveHDR",
+          "type": "method",
+          "addedInBuild": 21000,
+          "description": "saveHDR(path: str) -> None. Save this TOP's current frame as a Radiance HDR file."
+        }
+      ],
+      "featureAreas": ["rendering", "operators", "Python API", "UI"]
+    }
+  ],
+  "featureAreaIndex": {
+    "rendering": [
+      "2025.10000",
+      "2024.50000",
+      "2023.11000",
+      "2022.32000",
+      "2021.15000",
+      "2020.20000"
+    ],
+    "Python API": [
+      "2025.10000",
+      "2024.50000",
+      "2023.11000",
+      "2022.32000",
+      "2021.15000",
+      "2020.20000"
+    ],
+    "operators": [
+      "2025.10000",
+      "2024.50000",
+      "2023.11000",
+      "2022.32000",
+      "2021.15000",
+      "2020.20000"
+    ],
+    "networking": [
+      "2024.50000",
+      "2022.32000"
+    ],
+    "UI": [
+      "2023.11000",
+      "2021.15000",
+      "2020.20000"
+    ]
+  }
+}

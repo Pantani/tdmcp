@@ -29,10 +29,17 @@ The committed operator knowledge base, exposed as readable resources:
 | Family | URI | What it exposes |
 | --- | --- | --- |
 | Operators | `tdmcp://operators/{name}` | Operator catalog — read a category (TOP, CHOP, SOP, DAT, COMP, MAT, POP) to list, or an operator name for full docs. |
+| Operator connections | `tdmcp://operator-connections/{operator}` | Likely upstream/downstream operators, workflow hits and next-operator suggestions grounded in imported operator docs and patterns. |
+| Operator examples | `tdmcp://operator-examples/{operator}` | Stored Python snippets, expressions, generated usage patterns and tips for a specific operator. |
 | Python API | `tdmcp://python-api/{class_name}` | TouchDesigner Python class reference — members and methods. |
+| TD versions | `tdmcp://td-versions/{version}` | Stable TouchDesigner release metadata, Python-version notes, highlights and compatibility changes. |
+| Experimental builds | `tdmcp://td-experimental/{series_or_category}` | Experimental TouchDesigner build-series data, feature flags, new operators and breaking-change notes. |
+| Compatibility | `tdmcp://compat/operators/{operator}`, `tdmcp://compat/python/{class_or_member}` | Direct operator and Python API compatibility lookups for added/changed/removed version notes. |
 | Patterns | `tdmcp://patterns/{pattern_name}` | Named operator-chain workflow patterns (recommended wiring). |
 | GLSL patterns | `tdmcp://glsl/{pattern_name}` | Named shader techniques with ready-to-use fragment-shader snippets. |
 | GLSL snippets | `tdmcp://glsl-snippets` | A vetted, license-clean catalog of embedded GLSL snippets the agent can assemble without guessing IDs. |
+| Technique packs | `tdmcp://techniques/{category}` | Bottobot technique packs such as audio-visual, GPU compute, machine learning, networking and advanced Python workflows. |
+| TD classes | `tdmcp://td-classes/{family}` | TouchDesigner operator-family class references such as TOP Class, CHOP Class and COMP Class. |
 | Recipes | `tdmcp://recipes/{recipe_name}`, `tdmcp://recipes/search/{query}` | Pre-validated composite network templates, plus keyword search over built-in and vault recipes. |
 | Tutorials | `tdmcp://tutorials/{tutorial_name}` | Long-form TD fundamentals and workflows. |
 

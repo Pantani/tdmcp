@@ -1,0 +1,136 @@
+{
+  "category": "glsl",
+  "displayName": "GLSL Shaders",
+  "description": "Advanced GLSL shader techniques in TouchDesigner including raymarching, signed distance fields, reaction-diffusion simulations, feedback loops, and procedural texture generation.",
+  "techniques": [
+    {
+      "id": "raymarching_basic",
+      "name": "Basic Raymarching with SDF",
+      "subcategory": "raymarching",
+      "description": "Raymarching through a scene defined by signed distance functions (SDFs). Renders 3D geometry entirely inside a GLSL TOP without any SOP geometry.",
+      "difficulty": "intermediate",
+      "operators": ["GLSL TOP", "GLSL Multi TOP"],
+      "tags": ["raymarching", "SDF", "3D", "procedural", "real-time"],
+      "notes": "Use GLSL TOP in Pixel shader mode. Set Cook Rate to 'Frame' for animation. Output is a full 3D rendered image.",
+      "code": {
+        "language": "glsl",
+        "filename": "raymarching_basic.glsl",
+        "snippet": "// Basic Raymarching SDF Scene — GLSL TOP Pixel Shader\n// Inputs: TDOutputSwizzle for proper output\n// Uniforms: uTime (float, drives animation)\n\nuniform float uTime;\n\n// --- SDF Primitives ---\nfloat sdSphere(vec3 p, float r) {\n    return length(p) - r;\n}\n\nfloat sdBox(vec3 p, vec3 b) {\n    vec3 q = abs(p) - b;\n    return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);\n}\n\nfloat sdTorus(vec3 p, vec2 t) {\n    vec2 q = vec2(length(p.xz) - t.x, p.y);\n    return length(q) - t.y;\n}\n\n// --- Smooth Boolean Operations ---\nfloat opSmoothUnion(float d1, float d2, float k) {\n    float h = clamp(0.5 + 0.5 * (d2 - d1) / k, 0.0, 1.0);\n    return mix(d2, d1, h) - k * h * (1.0 - h);\n}\n\n// --- Scene SDF ---\nfloat sceneSDF(vec3 p) {\n    // Animated sphere\n    vec3 sp = p - vec3(sin(uTime * 0.7) * 0.5, cos(uTime * 0.5) * 0.3, 0.0);\n    float sphere = sdSphere(sp, 0.4);\n    \n    // Static torus\n    vec3 tp = p - vec3(0.0, -0.5, 0.0);\n    tp = vec3(tp.x, tp.z, tp.y); // rotate to XZ plane\n    float torus = sdTorus(tp, vec2(0.6, 0.15));\n    \n    return opSmoothUnion(sphere, torus, 0.3);\n}\n\n// --- Normal via Central Differences ---\nvec3 calcNormal(vec3 p) {\n    const float eps = 0.001;\n    return normalize(vec3(\n        sceneSDF(p + vec3(eps, 0, 0)) - sceneSDF(p - vec3(eps, 0, 0)),\n        sceneSDF(p + vec3(0, eps, 0)) - sceneSDF(p - vec3(0, eps, 0)),\n        sceneSDF(p + vec3(0, 0, eps)) - sceneSDF(p - vec3(0, 0, eps))\n    ));\n}\n\n// --- Raymarcher ---\nfloat raymarch(vec3 ro, vec3 rd) {\n    float t = 0.0;\n    for (int i = 0; i < 96; i++) {\n        float d = sceneSDF(ro + rd * t);\n        if (d < 0.001) return t;\n        if (t > 20.0) break;\n        t += d;\n    }\n    return -1.0;\n}\n\nout vec4 fragColor;\nvoid main() {\n    vec2 uv = vUV.st * 2.0 - 1.0;\n    uv.x *= uTD2DInfos[0].res.x / uTD2DInfos[0].res.y; // aspect correct\n    \n    // Camera setup\n    vec3 ro = vec3(0.0, 0.0, 2.5);       // ray origin\n    vec3 rd = normalize(vec3(uv, -1.5)); // ray direction\n    \n    vec3 col = vec3(0.05, 0.05, 0.12);   // background\n    \n    float t = raymarch(ro, rd);\n    if (t > 0.0) {\n        vec3 pos = ro + rd * t;\n        vec3 nor = calcNormal(pos);\n        \n        // Lighting\n        vec3 light = normalize(vec3(1.0, 2.0, 3.0));\n        float diff = max(dot(nor, light), 0.0);\n        float spec = pow(max(dot(reflect(-light, nor), -rd), 0.0), 32.0);\n        \n        col = vec3(0.3, 0.6, 0.9) * diff + vec3(1.0) * spec * 0.5;\n        col += vec3(0.05, 0.05, 0.15); // ambient\n        \n        // Fog\n        col = mix(col, vec3(0.05, 0.05, 0.12), 1.0 - exp(-t * 0.1));\n    }\n    \n    fragColor = TDOutputSwizzle(vec4(col, 1.0));\n}"
+      },
+      "setup": {
+        "operators_needed": [
+          { "op": "GLSL TOP", "settings": { "Shader Type": "Pixel", "Cook Rate": "Frame" } },
+          { "op": "Constant CHOP", "purpose": "Drive uTime uniform with absTime.seconds expression" }
+        ],
+        "uniforms": [
+          { "name": "uTime", "type": "float", "source": "absTime.seconds" }
+        ]
+      }
+    },
+    {
+      "id": "sdf_domain_repetition",
+      "name": "SDF Domain Repetition and Deformation",
+      "subcategory": "raymarching",
+      "description": "Infinite repetition of SDF primitives using mod() and domain warping for complex procedural scenes.",
+      "difficulty": "advanced",
+      "operators": ["GLSL TOP"],
+      "tags": ["SDF", "domain-repetition", "infinite", "procedural"],
+      "code": {
+        "language": "glsl",
+        "filename": "sdf_domain_repeat.glsl",
+        "snippet": "// Domain Repetition — infinite grid of objects\nuniform float uTime;\nuniform float uSpacing; // cell spacing, e.g. 2.0\n\nfloat sdSphere(vec3 p, float r) { return length(p) - r; }\n\n// Repeat space with cell size c\nvec3 opRepeat(vec3 p, vec3 c) {\n    return mod(p + 0.5 * c, c) - 0.5 * c;\n}\n\n// Limited repetition (N repetitions per axis)\nvec3 opRepeatLim(vec3 p, float c, vec3 lim) {\n    return p - c * clamp(round(p / c), -lim, lim);\n}\n\n// Domain warping — FBM-based displacement\nvec3 domainWarp(vec3 p, float strength) {\n    float t = uTime * 0.3;\n    return p + strength * vec3(\n        sin(p.y * 2.1 + t) * cos(p.z * 1.7),\n        sin(p.z * 1.9 + t * 1.1) * cos(p.x * 2.3),\n        sin(p.x * 2.5 + t * 0.9) * cos(p.y * 1.5)\n    );\n}\n\nfloat scene(vec3 p) {\n    vec3 wp = domainWarp(p, 0.15);\n    vec3 rp = opRepeat(wp, vec3(uSpacing));\n    return sdSphere(rp, 0.3 + sin(uTime + length(floor(p / uSpacing))) * 0.1);\n}"
+      }
+    },
+    {
+      "id": "reaction_diffusion_gs",
+      "name": "Gray-Scott Reaction-Diffusion",
+      "subcategory": "reaction-diffusion",
+      "description": "Classic Gray-Scott reaction-diffusion system generating organic patterns like coral, spots, and labyrinths. Runs entirely on GPU via ping-pong Feedback TOP.",
+      "difficulty": "intermediate",
+      "operators": ["GLSL TOP", "Feedback TOP", "Constant CHOP"],
+      "tags": ["reaction-diffusion", "Gray-Scott", "simulation", "organic", "feedback"],
+      "notes": "Requires Feedback TOP for ping-pong buffer. Wire: GLSL TOP -> Feedback TOP -> back to GLSL TOP input. Run at cook rate 'Frame'. Parameter F and K control pattern type: spots (F=0.035,K=0.065), labyrinths (F=0.06,K=0.062), coral (F=0.055,K=0.062).",
+      "code": {
+        "language": "glsl",
+        "filename": "reaction_diffusion_gs.glsl",
+        "snippet": "// Gray-Scott Reaction-Diffusion — GLSL TOP\n// Input 0: previous state (Feedback TOP) — RG channels = A,B concentrations\n// Uniforms: F (feed rate), K (kill rate), dA, dB (diffusion rates)\n\nuniform float uF;   // feed rate  (e.g. 0.055)\nuniform float uK;   // kill rate  (e.g. 0.062)\nuniform float uDa;  // diffusion A (e.g. 1.0)\nuniform float uDb;  // diffusion B (e.g. 0.5)\nuniform float uDt;  // timestep   (e.g. 1.0)\nuniform float uSeed; // used for initial noise seeding\n\nvec2 texel;\n\nvec4 sampleState(vec2 uv) {\n    return texture(sTD2DInputs[0], uv);\n}\n\nvoid main() {\n    texel = 1.0 / uTD2DInfos[0].res.zw;\n    vec2 uv = vUV.st;\n    \n    // Laplacian (5-tap)\n    vec4 center = sampleState(uv);\n    vec4 left   = sampleState(uv + vec2(-texel.x, 0.0));\n    vec4 right  = sampleState(uv + vec2( texel.x, 0.0));\n    vec4 up     = sampleState(uv + vec2(0.0,  texel.y));\n    vec4 down   = sampleState(uv + vec2(0.0, -texel.y));\n    \n    float a = center.r;\n    float b = center.g;\n    \n    float lapA = (left.r + right.r + up.r + down.r) - 4.0 * a;\n    float lapB = (left.g + right.g + up.g + down.g) - 4.0 * b;\n    \n    float reaction = a * b * b;\n    \n    float newA = a + uDt * (uDa * lapA - reaction + uF * (1.0 - a));\n    float newB = b + uDt * (uDb * lapB + reaction - (uK + uF) * b);\n    \n    newA = clamp(newA, 0.0, 1.0);\n    newB = clamp(newB, 0.0, 1.0);\n    \n    fragColor = TDOutputSwizzle(vec4(newA, newB, 0.0, 1.0));\n}"
+      },
+      "visualization_shader": {
+        "description": "Second GLSL TOP to colorize the A/B state into a visible image",
+        "snippet": "// Colorize reaction-diffusion output\n// Input 0: RD state (A=R, B=G)\nvoid main() {\n    vec4 state = texture(sTD2DInputs[0], vUV.st);\n    float a = state.r;\n    float b = state.g;\n    float t = b; // highlight B concentration\n    \n    // Palette: deep blue -> cyan -> white\n    vec3 col = mix(\n        mix(vec3(0.02, 0.05, 0.2), vec3(0.0, 0.8, 0.9), t * 2.0),\n        vec3(1.0),\n        max(0.0, t * 2.0 - 1.0)\n    );\n    fragColor = TDOutputSwizzle(vec4(col, 1.0));\n}"
+      },
+      "setup": {
+        "operators_needed": [
+          { "op": "Noise TOP", "purpose": "Seed initial state — connect to GLSL TOP input 0 before Feedback is active" },
+          { "op": "GLSL TOP", "purpose": "Gray-Scott simulation step" },
+          { "op": "Feedback TOP", "purpose": "Ping-pong buffer — output feeds back to GLSL TOP input 0" },
+          { "op": "GLSL TOP (colorize)", "purpose": "Visualize A/B concentrations" }
+        ]
+      }
+    },
+    {
+      "id": "feedback_loop",
+      "name": "Feedback Loop Effects",
+      "subcategory": "feedback",
+      "description": "Multi-pass feedback effects using Feedback TOP to create trails, echo, zoom-blur, kaleidoscope feedback, and flame simulation.",
+      "difficulty": "beginner",
+      "operators": ["Feedback TOP", "GLSL TOP", "Transform TOP", "Composite TOP"],
+      "tags": ["feedback", "trails", "echo", "blur", "zoom"],
+      "notes": "The Feedback TOP outputs its previous frame. Connect source -> Feedback TOP. Then use the Feedback TOP output as one input to your effect shader alongside the new source frame.",
+      "code": {
+        "language": "glsl",
+        "filename": "feedback_zoom_rotate.glsl",
+        "snippet": "// Feedback Zoom + Rotate + Decay\n// Input 0: current live source (Camera/Video)\n// Input 1: Feedback TOP (previous frame after effects)\nuniform float uDecay;  // e.g. 0.95\nuniform float uZoom;   // e.g. 1.005  (>1 zooms in)\nuniform float uRotate; // rotation in radians per frame, e.g. 0.002\nuniform float uMix;    // blend live vs feedback, e.g. 0.15\n\nvoid main() {\n    vec2 uv = vUV.st;\n    vec2 center = vec2(0.5);\n    \n    // Apply zoom and rotation to feedback UV\n    vec2 offset = uv - center;\n    float c = cos(uRotate);\n    float s = sin(uRotate);\n    offset = vec2(c * offset.x - s * offset.y,\n                  s * offset.x + c * offset.y);\n    offset /= uZoom;\n    vec2 fbUV = offset + center;\n    \n    vec4 live = texture(sTD2DInputs[0], uv);\n    vec4 fb   = texture(sTD2DInputs[1], fbUV) * uDecay;\n    \n    fragColor = TDOutputSwizzle(mix(fb, live, uMix));\n}"
+      }
+    },
+    {
+      "id": "procedural_fbm_texture",
+      "name": "Procedural FBM Noise Texture",
+      "subcategory": "procedural-textures",
+      "description": "Fractional Brownian Motion (fBm) layered noise for generating clouds, terrain heightmaps, marble, and wood grain procedurally.",
+      "difficulty": "beginner",
+      "operators": ["GLSL TOP"],
+      "tags": ["FBM", "noise", "procedural", "texture", "clouds", "terrain"],
+      "code": {
+        "language": "glsl",
+        "filename": "procedural_fbm.glsl",
+        "snippet": "// Procedural FBM Noise — GLSL TOP\nuniform float uTime;\nuniform float uScale;    // overall scale, e.g. 3.0\nuniform int   uOctaves;  // 1..8\nuniform float uLacunarity; // frequency multiplier, e.g. 2.0\nuniform float uGain;     // amplitude multiplier, e.g. 0.5\n\n// Value noise hash\nvec2 hash2(vec2 p) {\n    p = vec2(dot(p, vec2(127.1, 311.7)),\n             dot(p, vec2(269.5, 183.3)));\n    return fract(sin(p) * 43758.5453);\n}\n\n// Gradient noise (Perlin-like)\nfloat noise(vec2 p) {\n    vec2 i = floor(p);\n    vec2 f = fract(p);\n    vec2 u = f * f * (3.0 - 2.0 * f); // smoothstep\n    \n    float a = dot(hash2(i + vec2(0,0)) * 2.0 - 1.0, f - vec2(0,0));\n    float b = dot(hash2(i + vec2(1,0)) * 2.0 - 1.0, f - vec2(1,0));\n    float c = dot(hash2(i + vec2(0,1)) * 2.0 - 1.0, f - vec2(0,1));\n    float d = dot(hash2(i + vec2(1,1)) * 2.0 - 1.0, f - vec2(1,1));\n    \n    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);\n}\n\n// fBm — layered octaves of noise\nfloat fbm(vec2 p) {\n    float value = 0.0;\n    float amplitude = 0.5;\n    float frequency = 1.0;\n    \n    for (int i = 0; i < 8; i++) {\n        if (i >= uOctaves) break;\n        value += amplitude * noise(p * frequency);\n        frequency *= uLacunarity;\n        amplitude *= uGain;\n    }\n    return value;\n}\n\n// Domain-warped fBm for extra complexity\nfloat warpedFbm(vec2 p) {\n    vec2 q = vec2(fbm(p), fbm(p + vec2(5.2, 1.3)));\n    return fbm(p + 4.0 * q);\n}\n\nvoid main() {\n    vec2 uv = vUV.st;\n    vec2 p = uv * uScale + vec2(uTime * 0.05);\n    \n    float n = warpedFbm(p) * 0.5 + 0.5;\n    \n    // Cloud-like coloring\n    vec3 colA = vec3(0.12, 0.18, 0.35);\n    vec3 colB = vec3(0.9, 0.95, 1.0);\n    vec3 col = mix(colA, colB, smoothstep(0.3, 0.75, n));\n    \n    fragColor = TDOutputSwizzle(vec4(col, 1.0));\n}"
+      }
+    },
+    {
+      "id": "voronoi_cellular",
+      "name": "Voronoi / Cellular Noise",
+      "subcategory": "procedural-textures",
+      "description": "Worley/Voronoi noise for cellular patterns, cracked earth, skin, stone, and mosaic effects.",
+      "difficulty": "beginner",
+      "operators": ["GLSL TOP"],
+      "tags": ["voronoi", "cellular", "worley", "procedural", "pattern"],
+      "code": {
+        "language": "glsl",
+        "filename": "voronoi.glsl",
+        "snippet": "// Voronoi / Cellular Noise — GLSL TOP\nuniform float uTime;\nuniform float uScale; // e.g. 8.0\nuniform float uAnim;  // animation speed, e.g. 0.3\n\nvec2 hash2(vec2 p) {\n    return fract(sin(vec2(\n        dot(p, vec2(127.1, 311.7)),\n        dot(p, vec2(269.5, 183.3))\n    )) * 43758.5453);\n}\n\n// Returns vec2(F1, F2) — distance to nearest and second-nearest cell\nvec2 voronoi(vec2 p) {\n    vec2 i = floor(p);\n    vec2 f = fract(p);\n    \n    float F1 = 8.0, F2 = 8.0;\n    \n    for (int y = -2; y <= 2; y++) {\n        for (int x = -2; x <= 2; x++) {\n            vec2 neighbor = vec2(x, y);\n            vec2 point = hash2(i + neighbor);\n            point = 0.5 + 0.5 * sin(uTime * uAnim + 6.2831 * point);\n            vec2 diff = neighbor + point - f;\n            float d = length(diff);\n            if (d < F1) { F2 = F1; F1 = d; }\n            else if (d < F2) { F2 = d; }\n        }\n    }\n    return vec2(F1, F2);\n}\n\nvoid main() {\n    vec2 uv = vUV.st * uScale;\n    vec2 F = voronoi(uv);\n    \n    float border = smoothstep(0.0, 0.08, F.y - F.x);\n    float cell = F.x;\n    \n    vec3 col = mix(vec3(0.02), vec3(0.5 + 0.5 * cell, 0.7, 0.9), border);\n    fragColor = TDOutputSwizzle(vec4(col, 1.0));\n}"
+      }
+    },
+    {
+      "id": "glsl_multi_pass",
+      "name": "Multi-Pass GLSL with GLSL Multi TOP",
+      "subcategory": "multi-pass",
+      "description": "Using GLSL Multi TOP to run multiple shader passes (G-buffer, lighting, post-process) in a single node with multiple outputs.",
+      "difficulty": "advanced",
+      "operators": ["GLSL Multi TOP"],
+      "tags": ["multi-pass", "G-buffer", "deferred", "GLSL Multi TOP"],
+      "notes": "GLSL Multi TOP outputs up to 8 textures per cook. Pixel shader can write to multiple outputs via layout(location=N). Inputs are accessed as sTD2DInputs[N].",
+      "code": {
+        "language": "glsl",
+        "filename": "glsl_multi_pass.glsl",
+        "snippet": "// GLSL Multi TOP — outputs albedo, normals, depth in one pass\n// Set 'Outputs' parameter to 3 in GLSL Multi TOP\n\nuniform float uTime;\n\nlayout(location = 0) out vec4 outAlbedo;\nlayout(location = 1) out vec4 outNormal;\nlayout(location = 2) out vec4 outDepth;\n\nvoid main() {\n    vec2 uv = vUV.st;\n    \n    // Example: output different data per channel\n    vec3 albedo = vec3(uv, sin(uTime) * 0.5 + 0.5);\n    vec3 normal = normalize(vec3(uv * 2.0 - 1.0, 1.0));\n    float depth = uv.x; // simplified\n    \n    outAlbedo = TDOutputSwizzle(vec4(albedo, 1.0));\n    outNormal = TDOutputSwizzle(vec4(normal * 0.5 + 0.5, 1.0));\n    outDepth  = TDOutputSwizzle(vec4(depth, depth, depth, 1.0));\n}"
+      }
+    }
+  ],
+  "resources": [
+    { "title": "Inigo Quilez SDF Functions", "url": "https://iquilezles.org/articles/distfunctions/" },
+    { "title": "The Book of Shaders", "url": "https://thebookofshaders.com/" },
+    { "title": "TouchDesigner GLSL TOP Wiki", "url": "https://docs.derivative.ca/GLSL_TOP" },
+    { "title": "TouchDesigner GLSL Multi TOP Wiki", "url": "https://docs.derivative.ca/GLSL_Multi_TOP" }
+  ]
+}
