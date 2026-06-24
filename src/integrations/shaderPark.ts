@@ -21,6 +21,8 @@ interface RawShaderParkCompileResult {
   error?: unknown;
 }
 
+const SHADER_PARK_CORE_SPECIFIER = "shader-park-core";
+
 let shaderParkCorePromise: Promise<ShaderParkCoreModule> | undefined;
 // shader-park-core writes during module evaluation; serialize stream suppression
 // so nested import attempts restore the original writers in order.
@@ -60,15 +62,45 @@ async function withSuppressedImportOutput<T>(operation: () => Promise<T>): Promi
 async function loadShaderParkCore(): Promise<ShaderParkCoreModule> {
   if (!shaderParkCorePromise) {
     const importPromise = withSuppressedImportOutput(
-      async () => (await import("shader-park-core")) as unknown as ShaderParkCoreModule,
+      async () => (await import(SHADER_PARK_CORE_SPECIFIER)) as unknown as ShaderParkCoreModule,
     );
-    const retryablePromise = importPromise.catch((error) => {
+    const retryablePromise = importPromise.catch((error: unknown) => {
       if (shaderParkCorePromise === retryablePromise) shaderParkCorePromise = undefined;
+      if (isShaderParkModuleNotFound(error)) {
+        throw new Error(
+          "Shader Park compiler requires the optional dependency 'shader-park-core'. " +
+            "Install it before using create_shader_park or `tdmcp-agent shaderpark`.",
+        );
+      }
       throw error;
     });
     shaderParkCorePromise = retryablePromise;
   }
   return shaderParkCorePromise;
+}
+
+function isShaderParkModuleNotFound(error: unknown): boolean {
+  const visited = new Set<unknown>();
+  const pending: unknown[] = [error];
+  while (pending.length > 0) {
+    const current = pending.pop();
+    if (current === undefined || current === null || visited.has(current)) continue;
+    visited.add(current);
+    const code = (current as NodeJS.ErrnoException).code;
+    if (code === "ERR_MODULE_NOT_FOUND" || code === "MODULE_NOT_FOUND") return true;
+    const message = current instanceof Error ? current.message : String(current);
+    if (
+      message.includes(SHADER_PARK_CORE_SPECIFIER) &&
+      /cannot find|could not resolve|does the file exist|failed to load|is it installed/i.test(
+        message,
+      )
+    ) {
+      return true;
+    }
+    const cause = (current as { cause?: unknown }).cause;
+    if (cause !== undefined) pending.push(cause);
+  }
+  return false;
 }
 
 function isUniform(value: unknown): value is ShaderParkUniform {

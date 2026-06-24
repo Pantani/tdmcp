@@ -18,6 +18,15 @@ installing Processing.
 
 ## Compile Shader Park code
 
+`create_shader_park` uses the optional `shader-park-core` peer dependency. The
+default hosted/package install does not include it because `shader-park-core@0.2.8`
+publishes a broken `toMinimal` bin entry that makes pnpm emit install warnings.
+For local Shader Park compilation, install it next to tdmcp first:
+
+```bash
+npm install shader-park-core
+```
+
 Ask your assistant:
 
 > *"Create a Shader Park sculpture with `rotateY(time * 0.25); color(vec3(0.2, 0.8, 1.0)); sphere(0.45);`, expose the controls, and show me a preview."*

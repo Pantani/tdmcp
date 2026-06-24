@@ -18,6 +18,16 @@ consegue montar a ideia sem instalar Processing.
 
 ## Compile código Shader Park
 
+`create_shader_park` usa a dependência peer opcional `shader-park-core`. O
+install padrão/hosted não inclui essa dependência porque `shader-park-core@0.2.8`
+publica uma entrada de binário `toMinimal` quebrada que faz o pnpm emitir
+warnings de instalação. Para compilar Shader Park localmente, instale-a junto do
+tdmcp primeiro:
+
+```bash
+npm install shader-park-core
+```
+
 Peça ao assistente:
 
 > *"Crie uma escultura Shader Park com `rotateY(time * 0.25); color(vec3(0.2, 0.8, 1.0)); sphere(0.45);`, exponha os controles e me mostre um preview."*
