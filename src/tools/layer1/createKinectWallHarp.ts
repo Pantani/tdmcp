@@ -1287,8 +1287,10 @@ def onStart():
 '''
 
 CLEAN_SYNTH_DRIVER_DAT_CODE = r'''
-# Uses a native Audio Oscillator CHOP for a clean sine voice, avoiding Script CHOP audio-buffer glitches.
+# Uses native Audio Oscillator CHOP voices for clean sine layers, avoiding Script CHOP audio-buffer glitches.
 import math
+
+VOICE_NAMES = ('clean_sine_voice', 'clean_sine_voice_2', 'clean_sine_voice_3')
 
 def _par_value(name, default):
     try:
@@ -1323,54 +1325,95 @@ def _set_par(node, names, value):
                 pass
     return False
 
-def _last_event():
+def _voice_nodes():
+    nodes = []
+    for name in VOICE_NAMES:
+        node = op(name)
+        if node is not None:
+            nodes.append(node)
+    return nodes
+
+def _last_events(max_events=4):
+    events = []
     try:
         queue = parent().fetch('tdmcp_harp_event_queue', [])
         if isinstance(queue, list) and queue:
             parent().store('tdmcp_harp_event_queue', [])
-            return queue[-1]
+            for item in queue[-max_events:]:
+                if isinstance(item, dict):
+                    events.append(item)
     except Exception:
         pass
+    if events:
+        return events[-max_events:]
     latest = parent().fetch('tdmcp_harp_latest', {})
     if isinstance(latest, dict):
         for i in range(32):
             try:
                 if float(latest.get('string%d_trigger' % i, 0.0)) > 0.5:
-                    return {'string': i, 'freq': float(latest.get('string%d_freq' % i, 220.0))}
+                    events.append({'string': i, 'freq': float(latest.get('string%d_freq' % i, 220.0))})
+                    if len(events) >= max_events:
+                        break
             except Exception:
                 pass
-    return None
+    return events[-max_events:]
+
+def _voice_patch(event, voice_index):
+    intervals = (1.0, 1.498307, 2.0)
+    gains = (1.0, 0.42, 0.24)
+    try:
+        freq = float(event.get('freq', 220.0)) if isinstance(event, dict) else 220.0
+    except Exception:
+        freq = 220.0
+    freq = max(30.0, min(4000.0, freq * intervals[min(voice_index, len(intervals) - 1)]))
+    return {'freq': freq, 'level': gains[min(voice_index, len(gains) - 1)], 'last': absTime.seconds}
 
 def _drive_clean_synth():
-    osc = op('clean_sine_voice')
-    if osc is None:
+    voices = _voice_nodes()
+    if not voices:
         return
     now = absTime.seconds
-    state = parent().fetch('tdmcp_clean_synth_state', {})
-    if not isinstance(state, dict):
-        state = {'freq': 220.0, 'level': 0.0, 'last': now}
-    event = _last_event() if _bool_value('Active', True) and not _bool_value('Calibrationmode', False) else None
-    if event is not None:
-        try:
-            freq = float(event.get('freq', 220.0)) if isinstance(event, dict) else 220.0
-        except Exception:
-            freq = 220.0
-        state = {'freq': freq, 'level': 1.0, 'last': now}
-    age = max(0.0, now - float(state.get('last', now)))
-    decay = max(0.08, min(1.2, float(_par_value('Decay', 0.35)) * 0.42))
+    states = parent().fetch('tdmcp_clean_synth_voices', [])
+    if not isinstance(states, list) or len(states) != len(voices):
+        states = [{'freq': 220.0, 'level': 0.0, 'last': now} for _ in voices]
+    events = _last_events() if _bool_value('Active', True) and not _bool_value('Calibrationmode', False) else []
+    if events:
+        if len(events) == 1:
+            states = [_voice_patch(events[0], index) for index in range(len(voices))]
+        else:
+            selected = events[-len(voices):]
+            states = []
+            for index in range(len(voices)):
+                event = selected[index % len(selected)]
+                state = _voice_patch(event, 0)
+                state['level'] = 0.92 if index == 0 else 0.68
+                state['last'] = now
+                states.append(state)
+    decay = max(0.08, min(1.4, float(_par_value('Decay', 0.35)) * 0.64))
     volume = max(0.0, min(1.0, float(_par_value('Mastervolume', 0.35))))
-    amp = max(0.0, min(0.55, float(state.get('level', 0.0)) * math.exp(-age / decay) * volume * 0.62))
-    if not _bool_value('Active', True) or _bool_value('Calibrationmode', False):
-        amp = 0.0
-    _set_par(osc, ['freq', 'frequency'], max(30.0, min(4000.0, float(state.get('freq', 220.0)))))
-    _set_par(osc, ['rate'], int(float(_par_value('Audiosamplerate', 48000))))
-    _set_par(osc, ['amp', 'amplitude'], amp)
-    _set_par(osc, ['active'], True)
-    parent().store('tdmcp_clean_synth_state', state)
-    try:
-        osc.cook(force=True)
-    except Exception:
-        pass
+    for index, osc in enumerate(voices):
+        state = states[index] if index < len(states) and isinstance(states[index], dict) else {'freq': 220.0, 'level': 0.0, 'last': now}
+        age = max(0.0, now - float(state.get('last', now)))
+        amp = max(0.0, min(0.32, float(state.get('level', 0.0)) * math.exp(-age / decay) * volume * 0.44))
+        if not _bool_value('Active', True) or _bool_value('Calibrationmode', False):
+            amp = 0.0
+        _set_par(osc, ['type'], 'sine')
+        _set_par(osc, ['freq', 'frequency'], max(30.0, min(4000.0, float(state.get('freq', 220.0)))))
+        _set_par(osc, ['rate'], int(float(_par_value('Audiosamplerate', 48000))))
+        _set_par(osc, ['amp', 'amplitude'], amp)
+        _set_par(osc, ['active'], True)
+        try:
+            osc.cook(force=True)
+        except Exception:
+            pass
+    mix = op('clean_sine_mix')
+    if mix is not None:
+        _set_par(mix, ['combinechops', 'chopop', 'operation'], 'add')
+        try:
+            mix.cook(force=True)
+        except Exception:
+            pass
+    parent().store('tdmcp_clean_synth_voices', states)
     out = op('audio_out')
     if out is not None:
         try:
@@ -1448,6 +1491,19 @@ def _laser_texture_rows(pos, y_norms, now):
     scan = 0.5 + 0.5 * np.sin(y_norms * 74.0 - now * 11.0 + pos * 19.0)
     pulse = 0.5 + 0.5 * math.sin(now * 2.1 + pos * 37.0)
     return np.clip(grain * 0.46 + scan * 0.34 + pulse * 0.2, 0.0, 1.0).astype(np.float32)
+
+def _beam_gradient_rows(pos, y_norms, energy, now):
+    white_hot = np.array([1.0, 1.0, 1.0], dtype=np.float32)
+    cyan = np.array([0.02, 1.0, 0.92], dtype=np.float32)
+    electric_blue = np.array([0.14, 0.48, 1.0], dtype=np.float32)
+    violet = np.array([0.74, 0.16, 1.0], dtype=np.float32)
+    magenta = np.array([1.0, 0.08, 0.78], dtype=np.float32)
+    vertical = (0.5 + 0.5 * np.sin(y_norms * 5.8 + pos * 3.4 + now * 0.28)).reshape(len(y_norms), 1)
+    spectral_edge = (0.5 + 0.5 * np.sin(y_norms * 18.0 - now * 1.15 + pos * 9.0)).reshape(len(y_norms), 1)
+    base = cyan * (1.0 - vertical) + electric_blue * vertical
+    edge = violet * (1.0 - spectral_edge) + magenta * spectral_edge
+    hot = (0.12 + 0.22 * energy) * (0.5 + 0.5 * np.sin(y_norms * 42.0 + now * 2.3 + pos * 17.0)).reshape(len(y_norms), 1)
+    return np.clip(base * (0.72 + 0.24 * energy) + edge * (0.28 + 0.34 * energy) + white_hot * hot, 0.0, 1.0).astype(np.float32)
 
 def _localized_hand_motion(pos, y_norm, hand_values, visual_count, curtain_follow):
     motion = 0.0
@@ -1553,8 +1609,19 @@ def _draw_neon_trails(img, trails, now):
         glow = np.exp(-(d2.astype(np.float32) / (2.0 * sigma * sigma))).astype(np.float32)
         core = np.exp(-(d2.astype(np.float32) / (2.0 * max(2.0, sigma * 0.42) ** 2))).astype(np.float32)
         trail_alpha = (fade ** 1.25) * 0.78
+        wake_sigma_x = max(9.0, radius * 0.28)
+        wake_sigma_y = max(28.0, radius * 0.95)
+        wake = np.exp(-(
+            ((xx - cx).astype(np.float32) ** 2) / (2.0 * wake_sigma_x * wake_sigma_x)
+            + ((yy - cy).astype(np.float32) ** 2) / (2.0 * wake_sigma_y * wake_sigma_y)
+        )).astype(np.float32)
+        wake_alpha = (fade ** 1.55) * 0.32
         color = left_color if str(point.get("side", "left")) == "left" else right_color
-        value = color.reshape(1, 1, 3) * ((glow * trail_alpha * 0.74) + (core * trail_alpha * 0.46)).reshape(y1 - y0, x1 - x0, 1)
+        value = color.reshape(1, 1, 3) * (
+            (glow * trail_alpha * 0.54)
+            + (core * trail_alpha * 0.34)
+            + (wake * wake_alpha)
+        ).reshape(y1 - y0, x1 - x0, 1)
         img[y0:y1, x0:x1, 0:3] = np.maximum(img[y0:y1, x0:x1, 0:3], value)
 
 def _drive_callback(node_path, callback_path):
@@ -1812,6 +1879,13 @@ def _update_calibration(hand_values, now):
         state["last_hand"] = None
         parent().store("tdmcp_calibration_wizard", state)
         return state
+    if not bool(state.get("armed", False)) and not manual:
+        state["progress"] = 0.0
+        state["stable_since"] = None
+        state["last_hand"] = {"raw_x": float(hand["raw_x"]), "raw_y": float(hand["raw_y"])}
+        state["status"] = "clear_wall"
+        parent().store("tdmcp_calibration_wizard", state)
+        return state
     state["clear_since"] = None
     if state.get("awaiting_move") and not manual:
         last_capture = state.get("last_capture", {})
@@ -1926,6 +2000,7 @@ def onCook(scriptOp):
     curtain_follow = max(0.0, min(1.0, float(_active_value("Curtainfollow", CFG.get("curtain_follow", 0.5)))))
     rows = np.arange(height, dtype=np.int32)
     y_norms = 1.0 - (np.arange(height, dtype=np.float32) / max(1.0, float(height)))
+    white_hot = np.array([1.0, 1.0, 1.0], dtype=np.float32)
     for i in range(visual_count):
         pos = (i + 0.5) / max(1, visual_count)
         note_energy = 0.0
@@ -1943,15 +2018,23 @@ def onCook(scriptOp):
         phase = y_norms * 21.0 + now * (11.0 + local_motion * 28.0) + pos * 41.0
         xs = np.clip((x_base + np.sin(phase) * motion * vibration).astype(np.int32), 0, width - 1)
         texture = _laser_texture_rows(pos, y_norms, now)
-        core = color.reshape(1, 3) * (0.9 + 0.34 * texture).reshape(height, 1)
+        gradient = _beam_gradient_rows(pos, y_norms, tint, now)
+        beam_color = np.maximum(color.reshape(1, 3) * 0.48, gradient)
+        core = beam_color * (0.78 + 0.42 * texture).reshape(height, 1)
         halo = color.reshape(1, 3) * (0.34 + 0.48 * local_motion).reshape(height, 1)
-        beam_alpha = np.minimum(1.0, 0.58 + texture * 0.26 + tint * 0.42).reshape(height, 1)
-        halo_gain = (0.46 + motion * 0.55).reshape(height, 1)
+        needle = np.clip((white_hot.reshape(1, 3) * (0.42 + 0.38 * texture + 0.28 * local_motion).reshape(height, 1)) + (beam_color * (0.52 + 0.28 * tint)), 0.0, 1.0)
+        beam_alpha = np.minimum(1.0, 0.68 + texture * 0.24 + tint * 0.5).reshape(height, 1)
+        halo_gain = (0.38 + motion * 0.72).reshape(height, 1)
         halo_value = halo * halo_gain
-        for offset in (-3, -2, -1, 0, 1, 2, 3):
+        far_halo = beam_color * (0.14 + motion * 0.34 + texture * 0.08).reshape(height, 1)
+        edge_value = np.maximum(halo_value, core * 0.42)
+        for offset in (-8, -6, -4, 4, 6, 8):
             hx = np.clip(xs + offset, 0, width - 1)
-            img[rows, hx, 0:3] = np.maximum(img[rows, hx, 0:3], halo_value)
-        img[rows, xs, 0:3] = np.maximum(img[rows, xs, 0:3], core * beam_alpha)
+            img[rows, hx, 0:3] = np.maximum(img[rows, hx, 0:3], far_halo)
+        for offset in (-3, -2, -1, 1, 2, 3):
+            hx = np.clip(xs + offset, 0, width - 1)
+            img[rows, hx, 0:3] = np.maximum(img[rows, hx, 0:3], edge_value)
+        img[rows, xs, 0:3] = np.maximum(img[rows, xs, 0:3], needle * beam_alpha)
     _draw_neon_trails(img, trails, now)
     if active and calibrating:
         state = _update_calibration(hand_values, now)
@@ -2022,14 +2105,13 @@ def onCook(scriptOp):
     height = int(CFG["output_height"])
     img = np.zeros((height, width, 4), dtype=np.float32)
     img[:, :, 3] = 1.0
-    hands = _latest("tdmcp_hands_latest")
-    if not hands:
-        hands = _synthetic_hands(absTime.seconds)
-    if _bool_value("Showdebug", CFG["show_debug"]):
+    active = _bool_value("Active", True)
+    hands = _latest("tdmcp_hands_latest") if active else {}
+    if active and _bool_value("Showdebug", CFG["show_debug"]):
         for prefix, color in (("left", [1.0, 0.9, 0.1]), ("right", [1.0, 0.35, 0.15])):
             if _read_map(hands, prefix + "_present", 0.0) > 0.5:
                 cx = int(_read_map(hands, prefix + "_x", 0.0) * width)
-                cy = int(_read_map(hands, prefix + "_y", 0.0) * height)
+                cy = int((1.0 - _read_map(hands, prefix + "_y", 0.0)) * height)
                 img[max(0, cy - 10):min(height, cy + 11), max(0, cx - 10):min(width, cx + 11), 0:3] = color
     scriptOp.copyNumpyArray(img)
     return
@@ -2192,47 +2274,33 @@ try:
                 _set_par(_tracking_driver, ["start"], True, False)
                 _set_par(_tracking_driver, ["play"], True, False)
 
-                _audio = _create(_cont, ["scriptCHOP"], "pluck_synth", 740, -320, "internal pluck synth")
-                _set_par(_audio, ["timeslice"], True, False)
-                _set_par(_audio, ["modoutsidecook"], True, False)
-                _set_par(_audio, ["cooktype"], "always", False)
-                _audio_cfg = dict(_p)
-                _audio_cfg["hand_tracker_path"] = _hands.path if _hands is not None else ""
-                _audio_cfg["hand_tracker_callbacks_path"] = _hands_cb.path if _hands_cb is not None else ""
-                _audio_cfg["harp_logic_path"] = _logic.path if _logic is not None else ""
-                _audio_cfg["harp_logic_callbacks_path"] = _logic_cb.path if _logic_cb is not None else ""
-                _audio_code = AUDIO_CHOP_CODE.replace("__CFG__", json.dumps(_audio_cfg))
-                _audio_cb = _text_dat(_cont, "pluck_synth_callbacks", 740, -500, "audio callbacks")
-                _set_text(_audio_cb, _audio_code)
-                _set_callbacks(_audio, _audio_cb)
-                _audio_debug = _create(_cont, ["nullCHOP"], "audio_debug", 980, -320, "audio debug")
-                _set_par(_audio_debug, ["timeslice"], True, False)
-                _set_par(_audio_debug, ["cooktype"], "always", False)
-                _connect(_audio, _audio_debug)
-                if _audio_debug is not None:
-                    report["audio_chop"] = _audio_debug.path
                 _clean_voice = _create(_cont, ["audiooscillatorCHOP"], "clean_sine_voice", 980, -500, "clean sine voice")
+                _clean_voice_2 = _create(_cont, ["audiooscillatorCHOP"], "clean_sine_voice_2", 980, -580, "clean sine fifth voice")
+                _clean_voice_3 = _create(_cont, ["audiooscillatorCHOP"], "clean_sine_voice_3", 980, -660, "clean sine octave voice")
                 _set_par(_clean_voice, ["type"], "sine", False)
                 _set_par(_clean_voice, ["freq", "frequency"], 220, False)
                 _set_par(_clean_voice, ["rate"], int(_p["audio_sample_rate"]), False)
                 _set_par(_clean_voice, ["amp", "amplitude"], 0, False)
                 _set_par(_clean_voice, ["active"], True, False)
+                for _voice in (_clean_voice_2, _clean_voice_3):
+                    _set_par(_voice, ["type"], "sine", False)
+                    _set_par(_voice, ["freq", "frequency"], 220, False)
+                    _set_par(_voice, ["rate"], int(_p["audio_sample_rate"]), False)
+                    _set_par(_voice, ["amp", "amplitude"], 0, False)
+                    _set_par(_voice, ["active"], True, False)
+                _clean_mix = _create(_cont, ["mathCHOP"], "clean_sine_mix", 1210, -580, "clean sine voice mix")
+                _set_par(_clean_mix, ["combinechops", "chopop", "operation"], "add", False)
+                _connect(_clean_voice, _clean_mix, 0)
+                _connect(_clean_voice_2, _clean_mix, 1)
+                _connect(_clean_voice_3, _clean_mix, 2)
                 _audio_out = _create(_cont, ["audiodeviceoutCHOP"], "audio_out", 1210, -320, "audio output")
                 if _audio_out is not None:
-                    _connect(_clean_voice, _audio_out)
+                    _connect(_clean_mix, _audio_out)
                     if str(_p.get("audio_device", "")).strip():
                         _set_par(_audio_out, ["device"], str(_p["audio_device"]), False)
                     report["audio_out"] = _audio_out.path
                 else:
-                    _warn("Audio Device Out CHOP unavailable; pluck_synth still exposes audio_debug.")
-                _audio_driver = _create(_cont, ["executeDAT"], "audio_driver", 1210, -500, "audio driver")
-                _set_text(_audio_driver, AUDIO_DRIVER_DAT_CODE)
-                _set_par(_audio_driver, ["active"], False, False)
-                _set_par(_audio_driver, ["framestart"], True, False)
-                _set_par(_audio_driver, ["start"], True, False)
-                _set_par(_audio_driver, ["play"], True, False)
-                if _audio_driver is not None:
-                    report["audio_driver"] = _audio_driver.path
+                    _warn("Audio Device Out CHOP unavailable; clean_sine_mix still exposes the synth signal.")
                 _clean_driver = _create(_cont, ["executeDAT"], "clean_synth_driver", 1210, -660, "clean synth driver")
                 _set_text(_clean_driver, CLEAN_SYNTH_DRIVER_DAT_CODE)
                 _set_par(_clean_driver, ["active"], True, False)

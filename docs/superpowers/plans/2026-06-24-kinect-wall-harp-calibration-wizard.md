@@ -10,7 +10,7 @@
 
 ---
 
-### Task 1: Add Generator Contract
+## Task 1: Add Generator Contract
 
 **Files:**
 - Modify: `src/tools/layer1/createKinectWallHarp.ts`
@@ -20,7 +20,7 @@
 - [ ] Expose `Calibrationmode`, `Manualcapture`, `Resetcalibration`, and `Calibrationholdms` custom parameters.
 - [ ] Assert the generated Python contains the calibration parameters and storage keys.
 
-### Task 2: Preserve Raw Hand Coordinates
+## Task 2: Preserve Raw Hand Coordinates
 
 **Files:**
 - Modify: `src/tools/layer1/createKinectWallHarp.ts`
@@ -29,7 +29,7 @@
 - [ ] Store those channels in `tdmcp_hands_latest`.
 - [ ] Keep mapped `x/y` unchanged for the harp logic.
 
-### Task 3: Add Visual Calibration Wizard
+## Task 3: Add Visual Calibration Wizard
 
 **Files:**
 - Modify: `src/tools/layer1/createKinectWallHarp.ts`
@@ -41,7 +41,7 @@
 - [ ] Reset state when `Resetcalibration` is toggled.
 - [ ] Apply `Inputmirrorx`, `Inputleft`, `Inputright`, `Inputtop`, and `Inputbottom` from the four captured raw points.
 
-### Task 4: Verify and Apply Live
+## Task 4: Verify and Apply Live
 
 **Files:**
 - Modify: live TouchDesigner project `/project1/kinect_wall_harp`

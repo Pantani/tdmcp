@@ -93,24 +93,49 @@ function assignValueOption(args, key, value, parser) {
   args[key] = parser(value);
 }
 
-function validateArgs(args) {
+function validatePort(args) {
   if (!Number.isInteger(args.port) || args.port < 1024 || args.port > 65535) {
     throw new Error(`Invalid --port: ${args.port}`);
   }
+}
+
+function validateRate(args) {
   if (!Number.isFinite(args.rate) || args.rate <= 0) {
     throw new Error(`Invalid --rate: ${args.rate}`);
   }
+}
+
+function validateFrameLimit(args) {
+  if (!Number.isInteger(args.frames) || args.frames < 0) {
+    throw new Error(`Invalid --frames: ${args.frames}`);
+  }
+}
+
+function validateSource(args) {
   if (!["synthetic", "libfreenect2"].includes(args.source)) {
     throw new Error(`Invalid --source: ${args.source}`);
   }
+}
+
+function optionalNumberFlag(name) {
+  return name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+}
+
+function validateOptionalNumbers(args) {
   for (const name of OPTIONAL_NUMBER_NAMES) {
     const value = args[name];
     if (value !== undefined && !Number.isFinite(value)) {
-      throw new Error(
-        `Invalid --${name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}: ${value}`,
-      );
+      throw new Error(`Invalid --${optionalNumberFlag(name)}: ${value}`);
     }
   }
+}
+
+function validateArgs(args) {
+  validatePort(args);
+  validateRate(args);
+  validateFrameLimit(args);
+  validateSource(args);
+  validateOptionalNumbers(args);
 }
 
 function parseArgs(argv) {
@@ -275,7 +300,7 @@ async function runSynthetic(socket, args) {
   });
 }
 
-async function runLibfreenect2(socket, args) {
+function buildLibfreenect2HelperArgs(args) {
   const helperArgs = [];
   if (args.frames > 0) helperArgs.push("--frames", String(args.frames));
   const pushOptional = (flag, value) => {
@@ -296,48 +321,77 @@ async function runLibfreenect2(socket, args) {
   pushOptional("--crop-top", args.cropTop);
   pushOptional("--crop-bottom", args.cropBottom);
   if (args.undistortDepth) helperArgs.push("--undistort-depth");
-  const child = spawn(args.helper, helperArgs, { stdio: ["ignore", "pipe", "pipe"] });
-  let childExited = false;
-  let lastFrameAt = Date.now();
+  return helperArgs;
+}
+
+async function runLibfreenect2(socket, args) {
+  const helperArgs = buildLibfreenect2HelperArgs(args);
   const stallTimeoutMs = Math.max(0, Number(args.stallTimeoutMs ?? 8000));
-  const stallTimer =
-    stallTimeoutMs > 0
-      ? setInterval(
-          () => {
-            if (childExited) return;
-            const silenceMs = Date.now() - lastFrameAt;
-            if (silenceMs <= stallTimeoutMs) return;
-            process.stderr.write(
-              `[kinect-wall-harp-bridge] LIBUSB/depth stream stalled for ${silenceMs}ms; restarting helper\n`,
-            );
-            child.kill("SIGTERM");
-            const killTimer = setTimeout(() => {
-              if (!childExited) child.kill("SIGKILL");
-            }, 1200);
-            killTimer.unref?.();
-          },
-          Math.max(1000, Math.min(2000, stallTimeoutMs)),
-        )
-      : undefined;
-  child.stderr.on("data", (chunk) => process.stderr.write(chunk));
-  const lines = createInterface({ input: child.stdout });
-  lines.on("line", (line) => {
-    if (!line.trim().startsWith("{")) return;
-    lastFrameAt = Date.now();
-    try {
-      sendFrame(socket, args, JSON.parse(line));
-    } catch (err) {
-      process.stderr.write(`[kinect-wall-harp-bridge] ignored helper line: ${err.message}\n`);
-    }
-  });
   return new Promise((resolve, reject) => {
-    child.on("error", reject);
-    child.on("exit", (code) => {
-      childExited = true;
-      if (stallTimer !== undefined) clearInterval(stallTimer);
-      if (code === 0) resolve();
-      else reject(new Error(`libfreenect2 helper exited with code ${code}`));
-    });
+    let settled = false;
+    const settle = (callback, value) => {
+      if (settled) return;
+      settled = true;
+      callback(value);
+    };
+    const launchHelper = () => {
+      const child = spawn(args.helper, helperArgs, { stdio: ["ignore", "pipe", "pipe"] });
+      let childExited = false;
+      let lastFrameAt = Date.now();
+      let restartRequested = false;
+      const stallTimer =
+        stallTimeoutMs > 0
+          ? setInterval(
+              () => {
+                if (childExited || restartRequested) return;
+                const silenceMs = Date.now() - lastFrameAt;
+                if (silenceMs <= stallTimeoutMs) return;
+                restartRequested = true;
+                process.stderr.write(
+                  `[kinect-wall-harp-bridge] LIBUSB/depth stream stalled for ${silenceMs}ms; restarting helper\n`,
+                );
+                child.kill("SIGTERM");
+                const killTimer = setTimeout(() => {
+                  if (!childExited) child.kill("SIGKILL");
+                }, 1200);
+                killTimer.unref?.();
+              },
+              Math.max(1000, Math.min(2000, stallTimeoutMs)),
+            )
+          : undefined;
+      child.stderr.on("data", (chunk) => process.stderr.write(chunk));
+      const lines = createInterface({ input: child.stdout });
+      lines.on("line", (line) => {
+        if (!line.trim().startsWith("{")) return;
+        lastFrameAt = Date.now();
+        try {
+          sendFrame(socket, args, JSON.parse(line));
+        } catch (err) {
+          process.stderr.write(`[kinect-wall-harp-bridge] ignored helper line: ${err.message}\n`);
+        }
+      });
+      const clearStallTimer = () => {
+        if (stallTimer !== undefined) clearInterval(stallTimer);
+      };
+      child.on("error", (err) => {
+        childExited = true;
+        clearStallTimer();
+        lines.close();
+        settle(reject, err);
+      });
+      child.on("exit", (code, signal) => {
+        childExited = true;
+        clearStallTimer();
+        lines.close();
+        if (restartRequested && !settled) {
+          launchHelper();
+          return;
+        }
+        if (code === 0) settle(resolve);
+        else settle(reject, new Error(`libfreenect2 helper exited with code ${code ?? signal}`));
+      });
+    };
+    launchHelper();
   });
 }
 

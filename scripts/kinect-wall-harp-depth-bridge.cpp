@@ -353,12 +353,13 @@ int main(int argc, char** argv) {
   libfreenect2::Frame undistorted(512, 424, 4);
 
   float wallMm = cfg.wallMm;
-  int frameCount = 0;
+  int rawFrameCount = 0;
+  int outputFrameCount = 0;
   int backgroundFrameCount = 0;
   std::vector<float> background;
   std::vector<float> backgroundSum;
   std::vector<int> backgroundCount;
-  while (cfg.frames == 0 || frameCount < cfg.frames) {
+  while (cfg.frames == 0 || outputFrameCount < cfg.frames) {
     libfreenect2::FrameMap frames;
     if (!listener.waitForNewFrame(frames, 10000)) {
       std::cerr << "[kinect-depth-bridge] timeout waiting for depth frame" << std::endl;
@@ -383,25 +384,25 @@ int main(int argc, char** argv) {
       }
       emitJson({});
       listener.release(frames);
-      frameCount += 1;
+      rawFrameCount += 1;
       break;
     }
 
     if (cfg.backgroundFrames > 0 && static_cast<int>(background.size()) != pixelCount) {
-      background.assign(pixelCount, 0.0f);
-      backgroundSum.assign(pixelCount, 0.0f);
+      background.assign(pixelCount, 0.0F);
+      backgroundSum.assign(pixelCount, 0.0F);
       backgroundCount.assign(pixelCount, 0);
       backgroundFrameCount = 0;
     }
 
     if (cfg.backgroundFrames > 0 && backgroundFrameCount < cfg.backgroundFrames) {
       const float measured = medianDepth(data, width, height);
-      if (cfg.wallMm <= 0.0f && measured > 0.0f) {
-        wallMm = wallMm <= 0.0f ? measured : wallMm * 0.85f + measured * 0.15f;
+      if (cfg.wallMm <= 0.0F && measured > 0.0F) {
+        wallMm = wallMm <= 0.0F ? measured : wallMm * 0.85F + measured * 0.15F;
       }
       for (int idx = 0; idx < pixelCount; ++idx) {
         const float d = data[idx];
-        if (std::isfinite(d) && d > 300.0f && d < 8000.0f) {
+        if (std::isfinite(d) && d > 300.0F && d < 8000.0F) {
           backgroundSum[idx] += d;
           backgroundCount[idx] += 1;
         }
@@ -420,14 +421,16 @@ int main(int argc, char** argv) {
                   << " fallback_wall_mm=" << wallMm << std::endl;
       }
       emitJson({});
-    } else if (cfg.wallMm <= 0.0f && wallMm <= 0.0f && frameCount < cfg.calibrationFrames) {
+    } else if (cfg.wallMm <= 0.0F && rawFrameCount < cfg.calibrationFrames) {
       const float measured = medianDepth(data, width, height);
-      if (measured > 0.0f) wallMm = measured;
-      if (frameCount == cfg.calibrationFrames - 1) {
+      if (measured > 0.0F) {
+        wallMm = wallMm <= 0.0F ? measured : wallMm * 0.85F + measured * 0.15F;
+      }
+      if (rawFrameCount == cfg.calibrationFrames - 1) {
         std::cerr << "[kinect-depth-bridge] calibrated wall_mm=" << wallMm << std::endl;
       }
       emitJson({});
-    } else if (wallMm > 0.0f) {
+    } else if (wallMm > 0.0F) {
       const std::vector<float>* backgroundPtr = cfg.backgroundFrames > 0 ? &background : nullptr;
       std::vector<Hand> hands = extractHands(
         data,
@@ -437,9 +440,9 @@ int main(int argc, char** argv) {
         backgroundPtr,
         cfg
       );
-      if (cfg.debugEvery > 0 && frameCount % cfg.debugEvery == 0) {
+      if (cfg.debugEvery > 0 && rawFrameCount % cfg.debugEvery == 0) {
         const DetectionStats stats = collectStats(data, width, height, wallMm, backgroundPtr, cfg);
-        std::cerr << "[kinect-depth-bridge] debug frame=" << frameCount
+        std::cerr << "[kinect-depth-bridge] debug frame=" << rawFrameCount
                   << " valid=" << stats.validSamples
                   << " foreground=" << stats.foregroundSamples
                   << " candidates=" << stats.candidateSamples
@@ -447,12 +450,14 @@ int main(int argc, char** argv) {
                   << " hands=" << hands.size() << std::endl;
       }
       emitJson(hands);
+      outputFrameCount += 1;
     } else {
       emitJson({});
+      outputFrameCount += 1;
     }
 
     listener.release(frames);
-    frameCount += 1;
+    rawFrameCount += 1;
   }
 
   dev->stop();

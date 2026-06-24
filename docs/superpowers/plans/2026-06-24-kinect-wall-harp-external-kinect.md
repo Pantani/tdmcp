@@ -10,7 +10,7 @@
 
 ---
 
-### Task 1: External Kinect Runtime Probe
+## Task 1: External Kinect Runtime Probe
 
 **Files:**
 - Modify: `_workspace/kinect-wall-harp/08_external_kinect_runtime.md`
@@ -86,7 +86,7 @@ The external process opens the Kinect or reports an actionable USB/firmware/back
 TouchDesigner remains open and bridge :9980 remains reachable.
 ```
 
-### Task 2: Add OSC Kinect Mode To Harp Tool
+## Task 2: Add OSC Kinect Mode To Harp Tool
 
 **Files:**
 - Modify: `src/tools/layer1/createKinectWallHarp.ts`
@@ -190,7 +190,7 @@ Expected:
 Focused tests pass, Biome reports no fixes, TypeScript build passes.
 ```
 
-### Task 3: External OSC Bridge Script
+## Task 3: External OSC Bridge Script
 
 **Files:**
 - Create: `scripts/kinect-wall-harp-bridge.mjs`
@@ -228,7 +228,7 @@ If `Protonect` works, add a libfreenect2-backed mode or a small helper executabl
 wrapper that emits normalized left/right blobs. Keep this separate from the TD
 bridge process.
 
-### Task 4: Live TouchDesigner Rebuild And QA
+## Task 4: Live TouchDesigner Rebuild And QA
 
 **Files:**
 - Modify: `_workspace/kinect-wall-harp/08_external_kinect_runtime.md`

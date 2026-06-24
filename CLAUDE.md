@@ -207,6 +207,7 @@ can be answered directly. Runtime implementation should be handed to
 `tdmcp-pipeline` after the POC boundary is accepted.
 
 **Change log:**
+
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
 | 2026-06-04 | Initial design harness | 5 agents + 5 skills | design the Ui24R operator-approved scene-arming expansion before runtime work |
@@ -288,6 +289,7 @@ sub-agents (no `TeamCreate`).
 **Trigger:** when asked to add more cookbook examples, create visual examples for the documentation, show more surprising things you can do with tdmcp, expand the prompt cookbook, or any request to add prompts + results to the cookbook — use the `tdmcp-cookbook-examples` skill (curator → EN writer ∥ PT writer → QA). Simple questions can be answered directly.
 
 **Change log:**
+
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
 | 2026-05-29 | Initial build | 2 agents + 1 skill | extend prompt cookbook with surprising examples for all tools not yet shown |
@@ -367,6 +369,7 @@ tool/recipe/docs, use the `tdmcp-kinect-wall-harp` skill before the generic
 `tdmcp-pipeline`. Simple conceptual questions can be answered directly.
 
 **Change log:**
+
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
 | 2026-06-23 | Initial implementation harness | 5 agents + 1 skill + Codex mirrors | execute the approved Kinect wall harp spec through live prototype, Layer 1 tool build, integration, and live/synthetic QA |

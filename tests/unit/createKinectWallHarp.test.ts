@@ -110,7 +110,7 @@ function successReport(overrides: Partial<Record<string, unknown>> = {}) {
     hands_debug: "/project1/kinect_wall_harp/hands_debug",
     hands_chop: "/project1/kinect_wall_harp/hands",
     harp_chop: "/project1/kinect_wall_harp/harp_state",
-    audio_chop: "/project1/kinect_wall_harp/audio_debug",
+    audio_chop: "",
     audio_out: "/project1/kinect_wall_harp/audio_out",
     status_dat: "/project1/kinect_wall_harp/status",
     string_count: 16,
@@ -130,9 +130,9 @@ function successReport(overrides: Partial<Record<string, unknown>> = {}) {
         role: "entry trigger logic",
       },
       {
-        path: "/project1/kinect_wall_harp/pluck_synth",
-        type: "scriptCHOP",
-        role: "internal pluck synth",
+        path: "/project1/kinect_wall_harp/clean_sine_voice",
+        type: "audiooscillatorCHOP",
+        role: "clean sine voice",
       },
     ],
     coordinates: {
@@ -266,9 +266,9 @@ describe("create_kinect_wall_harp", () => {
     expect(script).toContain('_create(_cont, ["keyboardinCHOP"], "calibration_keys"');
     expect(script).toContain('_set_par(_logic, ["timeslice"], False, False)');
     expect(script).toContain('_set_par(_logic, ["modoutsidecook"], True, False)');
-    expect(script).toContain('_set_par(_audio, ["timeslice"], True, False)');
-    expect(script).toContain('_set_par(_audio, ["modoutsidecook"], True, False)');
-    expect(script).toContain('_set_par(_audio_debug, ["timeslice"], True, False)');
+    expect(script).not.toContain('_create(_cont, ["scriptCHOP"], "pluck_synth"');
+    expect(script).not.toContain('_create(_cont, ["nullCHOP"], "audio_debug"');
+    expect(script).not.toContain('_create(_cont, ["executeDAT"], "audio_driver"');
     expect(script).toContain('_set_par(_hands_null, ["cooktype"], "always", False)');
     expect(script).toContain('_set_par(_logic_null, ["cooktype"], "always", False)');
     expect(script).toContain('_set_par(_audio_out, ["device"], str(_p["audio_device"]), False)');
@@ -299,6 +299,9 @@ describe("create_kinect_wall_harp", () => {
     expect(script).toContain("logic_cb.module.onCook(logic)");
     expect(script).toContain("CLEAN_SYNTH_DRIVER_DAT_CODE");
     expect(script).toContain('_create(_cont, ["audiooscillatorCHOP"], "clean_sine_voice"');
+    expect(script).toContain('_create(_cont, ["audiooscillatorCHOP"], "clean_sine_voice_2"');
+    expect(script).toContain('_create(_cont, ["audiooscillatorCHOP"], "clean_sine_voice_3"');
+    expect(script).toContain('_create(_cont, ["mathCHOP"], "clean_sine_mix"');
     expect(script).toContain(
       '_set_par(_clean_voice, ["rate"], int(_p["audio_sample_rate"]), False)',
     );
@@ -306,7 +309,10 @@ describe("create_kinect_wall_harp", () => {
     expect(script).toContain(
       "_set_par(osc, ['rate'], int(float(_par_value('Audiosamplerate', 48000))))",
     );
-    expect(script).toContain("_connect(_clean_voice, _audio_out)");
+    expect(script).toContain("def _last_events(max_events=4):");
+    expect(script).toContain("def _voice_patch(event, voice_index):");
+    expect(script).toContain("tdmcp_clean_synth_voices");
+    expect(script).toContain("_connect(_clean_mix, _audio_out)");
     expect(script).toContain('_vis_cfg["hand_tracker_callbacks_path"]');
     expect(script).toContain('_vis_cfg["harp_logic_callbacks_path"]');
     expect(script).not.toContain('_vis_cfg["pluck_synth_callbacks_path"]');
@@ -338,21 +344,22 @@ describe("create_kinect_wall_harp", () => {
     expect(script).toContain("def _laser_palette");
     expect(script).toContain("def _laser_texture");
     expect(script).toContain("def _laser_texture_rows");
+    expect(script).toContain("def _beam_gradient_rows");
     expect(script).toContain("def _update_hand_trails");
     expect(script).toContain("def _draw_neon_trails");
     expect(script).toContain('parent().store("tdmcp_neon_hand_trails"');
     expect(script).toContain('parent().fetch("tdmcp_neon_hand_trails"');
     expect(script).toContain("trail_alpha =");
+    expect(script).toContain("wake_alpha =");
     expect(script).toContain("np.clip(color * (1.18 + 0.55 * energy)");
+    expect(script).toContain("white_hot = np.array([1.0, 1.0, 1.0]");
     expect(script).toContain("def _localized_hand_motion");
     expect(script).toContain("def _localized_hand_motion_rows");
     expect(script).toContain("visual_count = max(8, min(192");
     expect(script).toContain("height_weight = math.exp(-(dy * dy) / 0.035)");
     expect(script).toContain("height_weight = np.exp(-((dy * dy) / 0.035))");
     expect(script).toContain("y_norms = 1.0 - (np.arange(height, dtype=np.float32)");
-    expect(script).toContain(
-      "core = color.reshape(1, 3) * (0.9 + 0.34 * texture).reshape(height, 1)",
-    );
+    expect(script).toContain("needle = np.clip((white_hot.reshape(1, 3) *");
     expect(script).toContain(
       "halo = color.reshape(1, 3) * (0.34 + 0.48 * local_motion).reshape(height, 1)",
     );
@@ -376,11 +383,15 @@ describe("create_kinect_wall_harp", () => {
     expect(script).toContain("Calibrationmode");
     expect(script).toContain("Manualcapture");
     expect(script).toContain("Resetcalibration");
+    expect(script).toContain('if not bool(state.get("armed", False)) and not manual:');
+    expect(script).toContain('state["status"] = "clear_wall"');
     expect(script).toContain('"raw_x"');
     expect(script).toContain('"string_%d" % i');
     expect(script).toContain('prefix + "_cal_x"');
     expect(script).not.toContain('target_dist = math.hypot(float(hand["raw_x"])');
     expect(script).toContain('_draw_dot(img, float(hand["raw_x"]), float(hand["raw_y"]');
+    expect(script).toContain('hands = _latest("tdmcp_hands_latest") if active else {}');
+    expect(script).toContain('cy = int((1.0 - _read_map(hands, prefix + "_y", 0.0)) * height)');
     expect(script).toContain('_custom_par(audio, "appendInt", "Audiosamplerate"');
     expect(script).toContain('_custom_par(audio, "appendFloat", "Reverbmix"');
     expect(script).toContain('_custom_par(audio, "appendFloat", "Reverbdecay"');
@@ -388,8 +399,6 @@ describe("create_kinect_wall_harp", () => {
     expect(script).toContain('_custom_par(visual, "appendInt", "Visuallinecount"');
     expect(script).toContain('_custom_par(visual, "appendFloat", "Curtainspread"');
     expect(script).toContain('_custom_par(visual, "appendFloat", "Curtainfollow"');
-    expect(script).toContain('_set_par(_audio, ["cooktype"], "always", False)');
-    expect(script).toContain('_set_par(_audio_debug, ["cooktype"], "always", False)');
     expect(script).toContain("def onFrameStart(frame):");
     expect(script).not.toContain("_connect(_audio_debug, _audio_out)");
 
@@ -434,7 +443,7 @@ describe("create_kinect_wall_harp", () => {
     const report = jsonOf(result);
     expect(report.output_top).toBe("/project1/kinect_wall_harp/out1");
     expect(report.hands_chop).toBe("/project1/kinect_wall_harp/hands");
-    expect(report.audio_chop).toBe("/project1/kinect_wall_harp/audio_debug");
+    expect(report.audio_chop).toBe("");
     expect(report.synthetic_fallback).toBe(true);
     expect(report.warnings).toEqual([
       "Freenect live activation is disabled by default after macOS FreenectTD crash evidence; using synthetic fallback. Pass activate_freenect=true only in an isolated diagnostic project.",

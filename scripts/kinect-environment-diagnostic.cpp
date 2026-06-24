@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -116,10 +117,10 @@ static Config parseArgs(int argc, char** argv) {
   }
   cfg.width = std::max(320, cfg.width);
   cfg.height = std::max(240, cfg.height);
-  cfg.backgroundFrames = std::max(0, cfg.backgroundFrames);
+  cfg.backgroundFrames = std::max(1, cfg.backgroundFrames);
   cfg.rate = std::max(1, cfg.rate);
-  cfg.nearMinMm = std::max(1.0f, cfg.nearMinMm);
-  cfg.nearMaxMm = std::max(cfg.nearMinMm + 1.0f, cfg.nearMaxMm);
+  cfg.nearMinMm = std::max(1.0F, cfg.nearMinMm);
+  cfg.nearMaxMm = std::max(cfg.nearMinMm + 1.0F, cfg.nearMaxMm);
   return cfg;
 }
 
@@ -451,7 +452,9 @@ static void writeAtomic(const std::string& path, const char* data, size_t bytes)
     if (!out) throw std::runtime_error("failed to open " + tmp);
     out.write(data, static_cast<std::streamsize>(bytes));
   }
-  std::rename(tmp.c_str(), path.c_str());
+  if (std::rename(tmp.c_str(), path.c_str()) != 0) {
+    throw std::runtime_error("failed to rename " + tmp + " to " + path);
+  }
 }
 
 static void writeMarkerJson(std::ostringstream& out, const char* name, const MarkerStats& marker, int width, int height) {
@@ -666,21 +669,27 @@ int main(int argc, char** argv) {
       fillRect(img, cfg.width, cfg.height, cfg.width - 120, 0, cfg.width, 10, 255, 176, 0);
     }
 
-    writeAtomic(cfg.rawPath, reinterpret_cast<const char*>(img.data()), img.size());
-    writeJson(
-      cfg,
-      serial,
-      frame,
-      backgroundReady,
-      backgroundCount,
-      stats,
-      rgb,
-      registeredRgb,
-      static_cast<int>(color->width),
-      static_cast<int>(color->height),
-      dw,
-      dh
-    );
+    try {
+      writeAtomic(cfg.rawPath, reinterpret_cast<const char*>(img.data()), img.size());
+      writeJson(
+        cfg,
+        serial,
+        frame,
+        backgroundReady,
+        backgroundCount,
+        stats,
+        rgb,
+        registeredRgb,
+        static_cast<int>(color->width),
+        static_cast<int>(color->height),
+        dw,
+        dh
+      );
+    } catch (const std::exception& exc) {
+      listener.release(frames);
+      std::cerr << "[kinect-environment-diagnostic] " << exc.what() << std::endl;
+      break;
+    }
     listener.release(frames);
     frame += 1;
     std::this_thread::sleep_for(std::chrono::milliseconds(std::max(1, 1000 / cfg.rate)));
