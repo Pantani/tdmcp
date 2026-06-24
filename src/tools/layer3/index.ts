@@ -13,6 +13,7 @@ import { registerDeleteTdNode } from "./deleteTdNode.js";
 import { registerDiffSnapshots } from "./diffSnapshots.js";
 import { registerDisconnectNodes } from "./disconnectNodes.js";
 import { registerDocumentNetwork } from "./documentNetwork.js";
+import { registerDraftRecipeFromOperatorChain } from "./draftRecipeFromOperatorChain.js";
 import { registerEditDatContent } from "./editDatContent.js";
 import { registerElicitMissingArgs } from "./elicitMissingArgs.js";
 import { registerExecNodeMethod } from "./execNodeMethod.js";
@@ -61,6 +62,7 @@ import { registerSuggestOperatorChain } from "./suggestOperatorChain.js";
 import { registerSummarizeTdErrors } from "./summarizeTdErrors.js";
 import { registerSwapOperator } from "./swapOperator.js";
 import { registerUpdateTdNodeParameters } from "./updateTdNodeParameters.js";
+import { registerValidateOperatorChain } from "./validateOperatorChain.js";
 import { registerWatchNode } from "./watchNode.js";
 import { registerWriteAgentGuide } from "./writeAgentGuide.js";
 
@@ -89,6 +91,8 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerCompareOperatorDocs,
   registerGetOperatorWorkflowGuide,
   registerSuggestOperatorChain,
+  registerValidateOperatorChain,
+  registerDraftRecipeFromOperatorChain,
   registerSearchPythonApi,
   registerPlanTdVersionMigration,
   registerSearchTouchDesignerKnowledge,

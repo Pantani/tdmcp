@@ -596,6 +596,10 @@ import { deleteTdNodeImpl, deleteTdNodeSchema } from "../tools/layer3/deleteTdNo
 import { diffSnapshotsImpl, diffSnapshotsSchema } from "../tools/layer3/diffSnapshots.js";
 import { disconnectNodesImpl, disconnectNodesSchema } from "../tools/layer3/disconnectNodes.js";
 import { documentNetworkImpl, documentNetworkSchema } from "../tools/layer3/documentNetwork.js";
+import {
+  draftRecipeFromOperatorChainImpl,
+  draftRecipeFromOperatorChainSchema,
+} from "../tools/layer3/draftRecipeFromOperatorChain.js";
 import { editDatContentImpl, editDatContentSchema } from "../tools/layer3/editDatContent.js";
 import {
   elicitMissingArgsImpl,
@@ -690,6 +694,10 @@ import {
   updateTdNodeParametersImpl,
   updateTdNodeParametersSchema,
 } from "../tools/layer3/updateTdNodeParameters.js";
+import {
+  validateOperatorChainImpl,
+  validateOperatorChainSchema,
+} from "../tools/layer3/validateOperatorChain.js";
 import { writeAgentGuideImpl, writeAgentGuideSchema } from "../tools/layer3/writeAgentGuide.js";
 import {
   checksumAndVerifyPackImpl,
@@ -912,6 +920,11 @@ const COMMANDS: Record<string, Command> = {
     suggestOperatorChainImpl,
     "Suggest a read-only operator chain for a creative or technical goal (offline).",
   ),
+  "operators validate-chain": r(
+    validateOperatorChainSchema,
+    validateOperatorChainImpl,
+    "Validate an ordered operator chain before creating nodes (offline).",
+  ),
   "knowledge search": r(
     searchTouchDesignerKnowledgeSchema,
     searchTouchDesignerKnowledgeImpl,
@@ -944,6 +957,11 @@ const COMMANDS: Record<string, Command> = {
     mutates: true,
   }),
   recipes: r(listRecipesSchema, listRecipesImpl, "List the built-in recipe library (offline)."),
+  "recipes draft-chain": r(
+    draftRecipeFromOperatorChainSchema,
+    draftRecipeFromOperatorChainImpl,
+    "Draft a RecipeSchema JSON from an operator chain without applying it.",
+  ),
   recipe: r(applyRecipeSchema, applyRecipeImpl, "Build a recipe by id.", { mutates: true }),
   init: r(
     scaffoldShowSchema,

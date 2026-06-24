@@ -23,6 +23,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Add `suggest_operator_chain` and `plan_td_version_migration` read-only tools
   so agents can turn offline workflow/compatibility knowledge into operator-chain
   plans and TouchDesigner upgrade checklists before touching a live project.
+- Add `validate_operator_chain` and `draft_recipe_from_operator_chain` read-only
+  tools so agents can preflight operator chains against offline docs/version
+  compatibility and turn validated chains into `RecipeSchema` drafts without
+  mutating TouchDesigner.
 
 ### Fixed
 

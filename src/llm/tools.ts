@@ -25,6 +25,10 @@ import {
 import { compareTdNodesImpl, compareTdNodesSchema } from "../tools/layer3/compareTdNodes.js";
 import { createTdNodeImpl, createTdNodeSchema } from "../tools/layer3/createTdNode.js";
 import { deleteTdNodeImpl, deleteTdNodeSchema } from "../tools/layer3/deleteTdNode.js";
+import {
+  draftRecipeFromOperatorChainImpl,
+  draftRecipeFromOperatorChainSchema,
+} from "../tools/layer3/draftRecipeFromOperatorChain.js";
 import { findTdNodesImpl, findTdNodesSchema } from "../tools/layer3/findTdNodes.js";
 import { getModuleHelpImpl, getModuleHelpSchema } from "../tools/layer3/getModuleHelp.js";
 import {
@@ -66,6 +70,10 @@ import {
   updateTdNodeParametersImpl,
   updateTdNodeParametersSchema,
 } from "../tools/layer3/updateTdNodeParameters.js";
+import {
+  validateOperatorChainImpl,
+  validateOperatorChainSchema,
+} from "../tools/layer3/validateOperatorChain.js";
 import type { ToolContext } from "../tools/types.js";
 import type { OpenAITool } from "./client.js";
 import { createProjectRagSearchTool } from "./projectRagSearchTool.js";
@@ -184,6 +192,18 @@ export const LLM_TOOLS: LlmTool[] = [
     "Suggest a read-only TouchDesigner operator chain for a creative or technical goal from offline docs.",
     suggestOperatorChainSchema,
     suggestOperatorChainImpl,
+  ),
+  t(
+    "validate_operator_chain",
+    "Validate an ordered TouchDesigner operator chain against offline docs, connection hints, family filters, and version compatibility.",
+    validateOperatorChainSchema,
+    validateOperatorChainImpl,
+  ),
+  t(
+    "draft_recipe_from_operator_chain",
+    "Draft a RecipeSchema-valid recipe JSON from an operator chain without writing files or touching TouchDesigner.",
+    draftRecipeFromOperatorChainSchema,
+    draftRecipeFromOperatorChainImpl,
   ),
   t(
     "search_touchdesigner_knowledge",

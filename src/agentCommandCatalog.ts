@@ -1510,6 +1510,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "operators validate-chain",
+    summary: "Validate an ordered operator chain before creating nodes (offline).",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "optical-flow",
     summary:
       "Compute optical flow from a video/camera source and expose flow vectors for reactive use.",
@@ -1782,6 +1789,13 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "recipes",
     summary: "List the built-in recipe library (offline).",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "recipes draft-chain",
+    summary: "Draft a RecipeSchema JSON from an operator chain without applying it.",
     mutates: false,
     unsafe: false,
     source: "tool",
