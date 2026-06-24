@@ -33,6 +33,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Keep Glama/pnpm Docker builds warning-free by moving pnpm install policy into
+  `pnpm-workspace.yaml`, pinning the Vite/Cheerio resolutions there, and keeping
+  the Shader Park compiler as an optional peer.
 - Clear the npm audit report by updating vulnerable Vitest, Vite, VitePress and esbuild
   transitive dependency resolutions.
 

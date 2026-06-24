@@ -1,8 +1,9 @@
 /**
  * LanceIndexStore — fully offline. The real `@lancedb/lancedb` optional dep is
- * NEVER required: every test injects an in-memory fake via the `moduleLoader`
- * seam. The only test that touches the real loader asserts it *rejects* with the
- * friendly typed error (the dep is absent in CI), so we never import it for real.
+ * NEVER required: every store behavior test injects an in-memory fake via the
+ * `moduleLoader` seam. The only test that touches the real loader accepts either
+ * valid install state: the peer is installed and loads, or it is absent and the
+ * loader returns the friendly typed error.
  */
 
 import { mkdtempSync, rmSync } from "node:fs";
@@ -321,12 +322,18 @@ describe("LanceIndexStore", () => {
     });
   });
 
-  describe("loadLanceModule (real, optional dep absent)", () => {
-    it("rejects with the friendly typed error when the dep is not installed", async () => {
-      await expect(loadLanceModule()).rejects.toThrow(
-        "LanceDB backend requires the optional dependency '@lancedb/lancedb'. " +
-          "Install it or use TDMCP_RAG_BACKEND=jsonl.",
-      );
+  describe("loadLanceModule (real, optional dep)", () => {
+    it("loads the peer when installed or rejects with the friendly typed error when absent", async () => {
+      try {
+        const module = await loadLanceModule();
+        expect(module).toEqual(expect.objectContaining({ connect: expect.any(Function) }));
+      } catch (err) {
+        expect(err).toBeInstanceOf(Error);
+        expect((err as Error).message).toBe(
+          "LanceDB backend requires the optional dependency '@lancedb/lancedb'. " +
+            "Install it or use TDMCP_RAG_BACKEND=jsonl.",
+        );
+      }
     });
   });
 });
