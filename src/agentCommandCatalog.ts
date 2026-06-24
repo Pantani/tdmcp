@@ -306,6 +306,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "classes search",
+    summary: "Search TD Python API classes, methods, and members (offline).",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "clock-sync",
     summary: "Drive the global tempo from a Bpm knob + tap-tempo (beat-match the DJ).",
     mutates: true,
@@ -1477,6 +1484,13 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "operators",
     summary: "Search the operator knowledge base by keyword (offline).",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "operators compare-docs",
+    summary: "Compare two operator docs from offline knowledge.",
     mutates: false,
     unsafe: false,
     source: "tool",

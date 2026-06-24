@@ -4,6 +4,7 @@ import { registerAnalyzeProject } from "./analyzeProject.js";
 import { registerCaptionTop } from "./captionTop.js";
 import { registerCollectProjectAssets } from "./collectProjectAssets.js";
 import { registerCompactGraphDigest } from "./compactGraphDigest.js";
+import { registerCompareOperatorDocs } from "./compareOperatorDocs.js";
 import { registerCompareTdNodes } from "./compareTdNodes.js";
 import { registerControlTimelineTransport } from "./controlTimelineTransport.js";
 import { registerCopilotVision } from "./copilotVision.js";
@@ -49,6 +50,7 @@ import { registerRenderOutput } from "./renderOutput.js";
 import { registerRepairNetwork } from "./repairNetwork.js";
 import { registerScoreBuild } from "./scoreBuild.js";
 import { registerSearchOperators } from "./searchOperators.js";
+import { registerSearchPythonApi } from "./searchPythonApi.js";
 import { registerSearchTouchDesignerKnowledge } from "./searchTouchDesignerKnowledge.js";
 import { registerSerializeNetwork } from "./serializeNetwork.js";
 import { registerSetDatContent } from "./setDatContent.js";
@@ -82,7 +84,9 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerSnapshotTdGraph,
   registerReloadBridge,
   registerSearchOperators,
+  registerCompareOperatorDocs,
   registerGetOperatorWorkflowGuide,
+  registerSearchPythonApi,
   registerSearchTouchDesignerKnowledge,
   registerManagePackages,
   registerDocumentNetwork,

@@ -17,6 +17,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Expand `search_operators` with category/subcategory filters, exact/tag modes,
   parameter metadata search, version compatibility filtering, facets, zero-result
   tips, and explicit validation for unknown categories or TouchDesigner versions.
+- Add `compare_operator_docs` and `search_python_api` read-only knowledge tools
+  so agents can compare operator documentation and search TouchDesigner Python
+  classes, methods, and members without guessing resource URIs.
 
 ### Fixed
 

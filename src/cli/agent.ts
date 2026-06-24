@@ -582,6 +582,10 @@ import {
   compactGraphDigestImpl,
   compactGraphDigestSchema,
 } from "../tools/layer3/compactGraphDigest.js";
+import {
+  compareOperatorDocsImpl,
+  compareOperatorDocsSchema,
+} from "../tools/layer3/compareOperatorDocs.js";
 import { compareTdNodesImpl, compareTdNodesSchema } from "../tools/layer3/compareTdNodes.js";
 import {
   controlTimelineTransportImpl,
@@ -658,6 +662,7 @@ import { renderOutputImpl, renderOutputSchema } from "../tools/layer3/renderOutp
 import { repairNetworkImpl, repairNetworkSchema } from "../tools/layer3/repairNetwork.js";
 import { scoreBuildImpl, scoreBuildSchema } from "../tools/layer3/scoreBuild.js";
 import { searchOperatorsImpl, searchOperatorsSchema } from "../tools/layer3/searchOperators.js";
+import { searchPythonApiImpl, searchPythonApiSchema } from "../tools/layer3/searchPythonApi.js";
 import {
   searchTouchDesignerKnowledgeImpl,
   searchTouchDesignerKnowledgeSchema,
@@ -884,6 +889,11 @@ const COMMANDS: Record<string, Command> = {
     searchOperatorsImpl,
     "Search the operator knowledge base by keyword (offline).",
   ),
+  "operators compare-docs": r(
+    compareOperatorDocsSchema,
+    compareOperatorDocsImpl,
+    "Compare two operator docs from offline knowledge.",
+  ),
   "operators guide": r(
     getOperatorWorkflowGuideSchema,
     getOperatorWorkflowGuideImpl,
@@ -893,6 +903,11 @@ const COMMANDS: Record<string, Command> = {
     searchTouchDesignerKnowledgeSchema,
     searchTouchDesignerKnowledgeImpl,
     "Search embedded TD operators, versions, compatibility notes, techniques, and classes.",
+  ),
+  "classes search": r(
+    searchPythonApiSchema,
+    searchPythonApiImpl,
+    "Search TD Python API classes, methods, and members (offline).",
   ),
   document: r(
     documentNetworkSchema,

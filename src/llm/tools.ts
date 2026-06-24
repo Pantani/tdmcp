@@ -18,6 +18,10 @@ import {
   compactGraphDigestImpl,
   compactGraphDigestSchema,
 } from "../tools/layer3/compactGraphDigest.js";
+import {
+  compareOperatorDocsImpl,
+  compareOperatorDocsSchema,
+} from "../tools/layer3/compareOperatorDocs.js";
 import { compareTdNodesImpl, compareTdNodesSchema } from "../tools/layer3/compareTdNodes.js";
 import { createTdNodeImpl, createTdNodeSchema } from "../tools/layer3/createTdNode.js";
 import { deleteTdNodeImpl, deleteTdNodeSchema } from "../tools/layer3/deleteTdNode.js";
@@ -41,6 +45,7 @@ import {
 import { getTdNodesImpl, getTdNodesSchema } from "../tools/layer3/getTdNodes.js";
 import { getTdTopologyImpl, getTdTopologySchema } from "../tools/layer3/getTdTopology.js";
 import { searchOperatorsImpl, searchOperatorsSchema } from "../tools/layer3/searchOperators.js";
+import { searchPythonApiImpl, searchPythonApiSchema } from "../tools/layer3/searchPythonApi.js";
 import {
   searchTouchDesignerKnowledgeImpl,
   searchTouchDesignerKnowledgeSchema,
@@ -155,6 +160,12 @@ export const LLM_TOOLS: LlmTool[] = [
     searchOperatorsImpl,
   ),
   t(
+    "compare_operator_docs",
+    "Compare two operator types from the offline knowledge base, including shared and unique documented parameters.",
+    compareOperatorDocsSchema,
+    compareOperatorDocsImpl,
+  ),
+  t(
     "get_operator_workflow_guide",
     "Get one operator's common inputs, outputs, examples, and next-operator suggestions (offline).",
     getOperatorWorkflowGuideSchema,
@@ -165,6 +176,12 @@ export const LLM_TOOLS: LlmTool[] = [
     "Search embedded TouchDesigner operators, versions, compatibility notes, technique packs, TD classes, and experimental notes (offline).",
     searchTouchDesignerKnowledgeSchema,
     searchTouchDesignerKnowledgeImpl,
+  ),
+  t(
+    "search_python_api",
+    "Search TouchDesigner Python API classes, methods, and members from the offline knowledge base.",
+    searchPythonApiSchema,
+    searchPythonApiImpl,
   ),
   t(
     "list_recipes",
