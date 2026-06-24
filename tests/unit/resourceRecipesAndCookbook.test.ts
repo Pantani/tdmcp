@@ -174,6 +174,33 @@ describe("cookbook resource helpers", () => {
     }
   });
 
+  it("documents the offline tutorial-to-recipe knowledge workflow in both cookbooks", () => {
+    const en = readCookbookResource("en").text;
+    const pt = readCookbookResource("pt").text;
+
+    expect(en).toContain("## Offline TD knowledge & recipe drafting");
+    expect(en).toContain("draft_recipe_from_tutorial");
+    expect(en).toContain("tdmcp-agent tutorials draft-recipe");
+    expect(en).toContain("UNVERIFIED-pending-td");
+    expect(en).toContain('"name":"write_a_glsl_top","strict":false');
+    expect(en).toContain("undocumented_connection");
+    expect(en).toContain('"name":"anatomy_of_a_chop","strict":false');
+    expect(en).not.toContain('"name":"CHOP optimization"');
+    expect(en).not.toContain(
+      "GLSL TOP -> Null TOP\nchain and validates the result as `RecipeSchema` JSON",
+    );
+
+    expect(pt).toContain("## Conhecimento TD offline & rascunhos de receita");
+    expect(pt).toContain("draft_recipe_from_tutorial");
+    expect(pt).toContain("tdmcp-agent tutorials draft-recipe");
+    expect(pt).toContain("UNVERIFIED-pending-td");
+    expect(pt).toContain('"name":"write_a_glsl_top","strict":false');
+    expect(pt).toContain("undocumented_connection");
+    expect(pt).toContain('"name":"anatomy_of_a_chop","strict":false');
+    expect(pt).not.toContain('"name":"CHOP optimization"');
+    expect(pt).not.toContain("GLSL TOP -> Null\nTOP e valida o resultado como JSON `RecipeSchema`");
+  });
+
   it("returns an explanatory payload instead of throwing when the cookbook file is missing", () => {
     const result = readCookbookResourceFromPath("pt", "/tmp/tdmcp-missing-cookbook.md");
 

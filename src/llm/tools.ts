@@ -33,6 +33,10 @@ import {
   draftRecipeFromTechniqueImpl,
   draftRecipeFromTechniqueSchema,
 } from "../tools/layer3/draftRecipeFromTechnique.js";
+import {
+  draftRecipeFromTutorialImpl,
+  draftRecipeFromTutorialSchema,
+} from "../tools/layer3/draftRecipeFromTutorial.js";
 import { findTdNodesImpl, findTdNodesSchema } from "../tools/layer3/findTdNodes.js";
 import { getModuleHelpImpl, getModuleHelpSchema } from "../tools/layer3/getModuleHelp.js";
 import {
@@ -231,6 +235,12 @@ export const LLM_TOOLS: LlmTool[] = [
     "List, search, or retrieve embedded TouchDesigner tutorials with optional full content (offline).",
     getTutorialSchema,
     getTutorialImpl,
+  ),
+  t(
+    "draft_recipe_from_tutorial",
+    "Draft a RecipeSchema-valid recipe JSON from an embedded TouchDesigner tutorial without writing files or touching TouchDesigner.",
+    draftRecipeFromTutorialSchema,
+    draftRecipeFromTutorialImpl,
   ),
   t(
     "search_touchdesigner_knowledge",

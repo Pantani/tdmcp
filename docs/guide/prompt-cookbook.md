@@ -1712,6 +1712,66 @@ patch: one operator, one safe parameter, one way back.*
 describe what is on screen, name the weakest artistic choice, then propose a small
 change the artist can approve.*
 
+## Offline TD knowledge & recipe drafting
+
+Use these when you want the agent to read embedded TouchDesigner knowledge before it
+creates nodes. The tools in this section are read-only and work without a live TD
+bridge; any live cook or projector check stays **UNVERIFIED-pending-td** until you
+run the draft against a connected TouchDesigner instance.
+
+> *"Find the embedded tutorial for writing a GLSL TOP, try a conservative tutorial
+> draft in non-strict triage mode, and show me why it is or is not safe before
+> applying anything."*
+
+```bash
+tdmcp-agent tutorials get \
+  --params '{"name":"write_a_glsl_top","include_content":true}'
+tdmcp-agent tutorials draft-recipe \
+  --params '{"name":"write_a_glsl_top","strict":false,"max_steps":5}'
+```
+
+*`get_tutorial` retrieves the structured tutorial text and code blocks; the
+`draft_recipe_from_tutorial` tool validates the extracted chain with documented
+connection checks. For the bundled `write_a_glsl_top` tutorial, this is expected
+to stay non-draftable because the prose/TOC chain includes undocumented adjacent
+links such as `GLSL TOP -> GLSL Multi TOP`; the report should include
+`undocumented_connection`, omit `apply_recipe`, and leave the TD graph untouched.*
+
+> *"Before creating a feedback post chain, compare the operator docs for Blur TOP
+> and Level TOP, validate `Noise TOP -> Blur TOP -> Level TOP -> Null TOP`, then
+> draft a recipe from that chain without touching the project."*
+
+```bash
+tdmcp-agent operators compare-docs \
+  --params '{"operator_a":"Blur TOP","operator_b":"Level TOP"}'
+tdmcp-agent operators validate-chain \
+  --params '{"chain":["Noise TOP","Blur TOP","Level TOP","Null TOP"],"family":"TOP"}'
+tdmcp-agent recipes draft-chain \
+  --params '{"chain":["Noise TOP","Blur TOP","Level TOP","Null TOP"],"id":"feedback_post_draft","tags":["draft","feedback"]}'
+```
+
+*This is the safe "read, compare, validate, draft" loop: the agent can explain the
+operator tradeoffs and hand you a schema-valid recipe draft while the actual
+TouchDesigner graph remains unchanged.*
+
+> *"Search embedded tutorials for CHOP workflows, copy one tutorial id from the
+> results, try `draft_recipe_from_tutorial` in non-strict mode, and if it is not
+> draftable, explain why. Use any extracted operators as input to
+> `validate_operator_chain`, and only draft a recipe when the cleaned chain has no
+> errors. Treat `apply_recipe` as a later handoff, not part of this run."*
+
+```bash
+tdmcp-agent tutorials get \
+  --params '{"query":"CHOP","include_content":true,"limit":3}'
+tdmcp-agent tutorials draft-recipe \
+  --params '{"name":"anatomy_of_a_chop","strict":false,"max_steps":5}'
+```
+
+*This is the useful failure mode: a tutorial can still teach the agent what to
+inspect or validate even when it cannot become a safe recipe automatically.
+`draft_recipe_from_tutorial` takes a tutorial id or exact display name, not a
+free-text search query, so substitute the id you chose from the previous result.*
+
 ## Creative library (Creative RAG)
 
 The creative repertoire is an opt-in local index of open-licensed reference

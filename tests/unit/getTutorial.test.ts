@@ -57,7 +57,25 @@ function writeTutorialFixture(dataDir: string): void {
     category: "Advanced Development",
     subcategory: "GLSL",
     summary: "Create a GLSL TOP shader with uniforms.",
-    content: "Use a GLSL TOP, declare uniform float uTime, then connect a Null TOP.",
+    content: {
+      sections: [
+        {
+          title: "Build the shader",
+          level: 2,
+          content: [
+            {
+              type: "paragraph",
+              text: "Use a GLSL TOP, declare uniform float uTime, then connect a Null TOP.",
+            },
+            {
+              type: "code",
+              language: "glsl",
+              text: "layout(location = 0) out vec4 fragColor;\nvoid main() { fragColor = TDOutputSwizzle(vec4(1.0)); }",
+            },
+          ],
+        },
+      ],
+    },
     keywords: ["glsl", "shader", "uniform"],
     tags: ["glsl", "shader"],
   });
@@ -157,7 +175,30 @@ describe("getTutorialImpl", () => {
     }>(result);
 
     expect(data.tutorial.content).toContain("uniform float uTime");
+    expect(data.tutorial.content).toContain("TDOutputSwizzle");
     expect(data.nextToolHints).toContain("search_touchdesigner_knowledge");
+  });
+
+  it("searches structured tutorial section content and code blocks", () => {
+    const dataDir = join(tempRoot(), "data");
+    writeTutorialFixture(dataDir);
+
+    const result = getTutorialImpl(makeCtx(dataDir), {
+      query: "TDOutputSwizzle",
+      include_content: true,
+    });
+    const data = structured<{
+      mode: string;
+      tutorials: Array<{ id: string; content?: string }>;
+    }>(result);
+
+    expect(data.mode).toBe("search");
+    expect(data.tutorials).toEqual([
+      expect.objectContaining({
+        id: "write_a_glsl_top",
+        content: expect.stringContaining("TDOutputSwizzle"),
+      }),
+    ]);
   });
 
   it("loads full tutorial content for list mode when requested", () => {

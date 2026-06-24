@@ -608,6 +608,10 @@ import {
   draftRecipeFromTechniqueImpl,
   draftRecipeFromTechniqueSchema,
 } from "../tools/layer3/draftRecipeFromTechnique.js";
+import {
+  draftRecipeFromTutorialImpl,
+  draftRecipeFromTutorialSchema,
+} from "../tools/layer3/draftRecipeFromTutorial.js";
 import { editDatContentImpl, editDatContentSchema } from "../tools/layer3/editDatContent.js";
 import {
   elicitMissingArgsImpl,
@@ -952,6 +956,11 @@ const COMMANDS: Record<string, Command> = {
     getTutorialSchema,
     getTutorialImpl,
     "List, search, or retrieve TouchDesigner tutorials (offline).",
+  ),
+  "tutorials draft-recipe": r(
+    draftRecipeFromTutorialSchema,
+    draftRecipeFromTutorialImpl,
+    "Draft a RecipeSchema JSON from a TouchDesigner tutorial (offline).",
   ),
   "knowledge search": r(
     searchTouchDesignerKnowledgeSchema,

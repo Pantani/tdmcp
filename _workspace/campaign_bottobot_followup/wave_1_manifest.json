@@ -1,0 +1,44 @@
+{
+  "wave": 1,
+  "name": "tutorial_to_recipe",
+  "features": [
+    "tutorial_structured_content_hardening",
+    "tutorial_to_recipe"
+  ],
+  "foundations": [
+    {
+      "id": "tutorial_structured_content_hardening",
+      "targetFiles": [
+        "src/tools/layer3/getTutorial.ts",
+        "src/tools/layer3/tutorialContent.ts",
+        "tests/unit/getTutorial.test.ts"
+      ]
+    }
+  ],
+  "parallel": [
+    {
+      "id": "tutorial_to_recipe",
+      "targetFiles": [
+        "src/tools/layer3/draftRecipeFromTutorial.ts",
+        "tests/unit/draftRecipeFromTutorial.test.ts"
+      ],
+      "sharedIntegrationFiles": [
+        "src/tools/layer3/index.ts",
+        "src/cli/agent.ts",
+        "src/agentCommandCatalog.ts",
+        "CHANGELOG.md"
+      ]
+    }
+  ],
+  "blocked": [],
+  "status": "qa-focused-pass",
+  "qa": [
+    "PASS: npm run agent:catalog:gen",
+    "PASS: npm run docs:gen",
+    "PASS: npm run lint",
+    "PASS: npm run typecheck",
+    "PASS: npm run validate:recipes",
+    "PASS: npx vitest run tests/unit/getTutorial.test.ts tests/unit/draftRecipeFromTutorial.test.ts tests/unit/llmAgent.test.ts tests/unit/cliAgent.test.ts tests/unit/commandCatalogResource.test.ts tests/unit/toolsLayer3.test.ts"
+  ],
+  "liveChecks": "UNVERIFIED-pending-td unless bridge is reachable"
+}
