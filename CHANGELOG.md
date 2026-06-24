@@ -20,6 +20,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Add `compare_operator_docs` and `search_python_api` read-only knowledge tools
   so agents can compare operator documentation and search TouchDesigner Python
   classes, methods, and members without guessing resource URIs.
+- Add `suggest_operator_chain` and `plan_td_version_migration` read-only tools
+  so agents can turn offline workflow/compatibility knowledge into operator-chain
+  plans and TouchDesigner upgrade checklists before touching a live project.
 
 ### Fixed
 

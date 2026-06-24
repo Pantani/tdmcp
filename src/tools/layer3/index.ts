@@ -41,6 +41,7 @@ import { registerLintRecipeLibrary } from "./lintRecipeLibrary.js";
 import { registerManageComponentStorage } from "./manageComponentStorage.js";
 import { registerManagePackages } from "./managePackages.js";
 import { registerOptimizePerformance } from "./optimizePerformance.js";
+import { registerPlanTdVersionMigration } from "./planTdVersionMigration.js";
 import { registerProfileCookCost } from "./profileCookCost.js";
 import { registerProjectDocumentationSite } from "./projectDocumentationSite.js";
 import { registerReadParameterModes } from "./readParameterModes.js";
@@ -56,6 +57,7 @@ import { registerSerializeNetwork } from "./serializeNetwork.js";
 import { registerSetDatContent } from "./setDatContent.js";
 import { registerSetParameterExpression } from "./setParameterExpression.js";
 import { registerSnapshotTdGraph } from "./snapshotTdGraph.js";
+import { registerSuggestOperatorChain } from "./suggestOperatorChain.js";
 import { registerSummarizeTdErrors } from "./summarizeTdErrors.js";
 import { registerSwapOperator } from "./swapOperator.js";
 import { registerUpdateTdNodeParameters } from "./updateTdNodeParameters.js";
@@ -86,7 +88,9 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerSearchOperators,
   registerCompareOperatorDocs,
   registerGetOperatorWorkflowGuide,
+  registerSuggestOperatorChain,
   registerSearchPythonApi,
+  registerPlanTdVersionMigration,
   registerSearchTouchDesignerKnowledge,
   registerManagePackages,
   registerDocumentNetwork,

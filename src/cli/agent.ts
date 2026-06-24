@@ -647,6 +647,10 @@ import {
   optimizePerformanceImpl,
   optimizePerformanceSchema,
 } from "../tools/layer3/optimizePerformance.js";
+import {
+  planTdVersionMigrationImpl,
+  planTdVersionMigrationSchema,
+} from "../tools/layer3/planTdVersionMigration.js";
 import { profileCookCostImpl, profileCookCostSchema } from "../tools/layer3/profileCookCost.js";
 import {
   projectDocumentationSiteImpl,
@@ -674,6 +678,10 @@ import {
   setParameterExpressionSchema,
 } from "../tools/layer3/setParameterExpression.js";
 import { snapshotTdGraphImpl, snapshotTdGraphSchema } from "../tools/layer3/snapshotTdGraph.js";
+import {
+  suggestOperatorChainImpl,
+  suggestOperatorChainSchema,
+} from "../tools/layer3/suggestOperatorChain.js";
 import {
   summarizeTdErrorsImpl,
   summarizeTdErrorsSchema,
@@ -899,10 +907,20 @@ const COMMANDS: Record<string, Command> = {
     getOperatorWorkflowGuideImpl,
     "Get operator connections, examples, and next-operator suggestions (offline).",
   ),
+  "operators suggest-chain": r(
+    suggestOperatorChainSchema,
+    suggestOperatorChainImpl,
+    "Suggest a read-only operator chain for a creative or technical goal (offline).",
+  ),
   "knowledge search": r(
     searchTouchDesignerKnowledgeSchema,
     searchTouchDesignerKnowledgeImpl,
     "Search embedded TD operators, versions, compatibility notes, techniques, and classes.",
+  ),
+  "versions migration-plan": r(
+    planTdVersionMigrationSchema,
+    planTdVersionMigrationImpl,
+    "Plan a TD version migration from release and compatibility notes (offline).",
   ),
   "classes search": r(
     searchPythonApiSchema,

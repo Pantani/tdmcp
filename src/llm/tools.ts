@@ -44,12 +44,20 @@ import {
 } from "../tools/layer3/getTdNodeParameters.js";
 import { getTdNodesImpl, getTdNodesSchema } from "../tools/layer3/getTdNodes.js";
 import { getTdTopologyImpl, getTdTopologySchema } from "../tools/layer3/getTdTopology.js";
+import {
+  planTdVersionMigrationImpl,
+  planTdVersionMigrationSchema,
+} from "../tools/layer3/planTdVersionMigration.js";
 import { searchOperatorsImpl, searchOperatorsSchema } from "../tools/layer3/searchOperators.js";
 import { searchPythonApiImpl, searchPythonApiSchema } from "../tools/layer3/searchPythonApi.js";
 import {
   searchTouchDesignerKnowledgeImpl,
   searchTouchDesignerKnowledgeSchema,
 } from "../tools/layer3/searchTouchDesignerKnowledge.js";
+import {
+  suggestOperatorChainImpl,
+  suggestOperatorChainSchema,
+} from "../tools/layer3/suggestOperatorChain.js";
 import {
   summarizeTdErrorsImpl,
   summarizeTdErrorsSchema,
@@ -172,10 +180,22 @@ export const LLM_TOOLS: LlmTool[] = [
     getOperatorWorkflowGuideImpl,
   ),
   t(
+    "suggest_operator_chain",
+    "Suggest a read-only TouchDesigner operator chain for a creative or technical goal from offline docs.",
+    suggestOperatorChainSchema,
+    suggestOperatorChainImpl,
+  ),
+  t(
     "search_touchdesigner_knowledge",
     "Search embedded TouchDesigner operators, versions, compatibility notes, technique packs, TD classes, and experimental notes (offline).",
     searchTouchDesignerKnowledgeSchema,
     searchTouchDesignerKnowledgeImpl,
+  ),
+  t(
+    "plan_td_version_migration",
+    "Plan a TouchDesigner version migration from offline release, operator, and Python compatibility knowledge.",
+    planTdVersionMigrationSchema,
+    planTdVersionMigrationImpl,
   ),
   t(
     "search_python_api",

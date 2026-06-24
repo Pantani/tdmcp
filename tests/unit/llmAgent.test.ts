@@ -84,9 +84,13 @@ describe("local copilot — curated tool registry", () => {
     const names = LLM_TOOLS.map((t) => t.name);
     expect(names).toContain("search_operators");
     expect(names).toContain("list_recipes");
+    expect(names).toContain("suggest_operator_chain");
+    expect(names).toContain("plan_td_version_migration");
     const byName = Object.fromEntries(LLM_TOOLS.map((t) => [t.name, t.mutates]));
     expect(byName.search_operators).toBe(false);
     expect(byName.list_recipes).toBe(false);
+    expect(byName.suggest_operator_chain).toBe(false);
+    expect(byName.plan_td_version_migration).toBe(false);
   });
 
   it("the creative tier adds the curated Layer-1 generators on top of standard", () => {

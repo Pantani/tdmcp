@@ -1503,6 +1503,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "operators suggest-chain",
+    summary: "Suggest a read-only operator chain for a creative or technical goal (offline).",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "optical-flow",
     summary:
       "Compute optical flow from a video/camera source and expose flow vectors for reactive use.",
@@ -2150,6 +2157,13 @@ export const AGENT_COMMAND_CATALOG = [
     mutates: false,
     unsafe: false,
     source: "cli",
+  },
+  {
+    command: "versions migration-plan",
+    summary: "Plan a TD version migration from release and compatibility notes (offline).",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
   },
   {
     command: "video",
