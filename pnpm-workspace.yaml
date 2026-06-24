@@ -1,1 +1,10 @@
 autoInstallPeers: false
+overrides:
+  "@bottobot/td-mcp>cheerio": 1.0.0-rc.12
+  vite: 6.4.3
+onlyBuiltDependencies:
+  - esbuild
+  - msw
+allowBuilds:
+  esbuild: true
+  msw: true

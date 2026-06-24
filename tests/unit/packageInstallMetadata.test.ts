@@ -11,14 +11,14 @@ interface PackageJson {
   devDependencies?: Record<string, string>;
   peerDependencies?: Record<string, string>;
   peerDependenciesMeta?: Record<string, { optional?: boolean }>;
-  pnpm?: {
-    overrides?: Record<string, string>;
-    onlyBuiltDependencies?: string[];
-  };
+  pnpm?: unknown;
 }
 
 interface PnpmWorkspace {
   autoInstallPeers?: boolean;
+  overrides?: Record<string, string>;
+  onlyBuiltDependencies?: string[];
+  allowBuilds?: Record<string, boolean>;
 }
 
 function readRootPackageJson(): PackageJson {
@@ -35,6 +35,7 @@ describe("package install metadata", () => {
     const pnpmWorkspace = readPnpmWorkspace();
 
     expect(packageJson.dependencies).not.toHaveProperty("shader-park-core");
+    expect(packageJson.pnpm).toBeUndefined();
     expect(packageJson.devDependencies).toHaveProperty("search-insights", "^2.17.3");
     expect(packageJson.peerDependencies).toMatchObject({
       "shader-park-core": "^0.2.8",
@@ -42,11 +43,12 @@ describe("package install metadata", () => {
     expect(packageJson.peerDependenciesMeta).toMatchObject({
       "shader-park-core": { optional: true },
     });
-    expect(packageJson.pnpm?.overrides).toMatchObject({
+    expect(pnpmWorkspace.overrides).toMatchObject({
       "@bottobot/td-mcp>cheerio": "1.0.0-rc.12",
       vite: "6.4.3",
     });
-    expect(packageJson.pnpm?.onlyBuiltDependencies).toEqual(["esbuild", "msw"]);
+    expect(pnpmWorkspace.onlyBuiltDependencies).toEqual(["esbuild", "msw"]);
+    expect(pnpmWorkspace.allowBuilds).toEqual({ esbuild: true, msw: true });
     expect(pnpmWorkspace.autoInstallPeers).toBe(false);
   });
 });
