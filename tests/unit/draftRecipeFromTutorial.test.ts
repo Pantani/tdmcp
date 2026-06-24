@@ -219,4 +219,33 @@ describe("draftRecipeFromTutorialImpl", () => {
     expect(textOf(result)).toContain("does not contain enough operator references");
     expect(textOf(result)).toContain("get_tutorial");
   });
+
+  it("rejects bundled tutorial chains with undocumented adjacent links by default", () => {
+    const result = draftRecipeFromTutorialImpl(
+      {
+        knowledge: new KnowledgeBase(),
+        logger: silentLogger,
+      } as unknown as ToolContext,
+      {
+        name: "write_a_glsl_top",
+      },
+    );
+    const data = structured<{
+      valid: boolean;
+      draftable: boolean;
+      unsupportedReasons: string[];
+      nextToolHints: string[];
+      chainReport?: { valid: boolean; issues?: Array<{ type: string; message: string }> };
+    }>(result);
+
+    expect(result.isError).toBe(true);
+    expect(data.valid).toBe(false);
+    expect(data.draftable).toBe(false);
+    expect(data.chainReport?.valid).toBe(false);
+    expect(
+      data.chainReport?.issues?.some((issue) => issue.type === "undocumented_connection"),
+    ).toBe(true);
+    expect(data.unsupportedReasons.join("\n")).toContain("No documented connection was found");
+    expect(data.nextToolHints).not.toContain("apply_recipe");
+  });
 });

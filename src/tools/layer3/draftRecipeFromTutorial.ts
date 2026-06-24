@@ -87,6 +87,11 @@ export const draftRecipeFromTutorialOutputSchema = z.object({
 });
 
 type DraftRecipeFromTutorialOutput = z.output<typeof draftRecipeFromTutorialOutputSchema>;
+type TutorialChainReport = {
+  valid?: boolean;
+  issues?: Array<{ type: string; severity?: string; message: string }>;
+  warnings?: string[];
+};
 
 function compactKey(value: string | undefined): string {
   return (value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -286,12 +291,29 @@ function textOf(result: CallToolResult): string {
     .join("\n");
 }
 
+function strictNotDraftableResult(
+  summary: string,
+  output: DraftRecipeFromTutorialOutput,
+): CallToolResult {
+  return {
+    isError: true,
+    content: [
+      {
+        type: "text",
+        text: `${summary}\n\n\`\`\`json\n${JSON.stringify(output, null, 2)}\n\`\`\``,
+      },
+    ],
+    structuredContent: output as { [key: string]: unknown },
+  };
+}
+
 function notDraftable(
   args: DraftRecipeFromTutorialArgs,
   tutorial: Tutorial,
   operators: string[],
   reasons: string[],
   warnings: string[] = [],
+  chainReport?: TutorialChainReport,
 ): CallToolResult {
   const output: DraftRecipeFromTutorialOutput = {
     valid: false,
@@ -307,8 +329,15 @@ function notDraftable(
       "draft_recipe_from_operator_chain",
     ],
   };
+  if (chainReport) {
+    output.chainReport = {
+      valid: Boolean(chainReport.valid),
+      issues: chainReport.issues,
+      warnings: chainReport.warnings,
+    };
+  }
   const summary = `Tutorial ${tutorial.id} does not contain enough operator references for a RecipeSchema draft.`;
-  if (args.strict) return errorResult(summary, output);
+  if (args.strict) return strictNotDraftableResult(summary, output);
   return structuredResult(summary, output);
 }
 
@@ -345,19 +374,21 @@ export function draftRecipeFromTutorialImpl(
       chain: operators,
       family: args.family,
       target_version: args.td_version_min,
+      require_documented_connections: true,
     });
-    const chainReport = chainValidation.structuredContent as
-      | {
-          valid?: boolean;
-          issues?: Array<{ type: string; severity?: string; message: string }>;
-          warnings?: string[];
-        }
-      | undefined;
+    const chainReport = chainValidation.structuredContent as TutorialChainReport | undefined;
     if (!chainReport?.valid) {
       const reasons = chainReport?.issues?.map((issue) => issue.message) ?? [
         "Extracted operator chain did not validate.",
       ];
-      return notDraftable(args, tutorial, operators, reasons, [textOf(chainValidation)]);
+      return notDraftable(
+        args,
+        tutorial,
+        operators,
+        reasons,
+        [textOf(chainValidation)],
+        chainReport,
+      );
     }
 
     const flattened = flattenTutorialContent(tutorial.content) ?? "";
