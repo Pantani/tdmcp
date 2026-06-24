@@ -30,6 +30,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Add `get_technique_detail`, `draft_recipe_from_technique`, and `get_tutorial`
   read-only knowledge tools so agents can inspect Bottobot-derived technique and
   tutorial material and turn GLSL techniques into `RecipeSchema` drafts offline.
+- Add `draft_recipe_from_tutorial` as a read-only Layer 3/CLI/local-copilot tool
+  that extracts conservative operator chains from embedded tutorials and drafts
+  `RecipeSchema` JSON offline; harden tutorial content handling so structured
+  Bottobot tutorial sections and code blocks flatten consistently for retrieval
+  and search.
+- Add English and Portuguese cookbook examples for offline TouchDesigner
+  knowledge workflows, including tutorial-to-recipe drafting and operator-chain
+  compare/validate/draft loops with live checks marked `UNVERIFIED-pending-td`.
 
 ### Fixed
 

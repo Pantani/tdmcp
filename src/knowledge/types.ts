@@ -193,7 +193,7 @@ export interface Tutorial {
   subcategory?: string;
   description?: string;
   summary?: string;
-  content?: string;
+  content?: unknown;
   keywords?: string[];
   tags?: string[];
 }

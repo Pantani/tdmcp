@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { Tutorial, TutorialSummary } from "../../knowledge/types.js";
 import { errorResult, structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { flattenTutorialContent, tutorialTextFields } from "./tutorialContent.js";
 
 export const getTutorialSchema = z.object({
   query: z
@@ -102,7 +103,7 @@ function tutorialToResult(
     subcategory: full.subcategory,
     description: full.description,
     summary: tutorial.summary,
-    ...(includeContent && full.content ? { content: full.content } : {}),
+    ...(includeContent && full.content ? { content: flattenTutorialContent(full.content) } : {}),
     keywords: full.keywords,
     tags: full.tags,
     resourceUri: resourceUri(tutorialId(tutorial)),
@@ -115,16 +116,7 @@ function tutorialHaystack(summary: TutorialSummary, tutorial: Tutorial | undefin
     summary.name,
     summary.category,
     summary.summary,
-    tutorial?.id,
-    tutorial?.name,
-    tutorial?.displayName,
-    tutorial?.category,
-    tutorial?.subcategory,
-    tutorial?.description,
-    tutorial?.summary,
-    ...(tutorial?.keywords ?? []),
-    ...(tutorial?.tags ?? []),
-    tutorial?.content,
+    tutorial ? tutorialTextFields(tutorial) : undefined,
   ]
     .filter((value): value is string => typeof value === "string")
     .join(" ")
