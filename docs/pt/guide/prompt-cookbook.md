@@ -1756,21 +1756,24 @@ bridge TD ao vivo; qualquer cook ou checagem de projetor continua
 **UNVERIFIED-pending-td** até você rodar o rascunho contra uma instância
 TouchDesigner conectada.
 
-> *"Encontre o tutorial embutido para escrever um GLSL TOP, gere um rascunho
-> RecipeSchema a partir dele, valide a cadeia de operadores e me mostre o JSON
+> *"Encontre o tutorial embutido para escrever um GLSL TOP, tente um rascunho de
+> tutorial em modo de triagem non-strict e me mostre por que ele é ou não é seguro
 > antes de aplicar qualquer coisa."*
 
 ```bash
 tdmcp-agent tutorials get \
-  --params '{"name":"Write a GLSL TOP","include_content":true}'
+  --params '{"name":"write_a_glsl_top","include_content":true}'
 tdmcp-agent tutorials draft-recipe \
-  --params '{"name":"Write a GLSL TOP","id":"tutorial_glsl_top_draft"}'
+  --params '{"name":"write_a_glsl_top","strict":false,"max_steps":5}'
 ```
 
 *`get_tutorial` recupera o texto estruturado do tutorial e os blocos de código; a
-tool `draft_recipe_from_tutorial` extrai uma cadeia conservadora GLSL TOP -> Null
-TOP e valida o resultado como JSON `RecipeSchema`. Inspecione primeiro; use
-`apply_recipe` só quando estiver pronto para construir e verificar no TD.*
+tool `draft_recipe_from_tutorial` valida a cadeia extraída com checagens de
+conexões documentadas. Para o tutorial embutido `write_a_glsl_top`, o resultado
+esperado é continuar sem rascunho: a cadeia extraída de texto/TOC inclui links
+adjacentes sem documentação, como `GLSL TOP -> GLSL Multi TOP`; o relatório deve
+incluir `undocumented_connection`, omitir `apply_recipe` e deixar o grafo TD
+intocado.*
 
 > *"Antes de criar uma cadeia de post com feedback, compare os docs de operator de
 > Blur TOP e Level TOP, valide `Noise TOP -> Blur TOP -> Level TOP -> Null TOP`,
@@ -1789,22 +1792,24 @@ tdmcp-agent recipes draft-chain \
 tradeoffs dos operadores e entrega um rascunho de receita válido no schema enquanto
 o grafo TouchDesigner real permanece inalterado.*
 
-> *"Busque tutoriais embutidos sobre otimização de CHOP, tente
-> `draft_recipe_from_tutorial` em modo non-strict e, se não der para gerar uma
-> receita, explique o motivo. Use os operadores extraídos como entrada para
-> `validate_operator_chain` e só gere uma receita quando a cadeia corrigida não
-> tiver erros. Trate `apply_recipe` como handoff posterior, não como parte desta
-> execução."*
+> *"Busque tutoriais embutidos sobre fluxos CHOP, copie um id de tutorial dos
+> resultados, tente `draft_recipe_from_tutorial` em modo non-strict e, se não der
+> para gerar uma receita, explique o motivo. Use os operadores extraídos como
+> entrada para `validate_operator_chain` e só gere uma receita quando a cadeia
+> corrigida não tiver erros. Trate `apply_recipe` como handoff posterior, não como
+> parte desta execução."*
 
 ```bash
 tdmcp-agent tutorials get \
-  --params '{"query":"CHOP optimization","include_content":true,"limit":3}'
+  --params '{"query":"CHOP","include_content":true,"limit":3}'
 tdmcp-agent tutorials draft-recipe \
-  --params '{"name":"CHOP optimization","strict":false,"max_steps":5}'
+  --params '{"name":"anatomy_of_a_chop","strict":false,"max_steps":5}'
 ```
 
 *Esse é o modo de falha útil: um tutorial ainda pode ensinar o que o agente deve
-inspecionar ou validar, mesmo quando não vira uma receita segura automaticamente.*
+inspecionar ou validar, mesmo quando não vira uma receita segura automaticamente.
+`draft_recipe_from_tutorial` recebe um id de tutorial ou nome exato, não uma busca
+livre; substitua pelo id escolhido no resultado anterior.*
 
 ## Biblioteca criativa (Creative RAG)
 

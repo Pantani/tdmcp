@@ -1719,20 +1719,23 @@ creates nodes. The tools in this section are read-only and work without a live T
 bridge; any live cook or projector check stays **UNVERIFIED-pending-td** until you
 run the draft against a connected TouchDesigner instance.
 
-> *"Find the embedded tutorial for writing a GLSL TOP, draft a RecipeSchema from it,
-> validate the operator chain, and show me the JSON before applying anything."*
+> *"Find the embedded tutorial for writing a GLSL TOP, try a conservative tutorial
+> draft in non-strict triage mode, and show me why it is or is not safe before
+> applying anything."*
 
 ```bash
 tdmcp-agent tutorials get \
-  --params '{"name":"Write a GLSL TOP","include_content":true}'
+  --params '{"name":"write_a_glsl_top","include_content":true}'
 tdmcp-agent tutorials draft-recipe \
-  --params '{"name":"Write a GLSL TOP","id":"tutorial_glsl_top_draft"}'
+  --params '{"name":"write_a_glsl_top","strict":false,"max_steps":5}'
 ```
 
 *`get_tutorial` retrieves the structured tutorial text and code blocks; the
-`draft_recipe_from_tutorial` tool extracts a conservative GLSL TOP -> Null TOP
-chain and validates the result as `RecipeSchema` JSON. Inspect it first, then use
-`apply_recipe` only when you are ready to build and verify in TD.*
+`draft_recipe_from_tutorial` tool validates the extracted chain with documented
+connection checks. For the bundled `write_a_glsl_top` tutorial, this is expected
+to stay non-draftable because the prose/TOC chain includes undocumented adjacent
+links such as `GLSL TOP -> GLSL Multi TOP`; the report should include
+`undocumented_connection`, omit `apply_recipe`, and leave the TD graph untouched.*
 
 > *"Before creating a feedback post chain, compare the operator docs for Blur TOP
 > and Level TOP, validate `Noise TOP -> Blur TOP -> Level TOP -> Null TOP`, then
@@ -1751,21 +1754,23 @@ tdmcp-agent recipes draft-chain \
 operator tradeoffs and hand you a schema-valid recipe draft while the actual
 TouchDesigner graph remains unchanged.*
 
-> *"Search embedded tutorials for a CHOP optimization workflow, try
-> `draft_recipe_from_tutorial` in non-strict mode, and if it is not draftable,
-> explain why. Use any extracted operators as input to `validate_operator_chain`,
-> and only draft a recipe when the cleaned chain has no errors. Treat
-> `apply_recipe` as a later handoff, not part of this run."*
+> *"Search embedded tutorials for CHOP workflows, copy one tutorial id from the
+> results, try `draft_recipe_from_tutorial` in non-strict mode, and if it is not
+> draftable, explain why. Use any extracted operators as input to
+> `validate_operator_chain`, and only draft a recipe when the cleaned chain has no
+> errors. Treat `apply_recipe` as a later handoff, not part of this run."*
 
 ```bash
 tdmcp-agent tutorials get \
-  --params '{"query":"CHOP optimization","include_content":true,"limit":3}'
+  --params '{"query":"CHOP","include_content":true,"limit":3}'
 tdmcp-agent tutorials draft-recipe \
-  --params '{"name":"CHOP optimization","strict":false,"max_steps":5}'
+  --params '{"name":"anatomy_of_a_chop","strict":false,"max_steps":5}'
 ```
 
 *This is the useful failure mode: a tutorial can still teach the agent what to
-inspect or validate even when it cannot become a safe recipe automatically.*
+inspect or validate even when it cannot become a safe recipe automatically.
+`draft_recipe_from_tutorial` takes a tutorial id or exact display name, not a
+free-text search query, so substitute the id you chose from the previous result.*
 
 ## Creative library (Creative RAG)
 
