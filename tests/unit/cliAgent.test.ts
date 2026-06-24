@@ -1369,6 +1369,29 @@ describe("tdmcp-agent CLI — phase 7 (stage I/O & sensor reactivity)", () => {
     expect(doc.args.source).toBe("synthetic");
   });
 
+  it("schema kinect-wall-harp exposes wall depth and eight-string controls", async () => {
+    const r = await runCli(["schema", "kinect-wall-harp"]);
+    expect(r.code).toBe(0);
+    const input = JSON.stringify(JSON.parse(r.stdout).input);
+    expect(input).toContain("freenect");
+    expect(input).toContain("synthetic");
+    expect(input).toContain("wall_depth_center");
+    expect(input).toContain("touch_thickness");
+    expect(input).toContain("background_level");
+    expect(input).toContain("frequencies");
+  });
+
+  it("dry-runs kinect-wall-harp with the synthetic source", async () => {
+    const r = await runCli(["kinect-wall-harp", "--dry-run", "--params", '{"source":"synthetic"}']);
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.dryRun).toBe(true);
+    expect(doc.command).toBe("kinect-wall-harp");
+    expect(doc.args.source).toBe("synthetic");
+    expect(doc.args.background_level).toBe(0.32);
+    expect(doc.args.string_count).toBe(8);
+  });
+
   it("schema text exposes the text content and alignment", async () => {
     const r = await runCli(["schema", "text"]);
     expect(r.code).toBe(0);

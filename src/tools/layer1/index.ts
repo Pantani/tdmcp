@@ -53,6 +53,7 @@ import { registerCreateJfaVoronoi } from "./createJfaVoronoi.js";
 import { registerCreateKaleidoscope } from "./createKaleidoscope.js";
 import { registerCreateKeyer } from "./createKeyer.js";
 import { registerCreateKeyframeAnimation } from "./createKeyframeAnimation.js";
+import { registerCreateKinectWallHarp } from "./createKinectWallHarp.js";
 import { registerCreateKineticText } from "./createKineticText.js";
 import { registerCreateLayerMixer } from "./createLayerMixer.js";
 import { registerCreateLayerStack } from "./createLayerStack.js";
@@ -149,6 +150,7 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerExtractAudioFeatures,
   registerCreateMotionReactive,
   registerCreateInteractiveProjectionMapping,
+  registerCreateKinectWallHarp,
   registerCreateMultiOutput,
   registerCreateSyncExternalClock,
   registerCreateTempoSync,
