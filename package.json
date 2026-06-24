@@ -95,6 +95,16 @@
     "fsevents": true,
     "msw": true
   },
+  "pnpm": {
+    "overrides": {
+      "@bottobot/td-mcp>cheerio": "1.0.0-rc.12",
+      "vite": "6.4.3"
+    },
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "msw"
+    ]
+  },
   "keywords": [
     "touchdesigner",
     "touchdesigner-mcp",
@@ -115,15 +125,18 @@
   ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "shader-park-core": "^0.2.8",
     "yaml": "^2.9.0",
     "zod": "^4.4.3"
   },
   "peerDependencies": {
-    "@lancedb/lancedb": "^0.30.0"
+    "@lancedb/lancedb": "^0.30.0",
+    "shader-park-core": "^0.2.8"
   },
   "peerDependenciesMeta": {
     "@lancedb/lancedb": {
+      "optional": true
+    },
+    "shader-park-core": {
       "optional": true
     }
   },
@@ -136,6 +149,7 @@
     "dependency-cruiser": "^17.4.3",
     "eslint": "^9.39.4",
     "msw": "^2.12.14",
+    "search-insights": "^2.17.3",
     "tsup": "^8.5.1",
     "tsx": "^4.22.3",
     "typescript": "^6.0.3",
