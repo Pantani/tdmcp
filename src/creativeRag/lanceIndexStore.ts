@@ -6,10 +6,11 @@
  * narrows the candidate set before scoring. The public contract ({@link IndexStore})
  * is identical, so the integrator's backend factory can swap stores transparently.
  *
- * The `@lancedb/lancedb` package is an *optional peer* dependency — it is NOT in
- * `dependencies` and is not auto-installed, so a default install never pulls it.
- * {@link loadLanceModule} dynamically imports it and turns a missing-module
- * failure into a friendly, typed error pointing at the jsonl fallback.
+ * The `@lancedb/lancedb` package is an *optional peer* dependency — depending on
+ * the package manager and install mode it may or may not be present in the local
+ * install tree. {@link loadLanceModule} dynamically imports it and turns a
+ * missing-module failure into a friendly, typed error pointing at the jsonl
+ * fallback.
  *
  * SCORE CONTRACT: {@link IndexStore.search} must return `score` as cosine 0..1.
  * LanceDB's `vectorSearch` ranks by L2 `_distance`, not cosine — so we use the
@@ -18,9 +19,9 @@
  * values and the ordering byte-for-byte comparable with {@link JsonlIndexStore}.
  *
  * TESTING SEAM: the lance module is injectable. `LanceIndexStoreOptions.moduleLoader`
- * defaults to {@link loadLanceModule}; tests pass an in-memory fake so CI never
- * touches (or requires) the real optional dependency. The integrator's factory
- * MUST leave this seam intact (default = real loader, override = inject).
+ * defaults to {@link loadLanceModule}; store behavior tests pass an in-memory
+ * fake so they do not require the real optional dependency. The integrator's
+ * factory MUST leave this seam intact (default = real loader, override = inject).
  */
 
 import { cosineSimilarity } from "./cosine.js";
@@ -87,20 +88,21 @@ interface LanceModule {
   connect(dir: string): Promise<LanceConnection>;
 }
 
+// Keep the specifier type-erased so `tsc` does not require optional peer types
+// during builds where the LanceDB package is intentionally absent.
+const LANCE_MODULE_SPECIFIER: string = "@lancedb/lancedb";
+
 /**
- * Lazy-load `@lancedb/lancedb`. The dep is an optional peer that the default
- * install never pulls, so the import normally fails when the backend is selected
- * without it installed. Any module-resolution failure — Node's
+ * Lazy-load `@lancedb/lancedb`. The dep is an optional peer, so the import can
+ * fail when the backend is selected without it installed. Any module-resolution
+ * failure — Node's
  * `ERR_MODULE_NOT_FOUND`/`MODULE_NOT_FOUND` or a bundler's "Could not resolve …
  * Is it installed?" — is turned into one clear, actionable error so the factory
  * can fall back to JSONL. Exported so tests can stub it.
  */
 export async function loadLanceModule(): Promise<unknown> {
   try {
-    // @ts-expect-error optional peer dependency — intentionally absent from the
-    // default install tree (declared only as an optional peerDependency), so there
-    // are no type declarations to resolve. Resolved at runtime when installed.
-    return await import("@lancedb/lancedb");
+    return await import(LANCE_MODULE_SPECIFIER);
   } catch (err) {
     if (isModuleNotFound(err)) {
       throw new Error(
@@ -121,7 +123,7 @@ function isModuleNotFound(err: unknown): boolean {
   // Bundlers (Vite/esbuild, used under Vitest) throw a plain Error with no `code`.
   const message = err instanceof Error ? err.message : String(err);
   return (
-    message.includes("@lancedb/lancedb") &&
+    message.includes(LANCE_MODULE_SPECIFIER) &&
     (/cannot find|could not resolve|is it installed/i.test(message) ||
       message.includes("Failed to load"))
   );
