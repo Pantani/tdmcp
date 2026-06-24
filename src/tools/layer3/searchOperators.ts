@@ -335,7 +335,12 @@ function validateSearchFilters(ctx: ToolContext, args: SearchOperatorsArgs) {
 }
 
 export async function searchOperatorsImpl(ctx: ToolContext, rawArgs: SearchOperatorsInput) {
-  const args = searchOperatorsSchema.parse(rawArgs);
+  const parsed = searchOperatorsSchema.safeParse(rawArgs);
+  if (!parsed.success) {
+    return errorResult("Invalid search_operators input.", { issues: parsed.error.issues });
+  }
+
+  const args = parsed.data;
   const validationError = validateSearchFilters(ctx, args);
   if (validationError) return validationError;
 

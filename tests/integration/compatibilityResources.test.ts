@@ -1,33 +1,21 @@
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { describe, expect, it } from "vitest";
-import { createTdmcpServer } from "../../src/server/tdmcpServer.js";
-import { loadConfig } from "../../src/utils/config.js";
-import { silentLogger } from "../../src/utils/logger.js";
+import { afterEach, describe, expect, it } from "vitest";
+import { closeSessions, connectClient, jsonText, type ResourceClientSession } from "./helpers.js";
 
-async function connectClient() {
-  const config = loadConfig();
-  const server = createTdmcpServer(config, { logger: silentLogger });
-  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
-  const client = new Client({ name: "tdmcp-compatibility-resource-test", version: "0.0.0" });
-  await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
-  return client;
+const sessions: ResourceClientSession[] = [];
+
+async function connectResourceClient() {
+  const session = await connectClient("tdmcp-compatibility-resource-test");
+  sessions.push(session);
+  return session.client;
 }
 
-type ResourceReadResult = Awaited<ReturnType<Client["readResource"]>>;
-
-function jsonText(result: ResourceReadResult): string {
-  const content = result.contents[0];
-  expect(content?.mimeType).toBe("application/json");
-  if (!content || !("text" in content)) {
-    throw new Error("Expected JSON text resource content.");
-  }
-  return content.text;
-}
+afterEach(async () => {
+  await closeSessions(sessions);
+});
 
 describe("integration: compatibility resources", () => {
   it("reads operator compatibility as an MCP resource", async () => {
-    const client = await connectClient();
+    const client = await connectResourceClient();
 
     const result = await client.readResource({
       uri: "tdmcp://compat/operators/noise_top",
@@ -44,7 +32,7 @@ describe("integration: compatibility resources", () => {
   });
 
   it("reads Python API compatibility as an MCP resource", async () => {
-    const client = await connectClient();
+    const client = await connectResourceClient();
 
     const result = await client.readResource({
       uri: "tdmcp://compat/python/OP.cook",

@@ -81,10 +81,6 @@ function resourceUri(prefix: string, id: string): string {
   return `${prefix}${encodeURIComponent(id)}`;
 }
 
-function techniqueCategory(id: string): string {
-  return id.split("/", 1)[0] ?? id;
-}
-
 function searchSurface(
   ctx: ToolContext,
   surface: ResultSurface,
@@ -151,13 +147,21 @@ function searchSurface(
 
     case "techniques":
       return ctx.knowledge.searchTechniques(query, limit).map((technique) => {
-        const category = techniqueCategory(technique.id);
+        if (technique.id.includes("/")) {
+          return {
+            surface,
+            id: technique.id,
+            name: technique.name,
+            ...maybeDescription(technique.description),
+            toolHint: "get_technique_detail",
+          };
+        }
         return {
           surface,
           id: technique.id,
           name: technique.name,
           ...maybeDescription(technique.description),
-          resourceUri: resourceUri("tdmcp://techniques/", category),
+          resourceUri: resourceUri("tdmcp://techniques/", technique.id),
         };
       });
 

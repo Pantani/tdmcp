@@ -1,13 +1,77 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
 import { compareOperatorDocsImpl } from "../../src/tools/layer3/compareOperatorDocs.js";
 import type { ToolContext } from "../../src/tools/types.js";
 import { silentLogger } from "../../src/utils/logger.js";
 
-function makeCtx(): ToolContext {
+const tempRoots: string[] = [];
+
+function tempRoot(): string {
+  const root = mkdtempSync(join(tmpdir(), "tdmcp-compare-operator-tool-"));
+  tempRoots.push(root);
+  return root;
+}
+
+function writeJson(path: string, data: unknown): void {
+  writeFileSync(path, JSON.stringify(data));
+}
+
+function writeCompareFixture(dataDir: string): void {
+  mkdirSync(join(dataDir, "operators"), { recursive: true });
+  mkdirSync(join(dataDir, "python-api"), { recursive: true });
+  mkdirSync(join(dataDir, "tutorials"), { recursive: true });
+  mkdirSync(join(dataDir, "versions"), { recursive: true });
+  mkdirSync(join(dataDir, "techniques"), { recursive: true });
+  mkdirSync(join(dataDir, "td-classes"), { recursive: true });
+
+  writeJson(join(dataDir, "operators", "index.json"), [
+    {
+      slug: "unknown_alpha",
+      name: "Unknown Alpha",
+      displayName: "Unknown Alpha",
+      category: "",
+      subcategory: "",
+      summary: "Fixture without category metadata.",
+      keywords: ["unknown"],
+    },
+    {
+      slug: "unknown_beta",
+      name: "Unknown Beta",
+      displayName: "Unknown Beta",
+      category: "",
+      subcategory: "",
+      summary: "Second fixture without category metadata.",
+      keywords: ["unknown"],
+    },
+  ]);
+  writeJson(join(dataDir, "operators", "unknown_alpha.json"), {
+    name: "Unknown Alpha",
+    displayName: "Unknown Alpha",
+    summary: "Fixture without category metadata.",
+  });
+  writeJson(join(dataDir, "operators", "unknown_beta.json"), {
+    name: "Unknown Beta",
+    displayName: "Unknown Beta",
+    summary: "Second fixture without category metadata.",
+  });
+  writeJson(join(dataDir, "python-api", "index.json"), []);
+  writeJson(join(dataDir, "tutorials", "index.json"), []);
+  writeJson(join(dataDir, "patterns.json"), []);
+  writeJson(join(dataDir, "glsl.json"), []);
+  writeJson(join(dataDir, "versions", "version-manifest.json"), { versions: [] });
+  writeJson(join(dataDir, "versions", "release-highlights.json"), { releases: {} });
+  writeJson(join(dataDir, "versions", "operator-compatibility.json"), { operators: {} });
+  writeJson(join(dataDir, "versions", "python-api-compatibility.json"), { classes: {} });
+  writeJson(join(dataDir, "versions", "experimental-builds.json"), { buildSeries: [] });
+}
+
+function makeCtx(dataDir?: string): ToolContext {
   return {
-    knowledge: new KnowledgeBase(),
+    knowledge: new KnowledgeBase(dataDir ? { dataDir } : undefined),
     logger: silentLogger,
   } as unknown as ToolContext;
 }
@@ -15,7 +79,12 @@ function makeCtx(): ToolContext {
 interface CompareData {
   operatorA: { name: string; category?: string };
   operatorB: { name: string; category?: string };
-  overview: { sameCategory: boolean; parameterCountA: number; parameterCountB: number };
+  overview: {
+    sameCategory: boolean;
+    sameSubcategory: boolean;
+    parameterCountA: number;
+    parameterCountB: number;
+  };
   sharedParameters: Array<{ name: string; type?: string }>;
   uniqueToA: Array<{ name: string }>;
   uniqueToB: Array<{ name: string }>;
@@ -32,6 +101,12 @@ function textOf(result: CallToolResult): string {
     .map((c) => c.text)
     .join("\n");
 }
+
+afterEach(() => {
+  for (const root of tempRoots.splice(0)) {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
 
 describe("compareOperatorDocsImpl", () => {
   it("compares two operator docs and reports shared and unique parameters", () => {
@@ -79,6 +154,20 @@ describe("compareOperatorDocsImpl", () => {
     expect(data.sharedParameters).toEqual([]);
     expect(data.uniqueToA).toEqual([]);
     expect(data.uniqueToB).toEqual([]);
+  });
+
+  it("does not treat missing category metadata as a category match", () => {
+    const dataDir = join(tempRoot(), "data");
+    writeCompareFixture(dataDir);
+
+    const result = compareOperatorDocsImpl(makeCtx(dataDir), {
+      operator_a: "Unknown Alpha",
+      operator_b: "Unknown Beta",
+    });
+    const data = sc(result);
+
+    expect(data.overview.sameCategory).toBe(false);
+    expect(data.overview.sameSubcategory).toBe(false);
   });
 
   it("returns an error with suggestions when an operator cannot be resolved", () => {

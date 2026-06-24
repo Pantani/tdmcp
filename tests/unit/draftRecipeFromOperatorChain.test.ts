@@ -190,4 +190,30 @@ describe("draftRecipeFromOperatorChainImpl", () => {
     expect(textOf(result)).toContain("Cannot draft recipe from invalid operator chain");
     expect(textOf(result)).toContain("missing_operator");
   });
+
+  it("does not synthesize new direct connections across unresolved gaps", () => {
+    const dataDir = join(tempRoot(), "data");
+    writeChainFixture(dataDir);
+
+    const result = draftRecipeFromOperatorChainImpl(makeCtx(dataDir), {
+      chain: ["Noise TOP", "Missing TOP", "Null TOP"],
+      strict: false,
+    });
+    const data = structured<{
+      valid: boolean;
+      recipe: { connections: Array<{ from: string; to: string }> };
+      chainReport: {
+        valid: boolean;
+        errors: Array<{ code: string; index: number }>;
+        connections: Array<{ from: string; to: string }>;
+      };
+    }>(result);
+
+    expect(data.valid).toBe(false);
+    expect(data.chainReport.errors).toEqual([
+      expect.objectContaining({ code: "missing_operator", index: 1 }),
+    ]);
+    expect(data.chainReport.connections).toEqual([]);
+    expect(data.recipe.connections).toEqual([]);
+  });
 });

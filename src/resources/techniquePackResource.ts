@@ -1,5 +1,5 @@
 import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { firstVar, jsonContents, type ResourceRegistrar } from "./shared.js";
+import { decodeResourceValue, firstVar, jsonContents, type ResourceRegistrar } from "./shared.js";
 
 export interface TechniquePackSummary {
   id: string;
@@ -22,15 +22,11 @@ function techniquePackKnowledge(knowledge: unknown): TechniquePackKnowledge {
 }
 
 function keyFromUri(uri: URL): string {
-  return decodeURIComponent(uri.pathname.replace(/^\/+/, ""));
+  return categoryFromTemplate(uri.pathname.replace(/^\/+/, ""));
 }
 
 function categoryFromTemplate(value: string): string {
-  try {
-    return decodeURIComponent(value);
-  } catch {
-    return value;
-  }
+  return decodeResourceValue(value);
 }
 
 function techniqueSuggestions(knowledge: TechniquePackKnowledge, query: string): string[] {

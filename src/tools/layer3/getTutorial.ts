@@ -174,10 +174,19 @@ function searchTutorials(
     .map((entry) => tutorialToResult(entry.tutorial, args.include_content));
 }
 
-function listTutorials(summaries: TutorialSummary[], args: GetTutorialArgs): TutorialResult[] {
+function listTutorials(
+  ctx: ToolContext,
+  summaries: TutorialSummary[],
+  args: GetTutorialArgs,
+): TutorialResult[] {
   return summaries
     .slice(0, args.limit)
-    .map((summary) => tutorialToResult(summary, args.include_content));
+    .map((summary) =>
+      tutorialToResult(
+        args.include_content ? (ctx.knowledge.getTutorial(summary.id) ?? summary) : summary,
+        args.include_content,
+      ),
+    );
 }
 
 function unknownTutorial(name: string, summaries: TutorialSummary[]): CallToolResult {
@@ -231,7 +240,7 @@ export function getTutorialImpl(ctx: ToolContext, rawArgs: GetTutorialInput): Ca
       );
     }
 
-    const tutorials = listTutorials(summaries, args);
+    const tutorials = listTutorials(ctx, summaries, args);
     return structuredResult(`Listed ${tutorials.length} TouchDesigner tutorial(s).`, {
       mode: "list",
       count: tutorials.length,

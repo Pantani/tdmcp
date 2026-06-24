@@ -205,8 +205,14 @@ function operatorOverview(input: string, doc: OperatorDoc): OperatorOverview {
 
 function comparisonOverview(docA: OperatorDoc, docB: OperatorDoc) {
   return {
-    sameCategory: compactKey(docA.category ?? "") === compactKey(docB.category ?? ""),
-    sameSubcategory: compactKey(docA.subcategory ?? "") === compactKey(docB.subcategory ?? ""),
+    sameCategory:
+      docA.category && docB.category
+        ? compactKey(docA.category) === compactKey(docB.category)
+        : false,
+    sameSubcategory:
+      docA.subcategory && docB.subcategory
+        ? compactKey(docA.subcategory) === compactKey(docB.subcategory)
+        : false,
     categoryA: docA.category,
     categoryB: docB.category,
     subcategoryA: docA.subcategory,

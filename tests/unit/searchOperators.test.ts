@@ -190,6 +190,17 @@ describe("searchOperatorsImpl", () => {
     expect(textOf(result)).toContain("unknown category");
   });
 
+  it("returns a tool error instead of throwing for invalid input", async () => {
+    const result = await searchOperatorsImpl(makeCtx(), {
+      query: "",
+      limit: 5,
+      semantic: false,
+    });
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("Invalid search_operators input");
+  });
+
   it("rejects unknown TouchDesigner version filters", async () => {
     const result = await searchOperatorsImpl(makeCtx(), {
       query: "noise",

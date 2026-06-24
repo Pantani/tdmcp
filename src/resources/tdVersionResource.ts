@@ -1,5 +1,5 @@
 import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { firstVar, jsonContents, type ResourceRegistrar } from "./shared.js";
+import { decodeResourceValue, firstVar, jsonContents, type ResourceRegistrar } from "./shared.js";
 
 export interface TouchDesignerVersionSummary {
   version: string;
@@ -28,7 +28,7 @@ function versionDescription(entry: TouchDesignerVersionSummary): string | undefi
 }
 
 function keyFromUri(uri: URL): string {
-  return decodeURIComponent(uri.pathname.replace(/^\/+/, ""));
+  return decodeResourceValue(uri.pathname.replace(/^\/+/, ""));
 }
 
 function versionSuggestions(knowledge: TdVersionKnowledge, query: string): string[] {
@@ -75,7 +75,7 @@ export const registerTdVersionResource: ResourceRegistrar = (server, ctx) => {
       mimeType: "application/json",
     },
     async (uri, variables) => {
-      const version = firstVar(variables.version) || keyFromUri(uri);
+      const version = decodeResourceValue(firstVar(variables.version)) || keyFromUri(uri);
       const entry =
         typeof knowledge.getTouchDesignerVersion === "function"
           ? knowledge.getTouchDesignerVersion(version)

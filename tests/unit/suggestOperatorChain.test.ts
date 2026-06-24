@@ -30,13 +30,22 @@ function writeChainFixture(dataDir: string): void {
 
   writeJson(join(dataDir, "operators", "index.json"), [
     {
+      slug: "audio_spectrum_chop",
+      name: "Audio Spectrum CHOP",
+      displayName: "Audio Spectrum CHOP",
+      category: "CHOP",
+      subcategory: "Audio",
+      summary: "Analyze audio spectrum for mixedfallback provenance tests",
+      keywords: ["mixedfallback", "audio", "spectrum"],
+    },
+    {
       slug: "noise_top",
       name: "Noise TOP",
       displayName: "Noise TOP",
       category: "TOP",
       subcategory: "Generator",
       summary: "Procedural texture noise",
-      keywords: ["noise", "procedural", "texture"],
+      keywords: ["noise", "procedural", "texture", "mixedfallback"],
     },
     {
       slug: "level_top",
@@ -54,7 +63,7 @@ function writeChainFixture(dataDir: string): void {
       category: "TOP",
       subcategory: "Utility",
       summary: "Stable output handoff",
-      keywords: ["null", "output", "texture"],
+      keywords: ["null", "output", "texture", "mixedfallback"],
     },
   ]);
   writeJson(join(dataDir, "operators", "noise_top.json"), {
@@ -80,6 +89,13 @@ function writeChainFixture(dataDir: string): void {
     category: "TOP",
     subcategory: "Utility",
     summary: "Stable output handoff",
+  });
+  writeJson(join(dataDir, "operators", "audio_spectrum_chop.json"), {
+    name: "Audio Spectrum CHOP",
+    displayName: "Audio Spectrum CHOP",
+    category: "CHOP",
+    subcategory: "Audio",
+    summary: "Analyze audio spectrum for mixedfallback provenance tests",
   });
   writeJson(join(dataDir, "python-api", "index.json"), []);
   writeJson(join(dataDir, "tutorials", "index.json"), []);
@@ -180,5 +196,25 @@ describe("suggestOperatorChainImpl", () => {
     expect(result.isError).toBe(true);
     expect(textOf(result)).toContain("Seed operator not found");
     expect(textOf(result)).toContain("suggestions");
+  });
+
+  it("keeps fallback source matches aligned with the family-filtered chain", () => {
+    const dataDir = join(tempRoot(), "data");
+    writeChainFixture(dataDir);
+    writeJson(join(dataDir, "patterns.json"), []);
+
+    const result = suggestOperatorChainImpl(makeCtx(dataDir), {
+      goal: "mixedfallback",
+      family: "TOP",
+      max_steps: 2,
+    });
+    const data = structured<{
+      chain: Array<{ operator: string }>;
+      sourceMatches: Array<{ id: string; name: string }>;
+    }>(result);
+
+    expect(data.chain.map((step) => step.operator)).toEqual(["Noise TOP", "Null TOP"]);
+    expect(data.sourceMatches.map((match) => match.id)).toEqual(["noise_top", "null_top"]);
+    expect(data.sourceMatches.map((match) => match.id)).not.toContain("audio_spectrum_chop");
   });
 });

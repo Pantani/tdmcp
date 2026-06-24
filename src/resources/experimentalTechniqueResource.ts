@@ -1,5 +1,5 @@
 import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { firstVar, jsonContents, type ResourceRegistrar } from "./shared.js";
+import { decodeResourceValue, firstVar, jsonContents, type ResourceRegistrar } from "./shared.js";
 
 export interface TouchDesignerExperimentalSummary {
   id: string;
@@ -26,7 +26,7 @@ function experimentalLabel(entry: TouchDesignerExperimentalSummary): string {
 }
 
 function keyFromUri(uri: URL): string {
-  return decodeURIComponent(uri.pathname.replace(/^\/+/, ""));
+  return decodeResourceValue(uri.pathname.replace(/^\/+/, ""));
 }
 
 function experimentalSuggestions(knowledge: ExperimentalKnowledge, query: string): string[] {
@@ -74,7 +74,8 @@ export const registerExperimentalTechniqueResource: ResourceRegistrar = (server,
       mimeType: "application/json",
     },
     async (uri, variables) => {
-      const seriesOrCategory = firstVar(variables.series_or_category) || keyFromUri(uri);
+      const seriesOrCategory =
+        decodeResourceValue(firstVar(variables.series_or_category)) || keyFromUri(uri);
       const entry =
         typeof knowledge.getTouchDesignerExperimental === "function"
           ? knowledge.getTouchDesignerExperimental(seriesOrCategory)

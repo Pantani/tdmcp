@@ -150,15 +150,14 @@ function seedChain(ctx: ToolContext, seed: string, maxSteps: number): string[] {
   return chain;
 }
 
-function searchFallbackChain(ctx: ToolContext, args: SuggestOperatorChainArgs): string[] {
-  const candidates = ctx.knowledge
+function searchFallbackCandidates(ctx: ToolContext, args: SuggestOperatorChainArgs) {
+  return ctx.knowledge
     .searchOperators(args.goal, args.max_steps * 2)
     .filter((operator) => {
       if (!args.family) return true;
       return compactKey(operator.category) === compactKey(args.family);
     })
     .slice(0, args.max_steps);
-  return candidates.map((operator) => operator.displayName);
 }
 
 function sourceForPattern(pattern: Pattern): SourceMatch {
@@ -242,9 +241,9 @@ export function suggestOperatorChainImpl(
         chainNames = pattern.workflow;
         sourceMatches = [sourceForPattern(pattern)];
       } else {
-        const candidates = ctx.knowledge.searchOperators(args.goal, args.max_steps);
-        chainNames = searchFallbackChain(ctx, args);
-        sourceMatches = candidates.slice(0, args.max_steps).map(sourceForSearch);
+        const candidates = searchFallbackCandidates(ctx, args);
+        chainNames = candidates.map((operator) => operator.displayName);
+        sourceMatches = candidates.map(sourceForSearch);
       }
     }
 

@@ -1,33 +1,21 @@
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { describe, expect, it } from "vitest";
-import { createTdmcpServer } from "../../src/server/tdmcpServer.js";
-import { loadConfig } from "../../src/utils/config.js";
-import { silentLogger } from "../../src/utils/logger.js";
+import { afterEach, describe, expect, it } from "vitest";
+import { closeSessions, connectClient, jsonText, type ResourceClientSession } from "./helpers.js";
 
-async function connectClient() {
-  const config = loadConfig();
-  const server = createTdmcpServer(config, { logger: silentLogger });
-  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
-  const client = new Client({ name: "tdmcp-technique-class-resource-test", version: "0.0.0" });
-  await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
-  return client;
+const sessions: ResourceClientSession[] = [];
+
+async function connectResourceClient() {
+  const session = await connectClient("tdmcp-technique-class-resource-test");
+  sessions.push(session);
+  return session.client;
 }
 
-type ResourceReadResult = Awaited<ReturnType<Client["readResource"]>>;
-
-function jsonText(result: ResourceReadResult): string {
-  const content = result.contents[0];
-  expect(content?.mimeType).toBe("application/json");
-  if (!content || !("text" in content)) {
-    throw new Error("Expected JSON text resource content.");
-  }
-  return content.text;
-}
+afterEach(async () => {
+  await closeSessions(sessions);
+});
 
 describe("integration: technique pack and TD class resources", () => {
   it("reads Bottobot technique packs as MCP resources", async () => {
-    const client = await connectClient();
+    const client = await connectResourceClient();
 
     const result = await client.readResource({
       uri: "tdmcp://techniques/audio-visual",
@@ -45,7 +33,7 @@ describe("integration: technique pack and TD class resources", () => {
   });
 
   it("reads TouchDesigner class family references as MCP resources", async () => {
-    const client = await connectClient();
+    const client = await connectResourceClient();
 
     const result = await client.readResource({
       uri: "tdmcp://td-classes/top_class",
@@ -59,5 +47,16 @@ describe("integration: technique pack and TD class resources", () => {
     expect(payload.id).toBe("top_class");
     expect(payload.displayName).toBe("TOP Class");
     expect(payload.description).toContain("TOP operator");
+  });
+
+  it("returns a JSON error for malformed technique pack resource URIs", async () => {
+    const client = await connectResourceClient();
+
+    const result = await client.readResource({
+      uri: "tdmcp://techniques/%E0%A4%A",
+    });
+    const payload = JSON.parse(jsonText(result)) as { error: string };
+
+    expect(payload.error).toContain("%E0%A4%A");
   });
 });

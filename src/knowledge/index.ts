@@ -89,10 +89,15 @@ function codeExamples(value: unknown): OperatorCodeExample[] {
     .filter((entry) => entry.code);
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function operatorTypeToken(identity: OperatorIdentity): string {
   const family = identity.category.toUpperCase();
+  const familySuffix = escapeRegExp(family);
   const shortName = identity.displayName
-    .replace(new RegExp(`\\s+${family}$`, "i"), "")
+    .replace(new RegExp(`\\s+${familySuffix}$`, "i"), "")
     .replace(/[^a-zA-Z0-9]+/g, "")
     .toLowerCase();
   return `${shortName}${family}`;
@@ -100,12 +105,13 @@ function operatorTypeToken(identity: OperatorIdentity): string {
 
 function operatorStepMatches(step: string, identity: OperatorIdentity): boolean {
   const stepKey = compactKey(step);
+  const categorySuffix = escapeRegExp(identity.category);
   const names = [
     identity.name,
     identity.displayName,
     identity.slug,
-    identity.displayName.replace(new RegExp(`\\s+${identity.category}$`, "i"), ""),
-    identity.name.replace(new RegExp(`\\s+${identity.category}$`, "i"), ""),
+    identity.displayName.replace(new RegExp(`\\s+${categorySuffix}$`, "i"), ""),
+    identity.name.replace(new RegExp(`\\s+${categorySuffix}$`, "i"), ""),
   ];
   return names.some((name) => compactKey(name) === stepKey);
 }
@@ -418,8 +424,9 @@ export class KnowledgeBase {
   }
 
   private generatedOperatorUsagePatterns(identity: OperatorIdentity): OperatorCodeExample[] {
+    const categorySuffix = escapeRegExp(identity.category);
     const shortName = identity.displayName
-      .replace(new RegExp(`\\s+${identity.category}$`, "i"), "")
+      .replace(new RegExp(`\\s+${categorySuffix}$`, "i"), "")
       .replace(/\s+/g, "")
       .toLowerCase();
     const typeToken = operatorTypeToken(identity);
@@ -929,8 +936,11 @@ export class KnowledgeBase {
     const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
     const matches: Array<{ id: string; name: string; description?: string }> = [];
     for (const [id, record] of Object.entries(this.tdOperatorCompatibility().operators)) {
+      const changes = (record.changedIn ?? [])
+        .map((change) => `${change.version} ${change.change}`)
+        .join(" ");
       const text =
-        `${id} ${record.name} ${record.category ?? ""} ${record.notes ?? ""}`.toLowerCase();
+        `${id} ${record.name} ${record.category ?? ""} ${record.addedIn ?? ""} ${record.removedIn ?? ""} ${changes} ${record.notes ?? ""}`.toLowerCase();
       if (terms.length > 0 && !terms.every((term) => text.includes(term))) continue;
       matches.push({ id, name: record.name, description: record.notes });
       if (matches.length >= limit) break;

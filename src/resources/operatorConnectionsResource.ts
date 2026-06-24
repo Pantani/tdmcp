@@ -1,5 +1,5 @@
 import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { firstVar, jsonContents, type ResourceRegistrar } from "./shared.js";
+import { decodeResourceValue, firstVar, jsonContents, type ResourceRegistrar } from "./shared.js";
 
 export interface OperatorWorkflowGuideSummary {
   id: string;
@@ -20,15 +20,11 @@ function operatorConnectionsKnowledge(knowledge: unknown): OperatorConnectionsKn
 }
 
 function keyFromUri(uri: URL): string {
-  return decodeURIComponent(uri.pathname.replace(/^\/+/, ""));
+  return decodeResourceValue(uri.pathname.replace(/^\/+/, ""));
 }
 
 function operatorFromTemplate(value: string): string {
-  try {
-    return decodeURIComponent(value);
-  } catch {
-    return value;
-  }
+  return decodeResourceValue(value);
 }
 
 function guideSuggestions(knowledge: OperatorConnectionsKnowledge, query: string): string[] {

@@ -264,6 +264,7 @@ function resolveChain(
     const previous = resolved[index - 1];
     const next = resolved[index];
     if (!previous || !next) continue;
+    if (next.index !== previous.index + 1) continue;
 
     const hint = connectionHint(ctx, previous, next);
     const report: ConnectionReport = {
@@ -320,14 +321,17 @@ function recipeCandidate(args: DraftRecipeFromOperatorChainArgs, resolved: Resol
       parameters: {},
       comment: `Drafted from ${node.displayName}.`,
     })),
-    connections: resolved.slice(1).map((node, index) => {
+    connections: resolved.slice(1).flatMap((node, index) => {
       const previous = resolved[index];
-      return {
-        from: previous?.name ?? "",
-        to: node.name,
-        from_output: 0,
-        to_input: 0,
-      };
+      if (!previous || node.index !== previous.index + 1) return [];
+      return [
+        {
+          from: previous.name,
+          to: node.name,
+          from_output: 0,
+          to_input: 0,
+        },
+      ];
     }),
     parameters: [],
     glsl_uniforms: [],

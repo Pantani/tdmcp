@@ -179,7 +179,7 @@ describe("searchTouchDesignerKnowledgeImpl", () => {
     });
     const data = structured<{
       count: number;
-      results: Array<{ surface: string; id: string; resourceUri?: string }>;
+      results: Array<{ surface: string; id: string; resourceUri?: string; toolHint?: string }>;
     }>(result);
 
     expect(data.count).toBe(1);
@@ -187,7 +187,31 @@ describe("searchTouchDesignerKnowledgeImpl", () => {
       expect.objectContaining({
         surface: "techniques",
         id: "audio-visual/fft_to_geometry",
-        resourceUri: "tdmcp://techniques/audio-visual",
+        toolHint: "get_technique_detail",
+      }),
+    ]);
+    expect(data.results[0]?.resourceUri).toBeUndefined();
+  });
+
+  it("matches operator compatibility records by version metadata", () => {
+    const dataDir = join(tempRoot(), "data");
+    writeRouterFixture(dataDir);
+
+    const result = searchTouchDesignerKnowledgeImpl(makeCtx(dataDir), {
+      query: "2024",
+      surface: "operator_compatibility",
+      limit: 5,
+    });
+    const data = structured<{
+      count: number;
+      results: Array<{ surface: string; id: string }>;
+    }>(result);
+
+    expect(data.count).toBe(1);
+    expect(data.results).toEqual([
+      expect.objectContaining({
+        surface: "operator_compatibility",
+        id: "noise_top",
       }),
     ]);
   });

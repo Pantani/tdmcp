@@ -1,33 +1,21 @@
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { describe, expect, it } from "vitest";
-import { createTdmcpServer } from "../../src/server/tdmcpServer.js";
-import { loadConfig } from "../../src/utils/config.js";
-import { silentLogger } from "../../src/utils/logger.js";
+import { afterEach, describe, expect, it } from "vitest";
+import { closeSessions, connectClient, jsonText, type ResourceClientSession } from "./helpers.js";
 
-async function connectClient() {
-  const config = loadConfig();
-  const server = createTdmcpServer(config, { logger: silentLogger });
-  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
-  const client = new Client({ name: "tdmcp-version-resource-test", version: "0.0.0" });
-  await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
-  return client;
+const sessions: ResourceClientSession[] = [];
+
+async function connectResourceClient() {
+  const session = await connectClient("tdmcp-version-resource-test");
+  sessions.push(session);
+  return session.client;
 }
 
-type ResourceReadResult = Awaited<ReturnType<Client["readResource"]>>;
-
-function jsonText(result: ResourceReadResult): string {
-  const content = result.contents[0];
-  expect(content?.mimeType).toBe("application/json");
-  if (!content || !("text" in content)) {
-    throw new Error("Expected JSON text resource content.");
-  }
-  return content.text;
-}
+afterEach(async () => {
+  await closeSessions(sessions);
+});
 
 describe("integration: TouchDesigner version resources", () => {
   it("reads stable TouchDesigner release metadata as an MCP resource", async () => {
-    const client = await connectClient();
+    const client = await connectResourceClient();
 
     const result = await client.readResource({ uri: "tdmcp://td-versions/2023" });
     const payload = JSON.parse(jsonText(result)) as {
@@ -42,7 +30,7 @@ describe("integration: TouchDesigner version resources", () => {
   });
 
   it("reads experimental build metadata as an MCP resource", async () => {
-    const client = await connectClient();
+    const client = await connectResourceClient();
 
     const result = await client.readResource({
       uri: "tdmcp://td-experimental/2025.10000",
@@ -53,5 +41,21 @@ describe("integration: TouchDesigner version resources", () => {
     };
     expect(payload.seriesId).toBe("2025.10000");
     expect(payload.experimentalOperators.length).toBeGreaterThan(0);
+  });
+
+  it("returns JSON errors for malformed version resource URIs", async () => {
+    const client = await connectResourceClient();
+
+    const versionResult = await client.readResource({ uri: "tdmcp://td-versions/%E0%A4%A" });
+    const experimentalResult = await client.readResource({
+      uri: "tdmcp://td-experimental/%E0%A4%A",
+    });
+
+    expect(JSON.parse(jsonText(versionResult))).toEqual(
+      expect.objectContaining({ error: expect.stringContaining("%E0%A4%A") }),
+    );
+    expect(JSON.parse(jsonText(experimentalResult))).toEqual(
+      expect.objectContaining({ error: expect.stringContaining("%E0%A4%A") }),
+    );
   });
 });

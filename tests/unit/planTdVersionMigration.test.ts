@@ -35,9 +35,10 @@ function writeMigrationFixture(dataDir: string): void {
   writeJson(join(dataDir, "glsl.json"), []);
   writeJson(join(dataDir, "versions", "version-manifest.json"), {
     currentStable: "2024",
-    versionOrder: ["099", "2023", "2024"],
+    versionOrder: ["099", "2022", "2023", "2024"],
     versions: [
       { id: "099", label: "TouchDesigner 099", supportStatus: "legacy" },
+      { id: "2022", label: "TouchDesigner 2022", supportStatus: "legacy" },
       { id: "2023", label: "TouchDesigner 2023", supportStatus: "stable" },
       { id: "2024", label: "TouchDesigner 2024", supportStatus: "stable" },
     ],
@@ -62,12 +63,25 @@ function writeMigrationFixture(dataDir: string): void {
         addedIn: "2024",
         notes: "New POP particle workflow.",
       },
+      target_only_top: {
+        name: "Target Only TOP",
+        category: "TOP",
+        addedIn: "2022",
+        notes: "Available in the downgrade target build.",
+      },
       web_render_top: {
         name: "Web Render TOP",
         category: "TOP",
         addedIn: "099",
         changedIn: [{ version: "2024", change: "Chromium runtime updated" }],
         notes: "Validate browser rendering and script callbacks.",
+      },
+      legacy_removed_top: {
+        name: "Legacy Removed TOP",
+        category: "TOP",
+        addedIn: "099",
+        removedIn: "2024",
+        notes: "Legacy operator dropped from current builds.",
       },
     },
   });
@@ -121,7 +135,7 @@ describe("planTdVersionMigrationImpl", () => {
     const result = planTdVersionMigrationImpl(makeCtx(dataDir), {
       from_version: "2023",
       to_version: "2024",
-      query: "web script particle",
+      query: "web script particle legacy",
       limit: 10,
     });
     const data = structured<{
@@ -131,6 +145,7 @@ describe("planTdVersionMigrationImpl", () => {
       releaseHighlights: Array<{ version: string; theme?: string; breakingChanges: string[] }>;
       operatorAdditions: Array<{ name: string }>;
       operatorChanges: Array<{ name: string; changes: string[] }>;
+      operatorRemovals: Array<{ name: string; removedIn?: string | null }>;
       pythonApiAdditions: Array<{ ref: string; signature?: string }>;
       checklist: string[];
     }>(result);
@@ -152,6 +167,12 @@ describe("planTdVersionMigrationImpl", () => {
         changes: ["Chromium runtime updated"],
       }),
     ]);
+    expect(data.operatorRemovals).toEqual([
+      expect.objectContaining({
+        name: "Legacy Removed TOP",
+        removedIn: "2024",
+      }),
+    ]);
     expect(data.pythonApiAdditions).toEqual([
       expect.objectContaining({
         ref: "OP.addScript",
@@ -162,12 +183,40 @@ describe("planTdVersionMigrationImpl", () => {
     expect(textOf(result)).toContain("Migration plan 2023 -> 2024");
   });
 
+  it("audits additions after the target version when planning a downgrade", () => {
+    const dataDir = join(tempRoot(), "data");
+    writeMigrationFixture(dataDir);
+
+    const result = planTdVersionMigrationImpl(makeCtx(dataDir), {
+      from_version: "2024",
+      to_version: "2022",
+      query: "particle target",
+      limit: 10,
+    });
+    const data = structured<{
+      direction: string;
+      versionPath: string[];
+      operatorAdditions: Array<{ name: string; addedIn?: string }>;
+      checklist: string[];
+    }>(result);
+
+    expect(data.direction).toBe("downgrade");
+    expect(data.versionPath).toEqual(["2024", "2023"]);
+    expect(data.operatorAdditions).toEqual([
+      expect.objectContaining({ name: "Particle POP", addedIn: "2024" }),
+    ]);
+    expect(data.operatorAdditions).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: "Target Only TOP" })]),
+    );
+    expect(data.checklist.join("\n")).toContain("Downgrade requested");
+  });
+
   it("returns a useful error when either version cannot be resolved", () => {
     const dataDir = join(tempRoot(), "data");
     writeMigrationFixture(dataDir);
 
     const result = planTdVersionMigrationImpl(makeCtx(dataDir), {
-      from_version: "2022",
+      from_version: "2021",
       to_version: "2024",
     });
 

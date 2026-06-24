@@ -160,6 +160,28 @@ describe("getTutorialImpl", () => {
     expect(data.nextToolHints).toContain("search_touchdesigner_knowledge");
   });
 
+  it("loads full tutorial content for list mode when requested", () => {
+    const dataDir = join(tempRoot(), "data");
+    writeTutorialFixture(dataDir);
+
+    const result = getTutorialImpl(makeCtx(dataDir), {
+      include_content: true,
+      limit: 1,
+    });
+    const data = structured<{
+      mode: string;
+      tutorials: Array<{ id: string; content?: string }>;
+    }>(result);
+
+    expect(data.mode).toBe("list");
+    expect(data.tutorials).toEqual([
+      expect.objectContaining({
+        id: "write_a_glsl_top",
+        content: expect.stringContaining("uniform float uTime"),
+      }),
+    ]);
+  });
+
   it("returns suggestions for an unknown tutorial", () => {
     const dataDir = join(tempRoot(), "data");
     writeTutorialFixture(dataDir);

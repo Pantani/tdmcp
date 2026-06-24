@@ -82,6 +82,7 @@ export const planTdVersionMigrationOutputSchema = z.object({
   releaseHighlights: z.array(releaseHighlightSchema),
   operatorAdditions: z.array(operatorCompatibilitySchema),
   operatorChanges: z.array(operatorCompatibilitySchema),
+  operatorRemovals: z.array(operatorCompatibilitySchema),
   pythonApiAdditions: z.array(pythonApiAdditionSchema),
   checklist: z.array(z.string()),
   warnings: z.array(z.string()),
@@ -139,7 +140,7 @@ function versionPath(
   if (fromIndex === -1 || toIndex === -1) return { direction: "upgrade", path: [toVersion] };
   if (fromIndex < toIndex)
     return { direction: "upgrade", path: versions.slice(fromIndex + 1, toIndex + 1) };
-  return { direction: "downgrade", path: versions.slice(toIndex, fromIndex).reverse() };
+  return { direction: "downgrade", path: versions.slice(toIndex + 1, fromIndex + 1).reverse() };
 }
 
 function releaseHighlightReport(
@@ -183,6 +184,16 @@ function operatorChangeReport(
   };
 }
 
+function operatorRemovalReport(record: TdOperatorCompatibility): OperatorCompatibilityReport {
+  return {
+    name: record.name,
+    category: record.category,
+    addedIn: record.addedIn,
+    removedIn: record.removedIn,
+    notes: record.notes,
+  };
+}
+
 function pythonAdditionReport(entry: TdPythonApiCompatibilityEntry): PythonApiAdditionReport {
   return {
     ref: `${entry.class}.${entry.name}`,
@@ -200,6 +211,7 @@ function migrationChecklist(args: {
   releaseHighlights: ReleaseHighlightReport[];
   operatorAdditions: OperatorCompatibilityReport[];
   operatorChanges: OperatorCompatibilityReport[];
+  operatorRemovals: OperatorCompatibilityReport[];
   pythonApiAdditions: PythonApiAdditionReport[];
 }): string[] {
   const checklist: string[] = [];
@@ -222,6 +234,11 @@ function migrationChecklist(args: {
     const changes =
       operator.changes?.join("; ") || operator.notes || "compatibility behavior changed";
     checklist.push(`Validate ${operator.name}: ${changes}`);
+  }
+  for (const operator of args.operatorRemovals) {
+    checklist.push(
+      `Replace or remove ${operator.name}: removed in TouchDesigner ${operator.removedIn ?? "a crossed version"}.`,
+    );
   }
   for (const operator of args.operatorAdditions) {
     checklist.push(
@@ -307,6 +324,15 @@ export function planTdVersionMigrationImpl(
       .slice(0, args.limit)
       .map((record) => operatorChangeReport(record, versionIds));
 
+    const operatorRemovals = ctx.knowledge
+      .listOperatorCompatibility()
+      .filter((record) => record.removedIn && versionIds.has(record.removedIn))
+      .filter((record) =>
+        matchesQuery(terms, record.name, record.category, record.notes, record.removedIn ?? ""),
+      )
+      .slice(0, args.limit)
+      .map(operatorRemovalReport);
+
     const pythonApiAdditions = pathReport.path
       .flatMap((version) => ctx.knowledge.getTdVersionPythonApiAdditions(version.id))
       .filter((entry) =>
@@ -333,11 +359,12 @@ export function planTdVersionMigrationImpl(
       releaseHighlights,
       operatorAdditions,
       operatorChanges,
+      operatorRemovals,
       pythonApiAdditions,
     });
 
     return structuredResult(
-      `Migration plan ${fromVersion.id} -> ${toVersion.id}: ${pathReport.path.length} version boundary/boundaries, ${operatorChanges.length} operator change(s), ${pythonApiAdditions.length} Python API addition(s).`,
+      `Migration plan ${fromVersion.id} -> ${toVersion.id}: ${pathReport.path.length} version boundary/boundaries, ${operatorChanges.length} operator change(s), ${operatorRemovals.length} operator removal(s), ${pythonApiAdditions.length} Python API addition(s).`,
       {
         fromVersion: versionSummary(fromVersion),
         toVersion: versionSummary(toVersion),
@@ -347,6 +374,7 @@ export function planTdVersionMigrationImpl(
         releaseHighlights,
         operatorAdditions,
         operatorChanges,
+        operatorRemovals,
         pythonApiAdditions,
         checklist,
         warnings,
