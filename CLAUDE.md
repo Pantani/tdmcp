@@ -353,6 +353,24 @@ tracking, or this feature's recipe/docs, use the
 |------|--------|--------|--------|
 | 2026-06-05 | Initial implementation team | 5 agents + 1 skill | execute the approved interactive projection mapping spec through prototype, Layer 1 tool, recipe/docs, and physical/synthetic QA |
 
+## Harness: Kinect wall harp
+
+**Goal:** implement the approved Kinect v2 + FreenectTD projected wall harp as a
+live TouchDesigner prototype and reusable tdmcp Layer 1 tool: two independent
+wall-depth hand blobs, eight projected strings, internal pluck synth, calibration
+controls, and live/synthetic QA.
+
+**Trigger:** when asked to build, implement, continue, fix, QA, document, or ship
+the Kinect wall harp, Kinect v2 wall-depth harp, FreenectTD depth-blob hand
+tracking, projected wall strings, pluck synth harp, or this feature's Layer 1
+tool/recipe/docs, use the `tdmcp-kinect-wall-harp` skill before the generic
+`tdmcp-pipeline`. Simple conceptual questions can be answered directly.
+
+**Change log:**
+| Date | Change | Target | Reason |
+|------|--------|--------|--------|
+| 2026-06-23 | Initial implementation harness | 5 agents + 1 skill + Codex mirrors | execute the approved Kinect wall harp spec through live prototype, Layer 1 tool build, integration, and live/synthetic QA |
+
 ## Harness: Telegram + Ollama local copilot
 
 **Goal:** implement and maintain a secure Telegram Bot API entry point for the
