@@ -106,15 +106,27 @@
       "id": "network_template_gap_review",
       "wave": 3,
       "priority": "P2",
-      "status": "pending",
+      "status": "quarantined-no-new-feature",
       "surface": "layer3/docs",
       "value": "Decide whether Bottobot get_network_template adds non-duplicative value beyond suggest_operator_chain, validate_operator_chain, draft_recipe_from_operator_chain and existing first-party recipes.",
       "dependsOn": [
         "tutorial_to_recipe"
       ],
-      "files": [],
-      "qa": [],
-      "history": []
+      "files": [
+        "_workspace/campaign_bottobot_followup/wave_3_network_template_gap_review.md",
+        "_workspace/campaign_bottobot_followup/ledger.json",
+        "_workspace/campaign_bottobot_followup/build-ledger.mjs"
+      ],
+      "qa": [
+        "PASS: read-only Bottobot source audit of tools/get_network_template.js confirmed a static Markdown catalog with five templates and no RecipeSchema validation or TD application.",
+        "PASS: subagent review confirmed Bottobot get_network_template data is the in-module hard-coded TEMPLATES object, not imported patterns/operator/tutorial knowledge data.",
+        "PASS: current tdmcp surface audit confirmed overlapping validated recipes, Layer 1 builders, suggest_operator_chain, validate_operator_chain, draft_recipe_from_operator_chain, and draft_recipe_from_tutorial."
+      ],
+      "history": [
+        "Quarantined get_network_template as duplicate of stronger tdmcp recipe/builder/chain surfaces.",
+        "No new tool, registry, CLI, or generated docs change is warranted unless a future source provides materially new validated template assets.",
+        "Live TouchDesigner execution not attempted; status remains UNVERIFIED-pending-td."
+      ]
     }
   ],
   "shippedBaseline": [
@@ -133,5 +145,5 @@
     "techniques_cli_aliases",
     "tutorials_cli_aliases"
   ],
-  "updatedAt": "2026-06-24T08:43:00.000Z"
+  "updatedAt": "2026-06-24T08:55:00.000Z"
 }
