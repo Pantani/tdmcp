@@ -1,0 +1,98 @@
+{
+  "category": "audio-visual",
+  "displayName": "Audio-Visual",
+  "description": "Audio-reactive visual techniques in TouchDesigner including FFT-to-geometry, granular synthesis, MIDI-driven visuals, beat detection, and spectral analysis for real-time audio visualization.",
+  "techniques": [
+    {
+      "id": "fft_to_geometry",
+      "name": "FFT to Geometry",
+      "subcategory": "audio-reactive",
+      "description": "Converting FFT frequency spectrum data from Audio Spectrum CHOP into 3D geometry. Creates audio-reactive waveforms, bar visualizers, terrain meshes, and particle systems driven by audio energy.",
+      "difficulty": "beginner",
+      "operators": ["Audio Spectrum CHOP", "Audio Device In CHOP", "CHOP to SOP", "Noise CHOP", "Math CHOP"],
+      "tags": ["FFT", "audio-reactive", "spectrum", "geometry", "waveform", "visualization"],
+      "notes": "Audio Spectrum CHOP outputs frequency bins as CHOP channels. Each channel is a frequency band. Connect to CHOP to SOP to drive point positions. Math CHOP scales the values.",
+      "code": {
+        "language": "python",
+        "filename": "fft_geometry.py",
+        "snippet": "# FFT to Geometry — Script SOP driven by Audio Spectrum CHOP\nimport numpy as np\n\ndef cook(scriptOp):\n    specChop = op('audio_spectrum1')  # Audio Spectrum CHOP\n    if specChop is None or specChop.numChans == 0:\n        return\n    \n    scriptOp.clear()\n    \n    n = specChop.numSamples\n    channel = specChop[0]  # first channel = magnitude\n    \n    # Create a circular waveform\n    for i in range(n):\n        angle = (i / n) * 2 * np.pi\n        mag = channel[i]\n        \n        # Map frequency magnitude to radius\n        radius = 0.3 + mag * 2.0  # base radius + audio-driven expansion\n        \n        x = radius * np.cos(angle)\n        y = radius * np.sin(angle)\n        z = 0.0\n        \n        pt = scriptOp.appendPoint()\n        pt.P = (float(x), float(y), float(z))\n    \n    # Close the loop\n    prim = scriptOp.appendPrim('polyline')\n    for i in range(n):\n        prim.appendVertex(scriptOp.points[i])\n    prim.close(True)\n\n# --- Alternative: 3D Terrain from Spectrogram ---\ndef cook_terrain(scriptOp):\n    \"\"\"Create a grid mesh where Y height = FFT magnitude\"\"\"\n    specChop = op('audio_spectrum1')\n    histChop = op('audio_history')  # Trail CHOP recording spectrum over time\n    \n    if not specChop or not histChop:\n        return\n    \n    scriptOp.clear()\n    \n    freqBins = specChop.numSamples\n    timeSteps = histChop.numSamples\n    \n    points = []\n    for t in range(timeSteps):\n        for f in range(freqBins):\n            x = (f / freqBins) * 2.0 - 1.0\n            z = (t / timeSteps) * 2.0 - 1.0\n            # Get historical spectrum value\n            y = float(histChop[0][t]) * 3.0  # scale\n            pt = scriptOp.appendPoint()\n            pt.P = (x, y, z)\n            points.append(pt)"
+      },
+      "workflow": {
+        "description": "Standard FFT visualization chain",
+        "chain": [
+          "Audio Device In CHOP (microphone/line-in)",
+          "Audio Spectrum CHOP (FFT, 512 bins, log scale)",
+          "Math CHOP (scale: multiply by 5.0)",
+          "Lag CHOP (smooth: lag=0.05, attack=0.01)",
+          "CHOP to SOP (or Script SOP) -> drive geometry",
+          "Render with Geometry COMP"
+        ]
+      }
+    },
+    {
+      "id": "beat_detection",
+      "name": "Beat Detection and Tempo Tracking",
+      "subcategory": "beat-detection",
+      "description": "Real-time beat detection using low-frequency FFT energy thresholding, onset detection, and tempo estimation. Drives visual events synchronized to music beats.",
+      "difficulty": "intermediate",
+      "operators": ["Audio Spectrum CHOP", "Analyze CHOP", "Logic CHOP", "Count CHOP", "Timer CHOP", "Beat CHOP"],
+      "tags": ["beat-detection", "onset", "tempo", "BPM", "trigger", "music"],
+      "notes": "TD has a built-in Beat CHOP for tempo tracking when synced to Ableton or Bitwig. For standalone beat detection, use energy onset detection via Analyze CHOP on the sub-bass band.",
+      "code": {
+        "language": "python",
+        "filename": "beat_detection.py",
+        "snippet": "# Beat Detection via Low-Frequency Energy Onset\n# Works without Ableton — analyzes audio directly\n\n# Node setup:\n# Audio Device In CHOP -> Audio Filter CHOP (lowpass, cutoff=200Hz)\n# -> Analyze CHOP (RMS/peak) -> Slope CHOP -> Logic CHOP (rising edge)\n# -> Count CHOP (accumulates beats) -> Timer CHOP (inter-beat intervals)\n\n_prev_energy = 0.0\n_beat_times = []\n_energy_history = []\nHISTORY_LEN = 43  # ~1.5 seconds at 30fps\nTHRESHOLD_MULTIPLIER = 1.5\n\ndef onChopExec(dat, channel, sampleIndex, val, prev):\n    \"\"\"\n    Called by CHOP Execute DAT when the RMS energy channel updates.\n    Implement onset detection with local energy mean threshold.\n    \"\"\"\n    global _energy_history, _beat_times\n    \n    energy = val\n    _energy_history.append(energy)\n    if len(_energy_history) > HISTORY_LEN:\n        _energy_history.pop(0)\n    \n    if len(_energy_history) < HISTORY_LEN:\n        return\n    \n    local_mean = sum(_energy_history) / len(_energy_history)\n    threshold = local_mean * THRESHOLD_MULTIPLIER\n    \n    # Beat detected: current energy significantly above local mean\n    if energy > threshold and prev <= local_mean:\n        current_time = absTime.seconds\n        _beat_times.append(current_time)\n        \n        # Keep last 8 beats for BPM estimation\n        if len(_beat_times) > 8:\n            _beat_times.pop(0)\n        \n        # Trigger beat visual event\n        op('beat_trigger').par.value0 = 1.0\n        run('op(\"beat_trigger\").par.value0.val = 0.0', delayFrames=2)\n        \n        # Calculate BPM\n        if len(_beat_times) >= 2:\n            intervals = [_beat_times[i+1] - _beat_times[i] \n                        for i in range(len(_beat_times)-1)]\n            avg_interval = sum(intervals) / len(intervals)\n            bpm = 60.0 / avg_interval if avg_interval > 0 else 0\n            op('bpm_display').par.value0 = round(bpm, 1)\n            print(f'BPM: {bpm:.1f}')"
+      }
+    },
+    {
+      "id": "granular_synthesis",
+      "name": "Granular Synthesis",
+      "subcategory": "granular",
+      "description": "Granular synthesis in TouchDesigner using Audio File In CHOP, Audio Play CHOP, and custom Python scheduling. Creates texture-rich soundscapes, pitch-shifting, and time-stretching by playing many short audio grains.",
+      "difficulty": "advanced",
+      "operators": ["Audio File In CHOP", "Audio Play CHOP", "Script CHOP", "Math CHOP", "Merge CHOP"],
+      "tags": ["granular", "synthesis", "audio", "grain", "texture", "soundscape", "time-stretch"],
+      "notes": "True polyphonic granular requires multiple Audio Play CHOPs or a custom C++ CHOP. Python approach: schedule grain triggers and modulate playback rate. For richer granular, use the TDAbleton integration or VST plugins via Audio VST CHOP.",
+      "code": {
+        "language": "python",
+        "filename": "granular_synthesis.py",
+        "snippet": "# Granular Synthesis Scheduler\n# Controls multiple Audio Play CHOP instances as individual grains\n\nimport random\nimport math\n\nMAX_GRAINS = 16  # number of simultaneous grains\n\nclass GranularEngine:\n    def __init__(self, audioFilePath, audioPlayCHOPs):\n        self.file = audioFilePath\n        self.players = audioPlayCHOPs  # list of Audio Play CHOP references\n        self.next_grain = 0\n        self.grains = []\n        \n        # Granular parameters\n        self.grain_size   = 0.1    # seconds\n        self.grain_rate   = 10     # grains per second\n        self.spray        = 0.5    # position randomization (0..1)\n        self.pitch_range  = 0.3    # pitch deviation\n        self.position     = 0.0    # playback head position 0..1\n        self.position_speed = 0.05 # how fast head moves\n    \n    def update(self, dt):\n        \"\"\"Call every frame with delta time.\"\"\"\n        self.position += self.position_speed * dt\n        self.position = self.position % 1.0\n        \n        # Check if it's time to trigger next grain\n        grain_interval = 1.0 / self.grain_rate\n        # Simplified: just trigger every frame if rate is high enough\n        self.trigger_grain()\n    \n    def trigger_grain(self):\n        player = self.players[self.next_grain % len(self.players)]\n        self.next_grain += 1\n        \n        # Randomize grain parameters\n        pos = self.position + (random.random() - 0.5) * self.spray\n        pos = max(0.0, min(1.0, pos))\n        \n        pitch = 1.0 + (random.random() - 0.5) * self.pitch_range\n        volume = random.uniform(0.5, 1.0)\n        \n        # Configure and trigger Audio Play CHOP\n        player.par.file = self.file\n        player.par.rate = pitch\n        player.par.volume = volume\n        player.par.trimstart = pos\n        player.par.trimend = min(1.0, pos + self.grain_size * pitch)\n        player.par.play.pulse()\n\n# Global engine instance\n_engine = None\n\ndef onStart():\n    global _engine\n    players = [op(f'audio_play{i+1}') for i in range(MAX_GRAINS)]\n    _engine = GranularEngine(\n        audioFilePath=project.folder + '/audio/source.wav',\n        audioPlayCHOPs=players\n    )\n\ndef onFrameEnd(frame):\n    if _engine:\n        _engine.position = op('position_slider').par.value0.eval()\n        _engine.grain_rate = op('rate_slider').par.value0.eval()\n        _engine.pitch_range = op('pitch_slider').par.value0.eval()\n        _engine.update(1.0 / project.cookRate)"
+      }
+    },
+    {
+      "id": "midi_driven_visuals",
+      "name": "MIDI-Driven Visual System",
+      "subcategory": "midi",
+      "description": "Building MIDI-reactive visual systems using MIDI In CHOP, MIDI In DAT, and MIDI Event DAT. Maps note velocity, pitch, controller values, and note-on/off events to visual parameters.",
+      "difficulty": "beginner",
+      "operators": ["MIDI In CHOP", "MIDI In DAT", "MIDI Event DAT", "Select CHOP", "Logic CHOP"],
+      "tags": ["MIDI", "music", "note", "velocity", "controller", "reactive", "mapping"],
+      "notes": "MIDI In CHOP outputs continuous controller values and note states as CHOP channels. MIDI In DAT provides raw event messages. MIDI Event DAT converts events into table rows for scripting.",
+      "code": {
+        "language": "python",
+        "filename": "midi_visual_mapping.py",
+        "snippet": "# MIDI-Driven Visual Mapping\n# Reads MIDI In CHOP and maps to visual parameters\n\ndef map_midi_to_visuals(midiChop, geoComp, materialNode):\n    \"\"\"\n    Map MIDI controller values to geometry and material parameters.\n    MIDI In CHOP channel names: 'cc7' = volume, 'cc10' = pan, etc.\n    Note channels: 'note60' = middle C, etc.\n    \"\"\"\n    # Controller mappings\n    volume_cc = midiChop['cc7'][0] if 'cc7' in midiChop.chans() else 0.5\n    pan_cc    = midiChop['cc10'][0] if 'cc10' in midiChop.chans() else 0.5\n    \n    # Map volume -> scale\n    geoComp.par.sx = 0.2 + volume_cc * 2.0\n    geoComp.par.sy = 0.2 + volume_cc * 2.0\n    geoComp.par.sz = 0.2 + volume_cc * 2.0\n    \n    # Map pan -> X position\n    geoComp.par.tx = (pan_cc * 2.0 - 1.0) * 3.0\n\n# MIDI Event DAT callback\n# Place in a DAT Execute connected to MIDI Event DAT\ndef onTableChange(dat):\n    \"\"\"\n    Called when new MIDI events arrive in MIDI Event DAT.\n    Each row: [status, channel, data1, data2, absTime]\n    \"\"\"\n    for row in range(dat.numRows):\n        status = int(dat[row, 'status'])\n        channel = int(dat[row, 'channel'])\n        data1   = int(dat[row, 'data1'])    # note or CC number\n        data2   = int(dat[row, 'data2'])    # velocity or CC value\n        \n        if status == 144 and data2 > 0:  # Note On\n            note = data1\n            velocity = data2 / 127.0\n            on_note_on(note, velocity, channel)\n        elif status == 128 or (status == 144 and data2 == 0):  # Note Off\n            on_note_off(data1, channel)\n        elif status == 176:  # Control Change\n            on_cc(data1, data2 / 127.0, channel)\n\ndef on_note_on(note, velocity, channel):\n    \"\"\"Trigger visual event for note-on.\"\"\"\n    hue = (note % 12) / 12.0  # Map pitch class to color\n    brightness = velocity\n    op('color_ctrl').par.value0 = hue\n    op('color_ctrl').par.value1 = brightness\n    op('trigger_flash').par.value0 = velocity\n    run('op(\"trigger_flash\").par.value0.val = 0.0', delayFrames=5)\n\ndef on_cc(cc_num, value, channel):\n    \"\"\"Handle continuous controller change.\"\"\"\n    cc_map = {\n        1:  'op(\"modwheel\").par.value0',   # Mod wheel\n        7:  'op(\"master_vol\").par.value0',  # Volume\n        11: 'op(\"expression\").par.value0',  # Expression\n        74: 'op(\"filter_cutoff\").par.value0' # Filter cutoff (common in synths)\n    }\n    if cc_num in cc_map:\n        target = op(cc_map[cc_num].split('\"')[1])\n        param = cc_map[cc_num].split('.')[1].split('\"')[0]\n        if target:\n            target.par.value0 = value"
+      }
+    },
+    {
+      "id": "spectral_analysis_visualization",
+      "name": "Spectral Analysis and Visualization",
+      "subcategory": "spectrum",
+      "description": "Advanced frequency analysis techniques: mel-frequency spectrum, spectral centroid tracking, onset detection, and building a real-time spectrogram display.",
+      "difficulty": "intermediate",
+      "operators": ["Audio Spectrum CHOP", "Trail CHOP", "CHOP to TOP", "Math CHOP"],
+      "tags": ["spectral", "mel", "centroid", "spectrogram", "analysis", "frequency"],
+      "code": {
+        "language": "python",
+        "filename": "spectral_analysis.py",
+        "snippet": "# Spectral Analysis Helpers — for Script CHOP\nimport numpy as np\n\ndef cook(scriptOp):\n    specChop = op('audio_spectrum1')  # Audio Spectrum CHOP output\n    if specChop is None: return\n    \n    # Get spectrum as numpy array\n    magnitudes = np.array([specChop[0][i] for i in range(specChop.numSamples)])\n    freqs = np.linspace(20, 20000, len(magnitudes))  # approximate\n    \n    # --- Spectral Centroid (brightness measure) ---\n    total_mag = np.sum(magnitudes)\n    if total_mag > 0:\n        centroid = np.sum(freqs * magnitudes) / total_mag\n    else:\n        centroid = 0.0\n    \n    # --- Spectral Rolloff (85% of energy below this freq) ---\n    cumulative = np.cumsum(magnitudes)\n    rolloff_thresh = 0.85 * total_mag\n    rolloff_idx = np.searchsorted(cumulative, rolloff_thresh)\n    rolloff_freq = freqs[min(rolloff_idx, len(freqs)-1)]\n    \n    # --- Band energies (sub-bass, bass, mid, high) ---\n    sub_bass = np.mean(magnitudes[freqs < 80])\n    bass     = np.mean(magnitudes[(freqs >= 80) & (freqs < 250)])\n    mid      = np.mean(magnitudes[(freqs >= 250) & (freqs < 4000)])\n    high     = np.mean(magnitudes[freqs >= 4000])\n    \n    # Output as CHOP channels\n    scriptOp['centroid'][0]   = float(centroid / 20000.0)   # normalized\n    scriptOp['rolloff'][0]    = float(rolloff_freq / 20000.0)\n    scriptOp['sub_bass'][0]   = float(sub_bass)\n    scriptOp['bass'][0]       = float(bass)\n    scriptOp['mid'][0]        = float(mid)\n    scriptOp['high'][0]       = float(high)\n    scriptOp['brightness'][0] = float(centroid / 20000.0)   # alias"
+      }
+    }
+  ],
+  "resources": [
+    { "title": "Audio Spectrum CHOP Documentation", "url": "https://docs.derivative.ca/Audio_Spectrum_CHOP" },
+    { "title": "MIDI In CHOP Documentation", "url": "https://docs.derivative.ca/MIDI_In_CHOP" },
+    { "title": "Beat CHOP Documentation", "url": "https://docs.derivative.ca/Beat_CHOP" },
+    { "title": "Granular Synthesis Overview", "url": "https://en.wikipedia.org/wiki/Granular_synthesis" }
+  ]
+}

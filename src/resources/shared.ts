@@ -31,6 +31,14 @@ export function firstVar(value: string | string[] | undefined): string {
   return value ?? "";
 }
 
+export function decodeResourceValue(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 export function jsonContents(uri: URL, data: unknown): ReadResourceResult {
   return {
     contents: [

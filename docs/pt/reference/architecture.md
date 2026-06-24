@@ -72,10 +72,18 @@ As redes geradas são auto-organizadas num layout legível da esquerda para a di
 
 O servidor já vem com uma referência embutida e offline, para que a IA use
 operadores de verdade em vez de inventá-los: **629 operadores**, **68 classes
-Python**, padrões de fluxo de trabalho, técnicas de GLSL e tutoriais. Tudo isso é
-exposto como recursos MCP que a IA pode ler sob demanda:
+Python**, padrões de fluxo de trabalho, técnicas de GLSL, tutoriais, **7 perfis
+de release do TouchDesigner**, **45 entradas de compatibilidade de operadores**,
+**9 classes de compatibilidade da API Python** e **6 séries de builds
+experimentais**, **7 packs de técnicas** com **39 técnicas** e **6 referências
+de classes do TouchDesigner**. Tudo isso é exposto como recursos MCP que a IA
+pode ler sob demanda:
 
 `tdmcp://operators/{category|name}` · `tdmcp://python-api/{class}` ·
+`tdmcp://operator-connections/{operator}` · `tdmcp://operator-examples/{operator}` ·
+`tdmcp://td-versions/{version}` · `tdmcp://td-experimental/{series_or_category}` ·
+`tdmcp://compat/operators/{operator}` · `tdmcp://compat/python/{class_or_member}` ·
+`tdmcp://techniques/{category}` · `tdmcp://td-classes/{family}` ·
 `tdmcp://patterns/{name}` · `tdmcp://glsl/{name}` · `tdmcp://recipes/{name}` ·
 `tdmcp://tutorials/{name}`
 

@@ -582,6 +582,10 @@ import {
   compactGraphDigestImpl,
   compactGraphDigestSchema,
 } from "../tools/layer3/compactGraphDigest.js";
+import {
+  compareOperatorDocsImpl,
+  compareOperatorDocsSchema,
+} from "../tools/layer3/compareOperatorDocs.js";
 import { compareTdNodesImpl, compareTdNodesSchema } from "../tools/layer3/compareTdNodes.js";
 import {
   controlTimelineTransportImpl,
@@ -592,6 +596,14 @@ import { deleteTdNodeImpl, deleteTdNodeSchema } from "../tools/layer3/deleteTdNo
 import { diffSnapshotsImpl, diffSnapshotsSchema } from "../tools/layer3/diffSnapshots.js";
 import { disconnectNodesImpl, disconnectNodesSchema } from "../tools/layer3/disconnectNodes.js";
 import { documentNetworkImpl, documentNetworkSchema } from "../tools/layer3/documentNetwork.js";
+import {
+  draftRecipeFromOperatorChainImpl,
+  draftRecipeFromOperatorChainSchema,
+} from "../tools/layer3/draftRecipeFromOperatorChain.js";
+import {
+  draftRecipeFromTechniqueImpl,
+  draftRecipeFromTechniqueSchema,
+} from "../tools/layer3/draftRecipeFromTechnique.js";
 import { editDatContentImpl, editDatContentSchema } from "../tools/layer3/editDatContent.js";
 import {
   elicitMissingArgsImpl,
@@ -612,6 +624,10 @@ import {
   getNodeStateRuntimeSchema,
 } from "../tools/layer3/getNodeStateRuntime.js";
 import {
+  getOperatorWorkflowGuideImpl,
+  getOperatorWorkflowGuideSchema,
+} from "../tools/layer3/getOperatorWorkflowGuide.js";
+import {
   getTdClassDetailsImpl,
   getTdClassDetailsSchema,
 } from "../tools/layer3/getTdClassDetails.js";
@@ -626,6 +642,11 @@ import {
 import { getTdNodesImpl, getTdNodesSchema } from "../tools/layer3/getTdNodes.js";
 import { getTdPerformanceImpl, getTdPerformanceSchema } from "../tools/layer3/getTdPerformance.js";
 import { getTdTopologyImpl, getTdTopologySchema } from "../tools/layer3/getTdTopology.js";
+import {
+  getTechniqueDetailImpl,
+  getTechniqueDetailSchema,
+} from "../tools/layer3/getTechniqueDetail.js";
+import { getTutorialImpl, getTutorialSchema } from "../tools/layer3/getTutorial.js";
 import { inspectComponentImpl, inspectComponentSchema } from "../tools/layer3/inspectComponent.js";
 import {
   inspectGpuAndDisplaysImpl,
@@ -639,6 +660,10 @@ import {
   optimizePerformanceImpl,
   optimizePerformanceSchema,
 } from "../tools/layer3/optimizePerformance.js";
+import {
+  planTdVersionMigrationImpl,
+  planTdVersionMigrationSchema,
+} from "../tools/layer3/planTdVersionMigration.js";
 import { profileCookCostImpl, profileCookCostSchema } from "../tools/layer3/profileCookCost.js";
 import {
   projectDocumentationSiteImpl,
@@ -654,6 +679,11 @@ import { renderOutputImpl, renderOutputSchema } from "../tools/layer3/renderOutp
 import { repairNetworkImpl, repairNetworkSchema } from "../tools/layer3/repairNetwork.js";
 import { scoreBuildImpl, scoreBuildSchema } from "../tools/layer3/scoreBuild.js";
 import { searchOperatorsImpl, searchOperatorsSchema } from "../tools/layer3/searchOperators.js";
+import { searchPythonApiImpl, searchPythonApiSchema } from "../tools/layer3/searchPythonApi.js";
+import {
+  searchTouchDesignerKnowledgeImpl,
+  searchTouchDesignerKnowledgeSchema,
+} from "../tools/layer3/searchTouchDesignerKnowledge.js";
 import { serializeNetworkImpl, serializeNetworkSchema } from "../tools/layer3/serializeNetwork.js";
 import { setDatContentImpl, setDatContentSchema } from "../tools/layer3/setDatContent.js";
 import {
@@ -662,6 +692,10 @@ import {
 } from "../tools/layer3/setParameterExpression.js";
 import { snapshotTdGraphImpl, snapshotTdGraphSchema } from "../tools/layer3/snapshotTdGraph.js";
 import {
+  suggestOperatorChainImpl,
+  suggestOperatorChainSchema,
+} from "../tools/layer3/suggestOperatorChain.js";
+import {
   summarizeTdErrorsImpl,
   summarizeTdErrorsSchema,
 } from "../tools/layer3/summarizeTdErrors.js";
@@ -669,6 +703,10 @@ import {
   updateTdNodeParametersImpl,
   updateTdNodeParametersSchema,
 } from "../tools/layer3/updateTdNodeParameters.js";
+import {
+  validateOperatorChainImpl,
+  validateOperatorChainSchema,
+} from "../tools/layer3/validateOperatorChain.js";
 import { writeAgentGuideImpl, writeAgentGuideSchema } from "../tools/layer3/writeAgentGuide.js";
 import {
   checksumAndVerifyPackImpl,
@@ -876,6 +914,56 @@ const COMMANDS: Record<string, Command> = {
     searchOperatorsImpl,
     "Search the operator knowledge base by keyword (offline).",
   ),
+  "operators compare-docs": r(
+    compareOperatorDocsSchema,
+    compareOperatorDocsImpl,
+    "Compare two operator docs from offline knowledge.",
+  ),
+  "operators guide": r(
+    getOperatorWorkflowGuideSchema,
+    getOperatorWorkflowGuideImpl,
+    "Get operator connections, examples, and next-operator suggestions (offline).",
+  ),
+  "operators suggest-chain": r(
+    suggestOperatorChainSchema,
+    suggestOperatorChainImpl,
+    "Suggest a read-only operator chain for a creative or technical goal (offline).",
+  ),
+  "operators validate-chain": r(
+    validateOperatorChainSchema,
+    validateOperatorChainImpl,
+    "Validate an ordered operator chain before creating nodes (offline).",
+  ),
+  "techniques get": r(
+    getTechniqueDetailSchema,
+    getTechniqueDetailImpl,
+    "Inspect TouchDesigner technique packs and individual techniques (offline).",
+  ),
+  "techniques draft-recipe": r(
+    draftRecipeFromTechniqueSchema,
+    draftRecipeFromTechniqueImpl,
+    "Draft a RecipeSchema JSON from a TouchDesigner technique (offline).",
+  ),
+  "tutorials get": r(
+    getTutorialSchema,
+    getTutorialImpl,
+    "List, search, or retrieve TouchDesigner tutorials (offline).",
+  ),
+  "knowledge search": r(
+    searchTouchDesignerKnowledgeSchema,
+    searchTouchDesignerKnowledgeImpl,
+    "Search embedded TD operators, versions, compatibility notes, techniques, and classes.",
+  ),
+  "versions migration-plan": r(
+    planTdVersionMigrationSchema,
+    planTdVersionMigrationImpl,
+    "Plan a TD version migration from release and compatibility notes (offline).",
+  ),
+  "classes search": r(
+    searchPythonApiSchema,
+    searchPythonApiImpl,
+    "Search TD Python API classes, methods, and members (offline).",
+  ),
   document: r(
     documentNetworkSchema,
     documentNetworkImpl,
@@ -893,6 +981,11 @@ const COMMANDS: Record<string, Command> = {
     mutates: true,
   }),
   recipes: r(listRecipesSchema, listRecipesImpl, "List the built-in recipe library (offline)."),
+  "recipes draft-chain": r(
+    draftRecipeFromOperatorChainSchema,
+    draftRecipeFromOperatorChainImpl,
+    "Draft a RecipeSchema JSON from an operator chain without applying it.",
+  ),
   recipe: r(applyRecipeSchema, applyRecipeImpl, "Build a recipe by id.", { mutates: true }),
   init: r(
     scaffoldShowSchema,

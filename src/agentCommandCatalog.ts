@@ -306,6 +306,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "classes search",
+    summary: "Search TD Python API classes, methods, and members (offline).",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "clock-sync",
     summary: "Drive the global tempo from a Bpm knob + tap-tempo (beat-match the DJ).",
     mutates: true,
@@ -1097,6 +1104,14 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "knowledge search",
+    summary:
+      "Search embedded TD operators, versions, compatibility notes, techniques, and classes.",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "launcher",
     summary: "Build an Ableton-style grid of cue-trigger buttons.",
     mutates: true,
@@ -1474,6 +1489,34 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "operators compare-docs",
+    summary: "Compare two operator docs from offline knowledge.",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "operators guide",
+    summary: "Get operator connections, examples, and next-operator suggestions (offline).",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "operators suggest-chain",
+    summary: "Suggest a read-only operator chain for a creative or technical goal (offline).",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "operators validate-chain",
+    summary: "Validate an ordered operator chain before creating nodes (offline).",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "optical-flow",
     summary:
       "Compute optical flow from a video/camera source and expose flow vectors for reactive use.",
@@ -1751,6 +1794,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "recipes draft-chain",
+    summary: "Draft a RecipeSchema JSON from an operator chain without applying it.",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "record-fixtures",
     summary: "Record bridge fixtures for offline tests.",
     mutates: false,
@@ -2022,6 +2072,20 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "techniques draft-recipe",
+    summary: "Draft a RecipeSchema JSON from a TouchDesigner technique (offline).",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "techniques get",
+    summary: "Inspect TouchDesigner technique packs and individual techniques (offline).",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "tempo-sync",
     summary: "Create a beat clock (ramp/pulse/beat/bar/bpm) + optional beat events.",
     mutates: true,
@@ -2087,6 +2151,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "tutorials get",
+    summary: "List, search, or retrieve TouchDesigner tutorials (offline).",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "two-way-surface",
     summary: "Bidirectional control surface: parameter <-> external channel sync with guards.",
     mutates: true,
@@ -2121,6 +2192,13 @@ export const AGENT_COMMAND_CATALOG = [
     mutates: false,
     unsafe: false,
     source: "cli",
+  },
+  {
+    command: "versions migration-plan",
+    summary: "Plan a TD version migration from release and compatibility notes (offline).",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
   },
   {
     command: "video",

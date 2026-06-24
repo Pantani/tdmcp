@@ -10,6 +10,26 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Add a Claude Code plugin marketplace entry for tdmcp with a stdio-pinned MCP server
   launch configuration.
+- Import TouchDesigner knowledge from Bottobot into MCP resources for version
+  history, compatibility notes, operator workflow guidance, technique packs, TD
+  class families, and experimental build data; add read-only agent tools for
+  cross-surface knowledge search and operator workflow lookup.
+- Expand `search_operators` with category/subcategory filters, exact/tag modes,
+  parameter metadata search, version compatibility filtering, facets, zero-result
+  tips, and explicit validation for unknown categories or TouchDesigner versions.
+- Add `compare_operator_docs` and `search_python_api` read-only knowledge tools
+  so agents can compare operator documentation and search TouchDesigner Python
+  classes, methods, and members without guessing resource URIs.
+- Add `suggest_operator_chain` and `plan_td_version_migration` read-only tools
+  so agents can turn offline workflow/compatibility knowledge into operator-chain
+  plans and TouchDesigner upgrade checklists before touching a live project.
+- Add `validate_operator_chain` and `draft_recipe_from_operator_chain` read-only
+  tools so agents can preflight operator chains against offline docs/version
+  compatibility and turn validated chains into `RecipeSchema` drafts without
+  mutating TouchDesigner.
+- Add `get_technique_detail`, `draft_recipe_from_technique`, and `get_tutorial`
+  read-only knowledge tools so agents can inspect Bottobot-derived technique and
+  tutorial material and turn GLSL techniques into `RecipeSchema` drafts offline.
 
 ### Fixed
 

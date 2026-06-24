@@ -67,10 +67,17 @@ Generated networks are auto-arranged into a readable left→right layout
 
 The server ships with an embedded, offline reference so the AI uses real
 operators rather than inventing them: **629 operators**, **68 Python classes**,
-workflow patterns, GLSL techniques and tutorials. These are exposed as MCP
+workflow patterns, GLSL techniques, tutorials, **7 TouchDesigner release
+profiles**, **45 operator compatibility entries**, **9 Python API compatibility
+classes**, **6 experimental build series**, **7 technique packs** with **39
+techniques**, and **6 TouchDesigner class references**. These are exposed as MCP
 resources the AI can read on demand:
 
 `tdmcp://operators/{category|name}` · `tdmcp://python-api/{class}` ·
+`tdmcp://operator-connections/{operator}` · `tdmcp://operator-examples/{operator}` ·
+`tdmcp://td-versions/{version}` · `tdmcp://td-experimental/{series_or_category}` ·
+`tdmcp://compat/operators/{operator}` · `tdmcp://compat/python/{class_or_member}` ·
+`tdmcp://techniques/{category}` · `tdmcp://td-classes/{family}` ·
 `tdmcp://patterns/{name}` · `tdmcp://glsl/{name}` ·
 `tdmcp://glsl-snippets` · `tdmcp://recipes/{name}` ·
 `tdmcp://recipes/search/{query}` · `tdmcp://tutorials/{name}` ·
