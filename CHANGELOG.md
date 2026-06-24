@@ -14,6 +14,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   history, compatibility notes, operator workflow guidance, technique packs, TD
   class families, and experimental build data; add read-only agent tools for
   cross-surface knowledge search and operator workflow lookup.
+- Expand `search_operators` with category/subcategory filters, exact/tag modes,
+  parameter metadata search, version compatibility filtering, facets, zero-result
+  tips, and explicit validation for unknown categories or TouchDesigner versions.
 
 ### Fixed
 
