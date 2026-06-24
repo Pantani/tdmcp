@@ -1,0 +1,18 @@
+{
+  "name": "tdmcp",
+  "owner": {
+    "name": "Pantani"
+  },
+  "metadata": {
+    "description": "Claude Code plugins for TouchDesigner MCP workflows."
+  },
+  "plugins": [
+    {
+      "name": "tdmcp",
+      "source": "./plugins/tdmcp",
+      "description": "Installs the tdmcp TouchDesigner MCP server for Claude Code.",
+      "category": "creative-coding",
+      "tags": ["touchdesigner", "mcp", "creative-coding", "generative-art"]
+    }
+  ]
+}
