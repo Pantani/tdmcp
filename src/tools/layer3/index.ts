@@ -24,6 +24,7 @@ import { registerGetBridgeLogs } from "./getBridgeLogs.js";
 import { registerGetInlinePreview } from "./getInlinePreview.js";
 import { registerGetModuleHelp } from "./getModuleHelp.js";
 import { registerGetNodeStateRuntime } from "./getNodeStateRuntime.js";
+import { registerGetOperatorWorkflowGuide } from "./getOperatorWorkflowGuide.js";
 import { registerGetTdClassDetails } from "./getTdClassDetails.js";
 import { registerGetTdClasses } from "./getTdClasses.js";
 import { registerGetTdInfo } from "./getTdInfo.js";
@@ -48,6 +49,7 @@ import { registerRenderOutput } from "./renderOutput.js";
 import { registerRepairNetwork } from "./repairNetwork.js";
 import { registerScoreBuild } from "./scoreBuild.js";
 import { registerSearchOperators } from "./searchOperators.js";
+import { registerSearchTouchDesignerKnowledge } from "./searchTouchDesignerKnowledge.js";
 import { registerSerializeNetwork } from "./serializeNetwork.js";
 import { registerSetDatContent } from "./setDatContent.js";
 import { registerSetParameterExpression } from "./setParameterExpression.js";
@@ -80,6 +82,8 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerSnapshotTdGraph,
   registerReloadBridge,
   registerSearchOperators,
+  registerGetOperatorWorkflowGuide,
+  registerSearchTouchDesignerKnowledge,
   registerManagePackages,
   registerDocumentNetwork,
   registerDiffSnapshots,

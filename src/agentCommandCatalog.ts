@@ -1097,6 +1097,14 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "knowledge search",
+    summary:
+      "Search embedded TD operators, versions, compatibility notes, techniques, and classes.",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "launcher",
     summary: "Build an Ableton-style grid of cue-trigger buttons.",
     mutates: true,
@@ -1469,6 +1477,13 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "operators",
     summary: "Search the operator knowledge base by keyword (offline).",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "operators guide",
+    summary: "Get operator connections, examples, and next-operator suggestions (offline).",
     mutates: false,
     unsafe: false,
     source: "tool",

@@ -612,6 +612,10 @@ import {
   getNodeStateRuntimeSchema,
 } from "../tools/layer3/getNodeStateRuntime.js";
 import {
+  getOperatorWorkflowGuideImpl,
+  getOperatorWorkflowGuideSchema,
+} from "../tools/layer3/getOperatorWorkflowGuide.js";
+import {
   getTdClassDetailsImpl,
   getTdClassDetailsSchema,
 } from "../tools/layer3/getTdClassDetails.js";
@@ -654,6 +658,10 @@ import { renderOutputImpl, renderOutputSchema } from "../tools/layer3/renderOutp
 import { repairNetworkImpl, repairNetworkSchema } from "../tools/layer3/repairNetwork.js";
 import { scoreBuildImpl, scoreBuildSchema } from "../tools/layer3/scoreBuild.js";
 import { searchOperatorsImpl, searchOperatorsSchema } from "../tools/layer3/searchOperators.js";
+import {
+  searchTouchDesignerKnowledgeImpl,
+  searchTouchDesignerKnowledgeSchema,
+} from "../tools/layer3/searchTouchDesignerKnowledge.js";
 import { serializeNetworkImpl, serializeNetworkSchema } from "../tools/layer3/serializeNetwork.js";
 import { setDatContentImpl, setDatContentSchema } from "../tools/layer3/setDatContent.js";
 import {
@@ -875,6 +883,16 @@ const COMMANDS: Record<string, Command> = {
     searchOperatorsSchema,
     searchOperatorsImpl,
     "Search the operator knowledge base by keyword (offline).",
+  ),
+  "operators guide": r(
+    getOperatorWorkflowGuideSchema,
+    getOperatorWorkflowGuideImpl,
+    "Get operator connections, examples, and next-operator suggestions (offline).",
+  ),
+  "knowledge search": r(
+    searchTouchDesignerKnowledgeSchema,
+    searchTouchDesignerKnowledgeImpl,
+    "Search embedded TD operators, versions, compatibility notes, techniques, and classes.",
   ),
   document: r(
     documentNetworkSchema,

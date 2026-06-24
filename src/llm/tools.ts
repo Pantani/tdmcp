@@ -24,6 +24,10 @@ import { deleteTdNodeImpl, deleteTdNodeSchema } from "../tools/layer3/deleteTdNo
 import { findTdNodesImpl, findTdNodesSchema } from "../tools/layer3/findTdNodes.js";
 import { getModuleHelpImpl, getModuleHelpSchema } from "../tools/layer3/getModuleHelp.js";
 import {
+  getOperatorWorkflowGuideImpl,
+  getOperatorWorkflowGuideSchema,
+} from "../tools/layer3/getOperatorWorkflowGuide.js";
+import {
   getTdClassDetailsImpl,
   getTdClassDetailsSchema,
 } from "../tools/layer3/getTdClassDetails.js";
@@ -37,6 +41,10 @@ import {
 import { getTdNodesImpl, getTdNodesSchema } from "../tools/layer3/getTdNodes.js";
 import { getTdTopologyImpl, getTdTopologySchema } from "../tools/layer3/getTdTopology.js";
 import { searchOperatorsImpl, searchOperatorsSchema } from "../tools/layer3/searchOperators.js";
+import {
+  searchTouchDesignerKnowledgeImpl,
+  searchTouchDesignerKnowledgeSchema,
+} from "../tools/layer3/searchTouchDesignerKnowledge.js";
 import {
   summarizeTdErrorsImpl,
   summarizeTdErrorsSchema,
@@ -145,6 +153,18 @@ export const LLM_TOOLS: LlmTool[] = [
     "Search the 629-operator knowledge base by keyword to find the right operator type (offline).",
     searchOperatorsSchema,
     searchOperatorsImpl,
+  ),
+  t(
+    "get_operator_workflow_guide",
+    "Get one operator's common inputs, outputs, examples, and next-operator suggestions (offline).",
+    getOperatorWorkflowGuideSchema,
+    getOperatorWorkflowGuideImpl,
+  ),
+  t(
+    "search_touchdesigner_knowledge",
+    "Search embedded TouchDesigner operators, versions, compatibility notes, technique packs, TD classes, and experimental notes (offline).",
+    searchTouchDesignerKnowledgeSchema,
+    searchTouchDesignerKnowledgeImpl,
   ),
   t(
     "list_recipes",
