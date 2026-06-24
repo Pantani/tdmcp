@@ -1,7 +1,6 @@
 #!/usr/bin/env node
-import { spawn } from "node:child_process";
 import dgram from "node:dgram";
-import { createInterface } from "node:readline";
+import { runJsonLineHelper } from "./external-helper-supervisor.mjs";
 
 const DEFAULT_HELPER = "_workspace/kinect-wall-harp/external/kinect_harp_depth_bridge";
 const STRING_OPTIONS = new Map([
@@ -327,71 +326,15 @@ function buildLibfreenect2HelperArgs(args) {
 async function runLibfreenect2(socket, args) {
   const helperArgs = buildLibfreenect2HelperArgs(args);
   const stallTimeoutMs = Math.max(0, Number(args.stallTimeoutMs ?? 8000));
-  return new Promise((resolve, reject) => {
-    let settled = false;
-    const settle = (callback, value) => {
-      if (settled) return;
-      settled = true;
-      callback(value);
-    };
-    const launchHelper = () => {
-      const child = spawn(args.helper, helperArgs, { stdio: ["ignore", "pipe", "pipe"] });
-      let childExited = false;
-      let lastFrameAt = Date.now();
-      let restartRequested = false;
-      const stallTimer =
-        stallTimeoutMs > 0
-          ? setInterval(
-              () => {
-                if (childExited || restartRequested) return;
-                const silenceMs = Date.now() - lastFrameAt;
-                if (silenceMs <= stallTimeoutMs) return;
-                restartRequested = true;
-                process.stderr.write(
-                  `[kinect-wall-harp-bridge] LIBUSB/depth stream stalled for ${silenceMs}ms; restarting helper\n`,
-                );
-                child.kill("SIGTERM");
-                const killTimer = setTimeout(() => {
-                  if (!childExited) child.kill("SIGKILL");
-                }, 1200);
-                killTimer.unref?.();
-              },
-              Math.max(1000, Math.min(2000, stallTimeoutMs)),
-            )
-          : undefined;
-      child.stderr.on("data", (chunk) => process.stderr.write(chunk));
-      const lines = createInterface({ input: child.stdout });
-      lines.on("line", (line) => {
-        if (!line.trim().startsWith("{")) return;
-        lastFrameAt = Date.now();
-        try {
-          sendFrame(socket, args, JSON.parse(line));
-        } catch (err) {
-          process.stderr.write(`[kinect-wall-harp-bridge] ignored helper line: ${err.message}\n`);
-        }
-      });
-      const clearStallTimer = () => {
-        if (stallTimer !== undefined) clearInterval(stallTimer);
-      };
-      child.on("error", (err) => {
-        childExited = true;
-        clearStallTimer();
-        lines.close();
-        settle(reject, err);
-      });
-      child.on("exit", (code, signal) => {
-        childExited = true;
-        clearStallTimer();
-        lines.close();
-        if (restartRequested && !settled) {
-          launchHelper();
-          return;
-        }
-        if (code === 0) settle(resolve);
-        else settle(reject, new Error(`libfreenect2 helper exited with code ${code ?? signal}`));
-      });
-    };
-    launchHelper();
+  return runJsonLineHelper({
+    command: args.helper,
+    args: helperArgs,
+    label: "kinect-wall-harp-bridge",
+    stallTimeoutMs,
+    onJson: (frame) => sendFrame(socket, args, frame),
+    formatStallMessage: ({ silenceMs }) =>
+      `[kinect-wall-harp-bridge] LIBUSB/depth stream stalled for ${silenceMs}ms; restarting helper`,
+    formatExitError: (code, signal) => `libfreenect2 helper exited with code ${code ?? signal}`,
   });
 }
 

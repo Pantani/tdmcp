@@ -75,6 +75,12 @@ path for the Ableton session we validated manually:
   rotates, glows, exposes artist controls and can drive optional futuristic audio.
   Offline gates are green; live TD cook validation remains pending a reachable
   bridge.
+- 🧪 **`create_kinect_wall_harp` (Layer 1).** Builds a projected wall harp with
+  laser-line visuals, two-hand wall-touch tracking, an OSC Kinect input path,
+  external `libfreenect2` helper scripts, calibration diagnostics and a
+  sine-based pluck synth. The tool remains synthetic-safe for offline rehearsal;
+  real Kinect/projector use is setup-specific and follows the new
+  [physical installations](./guide/physical-installations) checklist.
 - **`diagnose_tdableton_mapper` (Layer 2).** Checks the real `TDA_Mapper` target,
   input CHOP, `Reorder`, bypass states, `Min/Max` ranges and missing `map1..map4`
   channels, with optional TD-side repair. AbletonMCP is not required for this
@@ -771,7 +777,10 @@ properly:
   `create_optical_flow` ships in main).
 - **Hardware-bound:** depth cameras (Kinect / Azure / RealSense), SMPTE/LTC
   timecode genlock, and laser (ILDA) output. Where possible we prefer the lighter,
-  camera-only paths (MediaPipe face/hand/body, stock-TOP optical flow).
+  camera-only paths (MediaPipe face/hand/body, stock-TOP optical flow). The
+  Kinect wall harp is a concrete, synthetic-safe depth-camera tool, but portable
+  live claims still depend on the actual room, projector, USB path and sensor
+  validation.
 - **Mixer/PA live control beyond scene arming:** autonomous PA control, mixer
   gain, PA mute, routing, patching, phantom power, mute groups and channel-strip
   edits remain out of scope for the AI path. The planned Ui24R work is limited

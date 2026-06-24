@@ -180,6 +180,11 @@ Body-pose reactivity lives in its own arc — see
 - **`create_facade_mapping`** — A multi-projector architectural facade rig
   (per-projector crop / corner-pin / edge-blend), shipped as a calibration
   skeleton. See [Output & mapping](/guide/prompt-cookbook#output-mapping).
+- **`create_kinect_wall_harp`** — A projected wall instrument with laser-like
+  strings, two-hand wall-touch tracking, an OSC Kinect input mode and an internal
+  pluck synth. Reach for it when a depth camera and projector become the
+  instrument, and follow the [physical installations](/guide/physical-installations)
+  checklist before making live tracking claims.
 - **`create_test_pattern`** — A projector calibration/alignment source (grid,
   crosshair, colour bars, ramp, circle-grid) with optional per-projector ID
   overlay.

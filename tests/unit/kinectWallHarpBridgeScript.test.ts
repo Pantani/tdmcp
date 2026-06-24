@@ -13,12 +13,14 @@ describe("kinect wall harp external bridge script", () => {
 
   it("contains a libfreenect2 stdout stall watchdog so USB hangs recover", () => {
     const source = readFileSync("scripts/kinect-wall-harp-bridge.mjs", "utf8");
+    const supervisor = readFileSync("scripts/external-helper-supervisor.mjs", "utf8");
 
+    expect(source).toContain("runJsonLineHelper");
     expect(source).toContain("stallTimeoutMs");
     expect(source).toContain("--stall-timeout-ms");
-    expect(source).toContain("lastFrameAt");
+    expect(supervisor).toContain("lastFrameAt");
     expect(source).toContain("LIBUSB/depth stream stalled");
-    expect(source).toContain('child.kill("SIGTERM")');
+    expect(supervisor).toContain('child.kill("SIGTERM")');
   });
 
   it("restarts the libfreenect2 helper after a stalled depth stream", () => {
