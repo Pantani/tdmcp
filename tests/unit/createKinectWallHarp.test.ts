@@ -292,6 +292,21 @@ describe("create_kinect_wall_harp", () => {
     expect(script).toContain("def _zone_for_hand");
     expect(script).toContain('_drive_callback(CFG.get("hand_tracker_path", "")');
     expect(script).not.toContain('_drive_callback(CFG.get("pluck_synth_path", "")');
+    expect(script).toContain("TRACKING_DRIVER_DAT_CODE");
+    expect(script).toContain('_create(_cont, ["executeDAT"], "tracking_driver"');
+    expect(script).toContain("def _drive_tracking():");
+    expect(script).toContain("hand_cb.module.onCook(hand)");
+    expect(script).toContain("logic_cb.module.onCook(logic)");
+    expect(script).toContain("CLEAN_SYNTH_DRIVER_DAT_CODE");
+    expect(script).toContain('_create(_cont, ["audiooscillatorCHOP"], "clean_sine_voice"');
+    expect(script).toContain(
+      '_set_par(_clean_voice, ["rate"], int(_p["audio_sample_rate"]), False)',
+    );
+    expect(script).toContain('_create(_cont, ["executeDAT"], "clean_synth_driver"');
+    expect(script).toContain(
+      "_set_par(osc, ['rate'], int(float(_par_value('Audiosamplerate', 48000))))",
+    );
+    expect(script).toContain("_connect(_clean_voice, _audio_out)");
     expect(script).toContain('_vis_cfg["hand_tracker_callbacks_path"]');
     expect(script).toContain('_vis_cfg["harp_logic_callbacks_path"]');
     expect(script).not.toContain('_vis_cfg["pluck_synth_callbacks_path"]');
@@ -323,6 +338,12 @@ describe("create_kinect_wall_harp", () => {
     expect(script).toContain("def _laser_palette");
     expect(script).toContain("def _laser_texture");
     expect(script).toContain("def _laser_texture_rows");
+    expect(script).toContain("def _update_hand_trails");
+    expect(script).toContain("def _draw_neon_trails");
+    expect(script).toContain('parent().store("tdmcp_neon_hand_trails"');
+    expect(script).toContain('parent().fetch("tdmcp_neon_hand_trails"');
+    expect(script).toContain("trail_alpha =");
+    expect(script).toContain("np.clip(color * (1.18 + 0.55 * energy)");
     expect(script).toContain("def _localized_hand_motion");
     expect(script).toContain("def _localized_hand_motion_rows");
     expect(script).toContain("visual_count = max(8, min(192");
@@ -330,10 +351,10 @@ describe("create_kinect_wall_harp", () => {
     expect(script).toContain("height_weight = np.exp(-((dy * dy) / 0.035))");
     expect(script).toContain("y_norms = 1.0 - (np.arange(height, dtype=np.float32)");
     expect(script).toContain(
-      "core = color.reshape(1, 3) * (0.72 + 0.28 * texture).reshape(height, 1)",
+      "core = color.reshape(1, 3) * (0.9 + 0.34 * texture).reshape(height, 1)",
     );
     expect(script).toContain(
-      "halo = color.reshape(1, 3) * (0.22 + 0.42 * local_motion).reshape(height, 1)",
+      "halo = color.reshape(1, 3) * (0.34 + 0.48 * local_motion).reshape(height, 1)",
     );
     expect(script).not.toContain("for y in range(height):");
     expect(script).not.toContain(
@@ -369,6 +390,8 @@ describe("create_kinect_wall_harp", () => {
     expect(script).toContain('_custom_par(visual, "appendFloat", "Curtainfollow"');
     expect(script).toContain('_set_par(_audio, ["cooktype"], "always", False)');
     expect(script).toContain('_set_par(_audio_debug, ["cooktype"], "always", False)');
+    expect(script).toContain("def onFrameStart(frame):");
+    expect(script).not.toContain("_connect(_audio_debug, _audio_out)");
 
     const payload = decodePayload(script);
     expect(payload.name).toBe("harp_test");

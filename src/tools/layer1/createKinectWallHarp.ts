@@ -86,7 +86,7 @@ export const createKinectWallHarpSchema = z.object({
     .number()
     .min(0)
     .max(1)
-    .default(0.35)
+    .default(0.18)
     .describe("Hand centroid smoothing amount used by the tracking Script CHOP."),
   crop_left: z.coerce.number().min(0).max(1).default(0),
   crop_right: z.coerce.number().min(0).max(1).default(1),
@@ -276,6 +276,7 @@ interface KinectWallHarpReport {
   hands_chop: string;
   harp_chop: string;
   audio_chop: string;
+  audio_driver: string;
   audio_out: string;
   status_dat: string;
   string_count: number;
@@ -302,6 +303,7 @@ report = {
     "hands_chop": "",
     "harp_chop": "",
     "audio_chop": "",
+    "audio_driver": "",
     "audio_out": "",
     "status_dat": "",
     "string_count": int(_p.get("string_count", 8)),
@@ -720,6 +722,42 @@ def _read_osc_hand(src, prefix):
     size = max(0.0, min(1.0, _read_chop_any(src, _osc_names(prefix, "size"), 0.0)))
     return (present, x, y, size, raw_x, raw_y, cal_x, raw_y)
 
+def _update_hand_trails(hand_values, now):
+    life = 1.35
+    trails = parent().fetch("tdmcp_neon_hand_trails", [])
+    if not isinstance(trails, list):
+        trails = []
+    next_trails = []
+    for point in trails:
+        if not isinstance(point, dict):
+            continue
+        try:
+            if float(now) - float(point.get("time", 0.0)) <= life:
+                next_trails.append(point)
+        except Exception:
+            pass
+    for prefix in ("left", "right"):
+        if float(hand_values.get(prefix + "_present", 0.0)) <= 0.5:
+            continue
+        x = max(0.0, min(1.0, float(hand_values.get(prefix + "_x", 0.0))))
+        y = max(0.0, min(1.0, float(hand_values.get(prefix + "_y", 0.5))))
+        size = max(0.0, min(1.0, float(hand_values.get(prefix + "_size", 0.04))))
+        last = parent().fetch("tdmcp_" + prefix + "_last_neon_trail", None)
+        should_add = True
+        if isinstance(last, dict):
+            try:
+                dist = math.hypot(x - float(last.get("x", x)), y - float(last.get("y", y)))
+                should_add = dist > 0.004 or float(now) - float(last.get("time", 0.0)) > 0.025
+            except Exception:
+                should_add = True
+        if should_add:
+            point = {"x": x, "y": y, "size": size, "time": float(now), "side": prefix}
+            next_trails.append(point)
+            parent().store("tdmcp_" + prefix + "_last_neon_trail", point)
+    next_trails = sorted(next_trails, key=lambda point: float(point.get("time", 0.0)))[-144:]
+    parent().store("tdmcp_neon_hand_trails", next_trails)
+    return next_trails
+
 def onCook(scriptOp):
     scriptOp.clear()
     mode = CFG["mode"]
@@ -778,6 +816,7 @@ def onCook(scriptOp):
         _chan(scriptOp, prefix + "_cal_x", vals[6])
         _chan(scriptOp, prefix + "_cal_y", vals[7])
     try:
+        _update_hand_trails(latest, absTime.seconds)
         parent().store("tdmcp_hands_latest", latest)
     except Exception:
         pass
@@ -1177,6 +1216,177 @@ def onCook(scriptOp):
     return
 '''
 
+AUDIO_DRIVER_DAT_CODE = r'''
+# Drives the Kinect wall harp synth explicitly; Script CHOP auto-cook can be unreliable on some TD audio setups.
+def _drive_audio():
+    synth = op('pluck_synth')
+    callback = op('pluck_synth_callbacks')
+    if synth is not None and callback is not None:
+        try:
+            callback.module.onCook(synth)
+        except Exception:
+            pass
+    debug = op('audio_debug')
+    if debug is not None:
+        try:
+            debug.cook(force=True)
+        except Exception:
+            pass
+    out = op('audio_out')
+    if out is not None:
+        try:
+            out.cook(force=True)
+        except Exception:
+            pass
+
+def onFrameStart(frame):
+    _drive_audio()
+    return
+
+def onStart():
+    _drive_audio()
+    return
+'''
+
+TRACKING_DRIVER_DAT_CODE = r'''
+# Drives hand tracking and harp logic once per frame, independent from audio output timing.
+def _cook(node):
+    if node is not None:
+        try:
+            node.cook(force=True)
+        except Exception:
+            pass
+
+def _drive_tracking():
+    hand = op('hand_tracker')
+    hand_cb = op('hand_tracker_callbacks')
+    if hand is not None and hand_cb is not None:
+        try:
+            hand_cb.module.onCook(hand)
+        except Exception:
+            pass
+    _cook(hand)
+    _cook(op('hands'))
+    logic = op('harp_logic')
+    logic_cb = op('harp_logic_callbacks')
+    if logic is not None and logic_cb is not None:
+        try:
+            logic_cb.module.onCook(logic)
+        except Exception:
+            pass
+    _cook(logic)
+    _cook(op('harp_state'))
+
+def onFrameStart(frame):
+    _drive_tracking()
+    return
+
+def onStart():
+    _drive_tracking()
+    return
+'''
+
+CLEAN_SYNTH_DRIVER_DAT_CODE = r'''
+# Uses a native Audio Oscillator CHOP for a clean sine voice, avoiding Script CHOP audio-buffer glitches.
+import math
+
+def _par_value(name, default):
+    try:
+        p = getattr(parent().par, name, None)
+        return p.eval() if p is not None else default
+    except Exception:
+        return default
+
+def _bool_value(name, default):
+    value = _par_value(name, default)
+    if isinstance(value, str):
+        return value.lower() not in ('0', 'false', 'off', 'no')
+    return bool(value)
+
+def _set_par(node, names, value):
+    if node is None:
+        return False
+    if isinstance(names, str):
+        names = [names]
+    for name in names:
+        try:
+            par = getattr(node.par, name, None)
+            if par is None:
+                continue
+            setattr(node.par, name, value)
+            return True
+        except Exception:
+            try:
+                getattr(node.par, name).val = value
+                return True
+            except Exception:
+                pass
+    return False
+
+def _last_event():
+    try:
+        queue = parent().fetch('tdmcp_harp_event_queue', [])
+        if isinstance(queue, list) and queue:
+            parent().store('tdmcp_harp_event_queue', [])
+            return queue[-1]
+    except Exception:
+        pass
+    latest = parent().fetch('tdmcp_harp_latest', {})
+    if isinstance(latest, dict):
+        for i in range(32):
+            try:
+                if float(latest.get('string%d_trigger' % i, 0.0)) > 0.5:
+                    return {'string': i, 'freq': float(latest.get('string%d_freq' % i, 220.0))}
+            except Exception:
+                pass
+    return None
+
+def _drive_clean_synth():
+    osc = op('clean_sine_voice')
+    if osc is None:
+        return
+    now = absTime.seconds
+    state = parent().fetch('tdmcp_clean_synth_state', {})
+    if not isinstance(state, dict):
+        state = {'freq': 220.0, 'level': 0.0, 'last': now}
+    event = _last_event() if _bool_value('Active', True) and not _bool_value('Calibrationmode', False) else None
+    if event is not None:
+        try:
+            freq = float(event.get('freq', 220.0)) if isinstance(event, dict) else 220.0
+        except Exception:
+            freq = 220.0
+        state = {'freq': freq, 'level': 1.0, 'last': now}
+    age = max(0.0, now - float(state.get('last', now)))
+    decay = max(0.08, min(1.2, float(_par_value('Decay', 0.35)) * 0.42))
+    volume = max(0.0, min(1.0, float(_par_value('Mastervolume', 0.35))))
+    amp = max(0.0, min(0.55, float(state.get('level', 0.0)) * math.exp(-age / decay) * volume * 0.62))
+    if not _bool_value('Active', True) or _bool_value('Calibrationmode', False):
+        amp = 0.0
+    _set_par(osc, ['freq', 'frequency'], max(30.0, min(4000.0, float(state.get('freq', 220.0)))))
+    _set_par(osc, ['rate'], int(float(_par_value('Audiosamplerate', 48000))))
+    _set_par(osc, ['amp', 'amplitude'], amp)
+    _set_par(osc, ['active'], True)
+    parent().store('tdmcp_clean_synth_state', state)
+    try:
+        osc.cook(force=True)
+    except Exception:
+        pass
+    out = op('audio_out')
+    if out is not None:
+        try:
+            out.cook(force=True)
+        except Exception:
+            pass
+
+def onFrameStart(frame):
+    _drive_clean_synth()
+    return
+
+def onStart():
+    _drive_clean_synth()
+    return
+'''
+
 VISUAL_TOP_CODE = r'''
 import json, math
 try:
@@ -1217,15 +1427,15 @@ def _read_map(src, name, default=0.0):
 
 def _laser_palette(pos, energy, now):
     phase = pos * 6.28318
-    cyan = np.array([0.0, 0.95, 1.0], dtype=np.float32)
-    blue = np.array([0.08, 0.22, 1.0], dtype=np.float32)
-    violet = np.array([0.55, 0.2, 1.0], dtype=np.float32)
-    magenta = np.array([1.0, 0.08, 0.72], dtype=np.float32)
+    cyan = np.array([0.04, 1.0, 1.0], dtype=np.float32)
+    blue = np.array([0.12, 0.48, 1.0], dtype=np.float32)
+    violet = np.array([0.72, 0.28, 1.0], dtype=np.float32)
+    magenta = np.array([1.0, 0.12, 0.86], dtype=np.float32)
     a = 0.5 + 0.5 * math.sin(phase * 1.7 + now * 0.17)
     b = 0.5 + 0.5 * math.sin(phase * 2.9 - now * 0.11)
     color = cyan * (1.0 - a) + blue * a
     accent = violet * (1.0 - b) + magenta * b
-    return color * (0.62 + 0.24 * energy) + accent * (0.18 + 0.22 * energy)
+    return np.clip(color * (1.18 + 0.55 * energy) + accent * (0.32 + 0.38 * energy), 0.0, 1.0)
 
 def _laser_texture(pos, y_norm, now):
     grain = 0.5 + 0.5 * math.sin(pos * 827.0 + y_norm * 91.0 + now * 5.3)
@@ -1270,6 +1480,82 @@ def _localized_hand_motion_rows(pos, y_norms, hand_values, visual_count, curtain
         width_weight = math.exp(-(dx * dx) / 18.0)
         motion = np.maximum(motion, (width_weight * height_weight * curtain_follow).astype(np.float32))
     return motion
+
+def _update_hand_trails(hand_values, now):
+    life = 1.25
+    trails = parent().fetch("tdmcp_neon_hand_trails", [])
+    if not isinstance(trails, list):
+        trails = []
+    next_trails = []
+    for point in trails:
+        if not isinstance(point, dict):
+            continue
+        try:
+            age = float(now) - float(point.get("time", 0.0))
+        except Exception:
+            continue
+        if age <= life:
+            next_trails.append(point)
+    for prefix in ("left", "right"):
+        if _read_map(hand_values, prefix + "_present", 0.0) <= 0.5:
+            continue
+        x = max(0.0, min(1.0, _read_map(hand_values, prefix + "_x", 0.0)))
+        y = max(0.0, min(1.0, _read_map(hand_values, prefix + "_y", 0.5)))
+        size = max(0.0, min(1.0, _read_map(hand_values, prefix + "_size", 0.04)))
+        last = parent().fetch("tdmcp_" + prefix + "_last_neon_trail", None)
+        should_add = True
+        if isinstance(last, dict):
+            try:
+                dist = math.hypot(x - float(last.get("x", x)), y - float(last.get("y", y)))
+                should_add = dist > 0.006 or float(now) - float(last.get("time", 0.0)) > 0.045
+            except Exception:
+                should_add = True
+        if should_add:
+            point = {"x": x, "y": y, "size": size, "time": float(now), "side": prefix}
+            next_trails.append(point)
+            parent().store("tdmcp_" + prefix + "_last_neon_trail", point)
+    next_trails = sorted(next_trails, key=lambda point: float(point.get("time", 0.0)))[-96:]
+    parent().store("tdmcp_neon_hand_trails", next_trails)
+    return next_trails
+
+def _draw_neon_trails(img, trails, now):
+    if not trails:
+        return
+    h, w, _ = img.shape
+    left_color = np.array([0.0, 1.0, 0.94], dtype=np.float32)
+    right_color = np.array([1.0, 0.18, 0.92], dtype=np.float32)
+    life = 1.25
+    for point in trails:
+        if not isinstance(point, dict):
+            continue
+        try:
+            age = float(now) - float(point.get("time", 0.0))
+            fade = max(0.0, min(1.0, 1.0 - age / life))
+            x = max(0.0, min(1.0, float(point.get("x", 0.0))))
+            y = max(0.0, min(1.0, float(point.get("y", 0.5))))
+            size = max(0.0, min(1.0, float(point.get("size", 0.04))))
+        except Exception:
+            continue
+        if fade <= 0.0:
+            continue
+        cx = int(max(0, min(w - 1, x * w)))
+        cy = int(max(0, min(h - 1, (1.0 - y) * h)))
+        radius = int(max(22, min(90, 28 + size * 340 + fade * 28)))
+        y0 = max(0, cy - radius)
+        y1 = min(h, cy + radius + 1)
+        x0 = max(0, cx - radius)
+        x1 = min(w, cx + radius + 1)
+        if x1 <= x0 or y1 <= y0:
+            continue
+        yy, xx = np.ogrid[y0:y1, x0:x1]
+        d2 = (xx - cx) * (xx - cx) + (yy - cy) * (yy - cy)
+        sigma = max(4.0, radius * 0.42)
+        glow = np.exp(-(d2.astype(np.float32) / (2.0 * sigma * sigma))).astype(np.float32)
+        core = np.exp(-(d2.astype(np.float32) / (2.0 * max(2.0, sigma * 0.42) ** 2))).astype(np.float32)
+        trail_alpha = (fade ** 1.25) * 0.78
+        color = left_color if str(point.get("side", "left")) == "left" else right_color
+        value = color.reshape(1, 1, 3) * ((glow * trail_alpha * 0.74) + (core * trail_alpha * 0.46)).reshape(y1 - y0, x1 - x0, 1)
+        img[y0:y1, x0:x1, 0:3] = np.maximum(img[y0:y1, x0:x1, 0:3], value)
 
 def _drive_callback(node_path, callback_path):
     try:
@@ -1625,14 +1911,15 @@ def onCook(scriptOp):
     active = _bool_value("Active", True)
     calibrating = _bool_value("Calibrationmode", False)
     now = absTime.seconds
-    if active:
-        _drive_callback(CFG.get("hand_tracker_path", ""), CFG.get("hand_tracker_callbacks_path", ""))
-        if not calibrating:
-            _drive_callback(CFG.get("harp_logic_path", ""), CFG.get("harp_logic_callbacks_path", ""))
     hand_values = {}
     if active:
         hand_values = _latest("tdmcp_hands_latest")
     logic = _latest("tdmcp_harp_latest") if active and not calibrating else {}
+    if active and not hand_values:
+        hand_values = _synthetic_hands(now)
+    trails = parent().fetch("tdmcp_neon_hand_trails", []) if active and not calibrating else []
+    if not isinstance(trails, list):
+        trails = []
     glow = float(_active_value("Glow", CFG["glow"]))
     vibration = float(_active_value("Vibrationamount", CFG["vibration_amount"]))
     curtain_spread = max(0.01, float(_active_value("Curtainspread", CFG.get("curtain_spread", 3.2))))
@@ -1656,27 +1943,16 @@ def onCook(scriptOp):
         phase = y_norms * 21.0 + now * (11.0 + local_motion * 28.0) + pos * 41.0
         xs = np.clip((x_base + np.sin(phase) * motion * vibration).astype(np.int32), 0, width - 1)
         texture = _laser_texture_rows(pos, y_norms, now)
-        core = color.reshape(1, 3) * (0.72 + 0.28 * texture).reshape(height, 1)
-        halo = color.reshape(1, 3) * (0.22 + 0.42 * local_motion).reshape(height, 1)
-        beam_alpha = np.minimum(1.0, 0.44 + texture * 0.22 + tint * 0.34).reshape(height, 1)
-        halo_gain = (0.35 + motion * 0.45).reshape(height, 1)
+        core = color.reshape(1, 3) * (0.9 + 0.34 * texture).reshape(height, 1)
+        halo = color.reshape(1, 3) * (0.34 + 0.48 * local_motion).reshape(height, 1)
+        beam_alpha = np.minimum(1.0, 0.58 + texture * 0.26 + tint * 0.42).reshape(height, 1)
+        halo_gain = (0.46 + motion * 0.55).reshape(height, 1)
         halo_value = halo * halo_gain
-        for offset in (-2, -1, 0, 1, 2):
+        for offset in (-3, -2, -1, 0, 1, 2, 3):
             hx = np.clip(xs + offset, 0, width - 1)
             img[rows, hx, 0:3] = np.maximum(img[rows, hx, 0:3], halo_value)
         img[rows, xs, 0:3] = np.maximum(img[rows, xs, 0:3], core * beam_alpha)
-        if float(np.max(local_motion)) > 0.08:
-            spark_limit = 2.0 + local_motion * 10.0
-            spark_value = hit.reshape(1, 3) * (local_motion * 0.55).reshape(height, 1)
-            for offset in range(-12, 13):
-                mask = np.abs(offset) <= spark_limit
-                if not bool(np.any(mask)):
-                    continue
-                sx = np.clip(xs[mask] + offset, 0, width - 1)
-                sr = rows[mask]
-                img[sr, sx, 0:3] = np.maximum(img[sr, sx, 0:3], spark_value[mask])
-    if active and not hand_values:
-        hand_values = _synthetic_hands(now)
+    _draw_neon_trails(img, trails, now)
     if active and calibrating:
         state = _update_calibration(hand_values, now)
         _draw_calibration_overlay(img, state, hand_values, now)
@@ -1909,6 +2185,12 @@ try:
                 _set_par(_logic_null, ["cooktype"], "always", False)
                 if _logic_null is not None:
                     report["harp_chop"] = _logic_null.path
+                _tracking_driver = _create(_cont, ["executeDAT"], "tracking_driver", 1210, -20, "tracking driver")
+                _set_text(_tracking_driver, TRACKING_DRIVER_DAT_CODE)
+                _set_par(_tracking_driver, ["active"], True, False)
+                _set_par(_tracking_driver, ["framestart"], True, False)
+                _set_par(_tracking_driver, ["start"], True, False)
+                _set_par(_tracking_driver, ["play"], True, False)
 
                 _audio = _create(_cont, ["scriptCHOP"], "pluck_synth", 740, -320, "internal pluck synth")
                 _set_par(_audio, ["timeslice"], True, False)
@@ -1929,14 +2211,34 @@ try:
                 _connect(_audio, _audio_debug)
                 if _audio_debug is not None:
                     report["audio_chop"] = _audio_debug.path
+                _clean_voice = _create(_cont, ["audiooscillatorCHOP"], "clean_sine_voice", 980, -500, "clean sine voice")
+                _set_par(_clean_voice, ["type"], "sine", False)
+                _set_par(_clean_voice, ["freq", "frequency"], 220, False)
+                _set_par(_clean_voice, ["rate"], int(_p["audio_sample_rate"]), False)
+                _set_par(_clean_voice, ["amp", "amplitude"], 0, False)
+                _set_par(_clean_voice, ["active"], True, False)
                 _audio_out = _create(_cont, ["audiodeviceoutCHOP"], "audio_out", 1210, -320, "audio output")
                 if _audio_out is not None:
-                    _connect(_audio_debug, _audio_out)
+                    _connect(_clean_voice, _audio_out)
                     if str(_p.get("audio_device", "")).strip():
                         _set_par(_audio_out, ["device"], str(_p["audio_device"]), False)
                     report["audio_out"] = _audio_out.path
                 else:
                     _warn("Audio Device Out CHOP unavailable; pluck_synth still exposes audio_debug.")
+                _audio_driver = _create(_cont, ["executeDAT"], "audio_driver", 1210, -500, "audio driver")
+                _set_text(_audio_driver, AUDIO_DRIVER_DAT_CODE)
+                _set_par(_audio_driver, ["active"], False, False)
+                _set_par(_audio_driver, ["framestart"], True, False)
+                _set_par(_audio_driver, ["start"], True, False)
+                _set_par(_audio_driver, ["play"], True, False)
+                if _audio_driver is not None:
+                    report["audio_driver"] = _audio_driver.path
+                _clean_driver = _create(_cont, ["executeDAT"], "clean_synth_driver", 1210, -660, "clean synth driver")
+                _set_text(_clean_driver, CLEAN_SYNTH_DRIVER_DAT_CODE)
+                _set_par(_clean_driver, ["active"], True, False)
+                _set_par(_clean_driver, ["framestart"], True, False)
+                _set_par(_clean_driver, ["start"], True, False)
+                _set_par(_clean_driver, ["play"], True, False)
 
                 _keys = _create(_cont, ["keyboardinCHOP"], "calibration_keys", 20, -320, "calibration keyboard fallback")
                 if _keys is not None:

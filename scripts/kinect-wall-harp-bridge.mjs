@@ -4,9 +4,57 @@ import dgram from "node:dgram";
 import { createInterface } from "node:readline";
 
 const DEFAULT_HELPER = "_workspace/kinect-wall-harp/external/kinect_harp_depth_bridge";
+const STRING_OPTIONS = new Map([
+  ["--host", "host"],
+  ["--source", "source"],
+  ["--helper", "helper"],
+]);
+const FLOAT_OPTIONS = new Map([
+  ["--rate", "rate"],
+  ["--wall-mm", "wallMm"],
+  ["--near-min-mm", "nearMinMm"],
+  ["--near-max-mm", "nearMaxMm"],
+  ["--min-size", "minSize"],
+  ["--max-size", "maxSize"],
+  ["--crop-left", "cropLeft"],
+  ["--crop-right", "cropRight"],
+  ["--crop-top", "cropTop"],
+  ["--crop-bottom", "cropBottom"],
+]);
+const INTEGER_OPTIONS = new Map([
+  ["--port", "port"],
+  ["--frames", "frames"],
+  ["--calibration-frames", "calibrationFrames"],
+  ["--background-frames", "backgroundFrames"],
+  ["--debug-every", "debugEvery"],
+  ["--min-pixels", "minPixels"],
+  ["--stride", "stride"],
+  ["--stall-timeout-ms", "stallTimeoutMs"],
+]);
+const BOOLEAN_OPTIONS = new Map([
+  ["--undistort-depth", "undistortDepth"],
+  ["--mirror", "mirror"],
+]);
+const OPTIONAL_NUMBER_NAMES = [
+  "calibrationFrames",
+  "backgroundFrames",
+  "debugEvery",
+  "wallMm",
+  "nearMinMm",
+  "nearMaxMm",
+  "minPixels",
+  "stride",
+  "minSize",
+  "maxSize",
+  "cropLeft",
+  "cropRight",
+  "cropTop",
+  "cropBottom",
+  "stallTimeoutMs",
+];
 
-function parseArgs(argv) {
-  const args = {
+function defaultArgs() {
+  return {
     host: "127.0.0.1",
     port: 7400,
     source: "synthetic",
@@ -29,81 +77,23 @@ function parseArgs(argv) {
     cropTop: undefined,
     cropBottom: undefined,
     undistortDepth: false,
+    stallTimeoutMs: 8000,
   };
-  for (let i = 2; i < argv.length; i += 1) {
-    const arg = argv[i];
-    const next = argv[i + 1];
-    if (arg === "--host" && next) {
-      args.host = next;
-      i += 1;
-    } else if (arg === "--port" && next) {
-      args.port = Number.parseInt(next, 10);
-      i += 1;
-    } else if (arg === "--source" && next) {
-      args.source = next;
-      i += 1;
-    } else if (arg === "--rate" && next) {
-      args.rate = Number.parseFloat(next);
-      i += 1;
-    } else if (arg === "--frames" && next) {
-      args.frames = Number.parseInt(next, 10);
-      i += 1;
-    } else if (arg === "--helper" && next) {
-      args.helper = next;
-      i += 1;
-    } else if (arg === "--calibration-frames" && next) {
-      args.calibrationFrames = Number.parseInt(next, 10);
-      i += 1;
-    } else if (arg === "--background-frames" && next) {
-      args.backgroundFrames = Number.parseInt(next, 10);
-      i += 1;
-    } else if (arg === "--debug-every" && next) {
-      args.debugEvery = Number.parseInt(next, 10);
-      i += 1;
-    } else if (arg === "--wall-mm" && next) {
-      args.wallMm = Number.parseFloat(next);
-      i += 1;
-    } else if (arg === "--near-min-mm" && next) {
-      args.nearMinMm = Number.parseFloat(next);
-      i += 1;
-    } else if (arg === "--near-max-mm" && next) {
-      args.nearMaxMm = Number.parseFloat(next);
-      i += 1;
-    } else if (arg === "--min-pixels" && next) {
-      args.minPixels = Number.parseInt(next, 10);
-      i += 1;
-    } else if (arg === "--stride" && next) {
-      args.stride = Number.parseInt(next, 10);
-      i += 1;
-    } else if (arg === "--min-size" && next) {
-      args.minSize = Number.parseFloat(next);
-      i += 1;
-    } else if (arg === "--max-size" && next) {
-      args.maxSize = Number.parseFloat(next);
-      i += 1;
-    } else if (arg === "--crop-left" && next) {
-      args.cropLeft = Number.parseFloat(next);
-      i += 1;
-    } else if (arg === "--crop-right" && next) {
-      args.cropRight = Number.parseFloat(next);
-      i += 1;
-    } else if (arg === "--crop-top" && next) {
-      args.cropTop = Number.parseFloat(next);
-      i += 1;
-    } else if (arg === "--crop-bottom" && next) {
-      args.cropBottom = Number.parseFloat(next);
-      i += 1;
-    } else if (arg === "--undistort-depth") {
-      args.undistortDepth = true;
-    } else if (arg === "--mirror") {
-      args.mirror = true;
-    } else if (arg === "--help" || arg === "-h") {
-      printHelp();
-      process.exit(0);
-    } else {
-      throw new Error(`Unknown argument: ${arg}`);
-    }
+}
+
+function requireValue(argv, index, flag) {
+  const value = argv[index + 1];
+  if (value === undefined) {
+    throw new Error(`Missing value for ${flag}`);
   }
+  return value;
+}
+
+function assignValueOption(args, key, value, parser) {
+  args[key] = parser(value);
+}
+
+function validateArgs(args) {
   if (!Number.isInteger(args.port) || args.port < 1024 || args.port > 65535) {
     throw new Error(`Invalid --port: ${args.port}`);
   }
@@ -113,32 +103,57 @@ function parseArgs(argv) {
   if (!["synthetic", "libfreenect2"].includes(args.source)) {
     throw new Error(`Invalid --source: ${args.source}`);
   }
-  for (const [name, value] of Object.entries(args)) {
-    if (
-      [
-        "calibrationFrames",
-        "backgroundFrames",
-        "debugEvery",
-        "wallMm",
-        "nearMinMm",
-        "nearMaxMm",
-        "minPixels",
-        "stride",
-        "minSize",
-        "maxSize",
-        "cropLeft",
-        "cropRight",
-        "cropTop",
-        "cropBottom",
-      ].includes(name) &&
-      value !== undefined &&
-      !Number.isFinite(value)
-    ) {
+  for (const name of OPTIONAL_NUMBER_NAMES) {
+    const value = args[name];
+    if (value !== undefined && !Number.isFinite(value)) {
       throw new Error(
         `Invalid --${name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}: ${value}`,
       );
     }
   }
+}
+
+function parseArgs(argv) {
+  const args = defaultArgs();
+  for (let i = 2; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === "--help" || arg === "-h") {
+      printHelp();
+      process.exit(0);
+    }
+
+    const stringKey = STRING_OPTIONS.get(arg);
+    if (stringKey !== undefined) {
+      args[stringKey] = requireValue(argv, i, arg);
+      i += 1;
+      continue;
+    }
+
+    const integerKey = INTEGER_OPTIONS.get(arg);
+    if (integerKey !== undefined) {
+      assignValueOption(args, integerKey, requireValue(argv, i, arg), (value) =>
+        Number.parseInt(value, 10),
+      );
+      i += 1;
+      continue;
+    }
+
+    const floatKey = FLOAT_OPTIONS.get(arg);
+    if (floatKey !== undefined) {
+      assignValueOption(args, floatKey, requireValue(argv, i, arg), Number.parseFloat);
+      i += 1;
+      continue;
+    }
+
+    const booleanKey = BOOLEAN_OPTIONS.get(arg);
+    if (booleanKey !== undefined) {
+      args[booleanKey] = true;
+      continue;
+    }
+
+    throw new Error(`Unknown argument: ${arg}`);
+  }
+  validateArgs(args);
   return args;
 }
 
@@ -172,6 +187,8 @@ Options:
   --crop-bottom <0..1>
                       Ignore depth blobs below this normalized Y.
   --undistort-depth   Undistort depth before crop/tracking. Use with crops derived from libfreenect2 registration.
+  --stall-timeout-ms <n>
+                      Kill the helper if no JSON depth frame arrives for n ms. Default: 8000. Use 0 to disable.
   --mirror            Mirror outgoing X coordinates.
 `);
 }
@@ -280,10 +297,33 @@ async function runLibfreenect2(socket, args) {
   pushOptional("--crop-bottom", args.cropBottom);
   if (args.undistortDepth) helperArgs.push("--undistort-depth");
   const child = spawn(args.helper, helperArgs, { stdio: ["ignore", "pipe", "pipe"] });
+  let childExited = false;
+  let lastFrameAt = Date.now();
+  const stallTimeoutMs = Math.max(0, Number(args.stallTimeoutMs ?? 8000));
+  const stallTimer =
+    stallTimeoutMs > 0
+      ? setInterval(
+          () => {
+            if (childExited) return;
+            const silenceMs = Date.now() - lastFrameAt;
+            if (silenceMs <= stallTimeoutMs) return;
+            process.stderr.write(
+              `[kinect-wall-harp-bridge] LIBUSB/depth stream stalled for ${silenceMs}ms; restarting helper\n`,
+            );
+            child.kill("SIGTERM");
+            const killTimer = setTimeout(() => {
+              if (!childExited) child.kill("SIGKILL");
+            }, 1200);
+            killTimer.unref?.();
+          },
+          Math.max(1000, Math.min(2000, stallTimeoutMs)),
+        )
+      : undefined;
   child.stderr.on("data", (chunk) => process.stderr.write(chunk));
   const lines = createInterface({ input: child.stdout });
   lines.on("line", (line) => {
     if (!line.trim().startsWith("{")) return;
+    lastFrameAt = Date.now();
     try {
       sendFrame(socket, args, JSON.parse(line));
     } catch (err) {
@@ -293,6 +333,8 @@ async function runLibfreenect2(socket, args) {
   return new Promise((resolve, reject) => {
     child.on("error", reject);
     child.on("exit", (code) => {
+      childExited = true;
+      if (stallTimer !== undefined) clearInterval(stallTimer);
       if (code === 0) resolve();
       else reject(new Error(`libfreenect2 helper exited with code ${code}`));
     });
