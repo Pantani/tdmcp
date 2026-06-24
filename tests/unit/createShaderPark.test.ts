@@ -1,5 +1,5 @@
 import { HttpResponse, http } from "msw";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import type { z } from "zod";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
 import { RecipeLibrary } from "../../src/recipes/loader.js";
@@ -11,6 +11,33 @@ import {
 import type { ToolContext } from "../../src/tools/types.js";
 import { silentLogger } from "../../src/utils/logger.js";
 import { makeTdServer, TD_BASE } from "../helpers/tdMock.js";
+
+vi.mock("../../src/integrations/shaderPark.js", () => ({
+  compileShaderParkToTouchDesigner: vi.fn(async (code: string) => {
+    if (code.trim() === "sphere(") {
+      throw new Error("Shader Park compile failed: parse error");
+    }
+    const uniforms: Array<{ name: string; type: string; value: number | number[] }> = [
+      { name: "time", type: "float", value: 0 },
+      { name: "opacity", type: "float", value: 1 },
+      { name: "_scale", type: "float", value: 1 },
+      { name: "mouse", type: "vec2", value: [0, 0] },
+      { name: "uShadowStrength", type: "float", value: 0.35 },
+      { name: "uBaseColor", type: "vec4", value: [1, 1, 1, 1] },
+      { name: "cameraPosition", type: "vec3", value: [0, 0, 4] },
+      { name: "useTDLighting", type: "float", value: 1 },
+    ];
+    if (code.includes("size")) uniforms.push({ name: "size", type: "float", value: 0 });
+    if (code.includes("ringRadius")) {
+      uniforms.push({ name: "ringRadius", type: "float", value: 0 });
+    }
+    return {
+      pixelShader:
+        "uniform float size;\nuniform vec4 uBaseColor;\nfloat surfaceDistance(vec3 p) { return 0.0; }",
+      uniforms,
+    };
+  }),
+}));
 
 const server = makeTdServer();
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));

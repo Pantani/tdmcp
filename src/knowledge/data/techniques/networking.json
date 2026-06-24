@@ -1,0 +1,90 @@
+{
+  "category": "networking",
+  "displayName": "Networking",
+  "description": "Networking and inter-application communication in TouchDesigner including OSC server/client, WebSocket DAT, NDI video streaming, and TDAbleton sync for Ableton Live integration.",
+  "techniques": [
+    {
+      "id": "osc_server_client",
+      "name": "OSC Server and Client",
+      "subcategory": "osc",
+      "description": "Open Sound Control (OSC) communication in TouchDesigner for sending and receiving parameter data, triggers, and messages between applications, instruments, and machines.",
+      "difficulty": "beginner",
+      "operators": ["OSC In CHOP", "OSC In DAT", "OSC Out CHOP", "OSC Out DAT"],
+      "tags": ["OSC", "networking", "UDP", "protocol", "receive", "send", "inter-app"],
+      "notes": "OSC In CHOP receives continuous float values as CHOP channels. OSC In DAT receives any OSC message as table rows. OSC Out sends data. Default ports: 7000 (receive), 7001 (send). Firewall must allow UDP on chosen ports.",
+      "code": {
+        "language": "python",
+        "filename": "osc_setup.py",
+        "snippet": "# OSC Setup and Handling in TouchDesigner\n\n# --- OSC Receiver Setup ---\ndef setup_osc_receiver(oscInDat, port=7000, local_address='0.0.0.0'):\n    \"\"\"\n    Configure OSC In DAT to receive on specified port.\n    Messages arrive as table rows: [address, args...]\n    \"\"\"\n    oscInDat.par.port = port\n    oscInDat.par.localaddress = local_address\n    oscInDat.par.active = True\n    print(f'OSC receiving on port {port}')\n\n# --- OSC Sender Setup ---\ndef setup_osc_sender(oscOutDat, host='127.0.0.1', port=7001):\n    \"\"\"\n    Configure OSC Out DAT to send to specified host:port.\n    \"\"\"\n    oscOutDat.par.networkaddress = host\n    oscOutDat.par.port = port\n    print(f'OSC sending to {host}:{port}')\n\n# --- Sending OSC Messages ---\ndef send_osc(oscOutDat, address, *values):\n    \"\"\"\n    Send an OSC message with address and values.\n    Values can be float, int, or string.\n    \"\"\"\n    oscOutDat.sendOSC(address, values)\n\n# Example sends\n# send_osc(op('osc_out1'), '/td/position', 0.5, 0.3, 1.0)\n# send_osc(op('osc_out1'), '/td/trigger', 1)\n# send_osc(op('osc_out1'), '/td/label', 'hello')\n\n# --- Receiving OSC Messages (onReceiveOSC callback) ---\n# Place in 'Callbacks DAT' of OSC In DAT\ndef onReceiveOSC(dat, address, args, peer):\n    \"\"\"\n    Called for each incoming OSC message.\n    address: string like '/td/control'\n    args: list of values\n    peer: (host, port) tuple\n    \"\"\"\n    # Route messages to different handlers\n    if address.startswith('/td/position'):\n        if len(args) >= 3:\n            op('pos_control').par.value0 = float(args[0])\n            op('pos_control').par.value1 = float(args[1])\n            op('pos_control').par.value2 = float(args[2])\n    \n    elif address.startswith('/td/color'):\n        if len(args) >= 3:\n            op('bg_color').par.colorr = float(args[0])\n            op('bg_color').par.colorg = float(args[1])\n            op('bg_color').par.colorb = float(args[2])\n    \n    elif address.startswith('/td/trigger'):\n        op('trigger_node').par.value0.pulse()\n    \n    # Log all messages for debugging\n    print(f'[OSC] {address}: {args} from {peer}')\n\n# --- Bidirectional OSC with TouchOSC or similar ---\ndef setup_touchosc_bridge(oscInDat, oscOutDat, tablet_ip, receive_port=8000, send_port=9000):\n    \"\"\"\n    Configure for TouchOSC app communication.\n    \"\"\"\n    setup_osc_receiver(oscInDat, receive_port)\n    setup_osc_sender(oscOutDat, tablet_ip, send_port)\n    print(f'TouchOSC bridge: receive={receive_port}, send to {tablet_ip}:{send_port}')"
+      }
+    },
+    {
+      "id": "websocket_dat",
+      "name": "WebSocket DAT for Browser Integration",
+      "subcategory": "websocket",
+      "description": "Using WebSocket DAT to create a real-time bidirectional communication channel between TouchDesigner and web browsers, Node.js servers, or other WebSocket clients.",
+      "difficulty": "intermediate",
+      "operators": ["WebSocket DAT", "Web Server DAT", "JSON DAT"],
+      "tags": ["WebSocket", "browser", "real-time", "bidirectional", "web", "JSON"],
+      "notes": "WebSocket DAT can act as both server (for browsers to connect to) or client (connecting to an external server). TD also has a Web Server DAT for HTTP REST APIs.",
+      "code": {
+        "language": "python",
+        "filename": "websocket_server.py",
+        "snippet": "# WebSocket DAT — Server Mode\n# TD acts as WebSocket server; browsers connect to ws://localhost:PORT\n\n# In the WebSocket DAT parameters:\n#   Mode: Server\n#   Port: 9090\n#   Active: On\n\n# --- Callbacks DAT for WebSocket DAT ---\ndef onConnect(dat, rowIndex):\n    \"\"\"\n    Called when a client connects.\n    dat.row(rowIndex) contains client info (address, port, etc.)\n    \"\"\"\n    client_info = dat.row(rowIndex)\n    print(f'[WS] Client connected: {client_info}')\n    \n    # Send welcome message\n    dat.sendText('{\"type\":\"welcome\",\"message\":\"Connected to TouchDesigner\"}',\n                 clients=[rowIndex])\n\ndef onDisconnect(dat, rowIndex):\n    print(f'[WS] Client disconnected: row {rowIndex}')\n\ndef onReceiveText(dat, rowIndex, message, bytes):\n    \"\"\"\n    Called when text message received from a client.\n    \"\"\"\n    import json\n    try:\n        data = json.loads(message)\n        msg_type = data.get('type', '')\n        \n        if msg_type == 'control':\n            # Map incoming data to TD parameters\n            if 'x' in data: op('control').par.value0 = float(data['x'])\n            if 'y' in data: op('control').par.value1 = float(data['y'])\n            if 'color' in data:\n                rgb = data['color']\n                op('bg_color').par.colorr = rgb[0] / 255.0\n                op('bg_color').par.colorg = rgb[1] / 255.0\n                op('bg_color').par.colorb = rgb[2] / 255.0\n        \n        elif msg_type == 'trigger':\n            op('trigger_event').par.value0.pulse()\n        \n        # Echo back acknowledgment\n        dat.sendText(json.dumps({'type': 'ack', 'received': msg_type}),\n                     clients=[rowIndex])\n    \n    except json.JSONDecodeError:\n        print(f'[WS] Invalid JSON: {message}')\n\n# --- Broadcast state to all connected clients ---\ndef broadcast_state(wsDat):\n    \"\"\"\n    Send current TD state to all connected WebSocket clients.\n    \"\"\"\n    import json\n    state = {\n        'type': 'state',\n        'fps': project.cookRate,\n        'frame': absTime.frame,\n        'param_x': op('control').par.value0.eval(),\n        'param_y': op('control').par.value1.eval()\n    }\n    wsDat.sendText(json.dumps(state))  # no clients arg = broadcast to all\n\n# --- JavaScript client example (for browser) ---\n# const ws = new WebSocket('ws://localhost:9090');\n# ws.onopen = () => ws.send(JSON.stringify({type:'control', x:0.5, y:0.3}));\n# ws.onmessage = (e) => console.log('TD:', JSON.parse(e.data));"
+      }
+    },
+    {
+      "id": "ndi_streaming",
+      "name": "NDI Video Streaming",
+      "subcategory": "ndi",
+      "description": "Network Device Interface (NDI) for low-latency video over LAN. Send and receive full-quality video streams between TouchDesigner instances, video mixers, and other NDI-compatible software.",
+      "difficulty": "beginner",
+      "operators": ["NDI In TOP", "NDI Out TOP", "NDI DAT"],
+      "tags": ["NDI", "streaming", "video", "LAN", "network", "real-time", "NewTek"],
+      "notes": "NDI requires all devices on the same network segment (or NDI Bridge for cross-subnet). NDI DAT lists available sources. NDI Out TOP requires a valid license for some features. NDI is near-zero latency on GigE LAN.",
+      "code": {
+        "language": "python",
+        "filename": "ndi_streaming.py",
+        "snippet": "# NDI Streaming Setup and Management\n\ndef list_ndi_sources(ndiDat):\n    \"\"\"\n    NDI DAT lists all available NDI sources on the network.\n    Returns list of (name, IP) tuples.\n    \"\"\"\n    sources = []\n    for row in range(ndiDat.numRows):\n        name = str(ndiDat[row, 0])  # source name\n        ip   = str(ndiDat[row, 1])  # IP address\n        sources.append((name, ip))\n        print(f'[NDI] Found source: {name} at {ip}')\n    return sources\n\ndef setup_ndi_receiver(ndiInTop, source_name):\n    \"\"\"\n    Configure NDI In TOP to receive from a named source.\n    source_name: as shown in NDI DAT, e.g. 'WORKSTATION (Program)'\n    \"\"\"\n    ndiInTop.par.source = source_name\n    ndiInTop.par.active = True\n    print(f'[NDI] Receiving: {source_name}')\n\ndef setup_ndi_sender(ndiOutTop, stream_name='TouchDesigner Output', group='public'):\n    \"\"\"\n    Configure NDI Out TOP to broadcast on the network.\n    stream_name: visible name in NDI discovery\n    \"\"\"\n    ndiOutTop.par.streamname = stream_name\n    ndiOutTop.par.group = group\n    ndiOutTop.par.active = True\n    print(f'[NDI] Broadcasting as: {stream_name}')\n\ndef auto_connect_ndi(ndiDat, ndiInTop, preferred_source_keyword='VMIX'):\n    \"\"\"\n    Auto-connect to first available NDI source matching keyword.\n    \"\"\"\n    sources = list_ndi_sources(ndiDat)\n    for name, ip in sources:\n        if preferred_source_keyword.lower() in name.lower():\n            setup_ndi_receiver(ndiInTop, name)\n            return True\n    if sources:\n        setup_ndi_receiver(ndiInTop, sources[0][0])\n        return True\n    print('[NDI] No sources available')\n    return False\n\n# Multi-instance NDI routing (e.g., stage distribution)\ndef setup_stage_distribution(outputs):\n    \"\"\"\n    Configure multiple NDI Out TOPs for stage distribution.\n    outputs: list of (ndiOutTop, stream_name) tuples\n    \"\"\"\n    for ndiOutTop, stream_name in outputs:\n        setup_ndi_sender(ndiOutTop, stream_name)"
+      }
+    },
+    {
+      "id": "tdableton_sync",
+      "name": "TDAbleton Live Sync",
+      "subcategory": "ableton",
+      "description": "Bidirectional communication between TouchDesigner and Ableton Live using the TDAbleton MIDI Remote Script. Syncs tempo, triggers clips, receives parameter changes, and streams audio analysis.",
+      "difficulty": "intermediate",
+      "operators": ["MIDI In CHOP", "Beat CHOP", "OSC In CHOP", "OSC Out CHOP", "Ableton Link CHOP"],
+      "tags": ["Ableton", "TDAbleton", "sync", "BPM", "tempo", "MIDI", "Live", "music"],
+      "notes": "TDAbleton uses a Max for Live MIDI Remote Script. Install in Ableton's MIDI Remote Scripts folder. Communication is over OSC (port 7000 TD->Ableton, 9000 Ableton->TD by default). Ableton Link CHOP provides Ableton Link protocol for tempo sync without TDAbleton.",
+      "code": {
+        "language": "python",
+        "filename": "tdableton_setup.py",
+        "snippet": "# TDAbleton Integration\n# Assumes TDAbleton M4L device is running in Ableton\n# and the TDAbleton component is loaded in TD\n\n# Standard TDAbleton port config:\n# Ableton sends OSC to TD on port 7000\n# TD sends OSC to Ableton on port 9000\n\nclass TDAbletonBridge:\n    def __init__(self, oscInDat, oscOutDat):\n        self.osc_in = oscInDat\n        self.osc_out = oscOutDat\n        self.tempo = 120.0\n        self.beat = 0\n        self.playing = False\n        self.clips = {}  # track -> {clip_index -> clip_info}\n    \n    def on_receive_osc(self, address, args):\n        \"\"\"\n        Handle messages from Ableton via TDAbleton.\n        Called by OSC In DAT callback.\n        \"\"\"\n        if address == '/live/song/get/tempo':\n            self.tempo = float(args[0])\n            op('bpm_display').par.value0 = self.tempo\n        \n        elif address == '/live/song/get/is_playing':\n            self.playing = bool(args[0])\n        \n        elif address == '/live/song/get/current_song_time':\n            beat_time = float(args[0])\n            self.beat = int(beat_time) % 4\n        \n        elif address.startswith('/live/clip/get/'):\n            # Handle clip state updates\n            parts = address.split('/')\n            # e.g. /live/clip/get/playing_status\n            pass\n    \n    # --- Control Ableton from TD ---\n    def play(self):\n        self.osc_out.sendOSC('/live/song/start_playing', [])\n    \n    def stop(self):\n        self.osc_out.sendOSC('/live/song/stop_playing', [])\n    \n    def set_tempo(self, bpm):\n        self.osc_out.sendOSC('/live/song/set/tempo', [float(bpm)])\n    \n    def trigger_clip(self, track, clip):\n        self.osc_out.sendOSC('/live/clip_slot/fire', [int(track), int(clip)])\n    \n    def stop_clip(self, track):\n        self.osc_out.sendOSC('/live/track/stop_all_clips', [int(track)])\n    \n    def set_track_volume(self, track, volume):\n        \"\"\"volume: 0.0..1.0\"\"\"\n        self.osc_out.sendOSC('/live/track/set/volume', [int(track), float(volume)])\n    \n    def set_device_param(self, track, device, param, value):\n        \"\"\"Control any Ableton device parameter.\"\"\"\n        self.osc_out.sendOSC('/live/device/set/parameter/value',\n                             [int(track), int(device), int(param), float(value)])\n\n# Ableton Link CHOP — hardware-synced tempo\n# No setup needed beyond adding the Ableton Link CHOP\n# It auto-discovers Link sessions on the network\ndef get_link_tempo(abletonLinkChop):\n    \"\"\"Read current Ableton Link tempo.\"\"\"\n    if 'tempo' in [c.name for c in abletonLinkChop.chans()]:\n        return abletonLinkChop['tempo'][0]\n    return 120.0\n\ndef get_link_beat(abletonLinkChop):\n    \"\"\"Read current beat position from Ableton Link.\"\"\"\n    if 'beat' in [c.name for c in abletonLinkChop.chans()]:\n        return abletonLinkChop['beat'][0]\n    return 0.0"
+      }
+    },
+    {
+      "id": "touch_in_out_dat",
+      "name": "TouchIn / TouchOut for TD-to-TD Networking",
+      "subcategory": "touch-network",
+      "description": "Using TouchIn/TouchOut CHOP and DAT operators for direct peer-to-peer communication between TouchDesigner instances over a LAN, without OSC overhead.",
+      "difficulty": "beginner",
+      "operators": ["Touch In CHOP", "Touch Out CHOP", "Touch In DAT", "Touch Out DAT", "Touch In TOP", "Touch Out TOP"],
+      "tags": ["TouchIn", "TouchOut", "TD-network", "peer-to-peer", "LAN", "multi-machine"],
+      "notes": "Touch In/Out operates over TCP. One instance acts as server (Touch Out), others connect as clients (Touch In). Supports CHOP, DAT, and TOP data. Useful for multi-machine setups with a single master TD controller.",
+      "code": {
+        "language": "python",
+        "filename": "touch_network.py",
+        "snippet": "# Touch In/Out Networking Setup\n\ndef setup_touch_out_server(touchOutChop, port=7500):\n    \"\"\"\n    Configure Touch Out CHOP as server.\n    Remote machines connect to this machine's IP on the given port.\n    \"\"\"\n    touchOutChop.par.port = port\n    touchOutChop.par.active = True\n    print(f'Touch Out CHOP serving on port {port}')\n\ndef setup_touch_in_client(touchInChop, server_ip, port=7500):\n    \"\"\"\n    Configure Touch In CHOP to receive from a server.\n    server_ip: IP address of the master TouchDesigner machine\n    \"\"\"\n    touchInChop.par.networkaddress = server_ip\n    touchInChop.par.port = port\n    touchInChop.par.active = True\n    print(f'Touch In CHOP connecting to {server_ip}:{port}')\n\n# Multi-machine show setup\ndef configure_show_network(machine_role, server_ip='192.168.1.100'):\n    \"\"\"\n    Configure network based on machine role.\n    'master': sends data, 'client': receives data\n    \"\"\"\n    if machine_role == 'master':\n        setup_touch_out_server(op('touch_out_chop'))\n        setup_touch_out_server(op('touch_out_top'), port=7501)\n        print('Master: broadcasting CHOP and TOP data')\n    else:\n        setup_touch_in_client(op('touch_in_chop'), server_ip)\n        setup_touch_in_client(op('touch_in_top'), server_ip, port=7501)\n        print(f'Client: receiving from master at {server_ip}')"
+      }
+    }
+  ],
+  "resources": [
+    { "title": "OSC In CHOP Documentation", "url": "https://docs.derivative.ca/OSC_In_CHOP" },
+    { "title": "WebSocket DAT Documentation", "url": "https://docs.derivative.ca/WebSocket_DAT" },
+    { "title": "NDI In TOP Documentation", "url": "https://docs.derivative.ca/NDI_In_TOP" },
+    { "title": "TDAbleton GitHub", "url": "https://github.com/bottobot/TDAbleton" },
+    { "title": "Ableton Link CHOP", "url": "https://docs.derivative.ca/Ableton_Link_CHOP" },
+    { "title": "Touch In CHOP", "url": "https://docs.derivative.ca/Touch_In_CHOP" }
+  ]
+}

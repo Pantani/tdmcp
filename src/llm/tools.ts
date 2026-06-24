@@ -18,11 +18,27 @@ import {
   compactGraphDigestImpl,
   compactGraphDigestSchema,
 } from "../tools/layer3/compactGraphDigest.js";
+import {
+  compareOperatorDocsImpl,
+  compareOperatorDocsSchema,
+} from "../tools/layer3/compareOperatorDocs.js";
 import { compareTdNodesImpl, compareTdNodesSchema } from "../tools/layer3/compareTdNodes.js";
 import { createTdNodeImpl, createTdNodeSchema } from "../tools/layer3/createTdNode.js";
 import { deleteTdNodeImpl, deleteTdNodeSchema } from "../tools/layer3/deleteTdNode.js";
+import {
+  draftRecipeFromOperatorChainImpl,
+  draftRecipeFromOperatorChainSchema,
+} from "../tools/layer3/draftRecipeFromOperatorChain.js";
+import {
+  draftRecipeFromTechniqueImpl,
+  draftRecipeFromTechniqueSchema,
+} from "../tools/layer3/draftRecipeFromTechnique.js";
 import { findTdNodesImpl, findTdNodesSchema } from "../tools/layer3/findTdNodes.js";
 import { getModuleHelpImpl, getModuleHelpSchema } from "../tools/layer3/getModuleHelp.js";
+import {
+  getOperatorWorkflowGuideImpl,
+  getOperatorWorkflowGuideSchema,
+} from "../tools/layer3/getOperatorWorkflowGuide.js";
 import {
   getTdClassDetailsImpl,
   getTdClassDetailsSchema,
@@ -36,7 +52,25 @@ import {
 } from "../tools/layer3/getTdNodeParameters.js";
 import { getTdNodesImpl, getTdNodesSchema } from "../tools/layer3/getTdNodes.js";
 import { getTdTopologyImpl, getTdTopologySchema } from "../tools/layer3/getTdTopology.js";
+import {
+  getTechniqueDetailImpl,
+  getTechniqueDetailSchema,
+} from "../tools/layer3/getTechniqueDetail.js";
+import { getTutorialImpl, getTutorialSchema } from "../tools/layer3/getTutorial.js";
+import {
+  planTdVersionMigrationImpl,
+  planTdVersionMigrationSchema,
+} from "../tools/layer3/planTdVersionMigration.js";
 import { searchOperatorsImpl, searchOperatorsSchema } from "../tools/layer3/searchOperators.js";
+import { searchPythonApiImpl, searchPythonApiSchema } from "../tools/layer3/searchPythonApi.js";
+import {
+  searchTouchDesignerKnowledgeImpl,
+  searchTouchDesignerKnowledgeSchema,
+} from "../tools/layer3/searchTouchDesignerKnowledge.js";
+import {
+  suggestOperatorChainImpl,
+  suggestOperatorChainSchema,
+} from "../tools/layer3/suggestOperatorChain.js";
 import {
   summarizeTdErrorsImpl,
   summarizeTdErrorsSchema,
@@ -45,6 +79,10 @@ import {
   updateTdNodeParametersImpl,
   updateTdNodeParametersSchema,
 } from "../tools/layer3/updateTdNodeParameters.js";
+import {
+  validateOperatorChainImpl,
+  validateOperatorChainSchema,
+} from "../tools/layer3/validateOperatorChain.js";
 import type { ToolContext } from "../tools/types.js";
 import type { OpenAITool } from "./client.js";
 import { createProjectRagSearchTool } from "./projectRagSearchTool.js";
@@ -145,6 +183,72 @@ export const LLM_TOOLS: LlmTool[] = [
     "Search the 629-operator knowledge base by keyword to find the right operator type (offline).",
     searchOperatorsSchema,
     searchOperatorsImpl,
+  ),
+  t(
+    "compare_operator_docs",
+    "Compare two operator types from the offline knowledge base, including shared and unique documented parameters.",
+    compareOperatorDocsSchema,
+    compareOperatorDocsImpl,
+  ),
+  t(
+    "get_operator_workflow_guide",
+    "Get one operator's common inputs, outputs, examples, and next-operator suggestions (offline).",
+    getOperatorWorkflowGuideSchema,
+    getOperatorWorkflowGuideImpl,
+  ),
+  t(
+    "suggest_operator_chain",
+    "Suggest a read-only TouchDesigner operator chain for a creative or technical goal from offline docs.",
+    suggestOperatorChainSchema,
+    suggestOperatorChainImpl,
+  ),
+  t(
+    "validate_operator_chain",
+    "Validate an ordered TouchDesigner operator chain against offline docs, connection hints, family filters, and version compatibility.",
+    validateOperatorChainSchema,
+    validateOperatorChainImpl,
+  ),
+  t(
+    "draft_recipe_from_operator_chain",
+    "Draft a RecipeSchema-valid recipe JSON from an operator chain without writing files or touching TouchDesigner.",
+    draftRecipeFromOperatorChainSchema,
+    draftRecipeFromOperatorChainImpl,
+  ),
+  t(
+    "get_technique_detail",
+    "Inspect embedded TouchDesigner technique packs and techniques, optionally including code/setup details (offline).",
+    getTechniqueDetailSchema,
+    getTechniqueDetailImpl,
+  ),
+  t(
+    "draft_recipe_from_technique",
+    "Draft a RecipeSchema-valid GLSL recipe JSON from an embedded TouchDesigner technique without writing files or touching TouchDesigner.",
+    draftRecipeFromTechniqueSchema,
+    draftRecipeFromTechniqueImpl,
+  ),
+  t(
+    "get_tutorial",
+    "List, search, or retrieve embedded TouchDesigner tutorials with optional full content (offline).",
+    getTutorialSchema,
+    getTutorialImpl,
+  ),
+  t(
+    "search_touchdesigner_knowledge",
+    "Search embedded TouchDesigner operators, versions, compatibility notes, technique packs, TD classes, and experimental notes (offline).",
+    searchTouchDesignerKnowledgeSchema,
+    searchTouchDesignerKnowledgeImpl,
+  ),
+  t(
+    "plan_td_version_migration",
+    "Plan a TouchDesigner version migration from offline release, operator, and Python compatibility knowledge.",
+    planTdVersionMigrationSchema,
+    planTdVersionMigrationImpl,
+  ),
+  t(
+    "search_python_api",
+    "Search TouchDesigner Python API classes, methods, and members from the offline knowledge base.",
+    searchPythonApiSchema,
+    searchPythonApiImpl,
   ),
   t(
     "list_recipes",

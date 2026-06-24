@@ -14,6 +14,7 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const manifestPaths = [join(root, "dxt", "manifest.json"), join(root, "safeskill.manifest.json")];
 const serverPath = join(root, "server.json");
+const claudePluginManifestPath = join(root, "plugins", "tdmcp", ".claude-plugin", "plugin.json");
 const bootstrapPinPaths = [
   join(root, "td", "bootstrap.py"),
   join(root, "td", "modules", "mcp", "install.py"),
@@ -45,6 +46,22 @@ for (const manifestPath of manifestPaths) {
   } else {
     writeFileSync(manifestPath, after);
     process.stdout.write(`[sync-manifest-version] ${manifestPath} -> ${version}\n`);
+  }
+}
+
+{
+  const before = readFileSync(claudePluginManifestPath, "utf8");
+  const after = before
+    .replace(/("version"\s*:\s*")[^"]*"/, `$1${version}"`)
+    .replace(/@dpantani\/tdmcp@[^"]+/g, `@dpantani/tdmcp@${version}`);
+
+  if (after === before) {
+    process.stdout.write(
+      `[sync-manifest-version] ${claudePluginManifestPath} already at ${version}\n`,
+    );
+  } else {
+    writeFileSync(claudePluginManifestPath, after);
+    process.stdout.write(`[sync-manifest-version] ${claudePluginManifestPath} -> ${version}\n`);
   }
 }
 

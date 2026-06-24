@@ -1,22 +1,41 @@
 import { describe, expect, it, vi } from "vitest";
-import { compileShaderParkToTouchDesigner } from "../../src/integrations/shaderPark.js";
 
 describe("Shader Park integration", () => {
   it("compiles Shader Park sculpture code into TouchDesigner GLSL", async () => {
+    vi.resetModules();
+    vi.doMock("shader-park-core", () => ({
+      sculptToTouchDesignerShaderSource: () => ({
+        frag: "uniform float size;\nfloat surfaceDistance(vec3 p) { return 0.0; }",
+        uniforms: [
+          { name: "time", type: "float", value: 0 },
+          { name: "opacity", type: "float", value: 1 },
+          { name: "_scale", type: "float", value: 1 },
+          { name: "size", type: "float", value: 0 },
+        ],
+      }),
+    }));
     const originalLog = console.log;
-    const compiled = await compileShaderParkToTouchDesigner("let size = input();\nsphere(size);");
+    try {
+      const { compileShaderParkToTouchDesigner } = await import(
+        "../../src/integrations/shaderPark.js"
+      );
+      const compiled = await compileShaderParkToTouchDesigner("let size = input();\nsphere(size);");
 
-    expect(console.log).toBe(originalLog);
-    expect(compiled.pixelShader).toContain("uniform float size;");
-    expect(compiled.pixelShader).toContain("surfaceDistance");
-    expect(compiled.uniforms).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ name: "time", type: "float", value: 0 }),
-        expect.objectContaining({ name: "opacity", type: "float", value: 1 }),
-        expect.objectContaining({ name: "_scale", type: "float", value: 1 }),
-        expect.objectContaining({ name: "size", type: "float", value: 0 }),
-      ]),
-    );
+      expect(console.log).toBe(originalLog);
+      expect(compiled.pixelShader).toContain("uniform float size;");
+      expect(compiled.pixelShader).toContain("surfaceDistance");
+      expect(compiled.uniforms).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: "time", type: "float", value: 0 }),
+          expect.objectContaining({ name: "opacity", type: "float", value: 1 }),
+          expect.objectContaining({ name: "_scale", type: "float", value: 1 }),
+          expect.objectContaining({ name: "size", type: "float", value: 0 }),
+        ]),
+      );
+    } finally {
+      vi.doUnmock("shader-park-core");
+      vi.resetModules();
+    }
   });
 
   it("suppresses shader-park-core import-time stream writes without replacing console.log", async () => {
@@ -60,9 +79,45 @@ describe("Shader Park integration", () => {
   });
 
   it("turns Shader Park compiler failures into actionable errors", async () => {
-    await expect(compileShaderParkToTouchDesigner("sphere(")).rejects.toThrow(
-      /Shader Park compile failed/i,
-    );
+    vi.resetModules();
+    vi.doMock("shader-park-core", () => ({
+      sculptToTouchDesignerShaderSource: () => {
+        throw new Error("parse error");
+      },
+    }));
+    try {
+      const { compileShaderParkToTouchDesigner } = await import(
+        "../../src/integrations/shaderPark.js"
+      );
+      await expect(compileShaderParkToTouchDesigner("sphere(")).rejects.toThrow(
+        "Shader Park compile failed: parse error",
+      );
+    } finally {
+      vi.doUnmock("shader-park-core");
+      vi.resetModules();
+    }
+  });
+
+  it("turns a missing optional shader-park-core install into actionable guidance", async () => {
+    vi.resetModules();
+    vi.doMock("shader-park-core", () => {
+      const missingPackageError = new Error("Cannot find package 'shader-park-core'");
+      Object.assign(missingPackageError, { code: "ERR_MODULE_NOT_FOUND" });
+      throw missingPackageError;
+    });
+
+    try {
+      const { compileShaderParkToTouchDesigner: compileWithMock } = await import(
+        "../../src/integrations/shaderPark.js"
+      );
+
+      await expect(compileWithMock("sphere(0.5);")).rejects.toThrow(
+        "Shader Park compiler requires the optional dependency 'shader-park-core'.",
+      );
+    } finally {
+      vi.doUnmock("shader-park-core");
+      vi.resetModules();
+    }
   });
 
   it("preserves Shader Park failure context for circular compiler errors", async () => {
