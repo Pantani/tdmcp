@@ -58,7 +58,7 @@ Palette package.
 3. Paste this **one line** and press **Enter**:
 
    ```python
-   import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.10.0/td/bootstrap.py").read().decode())
+   import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.11.0/td/bootstrap.py").read().decode())
    ```
 
 You should see:

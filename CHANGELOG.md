@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-06-25
+
 ### Added
 
 - Add a Claude Code plugin marketplace entry for tdmcp with a stdio-pinned MCP
@@ -86,6 +88,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Factor Kinect wall harp JSON-line helper supervision into a reusable external
   helper supervisor while preserving libfreenect2 stall restart coverage.
+- Harden the external-helper supervisor stall-restart unit test against Node
+  subprocess startup jitter under the full parallel Vitest suite.
 - Stabilize the JS/TS cognitive-complexity ratchet with signature-based baseline
   keys, align the advertised Node engine floor with the ESLint dependency chain,
   and expand offline coverage tests for the coverage/complexity wave.
@@ -106,6 +110,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   bootstrap-pin docs) from the script itself, and drop the drift-prone
   hand-maintained `git add` list from the `version` npm script — so the release
   commit/tag no longer omits the rewritten bootstrap pins.
+- Sync the TouchDesigner bridge `BRIDGE_VERSION` and `get_td_info` expected
+  bridge version to the package version during release prep, so users running an
+  old bridge get the intended `bridge_stale` reload warning after upgrading.
 - Correct the advertised tool count (286 → 332) on the README and docs landing
   page.
 - Remove a dead `code-quality` CI step that diffed the gitignored
@@ -1923,7 +1930,8 @@ API on its first live run, and is fail-forward (per-item warnings, never throws)
 [0.8.0]: https://github.com/Pantani/tdmcp/compare/v0.7.1...fa7d33c2a8093d85cbad6226f62f28714a0af8fb
 [0.7.1]: https://github.com/Pantani/tdmcp/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/Pantani/tdmcp/compare/v0.6.1...v0.7.0
-[Unreleased]: https://github.com/Pantani/tdmcp/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/Pantani/tdmcp/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/Pantani/tdmcp/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/Pantani/tdmcp/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/Pantani/tdmcp/compare/v0.8.3...v0.9.0
 [0.6.1]: https://github.com/Pantani/tdmcp/compare/v0.6.0...v0.6.1

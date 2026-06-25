@@ -11,16 +11,17 @@ page is the honest, bird's-eye picture of **what already works, what's still
 rough, and what's coming next** on the way to a stable 1.0.
 
 **Where things stand today.** The npm `latest` package and latest published
-GitHub Release/tag are **v0.9.0** as of June 23, 2026. v0.9.0 is the hype-scout
-Round 4 campaign release: force multipliers, POP combos, the generative-AI
-bridge wave and the VFX aesthetic tail. It also includes the Hermes/Telegram AI
-Party policy wrapper and the local Live Nervous System rehearsal POC. The current
-source tree is preparing **v0.10.0** with the post-0.9.0 MediaPipe hands,
-Creative RAG, Project RAG and consolidation-gate follow-ups listed below. The
-CHANGELOG blocks list every entry; the always-current tool list is the
-[Tools reference](/reference/tools). 1.0 is **not** the next minor — the v0.10.x
-line is the active feature/consolidation line, and v1.0 will land only once the
-consolidation gates below are all green.
+GitHub Release/tag are **v0.10.0** as of June 25, 2026. v0.10.0 is the
+roadmap-to-1.0 consolidation release for recipe depth, mixer-scene policy,
+coverage gating, exec-off smoke coverage, Connectors Directory prep, hand
+controls, Creative RAG and Project RAG. The current source tree is preparing
+**v0.11.0** with the TouchDesigner knowledge import, Claude Code marketplace
+metadata, Kinect wall harp, physical-installation diagnostics, offline
+tutorial-to-recipe drafting, cookbook examples, and CLI/docs/release hardening
+listed below. The CHANGELOG blocks list every entry; the always-current tool list
+is the [Tools reference](/reference/tools). 1.0 is **not** the next minor — the
+v0.11.x line is the active feature/consolidation line, and v1.0 will land only
+once the consolidation gates below are all green.
 
 The project has grown through five arcs:
 
@@ -59,61 +60,30 @@ The project has grown through five arcs:
 
 ## ✅ Current Release Line
 
-### v0.10.0 preparation — post-0.9.0 MediaPipe hands, TDAbleton mapper + RAG follow-ups
+### v0.11.0 preparation — TouchDesigner knowledge, hardware diagnostics and CLI/docs hardening
 
-Source-tree work after the npm v0.9.0 publication adds a focused live-control
-path for the Ableton session we validated manually:
+Source-tree work after the v0.10.0 publication prepares the next minor around
+offline TouchDesigner knowledge, hardware-installation readiness and release
+reliability:
 
-- **`create_hand_ableton_mapper` (Layer 2).** Builds the TouchDesigner side of a
-  MediaPipe-hands performance controller for TDAbleton: `map1` left pinch,
-  `map2` right pinch, `map3` left wrist roll, `map4` right wrist roll, plus a
-  `mapper_send` CHOP and skeleton overlay with star joints.
-- **`create_hand_gesture_bus` (Layer 2) + `create_hand_hologram` (Layer 1).**
-  Turns the palm-hologram prototype into reusable tools: a stable hands CHOP bus
-  with palm openness, float anchor, active-hand lock and debounced opposite-hand
-  pinch, plus a synthetic-safe GLSL hologram cube that floats above the palm,
-  rotates, glows, exposes artist controls and can drive optional futuristic audio.
-  Offline gates are green; live TD cook validation remains pending a reachable
-  bridge.
-- 🧪 **`create_kinect_wall_harp` (Layer 1).** Builds a projected wall harp with
-  laser-line visuals, two-hand wall-touch tracking, an OSC Kinect input path,
-  external `libfreenect2` helper scripts, calibration diagnostics and a
-  sine-based pluck synth. The tool remains synthetic-safe for offline rehearsal;
-  real Kinect/projector use is setup-specific and follows the new
-  [physical installations](./guide/physical-installations) checklist.
-- **`diagnose_tdableton_mapper` (Layer 2).** Checks the real `TDA_Mapper` target,
-  input CHOP, `Reorder`, bypass states, `Min/Max` ranges and missing `map1..map4`
-  channels, with optional TD-side repair. AbletonMCP is not required for this
-  runtime path.
-- 🧪 **Creative RAG (opt-in, experimental).** A local-only creative
-  repertoire of open-licensed artworks/artists/techniques: `tdmcp creative-rag
-  {sync|index|search}` plus read-only `tdmcp://creative/cards/{id}` and
-  `tdmcp://creative/search` MCP resources. Off by default (`TDMCP_RAG_ENABLED=0`);
-  **seven live sources** — four keyless museum APIs (Art Institute of Chicago,
-  The Met, Rijksmuseum, Cleveland Museum of Art) plus ✅ **Smithsonian Open
-  Access** (key-gated), ✅ **Wikimedia Commons** (keyless), and 🧪 **Europeana**
-  (key-gated, field map UNVERIFIED until a real keyed sync) — in-memory cosine
-  over a local JSONL index, embeddings via local Ollama. **Repertório, não
-  policy** — no bridge, DMX, or Python exec. Shipped follow-ups: ✅ embedding
-  batching (`TDMCP_RAG_EMBED_BATCH`), ✅ content-type-aware binary extensions,
-  ✅ versioned/migration-tolerant index lines, and 🧪 an experimental
-  `TDMCP_RAG_BACKEND=lancedb` vector store (optional `@lancedb/lancedb` dep,
-  falls back to JSONL when absent). Remaining stub sources: Harvard, Cooper
-  Hewitt, Internet Archive, WikiArt, portfolios, Shadertoy. See
-  [Creative RAG](./CREATIVE_RAG).
-- 🧪 **Project RAG (opt-in, experimental, F0+F1+F2+F3 shipped — on
-  `feature/project-rag-f3`).** Sibling RAG to Creative RAG, indexing
-  TouchDesigner *projects/components/snippets/tutorials* with mandatory
-  `provenance` + `license` per card. F0+F1+F2 brought the multi-source +
-  tuned scoring MVP; **F3 adds opt-in bridge-quarantine analysis** —
-  `toeexpand` subprocess wrapper (reduced env, 30 s timeout, group-kill,
-  UUID temp cwd) and a dynamic analyzer that talks to a *separate*
-  TouchDesigner on dedicated port `9981` (refuses `9980`). New CLI:
-  `tdmcp project-rag analyze <path>`, `bridge install` (walkthrough +
-  probe), and `sync --bridge` (idempotent post-sync analyze pass).
-  Card schema gains `analysisStatus`/`analysisReason`. F4 (prompts,
-  resources, copilot tool, cookbook entries) is the next wave. See
-  [Project RAG](./PROJECT_RAG).
+- **TouchDesigner knowledge import.** Bottobot-derived operator/version,
+  compatibility, technique and tutorial knowledge is exposed as read-only MCP
+  resources and agent tools for operator search, workflow lookup, comparison,
+  version migration planning and offline recipe drafting.
+- **Kinect wall harp + physical diagnostics.** `create_kinect_wall_harp`,
+  external Kinect bridge helpers, normalized bridge-status DAT/CHOP surfaces,
+  local source-status diagnostics and `diagnose_hardware_environment` give
+  projection/hardware setups a preflight path before live venue validation.
+- **Claude Code marketplace metadata.** The release surface now includes a
+  `.claude-plugin` marketplace entry with a stdio-pinned package launch.
+- **Cookbook and docs follow-through.** English and Portuguese examples cover
+  offline TD knowledge workflows, tutorial-to-recipe drafting, operator
+  compare/validate/draft loops, newer live-video and performance-control
+  prompts, and TD-captured hardware-free media examples.
+- **Release and CLI hardening.** Bootstrap pins, install prompts, SafeSkill
+  scanning, doctor remediation hints, command suggestions, tool counts,
+  Glama/pnpm Docker builds and tool-description quality were tightened before
+  tagging.
 
 ### Wave 12 — v0.8.3 (live-show resilience + LLM token budget + CLI ergonomics) {#wave-12-v0-8-3}
 
