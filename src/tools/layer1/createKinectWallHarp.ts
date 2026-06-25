@@ -12,18 +12,34 @@ const DEFAULT_FREQUENCIES = [
   587.33, 659.25, 783.99,
 ];
 
-const KINECT_BRIDGE_STATUS_DRIVER_DAT_CODE = buildExternalSensorStatusDriverDatCode({
-  parameterName: "Bridgestatusjson",
-  statusChopName: "bridge_status_chop",
-  statusDatName: "bridge_status",
-  statusJsonPlaceholder: "__BRIDGE_STATUS_JSON__",
-  storeKey: "tdmcp_bridge_status",
-});
+function assertRawTripleQuotedPythonSafe(label: string, code: string): string {
+  if (code.includes("'''")) {
+    throw new Error(`${label} cannot be embedded in a raw triple-single-quoted Python string`);
+  }
+  if (code.endsWith("\\")) {
+    throw new Error(`${label} cannot end with a trailing backslash`);
+  }
+  return code;
+}
 
-const KINECT_BRIDGE_STATUS_CHOP_CODE = buildExternalSensorStatusChopCode({
-  channelPrefix: "bridge",
-  storeKey: "tdmcp_bridge_status",
-});
+const KINECT_BRIDGE_STATUS_DRIVER_DAT_CODE = assertRawTripleQuotedPythonSafe(
+  "Kinect bridge status driver DAT code",
+  buildExternalSensorStatusDriverDatCode({
+    parameterName: "Bridgestatusjson",
+    statusChopName: "bridge_status_chop",
+    statusDatName: "bridge_status",
+    statusJsonPlaceholder: "__BRIDGE_STATUS_JSON__",
+    storeKey: "tdmcp_bridge_status",
+  }),
+);
+
+const KINECT_BRIDGE_STATUS_CHOP_CODE = assertRawTripleQuotedPythonSafe(
+  "Kinect bridge status CHOP code",
+  buildExternalSensorStatusChopCode({
+    channelPrefix: "bridge",
+    storeKey: "tdmcp_bridge_status",
+  }),
+);
 
 export const createKinectWallHarpSchema = z.object({
   parent_path: z
@@ -2188,9 +2204,10 @@ try:
             _bridge_status_driver = _create(_cont, ["executeDAT"], "bridge_status_driver", -430, 360, "bridge status driver")
             if _bridge_status_driver is not None:
                 report["bridge_status_driver"] = _bridge_status_driver.path
+                _bridge_status_literal = json.dumps(str(_p.get("bridge_status_json", "")))
                 _bridge_status_code = BRIDGE_STATUS_DRIVER_DAT_CODE.replace(
-                    "__BRIDGE_STATUS_JSON__",
-                    str(_p.get("bridge_status_json", "")),
+                    '"__BRIDGE_STATUS_JSON__"',
+                    _bridge_status_literal,
                 )
                 _set_text(_bridge_status_driver, _bridge_status_code)
                 _set_par(_bridge_status_driver, ["active"], True, False)

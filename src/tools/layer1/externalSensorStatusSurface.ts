@@ -109,7 +109,12 @@ export function buildExternalSensorStatusDriverDatCode(
   const storeKey = options.storeKey ?? "tdmcp_sensor_status";
 
   return `# Mirrors an external sensor bridge status JSON into a TouchDesigner DAT and project store.
-import json, time
+import json, os, time
+
+STALE_AFTER_SECONDS = 2.0
+_LAST_STATUS_PATH = None
+_LAST_STATUS_MTIME = None
+_LAST_STATUS_PAYLOAD = None
 
 def _par_value(name, default):
     try:
@@ -138,6 +143,43 @@ def _write_status(payload):
             pass
     _cook(op(${pyString(statusChopName)}))
 
+def _file_mtime(path):
+    return os.path.getmtime(path)
+
+def _copy_payload(payload):
+    try:
+        return dict(payload)
+    except Exception:
+        return {}
+
+def _payload_with_freshness(payload, path, mtime):
+    now = time.time()
+    fresh = _copy_payload(payload)
+    age = max(0.0, now - float(mtime))
+    fresh["path"] = path
+    fresh["statusAgeSeconds"] = age
+    fresh["statusMtime"] = float(mtime)
+    if age > STALE_AFTER_SECONDS:
+        fresh["ok"] = False
+        fresh["stale"] = True
+        fresh["state"] = "stale"
+        if not fresh.get("error"):
+            fresh["error"] = "status JSON has not updated for %.2fs" % age
+    return fresh
+
+def _load_status(path, mtime):
+    global _LAST_STATUS_PATH, _LAST_STATUS_MTIME, _LAST_STATUS_PAYLOAD
+    if _LAST_STATUS_PATH == path and _LAST_STATUS_MTIME == mtime and isinstance(_LAST_STATUS_PAYLOAD, dict):
+        return _copy_payload(_LAST_STATUS_PAYLOAD)
+    with open(path, "r", encoding="utf-8") as handle:
+        payload = json.loads(handle.read())
+    if not isinstance(payload, dict):
+        raise ValueError("status JSON root must be an object")
+    _LAST_STATUS_PATH = path
+    _LAST_STATUS_MTIME = mtime
+    _LAST_STATUS_PAYLOAD = _copy_payload(payload)
+    return payload
+
 def _read_status():
     path = _status_path()
     if not path:
@@ -149,11 +191,8 @@ def _read_status():
         })
         return
     try:
-        with open(path, "r", encoding="utf-8") as handle:
-            payload = json.loads(handle.read())
-        if not isinstance(payload, dict):
-            raise ValueError("status JSON root must be an object")
-        _write_status(payload)
+        mtime = _file_mtime(path)
+        _write_status(_payload_with_freshness(_load_status(path, mtime), path, mtime))
     except Exception as exc:
         _write_status({
             "error": str(exc),
@@ -300,6 +339,7 @@ STATE_CODES = {
     "missing": 5.0,
     "unconfigured": 6.0,
     "waiting": 7.0,
+    "stale": 8.0,
 }
 
 def _status():

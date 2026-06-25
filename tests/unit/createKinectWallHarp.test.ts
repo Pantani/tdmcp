@@ -209,6 +209,7 @@ describe("create_kinect_wall_harp", () => {
 
   it("sends a base64 payload through msw /api/exec and returns the structured report", async () => {
     const bodies = captureExec(successReport());
+    const statusJsonPath = String.raw`C:\Users\Pantani\kinect "status".json`;
     const args = createKinectWallHarpSchema.parse({
       parent_path: "/project1",
       name: "harp_test",
@@ -250,7 +251,7 @@ describe("create_kinect_wall_harp", () => {
       glow: "1.5",
       vibration_amount: "22",
       vibration_decay: "0.6",
-      bridge_status_json: "_workspace/kinect-wall-harp/test-status.json",
+      bridge_status_json: statusJsonPath,
     });
 
     const result = await createKinectWallHarpImpl(makeCtx(), args);
@@ -276,7 +277,14 @@ describe("create_kinect_wall_harp", () => {
     expect(script).toContain("scriptOp.appendChan(name)");
     expect(script).toContain('_chan(scriptOp, "bridge_ok"');
     expect(script).toContain('_chan(scriptOp, "bridge_state_code"');
+    expect(script).toContain("STATE_CODES.get(state, 99.0)");
     expect(script).toContain('_cook(op("bridge_status_chop"))');
+    expect(script).toContain(
+      '_bridge_status_literal = json.dumps(str(_p.get("bridge_status_json", "")))',
+    );
+    expect(script).toContain(
+      "BRIDGE_STATUS_DRIVER_DAT_CODE.replace(\n                    '\"__BRIDGE_STATUS_JSON__\"',\n                    _bridge_status_literal,",
+    );
     expect(script).toContain("bridge_status_json");
     expect(script).toContain('report["bridge_status_dat"]');
     expect(script).toContain('report["bridge_status_chop"]');
@@ -457,7 +465,7 @@ describe("create_kinect_wall_harp", () => {
     expect(payload.curtain_spread).toBe(4);
     expect(payload.curtain_follow).toBe(0.65);
     expect(payload.frequencies).toHaveLength(16);
-    expect(payload.bridge_status_json).toBe("_workspace/kinect-wall-harp/test-status.json");
+    expect(payload.bridge_status_json).toBe(statusJsonPath);
 
     const text = textOf(result);
     expect(text).toContain("Built Kinect wall harp");

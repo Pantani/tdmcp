@@ -5,6 +5,7 @@ import { dirname } from "node:path";
 import { runJsonLineHelper } from "./external-helper-supervisor.mjs";
 
 const DEFAULT_HELPER = "_workspace/kinect-wall-harp/external/kinect_harp_depth_bridge";
+const STATUS_FRAME_WRITE_INTERVAL_MS = 500;
 const STRING_OPTIONS = new Map([
   ["--host", "host"],
   ["--source", "source"],
@@ -271,14 +272,50 @@ function sendFrame(socket, args, frame) {
   }
 }
 
+let lastStatusWriteAtMs = 0;
+let lastStatusSignature = "";
+
+function statusSignature(status) {
+  return [
+    status.type,
+    status.state,
+    status.ok,
+    status.stale,
+    status.restartCount,
+    status.pid,
+    status.error,
+  ].join("|");
+}
+
+function shouldWriteStatusJson(status, nowMs) {
+  const signature = statusSignature(status);
+  if (status.type !== "frame") {
+    lastStatusSignature = signature;
+    lastStatusWriteAtMs = nowMs;
+    return true;
+  }
+  if (signature !== lastStatusSignature) {
+    lastStatusSignature = signature;
+    lastStatusWriteAtMs = nowMs;
+    return true;
+  }
+  if (nowMs - lastStatusWriteAtMs >= STATUS_FRAME_WRITE_INTERVAL_MS) {
+    lastStatusWriteAtMs = nowMs;
+    return true;
+  }
+  return false;
+}
+
 function writeStatusJson(args, status) {
   if (args.statusJson === undefined) return;
+  const nowMs = Date.now();
+  if (!shouldWriteStatusJson(status, nowMs)) return;
   const payload = {
     ...status,
     source: args.source,
     helper: args.helper,
     target: { host: args.host, port: args.port },
-    updatedAt: new Date().toISOString(),
+    updatedAt: new Date(nowMs).toISOString(),
   };
   try {
     mkdirSync(dirname(args.statusJson), { recursive: true });

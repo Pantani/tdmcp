@@ -128,6 +128,16 @@ setTimeout(() => process.exit(0), 50);
     }
   });
 
+  it("throttles repeated frame status JSON writes to avoid real-time disk churn", () => {
+    const source = readFileSync("scripts/kinect-wall-harp-bridge.mjs", "utf8");
+
+    expect(source).toContain("STATUS_FRAME_WRITE_INTERVAL_MS = 500");
+    expect(source).toContain("function shouldWriteStatusJson(status, nowMs)");
+    expect(source).toContain('if (status.type !== "frame")');
+    expect(source).toContain("if (nowMs - lastStatusWriteAtMs >= STATUS_FRAME_WRITE_INTERVAL_MS)");
+    expect(source).toContain("if (!shouldWriteStatusJson(status, nowMs)) return;");
+  });
+
   it("rejects invalid frame limits before entering the run loop", () => {
     const source = readFileSync("scripts/kinect-wall-harp-bridge.mjs", "utf8");
 

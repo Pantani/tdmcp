@@ -18,6 +18,12 @@ describe("external sensor status surface", () => {
     });
 
     expect(code).toContain('_par_value("Sensorstatusjson", "__SENSOR_STATUS_JSON__")');
+    expect(code).toContain("import json, os, time");
+    expect(code).toContain("STALE_AFTER_SECONDS = 2.0");
+    expect(code).toContain("mtime = _file_mtime(path)");
+    expect(code).toContain("_payload_with_freshness(_load_status(path, mtime), path, mtime)");
+    expect(code).toContain('fresh["state"] = "stale"');
+    expect(code).toContain("if _LAST_STATUS_PATH == path and _LAST_STATUS_MTIME == mtime");
     expect(code).toContain('parent().store("tdmcp_sensor_status"');
     expect(code).toContain('dat = op("sensor_status")');
     expect(code).toContain('_cook(op("sensor_status_chop"))');
@@ -35,6 +41,20 @@ describe("external sensor status surface", () => {
     expect(code).toContain('_chan(scriptOp, "sensor_ok"');
     expect(code).toContain('_chan(scriptOp, "sensor_state_code"');
     expect(code).toContain('"running": 1.0');
+    expect(code).toContain('"stale": 8.0');
+  });
+
+  it("keeps generated snippets safe for raw triple-quoted Python embedding", () => {
+    const snippets = [
+      buildExternalSensorStatusDriverDatCode(),
+      buildExternalSensorStatusChopCode(),
+      buildExternalSensorLocalStatusDriverDatCode(),
+    ];
+
+    for (const code of snippets) {
+      expect(code).not.toContain("'''");
+      expect(code.endsWith("\\")).toBe(false);
+    }
   });
 
   it("builds local operator status driver code for TouchDesigner-native sources", () => {
