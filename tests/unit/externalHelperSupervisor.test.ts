@@ -41,9 +41,9 @@ if (count === 1) {
     try {
       await runJsonLineHelper({
         command: helper,
-        stallTimeoutMs: 150,
-        stallCheckIntervalMs: 25,
-        killGraceMs: 50,
+        stallTimeoutMs: 800,
+        stallCheckIntervalMs: 50,
+        killGraceMs: 100,
         maxRestarts: 3,
         onJson: (frame) => frames.push(frame),
         log: (line) => logs.push(line),

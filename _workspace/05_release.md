@@ -1,48 +1,77 @@
-# tdmcp 0.10.0 release preparation
+# tdmcp 0.11.0 release preparation
 
-Date: 2026-06-23
+Date: 2026-06-25
 Status: prepared, not tagged or published
 
 ## Version
 
-- Target version: `0.10.0`
-- Base released version: `v0.9.0`
-- `v0.9.0` GitHub Release/tag was backfilled on 2026-06-23 and points to `b10221d7026bad963ea605e24649b1f7e34d9deb`, the scoped npm package restoration commit.
+- Target version: `0.11.0`
+- Base released version: `v0.10.0`
+- Base checkout: `7fbf9422749cff075bf42eccad16e2ef8325f74b`
+- Registry/release truth checked before prep:
+  - npm `@dpantani/tdmcp` latest: `0.10.0`
+  - GitHub latest published release: `v0.10.0`
+  - GitHub tag/release `v0.11.0`: not present
 
 ## Prepared
 
-- Bumped package and published metadata versions to `0.10.0`: `package.json`, `package-lock.json`, `server.json`, `dxt/manifest.json`, and `safeskill.manifest.json`.
-- Promoted the existing post-0.9.0 `CHANGELOG.md` entries into `## [0.10.0] - 2026-06-23`.
-- Updated `CHANGELOG.md` compare links for `Unreleased`, `0.10.0`, and `0.9.0`.
-- Updated `docs/ROADMAP.md` so it no longer says the latest GitHub Release is `v0.8.3`.
-- Updated bootstrap/install pins to `v0.10.0` with `scripts/sync-manifest-version.mjs` so the `0.10.0` package installs matching bridge modules.
+- Bumped package and published metadata versions to `0.11.0`:
+  `package.json`, `package-lock.json`, `server.json`, `dxt/manifest.json`,
+  `safeskill.manifest.json`, and `plugins/tdmcp/.claude-plugin/plugin.json`.
+- Promoted the existing post-0.10.0 `CHANGELOG.md` entries into
+  `## [0.11.0] - 2026-06-25`.
+- Updated `CHANGELOG.md` compare links for `Unreleased`, `0.11.0`, and
+  `0.10.0`.
+- Updated `docs/ROADMAP.md` so the public roadmap says the latest shipped line is
+  `v0.10.0` and the source tree is preparing `v0.11.0`.
+- Updated bootstrap/install pins to `v0.11.0` with
+  `scripts/sync-manifest-version.mjs` so the `0.11.0` package installs matching
+  bridge modules after the tag exists.
+- Hardened the external-helper supervisor stall-restart unit test timing after
+  the first full Vitest release gate exposed a subprocess-startup flake under
+  parallel load.
 
 ## Shipping Scope
 
-- Recipe library depth (G3), including 18 new first-party recipes and expanded validation.
-- AI Show Director mixer scene arming dry-run MVP with approval recheck boundaries.
-- Coverage CI gate, exec-off smoke coverage and Connectors Directory prep.
-- Docs completeness for v0.7/v0.8 arcs and the API stability pin.
-- Hand gesture bus and hand hologram controls.
-- Creative RAG and Project RAG follow-ups, including cross-RAG fusion, Project RAG sources, bridge-quarantine analysis and MCP surfaces.
-- CI validation hardening and Node engine floor alignment.
+- Claude Code plugin marketplace metadata for tdmcp.
+- Bottobot-derived TouchDesigner knowledge resources and read-only agent tools
+  for operator docs, Python API search, technique/tutorial lookup, operator-chain
+  validation, migration planning, and offline recipe drafting.
+- Kinect wall harp command/tool, external Kinect bridge helpers, normalized
+  bridge-status outputs, local source-status diagnostics, and
+  `diagnose_hardware_environment`.
+- English and Portuguese physical-installations and cookbook examples for
+  offline TD knowledge workflows, tutorial-to-recipe drafting, and
+  operator-chain compare/validate/draft loops.
+- Release, CLI, package metadata, SafeSkill, Glama/pnpm Docker, tool-description
+  and tool-count hardening.
 
 ## Held Back
 
-- `v0.10.0` npm publish, GitHub tag and GitHub Release are not performed in this preparation step; the bootstrap URLs intentionally point to the future `v0.10.0` release tag that will exist before publication.
-- Live TouchDesigner cook validation remains pending where the changelog marks it `UNVERIFIED-pending-td`.
-- Connectors Directory acceptance remains an external process.
-- Project RAG live bridge validation on a real quarantine `9981` TouchDesigner remains unverified until a reachable bridge is available.
+- `v0.11.0` npm publish, GitHub tag and GitHub Release are not performed in this
+  preparation step; the bootstrap URLs intentionally point to the future
+  `v0.11.0` release tag that must exist before publication.
+- Live TouchDesigner cook validation remains pending where the changelog/docs
+  mark flows as setup-specific or `UNVERIFIED-pending-td`.
+- Real Kinect/projector venue validation remains setup-specific and must be run
+  against the target hardware before calling those physical-installation flows
+  live-validated.
 
 ## Validation
 
-- `npm ci` completed; npm reported 7 dev/dependency-tooling audit findings.
+- `npm ci` passed and reported 0 vulnerabilities.
 - `npm audit --omit=dev --json` reported 0 production vulnerabilities.
 - `npm run typecheck` passed.
 - `npm run validate:recipes` passed: 50/50 recipes valid.
 - `npm run test:bridge` passed: 213 Python bridge tests.
 - `npm run build` passed.
-- `npm run docs:build` passed and regenerated 318 tool docs without a tracked diff.
-- `npm run test` passed: 440 test files, 4563 tests.
-- `npm run lint` passed: Biome checked 1081 files.
-- `node scripts/sync-manifest-version.mjs` updated bootstrap/install pins to `v0.10.0`.
+- `npm run docs:build` passed and regenerated 332 tool docs.
+- `npm exec -- vitest run tests/unit/externalHelperSupervisor.test.ts` passed
+  after hardening the stall-restart test timing.
+- `npm run test` passed on the rerun: 477 test files, 4804 tests.
+- `npm run lint` passed: Biome checked 1152 files.
+- `npm run build:mcpb` passed with official `@anthropic-ai/mcpb@2.1.2`,
+  producing `tdmcp@0.11.0` / `tdmcp-0.11.0.mcpb` at 7.9 MB.
+- `npm pack --dry-run --json` passed for `@dpantani/tdmcp@0.11.0`, producing
+  `dpantani-tdmcp-0.11.0.tgz` at 7.49 MB packed / 49.52 MB unpacked.
+- `git diff --check` passed.
