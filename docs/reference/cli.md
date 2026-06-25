@@ -17,7 +17,7 @@ The package installs two binaries: `tdmcp` (the MCP server + utilities) and
 | `tdmcp serve --http --port 3939` | Start the MCP server over loopback Streamable HTTP for clients that do not use stdio. Bare `tdmcp` still defaults to stdio. |
 | `tdmcp --help` | Print top-level usage without starting the MCP server. |
 | `tdmcp init` | One-shot onboarding: stage the bridge, write a client config (Claude / Cursor / Codex), seed a profile and optional bridge token. See [Onboarding](#onboarding) below. |
-| `tdmcp ask "<prompt>"` | Non-interactive copilot turn — one prompt in, one answer out (machine-readable with `--json`). See [Onboarding](#onboarding) below. |
+| `tdmcp ask "your prompt"` | Non-interactive copilot turn — one prompt in, one answer out (machine-readable with `--json`). See [Onboarding](#onboarding) below. |
 | `tdmcp chat` _(alias `tdmcp llm-run`)_ | Start the local LLM copilot UI (see below). |
 | `tdmcp telegram` | Start an allowlisted Telegram Bot API long-poll bridge into the local Ollama copilot. See [Telegram copilot](#telegram-copilot) below. |
 | `tdmcp creative-rag sync\|index\|search` | Manage the opt-in Creative RAG reference store. See [Creative RAG](/creative-rag). |

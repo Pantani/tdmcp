@@ -14,6 +14,15 @@
 # JavaScript/Python code execution.
 src/knowledge/data/
 
+# --- Dependencies & VCS internals (never our code; scanning them OOMs the CLI) ---
+# `npx skillsafe scan .` walks the working tree; without these it tries to load
+# all of node_modules into memory (heap OOM) and chokes on the `.git` pointer
+# file in a git worktree (ENOTDIR). None of these are server/bridge source.
+node_modules/
+.git/
+.claude/
+_workspace/
+
 # --- Build / derived output (also gitignored) ---
 dist/
 coverage/

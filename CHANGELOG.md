@@ -101,6 +101,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `docs/reference/tools.md` and could never fail.
 - Fix two tool-description inaccuracies: `image_to_particles`' default source
   image and `create_video_scopes`' TD-099-unsupported histogram panel.
+- Make `npx skillsafe scan .` (the SafeSkill scan documented in `.safeskillignore`)
+  usable by excluding `node_modules/`, `.git/`, `.claude/` and `_workspace/` —
+  without them the CLI ran the Node heap out of memory walking dependencies. Also
+  reword a `<prompt>` placeholder in `docs/reference/cli.md` that SafeSkill flagged
+  as a fake-XML context-boundary (a false positive in a CLI usage example).
 
 ## [0.10.0] - 2026-06-23
 
