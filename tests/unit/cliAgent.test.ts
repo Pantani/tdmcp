@@ -456,6 +456,51 @@ describe("tdmcp-agent CLI", () => {
     }
   });
 
+  it("stops a JSON run file after the first failed step by default", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-agent-run-stop-"));
+    try {
+      const file = join(dir, "stop-plan.json");
+      writeFileSync(file, JSON.stringify([{ command: "nodes frobnicate" }, { command: "config" }]));
+
+      const r = await runCli(["run", file]);
+
+      expect(r.code).toBe(2);
+      const doc = JSON.parse(r.stdout);
+      expect(doc.steps).toHaveLength(1);
+      expect(doc.steps[0].stderr).toContain("Unknown command");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("runs object-shaped JSON command files with array commands and output flags", async () => {
+    const r = await runCli(["run", "-"], {
+      stdin: JSON.stringify({
+        steps: [
+          {
+            command: ["nodes", "list"],
+            params: { parent_path: "/project1" },
+            output: "text",
+          },
+        ],
+      }),
+      makeCtx,
+    });
+
+    expect(r.code).toBe(0);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.steps).toHaveLength(1);
+    expect(doc.steps[0].command).toEqual([
+      "nodes",
+      "list",
+      "--params",
+      JSON.stringify({ parent_path: "/project1" }),
+      "--output",
+      "text",
+    ]);
+    expect(typeof doc.steps[0].stdout).toBe("string");
+  });
+
   it("propagates global config flags into JSON run-file steps", async () => {
     const dir = mkdtempSync(join(tmpdir(), "tdmcp-agent-run-"));
     try {
@@ -836,6 +881,39 @@ describe("tdmcp-agent CLI — phase 0 additions", () => {
     const r = await runCli(["preview"]);
     expect(r.code).toBe(2);
     expect(r.stderr).toContain("Invalid arguments");
+  });
+
+  it("captures a preview through the mocked bridge and writes the output file", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-agent-preview-"));
+    try {
+      const out = join(dir, "preview.png");
+      const r = await runCli(["preview", "/project1/out1", "--out", out], { makeCtx });
+
+      expect(r.code).toBe(0);
+      const doc = JSON.parse(r.stdout);
+      expect(doc).toMatchObject({
+        node_path: "/project1/out1",
+        file: out,
+        width: 640,
+        height: 360,
+        mimeType: "image/png",
+      });
+      expect(readFileSync(out).length).toBeGreaterThan(0);
+      expect(r.stderr).toContain("Saved preview");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects invalid preview params JSON before building a context", async () => {
+    const r = await runCli(["preview", "--params", "{not-json"], {
+      makeCtx: () => {
+        throw new Error("preview JSON parse must not build context");
+      },
+    });
+
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain("Invalid JSON");
   });
 
   it("reloads the bridge through the mocked exec endpoint", async () => {
@@ -1762,10 +1840,95 @@ describe("tdmcp-agent CLI — wave-5 branch coverage", () => {
     expect(r.stderr).toContain("Missing setlist path");
   });
 
+  it("setlist run dry-runs a minimal setlist file", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-agent-setlist-"));
+    try {
+      const file = join(dir, "setlist.json");
+      writeFileSync(
+        file,
+        JSON.stringify({
+          title: "Unit Show",
+          bpm: 120,
+          scenes: [{ id: "intro", cue: "look_intro", hold_seconds: 0 }],
+        }),
+      );
+
+      const r = await runCli(["setlist", "run", file, "--dry-run", "--mode", "duration"], {
+        makeCtx,
+      });
+
+      expect(r.code).toBe(0);
+      expect(r.stdout).toContain('"t":"would_fire"');
+      expect(r.stdout).toContain('"ended_reason":"complete"');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("setlist run reports malformed file content", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-agent-setlist-bad-"));
+    try {
+      const file = join(dir, "setlist.json");
+      writeFileSync(file, "{not json");
+
+      const r = await runCli(["setlist", "run", file, "--dry-run"], { makeCtx });
+
+      expect(r.code).toBe(2);
+      expect(r.stderr).toContain("setlist string is not valid JSON");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("schedule without a file errors", async () => {
     const r = await runCli(["schedule"]);
     expect(r.code).toBe(2);
     expect(r.stderr).toContain("Missing schedule path");
+  });
+
+  it("schedule prints timezone info without building a TD context", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-agent-schedule-"));
+    try {
+      const file = join(dir, "schedule.json");
+      writeFileSync(
+        file,
+        JSON.stringify({
+          entries: [
+            {
+              at: "09:30",
+              action: { type: "command", cmd: "/bin/echo", args: ["hi"] },
+            },
+          ],
+        }),
+      );
+
+      const r = await runCli(["schedule", file, "--tz-info"], {
+        makeCtx: () => {
+          throw new Error("schedule tz-info must not build context");
+        },
+      });
+
+      expect(r.code).toBe(0);
+      expect(r.stdout).toContain("timezone:");
+      expect(r.stdout).toContain("entry_");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("schedule reports malformed schedule files", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-agent-schedule-bad-"));
+    try {
+      const file = join(dir, "schedule.json");
+      writeFileSync(file, "{not json");
+
+      const r = await runCli(["schedule", file]);
+
+      expect(r.code).toBe(2);
+      expect(r.stderr).toContain("error:");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("nodes find with invalid JSON --params returns code 2 with friendly message", async () => {
@@ -1778,6 +1941,43 @@ describe("tdmcp-agent CLI — wave-5 branch coverage", () => {
     const r = await runCli(["nodes", "create", "--params", '{"parent_path":"/x"}']);
     expect(r.code).toBe(2);
     expect(r.stderr).toContain("Invalid arguments");
+  });
+
+  it("unknown commands include a nearest-command hint when one is obvious", async () => {
+    const r = await runCli(["noeds"]);
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain('Did you mean "nodes"?');
+  });
+
+  it("merges --params-file and --json before dry-run validation", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-agent-params-file-"));
+    try {
+      const file = join(dir, "params.json");
+      writeFileSync(file, JSON.stringify({ parent_path: "/project1" }), "utf8");
+
+      const r = await runCli(
+        [
+          "nodes",
+          "list",
+          "--dry-run",
+          "--params-file",
+          file,
+          "--json",
+          JSON.stringify({ detail_level: "summary" }),
+        ],
+        {
+          makeCtx: () => {
+            throw new Error("dry-run must not build context");
+          },
+        },
+      );
+
+      expect(r.code).toBe(0);
+      const doc = JSON.parse(r.stdout);
+      expect(doc.args).toMatchObject({ parent_path: "/project1", detail_level: "summary" });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("nodes list rendered as text returns the result text", async () => {
@@ -1891,6 +2091,75 @@ describe("tdmcp-agent CLI — wave-5 branch coverage", () => {
     expect(closed).toBe(true);
   });
 
+  it("watch pretty output filters events and debounces exec hooks", async () => {
+    const lines: string[] = [];
+    const statuses: string[] = [];
+    const execCalls: Array<{ command: string; event: unknown }> = [];
+    const controller = new AbortController();
+    let emit: ((e: unknown) => void) | undefined;
+    let now = 1_000;
+
+    const done = runWatch({
+      filter: ["beat"],
+      execOn: ["beat"],
+      exec: "echo beat",
+      execDebounceMs: 50,
+      heartbeatMs: 1,
+      pretty: true,
+      now: () => now,
+      execCommand: (command, event) => execCalls.push({ command, event }),
+      write: (line) => lines.push(line),
+      writeStatus: (line) => statuses.push(line),
+      signal: controller.signal,
+      makeStream: ({ onEvent, includeHighFrequency }) => {
+        expect(includeHighFrequency).toBe(false);
+        emit = onEvent as (e: unknown) => void;
+        return { start: () => {}, close: () => {} };
+      },
+    });
+
+    emit?.({ type: "timeline.frame", data: { frame: 1 } });
+    emit?.({ type: "beat", data: { bar: 1 } });
+    emit?.({ type: "beat", data: { bar: 2 } });
+    now += 60;
+    emit?.({ type: "beat", data: { bar: 3 } });
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    controller.abort();
+    await done;
+
+    expect(lines).toEqual(['beat {"bar":1}', 'beat {"bar":2}', 'beat {"bar":3}']);
+    expect(execCalls).toEqual([
+      expect.objectContaining({ command: "echo beat" }),
+      expect.objectContaining({ command: "echo beat" }),
+    ]);
+    expect(statuses.some((line) => line.startsWith("Heartbeat:"))).toBe(true);
+    expect(statuses.at(-1)).toBe("Stopped after 3 events.");
+  });
+
+  it("watch pretty output falls back to event names and scalar payloads", async () => {
+    const lines: string[] = [];
+    const controller = new AbortController();
+    let emit: ((e: unknown) => void) | undefined;
+
+    const done = runWatch({
+      pretty: true,
+      write: (line) => lines.push(line),
+      writeStatus: () => {},
+      signal: controller.signal,
+      makeStream: ({ onEvent }) => {
+        emit = onEvent as (e: unknown) => void;
+        return { start: () => {}, close: () => {} };
+      },
+    });
+
+    emit?.({ event: "custom", data: undefined });
+    emit?.("raw-event");
+    controller.abort();
+    await done;
+
+    expect(lines).toEqual(["custom", "event raw-event"]);
+  });
+
   // ───── wave-9: branch-coverage fills for runCli error paths ─────
 
   it("returns code 2 with stderr when parseCliArgs throws (unknown flag)", async () => {
@@ -1994,5 +2263,153 @@ describe("tdmcp-agent CLI — wave-5 branch coverage", () => {
     const [matches, prefix] = completeReplLine("zzz-no-such-prefix");
     expect(prefix).toBe("zzz-no-such-prefix");
     expect(matches.length).toBeGreaterThan(0);
+  });
+});
+
+describe("tdmcp-agent CLI — coverage wave 3 offline branches", () => {
+  it("emits schemas for ai-party gateway and telegram-once", async () => {
+    const gateway = await runCli(["schema", "ai-party"]);
+    expect(gateway.code).toBe(0);
+    const gatewayDoc = JSON.parse(gateway.stdout);
+    expect(gatewayDoc.command).toBe("ai-party");
+    expect(JSON.stringify(gatewayDoc.input)).toContain("message");
+    expect(JSON.stringify(gatewayDoc.input)).toContain("preapproved_cues");
+
+    const telegram = await runCli(["schema", "ai-party", "telegram-once"]);
+    expect(telegram.code).toBe(0);
+    const telegramDoc = JSON.parse(telegram.stdout);
+    expect(telegramDoc.command).toBe("ai-party telegram-once");
+    expect(JSON.stringify(telegramDoc.input)).toContain("allowed_chat_ids");
+  });
+
+  it("prints focused help for ai-party special commands", async () => {
+    const gateway = await runCli(["help", "ai-party"]);
+    expect(gateway.code).toBe(0);
+    expect(gateway.stdout).toContain("tdmcp-agent ai-party");
+    expect(gateway.stdout).toContain("Input schema:");
+
+    const telegram = await runCli(["help", "ai-party", "telegram-once"]);
+    expect(telegram.code).toBe(0);
+    expect(telegram.stdout).toContain("tdmcp-agent ai-party telegram-once");
+    expect(telegram.stdout).toContain("allowed_chat_ids");
+  });
+
+  it("rejects malformed ai-party-poc params before running the POC", async () => {
+    const invalidJson = await runCli(["ai-party-poc", "--params", "{not-json"]);
+    expect(invalidJson.code).toBe(2);
+    expect(invalidJson.stderr).toContain("Invalid JSON");
+
+    const invalidArgs = await runCli(["ai-party-poc", "--params", '{"operator":""}']);
+    expect(invalidArgs.code).toBe(2);
+    expect(invalidArgs.stderr).toContain('Invalid arguments for "ai-party-poc"');
+  });
+
+  it("rejects malformed ai-party gateway input and unknown verbs", async () => {
+    const invalidArgs = await runCli(["ai-party", "--params", "{}"]);
+    expect(invalidArgs.code).toBe(2);
+    expect(invalidArgs.stderr).toContain('Invalid arguments for "ai-party"');
+
+    const unknown = await runCli(["ai-party", "dancefloor"]);
+    expect(unknown.code).toBe(2);
+    expect(unknown.stderr).toContain('Unknown ai-party verb "dancefloor"');
+  });
+
+  it("rejects invalid ai-party telegram-once args without polling Telegram", async () => {
+    const r = await runCli(["ai-party", "telegram-once", "--params", '{"limit":101}']);
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain('Invalid arguments for "ai-party telegram-once"');
+  });
+
+  it("rejects show-director non-intent argument errors separately from malformed intents", async () => {
+    const r = await runCli(["show-director", "--params", '{"operator":""}']);
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain('Invalid arguments for "show-director"');
+    expect(r.stderr).not.toContain("Malformed show intent");
+  });
+
+  it("rejects show-director mixer catalogs whose policy hash has drifted", async () => {
+    const scene = {
+      scene_id: "drifted_scene",
+      label: "Drifted Scene",
+      adapter_target: { kind: "soundcraft_ui24r", mixer_id: "foh-ui24r" },
+      operation: "recall_snapshot",
+      show_name: "Demo Show",
+      snapshot_name: "Drifted Snapshot",
+      allowed_setlist_sections: ["intro"],
+      last_validated_at: "2026-06-03T18:00:00.000Z",
+      rollback_target: "house_default",
+      safety_notes: "Fixture catalog for hash-mismatch coverage.",
+      forbidden_delta_check: {
+        excludes_all_forbidden: true,
+        verified: [
+          "gain",
+          "pa_mute",
+          "routing",
+          "patch",
+          "channel_strip",
+          "mute_group",
+          "phantom_power",
+        ],
+      },
+    };
+    const r = await runCli([
+      "show-director",
+      "--params",
+      JSON.stringify({
+        mixer_scene_catalog: {
+          venue: "Fixture Venue",
+          catalog_version: "test",
+          policy_hash: "not-the-real-hash",
+          scenes: [scene],
+        },
+        intent: {
+          type: "arm_mixer_scene",
+          adapter_target: { kind: "soundcraft_ui24r", mixer_id: "foh-ui24r" },
+          target: { kind: "snapshot", scene_id: "drifted_scene" },
+        },
+      }),
+    ]);
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain("Invalid mixer scene catalog");
+    expect(r.stderr).toContain("catalog hash mismatch");
+  });
+
+  it("returns structured doctor output with --output json", async () => {
+    const r = await runCli(["doctor", "--output", "json"], { makeCtx });
+    expect(r.stdout).toContain('"checks"');
+    expect(r.stderr).toBe("");
+    expect([0, 1]).toContain(r.code);
+  });
+
+  it("honors doctor --quiet by suppressing output", async () => {
+    const r = await runCli(["doctor", "--quiet"], { makeCtx });
+    expect(r.stdout).toBe("");
+    expect(r.stderr).toBe("");
+    expect([0, 1]).toContain(r.code);
+  });
+
+  it("surfaces preview context build failures before capture", async () => {
+    const r = await runCli(["preview", "/project1/out1"], {
+      makeCtx: () => {
+        throw new Error("bad preview config");
+      },
+    });
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain("bad preview config");
+  });
+
+  it("surfaces invalid config profile resolution errors", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-agent-bad-profile-"));
+    const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    try {
+      const config = join(dir, "tdmcp.json");
+      writeFileSync(config, "{not-json");
+      const r = await runCli(["config", "profile", "club", "--config", config]);
+      expect(r.code).toBe(2);
+      expect(r.stderr.length).toBeGreaterThan(0);
+    } finally {
+      stderr.mockRestore();
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

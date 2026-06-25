@@ -57,6 +57,16 @@ interface HardwareCheck {
   title: string;
 }
 
+interface HardwareReport {
+  bridge?: Record<string, unknown>;
+  checks: HardwareCheck[];
+  connected: boolean;
+  endpoint: string;
+  overall: CheckStatus;
+  status_surfaces?: Record<string, unknown>[];
+  system?: Record<string, unknown>;
+}
+
 function defaultSections(args: DiagnoseHardwareEnvironmentArgs): Set<string> {
   if (args.include) return new Set(args.include);
   const sections = new Set<string>(["bridge", "display"]);
@@ -143,24 +153,36 @@ async function readStatusSurface(
   }
 }
 
-export async function diagnoseHardwareEnvironmentImpl(
-  ctx: ToolContext,
-  args: DiagnoseHardwareEnvironmentArgs,
-) {
-  const sections = defaultSections(args);
-  const checks: HardwareCheck[] = [];
-  const endpoint = ctx.client.endpoint;
-  const report: Record<string, unknown> = {
+function createReport(endpoint: string, checks: HardwareCheck[]): HardwareReport {
+  return {
     checks,
     connected: false,
     endpoint,
     overall: "unverified",
   };
+}
 
+function bridgeFailureCheck(endpoint: string, err: unknown): HardwareCheck {
+  return {
+    evidence: { endpoint, reason: friendlyTdError(err) },
+    id: "bridge",
+    recommendation:
+      "Start TouchDesigner and verify the tdmcp bridge is reachable before diagnosing hardware.",
+    status: "fail",
+    title: "TouchDesigner bridge reachable",
+  };
+}
+
+async function collectBridgeDiagnostics(
+  ctx: ToolContext,
+  sections: ReadonlySet<string>,
+  checks: HardwareCheck[],
+  report: HardwareReport,
+): Promise<boolean> {
   try {
     const bridge = await ctx.client.getInfo();
     report.connected = true;
-    report.bridge = bridge;
+    report.bridge = bridge as Record<string, unknown>;
     if (sections.has("bridge")) {
       checks.push({
         evidence: bridge as Record<string, unknown>,
@@ -169,71 +191,100 @@ export async function diagnoseHardwareEnvironmentImpl(
         title: "TouchDesigner bridge reachable",
       });
     }
+    return true;
   } catch (err) {
-    const reason = friendlyTdError(err);
-    checks.push({
-      evidence: { endpoint, reason },
-      id: "bridge",
-      recommendation:
-        "Start TouchDesigner and verify the tdmcp bridge is reachable before diagnosing hardware.",
-      status: "fail",
-      title: "TouchDesigner bridge reachable",
-    });
+    checks.push(bridgeFailureCheck(report.endpoint, err));
     report.overall = overallStatus(checks);
+    return false;
+  }
+}
+
+function displayStatus(monitorError: unknown, enoughMonitors: boolean): CheckStatus {
+  if (monitorError) return "warning";
+  return enoughMonitors ? "pass" : "warning";
+}
+
+async function collectDisplayDiagnostics(
+  ctx: ToolContext,
+  args: DiagnoseHardwareEnvironmentArgs,
+  sections: ReadonlySet<string>,
+  checks: HardwareCheck[],
+  report: HardwareReport,
+): Promise<void> {
+  if (!sections.has("display")) return;
+  try {
+    const system = await ctx.client.getSystemInfo(["monitors", "performMode"]);
+    report.system = system as Record<string, unknown>;
+    const monitors = Array.isArray(system.monitors) ? system.monitors : [];
+    const monitorError = asRecord(system.monitors)?.error;
+    const expected = args.expected_min_monitors ?? 1;
+    const enoughMonitors = monitors.length >= expected;
+    checks.push({
+      evidence: {
+        actual: monitors.length,
+        expected_min_monitors: expected,
+        monitor_error: monitorError,
+        performMode: system.performMode,
+      },
+      id: "display",
+      recommendation: enoughMonitors
+        ? undefined
+        : "Connect/enable the projector or lower expected_min_monitors for this diagnostic pass.",
+      status: displayStatus(monitorError, enoughMonitors),
+      title: "Display/projector topology",
+    });
+  } catch (err) {
+    checks.push({
+      evidence: { reason: friendlyTdError(err) },
+      id: "display",
+      recommendation: "Update or restart the bridge if /api/system is unavailable.",
+      status: "warning",
+      title: "Display/projector topology",
+    });
+  }
+}
+
+async function collectStatusSurfaceDiagnostics(
+  ctx: ToolContext,
+  args: DiagnoseHardwareEnvironmentArgs,
+  sections: ReadonlySet<string>,
+  checks: HardwareCheck[],
+  report: HardwareReport,
+): Promise<void> {
+  if (!sections.has("status_surfaces")) return;
+  const surfaces: Record<string, unknown>[] = [];
+  if (args.status_paths.length === 0) {
+    checks.push({
+      id: "status_surfaces",
+      recommendation:
+        "Pass generated source_status or bridge_status DAT paths to verify live sensor/helper health.",
+      status: "unverified",
+      title: "Generated sensor/helper status surfaces",
+    });
+  }
+  for (const path of args.status_paths) {
+    const { check, payload } = await readStatusSurface(ctx, path);
+    checks.push(check);
+    if (payload) surfaces.push(payload);
+  }
+  report.status_surfaces = surfaces;
+}
+
+export async function diagnoseHardwareEnvironmentImpl(
+  ctx: ToolContext,
+  args: DiagnoseHardwareEnvironmentArgs,
+) {
+  const sections = defaultSections(args);
+  const checks: HardwareCheck[] = [];
+  const endpoint = ctx.client.endpoint;
+  const report = createReport(endpoint, checks);
+  const connected = await collectBridgeDiagnostics(ctx, sections, checks, report);
+  if (!connected) {
     return structuredResult("Hardware environment diagnosis: fail.", report);
   }
 
-  if (sections.has("display")) {
-    try {
-      const system = await ctx.client.getSystemInfo(["monitors", "performMode"]);
-      report.system = system as Record<string, unknown>;
-      const monitors = Array.isArray(system.monitors) ? system.monitors : [];
-      const monitorError = asRecord(system.monitors)?.error;
-      const expected = args.expected_min_monitors ?? 1;
-      const enoughMonitors = monitors.length >= expected;
-      checks.push({
-        evidence: {
-          actual: monitors.length,
-          expected_min_monitors: expected,
-          monitor_error: monitorError,
-          performMode: system.performMode,
-        },
-        id: "display",
-        recommendation: enoughMonitors
-          ? undefined
-          : "Connect/enable the projector or lower expected_min_monitors for this diagnostic pass.",
-        status: monitorError ? "warning" : enoughMonitors ? "pass" : "warning",
-        title: "Display/projector topology",
-      });
-    } catch (err) {
-      checks.push({
-        evidence: { reason: friendlyTdError(err) },
-        id: "display",
-        recommendation: "Update or restart the bridge if /api/system is unavailable.",
-        status: "warning",
-        title: "Display/projector topology",
-      });
-    }
-  }
-
-  if (sections.has("status_surfaces")) {
-    const surfaces: Record<string, unknown>[] = [];
-    if (args.status_paths.length === 0) {
-      checks.push({
-        id: "status_surfaces",
-        recommendation:
-          "Pass generated source_status or bridge_status DAT paths to verify live sensor/helper health.",
-        status: "unverified",
-        title: "Generated sensor/helper status surfaces",
-      });
-    }
-    for (const path of args.status_paths) {
-      const { check, payload } = await readStatusSurface(ctx, path);
-      checks.push(check);
-      if (payload) surfaces.push(payload);
-    }
-    report.status_surfaces = surfaces;
-  }
+  await collectDisplayDiagnostics(ctx, args, sections, checks, report);
+  await collectStatusSurfaceDiagnostics(ctx, args, sections, checks, report);
 
   report.overall = overallStatus(checks);
   return structuredResult(`Hardware environment diagnosis: ${String(report.overall)}.`, report);

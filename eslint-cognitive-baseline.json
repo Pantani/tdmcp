@@ -1,0 +1,2837 @@
+[
+  {
+    "file": "scripts/fetch-shader-park-td.mjs",
+    "line": 26,
+    "column": 10,
+    "complexity": 12,
+    "signature": "parseArgs",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "scripts/fetch-shader-park-td.mjs:parseArgs"
+  },
+  {
+    "file": "scripts/generate-doc-example-clips.mjs",
+    "line": 3901,
+    "column": 10,
+    "complexity": 10,
+    "signature": "cellularAutomataTapestryFrame",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "scripts/generate-doc-example-clips.mjs:cellularAutomataTapestryFrame"
+  },
+  {
+    "file": "scripts/generate-doc-example-clips.mjs",
+    "line": 2983,
+    "column": 10,
+    "complexity": 13,
+    "signature": "cliCompletionDoctorFrame",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 13 to the 9 allowed.",
+    "stableKey": "scripts/generate-doc-example-clips.mjs:cliCompletionDoctorFrame"
+  },
+  {
+    "file": "scripts/generate-doc-example-clips.mjs",
+    "line": 2128,
+    "column": 10,
+    "complexity": 12,
+    "signature": "commandCatalogFrame",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "scripts/generate-doc-example-clips.mjs:commandCatalogFrame"
+  },
+  {
+    "file": "scripts/generate-doc-example-clips.mjs",
+    "line": 2066,
+    "column": 10,
+    "complexity": 12,
+    "signature": "configInitFrame",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "scripts/generate-doc-example-clips.mjs:configInitFrame"
+  },
+  {
+    "file": "scripts/generate-doc-example-clips.mjs",
+    "line": 436,
+    "column": 10,
+    "complexity": 12,
+    "signature": "dashboardFrame",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "scripts/generate-doc-example-clips.mjs:dashboardFrame"
+  },
+  {
+    "file": "scripts/generate-doc-example-clips.mjs",
+    "line": 407,
+    "column": 10,
+    "complexity": 11,
+    "signature": "glslMaterialFrame",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "scripts/generate-doc-example-clips.mjs:glslMaterialFrame"
+  },
+  {
+    "file": "scripts/generate-doc-example-clips.mjs",
+    "line": 1445,
+    "column": 10,
+    "complexity": 14,
+    "signature": "jfaVoronoiFrame",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 14 to the 9 allowed.",
+    "stableKey": "scripts/generate-doc-example-clips.mjs:jfaVoronoiFrame"
+  },
+  {
+    "file": "scripts/generate-doc-example-clips.mjs",
+    "line": 2911,
+    "column": 10,
+    "complexity": 11,
+    "signature": "nChanDecksFxBusFrame",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "scripts/generate-doc-example-clips.mjs:nChanDecksFxBusFrame"
+  },
+  {
+    "file": "scripts/generate-doc-example-clips.mjs",
+    "line": 849,
+    "column": 10,
+    "complexity": 12,
+    "signature": "noiseLandscapeFrame",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "scripts/generate-doc-example-clips.mjs:noiseLandscapeFrame"
+  },
+  {
+    "file": "scripts/generate-doc-example-clips.mjs",
+    "line": 975,
+    "column": 10,
+    "complexity": 11,
+    "signature": "pbrProductFrame",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "scripts/generate-doc-example-clips.mjs:pbrProductFrame"
+  },
+  {
+    "file": "scripts/generate-doc-example-clips.mjs",
+    "line": 239,
+    "column": 10,
+    "complexity": 14,
+    "signature": "polygon",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 14 to the 9 allowed.",
+    "stableKey": "scripts/generate-doc-example-clips.mjs:polygon"
+  },
+  {
+    "file": "scripts/generate-doc-example-clips.mjs",
+    "line": 381,
+    "column": 10,
+    "complexity": 11,
+    "signature": "sceneTimelineFrame",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "scripts/generate-doc-example-clips.mjs:sceneTimelineFrame"
+  },
+  {
+    "file": "scripts/generate-doc-example-clips.mjs",
+    "line": 1588,
+    "column": 10,
+    "complexity": 19,
+    "signature": "tdabletonFrame",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 19 to the 9 allowed.",
+    "stableKey": "scripts/generate-doc-example-clips.mjs:tdabletonFrame"
+  },
+  {
+    "file": "scripts/generate-doc-example-clips.mjs",
+    "line": 774,
+    "column": 10,
+    "complexity": 12,
+    "signature": "timecodeSyncFrame",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "scripts/generate-doc-example-clips.mjs:timecodeSyncFrame"
+  },
+  {
+    "file": "scripts/generate-doc-example-clips.mjs",
+    "line": 2796,
+    "column": 10,
+    "complexity": 12,
+    "signature": "watchBuildHotReloadFrame",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "scripts/generate-doc-example-clips.mjs:watchBuildHotReloadFrame"
+  },
+  {
+    "file": "scripts/kinect-wall-harp-bridge.mjs",
+    "line": 141,
+    "column": 10,
+    "complexity": 11,
+    "signature": "parseArgs",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "scripts/kinect-wall-harp-bridge.mjs:parseArgs"
+  },
+  {
+    "file": "src/automation/aiPartyFanIn.ts",
+    "line": 107,
+    "column": 10,
+    "complexity": 58,
+    "signature": "effectIntent",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 58 to the 9 allowed.",
+    "stableKey": "src/automation/aiPartyFanIn.ts:effectIntent"
+  },
+  {
+    "file": "src/automation/aiPartyGateway.ts",
+    "line": 170,
+    "column": 10,
+    "complexity": 39,
+    "signature": "fallbackForCommand",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 39 to the 9 allowed.",
+    "stableKey": "src/automation/aiPartyGateway.ts:fallbackForCommand"
+  },
+  {
+    "file": "src/automation/aiPartyLive/ollamaClient.ts",
+    "line": 48,
+    "column": 10,
+    "complexity": 22,
+    "signature": "deterministicEnvelope",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 22 to the 9 allowed.",
+    "stableKey": "src/automation/aiPartyLive/ollamaClient.ts:deterministicEnvelope"
+  },
+  {
+    "file": "src/automation/aiPartyLive/ollamaClient.ts",
+    "line": 280,
+    "column": 23,
+    "complexity": 11,
+    "signature": "parseOllamaShowIntent",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/automation/aiPartyLive/ollamaClient.ts:parseOllamaShowIntent"
+  },
+  {
+    "file": "src/automation/aiPartyLive/policy.ts",
+    "line": 183,
+    "column": 17,
+    "complexity": 11,
+    "signature": "evaluateAiPartyPolicy",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/automation/aiPartyLive/policy.ts:evaluateAiPartyPolicy"
+  },
+  {
+    "file": "src/automation/aiPartyLive/policy.ts",
+    "line": 122,
+    "column": 10,
+    "complexity": 12,
+    "signature": "evaluateEffect",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/automation/aiPartyLive/policy.ts:evaluateEffect"
+  },
+  {
+    "file": "src/automation/aiPartyLive/service.ts",
+    "line": 2007,
+    "column": 9,
+    "complexity": 14,
+    "signature": "handleTelegramText",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 14 to the 9 allowed.",
+    "stableKey": "src/automation/aiPartyLive/service.ts:handleTelegramText"
+  },
+  {
+    "file": "src/automation/aiPartyLive/service.ts",
+    "line": 1273,
+    "column": 9,
+    "complexity": 13,
+    "signature": "pollTelegramOnce",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 13 to the 9 allowed.",
+    "stableKey": "src/automation/aiPartyLive/service.ts:pollTelegramOnce"
+  },
+  {
+    "file": "src/automation/aiPartyLive/service.ts",
+    "line": 1206,
+    "column": 17,
+    "complexity": 28,
+    "signature": "private async dispatchPolicyPlan(",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 28 to the 9 allowed.",
+    "stableKey": "src/automation/aiPartyLive/service.ts:private async dispatchPolicyPlan("
+  },
+  {
+    "file": "src/automation/aiPartyLive/service.ts",
+    "line": 1666,
+    "column": 3,
+    "complexity": 11,
+    "signature": "queueAudienceSuggestion(",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/automation/aiPartyLive/service.ts:queueAudienceSuggestion("
+  },
+  {
+    "file": "src/automation/aiPartyLive/service.ts",
+    "line": 2126,
+    "column": 17,
+    "complexity": 117,
+    "signature": "route",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 117 to the 9 allowed.",
+    "stableKey": "src/automation/aiPartyLive/service.ts:route"
+  },
+  {
+    "file": "src/automation/aiPartyLive/service.ts",
+    "line": 1924,
+    "column": 9,
+    "complexity": 11,
+    "signature": "tdPreview",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/automation/aiPartyLive/service.ts:tdPreview"
+  },
+  {
+    "file": "src/automation/aiPartyLive/tdAdapter.ts",
+    "line": 600,
+    "column": 23,
+    "complexity": 15,
+    "signature": "sendAiPartyActionsToTd",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 15 to the 9 allowed.",
+    "stableKey": "src/automation/aiPartyLive/tdAdapter.ts:sendAiPartyActionsToTd"
+  },
+  {
+    "file": "src/automation/aiPartyLive/telegram.ts",
+    "line": 146,
+    "column": 17,
+    "complexity": 16,
+    "signature": "parseAiPartyTelegramCommand",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 16 to the 9 allowed.",
+    "stableKey": "src/automation/aiPartyLive/telegram.ts:parseAiPartyTelegramCommand"
+  },
+  {
+    "file": "src/automation/aiPartyPoc.ts",
+    "line": 156,
+    "column": 17,
+    "complexity": 13,
+    "signature": "runAiPartyPoc",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 13 to the 9 allowed.",
+    "stableKey": "src/automation/aiPartyPoc.ts:runAiPartyPoc"
+  },
+  {
+    "file": "src/automation/macroSchema.ts",
+    "line": 75,
+    "column": 10,
+    "complexity": 11,
+    "signature": "redactValue",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/automation/macroSchema.ts:redactValue"
+  },
+  {
+    "file": "src/automation/macroSchema.ts",
+    "line": 111,
+    "column": 17,
+    "complexity": 11,
+    "signature": "summarizeResult",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/automation/macroSchema.ts:summarizeResult"
+  },
+  {
+    "file": "src/automation/setlistSchema.ts",
+    "line": 325,
+    "column": 10,
+    "complexity": 15,
+    "signature": "ensureIds",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 15 to the 9 allowed.",
+    "stableKey": "src/automation/setlistSchema.ts:ensureIds"
+  },
+  {
+    "file": "src/automation/setlistSchema.ts",
+    "line": 246,
+    "column": 10,
+    "complexity": 15,
+    "signature": "trackToScene",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 15 to the 9 allowed.",
+    "stableKey": "src/automation/setlistSchema.ts:trackToScene"
+  },
+  {
+    "file": "src/automation/showDirectorRuntime.ts",
+    "line": 340,
+    "column": 17,
+    "complexity": 17,
+    "signature": "submitShowIntent",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 17 to the 9 allowed.",
+    "stableKey": "src/automation/showDirectorRuntime.ts:submitShowIntent"
+  },
+  {
+    "file": "src/automation/showDirectorSchema.ts",
+    "line": 326,
+    "column": 17,
+    "complexity": 12,
+    "signature": "evaluateMixerSceneIntent",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/automation/showDirectorSchema.ts:evaluateMixerSceneIntent"
+  },
+  {
+    "file": "src/automation/showDirectorSchema.ts",
+    "line": 400,
+    "column": 17,
+    "complexity": 25,
+    "signature": "evaluateShowIntent",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 25 to the 9 allowed.",
+    "stableKey": "src/automation/showDirectorSchema.ts:evaluateShowIntent"
+  },
+  {
+    "file": "src/automation/showIntentOllama.ts",
+    "line": 113,
+    "column": 10,
+    "complexity": 21,
+    "signature": "firstJsonObject",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 21 to the 9 allowed.",
+    "stableKey": "src/automation/showIntentOllama.ts:firstJsonObject"
+  },
+  {
+    "file": "src/automation/showIntentOllama.ts",
+    "line": 285,
+    "column": 23,
+    "complexity": 11,
+    "signature": "inspectAiPartyOllamaSetup",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/automation/showIntentOllama.ts:inspectAiPartyOllamaSetup"
+  },
+  {
+    "file": "src/cli/agent.ts",
+    "line": 4389,
+    "column": 43,
+    "complexity": 10,
+    "signature": "const onEvent: TdEventHandler = (event) => {",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "src/cli/agent.ts:const onEvent: TdEventHandler = (event) => {"
+  },
+  {
+    "file": "src/cli/agent.ts",
+    "line": 3144,
+    "column": 10,
+    "complexity": 12,
+    "signature": "firstPositionalArg",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/cli/agent.ts:firstPositionalArg"
+  },
+  {
+    "file": "src/cli/agent.ts",
+    "line": 4500,
+    "column": 16,
+    "complexity": 40,
+    "signature": "main",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 40 to the 9 allowed.",
+    "stableKey": "src/cli/agent.ts:main"
+  },
+  {
+    "file": "src/cli/agent.ts",
+    "line": 3416,
+    "column": 23,
+    "complexity": 248,
+    "signature": "runCli",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 248 to the 9 allowed.",
+    "stableKey": "src/cli/agent.ts:runCli"
+  },
+  {
+    "file": "src/cli/agent.ts",
+    "line": 4445,
+    "column": 23,
+    "complexity": 12,
+    "signature": "runRepl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/cli/agent.ts:runRepl"
+  },
+  {
+    "file": "src/cli/ask.ts",
+    "line": 78,
+    "column": 17,
+    "complexity": 10,
+    "signature": "parseAskArgs",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "src/cli/ask.ts:parseAskArgs"
+  },
+  {
+    "file": "src/cli/ask.ts",
+    "line": 139,
+    "column": 23,
+    "complexity": 55,
+    "signature": "runAsk",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 55 to the 9 allowed.",
+    "stableKey": "src/cli/ask.ts:runAsk"
+  },
+  {
+    "file": "src/cli/bridgeWatchBuild.ts",
+    "line": 161,
+    "column": 16,
+    "complexity": 34,
+    "signature": "runPipeline",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 34 to the 9 allowed.",
+    "stableKey": "src/cli/bridgeWatchBuild.ts:runPipeline"
+  },
+  {
+    "file": "src/cli/chat.ts",
+    "line": 211,
+    "column": 23,
+    "complexity": 12,
+    "signature": "runChat",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/cli/chat.ts:runChat"
+  },
+  {
+    "file": "src/cli/controllerToCliBridge.ts",
+    "line": 184,
+    "column": 10,
+    "complexity": 30,
+    "signature": "detectEdge",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 30 to the 9 allowed.",
+    "stableKey": "src/cli/controllerToCliBridge.ts:detectEdge"
+  },
+  {
+    "file": "src/cli/controllerToCliBridge.ts",
+    "line": 434,
+    "column": 23,
+    "complexity": 69,
+    "signature": "runControllerBridge",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 69 to the 9 allowed.",
+    "stableKey": "src/cli/controllerToCliBridge.ts:runControllerBridge"
+  },
+  {
+    "file": "src/cli/doctor.ts",
+    "line": 706,
+    "column": 10,
+    "complexity": 14,
+    "signature": "render",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 14 to the 9 allowed.",
+    "stableKey": "src/cli/doctor.ts:render"
+  },
+  {
+    "file": "src/cli/doctor.ts",
+    "line": 533,
+    "column": 16,
+    "complexity": 28,
+    "signature": "repairBridge",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 28 to the 9 allowed.",
+    "stableKey": "src/cli/doctor.ts:repairBridge"
+  },
+  {
+    "file": "src/cli/doctor.ts",
+    "line": 744,
+    "column": 23,
+    "complexity": 15,
+    "signature": "runDoctor",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 15 to the 9 allowed.",
+    "stableKey": "src/cli/doctor.ts:runDoctor"
+  },
+  {
+    "file": "src/cli/fixtureRecorder.ts",
+    "line": 283,
+    "column": 23,
+    "complexity": 11,
+    "signature": "runFixtureRecorder",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/cli/fixtureRecorder.ts:runFixtureRecorder"
+  },
+  {
+    "file": "src/cli/fixtureRecorder.ts",
+    "line": 170,
+    "column": 92,
+    "complexity": 14,
+    "signature": "wrapRecordingFetch",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 14 to the 9 allowed.",
+    "stableKey": "src/cli/fixtureRecorder.ts:wrapRecordingFetch"
+  },
+  {
+    "file": "src/cli/init.ts",
+    "line": 253,
+    "column": 23,
+    "complexity": 19,
+    "signature": "detectEnvironment",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 19 to the 9 allowed.",
+    "stableKey": "src/cli/init.ts:detectEnvironment"
+  },
+  {
+    "file": "src/cli/init.ts",
+    "line": 106,
+    "column": 17,
+    "complexity": 41,
+    "signature": "parseInitArgs",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 41 to the 9 allowed.",
+    "stableKey": "src/cli/init.ts:parseInitArgs"
+  },
+  {
+    "file": "src/cli/init.ts",
+    "line": 645,
+    "column": 10,
+    "complexity": 11,
+    "signature": "renderSummary",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/cli/init.ts:renderSummary"
+  },
+  {
+    "file": "src/cli/init.ts",
+    "line": 355,
+    "column": 23,
+    "complexity": 85,
+    "signature": "runInit",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 85 to the 9 allowed.",
+    "stableKey": "src/cli/init.ts:runInit"
+  },
+  {
+    "file": "src/cli/installBridge.ts",
+    "line": 191,
+    "column": 10,
+    "complexity": 19,
+    "signature": "parseInstallBridgeArgs",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 19 to the 9 allowed.",
+    "stableKey": "src/cli/installBridge.ts:parseInstallBridgeArgs"
+  },
+  {
+    "file": "src/cli/installBridge.ts",
+    "line": 343,
+    "column": 16,
+    "complexity": 11,
+    "signature": "verifyInstalledBridge",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/cli/installBridge.ts:verifyInstalledBridge"
+  },
+  {
+    "file": "src/cli/installClient.ts",
+    "line": 177,
+    "column": 10,
+    "complexity": 21,
+    "signature": "parseArgs",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 21 to the 9 allowed.",
+    "stableKey": "src/cli/installClient.ts:parseArgs"
+  },
+  {
+    "file": "src/cli/logTailFiltered.ts",
+    "line": 96,
+    "column": 23,
+    "complexity": 11,
+    "signature": "pollOnce",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/cli/logTailFiltered.ts:pollOnce"
+  },
+  {
+    "file": "src/cli/logTailFiltered.ts",
+    "line": 163,
+    "column": 23,
+    "complexity": 10,
+    "signature": "runLogTailFiltered",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "src/cli/logTailFiltered.ts:runLogTailFiltered"
+  },
+  {
+    "file": "src/cli/panicBlackout.ts",
+    "line": 116,
+    "column": 10,
+    "complexity": 10,
+    "signature": "describeTransition",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "src/cli/panicBlackout.ts:describeTransition"
+  },
+  {
+    "file": "src/cli/panicBlackout.ts",
+    "line": 190,
+    "column": 23,
+    "complexity": 24,
+    "signature": "runPanic",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 24 to the 9 allowed.",
+    "stableKey": "src/cli/panicBlackout.ts:runPanic"
+  },
+  {
+    "file": "src/cli/remoteAndFanout.ts",
+    "line": 307,
+    "column": 16,
+    "complexity": 18,
+    "signature": "async function runChunked<T>(",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 18 to the 9 allowed.",
+    "stableKey": "src/cli/remoteAndFanout.ts:async function runChunked<T>("
+  },
+  {
+    "file": "src/cli/remoteAndFanout.ts",
+    "line": 200,
+    "column": 16,
+    "complexity": 14,
+    "signature": "callOneTarget",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 14 to the 9 allowed.",
+    "stableKey": "src/cli/remoteAndFanout.ts:callOneTarget"
+  },
+  {
+    "file": "src/cli/remoteAndFanout.ts",
+    "line": 88,
+    "column": 10,
+    "complexity": 31,
+    "signature": "parseArgv",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 31 to the 9 allowed.",
+    "stableKey": "src/cli/remoteAndFanout.ts:parseArgv"
+  },
+  {
+    "file": "src/cli/scheduler.ts",
+    "line": 456,
+    "column": 18,
+    "complexity": 22,
+    "signature": "fire",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 22 to the 9 allowed.",
+    "stableKey": "src/cli/scheduler.ts:fire"
+  },
+  {
+    "file": "src/cli/scheduler.ts",
+    "line": 109,
+    "column": 17,
+    "complexity": 13,
+    "signature": "shellSplit",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 13 to the 9 allowed.",
+    "stableKey": "src/cli/scheduler.ts:shellSplit"
+  },
+  {
+    "file": "src/cli/scheduler.ts",
+    "line": 573,
+    "column": 17,
+    "complexity": 13,
+    "signature": "tzInfo",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 13 to the 9 allowed.",
+    "stableKey": "src/cli/scheduler.ts:tzInfo"
+  },
+  {
+    "file": "src/cli/setlistRunner.ts",
+    "line": 353,
+    "column": 17,
+    "complexity": 16,
+    "signature": "(async () => {",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 16 to the 9 allowed.",
+    "stableKey": "src/cli/setlistRunner.ts:(async () => {"
+  },
+  {
+    "file": "src/cli/setlistRunner.ts",
+    "line": 216,
+    "column": 23,
+    "complexity": 82,
+    "signature": "runSetlist",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 82 to the 9 allowed.",
+    "stableKey": "src/cli/setlistRunner.ts:runSetlist"
+  },
+  {
+    "file": "src/cli/soundcheckMonitor.ts",
+    "line": 342,
+    "column": 40,
+    "complexity": 14,
+    "signature": "const tick = async (): Promise<void> => {",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 14 to the 9 allowed.",
+    "stableKey": "src/cli/soundcheckMonitor.ts:const tick = async (): Promise<void> => {"
+  },
+  {
+    "file": "src/cli/soundcheckMonitor.ts",
+    "line": 150,
+    "column": 17,
+    "complexity": 34,
+    "signature": "evaluateWindow",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 34 to the 9 allowed.",
+    "stableKey": "src/cli/soundcheckMonitor.ts:evaluateWindow"
+  },
+  {
+    "file": "src/cli/telegram.ts",
+    "line": 113,
+    "column": 17,
+    "complexity": 18,
+    "signature": "parseTelegramArgs",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 18 to the 9 allowed.",
+    "stableKey": "src/cli/telegram.ts:parseTelegramArgs"
+  },
+  {
+    "file": "src/cli/telegram.ts",
+    "line": 416,
+    "column": 23,
+    "complexity": 15,
+    "signature": "runTelegram",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 15 to the 9 allowed.",
+    "stableKey": "src/cli/telegram.ts:runTelegram"
+  },
+  {
+    "file": "src/cli/tui.ts",
+    "line": 257,
+    "column": 10,
+    "complexity": 10,
+    "signature": "coerce",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "src/cli/tui.ts:coerce"
+  },
+  {
+    "file": "src/cli/tui.ts",
+    "line": 366,
+    "column": 10,
+    "complexity": 10,
+    "signature": "eventDetail",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "src/cli/tui.ts:eventDetail"
+  },
+  {
+    "file": "src/cli/tui.ts",
+    "line": 219,
+    "column": 17,
+    "complexity": 15,
+    "signature": "parseArgv",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 15 to the 9 allowed.",
+    "stableKey": "src/cli/tui.ts:parseArgv"
+  },
+  {
+    "file": "src/cli/tui.ts",
+    "line": 118,
+    "column": 17,
+    "complexity": 36,
+    "signature": "renderFrame",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 36 to the 9 allowed.",
+    "stableKey": "src/cli/tui.ts:renderFrame"
+  },
+  {
+    "file": "src/cli/tui.ts",
+    "line": 458,
+    "column": 23,
+    "complexity": 12,
+    "signature": "runDashboard",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/cli/tui.ts:runDashboard"
+  },
+  {
+    "file": "src/creativeRag/cli.ts",
+    "line": 314,
+    "column": 16,
+    "complexity": 10,
+    "signature": "runSearch",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "src/creativeRag/cli.ts:runSearch"
+  },
+  {
+    "file": "src/creativeRag/indexStore.ts",
+    "line": 116,
+    "column": 10,
+    "complexity": 12,
+    "signature": "matchesFilters",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/creativeRag/indexStore.ts:matchesFilters"
+  },
+  {
+    "file": "src/creativeRag/lanceIndexStore.ts",
+    "line": 376,
+    "column": 10,
+    "complexity": 12,
+    "signature": "matchesFilters",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/creativeRag/lanceIndexStore.ts:matchesFilters"
+  },
+  {
+    "file": "src/creativeRag/ollamaClient.ts",
+    "line": 63,
+    "column": 17,
+    "complexity": 18,
+    "signature": "embedChunk",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 18 to the 9 allowed.",
+    "stableKey": "src/creativeRag/ollamaClient.ts:embedChunk"
+  },
+  {
+    "file": "src/creativeRag/service.ts",
+    "line": 227,
+    "column": 18,
+    "complexity": 11,
+    "signature": "index",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/creativeRag/service.ts:index"
+  },
+  {
+    "file": "src/creativeRag/service.ts",
+    "line": 143,
+    "column": 18,
+    "complexity": 34,
+    "signature": "sync",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 34 to the 9 allowed.",
+    "stableKey": "src/creativeRag/service.ts:sync"
+  },
+  {
+    "file": "src/creativeRag/sources/rijksmuseum.ts",
+    "line": 197,
+    "column": 9,
+    "complexity": 12,
+    "signature": "async fetchItems(",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/creativeRag/sources/rijksmuseum.ts:async fetchItems("
+  },
+  {
+    "file": "src/creativeRag/sources/rijksmuseum.ts",
+    "line": 116,
+    "column": 10,
+    "complexity": 11,
+    "signature": "extractRightsUri",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/creativeRag/sources/rijksmuseum.ts:extractRightsUri"
+  },
+  {
+    "file": "src/index.ts",
+    "line": 11,
+    "column": 16,
+    "complexity": 28,
+    "signature": "main",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 28 to the 9 allowed.",
+    "stableKey": "src/index.ts:main"
+  },
+  {
+    "file": "src/integrations/shaderPark.ts",
+    "line": 82,
+    "column": 10,
+    "complexity": 12,
+    "signature": "isShaderParkModuleNotFound",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/integrations/shaderPark.ts:isShaderParkModuleNotFound"
+  },
+  {
+    "file": "src/knowledge/index.ts",
+    "line": 1081,
+    "column": 3,
+    "complexity": 12,
+    "signature": "getTdVersionPythonApiAdditions",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/knowledge/index.ts:getTdVersionPythonApiAdditions"
+  },
+  {
+    "file": "src/knowledge/index.ts",
+    "line": 526,
+    "column": 3,
+    "complexity": 12,
+    "signature": "searchOperators",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/knowledge/index.ts:searchOperators"
+  },
+  {
+    "file": "src/knowledge/index.ts",
+    "line": 706,
+    "column": 3,
+    "complexity": 11,
+    "signature": "searchTechniques",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/knowledge/index.ts:searchTechniques"
+  },
+  {
+    "file": "src/knowledge/index.ts",
+    "line": 368,
+    "column": 3,
+    "complexity": 12,
+    "signature": "suggestNextOperators",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/knowledge/index.ts:suggestNextOperators"
+  },
+  {
+    "file": "src/knowledge/normalize.ts",
+    "line": 103,
+    "column": 14,
+    "complexity": 10,
+    "signature": "normalizeGlsl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "src/knowledge/normalize.ts:normalizeGlsl"
+  },
+  {
+    "file": "src/llm/agent.ts",
+    "line": 92,
+    "column": 23,
+    "complexity": 14,
+    "signature": "runAgentTurn",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 14 to the 9 allowed.",
+    "stableKey": "src/llm/agent.ts:runAgentTurn"
+  },
+  {
+    "file": "src/llm/client.ts",
+    "line": 233,
+    "column": 9,
+    "complexity": 16,
+    "signature": "constructor",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 16 to the 9 allowed.",
+    "stableKey": "src/llm/client.ts:constructor"
+  },
+  {
+    "file": "src/llm/client.ts",
+    "line": 156,
+    "column": 3,
+    "complexity": 12,
+    "signature": "push",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/llm/client.ts:push"
+  },
+  {
+    "file": "src/llm/projectRagSearchTool.ts",
+    "line": 39,
+    "column": 50,
+    "complexity": 11,
+    "signature": "run",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/llm/projectRagSearchTool.ts:run"
+  },
+  {
+    "file": "src/llm/server.ts",
+    "line": 195,
+    "column": 26,
+    "complexity": 17,
+    "signature": "run",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 17 to the 9 allowed.",
+    "stableKey": "src/llm/server.ts:run"
+  },
+  {
+    "file": "src/packages/cli.ts",
+    "line": 88,
+    "column": 23,
+    "complexity": 71,
+    "signature": "runPackageCli",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 71 to the 9 allowed.",
+    "stableKey": "src/packages/cli.ts:runPackageCli"
+  },
+  {
+    "file": "src/packages/github.ts",
+    "line": 194,
+    "column": 23,
+    "complexity": 13,
+    "signature": "downloadToFile",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 13 to the 9 allowed.",
+    "stableKey": "src/packages/github.ts:downloadToFile"
+  },
+  {
+    "file": "src/packages/installer.ts",
+    "line": 98,
+    "column": 23,
+    "complexity": 31,
+    "signature": "installPackage",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 31 to the 9 allowed.",
+    "stableKey": "src/packages/installer.ts:installPackage"
+  },
+  {
+    "file": "src/projectRag/cli.ts",
+    "line": 551,
+    "column": 16,
+    "complexity": 12,
+    "signature": "runAnalyze",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/projectRag/cli.ts:runAnalyze"
+  },
+  {
+    "file": "src/projectRag/cli.ts",
+    "line": 577,
+    "column": 16,
+    "complexity": 11,
+    "signature": "runBridge",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/projectRag/cli.ts:runBridge"
+  },
+  {
+    "file": "src/projectRag/cli.ts",
+    "line": 378,
+    "column": 16,
+    "complexity": 12,
+    "signature": "runDiscovery",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/projectRag/cli.ts:runDiscovery"
+  },
+  {
+    "file": "src/projectRag/cli.ts",
+    "line": 411,
+    "column": 16,
+    "complexity": 10,
+    "signature": "runSync",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "src/projectRag/cli.ts:runSync"
+  },
+  {
+    "file": "src/projectRag/extractors/githubLicense.ts",
+    "line": 45,
+    "column": 23,
+    "complexity": 11,
+    "signature": "fetchGithubLicense",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/projectRag/extractors/githubLicense.ts:fetchGithubLicense"
+  },
+  {
+    "file": "src/projectRag/indexStore.ts",
+    "line": 118,
+    "column": 10,
+    "complexity": 19,
+    "signature": "matchesFilters",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 19 to the 9 allowed.",
+    "stableKey": "src/projectRag/indexStore.ts:matchesFilters"
+  },
+  {
+    "file": "src/projectRag/service.ts",
+    "line": 618,
+    "column": 10,
+    "complexity": 12,
+    "signature": "buildCardFromItem",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/projectRag/service.ts:buildCardFromItem"
+  },
+  {
+    "file": "src/projectRag/service.ts",
+    "line": 403,
+    "column": 18,
+    "complexity": 10,
+    "signature": "index",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "src/projectRag/service.ts:index"
+  },
+  {
+    "file": "src/projectRag/service.ts",
+    "line": 476,
+    "column": 18,
+    "complexity": 11,
+    "signature": "listSources",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/projectRag/service.ts:listSources"
+  },
+  {
+    "file": "src/projectRag/service.ts",
+    "line": 348,
+    "column": 18,
+    "complexity": 17,
+    "signature": "runBridgePass",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 17 to the 9 allowed.",
+    "stableKey": "src/projectRag/service.ts:runBridgePass"
+  },
+  {
+    "file": "src/projectRag/service.ts",
+    "line": 185,
+    "column": 18,
+    "complexity": 83,
+    "signature": "sync",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 83 to the 9 allowed.",
+    "stableKey": "src/projectRag/service.ts:sync"
+  },
+  {
+    "file": "src/projectRag/sources/awesomeList.ts",
+    "line": 108,
+    "column": 17,
+    "complexity": 12,
+    "signature": "parseAwesomeReadme",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/projectRag/sources/awesomeList.ts:parseAwesomeReadme"
+  },
+  {
+    "file": "src/projectRag/sources/githubRepo.ts",
+    "line": 135,
+    "column": 16,
+    "complexity": 11,
+    "signature": "fetchOneRepo",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/projectRag/sources/githubRepo.ts:fetchOneRepo"
+  },
+  {
+    "file": "src/projectRag/sources/githubTopic.ts",
+    "line": 202,
+    "column": 16,
+    "complexity": 12,
+    "signature": "buildItemFromSearch",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/projectRag/sources/githubTopic.ts:buildItemFromSearch"
+  },
+  {
+    "file": "src/projectRag/sources/githubTopic.ts",
+    "line": 165,
+    "column": 16,
+    "complexity": 20,
+    "signature": "scanTopic",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 20 to the 9 allowed.",
+    "stableKey": "src/projectRag/sources/githubTopic.ts:scanTopic"
+  },
+  {
+    "file": "src/prompts/creativeInspiration.ts",
+    "line": 37,
+    "column": 23,
+    "complexity": 12,
+    "signature": "creativeInspirationImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/prompts/creativeInspiration.ts:creativeInspirationImpl"
+  },
+  {
+    "file": "src/prompts/projectRagContext.ts",
+    "line": 51,
+    "column": 23,
+    "complexity": 11,
+    "signature": "projectRagContextImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/prompts/projectRagContext.ts:projectRagContextImpl"
+  },
+  {
+    "file": "src/recipes/loader.ts",
+    "line": 87,
+    "column": 3,
+    "complexity": 11,
+    "signature": "findByTags",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/recipes/loader.ts:findByTags"
+  },
+  {
+    "file": "src/recipes/loader.ts",
+    "line": 30,
+    "column": 11,
+    "complexity": 20,
+    "signature": "load",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 20 to the 9 allowed.",
+    "stableKey": "src/recipes/loader.ts:load"
+  },
+  {
+    "file": "src/resources/graphDigest.ts",
+    "line": 224,
+    "column": 10,
+    "complexity": 28,
+    "signature": "applyBudget",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 28 to the 9 allowed.",
+    "stableKey": "src/resources/graphDigest.ts:applyBudget"
+  },
+  {
+    "file": "src/resources/graphDigest.ts",
+    "line": 314,
+    "column": 23,
+    "complexity": 13,
+    "signature": "buildDigest",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 13 to the 9 allowed.",
+    "stableKey": "src/resources/graphDigest.ts:buildDigest"
+  },
+  {
+    "file": "src/resources/graphDigest.ts",
+    "line": 151,
+    "column": 10,
+    "complexity": 15,
+    "signature": "walkOutputChain",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 15 to the 9 allowed.",
+    "stableKey": "src/resources/graphDigest.ts:walkOutputChain"
+  },
+  {
+    "file": "src/resources/sceneSummary.ts",
+    "line": 120,
+    "column": 23,
+    "complexity": 10,
+    "signature": "fetchSceneCurrent",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "src/resources/sceneSummary.ts:fetchSceneCurrent"
+  },
+  {
+    "file": "src/resources/sceneSummary.ts",
+    "line": 228,
+    "column": 23,
+    "complexity": 10,
+    "signature": "fetchSceneOperators",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "src/resources/sceneSummary.ts:fetchSceneOperators"
+  },
+  {
+    "file": "src/server/transportFactory.ts",
+    "line": 110,
+    "column": 18,
+    "complexity": 18,
+    "signature": "handle",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 18 to the 9 allowed.",
+    "stableKey": "src/server/transportFactory.ts:handle"
+  },
+  {
+    "file": "src/td-client/touchDesignerClient.ts",
+    "line": 188,
+    "column": 17,
+    "complexity": 19,
+    "signature": "endpoint",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 19 to the 9 allowed.",
+    "stableKey": "src/td-client/touchDesignerClient.ts:endpoint"
+  },
+  {
+    "file": "src/td-client/touchDesignerClient.ts",
+    "line": 89,
+    "column": 10,
+    "complexity": 14,
+    "signature": "parseStdoutJson",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 14 to the 9 allowed.",
+    "stableKey": "src/td-client/touchDesignerClient.ts:parseStdoutJson"
+  },
+  {
+    "file": "src/td-client/touchDesignerClient.ts",
+    "line": 230,
+    "column": 17,
+    "complexity": 15,
+    "signature": "private async attemptRequest<T>(",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 15 to the 9 allowed.",
+    "stableKey": "src/td-client/touchDesignerClient.ts:private async attemptRequest<T>("
+  },
+  {
+    "file": "src/telegram/client.ts",
+    "line": 94,
+    "column": 17,
+    "complexity": 12,
+    "signature": "deleteWebhook",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/telegram/client.ts:deleteWebhook"
+  },
+  {
+    "file": "src/telegram/copilot.ts",
+    "line": 110,
+    "column": 17,
+    "complexity": 13,
+    "signature": "if",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 13 to the 9 allowed.",
+    "stableKey": "src/telegram/copilot.ts:if"
+  },
+  {
+    "file": "src/tools/ai/loadSessionProfile.ts",
+    "line": 168,
+    "column": 23,
+    "complexity": 19,
+    "signature": "loadSessionProfileImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 19 to the 9 allowed.",
+    "stableKey": "src/tools/ai/loadSessionProfile.ts:loadSessionProfileImpl"
+  },
+  {
+    "file": "src/tools/ai/loadSessionProfile.ts",
+    "line": 121,
+    "column": 10,
+    "complexity": 17,
+    "signature": "readProfile",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 17 to the 9 allowed.",
+    "stableKey": "src/tools/ai/loadSessionProfile.ts:readProfile"
+  },
+  {
+    "file": "src/tools/cli/macroRecorder.ts",
+    "line": 33,
+    "column": 23,
+    "complexity": 32,
+    "signature": "macroRecorderImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 32 to the 9 allowed.",
+    "stableKey": "src/tools/cli/macroRecorder.ts:macroRecorderImpl"
+  },
+  {
+    "file": "src/tools/cli/runMacroScript.ts",
+    "line": 90,
+    "column": 23,
+    "complexity": 36,
+    "signature": "runMacroScriptImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 36 to the 9 allowed.",
+    "stableKey": "src/tools/cli/runMacroScript.ts:runMacroScriptImpl"
+  },
+  {
+    "file": "src/tools/foundation/glslTopMapping.ts",
+    "line": 704,
+    "column": 17,
+    "complexity": 12,
+    "signature": "applyShadertoyUniforms",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/tools/foundation/glslTopMapping.ts:applyShadertoyUniforms"
+  },
+  {
+    "file": "src/tools/foundation/glslTopMapping.ts",
+    "line": 421,
+    "column": 17,
+    "complexity": 15,
+    "signature": "mapIsfFragmentToFragment",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 15 to the 9 allowed.",
+    "stableKey": "src/tools/foundation/glslTopMapping.ts:mapIsfFragmentToFragment"
+  },
+  {
+    "file": "src/tools/foundation/glslTopMapping.ts",
+    "line": 256,
+    "column": 17,
+    "complexity": 36,
+    "signature": "mapIsfInputsToBindings",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 36 to the 9 allowed.",
+    "stableKey": "src/tools/foundation/glslTopMapping.ts:mapIsfInputsToBindings"
+  },
+  {
+    "file": "src/tools/foundation/glslTopMapping.ts",
+    "line": 149,
+    "column": 17,
+    "complexity": 13,
+    "signature": "mapShadertoyMainImageToFragment",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 13 to the 9 allowed.",
+    "stableKey": "src/tools/foundation/glslTopMapping.ts:mapShadertoyMainImageToFragment"
+  },
+  {
+    "file": "src/tools/foundation/glslTopMapping.ts",
+    "line": 615,
+    "column": 23,
+    "complexity": 10,
+    "signature": "wireGlslChannels",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "src/tools/foundation/glslTopMapping.ts:wireGlslChannels"
+  },
+  {
+    "file": "src/tools/foundation/glslTopMapping.ts",
+    "line": 549,
+    "column": 23,
+    "complexity": 33,
+    "signature": "writeUniformSequences",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 33 to the 9 allowed.",
+    "stableKey": "src/tools/foundation/glslTopMapping.ts:writeUniformSequences"
+  },
+  {
+    "file": "src/tools/layer1/applyCreativeCard.ts",
+    "line": 138,
+    "column": 23,
+    "complexity": 16,
+    "signature": "applyCreativeCardImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 16 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/applyCreativeCard.ts:applyCreativeCardImpl"
+  },
+  {
+    "file": "src/tools/layer1/audioFingerprintToVisual.ts",
+    "line": 424,
+    "column": 23,
+    "complexity": 15,
+    "signature": "audioFingerprintToVisualImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 15 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/audioFingerprintToVisual.ts:audioFingerprintToVisualImpl"
+  },
+  {
+    "file": "src/tools/layer1/audioFingerprintToVisual.ts",
+    "line": 111,
+    "column": 17,
+    "complexity": 13,
+    "signature": "classify",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 13 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/audioFingerprintToVisual.ts:classify"
+  },
+  {
+    "file": "src/tools/layer1/composeCueList.ts",
+    "line": 353,
+    "column": 23,
+    "complexity": 21,
+    "signature": "composeCueListImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 21 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/composeCueList.ts:composeCueListImpl"
+  },
+  {
+    "file": "src/tools/layer1/composeCueList.ts",
+    "line": 248,
+    "column": 10,
+    "complexity": 63,
+    "signature": "grammarParse",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 63 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/composeCueList.ts:grammarParse"
+  },
+  {
+    "file": "src/tools/layer1/create3dScene.ts",
+    "line": 49,
+    "column": 28,
+    "complexity": 14,
+    "signature": "create3dSceneImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 14 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/create3dScene.ts:create3dSceneImpl"
+  },
+  {
+    "file": "src/tools/layer1/createAiMirror.ts",
+    "line": 263,
+    "column": 28,
+    "complexity": 14,
+    "signature": "createAiMirrorImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 14 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/createAiMirror.ts:createAiMirrorImpl"
+  },
+  {
+    "file": "src/tools/layer1/createAiMirror.ts",
+    "line": 133,
+    "column": 10,
+    "complexity": 13,
+    "signature": "parseSdEnvelope",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 13 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/createAiMirror.ts:parseSdEnvelope"
+  },
+  {
+    "file": "src/tools/layer1/createAudioReactive.ts",
+    "line": 198,
+    "column": 28,
+    "complexity": 20,
+    "signature": "if",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 20 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/createAudioReactive.ts:if"
+  },
+  {
+    "file": "src/tools/layer1/createDepthPopField.ts",
+    "line": 124,
+    "column": 28,
+    "complexity": 18,
+    "signature": "createDepthPopFieldImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 18 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/createDepthPopField.ts:createDepthPopFieldImpl"
+  },
+  {
+    "file": "src/tools/layer1/createDepthSilhouette.ts",
+    "line": 132,
+    "column": 28,
+    "complexity": 10,
+    "signature": "createDepthSilhouetteImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/createDepthSilhouette.ts:createDepthSilhouetteImpl"
+  },
+  {
+    "file": "src/tools/layer1/createDisplacementWarp.ts",
+    "line": 59,
+    "column": 28,
+    "complexity": 14,
+    "signature": "createDisplacementWarpImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 14 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/createDisplacementWarp.ts:createDisplacementWarpImpl"
+  },
+  {
+    "file": "src/tools/layer1/createFacadeMapping.ts",
+    "line": 324,
+    "column": 28,
+    "complexity": 10,
+    "signature": "createFacadeMappingImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/createFacadeMapping.ts:createFacadeMappingImpl"
+  },
+  {
+    "file": "src/tools/layer1/createGaussianSplatScene.ts",
+    "line": 187,
+    "column": 28,
+    "complexity": 10,
+    "signature": "import",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/createGaussianSplatScene.ts:import"
+  },
+  {
+    "file": "src/tools/layer1/createGenerativeAudio.ts",
+    "line": 146,
+    "column": 28,
+    "complexity": 23,
+    "signature": "createGenerativeAudioImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 23 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/createGenerativeAudio.ts:createGenerativeAudioImpl"
+  },
+  {
+    "file": "src/tools/layer1/createImageToParticles.ts",
+    "line": 187,
+    "column": 28,
+    "complexity": 15,
+    "signature": "createImageToParticlesImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 15 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/createImageToParticles.ts:createImageToParticlesImpl"
+  },
+  {
+    "file": "src/tools/layer1/createKeyer.ts",
+    "line": 52,
+    "column": 28,
+    "complexity": 17,
+    "signature": "createKeyerImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 17 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/createKeyer.ts:createKeyerImpl"
+  },
+  {
+    "file": "src/tools/layer1/createKineticText.ts",
+    "line": 77,
+    "column": 28,
+    "complexity": 10,
+    "signature": "createKineticTextImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/createKineticText.ts:createKineticTextImpl"
+  },
+  {
+    "file": "src/tools/layer1/createLayerMixer.ts",
+    "line": 43,
+    "column": 28,
+    "complexity": 13,
+    "signature": "createLayerMixerImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 13 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/createLayerMixer.ts:createLayerMixerImpl"
+  },
+  {
+    "file": "src/tools/layer1/createLayerStack.ts",
+    "line": 97,
+    "column": 28,
+    "complexity": 13,
+    "signature": "createLayerStackImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 13 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/createLayerStack.ts:createLayerStackImpl"
+  },
+  {
+    "file": "src/tools/layer1/createLiveSource.ts",
+    "line": 67,
+    "column": 28,
+    "complexity": 11,
+    "signature": "createLiveSourceImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/createLiveSource.ts:createLiveSourceImpl"
+  },
+  {
+    "file": "src/tools/layer1/createMediaBin.ts",
+    "line": 174,
+    "column": 28,
+    "complexity": 15,
+    "signature": "createMediaBinImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 15 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/createMediaBin.ts:createMediaBinImpl"
+  },
+  {
+    "file": "src/tools/layer1/createMultiOutput.ts",
+    "line": 68,
+    "column": 28,
+    "complexity": 34,
+    "signature": "createMultiOutputImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 34 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/createMultiOutput.ts:createMultiOutputImpl"
+  },
+  {
+    "file": "src/tools/layer1/createMultipass3dDepth.ts",
+    "line": 59,
+    "column": 28,
+    "complexity": 14,
+    "signature": "multipass3dDepthImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 14 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/createMultipass3dDepth.ts:multipass3dDepthImpl"
+  },
+  {
+    "file": "src/tools/layer1/createPopParticleSystem.ts",
+    "line": 85,
+    "column": 28,
+    "complexity": 15,
+    "signature": "createPopParticleSystemImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 15 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/createPopParticleSystem.ts:createPopParticleSystemImpl"
+  },
+  {
+    "file": "src/tools/layer1/createPoseControlnetDriver.ts",
+    "line": 300,
+    "column": 28,
+    "complexity": 20,
+    "signature": "if",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 20 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/createPoseControlnetDriver.ts:if"
+  },
+  {
+    "file": "src/tools/layer1/createProbSequencer.ts",
+    "line": 266,
+    "column": 23,
+    "complexity": 20,
+    "signature": "createProbSequencerImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 20 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/createProbSequencer.ts:createProbSequencerImpl"
+  },
+  {
+    "file": "src/tools/layer1/createSafetyBlackoutChain.ts",
+    "line": 113,
+    "column": 28,
+    "complexity": 28,
+    "signature": "createSafetyBlackoutChainImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 28 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/createSafetyBlackoutChain.ts:createSafetyBlackoutChainImpl"
+  },
+  {
+    "file": "src/tools/layer1/createSdfField.ts",
+    "line": 221,
+    "column": 10,
+    "complexity": 19,
+    "signature": "generateSceneDist",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 19 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/createSdfField.ts:generateSceneDist"
+  },
+  {
+    "file": "src/tools/layer1/createShowFailover.ts",
+    "line": 195,
+    "column": 28,
+    "complexity": 12,
+    "signature": "createShowFailoverImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/createShowFailover.ts:createShowFailoverImpl"
+  },
+  {
+    "file": "src/tools/layer1/createStrangeAttractor.ts",
+    "line": 237,
+    "column": 28,
+    "complexity": 13,
+    "signature": "createStrangeAttractorImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 13 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/createStrangeAttractor.ts:createStrangeAttractorImpl"
+  },
+  {
+    "file": "src/tools/layer1/createVideoPlayer.ts",
+    "line": 25,
+    "column": 28,
+    "complexity": 12,
+    "signature": "createVideoPlayerImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/createVideoPlayer.ts:createVideoPlayerImpl"
+  },
+  {
+    "file": "src/tools/layer1/createVideoScopes.ts",
+    "line": 210,
+    "column": 16,
+    "complexity": 11,
+    "signature": "buildParadePanel",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/createVideoScopes.ts:buildParadePanel"
+  },
+  {
+    "file": "src/tools/layer1/createVideoScopes.ts",
+    "line": 474,
+    "column": 28,
+    "complexity": 22,
+    "signature": "if",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 22 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/createVideoScopes.ts:if"
+  },
+  {
+    "file": "src/tools/layer1/createVoxelStack.ts",
+    "line": 82,
+    "column": 28,
+    "complexity": 11,
+    "signature": "createVoxelStackImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/createVoxelStack.ts:createVoxelStackImpl"
+  },
+  {
+    "file": "src/tools/layer1/describeProject.ts",
+    "line": 11,
+    "column": 17,
+    "complexity": 17,
+    "signature": "describeProjectImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 17 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/describeProject.ts:describeProjectImpl"
+  },
+  {
+    "file": "src/tools/layer1/driveStreamdiffusion.ts",
+    "line": 165,
+    "column": 28,
+    "complexity": 20,
+    "signature": "import",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 20 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/driveStreamdiffusion.ts:import"
+  },
+  {
+    "file": "src/tools/layer1/enhanceBuild.ts",
+    "line": 174,
+    "column": 23,
+    "complexity": 61,
+    "signature": "enhanceBuildImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 61 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/enhanceBuild.ts:enhanceBuildImpl"
+  },
+  {
+    "file": "src/tools/layer1/importIsfShader.ts",
+    "line": 99,
+    "column": 17,
+    "complexity": 63,
+    "signature": "extractIsfHeader",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 63 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/importIsfShader.ts:extractIsfHeader"
+  },
+  {
+    "file": "src/tools/layer1/importShadertoy.ts",
+    "line": 103,
+    "column": 16,
+    "complexity": 12,
+    "signature": "fetchShaderById",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/importShadertoy.ts:fetchShaderById"
+  },
+  {
+    "file": "src/tools/layer1/moodboardToSystem.ts",
+    "line": 402,
+    "column": 10,
+    "complexity": 15,
+    "signature": "buildGeneratorArgs",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 15 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/moodboardToSystem.ts:buildGeneratorArgs"
+  },
+  {
+    "file": "src/tools/layer1/moodboardToSystem.ts",
+    "line": 540,
+    "column": 23,
+    "complexity": 39,
+    "signature": "moodboardToSystemImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 39 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/moodboardToSystem.ts:moodboardToSystemImpl"
+  },
+  {
+    "file": "src/tools/layer1/moodboardToSystem.ts",
+    "line": 179,
+    "column": 10,
+    "complexity": 11,
+    "signature": "resolveImagePath",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/moodboardToSystem.ts:resolveImagePath"
+  },
+  {
+    "file": "src/tools/layer1/setupOutput.ts",
+    "line": 52,
+    "column": 28,
+    "complexity": 10,
+    "signature": "setupOutputImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/setupOutput.ts:setupOutputImpl"
+  },
+  {
+    "file": "src/tools/layer2/autoRepairLoop.ts",
+    "line": 211,
+    "column": 14,
+    "complexity": 48,
+    "signature": "async () => {",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 48 to the 9 allowed.",
+    "stableKey": "src/tools/layer2/autoRepairLoop.ts:async () => {"
+  },
+  {
+    "file": "src/tools/layer2/connectHelper.ts",
+    "line": 28,
+    "column": 23,
+    "complexity": 11,
+    "signature": "connectNodesViaBridge",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/tools/layer2/connectHelper.ts:connectNodesViaBridge"
+  },
+  {
+    "file": "src/tools/layer2/createDecks.ts",
+    "line": 210,
+    "column": 16,
+    "complexity": 13,
+    "signature": "createNChannelDecks",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 13 to the 9 allowed.",
+    "stableKey": "src/tools/layer2/createDecks.ts:createNChannelDecks"
+  },
+  {
+    "file": "src/tools/layer2/createEuclideanSequencer.ts",
+    "line": 86,
+    "column": 17,
+    "complexity": 10,
+    "signature": "bjorklundPattern",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "src/tools/layer2/createEuclideanSequencer.ts:bjorklundPattern"
+  },
+  {
+    "file": "src/tools/layer2/createGlslMaterial.ts",
+    "line": 89,
+    "column": 14,
+    "complexity": 18,
+    "signature": "createGlslMaterialImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 18 to the 9 allowed.",
+    "stableKey": "src/tools/layer2/createGlslMaterial.ts:createGlslMaterialImpl"
+  },
+  {
+    "file": "src/tools/layer2/createGlslShader.ts",
+    "line": 49,
+    "column": 14,
+    "complexity": 11,
+    "signature": "createGlslShaderImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/tools/layer2/createGlslShader.ts:createGlslShaderImpl"
+  },
+  {
+    "file": "src/tools/layer2/createLookBank.ts",
+    "line": 496,
+    "column": 14,
+    "complexity": 16,
+    "signature": "(report) => {",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 16 to the 9 allowed.",
+    "stableKey": "src/tools/layer2/createLookBank.ts:(report) => {"
+  },
+  {
+    "file": "src/tools/layer2/createModulators.ts",
+    "line": 296,
+    "column": 61,
+    "complexity": 11,
+    "signature": "const specs: ModulatorSpec[] = args.modulators.map((m, i) => {",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/tools/layer2/createModulators.ts:const specs: ModulatorSpec[] = args.modulators.map((m, i) => {"
+  },
+  {
+    "file": "src/tools/layer2/createNodeChain.ts",
+    "line": 34,
+    "column": 23,
+    "complexity": 26,
+    "signature": "createNodeChainImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 26 to the 9 allowed.",
+    "stableKey": "src/tools/layer2/createNodeChain.ts:createNodeChainImpl"
+  },
+  {
+    "file": "src/tools/layer2/createPanic.ts",
+    "line": 41,
+    "column": 28,
+    "complexity": 15,
+    "signature": "createPanicImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 15 to the 9 allowed.",
+    "stableKey": "src/tools/layer2/createPanic.ts:createPanicImpl"
+  },
+  {
+    "file": "src/tools/layer2/createPresetMorph.ts",
+    "line": 419,
+    "column": 14,
+    "complexity": 14,
+    "signature": "(report) => {",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 14 to the 9 allowed.",
+    "stableKey": "src/tools/layer2/createPresetMorph.ts:(report) => {"
+  },
+  {
+    "file": "src/tools/layer2/createSceneTimeline.ts",
+    "line": 13,
+    "column": 17,
+    "complexity": 12,
+    "signature": "validateSlotRefs",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/tools/layer2/createSceneTimeline.ts:validateSlotRefs"
+  },
+  {
+    "file": "src/tools/layer2/extendDataSourceFabric.ts",
+    "line": 334,
+    "column": 14,
+    "complexity": 12,
+    "signature": "extendDataSourceFabricImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/tools/layer2/extendDataSourceFabric.ts:extendDataSourceFabricImpl"
+  },
+  {
+    "file": "src/tools/layer2/manageCheckpoint.ts",
+    "line": 222,
+    "column": 14,
+    "complexity": 11,
+    "signature": "(report) => {",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/tools/layer2/manageCheckpoint.ts:(report) => {"
+  },
+  {
+    "file": "src/tools/layer2/orchestration.ts",
+    "line": 212,
+    "column": 23,
+    "complexity": 56,
+    "signature": "buildFromRecipe",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 56 to the 9 allowed.",
+    "stableKey": "src/tools/layer2/orchestration.ts:buildFromRecipe"
+  },
+  {
+    "file": "src/tools/layer2/orchestration.ts",
+    "line": 393,
+    "column": 23,
+    "complexity": 11,
+    "signature": "finalize",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/tools/layer2/orchestration.ts:finalize"
+  },
+  {
+    "file": "src/tools/layer2/postPasses3d.ts",
+    "line": 145,
+    "column": 14,
+    "complexity": 34,
+    "signature": "postPasses3dImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 34 to the 9 allowed.",
+    "stableKey": "src/tools/layer2/postPasses3d.ts:postPasses3dImpl"
+  },
+  {
+    "file": "src/tools/layer2/scaffoldToolGenerator.ts",
+    "line": 325,
+    "column": 23,
+    "complexity": 19,
+    "signature": "scaffoldToolGeneratorImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 19 to the 9 allowed.",
+    "stableKey": "src/tools/layer2/scaffoldToolGenerator.ts:scaffoldToolGeneratorImpl"
+  },
+  {
+    "file": "src/tools/layer3/captionTop.ts",
+    "line": 376,
+    "column": 14,
+    "complexity": 16,
+    "signature": "captionTopImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 16 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/captionTop.ts:captionTopImpl"
+  },
+  {
+    "file": "src/tools/layer3/captionTop.ts",
+    "line": 174,
+    "column": 10,
+    "complexity": 20,
+    "signature": "computeStats",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 20 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/captionTop.ts:computeStats"
+  },
+  {
+    "file": "src/tools/layer3/captionTop.ts",
+    "line": 122,
+    "column": 10,
+    "complexity": 16,
+    "signature": "unfilter",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 16 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/captionTop.ts:unfilter"
+  },
+  {
+    "file": "src/tools/layer3/diffSnapshots.ts",
+    "line": 33,
+    "column": 17,
+    "complexity": 11,
+    "signature": "diffSnapshots",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/diffSnapshots.ts:diffSnapshots"
+  },
+  {
+    "file": "src/tools/layer3/draftRecipeFromOperatorChain.ts",
+    "line": 373,
+    "column": 17,
+    "complexity": 14,
+    "signature": "draftRecipeFromOperatorChainImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 14 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/draftRecipeFromOperatorChain.ts:draftRecipeFromOperatorChainImpl"
+  },
+  {
+    "file": "src/tools/layer3/draftRecipeFromTechnique.ts",
+    "line": 237,
+    "column": 17,
+    "complexity": 11,
+    "signature": "draftRecipeFromTechniqueImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/draftRecipeFromTechnique.ts:draftRecipeFromTechniqueImpl"
+  },
+  {
+    "file": "src/tools/layer3/draftRecipeFromTutorial.ts",
+    "line": 344,
+    "column": 17,
+    "complexity": 19,
+    "signature": "draftRecipeFromTutorialImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 19 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/draftRecipeFromTutorial.ts:draftRecipeFromTutorialImpl"
+  },
+  {
+    "file": "src/tools/layer3/elicitMissingArgs.ts",
+    "line": 72,
+    "column": 10,
+    "complexity": 34,
+    "signature": "classifyField",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 34 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/elicitMissingArgs.ts:classifyField"
+  },
+  {
+    "file": "src/tools/layer3/elicitMissingArgs.ts",
+    "line": 206,
+    "column": 23,
+    "complexity": 80,
+    "signature": "elicitMissingArgsImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 80 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/elicitMissingArgs.ts:elicitMissingArgsImpl"
+  },
+  {
+    "file": "src/tools/layer3/elicitMissingArgs.ts",
+    "line": 163,
+    "column": 10,
+    "complexity": 17,
+    "signature": "extractFirstJsonObject",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 17 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/elicitMissingArgs.ts:extractFirstJsonObject"
+  },
+  {
+    "file": "src/tools/layer3/extractPalette.ts",
+    "line": 89,
+    "column": 10,
+    "complexity": 15,
+    "signature": "decodePngRgb",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 15 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/extractPalette.ts:decodePngRgb"
+  },
+  {
+    "file": "src/tools/layer3/extractPalette.ts",
+    "line": 257,
+    "column": 14,
+    "complexity": 13,
+    "signature": "extractPaletteImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 13 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/extractPalette.ts:extractPaletteImpl"
+  },
+  {
+    "file": "src/tools/layer3/extractPalette.ts",
+    "line": 165,
+    "column": 10,
+    "complexity": 43,
+    "signature": "kmeans",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 43 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/extractPalette.ts:kmeans"
+  },
+  {
+    "file": "src/tools/layer3/extractPalette.ts",
+    "line": 53,
+    "column": 10,
+    "complexity": 16,
+    "signature": "unfilter",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 16 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/extractPalette.ts:unfilter"
+  },
+  {
+    "file": "src/tools/layer3/generateReadme.ts",
+    "line": 220,
+    "column": 17,
+    "complexity": 28,
+    "signature": "buildReadme",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 28 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/generateReadme.ts:buildReadme"
+  },
+  {
+    "file": "src/tools/layer3/getInlinePreview.ts",
+    "line": 391,
+    "column": 10,
+    "complexity": 19,
+    "signature": "assemble",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 19 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/getInlinePreview.ts:assemble"
+  },
+  {
+    "file": "src/tools/layer3/getModuleHelp.ts",
+    "line": 10,
+    "column": 17,
+    "complexity": 19,
+    "signature": "getModuleHelpImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 19 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/getModuleHelp.ts:getModuleHelpImpl"
+  },
+  {
+    "file": "src/tools/layer3/getTdNodeFlags.ts",
+    "line": 292,
+    "column": 14,
+    "complexity": 26,
+    "signature": "getTdNodeFlagsImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 26 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/getTdNodeFlags.ts:getTdNodeFlagsImpl"
+  },
+  {
+    "file": "src/tools/layer3/getTdNodes.ts",
+    "line": 66,
+    "column": 12,
+    "complexity": 10,
+    "signature": "getTdNodesImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/getTdNodes.ts:getTdNodesImpl"
+  },
+  {
+    "file": "src/tools/layer3/getTutorial.ts",
+    "line": 196,
+    "column": 17,
+    "complexity": 10,
+    "signature": "getTutorialImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/getTutorial.ts:getTutorialImpl"
+  },
+  {
+    "file": "src/tools/layer3/inspectComponent.ts",
+    "line": 342,
+    "column": 14,
+    "complexity": 10,
+    "signature": "inspectComponentImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/inspectComponent.ts:inspectComponentImpl"
+  },
+  {
+    "file": "src/tools/layer3/lintRecipeLibrary.ts",
+    "line": 112,
+    "column": 17,
+    "complexity": 21,
+    "signature": "loadRecipesForLint",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 21 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/lintRecipeLibrary.ts:loadRecipesForLint"
+  },
+  {
+    "file": "src/tools/layer3/lintRecipeLibrary.ts",
+    "line": 235,
+    "column": 33,
+    "complexity": 10,
+    "signature": "r.nodes.forEach((node, i) => {",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/lintRecipeLibrary.ts:r.nodes.forEach((node, i) => {"
+  },
+  {
+    "file": "src/tools/layer3/lintRecipeLibrary.ts",
+    "line": 173,
+    "column": 17,
+    "complexity": 36,
+    "signature": "runLint",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 36 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/lintRecipeLibrary.ts:runLint"
+  },
+  {
+    "file": "src/tools/layer3/manageComponentStorage.ts",
+    "line": 111,
+    "column": 61,
+    "complexity": 26,
+    "signature": "const check = (v: unknown, path: string): string | null => {",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 26 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/manageComponentStorage.ts:const check = (v: unknown, path: string): string | null => {"
+  },
+  {
+    "file": "src/tools/layer3/manageComponentStorage.ts",
+    "line": 92,
+    "column": 23,
+    "complexity": 17,
+    "signature": "manageComponentStorageImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 17 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/manageComponentStorage.ts:manageComponentStorageImpl"
+  },
+  {
+    "file": "src/tools/layer3/managePackages.ts",
+    "line": 58,
+    "column": 23,
+    "complexity": 25,
+    "signature": "managePackagesImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 25 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/managePackages.ts:managePackagesImpl"
+  },
+  {
+    "file": "src/tools/layer3/planTdVersionMigration.ts",
+    "line": 209,
+    "column": 10,
+    "complexity": 10,
+    "signature": "migrationChecklist",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/planTdVersionMigration.ts:migrationChecklist"
+  },
+  {
+    "file": "src/tools/layer3/profileCookCost.ts",
+    "line": 65,
+    "column": 23,
+    "complexity": 21,
+    "signature": "profileCookCostImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 21 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/profileCookCost.ts:profileCookCostImpl"
+  },
+  {
+    "file": "src/tools/layer3/projectDocumentationSite.ts",
+    "line": 224,
+    "column": 23,
+    "complexity": 32,
+    "signature": "projectDocumentationSiteImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 32 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/projectDocumentationSite.ts:projectDocumentationSiteImpl"
+  },
+  {
+    "file": "src/tools/layer3/scoreBuild.ts",
+    "line": 247,
+    "column": 10,
+    "complexity": 17,
+    "signature": "buildSuggestions",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 17 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/scoreBuild.ts:buildSuggestions"
+  },
+  {
+    "file": "src/tools/layer3/scoreBuild.ts",
+    "line": 110,
+    "column": 10,
+    "complexity": 41,
+    "signature": "decodePng",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 41 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/scoreBuild.ts:decodePng"
+  },
+  {
+    "file": "src/tools/layer3/scoreBuild.ts",
+    "line": 278,
+    "column": 23,
+    "complexity": 80,
+    "signature": "scoreBuildImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 80 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/scoreBuild.ts:scoreBuildImpl"
+  },
+  {
+    "file": "src/tools/layer3/searchOperators.ts",
+    "line": 199,
+    "column": 10,
+    "complexity": 11,
+    "signature": "scoreOperator",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/searchOperators.ts:scoreOperator"
+  },
+  {
+    "file": "src/tools/layer3/searchOperators.ts",
+    "line": 337,
+    "column": 23,
+    "complexity": 10,
+    "signature": "searchOperatorsImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/searchOperators.ts:searchOperatorsImpl"
+  },
+  {
+    "file": "src/tools/layer3/searchPythonApi.ts",
+    "line": 344,
+    "column": 10,
+    "complexity": 34,
+    "signature": "searchCompatibilityOnly",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 34 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/searchPythonApi.ts:searchCompatibilityOnly"
+  },
+  {
+    "file": "src/tools/layer3/searchPythonApi.ts",
+    "line": 291,
+    "column": 10,
+    "complexity": 44,
+    "signature": "searchDocs",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 44 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/searchPythonApi.ts:searchDocs"
+  },
+  {
+    "file": "src/tools/layer3/serializeNetwork.ts",
+    "line": 340,
+    "column": 14,
+    "complexity": 28,
+    "signature": "serializeNetworkImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 28 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/serializeNetwork.ts:serializeNetworkImpl"
+  },
+  {
+    "file": "src/tools/layer3/setParameterExpression.ts",
+    "line": 144,
+    "column": 14,
+    "complexity": 19,
+    "signature": "import",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 19 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/setParameterExpression.ts:import"
+  },
+  {
+    "file": "src/tools/layer3/snapshotTdGraph.ts",
+    "line": 123,
+    "column": 17,
+    "complexity": 23,
+    "signature": "computeTypeDefaults",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 23 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/snapshotTdGraph.ts:computeTypeDefaults"
+  },
+  {
+    "file": "src/tools/layer3/snapshotTdGraph.ts",
+    "line": 216,
+    "column": 10,
+    "complexity": 11,
+    "signature": "normalizeParameterModes",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/snapshotTdGraph.ts:normalizeParameterModes"
+  },
+  {
+    "file": "src/tools/layer3/snapshotTdGraph.ts",
+    "line": 235,
+    "column": 14,
+    "complexity": 13,
+    "signature": "snapshotTdGraphImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 13 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/snapshotTdGraph.ts:snapshotTdGraphImpl"
+  },
+  {
+    "file": "src/tools/layer3/snapshotTdGraph.ts",
+    "line": 171,
+    "column": 27,
+    "complexity": 10,
+    "signature": "toCompactNodes",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/snapshotTdGraph.ts:toCompactNodes"
+  },
+  {
+    "file": "src/tools/layer3/suggestOperatorChain.ts",
+    "line": 208,
+    "column": 17,
+    "complexity": 14,
+    "signature": "suggestOperatorChainImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 14 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/suggestOperatorChain.ts:suggestOperatorChainImpl"
+  },
+  {
+    "file": "src/tools/layer3/tutorialContent.ts",
+    "line": 32,
+    "column": 17,
+    "complexity": 18,
+    "signature": "flattenTutorialContent",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 18 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/tutorialContent.ts:flattenTutorialContent"
+  },
+  {
+    "file": "src/tools/layer3/tutorialContent.ts",
+    "line": 82,
+    "column": 34,
+    "complexity": 11,
+    "signature": "visit",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/tutorialContent.ts:visit"
+  },
+  {
+    "file": "src/tools/layer3/validateOperatorChain.ts",
+    "line": 374,
+    "column": 10,
+    "complexity": 16,
+    "signature": "issueSuggestions",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 16 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/validateOperatorChain.ts:issueSuggestions"
+  },
+  {
+    "file": "src/tools/layer3/validateOperatorChain.ts",
+    "line": 440,
+    "column": 17,
+    "complexity": 23,
+    "signature": "validateOperatorChainImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 23 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/validateOperatorChain.ts:validateOperatorChainImpl"
+  },
+  {
+    "file": "src/tools/layer3/watchNode.ts",
+    "line": 198,
+    "column": 23,
+    "complexity": 15,
+    "signature": "watchNodeImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 15 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/watchNode.ts:watchNodeImpl"
+  },
+  {
+    "file": "src/tools/layer3/writeAgentGuide.ts",
+    "line": 289,
+    "column": 23,
+    "complexity": 10,
+    "signature": "writeAgentGuideImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/writeAgentGuide.ts:writeAgentGuideImpl"
+  },
+  {
+    "file": "src/tools/library/checksumAndVerifyPack.ts",
+    "line": 185,
+    "column": 16,
+    "complexity": 13,
+    "signature": "computeChecksums",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 13 to the 9 allowed.",
+    "stableKey": "src/tools/library/checksumAndVerifyPack.ts:computeChecksums"
+  },
+  {
+    "file": "src/tools/library/checksumAndVerifyPack.ts",
+    "line": 69,
+    "column": 10,
+    "complexity": 15,
+    "signature": "globToRegExp",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 15 to the 9 allowed.",
+    "stableKey": "src/tools/library/checksumAndVerifyPack.ts:globToRegExp"
+  },
+  {
+    "file": "src/tools/library/checksumAndVerifyPack.ts",
+    "line": 277,
+    "column": 16,
+    "complexity": 47,
+    "signature": "verifyChecksums",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 47 to the 9 allowed.",
+    "stableKey": "src/tools/library/checksumAndVerifyPack.ts:verifyChecksums"
+  },
+  {
+    "file": "src/tools/library/checksumAndVerifyPack.ts",
+    "line": 132,
+    "column": 10,
+    "complexity": 44,
+    "signature": "walkDir",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 44 to the 9 allowed.",
+    "stableKey": "src/tools/library/checksumAndVerifyPack.ts:walkDir"
+  },
+  {
+    "file": "src/tools/library/componentChangelogTrail.ts",
+    "line": 145,
+    "column": 23,
+    "complexity": 24,
+    "signature": "componentChangelogTrailImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 24 to the 9 allowed.",
+    "stableKey": "src/tools/library/componentChangelogTrail.ts:componentChangelogTrailImpl"
+  },
+  {
+    "file": "src/tools/library/curatedCollectionPack.ts",
+    "line": 174,
+    "column": 16,
+    "complexity": 33,
+    "signature": "packImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 33 to the 9 allowed.",
+    "stableKey": "src/tools/library/curatedCollectionPack.ts:packImpl"
+  },
+  {
+    "file": "src/tools/library/curatedCollectionPack.ts",
+    "line": 342,
+    "column": 16,
+    "complexity": 41,
+    "signature": "unpackImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 41 to the 9 allowed.",
+    "stableKey": "src/tools/library/curatedCollectionPack.ts:unpackImpl"
+  },
+  {
+    "file": "src/tools/library/diffLibraryAssets.ts",
+    "line": 90,
+    "column": 10,
+    "complexity": 23,
+    "signature": "deepDiff",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 23 to the 9 allowed.",
+    "stableKey": "src/tools/library/diffLibraryAssets.ts:deepDiff"
+  },
+  {
+    "file": "src/tools/library/diffLibraryAssets.ts",
+    "line": 207,
+    "column": 23,
+    "complexity": 22,
+    "signature": "diffLibraryAssetsImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 22 to the 9 allowed.",
+    "stableKey": "src/tools/library/diffLibraryAssets.ts:diffLibraryAssetsImpl"
+  },
+  {
+    "file": "src/tools/library/diffLibraryAssets.ts",
+    "line": 143,
+    "column": 10,
+    "complexity": 14,
+    "signature": "diffRecipes",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 14 to the 9 allowed.",
+    "stableKey": "src/tools/library/diffLibraryAssets.ts:diffRecipes"
+  },
+  {
+    "file": "src/tools/library/importRecipeFromUrl.ts",
+    "line": 89,
+    "column": 23,
+    "complexity": 36,
+    "signature": "importRecipeFromUrlImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 36 to the 9 allowed.",
+    "stableKey": "src/tools/library/importRecipeFromUrl.ts:importRecipeFromUrlImpl"
+  },
+  {
+    "file": "src/tools/library/index.ts",
+    "line": 225,
+    "column": 23,
+    "complexity": 16,
+    "signature": "browseLibraryImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 16 to the 9 allowed.",
+    "stableKey": "src/tools/library/index.ts:browseLibraryImpl"
+  },
+  {
+    "file": "src/tools/library/index.ts",
+    "line": 541,
+    "column": 23,
+    "complexity": 13,
+    "signature": "importRecipeBundleImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 13 to the 9 allowed.",
+    "stableKey": "src/tools/library/index.ts:importRecipeBundleImpl"
+  },
+  {
+    "file": "src/tools/library/index.ts",
+    "line": 702,
+    "column": 23,
+    "complexity": 12,
+    "signature": "localMarketplaceIndexImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/tools/library/index.ts:localMarketplaceIndexImpl"
+  },
+  {
+    "file": "src/tools/library/index.ts",
+    "line": 583,
+    "column": 23,
+    "complexity": 19,
+    "signature": "validateLibraryAssetImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 19 to the 9 allowed.",
+    "stableKey": "src/tools/library/index.ts:validateLibraryAssetImpl"
+  },
+  {
+    "file": "src/tools/pythonReport.ts",
+    "line": 17,
+    "column": 17,
+    "complexity": 14,
+    "signature": "buildPayloadScript",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 14 to the 9 allowed.",
+    "stableKey": "src/tools/pythonReport.ts:buildPayloadScript"
+  },
+  {
+    "file": "src/tools/vault/autoTagLibraryAsset.ts",
+    "line": 398,
+    "column": 23,
+    "complexity": 44,
+    "signature": "autoTagLibraryAssetImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 44 to the 9 allowed.",
+    "stableKey": "src/tools/vault/autoTagLibraryAsset.ts:autoTagLibraryAssetImpl"
+  },
+  {
+    "file": "src/tools/vault/autoTagLibraryAsset.ts",
+    "line": 186,
+    "column": 17,
+    "complexity": 47,
+    "signature": "suggestTags",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 47 to the 9 allowed.",
+    "stableKey": "src/tools/vault/autoTagLibraryAsset.ts:suggestTags"
+  },
+  {
+    "file": "src/tools/vault/browseVaultLibrary.ts",
+    "line": 76,
+    "column": 23,
+    "complexity": 22,
+    "signature": "browseVaultLibraryImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 22 to the 9 allowed.",
+    "stableKey": "src/tools/vault/browseVaultLibrary.ts:browseVaultLibraryImpl"
+  },
+  {
+    "file": "src/tools/vault/exportLookTox.ts",
+    "line": 75,
+    "column": 23,
+    "complexity": 12,
+    "signature": "exportLookToxImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/tools/vault/exportLookTox.ts:exportLookToxImpl"
+  },
+  {
+    "file": "src/tools/vault/generateLibraryIndex.ts",
+    "line": 153,
+    "column": 23,
+    "complexity": 41,
+    "signature": "generateLibraryIndexImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 41 to the 9 allowed.",
+    "stableKey": "src/tools/vault/generateLibraryIndex.ts:generateLibraryIndexImpl"
+  },
+  {
+    "file": "src/tools/vault/importSetlist.ts",
+    "line": 42,
+    "column": 23,
+    "complexity": 21,
+    "signature": "importSetlistImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 21 to the 9 allowed.",
+    "stableKey": "src/tools/vault/importSetlist.ts:importSetlistImpl"
+  },
+  {
+    "file": "src/tools/vault/learnConventions.ts",
+    "line": 546,
+    "column": 14,
+    "complexity": 28,
+    "signature": "(report) => {",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 28 to the 9 allowed.",
+    "stableKey": "src/tools/vault/learnConventions.ts:(report) => {"
+  },
+  {
+    "file": "src/tools/vault/learnConventions.ts",
+    "line": 358,
+    "column": 10,
+    "complexity": 16,
+    "signature": "extractContainerShapes",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 16 to the 9 allowed.",
+    "stableKey": "src/tools/vault/learnConventions.ts:extractContainerShapes"
+  },
+  {
+    "file": "src/tools/vault/learnConventions.ts",
+    "line": 449,
+    "column": 10,
+    "complexity": 11,
+    "signature": "extractLayout",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/tools/vault/learnConventions.ts:extractLayout"
+  },
+  {
+    "file": "src/tools/vault/learnConventions.ts",
+    "line": 269,
+    "column": 10,
+    "complexity": 23,
+    "signature": "extractNaming",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 23 to the 9 allowed.",
+    "stableKey": "src/tools/vault/learnConventions.ts:extractNaming"
+  },
+  {
+    "file": "src/tools/vault/learnConventions.ts",
+    "line": 416,
+    "column": 10,
+    "complexity": 20,
+    "signature": "extractParamDefaults",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 20 to the 9 allowed.",
+    "stableKey": "src/tools/vault/learnConventions.ts:extractParamDefaults"
+  },
+  {
+    "file": "src/tools/vault/learnFromMyCorpus.ts",
+    "line": 231,
+    "column": 17,
+    "complexity": 12,
+    "signature": "clusterPalettes",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 12 to the 9 allowed.",
+    "stableKey": "src/tools/vault/learnFromMyCorpus.ts:clusterPalettes"
+  },
+  {
+    "file": "src/tools/vault/learnFromMyCorpus.ts",
+    "line": 529,
+    "column": 17,
+    "complexity": 62,
+    "signature": "extractStyle",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 62 to the 9 allowed.",
+    "stableKey": "src/tools/vault/learnFromMyCorpus.ts:extractStyle"
+  },
+  {
+    "file": "src/tools/vault/learnFromMyCorpus.ts",
+    "line": 698,
+    "column": 23,
+    "complexity": 16,
+    "signature": "learnFromMyCorpusImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 16 to the 9 allowed.",
+    "stableKey": "src/tools/vault/learnFromMyCorpus.ts:learnFromMyCorpusImpl"
+  },
+  {
+    "file": "src/tools/vault/learnFromMyCorpus.ts",
+    "line": 264,
+    "column": 12,
+    "complexity": 11,
+    "signature": "recurse",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/tools/vault/learnFromMyCorpus.ts:recurse"
+  },
+  {
+    "file": "src/tools/vault/learnFromMyCorpus.ts",
+    "line": 455,
+    "column": 17,
+    "complexity": 21,
+    "signature": "scanCorpus",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 21 to the 9 allowed.",
+    "stableKey": "src/tools/vault/learnFromMyCorpus.ts:scanCorpus"
+  },
+  {
+    "file": "src/tools/vault/learnFromMyCorpus.ts",
+    "line": 377,
+    "column": 10,
+    "complexity": 73,
+    "signature": "scanMarkdownFile",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 73 to the 9 allowed.",
+    "stableKey": "src/tools/vault/learnFromMyCorpus.ts:scanMarkdownFile"
+  },
+  {
+    "file": "src/tools/vault/learnFromMyCorpus.ts",
+    "line": 319,
+    "column": 10,
+    "complexity": 40,
+    "signature": "scanRecipeFile",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 40 to the 9 allowed.",
+    "stableKey": "src/tools/vault/learnFromMyCorpus.ts:scanRecipeFile"
+  },
+  {
+    "file": "src/tools/vault/libraryLineageGraph.ts",
+    "line": 269,
+    "column": 10,
+    "complexity": 21,
+    "signature": "buildClusters",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 21 to the 9 allowed.",
+    "stableKey": "src/tools/vault/libraryLineageGraph.ts:buildClusters"
+  },
+  {
+    "file": "src/tools/vault/libraryLineageGraph.ts",
+    "line": 303,
+    "column": 23,
+    "complexity": 57,
+    "signature": "libraryLineageGraphImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 57 to the 9 allowed.",
+    "stableKey": "src/tools/vault/libraryLineageGraph.ts:libraryLineageGraphImpl"
+  },
+  {
+    "file": "src/tools/vault/libraryLineageGraph.ts",
+    "line": 225,
+    "column": 10,
+    "complexity": 23,
+    "signature": "renderDot",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 23 to the 9 allowed.",
+    "stableKey": "src/tools/vault/libraryLineageGraph.ts:renderDot"
+  },
+  {
+    "file": "src/tools/vault/libraryLineageGraph.ts",
+    "line": 158,
+    "column": 10,
+    "complexity": 37,
+    "signature": "renderMermaid",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 37 to the 9 allowed.",
+    "stableKey": "src/tools/vault/libraryLineageGraph.ts:renderMermaid"
+  },
+  {
+    "file": "src/tools/vault/mergeVaults.ts",
+    "line": 95,
+    "column": 10,
+    "complexity": 15,
+    "signature": "buildMergeLog",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 15 to the 9 allowed.",
+    "stableKey": "src/tools/vault/mergeVaults.ts:buildMergeLog"
+  },
+  {
+    "file": "src/tools/vault/mergeVaults.ts",
+    "line": 137,
+    "column": 23,
+    "complexity": 75,
+    "signature": "mergeVaultsImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 75 to the 9 allowed.",
+    "stableKey": "src/tools/vault/mergeVaults.ts:mergeVaultsImpl"
+  },
+  {
+    "file": "src/tools/vault/mergeVaults.ts",
+    "line": 45,
+    "column": 10,
+    "complexity": 15,
+    "signature": "walkRel",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 15 to the 9 allowed.",
+    "stableKey": "src/tools/vault/mergeVaults.ts:walkRel"
+  },
+  {
+    "file": "src/tools/vault/morphPack.ts",
+    "line": 366,
+    "column": 16,
+    "complexity": 30,
+    "signature": "doUnpack",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 30 to the 9 allowed.",
+    "stableKey": "src/tools/vault/morphPack.ts:doUnpack"
+  },
+  {
+    "file": "src/tools/vault/recallSimilarWork.ts",
+    "line": 136,
+    "column": 10,
+    "complexity": 11,
+    "signature": "buildSnippet",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/tools/vault/recallSimilarWork.ts:buildSnippet"
+  },
+  {
+    "file": "src/tools/vault/recallSimilarWork.ts",
+    "line": 193,
+    "column": 23,
+    "complexity": 14,
+    "signature": "recallSimilarWorkImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 14 to the 9 allowed.",
+    "stableKey": "src/tools/vault/recallSimilarWork.ts:recallSimilarWorkImpl"
+  },
+  {
+    "file": "src/tools/vault/saveComponentToVault.ts",
+    "line": 111,
+    "column": 23,
+    "complexity": 35,
+    "signature": "saveComponentToVaultImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 35 to the 9 allowed.",
+    "stableKey": "src/tools/vault/saveComponentToVault.ts:saveComponentToVaultImpl"
+  },
+  {
+    "file": "src/tools/vault/saveRecipeToVault.ts",
+    "line": 149,
+    "column": 23,
+    "complexity": 18,
+    "signature": "saveRecipeToVaultImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 18 to the 9 allowed.",
+    "stableKey": "src/tools/vault/saveRecipeToVault.ts:saveRecipeToVaultImpl"
+  },
+  {
+    "file": "src/tools/vault/scaffoldRecipeFromNetwork.ts",
+    "line": 231,
+    "column": 23,
+    "complexity": 14,
+    "signature": "scaffoldRecipeFromNetworkImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 14 to the 9 allowed.",
+    "stableKey": "src/tools/vault/scaffoldRecipeFromNetwork.ts:scaffoldRecipeFromNetworkImpl"
+  },
+  {
+    "file": "src/tools/vault/tagAndSearchLibrary.ts",
+    "line": 129,
+    "column": 23,
+    "complexity": 71,
+    "signature": "tagAndSearchLibraryImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 71 to the 9 allowed.",
+    "stableKey": "src/tools/vault/tagAndSearchLibrary.ts:tagAndSearchLibraryImpl"
+  },
+  {
+    "file": "src/tools/vault/tutorialCompanionPack.ts",
+    "line": 96,
+    "column": 23,
+    "complexity": 24,
+    "signature": "tutorialCompanionPackImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 24 to the 9 allowed.",
+    "stableKey": "src/tools/vault/tutorialCompanionPack.ts:tutorialCompanionPackImpl"
+  },
+  {
+    "file": "src/tools/vault/variantPack.ts",
+    "line": 192,
+    "column": 14,
+    "complexity": 25,
+    "signature": "(report) => {",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 25 to the 9 allowed.",
+    "stableKey": "src/tools/vault/variantPack.ts:(report) => {"
+  },
+  {
+    "file": "src/tools/vault/vaultRepoSync.ts",
+    "line": 178,
+    "column": 10,
+    "complexity": 20,
+    "signature": "parseStatusV2",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 20 to the 9 allowed.",
+    "stableKey": "src/tools/vault/vaultRepoSync.ts:parseStatusV2"
+  },
+  {
+    "file": "src/tools/vault/vaultRepoSync.ts",
+    "line": 269,
+    "column": 23,
+    "complexity": 27,
+    "signature": "vaultRepoSyncImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 27 to the 9 allowed.",
+    "stableKey": "src/tools/vault/vaultRepoSync.ts:vaultRepoSyncImpl"
+  },
+  {
+    "file": "src/tools/vault/versionLibraryAsset.ts",
+    "line": 140,
+    "column": 10,
+    "complexity": 15,
+    "signature": "loadSidecar",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 15 to the 9 allowed.",
+    "stableKey": "src/tools/vault/versionLibraryAsset.ts:loadSidecar"
+  },
+  {
+    "file": "src/tools/vault/versionLibraryAsset.ts",
+    "line": 190,
+    "column": 23,
+    "complexity": 35,
+    "signature": "versionLibraryAssetImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 35 to the 9 allowed.",
+    "stableKey": "src/tools/vault/versionLibraryAsset.ts:versionLibraryAssetImpl"
+  },
+  {
+    "file": "src/vault/memoryNote.ts",
+    "line": 180,
+    "column": 17,
+    "complexity": 15,
+    "signature": "mergeStyleMemory",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 15 to the 9 allowed.",
+    "stableKey": "src/vault/memoryNote.ts:mergeStyleMemory"
+  }
+]

@@ -59,6 +59,13 @@ function decodePayload(script: string): Record<string, unknown> {
   return JSON.parse(Buffer.from(b64, "base64").toString("utf8")) as Record<string, unknown>;
 }
 
+function jsonPayload<T>(result: { content: Array<{ type: string; text?: string }> }): T {
+  const text = result.content[0]?.type === "text" ? result.content[0].text : "";
+  const json = /```json\n([\s\S]*?)\n```/.exec(text ?? "")?.[1];
+  if (!json) throw new Error(`No JSON payload found in result: ${text}`);
+  return JSON.parse(json) as T;
+}
+
 describe("library and packaging tools", () => {
   it("builds a Windows zip extraction command without interpolating paths", () => {
     const zipPath = "C:\\packages\\widget'; Remove-Item C:\\important.zip";
@@ -374,6 +381,86 @@ describe("library and packaging tools", () => {
     }
   });
 
+  it("browses local packages by manifest metadata and ignores non-package folders", async () => {
+    const dir = tmp();
+    try {
+      const packages = join(dir, "packages");
+      const widget = join(packages, "widget");
+      const other = join(packages, "other");
+      const scratch = join(packages, "scratch");
+      mkdirSync(widget, { recursive: true });
+      mkdirSync(other, { recursive: true });
+      mkdirSync(scratch, { recursive: true });
+      writeFileSync(
+        join(widget, "tdmcp-component.json"),
+        JSON.stringify({
+          id: "widget_pack",
+          name: "Widget Pack",
+          version: "2.0.0",
+          description: "projection mapping utilities",
+        }),
+        "utf8",
+      );
+      writeFileSync(
+        join(other, "manifest.json"),
+        JSON.stringify({
+          id: "other_pack",
+          name: "Other Pack",
+          version: "1.0.0",
+          description: "unrelated audio helpers",
+        }),
+        "utf8",
+      );
+      writeFileSync(join(scratch, "notes.txt"), "not a manifest", "utf8");
+
+      const browse = await browseLibraryImpl(makeCtx(), {
+        package_dir: packages,
+        query: "projection",
+        tags: [],
+        include_recipes: false,
+        include_packages: true,
+      });
+
+      expect(browse.isError).toBeFalsy();
+      expect(browse.structuredContent?.recipes).toEqual([]);
+      expect(browse.structuredContent?.packages).toEqual([
+        expect.objectContaining({
+          path: widget,
+          id: "widget_pack",
+          name: "Widget Pack",
+          version: "2.0.0",
+        }),
+      ]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("reports invalid and missing component manifests as tool errors", async () => {
+    const dir = tmp();
+    try {
+      const invalid = join(dir, "invalid");
+      mkdirSync(invalid, { recursive: true });
+      writeFileSync(join(invalid, "tdmcp-component.json"), JSON.stringify({ assets: [7] }), "utf8");
+
+      const invalidResult = await inspectComponentManifestImpl(makeCtx(), { path: invalid });
+      expect(invalidResult.isError).toBe(true);
+      expect(
+        invalidResult.content[0]?.type === "text" ? invalidResult.content[0].text : "",
+      ).toMatch(/Invalid manifest/);
+
+      const missingResult = await inspectComponentManifestImpl(makeCtx(), {
+        path: join(dir, "missing"),
+      });
+      expect(missingResult.isError).toBe(true);
+      expect(
+        missingResult.content[0]?.type === "text" ? missingResult.content[0].text : "",
+      ).toMatch(/No component manifest found/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("preflights recipe bundle conflicts before writing any imported recipe", async () => {
     const dir = tmp();
     try {
@@ -438,6 +525,76 @@ describe("library and packaging tools", () => {
     }
   });
 
+  it("preflights recipe publish artifact conflicts before overwriting files", async () => {
+    const dir = tmp();
+    try {
+      const recipePath = join(dir, "pulse.json");
+      await scaffoldRecipeTemplateImpl(makeCtx(), {
+        out_file: recipePath,
+        id: "pulse",
+        name: "Pulse",
+        overwrite: false,
+      });
+      const outDir = join(dir, "published");
+      mkdirSync(outDir, { recursive: true });
+      const existingBundle = join(outDir, "stage_pack.recipes.json");
+      writeFileSync(existingBundle, "existing", "utf8");
+
+      const result = await publishRecipeBundleImpl(makeCtx(dir), {
+        out_dir: outDir,
+        name: "stage pack",
+        version: "1.2.3",
+        recipe_ids: ["pulse"],
+        include_all: false,
+        overwrite: false,
+      });
+
+      expect(result.isError).toBe(true);
+      expect(readFileSync(existingBundle, "utf8")).toBe("existing");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("publishes all recipes when include_all is enabled", async () => {
+    const dir = tmp();
+    try {
+      await scaffoldRecipeTemplateImpl(makeCtx(), {
+        out_file: join(dir, "pulse.json"),
+        id: "pulse",
+        name: "Pulse",
+        overwrite: false,
+      });
+      await scaffoldRecipeTemplateImpl(makeCtx(), {
+        out_file: join(dir, "wave.json"),
+        id: "wave",
+        name: "Wave",
+        overwrite: false,
+      });
+
+      const result = await publishRecipeBundleImpl(makeCtx(dir), {
+        out_dir: join(dir, "published"),
+        name: "all",
+        version: "1.0.0",
+        recipe_ids: ["missing"],
+        include_all: true,
+        overwrite: false,
+      });
+
+      expect(result.isError).toBeFalsy();
+      const payload = jsonPayload<{
+        manifest: { recipe_count: number; recipes: string[]; missing: string[] };
+      }>(result);
+      expect(payload.manifest).toMatchObject({
+        recipe_count: 2,
+        recipes: ["pulse", "wave"],
+        missing: [],
+      });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("inspects manifests, attaches docs, validates assets, and writes a local marketplace index", async () => {
     const dir = tmp();
     try {
@@ -488,6 +645,31 @@ describe("library and packaging tools", () => {
         entries: unknown[];
       };
       expect(index.entries).toHaveLength(1);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("attaches docs at the package root when asset_dir is dot", async () => {
+    const dir = tmp();
+    try {
+      const pkg = join(dir, "pkg");
+      mkdirSync(pkg, { recursive: true });
+      const manifestPath = join(pkg, "tdmcp-component.json");
+      writeFileSync(manifestPath, JSON.stringify({ id: "widget", docs: [] }), "utf8");
+      const doc = join(dir, "README.md");
+      writeFileSync(doc, "# Widget\n", "utf8");
+
+      const attached = await attachDocsAsAssetsImpl(makeCtx(), {
+        manifest_path: manifestPath,
+        docs: [doc],
+        asset_dir: ".",
+      });
+
+      expect(attached.isError).toBeFalsy();
+      expect(existsSync(join(pkg, "README.md"))).toBe(true);
+      const payload = jsonPayload<{ manifest: { docs: string[] } }>(attached);
+      expect(payload.manifest).toMatchObject({ docs: ["README.md"] });
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -803,6 +985,46 @@ describe("library and packaging tools", () => {
     }
   });
 
+  it("installs a single tox file into a package folder", async () => {
+    const dir = tmp();
+    try {
+      const source = join(dir, "widget.tox");
+      const dest = join(dir, "packages");
+      writeFileSync(source, "tox", "utf8");
+
+      const installed = await installLibraryPackageImpl(makeCtx(), {
+        source,
+        dest_dir: dest,
+        overwrite: false,
+      });
+
+      expect(installed.isError).toBeFalsy();
+      expect(existsSync(join(dest, "widget", "widget.tox"))).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("reports missing install sources before creating destination folders", async () => {
+    const dir = tmp();
+    try {
+      const dest = join(dir, "packages");
+      const result = await installLibraryPackageImpl(makeCtx(), {
+        source: join(dir, "missing.tox"),
+        dest_dir: dest,
+        overwrite: false,
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0]?.type === "text" ? result.content[0].text : "").toMatch(
+        /Package source not found/,
+      );
+      expect(existsSync(dest)).toBe(false);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("checks component externaltox links from a live TD report", async () => {
     server.use(
       http.post(`${TD_BASE}/api/exec`, () =>
@@ -831,6 +1053,30 @@ describe("library and packaging tools", () => {
     expect(result.isError).toBeFalsy();
     expect(result.content[0]?.type).toBe("text");
     expect(result.content[0]?.type === "text" ? result.content[0].text : "").toContain("1 issue");
+  });
+
+  it("returns an error when the component link health report is fatal", async () => {
+    server.use(
+      http.post(`${TD_BASE}/api/exec`, () =>
+        HttpResponse.json({
+          ok: true,
+          data: {
+            result: null,
+            stdout: JSON.stringify({ checked: [], fatal: "Parent not found: /missing" }),
+          },
+        }),
+      ),
+    );
+
+    const result = await componentLinkHealthImpl(makeCtx(), {
+      paths: [],
+      parent_path: "/missing",
+    });
+
+    expect(result.isError).toBe(true);
+    expect(result.content[0]?.type === "text" ? result.content[0].text : "").toContain(
+      "Component link health failed",
+    );
   });
 
   it("returns an error when every asset preview capture fails", async () => {

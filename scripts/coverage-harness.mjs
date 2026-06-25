@@ -136,17 +136,28 @@ function gapScore(row) {
   return missing(row.lines) * 3 + missing(row.functions) * 2 + missing(row.branches);
 }
 
+const surfaceRules = [
+  [
+    "entrypoints-cli-llm",
+    (file) => file === "src/index.ts" || file.startsWith("src/cli/") || file.startsWith("src/llm/"),
+  ],
+  [
+    "resources-knowledge",
+    (file) => file.startsWith("src/resources/") || file.startsWith("src/knowledge/"),
+  ],
+  ["prompts", (file) => file.startsWith("src/prompts/")],
+  ["tools", (file) => file.startsWith("src/tools/")],
+  [
+    "server-transport",
+    (file) => file.startsWith("src/server/") || file.startsWith("src/td-client/"),
+  ],
+];
+
 function surfaceFor(file) {
-  if (file === "src/index.ts" || file.startsWith("src/cli/") || file.startsWith("src/llm/")) {
-    return "entrypoints-cli-llm";
-  }
-  if (file.startsWith("src/resources/") || file.startsWith("src/knowledge/")) {
-    return "resources-knowledge";
-  }
-  if (file.startsWith("src/prompts/")) return "prompts";
-  if (file.startsWith("src/tools/")) return "tools";
-  if (file.startsWith("src/server/") || file.startsWith("src/td-client/")) {
-    return "server-transport";
+  for (const [surface, matches] of surfaceRules) {
+    if (matches(file)) {
+      return surface;
+    }
   }
   return "other";
 }

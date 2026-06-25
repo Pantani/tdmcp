@@ -259,6 +259,7 @@ directly.
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
 | 2026-05-28 | Initial build | coverage harness + 3 agents + 2 skills | make coverage work repeatable, code-scoped, and gate-backed |
+| 2026-06-25 | Wave-1 coverage/complexity build | coverage harness + `make complexity` | start 90% coverage campaign and add cognitive-complexity ratchets alongside cyclomatic max 9 |
 
 ## Harness: repo quality audit
 
@@ -281,6 +282,7 @@ sub-agents (no `TeamCreate`).
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
 | 2026-06-10 | Initial quality-audit team | 6 agents + 1 skill | broad repo/code quality harness for command sweeps, security, UX flow, refactor/test gaps, and QA-backed fix waves |
+| 2026-06-25 | Cognitive complexity ratchet | `make complexity` | prevent new or worse cognitive-complexity debt while existing TS/JS and Python debt is reduced wave by wave |
 
 ## Harness: cookbook examples
 

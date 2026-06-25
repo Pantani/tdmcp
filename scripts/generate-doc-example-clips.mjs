@@ -289,6 +289,16 @@ function baseFrame() {
   return buf;
 }
 
+function montageClipActive(index, current, next, fade) {
+  return index === current || (index === next && fade > 0.35);
+}
+
+function montageProgress(index, current, next, fade) {
+  if (index === current) return 1 - fade;
+  if (index === next) return fade;
+  return 0.12;
+}
+
 function autoMontageFrame(t) {
   const buf = baseFrame();
   const phase = (t * 2.1) % 3;
@@ -304,19 +314,21 @@ function autoMontageFrame(t) {
   rect(buf, 30, 212, 420, 32, [0, 0, 0], 0.38);
   for (let i = 0; i < 3; i++) {
     const x = 52 + i * 132;
-    const active = i === current || (i === next && fade > 0.35);
+    const active = montageClipActive(i, current, next, fade);
     rect(buf, x, 220, 92, 12, active ? [255, 255, 255] : [120, 130, 150], active ? 0.85 : 0.35);
-    rect(
-      buf,
-      x,
-      234,
-      92 * (i === current ? 1 - fade : i === next ? fade : 0.12),
-      4,
-      [55, 232, 190],
-      0.85,
-    );
+    rect(buf, x, 234, 92 * montageProgress(i, current, next, fade), 4, [55, 232, 190], 0.85);
   }
   return buf;
+}
+
+function drawEuclideanStep(buf, index, step, hits) {
+  const x = 34 + index * 26;
+  const active = hits.has(index);
+  const now = index === step;
+  const h = active ? 72 : 34;
+  rect(buf, x, 185 - h, 16, h, active ? [250, 96, 142] : [74, 88, 112], active ? 0.74 : 0.38);
+  rect(buf, x, 193, 16, 18, now ? [255, 236, 116] : [32, 40, 58], now ? 0.98 : 0.9);
+  if (now) glow(buf, x + 8, 202, 30, [255, 236, 116], 0.9);
 }
 
 function euclideanFrame(t) {
@@ -327,13 +339,7 @@ function euclideanFrame(t) {
   glow(buf, width / 2, 96, 128 + flash * 60, [60, 245, 220], 0.35 + flash * 0.65);
   circle(buf, width / 2, 96, 62 + flash * 16, [255, 255, 255], 0.08 + flash * 0.18);
   for (let i = 0; i < 16; i++) {
-    const x = 34 + i * 26;
-    const active = hits.has(i);
-    const now = i === step;
-    const h = active ? 72 : 34;
-    rect(buf, x, 185 - h, 16, h, active ? [250, 96, 142] : [74, 88, 112], active ? 0.74 : 0.38);
-    rect(buf, x, 193, 16, 18, now ? [255, 236, 116] : [32, 40, 58], now ? 0.98 : 0.9);
-    if (now) glow(buf, x + 8, 202, 30, [255, 236, 116], 0.9);
+    drawEuclideanStep(buf, i, step, hits);
   }
   for (let i = 0; i < 5; i++) {
     const a = t * 2 + i * 1.256;
@@ -1004,6 +1010,28 @@ function pbrProductFrame(t) {
   return buf;
 }
 
+function depthPanelColor(panelIndex, depth) {
+  if (panelIndex === 0) return [mix(5, 116, depth), mix(12, 192, depth), mix(26, 255, depth)];
+  if (panelIndex === 1) return [depth * 255, depth * 255, depth * 255];
+  return mixColor([2, 4, 10], [255, 230, 190], depth ** 0.7);
+}
+
+function depthPanelAlpha(panelIndex) {
+  if (panelIndex === 0) return 0.86;
+  if (panelIndex === 1) return 0.92;
+  return 0.9;
+}
+
+function depthPanelGlowColor(panelIndex) {
+  return panelIndex === 2 ? [255, 180, 85] : [80, 180, 255];
+}
+
+function depthPanelCircleStyle(panelIndex) {
+  return panelIndex === 1
+    ? { color: [220, 220, 220], alpha: 0.36 }
+    : { color: [255, 255, 255], alpha: 0.13 };
+}
+
 function multipassDepthFrame(t) {
   const buf = baseFrame();
   const panels = [
@@ -1021,15 +1049,14 @@ function multipassDepthFrame(t) {
         const u = (x - px) / pw;
         const v = (y - py) / ph;
         const depth = smoothstep(0.95, 0.1, Math.hypot(u - 0.5, v - 0.54));
-        if (i === 0) set(buf, x, y, mixColor([5, 12, 26], [116, 192, 255], depth), 0.86);
-        if (i === 1) set(buf, x, y, [depth * 255, depth * 255, depth * 255], 0.92);
-        if (i === 2) set(buf, x, y, mixColor([2, 4, 10], [255, 230, 190], depth ** 0.7), 0.9);
+        set(buf, x, y, depthPanelColor(i, depth), depthPanelAlpha(i));
       }
     }
     const cx = px + pw / 2 + Math.sin(t * 1.5 + i) * 8;
     const cy = py + 112;
-    glow(buf, cx, cy, 58, i === 2 ? [255, 180, 85] : [80, 180, 255], 0.24);
-    circle(buf, cx, cy, 32, i === 1 ? [220, 220, 220] : [255, 255, 255], i === 1 ? 0.36 : 0.13);
+    const circleStyle = depthPanelCircleStyle(i);
+    glow(buf, cx, cy, 58, depthPanelGlowColor(i), 0.24);
+    circle(buf, cx, cy, 32, circleStyle.color, circleStyle.alpha);
   }
   return buf;
 }
@@ -2127,19 +2154,23 @@ function commandCatalogFrame(t) {
   return buf;
 }
 
+function drawConfigProfileCard(buf, index, selected) {
+  const x = 42 + index * 132;
+  const on = index === selected;
+  rect(buf, x, 46, 102, 164, on ? [28, 42, 62] : [16, 24, 38], on ? 0.98 : 0.9);
+  rect(buf, x + 14, 66, 54, 6, [255, 255, 255], on ? 0.42 : 0.22);
+  rect(buf, x + 14, 88, 70, 5, [57, 232, 190], on ? 0.76 : 0.34);
+  rect(buf, x + 14, 106, 58, 5, [255, 214, 86], on ? 0.7 : 0.3);
+  for (let j = 0; j < 6; j++) circle(buf, x + 18 + j * 10, 132, 2.6, [190, 198, 210], 0.6);
+  rect(buf, x + 14, 158, 70, 14, [255, 86, 134], on ? 0.52 : 0.18);
+  if (on) glow(buf, x + 51, 128, 60, [57, 232, 190], 0.32);
+}
+
 function configProfilesFrame(t) {
   const buf = baseFrame();
   const selected = Math.floor((t * 1.8) % 3);
   for (let i = 0; i < 3; i++) {
-    const x = 42 + i * 132;
-    const on = i === selected;
-    rect(buf, x, 46, 102, 164, on ? [28, 42, 62] : [16, 24, 38], on ? 0.98 : 0.9);
-    rect(buf, x + 14, 66, 54, 6, [255, 255, 255], on ? 0.42 : 0.22);
-    rect(buf, x + 14, 88, 70, 5, [57, 232, 190], on ? 0.76 : 0.34);
-    rect(buf, x + 14, 106, 58, 5, [255, 214, 86], on ? 0.7 : 0.3);
-    for (let j = 0; j < 6; j++) circle(buf, x + 18 + j * 10, 132, 2.6, [190, 198, 210], 0.6);
-    rect(buf, x + 14, 158, 70, 14, [255, 86, 134], on ? 0.52 : 0.18);
-    if (on) glow(buf, x + 51, 128, 60, [57, 232, 190], 0.32);
+    drawConfigProfileCard(buf, i, selected);
   }
   rect(buf, 152, 224, 176, 8, [255, 255, 255], 0.16);
   rect(buf, 152, 224, 58 + selected * 58, 8, [57, 232, 190], 0.7);
@@ -2230,6 +2261,13 @@ function agentWatchHooksFrame(t) {
   return buf;
 }
 
+function drawCopilotTierRow(buf, index, safe) {
+  const y = 104 + index * 28;
+  rect(buf, 68, y, 150 + (index % 2) * 42, 14, [28, 38, 58], 0.94);
+  rect(buf, 82, y + 5, 64 + index * 18, 4, [255, 255, 255], 0.26);
+  if (index % 2 === 1) rect(buf, 258, y, 94, 14, safe ? [57, 232, 190] : [255, 214, 86], 0.48);
+}
+
 function copilotTierSwitchFrame(t) {
   const buf = baseFrame();
   rect(buf, 40, 28, 400, 214, [16, 24, 38], 0.96);
@@ -2237,10 +2275,7 @@ function copilotTierSwitchFrame(t) {
   rect(buf, 64, 54, 120, 26, safe ? [57, 232, 190] : [38, 48, 66], safe ? 0.76 : 0.62);
   rect(buf, 202, 54, 120, 26, safe ? [38, 48, 66] : [255, 86, 134], safe ? 0.62 : 0.76);
   for (let i = 0; i < 4; i++) {
-    const y = 104 + i * 28;
-    rect(buf, 68, y, 150 + (i % 2) * 42, 14, [28, 38, 58], 0.94);
-    rect(buf, 82, y + 5, 64 + i * 18, 4, [255, 255, 255], 0.26);
-    if (i % 2 === 1) rect(buf, 258, y, 94, 14, safe ? [57, 232, 190] : [255, 214, 86], 0.48);
+    drawCopilotTierRow(buf, i, safe);
   }
   rect(buf, 68, 214, 252, 9, [255, 255, 255], 0.14);
   rect(buf, 68, 214, 92 + (safe ? 20 : 120), 9, safe ? [57, 232, 190] : [255, 86, 134], 0.74);
@@ -2433,6 +2468,31 @@ function sdfCsgCathedralFrame(t) {
   return buf;
 }
 
+function opticalParticleColor(index) {
+  if (index % 5 === 0) return [255, 86, 134];
+  if (index % 3 === 0) return [255, 214, 86];
+  return [57, 232, 190];
+}
+
+function drawOpticalParticleTrail(buf, index, bodyX, bodyY, t) {
+  let x = rand(index, 4, 1) * width;
+  let y = rand(index, 9, 2) * height;
+  const trail = 8 + Math.floor(rand(index, 6, 3) * 8);
+  const color = opticalParticleColor(index);
+  for (let s = 0; s < trail; s++) {
+    const dx = bodyX - x;
+    const dy = bodyY - y;
+    const pull = Math.exp(-(dx * dx + dy * dy) / 26000);
+    const a = Math.sin(x * 0.018 + y * 0.024 + t * 3.4) * Math.PI + pull * Math.atan2(dy, dx);
+    const nx = x + Math.cos(a) * (2.8 + pull * 9);
+    const ny = y + Math.sin(a) * (2.2 + pull * 7);
+    line(buf, x, y, nx, ny, color, 0.08 + pull * 0.18);
+    x = nx;
+    y = ny;
+  }
+  if (index % 4 === 0) circle(buf, x, y, 1.5, color, 0.48);
+}
+
 function opticalFlowParticlesTrailFrame(t) {
   const buf = baseFrame();
   for (let y = 0; y < height; y++) {
@@ -2459,22 +2519,7 @@ function opticalFlowParticlesTrailFrame(t) {
     0.07,
   );
   for (let i = 0; i < 760; i++) {
-    let x = rand(i, 4, 1) * width;
-    let y = rand(i, 9, 2) * height;
-    const trail = 8 + Math.floor(rand(i, 6, 3) * 8);
-    const color = i % 5 === 0 ? [255, 86, 134] : i % 3 === 0 ? [255, 214, 86] : [57, 232, 190];
-    for (let s = 0; s < trail; s++) {
-      const dx = bodyX - x;
-      const dy = bodyY - y;
-      const pull = Math.exp(-(dx * dx + dy * dy) / 26000);
-      const a = Math.sin(x * 0.018 + y * 0.024 + t * 3.4) * Math.PI + pull * Math.atan2(dy, dx);
-      const nx = x + Math.cos(a) * (2.8 + pull * 9);
-      const ny = y + Math.sin(a) * (2.2 + pull * 7);
-      line(buf, x, y, nx, ny, color, 0.08 + pull * 0.18);
-      x = nx;
-      y = ny;
-    }
-    if (i % 4 === 0) circle(buf, x, y, 1.5, color, 0.48);
+    drawOpticalParticleTrail(buf, i, bodyX, bodyY, t);
   }
   for (let gy = 0; gy < 7; gy++) {
     for (let gx = 0; gx < 11; gx++) {
@@ -3507,11 +3552,7 @@ function setlistRunnerFrame(t) {
   return buf;
 }
 
-function showFailoverFrame(t) {
-  const buf = baseFrame();
-  const trip = Math.sin(t * 2.4) > 0.08;
-  rect(buf, 34, 52, 150, 106, [16, 24, 38], 0.95);
-  rect(buf, 296, 52, 150, 106, [16, 24, 38], 0.95);
+function drawFailoverRows(buf, trip) {
   for (let i = 0; i < 30; i++) {
     circle(
       buf,
@@ -3531,9 +3572,25 @@ function showFailoverFrame(t) {
       trip ? 0.7 : 0.22,
     );
   }
+}
+
+function failoverPrimaryColor(trip) {
+  return trip ? [255, 86, 134] : [57, 232, 190];
+}
+
+function failoverSecondaryColor(trip) {
+  return trip ? [255, 214, 86] : [74, 88, 112];
+}
+
+function showFailoverFrame(t) {
+  const buf = baseFrame();
+  const trip = Math.sin(t * 2.4) > 0.08;
+  rect(buf, 34, 52, 150, 106, [16, 24, 38], 0.95);
+  rect(buf, 296, 52, 150, 106, [16, 24, 38], 0.95);
+  drawFailoverRows(buf, trip);
   rect(buf, 214, 84, 52, 42, [238, 242, 247], 0.9);
-  line(buf, 184, 105, 214, 105, trip ? [255, 86, 134] : [57, 232, 190], 0.82);
-  line(buf, 266, 105, 296, 105, trip ? [255, 214, 86] : [74, 88, 112], 0.82);
+  line(buf, 184, 105, 214, 105, failoverPrimaryColor(trip), 0.82);
+  line(buf, 266, 105, 296, 105, failoverSecondaryColor(trip), 0.82);
   const idx = trip ? 1 : 0;
   rect(buf, 226, 96 + idx * 16, 28, 7, trip ? [255, 214, 86] : [57, 232, 190], 0.9);
   rect(buf, 88, 206, 304, 7, [255, 255, 255], 0.14);

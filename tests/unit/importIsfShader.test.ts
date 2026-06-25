@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
@@ -83,6 +86,18 @@ const ISF_MULTIPASS = `/*{
   "PASSES": [{}, {}]
 }*/
 void main() { gl_FragColor = vec4(0.0); }`;
+const ISF_AUDIO_AND_UNSUPPORTED = `/*   \n{
+  "DESCRIPTION": "Audio Imports",
+  "IMPORTED": { "mask": { "PATH": "mask.png" } },
+  "INPUTS": [
+    { "NAME": "fft", "TYPE": "audioFFT" },
+    { "NAME": "mic", "TYPE": "audio" },
+    { "NAME": "cube", "TYPE": "cube" },
+    { "TYPE": "float" },
+    { "NAME": "gain" }
+  ],
+  "PASSES": [{}, {}]
+}   \n*/\nvoid main() { gl_FragColor = vec4(1.0); }`;
 
 // ─── Header parser ───────────────────────────────────────────────────────────
 
@@ -132,6 +147,35 @@ describe("extractIsfHeader", () => {
     const r = extractIsfHeader(ISF_CRLF);
     expect(r.ok).toBe(true);
   });
+
+  it("reports unterminated and missing-closing metadata blocks", () => {
+    const unterminated = extractIsfHeader('/*{ "DESCRIPTION": "unterminated" ');
+    expect(unterminated.ok).toBe(false);
+    if (!unterminated.ok) expect(unterminated.error).toMatch(/unterminated JSON/);
+
+    const missingClose = extractIsfHeader('/*{ "DESCRIPTION": "missing close" } void main(){}');
+    expect(missingClose.ok).toBe(false);
+    if (!missingClose.ok) expect(missingClose.error).toMatch(/missing closing/);
+  });
+
+  it("filters unsupported inputs and warns for imported, multi-pass, and audio inputs", () => {
+    const r = extractIsfHeader(ISF_AUDIO_AND_UNSUPPORTED);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.header.INPUTS).toEqual([
+      expect.objectContaining({ NAME: "fft", TYPE: "image" }),
+      expect.objectContaining({ NAME: "mic", TYPE: "image" }),
+    ]);
+    expect(r.warnings).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("Multi-pass"),
+        expect.stringContaining("IMPORTED"),
+        expect.stringContaining("audio input 'fft'"),
+        expect.stringContaining("audio input 'mic'"),
+        expect.stringContaining("Unsupported ISF input type 'cube'"),
+      ]),
+    );
+  });
 });
 
 // ─── Control-default merging ────────────────────────────────────────────────
@@ -157,6 +201,29 @@ describe("applyControlDefaults", () => {
     const angleUnchanged = typeMis.inputs.find((i) => i.NAME === "angle");
     expect(angleUnchanged?.DEFAULT).toBe(0.5);
     expect(typeMis.warnings.some((w) => /angle/.test(w))).toBe(true);
+  });
+
+  it("accepts compatible scalar/vector defaults and rejects event/image defaults", () => {
+    const inputs = [
+      { NAME: "mode", TYPE: "long" as const, DEFAULT: 0 },
+      { NAME: "enabled", TYPE: "bool" as const, DEFAULT: false },
+      { NAME: "center", TYPE: "point2D" as const, DEFAULT: [0.5, 0.5] },
+      { NAME: "bang", TYPE: "event" as const },
+      { NAME: "image", TYPE: "image" as const },
+    ];
+
+    const r = applyControlDefaults(inputs, {
+      mode: 2,
+      enabled: true,
+      center: [0.25, 0.75],
+      bang: true,
+      image: "/project1/movie1",
+    });
+
+    expect(r.inputs.find((i) => i.NAME === "mode")?.DEFAULT).toBe(2);
+    expect(r.inputs.find((i) => i.NAME === "enabled")?.DEFAULT).toBe(true);
+    expect(r.inputs.find((i) => i.NAME === "center")?.DEFAULT).toEqual([0.25, 0.75]);
+    expect(r.warnings).toEqual([expect.stringContaining("bang"), expect.stringContaining("image")]);
   });
 });
 
@@ -260,6 +327,34 @@ describe("importIsfShaderImpl (end-to-end via msw)", () => {
     });
     expect(fail.isError).toBe(true);
     expect(textOf(fail)).toMatch(/404|Failed to resolve/i);
+  });
+
+  it("loads a shader from a local file and rejects undetectable auto sources", async () => {
+    captureBuildHandlers();
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-isf-file-"));
+    try {
+      const file = join(dir, "shader.fs");
+      writeFileSync(file, ISF_MINIMAL, "utf8");
+
+      const ok = await importIsfShaderImpl(ctx(), {
+        ...baseArgs,
+        source_kind: "file",
+        source: file,
+        name: "123 file shader",
+      });
+      expect(ok.isError).toBeFalsy();
+      expect(textOf(ok)).toContain("file://");
+
+      const fail = await importIsfShaderImpl(ctx(), {
+        ...baseArgs,
+        source_kind: "auto",
+        source: "just a label, not a shader",
+      });
+      expect(fail.isError).toBe(true);
+      expect(textOf(fail)).toMatch(/Could not detect ISF source kind/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("emits the multi-pass deferred warning when PASSES has length > 1", async () => {

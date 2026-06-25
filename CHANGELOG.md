@@ -69,6 +69,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Factor Kinect wall harp JSON-line helper supervision into a reusable external
   helper supervisor while preserving libfreenect2 stall restart coverage.
+- Stabilize the JS/TS cognitive-complexity ratchet with signature-based baseline
+  keys, align the advertised Node engine floor with the ESLint dependency chain,
+  and expand offline coverage tests for the coverage/complexity wave.
 - Keep Glama/pnpm Docker builds warning-free by moving pnpm install policy into
   `pnpm-workspace.yaml`, pinning the Vite/Cheerio resolutions there, and keeping
   the Shader Park compiler as an optional peer.
