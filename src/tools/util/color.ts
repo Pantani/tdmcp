@@ -29,8 +29,11 @@ export function parseHexColor(
   hex: string,
   options: ParseHexOptions = {},
 ): [number, number, number] | undefined {
+  // Defensive: the helper is shared across many call sites that pass schema args
+  // directly; tolerate a missing value (treat as malformed → undefined) instead
+  // of throwing on `.trim()`.
   const re = options.shorthand ? HEX_SHORTHAND_OR_FULL : HEX_FULL;
-  const group = re.exec(hex.trim())?.[1];
+  const group = re.exec((hex ?? "").trim())?.[1];
   if (!group) return undefined;
   const full = group.length === 3 ? group.replace(/./g, (c) => c + c) : group;
   const int = Number.parseInt(full, 16);

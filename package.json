@@ -86,7 +86,7 @@
     "ai-party:td-build": "tsx src/automation/aiPartyLive/cli.ts td-build",
     "ai-party:test": "node scripts/run-vitest.mjs run tests/unit/aiPartyLive.test.ts tests/unit/showDirector.test.ts tests/unit/aiPartyGateway.test.ts tests/unit/aiPartyPoc.test.ts",
     "ai-party:telegram": "tsx src/automation/aiPartyLive/cli.ts telegram",
-    "version": "node scripts/sync-manifest-version.mjs && git add dxt/manifest.json safeskill.manifest.json server.json plugins/tdmcp/.claude-plugin/plugin.json",
+    "version": "node scripts/sync-manifest-version.mjs",
     "prepack": "node scripts/clean-pycache.mjs",
     "prepublishOnly": "npm run build && npm test"
   },

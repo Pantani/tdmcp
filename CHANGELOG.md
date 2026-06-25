@@ -95,6 +95,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Pin the bootstrap one-liner in `llms-install.md` and `tdmcp-install-prompt.md`
   to the released tag (they were stuck on `main`) and add both to the
   version-sync `bootstrapPinPaths` so they stay pinned on future releases.
+- Stage every file `sync-manifest-version.mjs` rewrites (manifests + all
+  bootstrap-pin docs) from the script itself, and drop the drift-prone
+  hand-maintained `git add` list from the `version` npm script — so the release
+  commit/tag no longer omits the rewritten bootstrap pins.
 - Correct the advertised tool count (286 → 332) on the README and docs landing
   page.
 - Remove a dead `code-quality` CI step that diffed the gitignored

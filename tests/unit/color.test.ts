@@ -17,6 +17,13 @@ describe("parseHexColor", () => {
     expect(parseHexColor("")).toBeUndefined();
   });
 
+  it("tolerates missing input (undefined/null) instead of throwing", () => {
+    // The helper is shared and some call sites pass schema args directly; a
+    // missing value must degrade to undefined, not crash on `.trim()`.
+    expect(parseHexColor(undefined as unknown as string)).toBeUndefined();
+    expect(parseHexColor(null as unknown as string)).toBeUndefined();
+  });
+
   it("rejects 3-digit shorthand by default (6-digit only)", () => {
     expect(parseHexColor("#abc")).toBeUndefined();
   });

@@ -140,6 +140,11 @@ describe("SafeSkill hygiene", () => {
     expect(pkg.files).toContain("safeskill.manifest.json");
     expect(manifest.version).toBe(pkg.version);
     expect(syncScript).toContain("safeskill.manifest.json");
-    expect(pkg.scripts?.version).toContain("safeskill.manifest.json");
+    // The `version` lifecycle script delegates to sync-manifest-version.mjs, which
+    // stages every managed file (manifests + bootstrap pins) via `git add` — so
+    // safeskill.manifest.json is still staged on a version bump, without a
+    // drift-prone hand-maintained list in package.json.
+    expect(pkg.scripts?.version).toContain("sync-manifest-version");
+    expect(syncScript).toContain('["add"');
   });
 });
