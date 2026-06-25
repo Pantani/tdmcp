@@ -1,8 +1,12 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { KnowledgeBase } from "../../src/knowledge/index.js";
 import {
   type LintRecipeLibraryArgs,
   lintRecipeLibraryImpl,
+  loadRecipesForLint,
   runLint,
 } from "../../src/tools/layer3/lintRecipeLibrary.js";
 import type { ToolContext } from "../../src/tools/types.js";
@@ -218,6 +222,48 @@ describe("lint_recipe_library (rules)", () => {
     expect(report.recipes[0]?.errors.some((f) => f.rule === "control_bind_unresolved")).toBe(true);
   });
 
+  it("flags duplicate nodes, missing parameter nodes, glsl hosts, and empty hygiene fields", () => {
+    const report = runLint(
+      [
+        src("messy.json", {
+          id: "messy",
+          name: "Messy",
+          description: "",
+          tags: [],
+          nodes: [
+            { name: "noise1", type: "noiseTOP" },
+            { name: "noise1", type: "levelTOP" },
+            { name: "shader", type: "noiseTOP" },
+          ],
+          parameters: [{ name: "Speed", node: "missing", param: "speed" }],
+          glsl_uniforms: [
+            { name: "uTime", node: "missing" },
+            { name: "uGain", node: "shader" },
+          ],
+          controls: [{ name: "Gain", bind_to: ["/project1/missing.gain", "noise1.gain"] }],
+          preview_description: "",
+        }),
+      ],
+      knowledge,
+      DEFAULT_ARGS,
+    );
+
+    const rec = report.recipes[0];
+    expect(rec?.errors.map((f) => f.rule)).toEqual(
+      expect.arrayContaining([
+        "duplicate_node_names",
+        "parameter_node_missing",
+        "control_bind_unresolved",
+      ]),
+    );
+    expect(rec?.warnings.map((f) => f.rule)).toEqual(
+      expect.arrayContaining(["description_empty", "glsl_uniform_host"]),
+    );
+    expect(rec?.info.map((f) => f.rule)).toEqual(
+      expect.arrayContaining(["tags_empty", "preview_description_empty"]),
+    );
+  });
+
   it("flags id/filename mismatch", () => {
     const report = runLint(
       [
@@ -256,6 +302,34 @@ describe("lint_recipe_library (rules)", () => {
     expect(rec?.warnings.length).toBe(1);
     expect(rec?.errors).toEqual([]);
     expect(rec?.info).toEqual([]);
+  });
+
+  it("filters recipes by id or filename before linting", () => {
+    const report = runLint(
+      [
+        src("selected.json", {
+          id: "selected",
+          name: "Selected",
+          description: "d",
+          tags: ["t"],
+          nodes: [{ name: "x", type: "doesNotExistTOP" }],
+          preview_description: "p",
+        }),
+        src("ignored_file.json", {
+          id: "ignored",
+          name: "Ignored",
+          description: "d",
+          tags: ["t"],
+          nodes: [{ name: "noise1", type: "noiseTOP" }],
+          preview_description: "p",
+        }),
+      ],
+      knowledge,
+      { ...DEFAULT_ARGS, recipe_id: "selected" },
+    );
+
+    expect(report.summary.totalRecipes).toBe(1);
+    expect(report.recipes[0]?.id).toBe("selected");
   });
 
   it("isError on fail_on=error when errors present", () => {
@@ -301,6 +375,53 @@ describe("lint_recipe_library (rules)", () => {
     expect(result.isError).toBeFalsy();
   });
 
+  it("isError on fail_on=warn when warnings are present", () => {
+    const ctx = { knowledge, recipes: {} } as unknown as ToolContext;
+    const result = lintRecipeLibraryImpl(
+      ctx,
+      { severity: "warn", fail_on: "warn" },
+      {
+        sources: [
+          src("foo.json", {
+            id: "bar",
+            name: "F",
+            description: "d",
+            tags: ["t"],
+            nodes: [{ name: "noise1", type: "noiseTOP" }],
+            preview_description: "p",
+          }),
+        ],
+      },
+    );
+    expect(result.isError).toBe(true);
+  });
+
+  it("never fails when fail_on is never even if errors are present", () => {
+    const ctx = { knowledge, recipes: {} } as unknown as ToolContext;
+    const result = lintRecipeLibraryImpl(
+      ctx,
+      { severity: "info", fail_on: "never" },
+      {
+        sources: [
+          src("d.json", {
+            id: "d",
+            name: "D",
+            description: "",
+            tags: [],
+            nodes: [{ name: "a", type: "noiseTOP" }],
+            connections: [{ from: "missing", to: "ghost" }],
+            preview_description: "",
+          }),
+        ],
+      },
+    );
+    expect(result.isError).toBeFalsy();
+    expect(
+      (result as { structuredContent?: { summary: { withErrors: number } } }).structuredContent
+        ?.summary.withErrors,
+    ).toBe(1);
+  });
+
   it("structuredContent carries the report shape", () => {
     const ctx = { knowledge, recipes: {} } as unknown as ToolContext;
     const result = lintRecipeLibraryImpl(ctx, DEFAULT_ARGS, {
@@ -318,5 +439,27 @@ describe("lint_recipe_library (rules)", () => {
     const data = (result as { structuredContent?: { summary: { totalRecipes: number } } })
       .structuredContent;
     expect(data?.summary.totalRecipes).toBe(1);
+  });
+
+  it("loads invalid JSON and schema-invalid recipe files for linting", () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-recipe-lint-"));
+    try {
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(join(dir, "broken.json"), "{not-json", "utf8");
+      writeFileSync(join(dir, "schema_bad.json"), JSON.stringify({ id: "schema_bad" }), "utf8");
+      writeFileSync(join(dir, "notes.txt"), "ignore", "utf8");
+
+      const sources = loadRecipesForLint({ dir });
+      const report = runLint(sources, knowledge, DEFAULT_ARGS);
+
+      expect(sources.map((source) => source.file).sort()).toEqual([
+        "broken.json",
+        "schema_bad.json",
+      ]);
+      expect(report.summary.totalRecipes).toBe(2);
+      expect(report.recipes.map((recipe) => recipe.errors[0]?.rule)).toEqual(["schema", "schema"]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

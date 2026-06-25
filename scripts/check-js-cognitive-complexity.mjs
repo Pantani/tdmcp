@@ -11,6 +11,48 @@ const defaultBaseline = "eslint-cognitive-baseline.json";
 const defaultThreshold = 9;
 const lintTargets = ["src/**/*.{ts,tsx,js,mjs,cjs}", "scripts/**/*.{js,mjs,cjs}", "*.{js,mjs,cjs}"];
 
+function normalizeSignature(value) {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function signatureFromLine(line) {
+  const trimmed = normalizeSignature(line);
+  const patterns = [
+    /\b(?:async\s+)?function\s+\*?\s*([A-Za-z_$][\w$]*)\s*\(/,
+    /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?(?:\([^)]*\)|[A-Za-z_$][\w$]*)\s*=>/,
+    /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?function\b/,
+    /\b(?:async\s+)?([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*[:\w<>,\s[\]|&?.]*\s*\{/,
+    /\b([A-Za-z_$][\w$]*)\s*:\s*(?:async\s*)?(?:function\b|\([^)]*\)\s*=>)/,
+  ];
+  for (const pattern of patterns) {
+    const match = trimmed.match(pattern);
+    if (match?.[1]) return match[1];
+  }
+  return undefined;
+}
+
+function sourceSignature(source, line) {
+  const lines = source.split(/\r?\n/);
+  for (let index = line - 1; index >= Math.max(0, line - 8); index--) {
+    const signature = signatureFromLine(lines[index] ?? "");
+    if (signature) return signature;
+  }
+  return normalizeSignature(lines[line - 1] ?? "");
+}
+
+function withStableKeys(entries) {
+  const counts = new Map();
+  return entries.map((entry) => {
+    const baseKey = `${entry.file}:${entry.signature || `line:${entry.line}:col:${entry.column}`}`;
+    const count = counts.get(baseKey) ?? 0;
+    counts.set(baseKey, count + 1);
+    return {
+      ...entry,
+      stableKey: count === 0 ? baseKey : `${baseKey}#${count + 1}`,
+    };
+  });
+}
+
 function parseArgs(argv) {
   const options = {
     baseline: defaultBaseline,
@@ -30,6 +72,11 @@ function parseArgs(argv) {
 }
 
 function entryKey(entry) {
+  if (typeof entry.stableKey === "string" && entry.stableKey.length > 0) return entry.stableKey;
+  return `${entry.file}:${entry.line}:${entry.column}`;
+}
+
+function legacyEntryKey(entry) {
   return `${entry.file}:${entry.line}:${entry.column}`;
 }
 
@@ -39,6 +86,15 @@ function parseComplexity(message) {
 }
 
 async function collectViolations(threshold) {
+  const sourceCache = new Map();
+  const sourceFor = (filePath) => {
+    let source = sourceCache.get(filePath);
+    if (source === undefined) {
+      source = readFileSync(filePath, "utf8");
+      sourceCache.set(filePath, source);
+    }
+    return source;
+  };
   const eslint = new ESLint({
     overrideConfigFile: true,
     overrideConfig: [
@@ -55,7 +111,7 @@ async function collectViolations(threshold) {
     ],
   });
   const results = await eslint.lintFiles(lintTargets);
-  return results
+  const entries = results
     .flatMap((result) =>
       result.messages
         .filter((message) => message.ruleId === "sonarjs/cognitive-complexity")
@@ -64,10 +120,12 @@ async function collectViolations(threshold) {
           line: message.line,
           column: message.column,
           complexity: parseComplexity(message.message),
+          signature: sourceSignature(sourceFor(result.filePath), message.line),
           message: message.message,
         })),
     )
-    .sort((a, b) => entryKey(a).localeCompare(entryKey(b)));
+    .sort((a, b) => legacyEntryKey(a).localeCompare(legacyEntryKey(b)));
+  return withStableKeys(entries).sort((a, b) => entryKey(a).localeCompare(entryKey(b)));
 }
 
 function readBaseline(filename) {
@@ -77,13 +135,25 @@ function readBaseline(filename) {
 
 function compareWithBaseline(current, baseline) {
   const baselineByKey = new Map(baseline.map((entry) => [entryKey(entry), entry]));
+  const legacyBaselineByKey = new Map(baseline.map((entry) => [legacyEntryKey(entry), entry]));
+  const relocatedBaseline = [...baseline];
   const failures = [];
   for (const entry of current) {
-    const previous = baselineByKey.get(entryKey(entry));
+    const previous =
+      baselineByKey.get(entryKey(entry)) ??
+      legacyBaselineByKey.get(legacyEntryKey(entry)) ??
+      relocatedBaseline.find(
+        (candidate) =>
+          candidate.file === entry.file &&
+          candidate.complexity === entry.complexity &&
+          candidate.signature === undefined,
+      );
     if (!previous) {
       failures.push({ kind: "new", entry });
       continue;
     }
+    const relocatedIndex = relocatedBaseline.indexOf(previous);
+    if (relocatedIndex !== -1) relocatedBaseline.splice(relocatedIndex, 1);
     if (entry.complexity > previous.complexity) {
       failures.push({ kind: "worse", entry, previous });
     }
