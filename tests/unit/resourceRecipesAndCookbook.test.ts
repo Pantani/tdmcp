@@ -239,7 +239,9 @@ describe("cookbook resource helpers", () => {
         "/examples/cubemap-dome-master.mp4",
       ]) {
         expect(text).toContain(capturedMedia);
-        expect(existsSync(join(process.cwd(), "docs/public", capturedMedia))).toBe(true);
+        expect(
+          existsSync(join(process.cwd(), "docs/public", capturedMedia.replace(/^\/+/, ""))),
+        ).toBe(true);
       }
       expect(text).not.toMatch(
         /\/examples\/(?:kinect-wall-harp|mixer-scene|operator-search|version-migration|technique-to-recipe|band-router|audio-glsl|live-ingest|media-bin|keyer|phone-gesture|performance-control|stipple-pointcloud|dmx-fixture).*\.mp4/,
