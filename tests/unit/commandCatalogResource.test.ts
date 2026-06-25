@@ -18,5 +18,14 @@ describe("command catalog resource helpers", () => {
         unsafe: false,
       }),
     );
+    expect(result.commands).toContainEqual(
+      expect.objectContaining({
+        command: "hardware-diagnose",
+        summary: expect.stringContaining("Preflight bridge"),
+        mutates: false,
+        unsafe: false,
+        source: "tool",
+      }),
+    );
   }, 10_000);
 });

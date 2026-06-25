@@ -7,8 +7,10 @@ import {
   runBuild,
 } from "../layer2/orchestration.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { addExternalSensorLocalStatusSurface } from "./externalSensorStatusSurface.js";
 
 const q = (value: string): string => JSON.stringify(value);
+const DEPTH_SILHOUETTE_STATUS_STORE_KEY = "tdmcp_depth_silhouette_status";
 
 /**
  * Depth/IR capture devices whose TOPs were confirmed to exist in this build's knowledge base
@@ -181,6 +183,13 @@ export async function createDepthSilhouetteImpl(ctx: ToolContext, args: CreateDe
     // Null = the stable output bind point (other tools/composites reference op('…/out1')).
     const out = await builder.add("nullTOP", "out1");
     await builder.connect(output, out);
+    const statusSurface = await addExternalSensorLocalStatusSurface(builder, {
+      channelPrefix: "depth_source",
+      outputPath: out,
+      sourceKind: args.source,
+      sourcePath: source,
+      storeKey: DEPTH_SILHOUETTE_STATUS_STORE_KEY,
+    });
 
     // Threshold is the headline knob; Smooth the blur size; Invert toggles the level invert.
     // FillColor is an RGB swatch (the ControlSpec 'rgb' type does not support bind_to, so it
@@ -231,7 +240,7 @@ export async function createDepthSilhouetteImpl(ctx: ToolContext, args: CreateDe
     return finalize(ctx, {
       summary: `Built a depth silhouette / body mask (source: ${sourceLabel}, threshold ${args.threshold}) → ${out}. White silhouette on black${
         args.fill_color ? ` filled ${args.fill_color}` : ""
-      }${args.invert ? " (inverted)" : ""}. Bind op('${mask}').par.threshold to proximity/audio to make it react, or use ${out} as a mask for other visuals.`,
+      }${args.invert ? " (inverted)" : ""}. Bind op('${mask}').par.threshold to proximity/audio to make it react, or use ${out} as a mask for other visuals. Source diagnostics are exposed at source_status and source_status_chop.`,
       builder,
       outputPath: out,
       // Output is a TOP (the Null), so a preview image is captured.
@@ -246,6 +255,9 @@ export async function createDepthSilhouetteImpl(ctx: ToolContext, args: CreateDe
         fill_color: args.fill_color,
         mask_path: mask,
         output_path: out,
+        source_status_chop: statusSurface.statusChop,
+        source_status_dat: statusSurface.statusDat,
+        source_status_driver: statusSurface.statusDriver,
       },
     });
   });

@@ -41,6 +41,14 @@ function textOf(result: CallToolResult): string {
     .join("\n");
 }
 
+function dataOf(result: CallToolResult): Record<string, unknown> {
+  const match = /```json\n([\s\S]*?)\n```/.exec(textOf(result));
+  if (!match) throw new Error("result text did not contain a JSON block");
+  const payload = match[1];
+  if (payload === undefined) throw new Error("result JSON block was empty");
+  return JSON.parse(payload) as Record<string, unknown>;
+}
+
 // Records every POST /api/nodes body so a test can assert which ops/params were created.
 function captureCreateBodies(): CreatedNodeBody[] {
   const bodies: CreatedNodeBody[] = [];
@@ -138,6 +146,43 @@ describe("create_depth_silhouette", () => {
     const bodies = captureCreateBodies();
     await run({ source: "kinect_azure", expose_controls: false });
     expect(bodies.map((b) => b.type)).toContain("kinectazureTOP");
+  });
+
+  it("adds a reusable local source status DAT/CHOP surface", async () => {
+    const bodies = captureCreateBodies();
+    const scripts: string[] = [];
+    server.use(
+      http.post(`${TD_BASE}/api/exec`, async ({ request }) => {
+        scripts.push(((await request.json()) as { script: string }).script);
+        return HttpResponse.json({ ok: true, data: { result: null, stdout: "" } });
+      }),
+    );
+
+    const result = await run({ source: "kinect", expose_controls: false });
+    expect(result.isError).toBeFalsy();
+
+    expect(bodies.some((b) => b.type === "textDAT" && b.name === "source_status")).toBe(true);
+    expect(bodies.some((b) => b.type === "scriptCHOP" && b.name === "source_status_chop")).toBe(
+      true,
+    );
+    expect(
+      bodies.some((b) => b.type === "textDAT" && b.name === "source_status_chop_callbacks"),
+    ).toBe(true);
+    expect(bodies.some((b) => b.type === "executeDAT" && b.name === "source_status_driver")).toBe(
+      true,
+    );
+
+    const script = scripts.join("\n");
+    expect(script).toContain('SOURCE_KIND = \\"kinect\\"');
+    expect(script).toContain('SOURCE_PATH = \\"/project1/depth_silhouette/source\\"');
+    expect(script).toContain('OUTPUT_PATH = \\"/project1/depth_silhouette/out1\\"');
+    expect(script).toContain('parent().store(\\"tdmcp_depth_silhouette_status\\"');
+    expect(script).toContain('_chan(scriptOp, \\"depth_source_ok\\"');
+
+    const data = dataOf(result);
+    expect(data.source_status_dat).toBe("/project1/depth_silhouette/source_status");
+    expect(data.source_status_chop).toBe("/project1/depth_silhouette/source_status_chop");
+    expect(data.source_status_driver).toBe("/project1/depth_silhouette/source_status_driver");
   });
 
   it("exposes Threshold/Smooth/Invert controls bound to the right params", async () => {

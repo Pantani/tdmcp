@@ -1,28 +1,30 @@
 # Changelog
 
 All notable changes to **tdmcp** are documented here. The format follows
-[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
-to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
+adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
 ### Added
 
-- Add a Claude Code plugin marketplace entry for tdmcp with a stdio-pinned MCP server
-  launch configuration.
+- Add a Claude Code plugin marketplace entry for tdmcp with a stdio-pinned MCP
+  server launch configuration.
 - Import TouchDesigner knowledge from Bottobot into MCP resources for version
   history, compatibility notes, operator workflow guidance, technique packs, TD
   class families, and experimental build data; add read-only agent tools for
   cross-surface knowledge search and operator workflow lookup.
-- Expand `search_operators` with category/subcategory filters, exact/tag modes,
-  parameter metadata search, version compatibility filtering, facets, zero-result
-  tips, and explicit validation for unknown categories or TouchDesigner versions.
+- Expand `search_operators` with category/subcategory filters, exact/tag
+  modes, parameter metadata search, version compatibility filtering, facets,
+  zero-result tips, and explicit validation for unknown categories or
+  TouchDesigner versions.
 - Add `compare_operator_docs` and `search_python_api` read-only knowledge tools
   so agents can compare operator documentation and search TouchDesigner Python
   classes, methods, and members without guessing resource URIs.
 - Add `suggest_operator_chain` and `plan_td_version_migration` read-only tools
-  so agents can turn offline workflow/compatibility knowledge into operator-chain
-  plans and TouchDesigner upgrade checklists before touching a live project.
+  so agents can turn offline workflow/compatibility knowledge into
+  operator-chain plans and TouchDesigner upgrade checklists before touching a
+  live project.
 - Add `validate_operator_chain` and `draft_recipe_from_operator_chain` read-only
   tools so agents can preflight operator chains against offline docs/version
   compatibility and turn validated chains into `RecipeSchema` drafts without
@@ -30,9 +32,30 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Add `get_technique_detail`, `draft_recipe_from_technique`, and `get_tutorial`
   read-only knowledge tools so agents can inspect Bottobot-derived technique and
   tutorial material and turn GLSL techniques into `RecipeSchema` drafts offline.
-- Add the Kinect wall harp command/tool with FreenectTD-oriented wall-touch tracking,
-  external Kinect bridge support, calibration diagnostics, laser-line visuals, and clean
-  sine-based audio output.
+- Add the Kinect wall harp command/tool with FreenectTD-oriented wall-touch
+  tracking, external Kinect bridge support, calibration diagnostics, laser-line
+  visuals, and clean sine-based audio output.
+- Add an English and Portuguese physical-installations guide that captures the
+  Kinect wall harp lessons as a reusable hardware/projector checklist and
+  next-slice backlog.
+- Add a post-implementation learning harness that studies shipped tdmcp features
+  and turns real code, runtime, review, docs, and hardware lessons into routed
+  improvement backlogs.
+- Add normalized helper status payloads and optional `--status-json` output to
+  the Kinect wall harp libfreenect2 bridge.
+- Surface Kinect wall harp bridge health inside generated TouchDesigner projects
+  through a `bridge_status` DAT driven by the same normalized status JSON.
+- Add a generated `bridge_status_chop` to expose bridge health as numeric
+  TouchDesigner channels for panels, overlays, and logic.
+- Add a reusable external-sensor status-surface helper so future Layer 1 tools
+  can generate consistent bridge health DAT/CHOP diagnostics.
+- Add local TouchDesigner operator-health status surfaces to `create_live_source`
+  and `create_depth_silhouette` so camera, depth, NDI, Syphon/Spout,
+  screen-grab, and video-stream inputs expose `source_status` and
+  `source_status_chop` diagnostics without an external bridge.
+- Add `diagnose_hardware_environment`, a read-only Layer 3/MCP/agent preflight
+  for bridge reachability, display/projector topology, and generated
+  `source_status` / `bridge_status` DAT health checks.
 - Add `draft_recipe_from_tutorial` as a read-only Layer 3/CLI/local-copilot tool
   that extracts conservative operator chains from embedded tutorials and drafts
   `RecipeSchema` JSON offline; harden tutorial content handling so structured
@@ -44,11 +67,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Factor Kinect wall harp JSON-line helper supervision into a reusable external
+  helper supervisor while preserving libfreenect2 stall restart coverage.
 - Keep Glama/pnpm Docker builds warning-free by moving pnpm install policy into
   `pnpm-workspace.yaml`, pinning the Vite/Cheerio resolutions there, and keeping
   the Shader Park compiler as an optional peer.
-- Clear the npm audit report by updating vulnerable Vitest, Vite, VitePress and esbuild
-  transitive dependency resolutions.
+- Clear the npm audit report by updating vulnerable Vitest, Vite, VitePress and
+  esbuild transitive dependency resolutions.
 
 ## [0.10.0] - 2026-06-23
 

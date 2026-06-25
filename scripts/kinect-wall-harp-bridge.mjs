@@ -1,13 +1,16 @@
 #!/usr/bin/env node
-import { spawn } from "node:child_process";
 import dgram from "node:dgram";
-import { createInterface } from "node:readline";
+import { mkdirSync, renameSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
+import { runJsonLineHelper } from "./external-helper-supervisor.mjs";
 
 const DEFAULT_HELPER = "_workspace/kinect-wall-harp/external/kinect_harp_depth_bridge";
+const STATUS_FRAME_WRITE_INTERVAL_MS = 500;
 const STRING_OPTIONS = new Map([
   ["--host", "host"],
   ["--source", "source"],
   ["--helper", "helper"],
+  ["--status-json", "statusJson"],
 ]);
 const FLOAT_OPTIONS = new Map([
   ["--rate", "rate"],
@@ -61,6 +64,7 @@ function defaultArgs() {
     rate: 30,
     frames: 0,
     helper: DEFAULT_HELPER,
+    statusJson: undefined,
     mirror: false,
     calibrationFrames: undefined,
     backgroundFrames: undefined,
@@ -194,6 +198,8 @@ Options:
   --rate <hz>         Synthetic send rate. Default: 30
   --frames <n>        Stop after n frames. 0 means run until interrupted.
   --helper <path>     libfreenect2 JSON helper path.
+  --status-json <path>
+                      Write normalized helper status JSON to this path.
   --wall-mm <mm>      Override wall depth instead of auto-calibrating.
   --calibration-frames <n>
                       Frames used for wall auto-calibration. Default helper value: 45
@@ -266,6 +272,62 @@ function sendFrame(socket, args, frame) {
   }
 }
 
+let lastStatusWriteAtMs = 0;
+let lastStatusSignature = "";
+
+function statusSignature(status) {
+  return [
+    status.type,
+    status.state,
+    status.ok,
+    status.stale,
+    status.restartCount,
+    status.pid,
+    status.error,
+  ].join("|");
+}
+
+function shouldWriteStatusJson(status, nowMs) {
+  const signature = statusSignature(status);
+  if (status.type !== "frame") {
+    lastStatusSignature = signature;
+    lastStatusWriteAtMs = nowMs;
+    return true;
+  }
+  if (signature !== lastStatusSignature) {
+    lastStatusSignature = signature;
+    lastStatusWriteAtMs = nowMs;
+    return true;
+  }
+  if (nowMs - lastStatusWriteAtMs >= STATUS_FRAME_WRITE_INTERVAL_MS) {
+    lastStatusWriteAtMs = nowMs;
+    return true;
+  }
+  return false;
+}
+
+function writeStatusJson(args, status) {
+  if (args.statusJson === undefined) return;
+  const nowMs = Date.now();
+  if (!shouldWriteStatusJson(status, nowMs)) return;
+  const payload = {
+    ...status,
+    source: args.source,
+    helper: args.helper,
+    target: { host: args.host, port: args.port },
+    updatedAt: new Date(nowMs).toISOString(),
+  };
+  try {
+    mkdirSync(dirname(args.statusJson), { recursive: true });
+    const tmp = `${args.statusJson}.${process.pid}.tmp`;
+    writeFileSync(tmp, `${JSON.stringify(payload, null, 2)}\n`);
+    renameSync(tmp, args.statusJson);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    process.stderr.write(`[kinect-wall-harp-bridge] failed to write status JSON: ${message}\n`);
+  }
+}
+
 function syntheticFrame(t) {
   return {
     left: {
@@ -327,71 +389,16 @@ function buildLibfreenect2HelperArgs(args) {
 async function runLibfreenect2(socket, args) {
   const helperArgs = buildLibfreenect2HelperArgs(args);
   const stallTimeoutMs = Math.max(0, Number(args.stallTimeoutMs ?? 8000));
-  return new Promise((resolve, reject) => {
-    let settled = false;
-    const settle = (callback, value) => {
-      if (settled) return;
-      settled = true;
-      callback(value);
-    };
-    const launchHelper = () => {
-      const child = spawn(args.helper, helperArgs, { stdio: ["ignore", "pipe", "pipe"] });
-      let childExited = false;
-      let lastFrameAt = Date.now();
-      let restartRequested = false;
-      const stallTimer =
-        stallTimeoutMs > 0
-          ? setInterval(
-              () => {
-                if (childExited || restartRequested) return;
-                const silenceMs = Date.now() - lastFrameAt;
-                if (silenceMs <= stallTimeoutMs) return;
-                restartRequested = true;
-                process.stderr.write(
-                  `[kinect-wall-harp-bridge] LIBUSB/depth stream stalled for ${silenceMs}ms; restarting helper\n`,
-                );
-                child.kill("SIGTERM");
-                const killTimer = setTimeout(() => {
-                  if (!childExited) child.kill("SIGKILL");
-                }, 1200);
-                killTimer.unref?.();
-              },
-              Math.max(1000, Math.min(2000, stallTimeoutMs)),
-            )
-          : undefined;
-      child.stderr.on("data", (chunk) => process.stderr.write(chunk));
-      const lines = createInterface({ input: child.stdout });
-      lines.on("line", (line) => {
-        if (!line.trim().startsWith("{")) return;
-        lastFrameAt = Date.now();
-        try {
-          sendFrame(socket, args, JSON.parse(line));
-        } catch (err) {
-          process.stderr.write(`[kinect-wall-harp-bridge] ignored helper line: ${err.message}\n`);
-        }
-      });
-      const clearStallTimer = () => {
-        if (stallTimer !== undefined) clearInterval(stallTimer);
-      };
-      child.on("error", (err) => {
-        childExited = true;
-        clearStallTimer();
-        lines.close();
-        settle(reject, err);
-      });
-      child.on("exit", (code, signal) => {
-        childExited = true;
-        clearStallTimer();
-        lines.close();
-        if (restartRequested && !settled) {
-          launchHelper();
-          return;
-        }
-        if (code === 0) settle(resolve);
-        else settle(reject, new Error(`libfreenect2 helper exited with code ${code ?? signal}`));
-      });
-    };
-    launchHelper();
+  return runJsonLineHelper({
+    command: args.helper,
+    args: helperArgs,
+    label: "kinect-wall-harp-bridge",
+    stallTimeoutMs,
+    onJson: (frame) => sendFrame(socket, args, frame),
+    onStatus: (status) => writeStatusJson(args, status),
+    formatStallMessage: ({ silenceMs }) =>
+      `[kinect-wall-harp-bridge] LIBUSB/depth stream stalled for ${silenceMs}ms; restarting helper`,
+    formatExitError: (code, signal) => `libfreenect2 helper exited with code ${code ?? signal}`,
   });
 }
 

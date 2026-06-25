@@ -2,8 +2,10 @@ import { z } from "zod";
 import type { ControlSpec } from "../layer2/createControlPanel.js";
 import { createSystemContainer, finalize, runBuild } from "../layer2/orchestration.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { addExternalSensorLocalStatusSurface } from "./externalSensorStatusSurface.js";
 
 const q = (value: string): string => JSON.stringify(value);
+const LIVE_SOURCE_STATUS_STORE_KEY = "tdmcp_live_source_status";
 
 export const createLiveSourceSchema = z.object({
   name: z.string().default("live_source").describe("Name for the source system COMP."),
@@ -108,13 +110,22 @@ export async function createLiveSourceImpl(
     const outNode = await builder.add("nullTOP", "out1");
     await builder.connect(fitNode, outNode);
 
+    const statusSurface = await addExternalSensorLocalStatusSurface(builder, {
+      channelPrefix: "live_source",
+      outputPath: outNode,
+      sourceKind: args.kind,
+      sourcePath: sourceNode,
+      storeKey: LIVE_SOURCE_STATUS_STORE_KEY,
+    });
+
     // 4. Summary and platform notes.
     const kindLabel = args.kind.replace("_", " ");
     const sourceInfo = args.source_name ? ` (source: "${args.source_name}")` : "";
     const resLabel = `${resW}×${resH}`;
     const summary =
       `Built a live source COMP "${args.name}" — ${kindLabel} feed${sourceInfo} normalized to ${resLabel}, ` +
-      `output at out1. Connect downstream tools to the out1 Null TOP.\n\n` +
+      `output at out1. Connect downstream tools to the out1 Null TOP. Diagnostics are exposed at ` +
+      `source_status and source_status_chop.\n\n` +
       `Platform note: ${KIND_NOTES[args.kind]}`;
 
     // Expose the source_name as an editable control where it makes sense.
@@ -135,6 +146,9 @@ export async function createLiveSourceImpl(
       fit_node: fitNode,
       resolution: [resW, resH],
       platform_note: KIND_NOTES[args.kind],
+      source_status_chop: statusSurface.statusChop,
+      source_status_dat: statusSurface.statusDat,
+      source_status_driver: statusSurface.statusDriver,
       unverified:
         args.kind !== "screen_grab"
           ? [

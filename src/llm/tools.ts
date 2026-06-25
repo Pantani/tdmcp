@@ -26,6 +26,10 @@ import { compareTdNodesImpl, compareTdNodesSchema } from "../tools/layer3/compar
 import { createTdNodeImpl, createTdNodeSchema } from "../tools/layer3/createTdNode.js";
 import { deleteTdNodeImpl, deleteTdNodeSchema } from "../tools/layer3/deleteTdNode.js";
 import {
+  diagnoseHardwareEnvironmentImpl,
+  diagnoseHardwareEnvironmentSchema,
+} from "../tools/layer3/diagnoseHardwareEnvironment.js";
+import {
   draftRecipeFromOperatorChainImpl,
   draftRecipeFromOperatorChainSchema,
 } from "../tools/layer3/draftRecipeFromOperatorChain.js";
@@ -132,6 +136,12 @@ export const LLM_TOOLS: LlmTool[] = [
     "Health check: confirm the TouchDesigner bridge is reachable and report TD/bridge versions.",
     z.object({}),
     (ctx) => getTdInfoImpl(ctx),
+  ),
+  t(
+    "diagnose_hardware_environment",
+    "Preflight a physical installation: bridge, display/projector topology, and generated sensor/helper status DATs.",
+    diagnoseHardwareEnvironmentSchema,
+    diagnoseHardwareEnvironmentImpl,
   ),
   t(
     "get_td_nodes",

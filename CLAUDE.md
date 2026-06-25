@@ -374,6 +374,31 @@ tool/recipe/docs, use the `tdmcp-kinect-wall-harp` skill before the generic
 |------|--------|--------|--------|
 | 2026-06-23 | Initial implementation harness | 5 agents + 1 skill + Codex mirrors | execute the approved Kinect wall harp spec through live prototype, Layer 1 tool build, integration, and live/synthetic QA |
 
+## Harness: implementation learning
+
+**Goal:** study a merged or shipped tdmcp implementation after the build, trace
+what actually happened across code/docs/tests/runtime/user feedback, and turn the
+lessons into concrete improvements: code, tests, docs, runtime diagnostics,
+roadmap items, or harness updates.
+
+**Trigger:** when asked to study, analyze, audit, or learn from a completed
+implementation, project, PR, physical installation, or build; extract what tdmcp
+can improve from an implementation; or turn real project experience into a
+prioritized improvement backlog, use `tdmcp-implementation-learning`. If the user
+asks to continue building the original feature, route to that feature harness or
+`tdmcp-pipeline` after the learning pass.
+
+Note: this is a post-implementation harness. It does not replace
+`tdmcp-kinect-wall-harp`, `tdmcp-pipeline`, `tdmcp-quality-audit`,
+`tdmcp-test-coverage`, or `tdmcp-docs-roadmap-update`; it decides which of those
+should own each follow-up item.
+
+**Change log:**
+
+| Date | Change | Target | Reason |
+| --- | --- | --- | --- |
+| 2026-06-24 | Initial build | 5 agents + 1 skill | post-build learning |
+
 ## Harness: Telegram + Ollama local copilot
 
 **Goal:** implement and maintain a secure Telegram Bot API entry point for the

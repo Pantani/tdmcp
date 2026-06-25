@@ -192,6 +192,12 @@ A reatividade de pose-do-corpo vive na própria trilha — veja
 - **`create_facade_mapping`** — Um rig de fachada arquitetônica multiprojetores
   (crop / corner-pin / edge-blend por projetor), entregue como esqueleto de
   calibração. Veja [Saída & mapeamento](/pt/guide/prompt-cookbook#saida-mapeamento).
+- **`create_kinect_wall_harp`** — Um instrumento de parede projetada com linhas
+  tipo laser, tracking de duas mãos encostando na parede, modo OSC Kinect e synth
+  interno de pluck. Recorra a ele quando câmera de profundidade e projetor viram
+  o instrumento, e siga o checklist de
+  [instalações físicas](/pt/guide/physical-installations) antes de afirmar que o
+  tracking ao vivo passou.
 - **`create_test_pattern`** — Uma fonte de calibração/alinhamento de projetor (grade,
   crosshair, color bars, ramp, circle-grid) com overlay de ID por projetor opcional.
 

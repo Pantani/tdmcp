@@ -2,11 +2,44 @@ import { z } from "zod";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import {
+  buildExternalSensorStatusChopCode,
+  buildExternalSensorStatusDriverDatCode,
+} from "./externalSensorStatusSurface.js";
 
 const DEFAULT_FREQUENCIES = [
   130.81, 146.83, 164.81, 196, 220, 246.94, 261.63, 293.66, 329.63, 392, 440, 493.88, 523.25,
   587.33, 659.25, 783.99,
 ];
+
+function assertRawTripleQuotedPythonSafe(label: string, code: string): string {
+  if (code.includes("'''")) {
+    throw new Error(`${label} cannot be embedded in a raw triple-single-quoted Python string`);
+  }
+  if (code.endsWith("\\")) {
+    throw new Error(`${label} cannot end with a trailing backslash`);
+  }
+  return code;
+}
+
+const KINECT_BRIDGE_STATUS_DRIVER_DAT_CODE = assertRawTripleQuotedPythonSafe(
+  "Kinect bridge status driver DAT code",
+  buildExternalSensorStatusDriverDatCode({
+    parameterName: "Bridgestatusjson",
+    statusChopName: "bridge_status_chop",
+    statusDatName: "bridge_status",
+    statusJsonPlaceholder: "__BRIDGE_STATUS_JSON__",
+    storeKey: "tdmcp_bridge_status",
+  }),
+);
+
+const KINECT_BRIDGE_STATUS_CHOP_CODE = assertRawTripleQuotedPythonSafe(
+  "Kinect bridge status CHOP code",
+  buildExternalSensorStatusChopCode({
+    channelPrefix: "bridge",
+    storeKey: "tdmcp_bridge_status",
+  }),
+);
 
 export const createKinectWallHarpSchema = z.object({
   parent_path: z
@@ -30,6 +63,12 @@ export const createKinectWallHarpSchema = z.object({
     .max(65535)
     .default(7400)
     .describe("UDP port for OSC Kinect hand input when source='osc_kinect'."),
+  bridge_status_json: z
+    .string()
+    .default("_workspace/kinect-wall-harp/bridge-status.json")
+    .describe(
+      "JSON status path written by scripts/kinect-wall-harp-bridge.mjs --status-json and read by the generated bridge_status DAT.",
+    ),
   fallback_to_synthetic: z
     .boolean()
     .default(true)
@@ -279,6 +318,10 @@ interface KinectWallHarpReport {
   audio_driver: string;
   audio_out: string;
   status_dat: string;
+  bridge_status_dat: string;
+  bridge_status_chop: string;
+  bridge_status_driver: string;
+  bridge_status_json: string;
   string_count: number;
   visual_line_count: number;
   freenect_available: boolean;
@@ -306,6 +349,10 @@ report = {
     "audio_driver": "",
     "audio_out": "",
     "status_dat": "",
+    "bridge_status_dat": "",
+    "bridge_status_chop": "",
+    "bridge_status_driver": "",
+    "bridge_status_json": str(_p.get("bridge_status_json", "")),
     "string_count": int(_p.get("string_count", 8)),
     "visual_line_count": int(_p.get("visual_line_count", _p.get("string_count", 8))),
     "freenect_available": False,
@@ -519,6 +566,7 @@ def _expose_controls(comp):
         _custom_par(tracking, "appendFloat", "Inputtop", _p["input_top"], min=0, max=1)
         _custom_par(tracking, "appendFloat", "Inputbottom", _p["input_bottom"], min=0, max=1)
         _custom_par(tracking, "appendToggle", "Showdebug", bool(_p["show_debug"]))
+        _custom_par(tracking, "appendStr", "Bridgestatusjson", _p.get("bridge_status_json", ""))
         calibration = comp.appendCustomPage("Calibration")
         _custom_par(calibration, "appendToggle", "Calibrationmode", False)
         _custom_par(calibration, "appendToggle", "Manualcapture", False)
@@ -1285,6 +1333,10 @@ def onStart():
     _drive_tracking()
     return
 '''
+
+BRIDGE_STATUS_DRIVER_DAT_CODE = r'''${KINECT_BRIDGE_STATUS_DRIVER_DAT_CODE}'''
+
+BRIDGE_STATUS_CHOP_CODE = r'''${KINECT_BRIDGE_STATUS_CHOP_CODE}'''
 
 CLEAN_SYNTH_DRIVER_DAT_CODE = r'''
 # Uses native Audio Oscillator CHOP voices for clean sine layers, avoiding Script CHOP audio-buffer glitches.
@@ -2131,6 +2183,37 @@ try:
             _status = _create(_cont, ["textDAT"], "status", -900, 360, "status")
             if _status is not None:
                 report["status_dat"] = _status.path
+            _bridge_status = _create(_cont, ["textDAT"], "bridge_status", -660, 360, "bridge status")
+            if _bridge_status is not None:
+                report["bridge_status_dat"] = _bridge_status.path
+                _set_text(_bridge_status, json.dumps({
+                    "ok": False,
+                    "path": str(_p.get("bridge_status_json", "")),
+                    "stale": True,
+                    "state": "waiting",
+                }, indent=2, sort_keys=True))
+            _bridge_status_chop = _create(_cont, ["scriptCHOP"], "bridge_status_chop", -660, 500, "bridge status channels")
+            if _bridge_status_chop is not None:
+                report["bridge_status_chop"] = _bridge_status_chop.path
+                _set_par(_bridge_status_chop, ["timeslice"], False, False)
+                _set_par(_bridge_status_chop, ["modoutsidecook"], True, False)
+                _set_par(_bridge_status_chop, ["cooktype"], "always", False)
+                _bridge_status_chop_cb = _text_dat(_cont, "bridge_status_chop_callbacks", -430, 500, "bridge status callbacks")
+                _set_text(_bridge_status_chop_cb, BRIDGE_STATUS_CHOP_CODE)
+                _set_callbacks(_bridge_status_chop, _bridge_status_chop_cb)
+            _bridge_status_driver = _create(_cont, ["executeDAT"], "bridge_status_driver", -430, 360, "bridge status driver")
+            if _bridge_status_driver is not None:
+                report["bridge_status_driver"] = _bridge_status_driver.path
+                _bridge_status_literal = json.dumps(str(_p.get("bridge_status_json", "")))
+                _bridge_status_code = BRIDGE_STATUS_DRIVER_DAT_CODE.replace(
+                    '"__BRIDGE_STATUS_JSON__"',
+                    _bridge_status_literal,
+                )
+                _set_text(_bridge_status_driver, _bridge_status_code)
+                _set_par(_bridge_status_driver, ["active"], True, False)
+                _set_par(_bridge_status_driver, ["framestart"], True, False)
+                _set_par(_bridge_status_driver, ["start"], True, False)
+                _set_par(_bridge_status_driver, ["play"], True, False)
             _depth_src = None
             _osc_select = None
             _mode = (
@@ -2389,7 +2472,7 @@ export const registerCreateKinectWallHarp: ToolRegistrar = (server, ctx) => {
     {
       title: "Create Kinect wall harp",
       description:
-        "Build a synthetic-safe Kinect v2 / FreenectTD projected wall harp in an isolated Base COMP. The network can create a FreenectTOP depth path when explicitly enabled, listen to an external OSC Kinect bridge with source='osc_kinect', or build a synthetic fallback. It extracts left/right hand centroids, divides the projection into configurable musical zones, triggers short electronic plucks on zone entry, renders a denser vibrating curtain of projected strings, and exposes depth/mask/hands/audio debug outputs. If FreenectTD or Kinect hardware is unavailable, the tool returns warnings instead of throwing, so the visual/audio/trigger chain can still be tested offline.",
+        "Build a synthetic-safe Kinect v2 / FreenectTD projected wall harp in an isolated Base COMP. The network can create a FreenectTOP depth path when explicitly enabled, listen to an external OSC Kinect bridge with source='osc_kinect', or build a synthetic fallback. It extracts left/right hand centroids, divides the projection into configurable musical zones, triggers short electronic plucks on zone entry, renders a denser vibrating curtain of projected strings, and exposes depth/mask/hands/audio plus bridge-status diagnostics. If FreenectTD or Kinect hardware is unavailable, the tool returns warnings instead of throwing, so the visual/audio/trigger chain can still be tested offline.",
       inputSchema: createKinectWallHarpSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

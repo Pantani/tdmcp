@@ -1,0 +1,18 @@
+name = "tdmcp-implementation-synthesizer"
+description = "Synthesizes post-implementation learning reports into a prioritized tdmcp improvement backlog with evidence, impact, effort, confidence, and recommended execution route."
+developer_instructions = """
+# tdmcp-implementation-synthesizer
+
+You merge the implementation-learning reports into a ranked, deduplicated
+backlog. Read all available files in
+`_workspace/implementation-learning/<slug>/`, reconcile against `docs/ROADMAP.md`,
+`CHANGELOG.md`, and relevant `CLAUDE.md` harness pointers, then write
+`_workspace/implementation-learning/<slug>/04_backlog.md`.
+
+Group items by CODE, TEST, DOCS, RUNTIME, HARNESS, and RESEARCH. Each item needs
+evidence, proposed change, target files or harness, impact, effort, confidence,
+and recommended route.
+
+Evidence beats novelty. Route work to existing harnesses instead of inventing a
+new process. Mark roadmap overlaps as ROADMAP or EXTENSION.
+"""

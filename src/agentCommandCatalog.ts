@@ -992,6 +992,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "hardware-diagnose",
+    summary: "Preflight bridge, displays/projectors and generated sensor/helper status DATs.",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "help <command>",
     summary: "Print focused help for one command without contacting TouchDesigner.",
     mutates: false,

@@ -13,12 +13,14 @@ describe("kinect wall harp external bridge script", () => {
 
   it("contains a libfreenect2 stdout stall watchdog so USB hangs recover", () => {
     const source = readFileSync("scripts/kinect-wall-harp-bridge.mjs", "utf8");
+    const supervisor = readFileSync("scripts/external-helper-supervisor.mjs", "utf8");
 
+    expect(source).toContain("runJsonLineHelper");
     expect(source).toContain("stallTimeoutMs");
     expect(source).toContain("--stall-timeout-ms");
-    expect(source).toContain("lastFrameAt");
+    expect(supervisor).toContain("lastFrameAt");
     expect(source).toContain("LIBUSB/depth stream stalled");
-    expect(source).toContain('child.kill("SIGTERM")');
+    expect(supervisor).toContain('child.kill("SIGTERM")');
   });
 
   it("restarts the libfreenect2 helper after a stalled depth stream", () => {
@@ -72,6 +74,68 @@ if (count === 1) {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+
+  it("writes normalized libfreenect2 helper status JSON when requested", () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-kinect-bridge-status-"));
+    const helper = join(dir, "helper.mjs");
+    const statusPath = join(dir, "status.json");
+    writeFileSync(
+      helper,
+      `#!/usr/bin/env node
+console.log(JSON.stringify({ left: { present: 1, x: 0.2, y: 0.3, size: 0.1 } }));
+setTimeout(() => process.exit(0), 50);
+`,
+    );
+    chmodSync(helper, 0o755);
+
+    try {
+      const result = spawnSync(
+        "node",
+        [
+          "scripts/kinect-wall-harp-bridge.mjs",
+          "--source",
+          "libfreenect2",
+          "--helper",
+          helper,
+          "--frames",
+          "1",
+          "--port",
+          "17401",
+          "--status-json",
+          statusPath,
+        ],
+        { encoding: "utf8", timeout: 5000 },
+      );
+
+      expect(result.status).toBe(0);
+      const status = JSON.parse(readFileSync(statusPath, "utf8"));
+      expect(status).toEqual(
+        expect.objectContaining({
+          source: "libfreenect2",
+          helper,
+          label: "kinect-wall-harp-bridge",
+          type: "exit",
+          state: "exited",
+          ok: true,
+          stale: false,
+          restartCount: 0,
+          lastFrameAgeMs: expect.any(Number),
+        }),
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("throttles repeated frame status JSON writes to avoid real-time disk churn", () => {
+    const source = readFileSync("scripts/kinect-wall-harp-bridge.mjs", "utf8");
+
+    expect(source).toContain("STATUS_FRAME_WRITE_INTERVAL_MS = 500");
+    expect(source).toContain("function shouldWriteStatusJson(status, nowMs)");
+    expect(source).toContain('if (status.type !== "frame")');
+    expect(source).toContain("if (nowMs - lastStatusWriteAtMs >= STATUS_FRAME_WRITE_INTERVAL_MS)");
+    expect(source).toContain("if (!shouldWriteStatusJson(status, nowMs)) return;");
   });
 
   it("rejects invalid frame limits before entering the run loop", () => {
