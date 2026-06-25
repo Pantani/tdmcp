@@ -1,4 +1,4 @@
-.PHONY: lint lint-fix complexity complexity-py complexity-js
+.PHONY: lint lint-fix complexity complexity-py complexity-js complexity-cognitive
 
 lint:
 	npm run lint
@@ -14,6 +14,7 @@ complexity:
 	@status=0; \
 	$(MAKE) complexity-py || status=$$?; \
 	$(MAKE) complexity-js || status=$$?; \
+	$(MAKE) complexity-cognitive || status=$$?; \
 	exit $$status
 
 complexity-py:
@@ -21,3 +22,6 @@ complexity-py:
 
 complexity-js:
 	npm run complexity:js
+
+complexity-cognitive:
+	npm run complexity:cognitive

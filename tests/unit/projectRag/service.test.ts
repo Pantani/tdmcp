@@ -1,4 +1,4 @@
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, relative } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -179,6 +179,135 @@ describe("projectRag service (skeleton-level behaviour)", () => {
     expect(await svc.getCard(computeProjectId(restricted.canonical))).toBeUndefined();
     expect(await svc.getCard(computeProjectId(proprietaryPaid.canonical))).toBeUndefined();
     expect(await svc.index()).toEqual({ embedded: 0, cachedSkipped: 0, total: 0 });
+  });
+
+  it("sync() downloads and records permissive binaries without changing content hash", async () => {
+    const item: RawProjectItem = {
+      sourceName: "test-source",
+      sourceUrl: "https://example.test/free.tox",
+      canonical: "test-source:free.tox",
+      title: "Free package",
+      type: "component",
+      tags: ["tox"],
+      license: "MIT",
+      licenseConfidence: "declared",
+      binaryUrl: "https://example.test/free.tox",
+      pathInRepo: "components/free.tox",
+    };
+    const source: SourceAdapter = {
+      name: "test-source",
+      displayName: "Test Source",
+      fetchItems: async () => [item],
+    };
+    const fetchImpl = vi.fn<typeof fetch>(async () => new Response(new Uint8Array([1, 2, 3])));
+    const svc = createProjectRagService({
+      config: makeConfig(DIR),
+      sources: [source],
+      embeddings: NOOP_EMBEDDINGS,
+      fetchImpl,
+    });
+
+    const report = await svc.sync({});
+    const stored = await svc.getCard(computeProjectId(item.canonical));
+
+    expect(report.added).toBe(1);
+    expect(report.binariesStored).toBe(1);
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "https://example.test/free.tox",
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+    expect(stored?.binaryPath).toMatch(/^binaries\/[0-9a-f]{64}\.tox$/);
+    expect(stored?.binaryHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(stored?.analysisStatus).toBeUndefined();
+    expect(existsSync(join(DIR, stored?.binaryPath ?? "missing"))).toBe(true);
+  });
+
+  it("sync({sources:[missing], bridge:true}) still runs the bridge pass over persisted cards", async () => {
+    const id = computeProjectId("github:foo/filter#1").slice(0, 64).padEnd(64, "0").slice(0, 64);
+    const cardsDir = join(DIR, "cards");
+    mkdirSync(cardsDir, { recursive: true });
+    const card: ProjectRagCard = {
+      schemaVersion: 2,
+      id,
+      kind: "project",
+      type: "component",
+      title: "Filtered bridge card",
+      tags: [],
+      contentHash: "",
+      provenance: {
+        sourceName: "github:foo/filter",
+        sourceUrl: "https://github.com/foo/filter",
+        canonical: "github:foo/filter#1",
+        fetchedAt: "2026-06-18T00:00:00Z",
+      },
+      license: "MIT",
+      licenseConfidence: "spdx-detected",
+      binaryPath: "binaries/filter.tox",
+    };
+    const final = { ...card, contentHash: computeProjectContentHash(card) };
+    writeFileSync(join(cardsDir, `${id}.md`), serializeProjectCard(final), "utf8");
+    const source: SourceAdapter = {
+      name: "registered-source",
+      displayName: "Registered Source",
+      fetchItems: async () => {
+        throw new Error("should not fetch unmatched source");
+      },
+    };
+    const calls: string[] = [];
+    const svc = createProjectRagService({
+      config: makeConfig(DIR),
+      sources: [source],
+      embeddings: NOOP_EMBEDDINGS,
+      bridgeAnalyzeImpl: async (p) => {
+        calls.push(p);
+        return { status: "ok", errorCount: 0 };
+      },
+    });
+
+    const report = await svc.sync({ sources: ["missing-source"], bridge: true });
+
+    expect(report.bridgeAnalysis).toEqual({ attempted: 1, ok: 1, failed: 0, skipped: 0 });
+    expect(calls).toHaveLength(1);
+  });
+
+  it("index() propagates embedding failures after logging them", async () => {
+    const canonical = "github:foo/bar/embed-fail.tox";
+    const id = computeProjectId(canonical);
+    const card: ProjectRagCard = {
+      schemaVersion: 2,
+      id,
+      kind: "project",
+      type: "component",
+      title: "Embed fail",
+      tags: ["embed"],
+      contentHash: "",
+      provenance: {
+        sourceName: "github:foo/bar",
+        sourceUrl: "https://github.com/foo/bar",
+        canonical,
+        fetchedAt: "2026-06-18T00:00:00Z",
+      },
+      license: "MIT",
+      licenseConfidence: "spdx-detected",
+    };
+    const final = { ...card, contentHash: computeProjectContentHash(card) };
+    const cardsDir = join(DIR, "cards");
+    mkdirSync(cardsDir, { recursive: true });
+    writeFileSync(join(cardsDir, `${id}.md`), serializeProjectCard(final), "utf8");
+    const logger = { ...console, error: vi.fn(), warn: vi.fn(), debug: vi.fn(), info: vi.fn() };
+    const svc = createProjectRagService({
+      config: makeConfig(DIR),
+      sources: [],
+      embeddings: {
+        embed: async () => {
+          throw new Error("ollama offline");
+        },
+      },
+      logger,
+    });
+
+    await expect(svc.index()).rejects.toThrow("ollama offline");
+    expect(logger.error).toHaveBeenCalledWith(expect.stringContaining("embedding failed"));
   });
 
   it("passes bridgeToken to quarantine probe and direct analyze", async () => {

@@ -23,12 +23,56 @@ def _state(td):
     project = td.project
     return {
         "play": bool(project.play),
-        "frame": int(td.me.time.frame) if hasattr(td, "me") else int(project.startFrame),
+        "frame": int(td.me.time.frame)
+        if hasattr(td, "me")
+        else int(project.startFrame),
         "rate": float(project.rate),
         "startFrame": int(project.startFrame),
         "endFrame": int(project.endFrame),
         "fps": float(getattr(project, "cookRate", 60.0)),
     }
+
+
+def _play(td, _frame, _rate, _cue_name):
+    td.project.play = True
+
+
+def _pause(td, _frame, _rate, _cue_name):
+    td.project.play = False
+
+
+def _seek(td, frame, _rate, _cue_name):
+    if frame is None:
+        raise ValueError("seek requires `frame`.")
+    project = td.project
+    target = max(int(project.startFrame), min(int(frame), int(project.endFrame)))
+    # ``me.time.frame`` is the documented way to scrub; project.frame is read-only
+    # on some builds. The router does not have ``me`` in scope, so reach via ``td``.
+    td.me.time.frame = target
+
+
+def _cue(td, _frame, _rate, cue_name):
+    if not cue_name:
+        raise ValueError("cue requires `cueName`.")
+    try:
+        td.project.cue(cue_name)
+    except Exception as exc:  # noqa: BLE001
+        raise ValueError("cue %r not found" % cue_name) from exc
+
+
+def _rate(td, _frame, rate, _cue_name):
+    if rate is None:
+        raise ValueError("rate requires `rate`.")
+    td.project.rate = float(rate)
+
+
+_ACTIONS = {
+    "play": _play,
+    "pause": _pause,
+    "seek": _seek,
+    "cue": _cue,
+    "rate": _rate,
+}
 
 
 def control(action, frame=None, rate=None, cue_name=None):
@@ -39,32 +83,10 @@ def control(action, frame=None, rate=None, cue_name=None):
     """
     import td
 
-    project = td.project
-
-    if action == "play":
-        project.play = True
-    elif action == "pause":
-        project.play = False
-    elif action == "seek":
-        if frame is None:
-            raise ValueError("seek requires `frame`.")
-        target = max(int(project.startFrame), min(int(frame), int(project.endFrame)))
-        # ``me.time.frame`` is the documented way to scrub; project.frame is read-only
-        # on some builds. The router does not have ``me`` in scope, so reach via ``td``.
-        td.me.time.frame = target
-    elif action == "cue":
-        if not cue_name:
-            raise ValueError("cue requires `cueName`.")
-        try:
-            project.cue(cue_name)
-        except Exception as exc:  # noqa: BLE001
-            raise ValueError("cue %r not found" % cue_name) from exc
-    elif action == "rate":
-        if rate is None:
-            raise ValueError("rate requires `rate`.")
-        project.rate = float(rate)
-    else:
+    handler = _ACTIONS.get(action)
+    if handler is None:
         raise ValueError("Unsupported transport action: %r" % action)
+    handler(td, frame, rate, cue_name)
 
     state = _state(td)
     state["action"] = action

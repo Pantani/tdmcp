@@ -4,4 +4,4 @@
 # (`uvx ruff check td --select C901`) opts in to the McCabe complexity check
 # explicitly on the CLI, and re-uses the `max-complexity` knob below.
 [tool.ruff.lint.mccabe]
-max-complexity = 10
+max-complexity = 9

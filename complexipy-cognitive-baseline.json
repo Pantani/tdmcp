@@ -1,0 +1,127 @@
+[
+  {
+    "path": "td/modules/mcp/controllers/api_controller.py",
+    "function": "_emit_event",
+    "complexity": 12
+  },
+  {
+    "path": "td/modules/mcp/controllers/api_controller.py",
+    "function": "_find_header",
+    "complexity": 26
+  },
+  {
+    "path": "td/modules/mcp/controllers/api_controller.py",
+    "function": "_merge_query",
+    "complexity": 11
+  },
+  {
+    "path": "td/modules/mcp/controllers/api_controller.py",
+    "function": "_route",
+    "complexity": 12
+  },
+  {
+    "path": "td/modules/mcp/controllers/api_controller.py",
+    "function": "_route_get_root",
+    "complexity": 10
+  },
+  {
+    "path": "td/modules/mcp/controllers/api_controller.py",
+    "function": "_route_node_special",
+    "complexity": 12
+  },
+  {
+    "path": "td/modules/mcp/install.py",
+    "function": "_append_custom_par",
+    "complexity": 11
+  },
+  {
+    "path": "td/modules/mcp/install.py",
+    "function": "build_package",
+    "complexity": 10
+  },
+  {
+    "path": "td/modules/mcp/install.py",
+    "function": "run",
+    "complexity": 12
+  },
+  {
+    "path": "td/modules/mcp/services/analysis_service.py",
+    "function": "topology",
+    "complexity": 14
+  },
+  {
+    "path": "td/modules/mcp/services/api_service.py",
+    "function": "_flags",
+    "complexity": 14
+  },
+  {
+    "path": "td/modules/mcp/services/api_service.py",
+    "function": "get_node_errors",
+    "complexity": 14
+  },
+  {
+    "path": "td/modules/mcp/services/connect_service.py",
+    "function": "_target_disconnects",
+    "complexity": 14
+  },
+  {
+    "path": "td/modules/mcp/services/connect_service.py",
+    "function": "connect",
+    "complexity": 18
+  },
+  {
+    "path": "td/modules/mcp/services/log_service.py",
+    "function": "_header_map",
+    "complexity": 10
+  },
+  {
+    "path": "td/modules/mcp/services/param_text_service.py",
+    "function": "_json_safe",
+    "complexity": 12
+  },
+  {
+    "path": "td/modules/mcp/services/param_text_service.py",
+    "function": "_param_entry",
+    "complexity": 12
+  },
+  {
+    "path": "td/modules/mcp/services/param_text_service.py",
+    "function": "read_param_modes",
+    "complexity": 13
+  },
+  {
+    "path": "td/modules/mcp/services/project_analysis_service.py",
+    "function": "_expression_dependencies",
+    "complexity": 12
+  },
+  {
+    "path": "td/modules/mcp/services/project_analysis_service.py",
+    "function": "_file_dependency",
+    "complexity": 10
+  },
+  {
+    "path": "td/modules/mcp/services/project_analysis_service.py",
+    "function": "_source_param_dependencies",
+    "complexity": 13
+  },
+  {
+    "path": "td/modules/mcp/services/project_load_service.py",
+    "function": "_collect_errors",
+    "complexity": 15
+  },
+  {
+    "path": "td/modules/mcp/services/project_load_service.py",
+    "function": "_preview_b64",
+    "complexity": 13
+  },
+  {
+    "path": "td/modules/mcp/services/system_service.py",
+    "function": "_read_gpu",
+    "complexity": 12
+  },
+  {
+    "path": "td/modules/mcp/services/system_service.py",
+    "function": "set_perform_mode",
+    "complexity": 10
+  }
+]

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   defaultClientPath,
+  detectEnvironment,
   type InitResult,
   parseInitArgs,
   type RunInitDeps,
@@ -24,15 +25,20 @@ function makeDeps(
     home?: string;
     bridgeRunning?: boolean;
     configReadJson?: Record<string, unknown> | null;
+    configReadText?: string;
     bridgeResult?: Record<string, unknown>;
     bridgeReject?: boolean;
+    fetchBridgeReject?: boolean;
     doctorOk?: boolean;
     doctorReject?: boolean;
     configInitCode?: number;
     configInitPath?: string;
+    configInitReject?: boolean;
+    configInitStderr?: string;
     clientWriteFails?: Set<string>;
     spawnRecord?: string[];
     clipboardRecord?: string[];
+    clipboardReject?: boolean;
     token?: string;
   } = {},
 ): { deps: RunInitDeps; stdout: string[]; stderr: string[] } {
@@ -47,6 +53,9 @@ function makeDeps(
     homedir: () => opts.home ?? "/home/artist",
     existsSync: (p: string) => fs.existing.has(p),
     readFile: async (p: string) => {
+      if (opts.configReadText !== undefined && p.endsWith("tdmcp.json")) {
+        return opts.configReadText;
+      }
       if (opts.configReadJson !== undefined && p.endsWith("tdmcp.json")) {
         if (opts.configReadJson === null) throw new Error("malformed");
         return JSON.stringify(opts.configReadJson);
@@ -61,9 +70,13 @@ function makeDeps(
     },
     mkdir: async () => undefined,
     randomToken: () => opts.token ?? "tok-deadbeef",
-    fetchBridge: async () => Boolean(opts.bridgeRunning),
+    fetchBridge: async () => {
+      if (opts.fetchBridgeReject) throw new Error("bridge offline");
+      return Boolean(opts.bridgeRunning);
+    },
     spawnTd: (p: string) => spawnRecord.push(p),
     copyToClipboard: async (t: string) => {
+      if (opts.clipboardReject) throw new Error("clipboard blocked");
       clipboardRecord.push(t);
       return true;
     },
@@ -84,12 +97,15 @@ function makeDeps(
       fs.existing.add(path);
       return {} as Record<string, unknown>;
     }) as unknown as RunInitDeps["writeInstallClientConfig"],
-    runConfigInit: vi.fn(() => ({
-      stdout: "",
-      stderr: "",
-      code: opts.configInitCode ?? 0,
-      path: opts.configInitPath ?? "/home/artist/.tdmcp/config.env",
-    })) as unknown as RunInitDeps["runConfigInit"],
+    runConfigInit: vi.fn(() => {
+      if (opts.configInitReject) throw new Error("config boom");
+      return {
+        stdout: "",
+        stderr: opts.configInitStderr ?? "",
+        code: opts.configInitCode ?? 0,
+        path: opts.configInitPath ?? "/home/artist/.tdmcp/config.env",
+      };
+    }) as unknown as RunInitDeps["runConfigInit"],
     runDoctor: vi.fn(async () => {
       if (opts.doctorReject) throw new Error("doctor boom");
       return {
@@ -181,6 +197,25 @@ describe("parseInitArgs", () => {
     const r = parseInitArgs(["--skip", "weird"]);
     expect("error" in r).toBe(true);
   });
+
+  it.each([
+    "--bridge-dir",
+    "--token",
+    "--profile",
+    "--td-path",
+    "--clients",
+    "--skip",
+  ])("rejects %s without a value", (flag) => {
+    const r = parseInitArgs([flag]);
+    expect("error" in r).toBe(true);
+    if ("error" in r) expect(r.code).toBe(2);
+  });
+
+  it("rejects unexpected positional arguments", () => {
+    const r = parseInitArgs(["project.td"]);
+    expect("error" in r).toBe(true);
+    if ("error" in r) expect(r.error).toContain("Unexpected argument");
+  });
 });
 
 describe("defaultClientPath", () => {
@@ -194,6 +229,27 @@ describe("defaultClientPath", () => {
   });
   it("returns the Codex path", () => {
     expect(defaultClientPath("codex", "darwin", "/h")).toBe("/h/.codex/config.toml");
+  });
+  it("returns the Linux Claude path", () => {
+    expect(defaultClientPath("claude", "linux", "/h")).toBe(
+      "/h/.config/Claude/claude_desktop_config.json",
+    );
+  });
+  it("uses APPDATA for the Windows Claude path when available", () => {
+    const oldAppData = process.env.APPDATA;
+    process.env.APPDATA = "C:\\Users\\artist\\AppData\\Roaming";
+    try {
+      const p = defaultClientPath("claude", "win32", "/home/artist");
+      expect(p).toContain("AppData");
+      expect(p).toContain("Claude");
+      expect(p).toContain("claude_desktop_config.json");
+    } finally {
+      if (oldAppData === undefined) {
+        delete process.env.APPDATA;
+      } else {
+        process.env.APPDATA = oldAppData;
+      }
+    }
   });
 });
 
@@ -240,6 +296,55 @@ describe("resolveClients", () => {
       },
     };
     expect(resolveClients(flags, det)).toEqual(["claude"]);
+  });
+});
+
+describe("detectEnvironment", () => {
+  function detectionDeps(deps: RunInitDeps) {
+    return {
+      platform: deps.platform ?? (() => "darwin" as NodeJS.Platform),
+      homedir: deps.homedir ?? (() => "/home/artist"),
+      existsSync: deps.existsSync ?? (() => false),
+      fetchBridge: deps.fetchBridge ?? (async () => false),
+      readFile: deps.readFile ?? (async () => ""),
+    };
+  }
+
+  it("keeps existingConfig when tdmcp.json is malformed and bridge probing fails", async () => {
+    const flags = parseInitArgs(["--bridge-port", "1777", "--td-path", "/custom/TouchDesigner"]);
+    if ("error" in flags) throw new Error(flags.error);
+    const configPath = `${process.cwd()}/tdmcp.json`;
+    const fs = makeFs([configPath, "/custom/TouchDesigner", "/home/artist/.codex/config.toml"]);
+    const { deps } = makeDeps({ fs, configReadText: "{bad-json", fetchBridgeReject: true });
+
+    const detection = await detectEnvironment(flags, detectionDeps(deps));
+
+    expect(detection.td).toEqual({ found: true, path: "/custom/TouchDesigner" });
+    expect(detection.bridge.running).toBe(false);
+    expect(detection.existingConfig).toEqual({ exists: true, path: configPath });
+    expect(detection.clients.codex.exists).toBe(true);
+  });
+
+  it("keeps existingConfig when tdmcp.json parses to a non-object", async () => {
+    const flags = parseInitArgs([]);
+    if ("error" in flags) throw new Error(flags.error);
+    const configPath = `${process.cwd()}/tdmcp.json`;
+    const fs = makeFs([configPath]);
+    const { deps } = makeDeps({ fs, configReadText: "null" });
+
+    const detection = await detectEnvironment(flags, detectionDeps(deps));
+
+    expect(detection.existingConfig).toEqual({ exists: true, path: configPath });
+  });
+
+  it("reports no TouchDesigner candidate on Linux by default", async () => {
+    const flags = parseInitArgs([]);
+    if ("error" in flags) throw new Error(flags.error);
+    const { deps } = makeDeps({ platform: "linux" });
+
+    const detection = await detectEnvironment(flags, detectionDeps(deps));
+
+    expect(detection.td).toEqual({ found: false });
   });
 });
 
@@ -319,6 +424,19 @@ describe("runInit", () => {
     expect(r.flags.token).toBe("secret-xyz");
   });
 
+  it("--no-token skips token generation and passes no token to config init", async () => {
+    const { deps } = makeDeps();
+    const r = await runInit(["--yes", "--json", "--no-token"], deps);
+    const tokenStep = r.steps.find((s) => s.id === "token");
+    expect(tokenStep?.status).toBe("skipped");
+    expect(tokenStep?.detail).toBe("no-token");
+    expect(r.flags.tokenSet).toBe(false);
+    const configCall = (deps.runConfigInit as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as
+      | { bridgeToken?: string }
+      | undefined;
+    expect(configCall?.bridgeToken).toBeUndefined();
+  });
+
   it("rejects unknown flags with exit code 2 and prints help hint", async () => {
     const { deps, stderr } = makeDeps();
     const r = await runInit(["--bogus"], deps);
@@ -395,6 +513,19 @@ describe("runInit", () => {
     expect(r.steps.find((s) => s.id === "clients")?.status).toBe("skipped");
   });
 
+  it("marks clients failed when every explicit client writer fails", async () => {
+    const { deps } = makeDeps({
+      clientWriteFails: new Set(["claude", "cursor"]),
+    });
+    const r = await runInit(["--yes", "--json", "--clients", "claude,cursor"], deps);
+    const clients = r.steps.find((s) => s.id === "clients");
+    expect(clients?.status).toBe("failed");
+    expect(clients?.detail).toContain("claude:fail claude");
+    expect(clients?.detail).toContain("cursor:fail cursor");
+    expect(clients?.retry).toBe("tdmcp install-client <name> --write --path <file>");
+    expect(r.ok).toBe(false);
+  });
+
   it("--open-td with TD missing marks the open step skipped", async () => {
     const { deps } = makeDeps({ fs: makeFs() }); // no TD on disk
     const r = await runInit(["--yes", "--json", "--open-td"], deps);
@@ -412,6 +543,27 @@ describe("runInit", () => {
     expect(spawnRecord).toEqual(["/Applications/TouchDesigner.app"]);
     expect(clipboardRecord[0]).toContain("install.run");
     expect(r.steps.find((s) => s.id === "open")?.status).toBe("ok");
+  });
+
+  it("--open-td in dry-run reports the launch without spawning", async () => {
+    const fs = makeFs(["/Applications/TouchDesigner.app"]);
+    const spawnRecord: string[] = [];
+    const { deps } = makeDeps({ fs, platform: "darwin", spawnRecord });
+    const r = await runInit(["--dry-run", "--json", "--open-td"], deps);
+    expect(spawnRecord).toEqual([]);
+    expect(r.steps.find((s) => s.id === "open")?.status).toBe("would");
+  });
+
+  it("--open-td marks open failed when clipboard preparation throws", async () => {
+    const fs = makeFs(["/Applications/TouchDesigner.app"]);
+    const spawnRecord: string[] = [];
+    const { deps } = makeDeps({ fs, platform: "darwin", spawnRecord, clipboardReject: true });
+    const r = await runInit(["--yes", "--json", "--open-td"], deps);
+    const open = r.steps.find((s) => s.id === "open");
+    expect(open?.status).toBe("failed");
+    expect(open?.detail).toBe("clipboard blocked");
+    expect(spawnRecord).toEqual([]);
+    expect(r.ok).toBe(false);
   });
 
   it("client write failure for one client is isolated; others still patched", async () => {
@@ -436,6 +588,38 @@ describe("runInit", () => {
     const { deps } = makeDeps({ doctorOk: false });
     const r: InitResult = await runInit(["--yes", "--json"], deps);
     expect(r.steps.find((s) => s.id === "doctor")?.status).toBe("failed");
+    expect(r.ok).toBe(false);
+  });
+
+  it("doctor exceptions mark doctor failed without throwing", async () => {
+    const { deps } = makeDeps({ doctorReject: true });
+    const r = await runInit(["--yes", "--json"], deps);
+    const doctor = r.steps.find((s) => s.id === "doctor");
+    expect(doctor?.status).toBe("failed");
+    expect(doctor?.detail).toBe("doctor boom");
+    expect(r.ok).toBe(false);
+  });
+
+  it("config init code 2 marks config failed with stderr detail", async () => {
+    const { deps, stderr } = makeDeps({
+      configInitCode: 2,
+      configInitStderr: "bad config\n",
+    });
+    const r = await runInit(["--yes", "--json"], deps);
+    const config = r.steps.find((s) => s.id === "config");
+    expect(config?.status).toBe("failed");
+    expect(config?.detail).toBe("bad config");
+    expect(r.ok).toBe(false);
+    expect(process.exitCode).toBe(1);
+    expect(stderr.join("")).toContain("Some steps failed");
+  });
+
+  it("config init exceptions mark config failed", async () => {
+    const { deps } = makeDeps({ configInitReject: true });
+    const r = await runInit(["--yes", "--json"], deps);
+    const config = r.steps.find((s) => s.id === "config");
+    expect(config?.status).toBe("failed");
+    expect(config?.detail).toBe("config boom");
     expect(r.ok).toBe(false);
   });
 
@@ -472,5 +656,20 @@ describe("runInit", () => {
     const r = await runInit(["--help"], deps);
     expect(r.ok).toBe(true);
     expect(stdout.join("")).toContain("tdmcp init [options]");
+  });
+
+  it("renders a non-json success summary", async () => {
+    const { deps, stdout } = makeDeps();
+    const r = await runInit(["--yes"], deps);
+    expect(r.ok).toBe(true);
+    expect(stdout.join("")).toContain("Ready.");
+  });
+
+  it("renders a non-json failure summary", async () => {
+    const { deps, stdout } = makeDeps({ doctorReject: true });
+    const r = await runInit(["--yes"], deps);
+    expect(r.ok).toBe(false);
+    expect(stdout.join("")).toContain("doctor: doctor boom");
+    expect(stdout.join("")).toContain("Some steps failed.");
   });
 });

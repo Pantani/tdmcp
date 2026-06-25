@@ -13,6 +13,7 @@ import {
   AiPartyCueSchema,
   aiPartyVisualFingerprint,
   buildAiPartyTdDemoScript,
+  configFromEnv,
   createAiPartyGeneratedCue,
   createAiPartyLiveService,
   createInitialAiPartyShowState,
@@ -163,6 +164,54 @@ type CueMutationJson = {
 };
 
 describe("aiPartyLive schema and policy", () => {
+  it("parses AI Party live environment configuration", () => {
+    const cfg = configFromEnv({
+      OLLAMA_BASE_URL: "http://ollama.local",
+      OLLAMA_MODEL: "llama-show",
+      TD_BRIDGE_URL: "http://td.local:9980",
+      TD_BRIDGE_TOKEN: "secret",
+      POC_DASHBOARD_HOST: "localhost",
+      POC_DASHBOARD_PORT: "9191",
+      TELEGRAM_BOT_TOKEN: "123:abc",
+      TELEGRAM_ALLOWED_CHAT_IDS: "100, 200, ,300",
+      TELEGRAM_POLLING_ENABLED: "yes",
+      TELEGRAM_WEBHOOK_URL: "https://example.test/hook",
+      HARDWARE_ENABLED: "1",
+      DMX_LIVE_ENABLED: "true",
+      SHOW_MODE: "show",
+      POC_EVENT_LOG_PATH: "/tmp/ai-party-events.jsonl",
+      POC_GENERATED_CUES_PATH: "/tmp/generated-cues.json",
+      POC_CUE_STORE_PATH: "/tmp/ignored-cues.json",
+      POC_GENERATED_CUE_LIMIT: "7",
+      POC_TRANSITION_SECONDS: "5",
+      POC_TRANSITION_TICK_MS: "0",
+      POC_AUTO_ADVANCE: "true",
+    });
+
+    expect(cfg).toMatchObject({
+      ollamaBaseUrl: "http://ollama.local",
+      ollamaModel: "llama-show",
+      tdBridgeUrl: "http://td.local:9980",
+      tdBridgeToken: "secret",
+      dashboardHost: "localhost",
+      dashboardPort: 9191,
+      telegramBotToken: "123:abc",
+      telegramAllowedChatIds: ["100", "200", "300"],
+      telegramPollingEnabled: true,
+      telegramWebhookUrl: "https://example.test/hook",
+      hardwareEnabled: true,
+      dmxLiveEnabled: true,
+      showMode: "show",
+      eventLogPath: "/tmp/ai-party-events.jsonl",
+      generatedCuePath: "/tmp/generated-cues.json",
+      generatedCueLimit: 7,
+      cueStorePath: "/tmp/generated-cues.json",
+      transitionSeconds: 5,
+      transitionTickMs: 0,
+      autoAdvanceEnabled: true,
+    });
+  });
+
   it("accepts the requested ShowIntent envelope shape", () => {
     const parsed = ShowIntentEnvelopeSchema.parse({
       intent: {
@@ -429,6 +478,367 @@ describe("aiPartyLive schema and policy", () => {
 });
 
 describe("aiPartyLive service", () => {
+  it("limits generated cues, audience queue size, and empty replay reads", () => {
+    const service = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      generatedCuePath: tempGeneratedCuePath(),
+      generatedCueLimit: 2,
+    });
+
+    expect(service.replayEvents()).toEqual({ ok: true, events: [] });
+
+    const single = service.generateCue("velvet chrome lounge wave", { count: Number.NaN });
+    expect(single.generated_cues).toHaveLength(1);
+
+    const generated = service.generateCue("molten chrome cathedral glow", { count: 99 });
+    expect(generated.generated_cues).toHaveLength(4);
+    expect(service.snapshot().cues.filter((cue) => cue.name.startsWith("gen_"))).toHaveLength(2);
+
+    for (let index = 0; index < 82; index += 1) {
+      service.queueAudienceSuggestion(`more neon please ${index}`, "100", "fan");
+    }
+    expect(service.snapshot().audience_suggestions).toHaveLength(80);
+  });
+
+  it("mutates generated cue metadata directly and rejects protected catalog cues", () => {
+    const service = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      generatedCuePath: tempGeneratedCuePath(),
+    });
+    const generated = service.generateCue("neon silk lounge", { count: 2 });
+    const cueName = generated.cue.name;
+
+    expect(() => service.updateGeneratedCue("premium_tropical", { label: "VIP" })).toThrow(
+      /Only generated cues/,
+    );
+    expect(() => service.updateGeneratedCue(cueName, { label: "   " })).toThrow(
+      /at least 1 character/,
+    );
+
+    const updated = service.updateGeneratedCue(cueName, {
+      label: "Generated: VIP Silk",
+      description: "  shorter human edited description  ",
+      favorite: true,
+    });
+    expect(updated.cue).toMatchObject({
+      name: cueName,
+      label: "Generated: VIP Silk",
+      description: "shorter human edited description",
+      favorite: true,
+    });
+
+    const deleted = service.deleteGeneratedCue(cueName);
+    expect(deleted.ok).toBe(true);
+    expect(deleted.cues.some((cue) => cue.name === cueName)).toBe(false);
+    expect(() => service.deleteGeneratedCue("premium_tropical")).toThrow(/Only generated cues/);
+  });
+
+  it("surfaces persistence failures without crashing the show surface", async () => {
+    const eventLogDirectory = mkdtempSync(join(tmpdir(), "tdmcp-ai-party-event-dir-"));
+    const eventService = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: eventLogDirectory,
+    });
+    await eventService.triggerCue("premium_tropical");
+    expect(eventService.snapshot().showState.last_error).toContain("Could not write event log");
+
+    const cueStoreDirectory = mkdtempSync(join(tmpdir(), "tdmcp-ai-party-cue-dir-"));
+    const cueService = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      generatedCuePath: cueStoreDirectory,
+    });
+    cueService.generateCue("soft chrome ambience");
+    expect(cueService.snapshot().showState.last_error).toContain("Could not write cue store");
+  });
+
+  it("covers Telegram blockers, ignored updates, direct commands, and fetch failures", async () => {
+    const disabled = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+    });
+    await expect(disabled.pollTelegramOnce()).resolves.toMatchObject({
+      ok: false,
+      warning: "Telegram polling is disabled.",
+    });
+    await expect(disabled.telegramTest()).resolves.toMatchObject({
+      ok: false,
+      warning: "TELEGRAM_BOT_TOKEN is not configured.",
+    });
+
+    const missingAllowedChats = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      telegramBotToken: "123:secret",
+      telegramPollingEnabled: true,
+    });
+    await expect(missingAllowedChats.pollTelegramOnce()).resolves.toMatchObject({
+      ok: false,
+      warning: "TELEGRAM_ALLOWED_CHAT_IDS is required before polling starts.",
+    });
+    await expect(missingAllowedChats.telegramTest()).resolves.toMatchObject({
+      ok: false,
+      warning: "TELEGRAM_ALLOWED_CHAT_IDS is required before polling starts.",
+    });
+
+    const calls: string[] = [];
+    const mixedUpdates = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      telegramBotToken: "123:secret",
+      telegramAllowedChatIds: ["100"],
+      telegramPollingEnabled: true,
+      fetchImpl: async (input) => {
+        calls.push(String(input));
+        return okJson({
+          ok: true,
+          result: [
+            { update_id: 10, message: { message_id: 1, chat: { id: 100 } } },
+            {
+              update_id: 11,
+              message: {
+                message_id: 2,
+                text: "/status",
+                chat: { id: 200 },
+                from: { username: "intruder" },
+              },
+            },
+          ],
+        });
+      },
+    });
+    await expect(mixedUpdates.telegramTest()).resolves.toMatchObject({
+      ok: true,
+      allowed_chat_ids: 1,
+    });
+    await expect(mixedUpdates.pollTelegramOnce(0)).resolves.toMatchObject({
+      ok: true,
+      processed: 0,
+      next_offset: 12,
+      ignored: [
+        { update_id: 10, reason: "update has no text" },
+        { update_id: 11, reason: "chat is not allowlisted" },
+      ],
+    });
+    expect(calls.some((url) => url.includes("getUpdates"))).toBe(true);
+
+    const direct = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      telegramAllowedChatIds: ["100"],
+    });
+    await expect(direct.handleTelegramText("/status", "200")).resolves.toContain("Blocked");
+    await expect(direct.handleTelegramText("/cues", "100")).resolves.toContain("premium_tropical");
+    await expect(
+      direct.handleTelegramText("/suggest /cue premium_tropical", "100"),
+    ).resolves.toContain("queued");
+    const pending = await direct.evaluateIntent(
+      {
+        intent: { type: "arm_effect", effect: "fog", duration_seconds: 3, intensity: 0.35 },
+        confidence: 1,
+        source_summary: "telegram fog",
+        needs_operator_review: true,
+      },
+      { source: "telegram", rawText: "/fog 3 0.35" },
+    );
+    const secondPending = await direct.evaluateIntent(
+      {
+        intent: { type: "arm_effect", effect: "hazer", duration_seconds: 3, intensity: 0.35 },
+        confidence: 1,
+        source_summary: "telegram hazer",
+        needs_operator_review: true,
+      },
+      { source: "telegram", rawText: "/hazer 3 0.35" },
+    );
+    await expect(
+      direct.handleTelegramText(`/approve ${pending.approval?.id ?? ""}`, "100", "foh"),
+    ).resolves.toContain("simulated");
+    await expect(
+      direct.handleTelegramText(`/reject ${secondPending.approval?.id ?? ""}`, "100", "foh"),
+    ).resolves.toContain("rejected");
+
+    const failingPoll = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      telegramBotToken: "123:secret",
+      telegramAllowedChatIds: ["100"],
+      telegramPollingEnabled: true,
+      fetchImpl: async () => {
+        throw new Error("telegram down");
+      },
+    });
+    await expect(failingPoll.pollTelegramOnce(0)).resolves.toMatchObject({
+      ok: false,
+      warning: "telegram down",
+    });
+  });
+
+  it("serves the remaining dashboard routes and route-level errors", async () => {
+    const service = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      telegramBotToken: "123:secret",
+      telegramAllowedChatIds: ["100"],
+      fetchImpl: async (input, init) => {
+        const url = new URL(String(input));
+        if (url.pathname === "/api/info") {
+          return okJson({ ok: true, data: { bridge_version: "test", project: "unit" } });
+        }
+        if (url.pathname === "/api/exec") {
+          return okJson({
+            ok: true,
+            data: { stdout: JSON.stringify({ ok: true, targetPath: "/project1/ai_party_poc" }) },
+          });
+        }
+        if (init?.method === "PATCH") {
+          return okJson({
+            ok: true,
+            data: {
+              path: decodeURIComponent(url.pathname.replace("/api/nodes/", "")),
+              type: "textTOP",
+              name: "node",
+              parameters: {},
+            },
+          });
+        }
+        return okJson({});
+      },
+    });
+    const handle = await service.start();
+    handles.push(handle);
+
+    const root = await fetch(handle.url);
+    expect(root.status).toBe(200);
+    expect(await root.text()).toContain("FOH Dashboard v2");
+
+    const events = await fetch(`${handle.url}api/events?limit=1`).then(
+      readJson<{ events: unknown[] }>,
+    );
+    expect(events.events.length).toBeGreaterThanOrEqual(0);
+
+    await expect(
+      fetch(`${handle.url}api/timeline`).then(readJson<{ ok: boolean }>),
+    ).resolves.toMatchObject({
+      ok: true,
+    });
+    await expect(
+      fetch(`${handle.url}api/timeline/next`, { method: "POST" }).then(readJson<TimelineJson>),
+    ).resolves.toMatchObject({ ok: true, state: { timeline: { current_scene: "warmup" } } });
+    await expect(
+      fetch(`${handle.url}api/timeline/previous`, { method: "POST" }).then(readJson<TimelineJson>),
+    ).resolves.toMatchObject({ ok: true, state: { timeline: { current_scene: "doors" } } });
+    await expect(
+      fetch(`${handle.url}api/timeline/jump`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ index: 2 }),
+      }).then(readJson<TimelineJson>),
+    ).resolves.toMatchObject({ ok: true, state: { timeline: { current_scene: "build" } } });
+
+    const missingMorph = await fetch(`${handle.url}api/cues/morph`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ to: "missing_cue" }),
+    }).then(readJson<{ ok: boolean; message: string }>);
+    expect(missingMorph).toMatchObject({
+      ok: false,
+      message: expect.stringContaining("not found"),
+    });
+
+    const unsafeCue = await fetch(`${handle.url}api/cues/generate`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ prompt: "raw dmx blackout strobe" }),
+    }).then(readJson<{ ok: boolean; message: string }>);
+    expect(unsafeCue).toMatchObject({ ok: false, message: expect.stringContaining("safe visual") });
+
+    const protectedCue = await fetch(`${handle.url}api/cues/premium_tropical`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ label: "Nope" }),
+    }).then(readJson<{ ok: boolean; message: string }>);
+    expect(protectedCue).toMatchObject({
+      ok: false,
+      message: expect.stringContaining("generated"),
+    });
+
+    await expect(
+      fetch(`${handle.url}api/audience`).then(readJson<{ suggestions: unknown[] }>),
+    ).resolves.toMatchObject({
+      suggestions: [],
+    });
+    const suggestion = await fetch(`${handle.url}api/audience/suggest`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ text: "more gold light", source: "dashboard" }),
+    }).then(readJson<AudienceSuggestionJson>);
+    expect(suggestion.ok).toBe(true);
+    const suggestionId = suggestion.suggestion?.id ?? "";
+    await expect(
+      fetch(`${handle.url}api/audience/suggestions`).then(readJson<{ suggestions: unknown[] }>),
+    ).resolves.toMatchObject({ suggestions: [expect.objectContaining({ id: suggestionId })] });
+    await expect(
+      fetch(`${handle.url}api/audience/${suggestionId}/promote`, { method: "POST" }).then(
+        readJson<AudienceSuggestionJson>,
+      ),
+    ).resolves.toMatchObject({ ok: true, suggestion: { status: "promoted" } });
+    await expect(
+      fetch(`${handle.url}api/audience/${suggestionId}/dismiss`, { method: "POST" }).then(
+        readJson<AudienceSuggestionJson>,
+      ),
+    ).resolves.toMatchObject({ ok: true, suggestion: { status: "dismissed" } });
+    await expect(
+      fetch(`${handle.url}api/audience/missing/promote`, { method: "POST" }).then(
+        readJson<{ ok: boolean; message: string }>,
+      ),
+    ).resolves.toMatchObject({ ok: false, message: expect.stringContaining("not found") });
+
+    await expect(
+      fetch(`${handle.url}api/approvals`).then(readJson<{ approvals: unknown[] }>),
+    ).resolves.toMatchObject({
+      approvals: [],
+    });
+    await expect(
+      fetch(`${handle.url}api/intents/evaluate`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          intent: { type: "request_cue", cue: "neon_pulse", cue_kind: "combined" },
+          confidence: 1,
+          source_summary: "manual neon",
+          needs_operator_review: false,
+        }),
+      }).then(readJson<OperatorJson>),
+    ).resolves.toMatchObject({ policy: { decision: "allow" } });
+    await expect(
+      fetch(`${handle.url}api/cues/doors_idle/trigger`, { method: "POST" }).then(
+        readJson<OperatorJson>,
+      ),
+    ).resolves.toMatchObject({ policy: { decision: "allow" } });
+    await expect(fetch(`${handle.url}api/td/info`).then(readJson<TdJson>)).resolves.toMatchObject({
+      ok: true,
+      status: "ok",
+    });
+    await expect(
+      fetch(`${handle.url}api/td/build`, { method: "POST" }).then(readJson<{ ok: boolean }>),
+    ).resolves.toMatchObject({
+      ok: true,
+    });
+    await expect(
+      fetch(`${handle.url}api/telegram/test`, { method: "POST" }).then(
+        readJson<{ ok: boolean; allowed_chat_ids: number }>,
+      ),
+    ).resolves.toMatchObject({ ok: true, allowed_chat_ids: 1 });
+    await expect(
+      fetch(`${handle.url}missing`).then(readJson<{ ok: boolean; error: string }>),
+    ).resolves.toMatchObject({
+      ok: false,
+      error: "not found",
+    });
+  });
+
   it("queues, approves, rejects, expires, broadcasts, and persists approval events", async () => {
     const logPath = tempLogPath();
     const service = createAiPartyLiveService({

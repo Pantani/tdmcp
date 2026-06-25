@@ -1996,3 +1996,151 @@ describe("tdmcp-agent CLI — wave-5 branch coverage", () => {
     expect(matches.length).toBeGreaterThan(0);
   });
 });
+
+describe("tdmcp-agent CLI — coverage wave 3 offline branches", () => {
+  it("emits schemas for ai-party gateway and telegram-once", async () => {
+    const gateway = await runCli(["schema", "ai-party"]);
+    expect(gateway.code).toBe(0);
+    const gatewayDoc = JSON.parse(gateway.stdout);
+    expect(gatewayDoc.command).toBe("ai-party");
+    expect(JSON.stringify(gatewayDoc.input)).toContain("message");
+    expect(JSON.stringify(gatewayDoc.input)).toContain("preapproved_cues");
+
+    const telegram = await runCli(["schema", "ai-party", "telegram-once"]);
+    expect(telegram.code).toBe(0);
+    const telegramDoc = JSON.parse(telegram.stdout);
+    expect(telegramDoc.command).toBe("ai-party telegram-once");
+    expect(JSON.stringify(telegramDoc.input)).toContain("allowed_chat_ids");
+  });
+
+  it("prints focused help for ai-party special commands", async () => {
+    const gateway = await runCli(["help", "ai-party"]);
+    expect(gateway.code).toBe(0);
+    expect(gateway.stdout).toContain("tdmcp-agent ai-party");
+    expect(gateway.stdout).toContain("Input schema:");
+
+    const telegram = await runCli(["help", "ai-party", "telegram-once"]);
+    expect(telegram.code).toBe(0);
+    expect(telegram.stdout).toContain("tdmcp-agent ai-party telegram-once");
+    expect(telegram.stdout).toContain("allowed_chat_ids");
+  });
+
+  it("rejects malformed ai-party-poc params before running the POC", async () => {
+    const invalidJson = await runCli(["ai-party-poc", "--params", "{not-json"]);
+    expect(invalidJson.code).toBe(2);
+    expect(invalidJson.stderr).toContain("Invalid JSON");
+
+    const invalidArgs = await runCli(["ai-party-poc", "--params", '{"operator":""}']);
+    expect(invalidArgs.code).toBe(2);
+    expect(invalidArgs.stderr).toContain('Invalid arguments for "ai-party-poc"');
+  });
+
+  it("rejects malformed ai-party gateway input and unknown verbs", async () => {
+    const invalidArgs = await runCli(["ai-party", "--params", "{}"]);
+    expect(invalidArgs.code).toBe(2);
+    expect(invalidArgs.stderr).toContain('Invalid arguments for "ai-party"');
+
+    const unknown = await runCli(["ai-party", "dancefloor"]);
+    expect(unknown.code).toBe(2);
+    expect(unknown.stderr).toContain('Unknown ai-party verb "dancefloor"');
+  });
+
+  it("rejects invalid ai-party telegram-once args without polling Telegram", async () => {
+    const r = await runCli(["ai-party", "telegram-once", "--params", '{"limit":101}']);
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain('Invalid arguments for "ai-party telegram-once"');
+  });
+
+  it("rejects show-director non-intent argument errors separately from malformed intents", async () => {
+    const r = await runCli(["show-director", "--params", '{"operator":""}']);
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain('Invalid arguments for "show-director"');
+    expect(r.stderr).not.toContain("Malformed show intent");
+  });
+
+  it("rejects show-director mixer catalogs whose policy hash has drifted", async () => {
+    const scene = {
+      scene_id: "drifted_scene",
+      label: "Drifted Scene",
+      adapter_target: { kind: "soundcraft_ui24r", mixer_id: "foh-ui24r" },
+      operation: "recall_snapshot",
+      show_name: "Demo Show",
+      snapshot_name: "Drifted Snapshot",
+      allowed_setlist_sections: ["intro"],
+      last_validated_at: "2026-06-03T18:00:00.000Z",
+      rollback_target: "house_default",
+      safety_notes: "Fixture catalog for hash-mismatch coverage.",
+      forbidden_delta_check: {
+        excludes_all_forbidden: true,
+        verified: [
+          "gain",
+          "pa_mute",
+          "routing",
+          "patch",
+          "channel_strip",
+          "mute_group",
+          "phantom_power",
+        ],
+      },
+    };
+    const r = await runCli([
+      "show-director",
+      "--params",
+      JSON.stringify({
+        mixer_scene_catalog: {
+          venue: "Fixture Venue",
+          catalog_version: "test",
+          policy_hash: "not-the-real-hash",
+          scenes: [scene],
+        },
+        intent: {
+          type: "arm_mixer_scene",
+          adapter_target: { kind: "soundcraft_ui24r", mixer_id: "foh-ui24r" },
+          target: { kind: "snapshot", scene_id: "drifted_scene" },
+        },
+      }),
+    ]);
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain("Invalid mixer scene catalog");
+    expect(r.stderr).toContain("catalog hash mismatch");
+  });
+
+  it("returns structured doctor output with --output json", async () => {
+    const r = await runCli(["doctor", "--output", "json"], { makeCtx });
+    expect(r.stdout).toContain('"checks"');
+    expect(r.stderr).toBe("");
+    expect([0, 1]).toContain(r.code);
+  });
+
+  it("honors doctor --quiet by suppressing output", async () => {
+    const r = await runCli(["doctor", "--quiet"], { makeCtx });
+    expect(r.stdout).toBe("");
+    expect(r.stderr).toBe("");
+    expect([0, 1]).toContain(r.code);
+  });
+
+  it("surfaces preview context build failures before capture", async () => {
+    const r = await runCli(["preview", "/project1/out1"], {
+      makeCtx: () => {
+        throw new Error("bad preview config");
+      },
+    });
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain("bad preview config");
+  });
+
+  it("surfaces invalid config profile resolution errors", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-agent-bad-profile-"));
+    const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    try {
+      const config = join(dir, "tdmcp.json");
+      writeFileSync(config, "{not-json");
+      const r = await runCli(["config", "profile", "club", "--config", config]);
+      expect(r.code).toBe(2);
+      expect(r.stderr.length).toBeGreaterThan(0);
+    } finally {
+      stderr.mockRestore();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});

@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -316,6 +316,36 @@ describe("runDoctor", () => {
     expect(created).toBe(profilePath);
     const repair = r.report.repairs?.find((x) => x.id === "profile_dir");
     expect(repair?.status).toBe("applied");
+  });
+
+  it("--fix can use default filesystem repairs for vault, env token, and profiles", async () => {
+    const vaultPath = join(tmpRoot, "vault-default");
+    const envPath = join(tmpRoot, ".env");
+    const profilePath = join(tmpRoot, "profiles-default");
+    writeFileSync(envPath, "EXISTING=1\n", "utf8");
+
+    const r = await runDoctor({
+      fix: true,
+      config: baseConfig({ vaultPath }),
+      makeCtx: makeFakeCtx(),
+      makeLlmClient: makeFakeLlm({ ok: true, modelReady: true, detail: "ok" }),
+      envFilePath: envPath,
+      profileDirPath: profilePath,
+      projectRagProbes: noProjectRagIndex,
+    });
+
+    expect(existsSync(vaultPath)).toBe(true);
+    expect(existsSync(profilePath)).toBe(true);
+    expect(readFileSync(envPath, "utf8")).toMatch(
+      /EXISTING=1\n\nTDMCP_BRIDGE_TOKEN=[0-9a-f]{48}\n/,
+    );
+    expect(r.report.repairs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "vault", status: "applied" }),
+        expect.objectContaining({ id: "bridge_token", status: "applied" }),
+        expect.objectContaining({ id: "profile_dir", status: "applied" }),
+      ]),
+    );
   });
 
   it("--fix profile dir reports failed when repair throws", async () => {

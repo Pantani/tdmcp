@@ -16,6 +16,7 @@ import {
   bindingsFileSchema,
   channelCandidatesFor,
   type LogEvent,
+  loadBindingsFile,
   runControllerBridge,
   type SpawnLike,
   shapeArgv,
@@ -87,6 +88,26 @@ describe("channelCandidatesFor", () => {
     expect(cands).toContain("scene/next");
     expect(cands).toContain("scene_next");
   });
+
+  it("midi-cc and raw channel events resolve their expected channel names", () => {
+    expect(
+      channelCandidatesFor({
+        type: "midi-cc",
+        value: 74,
+        threshold: 0.5,
+        edge: "rising",
+        channel: 3,
+      }),
+    ).toEqual(["ch3c74", "c74"]);
+    expect(
+      channelCandidatesFor({
+        type: "channel",
+        value: "slider1",
+        threshold: 0.5,
+        edge: "rising",
+      }),
+    ).toEqual(["slider1"]);
+  });
 });
 
 describe("shapeArgv", () => {
@@ -101,6 +122,9 @@ describe("shapeArgv", () => {
       file: "/bin/sh",
       args: ["-lc", "open -a OBS"],
     });
+  });
+  it("rejects empty argv when shell=false", () => {
+    expect(() => shapeArgv([], false)).toThrow("command must have at least one argv element");
   });
 });
 
@@ -156,6 +180,25 @@ describe("tickOnce — midi-note edge=off", () => {
       state = r.state;
     }
     expect(fires).toEqual([30]);
+  });
+});
+
+describe("tickOnce — midi-note edge=any", () => {
+  const b = mkBinding("note-any", { type: "midi-note", value: 60, edge: "any" }, ["true"], 0);
+  it("fires on both on and off transitions", () => {
+    let state: TickState = {};
+    const edges: string[] = [];
+    for (const [t, n60] of [
+      [10, 0],
+      [20, 1],
+      [30, 1],
+      [40, 0],
+    ] as const) {
+      const r = tickOnce(state, [b], { n60 }, t);
+      edges.push(...r.fires.map((f) => f.edge));
+      state = r.state;
+    }
+    expect(edges).toEqual(["on", "off"]);
   });
 });
 
@@ -232,6 +275,25 @@ describe("tickOnce — osc-addr", () => {
   });
 });
 
+describe("tickOnce — channel event", () => {
+  it("supports falling edges and leaves state unchanged when the sample is absent", () => {
+    const b = mkBinding(
+      "fader-down",
+      { type: "channel", value: "chan1", threshold: 0.5, edge: "falling" },
+      ["true"],
+      0,
+    );
+    let state: TickState = { "fader-down": { prev: 0.8, lastFiredAt: null } };
+    let r = tickOnce(state, [b], {}, 10);
+    expect(r.fires).toEqual([]);
+    expect(r.state["fader-down"]?.prev).toBe(0.8);
+
+    state = r.state;
+    r = tickOnce(state, [b], { chan1: 0.2 }, 20);
+    expect(r.fires.map((f) => f.edge)).toEqual(["falling"]);
+  });
+});
+
 describe("tickOnce — debounce", () => {
   const b = mkBinding("fast-trigger", { type: "midi-note", value: 60, edge: "on" }, ["true"], 400);
   it("suppresses a re-fire within debounce_ms; reports debounced", () => {
@@ -288,6 +350,35 @@ async function writeBindings(obj: unknown): Promise<string> {
   return path;
 }
 
+async function writeBindingsText(body: string): Promise<string> {
+  const dir = await mkdtemp(join(tmpdir(), "tdmcp-cb-"));
+  const path = join(dir, "bindings.json");
+  await writeFile(path, body, "utf8");
+  return path;
+}
+
+describe("loadBindingsFile", () => {
+  it("reports unreadable bindings files", async () => {
+    const result = await loadBindingsFile(join(tmpdir(), "missing-bindings.json"));
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.message).toContain("could not read bindings file");
+  });
+
+  it("reports invalid JSON", async () => {
+    const path = await writeBindingsText("{not-json");
+    const result = await loadBindingsFile(path);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.message).toContain("bindings file is not valid JSON");
+  });
+
+  it("reports schema validation issues with paths", async () => {
+    const path = await writeBindings({ bindings: [] });
+    const result = await loadBindingsFile(path);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.message).toContain("bindings");
+  });
+});
+
 describe("runControllerBridge — fatal when listener missing on TD", () => {
   it("emits fatal, returns non-zero exit, no spawn", async () => {
     server.use(
@@ -307,6 +398,52 @@ describe("runControllerBridge — fatal when listener missing on TD", () => {
     expect(summary.exit_code).not.toBe(0);
     expect(summary.fatal).toMatch(/Listener op not found/);
     expect(spawn).not.toHaveBeenCalled();
+    expect(events.some((e) => e.type === "fatal")).toBe(true);
+  });
+});
+
+describe("runControllerBridge — config validation failures", () => {
+  it("returns exit code 2 when a binding has no listener source", async () => {
+    const cfg = await writeBindings({
+      bindings: [{ id: "x", event: { type: "midi-note", value: 60 }, command: ["true"] }],
+    });
+    const events: LogEvent[] = [];
+    const summary = await runControllerBridge(
+      makeCtx(),
+      { config: cfg, poll_ms: 5 },
+      { emit: (e) => events.push(e), sleep: async () => {} },
+    );
+
+    expect(summary.exit_code).toBe(2);
+    expect(summary.fatal).toContain("has no listener_path");
+    expect(events.some((e) => e.type === "fatal")).toBe(true);
+  });
+});
+
+describe("runControllerBridge — bridge execution failures", () => {
+  it("turns executePythonScript errors into fatal exit code 3", async () => {
+    const cfg = await writeBindings({
+      listener_path: "/project1/midi_in1",
+      bindings: [{ id: "x", event: { type: "midi-note", value: 60 }, command: ["true"] }],
+    });
+    const ctx = {
+      ...makeCtx(),
+      client: {
+        executePythonScript: async () => {
+          throw new Error("td execute failed");
+        },
+      },
+    } as unknown as ToolContext;
+    const events: LogEvent[] = [];
+
+    const summary = await runControllerBridge(
+      ctx,
+      { config: cfg, poll_ms: 5 },
+      { emit: (e) => events.push(e), sleep: async () => {} },
+    );
+
+    expect(summary.exit_code).toBe(3);
+    expect(summary.fatal).toBe("td execute failed");
     expect(events.some((e) => e.type === "fatal")).toBe(true);
   });
 });
@@ -479,5 +616,45 @@ describe("runControllerBridge — fired log includes required keys", () => {
       expect(fired.value).toBe(1);
       expect(fired.pid).toBe(42);
     }
+  });
+});
+
+describe("runControllerBridge — spawn failures", () => {
+  it("logs spawn errors but still emits the fired event", async () => {
+    server.use(
+      execHandlerSequence([
+        { frame: 1, channels: { n60: 0 }, fatal: null },
+        { frame: 2, channels: { n60: 1 }, fatal: null },
+      ]),
+    );
+    const cfg = await writeBindings({
+      listener_path: "/project1/midi_in1",
+      bindings: [
+        {
+          id: "fire-chorus",
+          event: { type: "midi-note", value: 60, edge: "on" },
+          command: ["true"],
+        },
+      ],
+    });
+    const events: LogEvent[] = [];
+
+    const summary = await runControllerBridge(
+      makeCtx(),
+      { config: cfg, poll_ms: 5, once: true },
+      {
+        spawn: () => {
+          throw new Error("spawn denied");
+        },
+        emit: (e) => events.push(e),
+        sleep: async () => {},
+      },
+    );
+
+    expect(summary.events).toBe(1);
+    expect(summary.spawns).toBe(0);
+    expect(summary.exit_code).toBe(0);
+    expect(events.some((e) => e.type === "fatal" && e.message.includes("spawn failed"))).toBe(true);
+    expect(events.some((e) => e.type === "fired")).toBe(true);
   });
 });
