@@ -20,6 +20,8 @@ const bootstrapPinPaths = [
   join(root, "td", "modules", "mcp", "install.py"),
   join(root, "README.md"),
   join(root, "td", "README.md"),
+  join(root, "llms-install.md"),
+  join(root, "tdmcp-install-prompt.md"),
   join(root, "docs", "guide", "codex.md"),
   join(root, "docs", "guide", "install.md"),
   join(root, "docs", "guide", "local-copilot.md"),

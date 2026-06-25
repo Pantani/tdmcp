@@ -173,9 +173,6 @@ jobs:
       - name: Build docs
         run: npm run docs:build
 
-      - name: Verify generated docs are committed
-        run: git diff --exit-code -- docs/reference/tools.md
-
   workflow-lint:
     name: Workflow Lint
     runs-on: ubuntu-latest

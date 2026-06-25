@@ -6,6 +6,7 @@ import {
 } from "../layer2/createHandGestureBus.js";
 import { createSystemContainer, finalize, runBuild } from "../layer2/orchestration.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { parseHexColor } from "../util/color.js";
 
 const q = (value: string): string => JSON.stringify(value);
 
@@ -96,14 +97,6 @@ export const createHandHologramSchema = z.object({
   capture_preview: z.boolean().default(true),
 });
 type CreateHandHologramArgs = z.infer<typeof createHandHologramSchema>;
-
-function parseHexColor(hex: string): [number, number, number] | undefined {
-  const match = HEX_COLOR.exec(hex.trim());
-  const group = match?.[1];
-  if (!group) return undefined;
-  const int = Number.parseInt(group, 16);
-  return [((int >> 16) & 0xff) / 255, ((int >> 8) & 0xff) / 255, (int & 0xff) / 255];
-}
 
 function chanExpr(gestureBusPath: string, name: string, fallback: number): string {
   return `(float(op(${q(gestureBusPath)})[${q(name)}][0]) if op(${q(

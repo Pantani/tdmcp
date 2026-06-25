@@ -7,6 +7,7 @@ import {
   runBuild,
 } from "../layer2/orchestration.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { hexToRgb } from "../util/color.js";
 import { addExternalSensorLocalStatusSurface } from "./externalSensorStatusSurface.js";
 
 const q = (value: string): string => JSON.stringify(value);
@@ -80,24 +81,6 @@ export const createDepthSilhouetteSchema = z.object({
 });
 type CreateDepthSilhouetteArgs = z.infer<typeof createDepthSilhouetteSchema>;
 
-/** Parses '#rrggbb' / 'rrggbb' (3- or 6-digit) into 0..1 RGB. Falls back to white. */
-function hexToRgb(hex: string): { r: number; g: number; b: number } {
-  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex.trim());
-  if (!m) return { r: 1, g: 1, b: 1 };
-  let h = m[1] as string;
-  if (h.length === 3)
-    h = h
-      .split("")
-      .map((c) => c + c)
-      .join("");
-  const int = Number.parseInt(h, 16);
-  return {
-    r: ((int >> 16) & 0xff) / 255,
-    g: ((int >> 8) & 0xff) / 255,
-    b: (int & 0xff) / 255,
-  };
-}
-
 /**
  * The single-channel source the silhouette is keyed from. The default 'synthetic' source is a
  * self-contained animated monochrome noise field — no device, no permissions — that gives the
@@ -167,7 +150,7 @@ export async function createDepthSilhouetteImpl(ctx: ToolContext, args: CreateDe
     let output = level;
     let fillRgb: { r: number; g: number; b: number } | undefined;
     if (args.fill_color) {
-      fillRgb = hexToRgb(args.fill_color);
+      fillRgb = hexToRgb(args.fill_color, { r: 1, g: 1, b: 1 }, { shorthand: true });
       const fill = await builder.add("constantTOP", "fill", {
         colorr: fillRgb.r,
         colorg: fillRgb.g,

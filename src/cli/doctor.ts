@@ -30,7 +30,7 @@ import {
 import { type InstallBridgeResult, runInstallBridge } from "./installBridge.js";
 
 /**
- * `tdmcp doctor` — a one-shot environment diagnostic for non-technical artists.
+ * `tdmcp-agent doctor` — a one-shot environment diagnostic for non-technical artists.
  *
  * It probes the things a fresh setup needs (the TouchDesigner bridge, the local
  * LLM copilot, the optional vault) and resolves the effective config, then prints
@@ -632,11 +632,11 @@ function suggestFix(check: DoctorCheck, config: TdmcpConfig): string | undefined
   if (check.status === "pass") return undefined;
   switch (check.id) {
     case "bridge":
-      return "Start TouchDesigner, then run `tdmcp doctor --fix` to attempt a macOS Textport auto-install; if automation is unavailable, run `tdmcp install-bridge` and paste the Textport one-liner it prints.";
+      return "Start TouchDesigner, then run `tdmcp-agent doctor --fix` to attempt a macOS Textport auto-install; if automation is unavailable, run `tdmcp install-bridge` and paste the Textport one-liner it prints.";
     case "bridge_token":
-      return "Run `tdmcp doctor --fix` to generate a token and write it to your .env file, then set the same value in TouchDesigner's environment (TDMCP_BRIDGE_TOKEN).";
+      return "Run `tdmcp-agent doctor --fix` to generate a token and write it to your .env file, then set the same value in TouchDesigner's environment (TDMCP_BRIDGE_TOKEN).";
     case "profile_dir":
-      return "Run `tdmcp doctor --fix` to scaffold the default profile directory, or create it manually.";
+      return "Run `tdmcp-agent doctor --fix` to scaffold the default profile directory, or create it manually.";
     case "llm":
       return `Start the local LLM and pull the model:  ollama serve  &&  ollama pull ${config.llmModel}`;
     case "vault":
@@ -644,7 +644,7 @@ function suggestFix(check: DoctorCheck, config: TdmcpConfig): string | undefined
         ? `Create the folder or fix the path:  mkdir -p "${config.vaultPath}"  (or unset TDMCP_VAULT_PATH).`
         : undefined;
     case "config":
-      return "Fix the invalid setting shown above (check your env vars / config file), then re-run `tdmcp doctor`.";
+      return "Fix the invalid setting shown above (check your env vars / config file), then re-run `tdmcp-agent doctor`.";
     case "rag_ollama":
     case "rag_embed_model":
     case "rag_data_dir":
@@ -704,7 +704,7 @@ function checkConfig(config: TdmcpConfig): DoctorCheck {
 }
 
 function render(report: DoctorReport): string {
-  const lines: string[] = ["tdmcp doctor — environment check", ""];
+  const lines: string[] = ["tdmcp-agent doctor — environment check", ""];
   for (const c of report.checks) {
     lines.push(`  ${ICON[c.status]} ${c.title}: ${c.detail}`);
   }
@@ -873,6 +873,6 @@ export async function runDoctor(opts: RunDoctorOptions = {}): Promise<DoctorResu
 
   const summary = ok
     ? "Setup is ready."
-    : "Setup is not ready: a critical check failed (run `tdmcp doctor` for details).";
+    : "Setup is not ready: a critical check failed (run `tdmcp-agent doctor` for details).";
   return { stdout: `${render(report)}\n`, stderr: `${summary}\n`, code: ok ? 0 : 1, report };
 }

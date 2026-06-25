@@ -145,7 +145,7 @@ export const registerCreateSpectrum: ToolRegistrar = (server, ctx) => {
     {
       title: "Create audio spectrum",
       description:
-        "Build an FFT audio-spectrum analyzer that exposes N separate, ready-to-bind frequency-bin channels (band0..band{N-1}) on a Null CHOP. This is the per-band complement to extract_audio_features (which only gives overall level + bass/mid/treble): bind a row of parameters to op('…/spectrum/spectrum')['band0'], ['band1'], … to drive a bank of bars, or pick one frequency. A Sensitivity knob scales every band. Source can be the live device (mic/line — may prompt for macOS permission), an audio file, a synthetic oscillator (for testing), or an existing CHOP.",
+        "Build an FFT audio-spectrum analyzer that exposes N separate, ready-to-bind frequency-bin channels (band0..band{N-1}) on a Null CHOP. This is the per-band complement to extract_audio_features (which only gives overall level + bass/mid/treble): bind a row of parameters to op('…/spectrum/spectrum')['band0'], ['band1'], … to drive a bank of bars, or pick one frequency. A Sensitivity knob scales every band. Source can be the live device (mic/line — may prompt for macOS permission), an audio file, a synthetic oscillator (for testing), or an existing CHOP. Use extract_audio_features when you want coarse level/bass/mid/treble bands instead of N fine bins, create_audio_reactive for a ready-made spectrum visual, and feed this Null into bind_audio_reactive to drive a COMP.",
       inputSchema: createSpectrumSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

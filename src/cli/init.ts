@@ -581,14 +581,14 @@ export async function runInit(argv: string[], depsIn: RunInitDeps = {}): Promise
   if (flags.skip.has("doctor")) {
     steps.push({ id: "doctor", status: "skipped", detail: "skip" });
   } else if (flags.dryRun) {
-    steps.push({ id: "doctor", status: "would", detail: "would run tdmcp doctor --json" });
+    steps.push({ id: "doctor", status: "would", detail: "would run tdmcp-agent doctor --json" });
   } else {
     try {
       const r = await deps.runDoctor({});
       steps.push({
         id: "doctor",
         status: r.report.ok ? "ok" : "failed",
-        detail: r.report.ok ? "all checks pass" : "some checks failed (run `tdmcp doctor`)",
+        detail: r.report.ok ? "all checks pass" : "some checks failed (run `tdmcp-agent doctor`)",
       });
     } catch (err) {
       steps.push({ id: "doctor", status: "failed", detail: (err as Error).message });

@@ -8,6 +8,7 @@ import {
 } from "../layer2/orchestration.js";
 import { errorResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { hexToRgb } from "../util/color.js";
 
 const q = (value: string): string => JSON.stringify(value);
 
@@ -98,24 +99,6 @@ export const createHistogramScopeValidatedSchema =
 
 type CreateHistogramScopeArgs = z.infer<typeof createHistogramScopeSchema>;
 
-/** Parses '#rrggbb' / 'rrggbb' (3- or 6-digit) into 0..1 RGB. Falls back to green. */
-function hexToRgb(hex: string): { r: number; g: number; b: number } {
-  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex.trim());
-  if (!m) return { r: 0, g: 1, b: 0.53 };
-  let h = m[1] as string;
-  if (h.length === 3)
-    h = h
-      .split("")
-      .map((c) => c + c)
-      .join("");
-  const int = Number.parseInt(h, 16);
-  return {
-    r: ((int >> 16) & 0xff) / 255,
-    g: ((int >> 8) & 0xff) / 255,
-    b: (int & 0xff) / 255,
-  };
-}
-
 /** Build the video source TOP and return its path. */
 async function buildSource(
   builder: NetworkBuilder,
@@ -184,7 +167,7 @@ export async function createHistogramScopeImpl(ctx: ToolContext, args: CreateHis
 
   return runBuild(async () => {
     const builder = await createSystemContainer(ctx, args.parent_path, "histogram_scope");
-    const rgb = hexToRgb(args.trace_color);
+    const rgb = hexToRgb(args.trace_color, { r: 0, g: 1, b: 0.53 }, { shorthand: true });
     const [outW, outH] = args.resolution;
 
     // Source
@@ -395,7 +378,7 @@ export const registerCreateHistogramScope: ToolRegistrar = (server, ctx) => {
     {
       title: "Create histogram scope",
       description:
-        "Build a luminance (and optional per-channel RGB) histogram video scope for any TOP. Computes the histogram on the GPU using a GLSL TOP (bins×1 output), samples into a CHOP, normalises, and renders through choptoSOP → renderTOP. Output is a single Null TOP ready for previews or bind_to_channel. Implements the roadmap Milestone 2 histogram scope panel as a standalone focused tool.",
+        "Build a luminance (and optional per-channel RGB) histogram video scope for any TOP. Computes the histogram on the GPU using a GLSL TOP (bins×1 output), samples into a CHOP, normalises, and renders through choptoSOP → renderTOP. Output is a single Null TOP ready for previews or bind_to_channel. Implements the roadmap Milestone 2 histogram scope panel as a standalone focused tool. This is the single-scope, working histogram (the one create_video_scopes can't render in TD 099); for a combined waveform/parade/vectorscope monitor use create_video_scopes.",
       inputSchema: createHistogramScopeSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

@@ -13,7 +13,10 @@ describe("MCPB manifest safety controls", () => {
   it("exposes bridge auth and raw-tool profile controls to extension users", () => {
     const manifest = JSON.parse(readFileSync(join(root, "dxt", "manifest.json"), "utf8")) as {
       server?: { mcp_config?: { env?: Record<string, string> } };
-      user_config?: Record<string, { type?: string; title?: string; default?: unknown }>;
+      user_config?: Record<
+        string,
+        { type?: string; title?: string; default?: unknown; sensitive?: boolean }
+      >;
     };
 
     expect(manifest.server?.mcp_config?.env).toMatchObject({
@@ -25,6 +28,9 @@ describe("MCPB manifest safety controls", () => {
       type: "string",
       title: "TouchDesigner bridge token",
       default: "",
+      // The bridge token is a secret: Claude Desktop must mask it and store it in
+      // the OS keychain rather than render it in plain text.
+      sensitive: true,
     });
     expect(manifest.user_config?.TDMCP_RAW_PYTHON).toMatchObject({
       type: "string",

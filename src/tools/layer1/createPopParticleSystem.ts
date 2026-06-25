@@ -300,6 +300,10 @@ export const registerCreatePopParticleSystem: ToolRegistrar = (server, ctx) =>
         "(field_pop visualization), and 'composite' (compositeTOP add of both). " +
         "POP chain creation is delegated to build_pop_chain (Layer 2); " +
         "this tool adds only the render rig and control exposure. " +
+        "This is the only particle tool built on TouchDesigner's native POP operators (force-texture driven, with field/composite output modes); " +
+        "pick a sibling instead for non-POP paths: create_gpu_particle_field for a GPU noise/curl/gravity drift field, " +
+        "create_particle_flock for GPU boids/flocking, image_to_particles to reconstruct an image/video as points, " +
+        "create_particle_system for a simple CPU emitter. " +
         "NOTE: POPs are Experimental — the result carries an unverified marker; live-validate.",
       inputSchema: createPopParticleSystemSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },

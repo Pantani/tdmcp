@@ -147,7 +147,7 @@ export const registerExtractAudioFeatures: ToolRegistrar = (server, ctx) => {
     {
       title: "Extract audio features",
       description:
-        "Build an audio-analysis chain that exposes ready-to-bind reactive channels — overall level plus bass/mid/treble band energies — on a Null CHOP. Unlike create_audio_reactive (which renders a spectrum visual), this produces the raw signals so you can drive ANY parameter: bind a node parameter to op('…/audio_features/features')['bass'] and it pulses with the music. A Sensitivity knob scales all channels. Source can be the live device (mic/line — may prompt for macOS permission), an audio file, a synthetic oscillator (for testing), or an existing CHOP.",
+        "Build an audio-analysis chain that exposes ready-to-bind reactive channels — overall level plus bass/mid/treble band energies — on a Null CHOP. Unlike create_audio_reactive (which renders a spectrum visual), this produces the raw signals so you can drive ANY parameter: bind a node parameter to op('…/audio_features/features')['bass'] and it pulses with the music. A Sensitivity knob scales all channels. Source can be the live device (mic/line — may prompt for macOS permission), an audio file, a synthetic oscillator (for testing), or an existing CHOP. Use create_spectrum for N fine per-band channels instead of these four coarse bands, and pass this Null as the source_chop to bind_audio_reactive to make a whole COMP react.",
       inputSchema: extractAudioFeaturesSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

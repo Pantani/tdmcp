@@ -7,6 +7,7 @@ import {
   runBuild,
 } from "../layer2/orchestration.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { parseHexColor } from "../util/color.js";
 
 const q = (value: string): string => JSON.stringify(value);
 
@@ -168,17 +169,6 @@ const SHADERS: Record<ShaderName, string> = {
   metaballs: METABALLS_SHADER,
   plasma: PLASMA_SHADER,
 };
-
-const HEX_COLOR = /^#?([0-9a-fA-F]{6})$/;
-
-/** Parses "#rrggbb" (or "rrggbb") into linear-ish 0..1 RGB; undefined for malformed input. */
-function parseHexColor(hex: string): [number, number, number] | undefined {
-  const match = HEX_COLOR.exec(hex.trim());
-  const group = match?.[1];
-  if (!group) return undefined;
-  const int = Number.parseInt(group, 16);
-  return [((int >> 16) & 0xff) / 255, ((int >> 8) & 0xff) / 255, (int & 0xff) / 255];
-}
 
 export const createShaderLibSchema = z.object({
   shader: z

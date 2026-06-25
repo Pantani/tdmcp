@@ -7,6 +7,7 @@ import {
   runBuild,
 } from "../layer2/orchestration.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { parseHexColor, rgbToHex } from "../util/color.js";
 
 const q = (value: string): string => JSON.stringify(value);
 
@@ -90,28 +91,6 @@ const MARCH_BODY = `void main(){
   fragColor = TDOutputSwizzle(vec4(col, 1.0));
 }
 `;
-
-const HEX_COLOR = /^#?([0-9a-fA-F]{6})$/;
-
-/** Parses "#rrggbb" (or "rrggbb") into 0..1 RGB; undefined for malformed input. */
-function parseHexColor(hex: string): [number, number, number] | undefined {
-  const match = HEX_COLOR.exec(hex.trim());
-  const group = match?.[1];
-  if (!group) return undefined;
-  const int = Number.parseInt(group, 16);
-  return [((int >> 16) & 0xff) / 255, ((int >> 8) & 0xff) / 255, (int & 0xff) / 255];
-}
-
-/** Formats a 0..1 RGB triple back to a "#rrggbb" string for seeding an RGB swatch. */
-function toHex(rgb: [number, number, number]): string {
-  return `#${rgb
-    .map((c) =>
-      Math.round(c * 255)
-        .toString(16)
-        .padStart(2, "0"),
-    )
-    .join("")}`;
-}
 
 const primitiveSchema = z.object({
   kind: z.enum(["sphere", "box", "torus"]).describe("SDF primitive shape."),
@@ -419,9 +398,9 @@ export async function createSdfFieldImpl(ctx: ToolContext, args: CreateSdfFieldA
           { name: "StepCount", type: "int", min: 8, max: 256, default: args.step_count },
           { name: "Intensity", type: "float", min: 0, max: 3, default: args.intensity },
           { name: "Rotate", type: "float", min: -6.28, max: 6.28, default: args.rotate_scene },
-          { name: "ColorA", type: "rgb", default: toHex(colorA) },
-          { name: "ColorB", type: "rgb", default: toHex(colorB) },
-          { name: "Background", type: "rgb", default: toHex(bg) },
+          { name: "ColorA", type: "rgb", default: rgbToHex(colorA) },
+          { name: "ColorB", type: "rgb", default: rgbToHex(colorB) },
+          { name: "Background", type: "rgb", default: rgbToHex(bg) },
         ]
       : [];
 

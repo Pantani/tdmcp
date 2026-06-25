@@ -1,23 +1,13 @@
 import { z } from "zod";
 import { createSystemContainer, finalize, runBuild } from "../layer2/orchestration.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { hexToRgbTuple } from "../util/color.js";
 
 const RESOLUTIONS = {
   "720p": [1280, 720],
   "1080p": [1920, 1080],
   "4K": [3840, 2160],
 } as const;
-
-/** "#rrggbb" (or "rrggbb") → [r,g,b] in 0..1; falls back to white on anything malformed. */
-function hexToRgb(hex: string): [number, number, number] {
-  const h = hex.replace(/^#/, "");
-  if (!/^[0-9a-fA-F]{6}$/.test(h)) return [1, 1, 1];
-  return [
-    Number.parseInt(h.slice(0, 2), 16) / 255,
-    Number.parseInt(h.slice(2, 4), 16) / 255,
-    Number.parseInt(h.slice(4, 6), 16) / 255,
-  ];
-}
 
 export const createTextOverlaySchema = z.object({
   text: z.string().default("TEXT").describe("The text to display."),
@@ -48,7 +38,7 @@ export async function createTextOverlayImpl(ctx: ToolContext, args: CreateTextOv
   return runBuild(async () => {
     const builder = await createSystemContainer(ctx, args.parent_path, "text_overlay");
     const [width, height] = RESOLUTIONS[args.resolution];
-    const [r, g, b] = hexToRgb(args.color);
+    const [r, g, b] = hexToRgbTuple(args.color, [1, 1, 1]);
 
     // Transparent-background Text TOP: only the glyphs are opaque, so it composites cleanly.
     const text = await builder.add("textTOP", "text", {
@@ -103,7 +93,7 @@ export const registerCreateTextOverlay: ToolRegistrar = (server, ctx) => {
     {
       title: "Create text overlay",
       description:
-        "Composite styled text over a visual (or on its own transparent background) — a Text TOP with font size, color, and alignment, optionally laid 'over' a source TOP through a Composite TOP, output as a Null. For lyrics, titles, song names, or credits in a set. Distinct from the vault's bind_vault_text (which data-syncs a Text DAT to a note); this is a finished visual layer ready for setup_output.",
+        "Composite styled STATIC text over a visual (or on its own transparent background) — a Text TOP with font size, color, and alignment, optionally laid 'over' a source TOP through a Composite TOP, output as a Null. For lyrics, titles, song names, or credits in a set. Distinct from the vault's bind_vault_text (which data-syncs a Text DAT to a note); this is a finished visual layer ready for setup_output. The text does not move: for a single word that flashes/pulses/slides use create_kinetic_text, and for multi-line scrolling tickers/credits rolls/typewriter reveals use create_text_crawl.",
       inputSchema: createTextOverlaySchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

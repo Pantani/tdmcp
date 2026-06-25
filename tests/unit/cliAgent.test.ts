@@ -654,6 +654,14 @@ describe("tdmcp-agent CLI", () => {
     expect(r.stderr).toContain("show-director");
   });
 
+  it('does not suggest the exact token the user typed (no `Did you mean "exec"`) (U4)', async () => {
+    const r = await runCli(["exec"]);
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain("Unknown command");
+    // A known-but-unresolvable command entered verbatim must never suggest itself.
+    expect(r.stderr).not.toContain('Did you mean "exec"');
+  });
+
   it("rejects an unknown command with exit code 2", async () => {
     const r = await runCli(["nodes", "frobnicate"]);
     expect(r.code).toBe(2);

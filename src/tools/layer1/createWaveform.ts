@@ -7,6 +7,7 @@ import {
   runBuild,
 } from "../layer2/orchestration.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { hexToRgb } from "../util/color.js";
 
 const q = (value: string): string => JSON.stringify(value);
 
@@ -54,24 +55,6 @@ export const createWaveformSchema = z.object({
     .describe("Parent COMP path the self-contained 'waveform' container is created inside."),
 });
 type CreateWaveformArgs = z.infer<typeof createWaveformSchema>;
-
-/** Parses '#rrggbb' / 'rrggbb' (3- or 6-digit) into 0..1 RGB. Falls back to green. */
-function hexToRgb(hex: string): { r: number; g: number; b: number } {
-  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex.trim());
-  if (!m) return { r: 0, g: 1, b: 0.53 };
-  let h = m[1] as string;
-  if (h.length === 3)
-    h = h
-      .split("")
-      .map((c) => c + c)
-      .join("");
-  const int = Number.parseInt(h, 16);
-  return {
-    r: ((int >> 16) & 0xff) / 255,
-    g: ((int >> 8) & 0xff) / 255,
-    b: (int & 0xff) / 255,
-  };
-}
 
 /** Mirrors extractAudioFeatures.buildSource so the source enum behaves identically. */
 async function buildSource(builder: NetworkBuilder, args: CreateWaveformArgs): Promise<string> {
@@ -189,7 +172,7 @@ export async function createWaveformImpl(ctx: ToolContext, args: CreateWaveformA
     // Tint the white line to the chosen colour: a flat Constant TOP of the colour multiplied
     // over the render (operand 'multiply') stains the trace without touching its shape, and
     // leaves the dark background dark. Input 0 = the render, input 1 = the flat colour.
-    const rgb = hexToRgb(args.color);
+    const rgb = hexToRgb(args.color, { r: 0, g: 1, b: 0.53 }, { shorthand: true });
     const tintColor = await builder.add("constantTOP", "tint", {
       colorr: rgb.r,
       colorg: rgb.g,
