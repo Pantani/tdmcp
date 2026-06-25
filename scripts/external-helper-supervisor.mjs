@@ -37,24 +37,40 @@ function restartLimit(maxRestarts) {
   return Number.isFinite(maxRestarts) ? Math.max(0, Number(maxRestarts)) : Number.POSITIVE_INFINITY;
 }
 
+function commandOptions(options) {
+  return {
+    args: options.args ?? [],
+    command: options.command,
+    label: options.label ?? "external-helper",
+  };
+}
+
+function timingOptions(options) {
+  return {
+    killGraceMs: options.killGraceMs ?? 1200,
+    restartLimit: restartLimit(options.maxRestarts ?? Number.POSITIVE_INFINITY),
+    stallCheckIntervalMs: options.stallCheckIntervalMs,
+    timeoutMs: Math.max(0, Number(options.stallTimeoutMs ?? 0)),
+  };
+}
+
+function callbackOptions(options) {
+  return {
+    formatExitError: options.formatExitError,
+    formatLineError: options.formatLineError,
+    formatStallMessage: options.formatStallMessage,
+    log: options.log ?? defaultLog,
+    now: options.now ?? (() => Date.now()),
+    onJson: options.onJson,
+    onStatus: options.onStatus,
+    onStderr: options.onStderr ?? defaultStderr,
+    spawnImpl: options.spawnImpl ?? spawn,
+  };
+}
+
 class JsonLineHelperRun {
   constructor(options) {
-    this.command = options.command;
-    this.args = options.args ?? [];
-    this.label = options.label ?? "external-helper";
-    this.timeoutMs = Math.max(0, Number(options.stallTimeoutMs ?? 0));
-    this.stallCheckIntervalMs = options.stallCheckIntervalMs;
-    this.killGraceMs = options.killGraceMs ?? 1200;
-    this.restartLimit = restartLimit(options.maxRestarts ?? Number.POSITIVE_INFINITY);
-    this.onJson = options.onJson;
-    this.onStatus = options.onStatus;
-    this.onStderr = options.onStderr ?? defaultStderr;
-    this.log = options.log ?? defaultLog;
-    this.formatStallMessage = options.formatStallMessage;
-    this.formatLineError = options.formatLineError;
-    this.formatExitError = options.formatExitError;
-    this.spawnImpl = options.spawnImpl ?? spawn;
-    this.now = options.now ?? (() => Date.now());
+    Object.assign(this, commandOptions(options), timingOptions(options), callbackOptions(options));
     this.settled = false;
     this.restartCount = 0;
   }
