@@ -12,6 +12,7 @@ interface PackageJson {
   peerDependencies?: Record<string, string>;
   peerDependenciesMeta?: Record<string, { optional?: boolean }>;
   pnpm?: unknown;
+  version: string;
 }
 
 interface PnpmWorkspace {
@@ -50,5 +51,14 @@ describe("package install metadata", () => {
     expect(pnpmWorkspace.onlyBuiltDependencies).toEqual(["esbuild", "msw"]);
     expect(pnpmWorkspace.allowBuilds).toEqual({ esbuild: true, msw: true });
     expect(pnpmWorkspace.autoInstallPeers).toBe(false);
+  });
+
+  it("keeps bridge stale-detection versions synced to the package version", () => {
+    const packageJson = readRootPackageJson();
+    const bridgeVersionPy = readFileSync(join(root, "td/modules/utils/version.py"), "utf8");
+    const getTdInfoTs = readFileSync(join(root, "src/tools/layer3/getTdInfo.ts"), "utf8");
+
+    expect(bridgeVersionPy).toContain(`BRIDGE_VERSION = "${packageJson.version}"`);
+    expect(getTdInfoTs).toContain(`EXPECTED_BRIDGE_VERSION = "${packageJson.version}"`);
   });
 });

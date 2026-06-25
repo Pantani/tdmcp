@@ -11,7 +11,7 @@ const DESCRIPTION =
  * bridge is stale relative to the source (the recurring "edited td/ but it didn't take"
  * gotcha) so a confusing class of failures gets a named, actionable message.
  */
-const EXPECTED_BRIDGE_VERSION = "0.6.1";
+const EXPECTED_BRIDGE_VERSION = "0.11.0";
 
 export async function getTdInfoImpl(ctx: ToolContext) {
   const knowledge = ctx.knowledge.stats();

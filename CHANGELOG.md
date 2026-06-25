@@ -110,6 +110,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   bootstrap-pin docs) from the script itself, and drop the drift-prone
   hand-maintained `git add` list from the `version` npm script — so the release
   commit/tag no longer omits the rewritten bootstrap pins.
+- Sync the TouchDesigner bridge `BRIDGE_VERSION` and `get_td_info` expected
+  bridge version to the package version during release prep, so users running an
+  old bridge get the intended `bridge_stale` reload warning after upgrading.
 - Correct the advertised tool count (286 → 332) on the README and docs landing
   page.
 - Remove a dead `code-quality` CI step that diffed the gitignored

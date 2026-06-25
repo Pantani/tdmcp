@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
@@ -13,6 +16,13 @@ import { updateTdNodeParametersImpl } from "../../src/tools/layer3/updateTdNodeP
 import type { ToolContext } from "../../src/tools/types.js";
 import { silentLogger } from "../../src/utils/logger.js";
 import { makeTdServer, offlineInfoHandler, TD_BASE } from "../helpers/tdMock.js";
+
+const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+const packageVersion = (
+  JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
+    version: string;
+  }
+).version;
 
 const server = makeTdServer();
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
@@ -50,7 +60,7 @@ describe("layer 3 tool handlers", () => {
   });
 
   it("get_td_info warns when the running bridge is stale vs the build", async () => {
-    // The default mock reports bridge_version 0.3.0, older than this build's expected 0.6.1.
+    // The default mock reports bridge_version 0.3.0, older than this build's expected version.
     const result = await getTdInfoImpl(makeCtx());
     expect(result.isError).toBeFalsy();
     expect(textOf(result)).toContain("stale");
@@ -65,7 +75,7 @@ describe("layer 3 tool handlers", () => {
           data: {
             td_version: "2023.12000",
             python_version: "3.11.1",
-            bridge_version: "0.6.1",
+            bridge_version: packageVersion,
             build: "2023.12000",
           },
         }),

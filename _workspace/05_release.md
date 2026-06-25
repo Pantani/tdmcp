@@ -27,6 +27,9 @@ Status: prepared, not tagged or published
 - Updated bootstrap/install pins to `v0.11.0` with
   `scripts/sync-manifest-version.mjs` so the `0.11.0` package installs matching
   bridge modules after the tag exists.
+- Updated the TouchDesigner bridge `BRIDGE_VERSION` and `get_td_info` expected
+  bridge version to `0.11.0`, and extended `scripts/sync-manifest-version.mjs`
+  so future releases keep the stale-bridge detector aligned with `package.json`.
 - Hardened the external-helper supervisor stall-restart unit test timing after
   the first full Vitest release gate exposed a subprocess-startup flake under
   parallel load.
@@ -68,6 +71,11 @@ Status: prepared, not tagged or published
 - `npm run docs:build` passed and regenerated 332 tool docs.
 - `npm exec -- vitest run tests/unit/externalHelperSupervisor.test.ts` passed
   after hardening the stall-restart test timing.
+- `npm exec -- vitest run tests/unit/bootstrapReleasePin.test.ts
+  tests/unit/packageInstallMetadata.test.ts tests/unit/toolsLayer3.test.ts`
+  passed for the bridge-version sync fix.
+- `npm run typecheck`, `npm run lint`, `npm run test:bridge`, and
+  `git diff --check` passed after the bridge-version sync fix.
 - `npm run test` passed on the rerun: 477 test files, 4804 tests.
 - `npm run lint` passed: Biome checked 1152 files.
 - `npm run build:mcpb` passed with official `@anthropic-ai/mcpb@2.1.2`,
