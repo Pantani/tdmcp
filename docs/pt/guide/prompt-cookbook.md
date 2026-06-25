@@ -454,6 +454,16 @@ classe de nota, `create_transient_reactive` separa percussão de sustain, e
 gerador ajustado, como glitch, caleidoscópio, feedback, partículas na GPU ou geometria
 reativa a áudio. Use `dry_run` primeiro quando quiser inspecionar a escolha.*
 
+> *"Divida o feed do DJ em quatro bandas limpas, roteie sub para displacement,
+> médios para pulso de cor e agudos para densidade de faíscas, então conecte as
+> mesmas bandas ao meu GLSL TOP como uniforms `uBass`, `uMid` e `uHigh`."*
+
+*Use `create_band_router` quando uma entrada de áudio precisa virar canais de
+controle legíveis `band0..bandN`, depois `create_audio_glsl_uniforms` quando esses
+canais devem guiar uniforms do shader diretamente. O resultado não é só "reativo a
+áudio": é um barramento de modulação nomeado e inspecionável que quem escreve shader
+consegue ajustar sem reescrever GLSL a cada mudança.*
+
 ### MIDI & instrumentos
 
 > *"Faça cada nota do meu teclado MIDI disparar um estouro de cor diferente — e me
@@ -734,6 +744,15 @@ posição, altura, escala e cor, e instancia box geometry por uma câmera isomé
 ou de perspectiva. É footage plano virando campo performável de cubos, não um
 filtro 2D pixelado.*
 
+> *"Transforme este retrato num estudo de nuvem de pontos pontilhada: pontos
+> quentes sobre preto, luminância controlando densidade, jitter aleatório sutil e
+> uma órbita lenta de câmera como uma impressão se dissolvendo no espaço."*
+
+*`create_stipple_pointcloud` converte luminância de TOP em densidade POP e renderiza
+milhares de pontos pequenos com controles de DotSize, JitterAmount e CameraRotate.
+Fica entre gravura e partículas 3D: mais tátil que halftone, mais leve que uma
+simulação completa de fluido ou partículas.*
+
 ## Vídeo & câmera
 
 > *"Passe minha webcam por detecção de bordas, um RGB split e um loop de feedback
@@ -804,6 +823,16 @@ StreamDiffusionTD com controles de Prompt, Negative Prompt, Strength e CFG, mais
 preview opcional da câmera. A saída pode ficar interna ou ir para Syphon-Spout /
 NDI, e a falta do TOX de StreamDiffusion vira aviso amigável com o esqueleto ainda
 montado.*
+
+> *"Monte meu rack de ingest ao vivo: uma fonte segura de screen-grab para ensaio,
+> um media bin de loops vindo de uma pasta e um chroma keyer que possa alternar
+> entre câmera e cartão de teste antes do show."*
+
+*`create_live_source`, `create_media_bin` e `create_keyer` são o trio prático de
+entrada de vídeo: um normaliza feeds ao vivo, outro varre uma pasta em clipes
+alternáveis e o terceiro compõe footage keyado sobre um fundo. Câmera, NDI,
+Syphon/Spout e streams continuam gated por plataforma/permissão, então o prompt deve
+pedir warnings e caminhos `out1` estáveis antes de ligar no mix do show.*
 
 ## Texto & títulos
 
@@ -927,6 +956,17 @@ dentro dele. O bus estabiliza a âncora da palma, mantém a palma ativa travada
 quando a mão de controle entra no frame, e publica `pinch_power`, `light_gain` e
 `audio_level` para o mesmo tracking depois guiar lasers, partículas ou áudio.*
 
+> *"Monte um controlador de gestos pelo celular na porta 9982: X/Y multitouch para
+> feedback e hue, inclinação para roll da câmera e shake como gatilho de flash
+> seguro para panic. Me dê a URL e os nomes dos canais CHOP antes de eu fazer
+> bind."*
+
+*`create_phone_gesture` serve uma página local do próprio TouchDesigner e publica
+canais de touch, tilt, gyro e shake por Script CHOP. Sensores de movimento no iOS
+precisam de toque explícito de permissão no navegador e muitas vezes HTTPS, então
+isso entra primeiro como superfície de ensaio; só depois vira controle de show,
+quando as faixas dos canais já foram observadas.*
+
 > *"Transforme minhas mãos na webcam em um controlador de Ableton Auto Filter com
 > quatro canais via TDAbleton, sem AbletonMCP. Use rastreamento de mãos do
 > MediaPipe, monte um overlay de esqueleto com estrelinhas nas juntas, publique
@@ -940,6 +980,27 @@ e `diagnose_tdableton_mapper` confere caminho do mapper, CHOP de entrada, `Reord
 bypasses e ranges. O caminho de runtime é TouchDesigner -> `TDA_Mapper` do
 TDAbleton -> parâmetros mapeados de Auto Filter ou macros de rack no Ableton;
 AbletonMCP não é necessário.*
+
+> *"Monte um rig de ensaio de harpa de parede com Kinect em modo sintético:
+> 16 zonas musicais pela parede, 128 linhas laser sutis, flashes âmbar de pluck,
+> pontos de mão em debug e controles expostos de calibração, decay de áudio e
+> reverb para eu testar a peça antes de conectar o Kinect."*
+
+*`create_kinect_wall_harp` monta o instrumento de parede como um COMP no TD:
+linhas projetadas da harpa, saídas de debug de depth / mask / mãos, barramentos CHOP de
+mão e pluck, além de uma cadeia interna de áudio sine/reverb. Use
+`source:"synthetic"` ou mantenha `fallback_to_synthetic:true` para ensaio; só
+adicione vídeo no cookbook depois de capturar o `output_top` real do TouchDesigner.*
+
+> *"Monte uma camada de controle performável para este look: quatro moduladores
+> travados no tempo chamados breathe, shimmer, wobble e random_hold, um XY pad para
+> blur/hue e um look bank com slots ambient, chorus e blackout-safe mais um botão de
+> morph A/B."*
+
+*`create_modulators`, `create_xy_pad` e `create_look_bank` transformam um patch
+gerado em instrumento: modulação CHOP nomeada, controle direto em dois eixos e looks
+salvos que podem saltar, quantizar ou morfar. Use quando o visual já funciona e o
+próximo problema é repetir os controles sob pressão de show.*
 
 > *"Monte dois cues — 'intro' e 'drop' — entre os quais eu possa transicionar."*
 
@@ -1070,6 +1131,16 @@ cook, faixa de timeline de cues e uma superfície de panic em duas etapas.*
 de hardware. Ele valida intents estruturadas de show, retorna decisões allow /
 approval / block, mantém fila de aprovação e audit log, e marca todo plano de ação
 como dry-run-only até um caminho humano/de operador resolver aquilo.*
+
+> *"Antes da banda entrar, arme a cena Soundcraft pré-declarada `band_a_intro`
+> pelo AI Show Director. Coloque na fila de aprovação, amarre o hash do catálogo e
+> mostre o plano dry-run sem contatar o mixer."*
+
+*`arm_mixer_scene` é separado de `arm_effect`: só um `scene_id` pré-declarado no
+catálogo entra na fila de aprovação, a aprovação revalida o hash do catálogo atual
+e o adapter dry-run devolve `hardware_changed:false`. A saída útil é o plano
+revisado pelo operador e o estado de auditoria, não uma ilustração decorativa de
+mixer.*
 
 > *"Trave o show em timecode OSC de entrada, siga a timeline quadro a quadro e pule
 > para cues nomeados se o rótulo de timecode disser chorus ou blackout."*
@@ -1211,6 +1282,12 @@ alinhar com uma parede, tela ou objeto.*
 > *"Monte uma pipeline de fixtures DMX para oito barras RGBW via Art-Net universo 1,
 > com canais de dimmer, cor e strobe expostos."*
 
+*`create_dmx_fixture_pipeline` organiza perfis de fixture, padding de slots DMX e
+um DMX Out CHOP para Art-Net ou sACN. Ele deve mostrar sobreposições, warnings acima
+do canal 512 e nomes exatos dos canais antes de qualquer coisa ir ao vivo; saída de
+fixture é hardware, então o cookbook mantém isso como relatório de
+roteamento/controle verificado, não como preview falso de luz.*
+
 > *"Crie um arquivo inicial de config `TDMCP_*` para este notebook de show, mas deixe
 > segredos comentados e recuse sobrescrever o arquivo existente sem `force`."*
 
@@ -1272,6 +1349,16 @@ começar a transmitir.*
 recorta cada fatia com overlap, aplica ramps de blend / branches de corner pin, cria
 Nulls de saída por projetor e expõe brilho mais controles de largura/curva de blend.
 É o esqueleto de setup antes do alinhamento físico dos projetores.*
+
+> *"Prepare uma versão fulldome desta cena panorâmica: gere um dome master fisheye
+> 2048, exponha Rotation de horizonte e FOV, e se eu tiver um render cubemap use
+> isso em vez de deformar um TOP equirectangular plano."*
+
+*Use `create_dome_output` para uma fonte 2D equirectangular/panorâmica e
+`create_cubemap_dome` quando você tem, ou quer gerar, uma fonte cubemap real. Os
+dois produzem um dome master quadrado, mas geometria final, FOV e costuras precisam
+ser ajustados contra o dome ou simulador real; a saída útil é o caminho do TOP
+mapeado e os controles, não uma ilustração genérica de planetário.*
 
 ## Consertar & entender
 
@@ -1590,6 +1677,16 @@ two-color cobrem terminal fósforo, câmera posterizada e palco duotone.*
 GLSL para que cada linha ou coluna venha de um frame passado diferente. O controle
 Depth define quanto tempo é esticado pela saída.*
 
+> *"Dê a esta câmera um time echo: rastros fantasmas recursivos em modo echo no
+> verso, depois um derretimento time-displace guiado por ramp vertical no
+> breakdown."*
+
+*`create_time_echo` é o container mais amplo de efeitos de tempo: `echo` para
+trails recursivos por feedback, `slit_scan` para fatias de tempo por linha/coluna e
+`time_displace` para offsets de frame por pixel guiados por ramp ou noise TOP. Peça
+resolução fixa e warnings porque nomes de operador cache/time-machine variam entre
+builds do TD.*
+
 > *"Gere blobs de cromo líquido num fundo preto de estúdio, metal azulado,
 > movimento lento e controle de Speed para aquele momento de logo Y2K."*
 
@@ -1755,6 +1852,56 @@ embutido antes de criar nós. As tools desta seção são read-only e funcionam 
 bridge TD ao vivo; qualquer cook ou checagem de projetor continua
 **UNVERIFIED-pending-td** até você rodar o rascunho contra uma instância
 TouchDesigner conectada.
+
+> *"Antes de escolher o estágio de blur, busque operadores TOP embutidos no
+> TouchDesigner 2023 com busca por parâmetros ligada. Mostre quais operadores
+> expõem controles ligados a borda, raio ou feedback, e ainda não crie nós."*
+
+```bash
+tdmcp-agent operators \
+  --params '{"query":"edge radius feedback blur","category":"TOP","version":"2023","parameter_search":true,"limit":8}'
+```
+
+*O `search_operators` expandido filtra por categoria, versão do TouchDesigner e
+metadados de parâmetros antes de o agente mexer no projeto. Use quando a pergunta
+é "qual operador expõe o controle de que preciso?", não só "como chama este op?".*
+
+> *"Estou migrando um patch de feedback de 2022 para 2024 e quero uma cadeia de
+> trails segura para câmera. Planeje primeiro a migração de versão do TD, depois
+> sugira uma cadeia TOP e valide antes de rascunhar a receita."*
+
+```bash
+tdmcp-agent versions migration-plan \
+  --params '{"from_version":"2022","to_version":"2024","query":"TOP feedback camera trails"}'
+tdmcp-agent operators suggest-chain \
+  --params '{"goal":"camera-safe feedback trails","family":"TOP","max_steps":5}'
+tdmcp-agent operators validate-chain \
+  --params '{"chain":["Video Device In TOP","Feedback TOP","Transform TOP","Level TOP","Null TOP"],"family":"TOP"}'
+tdmcp-agent recipes draft-chain \
+  --params '{"chain":["Video Device In TOP","Feedback TOP","Transform TOP","Level TOP","Null TOP"],"id":"camera_feedback_trails_draft","tags":["draft","feedback","migration"]}'
+```
+
+*Este é um preflight atento à versão: notas de release e registros de
+compatibilidade orientam a sugestão de cadeia, `validate_operator_chain` checa as
+adjacências de operadores e o rascunho de receita continua offline até um
+`apply_recipe` posterior com cook ao vivo no TD.*
+
+> *"Abra o pacote embutido de técnicas GLSL, inspecione uma técnica de
+> reaction-diffusion com notas de setup e código, então gere um rascunho de
+> receita válido no schema em modo non-strict. Deixe aplicar isso para uma passada
+> ao vivo no TD depois."*
+
+```bash
+tdmcp-agent techniques get \
+  --params '{"category":"glsl","technique_id":"reaction_diffusion","include_code":true,"include_setup":true}'
+tdmcp-agent techniques draft-recipe \
+  --params '{"category":"glsl","technique_id":"reaction_diffusion","id":"reaction_diffusion_technique_draft","strict":false}'
+```
+
+*`get_technique_detail` e `draft_recipe_from_technique` transformam pacotes
+embutidos de técnicas TouchDesigner em candidatos `RecipeSchema` sem afirmar que a
+rede já cozinhou. Preserve warnings e próximos passos sugeridos, então valide o
+rascunho no TouchDesigner antes de virar receita de show.*
 
 > *"Encontre o tutorial embutido para escrever um GLSL TOP, tente um rascunho de
 > tutorial em modo de triagem non-strict e me mostre por que ele é ou não é seguro

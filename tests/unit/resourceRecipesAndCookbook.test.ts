@@ -201,6 +201,42 @@ describe("cookbook resource helpers", () => {
     expect(pt).not.toContain("GLSL TOP -> Null\nTOP e valida o resultado como JSON `RecipeSchema`");
   });
 
+  it("documents newer knowledge and safety workflows without placeholder media", () => {
+    const en = readCookbookResource("en").text;
+    const pt = readCookbookResource("pt").text;
+
+    for (const text of [en, pt]) {
+      for (const expected of [
+        "create_kinect_wall_harp",
+        "arm_mixer_scene",
+        "hardware_changed:false",
+        "search_operators",
+        "tdmcp-agent versions migration-plan",
+        "tdmcp-agent techniques draft-recipe",
+        "draft_recipe_from_technique",
+        "create_band_router",
+        "create_audio_glsl_uniforms",
+        "create_live_source",
+        "create_media_bin",
+        "create_keyer",
+        "create_phone_gesture",
+        "create_modulators",
+        "create_xy_pad",
+        "create_look_bank",
+        "create_stipple_pointcloud",
+        "create_time_echo",
+        "create_dmx_fixture_pipeline",
+        "create_dome_output",
+        "create_cubemap_dome",
+      ]) {
+        expect(text).toContain(expected);
+      }
+      expect(text).not.toMatch(
+        /\/examples\/(?:kinect-wall-harp|mixer-scene|operator-search|version-migration|technique-to-recipe|band-router|audio-glsl|live-ingest|media-bin|keyer|phone-gesture|performance-control|stipple-pointcloud|time-echo|dmx-fixture|dome-output|cubemap-dome).*\.mp4/,
+      );
+    }
+  });
+
   it("returns an explanatory payload instead of throwing when the cookbook file is missing", () => {
     const result = readCookbookResourceFromPath("pt", "/tmp/tdmcp-missing-cookbook.md");
 

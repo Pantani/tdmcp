@@ -438,6 +438,16 @@ thresholds.*
 dispatches a tuned generator such as glitch, kaleidoscope, feedback, GPU particles
 or audio-reactive geometry. Use `dry_run` first when you want to inspect the choice.*
 
+> *"Split my DJ feed into four clean bands, route sub to displacement, mid to
+> color pulse and highs to spark density, then bind the same bands into my GLSL
+> TOP as `uBass`, `uMid` and `uHigh` uniforms."*
+
+*Use `create_band_router` when one audio input needs readable `band0..bandN`
+control channels, then `create_audio_glsl_uniforms` when those channels should
+drive shader uniforms directly. The result is not only "audio reactive"; it is a
+named, inspectable modulation bus that a shader artist can tune without rewriting
+the GLSL every time.*
+
 ### MIDI & instruments
 
 > *"Make each note on my MIDI keyboard flash a different colored burst — and let me
@@ -711,6 +721,15 @@ height, scale and color buses, then instances box geometry through an isometric 
 perspective camera. It turns flat footage into a performable field of cubes rather
 than a pixelated 2D filter.*
 
+> *"Turn this portrait into a stippled point-cloud study: warm dots on black,
+> luminance controls density, slight random jitter, and a slow camera orbit like a
+> print dissolving into space."*
+
+*`create_stipple_pointcloud` converts TOP luminance into POP density and renders
+thousands of tiny points with DotSize, JitterAmount and CameraRotate controls. It
+sits between printmaking and 3D particles: more tactile than a halftone, lighter
+than a full fluid or particle sim.*
+
 ## Video & camera
 
 > *"Pipe my webcam through edge detection, an RGB split and a feedback loop for a
@@ -777,6 +796,16 @@ StreamDiffusionTD with Prompt, Negative Prompt, Strength and CFG controls plus a
 optional camera preview. The output can stay internal or go to Syphon-Spout / NDI,
 and a missing StreamDiffusion TOX becomes a friendly warning with the skeleton
 still built.*
+
+> *"Build my live ingest rack: a safe screen-grab source for rehearsal, a folder
+> media bin of loops, and a chroma keyer that can swap between camera and test
+> card before the show."*
+
+*`create_live_source`, `create_media_bin` and `create_keyer` are the practical
+video-input trio: one normalizes live feeds, one scans a folder into switchable
+clips, and one composites keyed footage over a background. Camera, NDI,
+Syphon/Spout and streams remain platform/permission gated, so the prompt should
+ask for warnings and stable `out1` paths before wiring the show mix.*
 
 ## Text & titles
 
@@ -898,6 +927,15 @@ inside it. The bus stabilizes the palm anchor, keeps the active palm locked when
 the control hand enters the frame, and publishes `pinch_power`, `light_gain` and
 `audio_level` so the same tracking can later drive lasers, particles or audio.*
 
+> *"Build a phone gesture controller on port 9982: multitouch X/Y controls for
+> feedback and hue, tilt for camera roll, and shake as a panic-safe flash trigger.
+> Give me the URL and the CHOP channel names before I bind anything."*
+
+*`create_phone_gesture` serves a local phone page from TouchDesigner and publishes
+touch, tilt, gyro and shake channels through a Script CHOP. iOS motion sensors need
+an explicit browser permission tap and often HTTPS, so this belongs in rehearsal
+as a control surface first, then in the show once the channel ranges are watched.*
+
 > *"Turn my webcam hands into a four-channel Ableton Auto Filter controller through
 > TDAbleton, without AbletonMCP. Use MediaPipe hand tracking, build a skeleton
 > overlay with star joints, publish `mapper_send` so `map1` is left pinch, `map2`
@@ -909,6 +947,26 @@ controller and `diagnose_tdableton_mapper` checks the mapper path, input CHOP,
 `Reorder`, bypasses and ranges. The runtime path is TouchDesigner -> TDAbleton
 `TDA_Mapper` -> Ableton mapped Auto Filter or rack macro parameters; AbletonMCP is
 not required.*
+
+> *"Build a Kinect wall harp rehearsal rig in synthetic mode: 16 musical zones
+> across the wall, 128 subtle laser lines, amber pluck flashes, debug hand dots,
+> and exposed calibration, audio decay and reverb controls so I can test the
+> piece before the Kinect is connected."*
+
+*`create_kinect_wall_harp` builds the wall instrument as a TD COMP: projected harp
+lines, depth / mask / hands debug outputs, hand and pluck CHOP buses, plus an
+internal sine/reverb audio chain. Use `source:"synthetic"` or keep
+`fallback_to_synthetic:true` for rehearsal; add a cookbook video only after
+capturing the real `output_top` from TouchDesigner.*
+
+> *"Build a performance control layer for this look: four tempo-locked modulators
+> named breathe, shimmer, wobble and random_hold, an XY pad for blur/hue, and a
+> look bank with ambient, chorus and blackout-safe slots plus an A/B morph knob."*
+
+*`create_modulators`, `create_xy_pad` and `create_look_bank` turn a generated patch
+into an instrument: named CHOP modulation, direct two-axis control and stored looks
+that can snap, quantize or morph. Use it once the visual works and the next problem
+is making the controls repeatable under show pressure.*
 
 > *"Follow the MIDI clock coming from my DJ software."*
 
@@ -1036,6 +1094,15 @@ cue timeline strip and a safer two-step panic surface.*
 validates structured show intents, returns allow / approval / block decisions, keeps
 an approval queue and audit log, and marks every action plan as dry-run-only until a
 human/operator path resolves it.*
+
+> *"Before the band walks on, arm the predeclared Soundcraft scene `band_a_intro`
+> through the AI Show Director. Put it in the approval queue, bind the catalog
+> hash, and show the dry-run plan without contacting the mixer."*
+
+*`arm_mixer_scene` is separate from `arm_effect`: only a predeclared catalog
+`scene_id` can enter the approval queue, approval rechecks the current catalog hash,
+and the dry-run adapter returns `hardware_changed:false`. The useful output is the
+operator-reviewed plan and audit state, not a decorative mixer illustration.*
 
 > *"Plan a 20-minute set across my three scenes in dry-run mode first — show me
 > what the AI director will do before it touches anything."*
@@ -1175,6 +1242,12 @@ up with a wall, screen or object.*
 > *"Build a DMX fixture pipeline for eight RGBW bars over Art-Net universe 1, with
 > dimmer, color and strobe channels exposed."*
 
+*`create_dmx_fixture_pipeline` lays out fixture profiles, DMX slot padding and a
+DMX Out CHOP for Art-Net or sACN. It should surface overlaps, over-512 warnings and
+the exact channel names before anything goes live; fixture output is hardware, so
+the cookbook keeps this as a verified routing/control report rather than a fake
+lighting preview.*
+
 > *"Create a starter `TDMCP_*` config file for this show laptop, but leave secrets
 > commented out and refuse to overwrite the existing file unless I pass force."*
 
@@ -1223,6 +1296,16 @@ start sending.*
 slice with overlap, applies blend ramps / corner-pin branches, creates
 per-projector Null outputs and exposes brightness plus blend-width/curve controls.
 It is the setup skeleton before the real projector alignment pass.*
+
+> *"Prepare a fulldome version of this panoramic scene: make a 2048 fisheye dome
+> master, expose horizon Rotation and FOV, and if I have a cube-map render use that
+> instead of warping a flat equirectangular TOP."*
+
+*Use `create_dome_output` for a 2D equirectangular/panoramic source and
+`create_cubemap_dome` when you have, or want to generate, a real cube-map source.
+Both produce a square dome master, but final geometry, FOV and seam behavior must
+be tuned against the actual dome or simulator, so the useful output is the mapped
+TOP path plus controls, not a generic planetarium illustration.*
 
 **What you'll get:** stage-prep tools for displays, GPU capability, DMX / Art-Net,
 shared-memory IPC and multi-agent fanout. These are infrastructure surfaces, so the
@@ -1554,6 +1637,14 @@ cover terminal phosphor, posterized camera and duotone stage looks.*
 in GLSL so each row or column pulls from a different past frame. The Depth control
 sets how much time is stretched across the output.*
 
+> *"Give this camera a time echo: recursive ghost trails in echo mode for the
+> verse, then a time-displace melt driven by a vertical ramp for the breakdown."*
+
+*`create_time_echo` is the broader time-effects container: `echo` for recursive
+feedback trails, `slit_scan` for row/column time slices and `time_displace` for
+per-pixel frame offsets driven by a ramp or noise TOP. Ask for fixed resolution and
+warnings because cache/time-machine operator names vary across TD builds.*
+
 > *"Generate liquid chrome blobs on a black studio background, blue-tinted metal,
 > slow movement, and a Speed control for the Y2K logo moment."*
 
@@ -1718,6 +1809,55 @@ Use these when you want the agent to read embedded TouchDesigner knowledge befor
 creates nodes. The tools in this section are read-only and work without a live TD
 bridge; any live cook or projector check stays **UNVERIFIED-pending-td** until you
 run the draft against a connected TouchDesigner instance.
+
+> *"Before choosing the blur stage, search embedded TOP operators in
+> TouchDesigner 2023 with parameter search turned on. Show me which operators
+> expose edge, radius or feedback-related controls, and do not create nodes yet."*
+
+```bash
+tdmcp-agent operators \
+  --params '{"query":"edge radius feedback blur","category":"TOP","version":"2023","parameter_search":true,"limit":8}'
+```
+
+*Expanded `search_operators` can filter by category, TouchDesigner version and
+parameter metadata before the agent mutates a project. Use it when the question is
+"which operator actually exposes the control I need?", not just "what is this op
+called?".*
+
+> *"I am migrating a 2022 feedback patch to 2024 and want a camera-safe trails
+> chain. Plan the TD version migration first, then suggest a TOP chain and
+> validate it before drafting a recipe."*
+
+```bash
+tdmcp-agent versions migration-plan \
+  --params '{"from_version":"2022","to_version":"2024","query":"TOP feedback camera trails"}'
+tdmcp-agent operators suggest-chain \
+  --params '{"goal":"camera-safe feedback trails","family":"TOP","max_steps":5}'
+tdmcp-agent operators validate-chain \
+  --params '{"chain":["Video Device In TOP","Feedback TOP","Transform TOP","Level TOP","Null TOP"],"family":"TOP"}'
+tdmcp-agent recipes draft-chain \
+  --params '{"chain":["Video Device In TOP","Feedback TOP","Transform TOP","Level TOP","Null TOP"],"id":"camera_feedback_trails_draft","tags":["draft","feedback","migration"]}'
+```
+
+*This is a version-aware preflight: release notes and compatibility records shape
+the chain suggestion, `validate_operator_chain` checks the operator adjacency, and
+the recipe draft remains offline until a later `apply_recipe` + live TD cook pass.*
+
+> *"Open the embedded GLSL technique pack, inspect a reaction-diffusion technique
+> with setup notes and code, then draft a schema-valid recipe from it in
+> non-strict mode. Leave applying it for a live TD pass later."*
+
+```bash
+tdmcp-agent techniques get \
+  --params '{"category":"glsl","technique_id":"reaction_diffusion","include_code":true,"include_setup":true}'
+tdmcp-agent techniques draft-recipe \
+  --params '{"category":"glsl","technique_id":"reaction_diffusion","id":"reaction_diffusion_technique_draft","strict":false}'
+```
+
+*`get_technique_detail` and `draft_recipe_from_technique` turn embedded
+TouchDesigner technique packs into `RecipeSchema` candidates without claiming that
+the network has cooked. Preserve warnings and next-tool hints, then verify the
+draft against TouchDesigner before it becomes a show recipe.*
 
 > *"Find the embedded tutorial for writing a GLSL TOP, try a conservative tutorial
 > draft in non-strict triage mode, and show me why it is or is not safe before
