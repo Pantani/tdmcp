@@ -213,6 +213,8 @@ describe("cookbook resource helpers", () => {
         "search_operators",
         "tdmcp-agent versions migration-plan",
         "tdmcp-agent techniques draft-recipe",
+        '"technique_id":"reaction_diffusion_gs"',
+        '"id":"reaction_diffusion_gs_technique_draft"',
         "draft_recipe_from_technique",
         "create_band_router",
         "create_audio_glsl_uniforms",
@@ -242,6 +244,7 @@ describe("cookbook resource helpers", () => {
       expect(text).not.toMatch(
         /\/examples\/(?:kinect-wall-harp|mixer-scene|operator-search|version-migration|technique-to-recipe|band-router|audio-glsl|live-ingest|media-bin|keyer|phone-gesture|performance-control|stipple-pointcloud|dmx-fixture).*\.mp4/,
       );
+      expect(text).not.toContain('"technique_id":"reaction_diffusion","include_code":true');
     }
   });
 

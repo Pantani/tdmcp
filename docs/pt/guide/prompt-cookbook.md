@@ -1899,9 +1899,9 @@ adjacências de operadores e o rascunho de receita continua offline até um
 
 ```bash
 tdmcp-agent techniques get \
-  --params '{"category":"glsl","technique_id":"reaction_diffusion","include_code":true,"include_setup":true}'
+  --params '{"category":"glsl","technique_id":"reaction_diffusion_gs","include_code":true,"include_setup":true}'
 tdmcp-agent techniques draft-recipe \
-  --params '{"category":"glsl","technique_id":"reaction_diffusion","id":"reaction_diffusion_technique_draft","strict":false}'
+  --params '{"category":"glsl","technique_id":"reaction_diffusion_gs","id":"reaction_diffusion_gs_technique_draft","strict":false}'
 ```
 
 *`get_technique_detail` e `draft_recipe_from_technique` transformam pacotes
