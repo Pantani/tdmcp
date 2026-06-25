@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -199,6 +199,55 @@ describe("cookbook resource helpers", () => {
     expect(pt).toContain('"name":"anatomy_of_a_chop","strict":false');
     expect(pt).not.toContain('"name":"CHOP optimization"');
     expect(pt).not.toContain("GLSL TOP -> Null\nTOP e valida o resultado como JSON `RecipeSchema`");
+  });
+
+  it("documents newer knowledge and safety workflows without placeholder media", () => {
+    const en = readCookbookResource("en").text;
+    const pt = readCookbookResource("pt").text;
+
+    for (const text of [en, pt]) {
+      for (const expected of [
+        "create_kinect_wall_harp",
+        "arm_mixer_scene",
+        "hardware_changed:false",
+        "search_operators",
+        "tdmcp-agent versions migration-plan",
+        "tdmcp-agent techniques draft-recipe",
+        '"technique_id":"reaction_diffusion_gs"',
+        '"id":"reaction_diffusion_gs_technique_draft"',
+        "draft_recipe_from_technique",
+        "create_band_router",
+        "create_audio_glsl_uniforms",
+        "create_live_source",
+        "create_media_bin",
+        "create_keyer",
+        "create_phone_gesture",
+        "create_modulators",
+        "create_xy_pad",
+        "create_look_bank",
+        "create_stipple_pointcloud",
+        "create_time_echo",
+        "create_dmx_fixture_pipeline",
+        "create_dome_output",
+        "create_cubemap_dome",
+      ]) {
+        expect(text).toContain(expected);
+      }
+      for (const capturedMedia of [
+        "/examples/time-echo-glitch.mp4",
+        "/examples/dome-output-glitch.mp4",
+        "/examples/cubemap-dome-master.mp4",
+      ]) {
+        expect(text).toContain(capturedMedia);
+        expect(
+          existsSync(join(process.cwd(), "docs/public", capturedMedia.replace(/^\/+/, ""))),
+        ).toBe(true);
+      }
+      expect(text).not.toMatch(
+        /\/examples\/(?:kinect-wall-harp|mixer-scene|operator-search|version-migration|technique-to-recipe|band-router|audio-glsl|live-ingest|media-bin|keyer|phone-gesture|performance-control|stipple-pointcloud|dmx-fixture).*\.mp4/,
+      );
+      expect(text).not.toContain('"technique_id":"reaction_diffusion","include_code":true');
+    }
   });
 
   it("returns an explanatory payload instead of throwing when the cookbook file is missing", () => {
