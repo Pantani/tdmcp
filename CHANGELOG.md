@@ -41,10 +41,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Add English and Portuguese cookbook examples for offline TouchDesigner
   knowledge workflows, including tutorial-to-recipe drafting and operator-chain
   compare/validate/draft loops with live checks marked `UNVERIFIED-pending-td`.
-- Expand the English and Portuguese prompt cookbook with description-only examples
-  for newer TouchDesigner tools, including live video ingest, phone gesture
-  control, performance controls, stipple point clouds, time echo, DMX fixture
-  routing, and fulldome/cubemap output.
+- Expand the English and Portuguese prompt cookbook with newer TouchDesigner
+  examples for live video ingest, phone gesture control, performance controls,
+  stipple point clouds, time echo, DMX fixture routing, and fulldome/cubemap output;
+  include TD-captured videos for the hardware-free time-echo and dome examples.
 
 ### Fixed
 

@@ -1297,9 +1297,13 @@ slice with overlap, applies blend ramps / corner-pin branches, creates
 per-projector Null outputs and exposes brightness plus blend-width/curve controls.
 It is the setup skeleton before the real projector alignment pass.*
 
-> *"Prepare a fulldome version of this panoramic scene: make a 2048 fisheye dome
-> master, expose horizon Rotation and FOV, and if I have a cube-map render use that
-> instead of warping a flat equirectangular TOP."*
+> *"Prepare hardware-free fulldome tests for this generated glitch feed: make a
+> fisheye dome master with horizon Rotation and FOV controls, then build a true
+> cube-map test scene so I can compare the higher-fidelity path."*
+
+<video :src="withBase('/examples/dome-output-glitch.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+<video :src="withBase('/examples/cubemap-dome-master.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *Use `create_dome_output` for a 2D equirectangular/panoramic source and
 `create_cubemap_dome` when you have, or want to generate, a real cube-map source.
@@ -1637,8 +1641,11 @@ cover terminal phosphor, posterized camera and duotone stage looks.*
 in GLSL so each row or column pulls from a different past frame. The Depth control
 sets how much time is stretched across the output.*
 
-> *"Give this camera a time echo: recursive ghost trails in echo mode for the
-> verse, then a time-displace melt driven by a vertical ramp for the breakdown."*
+> *"Give this generated glitch feed a time echo: recursive ghost trails in echo
+> mode for the verse, then a time-displace melt driven by a vertical ramp for the
+> breakdown."*
+
+<video :src="withBase('/examples/time-echo-glitch.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`create_time_echo` is the broader time-effects container: `echo` for recursive
 feedback trails, `slit_scan` for row/column time slices and `time_displace` for

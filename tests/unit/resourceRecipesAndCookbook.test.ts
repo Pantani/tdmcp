@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -231,8 +231,16 @@ describe("cookbook resource helpers", () => {
       ]) {
         expect(text).toContain(expected);
       }
+      for (const capturedMedia of [
+        "/examples/time-echo-glitch.mp4",
+        "/examples/dome-output-glitch.mp4",
+        "/examples/cubemap-dome-master.mp4",
+      ]) {
+        expect(text).toContain(capturedMedia);
+        expect(existsSync(join(process.cwd(), "docs/public", capturedMedia))).toBe(true);
+      }
       expect(text).not.toMatch(
-        /\/examples\/(?:kinect-wall-harp|mixer-scene|operator-search|version-migration|technique-to-recipe|band-router|audio-glsl|live-ingest|media-bin|keyer|phone-gesture|performance-control|stipple-pointcloud|time-echo|dmx-fixture|dome-output|cubemap-dome).*\.mp4/,
+        /\/examples\/(?:kinect-wall-harp|mixer-scene|operator-search|version-migration|technique-to-recipe|band-router|audio-glsl|live-ingest|media-bin|keyer|phone-gesture|performance-control|stipple-pointcloud|dmx-fixture).*\.mp4/,
       );
     }
   });

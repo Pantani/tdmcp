@@ -1350,9 +1350,13 @@ recorta cada fatia com overlap, aplica ramps de blend / branches de corner pin, 
 Nulls de saída por projetor e expõe brilho mais controles de largura/curva de blend.
 É o esqueleto de setup antes do alinhamento físico dos projetores.*
 
-> *"Prepare uma versão fulldome desta cena panorâmica: gere um dome master fisheye
-> 2048, exponha Rotation de horizonte e FOV, e se eu tiver um render cubemap use
-> isso em vez de deformar um TOP equirectangular plano."*
+> *"Prepare testes fulldome sem hardware para este feed glitch gerado: faça um dome
+> master fisheye com controles de Rotation de horizonte e FOV, então monte uma cena
+> de teste cubemap real para eu comparar o caminho de maior fidelidade."*
+
+<video :src="withBase('/examples/dome-output-glitch.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+<video :src="withBase('/examples/cubemap-dome-master.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *Use `create_dome_output` para uma fonte 2D equirectangular/panorâmica e
 `create_cubemap_dome` quando você tem, ou quer gerar, uma fonte cubemap real. Os
@@ -1677,9 +1681,11 @@ two-color cobrem terminal fósforo, câmera posterizada e palco duotone.*
 GLSL para que cada linha ou coluna venha de um frame passado diferente. O controle
 Depth define quanto tempo é esticado pela saída.*
 
-> *"Dê a esta câmera um time echo: rastros fantasmas recursivos em modo echo no
-> verso, depois um derretimento time-displace guiado por ramp vertical no
+> *"Dê a este feed glitch gerado um time echo: rastros fantasmas recursivos em modo
+> echo no verso, depois um derretimento time-displace guiado por ramp vertical no
 > breakdown."*
+
+<video :src="withBase('/examples/time-echo-glitch.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`create_time_echo` é o container mais amplo de efeitos de tempo: `echo` para
 trails recursivos por feedback, `slit_scan` para fatias de tempo por linha/coluna e
