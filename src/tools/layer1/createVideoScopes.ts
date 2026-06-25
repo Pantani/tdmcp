@@ -8,6 +8,7 @@ import {
 } from "../layer2/orchestration.js";
 import { errorResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { hexToRgb } from "../util/color.js";
 
 const q = (value: string): string => JSON.stringify(value);
 
@@ -87,24 +88,6 @@ const refineSource = (val: CreateVideoScopesArgs, ctx: z.RefinementCtx) => {
 export const createVideoScopesValidatedSchema = createVideoScopesSchema.superRefine(refineSource);
 
 type CreateVideoScopesArgs = z.infer<typeof createVideoScopesSchema>;
-
-/** Parses '#rrggbb' / 'rrggbb' (3- or 6-digit) into 0..1 RGB. Falls back to green. */
-function hexToRgb(hex: string): { r: number; g: number; b: number } {
-  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex.trim());
-  if (!m) return { r: 0, g: 1, b: 0.53 };
-  let h = m[1] as string;
-  if (h.length === 3)
-    h = h
-      .split("")
-      .map((c) => c + c)
-      .join("");
-  const int = Number.parseInt(h, 16);
-  return {
-    r: ((int >> 16) & 0xff) / 255,
-    g: ((int >> 8) & 0xff) / 255,
-    b: (int & 0xff) / 255,
-  };
-}
 
 /** Build the video source TOP and return its path. */
 async function buildSource(builder: NetworkBuilder, args: CreateVideoScopesArgs): Promise<string> {
@@ -473,7 +456,7 @@ export async function createVideoScopesImpl(ctx: ToolContext, args: CreateVideoS
   }
   return runBuild(async () => {
     const builder = await createSystemContainer(ctx, args.parent_path, "video_scopes");
-    const rgb = hexToRgb(args.trace_color);
+    const rgb = hexToRgb(args.trace_color, { r: 0, g: 1, b: 0.53 }, { shorthand: true });
 
     // Source
     const sourceTop = await buildSource(builder, args);
@@ -630,7 +613,7 @@ export const registerCreateVideoScopes: ToolRegistrar = (server, ctx) => {
     {
       title: "Create video scopes monitor",
       description:
-        "Build a broadcast-style video engineering monitor with up to four scope panels: waveform (luma trace), RGB parade (per-channel traces), vectorscope (UV chrominance scatter), and histogram (luma distribution). Each panel renders as a CHOP-to-SOP scope line through an orthographic camera and Render TOP, composited into a single output TOP via layoutTOP. Companion to create_waveform (audio) and create_spectrum (audio frequency). Default source is a synthetic test pattern (no device permission needed); 'device' is opt-in for live camera.",
+        "Build a broadcast-style video engineering monitor with multiple scope panels: waveform (luma trace), RGB parade (per-channel traces), and vectorscope (UV chrominance scatter). Each panel renders as a CHOP-to-SOP scope line through an orthographic camera and Render TOP, composited into a single output TOP via layoutTOP. Companion to create_waveform (audio) and create_spectrum (audio frequency). Default source is a synthetic test pattern (no device permission needed); 'device' is opt-in for live camera. The histogram panel here is unsupported in TD 099 and silently skipped — for a working luminance/RGB histogram use the standalone create_histogram_scope instead.",
       inputSchema: createVideoScopesSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

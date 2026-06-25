@@ -7,6 +7,7 @@ import {
   runBuild,
 } from "../layer2/orchestration.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { parseHexColor, rgbToHex } from "../util/color.js";
 
 const q = (value: string): string => JSON.stringify(value);
 
@@ -24,26 +25,6 @@ const q = (value: string): string => JSON.stringify(value);
 const PALETTE_MODES = ["random", "from_image", "duotone"] as const;
 type PaletteMode = (typeof PALETTE_MODES)[number];
 const PALETTE_MODE_CODE: Record<PaletteMode, number> = { random: 0, from_image: 1, duotone: 2 };
-
-const HEX_COLOR = /^#?([0-9a-fA-F]{6})$/;
-
-function parseHexColor(hex: string): [number, number, number] | undefined {
-  const match = HEX_COLOR.exec(hex.trim());
-  const group = match?.[1];
-  if (!group) return undefined;
-  const int = Number.parseInt(group, 16);
-  return [((int >> 16) & 0xff) / 255, ((int >> 8) & 0xff) / 255, (int & 0xff) / 255];
-}
-
-function toHex(rgb: [number, number, number]): string {
-  return `#${rgb
-    .map((c) =>
-      Math.round(c * 255)
-        .toString(16)
-        .padStart(2, "0"),
-    )
-    .join("")}`;
-}
 
 /** Next power-of-two ≥ n (and ≥ 4), bounded so the seed TOP width stays sane. */
 function nextPow2(n: number): number {
@@ -474,9 +455,9 @@ export async function createJfaVoronoiImpl(ctx: ToolContext, args: CreateJfaVoro
             max: 0.05,
             default: args.edge_thickness,
           },
-          { name: "EdgeColor", type: "rgb", default: toHex(edgeColor) },
-          { name: "ColorA", type: "rgb", default: toHex(colorA) },
-          { name: "ColorB", type: "rgb", default: toHex(colorB) },
+          { name: "EdgeColor", type: "rgb", default: rgbToHex(edgeColor) },
+          { name: "ColorA", type: "rgb", default: rgbToHex(colorA) },
+          { name: "ColorB", type: "rgb", default: rgbToHex(colorB) },
         ]
       : [];
 

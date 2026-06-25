@@ -9,7 +9,7 @@ import type { DoctorCheck } from "./doctor.js";
  *
  * The point of this probe is a single informative nudge: when an on-disk
  * Project RAG index already exists but `TDMCP_PROJECT_RAG_ENABLED` has been
- * turned off, the index is silently ignored. Without this check `tdmcp doctor`
+ * turned off, the index is silently ignored. Without this check `tdmcp-agent doctor`
  * gives no hint that previously-ingested project knowledge is dormant. It is
  * never critical and never fails — at worst it warns.
  */

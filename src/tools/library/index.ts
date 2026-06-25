@@ -884,7 +884,8 @@ export const libraryRegistrars: ToolRegistrar[] = [
       "browse_library",
       {
         title: "Browse library",
-        description: "Browse built-in/vault recipes and optional local component packages.",
+        description:
+          "Browse built-in/vault recipes and optional local component packages. Read-only discovery step before instantiating a recipe (apply_recipe) or installing a package (install_library_package); returns the matching recipes and packages so an agent can pick one by name.",
         inputSchema: browseLibrarySchema.shape,
         annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
         outputSchema: z.object({ recipes: z.array(z.unknown()), packages: z.array(z.unknown()) })
@@ -898,7 +899,7 @@ export const libraryRegistrars: ToolRegistrar[] = [
       {
         title: "Inspect component manifest",
         description:
-          "Read and validate a tdmcp component/library manifest from a package folder or file.",
+          "Read and validate a tdmcp component/library manifest from a package folder or file. Read-only: use it to check a package's metadata, declared assets, and docs before install_library_package or make_portable_tox; reports validation problems instead of throwing.",
         inputSchema: inspectComponentManifestSchema.shape,
         annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
       },
@@ -921,7 +922,8 @@ export const libraryRegistrars: ToolRegistrar[] = [
       "export_recipe_bundle",
       {
         title: "Export recipe bundle",
-        description: "Write selected recipes to a portable JSON bundle.",
+        description:
+          "Write selected recipes to a portable JSON bundle on disk. Use it to hand recipes to another machine or to CI; re-import the bundle with import_recipe_bundle, or produce a signed/versioned artifact with publish_recipe_bundle. Writes a file (destructive).",
         inputSchema: exportRecipeBundleSchema.shape,
         annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
       },
@@ -944,7 +946,8 @@ export const libraryRegistrars: ToolRegistrar[] = [
       "import_recipe_bundle",
       {
         title: "Import recipe bundle",
-        description: "Import recipes from a portable JSON bundle into a recipe directory.",
+        description:
+          "Import recipes from a portable JSON bundle into a recipe directory. The inverse of export_recipe_bundle: each recipe is validated before it is written, so a malformed bundle fails loudly instead of corrupting the directory. Writes files (destructive).",
         inputSchema: importRecipeBundleSchema.shape,
         annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
       },
@@ -956,7 +959,7 @@ export const libraryRegistrars: ToolRegistrar[] = [
       {
         title: "Validate library asset",
         description:
-          "Check that a local library asset exists and is referenced by an optional manifest.",
+          "Check that a local library asset exists on disk and is referenced by an optional manifest. Read-only pre-flight for packaging: catches missing or unreferenced files before make_portable_tox / install_library_package and returns the specific problem rather than failing later.",
         inputSchema: validateLibraryAssetSchema.shape,
         annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
       },
@@ -967,7 +970,8 @@ export const libraryRegistrars: ToolRegistrar[] = [
       "scaffold_recipe_template",
       {
         title: "Scaffold recipe template",
-        description: "Write a minimal valid recipe JSON template.",
+        description:
+          "Write a minimal but valid recipe JSON template to disk as a starting point for a new recipe. Use it to bootstrap a hand-authored recipe that already passes RecipeSchema; fill in nodes/connections, then instantiate with apply_recipe. Writes a file (destructive).",
         inputSchema: scaffoldRecipeTemplateSchema.shape,
         annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
       },
@@ -979,7 +983,7 @@ export const libraryRegistrars: ToolRegistrar[] = [
       {
         title: "Attach docs as assets",
         description:
-          "Copy documentation files into a package and add them to its manifest docs list.",
+          "Copy documentation files into a package and register them in its manifest's docs list. Use after make_portable_tox to bundle a README or usage notes with a component so they travel with it; writes into the package folder (destructive).",
         inputSchema: attachDocsAsAssetsSchema.shape,
         annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
       },
@@ -991,7 +995,7 @@ export const libraryRegistrars: ToolRegistrar[] = [
       {
         title: "Local marketplace index",
         description:
-          "Scan a local package directory and write an index of installable tdmcp packages.",
+          "Scan a local package directory and write an index of installable tdmcp packages. Use it to make a folder of components browsable and installable as a simple local marketplace; the written index is what browse_library and install_library_package consume. Writes a file (destructive).",
         inputSchema: localMarketplaceIndexSchema.shape,
         annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
       },
@@ -1002,7 +1006,8 @@ export const libraryRegistrars: ToolRegistrar[] = [
       "component_link_health",
       {
         title: "Component link health",
-        description: "Probe live COMPs for externaltox paths and missing linked component files.",
+        description:
+          "Probe live COMPs in the running project for externaltox paths and report missing or broken linked component files. Read-only diagnostic: run it when externally-linked .tox components may have moved or gone stale, before relying on them in a build.",
         inputSchema: componentLinkHealthSchema.shape,
         annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
       },
@@ -1013,7 +1018,8 @@ export const libraryRegistrars: ToolRegistrar[] = [
       "refresh_asset_previews",
       {
         title: "Refresh asset previews",
-        description: "Capture preview PNG assets from one or more TOP nodes.",
+        description:
+          "Capture fresh preview PNG assets from one or more live TOP nodes and write them to disk. Use it to regenerate stale thumbnails for library/package assets after a network changes; requires a running TouchDesigner bridge and writes image files (destructive).",
         inputSchema: refreshAssetPreviewsSchema.shape,
         annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
       },

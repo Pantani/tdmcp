@@ -153,7 +153,7 @@ describe("tdmcp doctor", () => {
   it("produces a human-readable report with a status icon per check", async () => {
     server.use(llmModels("qwen2.5:3b"));
     const r = await runDoctor({ config: makeConfig(), makeCtx });
-    expect(r.stdout).toContain("tdmcp doctor");
+    expect(r.stdout).toContain("tdmcp-agent doctor");
     // one line per check (bridge, config, tools, llm, vault, bridge_token, profile_dir,
     // plus Creative RAG: rag_ollama, rag_embedding_model, rag_data_dir,
     // plus Project RAG: project_rag)

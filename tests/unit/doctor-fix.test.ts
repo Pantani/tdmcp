@@ -121,6 +121,26 @@ describe("doctor --fix: bridge_token repair", () => {
     expect(r.report.fixes?.some((f) => f.id === "bridge_token")).toBe(true);
   });
 
+  it("fix suggestions reference `tdmcp-agent doctor`, never the package `tdmcp doctor` (U1)", async () => {
+    server.use(llmModels("qwen2.5:3b"));
+    const r = await runDoctor({
+      config: makeConfig({ bridgeToken: undefined }),
+      makeCtx,
+      fix: true,
+      envFileWrite: () => {
+        throw new Error("disk full");
+      },
+    });
+    const commands = (r.report.fixes ?? []).map((f) => f.command);
+    // The health doctor lives in the `tdmcp-agent` binary; `tdmcp doctor` routes
+    // to the package-library doctor (`tdmcp doctor [lib]`). A remediation that
+    // says "run `tdmcp doctor --fix`" sends a failing user in a circle.
+    expect(commands.some((c) => c.includes("tdmcp-agent doctor"))).toBe(true);
+    // "tdmcp-agent doctor" does not contain the substring "tdmcp doctor", so this
+    // catches any regression back to the wrong binary.
+    for (const c of commands) expect(c).not.toContain("tdmcp doctor");
+  });
+
   it("does not write a token without --fix", async () => {
     server.use(llmModels("qwen2.5:3b"));
     const written: string[] = [];

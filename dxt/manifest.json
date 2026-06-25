@@ -44,6 +44,7 @@
       "type": "string",
       "title": "TouchDesigner bridge token",
       "description": "Optional bearer token shared with the TouchDesigner bridge. Leave blank only on trusted local networks.",
+      "sensitive": true,
       "required": false,
       "default": ""
     },

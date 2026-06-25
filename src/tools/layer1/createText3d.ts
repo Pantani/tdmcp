@@ -2,29 +2,9 @@ import { z } from "zod";
 import type { ControlSpec } from "../layer2/createControlPanel.js";
 import { createSystemContainer, finalize, runBuild } from "../layer2/orchestration.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { hexToRgb } from "../util/color.js";
 
 const q = (value: string): string => JSON.stringify(value);
-
-/**
- * Parses '#rrggbb' / 'rrggbb' (3- or 6-digit) into 0..1 RGB. Falls back to white.
- * Copied from createKineticText — keep in sync if the pattern evolves.
- */
-function hexToRgb(hex: string): { r: number; g: number; b: number } {
-  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex.trim());
-  if (!m) return { r: 1, g: 1, b: 1 };
-  let h = m[1] as string;
-  if (h.length === 3)
-    h = h
-      .split("")
-      .map((c) => c + c)
-      .join("");
-  const int = Number.parseInt(h, 16);
-  return {
-    r: ((int >> 16) & 0xff) / 255,
-    g: ((int >> 8) & 0xff) / 255,
-    b: (int & 0xff) / 255,
-  };
-}
 
 export const createText3dSchema = z.object({
   name: z
@@ -68,7 +48,7 @@ type CreateText3dArgs = z.infer<typeof createText3dSchema>;
 export async function createText3dImpl(ctx: ToolContext, args: CreateText3dArgs) {
   return runBuild(async () => {
     const builder = await createSystemContainer(ctx, args.parent_path, args.name);
-    const rgb = hexToRgb(args.color);
+    const rgb = hexToRgb(args.color, { r: 1, g: 1, b: 1 }, { shorthand: true });
 
     // --- Geometry COMP ---
     // Holds the text SOP pipeline. The builder auto-clears the default torus1 from

@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { ControlSpec } from "../layer2/createControlPanel.js";
 import { createSystemContainer, finalize, runBuild } from "../layer2/orchestration.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { hexToRgb } from "../util/color.js";
 
 const q = (value: string): string => JSON.stringify(value);
 
@@ -55,28 +56,10 @@ export const createKineticTextSchema = z.object({
 });
 type CreateKineticTextArgs = z.infer<typeof createKineticTextSchema>;
 
-/** Parses '#rrggbb' / 'rrggbb' (3- or 6-digit) into 0..1 RGB. Falls back to white. */
-function hexToRgb(hex: string): { r: number; g: number; b: number } {
-  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex.trim());
-  if (!m) return { r: 1, g: 1, b: 1 };
-  let h = m[1] as string;
-  if (h.length === 3)
-    h = h
-      .split("")
-      .map((c) => c + c)
-      .join("");
-  const int = Number.parseInt(h, 16);
-  return {
-    r: ((int >> 16) & 0xff) / 255,
-    g: ((int >> 8) & 0xff) / 255,
-    b: (int & 0xff) / 255,
-  };
-}
-
 export async function createKineticTextImpl(ctx: ToolContext, args: CreateKineticTextArgs) {
   return runBuild(async () => {
     const builder = await createSystemContainer(ctx, args.parent_path, "kinetic_text");
-    const rgb = hexToRgb(args.color);
+    const rgb = hexToRgb(args.color, { r: 1, g: 1, b: 1 }, { shorthand: true });
 
     // The word itself. Text TOP param names (verified against text_top.json): `text`,
     // `fontsizex`/`fontsizey`, `fontcolorr/g/b`, `alignx`/`aligny` (centre it in frame).
@@ -261,7 +244,7 @@ export const registerCreateKineticText: ToolRegistrar = (server, ctx) => {
     {
       title: "Create kinetic text",
       description:
-        "Build a self-contained animated / kinetic typography layer — a word or line that flashes, pulses, or slides, the signature live-VJ lyric-flash effect. A Text TOP renders the text; an LFO CHOP at the given Rate (Hz) drives the animation: 'flash' gates a Level TOP's alpha/opacity hard on/off (a square wave — the text vanishes between flashes rather than turning black, so it pops cleanly in and out over a background), 'pulse' drives a Transform TOP's scale plus a Level TOP alpha fade (a sine, the text breathes), and 'slide' scrolls the Transform TOP's translate-X. Creates a new baseCOMP under `parent_path` holding the Text TOP, the LFO, the per-mode Transform/Level nodes, an optional Composite, and a Null output. With an input_path the text is composited OVER that source (pulled in by a Select TOP, so it can live in another container); without one it animates on a transparent frame. Rate is free-running for v1 — bind the LFO's frequency to a beat CHOP (or a Trigger to a detect_onsets channel) to lock the flashes to the tempo. Returns a summary plus a JSON block with the container path, created node paths, the text/lfo/output paths, exposed controls, any node errors, warnings, and an inline preview image.",
+        "Build a self-contained animated / kinetic typography layer — a word or line that flashes, pulses, or slides, the signature live-VJ lyric-flash effect. A Text TOP renders the text; an LFO CHOP at the given Rate (Hz) drives the animation: 'flash' gates a Level TOP's alpha/opacity hard on/off (a square wave — the text vanishes between flashes rather than turning black, so it pops cleanly in and out over a background), 'pulse' drives a Transform TOP's scale plus a Level TOP alpha fade (a sine, the text breathes), and 'slide' scrolls the Transform TOP's translate-X. Creates a new baseCOMP under `parent_path` holding the Text TOP, the LFO, the per-mode Transform/Level nodes, an optional Composite, and a Null output. With an input_path the text is composited OVER that source (pulled in by a Select TOP, so it can live in another container); without one it animates on a transparent frame. Rate is free-running for v1 — bind the LFO's frequency to a beat CHOP (or a Trigger to a detect_onsets channel) to lock the flashes to the tempo. This is for a single animated word/line; for a static caption or title use create_text_overlay, and for multi-line scrolling tickers/credits rolls/typewriter reveals use create_text_crawl. Returns a summary plus a JSON block with the container path, created node paths, the text/lfo/output paths, exposed controls, any node errors, warnings, and an inline preview image.",
       inputSchema: createKineticTextSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

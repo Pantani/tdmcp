@@ -1,12 +1,14 @@
 // Syncs published metadata "version" fields to match `package.json`.
 //
 // Runs automatically as the npm `version` lifecycle script: `npm version <bump>`
-// bumps package.json, then this runs and stages the manifests, then npm makes
-// the version commit + tag. That keeps published security/package metadata from
-// drifting away from the package version.
+// bumps package.json, then this runs and stages every file it manages (manifests,
+// plugin/server JSON, and the bootstrap-pin docs), then npm makes the version
+// commit + tag. That keeps published security/package metadata — and the install
+// instructions' pinned bootstrap URLs — from drifting away from the package version.
 //
 // A surgical text replace is used (not JSON.stringify) so the manifest keeps its
 // exact formatting and stays Biome-clean.
+import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -20,6 +22,8 @@ const bootstrapPinPaths = [
   join(root, "td", "modules", "mcp", "install.py"),
   join(root, "README.md"),
   join(root, "td", "README.md"),
+  join(root, "llms-install.md"),
+  join(root, "tdmcp-install-prompt.md"),
   join(root, "docs", "guide", "codex.md"),
   join(root, "docs", "guide", "install.md"),
   join(root, "docs", "guide", "local-copilot.md"),
@@ -99,4 +103,30 @@ for (const filePath of bootstrapPinPaths) {
     writeFileSync(filePath, after);
     process.stdout.write(`[sync-manifest-version] ${filePath} bootstrap pins -> ${version}\n`);
   }
+}
+
+// Stage every file this script manages so the `npm version` release commit/tag
+// includes the rewritten bootstrap pins. The `version` lifecycle script only
+// `git add`s the manifest/plugin JSON by hand, so the bootstrapPinPaths (README,
+// install prompts, docs, td/*) would otherwise be left out of the commit and the
+// worktree left dirty. Staging here keeps the set in sync with the list above —
+// no hand-maintained duplicate to drift (PR #118 review). execFileSync with an
+// argv array (never a shell string) keeps this injection-free.
+const managedPaths = [...manifestPaths, claudePluginManifestPath, serverPath, ...bootstrapPinPaths];
+let insideGitWorkTree = false;
+try {
+  execFileSync("git", ["rev-parse", "--is-inside-work-tree"], { cwd: root, stdio: "ignore" });
+  insideGitWorkTree = true;
+} catch {
+  insideGitWorkTree = false;
+}
+if (insideGitWorkTree) {
+  execFileSync("git", ["add", "--", ...managedPaths], { cwd: root, stdio: "inherit" });
+  process.stdout.write(
+    `[sync-manifest-version] staged ${managedPaths.length} managed files for the version commit\n`,
+  );
+} else {
+  process.stderr.write(
+    "[sync-manifest-version] not a git work tree; skipped staging (run `git add` manually)\n",
+  );
 }

@@ -3197,6 +3197,10 @@ function nearestCommand(input: string): string | undefined {
   const firstTokens = commandNames.map((command) => command.split(" ")[0] ?? command);
   const keys = [...new Set([...commandNames, ...firstTokens])];
   for (const key of keys) {
+    // Never suggest the exact token the user typed: when a known-but-unresolvable
+    // command (e.g. a gated `exec`) is entered verbatim, "Did you mean exec?" is
+    // pure noise. A useful "did you mean" must point at a *different* command.
+    if (key === input) continue;
     const d = editDistance(input, key);
     if (d < bestDist) {
       bestDist = d;

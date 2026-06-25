@@ -2,16 +2,9 @@ import { z } from "zod";
 import type { ControlSpec } from "../layer2/createControlPanel.js";
 import { createSystemContainer, finalize, runBuild } from "../layer2/orchestration.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { hexToRgb } from "../util/color.js";
 
 const q = (value: string): string => JSON.stringify(value);
-
-// Parse a #rrggbb hex into 0..1 RGB triplet; falls back to a soft magenta for invalid input.
-function hexToRgb(hex: string): { r: number; g: number; b: number } {
-  const m = /^#?([0-9a-fA-F]{6})$/.exec(hex.trim());
-  if (!m?.[1]) return { r: 1, g: 0.227, b: 0.549 };
-  const n = Number.parseInt(m[1], 16);
-  return { r: ((n >> 16) & 255) / 255, g: ((n >> 8) & 255) / 255, b: (n & 255) / 255 };
-}
 
 // ─── Inline fragment shaders (per spec) ──────────────────────────────────────
 
@@ -215,7 +208,7 @@ export async function createFluidSimImpl(ctx: ToolContext, args: CreateFluidSimA
     const builder = await createSystemContainer(ctx, args.parent_path, "fluid_sim");
     const res = Number.parseInt(args.resolution, 10);
     const texel = 1 / res;
-    const dye = hexToRgb(args.dye_color);
+    const dye = hexToRgb(args.dye_color, { r: 1, g: 0.227, b: 0.549 });
     const velocityDecay = 1 - args.viscosity * 0.05;
 
     // Common res params for every TOP in the loop. The exact pixel-format param name

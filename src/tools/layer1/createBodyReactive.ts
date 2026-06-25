@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { ControlSpec } from "../layer2/createControlPanel.js";
 import { createSystemContainer, finalize, runBuild } from "../layer2/orchestration.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { hexToRgb } from "../util/color.js";
 import {
   buildPoseSource,
   installFrameCooker,
@@ -10,20 +11,6 @@ import {
 } from "./poseSource.js";
 
 const q = (value: string): string => JSON.stringify(value);
-
-/** Parses '#rrggbb' / 'rrggbb' (3- or 6-digit) into 0..1 RGB. Falls back to magenta. */
-function hexToRgb(hex: string): { r: number; g: number; b: number } {
-  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex.trim());
-  if (!m) return { r: 1, g: 0.25, b: 0.8 };
-  let h = m[1] as string;
-  if (h.length === 3)
-    h = h
-      .split("")
-      .map((c) => c + c)
-      .join("");
-  const int = Number.parseInt(h, 16);
-  return { r: ((int >> 16) & 0xff) / 255, g: ((int >> 8) & 0xff) / 255, b: (int & 0xff) / 255 };
-}
 
 export const createBodyReactiveSchema = z.object({
   ...poseSourceSchemaFields,
@@ -72,7 +59,7 @@ export async function createBodyReactiveImpl(ctx: ToolContext, args: CreateBodyR
   return runBuild(async () => {
     const builder = await createSystemContainer(ctx, args.parent_path, "body_reactive");
     const src = await buildPoseSource(builder, args);
-    const rgb = hexToRgb(args.color);
+    const rgb = hexToRgb(args.color, { r: 1, g: 0.25, b: 0.8 }, { shorthand: true });
 
     // Geometry: a small sphere copied onto a point cloud built from the pose landmarks. The
     // CHOP-to-SOP turns the 33 samples into points; Copy stamps a dot on each (validated live —

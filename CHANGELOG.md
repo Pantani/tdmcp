@@ -69,6 +69,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   stipple point clouds, time echo, DMX fixture routing, and fulldome/cubemap output;
   include TD-captured videos for the hardware-free time-echo and dome examples.
 
+### Changed
+
+- Deduplicate ~20 copy-pasted hex-color helpers across Layer 1 generators into a
+  shared `src/tools/util/color.ts` (`parseHexColor`/`hexToRgb`/`hexToRgbTuple`/
+  `rgbToHex`), removing ~268 duplicated lines while preserving each tool's exact
+  fallback color and `#rgb` shorthand policy.
+- Improve tool-description quality (Glama "Disambiguation" + minimum-tool score):
+  add code-verified "use X instead of Y when Z" guidance to the overlapping
+  particle, audio, feedback, text, and scope tools, and enrich the weakest
+  library/recipe tool descriptions with usage context and read-only/writes notes.
+- Mark the MCPB `TDMCP_BRIDGE_TOKEN` user-config field as `sensitive` so Claude
+  Desktop masks it and stores it in the OS keychain instead of plain text.
+
 ### Fixed
 
 - Factor Kinect wall harp JSON-line helper supervision into a reusable external
@@ -81,6 +94,29 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the Shader Park compiler as an optional peer.
 - Clear the npm audit report by updating vulnerable Vitest, Vite, VitePress and
   esbuild transitive dependency resolutions.
+- Point the `doctor --fix` remediation hints at `tdmcp-agent doctor` (the binary
+  that hosts the health doctor); `tdmcp doctor` routes to the package-library
+  doctor, so the old hints sent failing users in a circle.
+- Stop the agent CLI from suggesting the exact unknown command the user typed
+  (e.g. `tdmcp-agent exec` no longer prints `Did you mean "exec"?`).
+- Pin the bootstrap one-liner in `llms-install.md` and `tdmcp-install-prompt.md`
+  to the released tag (they were stuck on `main`) and add both to the
+  version-sync `bootstrapPinPaths` so they stay pinned on future releases.
+- Stage every file `sync-manifest-version.mjs` rewrites (manifests + all
+  bootstrap-pin docs) from the script itself, and drop the drift-prone
+  hand-maintained `git add` list from the `version` npm script — so the release
+  commit/tag no longer omits the rewritten bootstrap pins.
+- Correct the advertised tool count (286 → 332) on the README and docs landing
+  page.
+- Remove a dead `code-quality` CI step that diffed the gitignored
+  `docs/reference/tools.md` and could never fail.
+- Fix two tool-description inaccuracies: `image_to_particles`' default source
+  image and `create_video_scopes`' TD-099-unsupported histogram panel.
+- Make `npx skillsafe scan .` (the SafeSkill scan documented in `.safeskillignore`)
+  usable by excluding `node_modules/`, `.git/`, `.claude/` and `_workspace/` —
+  without them the CLI ran the Node heap out of memory walking dependencies. Also
+  reword a `<prompt>` placeholder in `docs/reference/cli.md` that SafeSkill flagged
+  as a fake-XML context-boundary (a false positive in a CLI usage example).
 
 ## [0.10.0] - 2026-06-23
 

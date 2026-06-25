@@ -2,22 +2,7 @@ import { z } from "zod";
 import type { ControlSpec } from "../layer2/createControlPanel.js";
 import { createSystemContainer, finalize, runBuild } from "../layer2/orchestration.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
-
-// Converts a '#rrggbb' or '#rgb' hex string to 0–1 RGB components.
-// Falls back to green (#00ff00) if the string is malformed so a bad colour
-// string can't sink the whole build.
-function hexToRgb(hex: string): { r: number; g: number; b: number } {
-  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex.trim());
-  if (!m) return { r: 0, g: 1, b: 0 };
-  const raw = m[1] ?? "";
-  const h = raw.length === 3 ? raw.replace(/./g, (c) => c + c) : raw;
-  const int = Number.parseInt(h, 16);
-  return {
-    r: ((int >> 16) & 0xff) / 255,
-    g: ((int >> 8) & 0xff) / 255,
-    b: (int & 0xff) / 255,
-  };
-}
+import { hexToRgb } from "../util/color.js";
 
 export const createKeyerSchema = z.object({
   name: z.string().default("keyer").describe("Name for the keyer COMP."),
@@ -85,7 +70,7 @@ export async function createKeyerImpl(ctx: ToolContext, args: CreateKeyerArgs) {
       });
     }
 
-    const rgb = hexToRgb(args.key_color);
+    const rgb = hexToRgb(args.key_color, { r: 0, g: 1, b: 0 }, { shorthand: true });
 
     // Keying stage — three paths depending on key_type.
     let keyStage: string;
