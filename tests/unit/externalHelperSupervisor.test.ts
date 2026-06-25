@@ -92,4 +92,60 @@ setInterval(() => {}, 1000);
       rmSync(dir, { recursive: true, force: true });
     }
   });
+
+  it("emits normalized status payloads with stale and frame-age fields", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-helper-supervisor-status-"));
+    const helper = writeHelper(
+      dir,
+      `
+process.on("SIGTERM", () => {});
+console.log(JSON.stringify({ frame: 1 }));
+setInterval(() => {}, 1000);
+`,
+    );
+    const statuses: Array<Record<string, unknown>> = [];
+
+    try {
+      await expect(
+        runJsonLineHelper({
+          command: helper,
+          label: "sensor-test",
+          stallTimeoutMs: 1200,
+          stallCheckIntervalMs: 50,
+          killGraceMs: 50,
+          maxRestarts: 0,
+          onJson: () => {},
+          onStatus: (status) => statuses.push(status as unknown as Record<string, unknown>),
+          log: () => {},
+        }),
+      ).rejects.toThrow("stalled");
+
+      expect(statuses.length).toBeGreaterThan(0);
+      for (const status of statuses) {
+        expect(status).toEqual(
+          expect.objectContaining({
+            label: "sensor-test",
+            restartCount: expect.any(Number),
+            ok: expect.any(Boolean),
+            stale: expect.any(Boolean),
+            startedAtMs: expect.any(Number),
+            lastFrameAtMs: expect.any(Number),
+            lastFrameAgeMs: expect.any(Number),
+          }),
+        );
+      }
+      expect(statuses).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ type: "frame", state: "running", stale: false }),
+          expect.objectContaining({ type: "stall_limit", state: "stalled", stale: true }),
+        ]),
+      );
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(statuses.at(-1)).toEqual(
+        expect.objectContaining({ type: "stall_limit", state: "stalled", stale: true }),
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
 });

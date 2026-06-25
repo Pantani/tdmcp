@@ -597,6 +597,10 @@ import {
 } from "../tools/layer3/controlTimelineTransport.js";
 import { createTdNodeImpl, createTdNodeSchema } from "../tools/layer3/createTdNode.js";
 import { deleteTdNodeImpl, deleteTdNodeSchema } from "../tools/layer3/deleteTdNode.js";
+import {
+  diagnoseHardwareEnvironmentImpl,
+  diagnoseHardwareEnvironmentSchema,
+} from "../tools/layer3/diagnoseHardwareEnvironment.js";
 import { diffSnapshotsImpl, diffSnapshotsSchema } from "../tools/layer3/diffSnapshots.js";
 import { disconnectNodesImpl, disconnectNodesSchema } from "../tools/layer3/disconnectNodes.js";
 import { documentNetworkImpl, documentNetworkSchema } from "../tools/layer3/documentNetwork.js";
@@ -2225,6 +2229,11 @@ const COMMANDS: Record<string, Command> = {
     inspectGpuAndDisplaysImpl,
     "Inspect host GPU + connected displays (offline-friendly).",
   ),
+  "hardware-diagnose": r(
+    diagnoseHardwareEnvironmentSchema,
+    diagnoseHardwareEnvironmentImpl,
+    "Preflight bridge, displays/projectors and generated sensor/helper status DATs.",
+  ),
   "macro-record": r(
     macroRecorderSchema,
     macroRecorderImpl,
@@ -2701,7 +2710,7 @@ function commandGroup(entry: AgentCommandCatalogEntry): string {
   if (entry.unsafe) return "Unsafe escape hatches";
   if (entry.source === "cli") return "CLI workflow";
   if (
-    /^(info|reload|nodes|errors|document|diff|digest|optimize|analyze|params-modes|node-state|logs|serialize|inspect-comp|score-build|gpu-displays)/.test(
+    /^(info|reload|nodes|errors|document|diff|digest|optimize|analyze|params-modes|node-state|logs|serialize|inspect-comp|score-build|gpu-displays|hardware-diagnose)/.test(
       entry.command,
     )
   ) {

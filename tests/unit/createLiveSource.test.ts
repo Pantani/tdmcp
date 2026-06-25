@@ -60,6 +60,17 @@ function captureExecScripts(): string[] {
   return scripts;
 }
 
+function dataOf(result: Awaited<ReturnType<typeof createLiveSourceImpl>>): Record<string, unknown> {
+  const text = result.content.find((c) => c.type === "text") as
+    | { type: "text"; text: string }
+    | undefined;
+  const match = /```json\n([\s\S]*?)\n```/.exec(text?.text ?? "");
+  if (!match) throw new Error("result text did not contain a JSON block");
+  const payload = match[1];
+  if (payload === undefined) throw new Error("result JSON block was empty");
+  return JSON.parse(payload) as Record<string, unknown>;
+}
+
 describe("create_live_source", () => {
   describe("screen_grab (default)", () => {
     it("creates screengrabTOP, fitTOP, and out1 nullTOP", async () => {
@@ -90,6 +101,42 @@ describe("create_live_source", () => {
       // Output Null TOP.
       const outTop = bodies.find((b) => b.type === "nullTOP" && b.name === "out1");
       expect(outTop).toBeDefined();
+    });
+
+    it("adds a reusable local source status DAT/CHOP surface", async () => {
+      const bodies = captureCreateBodies();
+      const scripts = captureExecScripts();
+      const result = await createLiveSourceImpl(makeCtx(), {
+        name: "live_source",
+        parent_path: "/project1",
+        kind: "screen_grab",
+        resolution: [1280, 720],
+      });
+      expect(result.isError).toBeFalsy();
+
+      expect(bodies.some((b) => b.type === "textDAT" && b.name === "source_status")).toBe(true);
+      expect(bodies.some((b) => b.type === "scriptCHOP" && b.name === "source_status_chop")).toBe(
+        true,
+      );
+      expect(
+        bodies.some((b) => b.type === "textDAT" && b.name === "source_status_chop_callbacks"),
+      ).toBe(true);
+      expect(bodies.some((b) => b.type === "executeDAT" && b.name === "source_status_driver")).toBe(
+        true,
+      );
+
+      const script = scripts.join("\n");
+      expect(script).toContain('SOURCE_KIND = \\"screen_grab\\"');
+      expect(script).toContain('SOURCE_PATH = \\"/project1/live_source/source_in\\"');
+      expect(script).toContain('OUTPUT_PATH = \\"/project1/live_source/out1\\"');
+      expect(script).toContain('parent().store(\\"tdmcp_live_source_status\\"');
+      expect(script).toContain('_chan(scriptOp, \\"live_source_ok\\"');
+      expect(script).toContain("source_status_chop");
+
+      const data = dataOf(result);
+      expect(data.source_status_dat).toBe("/project1/live_source/source_status");
+      expect(data.source_status_chop).toBe("/project1/live_source/source_status_chop");
+      expect(data.source_status_driver).toBe("/project1/live_source/source_status_driver");
     });
 
     it("sets resolution on the fit stage", async () => {

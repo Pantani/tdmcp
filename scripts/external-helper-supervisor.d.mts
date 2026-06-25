@@ -1,10 +1,18 @@
 import type { ChildProcessWithoutNullStreams, SpawnOptionsWithoutStdio } from "node:child_process";
 
 export interface HelperStatusEvent {
-  type: "start" | "frame" | "stall" | "stall_limit" | "exit";
+  type: "start" | "frame" | "stall" | "stall_limit" | "line_error" | "error" | "exit";
+  label: string;
+  state: "starting" | "running" | "stalled" | "failed" | "exited";
+  ok: boolean;
+  stale: boolean;
   restartCount: number;
   pid?: number;
+  startedAtMs: number;
+  lastFrameAtMs: number;
+  lastFrameAgeMs: number;
   silenceMs?: number;
+  error?: string;
   code?: number | null;
   signal?: NodeJS.Signals | null;
 }

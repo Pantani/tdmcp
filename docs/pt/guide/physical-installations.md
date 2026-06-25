@@ -51,7 +51,11 @@ sala:
   dispositivo de saída errado.
 - **Reiniciar helper faz parte da feature.** Um stream de profundidade travado
   deve reiniciar o processo auxiliar ou marcar tracking offline; não deve
-  congelar silenciosamente a ponte.
+  congelar silenciosamente a ponte. No bridge da harpa Kinect, use
+  `--status-json <path>` quando um operador ou componente TD gerado precisar de
+  uma superfície de saúde legível por máquina. Projetos gerados por
+  `create_kinect_wall_harp` leem o mesmo arquivo no DAT `bridge_status` e
+  expõem canais numéricos no `bridge_status_chop`.
 
 ## Ferramentas atuais
 
@@ -61,11 +65,21 @@ sala:
   ou calibração.
 - **`create_interactive_projection_mapping`** é o rig de ensaio para movimento de
   câmera ou fonte sintética dirigindo uma saída de projetor.
+- **`create_live_source`** monta entradas de câmera, NDI, Syphon/Spout,
+  screen-grab ou vídeo de rede e agora expõe `source_status` e
+  `source_status_chop` para o projeto gerado saber se a fonte está ausente,
+  aguardando, com falha ou rodando.
 - **`create_depth_silhouette`** e **`create_blob_reactive`** são opções mais leves
   quando a obra precisa de máscaras ou blobs rastreados em vez de um instrumento
-  customizado.
+  customizado. `create_depth_silhouette` também expõe `source_status` e
+  `source_status_chop` para a fonte escolhida: sintética, arquivo ou sensor de
+  profundidade ao vivo.
 - **`create_external_io`** é a rota padrão para OSC, MIDI, DMX, NDI e
   Syphon/Spout.
+- **`diagnose_hardware_environment`** é o primeiro preflight genérico da sala:
+  checa se a bridge responde, se há displays/projetores suficientes e se DATs
+  gerados como `source_status` / `bridge_status` estão saudáveis antes da
+  calibração.
 - **`watch_node`**, **`get_node_state_runtime`** e
   **`inspect_gpu_and_displays`** ajudam a verificar se o projeto TD está cozinhando
   e saindo no display correto.
@@ -76,9 +90,10 @@ A harpa aponta para um pequeno kit reutilizável de instalação:
 
 | Candidato | O que adicionaria | Por que importa |
 |---|---|---|
-| `diagnose_hardware_environment` | Painel genérico de RGB/profundidade/áudio/device com status PASS / FAIL / UNVERIFIED explícito. | O artista precisa saber se a sala está errada antes de ajustar a obra. |
+| extensões de `diagnose_hardware_environment` | Adicionar métricas de frames RGB/profundidade e checagens de device de áudio ao preflight já entregue para bridge/display/status-DAT. | O artista precisa saber se a sala está errada antes de ajustar a obra. |
 | `create_projection_calibration_wizard` | Alvos projetados, hold-to-capture, checagens de crop/espelho/eixo Y e saída de mapeamento salva. | A calibração deve acontecer na tela, não por timing de chat. |
-| `run_external_sensor_bridge` | Supervisor reutilizável para processos de sensor, com detecção de dado velho, política de restart e saída OSC/WebSocket normalizada. | Isolamento de crash e restart não devem ser reimplementados por device. |
+| `run_external_sensor_bridge` | Supervisor reutilizável para processos de sensor, com detecção de dado velho, política de restart e saída OSC/WebSocket/status JSON normalizada. | Isolamento de crash e restart não devem ser reimplementados por device. |
+| `external_sensor_status_surface` | Primitivo compartilhado para builders gerarem superfícies DAT/CHOP a partir de status JSON de helpers externos ou status local de operadores TouchDesigner. | Toda ferramenta de sensor físico deve expor a mesma forma de saúde para painéis, overlays e lógica. |
 | `diagnose_audio_device` | Checagens de device de saída, sample rate, clipping e contagem de vozes para cadeias de áudio TD. | Áudio com glitch é comum em instrumentos interativos e precisa de checklist próprio. |
 | `organize_generated_project` | Move, rotula e limpa COMPs gerados sob `/project1` preservando diagnósticos úteis. | Iteração ao vivo deixa sobras; a limpeza precisa ser segura e explicar o que ficou. |
 

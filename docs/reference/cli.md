@@ -103,6 +103,7 @@ tdmcp-agent help nodes find       # focused help + input schema
 tdmcp-agent schema "nodes create" # print a command's JSON Schema
 tdmcp-agent nodes list --output table
 tdmcp-agent nodes list --output csv
+tdmcp-agent hardware-diagnose --params '{"expected_min_monitors":2,"status_paths":["/project1/kinect_wall_harp/bridge_status"]}'
 tdmcp-agent run ./show-plan.json  # run a JSON file of command steps
 cat show-plan.json | tdmcp-agent run - --continue-on-error
 tdmcp-agent config profiles       # list saved config profiles

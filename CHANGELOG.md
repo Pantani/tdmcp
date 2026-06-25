@@ -41,6 +41,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Add a post-implementation learning harness that studies shipped tdmcp features
   and turns real code, runtime, review, docs, and hardware lessons into routed
   improvement backlogs.
+- Add normalized helper status payloads and optional `--status-json` output to
+  the Kinect wall harp libfreenect2 bridge.
+- Surface Kinect wall harp bridge health inside generated TouchDesigner projects
+  through a `bridge_status` DAT driven by the same normalized status JSON.
+- Add a generated `bridge_status_chop` to expose bridge health as numeric
+  TouchDesigner channels for panels, overlays, and logic.
+- Add a reusable external-sensor status-surface helper so future Layer 1 tools
+  can generate consistent bridge health DAT/CHOP diagnostics.
+- Add local TouchDesigner operator-health status surfaces to `create_live_source`
+  and `create_depth_silhouette` so camera, depth, NDI, Syphon/Spout,
+  screen-grab, and video-stream inputs expose `source_status` and
+  `source_status_chop` diagnostics without an external bridge.
+- Add `diagnose_hardware_environment`, a read-only Layer 3/MCP/agent preflight
+  for bridge reachability, display/projector topology, and generated
+  `source_status` / `bridge_status` DAT health checks.
 - Add `draft_recipe_from_tutorial` as a read-only Layer 3/CLI/local-copilot tool
   that extracts conservative operator chains from embedded tutorials and drafts
   `RecipeSchema` JSON offline; harden tutorial content handling so structured

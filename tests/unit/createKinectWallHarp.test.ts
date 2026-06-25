@@ -64,6 +64,7 @@ interface Payload {
   vibration_amount: number;
   vibration_decay: number;
   expose_controls: boolean;
+  bridge_status_json: string;
 }
 
 const server = makeTdServer();
@@ -113,6 +114,10 @@ function successReport(overrides: Partial<Record<string, unknown>> = {}) {
     audio_chop: "",
     audio_out: "/project1/kinect_wall_harp/audio_out",
     status_dat: "/project1/kinect_wall_harp/status",
+    bridge_status_dat: "/project1/kinect_wall_harp/bridge_status",
+    bridge_status_chop: "/project1/kinect_wall_harp/bridge_status_chop",
+    bridge_status_driver: "/project1/kinect_wall_harp/bridge_status_driver",
+    bridge_status_json: "_workspace/kinect-wall-harp/bridge-status.json",
     string_count: 16,
     visual_line_count: 32,
     freenect_available: false,
@@ -199,6 +204,7 @@ describe("create_kinect_wall_harp", () => {
     expect(parsed.hit_color).toBe("#FFB000");
     expect(parsed.background_level).toBe(0);
     expect(parsed.show_debug).toBe(false);
+    expect(parsed.bridge_status_json).toBe("_workspace/kinect-wall-harp/bridge-status.json");
   });
 
   it("sends a base64 payload through msw /api/exec and returns the structured report", async () => {
@@ -244,6 +250,7 @@ describe("create_kinect_wall_harp", () => {
       glow: "1.5",
       vibration_amount: "22",
       vibration_decay: "0.6",
+      bridge_status_json: "_workspace/kinect-wall-harp/test-status.json",
     });
 
     const result = await createKinectWallHarpImpl(makeCtx(), args);
@@ -258,6 +265,22 @@ describe("create_kinect_wall_harp", () => {
     expect(script).toContain("renderselectTOP");
     expect(script).toContain("scriptCHOP");
     expect(script).toContain("strings_visual");
+    expect(script).toContain("BRIDGE_STATUS_DRIVER_DAT_CODE");
+    expect(script).toContain("BRIDGE_STATUS_CHOP_CODE");
+    expect(script).toContain('_create(_cont, ["textDAT"], "bridge_status"');
+    expect(script).toContain('_create(_cont, ["scriptCHOP"], "bridge_status_chop"');
+    expect(script).toContain('_text_dat(_cont, "bridge_status_chop_callbacks"');
+    expect(script).toContain('_create(_cont, ["executeDAT"], "bridge_status_driver"');
+    expect(script).toContain('_custom_par(tracking, "appendStr", "Bridgestatusjson"');
+    expect(script).toContain('parent().store("tdmcp_bridge_status"');
+    expect(script).toContain("scriptOp.appendChan(name)");
+    expect(script).toContain('_chan(scriptOp, "bridge_ok"');
+    expect(script).toContain('_chan(scriptOp, "bridge_state_code"');
+    expect(script).toContain('_cook(op("bridge_status_chop"))');
+    expect(script).toContain("bridge_status_json");
+    expect(script).toContain('report["bridge_status_dat"]');
+    expect(script).toContain('report["bridge_status_chop"]');
+    expect(script).toContain('report["bridge_status_driver"]');
     expect(script).toContain("nodeX");
     expect(script).toContain("nodeY");
     expect(script).toContain('_set_par(_hands, ["timeslice"], False, False)');
@@ -434,6 +457,7 @@ describe("create_kinect_wall_harp", () => {
     expect(payload.curtain_spread).toBe(4);
     expect(payload.curtain_follow).toBe(0.65);
     expect(payload.frequencies).toHaveLength(16);
+    expect(payload.bridge_status_json).toBe("_workspace/kinect-wall-harp/test-status.json");
 
     const text = textOf(result);
     expect(text).toContain("Built Kinect wall harp");
@@ -443,6 +467,7 @@ describe("create_kinect_wall_harp", () => {
     const report = jsonOf(result);
     expect(report.output_top).toBe("/project1/kinect_wall_harp/out1");
     expect(report.hands_chop).toBe("/project1/kinect_wall_harp/hands");
+    expect(report.bridge_status_chop).toBe("/project1/kinect_wall_harp/bridge_status_chop");
     expect(report.audio_chop).toBe("");
     expect(report.synthetic_fallback).toBe(true);
     expect(report.warnings).toEqual([

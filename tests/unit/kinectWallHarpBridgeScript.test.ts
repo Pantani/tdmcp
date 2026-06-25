@@ -76,6 +76,58 @@ if (count === 1) {
     }
   });
 
+  it("writes normalized libfreenect2 helper status JSON when requested", () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-kinect-bridge-status-"));
+    const helper = join(dir, "helper.mjs");
+    const statusPath = join(dir, "status.json");
+    writeFileSync(
+      helper,
+      `#!/usr/bin/env node
+console.log(JSON.stringify({ left: { present: 1, x: 0.2, y: 0.3, size: 0.1 } }));
+setTimeout(() => process.exit(0), 50);
+`,
+    );
+    chmodSync(helper, 0o755);
+
+    try {
+      const result = spawnSync(
+        "node",
+        [
+          "scripts/kinect-wall-harp-bridge.mjs",
+          "--source",
+          "libfreenect2",
+          "--helper",
+          helper,
+          "--frames",
+          "1",
+          "--port",
+          "17401",
+          "--status-json",
+          statusPath,
+        ],
+        { encoding: "utf8", timeout: 5000 },
+      );
+
+      expect(result.status).toBe(0);
+      const status = JSON.parse(readFileSync(statusPath, "utf8"));
+      expect(status).toEqual(
+        expect.objectContaining({
+          source: "libfreenect2",
+          helper,
+          label: "kinect-wall-harp-bridge",
+          type: "exit",
+          state: "exited",
+          ok: true,
+          stale: false,
+          restartCount: 0,
+          lastFrameAgeMs: expect.any(Number),
+        }),
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("rejects invalid frame limits before entering the run loop", () => {
     const source = readFileSync("scripts/kinect-wall-harp-bridge.mjs", "utf8");
 

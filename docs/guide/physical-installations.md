@@ -48,7 +48,10 @@ Use this order for projectors, depth cameras, MIDI/OSC devices and room sensors:
   bank, too many overlapping triggers, or the wrong output device.
 - **Restarting a helper is part of the feature.** A stalled depth stream should
   restart its helper or mark tracking offline; it should not silently freeze the
-  bridge.
+  bridge. For the Kinect wall harp bridge, use `--status-json <path>` when an
+  operator or generated TD component needs a machine-readable health surface.
+  Generated `create_kinect_wall_harp` projects read the same file into the
+  `bridge_status` DAT and expose numeric channels through `bridge_status_chop`.
 
 ## Current tools to use
 
@@ -59,11 +62,19 @@ Use this order for projectors, depth cameras, MIDI/OSC devices and room sensors:
   projection mapping or calibration.
 - **`create_interactive_projection_mapping`** is the rehearsal rig for camera or
   synthetic motion driving a projector output.
+- **`create_live_source`** builds camera, NDI, Syphon/Spout, screen-grab or
+  network-video inputs and now exposes `source_status` plus
+  `source_status_chop` so the generated project can tell whether the source op
+  is missing, waiting, failed or running.
 - **`create_depth_silhouette`** and **`create_blob_reactive`** are lighter sensor
   tools when the artwork needs masks or tracked blobs instead of a full custom
-  instrument.
+  instrument. `create_depth_silhouette` also exposes `source_status` and
+  `source_status_chop` for its selected synthetic, file or live depth source.
 - **`create_external_io`** is the standard route for OSC, MIDI, DMX, NDI and
   Syphon/Spout I/O.
+- **`diagnose_hardware_environment`** is the first generic room preflight: it
+  checks bridge reachability, display/projector count and generated
+  `source_status` / `bridge_status` DATs before calibration.
 - **`watch_node`**, **`get_node_state_runtime`** and
   **`inspect_gpu_and_displays`** help verify that the running TD project is
   cooking and routed to the intended display.
@@ -74,9 +85,10 @@ The wall harp points to a small reusable installation toolkit:
 
 | Candidate | What it would add | Why it matters |
 |---|---|---|
-| `diagnose_hardware_environment` | Generic RGB/depth/audio/device health panel with explicit PASS / FAIL / UNVERIFIED status. | Artists need to know whether the room is wrong before tuning an artwork. |
+| `diagnose_hardware_environment` extensions | Add RGB/depth frame metrics and audio-device checks to the shipped bridge/display/status-DAT preflight. | Artists need to know whether the room is wrong before tuning an artwork. |
 | `create_projection_calibration_wizard` | Projected targets, hold-to-capture points, crop/mirror/Y-axis checks and stored mapping output. | Calibration should happen on screen, not through chat timing. |
-| `run_external_sensor_bridge` | A reusable helper supervisor for sensor processes, with stale-data detection, restart policy and normalized OSC/WebSocket output. | Crash isolation and restart behavior should not be reimplemented per device. |
+| `run_external_sensor_bridge` | A reusable helper supervisor for sensor processes, with stale-data detection, restart policy and normalized OSC/WebSocket/status JSON output. | Crash isolation and restart behavior should not be reimplemented per device. |
+| `external_sensor_status_surface` | Shared builder primitive for generated DAT/CHOP health surfaces from external helper status JSON or local TouchDesigner operator status. | Every physical sensor tool should expose the same health shape to panels, overlays and logic. |
 | `diagnose_audio_device` | Output-device, sample-rate, clipping and voice-count checks for TD audio chains. | Glitchy audio is common in interactive instruments and needs a first-class checklist. |
 | `organize_generated_project` | Move, label and prune generated COMPs under `/project1` while preserving useful diagnostics. | Live iteration leaves debris; cleanup should be safe and explain what remains. |
 

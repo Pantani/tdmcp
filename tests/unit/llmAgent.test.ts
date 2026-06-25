@@ -52,6 +52,7 @@ describe("local copilot — curated tool registry", () => {
   it("exposes the inspection/CRUD subset and withholds Layer-1 + raw Python", () => {
     const names = LLM_TOOLS.map((t) => t.name);
     expect(names).toContain("get_td_info");
+    expect(names).toContain("diagnose_hardware_environment");
     expect(names).toContain("get_td_nodes");
     expect(names).toContain("create_td_node");
     expect(names).toContain("connect_nodes");
@@ -67,6 +68,7 @@ describe("local copilot — curated tool registry", () => {
   it("flags mutating vs read-only tools", () => {
     const byName = Object.fromEntries(LLM_TOOLS.map((t) => [t.name, t.mutates]));
     expect(byName.get_td_info).toBe(false);
+    expect(byName.diagnose_hardware_environment).toBe(false);
     expect(byName.get_td_nodes).toBe(false);
     expect(byName.create_td_node).toBe(true);
     expect(byName.delete_td_node).toBe(true);

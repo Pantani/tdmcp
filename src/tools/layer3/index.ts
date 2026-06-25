@@ -10,6 +10,7 @@ import { registerControlTimelineTransport } from "./controlTimelineTransport.js"
 import { registerCopilotVision } from "./copilotVision.js";
 import { registerCreateTdNode } from "./createTdNode.js";
 import { registerDeleteTdNode } from "./deleteTdNode.js";
+import { registerDiagnoseHardwareEnvironment } from "./diagnoseHardwareEnvironment.js";
 import { registerDiffSnapshots } from "./diffSnapshots.js";
 import { registerDisconnectNodes } from "./disconnectNodes.js";
 import { registerDocumentNetwork } from "./documentNetwork.js";
@@ -141,6 +142,7 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerProfileCookCost,
   registerControlTimelineTransport,
   registerInspectGpuAndDisplays,
+  registerDiagnoseHardwareEnvironment,
   // Campaign BEYOND Wave 5 (backlog 2026-05-30 — v0.7.0):
   registerManageComponentStorage,
   registerElicitMissingArgs,

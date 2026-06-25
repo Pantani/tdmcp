@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import dgram from "node:dgram";
+import { mkdirSync, renameSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { runJsonLineHelper } from "./external-helper-supervisor.mjs";
 
 const DEFAULT_HELPER = "_workspace/kinect-wall-harp/external/kinect_harp_depth_bridge";
@@ -7,6 +9,7 @@ const STRING_OPTIONS = new Map([
   ["--host", "host"],
   ["--source", "source"],
   ["--helper", "helper"],
+  ["--status-json", "statusJson"],
 ]);
 const FLOAT_OPTIONS = new Map([
   ["--rate", "rate"],
@@ -60,6 +63,7 @@ function defaultArgs() {
     rate: 30,
     frames: 0,
     helper: DEFAULT_HELPER,
+    statusJson: undefined,
     mirror: false,
     calibrationFrames: undefined,
     backgroundFrames: undefined,
@@ -193,6 +197,8 @@ Options:
   --rate <hz>         Synthetic send rate. Default: 30
   --frames <n>        Stop after n frames. 0 means run until interrupted.
   --helper <path>     libfreenect2 JSON helper path.
+  --status-json <path>
+                      Write normalized helper status JSON to this path.
   --wall-mm <mm>      Override wall depth instead of auto-calibrating.
   --calibration-frames <n>
                       Frames used for wall auto-calibration. Default helper value: 45
@@ -265,6 +271,26 @@ function sendFrame(socket, args, frame) {
   }
 }
 
+function writeStatusJson(args, status) {
+  if (args.statusJson === undefined) return;
+  const payload = {
+    ...status,
+    source: args.source,
+    helper: args.helper,
+    target: { host: args.host, port: args.port },
+    updatedAt: new Date().toISOString(),
+  };
+  try {
+    mkdirSync(dirname(args.statusJson), { recursive: true });
+    const tmp = `${args.statusJson}.${process.pid}.tmp`;
+    writeFileSync(tmp, `${JSON.stringify(payload, null, 2)}\n`);
+    renameSync(tmp, args.statusJson);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    process.stderr.write(`[kinect-wall-harp-bridge] failed to write status JSON: ${message}\n`);
+  }
+}
+
 function syntheticFrame(t) {
   return {
     left: {
@@ -332,6 +358,7 @@ async function runLibfreenect2(socket, args) {
     label: "kinect-wall-harp-bridge",
     stallTimeoutMs,
     onJson: (frame) => sendFrame(socket, args, frame),
+    onStatus: (status) => writeStatusJson(args, status),
     formatStallMessage: ({ silenceMs }) =>
       `[kinect-wall-harp-bridge] LIBUSB/depth stream stalled for ${silenceMs}ms; restarting helper`,
     formatExitError: (code, signal) => `libfreenect2 helper exited with code ${code ?? signal}`,
