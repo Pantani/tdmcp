@@ -32,7 +32,12 @@ _td_stub.app = mock.MagicMock(name="app")
 _td_stub.project = mock.MagicMock(name="project")
 sys.modules.setdefault("td", _td_stub)
 
-from mcp.services import analysis_service, api_service, batch_service  # noqa: E402
+from mcp.services import (  # noqa: E402
+    analysis_service,
+    api_service,
+    batch_service,
+    preview_service,
+)
 
 
 # --- Lightweight fakes for TD node objects -------------------------------------
@@ -110,6 +115,7 @@ class CreateNodeWarningTests(unittest.TestCase):
     def test_failed_params_become_warnings_not_silent(self):
         node = FakeNode("/project1/lvl", ["brightness1"])
         parent = mock.MagicMock(name="parent")
+        parent.op.return_value = None  # no name collision: fresh create
         parent.create.return_value = node
         with mock.patch.object(api_service, "op", lambda p: parent), mock.patch.object(
             api_service, "_resolve_type", lambda t: object
@@ -126,12 +132,217 @@ class CreateNodeWarningTests(unittest.TestCase):
     def test_no_warnings_when_all_params_valid(self):
         node = FakeNode("/project1/lvl", ["brightness1"])
         parent = mock.MagicMock(name="parent")
+        parent.op.return_value = None  # no name collision: fresh create
         parent.create.return_value = node
         with mock.patch.object(api_service, "op", lambda p: parent), mock.patch.object(
             api_service, "_resolve_type", lambda t: object
         ):
             ref = api_service.create_node("/project1", "fakeTOP", "lvl", {"brightness1": 0.5})
         self.assertNotIn("parameter_warnings", ref)
+        self.assertNotIn("already_existed", ref)
+
+
+class CreateNodeIdempotencyTests(unittest.TestCase):
+    def test_same_name_and_type_reuses_without_recreating(self):
+        existing = FakeNode("/project1/lvl", ["brightness1"])
+        existing.OPType = "levelTOP"
+        parent = mock.MagicMock(name="parent")
+        parent.op.return_value = existing  # name already taken by a levelTOP
+        with mock.patch.object(api_service, "op", lambda p: parent), mock.patch.object(
+            api_service, "_resolve_type", lambda t: object
+        ):
+            ref = api_service.create_node("/project1", "levelTOP", "lvl", {"brightness1": 0.5})
+        self.assertTrue(ref.get("already_existed"))
+        self.assertEqual(ref["path"], "/project1/lvl")
+        parent.create.assert_not_called()  # reused, never re-created
+        # Idempotent: parameters still converge onto the existing node.
+        self.assertEqual(existing.par.brightness1.val, 0.5)
+
+    def test_same_name_different_type_is_explicit_error(self):
+        existing = FakeNode("/project1/lvl")
+        existing.OPType = "levelTOP"
+        parent = mock.MagicMock(name="parent")
+        parent.op.return_value = existing
+        with mock.patch.object(api_service, "op", lambda p: parent), mock.patch.object(
+            api_service, "_resolve_type", lambda t: object
+        ):
+            with self.assertRaises(ValueError) as cm:
+                api_service.create_node("/project1", "noiseTOP", "lvl")
+        msg = str(cm.exception)
+        self.assertIn("collision", msg)
+        self.assertIn("levelTOP", msg)
+        parent.create.assert_not_called()
+
+
+class _MenuPar:
+    """A fake fixed-Menu parameter for menu-validation tests."""
+
+    def __init__(self, name, menu_names, val=None):
+        self.name = name
+        self.style = "Menu"
+        self.menuNames = menu_names
+        self.menuLabels = menu_names
+        self.val = val
+
+    def eval(self):
+        return self.val
+
+
+class MenuValidationTests(unittest.TestCase):
+    def _node_with_menu(self):
+        node = FakeNode("/project1/comp", [])
+        node.par.extend = _MenuPar("extend", ["hold", "cycle", "mirror"])
+        return node
+
+    def test_invalid_menu_value_raises_with_valid_options(self):
+        node = self._node_with_menu()
+        with mock.patch.object(api_service, "op", lambda p: node):
+            with self.assertRaises(ValueError) as cm:
+                api_service.update_parameters("/project1/comp", {"extend": "bogus"})
+        msg = str(cm.exception)
+        self.assertIn("extend", msg)
+        self.assertIn("hold", msg)  # valid options are listed
+        self.assertIn("cycle", msg)
+        # The invalid value was NOT silently coerced onto the par.
+        self.assertIsNone(node.par.extend.val)
+
+    def test_valid_menu_value_applies(self):
+        node = self._node_with_menu()
+        with mock.patch.object(api_service, "op", lambda p: node):
+            api_service.update_parameters("/project1/comp", {"extend": "cycle"})
+        self.assertEqual(node.par.extend.val, "cycle")
+
+    def test_menu_error_helper_ignores_strmenu(self):
+        # StrMenu accepts arbitrary strings, so it must never be rejected.
+        par = _MenuPar("file", ["a", "b"])
+        par.style = "StrMenu"
+        self.assertIsNone(api_service.menu_value_error(par, "anything"))
+
+    def test_create_surfaces_invalid_menu_as_warning(self):
+        node = self._node_with_menu()
+        parent = mock.MagicMock(name="parent")
+        parent.op.return_value = None
+        parent.create.return_value = node
+        with mock.patch.object(api_service, "op", lambda p: parent), mock.patch.object(
+            api_service, "_resolve_type", lambda t: object
+        ):
+            ref = api_service.create_node("/project1", "fakeTOP", "comp", {"extend": "bogus"})
+        self.assertIn("extend", ref.get("parameter_warnings", []))
+
+
+class SampleGridTests(unittest.TestCase):
+    def test_finite_or_none_sanitizes_nan_and_inf(self):
+        self.assertEqual(preview_service._finite_or_none(0.5), 0.5)
+        self.assertIsNone(preview_service._finite_or_none(float("nan")))
+        self.assertIsNone(preview_service._finite_or_none(float("inf")))
+        self.assertIsNone(preview_service._finite_or_none("x"))
+
+    def test_grid_indices_span_the_axis(self):
+        self.assertEqual(preview_service._grid_indices(2, 4), [1, 3])
+        self.assertEqual(preview_service._grid_indices(4, 0), [0, 0, 0, 0])
+        # Never runs off the end.
+        self.assertTrue(all(0 <= i < 8 for i in preview_service._grid_indices(8, 8)))
+
+    def test_channel_stats_ignore_none_and_average(self):
+        samples = [[[0.0, 0.0, 0.0, 1.0], [1.0, 0.5, 0.0, None]]]
+        stats = preview_service._channel_stats(samples)
+        self.assertEqual(stats["r"], {"min": 0.0, "max": 1.0, "mean": 0.5})
+        self.assertEqual(stats["a"], {"min": 1.0, "max": 1.0, "mean": 1.0})  # None ignored
+
+    def test_sample_grid_reads_top_and_sanitizes(self):
+        # A 2x2 RGBA image with an Inf that must sanitize to null.
+        arr = [
+            [[0.0, 0.0, 0.0, 1.0], [1.0, 1.0, 1.0, 1.0]],
+            [[float("inf"), 0.0, 0.0, 1.0], [0.5, 0.5, 0.5, 1.0]],
+        ]
+        node = mock.MagicMock(name="top")
+        node.family = "TOP"
+        node.path = "/project1/noise1"
+        node.numpyArray.return_value = arr
+        with mock.patch.object(preview_service, "op", lambda p: node):
+            result = preview_service.sample_grid("/project1/noise1", 2)
+        self.assertEqual(result["grid"], 2)
+        self.assertEqual(result["width"], 2)
+        self.assertEqual(result["height"], 2)
+        self.assertIsNone(result["samples"][1][0][0])  # Inf → null
+        self.assertIn("r", result["stats"])
+
+    def test_sample_grid_rejects_non_top(self):
+        node = mock.MagicMock(name="chop")
+        node.family = "CHOP"
+        with mock.patch.object(preview_service, "op", lambda p: node):
+            with self.assertRaises(ValueError):
+                preview_service.sample_grid("/project1/chop1", 4)
+
+
+class DeferredCaptureTests(unittest.TestCase):
+    def setUp(self):
+        preview_service._PREVIEW_JOBS.clear()
+
+    def tearDown(self):
+        preview_service._PREVIEW_JOBS.clear()
+
+    def _node_with_pulse(self):
+        node = mock.MagicMock(name="node")
+        node.par.Reset = mock.MagicMock(name="reset_par")
+        return node
+
+    def test_pre_pulses_validate_all_before_firing_any(self):
+        good = self._node_with_pulse()
+        nodes = {"/project1/fb": good}  # the second target is missing
+        with mock.patch.object(preview_service, "op", lambda p: nodes.get(p)):
+            with self.assertRaises(LookupError):
+                preview_service.capture_advanced(
+                    "/project1/out",
+                    pre_pulses=[{"path": "/project1/fb", "par": "Reset"}, {"path": "/nope", "par": "Reset"}],
+                )
+        # All-or-nothing: the valid target was NOT pulsed because a sibling was invalid.
+        good.par.Reset.pulse.assert_not_called()
+
+    def test_immediate_capture_fires_pulses_then_captures(self):
+        node = self._node_with_pulse()
+        with mock.patch.object(preview_service, "op", lambda p: node), mock.patch.object(
+            preview_service, "capture", return_value={"path": "/project1/out", "base64": "x"}
+        ) as cap:
+            result = preview_service.capture_advanced(
+                "/project1/out", pre_pulses=[{"path": "/project1/fb", "par": "Reset"}]
+            )
+        node.par.Reset.pulse.assert_called_once()
+        cap.assert_called_once()
+        self.assertEqual(result["path"], "/project1/out")
+
+    def test_deferred_job_becomes_ready_and_is_collected_once(self):
+        # Default _schedule (no td.run off-TD) runs the callback immediately.
+        with mock.patch.object(
+            preview_service, "capture", return_value={"path": "/project1/out", "base64": "x"}
+        ):
+            scheduled = preview_service.capture_advanced("/project1/out", delay_frames=6)
+        self.assertEqual(scheduled["status"], "capturing")
+        self.assertIn("job_id", scheduled)
+        self.assertGreater(scheduled["wait_ms"], 0)
+        collected = preview_service.collect_preview_job(scheduled["job_id"])
+        self.assertEqual(collected["status"], "ready")
+        self.assertEqual(collected["preview"]["path"], "/project1/out")
+        # One-shot: a second collect reports expired.
+        again = preview_service.collect_preview_job(scheduled["job_id"])
+        self.assertEqual(again["status"], "expired")
+
+    def test_deferred_job_reports_pending_until_the_frame_arrives(self):
+        with mock.patch.object(preview_service, "_schedule", lambda cb, frames: None):
+            scheduled = preview_service.capture_advanced("/project1/out", delay_frames=6)
+        collected = preview_service.collect_preview_job(scheduled["job_id"])
+        self.assertEqual(collected["status"], "pending")
+
+    def test_expired_job_is_pruned_by_ttl(self):
+        with mock.patch.object(preview_service, "_schedule", lambda cb, frames: None):
+            scheduled = preview_service.capture_advanced("/project1/out", delay_frames=6)
+        # Age the job past its TTL, then collect → expired (and pruned).
+        preview_service._PREVIEW_JOBS[scheduled["job_id"]]["created"] -= (
+            preview_service._JOB_TTL_SECONDS + 1
+        )
+        collected = preview_service.collect_preview_job(scheduled["job_id"])
+        self.assertEqual(collected["status"], "expired")
+        self.assertNotIn(scheduled["job_id"], preview_service._PREVIEW_JOBS)
 
 
 class ConnectGuardTests(unittest.TestCase):

@@ -394,7 +394,7 @@ export const registerSearchOperators: ToolRegistrar = (server, ctx) => {
     {
       title: "Search operators",
       description:
-        "Search the embedded operator knowledge base (629 operators) by keyword, exact name, tag/keyword, category, subcategory, parameter metadata, or TouchDesigner version compatibility — ranked by relevance, fully offline by default. Use it to discover the right operator before creating nodes instead of guessing a type (e.g. 'what sends DMX?', 'particle', 'corner pin'). Returns name, family, summary, facets and optional matching parameters. Pass semantic:true to re-rank fuzzy candidates by embedding similarity (needs an LLM endpoint; falls back to keyword).",
+        "Search the embedded operator knowledge base (629 operators) by keyword, exact name, tag/keyword, category, subcategory, parameter metadata, or TouchDesigner version compatibility — ranked by relevance, fully offline by default. Use it to discover the right operator before creating nodes instead of guessing a type (e.g. 'what sends DMX?', 'particle', 'corner pin'). Returns name, family, summary, facets and optional matching parameters. Pass semantic:true to re-rank fuzzy candidates by embedding similarity (needs an LLM endpoint; falls back to keyword). Token economy: use a specific query and a small `limit`; one focused search beats several broad ones.",
       inputSchema: searchOperatorsSchema.shape,
       annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     },

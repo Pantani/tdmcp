@@ -97,6 +97,20 @@ describe("layoutScript", () => {
     expect(script).toContain("_n.nodeY = _xy[1]");
     expect(script).toContain("if _n is not None:");
   });
+
+  it("moves docked DATs by the same delta by default", () => {
+    const script = layoutScript({ "/p/a": [200, -140] });
+    expect(script).toContain("_dx = _xy[0] - _n.nodeX");
+    expect(script).toContain("_dy = _xy[1] - _n.nodeY");
+    expect(script).toContain("for _d in getattr(_n, 'docked', []) or []:");
+    expect(script).toContain("_d.nodeX += _dx");
+  });
+
+  it("omits docked-follow when includeDocked is false", () => {
+    const script = layoutScript({ "/p/a": [0, 0] }, false);
+    expect(script).not.toContain("docked");
+    expect(script).toContain("_n.nodeX = _xy[0]");
+  });
 });
 
 describe("placeInGridScript", () => {

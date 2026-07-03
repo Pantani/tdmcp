@@ -7,6 +7,7 @@ Node-path URL segments are percent-encoded by the client (a TD path contains
 slashes), so they are `unquote`d here.
 """
 
+import contextlib
 import hmac
 import json
 import os
@@ -468,11 +469,42 @@ def _route_dat_text_get(rest):
     return api_service.get_node(_node_path(rest[1:]))
 
 
-def _route_preview(method, rest, query):
+def _preview_get(node_path, query):
+    grid = _qs(query, "sample_grid")
+    if grid is not None:
+        # Cheap JSON stats instead of an encoded image (10–50× cheaper).
+        return preview_service.sample_grid(node_path, int(grid))
+    return preview_service.capture(
+        node_path, int(_qs(query, "width", 640)), int(_qs(query, "height", 360))
+    )
+
+
+def _preview_post(node_path, body):
+    # Advanced capture: same-tick pre-pulses + optional deferred (delay_frames) job.
+    return preview_service.capture_advanced(
+        node_path,
+        width=int(body.get("width", 640)),
+        height=int(body.get("height", 360)),
+        pre_pulses=body.get("pre_pulses"),
+        delay_frames=int(body.get("delay_frames", 0) or 0),
+        sample_grid_n=body.get("sample_grid"),
+    )
+
+
+def _route_preview(method, rest, query, body):
+    if len(rest) < 2:
+        return None
+    node_path = _node_path(rest[1:])
+    if method == "GET":
+        return _preview_get(node_path, query)
+    if method == "POST":
+        return _preview_post(node_path, body)
+    return None
+
+
+def _route_preview_job(method, rest):
     if method == "GET" and len(rest) >= 2:
-        return preview_service.capture(
-            _node_path(rest[1:]), int(_qs(query, "width", 640)), int(_qs(query, "height", 360))
-        )
+        return preview_service.collect_preview_job(unquote(rest[1]))
     return None
 
 
@@ -504,7 +536,9 @@ def _route(method, path, query, body, webserver=None):
     elif rest and rest[0] == "nodes":
         routed = _route_nodes(method, rest, query, body)
     elif rest and rest[0] == "preview":
-        routed = _route_preview(method, rest, query)
+        routed = _route_preview(method, rest, query, body)
+    elif rest and rest[0] == "preview_job":
+        routed = _route_preview_job(method, rest)
     elif rest and rest[0] == "network":
         routed = _route_network(method, rest, query)
     if routed is not None:
@@ -575,6 +609,67 @@ def _emit_event(webserver, method, path, data):
         pass
 
 
+def _get_ui():
+    """The TouchDesigner `ui` global, or None when unavailable (tests, old builds).
+
+    `ui` is only injected into TD script scope, so reach it via the `td` module the
+    same way the services reach `op`/`app`. Absent off-TD, which disables undo
+    wrapping (a no-op) rather than failing the request.
+    """
+    try:
+        import td
+
+        return getattr(td, "ui", None)
+    except Exception:  # noqa: BLE001
+        return None
+
+
+# POST routes that only READ (no network mutation) and so need no undo block.
+_READ_ONLY_POST = (["param_modes", "batch"],)
+
+
+def _undo_label(method, path):
+    """Undo-block label for a mutating request, or None for a read-only one.
+
+    Every operation that changes the TD network (create/update/delete/connect/exec/…)
+    is wrapped in one `ui.undo` block so the artist can Ctrl+Z the whole agent action
+    at once. All GETs and the batched param-mode read mutate nothing, so they get no
+    block (and never pollute the undo stack).
+    """
+    if method == "GET":
+        return None
+    parts = [p for p in path.split("/") if p]
+    rest = parts[1:] if parts[:1] == ["api"] else parts
+    if method == "POST" and rest in _READ_ONLY_POST:
+        return None
+    return "MCP %s %s" % (method, path)
+
+
+@contextlib.contextmanager
+def _undo_block(label):
+    """Wrap a mutating request in ui.undo.startBlock/endBlock (endBlock in finally).
+
+    Best-effort: if `ui` is missing or startBlock throws we skip the block entirely
+    rather than fail the request; endBlock only runs when the block actually started.
+    """
+    ui = _get_ui() if label is not None else None
+    started = False
+    if ui is not None:
+        try:
+            ui.undo.startBlock(label)
+            started = True
+        except Exception:  # noqa: BLE001
+            started = False
+    try:
+        yield
+    finally:
+        if started:
+            try:
+                ui.undo.endBlock()
+            except Exception:  # noqa: BLE001
+                pass
+
+
 def handle(request, response, webserver=None):
     try:
         _check_origin(request)
@@ -584,8 +679,9 @@ def handle(request, response, webserver=None):
         parsed = urlparse(request.get("uri", "/"))
         query = _merge_query(request, parse_qs(parsed.query))
         body = _parse_body(request)
-        data = _route(method, parsed.path, query, body, webserver)
-        _emit_event(webserver, method, parsed.path, data)
+        with _undo_block(_undo_label(method, parsed.path)):
+            data = _route(method, parsed.path, query, body, webserver)
+            _emit_event(webserver, method, parsed.path, data)
         return _send(response, 200, {"ok": True, "data": data})
     except PermissionError as exc:
         return _send(response, getattr(exc, "status", 403), {"ok": False, "error": {"message": str(exc)}})

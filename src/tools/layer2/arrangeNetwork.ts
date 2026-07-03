@@ -11,6 +11,12 @@ export const arrangeNetworkSchema = z.object({
     .boolean()
     .default(false)
     .describe("Also arrange the nodes inside nested COMPs (each network is tidied on its own)."),
+  include_docked: z
+    .boolean()
+    .default(true)
+    .describe(
+      "Move each node's docked DATs (e.g. GLSL *_pixel or callbacks DATs) with it by the same delta, like an interactive drag. Set false to reposition only the nodes themselves.",
+    ),
 });
 type ArrangeNetworkArgs = z.infer<typeof arrangeNetworkSchema>;
 
@@ -22,7 +28,7 @@ export async function arrangeNetworkImpl(ctx: ToolContext, args: ArrangeNetworkA
       const edges = topology.connections.map((c) => ({ from: c.source_path, to: c.target_path }));
       const positions = computeLayoutByParent(nodes, edges);
       if (nodes.length > 0) {
-        await ctx.client.executePythonScript(layoutScript(positions), false);
+        await ctx.client.executePythonScript(layoutScript(positions, args.include_docked), false);
       }
       return Object.keys(positions).length;
     },

@@ -188,7 +188,11 @@ describe("layer 2 tool handlers", () => {
         return HttpResponse.json({ ok: true, data: { result: null, stdout: "" } });
       }),
     );
-    const result = await arrangeNetworkImpl(makeCtx(), { path: "/project1", recursive: false });
+    const result = await arrangeNetworkImpl(makeCtx(), {
+      path: "/project1",
+      recursive: false,
+      include_docked: true,
+    });
     expect(textOf(result)).toContain("Arranged 2 node(s)");
     // Downstream node "b" is pushed right of source "a".
     expect(execScript).toContain("_n.nodeX = _xy[0]");
@@ -245,7 +249,11 @@ describe("layer 2 tool handlers", () => {
         HttpResponse.json({ ok: true, data: { nodes: [], connections: [] } }),
       ),
     );
-    const result = await arrangeNetworkImpl(makeCtx(), { path: "/empty", recursive: false });
+    const result = await arrangeNetworkImpl(makeCtx(), {
+      path: "/empty",
+      recursive: false,
+      include_docked: true,
+    });
     expect(textOf(result)).toContain("No nodes to arrange");
   });
 });

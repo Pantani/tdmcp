@@ -2,12 +2,15 @@ import type { z } from "zod";
 import { type Logger, silentLogger } from "../utils/logger.js";
 import { TdApiError, TdConnectionError, TdTimeoutError } from "./types.js";
 import {
+  AdvancedCaptureSchema,
   ApiEnvelopeSchema,
   BatchResultSchema,
   BridgeLogsSchema,
+  type CaptureAdvancedInput,
   ConnectResultSchema,
   type CreateNodeInput,
   CreateNodeInputSchema,
+  PreviewJobSchema,
   CustomParamsSchema,
   DatTextSchema,
   DatTextWriteSchema,
@@ -25,6 +28,7 @@ import {
   PerformanceSchema,
   PerformModeStateSchema,
   PreviewSchema,
+  SampleGridSchema,
   ProjectAnalysisSchema,
   ProjectLoadSchema,
   SetParamModeResultSchema,
@@ -362,6 +366,26 @@ export class TouchDesignerClient {
       width,
       height,
     });
+  }
+
+  sampleGrid(path: string, grid: number) {
+    return this.request("GET", `/api/preview/${segment(path)}`, SampleGridSchema, undefined, {
+      sample_grid: grid,
+    });
+  }
+
+  captureAdvanced(path: string, opts: CaptureAdvancedInput) {
+    return this.request("POST", `/api/preview/${segment(path)}`, AdvancedCaptureSchema, {
+      width: opts.width,
+      height: opts.height,
+      sample_grid: opts.sampleGrid,
+      pre_pulses: opts.prePulses,
+      delay_frames: opts.delayFrames,
+    });
+  }
+
+  collectPreviewJob(jobId: string) {
+    return this.request("GET", `/api/preview_job/${segment(jobId)}`, PreviewJobSchema);
   }
 
   batch(operations: TdBatchOperation[]) {

@@ -6,6 +6,33 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Idempotent node creation: `create_td_node` / `create_node_chain` now reuse an
+  operator that already exists at the target path with the same name and type
+  (reported as `already_existed: true`) instead of failing or auto-renaming, so
+  agent retries are safe. A name collision with a _different_ type stays an
+  explicit error.
+- Automatic undo blocks: every mutating bridge request is wrapped in one
+  TouchDesigner `ui.undo` block, so the artist can Ctrl+Z a whole agent action in
+  a single step.
+- Menu parameter validation: setting a fixed-Menu parameter to an unknown value
+  (which TouchDesigner would silently coerce to index 0) now returns an explicit
+  error listing the valid menu entries, across `update_td_node_parameters`,
+  `set_parameters_batch`, and `set_parameter_expression`.
+- `get_preview` gains a `sample_grid` option (2–16): return an N×N grid of RGBA
+  samples plus per-channel min/max/mean stats as JSON — a 10–50× cheaper way to
+  check whether a TOP's output is alive than encoding a full image. NaN/Inf from
+  HDR TOPs are sanitized to null.
+- `get_preview` gains `pre_pulses` (pulse parameters in the same frame just
+  before capture, validated all-or-nothing) and `delay_frames` (defer the capture
+  and collect it later by `job_id`), so transient events can be captured reliably.
+- `arrange_network` and the shared layout path now move each node's docked DATs
+  by the same delta as the node (`include_docked`, default on), mimicking an
+  interactive drag.
+- Token-economy guidance added to the most-used read tools and the server's
+  `initialize` instructions.
+
 ## [0.11.0] - 2026-06-25
 
 ### Added

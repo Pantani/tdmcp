@@ -96,6 +96,31 @@ describe("layer 3 tool handlers", () => {
     expect(textOf(bad)).toContain("not found in the knowledge base");
   });
 
+  it("create_td_node reports an idempotent reuse when the node already existed", async () => {
+    server.use(
+      http.post(`${TD_BASE}/api/nodes`, async ({ request }) => {
+        const body = (await request.json()) as { parent_path: string; type: string; name?: string };
+        return HttpResponse.json({
+          ok: true,
+          data: {
+            path: `${body.parent_path}/${body.name ?? "noise1"}`,
+            type: body.type,
+            name: body.name ?? "noise1",
+            already_existed: true,
+          },
+        });
+      }),
+    );
+    const result = await createTdNodeImpl(makeCtx(), {
+      parent_path: "/project1",
+      type: "noiseTOP",
+      name: "noise1",
+    });
+    expect(textOf(result)).toContain("Reused existing noiseTOP");
+    expect(textOf(result)).toContain("already existed");
+    expect(textOf(result)).toContain('"already_existed": true');
+  });
+
   it("create_td_node returns a friendly error when offline", async () => {
     server.use(http.post(`${TD_BASE}/api/nodes`, () => HttpResponse.error()));
     const result = await createTdNodeImpl(makeCtx(), {

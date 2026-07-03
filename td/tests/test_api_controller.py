@@ -229,6 +229,32 @@ class RoutingTests(unittest.TestCase):
         ac._route("GET", "/api/preview/project1/out1", {"width": ["800"], "height": ["600"]}, {})
         ac.preview_service.capture.assert_called_once_with("/project1/out1", 800, 600)
 
+    def test_preview_sample_grid_dispatch(self):
+        ac._route("GET", "/api/preview/project1/out1", {"sample_grid": ["8"]}, {})
+        ac.preview_service.sample_grid.assert_called_once_with("/project1/out1", 8)
+        ac.preview_service.capture.assert_not_called()
+
+    def test_preview_post_advanced_dispatch(self):
+        body = {
+            "width": 320,
+            "height": 180,
+            "pre_pulses": [{"path": "/project1/fb", "par": "Reset"}],
+            "delay_frames": 6,
+        }
+        ac._route("POST", "/api/preview/project1/out1", {}, body)
+        ac.preview_service.capture_advanced.assert_called_once_with(
+            "/project1/out1",
+            width=320,
+            height=180,
+            pre_pulses=[{"path": "/project1/fb", "par": "Reset"}],
+            delay_frames=6,
+            sample_grid_n=None,
+        )
+
+    def test_preview_job_collect_dispatch(self):
+        ac._route("GET", "/api/preview_job/abc123", {}, {})
+        ac.preview_service.collect_preview_job.assert_called_once_with("abc123")
+
     def test_network_topology_dispatch(self):
         ac._route("GET", "/api/network/project1/topology", {"recursive": ["true"]}, {})
         ac.analysis_service.topology.assert_called_once_with("/project1", recursive=True)
@@ -419,6 +445,64 @@ class HandleTests(unittest.TestCase):
         self.assertEqual(resp["statusCode"], 400)
         self.assertIn("parent_path", resp["data"])
         self.assertIn("Missing required field", resp["data"])
+
+
+class UndoBlockTests(unittest.TestCase):
+    def tearDown(self):
+        _clear_exec_env()
+        _clear_token_env()
+
+    def _resp(self):
+        return {}
+
+    def test_mutating_request_is_wrapped_in_a_single_undo_block(self):
+        ui = mock.MagicMock(name="ui")
+        with mock.patch.object(ac, "_get_ui", return_value=ui), mock.patch.object(
+            ac, "_route", return_value={"path": "/project1/noise1"}
+        ):
+            ac.handle(
+                {"method": "POST", "uri": "/api/nodes", "data": '{"parent_path":"/p","type":"noiseTOP"}'},
+                self._resp(),
+            )
+        ui.undo.startBlock.assert_called_once()
+        (label,), _ = ui.undo.startBlock.call_args
+        self.assertTrue(label.startswith("MCP POST /api/nodes"))
+        ui.undo.endBlock.assert_called_once()
+
+    def test_endblock_runs_even_when_the_route_raises(self):
+        ui = mock.MagicMock(name="ui")
+        with mock.patch.object(ac, "_get_ui", return_value=ui), mock.patch.object(
+            ac, "_route", side_effect=ValueError("boom")
+        ):
+            resp = ac.handle({"method": "DELETE", "uri": "/api/nodes/p/x"}, self._resp())
+        self.assertEqual(resp["statusCode"], 400)
+        ui.undo.startBlock.assert_called_once()
+        ui.undo.endBlock.assert_called_once()  # finally guarantees the block closes
+
+    def test_read_only_get_is_not_wrapped(self):
+        ui = mock.MagicMock(name="ui")
+        with mock.patch.object(ac, "_get_ui", return_value=ui), mock.patch.object(
+            ac, "_route", return_value={"ok": 1}
+        ):
+            ac.handle({"method": "GET", "uri": "/api/info"}, self._resp())
+        ui.undo.startBlock.assert_not_called()
+
+    def test_missing_ui_does_not_break_a_mutating_request(self):
+        with mock.patch.object(ac, "_get_ui", return_value=None), mock.patch.object(
+            ac, "_route", return_value={"path": "/p/x"}
+        ):
+            resp = ac.handle(
+                {"method": "POST", "uri": "/api/nodes", "data": '{"parent_path":"/p","type":"noiseTOP"}'},
+                self._resp(),
+            )
+        self.assertEqual(resp["statusCode"], 200)
+
+    def test_undo_label_classifies_reads_and_writes(self):
+        self.assertIsNone(ac._undo_label("GET", "/api/nodes"))
+        self.assertIsNone(ac._undo_label("POST", "/api/param_modes/batch"))
+        self.assertIsNotNone(ac._undo_label("POST", "/api/nodes"))
+        self.assertIsNotNone(ac._undo_label("PATCH", "/api/nodes/p/x"))
+        self.assertIsNotNone(ac._undo_label("DELETE", "/api/nodes/p/x"))
 
 
 class StructuredEndpointTests(unittest.TestCase):

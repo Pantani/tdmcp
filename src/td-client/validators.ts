@@ -14,6 +14,8 @@ export const NodeRefSchema = z.object({
   name: z.string().default(""),
   /** Parameters that could not be applied at create time (unknown name or bad value). */
   parameter_warnings: z.array(z.string()).optional(),
+  /** True when an identically-named+typed operator already existed and was reused (idempotent create). */
+  already_existed: z.boolean().optional(),
 });
 export type TdNodeRef = z.infer<typeof NodeRefSchema>;
 
@@ -86,6 +88,55 @@ export const PreviewSchema = z.object({
 });
 export type TdPreview = z.infer<typeof PreviewSchema>;
 
+/** One channel's summary over the sampled grid; null when every sample was NaN/Inf. */
+const ChannelStatSchema = z.object({
+  min: z.number().nullable(),
+  max: z.number().nullable(),
+  mean: z.number().nullable(),
+});
+
+/** Cheap N×N RGBA sampling of a TOP: samples[row][col] = [r,g,b,a] with NaN/Inf → null. */
+export const SampleGridSchema = z.object({
+  path: z.string(),
+  width: z.number().int().nonnegative(),
+  height: z.number().int().nonnegative(),
+  grid: z.number().int().positive(),
+  samples: z.array(z.array(z.array(z.number().nullable()))),
+  stats: z.object({
+    r: ChannelStatSchema,
+    g: ChannelStatSchema,
+    b: ChannelStatSchema,
+    a: ChannelStatSchema,
+  }),
+});
+export type TdSampleGrid = z.infer<typeof SampleGridSchema>;
+
+/** Returned when a capture was deferred by delay_frames; collect it later by job_id. */
+export const CapturingJobSchema = z.object({
+  status: z.literal("capturing"),
+  job_id: z.string(),
+  delay_frames: z.number().int().nonnegative(),
+  wait_ms: z.number().int().nonnegative(),
+});
+export type TdCapturingJob = z.infer<typeof CapturingJobSchema>;
+
+/** Advanced capture result: an image, a sample grid, or a deferred-job ticket. */
+export const AdvancedCaptureSchema = z.union([
+  CapturingJobSchema,
+  SampleGridSchema,
+  PreviewSchema,
+]);
+export type TdAdvancedCapture = z.infer<typeof AdvancedCaptureSchema>;
+
+/** Result of collecting a deferred capture job. */
+export const PreviewJobSchema = z.object({
+  status: z.enum(["pending", "ready", "error", "expired"]),
+  job_id: z.string(),
+  preview: z.union([PreviewSchema, SampleGridSchema]).optional(),
+  error: z.string().optional(),
+});
+export type TdPreviewJob = z.infer<typeof PreviewJobSchema>;
+
 export const ExecResultSchema = z.object({
   result: z.unknown().optional(),
   stdout: z.string().optional(),
@@ -146,6 +197,19 @@ export const CreateNodeInputSchema = z.object({
   parameters: z.record(z.string(), z.unknown()).optional(),
 });
 export type CreateNodeInput = z.infer<typeof CreateNodeInputSchema>;
+
+/** One parameter to pulse in the same bridge tick immediately before an advanced capture. */
+export const PrePulseSchema = z.object({ path: z.string(), par: z.string() });
+export type PrePulse = z.infer<typeof PrePulseSchema>;
+
+/** Options for TouchDesignerClient.captureAdvanced (pre-pulses + optional deferred capture). */
+export interface CaptureAdvancedInput {
+  width?: number;
+  height?: number;
+  sampleGrid?: number;
+  prePulses?: PrePulse[];
+  delayFrames?: number;
+}
 
 /** A single atomic operation accepted by `POST /api/batch`. */
 export const BatchOperationSchema = z.discriminatedUnion("action", [
