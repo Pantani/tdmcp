@@ -10,8 +10,10 @@ Run from the repo root: `python3 -m unittest discover -s td/tests`
 (or `npm run test:bridge`). No third-party dependencies — stdlib only.
 """
 
+import json
 import os
 import sys
+import time
 import types
 import unittest
 from unittest import mock
@@ -209,7 +211,11 @@ class RoutingTests(unittest.TestCase):
         ac.api_service.update_parameters.assert_called_once_with("/project1/noise1", {"period": 4})
 
         ac._route("DELETE", "/api/nodes/project1/noise1", {}, {})
-        ac.api_service.delete_node.assert_called_once_with("/project1/noise1")
+        ac.api_service.delete_node.assert_called_once_with("/project1/noise1", "delete")
+
+    def test_node_delete_bypass_mode(self):
+        ac._route("DELETE", "/api/nodes/project1/noise1", {"mode": ["bypass"]}, {})
+        ac.api_service.delete_node.assert_called_once_with("/project1/noise1", "bypass")
 
     def test_node_method_dispatch(self):
         os.environ["TDMCP_BRIDGE_ALLOW_EXEC"] = "1"
@@ -445,6 +451,44 @@ class HandleTests(unittest.TestCase):
         self.assertEqual(resp["statusCode"], 400)
         self.assertIn("parent_path", resp["data"])
         self.assertIn("Missing required field", resp["data"])
+
+
+class BackpressureTests(unittest.TestCase):
+    def setUp(self):
+        ac._BACKPRESSURE["cooldown_until"] = 0.0
+
+    def tearDown(self):
+        ac._BACKPRESSURE["cooldown_until"] = 0.0
+        os.environ.pop("TDMCP_SLOW_THRESHOLD_MS", None)
+        os.environ.pop("TDMCP_COOLDOWN_MS", None)
+
+    def _resp(self):
+        return {}
+
+    def test_slow_request_arms_cooldown_and_next_request_gets_503(self):
+        os.environ["TDMCP_SLOW_THRESHOLD_MS"] = "1"  # anything cooks "slow"
+        os.environ["TDMCP_COOLDOWN_MS"] = "5000"
+
+        def _slow_route(*_a, **_k):
+            time.sleep(0.005)  # 5ms > 1ms threshold
+            return {"ok": 1}
+
+        with mock.patch.object(ac, "_route", _slow_route):
+            first = ac.handle({"method": "GET", "uri": "/api/info"}, self._resp())
+        self.assertEqual(first["statusCode"], 200)
+        # The next request is shed with 503 + retry_after.
+        second = ac.handle({"method": "GET", "uri": "/api/info"}, self._resp())
+        self.assertEqual(second["statusCode"], 503)
+        payload = json.loads(second["data"])
+        self.assertEqual(payload["error"]["code"], "backpressure")
+        self.assertGreaterEqual(payload["error"]["retry_after"], 1)
+
+    def test_fast_requests_never_trip_the_gate(self):
+        with mock.patch.object(ac, "_route", return_value={"ok": 1}):
+            r1 = ac.handle({"method": "GET", "uri": "/api/info"}, self._resp())
+            r2 = ac.handle({"method": "GET", "uri": "/api/info"}, self._resp())
+        self.assertEqual(r1["statusCode"], 200)
+        self.assertEqual(r2["statusCode"], 200)
 
 
 class UndoBlockTests(unittest.TestCase):

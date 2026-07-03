@@ -2982,6 +2982,7 @@ const ENV_NAMES: Record<keyof TdmcpConfig, string> = {
   httpPort: "TDMCP_HTTP_PORT",
   events: "TDMCP_EVENTS",
   rawPython: "TDMCP_RAW_PYTHON",
+  yolo: "TDMCP_YOLO",
   toolProfile: "TDMCP_TOOL_PROFILE",
   bridgeToken: "TDMCP_BRIDGE_TOKEN",
   llmBaseUrl: "TDMCP_LLM_BASE_URL",

@@ -1,6 +1,6 @@
 import type { z } from "zod";
 import { type Logger, silentLogger } from "../utils/logger.js";
-import { TdApiError, TdConnectionError, TdTimeoutError } from "./types.js";
+import { TdApiError, TdBackpressureError, TdConnectionError, TdTimeoutError } from "./types.js";
 import {
   AdvancedCaptureSchema,
   ApiEnvelopeSchema,
@@ -81,6 +81,22 @@ function extractErrorMessage(json: unknown): string | undefined {
     if (typeof obj.message === "string") return obj.message;
   }
   return undefined;
+}
+
+/** Reads the bridge's `error.retry_after` (seconds) from a 503 body, if present. */
+function readRetryAfterSeconds(json: unknown): number | undefined {
+  if (!json || typeof json !== "object") return undefined;
+  const error = (json as Record<string, unknown>).error;
+  if (!error || typeof error !== "object") return undefined;
+  const value = (error as Record<string, unknown>).retry_after;
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+/** Resolves a retry delay (ms) for a 503 from the body's retry_after or a default. */
+function extractRetryAfterMs(json: unknown): number {
+  const seconds = readRetryAfterSeconds(json);
+  if (seconds !== undefined) return Math.max(0, Math.round(seconds * 1000));
+  return 2000;
 }
 
 /** Encodes a TD node path (which contains slashes) into a single URL segment. */
@@ -277,6 +293,15 @@ export class TouchDesignerClient {
       }
     }
 
+    if (response.status === 503) {
+      const retryAfterMs = extractRetryAfterMs(json);
+      throw new TdBackpressureError(
+        extractErrorMessage(json) ??
+          `TouchDesigner is busy (HTTP 503) for ${method} ${path}; retry in ~${retryAfterMs}ms.`,
+        { retryAfterMs },
+      );
+    }
+
     if (!response.ok) {
       const message =
         extractErrorMessage(json) ??
@@ -315,8 +340,10 @@ export class TouchDesignerClient {
     return this.request("POST", "/api/nodes", NodeRefSchema, CreateNodeInputSchema.parse(input));
   }
 
-  deleteNode(path: string) {
-    return this.request("DELETE", `/api/nodes/${segment(path)}`, DeleteResultSchema);
+  deleteNode(path: string, mode: "delete" | "bypass" = "delete") {
+    return this.request("DELETE", `/api/nodes/${segment(path)}`, DeleteResultSchema, undefined, {
+      mode,
+    });
   }
 
   getNodes(parentPath?: string) {

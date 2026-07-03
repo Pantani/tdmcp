@@ -58,6 +58,36 @@ function sendJson(res: ServerResponse, status: number, payload: unknown): void {
   res.end(JSON.stringify(payload));
 }
 
+const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "::1", "[::1]"]);
+
+/**
+ * True when a browser-set `Origin` is present and is NOT loopback — a cross-site
+ * page trying to drive the local MCP server (DNS-rebinding / CSRF). A missing
+ * Origin (the SDK client, curl, same-origin) is allowed; an unparseable Origin is
+ * rejected. Complements the SDK's Host-based `enableDnsRebindingProtection`.
+ */
+export function isCrossOriginRejected(origin: string | undefined): boolean {
+  if (!origin) return false;
+  try {
+    return !LOOPBACK_HOSTS.has(new URL(origin).hostname);
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * True when a POST carries a Content-Type that is present and not `application/json`
+ * — reject with 415. A missing Content-Type is left for the normal flow (the SDK
+ * client always sends JSON); non-POST methods are never rejected here.
+ */
+export function isUnsupportedPostMediaType(
+  method: string | undefined,
+  contentType: string | undefined,
+): boolean {
+  if (method !== "POST" || !contentType) return false;
+  return !/^application\/json\b/i.test(contentType.trim());
+}
+
 function startStdio(
   createMcpServer: () => McpServer,
   config: TdmcpConfig,
@@ -111,6 +141,14 @@ async function startHttp(
     const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
     if (url.pathname !== MCP_PATH) {
       sendJson(res, 404, { error: "Not found. MCP endpoint is at /mcp." });
+      return;
+    }
+    if (isCrossOriginRejected(req.headers.origin)) {
+      sendJson(res, 403, { error: "Cross-origin request rejected (non-loopback Origin)." });
+      return;
+    }
+    if (isUnsupportedPostMediaType(req.method, req.headers["content-type"])) {
+      sendJson(res, 415, { error: "Unsupported Media Type: POST body must be application/json." });
       return;
     }
     const sessionId = req.headers["mcp-session-id"];

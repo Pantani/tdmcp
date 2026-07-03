@@ -10,7 +10,9 @@ slashes), so they are `unquote`d here.
 import contextlib
 import hmac
 import json
+import math
 import os
+import time
 from urllib.parse import parse_qs, unquote, urlparse
 
 from mcp import events
@@ -431,14 +433,14 @@ def _route_node_param_mode(method, rest, body):
     return None
 
 
-def _route_node_crud(method, rest, body):
+def _route_node_crud(method, rest, query, body):
     node_path = _node_path(rest[1:])
     if method == "GET":
         return api_service.get_node(node_path)
     if method == "PATCH":
         return api_service.update_parameters(node_path, body.get("parameters", {}))
     if method == "DELETE":
-        return api_service.delete_node(node_path)
+        return api_service.delete_node(node_path, _qs(query, "mode", "delete"))
     return None
 
 
@@ -456,7 +458,7 @@ def _route_nodes(method, rest, query, body):
     if method == "PUT" and rest[-1] == "text":
         _require(body, "text")
         return param_text_service.put_dat_text(_node_path(rest[1:-1]), body["text"])
-    return _route_node_crud(method, rest, body)
+    return _route_node_crud(method, rest, query, body)
 
 
 def _route_dat_text_get(rest):
@@ -601,7 +603,8 @@ def _emit_event(webserver, method, path, data):
             _emit_node_errors(webserver, (data or {}).get("path"))
         elif method == "PATCH" and len(rest) >= 2 and rest[0] == "nodes":
             _emit_node_errors(webserver, (data or {}).get("path"))
-        elif method == "DELETE" and len(rest) >= 2 and rest[0] == "nodes":
+        elif method == "DELETE" and len(rest) >= 2 and rest[0] == "nodes" and (data or {}).get("deleted"):
+            # A bypass (mode='bypass') reports {bypassed}, not {deleted}: not a deletion.
             events.broadcast(webserver, "node.deleted", data)
         elif method == "POST" and rest == ["batch"]:
             _emit_batch_events(webserver, data)
@@ -670,18 +673,75 @@ def _undo_block(label):
                 pass
 
 
+# Back-pressure: after one request runs slower than the threshold, TD's cook loop
+# needs a moment to recover, so the bridge sheds subsequent requests with 503 +
+# retry_after for a short cooldown window instead of piling more work on.
+_BACKPRESSURE = {"cooldown_until": 0.0}
+
+
+def _env_int(name, default):
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return default
+    return value if value > 0 else default
+
+
+def _slow_threshold_ms():
+    return _env_int("TDMCP_SLOW_THRESHOLD_MS", 5000)
+
+
+def _cooldown_ms():
+    return _env_int("TDMCP_COOLDOWN_MS", 2000)
+
+
+def _backpressure_response(response):
+    """A 503 + retry_after while cooling down from a slow request, else None."""
+    remaining = _BACKPRESSURE["cooldown_until"] - time.monotonic()
+    if remaining <= 0:
+        return None
+    retry_after = max(1, int(math.ceil(remaining)))
+    return _send(
+        response,
+        503,
+        {
+            "ok": False,
+            "error": {
+                "code": "backpressure",
+                "message": "TouchDesigner is recovering from a slow request; retry after %ds." % retry_after,
+                "retry_after": retry_after,
+            },
+        },
+    )
+
+
+def _record_duration(elapsed_seconds):
+    if elapsed_seconds * 1000.0 >= _slow_threshold_ms():
+        _BACKPRESSURE["cooldown_until"] = time.monotonic() + _cooldown_ms() / 1000.0
+
+
 def handle(request, response, webserver=None):
     try:
         _check_origin(request)
         _check_host(request)
         _check_auth(request)
+        gate = _backpressure_response(response)
+        if gate is not None:
+            return gate
         method = (request.get("method") or "GET").upper()
         parsed = urlparse(request.get("uri", "/"))
         query = _merge_query(request, parse_qs(parsed.query))
         body = _parse_body(request)
-        with _undo_block(_undo_label(method, parsed.path)):
-            data = _route(method, parsed.path, query, body, webserver)
-            _emit_event(webserver, method, parsed.path, data)
+        start = time.monotonic()
+        try:
+            with _undo_block(_undo_label(method, parsed.path)):
+                data = _route(method, parsed.path, query, body, webserver)
+                _emit_event(webserver, method, parsed.path, data)
+        finally:
+            _record_duration(time.monotonic() - start)
         return _send(response, 200, {"ok": True, "data": data})
     except PermissionError as exc:
         return _send(response, getattr(exc, "status", 403), {"ok": False, "error": {"message": str(exc)}})

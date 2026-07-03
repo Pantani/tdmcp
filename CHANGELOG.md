@@ -32,6 +32,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   interactive drag.
 - Token-economy guidance added to the most-used read tools and the server's
   `initialize` instructions.
+- `delete_td_node` gains a `mode`: `bypass` disables an operator (reversible)
+  instead of destroying it, a safer middle ground; `delete` stays the default.
+  `TDMCP_YOLO=1` is surfaced in result reporting for future confirmation gates.
+- Bridge back-pressure: after a request runs slower than
+  `TDMCP_SLOW_THRESHOLD_MS` (default 5000), subsequent requests are shed with
+  HTTP 503 + `retry_after` for a `TDMCP_COOLDOWN_MS` window (default 2000) so
+  TouchDesigner's cook loop can recover; the client surfaces this as a typed,
+  retryable `TdBackpressureError`.
+- Streamable HTTP transport hardening: reject a present, non-loopback `Origin`
+  with 403 (anti DNS-rebinding, alongside the existing Host allowlist) and a POST
+  with a non-JSON `Content-Type` with 415.
 
 ## [0.11.0] - 2026-06-25
 

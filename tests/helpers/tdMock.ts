@@ -95,7 +95,11 @@ export const tdHandlers = [
     });
   }),
 
-  http.delete(`${TD_BASE}/api/nodes/:seg`, ({ params }) => ok({ deleted: seg(params) })),
+  http.delete(`${TD_BASE}/api/nodes/:seg`, ({ params, request }) => {
+    const mode = new URL(request.url).searchParams.get("mode") ?? "delete";
+    if (mode === "bypass") return ok({ bypassed: seg(params), mode: "bypass" });
+    return ok({ deleted: seg(params), mode: "delete" });
+  }),
 
   http.post(`${TD_BASE}/api/exec`, () => ok({ result: null, stdout: "" })),
 

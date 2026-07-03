@@ -183,6 +183,12 @@ export const ConfigSchema = z.object({
    */
   rawPython: z.enum(["on", "off"]).default("on"),
   /**
+   * "YOLO" mode (`TDMCP_YOLO=1`): skip any interactive confirmation the bridge may
+   * add for destructive actions. No native dialogs exist yet, so today this only
+   * flows into result reporting; off by default so nothing is silently skipped.
+   */
+  yolo: z.preprocess(ragEnabledFlag, z.boolean().default(false)),
+  /**
    * Tool exposure profile. `full` (default) registers every tool; `safe`
    * additionally hides the destructive/raw-code tools (a superset of
    * TDMCP_RAW_PYTHON=off) so an autonomous in-TD agent (e.g. via LOPs) gets a
@@ -417,6 +423,7 @@ function envValues(env: NodeJS.ProcessEnv): Record<string, unknown> {
     httpPort: env.TDMCP_HTTP_PORT,
     events: env.TDMCP_EVENTS,
     rawPython: env.TDMCP_RAW_PYTHON,
+    yolo: env.TDMCP_YOLO,
     toolProfile: env.TDMCP_TOOL_PROFILE,
     bridgeToken: env.TDMCP_BRIDGE_TOKEN || undefined,
     llmBaseUrl: env.TDMCP_LLM_BASE_URL,

@@ -275,6 +275,35 @@ class SampleGridTests(unittest.TestCase):
                 preview_service.sample_grid("/project1/chop1", 4)
 
 
+class DeleteModeTests(unittest.TestCase):
+    def test_default_mode_destroys(self):
+        node = mock.MagicMock(name="node")
+        with mock.patch.object(api_service, "op", lambda p: node):
+            result = api_service.delete_node("/project1/x")
+        node.destroy.assert_called_once()
+        self.assertEqual(result["deleted"], "/project1/x")
+
+    def test_bypass_mode_sets_flag_and_does_not_destroy(self):
+        node = mock.MagicMock(name="node")
+        with mock.patch.object(api_service, "op", lambda p: node):
+            result = api_service.delete_node("/project1/x", "bypass")
+        self.assertTrue(node.bypass)
+        node.destroy.assert_not_called()
+        self.assertEqual(result["bypassed"], "/project1/x")
+        self.assertEqual(result["mode"], "bypass")
+
+    def test_unknown_mode_raises(self):
+        node = mock.MagicMock(name="node")
+        with mock.patch.object(api_service, "op", lambda p: node):
+            with self.assertRaises(ValueError):
+                api_service.delete_node("/project1/x", "nuke")
+
+    def test_missing_node_raises(self):
+        with mock.patch.object(api_service, "op", lambda p: None):
+            with self.assertRaises(LookupError):
+                api_service.delete_node("/nope", "bypass")
+
+
 class DeferredCaptureTests(unittest.TestCase):
     def setUp(self):
         preview_service._PREVIEW_JOBS.clear()

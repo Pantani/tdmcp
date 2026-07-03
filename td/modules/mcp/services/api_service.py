@@ -261,12 +261,22 @@ def create_node(parent_path, type_name, name=None, parameters=None):
     return ref
 
 
-def delete_node(path):
+def delete_node(path, mode="delete"):
+    """Remove a node, or (mode='bypass') just bypass it — a safer, reversible middle ground.
+
+    'bypass' sets the operator's bypass flag instead of destroying it, so the artist can
+    re-enable it with one click; 'delete' (default) destroys it as before.
+    """
     node = op(path)  # noqa: F821
     if node is None:
         raise LookupError("Node not found: %s" % path)
+    if mode == "bypass":
+        node.bypass = True
+        return {"bypassed": path, "mode": "bypass"}
+    if mode != "delete":
+        raise ValueError("Unknown delete mode %r (expected 'delete' or 'bypass')." % mode)
     node.destroy()
-    return {"deleted": path}
+    return {"deleted": path, "mode": "delete"}
 
 
 def get_nodes(parent_path=None):

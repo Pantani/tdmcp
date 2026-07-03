@@ -147,7 +147,11 @@ export type TdExecResult = z.infer<typeof ExecResultSchema>;
 export const MethodResultSchema = z.object({ result: z.unknown() });
 export type TdMethodResult = z.infer<typeof MethodResultSchema>;
 
-export const DeleteResultSchema = z.object({ deleted: z.string() });
+export const DeleteResultSchema = z.object({
+  deleted: z.string().optional(),
+  bypassed: z.string().optional(),
+  mode: z.enum(["delete", "bypass"]).default("delete"),
+});
 export type TdDeleteResult = z.infer<typeof DeleteResultSchema>;
 
 export const ConnectionSchema = z.object({
