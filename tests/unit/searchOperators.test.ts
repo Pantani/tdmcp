@@ -73,7 +73,11 @@ describe("searchOperatorsImpl menu catalog awareness (C12)", () => {
     (result as { structuredContent?: MetaData }).structuredContent as MetaData;
 
   it("stamps results with the offline data_version", async () => {
-    const result = await searchOperatorsImpl(makeCtx(), { query: "blur", limit: 5, semantic: false });
+    const result = await searchOperatorsImpl(makeCtx(), {
+      query: "blur",
+      limit: 5,
+      semantic: false,
+    });
     expect(meta(result).data_version?.source).toBe("bottobot");
   });
 

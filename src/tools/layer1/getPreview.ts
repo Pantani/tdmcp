@@ -1,9 +1,6 @@
 import { z } from "zod";
 import { capturePreview } from "../../feedback/previewCapture.js";
-import type {
-  TdAdvancedCapture,
-  TdPreviewJob,
-} from "../../td-client/validators.js";
+import type { TdAdvancedCapture, TdPreviewJob } from "../../td-client/validators.js";
 import { errorResult, guardTd, imageResult, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
@@ -54,7 +51,11 @@ export const getPreviewSchema = z.object({
 });
 type GetPreviewArgs = z.infer<typeof getPreviewSchema>;
 
-const MIME_BY_FORMAT: Record<string, string> = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg" };
+const MIME_BY_FORMAT: Record<string, string> = {
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+};
 
 function renderAdvanced(res: TdAdvancedCapture, path: string) {
   if ("status" in res) {
@@ -72,7 +73,10 @@ function renderAdvanced(res: TdAdvancedCapture, path: string) {
 
 function renderJob(job: TdPreviewJob) {
   if (job.status === "pending") {
-    return jsonResult(`Capture ${job.job_id} is still pending; call again shortly with the same job_id.`, job);
+    return jsonResult(
+      `Capture ${job.job_id} is still pending; call again shortly with the same job_id.`,
+      job,
+    );
   }
   if (job.status === "expired") {
     return jsonResult(

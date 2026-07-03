@@ -121,11 +121,7 @@ export const CapturingJobSchema = z.object({
 export type TdCapturingJob = z.infer<typeof CapturingJobSchema>;
 
 /** Advanced capture result: an image, a sample grid, or a deferred-job ticket. */
-export const AdvancedCaptureSchema = z.union([
-  CapturingJobSchema,
-  SampleGridSchema,
-  PreviewSchema,
-]);
+export const AdvancedCaptureSchema = z.union([CapturingJobSchema, SampleGridSchema, PreviewSchema]);
 export type TdAdvancedCapture = z.infer<typeof AdvancedCaptureSchema>;
 
 /** Result of collecting a deferred capture job. */

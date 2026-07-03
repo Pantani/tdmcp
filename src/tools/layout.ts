@@ -135,10 +135,7 @@ export function layoutScript(positions: Positions, includeDocked = true): string
     "    if _n is not None:",
   ];
   if (includeDocked) {
-    lines.push(
-      "        _dx = _xy[0] - _n.nodeX",
-      "        _dy = _xy[1] - _n.nodeY",
-    );
+    lines.push("        _dx = _xy[0] - _n.nodeX", "        _dy = _xy[1] - _n.nodeY");
   }
   lines.push("        _n.nodeX = _xy[0]", "        _n.nodeY = _xy[1]");
   if (includeDocked) {

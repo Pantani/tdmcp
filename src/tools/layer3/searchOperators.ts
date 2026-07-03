@@ -342,7 +342,9 @@ async function buildMenuMeta(ctx: ToolContext, args: SearchOperatorsArgs): Promi
   try {
     const info = await ctx.client.getInfo();
     const staleHint = computeStaleHint(dataVersion.tdMajor, info.td_version);
-    return staleHint ? { data_version: dataVersion, stale_hint: staleHint } : { data_version: dataVersion };
+    return staleHint
+      ? { data_version: dataVersion, stale_hint: staleHint }
+      : { data_version: dataVersion };
   } catch {
     return { data_version: dataVersion }; // TD offline — provenance only, no staleness check
   }

@@ -139,7 +139,12 @@ export const tdHandlers = [
       sample_grid?: number;
     };
     if (body.delay_frames) {
-      return ok({ status: "capturing", job_id: "job-1", delay_frames: body.delay_frames, wait_ms: 100 });
+      return ok({
+        status: "capturing",
+        job_id: "job-1",
+        delay_frames: body.delay_frames,
+        wait_ms: 100,
+      });
     }
     return ok({
       path: seg(params),

@@ -26,7 +26,8 @@ export function splitMarkdownSections(text: string): { intro: string; sections: 
   for (const line of lines) {
     const match = HEADING_RE.exec(line);
     if (match) {
-      if (current) sections.push({ title: current.title, content: current.lines.join("\n").trim() });
+      if (current)
+        sections.push({ title: current.title, content: current.lines.join("\n").trim() });
       current = { title: match[1] as string, lines: [] };
     } else if (current) {
       current.lines.push(line);

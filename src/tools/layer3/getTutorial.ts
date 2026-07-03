@@ -1,7 +1,7 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import type { Tutorial, TutorialSummary } from "../../knowledge/types.js";
 import { buildSectionView, capText } from "../../knowledge/docSections.js";
+import type { Tutorial, TutorialSummary } from "../../knowledge/types.js";
 import { errorResult, structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import {
@@ -21,7 +21,9 @@ export const getTutorialSchema = z.object({
   include_content: z
     .boolean()
     .default(false)
-    .describe("When true, include tutorial content (capped, with a sections_available list) in returned entries."),
+    .describe(
+      "When true, include tutorial content (capped, with a sections_available list) in returned entries.",
+    ),
   section: z
     .string()
     .trim()
