@@ -1,7 +1,7 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { describe, expect, it } from "vitest";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
-import { searchOperatorsImpl } from "../../src/tools/layer3/searchOperators.js";
+import { computeStaleHint, searchOperatorsImpl } from "../../src/tools/layer3/searchOperators.js";
 import type { ToolContext } from "../../src/tools/types.js";
 import { silentLogger } from "../../src/utils/logger.js";
 
@@ -47,6 +47,67 @@ function textOf(result: CallToolResult): string {
     .map((c) => c.text)
     .join("\n");
 }
+
+describe("computeStaleHint", () => {
+  it("returns undefined when the majors match or are unknown", () => {
+    expect(computeStaleHint(2023, "2023.11510")).toBeUndefined();
+    expect(computeStaleHint(undefined, "2023.11510")).toBeUndefined();
+    expect(computeStaleHint(2023, undefined)).toBeUndefined();
+    expect(computeStaleHint(2023, "not-a-version")).toBeUndefined();
+  });
+
+  it("warns when the live TD major differs from the data major", () => {
+    const hint = computeStaleHint(2023, "2025.30000");
+    expect(hint).toContain("2023");
+    expect(hint).toContain("2025");
+    expect(hint).toContain("get_td_node_parameters");
+  });
+});
+
+describe("searchOperatorsImpl menu catalog awareness (C12)", () => {
+  interface MetaData {
+    data_version?: { source: string; tdMajor?: number };
+    stale_hint?: string;
+  }
+  const meta = (result: CallToolResult): MetaData =>
+    (result as { structuredContent?: MetaData }).structuredContent as MetaData;
+
+  it("stamps results with the offline data_version", async () => {
+    const result = await searchOperatorsImpl(makeCtx(), { query: "blur", limit: 5, semantic: false });
+    expect(meta(result).data_version?.source).toBe("bottobot");
+  });
+
+  it("adds a stale_hint when a live TD reports a different major", async () => {
+    const ctx = {
+      knowledge: new KnowledgeBase(),
+      logger: silentLogger,
+      client: { getInfo: async () => ({ td_version: "2099.99999" }) },
+    } as unknown as ToolContext;
+    const result = await searchOperatorsImpl(ctx, {
+      query: "blur",
+      limit: 5,
+      semantic: false,
+      parameter_search: true,
+    });
+    expect(meta(result).stale_hint).toContain("2099");
+  });
+
+  it("omits the stale check (no network) when parameter_search is off", async () => {
+    let called = false;
+    const ctx = {
+      knowledge: new KnowledgeBase(),
+      logger: silentLogger,
+      client: {
+        getInfo: async () => {
+          called = true;
+          return { td_version: "2099.0" };
+        },
+      },
+    } as unknown as ToolContext;
+    await searchOperatorsImpl(ctx, { query: "blur", limit: 5, semantic: false });
+    expect(called).toBe(false);
+  });
+});
 
 describe("searchOperatorsImpl", () => {
   it("returns keyword matches fully offline for a plain query", async () => {

@@ -88,6 +88,27 @@ export function isUnsupportedPostMediaType(
   return !/^application\/json\b/i.test(contentType.trim());
 }
 
+/**
+ * Runs the cheap request gates before session handling: wrong path (404), a
+ * non-loopback Origin (403), or a non-JSON POST body (415). Returns true and sends
+ * the rejection when the request is refused, else false.
+ */
+function rejectPreflight(pathname: string, req: IncomingMessage, res: ServerResponse): boolean {
+  if (pathname !== MCP_PATH) {
+    sendJson(res, 404, { error: "Not found. MCP endpoint is at /mcp." });
+    return true;
+  }
+  if (isCrossOriginRejected(req.headers.origin)) {
+    sendJson(res, 403, { error: "Cross-origin request rejected (non-loopback Origin)." });
+    return true;
+  }
+  if (isUnsupportedPostMediaType(req.method, req.headers["content-type"])) {
+    sendJson(res, 415, { error: "Unsupported Media Type: POST body must be application/json." });
+    return true;
+  }
+  return false;
+}
+
 function startStdio(
   createMcpServer: () => McpServer,
   config: TdmcpConfig,
@@ -139,18 +160,7 @@ async function startHttp(
 
   async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
-    if (url.pathname !== MCP_PATH) {
-      sendJson(res, 404, { error: "Not found. MCP endpoint is at /mcp." });
-      return;
-    }
-    if (isCrossOriginRejected(req.headers.origin)) {
-      sendJson(res, 403, { error: "Cross-origin request rejected (non-loopback Origin)." });
-      return;
-    }
-    if (isUnsupportedPostMediaType(req.method, req.headers["content-type"])) {
-      sendJson(res, 415, { error: "Unsupported Media Type: POST body must be application/json." });
-      return;
-    }
+    if (rejectPreflight(url.pathname, req, res)) return;
     const sessionId = req.headers["mcp-session-id"];
     const existing = typeof sessionId === "string" ? transports.get(sessionId) : undefined;
 

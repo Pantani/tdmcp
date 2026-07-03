@@ -49,6 +49,53 @@ export function flattenTutorialContent(content: unknown): string | undefined {
   return parts.length > 0 ? parts.join("\n\n") : undefined;
 }
 
+function sectionBody(section: Record<string, unknown>): string {
+  const body: string[] = [];
+  pushText(body, section.text);
+  for (const item of stringArray(section.items)) pushText(body, item);
+  if (Array.isArray(section.content)) {
+    for (const child of section.content) flattenBlock(child, body);
+  }
+  return body.join("\n\n");
+}
+
+/**
+ * Like {@link flattenTutorialContent} but emits a `## <title>` heading per top-level
+ * section, so a large tutorial can be split into drill-in sections (see
+ * `buildSectionView`). Falls back to the plain flatten when the content has no
+ * section structure.
+ */
+function sectionTitle(section: unknown): string | undefined {
+  if (isRecord(section) && typeof section.title === "string" && section.title.trim()) {
+    return section.title.trim();
+  }
+  return undefined;
+}
+
+function appendSectionMarkdown(section: unknown, parts: string[]): void {
+  const title = sectionTitle(section);
+  if (!title || !isRecord(section)) {
+    flattenBlock(section, parts);
+    return;
+  }
+  parts.push(`## ${title}`);
+  const body = sectionBody(section);
+  if (body) parts.push(body);
+}
+
+export function tutorialContentToMarkdown(content: unknown): string | undefined {
+  if (typeof content === "string") {
+    const trimmed = content.trim();
+    return trimmed || undefined;
+  }
+  if (!isRecord(content) || !Array.isArray(content.sections)) {
+    return flattenTutorialContent(content);
+  }
+  const parts: string[] = [];
+  for (const section of content.sections) appendSectionMarkdown(section, parts);
+  return parts.length > 0 ? parts.join("\n\n") : flattenTutorialContent(content);
+}
+
 export function tutorialTextFields(tutorial: {
   id?: string;
   name?: string;

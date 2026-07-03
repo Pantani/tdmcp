@@ -99,6 +99,25 @@ function extractRetryAfterMs(json: unknown): number {
   return 2000;
 }
 
+/** Throws the right typed error for a non-2xx response (backpressure 503 vs generic API error). */
+function throwForHttpError(response: Response, json: unknown, method: string, path: string): void {
+  if (response.status === 503) {
+    const retryAfterMs = extractRetryAfterMs(json);
+    throw new TdBackpressureError(
+      extractErrorMessage(json) ??
+        `TouchDesigner is busy (HTTP 503) for ${method} ${path}; retry in ~${retryAfterMs}ms.`,
+      { retryAfterMs },
+    );
+  }
+  if (!response.ok) {
+    throw new TdApiError(
+      extractErrorMessage(json) ??
+        `TouchDesigner bridge returned HTTP ${response.status} for ${method} ${path}.`,
+      { status: response.status },
+    );
+  }
+}
+
 /** Encodes a TD node path (which contains slashes) into a single URL segment. */
 function segment(path: string): string {
   return encodeURIComponent(path);
@@ -293,21 +312,7 @@ export class TouchDesignerClient {
       }
     }
 
-    if (response.status === 503) {
-      const retryAfterMs = extractRetryAfterMs(json);
-      throw new TdBackpressureError(
-        extractErrorMessage(json) ??
-          `TouchDesigner is busy (HTTP 503) for ${method} ${path}; retry in ~${retryAfterMs}ms.`,
-        { retryAfterMs },
-      );
-    }
-
-    if (!response.ok) {
-      const message =
-        extractErrorMessage(json) ??
-        `TouchDesigner bridge returned HTTP ${response.status} for ${method} ${path}.`;
-      throw new TdApiError(message, { status: response.status });
-    }
+    throwForHttpError(response, json, method, path);
 
     const envelope = ApiEnvelopeSchema.safeParse(json);
     if (!envelope.success) {

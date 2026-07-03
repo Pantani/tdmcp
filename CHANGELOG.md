@@ -43,6 +43,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Streamable HTTP transport hardening: reject a present, non-loopback `Origin`
   with 403 (anti DNS-rebinding, alongside the existing Host allowlist) and a POST
   with a non-JSON `Content-Type` with 415.
+- `get_tutorial` splits large documents into sections: with `include_content` the
+  body is capped (~30K chars, truncated at a line boundary) and comes with a
+  `sections_available` list; pass a `section` title to return just that part.
+- `search_operators` now surfaces the offline menu catalog (menu options on
+  matched Menu parameters) and stamps results with a `data_version` (which
+  TouchDesigner build the data reflects) plus a `stale_hint` when a connected
+  TouchDesigner reports a different major version.
 
 ## [0.11.0] - 2026-06-25
 

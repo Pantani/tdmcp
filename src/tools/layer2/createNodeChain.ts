@@ -32,6 +32,12 @@ interface CreatedNode {
   already_existed?: boolean;
 }
 
+/** Parenthetical note when some nodes were reused rather than freshly created. */
+function reusedNote(created: CreatedNode[]): string {
+  const reused = created.filter((c) => c.already_existed).length;
+  return reused > 0 ? ` (${reused} already existed and were reused)` : "";
+}
+
 export async function createNodeChainImpl(
   ctx: ToolContext,
   args: CreateNodeChainArgs,
@@ -104,10 +110,8 @@ export async function createNodeChainImpl(
     }
   }
 
-  const reused = created.filter((c) => c.already_existed).length;
-  const reusedNote = reused > 0 ? ` (${reused} already existed and were reused)` : "";
   return jsonResult(
-    `Created ${created.length} node(s)${reusedNote} and ${connections.length} connection(s) under ${args.parent_path}.`,
+    `Created ${created.length} node(s)${reusedNote(created)} and ${connections.length} connection(s) under ${args.parent_path}.`,
     { created, connections, warnings },
   );
 }
