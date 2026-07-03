@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTdmcpServer } from "../../src/server/tdmcpServer.js";
 import {
   isCrossOriginRejected,
+  isHttpBearerAuthorized,
   isUnsupportedPostMediaType,
   startTransport,
   type TransportHandle,
@@ -114,5 +115,60 @@ describe("HTTP transport guards (unit)", () => {
     expect(isUnsupportedPostMediaType("POST", "text/plain")).toBe(true);
     expect(isUnsupportedPostMediaType("POST", undefined)).toBe(false);
     expect(isUnsupportedPostMediaType("GET", "text/plain")).toBe(false);
+  });
+
+  it("isHttpBearerAuthorized: only a correct Bearer token passes", () => {
+    expect(isHttpBearerAuthorized("Bearer s3cret", "s3cret")).toBe(true);
+    expect(isHttpBearerAuthorized("Bearer wrong", "s3cret")).toBe(false);
+    expect(isHttpBearerAuthorized("s3cret", "s3cret")).toBe(false); // no Bearer prefix
+    expect(isHttpBearerAuthorized(undefined, "s3cret")).toBe(false);
+  });
+});
+
+describe("integration: Streamable HTTP transport OAuth bearer", () => {
+  const AUTH_PORT = 39412;
+  let authHandle: TransportHandle;
+
+  beforeAll(async () => {
+    const config = loadConfig({
+      TDMCP_TRANSPORT: "http",
+      TDMCP_HTTP_PORT: String(AUTH_PORT),
+      TDMCP_HTTP_AUTH_TOKEN: "s3cret",
+    });
+    authHandle = await startTransport(
+      () => createTdmcpServer(config, { logger: silentLogger }),
+      config,
+      silentLogger,
+    );
+  });
+
+  afterAll(async () => {
+    await authHandle.close();
+  });
+
+  const post = (headers: Record<string, string>) =>
+    fetch(`http://127.0.0.1:${AUTH_PORT}/mcp`, {
+      method: "POST",
+      headers: { "content-type": "application/json", ...headers },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list", params: {} }),
+    });
+
+  it("returns 401 with a WWW-Authenticate challenge when the token is missing", async () => {
+    const res = await post({});
+    expect(res.status).toBe(401);
+    expect(res.headers.get("www-authenticate")).toMatch(/^Bearer/);
+  });
+
+  it("returns 401 for a wrong token", async () => {
+    const res = await post({ authorization: "Bearer nope" });
+    expect(res.status).toBe(401);
+  });
+
+  it("passes auth with the correct token (no 401)", async () => {
+    const res = await post({
+      authorization: "Bearer s3cret",
+      accept: "application/json, text/event-stream",
+    });
+    expect(res.status).not.toBe(401);
   });
 });

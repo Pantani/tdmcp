@@ -22,6 +22,7 @@ from mcp.services import (
     batch_service,
     connect_service,
     custom_params_service,
+    editor_service,
     log_service,
     param_text_service,
     preview_service,
@@ -510,6 +511,13 @@ def _route_preview_job(method, rest):
     return None
 
 
+def _route_editor(method, rest, body):
+    if method == "POST" and rest == ["editor", "focus"]:
+        _require(body, "paths")
+        return editor_service.focus(body["paths"], _as_bool(body.get("animate", True), "animate"))
+    return None
+
+
 def _route_network(method, rest, query):
     if method == "GET" and len(rest) >= 3:
         kind = rest[-1]
@@ -525,24 +533,34 @@ def _route_network(method, rest, query):
     return None
 
 
+def _route_second_tier(method, rest, query, body):
+    """Dispatch the non-root REST families by their first path segment."""
+    if not rest:
+        return None
+    head = rest[0]
+    if head == "projects":
+        return _route_projects(method, rest, query)
+    if head == "nodes":
+        return _route_nodes(method, rest, query, body)
+    if head == "preview":
+        return _route_preview(method, rest, query, body)
+    if head == "preview_job":
+        return _route_preview_job(method, rest)
+    if head == "editor":
+        return _route_editor(method, rest, body)
+    if head == "network":
+        return _route_network(method, rest, query)
+    return None
+
+
 def _route(method, path, query, body, webserver=None):
     parts = [p for p in path.split("/") if p]
     if not parts or parts[0] != "api":
         raise ValueError("Not found: %s" % path)
     rest = parts[1:]
     routed = _route_root(method, rest, query, body, webserver)
-    if routed is not None:
-        return routed
-    if rest and rest[0] == "projects":
-        routed = _route_projects(method, rest, query)
-    elif rest and rest[0] == "nodes":
-        routed = _route_nodes(method, rest, query, body)
-    elif rest and rest[0] == "preview":
-        routed = _route_preview(method, rest, query, body)
-    elif rest and rest[0] == "preview_job":
-        routed = _route_preview_job(method, rest)
-    elif rest and rest[0] == "network":
-        routed = _route_network(method, rest, query)
+    if routed is None:
+        routed = _route_second_tier(method, rest, query, body)
     if routed is not None:
         return routed
     raise ValueError("Unsupported %s %s" % (method, path))
@@ -627,8 +645,9 @@ def _get_ui():
         return None
 
 
-# POST routes that only READ (no network mutation) and so need no undo block.
-_READ_ONLY_POST = (["param_modes", "batch"],)
+# POST routes that don't mutate the project graph and so need no undo block
+# (a batched param-mode read; a UI-only editor pan/zoom).
+_READ_ONLY_POST = (["param_modes", "batch"], ["editor", "focus"])
 
 
 def _undo_label(method, path):

@@ -204,6 +204,15 @@ export const ConfigSchema = z.object({
    */
   bridgeToken: z.string().min(1).optional(),
   /**
+   * Optional bearer token that the Streamable HTTP transport requires on every
+   * request (`Authorization: Bearer <token>`). Acts as the enforcement half of an
+   * MCP OAuth2 Resource Server: when set, missing/invalid credentials get a 401 with
+   * a `WWW-Authenticate: Bearer` challenge. Unset (default) keeps the zero-config
+   * local flow open. The HTTP transport binds loopback only, so this matters when
+   * the server is fronted by a proxy or bound to a LAN interface.
+   */
+  httpAuthToken: z.string().min(1).optional(),
+  /**
    * Base URL of an OpenAI-compatible chat endpoint used by `tdmcp chat` (the local
    * LLM copilot). Defaults to Ollama's local server. Point it at LM Studio, a cloud
    * GPU, or any OpenAI-compatible API to swap the model without code changes.
@@ -426,6 +435,7 @@ function envValues(env: NodeJS.ProcessEnv): Record<string, unknown> {
     yolo: env.TDMCP_YOLO,
     toolProfile: env.TDMCP_TOOL_PROFILE,
     bridgeToken: env.TDMCP_BRIDGE_TOKEN || undefined,
+    httpAuthToken: env.TDMCP_HTTP_AUTH_TOKEN || undefined,
     llmBaseUrl: env.TDMCP_LLM_BASE_URL,
     llmModel: env.TDMCP_LLM_MODEL,
     llmApiKey: env.TDMCP_LLM_API_KEY || undefined,

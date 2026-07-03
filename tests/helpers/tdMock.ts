@@ -171,6 +171,11 @@ export const tdHandlers = [
     }),
   ),
 
+  http.post(`${TD_BASE}/api/editor/focus`, async ({ request }) => {
+    const body = (await request.json()) as { paths: string[]; animate?: boolean };
+    return ok({ focused: body.paths, pane: "pane1", animate: body.animate ?? true });
+  }),
+
   http.post(`${TD_BASE}/api/batch`, async ({ request }) => {
     const body = (await request.json()) as { operations: Array<{ action: string }> };
     return ok({ results: body.operations.map((op) => ({ action: op.action, ok: true })) });

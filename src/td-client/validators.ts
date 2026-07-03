@@ -133,6 +133,14 @@ export const PreviewJobSchema = z.object({
 });
 export type TdPreviewJob = z.infer<typeof PreviewJobSchema>;
 
+/** Result of pointing the Network Editor at some operators (a UI-only follow move). */
+export const EditorFocusSchema = z.object({
+  focused: z.array(z.string()).default([]),
+  pane: z.string().nullable().optional(),
+  animate: z.boolean().default(true),
+});
+export type TdEditorFocus = z.infer<typeof EditorFocusSchema>;
+
 export const ExecResultSchema = z.object({
   result: z.unknown().optional(),
   stdout: z.string().optional(),

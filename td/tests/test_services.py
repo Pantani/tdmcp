@@ -36,6 +36,7 @@ from mcp.services import (  # noqa: E402
     analysis_service,
     api_service,
     batch_service,
+    editor_service,
     preview_service,
 )
 
@@ -302,6 +303,51 @@ class DeleteModeTests(unittest.TestCase):
         with mock.patch.object(api_service, "op", lambda p: None):
             with self.assertRaises(LookupError):
                 api_service.delete_node("/nope", "bypass")
+
+
+class EditorFocusTests(unittest.TestCase):
+    def _pane(self):
+        pane = mock.MagicMock(name="pane")
+        pane.name = "pane1"
+        pane.homeSelected = mock.MagicMock(name="homeSelected")
+        return pane
+
+    def test_focus_points_pane_selects_and_homes(self):
+        node = mock.MagicMock(name="node")
+        node.path = "/project1/noise1"
+        parent = mock.MagicMock(name="parent")
+        node.parent.return_value = parent
+        pane = self._pane()
+        ui = mock.MagicMock(name="ui")
+        ui.panes = [pane]
+        with mock.patch.object(editor_service, "op", lambda p: node), mock.patch.object(
+            editor_service, "_get_ui", lambda: ui
+        ):
+            result = editor_service.focus(["/project1/noise1"], animate=True)
+        self.assertEqual(result["focused"], ["/project1/noise1"])
+        self.assertEqual(result["pane"], "pane1")
+        self.assertIs(pane.owner, parent)
+        self.assertTrue(node.selected)
+        pane.homeSelected.assert_called_once_with(zoom=True)
+
+    def test_focus_raises_when_no_operator_resolves(self):
+        ui = mock.MagicMock(name="ui")
+        ui.panes = [self._pane()]
+        with mock.patch.object(editor_service, "op", lambda p: None), mock.patch.object(
+            editor_service, "_get_ui", lambda: ui
+        ):
+            with self.assertRaises(ValueError):
+                editor_service.focus(["/nope"])
+
+    def test_focus_raises_when_no_network_editor_pane(self):
+        node = mock.MagicMock(name="node")
+        ui = mock.MagicMock(name="ui")
+        ui.panes = []  # no pane exposes homeSelected
+        with mock.patch.object(editor_service, "op", lambda p: node), mock.patch.object(
+            editor_service, "_get_ui", lambda: ui
+        ):
+            with self.assertRaises(RuntimeError):
+                editor_service.focus(["/project1/noise1"])
 
 
 class DeferredCaptureTests(unittest.TestCase):

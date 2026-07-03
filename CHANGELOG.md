@@ -50,6 +50,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   matched Menu parameters) and stamps results with a `data_version` (which
   TouchDesigner build the data reflects) plus a `stale_hint` when a connected
   TouchDesigner reports a different major version.
+- `focus_network_editor` (Layer 2): pan/zoom TouchDesigner's Network Editor to
+  frame given operators — a "follow" move so the artist sees what the agent just
+  built. UI-only; new `POST /api/editor/focus` bridge endpoint.
+- OAuth-style bearer auth on the Streamable HTTP transport: set
+  `TDMCP_HTTP_AUTH_TOKEN` to require `Authorization: Bearer <token>` on every
+  request; missing/invalid credentials get a 401 with a `WWW-Authenticate: Bearer`
+  challenge (the enforcement half of an MCP OAuth2 Resource Server). Off by default.
+- `npm run smoke`: an offline smoke harness that boots the server, completes a real
+  in-memory MCP handshake, and verifies the tool surface + graceful offline
+  degradation without a running TouchDesigner.
+- `npm run contract:gen`: export a portable "skill contract" — a host-agnostic JSON
+  snapshot of every tool (name, description, JSON-Schema inputs) + prompts.
 
 ## [0.11.0] - 2026-06-25
 

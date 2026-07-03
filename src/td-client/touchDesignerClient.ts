@@ -15,6 +15,7 @@ import {
   DatTextWriteSchema,
   DeleteResultSchema,
   DisconnectResultSchema,
+  EditorFocusSchema,
   ExecResultSchema,
   InfoSchema,
   MethodResultSchema,
@@ -418,6 +419,10 @@ export class TouchDesignerClient {
 
   collectPreviewJob(jobId: string) {
     return this.request("GET", `/api/preview_job/${segment(jobId)}`, PreviewJobSchema);
+  }
+
+  focusEditor(paths: string[], animate: boolean) {
+    return this.request("POST", "/api/editor/focus", EditorFocusSchema, { paths, animate });
   }
 
   batch(operations: TdBatchOperation[]) {

@@ -162,17 +162,20 @@ class RoutingTests(unittest.TestCase):
             "batch": ac.batch_service,
             "analysis": ac.analysis_service,
             "preview": ac.preview_service,
+            "editor": ac.editor_service,
         }
         ac.api_service = mock.MagicMock(name="api_service")
         ac.batch_service = mock.MagicMock(name="batch_service")
         ac.analysis_service = mock.MagicMock(name="analysis_service")
         ac.preview_service = mock.MagicMock(name="preview_service")
+        ac.editor_service = mock.MagicMock(name="editor_service")
 
     def tearDown(self):
         ac.api_service = self._saved["api"]
         ac.batch_service = self._saved["batch"]
         ac.analysis_service = self._saved["analysis"]
         ac.preview_service = self._saved["preview"]
+        ac.editor_service = self._saved["editor"]
 
     def test_get_info(self):
         ac._route("GET", "/api/info", {}, {})
@@ -260,6 +263,10 @@ class RoutingTests(unittest.TestCase):
     def test_preview_job_collect_dispatch(self):
         ac._route("GET", "/api/preview_job/abc123", {}, {})
         ac.preview_service.collect_preview_job.assert_called_once_with("abc123")
+
+    def test_editor_focus_dispatch(self):
+        ac._route("POST", "/api/editor/focus", {}, {"paths": ["/project1/noise1"], "animate": True})
+        ac.editor_service.focus.assert_called_once_with(["/project1/noise1"], True)
 
     def test_network_topology_dispatch(self):
         ac._route("GET", "/api/network/project1/topology", {"recursive": ["true"]}, {})

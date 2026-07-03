@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { randomUUID, timingSafeEqual } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -89,11 +89,40 @@ export function isUnsupportedPostMediaType(
 }
 
 /**
- * Runs the cheap request gates before session handling: wrong path (404), a
- * non-loopback Origin (403), or a non-JSON POST body (415). Returns true and sends
- * the rejection when the request is refused, else false.
+ * Validates an `Authorization: Bearer <token>` header against the expected token in
+ * constant time. The enforcement half of an MCP OAuth2 Resource Server (static
+ * pre-shared token — no AS/discovery). Returns false on a missing/malformed header
+ * or a mismatch.
  */
-function rejectPreflight(pathname: string, req: IncomingMessage, res: ServerResponse): boolean {
+export function isHttpBearerAuthorized(authHeader: string | undefined, token: string): boolean {
+  const prefix = "Bearer ";
+  if (!authHeader || !authHeader.startsWith(prefix)) return false;
+  const provided = Buffer.from(authHeader.slice(prefix.length));
+  const expected = Buffer.from(token);
+  return provided.length === expected.length && timingSafeEqual(provided, expected);
+}
+
+/** Sends a 401 with an OAuth2 `WWW-Authenticate: Bearer` challenge. */
+function sendUnauthorized(res: ServerResponse, error: string): void {
+  res.writeHead(401, {
+    "content-type": "application/json",
+    "www-authenticate": `Bearer error="${error}"`,
+  });
+  res.end(JSON.stringify({ error: "Unauthorized: a valid Bearer token is required." }));
+}
+
+/**
+ * Runs the cheap request gates before session handling: wrong path (404), a
+ * non-loopback Origin (403), a non-JSON POST body (415), or (when a token is
+ * configured) a missing/invalid Bearer (401). Returns true and sends the rejection
+ * when the request is refused, else false.
+ */
+function rejectPreflight(
+  config: TdmcpConfig,
+  pathname: string,
+  req: IncomingMessage,
+  res: ServerResponse,
+): boolean {
   if (pathname !== MCP_PATH) {
     sendJson(res, 404, { error: "Not found. MCP endpoint is at /mcp." });
     return true;
@@ -104,6 +133,10 @@ function rejectPreflight(pathname: string, req: IncomingMessage, res: ServerResp
   }
   if (isUnsupportedPostMediaType(req.method, req.headers["content-type"])) {
     sendJson(res, 415, { error: "Unsupported Media Type: POST body must be application/json." });
+    return true;
+  }
+  if (config.httpAuthToken && !isHttpBearerAuthorized(req.headers.authorization, config.httpAuthToken)) {
+    sendUnauthorized(res, req.headers.authorization ? "invalid_token" : "missing_token");
     return true;
   }
   return false;
@@ -160,7 +193,7 @@ async function startHttp(
 
   async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
-    if (rejectPreflight(url.pathname, req, res)) return;
+    if (rejectPreflight(config, url.pathname, req, res)) return;
     const sessionId = req.headers["mcp-session-id"];
     const existing = typeof sessionId === "string" ? transports.get(sessionId) : undefined;
 

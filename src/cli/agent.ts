@@ -2985,6 +2985,7 @@ const ENV_NAMES: Record<keyof TdmcpConfig, string> = {
   yolo: "TDMCP_YOLO",
   toolProfile: "TDMCP_TOOL_PROFILE",
   bridgeToken: "TDMCP_BRIDGE_TOKEN",
+  httpAuthToken: "TDMCP_HTTP_AUTH_TOKEN",
   llmBaseUrl: "TDMCP_LLM_BASE_URL",
   llmModel: "TDMCP_LLM_MODEL",
   llmApiKey: "TDMCP_LLM_API_KEY",

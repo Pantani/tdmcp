@@ -3,6 +3,7 @@ import { registerAddCustomParameters } from "./addCustomParameters.js";
 import { registerAnimateParameter } from "./animateParameter.js";
 import { registerApplyLut } from "./applyLut.js";
 import { registerArrangeNetwork } from "./arrangeNetwork.js";
+import { registerFocusNetworkEditor } from "./focusNetworkEditor.js";
 import { registerAuthorScriptOperator } from "./authorScriptOperator.js";
 import { registerAutoRepairLoop } from "./autoRepairLoop.js";
 import { registerBatchOperations } from "./batchOperations.js";
@@ -80,6 +81,7 @@ import { registerSetupSegmentation } from "./setupSegmentation.js";
 import { registerSyncTimecode } from "./syncTimecode.js";
 
 export const layer2Registrars: ToolRegistrar[] = [
+  registerFocusNetworkEditor,
   registerCreateNodeChain,
   registerConnectNodes,
   registerCreateGlslShader,
