@@ -78,6 +78,139 @@ describe("rebuildNetworkSchema", () => {
   it("rejects a spec missing the nodes array", () => {
     expect(() => rebuildNetworkSchema.parse({ parent_path: "/project1", spec: {} })).toThrow();
   });
+
+  it("defaults auto_layout to false", () => {
+    const parsed = rebuildNetworkSchema.parse({
+      parent_path: "/project1",
+      spec: { nodes: [{ name: "a", type: "noiseTOP" }] },
+    });
+    expect(parsed.auto_layout).toBe(false);
+  });
+});
+
+// A 3-node dependency chain A -> B -> C, plus a same-layer sibling of C, so the
+// longest-path column layout can be asserted (columns increase left->right, and
+// same-layer nodes get distinct y).
+type LaidNode = { name: string; x?: number; y?: number };
+function laidNodes(script: string): LaidNode[] {
+  const spec = decodePayload(script).spec as { nodes: LaidNode[] };
+  return spec.nodes;
+}
+function byName(nodes: LaidNode[], name: string): LaidNode {
+  const n = nodes.find((node) => node.name === name);
+  if (!n) throw new Error(`node ${name} not found`);
+  return n;
+}
+
+/** A report handler that captures the outgoing exec script. */
+function captureExecScript(sink: { script: string }): void {
+  server.use(
+    http.post(`${TD_BASE}/api/exec`, async ({ request }) => {
+      sink.script = ((await request.json()) as { script: string }).script;
+      return HttpResponse.json({
+        ok: true,
+        data: {
+          stdout: JSON.stringify({
+            parent_path: "/project1",
+            created: [],
+            wired: 0,
+            params_set: 0,
+            cleared: 0,
+            warnings: [],
+          }),
+        },
+      });
+    }),
+  );
+}
+
+describe("rebuildNetworkImpl auto_layout", () => {
+  it("injects longest-path columns left→right and stacks same-layer nodes in y", async () => {
+    const sink = { script: "" };
+    captureExecScript(sink);
+
+    await rebuildNetworkImpl(
+      makeCtx(),
+      rebuildNetworkSchema.parse({
+        parent_path: "/project1",
+        auto_layout: true,
+        spec: {
+          nodes: [
+            { name: "a", type: "noiseTOP" },
+            { name: "b", type: "levelTOP", inputs: [{ from: "a" }] },
+            { name: "c", type: "blurTOP", inputs: [{ from: "b" }] },
+            // same layer as c (also one hop from b) -> shares c's column, differs in y.
+            { name: "c2", type: "blurTOP", inputs: [{ from: "b" }] },
+          ],
+        },
+      }),
+    );
+
+    const nodes = laidNodes(sink.script);
+    const a = byName(nodes, "a");
+    const b = byName(nodes, "b");
+    const c = byName(nodes, "c");
+    const c2 = byName(nodes, "c2");
+    // Columns increase with dependency depth.
+    expect(b.x).toBeGreaterThan(a.x as number);
+    expect(c.x).toBeGreaterThan(b.x as number);
+    // c and c2 are on the same longest-path column.
+    expect(c2.x).toBe(c.x);
+    // Same-layer siblings are stacked vertically.
+    expect(c.y).not.toBe(c2.y);
+  });
+
+  it("overrides manual x/y when auto_layout is true", async () => {
+    const sink = { script: "" };
+    captureExecScript(sink);
+
+    await rebuildNetworkImpl(
+      makeCtx(),
+      rebuildNetworkSchema.parse({
+        parent_path: "/project1",
+        auto_layout: true,
+        spec: {
+          nodes: [
+            { name: "a", type: "noiseTOP", x: 999, y: 888 },
+            { name: "b", type: "levelTOP", inputs: [{ from: "a" }] },
+          ],
+        },
+      }),
+    );
+
+    const a = byName(laidNodes(sink.script), "a");
+    expect(a.x).not.toBe(999);
+    expect(a.y).not.toBe(888);
+  });
+
+  it("preserves manual x/y and injects none when auto_layout is off (default)", async () => {
+    const sink = { script: "" };
+    captureExecScript(sink);
+
+    await rebuildNetworkImpl(
+      makeCtx(),
+      rebuildNetworkSchema.parse({
+        parent_path: "/project1",
+        // auto_layout omitted -> parse fills false.
+        spec: {
+          nodes: [
+            { name: "a", type: "noiseTOP", x: 10, y: 20 },
+            { name: "b", type: "levelTOP", inputs: [{ from: "a" }] },
+          ],
+        },
+      }),
+    );
+
+    const nodes = laidNodes(sink.script);
+    const a = byName(nodes, "a");
+    const b = byName(nodes, "b");
+    // Manual coords survive untouched.
+    expect(a.x).toBe(10);
+    expect(a.y).toBe(20);
+    // A node without manual coords carries no injected x/y.
+    expect(b.x).toBeUndefined();
+    expect(b.y).toBeUndefined();
+  });
 });
 
 describe("rebuildNetworkImpl", () => {
@@ -173,6 +306,7 @@ describe("rebuildNetworkImpl", () => {
       parent_path: "/project1",
       spec: { nodes: [{ name: "noise1", type: "noiseTOP", params: {}, inputs: [] }] },
       clear_existing: true,
+      auto_layout: false,
     });
     expect(result.isError).toBeFalsy();
     const text = (result.content?.[0] as { text: string }).text;
@@ -196,6 +330,7 @@ describe("rebuildNetworkImpl", () => {
       parent_path: "/nope",
       spec: { nodes: [{ name: "a", type: "noiseTOP", params: {}, inputs: [] }] },
       clear_existing: false,
+      auto_layout: false,
     });
     expect(result.isError).toBe(true);
     const text = (result.content?.[0] as { text: string }).text;
@@ -209,6 +344,7 @@ describe("rebuildNetworkImpl", () => {
       parent_path: "/project1",
       spec: { nodes: [{ name: "a", type: "noiseTOP", params: {}, inputs: [] }] },
       clear_existing: false,
+      auto_layout: false,
     });
     expect(result.isError).toBe(true);
   });

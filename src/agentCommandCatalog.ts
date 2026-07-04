@@ -625,6 +625,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "dat-get",
+    summary: "Read a DAT's text/table content with paging (offset/limit, header, preview).",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "dat-set",
     summary: "Overwrite a DAT's whole text (refuses silent wipes unless confirm_wipe).",
     mutates: true,
@@ -1585,6 +1592,13 @@ export const AGENT_COMMAND_CATALOG = [
     command: "params",
     summary: "Set many parameters across nodes at once.",
     mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "params-menu",
+    summary: "Read a parameter's live menu names/labels + current value (menu-style params).",
+    mutates: false,
     unsafe: false,
     source: "tool",
   },

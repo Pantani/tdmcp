@@ -11,10 +11,10 @@ export const setParameterExpressionSchema = z.object({
       z.object({
         param: z.string().describe("Parameter name (case-sensitive), e.g. 'tx'."),
         mode: z
-          .enum(["expression", "bind", "constant"])
+          .enum(["expression", "bind", "constant", "reset", "unbind"])
           .default("expression")
           .describe(
-            "expression: set par.expr; bind: set par.bindExpr; constant: set par.val from `value`.",
+            "expression: set par.expr; bind: set par.bindExpr; constant: set par.val from `value`; reset: restore par default (par.reset()); unbind: freeze current eval() value as a constant, dropping the driver.",
           ),
         expr: z
           .string()
@@ -109,6 +109,35 @@ try:
                         _par.mode = type(_par.mode).BIND
                     except Exception:
                         report["warnings"].append("param '" + str(_a["param"]) + "': could not flip to Bind mode")
+                elif _m == "reset":
+                    # par.reset() clears value+expr+bind+mode in one call. It is not
+                    # documented in the bundled Par.json (UNVERIFIED — probe live); the
+                    # fallback restores par.default + flips to Constant for a Par without it.
+                    _reset = getattr(_par, "reset", None)
+                    if callable(_reset):
+                        try:
+                            _reset()
+                        except Exception:
+                            report["warnings"].append("param '" + str(_a["param"]) + "': reset() failed")
+                            continue
+                    else:
+                        try:
+                            _par.val = _par.default
+                        except Exception:
+                            pass
+                        try:
+                            _par.mode = type(_par.mode).CONSTANT
+                        except Exception:
+                            pass
+                elif _m == "unbind":
+                    # Freeze the current driven value as a constant, dropping the driver.
+                    try:
+                        _frozen = _par.eval()
+                        _par.val = _frozen
+                        _par.mode = type(_par.mode).CONSTANT
+                    except Exception:
+                        report["warnings"].append("param '" + str(_a["param"]) + "': could not unbind")
+                        continue
                 else:
                     _v = _a.get("value")
                     if _v is None:
@@ -136,76 +165,140 @@ export function buildSetExprScript(payload: object): string {
   return buildPayloadScript(SET_EXPR_SCRIPT, payload);
 }
 
+type Assignment = SetParameterExpressionArgs["assignments"][number];
+
+/** Whole-batch exec path (ALLOW_EXEC=1): used for reset/unbind and older-bridge fallback. */
+async function runBatchViaExec(
+  ctx: ToolContext,
+  args: SetParameterExpressionArgs,
+): Promise<SetParameterExpressionReport> {
+  const script = buildSetExprScript({ path: args.path, assignments: args.assignments });
+  const exec = await ctx.client.executePythonScript(script, true);
+  return parsePythonReport<SetParameterExpressionReport>(exec.stdout);
+}
+
+/** The local pre-flight the exec path mirrors: a required field is missing for this mode. */
+function preflightWarning(a: Assignment): string | undefined {
+  if ((a.mode === "expression" || a.mode === "bind") && !a.expr) {
+    return `param '${a.param}': expr required for mode '${a.mode}'`;
+  }
+  if (a.mode === "constant" && a.value === undefined) {
+    return `param '${a.param}': value required for mode 'constant'`;
+  }
+  return undefined;
+}
+
+/**
+ * Outcome of one per-param attempt. `proven` on a `warned` result records whether
+ * the endpoint actually responded (an endpoint rejection proves the route is
+ * present; a local pre-flight skip does not). `abandon` means a missing-endpoint
+ * hit before the route was proven present, so the caller falls back to exec.
+ */
+type AttemptResult =
+  | { kind: "applied"; entry: AppliedEntry }
+  | { kind: "warned"; warning: string; proven: boolean }
+  | { kind: "abandon" };
+
+/** Map a failed endpoint call to a per-param result (abandon / warn / rethrow). */
+function classifyEndpointError(
+  a: Assignment,
+  endpointProven: boolean,
+  err: unknown,
+): AttemptResult {
+  // A missing endpoint BEFORE the route is proven present (older bridge) abandons
+  // the loop for the whole-batch exec fallback. Any other TdApiError is a
+  // validation rejection from a PRESENT route — fail-forward as a per-param warning
+  // and mark the route proven.
+  if (!endpointProven && isMissingEndpoint(err)) return { kind: "abandon" };
+  if (err instanceof TdApiError) {
+    return { kind: "warned", warning: `param '${a.param}': ${err.message}`, proven: true };
+  }
+  throw err; // connection/timeout -> guardTd
+}
+
+/** Classify one assignment: local pre-flight, then the endpoint attempt. */
+async function classifyAssignment(
+  ctx: ToolContext,
+  path: string,
+  a: Assignment,
+  endpointProven: boolean,
+): Promise<AttemptResult> {
+  const warning = preflightWarning(a);
+  if (warning) return { kind: "warned", warning, proven: false };
+  try {
+    const r = await ctx.client.setParameterMode(path, a.param, a.mode, a.expr, a.value);
+    return {
+      kind: "applied",
+      entry: {
+        param: r.param,
+        mode: a.mode,
+        readback_mode: r.readback_mode,
+        readback_expr: r.readback_expr,
+      },
+    };
+  } catch (err) {
+    return classifyEndpointError(a, endpointProven, err);
+  }
+}
+
+/** Fail-forward accumulator for the per-param endpoint loop. */
+interface EndpointBatch {
+  applied: AppliedEntry[];
+  warnings: string[];
+  // "Proven present" = an endpoint call returned (success OR a non-missing
+  // rejection). A local pre-flight skip does NOT prove the route, so the first
+  // ACTUAL endpoint call can land at index > 0.
+  endpointProven: boolean;
+}
+
+/** Fold one classified result into the batch; returns false when the loop must abandon. */
+function foldResult(batch: EndpointBatch, result: AttemptResult): boolean {
+  if (result.kind === "abandon") return false;
+  if (result.kind === "applied") {
+    batch.endpointProven = true;
+    batch.applied.push(result.entry);
+    return true;
+  }
+  if (result.proven) batch.endpointProven = true;
+  batch.warnings.push(result.warning);
+  return true;
+}
+
+/**
+ * First-class per-param endpoint path (survives ALLOW_EXEC=0), fail-forward.
+ * Returns the report, or `null` when the endpoint is absent (older bridge) so the
+ * caller falls back to whole-batch exec.
+ */
+async function runBatchViaEndpoint(
+  ctx: ToolContext,
+  args: SetParameterExpressionArgs,
+): Promise<SetParameterExpressionReport | null> {
+  const batch: EndpointBatch = { applied: [], warnings: [], endpointProven: false };
+  for (const a of args.assignments) {
+    if (!a) continue;
+    const result = await classifyAssignment(ctx, args.path, a, batch.endpointProven);
+    if (!foldResult(batch, result)) return null;
+  }
+  return { path: args.path, applied: batch.applied, warnings: batch.warnings };
+}
+
 export async function setParameterExpressionImpl(
   ctx: ToolContext,
   args: SetParameterExpressionArgs,
 ): Promise<import("@modelcontextprotocol/sdk/types.js").CallToolResult> {
   return guardTd(
     async () => {
-      // 1) first-class per-param endpoint (survives ALLOW_EXEC=0). It flips par.mode
-      //    via type(par.mode), which also fixes the silent `ParMode` NameError the
-      //    exec path hit. Loop fail-forward — per-item failures become warnings.
-      //    If a missing-endpoint error hits BEFORE the endpoint is proven present
-      //    (older bridge / 404), abandon the loop and fall back to whole-batch exec.
-      const applied: AppliedEntry[] = [];
-      const warnings: string[] = [];
-      let endpointUsable = true;
-      // "Proven present" = any call returned — a success OR a non-missing rejection
-      // (the route exists, it just refused that param). Tracking this instead of
-      // `i === 0` is correct when earlier assignments are skipped locally (missing
-      // expr/value), so the first ACTUAL endpoint call can land at index > 0.
-      let endpointProven = false;
-      for (let i = 0; i < args.assignments.length; i++) {
-        const a = args.assignments[i];
-        if (!a) continue;
-        // Mirror the exec path's pre-flight: expr is required for expression/bind.
-        if ((a.mode === "expression" || a.mode === "bind") && !a.expr) {
-          warnings.push(`param '${a.param}': expr required for mode '${a.mode}'`);
-          continue;
-        }
-        if (a.mode === "constant" && a.value === undefined) {
-          warnings.push(`param '${a.param}': value required for mode 'constant'`);
-          continue;
-        }
-        try {
-          const r = await ctx.client.setParameterMode(args.path, a.param, a.mode, a.expr, a.value);
-          endpointProven = true;
-          applied.push({
-            param: r.param,
-            mode: a.mode,
-            readback_mode: r.readback_mode,
-            readback_expr: r.readback_expr,
-          });
-        } catch (err) {
-          // A missing endpoint BEFORE the route is proven present (older bridge)
-          // triggers the whole-batch exec fallback. A validation error (unknown
-          // param, missing node — also a TdApiError) is fail-forward per-param,
-          // so later valid assignments still apply and ALLOW_EXEC=0 users get the
-          // real reason instead of an exec-disabled error.
-          if (!endpointProven && isMissingEndpoint(err)) {
-            endpointUsable = false;
-            break;
-          }
-          if (err instanceof TdApiError) {
-            // The route exists (it rejected this param), so any later error is not
-            // a missing endpoint — keep going fail-forward as a per-param warning.
-            endpointProven = true;
-            warnings.push(`param '${a.param}': ${err.message}`);
-            continue;
-          }
-          throw err; // connection/timeout -> guardTd
-        }
-      }
-      if (endpointUsable) {
-        return { path: args.path, applied, warnings } as SetParameterExpressionReport;
-      }
-      // fallback: whole-batch exec (older bridge).
-      const script = buildSetExprScript({
-        path: args.path,
-        assignments: args.assignments,
-      });
-      const exec = await ctx.client.executePythonScript(script, true);
-      return parsePythonReport<SetParameterExpressionReport>(exec.stdout);
+      // reset/unbind are not yet accepted by the PATCH …/mode endpoint. On an
+      // un-upgraded bridge the endpoint would reject the unknown mode as a per-param
+      // validation warning while other params succeed — a half-applied batch across a
+      // version boundary. To stay correct, if ANY assignment uses reset/unbind, run the
+      // whole batch through the exec path (which always works when ALLOW_EXEC=1).
+      const needsExec = args.assignments.some((a) => a.mode === "reset" || a.mode === "unbind");
+      if (needsExec) return runBatchViaExec(ctx, args);
+      // Prefer the per-param endpoint; a null return means the route is absent
+      // (older bridge), so fall back to the whole-batch exec path.
+      const report = await runBatchViaEndpoint(ctx, args);
+      return report ?? runBatchViaExec(ctx, args);
     },
     (report) => {
       if (report.fatal) {
@@ -228,7 +321,7 @@ export const registerSetParameterExpression: ToolRegistrar = (server, ctx) => {
     {
       title: "Set parameter expression / bind / constant",
       description:
-        "Set one or more parameters on a node to an expression, bind expression, or constant value without needing the raw-Python escape hatch. Supports three modes: 'expression' (par.expr = ...), 'bind' (par.bindExpr = ...), and 'constant' (par.val = ...). Multiple assignments are applied fail-forward — per-item failures accumulate as warnings so a partial batch still returns useful results. Use this instead of execute_python_script when TDMCP_RAW_PYTHON is off.",
+        "Set one or more parameters on a node to an expression, bind expression, or constant value without needing the raw-Python escape hatch. Supports five modes: 'expression' (par.expr = ...), 'bind' (par.bindExpr = ...), 'constant' (par.val = ...), 'reset' (restore the parameter default via par.reset()), and 'unbind' (freeze the current evaluated value as a constant, dropping the driver). Multiple assignments are applied fail-forward — per-item failures accumulate as warnings so a partial batch still returns useful results. Batches using reset/unbind run through the exec path and require TDMCP_BRIDGE_ALLOW_EXEC=1. Use this instead of execute_python_script when TDMCP_RAW_PYTHON is off.",
       inputSchema: setParameterExpressionSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

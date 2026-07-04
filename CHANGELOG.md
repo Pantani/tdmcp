@@ -62,6 +62,38 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   degradation without a running TouchDesigner.
 - `npm run contract:gen`: export a portable "skill contract" — a host-agnostic JSON
   snapshot of every tool (name, description, JSON-Schema inputs) + prompts.
+- Add `get_dat_content` (CLI `dat-get`), a read-only Layer 3 tool that pages a
+  DAT's text or table content (offset/limit, optional header, preview rows, and
+  a `truncated`/`row_range` window) so agents can inspect large DATs without raw
+  Python.
+- Add `get_parameter_menu` (CLI `params-menu`), a read-only Layer 3 tool that
+  live-fetches a menu-style parameter's `menuNames`/`menuLabels` and current
+  value from the bridge, with a loud-warned bundled-knowledge fallback when raw
+  exec is unavailable. Patterns inspired by Derivative's official TouchDesigner
+  TDMCP (Shared Use License); reimplemented independently.
+
+### Changed
+
+- Add an optional `auto_layout` flag to `rebuild_network` that runs the dataflow
+  auto-layout over the spec's nodes before rebuild, overriding manual x/y.
+  Patterns inspired by Derivative's official TouchDesigner TDMCP (Shared Use
+  License); reimplemented independently.
+- Extend `set_parameter_expression` with `reset` and `unbind` assignment modes
+  (reset a parameter to its default / freeze a driven value to a constant);
+  these two modes require `TDMCP_BRIDGE_ALLOW_EXEC=1`. Patterns inspired by
+  Derivative's official TouchDesigner TDMCP (Shared Use License); reimplemented
+  independently.
+
+### Security
+
+- Harden the TouchDesigner bridge request handler with a loopback-only address
+  scope by default: a request from a non-loopback peer is rejected (HTTP `403`)
+  before routing, authentication, or any tool runs, unless LAN exposure is
+  explicitly enabled with `TDMCP_BRIDGE_ALLOW_LAN=1` in TouchDesigner's
+  environment. This complements the existing `Origin`/`Host` header guards with
+  an unforgeable peer-address check. Pattern inspired by Derivative's official
+  TouchDesigner TDMCP ("Address Scope") under the Shared Use License;
+  reimplemented independently in our Python bridge.
 
 ## [0.11.0] - 2026-06-25
 

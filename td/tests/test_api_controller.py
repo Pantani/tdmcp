@@ -413,6 +413,114 @@ class HostTests(unittest.TestCase):
         self.assertIn("Host", resp["data"])
 
 
+def _clear_lan_env():
+    os.environ.pop("TDMCP_BRIDGE_ALLOW_LAN", None)
+
+
+class AddressScopeTests(unittest.TestCase):
+    """P2-1: loopback-only address scope. Off-host peers are rejected at the
+    earliest point unless TDMCP_BRIDGE_ALLOW_LAN opts into LAN exposure."""
+
+    def tearDown(self):
+        _clear_lan_env()
+        _clear_token_env()
+
+    def test_lan_exposure_disabled_by_default(self):
+        _clear_lan_env()
+        self.assertFalse(ac._lan_exposure_enabled())
+
+    def test_lan_exposure_enabled_values(self):
+        for value in ("1", "true", "yes", "on", " On "):
+            os.environ["TDMCP_BRIDGE_ALLOW_LAN"] = value
+            self.assertTrue(ac._lan_exposure_enabled(), value)
+
+    def test_lan_exposure_disabled_values(self):
+        for value in ("0", "false", "no", "off", "", "anything"):
+            os.environ["TDMCP_BRIDGE_ALLOW_LAN"] = value
+            self.assertFalse(ac._lan_exposure_enabled(), value)
+
+    def test_no_peer_address_is_allowed(self):
+        # Older builds surface no peer address; header guards apply instead.
+        _clear_lan_env()
+        ac._check_address_scope({"method": "GET"})  # must not raise
+
+    def test_loopback_peers_allowed(self):
+        _clear_lan_env()
+        for addr in ("127.0.0.1", "::1", "[::1]", "::ffff:127.0.0.1", "localhost"):
+            ac._check_address_scope({"clientAddress": addr})  # must not raise
+
+    def test_loopback_peer_with_port_allowed(self):
+        _clear_lan_env()
+        for addr in ("127.0.0.1:53512", "::1"):
+            ac._check_address_scope({"clientAddress": addr})
+
+    def test_off_host_peer_rejected(self):
+        _clear_lan_env()
+        for addr in ("192.168.1.5", "10.0.0.9", "203.0.113.7", "::ffff:8.8.8.8"):
+            with self.assertRaises(PermissionError, msg=addr):
+                ac._check_address_scope({"clientAddress": addr})
+
+    def test_off_host_peer_rejected_even_with_token(self):
+        # Address scope is independent of the bearer token: binding all interfaces
+        # without an explicit LAN opt-in is refused regardless of auth.
+        _clear_lan_env()
+        os.environ["TDMCP_BRIDGE_TOKEN"] = "s3cret"
+        with self.assertRaises(PermissionError):
+            ac._check_address_scope({"clientAddress": "192.168.1.5"})
+
+    def test_off_host_peer_allowed_when_lan_opted_in(self):
+        os.environ["TDMCP_BRIDGE_ALLOW_LAN"] = "1"
+        ac._check_address_scope({"clientAddress": "192.168.1.5"})  # must not raise
+
+    def test_peer_address_lookup_is_nested(self):
+        _clear_lan_env()
+        with self.assertRaises(PermissionError):
+            ac._check_address_scope({"meta": {"remote_address": "192.168.1.5"}})
+
+    def test_handle_rejects_off_host_peer_with_403(self):
+        _clear_lan_env()
+        resp = ac.handle(
+            {"method": "GET", "uri": "/api/info", "clientAddress": "192.168.1.5"}, {}
+        )
+        self.assertEqual(resp["statusCode"], 403)
+        self.assertIn("off-host", resp["data"])
+
+    def test_normalize_address_forms(self):
+        self.assertEqual(ac._normalize_address("::ffff:127.0.0.1"), "127.0.0.1")
+        self.assertEqual(ac._normalize_address("[::1]"), "::1")
+        self.assertEqual(ac._normalize_address("[::1]:9980"), "::1")
+        self.assertEqual(ac._normalize_address("fe80::1%en0"), "fe80::1")
+        self.assertEqual(ac._normalize_address("127.0.0.1:9980"), "127.0.0.1")
+        self.assertIsNone(ac._normalize_address(""))
+        self.assertIsNone(ac._normalize_address(None))
+
+    def test_bracketed_ipv6_loopback_with_port_allowed(self):
+        # A bracketed IPv6 loopback with a port (`[::1]:9980`) must normalize to
+        # the bare loopback host, not be rejected by a naive strip("[]").
+        _clear_lan_env()
+        for addr in ("[::1]", "[::1]:9980"):
+            ac._check_address_scope({"clientAddress": addr})  # must not raise
+
+    def test_alias_key_off_host_still_rejected(self):
+        # A non-loopback address supplied under an ALIAS key (remoteAddress) is a
+        # real peer address, not a bypass: off-host input is still rejected when
+        # TDMCP_BRIDGE_ALLOW_LAN is unset.
+        _clear_lan_env()
+        for key in ("remoteAddress", "peerAddress", "remote_address"):
+            with self.assertRaises(PermissionError, msg=key):
+                ac._check_address_scope({key: "192.168.1.5"})
+
+    def test_header_map_clientaddress_not_trusted(self):
+        # HTTP header maps are attacker-controlled. A spoofed loopback address under
+        # headers/header/fields must NOT be treated as the peer address — otherwise a
+        # remote client could inject `clientAddress: 127.0.0.1` to bypass the gate.
+        for container in ("headers", "header", "fields"):
+            self.assertIsNone(
+                ac._client_address({container: {"clientAddress": "127.0.0.1"}}),
+                msg=container,
+            )
+
+
 class HandleTests(unittest.TestCase):
     def tearDown(self):
         _clear_exec_env()
