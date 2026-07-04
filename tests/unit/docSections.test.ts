@@ -33,9 +33,17 @@ describe("splitMarkdownSections", () => {
   });
 
   it("does not treat a # inside a fenced code block as a heading", () => {
-    const doc = ["Intro", "", "## Real", "body", "", "```py", "# not a heading", "x = 1", "```"].join(
-      "\n",
-    );
+    const doc = [
+      "Intro",
+      "",
+      "## Real",
+      "body",
+      "",
+      "```py",
+      "# not a heading",
+      "x = 1",
+      "```",
+    ].join("\n");
     const { sections } = splitMarkdownSections(doc);
     expect(sections.map((s) => s.title)).toEqual(["Real"]);
     expect(sections[0]?.content).toContain("# not a heading"); // stays inside the section body

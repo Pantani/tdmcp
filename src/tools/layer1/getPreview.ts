@@ -8,7 +8,9 @@ export const getPreviewSchema = z.object({
   node_path: z
     .string()
     .optional()
-    .describe("Path of the TOP node to capture. Required unless collecting a deferred job by job_id."),
+    .describe(
+      "Path of the TOP node to capture. Required unless collecting a deferred job by job_id.",
+    ),
   width: z.coerce
     .number()
     .int()
