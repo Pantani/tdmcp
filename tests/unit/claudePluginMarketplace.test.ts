@@ -27,27 +27,4 @@ describe("Claude Code plugin marketplace", () => {
       }),
     );
   });
-
-  it("pins the Claude plugin MCP command to the package version", () => {
-    const packageJson = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
-      version?: string;
-    };
-    const plugin = JSON.parse(
-      readFileSync(join(root, "plugins", "tdmcp", ".claude-plugin", "plugin.json"), "utf8"),
-    ) as {
-      version?: string;
-      mcpServers?: { tdmcp?: { command?: string; args?: string[]; env?: Record<string, string> } };
-    };
-
-    expect(plugin.version).toBe(packageJson.version);
-    expect(plugin.mcpServers?.tdmcp).toMatchObject({
-      command: "npx",
-      args: ["--yes", `--package=@dpantani/tdmcp@${packageJson.version}`, "tdmcp"],
-      env: {
-        TDMCP_TRANSPORT: "stdio",
-        TDMCP_RAW_PYTHON: "off",
-        TDMCP_TOOL_PROFILE: "safe",
-      },
-    });
-  });
 });

@@ -2,7 +2,7 @@
 //
 // Runs automatically as the npm `version` lifecycle script: `npm version <bump>`
 // bumps package.json, then this runs and stages every file it manages (manifests,
-// plugin/server JSON, bridge version probes, and the bootstrap-pin docs), then
+// server JSON, bridge version probes, and the bootstrap-pin docs), then
 // npm makes the version commit + tag. That keeps published security/package
 // metadata, the stale-bridge detector, and the install instructions' pinned
 // bootstrap URLs from drifting away from the package version.
@@ -17,7 +17,6 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const manifestPaths = [join(root, "dxt", "manifest.json"), join(root, "safeskill.manifest.json")];
 const serverPath = join(root, "server.json");
-const claudePluginManifestPath = join(root, "plugins", "tdmcp", ".claude-plugin", "plugin.json");
 const bridgeVersionPaths = [
   join(root, "td", "modules", "utils", "version.py"),
   join(root, "src", "tools", "layer3", "getTdInfo.ts"),
@@ -55,22 +54,6 @@ for (const manifestPath of manifestPaths) {
   } else {
     writeFileSync(manifestPath, after);
     process.stdout.write(`[sync-manifest-version] ${manifestPath} -> ${version}\n`);
-  }
-}
-
-{
-  const before = readFileSync(claudePluginManifestPath, "utf8");
-  const after = before
-    .replace(/("version"\s*:\s*")[^"]*"/, `$1${version}"`)
-    .replace(/@dpantani\/tdmcp@[^"]+/g, `@dpantani/tdmcp@${version}`);
-
-  if (after === before) {
-    process.stdout.write(
-      `[sync-manifest-version] ${claudePluginManifestPath} already at ${version}\n`,
-    );
-  } else {
-    writeFileSync(claudePluginManifestPath, after);
-    process.stdout.write(`[sync-manifest-version] ${claudePluginManifestPath} -> ${version}\n`);
   }
 }
 
@@ -128,19 +111,13 @@ for (const filePath of bridgeVersionPaths) {
 
 // Stage every file this script manages so the `npm version` release commit/tag
 // includes the rewritten bootstrap pins and bridge-version probes. The `version`
-// lifecycle script only `git add`s the manifest/plugin JSON by hand, so the
+// lifecycle script only `git add`s the manifest/server JSON by hand, so the
 // bootstrapPinPaths (README, install prompts, docs, td/*) would otherwise be left
 // out of the commit and the worktree left dirty. Staging here keeps the set in
 // sync with the list above — no hand-maintained duplicate to drift (PR #118/#119
 // review). execFileSync with an argv array (never a shell string) keeps this
 // injection-free.
-const managedPaths = [
-  ...manifestPaths,
-  claudePluginManifestPath,
-  serverPath,
-  ...bootstrapPinPaths,
-  ...bridgeVersionPaths,
-];
+const managedPaths = [...manifestPaths, serverPath, ...bootstrapPinPaths, ...bridgeVersionPaths];
 let insideGitWorkTree = false;
 try {
   execFileSync("git", ["rev-parse", "--is-inside-work-tree"], { cwd: root, stdio: "ignore" });
