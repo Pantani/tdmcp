@@ -16,13 +16,14 @@ for the next release. v0.11.0 shipped the TouchDesigner knowledge import, Claude
 Code marketplace metadata, Kinect wall harp, physical-installation diagnostics,
 offline tutorial-to-recipe drafting, cookbook examples, and CLI/docs/release
 hardening. The current source tree is preparing **v0.12.0** with safer retry
-semantics, undo-aware mutations, preview/read tooling, transport/bridge
-hardening, and release-ready install pins listed below; those `v0.12.0` install
-pins become user-installable only after the tag/release is published. The
-CHANGELOG blocks list every entry; the always-current tool list is the
-[Tools reference](/reference/tools). 1.0 is **not** the next minor — the v0.12.x
-line is the active feature/consolidation line, and v1.0 will land only once the
-consolidation gates below are all green.
+semantics, undo-aware mutations, preview/read tooling, and transport/bridge
+hardening. Until the `v0.12.0` tag/release is published, public bootstrap and
+package self-install URLs stay pinned to the existing `v0.11.0` release; the
+version-sync script advances those install pins during the actual tagged
+release. The CHANGELOG blocks list every entry; the always-current tool list is
+the [Tools reference](/reference/tools). 1.0 is **not** the next minor — the
+v0.12.x line is the active feature/consolidation line, and v1.0 will land only
+once the consolidation gates below are all green.
 
 The project has grown through five arcs:
 
