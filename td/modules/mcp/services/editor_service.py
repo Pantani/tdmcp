@@ -24,6 +24,27 @@ def _network_editor_pane(ui):
     return None
 
 
+def _resolve_ops(paths):
+    """Existing operators for the given paths (missing ones dropped)."""
+    ops = []
+    for path in paths or []:
+        node = op(path)
+        if node is not None:
+            ops.append(node)
+    return ops
+
+
+def _resolve_pane():
+    """The Network Editor pane to drive, or raise when none is available."""
+    ui = _get_ui()
+    pane = _network_editor_pane(ui) if ui is not None else None
+    if pane is None:
+        raise RuntimeError(
+            "No Network Editor pane available to focus (is TouchDesigner running with its UI?)."
+        )
+    return pane
+
+
 def focus(paths, animate=True):
     """Frame the given operators in a Network Editor pane (TD animates the move).
 
@@ -31,15 +52,10 @@ def focus(paths, animate=True):
     selection with zoom. Raises when no target resolves or no Network Editor pane
     exists (e.g. a headless/perform-only session).
     """
-    ops = [node for node in (op(path) for path in paths or []) if node is not None]
+    ops = _resolve_ops(paths)
     if not ops:
         raise ValueError("No matching operators to focus: %r" % (paths,))
-    ui = _get_ui()
-    pane = _network_editor_pane(ui) if ui is not None else None
-    if pane is None:
-        raise RuntimeError(
-            "No Network Editor pane available to focus (is TouchDesigner running with its UI?)."
-        )
+    pane = _resolve_pane()
     parent = ops[0].parent()
     if parent is not None:
         pane.owner = parent

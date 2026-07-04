@@ -146,21 +146,25 @@ def _grid_indices(count, size):
     return [min(size - 1, int((i + 0.5) / count * size)) for i in range(count)]
 
 
+def _column_values(samples, channel_index):
+    """Non-null samples for one channel across the whole grid."""
+    values = []
+    for row in samples:
+        for cell in row:
+            if channel_index < len(cell) and cell[channel_index] is not None:
+                values.append(cell[channel_index])
+    return values
+
+
+def _stat(values):
+    if not values:
+        return {"min": None, "max": None, "mean": None}
+    return {"min": min(values), "max": max(values), "mean": sum(values) / len(values)}
+
+
 def _channel_stats(samples):
     """Per-channel {min,max,mean} over the sampled grid, ignoring None (NaN/Inf)."""
-    stats = {}
-    for channel_index, key in enumerate(_CHANNELS):
-        values = [
-            cell[channel_index]
-            for row in samples
-            for cell in row
-            if channel_index < len(cell) and cell[channel_index] is not None
-        ]
-        if values:
-            stats[key] = {"min": min(values), "max": max(values), "mean": sum(values) / len(values)}
-        else:
-            stats[key] = {"min": None, "max": None, "mean": None}
-    return stats
+    return {key: _stat(_column_values(samples, index)) for index, key in enumerate(_CHANNELS)}
 
 
 def _grid_from_array(arr, n):
