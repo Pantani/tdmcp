@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { cosineSimilarity, embedTextsCached } from "../../knowledge/embeddings.js";
-import type { OperatorParameter, OperatorSummary } from "../../knowledge/types.js";
+import type {
+  KnowledgeDataVersion,
+  OperatorParameter,
+  OperatorSummary,
+} from "../../knowledge/types.js";
 import { loadConfig } from "../../utils/config.js";
 import { errorResult, structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -59,6 +63,9 @@ interface MatchedParameter {
   label?: string;
   type?: string;
   description?: string;
+  /** Menu options for a Menu/StrMenu parameter (the offline menu catalog). */
+  menuItems?: string[];
+  menuLabels?: string[];
 }
 
 type SearchOperatorHit = OperatorSummary & {
@@ -138,6 +145,8 @@ function matchingParameters(
       label: parameter.label,
       type: parameter.type ?? parameter.dataType,
       description: parameter.description,
+      ...(parameter.menuItems?.length ? { menuItems: parameter.menuItems } : {}),
+      ...(parameter.menuLabels?.length ? { menuLabels: parameter.menuLabels } : {}),
     }));
 }
 
@@ -293,11 +302,60 @@ function shouldUseSemantic(args: SearchOperatorsArgs): boolean {
   return args.semantic && args.type === "fuzzy";
 }
 
+/** Parses a major version (e.g. 2023) from a TouchDesigner version string. */
+function majorOf(version: string | undefined): number | undefined {
+  if (!version) return undefined;
+  const match = version.match(/\b(20\d{2}|099|99)\b/);
+  return match ? Number(match[1]) : undefined;
+}
+
+/**
+ * A staleness note when the live TD's major differs from the major the offline
+ * catalog was generated against — the menu options may have changed. Undefined when
+ * either major is unknown or they match.
+ */
+export function computeStaleHint(
+  dataMajor: number | undefined,
+  liveTdVersion: string | undefined,
+): string | undefined {
+  const liveMajor = majorOf(liveTdVersion);
+  if (dataMajor === undefined || liveMajor === undefined || dataMajor === liveMajor) {
+    return undefined;
+  }
+  return `The offline knowledge base reflects TouchDesigner ${dataMajor}, but the connected TouchDesigner is ${liveMajor}. Parameter menus may have changed — verify against the live operator with get_td_node_parameters.`;
+}
+
+interface MenuMeta {
+  data_version?: KnowledgeDataVersion;
+  stale_hint?: string;
+}
+
+/**
+ * Builds the menu-catalog provenance for the response: always the offline
+ * `data_version`, plus a `stale_hint` (best-effort, only when the caller asked for
+ * parameters) when a reachable live TD is on a different major version.
+ */
+async function buildMenuMeta(ctx: ToolContext, args: SearchOperatorsArgs): Promise<MenuMeta> {
+  const dataVersion = ctx.knowledge.dataVersion();
+  if (!dataVersion) return {};
+  if (!args.parameter_search) return { data_version: dataVersion };
+  try {
+    const info = await ctx.client.getInfo();
+    const staleHint = computeStaleHint(dataVersion.tdMajor, info.td_version);
+    return staleHint
+      ? { data_version: dataVersion, stale_hint: staleHint }
+      : { data_version: dataVersion };
+  } catch {
+    return { data_version: dataVersion }; // TD offline — provenance only, no staleness check
+  }
+}
+
 function resultPayload(
   args: SearchOperatorsArgs,
   report: SearchReport,
   operators: SearchOperatorHit[],
   mode: string,
+  menuMeta: MenuMeta = {},
 ) {
   return {
     query: args.query,
@@ -309,6 +367,8 @@ function resultPayload(
     operators,
     tips: report.tips,
     warnings: report.warnings,
+    ...(menuMeta.data_version ? { data_version: menuMeta.data_version } : {}),
+    ...(menuMeta.stale_hint ? { stale_hint: menuMeta.stale_hint } : {}),
   };
 }
 
@@ -347,6 +407,7 @@ export async function searchOperatorsImpl(ctx: ToolContext, rawArgs: SearchOpera
   // Keyword search always runs: it's the result in default mode and the candidate pool in
   // semantic mode (recall first, then embedding re-rank for precision).
   const report = searchOperators(ctx, args);
+  const menuMeta = await buildMenuMeta(ctx, args);
   const useSemantic = shouldUseSemantic(args);
   const poolSize = useSemantic ? Math.max(args.limit * 4, 40) : args.limit;
   const keyword = report.operators.slice(0, poolSize);
@@ -359,7 +420,7 @@ export async function searchOperatorsImpl(ctx: ToolContext, rawArgs: SearchOpera
       operators.length === 0 && report.tips.length > 0 ? ` Try: ${report.tips[0]}` : "";
     return structuredResult(
       `Found ${operators.length} operator(s) matching "${args.query}"${suffix}.${zeroTips}`,
-      resultPayload(args, report, operators, baseMode),
+      resultPayload(args, report, operators, baseMode, menuMeta),
     );
   }
 
@@ -377,13 +438,13 @@ export async function searchOperatorsImpl(ctx: ToolContext, rawArgs: SearchOpera
       .map((x) => x.o);
     return structuredResult(
       `Found ${operators.length} operator(s) for "${args.query}" (semantic re-rank of ${keyword.length} candidates).`,
-      resultPayload(args, report, operators, "semantic"),
+      resultPayload(args, report, operators, "semantic", menuMeta),
     );
   } catch (err) {
     const operators = keyword.slice(0, args.limit);
     return structuredResult(
       `Found ${operators.length} operator(s) matching "${args.query}" (semantic unavailable: ${String(err).slice(0, 80)}; using keyword ranking).`,
-      resultPayload(args, report, operators, "keyword_fallback"),
+      resultPayload(args, report, operators, "keyword_fallback", menuMeta),
     );
   }
 }
@@ -394,7 +455,7 @@ export const registerSearchOperators: ToolRegistrar = (server, ctx) => {
     {
       title: "Search operators",
       description:
-        "Search the embedded operator knowledge base (629 operators) by keyword, exact name, tag/keyword, category, subcategory, parameter metadata, or TouchDesigner version compatibility — ranked by relevance, fully offline by default. Use it to discover the right operator before creating nodes instead of guessing a type (e.g. 'what sends DMX?', 'particle', 'corner pin'). Returns name, family, summary, facets and optional matching parameters. Pass semantic:true to re-rank fuzzy candidates by embedding similarity (needs an LLM endpoint; falls back to keyword).",
+        "Search the embedded operator knowledge base (629 operators) by keyword, exact name, tag/keyword, category, subcategory, parameter metadata, or TouchDesigner version compatibility — ranked by relevance, fully offline by default. Use it to discover the right operator before creating nodes instead of guessing a type (e.g. 'what sends DMX?', 'particle', 'corner pin'). Returns name, family, summary, facets and optional matching parameters. Pass semantic:true to re-rank fuzzy candidates by embedding similarity (needs an LLM endpoint; falls back to keyword). With parameter_search, matched Menu parameters include their menu options; results are stamped with a data_version (which TouchDesigner build the offline catalog reflects) and a stale_hint when the connected TD is on a different major. Token economy: use a specific query and a small `limit`; one focused search beats several broad ones.",
       inputSchema: searchOperatorsSchema.shape,
       annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     },

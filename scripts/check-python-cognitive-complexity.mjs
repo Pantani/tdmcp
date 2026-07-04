@@ -44,6 +44,13 @@ function normalize(entry) {
   };
 }
 
+// Pin complexipy: uvx otherwise resolves the latest release at run time, and complexipy
+// 6.0.0 re-scored cognitive complexity upward, drifting every baseline entry at once (a
+// CI break unrelated to any diff). 5.6.1 is the newest release whose scores match the
+// committed baseline. Bump this deliberately + regenerate the baseline
+// (npm run complexity:cognitive:py:update) when upgrading.
+const COMPLEXIPY_SPEC = "complexipy==5.6.1";
+
 function collectViolations(threshold) {
   const dir = mkdtempSync(path.join(tmpdir(), "tdmcp-complexipy-"));
   const output = path.join(dir, "complexipy.json");
@@ -51,6 +58,8 @@ function collectViolations(threshold) {
     const result = spawnSync(
       "uvx",
       [
+        "--from",
+        COMPLEXIPY_SPEC,
         "complexipy",
         "td",
         "--max-complexity-allowed",

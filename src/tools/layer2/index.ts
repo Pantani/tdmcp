@@ -61,6 +61,7 @@ import { registerCreateXyPad } from "./createXyPad.js";
 import { registerDiagnoseTdabletonMapper } from "./diagnoseTdabletonMapper.js";
 import { registerDuplicateNetwork } from "./duplicateNetwork.js";
 import { registerExtendDataSourceFabric } from "./extendDataSourceFabric.js";
+import { registerFocusNetworkEditor } from "./focusNetworkEditor.js";
 import { registerLearnControl } from "./learnControl.js";
 import { registerManageAnnotation } from "./manageAnnotation.js";
 import { registerManageCheckpoint } from "./manageCheckpoint.js";
@@ -80,6 +81,7 @@ import { registerSetupSegmentation } from "./setupSegmentation.js";
 import { registerSyncTimecode } from "./syncTimecode.js";
 
 export const layer2Registrars: ToolRegistrar[] = [
+  registerFocusNetworkEditor,
   registerCreateNodeChain,
   registerConnectNodes,
   registerCreateGlslShader,

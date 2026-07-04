@@ -179,6 +179,29 @@ describe("getTutorialImpl", () => {
     expect(data.nextToolHints).toContain("search_touchdesigner_knowledge");
   });
 
+  it("lists sections_available and drills into one section on request", () => {
+    const dataDir = join(tempRoot(), "data");
+    writeTutorialFixture(dataDir);
+
+    const overview = getTutorialImpl(makeCtx(dataDir), {
+      name: "write_a_glsl_top",
+      include_content: true,
+    });
+    const overviewData = structured<{
+      tutorial: { sections_available?: string[]; content?: string };
+    }>(overview);
+    expect(overviewData.tutorial.sections_available).toContain("Build the shader");
+
+    const drilled = getTutorialImpl(makeCtx(dataDir), {
+      name: "write_a_glsl_top",
+      include_content: true,
+      section: "Build the shader",
+    });
+    const drilledData = structured<{ tutorial: { content?: string } }>(drilled);
+    expect(drilledData.tutorial.content).toContain("uniform float uTime");
+    expect(drilledData.tutorial.content).toContain("TDOutputSwizzle");
+  });
+
   it("searches structured tutorial section content and code blocks", () => {
     const dataDir = join(tempRoot(), "data");
     writeTutorialFixture(dataDir);

@@ -197,6 +197,12 @@ export const ConfigSchema = z.object({
    */
   rawPython: z.enum(["on", "off"]).default("on"),
   /**
+   * "YOLO" mode (`TDMCP_YOLO=1`): skip any interactive confirmation the bridge may
+   * add for destructive actions. No native dialogs exist yet, so today this only
+   * flows into result reporting; off by default so nothing is silently skipped.
+   */
+  yolo: z.preprocess(ragEnabledFlag, z.boolean().default(false)),
+  /**
    * Tool exposure profile. `full` (default) registers every tool; `safe`
    * additionally hides the destructive/raw-code tools (a superset of
    * TDMCP_RAW_PYTHON=off) so an autonomous in-TD agent (e.g. via LOPs) gets a
@@ -211,6 +217,15 @@ export const ConfigSchema = z.object({
    * environment (`TDMCP_BRIDGE_TOKEN`) to turn enforcement on.
    */
   bridgeToken: z.string().min(1).optional(),
+  /**
+   * Optional bearer token that the Streamable HTTP transport requires on every
+   * request (`Authorization: Bearer <token>`). Acts as the enforcement half of an
+   * MCP OAuth2 Resource Server: when set, missing/invalid credentials get a 401 with
+   * a `WWW-Authenticate: Bearer` challenge. Unset (default) keeps the zero-config
+   * local flow open. The HTTP transport binds loopback only, so this matters when
+   * the server is fronted by a proxy or bound to a LAN interface.
+   */
+  httpAuthToken: z.string().min(1).optional(),
   /**
    * Base URL of an OpenAI-compatible chat endpoint used by `tdmcp chat` (the local
    * LLM copilot). Defaults to Ollama's local server. Point it at LM Studio, a cloud
@@ -433,8 +448,10 @@ function envValues(env: NodeJS.ProcessEnv): Record<string, unknown> {
     httpPort: env.TDMCP_HTTP_PORT,
     events: env.TDMCP_EVENTS,
     rawPython: env.TDMCP_RAW_PYTHON,
+    yolo: env.TDMCP_YOLO,
     toolProfile: env.TDMCP_TOOL_PROFILE,
     bridgeToken: env.TDMCP_BRIDGE_TOKEN || undefined,
+    httpAuthToken: env.TDMCP_HTTP_AUTH_TOKEN || undefined,
     llmBaseUrl: env.TDMCP_LLM_BASE_URL,
     llmModel: env.TDMCP_LLM_MODEL,
     llmApiKey: env.TDMCP_LLM_API_KEY || undefined,
@@ -577,6 +594,7 @@ export function loadConfig(
 /** Sensitive keys redacted by {@link describeConfig} for safe printing/sharing. */
 const SECRET_KEYS: ReadonlyArray<keyof LoadedTdmcpConfig> = [
   "bridgeToken",
+  "httpAuthToken",
   "llmApiKey",
   "telegramBotToken",
   "telegramAllowedChats",

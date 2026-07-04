@@ -50,6 +50,60 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Patterns inspired by Derivative's official TouchDesigner TDMCP ("Address Scope";
   CHANGELOG 1.1.46, browser-driven-request blocking) under the Shared Use License;
   reimplemented independently in our Python bridge.
+- Idempotent node creation: `create_td_node` / `create_node_chain` now reuse an
+  operator that already exists at the target path with the same name and type
+  (reported as `already_existed: true`) instead of failing or auto-renaming, so
+  agent retries are safe. A name collision with a _different_ type stays an
+  explicit error.
+- Automatic undo blocks: every mutating bridge request is wrapped in one
+  TouchDesigner `ui.undo` block, so the artist can Ctrl+Z a whole agent action in
+  a single step.
+- Menu parameter validation: setting a fixed-Menu parameter to an unknown value
+  (which TouchDesigner would silently coerce to index 0) now returns an explicit
+  error listing the valid menu entries, across `update_td_node_parameters`,
+  `set_parameters_batch`, and `set_parameter_expression`.
+- `get_preview` gains a `sample_grid` option (2–16): return an N×N grid of RGBA
+  samples plus per-channel min/max/mean stats as JSON — a 10–50× cheaper way to
+  check whether a TOP's output is alive than encoding a full image. NaN/Inf from
+  HDR TOPs are sanitized to null.
+- `get_preview` gains `pre_pulses` (pulse parameters in the same frame just
+  before capture, validated all-or-nothing) and `delay_frames` (defer the capture
+  and collect it later by `job_id`), so transient events can be captured reliably.
+- `arrange_network` and the shared layout path now move each node's docked DATs
+  by the same delta as the node (`include_docked`, default on), mimicking an
+  interactive drag.
+- Token-economy guidance added to the most-used read tools and the server's
+  `initialize` instructions.
+- `delete_td_node` gains a `mode`: `bypass` disables an operator (reversible)
+  instead of destroying it, a safer middle ground; `delete` stays the default.
+  `TDMCP_YOLO=1` is surfaced in result reporting for future confirmation gates.
+- Bridge back-pressure: after a request runs slower than
+  `TDMCP_SLOW_THRESHOLD_MS` (default 5000), subsequent requests are shed with
+  HTTP 503 + `retry_after` for a `TDMCP_COOLDOWN_MS` window (default 2000) so
+  TouchDesigner's cook loop can recover; the client surfaces this as a typed,
+  retryable `TdBackpressureError`.
+- Streamable HTTP transport hardening: reject a present, non-loopback `Origin`
+  with 403 (anti DNS-rebinding, alongside the existing Host allowlist) and a POST
+  with a non-JSON `Content-Type` with 415.
+- `get_tutorial` splits large documents into sections: with `include_content` the
+  body is capped (~30K chars, truncated at a line boundary) and comes with a
+  `sections_available` list; pass a `section` title to return just that part.
+- `search_operators` now surfaces the offline menu catalog (menu options on
+  matched Menu parameters) and stamps results with a `data_version` (which
+  TouchDesigner build the data reflects) plus a `stale_hint` when a connected
+  TouchDesigner reports a different major version.
+- `focus_network_editor` (Layer 2): pan/zoom TouchDesigner's Network Editor to
+  frame given operators — a "follow" move so the artist sees what the agent just
+  built. UI-only; new `POST /api/editor/focus` bridge endpoint.
+- OAuth-style bearer auth on the Streamable HTTP transport: set
+  `TDMCP_HTTP_AUTH_TOKEN` to require `Authorization: Bearer <token>` on every
+  request; missing/invalid credentials get a 401 with a `WWW-Authenticate: Bearer`
+  challenge (the enforcement half of an MCP OAuth2 Resource Server). Off by default.
+- `npm run smoke`: an offline smoke harness that boots the server, completes a real
+  in-memory MCP handshake, and verifies the tool surface + graceful offline
+  degradation without a running TouchDesigner.
+- `npm run contract:gen`: export a portable "skill contract" — a host-agnostic JSON
+  snapshot of every tool (name, description, JSON-Schema inputs) + prompts.
 
 ## [0.11.0] - 2026-06-25
 

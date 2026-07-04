@@ -49,3 +49,6 @@ docs/reference/tools.md
 # External Shader Park TouchDesigner plugin fetched on demand by
 # `npm run shader-park:tox`; do not vendor release binaries into source.
 vendor/shader-park/*.tox
+
+# Generated portable tool contract (npm run contract:gen)
+skill-contract.json

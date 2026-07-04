@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { type Logger, silentLogger } from "../utils/logger.js";
 import { bottobotPackageDir, knowledgeDataDir } from "../utils/paths.js";
 import {
@@ -14,6 +14,7 @@ import {
 import type {
   GlslSummary,
   GlslTechnique,
+  KnowledgeDataVersion,
   KnowledgeStats,
   OperatorCodeExample,
   OperatorConnectionEntry,
@@ -174,6 +175,7 @@ export class KnowledgeBase {
 
   private opIndexCache?: OperatorSummary[];
   private opLookupCache?: Map<string, string>;
+  private dataVersionCache?: KnowledgeDataVersion | null;
   private readonly opDocCache = new Map<string, OperatorDoc | null>();
   private pyIndexCache?: PythonClassSummary[];
   private pyLookupCache?: Map<string, string>;
@@ -829,6 +831,46 @@ export class KnowledgeBase {
     if (order.length === 0) return manifest.versions;
     const byId = new Map(manifest.versions.map((version) => [version.id, version]));
     return order.map((id) => byId.get(id)).filter((v): v is TdVersionInfo => Boolean(v));
+  }
+
+  /** The newest TouchDesigner version the knowledge base knows about (by major, then id). */
+  newestTdVersion(): TdVersionInfo | undefined {
+    const versions = this.listTdVersions();
+    if (versions.length === 0) return undefined;
+    return versions.reduce((best, current) => {
+      const bestMajor = best.majorVersion ?? 0;
+      const curMajor = current.majorVersion ?? 0;
+      if (curMajor > bestMajor) return current;
+      if (curMajor === bestMajor && (current.id ?? "") > (best.id ?? "")) return current;
+      return best;
+    });
+  }
+
+  /**
+   * Provenance of the offline knowledge base — which importer/version generated it,
+   * when, and the newest TouchDesigner build it reflects — so a tool can stamp
+   * results with a `data_version` and warn when a live TD is on a different major.
+   */
+  dataVersion(): KnowledgeDataVersion | undefined {
+    if (this.dataVersionCache !== undefined) return this.dataVersionCache ?? undefined;
+    this.dataVersionCache = this.readDataVersion() ?? null;
+    return this.dataVersionCache ?? undefined;
+  }
+
+  private readDataVersion(): KnowledgeDataVersion | undefined {
+    if (this.source.kind === "empty") return undefined;
+    const metaPath = join(dirname(this.source.operatorsDir), "meta.json");
+    if (!existsSync(metaPath)) return undefined;
+    const meta = this.readJson(metaPath) as Record<string, unknown> | undefined;
+    if (!meta) return undefined;
+    const newest = this.newestTdVersion();
+    return {
+      source: typeof meta.source === "string" ? meta.source : "unknown",
+      sourceVersion: typeof meta.bottobotVersion === "string" ? meta.bottobotVersion : undefined,
+      importedAt: typeof meta.importedAt === "string" ? meta.importedAt : undefined,
+      tdVersion: newest?.id,
+      tdMajor: newest?.majorVersion,
+    };
   }
 
   getTdVersion(versionOrAlias: string): TdVersionInfo | undefined {

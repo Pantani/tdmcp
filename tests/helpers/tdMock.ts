@@ -95,12 +95,34 @@ export const tdHandlers = [
     });
   }),
 
-  http.delete(`${TD_BASE}/api/nodes/:seg`, ({ params }) => ok({ deleted: seg(params) })),
+  http.delete(`${TD_BASE}/api/nodes/:seg`, ({ params, request }) => {
+    const mode = new URL(request.url).searchParams.get("mode") ?? "delete";
+    if (mode === "bypass") return ok({ bypassed: seg(params), mode: "bypass" });
+    return ok({ deleted: seg(params), mode: "delete" });
+  }),
 
   http.post(`${TD_BASE}/api/exec`, () => ok({ result: null, stdout: "" })),
 
   http.get(`${TD_BASE}/api/preview/:seg`, ({ params, request }) => {
     const url = new URL(request.url);
+    const gridParam = url.searchParams.get("sample_grid");
+    if (gridParam) {
+      const n = Number(gridParam);
+      const row = Array.from({ length: n }, () => [0.5, 0.25, 0.75, 1]);
+      return ok({
+        path: seg(params),
+        width: 128,
+        height: 72,
+        grid: n,
+        samples: Array.from({ length: n }, () => row.map((c) => [...c])),
+        stats: {
+          r: { min: 0.5, max: 0.5, mean: 0.5 },
+          g: { min: 0.25, max: 0.25, mean: 0.25 },
+          b: { min: 0.75, max: 0.75, mean: 0.75 },
+          a: { min: 1, max: 1, mean: 1 },
+        },
+      });
+    }
     return ok({
       path: seg(params),
       width: Number(url.searchParams.get("width") ?? 640),
@@ -109,6 +131,49 @@ export const tdHandlers = [
       base64:
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
     });
+  }),
+
+  http.post(`${TD_BASE}/api/preview/:seg`, async ({ params, request }) => {
+    const body = (await request.json()) as {
+      delay_frames?: number;
+      sample_grid?: number;
+    };
+    if (body.delay_frames) {
+      return ok({
+        status: "capturing",
+        job_id: "job-1",
+        delay_frames: body.delay_frames,
+        wait_ms: 100,
+      });
+    }
+    return ok({
+      path: seg(params),
+      width: 320,
+      height: 180,
+      format: "png",
+      base64:
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+    });
+  }),
+
+  http.get(`${TD_BASE}/api/preview_job/:seg`, ({ params }) =>
+    ok({
+      status: "ready",
+      job_id: seg(params),
+      preview: {
+        path: "/project1/out1",
+        width: 320,
+        height: 180,
+        format: "png",
+        base64:
+          "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+      },
+    }),
+  ),
+
+  http.post(`${TD_BASE}/api/editor/focus`, async ({ request }) => {
+    const body = (await request.json()) as { paths: string[]; animate?: boolean };
+    return ok({ focused: body.paths, pane: "pane1", animate: body.animate ?? true });
   }),
 
   http.post(`${TD_BASE}/api/batch`, async ({ request }) => {

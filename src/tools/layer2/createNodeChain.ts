@@ -29,6 +29,14 @@ interface CreatedNode {
   path: string;
   type: string;
   name: string;
+  already_existed?: boolean;
+}
+
+/** Parenthetical note when some nodes were reused rather than freshly created. */
+function reusedNote(created: CreatedNode[]): string {
+  const reused = created.filter((c) => c.already_existed).length;
+  if (reused === 0) return "";
+  return ` (${reused} already existed and ${reused === 1 ? "was" : "were"} reused)`;
 }
 
 export async function createNodeChainImpl(
@@ -56,6 +64,7 @@ export async function createNodeChainImpl(
         path: ref.path,
         type: ref.type || node.type,
         name: ref.name || node.name || "",
+        already_existed: ref.already_existed,
       });
     } catch (err) {
       return errorResult(
@@ -103,7 +112,7 @@ export async function createNodeChainImpl(
   }
 
   return jsonResult(
-    `Created ${created.length} node(s) and ${connections.length} connection(s) under ${args.parent_path}.`,
+    `Created ${created.length} node(s)${reusedNote(created)} and ${connections.length} connection(s) under ${args.parent_path}.`,
     { created, connections, warnings },
   );
 }

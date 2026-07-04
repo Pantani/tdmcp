@@ -1,10 +1,12 @@
 import type { z } from "zod";
 import { type Logger, silentLogger } from "../utils/logger.js";
-import { TdApiError, TdConnectionError, TdTimeoutError } from "./types.js";
+import { TdApiError, TdBackpressureError, TdConnectionError, TdTimeoutError } from "./types.js";
 import {
+  AdvancedCaptureSchema,
   ApiEnvelopeSchema,
   BatchResultSchema,
   BridgeLogsSchema,
+  type CaptureAdvancedInput,
   ConnectResultSchema,
   type CreateNodeInput,
   CreateNodeInputSchema,
@@ -13,6 +15,7 @@ import {
   DatTextWriteSchema,
   DeleteResultSchema,
   DisconnectResultSchema,
+  EditorFocusSchema,
   ExecResultSchema,
   InfoSchema,
   MethodResultSchema,
@@ -24,9 +27,11 @@ import {
   ParamModesSchema,
   PerformanceSchema,
   PerformModeStateSchema,
+  PreviewJobSchema,
   PreviewSchema,
   ProjectAnalysisSchema,
   ProjectLoadSchema,
+  SampleGridSchema,
   SetParamModeResultSchema,
   SystemInfoSchema,
   type TdBatchOperation,
@@ -77,6 +82,41 @@ function extractErrorMessage(json: unknown): string | undefined {
     if (typeof obj.message === "string") return obj.message;
   }
   return undefined;
+}
+
+/** Reads the bridge's `error.retry_after` (seconds) from a 503 body, if present. */
+function readRetryAfterSeconds(json: unknown): number | undefined {
+  if (!json || typeof json !== "object") return undefined;
+  const error = (json as Record<string, unknown>).error;
+  if (!error || typeof error !== "object") return undefined;
+  const value = (error as Record<string, unknown>).retry_after;
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+/** Resolves a retry delay (ms) for a 503 from the body's retry_after or a default. */
+function extractRetryAfterMs(json: unknown): number {
+  const seconds = readRetryAfterSeconds(json);
+  if (seconds !== undefined) return Math.max(0, Math.round(seconds * 1000));
+  return 2000;
+}
+
+/** Throws the right typed error for a non-2xx response (backpressure 503 vs generic API error). */
+function throwForHttpError(response: Response, json: unknown, method: string, path: string): void {
+  if (response.status === 503) {
+    const retryAfterMs = extractRetryAfterMs(json);
+    throw new TdBackpressureError(
+      extractErrorMessage(json) ??
+        `TouchDesigner is busy (HTTP 503) for ${method} ${path}; retry in ~${retryAfterMs}ms.`,
+      { retryAfterMs },
+    );
+  }
+  if (!response.ok) {
+    throw new TdApiError(
+      extractErrorMessage(json) ??
+        `TouchDesigner bridge returned HTTP ${response.status} for ${method} ${path}.`,
+      { status: response.status },
+    );
+  }
 }
 
 /** Encodes a TD node path (which contains slashes) into a single URL segment. */
@@ -273,12 +313,7 @@ export class TouchDesignerClient {
       }
     }
 
-    if (!response.ok) {
-      const message =
-        extractErrorMessage(json) ??
-        `TouchDesigner bridge returned HTTP ${response.status} for ${method} ${path}.`;
-      throw new TdApiError(message, { status: response.status });
-    }
+    throwForHttpError(response, json, method, path);
 
     const envelope = ApiEnvelopeSchema.safeParse(json);
     if (!envelope.success) {
@@ -311,8 +346,10 @@ export class TouchDesignerClient {
     return this.request("POST", "/api/nodes", NodeRefSchema, CreateNodeInputSchema.parse(input));
   }
 
-  deleteNode(path: string) {
-    return this.request("DELETE", `/api/nodes/${segment(path)}`, DeleteResultSchema);
+  deleteNode(path: string, mode: "delete" | "bypass" = "delete") {
+    return this.request("DELETE", `/api/nodes/${segment(path)}`, DeleteResultSchema, undefined, {
+      mode,
+    });
   }
 
   getNodes(parentPath?: string) {
@@ -362,6 +399,30 @@ export class TouchDesignerClient {
       width,
       height,
     });
+  }
+
+  sampleGrid(path: string, grid: number) {
+    return this.request("GET", `/api/preview/${segment(path)}`, SampleGridSchema, undefined, {
+      sample_grid: grid,
+    });
+  }
+
+  captureAdvanced(path: string, opts: CaptureAdvancedInput) {
+    return this.request("POST", `/api/preview/${segment(path)}`, AdvancedCaptureSchema, {
+      width: opts.width,
+      height: opts.height,
+      sample_grid: opts.sampleGrid,
+      pre_pulses: opts.prePulses,
+      delay_frames: opts.delayFrames,
+    });
+  }
+
+  collectPreviewJob(jobId: string) {
+    return this.request("GET", `/api/preview_job/${segment(jobId)}`, PreviewJobSchema);
+  }
+
+  focusEditor(paths: string[], animate: boolean) {
+    return this.request("POST", "/api/editor/focus", EditorFocusSchema, { paths, animate });
   }
 
   batch(operations: TdBatchOperation[]) {

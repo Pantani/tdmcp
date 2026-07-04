@@ -2996,8 +2996,10 @@ const ENV_NAMES: Record<keyof TdmcpConfig, string> = {
   httpPort: "TDMCP_HTTP_PORT",
   events: "TDMCP_EVENTS",
   rawPython: "TDMCP_RAW_PYTHON",
+  yolo: "TDMCP_YOLO",
   toolProfile: "TDMCP_TOOL_PROFILE",
   bridgeToken: "TDMCP_BRIDGE_TOKEN",
+  httpAuthToken: "TDMCP_HTTP_AUTH_TOKEN",
   llmBaseUrl: "TDMCP_LLM_BASE_URL",
   llmModel: "TDMCP_LLM_MODEL",
   llmApiKey: "TDMCP_LLM_API_KEY",
@@ -3044,6 +3046,7 @@ const ENV_NAMES: Record<keyof TdmcpConfig, string> = {
 };
 const SECRET_ENV: ReadonlySet<keyof TdmcpConfig> = new Set([
   "bridgeToken",
+  "httpAuthToken",
   "llmApiKey",
   "telegramBotToken",
   "telegramAllowedChats",
@@ -3892,7 +3895,8 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
     }
     const raw = assembled.raw;
     if (positionals[1]) raw.node_path = positionals[1];
-    const parsed = getPreviewSchema.safeParse(raw);
+    // The CLI always captures (never collects a deferred job), so node_path is required.
+    const parsed = getPreviewSchema.required({ node_path: true }).safeParse(raw);
     if (!parsed.success) {
       return {
         stdout: "",

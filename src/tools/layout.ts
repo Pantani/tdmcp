@@ -121,16 +121,34 @@ export function computeLayoutByParent(
  * Builds a Python snippet that writes `nodeX`/`nodeY` for each path. The position
  * map is JSON-encoded (a valid Python literal for this string/number subset) and
  * applied defensively, so a stale path can't abort the rest of the batch.
+ *
+ * When `includeDocked` (default), each node's docked DATs — e.g. a GLSL TOP's
+ * `*_pixel` DAT or a COMP's callbacks DAT — are shifted by the SAME delta the node
+ * moved, mimicking an interactive drag (programmatic nodeX/nodeY writes otherwise
+ * leave docked DATs stranded at their old spot).
  */
-export function layoutScript(positions: Positions): string {
-  return [
+export function layoutScript(positions: Positions, includeDocked = true): string {
+  const lines = [
     `_pos = ${JSON.stringify(positions)}`,
     "for _p, _xy in _pos.items():",
     "    _n = op(_p)",
     "    if _n is not None:",
-    "        _n.nodeX = _xy[0]",
-    "        _n.nodeY = _xy[1]",
-  ].join("\n");
+  ];
+  if (includeDocked) {
+    lines.push("        _dx = _xy[0] - _n.nodeX", "        _dy = _xy[1] - _n.nodeY");
+  }
+  lines.push("        _n.nodeX = _xy[0]", "        _n.nodeY = _xy[1]");
+  if (includeDocked) {
+    lines.push(
+      "        for _d in getattr(_n, 'docked', []) or []:",
+      "            try:",
+      "                _d.nodeX += _dx",
+      "                _d.nodeY += _dy",
+      "            except Exception:",
+      "                pass",
+    );
+  }
+  return lines.join("\n");
 }
 
 /**

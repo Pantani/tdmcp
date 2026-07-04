@@ -38,6 +38,21 @@ export class TdApiError extends TdError {
   }
 }
 
+/**
+ * The bridge is shedding load (HTTP 503) after a slow request so TouchDesigner's
+ * cook loop can recover. Retryable: wait `retryAfterMs` and try again.
+ */
+export class TdBackpressureError extends TdError {
+  readonly retryAfterMs: number;
+  readonly retryable = true;
+
+  constructor(message: string, options: { retryAfterMs: number; cause?: unknown }) {
+    super(message, "TD_BACKPRESSURE", options);
+    this.name = "TdBackpressureError";
+    this.retryAfterMs = options.retryAfterMs;
+  }
+}
+
 /** Produces a human-friendly, single-line description of any error. */
 export function friendlyTdError(err: unknown): string {
   if (err instanceof TdError) return err.message;

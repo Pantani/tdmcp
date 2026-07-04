@@ -21,6 +21,8 @@ import math
 
 import td
 
+from mcp.services import api_service
+
 # TouchDesigner injects globals (op, ParMode, operator classes) only into
 # DAT/Textport scope, not into imported modules — so reach them via `td`.
 op = td.op
@@ -188,12 +190,20 @@ def _write_param_mode(par, param, norm, mode_cls, expr=None, value=None):
         par.mode = mode_cls.BIND
         return
     if norm == "constant":
-        if value is None:
-            raise ValueError("value is required for mode 'constant' (param %s)" % param)
-        par.val = value
-        par.mode = mode_cls.CONSTANT
+        _write_constant(par, param, value, mode_cls)
         return
     raise ValueError("Unknown mode %r (expected expression|bind|constant)" % norm)
+
+
+def _write_constant(par, param, value, mode_cls):
+    """Set a parameter to a constant value, rejecting invalid fixed-Menu values."""
+    if value is None:
+        raise ValueError("value is required for mode 'constant' (param %s)" % param)
+    menu_err = api_service.menu_value_error(par, value)
+    if menu_err is not None:
+        raise ValueError("Invalid value for %s: %s" % (param, menu_err))
+    par.val = value
+    par.mode = mode_cls.CONSTANT
 
 
 def _readback_expr(par, norm):
