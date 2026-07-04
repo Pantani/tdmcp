@@ -1,6 +1,6 @@
 {
   "name": "tdmcp",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "Connect Claude Code to TouchDesigner through the tdmcp Model Context Protocol server.",
   "author": {
     "name": "Pantani",
@@ -20,7 +20,7 @@
   "mcpServers": {
     "tdmcp": {
       "command": "npx",
-      "args": ["--yes", "--package=@dpantani/tdmcp@0.11.0", "tdmcp"],
+      "args": ["--yes", "--package=@dpantani/tdmcp@0.12.0", "tdmcp"],
       "env": {
         "TDMCP_TRANSPORT": "stdio",
         "TDMCP_RAW_PYTHON": "off",
