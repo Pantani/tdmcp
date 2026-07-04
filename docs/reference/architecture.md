@@ -140,10 +140,16 @@ The TouchDesigner bridge runs **arbitrary Python inside your TD process** — th
 is what lets the assistant build networks for you. Treat it like an open door to
 the machine TD runs on:
 
-- **The Web Server DAT listens on its port (default `9980`) on all network
-  interfaces.** Anyone who can reach `http://<your-ip>:9980` can run code on that
-  machine. Only run it on a trusted network, and/or firewall the port to
-  localhost.
+- **The Web Server DAT binds its port (default `9980`) on all interfaces, but the
+  bridge is loopback-only by default.** A request from a non-loopback peer address
+  is rejected immediately (HTTP `403`), **before** routing, authentication, or any
+  tool runs, so reaching the port from another machine is not enough to drive it.
+  To expose the bridge to a LAN, set `TDMCP_BRIDGE_ALLOW_LAN=1` in TouchDesigner's
+  environment (also accepts `true`/`yes`/`on`) — and pair it with
+  `TDMCP_BRIDGE_TOKEN`. Even then, only run it on a trusted network and/or firewall
+  the port. (Some TouchDesigner builds don't surface the peer address to the
+  callback; where that's the case the `Origin`/`Host` guards below are the
+  defense.)
 - **Turn on bridge auth for untrusted networks:** set `TDMCP_BRIDGE_TOKEN` to a
   shared secret in **both** the server's environment and TouchDesigner's
   environment. The bridge then rejects any request without a matching
@@ -159,9 +165,12 @@ the machine TD runs on:
 - The MCP server binds to loopback (`127.0.0.1`) for both transports and enables
   DNS-rebinding protection on HTTP.
 - **The bridge refuses browser cross-origin requests.** Any request carrying an
-  `Origin` header that isn't loopback is rejected (HTTP `403`), so a malicious web
-  page can't quietly POST to the bridge (CSRF / DNS-rebinding → drive-by code
-  execution). The MCP server sends no `Origin`, so normal use is unaffected.
+  `Origin` header that isn't loopback is rejected (HTTP `403`), and a
+  `POST`/`PATCH`/`PUT` whose `Content-Type` is present but not `application/json`
+  is rejected too — that blocks the simple cross-site form/`fetch` POSTs a
+  malicious web page could aim at the bridge (CSRF / DNS-rebinding → drive-by code
+  execution). The MCP server sends no `Origin` and always uses
+  `application/json`, so normal use is unaffected.
 - **The local copilot chat UI (`tdmcp chat`) applies the same guard.** It binds to
   loopback and rejects (HTTP `403`) any request whose `Host` or `Origin` isn't a
   loopback name, so a page the artist visits can't drive node CRUD against the live

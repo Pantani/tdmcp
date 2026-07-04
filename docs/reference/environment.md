@@ -94,6 +94,7 @@ depth — they are enforced bridge-side, even for direct network callers. See
 
 | Variable | Default | Description |
 | --- | --- | --- |
+| `TDMCP_BRIDGE_ALLOW_LAN` | _(unset)_ | Bridge address scope. The bridge is loopback-only by default and refuses off-host (non-loopback) peers immediately (HTTP `403`), before routing/auth. Set to `1`/`true`/`on` in TouchDesigner's environment to allow LAN peers; pair it with `TDMCP_BRIDGE_TOKEN`. |
 | `TDMCP_BRIDGE_ALLOW_EXEC` | _(unset)_ | Optional bridge-side opt-in. Set to `1`/`true`/`on` in TouchDesigner's environment to allow arbitrary-code endpoints (`/api/exec`, node `method`) when no bridge token is configured. Leave unset for the safer default; structured endpoints keep working. |
 | `TDMCP_BRIDGE_TOKEN` | _(unset)_ | Shared bearer token; must match the server's value to authorize requests. |
 

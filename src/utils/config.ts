@@ -172,6 +172,20 @@ export const ConfigSchema = z.object({
   logLevel: z.enum(["debug", "info", "warn", "error", "silent"]).default("info"),
   /** Per-request timeout against the TD bridge, in milliseconds. */
   requestTimeoutMs: z.coerce.number().int().positive().default(10000),
+  /**
+   * Rate-limit slow-call threshold, in milliseconds. When a tool call's
+   * wall-clock duration exceeds this, the NEXT tool call waits out
+   * `rateLimitCooldownMs`. `0` (default) DISABLES the gate entirely; both this
+   * and `rateLimitCooldownMs` must be > 0 to activate. Pattern inspired by
+   * Derivative's official TouchDesigner TDMCP request_gate.py (Shared Use License).
+   */
+  rateLimitSlowMs: z.coerce.number().int().nonnegative().default(0),
+  /**
+   * Cooldown imposed before the next tool call after a slow call, in
+   * milliseconds. Only applied when `rateLimitSlowMs > 0`. `0` (default)
+   * DISABLES the gate.
+   */
+  rateLimitCooldownMs: z.coerce.number().int().nonnegative().default(0),
   /** HTTP transport port (only used when transport=http). */
   httpPort: z.coerce.number().int().positive().max(65535).default(3939),
   /** Subscribe to TD WebSocket events and forward them as MCP logging notifications. */
@@ -414,6 +428,8 @@ function envValues(env: NodeJS.ProcessEnv): Record<string, unknown> {
     transport: env.TDMCP_TRANSPORT,
     logLevel: env.TDMCP_LOG_LEVEL,
     requestTimeoutMs: env.TDMCP_REQUEST_TIMEOUT_MS,
+    rateLimitSlowMs: env.TDMCP_RATE_LIMIT_SLOW_MS,
+    rateLimitCooldownMs: env.TDMCP_RATE_LIMIT_COOLDOWN_MS,
     httpPort: env.TDMCP_HTTP_PORT,
     events: env.TDMCP_EVENTS,
     rawPython: env.TDMCP_RAW_PYTHON,

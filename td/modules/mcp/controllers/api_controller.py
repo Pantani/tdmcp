@@ -67,6 +67,24 @@ def _exec_allowed():
     return raw.strip().lower() in ("1", "true", "yes", "on")
 
 
+def _lan_exposure_enabled():
+    """Whether the bridge accepts requests from OFF-HOST (non-loopback) peers.
+
+    Default-DENY. The WebServer DAT binds all interfaces, so without this gate any
+    machine that can reach :9980 could drive the bridge — and under the default
+    zero-auth + exec config that is drive-by remote code execution. We refuse a
+    non-loopback peer address at the earliest point in the request handler, BEFORE
+    routing, authentication, or any tool runs, unless the operator explicitly opts
+    into LAN exposure by setting `TDMCP_BRIDGE_ALLOW_LAN` to 1/true/yes/on in that
+    TouchDesigner's environment (documented for trusted networks, ideally paired
+    with `TDMCP_BRIDGE_TOKEN`). Mirrors the official TDMCP "Address Scope" gate.
+    """
+    raw = os.environ.get("TDMCP_BRIDGE_ALLOW_LAN")
+    if raw is None:
+        return False
+    return raw.strip().lower() in ("1", "true", "yes", "on")
+
+
 def _quarantine_load_enabled():
     """Whether `POST /api/project/load` may open an artifact in THIS instance.
 
@@ -124,6 +142,126 @@ def _check_auth(request):
 
 
 _LOOPBACK_HOSTS = ("127.0.0.1", "localhost", "::1")
+
+# Request-meta keys under which TD builds surface the connecting peer's address.
+# It is NOT an HTTP header (a client cannot forge it), so it is looked up
+# separately from `_find_header`. Builds vary in the exact spelling, so we scan a
+# small allowlist and normalize IPv6 / IPv4-mapped forms before comparing.
+_CLIENT_ADDRESS_KEYS = (
+    "clientAddress",
+    "client-address",
+    "clientaddress",
+    "client_address",
+    "remoteAddress",
+    "remote-address",
+    "remote_address",
+    "peerAddress",
+    "peer_address",
+)
+
+
+def _normalize_address(addr):
+    """Reduce a raw peer address to a bare host for loopback comparison.
+
+    Strips an IPv6 zone id (`fe80::1%en0` -> `fe80::1`), brackets (`[::1]` ->
+    `::1`), and the IPv4-mapped IPv6 prefix (`::ffff:127.0.0.1` -> `127.0.0.1`).
+    A `host:port` pair is left alone unless it is an unambiguous IPv4 `a.b.c.d:p`,
+    whose port we drop; bare IPv6 (many colons) is never split.
+    """
+    if not isinstance(addr, str):
+        return None
+    value = addr.strip()
+    if not value:
+        return None
+    value = value.strip("[]")
+    if value.startswith("::ffff:") and "." in value:
+        value = value[len("::ffff:") :]
+    value = value.split("%", 1)[0]
+    # Drop a trailing :port only for plain IPv4 (single colon, dotted quad).
+    if value.count(":") == 1 and "." in value.split(":", 1)[0]:
+        value = value.split(":", 1)[0]
+    return value or None
+
+
+def _client_address(request):
+    """Return the connecting peer's address from the request meta, or None.
+
+    Scans the small allowlist of build-specific keys (top level and one nesting
+    level, mirroring `_find_header`'s defensiveness). Returns None when the build
+    does not surface a peer address at all, in which case the caller falls back to
+    the Origin/Host header guards rather than failing open on address scope.
+    """
+    if not isinstance(request, dict):
+        return None
+
+    def scan(node, depth=0):
+        if not isinstance(node, dict) or depth > 2:
+            return None
+        for key in _CLIENT_ADDRESS_KEYS:
+            if key in node:
+                normalized = _normalize_address(node[key])
+                if normalized:
+                    return normalized
+        for nested in ("headers", "header", "fields", "meta"):
+            sub = node.get(nested)
+            hit = scan(sub, depth + 1) if isinstance(sub, dict) else None
+            if hit is not None:
+                return hit
+        return None
+
+    return scan(request)
+
+
+def _check_address_scope(request):
+    """Reject off-host (non-loopback) peers unless LAN exposure is opted in.
+
+    This is the network-layer "Address Scope" gate: it runs FIRST in `handle`,
+    before origin/host/auth/routing, so an off-host request is refused immediately
+    and never reaches a tool. Enforced on the peer address (which a caller cannot
+    forge), independent of the bearer token — even an authenticated remote caller
+    is refused unless `TDMCP_BRIDGE_ALLOW_LAN` is set, because binding all
+    interfaces without an explicit opt-in is the known drive-by-RCE risk. When the
+    TD build does not surface a peer address the check is a no-op and the
+    Origin/Host header guards remain the defense.
+    """
+    if _lan_exposure_enabled():
+        return  # operator opted into LAN exposure
+    address = _client_address(request)
+    if address is None:
+        return  # build doesn't expose a peer address; header guards apply
+    if address not in _LOOPBACK_HOSTS:
+        raise _Forbidden(
+            "Forbidden: off-host request from %r rejected. The bridge is "
+            "loopback-only by default; set TDMCP_BRIDGE_ALLOW_LAN=1 in "
+            "TouchDesigner's environment to allow LAN access." % address
+        )
+
+
+_JSON_CONTENT_TYPES = ("application/json",)
+
+
+def _check_content_type(request):
+    """Reject a POST/PATCH/PUT body whose Content-Type is present but not JSON.
+
+    Simple cross-site form/`fetch` POSTs from a browser carry a non-JSON
+    `Content-Type` (text/plain, application/x-www-form-urlencoded, multipart/*) —
+    exactly the "simple request" set that skips a CORS preflight. The Node client
+    always sends `application/json`, so a body with a present-but-non-JSON type can
+    only be a cross-site attempt to drive the exec surface. Refuse it. A missing
+    Content-Type (older TD builds, GETs) is allowed, mirroring the Origin guard's
+    fail-safe-not-open posture; parameters like `; charset=utf-8` are ignored.
+    """
+    method = (request.get("method") or "GET").upper()
+    if method not in ("POST", "PATCH", "PUT"):
+        return
+    content_type = _find_header(request, "content-type")
+    if not content_type:
+        return  # no declared type: allowed (older builds / no body)
+    base = content_type.split(";", 1)[0].strip().lower()
+    if base and base not in _JSON_CONTENT_TYPES:
+        raise _Forbidden(
+            "Forbidden: request body Content-Type %r is not application/json." % content_type
+        )
 
 
 def _check_origin(request):
@@ -577,8 +715,10 @@ def _emit_event(webserver, method, path, data):
 
 def handle(request, response, webserver=None):
     try:
+        _check_address_scope(request)
         _check_origin(request)
         _check_host(request)
+        _check_content_type(request)
         _check_auth(request)
         method = (request.get("method") or "GET").upper()
         parsed = urlparse(request.get("uri", "/"))

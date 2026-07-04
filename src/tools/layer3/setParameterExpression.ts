@@ -11,10 +11,10 @@ export const setParameterExpressionSchema = z.object({
       z.object({
         param: z.string().describe("Parameter name (case-sensitive), e.g. 'tx'."),
         mode: z
-          .enum(["expression", "bind", "constant"])
+          .enum(["expression", "bind", "constant", "reset", "unbind"])
           .default("expression")
           .describe(
-            "expression: set par.expr; bind: set par.bindExpr; constant: set par.val from `value`.",
+            "expression: set par.expr; bind: set par.bindExpr; constant: set par.val from `value`; reset: restore par default (par.reset()); unbind: freeze current eval() value as a constant, dropping the driver.",
           ),
         expr: z
           .string()
@@ -109,6 +109,34 @@ try:
                         _par.mode = type(_par.mode).BIND
                     except Exception:
                         report["warnings"].append("param '" + str(_a["param"]) + "': could not flip to Bind mode")
+                elif _m == "reset":
+                    # par.reset() clears value+expr+bind+mode in one call. It is not
+                    # documented in the bundled Par.json (UNVERIFIED — probe live); the
+                    # fallback restores par.default + flips to Constant for a Par without it.
+                    _reset = getattr(_par, "reset", None)
+                    if callable(_reset):
+                        try:
+                            _reset()
+                        except Exception:
+                            report["warnings"].append("param '" + str(_a["param"]) + "': reset() failed")
+                    else:
+                        try:
+                            _par.val = _par.default
+                        except Exception:
+                            pass
+                        try:
+                            _par.mode = type(_par.mode).CONSTANT
+                        except Exception:
+                            pass
+                elif _m == "unbind":
+                    # Freeze the current driven value as a constant, dropping the driver.
+                    try:
+                        _frozen = _par.eval()
+                        _par.val = _frozen
+                        _par.mode = type(_par.mode).CONSTANT
+                    except Exception:
+                        report["warnings"].append("param '" + str(_a["param"]) + "': could not unbind")
+                        continue
                 else:
                     _v = _a.get("value")
                     if _v is None:
@@ -142,6 +170,20 @@ export async function setParameterExpressionImpl(
 ): Promise<import("@modelcontextprotocol/sdk/types.js").CallToolResult> {
   return guardTd(
     async () => {
+      // reset/unbind are not yet accepted by the PATCH …/mode endpoint. On an
+      // un-upgraded bridge the endpoint would reject the unknown mode as a per-param
+      // validation warning while other params succeed — a half-applied batch across a
+      // version boundary. To stay correct, if ANY assignment uses reset/unbind, run the
+      // whole batch through the exec path (which always works when ALLOW_EXEC=1).
+      const needsExec = args.assignments.some((a) => a.mode === "reset" || a.mode === "unbind");
+      if (needsExec) {
+        const script = buildSetExprScript({
+          path: args.path,
+          assignments: args.assignments,
+        });
+        const exec = await ctx.client.executePythonScript(script, true);
+        return parsePythonReport<SetParameterExpressionReport>(exec.stdout);
+      }
       // 1) first-class per-param endpoint (survives ALLOW_EXEC=0). It flips par.mode
       //    via type(par.mode), which also fixes the silent `ParMode` NameError the
       //    exec path hit. Loop fail-forward — per-item failures become warnings.
@@ -228,7 +270,7 @@ export const registerSetParameterExpression: ToolRegistrar = (server, ctx) => {
     {
       title: "Set parameter expression / bind / constant",
       description:
-        "Set one or more parameters on a node to an expression, bind expression, or constant value without needing the raw-Python escape hatch. Supports three modes: 'expression' (par.expr = ...), 'bind' (par.bindExpr = ...), and 'constant' (par.val = ...). Multiple assignments are applied fail-forward — per-item failures accumulate as warnings so a partial batch still returns useful results. Use this instead of execute_python_script when TDMCP_RAW_PYTHON is off.",
+        "Set one or more parameters on a node to an expression, bind expression, or constant value without needing the raw-Python escape hatch. Supports five modes: 'expression' (par.expr = ...), 'bind' (par.bindExpr = ...), 'constant' (par.val = ...), 'reset' (restore the parameter default via par.reset()), and 'unbind' (freeze the current evaluated value as a constant, dropping the driver). Multiple assignments are applied fail-forward — per-item failures accumulate as warnings so a partial batch still returns useful results. Batches using reset/unbind run through the exec path and require TDMCP_BRIDGE_ALLOW_EXEC=1. Use this instead of execute_python_script when TDMCP_RAW_PYTHON is off.",
       inputSchema: setParameterExpressionSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

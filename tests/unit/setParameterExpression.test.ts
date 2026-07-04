@@ -208,6 +208,38 @@ describe("setParameterExpressionImpl", () => {
     expect(textOf(result)).toContain("connection refused");
   });
 
+  it("reset — payload carries mode:'reset' and the script has a reset() branch", async () => {
+    const exec = happyReport({
+      applied: [{ param: "tx", mode: "reset", readback_mode: "CONSTANT", readback_expr: "" }],
+    });
+    const result = await setParameterExpressionImpl(fakeCtx(exec), {
+      path: "/project1/geo1",
+      assignments: [{ param: "tx", mode: "reset" }],
+    });
+    expect(result.isError).toBeFalsy();
+    const script = scriptArg(exec);
+    expect(script).toContain('getattr(_par, "reset"');
+    const payload = decodePayload(script);
+    expect(payload.assignments[0]?.mode).toBe("reset");
+    expect(textOf(result)).toContain("Set 1 parameter(s)");
+  });
+
+  it("unbind — freezes eval() as a constant; report shows Constant readback", async () => {
+    const exec = happyReport({
+      applied: [{ param: "tx", mode: "unbind", readback_mode: "CONSTANT", readback_expr: "" }],
+    });
+    const result = await setParameterExpressionImpl(fakeCtx(exec), {
+      path: "/project1/geo1",
+      assignments: [{ param: "tx", mode: "unbind" }],
+    });
+    expect(result.isError).toBeFalsy();
+    const script = scriptArg(exec);
+    expect(script).toContain("_par.eval()");
+    const payload = decodePayload(script);
+    expect(payload.assignments[0]?.mode).toBe("unbind");
+    expect(textOf(result)).toContain("Set 1 parameter(s)");
+  });
+
   it("captures stdout — passes `true` as the second arg to executePythonScript", async () => {
     const exec = happyReport();
     await setParameterExpressionImpl(fakeCtx(exec), {
@@ -255,8 +287,8 @@ describe("setParameterExpressionSchema", () => {
     ).toBe(false);
   });
 
-  it("accepts all three valid modes", () => {
-    for (const mode of ["expression", "bind", "constant"] as const) {
+  it("accepts all five valid modes", () => {
+    for (const mode of ["expression", "bind", "constant", "reset", "unbind"] as const) {
       expect(
         setParameterExpressionSchema.safeParse({
           path: "/x",
@@ -264,6 +296,15 @@ describe("setParameterExpressionSchema", () => {
         }).success,
       ).toBe(true);
     }
+  });
+
+  it("rejects a bogus mode:'clear'", () => {
+    expect(
+      setParameterExpressionSchema.safeParse({
+        path: "/x",
+        assignments: [{ param: "tx", mode: "clear" }],
+      }).success,
+    ).toBe(false);
   });
 
   it("accepts a boolean value for constant mode", () => {
@@ -304,6 +345,43 @@ describe("setParameterExpressionImpl — endpoint-first", () => {
     expect(result.isError).toBeFalsy();
     expect(setParameterMode).toHaveBeenCalledTimes(2);
     expect(exec).not.toHaveBeenCalled();
+    expect(textOf(result)).toContain("Set 2 parameter(s)");
+  });
+
+  it("reset/unbind route straight to exec, never calling the per-param endpoint", async () => {
+    const setParameterMode = vi.fn(async () => {
+      throw new Error("endpoint should not be called for reset/unbind");
+    });
+    const exec = vi.fn(async () => ({
+      stdout: JSON.stringify({
+        path: "/project1/geo1",
+        applied: [
+          { param: "tx", mode: "reset", readback_mode: "CONSTANT", readback_expr: "" },
+          { param: "ty", mode: "constant", readback_mode: "CONSTANT", readback_expr: "" },
+        ],
+        warnings: [],
+      }),
+    }));
+    const ctx = {
+      client: { setParameterMode, executePythonScript: exec },
+      logger: silentLogger,
+    } as unknown as ToolContext;
+
+    const result = await setParameterExpressionImpl(ctx, {
+      path: "/project1/geo1",
+      assignments: [
+        { param: "tx", mode: "reset" },
+        { param: "ty", mode: "constant", value: 1 },
+      ],
+    });
+
+    expect(result.isError).toBeFalsy();
+    expect(setParameterMode).not.toHaveBeenCalled();
+    expect(exec).toHaveBeenCalledOnce();
+    // The decoded payload carries the reset assignment.
+    const payload = decodePayload(scriptArg(exec));
+    expect(payload.assignments[0]?.mode).toBe("reset");
+    expect(payload.assignments[1]?.mode).toBe("constant");
     expect(textOf(result)).toContain("Set 2 parameter(s)");
   });
 

@@ -7,6 +7,7 @@ import { registerAllTools } from "../tools/index.js";
 import type { TdmcpConfig } from "../utils/config.js";
 import { getVersion } from "../utils/version.js";
 import { buildToolContext, type ToolContextOverrides } from "./context.js";
+import { rateGateFromConfig, wrapWithRateGate } from "./rateGate.js";
 
 const INSTRUCTIONS = `tdmcp lets you build visual systems in TouchDesigner.
 
@@ -45,6 +46,10 @@ export function createTdmcpServer(
   // active (macro_recorder itself is exempt via the recorder's own guard).
   // Installed BEFORE registerAllTools so every tool picks up the hook.
   const macroRecorder = getMacroRecorder();
+  // Reactive tool-call rate gate — undefined (no-op) unless both
+  // TDMCP_RATE_LIMIT_SLOW_MS and TDMCP_RATE_LIMIT_COOLDOWN_MS are > 0. Composed
+  // outermost so its cooldown covers the whole macro-wrapped handler.
+  const rateGate = rateGateFromConfig(config, logger);
   // biome-ignore lint/suspicious/noExplicitAny: registerTool is heavily overloaded — type the bound copy as variadic so we can transparently wrap the final handler.
   const realRegisterTool = server.registerTool.bind(server) as (...args: any[]) => unknown;
   // biome-ignore lint/suspicious/noExplicitAny: forwarding the SDK's variadic registerTool signature.
@@ -52,7 +57,9 @@ export function createTdmcpServer(
     const handler = rest[rest.length - 1];
     if (typeof handler === "function") {
       // biome-ignore lint/suspicious/noExplicitAny: handler args/return are tool-specific.
-      const wrapped = macroRecorder.wrapHandler<any, any>(name, handler);
+      let wrapped = macroRecorder.wrapHandler<any, any>(name, handler);
+      // biome-ignore lint/suspicious/noExplicitAny: handler args/return are tool-specific.
+      if (rateGate) wrapped = wrapWithRateGate<any, any>(rateGate, wrapped);
       rest[rest.length - 1] = wrapped;
     }
     return realRegisterTool(name, ...rest);

@@ -629,6 +629,7 @@ import {
 import { findTdNodesImpl, findTdNodesSchema } from "../tools/layer3/findTdNodes.js";
 import { generateReadmeImpl, generateReadmeSchema } from "../tools/layer3/generateReadme.js";
 import { getBridgeLogsImpl, getBridgeLogsSchema } from "../tools/layer3/getBridgeLogs.js";
+import { getDatContentImpl, getDatContentSchema } from "../tools/layer3/getDatContent.js";
 import { getInlinePreviewImpl, getInlinePreviewSchema } from "../tools/layer3/getInlinePreview.js";
 import { getModuleHelpImpl, getModuleHelpSchema } from "../tools/layer3/getModuleHelp.js";
 import {
@@ -639,6 +640,7 @@ import {
   getOperatorWorkflowGuideImpl,
   getOperatorWorkflowGuideSchema,
 } from "../tools/layer3/getOperatorWorkflowGuide.js";
+import { getParameterMenuImpl, getParameterMenuSchema } from "../tools/layer3/getParameterMenu.js";
 import {
   getTdClassDetailsImpl,
   getTdClassDetailsSchema,
@@ -1523,6 +1525,11 @@ const COMMANDS: Record<string, Command> = {
     generateReadmeImpl,
     "Generate a Markdown project doc (params, I/O, deps, preview).",
   ),
+  "dat-get": r(
+    getDatContentSchema,
+    getDatContentImpl,
+    "Read a DAT's text/table content with paging (offset/limit, header, preview).",
+  ),
   "dat-edit": r(
     editDatContentSchema,
     editDatContentImpl,
@@ -1643,6 +1650,11 @@ const COMMANDS: Record<string, Command> = {
     readParameterModesSchema,
     readParameterModesImpl,
     "Read each parameter's mode (constant/expression/export/bind) + raw expr/bind/export.",
+  ),
+  "params-menu": r(
+    getParameterMenuSchema,
+    getParameterMenuImpl,
+    "Read a parameter's live menu names/labels + current value (menu-style params).",
   ),
   "set-expr": r(
     setParameterExpressionSchema,
@@ -2979,6 +2991,8 @@ const ENV_NAMES: Record<keyof TdmcpConfig, string> = {
   transport: "TDMCP_TRANSPORT",
   logLevel: "TDMCP_LOG_LEVEL",
   requestTimeoutMs: "TDMCP_REQUEST_TIMEOUT_MS",
+  rateLimitSlowMs: "TDMCP_RATE_LIMIT_SLOW_MS",
+  rateLimitCooldownMs: "TDMCP_RATE_LIMIT_COOLDOWN_MS",
   httpPort: "TDMCP_HTTP_PORT",
   events: "TDMCP_EVENTS",
   rawPython: "TDMCP_RAW_PYTHON",

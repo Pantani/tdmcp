@@ -374,6 +374,135 @@ class HostTests(unittest.TestCase):
         self.assertIn("Host", resp["data"])
 
 
+def _clear_lan_env():
+    os.environ.pop("TDMCP_BRIDGE_ALLOW_LAN", None)
+
+
+class AddressScopeTests(unittest.TestCase):
+    """P2-1: loopback-only address scope. Off-host peers are rejected at the
+    earliest point unless TDMCP_BRIDGE_ALLOW_LAN opts into LAN exposure."""
+
+    def tearDown(self):
+        _clear_lan_env()
+        _clear_token_env()
+
+    def test_lan_exposure_disabled_by_default(self):
+        _clear_lan_env()
+        self.assertFalse(ac._lan_exposure_enabled())
+
+    def test_lan_exposure_enabled_values(self):
+        for value in ("1", "true", "yes", "on", " On "):
+            os.environ["TDMCP_BRIDGE_ALLOW_LAN"] = value
+            self.assertTrue(ac._lan_exposure_enabled(), value)
+
+    def test_lan_exposure_disabled_values(self):
+        for value in ("0", "false", "no", "off", "", "anything"):
+            os.environ["TDMCP_BRIDGE_ALLOW_LAN"] = value
+            self.assertFalse(ac._lan_exposure_enabled(), value)
+
+    def test_no_peer_address_is_allowed(self):
+        # Older builds surface no peer address; header guards apply instead.
+        _clear_lan_env()
+        ac._check_address_scope({"method": "GET"})  # must not raise
+
+    def test_loopback_peers_allowed(self):
+        _clear_lan_env()
+        for addr in ("127.0.0.1", "::1", "[::1]", "::ffff:127.0.0.1", "localhost"):
+            ac._check_address_scope({"clientAddress": addr})  # must not raise
+
+    def test_loopback_peer_with_port_allowed(self):
+        _clear_lan_env()
+        for addr in ("127.0.0.1:53512", "::1"):
+            ac._check_address_scope({"clientAddress": addr})
+
+    def test_off_host_peer_rejected(self):
+        _clear_lan_env()
+        for addr in ("192.168.1.5", "10.0.0.9", "203.0.113.7", "::ffff:8.8.8.8"):
+            with self.assertRaises(PermissionError, msg=addr):
+                ac._check_address_scope({"clientAddress": addr})
+
+    def test_off_host_peer_rejected_even_with_token(self):
+        # Address scope is independent of the bearer token: binding all interfaces
+        # without an explicit LAN opt-in is refused regardless of auth.
+        _clear_lan_env()
+        os.environ["TDMCP_BRIDGE_TOKEN"] = "s3cret"
+        with self.assertRaises(PermissionError):
+            ac._check_address_scope({"clientAddress": "192.168.1.5"})
+
+    def test_off_host_peer_allowed_when_lan_opted_in(self):
+        os.environ["TDMCP_BRIDGE_ALLOW_LAN"] = "1"
+        ac._check_address_scope({"clientAddress": "192.168.1.5"})  # must not raise
+
+    def test_peer_address_lookup_is_nested(self):
+        _clear_lan_env()
+        with self.assertRaises(PermissionError):
+            ac._check_address_scope({"meta": {"remote_address": "192.168.1.5"}})
+
+    def test_handle_rejects_off_host_peer_with_403(self):
+        _clear_lan_env()
+        resp = ac.handle(
+            {"method": "GET", "uri": "/api/info", "clientAddress": "192.168.1.5"}, {}
+        )
+        self.assertEqual(resp["statusCode"], 403)
+        self.assertIn("off-host", resp["data"])
+
+    def test_normalize_address_forms(self):
+        self.assertEqual(ac._normalize_address("::ffff:127.0.0.1"), "127.0.0.1")
+        self.assertEqual(ac._normalize_address("[::1]"), "::1")
+        self.assertEqual(ac._normalize_address("fe80::1%en0"), "fe80::1")
+        self.assertEqual(ac._normalize_address("127.0.0.1:9980"), "127.0.0.1")
+        self.assertIsNone(ac._normalize_address(""))
+        self.assertIsNone(ac._normalize_address(None))
+
+
+class ContentTypeTests(unittest.TestCase):
+    """P2-2: a POST/PATCH/PUT body whose Content-Type is present but not JSON is
+    refused (blocks simple cross-site form/fetch POSTs to the exec surface)."""
+
+    def test_get_ignores_content_type(self):
+        ac._check_content_type({"method": "GET", "content-type": "text/plain"})
+
+    def test_missing_content_type_allowed(self):
+        ac._check_content_type({"method": "POST"})  # older builds / no body
+
+    def test_json_content_type_allowed(self):
+        for ct in ("application/json", "application/json; charset=utf-8", "APPLICATION/JSON"):
+            ac._check_content_type({"method": "POST", "content-type": ct})
+
+    def test_non_json_post_rejected(self):
+        for ct in (
+            "text/plain",
+            "application/x-www-form-urlencoded",
+            "multipart/form-data; boundary=x",
+        ):
+            with self.assertRaises(PermissionError, msg=ct):
+                ac._check_content_type({"method": "POST", "content-type": ct})
+
+    def test_non_json_patch_and_put_rejected(self):
+        for method in ("PATCH", "PUT"):
+            with self.assertRaises(PermissionError, msg=method):
+                ac._check_content_type({"method": method, "content-type": "text/plain"})
+
+    def test_content_type_lookup_is_nested(self):
+        with self.assertRaises(PermissionError):
+            ac._check_content_type(
+                {"method": "POST", "headers": {"Content-Type": "text/plain"}}
+            )
+
+    def test_handle_rejects_non_json_post_with_403(self):
+        resp = ac.handle(
+            {
+                "method": "POST",
+                "uri": "/api/exec",
+                "content-type": "text/plain",
+                "data": '{"script": "1"}',
+            },
+            {},
+        )
+        self.assertEqual(resp["statusCode"], 403)
+        self.assertIn("application/json", resp["data"])
+
+
 class HandleTests(unittest.TestCase):
     def tearDown(self):
         _clear_exec_env()
