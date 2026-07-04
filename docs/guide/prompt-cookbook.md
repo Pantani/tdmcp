@@ -1414,6 +1414,81 @@ iterations, scores `errors_before`/`errors_after` per pass, halts on a no-progre
 plateau, and inherits the same rollback safety. One call instead of a manual
 repair/check/repeat loop.*
 
+> *"Before touching this show patch, sample `/project1/out1` on an 8x8 grid and
+> tell me if it is alive, roughly what colors are present, and whether a full
+> screenshot is worth taking."*
+
+*`get_preview` with `sample_grid` returns an RGBA sample grid plus per-channel
+min/max/mean stats as JSON instead of encoding an image. Use it as the cheap
+"is this TOP alive?" check before spending context on a full preview or critique.*
+
+<video :src="withBase('/examples/cookbook-ops-sample-grid-source.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Captured from the live
+`/project1/cookbook_ops_demo/sample_grid_halftone_source/out1` TOP that was
+sampled with `sample_grid:8`. The clip shows the TouchDesigner output being
+sampled; the actual tool response is the RGBA grid and stats JSON.*
+
+> *"Pulse the reset on `/project1/trails/feedback1`, wait 12 frames, then collect
+> the preview so I can see the burst after the feedback loop catches up."*
+
+*`get_preview` now accepts `pre_pulses` and `delay_frames`: pulse one or more
+parameters in the same frame, defer the capture, then collect it later by `job_id`.
+This is for transient looks that are invisible if you snapshot one frame too early.*
+
+<video :src="withBase('/examples/cookbook-ops-preview-burst.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Captured from the live `/project1/cookbook_ops_demo/preview_burst/out1` TOP after
+pulsing `/project1/cookbook_ops_demo/preview_burst/feedback1` `reset` and delaying
+12 frames through tdmcp. This clip is the TouchDesigner result, not an illustrative
+prompt mockup.*
+
+> *"Before setting the input device on `/project1/live_in/moviefilein1`, read its
+> menu values and show me the exact machine names I can set without TouchDesigner
+> silently choosing the first item."*
+
+*`get_parameter_menu` live-fetches `menuNames`, `menuLabels` and the current menu
+value from the running TouchDesigner build. Ask for it before setting Menu /
+StrMenu parameters; if raw exec is disabled, the fallback is clearly marked as a
+stale bundled catalog.*
+
+> *"Read rows 500-560 of `/project1/show/state_table`, include the header and the
+> first five rows, and tell me whether any cue state looks wrong."*
+
+*`get_dat_content` reads Text and Table DATs in pages: `offset`, `limit`,
+`include_header` and `preview_rows` keep a huge cue table from flooding the model.
+The result includes row counts, truncation state and the exact row window read.*
+
+> *"After you build the hero look, focus the Network Editor on the new output,
+> control panel and final composite so I can inspect the exact nodes without
+> hunting."*
+
+*`focus_network_editor` is a UI-only follow move: it pans/zooms TouchDesigner's
+Network Editor to frame the selected operators and changes nothing in the graph.
+It is the handoff step after a generated build, not a visual effect.*
+
+> *"Tidy `/project1/hero` recursively, but keep every shader DAT docked next to
+> the node it belongs to."*
+
+*`arrange_network` keeps the left-to-right data-flow cleanup, and `include_docked`
+now moves docked GLSL / callback DATs by the same delta as their owner node. Use it
+when generated networks are readable only if their helper DATs travel with them.*
+
+> *"Disable `/project1/hero/old_grade` for rehearsal, but do not delete it — I want
+> to re-enable it if the director misses that look."*
+
+*`delete_td_node` with `mode:"bypass"` flips the operator bypass flag instead of
+destroying the node. It is the reversible middle ground between leaving a broken
+operator in the chain and permanently deleting show work.*
+
+> *"Rebuild this small post chain from the saved spec with auto-layout on, so
+> reruns do not leave nodes stacked and the wires read left-to-right."*
+
+*`rebuild_network` with `auto_layout:true` computes positions from the spec's input
+graph and overrides stale manual coordinates before creating the nodes. It is useful
+for recipe/spec round-trips where a correct network still needs a readable TD
+layout.*
+
 > *"Pull the dominant colours out of my hero clip and use them to seed a matching
 > colour grade for the rest of the show."*
 

@@ -2,7 +2,7 @@
  * Project RAG — scoring ground-truth (F2).
  *
  * Builds a tiny in-memory project index from the curated mock cards in
- * `_workspace/campaign_project_rag/scoring_ground_truth.json`, embeds each card
+ * `tests/fixtures/projectRag/scoring_ground_truth.json`, embeds each card
  * + query into a deterministic token-bag vector, and asserts the tuned scoring
  * (curated boost + copyleft penalty + composite weights) yields >=7/10 hits at
  * top-1.
@@ -15,7 +15,8 @@
 
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { computeProjectContentHash } from "../../../src/projectRag/cardParser.js";
 import { ProjectJsonlIndexStore } from "../../../src/projectRag/indexStore.js";
@@ -40,7 +41,10 @@ interface GroundTruth {
   queries: Array<{ q: string; expectTop1: string }>;
 }
 
-const GT_PATH = join(process.cwd(), "_workspace/campaign_project_rag/scoring_ground_truth.json");
+const GT_PATH = join(
+  dirname(fileURLToPath(import.meta.url)),
+  "../../fixtures/projectRag/scoring_ground_truth.json",
+);
 const GT = JSON.parse(readFileSync(GT_PATH, "utf8")) as GroundTruth;
 
 /** Token-bag normalized vector keyed by GT.tokens order. */

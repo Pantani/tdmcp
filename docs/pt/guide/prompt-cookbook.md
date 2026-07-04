@@ -1460,6 +1460,84 @@ iterações, marca `errors_before`/`errors_after` por passada, para no platô e
 herda o mesmo rollback de segurança. Uma chamada no lugar do ciclo manual
 reparar/checar/repetir.*
 
+> *"Antes de tocar neste patch de show, amostre `/project1/out1` num grid 8x8 e
+> me diga se ele está vivo, quais cores aparecem por alto e se vale gastar uma
+> captura completa."*
+
+*`get_preview` com `sample_grid` devolve um grid de amostras RGBA mais estatísticas
+min/max/mean por canal em JSON, sem codificar imagem. Use como checagem barata de
+"este TOP está vivo?" antes de gastar contexto com preview completo ou crítica.*
+
+<video :src="withBase('/examples/cookbook-ops-sample-grid-source.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Capturado ao vivo do TOP
+`/project1/cookbook_ops_demo/sample_grid_halftone_source/out1` amostrado com
+`sample_grid:8`. O clipe mostra o output do TouchDesigner sendo amostrado; a
+resposta real da ferramenta é o grid RGBA e as estatísticas em JSON.*
+
+> *"Dispare o reset de `/project1/trails/feedback1`, espere 12 frames e depois
+> colete o preview para eu ver o burst depois que o feedback loop estabilizar."*
+
+*`get_preview` agora aceita `pre_pulses` e `delay_frames`: pulsa um ou mais
+parâmetros no mesmo frame, adia a captura e depois coleta por `job_id`. É para
+looks transitórios que somem se você capturar um frame cedo demais.*
+
+<video :src="withBase('/examples/cookbook-ops-preview-burst.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Capturado ao vivo do TOP `/project1/cookbook_ops_demo/preview_burst/out1` depois
+de disparar `reset` em `/project1/cookbook_ops_demo/preview_burst/feedback1` e
+esperar 12 frames pelo tdmcp. Este clipe é o resultado do TouchDesigner, não uma
+ilustração do prompt.*
+
+> *"Antes de setar o device de entrada em `/project1/live_in/moviefilein1`, leia
+> os valores de menu e me mostre os nomes de máquina exatos que posso usar sem o
+> TouchDesigner escolher silenciosamente o primeiro item."*
+
+*`get_parameter_menu` busca ao vivo `menuNames`, `menuLabels` e o valor atual do
+menu no build de TouchDesigner rodando. Peça isso antes de setar parâmetros Menu /
+StrMenu; se raw exec estiver desligado, o fallback vem marcado como catálogo
+embutido possivelmente defasado.*
+
+> *"Leia as linhas 500-560 de `/project1/show/state_table`, inclua o header e as
+> cinco primeiras linhas, e me diga se algum estado de cue parece errado."*
+
+*`get_dat_content` lê Text DATs e Table DATs em páginas: `offset`, `limit`,
+`include_header` e `preview_rows` impedem uma tabela enorme de cues de inundar o
+modelo. O resultado inclui contagem de linhas, estado de truncamento e a janela
+exata lida.*
+
+> *"Depois de montar o hero look, foque o Network Editor no novo output, no painel
+> de controle e no composite final para eu inspecionar os nós exatos sem caçar na
+> rede."*
+
+*`focus_network_editor` é um movimento de UI: ele faz pan/zoom no Network Editor do
+TouchDesigner para enquadrar os operadores selecionados e não muda nada no grafo. É
+o passo de handoff depois de um build gerado, não um efeito visual.*
+
+> *"Arrume `/project1/hero` recursivamente, mas mantenha todo DAT de shader
+> dockado junto do nó a que pertence."*
+
+*`arrange_network` mantém a limpeza left-to-right do fluxo de dados, e
+`include_docked` agora move DATs dockados de GLSL / callbacks pelo mesmo delta do
+nó dono. Use quando a rede gerada só fica legível se os DATs auxiliares viajarem
+junto.*
+
+> *"Desative `/project1/hero/old_grade` para o ensaio, mas não delete — quero
+> poder reativar se o diretor sentir falta daquele look."*
+
+*`delete_td_node` com `mode:"bypass"` liga o bypass do operador em vez de destruir
+o nó. É o meio-termo reversível entre deixar um operador quebrado na cadeia e apagar
+trabalho de show permanentemente.*
+
+> *"Reconstrua esta pequena cadeia de post a partir do spec salvo com auto-layout
+> ligado, para os reruns não deixarem nós empilhados e os fios ficarem legíveis da
+> esquerda para a direita."*
+
+*`rebuild_network` com `auto_layout:true` calcula posições a partir do grafo de
+inputs do spec e sobrescreve coordenadas manuais velhas antes de criar os nós. É
+útil para round-trips de receita/spec em que a rede correta ainda precisa ficar
+legível no layout do TD.*
+
 ## Looks reutilizáveis & handoff de show
 
 Use estes quando o look já funciona e você quer tocar de novo, ensinar, levar para

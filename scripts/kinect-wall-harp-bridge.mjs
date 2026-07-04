@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import dgram from "node:dgram";
-import { mkdirSync, renameSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { runJsonLineHelper } from "./external-helper-supervisor.mjs";
 
@@ -11,6 +11,7 @@ const STRING_OPTIONS = new Map([
   ["--source", "source"],
   ["--helper", "helper"],
   ["--status-json", "statusJson"],
+  ["--projection-calibration-json", "projectionCalibrationJson"],
 ]);
 const FLOAT_OPTIONS = new Map([
   ["--rate", "rate"],
@@ -19,10 +20,13 @@ const FLOAT_OPTIONS = new Map([
   ["--near-max-mm", "nearMaxMm"],
   ["--min-size", "minSize"],
   ["--max-size", "maxSize"],
+  ["--max-width", "maxWidth"],
+  ["--max-height", "maxHeight"],
   ["--crop-left", "cropLeft"],
   ["--crop-right", "cropRight"],
   ["--crop-top", "cropTop"],
   ["--crop-bottom", "cropBottom"],
+  ["--projection-crop-margin", "projectionCropMargin"],
 ]);
 const INTEGER_OPTIONS = new Map([
   ["--port", "port"],
@@ -49,6 +53,8 @@ const OPTIONAL_NUMBER_NAMES = [
   "stride",
   "minSize",
   "maxSize",
+  "maxWidth",
+  "maxHeight",
   "cropLeft",
   "cropRight",
   "cropTop",
@@ -65,6 +71,8 @@ function defaultArgs() {
     frames: 0,
     helper: DEFAULT_HELPER,
     statusJson: undefined,
+    projectionCalibrationJson: undefined,
+    projectionCropMargin: 0.02,
     mirror: false,
     calibrationFrames: undefined,
     backgroundFrames: undefined,
@@ -76,6 +84,8 @@ function defaultArgs() {
     stride: undefined,
     minSize: undefined,
     maxSize: undefined,
+    maxWidth: undefined,
+    maxHeight: undefined,
     cropLeft: undefined,
     cropRight: undefined,
     cropTop: undefined,
@@ -134,12 +144,23 @@ function validateOptionalNumbers(args) {
   }
 }
 
+function validateProjectionCropMargin(args) {
+  if (
+    !Number.isFinite(args.projectionCropMargin) ||
+    args.projectionCropMargin < 0 ||
+    args.projectionCropMargin > 0.25
+  ) {
+    throw new Error(`Invalid --projection-crop-margin: ${args.projectionCropMargin}`);
+  }
+}
+
 function validateArgs(args) {
   validatePort(args);
   validateRate(args);
   validateFrameLimit(args);
   validateSource(args);
   validateOptionalNumbers(args);
+  validateProjectionCropMargin(args);
 }
 
 function parseArgs(argv) {
@@ -200,6 +221,13 @@ Options:
   --helper <path>     libfreenect2 JSON helper path.
   --status-json <path>
                       Write normalized helper status JSON to this path.
+  --projection-calibration-json <path>
+                      Read /tmp/kinect_environment_diagnostic.json and use its
+                      registered_projection_bbox as the default libfreenect2 crop.
+                      Manual --crop-* flags override this automatic crop.
+  --projection-crop-margin <0..0.25>
+                      Extra normalized margin around registered projection crop.
+                      Default: 0.02
   --wall-mm <mm>      Override wall depth instead of auto-calibrating.
   --calibration-frames <n>
                       Frames used for wall auto-calibration. Default helper value: 45
@@ -212,6 +240,8 @@ Options:
   --stride <n>        Depth sampling stride for helper. Default helper value: 2
   --min-size <0..1>   Minimum normalized blob area.
   --max-size <0..1>   Maximum normalized blob area, useful to reject body/wall blobs.
+  --max-width <0..1>  Reject connected components wider than this normalized span.
+  --max-height <0..1> Reject connected components taller than this normalized span.
   --crop-left <0..1>  Ignore depth blobs left of this normalized X.
   --crop-right <0..1> Ignore depth blobs right of this normalized X.
   --crop-top <0..1>   Ignore depth blobs above this normalized Y.
@@ -245,14 +275,51 @@ function clamp01(value) {
   return Math.max(0, Math.min(1, value));
 }
 
+const HAND_OSC_FIELDS = [
+  "present",
+  "x",
+  "y",
+  "raw_x",
+  "raw_y",
+  "size",
+  "open_score",
+  "min_x",
+  "min_y",
+  "max_x",
+  "max_y",
+  "center_x",
+  "center_y",
+  "width",
+  "height",
+];
+
 function normalizeFrame(frame, mirror) {
   const hand = (raw = {}) => {
     const x = clamp01(Number(raw.x ?? 0));
+    const rawX = clamp01(Number(raw.raw_x ?? raw.rawX ?? raw.x ?? 0));
+    const rawY = clamp01(Number(raw.raw_y ?? raw.rawY ?? raw.y ?? 0));
+    const minX = clamp01(Number(raw.min_x ?? raw.minX ?? x));
+    const maxX = clamp01(Number(raw.max_x ?? raw.maxX ?? x));
+    const centerX = clamp01(Number(raw.center_x ?? raw.centerX ?? x));
+    const mappedMinX = mirror ? 1 - maxX : minX;
+    const mappedMaxX = mirror ? 1 - minX : maxX;
+    const mappedCenterX = mirror ? 1 - centerX : centerX;
     return {
       present: Number(raw.present ?? 0) > 0.5 ? 1 : 0,
       x: mirror ? 1 - x : x,
       y: clamp01(Number(raw.y ?? 0)),
+      raw_x: mirror ? 1 - rawX : rawX,
+      raw_y: rawY,
       size: clamp01(Number(raw.size ?? 0)),
+      open_score: clamp01(Number(raw.open_score ?? raw.openScore ?? raw.palm_open ?? 0)),
+      min_x: mappedMinX,
+      min_y: clamp01(Number(raw.min_y ?? raw.minY ?? raw.y ?? 0)),
+      max_x: mappedMaxX,
+      max_y: clamp01(Number(raw.max_y ?? raw.maxY ?? raw.y ?? 0)),
+      center_x: mappedCenterX,
+      center_y: clamp01(Number(raw.center_y ?? raw.centerY ?? raw.y ?? 0)),
+      width: Math.max(0, mappedMaxX - mappedMinX),
+      height: clamp01(Number(raw.height ?? 0)),
     };
   };
   return {
@@ -264,7 +331,7 @@ function normalizeFrame(frame, mirror) {
 function sendFrame(socket, args, frame) {
   const normalized = normalizeFrame(frame, args.mirror);
   for (const side of ["left", "right"]) {
-    for (const field of ["present", "x", "y", "size"]) {
+    for (const field of HAND_OSC_FIELDS) {
       const address = `/kinect/${side}/${field}`;
       const packet = oscFloatMessage(address, normalized[side][field]);
       socket.send(packet, args.port, args.host);
@@ -329,19 +396,26 @@ function writeStatusJson(args, status) {
 }
 
 function syntheticFrame(t) {
+  const hand = (present, x, y, size) => ({
+    present,
+    x,
+    y,
+    raw_x: x,
+    raw_y: y,
+    size,
+    open_score: present ? 1 : 0,
+    min_x: clamp01(x - size * 1.8),
+    min_y: clamp01(y - size * 1.25),
+    max_x: clamp01(x + size * 1.8),
+    max_y: clamp01(y + size * 0.9),
+    center_x: x,
+    center_y: y,
+    width: clamp01(size * 3.6),
+    height: clamp01(size * 2.15),
+  });
   return {
-    left: {
-      present: 1,
-      x: 0.22 + 0.22 * ((Math.sin(t * 0.85) + 1) * 0.5),
-      y: 0.48,
-      size: 0.08,
-    },
-    right: {
-      present: 1,
-      x: 0.56 + 0.26 * ((Math.cos(t * 0.7) + 1) * 0.5),
-      y: 0.52,
-      size: 0.08,
-    },
+    left: hand(1, 0.22 + 0.22 * ((Math.sin(t * 0.85) + 1) * 0.5), 0.48, 0.08),
+    right: hand(1, 0.56 + 0.26 * ((Math.cos(t * 0.7) + 1) * 0.5), 0.52, 0.08),
   };
 }
 
@@ -362,12 +436,56 @@ async function runSynthetic(socket, args) {
   });
 }
 
+function finite01(value, label) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 0 || number > 1) {
+    throw new Error(`Invalid ${label} in projection calibration JSON: ${value}`);
+  }
+  return number;
+}
+
+function loadProjectionCalibrationCrop(args) {
+  if (args.projectionCalibrationJson === undefined) return undefined;
+  const raw = readFileSync(args.projectionCalibrationJson, "utf8");
+  const parsed = JSON.parse(raw);
+  if (parsed.registered_projection_present !== true) {
+    throw new Error(
+      `Projection calibration JSON has no registered projection: ${args.projectionCalibrationJson}`,
+    );
+  }
+  const bbox = parsed.registered_projection_bbox;
+  if (bbox === null || typeof bbox !== "object") {
+    throw new Error(`Projection calibration JSON is missing registered_projection_bbox`);
+  }
+  const margin = Number(args.projectionCropMargin ?? 0);
+  const left = clamp01(finite01(bbox.x0, "registered_projection_bbox.x0") - margin);
+  const top = clamp01(finite01(bbox.y0, "registered_projection_bbox.y0") - margin);
+  const right = clamp01(finite01(bbox.x1, "registered_projection_bbox.x1") + margin);
+  const bottom = clamp01(finite01(bbox.y1, "registered_projection_bbox.y1") + margin);
+  if (right - left < 0.02 || bottom - top < 0.02) {
+    throw new Error(`Projection calibration bbox is too small to use as a depth crop`);
+  }
+  return { left, right, top, bottom };
+}
+
 function buildLibfreenect2HelperArgs(args) {
+  const projectionCrop = loadProjectionCalibrationCrop(args);
+  if (projectionCrop !== undefined) {
+    process.stderr.write(
+      `[kinect-wall-harp-bridge] auto projection crop from ${args.projectionCalibrationJson}: ` +
+        `left=${projectionCrop.left.toFixed(4)} right=${projectionCrop.right.toFixed(4)} ` +
+        `top=${projectionCrop.top.toFixed(4)} bottom=${projectionCrop.bottom.toFixed(4)}\n`,
+    );
+  }
   const helperArgs = [];
   if (args.frames > 0) helperArgs.push("--frames", String(args.frames));
   const pushOptional = (flag, value) => {
     if (value !== undefined) helperArgs.push(flag, String(value));
   };
+  const cropLeft = args.cropLeft ?? projectionCrop?.left;
+  const cropRight = args.cropRight ?? projectionCrop?.right;
+  const cropTop = args.cropTop ?? projectionCrop?.top;
+  const cropBottom = args.cropBottom ?? projectionCrop?.bottom;
   pushOptional("--calibration-frames", args.calibrationFrames);
   pushOptional("--background-frames", args.backgroundFrames);
   pushOptional("--debug-every", args.debugEvery);
@@ -378,11 +496,13 @@ function buildLibfreenect2HelperArgs(args) {
   pushOptional("--stride", args.stride);
   pushOptional("--min-size", args.minSize);
   pushOptional("--max-size", args.maxSize);
-  pushOptional("--crop-left", args.cropLeft);
-  pushOptional("--crop-right", args.cropRight);
-  pushOptional("--crop-top", args.cropTop);
-  pushOptional("--crop-bottom", args.cropBottom);
-  if (args.undistortDepth) helperArgs.push("--undistort-depth");
+  pushOptional("--max-width", args.maxWidth);
+  pushOptional("--max-height", args.maxHeight);
+  pushOptional("--crop-left", cropLeft);
+  pushOptional("--crop-right", cropRight);
+  pushOptional("--crop-top", cropTop);
+  pushOptional("--crop-bottom", cropBottom);
+  if (args.undistortDepth || projectionCrop !== undefined) helperArgs.push("--undistort-depth");
   return helperArgs;
 }
 

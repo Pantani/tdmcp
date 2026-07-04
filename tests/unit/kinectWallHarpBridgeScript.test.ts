@@ -128,6 +128,72 @@ setTimeout(() => process.exit(0), 50);
     }
   });
 
+  it("uses registered projection diagnostics as the default libfreenect2 crop", () => {
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-kinect-projection-crop-"));
+    const helper = join(dir, "helper.mjs");
+    const argsPath = join(dir, "helper-args.json");
+    const calibrationPath = join(dir, "projection-calibration.json");
+    writeFileSync(
+      calibrationPath,
+      JSON.stringify({
+        ok: true,
+        registered_projection_present: true,
+        registered_projection_bbox: { x0: 0.2, y0: 0.3, x1: 0.8, y1: 0.9 },
+      }),
+    );
+    writeFileSync(
+      helper,
+      `#!/usr/bin/env node
+import { writeFileSync } from "node:fs";
+
+writeFileSync(${JSON.stringify(argsPath)}, JSON.stringify(process.argv.slice(2)));
+console.log(JSON.stringify({ left: { present: 0 }, right: { present: 0 } }));
+`,
+    );
+    chmodSync(helper, 0o755);
+
+    try {
+      const result = spawnSync(
+        "node",
+        [
+          "scripts/kinect-wall-harp-bridge.mjs",
+          "--source",
+          "libfreenect2",
+          "--helper",
+          helper,
+          "--frames",
+          "1",
+          "--port",
+          "17402",
+          "--projection-calibration-json",
+          calibrationPath,
+          "--projection-crop-margin",
+          "0.01",
+        ],
+        { encoding: "utf8", timeout: 5000 },
+      );
+
+      expect(result.status).toBe(0);
+      expect(result.stderr).toContain("auto projection crop");
+      const helperArgs = JSON.parse(readFileSync(argsPath, "utf8"));
+      expect(helperArgs).toEqual(
+        expect.arrayContaining([
+          "--crop-left",
+          "0.19",
+          "--crop-right",
+          "0.81",
+          "--crop-top",
+          "0.29",
+          "--crop-bottom",
+          "0.91",
+          "--undistort-depth",
+        ]),
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("throttles repeated frame status JSON writes to avoid real-time disk churn", () => {
     const source = readFileSync("scripts/kinect-wall-harp-bridge.mjs", "utf8");
 
@@ -155,6 +221,37 @@ setTimeout(() => process.exit(0), 50);
     expect(source).toContain(
       'std::cerr << "[kinect-environment-diagnostic] " << exc.what() << std::endl;',
     );
+  });
+
+  it("preserves Kinect open-hand and extremity fields in the OSC contract", () => {
+    const source = readFileSync("scripts/kinect-wall-harp-bridge.mjs", "utf8");
+
+    expect(source).toContain("HAND_OSC_FIELDS");
+    expect(source).toContain("--projection-calibration-json");
+    expect(source).toContain("registered_projection_bbox");
+    expect(source).toContain("Projection calibration JSON has no registered projection");
+    expect(source).toContain('"open_score"');
+    expect(source).toContain('"raw_x"');
+    expect(source).toContain('"raw_y"');
+    expect(source).toContain('"min_x"');
+    expect(source).toContain('"max_y"');
+    expect(source).toContain('"center_x"');
+    expect(source).toContain("raw.raw_x ?? raw.rawX ?? raw.x");
+    expect(source).toContain("raw.raw_y ?? raw.rawY ?? raw.y");
+    expect(source).toContain("raw.open_score ?? raw.openScore ?? raw.palm_open");
+  });
+
+  it("emits raw blob position, extremities and open score from the native Kinect helper", () => {
+    const source = readFileSync("scripts/kinect-wall-harp-depth-bridge.cpp", "utf8");
+
+    expect(source).toContain("float rawX = 0.0f;");
+    expect(source).toContain("h.rawX = clamp01(rawX);");
+    expect(source).toContain('<< ",\\"raw_x\\":" << hand.rawX');
+    expect(source).toContain("float openScore = 0.0f;");
+    expect(source).toContain("minSx = std::min(minSx, x);");
+    expect(source).toContain('<< ",\\"open_score\\":" << hand.openScore');
+    expect(source).toContain('<< ",\\"min_x\\":" << hand.minX');
+    expect(source).toContain("const float spanScore = clamp01");
   });
 
   it("separates Kinect depth warm-up frames from detection output limits", () => {

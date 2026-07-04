@@ -250,6 +250,44 @@ describe("cookbook resource helpers", () => {
     }
   });
 
+  it("documents v0.11 operational TD workflows without placeholder media", () => {
+    const en = readCookbookResource("en").text;
+    const pt = readCookbookResource("pt").text;
+
+    for (const text of [en, pt]) {
+      for (const expected of [
+        "sample_grid",
+        "pre_pulses",
+        "delay_frames",
+        "get_parameter_menu",
+        "menuNames",
+        "menuLabels",
+        "get_dat_content",
+        "preview_rows",
+        "focus_network_editor",
+        "include_docked",
+        'mode:"bypass"',
+        "auto_layout:true",
+      ]) {
+        expect(text).toContain(expected);
+      }
+
+      for (const capturedMedia of [
+        "/examples/cookbook-ops-sample-grid-source.mp4",
+        "/examples/cookbook-ops-preview-burst.mp4",
+      ]) {
+        expect(text).toContain(capturedMedia);
+        expect(
+          existsSync(join(process.cwd(), "docs/public", capturedMedia.replace(/^\/+/, ""))),
+        ).toBe(true);
+      }
+
+      expect(text).not.toMatch(
+        /\/examples\/(?:sample-grid|deferred-preview|parameter-menu|dat-content|focus-network-editor|arrange-docked|safe-bypass|rebuild-auto-layout).*\.mp4/,
+      );
+    }
+  });
+
   it("returns an explanatory payload instead of throwing when the cookbook file is missing", () => {
     const result = readCookbookResourceFromPath("pt", "/tmp/tdmcp-missing-cookbook.md");
 

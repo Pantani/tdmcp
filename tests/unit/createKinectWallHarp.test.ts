@@ -511,6 +511,8 @@ describe("create_kinect_wall_harp", () => {
     expect(script).toContain('_read_osc_hand(src, "left")');
     expect(script).toContain('"/kinect/" + prefix + "/" + field');
     expect(script).toContain('kinect_" + prefix + "_" + field');
+    expect(script).toContain('_read_chop_any(src, _osc_names(prefix, "raw_x"), mapped_x)');
+    expect(script).toContain('_read_chop_any(src, _osc_names(prefix, "raw_y"), mapped_y)');
     expect(script).toContain('_hands_cfg["osc_path"]');
     expect(script).toContain("osc_depth_placeholder");
     expect(script).not.toContain(

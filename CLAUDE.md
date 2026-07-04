@@ -178,41 +178,6 @@ questions can be answered directly.
 | 2026-05-28 | Initial harness | feature discovery (2 agents + 3 skills) | ideation: survey 4 surfaces → prioritized FEATURE_BACKLOG; feeds tdmcp-pipeline |
 | 2026-05-28 | Tuned (Phase 7) | discovery (all 5 files) | run robustness (incremental writes + auto-retry); weighting profiles (live-show default); 5th surface `library`; breadth→depth + Confidence field |
 
-## Harness: AI party mixer design
-
-**Goal:** design the Soundcraft Ui24R / mixer-aware expansion of AI-Controlled
-Party as an operator-approved scene-arming flow, preserving the current
-show-director policy boundaries.
-
-**Trigger:** when asked to design, update, refine, or re-run the Soundcraft
-Ui24R scene-arming expansion, mixer-aware AI party, operator-approved mixer
-cues/snapshots/shows, Companion bridge, direct Soundcraft adapter, or related
-AI-Controlled Party mixer follow-ups, use the `tdmcp-ai-party-mixer-design`
-skill. It produces a spec/handoff for `tdmcp-pipeline`; it does not implement
-runtime code directly. Simple questions can be answered directly.
-
-## Harness: AI party POC
-
-**Goal:** design Hermes/Telegram AI-controlled-party POCs around tdmcp's
-show-director policy layer: four projections, Telegram triggers, Hermes intent
-planning, PA announcements, fog/hazer, lights/DMX, operator approvals, audit logs,
-and venue validation.
-
-**Trigger:** when asked to design, update, validate, implement, or refine an AI
-party / AI show director / Hermes / Telegram live-event control POC, use the
-`ai-party-poc` skill. It coordinates `ai-party-poc-lead`,
-`ai-party-systems-architect`, `ai-party-show-designer`,
-`ai-party-chatops-integrator`, and `ai-party-venue-safety-qa`. Simple questions
-can be answered directly. Runtime implementation should be handed to
-`tdmcp-pipeline` after the POC boundary is accepted.
-
-**Change log:**
-
-| Date | Change | Target | Reason |
-|------|--------|--------|--------|
-| 2026-06-04 | Initial design harness | 5 agents + 5 skills | design the Ui24R operator-approved scene-arming expansion before runtime work |
-| 2026-06-10 | Initial harness | `ai-party-poc` + 5 agents | design Hermes/Telegram AI-controlled-party POCs before code or hardware control |
-
 ## Harness: feature build
 
 **Goal:** implement batches of new tdmcp tools (e.g. Phase 13 / v0.5.0) as parallel
@@ -339,43 +304,6 @@ skill author the endpoint + client + validator + exec-fallback slice.
 | 2026-05-30 | Initial build | 1 agent (`tdmcp-backlog-planner`) + 1 skill (`tdmcp-backlog-campaign`) + ledger | drive the round-2 "BEYOND" backlog (66 buildable: 2 foundations + 64 features, 5 waves) to completion idempotently; reuses the whole per-wave pipeline. Policy: staged-by-priority, checkpoint after wave 1, commit+push **no-tag**, TD-required before build waves |
 | 2026-05-30 | Consolidated a parallel campaign (PR #29) | +9 artist-control tools (`create_test_pattern`, `create_text_crawl`, `create_band_router`, `create_sidechain_pump`, `create_xy_pad`, `create_time_echo`, `create_capture_loop`, `create_vector_lines`, `create_blob_reactive`) + `tdmcp-bridge-engineer` agent + `tdmcp-bridge-endpoint` skill | a concurrent session built these round-1 tools (live-validated TD 099: 8 qa_pass, `create_blob_reactive` unverified pending live camera) on a duplicate harness; merged into this line keeping its tools + bridge authoring, dropping the duplicate campaign agent/scripts in favour of `tdmcp-backlog-planner` |
 
-## Harness: interactive projection mapping
-
-**Goal:** implement `create_interactive_projection_mapping` and the
-`interactive_projection_mapping` recipe/docs as a physical USB webcam + projector
-installation starter, while keeping a synthetic-source path for automated tests.
-
-**Trigger:** when asked to build, implement, continue, fix, QA, document, or ship
-`create_interactive_projection_mapping`, `interactive_projection_mapping`, USB
-webcam/projector projection mapping, optical-flow hand interaction, blob/post-it
-tracking, or this feature's recipe/docs, use the
-`tdmcp-interactive-projection-mapping` skill before the generic
-`tdmcp-pipeline`. Simple conceptual questions can be answered directly.
-
-**Change log:**
-| Date | Change | Target | Reason |
-|------|--------|--------|--------|
-| 2026-06-05 | Initial implementation team | 5 agents + 1 skill | execute the approved interactive projection mapping spec through prototype, Layer 1 tool, recipe/docs, and physical/synthetic QA |
-
-## Harness: Kinect wall harp
-
-**Goal:** implement the approved Kinect v2 + FreenectTD projected wall harp as a
-live TouchDesigner prototype and reusable tdmcp Layer 1 tool: two independent
-wall-depth hand blobs, eight projected strings, internal pluck synth, calibration
-controls, and live/synthetic QA.
-
-**Trigger:** when asked to build, implement, continue, fix, QA, document, or ship
-the Kinect wall harp, Kinect v2 wall-depth harp, FreenectTD depth-blob hand
-tracking, projected wall strings, pluck synth harp, or this feature's Layer 1
-tool/recipe/docs, use the `tdmcp-kinect-wall-harp` skill before the generic
-`tdmcp-pipeline`. Simple conceptual questions can be answered directly.
-
-**Change log:**
-
-| Date | Change | Target | Reason |
-|------|--------|--------|--------|
-| 2026-06-23 | Initial implementation harness | 5 agents + 1 skill + Codex mirrors | execute the approved Kinect wall harp spec through live prototype, Layer 1 tool build, integration, and live/synthetic QA |
-
 ## Harness: implementation learning
 
 **Goal:** study a merged or shipped tdmcp implementation after the build, trace
@@ -400,27 +328,6 @@ should own each follow-up item.
 | Date | Change | Target | Reason |
 | --- | --- | --- | --- |
 | 2026-06-24 | Initial build | 5 agents + 1 skill | post-build learning |
-
-## Harness: Telegram + Ollama local copilot
-
-**Goal:** implement and maintain a secure Telegram Bot API entry point for the
-local Ollama-powered tdmcp copilot, so allowlisted Telegram messages can inspect
-or control TouchDesigner through the existing `runAgentTurn`/tool-tier/bridge
-path instead of talking directly to TD.
-
-**Trigger:** when asked to build, implement, execute, continue, fix, QA,
-document, or ship Telegram/Telegram Bot API control of TouchDesigner through
-local Ollama, `tdmcp ask`/`tdmcp chat`, local LLM tool calls, chat allowlists,
-confirmation gates, or Telegram ChatOps for tdmcp, use the
-`tdmcp-telegram-ollama-copilot` skill. Simple conceptual questions can be
-answered directly. Note: this environment runs the team as coordinated
-sub-agents (no `TeamCreate`).
-
-**Change log:**
-
-| Date | Change | Target | Reason |
-|------|--------|--------|--------|
-| 2026-06-10 | Initial implementation team | 4 agents + 3 skills | execute the Telegram + Ollama local-copilot feature with dedicated Bot API, LLM/tool-call, security QA, and orchestration roles; reuses existing bridge/integrator specialists |
 
 ## Harness: hype trend scouting
 

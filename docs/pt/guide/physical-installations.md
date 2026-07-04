@@ -56,11 +56,24 @@ sala:
   uma superfície de saúde legível por máquina. Projetos gerados por
   `create_kinect_wall_harp` leem o mesmo arquivo no DAT `bridge_status` e
   expõem canais numéricos no `bridge_status_chop`.
+- **Crop de projetor deve vir de RGB mais depth registrado.** Quando Kinect e
+  projetor enxergam a mesma parede, rode primeiro o padrão de calibração da
+  projeção e o diagnóstico externo do ambiente. O diagnóstico grava
+  `/tmp/kinect_environment_diagnostic.json`; passe esse arquivo para
+  `scripts/kinect-wall-harp-bridge.mjs --projection-calibration-json ...` para a
+  ponte usar `registered_projection_bbox` como crop de profundidade. O contrato
+  OSC preserva tanto os pontos no espaço do crop/projetor (`x/y`) quanto as
+  coordenadas registradas completas (`raw_x/raw_y`), permitindo que componentes
+  TD reutilizem os controles `Input*` da wall harp para o alinhamento final.
 
 ## Ferramentas atuais
 
 - **`create_kinect_wall_harp`** monta a harpa de linhas projetadas com fallback
   sintético, modo OSC Kinect, controles de calibração e synth interno.
+- **`scripts/create-kinect-projection-calibration-pattern-td.py`** projeta o alvo
+  de sala de alto contraste, e **`scripts/kinect-environment-diagnostic.cpp`**
+  lê RGB/profundidade/IR do Kinect com registro do libfreenect2 para gerar o JSON
+  de crop de projeção usado pelo bridge OSC.
 - **`create_test_pattern`** dá à sala um alvo visível antes de projection mapping
   ou calibração.
 - **`create_interactive_projection_mapping`** é o rig de ensaio para movimento de
@@ -91,7 +104,7 @@ A harpa aponta para um pequeno kit reutilizável de instalação:
 | Candidato | O que adicionaria | Por que importa |
 |---|---|---|
 | extensões de `diagnose_hardware_environment` | Adicionar métricas de frames RGB/profundidade e checagens de device de áudio ao preflight já entregue para bridge/display/status-DAT. | O artista precisa saber se a sala está errada antes de ajustar a obra. |
-| `create_projection_calibration_wizard` | Alvos projetados, hold-to-capture, checagens de crop/espelho/eixo Y e saída de mapeamento salva. | A calibração deve acontecer na tela, não por timing de chat. |
+| `create_projection_calibration_wizard` | Refinar o crop automático por bbox registrado para calibração por pares de pontos projetados/ChArUco com homografia salva. | O crop automático agora é o primeiro passe padrão; pose precisa do modelo de calibração mais rico. |
 | `run_external_sensor_bridge` | Supervisor reutilizável para processos de sensor, com detecção de dado velho, política de restart e saída OSC/WebSocket/status JSON normalizada. | Isolamento de crash e restart não devem ser reimplementados por device. |
 | `external_sensor_status_surface` | Primitivo compartilhado para builders gerarem superfícies DAT/CHOP a partir de status JSON de helpers externos ou status local de operadores TouchDesigner. | Toda ferramenta de sensor físico deve expor a mesma forma de saúde para painéis, overlays e lógica. |
 | `diagnose_audio_device` | Checagens de device de saída, sample rate, clipping e contagem de vozes para cadeias de áudio TD. | Áudio com glitch é comum em instrumentos interativos e precisa de checklist próprio. |

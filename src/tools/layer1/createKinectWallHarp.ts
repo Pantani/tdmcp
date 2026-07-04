@@ -760,8 +760,10 @@ def _map_axis(value, lo_name, hi_name, lo_default, hi_default):
 
 def _read_osc_hand(src, prefix):
     present = _read_chop_any(src, _osc_names(prefix, "present"), 0.0)
-    raw_x = max(0.0, min(1.0, _read_chop_any(src, _osc_names(prefix, "x"), 0.0)))
-    raw_y = max(0.0, min(1.0, _read_chop_any(src, _osc_names(prefix, "y"), 0.0)))
+    mapped_x = max(0.0, min(1.0, _read_chop_any(src, _osc_names(prefix, "x"), 0.0)))
+    mapped_y = max(0.0, min(1.0, _read_chop_any(src, _osc_names(prefix, "y"), 0.0)))
+    raw_x = max(0.0, min(1.0, _read_chop_any(src, _osc_names(prefix, "raw_x"), mapped_x)))
+    raw_y = max(0.0, min(1.0, _read_chop_any(src, _osc_names(prefix, "raw_y"), mapped_y)))
     cal_x = raw_x
     if _bool_value("Inputmirrorx", CFG["input_mirror_x"]):
         cal_x = 1.0 - raw_x

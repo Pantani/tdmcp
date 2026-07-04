@@ -26,6 +26,8 @@ struct Config {
   int stride = 2;
   float minSize = 0.0f;
   float maxSize = 1.0f;
+  float maxWidth = 1.0f;
+  float maxHeight = 1.0f;
   float cropLeft = 0.0f;
   float cropRight = 1.0f;
   float cropTop = 0.0f;
@@ -38,7 +40,18 @@ struct Hand {
   bool present = false;
   float x = 0.0f;
   float y = 0.0f;
+  float rawX = 0.0f;
+  float rawY = 0.0f;
   float size = 0.0f;
+  float minX = 0.0f;
+  float minY = 0.0f;
+  float maxX = 0.0f;
+  float maxY = 0.0f;
+  float centerX = 0.0f;
+  float centerY = 0.0f;
+  float width = 0.0f;
+  float height = 0.0f;
+  float openScore = 0.0f;
   int count = 0;
 };
 
@@ -97,6 +110,10 @@ static Config parseArgs(int argc, char** argv) {
       if (!readFloatArg(argc, argv, i, cfg.minSize)) throw std::runtime_error("missing --min-size value");
     } else if (arg == "--max-size") {
       if (!readFloatArg(argc, argv, i, cfg.maxSize)) throw std::runtime_error("missing --max-size value");
+    } else if (arg == "--max-width") {
+      if (!readFloatArg(argc, argv, i, cfg.maxWidth)) throw std::runtime_error("missing --max-width value");
+    } else if (arg == "--max-height") {
+      if (!readFloatArg(argc, argv, i, cfg.maxHeight)) throw std::runtime_error("missing --max-height value");
     } else if (arg == "--crop-left") {
       if (!readFloatArg(argc, argv, i, cfg.cropLeft)) throw std::runtime_error("missing --crop-left value");
     } else if (arg == "--crop-right") {
@@ -117,6 +134,7 @@ static Config parseArgs(int argc, char** argv) {
                 << " [--calibration-frames n] [--background-frames n] [--debug-every n]"
                 << " [--near-min-mm mm] [--near-max-mm mm]"
                 << " [--min-pixels n] [--stride n] [--min-size f] [--max-size f]"
+                << " [--max-width f] [--max-height f]"
                 << " [--crop-left f] [--crop-right f] [--crop-top f] [--crop-bottom f]"
                 << " [--undistort-depth]"
                 << " [--dump-depth-ppm path]\n";
@@ -134,6 +152,8 @@ static Config parseArgs(int argc, char** argv) {
   cfg.stride = std::max(1, cfg.stride);
   cfg.minSize = std::max(0.0f, cfg.minSize);
   cfg.maxSize = std::max(cfg.minSize, std::min(1.0f, cfg.maxSize));
+  cfg.maxWidth = std::max(0.001f, std::min(1.0f, cfg.maxWidth));
+  cfg.maxHeight = std::max(0.001f, std::min(1.0f, cfg.maxHeight));
   cfg.cropLeft = std::max(0.0f, std::min(1.0f, cfg.cropLeft));
   cfg.cropRight = std::max(0.0f, std::min(1.0f, cfg.cropRight));
   cfg.cropTop = std::max(0.0f, std::min(1.0f, cfg.cropTop));
@@ -156,6 +176,10 @@ static float medianDepth(const float* depth, int width, int height) {
   const size_t mid = samples.size() / 2;
   std::nth_element(samples.begin(), samples.begin() + mid, samples.end());
   return samples[mid];
+}
+
+static float clamp01(float value) {
+  return std::max(0.0f, std::min(1.0f, value));
 }
 
 static void writeDepthPpm(const std::string& path, const float* depth, int width, int height) {
@@ -264,12 +288,20 @@ static std::vector<Hand> extractHands(
       q.push({sx, sy});
       seen[start] = 1;
       int count = 0;
+      int minSx = sx;
+      int maxSx = sx;
+      int minSy = sy;
+      int maxSy = sy;
       double sumX = 0.0;
       double sumY = 0.0;
       while (!q.empty()) {
         const auto [x, y] = q.front();
         q.pop();
         count += 1;
+        minSx = std::min(minSx, x);
+        maxSx = std::max(maxSx, x);
+        minSy = std::min(minSy, y);
+        maxSy = std::max(maxSy, y);
         sumX += x;
         sumY += y;
         for (const auto& off : offsets) {
@@ -287,11 +319,31 @@ static std::vector<Hand> extractHands(
       h.present = true;
       const float rawX = static_cast<float>((sumX / count + 0.5) / std::max(1, sw));
       const float rawY = static_cast<float>((sumY / count + 0.5) / std::max(1, sh));
-      h.x = std::max(0.0f, std::min(1.0f, (rawX - cfg.cropLeft) / (cfg.cropRight - cfg.cropLeft)));
-      h.y = std::max(0.0f, std::min(1.0f, (rawY - cfg.cropTop) / (cfg.cropBottom - cfg.cropTop)));
+      const float cropW = std::max(0.001f, cfg.cropRight - cfg.cropLeft);
+      const float cropH = std::max(0.001f, cfg.cropBottom - cfg.cropTop);
+      h.rawX = clamp01(rawX);
+      h.rawY = clamp01(rawY);
+      h.x = clamp01((rawX - cfg.cropLeft) / cropW);
+      h.y = clamp01((rawY - cfg.cropTop) / cropH);
       h.size = std::min(1.0f, static_cast<float>(count * stride * stride) / static_cast<float>(width * height));
       h.count = count;
       if (h.size < cfg.minSize || h.size > cfg.maxSize) continue;
+      const float rawMinX = static_cast<float>((minSx + 0.5) / std::max(1, sw));
+      const float rawMaxX = static_cast<float>((maxSx + 0.5) / std::max(1, sw));
+      const float rawMinY = static_cast<float>((minSy + 0.5) / std::max(1, sh));
+      const float rawMaxY = static_cast<float>((maxSy + 0.5) / std::max(1, sh));
+      h.minX = clamp01((rawMinX - cfg.cropLeft) / cropW);
+      h.maxX = clamp01((rawMaxX - cfg.cropLeft) / cropW);
+      h.minY = clamp01((rawMinY - cfg.cropTop) / cropH);
+      h.maxY = clamp01((rawMaxY - cfg.cropTop) / cropH);
+      h.centerX = (h.minX + h.maxX) * 0.5f;
+      h.centerY = (h.minY + h.maxY) * 0.5f;
+      h.width = std::max(0.0f, h.maxX - h.minX);
+      h.height = std::max(0.0f, h.maxY - h.minY);
+      if (h.width > cfg.maxWidth || h.height > cfg.maxHeight) continue;
+      const float spanScore = clamp01((std::max(h.width, h.height) - 0.07f) / 0.16f);
+      const float sizeScore = clamp01((h.size - 0.035f) / 0.12f);
+      h.openScore = std::max(spanScore, sizeScore);
       components.push_back(h);
     }
   }
@@ -306,14 +358,35 @@ static std::vector<Hand> extractHands(
   return components;
 }
 
+static void emitHand(const char* name, const Hand& hand, bool trailingComma) {
+  std::cout << "\"" << name << "\":{\"present\":" << (hand.present ? 1 : 0)
+            << ",\"x\":" << hand.x
+            << ",\"y\":" << hand.y
+            << ",\"raw_x\":" << hand.rawX
+            << ",\"raw_y\":" << hand.rawY
+            << ",\"size\":" << hand.size
+            << ",\"open_score\":" << hand.openScore
+            << ",\"min_x\":" << hand.minX
+            << ",\"min_y\":" << hand.minY
+            << ",\"max_x\":" << hand.maxX
+            << ",\"max_y\":" << hand.maxY
+            << ",\"center_x\":" << hand.centerX
+            << ",\"center_y\":" << hand.centerY
+            << ",\"width\":" << hand.width
+            << ",\"height\":" << hand.height
+            << ",\"count\":" << hand.count
+            << "}";
+  if (trailingComma) std::cout << ",";
+}
+
 static void emitJson(const std::vector<Hand>& hands) {
   const Hand empty;
   const Hand& left = hands.size() >= 1 ? hands[0] : empty;
   const Hand& right = hands.size() >= 2 ? hands[1] : empty;
-  std::cout << "{\"left\":{\"present\":" << (left.present ? 1 : 0) << ",\"x\":" << left.x
-            << ",\"y\":" << left.y << ",\"size\":" << left.size << "},\"right\":{\"present\":"
-            << (right.present ? 1 : 0) << ",\"x\":" << right.x << ",\"y\":" << right.y
-            << ",\"size\":" << right.size << "}}" << std::endl;
+  std::cout << "{";
+  emitHand("left", left, true);
+  emitHand("right", right, false);
+  std::cout << "}" << std::endl;
 }
 
 int main(int argc, char** argv) {
