@@ -135,7 +135,10 @@ function rejectPreflight(
     sendJson(res, 415, { error: "Unsupported Media Type: POST body must be application/json." });
     return true;
   }
-  if (config.httpAuthToken && !isHttpBearerAuthorized(req.headers.authorization, config.httpAuthToken)) {
+  if (
+    config.httpAuthToken &&
+    !isHttpBearerAuthorized(req.headers.authorization, config.httpAuthToken)
+  ) {
     sendUnauthorized(res, req.headers.authorization ? "invalid_token" : "missing_token");
     return true;
   }

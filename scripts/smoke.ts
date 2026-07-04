@@ -27,7 +27,10 @@ const MIN_TOOLS = 31;
 
 /** Runs the offline handshake and returns a report; throws on a hard protocol failure. */
 export async function runSmoke(): Promise<SmokeReport> {
-  const config = loadConfig({ TDMCP_TD_HOST: "127.0.0.1", TDMCP_TD_PORT: "59980" }, { useFiles: false });
+  const config = loadConfig(
+    { TDMCP_TD_HOST: "127.0.0.1", TDMCP_TD_PORT: "59980" },
+    { useFiles: false },
+  );
   const server = createTdmcpServer(config, { logger: silentLogger });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   await server.connect(serverTransport);
@@ -36,8 +39,14 @@ export async function runSmoke(): Promise<SmokeReport> {
   await client.connect(clientTransport);
   try {
     const { tools } = await client.listTools();
-    const resources = await client.listResources().then((r) => r.resources.length).catch(() => 0);
-    const prompts = await client.listPrompts().then((r) => r.prompts.length).catch(() => 0);
+    const resources = await client
+      .listResources()
+      .then((r) => r.resources.length)
+      .catch(() => 0);
+    const prompts = await client
+      .listPrompts()
+      .then((r) => r.prompts.length)
+      .catch(() => 0);
 
     // get_td_info is designed to SUCCEED while TD is offline, reporting connected:false
     // (not throw, not isError). That graceful degradation is the invariant we check.
@@ -68,9 +77,11 @@ export async function runSmoke(): Promise<SmokeReport> {
 /** Throws with a readable message when the report fails any invariant. */
 export function assertSmoke(report: SmokeReport): void {
   const failures: string[] = [];
-  if (report.tools < MIN_TOOLS) failures.push(`only ${report.tools} tools (expected ≥ ${MIN_TOOLS})`);
+  if (report.tools < MIN_TOOLS)
+    failures.push(`only ${report.tools} tools (expected ≥ ${MIN_TOOLS})`);
   if (!report.hasGetTdInfo) failures.push("get_td_info not registered");
-  if (!report.infoDegradesGracefully) failures.push("get_td_info did not degrade to a friendly error offline");
+  if (!report.infoDegradesGracefully)
+    failures.push("get_td_info did not degrade to a friendly error offline");
   if (failures.length) throw new Error(`smoke test failed: ${failures.join("; ")}`);
 }
 

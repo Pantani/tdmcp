@@ -5,7 +5,9 @@ import { afterEach, describe, expect, it } from "vitest";
 import { buildSkillContract, writeSkillContract } from "../../src/cli/skillContract.js";
 
 const tempDirs: string[] = [];
-afterEach(() => Promise.all(tempDirs.splice(0).map((d) => rm(d, { force: true, recursive: true }))));
+afterEach(() =>
+  Promise.all(tempDirs.splice(0).map((d) => rm(d, { force: true, recursive: true }))),
+);
 
 describe("skill contract", () => {
   it("describes every tool with a name and JSON-Schema input", async () => {
