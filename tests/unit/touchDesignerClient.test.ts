@@ -1,7 +1,7 @@
 import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
-import { TdApiError, TdConnectionError } from "../../src/td-client/types.js";
+import { TdApiError, TdBackpressureError, TdConnectionError } from "../../src/td-client/types.js";
 import { makeTdServer, offlineInfoHandler, TD_BASE } from "../helpers/tdMock.js";
 
 const server = makeTdServer();
@@ -46,6 +46,23 @@ describe("TouchDesignerClient", () => {
   it("throws TdConnectionError when TD is offline", async () => {
     server.use(offlineInfoHandler);
     await expect(client().getInfo()).rejects.toBeInstanceOf(TdConnectionError);
+  });
+
+  it("surfaces a 503 as a retryable TdBackpressureError carrying retryAfterMs", async () => {
+    server.use(
+      http.get(`${TD_BASE}/api/info`, () =>
+        HttpResponse.json(
+          { ok: false, error: { code: "backpressure", message: "busy", retry_after: 3 } },
+          { status: 503 },
+        ),
+      ),
+    );
+    const err = await client()
+      .getInfo()
+      .catch((e) => e);
+    expect(err).toBeInstanceOf(TdBackpressureError);
+    expect(err.retryable).toBe(true);
+    expect(err.retryAfterMs).toBe(3000);
   });
 
   it("sends an Authorization bearer header when a token is configured", async () => {

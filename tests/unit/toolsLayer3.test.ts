@@ -96,6 +96,31 @@ describe("layer 3 tool handlers", () => {
     expect(textOf(bad)).toContain("not found in the knowledge base");
   });
 
+  it("create_td_node reports an idempotent reuse when the node already existed", async () => {
+    server.use(
+      http.post(`${TD_BASE}/api/nodes`, async ({ request }) => {
+        const body = (await request.json()) as { parent_path: string; type: string; name?: string };
+        return HttpResponse.json({
+          ok: true,
+          data: {
+            path: `${body.parent_path}/${body.name ?? "noise1"}`,
+            type: body.type,
+            name: body.name ?? "noise1",
+            already_existed: true,
+          },
+        });
+      }),
+    );
+    const result = await createTdNodeImpl(makeCtx(), {
+      parent_path: "/project1",
+      type: "noiseTOP",
+      name: "noise1",
+    });
+    expect(textOf(result)).toContain("Reused existing noiseTOP");
+    expect(textOf(result)).toContain("already existed");
+    expect(textOf(result)).toContain('"already_existed": true');
+  });
+
   it("create_td_node returns a friendly error when offline", async () => {
     server.use(http.post(`${TD_BASE}/api/nodes`, () => HttpResponse.error()));
     const result = await createTdNodeImpl(makeCtx(), {
@@ -160,14 +185,27 @@ describe("layer 3 tool handlers", () => {
   });
 
   it("delete_td_node removes a node by path", async () => {
-    const result = await deleteTdNodeImpl(makeCtx(), { path: "/project1/noise1" });
+    const result = await deleteTdNodeImpl(makeCtx(), { path: "/project1/noise1", mode: "delete" });
     expect(result.isError).toBeFalsy();
     expect(textOf(result)).toContain("Deleted /project1/noise1");
   });
 
+  it("delete_td_node mode:'bypass' disables instead of destroying", async () => {
+    const result = await deleteTdNodeImpl(makeCtx(), { path: "/project1/noise1", mode: "bypass" });
+    expect(result.isError).toBeFalsy();
+    expect(textOf(result)).toContain("Bypassed /project1/noise1");
+    expect(textOf(result)).toContain("not destroyed");
+  });
+
+  it("delete_td_node surfaces YOLO mode in its report", async () => {
+    const ctx = { ...makeCtx(), yolo: true };
+    const result = await deleteTdNodeImpl(ctx, { path: "/project1/noise1", mode: "delete" });
+    expect(textOf(result)).toContain("TDMCP_YOLO on");
+  });
+
   it("delete_td_node returns a friendly error when offline", async () => {
     server.use(http.delete(`${TD_BASE}/api/nodes/:seg`, () => HttpResponse.error()));
-    const result = await deleteTdNodeImpl(makeCtx(), { path: "/project1/noise1" });
+    const result = await deleteTdNodeImpl(makeCtx(), { path: "/project1/noise1", mode: "delete" });
     expect(result.isError).toBe(true);
     expect(textOf(result)).toContain("Cannot reach TouchDesigner");
   });

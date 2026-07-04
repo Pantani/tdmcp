@@ -36,7 +36,7 @@ export const registerGetTdTopology: ToolRegistrar = (server, ctx) => {
     {
       title: "Get network topology",
       description:
-        "Read-only: return the nodes AND the connections (wiring) under a network root, flagging obvious structural issues. Returns {nodeCount, connectionCount, issues[], topology}. Use this when you need how nodes are wired together; use get_td_nodes/find_td_nodes when you only need the node list without connections, or snapshot_td_graph when you also want each node's parameters captured for diffing.",
+        "Read-only: return the nodes AND the connections (wiring) under a network root, flagging obvious structural issues. Returns {nodeCount, connectionCount, issues[], topology}. Use this when you need how nodes are wired together; use get_td_nodes/find_td_nodes when you only need the node list without connections, or snapshot_td_graph when you also want each node's parameters captured for diffing. Token economy: point it at a specific network root rather than the project root, and leave recursion off unless you need nested networks.",
       inputSchema: getTdTopologySchema.shape,
       outputSchema: getTdTopologyOutputSchema.shape,
       annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },

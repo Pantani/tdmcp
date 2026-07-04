@@ -17,6 +17,8 @@ Workflow:
 4. After building, check get_td_node_errors and capture get_preview so the artist can see the result.
 5. Prefer structured inspection/edit tools (find_td_nodes, get_td_node_parameters, summarize_td_errors, compare_td_nodes, snapshot_td_graph, update_td_node_parameters) and process their structuredContent with code. Treat execute_python_script and exec_node_method as a last resort, only when no structured tool fits.
 
+Token economy: read tools return a lot — scope every read (a parent path, a name filter, specific parameter keys) instead of listing broadly, don't re-list a path you already inspected, and prefer get_preview's sample_grid over a full image when you only need to know whether an output is alive.
+
 The server stays usable even when TouchDesigner is offline; tools return a friendly error in that case.`;
 
 export type TdmcpServerOverrides = ToolContextOverrides;

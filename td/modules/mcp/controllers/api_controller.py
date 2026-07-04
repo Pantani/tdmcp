@@ -7,9 +7,12 @@ Node-path URL segments are percent-encoded by the client (a TD path contains
 slashes), so they are `unquote`d here.
 """
 
+import contextlib
 import hmac
 import json
+import math
 import os
+import time
 from urllib.parse import parse_qs, unquote, urlparse
 
 from mcp import events
@@ -19,6 +22,7 @@ from mcp.services import (
     batch_service,
     connect_service,
     custom_params_service,
+    editor_service,
     log_service,
     param_text_service,
     preview_service,
@@ -430,14 +434,14 @@ def _route_node_param_mode(method, rest, body):
     return None
 
 
-def _route_node_crud(method, rest, body):
+def _route_node_crud(method, rest, query, body):
     node_path = _node_path(rest[1:])
     if method == "GET":
         return api_service.get_node(node_path)
     if method == "PATCH":
         return api_service.update_parameters(node_path, body.get("parameters", {}))
     if method == "DELETE":
-        return api_service.delete_node(node_path)
+        return api_service.delete_node(node_path, _qs(query, "mode", "delete"))
     return None
 
 
@@ -455,7 +459,7 @@ def _route_nodes(method, rest, query, body):
     if method == "PUT" and rest[-1] == "text":
         _require(body, "text")
         return param_text_service.put_dat_text(_node_path(rest[1:-1]), body["text"])
-    return _route_node_crud(method, rest, body)
+    return _route_node_crud(method, rest, query, body)
 
 
 def _route_dat_text_get(rest):
@@ -468,11 +472,49 @@ def _route_dat_text_get(rest):
     return api_service.get_node(_node_path(rest[1:]))
 
 
-def _route_preview(method, rest, query):
+def _preview_get(node_path, query):
+    grid = _qs(query, "sample_grid")
+    if grid is not None:
+        # Cheap JSON stats instead of an encoded image (10–50× cheaper).
+        return preview_service.sample_grid(node_path, int(grid))
+    return preview_service.capture(
+        node_path, int(_qs(query, "width", 640)), int(_qs(query, "height", 360))
+    )
+
+
+def _preview_post(node_path, body):
+    # Advanced capture: same-tick pre-pulses + optional deferred (delay_frames) job.
+    return preview_service.capture_advanced(
+        node_path,
+        width=int(body.get("width", 640)),
+        height=int(body.get("height", 360)),
+        pre_pulses=body.get("pre_pulses"),
+        delay_frames=int(body.get("delay_frames", 0) or 0),
+        sample_grid_n=body.get("sample_grid"),
+    )
+
+
+def _route_preview(method, rest, query, body):
+    if len(rest) < 2:
+        return None
+    node_path = _node_path(rest[1:])
+    if method == "GET":
+        return _preview_get(node_path, query)
+    if method == "POST":
+        return _preview_post(node_path, body)
+    return None
+
+
+def _route_preview_job(method, rest):
     if method == "GET" and len(rest) >= 2:
-        return preview_service.capture(
-            _node_path(rest[1:]), int(_qs(query, "width", 640)), int(_qs(query, "height", 360))
-        )
+        return preview_service.collect_preview_job(unquote(rest[1]))
+    return None
+
+
+def _route_editor(method, rest, body):
+    if method == "POST" and rest == ["editor", "focus"]:
+        _require(body, "paths")
+        return editor_service.focus(body["paths"], _as_bool(body.get("animate", True), "animate"))
     return None
 
 
@@ -491,22 +533,34 @@ def _route_network(method, rest, query):
     return None
 
 
+def _route_second_tier(method, rest, query, body):
+    """Dispatch the non-root REST families by their first path segment."""
+    if not rest:
+        return None
+    head = rest[0]
+    if head == "projects":
+        return _route_projects(method, rest, query)
+    if head == "nodes":
+        return _route_nodes(method, rest, query, body)
+    if head == "preview":
+        return _route_preview(method, rest, query, body)
+    if head == "preview_job":
+        return _route_preview_job(method, rest)
+    if head == "editor":
+        return _route_editor(method, rest, body)
+    if head == "network":
+        return _route_network(method, rest, query)
+    return None
+
+
 def _route(method, path, query, body, webserver=None):
     parts = [p for p in path.split("/") if p]
     if not parts or parts[0] != "api":
         raise ValueError("Not found: %s" % path)
     rest = parts[1:]
     routed = _route_root(method, rest, query, body, webserver)
-    if routed is not None:
-        return routed
-    if rest and rest[0] == "projects":
-        routed = _route_projects(method, rest, query)
-    elif rest and rest[0] == "nodes":
-        routed = _route_nodes(method, rest, query, body)
-    elif rest and rest[0] == "preview":
-        routed = _route_preview(method, rest, query)
-    elif rest and rest[0] == "network":
-        routed = _route_network(method, rest, query)
+    if routed is None:
+        routed = _route_second_tier(method, rest, query, body)
     if routed is not None:
         return routed
     raise ValueError("Unsupported %s %s" % (method, path))
@@ -567,7 +621,8 @@ def _emit_event(webserver, method, path, data):
             _emit_node_errors(webserver, (data or {}).get("path"))
         elif method == "PATCH" and len(rest) >= 2 and rest[0] == "nodes":
             _emit_node_errors(webserver, (data or {}).get("path"))
-        elif method == "DELETE" and len(rest) >= 2 and rest[0] == "nodes":
+        elif method == "DELETE" and len(rest) >= 2 and rest[0] == "nodes" and (data or {}).get("deleted"):
+            # A bypass (mode='bypass') reports {bypassed}, not {deleted}: not a deletion.
             events.broadcast(webserver, "node.deleted", data)
         elif method == "POST" and rest == ["batch"]:
             _emit_batch_events(webserver, data)
@@ -575,17 +630,137 @@ def _emit_event(webserver, method, path, data):
         pass
 
 
+def _get_ui():
+    """The TouchDesigner `ui` global, or None when unavailable (tests, old builds).
+
+    `ui` is only injected into TD script scope, so reach it via the `td` module the
+    same way the services reach `op`/`app`. Absent off-TD, which disables undo
+    wrapping (a no-op) rather than failing the request.
+    """
+    try:
+        import td
+
+        return getattr(td, "ui", None)
+    except Exception:  # noqa: BLE001
+        return None
+
+
+# POST routes that don't mutate the project graph and so need no undo block
+# (a batched param-mode read; a UI-only editor pan/zoom).
+_READ_ONLY_POST = (["param_modes", "batch"], ["editor", "focus"])
+
+
+def _undo_label(method, path):
+    """Undo-block label for a mutating request, or None for a read-only one.
+
+    Every operation that changes the TD network (create/update/delete/connect/exec/…)
+    is wrapped in one `ui.undo` block so the artist can Ctrl+Z the whole agent action
+    at once. All GETs and the batched param-mode read mutate nothing, so they get no
+    block (and never pollute the undo stack).
+    """
+    if method == "GET":
+        return None
+    parts = [p for p in path.split("/") if p]
+    rest = parts[1:] if parts[:1] == ["api"] else parts
+    if method == "POST" and rest in _READ_ONLY_POST:
+        return None
+    return "MCP %s %s" % (method, path)
+
+
+@contextlib.contextmanager
+def _undo_block(label):
+    """Wrap a mutating request in ui.undo.startBlock/endBlock (endBlock in finally).
+
+    Best-effort: if `ui` is missing or startBlock throws we skip the block entirely
+    rather than fail the request; endBlock only runs when the block actually started.
+    """
+    ui = _get_ui() if label is not None else None
+    started = False
+    if ui is not None:
+        try:
+            ui.undo.startBlock(label)
+            started = True
+        except Exception:  # noqa: BLE001
+            started = False
+    try:
+        yield
+    finally:
+        if started:
+            try:
+                ui.undo.endBlock()
+            except Exception:  # noqa: BLE001
+                pass
+
+
+# Back-pressure: after one request runs slower than the threshold, TD's cook loop
+# needs a moment to recover, so the bridge sheds subsequent requests with 503 +
+# retry_after for a short cooldown window instead of piling more work on.
+_BACKPRESSURE = {"cooldown_until": 0.0}
+
+
+def _env_int(name, default):
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return default
+    return value if value > 0 else default
+
+
+def _slow_threshold_ms():
+    return _env_int("TDMCP_SLOW_THRESHOLD_MS", 5000)
+
+
+def _cooldown_ms():
+    return _env_int("TDMCP_COOLDOWN_MS", 2000)
+
+
+def _backpressure_response(response):
+    """A 503 + retry_after while cooling down from a slow request, else None."""
+    remaining = _BACKPRESSURE["cooldown_until"] - time.monotonic()
+    if remaining <= 0:
+        return None
+    retry_after = max(1, int(math.ceil(remaining)))
+    return _send(
+        response,
+        503,
+        {
+            "ok": False,
+            "error": {
+                "code": "backpressure",
+                "message": "TouchDesigner is recovering from a slow request; retry after %ds." % retry_after,
+                "retry_after": retry_after,
+            },
+        },
+    )
+
+
+def _record_duration(elapsed_seconds):
+    if elapsed_seconds * 1000.0 >= _slow_threshold_ms():
+        _BACKPRESSURE["cooldown_until"] = time.monotonic() + _cooldown_ms() / 1000.0
+
+
 def handle(request, response, webserver=None):
     try:
         _check_origin(request)
         _check_host(request)
         _check_auth(request)
+        gate = _backpressure_response(response)
+        if gate is not None:
+            return gate
         method = (request.get("method") or "GET").upper()
         parsed = urlparse(request.get("uri", "/"))
         query = _merge_query(request, parse_qs(parsed.query))
         body = _parse_body(request)
-        data = _route(method, parsed.path, query, body, webserver)
-        _emit_event(webserver, method, parsed.path, data)
+        start = time.monotonic()
+        try:
+            with _undo_block(_undo_label(method, parsed.path)):
+                data = _route(method, parsed.path, query, body, webserver)
+                _emit_event(webserver, method, parsed.path, data)
+        finally:
+            _record_duration(time.monotonic() - start)
         return _send(response, 200, {"ok": True, "data": data})
     except PermissionError as exc:
         return _send(response, getattr(exc, "status", 403), {"ok": False, "error": {"message": str(exc)}})

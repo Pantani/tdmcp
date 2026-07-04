@@ -24,10 +24,13 @@ _MODULES = os.path.abspath(os.path.join(_HERE, "..", "modules"))
 if _MODULES not in sys.path:
     sys.path.insert(0, _MODULES)
 
-# The bridge service modules bind `op` from `td` at import time; a stub
-# suffices (each test patches the module's `op` with its own resolver).
+# The bridge service modules bind `op`/`app`/`project` from `td` at import time;
+# a stub suffices (each test patches the module's `op` with its own resolver).
+# api_service (imported transitively for menu validation) also binds app/project.
 _td_stub = types.ModuleType("td")
 _td_stub.op = mock.MagicMock(name="op")
+_td_stub.app = mock.MagicMock(name="app")
+_td_stub.project = mock.MagicMock(name="project")
 sys.modules.setdefault("td", _td_stub)
 
 from mcp.services import param_text_service as pme  # noqa: E402
@@ -184,6 +187,20 @@ class SetParamModeTests(unittest.TestCase):
         self.assertEqual(res["readback_mode"], "CONSTANT")
         # A constant has no expression — readback must not leak the stale par.expr.
         self.assertEqual(res["readback_expr"], "")
+
+    def test_constant_rejects_invalid_menu_value(self):
+        par = FakePar("extend")
+        par.style = "Menu"
+        par.menuNames = ["hold", "cycle", "mirror"]
+        par.menuLabels = ["hold", "cycle", "mirror"]
+        node = FakeNode("/project1/geo1", [par])
+        with _patch_op(node):
+            with self.assertRaises(ValueError) as cm:
+                pme.set_param_mode("/project1/geo1", "extend", "constant", value="bogus")
+        msg = str(cm.exception)
+        self.assertIn("hold", msg)  # valid options listed
+        self.assertIn("cycle", msg)
+        self.assertEqual(par.val, 0.0)  # not coerced onto the par
 
     def test_unknown_param_raises(self):
         node = FakeNode("/project1/geo1", [FakePar("tx")])

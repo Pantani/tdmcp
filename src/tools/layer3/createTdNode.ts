@@ -43,7 +43,13 @@ export async function createTdNodeImpl(ctx: ToolContext, args: CreateTdNodeArgs)
           `These parameter(s) were not applied (unknown name or bad value): ${node.parameter_warnings.join(", ")}.`,
         );
       }
-      return jsonResult(`Created ${node.type || args.type} at ${node.path}.`, {
+      const verb = node.already_existed ? "Reused existing" : "Created";
+      if (node.already_existed) {
+        allWarnings.push(
+          `A ${node.type || args.type} named "${node.name}" already existed at ${args.parent_path}; reused it (idempotent).`,
+        );
+      }
+      return jsonResult(`${verb} ${node.type || args.type} at ${node.path}.`, {
         node,
         warnings: allWarnings,
       });

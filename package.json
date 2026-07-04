@@ -77,6 +77,8 @@
     "validate:recipes": "tsx scripts/validate-recipes.ts",
     "lint:recipes": "tsx scripts/lint-recipes.ts",
     "agent:catalog:gen": "tsx scripts/gen-agent-command-catalog.ts && biome check --write src/agentCommandCatalog.ts",
+    "smoke": "tsx scripts/smoke.ts",
+    "contract:gen": "tsx scripts/gen-skill-contract.ts",
     "smoke:live": "tsx scripts/smoke-live.ts",
     "shader-park:tox": "node scripts/fetch-shader-park-td.mjs",
     "smoke:packages": "tsx scripts/smoke-packages.ts",

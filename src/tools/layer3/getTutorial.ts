@@ -1,9 +1,14 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
+import { buildSectionView, capText } from "../../knowledge/docSections.js";
 import type { Tutorial, TutorialSummary } from "../../knowledge/types.js";
 import { errorResult, structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
-import { flattenTutorialContent, tutorialTextFields } from "./tutorialContent.js";
+import {
+  flattenTutorialContent,
+  tutorialContentToMarkdown,
+  tutorialTextFields,
+} from "./tutorialContent.js";
 
 export const getTutorialSchema = z.object({
   query: z
@@ -16,7 +21,17 @@ export const getTutorialSchema = z.object({
   include_content: z
     .boolean()
     .default(false)
-    .describe("When true, include full tutorial content in returned tutorial entries."),
+    .describe(
+      "When true, include tutorial content (capped, with a sections_available list) in returned entries.",
+    ),
+  section: z
+    .string()
+    .trim()
+    .min(1)
+    .optional()
+    .describe(
+      "With include_content, drill into one section by title (from sections_available) instead of the intro overview — the cheap way to read a long tutorial.",
+    ),
   limit: z.coerce
     .number()
     .int()
@@ -38,6 +53,8 @@ const tutorialResultSchema = z.object({
   description: z.string().optional(),
   summary: z.string().optional(),
   content: z.string().optional(),
+  sections_available: z.array(z.string()).optional(),
+  content_truncated: z.boolean().optional(),
   keywords: z.array(z.string()).optional(),
   tags: z.array(z.string()).optional(),
   resourceUri: z.string(),
@@ -90,6 +107,18 @@ function tutorialName(tutorial: Tutorial | TutorialSummary): string {
   return tutorial.name;
 }
 
+/** List/search content: the flattened tutorial, capped to the budget (no section stripping). */
+function cappedContentFields(
+  full: Tutorial,
+  includeContent: boolean,
+): Pick<TutorialResult, "content" | "content_truncated"> {
+  if (!includeContent || !full.content) return {};
+  const flat = flattenTutorialContent(full.content);
+  if (!flat) return {};
+  const { text, truncated } = capText(flat);
+  return { content: text, content_truncated: truncated };
+}
+
 function tutorialToResult(
   tutorial: Tutorial | TutorialSummary,
   includeContent: boolean,
@@ -103,10 +132,33 @@ function tutorialToResult(
     subcategory: full.subcategory,
     description: full.description,
     summary: tutorial.summary,
-    ...(includeContent && full.content ? { content: flattenTutorialContent(full.content) } : {}),
+    ...cappedContentFields(full, includeContent),
     keywords: full.keywords,
     tags: full.tags,
     resourceUri: resourceUri(tutorialId(tutorial)),
+  };
+}
+
+/**
+ * Single-tutorial retrieval: replace the capped content with a sectioned view —
+ * an intro + sections_available overview by default, or one drilled-in section.
+ */
+function withSectionView(
+  result: TutorialResult,
+  tutorial: Tutorial | TutorialSummary,
+  includeContent: boolean,
+  section: string | undefined,
+): TutorialResult {
+  const full = tutorial as Tutorial;
+  if (!includeContent || !full.content) return result;
+  const markdown = tutorialContentToMarkdown(full.content) ?? flattenTutorialContent(full.content);
+  if (!markdown) return result;
+  const view = buildSectionView(markdown, { section });
+  return {
+    ...result,
+    content: view.content,
+    sections_available: view.sections_available,
+    content_truncated: view.truncated,
   };
 }
 
@@ -207,7 +259,14 @@ export function getTutorialImpl(ctx: ToolContext, rawArgs: GetTutorialInput): Ca
       const tutorial = resolveTutorial(ctx, summaries, args.name);
       if (!tutorial) return unknownTutorial(args.name, summaries);
 
-      const result = tutorialToResult(tutorial, args.include_content);
+      // Build the ref WITHOUT capped content — withSectionView supplies the body
+      // (a sectioned view), so computing cappedContentFields here would be wasted.
+      const result = withSectionView(
+        tutorialToResult(tutorial, false),
+        tutorial,
+        args.include_content,
+        args.section,
+      );
       return structuredResult(`Tutorial ${result.name}.`, {
         mode: "tutorial",
         name: args.name,
@@ -252,7 +311,7 @@ export const registerGetTutorial: ToolRegistrar = (server, ctx) => {
     {
       title: "Get TouchDesigner tutorial",
       description:
-        "Read-only: list embedded TouchDesigner tutorials, search tutorial metadata/content, or retrieve one tutorial by id/name with optional full content.",
+        "Read-only: list embedded TouchDesigner tutorials, search tutorial metadata/content, or retrieve one by id/name. With include_content, the content is capped (~30K chars) and comes with a sections_available list; pass a `section` title to drill into just that part instead of pulling the whole document.",
       inputSchema: getTutorialSchema.shape,
       outputSchema: getTutorialOutputSchema.shape,
       annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },

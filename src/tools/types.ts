@@ -22,6 +22,12 @@ export interface ToolContext {
    */
   allowRawPython?: boolean;
   /**
+   * "YOLO" mode (`TDMCP_YOLO=1`): skip any interactive confirmation the bridge may
+   * add for destructive actions. Surfaced in result reporting; false/undefined by
+   * default so nothing is silently skipped.
+   */
+  yolo?: boolean;
+  /**
    * Tool exposure profile. `"safe"` hides destructive/raw-code tools.
    * Undefined means `"full"` (the default).
    */

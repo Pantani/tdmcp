@@ -29,6 +29,71 @@ describe("getPreviewImpl", () => {
     expect(img).toBeDefined();
   });
 
+  it("returns JSON grid samples + stats (no image) when sample_grid is set", async () => {
+    const result = await getPreviewImpl(makeCtx(), {
+      node_path: "/project1/render1",
+      width: 640,
+      height: 360,
+      sample_grid: 4,
+    });
+    expect(result.isError).toBeFalsy();
+    // Cheap path: no image block, a JSON payload instead.
+    expect(result.content.find((c) => c.type === "image")).toBeUndefined();
+    const text = result.content
+      .filter((c): c is { type: "text"; text: string } => c.type === "text")
+      .map((c) => c.text)
+      .join("\n");
+    expect(text).toMatch(/4×4 grid/);
+    expect(text).toContain('"samples"');
+    expect(text).toContain('"stats"');
+  });
+
+  it("captures with pre_pulses (same-tick) and returns the image", async () => {
+    const result = await getPreviewImpl(makeCtx(), {
+      node_path: "/project1/out1",
+      width: 320,
+      height: 180,
+      pre_pulses: [{ path: "/project1/fb", par: "Reset" }],
+    });
+    expect(result.isError).toBeFalsy();
+    expect(result.content.find((c) => c.type === "image")).toBeDefined();
+  });
+
+  it("defers with delay_frames and then collects the job by job_id", async () => {
+    const deferred = await getPreviewImpl(makeCtx(), {
+      node_path: "/project1/out1",
+      width: 320,
+      height: 180,
+      delay_frames: 6,
+    });
+    const text = deferred.content
+      .filter((c): c is { type: "text"; text: string } => c.type === "text")
+      .map((c) => c.text)
+      .join("\n");
+    expect(text).toMatch(/job_id="job-1"/);
+
+    const collected = await getPreviewImpl(makeCtx(), {
+      node_path: "/project1/out1",
+      width: 320,
+      height: 180,
+      job_id: "job-1",
+    });
+    expect(collected.content.find((c) => c.type === "image")).toBeDefined();
+  });
+
+  it("collects a job by job_id without requiring a node_path", async () => {
+    const collected = await getPreviewImpl(makeCtx(), { width: 320, height: 180, job_id: "job-1" });
+    expect(collected.isError).toBeFalsy();
+    expect(collected.content.find((c) => c.type === "image")).toBeDefined();
+  });
+
+  it("errors when node_path is missing and there is no job_id", async () => {
+    const result = await getPreviewImpl(makeCtx(), { width: 640, height: 360 });
+    expect(result.isError).toBe(true);
+    const caption = result.content.find((c) => c.type === "text") as { text?: string } | undefined;
+    expect(caption?.text).toContain("node_path is required");
+  });
+
   it("includes a caption with the node path and pixel dimensions", async () => {
     const result = await getPreviewImpl(makeCtx(), {
       node_path: "/project1/render1",

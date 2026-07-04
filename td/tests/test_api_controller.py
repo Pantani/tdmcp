@@ -10,8 +10,10 @@ Run from the repo root: `python3 -m unittest discover -s td/tests`
 (or `npm run test:bridge`). No third-party dependencies — stdlib only.
 """
 
+import json
 import os
 import sys
+import time
 import types
 import unittest
 from unittest import mock
@@ -160,17 +162,20 @@ class RoutingTests(unittest.TestCase):
             "batch": ac.batch_service,
             "analysis": ac.analysis_service,
             "preview": ac.preview_service,
+            "editor": ac.editor_service,
         }
         ac.api_service = mock.MagicMock(name="api_service")
         ac.batch_service = mock.MagicMock(name="batch_service")
         ac.analysis_service = mock.MagicMock(name="analysis_service")
         ac.preview_service = mock.MagicMock(name="preview_service")
+        ac.editor_service = mock.MagicMock(name="editor_service")
 
     def tearDown(self):
         ac.api_service = self._saved["api"]
         ac.batch_service = self._saved["batch"]
         ac.analysis_service = self._saved["analysis"]
         ac.preview_service = self._saved["preview"]
+        ac.editor_service = self._saved["editor"]
 
     def test_get_info(self):
         ac._route("GET", "/api/info", {}, {})
@@ -209,7 +214,11 @@ class RoutingTests(unittest.TestCase):
         ac.api_service.update_parameters.assert_called_once_with("/project1/noise1", {"period": 4})
 
         ac._route("DELETE", "/api/nodes/project1/noise1", {}, {})
-        ac.api_service.delete_node.assert_called_once_with("/project1/noise1")
+        ac.api_service.delete_node.assert_called_once_with("/project1/noise1", "delete")
+
+    def test_node_delete_bypass_mode(self):
+        ac._route("DELETE", "/api/nodes/project1/noise1", {"mode": ["bypass"]}, {})
+        ac.api_service.delete_node.assert_called_once_with("/project1/noise1", "bypass")
 
     def test_node_method_dispatch(self):
         os.environ["TDMCP_BRIDGE_ALLOW_EXEC"] = "1"
@@ -228,6 +237,36 @@ class RoutingTests(unittest.TestCase):
     def test_preview_dispatch_with_dimensions(self):
         ac._route("GET", "/api/preview/project1/out1", {"width": ["800"], "height": ["600"]}, {})
         ac.preview_service.capture.assert_called_once_with("/project1/out1", 800, 600)
+
+    def test_preview_sample_grid_dispatch(self):
+        ac._route("GET", "/api/preview/project1/out1", {"sample_grid": ["8"]}, {})
+        ac.preview_service.sample_grid.assert_called_once_with("/project1/out1", 8)
+        ac.preview_service.capture.assert_not_called()
+
+    def test_preview_post_advanced_dispatch(self):
+        body = {
+            "width": 320,
+            "height": 180,
+            "pre_pulses": [{"path": "/project1/fb", "par": "Reset"}],
+            "delay_frames": 6,
+        }
+        ac._route("POST", "/api/preview/project1/out1", {}, body)
+        ac.preview_service.capture_advanced.assert_called_once_with(
+            "/project1/out1",
+            width=320,
+            height=180,
+            pre_pulses=[{"path": "/project1/fb", "par": "Reset"}],
+            delay_frames=6,
+            sample_grid_n=None,
+        )
+
+    def test_preview_job_collect_dispatch(self):
+        ac._route("GET", "/api/preview_job/abc123", {}, {})
+        ac.preview_service.collect_preview_job.assert_called_once_with("abc123")
+
+    def test_editor_focus_dispatch(self):
+        ac._route("POST", "/api/editor/focus", {}, {"paths": ["/project1/noise1"], "animate": True})
+        ac.editor_service.focus.assert_called_once_with(["/project1/noise1"], True)
 
     def test_network_topology_dispatch(self):
         ac._route("GET", "/api/network/project1/topology", {"recursive": ["true"]}, {})
@@ -419,6 +458,102 @@ class HandleTests(unittest.TestCase):
         self.assertEqual(resp["statusCode"], 400)
         self.assertIn("parent_path", resp["data"])
         self.assertIn("Missing required field", resp["data"])
+
+
+class BackpressureTests(unittest.TestCase):
+    def setUp(self):
+        ac._BACKPRESSURE["cooldown_until"] = 0.0
+
+    def tearDown(self):
+        ac._BACKPRESSURE["cooldown_until"] = 0.0
+        os.environ.pop("TDMCP_SLOW_THRESHOLD_MS", None)
+        os.environ.pop("TDMCP_COOLDOWN_MS", None)
+
+    def _resp(self):
+        return {}
+
+    def test_slow_request_arms_cooldown_and_next_request_gets_503(self):
+        os.environ["TDMCP_SLOW_THRESHOLD_MS"] = "1"  # anything cooks "slow"
+        os.environ["TDMCP_COOLDOWN_MS"] = "5000"
+
+        def _slow_route(*_a, **_k):
+            time.sleep(0.005)  # 5ms > 1ms threshold
+            return {"ok": 1}
+
+        with mock.patch.object(ac, "_route", _slow_route):
+            first = ac.handle({"method": "GET", "uri": "/api/info"}, self._resp())
+        self.assertEqual(first["statusCode"], 200)
+        # The next request is shed with 503 + retry_after.
+        second = ac.handle({"method": "GET", "uri": "/api/info"}, self._resp())
+        self.assertEqual(second["statusCode"], 503)
+        payload = json.loads(second["data"])
+        self.assertEqual(payload["error"]["code"], "backpressure")
+        self.assertGreaterEqual(payload["error"]["retry_after"], 1)
+
+    def test_fast_requests_never_trip_the_gate(self):
+        with mock.patch.object(ac, "_route", return_value={"ok": 1}):
+            r1 = ac.handle({"method": "GET", "uri": "/api/info"}, self._resp())
+            r2 = ac.handle({"method": "GET", "uri": "/api/info"}, self._resp())
+        self.assertEqual(r1["statusCode"], 200)
+        self.assertEqual(r2["statusCode"], 200)
+
+
+class UndoBlockTests(unittest.TestCase):
+    def tearDown(self):
+        _clear_exec_env()
+        _clear_token_env()
+
+    def _resp(self):
+        return {}
+
+    def test_mutating_request_is_wrapped_in_a_single_undo_block(self):
+        ui = mock.MagicMock(name="ui")
+        with mock.patch.object(ac, "_get_ui", return_value=ui), mock.patch.object(
+            ac, "_route", return_value={"path": "/project1/noise1"}
+        ):
+            ac.handle(
+                {"method": "POST", "uri": "/api/nodes", "data": '{"parent_path":"/p","type":"noiseTOP"}'},
+                self._resp(),
+            )
+        ui.undo.startBlock.assert_called_once()
+        (label,), _ = ui.undo.startBlock.call_args
+        self.assertTrue(label.startswith("MCP POST /api/nodes"))
+        ui.undo.endBlock.assert_called_once()
+
+    def test_endblock_runs_even_when_the_route_raises(self):
+        ui = mock.MagicMock(name="ui")
+        with mock.patch.object(ac, "_get_ui", return_value=ui), mock.patch.object(
+            ac, "_route", side_effect=ValueError("boom")
+        ):
+            resp = ac.handle({"method": "DELETE", "uri": "/api/nodes/p/x"}, self._resp())
+        self.assertEqual(resp["statusCode"], 400)
+        ui.undo.startBlock.assert_called_once()
+        ui.undo.endBlock.assert_called_once()  # finally guarantees the block closes
+
+    def test_read_only_get_is_not_wrapped(self):
+        ui = mock.MagicMock(name="ui")
+        with mock.patch.object(ac, "_get_ui", return_value=ui), mock.patch.object(
+            ac, "_route", return_value={"ok": 1}
+        ):
+            ac.handle({"method": "GET", "uri": "/api/info"}, self._resp())
+        ui.undo.startBlock.assert_not_called()
+
+    def test_missing_ui_does_not_break_a_mutating_request(self):
+        with mock.patch.object(ac, "_get_ui", return_value=None), mock.patch.object(
+            ac, "_route", return_value={"path": "/p/x"}
+        ):
+            resp = ac.handle(
+                {"method": "POST", "uri": "/api/nodes", "data": '{"parent_path":"/p","type":"noiseTOP"}'},
+                self._resp(),
+            )
+        self.assertEqual(resp["statusCode"], 200)
+
+    def test_undo_label_classifies_reads_and_writes(self):
+        self.assertIsNone(ac._undo_label("GET", "/api/nodes"))
+        self.assertIsNone(ac._undo_label("POST", "/api/param_modes/batch"))
+        self.assertIsNotNone(ac._undo_label("POST", "/api/nodes"))
+        self.assertIsNotNone(ac._undo_label("PATCH", "/api/nodes/p/x"))
+        self.assertIsNotNone(ac._undo_label("DELETE", "/api/nodes/p/x"))
 
 
 class StructuredEndpointTests(unittest.TestCase):

@@ -156,19 +156,90 @@ def _health_touchdesigner_info():
     return info
 
 
+def menu_value_error(par, value):
+    """Error string when `par` is a fixed Menu whose value is invalid, else None.
+
+    A TouchDesigner Menu par silently coerces an unrecognized value to index 0 — a
+    confusing no-op that looks like success. Validate against its menuNames/
+    menuLabels and surface an explicit error listing the valid entries instead.
+    Only the fixed `Menu` style is restricted; `StrMenu` accepts arbitrary strings
+    by design, so it is never rejected here.
+    """
+    if getattr(par, "style", None) != "Menu":
+        return None
+    names = list(getattr(par, "menuNames", None) or [])
+    labels = list(getattr(par, "menuLabels", None) or [])
+    if not names:
+        return None  # menu list unavailable — cannot validate, so don't block
+    if str(value) in names or str(value) in labels:
+        return None
+    return "%r is not a valid menu value (valid: %s)" % (value, ", ".join(names))
+
+
+def _apply_one_param(node, key, value):
+    """Set one parameter; return None on success or a human error reason."""
+    par = getattr(node.par, key, None)
+    if par is None:
+        return "unknown parameter name"
+    menu_err = menu_value_error(par, value)
+    if menu_err is not None:
+        return menu_err
+    try:
+        par.val = value
+    except Exception as exc:  # noqa: BLE001
+        return "could not set value (%s)" % exc
+    return None
+
+
 def apply_parameters(node, parameters):
-    applied, failed = [], []
+    """Apply {name: value} params; return (applied_names, failures).
+
+    `failures` is a list of {"name", "reason"} — an unknown name, an invalid Menu
+    value (would otherwise be silently coerced), or a set that raised. Good params
+    are applied even when a sibling fails, so the caller can report per-param.
+    """
+    applied, failures = [], []
     for key, value in (parameters or {}).items():
-        try:
-            par = getattr(node.par, key, None)
-            if par is None:
-                failed.append(key)
-                continue
-            par.val = value
+        reason = _apply_one_param(node, key, value)
+        if reason is None:
             applied.append(key)
-        except Exception:  # noqa: BLE001
-            failed.append(key)
-    return applied, failed
+        else:
+            failures.append({"name": key, "reason": reason})
+    return applied, failures
+
+
+def _existing_child(parent, name):
+    """Return the existing direct child named `name`, or None.
+
+    Only meaningful when a name was requested — without one TD auto-generates a
+    unique name, so there is nothing to collide with. `parent.op(name)` resolves a
+    child by relative name and returns None when absent.
+    """
+    if not name:
+        return None
+    return parent.op(name)
+
+
+def _create_or_reuse(parent, cls, type_name, name, parent_path):
+    """Create the operator, or reuse an identically-named+typed one already there.
+
+    Idempotent: re-issuing the same create (e.g. an agent retry) returns the
+    existing node with `already_existed=True` instead of failing or letting TD
+    auto-rename to `<name>1`. A name collision with a DIFFERENT type is an explicit
+    error — we never silently replace or rename an operator the artist may rely on.
+    """
+    existing = _existing_child(parent, name)
+    if existing is None:
+        node = parent.create(cls, name) if name else parent.create(cls)
+        return node, False
+    actual = op_type(existing)
+    if actual != type_name:
+        raise ValueError(
+            "Name collision: %r already exists at %s as a %s, not a %s. "
+            "Rename or delete it, or choose a different name."
+            % (name, parent_path, actual or "unknown type", type_name)
+        )
+    return existing, True
 
 
 def create_node(parent_path, type_name, name=None, parameters=None):
@@ -176,24 +247,36 @@ def create_node(parent_path, type_name, name=None, parameters=None):
     if parent is None:
         raise LookupError("Parent not found: %s" % parent_path)
     cls = _resolve_type(type_name)
-    node = parent.create(cls, name) if name else parent.create(cls)
+    node, already_existed = _create_or_reuse(parent, cls, type_name, name, parent_path)
     ref = node_ref(node)
+    if already_existed:
+        ref["already_existed"] = True
     if parameters:
         # The node is created regardless; surface any params that did not apply
         # (unknown name or bad value) as a non-fatal warning rather than dropping
         # them silently. The caller (create_td_node) relays these to the user.
-        _applied, failed = apply_parameters(node, parameters)
-        if failed:
-            ref["parameter_warnings"] = sorted(failed)
+        _applied, failures = apply_parameters(node, parameters)
+        if failures:
+            ref["parameter_warnings"] = sorted(f["name"] for f in failures)
     return ref
 
 
-def delete_node(path):
+def delete_node(path, mode="delete"):
+    """Remove a node, or (mode='bypass') just bypass it — a safer, reversible middle ground.
+
+    'bypass' sets the operator's bypass flag instead of destroying it, so the artist can
+    re-enable it with one click; 'delete' (default) destroys it as before.
+    """
     node = op(path)  # noqa: F821
     if node is None:
         raise LookupError("Node not found: %s" % path)
+    if mode == "bypass":
+        node.bypass = True
+        return {"bypassed": path, "mode": "bypass"}
+    if mode != "delete":
+        raise ValueError("Unknown delete mode %r (expected 'delete' or 'bypass')." % mode)
     node.destroy()
-    return {"deleted": path}
+    return {"deleted": path, "mode": "delete"}
 
 
 def get_nodes(parent_path=None):
@@ -344,12 +427,15 @@ def update_parameters(path, parameters):
             "Use get_td_node_parameters to see the valid parameter names."
             % (path, op_type(node), ", ".join(sorted(unknown)))
         )
-    applied, failed = apply_parameters(node, params)
-    if failed:
+    applied, failures = apply_parameters(node, params)
+    if failures:
+        details = "; ".join(
+            "%s (%s)" % (f["name"], f["reason"])
+            for f in sorted(failures, key=lambda f: f["name"])
+        )
         raise ValueError(
-            "Could not set parameter(s) on %s (%s): %s "
-            "(wrong value type or out of range?). Applied: %s."
-            % (path, op_type(node), ", ".join(sorted(failed)), ", ".join(sorted(applied)) or "none")
+            "Could not set parameter(s) on %s (%s): %s. Applied: %s."
+            % (path, op_type(node), details, ", ".join(sorted(applied)) or "none")
         )
     return node_detail(node)
 

@@ -64,6 +64,7 @@ export function buildToolContext(
     logger,
     vault,
     allowRawPython: config.rawPython !== "off",
+    yolo: config.yolo,
     toolProfile: config.toolProfile,
     creativeRag,
     projectRag,

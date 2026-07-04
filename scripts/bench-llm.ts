@@ -73,7 +73,7 @@ function scoreTurn(events: AgentEvent[], ok: string[]) {
 
 async function cleanup() {
   try {
-    await deleteTdNodeImpl(ctx, { path: BENCH_NODE });
+    await deleteTdNodeImpl(ctx, { path: BENCH_NODE, mode: "delete" });
   } catch {
     // best-effort
   }

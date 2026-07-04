@@ -123,7 +123,7 @@ export const registerGetTdNodes: ToolRegistrar = (server, ctx) => {
     {
       title: "List TouchDesigner nodes",
       description:
-        'Read-only: list the DIRECT child nodes of one COMP. Defaults to a compact summary (count + type breakdown + sample paths); pass detail_level:"full" or path_only:true for the complete list, and `pattern` to filter by name. Returns {count, by_type/sample or paths/nodes}. Use this to browse one level; use find_td_nodes to search recursively and by operator type, or get_td_topology when you also need the connections between nodes.',
+        'Read-only: list the DIRECT child nodes of one COMP. Defaults to a compact summary (count + type breakdown + sample paths); pass detail_level:"full" or path_only:true for the complete list, and `pattern` to filter by name. Returns {count, by_type/sample or paths/nodes}. Use this to browse one level; use find_td_nodes to search recursively and by operator type, or get_td_topology when you also need the connections between nodes. Token economy: keep the default compact summary and scope with `pattern`; only request the full list when you truly need every path, and avoid re-listing a path you already inspected.',
       inputSchema: getTdNodesSchema.shape,
       outputSchema: getTdNodesOutputSchema.shape,
       annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },

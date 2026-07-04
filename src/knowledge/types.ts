@@ -1,3 +1,17 @@
+/** Provenance stamp for the offline knowledge base (from its meta.json + version manifest). */
+export interface KnowledgeDataVersion {
+  /** Importer that generated the data, e.g. "bottobot". */
+  source: string;
+  /** Importer version, when recorded. */
+  sourceVersion?: string;
+  /** ISO timestamp the data was imported/generated. */
+  importedAt?: string;
+  /** Newest TouchDesigner version id the data reflects, e.g. "2023.11510". */
+  tdVersion?: string;
+  /** Major of {@link tdVersion}, for a cheap staleness comparison against a live TD. */
+  tdMajor?: number;
+}
+
 export interface OperatorParameter {
   name: string;
   label?: string;
