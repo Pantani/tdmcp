@@ -42,6 +42,26 @@ const BOOLEAN_OPTIONS = new Map([
   ["--undistort-depth", "undistortDepth"],
   ["--mirror", "mirror"],
 ]);
+const LIBFREENECT2_HELPER_OPTION_FLAGS = [
+  ["--calibration-frames", "calibrationFrames"],
+  ["--background-frames", "backgroundFrames"],
+  ["--debug-every", "debugEvery"],
+  ["--wall-mm", "wallMm"],
+  ["--near-min-mm", "nearMinMm"],
+  ["--near-max-mm", "nearMaxMm"],
+  ["--min-pixels", "minPixels"],
+  ["--stride", "stride"],
+  ["--min-size", "minSize"],
+  ["--max-size", "maxSize"],
+  ["--max-width", "maxWidth"],
+  ["--max-height", "maxHeight"],
+];
+const LIBFREENECT2_CROP_OPTION_FLAGS = [
+  ["--crop-left", "left"],
+  ["--crop-right", "right"],
+  ["--crop-top", "top"],
+  ["--crop-bottom", "bottom"],
+];
 const OPTIONAL_NUMBER_NAMES = [
   "calibrationFrames",
   "backgroundFrames",
@@ -275,6 +295,30 @@ function clamp01(value) {
   return Math.max(0, Math.min(1, value));
 }
 
+function firstDefinedNumber(raw, names, fallback) {
+  for (const name of names) {
+    if (raw[name] !== undefined && raw[name] !== null) return Number(raw[name]);
+  }
+  return Number(fallback);
+}
+
+function clampedHandValue(raw, names, fallback) {
+  return clamp01(firstDefinedNumber(raw, names, fallback));
+}
+
+function mirroredX(value, mirror) {
+  return mirror ? 1 - value : value;
+}
+
+function mapHorizontalBounds(bounds, mirror) {
+  if (!mirror) return bounds;
+  return {
+    minX: 1 - bounds.maxX,
+    maxX: 1 - bounds.minX,
+    centerX: 1 - bounds.centerX,
+  };
+}
+
 const HAND_OSC_FIELDS = [
   "present",
   "x",
@@ -293,38 +337,42 @@ const HAND_OSC_FIELDS = [
   "height",
 ];
 
-function normalizeFrame(frame, mirror) {
-  const hand = (raw = {}) => {
-    const x = clamp01(Number(raw.x ?? 0));
-    const rawX = clamp01(Number(raw.raw_x ?? raw.rawX ?? raw.x ?? 0));
-    const rawY = clamp01(Number(raw.raw_y ?? raw.rawY ?? raw.y ?? 0));
-    const minX = clamp01(Number(raw.min_x ?? raw.minX ?? x));
-    const maxX = clamp01(Number(raw.max_x ?? raw.maxX ?? x));
-    const centerX = clamp01(Number(raw.center_x ?? raw.centerX ?? x));
-    const mappedMinX = mirror ? 1 - maxX : minX;
-    const mappedMaxX = mirror ? 1 - minX : maxX;
-    const mappedCenterX = mirror ? 1 - centerX : centerX;
-    return {
-      present: Number(raw.present ?? 0) > 0.5 ? 1 : 0,
-      x: mirror ? 1 - x : x,
-      y: clamp01(Number(raw.y ?? 0)),
-      raw_x: mirror ? 1 - rawX : rawX,
-      raw_y: rawY,
-      size: clamp01(Number(raw.size ?? 0)),
-      open_score: clamp01(Number(raw.open_score ?? raw.openScore ?? raw.palm_open ?? 0)),
-      min_x: mappedMinX,
-      min_y: clamp01(Number(raw.min_y ?? raw.minY ?? raw.y ?? 0)),
-      max_x: mappedMaxX,
-      max_y: clamp01(Number(raw.max_y ?? raw.maxY ?? raw.y ?? 0)),
-      center_x: mappedCenterX,
-      center_y: clamp01(Number(raw.center_y ?? raw.centerY ?? raw.y ?? 0)),
-      width: Math.max(0, mappedMaxX - mappedMinX),
-      height: clamp01(Number(raw.height ?? 0)),
-    };
-  };
+function normalizeHand(raw = {}, mirror) {
+  const x = clampedHandValue(raw, ["x"], 0);
+  const y = clampedHandValue(raw, ["y"], 0);
+  const rawX = clampedHandValue(raw, ["raw_x", "rawX", "x"], 0);
+  const horizontal = mapHorizontalBounds(
+    {
+      minX: clampedHandValue(raw, ["min_x", "minX"], x),
+      maxX: clampedHandValue(raw, ["max_x", "maxX"], x),
+      centerX: clampedHandValue(raw, ["center_x", "centerX"], x),
+    },
+    mirror,
+  );
+
   return {
-    left: hand(frame.left),
-    right: hand(frame.right),
+    present: firstDefinedNumber(raw, ["present"], 0) > 0.5 ? 1 : 0,
+    x: mirroredX(x, mirror),
+    y,
+    raw_x: mirroredX(rawX, mirror),
+    raw_y: clampedHandValue(raw, ["raw_y", "rawY", "y"], 0),
+    size: clampedHandValue(raw, ["size"], 0),
+    open_score: clampedHandValue(raw, ["open_score", "openScore", "palm_open"], 0),
+    min_x: horizontal.minX,
+    min_y: clampedHandValue(raw, ["min_y", "minY"], y),
+    max_x: horizontal.maxX,
+    max_y: clampedHandValue(raw, ["max_y", "maxY"], y),
+    center_x: horizontal.centerX,
+    center_y: clampedHandValue(raw, ["center_y", "centerY"], y),
+    width: Math.max(0, horizontal.maxX - horizontal.minX),
+    height: clampedHandValue(raw, ["height"], 0),
+  };
+}
+
+function normalizeFrame(frame, mirror) {
+  return {
+    left: normalizeHand(frame.left, mirror),
+    right: normalizeHand(frame.right, mirror),
   };
 }
 
@@ -468,40 +516,45 @@ function loadProjectionCalibrationCrop(args) {
   return { left, right, top, bottom };
 }
 
+function logProjectionCrop(args, projectionCrop) {
+  if (projectionCrop === undefined) return;
+  process.stderr.write(
+    `[kinect-wall-harp-bridge] auto projection crop from ${args.projectionCalibrationJson}: ` +
+      `left=${projectionCrop.left.toFixed(4)} right=${projectionCrop.right.toFixed(4)} ` +
+      `top=${projectionCrop.top.toFixed(4)} bottom=${projectionCrop.bottom.toFixed(4)}\n`,
+  );
+}
+
+function pushOptionalHelperArg(helperArgs, flag, value) {
+  if (value !== undefined) helperArgs.push(flag, String(value));
+}
+
+function pushHelperOptionSet(helperArgs, args) {
+  for (const [flag, name] of LIBFREENECT2_HELPER_OPTION_FLAGS) {
+    pushOptionalHelperArg(helperArgs, flag, args[name]);
+  }
+}
+
+function cropValue(args, projectionCrop, name) {
+  const manualName = `crop${name[0].toUpperCase()}${name.slice(1)}`;
+  if (args[manualName] !== undefined && args[manualName] !== null) return args[manualName];
+  if (projectionCrop !== undefined) return projectionCrop[name];
+  return undefined;
+}
+
+function pushCropOptions(helperArgs, args, projectionCrop) {
+  for (const [flag, name] of LIBFREENECT2_CROP_OPTION_FLAGS) {
+    pushOptionalHelperArg(helperArgs, flag, cropValue(args, projectionCrop, name));
+  }
+}
+
 function buildLibfreenect2HelperArgs(args) {
   const projectionCrop = loadProjectionCalibrationCrop(args);
-  if (projectionCrop !== undefined) {
-    process.stderr.write(
-      `[kinect-wall-harp-bridge] auto projection crop from ${args.projectionCalibrationJson}: ` +
-        `left=${projectionCrop.left.toFixed(4)} right=${projectionCrop.right.toFixed(4)} ` +
-        `top=${projectionCrop.top.toFixed(4)} bottom=${projectionCrop.bottom.toFixed(4)}\n`,
-    );
-  }
+  logProjectionCrop(args, projectionCrop);
   const helperArgs = [];
   if (args.frames > 0) helperArgs.push("--frames", String(args.frames));
-  const pushOptional = (flag, value) => {
-    if (value !== undefined) helperArgs.push(flag, String(value));
-  };
-  const cropLeft = args.cropLeft ?? projectionCrop?.left;
-  const cropRight = args.cropRight ?? projectionCrop?.right;
-  const cropTop = args.cropTop ?? projectionCrop?.top;
-  const cropBottom = args.cropBottom ?? projectionCrop?.bottom;
-  pushOptional("--calibration-frames", args.calibrationFrames);
-  pushOptional("--background-frames", args.backgroundFrames);
-  pushOptional("--debug-every", args.debugEvery);
-  pushOptional("--wall-mm", args.wallMm);
-  pushOptional("--near-min-mm", args.nearMinMm);
-  pushOptional("--near-max-mm", args.nearMaxMm);
-  pushOptional("--min-pixels", args.minPixels);
-  pushOptional("--stride", args.stride);
-  pushOptional("--min-size", args.minSize);
-  pushOptional("--max-size", args.maxSize);
-  pushOptional("--max-width", args.maxWidth);
-  pushOptional("--max-height", args.maxHeight);
-  pushOptional("--crop-left", cropLeft);
-  pushOptional("--crop-right", cropRight);
-  pushOptional("--crop-top", cropTop);
-  pushOptional("--crop-bottom", cropBottom);
+  pushHelperOptionSet(helperArgs, args);
+  pushCropOptions(helperArgs, args, projectionCrop);
   if (args.undistortDepth || projectionCrop !== undefined) helperArgs.push("--undistort-depth");
   return helperArgs;
 }

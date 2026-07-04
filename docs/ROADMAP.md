@@ -10,17 +10,19 @@ can build real visual systems from plain language — no node-wiring by hand. Th
 page is the honest, bird's-eye picture of **what already works, what's still
 rough, and what's coming next** on the way to a stable 1.0.
 
-**Where things stand today.** The npm `latest` package and latest published
-GitHub Release/tag are **v0.11.0** as of July 4, 2026. v0.11.0 shipped the
-TouchDesigner knowledge import, Claude Code marketplace metadata, Kinect wall
-harp, physical-installation diagnostics, offline tutorial-to-recipe drafting,
-cookbook examples, and CLI/docs/release hardening. The current source tree is
-preparing **v0.12.0** with safer retry semantics, undo-aware mutations,
-preview/read tooling, transport/bridge hardening, and release-ready install pins
-listed below. The CHANGELOG blocks list every entry; the always-current tool list
-is the [Tools reference](/reference/tools). 1.0 is **not** the next minor — the
-v0.12.x line is the active feature/consolidation line, and v1.0 will land only
-once the consolidation gates below are all green.
+**Where things stand today.** The published npm `latest` package and latest
+published GitHub Release/tag remain **v0.11.0** while the repository is staged
+for the next release. v0.11.0 shipped the TouchDesigner knowledge import, Claude
+Code marketplace metadata, Kinect wall harp, physical-installation diagnostics,
+offline tutorial-to-recipe drafting, cookbook examples, and CLI/docs/release
+hardening. The current source tree is preparing **v0.12.0** with safer retry
+semantics, undo-aware mutations, preview/read tooling, transport/bridge
+hardening, and release-ready install pins listed below; those `v0.12.0` install
+pins become user-installable only after the tag/release is published. The
+CHANGELOG blocks list every entry; the always-current tool list is the
+[Tools reference](/reference/tools). 1.0 is **not** the next minor — the v0.12.x
+line is the active feature/consolidation line, and v1.0 will land only once the
+consolidation gates below are all green.
 
 The project has grown through five arcs:
 

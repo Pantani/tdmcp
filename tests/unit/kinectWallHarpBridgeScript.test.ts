@@ -236,9 +236,9 @@ console.log(JSON.stringify({ left: { present: 0 }, right: { present: 0 } }));
     expect(source).toContain('"min_x"');
     expect(source).toContain('"max_y"');
     expect(source).toContain('"center_x"');
-    expect(source).toContain("raw.raw_x ?? raw.rawX ?? raw.x");
-    expect(source).toContain("raw.raw_y ?? raw.rawY ?? raw.y");
-    expect(source).toContain("raw.open_score ?? raw.openScore ?? raw.palm_open");
+    expect(source).toContain('clampedHandValue(raw, ["raw_x", "rawX", "x"], 0)');
+    expect(source).toContain('clampedHandValue(raw, ["raw_y", "rawY", "y"], 0)');
+    expect(source).toContain('clampedHandValue(raw, ["open_score", "openScore", "palm_open"], 0)');
   });
 
   it("emits raw blob position, extremities and open score from the native Kinect helper", () => {
