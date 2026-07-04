@@ -83,6 +83,12 @@ function appendSectionMarkdown(section: unknown, parts: string[]): void {
   if (body) parts.push(body);
 }
 
+function flattenList(value: unknown, parts: string[]): void {
+  if (Array.isArray(value)) {
+    for (const item of value) flattenBlock(item, parts);
+  }
+}
+
 export function tutorialContentToMarkdown(content: unknown): string | undefined {
   if (typeof content === "string") {
     const trimmed = content.trim();
@@ -92,7 +98,11 @@ export function tutorialContentToMarkdown(content: unknown): string | undefined 
     return flattenTutorialContent(content);
   }
   const parts: string[] = [];
+  // Mirror flattenTutorialContent's coverage so no content is lost: toc, then the
+  // heading-bearing sections, then related links.
+  flattenList(content.tableOfContents, parts);
   for (const section of content.sections) appendSectionMarkdown(section, parts);
+  flattenList(content.relatedLinks, parts);
   return parts.length > 0 ? parts.join("\n\n") : flattenTutorialContent(content);
 }
 

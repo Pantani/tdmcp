@@ -35,7 +35,8 @@ interface CreatedNode {
 /** Parenthetical note when some nodes were reused rather than freshly created. */
 function reusedNote(created: CreatedNode[]): string {
   const reused = created.filter((c) => c.already_existed).length;
-  return reused > 0 ? ` (${reused} already existed and were reused)` : "";
+  if (reused === 0) return "";
+  return ` (${reused} already existed and ${reused === 1 ? "was" : "were"} reused)`;
 }
 
 export async function createNodeChainImpl(

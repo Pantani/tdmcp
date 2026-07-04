@@ -36,10 +36,10 @@ export async function buildSkillContract(): Promise<SkillContract> {
   const config = loadConfig({}, { useFiles: false });
   const server = createTdmcpServer(config, { logger: silentLogger });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
-  await server.connect(serverTransport);
   const client = new Client({ name: "tdmcp-contract", version: "0.0.0" });
-  await client.connect(clientTransport);
   try {
+    await server.connect(serverTransport);
+    await client.connect(clientTransport);
     const { tools } = await client.listTools();
     const prompts = await client
       .listPrompts()
@@ -63,8 +63,8 @@ export async function buildSkillContract(): Promise<SkillContract> {
       prompts: prompts.sort((a, b) => a.name.localeCompare(b.name)),
     };
   } finally {
-    await client.close();
-    await server.close();
+    await client.close().catch(() => {});
+    await server.close().catch(() => {});
   }
 }
 

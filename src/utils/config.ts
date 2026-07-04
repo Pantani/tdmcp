@@ -578,6 +578,7 @@ export function loadConfig(
 /** Sensitive keys redacted by {@link describeConfig} for safe printing/sharing. */
 const SECRET_KEYS: ReadonlyArray<keyof LoadedTdmcpConfig> = [
   "bridgeToken",
+  "httpAuthToken",
   "llmApiKey",
   "telegramBotToken",
   "telegramAllowedChats",

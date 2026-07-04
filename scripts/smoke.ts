@@ -33,11 +33,10 @@ export async function runSmoke(): Promise<SmokeReport> {
   );
   const server = createTdmcpServer(config, { logger: silentLogger });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
-  await server.connect(serverTransport);
-
   const client = new Client({ name: "tdmcp-smoke", version: "0.0.0" });
-  await client.connect(clientTransport);
   try {
+    await server.connect(serverTransport);
+    await client.connect(clientTransport);
     const { tools } = await client.listTools();
     const resources = await client
       .listResources()
@@ -69,8 +68,8 @@ export async function runSmoke(): Promise<SmokeReport> {
       infoDegradesGracefully,
     };
   } finally {
-    await client.close();
-    await server.close();
+    await client.close().catch(() => {});
+    await server.close().catch(() => {});
   }
 }
 

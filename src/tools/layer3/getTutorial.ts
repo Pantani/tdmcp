@@ -259,8 +259,10 @@ export function getTutorialImpl(ctx: ToolContext, rawArgs: GetTutorialInput): Ca
       const tutorial = resolveTutorial(ctx, summaries, args.name);
       if (!tutorial) return unknownTutorial(args.name, summaries);
 
+      // Build the ref WITHOUT capped content — withSectionView supplies the body
+      // (a sectioned view), so computing cappedContentFields here would be wasted.
       const result = withSectionView(
-        tutorialToResult(tutorial, args.include_content),
+        tutorialToResult(tutorial, false),
         tutorial,
         args.include_content,
         args.section,

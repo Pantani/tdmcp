@@ -122,6 +122,9 @@ describe("HTTP transport guards (unit)", () => {
     expect(isHttpBearerAuthorized("Bearer wrong", "s3cret")).toBe(false);
     expect(isHttpBearerAuthorized("s3cret", "s3cret")).toBe(false); // no Bearer prefix
     expect(isHttpBearerAuthorized(undefined, "s3cret")).toBe(false);
+    // Scheme is case-insensitive and surrounding whitespace is tolerated (RFC 7235).
+    expect(isHttpBearerAuthorized("bearer s3cret", "s3cret")).toBe(true);
+    expect(isHttpBearerAuthorized("  Bearer   s3cret  ", "s3cret")).toBe(true);
   });
 });
 

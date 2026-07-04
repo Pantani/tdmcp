@@ -81,6 +81,19 @@ describe("getPreviewImpl", () => {
     expect(collected.content.find((c) => c.type === "image")).toBeDefined();
   });
 
+  it("collects a job by job_id without requiring a node_path", async () => {
+    const collected = await getPreviewImpl(makeCtx(), { width: 320, height: 180, job_id: "job-1" });
+    expect(collected.isError).toBeFalsy();
+    expect(collected.content.find((c) => c.type === "image")).toBeDefined();
+  });
+
+  it("errors when node_path is missing and there is no job_id", async () => {
+    const result = await getPreviewImpl(makeCtx(), { width: 640, height: 360 });
+    expect(result.isError).toBe(true);
+    const caption = result.content.find((c) => c.type === "text") as { text?: string } | undefined;
+    expect(caption?.text).toContain("node_path is required");
+  });
+
   it("includes a caption with the node path and pixel dimensions", async () => {
     const result = await getPreviewImpl(makeCtx(), {
       node_path: "/project1/render1",

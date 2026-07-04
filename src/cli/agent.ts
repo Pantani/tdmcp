@@ -3032,6 +3032,7 @@ const ENV_NAMES: Record<keyof TdmcpConfig, string> = {
 };
 const SECRET_ENV: ReadonlySet<keyof TdmcpConfig> = new Set([
   "bridgeToken",
+  "httpAuthToken",
   "llmApiKey",
   "telegramBotToken",
   "telegramAllowedChats",
@@ -3880,7 +3881,8 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
     }
     const raw = assembled.raw;
     if (positionals[1]) raw.node_path = positionals[1];
-    const parsed = getPreviewSchema.safeParse(raw);
+    // The CLI always captures (never collects a deferred job), so node_path is required.
+    const parsed = getPreviewSchema.required({ node_path: true }).safeParse(raw);
     if (!parsed.success) {
       return {
         stdout: "",

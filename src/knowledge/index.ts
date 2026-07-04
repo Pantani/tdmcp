@@ -175,6 +175,7 @@ export class KnowledgeBase {
 
   private opIndexCache?: OperatorSummary[];
   private opLookupCache?: Map<string, string>;
+  private dataVersionCache?: KnowledgeDataVersion | null;
   private readonly opDocCache = new Map<string, OperatorDoc | null>();
   private pyIndexCache?: PythonClassSummary[];
   private pyLookupCache?: Map<string, string>;
@@ -851,6 +852,12 @@ export class KnowledgeBase {
    * results with a `data_version` and warn when a live TD is on a different major.
    */
   dataVersion(): KnowledgeDataVersion | undefined {
+    if (this.dataVersionCache !== undefined) return this.dataVersionCache ?? undefined;
+    this.dataVersionCache = this.readDataVersion() ?? null;
+    return this.dataVersionCache ?? undefined;
+  }
+
+  private readDataVersion(): KnowledgeDataVersion | undefined {
     if (this.source.kind === "empty") return undefined;
     const metaPath = join(dirname(this.source.operatorsDir), "meta.json");
     if (!existsSync(metaPath)) return undefined;

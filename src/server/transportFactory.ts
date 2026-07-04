@@ -95,9 +95,11 @@ export function isUnsupportedPostMediaType(
  * or a mismatch.
  */
 export function isHttpBearerAuthorized(authHeader: string | undefined, token: string): boolean {
-  const prefix = "Bearer ";
-  if (!authHeader || !authHeader.startsWith(prefix)) return false;
-  const provided = Buffer.from(authHeader.slice(prefix.length));
+  if (!authHeader) return false;
+  // The auth scheme is case-insensitive (RFC 7235) and may carry extra whitespace.
+  const match = /^\s*Bearer\s+(.+?)\s*$/i.exec(authHeader);
+  if (!match) return false;
+  const provided = Buffer.from(match[1] as string);
   const expected = Buffer.from(token);
   return provided.length === expected.length && timingSafeEqual(provided, expected);
 }

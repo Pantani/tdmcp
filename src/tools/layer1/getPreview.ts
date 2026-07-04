@@ -5,7 +5,10 @@ import { errorResult, guardTd, imageResult, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
 export const getPreviewSchema = z.object({
-  node_path: z.string().describe("Path of the TOP node to capture."),
+  node_path: z
+    .string()
+    .optional()
+    .describe("Path of the TOP node to capture. Required unless collecting a deferred job by job_id."),
   width: z.coerce
     .number()
     .int()
@@ -109,23 +112,29 @@ export async function getPreviewImpl(ctx: ToolContext, args: GetPreviewArgs) {
       (job) => renderJob(job),
     );
   }
+  const nodePath = args.node_path;
+  if (!nodePath) {
+    return errorResult(
+      "node_path is required to capture a preview (only omit it when collecting a deferred capture by job_id).",
+    );
+  }
   if (isAdvanced(args)) {
     return guardTd(
       () =>
-        ctx.client.captureAdvanced(args.node_path, {
+        ctx.client.captureAdvanced(nodePath, {
           width: args.width,
           height: args.height,
           sampleGrid: args.sample_grid,
           prePulses: args.pre_pulses,
           delayFrames: args.delay_frames,
         }),
-      (res) => renderAdvanced(res, args.node_path),
+      (res) => renderAdvanced(res, nodePath),
     );
   }
   if (args.sample_grid !== undefined) {
     const n = args.sample_grid;
     return guardTd(
-      () => ctx.client.sampleGrid(args.node_path, n),
+      () => ctx.client.sampleGrid(nodePath, n),
       (grid) =>
         jsonResult(
           `Sampled ${grid.path} on a ${grid.grid}×${grid.grid} grid (source ${grid.width}×${grid.height}).`,
@@ -134,12 +143,12 @@ export async function getPreviewImpl(ctx: ToolContext, args: GetPreviewArgs) {
     );
   }
   return guardTd(
-    () => capturePreview(ctx.client, args.node_path, args.width, args.height),
+    () => capturePreview(ctx.client, nodePath, args.width, args.height),
     (preview) =>
       imageResult(
         preview.base64,
         preview.mimeType,
-        `Preview of ${args.node_path} (${preview.width}×${preview.height}).`,
+        `Preview of ${nodePath} (${preview.width}×${preview.height}).`,
       ),
   );
 }

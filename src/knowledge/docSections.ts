@@ -16,26 +16,37 @@ export interface DocSection {
 export const DEFAULT_SECTION_CHAR_CAP = 30_000;
 
 const HEADING_RE = /^#{1,6}\s+(.+?)\s*$/;
+const FENCE_RE = /^\s*(```|~~~)/;
+
+type OpenSection = { title: string; lines: string[] };
+
+function flushSection(sections: DocSection[], current: OpenSection | undefined): void {
+  if (current) sections.push({ title: current.title, content: current.lines.join("\n").trim() });
+}
+
+function appendLine(current: OpenSection | undefined, introLines: string[], line: string): void {
+  if (current) current.lines.push(line);
+  else introLines.push(line);
+}
 
 /** Splits markdown into the intro (text before the first heading) and its `#`-headed sections. */
 export function splitMarkdownSections(text: string): { intro: string; sections: DocSection[] } {
-  const lines = text.split("\n");
   const introLines: string[] = [];
   const sections: DocSection[] = [];
-  let current: { title: string; lines: string[] } | undefined;
-  for (const line of lines) {
-    const match = HEADING_RE.exec(line);
-    if (match) {
-      if (current)
-        sections.push({ title: current.title, content: current.lines.join("\n").trim() });
-      current = { title: match[1] as string, lines: [] };
-    } else if (current) {
-      current.lines.push(line);
+  let current: OpenSection | undefined;
+  let inFence = false;
+  for (const line of text.split("\n")) {
+    if (FENCE_RE.test(line)) inFence = !inFence;
+    // A `#` inside a fenced code block is a comment/directive, not a heading.
+    const heading = inFence ? null : HEADING_RE.exec(line);
+    if (heading) {
+      flushSection(sections, current);
+      current = { title: heading[1] as string, lines: [] };
     } else {
-      introLines.push(line);
+      appendLine(current, introLines, line);
     }
   }
-  if (current) sections.push({ title: current.title, content: current.lines.join("\n").trim() });
+  flushSection(sections, current);
   return { intro: introLines.join("\n").trim(), sections };
 }
 
