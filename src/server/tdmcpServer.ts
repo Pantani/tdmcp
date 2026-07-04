@@ -54,8 +54,7 @@ export function createTdmcpServer(
     const handler = rest[rest.length - 1];
     if (typeof handler === "function") {
       // biome-ignore lint/suspicious/noExplicitAny: handler args/return are tool-specific.
-      const wrapped = macroRecorder.wrapHandler<any, any>(name, handler);
-      rest[rest.length - 1] = wrapped;
+      rest[rest.length - 1] = macroRecorder.wrapHandler<any, any>(name, handler);
     }
     return realRegisterTool(name, ...rest);
   };

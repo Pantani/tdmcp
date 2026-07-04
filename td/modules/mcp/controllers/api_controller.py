@@ -71,6 +71,24 @@ def _exec_allowed():
     return raw.strip().lower() in ("1", "true", "yes", "on")
 
 
+def _lan_exposure_enabled():
+    """Whether the bridge accepts requests from OFF-HOST (non-loopback) peers.
+
+    Default-DENY. The WebServer DAT binds all interfaces, so without this gate any
+    machine that can reach :9980 could drive the bridge — and under the default
+    zero-auth + exec config that is drive-by remote code execution. We refuse a
+    non-loopback peer address at the earliest point in the request handler, BEFORE
+    routing, authentication, or any tool runs, unless the operator explicitly opts
+    into LAN exposure by setting `TDMCP_BRIDGE_ALLOW_LAN` to 1/true/yes/on in that
+    TouchDesigner's environment (documented for trusted networks, ideally paired
+    with `TDMCP_BRIDGE_TOKEN`). Mirrors the official TDMCP "Address Scope" gate.
+    """
+    raw = os.environ.get("TDMCP_BRIDGE_ALLOW_LAN")
+    if raw is None:
+        return False
+    return raw.strip().lower() in ("1", "true", "yes", "on")
+
+
 def _quarantine_load_enabled():
     """Whether `POST /api/project/load` may open an artifact in THIS instance.
 
@@ -128,6 +146,128 @@ def _check_auth(request):
 
 
 _LOOPBACK_HOSTS = ("127.0.0.1", "localhost", "::1")
+
+# Request-meta keys under which TD builds surface the connecting peer's address.
+# It is NOT an HTTP header (a client cannot forge it), so it is looked up
+# separately from `_find_header`. Builds vary in the exact spelling, so we scan a
+# small allowlist and normalize IPv6 / IPv4-mapped forms before comparing.
+_CLIENT_ADDRESS_KEYS = (
+    "clientAddress",
+    "client-address",
+    "clientaddress",
+    "client_address",
+    "remoteAddress",
+    "remote-address",
+    "remote_address",
+    "peerAddress",
+    "peer_address",
+)
+
+
+def _strip_brackets(value):
+    """Reduce a bracketed IPv6 literal to its bare host, honoring a trailing port.
+
+    `[::1]:9980` -> `::1` and `[::1]` -> `::1`. A plain `strip("[]")` mishandles
+    the with-port form (it leaves `::1]:9980`, which fails the loopback check), so
+    the bracketed `[host]:port` shape is parsed explicitly. A value without a
+    leading bracket is returned unchanged for the caller's other normalizations.
+    """
+    if not value.startswith("["):
+        return value
+    end = value.find("]")
+    if end == -1:
+        return value.strip("[")
+    return value[1:end]
+
+
+def _normalize_address(addr):
+    """Reduce a raw peer address to a bare host for loopback comparison.
+
+    Strips an IPv6 zone id (`fe80::1%en0` -> `fe80::1`), brackets with an optional
+    port (`[::1]:9980` -> `::1`, `[::1]` -> `::1`), and the IPv4-mapped IPv6 prefix
+    (`::ffff:127.0.0.1` -> `127.0.0.1`). A `host:port` pair is left alone unless it
+    is an unambiguous IPv4 `a.b.c.d:p`, whose port we drop; bare IPv6 (many colons)
+    is never split.
+    """
+    if not isinstance(addr, str):
+        return None
+    value = addr.strip()
+    if not value:
+        return None
+    value = _strip_brackets(value)
+    if value.startswith("::ffff:") and "." in value:
+        value = value[len("::ffff:") :]
+    value = value.split("%", 1)[0]
+    # Drop a trailing :port only for plain IPv4 (single colon, dotted quad).
+    if value.count(":") == 1 and "." in value.split(":", 1)[0]:
+        value = value.split(":", 1)[0]
+    return value or None
+
+
+_CLIENT_ADDRESS_NESTED = ("headers", "header", "fields", "meta")
+
+
+def _client_address_here(node):
+    """First normalized peer address directly on this dict level, or None."""
+    for key in _CLIENT_ADDRESS_KEYS:
+        if key in node:
+            normalized = _normalize_address(node[key])
+            if normalized:
+                return normalized
+    return None
+
+
+def _scan_client_address(node, depth=0):
+    """Recursively find a normalized peer address (this level, then one nesting)."""
+    if not isinstance(node, dict) or depth > 2:
+        return None
+    here = _client_address_here(node)
+    if here is not None:
+        return here
+    for nested in _CLIENT_ADDRESS_NESTED:
+        sub = node.get(nested)
+        hit = _scan_client_address(sub, depth + 1) if isinstance(sub, dict) else None
+        if hit is not None:
+            return hit
+    return None
+
+
+def _client_address(request):
+    """Return the connecting peer's address from the request meta, or None.
+
+    Scans the small allowlist of build-specific keys (top level and one nesting
+    level, mirroring `_find_header`'s defensiveness). Returns None when the build
+    does not surface a peer address at all, in which case the caller falls back to
+    the Origin/Host header guards rather than failing open on address scope.
+    """
+    if not isinstance(request, dict):
+        return None
+    return _scan_client_address(request)
+
+
+def _check_address_scope(request):
+    """Reject off-host (non-loopback) peers unless LAN exposure is opted in.
+
+    This is the network-layer "Address Scope" gate: it runs FIRST in `handle`,
+    before origin/host/auth/routing, so an off-host request is refused immediately
+    and never reaches a tool. Enforced on the peer address (which a caller cannot
+    forge), independent of the bearer token — even an authenticated remote caller
+    is refused unless `TDMCP_BRIDGE_ALLOW_LAN` is set, because binding all
+    interfaces without an explicit opt-in is the known drive-by-RCE risk. When the
+    TD build does not surface a peer address the check is a no-op and the
+    Origin/Host header guards remain the defense.
+    """
+    if _lan_exposure_enabled():
+        return  # operator opted into LAN exposure
+    address = _client_address(request)
+    if address is None:
+        return  # build doesn't expose a peer address; header guards apply
+    if address not in _LOOPBACK_HOSTS:
+        raise _Forbidden(
+            "Forbidden: off-host request from %r rejected. The bridge is "
+            "loopback-only by default; set TDMCP_BRIDGE_ALLOW_LAN=1 in "
+            "TouchDesigner's environment to allow LAN access." % address
+        )
 
 
 def _check_origin(request):
@@ -744,6 +884,7 @@ def _record_duration(elapsed_seconds):
 
 def handle(request, response, webserver=None):
     try:
+        _check_address_scope(request)
         _check_origin(request)
         _check_host(request)
         _check_auth(request)

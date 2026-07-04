@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { computeDataflowLayout } from "../layout.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -71,6 +72,12 @@ export const rebuildNetworkSchema = z.object({
     .boolean()
     .default(false)
     .describe("Delete existing children of parent_path first (destructive)."),
+  auto_layout: z
+    .boolean()
+    .default(false)
+    .describe(
+      "Auto-position every node by dependency (longest-path columns, left→right) from the spec's `inputs` graph, overriding any per-node x/y. False (default) honors manual x/y only.",
+    ),
 });
 type RebuildNetworkArgs = z.infer<typeof rebuildNetworkSchema>;
 
@@ -82,6 +89,22 @@ interface RebuildNetworkReport {
   cleared: number;
   warnings: string[];
   fatal?: string;
+}
+
+type SpecNode = RebuildNetworkArgs["spec"]["nodes"][number];
+
+// Compute nodeX/nodeY for every node from the spec's `inputs` dependency graph
+// (longest-path columns, left→right) and stamp them onto each node, overriding any
+// manual x/y. Layout runs on the requested node NAMES pre-create — all spec nodes are
+// siblings of one parent, so computeDataflowLayout (single group) is correct.
+function applyAutoLayout(nodes: SpecNode[]): SpecNode[] {
+  const names = nodes.map((n) => n.name);
+  const edges = nodes.flatMap((n) => n.inputs.map((i) => ({ from: i.from, to: n.name })));
+  const pos = computeDataflowLayout(names, edges);
+  return nodes.map((n) => {
+    const xy = pos[n.name];
+    return xy ? { ...n, x: xy[0], y: xy[1] } : n;
+  });
 }
 
 // All TD globals (op, the operator-type names, ParMode) live inside this script
@@ -217,9 +240,10 @@ export function buildRebuildScript(payload: object): string {
 export async function rebuildNetworkImpl(ctx: ToolContext, args: RebuildNetworkArgs) {
   return guardTd(
     async () => {
+      const nodes = args.auto_layout ? applyAutoLayout(args.spec.nodes) : args.spec.nodes;
       const script = buildRebuildScript({
         parent_path: args.parent_path,
-        spec: args.spec,
+        spec: { ...args.spec, nodes },
         clear_existing: args.clear_existing,
       });
       const exec = await ctx.client.executePythonScript(script, true);
@@ -236,6 +260,7 @@ export async function rebuildNetworkImpl(ctx: ToolContext, args: RebuildNetworkA
       const summary =
         `Rebuilt ${report.created.length} node(s), ${report.wired} wire(s) under ${report.parent_path}` +
         `${report.cleared > 0 ? `, cleared ${report.cleared} existing` : ""}` +
+        `${args.auto_layout ? " (auto-laid out)" : ""}` +
         `${nWarn > 0 ? ` (${nWarn} warning(s))` : ""}.`;
       return jsonResult(summary, report);
     },
@@ -248,7 +273,7 @@ export const registerRebuildNetwork: ToolRegistrar = (server, ctx) => {
     {
       title: "Rebuild network from a spec",
       description:
-        "Reconstruct a live network inside a COMP from a serialize_network spec — the REBUILD half of a git-diffable round-trip. Takes a JSON spec of nodes (name, operator type, parameters as constants/expressions/binds, inbound wires by name, optional x/y) and, in one pass, creates every node, applies its parameters and expressions, then wires inputs by resolving each `from` reference to the freshly created node. Fail-forward: an unknown operator type, missing parameter, or unresolved wire becomes a warning and the rest still build, so a partial reconstruction still returns useful results. Set clear_existing to delete the parent's current children first (destructive). Returns the created node names, wire count, parameters set, and any warnings.",
+        "Reconstruct a live network inside a COMP from a serialize_network spec — the REBUILD half of a git-diffable round-trip. Takes a JSON spec of nodes (name, operator type, parameters as constants/expressions/binds, inbound wires by name, optional x/y) and, in one pass, creates every node, applies its parameters and expressions, then wires inputs by resolving each `from` reference to the freshly created node. Fail-forward: an unknown operator type, missing parameter, or unresolved wire becomes a warning and the rest still build, so a partial reconstruction still returns useful results. Set clear_existing to delete the parent's current children first (destructive). Set auto_layout to auto-position every node by dependency (longest-path columns, left→right) from the spec's inputs graph, overriding any manual x/y. Returns the created node names, wire count, parameters set, and any warnings.",
       inputSchema: rebuildNetworkSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },

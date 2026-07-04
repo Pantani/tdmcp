@@ -26,10 +26,12 @@ import { registerExtractPalette } from "./extractPalette.js";
 import { registerFindTdNodes } from "./findTdNodes.js";
 import { registerGenerateReadme } from "./generateReadme.js";
 import { registerGetBridgeLogs } from "./getBridgeLogs.js";
+import { registerGetDatContent } from "./getDatContent.js";
 import { registerGetInlinePreview } from "./getInlinePreview.js";
 import { registerGetModuleHelp } from "./getModuleHelp.js";
 import { registerGetNodeStateRuntime } from "./getNodeStateRuntime.js";
 import { registerGetOperatorWorkflowGuide } from "./getOperatorWorkflowGuide.js";
+import { registerGetParameterMenu } from "./getParameterMenu.js";
 import { registerGetTdClassDetails } from "./getTdClassDetails.js";
 import { registerGetTdClasses } from "./getTdClasses.js";
 import { registerGetTdInfo } from "./getTdInfo.js";
@@ -155,4 +157,8 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerGetInlinePreview,
   // Wave 2026-06-02 — compact-token graph digest for small LLM context:
   registerCompactGraphDigest,
+  // TDMCP-parity 2026-07-03 — read-only DAT paging + live parameter menu values
+  // (patterns inspired by Derivative's official TouchDesigner TDMCP, Shared Use License):
+  registerGetDatContent,
+  registerGetParameterMenu,
 ];
