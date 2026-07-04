@@ -17,7 +17,7 @@ it installs everything for you:
 ```text
 Install and connect tdmcp for me using the official install guide:
 https://pantani.github.io/tdmcp/guide/install
-Do every step yourself; only stop when you need me to run the TouchDesigner Textport step.
+Do every step yourself; only stop when you need me to do the TouchDesigner bridge step.
 ```
 :::
 
@@ -46,10 +46,28 @@ A release may not be published yet. Ask whoever shared tdmcp with you for the
 
 ## 3. Turn on the bridge inside TouchDesigner {#turn-on-the-bridge}
 
-This is what lets Claude actually drive TouchDesigner. If you are using the
-no-terminal Claude Desktop path, use the quick one-paste runtime bridge. If you
-work from the CLI and open lots of projects, you can also install a draggable
-Palette package.
+This is what lets Claude actually drive TouchDesigner. The easiest way needs **no
+Textport and no terminal** — just drag a file in. Prefer a one-paste command, or
+open lots of projects? The two alternatives below still work.
+
+### Easiest — drag in the release `.tox` {#drag-in-tox}
+
+1. **[⬇ Download tdmcp_bridge_package.tox](https://github.com/Pantani/tdmcp/releases/latest/download/tdmcp_bridge_package.tox)**
+   from the latest release.
+2. **Open TouchDesigner**, then drag the `.tox` from Finder/Explorer into your
+   `/project1` network.
+3. Click **Install** on the `tdmcp_bridge_package` component.
+
+That's it — no Textport, no Preferences, no clone. The package is self-bootstrapping:
+on the first **Install** it downloads `td/modules` from the matching release zip
+into `~/tdmcp-bridge` and starts the bridge on port 9980. You should see the
+`tdmcp_bridge` component appear in `/project1`. Its **Uninstall** button removes
+only that runtime bridge.
+
+::: warning If the release has no `.tox`
+Older releases may not ship the file yet. Use the one-paste runtime bridge below
+instead, then continue.
+:::
 
 ### Quick runtime bridge
 

@@ -73,7 +73,9 @@ args = ["<project-path>/dist/index.js"]
 
 ## Ligue a ponte no TouchDesigner
 
-O tdmcp precisa de uma pequena ponte rodando *dentro* do TouchDesigner. Abra o
+O tdmcp precisa de uma pequena ponte rodando *dentro* do TouchDesigner. O jeito
+mais fácil é arrastar o `.tox` do release — sem Textport
+([veja Instalação](/pt/guide/install#drag-in-tox)). Prefere uma linha? Abra o
 **Textport** (**Dialogs → Textport and DATs**), cole esta única linha e aperte
 Enter:
 

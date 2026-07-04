@@ -71,7 +71,9 @@ args = ["<project-path>/dist/index.js"]
 
 ## Turn on the bridge in TouchDesigner
 
-tdmcp needs a small bridge running *inside* TouchDesigner. Open the **Textport**
+tdmcp needs a small bridge running *inside* TouchDesigner. The easiest way is to
+drag the release `.tox` in — no Textport
+([see Install](/guide/install#drag-in-tox)). Prefer one paste? Open the **Textport**
 (**Dialogs → Textport and DATs**), paste this one line, and press Enter:
 
 ```python
