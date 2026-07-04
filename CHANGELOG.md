@@ -11,8 +11,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Add `get_dat_content` (CLI `dat-get`), a read-only Layer 3 tool that pages a
   DAT's text or table content (offset/limit, optional header, preview rows, and
   a `truncated`/`row_range` window) so agents can inspect large DATs without raw
-  Python. Patterns inspired by Derivative's official TouchDesigner TDMCP (Shared
-  Use License); reimplemented independently.
+  Python.
 - Add `get_parameter_menu` (CLI `params-menu`), a read-only Layer 3 tool that
   live-fetches a menu-style parameter's `menuNames`/`menuLabels` and current
   value from the bridge, with a loud-warned bundled-knowledge fallback when raw
