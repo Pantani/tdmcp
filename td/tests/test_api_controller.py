@@ -510,6 +510,16 @@ class AddressScopeTests(unittest.TestCase):
             with self.assertRaises(PermissionError, msg=key):
                 ac._check_address_scope({key: "192.168.1.5"})
 
+    def test_header_map_clientaddress_not_trusted(self):
+        # HTTP header maps are attacker-controlled. A spoofed loopback address under
+        # headers/header/fields must NOT be treated as the peer address — otherwise a
+        # remote client could inject `clientAddress: 127.0.0.1` to bypass the gate.
+        for container in ("headers", "header", "fields"):
+            self.assertIsNone(
+                ac._client_address({container: {"clientAddress": "127.0.0.1"}}),
+                msg=container,
+            )
+
 
 class HandleTests(unittest.TestCase):
     def tearDown(self):

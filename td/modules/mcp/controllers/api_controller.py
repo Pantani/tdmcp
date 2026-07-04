@@ -204,7 +204,11 @@ def _normalize_address(addr):
     return value or None
 
 
-_CLIENT_ADDRESS_NESTED = ("headers", "header", "fields", "meta")
+# Only trusted, TouchDesigner-supplied peer info is scanned. HTTP header maps
+# (`headers`/`header`/`fields`) are attacker-controlled — scanning them would let a
+# remote client spoof `clientAddress: 127.0.0.1` and bypass the loopback-only gate —
+# so they are deliberately excluded; only a non-header `meta` container is nested-scanned.
+_CLIENT_ADDRESS_NESTED = ("meta",)
 
 
 def _client_address_here(node):
