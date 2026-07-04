@@ -106,7 +106,7 @@ def _event_hooks_source(modules_dir=None):
 DEFAULT_PACKAGE_NAME = "tdmcp_bridge_package"
 DEFAULT_PACKAGE_TOX_NAME = DEFAULT_PACKAGE_NAME + ".tox"
 DEFAULT_PACKAGE_PALETTE_FOLDER = "tdmcp"
-DEFAULT_PACKAGE_BOOTSTRAP_REPO_ZIP = "https://github.com/Pantani/tdmcp/archive/refs/tags/v0.11.0.zip"
+DEFAULT_PACKAGE_BOOTSTRAP_REPO_ZIP = "https://github.com/Pantani/tdmcp/archive/refs/tags/v0.12.0.zip"
 DEFAULT_PACKAGE_BOOTSTRAP_DEST = "~/tdmcp-bridge"
 
 RUNTIME_BRIDGE_LAYOUT = {

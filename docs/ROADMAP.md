@@ -11,16 +11,15 @@ page is the honest, bird's-eye picture of **what already works, what's still
 rough, and what's coming next** on the way to a stable 1.0.
 
 **Where things stand today.** The npm `latest` package and latest published
-GitHub Release/tag are **v0.10.0** as of June 25, 2026. v0.10.0 is the
-roadmap-to-1.0 consolidation release for recipe depth, mixer-scene policy,
-coverage gating, exec-off smoke coverage, Connectors Directory prep, hand
-controls, Creative RAG and Project RAG. The current source tree is preparing
-**v0.11.0** with the TouchDesigner knowledge import, Claude Code marketplace
-metadata, Kinect wall harp, physical-installation diagnostics, offline
-tutorial-to-recipe drafting, cookbook examples, and CLI/docs/release hardening
+GitHub Release/tag are **v0.11.0** as of July 4, 2026. v0.11.0 shipped the
+TouchDesigner knowledge import, Claude Code marketplace metadata, Kinect wall
+harp, physical-installation diagnostics, offline tutorial-to-recipe drafting,
+cookbook examples, and CLI/docs/release hardening. The current source tree is
+preparing **v0.12.0** with safer retry semantics, undo-aware mutations,
+preview/read tooling, transport/bridge hardening, and release-ready install pins
 listed below. The CHANGELOG blocks list every entry; the always-current tool list
 is the [Tools reference](/reference/tools). 1.0 is **not** the next minor — the
-v0.11.x line is the active feature/consolidation line, and v1.0 will land only
+v0.12.x line is the active feature/consolidation line, and v1.0 will land only
 once the consolidation gates below are all green.
 
 The project has grown through five arcs:
@@ -60,30 +59,28 @@ The project has grown through five arcs:
 
 ## ✅ Current Release Line
 
-### v0.11.0 preparation — TouchDesigner knowledge, hardware diagnostics and CLI/docs hardening
+### v0.12.0 preparation — safe mutations, previews and bridge hardening
 
-Source-tree work after the v0.10.0 publication prepares the next minor around
-offline TouchDesigner knowledge, hardware-installation readiness and release
-reliability:
+Source-tree work after the v0.11.0 publication prepares the next minor around
+safer agent retries, cheaper inspection and stronger local transport defaults:
 
-- **TouchDesigner knowledge import.** Bottobot-derived operator/version,
-  compatibility, technique and tutorial knowledge is exposed as read-only MCP
-  resources and agent tools for operator search, workflow lookup, comparison,
-  version migration planning and offline recipe drafting.
-- **Kinect wall harp + physical diagnostics.** `create_kinect_wall_harp`,
-  external Kinect bridge helpers, normalized bridge-status DAT/CHOP surfaces,
-  local source-status diagnostics and `diagnose_hardware_environment` give
-  projection/hardware setups a preflight path before live venue validation.
-- **Claude Code marketplace metadata.** The release surface now includes a
-  `.claude-plugin` marketplace entry with a stdio-pinned package launch.
-- **Cookbook and docs follow-through.** English and Portuguese examples cover
-  offline TD knowledge workflows, tutorial-to-recipe drafting, operator
-  compare/validate/draft loops, newer live-video and performance-control
-  prompts, and TD-captured hardware-free media examples.
-- **Release and CLI hardening.** Bootstrap pins, install prompts, SafeSkill
-  scanning, doctor remediation hints, command suggestions, tool counts,
-  Glama/pnpm Docker builds and tool-description quality were tightened before
-  tagging.
+- **Retry-safe mutations.** `create_td_node` and `create_node_chain` reuse
+  matching existing operators instead of failing or auto-renaming; mutating
+  bridge requests are wrapped in single TouchDesigner undo blocks.
+- **Parameter and destructive-action guardrails.** Menu parameters now reject
+  unknown entries explicitly, `delete_td_node` adds reversible bypass mode, and
+  `set_parameter_expression` can reset or unbind values behind the exec gate.
+- **Cheaper inspection.** `get_preview` adds JSON sample grids, pre-pulse
+  capture and delayed capture jobs; `get_dat_content` pages large DATs;
+  `get_parameter_menu` exposes live menu choices with bundled fallback data.
+- **Layout and editor follow-through.** Shared layout moves docked DATs with
+  their parent nodes, `rebuild_network` can auto-layout specs, and
+  `focus_network_editor` frames generated operators in TouchDesigner's Network
+  Editor.
+- **Bridge and transport hardening.** Loopback peer-address enforcement,
+  back-pressure shedding, Streamable HTTP `Origin`/`Content-Type` checks,
+  optional bearer auth, an offline smoke harness, and portable contract export
+  prepare the release for safer local automation.
 
 ### Wave 12 — v0.8.3 (live-show resilience + LLM token budget + CLI ergonomics) {#wave-12-v0-8-3}
 

@@ -60,7 +60,7 @@ na Palette.
 3. Cole esta **única linha** e aperte **Enter**:
 
    ```python
-   import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.11.0/td/bootstrap.py").read().decode())
+   import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.12.0/td/bootstrap.py").read().decode())
    ```
 
 Você deve ver:
