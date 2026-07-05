@@ -106,17 +106,29 @@ npm run setup   # installs, builds, and prints the exact line to connect your cl
 
 ### Turn on the bridge inside TouchDesigner (everyone)
 
-Open TouchDesigner, open the **Textport** (`Dialogs → Textport and DATs`), paste
-this **one line** and press Enter:
+**Easiest — no Textport.** Download
+[**tdmcp_bridge_package.tox**](https://github.com/Pantani/tdmcp/releases/latest/download/tdmcp_bridge_package.tox)
+from the latest release, drag it into your `/project1` network, and click
+**Install** on the component. The package self-bootstraps and starts the bridge on
+port 9980. ✅
+
+<details>
+<summary>Prefer a one-line Textport command?</summary>
+
+Open the **Textport** (`Dialogs → Textport and DATs`), paste this **one line** and
+press Enter:
 
 ```python
 import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.12.0/td/bootstrap.py").read().decode())
 ```
 
-You should see `[tdmcp] bridge running on port 9980 (/project1/tdmcp_bridge)`. ✅
-It's safe and reversible — it adds one tidy component; remove it later with
-`from mcp import install; install.uninstall()`. Other install methods (module
-path, terminal, reusable `.tox`) are in the
+You should see `[tdmcp] bridge running on port 9980 (/project1/tdmcp_bridge)`.
+
+</details>
+
+Either way it's safe and reversible — it adds one tidy component; remove it later
+with `from mcp import install; install.uninstall()`. Other install methods (module
+path, terminal, Palette package) are in the
 [bridge docs](https://pantani.github.io/tdmcp/reference/bridge-api).
 
 ### Make something
