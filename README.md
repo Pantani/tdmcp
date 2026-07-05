@@ -84,7 +84,7 @@ You set up **two sides**: your **AI** (so it gets the tdmcp tools) and
 ```text
 Install and connect tdmcp for me using the official install guide:
 https://pantani.github.io/tdmcp/guide/install
-Do every step yourself; only stop when you need me to paste one line into TouchDesigner.
+Do every step yourself; only stop when you need me to do the TouchDesigner bridge step.
 ```
 
 It clones, builds and wires everything up; the only manual step is pasting one

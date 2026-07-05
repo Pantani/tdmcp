@@ -34,7 +34,7 @@ do TouchDesigner:
 ```text
 Install and connect tdmcp for me using the official install guide:
 https://pantani.github.io/tdmcp/pt/guide/install
-Do every step yourself; only stop when you need me to paste one line into TouchDesigner.
+Do every step yourself; only stop when you need me to do the TouchDesigner bridge step.
 ```
 :::
 
