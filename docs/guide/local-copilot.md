@@ -128,11 +128,12 @@ Full list (including `TDMCP_LLM_API_KEY` and the chat port) is in
 ## Turn on the bridge {#turn-on-the-bridge}
 
 Like every client, the copilot needs the small bridge running *inside*
-TouchDesigner. Open the **Textport** (**Dialogs → Textport and DATs**), paste this
-one line, and press Enter:
+TouchDesigner. The easiest way is to drag the release `.tox` in — no Textport
+([see Install](/guide/install#drag-in-tox)). Prefer one paste? Open the
+**Textport** (**Dialogs → Textport and DATs**), paste this one line, and press Enter:
 
 ```python
-import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.11.0/td/bootstrap.py").read().decode())
+import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.12.0/td/bootstrap.py").read().decode())
 ```
 
 You should see `[tdmcp] bridge running on port 9980`. See

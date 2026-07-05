@@ -135,11 +135,13 @@ A lista completa (incluindo `TDMCP_LLM_API_KEY` e a porta do chat) está em
 ## Ligue a ponte {#turn-on-the-bridge}
 
 Como todo cliente, o copiloto precisa da pequena ponte rodando *dentro* do
-TouchDesigner. Abra o **Textport** (**Dialogs → Textport and DATs**), cole esta
-única linha e aperte Enter:
+TouchDesigner. O jeito mais fácil é arrastar o `.tox` do release — sem Textport
+([veja Instalação](/pt/guide/install#drag-in-tox)). Prefere uma linha? Abra o
+**Textport** (**Dialogs → Textport and DATs**), cole esta única linha e aperte
+Enter:
 
 ```python
-import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.11.0/td/bootstrap.py").read().decode())
+import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.12.0/td/bootstrap.py").read().decode())
 ```
 
 Você deve ver `[tdmcp] bridge running on port 9980`. Veja

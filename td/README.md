@@ -8,30 +8,34 @@ talks to.
 > bridge ships as Python modules plus builders that TouchDesigner can run live to
 > create/export the Palette package or a runtime bridge `.tox`.
 
-## Easiest install
+## Easiest install — drag-and-drop, no Textport
 
-You only need the bridge running inside TouchDesigner once per project. For repeat
-use, install the Palette package once and then drag it into new projects:
+Download the prebuilt **`tdmcp_bridge_package.tox`** from the matching
+[GitHub Release](https://github.com/Pantani/tdmcp/releases), then in TouchDesigner:
 
-```bash
-npx --yes --package=@dpantani/tdmcp tdmcp install-bridge --palette
-```
+1. Drag the `.tox` from Finder/Explorer into your network.
+2. Click **Install** on the `tdmcp_bridge_package` COMP.
 
-Paste the Palette package Textport command printed by the CLI. It exports
-`tdmcp/tdmcp_bridge_package.tox`; drag that package from the Palette into a
-project and click **Install**. The package creates one tidy `tdmcp_bridge` COMP
-(Web Server DAT + callbacks), and its **Uninstall** button removes only that
-runtime bridge.
+That's it — no Textport, no Preferences, no clone. The package is tag-pinned and
+self-bootstrapping: on first Install it downloads `td/modules` from that release's
+zip into `~/tdmcp-bridge` and starts the bridge on port 9980. It creates one tidy
+`tdmcp_bridge` COMP (Web Server DAT + callbacks); its **Uninstall** button removes
+only that runtime bridge.
 
-Prefer the old one-off runtime bridge? Pick whichever fits — all three options
-below create the same idempotent `tdmcp_bridge` COMP and can be undone with
+> **Maintainers:** regenerate the release `.tox` with `npm run build:bridge-tox`
+> (see [Building the release .tox](#building-the-release-tox) below). A `.tox` can
+> only be serialized inside a live TD session, so this is a one-per-release step —
+> it is what lets every user skip the Textport.
+
+If your release has no `.tox` attached yet, use one of the Textport paths below.
+All create the same idempotent `tdmcp_bridge` COMP and can be undone with
 `from mcp import install; install.uninstall()`.
 
 **A. One paste — no clone, no Preferences.** In the Textport
 (`Dialogs → Textport and DATs`):
 
 ```python
-import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.11.0/td/bootstrap.py").read().decode())
+import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.12.0/td/bootstrap.py").read().decode())
 ```
 
 It downloads the bridge to `~/tdmcp-bridge/modules` and starts it on port 9980.
@@ -48,6 +52,24 @@ from mcp import install; install.run()
 **C. From the terminal.** `npx --yes --package=@dpantani/tdmcp tdmcp install-bridge` (or
 `node dist/index.js install-bridge` from a clone) copies the bridge to
 `~/tdmcp-bridge` and prints exactly what to paste in the Textport.
+
+### Building the release .tox
+
+Maintainers regenerate the distributable package once per release so users get the
+drag-and-drop flow above. From a clone with TouchDesigner running (bridge installed,
+`ALLOW_EXEC` enabled):
+
+```bash
+npm run build:bridge-tox           # -> dist/tdmcp_bridge_package.tox, tag-pinned to package.json version
+```
+
+It drives `install.export_package(...)` over the bridge's `/api/exec` — so you
+don't touch the Textport either — and prints the exact zip URL the package is
+pinned to. Attach the resulting `.tox` to the GitHub Release for that tag.
+
+Flags: `--out <path>`, `--repo-zip <url>` (override the tag pin), `--host`,
+`--port`, `--token`. If the bridge is offline the command prints the one-line
+`install.export_package(...)` you can paste in the Textport once instead.
 
 ### Make a reusable .tox (drag-and-drop)
 

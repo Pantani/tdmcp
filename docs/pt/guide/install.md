@@ -18,7 +18,7 @@ instala tudo para você:
 ```text
 Install and connect tdmcp for me using the official install guide:
 https://pantani.github.io/tdmcp/pt/guide/install
-Do every step yourself; only stop when you need me to run the TouchDesigner Textport step.
+Do every step yourself; only stop when you need me to do the TouchDesigner bridge step.
 ```
 :::
 
@@ -48,10 +48,29 @@ diretamente a quem te indicou o tdmcp e continue no passo 2.
 
 ## 3. Ligue a ponte dentro do TouchDesigner {#turn-on-the-bridge}
 
-É isso que permite o Claude realmente controlar o TouchDesigner. Se você está no
-caminho sem terminal do Claude Desktop, use a linha única rápida. Se trabalha
-pela CLI e abre muitos projetos, você também pode instalar um pacote arrastável
-na Palette.
+É isso que permite o Claude realmente controlar o TouchDesigner. O jeito mais
+fácil **não usa Textport nem terminal** — é só arrastar um arquivo. Prefere um
+comando de uma linha, ou abre muitos projetos? As duas alternativas abaixo
+continuam funcionando.
+
+### Mais fácil — arraste o `.tox` do release {#drag-in-tox}
+
+1. **[⬇ Baixe tdmcp_bridge_package.tox](https://github.com/Pantani/tdmcp/releases/latest/download/tdmcp_bridge_package.tox)**
+   do release mais recente.
+2. **Abra o TouchDesigner** e arraste o `.tox` do Finder/Explorer para a rede
+   `/project1`.
+3. Clique em **Install** no componente `tdmcp_bridge_package`.
+
+Pronto — sem Textport, sem Preferences, sem clone. O pacote se autoinicializa: no
+primeiro **Install** ele baixa `td/modules` do zip do release correspondente para
+`~/tdmcp-bridge` e liga a ponte na porta 9980. Você deve ver o componente
+`tdmcp_bridge` aparecer em `/project1`. O botão **Uninstall** remove apenas essa
+ponte runtime.
+
+::: warning Se o release não tiver o `.tox`
+Releases antigos podem ainda não trazer o arquivo. Use o runtime rápido da ponte
+abaixo e continue.
+:::
 
 ### Runtime rápido da ponte
 
@@ -60,7 +79,7 @@ na Palette.
 3. Cole esta **única linha** e aperte **Enter**:
 
    ```python
-   import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.11.0/td/bootstrap.py").read().decode())
+   import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.12.0/td/bootstrap.py").read().decode())
    ```
 
 Você deve ver:

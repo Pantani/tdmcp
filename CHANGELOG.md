@@ -6,6 +6,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Drag-and-drop bridge install: `npm run build:bridge-tox` generates a
+  tag-pinned, self-bootstrapping `tdmcp_bridge_package.tox` (via the running
+  bridge's `/api/exec`, so no Textport for the maintainer either) to attach to the
+  GitHub Release. End users then install the bridge by dragging the `.tox` into a
+  project and clicking **Install** — no Textport, no Preferences, no clone. The
+  `td/README.md` "Easiest install" now leads with this path.
+
 ## [0.12.0] - 2026-07-04
 
 ### Added
