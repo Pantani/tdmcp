@@ -18,10 +18,11 @@
  *    ALLOW_EXEC enabled on that (trusted, local) TD.
  *  - Bridge offline: prints the exact tag-pinned Textport one-liner to paste once.
  */
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { TouchDesignerClient } from "../src/td-client/touchDesignerClient.js";
+import { TdConnectionError } from "../src/td-client/types.js";
 import { loadConfig, tdBaseUrl } from "../src/utils/config.js";
 import { createLogger } from "../src/utils/logger.js";
 
@@ -36,11 +37,13 @@ interface BuildToxOptions {
   token?: string;
 }
 
-const FLAGS_WITH_VALUE = new Set(["--out", "--repo-zip", "--host", "--port", "--token"]);
+/** Repo root, resolved from this script's location (scripts/ -> ..). */
+function repoRoot(): string {
+  return dirname(dirname(fileURLToPath(import.meta.url)));
+}
 
 function packageVersion(): string {
-  const root = dirname(dirname(fileURLToPath(import.meta.url)));
-  const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
+  const pkg = JSON.parse(readFileSync(join(repoRoot(), "package.json"), "utf8")) as {
     version?: unknown;
   };
   if (typeof pkg.version !== "string" || pkg.version.length === 0) {
@@ -54,7 +57,9 @@ function parseArgs(args: string[]): BuildToxOptions {
     const i = args.indexOf(flag);
     if (i === -1) return undefined;
     const value = args[i + 1];
-    if (value === undefined || (FLAGS_WITH_VALUE.has(value) && value.startsWith("--"))) {
+    // Reject any following token that looks like a flag — including unknown ones
+    // (`--out --foo`) — so a missing value never silently swallows the next flag.
+    if (value === undefined || value.startsWith("--")) {
       throw new Error(`Missing value for ${flag}.`);
     }
     return value;
@@ -76,22 +81,31 @@ function parseArgs(args: string[]): BuildToxOptions {
   };
 }
 
-/** The one-liner a maintainer pastes into the Textport when the bridge is offline. */
-function textportCommand(options: BuildToxOptions): string {
+/** The `install.export_package(...)` call shared by the exec path and the fallback. */
+function exportCall(options: BuildToxOptions): string {
   return (
-    "from mcp import install; " +
     `install.export_package(path=${JSON.stringify(options.out)}, ` +
     `modules_dir=None, repo_zip=${JSON.stringify(options.repoZip)})`
   );
 }
 
+/**
+ * The lines a maintainer pastes into the Textport when the bridge is offline.
+ * Prepends this checkout's `td/modules` to `sys.path` so `import mcp` works even
+ * in a clean TD session with no Preferences module path set.
+ */
+function textportCommand(options: BuildToxOptions): string {
+  const modulesDir = join(repoRoot(), "td", "modules");
+  return [
+    `import sys; sys.path.insert(0, ${JSON.stringify(modulesDir)})`,
+    "from mcp import install",
+    exportCall(options),
+  ].join("\n");
+}
+
 /** The Python `install.export_package(...)` call driven over /api/exec. */
 function exportScript(options: BuildToxOptions): string {
-  return [
-    "from mcp import install",
-    `install.export_package(path=${JSON.stringify(options.out)}, ` +
-      `modules_dir=None, repo_zip=${JSON.stringify(options.repoZip)})`,
-  ].join("\n");
+  return ["from mcp import install", exportCall(options)].join("\n");
 }
 
 function buildClient(options: BuildToxOptions): TouchDesignerClient {
@@ -139,9 +153,11 @@ function reportOffline(options: BuildToxOptions, reason: string): void {
       "[tdmcp] A .tox can only be serialized from a live TouchDesigner session.",
       "",
       "  Either start TD with the bridge (ALLOW_EXEC enabled) and re-run this,",
-      "  or paste this ONCE into the Textport (Dialogs -> Textport and DATs):",
+      "  or paste these lines ONCE into the Textport (Dialogs -> Textport and DATs):",
       "",
-      `       ${textportCommand(options)}`,
+      ...textportCommand(options)
+        .split("\n")
+        .map((line) => `       ${line}`),
       "",
       `  It writes the package to ${options.out}. Then attach that .tox to the release.`,
       "",
@@ -158,11 +174,19 @@ async function main(): Promise<void> {
   try {
     await client.getInfo();
   } catch (err) {
-    reportOffline(options, err instanceof Error ? err.message : String(err));
-    process.exitCode = 1;
-    return;
+    // Only a genuine connection failure means "offline". API/timeout/back-pressure
+    // errors are real bridge faults and must surface, not hide behind the fallback.
+    if (err instanceof TdConnectionError) {
+      reportOffline(options, err.message);
+      process.exitCode = 1;
+      return;
+    }
+    throw err;
   }
 
+  // Remove any stale artifact first so the post-export existsSync check can only
+  // pass on a freshly written file, never on a leftover from an earlier run.
+  rmSync(options.out, { force: true });
   await client.executePythonScript(exportScript(options), true);
   if (!existsSync(options.out)) {
     throw new Error(
