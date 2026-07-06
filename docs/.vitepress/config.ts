@@ -23,67 +23,180 @@ function pageUrl(relativePath: string): string {
 }
 
 // Artist track — the only section that is translated (EN + PT-BR).
-const artistGuide = (base: string) => [
-  { text: "What is tdmcp?", link: `${base}/what-is-tdmcp` },
+//
+// One source of truth: `artistGroups{En,Pt}` describe the 7 collapsible groups
+// (title + collapsed state + page slugs) once per locale. `buildArtistGuide`
+// turns those descriptors into the VitePress sidebar shape, so EN and PT stay
+// structurally identical (same groups, same order, same collapsed values) by
+// construction. Slugs are locale-independent; the base prefix (`/guide` or
+// `/pt/guide`) is applied here.
+type ArtistItem = { text: string; slug: string };
+type ArtistGroup = { text: string; collapsed: boolean; items: ArtistItem[] };
+
+function buildArtistGuide(base: string, groups: ArtistGroup[]) {
+  return groups.map((group) => ({
+    text: group.text,
+    collapsed: group.collapsed,
+    items: group.items.map((item) => ({
+      text: item.text,
+      // An empty slug ("") targets the group index page (…/tutorials/).
+      link: item.slug === "" ? `${base}/tutorials/` : `${base}/${item.slug}`,
+    })),
+  }));
+}
+
+const artistGroupsEn: ArtistGroup[] = [
   {
-    text: "Get started",
+    text: "🚀 Start here",
     collapsed: false,
     items: [
-      { text: "Claude (Desktop & Code)", link: `${base}/install` },
-      { text: "Codex", link: `${base}/codex` },
-      { text: "Local copilot — no API", link: `${base}/local-copilot` },
+      { text: "What is tdmcp?", slug: "what-is-tdmcp" },
+      { text: "Install for Claude", slug: "install" },
+      { text: "Install for Codex", slug: "codex" },
+      { text: "Local copilot — no API", slug: "local-copilot" },
+      { text: "Your first visual", slug: "first-visual" },
     ],
   },
-  { text: "Your first visual", link: `${base}/first-visual` },
-  { text: "Body & pose tracking", link: `${base}/body-tracking` },
-  { text: "MediaPipe adapters", link: `${base}/mediapipe-adapters` },
-  { text: "Physical installations", link: `${base}/physical-installations` },
-  { text: "Shader Park", link: `${base}/shader-park` },
-  { text: "Use from TouchDesigner (LOPs)", link: `${base}/lops-integration` },
-  { text: "AI-Controlled Party", link: `${base}/ai-controlled-party` },
-  { text: "Show timelines & setlists", link: `${base}/show-timelines` },
-  { text: "Front-of-house dashboard", link: `${base}/dashboard-foh` },
-  { text: "Prompt cookbook", link: `${base}/prompt-cookbook` },
-  { text: "Layer-1 generators", link: `${base}/generators` },
-  { text: "Reusable components", link: `${base}/components` },
-  { text: "Recipe gallery", link: `${base}/recipes` },
-  { text: "Session profile & corpus", link: `${base}/session-profile` },
-  { text: "MCP resources", link: `${base}/mcp-resources` },
-  { text: "Troubleshooting", link: `${base}/troubleshooting` },
-  { text: "Glossary", link: `${base}/glossary` },
-  { text: "FAQ", link: `${base}/faq` },
+  {
+    text: "🎨 Tutorials",
+    collapsed: false,
+    items: [
+      { text: "Tutorials overview", slug: "" },
+      { text: "1. Your first audio-reactive visual", slug: "tutorials/audio-reactive-visual" },
+      {
+        text: "2. A camera-interactive installation",
+        slug: "tutorials/camera-interactive-installation",
+      },
+      { text: "3. A VJ set with a timeline", slug: "tutorials/vj-set-timeline" },
+      { text: "4. A generative art loop", slug: "tutorials/generative-art-loop" },
+    ],
+  },
+  {
+    text: "🕺 Body & interaction",
+    collapsed: true,
+    items: [
+      { text: "Body & pose tracking", slug: "body-tracking" },
+      { text: "MediaPipe adapters", slug: "mediapipe-adapters" },
+      { text: "Physical installations", slug: "physical-installations" },
+    ],
+  },
+  {
+    text: "🎛️ Live shows",
+    collapsed: true,
+    items: [
+      { text: "AI-Controlled Party", slug: "ai-controlled-party" },
+      { text: "Show timelines & setlists", slug: "show-timelines" },
+      { text: "Front-of-house dashboard", slug: "dashboard-foh" },
+    ],
+  },
+  {
+    text: "📚 Artist reference",
+    collapsed: true,
+    items: [
+      { text: "Prompt cookbook", slug: "prompt-cookbook" },
+      { text: "Layer-1 generators", slug: "generators" },
+      { text: "Reusable components", slug: "components" },
+      { text: "Recipe gallery", slug: "recipes" },
+      { text: "Glossary", slug: "glossary" },
+    ],
+  },
+  {
+    text: "⚙️ Advanced",
+    collapsed: true,
+    items: [
+      { text: "Use from TouchDesigner (LOPs)", slug: "lops-integration" },
+      { text: "Shader Park", slug: "shader-park" },
+      { text: "Session profile & corpus", slug: "session-profile" },
+      { text: "MCP resources", slug: "mcp-resources" },
+    ],
+  },
+  {
+    text: "🆘 Help",
+    collapsed: true,
+    items: [
+      { text: "Troubleshooting", slug: "troubleshooting" },
+      { text: "FAQ", slug: "faq" },
+    ],
+  },
 ];
 
-const artistGuidePt = [
-  { text: "O que é o tdmcp?", link: "/pt/guide/what-is-tdmcp" },
+const artistGroupsPt: ArtistGroup[] = [
   {
-    text: "Primeiros passos",
+    text: "🚀 Comece aqui",
     collapsed: false,
     items: [
-      { text: "Claude (Desktop e Code)", link: "/pt/guide/install" },
-      { text: "Codex", link: "/pt/guide/codex" },
-      { text: "Copiloto local — sem API", link: "/pt/guide/local-copilot" },
+      { text: "O que é o tdmcp?", slug: "what-is-tdmcp" },
+      { text: "Instalar para Claude", slug: "install" },
+      { text: "Instalar para Codex", slug: "codex" },
+      { text: "Copiloto local — sem API", slug: "local-copilot" },
+      { text: "Seu primeiro visual", slug: "first-visual" },
     ],
   },
-  { text: "Seu primeiro visual", link: "/pt/guide/first-visual" },
-  { text: "Rastreamento de corpo", link: "/pt/guide/body-tracking" },
-  { text: "Adaptadores MediaPipe", link: "/pt/guide/mediapipe-adapters" },
-  { text: "Instalações físicas", link: "/pt/guide/physical-installations" },
-  { text: "Shader Park", link: "/pt/guide/shader-park" },
-  { text: "Usar do TouchDesigner (LOPs)", link: "/pt/guide/lops-integration" },
-  { text: "Festa controlada por IA", link: "/pt/guide/ai-controlled-party" },
-  { text: "Timelines & setlists de show", link: "/pt/guide/show-timelines" },
-  { text: "Dashboard de front-of-house", link: "/pt/guide/dashboard-foh" },
-  { text: "Receitas de prompt", link: "/pt/guide/prompt-cookbook" },
-  { text: "Geradores Layer-1", link: "/pt/guide/generators" },
-  { text: "Componentes reutilizáveis", link: "/pt/guide/components" },
-  { text: "Galeria de receitas", link: "/pt/guide/recipes" },
-  { text: "Perfil de sessão & corpus", link: "/pt/guide/session-profile" },
-  { text: "Recursos MCP", link: "/pt/guide/mcp-resources" },
-  { text: "Solução de problemas", link: "/pt/guide/troubleshooting" },
-  { text: "Glossário", link: "/pt/guide/glossary" },
-  { text: "FAQ", link: "/pt/guide/faq" },
+  {
+    text: "🎨 Tutoriais",
+    collapsed: false,
+    items: [
+      { text: "Visão geral dos tutoriais", slug: "" },
+      { text: "1. Seu primeiro visual áudio-reativo", slug: "tutorials/audio-reactive-visual" },
+      {
+        text: "2. Uma instalação interativa por câmera",
+        slug: "tutorials/camera-interactive-installation",
+      },
+      { text: "3. Um set de VJ com timeline", slug: "tutorials/vj-set-timeline" },
+      { text: "4. Um loop de arte generativa", slug: "tutorials/generative-art-loop" },
+    ],
+  },
+  {
+    text: "🕺 Corpo & interação",
+    collapsed: true,
+    items: [
+      { text: "Rastreamento de corpo", slug: "body-tracking" },
+      { text: "Adaptadores MediaPipe", slug: "mediapipe-adapters" },
+      { text: "Instalações físicas", slug: "physical-installations" },
+    ],
+  },
+  {
+    text: "🎛️ Shows ao vivo",
+    collapsed: true,
+    items: [
+      { text: "Festa controlada por IA", slug: "ai-controlled-party" },
+      { text: "Timelines & setlists de show", slug: "show-timelines" },
+      { text: "Dashboard de front-of-house", slug: "dashboard-foh" },
+    ],
+  },
+  {
+    text: "📚 Referência do artista",
+    collapsed: true,
+    items: [
+      { text: "Receitas de prompt", slug: "prompt-cookbook" },
+      { text: "Geradores Layer-1", slug: "generators" },
+      { text: "Componentes reutilizáveis", slug: "components" },
+      { text: "Galeria de receitas", slug: "recipes" },
+      { text: "Glossário", slug: "glossary" },
+    ],
+  },
+  {
+    text: "⚙️ Avançado",
+    collapsed: true,
+    items: [
+      { text: "Usar do TouchDesigner (LOPs)", slug: "lops-integration" },
+      { text: "Shader Park", slug: "shader-park" },
+      { text: "Perfil de sessão & corpus", slug: "session-profile" },
+      { text: "Recursos MCP", slug: "mcp-resources" },
+    ],
+  },
+  {
+    text: "🆘 Ajuda",
+    collapsed: true,
+    items: [
+      { text: "Solução de problemas", slug: "troubleshooting" },
+      { text: "FAQ", slug: "faq" },
+    ],
+  },
 ];
+
+const artistGuide = (base: string) => buildArtistGuide(base, artistGroupsEn);
+const artistGuidePt = buildArtistGuide("/pt/guide", artistGroupsPt);
 
 const devReference = [
   { text: "Architecture", link: "/reference/architecture" },
@@ -327,7 +440,7 @@ export default defineConfig({
       lang: "en",
       themeConfig: {
         nav: [
-          { text: "Guide", link: "/guide/what-is-tdmcp", activeMatch: "/guide/" },
+          { text: "Guide", link: "/guide/", activeMatch: "/guide/" },
           { text: "Reference", link: "/reference/architecture", activeMatch: "/reference/" },
           { text: "Roadmap", link: "/roadmap" },
           {
@@ -358,7 +471,7 @@ export default defineConfig({
       link: "/pt/",
       themeConfig: {
         nav: [
-          { text: "Guia", link: "/pt/guide/what-is-tdmcp", activeMatch: "/pt/guide/" },
+          { text: "Guia", link: "/pt/guide/", activeMatch: "/pt/guide/" },
           {
             text: "Docs para devs",
             link: "/pt/reference/architecture",

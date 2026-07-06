@@ -304,6 +304,25 @@ skill author the endpoint + client + validator + exec-fallback slice.
 | 2026-05-30 | Initial build | 1 agent (`tdmcp-backlog-planner`) + 1 skill (`tdmcp-backlog-campaign`) + ledger | drive the round-2 "BEYOND" backlog (66 buildable: 2 foundations + 64 features, 5 waves) to completion idempotently; reuses the whole per-wave pipeline. Policy: staged-by-priority, checkpoint after wave 1, commit+push **no-tag**, TD-required before build waves |
 | 2026-05-30 | Consolidated a parallel campaign (PR #29) | +9 artist-control tools (`create_test_pattern`, `create_text_crawl`, `create_band_router`, `create_sidechain_pump`, `create_xy_pad`, `create_time_echo`, `create_capture_loop`, `create_vector_lines`, `create_blob_reactive`) + `tdmcp-bridge-engineer` agent + `tdmcp-bridge-endpoint` skill | a concurrent session built these round-1 tools (live-validated TD 099: 8 qa_pass, `create_blob_reactive` unverified pending live camera) on a duplicate harness; merged into this line keeping its tools + bridge authoring, dropping the duplicate campaign agent/scripts in favour of `tdmcp-backlog-planner` |
 
+## Harness: docs interactivity
+
+**Goal:** make the docs site artist-friendly and interactive — categorized/collapsible
+sidebar (EN+PT), goal-based guide home, step-by-step tutorial track, copy-prompt/level
+badges.
+
+**Trigger:** when asked to make the documentation more interactive, easier to navigate,
+better organized (categories/subcategories), add tutorials, or improve docs UX/IA —
+including follow-ups (re-run, fix QA findings, add one more tutorial, reorganize a
+section) — use the `tdmcp-docs-interactive` skill (architect → builder ∥ tutorial
+writers → QA, agents in `.claude/agents/`). Release-sync docs work stays with
+`tdmcp-docs-roadmap-update`; cookbook entries with `tdmcp-cookbook-examples`. Simple
+questions can be answered directly. Note: sub-agents (no `TeamCreate`).
+
+**Change log:**
+| Date | Change | Target | Reason |
+|------|--------|--------|--------|
+| 2026-07-06 | Initial harness | 3 agents (`docs-ia-architect`, `docs-interactive-builder`, `docs-tutorial-writer`) + 1 skill; reuses `docs-roadmap-qa` | flat 20-item artist guide is hard to navigate; add categories, interactive home, tutorials |
+
 ## Harness: implementation learning
 
 **Goal:** study a merged or shipped tdmcp implementation after the build, trace
