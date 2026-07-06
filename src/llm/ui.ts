@@ -280,6 +280,8 @@ async function send(text) {
         if (liveBubble) { liveBubble.textContent = ev.content || liveBubble.textContent; liveBubble.classList.remove("streaming"); }
         else if (ev.content) addBubble("copilot", ev.content);
         liveBubble = null;
+      } else if (ev.type === "suggestion") {
+        addBubble("copilot", "ℹ️ " + ev.message);
       } else if (ev.type === "error") {
         if (ev.message !== "cancelled") addBubble("copilot", "⚠ " + ev.message);
       } else if (ev.type === "final") { history = ev.messages; save(); }

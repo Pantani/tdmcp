@@ -8,6 +8,27 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- `create_pointer_reactive` no longer leaks undocumented channels past its output
+  Null (roadmap-to-1.0 polish, live-validated on TD 099 build 2025.32820). The
+  `u`/`v` rename CHOPs only rename the position channels, so the Mouse In `button`
+  rode along on every merge input; merging the three inputs then collision-suffixed
+  the duplicate buttons (`button1`, `button2`) and passed Mouse In's `raw_u`/`raw_v`
+  through, so the `pointer` Null carried nine channels instead of the advertised
+  five. A Select CHOP (`channames = "u v vu vv button"`) now whitelists exactly the
+  five documented bind points before the sensitivity gain and the output Null. Live
+  check: the Null now cooks with exactly `['u','v','vu','vv','button']` and no node
+  errors.
+- `create_step_repeat` and `create_interaction_zones` no longer hard-depend on a
+  bundled `Mosaic.mp4` for their built-in demo (roadmap-to-1.0 polish,
+  live-validated on TD 099 build 2025.32820). That clip does not ship on every TD
+  build — `step_repeat` degraded silently and `interaction_zones` raised
+  "Failed to open file". When no `source` is given, both now default to a
+  guaranteed-present synthetic Noise TOP (a slowly drifting sparse field, so
+  `interaction_zones` still has real frame-to-frame motion to detect) that cooks
+  clean on any install with no external asset. An explicit `source_path` still
+  wins unchanged. Live check: both demos built with no source arg cook with
+  `errors: []` and no "Failed to open file".
+
 - Recipe `histogram_scope` (roadmap-to-1.0 Wave 7, gate `g3_recipes_live`) — the
   trace `choptoSOP` lives inside the `geo` geometry COMP while its source merge
   CHOP `xyz` sits at the container root, so the node's `chop` parameter must be
@@ -35,6 +56,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Local copilot now auto-surfaces the Claude/Codex handoff suggestion when it hits
+  a dead-end (roadmap-to-1.0 polish). The handoff builder + `/handoff` endpoint + UI
+  button already existed but were only invoked manually; `runAgentTurn` now counts
+  back-to-back tool failures and, after two in a row, emits a single non-intrusive
+  `suggestion` event (rendered in the CLI chat and the browser copilot UI) pointing
+  the user at the `/handoff` escape hatch. It is a suggestion line, not a forced
+  exit — the turn continues — and it fires at most once per turn. A successful tool
+  call resets the streak.
 - Regression tests pinning the Europeana `wskey`-strip lesson (roadmap-to-1.0
   Wave 7, `rag_canonicalize_guid_test`): the persisted `sourceUrl`/`id` must never
   embed the API key and must stay stable across keys — covering both the URL-parse

@@ -103,8 +103,20 @@ async function buildPointerChain(
   await builder.connect(velocity, merge, 0, 1);
   await builder.connect(mousein, merge, 0, 2);
 
+  // The rename CHOPs only rename u/v (not the button that rides along from Mouse In),
+  // so each input into the merge still carries its own 'button' — and Mouse In also
+  // brings its raw_u/raw_v back in. Merging then collision-suffixes the duplicate
+  // buttons (button1/button2) and passes raw_u/raw_v through, leaking 4 undocumented
+  // channels past the contract. A Select CHOP whitelists exactly the 5 documented
+  // channels (channames confirmed live: whitelist keeps u v vu vv button, drops the
+  // rest) so the sensitivity gain and the output Null only ever see the 5 bind points.
+  const select = await builder.add("selectCHOP", "channels", {
+    channames: "u v vu vv button",
+  });
+  await builder.connect(merge, select);
+
   const gain = await builder.add("mathCHOP", "sensitivity", { gain: args.sensitivity });
-  await builder.connect(merge, gain);
+  await builder.connect(select, gain);
   const pointer = await builder.add("nullCHOP", "pointer");
   await builder.connect(gain, pointer);
 

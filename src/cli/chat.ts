@@ -190,6 +190,7 @@ export async function runHeadlessPrompt(
 ): Promise<void> {
   let answer: string | undefined;
   let error: string | undefined;
+  let suggestion: string | undefined;
   const messages = await runAgentTurn(
     ctx,
     client,
@@ -197,6 +198,7 @@ export async function runHeadlessPrompt(
     (event) => {
       if (event.type === "answer") answer = event.content;
       if (event.type === "error") error = event.message;
+      if (event.type === "suggestion") suggestion = event.message;
     },
     {
       tools: resolveTools(config.llmTier, { projectRag: ctx.projectRag !== undefined }),
@@ -211,6 +213,8 @@ export async function runHeadlessPrompt(
     )?.content;
   const output = answer ?? fallback ?? (error ? `Error: ${error}` : "");
   if (output) writeStdout(`${output.trimEnd()}\n`);
+  // A non-intrusive nudge printed after the answer when the copilot hit a dead-end.
+  if (suggestion) writeStdout(`\nℹ️  ${suggestion}\n`);
 }
 
 /**

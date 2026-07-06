@@ -72,16 +72,17 @@ const DEFAULT_ARGS = {
 };
 
 describe("create_step_repeat", () => {
-  it("builds a select/moviefilein source → glslTOP tiler → nullTOP chain and summarizes rows×cols", async () => {
+  it("builds a synthetic-noise source → glslTOP tiler → nullTOP chain and summarizes rows×cols", async () => {
     const bodies = captureCreateBodies();
     captureExecScripts();
     const result = await createStepRepeatImpl(makeCtx(), { ...DEFAULT_ARGS });
     expect(result.isError).toBeFalsy();
 
-    // No source_path -> falls back to the bundled Mosaic.mp4 test clip.
-    const movie = bodies.find((b) => b.type === "moviefileinTOP");
-    expect(movie).toBeDefined();
-    expect(movie?.parameters?.file).toBe("Mosaic.mp4");
+    // No source_path -> falls back to a guaranteed-present synthetic Noise TOP (no
+    // external asset — Mosaic.mp4 does not ship on every TD build).
+    const noise = bodies.find((b) => b.type === "noiseTOP");
+    expect(noise).toBeDefined();
+    expect(bodies.some((b) => b.type === "moviefileinTOP")).toBe(false);
     expect(bodies.some((b) => b.type === "selectTOP")).toBe(false);
 
     const glsl = bodies.find((b) => b.type === "glslTOP");

@@ -80,6 +80,11 @@ describe("create_interaction_zones", () => {
     });
     expect(result.isError).toBeFalsy();
 
+    // No source_path -> a guaranteed-present synthetic Noise TOP (no external asset;
+    // Mosaic.mp4 does not ship on every TD build and would raise "Failed to open file").
+    expect(bodies.some((b) => b.type === "noiseTOP")).toBe(true);
+    expect(bodies.some((b) => b.type === "moviefileinTOP")).toBe(false);
+
     // Motion-energy chain.
     expect(bodies.some((b) => b.type === "monochromeTOP")).toBe(true);
     expect(bodies.some((b) => b.type === "cacheTOP")).toBe(true);

@@ -31,7 +31,7 @@ export const createInteractionZonesSchema = z.object({
     .string()
     .optional()
     .describe(
-      "TOP to watch for motion (pulled via selectTOP). Omit for TD's bundled Mosaic.mp4 test clip (offline-safe).",
+      "TOP to watch for motion (pulled via selectTOP). Omit for a built-in synthetic animated Noise TOP that cooks clean on any install (offline-safe, no external asset).",
     ),
   zones: z
     .array(zoneSchema)
@@ -139,8 +139,11 @@ export async function createInteractionZonesImpl(
     const zones = resolveZones(args.zones);
 
     // ── Source ────────────────────────────────────────────────────────────────
-    // selectTOP pulls an external TOP cross-container; otherwise TD's bundled
-    // Mosaic.mp4 gives the chain motion to detect offline (no camera permission).
+    // selectTOP pulls an external TOP cross-container; otherwise a synthetic Noise TOP
+    // (drifting on the timeline) gives the motion chain frame-to-frame change to detect
+    // offline. A bundled movie (Mosaic.mp4) does NOT ship on every TD build and raises
+    // "Failed to open file", so the demo uses a guaranteed-present generator instead —
+    // it cooks clean on any install with no external asset and no camera permission.
     let sourceNode: string;
     if (args.source_path) {
       sourceNode = await builder.add("selectTOP", "source_in", {
@@ -149,11 +152,23 @@ export async function createInteractionZonesImpl(
         resolutionh: resH,
       });
     } else {
-      sourceNode = await builder.add("moviefileinTOP", "movie_test", {
-        file: "Mosaic.mp4",
+      sourceNode = await builder.add("noiseTOP", "synthetic_src", {
+        type: "sparse",
         resolutionw: resW,
         resolutionh: resH,
       });
+      // Drift the field on the timeline so consecutive frames differ → real motion for
+      // the difference TOP even with no camera.
+      await builder.python(
+        [
+          `_n = op(${q(sourceNode)})`,
+          `try:`,
+          `    _n.par.tz.expr = 'absTime.seconds * 0.5'`,
+          `    _n.par.tx.expr = 'absTime.seconds * 0.3'`,
+          `except Exception:`,
+          `    pass`,
+        ].join("\n"),
+      );
     }
 
     // ── Motion-energy TOP ─────────────────────────────────────────────────────
@@ -279,7 +294,9 @@ export async function createInteractionZonesImpl(
 
     const stateChannels = zoneChannels.map((z) => `${z}_state`);
     const dwellChannels = zoneChannels.map((z) => `${z}_dwell`);
-    const sourceSummary = args.source_path ? args.source_path : "Mosaic.mp4 (built-in test clip)";
+    const sourceSummary = args.source_path
+      ? args.source_path
+      : "a built-in synthetic animated Noise TOP (no external asset)";
     const summary =
       `Built ${zones.length} interaction zone(s) over ${sourceSummary} → ${out} (threshold ${args.threshold}). ` +
       `Motion in each zone is reduced to a level; the zones_out scriptCHOP emits per zone a *_state channel (1 when active) and a *_dwell channel (seconds continuously active). ` +
@@ -318,7 +335,7 @@ export const registerCreateInteractionZones: ToolRegistrar = (server, ctx) => {
     {
       title: "Create interaction zones",
       description:
-        "Define N rectangular zones over a camera / motion input; each zone fires when motion in that region crosses a threshold. Builds a stock-TOP chain — a motion-energy TOP (monochrome → previous-frame cache → difference), then per zone a cropTOP (region isolate) + analyzeTOP average + toptoCHOP, merged into one level CHOP, then a scriptCHOP that emits per zone a `*_state` channel (0/1 active) and a `*_dwell` channel (seconds continuously active). Ends on a 'zones' Null CHOP as the bind point — wire cues via bind_to_channel to op('…/interaction_zones/zones')['zone0_state']. Camera-only (no depth cam). Source is a TOP pulled via selectTOP, or TD's bundled Mosaic.mp4 test clip when omitted (offline-safe). A live Threshold knob tunes sensitivity. Zones are normalized rects (x,y = top-left corner, w,h = size); the top-left image convention is mapped to TD's bottom-left uv origin. Returns a summary plus JSON with the container path, created node paths, the zones Null path, per-zone state/dwell channel names, the zone definitions, threshold, and warnings (no preview image — the output is a CHOP, not a TOP).",
+        "Define N rectangular zones over a camera / motion input; each zone fires when motion in that region crosses a threshold. Builds a stock-TOP chain — a motion-energy TOP (monochrome → previous-frame cache → difference), then per zone a cropTOP (region isolate) + analyzeTOP average + toptoCHOP, merged into one level CHOP, then a scriptCHOP that emits per zone a `*_state` channel (0/1 active) and a `*_dwell` channel (seconds continuously active). Ends on a 'zones' Null CHOP as the bind point — wire cues via bind_to_channel to op('…/interaction_zones/zones')['zone0_state']. Camera-only (no depth cam). Source is a TOP pulled via selectTOP, or a built-in synthetic animated Noise TOP when omitted (offline-safe, cooks clean on any install with no external asset). A live Threshold knob tunes sensitivity. Zones are normalized rects (x,y = top-left corner, w,h = size); the top-left image convention is mapped to TD's bottom-left uv origin. Returns a summary plus JSON with the container path, created node paths, the zones Null path, per-zone state/dwell channel names, the zone definitions, threshold, and warnings (no preview image — the output is a CHOP, not a TOP).",
       inputSchema: createInteractionZonesSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

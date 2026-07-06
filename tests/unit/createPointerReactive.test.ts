@@ -136,6 +136,26 @@ describe("create_pointer_reactive", () => {
     expect(closeLoop).toBeDefined();
   });
 
+  it("whitelists exactly the 5 documented channels via a Select CHOP before the output Null", async () => {
+    const bodies = captureCreateBodies();
+    captureExecScripts();
+    const result = await createPointerReactiveImpl(makeCtx(), { ...baseArgs, demo: false });
+    expect(result.isError).toBeFalsy();
+
+    // A Select CHOP guards the output so raw_u/raw_v and the merge-collision button1/
+    // button2 channels never reach the pointer Null — only u/v/vu/vv/button.
+    const select = bodies.find((b) => b.type === "selectCHOP");
+    expect(select).toBeDefined();
+    expect(select?.parameters?.channames).toBe("u v vu vv button");
+
+    // Structured extra advertises exactly those 5 channels.
+    const text = result.content.find((c) => c.type === "text") as { text: string } | undefined;
+    const structured = JSON.parse(
+      text?.text.slice(text.text.indexOf("{"), text.text.lastIndexOf("}") + 1) ?? "{}",
+    );
+    expect(structured.channels).toEqual(["u", "v", "vu", "vv", "button"]);
+  });
+
   it("adds the per-frame cooker so the pointer Null stays live", async () => {
     captureCreateBodies();
     const scripts = captureExecScripts();

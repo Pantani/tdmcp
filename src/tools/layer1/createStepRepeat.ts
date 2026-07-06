@@ -9,7 +9,8 @@ export const createStepRepeatSchema = z.object({
     .optional()
     .describe(
       "Absolute path of a TOP to tile (pulled in via selectTOP so it can live anywhere). Omit to " +
-        "use TD's bundled Mosaic.mp4 test clip so the grid previews standalone.",
+        "use a built-in synthetic Noise TOP so the grid previews standalone on any install " +
+        "(no external asset needed).",
     ),
   rows: z.coerce
     .number()
@@ -134,6 +135,10 @@ export async function createStepRepeatImpl(ctx: ToolContext, args: CreateStepRep
     const [width, height] = args.resolution;
 
     // ── Source ────────────────────────────────────────────────────────────────
+    // A bundled movie (Mosaic.mp4) does NOT ship on every TD build, so the demo path
+    // uses a guaranteed-present synthetic Noise TOP instead — it cooks clean on any
+    // install with no "Failed to open file". A colored, slowly drifting sparse noise
+    // gives the tiler something varied to repeat. An explicit source_path still wins.
     let sourceNode: string;
     if (args.source_path) {
       sourceNode = await builder.add("selectTOP", "src", {
@@ -142,12 +147,21 @@ export async function createStepRepeatImpl(ctx: ToolContext, args: CreateStepRep
         resolutionh: height,
       });
     } else {
-      // Use TD's bundled Mosaic.mp4 so the grid previews standalone with no external asset.
-      sourceNode = await builder.add("moviefileinTOP", "movie_test", {
-        file: "Mosaic.mp4",
+      sourceNode = await builder.add("noiseTOP", "synthetic_src", {
+        type: "sparse",
         resolutionw: width,
         resolutionh: height,
       });
+      // Slowly drift the noise field on the timeline so the standalone demo has life.
+      await builder.python(
+        [
+          `_n = op(${JSON.stringify(sourceNode)})`,
+          `try:`,
+          `    _n.par.tz.expr = 'absTime.seconds * 0.15'`,
+          `except Exception:`,
+          `    pass`,
+        ].join("\n"),
+      );
     }
 
     // ── GLSL grid tiler ───────────────────────────────────────────────────────
@@ -268,7 +282,9 @@ export async function createStepRepeatImpl(ctx: ToolContext, args: CreateStepRep
       },
     ];
 
-    const sourceSummary = args.source_path ? args.source_path : "Mosaic.mp4 (built-in test clip)";
+    const sourceSummary = args.source_path
+      ? args.source_path
+      : "a built-in synthetic Noise TOP (no external asset)";
     const summary =
       `Built a ${args.rows}×${args.cols} brick/grid tiling of ${sourceSummary} ` +
       `(gap=${args.gap}, jitter_pos=${args.jitter_pos}, jitter_rot=${args.jitter_rot.toFixed(2)}rad, ` +
@@ -324,7 +340,8 @@ export const registerCreateStepRepeat: ToolRegistrar = (server, ctx) => {
         "Tile a source TOP into a rows×cols brick/grid pattern with per-cell gap, position jitter, " +
         "rotation jitter, and an optional brick/masonry half-tile row offset — all computed per-cell in " +
         "a single GLSL TOP shader (stock TOPs only, no external files besides the optional source). " +
-        "Defaults to TD's bundled Mosaic.mp4 test clip so the grid previews standalone without a source. " +
+        "Defaults to a built-in synthetic Noise TOP so the grid previews standalone on any install " +
+        "without a source (no external asset). " +
         "Output is a nullTOP. Returns a summary plus JSON with node paths, live controls, warnings, and " +
         "an inline preview image.",
       inputSchema: createStepRepeatSchema.shape,
