@@ -53,6 +53,13 @@ const INCLUDE = [
   [join(root, "safeskill.manifest.json"), "safeskill.manifest.json"],
 ];
 
+/**
+ * Archive-root files without which the bundle is invalid: `manifest.json` and the
+ * `icon.png` it references via `manifest.icon`. Staging must FAIL (not silently
+ * skip) if either source is missing, so a broken bundle never ships.
+ */
+const REQUIRED_ROOT = new Set(["manifest.json", "icon.png"]);
+
 function shouldStage(src) {
   const rel = relative(root, src).split(/[\\/]/).join("/");
   if (rel === "td/tests" || rel.startsWith("td/tests/")) return false;
@@ -72,6 +79,13 @@ function fail(msg) {
 function preflight() {
   if (!existsSync(manifestPath)) {
     fail(`missing manifest: ${manifestPath}`);
+  }
+  // Every REQUIRED_ROOT source must exist regardless of packer path (the icon is
+  // referenced by manifest.icon; a missing one produces an invalid bundle).
+  for (const [src, dest] of INCLUDE) {
+    if (REQUIRED_ROOT.has(dest) && !existsSync(src)) {
+      fail(`required bundle file missing: ${src} (staged as ${dest}).`);
+    }
   }
   if (!existsSync(join(root, "dist", "index.js"))) {
     fail("dist/index.js not found. Run `npm run build` before building the .mcpb bundle.");
@@ -197,6 +211,9 @@ function zipFallback() {
   try {
     for (const [src, dest] of INCLUDE) {
       if (!existsSync(src)) {
+        if (REQUIRED_ROOT.has(dest)) {
+          fail(`required bundle file missing: ${src} (staged as ${dest}).`);
+        }
         log(`skip (missing): ${dest}`);
         continue;
       }

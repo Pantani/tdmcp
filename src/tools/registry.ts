@@ -54,6 +54,7 @@ const SAFE_PROFILE_EXCLUDE = new Set<string>([
   "create_safety_blackout_chain", // builds a panic/kill chain — declared destructive
   "merge_vaults", // the 'theirs' strategy overwrites files in the target vault
   "manage_component_storage", // the delete action removes storage keys; set overwrites values
+  "macro_recorder", // stop writes a caller-named file (absolute paths allowed), truncating any existing file
 ]);
 
 export const runtimeToolRegistrars: ToolRegistrar[] = [

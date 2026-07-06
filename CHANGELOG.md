@@ -36,9 +36,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Tool-annotation directory gate: 14 tools registered without MCP safety
   annotations; every tool now carries `readOnlyHint` / `destructiveHint` /
-  `openWorldHint`. `merge_vaults` and `manage_component_storage` (which can
-  overwrite/delete user data) are now flagged `destructiveHint: true` and hidden by
-  the `safe` tool profile (added to `SAFE_PROFILE_EXCLUDE`).
+  `openWorldHint`. `merge_vaults`, `manage_component_storage`, and `macro_recorder`
+  (which can overwrite/delete user data or truncate a caller-named file) are now
+  flagged `destructiveHint: true` and hidden by the `safe` tool profile (added to
+  `SAFE_PROFILE_EXCLUDE`).
 - `audio_reactive_basic` recipe: the placeholder frame now reacts to audio out of
   the box instead of sitting at a static color. Two root causes, both live-debugged
   in TouchDesigner 099 build 2025.32820: the `level` analyzeCHOP's `function` was

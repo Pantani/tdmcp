@@ -57,6 +57,7 @@ const SAFE_PROFILE_EXCLUDE = [
   "create_safety_blackout_chain",
   "merge_vaults",
   "manage_component_storage",
+  "macro_recorder",
 ];
 
 // Build/inspect surface that the safe profile must keep available.
@@ -140,7 +141,7 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
     const safe = await toolNames({ TDMCP_TOOL_PROFILE: "safe" });
     expect(safe.length).toBeLessThan(full.length);
     expect(full.length - safe.length).toBe(SAFE_PROFILE_EXCLUDE.length);
-    expect(SAFE_PROFILE_EXCLUDE.length).toBe(32);
+    expect(SAFE_PROFILE_EXCLUDE.length).toBe(33);
   });
 
   it("safe exclusion list matches destructive tool annotations", async () => {
