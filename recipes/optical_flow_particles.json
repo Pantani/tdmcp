@@ -2,13 +2,7 @@
   "id": "optical_flow_particles",
   "name": "Optical Flow Particles",
   "description": "CPU optical-flow surrogate (previous-frame difference + blur, non-CUDA) extracted from a video source, driving both a flow-warped noise texture (flow_out) and a particle render. The motion energy is measured (topto → analyze average → flow_level) and a CHOP Execute callback scales the particleSOP's turbulence and wind with it, so motion in the source visibly stirs the particles out of the box. Swap 'source' for a videodeviceinTOP to drive it from a live camera (the default movie file is a static image, so expect a calm field until a moving source is wired in). Live-validated in TouchDesigner 099 build 2025.32820.",
-  "tags": [
-    "optical-flow",
-    "particle",
-    "video",
-    "reactive",
-    "motion"
-  ],
+  "tags": ["optical-flow", "particle", "video", "reactive", "motion"],
   "difficulty": "advanced",
   "td_version_min": "2023",
   "nodes": [
