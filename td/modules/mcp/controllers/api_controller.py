@@ -411,6 +411,21 @@ def _bridge_error_log_path(webserver):
         return None
 
 
+def _route_logs(query, webserver):
+    # Resolve the Error DAT relative to the webserver's own container so a custom
+    # install works; fall back to get_logs' default when tests have no webserver.
+    log_kwargs = {}
+    error_dat = _bridge_error_log_path(webserver)
+    if error_dat:
+        log_kwargs["error_dat_path"] = error_dat
+    return log_service.get_logs(
+        _qs(query, "severity", "all"),
+        int(_qs(query, "max_lines", 200)),
+        _qs(query, "scope") or None,
+        **log_kwargs,
+    )
+
+
 def _route_get_root(rest, query, webserver=None):
     if rest == ["info"]:
         return api_service.get_info()
@@ -428,18 +443,7 @@ def _route_get_root(rest, query, webserver=None):
         # ALLOW_EXEC=0. No query params; the full family-grouped enumeration.
         return optypes_service.list_optypes()
     if rest == ["logs"]:
-        # Resolve the Error DAT relative to the webserver's own container so a custom
-        # install works; fall back to get_logs' default when tests have no webserver.
-        log_kwargs = {}
-        error_dat = _bridge_error_log_path(webserver)
-        if error_dat:
-            log_kwargs["error_dat_path"] = error_dat
-        return log_service.get_logs(
-            _qs(query, "severity", "all"),
-            int(_qs(query, "max_lines", 200)),
-            _qs(query, "scope") or None,
-            **log_kwargs,
-        )
+        return _route_logs(query, webserver)
     return None
 
 
@@ -586,8 +590,10 @@ def _route_projects(method, rest, query):
     return None
 
 
-def _route_node_special(method, rest, query, body):
-    if rest[-1] == "method" and method == "POST":
+def _route_node_post_special(rest, body):
+    # POST sub-resources on a node (/method, /save). Split out so the combined
+    # special-route dispatch stays under the cognitive-complexity ratchet.
+    if rest[-1] == "method":
         if not _exec_allowed():
             raise _Forbidden(
                 "Forbidden: arbitrary method calls are disabled (TDMCP_BRIDGE_ALLOW_EXEC=0)."
@@ -596,7 +602,7 @@ def _route_node_special(method, rest, query, body):
         return api_service.call_method(
             _node_path(rest[1:-1]), body["method"], body.get("args", []), body.get("kwargs", {})
         )
-    if rest[-1] == "save" and method == "POST":
+    if rest[-1] == "save":
         # Structured node save (COMP -> .tox, TOP -> image). NO exec gate: it must
         # survive TDMCP_BRIDGE_ALLOW_EXEC=0. TD's own .save(), not arbitrary Python.
         _require(body, "file")
@@ -605,6 +611,12 @@ def _route_node_special(method, rest, query, body):
             body["file"],
             _as_bool(body.get("create_folders", True), "create_folders"),
         )
+    return None
+
+
+def _route_node_special(method, rest, query, body):
+    if method == "POST":
+        return _route_node_post_special(rest, body)
     if rest[-1] == "errors" and method == "GET":
         return api_service.get_node_errors(_node_path(rest[1:-1]), recursive=False)
     if rest[-1] == "custom_params" and method == "GET":

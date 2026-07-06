@@ -82,12 +82,11 @@ interface GeoVizReport {
 // Web-Mercator-ish equirectangular projection then normalization to [-1,1]. For city-scale
 // visualization the simple equirectangular projection (lng, lat*cos-corrected) is plenty and
 // keeps the code dependency-free.
-export function projectFeatures(
-  geojson: unknown,
-  defaultHeight: number,
-): { features: ProjectedFeature[]; warnings: string[] } {
-  const warnings: string[] = [];
-  const rawFeatures: Array<{ geometry: unknown; properties: unknown }> = [];
+type RawFeature = { geometry: unknown; properties: unknown };
+type CollectedFeature = { kind: "point" | "line"; coords: Array<[number, number]>; height: number };
+
+/** Normalize a GeoJSON object into a flat list of {geometry, properties} features. */
+function extractRawFeatures(geojson: unknown, warnings: string[]): RawFeature[] {
   const g = geojson as {
     type?: string;
     features?: unknown;
@@ -95,40 +94,41 @@ export function projectFeatures(
     properties?: unknown;
   };
   if (g.type === "FeatureCollection" && Array.isArray(g.features)) {
-    for (const f of g.features as Array<{ geometry?: unknown; properties?: unknown }>) {
-      rawFeatures.push({ geometry: f.geometry, properties: f.properties });
-    }
-  } else if (g.geometry) {
-    rawFeatures.push({ geometry: g.geometry, properties: g.properties });
-  } else {
-    warnings.push("GeoJSON has no FeatureCollection.features and no top-level geometry.");
+    return (g.features as Array<{ geometry?: unknown; properties?: unknown }>).map((f) => ({
+      geometry: f.geometry,
+      properties: f.properties,
+    }));
   }
+  if (g.geometry) return [{ geometry: g.geometry, properties: g.properties }];
+  warnings.push("GeoJSON has no FeatureCollection.features and no top-level geometry.");
+  return [];
+}
 
-  // Collect all lng/lat pairs to compute the bounding box for normalization.
-  const collected: Array<{
-    kind: "point" | "line";
-    coords: Array<[number, number]>;
-    height: number;
-  }> = [];
-  for (const rf of rawFeatures) {
-    const geom = rf.geometry as { type?: string; coordinates?: unknown } | null;
-    if (!geom?.type) continue;
-    const props = (rf.properties ?? {}) as Record<string, unknown>;
-    const heightRaw = props.height ?? props.render_height;
-    const height =
-      typeof heightRaw === "number" && Number.isFinite(heightRaw) ? heightRaw : defaultHeight;
-    const rings = flattenToRings(geom.type, geom.coordinates);
-    if (rings.length === 0) continue;
-    if (geom.type === "Point") {
-      const p = rings[0]?.[0];
-      if (p) collected.push({ kind: "point", coords: [p], height });
-    } else {
-      for (const ring of rings) {
-        if (ring.length >= 2) collected.push({ kind: "line", coords: ring, height });
-      }
-    }
+/** Flatten one raw feature into 0+ collected point/line entries with a resolved height. */
+function collectFeature(rf: RawFeature, defaultHeight: number): CollectedFeature[] {
+  const geom = rf.geometry as { type?: string; coordinates?: unknown } | null;
+  if (!geom?.type) return [];
+  const props = (rf.properties ?? {}) as Record<string, unknown>;
+  const heightRaw = props.height ?? props.render_height;
+  const height =
+    typeof heightRaw === "number" && Number.isFinite(heightRaw) ? heightRaw : defaultHeight;
+  const rings = flattenToRings(geom.type, geom.coordinates);
+  if (rings.length === 0) return [];
+  if (geom.type === "Point") {
+    const p = rings[0]?.[0];
+    return p ? [{ kind: "point", coords: [p], height }] : [];
   }
+  return rings
+    .filter((ring) => ring.length >= 2)
+    .map((ring) => ({ kind: "line", coords: ring, height }));
+}
 
+/** Bounding box (in lng / mercatorY space) + derived center + uniform span for normalization. */
+function computeBounds(collected: CollectedFeature[]): {
+  cx: number;
+  cy: number;
+  span: number;
+} {
   let minX = Number.POSITIVE_INFINITY;
   let minY = Number.POSITIVE_INFINITY;
   let maxX = Number.NEGATIVE_INFINITY;
@@ -142,12 +142,23 @@ export function projectFeatures(
       maxY = Math.max(maxY, y);
     }
   }
-  const spanX = maxX - minX || 1;
-  const spanY = maxY - minY || 1;
-  const span = Math.max(spanX, spanY);
-  const cx = (minX + maxX) / 2;
-  const cy = (minY + maxY) / 2;
+  const span = Math.max(maxX - minX || 1, maxY - minY || 1);
+  return { cx: (minX + maxX) / 2, cy: (minY + maxY) / 2, span };
+}
 
+export function projectFeatures(
+  geojson: unknown,
+  defaultHeight: number,
+): { features: ProjectedFeature[]; warnings: string[] } {
+  const warnings: string[] = [];
+  const rawFeatures = extractRawFeatures(geojson, warnings);
+
+  // Collect all lng/lat pairs to compute the bounding box for normalization.
+  const collected: CollectedFeature[] = rawFeatures.flatMap((rf) =>
+    collectFeature(rf, defaultHeight),
+  );
+
+  const { cx, cy, span } = computeBounds(collected);
   const features: ProjectedFeature[] = collected.map((c) => ({
     kind: c.kind,
     height: c.height,
@@ -166,36 +177,35 @@ function mercatorY(lat: number): number {
   return Math.log(Math.tan(Math.PI / 4 + rad / 2));
 }
 
+function asLngLatPair(v: unknown): [number, number] | null {
+  if (Array.isArray(v) && typeof v[0] === "number" && typeof v[1] === "number") {
+    return [v[0], v[1]];
+  }
+  return null;
+}
+
+/** Map a raw coordinate array into a single validated ring (dropping malformed pairs). */
+function coordsToRing(coords: unknown): Array<[number, number]> {
+  return (coords as unknown[]).map(asLngLatPair).filter((p): p is [number, number] => p !== null);
+}
+
 // Reduce every supported geometry type to an array of coordinate rings ([[lng,lat],...]).
 function flattenToRings(type: string, coords: unknown): Array<Array<[number, number]>> {
-  const asPair = (v: unknown): [number, number] | null => {
-    if (Array.isArray(v) && typeof v[0] === "number" && typeof v[1] === "number") {
-      return [v[0], v[1]];
-    }
-    return null;
-  };
   if (type === "Point") {
-    const p = asPair(coords);
+    const p = asLngLatPair(coords);
     return p ? [[p]] : [];
   }
   if (type === "LineString") {
-    const ring = (coords as unknown[]).map(asPair).filter((p): p is [number, number] => p !== null);
+    const ring = coordsToRing(coords);
     return ring.length ? [ring] : [];
   }
   if (type === "Polygon" || type === "MultiLineString") {
-    return (coords as unknown[][])
-      .map((ring) => ring.map(asPair).filter((p): p is [number, number] => p !== null))
-      .filter((r) => r.length > 0);
+    return (coords as unknown[][]).map(coordsToRing).filter((r) => r.length > 0);
   }
   if (type === "MultiPolygon") {
-    const out: Array<Array<[number, number]>> = [];
-    for (const poly of coords as unknown[][][]) {
-      for (const ring of poly) {
-        const r = ring.map(asPair).filter((p): p is [number, number] => p !== null);
-        if (r.length) out.push(r);
-      }
-    }
-    return out;
+    return (coords as unknown[][][]).flatMap((poly) =>
+      poly.map(coordsToRing).filter((r) => r.length > 0),
+    );
   }
   return [];
 }

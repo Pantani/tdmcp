@@ -171,6 +171,148 @@ function uniqueBasename(source: string, used: Set<string>): string {
   }
 }
 
+interface CopiedAsset {
+  node: string;
+  par: string;
+  source: string;
+  relative: string;
+  rewritten: boolean;
+}
+interface SkippedAsset {
+  node: string;
+  par: string;
+  value: string;
+  reason: string;
+}
+
+/**
+ * Copy each existing asset into `assets/`, de-duplicating basenames. Missing sources
+ * and copy failures are collected as `skipped` (fail-forward), never thrown.
+ */
+type Asset = NonNullable<CollectReport["assets"]>[number];
+
+/** Copy one asset into `assets/`, returning either the copied or the skipped record. */
+function copyOneAsset(
+  a: Asset,
+  assetsDir: string,
+  used: Set<string>,
+): { copied: CopiedAsset } | { skipped: SkippedAsset } {
+  const target = uniqueBasename(a.value, used);
+  try {
+    copyFileSync(a.value, join(assetsDir, target));
+    return {
+      copied: {
+        node: a.node,
+        par: a.par,
+        source: a.value,
+        relative: `assets/${target}`,
+        rewritten: false,
+      },
+    };
+  } catch (err) {
+    used.delete(target);
+    const reason = `copy failed: ${err instanceof Error ? err.message : String(err)}`;
+    return { skipped: { node: a.node, par: a.par, value: a.value, reason } };
+  }
+}
+
+function copyAssets(
+  assets: CollectReport["assets"],
+  assetsDir: string,
+  includeMissing: boolean,
+  warnings: string[],
+): { copied: CopiedAsset[]; skipped: SkippedAsset[] } {
+  const used = new Set<string>();
+  const copied: CopiedAsset[] = [];
+  const skipped: SkippedAsset[] = [];
+  for (const a of assets ?? []) {
+    if (!a.exists) {
+      skipped.push({ node: a.node, par: a.par, value: a.value, reason: "source missing" });
+      // include_missing suppresses the not-bundled warning (the caller opted into
+      // recording missing sources without treating them as a problem).
+      if (!includeMissing) {
+        warnings.push(`missing source, not bundled: ${a.value} (${a.node}.${a.par})`);
+      }
+      continue;
+    }
+    const result = copyOneAsset(a, assetsDir, used);
+    if ("copied" in result) copied.push(result.copied);
+    else skipped.push(result.skipped);
+  }
+  return { copied, skipped };
+}
+
+/**
+ * Rewrite the live pars to their bundled relative paths and flag each copied asset as
+ * `rewritten`. Fail-forward: a fatal pass or a per-par error becomes a warning.
+ */
+async function rewriteRefs(
+  ctx: ToolContext,
+  copied: CopiedAsset[],
+  warnings: string[],
+): Promise<void> {
+  const rewriteExec = await ctx.client.executePythonScript(
+    buildPayloadScript(REWRITE_REFS_SCRIPT, {
+      rewrites: copied.map((c) => ({ node: c.node, par: c.par, value: c.relative })),
+    }),
+    true,
+  );
+  const rewrite = parsePythonReport<RewriteReport>(rewriteExec.stdout);
+  if (rewrite.fatal) {
+    warnings.push(`rewrite pass failed: ${rewrite.fatal} — assets copied but refs unchanged.`);
+    return;
+  }
+  const byKey = new Map(rewrite.results.map((r) => [`${r.node} ${r.par}`, r]));
+  for (const c of copied) {
+    const r = byKey.get(`${c.node} ${c.par}`);
+    if (r?.ok) c.rewritten = true;
+    else if (r?.error) warnings.push(`rewrite ${c.node}.${c.par}: ${r.error}`);
+  }
+}
+
+/** Build + write the tdmcp-component manifest listing the bundled tox + assets. */
+function writeManifest(
+  outDir: string,
+  name: string,
+  toxPath: string,
+  comp_path: string,
+  copied: CopiedAsset[],
+): string {
+  const manifest = {
+    id: name,
+    name,
+    version: "0.1.0",
+    type: "touchdesigner-component",
+    tox: basename(toxPath),
+    assets: [basename(toxPath), ...copied.map((c) => c.relative)],
+    docs: [],
+    recipes: [],
+    generated_at: new Date().toISOString(),
+    source_comp: comp_path,
+  };
+  const manifestPath = join(outDir, "tdmcp-component.json");
+  writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+  return manifestPath;
+}
+
+/** Step 1: enumerate external refs (reuse the collect_project_assets scan). */
+async function scanProjectAssets(ctx: ToolContext, compPath: string): Promise<CollectReport> {
+  const collectExec = await ctx.client.executePythonScript(
+    buildCollectProjectAssetsScript({ parent_path: compPath, include_missing_only: false }),
+    true,
+  );
+  return parsePythonReport<CollectReport>(collectExec.stdout);
+}
+
+/** Step 4: save the COMP as a .tox beside its assets. */
+async function saveTox(ctx: ToolContext, compPath: string, toxPath: string): Promise<SaveReport> {
+  const saveExec = await ctx.client.executePythonScript(
+    buildPayloadScript(SAVE_TOX_SCRIPT, { comp_path: compPath, tox_path: toxPath }),
+    true,
+  );
+  return parsePythonReport<SaveReport>(saveExec.stdout);
+}
+
 export async function bundleDependenciesImpl(ctx: ToolContext, args: BundleDependenciesArgs) {
   const parsed = bundleDependenciesSchema.safeParse(args);
   if (!parsed.success) return errorResult(`Invalid arguments: ${parsed.error.message}`);
@@ -184,98 +326,25 @@ export async function bundleDependenciesImpl(ctx: ToolContext, args: BundleDepen
     async () => {
       const warnings: string[] = [];
       // 1. Enumerate external refs (reuse the collect_project_assets scan).
-      const collectExec = await ctx.client.executePythonScript(
-        buildCollectProjectAssetsScript({ parent_path: comp_path, include_missing_only: false }),
-        true,
-      );
-      const collect = parsePythonReport<CollectReport>(collectExec.stdout);
+      const collect = await scanProjectAssets(ctx, comp_path);
       if (collect.fatal) return { ok: false as const, fatal: collect.fatal, warnings };
       for (const w of collect.warnings ?? []) warnings.push(`scan: ${w}`);
 
       // 2. Copy each existing asset into assets/, tracking collisions + missing.
       mkdirSync(assetsDir, { recursive: true });
-      const used = new Set<string>();
-      const copied: Array<{
-        node: string;
-        par: string;
-        source: string;
-        relative: string;
-        rewritten: boolean;
-      }> = [];
-      const skipped: Array<{ node: string; par: string; value: string; reason: string }> = [];
-
-      for (const a of collect.assets ?? []) {
-        if (!a.exists) {
-          if (include_missing) {
-            skipped.push({ node: a.node, par: a.par, value: a.value, reason: "source missing" });
-          } else {
-            skipped.push({ node: a.node, par: a.par, value: a.value, reason: "source missing" });
-            warnings.push(`missing source, not bundled: ${a.value} (${a.node}.${a.par})`);
-          }
-          continue;
-        }
-        const target = uniqueBasename(a.value, used);
-        const relative = `assets/${target}`;
-        try {
-          copyFileSync(a.value, join(assetsDir, target));
-          copied.push({ node: a.node, par: a.par, source: a.value, relative, rewritten: false });
-        } catch (err) {
-          used.delete(target);
-          skipped.push({
-            node: a.node,
-            par: a.par,
-            value: a.value,
-            reason: `copy failed: ${err instanceof Error ? err.message : String(err)}`,
-          });
-        }
-      }
+      const { copied, skipped } = copyAssets(collect.assets, assetsDir, include_missing, warnings);
 
       // 3. Rewrite the live pars to the relative bundled path (optional).
       if (rewrite_refs && copied.length > 0) {
-        const rewriteExec = await ctx.client.executePythonScript(
-          buildPayloadScript(REWRITE_REFS_SCRIPT, {
-            rewrites: copied.map((c) => ({ node: c.node, par: c.par, value: c.relative })),
-          }),
-          true,
-        );
-        const rewrite = parsePythonReport<RewriteReport>(rewriteExec.stdout);
-        if (rewrite.fatal) {
-          warnings.push(
-            `rewrite pass failed: ${rewrite.fatal} — assets copied but refs unchanged.`,
-          );
-        } else {
-          const byKey = new Map(rewrite.results.map((r) => [`${r.node} ${r.par}`, r]));
-          for (const c of copied) {
-            const r = byKey.get(`${c.node} ${c.par}`);
-            if (r?.ok) c.rewritten = true;
-            else if (r?.error) warnings.push(`rewrite ${c.node}.${c.par}: ${r.error}`);
-          }
-        }
+        await rewriteRefs(ctx, copied, warnings);
       }
 
       // 4. Save the .tox beside its assets (points at the bundled copies when rewritten).
-      const saveExec = await ctx.client.executePythonScript(
-        buildPayloadScript(SAVE_TOX_SCRIPT, { comp_path, tox_path: toxPath }),
-        true,
-      );
-      const save = parsePythonReport<SaveReport>(saveExec.stdout);
+      const save = await saveTox(ctx, comp_path, toxPath);
       if (save.fatal) return { ok: false as const, fatal: save.fatal, warnings, copied, skipped };
 
       // 5. Manifest listing the bundled assets.
-      const manifest = {
-        id: name,
-        name,
-        version: "0.1.0",
-        type: "touchdesigner-component",
-        tox: basename(toxPath),
-        assets: [basename(toxPath), ...copied.map((c) => c.relative)],
-        docs: [],
-        recipes: [],
-        generated_at: new Date().toISOString(),
-        source_comp: comp_path,
-      };
-      const manifestPath = join(outDir, "tdmcp-component.json");
-      writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+      const manifestPath = writeManifest(outDir, name, toxPath, comp_path, copied);
 
       return {
         ok: true as const,

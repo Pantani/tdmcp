@@ -24,6 +24,94 @@ export interface PreviewInlineResult {
   stderr: string;
 }
 
+type FrameOutcome = { ok: true } | { ok: false; message: string };
+
+/** Capture the TOP once and write it to the terminal. Errors become a typed outcome. */
+async function renderPreviewFrame(
+  client: TouchDesignerClient,
+  opts: PreviewInlineOptions,
+  protocol: ReturnType<typeof detectInlineProtocol>,
+  writeStdout: (chunk: string) => void,
+): Promise<FrameOutcome> {
+  try {
+    const preview = await capturePreview(client, opts.nodePath, opts.width, opts.height);
+    const caption = `${preview.path}  ${preview.width}×${preview.height}`;
+    writeStdout(
+      renderInlineImage(preview.base64, {
+        protocol,
+        width: preview.width,
+        height: preview.height,
+        mimeType: preview.mimeType,
+        caption,
+        env: opts.env,
+      }),
+    );
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, message: friendlyTdError(err) };
+  }
+}
+
+/**
+ * `--watch` loop: re-render on an interval until aborted or `maxFrames`. A single
+ * capture failure is non-fatal (the op may be mid-cook) — polling continues but the
+ * last error is tracked so an all-failure run still exits non-zero. A connection-level
+ * failure won't recover by polling, so it bails immediately.
+ */
+interface WatchState {
+  anySuccess: boolean;
+  lastError: string | undefined;
+}
+
+/** Fold one frame outcome into the watch state, or bail on a connection-level failure. */
+function applyFrameOutcome(
+  outcome: FrameOutcome,
+  state: WatchState,
+): { bail: PreviewInlineResult } | undefined {
+  if (outcome.ok) {
+    state.anySuccess = true;
+    state.lastError = undefined;
+    return undefined;
+  }
+  state.lastError = outcome.message;
+  if (classifyTdErrorExit(outcome.message) === ExitCode.TdOffline) {
+    return { bail: { code: ExitCode.TdOffline, stdout: "", stderr: `${outcome.message}\n` } };
+  }
+  return undefined;
+}
+
+/** Final result once the watch loop ends without a hard bail. */
+function watchLoopResult(state: WatchState): PreviewInlineResult {
+  if (state.anySuccess) return { code: ExitCode.Ok, stdout: "", stderr: "" };
+  return {
+    code: state.lastError ? classifyTdErrorExit(state.lastError) : ExitCode.Ok,
+    stdout: "",
+    stderr: state.lastError ? `${state.lastError}\n` : "",
+  };
+}
+
+/** True once the loop has hit its frame budget or an abort signal. */
+function watchLoopDone(opts: PreviewInlineOptions, frames: number): boolean {
+  if (opts.maxFrames !== undefined && frames >= opts.maxFrames) return true;
+  return opts.signal?.aborted === true;
+}
+
+async function runWatchLoop(
+  renderFrame: () => Promise<FrameOutcome>,
+  opts: PreviewInlineOptions,
+): Promise<PreviewInlineResult> {
+  const state: WatchState = { anySuccess: false, lastError: undefined };
+  let frames = 0;
+  while (!opts.signal?.aborted) {
+    const bailed = applyFrameOutcome(await renderFrame(), state);
+    if (bailed) return bailed.bail;
+    frames += 1;
+    if (watchLoopDone(opts, frames)) break;
+    await delay(opts.intervalMs);
+  }
+  return watchLoopResult(state);
+}
+
 /**
  * Renders a TOP inline in the terminal. In `--watch` mode it re-renders on an
  * interval until aborted (Ctrl-C) or `maxFrames` is reached — a lightweight
@@ -38,61 +126,12 @@ export async function runPreviewInline(
   writeStdout: (chunk: string) => void = (chunk) => process.stdout.write(chunk),
 ): Promise<PreviewInlineResult> {
   const protocol = detectInlineProtocol(opts.env);
-
-  const renderOnce = async (): Promise<{ ok: true } | { ok: false; message: string }> => {
-    try {
-      const preview = await capturePreview(client, opts.nodePath, opts.width, opts.height);
-      const caption = `${preview.path}  ${preview.width}×${preview.height}`;
-      writeStdout(
-        renderInlineImage(preview.base64, {
-          protocol,
-          width: preview.width,
-          height: preview.height,
-          mimeType: preview.mimeType,
-          caption,
-          env: opts.env,
-        }),
-      );
-      return { ok: true };
-    } catch (err) {
-      return { ok: false, message: friendlyTdError(err) };
-    }
-  };
+  const renderFrame = () => renderPreviewFrame(client, opts, protocol, writeStdout);
 
   if (!opts.watch) {
-    const r = await renderOnce();
+    const r = await renderFrame();
     if (r.ok) return { code: ExitCode.Ok, stdout: "", stderr: "" };
     return { code: classifyTdErrorExit(r.message), stdout: "", stderr: `${r.message}\n` };
   }
-
-  // Watch mode: re-render on an interval. A single capture failure is
-  // non-fatal (the op may be mid-cook); we keep polling but track the last
-  // error so an all-failure run still exits non-zero.
-  let frames = 0;
-  let lastError: string | undefined;
-  let anySuccess = false;
-  while (!opts.signal?.aborted) {
-    const r = await renderOnce();
-    if (r.ok) {
-      anySuccess = true;
-      lastError = undefined;
-    } else {
-      lastError = r.message;
-      // Connection-level failure won't recover by polling — bail immediately.
-      if (classifyTdErrorExit(r.message) === ExitCode.TdOffline) {
-        return { code: ExitCode.TdOffline, stdout: "", stderr: `${r.message}\n` };
-      }
-    }
-    frames += 1;
-    if (opts.maxFrames !== undefined && frames >= opts.maxFrames) break;
-    if (opts.signal?.aborted) break;
-    await delay(opts.intervalMs);
-  }
-
-  if (anySuccess) return { code: ExitCode.Ok, stdout: "", stderr: "" };
-  return {
-    code: lastError ? classifyTdErrorExit(lastError) : ExitCode.Ok,
-    stdout: "",
-    stderr: lastError ? `${lastError}\n` : "",
-  };
+  return runWatchLoop(renderFrame, opts);
 }

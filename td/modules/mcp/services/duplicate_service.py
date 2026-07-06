@@ -15,16 +15,8 @@ whose ``.path`` is the created copy. Omitting ``name`` lets TD auto-number.
 """
 
 
-def duplicate(source_path, name=None, parent_path=None):
-    """Duplicate ``op(source_path)`` into ``parent_path`` (default: source's parent).
-
-    Returns ``{source, copy, parent}``. Raises ``LookupError`` when the source or
-    an explicit parent is missing and ``ValueError`` when the copy fails.
-    """
-    import td
-
-    op = td.op
-
+def _resolve_duplicate_targets(op, source_path, parent_path):
+    """Resolve the (src, parent) pair for a duplicate. Raises on a missing target."""
     src = op(source_path)
     if src is None:
         raise LookupError("duplicate: source not found: %s" % source_path)
@@ -33,10 +25,23 @@ def duplicate(source_path, name=None, parent_path=None):
         parent = op(parent_path)
         if parent is None:
             raise LookupError("duplicate: parent not found: %s" % parent_path)
-    else:
-        parent = src.parent()
-        if parent is None:
-            raise ValueError("duplicate: source %s has no parent" % source_path)
+        return src, parent
+
+    parent = src.parent()
+    if parent is None:
+        raise ValueError("duplicate: source %s has no parent" % source_path)
+    return src, parent
+
+
+def duplicate(source_path, name=None, parent_path=None):
+    """Duplicate ``op(source_path)`` into ``parent_path`` (default: source's parent).
+
+    Returns ``{source, copy, parent}``. Raises ``LookupError`` when the source or
+    an explicit parent is missing and ``ValueError`` when the copy fails.
+    """
+    import td
+
+    src, parent = _resolve_duplicate_targets(td.op, source_path, parent_path)
 
     try:
         new = parent.copy(src, name=name) if name else parent.copy(src)

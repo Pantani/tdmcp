@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { TouchDesignerClient } from "../../td-client/touchDesignerClient.js";
 import { guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
@@ -50,6 +51,48 @@ function reconcile(
   });
 }
 
+type OpTypesLive = Awaited<ReturnType<TouchDesignerClient["getOpTypes"]>>;
+type Reconciled = ReturnType<typeof reconcile>;
+
+/**
+ * Single-operator lookup that the KB doesn't document (e.g. a brand-new plugin optype):
+ * fall back to a direct live check by the given name.
+ */
+function singleOperatorFallback(
+  operator: string,
+  liveByKey: Map<string, string>,
+  live: OpTypesLive,
+) {
+  const optype = liveByKey.get(normKey(operator));
+  const summary = optype
+    ? `${operator} is creatable in this TouchDesigner as ${optype} (not documented in the knowledge base).`
+    : `${operator} is NOT creatable in this TouchDesigner and is not in the knowledge base.`;
+  return jsonResult(summary, {
+    operator,
+    createable: optype !== undefined,
+    optype: optype ?? null,
+    in_knowledge_base: false,
+    td_version: live.td_version ?? null,
+    build: live.build ?? null,
+  });
+}
+
+/** One-line summary of the reconciliation (single-operator vs whole-KB phrasing). */
+function reconcileSummary(
+  args: CheckOperatorAvailabilityArgs,
+  reconciled: Reconciled,
+  deprecatedCount: number,
+  kbGapCount: number | undefined,
+  live: OpTypesLive,
+): string {
+  if (args.operator) {
+    const state = reconciled[0]?.createable ? "creatable" : "deprecated/unavailable";
+    return `${args.operator}: ${state} in TD ${live.td_version ?? "?"} (build ${live.build ?? "?"}).`;
+  }
+  const gap = kbGapCount !== undefined ? `, ${kbGapCount} live-only (KB gap)` : "";
+  return `Reconciled ${reconciled.length} knowledge-base operators against live TD ${live.td_version ?? "?"}: ${reconciled.length - deprecatedCount} creatable, ${deprecatedCount} deprecated/unavailable${gap}.`;
+}
+
 export async function checkOperatorAvailabilityImpl(
   ctx: ToolContext,
   args: CheckOperatorAvailabilityArgs,
@@ -60,31 +103,16 @@ export async function checkOperatorAvailabilityImpl(
       const liveByKey = new Map<string, string>();
       for (const optype of live.optypes) liveByKey.set(normKey(optype), optype);
 
-      const kbAll = ctx.knowledge.listOperators().map((s) => ({
-        name: s.name,
-        category: s.category,
-      }));
+      const kbAll = ctx.knowledge
+        .listOperators()
+        .map((s) => ({ name: s.name, category: s.category }));
       const kb = args.operator
         ? kbAll.filter((e) => normKey(e.name) === normKey(args.operator as string))
         : kbAll;
 
       const reconciled = reconcile(kb, liveByKey);
-
-      // Single-operator lookup: the KB may not carry it at all (e.g. a brand-new
-      // plugin optype), so fall back to a direct live check by the given name.
       if (args.operator && reconciled.length === 0) {
-        const optype = liveByKey.get(normKey(args.operator));
-        const summary = optype
-          ? `${args.operator} is creatable in this TouchDesigner as ${optype} (not documented in the knowledge base).`
-          : `${args.operator} is NOT creatable in this TouchDesigner and is not in the knowledge base.`;
-        return jsonResult(summary, {
-          operator: args.operator,
-          createable: optype !== undefined,
-          optype: optype ?? null,
-          in_knowledge_base: false,
-          td_version: live.td_version ?? null,
-          build: live.build ?? null,
-        });
+        return singleOperatorFallback(args.operator, liveByKey, live);
       }
 
       const deprecated = reconciled.filter((r) => r.deprecated);
@@ -93,10 +121,7 @@ export async function checkOperatorAvailabilityImpl(
         ? live.optypes.filter((o) => !kbKeys.has(normKey(o))).sort()
         : undefined;
 
-      const summary = args.operator
-        ? `${args.operator}: ${reconciled[0]?.createable ? "creatable" : "deprecated/unavailable"} in TD ${live.td_version ?? "?"} (build ${live.build ?? "?"}).`
-        : `Reconciled ${reconciled.length} knowledge-base operators against live TD ${live.td_version ?? "?"}: ${reconciled.length - deprecated.length} creatable, ${deprecated.length} deprecated/unavailable${kbGap ? `, ${kbGap.length} live-only (KB gap)` : ""}.`;
-
+      const summary = reconcileSummary(args, reconciled, deprecated.length, kbGap?.length, live);
       return jsonResult(summary, {
         td_version: live.td_version ?? null,
         build: live.build ?? null,

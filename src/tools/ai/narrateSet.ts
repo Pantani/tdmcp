@@ -151,65 +151,80 @@ function parseEntries(content: string): Array<{
   return out;
 }
 
-export async function narrateSetImpl(
-  _ctx: ToolContext,
-  args: NarrateSetArgs,
-): Promise<ReturnType<typeof structuredResult>> {
-  const parsed = narrateSetSchema.safeParse(args);
-  if (!parsed.success) {
-    return errorResult(`Invalid arguments: ${parsed.error.message}`) as ReturnType<
-      typeof structuredResult
-    >;
-  }
-  const data = parsed.data;
-  const logPath = resolveLogPath(data);
+type NarrateResult = ReturnType<typeof structuredResult>;
 
-  if (data.mode === "append") {
-    if (!data.line?.trim()) {
-      return errorResult("narrate_set mode='append' requires a non-empty `line`.") as ReturnType<
-        typeof structuredResult
-      >;
-    }
-    const timestamp = new Date().toISOString();
-    const section = data.section ? sanitizeField(data.section) : "";
-    const cue = data.cue ? sanitizeField(data.cue) : "";
-    const line = sanitizeField(data.line);
-    const sectionPart = section ? ` [${section}]` : "";
-    const cuePart = cue ? ` (cue: ${cue})` : "";
-    const entryLine = `- \`${timestamp}\`${sectionPart}${cuePart} ${line}\n`;
-    // Count existing entries BEFORE appending so the post-write total is a pure
-    // increment — never a second read that could throw outside this try/catch and
-    // break the never-throw handler contract.
-    let priorCount = 0;
-    try {
-      mkdirSync(dirname(logPath), { recursive: true });
-      const isNew = !existsSync(logPath);
-      if (!isNew) priorCount = parseEntries(readFileSync(logPath, "utf8")).length;
-      const header = isNew ? `# Set narration — ${data.set_name ?? stampDate(new Date())}\n\n` : "";
-      appendFileSync(logPath, header + entryLine, "utf8");
-    } catch (err) {
-      return errorResult(
-        `Could not write narration to ${logPath}: ${err instanceof Error ? err.message : String(err)}`,
-      ) as ReturnType<typeof structuredResult>;
-    }
-    const total = priorCount + 1;
-    const appended: {
-      timestamp: string;
-      section?: string;
-      cue?: string;
-      line: string;
-    } = { timestamp, line };
-    if (section) appended.section = section;
-    if (cue) appended.cue = cue;
-    return structuredResult(`Narrated to ${logPath} (${total} line(s)).`, {
-      mode: "append",
-      log_path: logPath,
-      appended,
-      count: total,
-    });
+/**
+ * Append one entry line to the log, creating dir + header on first write. Counts
+ * existing entries BEFORE appending so the returned total is a pure increment (never
+ * a second read that could throw outside the caller's guard). Throws on I/O failure.
+ */
+function appendNarrationLine(logPath: string, entryLine: string, setName: string): number {
+  mkdirSync(dirname(logPath), { recursive: true });
+  const isNew = !existsSync(logPath);
+  const priorCount = isNew ? 0 : parseEntries(readFileSync(logPath, "utf8")).length;
+  const header = isNew ? `# Set narration — ${setName}\n\n` : "";
+  appendFileSync(logPath, header + entryLine, "utf8");
+  return priorCount;
+}
+
+interface NarrationFields {
+  timestamp: string;
+  section: string;
+  cue: string;
+  line: string;
+  entryLine: string;
+}
+
+/** Sanitize + format the append fields into the markdown entry line + its parts. */
+function buildNarrationFields(data: NarrateSetArgs): NarrationFields {
+  const timestamp = new Date().toISOString();
+  const section = data.section ? sanitizeField(data.section) : "";
+  const cue = data.cue ? sanitizeField(data.cue) : "";
+  const line = sanitizeField(data.line ?? "");
+  const sectionPart = section ? ` [${section}]` : "";
+  const cuePart = cue ? ` (cue: ${cue})` : "";
+  return {
+    timestamp,
+    section,
+    cue,
+    line,
+    entryLine: `- \`${timestamp}\`${sectionPart}${cuePart} ${line}\n`,
+  };
+}
+
+/** mode='append': write one timestamped narration line, returning the new total. */
+function narrateAppend(data: NarrateSetArgs, logPath: string): NarrateResult {
+  if (!data.line?.trim()) {
+    return errorResult("narrate_set mode='append' requires a non-empty `line`.") as NarrateResult;
+  }
+  const { timestamp, section, cue, line, entryLine } = buildNarrationFields(data);
+
+  let priorCount: number;
+  try {
+    priorCount = appendNarrationLine(logPath, entryLine, data.set_name ?? stampDate(new Date()));
+  } catch (err) {
+    return errorResult(
+      `Could not write narration to ${logPath}: ${err instanceof Error ? err.message : String(err)}`,
+    ) as NarrateResult;
   }
 
-  // recall
+  const appended: { timestamp: string; section?: string; cue?: string; line: string } = {
+    timestamp,
+    line,
+    ...(section ? { section } : {}),
+    ...(cue ? { cue } : {}),
+  };
+  const total = priorCount + 1;
+  return structuredResult(`Narrated to ${logPath} (${total} line(s)).`, {
+    mode: "append",
+    log_path: logPath,
+    appended,
+    count: total,
+  });
+}
+
+/** mode='recall': read the log back (last `tail` lines). Missing log is an empty recall. */
+function narrateRecall(data: NarrateSetArgs, logPath: string): NarrateResult {
   if (!existsSync(logPath)) {
     return structuredResult(`No narration log at ${logPath} yet.`, {
       mode: "recall",
@@ -224,13 +239,26 @@ export async function narrateSetImpl(
   } catch (err) {
     return errorResult(
       `Could not read narration log ${logPath}: ${err instanceof Error ? err.message : String(err)}`,
-    ) as ReturnType<typeof structuredResult>;
+    ) as NarrateResult;
   }
   const tailed = entries.slice(-data.tail);
   return structuredResult(
     `Recalled ${tailed.length} of ${entries.length} narration line(s) from ${logPath}.`,
     { mode: "recall", log_path: logPath, entries: tailed, count: entries.length },
   );
+}
+
+export async function narrateSetImpl(
+  _ctx: ToolContext,
+  args: NarrateSetArgs,
+): Promise<NarrateResult> {
+  const parsed = narrateSetSchema.safeParse(args);
+  if (!parsed.success) {
+    return errorResult(`Invalid arguments: ${parsed.error.message}`) as NarrateResult;
+  }
+  const data = parsed.data;
+  const logPath = resolveLogPath(data);
+  return data.mode === "append" ? narrateAppend(data, logPath) : narrateRecall(data, logPath);
 }
 
 export const registerNarrateSet: ToolRegistrar = (server, ctx) => {

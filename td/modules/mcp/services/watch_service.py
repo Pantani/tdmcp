@@ -230,11 +230,18 @@ def poll(op_resolver=None, frame=None, now_s=None):
         node = _safe_resolve(resolve, path)
         if node is None:
             continue
-        for par in _watched_pars(node, state.get("pars")):
-            payload = _diff_par(path, par, now, frame_no)
-            if payload is not None:
-                payloads.append(payload)
+        payloads.extend(_poll_node(path, node, state, now, frame_no))
     return payloads
+
+
+def _poll_node(path, node, state, now_s, frame_no):
+    """Change payloads for one watched node's parameters (skips unreadable pars)."""
+    out = []
+    for par in _watched_pars(node, state.get("pars")):
+        payload = _diff_par(path, par, now_s, frame_no)
+        if payload is not None:
+            out.append(payload)
+    return out
 
 
 def _default_op(path):

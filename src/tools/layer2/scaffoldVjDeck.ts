@@ -92,6 +92,75 @@ interface DecksReport {
   output_path?: string;
 }
 
+type ControlName = "crossfader" | "gain_a" | "gain_b";
+type TargetFor = (control: ControlName) => string | undefined;
+
+/** Build the optional on-screen fader surface. Returns its path (or a warning on failure). */
+async function buildFaderSurface(
+  ctx: ToolContext,
+  container: string,
+  targetFor: TargetFor,
+  warnings: string[],
+): Promise<string | undefined> {
+  const faders = (["crossfader", "gain_a", "gain_b"] as const)
+    .map((c) => {
+      const param = targetFor(c);
+      return param
+        ? {
+            param,
+            label: c === "crossfader" ? "Crossfade" : c === "gain_a" ? "Gain A" : "Gain B",
+            min: 0,
+            max: c === "crossfader" ? 1 : 2,
+          }
+        : undefined;
+    })
+    .filter((f): f is NonNullable<typeof f> => f !== undefined);
+  const surfaceResult = await createControlSurfaceImpl(ctx, {
+    comp_path: container,
+    name: "surface",
+    align: "horizlr",
+    faders,
+    cue_buttons: [],
+  });
+  if (surfaceResult.isError) {
+    warnings.push("Fader surface build failed; deck + MIDI still wired.");
+    return undefined;
+  }
+  return parseFence<{ surface?: string }>(surfaceResult)?.surface;
+}
+
+/** Build the optional midiinCHOP bound to the deck controls. Returns its path + binding count. */
+async function buildMidiMap(
+  ctx: ToolContext,
+  container: string,
+  args: ScaffoldVjDeckArgs,
+  targetFor: TargetFor,
+  warnings: string[],
+): Promise<{ midiPath: string | undefined; midiBindings: number }> {
+  const map = args.midi_map?.length ? args.midi_map : DEFAULT_MIDI_MAP;
+  const bindTo = map
+    .map((m) => {
+      const target = targetFor(m.control);
+      return target ? { channel: m.channel, target } : undefined;
+    })
+    .filter((b): b is { channel: string; target: string } => b !== undefined);
+  const ioResult = await createExternalIoImpl(ctx, {
+    kind: "midi_in",
+    parent_path: container,
+    name: "midi",
+    normalize: "0to1",
+    bind_to: bindTo,
+    interface: "artnet",
+    universe: 1,
+  });
+  if (ioResult.isError) {
+    warnings.push("MIDI-in build failed; deck + faders still wired.");
+    return { midiPath: undefined, midiBindings: 0 };
+  }
+  const io = parseFence<{ node?: string; bound?: unknown[] }>(ioResult);
+  return { midiPath: io?.node, midiBindings: io?.bound?.length ?? 0 };
+}
+
 export async function scaffoldVjDeckImpl(
   ctx: ToolContext,
   args: ScaffoldVjDeckArgs,
@@ -125,71 +194,21 @@ export async function scaffoldVjDeckImpl(
   }
 
   // Map a logical control name to the concrete 'nodePath.parName' the decks build exposes.
-  const targetFor = (control: "crossfader" | "gain_a" | "gain_b"): string | undefined => {
+  const targetFor: TargetFor = (control) => {
     if (control === "crossfader") return crossfader ? `${crossfader}.cross` : undefined;
     if (control === "gain_a") return gainA ? `${gainA}.brightness1` : undefined;
     return gainB ? `${gainB}.brightness1` : undefined;
   };
 
   // 2) Optional on-screen fader surface, built inside the deck container.
-  let surfacePath: string | undefined;
-  if (args.faders) {
-    const faders = (["crossfader", "gain_a", "gain_b"] as const)
-      .map((c) => {
-        const param = targetFor(c);
-        return param
-          ? {
-              param,
-              label: c === "crossfader" ? "Crossfade" : c === "gain_a" ? "Gain A" : "Gain B",
-              min: 0,
-              max: c === "crossfader" ? 1 : 2,
-            }
-          : undefined;
-      })
-      .filter((f): f is NonNullable<typeof f> => f !== undefined);
-    const surfaceResult = await createControlSurfaceImpl(ctx, {
-      comp_path: container,
-      name: "surface",
-      align: "horizlr",
-      faders,
-      cue_buttons: [],
-    });
-    if (surfaceResult.isError) {
-      warnings.push("Fader surface build failed; deck + MIDI still wired.");
-    } else {
-      const surf = parseFence<{ surface?: string }>(surfaceResult);
-      surfacePath = surf?.surface;
-    }
-  }
+  const surfacePath = args.faders
+    ? await buildFaderSurface(ctx, container, targetFor, warnings)
+    : undefined;
 
   // 3) Optional MIDI map: a midiinCHOP bound to the deck controls (external control surface).
-  let midiPath: string | undefined;
-  let midiBindings = 0;
-  if (args.midi) {
-    const map = args.midi_map?.length ? args.midi_map : DEFAULT_MIDI_MAP;
-    const bindTo = map
-      .map((m) => {
-        const target = targetFor(m.control);
-        return target ? { channel: m.channel, target } : undefined;
-      })
-      .filter((b): b is { channel: string; target: string } => b !== undefined);
-    const ioResult = await createExternalIoImpl(ctx, {
-      kind: "midi_in",
-      parent_path: container,
-      name: "midi",
-      normalize: "0to1",
-      bind_to: bindTo,
-      interface: "artnet",
-      universe: 1,
-    });
-    if (ioResult.isError) {
-      warnings.push("MIDI-in build failed; deck + faders still wired.");
-    } else {
-      const io = parseFence<{ node?: string; bound?: unknown[] }>(ioResult);
-      midiPath = io?.node;
-      midiBindings = io?.bound?.length ?? 0;
-    }
-  }
+  const { midiPath, midiBindings } = args.midi
+    ? await buildMidiMap(ctx, container, args, targetFor, warnings)
+    : { midiPath: undefined, midiBindings: 0 };
 
   const output = decks?.output ?? decks?.output_path;
   const summary = `Scaffolded VJ deck '${args.name}' in ${container}: A/B decks + crossfader${

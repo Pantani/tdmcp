@@ -97,6 +97,58 @@ function isAbort(err: unknown): boolean {
   return err instanceof Error && (err.name === "AbortError" || err.message === "cancelled");
 }
 
+interface FailureStreak {
+  consecutiveFailures: number;
+  handoffSuggested: boolean;
+}
+
+/**
+ * Executes every tool call the model requested this step, appends each result to
+ * `messages`, and tracks back-to-back failures. Once the streak crosses the handoff
+ * threshold it emits a one-time handoff suggestion. Returns the updated streak so
+ * the caller can carry it into the next step.
+ */
+async function executeToolCalls(
+  ctx: ToolContext,
+  toolset: LlmTool[],
+  calls: NonNullable<ChatMessage["tool_calls"]>,
+  messages: ChatMessage[],
+  emit: (event: AgentEvent) => void,
+  streak: FailureStreak,
+): Promise<FailureStreak> {
+  let { consecutiveFailures, handoffSuggested } = streak;
+  for (const call of calls) {
+    emit({
+      type: "tool",
+      name: call.function.name,
+      status: "start",
+      args: call.function.arguments,
+    });
+    const outcome = await dispatchTool(ctx, call.function.name, call.function.arguments, toolset);
+    emit({
+      type: "tool",
+      name: call.function.name,
+      status: "done",
+      ok: outcome.ok,
+      summary: outcome.summary,
+    });
+    messages.push({
+      role: "tool",
+      tool_call_id: call.id,
+      name: call.function.name,
+      content: outcome.payload,
+    });
+
+    // Track back-to-back tool failures; a successful call resets the streak.
+    consecutiveFailures = outcome.ok ? 0 : consecutiveFailures + 1;
+    if (!handoffSuggested && consecutiveFailures >= HANDOFF_FAILURE_THRESHOLD) {
+      handoffSuggested = true;
+      emit({ type: "suggestion", kind: "handoff", message: HANDOFF_SUGGESTION });
+    }
+  }
+  return { consecutiveFailures, handoffSuggested };
+}
+
 /**
  * Runs one user turn to completion: repeatedly streams a model response, executes
  * any tool calls it requests, and feeds results back until the model produces a
@@ -125,8 +177,7 @@ export async function runAgentTurn(
   // Dead-end detection: count tool failures that land back-to-back across steps and
   // offer a handoff to Claude/Codex once the local model is clearly looping on errors.
   // The suggestion fires at most once per turn so it never becomes noise.
-  let consecutiveFailures = 0;
-  let handoffSuggested = false;
+  let streak: FailureStreak = { consecutiveFailures: 0, handoffSuggested: false };
 
   for (let step = 0; step < maxSteps; step++) {
     if (opts.signal?.aborted) {
@@ -159,35 +210,7 @@ export async function runAgentTurn(
       return messages;
     }
 
-    for (const call of calls) {
-      emit({
-        type: "tool",
-        name: call.function.name,
-        status: "start",
-        args: call.function.arguments,
-      });
-      const outcome = await dispatchTool(ctx, call.function.name, call.function.arguments, toolset);
-      emit({
-        type: "tool",
-        name: call.function.name,
-        status: "done",
-        ok: outcome.ok,
-        summary: outcome.summary,
-      });
-      messages.push({
-        role: "tool",
-        tool_call_id: call.id,
-        name: call.function.name,
-        content: outcome.payload,
-      });
-
-      // Track back-to-back tool failures; a successful call resets the streak.
-      consecutiveFailures = outcome.ok ? 0 : consecutiveFailures + 1;
-      if (!handoffSuggested && consecutiveFailures >= HANDOFF_FAILURE_THRESHOLD) {
-        handoffSuggested = true;
-        emit({ type: "suggestion", kind: "handoff", message: HANDOFF_SUGGESTION });
-      }
-    }
+    streak = await executeToolCalls(ctx, toolset, calls, messages, emit, streak);
   }
 
   const content =

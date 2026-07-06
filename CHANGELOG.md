@@ -18,6 +18,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- refactor: reduce cognitive complexity of functions flagged by the ratchets — no
+  behavior change. Extracted well-named helpers from five worsened JS/TS functions
+  (`runCli`, `runChat`, `service.sync`, `runAgentTurn`, chat-server `run`), six
+  freshly-added JS/TS functions (`runPreviewInline`, `narrateSetImpl`,
+  `projectFeatures`/`flattenToRings`, `scaffoldVjDeckImpl`, `bundleDependenciesImpl`,
+  `checkOperatorAvailabilityImpl`), and four Python bridge functions
+  (`_route_get_root`, `_route_node_special`, `duplicate`, `poll`). `make complexity`
+  is green again.
 - Renamed the Desktop-extension build artifacts to match the current `.mcpb`
   format: `dxt/` → `mcpb/`, `scripts/build-dxt.mjs` → `scripts/build-mcpb.mjs`
   (log prefix `[build-mcpb]`), `tests/unit/buildDxtScript.test.ts` →

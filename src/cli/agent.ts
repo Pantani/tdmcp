@@ -3620,6 +3620,126 @@ function completionScript(shell: string): string | undefined {
   return undefined;
 }
 
+/** `--interval` for `preview --watch`, clamped to a 100ms floor (default 1000ms). */
+function previewIntervalMs(values: Record<string, unknown>): number {
+  const raw = typeof values.interval === "string" ? Number(values.interval) : Number.NaN;
+  return Number.isFinite(raw) && raw >= 100 ? raw : 1000;
+}
+
+/**
+ * `preview --inline [--watch]`: render a terminal thumbnail (iTerm2/Kitty, else an
+ * honest ASCII fallback). `--watch` re-renders on an interval until Ctrl-C; the abort
+ * controller is wired to SIGINT/SIGTERM only in watch mode.
+ */
+async function runInlinePreview(
+  ctx: ToolContext,
+  args: { node_path: string; width: number; height: number },
+  values: Record<string, unknown>,
+  watchMode: boolean,
+): Promise<CliResult> {
+  const ac = new AbortController();
+  const onSig = () => ac.abort();
+  if (watchMode) {
+    process.on("SIGINT", onSig);
+    process.on("SIGTERM", onSig);
+  }
+  try {
+    const r = await runPreviewInline(ctx.client, {
+      nodePath: args.node_path,
+      width: args.width,
+      height: args.height,
+      watch: watchMode,
+      intervalMs: previewIntervalMs(values),
+      signal: ac.signal,
+    });
+    return { stdout: r.stdout, stderr: r.stderr, code: r.code };
+  } finally {
+    process.off("SIGINT", onSig);
+    process.off("SIGTERM", onSig);
+  }
+}
+
+/** `preview <nodePath> -o file.png`: capture the TOP and write it to disk. */
+async function capturePreviewToFile(
+  ctx: ToolContext,
+  args: { node_path: string; width: number; height: number },
+  outPath: string,
+): Promise<CliResult> {
+  try {
+    const preview = await capturePreview(ctx.client, args.node_path, args.width, args.height);
+    const bytes = Buffer.from(preview.base64, "base64");
+    writeFileSync(outPath, bytes);
+    const doc = {
+      node_path: preview.path,
+      file: resolve(outPath),
+      width: preview.width,
+      height: preview.height,
+      bytes: bytes.length,
+      mimeType: preview.mimeType,
+    };
+    return {
+      stdout: `${JSON.stringify(doc, null, 2)}\n`,
+      stderr: `Saved preview of ${preview.path} to ${outPath} (${bytes.length} bytes).\n`,
+      code: 0,
+    };
+  } catch (err) {
+    const msg = friendlyTdError(err);
+    return { stdout: "", stderr: `${msg}\n`, code: classifyTdErrorExit(msg) };
+  }
+}
+
+type PreviewArgs = { node_path: string; width: number; height: number };
+
+/** Assemble + validate `preview` args (node_path required). Returns args or an error result. */
+function parsePreviewArgs(
+  values: Record<string, unknown>,
+  positionals: string[],
+  opts: RunCliOptions,
+): { args: PreviewArgs } | { error: CliResult } {
+  const assembled = assembleParams(values, opts);
+  if ("error" in assembled) {
+    const stderr = `Invalid JSON in --params/--json: ${assembled.error}\n`;
+    return { error: { stdout: "", stderr, code: 2 } };
+  }
+  const raw = assembled.raw;
+  if (positionals[1]) raw.node_path = positionals[1];
+  // The CLI always captures (never collects a deferred job), so node_path is required.
+  const parsed = getPreviewSchema.required({ node_path: true }).safeParse(raw);
+  if (!parsed.success) {
+    const stderr = `Invalid arguments for "preview": ${parsed.error.message}\n`;
+    return { error: { stdout: "", stderr, code: 2 } };
+  }
+  return { args: parsed.data };
+}
+
+/** `preview <nodePath>` to a PNG file (or `--inline`/`--dry-run`). A CLI side effect. */
+async function handlePreviewCommand(
+  values: Record<string, unknown>,
+  positionals: string[],
+  opts: RunCliOptions,
+): Promise<CliResult> {
+  const result = parsePreviewArgs(values, positionals, opts);
+  if ("error" in result) return result.error;
+  const args = result.args;
+  const inlineMode = values.inline === true;
+  const watchMode = values.watch === true;
+  const outPath = typeof values.out === "string" && values.out ? values.out : "preview.png";
+  if (values["dry-run"]) {
+    const doc = inlineMode
+      ? { dryRun: true, command: "preview", args, inline: true, watch: watchMode }
+      : { dryRun: true, command: "preview", args, out: resolve(outPath) };
+    return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
+  }
+  let ctx: ToolContext;
+  try {
+    ctx = buildCtx(opts, cliLoadOptions(values));
+  } catch (err) {
+    return { stdout: "", stderr: `${(err as Error).message}\n`, code: 2 };
+  }
+  if (inlineMode) return runInlinePreview(ctx, args, values, watchMode);
+  return capturePreviewToFile(ctx, args, outPath);
+}
+
 export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<CliResult> {
   let parsed: ReturnType<typeof parseCliArgs>;
   try {
@@ -4062,94 +4182,7 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   // `preview <nodePath> -o file.png` — capture a TOP and write it to disk. This is a
   // side effect that doesn't fit the CallToolResult command table, so it's handled here.
   if (positionals[0] === "preview") {
-    const assembled = assembleParams(values, opts);
-    if ("error" in assembled) {
-      return {
-        stdout: "",
-        stderr: `Invalid JSON in --params/--json: ${assembled.error}\n`,
-        code: 2,
-      };
-    }
-    const raw = assembled.raw;
-    if (positionals[1]) raw.node_path = positionals[1];
-    // The CLI always captures (never collects a deferred job), so node_path is required.
-    const parsed = getPreviewSchema.required({ node_path: true }).safeParse(raw);
-    if (!parsed.success) {
-      return {
-        stdout: "",
-        stderr: `Invalid arguments for "preview": ${parsed.error.message}\n`,
-        code: 2,
-      };
-    }
-    const inlineMode = values.inline === true;
-    const watchMode = values.watch === true;
-    const outPath = typeof values.out === "string" && values.out ? values.out : "preview.png";
-    if (values["dry-run"]) {
-      const doc = inlineMode
-        ? { dryRun: true, command: "preview", args: parsed.data, inline: true, watch: watchMode }
-        : { dryRun: true, command: "preview", args: parsed.data, out: resolve(outPath) };
-      return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
-    }
-    let ctx: ToolContext;
-    try {
-      ctx = buildCtx(opts, cliLoadOptions(values));
-    } catch (err) {
-      return { stdout: "", stderr: `${(err as Error).message}\n`, code: 2 };
-    }
-    // `--inline` renders a thumbnail directly in the terminal (iTerm2/Kitty, else
-    // an honest ASCII fallback); `--watch` re-renders on an interval until Ctrl-C.
-    if (inlineMode) {
-      const intervalMs = (() => {
-        const raw = typeof values.interval === "string" ? Number(values.interval) : Number.NaN;
-        return Number.isFinite(raw) && raw >= 100 ? raw : 1000;
-      })();
-      const ac = new AbortController();
-      const onSig = () => ac.abort();
-      if (watchMode) {
-        process.on("SIGINT", onSig);
-        process.on("SIGTERM", onSig);
-      }
-      try {
-        const r = await runPreviewInline(ctx.client, {
-          nodePath: parsed.data.node_path,
-          width: parsed.data.width,
-          height: parsed.data.height,
-          watch: watchMode,
-          intervalMs,
-          signal: ac.signal,
-        });
-        return { stdout: r.stdout, stderr: r.stderr, code: r.code };
-      } finally {
-        process.off("SIGINT", onSig);
-        process.off("SIGTERM", onSig);
-      }
-    }
-    try {
-      const preview = await capturePreview(
-        ctx.client,
-        parsed.data.node_path,
-        parsed.data.width,
-        parsed.data.height,
-      );
-      const bytes = Buffer.from(preview.base64, "base64");
-      writeFileSync(outPath, bytes);
-      const doc = {
-        node_path: preview.path,
-        file: resolve(outPath),
-        width: preview.width,
-        height: preview.height,
-        bytes: bytes.length,
-        mimeType: preview.mimeType,
-      };
-      return {
-        stdout: `${JSON.stringify(doc, null, 2)}\n`,
-        stderr: `Saved preview of ${preview.path} to ${outPath} (${bytes.length} bytes).\n`,
-        code: 0,
-      };
-    } catch (err) {
-      const msg = friendlyTdError(err);
-      return { stdout: "", stderr: `${msg}\n`, code: classifyTdErrorExit(msg) };
-    }
+    return handlePreviewCommand(values, positionals, opts);
   }
 
   // `doctor` — environment diagnostic (TD bridge, LLM copilot, vault, config). Read-only and
