@@ -1,7 +1,7 @@
 {
   "id": "audio_reactive_basic",
   "name": "Audio Reactive Basic",
-  "description": "Minimal audio-reactive starter mirroring the standalone shape of create_audio_reactive (Layer-1): an audio source feeds both an Audio Spectrum CHOP (for FFT visuals) and an Analyze CHOP (for an overall RMS level). The spectrum is published as a CHOP-to-TOP texture that a downstream visual chain can sample; the RMS level is exposed as a stable Null CHOP ready for bind_to_channel. A Constant TOP is driven by the level via expression bindings on its color channels, so the output frame pulses with the audio out of the box.",
+  "description": "Minimal audio-reactive starter mirroring the standalone shape of create_audio_reactive (Layer-1): an audio source feeds both an Audio Spectrum CHOP (for FFT visuals) and an Analyze CHOP (for an overall RMS level). The spectrum is published as a CHOP-to-TOP texture that a downstream visual chain can sample; the RMS level is exposed as a stable Null CHOP ready for bind_to_channel. A Constant TOP reacts out of the box: its color channels are bound via expressions to the RMS level, so the frame pulses with the sound with no manual wiring. Swap the audiodeviceinCHOP for an audiofileinCHOP to drive it from a file. Live-validated in TouchDesigner 099 build 2025.32820 (with a synthetic tone, since the RMS is 0 without a live mic).",
   "tags": ["audio-reactive", "spectrum", "rms", "starter", "performable"],
   "difficulty": "beginner",
   "td_version_min": "2022",
@@ -20,8 +20,8 @@
     {
       "name": "level",
       "type": "analyzeCHOP",
-      "parameters": { "function": 6 },
-      "comment": "Function 6 = RMS power. One stable amplitude channel for downstream modulation."
+      "parameters": { "function": "rmspower" },
+      "comment": "RMS power (menu name, not index — the bridge validates menu values). One stable amplitude channel for downstream modulation."
     },
     {
       "name": "level_null",
@@ -92,5 +92,5 @@
       "bind_to": ["sensitivity.brightness1"]
     }
   ],
-  "preview_description": "A dim violet frame that pulses brighter and warmer with the audio RMS level, with the spectrum texture chain in place for a custom shader downstream."
+  "preview_description": "A dim violet frame that pulses brighter and warmer with the audio RMS level, with the spectrum + RMS analysis chain behind it (spectrum texture ready to feed a custom shader). Live-validated in TouchDesigner 099 build 2025.32820."
 }
