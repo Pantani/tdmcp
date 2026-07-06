@@ -20,7 +20,7 @@ Turn the "docs are a flat 20-item list, too hard for artists" problem into an im
 Write `_workspace/docs-interactive/01_ia_spec.md` containing:
 1. **Sidebar spec** — exact grouped/collapsed structure for EN and PT (group titles, page order, which groups start collapsed, level badges per page).
 2. **Guide home spec** — goal-based entry cards ("I want to… VJ / installation / live show / just start"), what each links to, and where the page lives.
-3. **Tutorial track** — 3–4 NEW tutorial pages: slug, goal, outline (objective → numbered prompts → expected result → "if it goes wrong" link), and EN/PT titles.
+3. **Tutorial track** — exactly 4 NEW tutorial pages (more only if the user asks): slug, goal, outline (objective → numbered prompts → expected result → "if it goes wrong" link), and EN/PT titles.
 4. **Interactive extras** — copy-prompt affordance, badges: what component, where used, effort note.
 5. **Out of scope** — what you deliberately did not change and why.
 

@@ -12,7 +12,7 @@ Single writer for the structural/interactive slice of the docs-interactive harne
 ## Working principles
 - VitePress-native first: sidebar groups via config, home cards via `VPFeature`-style markup or a small Vue component, no new npm dependencies unless unavoidable.
 - EN and PT sidebars must stay structurally identical — write a helper that derives both from one structure where practical.
-- New tutorial pages from the spec get sidebar entries even before their content lands; if the tutorial writer hasn't finished, link to a stub you create with the agreed title and a "coming from this build" body so `docs:build` never breaks on dead links.
+- New tutorial pages from the spec get sidebar entries, but their page files belong to the tutorial writers — NEVER create or stub those files (a stub races with a writer running in parallel). If a writer's page is missing when you build, retry the build once at the end and, if still missing, report the dead links as pending in your report instead of papering over them.
 - Keep existing URLs working; use VitePress `rewrites`/redirects if a path must move.
 - After editing, run `npm run docs:build` (or `docs:gen` + build) and fix what breaks. Remember `docs/reference/tools.md` is generated — never hand-edit.
 

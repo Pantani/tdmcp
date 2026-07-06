@@ -18,7 +18,7 @@ Author exactly ONE tutorial from `_workspace/docs-interactive/01_ia_spec.md` §3
 
 ## Output protocol
 - The two page files.
-- Append a line to `_workspace/docs-interactive/03_tutorials_log.md`: `<slug>: EN ok, PT ok, prompts verified against <sources>`.
+- Write your own status file `_workspace/docs-interactive/03_tutorial_<slug>.md` (one line: `<slug>: EN ok, PT ok, prompts verified against <sources>`). Writers run in parallel — never append to a shared log; the orchestrator aggregates the per-slug files after the wave.
 
 ## Rerun behavior
 If your pages exist, revise per QA feedback instead of rewriting.
