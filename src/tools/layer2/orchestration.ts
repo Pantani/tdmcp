@@ -167,11 +167,13 @@ export class NetworkBuilder {
       }
     }
     // Older bridge without the param-mode endpoint: set the expression via exec.
-    // Assigning `.expr` alone leaves the parameter in Constant mode, so flip the
-    // mode to EXPRESSION too. ParMode is not importable as a global, so resolve the
-    // enum from the live parameter (`type(_par.mode).EXPRESSION`).
+    // Look the parameter up by name via getattr so a name that isn't a valid Python
+    // identifier can't break the script (and isn't string-interpolated as code).
+    // Assigning `.expr` alone leaves the parameter in Constant mode, so flip the mode
+    // to EXPRESSION too. ParMode is not importable as a global, so resolve the enum
+    // from the live parameter (`type(_par.mode).EXPRESSION`).
     await this.python(
-      `_par = op(${q(path)}).par.${param}\n_par.expr = ${q(expr)}\n_par.mode = type(_par.mode).EXPRESSION`,
+      `_par = getattr(op(${q(path)}).par, ${q(param)})\n_par.expr = ${q(expr)}\n_par.mode = type(_par.mode).EXPRESSION`,
     );
   }
 
