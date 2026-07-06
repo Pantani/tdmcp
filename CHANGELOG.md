@@ -86,6 +86,41 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     ships a complete Lindenmayer turtle-graphics generator (axiom + weighted
     stochastic rules + iterations → polyline tree), so the item is superseded.
 
+- Five new integration/creative tools (roadmap-to-1.0 Wave 5a), all
+  live-validated against TD 099 build 2025.32820 (each built a real node network
+  and cooked with `errors: []`):
+  - `create_fixture_control` (Layer 1) — a moving-head lighting rig with BOTH a
+    DMX/Art-Net output chain AND a 3D previsualization: each fixture is an
+    8-channel movingHead8 Constant CHOP block (pan/tilt/dimmer/rgb/strobe/gobo,
+    padded + merged into a dmxoutCHOP) plus a Geometry COMP head with a tube-cone
+    beam whose pan→ry / tilt→rx rotation is expression-driven straight from that
+    fixture's DMX pan/tilt channels, rendered under a camera+light Render TOP.
+    Adds the live 3D preview on top of `create_dmx_fixture_pipeline` (DMX-out
+    only).
+  - `create_detection_reactive` (Layer 1) — turn object/person detection into
+    control channels with **no CUDA**: either a `websocket` backend that
+    subscribes to an external detector process streaming JSON detections, or an
+    `onnx` CPU Script CHOP scaffold (onnxruntime, `CPUExecutionProvider`). Both
+    emit a stable Null CHOP contract — presence, count, and per-object normalized
+    bboxes (`objN_x/y/w/h/score`) — ready for `bind_to_channel`. (Detection idea
+    inspired by the MIT-licensed TDYolo; no code copied.)
+  - `create_geo_visualization` (Layer 1) — project GeoJSON/OSM Point/LineString/
+    Polygon features via a Mercator projection normalized to a unit box, then a
+    Script SOP lays out point clouds + polylines (optionally extruded into 3D
+    ribbon "buildings" from each feature's `height`), wrapped in a Geometry COMP
+    under a camera+light Render TOP. Emits an ODbL/OpenStreetMap attribution note.
+  - `scaffold_vj_deck` (Layer 2) — one-call orchestration that composes
+    `create_decks` (A/B mixer + crossfader), `create_control_surface` (on-screen
+    crossfade + per-deck gain faders), and `create_external_io` (a midiinCHOP
+    bound to the same crossfader/gain params) into one MIDI-mappable VJ deck UI
+    container. The deck-scaffold layer on top of the `create_decks` primitive.
+  - `create_synesthesia_unreal_osc` (Layer 2) — named OSC-out preset maps for
+    Synesthesia (`/syn`, port 6448) and Unreal Engine (`/unreal`, port 8000):
+    builds a Constant CHOP whose channels are named `<prefix>/<control>` so an
+    oscoutCHOP emits the exact addresses the target app expects, with overridable
+    controls/prefix/host/port. The preset layer on top of `create_external_io`
+    osc_out.
+
 - Artist-friendly docs information architecture: the guide sidebar is now 7
   collapsible categories (identical EN/PT structure derived from one
   descriptor), a "What do you want to make?" goal-card guide home is the new

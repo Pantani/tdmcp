@@ -711,6 +711,14 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "detection-reactive",
+    summary:
+      "Turn object/person detection (WebSocket or ONNX CPU) into presence/count/bbox channels.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "diagnose-tdableton-mapper",
     summary: "Inspect or repair TDAbleton TDA_Mapper routing for a hand Ableton mapper.",
     mutates: true,
@@ -905,6 +913,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "fixture-control",
+    summary: "Build a moving-head fixture rig with DMX out + a 3D pan/tilt/beam previz.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "flock",
     summary: "Boids-style GPU particle flocking (separation/alignment/cohesion).",
     mutates: true,
@@ -943,6 +958,13 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "genre",
     summary: "Scaffold a genre-flavored show (techno/ambient/installation).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "geo-visualization",
+    summary: "Project GeoJSON/OSM lat-long into a 3D city visualization (ODbL attribution).",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -1955,6 +1977,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "scaffold-vj-deck",
+    summary: "Scaffold a MIDI-mappable VJ deck (decks + fader surface + MIDI map).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "scene3d",
     summary: "Build a renderable 3D scene.",
     mutates: true,
@@ -2159,6 +2188,13 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "sync-timecode",
     summary: "Lock the show clock to external timecode (LTC/MTC/MIDI).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "synesthesia-unreal-osc",
+    summary: "Build a named OSC-out preset map for Synesthesia / Unreal Engine.",
     mutates: true,
     unsafe: false,
     source: "tool",

@@ -147,6 +147,10 @@ import {
   createDepthSilhouetteSchema,
 } from "../tools/layer1/createDepthSilhouette.js";
 import {
+  createDetectionReactiveImpl,
+  createDetectionReactiveSchema,
+} from "../tools/layer1/createDetectionReactive.js";
+import {
   createDisplacementWarpImpl,
   createDisplacementWarpSchema,
 } from "../tools/layer1/createDisplacementWarp.js";
@@ -173,6 +177,10 @@ import {
   createFeedbackTunnelImpl,
   createFeedbackTunnelSchema,
 } from "../tools/layer1/createFeedbackTunnel.js";
+import {
+  createFixtureControlImpl,
+  createFixtureControlSchema,
+} from "../tools/layer1/createFixtureControl.js";
 import { createFluidSimImpl, createFluidSimSchema } from "../tools/layer1/createFluidSim.js";
 import {
   createGaussianSplatSceneImpl,
@@ -186,6 +194,10 @@ import {
   createGenerativeAudioImpl,
   createGenerativeAudioSchema,
 } from "../tools/layer1/createGenerativeAudio.js";
+import {
+  createGeoVisualizationImpl,
+  createGeoVisualizationSchema,
+} from "../tools/layer1/createGeoVisualization.js";
 import { createGlitchImpl, createGlitchSchema } from "../tools/layer1/createGlitch.js";
 import {
   createGpuParticleFieldImpl,
@@ -555,6 +567,10 @@ import {
   createStageDashboardImpl,
   createStageDashboardSchema,
 } from "../tools/layer2/createStageDashboard.js";
+import {
+  createSynesthesiaUnrealOscImpl,
+  createSynesthesiaUnrealOscSchema,
+} from "../tools/layer2/createSynesthesiaUnrealOsc.js";
 import { createTimeEchoImpl, createTimeEchoSchema } from "../tools/layer2/createTimeEcho.js";
 import { createXyPadImpl, createXyPadSchema } from "../tools/layer2/createXyPad.js";
 import {
@@ -586,6 +602,7 @@ import {
   scaffoldToolGeneratorImpl,
   scaffoldToolGeneratorSchema,
 } from "../tools/layer2/scaffoldToolGenerator.js";
+import { scaffoldVjDeckImpl, scaffoldVjDeckSchema } from "../tools/layer2/scaffoldVjDeck.js";
 import {
   setParametersBatchImpl,
   setParametersBatchSchema,
@@ -2236,6 +2253,36 @@ const COMMANDS: Record<string, Command> = {
     createDmxFixturePipelineSchema,
     createDmxFixturePipelineImpl,
     "Build a DMX/Art-Net fixture pipeline (channels → patch → Art-Net Out).",
+    { mutates: true },
+  ),
+  "fixture-control": r(
+    createFixtureControlSchema,
+    createFixtureControlImpl,
+    "Build a moving-head fixture rig with DMX out + a 3D pan/tilt/beam previz.",
+    { mutates: true },
+  ),
+  "detection-reactive": r(
+    createDetectionReactiveSchema,
+    createDetectionReactiveImpl,
+    "Turn object/person detection (WebSocket or ONNX CPU) into presence/count/bbox channels.",
+    { mutates: true },
+  ),
+  "geo-visualization": r(
+    createGeoVisualizationSchema,
+    createGeoVisualizationImpl,
+    "Project GeoJSON/OSM lat-long into a 3D city visualization (ODbL attribution).",
+    { mutates: true },
+  ),
+  "scaffold-vj-deck": r(
+    scaffoldVjDeckSchema,
+    scaffoldVjDeckImpl,
+    "Scaffold a MIDI-mappable VJ deck (decks + fader surface + MIDI map).",
+    { mutates: true },
+  ),
+  "synesthesia-unreal-osc": r(
+    createSynesthesiaUnrealOscSchema,
+    createSynesthesiaUnrealOscImpl,
+    "Build a named OSC-out preset map for Synesthesia / Unreal Engine.",
     { mutates: true },
   ),
   "scaffold-tool-generator": r(

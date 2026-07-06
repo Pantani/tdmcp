@@ -57,6 +57,7 @@ import { registerCreateScheduler } from "./createScheduler.js";
 import { registerCreateSharedMemoryBridge } from "./createSharedMemoryBridge.js";
 import { registerCreateSidechainPump } from "./createSidechainPump.js";
 import { registerCreateStageDashboard } from "./createStageDashboard.js";
+import { registerCreateSynesthesiaUnrealOsc } from "./createSynesthesiaUnrealOsc.js";
 import { registerCreateTimeEcho } from "./createTimeEcho.js";
 import { registerCreateXyPad } from "./createXyPad.js";
 import { registerDiagnoseTdabletonMapper } from "./diagnoseTdabletonMapper.js";
@@ -74,6 +75,7 @@ import { registerRandomizeControls } from "./randomizeControls.js";
 import { registerRebuildNetwork } from "./rebuildNetwork.js";
 import { registerScaffoldExtension } from "./scaffoldExtension.js";
 import { registerScaffoldToolGenerator } from "./scaffoldToolGenerator.js";
+import { registerScaffoldVjDeck } from "./scaffoldVjDeck.js";
 import { registerSetParametersBatch } from "./setParametersBatch.js";
 import { registerSetPerformMode } from "./setPerformMode.js";
 import { registerSetupFaceTracking } from "./setupFaceTracking.js";
@@ -112,6 +114,9 @@ export const layer2Registrars: ToolRegistrar[] = [
   // Wave 6 — DJ decks + MIDI/OSC learn:
   registerCreateDecks,
   registerLearnControl,
+  // Wave 5a — integrations: VJ deck scaffold + Synesthesia/Unreal OSC preset:
+  registerScaffoldVjDeck,
+  registerCreateSynesthesiaUnrealOsc,
   // Post-0.3.0 parallel build — wave 1:
   registerCreateCueSequencer,
   registerCreateStageDashboard,

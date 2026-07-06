@@ -31,6 +31,7 @@ import { registerCreateDepthDisplacement } from "./createDepthDisplacement.js";
 import { registerCreateDepthFromTwoD } from "./createDepthFromTwoD.js";
 import { registerCreateDepthPopField } from "./createDepthPopField.js";
 import { registerCreateDepthSilhouette } from "./createDepthSilhouette.js";
+import { registerCreateDetectionReactive } from "./createDetectionReactive.js";
 import { registerCreateDisplacementWarp } from "./createDisplacementWarp.js";
 import { registerCreateDither } from "./createDither.js";
 import { registerCreateDmxFixturePipeline } from "./createDmxFixturePipeline.js";
@@ -40,10 +41,12 @@ import { registerCreateEngineComp } from "./createEngineComp.js";
 import { registerCreateFacadeMapping } from "./createFacadeMapping.js";
 import { registerCreateFeedbackNetwork } from "./createFeedbackNetwork.js";
 import { registerCreateFeedbackTunnel } from "./createFeedbackTunnel.js";
+import { registerCreateFixtureControl } from "./createFixtureControl.js";
 import { registerCreateFluidSim } from "./createFluidSim.js";
 import { registerCreateGaussianSplatScene } from "./createGaussianSplatScene.js";
 import { registerCreateGenerativeArt } from "./createGenerativeArt.js";
 import { registerCreateGenerativeAudio } from "./createGenerativeAudio.js";
+import { registerCreateGeoVisualization } from "./createGeoVisualization.js";
 import { registerCreateGlitch } from "./createGlitch.js";
 import { registerCreateGpuParticleField } from "./createGpuParticleField.js";
 import { registerCreateGrowthSystem } from "./createGrowthSystem.js";
@@ -186,6 +189,9 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateShaderLib,
   registerCreateShaderPark,
   registerCreateVideoSynth,
+  registerCreateDetectionReactive,
+  registerCreateFixtureControl,
+  registerCreateGeoVisualization,
   registerCreateDepthSilhouette,
   registerCreateKineticText,
   registerCreateWaveform,
