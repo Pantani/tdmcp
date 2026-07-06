@@ -183,6 +183,7 @@ export const registerManageComponentStorage: ToolRegistrar = (server, ctx) =>
       description:
         "CRUD operations on a COMP operator's .storage dictionary. Actions: list (all keys+values), get (one key), set (write a key), delete (remove a key). No operators are created; the target COMP must already exist.",
       inputSchema: manageComponentStorageSchema.shape,
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     (args) => manageComponentStorageImpl(ctx, args),
   );

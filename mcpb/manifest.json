@@ -4,10 +4,32 @@
   "display_name": "TouchDesigner (tdmcp)",
   "version": "0.12.0",
   "description": "AI-native visual creation for TouchDesigner — build real node networks from plain language.",
+  "long_description": "tdmcp turns plain-language prompts into real, wired, laid-out TouchDesigner node networks. It ships an embedded knowledge base of TouchDesigner operators and Python classes plus 300+ tools spanning whole systems (audio-reactive, feedback, generative), building blocks (connect, animate, control panels, external I/O), and atomic node CRUD, and follows a create → verify → preview loop that checks for post-cook errors and captures a preview of the output. It runs entirely on your own machine and talks only to a local TouchDesigner bridge on 127.0.0.1; it collects no data and has no telemetry.",
   "author": {
     "name": "Pantani",
     "url": "https://github.com/Pantani/tdmcp"
   },
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Pantani/tdmcp"
+  },
+  "homepage": "https://pantani.github.io/tdmcp/",
+  "documentation": "https://pantani.github.io/tdmcp/",
+  "support": "https://github.com/Pantani/tdmcp/issues",
+  "license": "MIT",
+  "privacy_policies": ["https://pantani.github.io/tdmcp/privacy"],
+  "keywords": [
+    "touchdesigner",
+    "visuals",
+    "vj",
+    "generative-art",
+    "audio-reactive",
+    "projection-mapping",
+    "creative-coding",
+    "mcp"
+  ],
+  "tools_generated": true,
   "server": {
     "type": "node",
     "entry_point": "dist/index.js",

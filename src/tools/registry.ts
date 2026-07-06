@@ -52,6 +52,8 @@ const SAFE_PROFILE_EXCLUDE = new Set<string>([
   "export_sop_to_svg", // writes/overwrites an SVG at a user-controlled filesystem path
   "generative_classics_pack", // writes/overwrites a bundle JSON at a user-controlled filesystem path
   "create_safety_blackout_chain", // builds a panic/kill chain — declared destructive
+  "merge_vaults", // the 'theirs' strategy overwrites files in the target vault
+  "manage_component_storage", // the delete action removes storage keys; set overwrites values
 ]);
 
 export const runtimeToolRegistrars: ToolRegistrar[] = [

@@ -360,6 +360,7 @@ export const registerSetupTdableton: ToolRegistrar = (server, ctx) =>
         "if the Palette isn't available. Either branch exposes the same Null CHOP names at the container boundary " +
         "so downstream bind_to_channel calls work regardless of which path was taken.",
       inputSchema: setupTdabletonSchema.shape,
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
     (args) => setupTdabletonImpl(ctx, args),
   );

@@ -5,20 +5,19 @@
 // it is available, and otherwise falls back to assembling the zip itself from
 // the verified file list.
 //
-// The official packer was renamed from `@anthropic-ai/dxt` (CLI `dxt`, format
-// `.dxt`) to `@anthropic-ai/mcpb` (CLI `mcpb`, format `.mcpb`); both expose
-// `pack <dir> <output>`. We try a pinned `mcpb` package first, then the
-// legacy `dxt` package, then zip. NOTE: the legacy `dxt` CLI predates spec 0.3
-// and rejects the modern `manifest_version` key (it still requires
-// `dxt_version`), so on machines that only have the legacy package the
-// official-packer path is expected to fail and the zip fallback kicks in — the
-// resulting bundle is still valid. (Legacy `.dxt` bundles still install in
-// Claude Desktop; `.mcpb` is the current format.)
+// The official packer was renamed from `@anthropic-ai/dxt` to
+// `@anthropic-ai/mcpb`; both expose `pack <dir> <output>`. We try a pinned
+// `@anthropic-ai/mcpb` first, then the legacy `@anthropic-ai/dxt`, then zip.
+// NOTE: the legacy packer predates manifest spec 0.3 and rejects the modern
+// `manifest_version` key (it still requires the old `dxt_version`), so on
+// machines that only have the legacy package the official-packer path is
+// expected to fail and the zip fallback kicks in — the resulting bundle is
+// still valid and installs in Claude Desktop.
 //
 // Run AFTER `npm run build` (the bundle needs a populated `dist/`).
 //
 // Usage:
-//   node scripts/build-dxt.mjs
+//   node scripts/build-mcpb.mjs
 import { spawnSync } from "node:child_process";
 import {
   cpSync,
@@ -34,7 +33,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const manifestPath = join(root, "dxt", "manifest.json");
+const manifestPath = join(root, "mcpb", "manifest.json");
 const outFile = join(root, "tdmcp.mcpb");
 
 /** Files/dirs to include at the root of the bundle (source -> archive path). */
@@ -43,6 +42,8 @@ const outFile = join(root, "tdmcp.mcpb");
 const INCLUDE = [
   // manifest.json MUST sit at the archive root.
   [manifestPath, "manifest.json"],
+  // icon.png (referenced by manifest.icon) must sit at the archive root too.
+  [join(root, "mcpb", "icon.png"), "icon.png"],
   [join(root, "dist"), "dist"],
   [join(root, "recipes"), "recipes"],
   [join(root, "td"), "td"],
@@ -60,11 +61,11 @@ function shouldStage(src) {
 }
 
 function log(msg) {
-  process.stdout.write(`[build-dxt] ${msg}\n`);
+  process.stdout.write(`[build-mcpb] ${msg}\n`);
 }
 
 function fail(msg) {
-  process.stderr.write(`[build-dxt] ERROR: ${msg}\n`);
+  process.stderr.write(`[build-mcpb] ERROR: ${msg}\n`);
   process.exit(1);
 }
 
@@ -82,7 +83,7 @@ function preflight() {
 
 // Official packer package names, in preference order. These are version-pinned
 // so release builds do not resolve mutable npm latest at pack time. `mcpb` is
-// the current name; `dxt` is the deprecated predecessor. Both expose
+// the current name; `@anthropic-ai/dxt` is the deprecated predecessor. Both expose
 // `<cli> pack <dir> <out>`.
 const OFFICIAL_PACKERS = [{ pkg: "@anthropic-ai/mcpb@2.1.2" }, { pkg: "@anthropic-ai/dxt@0.2.6" }];
 
@@ -157,7 +158,7 @@ function tryOfficialPacker() {
       continue;
     }
 
-    const stageDir = mkdtempSync(join(tmpdir(), "tdmcp-dxt-"));
+    const stageDir = mkdtempSync(join(tmpdir(), "tdmcp-mcpb-"));
     try {
       stageFiles(stageDir);
       stageNodeModules(stageDir);
@@ -192,7 +193,7 @@ function zipFallback() {
   }
 
   // Stage files so the archive has manifest.json at its root.
-  const stageDir = mkdtempSync(join(tmpdir(), "tdmcp-dxt-"));
+  const stageDir = mkdtempSync(join(tmpdir(), "tdmcp-mcpb-"));
   try {
     for (const [src, dest] of INCLUDE) {
       if (!existsSync(src)) {

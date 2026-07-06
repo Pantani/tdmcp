@@ -429,6 +429,7 @@ export const registerCreateFacadeMapping: ToolRegistrar = (server, ctx) =>
         "plus per-projector Null outputs and a summary preview composite. Ships as a calibration skeleton; " +
         "per-projector corners, color match, and (when 3D) camera transforms are left to live install alignment.",
       inputSchema: createFacadeMappingSchema.shape,
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
     (args) => createFacadeMappingImpl(ctx, args),
   );

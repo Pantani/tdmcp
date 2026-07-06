@@ -204,6 +204,7 @@ export const registerCreateAudioGlslUniforms: ToolRegistrar = (server, ctx) =>
       description:
         "Writes CHOP-reference expressions onto the seq.vec uniform slots of an existing glslTOP, so named channels (low/mid/high/rms etc.) drive shader uniforms every cook. Creates no operators — pure parameter binding. Idempotent and composable with create_glsl_shader.",
       inputSchema: createAudioGlslUniformsSchema.shape,
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
     (args) => createAudioGlslUniformsImpl(ctx, args),
   );
