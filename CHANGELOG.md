@@ -13,8 +13,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   in TouchDesigner 099 build 2025.32820: the `level` analyzeCHOP's `function` was
   given as the integer `6`, which the bridge's menu validation rejects (menu params
   take names, not indices) so it silently stayed on `average` — now `"rmspower"`;
-  and `out_color` was never wired to the level, so it never pulsed — a `color_drive`
-  CHOP Execute callback now drives its violet brightness from the RMS level. Verified
+  and `out_color` was never wired to the level, so it never pulsed — its
+  `colorr/g/b` are now bound to the RMS `level_null` channel via expressions (the
+  new recipe `expr` support), so the frame pulses declaratively every cook. Verified
   live with a synthetic tone (RMS is 0 without a mic); the audio-reactive-visual
   tutorial video was re-captured from the recipe's own output.
 - `audio_spectrum_bars` recipe: the `spectrum` had no output length set, so the
@@ -54,6 +55,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   GitHub Release. End users then install the bridge by dragging the `.tox` into a
   project and clicking **Install** — no Textport, no Preferences, no clone. The
   `td/README.md` "Easiest install" now leads with this path.
+- Recipe parameter expressions: a recipe `parameters` entry can now carry an
+  `expr` (Python expression) so `apply_recipe` binds the parameter in expression
+  mode instead of setting a constant. `op('<recipeNodeName>')` references are
+  rewritten to the real created paths at build time, and the bridge param-mode
+  endpoint is used with an `/api/exec` fallback for older bridges.
 
 ## [0.12.0] - 2026-07-04
 
