@@ -8,6 +8,25 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Three new first-class TouchDesigner bridge REST endpoints (roadmap-to-1.0
+  Wave 2), each promoting proven `/api/exec` logic to a structured route that
+  **survives `TDMCP_BRIDGE_ALLOW_EXEC=0`**, with a transparent `/api/exec`
+  fallback for older bridges (live-validated against TD 099 build 2025.32820):
+  - `POST /api/nodes/{path}/save` — save a node to a file (a COMP to a `.tox`
+    component, a TOP to an image); client `saveNode(...)`, `SaveNodeSchema`.
+    `render_output` now prefers this endpoint (falls back to exec on a 404).
+  - `POST /api/duplicate` — duplicate a node/subtree preserving its internal
+    wires + parameter values; client `duplicateNode(...)`, `DuplicateNodeSchema`.
+    `duplicate_network` now prefers this endpoint (falls back to exec on a 404).
+  - `GET /api/optypes` — the ground-truth creatable-operator list from the
+    RUNNING TouchDesigner (every `td` family-base subclass), client
+    `getOpTypes(...)`, `OpTypesSchema`.
+  - `check_operator_availability` (Layer 3) — reconciles the static operator
+    knowledge base against the live `/api/optypes` list, flagging which
+    documented operators are actually creatable in this build vs
+    deprecated/unavailable, plus (optionally) live-only optypes the KB doesn't
+    yet document. CLI: `tdmcp-agent check-optypes`.
+
 - Four new stock-TouchDesigner artist/interaction tools (roadmap-to-1.0 Wave 3,
   no GPU/hardware required):
   - `create_step_repeat` (Layer 1) — brick/grid tiling of a source TOP into

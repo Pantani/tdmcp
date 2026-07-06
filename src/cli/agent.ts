@@ -607,6 +607,10 @@ import { syncTimecodeImpl, syncTimecodeSchema } from "../tools/layer2/syncTimeco
 import { analyzeProjectImpl, analyzeProjectSchema } from "../tools/layer3/analyzeProject.js";
 import { captionTopImpl, captionTopSchema } from "../tools/layer3/captionTop.js";
 import {
+  checkOperatorAvailabilityImpl,
+  checkOperatorAvailabilitySchema,
+} from "../tools/layer3/checkOperatorAvailability.js";
+import {
   collectProjectAssetsImpl,
   collectProjectAssetsSchema,
 } from "../tools/layer3/collectProjectAssets.js";
@@ -1024,6 +1028,11 @@ const COMMANDS: Record<string, Command> = {
     { mutates: true },
   ),
   render: r(renderOutputSchema, renderOutputImpl, "Save a TOP to a file at full resolution."),
+  "check-optypes": r(
+    checkOperatorAvailabilitySchema,
+    checkOperatorAvailabilityImpl,
+    "Reconcile the operator knowledge base against the live TD's creatable optypes.",
+  ),
   movie: r(recordMovieSchema, recordMovieImpl, "Record a TOP to a movie/sequence (start/stop).", {
     mutates: true,
   }),

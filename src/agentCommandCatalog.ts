@@ -280,6 +280,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "check-optypes",
+    summary: "Reconcile the operator knowledge base against the live TD's creatable optypes.",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "checkpoint",
     summary: "Store/restore a full sub-network snapshot (undo point).",
     mutates: true,

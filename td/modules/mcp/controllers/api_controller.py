@@ -22,12 +22,15 @@ from mcp.services import (
     batch_service,
     connect_service,
     custom_params_service,
+    duplicate_service,
     editor_service,
     log_service,
+    optypes_service,
     param_text_service,
     preview_service,
     project_analysis_service,
     project_load_service,
+    save_service,
     system_service,
     transport_service,
 )
@@ -419,6 +422,10 @@ def _route_get_root(rest, query, webserver=None):
         include_raw = _qs(query, "include")
         include = [s for s in include_raw.split(",") if s] if include_raw else None
         return system_service.get_system_info(include)
+    if rest == ["optypes"]:
+        # Ground-truth creatable optype list from the live td module — survives
+        # ALLOW_EXEC=0. No query params; the full family-grouped enumeration.
+        return optypes_service.list_optypes()
     if rest == ["logs"]:
         # Resolve the Error DAT relative to the webserver's own container so a custom
         # install works; fall back to get_logs' default when tests have no webserver.
@@ -485,6 +492,13 @@ def _route_post_root_controls(rest, body):
         # Perform-mode write — survives ALLOW_EXEC=0; read side lives in /api/system.
         _require(body, "enabled")
         return system_service.set_perform_mode(_as_bool(body["enabled"], "enabled"))
+    if rest == ["duplicate"]:
+        # Node/subtree duplicate preserving wires+params — survives ALLOW_EXEC=0.
+        # TD's own parent.copy(), not arbitrary Python.
+        _require(body, "source_path")
+        return duplicate_service.duplicate(
+            body["source_path"], body.get("name"), body.get("parent_path")
+        )
 
     return None
 
@@ -552,6 +566,15 @@ def _route_node_special(method, rest, query, body):
         _require(body, "method")
         return api_service.call_method(
             _node_path(rest[1:-1]), body["method"], body.get("args", []), body.get("kwargs", {})
+        )
+    if rest[-1] == "save" and method == "POST":
+        # Structured node save (COMP -> .tox, TOP -> image). NO exec gate: it must
+        # survive TDMCP_BRIDGE_ALLOW_EXEC=0. TD's own .save(), not arbitrary Python.
+        _require(body, "file")
+        return save_service.save_node(
+            _node_path(rest[1:-1]),
+            body["file"],
+            _as_bool(body.get("create_folders", True), "create_folders"),
         )
     if rest[-1] == "errors" and method == "GET":
         return api_service.get_node_errors(_node_path(rest[1:-1]), recursive=False)

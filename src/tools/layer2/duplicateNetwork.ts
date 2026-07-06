@@ -2,8 +2,6 @@ import { z } from "zod";
 import { guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
-const q = (value: string): string => JSON.stringify(value);
-
 export const duplicateNetworkSchema = z.object({
   source_path: z.string().describe("Path of the node/COMP to duplicate."),
   name: z.string().optional().describe("Name for the copy (auto-generated if omitted)."),
@@ -15,21 +13,16 @@ export const duplicateNetworkSchema = z.object({
 type DuplicateNetworkArgs = z.infer<typeof duplicateNetworkSchema>;
 
 export async function duplicateNetworkImpl(ctx: ToolContext, args: DuplicateNetworkArgs) {
-  const script = [
-    `src = op(${q(args.source_path)})`,
-    `if src is None: raise Exception('source not found: ' + ${q(args.source_path)})`,
-    args.parent_path ? `parent = op(${q(args.parent_path)})` : "parent = src.parent()",
-    "if parent is None: raise Exception('parent not found')",
-    args.name ? `new = parent.copy(src, name=${q(args.name)})` : "new = parent.copy(src)",
-    "result = new.path",
-  ].join("\n");
-
+  // Goes through the first-class `POST /api/duplicate` route (survives
+  // TDMCP_BRIDGE_ALLOW_EXEC=0), with a transparent `/api/exec` fallback baked into
+  // `client.duplicateNode` for older bridges. `parent.copy` deep-copies the source
+  // including its internal wires + parameter values.
   return guardTd(
-    () => ctx.client.executePythonScript(script, true),
+    () => ctx.client.duplicateNode(args.source_path, args.name, args.parent_path),
     (res) =>
-      jsonResult(`Duplicated ${args.source_path} → ${res.result ?? "(see stdout)"}.`, {
-        source: args.source_path,
-        copy: res.result,
+      jsonResult(`Duplicated ${res.source} → ${res.copy}.`, {
+        source: res.source,
+        copy: res.copy,
       }),
   );
 }

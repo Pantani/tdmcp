@@ -2,6 +2,7 @@ import type { ToolRegistrar } from "../types.js";
 import { registerAnalyzeProject } from "./analyzeProject.js";
 // Campaign Waves 4 & 6 (backlog 2026-05-29):
 import { registerCaptionTop } from "./captionTop.js";
+import { registerCheckOperatorAvailability } from "./checkOperatorAvailability.js";
 import { registerCollectProjectAssets } from "./collectProjectAssets.js";
 import { registerCompactGraphDigest } from "./compactGraphDigest.js";
 import { registerCompareOperatorDocs } from "./compareOperatorDocs.js";
@@ -113,6 +114,8 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerOptimizePerformance,
   registerRenderOutput,
   registerRecordMovie,
+  // Roadmap Wave 2 — bridge createable-truth reconciliation:
+  registerCheckOperatorAvailability,
   // Phase 13 — project intelligence & agent-DX:
   registerAnalyzeProject,
   registerGenerateReadme,

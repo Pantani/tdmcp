@@ -466,6 +466,41 @@ export const ProjectLoadSchema = z.object({
 });
 export type TdProjectLoad = z.infer<typeof ProjectLoadSchema>;
 
+// --- Node save (POST /api/nodes/<path>/save) — survives ALLOW_EXEC=0 ---
+// A COMP saves to a .tox component file; a TOP saves to an image. Only image
+// operators expose width/height, so dimensions are optional and gated by
+// `has_dimensions`. `saved` is the canonical path TD wrote (COMP.save returns the
+// path string; TOP.save returns a FileSaveStatus, normalized bridge-side).
+export const SaveNodeSchema = z.object({
+  path: z.string(),
+  saved: z.string(),
+  has_dimensions: z.boolean().default(false),
+  width: z.number().int().optional(),
+  height: z.number().int().optional(),
+});
+export type TdSaveNode = z.infer<typeof SaveNodeSchema>;
+
+// --- Node/subtree duplicate (POST /api/duplicate) — survives ALLOW_EXEC=0 ---
+// `parent.copy(src[, name])` preserves the source's internal wires + params.
+export const DuplicateNodeSchema = z.object({
+  source: z.string(),
+  copy: z.string(),
+  parent: z.string().optional(),
+});
+export type TdDuplicateNode = z.infer<typeof DuplicateNodeSchema>;
+
+// --- Creatable-operator truth list (GET /api/optypes) — survives ALLOW_EXEC=0 ---
+// Ground-truth from the live TD: every lowercase `td` attribute that is a subclass
+// of a family base class (TOP/CHOP/SOP/DAT/COMP/MAT/POP) is a creatable optype.
+export const OpTypesSchema = z.object({
+  optypes: z.array(z.string()).default([]),
+  families: z.record(z.string(), z.array(z.string())).default({}),
+  count: z.number().int().default(0),
+  td_version: z.string().optional(),
+  build: z.string().optional(),
+});
+export type TdOpTypes = z.infer<typeof OpTypesSchema>;
+
 // --- Custom-parameter readout (GET /api/nodes/<path>/custom_params) ---
 // Structured endpoint for serialize_network + inspect_component. Every field
 // optional so older bridges (or per-par failures) round-trip cleanly. ``value``

@@ -15,6 +15,7 @@ import {
   DatTextWriteSchema,
   DeleteResultSchema,
   DisconnectResultSchema,
+  DuplicateNodeSchema,
   EditorFocusSchema,
   ExecResultSchema,
   InfoSchema,
@@ -23,6 +24,7 @@ import {
   NodeErrorsSchema,
   NodeListSchema,
   NodeRefSchema,
+  OpTypesSchema,
   ParamModesBatchSchema,
   ParamModesSchema,
   PerformanceSchema,
@@ -32,13 +34,17 @@ import {
   ProjectAnalysisSchema,
   ProjectLoadSchema,
   SampleGridSchema,
+  SaveNodeSchema,
   SetParamModeResultSchema,
   SystemInfoSchema,
   type TdBatchOperation,
   type TdCustomParams,
+  type TdDuplicateNode,
+  type TdOpTypes,
   type TdPerformModeState,
   type TdProjectAnalysis,
   type TdProjectLoad,
+  type TdSaveNode,
   type TdSystemInfo,
   TopologySchema,
   TransportStateSchema,
@@ -195,6 +201,94 @@ for _n in _nodes:
         if _t:
             _errors.append({"path": _n.path, "message": _t, "level": "error"})
 print(json.dumps({"root_path": _rp, "node_count": len(_nodes), "errors": _errors}))
+`;
+
+/** Exec fallback for `saveNode` on older bridges (no `/api/nodes/<path>/save`).
+ * Mirrors `save_service.save_node`: `op.save(file)`, normalize the return
+ * (COMP.save -> str; TOP.save -> FileSaveStatus), report dimensions only for
+ * image ops, and print the report as the final JSON line. */
+const SAVE_NODE_EXEC_SCRIPT = `
+import base64, json
+_p = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
+_n = op(_p["path"])
+if _n is None:
+    print(json.dumps({"fatal": "save: node not found: " + _p["path"]}))
+elif not hasattr(_n, "save"):
+    print(json.dumps({"fatal": "save: " + _p["path"] + " cannot be saved (no .save method)."}))
+else:
+    try:
+        _ret = _n.save(_p["file"], createFolders=bool(_p.get("createFolders", True)))
+        _saved = _p["file"] if (_ret is None or str(_ret).strip() != _p["file"]) else str(_ret)
+        _out = {"path": _n.path, "saved": _saved, "has_dimensions": False}
+        if hasattr(_n, "width") and hasattr(_n, "height"):
+            try:
+                _out["width"] = int(_n.width)
+                _out["height"] = int(_n.height)
+                _out["has_dimensions"] = True
+            except Exception:
+                _out["has_dimensions"] = False
+        print(json.dumps(_out))
+    except Exception as _e:
+        print(json.dumps({"fatal": "save: " + _p["path"] + " failed: " + str(_e)}))
+`;
+
+/** Exec fallback for `duplicateNode` on older bridges (no `/api/duplicate`).
+ * Mirrors `duplicate_service.duplicate`: resolve src + parent, `parent.copy`,
+ * print `{source, copy, parent}`. */
+const DUPLICATE_NODE_EXEC_SCRIPT = `
+import base64, json
+_p = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
+_src = op(_p["source"])
+if _src is None:
+    print(json.dumps({"fatal": "duplicate: source not found: " + _p["source"]}))
+else:
+    _parent = op(_p["parent"]) if _p.get("parent") else _src.parent()
+    if _parent is None:
+        print(json.dumps({"fatal": "duplicate: parent not found"}))
+    else:
+        try:
+            _new = _parent.copy(_src, name=_p["name"]) if _p.get("name") else _parent.copy(_src)
+            print(json.dumps({"source": _src.path, "copy": _new.path, "parent": _parent.path}))
+        except Exception as _e:
+            print(json.dumps({"fatal": "duplicate failed: " + str(_e)}))
+`;
+
+/** Exec fallback for `getOpTypes` on older bridges (no `/api/optypes`).
+ * Mirrors `optypes_service.list_optypes`: walk the `td` module for lowercase
+ * attributes that subclass a family base class, grouped by family. */
+const OPTYPES_EXEC_SCRIPT = `
+import json, inspect, td
+_FAM = ("TOP", "CHOP", "SOP", "DAT", "COMP", "MAT", "POP")
+_bases = {f: getattr(td, f, None) for f in _FAM}
+_families = {f: [] for f in _FAM}
+for _name in dir(td):
+    if not _name or not _name[0].islower():
+        continue
+    _obj = getattr(td, _name, None)
+    if not inspect.isclass(_obj):
+        continue
+    for _f in _FAM:
+        _b = _bases[_f]
+        if _b is not None:
+            try:
+                _is = issubclass(_obj, _b)
+            except Exception:
+                _is = False
+            if _is:
+                _families[_f].append(_name)
+                break
+_families = {f: sorted(v) for f, v in _families.items() if v}
+_all = sorted(x for v in _families.values() for x in v)
+_info = {}
+try:
+    _info["td_version"] = str(app.version)
+except Exception:
+    pass
+try:
+    _info["build"] = str(app.build)
+except Exception:
+    pass
+print(json.dumps({"optypes": _all, "families": _families, "count": len(_all), **_info}))
 `;
 
 /**
@@ -636,5 +730,120 @@ export class TouchDesignerClient {
       max_lines: maxLines,
       scope,
     });
+  }
+
+  // --- Node save (survives TDMCP_BRIDGE_ALLOW_EXEC=0) ---
+  /** Save a node to a file (`.tox` for a COMP, image for a TOP).
+   *
+   * Prefers `POST /api/nodes/<path>/save`; on a 404 (older bridge without the
+   * route) falls back to a single `/api/exec` pass that runs `op.save(...)` and
+   * prints the same report. The exec fallback fails when the bridge has
+   * `TDMCP_BRIDGE_ALLOW_EXEC=0`, exactly as before this route existed.
+   */
+  async saveNode(path: string, file: string, createFolders = true): Promise<TdSaveNode> {
+    const { tryEndpoint } = await import("./types.js");
+    return tryEndpoint(
+      () =>
+        this.request("POST", `/api/nodes/${segment(path)}/save`, SaveNodeSchema, {
+          file,
+          create_folders: createFolders,
+        }),
+      () => this.saveNodeViaExec(path, file, createFolders),
+    );
+  }
+
+  /** Exec-path fallback for {@link saveNode} — runs `op.save(...)` in TD and
+   * recovers the same report from stdout. */
+  private async saveNodeViaExec(
+    path: string,
+    file: string,
+    createFolders: boolean,
+  ): Promise<TdSaveNode> {
+    const b64 = Buffer.from(JSON.stringify({ path, file, createFolders }), "utf8").toString(
+      "base64",
+    );
+    const script = SAVE_NODE_EXEC_SCRIPT.replace("__PAYLOAD_B64__", b64);
+    const exec = await this.executePythonScript(script, true);
+    const report = parseStdoutJson(exec.stdout);
+    if (report && typeof report === "object" && "fatal" in report) {
+      throw new TdApiError(String((report as { fatal: unknown }).fatal));
+    }
+    const parsed = SaveNodeSchema.safeParse(report);
+    if (!parsed.success) {
+      throw new TdApiError(`Unexpected saveNode report shape: ${parsed.error.message}`);
+    }
+    return parsed.data;
+  }
+
+  // --- Node/subtree duplicate (survives TDMCP_BRIDGE_ALLOW_EXEC=0) ---
+  /** Duplicate a node/subtree preserving its internal wires + params.
+   *
+   * Prefers `POST /api/duplicate`; on a 404 falls back to a single `/api/exec`
+   * pass that runs `parent.copy(src)` and prints the same report. The exec
+   * fallback fails under `TDMCP_BRIDGE_ALLOW_EXEC=0`, exactly as before.
+   */
+  async duplicateNode(
+    sourcePath: string,
+    name?: string,
+    parentPath?: string,
+  ): Promise<TdDuplicateNode> {
+    const { tryEndpoint } = await import("./types.js");
+    return tryEndpoint(
+      () =>
+        this.request("POST", "/api/duplicate", DuplicateNodeSchema, {
+          source_path: sourcePath,
+          name: name ?? null,
+          parent_path: parentPath ?? null,
+        }),
+      () => this.duplicateNodeViaExec(sourcePath, name, parentPath),
+    );
+  }
+
+  /** Exec-path fallback for {@link duplicateNode}. */
+  private async duplicateNodeViaExec(
+    sourcePath: string,
+    name?: string,
+    parentPath?: string,
+  ): Promise<TdDuplicateNode> {
+    const b64 = Buffer.from(
+      JSON.stringify({ source: sourcePath, name: name ?? null, parent: parentPath ?? null }),
+      "utf8",
+    ).toString("base64");
+    const script = DUPLICATE_NODE_EXEC_SCRIPT.replace("__PAYLOAD_B64__", b64);
+    const exec = await this.executePythonScript(script, true);
+    const report = parseStdoutJson(exec.stdout);
+    if (report && typeof report === "object" && "fatal" in report) {
+      throw new TdApiError(String((report as { fatal: unknown }).fatal));
+    }
+    const parsed = DuplicateNodeSchema.safeParse(report);
+    if (!parsed.success) {
+      throw new TdApiError(`Unexpected duplicateNode report shape: ${parsed.error.message}`);
+    }
+    return parsed.data;
+  }
+
+  // --- Creatable-operator truth list (survives TDMCP_BRIDGE_ALLOW_EXEC=0) ---
+  /** Enumerate the ground-truth creatable operator types from the live TD.
+   *
+   * Prefers `GET /api/optypes`; on a 404 falls back to one `/api/exec` pass that
+   * walks the `td` module for family-base subclasses and prints the same report.
+   */
+  async getOpTypes(): Promise<TdOpTypes> {
+    const { tryEndpoint } = await import("./types.js");
+    return tryEndpoint(
+      () => this.request("GET", "/api/optypes", OpTypesSchema),
+      () => this.getOpTypesViaExec(),
+    );
+  }
+
+  /** Exec-path fallback for {@link getOpTypes}. */
+  private async getOpTypesViaExec(): Promise<TdOpTypes> {
+    const exec = await this.executePythonScript(OPTYPES_EXEC_SCRIPT, true);
+    const report = parseStdoutJson(exec.stdout);
+    const parsed = OpTypesSchema.safeParse(report);
+    if (!parsed.success) {
+      throw new TdApiError(`Unexpected getOpTypes report shape: ${parsed.error.message}`);
+    }
+    return parsed.data;
   }
 }
