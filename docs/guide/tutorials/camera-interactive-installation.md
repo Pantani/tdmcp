@@ -3,6 +3,10 @@ description: "Turn a webcam into an interactive installation with tdmcp — move
 level: intermediate
 ---
 
+<script setup>
+import { withBase } from "vitepress";
+</script>
+
 # A camera-interactive installation <Badge type="info" text="Intermediate" />
 
 **Objective** — build a webcam installation where a viewer's movement spawns glowing
@@ -12,12 +16,10 @@ particle trails, ready to project onto a wall.
 wherever motion happens in front of the camera. Stand still and it calms; move and
 the room paints itself.
 
-::: tip Live result
-This one is best seen live — the look depends entirely on real movement in front of
-your camera, so a canned clip wouldn't represent what you'll build. Follow the steps
-with your own webcam (or the synthetic test source) and use **"show me a preview"** at
-any point to see your result.
-:::
+<video :src="withBase('/examples/tutorial-camera-interactive-installation.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*The optical-flow particle field driven by a moving test clip — with your webcam, the
+particles churn wherever people move. Captured live from the recipe's own output.*
 
 **Before you start**
 

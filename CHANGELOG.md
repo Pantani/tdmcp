@@ -6,6 +6,23 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- `optical_flow_particles` recipe was non-functional end to end (black render, flat
+  flow field), live-debugged and fixed in TouchDesigner 099 build 2025.32820: the
+  particleSOP now renders as point sprites (the default `prtype` "lines" draws
+  nothing visible) with a soft circular sprite texture and visible point size; the
+  cacheTOP previous-frame tap uses `outputindex -1` (0 returned the current frame,
+  so the frame difference was always zero); the frame difference uses the
+  `difference` operand plus a gain stage, and the displaceTOP midpoint is 0 so no
+  motion means no displacement; the invalid `extforce`/`loop` parameters were
+  removed. The flow now actually drives the particles out of the box: a
+  topto→analyze→null CHOP chain measures motion energy and a CHOP Execute callback
+  scales the particle turbulence/wind with it. Output composites the particles over
+  a darkened flow texture. The camera-interactive-installation tutorial (EN+PT) now
+  embeds a live-captured video of the recipe's own output instead of the "best seen
+  live" hedge.
+
 ### Added
 
 - Drag-and-drop bridge install: `npm run build:bridge-tox` generates a

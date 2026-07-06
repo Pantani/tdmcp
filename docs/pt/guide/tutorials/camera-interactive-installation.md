@@ -3,6 +3,10 @@ description: "Transforme uma webcam numa instalação interativa com o tdmcp —
 level: intermediate
 ---
 
+<script setup>
+import { withBase } from "vitepress";
+</script>
+
 # Uma instalação interativa por câmera <Badge type="info" text="Intermediário" />
 
 **Objetivo** — montar uma instalação com webcam em que o movimento de quem assiste
@@ -12,12 +16,11 @@ gera rastros de partículas brilhantes, prontos para projetar numa parede.
 e deixam rastros onde há movimento diante da câmera. Fique parado e ele se acalma;
 mexa-se e a sala se pinta sozinha.
 
-::: tip Resultado ao vivo
-Este é melhor visto ao vivo — o visual depende inteiramente do movimento real diante
-da sua câmera, então um clipe pronto não representaria o que você vai construir. Siga os
-passos com a sua webcam (ou a fonte de teste sintética) e use **"me mostre uma prévia"**
-a qualquer momento para ver o seu resultado.
-:::
+<video :src="withBase('/examples/tutorial-camera-interactive-installation.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*O campo de partículas por fluxo óptico dirigido por um clipe de teste em movimento — com
+a sua webcam, as partículas se agitam onde as pessoas se mexem. Capturado ao vivo da
+própria saída da recipe.*
 
 **Antes de começar**
 
