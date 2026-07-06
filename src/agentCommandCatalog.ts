@@ -258,6 +258,14 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "bundle-deps",
+    summary:
+      "Make a COMP self-contained: copy external assets beside a saved .tox and rewrite refs to relative paths.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "caption-top",
     summary:
       "Caption a TOP: plain-text description of colors/brightness/motion (vision LLM or histogram).",
@@ -876,6 +884,14 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "export-external-tree",
+    summary:
+      "Save a COMP as a git-diffable externalized .tox tree (each COMP becomes its own file).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "extend-data-source-fabric",
     summary:
       "Extend create_data_source with new feed adapters (websocket/sse/mqtt/file-tail/process).",
@@ -1448,6 +1464,14 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "multipass-3d",
     summary: "Build a multipass 3D scene (Render + SSAO + a synthetic Depth output).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "narrate-set",
+    summary:
+      "Persist/recall a live-set narration log (append timestamped decision lines; recall them later).",
     mutates: true,
     unsafe: false,
     source: "tool",

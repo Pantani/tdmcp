@@ -42,6 +42,7 @@ import { capturePreview } from "../feedback/previewCapture.js";
 import { buildToolContext } from "../server/context.js";
 import { type TdEventHandler, TdEventStream } from "../td-client/eventStream.js";
 import { friendlyTdError } from "../td-client/types.js";
+import { narrateSetImpl, narrateSetSchema } from "../tools/ai/narrateSet.js";
 // Campaign BEYOND Wave 4 (backlog 2026-05-30 — v0.7.0):
 import { macroRecorderImpl, macroRecorderSchema } from "../tools/cli/macroRecorder.js";
 // Campaign BEYOND Wave 5 (backlog 2026-05-30 — v0.7.0):
@@ -622,6 +623,10 @@ import {
 } from "../tools/layer2/setupSegmentation.js";
 import { syncTimecodeImpl, syncTimecodeSchema } from "../tools/layer2/syncTimecode.js";
 import { analyzeProjectImpl, analyzeProjectSchema } from "../tools/layer3/analyzeProject.js";
+import {
+  bundleDependenciesImpl,
+  bundleDependenciesSchema,
+} from "../tools/layer3/bundleDependencies.js";
 import { captionTopImpl, captionTopSchema } from "../tools/layer3/captionTop.js";
 import {
   checkOperatorAvailabilityImpl,
@@ -788,6 +793,10 @@ import {
   diffLibraryAssetsSchema,
 } from "../tools/library/diffLibraryAssets.js";
 import {
+  exportExternalizedTreeImpl,
+  exportExternalizedTreeSchema,
+} from "../tools/library/exportExternalizedTree.js";
+import {
   exportPaletteComponentImpl,
   exportPaletteComponentSchema,
 } from "../tools/library/exportPaletteComponent.js";
@@ -853,9 +862,11 @@ import { runBridgeWatchBuild } from "./bridgeWatchBuild.js";
 import { runConfigInit } from "./configInit.js";
 import { controllerBridgeCliSchema, runControllerBridge } from "./controllerToCliBridge.js";
 import { runDoctor } from "./doctor.js";
+import { classifyTdErrorExit } from "./exitCodes.js";
 import { runFixtureRecorder } from "./fixtureRecorder.js";
 import { runLogTailFiltered } from "./logTailFiltered.js";
 import { type PanicSubVerb, runPanic } from "./panicBlackout.js";
+import { runPreviewInline } from "./previewInline.js";
 import { runRemoteFanout } from "./remoteAndFanout.js";
 import {
   loadScheduleFile,
@@ -2078,6 +2089,24 @@ const COMMANDS: Record<string, Command> = {
     "Scan a COMP subtree for external file dependencies into an inventory + optional manifest.",
     { mutates: true },
   ),
+  "bundle-deps": r(
+    bundleDependenciesSchema,
+    bundleDependenciesImpl,
+    "Make a COMP self-contained: copy external assets beside a saved .tox and rewrite refs to relative paths.",
+    { mutates: true },
+  ),
+  "export-external-tree": r(
+    exportExternalizedTreeSchema,
+    exportExternalizedTreeImpl,
+    "Save a COMP as a git-diffable externalized .tox tree (each COMP becomes its own file).",
+    { mutates: true },
+  ),
+  "narrate-set": r(
+    narrateSetSchema,
+    narrateSetImpl,
+    "Persist/recall a live-set narration log (append timestamped decision lines; recall them later).",
+    { mutates: true },
+  ),
   "doc-site": r(
     projectDocumentationSiteSchema,
     projectDocumentationSiteImpl,
@@ -3266,6 +3295,10 @@ function parseCliArgs(argv: string[]) {
       "llm-model": { type: "string" },
       "llm-base-url": { type: "string" },
       "no-ollama": { type: "boolean", default: false },
+      // `preview --inline [--watch]`:
+      inline: { type: "boolean", default: false },
+      watch: { type: "boolean", default: false },
+      interval: { type: "string" },
     },
   });
 }
@@ -4048,9 +4081,13 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
         code: 2,
       };
     }
+    const inlineMode = values.inline === true;
+    const watchMode = values.watch === true;
     const outPath = typeof values.out === "string" && values.out ? values.out : "preview.png";
     if (values["dry-run"]) {
-      const doc = { dryRun: true, command: "preview", args: parsed.data, out: resolve(outPath) };
+      const doc = inlineMode
+        ? { dryRun: true, command: "preview", args: parsed.data, inline: true, watch: watchMode }
+        : { dryRun: true, command: "preview", args: parsed.data, out: resolve(outPath) };
       return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
     }
     let ctx: ToolContext;
@@ -4058,6 +4095,34 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
       ctx = buildCtx(opts, cliLoadOptions(values));
     } catch (err) {
       return { stdout: "", stderr: `${(err as Error).message}\n`, code: 2 };
+    }
+    // `--inline` renders a thumbnail directly in the terminal (iTerm2/Kitty, else
+    // an honest ASCII fallback); `--watch` re-renders on an interval until Ctrl-C.
+    if (inlineMode) {
+      const intervalMs = (() => {
+        const raw = typeof values.interval === "string" ? Number(values.interval) : Number.NaN;
+        return Number.isFinite(raw) && raw >= 100 ? raw : 1000;
+      })();
+      const ac = new AbortController();
+      const onSig = () => ac.abort();
+      if (watchMode) {
+        process.on("SIGINT", onSig);
+        process.on("SIGTERM", onSig);
+      }
+      try {
+        const r = await runPreviewInline(ctx.client, {
+          nodePath: parsed.data.node_path,
+          width: parsed.data.width,
+          height: parsed.data.height,
+          watch: watchMode,
+          intervalMs,
+          signal: ac.signal,
+        });
+        return { stdout: r.stdout, stderr: r.stderr, code: r.code };
+      } finally {
+        process.off("SIGINT", onSig);
+        process.off("SIGTERM", onSig);
+      }
     }
     try {
       const preview = await capturePreview(
@@ -4082,7 +4147,8 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
         code: 0,
       };
     } catch (err) {
-      return { stdout: "", stderr: `${friendlyTdError(err)}\n`, code: 1 };
+      const msg = friendlyTdError(err);
+      return { stdout: "", stderr: `${msg}\n`, code: classifyTdErrorExit(msg) };
     }
   }
 
@@ -4452,7 +4518,12 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   const result = await cmd.run(ctx, args.data);
   // -q/--quiet keeps stdout=data and silences the friendly stderr summary (for pipelines/CI).
   const summary = values.quiet ? "" : (textOf(result).split("\n")[0] ?? "");
-  if (result.isError) return { stdout: "", stderr: `${textOf(result)}\n`, code: 1 };
+  if (result.isError) {
+    // Exit-code taxonomy: distinguish "TD unreachable" (3) from "TD reached but
+    // the op failed" (4) so callers can branch without scraping stderr.
+    const errText = textOf(result);
+    return { stdout: "", stderr: `${errText}\n`, code: classifyTdErrorExit(errText) };
+  }
 
   const output = String(values.output);
   const data = extractData(result);

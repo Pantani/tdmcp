@@ -8,6 +8,45 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Six CLI / AI / library capabilities (roadmap-to-1.0 Wave 5b):
+  - `bundle_dependencies` (Layer 3) — make a COMP self-contained: recursively
+    scan its subtree for external file references (reusing the
+    `collect_project_assets` scan), copy each existing asset into
+    `<out_dir>/assets/`, rewrite each referencing parameter in the live network
+    to the copied relative path, then save the COMP as a `.tox` beside its
+    assets with a manifest. Delta vs `make_portable_tox` (`.tox`-only). CLI:
+    `tdmcp-agent bundle-deps`. Live-validated against TD 099 (asset copied, live
+    par rewritten to `assets/clip.mov`, `.tox` saved, no post-cook errors).
+  - `export_externalized_tree` (library) — save a COMP as a git-diffable
+    externalized `.tox` tree via TouchDesigner's "save external": each COMP
+    (recursively, when `recurse`) is written to its own `.tox` with its
+    `externaltox` parameter set, so a version-controlled project shows per-node
+    diffs. CLI: `tdmcp-agent export-external-tree`. Live-validated on TD 099;
+    probe-live fix — on build 2025.32820, `saveExternalTox(path,…)` is a no-op,
+    so the tool sets each COMP's `externaltox` par first, then
+    `saveExternalTox(recurse=…)`, and verifies each file on disk.
+  - `tdmcp preview --inline [--watch]` — render a TOP thumbnail directly in the
+    terminal (iTerm2 OSC 1337 / Kitty graphics protocol, with an honest ASCII
+    fallback for plain terminals/pipes); `--watch` re-renders on an interval
+    until Ctrl-C. Builds on the existing preview capture path. Live-validated on
+    TD 099 (iTerm2 escape, ASCII fallback, and a 3-frame `--watch` run).
+  - CLI error-exit taxonomy — distinct, stable process exit codes across the
+    tool-invoking CLI paths: `0` ok, `2` usage/config, `3` TD offline/connection,
+    `4` TD reached-but-failed (cook/validation). One `src/cli/exitCodes.ts`
+    helper classifies failures at the exit boundary. Live-validated (offline
+    tool → 3, bad-path tool → 4).
+  - `copilot_session_persist` — the local copilot can now persist its transcript
+    plus last model/tier/temperature to a JSON session file
+    (`~/.tdmcp/copilot-session.json`) via new loopback `/session/save` and
+    `/session/load` endpoints, and reload it with `tdmcp chat --resume`
+    (`--session <path>` to choose the file). Corrupt sessions surface a `422`
+    instead of silently starting empty.
+  - `narrate_set` (AI) — persist a live set's narration as an append-only,
+    timestamped decision log (with optional section + cue) to a markdown session
+    note, recallable later; pairs with the `auto_vj_director` prompt. Delta vs
+    `log_performance`, which writes a one-shot network snapshot rather than a
+    running log. CLI: `tdmcp-agent narrate-set`.
+
 - Three new first-class TouchDesigner bridge REST endpoints (roadmap-to-1.0
   Wave 2), each promoting proven `/api/exec` logic to a structured route that
   **survives `TDMCP_BRIDGE_ALLOW_EXEC=0`**, with a transparent `/api/exec`

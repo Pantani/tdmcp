@@ -2,8 +2,9 @@ import { spawn, spawnSync } from "node:child_process";
 import { setTimeout as delay } from "node:timers/promises";
 import { parseArgs } from "node:util";
 import { runAgentTurn } from "../llm/agent.js";
-import { LlmClient } from "../llm/client.js";
+import { type ChatMessage, LlmClient } from "../llm/client.js";
 import { startChatServer } from "../llm/server.js";
+import { loadCopilotSession, resolveSessionPath } from "../llm/sessionStore.js";
 import { resolveTools } from "../llm/tools.js";
 import { buildToolContext } from "../server/context.js";
 import type { ToolContext } from "../tools/types.js";
@@ -88,9 +89,11 @@ export interface ChatCliOptions {
   autoStartOllama: boolean;
   readOnly: boolean;
   creative: boolean;
+  resume: boolean;
   prompt?: string;
   profile?: string;
   configPath?: string;
+  sessionPath?: string;
 }
 
 interface ChatRuntimeDeps {
@@ -112,6 +115,8 @@ Usage: tdmcp chat [flags]
 Flags:
   --read-only       Expose only inspection/readiness tools to the local copilot.
   --creative        Use the creative tool tier and a warmer sampling preset.
+  --resume          Reload the last saved transcript + model/tier and continue it.
+  --session <path>  Session file to persist/resume (default ~/.tdmcp/copilot-session.json).
   --prompt <text>   Run one headless prompt and print the answer; don't open the browser.
   --no-ollama       Don't auto-start Ollama; assume the endpoint is already running.
   --no-open         Don't open the browser automatically.
@@ -134,6 +139,8 @@ export function parseChatArgs(argv: string[] = []): ChatCliOptions {
       "no-ollama": { type: "boolean", default: false },
       "read-only": { type: "boolean", default: false },
       creative: { type: "boolean", default: false },
+      resume: { type: "boolean", default: false },
+      session: { type: "string" },
       prompt: { type: "string" },
       profile: { type: "string" },
       config: { type: "string" },
@@ -146,9 +153,11 @@ export function parseChatArgs(argv: string[] = []): ChatCliOptions {
     autoStartOllama: values["no-ollama"] !== true,
     readOnly: values["read-only"] === true,
     creative: values.creative === true,
+    resume: values.resume === true,
     ...(typeof values.prompt === "string" ? { prompt: values.prompt } : {}),
     ...(typeof values.profile === "string" ? { profile: values.profile } : {}),
     ...(typeof values.config === "string" ? { configPath: values.config } : {}),
+    ...(typeof values.session === "string" ? { sessionPath: values.session } : {}),
   };
 }
 
@@ -177,13 +186,14 @@ export async function runHeadlessPrompt(
   prompt: string,
   config: Pick<LoadedTdmcpConfig, "llmTier" | "llmMaxSteps">,
   writeStdout: (chunk: string) => void = (chunk) => process.stdout.write(chunk),
+  priorMessages: ChatMessage[] = [],
 ): Promise<void> {
   let answer: string | undefined;
   let error: string | undefined;
   const messages = await runAgentTurn(
     ctx,
     client,
-    [{ role: "user", content: prompt }],
+    [...priorMessages, { role: "user", content: prompt }],
     (event) => {
       if (event.type === "answer") answer = event.content;
       if (event.type === "error") error = event.message;
@@ -237,7 +247,30 @@ export async function runChat(argv: string[] = [], deps: ChatRuntimeDeps = {}): 
     profile: opts.profile,
     configPath: opts.configPath,
   });
-  const config = applyChatFlagOverrides(loaded, opts);
+  let config = applyChatFlagOverrides(loaded, opts);
+
+  // --resume: reload the last saved transcript + model/tier so the copilot picks
+  // up where it left off. A corrupt session is a warning, not a hard failure.
+  const sessionPath = resolveSessionPath(opts.sessionPath);
+  let resumedMessages: ChatMessage[] = [];
+  if (opts.resume) {
+    try {
+      const session = loadCopilotSession(sessionPath);
+      if (session) {
+        resumedMessages = session.messages;
+        // Restore last model/tier/temperature unless flags already forced them.
+        if (session.model) config = { ...config, llmModel: session.model };
+        if (session.tier && !opts.readOnly && !opts.creative) {
+          config = { ...config, llmTier: session.tier };
+        }
+        if (typeof session.temperature === "number") {
+          config = { ...config, llmTemperature: session.temperature };
+        }
+      }
+    } catch (err) {
+      writeStderr(`  ⚠ Could not resume session: ${(err as Error).message}\n`);
+    }
+  }
   const logger = makeLogger(config.logLevel === "silent" ? "silent" : "warn");
   const ctx = makeContext(config, { logger });
   const client = makeClient(config);
@@ -251,11 +284,21 @@ export async function runChat(argv: string[] = [], deps: ChatRuntimeDeps = {}): 
   await ensureOllama(client, config.llmBaseUrl, opts.autoStartOllama, log);
 
   if (headless) {
-    await runHeadlessPrompt(ctx, client, opts.prompt ?? "", config, writeStdout);
+    if (opts.resume && resumedMessages.length > 0) {
+      log(`  ↻ Resumed ${resumedMessages.length} message(s) from ${sessionPath}.`);
+    }
+    await runHeadlessPrompt(ctx, client, opts.prompt ?? "", config, writeStdout, resumedMessages);
     return;
   }
 
-  const serverConfig = opts.readOnly ? { ...config, llmLockedTier: "safe" as const } : config;
+  const baseServerConfig = {
+    ...config,
+    copilotSessionPath: sessionPath,
+    resumeSession: opts.resume,
+  };
+  const serverConfig = opts.readOnly
+    ? { ...baseServerConfig, llmLockedTier: "safe" as const }
+    : baseServerConfig;
   const handle = await launchServer(ctx, serverConfig);
   const health = await client.health();
 
@@ -279,6 +322,13 @@ export async function runChat(argv: string[] = [], deps: ChatRuntimeDeps = {}): 
     );
   } else {
     writeStdout(`  status: ${health.detail}\n`);
+  }
+  if (opts.resume) {
+    writeStdout(
+      resumedMessages.length > 0
+        ? `  resume: ${resumedMessages.length} message(s) from ${sessionPath} (Resume in the UI to load)\n`
+        : `  resume: no saved session at ${sessionPath} yet\n`,
+    );
   }
   writeStdout("\n  Press Ctrl-C to stop.\n\n");
 

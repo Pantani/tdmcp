@@ -11,6 +11,12 @@ import {
 import { runAgentTurn } from "./agent.js";
 import { applySettings, type ChatMessage, LlmClient, type LlmConfig } from "./client.js";
 import { buildHandoffPrompt } from "./handoff.js";
+import {
+  type CopilotSession,
+  loadCopilotSession,
+  resolveSessionPath,
+  saveCopilotSession,
+} from "./sessionStore.js";
 import { resolveTools, type ToolTier } from "./tools.js";
 import { CHAT_HTML } from "./ui.js";
 
@@ -32,6 +38,10 @@ type ChatServerConfig = TdmcpConfig &
   Partial<LlmRuntimeConfig> & {
     /** When set by the CLI, every browser/API chat request is forced to this tier. */
     llmLockedTier?: ToolTier;
+    /** Session file the transcript + model/tier persist to (/session/save|load). */
+    copilotSessionPath?: string;
+    /** When true (--resume), the UI is told to preload the persisted transcript. */
+    resumeSession?: boolean;
   };
 
 /** Extracts the bare hostname from a `Host` header (`h:port`, `[::1]:port`) or an `Origin` URL. */
@@ -170,6 +180,58 @@ async function handlePull(
   if (!res.writableEnded) res.end();
 }
 
+const SessionSaveBodySchema = {
+  isMessages(v: unknown): v is ChatMessage[] {
+    return Array.isArray(v);
+  },
+};
+
+async function handleSessionSave(
+  req: IncomingMessage,
+  res: ServerResponse,
+  sessionPath: string,
+  settings: LlmConfig,
+  tier: ToolTier | undefined,
+): Promise<void> {
+  const body = (await readJsonBody(req)) as {
+    messages?: ChatMessage[];
+    tier?: string;
+    model?: string;
+  };
+  const messages = SessionSaveBodySchema.isMessages(body.messages) ? body.messages : [];
+  const resolvedTier =
+    body.tier === "safe" || body.tier === "standard" || body.tier === "creative" ? body.tier : tier;
+  saveCopilotSession(sessionPath, {
+    model: body.model ?? settings.llmModel,
+    base_url: settings.llmBaseUrl,
+    tier: resolvedTier,
+    temperature: settings.llmTemperature,
+    messages,
+  });
+  res.writeHead(200, { "content-type": "application/json" });
+  res.end(JSON.stringify({ ok: true, path: sessionPath, count: messages.length }));
+}
+
+function handleSessionLoad(res: ServerResponse, sessionPath: string): void {
+  let session: CopilotSession | undefined;
+  try {
+    session = loadCopilotSession(sessionPath);
+  } catch (err) {
+    res.writeHead(422, { "content-type": "application/json" });
+    res.end(JSON.stringify({ ok: false, path: sessionPath, error: (err as Error).message }));
+    return;
+  }
+  res.writeHead(200, { "content-type": "application/json" });
+  res.end(
+    JSON.stringify({
+      ok: true,
+      path: sessionPath,
+      found: session !== undefined,
+      session: session ?? null,
+    }),
+  );
+}
+
 /**
  * Starts the local chat UI on loopback only. Serves the single-page UI at `/`, a
  * `/health` probe, a streaming `/chat` turn endpoint, and a `/pull` endpoint that
@@ -187,6 +249,7 @@ export function startChatServer(
     llmTemperature: config.llmTemperature,
   };
   const clientFor = () => new LlmClient(settings);
+  const sessionPath = resolveSessionPath(config.copilotSessionPath);
 
   const server = createServer((req, res) => {
     const method = req.method ?? "GET";
@@ -216,6 +279,8 @@ export function startChatServer(
             lockedTier: config.llmLockedTier,
             maxSteps: config.llmMaxSteps ?? DEFAULT_LLM_MAX_STEPS,
             temperature: settings.llmTemperature ?? DEFAULT_LLM_TEMPERATURE,
+            sessionPath,
+            resumeSession: config.resumeSession === true,
           }),
         );
         return;
@@ -250,6 +315,20 @@ export function startChatServer(
       }
       if (method === "POST" && path === "/pull") {
         await handlePull(req, res, clientFor());
+        return;
+      }
+      if (method === "POST" && path === "/session/save") {
+        await handleSessionSave(
+          req,
+          res,
+          sessionPath,
+          settings,
+          config.llmLockedTier ?? config.llmTier,
+        );
+        return;
+      }
+      if (method === "GET" && path === "/session/load") {
+        handleSessionLoad(res, sessionPath);
         return;
       }
       if (method === "POST" && path === "/handoff") {

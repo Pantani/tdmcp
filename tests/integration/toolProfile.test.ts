@@ -50,6 +50,8 @@ const SAFE_PROFILE_EXCLUDE = [
   "import_recipe_from_url",
   "export_palette_component",
   "collect_project_assets",
+  "bundle_dependencies",
+  "export_externalized_tree",
   "repair_network",
   "swap_operator",
   "export_sop_to_svg",
@@ -138,7 +140,7 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
     const safe = await toolNames({ TDMCP_TOOL_PROFILE: "safe" });
     expect(safe.length).toBeLessThan(full.length);
     expect(full.length - safe.length).toBe(SAFE_PROFILE_EXCLUDE.length);
-    expect(SAFE_PROFILE_EXCLUDE.length).toBe(30);
+    expect(SAFE_PROFILE_EXCLUDE.length).toBe(32);
   });
 
   it("safe exclusion list matches destructive tool annotations", async () => {

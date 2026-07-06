@@ -1283,7 +1283,9 @@ describe("tdmcp-agent CLI — phase 3 (advanced creation)", () => {
       ],
       { makeCtx },
     );
-    expect(r.code).toBe(1);
+    // Exit-code taxonomy: a tool that runs but returns isError is a TD error (4),
+    // not offline (3). (Bad flags/JSON/schema are caught pre-dispatch as usage=2.)
+    expect(r.code).toBe(4);
     expect(r.stderr).toContain("positive duration");
   });
 });

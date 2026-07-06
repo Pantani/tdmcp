@@ -1,5 +1,6 @@
 import type { ToolRegistrar } from "../types.js";
 import { registerAnalyzeProject } from "./analyzeProject.js";
+import { registerBundleDependencies } from "./bundleDependencies.js";
 // Campaign Waves 4 & 6 (backlog 2026-05-29):
 import { registerCaptionTop } from "./captionTop.js";
 import { registerCheckOperatorAvailability } from "./checkOperatorAvailability.js";
@@ -134,6 +135,7 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerInspectComponent,
   registerSerializeNetwork,
   // Campaign Wave 4 — library/packaging (backlog 2026-05-29):
+  registerBundleDependencies,
   registerCollectProjectAssets,
   registerProjectDocumentationSite,
   // Campaign Wave 6 — AI & LLM (backlog 2026-05-29):

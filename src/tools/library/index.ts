@@ -36,6 +36,7 @@ import { registerChecksumAndVerifyPack } from "./checksumAndVerifyPack.js";
 import { registerComponentChangelogTrail } from "./componentChangelogTrail.js";
 import { registerCuratedCollectionPack } from "./curatedCollectionPack.js";
 import { registerDiffLibraryAssets } from "./diffLibraryAssets.js";
+import { registerExportExternalizedTree } from "./exportExternalizedTree.js";
 import { registerExportPaletteComponent } from "./exportPaletteComponent.js";
 import { registerGenerativeClassicsPack } from "./generativeClassicsPack.js";
 import { registerImportRecipeFromUrl } from "./importRecipeFromUrl.js";
@@ -1039,6 +1040,7 @@ export const libraryRegistrars: ToolRegistrar[] = [
     ),
   // Campaign Wave 4 (backlog 2026-05-29):
   registerDiffLibraryAssets,
+  registerExportExternalizedTree,
   registerImportRecipeFromUrl,
   registerExportPaletteComponent,
   // Campaign BEYOND Wave 3 (backlog 2026-05-30 — v0.7.0):
