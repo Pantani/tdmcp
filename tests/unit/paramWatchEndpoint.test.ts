@@ -106,7 +106,45 @@ describe("watchParameters client method", () => {
     await expect(client.watchParameters("/project1/level1")).rejects.toThrow(/reinstall|update/i);
   });
 
-  it("maps a 400 to TdApiError", async () => {
+  it("maps an older-bridge 400 'Unsupported POST' to the friendly upgrade message", async () => {
+    // Older bridges answer an unknown route with HTTP 400 + an
+    // `Unsupported POST /api/params/watch` message, not 404 — isMissingEndpoint
+    // must catch this too so the artist sees reinstall/update guidance.
+    server.use(
+      http.post(`${TD_BASE}/api/params/watch`, () =>
+        HttpResponse.json(
+          { ok: false, error: { message: "Unsupported POST /api/params/watch" } },
+          { status: 400 },
+        ),
+      ),
+    );
+    await expect(makeClient().watchParameters("/project1/level1")).rejects.toThrow(
+      /reinstall|update/i,
+    );
+  });
+
+  it("maps an older-bridge 400 'Unsupported' on unwatch and list too", async () => {
+    server.use(
+      http.delete(`${TD_BASE}/api/params/watch`, () =>
+        HttpResponse.json(
+          { ok: false, error: { message: "Unsupported DELETE /api/params/watch" } },
+          { status: 400 },
+        ),
+      ),
+      http.get(`${TD_BASE}/api/params/watch`, () =>
+        HttpResponse.json(
+          { ok: false, error: { message: "Unsupported GET /api/params/watch" } },
+          { status: 400 },
+        ),
+      ),
+    );
+    await expect(makeClient().unwatchParameters("/project1/level1")).rejects.toThrow(
+      /reinstall|update/i,
+    );
+    await expect(makeClient().listParameterWatches()).rejects.toThrow(/reinstall|update/i);
+  });
+
+  it("maps a real validation 400 to TdApiError (NOT the upgrade message)", async () => {
     server.use(
       http.post(`${TD_BASE}/api/params/watch`, () =>
         HttpResponse.json(
@@ -118,12 +156,14 @@ describe("watchParameters client method", () => {
     await expect(makeClient().watchParameters("/project1/ghost")).rejects.toBeInstanceOf(
       TdApiError,
     );
+    // The real reason must survive — not be masked by the reinstall guidance.
+    await expect(makeClient().watchParameters("/project1/ghost")).rejects.toThrow(
+      /operator not found/i,
+    );
   });
 
   it("maps a connection refusal to TdConnectionError", async () => {
-    server.use(
-      http.post(`${TD_BASE}/api/params/watch`, () => HttpResponse.error()),
-    );
+    server.use(http.post(`${TD_BASE}/api/params/watch`, () => HttpResponse.error()));
     await expect(makeClient().watchParameters("/project1/n")).rejects.toBeInstanceOf(
       TdConnectionError,
     );

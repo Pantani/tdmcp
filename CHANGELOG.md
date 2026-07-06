@@ -8,6 +8,44 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- PR #128 review fixes (parameter-watch event path + inline-image + copilot
+  session save):
+  - **`param.changed` now reaches MCP clients by default.** It had been added to
+    the `eventStream` `HIGH_FREQUENCY` drop set, but `transportFactory` builds the
+    default stream without `includeHighFrequency`, so every watched `param.changed`
+    was dropped before it could be forwarded as an MCP logging notification —
+    `watch_parameter_changes` produced zero notifications. `param.changed` is
+    already gated at the source by the watch registry (empty registry ⇒ silent)
+    and coalesced bridge-side, so it is no longer in the blanket drop set; only the
+    genuinely unbounded `timeline.frame`/`node.cook` firehoses stay high-frequency.
+    Live-validated on TD 099 build 2025.32820: a `param.changed` frame now survives
+    the default (non-high-frequency) stream while `node.cook`/`timeline.frame` stay
+    gated.
+  - **Watch-service coalescing no longer loses the resting value.** The poll
+    snapshot advanced *before* the coalesce check dropped the event, so a burst
+    that settled at a new value within the 50 ms window and then stopped
+    (0.1 → 0.2, then quiet) never emitted the final 0.2 — subscribers kept the
+    stale 0.1. The emitted snapshot now advances only on delivery; a coalesced
+    change keeps the old snapshot so the settled value emits on the next post-window
+    poll. Live-validated against real `constantCHOP` parameter values on TD 099.
+  - **Older-bridge watch routes now surface the friendly upgrade message.** Older
+    bridges report an unknown route as HTTP 400 `Unsupported POST /api/params/watch`,
+    not 404; `watchParameters`/`unwatchParameters`/`listParameterWatches` only
+    mapped 404, so a real older bridge surfaced the raw error. They now use the
+    shared `isMissingEndpoint()` helper (matches 404 *and* `Unsupported <METHOD> …`)
+    for all three methods, while a genuine validation 400 still surfaces unchanged.
+    Live-validated: the running bridge returns `400 Unsupported …` for these routes
+    and the client now maps it to reinstall/update guidance.
+  - **`/session/save` returns a structured 422 on a malformed transcript.**
+    `saveCopilotSession` Zod-parses `messages` and can throw; the exception used to
+    bubble to the generic 500 plain-text handler, breaking the JSON contract. The
+    parse/write is now wrapped and returns a `{ ok: false, error }` **422** JSON
+    response, mirroring `/session/load`.
+  - **Inline-image escape sequences no longer contain literal control bytes.** The
+    iTerm2 OSC-1337 and Kitty graphics-protocol strings in `inlineImage.ts` embedded
+    raw ESC/BEL bytes in source; they now use explicit `\x1b`/`\x07` escapes.
+    Runtime output is byte-identical.
+
 - `create_pointer_reactive` no longer leaks undocumented channels past its output
   Null (roadmap-to-1.0 polish, live-validated on TD 099 build 2025.32820). The
   `u`/`v` rename CHOPs only rename the position channels, so the Mouse In `button`

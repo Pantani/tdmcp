@@ -233,6 +233,32 @@ class PollTests(unittest.TestCase):
         self.assertEqual(len(later), 1)
         self.assertEqual(later[0]["value"], 0.9)
 
+    def test_burst_then_settle_emits_final_resting_value(self):
+        # Regression: a burst that settles at a new value WITHIN the coalesce
+        # window and then STOPS must still eventually emit the settled value. The
+        # snapshot must only advance on delivery, else the coalesced final change
+        # is silently lost and subscribers keep the stale value.
+        node = FakeOp("/project1/slider")
+        node.par.add("value0", 0.0)
+        self._register(node, None)
+        graph = {node.path: node}
+        self._poll(graph, 1000.0)  # seed 0.0
+        node.set("value0", 0.1)
+        first = self._poll(graph, 1000.0)  # first change emits 0.0 -> 0.1
+        self.assertEqual([p["value"] for p in first], [0.1])
+        node.set("value0", 0.2)
+        # settles at 0.2 within the 50 ms window -> coalesced away for now...
+        self.assertEqual(self._poll(graph, 1000.010), [])
+        # ...and then the value STOPS changing. A poll after the window must still
+        # deliver the settled 0.2 (prev is the last EMITTED 0.1, not the dropped
+        # intermediate), so subscribers converge on 0.2.
+        settled = self._poll(graph, 1000.060)
+        self.assertEqual(len(settled), 1)
+        self.assertEqual(settled[0]["value"], 0.2)
+        self.assertEqual(settled[0]["prev"], 0.1)
+        # Once delivered, a further poll at rest is quiet (snapshot advanced to 0.2).
+        self.assertEqual(self._poll(graph, 1000.200), [])
+
     def test_unregistered_op_is_skipped(self):
         node = FakeOp("/project1/level1")
         node.par.add("opacity", 1.0)

@@ -201,13 +201,19 @@ async function handleSessionSave(
   const messages = SessionSaveBodySchema.isMessages(body.messages) ? body.messages : [];
   const resolvedTier =
     body.tier === "safe" || body.tier === "standard" || body.tier === "creative" ? body.tier : tier;
-  saveCopilotSession(sessionPath, {
-    model: body.model ?? settings.llmModel,
-    base_url: settings.llmBaseUrl,
-    tier: resolvedTier,
-    temperature: settings.llmTemperature,
-    messages,
-  });
+  try {
+    saveCopilotSession(sessionPath, {
+      model: body.model ?? settings.llmModel,
+      base_url: settings.llmBaseUrl,
+      tier: resolvedTier,
+      temperature: settings.llmTemperature,
+      messages,
+    });
+  } catch (err) {
+    res.writeHead(422, { "content-type": "application/json" });
+    res.end(JSON.stringify({ ok: false, path: sessionPath, error: (err as Error).message }));
+    return;
+  }
   res.writeHead(200, { "content-type": "application/json" });
   res.end(JSON.stringify({ ok: true, path: sessionPath, count: messages.length }));
 }

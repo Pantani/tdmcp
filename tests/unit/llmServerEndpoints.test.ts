@@ -253,6 +253,23 @@ describe("startChatServer session persistence endpoints", () => {
     expect(parsed.resumeSession).toBe(true);
   });
 
+  it("POST /session/save returns 422 JSON on a malformed messages payload", async () => {
+    // The array passes the Array.isArray guard but each element is Zod-parsed by
+    // saveCopilotSession; an invalid role must surface as a structured 422, not a 500.
+    const r = await send(
+      port,
+      "POST",
+      "/session/save",
+      { "content-type": "application/json" },
+      JSON.stringify({ messages: [{ role: "villain", content: "boom" }] }),
+    );
+    expect(r.status).toBe(422);
+    const parsed = JSON.parse(r.body);
+    expect(parsed.ok).toBe(false);
+    expect(typeof parsed.error).toBe("string");
+    expect(parsed.error.length).toBeGreaterThan(0);
+  });
+
   it("GET /session/load returns 422 on a corrupt session file", async () => {
     writeFileSync(sessionPath, "{ not json", "utf8");
     const r = await send(port, "GET", "/session/load");

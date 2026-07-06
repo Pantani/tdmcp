@@ -22,11 +22,14 @@ export type TdEventHandler = (event: TdEvent) => void;
 
 /** High-frequency events are dropped unless explicitly opted in, to avoid flooding.
  *
- * `param.changed` is coalesced bridge-side (one emit per (path, par) per window),
- * but a many-parameter or multi-op subscription can still be chatty, so it is
- * treated as high-frequency here too — an opt-in consumer sees every change; the
- * default stream stays quiet. */
-const HIGH_FREQUENCY = new Set(["timeline.frame", "node.cook", "param.changed"]);
+ * `param.changed` is deliberately NOT in this set. It is already gated at the
+ * source by the watch registry (empty registry ⇒ the bridge emits nothing) and
+ * coalesced bridge-side (one emit per (path, par) per window), so it is only ever
+ * chatty in proportion to what a client explicitly asked to watch. Keeping it out
+ * of the blanket drop set is what lets `watch_parameter_changes` forward events as
+ * MCP logging notifications on the default stream. Only the genuinely unbounded,
+ * always-on firehoses (`timeline.frame`, `node.cook`) stay high-frequency. */
+const HIGH_FREQUENCY = new Set(["timeline.frame", "node.cook"]);
 
 /**
  * Parses a raw WebSocket message into a `TdEvent`, applying the high-frequency

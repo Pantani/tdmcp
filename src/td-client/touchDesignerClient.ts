@@ -1,6 +1,12 @@
 import type { z } from "zod";
 import { type Logger, silentLogger } from "../utils/logger.js";
-import { TdApiError, TdBackpressureError, TdConnectionError, TdTimeoutError } from "./types.js";
+import {
+  isMissingEndpoint,
+  TdApiError,
+  TdBackpressureError,
+  TdConnectionError,
+  TdTimeoutError,
+} from "./types.js";
 import {
   AdvancedCaptureSchema,
   ApiEnvelopeSchema,
@@ -577,10 +583,14 @@ export class TouchDesignerClient {
    * WebSocket event stream as `param.changed` (validated by
    * {@link ParamChangedEventSchema}) — this call only registers the subscription.
    *
-   * 404 handling: an older bridge that predates the Parameter Execute DAT has no
-   * way to emit these events, so a 404 becomes a descriptive `TdApiError` telling
-   * the artist to reinstall/update the bridge — there is no exec fallback because
-   * the event plumbing (not just a Python one-shot) is what's missing.
+   * Missing-endpoint handling: an older bridge that predates the Parameter
+   * Execute DAT has no way to emit these events, so a missing route becomes a
+   * descriptive `TdApiError` telling the artist to reinstall/update the bridge —
+   * there is no exec fallback because the event plumbing (not just a Python
+   * one-shot) is what's missing. Older bridges report an unknown route as an
+   * HTTP 400 `Unsupported POST /api/params/watch`, not 404, so this uses the
+   * shared `isMissingEndpoint()` helper (which matches both) rather than checking
+   * status 404 alone.
    */
   async watchParameters(path: string, opts?: { pars?: string[] }): Promise<TdParamWatchResult> {
     return this.watchRequest("POST", path, opts?.pars);
@@ -594,12 +604,20 @@ export class TouchDesignerClient {
     return this.watchRequest("DELETE", path, opts?.pars);
   }
 
-  /** List every active parameter watch (`GET /api/params/watch`). */
-  listParameterWatches(): Promise<TdParamWatchList> {
-    return this.request("GET", "/api/params/watch", ParamWatchListSchema);
+  /** List every active parameter watch (`GET /api/params/watch`).
+   *
+   * Same older-bridge guard as watch/unwatch: an unknown route surfaces as a
+   * 404 OR an `Unsupported GET /api/params/watch` 400, so both are mapped to the
+   * reinstall/update guidance via `isMissingEndpoint()`. */
+  async listParameterWatches(): Promise<TdParamWatchList> {
+    try {
+      return await this.request("GET", "/api/params/watch", ParamWatchListSchema);
+    } catch (err) {
+      throw this.mapMissingWatchEndpoint(err);
+    }
   }
 
-  /** Shared register/unregister path with the older-bridge 404 message. */
+  /** Shared register/unregister path with the older-bridge missing-route message. */
   private async watchRequest(
     method: "POST" | "DELETE",
     path: string,
@@ -611,14 +629,21 @@ export class TouchDesignerClient {
         pars: pars ?? null,
       });
     } catch (err) {
-      if (err instanceof TdApiError && err.status === 404) {
-        throw new TdApiError(
-          "This TouchDesigner bridge predates parameter-change watching. Reinstall or update the tdmcp bridge (its Parameter Execute DAT emits the param.changed events).",
-          { status: 404 },
-        );
-      }
-      throw err;
+      throw this.mapMissingWatchEndpoint(err);
     }
+  }
+
+  /** Map a missing-route error (404 or `Unsupported <METHOD> ...` 400 on older
+   * bridges) to the reinstall/update guidance; rethrow everything else unchanged
+   * (a current bridge's real validation error must still surface). */
+  private mapMissingWatchEndpoint(err: unknown): unknown {
+    if (isMissingEndpoint(err)) {
+      return new TdApiError(
+        "This TouchDesigner bridge predates parameter-change watching. Reinstall or update the tdmcp bridge (its Parameter Execute DAT emits the param.changed events).",
+        { status: err instanceof TdApiError ? err.status : 404 },
+      );
+    }
+    return err;
   }
 
   // --- Param-mode + DAT-text endpoints (survive ALLOW_EXEC=0) ---

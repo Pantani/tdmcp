@@ -229,7 +229,15 @@ def _watched_pars(node, pars):
 
 
 def _diff_par(path, par, now_s, frame_no):
-    """Emit a payload if this par's value changed since the last snapshot."""
+    """Emit a payload if this par's value changed since the last EMITTED snapshot.
+
+    The snapshot only advances when a change is actually delivered (or on first
+    sight / no change). Coalesced changes deliberately leave the snapshot on the
+    old value so the next poll after the coalesce window still sees a delta and
+    emits the resting value — a burst that settles at a new value (0.1 → 0.2
+    within one window, then stops) always eventually emits the final 0.2 instead
+    of leaving subscribers stuck on the stale 0.1.
+    """
     name = getattr(par, "name", None)
     if name is None:
         return None
@@ -239,11 +247,12 @@ def _diff_par(path, par, now_s, frame_no):
         return None
     key = (path, name)
     prev = _SNAPSHOT.get(key, _UNSET)
-    _SNAPSHOT[key] = value
     if prev is _UNSET or prev == value:
-        return None  # first sight (seed only) or no change
-    if _coalesced(path, name, now_s):
+        _SNAPSHOT[key] = value  # first sight (seed only) or no change
         return None
+    if _coalesced(path, name, now_s):
+        return None  # keep the old snapshot; the settled value emits next window
+    _SNAPSHOT[key] = value  # advance only on delivery
     return {
         "path": path,
         "par": name,

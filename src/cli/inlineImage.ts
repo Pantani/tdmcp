@@ -32,7 +32,7 @@ export function detectInlineProtocol(env: TerminalEnv = process.env): InlineProt
 
 function itermSequence(base64: string, bytes: number): string {
   // inline=1 renders it in place; preserveAspectRatio keeps the thumbnail square-ish.
-  return `]1337;File=inline=1;size=${bytes};preserveAspectRatio=1:${base64}\n`;
+  return `\x1b]1337;File=inline=1;size=${bytes};preserveAspectRatio=1:${base64}\x07\n`;
 }
 
 function kittySequence(base64: string): string {
@@ -43,7 +43,7 @@ function kittySequence(base64: string): string {
     const chunk = base64.slice(i, i + CHUNK);
     const more = i + CHUNK < base64.length ? 1 : 0;
     const control = i === 0 ? `a=T,f=100,m=${more}` : `m=${more}`;
-    parts.push(`_G${control};${chunk}\\`);
+    parts.push(`\x1b_G${control};${chunk}\x1b\\`);
   }
   return `${parts.join("")}\n`;
 }
