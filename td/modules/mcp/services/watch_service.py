@@ -111,7 +111,7 @@ def unregister(path, pars=None):
     import td
 
     node = td.op(path)
-    resolved = node.path if node is not None else path
+    resolved = _resolve_watch_key(node, path)
     existing = _WATCHES.get(resolved)
     if existing is None:
         return {"path": resolved, "pars": None, "watching": False}
@@ -126,13 +126,47 @@ def unregister(path, pars=None):
         _clear_emit_state(resolved)
         return {"path": resolved, "pars": None, "watching": False}
     _WATCHES[resolved] = {"pars": remaining}
+    # Partial unregister: purge the REMOVED names' stale snapshot/emit state so a
+    # later re-watch of one of them starts fresh (_diff_par sees _UNSET and only
+    # seeds the snapshot instead of emitting a spurious change vs the old value).
+    _clear_emit_state(resolved, remove)
     return {"path": resolved, "pars": _pars_list(remaining), "watching": True}
 
 
-def _clear_emit_state(path):
-    for key in [k for k in _LAST_EMIT if k[0] == path]:
+def _resolve_watch_key(node, path):
+    """The registry key to unregister under.
+
+    ``register`` stores under the op's canonical ``node.path``. At unregister time
+    the op may still be alive (use its canonical path) or already deleted (the alias
+    is all we have). When it is deleted and the raw alias is NOT itself a stored key,
+    fall back to any stored key that ends with the alias's leaf name so the entry
+    ``register`` stored canonically is still removable after the op is gone.
+    """
+    if node is not None:
+        return node.path
+    if path in _WATCHES:
+        return path
+    leaf = path.rsplit("/", 1)[-1]
+    for key in _WATCHES:
+        if key == path or key.rsplit("/", 1)[-1] == leaf:
+            return key
+    return path
+
+
+def _clear_emit_state(path, pars=None):
+    """Drop snapshot/emit state for ``path``.
+
+    With ``pars`` None, clears every (path, *) key (full unregister). With a set of
+    names, clears only those (path, name) keys (partial unregister) so the still-watched
+    pars keep their snapshots and only the removed names reset to first-sight.
+    """
+
+    def _match(key):
+        return key[0] == path and (pars is None or key[1] in pars)
+
+    for key in [k for k in _LAST_EMIT if _match(k)]:
         _LAST_EMIT.pop(key, None)
-    for key in [k for k in _SNAPSHOT if k[0] == path]:
+    for key in [k for k in _SNAPSHOT if _match(k)]:
         _SNAPSHOT.pop(key, None)
 
 

@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -113,8 +113,9 @@ describe("narrate_set", () => {
     expect(text).toContain("requires a non-empty");
   });
 
-  it("recall reports a friendly error for an unreadable log directory", async () => {
-    // Point log_path at an existing *file* used as a directory segment — read fails cleanly.
+  it("append reports a friendly error when the log directory cannot be created", async () => {
+    // Point log_path at an existing *file* used as a directory segment — mkdirSync on the
+    // append path fails cleanly (ENOTDIR) and surfaces a friendly error, not a throw.
     const blocker = join(dir, "blocker");
     writeFileSync(blocker, "x", "utf8");
     const result = await narrateSetImpl(makeCtx(), {
@@ -124,6 +125,24 @@ describe("narrate_set", () => {
       tail: 50,
     });
     expect(result.isError).toBe(true);
+    const text = result.content[0]?.type === "text" ? result.content[0].text : "";
+    expect(text).toContain("Could not write narration");
+  });
+
+  it("recall reports a friendly error when the log path cannot be read", async () => {
+    // Point log_path at a DIRECTORY: existsSync is true so recall does not early-return,
+    // but readFileSync throws EISDIR — the read-failure branch must return errorResult,
+    // not throw and break the never-throw handler contract.
+    const asDir = join(dir, "as-dir");
+    mkdirSync(asDir, { recursive: true });
+    const result = await narrateSetImpl(makeCtx(), {
+      mode: "recall",
+      log_path: asDir,
+      tail: 50,
+    });
+    expect(result.isError).toBe(true);
+    const text = result.content[0]?.type === "text" ? result.content[0].text : "";
+    expect(text).toContain("Could not read narration log");
   });
 
   it("is registered as a non-destructive local-file tool", () => {
@@ -135,6 +154,9 @@ describe("narrate_set", () => {
     };
     registerNarrateSet(fakeServer as never, makeCtx());
     expect(calls[0]?.name).toBe("narrate_set");
-    expect(calls[0]?.options.annotations).toMatchObject({ readOnlyHint: false, openWorldHint: false });
+    expect(calls[0]?.options.annotations).toMatchObject({
+      readOnlyHint: false,
+      openWorldHint: false,
+    });
   });
 });

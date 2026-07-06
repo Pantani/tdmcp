@@ -133,12 +133,13 @@ export const europeanaSource: Source = {
     const body = (await response.json()) as EuropeanaSearchResponse;
     const data = Array.isArray(body.items) ? body.items : [];
 
-    if (data.length === 0) {
+    if (data.length === 0 && limit > 0) {
       // Keyed request that returned zero items for the `*` catalog query. A truly empty
       // Europeana is implausible, so this is far more likely a silent upstream hiccup or
       // a rejected/misconfigured key that still returned HTTP 200. Signal an untrusted
       // "empty" SKIP (reason "empty") rather than returning [] — that would tombstone
-      // every existing Europeana card on what may be a transient outage.
+      // every existing Europeana card on what may be a transient outage. A limit of 0 is
+      // an intentional zero-row sync, so an empty result is legitimate — return normally.
       throw new SourceSkippedError("Europeana", KEY_ENV, "empty");
     }
 

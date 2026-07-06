@@ -15,13 +15,19 @@ import type { ChatMessage } from "./client.js";
 // The file is plain JSON under ~/.tdmcp by default; nothing leaves the machine.
 // ---------------------------------------------------------------------------
 
+const ToolCallSchema = z.object({
+  id: z.string(),
+  type: z.literal("function"),
+  function: z.object({ name: z.string(), arguments: z.string() }),
+});
+
 const ChatMessageSchema: z.ZodType<ChatMessage> = z.object({
   role: z.enum(["system", "user", "assistant", "tool"]),
   content: z.string().nullable(),
-  tool_calls: z.array(z.unknown()).optional(),
+  tool_calls: z.array(ToolCallSchema).optional(),
   tool_call_id: z.string().optional(),
   name: z.string().optional(),
-}) as unknown as z.ZodType<ChatMessage>;
+});
 
 export const CopilotSessionSchema = z.object({
   version: z.literal(1).default(1),

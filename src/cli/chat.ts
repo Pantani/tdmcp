@@ -4,7 +4,7 @@ import { parseArgs } from "node:util";
 import { runAgentTurn } from "../llm/agent.js";
 import { type ChatMessage, LlmClient } from "../llm/client.js";
 import { startChatServer } from "../llm/server.js";
-import { loadCopilotSession, resolveSessionPath } from "../llm/sessionStore.js";
+import { loadCopilotSession, resolveSessionPath, saveCopilotSession } from "../llm/sessionStore.js";
 import { resolveTools } from "../llm/tools.js";
 import { buildToolContext } from "../server/context.js";
 import type { ToolContext } from "../tools/types.js";
@@ -187,7 +187,7 @@ export async function runHeadlessPrompt(
   config: Pick<LoadedTdmcpConfig, "llmTier" | "llmMaxSteps">,
   writeStdout: (chunk: string) => void = (chunk) => process.stdout.write(chunk),
   priorMessages: ChatMessage[] = [],
-): Promise<void> {
+): Promise<ChatMessage[]> {
   let answer: string | undefined;
   let error: string | undefined;
   let suggestion: string | undefined;
@@ -215,6 +215,7 @@ export async function runHeadlessPrompt(
   if (output) writeStdout(`${output.trimEnd()}\n`);
   // A non-intrusive nudge printed after the answer when the copilot hit a dead-end.
   if (suggestion) writeStdout(`\nℹ️  ${suggestion}\n`);
+  return messages;
 }
 
 /**
@@ -291,7 +292,30 @@ export async function runChat(argv: string[] = [], deps: ChatRuntimeDeps = {}): 
     if (opts.resume && resumedMessages.length > 0) {
       log(`  ↻ Resumed ${resumedMessages.length} message(s) from ${sessionPath}.`);
     }
-    await runHeadlessPrompt(ctx, client, opts.prompt ?? "", config, writeStdout, resumedMessages);
+    const finalMessages = await runHeadlessPrompt(
+      ctx,
+      client,
+      opts.prompt ?? "",
+      config,
+      writeStdout,
+      resumedMessages,
+    );
+    // With --resume, persist the updated transcript so a later headless run continues
+    // from this turn instead of the stale pre-turn context. A write failure is a
+    // warning, not a hard failure — the answer was already produced.
+    if (opts.resume) {
+      try {
+        saveCopilotSession(sessionPath, {
+          model: config.llmModel,
+          base_url: config.llmBaseUrl,
+          tier: config.llmTier,
+          temperature: config.llmTemperature,
+          messages: finalMessages,
+        });
+      } catch (err) {
+        writeStderr(`  ⚠ Could not save session: ${(err as Error).message}\n`);
+      }
+    }
     return;
   }
 
@@ -330,7 +354,7 @@ export async function runChat(argv: string[] = [], deps: ChatRuntimeDeps = {}): 
   if (opts.resume) {
     writeStdout(
       resumedMessages.length > 0
-        ? `  resume: ${resumedMessages.length} message(s) from ${sessionPath} (Resume in the UI to load)\n`
+        ? `  resume: ${resumedMessages.length} message(s) loaded from ${sessionPath}\n`
         : `  resume: no saved session at ${sessionPath} yet\n`,
     );
   }

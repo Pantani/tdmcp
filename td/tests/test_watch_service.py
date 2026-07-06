@@ -151,6 +151,20 @@ class WatchRegistryTests(unittest.TestCase):
             out = ws.unregister("/project1/ghost")
         self.assertFalse(out["watching"])
 
+    def test_unregister_after_op_deleted_removes_canonical_entry(self):
+        # Regression: register() stores under the op's canonical node.path. If the op
+        # is later DELETED, td.op(alias) returns None; unregister must still remove the
+        # entry register() stored canonically (not miss it and leak a dead watch).
+        node = FakeOp("/project1/level1")
+        with _OpPatch({"level1": node, "/project1/level1": node}):
+            ws.register("level1")  # canonicalized to /project1/level1
+        self.assertEqual(ws.list_watches()["count"], 1)
+        # Op is gone: td.op resolves nothing, only the original alias is known.
+        with _OpPatch({}):
+            out = ws.unregister("level1")
+        self.assertFalse(out["watching"])
+        self.assertEqual(ws.list_watches()["count"], 0)
+
     def test_is_watched_respects_filter(self):
         node = FakeOp("/project1/level1")
         with _OpPatch({"/project1/level1": node}):
@@ -265,6 +279,29 @@ class PollTests(unittest.TestCase):
         self._register(node, ["opacity"])
         # Poll with a graph that no longer resolves the path -> skipped, no raise.
         self.assertEqual(ws.poll(op_resolver=lambda p: None, frame=1, now_s=1000.0), [])
+
+    def test_partial_unregister_clears_removed_par_snapshot(self):
+        # Regression: unregistering only SOME par names must purge the removed names'
+        # stale snapshot/emit state. Otherwise a later re-watch of a removed par would
+        # diff against the old snapshot (not _UNSET) and either emit a spurious change
+        # or, on an unchanged value, stay seeded on stale state.
+        node = FakeOp("/project1/level1")
+        node.par.add("opacity", 1.0)
+        node.par.add("level", 0.0)
+        self._register(node, ["opacity", "level"])
+        graph = {node.path: node}
+        self._poll(graph, 1000.0)  # seed both snapshots
+        # Remove only 'opacity'; 'level' stays watched with its snapshot intact.
+        ws.unregister("/project1/level1", ["opacity"])
+        # Re-watch 'opacity' at its CURRENT value: because its snapshot was cleared,
+        # the next poll only re-seeds it (first sight) -> no spurious change event.
+        with _OpPatch({node.path: node}):
+            ws.register("/project1/level1", ["opacity"])
+        self.assertEqual(self._poll(graph, 1000.100), [])
+        # A real change afterwards still emits normally.
+        node.set("opacity", 0.5)
+        out = self._poll(graph, 1000.300)
+        self.assertEqual([(p["par"], p["prev"], p["value"]) for p in out], [("opacity", 1.0, 0.5)])
 
     def test_non_scalar_value_is_stringified(self):
         class Weird:

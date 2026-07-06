@@ -115,6 +115,18 @@ function resolveLogPath(args: NarrateSetArgs): string {
   return join(homedir(), ".tdmcp", `narration-${name}.md`);
 }
 
+// Each line is a single markdown list item. Free-text fields are flattened to one
+// line and stripped of the characters that delimit the record — backticks (timestamp),
+// square brackets (section), and parens (cue) — so a stray delimiter can neither
+// truncate the entry (newlines) nor misparse it back. `parseEntries` reads the same
+// shape; because these characters are removed at write time it never has to unescape.
+function sanitizeField(s: string): string {
+  return s
+    .replace(/[\r\n]+/g, " ")
+    .replace(/[`[\]()]/g, "")
+    .trim();
+}
+
 // Each line: "- `<ISO>` [section] (cue: <cue>) <line>". Parsed back leniently.
 const LINE_RE = /^-\s+`([^`]+)`\s*(?:\[([^\]]*)\]\s*)?(?:\(cue:\s*([^)]*)\)\s*)?(.*)$/;
 
@@ -159,12 +171,20 @@ export async function narrateSetImpl(
       >;
     }
     const timestamp = new Date().toISOString();
-    const sectionPart = data.section ? ` [${data.section}]` : "";
-    const cuePart = data.cue ? ` (cue: ${data.cue})` : "";
-    const entryLine = `- \`${timestamp}\`${sectionPart}${cuePart} ${data.line.trim()}\n`;
+    const section = data.section ? sanitizeField(data.section) : "";
+    const cue = data.cue ? sanitizeField(data.cue) : "";
+    const line = sanitizeField(data.line);
+    const sectionPart = section ? ` [${section}]` : "";
+    const cuePart = cue ? ` (cue: ${cue})` : "";
+    const entryLine = `- \`${timestamp}\`${sectionPart}${cuePart} ${line}\n`;
+    // Count existing entries BEFORE appending so the post-write total is a pure
+    // increment — never a second read that could throw outside this try/catch and
+    // break the never-throw handler contract.
+    let priorCount = 0;
     try {
       mkdirSync(dirname(logPath), { recursive: true });
       const isNew = !existsSync(logPath);
+      if (!isNew) priorCount = parseEntries(readFileSync(logPath, "utf8")).length;
       const header = isNew ? `# Set narration — ${data.set_name ?? stampDate(new Date())}\n\n` : "";
       appendFileSync(logPath, header + entryLine, "utf8");
     } catch (err) {
@@ -172,15 +192,15 @@ export async function narrateSetImpl(
         `Could not write narration to ${logPath}: ${err instanceof Error ? err.message : String(err)}`,
       ) as ReturnType<typeof structuredResult>;
     }
-    const total = existsSync(logPath) ? parseEntries(readFileSync(logPath, "utf8")).length : 1;
+    const total = priorCount + 1;
     const appended: {
       timestamp: string;
       section?: string;
       cue?: string;
       line: string;
-    } = { timestamp, line: data.line.trim() };
-    if (data.section) appended.section = data.section;
-    if (data.cue) appended.cue = data.cue;
+    } = { timestamp, line };
+    if (section) appended.section = section;
+    if (cue) appended.cue = cue;
     return structuredResult(`Narrated to ${logPath} (${total} line(s)).`, {
       mode: "append",
       log_path: logPath,

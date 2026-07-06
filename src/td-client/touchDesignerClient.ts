@@ -228,7 +228,7 @@ elif not hasattr(_n, "save"):
 else:
     try:
         _ret = _n.save(_p["file"], createFolders=bool(_p.get("createFolders", True)))
-        _saved = _p["file"] if (_ret is None or str(_ret).strip() != _p["file"]) else str(_ret)
+        _saved = str(_ret) if (_ret is not None and str(_ret).strip()) else _p["file"]
         _out = {"path": _n.path, "saved": _saved, "has_dimensions": False}
         if hasattr(_n, "width") and hasattr(_n, "height"):
             try:

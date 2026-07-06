@@ -94,16 +94,22 @@ export const createSdfTextSchema = z.object({
     ),
   camera_z: z.coerce
     .number()
+    .min(1)
+    .max(8)
     .default(2.2)
     .describe("Camera distance from the text (uCameraZ). Live 'CameraZ' control."),
   rotate: z.coerce
     .number()
+    .min(-6.28)
+    .max(6.28)
     .default(0.0)
     .describe(
       "Y-axis rotation speed of the text (radians/s via uRotate * uTime). Live 'Rotate'. Reads 0 when the TD timeline is paused.",
     ),
   speed: z.coerce
     .number()
+    .min(0)
+    .max(4)
     .default(1)
     .describe("Animation time multiplier (drives uTime). Live 'Speed' control."),
   step_count: z.coerce
@@ -115,6 +121,8 @@ export const createSdfTextSchema = z.object({
     .describe("Raymarch iterations (uSteps). Live 'StepCount'."),
   intensity: z.coerce
     .number()
+    .min(0)
+    .max(3)
     .default(1)
     .describe("Output brightness multiplier (uIntensity). Live 'Intensity'."),
   fill_color: z

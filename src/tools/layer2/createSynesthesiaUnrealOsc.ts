@@ -146,7 +146,11 @@ try:
             _try("osc active", lambda: setattr(_osc.par, "active", 1 if _p.get("active") else 0))
             report["osc_out"] = _osc.path
             try:
-                report["errors"] = [str(e) for e in _osc.errors()][:3]
+                # OP.errors() returns a single newline-joined STRING, not a list — split
+                # into lines first so we report messages, not individual characters.
+                _errs = _osc.errors()
+                _lines = _errs.splitlines() if isinstance(_errs, str) else [str(e) for e in _errs]
+                report["errors"] = [_l.strip() for _l in _lines if _l and _l.strip()][:3]
             except Exception:
                 pass
 except Exception:

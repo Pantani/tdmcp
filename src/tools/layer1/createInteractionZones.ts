@@ -77,13 +77,17 @@ interface ResolvedZone {
 }
 
 function resolveZones(zones: CreateInteractionZonesArgs["zones"]): ResolvedZone[] {
-  return zones.map((zone, index) => ({
-    key: (zone.name ?? `zone${index}`).replace(/[^a-zA-Z0-9_]/g, "_"),
-    x: zone.x,
-    y: zone.y,
-    w: zone.w,
-    h: zone.h,
-  }));
+  // Two distinct names can sanitize to the same key (e.g. "left zone" and "left/zone"
+  // both → "left_zone"), which would collide in downstream node/channel names. Track
+  // seen keys and disambiguate a collision by appending the zone index.
+  const seen = new Set<string>();
+  return zones.map((zone, index) => {
+    const base = (zone.name ?? `zone${index}`).replace(/[^a-zA-Z0-9_]/g, "_");
+    let key = base;
+    if (seen.has(key)) key = `${base}_${index}`;
+    seen.add(key);
+    return { key, x: zone.x, y: zone.y, w: zone.w, h: zone.h };
+  });
 }
 
 /**

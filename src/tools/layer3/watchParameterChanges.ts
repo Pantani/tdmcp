@@ -1,12 +1,15 @@
 import { z } from "zod";
-import { guardTd, structuredResult } from "../result.js";
+import { errorResult, guardTd, structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
 export const watchParameterChangesSchema = z.object({
   path: z
     .string()
     .min(1)
-    .describe("Operator path to watch for parameter changes, e.g. /project1/level1."),
+    .optional()
+    .describe(
+      "Operator path to watch for parameter changes, e.g. /project1/level1. Required for action='watch'/'unwatch'; omit for action='list'.",
+    ),
   parameters: z
     .array(z.string().min(1))
     .optional()
@@ -54,9 +57,17 @@ export async function watchParameterChangesImpl(ctx: ToolContext, args: WatchPar
     );
   }
 
+  // watch/unwatch operate on a specific op, so `path` is required for them.
+  if (!args.path?.trim()) {
+    return errorResult(
+      `watch_parameter_changes action='${args.action}' requires a non-empty \`path\`.`,
+    ) as ReturnType<typeof structuredResult>;
+  }
+  const path = args.path;
+
   if (args.action === "unwatch") {
     return guardTd(
-      () => ctx.client.unwatchParameters(args.path, { pars: args.parameters }),
+      () => ctx.client.unwatchParameters(path, { pars: args.parameters }),
       (result) =>
         structuredResult(
           result.watching
@@ -73,7 +84,7 @@ export async function watchParameterChangesImpl(ctx: ToolContext, args: WatchPar
   }
 
   return guardTd(
-    () => ctx.client.watchParameters(args.path, { pars: args.parameters }),
+    () => ctx.client.watchParameters(path, { pars: args.parameters }),
     (result) =>
       structuredResult(
         `Watching ${describePars(result.pars)} on ${result.path}. Changes surface as ` +

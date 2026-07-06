@@ -45,6 +45,46 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     iTerm2 OSC-1337 and Kitty graphics-protocol strings in `inlineImage.ts` embedded
     raw ESC/BEL bytes in source; they now use explicit `\x1b`/`\x07` escapes.
     Runtime output is byte-identical.
+  - **PR #128 review pass 1 (correctness / schema / Python / tests):**
+    - `create_synesthesia_unreal_osc` reported OSC-out errors character-by-character
+      — `OP.errors()` returns a single newline-joined **string**, so
+      `[str(e) for e in _osc.errors()]` iterated its characters. It now splits into
+      lines and takes the first three real messages. Live-validated on TD 099 build
+      2025.32820: a two-line error string now yields two messages, not `["C","o","n"]`.
+    - `watch_service.unregister` now (1) purges the **removed** par names' stale
+      `_SNAPSHOT`/`_LAST_EMIT` entries on a partial unregister, so a later re-watch
+      of a removed par starts fresh (`_diff_par` sees `_UNSET` and only seeds), and
+      (2) resolves the same **canonical** registry key `register()` stored under even
+      after the op is deleted (alias fallback), so a dead watch is no longer leaked.
+      New `td/tests/test_watch_service.py` regressions cover both; live-validated on
+      TD 099.
+    - `create_interaction_zones` no longer collides two zones whose names sanitize to
+      the same key (e.g. `"left zone"` and `"left/zone"` → `left_zone`) — colliding
+      keys are disambiguated by zone index. Live-checked TD's own silent auto-rename
+      (`left_zone` → `left_zone1`) that the fix guards against.
+    - Schema tightening: `create_sdf_text` `camera_z`/`rotate`/`speed`/`intensity`
+      now enforce their live ControlSpec ranges; `create_pointer_reactive` and
+      `create_interaction_zones` resolutions require positive integers;
+      `watch_parameter_changes` makes `path` optional (required only for
+      watch/unwatch, omittable for `list`).
+    - `narrate_set` sanitizes newlines and the record-delimiting characters
+      (`` ` ``, `[]`, `()`) out of free-text `line`/`section`/`cue` before persisting,
+      so `parseEntries` can no longer truncate or misparse an entry; the post-write
+      count is derived from a pre-append read inside the same `try/catch` (never a
+      second read that could throw out of the handler).
+    - `create_detection_reactive` wires its advertised `reconnect_seconds` into the
+      websocketDAT `reconnect`/`reconnectinterval` pars (probed fail-forward).
+    - `saveNode` exec fallback now keeps a valid alternate `_n.save(...)` return path
+      instead of always preferring the input `file` unless it matched exactly.
+    - `tdmcp chat --resume` (headless) now **persists** the updated transcript back to
+      the session file after each turn, so a later headless run continues from the
+      new context instead of stale state; the misleading "Resume in the UI to load"
+      hint is dropped (the browser UI has no matching load).
+    - `sessionStore` validates `tool_calls` against the real `ToolCall` shape (was
+      `z.unknown()`), removing the `as unknown as` schema cast so parsed sessions stay
+      strongly typed end to end.
+    - `europeana` source only tombstones on an empty keyed result when the requested
+      `limit > 0`; an intentional zero-row sync now returns normally.
 
 - `create_pointer_reactive` no longer leaks undocumented channels past its output
   Null (roadmap-to-1.0 polish, live-validated on TD 099 build 2025.32820). The

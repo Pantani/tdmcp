@@ -33,7 +33,7 @@ export const createPointerReactiveSchema = z.object({
     .default(1)
     .describe("Gain applied to every pointer channel (u, v, velocity, button) before the output."),
   resolution: z
-    .tuple([z.number(), z.number()])
+    .tuple([z.coerce.number().int().positive(), z.coerce.number().int().positive()])
     .default([1280, 720])
     .describe("Output resolution [width, height] in pixels for the demo feedback field."),
   parent_path: z

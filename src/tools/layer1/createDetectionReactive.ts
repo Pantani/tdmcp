@@ -188,6 +188,11 @@ try:
                 if _p.get("ws_port"):
                     _try("ws port", lambda: setattr(_ws.par, "port", int(_p["ws_port"])))
                 _try("ws active", lambda: setattr(_ws.par, "active", 1))
+                # Auto-reconnect: par names vary by TD build, so probe fail-forward.
+                if hasattr(_ws.par, "reconnect"):
+                    _try("ws reconnect", lambda: setattr(_ws.par, "reconnect", 1))
+                if hasattr(_ws.par, "reconnectinterval"):
+                    _try("ws reconnectinterval", lambda: setattr(_ws.par, "reconnectinterval", float(_p.get("reconnect_seconds", 2))))
                 _cb = _try("ws callbacks dat", lambda: _c.create(textDAT, "detector_cb"))
                 if _cb is not None:
                     _cb_text = (
