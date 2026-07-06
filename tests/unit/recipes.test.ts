@@ -48,6 +48,18 @@ describe("RecipeLibrary", () => {
     expect(recipe?.glsl_code?.glsl1).toContain("uniform float uKill");
   });
 
+  it("binds out_color to the RMS level via expressions in audio_reactive_basic", () => {
+    const recipe = library.get("audio_reactive_basic");
+    const exprs = new Map(
+      recipe?.parameters.filter((p) => p.node === "out_color").map((p) => [p.param, p.expr]),
+    );
+    for (const param of ["colorr", "colorg", "colorb"]) {
+      expect(exprs.get(param), `${param} must be expression-driven`).toContain(
+        "op('level_null')['chan1']",
+      );
+    }
+  });
+
   it("ships live controls on the performable feedback tunnel, bound to real parameters", () => {
     const recipe = library.get("performable_feedback_tunnel");
     expect(recipe).toBeDefined();
@@ -148,6 +160,79 @@ describe("buildFromRecipe — GLSL uniforms", () => {
 
     const { builder } = await buildFromRecipe(makeCtx(), recipe, "/project1");
     expect(builder.warnings.some((w) => w.includes('unknown node "ghost"'))).toBe(true);
+  });
+
+  it("sets a parameter expression via the param-mode endpoint, rewriting node refs", async () => {
+    const recipe = RecipeSchema.parse({
+      id: "expr_probe",
+      name: "Expr Probe",
+      nodes: [
+        { name: "level_null", type: "nullCHOP" },
+        { name: "out_color", type: "constantTOP" },
+      ],
+      parameters: [
+        { name: "R", node: "out_color", param: "colorr", expr: "op('level_null')['chan1']" },
+      ],
+    });
+
+    const modeCalls: Array<{ url: string; body: Record<string, unknown> }> = [];
+    server.use(
+      http.patch(`${TD_BASE}/api/nodes/:seg/params/:param/mode`, async ({ request }) => {
+        modeCalls.push({
+          url: request.url,
+          body: (await request.json()) as Record<string, unknown>,
+        });
+        return HttpResponse.json({
+          ok: true,
+          data: {
+            path: "/project1/expr_probe/out_color",
+            param: "colorr",
+            mode: "expression",
+            readback_mode: "expression",
+          },
+        });
+      }),
+    );
+
+    const { builder } = await buildFromRecipe(makeCtx(), recipe, "/project1");
+    expect(builder.warnings).toEqual([]);
+    expect(modeCalls).toHaveLength(1);
+    expect(modeCalls[0]?.url).toContain("/params/colorr/mode");
+    expect(modeCalls[0]?.body).toMatchObject({
+      mode: "expression",
+      expr: "op('/project1/expr_probe/level_null')['chan1']",
+    });
+  });
+
+  it("falls back to exec for expressions when the param-mode endpoint is absent", async () => {
+    const recipe = RecipeSchema.parse({
+      id: "expr_fallback",
+      name: "Expr Fallback",
+      nodes: [
+        { name: "level_null", type: "nullCHOP" },
+        { name: "out_color", type: "constantTOP" },
+      ],
+      parameters: [
+        { name: "R", node: "out_color", param: "colorr", expr: "op('level_null')['chan1']" },
+      ],
+    });
+
+    // The default tdMock handler 404s the param-mode endpoint (older bridge).
+    const execScripts: string[] = [];
+    server.use(
+      http.post(`${TD_BASE}/api/exec`, async ({ request }) => {
+        const body = (await request.json()) as { script: string };
+        execScripts.push(body.script);
+        return HttpResponse.json({ ok: true, data: { result: null, stdout: "" } });
+      }),
+    );
+
+    const { builder } = await buildFromRecipe(makeCtx(), recipe, "/project1");
+    expect(builder.warnings).toEqual([]);
+    const exec = execScripts.join("\n");
+    expect(exec).toContain(
+      `op("/project1/expr_fallback/out_color").par.colorr.expr = "op('/project1/expr_fallback/level_null')['chan1']"`,
+    );
   });
 
   it("resolves a control's bind_to from recipe node names to real created paths", async () => {

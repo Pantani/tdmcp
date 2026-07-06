@@ -2,7 +2,7 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { checkErrors } from "../../feedback/errorChecker.js";
 import { capturePreview } from "../../feedback/previewCapture.js";
 import type { Recipe, RecipeGlslUniform } from "../../recipes/schema.js";
-import { friendlyTdError } from "../../td-client/types.js";
+import { friendlyTdError, isMissingEndpoint } from "../../td-client/types.js";
 import {
   computeLayoutByParent,
   type LayoutEdge,
@@ -156,6 +156,20 @@ export class NetworkBuilder {
     }
   }
 
+  async setParamExpr(path: string, param: string, expr: string): Promise<void> {
+    try {
+      await this.ctx.client.setParameterMode(path, param, "expression", expr);
+      return;
+    } catch (err) {
+      if (!isMissingEndpoint(err)) {
+        this.warnings.push(`Failed to set expression on ${path}.${param}: ${friendlyTdError(err)}`);
+        return;
+      }
+    }
+    // Older bridge without the param-mode endpoint: set the expression via exec.
+    await this.python(`op(${q(path)}).par.${param}.expr = ${q(expr)}`);
+  }
+
   async python(code: string): Promise<void> {
     try {
       await this.ctx.client.executePythonScript(code, false);
@@ -206,6 +220,14 @@ export interface RecipeBuildResult {
   outputPath?: string;
   /** Controls to auto-expose, with `bind_to` already resolved to real node paths. */
   controls?: ControlSpec[];
+}
+
+/** Rewrites op('<recipeNodeName>') references in an expression to real created paths. */
+function resolveExprRefs(expr: string, builder: NetworkBuilder): string {
+  return expr.replace(/op\((['"])([^'"]+)\1\)/g, (match, _quote, name: string) => {
+    const path = builder.pathOf(name);
+    return path ? `op('${path}')` : match;
+  });
 }
 
 /** Instantiates a recipe inside a new container under `parentPath`. */
@@ -290,6 +312,10 @@ export async function buildFromRecipe(
     const target = builder.pathOf(param.node);
     if (!target) {
       builder.warnings.push(`Parameter "${param.name}" references unknown node "${param.node}".`);
+      continue;
+    }
+    if (param.expr !== undefined) {
+      await builder.setParamExpr(target, param.param, resolveExprRefs(param.expr, builder));
       continue;
     }
     if (param.value === undefined) continue;
