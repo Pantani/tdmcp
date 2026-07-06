@@ -8,6 +8,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- `audio_reactive_basic` recipe: the placeholder frame now reacts to audio out of
+  the box instead of sitting at a static color. Two root causes, both live-debugged
+  in TouchDesigner 099 build 2025.32820: the `level` analyzeCHOP's `function` was
+  given as the integer `6`, which the bridge's menu validation rejects (menu params
+  take names, not indices) so it silently stayed on `average` — now `"rmspower"`;
+  and `out_color` was never wired to the level, so it never pulsed — a `color_drive`
+  CHOP Execute callback now drives its violet brightness from the RMS level. Verified
+  live with a synthetic tone (RMS is 0 without a mic); the audio-reactive-visual
+  tutorial video was re-captured from the recipe's own output.
+- `audio_spectrum_bars` recipe: the `spectrum` had no output length set, so the
+  CHOP-to-TOP texture was a ~16k-wide strip and the raw FFT energy landed in a
+  handful of bins that rendered as a near-flat 1px line. The spectrum is now clamped
+  to 256 bins (`setmanually`/`outlength`) and the `bars` GLSL TOP has an explicit
+  output resolution, so it renders a full-height bar visual. Live-validated in TD 099
+  build 2025.32820.
 - `optical_flow_particles` recipe was non-functional end to end (black render, flat
   flow field), live-debugged and fixed in TouchDesigner 099 build 2025.32820: the
   particleSOP now renders as point sprites (the default `prtype` "lines" draws
