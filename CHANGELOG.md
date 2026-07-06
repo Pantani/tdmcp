@@ -85,6 +85,32 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
       strongly typed end to end.
     - `europeana` source only tombstones on an empty keyed result when the requested
       `limit > 0`; an intentional zero-row sync now returns normally.
+  - **PR #128 review pass 2 (network layout / orphan node):** these single-pass
+    builders create every op inside one Python exec with no auto-layout
+    (`NetworkBuilder`/`finalize` is not used), so their children stacked at the
+    default drop point. Each now writes deterministic `nodeX`/`nodeY` so the
+    generated network opens left→right instead of piled at the origin, and one
+    dead node is removed:
+    - `create_geo_visualization` no longer creates the **orphan `in1` In SOP**
+      inside the `geo` COMP — the COMP renders the city geometry via `select1`
+      (Select SOP), and `in1` was created but never wired or referenced. Its
+      container children (`city` → `city_out` → `geo` → `render`, with `cam`/`light`
+      as siblings, and the nested `select1`) are now laid out on a grid. Also fixed
+      the pre-existing `useOptionalChain` Biome warning in `projectFeatures`.
+      Live-validated on TD 099 build 2025.32820: the network cooks with `errors:[]`
+      after the orphan removal.
+    - `create_detection_reactive` positions `detector_ws`/`frames` (source) →
+      `detect` (Script CHOP) → `detections` (Null CHOP) with the callbacks DAT
+      below the source.
+    - `create_fixture_control` lays the DMX chain (fixture/pad Constant CHOPs →
+      `merge` → `rig_out` → `dmx`) in a top band and the 3D previz (`head_*` heads
+      → `previz_cam`/`previz_light`/`previz`) in a lower band so the two halves no
+      longer overlap.
+    - `add_timecode_overlay` positions `fmt`/`sel` → `tc` → `comp` → `out`.
+    - `create_synesthesia_unreal_osc` places the `controls` Constant CHOP left and
+      the `osc` Out CHOP right.
+    - Live-validated on TD 099 build 2025.32820: every tool-created op lands at a
+      distinct coordinate and all five networks cook with `errors:[]`.
 
 - `create_pointer_reactive` no longer leaks undocumented channels past its output
   Null (roadmap-to-1.0 polish, live-validated on TD 099 build 2025.32820). The

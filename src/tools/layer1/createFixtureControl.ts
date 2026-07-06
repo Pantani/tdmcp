@@ -150,6 +150,17 @@ def _try(label, fn):
         report["warnings"].append(label + ": " + str(_e))
         return None
 
+# Position a node in the network editor (nodeX/nodeY are attributes, not params) so the
+# rig reads on a readable grid instead of every op stacking at the default drop point.
+def _place(_op, _x, _y):
+    if _op is None:
+        return
+    try:
+        _op.nodeX = _x
+        _op.nodeY = _y
+    except Exception:
+        pass
+
 try:
     _parent = op(_p["parent_path"])
     if _parent is None:
@@ -168,7 +179,10 @@ try:
         _fixtures = sorted(_p["fixtures"], key=lambda f: int(f["startChannel"]))
         _ordered_inputs = []
         _cursor = 1
-        for _f in _fixtures:
+        # DMX Constant CHOPs / pads stack in a left column (x=0); previz heads sit in a
+        # separate lower band (x=0, y below the DMX column) so the two halves don't overlap.
+        _HEAD_Y0 = -900
+        for _hi, _f in enumerate(_fixtures):
             _fid = _f["id"]
             _start = int(_f["startChannel"])
             # Pad to keep merged-CHOP index aligned with DMX slot.
@@ -176,6 +190,7 @@ try:
                 _gap = _start - _cursor
                 _pad = _try("pad %s" % _fid, lambda: _cont.create(constantCHOP, "pad_%s" % _fid))
                 if _pad is not None:
+                    _place(_pad, 0, -len(_ordered_inputs) * 160)
                     for _k in range(_gap):
                         _try("pad name", lambda k=_k, n=_pad: setattr(n.par, "name%d" % k, "pad/%d" % k))
                         _try("pad val", lambda k=_k, n=_pad: setattr(n.par, "value%d" % k, 0.0))
@@ -187,6 +202,7 @@ try:
             _node = _try("fixture %s" % _fid, lambda fid=_fid: _cont.create(constantCHOP, fid))
             if _node is None:
                 continue
+            _place(_node, 0, -len(_ordered_inputs) * 160)
             for _k, _cn in enumerate(_chans):
                 _def = _defs[_k] if _k < len(_defs) else 0
                 _try("%s name%d" % (_fid, _k), lambda k=_k, cn=_cn, fid=_fid, n=_node: setattr(n.par, "name%d" % k, "%s/%s" % (fid, cn)))
@@ -201,6 +217,7 @@ try:
             _geo = _try("geo %s" % _fid, lambda fid=_fid: _cont.create(geometryCOMP, "head_%s" % fid))
             _beam = None
             if _geo is not None:
+                _place(_geo, 0, _HEAD_Y0 - _hi * 160)
                 _try("geo pos", lambda g=_geo, f=_f: (setattr(g.par, "tx", float(f["x"])), setattr(g.par, "ty", float(f["y"])), setattr(g.par, "tz", float(f["z"]))))
                 # Drive pan (ry) and tilt (rx) by expression from the fixture Constant CHOP.
                 # DMX 0-255 maps linearly onto +/- half the physical range.
@@ -223,19 +240,23 @@ try:
             else:
                 report["fixtures"].append({"id": _fid, "constant": _node.path, "geo": "", "beam": "", "startChannel": _start})
 
-        # --- DMX out chain ---
+        # --- DMX out chain: left input column -> merge -> rig_out -> dmx (x = 200/400/600) ---
         _merge = _try("merge", lambda: _cont.create(mergeCHOP, "merge"))
         if _merge is not None:
+            _place(_merge, 200, 0)
             _try("merge dup", lambda: setattr(_merge.par, "duplicate", "rename"))
             for _i, _n in enumerate(_ordered_inputs):
                 _try("merge connect %d" % _i, lambda i=_i, n=_n: _merge.inputConnectors[i].connect(n))
             report["merge"] = _merge.path
         _null = _try("rig_out", lambda: _cont.create(nullCHOP, "rig_out"))
-        if _null is not None and _merge is not None:
-            _try("rig_out connect", lambda: _null.inputConnectors[0].connect(_merge))
-            report["out"] = _null.path
+        if _null is not None:
+            _place(_null, 400, 0)
+            if _merge is not None:
+                _try("rig_out connect", lambda: _null.inputConnectors[0].connect(_merge))
+                report["out"] = _null.path
         _dmx = _try("dmx", lambda: _cont.create(dmxoutCHOP, "dmx"))
         if _dmx is not None:
+            _place(_dmx, 600, 0)
             _try("dmx interface", lambda: setattr(_dmx.par, "interface", _p["interface"]))
             _try("dmx universe", lambda: setattr(_dmx.par, "universe", int(_p["universe"])))
             if _p.get("host"):
@@ -251,13 +272,16 @@ try:
             except Exception:
                 pass
 
-        # --- 3D previz render: camera + light + render TOP over all heads ---
+        # --- 3D previz render: camera + light + render TOP over all heads (lower band) ---
         _cam = _try("cam", lambda: _cont.create(cameraCOMP, "previz_cam"))
         if _cam is not None:
+            _place(_cam, 200, _HEAD_Y0)
             _try("cam pos", lambda: (setattr(_cam.par, "tz", 12.0), setattr(_cam.par, "ty", 3.0)))
         _light = _try("light", lambda: _cont.create(lightCOMP, "previz_light"))
+        _place(_light, 200, _HEAD_Y0 - 160)
         _render = _try("render", lambda: _cont.create(renderTOP, "previz"))
         if _render is not None:
+            _place(_render, 400, _HEAD_Y0)
             _try("render res", lambda: (setattr(_render.par, "resolutionw", 1280), setattr(_render.par, "resolutionh", 720)))
             if _cam is not None:
                 _try("render cam", lambda: setattr(_render.par, "camera", _cam.name))

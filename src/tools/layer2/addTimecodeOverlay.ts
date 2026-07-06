@@ -116,6 +116,17 @@ try:
             if _cont is not None:
                 report["container"] = _cont.path
 
+                def _place(_o, _x, _y):
+                    # nodeX/nodeY are attributes, not params — set them so the chain reads
+                    # left->right instead of stacking at the default drop point.
+                    if _o is None:
+                        return
+                    try:
+                        _o.nodeX = _x
+                        _o.nodeY = _y
+                    except Exception:
+                        pass
+
                 def _setpar(_o, _name, _val, _label):
                     # Set a parameter defensively; record a warning (not a throw) if absent.
                     try:
@@ -160,6 +171,7 @@ try:
                 _sel = None
                 try:
                     _sel = _cont.create(selectTOP, "sel")
+                    _place(_sel, 0, -140)
                     _setpar(_sel, "top", _src, "source select")
                     report["source_select"] = _sel.path
                 except Exception as _e:
@@ -170,6 +182,7 @@ try:
                 _fmt = None
                 try:
                     _fmt = _cont.create(textDAT, "fmt")
+                    _place(_fmt, 0, 140)
                     _fmt.text = '''
 def tc(mode, fps, target, startframe):
     fps = max(1.0, float(fps))
@@ -202,6 +215,7 @@ def tc(mode, fps, target, startframe):
                 _tc = None
                 try:
                     _tc = _cont.create(textTOP, "tc")
+                    _place(_tc, 200, 0)
                     _startframe = absTime.frame
                     _expr = (
                         "mod('fmt').tc(%r, %r, %r, %r)"
@@ -234,6 +248,7 @@ def tc(mode, fps, target, startframe):
                 _comp = None
                 try:
                     _comp = _cont.create(compositeTOP, "comp")
+                    _place(_comp, 400, 0)
                     _setpar(_comp, "operand", "over", "composite operand")
                     if _tc is not None:
                         _comp.inputConnectors[0].connect(_tc)
@@ -248,6 +263,7 @@ def tc(mode, fps, target, startframe):
                 # --- Output null ---
                 try:
                     _null = _cont.create(nullTOP, "out")
+                    _place(_null, 600, 0)
                     if _out_src is not None:
                         _null.inputConnectors[0].connect(_out_src)
                     report["output_top"] = _null.path

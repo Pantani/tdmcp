@@ -114,6 +114,17 @@ def _try(label, fn):
         report["warnings"].append(label + ": " + str(_e))
         return None
 
+# Position a node in the network editor (nodeX/nodeY are attributes, not params) so the
+# generated network reads left->right instead of stacking at the default drop point.
+def _place(_op, _x, _y):
+    if _op is None:
+        return
+    try:
+        _op.nodeX = _x
+        _op.nodeY = _y
+    except Exception:
+        pass
+
 try:
     _parent = op(_p["parent_path"])
     if _parent is None:
@@ -128,6 +139,7 @@ try:
         # address tail so oscoutCHOP sends '/<prefix>/<control>'.
         _src = _try("source", lambda: _c.create(constantCHOP, "controls"))
         if _src is not None:
+            _place(_src, 0, 0)
             for _i, _ctl in enumerate(_controls):
                 _chan = "%s/%s" % (_prefix, _ctl)
                 _try("name%d" % _i, lambda i=_i, ch=_chan, n=_src: setattr(n.par, "name%d" % i, ch))
@@ -137,6 +149,7 @@ try:
 
         _osc = _try("osc out", lambda: _c.create(oscoutCHOP, "osc"))
         if _osc is not None:
+            _place(_osc, 200, 0)
             _try("osc netaddress", lambda: setattr(_osc.par, "netaddress", _p["host"]))
             _try("osc port", lambda: setattr(_osc.par, "port", int(_p["port"])))
             # The oscoutCHOP emits each channel at OSC address '/<channelName>', so naming the

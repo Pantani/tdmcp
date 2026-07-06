@@ -84,6 +84,17 @@ def _try(label, fn):
         report["warnings"].append(label + ": " + str(_e))
         return None
 
+# Position a node in the network editor (nodeX/nodeY are attributes, not params) so the
+# generated network reads left->right instead of stacking at the default drop point.
+def _place(_op, _x, _y):
+    if _op is None:
+        return
+    try:
+        _op.nodeX = _x
+        _op.nodeY = _y
+    except Exception:
+        pass
+
 # Script CHOP/SOP/TOP cook code lives in a companion callbacks DAT, resolved via the op's
 # 'callbacks' par (with a name-based fallback). Set THAT DAT's text, never the op's.
 def _set_script_cook(_op, _text):
@@ -176,11 +187,15 @@ try:
     else:
         _c = _parent.create(baseCOMP, _p["name"])
         report["container"] = _c.path
+        # detect (scriptCHOP) sits in the middle column; the source feeds it from the left
+        # and the detections null exits to the right.
         _script = _try("script chop", lambda: _c.create(scriptCHOP, "detect"))
+        _place(_script, 200, 0)
 
         if _p["source"] == "websocket":
             _ws = _try("ws dat", lambda: _c.create(websocketDAT, "detector_ws"))
             if _ws is not None:
+                _place(_ws, 0, 0)
                 report["source"] = _ws.path; report["source_type"] = _ws.type
                 # websocketDAT uses netaddress + port (parsed from the ws:// URL in TS).
                 if _p.get("ws_host"):
@@ -195,6 +210,7 @@ try:
                     _try("ws reconnectinterval", lambda: setattr(_ws.par, "reconnectinterval", float(_p.get("reconnect_seconds", 2))))
                 _cb = _try("ws callbacks dat", lambda: _c.create(textDAT, "detector_cb"))
                 if _cb is not None:
+                    _place(_cb, 0, -140)
                     _cb_text = (
                         "import json\\n"
                         "def onReceiveText(websocketDAT, rowIndex, message):\\n"
@@ -218,6 +234,7 @@ try:
             if _p.get("input_top"):
                 _sel = _try("select top", lambda: _c.create(selectTOP, "frames"))
                 if _sel is not None:
+                    _place(_sel, 0, 0)
                     _try("select top par", lambda: setattr(_sel.par, "top", _p["input_top"]))
                     report["select"] = _sel.path
             report["source"] = _script.path if _script is not None else ""
@@ -228,9 +245,11 @@ try:
                 _set_script_cook(_script, _cook)
 
         _null = _try("null chop", lambda: _c.create(nullCHOP, "detections"))
-        if _null is not None and _script is not None:
-            _try("null connect", lambda: _null.inputConnectors[0].connect(_script))
-            report["channels_null"] = _null.path
+        if _null is not None:
+            _place(_null, 400, 0)
+            if _script is not None:
+                _try("null connect", lambda: _null.inputConnectors[0].connect(_script))
+                report["channels_null"] = _null.path
         try:
             if _script is not None:
                 report["errors"] = [str(e) for e in _script.errors()][:3]

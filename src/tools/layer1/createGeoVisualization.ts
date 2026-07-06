@@ -112,7 +112,7 @@ export function projectFeatures(
   }> = [];
   for (const rf of rawFeatures) {
     const geom = rf.geometry as { type?: string; coordinates?: unknown } | null;
-    if (!geom || !geom.type) continue;
+    if (!geom?.type) continue;
     const props = (rf.properties ?? {}) as Record<string, unknown>;
     const heightRaw = props.height ?? props.render_height;
     const height =
@@ -216,6 +216,17 @@ def _try(label, fn):
         report["warnings"].append(label + ": " + str(_e))
         return None
 
+# Position a node in the network editor (nodeX/nodeY are attributes, not params) so the
+# generated network reads left->right instead of stacking at the default drop point.
+def _place(_op, _x, _y):
+    if _op is None:
+        return
+    try:
+        _op.nodeX = _x
+        _op.nodeY = _y
+    except Exception:
+        pass
+
 # Script SOP cook code lives in a companion callbacks DAT, resolved via the op's 'callbacks'
 # par (with a name-based fallback). Set THAT DAT's text, never the op's.
 def _set_script_cook(_op, _text):
@@ -282,30 +293,38 @@ try:
         _try("store scale", lambda: _c.store("tdmcp_geo_scale", float(_p["scale"])))
         _try("store extrude", lambda: _c.store("tdmcp_geo_extrude", bool(_p["extrude"])))
 
+        # Left->right data flow: city (scriptSOP) -> city_out (nullSOP) -> geo (COMP) -> render.
         _sop = _try("script sop", lambda: _c.create(scriptSOP, "city"))
         if _sop is not None:
             _set_script_cook(_sop, _SOP_COOK)
+            _place(_sop, 0, 0)
             report["script_sop"] = _sop.path
         _null = _try("null sop", lambda: _c.create(nullSOP, "city_out"))
         if _null is not None and _sop is not None:
             _try("null connect", lambda: _null.inputConnectors[0].connect(_sop))
+            _place(_null, 200, 0)
             report["out"] = _null.path
 
-        # Wrap in a Geometry COMP + render so it previews immediately.
+        # Wrap in a Geometry COMP + render so it previews immediately. The COMP renders the
+        # city null via a Select SOP inside it (no orphan In SOP needed).
         _geo = _try("geo comp", lambda: _c.create(geometryCOMP, "geo"))
         if _geo is not None and _null is not None:
-            _in = _try("geo instance in", lambda: _geo.create(inSOP, "in1"))
+            _place(_geo, 400, 0)
             # Point the Geometry COMP at the city null via a Select SOP inside it.
             _sel = _try("geo select sop", lambda: _geo.create(selectSOP, "select1"))
             if _sel is not None:
+                _place(_sel, 0, 0)
                 _try("geo select par", lambda: setattr(_sel.par, "sop", _null.path))
                 _try("geo render par", lambda: setattr(_sel.par, "render", True) if hasattr(_sel.par, "render") else None)
         _cam = _try("cam", lambda: _c.create(cameraCOMP, "cam"))
         if _cam is not None:
+            _place(_cam, 400, 150)
             _try("cam pos", lambda: (setattr(_cam.par, "ty", float(_p["scale"]) * 0.8), setattr(_cam.par, "tz", float(_p["scale"]) * 1.2)))
         _light = _try("light", lambda: _c.create(lightCOMP, "light"))
+        _place(_light, 400, 300)
         _render = _try("render", lambda: _c.create(renderTOP, "render"))
         if _render is not None:
+            _place(_render, 600, 0)
             _try("render res", lambda: (setattr(_render.par, "resolutionw", 1280), setattr(_render.par, "resolutionh", 720)))
             if _cam is not None:
                 _try("render cam", lambda: setattr(_render.par, "camera", _cam.name))
