@@ -4,9 +4,9 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const script = readFileSync(join(root, "scripts", "build-dxt.mjs"), "utf8");
+const script = readFileSync(join(root, "scripts", "build-mcpb.mjs"), "utf8");
 
-describe("build-dxt supply-chain guardrails", () => {
+describe("build-mcpb supply-chain guardrails", () => {
   it("pins official MCPB packer packages instead of resolving mutable npm latest", () => {
     expect(script).toContain("@anthropic-ai/mcpb@2.1.2");
     expect(script).toContain("@anthropic-ai/dxt@0.2.6");

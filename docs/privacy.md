@@ -6,7 +6,7 @@ aside: false
 
 # Privacy policy
 
-_Last updated: 27 May 2026_
+_Last updated: 6 July 2026_
 
 ## Summary
 
@@ -32,10 +32,25 @@ Code, Codex or Cursor) launches the local server.
 
 ## Network activity
 
-The MCP server's only network activity is local HTTP requests to your **own**
-TouchDesigner bridge at `127.0.0.1:9980` (the host and port are user-configurable
-via `TDMCP_TD_HOST` / `TDMCP_TD_PORT`). It makes no other network connections — no
-egress to the author, to Anthropic, or to any third party.
+tdmcp makes **no automatic or background network calls** of its own, and never
+sends anything to the author, to Anthropic, or to any analytics or telemetry
+service. Its normal activity is local HTTP requests to your **own** TouchDesigner
+bridge at `127.0.0.1:9980` (the host and port are user-configurable via
+`TDMCP_TD_HOST` / `TDMCP_TD_PORT`).
+
+The only outbound connections tdmcp ever makes are ones **you explicitly ask for**:
+
+- **Shader imports.** If you invoke the `import_shadertoy` or `import_isf_shader`
+  tools, tdmcp fetches the shader from the source you named — the Shadertoy API
+  (`shadertoy.com`) or the exact URL you passed. Nothing is fetched unless you run
+  those tools; `import_shadertoy` can be disabled entirely with `TDMCP_OFFLINE=1`.
+- **Optional local AI copilot.** The optional built-in copilot talks to the
+  language-model endpoint you configure via `TDMCP_LLM_BASE_URL`, which defaults to
+  a **local** runtime on `127.0.0.1:11434` (e.g. Ollama). It only connects if you
+  use the copilot, and only to the endpoint you set.
+
+None of these paths send data about you — they fetch content you requested from the
+source you chose. There is no other egress.
 
 Any files you ask tdmcp to write — recipes, presets, snapshots, or
 [vault](/reference/tools) exports — are saved to your own local disk and never
@@ -53,6 +68,9 @@ data collection of its own on top of your client.
 tdmcp ships **no third-party SDKs, trackers, or analytics**. npm and GitHub are
 distribution channels for the software and operate under their own privacy
 policies; tdmcp itself does not send your data to them or anyone else at runtime.
+The only third-party services tdmcp ever contacts are the ones you invoke by name
+(such as the Shadertoy API via `import_shadertoy`), and only to fetch the content
+you asked for — see [Network activity](#network-activity).
 
 ## Security
 

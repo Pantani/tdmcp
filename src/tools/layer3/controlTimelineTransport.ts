@@ -134,6 +134,7 @@ export const registerControlTimelineTransport: ToolRegistrar = (server, ctx) =>
       description:
         "Drive the TouchDesigner project timeline: play, pause, seek to a frame, jump to a named cue, or set playback rate. Returns the timeline state after the action so a copilot can verify the change took effect. NOTE: pausing will freeze any downstream motion/feedback/frame-diff chain — expected behaviour, not a bug.",
       inputSchema: controlTimelineTransportSchema.shape,
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
     (args) => controlTimelineTransportImpl(ctx, args),
   );

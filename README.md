@@ -71,7 +71,7 @@ Three pieces talk to each other on your computer:
 
 Node.js is only needed for the build-from-source path (**[Node 20+](https://nodejs.org)**).
 The one-click Claude Desktop extension needs nothing extra — the server is bundled
-inside the `.mcpb` (formerly `.dxt`; legacy `.dxt` files still install).
+inside the `.mcpb` extension file.
 
 ## Get started
 

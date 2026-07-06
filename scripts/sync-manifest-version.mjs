@@ -15,7 +15,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const manifestPaths = [join(root, "dxt", "manifest.json"), join(root, "safeskill.manifest.json")];
+const manifestPaths = [join(root, "mcpb", "manifest.json"), join(root, "safeskill.manifest.json")];
 const serverPath = join(root, "server.json");
 const bridgeVersionPaths = [
   join(root, "td", "modules", "utils", "version.py"),
