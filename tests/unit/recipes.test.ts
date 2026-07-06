@@ -231,8 +231,10 @@ describe("buildFromRecipe — GLSL uniforms", () => {
     expect(builder.warnings).toEqual([]);
     const exec = execScripts.join("\n");
     expect(exec).toContain(
-      `op("/project1/expr_fallback/out_color").par.colorr.expr = "op('/project1/expr_fallback/level_null')['chan1']"`,
+      `_par = op("/project1/expr_fallback/out_color").par.colorr\n_par.expr = "op('/project1/expr_fallback/level_null')['chan1']"`,
     );
+    // The fallback must flip the parameter into EXPRESSION mode, or it stays Constant.
+    expect(exec).toContain("_par.mode = type(_par.mode).EXPRESSION");
   });
 
   it("resolves a control's bind_to from recipe node names to real created paths", async () => {

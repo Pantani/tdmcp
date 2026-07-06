@@ -167,7 +167,12 @@ export class NetworkBuilder {
       }
     }
     // Older bridge without the param-mode endpoint: set the expression via exec.
-    await this.python(`op(${q(path)}).par.${param}.expr = ${q(expr)}`);
+    // Assigning `.expr` alone leaves the parameter in Constant mode, so flip the
+    // mode to EXPRESSION too. ParMode is not importable as a global, so resolve the
+    // enum from the live parameter (`type(_par.mode).EXPRESSION`).
+    await this.python(
+      `_par = op(${q(path)}).par.${param}\n_par.expr = ${q(expr)}\n_par.mode = type(_par.mode).EXPRESSION`,
+    );
   }
 
   async python(code: string): Promise<void> {
@@ -228,6 +233,33 @@ function resolveExprRefs(expr: string, builder: NetworkBuilder): string {
     const path = builder.pathOf(name);
     return path ? `op('${path}')` : match;
   });
+}
+
+/**
+ * Applies a recipe's exposed parameters. An `expr` binds the parameter in
+ * expression mode (with op(name) refs rewritten to real paths); otherwise the
+ * `value` is set as a constant, resolving a string that matches a node name to
+ * that node's path.
+ */
+async function applyRecipeParameters(
+  builder: NetworkBuilder,
+  parameters: Recipe["parameters"],
+): Promise<void> {
+  for (const param of parameters) {
+    const target = builder.pathOf(param.node);
+    if (!target) {
+      builder.warnings.push(`Parameter "${param.name}" references unknown node "${param.node}".`);
+      continue;
+    }
+    if (param.expr !== undefined) {
+      await builder.setParamExpr(target, param.param, resolveExprRefs(param.expr, builder));
+      continue;
+    }
+    if (param.value === undefined) continue;
+    const value =
+      typeof param.value === "string" ? (builder.pathOf(param.value) ?? param.value) : param.value;
+    await builder.setParams(target, { [param.param]: value });
+  }
 }
 
 /** Instantiates a recipe inside a new container under `parentPath`. */
@@ -307,25 +339,7 @@ export async function buildFromRecipe(
     }
   }
 
-  // Exposed parameters; a string value matching a node name resolves to that node's path.
-  for (const param of recipe.parameters) {
-    const target = builder.pathOf(param.node);
-    if (!target) {
-      builder.warnings.push(`Parameter "${param.name}" references unknown node "${param.node}".`);
-      continue;
-    }
-    if (param.expr !== undefined) {
-      await builder.setParamExpr(target, param.param, resolveExprRefs(param.expr, builder));
-      continue;
-    }
-    if (param.value === undefined) continue;
-    let value = param.value;
-    if (typeof value === "string") {
-      const referenced = builder.pathOf(value);
-      if (referenced) value = referenced;
-    }
-    await builder.setParams(target, { [param.param]: value });
-  }
+  await applyRecipeParameters(builder, recipe.parameters);
 
   for (const connection of recipe.connections) {
     const from = builder.pathOf(connection.from);
