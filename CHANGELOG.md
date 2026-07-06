@@ -8,6 +8,26 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Four new stock-TouchDesigner artist/interaction tools (roadmap-to-1.0 Wave 3,
+  no GPU/hardware required):
+  - `create_step_repeat` (Layer 1) — brick/grid tiling of a source TOP into
+    rows×cols with per-cell gap, position/rotation jitter, and an optional
+    brick/masonry half-tile row offset, all computed per-cell in a single GLSL
+    TOP shader; live controls for rows/cols/gap/jitter/brick.
+  - `add_timecode_overlay` (Layer 2) — draw a running HH:MM:SS:FF timecode onto
+    a source TOP as visual pixels, in `clock` (show time), `count_up`, or
+    `count_down` modes; the formatter lives in a Text DAT module so it ticks
+    live, composited over the source. Distinct from `sync_timecode`, which syncs
+    a clock signal rather than drawing pixels.
+  - `create_pointer_reactive` (Layer 1) — turn mouse/pointer position + click
+    into a bindable creative seed: normalized u/v + velocity + button on a
+    `pointer` Null CHOP ready for `bind_to_channel`, with an optional built-in
+    feedback-field demo the pointer visibly pushes.
+  - `create_interaction_zones` (Layer 1) — define N rectangular motion zones over
+    a camera input; each zone emits a `*_state` (active) and `*_dwell` (seconds
+    active) channel on a `zones` Null CHOP ready to fire cues, with a live
+    Threshold knob.
+
 - Artist-friendly docs information architecture: the guide sidebar is now 7
   collapsible categories (identical EN/PT structure derived from one
   descriptor), a "What do you want to make?" goal-card guide home is the new

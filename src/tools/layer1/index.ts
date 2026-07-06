@@ -48,6 +48,7 @@ import { registerCreateHalftone } from "./createHalftone.js";
 import { registerCreateHandHologram } from "./createHandHologram.js";
 import { registerCreateHistogramScope } from "./createHistogramScope.js";
 import { registerCreateImageToParticles } from "./createImageToParticles.js";
+import { registerCreateInteractionZones } from "./createInteractionZones.js";
 import { registerCreateInteractiveProjectionMapping } from "./createInteractiveProjectionMapping.js";
 import { registerCreateJfaVoronoi } from "./createJfaVoronoi.js";
 import { registerCreateKaleidoscope } from "./createKaleidoscope.js";
@@ -72,6 +73,7 @@ import { registerCreatePhoneGesture } from "./createPhoneGesture.js";
 import { registerCreatePhraseLockedCueEngine } from "./createPhraseLockedCueEngine.js";
 import { registerCreatePixelSort } from "./createPixelSort.js";
 import { registerCreatePointCloud } from "./createPointCloud.js";
+import { registerCreatePointerReactive } from "./createPointerReactive.js";
 import { registerCreatePopField } from "./createPopField.js";
 import { registerCreatePopGeometry } from "./createPopGeometry.js";
 import { registerCreatePopGrowth } from "./createPopGrowth.js";
@@ -95,6 +97,7 @@ import { registerCreateShowFailover } from "./createShowFailover.js";
 import { registerCreateSimulation } from "./createSimulation.js";
 import { registerCreateSlitScan } from "./createSlitScan.js";
 import { registerCreateSpectrum } from "./createSpectrum.js";
+import { registerCreateStepRepeat } from "./createStepRepeat.js";
 import { registerCreateStipplePointcloud } from "./createStipplePointcloud.js";
 import { registerCreateStrangeAttractor } from "./createStrangeAttractor.js";
 import { registerCreateStrobe } from "./createStrobe.js";
@@ -293,6 +296,10 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateVolumetricField,
   registerCreateVoxelStack,
   registerCreateFacadeMapping,
+  // Roadmap-to-1.0 Wave 3 (2026-07-06) — stock-TD artist/interaction tools:
+  registerCreateStepRepeat,
+  registerCreatePointerReactive,
+  registerCreateInteractionZones,
 ];
 
 // v0.6.0 — Creative RAG inspiration -> execution loop (gated behind env flag).

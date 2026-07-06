@@ -1069,6 +1069,14 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "interaction-zones",
+    summary:
+      "Define N rectangular motion zones over a camera input; emits per-zone state + dwell channels ready to fire cues.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "interactive-projection",
     summary: "Build a synthetic-safe camera/projector interactive projection mapping rig.",
     mutates: true,
@@ -1659,6 +1667,14 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "pointer-reactive",
+    summary:
+      "Turn mouse/pointer position + click into a bindable u/v/velocity/button Null CHOP, with an optional pushed feedback demo.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "pop-field",
     summary: "Build a GPU POP point field (experimental — live-validation pending).",
     mutates: true,
@@ -2073,6 +2089,14 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "step-repeat",
+    summary:
+      "Tile a source TOP into a rows×cols brick/grid with per-cell gap, position/rotation jitter, and optional brick offset.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "strange-attractor",
     summary: "Render a strange attractor (Lorenz / Aizawa / Halvorsen) as point/line geometry.",
     mutates: true,
@@ -2153,6 +2177,14 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "time-echo",
     summary: "Per-pixel time effect (echo trails / slit-scan / time-displace) on a source TOP.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "timecode-overlay",
+    summary:
+      "Overlay a live HH:MM:SS:FF timecode (clock / count-up / count-down) onto a source TOP as visual pixels.",
     mutates: true,
     unsafe: false,
     source: "tool",

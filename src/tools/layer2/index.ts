@@ -1,5 +1,6 @@
 import type { ToolRegistrar } from "../types.js";
 import { registerAddCustomParameters } from "./addCustomParameters.js";
+import { registerAddTimecodeOverlay } from "./addTimecodeOverlay.js";
 import { registerAnimateParameter } from "./animateParameter.js";
 import { registerApplyLut } from "./applyLut.js";
 import { registerArrangeNetwork } from "./arrangeNetwork.js";
@@ -183,4 +184,6 @@ export const layer2Registrars: ToolRegistrar[] = [
   registerConnectComfyui,
   registerConnectDaydreamCloud,
   registerCreateLlmChain,
+  // Roadmap-to-1.0 Wave 3 (2026-07-06) — visual timecode overlay:
+  registerAddTimecodeOverlay,
 ];

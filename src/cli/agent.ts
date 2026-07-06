@@ -200,6 +200,10 @@ import {
   createImageToParticlesSchema,
 } from "../tools/layer1/createImageToParticles.js";
 import {
+  createInteractionZonesImpl,
+  createInteractionZonesSchema,
+} from "../tools/layer1/createInteractionZones.js";
+import {
   createInteractiveProjectionMappingImpl,
   createInteractiveProjectionMappingSchema,
 } from "../tools/layer1/createInteractiveProjectionMapping.js";
@@ -265,6 +269,10 @@ import {
 } from "../tools/layer1/createPhraseLockedCueEngine.js";
 import { createPixelSortImpl, createPixelSortSchema } from "../tools/layer1/createPixelSort.js";
 import { createPointCloudImpl, createPointCloudSchema } from "../tools/layer1/createPointCloud.js";
+import {
+  createPointerReactiveImpl,
+  createPointerReactiveSchema,
+} from "../tools/layer1/createPointerReactive.js";
 import { createPopFieldImpl, createPopFieldSchema } from "../tools/layer1/createPopField.js";
 import {
   createPopGeometryImpl,
@@ -317,6 +325,7 @@ import { createShaderParkImpl, createShaderParkSchema } from "../tools/layer1/cr
 import { createSimulationImpl, createSimulationSchema } from "../tools/layer1/createSimulation.js";
 import { createSlitScanImpl, createSlitScanSchema } from "../tools/layer1/createSlitScan.js";
 import { createSpectrumImpl, createSpectrumSchema } from "../tools/layer1/createSpectrum.js";
+import { createStepRepeatImpl, createStepRepeatSchema } from "../tools/layer1/createStepRepeat.js";
 import {
   createStipplePointcloudImpl,
   createStipplePointcloudSchema,
@@ -415,6 +424,10 @@ import {
   addCustomParametersImpl,
   addCustomParametersSchema,
 } from "../tools/layer2/addCustomParameters.js";
+import {
+  addTimecodeOverlayImpl,
+  addTimecodeOverlaySchema,
+} from "../tools/layer2/addTimecodeOverlay.js";
 import { animateParameterImpl, animateParameterSchema } from "../tools/layer2/animateParameter.js";
 import { applyLutImpl, applyLutSchema } from "../tools/layer2/applyLut.js";
 import { arrangeNetworkImpl, arrangeNetworkSchema } from "../tools/layer2/arrangeNetwork.js";
@@ -2497,6 +2510,31 @@ const COMMANDS: Record<string, Command> = {
     getInlinePreviewImpl,
     "Inline inspection snapshot for one operator: small base64 thumbnail + errors (self + parents) + top-N changed-from-default parameters + 1-line cook stats. Single-round-trip 'is this op alive/healthy?' read.",
     { mutates: false },
+  ),
+  // Roadmap-to-1.0 Wave 3 (2026-07-06) — stock-TD artist/interaction tools:
+  "step-repeat": r(
+    createStepRepeatSchema,
+    createStepRepeatImpl,
+    "Tile a source TOP into a rows×cols brick/grid with per-cell gap, position/rotation jitter, and optional brick offset.",
+    { mutates: true },
+  ),
+  "timecode-overlay": r(
+    addTimecodeOverlaySchema,
+    addTimecodeOverlayImpl,
+    "Overlay a live HH:MM:SS:FF timecode (clock / count-up / count-down) onto a source TOP as visual pixels.",
+    { mutates: true },
+  ),
+  "pointer-reactive": r(
+    createPointerReactiveSchema,
+    createPointerReactiveImpl,
+    "Turn mouse/pointer position + click into a bindable u/v/velocity/button Null CHOP, with an optional pushed feedback demo.",
+    { mutates: true },
+  ),
+  "interaction-zones": r(
+    createInteractionZonesSchema,
+    createInteractionZonesImpl,
+    "Define N rectangular motion zones over a camera input; emits per-zone state + dwell channels ready to fire cues.",
+    { mutates: true },
   ),
   // v0.6.0 — Creative RAG inspiration → execution loop:
   "apply-creative-card": r(
