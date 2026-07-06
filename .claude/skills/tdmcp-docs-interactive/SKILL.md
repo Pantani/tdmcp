@@ -22,7 +22,7 @@ In ONE message spawn:
 File ownership prevents conflicts: builder never writes tutorial prose; writers never touch config/theme.
 
 ## Phase 3: QA
-Spawn `docs-roadmap-qa` (opus): `npm run docs:build` gate, EN/PT structural parity, dead links, sidebar↔file existence cross-check, generated `reference/tools.md` untouched. QA writes findings to `_workspace/docs-interactive/04_qa_report.md`.
+Spawn `docs-roadmap-qa` (opus): `npm run docs:build` gate, EN/PT structural parity, dead links, sidebar↔file existence cross-check, generated `reference/tools.md` untouched. Instruct it explicitly to write its findings to `_workspace/docs-interactive/04_qa_report.md` (its default from other harnesses is `_workspace/docs_roadmap_qa.md` — the fix loop reads the path above, so the prompt must override the default).
 
 ## Phase 4: fix loop + wrap-up
 - QA FAIL → route each finding to its owner agent (builder vs writer), rerun QA once. Second FAIL → report remaining issues to the user, do not loosen gates.
