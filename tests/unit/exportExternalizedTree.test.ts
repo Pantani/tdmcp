@@ -38,7 +38,10 @@ function captureExec(report: unknown): { scripts: string[] } {
     http.post(`${TD_BASE}/api/exec`, async ({ request }) => {
       const body = (await request.json()) as { script: string };
       scripts.push(body.script);
-      return HttpResponse.json({ ok: true, data: { result: null, stdout: JSON.stringify(report) } });
+      return HttpResponse.json({
+        ok: true,
+        data: { result: null, stdout: JSON.stringify(report) },
+      });
     }),
   );
   return { scripts };
@@ -144,6 +147,9 @@ describe("export_externalized_tree", () => {
     };
     registerExportExternalizedTree(fakeServer as never, makeCtx());
     expect(calls[0]?.name).toBe("export_externalized_tree");
-    expect(calls[0]?.options.annotations).toMatchObject({ readOnlyHint: false, destructiveHint: true });
+    expect(calls[0]?.options.annotations).toMatchObject({
+      readOnlyHint: false,
+      destructiveHint: true,
+    });
   });
 });

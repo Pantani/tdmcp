@@ -1,7 +1,7 @@
 import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { runPreviewInline } from "../../src/cli/previewInline.js";
 import { ExitCode } from "../../src/cli/exitCodes.js";
+import { runPreviewInline } from "../../src/cli/previewInline.js";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
 import { makeTdServer, TD_BASE } from "../helpers/tdMock.js";
 
@@ -20,12 +20,21 @@ function client() {
 function mockPreview(base64 = B64): void {
   server.use(
     http.post(`${TD_BASE}/api/exec`, () =>
-      HttpResponse.json({ ok: true, data: { result: null, stdout: JSON.stringify({ perform: false }) } }),
+      HttpResponse.json({
+        ok: true,
+        data: { result: null, stdout: JSON.stringify({ perform: false }) },
+      }),
     ),
     http.get(`${TD_BASE}/api/preview/:seg`, ({ params }) =>
       HttpResponse.json({
         ok: true,
-        data: { path: `/project1/${String(params.seg)}`, width: 128, height: 128, format: "png", base64 },
+        data: {
+          path: `/project1/${String(params.seg)}`,
+          width: 128,
+          height: 128,
+          format: "png",
+          base64,
+        },
       }),
     ),
   );

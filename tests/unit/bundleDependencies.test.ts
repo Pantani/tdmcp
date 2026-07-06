@@ -42,7 +42,10 @@ function queueExec(reports: unknown[]): { scripts: string[] } {
       scripts.push(body.script);
       const report = reports[Math.min(i, reports.length - 1)];
       i += 1;
-      return HttpResponse.json({ ok: true, data: { result: null, stdout: JSON.stringify(report) } });
+      return HttpResponse.json({
+        ok: true,
+        data: { result: null, stdout: JSON.stringify(report) },
+      });
     }),
   );
   return { scripts };
@@ -66,8 +69,20 @@ describe("bundle_dependencies", () => {
     const collect = {
       parent: "/project1/scene",
       assets: [
-        { node: "/project1/scene/moviein1", par: "file", value: srcClip, exists: true, kind: "style:File" },
-        { node: "/project1/scene/text1", par: "fontfile", value: srcFont, exists: true, kind: "name:fontfile" },
+        {
+          node: "/project1/scene/moviein1",
+          par: "file",
+          value: srcClip,
+          exists: true,
+          kind: "style:File",
+        },
+        {
+          node: "/project1/scene/text1",
+          par: "fontfile",
+          value: srcFont,
+          exists: true,
+          kind: "name:fontfile",
+        },
       ],
       count: 2,
       missing_count: 0,
@@ -191,7 +206,16 @@ describe("bundle_dependencies", () => {
   });
 
   it("returns an isError result (no throw) when the scan reports fatal", async () => {
-    queueExec([{ parent: "/nope", assets: [], count: 0, missing_count: 0, warnings: [], fatal: "COMP not found: /nope" }]);
+    queueExec([
+      {
+        parent: "/nope",
+        assets: [],
+        count: 0,
+        missing_count: 0,
+        warnings: [],
+        fatal: "COMP not found: /nope",
+      },
+    ]);
     const result = await bundleDependenciesImpl(makeCtx(), {
       comp_path: "/nope",
       out_dir: "/tmp/pkg",
@@ -212,6 +236,9 @@ describe("bundle_dependencies", () => {
     };
     registerBundleDependencies(fakeServer as never, makeCtx());
     expect(calls[0]?.name).toBe("bundle_dependencies");
-    expect(calls[0]?.options.annotations).toMatchObject({ readOnlyHint: false, destructiveHint: true });
+    expect(calls[0]?.options.annotations).toMatchObject({
+      readOnlyHint: false,
+      destructiveHint: true,
+    });
   });
 });
