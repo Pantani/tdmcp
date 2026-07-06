@@ -23,6 +23,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   project and clicking **Install** — no Textport, no Preferences, no clone. The
   `td/README.md` "Easiest install" now leads with this path.
 
+### Fixed
+
+- Recipe `audio_spectrum_bars`: pin the `bars` GLSL TOP to a custom 1280×720
+  output resolution. It previously inherited a 16384×1 resolution from the audio
+  spectrum `choptoTOP`, so `out1` rendered as a 1-pixel strip instead of a
+  viewable spectrum-bars visual (live-validated in TD 099 build 2025.32820).
+
 ## [0.12.0] - 2026-07-04
 
 ### Added
