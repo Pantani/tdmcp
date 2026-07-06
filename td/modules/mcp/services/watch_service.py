@@ -133,7 +133,7 @@ def unregister(path, pars=None):
     return {"path": resolved, "pars": _pars_list(remaining), "watching": True}
 
 
-def _resolve_watch_key(node, path):
+def _resolve_watch_key(node, path) -> str:
     """The registry key to unregister under.
 
     ``register`` stores under the op's canonical ``node.path``. At unregister time
@@ -147,13 +147,16 @@ def _resolve_watch_key(node, path):
     if path in _WATCHES:
         return path
     leaf = path.rsplit("/", 1)[-1]
-    for key in _WATCHES:
-        if key == path or key.rsplit("/", 1)[-1] == leaf:
-            return key
+    # Only use the leaf fallback when it is unambiguous — two watched paths that
+    # share a basename (e.g. /a/level1 and /b/level1) must not let unregister("level1")
+    # remove the wrong subscription.
+    matches = [key for key in _WATCHES if key.rsplit("/", 1)[-1] == leaf]
+    if len(matches) == 1:
+        return matches[0]
     return path
 
 
-def _clear_emit_state(path, pars=None):
+def _clear_emit_state(path, pars=None) -> None:
     """Drop snapshot/emit state for ``path``.
 
     With ``pars`` None, clears every (path, *) key (full unregister). With a set of
@@ -161,7 +164,7 @@ def _clear_emit_state(path, pars=None):
     pars keep their snapshots and only the removed names reset to first-sight.
     """
 
-    def _match(key):
+    def _match(key) -> bool:
         return key[0] == path and (pars is None or key[1] in pars)
 
     for key in [k for k in _LAST_EMIT if _match(k)]:

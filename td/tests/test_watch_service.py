@@ -278,7 +278,7 @@ class PollTests(unittest.TestCase):
         node.par.add("opacity", 1.0)
         self._register(node, ["opacity"])
         # Poll with a graph that no longer resolves the path -> skipped, no raise.
-        self.assertEqual(ws.poll(op_resolver=lambda p: None, frame=1, now_s=1000.0), [])
+        self.assertEqual(ws.poll(op_resolver=lambda _p: None, frame=1, now_s=1000.0), [])
 
     def test_partial_unregister_clears_removed_par_snapshot(self):
         # Regression: unregistering only SOME par names must purge the removed names'

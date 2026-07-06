@@ -640,7 +640,7 @@ export class TouchDesignerClient {
     if (isMissingEndpoint(err)) {
       return new TdApiError(
         "This TouchDesigner bridge predates parameter-change watching. Reinstall or update the tdmcp bridge (its Parameter Execute DAT emits the param.changed events).",
-        { status: err instanceof TdApiError ? err.status : 404 },
+        { status: err instanceof TdApiError ? err.status : 404, cause: err },
       );
     }
     return err;

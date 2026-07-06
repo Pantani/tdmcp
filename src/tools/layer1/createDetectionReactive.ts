@@ -112,6 +112,7 @@ def _set_script_cook(_op, _text):
         # Create a Text DAT and wire it as the callbacks source.
         _cb = _try("callbacks dat", lambda: _op.parent().create(textDAT, _op.name + '_callbacks'))
         if _cb is not None:
+            _place(_cb, 200, -140)
             _try("callbacks par", lambda: setattr(_op.par, "callbacks", _cb.name))
     if _cb is None:
         report["warnings"].append("Could not resolve callbacks DAT for " + _op.path)
@@ -186,6 +187,7 @@ try:
         report["fatal"] = "Parent COMP not found: " + str(_p["parent_path"])
     else:
         _c = _parent.create(baseCOMP, _p["name"])
+        _place(_c, 0, 0)
         report["container"] = _c.path
         # detect (scriptCHOP) sits in the middle column; the source feeds it from the left
         # and the detections null exits to the right.

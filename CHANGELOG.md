@@ -111,6 +111,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
       the `osc` Out CHOP right.
     - Live-validated on TD 099 build 2025.32820: every tool-created op lands at a
       distinct coordinate and all five networks cook with `errors:[]`.
+  - **PR #128 review pass 3 (re-review follow-ups):** the watch-service
+    deleted-alias fallback now only matches a leaf name when it is **unambiguous**
+    (two watched paths sharing a basename, e.g. `/a/level1` and `/b/level1`, no
+    longer let `unregister("level1")` remove the wrong subscription); `create_detection_reactive`
+    now positions its container COMP and the fallback callbacks DAT; `mapMissingWatchEndpoint`
+    preserves the original error as `cause`; and the watch-service helpers gained
+    Ruff return-type annotations (`_resolve_watch_key`/`_clear_emit_state`/`_match`).
 
 - `create_pointer_reactive` no longer leaks undocumented channels past its output
   Null (roadmap-to-1.0 polish, live-validated on TD 099 build 2025.32820). The
