@@ -9,7 +9,12 @@
     { "name": "audioin", "type": "audiodeviceinCHOP", "comment": "Live audio input" },
     { "name": "spectrum", "type": "audiospectrumCHOP", "comment": "FFT spectrum" },
     { "name": "audio_tex", "type": "choptoTOP", "comment": "Spectrum as a 1-row texture" },
-    { "name": "bars", "type": "glslTOP", "comment": "Draws the bars from the spectrum texture" },
+    {
+      "name": "bars",
+      "type": "glslTOP",
+      "comment": "Draws the bars from the spectrum texture",
+      "parameters": { "outputresolution": "custom", "resolutionw": 1280, "resolutionh": 720 }
+    },
     { "name": "out1", "type": "nullTOP" }
   ],
   "connections": [
