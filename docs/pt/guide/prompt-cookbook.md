@@ -31,13 +31,13 @@ pedir uma passada criativa. São bons para workshop e ensaio porque partem de re
 checadas por schema, não de topologia inventada do zero.
 
 > *"Aplique `audio_reactive_basic`, use um tom de teste se o mic não estiver
-> disponível, então ligue a cor de saída ao nível RMS e me mostre o caminho do Null
-> de áudio."*
+> disponível, e me mostre o caminho do Null de áudio dirigindo a cor de saída."*
 
 <video :src="withBase('/examples/recipe-audio-reactive-basic.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
-*Uma cadeia compacta de audio-in / spectrum / RMS com Null CHOP estável e saída TOP
-pronta para `bind_to_channel` ou expressões manuais.*
+*Uma cadeia compacta de audio-in / spectrum / RMS com Null CHOP estável. A cor da
+saída TOP já está ligada ao nível RMS por expressões, então o quadro pulsa com o
+áudio de imediato.*
 
 > *"Aplique `keyframe_animation_basic`, adicione cinco keyframes legíveis de câmera
 > ou objeto e exponha um controle Speed para eu ensaiar o movimento sem abrir o

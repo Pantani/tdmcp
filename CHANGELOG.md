@@ -14,6 +14,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   GitHub Release. End users then install the bridge by dragging the `.tox` into a
   project and clicking **Install** — no Textport, no Preferences, no clone. The
   `td/README.md` "Easiest install" now leads with this path.
+- Recipe parameter expressions: a recipe `parameters` entry can now carry an
+  `expr` (Python expression) so `apply_recipe` binds the parameter in expression
+  mode instead of setting a constant. `op('<recipeNodeName>')` references are
+  rewritten to the real created paths at build time, and the bridge param-mode
+  endpoint is used with an `/api/exec` fallback for older bridges.
+
+### Fixed
+
+- `audio_reactive_basic` is now actually audio-reactive: `out_color`'s
+  `colorr/g/b` are bound to the RMS `level_null` channel via expressions instead
+  of being left as CONSTANT 1.0. Previously the level→color bind was documented as
+  a manual wire and never applied, so the built network did not react to audio
+  (found in live TD validation). Re-validated live in TD 099 build 2025.32820.
 
 ## [0.12.0] - 2026-07-04
 
