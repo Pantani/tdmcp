@@ -6,6 +6,38 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- `audio_reactive_basic` recipe: the placeholder frame now reacts to audio out of
+  the box instead of sitting at a static color. Two root causes, both live-debugged
+  in TouchDesigner 099 build 2025.32820: the `level` analyzeCHOP's `function` was
+  given as the integer `6`, which the bridge's menu validation rejects (menu params
+  take names, not indices) so it silently stayed on `average` — now `"rmspower"`;
+  and `out_color` was never wired to the level, so it never pulsed — a `color_drive`
+  CHOP Execute callback now drives its violet brightness from the RMS level. Verified
+  live with a synthetic tone (RMS is 0 without a mic); the audio-reactive-visual
+  tutorial video was re-captured from the recipe's own output.
+- `audio_spectrum_bars` recipe: the `spectrum` had no output length set, so the
+  CHOP-to-TOP texture was a ~16k-wide strip and the raw FFT energy landed in a
+  handful of bins that rendered as a near-flat 1px line. The spectrum is now clamped
+  to 256 bins (`setmanually`/`outlength`) and the `bars` GLSL TOP has an explicit
+  output resolution, so it renders a full-height bar visual. Live-validated in TD 099
+  build 2025.32820.
+- `optical_flow_particles` recipe was non-functional end to end (black render, flat
+  flow field), live-debugged and fixed in TouchDesigner 099 build 2025.32820: the
+  particleSOP now renders as point sprites (the default `prtype` "lines" draws
+  nothing visible) with a soft circular sprite texture and visible point size; the
+  cacheTOP previous-frame tap uses `outputindex -1` (0 returned the current frame,
+  so the frame difference was always zero); the frame difference uses the
+  `difference` operand plus a gain stage, and the displaceTOP midpoint is 0 so no
+  motion means no displacement; the invalid `extforce`/`loop` parameters were
+  removed. The flow now actually drives the particles out of the box: a
+  topto→analyze→null CHOP chain measures motion energy and a CHOP Execute callback
+  scales the particle turbulence/wind with it. Output composites the particles over
+  a darkened flow texture. The camera-interactive-installation tutorial (EN+PT) now
+  embeds a live-captured video of the recipe's own output instead of the "best seen
+  live" hedge.
+
 ### Added
 
 - Artist-friendly docs information architecture: the guide sidebar is now 7
@@ -22,13 +54,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   GitHub Release. End users then install the bridge by dragging the `.tox` into a
   project and clicking **Install** — no Textport, no Preferences, no clone. The
   `td/README.md` "Easiest install" now leads with this path.
-
-### Fixed
-
-- Recipe `audio_spectrum_bars`: pin the `bars` GLSL TOP to a custom 1280×720
-  output resolution. It previously inherited a 16384×1 resolution from the audio
-  spectrum `choptoTOP`, so `out1` rendered as a 1-pixel strip instead of a
-  viewable spectrum-bars visual (live-validated in TD 099 build 2025.32820).
 
 ## [0.12.0] - 2026-07-04
 

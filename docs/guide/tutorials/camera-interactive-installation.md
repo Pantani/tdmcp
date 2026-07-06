@@ -3,6 +3,10 @@ description: "Turn a webcam into an interactive installation with tdmcp — move
 level: intermediate
 ---
 
+<script setup>
+import { withBase } from "vitepress";
+</script>
+
 # A camera-interactive installation <Badge type="info" text="Intermediate" />
 
 **Objective** — build a webcam installation where a viewer's movement spawns glowing
@@ -12,12 +16,10 @@ particle trails, ready to project onto a wall.
 wherever motion happens in front of the camera. Stand still and it calms; move and
 the room paints itself.
 
-::: tip Live result
-This one is best seen live — the look depends entirely on real movement in front of
-your camera, so a canned clip wouldn't represent what you'll build. Follow the steps
-with your own webcam (or the synthetic test source) and use **"show me a preview"** at
-any point to see your result.
-:::
+<video :src="withBase('/examples/tutorial-camera-interactive-installation.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*The optical-flow particle field driven by a moving test clip — with your webcam, the
+particles churn wherever people move. Captured live from the recipe's own output.*
 
 **Before you start**
 
@@ -52,19 +54,18 @@ sending the next.
    Apply the optical_flow_particles recipe, driven by my webcam. Use the bundled test clip if my camera is not ready.
    ```
 
-   → You get a network with two branches: an optical-flow field reading motion from
-   the camera, and a particle render. The recipe leaves them **unconnected on
-   purpose** — wiring the flow into the particles is the next step.
+   → You get a network that reads motion from the camera as an optical-flow field and
+   feeds it straight into the particle render — motion in front of the camera already
+   stirs the particles out of the box.
 
-3. Wire the flow into the particles so they follow movement:
+3. Make the reaction stronger and driftier:
 
    ```text
-   Wire the optical flow output (flow_out) into the particle simulation, so particles spawn and drift where movement happens and motion in front of the camera paints them.
+   Make the particles react more to movement and drift once they're stirred, so motion in front of the camera really paints them.
    ```
 
-   → The flow field now pushes the particles — moving in front of the camera stirs
-   them. Until this step, the particles move on their own, independent of the
-   camera.
+   → The particles respond harder to motion and keep drifting after they're pushed,
+   so the field feels alive rather than snapping back.
 
 4. Set the installation mood:
 

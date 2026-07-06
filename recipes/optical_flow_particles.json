@@ -1,7 +1,7 @@
 {
   "id": "optical_flow_particles",
   "name": "Optical Flow Particles",
-  "description": "CPU optical-flow surrogate (frame-difference + blur, non-CUDA) extracted from a video source, plus a parallel grid-emitter particle render. The flow TOP modulates a displaceTOP that warps a noise field, exposed at flow_out as a particle-driving texture; wiring flow_out into the particle simulation (e.g. as an extforcetop on the particleSOP, or via a chopToSOP to displace emitter points) is left to the user. The particle branch currently renders independently of the flow. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "description": "CPU optical-flow surrogate (previous-frame difference + blur, non-CUDA) extracted from a video source, driving both a flow-warped noise texture (flow_out) and a particle render. The motion energy is measured (topto → analyze average → flow_level) and a CHOP Execute callback scales the particleSOP's turbulence and wind with it, so motion in the source visibly stirs the particles out of the box. Swap 'source' for a videodeviceinTOP to drive it from a live camera (the default movie file is a static image, so expect a calm field until a moving source is wired in). Live-validated in TouchDesigner 099 build 2025.32820.",
   "tags": ["optical-flow", "particle", "video", "reactive", "motion"],
   "difficulty": "advanced",
   "td_version_min": "2023",
@@ -9,13 +9,17 @@
     {
       "name": "source",
       "type": "moviefileinTOP",
-      "parameters": { "play": 1, "loop": 1 },
-      "comment": "Video source (swap to videodeviceinTOP for live camera)"
+      "parameters": {
+        "play": 1
+      },
+      "comment": "Video source (swap to videodeviceinTOP for live camera). Default file is a static sample image — wire a moving source for flow."
     },
     {
       "name": "pre_blur",
       "type": "blurTOP",
-      "parameters": { "size": 2.0 },
+      "parameters": {
+        "size": 2.0
+      },
       "comment": "Spatial pre-blur to suppress high-frequency noise"
     },
     {
@@ -26,36 +30,95 @@
     {
       "name": "cache_prev",
       "type": "cacheTOP",
-      "parameters": { "cachesize": 2, "replaceindex": -1, "outputindex": 0 },
-      "comment": "Previous frame for temporal diff (non-CUDA optical flow surrogate)"
+      "parameters": {
+        "cachesize": 2,
+        "replaceindex": -1,
+        "outputindex": -1
+      },
+      "comment": "Previous frame for temporal diff (outputindex -1 = one frame back)"
     },
     {
       "name": "flow",
       "type": "compositeTOP",
-      "parameters": { "operand": "subtract" },
-      "comment": "Frame difference = motion energy; current minus previous luminance"
+      "parameters": {
+        "operand": "difference"
+      },
+      "comment": "Absolute frame difference = motion energy"
     },
     {
       "name": "flow_blur",
       "type": "blurTOP",
-      "parameters": { "size": 4.0 },
-      "comment": "Smooth the flow into a vector-ish displacement field"
+      "parameters": {
+        "size": 4.0
+      },
+      "comment": "Smooth the motion energy into a soft displacement field"
+    },
+    {
+      "name": "flow_gain",
+      "type": "levelTOP",
+      "parameters": {
+        "brightness1": 2.0,
+        "outputresolution": "custom",
+        "resolutionw": 64,
+        "resolutionh": 64
+      },
+      "comment": "Amplifies the (small) frame-difference so displace and the particle drive respond; downsampled so the CHOP readback stays cheap"
     },
     {
       "name": "noise_field",
       "type": "noiseTOP",
-      "parameters": { "resolutionw": 512, "resolutionh": 512, "period": 4.0 },
+      "parameters": {
+        "resolutionw": 512,
+        "resolutionh": 512,
+        "period": 4.0
+      },
       "comment": "Base noise that gets warped by optical flow"
     },
     {
       "name": "displace",
       "type": "displaceTOP",
-      "comment": "Warps noise by flow vectors — motion pushes the field"
+      "parameters": {
+        "midpointx": 0,
+        "midpointy": 0,
+        "displaceweightx": 0.4,
+        "displaceweighty": 0.4
+      },
+      "comment": "Warps noise by motion energy; midpoint 0 so no motion = no displacement"
     },
     {
       "name": "flow_out",
       "type": "nullTOP",
-      "comment": "Particle-driving texture (flow-warped noise)"
+      "comment": "Flow-warped noise texture (also useful as a projection layer)"
+    },
+    {
+      "name": "flow_to_chop",
+      "type": "toptoCHOP",
+      "parameters": {
+        "top": "flow_gain"
+      },
+      "comment": "Reads the (64x64) motion-energy texture into CHOP samples"
+    },
+    {
+      "name": "flow_analyze",
+      "type": "analyzeCHOP",
+      "parameters": {
+        "function": "average"
+      },
+      "comment": "Overall motion energy as a single value"
+    },
+    {
+      "name": "flow_level",
+      "type": "nullCHOP",
+      "comment": "Stable motion-energy level (0 = still, rises with movement)"
+    },
+    {
+      "name": "flow_drive",
+      "type": "chopexecuteDAT",
+      "parameters": {
+        "chop": "flow_level",
+        "valuechange": 1
+      },
+      "comment": "Pushes motion energy into the particle sim (turbulence + wind) via its callback"
     },
     {
       "name": "geo",
@@ -66,7 +129,12 @@
       "name": "emitter",
       "type": "gridSOP",
       "parent": "geo",
-      "parameters": { "rows": 20, "cols": 20 },
+      "parameters": {
+        "rows": 20,
+        "cols": 20,
+        "sizex": 3,
+        "sizey": 3
+      },
       "comment": "Grid emitter — particles spawn from grid vertices"
     },
     {
@@ -74,33 +142,188 @@
       "type": "particleSOP",
       "parent": "geo",
       "render": true,
-      "parameters": { "life": 3, "extforce": 0.5 },
-      "comment": "Particle simulation driven by the emitter"
+      "parameters": {
+        "prtype": "pointsprites",
+        "life": 4,
+        "birth": 200,
+        "turbx": 0.3,
+        "turby": 0.3,
+        "turbz": 0.3,
+        "jitter": 0.6
+      },
+      "comment": "Particle simulation rendered as point sprites (default 'lines' is invisible); baseline turbulence keeps it alive, flow_drive raises it with motion"
     },
-    { "name": "mat", "type": "pointspriteMAT", "comment": "Glowing sprite material" },
-    { "name": "cam", "type": "cameraCOMP", "parameters": { "tz": 4 } },
-    { "name": "light", "type": "lightCOMP", "parameters": { "tx": 2, "ty": 3, "tz": 4 } },
-    { "name": "render", "type": "renderTOP", "comment": "Final particle render" },
-    { "name": "out1", "type": "nullTOP" }
+    {
+      "name": "sprite_tex",
+      "type": "circleTOP",
+      "parameters": {
+        "outputresolution": "custom",
+        "resolutionw": 64,
+        "resolutionh": 64,
+        "radiusx": 0.35,
+        "radiusy": 0.35,
+        "softness": 0.15,
+        "bgalpha": 0.0
+      },
+      "comment": "Soft radial dot used as the sprite texture, so particles read as glow points"
+    },
+    {
+      "name": "mat",
+      "type": "pointspriteMAT",
+      "parameters": {
+        "pointsize": 14,
+        "colorr": 0.45,
+        "colorg": 0.75,
+        "colorb": 1.0
+      },
+      "comment": "Glowing sprite material (pointsize > 1 so particles are actually visible)"
+    },
+    {
+      "name": "cam",
+      "type": "cameraCOMP",
+      "parameters": {
+        "tz": 4
+      }
+    },
+    {
+      "name": "light",
+      "type": "lightCOMP",
+      "parameters": {
+        "tx": 2,
+        "ty": 3,
+        "tz": 4
+      }
+    },
+    {
+      "name": "render",
+      "type": "renderTOP",
+      "comment": "Final particle render"
+    },
+    {
+      "name": "bg_dim",
+      "type": "levelTOP",
+      "parameters": {
+        "brightness1": 0.3
+      },
+      "comment": "Darkened flow texture as the moody backdrop (brightness, not opacity, so alpha stays 1)"
+    },
+    {
+      "name": "comp",
+      "type": "overTOP",
+      "comment": "Particles composited over the dark flow backdrop"
+    },
+    {
+      "name": "out1",
+      "type": "nullTOP"
+    }
   ],
   "connections": [
-    { "from": "source", "to": "pre_blur" },
-    { "from": "pre_blur", "to": "mono" },
-    { "from": "mono", "to": "cache_prev" },
-    { "from": "mono", "to": "flow", "to_input": 0 },
-    { "from": "cache_prev", "to": "flow", "to_input": 1 },
-    { "from": "flow", "to": "flow_blur" },
-    { "from": "noise_field", "to": "displace", "to_input": 0 },
-    { "from": "flow_blur", "to": "displace", "to_input": 1 },
-    { "from": "displace", "to": "flow_out" },
-    { "from": "emitter", "to": "particle" },
-    { "from": "render", "to": "out1" }
+    {
+      "from": "source",
+      "to": "pre_blur"
+    },
+    {
+      "from": "pre_blur",
+      "to": "mono"
+    },
+    {
+      "from": "mono",
+      "to": "cache_prev"
+    },
+    {
+      "from": "mono",
+      "to": "flow",
+      "to_input": 0
+    },
+    {
+      "from": "cache_prev",
+      "to": "flow",
+      "to_input": 1
+    },
+    {
+      "from": "flow",
+      "to": "flow_blur"
+    },
+    {
+      "from": "flow_blur",
+      "to": "flow_gain"
+    },
+    {
+      "from": "noise_field",
+      "to": "displace",
+      "to_input": 0
+    },
+    {
+      "from": "flow_gain",
+      "to": "displace",
+      "to_input": 1
+    },
+    {
+      "from": "displace",
+      "to": "flow_out"
+    },
+    {
+      "from": "flow_to_chop",
+      "to": "flow_analyze"
+    },
+    {
+      "from": "flow_analyze",
+      "to": "flow_level"
+    },
+    {
+      "from": "emitter",
+      "to": "particle"
+    },
+    {
+      "from": "flow_out",
+      "to": "bg_dim"
+    },
+    {
+      "from": "render",
+      "to": "comp",
+      "to_input": 0
+    },
+    {
+      "from": "bg_dim",
+      "to": "comp",
+      "to_input": 1
+    },
+    {
+      "from": "comp",
+      "to": "out1"
+    }
   ],
   "parameters": [
-    { "name": "geometry", "node": "render", "param": "geometry", "value": "geo" },
-    { "name": "camera", "node": "render", "param": "camera", "value": "cam" },
-    { "name": "lights", "node": "render", "param": "lights", "value": "light" },
-    { "name": "material", "node": "geo", "param": "material", "value": "mat" },
+    {
+      "name": "geometry",
+      "node": "render",
+      "param": "geometry",
+      "value": "geo"
+    },
+    {
+      "name": "camera",
+      "node": "render",
+      "param": "camera",
+      "value": "cam"
+    },
+    {
+      "name": "lights",
+      "node": "render",
+      "param": "lights",
+      "value": "light"
+    },
+    {
+      "name": "material",
+      "node": "geo",
+      "param": "material",
+      "value": "mat"
+    },
+    {
+      "name": "sprite_map",
+      "node": "mat",
+      "param": "colormap",
+      "value": "sprite_tex"
+    },
     {
       "name": "flow_smoothing",
       "node": "flow_blur",
@@ -111,23 +334,35 @@
       "label": "Flow Smoothing"
     },
     {
+      "name": "flow_sensitivity",
+      "node": "flow_gain",
+      "param": "brightness1",
+      "value": 2.0,
+      "min": 0.0,
+      "max": 10.0,
+      "label": "Flow Sensitivity"
+    },
+    {
       "name": "particle_life",
       "node": "particle",
       "param": "life",
-      "value": 3,
+      "value": 4,
       "min": 0.5,
       "max": 15,
       "label": "Particle Lifetime"
     },
     {
-      "name": "ext_force",
-      "node": "particle",
-      "param": "extforce",
-      "value": 0.5,
-      "min": 0,
-      "max": 5,
-      "label": "External Force"
+      "name": "particle_size",
+      "node": "mat",
+      "param": "pointsize",
+      "value": 14,
+      "min": 1,
+      "max": 30,
+      "label": "Particle Size"
     }
   ],
-  "preview_description": "A particle grid renders alongside an optical-flow texture (flow_out). Once the user wires flow_out into the particle simulation, particles get pushed by motion in the source; out of the box, the particle branch is independent of the flow. metadata: offline-validated against RecipeSchema; live cook-check in TouchDesigner UNVERIFIED."
+  "python_code": {
+    "flow_drive": "def onValueChange(channel, sampleIndex, val, prev):\n    p = op('geo/particle').par\n    k = max(0.0, min(val * 6.0, 2.5))\n    p.turbx = 0.3 + k\n    p.turby = 0.3 + k\n    p.turbz = 0.3 + k\n    p.windx = k * 0.4\n    return\n"
+  },
+  "preview_description": "A dark field of glowing particle sprites over a flow-warped noise texture (flow_out). Motion in the video source raises the measured flow level, which stirs the particles with turbulence and wind — stand still and it calms, move and it churns. Live-validated in TouchDesigner 099 build 2025.32820."
 }

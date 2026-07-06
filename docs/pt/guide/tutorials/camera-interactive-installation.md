@@ -3,6 +3,10 @@ description: "Transforme uma webcam numa instalação interativa com o tdmcp —
 level: intermediate
 ---
 
+<script setup>
+import { withBase } from "vitepress";
+</script>
+
 # Uma instalação interativa por câmera <Badge type="info" text="Intermediário" />
 
 **Objetivo** — montar uma instalação com webcam em que o movimento de quem assiste
@@ -12,12 +16,11 @@ gera rastros de partículas brilhantes, prontos para projetar numa parede.
 e deixam rastros onde há movimento diante da câmera. Fique parado e ele se acalma;
 mexa-se e a sala se pinta sozinha.
 
-::: tip Resultado ao vivo
-Este é melhor visto ao vivo — o visual depende inteiramente do movimento real diante
-da sua câmera, então um clipe pronto não representaria o que você vai construir. Siga os
-passos com a sua webcam (ou a fonte de teste sintética) e use **"me mostre uma prévia"**
-a qualquer momento para ver o seu resultado.
-:::
+<video :src="withBase('/examples/tutorial-camera-interactive-installation.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*O campo de partículas por fluxo óptico dirigido por um clipe de teste em movimento — com
+a sua webcam, as partículas se agitam onde as pessoas se mexem. Capturado ao vivo da
+própria saída da recipe.*
 
 **Antes de começar**
 
@@ -52,19 +55,18 @@ antes de enviar o próximo.
    Aplique a receita optical_flow_particles, alimentada pela minha webcam. Use o clipe de teste incluído se a minha câmera não estiver pronta.
    ```
 
-   → Você recebe uma rede com dois ramos: um campo de fluxo óptico lendo o movimento
-   da câmera e um render de partículas. A receita os deixa **desconectados de
-   propósito** — ligar o fluxo às partículas é o próximo passo.
+   → Você recebe uma rede que lê o movimento da câmera como um campo de fluxo óptico
+   e o injeta direto no render de partículas — o movimento diante da câmera já agita
+   as partículas de imediato.
 
-3. Ligue o fluxo às partículas para elas seguirem o movimento:
+3. Deixe a reação mais forte e com mais deriva:
 
    ```text
-   Ligue a saída do fluxo óptico (flow_out) na simulação de partículas, para que as partículas nasçam e derivem onde há movimento e o movimento diante da câmera as pinte.
+   Faça as partículas reagirem mais ao movimento e derivarem depois de agitadas, para que o movimento diante da câmera realmente as pinte.
    ```
 
-   → O campo de fluxo agora empurra as partículas — mexer-se diante da câmera as
-   agita. Antes deste passo, as partículas se movem sozinhas, independentes da
-   câmera.
+   → As partículas respondem com mais força ao movimento e continuam derivando depois
+   de empurradas, deixando o campo vivo em vez de voltar ao lugar.
 
 4. Defina a atmosfera da instalação:
 
