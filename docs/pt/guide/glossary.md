@@ -119,8 +119,7 @@ receitas, setlists, moodboards, presets e um diário de shows.
 
 **`.mcpb`**
 : O único arquivo de extensão (MCP Bundle) que você instala no Claude Desktop. O
-servidor tdmcp vem embutido nele. Antes se chamava `.dxt` — arquivos `.dxt` antigos
-ainda instalam, mas `.mcpb` é o formato atual.
+servidor tdmcp vem embutido nele.
 
 **`.tox`**
 : Um arquivo de componente do TouchDesigner que você arrasta para qualquer projeto

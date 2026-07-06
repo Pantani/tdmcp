@@ -11,7 +11,7 @@ function userConfigEnv(name: string): string {
 
 describe("MCPB manifest safety controls", () => {
   it("exposes bridge auth and raw-tool profile controls to extension users", () => {
-    const manifest = JSON.parse(readFileSync(join(root, "dxt", "manifest.json"), "utf8")) as {
+    const manifest = JSON.parse(readFileSync(join(root, "mcpb", "manifest.json"), "utf8")) as {
       server?: { mcp_config?: { env?: Record<string, string> } };
       user_config?: Record<
         string,

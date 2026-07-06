@@ -232,6 +232,7 @@ export const registerRunMacroScript: ToolRegistrar = (server, ctx) => {
       description:
         "Replay a `MacroRecord` JSON file by dispatching each entry through the in-process tool handlers. Use `dryRun` to plan without invoking, `stopOnError` to halt on first failure, `argsOverrides` to shallow-merge per-tool arg replacements, and `allowRawPython` to opt-in to raw-Python entries (still subject to the server-side ctx gate). Redacted args from a recording may fail at the tool boundary; do not un-redact.",
       inputSchema: runMacroScriptSchema.shape,
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
     (args) => runMacroScriptImpl(ctx, args),
   );

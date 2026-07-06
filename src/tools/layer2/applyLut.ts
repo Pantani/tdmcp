@@ -438,6 +438,7 @@ export const registerApplyLut: ToolRegistrar = (server, ctx) =>
         "Strength and Bypass controls on a custom page. Pass `source_path` to grade an " +
         "existing TOP, or omit it for a standalone preview on a grey Constant TOP.",
       inputSchema: applyLutSchema.shape,
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
     (rawArgs) => {
       const parsed = applyLutSchema.safeParse(rawArgs);

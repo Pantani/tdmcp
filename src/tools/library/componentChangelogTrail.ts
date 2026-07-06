@@ -264,6 +264,7 @@ export const registerComponentChangelogTrail: ToolRegistrar = (server, ctx) =>
         "into the vault. Offline — no TD bridge required. Pairs with save_component_to_vault " +
         "and provenance_stamp.",
       inputSchema: componentChangelogTrailSchema.shape,
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
     },
     (callArgs) => componentChangelogTrailImpl(ctx, callArgs),
   );

@@ -886,7 +886,7 @@ troubleshooting and glossary.
 
 ### G6 — One-click install & Connectors Directory · 🧪
 
-The `.mcpb` (formerly `.dxt`) Claude Desktop bundle is built by
+The `.mcpb` Claude Desktop bundle is built by
 `npm run build:mcpb` and ships on every GitHub release; install docs cover the
 one-click path.
 

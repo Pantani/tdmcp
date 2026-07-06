@@ -6,6 +6,32 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Connectors Directory submission readiness (roadmap gate G6): bundled a Desktop-
+  extension icon (`mcpb/icon.png`, referenced by `manifest.icon`) and enriched the
+  MCPB manifest with `long_description`, `icon`, `repository`, `homepage`,
+  `documentation`, `support`, `license`, `keywords`, `tools_generated`, and
+  `privacy_policies` — all schema-validated by the official `@anthropic-ai/mcpb`
+  packer. A field-by-field submission draft, approval-gate checklist, and migration
+  notes were written under `_workspace/`.
+
+### Changed
+
+- Renamed the Desktop-extension build artifacts to match the current `.mcpb`
+  format: `dxt/` → `mcpb/`, `scripts/build-dxt.mjs` → `scripts/build-mcpb.mjs`
+  (log prefix `[build-mcpb]`), `tests/unit/buildDxtScript.test.ts` →
+  `buildMcpbScript.test.ts`; updated `package.json`, `sync-manifest-version.mjs`,
+  and the release workflow. Swept stale `.dxt` format references from the README,
+  install/glossary guides (EN + PT), CLI reference, roadmap, and deployment guide.
+  The `@anthropic-ai/dxt` fallback packer name is retained — it is a real
+  dependency, not a stale format reference.
+- Privacy policy (EN + PT): corrected the network-activity section to disclose the
+  opt-in, user-initiated outbound calls (`import_shadertoy` → Shadertoy API,
+  `import_isf_shader` → user URL, and the optional local AI copilot) instead of
+  claiming localhost-only egress. The no-telemetry / no-data-collection guarantees
+  are unchanged.
+
 ### Fixed
 
 - PR #128 review fixes (parameter-watch event path + inline-image + copilot
@@ -152,6 +178,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `front_of_house_dashboard`, `sidechain_pump`) all cooked with `errors: []`
   unchanged. `validate:recipes` stays 50/50.
 
+- Tool-annotation directory gate: 14 tools registered without MCP safety
+  annotations; every tool now carries `readOnlyHint` / `destructiveHint` /
+  `openWorldHint`. `merge_vaults`, `manage_component_storage`, and `macro_recorder`
+  (which can overwrite/delete user data or truncate a caller-named file) are now
+  flagged `destructiveHint: true` and hidden by the `safe` tool profile (added to
+  `SAFE_PROFILE_EXCLUDE`).
 - `audio_reactive_basic` recipe: the placeholder frame now reacts to audio out of
   the box instead of sitting at a static color. Two root causes, both live-debugged
   in TouchDesigner 099 build 2025.32820: the `level` analyzeCHOP's `function` was
