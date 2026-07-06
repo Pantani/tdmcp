@@ -3,9 +3,11 @@
  *
  * Single-call search endpoint. The API key is read from
  * `process.env.TDMCP_RAG_EUROPEANA_KEY` INSIDE `fetchItems`: if it is absent or
- * empty the adapter throws `SourceSkippedError` so the sync treats this source as
- * skipped (NOT an empty success) and never tombstones its existing cards. The
- * key value is NEVER logged.
+ * empty the adapter throws `SourceSkippedError` (reason `"no-key"`) so the sync treats
+ * this source as skipped (NOT an empty success) and never tombstones its existing cards.
+ * A keyed request that comes back with zero items is likewise treated as an untrusted
+ * skip (reason `"empty"`) — a rejected key or a silent upstream outage returning HTTP 200
+ * must not tombstone the whole source. The key value is NEVER logged.
  *
  * License signal is the per-item `rights[0]` CC/RS URI (e.g.
  * `http://creativecommons.org/publicdomain/zero/1.0/`), classified by the
@@ -117,8 +119,8 @@ export const europeanaSource: Source = {
     if (!key) {
       // Throw (not return []): a missing key is a SKIPPED source, not a successful
       // empty sync — see SourceSkippedError. Returning [] would let service.sync
-      // tombstone every existing Europeana card.
-      throw new SourceSkippedError("Europeana", KEY_ENV);
+      // tombstone every existing Europeana card. reason "no-key" is the default.
+      throw new SourceSkippedError("Europeana", KEY_ENV, "no-key");
     }
 
     const url =
@@ -130,6 +132,15 @@ export const europeanaSource: Source = {
     }
     const body = (await response.json()) as EuropeanaSearchResponse;
     const data = Array.isArray(body.items) ? body.items : [];
+
+    if (data.length === 0) {
+      // Keyed request that returned zero items for the `*` catalog query. A truly empty
+      // Europeana is implausible, so this is far more likely a silent upstream hiccup or
+      // a rejected/misconfigured key that still returned HTTP 200. Signal an untrusted
+      // "empty" SKIP (reason "empty") rather than returning [] — that would tombstone
+      // every existing Europeana card on what may be a transient outage.
+      throw new SourceSkippedError("Europeana", KEY_ENV, "empty");
+    }
 
     const items: RawSourceItem[] = [];
     for (const raw of data.slice(0, limit)) {

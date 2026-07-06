@@ -234,6 +234,33 @@ describe("creativeRag service.sync", () => {
     const metPath = join(dataDir, "cards", `${hashUrl(UNKNOWN_ITEM.sourceUrl)}.md`);
     expect(parseCard(readFileSync(metPath, "utf8")).tombstone).not.toBe(true);
   });
+
+  it("does not tombstone cards when a source skips with reason 'empty' (untrusted zero)", async () => {
+    // A keyed source that reached the upstream but got an untrusted empty result signals
+    // SourceSkippedError(reason:'empty'). Like the no-key skip, it must be a no-op — a
+    // silent upstream outage must not tombstone every card. Guards a misconfigured key
+    // (HTTP 200, no items) from masquerading as a genuinely empty catalog.
+    await makeService([
+      makeFakeSource("artic", "https://api.artic.edu/manifest", [PUBLIC_ITEM]),
+      makeFakeSource("met", "https://collectionapi.metmuseum.org/manifest", [UNKNOWN_ITEM]),
+    ]).sync({});
+
+    const emptyMet: Source = {
+      name: "met",
+      displayName: "The Met",
+      async fetchItems() {
+        throw new SourceSkippedError("The Met", "TDMCP_RAG_MET_KEY", "empty");
+      },
+    };
+    const report = await makeService([
+      makeFakeSource("artic", "https://api.artic.edu/manifest", [PUBLIC_ITEM]),
+      emptyMet,
+    ]).sync({});
+    expect(report.tombstoned).toBe(0);
+
+    const metPath = join(dataDir, "cards", `${hashUrl(UNKNOWN_ITEM.sourceUrl)}.md`);
+    expect(parseCard(readFileSync(metPath, "utf8")).tombstone).not.toBe(true);
+  });
 });
 
 describe("creativeRag service.index", () => {

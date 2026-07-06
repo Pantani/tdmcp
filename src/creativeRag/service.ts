@@ -165,11 +165,17 @@ export function createCreativeRagService(deps: CreativeRagServiceDeps): Creative
       try {
         items = await source.fetchItems(limit, fetchImpl, config.licenseAllowlist);
       } catch (err) {
-        // A skipped (key-gated, no credential) source and a failed source are both
-        // left out of `syncedSourceNames` below, so neither tombstones its existing
-        // cards — a missing key is a no-op, never a silent purge.
+        // A skipped source (no credential, or an untrusted empty upstream) and a failed
+        // source are all left out of `syncedSourceNames` below, so none tombstones its
+        // existing cards — a missing key or an untrusted zero is a no-op, never a silent
+        // purge. The `reason` only shapes the log so a misconfigured key never looks like
+        // a genuinely empty catalog.
         if (err instanceof SourceSkippedError) {
-          logger.warn(`Creative RAG: source "${source.name}" skipped — ${err.message}`);
+          const cause =
+            err.reason === "no-key"
+              ? "no API key configured"
+              : "upstream returned an untrusted empty result";
+          logger.warn(`Creative RAG: source "${source.name}" skipped (${cause}) — ${err.message}`);
         } else {
           logger.warn(`Creative RAG: source "${source.name}" failed to fetch`, {
             error: err instanceof Error ? err.message : String(err),

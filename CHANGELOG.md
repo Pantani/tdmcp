@@ -6,8 +6,40 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- Recipe `histogram_scope` (roadmap-to-1.0 Wave 7, gate `g3_recipes_live`) — the
+  trace `choptoSOP` lives inside the `geo` geometry COMP while its source merge
+  CHOP `xyz` sits at the container root, so the node's `chop` parameter must be
+  the relative path `../xyz`, not the bare `xyz` (which TD resolved against `geo`
+  and failed with `Invalid input CHOP ""`). Now cooks clean. Found and fixed by
+  live end-to-end cook validation of all 10 net-new v0.7–v0.8 recipes against a
+  real TouchDesigner (099, build 2025.32820): the other nine
+  (`raymarch_sphere_field`, `raymarch_infinite_tunnel`, `strange_attractor_lorenz`,
+  `ascii_render_post`, `dither_post`, `halftone_post`, `audio_glsl_uniforms`,
+  `front_of_house_dashboard`, `sidechain_pump`) all cooked with `errors: []`
+  unchanged. `validate:recipes` stays 50/50.
+
+### Changed
+
+- Creative RAG `SourceSkippedError` now carries a `reason: "no-key" | "empty"`
+  discriminator (roadmap-to-1.0 Wave 7, `rag_source_skipped_error`), so a
+  misconfigured key-gated source never tombstones a real result. `"no-key"`
+  (the default — existing two-arg call sites are unchanged) means the credential
+  is absent and the upstream was never reached; `"empty"` means the source DID
+  reach the upstream (key present) but got an untrusted zero (e.g. a rejected key
+  or a silent outage returning HTTP 200 with no items). Both remain
+  non-tombstoning by design — the discriminator only shapes the sync's skip log
+  and lets callers/tests tell the two apart. The Europeana adapter now raises
+  `"empty"` when a keyed request returns zero items for the `*` catalog query.
+
 ### Added
 
+- Regression tests pinning the Europeana `wskey`-strip lesson (roadmap-to-1.0
+  Wave 7, `rag_canonicalize_guid_test`): the persisted `sourceUrl`/`id` must never
+  embed the API key and must stay stable across keys — covering both the URL-parse
+  and the string-fallback branches of `canonicalizeGuid`, plus the new
+  `reason: "empty"` skip path (adapter + service no-tombstone).
 - Six CLI / AI / library capabilities (roadmap-to-1.0 Wave 5b):
   - `bundle_dependencies` (Layer 3) — make a COMP self-contained: recursively
     scan its subtree for external file references (reusing the
