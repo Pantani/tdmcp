@@ -1,15 +1,29 @@
 {
   "id": "audio_spectrum_bars",
   "name": "Audio Spectrum Bars",
-  "description": "Classic spectrum analyzer: live audio is analyzed into a frequency spectrum and drawn as colored bars in a GLSL TOP.",
+  "description": "Classic spectrum analyzer: live audio is analyzed into a frequency spectrum and drawn as colored bars in a GLSL TOP. The spectrum is clamped to 256 bins (setmanually) so the CHOP-to-TOP texture stays a sane width, and the bars TOP has an explicit output resolution so it renders a full-height frame instead of inheriting the 1-row spectrum texture size. Live-validated in TouchDesigner 099 build 2025.32820.",
   "tags": ["audio-reactive", "spectrum", "bars", "music"],
   "difficulty": "beginner",
   "td_version_min": "2022",
   "nodes": [
     { "name": "audioin", "type": "audiodeviceinCHOP", "comment": "Live audio input" },
-    { "name": "spectrum", "type": "audiospectrumCHOP", "comment": "FFT spectrum" },
+    {
+      "name": "spectrum",
+      "type": "audiospectrumCHOP",
+      "parameters": { "outputmenu": "setmanually", "outlength": 256 },
+      "comment": "FFT spectrum, clamped to 256 bins so audio_tex is 256×1 (not the default ~16k-wide strip)"
+    },
     { "name": "audio_tex", "type": "choptoTOP", "comment": "Spectrum as a 1-row texture" },
-    { "name": "bars", "type": "glslTOP", "comment": "Draws the bars from the spectrum texture" },
+    {
+      "name": "bars",
+      "type": "glslTOP",
+      "parameters": {
+        "outputresolution": "custom",
+        "resolutionw": 1280,
+        "resolutionh": 720
+      },
+      "comment": "Draws the bars from the spectrum texture at an explicit resolution (so out1 is a full-height frame, not a 1px strip)"
+    },
     { "name": "out1", "type": "nullTOP" }
   ],
   "connections": [
@@ -22,5 +36,5 @@
   "glsl_code": {
     "bars": "out vec4 fragColor;\nvoid main(){\n    vec2 uv = vUV.st;\n    float amp = texture(sTD2DInputs[0], vec2(uv.x, 0.5)).r;\n    float bar = step(uv.y, clamp(amp, 0.0, 1.0));\n    vec3 col = mix(vec3(0.02,0.0,0.08), vec3(0.1,0.9,1.0), uv.x) * bar;\n    fragColor = TDOutputSwizzle(vec4(col, 1.0));\n}\n"
   },
-  "preview_description": "A row of glowing cyan-to-magenta bars rising and falling with the music."
+  "preview_description": "A row of glowing cyan-to-magenta bars rising and falling with the music. Live-validated in TouchDesigner 099 build 2025.32820."
 }
