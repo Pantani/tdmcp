@@ -32,7 +32,7 @@ terminar antes de enviar o próximo.
 1. Peça o sistema base:
 
    ```text
-   Aplique a recipe reaction_diffusion e me mostre um preview.
+   Aplique a receita reaction_diffusion e me mostre um preview.
    ```
 
    A IA constrói uma rede de reação-difusão de Gray-Scott — uma simulação em GLSL

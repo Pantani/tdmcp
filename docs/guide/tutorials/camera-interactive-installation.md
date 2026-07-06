@@ -52,17 +52,19 @@ sending the next.
    Apply the optical_flow_particles recipe, driven by my webcam. Use the bundled test clip if my camera is not ready.
    ```
 
-   → You get a network that reads motion from the camera as an optical-flow field
-   feeding a particle render.
+   → You get a network with two branches: an optical-flow field reading motion from
+   the camera, and a particle render. The recipe leaves them **unconnected on
+   purpose** — wiring the flow into the particles is the next step.
 
-3. Make the particles follow movement:
+3. Wire the flow into the particles so they follow movement:
 
    ```text
-   Make the particles spawn and drift where movement happens, so motion in front of the camera paints the particles.
+   Wire the optical flow output (flow_out) into the particle simulation, so particles spawn and drift where movement happens and motion in front of the camera paints them.
    ```
 
    → The flow field now pushes the particles — moving in front of the camera stirs
-   them.
+   them. Until this step, the particles move on their own, independent of the
+   camera.
 
 4. Set the installation mood:
 

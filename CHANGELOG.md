@@ -8,6 +8,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Artist-friendly docs information architecture: the guide sidebar is now 7
+  collapsible categories (identical EN/PT structure derived from one
+  descriptor), a "What do you want to make?" goal-card guide home is the new
+  Guide entry point, and a bilingual tutorial track ships with 4 step-by-step
+  prompt tutorials (audio-reactive visual, camera-interactive installation, VJ
+  set with a timeline, generative art loop) — three of them live-validated in
+  TouchDesigner with captured preview videos embedded.
+
 - Drag-and-drop bridge install: `npm run build:bridge-tox` generates a
   tag-pinned, self-bootstrapping `tdmcp_bridge_package.tox` (via the running
   bridge's `/api/exec`, so no Textport for the maintainer either) to attach to the

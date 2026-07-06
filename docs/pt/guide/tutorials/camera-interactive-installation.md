@@ -41,7 +41,7 @@ antes de enviar o próximo.
 1. Confirme que o TouchDesigner está conectado e veja sua webcam:
 
    ```text
-   Check TouchDesigner is connected, then show me my webcam source. If no camera is available, use a synthetic test source instead.
+   Verifique se o TouchDesigner está conectado e me mostre a fonte da minha webcam. Se não houver câmera disponível, use uma fonte de teste sintética.
    ```
 
    → A IA confirma que a ponte está ativa e traz a imagem da câmera (ou de teste).
@@ -49,25 +49,27 @@ antes de enviar o próximo.
 2. Monte a base reativa ao movimento a partir da receita:
 
    ```text
-   Apply the optical_flow_particles recipe, driven by my webcam. Use the bundled test clip if my camera is not ready.
+   Aplique a receita optical_flow_particles, alimentada pela minha webcam. Use o clipe de teste incluído se a minha câmera não estiver pronta.
    ```
 
-   → Você recebe uma rede que lê o movimento da câmera como um campo de fluxo óptico
-   alimentando um render de partículas.
+   → Você recebe uma rede com dois ramos: um campo de fluxo óptico lendo o movimento
+   da câmera e um render de partículas. A receita os deixa **desconectados de
+   propósito** — ligar o fluxo às partículas é o próximo passo.
 
-3. Faça as partículas seguirem o movimento:
+3. Ligue o fluxo às partículas para elas seguirem o movimento:
 
    ```text
-   Make the particles spawn and drift where movement happens, so motion in front of the camera paints the particles.
+   Ligue a saída do fluxo óptico (flow_out) na simulação de partículas, para que as partículas nasçam e derivem onde há movimento e o movimento diante da câmera as pinte.
    ```
 
    → O campo de fluxo agora empurra as partículas — mexer-se diante da câmera as
-   agita.
+   agita. Antes deste passo, as partículas se movem sozinhas, independentes da
+   câmera.
 
 4. Defina a atmosfera da instalação:
 
    ```text
-   Add trails to the particles and give it a dark, moody palette — deep blues and violet on near-black.
+   Adicione rastros às partículas e dê um clima escuro e atmosférico — azuis profundos e violeta sobre quase-preto.
    ```
 
    → As partículas deixam rastros brilhantes e a cena vira uma peça de galeria, não
@@ -76,7 +78,7 @@ antes de enviar o próximo.
 5. Exponha os dois controles que você realmente vai tocar:
 
    ```text
-   Expose a Flow-sensitivity control and a Trail-length control so I can tune how reactive and how smeary it is.
+   Exponha um controle de sensibilidade do fluxo (Flow-sensitivity) e um de comprimento do rastro (Trail-length) para eu ajustar o quão reativo e o quão esfumado fica.
    ```
 
    → Aparecem dois knobs ao vivo. Flow-sensitivity define com que facilidade o
@@ -85,7 +87,7 @@ antes de enviar o próximo.
 6. Faça o preview e coloque em tela cheia para a instalação:
 
    ```text
-   Show me a preview. Then tell me how to send this output fullscreen to my projector or second display for the installation.
+   Me mostre uma prévia. Depois me diga como enviar esta saída em tela cheia para o meu projetor ou segundo display para a instalação.
    ```
 
    → Você vê o resultado, mais os passos para levar a saída ao projetor.
@@ -104,7 +106,7 @@ na peça.
   troque pela câmera depois. No macOS, conceda acesso à câmera — veja a
   [nota de permissão de câmera](/pt/guide/troubleshooting#macos-microphone-camera-permission).
 - **Ruído demais — partículas disparando o tempo todo** → reduza a Flow-sensitivity,
-  ou diga *"only react to bigger movements."*
+  ou diga *"reaja só a movimentos maiores."*
 - **Nada reage** → aumente a Flow-sensitivity e garanta luz suficiente e movimento
   real no enquadramento.
 - **Projetor / tela cheia** → veja
