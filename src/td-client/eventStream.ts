@@ -1,14 +1,32 @@
 import { type Logger, silentLogger } from "../utils/logger.js";
+import { ParamChangedEventSchema, type TdParamChangedEvent } from "./validators.js";
 
 export interface TdEvent {
   event: string;
   data?: unknown;
 }
 
+/**
+ * Validate a `param.changed` event's data payload into a typed
+ * `{ path, par, prev, value, frame }`. Returns `undefined` when the event is not
+ * a well-formed `param.changed` (wrong type or malformed data), so a consumer
+ * never handles a raw wire object.
+ */
+export function parseParamChangedEvent(event: TdEvent): TdParamChangedEvent | undefined {
+  if (event.event !== "param.changed") return undefined;
+  const parsed = ParamChangedEventSchema.safeParse(event.data);
+  return parsed.success ? parsed.data : undefined;
+}
+
 export type TdEventHandler = (event: TdEvent) => void;
 
-/** High-frequency events are dropped unless explicitly opted in, to avoid flooding. */
-const HIGH_FREQUENCY = new Set(["timeline.frame", "node.cook"]);
+/** High-frequency events are dropped unless explicitly opted in, to avoid flooding.
+ *
+ * `param.changed` is coalesced bridge-side (one emit per (path, par) per window),
+ * but a many-parameter or multi-op subscription can still be chatty, so it is
+ * treated as high-frequency here too — an opt-in consumer sees every change; the
+ * default stream stays quiet. */
+const HIGH_FREQUENCY = new Set(["timeline.frame", "node.cook", "param.changed"]);
 
 /**
  * Parses a raw WebSocket message into a `TdEvent`, applying the high-frequency

@@ -76,6 +76,9 @@ export const tdHandlers = [
   http.post(`${TD_BASE}/api/nodes/:seg/save`, notFound),
   http.post(`${TD_BASE}/api/duplicate`, notFound),
   http.get(`${TD_BASE}/api/optypes`, notFound),
+  http.post(`${TD_BASE}/api/params/watch`, notFound),
+  http.delete(`${TD_BASE}/api/params/watch`, notFound),
+  http.get(`${TD_BASE}/api/params/watch`, notFound),
 
   http.post(`${TD_BASE}/api/nodes/:seg/method`, () => ok({ result: "ok" })),
 

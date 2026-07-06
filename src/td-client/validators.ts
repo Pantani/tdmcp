@@ -264,6 +264,37 @@ export const DisconnectResultSchema = z.object({
 });
 export type TdDisconnectResult = z.infer<typeof DisconnectResultSchema>;
 
+// --- Parameter-change watches (opt-in; survive ALLOW_EXEC=0) ---
+// Response envelope for POST/DELETE /api/params/watch: a single watch's state.
+// `pars` is null for a watch-all subscription, or the sorted names being watched.
+export const ParamWatchResultSchema = z.object({
+  path: z.string(),
+  pars: z.array(z.string()).nullable().default(null),
+  watching: z.boolean(),
+});
+export type TdParamWatchResult = z.infer<typeof ParamWatchResultSchema>;
+
+// GET /api/params/watch: every active watch.
+export const ParamWatchListSchema = z.object({
+  watches: z
+    .array(z.object({ path: z.string(), pars: z.array(z.string()).nullable().default(null) }))
+    .default([]),
+  count: z.number().int().default(0),
+});
+export type TdParamWatchList = z.infer<typeof ParamWatchListSchema>;
+
+// The `param.changed` event payload the bridge broadcasts on the WebSocket stream
+// for a watched operator's parameter. Validated where events are parsed so a
+// consumer gets a typed shape, not a raw wire object.
+export const ParamChangedEventSchema = z.object({
+  path: z.string(),
+  par: z.string(),
+  prev: z.union([z.string(), z.number(), z.boolean(), z.null()]),
+  value: z.union([z.string(), z.number(), z.boolean(), z.null()]),
+  frame: z.number().int().nullable().default(null),
+});
+export type TdParamChangedEvent = z.infer<typeof ParamChangedEventSchema>;
+
 // --- Param-mode + DAT-text endpoints (survive ALLOW_EXEC=0) ---
 export const ParamModeEntrySchema = z.object({
   name: z.string(),

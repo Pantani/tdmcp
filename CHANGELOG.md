@@ -56,6 +56,27 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `watch_parameter_changes` (Layer 3) + an opt-in `param.changed` event
+  (roadmap-to-1.0, live-validated on TD 099 build 2025.32820). Subscribe to an
+  operator's parameters and get a `{path, par, prev, value, frame}` event on the
+  existing TD WebSocket stream whenever a watched value changes — from a human
+  moving a slider, a script, an expression, or a CHOP export. New bridge routes
+  `POST`/`DELETE`/`GET /api/params/watch` back a `watch_service` subscription
+  registry; a per-frame poller in the bridge's `events_hook` (`onFrameEnd`) detects
+  value deltas and calls `events.broadcast`. Polling — not a Parameter Execute DAT
+  `onValueChange` callback — was required because that callback fires only for
+  interactive UI edits, not scripted/expression changes (confirmed live). The event
+  is coalesced bridge-side (one emit per (path, par) per 50 ms, so a slider drag
+  can't flood) and typed as high-frequency in the Node event stream (delivered only
+  when the operator opts into `TDMCP_EVENTS` high-frequency mode). Typed client
+  methods `watchParameters`/`unwatchParameters`/`listParameterWatches`, a
+  `ParamWatchResult`/`ParamWatchList`/`ParamChangedEvent` Zod envelope, and a
+  `parseParamChangedEvent` validator on the event stream. All routes survive
+  `TDMCP_BRIDGE_ALLOW_EXEC=0` (structured, not arbitrary Python); a bridge that
+  predates the route yields a friendly "reinstall/update the bridge" error. Live
+  check: registered a watch on a levelTOP's `opacity`, drove it 1→0.5→0.2→0.9 and
+  saw three `param.changed` events with correct prev/value/frame; a 20-change
+  same-tick burst coalesced to a single event carrying the resting value.
 - Local copilot now auto-surfaces the Claude/Codex handoff suggestion when it hits
   a dead-end (roadmap-to-1.0 polish). The handoff builder + `/handoff` endpoint + UI
   button already existed but were only invoked manually; `runAgentTurn` now counts

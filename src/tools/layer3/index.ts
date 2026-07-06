@@ -73,6 +73,7 @@ import { registerSwapOperator } from "./swapOperator.js";
 import { registerUpdateTdNodeParameters } from "./updateTdNodeParameters.js";
 import { registerValidateOperatorChain } from "./validateOperatorChain.js";
 import { registerWatchNode } from "./watchNode.js";
+import { registerWatchParameterChanges } from "./watchParameterChanges.js";
 import { registerWriteAgentGuide } from "./writeAgentGuide.js";
 
 export const layer3Registrars: ToolRegistrar[] = [
@@ -130,6 +131,7 @@ export const layer3Registrars: ToolRegistrar[] = [
   // Phase 14 — runtime telemetry & logs:
   registerGetNodeStateRuntime,
   registerWatchNode,
+  registerWatchParameterChanges,
   registerGetBridgeLogs,
   // Phase 15 — component introspection + network serialization:
   registerInspectComponent,

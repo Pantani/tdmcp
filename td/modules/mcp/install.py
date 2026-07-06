@@ -92,6 +92,15 @@ def _event_hooks_source(modules_dir=None):
         "                        'severity': str(_ed[_rows, 4]), 'type': str(_ed[_rows, 5]), 'count': _rows,\n"
         "                    })\n"
         "    except Exception:\n"
+        "        pass\n"
+        "    try:\n"
+        "        # Opt-in param.changed: poll every registered watch for value deltas.\n"
+        "        # Empty registry -> poll() returns [] (near-zero cost), so this stays\n"
+        "        # silent until a consumer registers a watch via POST /api/params/watch.\n"
+        "        from mcp.services import watch_service\n"
+        "        for _pc in watch_service.poll(frame=int(frame)):\n"
+        "            _broadcast('param.changed', _pc)\n"
+        "    except Exception:\n"
         "        pass\n\n"
         "def onProjectPostSave():\n"
         "    try:\n"
@@ -658,6 +667,11 @@ def run(
         err.par.fromop.val = scope
     except Exception:
         pass
+
+    # Opt-in param.changed events are emitted by the events_hook onFrameEnd poller
+    # (watch_service.poll) — no separate DAT is needed. The poller returns nothing
+    # until a consumer registers a watch via POST /api/params/watch, so a plain
+    # install stays silent.
 
     _layout_runtime_bridge(comp)
 

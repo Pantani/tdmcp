@@ -27,6 +27,8 @@ import {
   OpTypesSchema,
   ParamModesBatchSchema,
   ParamModesSchema,
+  ParamWatchListSchema,
+  ParamWatchResultSchema,
   PerformanceSchema,
   PerformModeStateSchema,
   PreviewJobSchema,
@@ -41,6 +43,8 @@ import {
   type TdCustomParams,
   type TdDuplicateNode,
   type TdOpTypes,
+  type TdParamWatchList,
+  type TdParamWatchResult,
   type TdPerformModeState,
   type TdProjectAnalysis,
   type TdProjectLoad,
@@ -563,6 +567,58 @@ export class TouchDesignerClient {
       from_path: fromPath ?? null,
       to_input: toInput ?? null,
     });
+  }
+
+  // --- Parameter-change watches (opt-in; survive TDMCP_BRIDGE_ALLOW_EXEC=0) ---
+  /** Register a `param.changed` watch on an operator's parameters.
+   *
+   * `POST /api/params/watch`. With no `pars` the whole operator is watched;
+   * otherwise only the named parameters. Change events surface on the existing
+   * WebSocket event stream as `param.changed` (validated by
+   * {@link ParamChangedEventSchema}) — this call only registers the subscription.
+   *
+   * 404 handling: an older bridge that predates the Parameter Execute DAT has no
+   * way to emit these events, so a 404 becomes a descriptive `TdApiError` telling
+   * the artist to reinstall/update the bridge — there is no exec fallback because
+   * the event plumbing (not just a Python one-shot) is what's missing.
+   */
+  async watchParameters(path: string, opts?: { pars?: string[] }): Promise<TdParamWatchResult> {
+    return this.watchRequest("POST", path, opts?.pars);
+  }
+
+  /** Unregister a `param.changed` watch (or specific parameter names) from an op.
+   *
+   * `DELETE /api/params/watch`. With no `pars` the whole watch is removed;
+   * otherwise only the named parameters are dropped from an existing filter. */
+  async unwatchParameters(path: string, opts?: { pars?: string[] }): Promise<TdParamWatchResult> {
+    return this.watchRequest("DELETE", path, opts?.pars);
+  }
+
+  /** List every active parameter watch (`GET /api/params/watch`). */
+  listParameterWatches(): Promise<TdParamWatchList> {
+    return this.request("GET", "/api/params/watch", ParamWatchListSchema);
+  }
+
+  /** Shared register/unregister path with the older-bridge 404 message. */
+  private async watchRequest(
+    method: "POST" | "DELETE",
+    path: string,
+    pars?: string[],
+  ): Promise<TdParamWatchResult> {
+    try {
+      return await this.request(method, "/api/params/watch", ParamWatchResultSchema, {
+        path,
+        pars: pars ?? null,
+      });
+    } catch (err) {
+      if (err instanceof TdApiError && err.status === 404) {
+        throw new TdApiError(
+          "This TouchDesigner bridge predates parameter-change watching. Reinstall or update the tdmcp bridge (its Parameter Execute DAT emits the param.changed events).",
+          { status: 404 },
+        );
+      }
+      throw err;
+    }
   }
 
   // --- Param-mode + DAT-text endpoints (survive ALLOW_EXEC=0) ---

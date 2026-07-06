@@ -33,6 +33,7 @@ from mcp.services import (
     save_service,
     system_service,
     transport_service,
+    watch_service,
 )
 
 
@@ -540,7 +541,35 @@ def _route_post_root(rest, body):
     return None
 
 
+def _route_watch(method, rest, body, webserver=None):
+    """Opt-in parameter-change watch registry — survives ALLOW_EXEC=0.
+
+    `POST /api/params/watch`   {path, pars?} -> register a watch
+    `DELETE /api/params/watch` {path, pars?} -> unregister
+    `GET /api/params/watch`                  -> list active watches
+
+    Registering is structured (a subscription in `watch_service`), not arbitrary
+    Python, so it is intentionally NOT exec-gated. The change events themselves are
+    emitted by the `events_hook` onFrameEnd poller and surface on the existing
+    WebSocket stream as `param.changed` — no extra DAT install on register.
+    """
+    if rest != ["params", "watch"]:
+        return None
+    if method == "GET":
+        return watch_service.list_watches()
+    if method == "POST":
+        _require(body, "path")
+        return watch_service.register(body["path"], body.get("pars"))
+    if method == "DELETE":
+        _require(body, "path")
+        return watch_service.unregister(body["path"], body.get("pars"))
+    return None
+
+
 def _route_root(method, rest, query, body, webserver=None):
+    watched = _route_watch(method, rest, body, webserver)
+    if watched is not None:
+        return watched
     if method == "GET":
         return _route_get_root(rest, query, webserver)
     if method == "POST":
