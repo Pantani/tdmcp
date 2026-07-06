@@ -117,7 +117,7 @@ export const registerMacroRecorder: ToolRegistrar = (server, ctx) => {
       description:
         "Record the sequence of MCP tool calls to a portable JSON macro file. Actions: start | stop | list | load. Replay ships separately as `run_macro_script`.",
       inputSchema: macroRecorderSchema.shape,
-      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: false },
     },
     (args) => macroRecorderImpl(ctx, args),
   );

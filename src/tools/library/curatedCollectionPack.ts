@@ -505,7 +505,7 @@ export const registerCuratedCollectionPack: ToolRegistrar = (server, ctx) =>
         "checksum manifest. action=unpack restores the tree, optionally verifying integrity. " +
         "Fully offline — no TD bridge required.",
       inputSchema: curatedCollectionPackSchema.shape,
-      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
     },
     (callArgs) => curatedCollectionPackImpl(ctx, callArgs),
   );

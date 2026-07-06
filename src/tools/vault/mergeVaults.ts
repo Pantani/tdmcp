@@ -330,7 +330,7 @@ export const registerMergeVaults: ToolRegistrar = (server, ctx) =>
         "'theirs' overwrites target, 'ours' keeps target, 'rename' writes a side-by-side copy, 'skip' logs and skips. " +
         "dryRun=true plans without writing. Note: LF/CRLF differences count as conflicts.",
       inputSchema: mergeVaultsSchema.shape,
-      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: false },
     },
     (args) => mergeVaultsImpl(ctx, args),
   );
