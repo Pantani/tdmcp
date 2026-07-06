@@ -109,6 +109,14 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "asemic-writing",
+    summary:
+      "Generate a page of procedural asemic writing — random-but-writing-like glyph strokes (Script SOP pen → Tube SOP → ortho render).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "asset-validate",
     summary: "Validate a local library asset and manifest reference.",
     mutates: false,
@@ -195,6 +203,14 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "blob-reactive",
     summary: "Track blob/hand positions from a camera or TOP and bind params to them.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "blob-trace",
+    summary:
+      "Trace a blob/silhouette into a vector contour outline: monochrome → blur → threshold mask → Trace SOP → wireframe render.",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -711,6 +727,14 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "disconnect",
     summary: "Remove input wire(s) from a node (the inverse of connect).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "disorder-grid",
+    summary:
+      "Generate a grid of quads/lines with a single order↔chaos Disorder knob (0=perfect grid → 1=full chaos) driving per-cell position/rotation/scale jitter.",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -1968,6 +1992,14 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "sdf-text",
+    summary:
+      "Raymarch a text string as an extruded SDF slab: a Text TOP glyph mask fed to a GLSL raymarcher for solid, lit, spinnable 3D letters.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "segmentation",
     summary:
       "Set up MediaPipe selfie segmentation: publishes a clean alpha-mask Null TOP (and optionally a pre-keyed RGBA) from the camera.",
@@ -2146,6 +2178,14 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "terrain",
+    summary:
+      "Build a procedural heightmap terrain: Noise height field → GLSL vertex-displacement MAT on a subdivided grid, with optional water plane and distance fog.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "test-pattern",
     summary:
       "Build a projector calibration/test pattern (grid/crosshair/color-bars/ramp/circle-grid).",
@@ -2265,6 +2305,14 @@ export const AGENT_COMMAND_CATALOG = [
     command: "versions migration-plan",
     summary: "Plan a TD version migration from release and compatibility notes (offline).",
     mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "vertex-displacement-mat",
+    summary:
+      "Build a true vertex-shader displacement GLSL MAT (noise- or texture-driven) that deforms real mesh vertices; assign to a Geometry COMP or preview on a demo sphere.",
+    mutates: true,
     unsafe: false,
     source: "tool",
   },

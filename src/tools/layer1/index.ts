@@ -5,15 +5,18 @@ import { registerApplyPostProcessing } from "./applyPostProcessing.js";
 import { registerApplyRecipe } from "./applyRecipe.js";
 import { registerAudioFingerprintToVisual } from "./audioFingerprintToVisual.js";
 import { registerComposeCueList } from "./composeCueList.js";
+import { registerControlledDisorderGrid } from "./controlledDisorderGrid.js";
 import { registerCreate3dAudioReactive } from "./create3dAudioReactive.js";
 import { registerCreate3dScene } from "./create3dScene.js";
 import { registerCreateAiMirror } from "./createAiMirror.js";
 import { registerCreateAsciiRender } from "./createAsciiRender.js";
+import { registerCreateAsemicWriting } from "./createAsemicWriting.js";
 import { registerCreateAudioReactive } from "./createAudioReactive.js";
 import { registerCreateAutomationLane } from "./createAutomationLane.js";
 import { registerCreateAutopilot } from "./createAutopilot.js";
 // Campaign Wave 3 — artist controls (backlog 2026-05-29):
 import { registerCreateBlobReactive } from "./createBlobReactive.js";
+import { registerCreateBlobTrace } from "./createBlobTrace.js";
 import { registerCreateBodyBubbles } from "./createBodyBubbles.js";
 import { registerCreateBodyReactive } from "./createBodyReactive.js";
 import { registerCreateChopRecorder } from "./createChopRecorder.js";
@@ -89,6 +92,7 @@ import { registerCreateRaymarchScene } from "./createRaymarchScene.js";
 import { registerCreateReactionDiffusion } from "./createReactionDiffusion.js";
 import { registerCreateSafetyBlackoutChain } from "./createSafetyBlackoutChain.js";
 import { registerCreateSdfField } from "./createSdfField.js";
+import { registerCreateSdfText } from "./createSdfText.js";
 import { registerCreateSetlistRunner } from "./createSetlistRunner.js";
 import { registerCreateSetNavigator } from "./createSetNavigator.js";
 import { registerCreateShaderLib } from "./createShaderLib.js";
@@ -103,6 +107,7 @@ import { registerCreateStrangeAttractor } from "./createStrangeAttractor.js";
 import { registerCreateStrobe } from "./createStrobe.js";
 import { registerCreateSyncExternalClock } from "./createSyncExternalClock.js";
 import { registerCreateTempoSync } from "./createTempoSync.js";
+import { registerCreateTerrain } from "./createTerrain.js";
 import { registerCreateTestPattern } from "./createTestPattern.js";
 import { registerCreateText3d } from "./createText3d.js";
 import { registerCreateTextCrawl } from "./createTextCrawl.js";
@@ -111,6 +116,7 @@ import { registerCreateTransientReactive } from "./createTransientReactive.js";
 import { registerCreateTransition } from "./createTransition.js";
 import { registerCreateTwoWaySurface } from "./createTwoWaySurface.js";
 import { registerCreateVectorLines } from "./createVectorLines.js";
+import { registerCreateVertexDisplacementMat } from "./createVertexDisplacementMat.js";
 import { registerCreateVideoPlayer } from "./createVideoPlayer.js";
 import { registerCreateVideoScopes } from "./createVideoScopes.js";
 import { registerCreateVideoSynth } from "./createVideoSynth.js";
@@ -300,6 +306,13 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateStepRepeat,
   registerCreatePointerReactive,
   registerCreateInteractionZones,
+  // Roadmap-to-1.0 Wave 4 (2026-07-06) — stock-TD generators:
+  registerCreateTerrain,
+  registerCreateAsemicWriting,
+  registerCreateSdfText,
+  registerCreateVertexDisplacementMat,
+  registerControlledDisorderGrid,
+  registerCreateBlobTrace,
 ];
 
 // v0.6.0 — Creative RAG inspiration -> execution loop (gated behind env flag).

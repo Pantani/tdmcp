@@ -65,6 +65,10 @@ import {
 } from "../tools/layer1/audioFingerprintToVisual.js";
 import { composeCueListImpl, composeCueListSchema } from "../tools/layer1/composeCueList.js";
 import {
+  controlledDisorderGridImpl,
+  controlledDisorderGridSchema,
+} from "../tools/layer1/controlledDisorderGrid.js";
+import {
   create3dAudioReactiveImpl,
   create3dAudioReactiveSchema,
 } from "../tools/layer1/create3dAudioReactive.js";
@@ -74,6 +78,10 @@ import {
   createAsciiRenderImpl,
   createAsciiRenderSchema,
 } from "../tools/layer1/createAsciiRender.js";
+import {
+  createAsemicWritingImpl,
+  createAsemicWritingSchema,
+} from "../tools/layer1/createAsemicWriting.js";
 import {
   createAudioReactiveImpl,
   createAudioReactiveSchema,
@@ -87,6 +95,7 @@ import {
   createBlobReactiveImpl,
   createBlobReactiveSchema,
 } from "../tools/layer1/createBlobReactive.js";
+import { createBlobTraceImpl, createBlobTraceSchema } from "../tools/layer1/createBlobTrace.js";
 import {
   createBodyBubblesImpl,
   createBodyBubblesSchema,
@@ -316,6 +325,7 @@ import {
   createReactionDiffusionSchema,
 } from "../tools/layer1/createReactionDiffusion.js";
 import { createSdfFieldImpl, createSdfFieldSchema } from "../tools/layer1/createSdfField.js";
+import { createSdfTextImpl, createSdfTextSchema } from "../tools/layer1/createSdfText.js";
 import {
   createSetNavigatorImpl,
   createSetNavigatorSchema,
@@ -340,6 +350,7 @@ import {
   createSyncExternalClockSchema,
 } from "../tools/layer1/createSyncExternalClock.js";
 import { createTempoSyncImpl, createTempoSyncSchema } from "../tools/layer1/createTempoSync.js";
+import { createTerrainImpl, createTerrainSchema } from "../tools/layer1/createTerrain.js";
 import {
   createTestPatternImpl,
   createTestPatternSchema,
@@ -363,6 +374,10 @@ import {
   createVectorLinesImpl,
   createVectorLinesSchema,
 } from "../tools/layer1/createVectorLines.js";
+import {
+  createVertexDisplacementMatImpl,
+  createVertexDisplacementMatSchema,
+} from "../tools/layer1/createVertexDisplacementMat.js";
 import {
   createVideoPlayerImpl,
   createVideoPlayerSchema,
@@ -2534,6 +2549,43 @@ const COMMANDS: Record<string, Command> = {
     createInteractionZonesSchema,
     createInteractionZonesImpl,
     "Define N rectangular motion zones over a camera input; emits per-zone state + dwell channels ready to fire cues.",
+    { mutates: true },
+  ),
+  // Roadmap-to-1.0 Wave 4 (2026-07-06) — stock-TD generators:
+  terrain: r(
+    createTerrainSchema,
+    createTerrainImpl,
+    "Build a procedural heightmap terrain: Noise height field → GLSL vertex-displacement MAT on a subdivided grid, with optional water plane and distance fog.",
+    { mutates: true },
+  ),
+  "asemic-writing": r(
+    createAsemicWritingSchema,
+    createAsemicWritingImpl,
+    "Generate a page of procedural asemic writing — random-but-writing-like glyph strokes (Script SOP pen → Tube SOP → ortho render).",
+    { mutates: true },
+  ),
+  "sdf-text": r(
+    createSdfTextSchema,
+    createSdfTextImpl,
+    "Raymarch a text string as an extruded SDF slab: a Text TOP glyph mask fed to a GLSL raymarcher for solid, lit, spinnable 3D letters.",
+    { mutates: true },
+  ),
+  "vertex-displacement-mat": r(
+    createVertexDisplacementMatSchema,
+    createVertexDisplacementMatImpl,
+    "Build a true vertex-shader displacement GLSL MAT (noise- or texture-driven) that deforms real mesh vertices; assign to a Geometry COMP or preview on a demo sphere.",
+    { mutates: true },
+  ),
+  "disorder-grid": r(
+    controlledDisorderGridSchema,
+    controlledDisorderGridImpl,
+    "Generate a grid of quads/lines with a single order↔chaos Disorder knob (0=perfect grid → 1=full chaos) driving per-cell position/rotation/scale jitter.",
+    { mutates: true },
+  ),
+  "blob-trace": r(
+    createBlobTraceSchema,
+    createBlobTraceImpl,
+    "Trace a blob/silhouette into a vector contour outline: monochrome → blur → threshold mask → Trace SOP → wireframe render.",
     { mutates: true },
   ),
   // v0.6.0 — Creative RAG inspiration → execution loop:

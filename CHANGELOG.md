@@ -28,6 +28,45 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     active) channel on a `zones` Null CHOP ready to fire cues, with a live
     Threshold knob.
 
+- Six new stock-TouchDesigner generator tools (roadmap-to-1.0 Wave 4, all Layer 1,
+  no GPU/hardware required):
+  - `create_terrain` — a dedicated procedural heightmap landscape: an animated
+    Noise TOP height field displaces a subdivided Grid SOP along Z in a GLSL
+    vertex-displacement MAT (real 2.5D geometry, elevation-shaded from a low→high
+    colour ramp), with an optional translucent water plane and camera-distance
+    fog. Distinct from `create_visual_system`'s "terrain" keyword (which only maps
+    to the noise_landscape recipe). Live Height/Drift/WaterLevel/Zoom controls.
+  - `create_asemic_writing` — generate a page of procedural asemic writing:
+    random-but-writing-like glyph strokes that flow left-to-right along stacked
+    baselines but spell nothing, drawn by a Script SOP pen (italic slant, per-stroke
+    jitter, pen-lifts), tubed and rendered with an ortho camera. Deterministic per
+    seed; live Jitter/Slant/Thickness/Seed controls.
+  - `create_sdf_text` — raymarch a text string as an extruded signed-distance-field
+    slab: a Text TOP glyph mask feeds a GLSL raymarcher so the letters read as
+    solid, lit, rim-highlit 3D volumes that can spin. Distinct from
+    `create_sdf_field` (primitive CSG only, no text) and `create_text_3d`
+    (mesh-extruded). Live CameraZ/Speed/StepCount/Intensity/Rotate/Fill/Edge/
+    Background controls.
+  - `create_vertex_displacement_mat` — a true vertex-shader displacement GLSL MAT
+    that offsets mesh vertices along their normals by procedural 3D noise or a
+    sampled texture, assignable to your own Geometry COMP or previewed on a demo
+    sphere. Distinct from the TOP-space warps `create_depth_displacement` /
+    `create_displacement_warp` (which push pixels, not vertices). Live Amount/
+    Frequency/Speed controls.
+  - `controlled_disorder_grid` — a grid of quads (or outlined cells) with a single
+    order↔chaos `disorder` knob (0 = a perfect grid → 1 = full chaos) that scales
+    per-cell position/rotation/scale jitter together, each hashed from the cell
+    index in one GLSL TOP (the classic generative-design "controlled randomness" /
+    Schotter study). Live Disorder knob + colour swatches.
+  - `create_blob_trace` — trace a blob/silhouette into a vector contour outline:
+    monochrome → blur → threshold (blob mask) → optional edge → Trace SOP →
+    wireframe render. The contour-trace complement to `create_vector_lines` and
+    `export_sop_to_svg`, and distinct from `create_blob_reactive` (tracking, not
+    outline). Live Threshold/Blur/LineWidth controls.
+  - Note: `create_l_system` was **not** built — `create_growth_system` already
+    ships a complete Lindenmayer turtle-graphics generator (axiom + weighted
+    stochastic rules + iterations → polyline tree), so the item is superseded.
+
 - Artist-friendly docs information architecture: the guide sidebar is now 7
   collapsible categories (identical EN/PT structure derived from one
   descriptor), a "What do you want to make?" goal-card guide home is the new
