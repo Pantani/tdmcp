@@ -275,7 +275,11 @@ try:
                 report["channels_null"] = _null.path
         try:
             if _script is not None:
-                report["errors"] = [str(e) for e in _script.errors()][:3]
+                # .errors() returns a newline-joined STRING — iterating it yields
+                # characters, so split into lines before taking the first few messages.
+                _errs = _script.errors()
+                _lines = _errs.splitlines() if isinstance(_errs, str) else [str(e) for e in _errs]
+                report["errors"] = [l.strip() for l in _lines if l and l.strip()][:3]
         except Exception:
             pass
 except Exception:
