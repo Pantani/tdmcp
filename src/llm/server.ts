@@ -11,6 +11,12 @@ import {
 import { runAgentTurn } from "./agent.js";
 import { applySettings, type ChatMessage, LlmClient, type LlmConfig } from "./client.js";
 import { buildHandoffPrompt } from "./handoff.js";
+import {
+  type CopilotSession,
+  loadCopilotSession,
+  resolveSessionPath,
+  saveCopilotSession,
+} from "./sessionStore.js";
 import { resolveTools, type ToolTier } from "./tools.js";
 import { CHAT_HTML } from "./ui.js";
 
@@ -32,6 +38,10 @@ type ChatServerConfig = TdmcpConfig &
   Partial<LlmRuntimeConfig> & {
     /** When set by the CLI, every browser/API chat request is forced to this tier. */
     llmLockedTier?: ToolTier;
+    /** Session file the transcript + model/tier persist to (/session/save|load). */
+    copilotSessionPath?: string;
+    /** When true (--resume), the UI is told to preload the persisted transcript. */
+    resumeSession?: boolean;
   };
 
 /** Extracts the bare hostname from a `Host` header (`h:port`, `[::1]:port`) or an `Origin` URL. */
@@ -170,6 +180,163 @@ async function handlePull(
   if (!res.writableEnded) res.end();
 }
 
+const SessionSaveBodySchema = {
+  isMessages(v: unknown): v is ChatMessage[] {
+    return Array.isArray(v);
+  },
+};
+
+async function handleSessionSave(
+  req: IncomingMessage,
+  res: ServerResponse,
+  sessionPath: string,
+  settings: LlmConfig,
+  tier: ToolTier | undefined,
+): Promise<void> {
+  const body = (await readJsonBody(req)) as {
+    messages?: ChatMessage[];
+    tier?: string;
+    model?: string;
+  };
+  if (!SessionSaveBodySchema.isMessages(body.messages)) {
+    // A non-array `messages` must not silently overwrite an existing transcript with
+    // `[]` and still report success — surface it as a structured client error.
+    res.writeHead(422, { "content-type": "application/json" });
+    res.end(JSON.stringify({ ok: false, path: sessionPath, error: "messages must be an array" }));
+    return;
+  }
+  const messages = body.messages;
+  const resolvedTier =
+    body.tier === "safe" || body.tier === "standard" || body.tier === "creative" ? body.tier : tier;
+  try {
+    saveCopilotSession(sessionPath, {
+      model: body.model ?? settings.llmModel,
+      base_url: settings.llmBaseUrl,
+      tier: resolvedTier,
+      temperature: settings.llmTemperature,
+      messages,
+    });
+  } catch (err) {
+    res.writeHead(422, { "content-type": "application/json" });
+    res.end(JSON.stringify({ ok: false, path: sessionPath, error: (err as Error).message }));
+    return;
+  }
+  res.writeHead(200, { "content-type": "application/json" });
+  res.end(JSON.stringify({ ok: true, path: sessionPath, count: messages.length }));
+}
+
+function handleSessionLoad(res: ServerResponse, sessionPath: string): void {
+  let session: CopilotSession | undefined;
+  try {
+    session = loadCopilotSession(sessionPath);
+  } catch (err) {
+    res.writeHead(422, { "content-type": "application/json" });
+    res.end(JSON.stringify({ ok: false, path: sessionPath, error: (err as Error).message }));
+    return;
+  }
+  res.writeHead(200, { "content-type": "application/json" });
+  res.end(
+    JSON.stringify({
+      ok: true,
+      path: sessionPath,
+      found: session !== undefined,
+      session: session ?? null,
+    }),
+  );
+}
+
+/** Serves the `/health` probe: model readiness plus the effective UI settings snapshot. */
+async function handleHealth(
+  res: ServerResponse,
+  client: LlmClient,
+  settings: LlmConfig,
+  config: ChatServerConfig,
+  sessionPath: string,
+): Promise<void> {
+  const health = await client.health();
+  res.writeHead(200, { "content-type": "application/json" });
+  res.end(
+    JSON.stringify({
+      ...health,
+      model: settings.llmModel,
+      baseUrl: settings.llmBaseUrl,
+      hasKey: Boolean(settings.llmApiKey),
+      defaultTier: config.llmTier ?? DEFAULT_LLM_TIER,
+      lockedTier: config.llmLockedTier,
+      maxSteps: config.llmMaxSteps ?? DEFAULT_LLM_MAX_STEPS,
+      temperature: settings.llmTemperature ?? DEFAULT_LLM_TEMPERATURE,
+      sessionPath,
+      resumeSession: config.resumeSession === true,
+    }),
+  );
+}
+
+/** Applies a `/settings` patch (model/endpoint/key) and echoes the new state. Returns it. */
+async function handleSettings(
+  req: IncomingMessage,
+  res: ServerResponse,
+  settings: LlmConfig,
+): Promise<LlmConfig> {
+  const patch = (await readJsonBody(req)) as { model?: string; baseUrl?: string; apiKey?: string };
+  const next = applySettings(settings, patch);
+  res.writeHead(200, { "content-type": "application/json" });
+  res.end(
+    JSON.stringify({
+      ok: true,
+      model: next.llmModel,
+      baseUrl: next.llmBaseUrl,
+      hasKey: Boolean(next.llmApiKey),
+    }),
+  );
+  return next;
+}
+
+interface PostRouteDeps {
+  req: IncomingMessage;
+  res: ServerResponse;
+  ctx: ToolContext;
+  clientFor: () => LlmClient;
+  config: ChatServerConfig;
+  sessionPath: string;
+  settings: LlmConfig;
+}
+
+/**
+ * Dispatches the mutating POST routes (`/settings`, `/chat`, `/pull`, `/session/save`,
+ * `/handoff`). Returns `{ handled }` plus the possibly-updated live settings so the
+ * caller can adopt a `/settings` change. Unknown POST paths return `handled: false`.
+ */
+async function dispatchPostRoute(
+  path: string,
+  deps: PostRouteDeps,
+): Promise<{ handled: boolean; settings: LlmConfig }> {
+  const { req, res, ctx, clientFor, config, sessionPath } = deps;
+  let settings = deps.settings;
+  if (path === "/settings") {
+    settings = await handleSettings(req, res, settings);
+  } else if (path === "/chat") {
+    await handleChat(req, res, ctx, clientFor(), config);
+  } else if (path === "/pull") {
+    await handlePull(req, res, clientFor());
+  } else if (path === "/session/save") {
+    await handleSessionSave(
+      req,
+      res,
+      sessionPath,
+      settings,
+      config.llmLockedTier ?? config.llmTier,
+    );
+  } else if (path === "/handoff") {
+    const body = (await readJsonBody(req)) as { messages?: ChatMessage[] };
+    const prompt = buildHandoffPrompt(Array.isArray(body.messages) ? body.messages : []);
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(JSON.stringify({ prompt }));
+  } else {
+    return { handled: false, settings };
+  }
+  return { handled: true, settings };
+}
+
 /**
  * Starts the local chat UI on loopback only. Serves the single-page UI at `/`, a
  * `/health` probe, a streaming `/chat` turn endpoint, and a `/pull` endpoint that
@@ -187,10 +354,11 @@ export function startChatServer(
     llmTemperature: config.llmTemperature,
   };
   const clientFor = () => new LlmClient(settings);
+  const sessionPath = resolveSessionPath(config.copilotSessionPath);
 
   const server = createServer((req, res) => {
     const method = req.method ?? "GET";
-    const path = (req.url ?? "/").split("?")[0];
+    const path = (req.url ?? "/").split("?")[0] ?? "/";
 
     const run = async () => {
       if (!isLoopbackRequest(req)) {
@@ -204,20 +372,7 @@ export function startChatServer(
         return;
       }
       if (method === "GET" && path === "/health") {
-        const health = await clientFor().health();
-        res.writeHead(200, { "content-type": "application/json" });
-        res.end(
-          JSON.stringify({
-            ...health,
-            model: settings.llmModel,
-            baseUrl: settings.llmBaseUrl,
-            hasKey: Boolean(settings.llmApiKey),
-            defaultTier: config.llmTier ?? DEFAULT_LLM_TIER,
-            lockedTier: config.llmLockedTier,
-            maxSteps: config.llmMaxSteps ?? DEFAULT_LLM_MAX_STEPS,
-            temperature: settings.llmTemperature ?? DEFAULT_LLM_TEMPERATURE,
-          }),
-        );
+        await handleHealth(res, clientFor(), settings, config, sessionPath);
         return;
       }
       if (method === "GET" && path === "/models") {
@@ -226,38 +381,22 @@ export function startChatServer(
         res.end(JSON.stringify({ models }));
         return;
       }
-      if (method === "POST" && path === "/settings") {
-        const patch = (await readJsonBody(req)) as {
-          model?: string;
-          baseUrl?: string;
-          apiKey?: string;
-        };
-        settings = applySettings(settings, patch);
-        res.writeHead(200, { "content-type": "application/json" });
-        res.end(
-          JSON.stringify({
-            ok: true,
-            model: settings.llmModel,
-            baseUrl: settings.llmBaseUrl,
-            hasKey: Boolean(settings.llmApiKey),
-          }),
-        );
+      if (method === "GET" && path === "/session/load") {
+        handleSessionLoad(res, sessionPath);
         return;
       }
-      if (method === "POST" && path === "/chat") {
-        await handleChat(req, res, ctx, clientFor(), config);
-        return;
-      }
-      if (method === "POST" && path === "/pull") {
-        await handlePull(req, res, clientFor());
-        return;
-      }
-      if (method === "POST" && path === "/handoff") {
-        const body = (await readJsonBody(req)) as { messages?: ChatMessage[] };
-        const prompt = buildHandoffPrompt(Array.isArray(body.messages) ? body.messages : []);
-        res.writeHead(200, { "content-type": "application/json" });
-        res.end(JSON.stringify({ prompt }));
-        return;
+      if (method === "POST") {
+        const result = await dispatchPostRoute(path, {
+          req,
+          res,
+          ctx,
+          clientFor,
+          config,
+          sessionPath,
+          settings,
+        });
+        settings = result.settings;
+        if (result.handled) return;
       }
       res.writeHead(404, { "content-type": "text/plain" });
       res.end("not found");

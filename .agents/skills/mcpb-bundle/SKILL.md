@@ -1,6 +1,6 @@
 ---
 name: mcpb-bundle
-description: How to migrate the tdmcp Codex Desktop bundle from legacy .dxt to .mcpb (MCP Bundle) and keep it building — covers the manifest schema (verify against the installed packer, never hardcode), the build-dxt.mjs packer/zip-fallback flow, the npm scripts, and the full .dxt→.mcpb reference sweep across docs and scripts. Use when packaging or migrating the tdmcp desktop bundle.
+description: How to migrate the tdmcp Codex Desktop bundle from legacy .dxt to .mcpb (MCP Bundle) and keep it building — covers the manifest schema (verify against the installed packer, never hardcode), the build-mcpb.mjs packer/zip-fallback flow, the npm scripts, and the full .dxt→.mcpb reference sweep across docs and scripts. Use when packaging or migrating the tdmcp desktop bundle.
 ---
 
 # tdmcp Desktop bundle: .dxt → .mcpb
@@ -12,7 +12,7 @@ installs in Codex Desktop, but new directory submissions should ship `.mcpb`.
 
 ## What this repo already has
 
-`scripts/build-dxt.mjs` is **already MCPB-aware**: it tries `@anthropic-ai/mcpb`
+`scripts/build-mcpb.mjs` is **already MCPB-aware**: it tries `@anthropic-ai/mcpb`
 first, falls back to legacy `@anthropic-ai/dxt`, then to a system `zip`. The
 bundle stages `manifest.json` at the archive root + `dist/`, `recipes/`, `td/`,
 `README.md`, `LICENSE`, `package.json`, and a production-only `node_modules`. So
@@ -29,7 +29,7 @@ modern MCPB key (not the legacy `dxt_version`), so the manifest is largely corre
    ships a `validate` command, run it against `dxt/manifest.json` and let it tell
    you. Only change `manifest_version` if validation demands it. A wrong value
    breaks install — this is why we verify rather than assume a number.
-2. **Output filename** → `tdmcp.mcpb`. In `scripts/build-dxt.mjs`: change
+2. **Output filename** → `tdmcp.mcpb`. In `scripts/build-mcpb.mjs`: change
    `outFile` to `tdmcp.mcpb` and update the log lines (they say `.dxt`). Keep the
    packer-preference order and the zip fallback intact — both must still work.
    Optionally rename the script file to `build-mcpb.mjs` (update the npm script if
@@ -65,5 +65,5 @@ unzip -l tdmcp.mcpb     # manifest.json at root + dist/ present
 
 The `dxt/` directory name and `dxt/manifest.json` path can stay as-is (internal
 paths the script references) — renaming the directory is optional churn and not
-required for a valid `.mcpb`. If you rename it, update `build-dxt.mjs`,
+required for a valid `.mcpb`. If you rename it, update `build-mcpb.mjs`,
 `package.json`'s `version` script, and `sync-manifest-version.mjs`.

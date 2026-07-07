@@ -78,6 +78,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "apply_shader_from_vault",
+    summary: "Apply a GLSL shader stored in the vault to a TD network.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "apply-creative-card",
     summary:
       "Read a Creative RAG card and route to one of its whitelisted Layer 1 tdmcpAffordances with optional overrides (use `dry_run: true` to preview).",
@@ -104,6 +111,14 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "arrange",
     summary: "Auto-arrange a network left→right.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "asemic-writing",
+    summary:
+      "Generate a page of procedural asemic writing — random-but-writing-like glyph strokes (Script SOP pen → Tube SOP → ortho render).",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -151,6 +166,20 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "auto_repair_loop",
+    summary: "Iteratively check a network for errors and apply automatic repairs.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "auto_tag_library_asset",
+    summary: "Auto-tag a vault library asset's frontmatter from its network contents.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "automation-lane",
     summary: "Timeline automation lane: animate target parameters from a CHOP curve.",
     mutates: true,
@@ -193,8 +222,23 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "bind_vault_text",
+    summary: "Create a Text DAT bound to a vault note so its text drives TD.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "blob-reactive",
     summary: "Track blob/hand positions from a camera or TOP and bind params to them.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "blob-trace",
+    summary:
+      "Trace a blob/silhouette into a vector contour outline: monochrome → blur → threshold mask → Trace SOP → wireframe render.",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -221,6 +265,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "browse_vault_library",
+    summary: "Browse the vault library (recipes/components) with category counts (read-only).",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "build-chop-chain",
     summary: "Assemble a typed CHOP-processing chain from a recipe of stages.",
     mutates: true,
@@ -242,10 +293,25 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "bundle-deps",
+    summary:
+      "Make a COMP self-contained: copy external assets beside a saved .tox and rewrite refs to relative paths.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "caption-top",
     summary:
       "Caption a TOP: plain-text description of colors/brightness/motion (vision LLM or histogram).",
     mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "capture_to_vault",
+    summary: "Capture a TOP preview and write it into the vault as an attachment note.",
+    mutates: true,
     unsafe: false,
     source: "tool",
   },
@@ -260,6 +326,13 @@ export const AGENT_COMMAND_CATALOG = [
     command: "chain",
     summary: "Create a chain of connected nodes.",
     mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "check-optypes",
+    summary: "Reconcile the operator knowledge base against the live TD's creatable optypes.",
+    mutates: false,
     unsafe: false,
     source: "tool",
   },
@@ -431,6 +504,83 @@ export const AGENT_COMMAND_CATALOG = [
     mutates: true,
     unsafe: false,
     source: "cli",
+  },
+  {
+    command: "copilot_vision",
+    summary: "Capture a TOP and ask the configured multimodal LLM a question about it.",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "create_auto_montage",
+    summary: "Build an auto-montage switcher that cycles between sources.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "create_euclidean_sequencer",
+    summary: "Build a Euclidean rhythm sequencer CHOP network.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "create_glsl_material",
+    summary: "Create a GLSL MAT material with custom shader code.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "create_pose_reactive",
+    summary: "Build a pose-reactive visual system driven by body tracking.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "create_preset_morph",
+    summary: "Build a preset-morphing rig that interpolates between parameter snapshots.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "create_safety_blackout_chain",
+    summary: "Build a safety blackout/failsafe chain in front of the output.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "create_scene_timeline",
+    summary: "Build a scene timeline that sequences looks over time.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "create_scheduler",
+    summary: "Build a time-based scheduler that triggers actions on a clock.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "create_setlist_runner",
+    summary: "Build an in-TD setlist runner network for scene-by-scene shows.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "create_show_failover",
+    summary: "Build a show failover switcher (main/backup source watchdog).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
   },
   {
     command: "create-ai-mirror",
@@ -688,6 +838,14 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "detection-reactive",
+    summary:
+      "Turn object/person detection (WebSocket or ONNX CPU) into presence/count/bbox channels.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "diagnose-tdableton-mapper",
     summary: "Inspect or repair TDAbleton TDA_Mapper routing for a hand Ableton mapper.",
     mutates: true,
@@ -711,6 +869,14 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "disconnect",
     summary: "Remove input wire(s) from a node (the inverse of connect).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "disorder-grid",
+    summary:
+      "Generate a grid of quads/lines with a single order↔chaos Disorder knob (0=perfect grid → 1=full chaos) driving per-cell position/rotation/scale jitter.",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -837,10 +1003,53 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "export_look_tox",
+    summary: "Export a look as a .tox component into the vault.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "export_network_to_vault",
+    summary: "Export a network snapshot/documentation into the vault.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "export_setlist_to_vault",
+    summary: "Write a setlist note (scenes/tracks) into the vault.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "export_sop_to_svg",
+    summary: "Export a SOP's geometry as an SVG file on disk.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "export-external-tree",
+    summary:
+      "Save a COMP as a git-diffable externalized .tox tree (each COMP becomes its own file).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "extend-data-source-fabric",
     summary:
       "Extend create_data_source with new feed adapters (websocket/sse/mqtt/file-tail/process).",
     mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "extract_palette",
+    summary: "Extract a K-color palette from a TOP via deterministic k-means (read-only).",
+    mutates: false,
     unsafe: false,
     source: "tool",
   },
@@ -874,6 +1083,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "fixture-control",
+    summary: "Build a moving-head fixture rig with DMX out + a 3D pan/tilt/beam previz.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "flock",
     summary: "Boids-style GPU particle flocking (separation/alignment/cohesion).",
     mutates: true,
@@ -896,8 +1112,22 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "focus_network_editor",
+    summary: "Pan/zoom TouchDesigner's Network Editor to frame given operators (UI-only).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "gen-audio",
     summary: "Synthesize audio (oscillator/fm/noise); optional device output.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "generate_from_moodboard",
+    summary: "Build a visual system from a vault moodboard note.",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -910,9 +1140,30 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "generative_classics_pack",
+    summary: "Build a pack of classic generative-art networks in one shot.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "genre",
     summary: "Scaffold a genre-flavored show (techno/ambient/installation).",
     mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "geo-visualization",
+    summary: "Project GeoJSON/OSM lat-long into a 3D city visualization (ODbL attribution).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "get_preview",
+    summary: "Capture a TOP's current output as an inline PNG image (read-only).",
+    mutates: false,
     unsafe: false,
     source: "tool",
   },
@@ -1027,6 +1278,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "import_setlist",
+    summary: "Read a vault setlist note and build each scene's recipe in TD.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "import-isf",
     summary: "Import an ISF shader into a native GLSL TOP network.",
     mutates: true,
@@ -1064,6 +1322,14 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "install-library",
     summary: "Install a local package folder, zip, tox, or manifest into a package directory.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "interaction-zones",
+    summary:
+      "Define N rectangular motion zones over a camera input; emits per-zone state + dwell channels ready to fire cues.",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -1207,6 +1473,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "lint_recipe_library",
+    summary: "Offline semantic linter for recipes/*.json (schema, wiring, operators).",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "live-source",
     summary:
       "Build a live input layer (screen-grab/ndi/syphon-spout/camera/stream) → a previewed Null.",
@@ -1220,6 +1493,20 @@ export const AGENT_COMMAND_CATALOG = [
     mutates: true,
     unsafe: false,
     source: "cli",
+  },
+  {
+    command: "load_session_profile",
+    summary: "Load (or initialise) the persistent ~/.tdmcp session profile snapshot.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "log_performance",
+    summary: "Write a dated performance journal entry (snapshot + preview) to the vault.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
   },
   {
     command: "log-tail",
@@ -1252,6 +1539,13 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "macro-record",
     summary: "Record / stop / list / load tool-call macros (replay ships in wave 5).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "manage_packages",
+    summary: "List/install/manage Python packages available to the TD bridge.",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -1387,6 +1681,14 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "multipass-3d",
     summary: "Build a multipass 3D scene (Render + SSAO + a synthetic Depth output).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "narrate-set",
+    summary:
+      "Persist/recall a live-set narration log (append timestamped decision lines; recall them later).",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -1659,6 +1961,14 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "pointer-reactive",
+    summary:
+      "Turn mouse/pointer position + click into a bindable u/v/velocity/button Null CHOP, with an optional pushed feedback demo.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "pop-field",
     summary: "Build a GPU POP point field (experimental — live-validation pending).",
     mutates: true,
@@ -1739,6 +2049,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "publish_recipe_bundle",
+    summary: "Publish a signed/versioned recipe bundle artifact to disk.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "randomize",
     summary: "Randomize a COMP's numeric controls within range.",
     mutates: true,
@@ -1777,6 +2094,13 @@ export const AGENT_COMMAND_CATALOG = [
     command: "rebuild",
     summary: "Rebuild a network from a serialize_network spec (create + params + wires).",
     mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "recall_similar_work",
+    summary: "Rank past vault memory notes by similarity to a new visual goal (read-only).",
+    mutates: false,
     unsafe: false,
     source: "tool",
   },
@@ -1894,6 +2218,34 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "save_component_to_vault",
+    summary: "Save a component (.tox + note) into the vault library.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "save_recipe_to_vault",
+    summary: "Save a recipe JSON + note into the vault library.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "scaffold_recipe_from_network",
+    summary: "Scaffold a RecipeSchema JSON from a live TD network into the vault.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "scaffold_vault",
+    summary: "Scaffold the vault folder structure (Recipes/, Components/, Memory/, …).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "scaffold-ext",
     summary: "Give a COMP a Python extension class (behavior/methods).",
     mutates: true,
@@ -1903,6 +2255,13 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "scaffold-tool-generator",
     summary: "Scaffold a new tdmcp tool file + msw unit test from an inline spec.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "scaffold-vj-deck",
+    summary: "Scaffold a MIDI-mappable VJ deck (decks + fader surface + MIDI map).",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -1947,6 +2306,14 @@ export const AGENT_COMMAND_CATALOG = [
     command: "sdf-field",
     summary:
       "Build a signed-distance-field raymarched scene (volumetric SDF primitives + lighting).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "sdf-text",
+    summary:
+      "Raymarch a text string as an extruded SDF slab: a Text TOP glyph mask fed to a GLSL raymarcher for solid, lit, spinnable 3D letters.",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -2073,6 +2440,14 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "step-repeat",
+    summary:
+      "Tile a source TOP into a rows×cols brick/grid with per-cell gap, position/rotation jitter, and optional brick offset.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "strange-attractor",
     summary: "Render a strange attractor (Lorenz / Aizawa / Halvorsen) as point/line geometry.",
     mutates: true,
@@ -2087,6 +2462,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "style_memory",
+    summary: "Read or update the artist's standing style memory note in the vault.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "surface",
     summary: "Build a playable panel: faders + cue buttons.",
     mutates: true,
@@ -2094,8 +2476,36 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "swap_operator",
+    summary: "Swap one operator for another type while preserving wiring and parameters.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "sync_presets_vault",
+    summary: "Sync presets between TD and the vault.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "sync-timecode",
     summary: "Lock the show clock to external timecode (LTC/MTC/MIDI).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "synesthesia-unreal-osc",
+    summary: "Build a named OSC-out preset map for Synesthesia / Unreal Engine.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "tag_and_search_library",
+    summary: "Faceted browse + tag editing over the vault library.",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -2117,6 +2527,14 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "tempo-sync",
     summary: "Create a beat clock (ramp/pulse/beat/bar/bpm) + optional beat events.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "terrain",
+    summary:
+      "Build a procedural heightmap terrain: Noise height field → GLSL vertex-displacement MAT on a subdivided grid, with optional water plane and distance fog.",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -2158,6 +2576,14 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "timecode-overlay",
+    summary:
+      "Overlay a live HH:MM:SS:FF timecode (clock / count-up / count-down) onto a source TOP as visual pixels.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "timeline",
     summary: "Control TD timeline transport (play/pause/seek/rate/range).",
     mutates: true,
@@ -2175,6 +2601,13 @@ export const AGENT_COMMAND_CATALOG = [
     command: "transition",
     summary:
       "Build an A→B transition (dissolve/luma_wipe/slide/zoom/glitch_cut) over a Progress knob.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "tutorial_companion_pack",
+    summary: "Write a tutorial companion pack (notes + previews) into the vault.",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -2230,9 +2663,24 @@ export const AGENT_COMMAND_CATALOG = [
     source: "cli",
   },
   {
+    command: "version_library_asset",
+    summary: "Version a vault library asset (semver bump + changelog trail).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "versions migration-plan",
     summary: "Plan a TD version migration from release and compatibility notes (offline).",
     mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "vertex-displacement-mat",
+    summary:
+      "Build a true vertex-shader displacement GLSL MAT (noise- or texture-driven) that deforms real mesh vertices; assign to a Geometry COMP or preview on a demo sphere.",
+    mutates: true,
     unsafe: false,
     source: "tool",
   },
@@ -2284,6 +2732,22 @@ export const AGENT_COMMAND_CATALOG = [
     mutates: false,
     unsafe: false,
     source: "cli",
+  },
+  {
+    command: "watch_node",
+    summary:
+      "Sample one operator over a short interval: runtime state, params, CHOP channels (read-only).",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "watch_parameter_changes",
+    summary:
+      "Subscribe to (or list/unsubscribe) param.changed events for an operator's parameters.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
   },
   {
     command: "watch-build",

@@ -1,0 +1,54 @@
+{
+  "id": "displacement_warp_noise",
+  "name": "Displacement Warp (Noise)",
+  "description": "Reproducible twin of create_displacement_warp in noise mode: a Displace TOP warps a source's UVs by an animated monochrome noiseTOP modulator, so the image ripples and flows. A synthetic horizontal rampTOP stands in as the source so it previews offline; swap it for a selectTOP to warp real footage. The modulator drifts via absTime expressions on its tx/ty so the warp animates offline. The second_top and audio modulator modes swap the noise for a select/audiospectrum source. Offline-validated against RecipeSchema; live-cook-validated on TD 099 build 2025.32820.",
+  "tags": ["post-processing", "displace", "warp", "noise", "ripple", "controls"],
+  "difficulty": "intermediate",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "source",
+      "type": "rampTOP",
+      "parameters": { "type": "horizontal" },
+      "comment": "Synthetic source — swap for a selectTOP / moviefileinTOP to warp real content."
+    },
+    {
+      "name": "modulator",
+      "type": "noiseTOP",
+      "parameters": { "period": 2, "mono": 1 },
+      "comment": "Monochrome displacement driver; tx/ty drift via absTime so the warp flows offline."
+    },
+    {
+      "name": "displace",
+      "type": "displaceTOP",
+      "parameters": { "uvweight": 0.15 },
+      "comment": "Warps the source's UVs (input 0) by the modulator (input 1). uvweight = UV warp amount."
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "Final warped output." }
+  ],
+  "connections": [
+    { "from": "source", "to": "displace", "to_input": 0 },
+    { "from": "modulator", "to": "displace", "to_input": 1 },
+    { "from": "displace", "to": "out1" }
+  ],
+  "parameters": [
+    {
+      "name": "modulator_drift_x",
+      "node": "modulator",
+      "param": "tx",
+      "expr": "absTime.seconds * 0.3",
+      "description": "Drifts the noise modulator horizontally so the warp animates offline."
+    },
+    {
+      "name": "modulator_drift_y",
+      "node": "modulator",
+      "param": "ty",
+      "expr": "absTime.seconds * 0.2",
+      "description": "Drifts the noise modulator vertically."
+    }
+  ],
+  "controls": [
+    { "name": "Amount", "type": "float", "min": 0, "max": 1, "default": 0.15, "bind_to": ["displace.uvweight"] }
+  ],
+  "preview_description": "A horizontal color ramp rippling and flowing as an animated noise field pushes its pixels around — a smooth UV displacement warp with a single Amount knob."
+}

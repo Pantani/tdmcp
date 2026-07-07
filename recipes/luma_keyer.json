@@ -1,0 +1,47 @@
+{
+  "id": "luma_keyer",
+  "name": "Luma Keyer",
+  "description": "Reproducible twin of create_keyer in luma mode: a Level TOP shapes the source's luminance into a matte (contrast = threshold, gamma = softness), and a Matte TOP composites the source (input 0) over a background (input 1) using that luminance matte (input 2). Synthetic sources — a horizontal rampTOP as the keyed source (its luminance ramp makes the key visible) and a noiseTOP background — so it previews offline; swap them for selectTOPs. The chroma/rgb modes of the orchestrator use chromakeyTOP/rgbkeyTOP instead (not KB-covered here). Offline-validated against RecipeSchema; live-cook-validated on TD 099 build 2025.32820.",
+  "tags": ["compositing", "key", "luma", "matte", "controls"],
+  "difficulty": "intermediate",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "source",
+      "type": "rampTOP",
+      "parameters": { "type": "horizontal" },
+      "comment": "Keyed source (luminance ramp) — swap for a selectTOP to key a real feed."
+    },
+    {
+      "name": "bg",
+      "type": "noiseTOP",
+      "parameters": { "period": 5 },
+      "comment": "Background revealed through the key — swap for a selectTOP."
+    },
+    {
+      "name": "key_luma",
+      "type": "levelTOP",
+      "parameters": { "gamma1": 0.8, "contrast": 2.0, "blacklevel": 0.0 },
+      "comment": "Shapes the source luminance into a matte: contrast = key threshold, gamma1 = edge softness."
+    },
+    {
+      "name": "matte1",
+      "type": "matteTOP",
+      "parameters": { "mattechannel": "luminance" },
+      "comment": "Composites source (in 0) over background (in 1) using the luminance of the matte (in 2)."
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "Final keyed composite." }
+  ],
+  "connections": [
+    { "from": "source", "to": "key_luma" },
+    { "from": "source", "to": "matte1", "to_input": 0 },
+    { "from": "bg", "to": "matte1", "to_input": 1 },
+    { "from": "key_luma", "to": "matte1", "to_input": 2 },
+    { "from": "matte1", "to": "out1" }
+  ],
+  "controls": [
+    { "name": "Threshold", "type": "float", "min": 0, "max": 4, "default": 2.0, "bind_to": ["key_luma.contrast"] },
+    { "name": "Softness", "type": "float", "min": 0.1, "max": 2, "default": 0.8, "bind_to": ["key_luma.gamma1"] }
+  ],
+  "preview_description": "A horizontal ramp keyed by its own brightness — the bright half reveals the source while the dark half lets a noise background show through, a luma key with threshold and softness knobs."
+}

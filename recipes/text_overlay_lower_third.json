@@ -1,0 +1,49 @@
+{
+  "id": "text_overlay_lower_third",
+  "name": "Text Overlay",
+  "description": "Reproducible twin of create_text_overlay: a Text TOP renders a caption which a Composite TOP lays over a background source. A synthetic radial rampTOP stands in as the background so it previews offline; swap it for a selectTOP pointing at your live output to caption a real feed (the orchestrator's no-source path is just the Text TOP on transparent). Edit the Text TOP's text/font params or bind them for live titling. Offline-validated against RecipeSchema; live-cook-validated on TD 099 build 2025.32820.",
+  "tags": ["text", "overlay", "title", "lower-third", "composite"],
+  "difficulty": "beginner",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "bg",
+      "type": "rampTOP",
+      "parameters": { "type": "radial", "outputresolution": "custom", "resolutionw": 1280, "resolutionh": 720 },
+      "comment": "Synthetic background — swap for a selectTOP to caption your real feed."
+    },
+    {
+      "name": "text",
+      "type": "textTOP",
+      "parameters": {
+        "text": "tdmcp",
+        "fontsizex": 120,
+        "fontsizey": 120,
+        "fontcolorr": 1,
+        "fontcolorg": 1,
+        "fontcolorb": 1,
+        "fontalpha": 1,
+        "alignx": "center",
+        "aligny": "center",
+        "bgalpha": 0,
+        "outputresolution": "custom",
+        "resolutionw": 1280,
+        "resolutionh": 720
+      },
+      "comment": "The caption on a transparent background (bgalpha 0) so it composites cleanly."
+    },
+    {
+      "name": "comp",
+      "type": "compositeTOP",
+      "parameters": { "operand": "over" },
+      "comment": "Lays the text (input 0) over the background (input 1)."
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "Final captioned output." }
+  ],
+  "connections": [
+    { "from": "text", "to": "comp", "to_input": 0 },
+    { "from": "bg", "to": "comp", "to_input": 1 },
+    { "from": "comp", "to": "out1" }
+  ],
+  "preview_description": "White 'tdmcp' title centered over a soft radial gradient — a caption composited over a background, ready to swap the background for a live feed."
+}

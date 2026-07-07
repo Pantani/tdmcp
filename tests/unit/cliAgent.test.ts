@@ -1283,7 +1283,9 @@ describe("tdmcp-agent CLI — phase 3 (advanced creation)", () => {
       ],
       { makeCtx },
     );
-    expect(r.code).toBe(1);
+    // Exit-code taxonomy: a tool that runs but returns isError is a TD error (4),
+    // not offline (3). (Bad flags/JSON/schema are caught pre-dispatch as usage=2.)
+    expect(r.code).toBe(4);
     expect(r.stderr).toContain("positive duration");
   });
 });
@@ -2389,6 +2391,13 @@ describe("tdmcp-agent CLI — coverage wave 3 offline branches", () => {
     expect([0, 1]).toContain(r.code);
   });
 
+  it("accepts bare --json as an alias for --output json on doctor", async () => {
+    const r = await runCli(["doctor", "--json"], { makeCtx });
+    expect(r.stdout).toContain('"checks"');
+    expect(r.stderr).toBe("");
+    expect([0, 1]).toContain(r.code);
+  });
+
   it("honors doctor --quiet by suppressing output", async () => {
     const r = await runCli(["doctor", "--quiet"], { makeCtx });
     expect(r.stdout).toBe("");
@@ -2419,5 +2428,34 @@ describe("tdmcp-agent CLI — coverage wave 3 offline branches", () => {
       stderr.mockRestore();
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+});
+
+describe("tdmcp-agent CLI — tool-parity wave subcommands", () => {
+  it("get_preview captures a TOP through the CLI (msw success path)", async () => {
+    const r = await runCli(
+      ["get_preview", "--params", '{"node_path":"/project1/render1","width":640,"height":360}'],
+      { makeCtx },
+    );
+    expect(r.code).toBe(0);
+    expect(r.stderr).toContain("Preview of /project1/render1");
+    expect(r.stdout.length).toBeGreaterThan(0);
+  });
+
+  it("watch_node surfaces a friendly error when the bridge returns no report", async () => {
+    const r = await runCli(
+      ["watch_node", "--params", '{"path":"/project1/noise1","samples":1,"interval_ms":20}'],
+      { makeCtx },
+    );
+    // Exit-code taxonomy: 4 = TD reached but the op failed (3 = TD unreachable).
+    expect(r.code).toBe(4);
+    expect(r.stderr).toContain("No samples collected");
+  });
+
+  it("scaffold_vault returns a friendly error when no vault is configured", async () => {
+    const r = await runCli(["scaffold_vault", "--params", "{}"], { makeCtx });
+    // Exit-code taxonomy: 4 = op failed (vault missing), not a transport failure.
+    expect(r.code).toBe(4);
+    expect(r.stderr.toLowerCase()).toContain("vault");
   });
 });

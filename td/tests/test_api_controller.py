@@ -164,11 +164,13 @@ class RoutingTests(unittest.TestCase):
             "preview": ac.preview_service,
             "editor": ac.editor_service,
         }
+        self._saved["watch"] = ac.watch_service
         ac.api_service = mock.MagicMock(name="api_service")
         ac.batch_service = mock.MagicMock(name="batch_service")
         ac.analysis_service = mock.MagicMock(name="analysis_service")
         ac.preview_service = mock.MagicMock(name="preview_service")
         ac.editor_service = mock.MagicMock(name="editor_service")
+        ac.watch_service = mock.MagicMock(name="watch_service")
 
     def tearDown(self):
         ac.api_service = self._saved["api"]
@@ -176,6 +178,7 @@ class RoutingTests(unittest.TestCase):
         ac.analysis_service = self._saved["analysis"]
         ac.preview_service = self._saved["preview"]
         ac.editor_service = self._saved["editor"]
+        ac.watch_service = self._saved["watch"]
 
     def test_get_info(self):
         ac._route("GET", "/api/info", {}, {})
@@ -267,6 +270,30 @@ class RoutingTests(unittest.TestCase):
     def test_editor_focus_dispatch(self):
         ac._route("POST", "/api/editor/focus", {}, {"paths": ["/project1/noise1"], "animate": True})
         ac.editor_service.focus.assert_called_once_with(["/project1/noise1"], True)
+
+    def test_watch_register_dispatch(self):
+        # Registration routes straight to watch_service; the onFrameEnd poller (not
+        # a DAT installed here) is what later emits the events.
+        ac._route("POST", "/api/params/watch", {}, {"path": "/project1/level1", "pars": ["opacity"]})
+        ac.watch_service.register.assert_called_once_with("/project1/level1", ["opacity"])
+
+    def test_watch_register_survives_exec_disabled(self):
+        os.environ["TDMCP_BRIDGE_ALLOW_EXEC"] = "0"
+        ac._route("POST", "/api/params/watch", {}, {"path": "/project1/level1"})
+        ac.watch_service.register.assert_called_once_with("/project1/level1", None)
+
+    def test_watch_unregister_dispatch(self):
+        ac._route("DELETE", "/api/params/watch", {}, {"path": "/project1/level1"})
+        ac.watch_service.unregister.assert_called_once_with("/project1/level1", None)
+
+    def test_watch_list_dispatch(self):
+        ac._route("GET", "/api/params/watch", {}, {})
+        ac.watch_service.list_watches.assert_called_once_with()
+
+    def test_watch_register_missing_path_raises(self):
+        with self.assertRaises(ValueError) as cm:
+            ac._route("POST", "/api/params/watch", {}, {})
+        self.assertIn("path", str(cm.exception))
 
     def test_network_topology_dispatch(self):
         ac._route("GET", "/api/network/project1/topology", {"recursive": ["true"]}, {})

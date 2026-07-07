@@ -2,8 +2,9 @@ import { spawn, spawnSync } from "node:child_process";
 import { setTimeout as delay } from "node:timers/promises";
 import { parseArgs } from "node:util";
 import { runAgentTurn } from "../llm/agent.js";
-import { LlmClient } from "../llm/client.js";
+import { type ChatMessage, LlmClient } from "../llm/client.js";
 import { startChatServer } from "../llm/server.js";
+import { loadCopilotSession, resolveSessionPath, saveCopilotSession } from "../llm/sessionStore.js";
 import { resolveTools } from "../llm/tools.js";
 import { buildToolContext } from "../server/context.js";
 import type { ToolContext } from "../tools/types.js";
@@ -88,9 +89,11 @@ export interface ChatCliOptions {
   autoStartOllama: boolean;
   readOnly: boolean;
   creative: boolean;
+  resume: boolean;
   prompt?: string;
   profile?: string;
   configPath?: string;
+  sessionPath?: string;
 }
 
 interface ChatRuntimeDeps {
@@ -112,6 +115,8 @@ Usage: tdmcp chat [flags]
 Flags:
   --read-only       Expose only inspection/readiness tools to the local copilot.
   --creative        Use the creative tool tier and a warmer sampling preset.
+  --resume          Reload the last saved transcript + model/tier and continue it.
+  --session <path>  Session file to persist/resume (default ~/.tdmcp/copilot-session.json).
   --prompt <text>   Run one headless prompt and print the answer; don't open the browser.
   --no-ollama       Don't auto-start Ollama; assume the endpoint is already running.
   --no-open         Don't open the browser automatically.
@@ -134,6 +139,8 @@ export function parseChatArgs(argv: string[] = []): ChatCliOptions {
       "no-ollama": { type: "boolean", default: false },
       "read-only": { type: "boolean", default: false },
       creative: { type: "boolean", default: false },
+      resume: { type: "boolean", default: false },
+      session: { type: "string" },
       prompt: { type: "string" },
       profile: { type: "string" },
       config: { type: "string" },
@@ -146,9 +153,11 @@ export function parseChatArgs(argv: string[] = []): ChatCliOptions {
     autoStartOllama: values["no-ollama"] !== true,
     readOnly: values["read-only"] === true,
     creative: values.creative === true,
+    resume: values.resume === true,
     ...(typeof values.prompt === "string" ? { prompt: values.prompt } : {}),
     ...(typeof values.profile === "string" ? { profile: values.profile } : {}),
     ...(typeof values.config === "string" ? { configPath: values.config } : {}),
+    ...(typeof values.session === "string" ? { sessionPath: values.session } : {}),
   };
 }
 
@@ -171,22 +180,135 @@ export function applyChatFlagOverrides(
   return next;
 }
 
+interface ResumeState {
+  config: LoadedTdmcpConfig;
+  messages: ChatMessage[];
+}
+
+/**
+ * `--resume`: reload the last saved transcript + model/tier so the copilot picks
+ * up where it left off. A corrupt/missing session is a warning, not a hard failure.
+ * Returns the (possibly overridden) config and the restored messages.
+ */
+export function resolveResumeSession(
+  config: LoadedTdmcpConfig,
+  sessionPath: string,
+  opts: Pick<ChatCliOptions, "readOnly" | "creative">,
+  warn: (msg: string) => void,
+): ResumeState {
+  try {
+    const session = loadCopilotSession(sessionPath);
+    if (!session) return { config, messages: [] };
+    const next = { ...config };
+    // Restore last model/tier/temperature unless flags already forced them.
+    if (session.model) next.llmModel = session.model;
+    if (session.tier && !opts.readOnly && !opts.creative) next.llmTier = session.tier;
+    if (typeof session.temperature === "number") {
+      // `--creative` already raised the temperature in applyChatFlagOverrides; a
+      // cooler resumed value must not undo it — keep the warmer of the two.
+      next.llmTemperature = opts.creative
+        ? Math.max(session.temperature, next.llmTemperature ?? DEFAULT_LLM_TEMPERATURE)
+        : session.temperature;
+    }
+    return { config: next, messages: session.messages };
+  } catch (err) {
+    warn(`  ⚠ Could not resume session: ${(err as Error).message}\n`);
+    return { config, messages: [] };
+  }
+}
+
+/**
+ * Persist the updated transcript after a headless `--resume` turn so a later run
+ * continues from this turn instead of the stale pre-turn context. A write failure
+ * is a warning, not a hard failure — the answer was already produced.
+ */
+export function persistResumeTurn(
+  sessionPath: string,
+  config: LoadedTdmcpConfig,
+  messages: ChatMessage[],
+  warn: (msg: string) => void,
+): void {
+  try {
+    saveCopilotSession(sessionPath, {
+      model: config.llmModel,
+      base_url: config.llmBaseUrl,
+      tier: config.llmTier,
+      temperature: config.llmTemperature,
+      messages,
+    });
+  } catch (err) {
+    warn(`  ⚠ Could not save session: ${(err as Error).message}\n`);
+  }
+}
+
+type LlmHealth = Awaited<ReturnType<LlmClient["health"]>>;
+
+/** One line describing the endpoint's health/model readiness for the startup banner. */
+function healthBannerLine(
+  health: LlmHealth,
+  config: LoadedTdmcpConfig,
+  autoStart: boolean,
+): string {
+  if (!health.ok) {
+    return (
+      `\n  ⚠ LLM endpoint unreachable (${health.detail}).\n` +
+      (autoStart
+        ? "    Install Ollama from https://ollama.com, then re-run `tdmcp chat`.\n"
+        : "    Auto-start is off (--no-ollama) — start it yourself: ollama serve\n")
+    );
+  }
+  if (!health.modelReady) {
+    return `\n  ⚠ ${health.detail}.\n    Pull it with:  ollama pull ${config.llmModel}  (or use the button in the UI)\n`;
+  }
+  return `  status: ${health.detail}\n`;
+}
+
+/** Prints the interactive startup banner (URL, model, tier, health, resume note). */
+function printServerBanner(
+  writeStdout: (chunk: string) => void,
+  url: string,
+  config: LoadedTdmcpConfig,
+  health: LlmHealth,
+  autoStart: boolean,
+  resume: { active: boolean; count: number; sessionPath: string },
+): void {
+  writeStdout(`\n  tdmcp local copilot → ${url}\n`);
+  writeStdout(`  model: ${config.llmModel}  ·  endpoint: ${config.llmBaseUrl}\n`);
+  writeStdout(
+    `  tier: ${config.llmTier}  ·  temperature: ${
+      config.llmTemperature ?? DEFAULT_LLM_TEMPERATURE
+    }\n`,
+  );
+  writeStdout(healthBannerLine(health, config, autoStart));
+  if (resume.active) {
+    writeStdout(
+      resume.count > 0
+        ? `  resume: ${resume.count} message(s) loaded from ${resume.sessionPath}\n`
+        : `  resume: no saved session at ${resume.sessionPath} yet\n`,
+    );
+  }
+  writeStdout("\n  Press Ctrl-C to stop.\n\n");
+}
+
 export async function runHeadlessPrompt(
   ctx: ToolContext,
   client: LlmClient,
   prompt: string,
   config: Pick<LoadedTdmcpConfig, "llmTier" | "llmMaxSteps">,
   writeStdout: (chunk: string) => void = (chunk) => process.stdout.write(chunk),
-): Promise<void> {
+  priorMessages: ChatMessage[] = [],
+): Promise<ChatMessage[]> {
   let answer: string | undefined;
   let error: string | undefined;
+  let suggestion: string | undefined;
   const messages = await runAgentTurn(
     ctx,
     client,
-    [{ role: "user", content: prompt }],
+    [...priorMessages, { role: "user", content: prompt }],
     (event) => {
       if (event.type === "answer") answer = event.content;
       if (event.type === "error") error = event.message;
+      if (event.type === "suggestion") suggestion = event.message;
     },
     {
       tools: resolveTools(config.llmTier, { projectRag: ctx.projectRag !== undefined }),
@@ -201,6 +323,41 @@ export async function runHeadlessPrompt(
     )?.content;
   const output = answer ?? fallback ?? (error ? `Error: ${error}` : "");
   if (output) writeStdout(`${output.trimEnd()}\n`);
+  // A non-intrusive nudge printed after the answer when the copilot hit a dead-end.
+  if (suggestion) writeStdout(`\nℹ️  ${suggestion}\n`);
+  return messages;
+}
+
+interface HeadlessChatState {
+  ctx: ToolContext;
+  client: LlmClient;
+  config: LoadedTdmcpConfig;
+  opts: ChatCliOptions;
+  sessionPath: string;
+  resumedMessages: ChatMessage[];
+}
+
+interface HeadlessChatIo {
+  log: (msg: string) => void;
+  writeStdout: (chunk: string) => void;
+  writeStderr: (chunk: string) => void;
+}
+
+/** Headless (`--prompt`) path: optional resume note, one turn, optional persist. */
+async function runHeadlessChat(state: HeadlessChatState, io: HeadlessChatIo): Promise<void> {
+  const { ctx, client, config, opts, sessionPath, resumedMessages } = state;
+  if (opts.resume && resumedMessages.length > 0) {
+    io.log(`  ↻ Resumed ${resumedMessages.length} message(s) from ${sessionPath}.`);
+  }
+  const finalMessages = await runHeadlessPrompt(
+    ctx,
+    client,
+    opts.prompt ?? "",
+    config,
+    io.writeStdout,
+    resumedMessages,
+  );
+  if (opts.resume) persistResumeTurn(sessionPath, config, finalMessages, io.writeStderr);
 }
 
 /**
@@ -237,7 +394,15 @@ export async function runChat(argv: string[] = [], deps: ChatRuntimeDeps = {}): 
     profile: opts.profile,
     configPath: opts.configPath,
   });
-  const config = applyChatFlagOverrides(loaded, opts);
+  let config = applyChatFlagOverrides(loaded, opts);
+
+  const sessionPath = resolveSessionPath(opts.sessionPath);
+  let resumedMessages: ChatMessage[] = [];
+  if (opts.resume) {
+    const resumed = resolveResumeSession(config, sessionPath, opts, writeStderr);
+    config = resumed.config;
+    resumedMessages = resumed.messages;
+  }
   const logger = makeLogger(config.logLevel === "silent" ? "silent" : "warn");
   const ctx = makeContext(config, { logger });
   const client = makeClient(config);
@@ -251,36 +416,29 @@ export async function runChat(argv: string[] = [], deps: ChatRuntimeDeps = {}): 
   await ensureOllama(client, config.llmBaseUrl, opts.autoStartOllama, log);
 
   if (headless) {
-    await runHeadlessPrompt(ctx, client, opts.prompt ?? "", config, writeStdout);
+    await runHeadlessChat(
+      { ctx, client, config, opts, sessionPath, resumedMessages },
+      { log, writeStdout, writeStderr },
+    );
     return;
   }
 
-  const serverConfig = opts.readOnly ? { ...config, llmLockedTier: "safe" as const } : config;
+  const baseServerConfig = {
+    ...config,
+    copilotSessionPath: sessionPath,
+    resumeSession: opts.resume,
+  };
+  const serverConfig = opts.readOnly
+    ? { ...baseServerConfig, llmLockedTier: "safe" as const }
+    : baseServerConfig;
   const handle = await launchServer(ctx, serverConfig);
   const health = await client.health();
 
-  writeStdout(`\n  tdmcp local copilot → ${handle.url}\n`);
-  writeStdout(`  model: ${config.llmModel}  ·  endpoint: ${config.llmBaseUrl}\n`);
-  writeStdout(
-    `  tier: ${config.llmTier}  ·  temperature: ${
-      config.llmTemperature ?? DEFAULT_LLM_TEMPERATURE
-    }\n`,
-  );
-  if (!health.ok) {
-    writeStdout(
-      `\n  ⚠ LLM endpoint unreachable (${health.detail}).\n` +
-        (opts.autoStartOllama
-          ? "    Install Ollama from https://ollama.com, then re-run `tdmcp chat`.\n"
-          : "    Auto-start is off (--no-ollama) — start it yourself: ollama serve\n"),
-    );
-  } else if (!health.modelReady) {
-    writeStdout(
-      `\n  ⚠ ${health.detail}.\n    Pull it with:  ollama pull ${config.llmModel}  (or use the button in the UI)\n`,
-    );
-  } else {
-    writeStdout(`  status: ${health.detail}\n`);
-  }
-  writeStdout("\n  Press Ctrl-C to stop.\n\n");
+  printServerBanner(writeStdout, handle.url, config, health, opts.autoStartOllama, {
+    active: opts.resume,
+    count: resumedMessages.length,
+    sessionPath,
+  });
 
   if (opts.openBrowser) launchBrowser(handle.url);
 
