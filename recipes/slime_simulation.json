@@ -1,7 +1,7 @@
 {
   "id": "slime_simulation",
   "name": "Slime Mold Simulation",
-  "description": "Reproducible twin of create_simulation (slime / fluid type): a noise seed is composited (maximum) with the fed-back previous frame, displaced by an animated flow-field noise, blurred, decayed by a Level TOP, and looped back through a Feedback TOP — producing organic, agent-like slime trails. After import, bind the flow noise's tz to absTime.seconds * <speed> so the flow evolves (manual-wire — RecipeSchema parameters take constants only). Distinct from reaction_diffusion (Gray-Scott) — this is a displacement-feedback trail system. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "description": "Reproducible twin of create_simulation (slime / fluid type): a noise seed is composited (maximum) with the fed-back previous frame, displaced by an animated flow-field noise, blurred, decayed by a Level TOP, and looped back through a Feedback TOP — producing organic, agent-like slime trails. After import, bind the flow noise's tz to absTime.seconds * <speed> so the flow evolves (manual-wire — RecipeSchema parameters take constants only). Distinct from reaction_diffusion (Gray-Scott) — this is a displacement-feedback trail system. Live-validated in TD 099 build 2025.32820 (2026-07-07): 0 node errors, 0 warnings, FlowStrength binds to displaceweightx/y, and the feedback trails are measurably displaced.",
   "tags": ["simulation", "slime", "feedback", "organic", "generative", "controls"],
   "difficulty": "advanced",
   "td_version_min": "2022",
@@ -32,8 +32,8 @@
     {
       "name": "displace",
       "type": "displaceTOP",
-      "parameters": { "uvweightx": 0.04, "uvweighty": 0.04 },
-      "comment": "Push the trails along the flow field each frame — the 'movement' of the slime."
+      "parameters": { "displaceweightx": 0.04, "displaceweighty": 0.04 },
+      "comment": "Push the trails along the flow field each frame via per-axis Displace Weight — the 'movement' of the slime."
     },
     {
       "name": "blur",
@@ -82,7 +82,7 @@
       "min": 0,
       "max": 0.2,
       "default": 0.04,
-      "bind_to": ["displace.uvweightx", "displace.uvweighty"]
+      "bind_to": ["displace.displaceweightx", "displace.displaceweighty"]
     }
   ],
   "preview_description": "Branching, network-like slime trails that crawl and merge across the frame, leaving fading paths behind them — a feedback-displacement organism."

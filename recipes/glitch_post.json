@@ -1,7 +1,7 @@
 {
   "id": "glitch_post",
   "name": "Glitch Post",
-  "description": "Reproducible twin of create_glitch: a noise driver displaces the source via a Displace TOP, then a GLSL TOP adds chromatic RGB split and horizontal band tearing. A synthetic animated noiseTOP stands in as the source so it previews offline; swap the source for a selectTOP to glitch real footage. After import, bind the driver's tz to absTime.seconds * <speed> for moving glitches (manual-wire — RecipeSchema parameters take constants only). Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "description": "Reproducible twin of create_glitch: a noise driver displaces the source via a Displace TOP, then a GLSL TOP adds chromatic RGB split and horizontal band tearing. A synthetic animated noiseTOP stands in as the source so it previews offline; swap the source for a selectTOP to glitch real footage. After import, bind the driver's tz to absTime.seconds * <speed> for moving glitches (manual-wire — RecipeSchema parameters take constants only). Live-validated in TD 099 build 2025.32820 (2026-07-07): 0 node errors, 0 warnings, the Amount control binds to displaceweightx, and the source is measurably displaced.",
   "tags": ["post-processing", "glitch", "datamosh", "rgb-shift", "glsl", "showcase"],
   "difficulty": "intermediate",
   "td_version_min": "2022",
@@ -27,8 +27,8 @@
     {
       "name": "displace",
       "type": "displaceTOP",
-      "parameters": { "uvweightx": 0.06, "uvweighty": 0.0 },
-      "comment": "Displaces the source horizontally by the driver — the structural glitch."
+      "parameters": { "displaceweightx": 0.5, "displaceweighty": 0.0 },
+      "comment": "Horizontal-only displace: displaceweightx (bound to Amount) shifts along the horzsource channel; displaceweighty=0 kills vertical — the structural glitch."
     },
     {
       "name": "rgbshift",
@@ -83,7 +83,7 @@
       "min": 0,
       "max": 1,
       "default": 0.5,
-      "bind_to": ["displace.uvweightx"]
+      "bind_to": ["displace.displaceweightx"]
     }
   ],
   "preview_description": "A colorful noise field shredded with sideways band-tears and a cyan/red chromatic fringe — a clean datamosh-style glitch look."

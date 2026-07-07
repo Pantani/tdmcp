@@ -11,7 +11,12 @@ import type { ToolContext } from "../../src/tools/types.js";
  */
 
 interface FakeClientBehaviour {
-  createNode?: () => Promise<{ path: string; name: string; type: string }>;
+  createNode?: () => Promise<{
+    path: string;
+    name: string;
+    type: string;
+    parameter_warnings?: string[];
+  }>;
   updateNodeParameters?: () => Promise<unknown>;
   executePythonScript?: () => Promise<unknown>;
   connectNodes?: () => Promise<{ actual_input?: number }>;
@@ -53,6 +58,34 @@ describe("NetworkBuilder fail-forward warnings", () => {
     expect(builder.created).toHaveLength(2);
     expect(builder.warnings).toHaveLength(1);
     expect(builder.warnings[0]).toContain(`Failed to connect ${a} → ${b}`);
+  });
+
+  it("surfaces the bridge's parameter_warnings from add() so a typo'd token is not silent", async () => {
+    // The bridge creates the node but reports params it could not apply (unknown
+    // token / bad value). Regression guard: a recipe node.parameters typo (e.g. a
+    // nonexistent displaceTOP token) must become a visible warning, not vanish.
+    const builder = new NetworkBuilder(
+      makeCtx({
+        createNode: async () => ({
+          path: "/project1/sys/displace",
+          name: "displace",
+          type: "displaceTOP",
+          parameter_warnings: ["uvweightx", "uvweighty"],
+        }),
+      }),
+      "/project1/sys",
+    );
+    await builder.add("displaceTOP", "displace", { uvweightx: 0.06, uvweighty: 0 });
+    expect(builder.created).toHaveLength(1);
+    expect(builder.warnings).toHaveLength(1);
+    expect(builder.warnings[0]).toContain("displace");
+    expect(builder.warnings[0]).toContain("uvweightx, uvweighty");
+  });
+
+  it("adds no warning when the bridge reports no parameter_warnings", async () => {
+    const builder = new NetworkBuilder(makeCtx({}), "/project1/sys");
+    await builder.add("noiseTOP", "n1", { period: 4 });
+    expect(builder.warnings).toHaveLength(0);
   });
 
   it("collects a warning when setParams fails, without throwing", async () => {
