@@ -46,6 +46,20 @@ const SMITHSONIAN_RESPONSE = {
           freetext: { name: [{ content: "Unknown Maker" }] },
         },
       },
+      // No record_link — sourceUrl must be built from record_ID (a bare
+      // edanmdm identifier), not emitted raw.
+      {
+        content: {
+          descriptiveNonRepeating: {
+            title: { content: "Record-ID Only Object" },
+            record_ID: "edanmdm-nmah_1234567",
+            guid: "http://n2t.net/ark:/65665/abcdef",
+            online_media: {
+              media: [{ type: "Images", usage: { access: "CC0" } }],
+            },
+          },
+        },
+      },
       // Malformed — no title, must be skipped.
       {
         content: {
@@ -74,13 +88,17 @@ describe("smithsonianSource", () => {
     vi.stubEnv("TDMCP_RAG_SMITHSONIAN_KEY", "test-key");
 
     const items = await smithsonianSource.fetchItems(5, fetch);
-    expect(items).toHaveLength(2); // malformed item skipped
+    expect(items).toHaveLength(3); // malformed item skipped
 
     const cc0 = items.find((i) => i.title === "Apollo 11 Command Module");
     expect(cc0?.license).toBe("CC0");
     expect(cc0?.artist).toBe("NASA");
     expect(cc0?.sourceUrl).toBe("https://www.si.edu/object/apollo11");
     expect(cc0?.imageUrl).toBe("https://ids.si.edu/ids/deliveryService?id=apollo11");
+
+    // No record_link ⇒ sourceUrl is the canonical object page built from record_ID.
+    const byId = items.find((i) => i.title === "Record-ID Only Object");
+    expect(byId?.sourceUrl).toBe("https://www.si.edu/object/edanmdm-nmah_1234567");
 
     // Restricted ⇒ Unknown and no imageUrl, even though an image exists.
     const restricted = items.find((i) => i.title === "Rights-Restricted Object");

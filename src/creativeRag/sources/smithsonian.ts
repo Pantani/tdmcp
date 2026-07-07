@@ -19,6 +19,8 @@ const NAME = "smithsonian";
 const DISPLAY_NAME = "Smithsonian Open Access";
 const SOURCE_NAME = DISPLAY_NAME;
 const API_BASE = "https://api.si.edu/openaccess/api/v1.0/search";
+/** Canonical object-page base; `record_ID` (edanmdm-…) resolves under it. */
+const SI_OBJECT_BASE = "https://www.si.edu/object/";
 const QUERY = 'online_media_type:"Images" AND media_usage:CC0';
 const ENV_KEY = "TDMCP_RAG_SMITHSONIAN_KEY";
 
@@ -57,9 +59,30 @@ function extractTitle(content: SmithsonianContent): string | undefined {
   return typeof content.title === "string" && content.title.length > 0 ? content.title : undefined;
 }
 
+function isAbsoluteUrl(value: string | undefined): value is string {
+  if (!value) return false;
+  try {
+    const { protocol } = new URL(value);
+    return protocol === "http:" || protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 function extractSourceUrl(content: SmithsonianContent): string | undefined {
   const dnr = content.descriptiveNonRepeating;
-  return dnr?.record_link || dnr?.record_ID || dnr?.guid || undefined;
+  // `record_link`/`guid` are absolute URLs when present; `record_ID` (edanmdm-…)
+  // is a bare identifier, so build its canonical object-page URL instead of
+  // emitting the raw id (which fails downstream URL validation).
+  const recordLink = dnr?.record_link;
+  if (isAbsoluteUrl(recordLink)) return recordLink;
+  const recordId = dnr?.record_ID;
+  if (typeof recordId === "string" && recordId.length > 0) {
+    return `${SI_OBJECT_BASE}${encodeURIComponent(recordId)}`;
+  }
+  const guid = dnr?.guid;
+  if (isAbsoluteUrl(guid)) return guid;
+  return undefined;
 }
 
 function extractArtist(content: SmithsonianContent): string | undefined {
