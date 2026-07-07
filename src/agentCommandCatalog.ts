@@ -1497,7 +1497,7 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "load_session_profile",
     summary: "Load (or initialise) the persistent ~/.tdmcp session profile snapshot.",
-    mutates: false,
+    mutates: true,
     unsafe: false,
     source: "tool",
   },
@@ -2738,6 +2738,14 @@ export const AGENT_COMMAND_CATALOG = [
     summary:
       "Sample one operator over a short interval: runtime state, params, CHOP channels (read-only).",
     mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "watch_parameter_changes",
+    summary:
+      "Subscribe to (or list/unsubscribe) param.changed events for an operator's parameters.",
+    mutates: true,
     unsafe: false,
     source: "tool",
   },

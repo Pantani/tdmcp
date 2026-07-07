@@ -831,6 +831,10 @@ import {
   validateOperatorChainSchema,
 } from "../tools/layer3/validateOperatorChain.js";
 import { watchNodeImpl, watchNodeSchema } from "../tools/layer3/watchNode.js";
+import {
+  watchParameterChangesImpl,
+  watchParameterChangesSchema,
+} from "../tools/layer3/watchParameterChanges.js";
 import { writeAgentGuideImpl, writeAgentGuideSchema } from "../tools/layer3/writeAgentGuide.js";
 import {
   checksumAndVerifyPackImpl,
@@ -2918,6 +2922,12 @@ const COMMANDS: Record<string, Command> = {
     watchNodeImpl,
     "Sample one operator over a short interval: runtime state, params, CHOP channels (read-only).",
   ),
+  watch_parameter_changes: r(
+    watchParameterChangesSchema,
+    watchParameterChangesImpl,
+    "Subscribe to (or list/unsubscribe) param.changed events for an operator's parameters.",
+    { mutates: true },
+  ),
   generative_classics_pack: r(
     generativeClassicsPackSchema,
     generativeClassicsPackImpl,
@@ -2928,6 +2938,7 @@ const COMMANDS: Record<string, Command> = {
     loadSessionProfileSchema,
     loadSessionProfileImpl,
     "Load (or initialise) the persistent ~/.tdmcp session profile snapshot.",
+    { mutates: true },
   ),
   apply_shader_from_vault: r(
     applyShaderFromVaultSchema,
@@ -3701,7 +3712,8 @@ function normalizeDoctorJsonFlag(argv: string[]): string[] {
   return argv.flatMap((arg, index) => {
     if (arg !== "--json") return [arg];
     const next = argv[index + 1];
-    const hasValue = typeof next === "string" && next !== "" && !next.startsWith("-");
+    // Option-like (`-q`, `--fix`) means no value; JSON can start with "-" (e.g. `-1`).
+    const hasValue = typeof next === "string" && next !== "" && !/^-[-a-zA-Z]/.test(next);
     return hasValue ? [arg] : ["--output", "json"];
   });
 }

@@ -2447,13 +2447,15 @@ describe("tdmcp-agent CLI — tool-parity wave subcommands", () => {
       ["watch_node", "--params", '{"path":"/project1/noise1","samples":1,"interval_ms":20}'],
       { makeCtx },
     );
-    expect(r.code).toBe(1);
+    // Exit-code taxonomy: 4 = TD reached but the op failed (3 = TD unreachable).
+    expect(r.code).toBe(4);
     expect(r.stderr).toContain("No samples collected");
   });
 
   it("scaffold_vault returns a friendly error when no vault is configured", async () => {
     const r = await runCli(["scaffold_vault", "--params", "{}"], { makeCtx });
-    expect(r.code).toBe(1);
+    // Exit-code taxonomy: 4 = op failed (vault missing), not a transport failure.
+    expect(r.code).toBe(4);
     expect(r.stderr.toLowerCase()).toContain("vault");
   });
 });
