@@ -95,6 +95,24 @@ def _place(_op, _x, _y):
     except Exception:
         pass
 
+# Find a free X slot at row _y among _parent's existing children so repeated runs
+# under the same parent don't stack containers on top of each other.
+def _free_x(_parent, _y, _start=0.0, _step=260.0):
+    try:
+        _occupied = set()
+        for _ch in _parent.children:
+            try:
+                if abs(float(_ch.nodeY) - float(_y)) < 1.0:
+                    _occupied.add(round(float(_ch.nodeX) / _step) * _step)
+            except Exception:
+                continue
+        _x = float(_start)
+        while round(_x / _step) * _step in _occupied:
+            _x += _step
+        return _x
+    except Exception:
+        return float(_start)
+
 # Script CHOP/SOP/TOP cook code lives in a companion callbacks DAT, resolved via the op's
 # 'callbacks' par (with a name-based fallback). Set THAT DAT's text, never the op's.
 def _set_script_cook(_op, _text):
@@ -186,8 +204,11 @@ try:
     if _parent is None:
         report["fatal"] = "Parent COMP not found: " + str(_p["parent_path"])
     else:
+        # Probe a free X slot at y=0 BEFORE creating the container so repeat calls under
+        # the same parent don't stack (the new op would otherwise occupy slot 0 itself).
+        _cx = _free_x(_parent, 0)
         _c = _parent.create(baseCOMP, _p["name"])
-        _place(_c, 0, 0)
+        _place(_c, _cx, 0)
         report["container"] = _c.path
         # detect (scriptCHOP) sits in the middle column; the source feeds it from the left
         # and the detections null exits to the right.

@@ -165,6 +165,25 @@ class WatchRegistryTests(unittest.TestCase):
         self.assertFalse(out["watching"])
         self.assertEqual(ws.list_watches()["count"], 0)
 
+    def test_unregister_ambiguous_leaf_is_noop(self):
+        # Regression: two watched ops sharing a basename under different parents
+        # (/project1/a/level1 and /project1/b/level1). Once the aliases no longer
+        # resolve, unregister("level1") is ambiguous and must remove NEITHER — the
+        # leaf fallback only fires for a unique match.
+        a = FakeOp("/project1/a/level1")
+        a.par.add("opacity", 1.0)
+        b = FakeOp("/project1/b/level1")
+        b.par.add("opacity", 1.0)
+        with _OpPatch({a.path: a, b.path: b}):
+            ws.register(a.path, ["opacity"])
+            ws.register(b.path, ["opacity"])
+        # Aliases unresolved: td.op returns nothing, only the ambiguous leaf is given.
+        with _OpPatch({}):
+            out = ws.unregister("level1")
+        self.assertFalse(out["watching"])
+        watches = {w["path"] for w in ws.list_watches()["watches"]}
+        self.assertEqual(watches, {a.path, b.path})
+
     def test_is_watched_respects_filter(self):
         node = FakeOp("/project1/level1")
         with _OpPatch({"/project1/level1": node}):

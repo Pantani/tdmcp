@@ -152,6 +152,35 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     now positions its container COMP and the fallback callbacks DAT; `mapMissingWatchEndpoint`
     preserves the original error as `cause`; and the watch-service helpers gained
     Ruff return-type annotations (`_resolve_watch_key`/`_clear_emit_state`/`_match`).
+  - **PR #128 review pass 4 (re-review follow-ups):**
+    - Copilot `/session/save` now rejects a non-array `messages` with a structured
+      `422 {ok:false, error:"messages must be an array"}` instead of silently
+      coercing it to `[]` and overwriting an existing transcript while returning 200.
+    - `--creative` no longer loses its warmer temperature when `--resume` restores a
+      cooler saved session temperature — the resumed value is `Math.max`'d with the
+      creative override rather than blindly replacing it.
+    - `create_fixture_control`: the 3D previz head band's Y origin is now computed
+      from the DMX/pad input-row count instead of a fixed `-900`, so the heads never
+      overlap the DMX column at high fixture counts (live-validated on TD 099 build
+      2025.32820: 6 gapped fixtures → 11 DMX rows to y=-1600, head band starts at
+      y=-1920, cooks with no node errors).
+    - `add_timecode_overlay`: the container COMP is now explicitly placed (`_place`
+      defined before the create and called immediately after) so it lands at stable
+      coordinates instead of TD's default drop point.
+    - `create_detection_reactive`: the container is shifted to a free X slot among
+      the parent's existing children (`_free_x` probe) before placement, so repeated
+      runs under the same parent no longer stack containers (live-validated: two runs
+      landed at x=260 and x=520, no node errors).
+    - `create_geo_visualization`: `_sop.errors()` (a newline-joined string) is now
+      split into lines before taking the first three, instead of char-slicing the
+      string into single characters.
+    - `getOpTypesViaExec` now throws the reported `fatal` reason before schema
+      validation, matching `saveNodeViaExec`/`duplicateNodeViaExec`, so a TD-side
+      failure surfaces its message instead of a generic "Unexpected shape" error.
+    - `tryEndpoint` is imported statically in `touchDesignerClient` instead of via a
+      per-call `await import("./types.js")` in each fallback method.
+    - Regression test: `unregister` on an ambiguous shared leaf basename is a no-op
+      (both canonical watches survive).
 
 - `create_pointer_reactive` no longer leaks undocumented channels past its output
   Null (roadmap-to-1.0 polish, live-validated on TD 099 build 2025.32820). The
@@ -249,8 +278,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `onValueChange` callback — was required because that callback fires only for
   interactive UI edits, not scripted/expression changes (confirmed live). The event
   is coalesced bridge-side (one emit per (path, par) per 50 ms, so a slider drag
-  can't flood) and typed as high-frequency in the Node event stream (delivered only
-  when the operator opts into `TDMCP_EVENTS` high-frequency mode). Typed client
+  can't flood) and gated at the source by the watch registry (an empty registry
+  stays silent), so it is delivered on the default MCP event stream without any
+  `TDMCP_EVENTS` high-frequency opt-in. Typed client
   methods `watchParameters`/`unwatchParameters`/`listParameterWatches`, a
   `ParamWatchResult`/`ParamWatchList`/`ParamChangedEvent` Zod envelope, and a
   `parseParamChangedEvent` validator on the event stream. All routes survive

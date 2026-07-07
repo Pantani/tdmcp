@@ -203,7 +203,13 @@ export function resolveResumeSession(
     // Restore last model/tier/temperature unless flags already forced them.
     if (session.model) next.llmModel = session.model;
     if (session.tier && !opts.readOnly && !opts.creative) next.llmTier = session.tier;
-    if (typeof session.temperature === "number") next.llmTemperature = session.temperature;
+    if (typeof session.temperature === "number") {
+      // `--creative` already raised the temperature in applyChatFlagOverrides; a
+      // cooler resumed value must not undo it — keep the warmer of the two.
+      next.llmTemperature = opts.creative
+        ? Math.max(session.temperature, next.llmTemperature ?? DEFAULT_LLM_TEMPERATURE)
+        : session.temperature;
+    }
     return { config: next, messages: session.messages };
   } catch (err) {
     warn(`  ⚠ Could not resume session: ${(err as Error).message}\n`);

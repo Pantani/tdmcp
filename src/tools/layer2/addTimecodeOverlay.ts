@@ -108,6 +108,17 @@ try:
         if _parent is None:
             report["fatal"] = "Parent COMP not found: " + str(_p["parent_path"])
         else:
+            def _place(_o, _x, _y):
+                # nodeX/nodeY are attributes, not params — set them so the chain reads
+                # left->right instead of stacking at the default drop point.
+                if _o is None:
+                    return
+                try:
+                    _o.nodeX = _x
+                    _o.nodeY = _y
+                except Exception:
+                    pass
+
             try:
                 _cont = _parent.create(baseCOMP, _p["name"])
             except Exception as _e:
@@ -115,17 +126,9 @@ try:
                 _cont = None
             if _cont is not None:
                 report["container"] = _cont.path
-
-                def _place(_o, _x, _y):
-                    # nodeX/nodeY are attributes, not params — set them so the chain reads
-                    # left->right instead of stacking at the default drop point.
-                    if _o is None:
-                        return
-                    try:
-                        _o.nodeX = _x
-                        _o.nodeY = _y
-                    except Exception:
-                        pass
+                # Place the container itself so repeated runs don't stack the containers
+                # at the parent's default drop point.
+                _place(_cont, 0, 0)
 
                 def _setpar(_o, _name, _val, _label):
                     # Set a parameter defensively; record a warning (not a throw) if absent.

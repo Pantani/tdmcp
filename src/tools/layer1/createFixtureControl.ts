@@ -181,7 +181,18 @@ try:
         _cursor = 1
         # DMX Constant CHOPs / pads stack in a left column (x=0); previz heads sit in a
         # separate lower band (x=0, y below the DMX column) so the two halves don't overlap.
-        _HEAD_Y0 = -900
+        # Count the DMX input rows up front (one row per fixture + one per channel-gap pad,
+        # mirroring the placement loop) so the head band starts BELOW the whole DMX/pad
+        # stack at any fixture count instead of a fixed -900 that collides when it grows.
+        _row_count = 0
+        _scan_cursor = 1
+        for _sf in _fixtures:
+            _sc = int(_sf["startChannel"])
+            if _sc > _scan_cursor:
+                _row_count += 1  # gap pad
+            _row_count += 1      # fixture Constant CHOP
+            _scan_cursor = max(_scan_cursor, _sc + len(_chans))
+        _HEAD_Y0 = min(-900, -(_row_count + 1) * 160)
         for _hi, _f in enumerate(_fixtures):
             _fid = _f["id"]
             _start = int(_f["startChannel"])

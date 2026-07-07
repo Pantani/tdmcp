@@ -6,6 +6,7 @@ import {
   TdBackpressureError,
   TdConnectionError,
   TdTimeoutError,
+  tryEndpoint,
 } from "./types.js";
 import {
   AdvancedCaptureSchema,
@@ -684,7 +685,6 @@ export class TouchDesignerClient {
     items: Array<{ path: string; keys?: string[]; nonDefaultOnly?: boolean }>,
     continueOnError = true,
   ) {
-    const { tryEndpoint } = await import("./types.js");
     return tryEndpoint(
       () => this.readParameterModesBatch(items, continueOnError),
       async () => {
@@ -779,7 +779,6 @@ export class TouchDesignerClient {
    * a friendly error — exactly as before this route existed.
    */
   async loadProject(path: string, timeoutMs?: number): Promise<TdProjectLoad> {
-    const { tryEndpoint } = await import("./types.js");
     return tryEndpoint(
       () =>
         this.request("POST", "/api/project/load", ProjectLoadSchema, {
@@ -822,7 +821,6 @@ export class TouchDesignerClient {
    * `TDMCP_BRIDGE_ALLOW_EXEC=0`, exactly as before this route existed.
    */
   async saveNode(path: string, file: string, createFolders = true): Promise<TdSaveNode> {
-    const { tryEndpoint } = await import("./types.js");
     return tryEndpoint(
       () =>
         this.request("POST", `/api/nodes/${segment(path)}/save`, SaveNodeSchema, {
@@ -868,7 +866,6 @@ export class TouchDesignerClient {
     name?: string,
     parentPath?: string,
   ): Promise<TdDuplicateNode> {
-    const { tryEndpoint } = await import("./types.js");
     return tryEndpoint(
       () =>
         this.request("POST", "/api/duplicate", DuplicateNodeSchema, {
@@ -910,7 +907,6 @@ export class TouchDesignerClient {
    * walks the `td` module for family-base subclasses and prints the same report.
    */
   async getOpTypes(): Promise<TdOpTypes> {
-    const { tryEndpoint } = await import("./types.js");
     return tryEndpoint(
       () => this.request("GET", "/api/optypes", OpTypesSchema),
       () => this.getOpTypesViaExec(),
@@ -921,6 +917,9 @@ export class TouchDesignerClient {
   private async getOpTypesViaExec(): Promise<TdOpTypes> {
     const exec = await this.executePythonScript(OPTYPES_EXEC_SCRIPT, true);
     const report = parseStdoutJson(exec.stdout);
+    if (report && typeof report === "object" && "fatal" in report) {
+      throw new TdApiError(String((report as { fatal: unknown }).fatal));
+    }
     const parsed = OpTypesSchema.safeParse(report);
     if (!parsed.success) {
       throw new TdApiError(`Unexpected getOpTypes report shape: ${parsed.error.message}`);

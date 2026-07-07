@@ -198,7 +198,14 @@ async function handleSessionSave(
     tier?: string;
     model?: string;
   };
-  const messages = SessionSaveBodySchema.isMessages(body.messages) ? body.messages : [];
+  if (!SessionSaveBodySchema.isMessages(body.messages)) {
+    // A non-array `messages` must not silently overwrite an existing transcript with
+    // `[]` and still report success — surface it as a structured client error.
+    res.writeHead(422, { "content-type": "application/json" });
+    res.end(JSON.stringify({ ok: false, path: sessionPath, error: "messages must be an array" }));
+    return;
+  }
+  const messages = body.messages;
   const resolvedTier =
     body.tier === "safe" || body.tier === "standard" || body.tier === "creative" ? body.tier : tier;
   try {
