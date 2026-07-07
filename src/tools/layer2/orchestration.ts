@@ -120,6 +120,15 @@ export class NetworkBuilder {
     if (ref.name) this.nameToPath.set(ref.name, ref.path);
     this.pathToType.set(ref.path, ref.type || type);
     this.created.push({ name: ref.name || name || "", path: ref.path, type: ref.type || type });
+    // The bridge creates the node regardless but reports any params it could not
+    // apply (unknown token or bad value). Surface them as warnings — otherwise a
+    // typo'd parameter name (e.g. a nonexistent displaceTOP token) fails silently
+    // and the build looks clean while the effect never takes hold.
+    if (ref.parameter_warnings?.length) {
+      this.warnings.push(
+        `Parameter(s) not applied on ${ref.name || name || ref.path} (${ref.type || type}) — unknown name or bad value: ${ref.parameter_warnings.join(", ")}.`,
+      );
+    }
     // A fresh geometryCOMP ships with a default torus1 that renders over the real
     // geometry; clear its default children before the builder populates it.
     if (/geometrycomp/i.test(type)) {

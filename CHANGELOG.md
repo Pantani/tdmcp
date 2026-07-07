@@ -24,6 +24,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Recipes `glitch_post` and `slime_simulation` bound and set a nonexistent
+  displaceTOP token (`uvweightx`/`uvweighty`), so the displacement silently did
+  nothing. Switched to the real per-axis Displace Weight tokens
+  (`displaceweightx`/`displaceweighty`), verified against the live op; both
+  live-validated in TD 099 build 2025.32820 with 0 node errors / 0 warnings.
+- `NetworkBuilder.add()` now surfaces the bridge's `parameter_warnings` (params
+  the op could not apply — unknown token or bad value) as build warnings. This
+  was already reported by the bridge and relayed by `create_td_node`, but
+  recipe/Layer 1–2 builds dropped it, so a typo'd parameter name failed silently
+  while the build looked clean. Catches the whole class at build/live-cook time.
 - Telegram: transport errors no longer embed the bot token in the surfaced
   error message (`/bot<TOKEN>/…` is redacted to `/bot[REDACTED]/…`).
 - `npm run lint` now checks explicit paths (`src tests scripts`), fixing the
