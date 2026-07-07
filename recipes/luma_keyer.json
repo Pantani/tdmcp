@@ -1,7 +1,7 @@
 {
   "id": "luma_keyer",
   "name": "Luma Keyer",
-  "description": "Reproducible twin of create_keyer in luma mode: a Level TOP shapes the source's luminance into a matte (contrast = threshold, gamma = softness), and a Matte TOP composites the source (input 0) over a background (input 1) using that luminance matte (input 2). Synthetic sources — a horizontal rampTOP as the keyed source (its luminance ramp makes the key visible) and a noiseTOP background — so it previews offline; swap them for selectTOPs. The chroma/rgb modes of the orchestrator use chromakeyTOP/rgbkeyTOP instead (not KB-covered here). Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "description": "Reproducible twin of create_keyer in luma mode: a Level TOP shapes the source's luminance into a matte (contrast = threshold, gamma = softness), and a Matte TOP composites the source (input 0) over a background (input 1) using that luminance matte (input 2). Synthetic sources — a horizontal rampTOP as the keyed source (its luminance ramp makes the key visible) and a noiseTOP background — so it previews offline; swap them for selectTOPs. The chroma/rgb modes of the orchestrator use chromakeyTOP/rgbkeyTOP instead (not KB-covered here). Offline-validated against RecipeSchema; live-cook-validated on TD 099 build 2025.32820.",
   "tags": ["compositing", "key", "luma", "matte", "controls"],
   "difficulty": "intermediate",
   "td_version_min": "2022",

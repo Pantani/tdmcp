@@ -1,7 +1,7 @@
 {
   "id": "strobe_flash",
   "name": "Strobe Flash",
-  "description": "Reproducible twin of create_strobe: a square-wave LFO CHOP gates a Level TOP that flashes a solid Constant TOP on and off at a set rate. The flash is driven by a parameter expression on the Level TOP's brightness1 that reads the LFO channel, so the strobe animates offline off absTime with no callbacks. Rate and duty are exposed as live controls. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check. WARNING: strobing light can trigger photosensitive seizures — keep rate moderate for audiences.",
+  "description": "Reproducible twin of create_strobe: a square-wave LFO CHOP gates a Level TOP that flashes a solid Constant TOP on and off at a set rate. The flash is driven by a parameter expression on the Level TOP's brightness1 that reads the LFO channel, so the strobe animates offline off absTime with no callbacks. Rate and duty are exposed as live controls. Offline-validated against RecipeSchema; live-cook-validated on TD 099 build 2025.32820. WARNING: strobing light can trigger photosensitive seizures — keep rate moderate for audiences.",
   "tags": ["vj", "strobe", "flash", "lfo", "beat", "controls"],
   "difficulty": "beginner",
   "td_version_min": "2022",

@@ -15,7 +15,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     `transition_dissolve`, `text_overlay_lower_third`, `layer_stack_blend`,
     `strobe_flash`, `test_pattern_grid`, `datamosh_feedback_echo`, `chrome_blobs`,
     `displacement_warp_noise`, `luma_keyer`) — `validate:recipes` 50/50 → **60/60**,
-    `lint:recipes` clean; live-cook UNVERIFIED-pending-TD.
+    `lint:recipes` clean, and all 10 **live-cook-validated on TD 099 build
+    2025.32820** (0 node errors / 0 warnings each; the `displacement_warp_noise`
+    displaceTOP weight token was corrected `uvweightx/y` → `uvweight` against the
+    live op).
   - **G5 — docs completeness.** All 20 new #128 tools now have EN **and** PT
     prompt-cookbook entries (20/20 each, parity holds); `docs/reference/cli.md`
     documents the new `tdmcp-agent` subcommands (`bundle-deps`,

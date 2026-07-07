@@ -1,7 +1,7 @@
 {
   "id": "displacement_warp_noise",
   "name": "Displacement Warp (Noise)",
-  "description": "Reproducible twin of create_displacement_warp in noise mode: a Displace TOP warps a source's UVs by an animated monochrome noiseTOP modulator, so the image ripples and flows. A synthetic horizontal rampTOP stands in as the source so it previews offline; swap it for a selectTOP to warp real footage. The modulator drifts via absTime expressions on its tx/ty so the warp animates offline. The second_top and audio modulator modes swap the noise for a select/audiospectrum source. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "description": "Reproducible twin of create_displacement_warp in noise mode: a Displace TOP warps a source's UVs by an animated monochrome noiseTOP modulator, so the image ripples and flows. A synthetic horizontal rampTOP stands in as the source so it previews offline; swap it for a selectTOP to warp real footage. The modulator drifts via absTime expressions on its tx/ty so the warp animates offline. The second_top and audio modulator modes swap the noise for a select/audiospectrum source. Offline-validated against RecipeSchema; live-cook-validated on TD 099 build 2025.32820.",
   "tags": ["post-processing", "displace", "warp", "noise", "ripple", "controls"],
   "difficulty": "intermediate",
   "td_version_min": "2022",
@@ -21,8 +21,8 @@
     {
       "name": "displace",
       "type": "displaceTOP",
-      "parameters": { "uvweightx": 0.15, "uvweighty": 0.15 },
-      "comment": "Warps the source's UVs (input 0) by the modulator (input 1). uvweightx/y = warp amount."
+      "parameters": { "uvweight": 0.15 },
+      "comment": "Warps the source's UVs (input 0) by the modulator (input 1). uvweight = UV warp amount."
     },
     { "name": "out1", "type": "nullTOP", "comment": "Final warped output." }
   ],
@@ -48,7 +48,7 @@
     }
   ],
   "controls": [
-    { "name": "Amount", "type": "float", "min": 0, "max": 1, "default": 0.15, "bind_to": ["displace.uvweightx", "displace.uvweighty"] }
+    { "name": "Amount", "type": "float", "min": 0, "max": 1, "default": 0.15, "bind_to": ["displace.uvweight"] }
   ],
   "preview_description": "A horizontal color ramp rippling and flowing as an animated noise field pushes its pixels around — a smooth UV displacement warp with a single Amount knob."
 }

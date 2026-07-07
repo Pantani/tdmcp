@@ -897,8 +897,9 @@ knowledge base by `npm run lint:recipes`).
   twins** of pure TOP/CHOP-network orchestrators: `color_grade_basic`,
   `transition_dissolve`, `text_overlay_lower_third`, `layer_stack_blend`,
   `strobe_flash`, `test_pattern_grid`, `datamosh_feedback_echo`, `chrome_blobs`,
-  `displacement_warp_noise`, `luma_keyer` (schema- and KB-valid,
-  live-cook UNVERIFIED-pending-TD). Orchestrators whose
+  `displacement_warp_noise`, `luma_keyer` — all **live-cook-validated on TD 099
+  build 2025.32820** (each applies with 0 node errors / 0 warnings; the
+  displaceTOP `uvweight` token was corrected against the live op). Orchestrators whose
   behavior is callback/pulse/hardware/3D-asset-driven (e.g. `create_vector_lines`,
   `create_automation_lane`, `create_text_crawl`, `create_growth_system`,
   `create_pbr_scene`, `create_point_cloud`, `create_gaussian_splat_scene`,

@@ -1,7 +1,7 @@
 {
   "id": "chrome_blobs",
   "name": "Chrome Blobs (Liquid Metal)",
-  "description": "Reproducible twin of create_chrome_blobs: an animated noise field is blurred, gamma-lifted, thresholded into metaballs and re-softened, then a GLSL TOP fakes a chrome environment reflection (Sobel normal + procedural studio env + moving specular) over a gradient background — the classic liquid-metal look. The blob field animates offline via absTime expressions on the noiseTOP; the metal color (silver) and gradient background are baked into the shader. uTime is a uniform: after import bind it to absTime.seconds to move the reflections (manual-wire — RecipeSchema uniforms take constants only). Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "description": "Reproducible twin of create_chrome_blobs: an animated noise field is blurred, gamma-lifted, thresholded into metaballs and re-softened, then a GLSL TOP fakes a chrome environment reflection (Sobel normal + procedural studio env + moving specular) over a gradient background — the classic liquid-metal look. The blob field animates offline via absTime expressions on the noiseTOP; the metal color (silver) and gradient background are baked into the shader. uTime is a uniform: after import bind it to absTime.seconds to move the reflections (manual-wire — RecipeSchema uniforms take constants only). Offline-validated against RecipeSchema; live-cook-validated on TD 099 build 2025.32820.",
   "tags": ["generative", "chrome", "metaball", "liquid-metal", "glsl", "showcase"],
   "difficulty": "advanced",
   "td_version_min": "2022",

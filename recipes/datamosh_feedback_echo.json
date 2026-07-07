@@ -1,7 +1,7 @@
 {
   "id": "datamosh_feedback_echo",
   "name": "Datamosh (Feedback Echo)",
-  "description": "Reproducible twin of create_datamosh in feedback_echo mode: a source is combined with the previous output via a Composite TOP (operand 'maximum' so it stays bounded under feedback gain), a Feedback TOP re-injects the loop output, and a Level TOP whose brightness1 is the decay multiplier controls the trail length. A synthetic animated noiseTOP stands in as the source so it previews offline; swap it for a selectTOP to mosh real footage. The frame_blend / time_echo modes use Cache/TimeMachine TOPs instead. Offline-validated against RecipeSchema; the recursive look only fully develops after several cooked frames (prioritize for live cook-check).",
+  "description": "Reproducible twin of create_datamosh in feedback_echo mode: a source is combined with the previous output via a Composite TOP (operand 'maximum' so it stays bounded under feedback gain), a Feedback TOP re-injects the loop output, and a Level TOP whose brightness1 is the decay multiplier controls the trail length. A synthetic animated noiseTOP stands in as the source so it previews offline; swap it for a selectTOP to mosh real footage. The frame_blend / time_echo modes use Cache/TimeMachine TOPs instead. Offline-validated against RecipeSchema; the recursive look only fully develops after several cooked frames (live-cook-validated on TD 099 build 2025.32820; the recursive look develops over several cooked frames).",
   "tags": ["post-processing", "datamosh", "feedback", "echo", "trails", "controls"],
   "difficulty": "intermediate",
   "td_version_min": "2022",

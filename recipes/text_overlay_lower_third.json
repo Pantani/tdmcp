@@ -1,7 +1,7 @@
 {
   "id": "text_overlay_lower_third",
   "name": "Text Overlay",
-  "description": "Reproducible twin of create_text_overlay: a Text TOP renders a caption which a Composite TOP lays over a background source. A synthetic radial rampTOP stands in as the background so it previews offline; swap it for a selectTOP pointing at your live output to caption a real feed (the orchestrator's no-source path is just the Text TOP on transparent). Edit the Text TOP's text/font params or bind them for live titling. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "description": "Reproducible twin of create_text_overlay: a Text TOP renders a caption which a Composite TOP lays over a background source. A synthetic radial rampTOP stands in as the background so it previews offline; swap it for a selectTOP pointing at your live output to caption a real feed (the orchestrator's no-source path is just the Text TOP on transparent). Edit the Text TOP's text/font params or bind them for live titling. Offline-validated against RecipeSchema; live-cook-validated on TD 099 build 2025.32820.",
   "tags": ["text", "overlay", "title", "lower-third", "composite"],
   "difficulty": "beginner",
   "td_version_min": "2022",

@@ -1,7 +1,7 @@
 {
   "id": "color_grade_basic",
   "name": "Color Grade (Lift/Gamma/Gain + HSV)",
-  "description": "Reproducible twin of create_color_grade: a linear TOP grading chain — a Level TOP does brightness/gamma/contrast/black-level, then an HSV Adjust TOP does saturation and hue. A synthetic horizontal rampTOP stands in as the source so it previews offline; swap it for a selectTOP pointing at real footage. Every grading knob is exposed as a live control. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "description": "Reproducible twin of create_color_grade: a linear TOP grading chain — a Level TOP does brightness/gamma/contrast/black-level, then an HSV Adjust TOP does saturation and hue. A synthetic horizontal rampTOP stands in as the source so it previews offline; swap it for a selectTOP pointing at real footage. Every grading knob is exposed as a live control. Offline-validated against RecipeSchema; live-cook-validated on TD 099 build 2025.32820.",
   "tags": ["post-processing", "color", "grade", "levels", "hsv", "controls"],
   "difficulty": "beginner",
   "td_version_min": "2022",

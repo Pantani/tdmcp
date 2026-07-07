@@ -1,7 +1,7 @@
 {
   "id": "test_pattern_grid",
   "name": "Test Pattern (Grid)",
-  "description": "Reproducible twin of create_test_pattern in grid mode: a single GLSL TOP draws an 8-division alignment grid (line color / background color baked into the shader) for projector focus, mapping alignment and output checks. The orchestrator can also overlay an output-number/label Text TOP and emits crosshair / color-bars / ramp / circle-grid variants; this twin captures the grid generator. Fully self-contained (no source) so it previews offline. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "description": "Reproducible twin of create_test_pattern in grid mode: a single GLSL TOP draws an 8-division alignment grid (line color / background color baked into the shader) for projector focus, mapping alignment and output checks. The orchestrator can also overlay an output-number/label Text TOP and emits crosshair / color-bars / ramp / circle-grid variants; this twin captures the grid generator. Fully self-contained (no source) so it previews offline. Offline-validated against RecipeSchema; live-cook-validated on TD 099 build 2025.32820.",
   "tags": ["utility", "test-pattern", "grid", "calibration", "projection", "glsl"],
   "difficulty": "beginner",
   "td_version_min": "2022",

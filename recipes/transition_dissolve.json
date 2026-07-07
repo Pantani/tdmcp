@@ -1,7 +1,7 @@
 {
   "id": "transition_dissolve",
   "name": "Transition (Dissolve)",
-  "description": "Reproducible twin of create_transition in dissolve mode: two sources blended by a single Cross TOP with a 0..1 Progress knob (0 = source A, 1 = source B). Self-contained test sources (a blue constantTOP and a radial rampTOP) so it previews offline; swap them for selectTOPs pointing at your real A/B decks. For the wipe/slide/zoom/glitch_cut styles the orchestrator adds transform/composite/GLSL stages — this twin captures the core crossfade. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "description": "Reproducible twin of create_transition in dissolve mode: two sources blended by a single Cross TOP with a 0..1 Progress knob (0 = source A, 1 = source B). Self-contained test sources (a blue constantTOP and a radial rampTOP) so it previews offline; swap them for selectTOPs pointing at your real A/B decks. For the wipe/slide/zoom/glitch_cut styles the orchestrator adds transform/composite/GLSL stages — this twin captures the core crossfade. Offline-validated against RecipeSchema; live-cook-validated on TD 099 build 2025.32820.",
   "tags": ["vj", "transition", "crossfade", "dissolve", "mixer", "controls"],
   "difficulty": "beginner",
   "td_version_min": "2022",

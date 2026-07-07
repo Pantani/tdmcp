@@ -1,7 +1,7 @@
 {
   "id": "layer_stack_blend",
   "name": "Layer Stack (3-Layer Blend)",
-  "description": "Reproducible twin of create_layer_stack: a bottom-up compositing stack where each layer is a source -> Level TOP (opacity) feeding a Composite TOP with a per-layer blend mode. Self-contained test sources (noise, radial ramp, magenta constant) stand in for real layers so it previews offline; swap each for a selectTOP. Layer 2 blends 'add' and layer 3 blends 'screen' over the base. Per-layer opacity is exposed as a live control. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "description": "Reproducible twin of create_layer_stack: a bottom-up compositing stack where each layer is a source -> Level TOP (opacity) feeding a Composite TOP with a per-layer blend mode. Self-contained test sources (noise, radial ramp, magenta constant) stand in for real layers so it previews offline; swap each for a selectTOP. Layer 2 blends 'add' and layer 3 blends 'screen' over the base. Per-layer opacity is exposed as a live control. Offline-validated against RecipeSchema; live-cook-validated on TD 099 build 2025.32820.",
   "tags": ["vj", "compositing", "layers", "blend", "stack", "controls"],
   "difficulty": "intermediate",
   "td_version_min": "2022",
