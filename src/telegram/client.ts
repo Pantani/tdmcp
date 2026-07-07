@@ -99,21 +99,19 @@ export class TelegramBotClient {
       .join("[REDACTED]");
   }
 
-  private async request<T>(
+  private async fetchResponse(
     method: string,
-    body?: Record<string, unknown>,
-    signal?: AbortSignal,
-    httpMethod = "POST",
-    timeoutMs = this.timeoutMs,
-  ): Promise<T> {
+    body: Record<string, unknown> | undefined,
+    signal: AbortSignal | undefined,
+    httpMethod: string,
+    timeoutMs: number,
+  ): Promise<Response> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     if (signal) {
       if (signal.aborted) controller.abort();
       else signal.addEventListener("abort", () => controller.abort(), { once: true });
     }
-
-    let response: Response;
     try {
       const init: RequestInit = {
         method: httpMethod,
@@ -123,14 +121,23 @@ export class TelegramBotClient {
         init.headers = { "content-type": "application/json" };
         init.body = JSON.stringify(body);
       }
-      response = await this.fetchImpl(`${this.baseUrl}/bot${this.token}/${method}`, init);
+      return await this.fetchImpl(`${this.baseUrl}/bot${this.token}/${method}`, init);
     } catch (err) {
       const rawMessage = err instanceof Error ? err.message : String(err);
       throw new Error(`Telegram Bot API ${method} request failed: ${this.redactToken(rawMessage)}`);
     } finally {
       clearTimeout(timer);
     }
+  }
 
+  private async request<T>(
+    method: string,
+    body?: Record<string, unknown>,
+    signal?: AbortSignal,
+    httpMethod = "POST",
+    timeoutMs = this.timeoutMs,
+  ): Promise<T> {
+    const response = await this.fetchResponse(method, body, signal, httpMethod, timeoutMs);
     const text = await response.text();
     let data: TelegramEnvelope<T> | undefined;
     try {
