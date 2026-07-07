@@ -177,6 +177,24 @@ describe("TelegramBotClient", () => {
       setTimeoutSpy.mock.calls.some(([, delay]) => typeof delay === "number" && delay >= 65_000),
     ).toBe(true);
   });
+
+  it("redacts the bot token from transport error messages", async () => {
+    const fetchImpl = vi.fn(async (url: string | URL) => {
+      throw new Error(`fetch failed: connect ECONNREFUSED for ${String(url)}`);
+    }) as unknown as typeof fetch;
+    const client = new TelegramBotClient({ token: "secret-token", fetchImpl });
+
+    const error = await client.getMe().then(
+      () => undefined,
+      (err: unknown) => err as Error,
+    );
+
+    expect(error).toBeInstanceOf(Error);
+    expect(error?.message).not.toContain("secret-token");
+    expect(error?.message).toContain("/bot[REDACTED]/getMe");
+    expect(error?.message).toContain("Telegram Bot API getMe request failed");
+    expect(error?.message).toContain("ECONNREFUSED");
+  });
 });
 
 describe("TelegramCopilotService", () => {

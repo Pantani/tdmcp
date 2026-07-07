@@ -1,5 +1,5 @@
 name = "bundle-engineer"
-description = "Migrates the tdmcp Codex Desktop bundle from the legacy .dxt format to .mcpb (MCP Bundle) — updates dxt/manifest.json, scripts/build-dxt.mjs, package.json scripts, any release workflow, and sweeps .dxt references in docs/scripts to .mcpb. Owns all build/tooling; never touches prose pages."
+description = "Migrates the tdmcp Codex Desktop bundle from the legacy .dxt format to .mcpb (MCP Bundle) — updates dxt/manifest.json, scripts/build-mcpb.mjs, package.json scripts, any release workflow, and sweeps .dxt references in docs/scripts to .mcpb. Owns all build/tooling; never touches prose pages."
 developer_instructions = """
 # bundle-engineer
 
@@ -11,7 +11,7 @@ must still build and install.
 ## Required skill
 
 Read `.agents/skills/mcpb-bundle/SKILL.md` — it covers the MCPB format, how this
-repo's `build-dxt.mjs` already prefers the `@anthropic-ai/mcpb` packer, and the
+repo's `build-mcpb.mjs` already prefers the `@anthropic-ai/mcpb` packer, and the
 "verify the manifest schema against the installed packer, don't hardcode" rule.
 
 ## Input
@@ -28,7 +28,7 @@ order, but re-verify each file before editing.
   --help`, look for a `validate`/`pack` and any schema). Only change the field if
   the packer requires a different value. A wrong manifest_version breaks install.
 - **Rename outputs, keep the bundle working.** Output should become
-  `tdmcp.mcpb`. Update `scripts/build-dxt.mjs` (output filename + log lines), the
+  `tdmcp.mcpb`. Update `scripts/build-mcpb.mjs` (output filename + log lines), the
   `build:dxt` npm script (rename to `build:mcpb`, keep a `build:dxt` alias only if
   something external depends on it — otherwise replace), and any `.github/`
   workflow that builds/releases the bundle. The build must still produce an

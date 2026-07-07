@@ -8,6 +8,27 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- CLI parity: 44 previously MCP-only tools are now `tdmcp-agent` subcommands
+  (all 21 vault tools, `get_preview`, `watch_node`, `manage_packages`,
+  `swap_operator`, `copilot_vision`, `auto_repair_loop`, `create_glsl_material`,
+  `publish_recipe_bundle`, and more), plus a parity regression test
+  (`tests/unit/cliToolParity.test.ts`) that keeps every tool Impl wired to the
+  CLI.
+- `tdmcp-agent doctor --json` is now accepted as an alias for
+  `doctor --output json`.
+- CI: the Python bridge test job pins `actions/setup-python`, and the `.mcpb`
+  bundle is uploaded as a PR artifact.
+- `TouchDesignerClient.getHealth()`: typed, Zod-validated client method for the
+  bridge's `GET /api/health` liveness/heartbeat report.
+
+
+### Fixed
+
+- Telegram: transport errors no longer embed the bot token in the surfaced
+  error message (`/bot<TOKEN>/…` is redacted to `/bot[REDACTED]/…`).
+- `npm run lint` now checks explicit paths (`src tests scripts`), fixing the
+  0-files no-op inside linked git worktrees.
+- Docs: tool count corrected to 335 in the README and docs landing page.
 - Connectors Directory submission readiness (roadmap gate G6): bundled a Desktop-
   extension icon (`mcpb/icon.png`, referenced by `manifest.icon`) and enriched the
   MCPB manifest with `long_description`, `icon`, `repository`, `homepage`,
@@ -461,6 +482,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   prompt tutorials (audio-reactive visual, camera-interactive installation, VJ
   set with a timeline, generative art loop) — three of them live-validated in
   TouchDesigner with captured preview videos embedded.
+
 
 - Drag-and-drop bridge install: `npm run build:bridge-tox` generates a
   tag-pinned, self-bootstrapping `tdmcp_bridge_package.tox` (via the running

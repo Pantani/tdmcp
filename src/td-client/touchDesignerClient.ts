@@ -25,6 +25,7 @@ import {
   DuplicateNodeSchema,
   EditorFocusSchema,
   ExecResultSchema,
+  HealthSchema,
   InfoSchema,
   MethodResultSchema,
   NodeDetailSchema,
@@ -445,6 +446,11 @@ export class TouchDesignerClient {
 
   getInfo() {
     return this.request("GET", "/api/info", InfoSchema);
+  }
+
+  /** Bridge liveness/uptime/heartbeat report (`GET /api/health`). */
+  getHealth() {
+    return this.request("GET", "/api/health", HealthSchema);
   }
 
   createNode(input: CreateNodeInput) {

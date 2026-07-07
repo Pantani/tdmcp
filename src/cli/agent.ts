@@ -42,6 +42,10 @@ import { capturePreview } from "../feedback/previewCapture.js";
 import { buildToolContext } from "../server/context.js";
 import { type TdEventHandler, TdEventStream } from "../td-client/eventStream.js";
 import { friendlyTdError } from "../td-client/types.js";
+import {
+  loadSessionProfileImpl,
+  loadSessionProfileSchema,
+} from "../tools/ai/loadSessionProfile.js";
 import { narrateSetImpl, narrateSetSchema } from "../tools/ai/narrateSet.js";
 // Campaign BEYOND Wave 4 (backlog 2026-05-30 — v0.7.0):
 import { macroRecorderImpl, macroRecorderSchema } from "../tools/cli/macroRecorder.js";
@@ -314,6 +318,10 @@ import {
   createPoseControlnetDriverSchema,
 } from "../tools/layer1/createPoseControlnetDriver.js";
 import {
+  createPoseReactiveImpl,
+  createPoseReactiveSchema,
+} from "../tools/layer1/createPoseReactive.js";
+import {
   createPoseSkeletonImpl,
   createPoseSkeletonSchema,
 } from "../tools/layer1/createPoseSkeleton.js";
@@ -337,14 +345,26 @@ import {
   createReactionDiffusionImpl,
   createReactionDiffusionSchema,
 } from "../tools/layer1/createReactionDiffusion.js";
+import {
+  createSafetyBlackoutChainImpl,
+  createSafetyBlackoutChainSchema,
+} from "../tools/layer1/createSafetyBlackoutChain.js";
 import { createSdfFieldImpl, createSdfFieldSchema } from "../tools/layer1/createSdfField.js";
 import { createSdfTextImpl, createSdfTextSchema } from "../tools/layer1/createSdfText.js";
+import {
+  createSetlistRunnerImpl,
+  createSetlistRunnerSchema,
+} from "../tools/layer1/createSetlistRunner.js";
 import {
   createSetNavigatorImpl,
   createSetNavigatorSchema,
 } from "../tools/layer1/createSetNavigator.js";
 import { createShaderLibImpl, createShaderLibSchema } from "../tools/layer1/createShaderLib.js";
 import { createShaderParkImpl, createShaderParkSchema } from "../tools/layer1/createShaderPark.js";
+import {
+  createShowFailoverImpl,
+  createShowFailoverSchema,
+} from "../tools/layer1/createShowFailover.js";
 import { createSimulationImpl, createSimulationSchema } from "../tools/layer1/createSimulation.js";
 import { createSlitScanImpl, createSlitScanSchema } from "../tools/layer1/createSlitScan.js";
 import { createSpectrumImpl, createSpectrumSchema } from "../tools/layer1/createSpectrum.js";
@@ -427,7 +447,7 @@ import {
   extractAudioFeaturesImpl,
   extractAudioFeaturesSchema,
 } from "../tools/layer1/extractAudioFeatures.js";
-import { getPreviewSchema } from "../tools/layer1/getPreview.js";
+import { getPreviewImpl, getPreviewSchema } from "../tools/layer1/getPreview.js";
 import { importIsfShaderImpl, importIsfShaderSchema } from "../tools/layer1/importIsfShader.js";
 import { importModelImpl, importModelSchema } from "../tools/layer1/importModel.js";
 import { importShadertoyImpl, importShadertoySchema } from "../tools/layer1/importShadertoy.js";
@@ -463,6 +483,7 @@ import {
   authorScriptOperatorImpl,
   authorScriptOperatorSchema,
 } from "../tools/layer2/authorScriptOperator.js";
+import { autoRepairLoopImpl, autoRepairLoopSchema } from "../tools/layer2/autoRepairLoop.js";
 import { batchOperationsImpl, batchOperationsSchema } from "../tools/layer2/batchOperations.js";
 import {
   bindAudioReactiveImpl,
@@ -482,6 +503,10 @@ import {
   createAudioGlslUniformsImpl,
   createAudioGlslUniformsSchema,
 } from "../tools/layer2/createAudioGlslUniforms.js";
+import {
+  createAutoMontageImpl,
+  createAutoMontageSchema,
+} from "../tools/layer2/createAutoMontage.js";
 // Campaign Wave 3 — artist controls (backlog 2026-05-29):
 import { createBandRouterImpl, createBandRouterSchema } from "../tools/layer2/createBandRouter.js";
 import {
@@ -523,11 +548,19 @@ import {
   createEnvelopeFollowerImpl,
   createEnvelopeFollowerSchema,
 } from "../tools/layer2/createEnvelopeFollower.js";
+import {
+  createEuclideanSequencerImpl,
+  createEuclideanSequencerSchema,
+} from "../tools/layer2/createEuclideanSequencer.js";
 import { createExternalIoImpl, createExternalIoSchema } from "../tools/layer2/createExternalIo.js";
 import {
   createFlowAbstractionImpl,
   createFlowAbstractionSchema,
 } from "../tools/layer2/createFlowAbstraction.js";
+import {
+  createGlslMaterialImpl,
+  createGlslMaterialSchema,
+} from "../tools/layer2/createGlslMaterial.js";
 import { createGlslShaderImpl, createGlslShaderSchema } from "../tools/layer2/createGlslShader.js";
 import {
   createHandAbletonMapperImpl,
@@ -552,10 +585,19 @@ import {
   createPhoneRemoteSchema,
 } from "../tools/layer2/createPhoneRemote.js";
 import {
+  createPresetMorphImpl,
+  createPresetMorphSchema,
+} from "../tools/layer2/createPresetMorph.js";
+import {
   createPythonScriptImpl,
   createPythonScriptSchema,
 } from "../tools/layer2/createPythonScript.js";
 import { createReplicatorImpl, createReplicatorSchema } from "../tools/layer2/createReplicator.js";
+import {
+  createSceneTimelineImpl,
+  createSceneTimelineSchema,
+} from "../tools/layer2/createSceneTimeline.js";
+import { createSchedulerImpl, createSchedulerSchema } from "../tools/layer2/createScheduler.js";
 import {
   createSharedMemoryBridgeImpl,
   createSharedMemoryBridgeSchema,
@@ -583,6 +625,10 @@ import {
   extendDataSourceFabricImpl,
   extendDataSourceFabricSchema,
 } from "../tools/layer2/extendDataSourceFabric.js";
+import {
+  focusNetworkEditorImpl,
+  focusNetworkEditorSchema,
+} from "../tools/layer2/focusNetworkEditor.js";
 import { learnControlImpl, learnControlSchema } from "../tools/layer2/learnControl.js";
 import { manageAnnotationImpl, manageAnnotationSchema } from "../tools/layer2/manageAnnotation.js";
 import { manageCheckpointImpl, manageCheckpointSchema } from "../tools/layer2/manageCheckpoint.js";
@@ -649,6 +695,7 @@ import {
   controlTimelineTransportImpl,
   controlTimelineTransportSchema,
 } from "../tools/layer3/controlTimelineTransport.js";
+import { copilotVisionImpl, copilotVisionSchema } from "../tools/layer3/copilotVision.js";
 import { createTdNodeImpl, createTdNodeSchema } from "../tools/layer3/createTdNode.js";
 import { deleteTdNodeImpl, deleteTdNodeSchema } from "../tools/layer3/deleteTdNode.js";
 import {
@@ -680,6 +727,8 @@ import {
   executePythonScriptImpl,
   executePythonScriptSchema,
 } from "../tools/layer3/executePythonScript.js";
+import { exportSopToSvgImpl, exportSopToSvgSchema } from "../tools/layer3/exportSopToSvg.js";
+import { extractPaletteImpl, extractPaletteSchema } from "../tools/layer3/extractPalette.js";
 import { findTdNodesImpl, findTdNodesSchema } from "../tools/layer3/findTdNodes.js";
 import { generateReadmeImpl, generateReadmeSchema } from "../tools/layer3/generateReadme.js";
 import { getBridgeLogsImpl, getBridgeLogsSchema } from "../tools/layer3/getBridgeLogs.js";
@@ -721,9 +770,14 @@ import {
   inspectGpuAndDisplaysSchema,
 } from "../tools/layer3/inspectGpuAndDisplays.js";
 import {
+  lintRecipeLibraryImpl,
+  lintRecipeLibrarySchema,
+} from "../tools/layer3/lintRecipeLibrary.js";
+import {
   manageComponentStorageImpl,
   manageComponentStorageSchema,
 } from "../tools/layer3/manageComponentStorage.js";
+import { managePackagesImpl, managePackagesSchema } from "../tools/layer3/managePackages.js";
 import {
   optimizePerformanceImpl,
   optimizePerformanceSchema,
@@ -767,6 +821,7 @@ import {
   summarizeTdErrorsImpl,
   summarizeTdErrorsSchema,
 } from "../tools/layer3/summarizeTdErrors.js";
+import { swapOperatorImpl, swapOperatorSchema } from "../tools/layer3/swapOperator.js";
 import {
   updateTdNodeParametersImpl,
   updateTdNodeParametersSchema,
@@ -775,6 +830,11 @@ import {
   validateOperatorChainImpl,
   validateOperatorChainSchema,
 } from "../tools/layer3/validateOperatorChain.js";
+import { watchNodeImpl, watchNodeSchema } from "../tools/layer3/watchNode.js";
+import {
+  watchParameterChangesImpl,
+  watchParameterChangesSchema,
+} from "../tools/layer3/watchParameterChanges.js";
 import { writeAgentGuideImpl, writeAgentGuideSchema } from "../tools/layer3/writeAgentGuide.js";
 import {
   checksumAndVerifyPackImpl,
@@ -801,6 +861,10 @@ import {
   exportPaletteComponentSchema,
 } from "../tools/library/exportPaletteComponent.js";
 import {
+  generativeClassicsPackImpl,
+  generativeClassicsPackSchema,
+} from "../tools/library/generativeClassicsPack.js";
+import {
   importRecipeFromUrlImpl,
   importRecipeFromUrlSchema,
 } from "../tools/library/importRecipeFromUrl.js";
@@ -823,6 +887,8 @@ import {
   localMarketplaceIndexSchema,
   makePortableToxImpl,
   makePortableToxSchema,
+  publishRecipeBundleImpl,
+  publishRecipeBundleSchema,
   refreshAssetPreviewsImpl,
   refreshAssetPreviewsSchema,
   scaffoldRecipeTemplateImpl,
@@ -833,9 +899,37 @@ import {
 import { provenanceStampImpl, provenanceStampSchema } from "../tools/library/provenanceStamp.js";
 import type { ToolContext } from "../tools/types.js";
 import {
+  applyShaderFromVaultImpl,
+  applyShaderFromVaultSchema,
+} from "../tools/vault/applyShaderFromVault.js";
+import {
+  autoTagLibraryAssetImpl,
+  autoTagLibraryAssetSchema,
+} from "../tools/vault/autoTagLibraryAsset.js";
+import { bindVaultTextImpl, bindVaultTextSchema } from "../tools/vault/bindVaultText.js";
+import {
+  browseVaultLibraryImpl,
+  browseVaultLibrarySchema,
+} from "../tools/vault/browseVaultLibrary.js";
+import { captureToVaultImpl, captureToVaultSchema } from "../tools/vault/captureToVault.js";
+import { exportLookToxImpl, exportLookToxSchema } from "../tools/vault/exportLookTox.js";
+import {
+  exportNetworkToVaultImpl,
+  exportNetworkToVaultSchema,
+} from "../tools/vault/exportNetworkToVault.js";
+import {
+  exportSetlistToVaultImpl,
+  exportSetlistToVaultSchema,
+} from "../tools/vault/exportSetlistToVault.js";
+import {
+  generateFromMoodboardImpl,
+  generateFromMoodboardSchema,
+} from "../tools/vault/generateFromMoodboard.js";
+import {
   generateLibraryIndexImpl,
   generateLibraryIndexSchema,
 } from "../tools/vault/generateLibraryIndex.js";
+import { importSetlistImpl, importSetlistSchema } from "../tools/vault/importSetlist.js";
 import { learnConventionsImpl, learnConventionsSchema } from "../tools/vault/learnConventions.js";
 import {
   learnFromMyCorpusImpl,
@@ -845,10 +939,42 @@ import {
   libraryLineageGraphImpl,
   libraryLineageGraphSchema,
 } from "../tools/vault/libraryLineageGraph.js";
+import { logPerformanceImpl, logPerformanceSchema } from "../tools/vault/logPerformance.js";
 import { mergeVaultsImpl, mergeVaultsSchema } from "../tools/vault/mergeVaults.js";
 import { morphPackImpl, morphPackSchema } from "../tools/vault/morphPack.js";
+import {
+  recallSimilarWorkImpl,
+  recallSimilarWorkSchema,
+} from "../tools/vault/recallSimilarWork.js";
+import {
+  saveComponentToVaultImpl,
+  saveComponentToVaultSchema,
+} from "../tools/vault/saveComponentToVault.js";
+import {
+  saveRecipeToVaultImpl,
+  saveRecipeToVaultSchema,
+} from "../tools/vault/saveRecipeToVault.js";
+import {
+  scaffoldRecipeFromNetworkImpl,
+  scaffoldRecipeFromNetworkSchema,
+} from "../tools/vault/scaffoldRecipeFromNetwork.js";
+import { scaffoldVaultImpl, scaffoldVaultSchema } from "../tools/vault/scaffoldVault.js";
+import { styleMemoryImpl, styleMemorySchema } from "../tools/vault/styleMemory.js";
+import { syncPresetsVaultImpl, syncPresetsVaultSchema } from "../tools/vault/syncPresetsVault.js";
+import {
+  tagAndSearchLibraryImpl,
+  tagAndSearchLibrarySchema,
+} from "../tools/vault/tagAndSearchLibrary.js";
+import {
+  tutorialCompanionPackImpl,
+  tutorialCompanionPackSchema,
+} from "../tools/vault/tutorialCompanionPack.js";
 import { variantPackImpl, variantPackSchema } from "../tools/vault/variantPack.js";
 import { vaultRepoSyncImpl, vaultRepoSyncSchema } from "../tools/vault/vaultRepoSync.js";
+import {
+  versionLibraryAssetImpl,
+  versionLibraryAssetSchema,
+} from "../tools/vault/versionLibraryAsset.js";
 import {
   describeConfig,
   type LoadConfigOptions,
@@ -2680,6 +2806,270 @@ const COMMANDS: Record<string, Command> = {
     "Read a Creative RAG card and route to one of its whitelisted Layer 1 tdmcpAffordances with optional overrides (use `dry_run: true` to preview).",
     { mutates: true },
   ),
+  // CLI parity wave — expose every registered MCP tool as a same-named subcommand:
+  get_preview: r(
+    getPreviewSchema,
+    getPreviewImpl,
+    "Capture a TOP's current output as an inline PNG image (read-only).",
+  ),
+  create_pose_reactive: r(
+    createPoseReactiveSchema,
+    createPoseReactiveImpl,
+    "Build a pose-reactive visual system driven by body tracking.",
+    { mutates: true },
+  ),
+  create_safety_blackout_chain: r(
+    createSafetyBlackoutChainSchema,
+    createSafetyBlackoutChainImpl,
+    "Build a safety blackout/failsafe chain in front of the output.",
+    { mutates: true },
+  ),
+  create_setlist_runner: r(
+    createSetlistRunnerSchema,
+    createSetlistRunnerImpl,
+    "Build an in-TD setlist runner network for scene-by-scene shows.",
+    { mutates: true },
+  ),
+  create_show_failover: r(
+    createShowFailoverSchema,
+    createShowFailoverImpl,
+    "Build a show failover switcher (main/backup source watchdog).",
+    { mutates: true },
+  ),
+  auto_repair_loop: r(
+    autoRepairLoopSchema,
+    autoRepairLoopImpl,
+    "Iteratively check a network for errors and apply automatic repairs.",
+    { mutates: true },
+  ),
+  create_auto_montage: r(
+    createAutoMontageSchema,
+    createAutoMontageImpl,
+    "Build an auto-montage switcher that cycles between sources.",
+    { mutates: true },
+  ),
+  create_euclidean_sequencer: r(
+    createEuclideanSequencerSchema,
+    createEuclideanSequencerImpl,
+    "Build a Euclidean rhythm sequencer CHOP network.",
+    { mutates: true },
+  ),
+  create_glsl_material: r(
+    createGlslMaterialSchema,
+    createGlslMaterialImpl,
+    "Create a GLSL MAT material with custom shader code.",
+    { mutates: true },
+  ),
+  create_preset_morph: r(
+    createPresetMorphSchema,
+    createPresetMorphImpl,
+    "Build a preset-morphing rig that interpolates between parameter snapshots.",
+    { mutates: true },
+  ),
+  create_scene_timeline: r(
+    createSceneTimelineSchema,
+    createSceneTimelineImpl,
+    "Build a scene timeline that sequences looks over time.",
+    { mutates: true },
+  ),
+  create_scheduler: r(
+    createSchedulerSchema,
+    createSchedulerImpl,
+    "Build a time-based scheduler that triggers actions on a clock.",
+    { mutates: true },
+  ),
+  focus_network_editor: r(
+    focusNetworkEditorSchema,
+    focusNetworkEditorImpl,
+    "Pan/zoom TouchDesigner's Network Editor to frame given operators (UI-only).",
+    { mutates: true },
+  ),
+  copilot_vision: r(
+    copilotVisionSchema,
+    copilotVisionImpl,
+    "Capture a TOP and ask the configured multimodal LLM a question about it.",
+  ),
+  export_sop_to_svg: r(
+    exportSopToSvgSchema,
+    exportSopToSvgImpl,
+    "Export a SOP's geometry as an SVG file on disk.",
+    { mutates: true },
+  ),
+  extract_palette: r(
+    extractPaletteSchema,
+    extractPaletteImpl,
+    "Extract a K-color palette from a TOP via deterministic k-means (read-only).",
+  ),
+  lint_recipe_library: r(
+    lintRecipeLibrarySchema,
+    lintRecipeLibraryImpl,
+    "Offline semantic linter for recipes/*.json (schema, wiring, operators).",
+  ),
+  manage_packages: r(
+    managePackagesSchema,
+    managePackagesImpl,
+    "List/install/manage Python packages available to the TD bridge.",
+    { mutates: true },
+  ),
+  swap_operator: r(
+    swapOperatorSchema,
+    swapOperatorImpl,
+    "Swap one operator for another type while preserving wiring and parameters.",
+    { mutates: true },
+  ),
+  watch_node: r(
+    watchNodeSchema,
+    watchNodeImpl,
+    "Sample one operator over a short interval: runtime state, params, CHOP channels (read-only).",
+  ),
+  watch_parameter_changes: r(
+    watchParameterChangesSchema,
+    watchParameterChangesImpl,
+    "Subscribe to (or list/unsubscribe) param.changed events for an operator's parameters.",
+    { mutates: true },
+  ),
+  generative_classics_pack: r(
+    generativeClassicsPackSchema,
+    generativeClassicsPackImpl,
+    "Build a pack of classic generative-art networks in one shot.",
+    { mutates: true },
+  ),
+  load_session_profile: r(
+    loadSessionProfileSchema,
+    loadSessionProfileImpl,
+    "Load (or initialise) the persistent ~/.tdmcp session profile snapshot.",
+    { mutates: true },
+  ),
+  apply_shader_from_vault: r(
+    applyShaderFromVaultSchema,
+    applyShaderFromVaultImpl,
+    "Apply a GLSL shader stored in the vault to a TD network.",
+    { mutates: true },
+  ),
+  auto_tag_library_asset: r(
+    autoTagLibraryAssetSchema,
+    autoTagLibraryAssetImpl,
+    "Auto-tag a vault library asset's frontmatter from its network contents.",
+    { mutates: true },
+  ),
+  bind_vault_text: r(
+    bindVaultTextSchema,
+    bindVaultTextImpl,
+    "Create a Text DAT bound to a vault note so its text drives TD.",
+    { mutates: true },
+  ),
+  browse_vault_library: r(
+    browseVaultLibrarySchema,
+    browseVaultLibraryImpl,
+    "Browse the vault library (recipes/components) with category counts (read-only).",
+  ),
+  capture_to_vault: r(
+    captureToVaultSchema,
+    captureToVaultImpl,
+    "Capture a TOP preview and write it into the vault as an attachment note.",
+    { mutates: true },
+  ),
+  export_look_tox: r(
+    exportLookToxSchema,
+    exportLookToxImpl,
+    "Export a look as a .tox component into the vault.",
+    { mutates: true },
+  ),
+  export_network_to_vault: r(
+    exportNetworkToVaultSchema,
+    exportNetworkToVaultImpl,
+    "Export a network snapshot/documentation into the vault.",
+    { mutates: true },
+  ),
+  export_setlist_to_vault: r(
+    exportSetlistToVaultSchema,
+    exportSetlistToVaultImpl,
+    "Write a setlist note (scenes/tracks) into the vault.",
+    { mutates: true },
+  ),
+  generate_from_moodboard: r(
+    generateFromMoodboardSchema,
+    generateFromMoodboardImpl,
+    "Build a visual system from a vault moodboard note.",
+    { mutates: true },
+  ),
+  import_setlist: r(
+    importSetlistSchema,
+    importSetlistImpl,
+    "Read a vault setlist note and build each scene's recipe in TD.",
+    { mutates: true },
+  ),
+  log_performance: r(
+    logPerformanceSchema,
+    logPerformanceImpl,
+    "Write a dated performance journal entry (snapshot + preview) to the vault.",
+    { mutates: true },
+  ),
+  recall_similar_work: r(
+    recallSimilarWorkSchema,
+    recallSimilarWorkImpl,
+    "Rank past vault memory notes by similarity to a new visual goal (read-only).",
+  ),
+  save_component_to_vault: r(
+    saveComponentToVaultSchema,
+    saveComponentToVaultImpl,
+    "Save a component (.tox + note) into the vault library.",
+    { mutates: true },
+  ),
+  save_recipe_to_vault: r(
+    saveRecipeToVaultSchema,
+    saveRecipeToVaultImpl,
+    "Save a recipe JSON + note into the vault library.",
+    { mutates: true },
+  ),
+  scaffold_recipe_from_network: r(
+    scaffoldRecipeFromNetworkSchema,
+    scaffoldRecipeFromNetworkImpl,
+    "Scaffold a RecipeSchema JSON from a live TD network into the vault.",
+    { mutates: true },
+  ),
+  scaffold_vault: r(
+    scaffoldVaultSchema,
+    scaffoldVaultImpl,
+    "Scaffold the vault folder structure (Recipes/, Components/, Memory/, …).",
+    { mutates: true },
+  ),
+  style_memory: r(
+    styleMemorySchema,
+    styleMemoryImpl,
+    "Read or update the artist's standing style memory note in the vault.",
+    { mutates: true },
+  ),
+  sync_presets_vault: r(
+    syncPresetsVaultSchema,
+    syncPresetsVaultImpl,
+    "Sync presets between TD and the vault.",
+    { mutates: true },
+  ),
+  tag_and_search_library: r(
+    tagAndSearchLibrarySchema,
+    tagAndSearchLibraryImpl,
+    "Faceted browse + tag editing over the vault library.",
+    { mutates: true },
+  ),
+  tutorial_companion_pack: r(
+    tutorialCompanionPackSchema,
+    tutorialCompanionPackImpl,
+    "Write a tutorial companion pack (notes + previews) into the vault.",
+    { mutates: true },
+  ),
+  version_library_asset: r(
+    versionLibraryAssetSchema,
+    versionLibraryAssetImpl,
+    "Version a vault library asset (semver bump + changelog trail).",
+    { mutates: true },
+  ),
+  publish_recipe_bundle: r(
+    publishRecipeBundleSchema,
+    publishRecipeBundleImpl,
+    "Publish a signed/versioned recipe bundle artifact to disk.",
+    { mutates: true },
+  ),
 };
 
 const SPECIAL_COMMANDS: AgentCommandCatalogEntry[] = [
@@ -3304,6 +3694,7 @@ function parseCliArgs(argv: string[]) {
 }
 
 function normalizeCatalogJsonFlag(argv: string[]): string[] {
+  if (firstPositionalArg(argv) === "doctor") return normalizeDoctorJsonFlag(argv);
   if (firstPositionalArg(argv) !== "commands") return argv;
   let seenCommand = false;
   return argv.filter((arg, index) => {
@@ -3312,6 +3703,18 @@ function normalizeCatalogJsonFlag(argv: string[]): string[] {
     if (arg !== "--json") return true;
     const next = argv[index + 1];
     return typeof next === "string" && next !== "" && !next.startsWith("-");
+  });
+}
+
+// `doctor --json` alias: `--json` is a global string option (inline JSON args), so a bare
+// `--json` after `doctor` would fail with "argument missing"; rewrite it to `--output json`.
+function normalizeDoctorJsonFlag(argv: string[]): string[] {
+  return argv.flatMap((arg, index) => {
+    if (arg !== "--json") return [arg];
+    const next = argv[index + 1];
+    // Option-like (`-q`, `--fix`) means no value; JSON can start with "-" (e.g. `-1`).
+    const hasValue = typeof next === "string" && next !== "" && !/^-[-a-zA-Z]/.test(next);
+    return hasValue ? [arg] : ["--output", "json"];
   });
 }
 
@@ -4200,8 +4603,10 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
     const { stdout, stderr, code, report } = await runDoctor(
       make ? { makeCtx: () => make(), fix: values.fix } : { config: cfg, fix: values.fix },
     );
-    // --output json (explicit) → structured report; --quiet → exit code only.
-    if (argv.includes("--output") && values.output === "json") {
+    // --output json / --json (explicit) → structured report; --quiet → exit code only.
+    const explicitJson =
+      argv.includes("--output") || normalizeDoctorJsonFlag(argv).includes("--output");
+    if (explicitJson && values.output === "json") {
       return { stdout: `${JSON.stringify(report, null, 2)}\n`, stderr: "", code };
     }
     if (values.quiet) return { stdout: "", stderr: "", code };
