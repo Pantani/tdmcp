@@ -186,7 +186,21 @@ function asLngLatPair(v: unknown): [number, number] | null {
 
 /** Map a raw coordinate array into a single validated ring (dropping malformed pairs). */
 function coordsToRing(coords: unknown): Array<[number, number]> {
+  if (!Array.isArray(coords)) return [];
   return (coords as unknown[]).map(asLngLatPair).filter((p): p is [number, number] => p !== null);
+}
+
+// An array-of-rings container ([[ [lng,lat], … ], …]) → validated non-empty rings.
+// Non-array input yields [] so malformed geometry never throws (surfaced as a warning).
+function ringsFromArray(coords: unknown): Array<Array<[number, number]>> {
+  if (!Array.isArray(coords)) return [];
+  return (coords as unknown[]).map(coordsToRing).filter((r) => r.length > 0);
+}
+
+// A MultiPolygon container (array of Polygon coordinate arrays) → flattened rings.
+function flatRingsFromArray(coords: unknown): Array<Array<[number, number]>> {
+  if (!Array.isArray(coords)) return [];
+  return (coords as unknown[]).flatMap(ringsFromArray);
 }
 
 // Reduce every supported geometry type to an array of coordinate rings ([[lng,lat],...]).
@@ -200,12 +214,10 @@ function flattenToRings(type: string, coords: unknown): Array<Array<[number, num
     return ring.length ? [ring] : [];
   }
   if (type === "Polygon" || type === "MultiLineString") {
-    return (coords as unknown[][]).map(coordsToRing).filter((r) => r.length > 0);
+    return ringsFromArray(coords);
   }
   if (type === "MultiPolygon") {
-    return (coords as unknown[][][]).flatMap((poly) =>
-      poly.map(coordsToRing).filter((r) => r.length > 0),
-    );
+    return flatRingsFromArray(coords);
   }
   return [];
 }

@@ -15,21 +15,21 @@ whose ``.path`` is the created copy. Omitting ``name`` lets TD auto-number.
 """
 
 
-def _resolve_duplicate_targets(op, source_path, parent_path):
+def _resolve_duplicate_targets(op, source_path, parent_path) -> tuple:
     """Resolve the (src, parent) pair for a duplicate. Raises on a missing target."""
     src = op(source_path)
     if src is None:
-        raise LookupError("duplicate: source not found: %s" % source_path)
+        raise LookupError(f"duplicate: source not found: {source_path}")
 
     if parent_path:
         parent = op(parent_path)
         if parent is None:
-            raise LookupError("duplicate: parent not found: %s" % parent_path)
+            raise LookupError(f"duplicate: parent not found: {parent_path}")
         return src, parent
 
     parent = src.parent()
     if parent is None:
-        raise ValueError("duplicate: source %s has no parent" % source_path)
+        raise ValueError(f"duplicate: source {source_path} has no parent")
     return src, parent
 
 
@@ -46,9 +46,9 @@ def duplicate(source_path, name=None, parent_path=None):
     try:
         new = parent.copy(src, name=name) if name else parent.copy(src)
     except Exception as exc:  # noqa: BLE001
-        raise ValueError("duplicate: copy of %s failed: %s" % (source_path, exc))
+        raise ValueError(f"duplicate: copy of {source_path} failed: {exc}")
 
     if new is None:
-        raise ValueError("duplicate: copy of %s returned no node" % source_path)
+        raise ValueError(f"duplicate: copy of {source_path} returned no node")
 
     return {"source": src.path, "copy": new.path, "parent": parent.path}

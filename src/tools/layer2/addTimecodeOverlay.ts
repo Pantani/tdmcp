@@ -119,6 +119,26 @@ try:
                 except Exception:
                     pass
 
+            def _free_x(_y, _start=0.0, _step=260.0):
+                # Free X slot at row _y among _parent's existing children so repeat runs
+                # under the same parent don't stack containers. Probe BEFORE creating so
+                # the new container doesn't occupy slot 0 itself.
+                try:
+                    _occupied = set()
+                    for _ch in _parent.children:
+                        try:
+                            if abs(float(_ch.nodeY) - float(_y)) < 1.0:
+                                _occupied.add(round(float(_ch.nodeX) / _step) * _step)
+                        except Exception:
+                            continue
+                    _x = float(_start)
+                    while round(_x / _step) * _step in _occupied:
+                        _x += _step
+                    return _x
+                except Exception:
+                    return float(_start)
+
+            _cx = _free_x(0)
             try:
                 _cont = _parent.create(baseCOMP, _p["name"])
             except Exception as _e:
@@ -126,9 +146,9 @@ try:
                 _cont = None
             if _cont is not None:
                 report["container"] = _cont.path
-                # Place the container itself so repeated runs don't stack the containers
-                # at the parent's default drop point.
-                _place(_cont, 0, 0)
+                # Place the container at the pre-probed free slot so repeated runs don't
+                # stack the containers at the parent's default drop point.
+                _place(_cont, _cx, 0)
 
                 def _setpar(_o, _name, _val, _label):
                     # Set a parameter defensively; record a warning (not a throw) if absent.

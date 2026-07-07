@@ -234,7 +234,7 @@ def poll(op_resolver=None, frame=None, now_s=None):
     return payloads
 
 
-def _poll_node(path, node, state, now_s, frame_no):
+def _poll_node(path, node, state, now_s, frame_no) -> list:
     """Change payloads for one watched node's parameters (skips unreadable pars)."""
     out = []
     for par in _watched_pars(node, state.get("pars")):
