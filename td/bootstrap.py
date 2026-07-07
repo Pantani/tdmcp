@@ -3,7 +3,7 @@
 Paste this single line into the Textport (Dialogs -> Textport and DATs) and the
 bridge installs itself and starts:
 
-    import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.12.0/td/bootstrap.py").read().decode())
+    import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.13.0/td/bootstrap.py").read().decode())
 
 That release-pinned snippet downloads just the bridge modules to
 ~/tdmcp-bridge/modules, puts them on sys.path for this session, and runs
@@ -21,7 +21,7 @@ import sys
 import zipfile
 import urllib.request
 
-REPO_ZIP = "https://github.com/Pantani/tdmcp/archive/refs/tags/v0.12.0.zip"
+REPO_ZIP = "https://github.com/Pantani/tdmcp/archive/refs/tags/v0.13.0.zip"
 DEST = os.path.expanduser("~/tdmcp-bridge")
 _MARKER = "/td/modules/"
 _SKIP_RUN_ENV = "TDMCP_BOOTSTRAP_SKIP_RUN"

@@ -84,7 +84,7 @@ You cannot do this from the shell. **Present this to the user verbatim and wait:
 > 3. Paste this **one line** and press Enter:
 >
 > ```python
-> import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.12.0/td/bootstrap.py").read().decode())
+> import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.13.0/td/bootstrap.py").read().decode())
 > ```
 >
 > You should see: `[tdmcp] bridge running on port 9980 (/project1/tdmcp_bridge)`
