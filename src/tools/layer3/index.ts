@@ -1,7 +1,9 @@
 import type { ToolRegistrar } from "../types.js";
 import { registerAnalyzeProject } from "./analyzeProject.js";
+import { registerBundleDependencies } from "./bundleDependencies.js";
 // Campaign Waves 4 & 6 (backlog 2026-05-29):
 import { registerCaptionTop } from "./captionTop.js";
+import { registerCheckOperatorAvailability } from "./checkOperatorAvailability.js";
 import { registerCollectProjectAssets } from "./collectProjectAssets.js";
 import { registerCompactGraphDigest } from "./compactGraphDigest.js";
 import { registerCompareOperatorDocs } from "./compareOperatorDocs.js";
@@ -71,6 +73,7 @@ import { registerSwapOperator } from "./swapOperator.js";
 import { registerUpdateTdNodeParameters } from "./updateTdNodeParameters.js";
 import { registerValidateOperatorChain } from "./validateOperatorChain.js";
 import { registerWatchNode } from "./watchNode.js";
+import { registerWatchParameterChanges } from "./watchParameterChanges.js";
 import { registerWriteAgentGuide } from "./writeAgentGuide.js";
 
 export const layer3Registrars: ToolRegistrar[] = [
@@ -113,6 +116,8 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerOptimizePerformance,
   registerRenderOutput,
   registerRecordMovie,
+  // Roadmap Wave 2 — bridge createable-truth reconciliation:
+  registerCheckOperatorAvailability,
   // Phase 13 — project intelligence & agent-DX:
   registerAnalyzeProject,
   registerGenerateReadme,
@@ -126,11 +131,13 @@ export const layer3Registrars: ToolRegistrar[] = [
   // Phase 14 — runtime telemetry & logs:
   registerGetNodeStateRuntime,
   registerWatchNode,
+  registerWatchParameterChanges,
   registerGetBridgeLogs,
   // Phase 15 — component introspection + network serialization:
   registerInspectComponent,
   registerSerializeNetwork,
   // Campaign Wave 4 — library/packaging (backlog 2026-05-29):
+  registerBundleDependencies,
   registerCollectProjectAssets,
   registerProjectDocumentationSite,
   // Campaign Wave 6 — AI & LLM (backlog 2026-05-29):

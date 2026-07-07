@@ -109,6 +109,14 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "asemic-writing",
+    summary:
+      "Generate a page of procedural asemic writing — random-but-writing-like glyph strokes (Script SOP pen → Tube SOP → ortho render).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "asset-validate",
     summary: "Validate a local library asset and manifest reference.",
     mutates: false,
@@ -200,6 +208,14 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "blob-trace",
+    summary:
+      "Trace a blob/silhouette into a vector contour outline: monochrome → blur → threshold mask → Trace SOP → wireframe render.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "body-bubbles",
     summary: "Create open-palm bubble physics with body/hand collision.",
     mutates: true,
@@ -242,6 +258,14 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "bundle-deps",
+    summary:
+      "Make a COMP self-contained: copy external assets beside a saved .tox and rewrite refs to relative paths.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "caption-top",
     summary:
       "Caption a TOP: plain-text description of colors/brightness/motion (vision LLM or histogram).",
@@ -260,6 +284,13 @@ export const AGENT_COMMAND_CATALOG = [
     command: "chain",
     summary: "Create a chain of connected nodes.",
     mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "check-optypes",
+    summary: "Reconcile the operator knowledge base against the live TD's creatable optypes.",
+    mutates: false,
     unsafe: false,
     source: "tool",
   },
@@ -688,6 +719,14 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "detection-reactive",
+    summary:
+      "Turn object/person detection (WebSocket or ONNX CPU) into presence/count/bbox channels.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "diagnose-tdableton-mapper",
     summary: "Inspect or repair TDAbleton TDA_Mapper routing for a hand Ableton mapper.",
     mutates: true,
@@ -711,6 +750,14 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "disconnect",
     summary: "Remove input wire(s) from a node (the inverse of connect).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "disorder-grid",
+    summary:
+      "Generate a grid of quads/lines with a single order↔chaos Disorder knob (0=perfect grid → 1=full chaos) driving per-cell position/rotation/scale jitter.",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -837,6 +884,14 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "export-external-tree",
+    summary:
+      "Save a COMP as a git-diffable externalized .tox tree (each COMP becomes its own file).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "extend-data-source-fabric",
     summary:
       "Extend create_data_source with new feed adapters (websocket/sse/mqtt/file-tail/process).",
@@ -869,6 +924,13 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "feedback-tunnel",
     summary: "Build an infinite zoom/rotate/hue feedback tunnel generator.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "fixture-control",
+    summary: "Build a moving-head fixture rig with DMX out + a 3D pan/tilt/beam previz.",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -912,6 +974,13 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "genre",
     summary: "Scaffold a genre-flavored show (techno/ambient/installation).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "geo-visualization",
+    summary: "Project GeoJSON/OSM lat-long into a 3D city visualization (ODbL attribution).",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -1064,6 +1133,14 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "install-library",
     summary: "Install a local package folder, zip, tox, or manifest into a package directory.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "interaction-zones",
+    summary:
+      "Define N rectangular motion zones over a camera input; emits per-zone state + dwell channels ready to fire cues.",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -1392,6 +1469,14 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "narrate-set",
+    summary:
+      "Persist/recall a live-set narration log (append timestamped decision lines; recall them later).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "node-state",
     summary: "Read an operator's runtime telemetry (cook time/count, res, channels, GPU mem).",
     mutates: false,
@@ -1659,6 +1744,14 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "pointer-reactive",
+    summary:
+      "Turn mouse/pointer position + click into a bindable u/v/velocity/button Null CHOP, with an optional pushed feedback demo.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "pop-field",
     summary: "Build a GPU POP point field (experimental — live-validation pending).",
     mutates: true,
@@ -1908,6 +2001,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "scaffold-vj-deck",
+    summary: "Scaffold a MIDI-mappable VJ deck (decks + fader surface + MIDI map).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "scene3d",
     summary: "Build a renderable 3D scene.",
     mutates: true,
@@ -1947,6 +2047,14 @@ export const AGENT_COMMAND_CATALOG = [
     command: "sdf-field",
     summary:
       "Build a signed-distance-field raymarched scene (volumetric SDF primitives + lighting).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "sdf-text",
+    summary:
+      "Raymarch a text string as an extruded SDF slab: a Text TOP glyph mask fed to a GLSL raymarcher for solid, lit, spinnable 3D letters.",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -2073,6 +2181,14 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "step-repeat",
+    summary:
+      "Tile a source TOP into a rows×cols brick/grid with per-cell gap, position/rotation jitter, and optional brick offset.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "strange-attractor",
     summary: "Render a strange attractor (Lorenz / Aizawa / Halvorsen) as point/line geometry.",
     mutates: true,
@@ -2101,6 +2217,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "synesthesia-unreal-osc",
+    summary: "Build a named OSC-out preset map for Synesthesia / Unreal Engine.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "techniques draft-recipe",
     summary: "Draft a RecipeSchema JSON from a TouchDesigner technique (offline).",
     mutates: false,
@@ -2117,6 +2240,14 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "tempo-sync",
     summary: "Create a beat clock (ramp/pulse/beat/bar/bpm) + optional beat events.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "terrain",
+    summary:
+      "Build a procedural heightmap terrain: Noise height field → GLSL vertex-displacement MAT on a subdivided grid, with optional water plane and distance fog.",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -2153,6 +2284,14 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "time-echo",
     summary: "Per-pixel time effect (echo trails / slit-scan / time-displace) on a source TOP.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "timecode-overlay",
+    summary:
+      "Overlay a live HH:MM:SS:FF timecode (clock / count-up / count-down) onto a source TOP as visual pixels.",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -2233,6 +2372,14 @@ export const AGENT_COMMAND_CATALOG = [
     command: "versions migration-plan",
     summary: "Plan a TD version migration from release and compatibility notes (offline).",
     mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "vertex-displacement-mat",
+    summary:
+      "Build a true vertex-shader displacement GLSL MAT (noise- or texture-driven) that deforms real mesh vertices; assign to a Geometry COMP or preview on a demo sphere.",
+    mutates: true,
     unsafe: false,
     source: "tool",
   },

@@ -1,5 +1,8 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { request } from "node:http";
 import { createServer as createNetServer } from "node:net";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -175,5 +178,104 @@ describe("startChatServer endpoints", () => {
     );
     expect(r.status).toBe(500);
     expect(r.body).toContain("error");
+  });
+});
+
+describe("startChatServer session persistence endpoints", () => {
+  let port: number;
+  let close: () => Promise<void>;
+  let dir: string;
+  let sessionPath: string;
+
+  beforeAll(async () => {
+    dir = mkdtempSync(join(tmpdir(), "tdmcp-copilot-ep-"));
+    sessionPath = join(dir, "session.json");
+    port = await freePort();
+    const cfg = {
+      chatPort: port,
+      llmBaseUrl: OLLAMA,
+      llmModel: "llama3",
+      llmApiKey: undefined,
+      llmTier: "creative",
+      llmMaxSteps: 5,
+      llmTemperature: 0.7,
+      copilotSessionPath: sessionPath,
+      resumeSession: true,
+    } as unknown as TdmcpConfig;
+    const handle = await startChatServer({} as unknown as ToolContext, cfg);
+    close = handle.close;
+  });
+  afterAll(async () => {
+    await close?.();
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("GET /session/load reports not-found before anything is saved", async () => {
+    const r = await send(port, "GET", "/session/load");
+    expect(r.status).toBe(200);
+    const parsed = JSON.parse(r.body);
+    expect(parsed.ok).toBe(true);
+    expect(parsed.found).toBe(false);
+    expect(parsed.path).toBe(sessionPath);
+  });
+
+  it("POST /session/save persists the transcript, /session/load returns it", async () => {
+    const save = await send(
+      port,
+      "POST",
+      "/session/save",
+      { "content-type": "application/json" },
+      JSON.stringify({
+        messages: [
+          { role: "user", content: "make a plexus" },
+          { role: "assistant", content: "done" },
+        ],
+        tier: "creative",
+      }),
+    );
+    expect(save.status).toBe(200);
+    const savedDoc = JSON.parse(save.body);
+    expect(savedDoc.ok).toBe(true);
+    expect(savedDoc.count).toBe(2);
+
+    const load = await send(port, "GET", "/session/load");
+    const loaded = JSON.parse(load.body);
+    expect(loaded.found).toBe(true);
+    expect(loaded.session.messages).toHaveLength(2);
+    expect(loaded.session.tier).toBe("creative");
+    expect(loaded.session.model).toBe("llama3");
+  });
+
+  it("exposes the session path + resume flag in /health", async () => {
+    const r = await send(port, "GET", "/health");
+    const parsed = JSON.parse(r.body);
+    expect(parsed.sessionPath).toBe(sessionPath);
+    expect(parsed.resumeSession).toBe(true);
+  });
+
+  it("POST /session/save returns 422 JSON on a malformed messages payload", async () => {
+    // The array passes the Array.isArray guard but each element is Zod-parsed by
+    // saveCopilotSession; an invalid role must surface as a structured 422, not a 500.
+    const r = await send(
+      port,
+      "POST",
+      "/session/save",
+      { "content-type": "application/json" },
+      JSON.stringify({ messages: [{ role: "villain", content: "boom" }] }),
+    );
+    expect(r.status).toBe(422);
+    const parsed = JSON.parse(r.body);
+    expect(parsed.ok).toBe(false);
+    expect(typeof parsed.error).toBe("string");
+    expect(parsed.error.length).toBeGreaterThan(0);
+  });
+
+  it("GET /session/load returns 422 on a corrupt session file", async () => {
+    writeFileSync(sessionPath, "{ not json", "utf8");
+    const r = await send(port, "GET", "/session/load");
+    expect(r.status).toBe(422);
+    const parsed = JSON.parse(r.body);
+    expect(parsed.ok).toBe(false);
+    expect(parsed.error).toContain("not valid JSON");
   });
 });

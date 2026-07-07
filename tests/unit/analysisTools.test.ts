@@ -1,4 +1,5 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
 import { RecipeLibrary } from "../../src/recipes/loader.js";
@@ -62,13 +63,46 @@ describe("analysis tool handlers", () => {
   });
 
   describe("duplicate_network", () => {
-    it("duplicates a node even when exec returns a null result", async () => {
+    it("prefers the first-class POST /api/duplicate route", async () => {
+      server.use(
+        http.post(`${TD_BASE}/api/duplicate`, async ({ request }) => {
+          const body = (await request.json()) as { source_path: string };
+          expect(body.source_path).toBe("/project1/noise1");
+          return HttpResponse.json({
+            ok: true,
+            data: { source: "/project1/noise1", copy: "/project1/noise2", parent: "/project1" },
+          });
+        }),
+      );
       const result = await duplicateNetworkImpl(makeCtx(), {
         source_path: "/project1/noise1",
       });
       expect(result.isError).toBeFalsy();
-      // Mock /api/exec returns { result: null }, so the copy path falls back to stdout.
-      expect(textOf(result)).toContain("Duplicated /project1/noise1");
+      expect(textOf(result)).toContain("Duplicated /project1/noise1 → /project1/noise2");
+    });
+
+    it("falls back to /api/exec when the endpoint is absent (older bridge)", async () => {
+      // tdMock defaults POST /api/duplicate to 404; stub /api/exec to print the report.
+      server.use(
+        http.post(`${TD_BASE}/api/exec`, () =>
+          HttpResponse.json({
+            ok: true,
+            data: {
+              result: null,
+              stdout: `${JSON.stringify({
+                source: "/project1/noise1",
+                copy: "/project1/noise2",
+                parent: "/project1",
+              })}\n`,
+            },
+          }),
+        ),
+      );
+      const result = await duplicateNetworkImpl(makeCtx(), {
+        source_path: "/project1/noise1",
+      });
+      expect(result.isError).toBeFalsy();
+      expect(textOf(result)).toContain("Duplicated /project1/noise1 → /project1/noise2");
     });
   });
 });
