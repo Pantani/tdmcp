@@ -1,0 +1,22 @@
+{
+  "id": "test_pattern_grid",
+  "name": "Test Pattern (Grid)",
+  "description": "Reproducible twin of create_test_pattern in grid mode: a single GLSL TOP draws an 8-division alignment grid (line color / background color baked into the shader) for projector focus, mapping alignment and output checks. The orchestrator can also overlay an output-number/label Text TOP and emits crosshair / color-bars / ramp / circle-grid variants; this twin captures the grid generator. Fully self-contained (no source) so it previews offline. Offline-validated against RecipeSchema; live-cook-validated on TD 099 build 2025.32820.",
+  "tags": ["utility", "test-pattern", "grid", "calibration", "projection", "glsl"],
+  "difficulty": "beginner",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "pattern_gen",
+      "type": "glslTOP",
+      "parameters": { "outputresolution": "custom", "resolutionw": 1280, "resolutionh": 720 },
+      "comment": "Baked grid shader — no uniforms; edit division count / colors in glsl_code."
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "Final test-pattern output." }
+  ],
+  "connections": [{ "from": "pattern_gen", "to": "out1" }],
+  "glsl_code": {
+    "pattern_gen": "out vec4 fragColor;\nvoid main(){\n    float ndiv = float(8);\n    float lw = 0.5 / ndiv;\n    vec2 scaled = vUV.st * ndiv;\n    vec2 frac2 = fract(scaled);\n    bool onLine = (frac2.x < lw || frac2.x > (1.0 - lw) ||\n                   frac2.y < lw || frac2.y > (1.0 - lw));\n    vec3 lineCol = vec3(1.0, 1.0, 1.0);\n    vec3 bgCol   = vec3(0.02, 0.02, 0.06);\n    fragColor = TDOutputSwizzle(vec4(onLine ? lineCol : bgCol, 1.0));\n}\n"
+  },
+  "preview_description": "A crisp white 8x8 alignment grid on a near-black field — a projector-focus / mapping calibration test pattern."
+}

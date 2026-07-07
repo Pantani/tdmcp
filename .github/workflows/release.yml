@@ -70,6 +70,18 @@ jobs:
             echo "::error::safeskill.manifest.json version $SAFESKILL does not match package.json $PKG."
             exit 1
           fi
+          # Bootstrap/self-install pins are intentionally held on the last
+          # published tag during release-prep PRs (they point at raw/vX.Y.Z URLs
+          # that only resolve once the tag exists). At tag time they MUST match
+          # the tag, or the one-click install would download an older bridge and
+          # miss this release's bridge routes. sync-manifest-version.mjs advances
+          # them; this guard makes that non-optional.
+          PIN="$(grep -oE "raw/v[0-9]+\.[0-9]+\.[0-9]+/td/bootstrap\.py" README.md | head -1 | grep -oE "[0-9]+\.[0-9]+\.[0-9]+")"
+          echo "bootstrap install pin=v$PIN"
+          if [ "$PIN" != "$TAG" ]; then
+            echo "::error::Bootstrap install pins are at v$PIN but the tag is v$TAG. Run 'node scripts/sync-manifest-version.mjs' to advance the install pins to the release tag before tagging."
+            exit 1
+          fi
 
       - name: Install dependencies
         run: npm ci

@@ -6,8 +6,24 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-07-07
+
 ### Added
 
+- Consolidation-gate docs & recipes pass (roadmap G1/G2/G3/G5):
+  - **G3 — 10 new orchestrator recipe twins** (`color_grade_basic`,
+    `transition_dissolve`, `text_overlay_lower_third`, `layer_stack_blend`,
+    `strobe_flash`, `test_pattern_grid`, `datamosh_feedback_echo`, `chrome_blobs`,
+    `displacement_warp_noise`, `luma_keyer`) — `validate:recipes` 50/50 → **60/60**,
+    `lint:recipes` clean, and all 10 **live-cook-validated on TD 099 build
+    2025.32820** (0 node errors / 0 warnings each; the `displacement_warp_noise`
+    displaceTOP weight token was corrected `uvweightx/y` → `uvweight` against the
+    live op).
+  - **G5 — docs completeness.** All 20 new #128 tools now have EN **and** PT
+    prompt-cookbook entries (20/20 each, parity holds); `docs/reference/cli.md`
+    documents the new `tdmcp-agent` subcommands (`bundle-deps`,
+    `export-external-tree`, `narrate-set`, `check-optypes`,
+    `preview --inline [--watch]`, `doctor --json`) and the vault/MCP-tool parity.
 - CLI parity: 44 previously MCP-only tools are now `tdmcp-agent` subcommands
   (all 21 vault tools, `get_preview`, `watch_node`, `manage_packages`,
   `swap_operator`, `copilot_vision`, `auto_repair_loop`, `create_glsl_material`,
@@ -28,7 +44,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   error message (`/bot<TOKEN>/…` is redacted to `/bot[REDACTED]/…`).
 - `npm run lint` now checks explicit paths (`src tests scripts`), fixing the
   0-files no-op inside linked git worktrees.
-- Docs: tool count corrected to 335 in the README and docs landing page.
+- Docs: tool count corrected to 355 (generated `docs/reference/tools.md` total) in
+  the README and docs landing pages (EN + PT).
 - Connectors Directory submission readiness (roadmap gate G6): bundled a Desktop-
   extension icon (`mcpb/icon.png`, referenced by `manifest.icon`) and enriched the
   MCPB manifest with `long_description`, `icon`, `repository`, `homepage`,
@@ -39,6 +56,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- G2 coverage gate: ratcheted the `vitest.config.ts` no-regression floors up to
+  the current measured baseline (statements 84→86, branches 70→73,
+  functions 83→85, lines 86→88). The suite-level `Coverage Gate` CI job already
+  enforces these as a required check; the +5pp stretch target (lines ≥ 91,
+  branches ≥ 75) is unchanged.
+- Roadmap G1 correction: `docs/reference/API_STABILITY.md` (the v1.0 stability
+  pin) already exists and is wired into the docs nav — the roadmap no longer
+  reports it as missing; the only open G1 item is the one-clean-tagged-minor clock.
+- Release safety: the `release.yml` tag-verify step now also asserts the
+  bootstrap/self-install pins match the release tag, so a tag can never ship
+  one-click install paths that download an older bridge (the pins are held on
+  the last published tag during prep and advanced by `sync-manifest-version.mjs`
+  at release time).
 - refactor: reduce cognitive complexity of functions flagged by the ratchets — no
   behavior change. Extracted well-named helpers from five worsened JS/TS functions
   (`runCli`, `runChat`, `service.sync`, `runAgentTurn`, chat-server `run`), six
@@ -2511,7 +2541,8 @@ API on its first live run, and is fail-forward (per-item warnings, never throws)
 [0.8.0]: https://github.com/Pantani/tdmcp/compare/v0.7.1...fa7d33c2a8093d85cbad6226f62f28714a0af8fb
 [0.7.1]: https://github.com/Pantani/tdmcp/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/Pantani/tdmcp/compare/v0.6.1...v0.7.0
-[Unreleased]: https://github.com/Pantani/tdmcp/compare/v0.12.0...HEAD
+[Unreleased]: https://github.com/Pantani/tdmcp/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/Pantani/tdmcp/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/Pantani/tdmcp/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/Pantani/tdmcp/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/Pantani/tdmcp/compare/v0.9.0...v0.10.0
