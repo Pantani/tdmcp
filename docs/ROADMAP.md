@@ -99,9 +99,9 @@ release is published:
   recipe expression-mode (`expr`) support; drag-and-drop
   `tdmcp_bridge_package.tox` (`npm run build:bridge-tox`).
 
-> **Docs follow-through pending (G5).** The 20 new #128 tools and the 44
-> CLI-parity subcommands are not yet in the EN/PT prompt cookbook or
-> `docs/reference/cli.md`. Tracked as a G5 pendência below.
+> **Docs follow-through (G5) — done.** The 20 new #128 tools now have EN + PT
+> prompt-cookbook entries (20/20 each) and the new CLI-parity subcommands are
+> documented in `docs/reference/cli.md`. See G5 below.
 
 ### v0.12.0 — safe mutations, previews and bridge hardening
 
@@ -851,31 +851,38 @@ legend as the rest of the page (✅ shipped / 🧪 in progress / ⬜ planned).
 The contract for a "tdmcp tool" is the `ToolContext` shape
 (`src/tools/types.ts`) plus each tool's Zod `inputSchema`. Stability gate:
 
+- ✅ The stability pin is written — [`docs/reference/API_STABILITY.md`](/reference/API_STABILITY)
+  (with the companion [Tool API contract](/reference/tool-contract)) fixes the
+  v1.0 tool contract, the additive-minor rule, and the deprecation policy
+  (one-minor warn, next-minor remove).
 - ⬜ One full minor release cycle (one tagged minor) with **no breaking change**
   to `ToolContext` or to any existing tool's `inputSchema` (additive optional
   fields are allowed; renames / removals / required-field additions are not).
   The 20 new #128 tools are **additive-only** — they don't break the contract —
-  but the "one clean tagged minor, no schema change" clock is not yet started or
-  documented, so this stays open.
-- ⬜ An `API_STABILITY.md` note pinning the v1.0 contract and the deprecation
-  policy (one-minor warn, next-minor remove). No `API_STABILITY.md` exists yet.
+  and per the pin doc the clock starts at the first tagged minor published after
+  it landed, so this is the only open G1 item.
 
 ### G2 — Test coverage · 🧪
 
 Coverage is tracked by `npm run test:coverage` + the
-`npm run coverage:harness` ranking; the project's coverage harness already
-gates per-wave work but isn't yet a CI gate at the suite level.
+`npm run coverage:harness` ranking.
 
-- ⬜ Promote the coverage harness to a CI gate: enforce **lines and branches
-  ≥ current baseline + 5 pp**, with no regression allowed on any file that
-  already exceeds the target.
-- ⬜ Bridge tests (`npm run test:bridge`) and recipe validation
-  (`npm run validate:recipes`) stay green alongside the four PR gates.
+- ✅ **Suite-level CI coverage gate.** The `Coverage Gate` job in
+  `.github/workflows/ci.yml` runs `npm run test:coverage` and is a **required
+  check** in `ci-success`, so a regression below the `vitest.config.ts`
+  thresholds fails the build. The floors are ratcheted to the measured baseline
+  (2026-07-07: statements 86 / branches 73 / functions 85 / lines 88) and only
+  ever move up.
+- ⬜ Reach the **+5 pp** stretch target (lines ≥ 91, branches ≥ 75) — currently
+  at lines 88.85 / branches 73.36; raising the floors as coverage improves.
+- ✅ Bridge tests (`npm run test:bridge`) and recipe validation
+  (`npm run validate:recipes`) run green alongside the four PR gates.
 
 ### G3 — Recipe library depth · 🧪
 
-The repo ships **50 validated recipes** under `recipes/`, all gated by
-`RecipeSchema` and `npm run validate:recipes`.
+The repo ships **60 validated recipes** under `recipes/`, all gated by
+`RecipeSchema` and `npm run validate:recipes` (and cross-checked against the
+knowledge base by `npm run lint:recipes`).
 
 - ✅ **10 net-new recipes shipped** covering the v0.7–v0.8 generator wave —
   `raymarch_sphere_field` + `raymarch_infinite_tunnel` (SDF), `strange_attractor_lorenz`,
@@ -883,15 +890,24 @@ The repo ships **50 validated recipes** under `recipes/`, all gated by
   `audio_glsl_uniforms`, `front_of_house_dashboard` (dashboard-v2), `sidechain_pump`.
   All validated against `RecipeSchema` with real optypes **and now live-cook-validated**
   (the `[Unreleased]` recipe fixes closed `histogram_scope` and verified the other
-  nine cook with `errors:[]`; `validate:recipes` stays 50/50).
-- 🧪 **Orchestrator JSON twins — partial.** Eight new twins (glitch, kaleidoscope,
-  slime simulation, spectrum, waveform, tempo-sync, layer-mixer crossfade, slit-scan)
-  on top of the orchestrators already covered by the prior set. Orchestrators whose
+  nine cook with `errors:[]`).
+- 🧪 **Orchestrator JSON twins — partial (60 recipes total).** The prior set of
+  eight twins (glitch, kaleidoscope, slime simulation, spectrum, waveform,
+  tempo-sync, layer-mixer crossfade, slit-scan) is joined by **10 new offline
+  twins** of pure TOP/CHOP-network orchestrators: `color_grade_basic`,
+  `transition_dissolve`, `text_overlay_lower_third`, `layer_stack_blend`,
+  `strobe_flash`, `test_pattern_grid`, `datamosh_feedback_echo`, `chrome_blobs`,
+  `displacement_warp_noise`, `luma_keyer` (schema- and KB-valid,
+  live-cook UNVERIFIED-pending-TD). Orchestrators whose
   behavior is callback/pulse/hardware/3D-asset-driven (e.g. `create_vector_lines`,
   `create_automation_lane`, `create_text_crawl`, `create_growth_system`,
   `create_pbr_scene`, `create_point_cloud`, `create_gaussian_splat_scene`,
   `create_fluid_sim`, the `import_*` and MediaPipe/Kinect/DMX tools) are not faithfully
   reproducible as static JSON offline and are deferred to post-live twin authoring.
+  Also deferred: `create_keyer` chroma/rgb modes and `create_video_scopes`
+  (need `chromakeyTOP`/`rgbkeyTOP`, not yet in the knowledge base — probe live
+  first), `create_pixel_sort` (multi-pass GPU feedback — a static cook shows only
+  the seed), and `create_color_wheels` (per-channel params absent from the KB).
 
 ### G4 — Bridge hardening · 🧪
 
@@ -932,15 +948,14 @@ troubleshooting and glossary.
   show timelines & setlists, dashboard-v2 / front-of-house, session profile
   & corpus learning, MediaPipe adapters, MCP resources (glsl-snippets /
   cheatsheets / learning).
-- ⬜ **Document the 20 new #128 tools and the 44 CLI-parity subcommands.** They
-  are absent from both prompt cookbooks (EN + PT, 0/20) and from
-  `docs/reference/cli.md` (`bundle-deps`, `export-external-tree`, `narrate-set`,
-  `check-optypes`, `preview --inline` all missing). This is a fresh gap opened
-  by this PR — the widest single item left in G5.
+- ✅ **The 20 new #128 tools and the CLI-parity subcommands are documented.**
+  All 20 tools now have EN **and** PT prompt-cookbook entries (20/20 in each,
+  parity holds); `docs/reference/cli.md` documents the new `tdmcp-agent`
+  subcommands (`bundle-deps`, `export-external-tree`, `narrate-set`,
+  `check-optypes`, `preview --inline [--watch]`, `doctor --json`) and the full
+  MCP-tool parity + the 21 vault subcommands.
 - ⬜ Every Layer-1 generator referenced in the cookbook has a one-paragraph
   "what it builds + when to reach for it" entry in the relevant guide.
-- ✅ EN + PT parity for the prompt cookbook (parity itself still holds — both
-  cookbooks are at 0 for the new tools).
 
 ### G6 — One-click install & Connectors Directory · 🧪
 

@@ -138,6 +138,54 @@ set `"no_color": true` when a generated plan needs script-compatible output.
 For agent clients, `tdmcp://commands` exposes the same command catalog as an MCP
 resource.
 
+### Full tool parity
+
+Every registered MCP tool is exposed as a same-named `tdmcp-agent` subcommand, so
+anything Claude/Codex can drive, a shell script can drive too. Run `tdmcp-agent
+commands` to list them all, and `tdmcp-agent help <command>` /
+`tdmcp-agent schema <command>` for a command's summary and input schema. Notable
+subcommands surfaced by the parity sweep:
+
+| Subcommand | What it does |
+| --- | --- |
+| `get_preview` | Capture a TOP's current output as an inline PNG image (read-only). |
+| `watch_node` | Sample one operator over a short interval: runtime state, params, CHOP channels (read-only). |
+| `watch_parameter_changes` | Subscribe to (or list/unsubscribe) `param.changed` events for an operator's parameters. |
+| `manage_packages` | List/install/manage Python packages available to the TD bridge. |
+| `swap_operator` | Swap one operator for another type while preserving wiring and parameters. |
+| `copilot_vision` | Capture a TOP and ask the configured multimodal LLM a question about it. |
+| `auto_repair_loop` | Iteratively check a network for errors and apply automatic repairs. |
+| `create_glsl_material` | Create a GLSL MAT material with custom shader code. |
+| `publish_recipe_bundle` | Publish a signed/versioned recipe bundle artifact to disk. |
+
+The 21 Obsidian **vault** tools are available as subcommands too (all need
+`TDMCP_VAULT_PATH`): `apply_shader_from_vault`, `auto_tag_library_asset`,
+`bind_vault_text`, `browse_vault_library`, `capture_to_vault`, `export_look_tox`,
+`export_network_to_vault`, `export_setlist_to_vault`, `generate_from_moodboard`,
+`import_setlist`, `log_performance`, `recall_similar_work`,
+`save_component_to_vault`, `save_recipe_to_vault`, `scaffold_recipe_from_network`,
+`scaffold_vault`, `style_memory`, `sync_presets_vault`, `tag_and_search_library`,
+`tutorial_companion_pack`, and `version_library_asset`.
+
+### Packaging, narration & preview subcommands
+
+| Subcommand | What it does |
+| --- | --- |
+| `bundle-deps` | Make a COMP self-contained: copy external assets beside a saved `.tox` and rewrite refs to relative paths. |
+| `export-external-tree` | Save a COMP as a git-diffable externalized `.tox` tree (each COMP becomes its own file). |
+| `narrate-set` | Persist/recall a live-set narration log (append timestamped decision lines; recall them later). |
+| `check-optypes` | Reconcile the operator knowledge base against the live TD's creatable optypes. |
+
+`tdmcp-agent preview <nodePath>` captures a TOP to a PNG file (`-o file.png`,
+default `preview.png`; `--dry-run` prints the plan only). Add `--inline` to render
+a terminal thumbnail instead (iTerm2/Kitty inline image, else an honest ASCII
+fallback), and `--inline --watch` to re-render on an interval (`--interval <ms>`)
+until Ctrl-C.
+
+`tdmcp-agent doctor --json` is an alias for `doctor --output json` — the
+diagnostics emit a single machine-readable envelope. Pair it with `--fix` to apply
+safe repairs first, then report the JSON.
+
 `tdmcp-agent show-director` is a dry-run only AI Show Director policy surface. It
 validates a `ShowIntent`, returns `allow`, `require_approval` or `block`, and
 emits updated approval/audit state as JSON. It never connects to TouchDesigner or

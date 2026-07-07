@@ -311,6 +311,39 @@ primitivas esfera + caixa + torus) com controles ao vivo de CameraZ, StepCount,
 Speed, ColorA / ColorB e Background. A saída é um sólido infinitamente detalhado por
 onde você voa sem instanciar nenhum SOP.*
 
+> *"Monte uma paisagem 3D ondulada a partir de ruído — colinas de verdade vistas de
+> frente, vales em verde-musgo subindo até picos claros, um lago translúcido e calmo
+> cortando o relevo, e névoa de distância dissolvendo as colinas distantes no céu.
+> Deixe o terreno derivar devagar para nunca ficar parado, e me dê um botão de Altura
+> e de Zoom."*
+
+*`create_terrain` desloca um Grid SOP subdividido no eixo Z por um heightmap de Noise
+ao vivo num vertex MAT GLSL — geometria 2.5D de verdade, sombreada por elevação do
+baixo ao alto, com plano d'água translúcido opcional e fade de névoa por distância de
+câmera. Height / Drift / WaterLevel / Zoom ficam expostos, então é terreno deslocado
+real com um lago, não um plano de ruído chapado.*
+
+> *"Preencha o quadro com páginas de uma caligrafia inexistente — linhas de um
+> alfabeto que não existe, fluindo da esquerda para a direita como escrita de verdade,
+> com hastes e levantadas de caneta, desenhado como traços de tinta caligráfica limpos
+> sobre uma página clara."*
+
+*`create_asemic_writing` dispõe fileiras de glifos num Script SOP, cada um uma cadeia
+curta de traços caminhada por ruído com fluxo de baseline, hastes ascendentes /
+descendentes e levantadas ocasionais de caneta, tubada e renderizada ortograficamente
+como line-art. Nada é traçado de uma fonte — é escrita convincente num idioma que
+nunca foi projetado.*
+
+> *"Me dê o clássico visual Schotter — uma grade organizada de quadrados no topo que
+> vai ficando cada vez mais bêbada em direção à base, tombando e se espalhando. Coloque
+> toda essa descida ao caos em um único botão que eu possa automatizar."*
+
+*`controlled_disorder_grid` desenha uma grade rows×cols de quadrados num único GLSL
+TOP, onde um botão `disorder` (0 = grade perfeita → 1 = caos total) escala jitter de
+posição, rotação e escala por célula, cada um hasheado do índice da célula para ficar
+estável e reproduzível. É o "Schotter" de Georg Nees (1968) como um parâmetro ao vivo
+automatizável, inteiramente procedural.*
+
 ## Estudos artísticos & instalações
 
 Estes prompts são para artistas visuais primeiro: loops de galeria, imagens de
@@ -500,6 +533,36 @@ brilho na frente da sua webcam.
 frame atual versus o anterior, com controles de Sensitivity / Smoothing / Blur. Ele
 emite um TOP de flow RG-packed que pode modular displacement, partículas ou qualquer
 cadeia de movimento guiada por TOP.*
+
+> *"Trace minha silhueta ao vivo em um único contorno limpo — tire o preenchimento e a
+> cor, só o contorno em movimento do meu corpo desenhado como uma linha vetorial nítida
+> que me acompanha."*
+
+*`create_blob_trace` encadeia fonte → mono → blur → threshold (máscara de blob) →
+borda opcional → Trace SOP (máscara em polilinha) → render wireframe. O padrão é um
+blob sintético animado, então dá preview sem dispositivo; use `source:"camera"` para
+traçar a webcam ao vivo (pode pedir permissão de câmera no macOS). O blob da câmera
+vira line-art vetorial em movimento, não uma imagem filtrada.*
+
+> *"Faça o mouse pintar — um ponto brilhante que arrasta um rastro luminoso sobre um
+> campo de feedback que se dissipa, por onde eu mover o ponteiro, para eu pintar luz
+> com o dedo durante o show."*
+
+*`create_pointer_reactive` alimenta u/v/velocidade/botão de um Mouse In CHOP (com ganho
+de sensibilidade) num campo de feedback demo onde um ponto brilhante deixa rastro por
+cima de um buffer que decai. Os canais do ponteiro ficam expostos para ligar em
+qualquer outra coisa. Ponteiro único (Mouse In); multitouch real precisa de uma fonte
+Panel COMP, que a ferramenta reporta como aviso.*
+
+> *"Divida o quadro da câmera em alguns hotspots invisíveis e me avise quando alguém se
+> mexer dentro de cada um — como sensores que eu posso ligar para disparar visuais
+> quando as pessoas entram em partes diferentes do espaço."*
+
+*`create_interaction_zones` calcula movimento por frame (mono → diferença com o frame
+anterior), faz a média dentro de cada retângulo normalizado que você define e aplica
+threshold com dwell num canal de gatilho `zoneK_state` (0/1) por zona. O padrão é uma
+fonte sintética animada, então cozinha offline; uso real aponta `source_path` para um
+TOP de câmera. São tripwires de instalação com on/off limpo por zona.*
 
 ### Body tracking (webcam, sem hardware extra)
 
@@ -924,6 +987,25 @@ deve responder a eventos de nota individuais em vez de um nível global de áudi
 caminho: bugs orbitais, logos circulares de show, labels se movendo em torno de
 esculturas e loops de wayfinding.*
 
+> *"Transforme a palavra LUMEN em letras 3D sólidas e biseladas flutuando no escuro,
+> iluminadas como metal polido e girando devagar — sem geometria renderizada, só os
+> caracteres esculpidos na luz."*
+
+*`create_sdf_text` trata a máscara de um Text TOP como uma laje SDF extrudada e faz
+raymarch dela num único GLSL TOP — as letras aparecem como volumes iluminados e
+biselados, com profundidade ajustável e rotação opcional. Sem extrusão de mesh de
+fonte, sem atlas SDF externo: tipografia volumétrica saindo de uma string simples numa
+única passada de shader.*
+
+> *"Grave um timecode correndo no canto superior da minha saída, e me dê um modo de
+> contagem regressiva até zero para a abertura antes do set começar."*
+
+*`add_timecode_overlay` compõe um Text TOP cozinhando ao vivo (HH:MM:SS:FF) por cima de
+um TOP de entrada, com modos clock (tempo desde o início do projeto), count_up (a
+partir do zero) e count_down (de `target_seconds`, travado em 00:00:00:00). O FPS é
+sondado ao vivo — é um timecode/contagem gravado nos pixels, indispensável para ensaios
+e vinhetas de abertura, não só um sinal de sync.*
+
 **O que você recebe:** um kit performável de tipografia: hits de lyric com alpha,
 lower thirds pulsando, ticker crawls, créditos rolando, reveals typewriter, texto 3D
 extrudado, geometria tipográfica com noise, labels de projetor, palavras disparadas
@@ -1258,6 +1340,25 @@ numa fila e trava o disparo contra um Beat CHOP local de frase. O Null CHOP de
 saída emite o trigger quantizado musicalmente, enquanto PhraseLength, Active, Flush
 e QueueDepth dão controle ao operador sobre a fila.*
 
+> *"Monte um deck de VJ inteiro e jogável de uma vez — dois decks com crossfader,
+> faders na tela para o crossfade e o volume de cada deck, e mapeie tudo pro meu
+> controlador MIDI para eu mixar na mão agora mesmo."*
+
+*`scaffold_vj_deck` compõe um mixer de decks A/B com crossfader, uma superfície de
+faders na tela (crossfade + ganho por deck) e uma superfície MIDI-In cujos canais já
+estão ligados aos mesmos parâmetros — um único container de UI cabeado e jogável. É o
+caminho mais rápido de "nada" até "consigo performar", com o MIDI já mapeado a partir
+de uma frase.*
+
+> *"Mantenha um diário do meu set — cada vez que eu fizer uma jogada grande, registre
+> com horário e o nome da seção, para eu ter um setlist e anotações para reler depois."*
+
+*`narrate_set` acrescenta linhas com horário (e seção + cue opcionais) a um log de
+sessão em markdown local (`~/.tdmcp/narration-<data>.md`); `mode:"recall"` lê as
+últimas N linhas de volta. A IA deixa um setlist/diário escrito de toda a performance
+para você reler depois — um log append-only de decisões, não um snapshot único.
+Combina com o prompt `auto_vj_director`.*
+
 ## Saída & mapeamento
 
 > *"Mande o visual final para uma janela em tela cheia no meu segundo monitor."*
@@ -1363,6 +1464,26 @@ Nulls de saída por projetor e expõe brilho mais controles de largura/curva de 
 dois produzem um dome master quadrado, mas geometria final, FOV e costuras precisam
 ser ajustados contra o dome ou simulador real; a saída útil é o caminho do TOP
 mapeado e os controles, não uma ilustração genérica de planetário.*
+
+> *"Configure algumas moving-heads que eu possa controlar via DMX, e me dê um previz 3D
+> para ver os feixes varrerem e mudarem de cor no palco antes de encostar no rig de
+> verdade."*
+
+*`create_fixture_control` monta duas metades acopladas — uma cadeia DMX-out (Constant
+CHOPs → Merge → Null → DMX Out, um bloco movingHead8 de 8 canais por fixture) e um
+previz 3D de cada cabeça com um feixe cônico cujo pan/tilt/cor seguem os valores DMX.
+Controle de luz DMX real e um previz de feixes ao vivo de um prompt só; a saída física
+precisa de interface DMX, mas o previz funciona offline.*
+
+> *"Conecte o TouchDesigner para controlar o Synesthesia via OSC — configure os
+> endereços exatos que ele espera, para minha análise de grave e energia irem direto
+> para as cenas dele sem gambiarra."*
+
+*`create_synesthesia_unreal_osc` é um preset de OSC-out nomeado (synesthesia → `/syn`,
+porta 6448; unreal → `/unreal`, porta 8000): um Constant CHOP com um canal por controle
+já nomeado com o endereço OSC exato, ligado num OSC-Out CHOP em host:porta. Basta ligar
+sua análise nos canais de origem — o controle cross-app "simplesmente funciona" porque
+os templates de endereço já vêm preenchidos, sem digitar endereço à mão.*
 
 ## Consertar & entender
 
@@ -1538,6 +1659,25 @@ inputs do spec e sobrescreve coordenadas manuais velhas antes de criar os nós. 
 útil para round-trips de receita/spec em que a rede correta ainda precisa ficar
 legível no layout do TD.*
 
+> *"Antes de eu construir, me diga quais operadores existem de fato no TouchDesigner que
+> estou rodando agora — sinalize qualquer coisa documentada que esta versão não
+> consegue criar."*
+
+*`check_operator_availability` reconcilia a base de conhecimento de operadores com a
+lista real de optypes criáveis no TD que está rodando, sinalizando ops descontinuados
+ou indisponíveis (e, opcionalmente, optypes ao vivo ainda não documentados). Pega o
+"esse nó não existe no meu build" antes de o build falhar — verdade de campo da
+instalação viva, não uma lista estática. Sobrevive a `TDMCP_BRIDGE_ALLOW_EXEC=0`.*
+
+> *"Fique de olho nos parâmetros deste nó e me avise sempre que um valor mudar — seja eu
+> movendo à mão ou um script — para eu ver o que está mexendo no meu patch ao vivo."*
+
+*`watch_parameter_changes` assina eventos `param.changed` dos parâmetros de um operador;
+cada mudança transmite `{path, par, prev, value, frame}` ao cliente como notificação de
+logging (coalescida para o arrasto de um slider não inundar). Telemetria ao vivo de
+"quem mexeu no meu parâmetro", seja mão ou script. Requer o stream de eventos do TD
+(`TDMCP_EVENTS`) ligado.*
+
 ## Looks reutilizáveis & handoff de show
 
 Use estes quando o look já funciona e você quer tocar de novo, ensinar, levar para
@@ -1596,6 +1736,25 @@ CHOP continuam editáveis quando quiser aprender.*
 *`export_sop_to_svg` lê primitivas SOP e escreve vetores prontos para plotter. É a
 ponte da imagem generativa ao vivo para canetas, lasers e impressão.*
 
+> *"Empacote este componente para eu levar ao laptop do local sem nada faltando — copie
+> cada vídeo, fonte e LUT que ele usa para junto dele, reaponte tudo, e salve como uma
+> pasta portátil única."*
+
+*`bundle_dependencies` varre um COMP recursivamente atrás de referências externas, copia
+cada asset para `<out_dir>/assets/`, reescreve os parâmetros ao vivo para as cópias
+relativas e salva um `.tox` + manifesto — uma pasta movível, sem links quebrados. É o
+"collect + relink + save" de verdade num passo (ao contrário do `make_portable_tox`, que
+deixa os assets para trás); use `rewrite_refs:false` para copiar sem tocar na rede ao
+vivo.*
+
+> *"Salve este componente como uma árvore versionável para meu projeto mostrar diffs
+> reais por nó no git em vez de um blob binário opaco."*
+
+*`export_externalized_tree` usa `COMP.saveExternalTox` para escrever o componente (e,
+com recurse, cada COMP descendente) como seu próprio `.tox` em disco com `externaltox`
+reapontado — diffs por nó sob controle de versão. Transforma um projeto TD em algo que o
+git consegue de fato diffar, em vez de um blob binário opaco.*
+
 ## Autoria de shader & material
 
 > *"Crie um material GLSL para esta esfera: faixas iridescentes tipo óleo, rim light
@@ -1624,6 +1783,17 @@ manter a importação inteira offline.*
 *`import_isf_shader` parseia o cabeçalho JSON do ISF e transforma entradas float /
 color / bool / event / long em controles TouchDesigner, então sketches de biblioteca
 viram redes tocáveis em vez de blocos de código colados.*
+
+> *"Me dê um material que faça qualquer malha ondular e inchar na GPU — empurre cada
+> vértice pela normal com ruído 3D em movimento, para uma esfera simples virar uma bolha
+> derretida e agitada que eu possa aplicar na minha própria geometria."*
+
+*`create_vertex_displacement_mat` cria um GLSL MAT cujo estágio de vértice desloca cada
+vértice pela normal com ruído 3D procedural (ou pela luminância de um TOP amostrado),
+atribuído a um Geometry COMP alvo — deformação física de mesh na GPU. Sem alvo ele monta
+uma esfera demo para o material dar preview sozinho. Diferente dos warps de pixel 2D
+(`create_displacement_warp` / `create_depth_displacement`): aqui a malha real ondula e
+incha, e você aplica na sua própria geometria.*
 
 > *"Transforme este sketch de GLSL TOP num material no logo 3D, exponha Color, Speed
 > e Fresnel, depois renderize um preview."*
@@ -1797,6 +1967,16 @@ expõe os parâmetros químicos como controles performáveis.*
 e máscara de threshold. Axis, SortBy, Direction, Threshold, Iterations e Mix ficam
 ao vivo para ajustar o smear estilo Asendorf em vez de colar um shader uma vez.*
 
+> *"Pegue meu clipe e o estilhace numa parede de vídeo 5×5 dele mesmo, cada bloco
+> levemente deslocado e trepidando, para respirar como uma folha de contato
+> caleidoscópica."*
+
+*`create_step_repeat` ladrilha um TOP de origem numa grade rows×cols com gap ajustável e
+jitter de posição por célula. O padrão é uma fonte Noise sintética, então dá preview
+sozinho; aponte `source_path` para qualquer TOP e multiplique um clipe ao vivo numa
+parede de vídeo estilo folha de contato, com trepidação orgânica célula a célula — um
+staple de VJ numa chamada só.*
+
 ## Mixagem e camadas
 
 > *"Empilhe quatro camadas com modos de mistura e opacidade, cada uma com mute e
@@ -1868,6 +2048,27 @@ sub-redes inteiras, não só de geometria.*
 Anthropic ou endpoint custom compatível com OpenAI. Prompt e Response DATs, canal de
 status e controles de provider/model/temperature/max-token ficam dentro do TD,
 enquanto as chaves de API são lidas por variáveis de ambiente e nunca aparecem via Node.*
+
+> *"Pegue este GeoJSON de um bairro e levante-o numa pequena cidade 3D — extrude cada
+> silhueta de prédio pela altura no dado, disponha as ruas como fitas, e enquadre com
+> uma câmera para parecer uma maquete que eu possa iluminar."*
+
+*`create_geo_visualization` parseia uma FeatureCollection GeoJSON (Point/Line/Polygon),
+constrói a geometria num Script SOP, extruda cada feature de polígono/linha pela
+propriedade `height` do próprio dado e envolve tudo num Geometry COMP sob um Render TOP
+com câmera e luz. Dados de mapa reais viram uma maquete 3D iluminada de um prompt só;
+precisa de um payload GeoJSON e usa `height`/`default_height` de cada feature para a
+extrusão.*
+
+> *"Faça meus visuais reagirem a quantas pessoas a câmera vê — puxe contagens e posições
+> de objetos do meu detector e exponha como canais que eu possa mapear para intensidade
+> e taxa de emissão."*
+
+*`create_detection_reactive` assina um detector externo por WebSocket (JSON `{count,
+objects:[{x,y,w,h,score}]}`) ou monta um Script CHOP ONNX em CPU, expondo contagem e
+posições de detecção como canais CHOP para guiar qualquer parâmetro. Detecção de objetos
+(pessoas, mãos, props) dirigindo visuais sem CUDA — o caminho WebSocket roda em qualquer
+lugar; precisa de um processo detector externo ou de um modelo ONNX seu.*
 
 ## Checagens de ensaio & feedback artístico
 

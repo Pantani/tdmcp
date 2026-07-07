@@ -1,0 +1,85 @@
+{
+  "id": "chrome_blobs",
+  "name": "Chrome Blobs (Liquid Metal)",
+  "description": "Reproducible twin of create_chrome_blobs: an animated noise field is blurred, gamma-lifted, thresholded into metaballs and re-softened, then a GLSL TOP fakes a chrome environment reflection (Sobel normal + procedural studio env + moving specular) over a gradient background — the classic liquid-metal look. The blob field animates offline via absTime expressions on the noiseTOP; the metal color (silver) and gradient background are baked into the shader. uTime is a uniform: after import bind it to absTime.seconds to move the reflections (manual-wire — RecipeSchema uniforms take constants only). Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "tags": ["generative", "chrome", "metaball", "liquid-metal", "glsl", "showcase"],
+  "difficulty": "advanced",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "noise1",
+      "type": "noiseTOP",
+      "parameters": { "harmon": 6, "period": 1.0, "mono": 1 },
+      "comment": "Animated blob field. tx/tz are driven by absTime expressions so it moves offline."
+    },
+    {
+      "name": "blur1",
+      "type": "blurTOP",
+      "parameters": { "size": 12 },
+      "comment": "Soften the field so the metaballs merge smoothly."
+    },
+    {
+      "name": "level1",
+      "type": "levelTOP",
+      "parameters": { "gamma1": 0.5, "brightness1": 1.1 },
+      "comment": "Lift the field toward the threshold."
+    },
+    {
+      "name": "threshold1",
+      "type": "thresholdTOP",
+      "parameters": { "threshold": 0.45 },
+      "comment": "Cut the field into metaball shapes."
+    },
+    {
+      "name": "blur2",
+      "type": "blurTOP",
+      "parameters": { "size": 4 },
+      "comment": "Re-soften the hard threshold edges so the Sobel normal reads smooth."
+    },
+    {
+      "name": "glsl_chrome",
+      "type": "glslTOP",
+      "parameters": { "outputresolution": "custom", "resolutionw": 1280, "resolutionh": 720 },
+      "comment": "Fakes a chrome env-map reflection from the blob field; uTime uniform via the Vectors sequence."
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "Final chrome-blob output." }
+  ],
+  "connections": [
+    { "from": "noise1", "to": "blur1" },
+    { "from": "blur1", "to": "level1" },
+    { "from": "level1", "to": "threshold1" },
+    { "from": "threshold1", "to": "blur2" },
+    { "from": "blur2", "to": "glsl_chrome" },
+    { "from": "glsl_chrome", "to": "out1" }
+  ],
+  "parameters": [
+    {
+      "name": "field_drift_x",
+      "node": "noise1",
+      "param": "tx",
+      "expr": "absTime.seconds * 0.4",
+      "description": "Drifts the blob field horizontally so the metal flows offline."
+    },
+    {
+      "name": "field_drift_z",
+      "node": "noise1",
+      "param": "tz",
+      "expr": "absTime.seconds * 0.24",
+      "description": "Drifts the blob field in depth for evolving shapes."
+    }
+  ],
+  "glsl_code": {
+    "glsl_chrome": "uniform float uTime;\nout vec4 fragColor;\n\nconst vec3 uMetalColor = vec3(0.85, 0.85, 0.9);\nconst int  uBackground = 3;\n\nvec3 envSample(vec2 dir) {\n  float stripe = 0.5 + 0.5 * sin(dir.y * 6.2831 * 3.0 + uTime * 0.5);\n  float horiz  = 0.5 + 0.5 * cos(dir.x * 6.2831 * 2.0);\n  return vec3(stripe * 0.8 + horiz * 0.2);\n}\n\nvoid main() {\n  vec2 uv = vUV.st;\n  float d  = texture(sTD2DInputs[0], uv).r;\n  float px = 1.0 / uTD2DInfos[0].res.z;\n  float py = 1.0 / uTD2DInfos[0].res.w;\n  float dx = texture(sTD2DInputs[0], uv + vec2(px, 0.0)).r\n           - texture(sTD2DInputs[0], uv - vec2(px, 0.0)).r;\n  float dy = texture(sTD2DInputs[0], uv + vec2(0.0, py)).r\n           - texture(sTD2DInputs[0], uv - vec2(0.0, py)).r;\n  vec3 normal = normalize(vec3(dx, dy, 0.2));\n  vec2 reflDir = normal.xy * 2.0;\n  vec3 env = envSample(reflDir);\n  vec2 sunDir = vec2(cos(uTime * 0.7), sin(uTime * 0.4)) * 0.5 + 0.5;\n  float spec = pow(max(0.0, dot(normalize(normal.xy), normalize(sunDir - uv))), 24.0);\n  vec3 chrome = env * uMetalColor + vec3(spec * 0.9);\n  float blobMask = smoothstep(0.1, 0.4, d);\n  vec3 bg = vec3(0.0);\n  if (uBackground == 1) bg = vec3(1.0);\n  else if (uBackground == 2) bg = vec3(0.2 + 0.3 * (1.0 - length(uv - 0.5)));\n  else if (uBackground == 3) bg = mix(vec3(0.05, 0.05, 0.1), vec3(0.7, 0.75, 0.8), uv.y);\n  vec3 col = mix(bg, chrome, blobMask);\n  fragColor = TDOutputSwizzle(vec4(col, 1.0));\n}\n"
+  },
+  "glsl_uniforms": [
+    {
+      "node": "glsl_chrome",
+      "name": "uTime",
+      "kind": "float",
+      "value": 0,
+      "label": "Time",
+      "description": "Reflection animation phase. After import set this uniform's value expression to absTime.seconds to move the chrome highlights (manual-wire — schema takes constants only)."
+    }
+  ],
+  "preview_description": "Blobby metaballs rendered as flowing liquid silver chrome, reflecting a procedural studio environment with a bright moving specular, set against a soft blue-grey gradient."
+}

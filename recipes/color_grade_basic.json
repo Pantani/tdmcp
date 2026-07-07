@@ -1,0 +1,42 @@
+{
+  "id": "color_grade_basic",
+  "name": "Color Grade (Lift/Gamma/Gain + HSV)",
+  "description": "Reproducible twin of create_color_grade: a linear TOP grading chain — a Level TOP does brightness/gamma/contrast/black-level, then an HSV Adjust TOP does saturation and hue. A synthetic horizontal rampTOP stands in as the source so it previews offline; swap it for a selectTOP pointing at real footage. Every grading knob is exposed as a live control. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check.",
+  "tags": ["post-processing", "color", "grade", "levels", "hsv", "controls"],
+  "difficulty": "beginner",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "source",
+      "type": "rampTOP",
+      "parameters": { "type": "horizontal" },
+      "comment": "Synthetic gradient source — swap for a selectTOP / moviefileinTOP to grade real content."
+    },
+    {
+      "name": "grade_level",
+      "type": "levelTOP",
+      "parameters": { "brightness1": 1.0, "gamma1": 1.0, "contrast": 1.15, "blacklevel": 0.0 },
+      "comment": "Lift/gamma/gain + contrast + black level."
+    },
+    {
+      "name": "grade_hsv",
+      "type": "hsvadjustTOP",
+      "parameters": { "saturationmult": 1.3, "hueoffset": 0.0 },
+      "comment": "Saturation multiplier and hue rotation."
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "Final graded output." }
+  ],
+  "connections": [
+    { "from": "source", "to": "grade_level" },
+    { "from": "grade_level", "to": "grade_hsv" },
+    { "from": "grade_hsv", "to": "out1" }
+  ],
+  "controls": [
+    { "name": "Brightness", "type": "float", "min": 0, "max": 4, "default": 1.0, "bind_to": ["grade_level.brightness1"] },
+    { "name": "Gamma", "type": "float", "min": 0.1, "max": 4, "default": 1.0, "bind_to": ["grade_level.gamma1"] },
+    { "name": "Contrast", "type": "float", "min": 0, "max": 4, "default": 1.15, "bind_to": ["grade_level.contrast"] },
+    { "name": "Saturation", "type": "float", "min": 0, "max": 4, "default": 1.3, "bind_to": ["grade_hsv.saturationmult"] },
+    { "name": "Hue", "type": "float", "min": 0, "max": 360, "default": 0, "bind_to": ["grade_hsv.hueoffset"] }
+  ],
+  "preview_description": "A horizontal color ramp pushed warmer and more saturated with a touch of added contrast — a clean grading chain with brightness, gamma, contrast, saturation and hue on live knobs."
+}

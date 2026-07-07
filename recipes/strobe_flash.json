@@ -1,0 +1,47 @@
+{
+  "id": "strobe_flash",
+  "name": "Strobe Flash",
+  "description": "Reproducible twin of create_strobe: a square-wave LFO CHOP gates a Level TOP that flashes a solid Constant TOP on and off at a set rate. The flash is driven by a parameter expression on the Level TOP's brightness1 that reads the LFO channel, so the strobe animates offline off absTime with no callbacks. Rate and duty are exposed as live controls. Offline-validated against RecipeSchema; UNVERIFIED pending live cook-check. WARNING: strobing light can trigger photosensitive seizures — keep rate moderate for audiences.",
+  "tags": ["vj", "strobe", "flash", "lfo", "beat", "controls"],
+  "difficulty": "beginner",
+  "td_version_min": "2022",
+  "nodes": [
+    {
+      "name": "flash",
+      "type": "constantTOP",
+      "parameters": { "colorr": 1, "colorg": 1, "colorb": 1, "alpha": 1 },
+      "comment": "Solid white flash color — change for colored strobes."
+    },
+    {
+      "name": "strobe_lfo",
+      "type": "lfoCHOP",
+      "parameters": { "wavetype": "square", "frequency": 8, "amp": 1, "offset": 0, "bias": 0, "channelname": "chan1" },
+      "comment": "Square wave that gates the flash. frequency = strobe rate in Hz; bias = duty cycle."
+    },
+    {
+      "name": "blink",
+      "type": "levelTOP",
+      "parameters": { "brightness1": 1.0 },
+      "comment": "Gated brightness; brightness1 is driven by an expression that reads the LFO channel."
+    },
+    { "name": "out1", "type": "nullTOP", "comment": "Final strobe output." }
+  ],
+  "connections": [
+    { "from": "flash", "to": "blink" },
+    { "from": "blink", "to": "out1" }
+  ],
+  "parameters": [
+    {
+      "name": "strobe_gate",
+      "node": "blink",
+      "param": "brightness1",
+      "expr": "(1.0 if op('strobe_lfo')['chan1'] > 0 else 0.0)",
+      "description": "Full brightness when the LFO is high, black when low — the strobe gate. op('strobe_lfo') resolves to the created node path at build time."
+    }
+  ],
+  "controls": [
+    { "name": "Rate", "type": "float", "min": 0, "max": 30, "default": 8, "bind_to": ["strobe_lfo.frequency"] },
+    { "name": "Duty", "type": "float", "min": -1, "max": 1, "default": 0, "bind_to": ["strobe_lfo.bias"] }
+  ],
+  "preview_description": "A full-frame white flash switching hard on and off eight times a second — a beat-synced strobe with rate and duty on live knobs (use with photosensitivity caution)."
+}
