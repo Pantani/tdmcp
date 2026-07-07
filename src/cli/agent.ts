@@ -46,6 +46,7 @@ import {
   loadSessionProfileImpl,
   loadSessionProfileSchema,
 } from "../tools/ai/loadSessionProfile.js";
+import { narrateSetImpl, narrateSetSchema } from "../tools/ai/narrateSet.js";
 // Campaign BEYOND Wave 4 (backlog 2026-05-30 — v0.7.0):
 import { macroRecorderImpl, macroRecorderSchema } from "../tools/cli/macroRecorder.js";
 // Campaign BEYOND Wave 5 (backlog 2026-05-30 — v0.7.0):
@@ -69,6 +70,10 @@ import {
 } from "../tools/layer1/audioFingerprintToVisual.js";
 import { composeCueListImpl, composeCueListSchema } from "../tools/layer1/composeCueList.js";
 import {
+  controlledDisorderGridImpl,
+  controlledDisorderGridSchema,
+} from "../tools/layer1/controlledDisorderGrid.js";
+import {
   create3dAudioReactiveImpl,
   create3dAudioReactiveSchema,
 } from "../tools/layer1/create3dAudioReactive.js";
@@ -78,6 +83,10 @@ import {
   createAsciiRenderImpl,
   createAsciiRenderSchema,
 } from "../tools/layer1/createAsciiRender.js";
+import {
+  createAsemicWritingImpl,
+  createAsemicWritingSchema,
+} from "../tools/layer1/createAsemicWriting.js";
 import {
   createAudioReactiveImpl,
   createAudioReactiveSchema,
@@ -91,6 +100,7 @@ import {
   createBlobReactiveImpl,
   createBlobReactiveSchema,
 } from "../tools/layer1/createBlobReactive.js";
+import { createBlobTraceImpl, createBlobTraceSchema } from "../tools/layer1/createBlobTrace.js";
 import {
   createBodyBubblesImpl,
   createBodyBubblesSchema,
@@ -142,6 +152,10 @@ import {
   createDepthSilhouetteSchema,
 } from "../tools/layer1/createDepthSilhouette.js";
 import {
+  createDetectionReactiveImpl,
+  createDetectionReactiveSchema,
+} from "../tools/layer1/createDetectionReactive.js";
+import {
   createDisplacementWarpImpl,
   createDisplacementWarpSchema,
 } from "../tools/layer1/createDisplacementWarp.js";
@@ -168,6 +182,10 @@ import {
   createFeedbackTunnelImpl,
   createFeedbackTunnelSchema,
 } from "../tools/layer1/createFeedbackTunnel.js";
+import {
+  createFixtureControlImpl,
+  createFixtureControlSchema,
+} from "../tools/layer1/createFixtureControl.js";
 import { createFluidSimImpl, createFluidSimSchema } from "../tools/layer1/createFluidSim.js";
 import {
   createGaussianSplatSceneImpl,
@@ -181,6 +199,10 @@ import {
   createGenerativeAudioImpl,
   createGenerativeAudioSchema,
 } from "../tools/layer1/createGenerativeAudio.js";
+import {
+  createGeoVisualizationImpl,
+  createGeoVisualizationSchema,
+} from "../tools/layer1/createGeoVisualization.js";
 import { createGlitchImpl, createGlitchSchema } from "../tools/layer1/createGlitch.js";
 import {
   createGpuParticleFieldImpl,
@@ -203,6 +225,10 @@ import {
   createImageToParticlesImpl,
   createImageToParticlesSchema,
 } from "../tools/layer1/createImageToParticles.js";
+import {
+  createInteractionZonesImpl,
+  createInteractionZonesSchema,
+} from "../tools/layer1/createInteractionZones.js";
 import {
   createInteractiveProjectionMappingImpl,
   createInteractiveProjectionMappingSchema,
@@ -269,6 +295,10 @@ import {
 } from "../tools/layer1/createPhraseLockedCueEngine.js";
 import { createPixelSortImpl, createPixelSortSchema } from "../tools/layer1/createPixelSort.js";
 import { createPointCloudImpl, createPointCloudSchema } from "../tools/layer1/createPointCloud.js";
+import {
+  createPointerReactiveImpl,
+  createPointerReactiveSchema,
+} from "../tools/layer1/createPointerReactive.js";
 import { createPopFieldImpl, createPopFieldSchema } from "../tools/layer1/createPopField.js";
 import {
   createPopGeometryImpl,
@@ -320,6 +350,7 @@ import {
   createSafetyBlackoutChainSchema,
 } from "../tools/layer1/createSafetyBlackoutChain.js";
 import { createSdfFieldImpl, createSdfFieldSchema } from "../tools/layer1/createSdfField.js";
+import { createSdfTextImpl, createSdfTextSchema } from "../tools/layer1/createSdfText.js";
 import {
   createSetlistRunnerImpl,
   createSetlistRunnerSchema,
@@ -337,6 +368,7 @@ import {
 import { createSimulationImpl, createSimulationSchema } from "../tools/layer1/createSimulation.js";
 import { createSlitScanImpl, createSlitScanSchema } from "../tools/layer1/createSlitScan.js";
 import { createSpectrumImpl, createSpectrumSchema } from "../tools/layer1/createSpectrum.js";
+import { createStepRepeatImpl, createStepRepeatSchema } from "../tools/layer1/createStepRepeat.js";
 import {
   createStipplePointcloudImpl,
   createStipplePointcloudSchema,
@@ -351,6 +383,7 @@ import {
   createSyncExternalClockSchema,
 } from "../tools/layer1/createSyncExternalClock.js";
 import { createTempoSyncImpl, createTempoSyncSchema } from "../tools/layer1/createTempoSync.js";
+import { createTerrainImpl, createTerrainSchema } from "../tools/layer1/createTerrain.js";
 import {
   createTestPatternImpl,
   createTestPatternSchema,
@@ -374,6 +407,10 @@ import {
   createVectorLinesImpl,
   createVectorLinesSchema,
 } from "../tools/layer1/createVectorLines.js";
+import {
+  createVertexDisplacementMatImpl,
+  createVertexDisplacementMatSchema,
+} from "../tools/layer1/createVertexDisplacementMat.js";
 import {
   createVideoPlayerImpl,
   createVideoPlayerSchema,
@@ -435,6 +472,10 @@ import {
   addCustomParametersImpl,
   addCustomParametersSchema,
 } from "../tools/layer2/addCustomParameters.js";
+import {
+  addTimecodeOverlayImpl,
+  addTimecodeOverlaySchema,
+} from "../tools/layer2/addTimecodeOverlay.js";
 import { animateParameterImpl, animateParameterSchema } from "../tools/layer2/animateParameter.js";
 import { applyLutImpl, applyLutSchema } from "../tools/layer2/applyLut.js";
 import { arrangeNetworkImpl, arrangeNetworkSchema } from "../tools/layer2/arrangeNetwork.js";
@@ -569,6 +610,10 @@ import {
   createStageDashboardImpl,
   createStageDashboardSchema,
 } from "../tools/layer2/createStageDashboard.js";
+import {
+  createSynesthesiaUnrealOscImpl,
+  createSynesthesiaUnrealOscSchema,
+} from "../tools/layer2/createSynesthesiaUnrealOsc.js";
 import { createTimeEchoImpl, createTimeEchoSchema } from "../tools/layer2/createTimeEcho.js";
 import { createXyPadImpl, createXyPadSchema } from "../tools/layer2/createXyPad.js";
 import {
@@ -604,6 +649,7 @@ import {
   scaffoldToolGeneratorImpl,
   scaffoldToolGeneratorSchema,
 } from "../tools/layer2/scaffoldToolGenerator.js";
+import { scaffoldVjDeckImpl, scaffoldVjDeckSchema } from "../tools/layer2/scaffoldVjDeck.js";
 import {
   setParametersBatchImpl,
   setParametersBatchSchema,
@@ -623,7 +669,15 @@ import {
 } from "../tools/layer2/setupSegmentation.js";
 import { syncTimecodeImpl, syncTimecodeSchema } from "../tools/layer2/syncTimecode.js";
 import { analyzeProjectImpl, analyzeProjectSchema } from "../tools/layer3/analyzeProject.js";
+import {
+  bundleDependenciesImpl,
+  bundleDependenciesSchema,
+} from "../tools/layer3/bundleDependencies.js";
 import { captionTopImpl, captionTopSchema } from "../tools/layer3/captionTop.js";
+import {
+  checkOperatorAvailabilityImpl,
+  checkOperatorAvailabilitySchema,
+} from "../tools/layer3/checkOperatorAvailability.js";
 import {
   collectProjectAssetsImpl,
   collectProjectAssetsSchema,
@@ -795,6 +849,10 @@ import {
   diffLibraryAssetsSchema,
 } from "../tools/library/diffLibraryAssets.js";
 import {
+  exportExternalizedTreeImpl,
+  exportExternalizedTreeSchema,
+} from "../tools/library/exportExternalizedTree.js";
+import {
   exportPaletteComponentImpl,
   exportPaletteComponentSchema,
 } from "../tools/library/exportPaletteComponent.js";
@@ -926,9 +984,11 @@ import { runBridgeWatchBuild } from "./bridgeWatchBuild.js";
 import { runConfigInit } from "./configInit.js";
 import { controllerBridgeCliSchema, runControllerBridge } from "./controllerToCliBridge.js";
 import { runDoctor } from "./doctor.js";
+import { classifyTdErrorExit } from "./exitCodes.js";
 import { runFixtureRecorder } from "./fixtureRecorder.js";
 import { runLogTailFiltered } from "./logTailFiltered.js";
 import { type PanicSubVerb, runPanic } from "./panicBlackout.js";
+import { runPreviewInline } from "./previewInline.js";
 import { runRemoteFanout } from "./remoteAndFanout.js";
 import {
   loadScheduleFile,
@@ -1118,6 +1178,11 @@ const COMMANDS: Record<string, Command> = {
     { mutates: true },
   ),
   render: r(renderOutputSchema, renderOutputImpl, "Save a TOP to a file at full resolution."),
+  "check-optypes": r(
+    checkOperatorAvailabilitySchema,
+    checkOperatorAvailabilityImpl,
+    "Reconcile the operator knowledge base against the live TD's creatable optypes.",
+  ),
   movie: r(recordMovieSchema, recordMovieImpl, "Record a TOP to a movie/sequence (start/stop).", {
     mutates: true,
   }),
@@ -2146,6 +2211,24 @@ const COMMANDS: Record<string, Command> = {
     "Scan a COMP subtree for external file dependencies into an inventory + optional manifest.",
     { mutates: true },
   ),
+  "bundle-deps": r(
+    bundleDependenciesSchema,
+    bundleDependenciesImpl,
+    "Make a COMP self-contained: copy external assets beside a saved .tox and rewrite refs to relative paths.",
+    { mutates: true },
+  ),
+  "export-external-tree": r(
+    exportExternalizedTreeSchema,
+    exportExternalizedTreeImpl,
+    "Save a COMP as a git-diffable externalized .tox tree (each COMP becomes its own file).",
+    { mutates: true },
+  ),
+  "narrate-set": r(
+    narrateSetSchema,
+    narrateSetImpl,
+    "Persist/recall a live-set narration log (append timestamped decision lines; recall them later).",
+    { mutates: true },
+  ),
   "doc-site": r(
     projectDocumentationSiteSchema,
     projectDocumentationSiteImpl,
@@ -2321,6 +2404,36 @@ const COMMANDS: Record<string, Command> = {
     createDmxFixturePipelineSchema,
     createDmxFixturePipelineImpl,
     "Build a DMX/Art-Net fixture pipeline (channels → patch → Art-Net Out).",
+    { mutates: true },
+  ),
+  "fixture-control": r(
+    createFixtureControlSchema,
+    createFixtureControlImpl,
+    "Build a moving-head fixture rig with DMX out + a 3D pan/tilt/beam previz.",
+    { mutates: true },
+  ),
+  "detection-reactive": r(
+    createDetectionReactiveSchema,
+    createDetectionReactiveImpl,
+    "Turn object/person detection (WebSocket or ONNX CPU) into presence/count/bbox channels.",
+    { mutates: true },
+  ),
+  "geo-visualization": r(
+    createGeoVisualizationSchema,
+    createGeoVisualizationImpl,
+    "Project GeoJSON/OSM lat-long into a 3D city visualization (ODbL attribution).",
+    { mutates: true },
+  ),
+  "scaffold-vj-deck": r(
+    scaffoldVjDeckSchema,
+    scaffoldVjDeckImpl,
+    "Scaffold a MIDI-mappable VJ deck (decks + fader surface + MIDI map).",
+    { mutates: true },
+  ),
+  "synesthesia-unreal-osc": r(
+    createSynesthesiaUnrealOscSchema,
+    createSynesthesiaUnrealOscImpl,
+    "Build a named OSC-out preset map for Synesthesia / Unreal Engine.",
     { mutates: true },
   ),
   "scaffold-tool-generator": r(
@@ -2619,6 +2732,68 @@ const COMMANDS: Record<string, Command> = {
     getInlinePreviewImpl,
     "Inline inspection snapshot for one operator: small base64 thumbnail + errors (self + parents) + top-N changed-from-default parameters + 1-line cook stats. Single-round-trip 'is this op alive/healthy?' read.",
     { mutates: false },
+  ),
+  // Roadmap-to-1.0 Wave 3 (2026-07-06) — stock-TD artist/interaction tools:
+  "step-repeat": r(
+    createStepRepeatSchema,
+    createStepRepeatImpl,
+    "Tile a source TOP into a rows×cols brick/grid with per-cell gap, position/rotation jitter, and optional brick offset.",
+    { mutates: true },
+  ),
+  "timecode-overlay": r(
+    addTimecodeOverlaySchema,
+    addTimecodeOverlayImpl,
+    "Overlay a live HH:MM:SS:FF timecode (clock / count-up / count-down) onto a source TOP as visual pixels.",
+    { mutates: true },
+  ),
+  "pointer-reactive": r(
+    createPointerReactiveSchema,
+    createPointerReactiveImpl,
+    "Turn mouse/pointer position + click into a bindable u/v/velocity/button Null CHOP, with an optional pushed feedback demo.",
+    { mutates: true },
+  ),
+  "interaction-zones": r(
+    createInteractionZonesSchema,
+    createInteractionZonesImpl,
+    "Define N rectangular motion zones over a camera input; emits per-zone state + dwell channels ready to fire cues.",
+    { mutates: true },
+  ),
+  // Roadmap-to-1.0 Wave 4 (2026-07-06) — stock-TD generators:
+  terrain: r(
+    createTerrainSchema,
+    createTerrainImpl,
+    "Build a procedural heightmap terrain: Noise height field → GLSL vertex-displacement MAT on a subdivided grid, with optional water plane and distance fog.",
+    { mutates: true },
+  ),
+  "asemic-writing": r(
+    createAsemicWritingSchema,
+    createAsemicWritingImpl,
+    "Generate a page of procedural asemic writing — random-but-writing-like glyph strokes (Script SOP pen → Tube SOP → ortho render).",
+    { mutates: true },
+  ),
+  "sdf-text": r(
+    createSdfTextSchema,
+    createSdfTextImpl,
+    "Raymarch a text string as an extruded SDF slab: a Text TOP glyph mask fed to a GLSL raymarcher for solid, lit, spinnable 3D letters.",
+    { mutates: true },
+  ),
+  "vertex-displacement-mat": r(
+    createVertexDisplacementMatSchema,
+    createVertexDisplacementMatImpl,
+    "Build a true vertex-shader displacement GLSL MAT (noise- or texture-driven) that deforms real mesh vertices; assign to a Geometry COMP or preview on a demo sphere.",
+    { mutates: true },
+  ),
+  "disorder-grid": r(
+    controlledDisorderGridSchema,
+    controlledDisorderGridImpl,
+    "Generate a grid of quads/lines with a single order↔chaos Disorder knob (0=perfect grid → 1=full chaos) driving per-cell position/rotation/scale jitter.",
+    { mutates: true },
+  ),
+  "blob-trace": r(
+    createBlobTraceSchema,
+    createBlobTraceImpl,
+    "Trace a blob/silhouette into a vector contour outline: monochrome → blur → threshold mask → Trace SOP → wireframe render.",
+    { mutates: true },
   ),
   // v0.6.0 — Creative RAG inspiration → execution loop:
   "apply-creative-card": r(
@@ -3499,6 +3674,10 @@ function parseCliArgs(argv: string[]) {
       "llm-model": { type: "string" },
       "llm-base-url": { type: "string" },
       "no-ollama": { type: "boolean", default: false },
+      // `preview --inline [--watch]`:
+      inline: { type: "boolean", default: false },
+      watch: { type: "boolean", default: false },
+      interval: { type: "string" },
     },
   });
 }
@@ -3830,6 +4009,126 @@ function completionScript(shell: string): string | undefined {
     return [`complete -c tdmcp-agent -f -a '${words}'`, ""].join("\n");
   }
   return undefined;
+}
+
+/** `--interval` for `preview --watch`, clamped to a 100ms floor (default 1000ms). */
+function previewIntervalMs(values: Record<string, unknown>): number {
+  const raw = typeof values.interval === "string" ? Number(values.interval) : Number.NaN;
+  return Number.isFinite(raw) && raw >= 100 ? raw : 1000;
+}
+
+/**
+ * `preview --inline [--watch]`: render a terminal thumbnail (iTerm2/Kitty, else an
+ * honest ASCII fallback). `--watch` re-renders on an interval until Ctrl-C; the abort
+ * controller is wired to SIGINT/SIGTERM only in watch mode.
+ */
+async function runInlinePreview(
+  ctx: ToolContext,
+  args: { node_path: string; width: number; height: number },
+  values: Record<string, unknown>,
+  watchMode: boolean,
+): Promise<CliResult> {
+  const ac = new AbortController();
+  const onSig = () => ac.abort();
+  if (watchMode) {
+    process.on("SIGINT", onSig);
+    process.on("SIGTERM", onSig);
+  }
+  try {
+    const r = await runPreviewInline(ctx.client, {
+      nodePath: args.node_path,
+      width: args.width,
+      height: args.height,
+      watch: watchMode,
+      intervalMs: previewIntervalMs(values),
+      signal: ac.signal,
+    });
+    return { stdout: r.stdout, stderr: r.stderr, code: r.code };
+  } finally {
+    process.off("SIGINT", onSig);
+    process.off("SIGTERM", onSig);
+  }
+}
+
+/** `preview <nodePath> -o file.png`: capture the TOP and write it to disk. */
+async function capturePreviewToFile(
+  ctx: ToolContext,
+  args: { node_path: string; width: number; height: number },
+  outPath: string,
+): Promise<CliResult> {
+  try {
+    const preview = await capturePreview(ctx.client, args.node_path, args.width, args.height);
+    const bytes = Buffer.from(preview.base64, "base64");
+    writeFileSync(outPath, bytes);
+    const doc = {
+      node_path: preview.path,
+      file: resolve(outPath),
+      width: preview.width,
+      height: preview.height,
+      bytes: bytes.length,
+      mimeType: preview.mimeType,
+    };
+    return {
+      stdout: `${JSON.stringify(doc, null, 2)}\n`,
+      stderr: `Saved preview of ${preview.path} to ${outPath} (${bytes.length} bytes).\n`,
+      code: 0,
+    };
+  } catch (err) {
+    const msg = friendlyTdError(err);
+    return { stdout: "", stderr: `${msg}\n`, code: classifyTdErrorExit(msg) };
+  }
+}
+
+type PreviewArgs = { node_path: string; width: number; height: number };
+
+/** Assemble + validate `preview` args (node_path required). Returns args or an error result. */
+function parsePreviewArgs(
+  values: Record<string, unknown>,
+  positionals: string[],
+  opts: RunCliOptions,
+): { args: PreviewArgs } | { error: CliResult } {
+  const assembled = assembleParams(values, opts);
+  if ("error" in assembled) {
+    const stderr = `Invalid JSON in --params/--json: ${assembled.error}\n`;
+    return { error: { stdout: "", stderr, code: 2 } };
+  }
+  const raw = assembled.raw;
+  if (positionals[1]) raw.node_path = positionals[1];
+  // The CLI always captures (never collects a deferred job), so node_path is required.
+  const parsed = getPreviewSchema.required({ node_path: true }).safeParse(raw);
+  if (!parsed.success) {
+    const stderr = `Invalid arguments for "preview": ${parsed.error.message}\n`;
+    return { error: { stdout: "", stderr, code: 2 } };
+  }
+  return { args: parsed.data };
+}
+
+/** `preview <nodePath>` to a PNG file (or `--inline`/`--dry-run`). A CLI side effect. */
+async function handlePreviewCommand(
+  values: Record<string, unknown>,
+  positionals: string[],
+  opts: RunCliOptions,
+): Promise<CliResult> {
+  const result = parsePreviewArgs(values, positionals, opts);
+  if ("error" in result) return result.error;
+  const args = result.args;
+  const inlineMode = values.inline === true;
+  const watchMode = values.watch === true;
+  const outPath = typeof values.out === "string" && values.out ? values.out : "preview.png";
+  if (values["dry-run"]) {
+    const doc = inlineMode
+      ? { dryRun: true, command: "preview", args, inline: true, watch: watchMode }
+      : { dryRun: true, command: "preview", args, out: resolve(outPath) };
+    return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
+  }
+  let ctx: ToolContext;
+  try {
+    ctx = buildCtx(opts, cliLoadOptions(values));
+  } catch (err) {
+    return { stdout: "", stderr: `${(err as Error).message}\n`, code: 2 };
+  }
+  if (inlineMode) return runInlinePreview(ctx, args, values, watchMode);
+  return capturePreviewToFile(ctx, args, outPath);
 }
 
 export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<CliResult> {
@@ -4274,61 +4573,7 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   // `preview <nodePath> -o file.png` — capture a TOP and write it to disk. This is a
   // side effect that doesn't fit the CallToolResult command table, so it's handled here.
   if (positionals[0] === "preview") {
-    const assembled = assembleParams(values, opts);
-    if ("error" in assembled) {
-      return {
-        stdout: "",
-        stderr: `Invalid JSON in --params/--json: ${assembled.error}\n`,
-        code: 2,
-      };
-    }
-    const raw = assembled.raw;
-    if (positionals[1]) raw.node_path = positionals[1];
-    // The CLI always captures (never collects a deferred job), so node_path is required.
-    const parsed = getPreviewSchema.required({ node_path: true }).safeParse(raw);
-    if (!parsed.success) {
-      return {
-        stdout: "",
-        stderr: `Invalid arguments for "preview": ${parsed.error.message}\n`,
-        code: 2,
-      };
-    }
-    const outPath = typeof values.out === "string" && values.out ? values.out : "preview.png";
-    if (values["dry-run"]) {
-      const doc = { dryRun: true, command: "preview", args: parsed.data, out: resolve(outPath) };
-      return { stdout: `${JSON.stringify(doc, null, 2)}\n`, stderr: "", code: 0 };
-    }
-    let ctx: ToolContext;
-    try {
-      ctx = buildCtx(opts, cliLoadOptions(values));
-    } catch (err) {
-      return { stdout: "", stderr: `${(err as Error).message}\n`, code: 2 };
-    }
-    try {
-      const preview = await capturePreview(
-        ctx.client,
-        parsed.data.node_path,
-        parsed.data.width,
-        parsed.data.height,
-      );
-      const bytes = Buffer.from(preview.base64, "base64");
-      writeFileSync(outPath, bytes);
-      const doc = {
-        node_path: preview.path,
-        file: resolve(outPath),
-        width: preview.width,
-        height: preview.height,
-        bytes: bytes.length,
-        mimeType: preview.mimeType,
-      };
-      return {
-        stdout: `${JSON.stringify(doc, null, 2)}\n`,
-        stderr: `Saved preview of ${preview.path} to ${outPath} (${bytes.length} bytes).\n`,
-        code: 0,
-      };
-    } catch (err) {
-      return { stdout: "", stderr: `${friendlyTdError(err)}\n`, code: 1 };
-    }
+    return handlePreviewCommand(values, positionals, opts);
   }
 
   // `doctor` — environment diagnostic (TD bridge, LLM copilot, vault, config). Read-only and
@@ -4699,7 +4944,12 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   const result = await cmd.run(ctx, args.data);
   // -q/--quiet keeps stdout=data and silences the friendly stderr summary (for pipelines/CI).
   const summary = values.quiet ? "" : (textOf(result).split("\n")[0] ?? "");
-  if (result.isError) return { stdout: "", stderr: `${textOf(result)}\n`, code: 1 };
+  if (result.isError) {
+    // Exit-code taxonomy: distinguish "TD unreachable" (3) from "TD reached but
+    // the op failed" (4) so callers can branch without scraping stderr.
+    const errText = textOf(result);
+    return { stdout: "", stderr: `${errText}\n`, code: classifyTdErrorExit(errText) };
+  }
 
   const output = String(values.output);
   const data = extractData(result);

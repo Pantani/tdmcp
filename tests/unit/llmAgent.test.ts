@@ -230,6 +230,63 @@ describe("local copilot — agent loop", () => {
     expect(events.at(-1)).toEqual({ type: "answer", content: "There are several TOP classes." });
   });
 
+  it("suggests a handoff after consecutive tool failures, once per turn", async () => {
+    // The ctx bridge points at a discard port, so any bridge-touching tool call fails.
+    // Two failing get_td_nodes calls in a row is a dead-end → one handoff suggestion.
+    const nodesCall = (id: string): ChatMessage => ({
+      role: "assistant",
+      content: null,
+      tool_calls: [
+        {
+          id,
+          type: "function",
+          function: { name: "get_td_nodes", arguments: '{"parent_path":"/project1"}' },
+        },
+      ],
+    });
+    const client = scriptedClient([
+      nodesCall("c1"),
+      nodesCall("c2"),
+      nodesCall("c3"),
+      { role: "assistant", content: "I keep failing." },
+    ]);
+
+    const events: AgentEvent[] = [];
+    await runAgentTurn(makeCtx(), client, [{ role: "user", content: "list the nodes" }], (e) =>
+      events.push(e),
+    );
+
+    const suggestions = events.filter((e) => e.type === "suggestion");
+    expect(suggestions).toHaveLength(1);
+    const suggestion = suggestions[0];
+    expect(suggestion).toMatchObject({ type: "suggestion", kind: "handoff" });
+    expect((suggestion as { message: string }).message.toLowerCase()).toContain("handoff");
+  });
+
+  it("does not suggest a handoff when tool calls succeed", async () => {
+    // get_td_classes is a pure offline KB tool — it succeeds without the bridge.
+    const client = scriptedClient([
+      {
+        role: "assistant",
+        content: null,
+        tool_calls: [
+          {
+            id: "c1",
+            type: "function",
+            function: { name: "get_td_classes", arguments: '{"filter":"top"}' },
+          },
+        ],
+      },
+      { role: "assistant", content: "Here are the TOP classes." },
+    ]);
+
+    const events: AgentEvent[] = [];
+    await runAgentTurn(makeCtx(), client, [{ role: "user", content: "top classes?" }], (e) =>
+      events.push(e),
+    );
+    expect(events.some((e) => e.type === "suggestion")).toBe(false);
+  });
+
   it("surfaces an LLM transport error as an error event without throwing", async () => {
     const failing = {
       chatStream: async () => {

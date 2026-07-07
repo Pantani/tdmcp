@@ -284,5 +284,5 @@ Setup flags: `--token-stdin`, `--chat-id <id>`, `--user-id <id>`,
 | `npm run ai-party:llm-generate-data` | Generate deterministic ShowIntent training JSONL and train/validation splits. |
 | `npm run ai-party:llm-import-curated` | Convert approved curation CSV rows into validated training JSONL. |
 | `npm run import:bottobot` | (Re)build the embedded knowledge base — only needed to refresh it. |
-| `npm run build:mcpb` | Package a Claude Desktop `.mcpb` extension (formerly `.dxt`; see [Deployment](/deployment)). |
+| `npm run build:mcpb` | Package a Claude Desktop `.mcpb` extension (see [Deployment](/deployment)). |
 | `npm run docs:dev` / `docs:build` | Run / build this documentation site (regenerates the [Tools reference](/reference/tools) first). |

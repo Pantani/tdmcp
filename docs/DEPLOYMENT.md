@@ -57,9 +57,7 @@ Claude Desktop spawns the server locally, so the extension uses the **stdio**
 transport (no `TDMCP_TRANSPORT` override needed). TouchDesigner still runs on the
 same host; the extension exposes its host/port as user-configurable settings.
 
-> `.mcpb` (MCP Bundle) is the current Desktop-extension format; it was previously
-> called `.dxt`. Legacy `.dxt` bundles still install in Claude Desktop, but new
-> builds ship `.mcpb`.
+> `.mcpb` (MCP Bundle) is the Claude Desktop extension format tdmcp ships.
 
 ### Build the bundle
 
@@ -69,13 +67,12 @@ npm run build:mcpb     # (or: node scripts/build-mcpb.mjs)
 ```
 
 `build-mcpb.mjs` uses the official packer when available and otherwise falls back
-to a system `zip`. The packer was renamed from `@anthropic-ai/dxt` (CLI `dxt`,
-format `.dxt`) to `@anthropic-ai/mcpb` (CLI `mcpb`, format `.mcpb`); the script
-prefers `npx @anthropic-ai/mcpb pack` and falls back to the legacy
-`@anthropic-ai/dxt`, then `zip`. (The legacy `dxt` CLI predates manifest spec 0.3
-and rejects the `manifest_version` key, so install `@anthropic-ai/mcpb` to use the
-official packer.) It writes `tdmcp.mcpb` to the repo root and prints install
-instructions.
+to a system `zip`. The upstream packer was renamed from `@anthropic-ai/dxt` to
+`@anthropic-ai/mcpb`; the script prefers `npx @anthropic-ai/mcpb pack` and falls
+back to the legacy `@anthropic-ai/dxt`, then `zip`. (The legacy packer predates
+manifest spec 0.3 and rejects the `manifest_version` key, so install
+`@anthropic-ai/mcpb` to use the official packer.) It writes `tdmcp.mcpb` to the
+repo root and prints install instructions.
 
 ### Install
 
@@ -84,7 +81,7 @@ instructions.
 3. Set **TouchDesigner host/port** if they differ from the defaults
    (`127.0.0.1` : `9980`), then enable the extension.
 
-The manifest lives at `dxt/manifest.json`. It declares a `node` server with
+The manifest lives at `mcpb/manifest.json`. It declares a `node` server with
 `entry_point: dist/index.js` and surfaces `TDMCP_TD_HOST`, `TDMCP_TD_PORT`,
 `TDMCP_BRIDGE_TOKEN`, `TDMCP_RAW_PYTHON`, and `TDMCP_TOOL_PROFILE` via
 `user_config`, injected into the server env as `${user_config.*}`.

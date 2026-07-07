@@ -21,11 +21,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `TouchDesignerClient.getHealth()`: typed, Zod-validated client method for the
   bridge's `GET /api/health` liveness/heartbeat report.
 
-### Changed
-
-- The `.mcpb` bundle builder was renamed `scripts/build-dxt.mjs` →
-  `scripts/build-mcpb.mjs` (log prefix `[build-mcpb]`); `npm run build:mcpb`
-  is unchanged.
 
 ### Fixed
 
@@ -34,6 +29,460 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `npm run lint` now checks explicit paths (`src tests scripts`), fixing the
   0-files no-op inside linked git worktrees.
 - Docs: tool count corrected to 335 in the README and docs landing page.
+- Connectors Directory submission readiness (roadmap gate G6): bundled a Desktop-
+  extension icon (`mcpb/icon.png`, referenced by `manifest.icon`) and enriched the
+  MCPB manifest with `long_description`, `icon`, `repository`, `homepage`,
+  `documentation`, `support`, `license`, `keywords`, `tools_generated`, and
+  `privacy_policies` — all schema-validated by the official `@anthropic-ai/mcpb`
+  packer. A field-by-field submission draft, approval-gate checklist, and migration
+  notes were written under `_workspace/`.
+
+### Changed
+
+- refactor: reduce cognitive complexity of functions flagged by the ratchets — no
+  behavior change. Extracted well-named helpers from five worsened JS/TS functions
+  (`runCli`, `runChat`, `service.sync`, `runAgentTurn`, chat-server `run`), six
+  freshly-added JS/TS functions (`runPreviewInline`, `narrateSetImpl`,
+  `projectFeatures`/`flattenToRings`, `scaffoldVjDeckImpl`, `bundleDependenciesImpl`,
+  `checkOperatorAvailabilityImpl`), and four Python bridge functions
+  (`_route_get_root`, `_route_node_special`, `duplicate`, `poll`). `make complexity`
+  is green again.
+- Renamed the Desktop-extension build artifacts to match the current `.mcpb`
+  format: `dxt/` → `mcpb/`, `scripts/build-dxt.mjs` → `scripts/build-mcpb.mjs`
+  (log prefix `[build-mcpb]`), `tests/unit/buildDxtScript.test.ts` →
+  `buildMcpbScript.test.ts`; updated `package.json`, `sync-manifest-version.mjs`,
+  and the release workflow. Swept stale `.dxt` format references from the README,
+  install/glossary guides (EN + PT), CLI reference, roadmap, and deployment guide.
+  The `@anthropic-ai/dxt` fallback packer name is retained — it is a real
+  dependency, not a stale format reference.
+- Privacy policy (EN + PT): corrected the network-activity section to disclose the
+  opt-in, user-initiated outbound calls (`import_shadertoy` → Shadertoy API,
+  `import_isf_shader` → user URL, and the optional local AI copilot) instead of
+  claiming localhost-only egress. The no-telemetry / no-data-collection guarantees
+  are unchanged.
+
+### Fixed
+
+- PR #128 review fixes (parameter-watch event path + inline-image + copilot
+  session save):
+  - **`param.changed` now reaches MCP clients by default.** It had been added to
+    the `eventStream` `HIGH_FREQUENCY` drop set, but `transportFactory` builds the
+    default stream without `includeHighFrequency`, so every watched `param.changed`
+    was dropped before it could be forwarded as an MCP logging notification —
+    `watch_parameter_changes` produced zero notifications. `param.changed` is
+    already gated at the source by the watch registry (empty registry ⇒ silent)
+    and coalesced bridge-side, so it is no longer in the blanket drop set; only the
+    genuinely unbounded `timeline.frame`/`node.cook` firehoses stay high-frequency.
+    Live-validated on TD 099 build 2025.32820: a `param.changed` frame now survives
+    the default (non-high-frequency) stream while `node.cook`/`timeline.frame` stay
+    gated.
+  - **Watch-service coalescing no longer loses the resting value.** The poll
+    snapshot advanced *before* the coalesce check dropped the event, so a burst
+    that settled at a new value within the 50 ms window and then stopped
+    (0.1 → 0.2, then quiet) never emitted the final 0.2 — subscribers kept the
+    stale 0.1. The emitted snapshot now advances only on delivery; a coalesced
+    change keeps the old snapshot so the settled value emits on the next post-window
+    poll. Live-validated against real `constantCHOP` parameter values on TD 099.
+  - **Older-bridge watch routes now surface the friendly upgrade message.** Older
+    bridges report an unknown route as HTTP 400 `Unsupported POST /api/params/watch`,
+    not 404; `watchParameters`/`unwatchParameters`/`listParameterWatches` only
+    mapped 404, so a real older bridge surfaced the raw error. They now use the
+    shared `isMissingEndpoint()` helper (matches 404 *and* `Unsupported <METHOD> …`)
+    for all three methods, while a genuine validation 400 still surfaces unchanged.
+    Live-validated: the running bridge returns `400 Unsupported …` for these routes
+    and the client now maps it to reinstall/update guidance.
+  - **`/session/save` returns a structured 422 on a malformed transcript.**
+    `saveCopilotSession` Zod-parses `messages` and can throw; the exception used to
+    bubble to the generic 500 plain-text handler, breaking the JSON contract. The
+    parse/write is now wrapped and returns a `{ ok: false, error }` **422** JSON
+    response, mirroring `/session/load`.
+  - **Inline-image escape sequences no longer contain literal control bytes.** The
+    iTerm2 OSC-1337 and Kitty graphics-protocol strings in `inlineImage.ts` embedded
+    raw ESC/BEL bytes in source; they now use explicit `\x1b`/`\x07` escapes.
+    Runtime output is byte-identical.
+  - **PR #128 review pass 1 (correctness / schema / Python / tests):**
+    - `create_synesthesia_unreal_osc` reported OSC-out errors character-by-character
+      — `OP.errors()` returns a single newline-joined **string**, so
+      `[str(e) for e in _osc.errors()]` iterated its characters. It now splits into
+      lines and takes the first three real messages. Live-validated on TD 099 build
+      2025.32820: a two-line error string now yields two messages, not `["C","o","n"]`.
+    - `watch_service.unregister` now (1) purges the **removed** par names' stale
+      `_SNAPSHOT`/`_LAST_EMIT` entries on a partial unregister, so a later re-watch
+      of a removed par starts fresh (`_diff_par` sees `_UNSET` and only seeds), and
+      (2) resolves the same **canonical** registry key `register()` stored under even
+      after the op is deleted (alias fallback), so a dead watch is no longer leaked.
+      New `td/tests/test_watch_service.py` regressions cover both; live-validated on
+      TD 099.
+    - `create_interaction_zones` no longer collides two zones whose names sanitize to
+      the same key (e.g. `"left zone"` and `"left/zone"` → `left_zone`) — colliding
+      keys are disambiguated by zone index. Live-checked TD's own silent auto-rename
+      (`left_zone` → `left_zone1`) that the fix guards against.
+    - Schema tightening: `create_sdf_text` `camera_z`/`rotate`/`speed`/`intensity`
+      now enforce their live ControlSpec ranges; `create_pointer_reactive` and
+      `create_interaction_zones` resolutions require positive integers;
+      `watch_parameter_changes` makes `path` optional (required only for
+      watch/unwatch, omittable for `list`).
+    - `narrate_set` sanitizes newlines and the record-delimiting characters
+      (`` ` ``, `[]`, `()`) out of free-text `line`/`section`/`cue` before persisting,
+      so `parseEntries` can no longer truncate or misparse an entry; the post-write
+      count is derived from a pre-append read inside the same `try/catch` (never a
+      second read that could throw out of the handler).
+    - `create_detection_reactive` wires its advertised `reconnect_seconds` into the
+      websocketDAT `reconnect`/`reconnectinterval` pars (probed fail-forward).
+    - `saveNode` exec fallback now keeps a valid alternate `_n.save(...)` return path
+      instead of always preferring the input `file` unless it matched exactly.
+    - `tdmcp chat --resume` (headless) now **persists** the updated transcript back to
+      the session file after each turn, so a later headless run continues from the
+      new context instead of stale state; the misleading "Resume in the UI to load"
+      hint is dropped (the browser UI has no matching load).
+    - `sessionStore` validates `tool_calls` against the real `ToolCall` shape (was
+      `z.unknown()`), removing the `as unknown as` schema cast so parsed sessions stay
+      strongly typed end to end.
+    - `europeana` source only tombstones on an empty keyed result when the requested
+      `limit > 0`; an intentional zero-row sync now returns normally.
+  - **PR #128 review pass 2 (network layout / orphan node):** these single-pass
+    builders create every op inside one Python exec with no auto-layout
+    (`NetworkBuilder`/`finalize` is not used), so their children stacked at the
+    default drop point. Each now writes deterministic `nodeX`/`nodeY` so the
+    generated network opens left→right instead of piled at the origin, and one
+    dead node is removed:
+    - `create_geo_visualization` no longer creates the **orphan `in1` In SOP**
+      inside the `geo` COMP — the COMP renders the city geometry via `select1`
+      (Select SOP), and `in1` was created but never wired or referenced. Its
+      container children (`city` → `city_out` → `geo` → `render`, with `cam`/`light`
+      as siblings, and the nested `select1`) are now laid out on a grid. Also fixed
+      the pre-existing `useOptionalChain` Biome warning in `projectFeatures`.
+      Live-validated on TD 099 build 2025.32820: the network cooks with `errors:[]`
+      after the orphan removal.
+    - `create_detection_reactive` positions `detector_ws`/`frames` (source) →
+      `detect` (Script CHOP) → `detections` (Null CHOP) with the callbacks DAT
+      below the source.
+    - `create_fixture_control` lays the DMX chain (fixture/pad Constant CHOPs →
+      `merge` → `rig_out` → `dmx`) in a top band and the 3D previz (`head_*` heads
+      → `previz_cam`/`previz_light`/`previz`) in a lower band so the two halves no
+      longer overlap.
+    - `add_timecode_overlay` positions `fmt`/`sel` → `tc` → `comp` → `out`.
+    - `create_synesthesia_unreal_osc` places the `controls` Constant CHOP left and
+      the `osc` Out CHOP right.
+    - Live-validated on TD 099 build 2025.32820: every tool-created op lands at a
+      distinct coordinate and all five networks cook with `errors:[]`.
+  - **PR #128 review pass 3 (re-review follow-ups):** the watch-service
+    deleted-alias fallback now only matches a leaf name when it is **unambiguous**
+    (two watched paths sharing a basename, e.g. `/a/level1` and `/b/level1`, no
+    longer let `unregister("level1")` remove the wrong subscription); `create_detection_reactive`
+    now positions its container COMP and the fallback callbacks DAT; `mapMissingWatchEndpoint`
+    preserves the original error as `cause`; and the watch-service helpers gained
+    Ruff return-type annotations (`_resolve_watch_key`/`_clear_emit_state`/`_match`).
+  - **PR #128 review pass 4 (re-review follow-ups):**
+    - Copilot `/session/save` now rejects a non-array `messages` with a structured
+      `422 {ok:false, error:"messages must be an array"}` instead of silently
+      coercing it to `[]` and overwriting an existing transcript while returning 200.
+    - `--creative` no longer loses its warmer temperature when `--resume` restores a
+      cooler saved session temperature — the resumed value is `Math.max`'d with the
+      creative override rather than blindly replacing it.
+    - `create_fixture_control`: the 3D previz head band's Y origin is now computed
+      from the DMX/pad input-row count instead of a fixed `-900`, so the heads never
+      overlap the DMX column at high fixture counts (live-validated on TD 099 build
+      2025.32820: 6 gapped fixtures → 11 DMX rows to y=-1600, head band starts at
+      y=-1920, cooks with no node errors).
+    - `add_timecode_overlay`: the container COMP is now explicitly placed (`_place`
+      defined before the create and called immediately after) so it lands at stable
+      coordinates instead of TD's default drop point.
+    - `create_detection_reactive`: the container is shifted to a free X slot among
+      the parent's existing children (`_free_x` probe) before placement, so repeated
+      runs under the same parent no longer stack containers (live-validated: two runs
+      landed at x=260 and x=520, no node errors).
+    - `create_geo_visualization`: `_sop.errors()` (a newline-joined string) is now
+      split into lines before taking the first three, instead of char-slicing the
+      string into single characters.
+    - `getOpTypesViaExec` now throws the reported `fatal` reason before schema
+      validation, matching `saveNodeViaExec`/`duplicateNodeViaExec`, so a TD-side
+      failure surfaces its message instead of a generic "Unexpected shape" error.
+    - `tryEndpoint` is imported statically in `touchDesignerClient` instead of via a
+      per-call `await import("./types.js")` in each fallback method.
+    - Regression test: `unregister` on an ambiguous shared leaf basename is a no-op
+      (both canonical watches survive).
+
+- `create_pointer_reactive` no longer leaks undocumented channels past its output
+  Null (roadmap-to-1.0 polish, live-validated on TD 099 build 2025.32820). The
+  `u`/`v` rename CHOPs only rename the position channels, so the Mouse In `button`
+  rode along on every merge input; merging the three inputs then collision-suffixed
+  the duplicate buttons (`button1`, `button2`) and passed Mouse In's `raw_u`/`raw_v`
+  through, so the `pointer` Null carried nine channels instead of the advertised
+  five. A Select CHOP (`channames = "u v vu vv button"`) now whitelists exactly the
+  five documented bind points before the sensitivity gain and the output Null. Live
+  check: the Null now cooks with exactly `['u','v','vu','vv','button']` and no node
+  errors.
+- `create_step_repeat` and `create_interaction_zones` no longer hard-depend on a
+  bundled `Mosaic.mp4` for their built-in demo (roadmap-to-1.0 polish,
+  live-validated on TD 099 build 2025.32820). That clip does not ship on every TD
+  build — `step_repeat` degraded silently and `interaction_zones` raised
+  "Failed to open file". When no `source` is given, both now default to a
+  guaranteed-present synthetic Noise TOP (a slowly drifting sparse field, so
+  `interaction_zones` still has real frame-to-frame motion to detect) that cooks
+  clean on any install with no external asset. An explicit `source_path` still
+  wins unchanged. Live check: both demos built with no source arg cook with
+  `errors: []` and no "Failed to open file".
+
+- Recipe `histogram_scope` (roadmap-to-1.0 Wave 7, gate `g3_recipes_live`) — the
+  trace `choptoSOP` lives inside the `geo` geometry COMP while its source merge
+  CHOP `xyz` sits at the container root, so the node's `chop` parameter must be
+  the relative path `../xyz`, not the bare `xyz` (which TD resolved against `geo`
+  and failed with `Invalid input CHOP ""`). Now cooks clean. Found and fixed by
+  live end-to-end cook validation of all 10 net-new v0.7–v0.8 recipes against a
+  real TouchDesigner (099, build 2025.32820): the other nine
+  (`raymarch_sphere_field`, `raymarch_infinite_tunnel`, `strange_attractor_lorenz`,
+  `ascii_render_post`, `dither_post`, `halftone_post`, `audio_glsl_uniforms`,
+  `front_of_house_dashboard`, `sidechain_pump`) all cooked with `errors: []`
+  unchanged. `validate:recipes` stays 50/50.
+
+- Tool-annotation directory gate: 14 tools registered without MCP safety
+  annotations; every tool now carries `readOnlyHint` / `destructiveHint` /
+  `openWorldHint`. `merge_vaults`, `manage_component_storage`, and `macro_recorder`
+  (which can overwrite/delete user data or truncate a caller-named file) are now
+  flagged `destructiveHint: true` and hidden by the `safe` tool profile (added to
+  `SAFE_PROFILE_EXCLUDE`).
+- `audio_reactive_basic` recipe: the placeholder frame now reacts to audio out of
+  the box instead of sitting at a static color. Two root causes, both live-debugged
+  in TouchDesigner 099 build 2025.32820: the `level` analyzeCHOP's `function` was
+  given as the integer `6`, which the bridge's menu validation rejects (menu params
+  take names, not indices) so it silently stayed on `average` — now `"rmspower"`;
+  and `out_color` was never wired to the level, so it never pulsed — its
+  `colorr/g/b` are now bound to the RMS `level_null` channel via expressions (the
+  new recipe `expr` support), so the frame pulses declaratively every cook. Verified
+  live with a synthetic tone (RMS is 0 without a mic); the audio-reactive-visual
+  tutorial video was re-captured from the recipe's own output.
+- `audio_spectrum_bars` recipe: the `spectrum` had no output length set, so the
+  CHOP-to-TOP texture was a ~16k-wide strip and the raw FFT energy landed in a
+  handful of bins that rendered as a near-flat 1px line. The spectrum is now clamped
+  to 256 bins (`setmanually`/`outlength`) and the `bars` GLSL TOP has an explicit
+  output resolution, so it renders a full-height bar visual. Live-validated in TD 099
+  build 2025.32820.
+- `optical_flow_particles` recipe was non-functional end to end (black render, flat
+  flow field), live-debugged and fixed in TouchDesigner 099 build 2025.32820: the
+  particleSOP now renders as point sprites (the default `prtype` "lines" draws
+  nothing visible) with a soft circular sprite texture and visible point size; the
+  cacheTOP previous-frame tap uses `outputindex -1` (0 returned the current frame,
+  so the frame difference was always zero); the frame difference uses the
+  `difference` operand plus a gain stage, and the displaceTOP midpoint is 0 so no
+  motion means no displacement; the invalid `extforce`/`loop` parameters were
+  removed. The flow now actually drives the particles out of the box: a
+  topto→analyze→null CHOP chain measures motion energy and a CHOP Execute callback
+  scales the particle turbulence/wind with it. Output composites the particles over
+  a darkened flow texture. The camera-interactive-installation tutorial (EN+PT) now
+  embeds a live-captured video of the recipe's own output instead of the "best seen
+  live" hedge.
+
+### Changed
+
+- Creative RAG `SourceSkippedError` now carries a `reason: "no-key" | "empty"`
+  discriminator (roadmap-to-1.0 Wave 7, `rag_source_skipped_error`), so a
+  misconfigured key-gated source never tombstones a real result. `"no-key"`
+  (the default — existing two-arg call sites are unchanged) means the credential
+  is absent and the upstream was never reached; `"empty"` means the source DID
+  reach the upstream (key present) but got an untrusted zero (e.g. a rejected key
+  or a silent outage returning HTTP 200 with no items). Both remain
+  non-tombstoning by design — the discriminator only shapes the sync's skip log
+  and lets callers/tests tell the two apart. The Europeana adapter now raises
+  `"empty"` when a keyed request returns zero items for the `*` catalog query.
+
+### Added
+
+- `watch_parameter_changes` (Layer 3) + an opt-in `param.changed` event
+  (roadmap-to-1.0, live-validated on TD 099 build 2025.32820). Subscribe to an
+  operator's parameters and get a `{path, par, prev, value, frame}` event on the
+  existing TD WebSocket stream whenever a watched value changes — from a human
+  moving a slider, a script, an expression, or a CHOP export. New bridge routes
+  `POST`/`DELETE`/`GET /api/params/watch` back a `watch_service` subscription
+  registry; a per-frame poller in the bridge's `events_hook` (`onFrameEnd`) detects
+  value deltas and calls `events.broadcast`. Polling — not a Parameter Execute DAT
+  `onValueChange` callback — was required because that callback fires only for
+  interactive UI edits, not scripted/expression changes (confirmed live). The event
+  is coalesced bridge-side (one emit per (path, par) per 50 ms, so a slider drag
+  can't flood) and gated at the source by the watch registry (an empty registry
+  stays silent), so it is delivered on the default MCP event stream without any
+  `TDMCP_EVENTS` high-frequency opt-in. Typed client
+  methods `watchParameters`/`unwatchParameters`/`listParameterWatches`, a
+  `ParamWatchResult`/`ParamWatchList`/`ParamChangedEvent` Zod envelope, and a
+  `parseParamChangedEvent` validator on the event stream. All routes survive
+  `TDMCP_BRIDGE_ALLOW_EXEC=0` (structured, not arbitrary Python); a bridge that
+  predates the route yields a friendly "reinstall/update the bridge" error. Live
+  check: registered a watch on a levelTOP's `opacity`, drove it 1→0.5→0.2→0.9 and
+  saw three `param.changed` events with correct prev/value/frame; a 20-change
+  same-tick burst coalesced to a single event carrying the resting value.
+- Local copilot now auto-surfaces the Claude/Codex handoff suggestion when it hits
+  a dead-end (roadmap-to-1.0 polish). The handoff builder + `/handoff` endpoint + UI
+  button already existed but were only invoked manually; `runAgentTurn` now counts
+  back-to-back tool failures and, after two in a row, emits a single non-intrusive
+  `suggestion` event (rendered in the CLI chat and the browser copilot UI) pointing
+  the user at the `/handoff` escape hatch. It is a suggestion line, not a forced
+  exit — the turn continues — and it fires at most once per turn. A successful tool
+  call resets the streak.
+- Regression tests pinning the Europeana `wskey`-strip lesson (roadmap-to-1.0
+  Wave 7, `rag_canonicalize_guid_test`): the persisted `sourceUrl`/`id` must never
+  embed the API key and must stay stable across keys — covering both the URL-parse
+  and the string-fallback branches of `canonicalizeGuid`, plus the new
+  `reason: "empty"` skip path (adapter + service no-tombstone).
+- Six CLI / AI / library capabilities (roadmap-to-1.0 Wave 5b):
+  - `bundle_dependencies` (Layer 3) — make a COMP self-contained: recursively
+    scan its subtree for external file references (reusing the
+    `collect_project_assets` scan), copy each existing asset into
+    `<out_dir>/assets/`, rewrite each referencing parameter in the live network
+    to the copied relative path, then save the COMP as a `.tox` beside its
+    assets with a manifest. Delta vs `make_portable_tox` (`.tox`-only). CLI:
+    `tdmcp-agent bundle-deps`. Live-validated against TD 099 (asset copied, live
+    par rewritten to `assets/clip.mov`, `.tox` saved, no post-cook errors).
+  - `export_externalized_tree` (library) — save a COMP as a git-diffable
+    externalized `.tox` tree via TouchDesigner's "save external": each COMP
+    (recursively, when `recurse`) is written to its own `.tox` with its
+    `externaltox` parameter set, so a version-controlled project shows per-node
+    diffs. CLI: `tdmcp-agent export-external-tree`. Live-validated on TD 099;
+    probe-live fix — on build 2025.32820, `saveExternalTox(path,…)` is a no-op,
+    so the tool sets each COMP's `externaltox` par first, then
+    `saveExternalTox(recurse=…)`, and verifies each file on disk.
+  - `tdmcp preview --inline [--watch]` — render a TOP thumbnail directly in the
+    terminal (iTerm2 OSC 1337 / Kitty graphics protocol, with an honest ASCII
+    fallback for plain terminals/pipes); `--watch` re-renders on an interval
+    until Ctrl-C. Builds on the existing preview capture path. Live-validated on
+    TD 099 (iTerm2 escape, ASCII fallback, and a 3-frame `--watch` run).
+  - CLI error-exit taxonomy — distinct, stable process exit codes across the
+    tool-invoking CLI paths: `0` ok, `2` usage/config, `3` TD offline/connection,
+    `4` TD reached-but-failed (cook/validation). One `src/cli/exitCodes.ts`
+    helper classifies failures at the exit boundary. Live-validated (offline
+    tool → 3, bad-path tool → 4).
+  - `copilot_session_persist` — the local copilot can now persist its transcript
+    plus last model/tier/temperature to a JSON session file
+    (`~/.tdmcp/copilot-session.json`) via new loopback `/session/save` and
+    `/session/load` endpoints, and reload it with `tdmcp chat --resume`
+    (`--session <path>` to choose the file). Corrupt sessions surface a `422`
+    instead of silently starting empty.
+  - `narrate_set` (AI) — persist a live set's narration as an append-only,
+    timestamped decision log (with optional section + cue) to a markdown session
+    note, recallable later; pairs with the `auto_vj_director` prompt. Delta vs
+    `log_performance`, which writes a one-shot network snapshot rather than a
+    running log. CLI: `tdmcp-agent narrate-set`.
+
+- Three new first-class TouchDesigner bridge REST endpoints (roadmap-to-1.0
+  Wave 2), each promoting proven `/api/exec` logic to a structured route that
+  **survives `TDMCP_BRIDGE_ALLOW_EXEC=0`**, with a transparent `/api/exec`
+  fallback for older bridges (live-validated against TD 099 build 2025.32820):
+  - `POST /api/nodes/{path}/save` — save a node to a file (a COMP to a `.tox`
+    component, a TOP to an image); client `saveNode(...)`, `SaveNodeSchema`.
+    `render_output` now prefers this endpoint (falls back to exec on a 404).
+  - `POST /api/duplicate` — duplicate a node/subtree preserving its internal
+    wires + parameter values; client `duplicateNode(...)`, `DuplicateNodeSchema`.
+    `duplicate_network` now prefers this endpoint (falls back to exec on a 404).
+  - `GET /api/optypes` — the ground-truth creatable-operator list from the
+    RUNNING TouchDesigner (every `td` family-base subclass), client
+    `getOpTypes(...)`, `OpTypesSchema`.
+  - `check_operator_availability` (Layer 3) — reconciles the static operator
+    knowledge base against the live `/api/optypes` list, flagging which
+    documented operators are actually creatable in this build vs
+    deprecated/unavailable, plus (optionally) live-only optypes the KB doesn't
+    yet document. CLI: `tdmcp-agent check-optypes`.
+
+- Four new stock-TouchDesigner artist/interaction tools (roadmap-to-1.0 Wave 3,
+  no GPU/hardware required):
+  - `create_step_repeat` (Layer 1) — brick/grid tiling of a source TOP into
+    rows×cols with per-cell gap, position/rotation jitter, and an optional
+    brick/masonry half-tile row offset, all computed per-cell in a single GLSL
+    TOP shader; live controls for rows/cols/gap/jitter/brick.
+  - `add_timecode_overlay` (Layer 2) — draw a running HH:MM:SS:FF timecode onto
+    a source TOP as visual pixels, in `clock` (show time), `count_up`, or
+    `count_down` modes; the formatter lives in a Text DAT module so it ticks
+    live, composited over the source. Distinct from `sync_timecode`, which syncs
+    a clock signal rather than drawing pixels.
+  - `create_pointer_reactive` (Layer 1) — turn mouse/pointer position + click
+    into a bindable creative seed: normalized u/v + velocity + button on a
+    `pointer` Null CHOP ready for `bind_to_channel`, with an optional built-in
+    feedback-field demo the pointer visibly pushes.
+  - `create_interaction_zones` (Layer 1) — define N rectangular motion zones over
+    a camera input; each zone emits a `*_state` (active) and `*_dwell` (seconds
+    active) channel on a `zones` Null CHOP ready to fire cues, with a live
+    Threshold knob.
+
+- Six new stock-TouchDesigner generator tools (roadmap-to-1.0 Wave 4, all Layer 1,
+  no GPU/hardware required):
+  - `create_terrain` — a dedicated procedural heightmap landscape: an animated
+    Noise TOP height field displaces a subdivided Grid SOP along Z in a GLSL
+    vertex-displacement MAT (real 2.5D geometry, elevation-shaded from a low→high
+    colour ramp), with an optional translucent water plane and camera-distance
+    fog. Distinct from `create_visual_system`'s "terrain" keyword (which only maps
+    to the noise_landscape recipe). Live Height/Drift/WaterLevel/Zoom controls.
+  - `create_asemic_writing` — generate a page of procedural asemic writing:
+    random-but-writing-like glyph strokes that flow left-to-right along stacked
+    baselines but spell nothing, drawn by a Script SOP pen (italic slant, per-stroke
+    jitter, pen-lifts), tubed and rendered with an ortho camera. Deterministic per
+    seed; live Jitter/Slant/Thickness/Seed controls.
+  - `create_sdf_text` — raymarch a text string as an extruded signed-distance-field
+    slab: a Text TOP glyph mask feeds a GLSL raymarcher so the letters read as
+    solid, lit, rim-highlit 3D volumes that can spin. Distinct from
+    `create_sdf_field` (primitive CSG only, no text) and `create_text_3d`
+    (mesh-extruded). Live CameraZ/Speed/StepCount/Intensity/Rotate/Fill/Edge/
+    Background controls.
+  - `create_vertex_displacement_mat` — a true vertex-shader displacement GLSL MAT
+    that offsets mesh vertices along their normals by procedural 3D noise or a
+    sampled texture, assignable to your own Geometry COMP or previewed on a demo
+    sphere. Distinct from the TOP-space warps `create_depth_displacement` /
+    `create_displacement_warp` (which push pixels, not vertices). Live Amount/
+    Frequency/Speed controls.
+  - `controlled_disorder_grid` — a grid of quads (or outlined cells) with a single
+    order↔chaos `disorder` knob (0 = a perfect grid → 1 = full chaos) that scales
+    per-cell position/rotation/scale jitter together, each hashed from the cell
+    index in one GLSL TOP (the classic generative-design "controlled randomness" /
+    Schotter study). Live Disorder knob + colour swatches.
+  - `create_blob_trace` — trace a blob/silhouette into a vector contour outline:
+    monochrome → blur → threshold (blob mask) → optional edge → Trace SOP →
+    wireframe render. The contour-trace complement to `create_vector_lines` and
+    `export_sop_to_svg`, and distinct from `create_blob_reactive` (tracking, not
+    outline). Live Threshold/Blur/LineWidth controls.
+  - Note: `create_l_system` was **not** built — `create_growth_system` already
+    ships a complete Lindenmayer turtle-graphics generator (axiom + weighted
+    stochastic rules + iterations → polyline tree), so the item is superseded.
+
+- Five new integration/creative tools (roadmap-to-1.0 Wave 5a), all
+  live-validated against TD 099 build 2025.32820 (each built a real node network
+  and cooked with `errors: []`):
+  - `create_fixture_control` (Layer 1) — a moving-head lighting rig with BOTH a
+    DMX/Art-Net output chain AND a 3D previsualization: each fixture is an
+    8-channel movingHead8 Constant CHOP block (pan/tilt/dimmer/rgb/strobe/gobo,
+    padded + merged into a dmxoutCHOP) plus a Geometry COMP head with a tube-cone
+    beam whose pan→ry / tilt→rx rotation is expression-driven straight from that
+    fixture's DMX pan/tilt channels, rendered under a camera+light Render TOP.
+    Adds the live 3D preview on top of `create_dmx_fixture_pipeline` (DMX-out
+    only).
+  - `create_detection_reactive` (Layer 1) — turn object/person detection into
+    control channels with **no CUDA**: either a `websocket` backend that
+    subscribes to an external detector process streaming JSON detections, or an
+    `onnx` CPU Script CHOP scaffold (onnxruntime, `CPUExecutionProvider`). Both
+    emit a stable Null CHOP contract — presence, count, and per-object normalized
+    bboxes (`objN_x/y/w/h/score`) — ready for `bind_to_channel`. (Detection idea
+    inspired by the MIT-licensed TDYolo; no code copied.)
+  - `create_geo_visualization` (Layer 1) — project GeoJSON/OSM Point/LineString/
+    Polygon features via a Mercator projection normalized to a unit box, then a
+    Script SOP lays out point clouds + polylines (optionally extruded into 3D
+    ribbon "buildings" from each feature's `height`), wrapped in a Geometry COMP
+    under a camera+light Render TOP. Emits an ODbL/OpenStreetMap attribution note.
+  - `scaffold_vj_deck` (Layer 2) — one-call orchestration that composes
+    `create_decks` (A/B mixer + crossfader), `create_control_surface` (on-screen
+    crossfade + per-deck gain faders), and `create_external_io` (a midiinCHOP
+    bound to the same crossfader/gain params) into one MIDI-mappable VJ deck UI
+    container. The deck-scaffold layer on top of the `create_decks` primitive.
+  - `create_synesthesia_unreal_osc` (Layer 2) — named OSC-out preset maps for
+    Synesthesia (`/syn`, port 6448) and Unreal Engine (`/unreal`, port 8000):
+    builds a Constant CHOP whose channels are named `<prefix>/<control>` so an
+    oscoutCHOP emits the exact addresses the target app expects, with overridable
+    controls/prefix/host/port. The preset layer on top of `create_external_io`
+    osc_out.
+
+- Artist-friendly docs information architecture: the guide sidebar is now 7
+  collapsible categories (identical EN/PT structure derived from one
+  descriptor), a "What do you want to make?" goal-card guide home is the new
+  Guide entry point, and a bilingual tutorial track ships with 4 step-by-step
+  prompt tutorials (audio-reactive visual, camera-interactive installation, VJ
+  set with a timeline, generative art loop) — three of them live-validated in
+  TouchDesigner with captured preview videos embedded.
+
 
 - Drag-and-drop bridge install: `npm run build:bridge-tox` generates a
   tag-pinned, self-bootstrapping `tdmcp_bridge_package.tox` (via the running
@@ -41,6 +490,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   GitHub Release. End users then install the bridge by dragging the `.tox` into a
   project and clicking **Install** — no Textport, no Preferences, no clone. The
   `td/README.md` "Easiest install" now leads with this path.
+- Recipe parameter expressions: a recipe `parameters` entry can now carry an
+  `expr` (Python expression) so `apply_recipe` binds the parameter in expression
+  mode instead of setting a constant. `op('<recipeNodeName>')` references are
+  rewritten to the real created paths at build time, and the bridge param-mode
+  endpoint is used with an `/api/exec` fallback for older bridges.
 
 ## [0.12.0] - 2026-07-04
 

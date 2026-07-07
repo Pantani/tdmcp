@@ -34,6 +34,14 @@ export const RecipeParameterSchema = z.object({
   node: z.string().describe("Recipe node name the parameter belongs to."),
   param: z.string().describe("TD parameter name on that node."),
   value: z.unknown().optional(),
+  expr: z
+    .string()
+    .optional()
+    .describe(
+      "Python expression to drive the parameter (sets the param to expression mode). " +
+        "`op('<recipeNodeName>')` references are rewritten to the real created paths at " +
+        "build time. Takes precedence over `value`.",
+    ),
   label: z.string().optional(),
   min: z.number().optional(),
   max: z.number().optional(),

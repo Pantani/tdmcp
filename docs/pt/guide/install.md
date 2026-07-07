@@ -27,9 +27,7 @@ Do every step yourself; only stop when you need me to do the TouchDesigner bridg
 **[⬇ Baixar tdmcp.mcpb](https://github.com/Pantani/tdmcp/releases/latest/download/tdmcp.mcpb)**
 
 Um `.mcpb` (MCP Bundle) é um único arquivo que o Claude Desktop instala como
-extensão. O servidor está dentro dele — não há mais nada para baixar. (`.mcpb` é o
-formato atual; antes se chamava `.dxt`, e qualquer `.dxt` mais antigo que você já
-tenha continua instalando.)
+extensão. O servidor está dentro dele — não há mais nada para baixar.
 
 ::: warning Se o link de download não funcionar
 Pode ser que ainda não exista uma release publicada. Peça o arquivo `tdmcp.mcpb`

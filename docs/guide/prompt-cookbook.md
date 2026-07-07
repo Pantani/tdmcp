@@ -27,13 +27,14 @@ Use these when you want a validated first-party recipe first, then a creative pa
 They are good workshop and rehearsal prompts because they start from schema-checked
 networks instead of inventing topology from scratch.
 
-> *"Apply `audio_reactive_basic`, use a test tone if the mic is unavailable, then
-> bind the output color to the RMS level and show me the audio Null path."*
+> *"Apply `audio_reactive_basic`, use a test tone if the mic is unavailable, and
+> show me the audio Null path driving the output color."*
 
 <video :src="withBase('/examples/recipe-audio-reactive-basic.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
-*A compact audio-in / spectrum / RMS chain with a stable Null CHOP and a TOP output
-ready for `bind_to_channel` or manual expressions.*
+*A compact audio-in / spectrum / RMS chain with a stable Null CHOP. The TOP output
+color is already bound to the RMS level via expressions, so the frame pulses with
+the audio out of the box.*
 
 > *"Apply `keyframe_animation_basic`, add five readable camera/object keyframes, and
 > expose one Speed control so I can rehearse the move without touching the graph."*

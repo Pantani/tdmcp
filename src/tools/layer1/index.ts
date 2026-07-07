@@ -5,15 +5,18 @@ import { registerApplyPostProcessing } from "./applyPostProcessing.js";
 import { registerApplyRecipe } from "./applyRecipe.js";
 import { registerAudioFingerprintToVisual } from "./audioFingerprintToVisual.js";
 import { registerComposeCueList } from "./composeCueList.js";
+import { registerControlledDisorderGrid } from "./controlledDisorderGrid.js";
 import { registerCreate3dAudioReactive } from "./create3dAudioReactive.js";
 import { registerCreate3dScene } from "./create3dScene.js";
 import { registerCreateAiMirror } from "./createAiMirror.js";
 import { registerCreateAsciiRender } from "./createAsciiRender.js";
+import { registerCreateAsemicWriting } from "./createAsemicWriting.js";
 import { registerCreateAudioReactive } from "./createAudioReactive.js";
 import { registerCreateAutomationLane } from "./createAutomationLane.js";
 import { registerCreateAutopilot } from "./createAutopilot.js";
 // Campaign Wave 3 — artist controls (backlog 2026-05-29):
 import { registerCreateBlobReactive } from "./createBlobReactive.js";
+import { registerCreateBlobTrace } from "./createBlobTrace.js";
 import { registerCreateBodyBubbles } from "./createBodyBubbles.js";
 import { registerCreateBodyReactive } from "./createBodyReactive.js";
 import { registerCreateChopRecorder } from "./createChopRecorder.js";
@@ -28,6 +31,7 @@ import { registerCreateDepthDisplacement } from "./createDepthDisplacement.js";
 import { registerCreateDepthFromTwoD } from "./createDepthFromTwoD.js";
 import { registerCreateDepthPopField } from "./createDepthPopField.js";
 import { registerCreateDepthSilhouette } from "./createDepthSilhouette.js";
+import { registerCreateDetectionReactive } from "./createDetectionReactive.js";
 import { registerCreateDisplacementWarp } from "./createDisplacementWarp.js";
 import { registerCreateDither } from "./createDither.js";
 import { registerCreateDmxFixturePipeline } from "./createDmxFixturePipeline.js";
@@ -37,10 +41,12 @@ import { registerCreateEngineComp } from "./createEngineComp.js";
 import { registerCreateFacadeMapping } from "./createFacadeMapping.js";
 import { registerCreateFeedbackNetwork } from "./createFeedbackNetwork.js";
 import { registerCreateFeedbackTunnel } from "./createFeedbackTunnel.js";
+import { registerCreateFixtureControl } from "./createFixtureControl.js";
 import { registerCreateFluidSim } from "./createFluidSim.js";
 import { registerCreateGaussianSplatScene } from "./createGaussianSplatScene.js";
 import { registerCreateGenerativeArt } from "./createGenerativeArt.js";
 import { registerCreateGenerativeAudio } from "./createGenerativeAudio.js";
+import { registerCreateGeoVisualization } from "./createGeoVisualization.js";
 import { registerCreateGlitch } from "./createGlitch.js";
 import { registerCreateGpuParticleField } from "./createGpuParticleField.js";
 import { registerCreateGrowthSystem } from "./createGrowthSystem.js";
@@ -48,6 +54,7 @@ import { registerCreateHalftone } from "./createHalftone.js";
 import { registerCreateHandHologram } from "./createHandHologram.js";
 import { registerCreateHistogramScope } from "./createHistogramScope.js";
 import { registerCreateImageToParticles } from "./createImageToParticles.js";
+import { registerCreateInteractionZones } from "./createInteractionZones.js";
 import { registerCreateInteractiveProjectionMapping } from "./createInteractiveProjectionMapping.js";
 import { registerCreateJfaVoronoi } from "./createJfaVoronoi.js";
 import { registerCreateKaleidoscope } from "./createKaleidoscope.js";
@@ -72,6 +79,7 @@ import { registerCreatePhoneGesture } from "./createPhoneGesture.js";
 import { registerCreatePhraseLockedCueEngine } from "./createPhraseLockedCueEngine.js";
 import { registerCreatePixelSort } from "./createPixelSort.js";
 import { registerCreatePointCloud } from "./createPointCloud.js";
+import { registerCreatePointerReactive } from "./createPointerReactive.js";
 import { registerCreatePopField } from "./createPopField.js";
 import { registerCreatePopGeometry } from "./createPopGeometry.js";
 import { registerCreatePopGrowth } from "./createPopGrowth.js";
@@ -87,6 +95,7 @@ import { registerCreateRaymarchScene } from "./createRaymarchScene.js";
 import { registerCreateReactionDiffusion } from "./createReactionDiffusion.js";
 import { registerCreateSafetyBlackoutChain } from "./createSafetyBlackoutChain.js";
 import { registerCreateSdfField } from "./createSdfField.js";
+import { registerCreateSdfText } from "./createSdfText.js";
 import { registerCreateSetlistRunner } from "./createSetlistRunner.js";
 import { registerCreateSetNavigator } from "./createSetNavigator.js";
 import { registerCreateShaderLib } from "./createShaderLib.js";
@@ -95,11 +104,13 @@ import { registerCreateShowFailover } from "./createShowFailover.js";
 import { registerCreateSimulation } from "./createSimulation.js";
 import { registerCreateSlitScan } from "./createSlitScan.js";
 import { registerCreateSpectrum } from "./createSpectrum.js";
+import { registerCreateStepRepeat } from "./createStepRepeat.js";
 import { registerCreateStipplePointcloud } from "./createStipplePointcloud.js";
 import { registerCreateStrangeAttractor } from "./createStrangeAttractor.js";
 import { registerCreateStrobe } from "./createStrobe.js";
 import { registerCreateSyncExternalClock } from "./createSyncExternalClock.js";
 import { registerCreateTempoSync } from "./createTempoSync.js";
+import { registerCreateTerrain } from "./createTerrain.js";
 import { registerCreateTestPattern } from "./createTestPattern.js";
 import { registerCreateText3d } from "./createText3d.js";
 import { registerCreateTextCrawl } from "./createTextCrawl.js";
@@ -108,6 +119,7 @@ import { registerCreateTransientReactive } from "./createTransientReactive.js";
 import { registerCreateTransition } from "./createTransition.js";
 import { registerCreateTwoWaySurface } from "./createTwoWaySurface.js";
 import { registerCreateVectorLines } from "./createVectorLines.js";
+import { registerCreateVertexDisplacementMat } from "./createVertexDisplacementMat.js";
 import { registerCreateVideoPlayer } from "./createVideoPlayer.js";
 import { registerCreateVideoScopes } from "./createVideoScopes.js";
 import { registerCreateVideoSynth } from "./createVideoSynth.js";
@@ -177,6 +189,9 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateShaderLib,
   registerCreateShaderPark,
   registerCreateVideoSynth,
+  registerCreateDetectionReactive,
+  registerCreateFixtureControl,
+  registerCreateGeoVisualization,
   registerCreateDepthSilhouette,
   registerCreateKineticText,
   registerCreateWaveform,
@@ -293,6 +308,17 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateVolumetricField,
   registerCreateVoxelStack,
   registerCreateFacadeMapping,
+  // Roadmap-to-1.0 Wave 3 (2026-07-06) — stock-TD artist/interaction tools:
+  registerCreateStepRepeat,
+  registerCreatePointerReactive,
+  registerCreateInteractionZones,
+  // Roadmap-to-1.0 Wave 4 (2026-07-06) — stock-TD generators:
+  registerCreateTerrain,
+  registerCreateAsemicWriting,
+  registerCreateSdfText,
+  registerCreateVertexDisplacementMat,
+  registerControlledDisorderGrid,
+  registerCreateBlobTrace,
 ];
 
 // v0.6.0 — Creative RAG inspiration -> execution loop (gated behind env flag).

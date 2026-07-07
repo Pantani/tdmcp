@@ -45,7 +45,7 @@ jobs:
         run: |
           TAG="${GITHUB_REF_NAME#v}"
           PKG="$(node -p "require('./package.json').version")"
-          MANIFEST="$(node -p "require('./dxt/manifest.json').version")"
+          MANIFEST="$(node -p "require('./mcpb/manifest.json').version")"
           SERVER="$(node -p "require('./server.json').version")"
           SERVER_PKG="$(node -p "require('./server.json').packages[0].version")"
           SAFESKILL="$(node -p "require('./safeskill.manifest.json').version")"
@@ -55,7 +55,7 @@ jobs:
             exit 1
           fi
           if [ "$MANIFEST" != "$PKG" ]; then
-            echo "::error::dxt/manifest.json version $MANIFEST does not match package.json $PKG (the 'version' npm script keeps them in sync)."
+            echo "::error::mcpb/manifest.json version $MANIFEST does not match package.json $PKG (the 'version' npm script keeps them in sync)."
             exit 1
           fi
           if [ "$SERVER" != "$PKG" ]; then

@@ -314,6 +314,7 @@ export const registerConnectDaydreamCloud: ToolRegistrar = (server, ctx) =>
         "as a null TOP. API key is read from DAYDREAM_API_KEY in the TD process environment — " +
         "never inlined. Live probe SKIPPED (requires Daydream account + outbound HTTPS).",
       inputSchema: connectDaydreamCloudSchema.shape,
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
     (args) => connectDaydreamCloudImpl(ctx, args),
   );

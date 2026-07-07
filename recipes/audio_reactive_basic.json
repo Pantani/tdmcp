@@ -1,7 +1,7 @@
 {
   "id": "audio_reactive_basic",
   "name": "Audio Reactive Basic",
-  "description": "Minimal audio-reactive starter mirroring the standalone shape of create_audio_reactive (Layer-1): an audio source feeds both an Audio Spectrum CHOP (for FFT visuals) and an Analyze CHOP (for an overall RMS level). The spectrum is published as a CHOP-to-TOP texture that a downstream visual chain can sample; the RMS level is exposed as a stable Null CHOP ready for bind_to_channel. A Constant TOP placeholder is modulated by the level via a manual expression wire (set by the artist) to demonstrate the level→visual handshake. Offline-validated against RecipeSchema; live cook-check UNVERIFIED pending TD run. Manual-wire: set out_color.colorr expression to op('level_null')['chan1'] to make the placeholder color react to audio.",
+  "description": "Minimal audio-reactive starter mirroring the standalone shape of create_audio_reactive (Layer-1): an audio source feeds both an Audio Spectrum CHOP (for FFT visuals) and an Analyze CHOP (for an overall RMS level). The spectrum is published as a CHOP-to-TOP texture that a downstream visual chain can sample; the RMS level is exposed as a stable Null CHOP ready for bind_to_channel. A Constant TOP reacts out of the box: its color channels are bound via expressions to the RMS level, so the frame pulses with the sound with no manual wiring. Swap the audiodeviceinCHOP for an audiofileinCHOP to drive it from a file. Live-validated in TouchDesigner 099 build 2025.32820 (with a synthetic tone, since the RMS is 0 without a live mic).",
   "tags": ["audio-reactive", "spectrum", "rms", "starter", "performable"],
   "difficulty": "beginner",
   "td_version_min": "2022",
@@ -20,8 +20,8 @@
     {
       "name": "level",
       "type": "analyzeCHOP",
-      "parameters": { "function": 6 },
-      "comment": "Function 6 = RMS power. One stable amplitude channel for downstream modulation."
+      "parameters": { "function": "rmspower" },
+      "comment": "RMS power (menu name, not index — the bridge validates menu values). One stable amplitude channel for downstream modulation."
     },
     {
       "name": "level_null",
@@ -43,7 +43,7 @@
       "name": "out_color",
       "type": "constantTOP",
       "parameters": { "alpha": 1.0 },
-      "comment": "Visual placeholder. Manual-wire: set colorr/colorg/colorb expressions to op('level_null')['chan1'] (or combinations) to react to audio RMS. colorr/g/b intentionally omitted here so artist expressions aren't overwritten by constants."
+      "comment": "Audio-driven color: colorr/g/b are bound via expressions to the RMS level (see `parameters`), so the frame pulses with the audio."
     },
     {
       "name": "out1",
@@ -59,7 +59,29 @@
     { "from": "audio_tex", "to": "sensitivity" },
     { "from": "out_color", "to": "out1" }
   ],
-  "parameters": [],
+  "parameters": [
+    {
+      "name": "Level → Red",
+      "node": "out_color",
+      "param": "colorr",
+      "expr": "min(1.0, op('level_null')['chan1'] * 2.0)",
+      "description": "Red channel follows the RMS level (×2 gain, clamped)."
+    },
+    {
+      "name": "Level → Green",
+      "node": "out_color",
+      "param": "colorg",
+      "expr": "min(1.0, op('level_null')['chan1'] * 0.8)",
+      "description": "Green channel follows the RMS level at reduced gain."
+    },
+    {
+      "name": "Level → Blue",
+      "node": "out_color",
+      "param": "colorb",
+      "expr": "min(1.0, 0.25 + op('level_null')['chan1'] * 1.5)",
+      "description": "Blue floor of 0.25 keeps a dim violet frame at silence; level lifts it."
+    }
+  ],
   "controls": [
     {
       "name": "Sensitivity",
@@ -70,5 +92,5 @@
       "bind_to": ["sensitivity.brightness1"]
     }
   ],
-  "preview_description": "A dim violet placeholder frame with the spectrum + RMS analysis chain in place behind it, ready for the artist to wire the level into the visual color or feed the spectrum texture into a custom shader."
+  "preview_description": "A dim violet frame that pulses brighter and warmer with the audio RMS level, with the spectrum + RMS analysis chain behind it (spectrum texture ready to feed a custom shader). Live-validated in TouchDesigner 099 build 2025.32820."
 }

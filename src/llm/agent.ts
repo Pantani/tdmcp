@@ -13,7 +13,22 @@ export type AgentEvent =
   | { type: "tool"; name: string; status: "start"; args: string }
   | { type: "tool"; name: string; status: "done"; ok: boolean; summary: string }
   | { type: "answer"; content: string }
+  | { type: "suggestion"; kind: "handoff"; message: string }
   | { type: "error"; message: string };
+
+/**
+ * How many tool calls may fail back-to-back before the copilot suggests handing the
+ * task to Claude/Codex. A local dead-end (a small model looping on failing calls) is
+ * the strongest signal it is out of its depth; two consecutive failures is enough to
+ * offer help without nagging on a single transient error.
+ */
+const HANDOFF_FAILURE_THRESHOLD = 2;
+
+/** Non-intrusive one-liner nudging the user toward the /handoff escape hatch. */
+const HANDOFF_SUGGESTION =
+  "This looks stuck — the local copilot keeps hitting tool errors. If you want, hand this " +
+  "off to Claude or Codex (the /handoff button, or `POST /handoff`): they drive the same " +
+  "TouchDesigner bridge with the full toolset and can pick up where this left off.";
 
 export interface RunOptions {
   /** Abort an in-flight turn (cancel button / client disconnect). */
@@ -82,6 +97,58 @@ function isAbort(err: unknown): boolean {
   return err instanceof Error && (err.name === "AbortError" || err.message === "cancelled");
 }
 
+interface FailureStreak {
+  consecutiveFailures: number;
+  handoffSuggested: boolean;
+}
+
+/**
+ * Executes every tool call the model requested this step, appends each result to
+ * `messages`, and tracks back-to-back failures. Once the streak crosses the handoff
+ * threshold it emits a one-time handoff suggestion. Returns the updated streak so
+ * the caller can carry it into the next step.
+ */
+async function executeToolCalls(
+  ctx: ToolContext,
+  toolset: LlmTool[],
+  calls: NonNullable<ChatMessage["tool_calls"]>,
+  messages: ChatMessage[],
+  emit: (event: AgentEvent) => void,
+  streak: FailureStreak,
+): Promise<FailureStreak> {
+  let { consecutiveFailures, handoffSuggested } = streak;
+  for (const call of calls) {
+    emit({
+      type: "tool",
+      name: call.function.name,
+      status: "start",
+      args: call.function.arguments,
+    });
+    const outcome = await dispatchTool(ctx, call.function.name, call.function.arguments, toolset);
+    emit({
+      type: "tool",
+      name: call.function.name,
+      status: "done",
+      ok: outcome.ok,
+      summary: outcome.summary,
+    });
+    messages.push({
+      role: "tool",
+      tool_call_id: call.id,
+      name: call.function.name,
+      content: outcome.payload,
+    });
+
+    // Track back-to-back tool failures; a successful call resets the streak.
+    consecutiveFailures = outcome.ok ? 0 : consecutiveFailures + 1;
+    if (!handoffSuggested && consecutiveFailures >= HANDOFF_FAILURE_THRESHOLD) {
+      handoffSuggested = true;
+      emit({ type: "suggestion", kind: "handoff", message: HANDOFF_SUGGESTION });
+    }
+  }
+  return { consecutiveFailures, handoffSuggested };
+}
+
 /**
  * Runs one user turn to completion: repeatedly streams a model response, executes
  * any tool calls it requests, and feeds results back until the model produces a
@@ -106,6 +173,11 @@ export async function runAgentTurn(
     opts.maxSteps !== undefined && Number.isFinite(opts.maxSteps)
       ? Math.min(MAX_LLM_MAX_STEPS, Math.max(1, Math.trunc(opts.maxSteps)))
       : DEFAULT_LLM_MAX_STEPS;
+
+  // Dead-end detection: count tool failures that land back-to-back across steps and
+  // offer a handoff to Claude/Codex once the local model is clearly looping on errors.
+  // The suggestion fires at most once per turn so it never becomes noise.
+  let streak: FailureStreak = { consecutiveFailures: 0, handoffSuggested: false };
 
   for (let step = 0; step < maxSteps; step++) {
     if (opts.signal?.aborted) {
@@ -138,28 +210,7 @@ export async function runAgentTurn(
       return messages;
     }
 
-    for (const call of calls) {
-      emit({
-        type: "tool",
-        name: call.function.name,
-        status: "start",
-        args: call.function.arguments,
-      });
-      const outcome = await dispatchTool(ctx, call.function.name, call.function.arguments, toolset);
-      emit({
-        type: "tool",
-        name: call.function.name,
-        status: "done",
-        ok: outcome.ok,
-        summary: outcome.summary,
-      });
-      messages.push({
-        role: "tool",
-        tool_call_id: call.id,
-        name: call.function.name,
-        content: outcome.payload,
-      });
-    }
+    streak = await executeToolCalls(ctx, toolset, calls, messages, emit, streak);
   }
 
   const content =

@@ -443,6 +443,7 @@ export const registerChecksumAndVerifyPack: ToolRegistrar = (server, ctx) =>
         "action=compute walks a path and writes a tdmcp-checksums.json manifest. " +
         "action=verify re-hashes files and reports ok/mismatch/missing/extra. No TD bridge required.",
       inputSchema: checksumAndVerifyPackSchema.shape,
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
     },
     (args) => checksumAndVerifyPackImpl(ctx, args),
   );

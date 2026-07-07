@@ -71,8 +71,8 @@
       "type": "choptoSOP",
       "parent": "geo",
       "render": true,
-      "parameters": { "chop": "xyz" },
-      "comment": "Turns the xyz CHOP into a polyline; render+display flagged."
+      "parameters": { "chop": "../xyz" },
+      "comment": "Turns the xyz CHOP into a polyline; render+display flagged. chop is ../xyz because the SOP lives inside geo while the merge CHOP sits at the container root."
     },
     {
       "name": "mat",

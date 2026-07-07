@@ -282,6 +282,37 @@ export const DisconnectResultSchema = z.object({
 });
 export type TdDisconnectResult = z.infer<typeof DisconnectResultSchema>;
 
+// --- Parameter-change watches (opt-in; survive ALLOW_EXEC=0) ---
+// Response envelope for POST/DELETE /api/params/watch: a single watch's state.
+// `pars` is null for a watch-all subscription, or the sorted names being watched.
+export const ParamWatchResultSchema = z.object({
+  path: z.string(),
+  pars: z.array(z.string()).nullable().default(null),
+  watching: z.boolean(),
+});
+export type TdParamWatchResult = z.infer<typeof ParamWatchResultSchema>;
+
+// GET /api/params/watch: every active watch.
+export const ParamWatchListSchema = z.object({
+  watches: z
+    .array(z.object({ path: z.string(), pars: z.array(z.string()).nullable().default(null) }))
+    .default([]),
+  count: z.number().int().default(0),
+});
+export type TdParamWatchList = z.infer<typeof ParamWatchListSchema>;
+
+// The `param.changed` event payload the bridge broadcasts on the WebSocket stream
+// for a watched operator's parameter. Validated where events are parsed so a
+// consumer gets a typed shape, not a raw wire object.
+export const ParamChangedEventSchema = z.object({
+  path: z.string(),
+  par: z.string(),
+  prev: z.union([z.string(), z.number(), z.boolean(), z.null()]),
+  value: z.union([z.string(), z.number(), z.boolean(), z.null()]),
+  frame: z.number().int().nullable().default(null),
+});
+export type TdParamChangedEvent = z.infer<typeof ParamChangedEventSchema>;
+
 // --- Param-mode + DAT-text endpoints (survive ALLOW_EXEC=0) ---
 export const ParamModeEntrySchema = z.object({
   name: z.string(),
@@ -483,6 +514,41 @@ export const ProjectLoadSchema = z.object({
   preview_b64: z.string().optional(),
 });
 export type TdProjectLoad = z.infer<typeof ProjectLoadSchema>;
+
+// --- Node save (POST /api/nodes/<path>/save) — survives ALLOW_EXEC=0 ---
+// A COMP saves to a .tox component file; a TOP saves to an image. Only image
+// operators expose width/height, so dimensions are optional and gated by
+// `has_dimensions`. `saved` is the canonical path TD wrote (COMP.save returns the
+// path string; TOP.save returns a FileSaveStatus, normalized bridge-side).
+export const SaveNodeSchema = z.object({
+  path: z.string(),
+  saved: z.string(),
+  has_dimensions: z.boolean().default(false),
+  width: z.number().int().optional(),
+  height: z.number().int().optional(),
+});
+export type TdSaveNode = z.infer<typeof SaveNodeSchema>;
+
+// --- Node/subtree duplicate (POST /api/duplicate) — survives ALLOW_EXEC=0 ---
+// `parent.copy(src[, name])` preserves the source's internal wires + params.
+export const DuplicateNodeSchema = z.object({
+  source: z.string(),
+  copy: z.string(),
+  parent: z.string().optional(),
+});
+export type TdDuplicateNode = z.infer<typeof DuplicateNodeSchema>;
+
+// --- Creatable-operator truth list (GET /api/optypes) — survives ALLOW_EXEC=0 ---
+// Ground-truth from the live TD: every lowercase `td` attribute that is a subclass
+// of a family base class (TOP/CHOP/SOP/DAT/COMP/MAT/POP) is a creatable optype.
+export const OpTypesSchema = z.object({
+  optypes: z.array(z.string()).default([]),
+  families: z.record(z.string(), z.array(z.string())).default({}),
+  count: z.number().int().default(0),
+  td_version: z.string().optional(),
+  build: z.string().optional(),
+});
+export type TdOpTypes = z.infer<typeof OpTypesSchema>;
 
 // --- Custom-parameter readout (GET /api/nodes/<path>/custom_params) ---
 // Structured endpoint for serialize_network + inspect_component. Every field

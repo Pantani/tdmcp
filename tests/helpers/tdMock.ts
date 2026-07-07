@@ -71,6 +71,14 @@ export const tdHandlers = [
   http.post(`${TD_BASE}/api/project/load`, notFound),
   http.get(`${TD_BASE}/api/nodes/:seg/custom_params`, notFound),
   http.post(`${TD_BASE}/api/param_modes/batch`, notFound),
+  // Roadmap Wave 2 first-class endpoints — default to 404 so callers fall back to
+  // /api/exec; tests asserting the endpoint path override these per-test.
+  http.post(`${TD_BASE}/api/nodes/:seg/save`, notFound),
+  http.post(`${TD_BASE}/api/duplicate`, notFound),
+  http.get(`${TD_BASE}/api/optypes`, notFound),
+  http.post(`${TD_BASE}/api/params/watch`, notFound),
+  http.delete(`${TD_BASE}/api/params/watch`, notFound),
+  http.get(`${TD_BASE}/api/params/watch`, notFound),
 
   http.post(`${TD_BASE}/api/nodes/:seg/method`, () => ok({ result: "ok" })),
 

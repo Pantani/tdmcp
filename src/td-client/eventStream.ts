@@ -1,13 +1,34 @@
 import { type Logger, silentLogger } from "../utils/logger.js";
+import { ParamChangedEventSchema, type TdParamChangedEvent } from "./validators.js";
 
 export interface TdEvent {
   event: string;
   data?: unknown;
 }
 
+/**
+ * Validate a `param.changed` event's data payload into a typed
+ * `{ path, par, prev, value, frame }`. Returns `undefined` when the event is not
+ * a well-formed `param.changed` (wrong type or malformed data), so a consumer
+ * never handles a raw wire object.
+ */
+export function parseParamChangedEvent(event: TdEvent): TdParamChangedEvent | undefined {
+  if (event.event !== "param.changed") return undefined;
+  const parsed = ParamChangedEventSchema.safeParse(event.data);
+  return parsed.success ? parsed.data : undefined;
+}
+
 export type TdEventHandler = (event: TdEvent) => void;
 
-/** High-frequency events are dropped unless explicitly opted in, to avoid flooding. */
+/** High-frequency events are dropped unless explicitly opted in, to avoid flooding.
+ *
+ * `param.changed` is deliberately NOT in this set. It is already gated at the
+ * source by the watch registry (empty registry ⇒ the bridge emits nothing) and
+ * coalesced bridge-side (one emit per (path, par) per window), so it is only ever
+ * chatty in proportion to what a client explicitly asked to watch. Keeping it out
+ * of the blanket drop set is what lets `watch_parameter_changes` forward events as
+ * MCP logging notifications on the default stream. Only the genuinely unbounded,
+ * always-on firehoses (`timeline.frame`, `node.cook`) stay high-frequency. */
 const HIGH_FREQUENCY = new Set(["timeline.frame", "node.cook"]);
 
 /**

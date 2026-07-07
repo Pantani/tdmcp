@@ -22,14 +22,18 @@ from mcp.services import (
     batch_service,
     connect_service,
     custom_params_service,
+    duplicate_service,
     editor_service,
     log_service,
+    optypes_service,
     param_text_service,
     preview_service,
     project_analysis_service,
     project_load_service,
+    save_service,
     system_service,
     transport_service,
+    watch_service,
 )
 
 
@@ -407,6 +411,21 @@ def _bridge_error_log_path(webserver):
         return None
 
 
+def _route_logs(query, webserver):
+    # Resolve the Error DAT relative to the webserver's own container so a custom
+    # install works; fall back to get_logs' default when tests have no webserver.
+    log_kwargs = {}
+    error_dat = _bridge_error_log_path(webserver)
+    if error_dat:
+        log_kwargs["error_dat_path"] = error_dat
+    return log_service.get_logs(
+        _qs(query, "severity", "all"),
+        int(_qs(query, "max_lines", 200)),
+        _qs(query, "scope") or None,
+        **log_kwargs,
+    )
+
+
 def _route_get_root(rest, query, webserver=None):
     if rest == ["info"]:
         return api_service.get_info()
@@ -419,19 +438,12 @@ def _route_get_root(rest, query, webserver=None):
         include_raw = _qs(query, "include")
         include = [s for s in include_raw.split(",") if s] if include_raw else None
         return system_service.get_system_info(include)
+    if rest == ["optypes"]:
+        # Ground-truth creatable optype list from the live td module — survives
+        # ALLOW_EXEC=0. No query params; the full family-grouped enumeration.
+        return optypes_service.list_optypes()
     if rest == ["logs"]:
-        # Resolve the Error DAT relative to the webserver's own container so a custom
-        # install works; fall back to get_logs' default when tests have no webserver.
-        log_kwargs = {}
-        error_dat = _bridge_error_log_path(webserver)
-        if error_dat:
-            log_kwargs["error_dat_path"] = error_dat
-        return log_service.get_logs(
-            _qs(query, "severity", "all"),
-            int(_qs(query, "max_lines", 200)),
-            _qs(query, "scope") or None,
-            **log_kwargs,
-        )
+        return _route_logs(query, webserver)
     return None
 
 
@@ -485,6 +497,13 @@ def _route_post_root_controls(rest, body):
         # Perform-mode write — survives ALLOW_EXEC=0; read side lives in /api/system.
         _require(body, "enabled")
         return system_service.set_perform_mode(_as_bool(body["enabled"], "enabled"))
+    if rest == ["duplicate"]:
+        # Node/subtree duplicate preserving wires+params — survives ALLOW_EXEC=0.
+        # TD's own parent.copy(), not arbitrary Python.
+        _require(body, "source_path")
+        return duplicate_service.duplicate(
+            body["source_path"], body.get("name"), body.get("parent_path")
+        )
 
     return None
 
@@ -526,7 +545,35 @@ def _route_post_root(rest, body):
     return None
 
 
+def _route_watch(method, rest, body, webserver=None):
+    """Opt-in parameter-change watch registry — survives ALLOW_EXEC=0.
+
+    `POST /api/params/watch`   {path, pars?} -> register a watch
+    `DELETE /api/params/watch` {path, pars?} -> unregister
+    `GET /api/params/watch`                  -> list active watches
+
+    Registering is structured (a subscription in `watch_service`), not arbitrary
+    Python, so it is intentionally NOT exec-gated. The change events themselves are
+    emitted by the `events_hook` onFrameEnd poller and surface on the existing
+    WebSocket stream as `param.changed` — no extra DAT install on register.
+    """
+    if rest != ["params", "watch"]:
+        return None
+    if method == "GET":
+        return watch_service.list_watches()
+    if method == "POST":
+        _require(body, "path")
+        return watch_service.register(body["path"], body.get("pars"))
+    if method == "DELETE":
+        _require(body, "path")
+        return watch_service.unregister(body["path"], body.get("pars"))
+    return None
+
+
 def _route_root(method, rest, query, body, webserver=None):
+    watched = _route_watch(method, rest, body, webserver)
+    if watched is not None:
+        return watched
     if method == "GET":
         return _route_get_root(rest, query, webserver)
     if method == "POST":
@@ -543,8 +590,10 @@ def _route_projects(method, rest, query):
     return None
 
 
-def _route_node_special(method, rest, query, body):
-    if rest[-1] == "method" and method == "POST":
+def _route_node_post_special(rest, body):
+    # POST sub-resources on a node (/method, /save). Split out so the combined
+    # special-route dispatch stays under the cognitive-complexity ratchet.
+    if rest[-1] == "method":
         if not _exec_allowed():
             raise _Forbidden(
                 "Forbidden: arbitrary method calls are disabled (TDMCP_BRIDGE_ALLOW_EXEC=0)."
@@ -553,6 +602,21 @@ def _route_node_special(method, rest, query, body):
         return api_service.call_method(
             _node_path(rest[1:-1]), body["method"], body.get("args", []), body.get("kwargs", {})
         )
+    if rest[-1] == "save":
+        # Structured node save (COMP -> .tox, TOP -> image). NO exec gate: it must
+        # survive TDMCP_BRIDGE_ALLOW_EXEC=0. TD's own .save(), not arbitrary Python.
+        _require(body, "file")
+        return save_service.save_node(
+            _node_path(rest[1:-1]),
+            body["file"],
+            _as_bool(body.get("create_folders", True), "create_folders"),
+        )
+    return None
+
+
+def _route_node_special(method, rest, query, body):
+    if method == "POST":
+        return _route_node_post_special(rest, body)
     if rest[-1] == "errors" and method == "GET":
         return api_service.get_node_errors(_node_path(rest[1:-1]), recursive=False)
     if rest[-1] == "custom_params" and method == "GET":

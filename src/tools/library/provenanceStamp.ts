@@ -214,6 +214,7 @@ export const registerProvenanceStamp: ToolRegistrar = (server, ctx) =>
         "source COMP path, originating tdmcp tool, toolchain versions, best-effort git " +
         "metadata, author, tags, and freeform notes. Offline — no TD bridge required.",
       inputSchema: provenanceStampSchema.shape,
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
     },
     (callArgs) => provenanceStampImpl(ctx, callArgs),
   );

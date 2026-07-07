@@ -6,7 +6,7 @@ aside: false
 
 # Política de privacidade
 
-_Última atualização: 27 de maio de 2026_
+_Última atualização: 6 de julho de 2026_
 
 ## Resumo
 
@@ -33,11 +33,26 @@ local.
 
 ## Atividade de rede
 
-A única atividade de rede do servidor MCP são requisições HTTP locais para a sua
-**própria** ponte do TouchDesigner em `127.0.0.1:9980` (o host e a porta são
-configuráveis pelo usuário via `TDMCP_TD_HOST` / `TDMCP_TD_PORT`). Ele não faz
-nenhuma outra conexão de rede — nada sai para o autor, para a Anthropic ou para
-terceiros.
+O tdmcp **não faz nenhuma chamada de rede automática ou em segundo plano** por
+conta própria, e nunca envia nada para o autor, para a Anthropic ou para qualquer
+serviço de análise ou telemetria. Sua atividade normal são requisições HTTP locais
+para a sua **própria** ponte do TouchDesigner em `127.0.0.1:9980` (o host e a porta
+são configuráveis pelo usuário via `TDMCP_TD_HOST` / `TDMCP_TD_PORT`).
+
+As únicas conexões de saída que o tdmcp faz são as que **você pede explicitamente**:
+
+- **Importação de shaders.** Se você usar as ferramentas `import_shadertoy` ou
+  `import_isf_shader`, o tdmcp busca o shader da fonte que você indicou — a API do
+  Shadertoy (`shadertoy.com`) ou a URL exata que você passou. Nada é buscado a menos
+  que você rode essas ferramentas; a `import_shadertoy` pode ser totalmente
+  desativada com `TDMCP_OFFLINE=1`.
+- **Copiloto de IA local opcional.** O copiloto embutido opcional conversa com o
+  endpoint de modelo de linguagem que você configura via `TDMCP_LLM_BASE_URL`, que
+  por padrão aponta para um runtime **local** em `127.0.0.1:11434` (por exemplo,
+  Ollama). Ele só conecta se você usar o copiloto, e só ao endpoint que você definir.
+
+Nenhum desses caminhos envia dados sobre você — eles buscam o conteúdo que você
+pediu, da fonte que você escolheu. Não há nenhuma outra saída de dados.
 
 Quaisquer arquivos que você pedir para o tdmcp gravar — receitas, presets,
 snapshots ou exportações para o [vault](/reference/tools) — são salvos no seu
@@ -55,7 +70,9 @@ e não adiciona nenhuma coleta própria por cima do seu cliente.
 O tdmcp não inclui **nenhum SDK de terceiros, rastreador ou análise**. O npm e o
 GitHub são canais de distribuição do software e operam sob as próprias políticas de
 privacidade; o tdmcp em si não envia os seus dados para eles nem para ninguém
-durante a execução.
+durante a execução. Os únicos serviços de terceiros que o tdmcp chega a contatar são
+os que você invoca pelo nome (como a API do Shadertoy via `import_shadertoy`), e
+apenas para buscar o conteúdo que você pediu — veja [Atividade de rede](#atividade-de-rede).
 
 ## Segurança
 
