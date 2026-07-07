@@ -10,20 +10,21 @@ can build real visual systems from plain language — no node-wiring by hand. Th
 page is the honest, bird's-eye picture of **what already works, what's still
 rough, and what's coming next** on the way to a stable 1.0.
 
-**Where things stand today.** The published npm `latest` package and latest
-published GitHub Release/tag remain **v0.11.0** while the repository is staged
-for the next release. v0.11.0 shipped the TouchDesigner knowledge import, Claude
-Code marketplace metadata, Kinect wall harp, physical-installation diagnostics,
-offline tutorial-to-recipe drafting, cookbook examples, and CLI/docs/release
-hardening. The current source tree is preparing **v0.12.0** with safer retry
-semantics, undo-aware mutations, preview/read tooling, and transport/bridge
-hardening. Until the `v0.12.0` tag/release is published, public bootstrap and
-package self-install URLs stay pinned to the existing `v0.11.0` release; the
-version-sync script advances those install pins during the actual tagged
-release. The CHANGELOG blocks list every entry; the always-current tool list is
-the [Tools reference](/reference/tools). 1.0 is **not** the next minor — the
-v0.12.x line is the active feature/consolidation line, and v1.0 will land only
-once the consolidation gates below are all green.
+**Where things stand today.** The published npm `latest` package and the latest
+published GitHub Release/tag are both **v0.12.0** (published 2026-07-04), which
+shipped safer retry semantics, undo-aware mutations, cheaper preview/read
+tooling, and transport/bridge hardening. The current source tree is **preparing
+v0.13.0** (this PR, not yet tagged): 20 new artist/inspection tools plus 4 new
+first-class bridge REST routes and a `param.changed` event (#128), the
+`.dxt`→`.mcpb` Connectors Directory package migration (#129), and full CLI tool
+parity — 44 new `tdmcp-agent` subcommands (#130), plus recipe and docs fixes.
+Until the `v0.13.0` tag/release is published, public bootstrap and package
+self-install URLs stay pinned to the current `v0.12.0` release; the version-sync
+script advances those install pins during the actual tagged release. The
+CHANGELOG blocks list every entry; the always-current tool list is the
+[Tools reference](/reference/tools). 1.0 is **not** the next minor — the v0.1x
+line is the active feature/consolidation line, and v1.0 will land only once the
+consolidation gates below are all green.
 
 The project has grown through five arcs:
 
@@ -62,10 +63,51 @@ The project has grown through five arcs:
 
 ## ✅ Current Release Line
 
-### v0.12.0 preparation — safe mutations, previews and bridge hardening
+### v0.13.0 preparation (unreleased) — new tools, bridge routes, CLI parity
 
-Source-tree work after the v0.11.0 publication prepares the next minor around
-safer agent retries, cheaper inspection and stronger local transport defaults:
+Source-tree work on top of the published **v0.12.0** tag. Committed and pushed
+**without a tag** by design; this is the natural content of the next tagged
+minor (**v0.13.0**), which the version-sync script will cut and pin when the
+release is published:
+
+- **20 new tools (#128), live-validated on TD 099 build 2025.32820.** Layer 1:
+  `create_step_repeat`, `create_pointer_reactive`, `create_interaction_zones`,
+  `create_terrain`, `create_asemic_writing`, `create_sdf_text`,
+  `controlled_disorder_grid`, `create_blob_trace`, `create_fixture_control`,
+  `create_detection_reactive`, `create_geo_visualization`. Layer 2:
+  `add_timecode_overlay`, `scaffold_vj_deck`, `create_synesthesia_unreal_osc`.
+  Layer 3: `watch_parameter_changes`, `bundle_dependencies`,
+  `check_operator_availability`. Library: `export_externalized_tree`. AI:
+  `narrate_set`. Plus a `create_vertex_displacement_mat` MAT builder.
+- **4 new first-class bridge REST routes + `param.changed` event (#128).**
+  `POST /api/params/watch` / `DELETE` / `GET`, `POST /api/nodes/{path}/save`,
+  `POST /api/duplicate`, `GET /api/optypes` — promoting `render_output` and
+  `duplicate_network` off `/api/exec` (see G4). New event `param.changed` +
+  `watch_service`; client methods `watchParameters` / `unwatchParameters` /
+  `listParameterWatches`, `saveNode`, `duplicateNode`, `getOpTypes`, `getHealth`.
+- **Full CLI tool parity — 44 new subcommands (#130).** All 21 vault tools plus
+  `get_preview`, `watch_node`, `manage_packages`, `swap_operator`,
+  `copilot_vision`, `auto_repair_loop`, `create_glsl_material`,
+  `publish_recipe_bundle`, and others become `tdmcp-agent` subcommands; new
+  `bundle-deps`, `export-external-tree`, `narrate-set`, `check-optypes`,
+  `preview --inline [--watch]`, and a `doctor --json` alias.
+- **Connectors Directory package migration (#129).** `.dxt`→`.mcpb` bundle,
+  enriched + validated manifest, bundled `mcpb/icon.png`, and a field-by-field
+  submission draft (submission-readiness for G6; acceptance is still external).
+- **Recipe + install fixes.** `audio_reactive_basic`, `optical_flow_particles`,
+  `audio_spectrum_bars` and `histogram_scope` fixed and live-cook-validated;
+  recipe expression-mode (`expr`) support; drag-and-drop
+  `tdmcp_bridge_package.tox` (`npm run build:bridge-tox`).
+
+> **Docs follow-through pending (G5).** The 20 new #128 tools and the 44
+> CLI-parity subcommands are not yet in the EN/PT prompt cookbook or
+> `docs/reference/cli.md`. Tracked as a G5 pendência below.
+
+### v0.12.0 — safe mutations, previews and bridge hardening
+
+Published on **2026-07-04** (npm + GitHub release + `v0.12.0` tag). The 0.12
+line hardened the agent path around safer retries, cheaper inspection and
+stronger local transport defaults:
 
 - **Retry-safe mutations.** `create_td_node` and `create_node_chain` reuse
   matching existing operators instead of failing or auto-renaming; mutating
@@ -583,12 +625,13 @@ they're considered solid.
 
 ## ⬜ Planned — the road to 1.0 {#planned}
 
-With v0.8.1 published, the deferred SDF, strange-attractor, optical-flow and
+With the v0.8 line published (and now **v0.12.0** on top of it, with v0.13.0 in
+prep above), the deferred SDF, strange-attractor, optical-flow and
 histogram-scope generators; MediaPipe face / hand / segmentation adapters; the
 persistent `load_session_profile` (+ `tdmcp://session/profile` resource);
-additional `doctor --fix` repairs; the new `get_inline_preview` inspection tool;
+additional `doctor --fix` repairs; the `get_inline_preview` inspection tool;
 the front-of-house dashboard v2 layout; and the stronger `generate_readme` /
-`make_portable_tox` component-doc pass are all in the current release line.
+`make_portable_tox` component-doc pass all shipped in the v0.8 release line.
 The pre-Round-4 Planned list was empty (all v0.8.x queued items shipped); the
 **2026-06-09 hype-scout** ([Round 4](#appendix-d-round4)) reopened it with a
 trend-driven set of buildable wins. The remaining work toward a tagged 1.0
@@ -689,8 +732,10 @@ path is the one validatable without a local GPU.
 - ✅ `create_llm_chain` (dotsimulate LOPs).
 - ✅ `create_ai_mirror` combo recipe (depends on the bridge above + FM-01).
 
-### Milestone 5 — AI Show Director mixer scene arming · v0.8.x / v0.9.x
+### Milestone 5 — AI Show Director mixer scene arming · ⬜ Planned (design-stage)
 
+Still fully ⬜ — no `arm_mixer_scene` tool exists yet; all five rows below stay
+dry-run, manifest-gated and approval-gated before any live adapter is built.
 Design status: `_workspace/ai-party-mixer/05_synthesis_design.md` and
 `docs/superpowers/specs/2026-06-04-ai-party-ui24r-scene-arming-design.md`
 define the first safe slice.
@@ -795,8 +840,8 @@ properly:
 
 ## v1.0.0 — Consolidation {#v100-consolidation}
 
-With the feature surface settled on the v0.8 line (**286 tools** on HEAD after
-Wave 12; 279 at the v0.8.2 tag), the road to 1.0 is
+With the feature surface at **355 tools** on HEAD (the generated Tools-reference
+total after #128's 20 new tools), the road to 1.0 is
 a set of **measurable consolidation gates**, not a new feature wave. Each gate
 below states the current posture and what "done" looks like, using the same
 legend as the rest of the page (✅ shipped / 🧪 in progress / ⬜ planned).
@@ -809,8 +854,11 @@ The contract for a "tdmcp tool" is the `ToolContext` shape
 - ⬜ One full minor release cycle (one tagged minor) with **no breaking change**
   to `ToolContext` or to any existing tool's `inputSchema` (additive optional
   fields are allowed; renames / removals / required-field additions are not).
+  The 20 new #128 tools are **additive-only** — they don't break the contract —
+  but the "one clean tagged minor, no schema change" clock is not yet started or
+  documented, so this stays open.
 - ⬜ An `API_STABILITY.md` note pinning the v1.0 contract and the deprecation
-  policy (one-minor warn, next-minor remove).
+  policy (one-minor warn, next-minor remove). No `API_STABILITY.md` exists yet.
 
 ### G2 — Test coverage · 🧪
 
@@ -829,12 +877,13 @@ gates per-wave work but isn't yet a CI gate at the suite level.
 The repo ships **50 validated recipes** under `recipes/`, all gated by
 `RecipeSchema` and `npm run validate:recipes`.
 
-- 🧪 **10 net-new recipes shipped** covering the v0.7–v0.8 generator wave —
+- ✅ **10 net-new recipes shipped** covering the v0.7–v0.8 generator wave —
   `raymarch_sphere_field` + `raymarch_infinite_tunnel` (SDF), `strange_attractor_lorenz`,
   `histogram_scope`, `ascii_render_post`, `dither_post`, `halftone_post`,
   `audio_glsl_uniforms`, `front_of_house_dashboard` (dashboard-v2), `sidechain_pump`.
-  All offline-validated against `RecipeSchema` with real optypes; **live end-to-end
-  cook validation is UNVERIFIED-pending-td**.
+  All validated against `RecipeSchema` with real optypes **and now live-cook-validated**
+  (the `[Unreleased]` recipe fixes closed `histogram_scope` and verified the other
+  nine cook with `errors:[]`; `validate:recipes` stays 50/50).
 - 🧪 **Orchestrator JSON twins — partial.** Eight new twins (glitch, kaleidoscope,
   slime simulation, spectrum, waveform, tempo-sync, layer-mixer crossfade, slit-scan)
   on top of the orchestrators already covered by the prior set. Orchestrators whose
@@ -859,10 +908,13 @@ structured logs (see `src/td-client/touchDesignerClient.ts`). What's left:
   legitimate custom-Python / composite builds (create→wire→set→verify in one
   atomic pass) with **no typed REST equivalent**, or map only to the exec-gated
   `/method` route (no hardening value) — they correctly stay on exec, the
-  intended escape hatch. **What's left is new-endpoint authoring**, not a rewire:
-  add first-class routes (e.g. `POST /api/nodes/{path}/save`, `/api/duplicate`,
-  batch create+write) to un-gate ops like `render_output` / `duplicate_network`.
-  That is a `tdmcp-bridge-endpoint` slice and needs live TD to validate.
+  intended escape hatch. **What's left is new-endpoint authoring**, not a rewire.
+- 🧪 **#128 added 4 new first-class routes** — `POST /api/nodes/{path}/save`,
+  `POST /api/duplicate`, `GET /api/optypes`, and
+  `POST/DELETE/GET /api/params/watch` — promoting `render_output` and
+  `duplicate_network` off exec (exactly the "new-endpoint authoring" this gate
+  named). Remaining work is further new-endpoint authoring (e.g. batch
+  create+write) via `tdmcp-bridge-endpoint`; it needs live TD to validate.
 - ⬜ Keep `/api/exec` working when `TDMCP_BRIDGE_ALLOW_EXEC=0` is the venue
   policy: every Layer-1/Layer-2 tool must build with exec disabled (CI smoke).
 - ✅ Resilience patch — atomic writes, clean HTTP listen failure, event-stream
@@ -880,9 +932,15 @@ troubleshooting and glossary.
   show timelines & setlists, dashboard-v2 / front-of-house, session profile
   & corpus learning, MediaPipe adapters, MCP resources (glsl-snippets /
   cheatsheets / learning).
+- ⬜ **Document the 20 new #128 tools and the 44 CLI-parity subcommands.** They
+  are absent from both prompt cookbooks (EN + PT, 0/20) and from
+  `docs/reference/cli.md` (`bundle-deps`, `export-external-tree`, `narrate-set`,
+  `check-optypes`, `preview --inline` all missing). This is a fresh gap opened
+  by this PR — the widest single item left in G5.
 - ⬜ Every Layer-1 generator referenced in the cookbook has a one-paragraph
   "what it builds + when to reach for it" entry in the relevant guide.
-- ✅ EN + PT parity for the prompt cookbook.
+- ✅ EN + PT parity for the prompt cookbook (parity itself still holds — both
+  cookbooks are at 0 for the new tools).
 
 ### G6 — One-click install & Connectors Directory · 🧪
 
@@ -891,11 +949,17 @@ The `.mcpb` Claude Desktop bundle is built by
 one-click path.
 
 - ✅ `.mcpb` bundle produced on tag.
+- ✅ **Submission prep done (#129).** The `.dxt`→`.mcpb` migration, enriched +
+  validated manifest, bundled icon (`mcpb/icon.png`), and a field-by-field
+  submission draft are complete. What remains for this gate is external
+  acceptance, not more prep.
 - ✅ npm package publishing stays manual by default; CI auto-publish requires
   both `TDMCP_AUTO_NPM_PUBLISH=true` and `NPM_TOKEN`.
-- ⬜ Anthropic Connectors Directory submission accepted (the submission harness
-  — `tdmcp-submission` skill — drives prep and re-prep).
-- ⬜ Glama / awesome-touchdesigner listings cross-linked from `README.md`.
+- ⬜ Anthropic Connectors Directory submission **accepted** — an external
+  Anthropic decision, so this stays open until they accept (the submission
+  harness — `tdmcp-submission` skill — drives prep and re-prep).
+- ✅ Glama / awesome-touchdesigner listings cross-linked from `README.md`
+  (`README.md` Links & community section).
 
 > **Tool API contract reference.** The v1.0 invariants are documented in
 > [`docs/reference/tool-contract.md`](./reference/tool-contract.md) (naming,
@@ -958,18 +1022,23 @@ The only remaining Round-1 A.1 row targeted by this PR,
 
 #### A.2 · Library, packaging & distribution
 
+`bundle_dependencies` and `export_externalized_tree` were built in #128
+(unreleased, preparing v0.13.0 above); they leave this open backlog once
+v0.13.0 is tagged. The remaining open rows:
+
 | Feature | Delivers | Effort | Impact | Conf | Priority | Novelty | Probe-first |
 |---|---|---|---|---|---|---|---|
-| `bundle_dependencies` | Make `make_portable_tox` actually self-contained | M | High | Med | P1 | EXTENSION | file-par enum + path-rewrite |
-| `export_externalized_tree` | `save_external` → git-diffable `.tox` tree | S | Med | High | P1 | EXTENSION | tree shape on first run |
 | `expand_recipe_library` | First-party recipes for the new generators | M | Med | High | P2 | NEW (content) | live cook-check each |
 | `recipe_from_live_network` | Faithful round-trip recipe capture via `serialize_network` | M | Med | Med | P2 | EXTENSION | GLSL-uniform round-trip |
 
 #### A.3 · CLI & developer DX
 
+`preview_inline_and_watch` (`preview --inline [--watch]`) was built in #130
+(unreleased, preparing v0.13.0 above) and leaves this backlog once v0.13.0 is
+tagged. The remaining open rows:
+
 | Feature | Delivers | Effort | Impact | Conf | Priority | Novelty | Probe-first |
 |---|---|---|---|---|---|---|---|
-| `preview_inline_and_watch` | `preview --inline` (iTerm/Kitty/sixel) + `--watch` | M | Med | Med | P1 | ROADMAP | terminal-protocol detect |
 | `show_mode_oneliner` | `tdmcp show <profile>` — load+doctor+perform+pre-flight | M | Med | Med | P2 | NEW | abort semantics |
 | `error_exit_code_taxonomy` | Distinct exit codes (offline/TD-error/config) | S | Low | Med | P2 | NEW | error subclass survives |
 

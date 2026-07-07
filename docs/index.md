@@ -30,7 +30,7 @@ features:
     details: Audio-reactive, generative and particle systems arrive playable — with control panels, presets, cues, tempo sync, MIDI/OSC/DMX I/O and a phone remote.
   - title: Works offline-friendly
     details: A local LLM copilot (tdmcp chat) handles simple tasks without a paid API, and the server stays usable even when TouchDesigner is closed.
-  - title: 335 tools, three layers
+  - title: 355 tools, three layers
     details: From one-line artist generators down to atomic node CRUD, library packaging, AI session memory, vault workflows and Python escape hatches — see the full, always-current Tools reference.
   - title: Creative RAG (experimental)
     details: "Opt-in local creative repertoire — open-licensed artworks, artists and techniques you can search for inspiration. Off by default. Repertoire, not policy; no bridge, DMX or Python exec."
