@@ -120,15 +120,16 @@ jobs:
         if: steps.escape.outputs.skip != 'true' && steps.changed.outputs.ids != ''
         env:
           # The adapters read TDMCP_RAG_*_KEY (see
-          # src/creativeRag/sources/europeana.ts, smithsonian.ts). Export both
-          # the canonical names AND the legacy *_API_KEY aliases so a repo that
-          # still stores secrets under either convention keeps working.
-          TDMCP_RAG_EUROPEANA_KEY: ${{ secrets.EUROPEANA_API_KEY }}
-          TDMCP_RAG_SMITHSONIAN_KEY: ${{ secrets.SMITHSONIAN_API_KEY }}
-          TDMCP_RAG_RIJKSMUSEUM_KEY: ${{ secrets.RIJKSMUSEUM_API_KEY }}
-          EUROPEANA_API_KEY: ${{ secrets.EUROPEANA_API_KEY }}
-          SMITHSONIAN_API_KEY: ${{ secrets.SMITHSONIAN_API_KEY }}
-          RIJKSMUSEUM_API_KEY: ${{ secrets.RIJKSMUSEUM_API_KEY }}
+          # src/creativeRag/sources/europeana.ts, smithsonian.ts). Source each from
+          # EITHER the canonical TDMCP_RAG_*_KEY secret OR the legacy *_API_KEY
+          # alias so a repo that stores secrets under either convention keeps
+          # working (a missing secret evaluates to "" and falls through).
+          TDMCP_RAG_EUROPEANA_KEY: ${{ secrets.TDMCP_RAG_EUROPEANA_KEY || secrets.EUROPEANA_API_KEY }}
+          TDMCP_RAG_SMITHSONIAN_KEY: ${{ secrets.TDMCP_RAG_SMITHSONIAN_KEY || secrets.SMITHSONIAN_API_KEY }}
+          TDMCP_RAG_RIJKSMUSEUM_KEY: ${{ secrets.TDMCP_RAG_RIJKSMUSEUM_KEY || secrets.RIJKSMUSEUM_API_KEY }}
+          EUROPEANA_API_KEY: ${{ secrets.TDMCP_RAG_EUROPEANA_KEY || secrets.EUROPEANA_API_KEY }}
+          SMITHSONIAN_API_KEY: ${{ secrets.TDMCP_RAG_SMITHSONIAN_KEY || secrets.SMITHSONIAN_API_KEY }}
+          RIJKSMUSEUM_API_KEY: ${{ secrets.TDMCP_RAG_RIJKSMUSEUM_KEY || secrets.RIJKSMUSEUM_API_KEY }}
         run: |
           FAILED=""
           for id in ${{ steps.changed.outputs.ids }}; do
