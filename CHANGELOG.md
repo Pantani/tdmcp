@@ -6,6 +6,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- Creative RAG Smithsonian adapter: cards whose Open Access record omits
+  `record_link` no longer emit the bare `record_ID` (an `edanmdm-…` identifier)
+  as `sourceUrl`, which failed the probe-live URL gate ("Shape drift … sourceUrl:
+  Invalid URL"). The adapter now validates URL-ness and builds the canonical
+  object page `https://www.si.edu/object/{record_ID}` when `record_link` is
+  absent, keeping `guid` (ARK) as a last-resort fallback, so every card yields a
+  valid absolute URL.
+
 ## [0.13.0] - 2026-07-07
 
 ### Added
@@ -265,14 +275,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `ascii_render_post`, `dither_post`, `halftone_post`, `audio_glsl_uniforms`,
   `front_of_house_dashboard`, `sidechain_pump`) all cooked with `errors: []`
   unchanged. `validate:recipes` stays 50/50.
-- Creative RAG Smithsonian adapter: cards whose Open Access record omits
-  `record_link` no longer emit the bare `record_ID` (an `edanmdm-…` identifier)
-  as `sourceUrl`, which failed the probe-live URL gate ("Shape drift … sourceUrl:
-  Invalid URL"). The adapter now validates URL-ness and builds the canonical
-  object page `https://www.si.edu/object/{record_ID}` when `record_link` is
-  absent, keeping `guid` (ARK) as a last-resort fallback, so every card yields a
-  valid absolute URL.
-
 - Tool-annotation directory gate: 14 tools registered without MCP safety
   annotations; every tool now carries `readOnlyHint` / `destructiveHint` /
   `openWorldHint`. `merge_vaults`, `manage_component_storage`, and `macro_recorder`
