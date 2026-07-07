@@ -18,6 +18,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `doctor --output json`.
 - CI: the Python bridge test job pins `actions/setup-python`, and the `.mcpb`
   bundle is uploaded as a PR artifact.
+- `TouchDesignerClient.getHealth()`: typed, Zod-validated client method for the
+  bridge's `GET /api/health` liveness/heartbeat report.
+
+### Changed
+
+- The `.mcpb` bundle builder was renamed `scripts/build-dxt.mjs` →
+  `scripts/build-mcpb.mjs` (log prefix `[build-mcpb]`); `npm run build:mcpb`
+  is unchanged.
 
 ### Fixed
 

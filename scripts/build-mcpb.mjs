@@ -18,7 +18,7 @@
 // Run AFTER `npm run build` (the bundle needs a populated `dist/`).
 //
 // Usage:
-//   node scripts/build-dxt.mjs
+//   node scripts/build-mcpb.mjs
 import { spawnSync } from "node:child_process";
 import {
   cpSync,
@@ -60,11 +60,11 @@ function shouldStage(src) {
 }
 
 function log(msg) {
-  process.stdout.write(`[build-dxt] ${msg}\n`);
+  process.stdout.write(`[build-mcpb] ${msg}\n`);
 }
 
 function fail(msg) {
-  process.stderr.write(`[build-dxt] ERROR: ${msg}\n`);
+  process.stderr.write(`[build-mcpb] ERROR: ${msg}\n`);
   process.exit(1);
 }
 

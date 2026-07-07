@@ -49,7 +49,7 @@ repo proper. `_workspace/` is preserved for audit / re-runs.
 2. **docs-author ∥ bundle-engineer** (parallel — disjoint file sets):
    - docs-author owns: privacy page(s), `config.ts` nav additions,
      `02_form-answers.md`. (Prose lane.)
-   - bundle-engineer owns: `dxt/manifest.json`, `scripts/build-dxt.mjs`,
+   - bundle-engineer owns: `dxt/manifest.json`, `scripts/build-mcpb.mjs`,
      `package.json` scripts, `scripts/setup.mjs`, `.dxt`→`.mcpb` text sweep in
      existing docs, `.github/` release workflow, `01_migration-notes.md`. (Code
      lane.)

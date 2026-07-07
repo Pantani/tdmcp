@@ -19,6 +19,33 @@ describe("TouchDesignerClient", () => {
     expect(info.td_version).toBe("2023.12000");
   });
 
+  it("getHealth returns the parsed liveness report", async () => {
+    server.use(
+      http.get(`${TD_BASE}/api/health`, () =>
+        HttpResponse.json({
+          ok: true,
+          data: {
+            state: "ok",
+            uptime_seconds: 12.5,
+            heartbeat: { stale: false, age_seconds: 1.2 },
+            touchdesigner: { td_version: "099", bridge_version: "0.12.0" },
+          },
+        }),
+      ),
+    );
+    const health = await client().getHealth();
+    expect(health.state).toBe("ok");
+    expect(health.uptime_seconds).toBe(12.5);
+    expect(health.touchdesigner?.bridge_version).toBe("0.12.0");
+  });
+
+  it("getHealth rejects with a typed TdError on an invalid envelope", async () => {
+    server.use(
+      http.get(`${TD_BASE}/api/health`, () => HttpResponse.json({ ok: true, data: { state: 42 } })),
+    );
+    await expect(client().getHealth()).rejects.toMatchObject({ name: "TdApiError" });
+  });
+
   it("createNode posts and returns the node ref", async () => {
     const node = await client().createNode({ parent_path: "/project1", type: "noiseTOP" });
     expect(node.path).toBe("/project1/noisetop1");

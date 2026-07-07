@@ -82,7 +82,7 @@
     "smoke:live": "tsx scripts/smoke-live.ts",
     "shader-park:tox": "node scripts/fetch-shader-park-td.mjs",
     "smoke:packages": "tsx scripts/smoke-packages.ts",
-    "build:mcpb": "node scripts/build-dxt.mjs",
+    "build:mcpb": "node scripts/build-mcpb.mjs",
     "build:bridge-tox": "tsx scripts/build-bridge-tox.ts",
     "docs:gen": "tsx scripts/gen-tool-docs.ts",
     "docs:clips": "node scripts/generate-doc-example-clips.mjs",

@@ -69,6 +69,24 @@ export const InfoSchema = z.object({
 });
 export type TdInfo = z.infer<typeof InfoSchema>;
 
+export const HealthSchema = z.object({
+  state: z.string(),
+  status: z.string().optional(),
+  timestamp: z.string().optional(),
+  started_at: z.string().optional(),
+  uptime_seconds: z.number().optional(),
+  heartbeat: z
+    .object({
+      last_seen_at: z.string().nullable().optional(),
+      age_seconds: z.number().nullable().optional(),
+      stale: z.boolean().optional(),
+      stale_after_seconds: z.number().optional(),
+    })
+    .optional(),
+  touchdesigner: InfoSchema.optional(),
+});
+export type TdHealth = z.infer<typeof HealthSchema>;
+
 export const NodeErrorSchema = z.object({
   path: z.string(),
   message: z.string(),

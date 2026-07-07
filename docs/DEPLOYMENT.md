@@ -65,10 +65,10 @@ same host; the extension exposes its host/port as user-configurable settings.
 
 ```bash
 npm run build          # populate dist/ first
-npm run build:mcpb     # (or: node scripts/build-dxt.mjs)
+npm run build:mcpb     # (or: node scripts/build-mcpb.mjs)
 ```
 
-`build-dxt.mjs` uses the official packer when available and otherwise falls back
+`build-mcpb.mjs` uses the official packer when available and otherwise falls back
 to a system `zip`. The packer was renamed from `@anthropic-ai/dxt` (CLI `dxt`,
 format `.dxt`) to `@anthropic-ai/mcpb` (CLI `mcpb`, format `.mcpb`); the script
 prefers `npx @anthropic-ai/mcpb pack` and falls back to the legacy
