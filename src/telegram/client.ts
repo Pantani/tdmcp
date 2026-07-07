@@ -91,6 +91,14 @@ export class TelegramBotClient {
     });
   }
 
+  private redactToken(message: string): string {
+    return message
+      .split(`/bot${this.token}/`)
+      .join("/bot[REDACTED]/")
+      .split(this.token)
+      .join("[REDACTED]");
+  }
+
   private async request<T>(
     method: string,
     body?: Record<string, unknown>,
@@ -117,9 +125,8 @@ export class TelegramBotClient {
       }
       response = await this.fetchImpl(`${this.baseUrl}/bot${this.token}/${method}`, init);
     } catch (err) {
-      throw new Error(
-        `Telegram Bot API ${method} request failed: ${err instanceof Error ? err.message : String(err)}`,
-      );
+      const rawMessage = err instanceof Error ? err.message : String(err);
+      throw new Error(`Telegram Bot API ${method} request failed: ${this.redactToken(rawMessage)}`);
     } finally {
       clearTimeout(timer);
     }

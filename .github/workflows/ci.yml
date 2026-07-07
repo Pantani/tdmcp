@@ -74,6 +74,13 @@ jobs:
       - name: Build .mcpb bundle
         run: npm run build:mcpb
 
+      - name: Upload .mcpb artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: tdmcp-mcpb
+          path: "*.mcpb"
+          if-no-files-found: error
+
   bridge-tests:
     name: Python Bridge Tests
     runs-on: ubuntu-latest
@@ -82,6 +89,11 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.11"
 
       - name: Test bridge
         run: python3 -m unittest discover -s td/tests

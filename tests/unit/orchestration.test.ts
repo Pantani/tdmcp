@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
-import { NetworkBuilder } from "../../src/tools/layer2/orchestration.js";
+import { finalize, NetworkBuilder } from "../../src/tools/layer2/orchestration.js";
 import type { ToolContext } from "../../src/tools/types.js";
 
 /**
@@ -104,5 +104,125 @@ describe("NetworkBuilder fail-forward warnings", () => {
     await expect(builder.layout()).resolves.toBeUndefined();
     expect(builder.created).toHaveLength(2);
     expect(builder.warnings).toEqual([expect.stringContaining("Auto-layout skipped")]);
+  });
+});
+
+/**
+ * finalize() runs the shared "expose controls → error-check → preview → respond"
+ * step every Layer 1 tool funnels through. Its three degradation branches — a
+ * failed control-panel exec, a failed error check, and a failed preview capture —
+ * are fail-forward: each is folded into `warnings` while the build result stays
+ * useful. These assert that contract directly.
+ */
+
+interface FinalizeClientBehaviour {
+  executePythonScript?: () => Promise<{ stdout: string }>;
+  getNetworkErrors?: () => Promise<{ errors: Array<{ path: string; message: string }> }>;
+  getPreview?: () => Promise<{
+    path: string;
+    width: number;
+    height: number;
+    base64: string;
+    format?: string;
+  }>;
+}
+
+function makeFinalizeCtx(behaviour: FinalizeClientBehaviour): ToolContext {
+  const client = {
+    createNode: async () => ({ path: "/project1/sys/op1", name: "op1", type: "noiseTOP" }),
+    updateNodeParameters: async () => ({}),
+    connectNodes: async () => ({ actual_input: 0 }),
+    // Default: perform-mode probe + panel/layout scripts succeed with empty report.
+    executePythonScript:
+      behaviour.executePythonScript ??
+      (async () => ({ stdout: '{"created": [], "bound": [], "warnings": []}' })),
+    getNetworkErrors: behaviour.getNetworkErrors ?? (async () => ({ errors: [] })),
+    getPreview:
+      behaviour.getPreview ??
+      (async () => ({
+        path: "/project1/sys/op1",
+        width: 640,
+        height: 360,
+        base64: "AAAA",
+        format: "png",
+      })),
+  } as unknown as TouchDesignerClient;
+  return { client } as unknown as ToolContext;
+}
+
+/** Extracts the JSON `data` block finalize embeds in its text content. */
+function parseFinalizeData(result: {
+  content: Array<{ type: string; text?: string }>;
+}): Record<string, unknown> {
+  const text = result.content.find((c) => c.type === "text")?.text ?? "";
+  const json = text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1);
+  return JSON.parse(json);
+}
+
+describe("finalize degradation", () => {
+  it("still succeeds with a 'Preview unavailable' warning when preview capture fails", async () => {
+    const ctx = makeFinalizeCtx({
+      getPreview: async () => {
+        throw new Error("bridge offline: preview endpoint unreachable");
+      },
+    });
+    const builder = new NetworkBuilder(ctx, "/project1/sys");
+
+    const result = await finalize(ctx, {
+      summary: "Built network",
+      builder,
+      outputPath: "/project1/sys/out",
+    });
+
+    // No thrown error, no image content — text-only useful result.
+    expect(result.content.some((c) => c.type === "image")).toBe(false);
+    const data = parseFinalizeData(result as { content: Array<{ type: string; text?: string }> });
+    expect(data.container).toBe("/project1/sys");
+    expect(data.warnings).toEqual([expect.stringContaining("Preview unavailable")]);
+    expect(data.errors).toEqual([]);
+  });
+
+  it("still succeeds with an 'Error check unavailable' warning when the error check fails", async () => {
+    const ctx = makeFinalizeCtx({
+      getNetworkErrors: async () => {
+        throw new Error("bridge offline: node_errors endpoint unreachable");
+      },
+    });
+    const builder = new NetworkBuilder(ctx, "/project1/sys");
+
+    const result = await finalize(ctx, {
+      summary: "Built network",
+      builder,
+      // No outputPath → preview step skipped, isolating the error-check branch.
+    });
+
+    const data = parseFinalizeData(result as { content: Array<{ type: string; text?: string }> });
+    expect(data.warnings).toEqual([expect.stringContaining("Error check unavailable")]);
+    // Fail-forward: errors default to empty and the result is still returned.
+    expect(data.errors).toEqual([]);
+    expect(data.container).toBe("/project1/sys");
+  });
+
+  it("folds a control-panel exec failure into warnings without aborting the build", async () => {
+    // exposeControls runs a panel script via executePythonScript; make it throw.
+    const ctx = makeFinalizeCtx({
+      executePythonScript: async () => {
+        throw new Error("SyntaxError in generated panel script");
+      },
+      // Error-check + preview succeed, so any panel warning is the only degradation.
+    });
+    const builder = new NetworkBuilder(ctx, "/project1/sys");
+
+    const result = await finalize(ctx, {
+      summary: "Built network",
+      builder,
+      controls: [{ name: "Speed", type: "Float", bind_to: ["/project1/sys/op1"] }] as never,
+    });
+
+    const data = parseFinalizeData(result as { content: Array<{ type: string; text?: string }> });
+    expect(data.warnings).toEqual([expect.stringContaining("Control panel skipped")]);
+    // Fail-forward: an empty controls summary is still recorded, build still returns.
+    expect(data.controls).toEqual({ added: [], bound: 0 });
+    expect(data.container).toBe("/project1/sys");
   });
 });
