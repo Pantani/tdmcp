@@ -96,9 +96,14 @@ jobs:
         run: |
           KNOWN_IDS="artic cleveland europeana met rijksmuseum smithsonian wikimedia"
 
-          # If the shared http.ts helper changed, probe ALL sources (safer default)
+          # If a shared live-fetch helper changed, probe ALL sources (safer default).
+          # errors.ts is intentionally excluded: it is a pure error-type/message module
+          # (the SourceSkippedError skip-reason enum) with no live-fetch behavior, so a
+          # change to it cannot alter how any adapter talks to its upstream API and must
+          # not force re-probing unrelated key-gated sources. http.ts (the fetch helper)
+          # and types.ts (shared response shapes) genuinely can, so they stay.
           SHARED_CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- \
-            src/creativeRag/sources/http.ts src/creativeRag/sources/errors.ts src/creativeRag/sources/types.ts \
+            src/creativeRag/sources/http.ts src/creativeRag/sources/types.ts \
             | wc -l | tr -d ' ')
 
           if [ "$SHARED_CHANGED" -gt "0" ]; then
