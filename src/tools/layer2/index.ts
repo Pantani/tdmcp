@@ -103,6 +103,7 @@ import { registerConnectWifiPresenceBus } from "./connectWifiPresenceBus.js";
 import { registerConnectXsensMvnMocap } from "./connectXsensMvnMocap.js";
 import { registerConnectYoutubeLiveChatBus } from "./connectYoutubeLiveChatBus.js";
 import { registerCreateArtnetDiscoveryPanel } from "./createArtnetDiscoveryPanel.js";
+import { registerCreateAiTexture } from "./createAiTexture.js";
 import { registerCreateAudioGlslUniforms } from "./createAudioGlslUniforms.js";
 // Campaign Wave 3 — artist controls (backlog 2026-05-29):
 import { registerCreateAutoMontage } from "./createAutoMontage.js";
@@ -455,4 +456,6 @@ export const layer2Registrars: ToolRegistrar[] = [
   registerCreateLlmChain,
   // Roadmap-to-1.0 Wave 3 (2026-07-06) — visual timecode overlay:
   registerAddTimecodeOverlay,
+  // AI texture generation (2026-07-07) — prompt → fal.ai image → Movie File In TOP:
+  registerCreateAiTexture,
 ];

@@ -349,6 +349,27 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     scene. `create_raytk_op` connects an existing op into a new op's input. Wiring uses
     connector-to-connector (`dst.inputConnectors[i].connect(src.outputConnectors[0])`) —
     RayTK COMP connectors reject `.connect(op)`.
+- **AI texture asset lane** — a hosted text-to-image (txt2img) lane that turns a
+  prompt into a real TouchDesigner texture, complementing the realtime img2img
+  path shipped in Milestone 4:
+  - `create_ai_texture` (Layer 2, CLI `create-ai-texture`) — generate an image
+    from a text prompt via a hosted provider (fal.ai) and drop it into
+    TouchDesigner as a Movie File In TOP pointing at the cached asset.
+  - `create_ai_backdrop` (Layer 1, CLI `create-ai-backdrop`) — prompt → a fully
+    wired AI-generated backdrop (Movie File In → Level → Transform → Blur → Null)
+    with exposed **Brightness / Blur / Scale** live controls.
+  - New `src/services/imageGen/` hosted image-generation provider seam (fal.ai;
+    Flux-schnell default, WAN 2.5 selectable) that writes the render to a local
+    cache file and hands it to a Movie File In TOP — no new bridge endpoint, a
+    colocated filesystem handoff. On a post-generation bridge failure the tool
+    still cites the on-disk cache path so the rendered asset is never lost.
+  - New config (Node-only, never sent to the TD bridge):
+    `TDMCP_IMAGE_GEN_PROVIDER` (`fal` | `replicate` | `none`, default `none`),
+    `TDMCP_FAL_KEY`, `TDMCP_REPLICATE_KEY`, `TDMCP_IMAGE_GEN_MODEL`, and
+    `TDMCP_IMAGE_CACHE_DIR`. The provider keys are redacted in `doctor` /
+    `doctor --json`. Live TD cook + fal contract validation is pending (bridge
+    offline + no fal key at release time); all offline gates and safety checks
+    pass.
 
 ### Fixed
 

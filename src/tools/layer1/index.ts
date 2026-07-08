@@ -9,6 +9,7 @@ import { registerComposeCueList } from "./composeCueList.js";
 import { registerControlledDisorderGrid } from "./controlledDisorderGrid.js";
 import { registerCreate3dAudioReactive } from "./create3dAudioReactive.js";
 import { registerCreate3dScene } from "./create3dScene.js";
+import { registerCreateAiBackdrop } from "./createAiBackdrop.js";
 import { registerCreateAiMirror } from "./createAiMirror.js";
 import { registerCreateAsciiRender } from "./createAsciiRender.js";
 import { registerCreateAsemicWriting } from "./createAsemicWriting.js";
@@ -345,6 +346,8 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateVertexDisplacementMat,
   registerControlledDisorderGrid,
   registerCreateBlobTrace,
+  // AI backdrop generation (2026-07-07) — prompt → wired AI-generated backdrop system:
+  registerCreateAiBackdrop,
 ];
 
 // v0.6.0 — Creative RAG inspiration -> execution loop (gated behind env flag).

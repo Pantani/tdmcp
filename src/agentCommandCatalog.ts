@@ -723,9 +723,24 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "create-ai-backdrop",
+    summary:
+      "Prompt → a fully wired AI-generated backdrop system (level/transform/blur + controls).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "create-ai-mirror",
     summary:
       "Live AI-mirror combo: camera → StreamDiffusion (+ optional pose/depth controls) → preview.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "create-ai-texture",
+    summary: "Generate an image from a prompt (fal.ai) and drop it as a Movie File In TOP.",
     mutates: true,
     unsafe: false,
     source: "tool",
