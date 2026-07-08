@@ -55,6 +55,18 @@ function requirePackageId(args: ManagePackagesArgs): string | undefined {
   return args.package_id?.trim() || undefined;
 }
 
+// Best-effort live TD build detection so version-gated packages (e.g. RayTK, which needs the
+// 2025.30770 experimental build) warn against the running build. Returns undefined when the
+// bridge is unreachable, which the doctor treats as an offline gate warning.
+async function detectLiveBuild(ctx: ToolContext): Promise<string | undefined> {
+  try {
+    const info = await ctx.client.getInfo();
+    return info.td_version ?? info.build;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function managePackagesImpl(ctx: ToolContext, args: ManagePackagesArgs) {
   try {
     if (args.action === "search") {
@@ -83,17 +95,7 @@ export async function managePackagesImpl(ctx: ToolContext, args: ManagePackagesA
     if (args.action === "doctor") {
       const id = requirePackageId(args);
       if (!id) return errorResult("A `package_id` is required for package doctor.");
-      // Best-effort live TD build detection so version-gated packages (e.g. RayTK, which
-      // needs the 2025.30770 experimental build) warn against the running build. Fail-forward
-      // to an offline gate warning when the bridge is unreachable.
-      let liveBuild: string | undefined;
-      try {
-        const info = await ctx.client.getInfo();
-        liveBuild = info.td_version ?? info.build;
-      } catch {
-        liveBuild = undefined;
-      }
-      const report = doctorPackage(id, { liveBuild });
+      const report = doctorPackage(id, { liveBuild: await detectLiveBuild(ctx) });
       return structuredResult(`Package doctor: ${report.status}.`, { report });
     }
 
