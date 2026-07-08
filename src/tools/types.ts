@@ -4,6 +4,7 @@ import type { KnowledgeBase } from "../knowledge/index.js";
 import type { LlmClientLike } from "../llm/client.js";
 import type { ProjectRagService } from "../projectRag/index.js";
 import type { RecipeLibrary } from "../recipes/loader.js";
+import type { ImageProvider } from "../services/imageGen/types.js";
 import type { TouchDesignerClient } from "../td-client/touchDesignerClient.js";
 import type { Logger } from "../utils/logger.js";
 import type { Vault } from "../vault/index.js";
@@ -59,6 +60,18 @@ export interface ToolContext {
    * client on a dedicated port.
    */
   projectRag?: ProjectRagService;
+  /**
+   * Optional hosted image-gen provider (set when `imageGenProvider != "none"` AND
+   * its key is present); undefined when off. Tools MUST degrade via `errorResult`
+   * when undefined. Keys live only in Node, never threaded to the TD bridge.
+   */
+  imageGen?: ImageProvider;
+  /**
+   * Absolute-or-relative cache dir for generated images (`config.imageCacheDir`).
+   * Set together with `imageGen`. The generation helper writes the image here
+   * BEFORE any TD call, then points a Movie File In TOP at the absolute path.
+   */
+  imageCacheDir?: string;
 }
 
 /** A function that registers one tool against the MCP server. */

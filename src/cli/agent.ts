@@ -78,6 +78,7 @@ import {
   create3dAudioReactiveSchema,
 } from "../tools/layer1/create3dAudioReactive.js";
 import { create3dSceneImpl, create3dSceneSchema } from "../tools/layer1/create3dScene.js";
+import { createAiBackdropImpl, createAiBackdropSchema } from "../tools/layer1/createAiBackdrop.js";
 import { createAiMirrorImpl, createAiMirrorSchema } from "../tools/layer1/createAiMirror.js";
 import {
   createAsciiRenderImpl,
@@ -499,6 +500,7 @@ import {
   connectDaydreamCloudSchema,
 } from "../tools/layer2/connectDaydreamCloud.js";
 import { connectNodesImpl, connectNodesSchema } from "../tools/layer2/connectNodes.js";
+import { createAiTextureImpl, createAiTextureSchema } from "../tools/layer2/createAiTexture.js";
 import {
   createAudioGlslUniformsImpl,
   createAudioGlslUniformsSchema,
@@ -1991,6 +1993,18 @@ const COMMANDS: Record<string, Command> = {
     createAiMirrorSchema,
     createAiMirrorImpl,
     "Live AI-mirror combo: camera → StreamDiffusion (+ optional pose/depth controls) → preview.",
+    { mutates: true },
+  ),
+  "create-ai-texture": r(
+    createAiTextureSchema,
+    createAiTextureImpl,
+    "Generate an image from a prompt (fal.ai) and drop it as a Movie File In TOP.",
+    { mutates: true },
+  ),
+  "create-ai-backdrop": r(
+    createAiBackdropSchema,
+    createAiBackdropImpl,
+    "Prompt → a fully wired AI-generated backdrop system (level/transform/blur + controls).",
     { mutates: true },
   ),
   "connect-comfyui": r(
@@ -3606,6 +3620,11 @@ const ENV_NAMES: Record<keyof TdmcpConfig, string> = {
   projectRagAnalyzeTimeoutMs: "TDMCP_PROJECT_RAG_ANALYZE_TIMEOUT_MS",
   projectRagLicenseAllowlist: "TDMCP_PROJECT_RAG_LICENSE_ALLOWLIST",
   projectRagScoreWeights: "TDMCP_PROJECT_RAG_SCORE_WEIGHTS",
+  imageGenProvider: "TDMCP_IMAGE_GEN_PROVIDER",
+  falKey: "TDMCP_FAL_KEY",
+  replicateKey: "TDMCP_REPLICATE_KEY",
+  imageGenModel: "TDMCP_IMAGE_GEN_MODEL",
+  imageCacheDir: "TDMCP_IMAGE_CACHE_DIR",
 };
 const SECRET_ENV: ReadonlySet<keyof TdmcpConfig> = new Set([
   "bridgeToken",
