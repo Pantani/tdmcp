@@ -54,13 +54,13 @@ export const createRaytkSceneSchema = z.object({
     .boolean()
     .default(false)
     .describe(
-      "Add a RayTK lookAtCamera (camera category) wired into the renderer's Camera input (input 2). Default false uses the renderer's built-in camera — leave false for the minimal scene.",
+      "Add a RayTK lookAtCamera (camera category) wired into the renderer's Camera input (connector index 1, 0-based). Default false uses the renderer's built-in camera — leave false for the minimal scene.",
     ),
   add_light: z
     .boolean()
     .default(false)
     .describe(
-      "Add a RayTK pointLight (light category) wired into the renderer's Light input (input 3). Default false uses the renderer's built-in light — leave false for the minimal scene.",
+      "Add a RayTK pointLight (light category) wired into the renderer's Light input (connector index 2, 0-based). Default false uses the renderer's built-in light — leave false for the minimal scene.",
     ),
   name: z
     .string()
@@ -166,7 +166,11 @@ try:
         return None
 
     _by_role = {}
-    _x = 0.0
+    # Lay the RayTK chain out in NEGATIVE x so it ends just left of the origin (the last op,
+    # raymarchRender3D, lands at x=-200). The native out1 Null is the only builder-tracked node,
+    # so finalize()'s layout pins it at the origin; placing the untracked chain to its left keeps
+    # out1 sitting AFTER the renderer instead of overlapping the first ROP.
+    _x = -float(len(_ops)) * 200.0
     for _spec in _ops:
         _optype = _spec["optype"]
         _category = _spec["category"]

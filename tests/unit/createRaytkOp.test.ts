@@ -164,7 +164,10 @@ describe("create_raytk_op", () => {
     // A valid minimal call parses and applies defaults.
     const parsed = createRaytkOpSchema.parse({ op_type: "boxSdf" });
     expect(parsed.parent_path).toBe("/project1");
-    expect(parsed.node_x).toBe(0);
+    // node_x/node_y are optional (undefined -> bridge auto-places instead of stacking at origin).
+    expect(parsed.node_x).toBeUndefined();
     expect(parsed.input_index).toBe(0);
+    // connect_from, when present, must be a non-empty path (no misleading "wire skipped").
+    expect(() => createRaytkOpSchema.parse({ op_type: "boxSdf", connect_from: "" })).toThrow();
   });
 });

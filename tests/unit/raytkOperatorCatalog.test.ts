@@ -50,9 +50,11 @@ describe("RayTK operator catalog dataset", () => {
   it("declares the minimal renderable chain with renderer input order", () => {
     expect(catalog.minimalChain.chain).toEqual(["sphereSdf", "raymarchRender3D", "nullTOP"]);
     const inputs = catalog.minimalChain.rendererInputs;
-    expect(inputs.find((i) => i.index === 1)?.role).toMatch(/scene/);
-    expect(inputs.find((i) => i.index === 2)?.role).toMatch(/camera/);
-    expect(inputs.find((i) => i.index === 3)?.role).toMatch(/light/);
+    // 0-based connectorIndex (TouchDesigner inputConnectors[]) with the 1-based RayTK label.
+    expect(inputs.find((i) => i.connectorIndex === 0)?.role).toMatch(/scene/);
+    expect(inputs.find((i) => i.connectorIndex === 1)?.role).toMatch(/camera/);
+    expect(inputs.find((i) => i.connectorIndex === 2)?.role).toMatch(/light/);
+    expect(inputs.map((i) => i.rendererInput)).toEqual([1, 2, 3]);
   });
 
   it("exposes verified op masters per category", () => {

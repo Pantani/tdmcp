@@ -26,13 +26,22 @@ export const createRaytkOpSchema = z.object({
     .describe(
       "Optional node name for the new ROP. If omitted, TouchDesigner auto-uniques from the master name.",
     ),
-  node_x: z.coerce.number().default(0).describe("nodeCenterX placement of the new ROP."),
-  node_y: z.coerce.number().default(0).describe("nodeCenterY placement of the new ROP."),
-  connect_from: z
-    .string()
+  node_x: z.coerce
+    .number()
     .optional()
     .describe(
-      "Optional path of an existing operator to wire INTO this new op's input (source → new op).",
+      "nodeCenterX placement of the new ROP. Omit to auto-place to the right of existing siblings (avoids stacking repeated ops at the origin).",
+    ),
+  node_y: z.coerce
+    .number()
+    .optional()
+    .describe("nodeCenterY placement of the new ROP. Omit to auto-place (defaults to 0)."),
+  connect_from: z
+    .string()
+    .min(1)
+    .optional()
+    .describe(
+      "Optional path of an existing operator to wire INTO this new op's input (source → new op). Omit for no wire; must be a non-empty path when present.",
     ),
   input_index: z.coerce
     .number()
@@ -40,7 +49,7 @@ export const createRaytkOpSchema = z.object({
     .nonnegative()
     .default(0)
     .describe(
-      "Which input connector index of the NEW op that connect_from wires into. For raymarchRender3D: 0=scene, 1=camera, 2=light.",
+      "0-based input connector index of the NEW op that connect_from wires into (matches TouchDesigner inputConnectors[]). For raymarchRender3D: 0=scene, 1=camera, 2=light.",
     ),
   library_path: z
     .string()
@@ -90,7 +99,7 @@ def _resolve_master(p):
         for r in [lib_root, op("/project1/tdmcp_packages"), op("/raytk"), op("/")]:
             if r is None:
                 continue
-            found = r.findChildren(name="pathsByOpType", maxDepth=None)
+            found = r.findChildren(name="pathsByOpType", maxDepth=12)
             if found:
                 dat = found[0]
                 break
@@ -117,12 +126,13 @@ def _resolve_master(p):
             m = op(master_path)
             if m is not None:
                 return m, "pathsByOpType"
-    # (3) category-folder name search under known namespaces.
+    # (3) category-folder name search under known namespaces (depth-capped: last-resort probe
+    #     that must not traverse the whole project tree on large networks).
     best = None
     for r in [lib_root, op("/project1/tdmcp_packages"), op("/raytk"), op("/project1")]:
         if r is None:
             continue
-        for c in r.findChildren(name=op_type, maxDepth=None):
+        for c in r.findChildren(name=op_type, maxDepth=14):
             if not c.isCOMP:
                 continue
             par = c.parent()
@@ -150,8 +160,18 @@ def _run(p):
             return report
         new_name = p.get("name")
         new_op = dest.copy(master, name=new_name) if new_name else dest.copy(master)
-        new_op.nodeCenterX = p.get("node_x", 0)
-        new_op.nodeCenterY = p.get("node_y", 0)
+        # Placement: honour explicit coords; otherwise auto-place to the right of existing
+        # siblings so repeated create_raytk_op calls don't stack a pile at the origin.
+        nx = p.get("node_x")
+        ny = p.get("node_y")
+        if nx is None or ny is None:
+            sibs = [c for c in dest.children if c is not new_op]
+            max_x = max([(c.nodeCenterX or 0) for c in sibs], default=0)
+            new_op.nodeCenterX = nx if nx is not None else (max_x + 200 if sibs else 0)
+            new_op.nodeCenterY = ny if ny is not None else 0
+        else:
+            new_op.nodeCenterX = nx
+            new_op.nodeCenterY = ny
         report["created"] = new_op.path
         report["master_path"] = master.path
         report["resolution"] = resolution
@@ -187,8 +207,8 @@ export async function createRaytkOpImpl(ctx: ToolContext, args: CreateRaytkOpArg
         category: args.category ?? null,
         parent: args.parent_path,
         name: args.name ?? null,
-        node_x: args.node_x,
-        node_y: args.node_y,
+        node_x: args.node_x ?? null,
+        node_y: args.node_y ?? null,
         connect_from: args.connect_from ?? null,
         input_index: args.input_index,
         library_path: args.library_path ?? null,

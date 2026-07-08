@@ -53,7 +53,7 @@ export interface RaytkOperatorCatalog {
   minimalChain: {
     description: string;
     chain: string[];
-    rendererInputs: { index: number; role: string }[];
+    rendererInputs: { connectorIndex: number; rendererInput: number; role: string }[];
   };
   categoryCount: number;
   categories: RaytkCategory[];
@@ -316,10 +316,13 @@ export function readRaytkOperatorCatalog(): RaytkOperatorCatalog {
       description:
         "Smallest scene that yields a rendered TOP. raymarchRender3D uses a built-in camera+light by default, so SDF → render → Null TOP is genuinely the minimum.",
       chain: ["sphereSdf", "raymarchRender3D", "nullTOP"],
+      // `connectorIndex` is 0-based (matches TouchDesigner inputConnectors[] and create_raytk_op's
+      // `input_index`); `rendererInput` is the 1-based label RayTK docs use. Both are embedded to
+      // avoid off-by-one wiring mistakes.
       rendererInputs: [
-        { index: 1, role: "scene (the SDF / ROP chain)" },
-        { index: 2, role: "camera (e.g. lookAtCamera)" },
-        { index: 3, role: "light (e.g. pointLight)" },
+        { connectorIndex: 0, rendererInput: 1, role: "scene (the SDF / ROP chain)" },
+        { connectorIndex: 1, rendererInput: 2, role: "camera (e.g. lookAtCamera)" },
+        { connectorIndex: 2, rendererInput: 3, role: "light (e.g. pointLight)" },
       ],
     },
     categoryCount: RAYTK_CATEGORIES.length,
