@@ -19,6 +19,7 @@ import { registerProjectRagResource } from "./projectRagResource.js";
 import { registerProjectRagSourcesResource } from "./projectRagSourcesResource.js";
 import { registerPromptCatalogResource } from "./promptCatalogResource.js";
 import { registerPythonApiResource } from "./pythonApiResource.js";
+import { registerRaytkOperatorCatalogResource } from "./raytkOperatorCatalog.js";
 import { registerRecipeResource } from "./recipeResource.js";
 import { registerSceneSummaryResource } from "./sceneSummary.js";
 import { registerSessionProfileResource } from "./sessionProfile.js";
@@ -41,6 +42,8 @@ export function registerAllResources(server: McpServer, ctx: ResourceContext): v
   registerPatternResource(server, ctx);
   registerGlslPatternResource(server, ctx);
   registerGlslSnippetCatalogResource(server, ctx);
+  // RayTK integration (Wave W2) — native raymarching/SDF toolkit operator catalog:
+  registerRaytkOperatorCatalogResource(server, ctx);
   registerTechniquePackResource(server, ctx);
   registerTdClassResource(server, ctx);
   registerTdVersionResource(server, ctx);

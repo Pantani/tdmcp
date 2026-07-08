@@ -6,6 +6,34 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **RayTK native integration (node-graph, offline-built)** — beyond package-manager
+  staging, tdmcp can now drive RayTK (t3kt/raytk) as editable ROP node graphs,
+  complementary to (never replacing) the GLSL `create_raymarch_scene`/`create_sdf_field`:
+  - **`create_raytk_op`** (Layer 3) — instances one RayTK ROP master by op-name (e.g.
+    `sphereSdf`, `raymarchRender3D`, `lookAtCamera`) via the same `COMP.copy(master)`
+    primitive RayTK's palette uses, resolving the install-dependent master path **live**
+    (RayTK's `pathsByOpType` lookup → category-folder search, never hardcoded) and
+    optionally wiring a typed input. CLI: `tdmcp-agent raytk-op`.
+  - **`create_raytk_scene`** (Layer 1) — builds the minimal renderable RayTK chain
+    (`sphereSdf → raymarchRender3D → Null TOP`, renderer inputs 1=scene/2=camera/3=light,
+    built-in camera+light by default) with optional second SDF (`simpleUnion`), inline
+    `basicMat`, explicit `lookAtCamera`/`pointLight`. Fails forward with "stage & load
+    RayTK first" guidance and warns that the async shader compile may leave the first
+    preview black. CLI: `tdmcp-agent raytk-scene`.
+  - **`tdmcp://raytk/operators`** (+ `tdmcp://raytk/operators/{category}`) MCP resource —
+    a committed RayTK operator catalog (18 categories, verified op masters, typed
+    Sdf/float/vec4/Ray/Light connectors, the TD version gate, the minimal chain) so the
+    AI picks the right ROP before instancing.
+  - **Package version-gate honesty** — the `raytk` manifest's stale `tdVersionRange`
+    (`2022+`) is corrected to `2025.30770+` with a `versionGate` (RayTK 0.46 needs the TD
+    2025.30770 experimental build; pin ≤0.45 on 2023.x); `manage_packages doctor raytk`
+    now detects the live TD build and warns when it predates the gate.
+  - Live TouchDesigner validation is **UNVERIFIED** (bridge offline) — requires TD
+    2025.30770+ with the RayTK `.tox` loaded to confirm copy/wire, shader compile, and
+    render.
+
 ### Fixed
 
 - Creative RAG Smithsonian adapter: cards whose Open Access record omits

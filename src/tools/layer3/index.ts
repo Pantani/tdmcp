@@ -10,6 +10,7 @@ import { registerCompareOperatorDocs } from "./compareOperatorDocs.js";
 import { registerCompareTdNodes } from "./compareTdNodes.js";
 import { registerControlTimelineTransport } from "./controlTimelineTransport.js";
 import { registerCopilotVision } from "./copilotVision.js";
+import { registerCreateRaytkOp } from "./createRaytkOp.js";
 import { registerCreateTdNode } from "./createTdNode.js";
 import { registerDeleteTdNode } from "./deleteTdNode.js";
 import { registerDiagnoseHardwareEnvironment } from "./diagnoseHardwareEnvironment.js";
@@ -78,6 +79,8 @@ import { registerWriteAgentGuide } from "./writeAgentGuide.js";
 
 export const layer3Registrars: ToolRegistrar[] = [
   registerGetTdInfo,
+  // RayTK integration (Wave W3) — instance a RayTK ROP master by category/op-name:
+  registerCreateRaytkOp,
   registerCreateTdNode,
   registerDeleteTdNode,
   registerUpdateTdNodeParameters,

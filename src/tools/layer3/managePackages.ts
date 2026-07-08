@@ -83,7 +83,17 @@ export async function managePackagesImpl(ctx: ToolContext, args: ManagePackagesA
     if (args.action === "doctor") {
       const id = requirePackageId(args);
       if (!id) return errorResult("A `package_id` is required for package doctor.");
-      const report = doctorPackage(id);
+      // Best-effort live TD build detection so version-gated packages (e.g. RayTK, which
+      // needs the 2025.30770 experimental build) warn against the running build. Fail-forward
+      // to an offline gate warning when the bridge is unreachable.
+      let liveBuild: string | undefined;
+      try {
+        const info = await ctx.client.getInfo();
+        liveBuild = info.td_version ?? info.build;
+      } catch {
+        liveBuild = undefined;
+      }
+      const report = doctorPackage(id, { liveBuild });
       return structuredResult(`Package doctor: ${report.status}.`, { report });
     }
 
