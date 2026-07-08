@@ -206,6 +206,27 @@ spawn (sonnet for prescriptive tools, opus for the ones needing design judgment)
 | 2026-05-28 | Built Phases 14–15 | 32 tools + 11 prompts + `tdmcp://prompts` resource + `apply_post_processing` +5 effects | discovery backlog wave; Wave 0 reconciled out already-shipped Phase-13 items; 5 parallel waves (33 builders) + single-writer integration; offline-gated (1395 tests / 14 recipes / 51 bridge), TD offline so live-validation UNVERIFIED-pending; CLI/copilot-infra + hardware/GPU items deferred to v0.6.0+ |
 | 2026-05-28 | CLI/config/copilot follow-on | config files + profiles, doctor --fix/--json, CLI ergonomics, copilot creative tier, +3 tool extensions | single-writer pass (no builders — all shared files: config.ts/agent.ts/doctor.ts/llm); committed in 4 gated chunks; 1410 tests; install-client + heavier CLI items + hardware/GPU still deferred to v0.6.0+ |
 
+## Harness: AI texture implementation study
+
+**Goal:** study and compare ALL implementation approaches for bringing AI
+image/texture generation (WAN 2.5, fal.ai, Replicate, ComfyUI, StreamDiffusion,
+ElevenLabs image; file/URL/Spout/NDI delivery) into tdmcp, producing one
+decision-ready `_workspace/ai-texture-study/IMPLEMENTATION_STUDY.md`.
+
+**Trigger:** when asked to study/explore/compare/survey HOW to implement AI
+image or texture generation in tdmcp ("explorar todos os tipos de
+implementação", evaluate providers, delivery modes, hosted vs local) — including
+follow-ups (re-run, refresh/deepen one axis, re-synthesize, study status) — use
+the `tdmcp-ai-texture-study` skill (fan-out of 5 `td-impl-explorer`s → 1
+`td-impl-synthesizer`, in `.claude/agents/` and `.claude/skills/`). This harness
+DECIDES; building the chosen architecture goes to `tdmcp-pipeline`. Simple
+questions can be answered directly. Note: sub-agents (no `TeamCreate`).
+
+**Change log:**
+| Date | Change | Target | Reason |
+|------|--------|--------|--------|
+| 2026-07-07 | Initial harness | 2 agents + 3 skills | compare all AI texture-gen implementation routes (triggered by WAN 2.5 idea) before building |
+
 ## Harness: test coverage
 
 **Goal:** raise tdmcp's executable TypeScript coverage through focused Vitest/msw,
