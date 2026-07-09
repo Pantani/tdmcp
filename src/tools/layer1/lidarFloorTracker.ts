@@ -44,9 +44,11 @@ export const lidarFloorTrackerSchema = lidarFloorTrackerBaseSchema.superRefine((
   }
 });
 type LidarFloorTrackerArgs = z.infer<typeof lidarFloorTrackerSchema>;
+type LidarFloorTrackerInput = z.input<typeof lidarFloorTrackerBaseSchema>;
 
-export async function lidarFloorTrackerImpl(ctx: ToolContext, args: LidarFloorTrackerArgs) {
+export async function lidarFloorTrackerImpl(ctx: ToolContext, rawArgs: LidarFloorTrackerInput) {
   return runBuild(async () => {
+    const args: LidarFloorTrackerArgs = lidarFloorTrackerSchema.parse(rawArgs);
     const builder = await createSystemContainer(ctx, args.parent_path, args.name);
 
     let source: string;
@@ -184,6 +186,6 @@ export const registerLidarFloorTracker: ToolRegistrar = (server, ctx) => {
       inputSchema: lidarFloorTrackerBaseSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
-    (args) => lidarFloorTrackerImpl(ctx, lidarFloorTrackerSchema.parse(args)),
+    (args) => lidarFloorTrackerImpl(ctx, args),
   );
 };

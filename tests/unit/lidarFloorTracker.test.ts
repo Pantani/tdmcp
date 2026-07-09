@@ -24,6 +24,15 @@ describe("lidar_floor_tracker", () => {
     expect(() => lidarFloorTrackerSchema.parse({ sensor: "leuze_rod4" })).toThrow(/sensor_address/);
   });
 
+  it("returns an error result for missing hardware sensor_address", async () => {
+    const bodies = captureCreateBodies(server);
+    const result = await lidarFloorTrackerImpl(makeCtx(), { sensor: "ouster" });
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("sensor_address");
+    expect(bodies).toHaveLength(0);
+  });
+
   it("builds a synthetic CHOP tracker plus floor preview", async () => {
     const bodies = captureCreateBodies(server);
     const result = await lidarFloorTrackerImpl(makeCtx(), lidarFloorTrackerSchema.parse({}));
