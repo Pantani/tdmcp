@@ -39,6 +39,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Glama/MCP directory score surface: registry scans now use a compact
+  `TDMCP_TOOL_PROFILE=directory` build/inspect surface with raw Python disabled,
+  while the default local runtime remains `full`; low-scoring tool definitions
+  also gained clearer descriptions and parameter guidance.
 - Creative RAG Smithsonian adapter: cards whose Open Access record omits
   `record_link` no longer emit the bare `record_ID` (an `edanmdm-…` identifier)
   as `sourceUrl`, which failed the probe-live URL gate ("Shape drift … sourceUrl:
