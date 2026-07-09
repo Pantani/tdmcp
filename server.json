@@ -14,6 +14,19 @@
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@dpantani/tdmcp",
       "version": "0.13.0",
+      "environmentVariables": [
+        {
+          "name": "TDMCP_TOOL_PROFILE",
+          "default": "full",
+          "choices": ["full", "safe", "directory"],
+          "description": "Tool exposure profile. Use full for the installed runtime, safe to hide destructive/raw-code tools, or directory only for compact hosted directory scans."
+        },
+        {
+          "name": "TDMCP_RAW_PYTHON",
+          "value": "off",
+          "description": "Hide raw client-authored Python escape-hatch tools in registry scans."
+        }
+      ],
       "transport": {
         "type": "stdio"
       }

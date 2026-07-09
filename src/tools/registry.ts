@@ -59,6 +59,28 @@ const SAFE_PROFILE_EXCLUDE = new Set<string>([
   "macro_recorder", // stop writes a caller-named file (absolute paths allowed), truncating any existing file
 ]);
 
+/**
+ * Small registry/directory-facing surface. This keeps discovery pages coherent
+ * without changing the full local runtime default.
+ */
+const DIRECTORY_PROFILE_ALLOW = new Set<string>([
+  "get_td_info",
+  "search_operators",
+  "get_td_classes",
+  "get_operator_workflow_guide",
+  "find_td_nodes",
+  "get_td_node_parameters",
+  "get_td_node_flags",
+  "get_td_topology",
+  "create_td_node",
+  "connect_nodes",
+  "update_td_node_parameters",
+  "validate_operator_chain",
+  "list_recipes",
+  "apply_recipe",
+  "browse_library",
+]);
+
 export const runtimeToolRegistrars: ToolRegistrar[] = [
   ...layer3Registrars,
   ...layer2Registrars,
@@ -75,16 +97,20 @@ export function registerToolRegistrars(
   ctx: ToolContext,
   registrars: readonly ToolRegistrar[],
 ): void {
-  // For `safe`, intercept registerTool and drop excluded names. We wrap rather
-  // than gate each registrar so the exclusion list lives in one place. The
-  // registrars ignore registerTool's return value, so returning undefined for an
-  // excluded name is safe; resources/prompts register later, untouched.
-  if (ctx.toolProfile === "safe") {
+  // For filtered profiles, intercept registerTool and drop names in one place.
+  // The registrars ignore registerTool's return value, so returning undefined
+  // for an excluded name is safe; resources/prompts register later, untouched.
+  if (ctx.toolProfile === "safe" || ctx.toolProfile === "directory") {
     // biome-ignore lint/suspicious/noExplicitAny: registerTool is overloaded; type the bound copy as variadic so we can forward args.
     const realRegister = server.registerTool.bind(server) as (...args: any[]) => unknown;
     // biome-ignore lint/suspicious/noExplicitAny: forwarding the SDK's variadic registerTool signature.
-    (server as any).registerTool = (name: string, ...rest: any[]) =>
-      SAFE_PROFILE_EXCLUDE.has(name) ? undefined : realRegister(name, ...rest);
+    (server as any).registerTool = (name: string, ...rest: any[]) => {
+      if (ctx.toolProfile === "safe" && SAFE_PROFILE_EXCLUDE.has(name)) return undefined;
+      if (ctx.toolProfile === "directory" && !DIRECTORY_PROFILE_ALLOW.has(name)) {
+        return undefined;
+      }
+      return realRegister(name, ...rest);
+    };
     try {
       for (const register of registrars) register(server, ctx);
     } finally {

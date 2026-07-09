@@ -80,7 +80,7 @@
     "TDMCP_TOOL_PROFILE": {
       "type": "string",
       "title": "Tool profile",
-      "description": "Use full for all tools or safe to hide destructive/raw-code tools for autonomous sessions.",
+      "description": "Use full for all tools, safe to hide destructive/raw-code tools, or directory for a compact registry-facing surface.",
       "required": false,
       "default": "full"
     }

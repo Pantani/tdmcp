@@ -74,6 +74,24 @@ const SAFE_PROFILE_KEEP = [
   "search_operators",
 ];
 
+const DIRECTORY_PROFILE_TOOLS = [
+  "get_td_info",
+  "search_operators",
+  "get_td_classes",
+  "get_operator_workflow_guide",
+  "find_td_nodes",
+  "get_td_node_parameters",
+  "get_td_node_flags",
+  "get_td_topology",
+  "create_td_node",
+  "connect_nodes",
+  "update_td_node_parameters",
+  "validate_operator_chain",
+  "list_recipes",
+  "apply_recipe",
+  "browse_library",
+];
+
 async function toolList(env: NodeJS.ProcessEnv = {}) {
   const client = await connectClient(env);
   const { tools } = await client.listTools();
@@ -136,6 +154,21 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
   it("safe keeps the build/inspect surface", async () => {
     const names = await toolNames({ TDMCP_TOOL_PROFILE: "safe" });
     expect(names).toEqual(expect.arrayContaining(SAFE_PROFILE_KEEP));
+  });
+
+  it("directory exposes exactly the compact registry-facing surface", async () => {
+    const names = await toolNames({ TDMCP_TOOL_PROFILE: "directory" });
+    expect(names.sort()).toEqual([...DIRECTORY_PROFILE_TOOLS].sort());
+    expect(names).toHaveLength(15);
+  });
+
+  it("directory is a non-destructive subset of safe", async () => {
+    const directory = await toolNames({ TDMCP_TOOL_PROFILE: "directory" });
+    const safe = new Set(await toolNames({ TDMCP_TOOL_PROFILE: "safe" }));
+    for (const name of directory) {
+      expect(safe.has(name)).toBe(true);
+      expect(SAFE_PROFILE_EXCLUDE).not.toContain(name);
+    }
   });
 
   it("safe hides exactly SAFE_PROFILE_EXCLUDE.size fewer tools than full", async () => {
