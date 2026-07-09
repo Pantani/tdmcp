@@ -1265,27 +1265,22 @@ function cubemapFaceColor(face, s, q, t) {
   return mixColor(mixColor(base, [6, 9, 18], 0.58), base, 0.3 + wave * 0.34);
 }
 
-function sampleCubemapDomeDirection(dir, t) {
+function cubemapFaceProjection(dir) {
   const [x, y, z] = dir;
   const ax = Math.abs(x);
   const ay = Math.abs(y);
   const az = Math.abs(z);
-  let face = 0;
-  let s = 0;
-  let q = 0;
   if (ax >= ay && ax >= az) {
-    face = x > 0 ? 0 : 1;
-    s = z / ax;
-    q = y / ax;
-  } else if (ay >= ax && ay >= az) {
-    face = y > 0 ? 2 : 3;
-    s = x / ay;
-    q = z / ay;
-  } else {
-    face = z > 0 ? 4 : 5;
-    s = x / az;
-    q = y / az;
+    return { face: x > 0 ? 0 : 1, s: z / ax, q: y / ax };
   }
+  if (ay >= ax && ay >= az) {
+    return { face: y > 0 ? 2 : 3, s: x / ay, q: z / ay };
+  }
+  return { face: z > 0 ? 4 : 5, s: x / az, q: y / az };
+}
+
+function sampleCubemapDomeDirection(dir, t) {
+  const { face, s, q } = cubemapFaceProjection(dir);
   const gridS = Math.abs(((s * 4.5 + t * 0.18) % 1) - 0.5);
   const gridQ = Math.abs(((q * 4.5 - t * 0.12) % 1) - 0.5);
   const seam = Math.min(gridS, gridQ);
@@ -1295,13 +1290,7 @@ function sampleCubemapDomeDirection(dir, t) {
   return mixColor(gridColor, [255, 255, 255], smoothstep(0.82, 0.98, faceEdge) * 0.22);
 }
 
-function cubemapDomeMasterFrame(t) {
-  const frameSize = 480;
-  const buf = Buffer.alloc(frameSize * frameSize * 3);
-  const center = frameSize / 2;
-  const radius = frameSize * 0.455;
-  const rotation = t * 0.42;
-
+function drawCubemapDomeBackground(buf, frameSize, center, radius, rotation, t) {
   for (let y = 0; y < frameSize; y++) {
     for (let x = 0; x < frameSize; x++) {
       const dx = (x - center) / radius;
@@ -1324,7 +1313,9 @@ function cubemapDomeMasterFrame(t) {
       setSized(buf, frameSize, frameSize, x, y, domeShade, 1);
     }
   }
+}
 
+function drawCubemapDomeRings(buf, frameSize, center, radius, rotation) {
   for (let ring = 0; ring < 5; ring++) {
     const rr = radius * (0.2 + ring * 0.18);
     for (let i = 0; i < 280; i++) {
@@ -1334,13 +1325,24 @@ function cubemapDomeMasterFrame(t) {
       setSized(buf, frameSize, frameSize, x, y, [255, 255, 255], ring === 4 ? 0.16 : 0.09);
     }
   }
+}
 
+function cubemapParticleColor(i) {
+  const colors = [
+    [255, 214, 86],
+    [57, 232, 190],
+    [255, 86, 134],
+  ];
+  return colors[i % colors.length];
+}
+
+function drawCubemapDomeParticles(buf, frameSize, center, radius, t) {
   for (let i = 0; i < 22; i++) {
     const a = i * 2.399 + t * 0.45;
     const r = radius * (0.15 + 0.75 * rand(i, 2, 4));
     const x = center + Math.cos(a) * r;
     const y = center + Math.sin(a) * r;
-    const color = i % 3 === 0 ? [255, 214, 86] : i % 3 === 1 ? [57, 232, 190] : [255, 86, 134];
+    const color = cubemapParticleColor(i);
     circleSized(buf, frameSize, frameSize, x, y, 2.5 + rand(i, 5, 1) * 3, color, 0.42);
     lineSized(
       buf,
@@ -1354,7 +1356,9 @@ function cubemapDomeMasterFrame(t) {
       0.14,
     );
   }
+}
 
+function drawCubemapDomeRadials(buf, frameSize, center, radius, rotation) {
   for (let i = 0; i < 8; i++) {
     const a = (i / 8) * Math.PI * 2 + rotation;
     lineSized(
@@ -1369,6 +1373,19 @@ function cubemapDomeMasterFrame(t) {
       0.08,
     );
   }
+}
+
+function cubemapDomeMasterFrame(t) {
+  const frameSize = 480;
+  const buf = Buffer.alloc(frameSize * frameSize * 3);
+  const center = frameSize / 2;
+  const radius = frameSize * 0.455;
+  const rotation = t * 0.42;
+
+  drawCubemapDomeBackground(buf, frameSize, center, radius, rotation, t);
+  drawCubemapDomeRings(buf, frameSize, center, radius, rotation);
+  drawCubemapDomeParticles(buf, frameSize, center, radius, t);
+  drawCubemapDomeRadials(buf, frameSize, center, radius, rotation);
   circleSized(buf, frameSize, frameSize, center, center, 5, [255, 255, 255], 0.5);
   return buf;
 }
@@ -2855,36 +2872,31 @@ function drawMeshPolyline(buf, points, color, alpha = 0.24) {
   }
 }
 
-function mediaPipeFaceOverlayFrame(t) {
-  const buf = baseFrame();
+function drawFaceOverlayBackground(buf) {
   for (let y = 0; y < height; y++) {
     const shade = y / height;
     rect(buf, 0, y, width, 1, mixColor([8, 12, 20], [2, 5, 10], shade), 0.94);
   }
+}
 
-  const cx = 240 + Math.sin(t * 0.8) * 13;
-  const cy = 132 + Math.cos(t * 0.7) * 5;
-  const tilt = Math.sin(t * 0.65) * 0.06;
-  glow(buf, cx, cy, 150, [57, 232, 190], 0.11);
-  ellipseRing(buf, cx, cy + 4, 76, 98, 0.34, [205, 198, 170], 0.08);
-
-  const projectFace = (nx, ny) => {
+function makeFaceProjector(cx, cy, tilt) {
+  return (nx, ny) => {
     const x = nx * 74;
     const y = ny * 96;
     return [cx + x + y * tilt, cy + y - x * tilt * 0.24];
   };
+}
 
-  const cyan = [57, 232, 190];
-  const amber = [255, 214, 86];
-  const pink = [255, 86, 134];
-  const dim = [118, 144, 168];
+function buildFaceOval(projectFace, t) {
   const oval = [];
   for (let i = 0; i < 72; i++) {
     const a = (i / 72) * Math.PI * 2;
     oval.push(projectFace(Math.cos(a) * (0.88 + Math.sin(a * 3 + t) * 0.02), Math.sin(a) * 1.03));
   }
-  drawMeshPolyline(buf, [...oval, oval[0]], cyan, 0.28);
+  return oval;
+}
 
+function drawFaceContourRows(buf, projectFace, t, dim) {
   const rows = [
     [-0.58, 0.58, -0.58],
     [-0.68, 0.68, -0.32],
@@ -2900,7 +2912,9 @@ function mediaPipeFaceOverlayFrame(t) {
     }
     drawMeshPolyline(buf, row, dim, 0.13);
   }
+}
 
+function drawFaceBrowsAndEyes(buf, projectFace, amber) {
   for (let side = -1; side <= 1; side += 2) {
     const brow = [];
     const eye = [];
@@ -2912,8 +2926,10 @@ function mediaPipeFaceOverlayFrame(t) {
     drawMeshPolyline(buf, brow, amber, 0.48);
     drawMeshPolyline(buf, eye, amber, 0.58);
   }
+}
 
-  const nose = [
+function buildFaceNose(projectFace) {
+  return [
     projectFace(0, -0.18),
     projectFace(-0.08, 0.04),
     projectFace(0.04, 0.2),
@@ -2921,8 +2937,9 @@ function mediaPipeFaceOverlayFrame(t) {
     projectFace(0, 0.36),
     projectFace(0.16, 0.31),
   ];
-  drawMeshPolyline(buf, nose, cyan, 0.36);
+}
 
+function buildFaceMouth(projectFace) {
   const mouthTop = [];
   const mouthBottom = [];
   for (let i = 0; i <= 18; i++) {
@@ -2930,10 +2947,10 @@ function mediaPipeFaceOverlayFrame(t) {
     mouthTop.push(projectFace(Math.cos(a) * 0.31, 0.55 - Math.sin(a) * 0.06));
     mouthBottom.push(projectFace(Math.cos(a) * 0.29, 0.55 + Math.sin(a) * 0.075));
   }
-  drawMeshPolyline(buf, mouthTop, pink, 0.58);
-  drawMeshPolyline(buf, mouthBottom, pink, 0.48);
+  return { mouthTop, mouthBottom };
+}
 
-  for (const p of oval) drawMeshPoint(buf, p[0], p[1], cyan, 0.68);
+function drawFaceLandmarkCloud(buf, projectFace, cyan, dim) {
   for (let i = 0; i < 96; i++) {
     const nx = -0.64 + (i % 12) * 0.116;
     const ny = -0.5 + Math.floor(i / 12) * 0.17;
@@ -2943,13 +2960,45 @@ function mediaPipeFaceOverlayFrame(t) {
       drawMeshPoint(buf, x, y, i % 3 === 0 ? cyan : dim, 0.46);
     }
   }
-  for (const p of [...nose, ...mouthTop, ...mouthBottom])
-    drawMeshPoint(buf, p[0], p[1], pink, 0.58);
+}
 
+function drawFaceOverlayStatus(buf, t, cyan, pink) {
   const status = 0.62 + Math.sin(t * 1.5) * 0.18;
   rect(buf, 64, 222, 352, 2, [255, 255, 255], 0.1);
   rect(buf, 64, 222, 120 * status, 2, cyan, 0.58);
   rect(buf, 252, 222, 92 + Math.cos(t * 1.2) * 18, 2, pink, 0.46);
+}
+
+function mediaPipeFaceOverlayFrame(t) {
+  const buf = baseFrame();
+  drawFaceOverlayBackground(buf);
+
+  const cx = 240 + Math.sin(t * 0.8) * 13;
+  const cy = 132 + Math.cos(t * 0.7) * 5;
+  const tilt = Math.sin(t * 0.65) * 0.06;
+  glow(buf, cx, cy, 150, [57, 232, 190], 0.11);
+  ellipseRing(buf, cx, cy + 4, 76, 98, 0.34, [205, 198, 170], 0.08);
+
+  const projectFace = makeFaceProjector(cx, cy, tilt);
+  const cyan = [57, 232, 190];
+  const amber = [255, 214, 86];
+  const pink = [255, 86, 134];
+  const dim = [118, 144, 168];
+  const oval = buildFaceOval(projectFace, t);
+  drawMeshPolyline(buf, [...oval, oval[0]], cyan, 0.28);
+  drawFaceContourRows(buf, projectFace, t, dim);
+  drawFaceBrowsAndEyes(buf, projectFace, amber);
+
+  const nose = buildFaceNose(projectFace);
+  const { mouthTop, mouthBottom } = buildFaceMouth(projectFace);
+  drawMeshPolyline(buf, nose, cyan, 0.36);
+  drawMeshPolyline(buf, mouthTop, pink, 0.58);
+  drawMeshPolyline(buf, mouthBottom, pink, 0.48);
+  for (const p of oval) drawMeshPoint(buf, p[0], p[1], cyan, 0.68);
+  drawFaceLandmarkCloud(buf, projectFace, cyan, dim);
+  for (const p of [...nose, ...mouthTop, ...mouthBottom])
+    drawMeshPoint(buf, p[0], p[1], pink, 0.58);
+  drawFaceOverlayStatus(buf, t, cyan, pink);
   return buf;
 }
 
