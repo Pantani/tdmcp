@@ -180,6 +180,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "atem-switcher-control",
+    summary: "Build an atemOSC/Companion switcher-control preset.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "audio-features",
     summary: "Extract reactive channels (level/bass/mid/treble) to bind to params.",
     mutates: true,
@@ -224,6 +231,13 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "auto_tag_library_asset",
     summary: "Auto-tag a vault library asset's frontmatter from its network contents.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "auto-ui-from-params",
+    summary: "Generate a playable control panel from a node's parameters.",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -308,6 +322,13 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "blender-scene-bridge",
     summary: "Create a Blender scene handoff scaffold for file, OSC, or WebSocket workflows.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "blender-scene-import",
+    summary: "Import a Blender scene or exported asset into a PBR render scaffold.",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -484,6 +505,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "clip-transport",
+    summary: "Build a movie/audio clip transport with Play, Loop, and Speed controls.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "clock-sync",
     summary: "Drive the global tempo from a Bpm knob + tap-tempo (beat-match the DJ).",
     mutates: true,
@@ -520,8 +548,15 @@ export const AGENT_COMMAND_CATALOG = [
     source: "cli",
   },
   {
-    command: "companion-surface",
+    command: "companion-osc-surface",
     summary: "Create a Companion/Stream Deck OSC button surface with optional feedback.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "companion-surface",
+    summary: "Create a companion auto UI, fader surface, and preflight report.",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -1193,6 +1228,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "export-render-preset",
+    summary: "Record a TOP with a named VJ/editorial export preset.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "extend-data-source-fabric",
     summary:
       "Extend create_data_source with new feed adapters (websocket/sse/mqtt/file-tail/process).",
@@ -1732,6 +1774,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "lidar-floor-tracker",
+    summary: "Build a synthetic/Ouster/Leuze/UDP LiDAR floor-tracker scaffold.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "lighting-console-osc",
     summary: "Create a safety-gated lighting-console OSC command scaffold.",
     mutates: true,
@@ -1868,6 +1917,13 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "marketplace-index",
     summary: "Write an index.json for a local package directory.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "marketplace-index-seed",
+    summary: "Write a guarded starter marketplace seed JSON.",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -2177,6 +2233,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "notch-touchengine-bridge",
+    summary: "Build a guarded Notch TOP or TouchEngine bridge scaffold.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "notion-show-rundown",
     summary: "Create a Notion show rundown scaffold.",
     mutates: true,
@@ -2205,9 +2268,23 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "obs-stream-control",
+    summary: "Build an OBS WebSocket stream/record/scene control rig.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "omniverse-usd-bridge",
     summary: "Create an Omniverse USD bridge scaffold.",
     mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "one-source-five-ways",
+    summary: "Generate five deterministic remix briefs from one source.",
+    mutates: false,
     unsafe: false,
     source: "tool",
   },
@@ -2292,6 +2369,13 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "orbbec-depth-silhouette",
     summary: "Create an Orbbec/Kinect-compatible depth silhouette scaffold with safe fallbacks.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "osc-router",
+    summary: "Build an OSC control matrix for one or more external targets.",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -2531,6 +2615,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "projector-calibration",
+    summary: "Build a multi-projector calibration scaffold with corner-pin lanes.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "prometheus-metrics-panel",
     summary: "Create a Prometheus metrics panel scaffold.",
     mutates: true,
@@ -2567,6 +2658,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "qlab-osc",
+    summary: "Build a QLab OSC bridge with transport and cue-start routes.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "qr-scan-bus",
     summary: "Create a QR scan event bus scaffold.",
     mutates: true,
@@ -2590,6 +2688,14 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "raymarch",
     summary: "Volumetric GLSL raymarcher: SDF scenes (sphere-field/menger/tunnel).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "raytk-expr-graph",
+    summary:
+      "Build a preset/custom RayTK ROP expression graph with deterministic layout; needs RayTK loaded.",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -2782,6 +2888,13 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "resolume-arena",
     summary: "Create a Resolume Arena/Avenue OSC control scaffold.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "resolume-vdmx-output",
+    summary: "Build Resolume/VDMX OSC output-control lanes.",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -3009,6 +3122,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "shader-live-loop",
+    summary: "Edit a shader DAT, then inspect errors and optionally capture a preview.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "shaderlib",
     summary: "Instantiate a curated GLSL shader (tunnel/raymarch/fractal/…).",
     mutates: true,
@@ -3035,6 +3155,13 @@ export const AGENT_COMMAND_CATALOG = [
     mutates: false,
     unsafe: false,
     source: "cli",
+  },
+  {
+    command: "show-preflight",
+    summary: "Run a read-only PASS/UNVERIFIED/WARN/FAIL pre-show check.",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
   },
   {
     command: "sidechain",

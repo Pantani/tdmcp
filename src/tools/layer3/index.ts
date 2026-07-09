@@ -21,9 +21,11 @@ import { registerDraftRecipeFromOperatorChain } from "./draftRecipeFromOperatorC
 import { registerDraftRecipeFromTechnique } from "./draftRecipeFromTechnique.js";
 import { registerDraftRecipeFromTutorial } from "./draftRecipeFromTutorial.js";
 import { registerEditDatContent } from "./editDatContent.js";
+import { registerEditShaderLiveLoop } from "./editShaderLiveLoop.js";
 import { registerElicitMissingArgs } from "./elicitMissingArgs.js";
 import { registerExecNodeMethod } from "./execNodeMethod.js";
 import { registerExecutePythonScript } from "./executePythonScript.js";
+import { registerExportRenderPreset } from "./exportRenderPreset.js";
 import { registerExportSopToSvg } from "./exportSopToSvg.js";
 import { registerExtractPalette } from "./extractPalette.js";
 import { registerFindTdNodes } from "./findTdNodes.js";
@@ -67,6 +69,7 @@ import { registerSearchTouchDesignerKnowledge } from "./searchTouchDesignerKnowl
 import { registerSerializeNetwork } from "./serializeNetwork.js";
 import { registerSetDatContent } from "./setDatContent.js";
 import { registerSetParameterExpression } from "./setParameterExpression.js";
+import { registerShowPreflightReport } from "./showPreflightReport.js";
 import { registerSnapshotTdGraph } from "./snapshotTdGraph.js";
 import { registerSuggestOperatorChain } from "./suggestOperatorChain.js";
 import { registerSummarizeTdErrors } from "./summarizeTdErrors.js";
@@ -79,6 +82,7 @@ import { registerWriteAgentGuide } from "./writeAgentGuide.js";
 
 export const layer3Registrars: ToolRegistrar[] = [
   registerGetTdInfo,
+  registerShowPreflightReport,
   // RayTK integration (Wave W3) — instance a RayTK ROP master by category/op-name:
   registerCreateRaytkOp,
   registerCreateTdNode,
@@ -119,6 +123,7 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerOptimizePerformance,
   registerRenderOutput,
   registerRecordMovie,
+  registerExportRenderPreset,
   // Roadmap Wave 2 — bridge createable-truth reconciliation:
   registerCheckOperatorAvailability,
   // Phase 13 — project intelligence & agent-DX:
@@ -126,6 +131,7 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerGenerateReadme,
   registerEditDatContent,
   registerSetDatContent,
+  registerEditShaderLiveLoop,
   registerSetParameterExpression,
   registerWriteAgentGuide,
   // Phase 14 — parameter fidelity & wiring:

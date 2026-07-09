@@ -47,6 +47,7 @@ import {
   loadSessionProfileSchema,
 } from "../tools/ai/loadSessionProfile.js";
 import { narrateSetImpl, narrateSetSchema } from "../tools/ai/narrateSet.js";
+import { oneSourceFiveWaysImpl, oneSourceFiveWaysSchema } from "../tools/ai/oneSourceFiveWays.js";
 // Campaign BEYOND Wave 4 (backlog 2026-05-30 — v0.7.0):
 import { macroRecorderImpl, macroRecorderSchema } from "../tools/cli/macroRecorder.js";
 // Campaign BEYOND Wave 5 (backlog 2026-05-30 — v0.7.0):
@@ -68,6 +69,10 @@ import {
   audioFingerprintToVisualImpl,
   audioFingerprintToVisualSchema,
 } from "../tools/layer1/audioFingerprintToVisual.js";
+import {
+  blenderSceneImportImpl,
+  blenderSceneImportSchema,
+} from "../tools/layer1/blenderSceneImport.js";
 import { composeCueListImpl, composeCueListSchema } from "../tools/layer1/composeCueList.js";
 import {
   controlledDisorderGridImpl,
@@ -476,11 +481,23 @@ import { getPreviewImpl, getPreviewSchema } from "../tools/layer1/getPreview.js"
 import { importIsfShaderImpl, importIsfShaderSchema } from "../tools/layer1/importIsfShader.js";
 import { importModelImpl, importModelSchema } from "../tools/layer1/importModel.js";
 import { importShadertoyImpl, importShadertoySchema } from "../tools/layer1/importShadertoy.js";
+import {
+  lidarFloorTrackerImpl,
+  lidarFloorTrackerSchema,
+} from "../tools/layer1/lidarFloorTracker.js";
 import { listRecipesImpl, listRecipesSchema } from "../tools/layer1/listRecipes.js";
 import {
   moodboardToSystemImpl,
   moodboardToSystemSchema,
 } from "../tools/layer1/moodboardToSystem.js";
+import {
+  projectorCalibrationWizardImpl,
+  projectorCalibrationWizardSchema,
+} from "../tools/layer1/projectorCalibrationWizard.js";
+import {
+  raytkExprGraphBuilderImpl,
+  raytkExprGraphBuilderSchema,
+} from "../tools/layer1/raytkExprGraphBuilder.js";
 import { scaffoldGenreImpl, scaffoldGenreSchema } from "../tools/layer1/scaffoldGenre.js";
 import { scaffoldShowImpl, scaffoldShowSchema } from "../tools/layer1/scaffoldShow.js";
 import {
@@ -505,10 +522,15 @@ import { animateParameterImpl, animateParameterSchema } from "../tools/layer2/an
 import { applyLutImpl, applyLutSchema } from "../tools/layer2/applyLut.js";
 import { arrangeNetworkImpl, arrangeNetworkSchema } from "../tools/layer2/arrangeNetwork.js";
 import {
+  atemSwitcherControlImpl,
+  atemSwitcherControlSchema,
+} from "../tools/layer2/atemSwitcherControl.js";
+import {
   authorScriptOperatorImpl,
   authorScriptOperatorSchema,
 } from "../tools/layer2/authorScriptOperator.js";
 import { autoRepairLoopImpl, autoRepairLoopSchema } from "../tools/layer2/autoRepairLoop.js";
+import { autoUiFromParamsImpl, autoUiFromParamsSchema } from "../tools/layer2/autoUiFromParams.js";
 import { batchOperationsImpl, batchOperationsSchema } from "../tools/layer2/batchOperations.js";
 import {
   bindAudioReactiveImpl,
@@ -518,6 +540,10 @@ import { bindToChannelImpl, bindToChannelSchema } from "../tools/layer2/bindToCh
 import { buildChopChainImpl, buildChopChainSchema } from "../tools/layer2/buildChopChain.js";
 import { buildPopChainImpl, buildPopChainSchema } from "../tools/layer2/buildPopChain.js";
 import { buildSopGeometryImpl, buildSopGeometrySchema } from "../tools/layer2/buildSopGeometry.js";
+import {
+  clipAudioTransportImpl,
+  clipAudioTransportSchema,
+} from "../tools/layer2/clipAudioTransport.js";
 import {
   connectA1111WebuiBridgeImpl,
   connectA1111WebuiBridgeSchema,
@@ -559,6 +585,10 @@ import {
   connectCasparcgServerSchema,
 } from "../tools/layer2/connectCasparcgServer.js";
 import { connectComfyuiImpl, connectComfyuiSchema } from "../tools/layer2/connectComfyui.js";
+import {
+  connectCompanionSurfaceImpl,
+  connectCompanionSurfaceSchema,
+} from "../tools/layer2/connectCompanionSurface.js";
 import {
   connectDaydreamCloudImpl,
   connectDaydreamCloudSchema,
@@ -1106,12 +1136,23 @@ import { manageCheckpointImpl, manageCheckpointSchema } from "../tools/layer2/ma
 import { manageComponentImpl, manageComponentSchema } from "../tools/layer2/manageComponent.js";
 import { manageCueImpl, manageCueSchema } from "../tools/layer2/manageCue.js";
 import { managePresetsImpl, managePresetsSchema } from "../tools/layer2/managePresets.js";
+import {
+  notchTouchengineBridgeImpl,
+  notchTouchengineBridgeSchema,
+} from "../tools/layer2/notchTouchengineBridge.js";
+import { obsStreamControlImpl, obsStreamControlSchema } from "../tools/layer2/obsStreamControl.js";
+import { oscRouterMatrixImpl, oscRouterMatrixSchema } from "../tools/layer2/oscRouterMatrix.js";
 import { postPasses3dImpl, postPasses3dSchema } from "../tools/layer2/postPasses3d.js";
+import { qlabOscBridgeImpl, qlabOscBridgeSchema } from "../tools/layer2/qlabOscBridge.js";
 import {
   randomizeControlsImpl,
   randomizeControlsSchema,
 } from "../tools/layer2/randomizeControls.js";
 import { rebuildNetworkImpl, rebuildNetworkSchema } from "../tools/layer2/rebuildNetwork.js";
+import {
+  resolumeVdmxOutputChainImpl,
+  resolumeVdmxOutputChainSchema,
+} from "../tools/layer2/resolumeVdmxOutputChain.js";
 import {
   scaffoldExtensionImpl,
   scaffoldExtensionSchema,
@@ -1191,6 +1232,10 @@ import {
 } from "../tools/layer3/draftRecipeFromTutorial.js";
 import { editDatContentImpl, editDatContentSchema } from "../tools/layer3/editDatContent.js";
 import {
+  editShaderLiveLoopImpl,
+  editShaderLiveLoopSchema,
+} from "../tools/layer3/editShaderLiveLoop.js";
+import {
   elicitMissingArgsImpl,
   elicitMissingArgsSchema,
 } from "../tools/layer3/elicitMissingArgs.js";
@@ -1199,6 +1244,10 @@ import {
   executePythonScriptImpl,
   executePythonScriptSchema,
 } from "../tools/layer3/executePythonScript.js";
+import {
+  exportRenderPresetImpl,
+  exportRenderPresetSchema,
+} from "../tools/layer3/exportRenderPreset.js";
 import { exportSopToSvgImpl, exportSopToSvgSchema } from "../tools/layer3/exportSopToSvg.js";
 import { extractPaletteImpl, extractPaletteSchema } from "../tools/layer3/extractPalette.js";
 import { findTdNodesImpl, findTdNodesSchema } from "../tools/layer3/findTdNodes.js";
@@ -1284,6 +1333,10 @@ import {
   setParameterExpressionImpl,
   setParameterExpressionSchema,
 } from "../tools/layer3/setParameterExpression.js";
+import {
+  showPreflightReportImpl,
+  showPreflightReportSchema,
+} from "../tools/layer3/showPreflightReport.js";
 import { snapshotTdGraphImpl, snapshotTdGraphSchema } from "../tools/layer3/snapshotTdGraph.js";
 import {
   suggestOperatorChainImpl,
@@ -1368,6 +1421,10 @@ import {
   validateLibraryAssetImpl,
   validateLibraryAssetSchema,
 } from "../tools/library/index.js";
+import {
+  marketplaceIndexSeedImpl,
+  marketplaceIndexSeedSchema,
+} from "../tools/library/marketplaceIndexSeed.js";
 import { provenanceStampImpl, provenanceStampSchema } from "../tools/library/provenanceStamp.js";
 import type { ToolContext } from "../tools/types.js";
 import {
@@ -1570,6 +1627,11 @@ const COMMANDS: Record<string, Command> = {
     summarizeTdErrorsImpl,
     "Cluster network errors by cause.",
   ),
+  "show-preflight": r(
+    showPreflightReportSchema,
+    showPreflightReportImpl,
+    "Run a read-only PASS/UNVERIFIED/WARN/FAIL pre-show check.",
+  ),
   "classes list": r(getTdClassesSchema, getTdClassesImpl, "List TD Python API classes (offline)."),
   "classes get": r(
     getTdClassDetailsSchema,
@@ -1662,6 +1724,12 @@ const COMMANDS: Record<string, Command> = {
   movie: r(recordMovieSchema, recordMovieImpl, "Record a TOP to a movie/sequence (start/stop).", {
     mutates: true,
   }),
+  "export-render-preset": r(
+    exportRenderPresetSchema,
+    exportRenderPresetImpl,
+    "Record a TOP with a named VJ/editorial export preset.",
+    { mutates: true },
+  ),
   recipes: r(listRecipesSchema, listRecipesImpl, "List the built-in recipe library (offline)."),
   "recipes draft-chain": r(
     draftRecipeFromOperatorChainSchema,
@@ -1818,6 +1886,12 @@ const COMMANDS: Record<string, Command> = {
     "Wrap a source in a corner-pin for projection mapping.",
     { mutates: true },
   ),
+  "projector-calibration": r(
+    projectorCalibrationWizardSchema,
+    projectorCalibrationWizardImpl,
+    "Build a multi-projector calibration scaffold with corner-pin lanes.",
+    { mutates: true },
+  ),
   keyframe: r(
     createKeyframeAnimationSchema,
     createKeyframeAnimationImpl,
@@ -1875,10 +1949,58 @@ const COMMANDS: Record<string, Command> = {
     "Add bound custom-parameter controls to a COMP.",
     { mutates: true },
   ),
+  "auto-ui-from-params": r(
+    autoUiFromParamsSchema,
+    autoUiFromParamsImpl,
+    "Generate a playable control panel from a node's parameters.",
+    { mutates: true },
+  ),
+  "companion-surface": r(
+    createCompanionSurfaceSchema,
+    createCompanionSurfaceImpl,
+    "Create a companion auto UI, fader surface, and preflight report.",
+    { mutates: true },
+  ),
   surface: r(
     createControlSurfaceSchema,
     createControlSurfaceImpl,
     "Build a playable panel: faders + cue buttons.",
+    { mutates: true },
+  ),
+  "clip-transport": r(
+    clipAudioTransportSchema,
+    clipAudioTransportImpl,
+    "Build a movie/audio clip transport with Play, Loop, and Speed controls.",
+    { mutates: true },
+  ),
+  "osc-router": r(
+    oscRouterMatrixSchema,
+    oscRouterMatrixImpl,
+    "Build an OSC control matrix for one or more external targets.",
+    { mutates: true },
+  ),
+  "qlab-osc": r(
+    qlabOscBridgeSchema,
+    qlabOscBridgeImpl,
+    "Build a QLab OSC bridge with transport and cue-start routes.",
+    { mutates: true },
+  ),
+  "atem-switcher-control": r(
+    atemSwitcherControlSchema,
+    atemSwitcherControlImpl,
+    "Build an atemOSC/Companion switcher-control preset.",
+    { mutates: true },
+  ),
+  "resolume-vdmx-output": r(
+    resolumeVdmxOutputChainSchema,
+    resolumeVdmxOutputChainImpl,
+    "Build Resolume/VDMX OSC output-control lanes.",
+    { mutates: true },
+  ),
+  "obs-stream-control": r(
+    obsStreamControlSchema,
+    obsStreamControlImpl,
+    "Build an OBS WebSocket stream/record/scene control rig.",
     { mutates: true },
   ),
   remote: r(
@@ -1895,9 +2017,9 @@ const COMMANDS: Record<string, Command> = {
       mutates: true,
     },
   ),
-  "companion-surface": r(
-    createCompanionSurfaceSchema,
-    createCompanionSurfaceImpl,
+  "companion-osc-surface": r(
+    connectCompanionSurfaceSchema,
+    connectCompanionSurfaceImpl,
     "Create a Companion/Stream Deck OSC button surface with optional feedback.",
     { mutates: true },
   ),
@@ -2708,6 +2830,12 @@ const COMMANDS: Record<string, Command> = {
   model: r(importModelSchema, importModelImpl, "Import a 3D model file and render it.", {
     mutates: true,
   }),
+  "blender-scene-import": r(
+    blenderSceneImportSchema,
+    blenderSceneImportImpl,
+    "Import a Blender scene or exported asset into a PBR render scaffold.",
+    { mutates: true },
+  ),
   shaderlib: r(
     createShaderLibSchema,
     createShaderLibImpl,
@@ -2797,6 +2925,12 @@ const COMMANDS: Record<string, Command> = {
     createRaytkSdfGraphSchema,
     createRaytkSdfGraphImpl,
     "Build an advanced RayTK SDF graph with optional union, material, camera, and light.",
+    { mutates: true },
+  ),
+  "raytk-expr-graph": r(
+    raytkExprGraphBuilderSchema,
+    raytkExprGraphBuilderImpl,
+    "Build a preset/custom RayTK ROP expression graph with deterministic layout; needs RayTK loaded.",
     { mutates: true },
   ),
   "raytk-op": r(
@@ -2899,6 +3033,12 @@ const COMMANDS: Record<string, Command> = {
     setDatContentSchema,
     setDatContentImpl,
     "Overwrite a DAT's whole text (refuses silent wipes unless confirm_wipe).",
+    { mutates: true },
+  ),
+  "shader-live-loop": r(
+    editShaderLiveLoopSchema,
+    editShaderLiveLoopImpl,
+    "Edit a shader DAT, then inspect errors and optionally capture a preview.",
     { mutates: true },
   ),
   batch: r(
@@ -3258,6 +3398,12 @@ const COMMANDS: Record<string, Command> = {
     "Build a building-facade projection-mapping network (per-window tiling + warp).",
     { mutates: true },
   ),
+  "lidar-floor-tracker": r(
+    lidarFloorTrackerSchema,
+    lidarFloorTrackerImpl,
+    "Build a synthetic/Ouster/Leuze/UDP LiDAR floor-tracker scaffold.",
+    { mutates: true },
+  ),
   "beat-grid": r(
     createBeatGridSequencerSchema,
     createBeatGridSequencerImpl,
@@ -3525,6 +3671,12 @@ const COMMANDS: Record<string, Command> = {
     "Write an index.json for a local package directory.",
     { mutates: true },
   ),
+  "marketplace-index-seed": r(
+    marketplaceIndexSeedSchema,
+    marketplaceIndexSeedImpl,
+    "Write a guarded starter marketplace seed JSON.",
+    { mutates: true },
+  ),
   "component-health": r(
     componentLinkHealthSchema,
     componentLinkHealthImpl,
@@ -3682,6 +3834,12 @@ const COMMANDS: Record<string, Command> = {
     diagnoseHardwareEnvironmentSchema,
     diagnoseHardwareEnvironmentImpl,
     "Preflight bridge, displays/projectors and generated sensor/helper status DATs.",
+  ),
+  "notch-touchengine-bridge": r(
+    notchTouchengineBridgeSchema,
+    notchTouchengineBridgeImpl,
+    "Build a guarded Notch TOP or TouchEngine bridge scaffold.",
+    { mutates: true },
   ),
   "macro-record": r(
     macroRecorderSchema,
@@ -4137,6 +4295,11 @@ const COMMANDS: Record<string, Command> = {
     loadSessionProfileImpl,
     "Load (or initialise) the persistent ~/.tdmcp session profile snapshot.",
     { mutates: true },
+  ),
+  "one-source-five-ways": r(
+    oneSourceFiveWaysSchema,
+    oneSourceFiveWaysImpl,
+    "Generate five deterministic remix briefs from one source.",
   ),
   apply_shader_from_vault: r(
     applyShaderFromVaultSchema,

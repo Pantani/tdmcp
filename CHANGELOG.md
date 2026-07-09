@@ -18,7 +18,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - **`create_sam2_segmentation_bridge`** (Layer 1, CLI `sam2-segmentation-bridge`)
     builds a TouchDesigner bridge surface for external SAM2/FastSAM masks via ComfyUI,
     WebSocket, NDI, Syphon/Spout, or file-watch transports.
-  - **`create_companion_surface`** (Layer 2, CLI `companion-surface`) creates an OSC
+  - **`connect_companion_surface`** (Layer 2, CLI `companion-osc-surface`) creates an OSC
     Companion/Stream Deck button surface with mapping DATs, target parameter binding,
     and optional feedback channels.
   - **`connect_obs_recorder`** (Layer 2, CLI `obs-recorder`) creates OBS websocket v5
@@ -355,6 +355,119 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **`create_raytk_sdf_graph`** now sets the copied RayTK `raymarchRender3D`
   renderer to `1280x720` by default, avoiding TouchDesigner Non-Commercial
   resolution warnings during live QA while keeping the resolution configurable.
+- Glama/MCP directory score surface: the package metadata now exposes
+  `TDMCP_TOOL_PROFILE` as a configurable full/safe/directory setting so hosted
+  scanners can opt into the compact build/inspect surface without forcing
+  registry installs away from the default `full` runtime; low-scoring tool
+  definitions also gained clearer descriptions and parameter guidance.
+- Creative RAG Smithsonian adapter: cards whose Open Access record omits
+  `record_link` no longer emit the bare `record_ID` (an `edanmdm-…` identifier)
+  as `sourceUrl`, which failed the probe-live URL gate ("Shape drift … sourceUrl:
+  Invalid URL"). The adapter now validates URL-ness and builds the canonical
+  object page `https://www.si.edu/object/{record_ID}` when `record_link` is
+  absent, keeping `guid` (ARK) as a last-resort fallback, so every card yields a
+  valid absolute URL.
+
+## [0.13.1] - 2026-07-09
+
+### Added
+
+- Tool-integration campaign Waves 1-7:
+  - **`export_render_preset`** (Layer 3, CLI `export-render-preset`) wraps
+    `record_movie` with named delivery presets for HAP, HAP Alpha, ProRes 422/4444,
+    NotchLC, and MP4 review exports.
+  - **`show_preflight_report`** (Layer 3, CLI `show-preflight`) returns a read-only
+    PASS/WARN/FAIL pre-show report across bridge reachability, node errors,
+    topology, performance budget, and display checks.
+  - **`auto_ui_from_params`** (Layer 2, CLI `auto-ui-from-params`) infers primitive
+    node parameters and generates bound custom-parameter controls for quick playable
+    UI scaffolding.
+  - **`create_companion_surface`** (Layer 2, CLI `companion-surface`) composes auto
+    UI, a playable fader/cue surface, and optional preflight diagnostics around an
+    existing node or COMP.
+  - **`clip_audio_transport`** (Layer 2, CLI `clip-transport`) creates a deterministic
+    movie/audio transport container with video/audio outputs and shared Play, Loop,
+    and Speed controls.
+  - **`osc_router_matrix`** (Layer 2, CLI `osc-router`) creates a reusable OSC
+    target/control matrix with one Constant CHOP + OSC Out CHOP lane per external
+    target.
+  - **`qlab_osc_bridge`** (Layer 2, CLI `qlab-osc`) presets QLab transport and
+    cue-start OSC routes.
+  - **`atem_switcher_control`** (Layer 2, CLI `atem-switcher-control`) presets safe
+    atemOSC/Companion switcher routes for cut/auto/FTB plus program/preview input
+    selection without using the Blackmagic SDK directly.
+  - **`resolume_vdmx_output_chain`** (Layer 2, CLI `resolume-vdmx-output`) presets
+    OSC control lanes for Resolume, VDMX, or both.
+  - **`obs_stream_control`** (Layer 2, CLI `obs-stream-control`) creates an OBS
+    WebSocket v5 control rig with stream, recording, and scene-switch request
+    channels without storing OBS passwords.
+  - **`edit_shader_live_loop`** (Layer 3, CLI `shader-live-loop`) edits a GLSL/Text
+    DAT and immediately runs the shader feedback loop: post-edit error inspection
+    plus optional compact inline preview.
+  - **`blender_scene_import`** (Layer 1, CLI `blender-scene-import`) creates a
+    Blender-oriented PBR render scaffold from `.blend`/FBX/OBJ/glTF/GLB/USD assets,
+    with deterministic layout, fallback primitive, material controls, and `.blend`
+    export guidance.
+  - **`marketplace_index_seed`** (Library, CLI `marketplace-index-seed`) writes a
+    guarded starter marketplace seed JSON with built-in pack ideas plus custom
+    entries, without replacing `local_marketplace_index`.
+  - **`one_source_five_ways`** (AI, CLI `one-source-five-ways`) turns one source
+    node/asset into five deterministic remix briefs spanning colorway, motion,
+    texture, spatial reframing, and cueable performance variants.
+  - **`projector_calibration_wizard`** (Layer 1, CLI `projector-calibration`)
+    scaffolds generated-grid/source TOP calibration lanes with crop, corner-pin,
+    level, preview, and controls while keeping physical projector alignment marked
+    live-unverified.
+  - **`notch_touchengine_bridge`** (Layer 2, CLI `notch-touchengine-bridge`)
+    scaffolds a guarded Notch TOP or Engine COMP/TouchEngine bridge with notes and
+    output wiring while keeping license/runtime validation explicit.
+  - **`lidar_floor_tracker`** (Layer 1, CLI `lidar-floor-tracker`) scaffolds a
+    synthetic/Ouster/Leuze/UDP floor-tracking CHOP pipeline with preview output,
+    keeping real sensor validation marked hardware-unverified.
+  - **`raytk_expr_graph_builder`** (Layer 1, CLI `raytk-expr-graph`) builds a
+    preset or explicit RayTK ROP expression graph from copied RayTK masters,
+    typed connector edges, simple parameter values, deterministic node layout,
+    and a native `out1` TOP, while keeping live RayTK render/cook validation
+    explicit.
+- **RayTK native integration (node-graph, offline-built)** — beyond package-manager
+  staging, tdmcp can now drive RayTK (t3kt/raytk) as editable ROP node graphs,
+  complementary to (never replacing) the GLSL `create_raymarch_scene`/`create_sdf_field`:
+  - **`create_raytk_op`** (Layer 3) — instances one RayTK ROP master by op-name (e.g.
+    `sphereSdf`, `raymarchRender3D`, `lookAtCamera`) via the same `COMP.copy(master)`
+    primitive RayTK's palette uses, resolving the install-dependent master path **live**
+    (RayTK's `pathsByOpType` lookup → category-folder search, never hardcoded) and
+    optionally wiring a typed input. CLI: `tdmcp-agent raytk-op`.
+  - **`create_raytk_scene`** (Layer 1) — builds the minimal renderable RayTK chain
+    (`sphereSdf → raymarchRender3D → Null TOP`, renderer inputs 1=scene/2=camera/3=light,
+    built-in camera+light by default) with optional second SDF (`simpleUnion`), inline
+    `basicMat`, explicit `lookAtCamera`/`pointLight`. Fails forward with "stage & load
+    RayTK first" guidance and warns that the async shader compile may leave the first
+    preview black. CLI: `tdmcp-agent raytk-scene`.
+  - **`tdmcp://raytk/operators`** (+ `tdmcp://raytk/operators/{category}`) MCP resource —
+    a committed RayTK operator catalog (18 categories, verified op masters, typed
+    Sdf/float/vec4/Ray/Light connectors, the TD version gate, the minimal chain) so the
+    AI picks the right ROP before instancing.
+  - **Package version-gate honesty** — the `raytk` manifest's stale `tdVersionRange`
+    (`2022+`) is corrected to `2025.30770+` with a `versionGate` (RayTK 0.46 needs the TD
+    2025.30770 experimental build; pin ≤0.45 on 2023.x); `manage_packages doctor raytk`
+    now detects the live TD build and warns when it predates the gate.
+  - Live-validated on TouchDesigner build **2025.32820** with RayTK **0.46** loaded:
+    all six ROP masters resolve via `pathsByOpType`, copy, and wire; the raymarch shader
+    compiles and the output TOP renders a real (non-black) `sphereSdf ∪ boxSdf` + `basicMat`
+    scene. `create_raytk_op` connects an existing op into a new op's input. Wiring uses
+    connector-to-connector (`dst.inputConnectors[i].connect(src.outputConnectors[0])`) —
+    RayTK COMP connectors reject `.connect(op)`.
+
+### Changed
+
+- Docs follow-through for the tool-integration campaign: public tool-count copy now
+  matches the generated 375-tool reference; EN/PT prompt cookbook entries cover the
+  new integration, RayTK expression-graph, show-readiness, external-control,
+  projector/LiDAR, Blender/Notch and render-handoff flows without adding decorative
+  media; `docs/reference/cli.md` lists the new `tdmcp-agent` campaign subcommands.
+
+### Fixed
+
 - Glama/MCP directory score surface: the package metadata now exposes
   `TDMCP_TOOL_PROFILE` as a configurable full/safe/directory setting so hosted
   scanners can opt into the compact build/inspect surface without forcing
@@ -2912,7 +3025,8 @@ API on its first live run, and is fail-forward (per-item warnings, never throws)
 [0.8.0]: https://github.com/Pantani/tdmcp/compare/v0.7.1...fa7d33c2a8093d85cbad6226f62f28714a0af8fb
 [0.7.1]: https://github.com/Pantani/tdmcp/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/Pantani/tdmcp/compare/v0.6.1...v0.7.0
-[Unreleased]: https://github.com/Pantani/tdmcp/compare/v0.13.0...HEAD
+[Unreleased]: https://github.com/Pantani/tdmcp/compare/v0.13.1...HEAD
+[0.13.1]: https://github.com/Pantani/tdmcp/compare/v0.13.0...v0.13.1
 [0.13.0]: https://github.com/Pantani/tdmcp/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/Pantani/tdmcp/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/Pantani/tdmcp/compare/v0.10.0...v0.11.0

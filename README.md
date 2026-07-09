@@ -119,7 +119,7 @@ Open the **Textport** (`Dialogs → Textport and DATs`), paste this **one line**
 press Enter:
 
 ```python
-import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.13.0/td/bootstrap.py").read().decode())
+import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.13.1/td/bootstrap.py").read().decode())
 ```
 
 You should see `[tdmcp] bridge running on port 9980 (/project1/tdmcp_bridge)`.
@@ -148,7 +148,7 @@ the [prompt cookbook](https://pantani.github.io/tdmcp/guide/prompt-cookbook).
 
 ## What you can do
 
-**355 tools** across three layers, plus library/packaging, AI session memory and
+**375 tools** across three layers, plus library/packaging, AI session memory and
 Obsidian vault integrations — from one-line artist generators
 (`create_feedback_network`, `create_audio_reactive`, `create_particle_system`,
 `create_generative_art`, …) to building blocks (`create_control_panel`,

@@ -1,223 +1,230 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { HttpResponse, http } from "msw";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { KnowledgeBase } from "../../src/knowledge/index.js";
-import { RecipeLibrary } from "../../src/recipes/loader.js";
-import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
+import { describe, expect, it, vi } from "vitest";
 import {
   createCompanionSurfaceImpl,
   createCompanionSurfaceSchema,
 } from "../../src/tools/layer2/createCompanionSurface.js";
 import type { ToolContext } from "../../src/tools/types.js";
 import { silentLogger } from "../../src/utils/logger.js";
-import { makeTdServer, TD_BASE } from "../helpers/tdMock.js";
-
-const server = makeTdServer();
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
-
-interface CompanionPayload {
-  parent: string;
-  name: string;
-  listen_port: number;
-  feedback_host: string;
-  feedback_port: number;
-  create_mapping_dat: boolean;
-  buttons: Array<{
-    label: string;
-    address: string;
-    target?: string;
-    mode: "pulse" | "toggle" | "value";
-    feedback_channel?: string;
-  }>;
-}
-
-function makeCtx(): ToolContext {
-  return {
-    client: new TouchDesignerClient({ baseUrl: TD_BASE, timeoutMs: 2000 }),
-    knowledge: new KnowledgeBase(),
-    recipes: new RecipeLibrary(),
-    logger: silentLogger,
-  };
-}
-
-function decodePayload(script: string): CompanionPayload {
-  const b64 = /b64decode\("([^"]+)"\)/.exec(script)?.[1];
-  if (b64 === undefined) throw new Error("no base64 payload in script");
-  return JSON.parse(Buffer.from(b64, "base64").toString("utf8"));
-}
 
 function textOf(result: CallToolResult): string {
   return result.content
-    .filter((content): content is { type: "text"; text: string } => content.type === "text")
-    .map((content) => content.text)
+    .filter((c): c is { type: "text"; text: string } => c.type === "text")
+    .map((c) => c.text)
     .join("\n");
 }
 
-function captureWithReport(report: unknown): { scripts: string[]; returnOutputs: boolean[] } {
-  const scripts: string[] = [];
-  const returnOutputs: boolean[] = [];
-  server.use(
-    http.post(`${TD_BASE}/api/exec`, async ({ request }) => {
-      const body = (await request.json()) as { script: string; return_output?: boolean };
-      scripts.push(body.script);
-      returnOutputs.push(Boolean(body.return_output));
-      return HttpResponse.json({
-        ok: true,
-        data: { result: null, stdout: `bridge log\n${JSON.stringify(report)}\n` },
-      });
-    }),
-  );
-  return { scripts, returnOutputs };
+function decodePayload(script: string) {
+  const b64 = /b64decode\("([^"]+)"\)/.exec(script)?.[1];
+  if (!b64) throw new Error("no embedded payload");
+  return JSON.parse(Buffer.from(b64, "base64").toString("utf8")) as {
+    comp: string;
+    controls?: Array<{ name: string; bind_to?: string[] }>;
+    faders?: Array<{ param: string; label: string; min: number; max: number }>;
+    cue_buttons?: Array<{ cue: string; morph_seconds: number }>;
+  };
+}
+
+function makeCtx() {
+  const exec = vi.fn(async (script: string) => {
+    if (script.includes("appendCustomPage")) {
+      return {
+        stdout: JSON.stringify({
+          comp: "/project1/noise1",
+          page: "Companion",
+          created: [
+            { control: "amplitude", name: "Amplitude", type: "float", pars: ["Amplitude"] },
+          ],
+          bound: [{ control: "Amplitude", target: "/project1/noise1.amplitude" }],
+          warnings: [],
+        }),
+      };
+    }
+    return {
+      stdout: JSON.stringify({
+        comp: "/project1/noise1",
+        surface: "/project1/noise1/companion_surface",
+        faders: [{ slider: "/project1/noise1/companion_surface/slider1", param: "x" }],
+        cue_buttons: [{ button: "/project1/noise1/companion_surface/button1", cue: "drop" }],
+        warnings: [],
+      }),
+    };
+  });
+  const ctx = {
+    client: {
+      getNode: vi.fn(async () => ({
+        path: "/project1/noise1",
+        type: "noiseTOP",
+        name: "noise1",
+        parameters: { amplitude: 0.5, seed: 2, label: "main" },
+      })),
+      executePythonScript: exec,
+      getInfo: vi.fn(async () => ({ td_version: "2025.32820", bridge_version: "0.13.0" })),
+      getNetworkErrors: vi.fn(async () => ({ errors: [] })),
+      getNetworkTopology: vi.fn(async () => ({
+        nodes: [{ path: "/project1/noise1" }],
+        connections: [],
+      })),
+      getNetworkPerformance: vi.fn(async () => ({ nodes: [], total_cook_time_ms: 0 })),
+    },
+    logger: silentLogger,
+  } as unknown as ToolContext;
+  return { ctx, exec };
 }
 
 describe("create_companion_surface", () => {
-  it("sends a normalized multi-button payload to the bridge and summarizes success", async () => {
-    const capture = captureWithReport({
-      parent: "/project1",
-      container: "/project1/companion_surface",
-      osc_in: "/project1/companion_surface/osc_in",
-      osc_out: "/project1/companion_surface/osc_feedback",
-      mapping_dat: "/project1/companion_surface/button_mappings",
-      feedback_source: "/project1/companion_surface/feedback_controls",
-      buttons: [
-        {
-          label: "Blackout",
-          address: "/show/blackout",
-          mode: "pulse",
-          select: "/project1/companion_surface/button_01_select",
-          null: "/project1/companion_surface/button_01",
-          target: "/project1/level1.opacity",
-          bound: true,
-          feedback_channel: "show/blackout_led",
-        },
-        {
-          label: "Next Cue",
-          address: "/button/next_cue",
-          mode: "toggle",
-          select: "/project1/companion_surface/button_02_select",
-          null: "/project1/companion_surface/button_02",
-          target: "/project1/switch1.index",
-          bound: true,
-        },
-      ],
-      warnings: [],
-    });
-
-    const args = createCompanionSurfaceSchema.parse({
-      buttons: [
-        {
-          label: "Blackout",
-          address: "/show/blackout",
-          target: "/project1/level1.opacity",
-          feedback_channel: "show/blackout_led",
-        },
-        {
-          label: "Next Cue",
-          target: "/project1/switch1.index",
-          mode: "toggle",
-        },
-      ],
-    });
-    const result = await createCompanionSurfaceImpl(makeCtx(), args);
-
-    expect(result.isError).toBeFalsy();
-    expect(textOf(result)).toContain("Built companion surface /project1/companion_surface");
-    expect(textOf(result)).toContain("2 button(s)");
-    expect(capture.returnOutputs).toEqual([true]);
-    expect(capture.scripts).toHaveLength(1);
-
-    const script = capture.scripts[0] ?? "";
-    expect(script).toContain("nodeX");
-    expect(script).toContain("nodeY");
-    expect(script).toContain("feedback_stub");
-    expect(script).toContain("result = report");
-
-    const payload = decodePayload(script);
-    expect(payload).toMatchObject({
-      parent: "/project1",
-      name: "companion_surface",
-      listen_port: 9000,
-      feedback_host: "127.0.0.1",
-      feedback_port: 9001,
-      create_mapping_dat: true,
-    });
-    expect(payload.buttons).toHaveLength(2);
-    expect(payload.buttons[0]).toMatchObject({
-      label: "Blackout",
-      address: "/show/blackout",
-      target: "/project1/level1.opacity",
-      mode: "pulse",
-      feedback_channel: "show/blackout_led",
-    });
-    expect(payload.buttons[1]).toMatchObject({
-      label: "Next Cue",
-      address: "/button/next_cue",
-      target: "/project1/switch1.index",
-      mode: "toggle",
-    });
-  });
-
-  it("returns warnings for invalid target reports without marking the call as an error", async () => {
-    captureWithReport({
-      parent: "/project1",
-      container: "/project1/companion_surface",
-      osc_in: "/project1/companion_surface/osc_in",
-      osc_out: "/project1/companion_surface/osc_feedback",
-      buttons: [
-        {
-          label: "Broken",
-          address: "/button/broken",
-          mode: "value",
-          select: "/project1/companion_surface/button_01_select",
-          null: "/project1/companion_surface/button_01",
-          target: "/project1/missing.value",
-          bound: false,
-        },
-      ],
-      warnings: ["Target node not found: /project1/missing"],
-    });
-
+  it("builds auto UI, a playable fader/cue surface, and a preflight summary", async () => {
+    const { ctx, exec } = makeCtx();
     const result = await createCompanionSurfaceImpl(
-      makeCtx(),
+      ctx,
       createCompanionSurfaceSchema.parse({
-        buttons: [{ label: "Broken", target: "/project1/missing.value", mode: "value" }],
+        source_path: "/project1/noise1",
+        parameters: ["amplitude"],
+        cue_buttons: [{ cue: "drop", morph_seconds: 1 }],
       }),
     );
 
     expect(result.isError).toBeFalsy();
-    const text = textOf(result);
-    expect(text).toContain("1 button(s)");
-    expect(text).toContain("1 warning(s)");
-    expect(text).toContain("Target node not found: /project1/missing");
-  });
+    expect(textOf(result)).toContain("Created companion surface");
+    expect(textOf(result)).toContain("preflight PASS");
+    expect(result.content[0]?.type).toBe("text");
 
-  it("returns isError for a fatal parent-missing report", async () => {
-    captureWithReport({
-      parent: "/missing",
-      buttons: [],
-      warnings: [],
-      fatal: "Parent COMP not found: /missing",
+    const panelPayload = decodePayload(exec.mock.calls[0]?.[0] as string);
+    expect(panelPayload.comp).toBe("/project1/noise1");
+    expect(panelPayload.controls?.[0]).toMatchObject({
+      name: "amplitude",
+      bind_to: ["/project1/noise1.amplitude"],
     });
 
+    const surfacePayload = decodePayload(exec.mock.calls[1]?.[0] as string);
+    expect(surfacePayload.faders?.[0]).toMatchObject({
+      param: "/project1/noise1.Amplitude",
+      label: "amplitude",
+    });
+    expect(surfacePayload.cue_buttons?.[0]).toMatchObject({ cue: "drop", morph_seconds: 1 });
+  });
+
+  it("can skip the read-only preflight check", async () => {
+    const { ctx } = makeCtx();
     const result = await createCompanionSurfaceImpl(
-      makeCtx(),
-      createCompanionSurfaceSchema.parse({ parent_path: "/missing" }),
+      ctx,
+      createCompanionSurfaceSchema.parse({
+        source_path: "/project1/noise1",
+        parameters: ["amplitude"],
+        include_preflight: false,
+      }),
+    );
+    expect(result.isError).toBeFalsy();
+    expect((ctx.client.getInfo as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(0);
+  });
+
+  it("can build only the bound auto UI without a playable fader surface", async () => {
+    const { ctx, exec } = makeCtx();
+    const result = await createCompanionSurfaceImpl(
+      ctx,
+      createCompanionSurfaceSchema.parse({
+        source_path: "/project1/noise1",
+        parameters: ["amplitude"],
+        include_faders: false,
+        include_preflight: false,
+      }),
+    );
+
+    expect(textOf(result)).toContain("1 auto UI control(s), 0 fader(s).");
+    expect(result.isError).toBeFalsy();
+    expect(exec).toHaveBeenCalledTimes(1);
+    expect((ctx.client.getInfo as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(0);
+  });
+
+  it("can build unbound controls when bind is disabled", async () => {
+    const { ctx, exec } = makeCtx();
+    const result = await createCompanionSurfaceImpl(
+      ctx,
+      createCompanionSurfaceSchema.parse({
+        source_path: "/project1/noise1",
+        parameters: ["amplitude"],
+        bind: false,
+        include_preflight: false,
+      }),
+    );
+
+    expect(result.isError).toBeFalsy();
+    const panelPayload = decodePayload(exec.mock.calls[0]?.[0] as string);
+    expect(panelPayload.controls?.[0]).toMatchObject({ name: "amplitude" });
+    expect(panelPayload.controls?.[0]?.bind_to).toBeUndefined();
+    expect(exec).toHaveBeenCalledTimes(2);
+  });
+
+  it("returns the auto UI context when the playable surface build fails", async () => {
+    const { ctx, exec } = makeCtx();
+    exec
+      .mockResolvedValueOnce({
+        stdout: JSON.stringify({
+          comp: "/project1/noise1",
+          page: "Companion",
+          created: [
+            { control: "amplitude", name: "Amplitude", type: "float", pars: ["Amplitude"] },
+          ],
+          bound: [{ control: "Amplitude", target: "/project1/noise1.amplitude" }],
+          warnings: [],
+        }),
+      })
+      .mockResolvedValueOnce({
+        stdout: JSON.stringify({
+          comp: "/project1/noise1",
+          surface: "",
+          faders: [],
+          cue_buttons: [],
+          warnings: [],
+          fatal: "panel create failed",
+        }),
+      });
+
+    const result = await createCompanionSurfaceImpl(
+      ctx,
+      createCompanionSurfaceSchema.parse({
+        source_path: "/project1/noise1",
+        parameters: ["amplitude"],
+      }),
     );
 
     expect(result.isError).toBe(true);
-    expect(textOf(result)).toContain("Parent COMP not found: /missing");
+    const text = textOf(result);
+    expect(text).toContain("control surface build failed");
+    expect(text).toContain("panel create failed");
+    expect(text).toContain('"auto_ui"');
   });
 
-  it("does not throw when the bridge request fails", async () => {
-    server.use(http.post(`${TD_BASE}/api/exec`, () => HttpResponse.error()));
+  it("returns an error before mutating when no primitive parameters are eligible", async () => {
+    const { ctx, exec } = makeCtx();
+    (ctx.client.getNode as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      path: "/project1/blob",
+      type: "baseCOMP",
+      name: "blob",
+      parameters: { tuple: [1, 2] },
+    });
+    const result = await createCompanionSurfaceImpl(
+      ctx,
+      createCompanionSurfaceSchema.parse({ source_path: "/project1/blob" }),
+    );
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("No eligible");
+    expect(exec).not.toHaveBeenCalled();
+  });
 
-    await expect(
-      createCompanionSurfaceImpl(
-        makeCtx(),
-        createCompanionSurfaceSchema.parse({ buttons: [{ label: "Go" }] }),
-      ),
-    ).resolves.toMatchObject({ isError: true });
+  it("formats TouchDesigner lookup failures as tool errors", async () => {
+    const { ctx, exec } = makeCtx();
+    (ctx.client.getNode as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error("TD bridge unavailable"),
+    );
+
+    const result = await createCompanionSurfaceImpl(
+      ctx,
+      createCompanionSurfaceSchema.parse({ source_path: "/project1/noise1" }),
+    );
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("TD bridge unavailable");
+    expect(exec).not.toHaveBeenCalled();
   });
 });

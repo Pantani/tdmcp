@@ -40,6 +40,7 @@ import { registerExportExternalizedTree } from "./exportExternalizedTree.js";
 import { registerExportPaletteComponent } from "./exportPaletteComponent.js";
 import { registerGenerativeClassicsPack } from "./generativeClassicsPack.js";
 import { registerImportRecipeFromUrl } from "./importRecipeFromUrl.js";
+import { registerMarketplaceIndexSeed } from "./marketplaceIndexSeed.js";
 import { registerProvenanceStamp } from "./provenanceStamp.js";
 
 const ComponentManifestSchema = z
@@ -1109,6 +1110,7 @@ export const libraryRegistrars: ToolRegistrar[] = [
   registerExportExternalizedTree,
   registerImportRecipeFromUrl,
   registerExportPaletteComponent,
+  registerMarketplaceIndexSeed,
   // Campaign BEYOND Wave 3 (backlog 2026-05-30 — v0.7.0):
   registerProvenanceStamp,
   registerChecksumAndVerifyPack,

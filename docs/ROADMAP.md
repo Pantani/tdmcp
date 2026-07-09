@@ -11,30 +11,19 @@ page is the honest, bird's-eye picture of **what already works, what's still
 rough, and what's coming next** on the way to a stable 1.0.
 
 **Where things stand today.** The published npm `latest` package and the latest
-published GitHub Release/tag are both **v0.12.0** (published 2026-07-04), which
-shipped safer retry semantics, undo-aware mutations, cheaper preview/read
-tooling, and transport/bridge hardening. The current source tree is **preparing
-v0.13.0** (this PR, not yet tagged): 20 new artist/inspection tools plus 4 new
-first-class bridge REST routes and a `param.changed` event (#128), the
-`.dxt`→`.mcpb` Connectors Directory package migration (#129), and full CLI tool
-parity — 44 new `tdmcp-agent` subcommands (#130), plus recipe and docs fixes.
-Until the `v0.13.0` tag/release is published, public bootstrap and package
-self-install URLs stay pinned to the current `v0.12.0` release; the version-sync
-script advances those install pins during the actual tagged release. The
-CHANGELOG blocks list every entry; the always-current tool list is the
-[Tools reference](/reference/tools). 1.0 is **not** the next minor — the v0.1x
-line is the active feature/consolidation line, and v1.0 will land only once the
-consolidation gates below are all green.
-
-**Also in the current source tree (Unreleased): native RayTK integration.** RayTK
-(t3kt/raytk) is now driven as an editable ROP **node graph** — `create_raytk_op`
-(instance one ROP master), `create_raytk_scene` (the minimal `sphereSdf →
-raymarchRender3D → Null` chain), a `tdmcp://raytk/operators` catalog resource, and a
-TD-build-aware `manage_packages doctor` version gate (RayTK 0.46 needs TD 2025.30770+;
-pin ≤0.45 on 2023.x). This is complementary to — not a replacement for — the GLSL
-`create_raymarch_scene`/`create_sdf_field`. Built and gated **offline**; live cook/render
-validation stays **UNVERIFIED** pending a TD 2025.30770+ build with the RayTK `.tox`
-loaded. (Deep RayTK follow-ups such as EX-51's SDF expression-graph remain planned.)
+published GitHub Release/tag are both **v0.13.0** (published 2026-07-07), which
+shipped the #128 artist/inspection tools and bridge routes, the `.dxt`→`.mcpb`
+Connectors Directory package migration (#129), full CLI tool parity (#130),
+recipe/doc fixes, and the release-safety gates. The current source tree is
+**preparing v0.13.1** (this PR, not yet tagged): native RayTK ROP-node graph
+integration, Glama/MCP directory metadata fixes, and a Creative RAG Smithsonian
+URL fallback fix. Until the `v0.13.1` tag/release is published, public bootstrap
+and package self-install URLs stay pinned to the current `v0.13.0` release; the
+version-sync script advances those install pins during the actual tagged
+release. The CHANGELOG blocks list every entry; the always-current tool list is
+the [Tools reference](/reference/tools). 1.0 is **not** the next minor — the
+v0.1x line is the active feature/consolidation line, and v1.0 will land only
+once the consolidation gates below are all green.
 
 The project has grown through five arcs:
 
@@ -73,12 +62,27 @@ The project has grown through five arcs:
 
 ## ✅ Current Release Line
 
-### v0.13.0 preparation (unreleased) — new tools, bridge routes, CLI parity
+### v0.13.1 preparation (unreleased) — RayTK native integration and registry fixes
 
-Source-tree work on top of the published **v0.12.0** tag. Committed and pushed
-**without a tag** by design; this is the natural content of the next tagged
-minor (**v0.13.0**), which the version-sync script will cut and pin when the
-release is published:
+Source-tree work on top of the published **v0.13.0** tag. Committed and pushed
+**without a tag** by design; public bootstrap/self-install URLs stay pinned to
+v0.13.0 until the release tag exists, then `scripts/sync-manifest-version.mjs`
+must advance them to v0.13.1 before tagging:
+
+- **Native RayTK integration.** `create_raytk_op`, `create_raytk_scene`, and the
+  `tdmcp://raytk/operators` catalog drive RayTK (t3kt/raytk) as editable ROP
+  node graphs, complementary to the GLSL raymarch tools.
+- **RayTK version-gate honesty.** `manage_packages doctor raytk` now reflects
+  RayTK 0.46's TD 2025.30770+ requirement and warns on older TouchDesigner
+  builds.
+- **Registry/directory fixes.** Glama/MCP directory metadata exposes
+  `TDMCP_TOOL_PROFILE`, and the Creative RAG Smithsonian adapter now produces a
+  valid canonical URL when `record_link` is absent.
+
+### v0.13.0 — new tools, bridge routes, CLI parity
+
+Published on **2026-07-07** (npm + GitHub release + `v0.13.0` tag). The 0.13.0
+line shipped:
 
 - **20 new tools (#128), live-validated on TD 099 build 2025.32820.** Layer 1:
   `create_step_repeat`, `create_pointer_reactive`, `create_interaction_zones`,
@@ -635,7 +639,7 @@ they're considered solid.
 
 ## ⬜ Planned — the road to 1.0 {#planned}
 
-With the v0.8 line published (and now **v0.12.0** on top of it, with v0.13.0 in
+With the v0.8 line published (and now **v0.13.0** on top of it, with v0.13.1 in
 prep above), the deferred SDF, strange-attractor, optical-flow and
 histogram-scope generators; MediaPipe face / hand / segmentation adapters; the
 persistent `load_session_profile` (+ `tdmcp://session/profile` resource);
@@ -850,8 +854,8 @@ properly:
 
 ## v1.0.0 — Consolidation {#v100-consolidation}
 
-With the feature surface at **355 tools** on HEAD (the generated Tools-reference
-total after #128's 20 new tools), the road to 1.0 is
+With the feature surface at **375 tools** on HEAD (the generated Tools-reference
+total), the road to 1.0 is
 a set of **measurable consolidation gates**, not a new feature wave. Each gate
 below states the current posture and what "done" looks like, using the same
 legend as the rest of the page (✅ shipped / 🧪 in progress / ⬜ planned).
@@ -1048,9 +1052,8 @@ The only remaining Round-1 A.1 row targeted by this PR,
 
 #### A.2 · Library, packaging & distribution
 
-`bundle_dependencies` and `export_externalized_tree` were built in #128
-(unreleased, preparing v0.13.0 above); they leave this open backlog once
-v0.13.0 is tagged. The remaining open rows:
+`bundle_dependencies` and `export_externalized_tree` shipped in v0.13.0 above,
+leaving this open backlog. The remaining open rows:
 
 | Feature | Delivers | Effort | Impact | Conf | Priority | Novelty | Probe-first |
 |---|---|---|---|---|---|---|---|
@@ -1059,9 +1062,8 @@ v0.13.0 is tagged. The remaining open rows:
 
 #### A.3 · CLI & developer DX
 
-`preview_inline_and_watch` (`preview --inline [--watch]`) was built in #130
-(unreleased, preparing v0.13.0 above) and leaves this backlog once v0.13.0 is
-tagged. The remaining open rows:
+`preview_inline_and_watch` (`preview --inline [--watch]`) shipped in v0.13.0
+above and leaves this backlog. The remaining open rows:
 
 | Feature | Delivers | Effort | Impact | Conf | Priority | Novelty | Probe-first |
 |---|---|---|---|---|---|---|---|
