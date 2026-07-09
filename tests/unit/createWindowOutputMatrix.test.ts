@@ -41,7 +41,9 @@ describe("createWindowOutputMatrixImpl", () => {
 
     expect(result.isError).toBeFalsy();
     expect(payload.metadata.perform_mode).toBe(true);
-    expect(payload.nodes.find((node) => node.name === "window_out")?.optype).toBe("windowCOMP");
+    const windowNodes = payload.nodes.filter((node) => node.optype === "windowCOMP");
+    expect(windowNodes).toHaveLength(3);
+    expect(windowNodes.map((node) => node.name)).toEqual(["window_1", "window_2", "window_3"]);
     expect(payload.nodes.find((node) => node.name === "window_map")?.table?.join(" ")).toContain(
       "window_3",
     );

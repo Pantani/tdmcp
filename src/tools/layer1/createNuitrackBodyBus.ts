@@ -50,6 +50,8 @@ export interface NuitrackBodyBusReport {
   joint_set?: CreateNuitrackBodyBusArgs["joint_set"];
   receiver?: string;
   raw_skeleton?: string;
+  normalizer?: string;
+  normalizer_callbacks?: string;
   body_bus?: string;
   status_dat?: string;
   setup_dat?: string;
@@ -123,6 +125,22 @@ def _setpar(node, par_name, value, warn=True):
             _warn("Could not set %s on %s: %s" % (par_name, getattr(node, "path", node), exc))
         return False
 
+def _set_first_par(node, pairs, label):
+    for par_name, value in pairs:
+        try:
+            par = getattr(node.par, par_name, None)
+        except Exception:
+            par = None
+        if par is None:
+            continue
+        try:
+            par.val = value
+            return True
+        except Exception:
+            continue
+    _warn("Could not assign %s on %s." % (label, getattr(node, "path", node)))
+    return False
+
 def _connect(src, dst, input_index=0):
     try:
         dst.inputConnectors[input_index].connect(src)
@@ -136,6 +154,58 @@ JOINTS = {
     "upper_body": ["head", "neck", "torso", "left_shoulder", "right_shoulder", "left_hand", "right_hand"],
     "full_body": ["head", "neck", "torso", "left_shoulder", "right_shoulder", "left_elbow", "right_elbow", "left_hand", "right_hand", "left_knee", "right_knee", "left_foot", "right_foot"],
 }
+
+def _write_normalizer_callbacks(callbacks, channels, raw_path, channel_prefix):
+    if callbacks is None:
+        return False
+    callback_source = '''
+NORMALIZED_CHANNELS = %s
+RAW_TABLE_PATH = %r
+CHANNEL_PREFIX = %r
+
+def _to_float(value, fallback=0.0):
+    try:
+        return float(value)
+    except Exception:
+        return fallback
+
+def _raw_values():
+    values = {}
+    raw = op(RAW_TABLE_PATH)
+    if raw is None:
+        return values
+    try:
+        rows = raw.rows()[1:]
+    except Exception:
+        return values
+    for row in rows:
+        try:
+            body = int(_to_float(row[0].val))
+            joint = str(row[1].val)
+            prefix = "%%s%%d_%%s_" %% (CHANNEL_PREFIX, body, joint)
+            for axis, cell in zip(("x", "y", "z", "confidence"), row[2:6]):
+                values[prefix + axis] = _to_float(cell.val)
+        except Exception:
+            continue
+    return values
+
+def onCook(scriptOp):
+    scriptOp.clear()
+    values = _raw_values()
+    for channel_name in NORMALIZED_CHANNELS:
+        channel = scriptOp.appendChan(channel_name)
+        try:
+            channel[0] = values.get(channel_name, 0.0)
+        except Exception:
+            pass
+    return
+''' % (json.dumps(channels), str(raw_path), str(channel_prefix))
+    try:
+        callbacks.text = callback_source
+        return True
+    except Exception as exc:
+        _warn("Could not write normalize_script callback code: %s" % exc)
+        return False
 
 try:
     parent = op(_p["parent_path"])
@@ -176,6 +246,10 @@ try:
         _place(raw, 260, 0)
         raw.clear()
         raw.appendRow(["body", "joint", "x", "y", "z", "confidence"])
+        if mode == "sample":
+            raw.appendRow([0, "head", 0.5, 0.8, 0.0, 1.0])
+            raw.appendRow([0, "left_hand", 0.3, 0.55, 0.0, 1.0])
+            raw.appendRow([0, "right_hand", 0.7, 0.55, 0.0, 1.0])
         report["raw_skeleton"] = raw.path
 
         normalizer = _or_create(comp, "normalize_script", scriptCHOP)
@@ -188,6 +262,17 @@ try:
                 for axis in ("x", "y", "z", "confidence"):
                     channels.append("%s%d_%s_%s" % (_p.get("channel_prefix", "body"), b, joint, axis))
         report["channels"] = channels
+
+        callbacks = _or_create(comp, "normalize_script_callbacks", textDAT)
+        _place(callbacks, 520, -160)
+        if _write_normalizer_callbacks(callbacks, channels, raw.path, _p.get("channel_prefix", "body")):
+            report["normalizer_callbacks"] = callbacks.path
+            _set_first_par(
+                normalizer,
+                [("callbacks", callbacks.path), ("callbackdat", callbacks.path), ("script", callbacks.path)],
+                "callback DAT",
+            )
+        report["normalizer"] = normalizer.path
 
         body_bus = _or_create(comp, "body_bus", nullCHOP)
         _place(body_bus, 780, 0)

@@ -17,11 +17,15 @@ export const createWindowOutputMatrixSchema = z.object({
 
 type CreateWindowOutputMatrixArgs = z.infer<typeof createWindowOutputMatrixSchema>;
 
+function windowNodeName(index: number): string {
+  return `window_${index + 1}`;
+}
+
 function windowRows(args: CreateWindowOutputMatrixArgs): string[][] {
   const rows = [["window", "monitor_hint", "resolution"]];
   for (let index = 0; index < args.window_count; index += 1) {
     rows.push([
-      `window_${index + 1}`,
+      windowNodeName(index),
       `monitor_${index + 1}`,
       `${args.resolution_width}x${args.resolution_height}`,
     ]);
@@ -32,15 +36,26 @@ function windowRows(args: CreateWindowOutputMatrixArgs): string[][] {
 function sourceRows(args: CreateWindowOutputMatrixArgs): string[][] {
   const rows = [["source", "window", "routing"]];
   for (let index = 0; index < args.window_count; index += 1) {
-    rows.push([`source_${index + 1}`, `window_${index + 1}`, "operator assigns TOP"]);
+    rows.push([`source_${index + 1}`, windowNodeName(index), "operator assigns TOP"]);
   }
   return rows;
+}
+
+function windowNodes(args: CreateWindowOutputMatrixArgs) {
+  return Array.from({ length: args.window_count }, (_, index) => ({
+    name: windowNodeName(index),
+    optype: "windowCOMP",
+    x: index * 260,
+    y: 180,
+    params: { open: args.active ? 1 : 0, perform: args.perform_mode ? 1 : 0 },
+  }));
 }
 
 export async function createWindowOutputMatrixImpl(
   ctx: ToolContext,
   args: CreateWindowOutputMatrixArgs,
 ) {
+  const mapX = args.window_count * 260 + 120;
   return runExternalShowScaffold(
     ctx,
     {
@@ -59,19 +74,13 @@ export async function createWindowOutputMatrixImpl(
         "Keep windows inactive until source routing, monitor positions, and emergency blackout have been checked.",
       ],
       nodes: [
-        {
-          name: "window_out",
-          optype: "windowCOMP",
-          x: 0,
-          y: 120,
-          params: { open: args.active ? 1 : 0, perform: args.perform_mode ? 1 : 0 },
-        },
-        { name: "window_map", optype: "tableDAT", x: 300, y: 120, table: windowRows(args) },
-        { name: "source_map", optype: "tableDAT", x: 600, y: 120, table: sourceRows(args) },
+        ...windowNodes(args),
+        { name: "window_map", optype: "tableDAT", x: mapX, y: 180, table: windowRows(args) },
+        { name: "source_map", optype: "tableDAT", x: mapX + 300, y: 180, table: sourceRows(args) },
         {
           name: "status",
           optype: "tableDAT",
-          x: 300,
+          x: mapX,
           y: -40,
           table: [
             ["field", "value"],
@@ -84,7 +93,7 @@ export async function createWindowOutputMatrixImpl(
         {
           name: "setup_notes",
           optype: "textDAT",
-          x: 600,
+          x: mapX + 300,
           y: -40,
           text: "Use window_map and source_map as the operator routing plan. Assign TOP sources manually, then open windows only after monitor layout is verified.",
         },

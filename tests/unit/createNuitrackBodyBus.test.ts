@@ -84,6 +84,8 @@ describe("create_nuitrack_body_bus", () => {
           joint_set: "full_body",
           receiver: "/project1/nuitrack_body_bus/nuitrack_osc",
           raw_skeleton: "/project1/nuitrack_body_bus/raw_skeleton",
+          normalizer: "/project1/nuitrack_body_bus/normalize_script",
+          normalizer_callbacks: "/project1/nuitrack_body_bus/normalize_script_callbacks",
           body_bus: "/project1/nuitrack_body_bus/body_bus",
           status_dat: "/project1/nuitrack_body_bus/status",
           setup_dat: "/project1/nuitrack_body_bus/setup_notes",
@@ -103,6 +105,9 @@ describe("create_nuitrack_body_bus", () => {
     expect(textOf(result)).toContain("Live Nuitrack SDK not validated");
     expect(capturedScript).toContain("nodeX");
     expect(capturedScript).toContain("websocketDAT");
+    expect(capturedScript).toContain("normalize_script_callbacks");
+    expect(capturedScript).toContain("appendChan(channel_name)");
+    expect(capturedScript).toContain('report["channels"] = channels');
     expect(decodePayload(capturedScript).listen_port).toBe(7010);
   });
 

@@ -17,11 +17,15 @@ export const createDirectDisplayOutputSchema = z.object({
 
 type CreateDirectDisplayOutputArgs = z.infer<typeof createDirectDisplayOutputSchema>;
 
+function displayNodeName(index: number): string {
+  return `direct_display_${index + 1}`;
+}
+
 function displayRows(args: CreateDirectDisplayOutputArgs): string[][] {
   const rows = [["output", "display_index", "resolution"]];
   for (let index = 0; index < args.output_count; index += 1) {
     rows.push([
-      `output_${index + 1}`,
+      displayNodeName(index),
       String(args.display_index + index),
       `${args.resolution_width}x${args.resolution_height}`,
     ]);
@@ -29,10 +33,21 @@ function displayRows(args: CreateDirectDisplayOutputArgs): string[][] {
   return rows;
 }
 
+function displayNodes(args: CreateDirectDisplayOutputArgs) {
+  return Array.from({ length: args.output_count }, (_, index) => ({
+    name: displayNodeName(index),
+    optype: "directdisplayoutTOP",
+    x: index * 260,
+    y: 120,
+    params: { active: args.active ? 1 : 0, display: args.display_index + index },
+  }));
+}
+
 export async function createDirectDisplayOutputImpl(
   ctx: ToolContext,
   args: CreateDirectDisplayOutputArgs,
 ) {
+  const mapX = args.output_count * 260 + 120;
   return runExternalShowScaffold(
     ctx,
     {
@@ -51,19 +66,13 @@ export async function createDirectDisplayOutputImpl(
         "Keep active=false until monitor IDs, cable routing, and emergency blackout behavior are confirmed.",
       ],
       nodes: [
-        {
-          name: "direct_display",
-          optype: "directdisplayoutTOP",
-          x: 0,
-          y: 120,
-          params: { active: args.active ? 1 : 0, display: args.display_index },
-        },
+        ...displayNodes(args),
         { name: "monitors", optype: "monitorsDAT", x: 0, y: -40 },
-        { name: "display_map", optype: "tableDAT", x: 300, y: 120, table: displayRows(args) },
+        { name: "display_map", optype: "tableDAT", x: mapX, y: 120, table: displayRows(args) },
         {
           name: "status",
           optype: "tableDAT",
-          x: 300,
+          x: mapX,
           y: -40,
           table: [
             ["field", "value"],
@@ -76,7 +85,7 @@ export async function createDirectDisplayOutputImpl(
         {
           name: "setup_notes",
           optype: "textDAT",
-          x: 600,
+          x: mapX + 300,
           y: -40,
           text: "Compare monitors with display_map before enabling direct_display. Direct Display is a show-output path, so rehearse blackout/failsafe first.",
         },

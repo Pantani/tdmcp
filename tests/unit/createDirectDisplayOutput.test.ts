@@ -41,9 +41,10 @@ describe("createDirectDisplayOutputImpl", () => {
 
     expect(result.isError).toBeFalsy();
     expect(payload.metadata.display_index).toBe(1);
-    expect(payload.nodes.find((node) => node.name === "direct_display")?.optype).toBe(
-      "directdisplayoutTOP",
-    );
+    const outputNodes = payload.nodes.filter((node) => node.optype === "directdisplayoutTOP");
+    expect(outputNodes).toHaveLength(2);
+    expect(outputNodes.map((node) => node.name)).toEqual(["direct_display_1", "direct_display_2"]);
+    expect(outputNodes.map((node) => node.params?.display)).toEqual([1, 2]);
     expect(payload.nodes.find((node) => node.name === "monitors")?.optype).toBe("monitorsDAT");
     expect(payload.nodes.find((node) => node.name === "display_map")?.table?.join(" ")).toContain(
       "2560x1440",
