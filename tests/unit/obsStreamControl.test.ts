@@ -92,10 +92,11 @@ describe("buildObsStreamControlScript", () => {
     });
     expect(script).toContain("websocketDAT");
     expect(script).toContain("chopexecuteDAT");
-    expect(script).toContain("obswebsocket.json");
     expect(script).toContain('"op": 6');
     expect(script).toContain("onReceiveText");
     expect(script).toContain("sendText");
+    expect(script).toContain("_place_container(parent, container)");
+    expect(script).not.toContain('("protocol", "obswebsocket.json")');
 
     const payload = decodePayload(script);
     expect(payload.endpoint).toBe("ws://127.0.0.1:4455");

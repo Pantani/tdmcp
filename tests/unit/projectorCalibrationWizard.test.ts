@@ -80,6 +80,12 @@ describe("projector_calibration_wizard", () => {
     ).toBe(true);
     expect(bodies.filter((body) => body.type === "cornerpinTOP")).toHaveLength(2);
     expect(bodies.filter((body) => body.type === "levelTOP")).toHaveLength(2);
+    for (const level of bodies.filter((body) => body.type === "levelTOP")) {
+      expect(level.parameters).toMatchObject({ brightness1: 1, gamma1: 1, opacity: 1 });
+      expect(level.parameters).not.toHaveProperty("brightness");
+      expect(level.parameters).not.toHaveProperty("gamma");
+    }
+    expect(bodies.find((body) => body.type === "layoutTOP")?.parameters?.align).toBe("horizlr");
     expect(bodies.some((body) => body.type === "layoutTOP")).toBe(true);
     expect(bodies.some((body) => body.name === "p2_out")).toBe(true);
   });

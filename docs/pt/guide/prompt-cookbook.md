@@ -1664,7 +1664,7 @@ os templates de endereço já vêm preenchidos, sem digitar endereço à mão.*
 > da bridge, erros de nós, topologia, orçamento de performance e prontidão de
 > displays; se estiver limpo, monte uma companion surface para os controles do hero."*
 
-*`show_preflight_report` fica read-only e devolve PASS/WARN/FAIL em vez de um visual.
+*`show_preflight_report` fica read-only e devolve PASS/UNVERIFIED/WARN/FAIL em vez de um visual.
 `create_companion_surface` então embrulha um COMP escolhido com controles gerados,
 faders/cues e o mesmo contexto de preflight, para o operador receber uma superfície
 tocável mais os checks que explicam se ela está pronta para uso.*

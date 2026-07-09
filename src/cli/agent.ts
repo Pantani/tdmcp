@@ -1160,7 +1160,7 @@ const COMMANDS: Record<string, Command> = {
   "show-preflight": r(
     showPreflightReportSchema,
     showPreflightReportImpl,
-    "Run a read-only PASS/WARN/FAIL pre-show check.",
+    "Run a read-only PASS/UNVERIFIED/WARN/FAIL pre-show check.",
   ),
   "classes list": r(getTdClassesSchema, getTdClassesImpl, "List TD Python API classes (offline)."),
   "classes get": r(

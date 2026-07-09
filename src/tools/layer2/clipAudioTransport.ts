@@ -40,11 +40,19 @@ function cleanParams(parameters: Record<string, unknown>): Record<string, unknow
   return Object.fromEntries(Object.entries(parameters).filter(([, value]) => value !== undefined));
 }
 
+function movieLoopParams(loop: boolean): Record<string, string> {
+  const extend = loop ? "cycle" : "hold";
+  return { textendleft: extend, textendright: extend };
+}
+
+function audioLoopParam(loop: boolean): Record<string, string> {
+  return { repeat: loop ? "on" : "off" };
+}
+
 export async function clipAudioTransportImpl(ctx: ToolContext, args: ClipAudioTransportArgs) {
   return runBuild(async () => {
     const builder = await createSystemContainer(ctx, args.parent_path, args.name);
     const play = args.autoplay ? 1 : 0;
-    const loop = args.loop ? 1 : 0;
 
     const movie = await builder.add(
       "moviefileinTOP",
@@ -52,7 +60,7 @@ export async function clipAudioTransportImpl(ctx: ToolContext, args: ClipAudioTr
       cleanParams({
         file: args.movie_file,
         play,
-        loop,
+        ...movieLoopParams(args.loop),
         speed: args.speed,
       }),
     );
@@ -68,7 +76,7 @@ export async function clipAudioTransportImpl(ctx: ToolContext, args: ClipAudioTr
         cleanParams({
           file: args.audio_file,
           play,
-          loop,
+          ...audioLoopParam(args.loop),
           speed: args.speed,
         }),
       );
@@ -79,6 +87,11 @@ export async function clipAudioTransportImpl(ctx: ToolContext, args: ClipAudioTr
     const bindTargets = (param: string) => [
       `${movie}.${param}`,
       ...(audio ? [`${audio}.${param}`] : []),
+    ];
+    const loopBindTargets = [
+      `${movie}.textendleft`,
+      `${movie}.textendright`,
+      ...(audio ? [`${audio}.repeat`] : []),
     ];
     const controls: ControlSpec[] = args.expose_controls
       ? [
@@ -92,7 +105,7 @@ export async function clipAudioTransportImpl(ctx: ToolContext, args: ClipAudioTr
             name: "Loop",
             type: "toggle",
             default: args.loop,
-            bind_to: bindTargets("loop"),
+            bind_to: loopBindTargets,
           },
           {
             name: "Speed",

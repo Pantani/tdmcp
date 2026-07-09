@@ -1609,7 +1609,7 @@ source channels and it pushes straight into the other app's scenes, no manual ty
 > node errors, topology, performance budget and display readiness, then build a
 > companion surface for the hero controls if the report is clean."*
 
-*`show_preflight_report` stays read-only and returns PASS/WARN/FAIL instead of a
+*`show_preflight_report` stays read-only and returns PASS/UNVERIFIED/WARN/FAIL instead of a
 visual. `create_companion_surface` then wraps a chosen COMP with generated controls,
 fader/cue affordances and the same preflight context, so the operator gets a playable
 surface plus the checks that explain whether it is safe to use.*

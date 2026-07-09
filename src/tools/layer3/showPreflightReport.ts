@@ -3,7 +3,7 @@ import { friendlyTdError } from "../../td-client/types.js";
 import { structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
-const preflightStatusSchema = z.enum(["pass", "warn", "fail"]);
+const preflightStatusSchema = z.enum(["pass", "unverified", "warn", "fail"]);
 
 export const showPreflightReportSchema = z.object({
   root_path: z.string().default("/project1").describe("Network root to inspect before a show."),
@@ -27,6 +27,7 @@ export const showPreflightReportOutputSchema = z.object({
   target_fps: z.number(),
   summary: z.object({
     pass: z.number(),
+    unverified: z.number(),
     warn: z.number(),
     fail: z.number(),
   }),
@@ -42,15 +43,17 @@ export const showPreflightReportOutputSchema = z.object({
 
 type Check = z.infer<typeof showPreflightReportOutputSchema>["checks"][number];
 
-function worstStatus(checks: Check[]): "pass" | "warn" | "fail" {
+function worstStatus(checks: Check[]): "pass" | "unverified" | "warn" | "fail" {
   if (checks.some((check) => check.status === "fail")) return "fail";
   if (checks.some((check) => check.status === "warn")) return "warn";
+  if (checks.some((check) => check.status === "unverified")) return "unverified";
   return "pass";
 }
 
 function summarize(checks: Check[]) {
   return {
     pass: checks.filter((check) => check.status === "pass").length,
+    unverified: checks.filter((check) => check.status === "unverified").length,
     warn: checks.filter((check) => check.status === "warn").length,
     fail: checks.filter((check) => check.status === "fail").length,
   };
@@ -114,22 +117,37 @@ export async function showPreflightReportImpl(ctx: ToolContext, args: ShowPrefli
     try {
       const perf = await ctx.client.getNetworkPerformance(args.root_path, args.recursive);
       const frameBudgetMs = 1000 / args.target_fps;
-      const totalCookMs =
-        perf.total_cook_time_ms ?? perf.nodes.reduce((total, node) => total + node.cook_time_ms, 0);
-      const slowNodes = perf.nodes.filter((node) => node.cook_time_ms > frameBudgetMs);
-      const overBudget = totalCookMs > frameBudgetMs || slowNodes.length > 0;
-      checks.push({
-        id: "performance",
-        status: overBudget ? "warn" : "pass",
-        message: overBudget
-          ? `${totalCookMs.toFixed(2)}ms cook cost exceeds ${frameBudgetMs.toFixed(2)}ms budget or has ${slowNodes.length} slow node(s).`
-          : `${totalCookMs.toFixed(2)}ms cook cost within ${frameBudgetMs.toFixed(2)}ms frame budget.`,
-        data: { ...perf, frameBudgetMs, totalCookMs, slowNodes },
-      });
+      const sampledNodes = perf.nodes.filter(
+        (node) => node.cook_count === undefined || node.cook_count > 0,
+      );
+      if (perf.nodes.length > 0 && sampledNodes.length === 0) {
+        checks.push({
+          id: "performance",
+          status: "unverified",
+          message:
+            "Performance counters were available, but no node had cooked samples yet; run the network briefly and retry for a real frame-budget check.",
+          data: { ...perf, frameBudgetMs, totalCookMs: 0, slowNodes: [] },
+        });
+      } else {
+        const totalCookMs =
+          sampledNodes.length === perf.nodes.length && perf.total_cook_time_ms !== undefined
+            ? perf.total_cook_time_ms
+            : sampledNodes.reduce((total, node) => total + node.cook_time_ms, 0);
+        const slowNodes = sampledNodes.filter((node) => node.cook_time_ms > frameBudgetMs);
+        const overBudget = totalCookMs > frameBudgetMs || slowNodes.length > 0;
+        checks.push({
+          id: "performance",
+          status: overBudget ? "warn" : "pass",
+          message: overBudget
+            ? `${totalCookMs.toFixed(2)}ms cook cost exceeds ${frameBudgetMs.toFixed(2)}ms budget or has ${slowNodes.length} slow node(s).`
+            : `${totalCookMs.toFixed(2)}ms cook cost within ${frameBudgetMs.toFixed(2)}ms frame budget.`,
+          data: { ...perf, frameBudgetMs, totalCookMs, slowNodes },
+        });
+      }
     } catch (err) {
       checks.push({
         id: "performance",
-        status: "warn",
+        status: "unverified",
         message: `Could not read performance: ${friendlyTdError(err)}`,
       });
     }
@@ -141,17 +159,17 @@ export async function showPreflightReportImpl(ctx: ToolContext, args: ShowPrefli
       const monitorCount = Array.isArray(system.monitors) ? system.monitors.length : 0;
       checks.push({
         id: "displays",
-        status: monitorCount > 0 ? "pass" : "warn",
+        status: monitorCount > 0 ? "pass" : "unverified",
         message:
           monitorCount > 0
             ? `${monitorCount} monitor(s) detected; performMode=${String(system.performMode)}.`
-            : "No monitor topology was reported by TouchDesigner.",
+            : "Display topology is unavailable in this TouchDesigner build/session; verify physical outputs on the target show machine.",
         data: system,
       });
     } catch (err) {
       checks.push({
         id: "displays",
-        status: "warn",
+        status: "unverified",
         message: `Could not read GPU/display info: ${friendlyTdError(err)}`,
       });
     }
@@ -167,7 +185,7 @@ export async function showPreflightReportImpl(ctx: ToolContext, args: ShowPrefli
     checks,
   };
   return structuredResult(
-    `Show preflight ${status.toUpperCase()}: ${summary.pass} pass, ${summary.warn} warn, ${summary.fail} fail.`,
+    `Show preflight ${status.toUpperCase()}: ${summary.pass} pass, ${summary.unverified} unverified, ${summary.warn} warn, ${summary.fail} fail.`,
     report,
   );
 }
@@ -178,7 +196,7 @@ export const registerShowPreflightReport: ToolRegistrar = (server, ctx) => {
     {
       title: "Show preflight report",
       description:
-        "Read-only pre-show check: bridge reachability, node errors, topology, cook-time budget, GPU/display topology and perform-mode status in one PASS/WARN/FAIL report. Use before rehearsals or venue handoff to see what is safe, suspicious, or failing without mutating the project.",
+        "Read-only pre-show check: bridge reachability, node errors, topology, cook-time budget, GPU/display topology and perform-mode status in one PASS/UNVERIFIED/WARN/FAIL report. Use before rehearsals or venue handoff to see what is safe, unverified, suspicious, or failing without mutating the project.",
       inputSchema: showPreflightReportSchema.shape,
       outputSchema: showPreflightReportOutputSchema.shape,
       annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },

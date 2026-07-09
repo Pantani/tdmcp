@@ -70,9 +70,27 @@ describe("lidar_floor_tracker", () => {
 
     expect(result.isError).toBeFalsy();
     expect(textOf(result)).toContain("offline-synthetic");
-    for (const type of ["noiseCHOP", "mathCHOP", "logicCHOP", "nullCHOP", "glslTOP", "nullTOP"]) {
+    for (const type of [
+      "constantCHOP",
+      "mathCHOP",
+      "logicCHOP",
+      "nullCHOP",
+      "glslTOP",
+      "nullTOP",
+    ]) {
       expect(bodies.some((body) => body.type === type)).toBe(true);
     }
+    expect(bodies.find((body) => body.name === "synthetic_points")?.parameters).toMatchObject({
+      name0: "x",
+      name1: "y",
+      name2: "intensity",
+      name3: "id",
+    });
+    expect(bodies.find((body) => body.name === "occupancy")?.parameters).toMatchObject({
+      convert: "bound",
+      boundmin: 0.35,
+      boundmax: 1,
+    });
     expect(bodies.some((body) => body.name === "tracked_points")).toBe(true);
   });
 

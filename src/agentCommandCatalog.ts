@@ -2535,7 +2535,7 @@ export const AGENT_COMMAND_CATALOG = [
   },
   {
     command: "show-preflight",
-    summary: "Run a read-only PASS/WARN/FAIL pre-show check.",
+    summary: "Run a read-only PASS/UNVERIFIED/WARN/FAIL pre-show check.",
     mutates: false,
     unsafe: false,
     source: "tool",

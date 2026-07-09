@@ -31,8 +31,18 @@ export async function notchTouchengineBridgeImpl(
 ) {
   return runBuild(async () => {
     const builder = await createSystemContainer(ctx, args.parent_path, args.name);
-    const bridge =
-      args.mode === "notch_top"
+    const requiredPath = args.mode === "notch_top" ? args.block_path : args.tox_path;
+    const isPlaceholder = !requiredPath;
+    const bridge = isPlaceholder
+      ? await builder.add("constantTOP", "bridge_placeholder", {
+          resolutionw: args.width,
+          resolutionh: args.height,
+          colorr: 0.02,
+          colorg: 0.02,
+          colorb: 0.02,
+          alpha: 1,
+        })
+      : args.mode === "notch_top"
         ? await builder.add("notchTOP", "notch", {
             block: args.block_path,
             active: args.active,
@@ -48,7 +58,6 @@ export async function notchTouchengineBridgeImpl(
     const out = await builder.add("nullTOP", "out1");
     await builder.connect(bridge, out);
     const notes = await builder.add("textDAT", "bridge_notes");
-    const requiredPath = args.mode === "notch_top" ? args.block_path : args.tox_path;
     await builder.python(
       `op(${q(notes)}).text = ${q(
         [
@@ -61,7 +70,7 @@ export async function notchTouchengineBridgeImpl(
     );
 
     const controls: ControlSpec[] =
-      args.expose_controls && args.mode === "notch_top"
+      args.expose_controls && args.mode === "notch_top" && !isPlaceholder
         ? [
             {
               name: "Play",
@@ -80,12 +89,13 @@ export async function notchTouchengineBridgeImpl(
           ]
         : [];
 
+    const validationNotes: string[] = [];
     if (!requiredPath) {
-      builder.warnings.push(
-        `${args.mode} bridge created without an asset path; set ${args.mode === "notch_top" ? "block_path" : "tox_path"} before live playback.`,
+      validationNotes.push(
+        `${args.mode} bridge created as a placeholder because no asset path was provided; rerun with ${args.mode === "notch_top" ? "block_path" : "tox_path"} to create the live runtime operator.`,
       );
     }
-    builder.warnings.push(
+    validationNotes.push(
       "Notch/TouchEngine runtime and license validation remain UNVERIFIED until this scaffold is loaded on the target machine.",
     );
 
@@ -98,8 +108,10 @@ export async function notchTouchengineBridgeImpl(
         mode: args.mode,
         bridge,
         output_path: out,
+        placeholder: isPlaceholder,
         block_path: args.block_path,
         tox_path: args.tox_path,
+        validation_notes: validationNotes,
         live_validation: "UNVERIFIED-license-runtime",
       },
     });

@@ -59,8 +59,16 @@ export async function lidarFloorTrackerImpl(ctx: ToolContext, args: LidarFloorTr
         active: args.active,
       });
     } else {
-      source = await builder.add("noiseCHOP", "synthetic_points", { numchans: 4, period: 3 });
-      await builder.setParams(source, { channame: "x y intensity id" });
+      source = await builder.add("constantCHOP", "synthetic_points", {
+        name0: "x",
+        value0: 0,
+        name1: "y",
+        value1: 0,
+        name2: "intensity",
+        value2: 1,
+        name3: "id",
+        value3: 1,
+      });
     }
 
     const points =
@@ -76,7 +84,11 @@ export async function lidarFloorTrackerImpl(ctx: ToolContext, args: LidarFloorTr
       torange1: 1,
     });
     await builder.connect(points, normalize);
-    const occupancy = await builder.add("logicCHOP", "occupancy", { convertinput: "offtoon" });
+    const occupancy = await builder.add("logicCHOP", "occupancy", {
+      convert: "bound",
+      boundmin: args.threshold,
+      boundmax: 1,
+    });
     await builder.connect(normalize, occupancy);
     const outChop = await builder.add("nullCHOP", "tracked_points");
     await builder.connect(occupancy, outChop);
@@ -100,7 +112,7 @@ export async function lidarFloorTrackerImpl(ctx: ToolContext, args: LidarFloorTr
             min: 0,
             max: 1,
             default: args.threshold,
-            bind_to: [`${occupancy}.threshold`],
+            bind_to: [`${occupancy}.boundmin`],
           },
           {
             name: "Scale",

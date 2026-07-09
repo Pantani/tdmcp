@@ -109,18 +109,21 @@ describe("clip_audio_transport", () => {
     expect(movie?.parameters).toMatchObject({
       file: "/clips/look.mov",
       play: 0,
-      loop: 1,
+      textendleft: "cycle",
+      textendright: "cycle",
       speed: 0.75,
     });
+    expect(movie?.parameters).not.toHaveProperty("loop");
 
     const audio = bodies.find((body) => body.name === "audio_clip");
     expect(audio?.type).toBe("audiofileinCHOP");
     expect(audio?.parameters).toMatchObject({
       file: "/clips/look.wav",
       play: 0,
-      loop: 1,
+      repeat: "on",
       speed: 0.75,
     });
+    expect(audio?.parameters).not.toHaveProperty("loop");
     expect(bodies.some((body) => body.name === "video_out" && body.type === "nullTOP")).toBe(true);
     expect(bodies.some((body) => body.name === "audio_out" && body.type === "nullCHOP")).toBe(true);
     expect(textOf(result)).toContain("clip/audio transport");
@@ -138,6 +141,11 @@ describe("clip_audio_transport", () => {
     expect(controls.find((control) => control.name === "Play")?.bind_to).toEqual([
       "/project1/clip_audio_transport/movie_clip.play",
       "/project1/clip_audio_transport/audio_clip.play",
+    ]);
+    expect(controls.find((control) => control.name === "Loop")?.bind_to).toEqual([
+      "/project1/clip_audio_transport/movie_clip.textendleft",
+      "/project1/clip_audio_transport/movie_clip.textendright",
+      "/project1/clip_audio_transport/audio_clip.repeat",
     ]);
     expect(controls.find((control) => control.name === "Speed")?.bind_to).toEqual([
       "/project1/clip_audio_transport/movie_clip.speed",

@@ -81,7 +81,7 @@ export async function projectorCalibrationWizardImpl(
     }
 
     const layout = await builder.add("layoutTOP", "projector_preview", {
-      align: args.projectors > 2 ? "gridrows" : "horizontal",
+      align: args.projectors > 2 ? "gridrows" : "horizlr",
       resolutionw: args.width,
       resolutionh: args.height,
     });
@@ -102,8 +102,8 @@ export async function projectorCalibrationWizardImpl(
         : crop;
       if (args.include_corner_pin) await builder.connect(crop, warp);
       const level = await builder.add("levelTOP", `p${i + 1}_level`, {
-        brightness: 1,
-        gamma: 1,
+        brightness1: 1,
+        gamma1: 1,
         opacity: 1,
       });
       await builder.connect(warp, level);
@@ -119,7 +119,7 @@ export async function projectorCalibrationWizardImpl(
             min: 0,
             max: 2,
             default: 1,
-            bind_to: [`${level}.brightness`],
+            bind_to: [`${level}.brightness1`],
           },
           {
             name: `P${i + 1}Gamma`,
@@ -127,7 +127,7 @@ export async function projectorCalibrationWizardImpl(
             min: 0.1,
             max: 4,
             default: 1,
-            bind_to: [`${level}.gamma`],
+            bind_to: [`${level}.gamma1`],
           },
         );
       }
@@ -146,9 +146,9 @@ export async function projectorCalibrationWizardImpl(
     );
     const out = await builder.add("nullTOP", "out1");
     await builder.connect(layout, out);
-    builder.warnings.push(
+    const validationNotes = [
       "Live projector alignment remains UNVERIFIED: send each pN_out lane to the real projector output and inspect the physical grid.",
-    );
+    ];
 
     return finalize(ctx, {
       summary: `Built a ${args.projectors}-projector calibration wizard ending at ${out}.`,
@@ -160,6 +160,7 @@ export async function projectorCalibrationWizardImpl(
         projectors: args.projectors,
         lane_outputs: laneOutputs,
         overlap: args.overlap,
+        validation_notes: validationNotes,
         live_validation: "UNVERIFIED-projector",
       },
     });

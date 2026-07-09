@@ -652,6 +652,7 @@ export async function raytkExprGraphBuilderImpl(ctx: ToolContext, args: RaytkExp
   return runBuild(async () => {
     const graph = normalizeGraph(args);
     const builder = await createSystemContainer(ctx, args.parent_path, args.name);
+    const validationNotes: string[] = [];
 
     const script = buildRaytkExprGraphScript({
       container: builder.containerPath,
@@ -665,8 +666,12 @@ export async function raytkExprGraphBuilderImpl(ctx: ToolContext, args: RaytkExp
     try {
       const exec = await ctx.client.executePythonScript(script, true);
       report = parsePythonReport<RaytkExprGraphReport>(exec.stdout);
-      builder.warnings.push(...report.warnings);
-      if (report.guidance) builder.warnings.push(report.guidance);
+      if (report.library_loaded || report.created.length > 0) {
+        builder.warnings.push(...report.warnings);
+      } else {
+        validationNotes.push(...report.warnings);
+      }
+      if (report.guidance) validationNotes.push(report.guidance);
       if (report.fatal)
         builder.warnings.push(`RayTK expression graph fatal report: ${report.fatal}`);
     } catch (err) {
@@ -678,17 +683,17 @@ export async function raytkExprGraphBuilderImpl(ctx: ToolContext, args: RaytkExp
     const out = await builder.add("nullTOP", "out1");
     if (report?.output_path) {
       await builder.connect(report.output_path, out);
-      builder.warnings.push(
+      validationNotes.push(
         "RayTK raymarchRender3D compiles its shader on a background thread; preview capture is not proof of a fully cooked non-black render.",
       );
     } else {
-      builder.warnings.push("RayTK expression graph output was not created; out1 is empty.");
+      validationNotes.push("RayTK expression graph output was not created; out1 is empty.");
     }
 
     return finalize(ctx, {
       summary: report?.output_path
         ? `Built a RayTK expression graph (${graph.description}).`
-        : "RayTK expression graph not built - load the RayTK library first (see warnings).",
+        : "RayTK expression graph not built - load the RayTK library first.",
       builder,
       outputPath: out,
       capturePreviewImage: args.capture_preview_image,
@@ -714,6 +719,7 @@ export async function raytkExprGraphBuilderImpl(ctx: ToolContext, args: RaytkExp
           unresolved: report?.unresolved ?? graph.nodes.map((node) => node.id),
           parameters_applied: report?.parameters_applied ?? [],
         },
+        validation_notes: validationNotes,
         live_validation: "UNVERIFIED-raytk-render",
       },
     });

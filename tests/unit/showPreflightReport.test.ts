@@ -49,7 +49,7 @@ describe("showPreflightReportImpl", () => {
     expect(textOf(result)).toContain("PASS");
     expect(result.structuredContent).toMatchObject({
       status: "pass",
-      summary: { fail: 0, warn: 0 },
+      summary: { fail: 0, warn: 0, unverified: 0 },
     });
   });
 
@@ -91,5 +91,52 @@ describe("showPreflightReportImpl", () => {
     );
     expect(result.structuredContent).toMatchObject({ status: "warn" });
     expect(textOf(result)).toContain("WARN");
+  });
+
+  it("marks performance as unverified instead of warn when no cooked samples exist yet", async () => {
+    const result = await showPreflightReportImpl(
+      makeCtx({
+        getNetworkPerformance: vi.fn(async () => ({
+          nodes: [{ path: "/project1/fresh", cook_time_ms: 30, cook_count: 0 }],
+          total_cook_time_ms: 30,
+        })),
+      }),
+      {
+        root_path: "/project1",
+        target_fps: 60,
+        recursive: true,
+        include_displays: false,
+        include_performance: true,
+      },
+    );
+    expect(result.structuredContent).toMatchObject({
+      status: "unverified",
+      summary: { warn: 0, fail: 0, unverified: 1 },
+    });
+    expect(textOf(result)).toContain("UNVERIFIED");
+  });
+
+  it("marks unavailable display topology as unverified instead of warn", async () => {
+    const result = await showPreflightReportImpl(
+      makeCtx({
+        getSystemInfo: vi.fn(async () => ({
+          gpu: { name: null },
+          monitors: { error: "app.monitors unavailable on this TD build" },
+          performMode: null,
+        })),
+      }),
+      {
+        root_path: "/project1",
+        target_fps: 60,
+        recursive: true,
+        include_displays: true,
+        include_performance: false,
+      },
+    );
+    expect(result.structuredContent).toMatchObject({
+      status: "unverified",
+      summary: { warn: 0, fail: 0, unverified: 1 },
+    });
+    expect(textOf(result)).toContain("UNVERIFIED");
   });
 });

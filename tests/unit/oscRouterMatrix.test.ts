@@ -115,6 +115,7 @@ describe("osc_router_matrix", () => {
     expect(textOf(result)).toContain("Built OSC router matrix");
     expect(cap.scripts[0]).toContain("oscoutCHOP");
     expect(cap.scripts[0]).toContain("constantCHOP");
+    expect(cap.scripts[0]).toContain("_place_container(parent, container)");
   });
 
   it("returns an isError result on bridge fatal", async () => {

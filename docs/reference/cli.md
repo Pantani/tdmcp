@@ -173,7 +173,7 @@ commands:
 | Subcommand | What it does |
 | --- | --- |
 | `export-render-preset` | Record a TOP with a named VJ/editorial export preset. |
-| `show-preflight` | Run a read-only PASS/WARN/FAIL pre-show check. |
+| `show-preflight` | Run a read-only PASS/UNVERIFIED/WARN/FAIL pre-show check. |
 | `auto-ui-from-params` | Generate a playable control panel from a node's parameters. |
 | `companion-surface` | Create a companion auto UI, fader surface and preflight report. |
 | `clip-transport` | Build a movie/audio clip transport with Play, Loop and Speed controls. |

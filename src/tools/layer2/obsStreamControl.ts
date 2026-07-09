@@ -151,6 +151,23 @@ def _place(node, x, y):
     except Exception:
         pass
 
+def _place_container(parent, container):
+    try:
+        cw, ch, rows = 260, 200, 6
+        def _cell(child):
+            return (
+                round((child.nodeX + child.nodeWidth / 2.0) / cw),
+                round(-(child.nodeY + child.nodeHeight / 2.0) / ch),
+            )
+        occupied = {_cell(child) for child in parent.children if child is not container}
+        k = 0
+        while (k // rows, k % rows) in occupied:
+            k += 1
+        container.nodeX = (k // rows) * cw
+        container.nodeY = -((k % rows) * ch)
+    except Exception:
+        pass
+
 def _setpar(node, name, value, warn=True):
     try:
         par = getattr(node.par, name, None)
@@ -263,6 +280,7 @@ try:
         report["fatal"] = str(_p["parent_path"]) + " is not a COMP."
     else:
         container = parent.op(_p["name"]) or parent.create(baseCOMP, _p["name"])
+        _place_container(parent, container)
         report["container"] = container.path
 
         ws = container.op("obs_ws") or container.create(websocketDAT, "obs_ws")
@@ -287,7 +305,6 @@ try:
         _setpar(ws, "active", 1 if _p.get("auto_connect") else 0, warn=False)
         _setpar(ws, "autoreconnect", 1, warn=False)
         _setpar(ws, "reconnectinterval", 2.0, warn=False)
-        _set_first(ws, [("protocol", "obswebsocket.json"), ("subprotocol", "obswebsocket.json")])
 
         for idx, command in enumerate(_p.get("commands") or []):
             _setpar(controls, "name%d" % idx, command.get("channel"))
@@ -310,7 +327,7 @@ try:
         _setpar(ws, "callbacks", dispatch.name, warn=False)
 
         if _p.get("auth_required"):
-            report["warnings"].append(
+            report["auth_note"] = (
                 "OBS auth_required=true: tdmcp did not store a password. Complete obs-websocket authentication manually in obs_dispatch."
             )
 except Exception:

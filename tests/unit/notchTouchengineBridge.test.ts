@@ -79,6 +79,19 @@ describe("notch_touchengine_bridge", () => {
     expect(textOf(result)).toContain("UNVERIFIED-license-runtime");
   });
 
+  it("uses a clean TOP placeholder when a Notch block path is omitted", async () => {
+    const bodies = captureCreateBodies();
+    const result = await notchTouchengineBridgeImpl(
+      makeCtx(),
+      notchTouchengineBridgeSchema.parse({ mode: "notch_top" }),
+    );
+
+    expect(result.isError).toBeFalsy();
+    expect(bodies.some((body) => body.type === "notchTOP")).toBe(false);
+    expect(bodies.find((body) => body.name === "bridge_placeholder")?.type).toBe("constantTOP");
+    expect(textOf(result)).toContain("placeholder");
+  });
+
   it("builds an Engine COMP scaffold in TouchEngine mode", async () => {
     const bodies = captureCreateBodies();
     const result = await notchTouchengineBridgeImpl(
@@ -89,5 +102,18 @@ describe("notch_touchengine_bridge", () => {
     const engine = bodies.find((body) => body.type === "engineCOMP");
     expect(engine?.parameters?.file).toBe("/tox/scene.tox");
     expect(textOf(result)).toContain("engine_comp");
+  });
+
+  it("uses a clean TOP placeholder when a TouchEngine tox path is omitted", async () => {
+    const bodies = captureCreateBodies();
+    const result = await notchTouchengineBridgeImpl(
+      makeCtx(),
+      notchTouchengineBridgeSchema.parse({ mode: "engine_comp" }),
+    );
+
+    expect(result.isError).toBeFalsy();
+    expect(bodies.some((body) => body.type === "engineCOMP")).toBe(false);
+    expect(bodies.find((body) => body.name === "bridge_placeholder")?.type).toBe("constantTOP");
+    expect(textOf(result)).toContain("placeholder");
   });
 });
