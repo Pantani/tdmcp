@@ -91,41 +91,59 @@ ${presetList}`;
 
 export function resolveCaptureOptions(argv = process.argv.slice(2)) {
   const presetName = arg(argv, "preset");
+  const preset = resolvePreset(presetName);
+  const verify = resolveVerifyFlag(argv, preset);
+  const { width, height } = resolveDimensions(argv, preset);
+
+  return {
+    node: arg(argv, "node"),
+    out: arg(argv, "out"),
+    preset: presetName,
+    frames: numberArg(argv, "frames", presetValue(preset, "frames", 40)),
+    step: numberArg(argv, "step", presetValue(preset, "step", 2)),
+    width,
+    height,
+    fps: numberArg(argv, "fps", presetValue(preset, "fps", 16)),
+    host: arg(argv, "host", "127.0.0.1:9980"),
+    delayMs: numberArg(argv, "delay-ms", presetValue(preset, "delayMs", 0)),
+    warmupFrames: numberArg(argv, "warmup-frames", presetValue(preset, "warmupFrames", 0)),
+    verify,
+    motionMinUnique: resolveMotionMinUnique(argv, preset, verify),
+    contactSheet: arg(argv, "contact-sheet"),
+  };
+}
+
+function resolvePreset(presetName) {
   const preset = presetName ? PRESETS[presetName] : undefined;
   if (presetName && !preset) {
     throw new Error(
       `Unknown --preset ${JSON.stringify(presetName)}. Known presets: ${Object.keys(PRESETS).join(", ")}`,
     );
   }
+  return preset;
+}
 
-  const fallbackWidth = preset?.width ?? 480;
+function presetValue(preset, key, fallback) {
+  return preset?.[key] ?? fallback;
+}
+
+function resolveVerifyFlag(argv, preset) {
+  if (hasFlag(argv, "no-verify")) return false;
+  return hasFlag(argv, "verify") || Boolean(preset?.verify);
+}
+
+function resolveDimensions(argv, preset) {
   const size = arg(argv, "size");
-  const node = arg(argv, "node");
-  const out = arg(argv, "out");
-  const verify = hasFlag(argv, "no-verify")
-    ? false
-    : hasFlag(argv, "verify") || Boolean(preset?.verify);
-  const allowStill = hasFlag(argv, "allow-still");
+  const fallbackWidth = presetValue(preset, "width", 480);
   const width = numberArg(argv, "width", size ?? fallbackWidth);
+  const height = numberArg(argv, "height", size ?? presetValue(preset, "height", width));
+  return { width, height };
+}
 
-  return {
-    node,
-    out,
-    preset: presetName,
-    frames: numberArg(argv, "frames", preset?.frames ?? 40),
-    step: numberArg(argv, "step", preset?.step ?? 2),
-    width,
-    height: numberArg(argv, "height", size ?? preset?.height ?? width),
-    fps: numberArg(argv, "fps", preset?.fps ?? 16),
-    host: arg(argv, "host", "127.0.0.1:9980"),
-    delayMs: numberArg(argv, "delay-ms", preset?.delayMs ?? 0),
-    warmupFrames: numberArg(argv, "warmup-frames", preset?.warmupFrames ?? 0),
-    verify,
-    motionMinUnique: allowStill
-      ? 1
-      : numberArg(argv, "motion-min-unique", preset?.motionMinUnique ?? (verify ? 2 : 1)),
-    contactSheet: arg(argv, "contact-sheet"),
-  };
+function resolveMotionMinUnique(argv, preset, verify) {
+  if (hasFlag(argv, "allow-still")) return 1;
+  const fallback = presetValue(preset, "motionMinUnique", verify ? 2 : 1);
+  return numberArg(argv, "motion-min-unique", fallback);
 }
 
 async function exec(base, script) {
@@ -293,39 +311,61 @@ function encodeFrames({ dir, out, fps }) {
 }
 
 async function main(argv = process.argv.slice(2)) {
-  if (hasFlag(argv, "help") || hasFlag(argv, "h")) {
-    console.log(usage());
-    return;
-  }
-  if (hasFlag(argv, "list-presets")) {
-    console.log(JSON.stringify(PRESETS, null, 2));
-    return;
-  }
+  if (handleInfoCommand(argv)) return;
 
   const options = resolveCaptureOptions(argv);
   if (hasFlag(argv, "print-plan")) {
     console.log(JSON.stringify(options, null, 2));
     return;
   }
-  if (!options.node || !options.out) throw new Error(`${usage()}\n\nMissing --node or --out.`);
+  validateRequiredOptions(options);
+  await runCapturePlan(options);
+}
 
+function handleInfoCommand(argv) {
+  if (hasFlag(argv, "help") || hasFlag(argv, "h")) {
+    console.log(usage());
+    return true;
+  }
+  if (hasFlag(argv, "list-presets")) {
+    console.log(JSON.stringify(PRESETS, null, 2));
+    return true;
+  }
+  return false;
+}
+
+function validateRequiredOptions(options) {
+  if (!options.node || !options.out) throw new Error(`${usage()}\n\nMissing --node or --out.`);
+}
+
+async function runCapturePlan(options) {
   const { dir, frameHashes } = await captureFrames(options);
   try {
-    if (options.verify) {
-      verifyCapturedFrames({
-        frameHashes,
-        motionMinUnique: options.motionMinUnique,
-        out: options.out,
-      });
-    }
-    if (options.contactSheet) {
-      writeContactSheet({ dir, out: options.contactSheet, frames: options.frames });
-    }
+    maybeVerifyCapturedFrames(options, frameHashes);
+    maybeWriteContactSheet(options, dir);
     encodeFrames({ dir, out: options.out, fps: options.fps });
-    if (options.verify) probeVideo(options.out);
+    maybeProbeVideo(options);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+}
+
+function maybeVerifyCapturedFrames(options, frameHashes) {
+  if (!options.verify) return;
+  verifyCapturedFrames({
+    frameHashes,
+    motionMinUnique: options.motionMinUnique,
+    out: options.out,
+  });
+}
+
+function maybeWriteContactSheet(options, dir) {
+  if (!options.contactSheet) return;
+  writeContactSheet({ dir, out: options.contactSheet, frames: options.frames });
+}
+
+function maybeProbeVideo(options) {
+  if (options.verify) probeVideo(options.out);
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
