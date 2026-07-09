@@ -30,9 +30,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     (`2022+`) is corrected to `2025.30770+` with a `versionGate` (RayTK 0.46 needs the TD
     2025.30770 experimental build; pin ≤0.45 on 2023.x); `manage_packages doctor raytk`
     now detects the live TD build and warns when it predates the gate.
-  - Live TouchDesigner validation is **UNVERIFIED** (bridge offline) — requires TD
-    2025.30770+ with the RayTK `.tox` loaded to confirm copy/wire, shader compile, and
-    render.
+  - Live-validated on TouchDesigner build **2025.32820** with RayTK **0.46** loaded:
+    all six ROP masters resolve via `pathsByOpType`, copy, and wire; the raymarch shader
+    compiles and the output TOP renders a real (non-black) `sphereSdf ∪ boxSdf` + `basicMat`
+    scene. `create_raytk_op` connects an existing op into a new op's input. Wiring uses
+    connector-to-connector (`dst.inputConnectors[i].connect(src.outputConnectors[0])`) —
+    RayTK COMP connectors reject `.connect(op)`.
 
 ### Fixed
 

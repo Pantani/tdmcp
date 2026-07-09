@@ -195,10 +195,11 @@ describe("create_raytk_scene", () => {
       const script = scripts.find((s) => s.includes("pathsByOpType")) ?? "";
       expect(script).toContain(".copy(");
       expect(script).toContain("pathsByOpType");
-      // Renderer inputs: 0 = scene, 1 = camera, 2 = light.
-      expect(script).toContain("inputConnectors[0].connect");
-      expect(script).toContain("inputConnectors[1].connect");
-      expect(script).toContain("inputConnectors[2].connect");
+      // RayTK ROPs are COMPs: wire connector-to-connector (source OUTPUT into dest INPUT).
+      expect(script).toContain("inputConnectors[idx].connect(src.outputConnectors[0])");
+      // Renderer inputs are wired 0 = scene, 1 = camera, 2 = light.
+      expect(script).toContain("_wire(_camera, _render, 1");
+      expect(script).toContain("_wire(_light, _render, 2");
     });
   });
 

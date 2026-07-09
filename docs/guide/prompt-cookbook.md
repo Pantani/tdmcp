@@ -370,18 +370,21 @@ can keep tweaking the network by hand afterward — unlike the monolithic GLSL p
 The renderer compiles its shader on a background thread, so the first preview may be
 pre-compile; do a live cook-wait before trusting the frame.*
 
-> *"Add a lookAtCamera to my RayTK scene and wire it into the renderer's camera
-> input."*
+> *"Add a smooth-union combine to my RayTK scene and pull the existing sphere into
+> it, so I can start blending in more shapes."*
 
 ```bash
-tdmcp-agent raytk-op --params '{"op_type":"lookAtCamera","category":"camera","parent_path":"/project1/raytk_scene_sphereSdf","connect_from":"/project1/raytk_scene_sphereSdf/render1","input_index":1}'
+tdmcp-agent raytk-op --params '{"op_type":"simpleUnion","category":"combine","parent_path":"/project1/raytk_scene_sphereSdf","connect_from":"/project1/raytk_scene_sphereSdf/sdf_primary","input_index":0}'
 ```
 
-*`create_raytk_op` instances any single RayTK ROP by name and optionally wires an
-existing op into one of its 0-based typed inputs (for `raymarchRender3D`: 0=scene,
-1=camera, 2=light). The install-dependent master path is probed live, never
-hardcoded, and repeated calls auto-place to the right of existing siblings. Browse
-the full operator taxonomy via the `tdmcp://raytk/operators` catalog resource.*
+*`create_raytk_op` instances any single RayTK ROP by name and wires an **existing**
+op into one of the **new** op's 0-based typed inputs (source → new op) — here the
+scene's sphere becomes `simpleUnion` input 0. The install-dependent master path is
+probed live, never hardcoded, and repeated calls auto-place to the right of existing
+siblings. (Cameras and lights are wired straight into the renderer by
+`create_raytk_scene`'s `add_camera` / `add_light` flags — that direction is
+new-op → renderer, not covered by this source → new-op wire.) Browse the full
+operator taxonomy via the `tdmcp://raytk/operators` catalog resource.*
 
 ## Artist studies & installations
 

@@ -184,7 +184,10 @@ def _run(p):
             else:
                 try:
                     idx = int(p.get("input_index", 0))
-                    new_op.inputConnectors[idx].connect(src)
+                    # RayTK ROPs are COMPs: wire connector-to-connector (the source's OUTPUT
+                    # connector into this op's INPUT connector). Passing the OP to connect() is
+                    # rejected with "Invalid number or type of arguments".
+                    new_op.inputConnectors[idx].connect(src.outputConnectors[0])
                     report["connected"] = True
                 except Exception as _e:
                     report["warnings"].append("connect failed: " + str(_e))

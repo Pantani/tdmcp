@@ -211,27 +211,33 @@ try:
     _camera = _by_role.get("camera")
     _light = _by_role.get("light")
 
+    # RayTK ROPs are COMPs: wire connector-to-connector (source OUTPUT connector into the
+    # destination INPUT connector). inputConnectors[i].connect(OP) is rejected ("Invalid
+    # number or type of arguments") — it wants a Connector, not an operator.
+    def _wire(src, dst, idx, label):
+        _safe(lambda: dst.inputConnectors[idx].connect(src.outputConnectors[0]), label)
+
     # union: primary -> union input 0, secondary -> union input 1.
     if _union is not None and _prim is not None:
-        _safe(lambda: _union.inputConnectors[0].connect(_prim), "primary->union[0]")
+        _wire(_prim, _union, 0, "primary->union[0]")
     if _union is not None and _sec is not None:
-        _safe(lambda: _union.inputConnectors[1].connect(_sec), "secondary->union[1]")
+        _wire(_sec, _union, 1, "secondary->union[1]")
 
     # scene tail = material else union else primary.
     _scene = _union if _union is not None else _prim
     if _material is not None and _scene is not None:
-        _safe(lambda: _material.inputConnectors[0].connect(_scene), "scene->material[0]")
+        _wire(_scene, _material, 0, "scene->material[0]")
         _scene = _material
     if _scene is not None:
         report["scene_tail_path"] = _scene.path
 
     # renderer: input 0 = scene, input 1 = camera, input 2 = light.
     if _render is not None and _scene is not None:
-        _safe(lambda: _render.inputConnectors[0].connect(_scene), "scene->render[0]")
+        _wire(_scene, _render, 0, "scene->render[0]")
     if _render is not None and _camera is not None:
-        _safe(lambda: _render.inputConnectors[1].connect(_camera), "camera->render[1]")
+        _wire(_camera, _render, 1, "camera->render[1]")
     if _render is not None and _light is not None:
-        _safe(lambda: _render.inputConnectors[2].connect(_light), "light->render[2]")
+        _wire(_light, _render, 2, "light->render[2]")
 
     if _render is not None:
         report["render_path"] = _render.path

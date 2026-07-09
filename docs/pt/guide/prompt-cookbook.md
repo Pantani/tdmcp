@@ -384,19 +384,21 @@ continuar ajustando a rede à mão depois — diferente do caminho GLSL monolít
 renderer compila o shader numa thread em segundo plano, então o primeiro preview pode
 ser pré-compilação; faça um cook-wait ao vivo antes de confiar no frame.*
 
-> *"Adicione uma lookAtCamera à minha cena RayTK e ligue-a na entrada de câmera do
-> renderer."*
+> *"Adicione um combine de smooth-union à minha cena RayTK e puxe a esfera existente
+> para dentro dele, para eu começar a mesclar mais formas."*
 
 ```bash
-tdmcp-agent raytk-op --params '{"op_type":"lookAtCamera","category":"camera","parent_path":"/project1/raytk_scene_sphereSdf","connect_from":"/project1/raytk_scene_sphereSdf/render1","input_index":1}'
+tdmcp-agent raytk-op --params '{"op_type":"simpleUnion","category":"combine","parent_path":"/project1/raytk_scene_sphereSdf","connect_from":"/project1/raytk_scene_sphereSdf/sdf_primary","input_index":0}'
 ```
 
-*`create_raytk_op` instancia qualquer ROP RayTK isolado pelo nome e opcionalmente
-conecta um op existente numa das suas entradas tipadas 0-based (para
-`raymarchRender3D`: 0=scene, 1=câmera, 2=luz). O master path, dependente da
+*`create_raytk_op` instancia qualquer ROP RayTK isolado pelo nome e conecta um op
+**existente** numa das entradas tipadas 0-based do op **novo** (origem → op novo) —
+aqui a esfera da cena vira a entrada 0 do `simpleUnion`. O master path, dependente da
 instalação, é probado ao vivo, nunca hardcoded, e chamadas repetidas se auto-posicionam
-à direita dos irmãos existentes. Explore a taxonomia completa de operadores pelo
-recurso de catálogo `tdmcp://raytk/operators`.*
+à direita dos irmãos existentes. (Câmeras e luzes são ligadas direto no renderer pelos
+flags `add_camera` / `add_light` do `create_raytk_scene` — essa direção é op-novo →
+renderer, não coberta por este wire origem → op-novo.) Explore a taxonomia completa de
+operadores pelo recurso de catálogo `tdmcp://raytk/operators`.*
 
 ## Estudos artísticos & instalações
 
