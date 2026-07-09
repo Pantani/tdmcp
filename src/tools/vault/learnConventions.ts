@@ -601,7 +601,11 @@ export const registerLearnConventions: ToolRegistrar = (server, ctx) => {
     {
       title: "Learn the artist's house conventions from a live TD subtree",
       description:
-        "Walk a TouchDesigner subtree under scope_path without mutating TD, infer naming/colour/topology/parameter conventions, and persist them to the configured vault. By default it writes Memory/conventions.md and may merge confident naming/layout signals into Memory/style.md; set dry_run=true to return the extract without disk writes. Requires TDMCP_VAULT_PATH and returns the sampled conventions plus flags showing which notes were written.",
+        "Walk a TouchDesigner subtree under scope_path without mutating TD, infer naming/colour/topology/parameter " +
+        "conventions, and persist them to the configured vault. By default it writes Memory/conventions.md and may " +
+        "merge confident naming/layout signals into Memory/style.md; set dry_run=true to return the extract without " +
+        "disk writes. Requires TDMCP_VAULT_PATH and returns the sampled conventions plus flags showing which notes " +
+        "were written.",
       inputSchema: learnConventionsSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
     },

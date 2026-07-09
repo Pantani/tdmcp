@@ -17,8 +17,9 @@
       "environmentVariables": [
         {
           "name": "TDMCP_TOOL_PROFILE",
-          "value": "directory",
-          "description": "Expose the compact registry-facing build/inspect tool profile for MCP directories."
+          "default": "full",
+          "choices": ["full", "safe", "directory"],
+          "description": "Tool exposure profile. Use full for the installed runtime, safe to hide destructive/raw-code tools, or directory only for compact hosted directory scans."
         },
         {
           "name": "TDMCP_RAW_PYTHON",
